@@ -106,8 +106,10 @@ P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a"}, {"t": "20
 seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
-    t = sent[-1][1]
+    t = [x for m, x in sent if m == "draft"][-1]
     assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and list(seen)[0].startswith("digest_")
+    blog = sent[-1][1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
+    assert sent[-1][0] == "sendMessage" and "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     sent.clear(); H.digest(seen, P); assert not sent
 assert "og:title" in idx and "naver-site-verification" in idx
 print("OK: 모든 셀프체크 통과")

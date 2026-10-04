@@ -5,7 +5,7 @@ GitHub Actions에서 30분마다 실행. 외부 패키지 없음(파이썬 표�
 import hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, title_of
+from build_site import BASE as SITE, title_of, split_title
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -184,6 +184,19 @@ def digest(seen, posts):
             + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📲 실시간 알림: https://t.me/hotdeal_pick")
     if draft(text):
         seen[key] = time.time()
+        tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
+
+
+def blog_text(todays, kst):
+    """네이버 블로그에 그대로 복붙할 제목+본문 (일반 텍스트, 링크 그대로 노출, 대가성 문구 포함)."""
+    title = f"{kst.tm_mon}월 {kst.tm_mday}일 핫딜 모음 | {title_of(todays[0]['text'])}" + (f" 외 {len(todays) - 1}건" if len(todays) > 1 else "")
+    items = []
+    for n, p in enumerate(todays, 1):
+        t, rest, _ = split_title(p["text"])
+        items.append(f"{n}. {t}\n{rest.split(chr(10))[0]}\n👉 {p['url'] or SITE}")
+    return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + "\n\n".join(items)
+            + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
+            + "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
 
 def load(path, default):
