@@ -5,6 +5,7 @@ GitHub Actions에서 30분마다 실행. 외부 패키지 없음(파이썬 표�
 import hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
+from build_site import BASE as SITE, title_of
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -171,6 +172,20 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
+def digest(seen, posts):
+    """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 블로그에 그대로 붙여넣어도 되는 형식."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    key, today = time.strftime("digest_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
+    todays = [p for p in posts if p["t"].startswith(today) and not p["text"].startswith("📋")]
+    if key in seen or kst.tm_hour < 21 or not todays:
+        return
+    rows = [f"{n}. <a href=\"{esc(p['url'])}\">{esc(title_of(p['text']))}</a>" for n, p in enumerate(todays, 1)]
+    text = (f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows)
+            + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📲 실시간 알림: https://t.me/hotdeal_pick")
+    if draft(text):
+        seen[key] = time.time()
+
+
 def load(path, default):
     try:
         return json.load(open(path))
@@ -189,10 +204,11 @@ def main():
             seen[d["id"]] = time.time()
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
             draft(*deal_post(new[p["i"]], p["comment"]), score=p["score"])
-    try:
-        goldbox(seen)
-    except Exception as e:
-        print("goldbox", repr(e))
+    for step in (goldbox, lambda s: digest(s, load(POSTS, []))):
+        try:
+            step(seen)
+        except Exception as e:
+            print(step.__name__, repr(e))
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))
     print(f"new={len(new)} seen={len(seen)}")

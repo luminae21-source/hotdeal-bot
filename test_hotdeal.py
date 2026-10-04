@@ -69,10 +69,10 @@ assert len(posts) == 1 and posts[0]["url"] == "https://buy" and posts[0]["text"]
 sent.clear()
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "좋음"}] if len(lines) == 1 else []
 H.main()
-drafts = [p for m, p in sent if m == "sendMessage"]
-assert len(drafts) == 1 and "휴지" in drafts[0]["text"] and json.load(open("seen.json")).keys() == {"ppomppu_101"}
+drafts = [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]  # (21시 이후엔 📋 모아보기 초안도 같이 나감)
+assert len(drafts) == 1 and "휴지" in drafts[0]["text"] and {k for k in json.load(open("seen.json")) if k.startswith("ppomppu_")} == {"ppomppu_101"}
 sent.clear(); H.main()  # 재실행: 같은 글 다시 안 보냄
-assert not [m for m, _ in sent if m == "sendMessage"]
+assert not [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]
 
 # 5) 골드박스: 하루 1번, 대가성 문구 맨 앞, 고른 순서대로
 GB = [{"productName": f"상품{i}", "productPrice": 1000.0 * (i + 1), "productUrl": f"https://link.coupang.com/{i}"} for i in range(8)]
@@ -96,4 +96,17 @@ idx = open("docs/index.html").read()
 assert n == 1 and "[쿠팡] 휴지" in idx and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll")
 assert "p/0.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
 assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
+
+# 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
+H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
+today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a"}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o"},
+     {"t": f"{today} 11:00", "text": "📋 오늘의 딜 모아보기", "url": None}]
+seen, sent[:] = {}, []
+H.digest(seen, P)
+if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
+    t = sent[-1][1]
+    assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "github.io" in t and list(seen)[0].startswith("digest_")
+    sent.clear(); H.digest(seen, P); assert not sent
+assert "og:title" in idx
 print("OK: 모든 셀프체크 통과")
