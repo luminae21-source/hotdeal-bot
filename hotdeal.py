@@ -34,8 +34,13 @@ def http(url, body=None, headers=None, method=None):
     h = {"User-Agent": UA, **(headers or {})}
     if body is not None:
         body, h["Content-Type"] = json.dumps(body).encode(), "application/json"
-    with urllib.request.urlopen(urllib.request.Request(url, body, h, method=method), timeout=30) as r:
-        return r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, body, h, method=method), timeout=30) as r:
+            return r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        e.body = e.read().decode("utf-8", "replace")[:300]  # 로그에서 원인 바로 보이게
+        print("HTTP", e.code, url.split("/bot")[0], e.body)
+        raise
 
 
 def tg(method, **params):
@@ -43,7 +48,7 @@ def tg(method, **params):
     try:
         return json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
     except urllib.error.HTTPError as e:
-        print("TG", method, e.code, e.read().decode()[:300])
+        print("TG", method, e.code, e.body)
 
 
 def fetch_deals():
@@ -74,10 +79,10 @@ def ai_pick(prompt, lines):
             "type": "object", "required": ["i", "score", "comment"],
             "properties": {"i": {"type": "integer"}, "score": {"type": "integer"}, "comment": {"type": "string"}}}}}}}
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
-        "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "tool", "name": "pick"},
+        "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "auto"},
         "messages": [{"role": "user", "content": prompt + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
-    picks = next(c["input"]["picks"] for c in r["content"] if c["type"] == "tool_use")
+    picks = next((c["input"]["picks"] for c in r["content"] if c["type"] == "tool_use"), [])
     return sorted((p for p in picks if 0 <= p["i"] < len(lines)), key=lambda p: -p["score"])
 
 
