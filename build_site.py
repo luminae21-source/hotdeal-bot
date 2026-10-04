@@ -29,12 +29,19 @@ def to_html(text, entities):
     return "".join(out).replace("\n", "<br>")
 
 
+def split_title(text):
+    """(제목, 제목 아래 본문, 잘라낸 UTF-16 길이). 본문에 제목이 한 번 더 나오지 않게 제목 줄까지 잘라냄."""
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        t = re.sub(r"^[^\w가-ퟣ\[]+", "", line).strip()  # 앞 이모지 제거
+        if t and "쿠팡 파트너스 활동" not in t:
+            rest = "\n".join(lines[i + 1:]).lstrip("\n")
+            return t, rest, (len(text.encode("utf-16-le")) - len(rest.encode("utf-16-le"))) // 2
+    return TITLE, text, 0
+
+
 def title_of(text):
-    for line in text.split("\n"):
-        line = re.sub(r"^[^\w가-ퟣ\[]+", "", line).strip()  # 앞 이모지 제거
-        if line and "쿠팡 파트너스 활동" not in line:
-            return line
-    return TITLE
+    return split_title(text)[0]
 
 
 def page(title, body, desc="", canonical=""):
@@ -53,7 +60,8 @@ def build(posts, out="docs"):
     open(f"{out}/.nojekyll", "w").close()
     cards, urls = [], [BASE]
     for i, p in reversed(list(enumerate(posts))):
-        title, body = title_of(p["text"]), to_html(p["text"], p.get("entities"))
+        title, rest, cut = split_title(p["text"])
+        body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
         btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow noopener" target="_blank">🛒 구매하러 가기</a>' if p.get("url") else ""
         url = f"{BASE}p/{i}.html"
         card = f'<article class="card"><div class="t">{p["t"]}</div><h2><a href="{url}">{html.escape(title)}</a></h2><p>{body}</p>{btn}</article>'

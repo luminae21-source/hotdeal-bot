@@ -116,4 +116,5 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-04 | 웹사이트 생성 (링크 오프셋·제목·사이트맵·빈 목록·OG 태그) | 셀프체크 | ✅ |
 | 2026-10-04 | 사이트 파일 자동 커밋 | 실제 Actions 실행 | ✅ hotdeal-bot 계정으로 docs/ 커밋 |
 | 2026-10-04 | 일일 모아보기 (21시 1회·오늘 글만·자기 제외) | 셀프체크 | ✅ |
-| — | 웹사이트 실제 배포 (Pages), 쿠팡 API | Pages 설정 후 / 쿠팡 승인 후 | ⏳ |
+| 2026-10-04 | 웹사이트 실제 배포 | 저장소 Public 전환 + Pages(main/docs) | ✅ https://luminae21-source.github.io/hotdeal-bot/ |
+| — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |
