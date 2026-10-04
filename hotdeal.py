@@ -5,7 +5,7 @@ GitHub Actions에서 30분마다 실행. 외부 패키지 없음(파이썬 표�
 import hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, title_of, split_title
+from build_site import BASE as SITE, BLOG, title_of, split_title
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -181,7 +181,7 @@ def digest(seen, posts):
         return
     rows = [f"{n}. <a href=\"{esc(p['url'])}\">{esc(title_of(p['text']))}</a>" for n, p in enumerate(todays, 1)]
     text = (f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows)
-            + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📲 실시간 알림: https://t.me/hotdeal_pick")
+            + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick")
     if draft(text):
         seen[key] = time.time()
         tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
