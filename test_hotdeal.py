@@ -109,5 +109,5 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     t = sent[-1][1]
     assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and list(seen)[0].startswith("digest_")
     sent.clear(); H.digest(seen, P); assert not sent
-assert "og:title" in idx
+assert "og:title" in idx and "naver-site-verification" in idx
 print("OK: 모든 셀프체크 통과")
