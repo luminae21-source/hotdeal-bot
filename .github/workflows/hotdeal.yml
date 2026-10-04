@@ -1,0 +1,27 @@
+name: hotdeal
+on:
+  schedule:
+    - cron: "*/30 23,0-14 * * *"   # KST 08:00~23:30, 30분마다
+  workflow_dispatch:               # GitHub 앱에서 'Run workflow'로 즉시 실행
+concurrency: hotdeal
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) 유지
+        with:
+          path: seen.json
+          key: seen-${{ github.run_id }}
+          restore-keys: seen-
+      - run: python hotdeal.py
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_ADMIN_ID: ${{ secrets.TG_ADMIN_ID }}
+          TG_CHANNEL: ${{ secrets.TG_CHANNEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
+          COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
+          MIN_SCORE: ${{ vars.MIN_SCORE }}
+          MODEL: ${{ vars.MODEL }}
