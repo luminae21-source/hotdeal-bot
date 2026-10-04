@@ -6,7 +6,7 @@ import hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urll
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 
-E = os.environ
+E = {k: v.strip() for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
 MODEL = E.get("MODEL") or "claude-sonnet-5-5"
 MIN_SCORE = int(E.get("MIN_SCORE") or 7)
