@@ -2,7 +2,7 @@
 """posts.json(채널에 게시된 딜) -> docs/ 정적 사이트. GitHub Pages로 서빙. 외부 패키지 없음."""
 import html, json, os, re
 
-BASE = "https://luminae21-source.github.io/hotdeal-bot/"
+BASE = "https://hotdealpick.kr/"
 CHANNEL = "https://t.me/hotdeal_pick"
 TITLE = "오늘의 딜 pick"
 DISCLOSURE = "이 사이트는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
@@ -58,6 +58,7 @@ def page(title, body, desc="", canonical=""):
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
+    open(f"{out}/CNAME", "w").write(BASE.split("/")[2])  # GitHub Pages 커스텀 도메인 (재생성 때 안 날아가게)
     cards, urls = [], [BASE]
     for i, p in reversed(list(enumerate(posts))):
         title, rest, cut = split_title(p["text"])

@@ -93,7 +93,7 @@ assert S.title_of("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 
 assert S.title_of("🔥 [롯데온] 파스타 (14,490원)") == "[롯데온] 파스타 (14,490원)"
 n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
-assert n == 1 and idx.count("[쿠팡] 휴지") == 1 and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll")
+assert n == 1 and idx.count("[쿠팡] 휴지") == 1 and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr"
 assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in idx  # 제목 줄 잘라낸 뒤에도 링크 위치 정확
 assert "p/0.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
 assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
@@ -107,7 +107,7 @@ seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     t = sent[-1][1]
-    assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "github.io" in t and list(seen)[0].startswith("digest_")
+    assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and list(seen)[0].startswith("digest_")
     sent.clear(); H.digest(seen, P); assert not sent
 assert "og:title" in idx
 print("OK: 모든 셀프체크 통과")

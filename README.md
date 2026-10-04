@@ -9,7 +9,7 @@ GitHub Actions (30분마다, KST 08~24시)
  ├─ 뽐뿌 RSS → 30분 지난 새 글 → Claude 점수·코멘트 → 7점↑ 최대 5개 초안
  ├─ (쿠팡 키 있으면) 09시 이후 1회 골드박스 TOP5 초안
  ├─ 21시 이후 1회 '오늘의 딜 모아보기' 초안 (✅ → 채널 게시, 블로그에 복붙해도 됨)
- └─ 채널에 게시된 딜 → 웹사이트 자동 갱신 (luminae21-source.github.io/hotdeal-bot)
+ └─ 채널에 게시된 딜 → 웹사이트 자동 갱신 (hotdealpick.kr)
 ```
 
 ## 파일
@@ -53,7 +53,8 @@ GitHub Actions (30분마다, KST 08~24시)
 ### 5. 웹사이트 (GitHub Pages, 무료)
 - 저장소 **Public** 필요 (Free 플랜은 공개 저장소만 Pages 가능. 코드에 비밀값 없음, 시크릿은 별도 보관)
 - `Settings → Pages → Source: Deploy from a branch → main / docs` → 저장
-- 주소: `https://luminae21-source.github.io/hotdeal-bot/` → 텔레그램 채널 설명과 쿠팡파트너스 **내 정보 → 웹사이트**에도 등록
+- 기본 주소 `https://luminae21-source.github.io/hotdeal-bot/` → 커스텀 도메인 **https://hotdealpick.kr** 연결됨 (가비아 DNS: A @ → 185.199.108~111.153, CNAME www → luminae21-source.github.io / Pages → Custom domain / `docs/CNAME`은 `build_site.py`가 매번 생성)
+- 사이트 주소는 텔레그램 채널 설명과 쿠팡파트너스 **내 정보 → 웹사이트**에도 등록
 - 구글 유입: search.google.com/search-console 에 사이트 등록 → 사이트맵 `sitemap.xml` 제출
 
 ---
@@ -117,4 +118,5 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-04 | 사이트 파일 자동 커밋 | 실제 Actions 실행 | ✅ hotdeal-bot 계정으로 docs/ 커밋 |
 | 2026-10-04 | 일일 모아보기 (21시 1회·오늘 글만·자기 제외) | 셀프체크 | ✅ |
 | 2026-10-04 | 웹사이트 실제 배포 | 저장소 Public 전환 + Pages(main/docs) | ✅ https://luminae21-source.github.io/hotdeal-bot/ |
+| 2026-10-05 | 커스텀 도메인 | 가비아 hotdealpick.kr 구매(3년) + DNS + Pages 연결 | ⏳ DNS 전파 후 확인 |
 | — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |
