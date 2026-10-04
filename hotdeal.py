@@ -14,7 +14,7 @@ HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 MAX_DRAFTS = 5                 # 1회 실행당 검수 요청 최대 개수
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 FEEDS = {"ppomppu": "뽐뿌"}  # 보드 추가: {"rss id": "표시명"}
-SEEN = "seen.json"
+SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
@@ -147,6 +147,10 @@ def publish_approved():
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid},
                    text="⚠️ 채널 게시 실패: 봇이 채널 관리자인지, TG_CHANNEL 값이 맞는지 확인 후 ✅ 다시 눌러줘")
                 continue  # 버튼 유지 -> 재시도 가능
+            posts = load(POSTS, [])
+            posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": m.get("text", ""),
+                          "entities": m.get("entities", []), "url": rows[0][0]["url"] if rows else None})
+            json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         mark = "✅ 게시됨" if q["data"] == "ok" else "❌ 패스"
         tg("editMessageReplyMarkup", chat_id=chat, message_id=mid,
            reply_markup={"inline_keyboard": [[{"text": mark, "callback_data": "-"}]]})
@@ -167,11 +171,15 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
-def main():
+def load(path, default):
     try:
-        seen = json.load(open(SEEN))
+        return json.load(open(path))
     except (OSError, ValueError):
-        seen = {}
+        return default
+
+
+def main():
+    seen = load(SEEN, {})
     publish_approved()
     new = [d for d in fetch_deals() if d["id"] not in seen and MIN_AGE <= d["age"] <= MAX_AGE]
     if new:

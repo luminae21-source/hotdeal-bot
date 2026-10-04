@@ -7,14 +7,16 @@
 GitHub Actions (30분마다, KST 08~24시)
  ├─ ✅/❌ 누른 초안 처리 → 채널 게시
  ├─ 뽐뿌 RSS → 30분 지난 새 글 → Claude 점수·코멘트 → 7점↑ 최대 5개 초안
- └─ (쿠팡 키 있으면) 09시 이후 1회 골드박스 TOP5 초안
+ ├─ (쿠팡 키 있으면) 09시 이후 1회 골드박스 TOP5 초안
+ └─ 채널에 게시된 딜 → 웹사이트 자동 갱신 (luminae21-source.github.io/hotdeal-bot)
 ```
 
 ## 파일
 | 파일 | 역할 |
 |---|---|
 | `hotdeal.py` | 봇 본체 (표준 라이브러리만, 설치 X) |
-| `.github/workflows/hotdeal.yml` | 30분마다 자동 실행 |
+| `build_site.py` | 게시된 딜(`posts.json`) → `docs/` 웹사이트 생성 (GitHub Pages) |
+| `.github/workflows/hotdeal.yml` | 30분마다 자동 실행 + 사이트 커밋 |
 | `test_hotdeal.py` | 셀프체크 (`python test_hotdeal.py`) |
 
 ---
@@ -46,6 +48,12 @@ GitHub Actions (30분마다, KST 08~24시)
 3. 시크릿 2개 추가: `COUPANG_ACCESS_KEY`, `COUPANG_SECRET_KEY` → 끝. 다음 실행부터 자동 변환 + 골드박스 시작
 - 승인 전엔 링크가 원본 그대로 나감 → 이 기간은 **구독자 모으기** 기간. 쿠팡 딜은 파트너스 앱으로 링크 직접 만들어 몇 개 올리면 승인 앞당길 수 있어
 - 대가성 문구(`이 포스팅은 쿠팡 파트너스 활동의 일환으로…`)는 **제휴링크 글 맨 앞에 자동 삽입**됨
+
+### 5. 웹사이트 (GitHub Pages, 무료)
+- 저장소 **Public** 필요 (Free 플랜은 공개 저장소만 Pages 가능. 코드에 비밀값 없음, 시크릿은 별도 보관)
+- `Settings → Pages → Source: Deploy from a branch → main / docs` → 저장
+- 주소: `https://luminae21-source.github.io/hotdeal-bot/` → 텔레그램 채널 설명과 쿠팡파트너스 **내 정보 → 웹사이트**에도 등록
+- 구글 유입: search.google.com/search-console 에 사이트 등록 → 사이트맵 `sitemap.xml` 제출
 
 ---
 
@@ -93,4 +101,6 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-04 | Claude API 실제 호출 | 실제 Actions 실행 | ✅ (tool_choice 강제 시 400 → auto로 변경) |
 | 2026-10-04 | 텔레그램 초안 발송 | 실제 Actions 실행 | ✅ 2건 발송 |
 | 2026-10-04 | 시크릿에 공백/줄바꿈 섞임 | 실제 Actions 실행 | ✅ 코드에서 자동 제거 |
-| — | ✅ 승인 → 채널 게시, 쿠팡 API | 다음 실행 / 쿠팡 승인 후 | ⏳ |
+| 2026-10-04 | ✅ 승인 → 채널 게시 | 실제 Actions 실행 | ✅ 2건 게시 (t.me/hotdeal_pick) |
+| 2026-10-04 | 웹사이트 생성 (링크 오프셋·제목·사이트맵·빈 목록) | 셀프체크 | ✅ |
+| — | 웹사이트 실제 배포 (Pages), 쿠팡 API | Pages 설정 후 / 쿠팡 승인 후 | ⏳ |

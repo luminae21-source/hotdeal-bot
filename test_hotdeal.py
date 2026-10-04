@@ -42,13 +42,15 @@ assert method == "POST" and hdr["Authorization"].endswith("signature=" + want) a
 text, link = H.deal_post(d, "<싸다>")
 assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and link == "https://link.coupang.com/a/AFF"
 
-# 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인
+# 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록
+os.chdir(tempfile.mkdtemp())
 sent = []
 def fake_tg(method, **p):
     sent.append((method, p))
     if method == "getUpdates" and "offset" not in p:
         kb = {"inline_keyboard": [[{"text": "🛒", "url": "https://buy"}], [{"text": "✅", "callback_data": "ok"}]]}
-        msg = lambda mid: {"message_id": mid, "chat": {"id": 42}, "reply_markup": kb}
+        msg = lambda mid: {"message_id": mid, "chat": {"id": 42}, "reply_markup": kb, "text": "🔥 [쿠팡] 휴지\n\n좋음\n\n출처: 뽐뿌",
+                           "entities": [{"type": "text_link", "offset": 20, "length": 2, "url": "https://src"}]}
         return [{"update_id": 1, "callback_query": {"from": {"id": 42}, "data": "ok", "message": msg(10)}},
                 {"update_id": 2, "callback_query": {"from": {"id": 42}, "data": "ok", "message": msg(10)}},
                 {"update_id": 3, "callback_query": {"from": {"id": 42}, "data": "no", "message": msg(11)}},
@@ -60,9 +62,10 @@ copies = [p for m, p in sent if m == "copyMessage"]
 assert len(copies) == 1 and copies[0]["message_id"] == 10 and copies[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒", "url": "https://buy"}]]
 assert [p["message_id"] for m, p in sent if m == "editMessageReplyMarkup"] == [10, 11]
 assert sent[-1] == ("getUpdates", {"offset": 5})
+posts = json.load(open("posts.json"))
+assert len(posts) == 1 and posts[0]["url"] == "https://buy" and posts[0]["text"].startswith("🔥 [쿠팡] 휴지")
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
-os.chdir(tempfile.mkdtemp())
 sent.clear()
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "좋음"}] if len(lines) == 1 else []
 H.main()
@@ -81,4 +84,16 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 9:
     t = sent[-1][1]["text"]
     assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
     sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
+
+# 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
+import build_site as S
+assert S.to_html("🔥 a <b> 뽐뿌", [{"type": "text_link", "offset": 9, "length": 2, "url": "https://x"}]) == \
+    '🔥 a &lt;b&gt; <a href="https://x" rel="nofollow noopener" target="_blank">뽐뿌</a>'
+assert S.title_of("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 수수료\n\n⏰ 오늘의 골드박스 TOP5") == "오늘의 골드박스 TOP5"
+assert S.title_of("🔥 [롯데온] 파스타 (14,490원)") == "[롯데온] 파스타 (14,490원)"
+n = S.build(posts, "docs")
+idx = open("docs/index.html").read()
+assert n == 1 and "[쿠팡] 휴지" in idx and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll")
+assert "p/0.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
+assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
 print("OK: 모든 셀프체크 통과")
