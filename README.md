@@ -55,7 +55,7 @@ GitHub Actions (30분마다, KST 08~24시)
 - `Settings → Pages → Source: Deploy from a branch → main / docs` → 저장
 - 기본 주소 `https://luminae21-source.github.io/hotdeal-bot/` → 커스텀 도메인 **https://hotdealpick.kr** 연결됨 (가비아 DNS: A @ → 185.199.108~111.153, CNAME www → luminae21-source.github.io / Pages → Custom domain / `docs/CNAME`은 `build_site.py`가 매번 생성)
 - 사이트 주소는 텔레그램 채널 설명과 쿠팡파트너스 **내 정보 → 웹사이트**에도 등록
-- 구글 유입: search.google.com/search-console 에 사이트 등록 → 사이트맵 `sitemap.xml` 제출
+- 검색 등록 완료: 구글 서치콘솔(DNS TXT 인증), 네이버 서치어드바이저(HTML 태그 — `build_site.py`의 `naver-site-verification` 메타, 지우면 소유확인 풀림)
 
 ---
 
@@ -67,9 +67,9 @@ GitHub Actions (30분마다, KST 08~24시)
 ## 유입 늘리기 (한 번만 하면 되는 것)
 | 할 일 | 효과 |
 |---|---|
-| 채널 이름을 `오늘의 딜 pick | 핫딜·특가 알림` 으로, 설명에 사이트 주소 추가 | 텔레그램 내 검색 노출 |
-| Google Search Console에 사이트 등록 + `sitemap.xml` 제출 | 구글 검색 유입 |
-| Naver Search Advisor(searchadvisor.naver.com)에 사이트 등록 + 사이트맵 제출 | 네이버 검색 유입 |
+| ✅ 채널 이름 `오늘의 딜 pick | 핫딜·특가 알림`, 사진, 설명에 사이트 주소 | 텔레그램 내 검색 노출 |
+| ✅ Google Search Console 등록 + `sitemap.xml` 제출 | 구글 검색 유입 |
+| ✅ Naver Search Advisor 등록 + 사이트맵 제출 | 네이버 검색 유입 |
 | 네이버 블로그 하나 만들어 매일 모아보기 복붙 (사이트·채널 링크 포함) | 가장 큰 국내 유입원 |
 | 쿠팡 승인 뒤: 네이버 커넥트·11번가·알리 제휴도 추가 | 수수료 되는 딜 비율 35% → 80% |
 
@@ -119,4 +119,6 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-04 | 일일 모아보기 (21시 1회·오늘 글만·자기 제외) | 셀프체크 | ✅ |
 | 2026-10-04 | 웹사이트 실제 배포 | 저장소 Public 전환 + Pages(main/docs) | ✅ https://luminae21-source.github.io/hotdeal-bot/ |
 | 2026-10-05 | 커스텀 도메인 | 가비아 hotdealpick.kr 구매(3년) + DNS(A×4, CNAME www) + Pages Custom domain + Enforce HTTPS | ✅ https://hotdealpick.kr 정상 (2건 표시, HTTPS) |
+| 2026-10-05 | 구글 서치콘솔 | 도메인 속성 + DNS TXT 소유확인 + sitemap.xml 제출 | ✅ 소유확인 통과 (사이트맵은 수집 대기) |
+| 2026-10-05 | 네이버 서치어드바이저 | HTML 태그(`naver-site-verification`) 사이트에 삽입 + 소유확인 + 사이트맵·수집 요청 | ✅ |
 | — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |
