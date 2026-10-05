@@ -297,6 +297,17 @@ assert "ruliweb_1" in sj and "ppomppu_301" in sj and H.dkey("[G마켓] 코카콜
 assert "최근 24시간에 이미 올린 딜" in got[0][0] and "휴지 30롤" in got[0][0].split("이미 올린 딜")[1]
 json.dump({H.dkey("[쿠팡] 휴지 30롤"): time.time() - 2 * 86400}, open("seen.json", "w")); got.clear(); H.main()  # 24시간 지난 같은 상품은 새 딜로 판단
 assert any("휴지 30롤" in l for l in got[0][1])
+# 4-3) 한 번에 최대 2개만 게시, 넘친 좋은 딜은 다음 실행(15분 뒤)에 다시 / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
+RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
+H.http = lambda url, *a, **k: RU3 if url == H.RULIWEB_RSS else ""
+posted, pod = [], H.post_or_draft
+H.post_or_draft = lambda d, *a, **k: posted.append(d["id"])
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": 8, "comment": "c"} for i in range(len(lines))]
+json.dump({}, open("seen.json", "w")); H.main()
+sj = json.load(open("seen.json"))
+assert posted == ["ruliweb_90", "ruliweb_91"] and "ruliweb_92" not in sj and H.dkey("[G마켓] 상품2번 특가 묶음") not in sj  # 20분 된 루리웹 글도 판단
+posted.clear(); H.main(); assert posted == ["ruliweb_92"]  # 다음 실행에 나머지
+H.post_or_draft = pod
 H.http = fake_http
 
 # 5) 골드박스: 하루 1번, 대가성 문구 맨 앞, 고른 순서대로

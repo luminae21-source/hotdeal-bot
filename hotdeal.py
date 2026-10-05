@@ -14,8 +14,9 @@ ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
 MODEL = E.get("MODEL") or "claude-sonnet-5-5"
 MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
-MAX_DRAFTS = 5                 # 1회 실행당 검수 요청 최대 개수
+MAX_DRAFTS = 2                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻혀서 나눠 올림 -> 넘친 딜은 다음 실행에 다시 판단
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
+MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
 FEEDS = {"ppomppu": "뽐뿌"}  # 뽐뿌 보드 추가: {"rss id": "표시명"}
 RULIWEB_RSS = "https://bbs.ruliweb.com/market/board/1020/rss"  # 루리웹 핫딜예판: RSS + 글 아래 '출처'에 상품 주소 (robots 허용, GitHub 서버 OK 10/5)
 CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구매: RSS 없음 -> 목록 HTML, 글 위 '구매링크' (robots: 쿼리 없는 /service/board/ 허용)
@@ -622,7 +623,8 @@ def main():
     seen = load(SEEN, {})
     publish_approved()
     new, keys = [], set()
-    fresh = [d for d in fetch_deals() if d["id"] not in seen and MIN_AGE <= d["age"] <= MAX_AGE]
+    fresh = [d for d in fetch_deals() if d["id"] not in seen
+             and (MIN_AGE_RULIWEB if d["id"].startswith("ruliweb_") else MIN_AGE) <= d["age"] <= MAX_AGE]
     for d in sorted(fresh, key=lambda d: d["id"].split("_")[0] in FEEDS):  # 같은 딜이면 상품 주소를 얻을 수 있는 루리웹·클리앙 쪽을 남김
         k = dkey(d["title"])
         if k and (seen.get(k, 0) > time.time() - 86400 or k in keys):  # 24시간 안에 다른 커뮤니티에 올라온(또는 이미 판단한) 같은 딜
@@ -640,7 +642,11 @@ def main():
             if dkey(d["title"]):
                 seen[dkey(d["title"])] = time.time()
         print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
-        for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
+        good = [p for p in picks if p["score"] >= MIN_SCORE]
+        for p in good[MAX_DRAFTS:]:  # 넘친 좋은 딜은 '본 글'에서 빼서 다음 실행(15분 뒤)에 다시 판단 -> 나눠서 게시
+            seen.pop(new[p["i"]]["id"], None)
+            seen.pop(dkey(new[p["i"]]["title"]), None)
+        for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
         try:
