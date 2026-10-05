@@ -185,6 +185,11 @@ def digest(seen, posts):
     if draft(text):
         seen[key] = time.time()
         tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
+        try:  # Threads/인스타용 카드 -> docs/cards/ (워크플로가 커밋 -> 사이트에 공개 -> 다음 실행 때 threads()가 올림)
+            import cards
+            cards.make([title_of(p["text"]) for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
+        except Exception as e:
+            print("card", repr(e))
 
 
 def blog_text(todays, kst):
@@ -197,6 +202,35 @@ def blog_text(todays, kst):
     return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + "\n\n".join(items)
             + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
             + "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
+
+
+THREADS = "https://graph.threads.net/v1.0"
+
+
+def threads(seen):
+    """오늘 카드가 사이트에 올라와 있으면 Threads에 1회 게시하고, 같은 이미지를 관리자에게 인스타용으로 보냄.
+    토큰(시크릿 THREADS_TOKEN)은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today, key = time.strftime("%Y-%m-%d", kst), time.strftime("threads_%Y%m%d", kst)
+    if not E.get("THREADS_TOKEN") or key in seen or not os.path.exists(f"docs/cards/{today}.png"):
+        return
+    url = f"{SITE}cards/{today}.png"
+    try:
+        http(url, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에 다시
+    except Exception:
+        return
+    todays = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋")]
+    rows = [f"{n}. {title_of(p['text'])[:40]}" for n, p in enumerate(todays[:6], 1)]
+    text = (f"📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
+            + f"\n\n전체 딜·구매 링크 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick")[:480]
+    tok = E["THREADS_TOKEN"]
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    q = urllib.parse.urlencode({"media_type": "IMAGE", "image_url": url, "text": text, "topic_tag": "핫딜", "access_token": tok})
+    cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+    time.sleep(30)  # 미디어 처리 대기 (공식 권장값)
+    json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+    tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 Threads 게시 완료. 인스타에도 올리려면 이 이미지 그대로 쓰면 돼")
+    seen[key] = time.time()
 
 
 def load(path, default):
@@ -217,11 +251,13 @@ def main():
             seen[d["id"]] = time.time()
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
             draft(*deal_post(new[p["i"]], p["comment"]), score=p["score"])
-    for step in (goldbox, lambda s: digest(s, load(POSTS, []))):
+    for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
+            if step is threads:
+                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ Threads 게시 실패: {e!r}"[:300] + "\n토큰 만료(60일)면 THREADS_TOKEN 시크릿 재발급해줘")
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))
     print(f"new={len(new)} seen={len(seen)}")

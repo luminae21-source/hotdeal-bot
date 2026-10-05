@@ -112,4 +112,35 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     assert sent[-1][0] == "sendMessage" and "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     sent.clear(); H.digest(seen, P); assert not sent
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx
+
+# 8) 카드 이미지: 제목 파싱(중첩 괄호·뒤 꼬리말), 6개 넘어도 하단 박스 안 침범, PNG 생성
+import cards
+assert cards.parse("[네이버] 화장지 3겹(30m 30롤) 2팩 (18,900원/무료)") == ("네이버", "화장지 3겹(30m 30롤) 2팩", "18,900원/무료")
+assert cards.parse("[G마켓] 버쥠3 (189,000원/무료) 카드할인") == ("G마켓", "버쥠3 카드할인", "189,000원/무료")
+assert cards.parse("제목만") == ("", "제목만", "")
+assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
+assert os.path.getsize("docs/cards/t.png") > 10000
+
+# 9) Threads: 카드 미배포(404)면 대기, 배포되면 me -> 컨테이너 -> 30초 -> 발행 -> 사진 전송, 하루 1회
+H.E["THREADS_TOKEN"] = "tk"; H.time.sleep = lambda s: None
+today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+open(f"docs/cards/{today}.png", "wb").write(b"png")
+json.dump([{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a"}], open("posts.json", "w"))
+live, calls[:] = False, []
+def th_http(url, body=None, headers=None, method=None):
+    calls.append((method or "GET", url))
+    if url.endswith(".png"):
+        if not live: raise OSError("404")
+        return ""
+    if "/me?" in url: return json.dumps({"id": "777"})
+    if "/threads?" in url or "/threads_publish?" in url: return json.dumps({"id": "c1"})
+    raise AssertionError(url)
+H.http = th_http
+seen, sent[:] = {}, []
+H.threads(seen); assert not seen and len(calls) == 1  # 404 -> 다음 실행에
+live = True; calls.clear(); H.threads(seen)
+assert [m for m, _ in calls] == ["HEAD", "GET", "POST", "POST"] and "/777/threads?" in calls[2][1] and "creation_id=c1" in calls[3][1]
+assert "image_url=https%3A%2F%2Fhotdealpick.kr%2Fcards%2F" in calls[2][1] and "A%EB%94%9C" in calls[2][1]  # 카드 주소 + 제목 포함
+assert sent[-1][0] == "sendPhoto" and list(seen)[0].startswith("threads_")
+calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안 올림
 print("OK: 모든 셀프체크 통과")
