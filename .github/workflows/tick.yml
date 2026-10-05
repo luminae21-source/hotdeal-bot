@@ -17,7 +17,6 @@ jobs:
     steps:
       - run: |
           for i in 1 2 3; do gh workflow run tick.yml -R "$GITHUB_REPOSITORY" && break; sleep 10; done
-          h=$(TZ=Asia/Seoul date +%-H)
-          if [ "$h" -ge 8 ]; then gh workflow run hotdeal.yml -R "$GITHUB_REPOSITORY"; else echo "KST ${h}시: 밤이라 건너뜀"; fi
+          gh workflow run hotdeal.yml -R "$GITHUB_REPOSITORY"   # 24시간 (밤 0~8시 채널 글·사본은 hotdeal.py가 무음으로 보냄)
         env:
           GH_TOKEN: ${{ github.token }}
