@@ -19,6 +19,8 @@ SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+TOSS_NOTE = "이 포스팅은 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."  # 토스 권장 문구
+TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
 AFF_HOSTS = ("click.linkprice.com", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
@@ -143,7 +145,7 @@ def relink(m, url):
     """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
     text, ents = m.get("text", ""), m.get("entities", [])
     host = urllib.parse.urlsplit(url).netloc
-    note = DISCLOSURE if host == "link.coupang.com" else AFF_NOTE if host in AFF_HOSTS else ""
+    note = DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if host in TOSS_HOSTS else AFF_NOTE if host in AFF_HOSTS else ""
     if note and not text.startswith("이 포스팅은"):
         n = len(note.encode("utf-16-le")) // 2  # 텔레그램 오프셋은 UTF-16 단위
         text = f"{note}\n\n{text}"
@@ -235,7 +237,7 @@ def blog_text(todays, kst):
         items.append(f"{n}. {t}\n{rest.split(chr(10))[0]}\n👉 {p['url'] or SITE}")
     return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + "\n\n".join(items)
             + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
-            + "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
+            + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
 
 THREADS = "https://graph.threads.net/v1.0"

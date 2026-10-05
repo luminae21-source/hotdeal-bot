@@ -8,7 +8,7 @@ BLOG = "https://blog.naver.com/hotdeal_pick"
 INSTA = "https://www.instagram.com/hotdealpick.kr/"
 THREADS = "https://www.threads.com/@hotdealpick.kr"
 TITLE = "오늘의 딜 pick"
-DISCLOSURE = "이 사이트는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
+DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
 a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:12px 0 4px}header h1{margin:0;font-size:22px}header h1 a{color:inherit;text-decoration:none}
 .sub{color:#666;font-size:13px}.card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -37,7 +37,7 @@ def split_title(text):
     lines = text.split("\n")
     for i, line in enumerate(lines):
         t = re.sub(r"^[^\w가-ퟣ\[]+", "", line).strip()  # 앞 이모지 제거
-        if t and "쿠팡 파트너스 활동" not in t:
+        if t and not t.startswith("이 포스팅은"):  # 대가성 문구 줄(쿠팡·토스·기타 제휴)은 제목이 아님
             rest = "\n".join(lines[i + 1:]).lstrip("\n")
             return t, rest, (len(text.encode("utf-16-le")) - len(rest.encode("utf-16-le"))) // 2
     return TITLE, text, 0
