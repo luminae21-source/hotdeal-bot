@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""핫딜봇: 뽐뿌 RSS -> Claude 선별/코멘트 -> 텔레그램 관리자 검수(✅/❌) -> 채널 게시.
-제휴 링크는 초안에 답장으로 붙임(뽐뿌가 GitHub IP 차단 -> 쇼핑몰 주소 자동 추출 불가). 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
+"""핫딜봇: 뽐뿌 RSS -> Claude 선별/코멘트 -> 채널 바로 게시(링크프라이스 몰은 검색 제휴 링크 자동).
+쿠팡 등 수동 몰은 관리자에게 사본 -> 제휴 링크로 답장하면 채널 글 교체(뽐뿌가 GitHub IP 차단 -> 쇼핑몰 주소 자동 추출 불가). 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
 GitHub Actions에서 30분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
 import base64, hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
@@ -26,6 +26,13 @@ STORES = {"쿠팡": "💰 쿠팡 파트너스 · 링크 만들어 답장", "토�
           "g마켓": LP.format("0.6%"), "지마켓": LP.format("0.6%"), "옥션": LP.format("0.6%"), "롯데온": LP.format("1.4%"),
           "롯데on": LP.format("1.4%"), "이마트": LP.format("1%"), "11번가": LP.format("1.05%"), "알리": LP.format("6.3%")}
 # ponytail: 수수료율은 2026-10-05 링크프라이스 화면 기준 고정값. 바뀌면 여기만 고치면 됨
+LP_AID = "A100708461"  # 링크프라이스 사이트 코드 (모든 링크프라이스 링크에 그대로 보이는 공개 값)
+LP_SEARCH = {  # 링크프라이스 승인 몰: 제목 [쇼핑몰] -> (머천트, 표시 이름, 검색 주소). 상품 주소는 뽐뿌 차단으로 못 얻어서 검색 결과로 연결
+    "g마켓": ("gmarket", "G마켓", "https://www.gmarket.co.kr/n/search?keyword="),
+    "지마켓": ("gmarket", "G마켓", "https://www.gmarket.co.kr/n/search?keyword="),
+    "옥션": ("auction", "옥션", "https://www.auction.co.kr/n/search?keyword="),
+    "롯데온": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q="),
+    "롯데on": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q=")}
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
@@ -33,6 +40,7 @@ esc = html.escape
 DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 딜 중 구독자가 실제로 살 만한 것만 골라 pick 도구로 반환해.
 점수(1~10) 기준: 가격 매력, 생필품/대중성, 커뮤니티 반응(조회 대비 추천·댓글). 비추천이 많거나 품절·종료·가격오류 언급이 있으면 제외.
 comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품 효능 언급 금지, 이모지 최대 1개.
+q: 쇼핑몰 검색창에 넣을 짧은 검색어(브랜드+상품명+핵심 용량, 수량·가격·쿠폰 문구 빼고 20자 안팎).
 5점 미만은 반환하지 마.
 """
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 대중적으로 많이 살 만한 상품 5개를 골라 pick 도구로 반환해.
@@ -87,7 +95,8 @@ def ai_pick(prompt, lines):
     tool = {"name": "pick", "description": "게시할 항목", "input_schema": {
         "type": "object", "required": ["picks"], "properties": {"picks": {"type": "array", "items": {
             "type": "object", "required": ["i", "score", "comment"],
-            "properties": {"i": {"type": "integer"}, "score": {"type": "integer"}, "comment": {"type": "string"}}}}}}}
+            "properties": {"i": {"type": "integer"}, "score": {"type": "integer"}, "comment": {"type": "string"},
+                           "q": {"type": "string"}}}}}}}
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "auto"},
         "messages": [{"role": "user", "content": prompt + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
@@ -132,15 +141,14 @@ def affiliate(url):
 
 def store_info(title):
     """뽐뿌 제목의 [쇼핑몰]로 수익 안내 문구. 제휴 없는 몰은 수수료 0 표시."""
-    tag = re.match(r"\s*\[([^\]]+)\]", title)
-    tag = tag.group(1).lower().replace(" ", "") if tag else ""
+    tag = store_tag(title)
     return next((v for k, v in STORES.items() if k in tag), "💸 제휴 없는 쇼핑몰 · 수수료 0")
 
 
-def draft(text, buy_url=None, score=None, info=None):
+def draft(text, buy_url=None, score=None, info=None, label="🛒 구매하러 가기"):
     """관리자에게 검수용 초안 전송. ✅ 누르면 다음 실행 때 채널에 그대로 복사됨.
     info: 관리자만 보는 안내 버튼(채널엔 링크 버튼만 복사되므로 안 나감)."""
-    kb = [[{"text": "🛒 구매하러 가기", "url": buy_url}]] if buy_url else []
+    kb = [[{"text": label, "url": buy_url}]] if buy_url else []
     kb.append([{"text": f"✅ 게시 ({score}점)" if score else "✅ 게시", "callback_data": "ok"},
                {"text": "❌ 패스", "callback_data": "no"}])
     if info:
@@ -149,32 +157,70 @@ def draft(text, buy_url=None, score=None, info=None):
               link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
 
 
-def deal_post(d, comment):
+def store_tag(title):
+    """뽐뿌 제목 맨 앞 [쇼핑몰] -> 비교용 소문자·공백 제거 ('[G마켓]메디폴미' -> 'g마켓')."""
+    tag = re.match(r"\s*\[([^\]]+)\]", title)
+    return tag.group(1).lower().replace(" ", "") if tag else ""
+
+
+def keyword(title):
+    """Claude 검색어가 없을 때: 제목에서 [쇼핑몰]·끝의 (가격/배송) 떼고 40자."""
+    t = re.sub(r"^\s*\[[^\]]*\]\s*", "", title)
+    return re.sub(r"\s*\([^()]*(원|무료|무배|배송)[^()]*\)\s*$", "", t).strip()[:40]
+
+
+def lp_search(title, q=None):
+    """링크프라이스 승인 몰이면 그 몰 검색 결과로 가는 제휴 링크 -> (링크, 몰 이름), 아니면 (None, None)."""
+    hit = next((v for k, v in LP_SEARCH.items() if k in store_tag(title)), None)
+    if not hit:
+        return None, None
+    m, name, base = hit
+    tu = urllib.parse.quote(base + urllib.parse.quote(q or keyword(title)), safe="")
+    return f"https://click.linkprice.com/click.php?m={m}&a={LP_AID}&l=9999&l_cd1=3&l_cd2=0&tu={tu}", name
+
+
+def deal_post(d, comment, q=None):
+    """-> (본문, 버튼 링크, 버튼 이름). 쿠팡 자동 변환 > 링크프라이스 검색 링크 > 뽐뿌 글. 제휴 링크면 대가성 문구를 맨 앞에."""
     link, aff = affiliate(store_link(d["url"]))
-    head = f"<i>{DISCLOSURE}</i>\n\n" if aff else ""  # 공정위·쿠팡 규정: 대가성 문구는 첫 부분에
+    label = "🛒 구매하러 가기"
+    if not aff:
+        lp, name = lp_search(d["title"], q)
+        if lp:
+            link, label = lp, f"🔎 {name}에서 찾기"
+    note = aff_note(link or "")
+    head = f"<i>{note}</i>\n\n" if note else ""  # 공정위 지침: 대가성 문구는 첫 부분에
     text = f"{head}🔥 <b>{esc(d['title'])}</b>\n\n{esc(comment)}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
-    return text, link or d["url"]
+    return text, link or d["url"], label
 
 
-def record(text, ents, url):
-    """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드 재료)."""
+def record(text, ents, url, mid=None):
+    """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드 재료). mid = 채널 메시지 번호(나중에 링크 교체용)."""
     posts = load(POSTS, [])
     posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
-                  "entities": ents, "url": url})
+                  "entities": ents, "url": url, **({"mid": mid} if mid else {})})
     json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
 
 
-def post_or_draft(d, comment, score):
-    """💸(제휴 없는 몰) 딜은 기다릴 이유가 없으니 채널에 바로 게시, 💰 딜은 제휴 링크 답장할 수 있게 초안.
-    바로 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
-    text, url = deal_post(d, comment)
+def post_url(mid):
+    """채널 글 주소 (@공개채널 또는 -100… 숫자 id)."""
+    return f"https://t.me/{CHANNEL[1:]}/{mid}" if CHANNEL.startswith("@") else f"https://t.me/c/{CHANNEL.removeprefix('-100')}/{mid}"
+
+
+def post_or_draft(d, comment, score, q=None):
+    """✅ 없이 채널에 바로 게시. 링크프라이스 몰은 검색 제휴 링크가 자동으로 붙음.
+    쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크로 답장 -> 채널 글 교체(선택).
+    채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
+    text, url, label = deal_post(d, comment, q)
     info = store_info(d["title"])
-    if info.startswith("💸"):
-        m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
-               reply_markup={"inline_keyboard": [[{"text": "🛒 구매하러 가기", "url": url}]]})
-        if m:
-            return record(m.get("text", ""), m.get("entities", []), url)
-    draft(text, url, score=score, info=info)
+    m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
+           reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
+    if not m:
+        return draft(text, url, score=score, info=info, label=label)
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"))
+    if info.startswith("💰") and not aff_note(url):
+        tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": [
+            [{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
+            [{"text": info.split(" · ")[0] + " · 링크로 답장하면 채널 글 교체(선택)", "callback_data": "-"}]]})
 
 
 def aff_note(url):
@@ -183,14 +229,34 @@ def aff_note(url):
     return DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if host in TOSS_HOSTS else AFF_NOTE if host in AFF_HOSTS else ""
 
 
-def relink(m, url):
-    """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
-    text, ents = m.get("text", ""), m.get("entities", [])
+def with_note(text, ents, url):
+    """제휴 링크면 대가성 문구를 맨 앞에 붙인 (text, entities). 텔레그램 오프셋은 UTF-16 단위라 그만큼 뒤로 밂."""
     note = aff_note(url)
     if note and not text.startswith("이 포스팅은"):
-        n = len(note.encode("utf-16-le")) // 2  # 텔레그램 오프셋은 UTF-16 단위
-        text = f"{note}\n\n{text}"
-        ents = [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
+        n = len(note.encode("utf-16-le")) // 2
+        return f"{note}\n\n{text}", [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
+    return text, ents
+
+
+def relink_channel(notice, mid, url):
+    """이미 올라간 채널 글(mid)의 버튼을 url로 교체 + 대가성 문구. 관리자 사본과 posts.json도 같이 고침."""
+    text, ents = with_note(notice.get("text", ""), notice.get("entities", []), url)
+    kb = [[{"text": "🛒 구매하러 가기", "url": url}]]
+    if not tg("editMessageText", chat_id=CHANNEL, message_id=mid, text=text, entities=ents,
+              link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb}):
+        return
+    tg("editMessageText", chat_id=notice["chat"]["id"], message_id=notice["message_id"], text=text, entities=ents,
+       link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb + [[{"text": "✅ 채널 글 교체됨", "callback_data": "-"}]]})
+    posts = load(POSTS, [])
+    for p in posts:
+        if p.get("mid") == mid:
+            p.update(text=text, entities=ents, url=url)
+    json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+
+
+def relink(m, url):
+    """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
+    text, ents = with_note(m.get("text", ""), m.get("entities", []), url)
     rows = [[{"text": "🛒 구매하러 가기", "url": url}]]
     rest = [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" not in r[0]] or \
         [[{"text": "✅ 게시", "callback_data": "ok"}, {"text": "❌ 패스", "callback_data": "no"}]]
@@ -211,7 +277,13 @@ def publish_approved():
         if not url or str(m.get("from", {}).get("id")) != ADMIN:
             continue
         if m.get("reply_to_message"):
-            fixed[m["reply_to_message"]["message_id"]] = relink(m["reply_to_message"], url.group(0))
+            rm = m["reply_to_message"]
+            ch = next((b["url"] for r in rm.get("reply_markup", {}).get("inline_keyboard", []) for b in r
+                       if b.get("url", "").startswith("https://t.me/")), None)
+            if ch:  # 채널에 이미 올라간 글의 사본 -> 채널 글 교체
+                relink_channel(rm, int(ch.rsplit("/", 1)[1]), url.group(0))
+            else:   # 아직 초안 -> 초안 버튼 교체(✅ 때 반영)
+                fixed[rm["message_id"]] = relink(rm, url.group(0))
             continue
         lines = [l.strip().lstrip("🔥").strip() for l in m["text"].replace(url.group(0), "").split("\n")]
         lines = [l for l in lines if l and not l.startswith("이 포스팅은")]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
@@ -233,12 +305,13 @@ def publish_approved():
         if q["data"] == "ok":
             text, ents, rows = fixed.get(mid) or (m.get("text", ""), m.get("entities", []),
                                                   [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" in r[0]])
-            if not tg("copyMessage", chat_id=CHANNEL, from_chat_id=chat, message_id=mid,  # 복사는 수정된 현재 내용 기준
-                      reply_markup={"inline_keyboard": rows}):
+            cp = tg("copyMessage", chat_id=CHANNEL, from_chat_id=chat, message_id=mid,  # 복사는 수정된 현재 내용 기준
+                    reply_markup={"inline_keyboard": rows})
+            if not cp:
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid},
                    text="⚠️ 채널 게시 실패: 봇이 채널 관리자인지, TG_CHANNEL 값이 맞는지 확인 후 ✅ 다시 눌러줘")
                 continue  # 버튼 유지 -> 재시도 가능
-            record(text, ents, rows[0][0]["url"] if rows else None)
+            record(text, ents, rows[0][0]["url"] if rows else None, cp.get("message_id"))
         mark = "✅ 게시됨" if q["data"] == "ok" else "❌ 패스"
         tg("editMessageReplyMarkup", chat_id=chat, message_id=mid,
            reply_markup={"inline_keyboard": [[{"text": mark, "callback_data": "-"}]]})
@@ -339,7 +412,7 @@ def main():
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
-            post_or_draft(new[p["i"]], p["comment"], p["score"])
+            post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"))
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
         try:
             step(seen)

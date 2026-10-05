@@ -49,7 +49,7 @@ url, body, hdr, method = calls[-1]
 dt = hdr["Authorization"].split("signed-date=")[1].split(",")[0]
 want = hmac.new(b"sk", (dt + "POST" + H.CP_BASE + "/deeplink").encode(), hashlib.sha256).hexdigest()
 assert method == "POST" and hdr["Authorization"].endswith("signature=" + want) and body == {"coupangUrls": ["https://www.coupang.com/vp/products/1"]}
-text, link = H.deal_post(d, "<싸다>")
+text, link, label = H.deal_post(d, "<싸다>")
 assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and link == "https://link.coupang.com/a/AFF"
 
 # 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록
@@ -140,21 +140,52 @@ cps = [p for m, p in sent if m == "copyMessage"]
 assert len(cps) == 1 and cps[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒", "url": "https://ppomppu"}]]
 H.tg = fake_tg
 
-# 3-5) 💸 몰 딜은 채널에 바로 게시 + posts.json 기록, 💰 몰 딜은 초안, 바로 게시 실패하면 초안으로
+# 3-5) 전부 채널에 바로 게시(✅ 없음): 💸=뽐뿌 링크, 링크프라이스 몰=검색 제휴 링크+문구, 쿠팡 등=게시 후 관리자에게 사본(선택 교체)
+#      채널 게시 실패 -> 초안, 사본에 제휴 링크 답장 -> 채널 글·사본·posts.json 교체
+from urllib.parse import parse_qs, urlsplit
 sent.clear(); sl = H.store_link; H.store_link = lambda u: None
 D = lambda t: {"title": t, "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}
-n0 = len(json.load(open("posts.json")))
-H.tg = lambda method, **p: sent.append((method, p)) or ({"message_id": 9, "text": "🔥 [sk스토아] 블루베리", "entities": []}
-                                                        if p.get("chat_id") == "@ch" else {"message_id": 1})
-H.post_or_draft(D("[sk스토아] 블루베리"), "싸요", 8)
-assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")] and sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"].startswith("https://www.ppomppu")
-last = json.load(open("posts.json"))
-assert len(last) == n0 + 1 and last[-1]["text"] == "🔥 [sk스토아] 블루베리" and last[-1]["url"].startswith("https://www.ppomppu")
-sent.clear(); H.post_or_draft(D("[롯데온] 삼다수"), "싸요", 8)  # 💰: 초안만, 채널엔 안 감
-assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "42")] and sent[0][1]["reply_markup"]["inline_keyboard"][-1][0]["text"].startswith("💰")
+n0 = len(json.load(open("posts.json"))); mids = iter(range(100, 200))
+def ch_tg(method, **p):
+    sent.append((method, p))
+    if method == "sendMessage" and p.get("chat_id") == "@ch":
+        return {"message_id": next(mids), "text": p["text"].replace("<i>", "").replace("</i>", ""), "entities": []}
+    return {"message_id": 1}
+H.tg = ch_tg
+H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8)  # 💸: 바로 게시, 사본 없음
+assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")]
+assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": D("")["url"]}]]
+assert json.load(open("posts.json"))[-1]["mid"] == 100
+sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L")  # 링크프라이스: 자동 제휴
+b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
+qs = parse_qs(urlsplit(b["url"]).query)
+assert b["text"] == "🔎 롯데온에서 찾기" and qs["m"] == ["lotteon"] and qs["a"] == [H.LP_AID]
+assert qs["tu"] == ["https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q=%EC%A0%9C%EC%A3%BC%20%EC%82%BC%EB%8B%A4%EC%88%98%202L"]
+assert sent[0][1]["text"].startswith(f"<i>{H.AFF_NOTE}</i>") and len(sent) == 1  # 이미 제휴라 사본 없음
+assert H.keyword("[G마켓]메디폴미 레드 크림 50g(17,320원/무료)") == "메디폴미 레드 크림 50g" and H.keyword("[옥션] 라면 (1+1)") == "라면 (1+1)"
+assert parse_qs(urlsplit(H.lp_search("[지마켓] 신라면 20봉 (13,800원/무료)")[0]).query)["tu"][0].startswith("https://www.gmarket.co.kr/n/search?keyword=%EC%8B%A0")
+assert H.lp_search("[11번가] 로봇청소기") == (None, None)  # 11번가는 링크프라이스 승인 대기 -> 아직 자동 안 함
+sent.clear(); H.post_or_draft(D("[쿠팡] 휴지 30롤"), "싸요", 8)  # 손으로 링크 만들어야 하는 몰: 게시 + 관리자 사본
+assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch"), ("copyMessage", "42")]
+cp = sent[1][1]; assert cp["from_chat_id"] == "@ch" and cp["message_id"] == 102
+assert cp["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/102" and cp["reply_markup"]["inline_keyboard"][1][0]["text"].startswith("💰 쿠팡 파트너스")
 sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (None if p.get("chat_id") == "@ch" else {"message_id": 1})
 H.post_or_draft(D("[카카오] 게장"), "싸요", 8)  # 채널 게시 실패 -> 초안으로
-assert [p["chat_id"] for m, p in sent] == ["@ch", "42"] and len(json.load(open("posts.json"))) == n0 + 1
+assert [p["chat_id"] for m, p in sent] == ["@ch", "42"] and sent[1][1]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok"
+assert len(json.load(open("posts.json"))) == n0 + 3
+NT = {"message_id": 50, "chat": {"id": 42}, "text": "🔥 [쿠팡] 휴지 30롤\n\n싸요", "entities": [{"type": "bold", "offset": 3, "length": 4}],
+      "reply_markup": {"inline_keyboard": [[{"text": "📢 채널에 올라간 글", "url": "https://t.me/ch/102"}], [{"text": "💰", "callback_data": "-"}]]}}
+UP = [{"update_id": 40, "message": {"message_id": 51, "from": {"id": 42}, "text": "https://link.coupang.com/a/zz", "reply_to_message": NT}}]
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1})
+H.publish_approved()
+ed = [p for m, p in sent if m == "editMessageText"]
+n = len(H.DISCLOSURE.encode("utf-16-le")) // 2
+assert [(p["chat_id"], p["message_id"]) for p in ed] == [("@ch", 102), (42, 50)]
+assert ed[0]["text"].startswith(H.DISCLOSURE + "\n\n🔥") and ed[0]["entities"][1]["offset"] == 3 + n + 2
+assert ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": "https://link.coupang.com/a/zz"}]]
+pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
+assert pj[102]["url"] == "https://link.coupang.com/a/zz" and pj[102]["text"].startswith(H.DISCLOSURE) and pj[100]["url"] == D("")["url"]
+assert H.post_url(5) == "https://t.me/ch/5"
 H.store_link = sl; H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
@@ -163,7 +194,8 @@ H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "좋음"}] if
 H.main()
 drafts = [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]  # (21시 이후엔 📋 모아보기 초안도 같이 나감)
 assert len(drafts) == 1 and "휴지" in drafts[0]["text"] and {k for k in json.load(open("seen.json")) if k.startswith("ppomppu_")} == {"ppomppu_101"}
-assert drafts[0]["reply_markup"]["inline_keyboard"][-1] == [{"text": H.STORES["쿠팡"], "callback_data": "-"}]  # [쿠팡] 휴지 -> 수익 안내 버튼
+assert drafts[0]["chat_id"] == "@ch"  # ✅ 없이 채널에 바로
+assert not [p for m, p in sent if m == "copyMessage" and p["chat_id"] == "42"]  # 이미 제휴 링크(자동 변환)면 관리자 사본 안 보냄
 sent.clear(); H.main()  # 재실행: 같은 글 다시 안 보냄
 assert not [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]
 
