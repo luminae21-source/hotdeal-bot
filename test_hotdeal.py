@@ -296,7 +296,7 @@ urllib.request.urlopen = _uo
 H.E["THREADS_TOKEN"] = "tk"; H.time.sleep = lambda s: None
 today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
 open(f"docs/cards/{today}.png", "wb").write(b"png")
-json.dump([{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a"}], open("posts.json", "w"))
+json.dump([{"t": f"{today} 10:00", "text": "🔥 A딜 (15,480원/무료)", "url": "https://a"}], open("posts.json", "w"))
 live, calls[:] = False, []
 def th_http(url, body=None, headers=None, method=None):
     calls.append((method or "GET", url))
@@ -311,7 +311,8 @@ seen, sent[:] = {}, []
 H.threads(seen); assert not seen and len(calls) == 1  # 404 -> 다음 실행에
 live = True; calls.clear(); H.threads(seen)
 assert [m for m, _ in calls] == ["HEAD", "GET", "POST", "POST"] and "/777/threads?" in calls[2][1] and "creation_id=c1" in calls[3][1]
-assert "image_url=https%3A%2F%2Fhotdealpick.kr%2Fcards%2F" in calls[2][1] and "A%EB%94%9C" in calls[2][1]  # 카드 주소 + 제목 포함
+assert "image_url=https%3A%2F%2Fhotdealpick.kr%2Fcards%2F" in calls[2][1] and "A%EB%94%9C" in calls[2][1] and "15%2C480" not in calls[2][1]  # 카드 주소 + 제목 포함, 가격 꼬리는 뺌(카드에 있음)
+assert H.clip("코카콜라 190ml 30캔 + 스프라이트 제로 위드 티 350ml 24캔", 34) == "코카콜라 190ml 30캔 + 스프라이트 제로 위드 티…" and H.clip("짧은 제목", 34) == "짧은 제목"  # 단어 중간에서 안 끊김
 assert sent[-1][0] == "sendPhoto" and list(seen)[0].startswith("threads_")
 calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안 올림
 del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []

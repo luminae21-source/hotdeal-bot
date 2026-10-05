@@ -192,10 +192,18 @@ def store_tag(title):
     return tag.group(1).lower().replace(" ", "") if tag else ""
 
 
+PRICE_TAIL = r"\s*\([^()]*(원|무료|무배|배송)[^()]*\)\s*$"  # 뽐뿌 제목 끝 (가격/배송)
+
+
 def keyword(title):
     """Claude 검색어가 없을 때: 제목에서 [쇼핑몰]·끝의 (가격/배송) 떼고 40자."""
     t = re.sub(r"^\s*\[[^\]]*\]\s*", "", title)
-    return re.sub(r"\s*\([^()]*(원|무료|무배|배송)[^()]*\)\s*$", "", t).strip()[:40]
+    return re.sub(PRICE_TAIL, "", t).strip()[:40]
+
+
+def clip(s, n):
+    """n자 넘으면 띄어쓰기 단위로 자르고 … (가격·단어 중간에서 안 끊김)."""
+    return s if len(s) <= n else s[:n].rsplit(" ", 1)[0].rstrip(" +,(") + "…"
 
 
 def lp_search(title, q=None):
@@ -436,7 +444,7 @@ def threads(seen):
     if not tok:
         return
     todays = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋")]
-    rows = [f"{n}. {title_of(p['text'])[:40]}" for n, p in enumerate(todays[:6], 1)]
+    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]  # 가격은 카드 이미지에
     text = (f"📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
             + f"\n\n전체 딜·구매 링크 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick")[:480]
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
