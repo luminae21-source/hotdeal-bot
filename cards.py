@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""오늘의 딜 모아보기 -> Threads/인스타용 카드 이미지(1080x1350 PNG). Pillow 필요 (워크플로에서 설치)."""
+"""오늘의 딜 카드 이미지(1080x1350 PNG) + 인스타 릴스 영상(1080x1920 MP4). Pillow 필요 (워크플로에서 설치)."""
 import os, re
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1080, 1350
-ORANGE, RED, INK, GRAY, BG = (255, 90, 40), (225, 40, 40), (28, 30, 33), (120, 120, 120), (246, 247, 249)
 FONTS = {  # 러너: fonts/ (워크플로가 Google Fonts 저장소에서 내려받음) / 로컬: Noto CJK
     "bold": ["fonts/NanumGothic-ExtraBold.ttf", "/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc"],
     "reg": ["fonts/NanumGothic-Regular.ttf", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"],
@@ -44,44 +43,41 @@ def wrap(d, text, f, width, max_lines=2):
     return lines + ([cur.rstrip()] if cur.strip() else [])
 
 
-def make(titles, date_label, out):
-    """titles: 딜 제목 리스트(최대 6개 사용). date_label: '10월 5일'. out: 저장 경로. -> out"""
-    im = Image.new("RGB", (W, H), BG)
-    px = im.load()
-    for y in range(230):  # 상단 그라데이션 띄
-        for x in range(W):
-            t = x / W * 0.6 + y / 230 * 0.4
-            px[x, y] = (int(255 - 30 * t), int(90 - 50 * t), int(40 + 10 * t))
+def make(items, date_label, out):
+    """오늘의 딜 카드(1080x1350, 릴스와 같은 크림·먹색·숫자 포인트색 디자인). items: 딜 제목 문자열 또는 {"title", "unit"} (최대 5개). -> out"""
+    im = Image.new("RGB", (W, H), CREAM)
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle((60, 55, 180, 175), radius=26, fill="white")
-    f = font("bold", 78); d.text((120 - d.textlength("딜", font=f) / 2, 52), "딜", font=f, fill=ORANGE)
-    f = font("bold", 30); d.text((120 - d.textlength("pick", font=f) / 2, 128), "pick", font=f, fill=ORANGE)
-    d.text((215, 62), f"{date_label} 핫딜 모음", font=font("bold", 58), fill="white")
-    d.text((218, 140), "오늘의 딜 pick이 고른 살 만한 딜", font=font("reg", 30), fill=(255, 230, 220))
-
-    y, fb, fr, fs, fp = 270, font("bold", 38), font("reg", 26), font("bold", 24), font("bold", 32)
-    for n, t in enumerate(titles[:6], 1):
-        store, name, price = parse(t)
-        lines = wrap(d, name, fb, 760)
-        h = 70 + 48 * len(lines) + (46 if price else 0)
-        if y + h > H - 230:  # 하단 박스 침범하면 그만
-            break
-        d.rounded_rectangle((60, y, W - 60, y + h), radius=22, fill="white")
-        d.ellipse((90, y + 30, 150, y + 90), fill=ORANGE)
-        d.text((120 - d.textlength(str(n), font=fp) / 2, y + 40), str(n), font=fp, fill="white")
-        ty = y + 26
+    d.text((X0, 84), f"{date_label}  ·  오늘의 가성비 딜", font=pf("SemiBold", 34), fill=SUB)
+    f = pf("Bold", 34); d.text((W - X0 - d.textlength("딜 pick", font=f), 84), "딜 pick", font=f, fill=ACCENT)
+    d.text((X0, 136), "오늘 살 만한 딜", font=pf("ExtraBold", 76), fill=INK2)
+    d.rectangle((X0, 262, W - X0, 264), fill=LINE)
+    y = 292
+    for n, it in enumerate([{"title": i} if isinstance(i, str) else i for i in items][:5], 1):
+        store, name, price = parse(it["title"])
+        d.text((X0, y), f"{n:02d}", font=pf("ExtraBold", 34), fill=ACCENT)
         if store:
-            d.text((180, ty), store, font=fs, fill=ORANGE); ty += 36
-        for ln in lines:
-            d.text((180, ty), ln, font=fb, fill=INK); ty += 48
+            d.text((X0 + 68, y + 4), store, font=pf("SemiBold", 28), fill=SUB)
+        d.text((X0, y + 44), wrap(d, name, pf("Bold", 40), W - 2 * X0, 1)[0] if name else "", font=pf("Bold", 40), fill=INK2)
         if price:
-            d.text((180, ty + 4), price.replace("/", " · "), font=fr, fill=RED)
-        y += h + 18
-
-    d.rounded_rectangle((60, H - 200, W - 60, H - 70), radius=22, fill=INK)
-    d.text((100, H - 178), "전체 딜 · 구매 링크  →  hotdealpick.kr", font=font("bold", 36), fill="white")
-    d.text((100, H - 122), "실시간 알림  t.me/hotdeal_pick   |   네이버 블로그  blog.naver.com/hotdeal_pick", font=font("reg", 24), fill=(200, 200, 200))
-    d.text((60, H - 52), "쿠팡 파트너스 활동의 일환으로 일정 수수료를 받을 수 있습니다. 가격·재고는 게시 시점 기준.", font=font("reg", 20), fill=GRAY)
+            main, _, ship = price.partition("/")
+            fp = pf("ExtraBold", 44)
+            d.text((X0, y + 100), main.strip(), font=fp, fill=INK2)
+            x = X0 + d.textlength(main.strip(), font=fp) + 18
+            fs, unit = pf("SemiBold", 30), (it.get("unit") or "").strip()
+            ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
+            if unit:  # 단위가격은 포인트색, 배송은 회색
+                d.text((x, y + 112), unit, font=fs, fill=ACCENT)
+                x += d.textlength(unit + "  ", font=fs)
+            if ship:
+                d.text((x, y + 112), ("·  " if unit else "") + ship, font=fs, fill=SUB)
+        y += 170
+        if n < min(len(items), 5):
+            d.rectangle((X0, y - 14, W - X0, y - 13), fill=LINE)
+    d.rectangle((X0, H - 200, W - X0, H - 198), fill=LINE)
+    d.text((X0, H - 170), "전체 딜 · 구매 링크", font=pf("SemiBold", 32), fill=INK2)
+    f = pf("Bold", 40); d.text((W - X0 - d.textlength("hotdealpick.kr", font=f), H - 176), "hotdealpick.kr", font=f, fill=ACCENT)
+    d.text((X0, H - 112), "실시간 알림 t.me/hotdeal_pick  ·  블로그 blog.naver.com/hotdeal_pick", font=pf("Regular", 26), fill=SUB)
+    d.text((X0, H - 66), "일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요. 가격·재고는 게시 시점 기준.", font=pf("Regular", 22), fill=SUB)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     im.save(out, optimize=True)
     return out
@@ -239,9 +235,10 @@ def reel(items, date_label, out):
         store, name, price = parse(it["title"])
         main, _, ship = price.partition("/")
         ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
-        sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", it.get("comment") or "") if s.strip()]
-        it.update(store=store, name=name, main=main.strip(), ship=ship,
-                  pts=[p for p in (it.get("pts") or sents) if p.replace(" ", "") != ship.replace(" ", "")][:3],  # 배송은 따로 표시
+        sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n", it.get("comment") or "") if s.strip() and not s.lstrip().startswith(("💡", "⚠"))]
+        unit, warn = (it.get("unit") or "").strip(), (it.get("warn") or "").strip()
+        it.update(store=store, name=name, main=main.strip(), ship=ship, unit=unit, warn=warn,  # 배송·단위가격은 따로 표시 -> 이유 목록에서 뺌
+                  pts=[p for p in (it.get("pts") or sents) if p.replace(" ", "") not in (ship.replace(" ", ""), unit.replace(" ", ""))][:3 - bool(warn)],
                   hook=it.get("hook") or f"{name[:12]} {main.strip()}".strip())
     cream, night = Image.new("RGB", (RW, RH), CREAM), Image.new("RGB", (RW, RH), NIGHT)
     scenes = []  # (배경, 초, 그리기(frame, t), 진행 막대 색)
@@ -275,10 +272,16 @@ def reel(items, date_label, out):
         name = Image.new("RGBA", name.size, (0, 0, 0, 0)) if not it["name"] else name
         price = _text(it["main"], pf("ExtraBold", 140 if pf("ExtraBold", 140).getlength(it["main"]) < XW - 260 else 108), INK2) if it["main"] else None
         pill = _pill(it["ship"]) if it["ship"] else None
+        unit = _rich(it["unit"], pf("SemiBold", 50), XW) if it["unit"] else None
+        warn = None
+        if it["warn"]:  # 단점·조건까지 말해주는 게 광고 계정과의 차이
+            warn = Image.new("RGBA", (XW, 70), (0, 0, 0, 0))
+            ImageDraw.Draw(warn).text((0, 8), "확인할 점", font=pf("SemiBold", 40), fill=SUB)
+            ImageDraw.Draw(warn).text((200, 4), it["warn"], font=pf("Medium", 44), fill=INK2)
         why = _text("살 만한 이유", pf("SemiBold", 38), SUB)
         checks = [_check(p) for p in it["pts"]]
 
-        def deal(fr, t, lab=lab, tile=tile, name=name, price=price, pill=pill, why=why, checks=checks):
+        def deal(fr, t, lab=lab, tile=tile, name=name, price=price, pill=pill, why=why, checks=checks, unit=unit, warn=warn):
             _in(fr, lab, X0, 300, t, 0.0)
             _in(fr, tile, X0 - 40, 362, t, 0.05)
             y = 700
@@ -292,11 +295,16 @@ def reel(items, date_label, out):
             elif pill:
                 _in(fr, pill, X0, y, t, 0.32)
                 y += 90
-            if checks:
+            if unit:  # 비교 근거: 단위가격
+                _in(fr, unit, X0, y - 14, t, 0.36)
+                y += 80
+            if checks or warn:
                 _rule(fr, y, t, 0.42)
                 _in(fr, why, X0, y + 36, t, 0.5)
                 for k, c in enumerate(checks):
                     _in(fr, c, X0, y + 104 + 84 * k, t, 0.6 + 0.15 * k)
+                if warn:
+                    _in(fr, warn, X0, y + 104 + 84 * len(checks) + 6, t, 0.6 + 0.15 * len(checks))
         scenes.append((cream, 3.5, deal, INK2))
 
     light, dim = (172, 176, 184), (112, 116, 124)

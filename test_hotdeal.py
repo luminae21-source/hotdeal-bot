@@ -51,6 +51,9 @@ want = hmac.new(b"sk", (dt + "POST" + H.CP_BASE + "/deeplink").encode(), hashlib
 assert method == "POST" and hdr["Authorization"].endswith("signature=" + want) and body == {"coupangUrls": ["https://www.coupang.com/vp/products/1"]}
 text, link, label = H.deal_post(d, "<싸다>")
 assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and link == "https://link.coupang.com/a/AFF"
+t2 = H.deal_post(d, "싸다", None, {"unit": "100g당 990원", "warn": "쿠폰 <1인 1회>", "pts": ["x"]})[0]  # 단위가격·확인할 점은 코멘트 아래, 출처 위
+assert "싸다\n💡 단위가격 100g당 990원\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n\n출처:" in t2 and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", "")
+assert "unit:" in H.DEAL_PROMPT and "warn:" in H.DEAL_PROMPT and "unit:" in H.REEL_PROMPT
 
 # 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록
 os.chdir(tempfile.mkdtemp())
@@ -152,11 +155,12 @@ def ch_tg(method, **p):
         return {"message_id": next(mids), "text": p["text"].replace("<i>", "").replace("</i>", ""), "entities": []}
     return {"message_id": 1}
 H.tg = ch_tg
-H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8, None, {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "x": None})  # 💸: 바로 게시, 사본 없음
+H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8, None, {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "unit": "kg당 6,233원", "warn": "", "x": None})  # 💸: 바로 게시, 사본 없음
 assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")]
 assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": D("")["url"]}]]
 lp = json.load(open("posts.json"))[-1]
 assert lp["mid"] == 100 and lp["s"] == 8 and lp["e"] == "🫐" and lp["hook"] == "1kg 6,233원" and lp["pts"] == ["kg당 6,233원"] and "x" not in lp  # 릴스 재료 저장
+assert lp["unit"] == "kg당 6,233원" and "warn" not in lp and "💡 단위가격 kg당 6,233원" in sent[0][1]["text"]  # 빈 값은 저장 안 함
 sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L")  # 링크프라이스: 자동 제휴
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 qs = parse_qs(urlsplit(b["url"]).query)
@@ -256,6 +260,7 @@ assert cards.parse("[G마켓] 버짠3 (189,000원/무료) 카드할인") == ("G�
 assert cards.parse("제목만") == ("", "제목만", "")
 assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
 assert os.path.getsize("docs/cards/t.png") > 10000
+assert cards.make([{"title": "[G마켓] 우유 (23,740원/무료)", "unit": "팩당 495원"}, "[쿠팡] 휴지 (9,900원/무료)"], "10월 5일", "docs/cards/t2.png") == "docs/cards/t2.png"
 from PIL import Image, ImageDraw
 _d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
 assert cards.wrap(_d, "건국 멸균우유 200ml 48팩", cards.font("bold", 84), 880, 3) == ["건국 멸균우유 200ml", "48팩"]  # 띄어쓰기 단위
@@ -263,7 +268,7 @@ assert len(cards.wrap(_d, "가" * 100, cards.font("bold", 84), 880, 2)) == 2  # 
 # 8-2) 릴스 영상: 1080x1920 · 30fps · H.264 · 딜 3개면 15초
 import subprocess
 rv = cards.reel([{"title": "[G마켓] 건국 멸균우유 200ml 48팩 (23,740원/무료)", "comment": "쿠폰가예요", "e": "🥛", "hook": "우유 팩당 495원",
-                  "pts": ["팩당 약 495원", "무료배송", "상온 보관 가능"]},
+                  "pts": ["팩당 약 495원", "무료배송", "상온 보관 가능"], "unit": "팩당 약 495원", "warn": "카드할인 적용가"},
                  {"title": "[카카오] 고구마 3kg (7,600원/무료)", "comment": "맛있어요. 무료배송입니다."},  # e·hook·pts 없으면 제목·코멘트로
                  {"title": "제목만 있는 딜", "comment": "", "e": "x"}], "10월 5일", "docs/reel_t.mp4")  # 못 그리는 이모지 -> 🛒
 pr = subprocess.run([cards.ffmpeg().replace("ffmpeg", "ffprobe"), "-v", "error", "-show_entries", "stream=width,height,codec_name,r_frame_rate:format=duration",

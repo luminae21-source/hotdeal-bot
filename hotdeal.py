@@ -39,7 +39,9 @@ esc = html.escape
 
 REEL_RULES = """e: 상품을 한눈에 보여줄 이모지 1개 (예: 🥛 🍠 🧻 🔋 👟).
 hook: 릴스 첫 화면 한 줄, 14자 이내, 숫자 중심(개당·100g당 같은 단위가격이나 핵심 혜택). 예: "우유 팩당 495원". 계산은 제목·본문의 가격과 수량으로만.
-pts: 합리적인 소비인 이유 2~3개, 각 14자 이내, 사실만(단위가격·할인 조건·용량·보관·구성). 배송비는 따로 표시되니 빼고, 평소가·최저가·역대가는 글에 나온 경우만."""
+pts: 합리적인 소비인 이유 2~3개, 각 14자 이내, 사실만(할인 조건·용량·보관·구성). 배송비·단위가격은 따로 표시되니 빼고, 평소가·최저가·역대가는 글에 나온 경우만.
+unit: 단위가격 한 줄(예: "100g당 990원", "개당 495원", "1L당 1,980원"). 제목·본문의 가격과 수량으로 확실히 계산될 때만, 아니면 빈 문자열.
+warn: 사기 전에 확인할 점 1개, 16자 이내(예: "쿠폰 1인 1회", "옵션별 가격 다름", "카드할인 적용가"). 글에 근거 있을 때만, 없으면 빈 문자열."""
 DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 딜 중 구독자가 실제로 살 만한 것만 골라 pick 도구로 반환해.
 점수(1~10) 기준: 가격 매력, 생필품/대중성, 커뮤니티 반응(조회 대비 추천·댓글). 비추천이 많거나 품절·종료·가격오류 언급이 있으면 제외.
 comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품 효능 언급 금지, 이모지 최대 1개.
@@ -116,7 +118,7 @@ def ai_pick(prompt, lines):
             "type": "object", "required": ["i", "score", "comment"],
             "properties": {"i": {"type": "integer"}, "score": {"type": "integer"}, "comment": {"type": "string"},
                            "q": {"type": "string"}, "e": {"type": "string"}, "hook": {"type": "string"},
-                           "pts": {"type": "array", "items": {"type": "string"}}}}}}}}
+                           "pts": {"type": "array", "items": {"type": "string"}}, "unit": {"type": "string"}, "warn": {"type": "string"}}}}}}}
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "auto"},
         "messages": [{"role": "user", "content": prompt + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
@@ -204,8 +206,9 @@ def lp_search(title, q=None):
     return f"https://click.linkprice.com/click.php?m={m}&a={LP_AID}&l=9999&l_cd1=3&l_cd2=0&tu={tu}", name
 
 
-def deal_post(d, comment, q=None):
-    """-> (본문, 버튼 링크, 버튼 이름). 쿠팡 자동 변환 > 링크프라이스 검색 링크 > 뽐뿌 글. 제휴 링크면 대가성 문구를 맨 앞에."""
+def deal_post(d, comment, q=None, extra=None):
+    """-> (본문, 버튼 링크, 버튼 이름). 쿠팡 자동 변환 > 링크프라이스 검색 링크 > 뽐뿌 글. 제휴 링크면 대가성 문구를 맨 앞에.
+    extra의 unit(단위가격)·warn(확인할 점)이 있으면 코멘트 아래 한 줄씩 (다른 핫딜 채널과의 차이: 비교 근거 + 단점까지)."""
     link, aff = affiliate(store_link(d["url"]))
     label = "🛒 구매하러 가기"
     if not aff:
@@ -214,7 +217,9 @@ def deal_post(d, comment, q=None):
             link, label = lp, f"🔎 {name}에서 찾기"
     note = aff_note(link or "")
     head = f"<i>{note}</i>\n\n" if note else ""  # 공정위 지침: 대가성 문구는 첫 부분에
-    text = f"{head}🔥 <b>{esc(d['title'])}</b>\n\n{esc(comment)}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
+    x = extra or {}
+    facts = "".join(f"\n{icon} {esc(x[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if x.get(k))
+    text = f"{head}🔥 <b>{esc(d['title'])}</b>\n\n{esc(comment)}{facts}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
     return text, link or d["url"], label
 
 
@@ -237,7 +242,7 @@ def post_or_draft(d, comment, score, q=None, extra=None):
     """✅ 없이 채널에 바로 게시. 링크프라이스 몰은 검색 제휴 링크가 자동으로 붙음.
     쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크로 답장 -> 채널 글 교체(선택).
     채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
-    text, url, label = deal_post(d, comment, q)
+    text, url, label = deal_post(d, comment, q, extra)
     info = store_info(d["title"])
     m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
            reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
@@ -374,7 +379,7 @@ def digest(seen, posts):
         tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
         import cards
         try:  # Threads/인스타용 카드 -> docs/cards/ (워크플로가 커밋 -> 사이트에 공개 -> 다음 실행 때 threads()가 올림)
-            cards.make([title_of(p["text"]) for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
+            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
         except Exception as e:
             print("card", repr(e))
         try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 (저장소엔 안 올림). 점수 높은 순 TOP3
@@ -383,11 +388,11 @@ def digest(seen, posts):
             if need:
                 try:
                     for f in ai_pick(REEL_PROMPT, [f"{title_of(p['text'])} | {comment_of(p['text'])}" for p in need]):
-                        need[f["i"]].update({k: f[k] for k in ("e", "hook", "pts") if f.get(k)})
+                        need[f["i"]].update({k: f[k] for k in ("e", "hook", "pts", "unit", "warn") if f.get(k)})
                 except Exception as e:
                     print("reel fill", repr(e))
-            path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]), "e": p.get("e"), "hook": p.get("hook"),
-                               "pts": p.get("pts")} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
+            path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]),
+                                **{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
             tg_video(path, ((top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
                             + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
                             + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
@@ -483,7 +488,7 @@ def main():
             seen[d["id"]] = time.time()
         print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
-            post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts")})
+            post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
         try:
             step(seen)
