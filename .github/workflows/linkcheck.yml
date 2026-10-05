@@ -16,4 +16,7 @@ jobs:
               for d in bd[:3]:
                   u = H.store_link(d["url"])
                   print(" ", d["title"][:28], "|", u, "|", H.affiliate(u)[1] if u else "-", "|", H.store_info(d["title"], u or "")[:12])
+          print("== 링크프라이스 딥링크 API (승인 몰 S / 미승인 F)")
+          for u in ("https://item.gmarket.co.kr/Item?goodscode=3354653975", "https://www.11st.co.kr/products/1"):
+              print(" ", u[:40], "->", H.affiliate(u))
           PY
