@@ -108,6 +108,8 @@ assert H.location(f"http://127.0.0.1:{srv.server_port}/a") == f"http://127.0.0.1
 srv.server_close()
 assert H.store_info("쿠팡 휴지 & 물티슈", "https://www.coupang.com/vp/products/9") == H.STORES["쿠팡"]  # 제목에 [몰]이 없으면 주소로
 assert H.store_info("땅콩버터", "https://smartstore.naver.com/x/products/1") == H.STORES["네이버"]
+assert H.store_info("[롯데하이마트] 에어컨") == H.LP.format("1.26%") and H.store_info("[이마트] 라면") == H.LP.format("1%")  # 하이마트를 이마트로 잘못 보지 않음
+assert H.store_info("수납장", "https://ohou.se/productions/1").startswith("⏳")  # 오늘의집 승인 전엔 사본 안 보냄
 assert H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 (15,600원/무료)") == H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 / 15,600원")
 assert H.dkey("[쿠팡] 라면") is None  # 너무 짧으면 같은 딜 판단 안 함
 H.http = fake_http
