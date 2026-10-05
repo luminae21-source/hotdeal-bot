@@ -15,16 +15,12 @@ RSS = f"""<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel>
 CP = "https://www.coupang.com/vp/products/1?a=1&b=2"
 B64 = base64.b64encode(CP.encode()).decode()
 PAGE = f'<li class="topTitle-link partner"><span></span><a href="https://s.ppomppu.co.kr/?idno=ppomppu_101&amp;target={B64}&amp;encode=on" target="_blank">{CP}</a>'  # PC 글 (실제 구조)
-PAGE_M = f'<div class="link-box"><span></span><a class="noeffect" href="https://s.ppomppu.co.kr/?idno=ppomppu_101&amp;target={B64}&amp;encode=on" target="_blank">https://www.coupang.com/vp/pro...</a>'  # 모바일 글 (주소 잘림)
 
-calls, mobile_down = [], False
+calls = []
 def fake_http(url, body=None, headers=None, method=None):
     calls.append((url, body, headers, method))
     if "rss.php?id=dead" in url: raise OSError("feed down")
     if "rss.php" in url: return RSS
-    if "bbs_view.php" in url:
-        if mobile_down: raise OSError("403")
-        return PAGE_M
     if "view.php" in url: return PAGE
     if "deeplink" in url: return json.dumps({"data": [{"shortenUrl": "https://link.coupang.com/a/AFF"}]})
     raise AssertionError(url)
@@ -38,13 +34,14 @@ assert len(deals) == 2 and d["id"] == "ppomppu_101" and d["url"].startswith("htt
 assert d["hits"] == "댓글3·조회900·추천2·비추0" and d["desc"] == "쿠폰가 좋네요" and 44 < d["age"] < 46
 
 # 2) 쇼핑몰 링크 추출 + 쿠팡 제휴 변환 + 서명
-assert H.store_link(d["url"]) == CP and "m.ppomppu.co.kr/new/bbs_view.php" in calls[-1][0]  # 모바일 글 먼저 (base64 복원)
-mobile_down = True; assert H.store_link(d["url"]) == CP and "www.ppomppu.co.kr/zboard/view.php" in calls[-1][0]; mobile_down = False  # 모바일 막히면 PC 글
+assert H.store_link(d["url"]) == CP  # target= base64 복원
 P2 = base64.b64encode("https://item.gmarket.co.kr/Item?goodscode=3383368133&n=>>?".encode()).decode()
 assert "+" in P2 or "/" in P2
-H.http = lambda url, *a, **k: f'<div class="link-box"><a href="https://s.ppomppu.co.kr/?idno=x&amp;target={P2}&amp;encode=on">'
+H.http = lambda url, *a, **k: f'<li class="topTitle-link partner"><a href="https://s.ppomppu.co.kr/?idno=x&amp;target={P2}&amp;encode=on">'
 assert H.store_link(d["url"]) == "https://item.gmarket.co.kr/Item?goodscode=3383368133&n=>>?"
 H.http = lambda url, *a, **k: "<div>링크 없는 글</div>"; assert H.store_link(d["url"]) is None
+def blocked(url, *a, **k): raise OSError("403")
+H.http = blocked; assert H.store_link(d["url"]) is None  # GitHub 서버 차단 시 -> 버튼은 뽐뿌 글(관리자 답장으로 교체)
 H.http = fake_http
 assert H.affiliate("https://www.gmarket.co.kr/x") == ("https://www.gmarket.co.kr/x", False)
 assert H.affiliate("https://www.coupang.com/vp/products/1") == ("https://link.coupang.com/a/AFF", True)
@@ -77,6 +74,31 @@ assert [p["message_id"] for m, p in sent if m == "editMessageReplyMarkup"] == [1
 assert sent[-1] == ("getUpdates", {"offset": 5})
 posts = json.load(open("posts.json"))
 assert len(posts) == 1 and posts[0]["url"] == "https://buy" and posts[0]["text"].startswith("🔥 [쿠팡] 휴지")
+
+# 3-2) 초안에 링크로 답장 -> 버튼 교체 + 대가성 문구(UTF-16 오프셋 밀기), 같은 실행의 ✅는 교체된 링크로 게시, 남의 답장 무시
+sent.clear()
+DR = {"message_id": 20, "chat": {"id": 42}, "text": "🔥 [쿠팡] 휴지\n\n출처: 뽐뿌", "entities": [{"type": "text_link", "offset": 16, "length": 2, "url": "https://src"}],
+      "reply_markup": {"inline_keyboard": [[{"text": "🛒", "url": "https://ppomppu"}], [{"text": "✅ 게시 (8점)", "callback_data": "ok"}]]}}
+UP = [{"update_id": 7, "message": {"from": {"id": 99}, "text": "https://evil.com", "reply_to_message": DR}},
+      {"update_id": 8, "message": {"from": {"id": 42}, "text": "이걸로 https://link.coupang.com/a/xyz", "reply_to_message": DR}},
+      {"update_id": 9, "callback_query": {"from": {"id": 42}, "data": "ok", "message": DR}}]
+H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1})
+H.publish_approved()
+ed = [p for m, p in sent if m == "editMessageText"]
+n = len(H.DISCLOSURE.encode("utf-16-le")) // 2
+assert len(ed) == 1 and ed[0]["text"].startswith(H.DISCLOSURE + "\n\n🔥") and ed[0]["entities"][0] == {"type": "italic", "offset": 0, "length": n}
+assert ed[0]["entities"][1]["offset"] == 16 + n + 2 and ed[0]["reply_markup"]["inline_keyboard"][1][0]["text"] == "✅ 게시 (8점)"
+u16 = ed[0]["text"].encode("utf-16-le"); e = ed[0]["entities"][1]
+assert u16[e["offset"] * 2:(e["offset"] + e["length"]) * 2].decode("utf-16-le") == "뽐뿌"  # 링크 위치 그대로
+cp = [p for m, p in sent if m == "copyMessage"][0]
+assert cp["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": "https://link.coupang.com/a/xyz"}]]
+last = json.load(open("posts.json"))[-1]
+assert last["url"] == "https://link.coupang.com/a/xyz" and last["text"].startswith(H.DISCLOSURE)
+sent.clear(); H.relink(DR, "https://item.gmarket.co.kr/Item?goodscode=1")  # 일반 쇼핑몰 링크: 문구 없이 버튼만
+assert sent[0][1]["text"] == DR["text"] and sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"].startswith("https://item.gmarket")
+sent.clear(); H.relink(DR, "https://click.linkprice.com/click.php?m=gmarket")  # 링크프라이스: 일반 제휴 문구
+assert sent[0][1]["text"].startswith(H.AFF_NOTE)
+H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
 sent.clear()

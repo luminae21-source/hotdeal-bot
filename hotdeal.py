@@ -18,6 +18,8 @@ FEEDS = {"ppomppu": "뽐뿌"}  # 보드 추가: {"rss id": "표시명"}
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+AFF_NOTE = "이 포스팅은 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+AFF_HOSTS = ("click.linkprice.com", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
 
@@ -88,20 +90,19 @@ def ai_pick(prompt, lines):
 
 
 def store_link(post_url):
-    """뽐뿌 글 상단의 실제 쇼핑몰 링크. PC 글은 GitHub 서버에 403이라 모바일 글 먼저 시도.
-    링크는 s.ppomppu.co.kr/?...&target=<base64 원본주소>&encode=on 형태 -> 원본 주소로 복원."""
-    mobile = post_url.replace("www.ppomppu.co.kr/zboard/view.php", "m.ppomppu.co.kr/new/bbs_view.php")
-    for url in (mobile, post_url):
-        try:
-            m = re.search(r'(?:link-box|topTitle-link).*?href="https://s\.ppomppu\.co\.kr/\?([^"]+)"', http(url), re.S)
-        except Exception as e:
-            print("link", url, repr(e))
-            continue
-        if not m:
-            return None
-        q = "&" + html.unescape(m.group(1))
-        t = urllib.parse.unquote(re.search(r"&target=([^&]*)", q + "&target=").group(1))  # unquote_plus 쓰면 base64의 +가 깨짐
-        return (base64.b64decode(t + "=" * (-len(t) % 4)).decode() if "&encode=on" in q else t) or None
+    """뽐뿌 글 상단의 실제 쇼핑몰 링크 (s.ppomppu.co.kr/?...&target=<base64 원본주소>&encode=on -> 원본 주소).
+    ponytail: 뽐뿌가 GitHub 서버 IP를 PC·모바일 글 모두 403 차단(2026-10-05 linkcheck) -> 지금은 None,
+    그동안은 관리자가 초안에 링크로 답장하면 relink()가 교체. 차단 풀리면 이 함수가 그대로 다시 동작."""
+    try:
+        m = re.search(r'topTitle-link.*?href="https://s\.ppomppu\.co\.kr/\?([^"]+)"', http(post_url), re.S)
+    except Exception as e:
+        print("link", post_url, repr(e))
+        return None
+    if not m:
+        return None
+    q = "&" + html.unescape(m.group(1))
+    t = urllib.parse.unquote(re.search(r"&target=([^&]*)", q + "&target=").group(1))  # unquote_plus 쓰면 base64의 +가 깨짐
+    return (base64.b64decode(t + "=" * (-len(t) % 4)).decode() if "&encode=on" in q else t) or None
 
 
 def coupang(method, path, body=None):
@@ -138,9 +139,33 @@ def deal_post(d, comment):
     return text, link or d["url"]
 
 
+def relink(m, url):
+    """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
+    text, ents = m.get("text", ""), m.get("entities", [])
+    host = urllib.parse.urlsplit(url).netloc
+    note = DISCLOSURE if host == "link.coupang.com" else AFF_NOTE if host in AFF_HOSTS else ""
+    if note and not text.startswith("이 포스팅은"):
+        n = len(note.encode("utf-16-le")) // 2  # 텔레그램 오프셋은 UTF-16 단위
+        text = f"{note}\n\n{text}"
+        ents = [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
+    rows = [[{"text": "🛒 구매하러 가기", "url": url}]]
+    rest = [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" not in r[0]] or \
+        [[{"text": "✅ 게시", "callback_data": "ok"}, {"text": "❌ 패스", "callback_data": "no"}]]
+    tg("editMessageText", chat_id=m["chat"]["id"], message_id=m["message_id"], text=text, entities=ents,
+       link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": rows + rest})
+    return text, ents, rows
+
+
 def publish_approved():
-    """관리자가 누른 ✅/❌ 처리. 텔레그램이 버튼 입력을 24시간 보관하므로 30분 주기로 충분."""
-    ups = tg("getUpdates", allowed_updates=["callback_query"]) or []
+    """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 30분 주기로 충분.
+    1) 초안에 링크로 답장 -> 구매 버튼 교체  2) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)"""
+    ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
+    fixed = {}
+    for u in ups:
+        m = u.get("message") or {}
+        url = re.search(r"https?://\S+", m.get("text", ""))
+        if url and m.get("reply_to_message") and str(m.get("from", {}).get("id")) == ADMIN:
+            fixed[m["reply_to_message"]["message_id"]] = relink(m["reply_to_message"], url.group(0))
     handled = set()
     for u in ups:
         q = u.get("callback_query") or {}
@@ -150,15 +175,16 @@ def publish_approved():
         handled.add(m["message_id"])
         chat, mid = m["chat"]["id"], m["message_id"]
         if q["data"] == "ok":
-            rows = [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" in r[0]]
-            if not tg("copyMessage", chat_id=CHANNEL, from_chat_id=chat, message_id=mid,
+            text, ents, rows = fixed.get(mid) or (m.get("text", ""), m.get("entities", []),
+                                                  [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" in r[0]])
+            if not tg("copyMessage", chat_id=CHANNEL, from_chat_id=chat, message_id=mid,  # 복사는 수정된 현재 내용 기준
                       reply_markup={"inline_keyboard": rows}):
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid},
                    text="⚠️ 채널 게시 실패: 봇이 채널 관리자인지, TG_CHANNEL 값이 맞는지 확인 후 ✅ 다시 눌러줘")
                 continue  # 버튼 유지 -> 재시도 가능
             posts = load(POSTS, [])
-            posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": m.get("text", ""),
-                          "entities": m.get("entities", []), "url": rows[0][0]["url"] if rows else None})
+            posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
+                          "entities": ents, "url": rows[0][0]["url"] if rows else None})
             json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         mark = "✅ 게시됨" if q["data"] == "ok" else "❌ 패스"
         tg("editMessageReplyMarkup", chat_id=chat, message_id=mid,
