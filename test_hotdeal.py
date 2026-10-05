@@ -108,6 +108,9 @@ for u in ("https://toss.im/_m/abcDE", "https://toss.shopping/t/9?k=1&referrer=af
     assert sent[0][1]["text"].startswith(H.TOSS_NOTE + "\n\n") and sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == u
     assert H.title_of(sent[0][1]["text"]) == H.title_of(DR["text"])  # 대가성 문구 줄이 제목이 되면 안 됨
 assert H.title_of(H.AFF_NOTE + "\n\n🔥 [G마켓] 라면") == "[G마켓] 라면"
+sent.clear(); H.relink(DR, "https://naver.me/FBMXkU0N")  # 네이버 쇼핑커넥트: 네이버 안내 문구 그대로 맨 앞
+assert sent[0][1]["text"].startswith(H.NAVER_NOTE + "\n\n") and H.title_of(sent[0][1]["text"]) == H.title_of(DR["text"])
+assert H.store_info("[네이버] 퍼실 세제") == H.STORES["네이버"] and H.STORES["네이버"].startswith("💰")  # 쇼핑커넥트: 사본 보냄(텔레그램·사이트는 활동 제한 채널 아님)
 
 # 3-3) 봇에게 '제목 + 링크' 새로 보내기 -> 초안(대가성 문구·제목·코멘트·버튼), 붙여넣은 문구 중복 없음, 링크만 보내면 안내, 남의 메시지 무시
 sent.clear()
