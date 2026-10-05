@@ -181,7 +181,7 @@ def ai_pick(prompt, lines):
 
 def store_link(post_url):
     """딜 글에 적힌 실제 쇼핑몰 주소 (남의 제휴 링크·추적값은 plain()으로 걷어냄). 못 찾으면 None.
-    루리웹: 글 아래 '출처'(web.ruliweb.com/link.php?ol=원래주소). 클리앙: 글 위 '구매링크'(attached_link).
+    루리웹: 글 아래 '출처'(web.ruliweb.com/link.php?ol=원래주소, 네이버·토스는 주소 그대로). 클리앙: 글 위 '구매링크'(attached_link).
     뽐뿌: 상단 링크(s.ppomppu.co.kr ... target=base64) — ponytail: GitHub 서버 IP를 403 차단(10/5 linkcheck)이라 지금은 None,
     그동안은 검색 제휴 링크 또는 관리자 답장. 차단 풀리면 그대로 다시 동작."""
     try:
@@ -190,8 +190,9 @@ def store_link(post_url):
         print("link", post_url, repr(e))
         return None
     if "ruliweb.com" in post_url:
-        m = re.search(r'class="source_url.*?link\.php\?ol=([^"&]+)', page, re.S)
-        return plain(urllib.parse.unquote(m.group(1))) if m else None
+        m = re.search(r'class="source_url.*?href="([^"]+)"', page, re.S)  # 보통 link.php?ol=원래주소, 네이버·토스 등은 주소 그대로
+        u = html.unescape(m.group(1)) if m else ""
+        return plain(urllib.parse.parse_qs(urllib.parse.urlsplit(u).query).get("ol", [None])[0] if "link.php" in u else u)
     if "clien.net" in post_url:
         m = re.search(r'class="attached_link.*?href=[\'"]([^\'"]+)', page, re.S)
         return plain(html.unescape(m.group(1)).strip()) if m else None

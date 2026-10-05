@@ -73,6 +73,8 @@ assert c[0]["hits"] == "댓글4·조회1,234·추천7" and 39 < c[0]["age"] < 41
 H.http = lambda url, *a, **k: ('<div class="source_url box_line_with_shadow"><span class="text_bar">출처 : </span> '
     '<a href="https://web.ruliweb.com/link.php?ol=https%3A%2F%2Fwww.lotteon.com%2Fp%2Fproduct%2FLO1&amp;bbs=1020">x</a></div>')
 assert H.store_link(r["url"]) == "https://www.lotteon.com/p/product/LO1"
+H.http = lambda url, *a, **k: '<div class="source_url box_line_with_shadow"><span class="text_bar">출처 : </span> <a href="https://brand.naver.com/lottechilsung/products/127?NaPm=x" target="_blank">'
+assert H.store_link(r["url"]) == "https://brand.naver.com/lottechilsung/products/127"  # 네이버는 link.php 없이 주소 그대로(10/5 실제 글)
 lo = H.affiliate("https://www.lotteon.com/p/product/LO1")
 assert lo[1] and parse_qs(urlsplit(lo[0]).query)["m"] == ["lotteon"] and parse_qs(urlsplit(lo[0]).query)["tu"] == ["https://www.lotteon.com/p/product/LO1"]
 H.http = lambda url, *a, **k: ("<div class=\"attached_link top\"> <span class=\"attached_subject\">구매링크</span> "
