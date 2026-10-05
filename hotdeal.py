@@ -21,6 +21,11 @@ DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이�
 AFF_NOTE = "이 포스팅은 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 TOSS_NOTE = "이 포스팅은 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."  # 토스 권장 문구
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
+LP = "💰 링크프라이스 최대 {} · 딥링크 만들어 답장"
+STORES = {"쿠팡": "💰 쿠팡 파트너스 · 링크 만들어 답장", "토스": "💰 토스 쉐어링크 · 링크 만들어 답장",  # 뽐뿌 제목 [쇼핑몰] -> 초안 안내 버튼
+          "g마켓": LP.format("0.6%"), "지마켓": LP.format("0.6%"), "옥션": LP.format("0.6%"), "롯데온": LP.format("1.4%"),
+          "롯데on": LP.format("1.4%"), "이마트": LP.format("1%"), "11번가": LP.format("1.05%"), "알리": LP.format("6.3%")}
+# ponytail: 수수료율은 2026-10-05 링크프라이스 화면 기준 고정값. 바뀌면 여기만 고치면 됨
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
@@ -125,11 +130,21 @@ def affiliate(url):
     return url, False
 
 
-def draft(text, buy_url=None, score=None):
-    """관리자에게 검수용 초안 전송. ✅ 누르면 다음 실행 때 채널에 그대로 복사됨."""
+def store_info(title):
+    """뽐뿌 제목의 [쇼핑몰]로 수익 안내 문구. 제휴 없는 몰은 수수료 0 표시."""
+    tag = re.match(r"\s*\[([^\]]+)\]", title)
+    tag = tag.group(1).lower().replace(" ", "") if tag else ""
+    return next((v for k, v in STORES.items() if k in tag), "💸 제휴 없는 쇼핑몰 · 수수료 0")
+
+
+def draft(text, buy_url=None, score=None, info=None):
+    """관리자에게 검수용 초안 전송. ✅ 누르면 다음 실행 때 채널에 그대로 복사됨.
+    info: 관리자만 보는 안내 버튼(채널엔 링크 버튼만 복사되므로 안 나감)."""
     kb = [[{"text": "🛒 구매하러 가기", "url": buy_url}]] if buy_url else []
     kb.append([{"text": f"✅ 게시 ({score}점)" if score else "✅ 게시", "callback_data": "ok"},
                {"text": "❌ 패스", "callback_data": "no"}])
+    if info:
+        kb.append([{"text": info, "callback_data": "-"}])
     return tg("sendMessage", chat_id=ADMIN, text=text, parse_mode="HTML",
               link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
 
@@ -306,7 +321,7 @@ def main():
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
-            draft(*deal_post(new[p["i"]], p["comment"]), score=p["score"])
+            draft(*deal_post(new[p["i"]], p["comment"]), score=p["score"], info=store_info(new[p["i"]]["title"]))
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
         try:
             step(seen)

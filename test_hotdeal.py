@@ -124,12 +124,29 @@ assert ms[2]["text"] == "🔥 <b>[G마켓] 일반</b>"  # 일반 쇼핑몰 주�
 assert sent[-1] == ("getUpdates", {"offset": 24})
 H.tg = fake_tg
 
+# 3-4) 쇼핑몰별 수익 안내: 뽐뿌 제목 표기 흔들림([G마켓]붙여쓰기·지마켓·롯데ON) 흡수, 제휴 없는 몰은 수수료 0, 안내 버튼은 채널로 안 감
+assert H.store_info("[G마켓]메디폴미 크림") == H.store_info("[지마켓] 신라면") == H.LP.format("0.6%")
+assert H.store_info("[롯데ON] 삼다수") == H.store_info("[롯데온]블랙야크") == H.LP.format("1.4%")
+assert H.store_info("[알리익스프레스] 충전기") == H.LP.format("6.3%") and H.store_info("[쿠팡] 휴지") == H.STORES["쿠팡"]
+assert H.store_info("[sk스토아] 블루베리").startswith("💸") and H.store_info("제목에 태그 없음").startswith("💸")
+DI = {"message_id": 40, "chat": {"id": 42}, "text": "🔥 [롯데온] 삼다수", "entities": [],
+      "reply_markup": {"inline_keyboard": [[{"text": "🛒", "url": "https://ppomppu"}], [{"text": "✅", "callback_data": "ok"}],
+                                           [{"text": H.LP.format("1.4%"), "callback_data": "-"}]]}}
+UP = [{"update_id": 30, "callback_query": {"from": {"id": 42}, "data": "-", "message": DI}},  # 안내 버튼 눌러도 무시
+      {"update_id": 31, "callback_query": {"from": {"id": 42}, "data": "ok", "message": DI}}]
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1})
+H.publish_approved()
+cps = [p for m, p in sent if m == "copyMessage"]
+assert len(cps) == 1 and cps[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒", "url": "https://ppomppu"}]]
+H.tg = fake_tg
+
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
 sent.clear()
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "좋음"}] if len(lines) == 1 else []
 H.main()
 drafts = [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]  # (21시 이후엔 📋 모아보기 초안도 같이 나감)
 assert len(drafts) == 1 and "휴지" in drafts[0]["text"] and {k for k in json.load(open("seen.json")) if k.startswith("ppomppu_")} == {"ppomppu_101"}
+assert drafts[0]["reply_markup"]["inline_keyboard"][-1] == [{"text": H.STORES["쿠팡"], "callback_data": "-"}]  # [쿠팡] 휴지 -> 수익 안내 버튼
 sent.clear(); H.main()  # 재실행: 같은 글 다시 안 보냄
 assert not [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]
 
