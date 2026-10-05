@@ -1,0 +1,14 @@
+name: linkcheck                     # 구매 버튼이 뽐뿌 글로 가면: Actions → linkcheck → Run workflow → 로그 확인
+on: workflow_dispatch
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          python - <<'EOF'
+          import hotdeal as H
+          for d in H.fetch_deals()[:3]:
+              print(d["title"][:40], "->", H.store_link(d["url"]))
+          EOF
