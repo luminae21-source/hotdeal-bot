@@ -1,14 +1,41 @@
-name: linkcheck                     # 구매 버튼이 뽐뿌 글로 가면: Actions → linkcheck → Run workflow → 로그 확인
+name: linkcheck                     # 구매 버튼이 뽐뿌 글로 가면 / 새 딜 출처가 GitHub 서버에서 열리는지: Actions → linkcheck → Run workflow → 로그 확인
 on: workflow_dispatch
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v5
       - run: |
-          python - <<'EOF'
+          python - <<'PY'
+          import re, urllib.parse, urllib.request
           import hotdeal as H
-          for d in H.fetch_deals()[:3]:
-              print(d["title"][:40], "->", H.store_link(d["url"]))
-          EOF
+          def get(u):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": H.UA}), timeout=20) as r:
+                      return r.status, r.read().decode("utf-8", "replace")
+              except Exception as e:
+                  return getattr(e, "code", repr(e)[:60]), ""
+          print("== 뽐뿌 (글에서 쇼핑몰 주소)")
+          for d in H.fetch_deals()[:2]:
+              print(" ", d["title"][:30], "->", H.store_link(d["url"]))
+          print("== 루리웹 핫딜 RSS + 글의 출처 링크")
+          s, t = get("https://bbs.ruliweb.com/market/board/1020/rss")
+          posts = re.findall(r"<link>(https://bbs\.ruliweb\.com/market/board/1020/read/\d+)", t)
+          print("  rss", s, len(posts))
+          for u in posts[:3]:
+              s2, p = get(u)
+              m = re.search(r'class="source_url.*?href="https://web\.ruliweb\.com/link\.php\?ol=([^"&]+)', p, re.S)
+              print("  post", s2, u[-6:], urllib.parse.unquote(m.group(1)) if m else None)
+          print("== 클리앙 알뜰구매 목록 + 글의 구매링크")
+          s, t = get("https://www.clien.net/service/board/jirum")
+          ids = list(dict.fromkeys(re.findall(r'href="/service/board/jirum/(\d+)', t)))
+          print("  list", s, len(ids))
+          for i in ids[2:5]:
+              s2, p = get(f"https://www.clien.net/service/board/jirum/{i}")
+              m = re.search(r'class="attached_link.*?href=[\'"]([^\'"]+)', p, re.S)
+              print("  post", s2, i, m.group(1) if m else None)
+          print("== 퀘이사존 핫딜 목록")
+          s, t = get("https://quasarzone.com/bbs/qb_saleinfo")
+          print("  list", s, len(set(re.findall(r"/bbs/qb_saleinfo/views/(\d+)", t))))
+          PY
