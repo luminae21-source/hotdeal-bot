@@ -1,5 +1,5 @@
 """셀프체크: python test_hotdeal.py  (네트워크·키 불필요)"""
-import hashlib, hmac, json, os, tempfile, time
+import base64, hashlib, hmac, json, os, tempfile, time
 from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
@@ -12,13 +12,19 @@ RSS = f"""<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel>
 <item><title>[G마켓] 너무 새 글 (1원)</title><link>http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no=102</link>
 <description>x</description><pubDate>{ago(5)}</pubDate><hits> [0|1|0|0]</hits></item>
 </channel></rss>"""
-PAGE = '<li class="topTitle-link partner"><span></span><a href="https://s.ppomppu.co.kr/?x=1" target="_blank">https://www.coupang.com/vp/products/1?a=1&amp;b=2</a>'
+CP = "https://www.coupang.com/vp/products/1?a=1&b=2"
+B64 = base64.b64encode(CP.encode()).decode()
+PAGE = f'<li class="topTitle-link partner"><span></span><a href="https://s.ppomppu.co.kr/?idno=ppomppu_101&amp;target={B64}&amp;encode=on" target="_blank">{CP}</a>'  # PC 글 (실제 구조)
+PAGE_M = f'<div class="link-box"><span></span><a class="noeffect" href="https://s.ppomppu.co.kr/?idno=ppomppu_101&amp;target={B64}&amp;encode=on" target="_blank">https://www.coupang.com/vp/pro...</a>'  # 모바일 글 (주소 잘림)
 
-calls = []
+calls, mobile_down = [], False
 def fake_http(url, body=None, headers=None, method=None):
     calls.append((url, body, headers, method))
     if "rss.php?id=dead" in url: raise OSError("feed down")
     if "rss.php" in url: return RSS
+    if "bbs_view.php" in url:
+        if mobile_down: raise OSError("403")
+        return PAGE_M
     if "view.php" in url: return PAGE
     if "deeplink" in url: return json.dumps({"data": [{"shortenUrl": "https://link.coupang.com/a/AFF"}]})
     raise AssertionError(url)
@@ -32,7 +38,14 @@ assert len(deals) == 2 and d["id"] == "ppomppu_101" and d["url"].startswith("htt
 assert d["hits"] == "댓글3·조회900·추천2·비추0" and d["desc"] == "쿠폰가 좋네요" and 44 < d["age"] < 46
 
 # 2) 쇼핑몰 링크 추출 + 쿠팡 제휴 변환 + 서명
-assert H.store_link(d["url"]) == "https://www.coupang.com/vp/products/1?a=1&b=2"
+assert H.store_link(d["url"]) == CP and "m.ppomppu.co.kr/new/bbs_view.php" in calls[-1][0]  # 모바일 글 먼저 (base64 복원)
+mobile_down = True; assert H.store_link(d["url"]) == CP and "www.ppomppu.co.kr/zboard/view.php" in calls[-1][0]; mobile_down = False  # 모바일 막히면 PC 글
+P2 = base64.b64encode("https://item.gmarket.co.kr/Item?goodscode=3383368133&n=>>?".encode()).decode()
+assert "+" in P2 or "/" in P2
+H.http = lambda url, *a, **k: f'<div class="link-box"><a href="https://s.ppomppu.co.kr/?idno=x&amp;target={P2}&amp;encode=on">'
+assert H.store_link(d["url"]) == "https://item.gmarket.co.kr/Item?goodscode=3383368133&n=>>?"
+H.http = lambda url, *a, **k: "<div>링크 없는 글</div>"; assert H.store_link(d["url"]) is None
+H.http = fake_http
 assert H.affiliate("https://www.gmarket.co.kr/x") == ("https://www.gmarket.co.kr/x", False)
 assert H.affiliate("https://www.coupang.com/vp/products/1") == ("https://link.coupang.com/a/AFF", True)
 url, body, hdr, method = calls[-1]

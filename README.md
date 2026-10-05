@@ -20,6 +20,7 @@ GitHub Actions (30분마다, KST 08~24시)
 | `build_site.py` | 게시된 딜(`posts.json`) → `docs/` 웹사이트 생성 (GitHub Pages) |
 | `cards.py` | 오늘의 딜 → Threads/인스타 카드 이미지(1080×1350) → `docs/cards/날짜.png` (Pillow·나눔고딕은 워크플로가 설치) |
 | `.github/workflows/hotdeal.yml` | 30분마다 자동 실행 + 사이트 커밋 |
+| `.github/workflows/linkcheck.yml` | (수동) GitHub 서버에서 뽐뿌 쇼핑몰 링크 추출 점검 |
 | `test_hotdeal.py` | 셀프체크 (`python test_hotdeal.py`) |
 
 ---
@@ -84,7 +85,7 @@ GitHub Actions (30분마다, KST 08~24시)
 | ✅ Naver Search Advisor 등록 + 사이트맵 제출 | 네이버 검색 유입 |
 | ✅ 네이버 블로그 blog.naver.com/hotdeal_pick 개설 → 매일 21시 봇이 보내는 📝 블로그용 메시지 복붙 | 가장 큰 국내 유입원 |
 | Threads 연결 (위 6번) → 매일 카드 자동 게시 | 2030 유입, 손 안 감 |
-| 알리 어필리에이트·11번가 파트너스·네이버 쇼핑커넥트 **지금 신청** (승인 며칠) → 승인 나면 링크 변환 붙임 | 수수료 되는 딜 비율 35% → 80% |
+| 알리 어필리에이트·링크프라이스(11번가·G마켓·옥션, 딥링크 API 있음)·네이버 쇼핑커넥트(블로그·인스타용) **지금 신청** → 승인 나면 링크 변환 붙임 | 수수료 되는 딜 비율 35% → 80% |
 | 애드센스·애드포스트는 글 50개+ 뒤에 | 일찍 넣으면 반려 |
 
 ## 조절 (Settings → Variables, 선택)
@@ -110,6 +111,7 @@ GitHub Actions (30분마다, KST 08~24시)
 | `TG sendMessage 403` | 봇에게 `/start` 안 보냄 |
 | `⚠️ 채널 게시 실패` 메시지 | 봇이 채널 관리자인지, `TG_CHANNEL` 확인 |
 | `deeplink ...` | 쿠팡 키 오타 / 아직 API 미승인 |
+| 구매 버튼이 뽐뿌 글로 감 | Actions → `linkcheck` → Run workflow → 로그에 `-> None`/`403`이면 뽐뿌 구조 변경·차단 → 알려주기 |
 
 ---
 
@@ -142,5 +144,7 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-05 | 인스타·Threads 계정 `hotdealpick.kr` (실명 비노출·소개·링크) | 공개 프로필 확인 + Threads 링크 클릭 → 사이트 열림 | ✅ |
 | 2026-10-05 | Threads 앱 `hotdealpick` (권한 basic·content_publish, 콜백 URL, 테스터 수락, `THREADS_TOKEN` 시크릿) | Meta 대시보드 새로고침 확인 + Threads 웹사이트 권한 '활성' + GitHub 시크릿 목록 | ✅ |
 | 2026-10-05 | 사이트 하단 인스타·Threads 링크 | 셀프체크 6 | ✅ |
+| 2026-10-05 | 쇼핑몰 링크 추출 개선 (모바일 글 우선 → PC 글, `target=` base64 복원, `+` 보존, 링크 없는 글) | 실제 뽐뿌 PC·모바일 글(no=738120) + 셀프체크 2 | ✅ 둘 다 G마켓 원본 주소 복원 |
+| 2026-10-05 | GitHub 서버 → 모바일 뽐뿌 글 접근 | `linkcheck` 워크플로 실행 | ⏳ |
 | — | Threads 실제 게시 | THREADS_TOKEN 등록 후 첫 21시 | ⏳ |
 | — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |
