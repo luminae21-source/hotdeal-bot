@@ -1,10 +1,10 @@
 # 🔥 핫딜봇 (자동 수익형 텔레그램 채널)
 
 뽐뿌 핫딜을 30분마다 수집 → **Claude가 살 만한 딜만 골라 코멘트** → 내 텔레그램으로 초안 → **✅ 누르면 채널에 자동 게시**.
-쿠팡파트너스 키를 넣으면 쿠팡 링크가 **제휴링크로 자동 변환**되고, 매일 **골드박스 TOP5**도 올라와.
+제휴 링크는 초안에 **답장으로 붙이면** 버튼 교체 + 대가성 문구가 자동으로 들어가고(뽐뿌가 GitHub 서버를 막아서 쇼핑몰 주소 자동 추출은 안 됨), 쿠팡 API 키(최종 승인 후)를 넣으면 매일 **골드박스 TOP5**도 올라와.
 
 ```
-GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누락될 수 있음)
+GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 누락이 잦아서 외부 크론으로 보강 → 아래 7번)
  ├─ ✅/❌ 누른 초안 처리 → 채널 게시
  ├─ 뽐뿌 RSS → 30분 지난 새 글 → Claude 점수·코멘트 → 7점↑ 최대 5개 초안
  ├─ (쿠팡 키 있으면) 09시 이후 1회 골드박스 TOP5 초안
@@ -38,8 +38,8 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
 - ⚠️ Claude Max 구독과 API 요금은 **별도**야
 
 ### 3. GitHub
-1. 새 저장소 **Private**로 생성
-2. `Add file → Upload files` 로 `hotdeal.py`, `test_hotdeal.py`, `README.md` 업로드
+1. 새 저장소 **Public**으로 생성 (5번 웹사이트를 무료로 쓰려면 공개 필요. 코드에 비밀값 없음, 키는 시크릿에만)
+2. `Add file → Upload files` 로 `hotdeal.py`, `build_site.py`, `cards.py`, `test_hotdeal.py`, `README.md` 업로드
 3. `Add file → Create new file` → 파일명에 **`.github/workflows/hotdeal.yml`** 입력 → `hotdeal.yml` 내용 붙여넣기 → Commit
 4. `Settings → Secrets and variables → Actions → New repository secret` 로 4개 등록
    `TG_TOKEN`, `TG_ADMIN_ID`, `TG_CHANNEL`, `ANTHROPIC_API_KEY`
@@ -47,10 +47,10 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
    (초안이 0개면 7점 넘는 딜이 없던 것. 테스트용으로 Variables에 `MIN_SCORE=1` 넣고 다시 실행 → 확인 후 삭제)
 
 ### 4. 쿠팡파트너스 (수익 연결)
-1. partners.coupang.com 가입 → **활동 페이지에 텔레그램 채널 주소 등록** (미등록 시 제재 가능)
+1. partners.coupang.com 가입 → **활동 페이지에 링크를 거는 채널 전부 등록** (텔레그램·hotdealpick.kr·블로그·Threads·인스타. 미등록 채널에 링크 걸면 제재 가능)
 2. **최종 승인**(누적 판매 15만원 이후) → 파트너스 사이트에서 **API 키(Access/Secret) 발급**
-3. 시크릿 2개 추가: `COUPANG_ACCESS_KEY`, `COUPANG_SECRET_KEY` → 끝. 다음 실행부터 자동 변환 + 골드박스 시작
-- 승인 전엔 자동 변환이 안 됨 → 쿠팡 딜 초안에 **파트너스 링크로 답장**하면 버튼 교체 + 대가성 문구 자동 (아래 '매일 할 일'). 이렇게 판매 쌓이면 최종 승인 빨라짐
+3. 시크릿 2개 추가: `COUPANG_ACCESS_KEY`, `COUPANG_SECRET_KEY` → 다음 실행부터 **골드박스 TOP5 자동**
+- 뽐뿌 `[쿠팡]` 딜은 승인 전후 모두 **초안에 파트너스 링크로 답장**해서 붙임 (뽐뿌가 GitHub 서버를 막아 쿠팡 주소를 못 읽기 때문. 아래 '매일 할 일'). 판매가 쌓여야 최종 승인 → 쿠팡 딜은 링크프라이스 경유보다 파트너스 직접 링크 권장
 - 대가성 문구(`이 포스팅은 쿠팡 파트너스 활동의 일환으로…`)는 **제휴링크 글 맨 앞에 자동 삽입**됨
 
 ### 5. 웹사이트 (GitHub Pages, 무료)
@@ -68,6 +68,17 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
 5. GitHub 시크릿 `THREADS_TOKEN` 등록 → 끝. 다음날 21시 모아보기 뒤 자동으로 올라감
 - 토큰은 **60일 만료** → 봇이 "⚠️ Threads 게시 실패" 보내면 4번 다시 해서 시크릿 교체
 - 인스타그램은 API 조건(비즈니스 계정+페이스북 페이지)이 까다로워 자동화 안 함. 대신 Threads 게시 후 **같은 카드를 봇이 채팅으로 보내줌** → 폰에서 인스타에 올리면 10초
+
+### 7. 예약 실행 보강 (외부 크론, 무료)
+GitHub 예약 실행은 몇 시간씩 건너뛰기도 해서, cron-job.org가 30분마다 GitHub에 '실행해'라고 부르게 함.
+1. 토큰 만들기 (이름·권한 미리 채워진 링크): https://github.com/settings/personal-access-tokens/new?name=hotdeal-cron&description=cron-job.org%20trigger&target_name=luminae21-source&expires_in=366&actions=write
+   → Repository access: **Only select repositories → hotdeal-bot** → Generate → 토큰 복사 (한 번만 보임, 채팅에 붙이지 말 것)
+2. cron-job.org 가입 → CREATE CRONJOB
+   - URL: `https://api.github.com/repos/luminae21-source/hotdeal-bot/actions/workflows/hotdeal.yml/dispatches`
+   - 일정: 사용자 지정(Custom) → 분 `7,37` / 시 `8-23`
+   - ADVANCED: 시간대 `Asia/Seoul`, 요청 방식 **POST**, 본문 `{"ref":"main"}`, 헤더 3개: `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, `Authorization: Bearer (토큰)`
+3. 저장 → TEST RUN → 응답 **204**면 성공 (Actions에 `workflow_dispatch` 실행이 생김)
+- 토큰은 1년 만료 → 그 전에 1번 링크로 새로 만들어 cron-job.org 헤더만 교체. GitHub 예약 실행과 겹쳐도 같은 딜을 두 번 보내지 않음
 
 ---
 
@@ -101,7 +112,7 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
 ## 비용 (추정)
 | 항목 | 월 |
 |---|---|
-| GitHub Actions | 0원 (월 ~1,000분, 무료 2,000분 이내) |
+| GitHub Actions | 0원 (공개 저장소는 Actions 무료) |
 | Claude API | 약 $5~10 (1회 2~4건 판단 기준) |
 | 텔레그램 | 0원 |
 
@@ -114,7 +125,7 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
 | `TG sendMessage 403` | 봇에게 `/start` 안 보냄 |
 | `⚠️ 채널 게시 실패` 메시지 | 봇이 채널 관리자인지, `TG_CHANNEL` 확인 |
 | `deeplink ...` | 쿠팡 키 오타 / 아직 API 미승인 |
-| 초안이 몇 시간째 안 옴 (Actions에 `Scheduled` 실행이 드묾) | GitHub 예약 실행 지연·누락 → Run workflow로 바로 실행. 계속 드물면 외부 크론(cron-job.org)에서 30분마다 workflow_dispatch 호출로 해결 |
+| 초안이 몇 시간째 안 옴 (Actions에 `Scheduled` 실행이 드묾) | GitHub 예약 실행 누락 → Run workflow로 바로 실행. 근본 해결은 위 7번 외부 크론 (cron-job.org 실행 기록에서 204 확인) |
 | 구매 버튼이 뽐뿌 글로 감 | 현재 정상 (뽐뿌가 GitHub 서버 IP를 차단) → 초안에 링크 답장으로 교체. 차단이 풀렸는지는 Actions → `linkcheck` → Run workflow → 로그에 쇼핑몰 주소가 나오면 자동 추출 재개 |
 
 ---
@@ -153,7 +164,7 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 지연·누
 | 2026-10-05 | 초안 답장 링크 교체 (쿠팡=쿠팡 문구 / 링크프라이스·알리=제휴 문구 / 일반 주소=버튼만, UTF-16 오프셋, 같은 실행 ✅, 남의 답장 무시) | 셀프체크 3-2 + 22시 고정 실행 | ✅ |
 | 2026-10-05 | 토스 쉐어링크 링크(toss.im·toss.shopping) 답장 교체 + 토스 권장 대가성 문구, 제휴 문구 줄이 제목으로 잡히던 문제 수정 | 셀프체크 3-2 | ✅ (쉐어링크 가입·실제 링크는 ⏳) |
 | 2026-10-05 | 링크프라이스 G마켓 딥링크 생성 (item.gmarket.co.kr → click.linkprice.com/click.php?m=gmarket…) + 단축 도메인(lpweb·linkmoa·lase·bestmore·newtip)도 대가성 문구 자동 | 실제 링크프라이스 딥링크 메뉴 + 셀프체크 3-2 | ✅ (구매 시 수수료 집계는 ⏳) |
-| 2026-10-05 | 예약 실행 빈도 (`*/30`) | Actions 실행 목록 | ❌ 08~13시 KST 예약 10번 중 1번만 실행(#15, 16분 지연) → 혼잡한 정각·30분을 피해 `7,37`분으로 변경, 관찰 중 ⏳ |
+| 2026-10-05 | 예약 실행 빈도 (`*/30` → `7,37`) | Actions 실행 목록 | ❌ 08~13시 KST 예약 10번 중 1번만 실행(#15, 16분 지연). `7,37`분으로 바꾼 뒤에도 13:37·14:07·14:37 3번 모두 누락 → 외부 크론(7번) 필요 ⏳ |
 | 2026-10-05 | 봇에게 '제목+링크' 보내기 → 초안 (대가성 문구·HTML 이스케이프·붙여넣은 문구 중복 제거·링크만 보내면 안내·남의 메시지 무시) | 셀프체크 3-3 | ✅ |
 | 2026-10-05 | 수동 실행 #17 (새 코드) | 실제 Actions 실행 | ✅ 새 글 10건 판단 → 초안 3건 (G마켓·롯데온·SK스토아) |
 | 2026-10-05 | 링크프라이스 롯데온·쿠팡 승인 신청 | 실제 신청 | ✅ 롯데온 즉시 승인 / 쿠팡 승인 대기 ⏳ |

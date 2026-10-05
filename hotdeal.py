@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """핫딜봇: 뽐뿌 RSS -> Claude 선별/코멘트 -> 텔레그램 관리자 검수(✅/❌) -> 채널 게시.
-쿠팡파트너스 키가 있으면 쿠팡 링크 자동 변환 + 매일 골드박스 TOP5 초안.
-GitHub Actions에서 30분마다 실행. 외부 패키지 없음(파이썬 표준 라이브러리만)."""
+제휴 링크는 초안에 답장으로 붙임(뽐뿌가 GitHub IP 차단 -> 쇼핑몰 주소 자동 추출 불가). 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
+GitHub Actions에서 30분마다 실행(예약 + 외부 크론 workflow_dispatch). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
 import base64, hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
