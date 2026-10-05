@@ -1,0 +1,23 @@
+name: tick
+# GitHub 예약 실행(schedule)이 자주 빠져서 만든 '스스로 이어지는 타이머'.
+# tick 실행 -> environment 'tick'의 대기 타이머(29분, 러너 안 씀) -> hotdeal 실행 + 다음 tick 예약 -> 반복.
+# 준비(1회): Settings → Environments → New environment 'tick' → Wait timer 29 → Save
+on:
+  workflow_dispatch:               # 체인 시작/재시작: Actions → tick → Run workflow
+  schedule:
+    - cron: "11 */3 * * *"         # 체인이 끊겼을 때 자동 재시작용 (돌고 있으면 대기열에서 자동 취소됨)
+concurrency: tick                  # 대기·실행 중 1개 + 대기열 1개만 -> 체인이 여러 개로 불어나지 않음
+permissions:
+  actions: write                   # 다른 워크플로 실행(workflow_dispatch)용
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: tick
+    steps:
+      - run: |
+          for i in 1 2 3; do gh workflow run tick.yml -R "$GITHUB_REPOSITORY" && break; sleep 10; done
+          h=$(TZ=Asia/Seoul date +%-H)
+          if [ "$h" -ge 8 ]; then gh workflow run hotdeal.yml -R "$GITHUB_REPOSITORY"; else echo "KST ${h}시: 밤이라 건너뜀"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}
