@@ -112,6 +112,12 @@ assert H.store_info("[롯데하이마트] 에어컨") == H.LP.format("1.26%") an
 assert H.store_info("수납장", "https://ohou.se/productions/1").startswith("⏳")  # 오늘의집 승인 전엔 사본 안 보냄
 assert H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 (15,600원/무료)") == H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 / 15,600원")
 assert H.dkey("[쿠팡] 라면") is None  # 너무 짧으면 같은 딜 판단 안 함
+bodies, tt = [], time.time  # 밤(KST 0~8시) 발송은 무음, 낮·조회는 그대로
+H.http = lambda url, body=None, *a, **k: bodies.append(body) or '{"result": {}}'
+time.time = lambda: 1791223200; H.tg("sendMessage", chat_id="@ch", text="x"); H.tg("getUpdates")  # 10/6 03:00 KST
+time.time = lambda: 1791248400; H.tg("copyMessage", chat_id="42")  # 10/6 10:00 KST
+time.time = tt
+assert bodies[0]["disable_notification"] is True and "disable_notification" not in bodies[1] and "disable_notification" not in bodies[2]
 H.http = fake_http
 
 # 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록

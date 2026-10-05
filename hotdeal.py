@@ -99,7 +99,9 @@ def tg_video(path, caption):
 
 
 def tg(method, **params):
-    """텔레그램 API. 실패해도 전체 실행은 멈추지 않고 None 반환."""
+    """텔레그램 API. 실패해도 전체 실행은 멈추지 않고 None 반환. 밤(KST 0~8시) 발송은 무음(구독자·관리자 안 깨움)."""
+    if method in ("sendMessage", "copyMessage", "sendPhoto") and time.gmtime(time.time() + 9 * 3600).tm_hour < 8:
+        params.setdefault("disable_notification", True)
     try:
         return json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
     except urllib.error.HTTPError as e:
