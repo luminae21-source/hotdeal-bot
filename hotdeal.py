@@ -364,7 +364,7 @@ def blog_text(todays, kst):
             + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
 
-THREADS = "https://graph.threads.net/v1.0"
+THREADS = "https://graph.threads.com/v1.0"  # 공식 문서 기준 도메인
 
 
 def threads(seen):
@@ -395,6 +395,33 @@ def threads(seen):
     json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
+def threads_deals(seen):
+    """채널에 올라간 딜을 Threads에도 하나씩 (링크 = 사이트 딜 페이지: 구매 버튼·대가성 문구 있음).
+    사이트 반영 전(404)이면 다음 실행에. posts.json에 th 표시 -> 두 번 안 올림. 3시간 지난 딜은 안 올림(식은 딜), 1회 최대 3개(도배 방지)."""
+    tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
+    todo = [i for i, p in enumerate(posts) if not p.get("th") and p["t"] >= since and not p["text"].startswith("📋")][:3]
+    if not tok or not todo:
+        return
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    for i in todo:
+        url = f"{SITE}p/{i}.html"
+        try:
+            http(url, method="HEAD")
+        except Exception:
+            return
+        title, rest, _ = split_title(posts[i]["text"])
+        note = aff_note(posts[i].get("url") or "")
+        text = (f"{note}\n\n" if note else "") + f"🔥 {title}\n\n{rest.rsplit(chr(10) * 2 + '출처:', 1)[0].strip()}"[:250] \
+            + f"\n\n👉 {url}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
+        posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, "link_attachment": url, "topic_tag": "핫딜", "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(10)
+        json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+
+
 def load(path, default):
     try:
         return json.load(open(path))
@@ -414,12 +441,14 @@ def main():
         print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"))
-    for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
+    for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
-            if step is threads:
+            alert = time.strftime("th_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
+            if step in (threads, threads_deals) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+                seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ Threads 게시 실패: {e!r}"[:300] + "\n토큰 만료(60일)면 THREADS_TOKEN 시크릿 재발급해줘")
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))

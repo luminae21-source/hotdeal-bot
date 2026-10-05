@@ -271,4 +271,37 @@ calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안
 del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []
 H.threads(seen)  # 토큰 없으면: 사진만 보내고 Threads 호출 없음
 assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "Threads" not in sent[-1][1]["caption"] and list(seen)[0].startswith("threads_")
+# 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
+kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
+json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},
+           {"t": kt(0), "text": "📋 모아보기", "url": None},
+           {"t": kt(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x"},
+           {"t": kt(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n맛있음\n\n출처: 뽐뿌", "url": "https://www.ppomppu.co.kr/1"},
+           {"t": kt(0.2), "text": "🔥 [G마켓] 우유\n\n좋음\n\n출처: 뽐뿌", "url": "https://x"},
+           {"t": kt(0.1), "text": "🔥 [옥션] 라면\n\n좋음\n\n출처: 뽐뿌", "url": "https://y"}], open("posts.json", "w"))
+live_pages = {2, 3}
+def td_http(url, body=None, headers=None, method=None):
+    calls.append((method or "GET", url))
+    if "/p/" in url:
+        if int(url.rsplit("/", 1)[1].split(".")[0]) not in live_pages: raise OSError("404")
+        return ""
+    if "/me?" in url: return json.dumps({"id": "777"})
+    if "/threads?" in url or "/threads_publish?" in url: return json.dumps({"id": "c1"})
+    raise AssertionError(url)
+H.http, calls[:] = td_http, []
+H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
+from urllib.parse import parse_qs, urlsplit
+made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
+assert [m for m, _ in calls] == ["GET", "HEAD", "POST", "POST", "HEAD", "POST", "POST", "HEAD"]  # 4번 페이지 404 -> 멈춤
+assert [q["link_attachment"][0] for q in made] == ["https://hotdealpick.kr/p/2.html", "https://hotdealpick.kr/p/3.html"]
+t2, t3 = made[0]["text"][0], made[1]["text"][0]
+assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://hotdealpick.kr/p/2.html") and "출처" not in t2
+assert t3.startswith("🔥 [카카오] 고구마 3kg\n\n맛있음") and "이 포스팅은" not in t3 and t3.endswith("t.me/hotdeal_pick")
+assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and max(len(t2.encode()), len(t3.encode())) < 500
+assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, False, True, True, False, False]
+live_pages, calls[:] = {2, 3, 4, 5}, []; H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
+assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-8:] for m, u in calls if "/777/threads?" in u] == ["p/4.html", "p/5.html"]
+calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
+del H.E["THREADS_TOKEN"]; json.dump([{"t": kt(0), "text": "🔥 새 딜", "url": "https://z"}], open("posts.json", "w"))
+H.threads_deals({}); assert not calls  # 토큰 없으면 아무것도 안 함
 print("OK: 모든 셀프체크 통과")
