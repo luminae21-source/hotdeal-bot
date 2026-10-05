@@ -141,11 +141,16 @@ def deal_post(d, comment):
     return text, link or d["url"]
 
 
+def aff_note(url):
+    """제휴 링크면 그 프로그램의 대가성 문구, 일반 쇼핑몰 주소면 ''."""
+    host = urllib.parse.urlsplit(url).netloc
+    return DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if host in TOSS_HOSTS else AFF_NOTE if host in AFF_HOSTS else ""
+
+
 def relink(m, url):
     """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
     text, ents = m.get("text", ""), m.get("entities", [])
-    host = urllib.parse.urlsplit(url).netloc
-    note = DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if host in TOSS_HOSTS else AFF_NOTE if host in AFF_HOSTS else ""
+    note = aff_note(url)
     if note and not text.startswith("이 포스팅은"):
         n = len(note.encode("utf-16-le")) // 2  # 텔레그램 오프셋은 UTF-16 단위
         text = f"{note}\n\n{text}"
@@ -160,14 +165,27 @@ def relink(m, url):
 
 def publish_approved():
     """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 30분 주기로 충분.
-    1) 초안에 링크로 답장 -> 구매 버튼 교체  2) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)"""
+    1) 초안에 링크로 답장 -> 구매 버튼 교체  2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 그 딜 초안 생성
+    3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)"""
     ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
     fixed = {}
     for u in ups:
         m = u.get("message") or {}
         url = re.search(r"https?://\S+", m.get("text", ""))
-        if url and m.get("reply_to_message") and str(m.get("from", {}).get("id")) == ADMIN:
+        if not url or str(m.get("from", {}).get("id")) != ADMIN:
+            continue
+        if m.get("reply_to_message"):
             fixed[m["reply_to_message"]["message_id"]] = relink(m["reply_to_message"], url.group(0))
+            continue
+        lines = [l.strip().lstrip("🔥").strip() for l in m["text"].replace(url.group(0), "").split("\n")]
+        lines = [l for l in lines if l and not l.startswith("이 포스팅은")]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
+        if not lines:
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
+               text="첫 줄에 제목을 같이 보내줘. 예)\n[G마켓] 상품명 (39,910원/무료)\n한 줄 코멘트\n링크")
+            continue
+        note, body = aff_note(url.group(0)), "\n".join(lines[1:])
+        draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(lines[0])}</b>" + (f"\n\n{esc(body)}" if body else ""),
+              url.group(0))
     handled = set()
     for u in ups:
         q = u.get("callback_query") or {}
