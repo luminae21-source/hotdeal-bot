@@ -309,9 +309,19 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 9:
     t = sent[-1][1]["text"]
     assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
     sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
+# 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
+H.HAS_CP, tt = False, time.time
+sent.clear(); seen = {}
+time.time = lambda: 1791235800; H.goldbox(seen); assert not sent  # 10/6 06:30 KST: 아직
+time.time = lambda: 1791241200; H.goldbox(seen)  # 10/6 08:00 KST
+m, p = sent[-1]
+assert m == "sendMessage" and p["chat_id"] == "@ch" and p["text"].startswith("<i>" + H.DISCLOSURE) and p["reply_markup"]["inline_keyboard"][0][0]["url"] == H.GOLDBOX
+sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 1번만
+time.time, H.HAS_CP = tt, True
 
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
 import build_site as S
+assert 'href="' + S.GOLDBOX + '"' in S.page("t", "") and S.GOLDBOX.startswith("https://link.coupang.com/a/")  # 사이트 위쪽 골드박스 버튼(파트너스 링크)
 assert S.to_html("🔥 a <b> 뽐뿌", [{"type": "text_link", "offset": 9, "length": 2, "url": "https://x"}]) == \
     '🔥 a &lt;b&gt; <a href="https://x" rel="nofollow noopener" target="_blank">뽐뿌</a>'
 assert S.title_of("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 수수료\n\n⏰ 오늘의 골드박스 TOP5") == "오늘의 골드박스 TOP5"
