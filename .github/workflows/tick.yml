@@ -1,7 +1,7 @@
 name: tick
 # GitHub 예약 실행(schedule)이 자주 빠져서 만든 '스스로 이어지는 타이머'.
-# tick 실행 -> environment 'tick'의 대기 타이머(29분, 러너 안 씀) -> hotdeal 실행 + 다음 tick 예약 -> 반복.
-# 준비(1회): Settings → Environments → New environment 'tick' → Wait timer 29 → Save
+# tick 실행 -> environment 'tick'의 대기 타이머(14분, 러너 안 씀) -> hotdeal 실행 + 다음 tick 예약 -> 반복 (= 15분마다).
+# 준비(1회): Settings → Environments → New environment 'tick' → Wait timer 14 → Save (10/6에 29 -> 14로 변경)
 on:
   workflow_dispatch:               # 체인 시작/재시작: Actions → tick → Run workflow
   schedule:
