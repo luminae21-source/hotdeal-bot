@@ -5,18 +5,25 @@ on:
   workflow_dispatch:               # GitHub 앱에서 'Run workflow'로 즉시 실행
 concurrency: hotdeal
 permissions:
-  contents: write                  # posts.json / docs(웹사이트) 커밋용
+  contents: write                  # posts.json / docs(웹사이트·카드) 커밋용
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) 유지
+      - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) + 카드용 한글 폰트 유지
         with:
-          path: seen.json
+          path: |
+            seen.json
+            fonts
           key: seen-${{ github.run_id }}
           restore-keys: seen-
+      - run: |                     # 카드 이미지용: Pillow + 나눔고딕(Google Fonts, OFL). 있으면 건너뜀
+          python -c "import PIL" 2>/dev/null || pip install -q pillow
+          mkdir -p fonts && for w in ExtraBold Regular; do
+            [ -s fonts/NanumGothic-$w.ttf ] || curl -sSL -o fonts/NanumGothic-$w.ttf "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-$w.ttf"
+          done
       - run: python hotdeal.py && python build_site.py
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
@@ -25,9 +32,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
           COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
+          THREADS_TOKEN: ${{ secrets.THREADS_TOKEN }}
           MIN_SCORE: ${{ vars.MIN_SCORE }}
           MODEL: ${{ vars.MODEL }}
-      - run: |                     # 게시된 딜이 있으면 사이트 갱신 커밋
+      - run: |                     # 게시된 딜·카드가 있으면 사이트 갱신 커밋
           git config user.name hotdeal-bot && git config user.email hotdeal-bot@users.noreply.github.com
           git add -A docs && [ -f posts.json ] && git add posts.json
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && git push)
