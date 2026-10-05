@@ -2,7 +2,7 @@
 """핫딜봇: 뽐뿌 RSS -> Claude 선별/코멘트 -> 채널 바로 게시(링크프라이스 몰은 검색 제휴 링크 자동).
 쿠팡 등 수동 몰은 관리자에게 사본 -> 제휴 링크로 답장하면 채널 글 교체(뽐뿌가 GitHub IP 차단 -> 쇼핑몰 주소 자동 추출 불가). 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
 GitHub Actions에서 30분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, hashlib, hmac, html, json, os, re, time, urllib.error, urllib.parse, urllib.request
+import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from build_site import BASE as SITE, BLOG, title_of, split_title
@@ -59,6 +59,19 @@ def http(url, body=None, headers=None, method=None):
         e.body = e.read().decode("utf-8", "replace")[:300]  # 로그에서 원인 바로 보이게
         print("HTTP", e.code, url.split("/bot")[0], e.body)
         raise
+
+
+def tg_video(path, caption):
+    """관리자에게 영상 파일 업로드 (sendVideo, multipart). -> 보낸 메시지"""
+    b = "hotdeal" + os.urandom(8).hex()
+    fields = {"chat_id": ADMIN, "caption": caption, "supports_streaming": "true", "width": "1080", "height": "1920"}
+    body = ("".join(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields.items())
+            + f'--{b}\r\nContent-Disposition: form-data; name="video"; filename="reel.mp4"\r\nContent-Type: video/mp4\r\n\r\n').encode() \
+        + open(path, "rb").read() + f"\r\n--{b}--\r\n".encode()
+    req = urllib.request.Request(f"https://api.telegram.org/bot{E['TG_TOKEN']}/sendVideo", body,
+                                 {"Content-Type": f"multipart/form-data; boundary={b}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read())["result"]
 
 
 def tg(method, **params):
@@ -157,6 +170,11 @@ def draft(text, buy_url=None, score=None, info=None, label="🛒 구매하러 �
               link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
 
 
+def comment_of(text):
+    """채널 글(posts.json text) -> 제목 아래 코멘트 (출처 줄 제외)."""
+    return split_title(text)[1].rsplit("\n\n출처:", 1)[0].strip()
+
+
 def store_tag(title):
     """뽐뿌 제목 맨 앞 [쇼핑몰] -> 비교용 소문자·공백 제거 ('[G마켓]메디폴미' -> 'g마켓')."""
     tag = re.match(r"\s*\[([^\]]+)\]", title)
@@ -193,11 +211,11 @@ def deal_post(d, comment, q=None):
     return text, link or d["url"], label
 
 
-def record(text, ents, url, mid=None):
-    """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드 재료). mid = 채널 메시지 번호(나중에 링크 교체용)."""
+def record(text, ents, url, mid=None, score=None):
+    """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드·릴스 재료). mid = 채널 메시지 번호(나중에 링크 교체용), s = Claude 점수(릴스 TOP3)."""
     posts = load(POSTS, [])
     posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
-                  "entities": ents, "url": url, **({"mid": mid} if mid else {})})
+                  "entities": ents, "url": url, **({"mid": mid} if mid else {}), **({"s": score} if score else {})})
     json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
 
 
@@ -216,7 +234,7 @@ def post_or_draft(d, comment, score, q=None):
            reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
     if not m:
         return draft(text, url, score=score, info=info, label=label)
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"))
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score)
     if info.startswith("💰") and not aff_note(url):
         tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": [
             [{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
@@ -345,11 +363,21 @@ def digest(seen, posts):
     if draft(text):
         seen[key] = time.time()
         tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
+        import cards
         try:  # Threads/인스타용 카드 -> docs/cards/ (워크플로가 커밋 -> 사이트에 공개 -> 다음 실행 때 threads()가 올림)
-            import cards
             cards.make([title_of(p["text"]) for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
         except Exception as e:
             print("card", repr(e))
+        try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 (저장소엔 안 올림). 점수 높은 순 TOP3
+            top = sorted(todays, key=lambda p: -p.get("s", 0))[:3]
+            path = cards.reel([(title_of(p["text"]), comment_of(p["text"])) for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",
+                              os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
+            tg_video(path, (f"{kst.tm_mon}월 {kst.tm_mday}일 오늘의 핫딜 TOP{len(top)}\n\n"
+                            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
+                            + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+                            + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024])
+        except Exception as e:
+            print("reel", repr(e))
 
 
 def blog_text(todays, kst):
@@ -410,9 +438,8 @@ def threads_deals(seen):
             http(url, method="HEAD")
         except Exception:
             return
-        title, rest, _ = split_title(posts[i]["text"])
         note = aff_note(posts[i].get("url") or "")
-        text = (f"{note}\n\n" if note else "") + f"🔥 {title}\n\n{rest.rsplit(chr(10) * 2 + '출처:', 1)[0].strip()}"[:250] \
+        text = (f"{note}\n\n" if note else "") + f"🔥 {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
             + f"\n\n👉 {url}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)

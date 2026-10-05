@@ -155,7 +155,7 @@ H.tg = ch_tg
 H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8)  # 💸: 바로 게시, 사본 없음
 assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")]
 assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": D("")["url"]}]]
-assert json.load(open("posts.json"))[-1]["mid"] == 100
+assert json.load(open("posts.json"))[-1]["mid"] == 100 and json.load(open("posts.json"))[-1]["s"] == 8  # 점수 저장(릴스 TOP3용)
 sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L")  # 링크프라이스: 자동 제휴
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 qs = parse_qs(urlsplit(b["url"]).query)
@@ -226,15 +226,21 @@ assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").re
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
 today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a"}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o"},
-     {"t": f"{today} 11:00", "text": "📋 오늘의 딜 모아보기", "url": None}]
+P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a", "s": 7}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o", "s": 10},
+     {"t": f"{today} 11:00", "text": "📋 오늘의 딜 모아보기", "url": None},
+     {"t": f"{today} 12:00", "text": "🔥 [G마켓] B딜 (9,900원/무료)\n\n맛있어요\n\n출처: 뽐뿌", "url": "https://b", "s": 9}]
+H._tv_real, H.tg_video = H.tg_video, lambda path, cap: sent.append(("video", {"path": path, "caption": cap}))
 seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     t = [x for m, x in sent if m == "draft"][-1]
     assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_")
-    blog = sent[-1][1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
-    assert sent[-1][0] == "sendMessage" and "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
+    blog = [x for m, x in sent if m == "sendMessage"][-1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
+    assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
+    v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그
+    assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and "TOP2" in v[0]["caption"]
+    assert v[0]["caption"].index("1. [G마켓] B딜") < v[0]["caption"].index("2. A딜") and "옛날딜" not in v[0]["caption"]
+    assert "제휴 링크" in v[0]["caption"] and "#핫딜" in v[0]["caption"] and len(v[0]["caption"]) <= 1024
     sent.clear(); H.digest(seen, P); assert not sent
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
@@ -245,6 +251,32 @@ assert cards.parse("[G마켓] 버짠3 (189,000원/무료) 카드할인") == ("G�
 assert cards.parse("제목만") == ("", "제목만", "")
 assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
 assert os.path.getsize("docs/cards/t.png") > 10000
+from PIL import Image, ImageDraw
+_d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+assert cards.wrap(_d, "건국 멸균우유 200ml 48팩", cards.font("bold", 84), 880, 3) == ["건국 멸균우유 200ml", "48팩"]  # 띄어쓰기 단위
+assert len(cards.wrap(_d, "가" * 100, cards.font("bold", 84), 880, 2)) == 2  # 띄어쓰기 없어도 글자 단위로 2줄 + …
+# 8-2) 릴스 영상: 1080x1920 · 30fps · H.264 · 딜 3개면 15초
+import subprocess
+rv = cards.reel([("[G마켓] 건국 멸균우유 200ml 48팩 (23,740원/무료)", "쿠폰가예요"), ("[카카오] 고구마 3kg (7,600원/무료)", "맛있어요"),
+                 ("제목만 있는 딜", "")], "10월 5일", "docs/reel_t.mp4")
+pr = subprocess.run([cards.ffmpeg().replace("ffmpeg", "ffprobe"), "-v", "error", "-show_entries", "stream=width,height,codec_name,r_frame_rate:format=duration",
+                     "-of", "default=nw=1", rv], capture_output=True, text=True).stdout if os.path.exists(cards.ffmpeg().replace("ffmpeg", "ffprobe")) else ""
+assert os.path.getsize(rv) > 10000 and (not pr or all(s in pr for s in ["codec_name=h264", "width=1080", "height=1920", "r_frame_rate=30/1", "duration=15.0"]))
+# 8-3) 영상 업로드는 multipart (chat_id·caption·video 파일)
+import urllib.request
+class _R:
+    def __init__(self, req): self.req = req
+    def __enter__(self): return self
+    def __exit__(self, *a): pass
+    def read(self): return b'{"result": {"message_id": 5}}'
+_got = []
+_uo, urllib.request.urlopen = urllib.request.urlopen, lambda req, timeout=None: _got.append(req) or _R(req)
+_tv = H._tv_real
+assert _tv(rv, "캡션") == {"message_id": 5}
+_b = _got[0].data
+assert _got[0].full_url.endswith("/sendVideo") and _got[0].headers["Content-type"].startswith("multipart/form-data; boundary=")
+assert b'name="chat_id"\r\n\r\n42' in _b and "캡션".encode() in _b and b'filename="reel.mp4"' in _b and open(rv, "rb").read() in _b
+urllib.request.urlopen = _uo
 
 # 9) Threads: 카드 미배포(404)면 대기, 배포되면 me -> 컨테이너 -> 30초 -> 발행 -> 사진 전송, 하루 1회
 H.E["THREADS_TOKEN"] = "tk"; H.time.sleep = lambda s: None
