@@ -116,7 +116,7 @@ assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.co
 # 8) 카드 이미지: 제목 파싱(중첩 괄호·뒤 꼬리말), 6개 넘어도 하단 박스 안 침범, PNG 생성
 import cards
 assert cards.parse("[네이버] 화장지 3겹(30m 30롤) 2팩 (18,900원/무료)") == ("네이버", "화장지 3겹(30m 30롤) 2팩", "18,900원/무료")
-assert cards.parse("[G마켓] 버쥠3 (189,000원/무료) 카드할인") == ("G마켓", "버쥠3 카드할인", "189,000원/무료")
+assert cards.parse("[G마켓] 버짠3 (189,000원/무료) 카드할인") == ("G마켓", "버짠3 카드할인", "189,000원/무료")
 assert cards.parse("제목만") == ("", "제목만", "")
 assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
 assert os.path.getsize("docs/cards/t.png") > 10000
@@ -143,4 +143,7 @@ assert [m for m, _ in calls] == ["HEAD", "GET", "POST", "POST"] and "/777/thread
 assert "image_url=https%3A%2F%2Fhotdealpick.kr%2Fcards%2F" in calls[2][1] and "A%EB%94%9C" in calls[2][1]  # 카드 주소 + 제목 포함
 assert sent[-1][0] == "sendPhoto" and list(seen)[0].startswith("threads_")
 calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안 올림
+del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []
+H.threads(seen)  # 토큰 없으면: 사진만 보내고 Threads 호출 없음
+assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "Threads" not in sent[-1][1]["caption"] and list(seen)[0].startswith("threads_")
 print("OK: 모든 셀프체크 통과")

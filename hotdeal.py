@@ -208,29 +208,31 @@ THREADS = "https://graph.threads.net/v1.0"
 
 
 def threads(seen):
-    """오늘 카드가 사이트에 올라와 있으면 Threads에 1회 게시하고, 같은 이미지를 관리자에게 인스타용으로 보냄.
-    토큰(시크릿 THREADS_TOKEN)은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
+    """오늘 카드가 사이트에 올라와 있으면 관리자에게 인스타용으로 1회 보내고, THREADS_TOKEN 있으면 Threads에도 게시.
+    토큰은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, key = time.strftime("%Y-%m-%d", kst), time.strftime("threads_%Y%m%d", kst)
-    if not E.get("THREADS_TOKEN") or key in seen or not os.path.exists(f"docs/cards/{today}.png"):
+    if key in seen or not os.path.exists(f"docs/cards/{today}.png"):
         return
     url = f"{SITE}cards/{today}.png"
     try:
         http(url, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에 다시
     except Exception:
         return
+    tok = E.get("THREADS_TOKEN")
+    tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 오늘의 카드 (인스타에 그대로 올리면 돼)" + (" · Threads는 자동 게시 중" if tok else ""))
+    seen[key] = time.time()  # 사진은 1번만. Threads 실패는 아래서 관리자에게 알리고 재시도 안 함(스팸 방지)
+    if not tok:
+        return
     todays = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋")]
     rows = [f"{n}. {title_of(p['text'])[:40]}" for n, p in enumerate(todays[:6], 1)]
     text = (f"📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
             + f"\n\n전체 딜·구매 링크 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick")[:480]
-    tok = E["THREADS_TOKEN"]
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     q = urllib.parse.urlencode({"media_type": "IMAGE", "image_url": url, "text": text, "topic_tag": "핫딜", "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(30)  # 미디어 처리 대기 (공식 권장값)
     json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
-    tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 Threads 게시 완료. 인스타에도 올리려면 이 이미지 그대로 쓰면 돼")
-    seen[key] = time.time()
 
 
 def load(path, default):
