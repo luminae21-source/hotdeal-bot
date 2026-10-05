@@ -152,10 +152,11 @@ def ch_tg(method, **p):
         return {"message_id": next(mids), "text": p["text"].replace("<i>", "").replace("</i>", ""), "entities": []}
     return {"message_id": 1}
 H.tg = ch_tg
-H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8)  # 💸: 바로 게시, 사본 없음
+H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8, None, {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "x": None})  # 💸: 바로 게시, 사본 없음
 assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")]
 assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": D("")["url"]}]]
-assert json.load(open("posts.json"))[-1]["mid"] == 100 and json.load(open("posts.json"))[-1]["s"] == 8  # 점수 저장(릴스 TOP3용)
+lp = json.load(open("posts.json"))[-1]
+assert lp["mid"] == 100 and lp["s"] == 8 and lp["e"] == "🫐" and lp["hook"] == "1kg 6,233원" and lp["pts"] == ["kg당 6,233원"] and "x" not in lp  # 릴스 재료 저장
 sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L")  # 링크프라이스: 자동 제휴
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 qs = parse_qs(urlsplit(b["url"]).query)
@@ -228,8 +229,11 @@ H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
 today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
 P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a", "s": 7}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o", "s": 10},
      {"t": f"{today} 11:00", "text": "📋 오늘의 딜 모아보기", "url": None},
-     {"t": f"{today} 12:00", "text": "🔥 [G마켓] B딜 (9,900원/무료)\n\n맛있어요\n\n출처: 뽐뿌", "url": "https://b", "s": 9}]
+     {"t": f"{today} 12:00", "text": "🔥 [G마켓] B딜 (9,900원/무료)\n\n맛있어요\n\n출처: 뽐뿌", "url": "https://b", "s": 9,
+      "e": "🥛", "hook": "B딜 개당 99원", "pts": ["개당 99원", "쿠폰 10%"]}]
 H._tv_real, H.tg_video = H.tg_video, lambda path, cap: sent.append(("video", {"path": path, "caption": cap}))
+fills = []  # 릴스 재료(e·hook·pts) 없는 TOP 글만 Claude에게 채워달라고 함
+H.ai_pick = lambda prompt, lines: fills.append((prompt, lines)) or [{"i": 0, "score": 0, "comment": "", "e": "🍎", "hook": "A딜 훅", "pts": ["이유"]}]
 seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
@@ -238,9 +242,10 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     blog = [x for m, x in sent if m == "sendMessage"][-1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
     assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그
-    assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and "TOP2" in v[0]["caption"]
+    assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and v[0]["caption"].startswith("B딜 개당 99원 · ") and "가성비 TOP2" in v[0]["caption"]
     assert v[0]["caption"].index("1. [G마켓] B딜") < v[0]["caption"].index("2. A딜") and "옛날딜" not in v[0]["caption"]
     assert "제휴 링크" in v[0]["caption"] and "#핫딜" in v[0]["caption"] and len(v[0]["caption"]) <= 1024
+    assert fills == [(H.REEL_PROMPT, ["A딜 | "])] and "B딜" not in str(fills)  # B딜은 이미 hook·pts 있음
     sent.clear(); H.digest(seen, P); assert not sent
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
@@ -257,11 +262,14 @@ assert cards.wrap(_d, "건국 멸균우유 200ml 48팩", cards.font("bold", 84),
 assert len(cards.wrap(_d, "가" * 100, cards.font("bold", 84), 880, 2)) == 2  # 띄어쓰기 없어도 글자 단위로 2줄 + …
 # 8-2) 릴스 영상: 1080x1920 · 30fps · H.264 · 딜 3개면 15초
 import subprocess
-rv = cards.reel([("[G마켓] 건국 멸균우유 200ml 48팩 (23,740원/무료)", "쿠폰가예요"), ("[카카오] 고구마 3kg (7,600원/무료)", "맛있어요"),
-                 ("제목만 있는 딜", "")], "10월 5일", "docs/reel_t.mp4")
+rv = cards.reel([{"title": "[G마켓] 건국 멸균우유 200ml 48팩 (23,740원/무료)", "comment": "쿠폰가예요", "e": "🥛", "hook": "우유 팩당 495원",
+                  "pts": ["팩당 약 495원", "무료배송", "상온 보관 가능"]},
+                 {"title": "[카카오] 고구마 3kg (7,600원/무료)", "comment": "맛있어요. 무료배송입니다."},  # e·hook·pts 없으면 제목·코멘트로
+                 {"title": "제목만 있는 딜", "comment": "", "e": "x"}], "10월 5일", "docs/reel_t.mp4")  # 못 그리는 이모지 -> 🛒
 pr = subprocess.run([cards.ffmpeg().replace("ffmpeg", "ffprobe"), "-v", "error", "-show_entries", "stream=width,height,codec_name,r_frame_rate:format=duration",
                      "-of", "default=nw=1", rv], capture_output=True, text=True).stdout if os.path.exists(cards.ffmpeg().replace("ffmpeg", "ffprobe")) else ""
 assert os.path.getsize(rv) > 10000 and (not pr or all(s in pr for s in ["codec_name=h264", "width=1080", "height=1920", "r_frame_rate=30/1", "duration=15.0"]))
+assert cards.emoji("🥛", 200).size[1] == 200 and cards.emoji("x", 100).width > 50  # 정사각형 안에 맞춤, 실패하면 🛒
 # 8-3) 영상 업로드는 multipart (chat_id·caption·video 파일)
 import urllib.request
 class _R:

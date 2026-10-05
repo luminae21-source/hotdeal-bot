@@ -106,96 +106,181 @@ def ffmpeg():
     return exe
 
 
-def _slide(bg, draw_fn):
-    """배경색/그라데이션 + 내용(RGBA 레이어) -> (배경, 내용)"""
-    base = Image.new("RGB", (RW, RH), DARK)
-    if bg == "orange":
-        px = base.load()
-        for y in range(RH):
-            c = (int(255 - 25 * y / RH), int(100 - 55 * y / RH), int(40 + 10 * y / RH))
-            for x in range(RW):
-                px[x, y] = c
-    layer = Image.new("RGBA", (RW, RH), (0, 0, 0, 0))
-    draw_fn(ImageDraw.Draw(layer))
-    box = layer.getbbox()  # 내용 덩어리를 화면 가운데(인스타 UI 안 덮는 곳)로
-    if box:
-        moved = Image.new("RGBA", (RW, RH), (0, 0, 0, 0))
-        moved.paste(layer, (0, int(RH * 0.46 - (box[1] + box[3]) / 2)))
-        layer = moved
-    return base, layer
+EMOJI_URL = "https://raw.githubusercontent.com/googlefonts/noto-emoji/v2.047/fonts/NotoColorEmoji.ttf"  # 비트맵(CBDT)판, OFL
 
 
-def _center(d, y, text, f, fill):
-    d.text(((RW - d.textlength(text, font=f)) / 2, y), text, font=f, fill=fill)
+def emoji(ch, size):
+    """컬러 이모지 -> RGBA 이미지(size x size 안에 맞춤). 폰트가 fonts/에 없으면 1회 내려받음(워크플로 캐시에 같이 남음). 못 그리면 🛒"""
+    path = next((p for p in ["fonts/NotoColorEmoji.ttf", "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"] if os.path.exists(p)), None)
+    if not path:
+        import urllib.request
+        os.makedirs("fonts", exist_ok=True)
+        urllib.request.urlretrieve(EMOJI_URL, "fonts/NotoColorEmoji.ttf")
+        path = "fonts/NotoColorEmoji.ttf"
+    f = ImageFont.truetype(path, 109)  # CBDT는 109px 고정 -> 그린 뒤 크기 조절
+    for c in (ch or "", "🛒"):
+        im = Image.new("RGBA", (300, 160), (0, 0, 0, 0))
+        ImageDraw.Draw(im).text((10, 10), c[:2], font=f, embedded_color=True)
+        box = im.getbbox()
+        if box and box[2] - box[0] > 40:
+            im = im.crop(box)
+            k = size / max(im.width, im.height)
+            return im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS)
+    raise ValueError("이모지 렌더 실패")
+
+
+def _gradient():
+    im = Image.new("RGB", (RW, RH))
+    px = im.load()
+    for y in range(RH):
+        c = (int(255 - 25 * y / RH), int(100 - 55 * y / RH), int(40 + 10 * y / RH))
+        for x in range(RW):
+            px[x, y] = c
+    return im
+
+
+def _text(s, f, fill):
+    """글자 한 줄 -> 딱 맞는 RGBA 이미지"""
+    w, h = int(f.getlength(s)) + 8, int(f.size * 1.35)
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(im).text((4, 0), s, font=f, fill=fill)
+    return im
+
+
+def _fit(s, kind, size, width):
+    """width 안에 들어갈 때까지 글자 크기 줄임"""
+    while size > 30 and font(kind, size).getlength(s) > width:
+        size -= 4
+    return font(kind, size)
+
+
+def _check_line(s):
+    """✓ + 짧은 문장 (체크는 도형으로 그림: 나눔고딕에 ✓ 글리프 없음)"""
+    fr = font("bold", 50)
+    s = s if fr.getlength(s) <= 780 else s[:max(1, int(len(s) * 780 / fr.getlength(s)) - 1)] + "…"
+    im = Image.new("RGBA", (880, 80), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse((0, 8, 60, 68), fill=(60, 190, 110))
+    d.line([(14, 38), (26, 51), (47, 25)], fill="white", width=7, joint="curve")
+    d.text((84, 6), s, font=fr, fill="white")
+    return im
+
+
+def _put(frame, img, cx, cy, scale=1.0, alpha=1.0):
+    if alpha <= 0:
+        return
+    if scale != 1.0:
+        img = img.resize((max(1, int(img.width * scale)), max(1, int(img.height * scale))), Image.BILINEAR)
+    if alpha < 1.0:
+        img = img.copy()
+        img.putalpha(img.getchannel("A").point(lambda a: int(a * alpha)))
+    frame.paste(img, (int(cx - img.width / 2), int(cy - img.height / 2)), img)
+
+
+def _ease(x):
+    x = max(0.0, min(1.0, x))
+    return 1 - (1 - x) ** 3
+
+
+def _back(x):  # 살짝 튀어나왔다 자리잡기
+    x = max(0.0, min(1.0, x))
+    return 1 + 2.7 * (x - 1) ** 3 + 1.7 * (x - 1) ** 2
 
 
 def reel(items, date_label, out):
-    """items: [(딜 제목, 한 줄 코멘트)] 최대 3개. 15초 내외 1080x1920 MP4 (소리 없음 -> 인스타에서 음악 추가). -> out
-    화면 위·아래(인스타 UI가 덮는 곳)는 비우고 가운데에만 글자."""
+    """'사고 싶고, 합리적인 소비라고 느껴지게' 15초 1080x1920 MP4 (소리 없음 -> 인스타에서 음악 추가). -> out
+    items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
+    흐름: 1위 딜 숫자 훅 2초 -> 딜마다 3.5초(이모지 등장 -> 가격 도장 -> 이유 체크 하나씩) -> 저장·공유 유도 2.5초.
+    글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치."""
     import subprocess
-    items = items[:3]
-    slides = []  # (배경, 내용, 초)
-
-    def intro(d):
-        _center(d, 560, date_label, font("reg", 60), "white")
-        _center(d, 680, "오늘 놓치면 아까운", font("bold", 84), "white")
-        _center(d, 820, f"핫딜 TOP {len(items)}", font("bold", 170), "white")
-        _center(d, 1080, "딜 pick이 골랐어요", font("reg", 52), (255, 228, 215))
-    slides.append((*_slide("orange", intro), 2.0))
-
-    for n, (title, comment) in enumerate(items, 1):
-        store, name, price = parse(title)
+    items = [dict(it) for it in items[:3]]
+    for it in items:
+        store, name, price = parse(it["title"])
         main, _, ship = price.partition("/")
         ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
+        sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", it.get("comment") or "") if s.strip()]
+        it.update(store=store, name=name, main=main.strip(), ship=ship,
+                  pts=[p for p in (it.get("pts") or sents) if p.replace(" ", "") != ship.replace(" ", "")][:3],  # 배송은 따로 표시
+                  hook=it.get("hook") or f"{name[:12]} {main.strip()}".strip())
+    dark = Image.new("RGB", (RW, RH), DARK)
+    glow = Image.new("RGBA", (RW, RH), (0, 0, 0, 0))  # 이모지 뒤 은은한 빛
+    ImageDraw.Draw(glow).ellipse((290, 275, 790, 775), fill=(255, 110, 40, 120))
+    from PIL import ImageFilter
+    dark.paste(glow.filter(ImageFilter.GaussianBlur(90)), (0, 0), glow.filter(ImageFilter.GaussianBlur(90)))
+    orange = _gradient()
+    scenes = []  # (배경, 초, 그리기 함수(frame, t))
 
-        def deal(d, n=n, store=store, name=name, main=main, ship=ship, comment=comment):
-            d.ellipse((90, 330, 230, 470), fill=ORANGE)
-            f = font("bold", 90); d.text((160 - d.textlength(str(n), font=f) / 2, 342), str(n), font=f, fill="white")
-            if store:
-                d.text((260, 365), store, font=font("bold", 64), fill=ORANGE)
-            y, fb = 540, font("bold", 84)
-            for ln in wrap(d, name, fb, 880, 3):
-                d.text((90, y), ln, font=fb, fill="white"); y += 108
-            if main:
-                d.text((90, y + 40), main.strip(), font=font("bold", 150), fill=(255, 210, 60)); y += 230
+    top = items[0] if items else {"hook": "오늘의 핫딜", "e": "🛒"}
+    i_emo, i_hook = emoji(top.get("e"), 280), _text(top["hook"], _fit(top["hook"], "bold", 120, 940), "white")
+    i_t1, i_t2 = _text(f"{date_label} 가성비 1위", font("bold", 56), (255, 232, 220)), _text(f"살 만한 딜 TOP {len(items)}  끝까지 보기", font("reg", 48), "white")
+
+    def intro(fr, t):
+        _put(fr, i_t1, RW / 2, 400, alpha=_ease(t / 0.3))
+        _put(fr, i_emo, RW / 2, 650, scale=0.4 + 0.6 * _back(t / 0.45) + 0.04 * t)
+        _put(fr, i_hook, RW / 2, 950, scale=1.35 - 0.35 * _ease((t - 0.35) / 0.25), alpha=_ease((t - 0.35) / 0.2))
+        _put(fr, i_t2, RW / 2, 1110, alpha=_ease((t - 0.9) / 0.3))
+    scenes.append((orange, 2.0, intro))
+
+    for n, it in enumerate(items, 1):
+        head = Image.new("RGBA", (940, 110), (0, 0, 0, 0))
+        d = ImageDraw.Draw(head)
+        d.rounded_rectangle((0, 10, 150, 100), radius=45, fill=ORANGE)
+        f = font("bold", 56); d.text((75 - d.textlength(f"{n}위", font=f) / 2, 20), f"{n}위", font=f, fill="white")
+        if it["store"]:
+            d.text((180, 22), it["store"], font=font("bold", 56), fill=(255, 150, 110))
+        fb = font("bold", 66)
+        name = Image.new("RGBA", (940, 200), (0, 0, 0, 0))
+        for k, ln in enumerate(wrap(ImageDraw.Draw(name), it["name"], fb, 930, 2)):
+            ImageDraw.Draw(name).text((0, k * 88), ln, font=fb, fill="white")
+        price = _text(it["main"], _fit(it["main"], "bold", 150, 900), (255, 214, 60)) if it["main"] else None
+        ship = _text(it["ship"], font("bold", 50), (150, 225, 160)) if it["ship"] else None
+        emo, checks = emoji(it.get("e"), 280), [_check_line(p) for p in it["pts"]]
+        box_h = 106 + 84 * len(checks)  # '이 가격이 괜찮은 이유' + 체크 줄
+        box = Image.new("RGBA", (960, box_h), (0, 0, 0, 0))
+        ImageDraw.Draw(box).rounded_rectangle((0, 0, 959, box_h - 1), radius=28, fill=(255, 255, 255, 28))
+        ImageDraw.Draw(box).text((40, 26), "이 가격이 괜찮은 이유", font=font("bold", 42), fill=(255, 190, 150))
+
+        def deal(fr, t, head=head, name=name, price=price, ship=ship, emo=emo, checks=checks, box_h=box_h, box=box):
+            a, dy = _ease(t / 0.3), 40 * (1 - _ease(t / 0.3))
+            _put(fr, head, RW / 2, 280 + dy, alpha=a)
+            _put(fr, emo, RW / 2, 525, scale=0.5 + 0.5 * _back(t / 0.45) + 0.015 * t)
+            _put(fr, name, RW / 2, 820 + dy, alpha=a)
+            if price:
+                _put(fr, price, RW / 2, 990, scale=1.4 - 0.4 * _ease((t - 0.45) / 0.25), alpha=_ease((t - 0.45) / 0.15))
             if ship:
-                d.text((96, y), ship, font=font("bold", 56), fill=(170, 230, 170)); y += 90
-            fr = font("reg", 46)
-            for ln in wrap(d, comment, fr, 880, 3):
-                d.text((90, y + 30), ln, font=fr, fill=(200, 200, 205)); y += 64
-        slides.append((*_slide("dark", deal), 3.5))
+                _put(fr, ship, RW / 2, 1105, alpha=_ease((t - 0.65) / 0.2))
+            if checks and t > 0.8:
+                _put(fr, box, RW / 2, 1165 + box_h / 2, alpha=_ease((t - 0.8) / 0.2))
+            for k, c in enumerate(checks):
+                tk = (t - 0.95 - 0.3 * k) / 0.2
+                _put(fr, c, RW / 2 + 30 * (1 - _ease(tk)), 1261 + 84 * k + 40, alpha=_ease(tk))
+        scenes.append((dark, 3.5, deal))
 
-    def outro(d):
-        _center(d, 600, "전체 딜 · 구매 링크는", font("bold", 80), "white")
-        _center(d, 720, "프로필 링크에서", font("bold", 80), "white")
-        _center(d, 900, "hotdealpick.kr", font("bold", 72), (255, 236, 160))
-        _center(d, 1040, "텔레그램 실시간 알림 @hotdeal_pick", font("reg", 48), "white")
-        _center(d, 1120, "팔로우하면 매일 골라드려요", font("reg", 48), "white")
-        _center(d, 1300, "일부 링크는 제휴 링크로 수수료를 받을 수 있어요", font("reg", 34), (255, 220, 205))
-    slides.append((*_slide("orange", outro), 2.5))
+    o = [(_text("필요한 친구에게 보내주세요", font("bold", 70), "white"), 600),
+         (_text("저장해두고 장보기 전에 확인", font("bold", 70), "white"), 700),
+         (_text("매일 밤 9시 가성비 TOP3", font("reg", 52), (255, 232, 220)), 840),
+         (_text("전체 딜 · 구매 링크는 프로필 링크", font("bold", 62), "white"), 1000),
+         (_text("hotdealpick.kr", font("bold", 72), (255, 236, 160)), 1100),
+         (_text("텔레그램 실시간 알림 @hotdeal_pick", font("reg", 46), "white"), 1210),
+         (_text("일부 링크는 제휴 링크로 수수료를 받을 수 있어요", font("reg", 34), (255, 220, 205)), 1360)]
 
-    total = sum(s for *_, s in slides)
+    def outro(fr, t):
+        for k, (im, y) in enumerate(o):
+            _put(fr, im, RW / 2, y + 30 * (1 - _ease((t - 0.08 * k) / 0.3)), alpha=_ease((t - 0.08 * k) / 0.3))
+    scenes.append((orange, 2.5, outro))
+
+    total = sum(s for _, s, _ in scenes)
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{RW}x{RH}", "-r", str(FPS), "-i", "-",
-           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "23", "-preset", "veryfast", "-movflags", "+faststart", out]
+           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "veryfast", "-movflags", "+faststart", out]
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     proc, t0 = subprocess.Popen(cmd, stdin=subprocess.PIPE), 0.0
-    for base, layer, sec in slides:
-        done = None
+    for bg, sec, draw in scenes:
         for i in range(int(sec * FPS)):
-            t = i / FPS
-            if t >= 0.35 and done:
-                frame = done.copy()
-            else:  # 처음 0.35초: 아래에서 살짝 올라오며 나타남
-                k = min(1.0, t / 0.35)
-                lay = layer.copy()
-                lay.putalpha(layer.getchannel("A").point(lambda a, k=k: int(a * k)))
-                frame = base.copy()
-                frame.paste(lay, (0, int(60 * (1 - k) ** 2)), lay)
-                if k == 1.0:
-                    done = frame.copy()
+            frame = bg.copy()
+            draw(frame, i / FPS)
             d = ImageDraw.Draw(frame)  # 위쪽 진행 막대 (스토리처럼)
             d.rounded_rectangle((60, 150, RW - 60, 160), radius=5, fill=(90, 90, 95))
-            d.rounded_rectangle((60, 150, 60 + (RW - 120) * (t0 + t) / total, 160), radius=5, fill="white")
+            d.rounded_rectangle((60, 150, 60 + (RW - 120) * (t0 + i / FPS) / total, 160), radius=5, fill="white")
             proc.stdin.write(frame.tobytes())
         t0 += sec
     proc.stdin.close()
