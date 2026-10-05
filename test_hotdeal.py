@@ -140,6 +140,23 @@ cps = [p for m, p in sent if m == "copyMessage"]
 assert len(cps) == 1 and cps[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒", "url": "https://ppomppu"}]]
 H.tg = fake_tg
 
+# 3-5) 💸 몰 딜은 채널에 바로 게시 + posts.json 기록, 💰 몰 딜은 초안, 바로 게시 실패하면 초안으로
+sent.clear(); sl = H.store_link; H.store_link = lambda u: None
+D = lambda t: {"title": t, "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}
+n0 = len(json.load(open("posts.json")))
+H.tg = lambda method, **p: sent.append((method, p)) or ({"message_id": 9, "text": "🔥 [sk스토아] 블루베리", "entities": []}
+                                                        if p.get("chat_id") == "@ch" else {"message_id": 1})
+H.post_or_draft(D("[sk스토아] 블루베리"), "싸요", 8)
+assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")] and sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"].startswith("https://www.ppomppu")
+last = json.load(open("posts.json"))
+assert len(last) == n0 + 1 and last[-1]["text"] == "🔥 [sk스토아] 블루베리" and last[-1]["url"].startswith("https://www.ppomppu")
+sent.clear(); H.post_or_draft(D("[롯데온] 삼다수"), "싸요", 8)  # 💰: 초안만, 채널엔 안 감
+assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "42")] and sent[0][1]["reply_markup"]["inline_keyboard"][-1][0]["text"].startswith("💰")
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (None if p.get("chat_id") == "@ch" else {"message_id": 1})
+H.post_or_draft(D("[카카오] 게장"), "싸요", 8)  # 채널 게시 실패 -> 초안으로
+assert [p["chat_id"] for m, p in sent] == ["@ch", "42"] and len(json.load(open("posts.json"))) == n0 + 1
+H.store_link = sl; H.tg = fake_tg
+
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
 sent.clear()
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "좋음"}] if len(lines) == 1 else []

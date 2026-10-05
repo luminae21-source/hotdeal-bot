@@ -156,6 +156,27 @@ def deal_post(d, comment):
     return text, link or d["url"]
 
 
+def record(text, ents, url):
+    """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드 재료)."""
+    posts = load(POSTS, [])
+    posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
+                  "entities": ents, "url": url})
+    json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+
+
+def post_or_draft(d, comment, score):
+    """💸(제휴 없는 몰) 딜은 기다릴 이유가 없으니 채널에 바로 게시, 💰 딜은 제휴 링크 답장할 수 있게 초안.
+    바로 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
+    text, url = deal_post(d, comment)
+    info = store_info(d["title"])
+    if info.startswith("💸"):
+        m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
+               reply_markup={"inline_keyboard": [[{"text": "🛒 구매하러 가기", "url": url}]]})
+        if m:
+            return record(m.get("text", ""), m.get("entities", []), url)
+    draft(text, url, score=score, info=info)
+
+
 def aff_note(url):
     """제휴 링크면 그 프로그램의 대가성 문구, 일반 쇼핑몰 주소면 ''."""
     host = urllib.parse.urlsplit(url).netloc
@@ -217,10 +238,7 @@ def publish_approved():
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid},
                    text="⚠️ 채널 게시 실패: 봇이 채널 관리자인지, TG_CHANNEL 값이 맞는지 확인 후 ✅ 다시 눌러줘")
                 continue  # 버튼 유지 -> 재시도 가능
-            posts = load(POSTS, [])
-            posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
-                          "entities": ents, "url": rows[0][0]["url"] if rows else None})
-            json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+            record(text, ents, rows[0][0]["url"] if rows else None)
         mark = "✅ 게시됨" if q["data"] == "ok" else "❌ 패스"
         tg("editMessageReplyMarkup", chat_id=chat, message_id=mid,
            reply_markup={"inline_keyboard": [[{"text": mark, "callback_data": "-"}]]})
@@ -321,7 +339,7 @@ def main():
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
-            draft(*deal_post(new[p["i"]], p["comment"]), score=p["score"], info=store_info(new[p["i"]]["title"]))
+            post_or_draft(new[p["i"]], p["comment"], p["score"])
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
         try:
             step(seen)
