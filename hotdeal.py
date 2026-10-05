@@ -10,7 +10,7 @@ from build_site import BASE as SITE, BLOG, title_of, split_title
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
 MODEL = E.get("MODEL") or "claude-sonnet-5-5"
-MIN_SCORE = int(E.get("MIN_SCORE") or 8)
+MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 MAX_DRAFTS = 5                 # 1회 실행당 검수 요청 최대 개수
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
@@ -411,6 +411,7 @@ def main():
                                       for d in new])
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
+        print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"))
     for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads):
