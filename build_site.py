@@ -32,12 +32,15 @@ def to_html(text, entities):
     return "".join(out).replace("\n", "<br>")
 
 
+NOTE_STARTS = ("이 포스팅은", "이 콘텐츠는", "[광고]")  # 대가성 문구 줄 시작(쿠팡·링크프라이스·네이버 = 이 포스팅은, 토스 = 이 콘텐츠는)
+
+
 def split_title(text):
     """(제목, 제목 아래 본문, 잘라낸 UTF-16 길이). 본문에 제목이 한 번 더 나오지 않게 제목 줄까지 잘라냄."""
     lines = text.split("\n")
     for i, line in enumerate(lines):
         t = re.sub(r"^[^\w가-ퟣ\[]+", "", line).strip()  # 앞 이모지 제거
-        if t and not t.startswith("이 포스팅은"):  # 대가성 문구 줄(쿠팡·토스·기타 제휴)은 제목이 아님
+        if t and not t.startswith(NOTE_STARTS):  # 대가성 문구 줄(쿠팡·토스·기타 제휴)은 제목이 아님
             rest = "\n".join(lines[i + 1:]).lstrip("\n")
             return t, rest, (len(text.encode("utf-16-le")) - len(rest.encode("utf-16-le"))) // 2
     return TITLE, text, 0

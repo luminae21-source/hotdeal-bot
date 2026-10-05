@@ -18,12 +18,16 @@ B64 = base64.b64encode(CP.encode()).decode()
 PAGE = f'<li class="topTitle-link partner"><span></span><a href="https://s.ppomppu.co.kr/?idno=ppomppu_101&amp;target={B64}&amp;encode=on" target="_blank">{CP}</a>'  # PC 글 (실제 구조)
 
 calls = []
+LP_OK = {"gmarket.co.kr": "gmarket", "lotteon.com": "lotteon", "auction.co.kr": "auction", "e-himart.co.kr": "himart"}  # 링크프라이스 API가 '승인'으로 답하는 몰 (하이마트 = 새로 승인된 몰 가정)
 def fake_http(url, body=None, headers=None, method=None):
     calls.append((url, body, headers, method))
     if "rss.php?id=dead" in url: raise OSError("feed down")
     if "rss.php" in url: return RSS
     if "view.php" in url: return PAGE
     if "deeplink" in url: return json.dumps({"data": [{"shortenUrl": "https://link.coupang.com/a/AFF"}]})
+    if url.startswith("https://api.linkprice.com/ci/service/custom_link_xml?a_id=" + H.LP_AID + "&"):  # 실제 응답 형식(10/5 확인)
+        u = parse_qs(urlsplit(url).query)["url"][0]; m = next((v for k, v in LP_OK.items() if k in u), None)
+        return json.dumps({"result": "S", "url": H.lp_link(m, u).replace("l_cd2=0", "l_cd2=q"), "mobile_yn": "Y"} if m else {"result": "F", "url": "", "err_msg": "[-6] 승인거부"})
     raise AssertionError(url)
 H.http = fake_http
 H.FEEDS = {"ppomppu": "뽐뿌", "dead": "죽은피드"}
@@ -44,7 +48,13 @@ H.http = lambda url, *a, **k: "<div>링크 없는 글</div>"; assert H.store_lin
 def blocked(url, *a, **k): raise OSError("403")
 H.http = blocked; assert H.store_link(d["url"]) is None  # GitHub 서버 차단 시 -> 버튼은 뽐뿌 글(관리자 답장으로 교체)
 H.http = fake_http
-assert H.affiliate("https://item.gmarket.co.kr/Item?goodscode=1") == (H.lp_link("gmarket", "https://item.gmarket.co.kr/Item?goodscode=1"), True)  # 승인 몰 상품 -> 상품 페이지 딥링크
+GM = "https://item.gmarket.co.kr/Item?goodscode=1"
+assert H.affiliate(GM) == (H.lp_link("gmarket", GM).replace("l_cd2=0", "l_cd2=q"), True)  # 승인 몰 상품 -> 링크프라이스 API 딥링크
+assert H.affiliate("https://www.e-himart.co.kr/app/goods/goodsDetail?goodsNo=1")[1]  # 새로 승인된 몰도 코드 수정 없이 자동
+assert H.affiliate("https://www.11st.co.kr/products/1") == ("https://www.11st.co.kr/products/1", False)  # 승인 전(F) -> 제휴 아님
+H.http = blocked; assert H.affiliate(GM) == (H.lp_link("gmarket", GM), True) and not H.affiliate("https://www.11st.co.kr/products/1")[1]  # API 장애 -> 승인 몰은 직접 딥링크
+H.http = fake_http
+assert H.plain("https://toss.shopping/t/9?k=1&referrer=affiliate") == "https://toss.shopping/t/9"  # 남의 쉐어링크 표시(k=) 떼고 상품만
 assert H.affiliate("https://smartstore.naver.com/a/products/1") == ("https://smartstore.naver.com/a/products/1", False) and H.affiliate(None) == (None, False)
 assert H.affiliate("https://www.coupang.com/vp/products/1") == ("https://link.coupang.com/a/AFF", True)
 url, body, hdr, method = calls[-1]

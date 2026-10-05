@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, title_of, split_title
+from build_site import BASE as SITE, BLOG, NOTE_STARTS, title_of, split_title
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -24,7 +24,7 @@ SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
-TOSS_NOTE = "이 포스팅은 토스쇼핑 쉐어링크 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."  # 토스 권장 문구
+TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
 NAVER_NOTE = "이 포스팅은 네이버 쇼핑 커넥트 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다."  # 네이버 안내 문구 그대로(변형·누락 시 패널티), 글 맨 앞
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
@@ -43,7 +43,8 @@ LP_SEARCH = {  # 링크프라이스 승인 몰: 제목 [쇼핑몰] -> (머천트
     "지마켓": ("gmarket", "G마켓", "https://www.gmarket.co.kr/n/search?keyword="),
     "롯데온": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q="),
     "롯데on": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q=")}
-LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # 링크프라이스 승인 몰: 상품 주소 -> 상품 페이지 딥링크
+LP_API = "https://api.linkprice.com/ci/service/custom_link_xml?a_id={}&mode=json&url={}"  # 링크프라이스 딥링크 API: 승인된 몰이면 S + 링크, 아니면 F(승인거부·유효하지 않은 URL)
+LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # API 장애 때만 쓰는 승인 몰 목록(직접 딥링크)
 HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
                "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
@@ -229,6 +230,8 @@ def plain(url, hops=4):
     host, qs = p.netloc.lower(), urllib.parse.parse_qs(p.query)
     if host == "click.linkprice.com":
         return plain(qs["tu"][0], hops) if "tu" in qs else None
+    if host == "toss.shopping":  # 상품은 /t/번호, 쿼리(k=·referrer)는 남의 쉐어링크 표시
+        return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
     if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + TOSS_HOSTS + NAVER_HOSTS:
         return plain(location(url), hops - 1) if hops else None
     if host.endswith("coupang.com"):  # lptag·subid 등 추적값 빼고 상품·옵션만
@@ -253,13 +256,21 @@ def lp_link(merchant, target):
 
 
 def affiliate(url):
-    """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 링크프라이스 승인 몰: 상품 페이지 딥링크."""
+    """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 그 외: 링크프라이스 딥링크 API
+    (승인된 몰이면 상품 페이지 딥링크 — 새로 승인된 몰도 코드 수정 없이 바로 적용). API 장애 땐 LP_HOSTS로 직접."""
     host = urllib.parse.urlsplit(url or "").netloc.lower()
     if HAS_CP and host.endswith("coupang.com"):
         try:
             return coupang("POST", "/deeplink", {"coupangUrls": [url]})[0]["shortenUrl"], True
         except Exception as e:
             print("deeplink", repr(e))
+    if not url:
+        return url, False
+    try:
+        r = json.loads(http(LP_API.format(LP_AID, urllib.parse.quote(url, safe=""))))
+        return (r["url"], True) if r.get("result") == "S" and r.get("url") else (url, False)
+    except Exception as e:
+        print("lp api", repr(e))
     m = next((v for k, v in LP_HOSTS.items() if host == k or host.endswith("." + k)), None)
     return (lp_link(m, url), True) if m else (url, False)
 
@@ -379,7 +390,7 @@ def aff_note(url):
 def with_note(text, ents, url):
     """제휴 링크면 대가성 문구를 맨 앞에 붙인 (text, entities). 텔레그램 오프셋은 UTF-16 단위라 그만큼 뒤로 밂."""
     note = aff_note(url)
-    if note and not text.startswith("이 포스팅은"):
+    if note and not text.startswith(NOTE_STARTS):
         n = len(note.encode("utf-16-le")) // 2
         return f"{note}\n\n{text}", [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
     return text, ents
@@ -433,7 +444,7 @@ def publish_approved():
                 fixed[rm["message_id"]] = relink(rm, url.group(0))
             continue
         lines = [l.strip().lstrip("🔥").strip() for l in m["text"].replace(url.group(0), "").split("\n")]
-        lines = [l for l in lines if l and not l.startswith("이 포스팅은")]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
+        lines = [l for l in lines if l and not l.startswith(NOTE_STARTS)]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
         if not lines:
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
                text="첫 줄에 제목을 같이 보내줘. 예)\n[G마켓] 상품명 (39,910원/무료)\n한 줄 코멘트\n링크")
