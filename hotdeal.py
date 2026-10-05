@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""핫딜봇: 뽐뿌 RSS -> Claude 선별/코멘트 -> 채널 바로 게시(링크프라이스 몰은 검색 제휴 링크 자동).
-쿠팡 등 수동 몰은 관리자에게 사본 -> 제휴 링크로 답장하면 채널 글 교체(뽐뿌가 GitHub IP 차단 -> 쇼핑몰 주소 자동 추출 불가). 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
+"""핫딜봇: 뽐뿌·루리웹·클리앙 핫딜 -> Claude 선별/코멘트 -> 채널 바로 게시.
+상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
+쿠팡·네이버 등 수동 몰은 관리자에게 사본(+상품 열기 버튼) -> 제휴 링크로 답장하면 채널 글 교체. 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
 GitHub Actions에서 30분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
 import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from build_site import BASE as SITE, BLOG, title_of, split_title
 
@@ -14,7 +16,10 @@ MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 MAX_DRAFTS = 5                 # 1회 실행당 검수 요청 최대 개수
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
-FEEDS = {"ppomppu": "뽐뿌"}  # 보드 추가: {"rss id": "표시명"}
+FEEDS = {"ppomppu": "뽐뿌"}  # 뽐뿌 보드 추가: {"rss id": "표시명"}
+RULIWEB_RSS = "https://bbs.ruliweb.com/market/board/1020/rss"  # 루리웹 핫딜예판: RSS + 글 아래 '출처'에 상품 주소 (robots 허용, GitHub 서버 OK 10/5)
+CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구매: RSS 없음 -> 목록 HTML, 글 위 '구매링크' (robots: 쿼리 없는 /service/board/ 허용)
+KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
@@ -38,6 +43,9 @@ LP_SEARCH = {  # 링크프라이스 승인 몰: 제목 [쇼핑몰] -> (머천트
     "지마켓": ("gmarket", "G마켓", "https://www.gmarket.co.kr/n/search?keyword="),
     "롯데온": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q="),
     "롯데on": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q=")}
+LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # 링크프라이스 승인 몰: 상품 주소 -> 상품 페이지 딥링크
+HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
+               "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
@@ -52,6 +60,7 @@ DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 �
 comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품 효능 언급 금지, 이모지 최대 1개.
 q: 쇼핑몰 검색창에 넣을 짧은 검색어(브랜드+상품명+핵심 용량, 수량·가격·쿠폰 문구 빼고 20자 안팎).
 REEL_RULES
+같은 상품이 여러 커뮤니티([뽐뿌]·[루리웹]·[클리앙])에 올라왔으면 하나만 골라.
 5점 미만은 반환하지 마.
 """
 DEAL_PROMPT = DEAL_PROMPT.replace("REEL_RULES", REEL_RULES)
@@ -96,23 +105,61 @@ def tg(method, **params):
 
 
 def fetch_deals():
+    """모든 출처의 새 글 -> [{id, url, board, title, desc, hits, age(분)}]. 출처 하나가 죽어도 나머지는 진행."""
     deals = []
     for board, name in FEEDS.items():
         try:
-            items = ET.fromstring(http(f"https://www.ppomppu.co.kr/rss.php?id={board}")).iter("item")
-            for it in items:
-                url = it.findtext("link", "").replace("http://", "https://")
-                no = re.search(r"no=(\d+)", url).group(1)
-                h = (it.findtext("hits") or "").strip(" []").split("|")
-                deals.append({
-                    "id": f"{board}_{no}", "url": url, "board": name,
-                    "title": it.findtext("title", "").strip(),
-                    "desc": html.unescape(it.findtext("description", "")).replace("\xa0", " ").strip()[:200],
-                    "hits": "댓글{}·조회{}·추천{}·비추{}".format(*h) if len(h) == 4 else "",
-                    "age": (time.time() - parsedate_to_datetime(it.findtext("pubDate")).timestamp()) / 60,
-                })
-        except Exception as e:  # 피드 하나가 죽어도 나머지는 진행
+            deals += ppomppu_feed(board, name)
+        except Exception as e:
             print("feed", board, repr(e))
+    for feed in (ruliweb_feed, clien_feed):
+        try:
+            deals += feed()
+        except Exception as e:
+            print("feed", feed.__name__, repr(e))
+    return deals
+
+
+def ppomppu_feed(board, name):
+    deals = []
+    for it in ET.fromstring(http(f"https://www.ppomppu.co.kr/rss.php?id={board}")).iter("item"):
+        url = it.findtext("link", "").replace("http://", "https://")
+        no = re.search(r"no=(\d+)", url).group(1)
+        h = (it.findtext("hits") or "").strip(" []").split("|")
+        deals.append({
+            "id": f"{board}_{no}", "url": url, "board": name,
+            "title": it.findtext("title", "").strip(),
+            "desc": html.unescape(it.findtext("description", "")).replace("\xa0", " ").strip()[:200],
+            "hits": "댓글{}·조회{}·추천{}·비추{}".format(*h) if len(h) == 4 else "",
+            "age": (time.time() - parsedate_to_datetime(it.findtext("pubDate")).timestamp()) / 60,
+        })
+    return deals
+
+
+def ruliweb_feed():
+    """루리웹 핫딜예판 RSS (반응 수치는 없음, 분류는 desc로)."""
+    deals = []
+    for it in ET.fromstring(http(RULIWEB_RSS)).iter("item"):
+        url = it.findtext("link", "").strip()
+        deals.append({"id": "ruliweb_" + url.rsplit("/", 1)[-1], "url": url, "board": "루리웹",
+                      "title": it.findtext("title", "").strip(), "desc": f"분류: {it.findtext('category', '').strip()}", "hits": "",
+                      "age": (time.time() - parsedate_to_datetime(it.findtext("pubDate")).timestamp()) / 60})
+    return deals
+
+
+def clien_feed():
+    """클리앙 알뜰구매 목록 HTML (공지 제외). 시간은 KST 'YYYY-MM-DD HH:MM:SS'."""
+    deals, page = [], http(CLIEN_LIST)
+    for cls, sn, cmt, row in re.findall(r'class="list_item ([^"]*)" data-role="list-row"[^>]*?data-board-sn=(\d+)[^>]*?'
+                                        r'data-comment-count=(\d+)>(.*?)(?=class="list_item |$)', page, re.S):
+        title, ts = re.search(r'class="list_subject"[^>]*title="([^"]*)"', row), re.search(r'class="timestamp">([\d-]+ [\d:]+)<', row)
+        if "notice" in cls or not (title and ts):
+            continue
+        like, hit = re.search(r'list_votes"><i[^>]*></i>\s*(\d+)', row), re.search(r'class="hit">([\d,]+)<', row)
+        at = datetime.strptime(ts.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=KST).timestamp()
+        deals.append({"id": f"clien_{sn}", "url": f"{CLIEN_LIST}/{sn}", "board": "클리앙", "title": html.unescape(title.group(1)).strip(),
+                      "desc": "", "hits": f"댓글{cmt}·조회{hit.group(1) if hit else '?'}·추천{like.group(1) if like else 0}",
+                      "age": (time.time() - at) / 60})
     return deals
 
 
@@ -133,19 +180,62 @@ def ai_pick(prompt, lines):
 
 
 def store_link(post_url):
-    """뽐뿌 글 상단의 실제 쇼핑몰 링크 (s.ppomppu.co.kr/?...&target=<base64 원본주소>&encode=on -> 원본 주소).
-    ponytail: 뽐뿌가 GitHub 서버 IP를 PC·모바일 글 모두 403 차단(2026-10-05 linkcheck) -> 지금은 None,
-    그동안은 관리자가 초안에 링크로 답장하면 relink()가 교체. 차단 풀리면 이 함수가 그대로 다시 동작."""
+    """딜 글에 적힌 실제 쇼핑몰 주소 (남의 제휴 링크·추적값은 plain()으로 걷어냄). 못 찾으면 None.
+    루리웹: 글 아래 '출처'(web.ruliweb.com/link.php?ol=원래주소). 클리앙: 글 위 '구매링크'(attached_link).
+    뽐뿌: 상단 링크(s.ppomppu.co.kr ... target=base64) — ponytail: GitHub 서버 IP를 403 차단(10/5 linkcheck)이라 지금은 None,
+    그동안은 검색 제휴 링크 또는 관리자 답장. 차단 풀리면 그대로 다시 동작."""
     try:
-        m = re.search(r'topTitle-link.*?href="https://s\.ppomppu\.co\.kr/\?([^"]+)"', http(post_url), re.S)
+        page = http(post_url)
     except Exception as e:
         print("link", post_url, repr(e))
         return None
+    if "ruliweb.com" in post_url:
+        m = re.search(r'class="source_url.*?link\.php\?ol=([^"&]+)', page, re.S)
+        return plain(urllib.parse.unquote(m.group(1))) if m else None
+    if "clien.net" in post_url:
+        m = re.search(r'class="attached_link.*?href=[\'"]([^\'"]+)', page, re.S)
+        return plain(html.unescape(m.group(1)).strip()) if m else None
+    m = re.search(r'topTitle-link.*?href="https://s\.ppomppu\.co\.kr/\?([^"]+)"', page, re.S)
     if not m:
         return None
     q = "&" + html.unescape(m.group(1))
     t = urllib.parse.unquote(re.search(r"&target=([^&]*)", q + "&target=").group(1))  # unquote_plus 쓰면 base64의 +가 깨짐
-    return (base64.b64decode(t + "=" * (-len(t) % 4)).decode() if "&encode=on" in q else t) or None
+    return plain((base64.b64decode(t + "=" * (-len(t) % 4)).decode() if "&encode=on" in q else t) or None)
+
+
+class _Stay(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):  # 리다이렉트를 따라가지 않음 -> Location만 읽기
+        return None
+
+
+def location(url):
+    """단축·제휴 링크가 보내는 다음 주소 (페이지는 안 받음)."""
+    try:
+        urllib.request.build_opener(_Stay).open(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=15)
+    except urllib.error.HTTPError as e:
+        return urllib.parse.urljoin(url, e.headers.get("Location") or "") or None
+    except Exception as e:
+        print("location", url, repr(e))
+    return None
+
+
+def plain(url, hops=4):
+    """남의 제휴 링크(쿠팡 파트너스·링크프라이스 등)·추적값 -> 원래 쇼핑몰 주소. 우리 제휴 링크로 다시 만들기 위해.
+    링크프라이스는 tu=, 쿠팡·네이버(naver.me)·토스 단축은 리다이렉트를 따라감. 원래 주소를 못 찾으면 None(남의 링크를 그대로 쓰지 않음)."""
+    if not url or not url.startswith("http"):
+        return None
+    p = urllib.parse.urlsplit(url)
+    host, qs = p.netloc.lower(), urllib.parse.parse_qs(p.query)
+    if host == "click.linkprice.com":
+        return plain(qs["tu"][0], hops) if "tu" in qs else None
+    if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + TOSS_HOSTS + NAVER_HOSTS:
+        return plain(location(url), hops - 1) if hops else None
+    if host.endswith("coupang.com"):  # lptag·subid 등 추적값 빼고 상품·옵션만
+        keep = {k: v[0] for k, v in qs.items() if k in ("itemId", "vendorItemId")}
+        return urllib.parse.urlunsplit(("https", "www.coupang.com", p.path, urllib.parse.urlencode(keep), ""))
+    if host.endswith(("smartstore.naver.com", "brand.naver.com")):  # 상품은 경로에 있고 쿼리는 추적값(남의 쇼핑커넥트 등)
+        return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
+    return url
 
 
 def coupang(method, path, body=None):
@@ -156,19 +246,27 @@ def coupang(method, path, body=None):
     return json.loads(http(CP_HOST + CP_BASE + path, body, {"Authorization": auth}, method))["data"]
 
 
+def lp_link(merchant, target):
+    """링크프라이스 딥링크 (공식 형식 그대로, 가공 없음)."""
+    return f"https://click.linkprice.com/click.php?m={merchant}&a={LP_AID}&l=9999&l_cd1=3&l_cd2=0&tu={urllib.parse.quote(target, safe='')}"
+
+
 def affiliate(url):
-    """쿠팡 링크면 파트너스 링크로 변환 -> (링크, 제휴여부)."""
-    if HAS_CP and url and urllib.parse.urlsplit(url).netloc.endswith("coupang.com"):
+    """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 링크프라이스 승인 몰: 상품 페이지 딥링크."""
+    host = urllib.parse.urlsplit(url or "").netloc.lower()
+    if HAS_CP and host.endswith("coupang.com"):
         try:
             return coupang("POST", "/deeplink", {"coupangUrls": [url]})[0]["shortenUrl"], True
         except Exception as e:
             print("deeplink", repr(e))
-    return url, False
+    m = next((v for k, v in LP_HOSTS.items() if host == k or host.endswith("." + k)), None)
+    return (lp_link(m, url), True) if m else (url, False)
 
 
-def store_info(title):
-    """뽐뿌 제목의 [쇼핑몰]로 수익 안내 문구. 제휴 없는 몰은 수수료 0 표시."""
-    tag = store_tag(title)
+def store_info(title, url=""):
+    """제목의 [쇼핑몰](없으면 상품 주소의 도메인)로 수익 안내 문구. 제휴 없는 몰은 수수료 0 표시."""
+    host = urllib.parse.urlsplit(url or "").netloc.lower()
+    tag = store_tag(title) + " " + next((v for k, v in HOST_STORES.items() if k in host), "")
     return next((v for k, v in STORES.items() if k in tag), "💸 제휴 없는 쇼핑몰 · 수수료 0")
 
 
@@ -215,12 +313,12 @@ def lp_search(title, q=None):
     if not hit:
         return None, None
     m, name, base = hit
-    tu = urllib.parse.quote(base + urllib.parse.quote(q or keyword(title)), safe="")
-    return f"https://click.linkprice.com/click.php?m={m}&a={LP_AID}&l=9999&l_cd1=3&l_cd2=0&tu={tu}", name
+    return lp_link(m, base + urllib.parse.quote(q or keyword(title))), name
 
 
 def deal_post(d, comment, q=None, extra=None):
-    """-> (본문, 버튼 링크, 버튼 이름). 쿠팡 자동 변환 > 링크프라이스 검색 링크 > 뽐뿌 글. 제휴 링크면 대가성 문구를 맨 앞에.
+    """-> (본문, 버튼 링크, 버튼 이름). 상품 주소가 있으면 쿠팡 API·링크프라이스 상품 딥링크 > 링크프라이스 검색 링크
+    > 상품 페이지(제휴 없음, 관리자 사본으로 수동) > 원글. 제휴 링크면 대가성 문구를 맨 앞에.
     extra의 unit(단위가격)·warn(확인할 점)이 있으면 코멘트 아래 한 줄씩 (다른 핫딜 채널과의 차이: 비교 근거 + 단점까지)."""
     link, aff = affiliate(store_link(d["url"]))
     label = "🛒 구매하러 가기"
@@ -256,16 +354,18 @@ def post_or_draft(d, comment, score, q=None, extra=None):
     쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크로 답장 -> 채널 글 교체(선택).
     채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
     text, url, label = deal_post(d, comment, q, extra)
-    info = store_info(d["title"])
+    info = store_info(d["title"], url)
     m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
            reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
     if not m:
         return draft(text, url, score=score, info=info, label=label)
     record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, extra)
     if info.startswith("💰") and not aff_note(url):
-        tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": [
-            [{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
-            [{"text": info.split(" · ")[0] + " · 링크로 답장하면 채널 글 교체(선택)", "callback_data": "-"}]]})
+        kb = [[{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
+              [{"text": info.split(" · ")[0] + " · 링크로 답장하면 채널 글 교체(선택)", "callback_data": "-"}]]
+        if url != d["url"]:  # 상품 주소를 알면: 눌러서 쇼핑앱 열기 -> 공유 -> 제휴 링크 복사 -> 답장 (뽐뿌 글 거칠 필요 없음)
+            kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
+        tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": kb})
 
 
 def aff_note(url):
@@ -491,15 +591,33 @@ def load(path, default):
         return default
 
 
+def dkey(title):
+    """같은 딜 판단 키: [쇼핑몰]·가격 꼬리(괄호·' / 가격') 떼고 글자·숫자만 앞 24자. 너무 짧으면 None(판단 안 함). 24시간 지나면 같은 상품도 새 딜로 봄."""
+    k = re.sub(r"[^0-9a-z가-힣]", "", re.split(r"\s/\s", keyword(title))[0].lower())[:24]
+    return "k:" + k if len(k) >= 4 else None
+
+
 def main():
     seen = load(SEEN, {})
     publish_approved()
-    new = [d for d in fetch_deals() if d["id"] not in seen and MIN_AGE <= d["age"] <= MAX_AGE]
+    new, keys = [], set()
+    fresh = [d for d in fetch_deals() if d["id"] not in seen and MIN_AGE <= d["age"] <= MAX_AGE]
+    for d in sorted(fresh, key=lambda d: d["id"].split("_")[0] in FEEDS):  # 같은 딜이면 상품 주소를 얻을 수 있는 루리웹·클리앙 쪽을 남김
+        k = dkey(d["title"])
+        if k and (seen.get(k, 0) > time.time() - 86400 or k in keys):  # 24시간 안에 다른 커뮤니티에 올라온(또는 이미 판단한) 같은 딜
+            seen[d["id"]] = time.time()
+            continue
+        keys.add(k)
+        new.append(d)
     if new:
-        picks = ai_pick(DEAL_PROMPT, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}"
-                                      for d in new])
+        since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
+        recent = [title_of(p["text"]) for p in load(POSTS, []) if p["t"] >= since and not p["text"].startswith("📋")][-30:]
+        prompt = DEAL_PROMPT + ("\n최근 24시간에 이미 올린 딜(같은 상품이면 고르지 마):\n" + "\n".join(recent) if recent else "")
+        picks = ai_pick(prompt, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}" for d in new])
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
+            if dkey(d["title"]):
+                seen[dkey(d["title"])] = time.time()
         print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         for p in [p for p in picks if p["score"] >= MIN_SCORE][:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})

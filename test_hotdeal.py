@@ -1,5 +1,6 @@
 """셀프체크: python test_hotdeal.py  (네트워크·키 불필요)"""
 import base64, hashlib, hmac, json, os, tempfile, time
+from urllib.parse import parse_qs, urlsplit
 from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
@@ -34,7 +35,7 @@ assert len(deals) == 2 and d["id"] == "ppomppu_101" and d["url"].startswith("htt
 assert d["hits"] == "댓글3·조회900·추천2·비추0" and d["desc"] == "쿠폰가 좋네요" and 44 < d["age"] < 46
 
 # 2) 쇼핑몰 링크 추출 + 쿠팡 제휴 변환 + 서명
-assert H.store_link(d["url"]) == CP  # target= base64 복원
+assert H.store_link(d["url"]) == "https://www.coupang.com/vp/products/1"  # target= base64 복원 + 쿠팡 추적값(a·b) 제거
 P2 = base64.b64encode("https://item.gmarket.co.kr/Item?goodscode=3383368133&n=>>?".encode()).decode()
 assert "+" in P2 or "/" in P2
 H.http = lambda url, *a, **k: f'<li class="topTitle-link partner"><a href="https://s.ppomppu.co.kr/?idno=x&amp;target={P2}&amp;encode=on">'
@@ -43,7 +44,8 @@ H.http = lambda url, *a, **k: "<div>링크 없는 글</div>"; assert H.store_lin
 def blocked(url, *a, **k): raise OSError("403")
 H.http = blocked; assert H.store_link(d["url"]) is None  # GitHub 서버 차단 시 -> 버튼은 뽐뿌 글(관리자 답장으로 교체)
 H.http = fake_http
-assert H.affiliate("https://www.gmarket.co.kr/x") == ("https://www.gmarket.co.kr/x", False)
+assert H.affiliate("https://item.gmarket.co.kr/Item?goodscode=1") == (H.lp_link("gmarket", "https://item.gmarket.co.kr/Item?goodscode=1"), True)  # 승인 몰 상품 -> 상품 페이지 딥링크
+assert H.affiliate("https://smartstore.naver.com/a/products/1") == ("https://smartstore.naver.com/a/products/1", False) and H.affiliate(None) == (None, False)
 assert H.affiliate("https://www.coupang.com/vp/products/1") == ("https://link.coupang.com/a/AFF", True)
 url, body, hdr, method = calls[-1]
 dt = hdr["Authorization"].split("signed-date=")[1].split(",")[0]
@@ -54,6 +56,49 @@ assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and li
 t2 = H.deal_post(d, "싸다", None, {"unit": "100g당 990원", "warn": "쿠폰 <1인 1회>", "pts": ["x"]})[0]  # 단위가격·확인할 점은 코멘트 아래, 출처 위
 assert "싸다\n💡 단위가격 100g당 990원\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n\n출처:" in t2 and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", "")
 assert "unit:" in H.DEAL_PROMPT and "warn:" in H.DEAL_PROMPT and "unit:" in H.REEL_PROMPT
+
+# 2-2) 새 출처: 루리웹 RSS·클리앙 목록(공지 제외) 파싱 / 글에서 상품 주소(남의 제휴 링크는 원래 주소로) / 승인 몰은 상품 페이지 딥링크
+RULI = f"""<rss><channel><item><title>[롯데온] 매일 피크닉 200ml 48팩 (15,600원/무료)</title><category>음식</category>
+<link>https://bbs.ruliweb.com/market/board/1020/read/107788</link><pubDate>{ago(50)}</pubDate></item></channel></rss>"""
+kst = lambda m: time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + 9 * 3600 - m * 60))
+ROW = lambda cls, sn, title, m: (f'<div class="list_item {cls}" data-role="list-row" data-author-id=a data-board-sn={sn} data-comment-count=4> '
+    f'<span class="list_votes"><i class="fa fa-heart"></i> 7</span> <span class="list_subject" data-role="cut-string" title="{title}"> '
+    f'<div class="list_hit"><span class="hit">1,234</span></div> <span class="time popover">10-05<span class="timestamp">{kst(m)}</span></span></div> ')
+CLIEN = ROW("notice", 1, "공지", 10) + ROW("symph_row jirum ", 19273778, "쿠팡 휴지 &amp; 물티슈", 40)
+H.http = lambda url, *a, **k: RULI if url == H.RULIWEB_RSS else CLIEN if url == H.CLIEN_LIST else ""
+r, c = H.ruliweb_feed()[0], H.clien_feed()
+assert r["id"] == "ruliweb_107788" and r["board"] == "루리웹" and r["desc"] == "분류: 음식" and 49 < r["age"] < 51
+assert [x["id"] for x in c] == ["clien_19273778"] and c[0]["title"] == "쿠팡 휴지 & 물티슈" and c[0]["url"] == H.CLIEN_LIST + "/19273778"
+assert c[0]["hits"] == "댓글4·조회1,234·추천7" and 39 < c[0]["age"] < 41
+H.http = lambda url, *a, **k: ('<div class="source_url box_line_with_shadow"><span class="text_bar">출처 : </span> '
+    '<a href="https://web.ruliweb.com/link.php?ol=https%3A%2F%2Fwww.lotteon.com%2Fp%2Fproduct%2FLO1&amp;bbs=1020">x</a></div>')
+assert H.store_link(r["url"]) == "https://www.lotteon.com/p/product/LO1"
+lo = H.affiliate("https://www.lotteon.com/p/product/LO1")
+assert lo[1] and parse_qs(urlsplit(lo[0]).query)["m"] == ["lotteon"] and parse_qs(urlsplit(lo[0]).query)["tu"] == ["https://www.lotteon.com/p/product/LO1"]
+H.http = lambda url, *a, **k: ("<div class=\"attached_link top\"> <span class=\"attached_subject\">구매링크</span> "
+    "<a href='https://click.linkprice.com/click.php?m=gmarket&a=A999&tu=https%3A%2F%2Fitem.gmarket.co.kr%2FItem%3Fgoodscode%3D7'target='_blank'>")
+assert H.store_link(c[0]["url"]) == "https://item.gmarket.co.kr/Item?goodscode=7"  # 남의 링크프라이스(a=A999) -> 원래 주소 -> 우리 a=로 다시
+assert "a=" + H.LP_AID in H.affiliate(H.store_link(c[0]["url"]))[0]
+hops = {"https://link.coupang.com/a/x": "https://link.coupang.com/re/AFFSDP?lptag=AF1&pageKey=9",
+        "https://link.coupang.com/re/AFFSDP?lptag=AF1&pageKey=9": "https://www.coupang.com/vp/products/9?itemId=8&vendorItemId=7&lptag=AF1&subid=s",
+        "https://naver.me/Ab": "https://smartstore.naver.com/s/products/1?NaPm=ct%3Dx"}
+loc = H.location; H.location = hops.get
+assert H.plain("https://link.coupang.com/a/x") == "https://www.coupang.com/vp/products/9?itemId=8&vendorItemId=7"  # 남의 쿠팡 파트너스 -> 상품
+assert H.plain("https://naver.me/Ab") == "https://smartstore.naver.com/s/products/1"  # 남의 쇼핑커넥트 -> 상품 주소만
+assert H.plain("https://link.coupang.com/a/dead") is None and H.plain("javascript:void(0)") is None  # 원래 주소 모르면 남의 링크 안 씀
+H.location = loc
+import http.server, threading
+class R(http.server.BaseHTTPRequestHandler):
+    def do_GET(self): self.send_response(302); self.send_header("Location", "/vp/products/5?lptag=x"); self.end_headers()
+    def log_message(self, *a): pass
+srv = http.server.HTTPServer(("127.0.0.1", 0), R); threading.Thread(target=srv.handle_request, daemon=True).start()
+assert H.location(f"http://127.0.0.1:{srv.server_port}/a") == f"http://127.0.0.1:{srv.server_port}/vp/products/5?lptag=x"  # 따라가지 않고 Location만
+srv.server_close()
+assert H.store_info("쿠팡 휴지 & 물티슈", "https://www.coupang.com/vp/products/9") == H.STORES["쿠팡"]  # 제목에 [몰]이 없으면 주소로
+assert H.store_info("땅콩버터", "https://smartstore.naver.com/x/products/1") == H.STORES["네이버"]
+assert H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 (15,600원/무료)") == H.dkey("[롯데온] 매일 피크닉 200ml 4종 48팩 / 15,600원")
+assert H.dkey("[쿠팡] 라면") is None  # 너무 짧으면 같은 딜 판단 안 함
+H.http = fake_http
 
 # 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록
 os.chdir(tempfile.mkdtemp())
@@ -148,7 +193,6 @@ H.tg = fake_tg
 
 # 3-5) 전부 채널에 바로 게시(✅ 없음): 💸=뽐뿌 링크, 링크프라이스 몰=검색 제휴 링크+문구, 쿠팡 등=게시 후 관리자에게 사본(선택 교체)
 #      채널 게시 실패 -> 초안, 사본에 제휴 링크 답장 -> 채널 글·사본·posts.json 교체
-from urllib.parse import parse_qs, urlsplit
 sent.clear(); sl = H.store_link; H.store_link = lambda u: None
 D = lambda t: {"title": t, "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}
 n0 = len(json.load(open("posts.json"))); mids = iter(range(100, 200))
@@ -195,6 +239,17 @@ assert ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러
 pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
 assert pj[102]["url"] == "https://link.coupang.com/a/zz" and pj[102]["text"].startswith(H.DISCLOSURE) and pj[100]["url"] == D("")["url"]
 assert H.post_url(5) == "https://t.me/ch/5"
+# 3-6) 상품 주소가 있는 딜(루리웹·클리앙): 채널 버튼은 상품 페이지 / 사본에 '상품 열기' / 옥션도 상품 페이지 딥링크
+H.tg = ch_tg; sent.clear(); H.store_link = lambda u: "https://smartstore.naver.com/s/products/1"
+H.post_or_draft(D("땅콩버터 파우더 3개"), "싸요", 8)  # 클리앙처럼 [몰]이 없어도 주소로 네이버 판단 -> 사본
+kb = [p for m, p in sent if m == "copyMessage"][0]["reply_markup"]["inline_keyboard"]
+assert kb[1][0] == {"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": "https://smartstore.naver.com/s/products/1"} and kb[2][0]["text"].startswith("💰 네이버")
+assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://smartstore.naver.com/s/products/1"
+sent.clear(); H.store_link = lambda u: "https://itempage3.auction.co.kr/DetailView.aspx?itemno=F1"
+H.post_or_draft(D("[옥션] 마사지패드"), "싸요", 8)  # 옥션: 검색 딥링크는 안 되지만 상품 주소가 있으면 상품 페이지 딥링크
+b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
+assert b["text"] == "🛒 구매하러 가기" and parse_qs(urlsplit(b["url"]).query)["m"] == ["auction"] and len(sent) == 1
+assert sent[0][1]["text"].startswith(f"<i>{H.AFF_NOTE}</i>")
 H.store_link = sl; H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
@@ -207,6 +262,22 @@ assert drafts[0]["chat_id"] == "@ch"  # ✅ 없이 채널에 바로
 assert not [p for m, p in sent if m == "copyMessage" and p["chat_id"] == "42"]  # 이미 제휴 링크(자동 변환)면 관리자 사본 안 보냄
 sent.clear(); H.main()  # 재실행: 같은 글 다시 안 보냄
 assert not [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]
+
+# 4-2) 같은 딜이 여러 커뮤니티에: 이미 판단한 딜은 다른 곳에서 또 안 봄 / 동시에 올라오면 루리웹(상품 주소 있음)만 / 최근 올린 딜을 Claude에게 알려줌
+it = lambda t, link, m, extra="": f"<item><title>{t}</title><link>{link}</link><pubDate>{ago(m)}</pubDate>{extra}</item>"
+PP = '<rss><channel>' + it("[G마켓] 코카콜라 190ml 30캔 (19,000원/무료)", "http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no=301", 45, "<hits> [1|50|1|0]</hits>") + '</channel></rss>'
+RU = ('<rss><channel>' + it("[쿠팡] 휴지 30롤 / 9,900원", "https://bbs.ruliweb.com/market/board/1020/read/1", 45)
+      + it("[G마켓] 코카콜라 190ml 30캔 / 19,000원", "https://bbs.ruliweb.com/market/board/1020/read/2", 45) + '</channel></rss>')
+H.http = lambda url, *a, **k: PP if "rss.php" in url else RU if url == H.RULIWEB_RSS else ""
+got = []; H.ai_pick = lambda prompt, lines: got.append((prompt, lines)) or []
+H.main()
+sj = json.load(open("seen.json"))
+assert len(got) == 1 and got[0][1] == ["[루리웹] [G마켓] 코카콜라 190ml 30캔 / 19,000원 |  | 45분 전 | 분류: "]  # 휴지는 이미 판단(뽐뿌) -> 제외
+assert "ruliweb_1" in sj and "ppomppu_301" in sj and H.dkey("[G마켓] 코카콜라 190ml 30캔") in sj
+assert "최근 24시간에 이미 올린 딜" in got[0][0] and "휴지 30롤" in got[0][0].split("이미 올린 딜")[1]
+json.dump({H.dkey("[쿠팡] 휴지 30롤"): time.time() - 2 * 86400}, open("seen.json", "w")); got.clear(); H.main()  # 24시간 지난 같은 상품은 새 딜로 판단
+assert any("휴지 30롤" in l for l in got[0][1])
+H.http = fake_http
 
 # 5) 골드박스: 하루 1번, 대가성 문구 맨 앞, 고른 순서대로
 GB = [{"productName": f"상품{i}", "productPrice": 1000.0 * (i + 1), "productUrl": f"https://link.coupang.com/{i}"} for i in range(8)]
