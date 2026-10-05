@@ -4,7 +4,7 @@
 제휴 링크는 초안에 **답장으로 붙이면** 버튼 교체 + 대가성 문구가 자동으로 들어가고(뽐뿌가 GitHub 서버를 막아서 쇼핑몰 주소 자동 추출은 안 됨), 쿠팡 API 키(최종 승인 후)를 넣으면 매일 **골드박스 TOP5**도 올라와.
 
 ```
-GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 누락이 잦아서 외부 크론으로 보강 → 아래 7번)
+GitHub Actions (30분마다, KST 08~24시 · tick 타이머가 30분마다 실행시킴 → 아래 7번)
  ├─ ✅/❌ 누른 초안 처리 → 채널 게시
  ├─ 뽐뿌 RSS → 30분 지난 새 글 → Claude 점수·코멘트 → 7점↑ 최대 5개 초안
  ├─ (쿠팡 키 있으면) 09시 이후 1회 골드박스 TOP5 초안
@@ -20,6 +20,7 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 누락이 �
 | `build_site.py` | 게시된 딜(`posts.json`) → `docs/` 웹사이트 생성 (GitHub Pages) |
 | `cards.py` | 오늘의 딜 → Threads/인스타 카드 이미지(1080×1350) → `docs/cards/날짜.png` (Pillow·나눔고딕은 워크플로가 설치) |
 | `.github/workflows/hotdeal.yml` | 30분마다 자동 실행 + 사이트 커밋 |
+| `.github/workflows/tick.yml` | 30분 자체 타이머: 대기 29분(러너 안 씀) → hotdeal 실행 + 다음 tick 예약 |
 | `.github/workflows/linkcheck.yml` | (수동) GitHub 서버에서 뽐뿌 쇼핑몰 링크 추출 점검 |
 | `test_hotdeal.py` | 셀프체크 (`python test_hotdeal.py`) |
 
@@ -69,16 +70,14 @@ GitHub Actions (30분마다, KST 08~24시 · GitHub 예약 실행은 누락이 �
 - 토큰은 **60일 만료** → 봇이 "⚠️ Threads 게시 실패" 보내면 4번 다시 해서 시크릿 교체
 - 인스타그램은 API 조건(비즈니스 계정+페이스북 페이지)이 까다로워 자동화 안 함. 대신 Threads 게시 후 **같은 카드를 봇이 채팅으로 보내줌** → 폰에서 인스타에 올리면 10초
 
-### 7. 예약 실행 보강 (외부 크론, 무료)
-GitHub 예약 실행은 몇 시간씩 건너뛰기도 해서, cron-job.org가 30분마다 GitHub에 '실행해'라고 부르게 함.
-1. 토큰 만들기 (이름·권한 미리 채워진 링크): https://github.com/settings/personal-access-tokens/new?name=hotdeal-cron&description=cron-job.org%20trigger&target_name=luminae21-source&expires_in=366&actions=write
-   → Repository access: **Only select repositories → hotdeal-bot** → Generate → 토큰 복사 (한 번만 보임, 채팅에 붙이지 말 것)
-2. cron-job.org 가입 → CREATE CRONJOB
-   - URL: `https://api.github.com/repos/luminae21-source/hotdeal-bot/actions/workflows/hotdeal.yml/dispatches`
-   - 일정: 사용자 지정(Custom) → 분 `7,37` / 시 `8-23`
-   - ADVANCED: 시간대 `Asia/Seoul`, 요청 방식 **POST**, 본문 `{"ref":"main"}`, 헤더 3개: `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, `Authorization: Bearer (토큰)`
-3. 저장 → TEST RUN → 응답 **204**면 성공 (Actions에 `workflow_dispatch` 실행이 생김)
-- 토큰은 1년 만료 → 그 전에 1번 링크로 새로 만들어 cron-job.org 헤더만 교체. GitHub 예약 실행과 겹쳐도 같은 딜을 두 번 보내지 않음
+### 7. 30분 자동 실행 (tick 타이머, 무료·설정 완료)
+GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 스스로 30분 간격을 만듦.
+1. `.github/workflows/tick.yml` 업로드 + `Settings → Environments → New environment` 이름 `tick` → **Wait timer 29분** → Save (완료)
+2. `Actions → tick → Run workflow` 한 번 → 이후 계속 이어짐 (완료)
+- 흐름: tick 실행 → 29분 대기(러너·요금 안 씀) → hotdeal 실행(KST 0~7시는 건너뜀) + 다음 tick 예약 → 반복
+- tick이 여러 개 생겨도 `concurrency: tick` 때문에 하나만 남고 나머지는 자동 취소. 끊기면 3시간마다 예약 실행이 다시 시작하고, 급하면 2번 다시 누르면 됨
+- 확인: Actions → tick 맨 위가 `Waiting`이면 정상
+- (선택) 외부 크론 보험: cron-job.org에서 30분마다 `POST https://api.github.com/repos/luminae21-source/hotdeal-bot/actions/workflows/hotdeal.yml/dispatches` (본문 `{"ref":"main"}`, 헤더 `Authorization: Bearer 토큰` — 토큰은 https://github.com/settings/personal-access-tokens/new?name=hotdeal-cron&target_name=luminae21-source&expires_in=366&actions=write 에서 hotdeal-bot만 선택)
 
 ---
 
@@ -86,7 +85,7 @@ GitHub 예약 실행은 몇 시간씩 건너뛰기도 해서, cron-job.org가 30
 - 봇 채팅에 오는 초안 보고 **✅ 게시 / ❌ 패스** 만 누르기. 초안 맨 아래 💰 버튼 = 그 쇼핑몰 제휴 수수료(💸면 제휴 없음). 나만 보이고 채널엔 안 나감
 - 수수료 받을 딜이면: 초안의 🛒 버튼(뽐뿌 글) → 쇼핑몰 주소 복사 → 쿠팡 파트너스 / 링크프라이스 / 토스 쉐어링크('[토스]' 딜은 토스 앱 상품 공유 → '팔릴 때마다 돈 버는 링크 공유하기')에서 제휴 링크 만들기 → **초안에 답장으로 링크 붙여넣기** → 바로 ✅ 눌러도 됨. 다음 실행 때 버튼이 그 링크로 바뀌고 대가성 문구가 맨 앞에 붙어서 게시됨 (일반 쇼핑몰 주소로 답장하면 버튼만 바뀜)
 - 내가 찾은 딜(초안 없음)은 봇 채팅에 **첫 줄 제목 + (코멘트) + 링크**를 보내면 다음 실행 때 그 딜 초안이 옴 → ✅. 제휴 링크면 대가성 문구 자동, 링크만 보내면 제목 달라고 답장 옴
-- ✅ 누른 건 **다음 실행** 때 채널에 올라감 (보통 30분 안, GitHub 예약 실행이 밀리면 더 늦음). 급하면 GitHub 앱 → Actions → hotdeal → Run workflow
+- ✅ 누른 건 **다음 실행** 때 채널에 올라감 (30분 안. tick 타이머가 30분마다 돌림). 급하면 GitHub 앱 → Actions → hotdeal → Run workflow
 - 밤 9시 '오늘의 딜 모아보기' 초안 → ✅ 게시. 바로 뒤에 오는 **📝 블로그용 메시지**(제목+본문)를 blog.naver.com/hotdeal_pick 에 복붙 1분 = 네이버 검색 유입
 - 9시 반쯤 📸 **오늘의 카드** 사진이 옴 → 인스타에 그대로 올리면 끝 (Threads 연결돼 있으면 Threads는 이미 자동 게시됨)
 
@@ -125,7 +124,7 @@ GitHub 예약 실행은 몇 시간씩 건너뛰기도 해서, cron-job.org가 30
 | `TG sendMessage 403` | 봇에게 `/start` 안 보냄 |
 | `⚠️ 채널 게시 실패` 메시지 | 봇이 채널 관리자인지, `TG_CHANNEL` 확인 |
 | `deeplink ...` | 쿠팡 키 오타 / 아직 API 미승인 |
-| 초안이 몇 시간째 안 옴 (Actions에 `Scheduled` 실행이 드묾) | GitHub 예약 실행 누락 → Run workflow로 바로 실행. 근본 해결은 위 7번 외부 크론 (cron-job.org 실행 기록에서 204 확인) |
+| 초안이 몇 시간째 안 옴 (Actions에 `Scheduled` 실행이 드묾) | Actions → tick 맨 위가 `Waiting`인지 확인. 아니면 tick → Run workflow (체인 재시작). 급하면 hotdeal → Run workflow |
 | 구매 버튼이 뽐뿌 글로 감 | 현재 정상 (뽐뿌가 GitHub 서버 IP를 차단) → 초안에 링크 답장으로 교체. 차단이 풀렸는지는 Actions → `linkcheck` → Run workflow → 로그에 쇼핑몰 주소가 나오면 자동 추출 재개 |
 
 ---
@@ -164,12 +163,14 @@ GitHub 예약 실행은 몇 시간씩 건너뛰기도 해서, cron-job.org가 30
 | 2026-10-05 | 초안 답장 링크 교체 (쿠팡=쿠팡 문구 / 링크프라이스·알리=제휴 문구 / 일반 주소=버튼만, UTF-16 오프셋, 같은 실행 ✅, 남의 답장 무시) | 셀프체크 3-2 + 22시 고정 실행 | ✅ |
 | 2026-10-05 | 토스 쉐어링크 링크(toss.im·toss.shopping) 답장 교체 + 토스 권장 대가성 문구, 제휴 문구 줄이 제목으로 잡히던 문제 수정 | 셀프체크 3-2 | ✅ (쉐어링크 가입·실제 링크는 ⏳) |
 | 2026-10-05 | 링크프라이스 G마켓 딥링크 생성 (item.gmarket.co.kr → click.linkprice.com/click.php?m=gmarket…) + 단축 도메인(lpweb·linkmoa·lase·bestmore·newtip)도 대가성 문구 자동 | 실제 링크프라이스 딥링크 메뉴 + 셀프체크 3-2 | ✅ (구매 시 수수료 집계는 ⏳) |
-| 2026-10-05 | 예약 실행 빈도 (`*/30` → `7,37`) | Actions 실행 목록 | ❌ 08~13시 KST 예약 10번 중 1번만 실행(#15, 16분 지연). `7,37`분으로 바꾼 뒤에도 13:37·14:07·14:37 3번 모두 누락 → 외부 크론(7번) 필요 ⏳ |
+| 2026-10-05 | 예약 실행 빈도 (`*/30` → `7,37`) | Actions 실행 목록 | ❌ 08~13시 KST 예약 10번 중 1번만 실행(#15, 16분 지연). `7,37`분으로 바꾼 뒤에도 13:37·14:07·14:37 3번 모두 누락 → tick 타이머(7번)로 해결 |
 | 2026-10-05 | 봇에게 '제목+링크' 보내기 → 초안 (대가성 문구·HTML 이스케이프·붙여넣은 문구 중복 제거·링크만 보내면 안내·남의 메시지 무시) | 셀프체크 3-3 | ✅ |
 | 2026-10-05 | 수동 실행 #17 (새 코드) | 실제 Actions 실행 | ✅ 새 글 10건 판단 → 초안 3건 (G마켓·롯데온·SK스토아) |
 | 2026-10-05 | 링크프라이스 롯데온·쿠팡 승인 신청 | 실제 신청 | ✅ 롯데온 즉시 승인 / 쿠팡 승인 대기 ⏳ |
 | 2026-10-05 | 링크프라이스 등록 사이트 주소 | 신청 화면 + 실제 접속 | ❌ blog.naver.com/hotdeal21 로 등록돼 있는데 접속 불가 (실제 블로그는 hotdeal_pick) → 원인: 네이버 아이디(hotdeal21) 기준 자동 등록 + 블로그 주소 변경. 링크프라이스 화면에선 수정 불가 → 1:1 문의로 hotdeal_pick 정정 요청 접수(10/5, 답변은 등록 이메일) ⏳. 알리 신청은 정정 후로 보류 |
 | 2026-10-05 | 초안 💰 수익 안내 버튼 (제목 [쇼핑몰] 표기 흔들림 흡수, 제휴 없는 몰 💸, 안내 버튼은 채널로 안 복사, 눌러도 무시) | 셀프체크 3-4 + 22시 고정 실행 | ✅ |
 | 2026-10-05 | 네이버 블로그 첫 글 (hotdeal_pick/224431881264) | 비로그인 접속으로 확인 | ✅ 전체공개·검색 허용(robots index,follow)·외부 노출, 링크 정상, 태그 8개(#첫글 #핫딜 #오늘의핫딜 #특가 #핫딜모음 #쇼핑정보 #최저가 #딜픽) 반영 확인 |
+| 2026-10-05 | ✅ 누른 초안 → 채널 게시 | 수동 실행 #20 + t.me/s/hotdeal_pick | ✅ 4건 게시 (구운계란·콜라+스프라이트·블루베리·삼다수). 게시 기능은 정상, 원인은 실행 누락 |
+| 2026-10-05 | tick 타이머 (environment 대기 타이머 + 자기 재실행) | 대기 1분으로 실제 시험 후 29분으로 변경 | ✅ tick #1→#2→#3→#5 이어짐, hotdeal #21·#22·#23 자동 실행(github-actions), 중간에 수동으로 넣은 tick #4는 자동 취소(체인 1개 유지) |
 | — | Threads 실제 게시 | THREADS_TOKEN 등록 후 첫 21시 | ⏳ |
 | — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |
