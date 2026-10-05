@@ -1,5 +1,5 @@
 """셀프체크: python test_hotdeal.py  (네트워크·키 불필요)"""
-import base64, hashlib, hmac, json, os, tempfile, time
+import base64, hashlib, hmac, json, os, re, tempfile, time
 from urllib.parse import parse_qs, urlsplit
 from email.utils import formatdate
 
@@ -219,7 +219,7 @@ n0 = len(json.load(open("posts.json"))); mids = iter(range(100, 200))
 def ch_tg(method, **p):
     sent.append((method, p))
     if method == "sendMessage" and p.get("chat_id") == "@ch":
-        return {"message_id": next(mids), "text": p["text"].replace("<i>", "").replace("</i>", ""), "entities": []}
+        return {"message_id": next(mids), "text": re.sub(r"<[^>]+>", "", p["text"]), "entities": []}  # 텔레그램은 태그 없는 글 + entities로 돌려줌
     return {"message_id": 1}
 H.tg = ch_tg
 H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8, None, {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "unit": "kg당 6,233원", "warn": "", "x": None})  # 💸: 바로 게시, 사본 없음
@@ -241,7 +241,10 @@ assert H.lp_search("[옥션] 라면 (1+1)") == (None, None)  # 옥션 검색 딥
 sent.clear(); H.post_or_draft(D("[쿠팡] 휴지 30롤"), "싸요", 8)  # 손으로 링크 만들어야 하는 몰: 게시 + 관리자 사본
 assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch"), ("copyMessage", "42")]
 cp = sent[1][1]; assert cp["from_chat_id"] == "@ch" and cp["message_id"] == 102
-assert cp["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/102" and cp["reply_markup"]["inline_keyboard"][1][0]["text"].startswith("💰 쿠팡 파트너스")
+kb = cp["reply_markup"]["inline_keyboard"]
+assert kb[0][0]["url"] == "https://t.me/ch/102" and kb[2][0]["text"].startswith("💰 쿠팡 파트너스")
+assert kb[1][0] == {"text": "🔗 파트너스 링크 만들기", "url": "https://partners.coupang.com/#affiliate/ws/link/0/%ED%9C%B4%EC%A7%80%2030%EB%A1%A4"}  # 파트너스 검색 결과 바로 열기
+assert json.load(open("posts.json"))[-1]["cp"] == 1  # 관리자 사본 번호 저장(링크만 보낼 때 찾기용)
 sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (None if p.get("chat_id") == "@ch" else {"message_id": 1})
 H.post_or_draft(D("[카카오] 게장"), "싸요", 8)  # 채널 게시 실패 -> 초안으로
 assert [p["chat_id"] for m, p in sent] == ["@ch", "42"] and sent[1][1]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok"
@@ -259,6 +262,19 @@ assert ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러
 pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
 assert pj[102]["url"] == "https://link.coupang.com/a/zz" and pj[102]["text"].startswith(H.DISCLOSURE) and pj[100]["url"] == D("")["url"]
 assert H.post_url(5) == "https://t.me/ch/5"
+# 3-5-2) 답장 없이 제휴 링크만 보내도 됨: 같은 몰(쿠팡·토스) 사본 중 아직 안 바꾼 가장 최근 채널 글이 바뀜, 없으면 안내
+H.tg = ch_tg; sent.clear()
+H.post_or_draft(D("[쿠팡] 물티슈 100매"), "싸요", 8); H.post_or_draft(D("[토스] 사과 5kg"), "싸요", 8)  # 채널 103(쿠팡), 104(토스)
+msg = lambda i, text: {"update_id": i, "message": {"message_id": 60 + i, "from": {"id": 42}, "text": text}}
+UP = [msg(1, "https://link.coupang.com/a/yy"), msg(2, "https://toss.im/_m/abc"), msg(3, "https://link.coupang.com/a/zz2")]
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1})
+H.publish_approved()
+ed = [(p["chat_id"], p["message_id"], p["reply_markup"]["inline_keyboard"][0][0]["url"]) for m, p in sent if m == "editMessageText"]
+assert ed == [("@ch", 103, "https://link.coupang.com/a/yy"), ("42", 1, "https://link.coupang.com/a/yy"),
+              ("@ch", 104, "https://toss.im/_m/abc"), ("42", 1, "https://toss.im/_m/abc")]  # 쿠팡 링크는 쿠팡 글(103)에, 토스는 토스 글(104)에
+assert [p["text"] for m, p in sent if m == "sendMessage"][0].startswith("첫 줄에 제목")  # 바꿀 쿠팡 글이 더 없음(102·103 교체 끝) -> 안내
+pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
+assert pj[103]["url"] == "https://link.coupang.com/a/yy" and pj[104]["text"].startswith(H.TOSS_NOTE) and H.pending_copy("https://toss.im/_m/x") is None
 # 3-6) 상품 주소가 있는 딜(루리웹·클리앙): 채널 버튼은 상품 페이지 / 사본에 '상품 열기' / 옥션도 상품 페이지 딥링크
 H.tg = ch_tg; sent.clear(); H.store_link = lambda u: "https://smartstore.naver.com/s/products/1"
 H.post_or_draft(D("땅콩버터 파우더 3개"), "싸요", 8)  # 클리앙처럼 [몰]이 없어도 주소로 네이버 판단 -> 사본

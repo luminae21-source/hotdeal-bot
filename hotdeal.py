@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """핫딜봇: 뽐뿌·루리웹·클리앙 핫딜 -> Claude 선별/코멘트 -> 채널 바로 게시.
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
-쿠팡·네이버 등 수동 몰은 관리자에게 사본(+상품 열기 버튼) -> 제휴 링크로 답장하면 채널 글 교체. 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
+쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 API 키가 있으면 매일 골드박스 TOP5 초안.
 GitHub Actions에서 30분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
 import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
@@ -45,6 +45,7 @@ LP_SEARCH = {  # 링크프라이스 승인 몰: 제목 [쇼핑몰] -> (머천트
     "지마켓": ("gmarket", "G마켓", "https://www.gmarket.co.kr/n/search?keyword="),
     "롯데온": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q="),
     "롯데on": ("lotteon", "롯데온", "https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q=")}
+CP_SEARCH = "https://partners.coupang.com/#affiliate/ws/link/0/"  # 파트너스 '상품 링크' 검색 결과를 바로 여는 주소(10/6 확인: 새로 열어도 검색됨, 상품 주소로는 검색 안 됨)
 LP_API = "https://api.linkprice.com/ci/service/custom_link_xml?a_id={}&mode=json&url={}"  # 링크프라이스 딥링크 API: 승인된 몰이면 S + 링크, 아니면 F(승인거부·유효하지 않은 URL)
 LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # API 장애 때만 쓰는 승인 몰 목록(직접 딥링크)
 HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
@@ -367,7 +368,7 @@ def post_url(mid):
 
 def post_or_draft(d, comment, score, q=None, extra=None):
     """✅ 없이 채널에 바로 게시. 링크프라이스 몰은 검색 제휴 링크가 자동으로 붙음.
-    쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크로 답장 -> 채널 글 교체(선택).
+    쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크를 답장(또는 그냥 전송) -> 채널 글 교체(선택).
     채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음."""
     text, url, label = deal_post(d, comment, q, extra)
     info = store_info(d["title"], url)
@@ -375,13 +376,25 @@ def post_or_draft(d, comment, score, q=None, extra=None):
            reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
     if not m:
         return draft(text, url, score=score, info=info, label=label)
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, extra)
+    cp = None
     if info.startswith("💰") and not aff_note(url):
         kb = [[{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
-              [{"text": info.split(" · ")[0] + " · 링크로 답장하면 채널 글 교체(선택)", "callback_data": "-"}]]
-        if url != d["url"]:  # 상품 주소를 알면: 눌러서 쇼핑앱 열기 -> 공유 -> 제휴 링크 복사 -> 답장 (뽐뿌 글 거칠 필요 없음)
+              [{"text": info.split(" · ")[0] + " · 링크 보내면 채널 글 교체(선택)", "callback_data": "-"}]]
+        if info.startswith("💰 쿠팡"):  # 앱 공유·주소 복사 없이: 파트너스 검색 결과 -> 상품 -> 링크 생성 -> URL 복사 -> 봇에 붙여넣기
+            kb.insert(1, [{"text": "🔗 파트너스 링크 만들기", "url": CP_SEARCH + urllib.parse.quote(q or keyword(d["title"]))}])
+        elif url != d["url"]:  # 상품 주소를 알면: 눌러서 쇼핑앱 열기 -> 공유 -> 제휴 링크 복사 -> 답장 (뽐뿌 글 거칠 필요 없음)
             kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
-        tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": kb})
+        cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
+                 reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
+
+
+def pending_copy(link):
+    """답장 없이 제휴 링크만 보냈을 때 바꿀 채널 글: 같은 프로그램(쿠팡·토스·네이버) 사본 중 아직 안 바꾼 가장 최근 글(24시간 안)."""
+    shop = {DISCLOSURE: "쿠팡", TOSS_NOTE: "토스", NAVER_NOTE: "네이버"}.get(aff_note(link))
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
+    return next((p for p in reversed(load(POSTS, [])) if shop and p.get("cp") and p.get("mid") and p["t"] >= since
+                 and not aff_note(p.get("url") or "") and store_info(title_of(p["text"]), p.get("url")).startswith("💰 " + shop)), None)
 
 
 def aff_note(url):
@@ -429,7 +442,8 @@ def relink(m, url):
 
 def publish_approved():
     """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 30분 주기로 충분.
-    1) 초안에 링크로 답장 -> 구매 버튼 교체  2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 그 딜 초안 생성
+    1) 사본·초안에 링크로 답장 -> 구매 버튼 교체 (쿠팡·토스·네이버 링크는 답장 없이 링크만 보내도 가장 최근 같은 몰 사본)
+    2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 그 딜 초안 생성
     3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)"""
     ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
     fixed = {}
@@ -449,6 +463,10 @@ def publish_approved():
             continue
         lines = [l.strip().lstrip("🔥").strip() for l in m["text"].replace(url.group(0), "").split("\n")]
         lines = [l for l in lines if l and not l.startswith(NOTE_STARTS)]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
+        p = None if lines else pending_copy(url.group(0))
+        if p:  # 링크만 보냄 -> 가장 최근 같은 몰 사본의 채널 글 교체 (사본에 '✅ 채널 글 교체됨' 표시로 어느 글인지 보임)
+            relink_channel({"chat": {"id": ADMIN}, "message_id": p["cp"], "text": p["text"], "entities": p["entities"]}, p["mid"], url.group(0))
+            continue
         if not lines:
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
                text="첫 줄에 제목을 같이 보내줘. 예)\n[G마켓] 상품명 (39,910원/무료)\n한 줄 코멘트\n링크")
