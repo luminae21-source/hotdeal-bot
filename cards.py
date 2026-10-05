@@ -48,7 +48,7 @@ def make(items, date_label, out):
     im = Image.new("RGB", (W, H), CREAM)
     d = ImageDraw.Draw(im)
     d.text((X0, 84), f"{date_label}  ·  오늘의 가성비 딜", font=pf("SemiBold", 34), fill=SUB)
-    f = pf("Bold", 34); d.text((W - X0 - d.textlength("딜 pick", font=f), 84), "딜 pick", font=f, fill=ACCENT)
+    f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 84), "핫딜픽", font=f, fill=ACCENT)
     d.text((X0, 136), "오늘 살 만한 딜", font=pf("ExtraBold", 76), fill=INK2)
     d.rectangle((X0, 262, W - X0, 264), fill=LINE)
     y = 292

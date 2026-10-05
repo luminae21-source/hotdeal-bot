@@ -7,7 +7,7 @@ CHANNEL = "https://t.me/hotdeal_pick"
 BLOG = "https://blog.naver.com/hotdeal_pick"
 INSTA = "https://www.instagram.com/hotdealpick.kr/"
 THREADS = "https://www.threads.com/@hotdealpick.kr"
-TITLE = "오늘의 딜 pick"
+TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
 a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:12px 0 4px}header h1{margin:0;font-size:22px}header h1 a{color:inherit;text-decoration:none}
