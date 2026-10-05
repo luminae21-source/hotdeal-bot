@@ -5,7 +5,7 @@ name: tick
 on:
   workflow_dispatch:               # 체인 시작/재시작: Actions → tick → Run workflow
   schedule:
-    - cron: "11 */3 * * *"         # 체인이 끊겼을 때 자동 재시작용 (돌고 있으면 대기열에서 자동 취소됨)
+    - cron: "11 * * * *"           # 체인이 끊겼을 때 자동 재시작용, 매시 (돌고 있으면 대기열에서 자동 취소됨. 10/6 새벽 GitHub 장애로 3시간 끊겨서 3시간 -> 1시간)
 concurrency: tick                  # 대기·실행 중 1개 + 대기열 1개만 -> 체인이 여러 개로 불어나지 않음
 permissions:
   actions: write                   # 다른 워크플로 실행(workflow_dispatch)용
