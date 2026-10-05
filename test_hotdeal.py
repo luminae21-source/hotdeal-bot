@@ -111,7 +111,7 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     blog = sent[-1][1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
     assert sent[-1][0] == "sendMessage" and "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     sent.clear(); H.digest(seen, P); assert not sent
-assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx
+assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
 # 8) 카드 이미지: 제목 파싱(중첩 괄호·뒤 꼬리말), 6개 넘어도 하단 박스 안 침범, PNG 생성
 import cards

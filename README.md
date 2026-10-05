@@ -139,5 +139,8 @@ GitHub Actions (30분마다, KST 08~24시)
 | 2026-10-05 | 카드 이미지 (제목 파싱·중첩 괄호·6개 초과 시 하단 침범 없음·PNG 생성) | 셀프체크 | ✅ |
 | 2026-10-05 | 카드 전송·Threads 게시 흐름 (카드 미배포 시 대기 → 사진 1회 → 토큰 있으면 me → 컨테이너 → 발행, 토큰 없으면 사진만) | 셀프체크 (API 모킹) | ✅ |
 | 2026-10-05 | 워크플로 Pillow·나눔고딕 설치 | 실제 Actions 실행 #14 | ✅ 3초, 오류 없음 |
+| 2026-10-05 | 인스타·Threads 계정 `hotdealpick.kr` (실명 비노출·소개·링크) | 공개 프로필 확인 + Threads 링크 클릭 → 사이트 열림 | ✅ |
+| 2026-10-05 | Threads 앱 `hotdealpick` (권한 basic·content_publish, 콜백 URL, 테스터 수락, `THREADS_TOKEN` 시크릿) | Meta 대시보드 새로고침 확인 + Threads 웹사이트 권한 '활성' + GitHub 시크릿 목록 | ✅ |
+| 2026-10-05 | 사이트 하단 인스타·Threads 링크 | 셀프체크 6 | ✅ |
 | — | Threads 실제 게시 | THREADS_TOKEN 등록 후 첫 21시 | ⏳ |
 | — | 쿠팡 API 실제 호출 | 쿠팡 최종 승인 후 | ⏳ |

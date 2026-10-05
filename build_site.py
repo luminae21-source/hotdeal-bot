@@ -5,6 +5,8 @@ import html, json, os, re
 BASE = "https://hotdealpick.kr/"
 CHANNEL = "https://t.me/hotdeal_pick"
 BLOG = "https://blog.naver.com/hotdeal_pick"
+INSTA = "https://www.instagram.com/hotdealpick.kr/"
+THREADS = "https://www.threads.com/@hotdealpick.kr"
 TITLE = "오늘의 딜 pick"
 DISCLOSURE = "이 사이트는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
@@ -54,7 +56,7 @@ def page(title, body, desc="", canonical=""):
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
 <p class="dis">{DISCLOSURE}</p>{body}
 <a class="tg" href="{CHANNEL}">📲 텔레그램에서 실시간으로 받기</a>
-<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
+<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
 def build(posts, out="docs"):
