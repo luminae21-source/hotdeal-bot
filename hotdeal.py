@@ -715,6 +715,19 @@ def bgm(kst):
         print("bgm", repr(e))
 
 
+def music_preview(seen):
+    """새로 넣은 Pixabay 곡은 관리자에게 1번 보내서 미리 듣고 저장할 수 있게(텔레그램이 음원 주소에서 바로 받아감). 못 받으면 곡 페이지 링크로."""
+    mus = load(MUSIC, [])
+    todo = [m for m in mus if m.get("url") and not m.get("sent")]
+    for m in todo:
+        m["sent"] = 1
+        cap = f"🎵 릴스 배경음악: {m['name']}\n{m.get('page', '')}\nPixabay 콘텐츠 라이선스(무료·상업 이용·출처 표시 불필요, Content ID 미등록)"
+        if not tg("sendAudio", chat_id=ADMIN, audio=m["url"], caption=cap):
+            tg("sendMessage", chat_id=ADMIN, text=cap, link_preview_options={"is_disabled": True})
+    if todo:
+        json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
+
+
 def ig_upload(path, caption, seen):
     """릴스 영상 -> 인스타 컨테이너 생성 + 영상 파일 업로드(rupload). 인스타가 처리하는 동안 기다리지 않고 다음 실행의 ig_publish()가 발행."""
     h = {"Authorization": "Bearer " + E["IG_TOKEN"]}
@@ -855,7 +868,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (events, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
+    for step in (events, music_preview, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
         try:
             step(seen)
         except Exception as e:

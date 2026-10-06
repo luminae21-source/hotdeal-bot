@@ -221,6 +221,15 @@ def no_net(req, timeout=None):
 H.urllib.request.urlopen = no_net; json.dump([{"url": "https://cdn.pixabay.com/download/audio/b.mp3"}], open("music.json", "w"))
 assert H.bgm(time.gmtime(0)) is None and len(os.listdir("music")) == 1  # 못 받으면 무음, 깨진 파일 안 남김
 os.remove("music.json"); assert H.bgm(time.gmtime(0)) is None  # 등록된 곡 없으면 무음
+# 새 Pixabay 곡은 관리자에게 1번 미리 듣기(텔레그램이 주소에서 받아감), 못 보내면 페이지 링크 글, 봇에 보낸 곡(id)은 안 보냄, 두 번 안 보냄
+json.dump([{"url": "https://cdn.pixabay.com/a.mp3", "name": "A", "page": "https://pixabay.com/music/a/"}, {"id": "F1", "u": "U1", "name": "B"},
+           {"url": "https://cdn.pixabay.com/c.mp3", "name": "C", "page": "https://pixabay.com/music/c/"}], open("music.json", "w"))
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or ({"message_id": 1} if p.get("audio", "").endswith("a.mp3") else None)
+H.music_preview({})
+assert [(m, p.get("audio")) for m, p in sent] == [("sendAudio", "https://cdn.pixabay.com/a.mp3"), ("sendAudio", "https://cdn.pixabay.com/c.mp3"), ("sendMessage", None)]
+assert "Pixabay" in sent[0][1]["caption"] and "https://pixabay.com/music/c/" in sent[2][1]["text"] and [m.get("sent") for m in json.load(open("music.json"))] == [1, None, 1]
+sent.clear(); H.music_preview({}); assert not sent
+os.remove("music.json"); H.music_preview({}); assert not sent
 H.urllib.request.urlopen, H.tg = uo, fake_tg
 # 3-4) 쇼핑몰별 수익 안내: 뽐뿌 제목 표기 흔들림([G마켓]붙여쓰기·지마켓·롯데ON) 흡수, 제휴 없는 몰은 수수료 0, 안내 버튼은 채널로 안 감
 assert H.store_info("[G마켓]메디폴미 크림") == H.store_info("[지마켓] 신라면") == H.LP.format("0.6%")
