@@ -571,8 +571,9 @@ def threads_hint(e):
 
 
 def toss_deals(seen):
-    """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널에 바로. 편성 0건인 날은 다음 실행에 다시.
-    API 상품·가격은 채널 글로만 쓰고 posts.json(사이트)엔 안 남김 — 승인 신청 내용(커머스형 전시·가격 비교 안 함) 그대로."""
+    """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널 + Threads에 바로. 편성 0건인 날은 다음 실행에 다시.
+    API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
+    커머스형 전시·가격 비교 안 함) 그대로."""
     kst = time.gmtime(time.time() + 9 * 3600)
     key = time.strftime("tossday_%Y%m%d", kst)
     if not HAS_TOSS or key in seen or kst.tm_hour < 9:
@@ -580,7 +581,7 @@ def toss_deals(seen):
     items = [x for x in toss("/products/today-deals?size=30")["items"] if not x.get("isSoldOut")]
     picks = items and ai_pick(GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)" for x in items])[:5]
-    rows = []
+    rows, plain = [], []
     for p in picks or []:
         x = items[p["i"]]
         try:
@@ -588,14 +589,25 @@ def toss_deals(seen):
         except Exception as e:  # 발급 제한 상품은 빼고 나머지만
             print("toss link", repr(e))
             continue
+        plain.append(f"{len(plain) + 1}. {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
         rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
                     + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
     print("toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
+    if items:  # Claude까지 돌렸으면 오늘은 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
+        seen[key] = time.time()
     if rows:
         tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
            text=f"<i>{TOSS_NOTE}</i>\n\n⏰ <b>오늘의 토스 하루특가 TOP{len(rows)}</b>\n\n" + "\n\n".join(rows))
-    if items:  # Claude까지 돌렸으면 오늘은 끝(발급이 다 막혀도 15분마다 다시 고르지 않게)
-        seen[key] = time.time()
+    tok = E.get("THREADS_TOKEN")
+    if rows and tok:  # Threads 글자 수 500 -> 넘치면 뒤 상품부터 뺌. 대가성 문구는 토스 가이드대로 맨 앞(더보기 없이 보이게)
+        while len(plain) > 1 and len(TOSS_NOTE) + 40 + len("\n\n".join(plain)) > 480:
+            plain.pop()
+        text = f"{TOSS_NOTE}\n\n⏰ 오늘의 토스 하루특가 TOP{len(plain)}\n\n" + "\n\n".join(plain)
+        me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(10)
+        json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
 def digest(seen, posts):
