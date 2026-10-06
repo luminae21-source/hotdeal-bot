@@ -108,6 +108,18 @@ def tg(method, **params):
     """텔레그램 API. 실패해도 전체 실행은 멈추지 않고 None 반환. 밤(KST 0~8시) 발송은 무음(구독자·관리자 안 깨움)."""
     if method in ("sendMessage", "copyMessage", "sendPhoto") and time.gmtime(time.time() + 9 * 3600).tm_hour < 8:
         params.setdefault("disable_notification", True)
+    text = params.get("text") or ""
+    if method == "sendMessage" and len(text) > 4096 and "reply_markup" not in params:  # 텔레그램 4096자 제한(10/6 블로그용 글 실패) -> 문단 단위로 나눠 보냄. 버튼 달린 초안은 안 나눔
+        parts = []
+        for para in text.split("\n\n"):
+            if parts and len(parts[-1]) + 2 + len(para) <= 4096:
+                parts[-1] += "\n\n" + para
+            else:
+                parts.append(para)
+        r = None
+        for p in parts:
+            r = tg(method, **{**params, "text": p[:4096]})
+        return r
     try:
         return json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
     except urllib.error.HTTPError as e:
@@ -587,18 +599,26 @@ def toss_deals(seen):
 
 
 def digest(seen, posts):
-    """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 블로그에 그대로 붙여넣어도 되는 형식."""
+    """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 바로 뒤 블로그용 글(길면 나눠서, 실패하면 다음 실행에 다시)·카드·릴스."""
     kst = time.gmtime(time.time() + 9 * 3600)
     key, today = time.strftime("digest_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
     todays = [p for p in posts if p["t"].startswith(today) and not p["text"].startswith("📋")]
-    if key in seen or kst.tm_hour < 21 or not todays:
+    if kst.tm_hour < 21 or not todays:
+        return
+
+    def blog():  # 실패하면(10/6: 4096자 초과) 다음 실행에 다시 — 모아보기 초안은 한 번만
+        if tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True}):
+            seen["blog_" + key[7:]] = time.time()
+    if key in seen:
+        if "blog_" + key[7:] not in seen:
+            blog()
         return
     rows = [f"{n}. <a href=\"{esc(p['url'])}\">{esc(title_of(p['text']))}</a>" for n, p in enumerate(todays, 1)]
     text = (f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows)
             + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick")
     if draft(text):
         seen[key] = time.time()
-        tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True})
+        blog()
         import cards
         try:  # Threads/인스타용 카드 -> docs/cards/ (워크플로가 커밋 -> 사이트에 공개 -> 다음 실행 때 threads()가 올림)
             cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
