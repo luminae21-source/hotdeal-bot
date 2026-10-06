@@ -26,7 +26,7 @@ CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구�
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
-MUSIC = "music.json"  # 릴스 배경음악: 관리자가 봇에 보낸 음악의 텔레그램 file_id만 저장(음원 파일은 공개 저장소에 안 올림 — 무료 음원도 원본 재배포는 금지)
+MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude가 고름) 또는 봇에 보낸 음악의 텔레그램 file_id. 음원 파일은 공개 저장소에 안 올림(무료 음원도 원본 재배포는 금지)
 IG = "https://graph.facebook.com/v25.0"  # 인스타 릴스 자동 게시(Facebook 로그인 방식 = 영상 파일을 바로 올림, 호스팅 불필요). IG_TOKEN = 페이지 액세스 토큰
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
@@ -498,7 +498,7 @@ def publish_approved():
         au = m.get("audio") or (doc if doc.get("mime_type", "").startswith("audio/") else None)
         if au and str(m.get("from", {}).get("id")) == ADMIN:
             mus = load(MUSIC, [])
-            if all(x["u"] != au["file_unique_id"] for x in mus):  # 같은 곡 두 번 보내도 1번만
+            if all(x.get("u") != au["file_unique_id"] for x in mus):  # 같은 곡 두 번 보내도 1번만 (Pixabay 주소 곡엔 u 없음)
                 mus.append({"id": au["file_id"], "u": au["file_unique_id"], "name": au.get("title") or au.get("file_name", "")})
                 json.dump(mus, open(MUSIC, "w"), ensure_ascii=False)
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
@@ -691,12 +691,22 @@ def digest(seen, posts):
 
 
 def bgm(kst):
-    """관리자가 봇에 보낸 배경음악(music.json) 중 오늘 차례 1곡 -> 임시 파일 경로. 없거나 못 받으면 None(무음 릴스)."""
+    """music.json 중 오늘 차례 1곡 -> 파일 경로. 없거나 못 받으면 None(무음 릴스).
+    url = Pixabay 음원(Claude가 고름): 처음 1번만 받아 Actions 캐시 music/에 보관(공개 저장소엔 안 올림) / id = 봇에 보낸 음악(텔레그램 file_id)."""
     mus = load(MUSIC, [])
     if not mus:
         return None
+    m = mus[kst.tm_yday % len(mus)]
     try:
-        f = tg("getFile", file_id=mus[kst.tm_yday % len(mus)]["id"])
+        if m.get("url"):
+            path = os.path.join("music", hashlib.sha1(m["url"].encode()).hexdigest()[:12] + ".mp3")
+            if not os.path.exists(path):
+                with urllib.request.urlopen(urllib.request.Request(m["url"], headers={"User-Agent": UA}), timeout=60) as r:
+                    data = r.read()
+                os.makedirs("music", exist_ok=True)
+                open(path, "wb").write(data)
+            return path
+        f = tg("getFile", file_id=m["id"])
         path = os.path.join(tempfile.gettempdir(), "bgm")
         with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
             open(path, "wb").write(r.read())

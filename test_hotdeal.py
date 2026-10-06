@@ -205,13 +205,21 @@ UP = [{"update_id": 40, "message": {"message_id": 50, "from": {"id": 42}, "audio
       {"update_id": 43, "message": {"message_id": 53, "from": {"id": 42}, "document": {"file_id": "F9", "file_unique_id": "U9", "mime_type": "application/pdf"}}},
       {"update_id": 44, "message": {"message_id": 54, "from": {"id": 42}, "document": {"file_id": "F3", "file_unique_id": "U3", "mime_type": "audio/x-wav", "file_name": "b.wav"}}}]
 sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1, "file_path": "music/f.mp3"})
+json.dump([{"url": "https://cdn.pixabay.com/download/audio/p.mp3", "name": "Pixabay"}], open("music.json", "w"))  # Claude가 넣은 Pixabay 곡 뒤에 추가
 H.publish_approved()
-assert [(x["id"], x["name"]) for x in json.load(open("music.json"))] == [("F1", "Happy"), ("F3", "b.wav")]
+assert [(x.get("id"), x["name"]) for x in json.load(open("music.json"))] == [(None, "Pixabay"), ("F1", "Happy"), ("F3", "b.wav")]
 assert [p["reply_parameters"]["message_id"] for m, p in sent if m == "sendMessage" and "배경음악" in p["text"]] == [50, 51, 54] and sent[-1] == ("getUpdates", {"offset": 45})
 got_url, uo = [], H.urllib.request.urlopen
-H.urllib.request.urlopen = lambda url, timeout=None: got_url.append(url) or io.BytesIO(b"ID3-music")
-bp = H.bgm(time.gmtime(86400 * 2))  # tm_yday 3 -> 3 % 2곡 = 두 번째 곡
+H.urllib.request.urlopen = lambda req, timeout=None: got_url.append(getattr(req, "full_url", req)) or io.BytesIO(b"ID3-music")
+bp = H.bgm(time.gmtime(86400 * 4))  # tm_yday 5 -> 5 % 3곡 = 세 번째 곡(F3)
 assert open(bp, "rb").read() == b"ID3-music" and got_url == ["https://api.telegram.org/file/bott/music/f.mp3"] and ("getFile", {"file_id": "F3"}) in sent
+json.dump([{"url": "https://cdn.pixabay.com/download/audio/a.mp3", "name": "Pixabay 곡"}], open("music.json", "w")); got_url.clear()
+pp = H.bgm(time.gmtime(0)); pp2 = H.bgm(time.gmtime(0))  # Pixabay 음원: 처음 1번만 받아 music/에 보관(캐시), 다음부턴 안 받음
+assert pp == pp2 and pp.startswith("music" + os.sep) and open(pp, "rb").read() == b"ID3-music" and got_url == ["https://cdn.pixabay.com/download/audio/a.mp3"]
+def no_net(req, timeout=None):
+    raise OSError("403")
+H.urllib.request.urlopen = no_net; json.dump([{"url": "https://cdn.pixabay.com/download/audio/b.mp3"}], open("music.json", "w"))
+assert H.bgm(time.gmtime(0)) is None and len(os.listdir("music")) == 1  # 못 받으면 무음, 깨진 파일 안 남김
 os.remove("music.json"); assert H.bgm(time.gmtime(0)) is None  # 등록된 곡 없으면 무음
 H.urllib.request.urlopen, H.tg = uo, fake_tg
 # 3-4) 쇼핑몰별 수익 안내: 뽐뿌 제목 표기 흔들림([G마켓]붙여쓰기·지마켓·롯데ON) 흡수, 제휴 없는 몰은 수수료 0, 안내 버튼은 채널로 안 감
