@@ -348,6 +348,42 @@ m, p = sent[-1]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and p["text"].startswith("<i>" + H.DISCLOSURE) and p["reply_markup"]["inline_keyboard"][0][0]["url"] == H.GOLDBOX
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 1번만
 time.time, H.HAS_CP = tt, True
+# 5-3) 토스 쉐어링크 Open API: 토스 상품 주소 -> 쉐어링크(tacaId), 토큰은 toss.json에 두고 재사용, 발급 실패면 주소 그대로(사본으로 수동)
+#      하루특가: 9시 이후 하루 1번 채널에 바로(품절·발급 실패 상품 빼고), posts.json(사이트)엔 안 남김
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1"); H.HAS_TOSS, ph, pa = True, H.http, H.ai_pick
+tcalls = []
+def toss_http(url, body=None, headers=None, method=None):
+    tcalls.append(url)
+    if url == "https://oauth2.cert.toss.im/token":
+        assert method == "POST" and b"grant_type=client_credentials" in body and b"client_secret=sk" in body and b"sharelink%3Awrite" in body
+        return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    assert url.startswith(H.TOSS_API) and headers["Authorization"] == "Bearer TK"
+    if url.endswith("/links"):
+        assert body["publisherId"] == "pub-1"
+        n = body.get("tacaId") or body.get("tacaItemId")
+        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/{n}"}} if n in (123, 1, 3)
+                          else {"resultType": "FAIL", "error": {"reason": "발급 제한 상품"}})
+    if url.endswith("/products/today-deals?size=30"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"토스상품{i}",
+                          "displayPrice": 1000 * (i + 1), "discountRate": 10 * i, "isSoldOut": i == 2} for i in range(4)]}})
+    raise AssertionError(url)
+H.http = toss_http
+if os.path.exists("toss.json"): os.remove("toss.json")
+assert H.affiliate("https://toss.shopping/t/123") == ("https://toss.im/_m/123", True) and H.aff_note("https://toss.im/_m/123") == H.TOSS_NOTE
+assert H.affiliate("https://toss.shopping/t/999") == ("https://toss.shopping/t/999", False)  # 발급 제한 -> 주소 그대로(사본)
+assert tcalls.count("https://oauth2.cert.toss.im/token") == 1 and json.load(open("toss.json"))["token"] == "TK"  # 토큰은 1번만 발급
+offered = []
+H.ai_pick = lambda prompt, lines: offered.extend(lines) or [{"i": 0, "score": 9, "comment": "가"}, {"i": 2, "score": 8, "comment": "나"}, {"i": 1, "score": 7, "comment": "다"}]
+seen, sent[:], n0 = {}, [], len(json.load(open("posts.json")))
+time.time = lambda: 1791241200; H.toss_deals(seen); assert not sent and not offered  # 10/6 08:00 KST: 9시 전
+time.time = lambda: 1791248400; H.toss_deals(seen)  # 10:00 KST
+m, p = sent[-1]; t = p["text"]
+assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "TOP2" in t
+assert not [l for l in offered if "토스상품2" in l] and "토스상품0" not in t  # 품절은 후보에서 빼고, 발급 실패(0)는 글에서 뺌
+assert t.index('href="https://toss.im/_m/3"') < t.index('href="https://toss.im/_m/1"') and "4,000원</b> (30%↓)" in t
+sent.clear(); H.toss_deals(seen); assert not sent  # 하루 1번
+assert len(json.load(open("posts.json"))) == n0  # API 상품은 사이트에 안 남김
+os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
 import build_site as S

@@ -14,6 +14,8 @@ ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
 MODEL = E.get("MODEL") or "claude-sonnet-5-5"
 MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
+HAS_TOSS = bool(E.get("TOSS_ACCESS_KEY") and E.get("TOSS_SECRET_KEY") and E.get("TOSS_PUBLISHER_ID"))  # 쉐어링크 Open API(10/6 승인). 호출은 고정 IP(오라클) 터널 경유 -> hotdeal.yml
+TOSS_API, TOSS_TOKEN = "https://sharelink.toss.im/openapi", "toss.json"  # toss.json: 1년짜리 액세스 토큰 보관(Actions 캐시, 매번 재발급 금지)
 MAX_DRAFTS = 2                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻혀서 나눠 올림 -> 넘친 딜은 다음 실행에 다시 판단
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
@@ -76,7 +78,7 @@ comment: 1줄, 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 
 def http(url, body=None, headers=None, method=None):
     h = {"User-Agent": UA, **(headers or {})}
-    if body is not None:
+    if body is not None and not isinstance(body, bytes):  # bytes = 폼 등 이미 인코딩된 본문(Content-Type은 headers로)
         body, h["Content-Type"] = json.dumps(body).encode(), "application/json"
     try:
         with urllib.request.urlopen(urllib.request.Request(url, body, h, method=method), timeout=30) as r:
@@ -260,10 +262,32 @@ def lp_link(merchant, target):
     return f"https://click.linkprice.com/click.php?m={merchant}&a={LP_AID}&l=9999&l_cd1=3&l_cd2=0&tu={urllib.parse.quote(target, safe='')}"
 
 
+def toss(path, body=None):
+    """쉐어링크 Open API -> success 본문. 토큰(1년)은 toss.json에 두고 만료 하루 전에만 재발급."""
+    t = load(TOSS_TOKEN, {})
+    if t.get("exp", 0) < time.time() + 86400:
+        form = urllib.parse.urlencode({"grant_type": "client_credentials", "client_id": E["TOSS_ACCESS_KEY"],
+                                       "client_secret": E["TOSS_SECRET_KEY"], "scope": "sharelink:read sharelink:write"}).encode()
+        r = json.loads(http("https://oauth2.cert.toss.im/token", form, {"Content-Type": "application/x-www-form-urlencoded"}, "POST"))
+        t = {"token": r["access_token"], "exp": time.time() + r["expires_in"]}
+        json.dump(t, open(TOSS_TOKEN, "w"))
+    r = json.loads(http(TOSS_API + path, body, {"Authorization": "Bearer " + t["token"]}))
+    if r.get("resultType") != "SUCCESS":  # HTTP 200이어도 FAIL일 수 있음(IP 미등록·발급 제한 상품 등)
+        raise RuntimeError(r.get("error"))
+    return r["success"]
+
+
 def affiliate(url):
-    """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 그 외: 링크프라이스 딥링크 API
-    (승인된 몰이면 상품 페이지 딥링크 — 새로 승인된 몰도 코드 수정 없이 바로 적용). API 장애 땐 LP_HOSTS로 직접."""
+    """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 토스: 쉐어링크 API(상품 주소의 tacaId).
+    그 외: 링크프라이스 딥링크 API (승인된 몰이면 상품 페이지 딥링크 — 새로 승인된 몰도 코드 수정 없이 바로 적용). API 장애 땐 LP_HOSTS로 직접."""
     host = urllib.parse.urlsplit(url or "").netloc.lower()
+    taca = HAS_TOSS and re.match(r"https://toss\.shopping/t/(\d+)", url or "")
+    if taca:  # 실패(발급 제한 상품 등)하면 상품 주소 그대로 -> 관리자 사본으로 수동
+        try:
+            return toss("/links", {"tacaId": int(taca.group(1)), "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"], True
+        except Exception as e:
+            print("toss link", repr(e))
+            return url, False
     if HAS_CP and host.endswith("coupang.com"):
         try:
             return coupang("POST", "/deeplink", {"coupangUrls": [url]})[0]["shortenUrl"], True
@@ -522,6 +546,33 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
+def toss_deals(seen):
+    """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널에 바로. 편성 0건인 날은 다음 실행에 다시.
+    API 상품·가격은 채널 글로만 쓰고 posts.json(사이트)엔 안 남김 — 승인 신청 내용(커머스형 전시·가격 비교 안 함) 그대로."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    key = time.strftime("tossday_%Y%m%d", kst)
+    if not HAS_TOSS or key in seen or kst.tm_hour < 9:
+        return
+    items = [x for x in toss("/products/today-deals?size=30")["items"] if not x.get("isSoldOut")]
+    picks = items and ai_pick(GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
+                              [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)" for x in items])[:5]
+    rows = []
+    for p in picks or []:
+        x = items[p["i"]]
+        try:
+            link = toss("/links", {"tacaItemId": x["tacaItemId"], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
+        except Exception as e:  # 발급 제한 상품은 빼고 나머지만
+            print("toss link", repr(e))
+            continue
+        rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
+                    + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
+    if rows:
+        tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+           text=f"<i>{TOSS_NOTE}</i>\n\n⏰ <b>오늘의 토스 하루특가 TOP{len(rows)}</b>\n\n" + "\n\n".join(rows))
+    if items:  # Claude까지 돌렸으면 오늘은 끝(발급이 다 막혀도 15분마다 다시 고르지 않게)
+        seen[key] = time.time()
+
+
 def digest(seen, posts):
     """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 블로그에 그대로 붙여넣어도 되는 형식."""
     kst = time.gmtime(time.time() + 9 * 3600)
@@ -670,7 +721,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (goldbox, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
+    for step in (goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
         try:
             step(seen)
         except Exception as e:
