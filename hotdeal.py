@@ -573,6 +573,7 @@ def toss_deals(seen):
             continue
         rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
                     + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
+    print("toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
     if rows:
         tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
            text=f"<i>{TOSS_NOTE}</i>\n\n⏰ <b>오늘의 토스 하루특가 TOP{len(rows)}</b>\n\n" + "\n\n".join(rows))

@@ -84,19 +84,19 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 - 확인: Actions → tick 맨 위가 `Waiting`이면 정상
 - (선택) 외부 크론 보험: cron-job.org에서 30분마다 `POST https://api.github.com/repos/luminae21-source/hotdeal-bot/actions/workflows/hotdeal.yml/dispatches` (본문 `{"ref":"main"}`, 헤더 `Authorization: Bearer 토큰` — 토큰은 https://github.com/settings/personal-access-tokens/new?name=hotdeal-cron&target_name=luminae21-source&expires_in=366&actions=write 에서 hotdeal-bot만 선택)
 
-### 8. 토스 쉐어링크 API 자동 발급 (10/6 승인 · 오라클 무료 서버 준비 중)
+### 8. 토스 쉐어링크 API 자동 발급 (10/6 승인 · 오라클 서버 168.107.47.187)
 - 하는 일: ① 토스 상품 주소가 있는 딜(루리웹·클리앙 출처 `toss.shopping/t/번호`)은 **쉐어링크 자동 발급** → 사본 답장 없이 바로 수수료 링크 ② 매일 9시 이후 1번 **'오늘의 토스 하루특가 TOP5'**(Claude 선택, 품절·발급 제한 상품 제외)를 채널에 바로. API로 받은 상품·가격은 채널 글로만 쓰고 사이트(posts.json)엔 안 남김(승인 신청 내용대로)
 - 뽐뿌 `[토스]` 딜(상품 주소를 못 읽음)과 발급 실패한 딜은 지금처럼 사본에 쉐어링크 답장
 - 토스 API는 **등록한 고정 IP에서만** 받음 → GitHub 서버는 실행마다 IP가 바뀌어서, hotdeal.yml이 **오라클 무료 서버로 SSH 터널**을 열고 `sharelink.toss.im` 호출만 그 서버를 거침(시크릿 없으면 이 단계 건너뜀, 터널 실패해도 나머지는 정상)
 - 준비 순서:
-  1. (진우) 오라클 클라우드 가입 — 홈 리전 **South Korea Central (Seoul)**(나중에 못 바꿈), 카드는 본인 확인용
-  2. 서버 만들기: 이미지 **Ubuntu**, 모양 **VM.Standard.E2.1.Micro**(Always Free), 'SSH 키 쌍 생성' → **개인 키 저장**, 고급 옵션 → 관리 → cloud-init 스크립트에 아래 붙여넣기(이 키로는 토스 API 터널만 열 수 있게 제한 — 키가 새도 서버 접속 불가)
+  1. ✅ 오라클 클라우드 계정 `luminae21`(홈 리전 **South Korea North (Chuncheon)**, 무료 체험 7/7 종료 → Always Free로 계속 무료)
+  2. ✅ 서버 `hotdeal-toss-tunnel`(10/6): 이미지 **Oracle Linux 9**(접속 사용자 `opc`), 모양 **VM.Standard.E2.1.Micro**(Always Free, 이 계정 한도 2대 = quant-server + 이 서버), 공인 IP **168.107.47.187**, 'SSH 키 쌍 생성' → 개인 키 `ssh-key-2026-10-06.key`(진우 PC 다운로드 폴더), cloud-init으로 이 키는 토스 API 터널만 열 수 있게 제한 — 키가 새도 서버 접속 불가
      ```
      #!/bin/bash
-     sed -i 's/^ssh-/restrict,port-forwarding,permitopen="sharelink.toss.im:443" ssh-/' /home/ubuntu/.ssh/authorized_keys
+     sed -i 's/^ssh-/restrict,port-forwarding,permitopen="sharelink.toss.im:443" ssh-/' /home/opc/.ssh/authorized_keys
      ```
-  3. 서버의 **공인 IP**를 쉐어링크 → 연동 → API 키 발급 화면에 등록하고 키 발급
-  4. GitHub 시크릿 5개(진우가 직접 붙여넣기): `TOSS_ACCESS_KEY`(Access Key), `TOSS_SECRET_KEY`(Secret Key), `TOSS_PUBLISHER_ID`(회원 연동 ID), `TOSS_TUNNEL_HOST`(`ubuntu@서버IP`), `TOSS_TUNNEL_KEY`(2번 개인 키 파일 내용 전체)
+  3. ✅ 쉐어링크 → 연동 → API 키 발급: 출발지 IP 168.107.47.187 등록 → 키 발급('연동 중')
+  4. ✅ GitHub 시크릿 5개: `TOSS_TUNNEL_HOST`(`opc@168.107.47.187`), 키 값 4개는 진우가 직접 붙여넣기 — `TOSS_ACCESS_KEY`(Access Key), `TOSS_SECRET_KEY`(Secret Key), `TOSS_PUBLISHER_ID`(회원 연동 ID), `TOSS_TUNNEL_KEY`(2번 개인 키 파일 내용 전체, BEGIN~END 줄까지)
   5. 오라클 계정 **Pay As You Go 전환**(무료 범위 안이면 0원) + 예산 알림 — 안 하면 한가한 무료 서버를 7일 뒤 정지시킴
 - 확인: Actions 로그에 `toss link`·`toss_deals` 오류가 없고, 토스 딜 버튼이 `toss.im/_m/...`이면 정상. 토큰(1년)은 Actions 캐시 `toss.json`에 두고 재사용(등록 IP 밖에선 못 씀)
 
@@ -164,7 +164,8 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 | `⚠️ 채널 게시 실패` 메시지 | 봇이 채널 관리자인지, `TG_CHANNEL` 확인 |
 | `deeplink ...` | 쿠팡 키 오타 / 아직 API 미승인 |
 | `graph.threads.com ... API access blocked` | Meta가 개발자 계정을 잠금(10/6: '비정상적인 활동이 감지' → 계정 확인 요청) → 진우가 developers.facebook.com 접속 → **계정 확인** 단계 완료. 끝나면 다음 실행부터 자동 재개(토큰 그대로면 시크릿 수정 불필요) |
-| `toss link ... ACCESS_DENIED` | 토스 API 등록 IP와 오라클 서버 IP가 다름 / 터널 실패(바로 위 단계 ::warning) → 세팅 8번 확인 |
+| `toss_deals ...` / `toss link ...` + `ACCESS_DENIED` | 토스 API 등록 IP와 오라클 서버 IP가 다름 / 터널 실패(바로 위 단계 ::warning) → 세팅 8번 확인 |
+| ⚠️ `토스 터널 연결 실패` + `Connection timed out during banner exchange` | 오라클 서버가 메모리 부족으로 멈춤(1GB 서버에서 Oracle Linux 업데이트가 돌 때 생기는 알려진 문제, 10/6 16:35 발생) → 오라클 콘솔 → 인스턴스 hotdeal-toss-tunnel → Actions → Reboot(Force 체크). IP는 그대로라 다른 설정은 손댄 필요 없음. 그동안 토스 딜은 사본(수동)으로 계속 나감 |
 | 채널에 딜이 몇 시간째 안 올라옴 | Actions → tick 맨 위가 `Waiting`인지 확인. 아니면 tick → Run workflow (체인 재시작). 급하면 hotdeal → Run workflow |
 | 구매 버튼이 커뮤니티 글로 감 | 뽐뿌 딜은 정상 (뽐뿌가 GitHub 서버 IP를 차단해 상품 주소를 못 꺼냄) → 링크프라이스 몰은 검색 링크, 그 외는 사본에 링크 답장으로 교체. 출처별 상태는 Actions → `linkcheck` → Run workflow → 로그에 쇼핑몰 주소가 나오면 정상 |
 
