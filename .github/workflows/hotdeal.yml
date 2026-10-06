@@ -44,6 +44,8 @@ jobs:
           COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
           COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
           THREADS_TOKEN: ${{ secrets.THREADS_TOKEN }}
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}       # 인스타 릴스 자동 게시: 페이지 액세스 토큰(없으면 영상만 봇 채팅으로)
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}   # 인스타 프로페셔널 계정 ID(숫자)
           TOSS_ACCESS_KEY: ${{ secrets.TOSS_ACCESS_KEY }}
           TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
           TOSS_PUBLISHER_ID: ${{ secrets.TOSS_PUBLISHER_ID }}
@@ -52,4 +54,5 @@ jobs:
       - run: |                     # 게시된 딜·카드가 있으면 사이트 갱신 커밋
           git config user.name hotdeal-bot && git config user.email hotdeal-bot@users.noreply.github.com
           git add -A docs && [ -f posts.json ] && git add posts.json
+          [ ! -f music.json ] || git add music.json   # 릴스 배경음악 목록(텔레그램 file_id만, 음원 파일 아님)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도
