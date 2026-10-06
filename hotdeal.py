@@ -546,6 +546,13 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
+def threads_hint(e):
+    """Threads 실패 알림의 조치 문구: Meta 개발자 계정 잠김('API access blocked', 10/6)과 토큰 만료를 구분."""
+    if "blocked" in (getattr(e, "body", "") or ""):
+        return "Meta가 개발자 계정을 잠갔어(API access blocked) → developers.facebook.com 접속해서 '계정 확인' 진행해줘. 끝나면 자동 재개"
+    return "토큰 만료(60일)면 THREADS_TOKEN 시크릿 재발급해줘"
+
+
 def toss_deals(seen):
     """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널에 바로. 편성 0건인 날은 다음 실행에 다시.
     API 상품·가격은 채널 글로만 쓰고 posts.json(사이트)엔 안 남김 — 승인 신청 내용(커머스형 전시·가격 비교 안 함) 그대로."""
@@ -729,7 +736,7 @@ def main():
             alert = time.strftime("th_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
             if step in (threads, threads_deals) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
-                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ Threads 게시 실패: {e!r}"[:300] + "\n토큰 만료(60일)면 THREADS_TOKEN 시크릿 재발급해줘")
+                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ Threads 게시 실패: {e!r}"[:300] + "\n" + threads_hint(e))
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))
     print(f"new={len(new)} seen={len(seen)}")

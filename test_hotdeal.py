@@ -348,6 +348,9 @@ m, p = sent[-1]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and p["text"].startswith("<i>" + H.DISCLOSURE) and p["reply_markup"]["inline_keyboard"][0][0]["url"] == H.GOLDBOX
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 1번만
 time.time, H.HAS_CP = tt, True
+# 5-4) Threads 실패 알림: 개발자 계정 잠김(API access blocked)이면 '계정 확인' 안내, 그 외엔 토큰 재발급 안내
+eb = Exception("400"); eb.body = '{"error": {"message": "API access blocked.", "code": 200}}'
+assert "계정 확인" in H.threads_hint(eb) and "토큰" in H.threads_hint(Exception("x"))
 # 5-3) 토스 쉐어링크 Open API: 토스 상품 주소 -> 쉐어링크(tacaId), 토큰은 toss.json에 두고 재사용, 발급 실패면 주소 그대로(사본으로 수동)
 #      하루특가: 9시 이후 하루 1번 채널에 바로(품절·발급 실패 상품 빼고), posts.json(사이트)엔 안 남김
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1"); H.HAS_TOSS, ph, pa = True, H.http, H.ai_pick
