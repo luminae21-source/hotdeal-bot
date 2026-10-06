@@ -165,7 +165,7 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 | `deeplink ...` | 쿠팡 키 오타 / 아직 API 미승인 |
 | `graph.threads.com ... API access blocked` | Meta가 개발자 계정을 잠금(10/6: '비정상적인 활동이 감지' → 계정 확인 요청) → 진우가 developers.facebook.com 접속 → **계정 확인** 단계 완료. 끝나면 다음 실행부터 자동 재개(토큰 그대로면 시크릿 수정 불필요) |
 | `toss_deals ...` / `toss link ...` + `ACCESS_DENIED` | 토스 API 등록 IP와 오라클 서버 IP가 다름 / 터널 실패(바로 위 단계 ::warning) → 세팅 8번 확인 |
-| ⚠️ `토스 터널 연결 실패` + `Connection timed out during banner exchange` | 오라클 서버가 메모리 부족으로 멈춤(1GB 서버에서 Oracle Linux 업데이트가 돌 때 생기는 알려진 문제, 10/6 16:35 발생) → 오라클 콘솔 → 인스턴스 hotdeal-toss-tunnel → Actions → Reboot(Force 체크). IP는 그대로라 다른 설정은 손댄 필요 없음. 그동안 토스 딜은 사본(수동)으로 계속 나감 |
+| ⚠️ `토스 터널 연결 실패` + `Connection timed out during banner exchange` | 오라클 서버가 메모리 부족으로 멈춤(1GB 서버에서 Oracle Linux 업데이트가 돌 때 생기는 알려진 문제, 10/6 16:35 발생) → 오라클 콘솔 → 인스턴스 hotdeal-toss-tunnel → Actions → Reboot(Force 체크). IP는 그대로라 다른 설정은 손댈 필요 없음. 그동안 토스 딜은 사본(수동)으로 계속 나감 |
 | 채널에 딜이 몇 시간째 안 올라옴 | Actions → tick 맨 위가 `Waiting`인지 확인. 아니면 tick → Run workflow (체인 재시작). 급하면 hotdeal → Run workflow |
 | 구매 버튼이 커뮤니티 글로 감 | 뽐뿌 딜은 정상 (뽐뿌가 GitHub 서버 IP를 차단해 상품 주소를 못 꺼냄) → 링크프라이스 몰은 검색 링크, 그 외는 사본에 링크 답장으로 교체. 출처별 상태는 Actions → `linkcheck` → Run workflow → 로그에 쇼핑몰 주소가 나오면 정상 |
 
@@ -258,6 +258,7 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 | 2026-10-06 | 실제 실행(11:19, 14e71f5): 새 터널 단계는 시크릿 없어서 건너뜀·토스 코드 오류 없음 / 단, **캐시 경로에 toss.json을 추가하면서 캐시 버전이 바뀌어 seen.json이 한 번 초기화**(seen 195 → 20) → 이 실행에서 6시간 안 글 9건을 다시 판단했지만 7점↑ 없어 중복 게시 없음, 다음 실행부터 정상(24시간 같은 딜 판단 기록은 최근 게시 목록을 Claude에게 주는 것으로 보완) | Actions 로그 seen= 추이 | ✅ (다음부터 cache path 바꿀 땐 이 점 주의) |
 | 2026-10-06 | **Threads 자동 게시 중단** 발견: 10:45 실행부터 `API access blocked.`(OAuthException 200) → Meta 개발자 페이지가 '이 개발자 계정에서 비정상적인 활동이 감지되었습니다 — 계정 확인' 상태. 마지막 API 게시는 02:5x(펩시·과탄산소다 등). 계정 확인은 본인 인증이라 진우가 직접 | developers.facebook.com/apps → 차단 안내 화면, threads.com/@hotdealpick.kr 최근 글 | ⏳ 진우 계정 확인 |
 | 2026-10-06 | 관리봇 'Threads 게시 실패' 알림이 '토큰 만료면 재발급'으로만 안내 → 실제 원인(Meta 개발자 계정 잠김)과 달라서 **오류 본문에 'blocked'가 있으면 '계정 확인' 안내**로 구분 / 오늘 알림이 10:46·11:20 두 번 온 건 seen.json 초기화로 '오늘 알림 보냄' 기록이 지워져서(다음부터 하루 1번) | 셀프체크 5-4(blocked → 계정 확인, 그 외 → 토큰) + 22시 고정 실행 | ✅ |
+| 2026-10-06 | **토스 API 연동 가동**: 오라클 서버 `hotdeal-toss-tunnel`(Oracle Linux 9·E2.1.Micro·168.107.47.187) 생성 → 쉐어링크에 출발지 IP 등록·키 발급 → 시크릿 5개(`TOSS_TUNNEL_HOST`는 Claude, 키 값 4개는 진우). 첫 실행 16:42·16:56은 터널 실패(`banner exchange` 타임아웃) → 오라클 그래프상 16:35부터 메모리 93%·디스크 읽기 폭주 후 16:38부터 응답 없음(1GB 서버에서 dnf 메모리 부족, 알려진 문제). ARM(A1) 무료 서버는 춘천 리전에서 선택지 없음 → 진우 선택으로 **강제 재부팅**(IP 그대로) → 17:13·17:25 터널 2초 연결, 토스 API 응답 정상(ACCESS_DENIED 없음). 오늘 하루특가 편성 0건(토스 문서: 편성 없으면 0건, 정상) → 다음 실행에 다시 확인, 0건이어도 `toss_deals N items` 로그 남기게 수정 | Actions 로그(터널 단계 2s, `toss_deals 0 items 0 picks 0 links`) + 오라클 모니터링 그래프 + 토스 개발자 문서 | ✅ 터널·API · ⏳ 첫 쉐어링크 자동 발급·하루특가 게시, 서버 재멈춤 여부(멈추면 안 될 때 표대로 재부팅) |
 | — | 오늘의집 승인 결과 / (선택) 알리 인증 메일·리얼핫딜 API — 안 해도 손해 없음 | 진우 | ⏳ |
 | — | 브랜드커넥트 스페이스명 '오늘의 딜 pick…' → '핫딜픽 | 매일 핫딜 모음' (변경 제한이면 60일 뒤 12월 초) | 진우 | ⏳ |
 | — | 릴스 영상 실제 전송 (관리자 봇) · 블로그 글 메시지 | 진우가 봇 채팅에서 확인 | ⏳ |
