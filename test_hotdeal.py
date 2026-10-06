@@ -323,6 +323,13 @@ json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
 assert posted == ["ruliweb_90", "ruliweb_91"] and "ruliweb_92" not in sj and H.dkey("[G마켓] 상품2번 특가 묶음") not in sj  # 20분 된 루리웹 글도 판단
 posted.clear(); H.main(); assert posted == ["ruliweb_92"]  # 다음 실행에 나머지
+# 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
+BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"
+H.ai_pick = lambda prompt, lines: got.append(lines) or []
+for ages, want in (([3, 10, 14, 25, 32], {514, 525, 532}), ([3, 14, 25, 32, 50], {532, 550})):
+    H.http = lambda url, *a, x=BUSY(ages), **k: x if "rss.php" in url else ""
+    got.clear(); json.dump({}, open("seen.json", "w")); H.main()
+    assert {int(re.search(r"바쁜상품(\d+)호", l).group(1)) + 500 for l in got[0]} == want, (ages, got)
 H.post_or_draft = pod
 H.http = fake_http
 
