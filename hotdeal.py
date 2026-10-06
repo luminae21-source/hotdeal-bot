@@ -673,11 +673,14 @@ def digest(seen, posts):
                         need[f["i"]].update({k: f[k] for k in ("e", "hook", "pts", "unit", "warn") if f.get(k)})
                 except Exception as e:
                     print("reel fill", repr(e))
+            music, mus = bgm(kst), load(MUSIC, [])
+            song = mus[kst.tm_yday % len(mus)] if music else None  # 캡션에 곡명(인스타에서도 무슨 곡인지 보이게)
             path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]),
                                 **{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",
-                              os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), bgm(kst))
+                              os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), music)
             cap = ((top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
                    + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
+                   + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if song.get("url") else "") if song else "")
                    + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
                    + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024]
             if E.get("IG_TOKEN") and E.get("IG_USER_ID"):
@@ -716,17 +719,27 @@ def bgm(kst):
         print("bgm", repr(e))
 
 
-def music_preview(seen):
-    """새로 넣은 Pixabay 곡은 관리자에게 1번 보내서 미리 듣고 저장할 수 있게(텔레그램이 음원 주소에서 바로 받아감). 못 받으면 곡 페이지 링크로."""
+def playlist(seen):
+    """릴스 배경음악 플레이리스트(관리자 채팅): 곡이 새로 들어오면(sent 없음) 목록 글 + 전 곡을 오디오로 다시 보냄 -> 텔레그램에서
+    곡을 누르면 재생되고 다음 곡으로 이어짐(곡명·아티스트는 플레이어에 표시). 원본 음원은 관리자 채팅에만(Pixabay: 단독 배포 금지)."""
     mus = load(MUSIC, [])
-    todo = [m for m in mus if m.get("url") and not m.get("sent")]
-    for m in todo:
+    if all(m.get("sent") for m in mus):
+        return
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today = kst.tm_yday % len(mus)
+    tg("sendMessage", chat_id=ADMIN, text=f"🎵 릴스 배경음악 플레이리스트 ({kst.tm_mon}/{kst.tm_mday} 갱신, {len(mus)}곡)\n\n"
+       + "\n".join(f"{i}. {m['name']}" + (" ← 오늘 릴스" if i - 1 == today else "") for i, m in enumerate(mus, 1))
+       + "\n\n아래 곡을 누르면 재생돼요(다음 곡으로 이어서). Pixabay 콘텐츠 라이선스·Content ID 미등록 곡만")
+    for m in mus:
+        title, _, artist = m["name"].partition(" — ")
+        r = tg("sendAudio", chat_id=ADMIN, audio=m.get("fid") or m.get("url") or m["id"], title=title, caption=m.get("page", ""),
+               **({"performer": artist} if artist else {}))
+        if r and r.get("audio"):
+            m["fid"] = r["audio"]["file_id"]  # 다음 갱신 땐 텔레그램에 있는 파일로(다시 안 받음)
+        elif not r:
+            tg("sendMessage", chat_id=ADMIN, text=f"🎵 {m['name']} — {m.get('page', '')}", link_preview_options={"is_disabled": True})
         m["sent"] = 1
-        cap = f"🎵 릴스 배경음악: {m['name']}\n{m.get('page', '')}\nPixabay 콘텐츠 라이선스(무료·상업 이용·출처 표시 불필요, Content ID 미등록)"
-        if not tg("sendAudio", chat_id=ADMIN, audio=m["url"], caption=cap):
-            tg("sendMessage", chat_id=ADMIN, text=cap, link_preview_options={"is_disabled": True})
-    if todo:
-        json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
+    json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
 
 
 def ig_upload(path, caption, seen):
@@ -879,7 +892,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (events, music_preview, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
         try:
             step(seen)
         except Exception as e:

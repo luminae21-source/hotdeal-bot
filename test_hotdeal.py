@@ -221,15 +221,23 @@ def no_net(req, timeout=None):
 H.urllib.request.urlopen = no_net; json.dump([{"url": "https://cdn.pixabay.com/download/audio/b.mp3"}], open("music.json", "w"))
 assert H.bgm(time.gmtime(0)) is None and len(os.listdir("music")) == 1  # 못 받으면 무음, 깨진 파일 안 남김
 os.remove("music.json"); assert H.bgm(time.gmtime(0)) is None  # 등록된 곡 없으면 무음
-# 새 Pixabay 곡은 관리자에게 1번 미리 듣기(텔레그램이 주소에서 받아감), 못 보내면 페이지 링크 글, 봇에 보낸 곡(id)은 안 보냄, 두 번 안 보냄
-json.dump([{"url": "https://cdn.pixabay.com/a.mp3", "name": "A", "page": "https://pixabay.com/music/a/"}, {"id": "F1", "u": "U1", "name": "B"},
+# 플레이리스트(관리자 채팅): 새 곡이 들어오면 목록 글 + 전 곡 오디오(곡명·아티스트 표시, 누르면 재생·다음 곡 이어서), 받은 file_id 저장, 못 보내면 링크 글, 두 번 안 보냄
+json.dump([{"url": "https://cdn.pixabay.com/a.mp3", "name": "A — x", "page": "https://pixabay.com/music/a/"}, {"id": "F1", "u": "U1", "name": "b.wav", "sent": 1},
            {"url": "https://cdn.pixabay.com/c.mp3", "name": "C", "page": "https://pixabay.com/music/c/"}], open("music.json", "w"))
-sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or ({"message_id": 1} if p.get("audio", "").endswith("a.mp3") else None)
-H.music_preview({})
-assert [(m, p.get("audio")) for m, p in sent] == [("sendAudio", "https://cdn.pixabay.com/a.mp3"), ("sendAudio", "https://cdn.pixabay.com/c.mp3"), ("sendMessage", None)]
-assert "Pixabay" in sent[0][1]["caption"] and "https://pixabay.com/music/c/" in sent[2][1]["text"] and [m.get("sent") for m in json.load(open("music.json"))] == [1, None, 1]
-sent.clear(); H.music_preview({}); assert not sent
-os.remove("music.json"); H.music_preview({}); assert not sent
+def pl_tg(method, **p):
+    sent.append((method, p))
+    return None if p.get("audio", "").endswith("c.mp3") else {"message_id": 1, "audio": {"file_id": "FA" if p.get("audio", "").endswith("a.mp3") else p.get("audio")}}
+sent.clear(); H.tg = pl_tg; tq4 = time.time; time.time = lambda: 1791248400  # 10/6 (279일째 -> 279 % 3 = 0번 곡이 오늘)
+H.playlist({})
+assert [(m, p.get("audio")) for m, p in sent] == [("sendMessage", None), ("sendAudio", "https://cdn.pixabay.com/a.mp3"), ("sendAudio", "F1"), ("sendAudio", "https://cdn.pixabay.com/c.mp3"), ("sendMessage", None)]
+assert "3곡" in sent[0][1]["text"] and "1. A — x ← 오늘 릴스" in sent[0][1]["text"] and "누르면 재생" in sent[0][1]["text"]
+assert (sent[1][1]["title"], sent[1][1]["performer"]) == ("A", "x") and "performer" not in sent[2][1] and "https://pixabay.com/music/c/" in sent[4][1]["text"]
+assert [(m.get("fid"), m.get("sent")) for m in json.load(open("music.json"))] == [("FA", 1), ("F1", 1), (None, 1)]
+sent.clear(); H.playlist({}); assert not sent  # 새 곡 없으면 안 보냄
+mj = json.load(open("music.json")) + [{"url": "https://cdn.pixabay.com/d.mp3", "name": "D"}]; json.dump(mj, open("music.json", "w"))
+H.playlist({}); assert sent[1][1]["audio"] == "FA" and "4곡" in sent[0][1]["text"]  # 새 곡 추가 -> 전체 다시(이미 받은 곡은 텔레그램 파일로)
+os.remove("music.json"); sent.clear(); H.playlist({}); assert not sent
+time.time = tq4
 H.urllib.request.urlopen, H.tg = uo, fake_tg
 # 3-4) 쇼핑몰별 수익 안내: 뽐뿌 제목 표기 흔들림([G마켓]붙여쓰기·지마켓·롯데ON) 흡수, 제휴 없는 몰은 수수료 0, 안내 버튼은 채널로 안 감
 assert H.store_info("[G마켓]메디폴미 크림") == H.store_info("[지마켓] 신라면") == H.LP.format("0.6%")
@@ -657,8 +665,11 @@ def ig_down(url, *a, **k):
     raise RuntimeError("down")
 H.http, vids, tt2 = ig_down, [], time.time
 H.tg_video, H.draft, time.time = lambda path, cap: vids.append(cap), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
+json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst: "docs/bgm_t.m4a"
 sent.clear(); H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
 assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].startswith("우유 개당 100원")
+assert "🎵 테스트곡 — 작가 (Pixabay)" in vids[0]  # 캡션에 오늘 곡명
+H.bgm = bg; os.remove("music.json")
 del H.E["IG_TOKEN"]; ic[:] = []; H.http = ig_http; H.ig_publish({"igc_C3": 1}); assert not ic  # 토큰 없으면 호출 없음
 time.time, H.http = tt2, ph2
 print("OK: 모든 셀프체크 통과")
