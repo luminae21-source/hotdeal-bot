@@ -25,6 +25,8 @@ RULIWEB_RSS = "https://bbs.ruliweb.com/market/board/1020/rss"  # 루리웹 핫�
 CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구매: RSS 없음 -> 목록 HTML, 글 위 '구매링크' (robots: 쿼리 없는 /service/board/ 허용)
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
+MUSIC = "music.json"  # 릴스 배경음악: 관리자가 봇에 보낸 음악의 텔레그램 file_id만 저장(음원 파일은 공개 저장소에 안 올림 — 무료 음원도 원본 재배포는 금지)
+IG = "https://graph.facebook.com/v25.0"  # 인스타 릴스 자동 게시(Facebook 로그인 방식 = 영상 파일을 바로 올림, 호스팅 불필요). IG_TOKEN = 페이지 액세스 토큰
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 안내 대가성 문구 그대로(10/5 머천트 정보 화면)
@@ -485,11 +487,22 @@ def publish_approved():
     """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 15분 주기로 충분.
     1) 사본·초안에 링크로 답장 -> 구매 버튼 교체 (쿠팡·토스·네이버 링크는 답장 없이 링크만 보내도 가장 최근 같은 몰 사본)
     2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 그 딜 초안 생성
-    3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)"""
+    3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)
+    4) 음악 파일 보내기 -> 릴스 배경음악 목록(music.json)에 추가"""
     ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
     fixed = {}
     for u in ups:
         m = u.get("message") or {}
+        doc = m.get("document") or {}
+        au = m.get("audio") or (doc if doc.get("mime_type", "").startswith("audio/") else None)
+        if au and str(m.get("from", {}).get("id")) == ADMIN:
+            mus = load(MUSIC, [])
+            if all(x["u"] != au["file_unique_id"] for x in mus):  # 같은 곡 두 번 보내도 1번만
+                mus.append({"id": au["file_id"], "u": au["file_unique_id"], "name": au.get("title") or au.get("file_name", "")})
+                json.dump(mus, open(MUSIC, "w"), ensure_ascii=False)
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
+               text=f"🎵 릴스 배경음악 등록 (총 {len(mus)}곡, 날마다 돌아가며 사용)")
+            continue
         url = re.search(r"https?://\S+", m.get("text", ""))
         if not url or str(m.get("from", {}).get("id")) != ADMIN:
             continue
@@ -646,13 +659,61 @@ def digest(seen, posts):
                 except Exception as e:
                     print("reel fill", repr(e))
             path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]),
-                                **{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
-            tg_video(path, ((top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
-                            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
-                            + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
-                            + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024])
+                                **{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",
+                              os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), bgm(kst))
+            cap = ((top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
+                   + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
+                   + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+                   + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024]
+            if E.get("IG_TOKEN") and E.get("IG_USER_ID"):
+                try:
+                    ig_upload(path, cap, seen)
+                except Exception as e:
+                    print("ig upload", repr(e), getattr(e, "body", ""))
+                    tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 인스타 릴스 업로드 실패 — 아래 영상을 직접 올려줘: {e!r} {getattr(e, 'body', '')}"[:400])
+            tg_video(path, cap)
         except Exception as e:
             print("reel", repr(e))
+
+
+def bgm(kst):
+    """관리자가 봇에 보낸 배경음악(music.json) 중 오늘 차례 1곡 -> 임시 파일 경로. 없거나 못 받으면 None(무음 릴스)."""
+    mus = load(MUSIC, [])
+    if not mus:
+        return None
+    try:
+        f = tg("getFile", file_id=mus[kst.tm_yday % len(mus)]["id"])
+        path = os.path.join(tempfile.gettempdir(), "bgm")
+        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
+            open(path, "wb").write(r.read())
+        return path
+    except Exception as e:
+        print("bgm", repr(e))
+
+
+def ig_upload(path, caption, seen):
+    """릴스 영상 -> 인스타 컨테이너 생성 + 영상 파일 업로드(rupload). 인스타가 처리하는 동안 기다리지 않고 다음 실행의 ig_publish()가 발행."""
+    h = {"Authorization": "Bearer " + E["IG_TOKEN"]}
+    c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"media_type": "REELS", "upload_type": "resumable", "caption": caption, "share_to_feed": True}, h, "POST"))
+    data = open(path, "rb").read()
+    http(c["uri"], data, {"Authorization": "OAuth " + E["IG_TOKEN"], "offset": "0", "file_size": str(len(data))}, "POST")
+    seen["igc_" + c["id"]] = time.time()
+
+
+def ig_publish(seen):
+    """올려둔 릴스 컨테이너가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에, 실패(ERROR·EXPIRED)면 알림(main)."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    if not (tok and uid):
+        return
+    for k in [k for k in seen if k.startswith("igc_")]:
+        st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
+        if st == "IN_PROGRESS":
+            continue
+        seen.pop(k)
+        if st != "FINISHED":
+            raise RuntimeError(f"인스타 릴스 처리 실패({st}) — 오늘 영상은 봇 채팅에서 직접 올려줘")
+        json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
+        tg("sendMessage", chat_id=ADMIN, text="🎬 인스타 릴스 자동 게시 완료 (instagram.com/hotdealpick.kr)")
 
 
 def blog_text(todays, kst):
@@ -770,15 +831,17 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals):
+    for step in (goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
-            alert = time.strftime("th_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            ig = step is ig_publish
+            alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
+            if step in (threads, threads_deals, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
-                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ Threads 게시 실패: {e!r}"[:300] + "\n" + threads_hint(e))
+                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
+                   + ("IG_TOKEN(페이지 토큰)·권한 확인 → README 세팅 6-2" if ig else threads_hint(e)))
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))
     print(f"new={len(new)} seen={len(seen)}")

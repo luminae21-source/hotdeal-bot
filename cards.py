@@ -223,8 +223,8 @@ def _rule(frame, y, t, delay, color=LINE):
         ImageDraw.Draw(frame).rectangle((X0, y, X0 + XW * k, y + 2), fill=color)
 
 
-def reel(items, date_label, out):
-    """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 15초 1080x1920 MP4 (소리 없음 -> 인스타에서 음악 추가). -> out
+def reel(items, date_label, out, music=None):
+    """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 15초 1080x1920 MP4. music(음악 파일 경로) 있으면 배경음악(짧으면 반복·앞뒤 페이드), 없으면 무음. -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
     디자인: 크림색 바탕 + 먹색 글자 + 포인트색은 숫자에만, 왼쪽 정렬 한 기준선, 프리텐다드, 흰 타일 위 이모지,
     은은한 페이드·떠오름 + 장면 사이 0.2초 디졸브. 마지막은 어두운 바탕에 저장·공유 유도.
@@ -324,8 +324,11 @@ def reel(items, date_label, out):
 
     total, n_sc = sum(s for _, s, _, _ in scenes), len(scenes)
     seg = (XW - 12 * (n_sc - 1)) / n_sc
-    cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{RW}x{RH}", "-r", str(FPS), "-i", "-",
-           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", out]
+    cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{RW}x{RH}", "-r", str(FPS), "-i", "-"]
+    if music:
+        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-shortest",
+                "-af", f"afade=t=in:d=0.5,afade=t=out:st={total - 1.5}:d=1.5"]
+    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", out]
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     proc, last = subprocess.Popen(cmd, stdin=subprocess.PIPE), None
     for si, (bg, sec, draw, bar) in enumerate(scenes):

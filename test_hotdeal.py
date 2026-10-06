@@ -1,5 +1,5 @@
 """셀프체크: python test_hotdeal.py  (네트워크·키 불필요)"""
-import base64, hashlib, hmac, json, os, re, tempfile, time
+import base64, hashlib, hmac, io, json, os, re, tempfile, time
 from urllib.parse import parse_qs, urlsplit
 from email.utils import formatdate
 
@@ -198,6 +198,22 @@ assert ms[2]["text"] == "🔥 <b>[G마켓] 일반</b>"  # 일반 쇼핑몰 주�
 assert sent[-1] == ("getUpdates", {"offset": 24})
 H.tg = fake_tg
 
+# 3-7) 음악 파일 보내기 -> 릴스 배경음악 등록(file_id만 저장, 같은 곡 1번, 오디오 문서도 됨, 남이 보낸 건·일반 파일은 무시) / 오늘 차례 곡 받기
+UP = [{"update_id": 40, "message": {"message_id": 50, "from": {"id": 42}, "audio": {"file_id": "F1", "file_unique_id": "U1", "title": "Happy"}}},
+      {"update_id": 41, "message": {"message_id": 51, "from": {"id": 42}, "document": {"file_id": "F1b", "file_unique_id": "U1", "mime_type": "audio/mpeg"}}},
+      {"update_id": 42, "message": {"message_id": 52, "from": {"id": 99}, "audio": {"file_id": "F2", "file_unique_id": "U2"}}},
+      {"update_id": 43, "message": {"message_id": 53, "from": {"id": 42}, "document": {"file_id": "F9", "file_unique_id": "U9", "mime_type": "application/pdf"}}},
+      {"update_id": 44, "message": {"message_id": 54, "from": {"id": 42}, "document": {"file_id": "F3", "file_unique_id": "U3", "mime_type": "audio/x-wav", "file_name": "b.wav"}}}]
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1, "file_path": "music/f.mp3"})
+H.publish_approved()
+assert [(x["id"], x["name"]) for x in json.load(open("music.json"))] == [("F1", "Happy"), ("F3", "b.wav")]
+assert [p["reply_parameters"]["message_id"] for m, p in sent if m == "sendMessage" and "배경음악" in p["text"]] == [50, 51, 54] and sent[-1] == ("getUpdates", {"offset": 45})
+got_url, uo = [], H.urllib.request.urlopen
+H.urllib.request.urlopen = lambda url, timeout=None: got_url.append(url) or io.BytesIO(b"ID3-music")
+bp = H.bgm(time.gmtime(86400 * 2))  # tm_yday 3 -> 3 % 2곡 = 두 번째 곡
+assert open(bp, "rb").read() == b"ID3-music" and got_url == ["https://api.telegram.org/file/bott/music/f.mp3"] and ("getFile", {"file_id": "F3"}) in sent
+os.remove("music.json"); assert H.bgm(time.gmtime(0)) is None  # 등록된 곡 없으면 무음
+H.urllib.request.urlopen, H.tg = uo, fake_tg
 # 3-4) 쇼핑몰별 수익 안내: 뽐뿌 제목 표기 흔들림([G마켓]붙여쓰기·지마켓·롯데ON) 흡수, 제휴 없는 몰은 수수료 0, 안내 버튼은 채널로 안 감
 assert H.store_info("[G마켓]메디폴미 크림") == H.store_info("[지마켓] 신라면") == H.LP.format("0.6%")
 assert H.store_info("[롯데ON] 삼다수") == H.store_info("[롯데온]블랙야크") == H.LP.format("1.4%")
@@ -486,6 +502,11 @@ pr = subprocess.run([cards.ffmpeg().replace("ffmpeg", "ffprobe"), "-v", "error",
                      "-of", "default=nw=1", rv], capture_output=True, text=True).stdout if os.path.exists(cards.ffmpeg().replace("ffmpeg", "ffprobe")) else ""
 assert os.path.getsize(rv) > 10000 and (not pr or all(s in pr for s in ["codec_name=h264", "width=1080", "height=1920", "r_frame_rate=30/1", "duration=15.0"]))
 assert cards.emoji("🥛", 200).size[1] == 200 and cards.emoji("x", 100).width > 50  # 정사각형 안에 맞춤, 실패하면 🛒
+subprocess.run([cards.ffmpeg(), "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=3", "docs/bgm_t.m4a"], check=True)
+rm = cards.reel([{"title": "[G마켓] 우유 (1,000원/무료)", "comment": "싸요"}], "10월 7일", "docs/reel_m.mp4", "docs/bgm_t.m4a")  # 3초 음악 -> 영상 길이만큼 반복
+au = subprocess.run([cards.ffmpeg(), "-i", rm], capture_output=True, text=True).stderr
+dur = lambda s: sum(float(x) * m for x, m in zip(re.search(r"Duration: (\d+):(\d+):([\d.]+)", s).groups(), (3600, 60, 1)))
+assert "Audio: aac" in au and "Video: h264" in au and abs(dur(au) - dur(subprocess.run([cards.ffmpeg(), "-i", cards.reel([{"title": "[G마켓] 우유 (1,000원/무료)", "comment": "싸요"}], "10월 7일", "docs/reel_n.mp4")], capture_output=True, text=True).stderr)) < 0.3
 # 8-3) 영상 업로드는 multipart (chat_id·caption·video 파일)
 import urllib.request
 class _R:
@@ -561,4 +582,39 @@ assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-8:] for m, u in calls
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
 del H.E["THREADS_TOKEN"]; json.dump([{"t": kt(0), "text": "🔥 새 딜", "url": "https://z"}], open("posts.json", "w"))
 H.threads_deals({}); assert not calls  # 토큰 없으면 아무것도 안 함
+# 9-3) 인스타 릴스 자동 게시: 컨테이너(REELS·resumable·캡션) -> rupload에 영상 파일(OAuth 헤더·offset 0·file_size) -> 다음 실행에 처리 끝났으면 발행
+#      처리 중이면 기다림, 실패(ERROR)면 예외(main이 하루 1번 알림), 업로드 실패해도 영상은 봇 채팅으로(직접 올리기), 토큰 없으면 아무것도 안 함
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2 = [], ["IN_PROGRESS"], H.http
+def ig_http(url, body=None, headers=None, method=None):
+    ic.append((url, body, headers, method))
+    if url.endswith("/178/media"):
+        return '{"id": "C1", "uri": "https://rupload.facebook.com/ig-api-upload/v25.0/C1"}'
+    if "rupload" in url:
+        return '{"success": true}'
+    if "status_code" in url:
+        return json.dumps({"status_code": st[0]})
+    if url.endswith("/178/media_publish"):
+        return '{"id": "M1"}'
+    raise AssertionError(url)
+H.http = ig_http; open("r.mp4", "wb").write(b"0" * 1234); seen = {}
+H.ig_upload("r.mp4", "캡션 #핫딜", seen)
+assert ic[0][1] == {"media_type": "REELS", "upload_type": "resumable", "caption": "캡션 #핫딜", "share_to_feed": True} and ic[0][2]["Authorization"] == "Bearer pt"
+assert ic[1][0] == "https://rupload.facebook.com/ig-api-upload/v25.0/C1" and ic[1][1] == b"0" * 1234 and ic[1][2] == {"Authorization": "OAuth pt", "offset": "0", "file_size": "1234"}
+assert list(seen) == ["igc_C1"]
+sent.clear(); H.ig_publish(seen); assert "igc_C1" in seen and not sent and not any("media_publish" in c[0] for c in ic)  # 처리 중 -> 다음 실행에
+st[0] = "FINISHED"; H.ig_publish(seen)
+assert ic[-1][0].endswith("/178/media_publish") and ic[-1][1] == {"creation_id": "C1"} and not seen and "자동 게시 완료" in sent[-1][1]["text"]
+st[0], seen = "ERROR", {"igc_C2": 1}
+try:
+    H.ig_publish(seen); assert False
+except RuntimeError as e:
+    assert "ERROR" in str(e) and not seen  # 실패한 컨테이너는 다시 안 봄
+def ig_down(url, *a, **k):
+    raise RuntimeError("down")
+H.http, vids, tt2 = ig_down, [], time.time
+H.tg_video, H.draft, time.time = lambda path, cap: vids.append(cap), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
+sent.clear(); H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
+assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].startswith("우유 개당 100원")
+del H.E["IG_TOKEN"]; ic[:] = []; H.http = ig_http; H.ig_publish({"igc_C3": 1}); assert not ic  # 토큰 없으면 호출 없음
+time.time, H.http = tt2, ph2
 print("OK: 모든 셀프체크 통과")
