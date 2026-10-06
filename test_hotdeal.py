@@ -326,16 +326,19 @@ posted.clear(); H.main(); assert posted == ["ruliweb_92"]  # 다음 실행에 �
 H.post_or_draft = pod
 H.http = fake_http
 
-# 5) 골드박스: 하루 1번, 대가성 문구 맨 앞, 고른 순서대로
+# 5) 골드박스(최종 승인 후 API): 7시 이후 하루 1번 TOP5를 ✅ 없이 채널에 바로, 대가성 문구 맨 앞, 고른 순서대로
 GB = [{"productName": f"상품{i}", "productPrice": 1000.0 * (i + 1), "productUrl": f"https://link.coupang.com/{i}"} for i in range(8)]
 H.http = lambda url, *a, **k: json.dumps({"data": GB})
 H.ai_pick = lambda prompt, lines: [{"i": 3, "score": 9, "comment": "a"}, {"i": 0, "score": 8, "comment": "b"}]
-seen, sent[:] = {}, []
-H.goldbox(seen)
-if time.gmtime(time.time() + 9 * 3600).tm_hour >= 9:
-    t = sent[-1][1]["text"]
-    assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
-    sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
+seen, sent[:], tt = {}, [], time.time
+time.time = lambda: 1791235800; H.goldbox(seen); assert not sent  # 10/6 06:30 KST: 아직
+time.time = lambda: 1791241200; H.goldbox(seen)  # 10/6 08:00 KST
+m, p = sent[-1]; t = p["text"]
+assert m == "sendMessage" and p["chat_id"] == "@ch" and p["reply_markup"]["inline_keyboard"][0][0]["url"] == H.GOLDBOX  # 초안(관리자) 아님
+assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
+assert json.load(open("posts.json"))[-1]["url"] == H.GOLDBOX  # 사이트·모아보기에도 기록
+sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
+time.time = tt
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
 sent.clear(); seen = {}
