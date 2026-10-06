@@ -16,7 +16,8 @@ MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 HAS_TOSS = bool(E.get("TOSS_ACCESS_KEY") and E.get("TOSS_SECRET_KEY") and E.get("TOSS_PUBLISHER_ID"))  # 쉐어링크 Open API(10/6 승인). 호출은 고정 IP(오라클) 터널 경유 -> hotdeal.yml
 TOSS_API, TOSS_TOKEN = "https://sharelink.toss.im/openapi", "toss.json"  # toss.json: 1년짜리 액세스 토큰 보관(Actions 캐시, 매번 재발급 금지)
-MAX_DRAFTS = 2                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻혀서 나눠 올림 -> 넘친 딜은 다음 실행에 다시 판단
+MAX_DRAFTS = 1                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻히고 뒤가 비어서 1개씩(10/6 진우 '꾸준하게') -> 넘친 딜은 다음 실행에 다시 판단
+GAP_FILL = 45                  # 분: 8~24시에 이만큼 채널 딜 글이 없으면 7점 딜이 없어도 6점 중 최고 1개로 빈틈 메움(꾸준히)
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
 RUN_GAP = 20                   # 분: 다음 실행까지(15분 체인 + 지연 여유). 이 안에 목록에서 밀려날 글은 덜 묵었어도 지금 판단
@@ -835,6 +836,13 @@ def dkey(title):
     return "k:" + k if len(k) >= 4 else None
 
 
+def quiet():
+    """8~24시(KST)인데 마지막 채널 딜 글이 GAP_FILL분보다 오래됐으면 True -> 6점 딜로 빈틈 메움."""
+    now = time.time() + 9 * 3600
+    last = max((p["t"] for p in load(POSTS, []) if not p["text"].startswith("📋")), default="")
+    return time.gmtime(now).tm_hour >= 8 and last < time.strftime("%Y-%m-%d %H:%M", time.gmtime(now - GAP_FILL * 60))
+
+
 def main():
     seen = load(SEEN, {})
     publish_approved()
@@ -863,6 +871,9 @@ def main():
                 seen[dkey(d["title"])] = time.time()
         print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         good = [p for p in picks if p["score"] >= MIN_SCORE]
+        if not good and picks and quiet():
+            best = max(picks, key=lambda p: p["score"])
+            good = [best] if best["score"] >= MIN_SCORE - 1 else []
         for p in good[MAX_DRAFTS:]:  # 넘친 좋은 딜은 '본 글'에서 빼서 다음 실행(15분 뒤)에 다시 판단 -> 나눠서 게시
             seen.pop(new[p["i"]]["id"], None)
             seen.pop(dkey(new[p["i"]]["title"]), None)

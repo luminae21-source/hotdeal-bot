@@ -352,7 +352,7 @@ assert "ruliweb_1" in sj and "ppomppu_301" in sj and H.dkey("[G마켓] 코카콜
 assert "최근 24시간에 이미 올린 딜" in got[0][0] and "휴지 30롤" in got[0][0].split("이미 올린 딜")[1]
 json.dump({H.dkey("[쿠팡] 휴지 30롤"): time.time() - 2 * 86400}, open("seen.json", "w")); got.clear(); H.main()  # 24시간 지난 같은 상품은 새 딜로 판단
 assert any("휴지 30롤" in l for l in got[0][1])
-# 4-3) 한 번에 최대 2개만 게시, 넘친 좋은 딜은 다음 실행(15분 뒤)에 다시 / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
+# 4-3) 한 번에 1개만 게시(꾸준히), 넘친 좋은 딜은 다음 실행(15분 뒤)에 다시 / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
 RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
 H.http = lambda url, *a, **k: RU3 if url == H.RULIWEB_RSS else ""
 posted, pod = [], H.post_or_draft
@@ -360,8 +360,24 @@ H.post_or_draft = lambda d, *a, **k: posted.append(d["id"])
 H.ai_pick = lambda prompt, lines: [{"i": i, "score": 8, "comment": "c"} for i in range(len(lines))]
 json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
-assert posted == ["ruliweb_90", "ruliweb_91"] and "ruliweb_92" not in sj and H.dkey("[G마켓] 상품2번 특가 묶음") not in sj  # 20분 된 루리웹 글도 판단
-posted.clear(); H.main(); assert posted == ["ruliweb_92"]  # 다음 실행에 나머지
+assert posted == ["ruliweb_90"] and "ruliweb_91" not in sj and "ruliweb_92" not in sj and H.dkey("[G마켓] 상품2번 특가 묶음") not in sj  # 20분 된 루리웹 글도 판단
+posted.clear(); H.main(); assert posted == ["ruliweb_91"]  # 다음 실행에 다음 것
+posted.clear(); H.main(); assert posted == ["ruliweb_92"]
+# 4-5) 꾸준히: 8~24시에 마지막 딜 글이 45분 넘으면 7점이 없어도 6점 최고 1개 / 45분 안이거나 밤(0~8시)이거나 최고가 5점이면 안 올림
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
+tq, kfmt, pa2 = time.time, lambda s: time.strftime("%Y-%m-%d %H:%M", time.gmtime(s + 9 * 3600)), H.publish_approved
+H.publish_approved = lambda: None  # 앞 테스트의 텔레그램 입력(✅)이 글을 기록하지 않게
+for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb_91"]), (1791248400, 1791248400 - 1200, False, []),
+                                (1791223200, 1791223200 - 7200, False, []), (1791248400, 1791248400 - 3600, True, [])):  # 10/6 10:00 / 03:00 KST
+    time.time = lambda n=now: n
+    feed = '<rss><channel>' + "".join(it(f"[G마켓] 상품{k}번 특가 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k in range(3)) + '</channel></rss>'
+    H.http = lambda url, *a, f=feed, **k: f if url == H.RULIWEB_RSS else ""
+    json.dump([{"t": kfmt(last), "text": "🔥 예전 딜", "url": "https://x"}], open("posts.json", "w"))
+    if picks5:
+        H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}]
+    posted.clear(); json.dump({}, open("seen.json", "w")); H.main()
+    assert posted == want, (now, last, posted)
+time.time, H.publish_approved = tq, pa2
 # 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
 BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"
 H.ai_pick = lambda prompt, lines: got.append(lines) or []
