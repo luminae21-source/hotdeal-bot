@@ -368,6 +368,17 @@ assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3")
 assert json.load(open("posts.json"))[-1]["url"] == H.GOLDBOX  # 사이트·모아보기에도 기록
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
 time.time = tt
+# 5-5) 예약 게시(행사 알림): 시각 됐고 6시간 안이면 채널에 1번, 쿠팡 파트너스 링크면 대가성 문구 맨 앞 + 버튼, 지난 지 오래됐거나 아직이면 안 올림
+json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "https://link.coupang.com/a/old"},
+           {"at": "2026-10-06 09:30", "text": "⚡ <b>쿠가세</b>", "button": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"},
+           {"at": "2026-10-06 09:40", "text": "일반", "button": "b", "url": "https://example.com"},
+           {"at": "2026-10-06 11:00", "text": "아직", "button": "b", "url": "https://link.coupang.com/a/y"}], open("events.json", "w"))
+seen, sent[:], tt3 = {}, [], time.time
+time.time = lambda: 1791248400; H.events(seen)  # 10/6 10:00 KST
+assert [p["text"] for m, p in sent] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반"] and sent[0][1]["chat_id"] == "@ch"
+assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
+sent.clear(); H.events(seen); assert not sent  # 1번만
+time.time = tt3; os.remove("events.json"); H.events({})  # 파일 없으면 아무것도 안 함
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
 sent.clear(); seen = {}

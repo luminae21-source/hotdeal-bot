@@ -25,6 +25,7 @@ RULIWEB_RSS = "https://bbs.ruliweb.com/market/board/1020/rss"  # 루리웹 핫�
 CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구매: RSS 없음 -> 목록 HTML, 글 위 '구매링크' (robots: 쿼리 없는 /service/board/ 허용)
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
+EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
 MUSIC = "music.json"  # 릴스 배경음악: 관리자가 봇에 보낸 음악의 텔레그램 file_id만 저장(음원 파일은 공개 저장소에 안 올림 — 무료 음원도 원본 재배포는 금지)
 IG = "https://graph.facebook.com/v25.0"  # 인스타 릴스 자동 게시(Facebook 로그인 방식 = 영상 파일을 바로 올림, 호스팅 불필요). IG_TOKEN = 페이지 액세스 토큰
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
@@ -576,6 +577,19 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
+def events(seen):
+    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞). 놓친 지 오래된 글은 안 올림(식은 글)."""
+    kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + h * 3600))
+    for ev in load(EVENTS, []):
+        key = "ev_" + ev["at"]
+        if key in seen or not (kst(9 - 6) <= ev["at"] <= kst(9)):
+            continue
+        note = aff_note(ev["url"])
+        if tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+              text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]}):
+            seen[key] = time.time()
+
+
 def threads_hint(e):
     """Threads 실패 알림의 조치 문구: Meta 개발자 계정 잠김('API access blocked', 10/6)과 토큰 만료를 구분."""
     if "blocked" in (getattr(e, "body", "") or ""):
@@ -831,7 +845,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
+    for step in (events, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
         try:
             step(seen)
         except Exception as e:
