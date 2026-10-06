@@ -33,7 +33,7 @@ jobs:
             && echo "127.0.0.2 sharelink.toss.im" | sudo tee -a /etc/hosts >/dev/null \
             || echo "::warning::토스 터널 연결 실패 -> 이번 실행은 토스 딜을 사본(수동)으로"
         env:
-          HOST: ${{ secrets.TOSS_TUNNEL_HOST }}   # opc@서버IP (오라클 리눅스 기본 사용자)
+          HOST: ${{ secrets.TOSS_TUNNEL_HOST }}   # ubuntu@서버IP (우분투 기본 사용자)
           KEY: ${{ secrets.TOSS_TUNNEL_KEY }}     # 서버 만들 때 받은 개인 키 파일 내용
       - run: python hotdeal.py && python build_site.py
         env:
