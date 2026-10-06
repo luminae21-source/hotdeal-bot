@@ -12,12 +12,13 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) + 카드용 한글 폰트 + 토스 API 토큰(toss.json, 1년짜리) 유지
+      - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) + 카드용 한글 폰트 + 토스 API 토큰(toss.json, 1년짜리) + 릴스 배경음악(music/, Pixabay에서 1번만 받음) 유지
         with:
           path: |
             seen.json
             fonts
             toss.json
+            music
           key: seen-${{ github.run_id }}
           restore-keys: seen-
       - run: |                     # 카드 이미지용: Pillow + 나눔고딕(Google Fonts, OFL). 있으면 건너뜀
