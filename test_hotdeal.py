@@ -489,6 +489,25 @@ except Exception:
     pass
 sent.clear(); H.toss_deals(seen); assert not sent
 del H.E["THREADS_TOKEN"]; H.time.sleep = sl
+# 5-3b) 토스 베스트(지금 많이 팔리는 상품, 10/7 진우 제안): 12·20시 1번씩, Claude가 '진짜 싼' 것만(없으면 안 올림), 리뷰를 판단 재료로, 3일 안에 올린 상품 제외, 사이트 미기록
+def best_http(url, body=None, headers=None, method=None):
+    if url.endswith("/products/best-selling?size=30"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"베스트{i}", "displayPrice": 6930,
+                          "discountRate": 88, "isSoldOut": i == 4, "reviewScore": 4.8, "reviewCount": 1523} for i in (1, 3, 4, 5)]}})
+    return toss_http(url, body, headers, method)
+offered.clear(); H.http = best_http
+H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 8, "comment": "개당 99원"}, {"i": 1, "score": 7, "comment": "나"}]
+                                                           if "할인율은 정가를 부풀린" in prompt and len(lines) == 3 else [])
+seen.clear(); sent.clear(); time.time = lambda: 1791252000; H.toss_deals(seen, True); assert not sent and not offered  # 11:00 KST: 12시 전
+time.time = lambda: 1791257400; H.toss_deals(seen, True)  # 12:30
+t = sent[-1][1]["text"]
+assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
+assert len(offered) == 3 and "베스트4" not in str(offered) and "리뷰 4.8점 1,523개" in offered[0] and "tb_1" in seen and "tb_3" in seen
+sent.clear(); H.toss_deals(seen, True); assert not sent  # 같은 회차 1번
+offered.clear(); time.time = lambda: 1791285000; H.toss_deals(seen, True)  # 20:10: 낮에 올린 1·3은 후보에서 빠짐 -> 5만 남음 -> Claude가 안 고르면 안 올림
+assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_20" in seen
+sent.clear(); H.toss_deals(seen, True); assert not sent and not offered[1:]
+assert len(json.load(open("posts.json"))) == n0
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성

@@ -80,6 +80,11 @@ REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보�
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 대중적으로 많이 살 만한 상품 5개를 골라 pick 도구로 반환해.
 comment: 1줄, 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 """
+BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
+믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
+comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
+"""
+TOSS_BEST_HOURS = (12, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 점심·저녁 1번씩 (10/7 진우 제안)
 
 
 def http(url, body=None, headers=None, method=None):
@@ -598,17 +603,22 @@ def threads_hint(e):
     return "토큰 만료(60일)면 THREADS_TOKEN 시크릿 재발급해줘"
 
 
-def toss_deals(seen):
+def toss_deals(seen, best=False):
     """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널 + Threads에 바로. 편성 0건인 날은 다음 실행에 다시.
+    best=True: 토스 베스트(지금 많이 팔리는 상품) 중 Claude가 '진짜 싼' 것만 최대 3개, TOSS_BEST_HOURS마다 1번. 3일 안에 올린 상품은 빼고, 없으면 안 올림.
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
     kst = time.gmtime(time.time() + 9 * 3600)
-    key = time.strftime("tossday_%Y%m%d", kst)
-    if not HAS_TOSS or key in seen or kst.tm_hour < 9:
+    hrs = [h for h in (TOSS_BEST_HOURS if best else (9,)) if h <= kst.tm_hour]
+    key = time.strftime("tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
+    if not HAS_TOSS or not hrs or key in seen:
         return
-    items = [x for x in toss("/products/today-deals?size=30")["items"] if not x.get("isSoldOut")]
-    picks = items and ai_pick(GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
-                              [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)" for x in items])[:5]
+    head = "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
+    raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
+    items = [x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen]
+    picks = items and ai_pick(BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
+                              [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
+                               + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])[:3 if best else 5]
     rows, plain = [], []
     for p in picks or []:
         x = items[p["i"]]
@@ -617,20 +627,22 @@ def toss_deals(seen):
         except Exception as e:  # 발급 제한 상품은 빼고 나머지만
             print("toss link", repr(e))
             continue
+        if best:
+            seen[f"tb_{x['tacaItemId']}"] = time.time()  # 베스트는 며칠씩 그대로라 3일(seen 보관 기간) 안엔 다시 안 올림
         plain.append(f"{len(plain) + 1}. {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
         rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
                     + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
-    print("toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
-    if items:  # Claude까지 돌렸으면 오늘은 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
+    print("toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
+    if raw:  # 목록을 받았으면(Claude까지 돌렸으면) 이번 회차는 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
         seen[key] = time.time()
     if rows:
         tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-           text=f"<i>{TOSS_NOTE}</i>\n\n⏰ <b>오늘의 토스 하루특가 TOP{len(rows)}</b>\n\n" + "\n\n".join(rows))
+           text=f"<i>{TOSS_NOTE}</i>\n\n{head.format(len(rows))}\n\n" + "\n\n".join(rows))
     tok = E.get("THREADS_TOKEN")
     if rows and tok:  # Threads 글자 수 500 -> 넘치면 뒤 상품부터 뺌. 대가성 문구는 토스 가이드대로 맨 앞(더보기 없이 보이게)
         while len(plain) > 1 and len(TOSS_NOTE) + 40 + len("\n\n".join(plain)) > 480:
             plain.pop()
-        text = f"{TOSS_NOTE}\n\n⏰ 오늘의 토스 하루특가 TOP{len(plain)}\n\n" + "\n\n".join(plain)
+        text = f"{TOSS_NOTE}\n\n{re.sub('<.*?>', '', head).format(len(plain))}\n\n" + "\n\n".join(plain)
         me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
         q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
@@ -892,7 +904,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (events, playlist, goldbox, toss_deals, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
         try:
             step(seen)
         except Exception as e:
