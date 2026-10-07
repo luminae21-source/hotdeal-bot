@@ -627,8 +627,7 @@ def toss_deals(seen, best=False):
         except Exception as e:  # 발급 제한 상품은 빼고 나머지만
             print("toss link", repr(e))
             continue
-        if best:
-            seen[f"tb_{x['tacaItemId']}"] = time.time()  # 베스트는 며칠씩 그대로라 3일(seen 보관 기간) 안엔 다시 안 올림
+        seen[f"tb_{x['tacaItemId']}"] = time.time()  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침)
         plain.append(f"{len(plain) + 1}. {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
         rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
                     + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")

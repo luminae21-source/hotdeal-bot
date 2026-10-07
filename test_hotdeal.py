@@ -507,6 +507,12 @@ sent.clear(); H.toss_deals(seen, True); assert not sent  # 같은 회차 1번
 offered.clear(); time.time = lambda: 1791285000; H.toss_deals(seen, True)  # 20:10: 낮에 올린 1·3은 후보에서 빠짐 -> 5만 남음 -> Claude가 안 고르면 안 올림
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_20" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent and not offered[1:]
+# 오늘 하루특가에 올린 상품도 베스트에서 빠짐 (10/7 12시 첫 베스트 글에 9시 하루특가의 초정 탄산수가 또 나왔음)
+seen.clear(); sent.clear(); offered.clear(); time.time = lambda: 1791248400
+H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 9, "comment": "가"}, {"i": 2, "score": 8, "comment": "나"}, {"i": 1, "score": 7, "comment": "다"}]
+                                                           if "하루특가" in prompt else [])
+H.toss_deals(seen); offered.clear(); time.time = lambda: 1791257400; H.toss_deals(seen, True)
+assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"]
 assert len(json.load(open("posts.json"))) == n0
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
