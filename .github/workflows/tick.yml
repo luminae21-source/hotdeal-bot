@@ -12,11 +12,11 @@ permissions:
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     environment: tick
     steps:
       - run: |
-          for i in 1 2 3; do gh workflow run tick.yml -R "$GITHUB_REPOSITORY" && break; sleep 10; done
+          for i in 1 2 3 4 5 6 7 8; do gh workflow run tick.yml -R "$GITHUB_REPOSITORY" && break; sleep 30; done   # GitHub API 500·502가 1분 넘게 이어진 적 있음(10/7 04:47 체인 끊김) -> 최대 약 4분 재시도
           gh workflow run hotdeal.yml -R "$GITHUB_REPOSITORY"   # 24시간 (밤 0~8시 채널 글·사본은 hotdeal.py가 무음으로 보냄)
         env:
           GH_TOKEN: ${{ github.token }}
