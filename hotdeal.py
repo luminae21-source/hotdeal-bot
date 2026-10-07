@@ -77,7 +77,8 @@ REEL_RULES
 """
 DEAL_PROMPT = DEAL_PROMPT.replace("REEL_RULES", REEL_RULES)
 REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n"
-GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 대중적으로 많이 살 만한 상품 5개를 골라 pick 도구로 반환해.
+GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
+대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
 comment: 1줄, 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 """
 BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
@@ -580,6 +581,7 @@ def goldbox(seen):
                     reply_markup={"inline_keyboard": [[{"text": "⏰ 골드박스 전체 보기", "url": GOLDBOX}]]})
     if m:
         record(m.get("text", ""), m.get("entities", []), GOLDBOX, m.get("message_id"))
+    if m or not rows:  # 살 만한 게 없으면 오늘은 안 올림(15분마다 다시 고르지 않게)
         seen[key] = time.time()
 
 

@@ -408,6 +408,9 @@ assert m == "sendMessage" and p["chat_id"] == "@ch" and p["reply_markup"]["inlin
 assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
 assert json.load(open("posts.json"))[-1]["url"] == H.GOLDBOX  # 사이트·모아보기에도 기록
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
+gp = []  # 살 만한 것만(10/7 진우): Claude가 하나도 안 고르면 안 올리고, 그날은 다시 안 고름(15분마다 Claude 호출 안 함)
+H.ai_pick = lambda prompt, lines: gp.append(prompt) or []
+seen.clear(); H.goldbox(seen); H.goldbox(seen); assert not sent and len(gp) == 1 and "억지로 5개 채우지 말고" in gp[0] and "goldbox_20261006" in seen
 time.time = tt
 # 5-5) 예약 게시(행사 알림): 시각 됐고 6시간 안이면 채널에 1번, 쿠팡 파트너스 링크면 대가성 문구 맨 앞 + 버튼, 지난 지 오래됐거나 아직이면 안 올림
 json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "https://link.coupang.com/a/old"},
