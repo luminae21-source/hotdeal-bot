@@ -843,10 +843,16 @@ def threads_deals(seen):
             + f"\n\n👉 {url}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, "link_attachment": url, "topic_tag": "핫딜", "access_token": tok})
-        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-        time.sleep(10)
-        json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+        for att in ({"link_attachment": url}, {}):  # 링크 미리보기를 Threads가 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로
+            q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": "핫딜", "access_token": tok})
+            cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+            time.sleep(10)
+            try:
+                json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+                break
+            except urllib.error.HTTPError as e:
+                if not att or "4279047" not in (getattr(e, "body", "") or ""):
+                    raise
 
 
 def load(path, default):

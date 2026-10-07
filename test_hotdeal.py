@@ -660,6 +660,27 @@ assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, Fal
 live_pages, calls[:] = {2, 3, 4, 5}, []; H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
 assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-8:] for m, u in calls if "/777/threads?" in u] == ["p/4.html", "p/5.html"]
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
+# 9-2b) Threads가 링크 미리보기를 못 만들면(Invalid Link Attachment·4279047, 10/7 15:51 버거킹 딜): 링크 첨부 없이 1번 더(본문 주소 그대로), 다른 오류는 그대로 예외
+import urllib.error
+def pub_fail(body, only_first):
+    def f(url, b=None, headers=None, method=None):
+        if "/threads_publish?" in url and (not only_first or sum("/777/threads?" in u for m, u in calls) == 1):
+            e = urllib.error.HTTPError(url, 400, "Bad Request", {}, None); e.body = body; raise e
+        return td_http(url, b, headers, method)
+    return f
+sl2, H.time.sleep, live_pages = H.time.sleep, lambda s: None, {0}
+json.dump([{"t": kt(0), "text": "🔥 [11번가] 버거킹\n\n싸요\n\n출처: 뽐뿌", "url": "https://w"}], open("posts.json", "w"))
+H.http, calls[:] = pub_fail('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', True), []; H.threads_deals({})
+made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
+assert [q.get("link_attachment") for q in made] == [["https://hotdealpick.kr/p/0.html"], None] and "👉 https://hotdealpick.kr/p/0.html" in made[1]["text"][0]
+assert sum("/threads_publish?" in u for m, u in calls) == 1  # 두 번째(첨부 없음)는 발행됨
+json.dump([{"t": kt(0), "text": "🔥 [G마켓] 우유\n\n좋음", "url": "https://x"}], open("posts.json", "w")); H.http, calls[:] = pub_fail('{"error": {"message": "expired"}}', False), []
+try:
+    H.threads_deals({}); raise AssertionError("다른 오류는 예외로 올라가야 함(main이 알림)")
+except urllib.error.HTTPError:
+    pass
+assert sum("/777/threads?" in u for m, u in calls) == 1  # 다른 오류면 다시 안 만듦
+H.time.sleep, H.http, calls[:] = sl2, td_http, []
 del H.E["THREADS_TOKEN"]; json.dump([{"t": kt(0), "text": "🔥 새 딜", "url": "https://z"}], open("posts.json", "w"))
 H.threads_deals({}); assert not calls  # 토큰 없으면 아무것도 안 함
 # 9-3) 인스타 릴스 자동 게시: 컨테이너(REELS·resumable·캡션) -> rupload에 영상 파일(OAuth 헤더·offset 0·file_size) -> 다음 실행에 처리 끝났으면 발행
