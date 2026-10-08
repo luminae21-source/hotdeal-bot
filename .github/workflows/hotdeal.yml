@@ -26,13 +26,16 @@ jobs:
           mkdir -p fonts && for w in ExtraBold Regular; do
             [ -s fonts/NanumGothic-$w.ttf ] || curl -sSL -o fonts/NanumGothic-$w.ttf "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-$w.ttf"
           done
-      - run: |                     # 토스 쉐어링크 API는 등록한 고정 IP에서만 받음 -> 오라클 무료 서버로 SSH 터널, sharelink.toss.im만 그 서버를 거침 (시크릿 없으면 건너뜀)
+      - run: |                     # 토스 쉐어링크 API는 등록한 고정 IP에서만 받음 -> 오라클 무료 서버로 SSH 터널, sharelink.toss.im(+ 열리면 뽐뿌)만 그 서버를 거침 (시크릿 없으면 건너뜀)
           [ -n "$HOST" ] || exit 0
           install -m 600 /dev/null ~/toss_key && printf '%s\n' "$KEY" > ~/toss_key
           sudo ssh -i ~/toss_key -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ConnectTimeout=15 \
-            -f -N -L 127.0.0.2:443:sharelink.toss.im:443 "$HOST" \
+            -f -N -L 127.0.0.2:443:sharelink.toss.im:443 -L 127.0.0.3:443:www.ppomppu.co.kr:443 -L 127.0.0.3:80:www.ppomppu.co.kr:80 "$HOST" \
             && echo "127.0.0.2 sharelink.toss.im" | sudo tee -a /etc/hosts >/dev/null \
-            || echo "::warning::토스 터널 연결 실패 -> 이번 실행은 토스 딜을 사본(수동)으로"
+            || { echo "::warning::토스 터널 연결 실패 -> 이번 실행은 토스 딜을 사본(수동)으로"; exit 0; }
+          # 뽐뿌는 GitHub 서버 IP의 글 페이지를 403 차단 -> 오라클 경유로 열릴 때(200)만 뽐뿌도 터널로(글 속 진짜 쇼핑몰 주소를 버튼에, 10/8 원글 삭제로 링크 끊김). 안 열리면 지금처럼 직접
+          c=$(curl -s -o /dev/null -w '%{http_code}' -m 10 -A "Mozilla/5.0" --resolve www.ppomppu.co.kr:443:127.0.0.3 "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1" || true)
+          [ "$c" = 200 ] && echo "127.0.0.3 www.ppomppu.co.kr" | sudo tee -a /etc/hosts >/dev/null; echo "ppomppu via tunnel: $c"
         env:
           HOST: ${{ secrets.TOSS_TUNNEL_HOST }}   # ubuntu@서버IP (우분투 기본 사용자)
           KEY: ${{ secrets.TOSS_TUNNEL_KEY }}     # 서버 만들 때 받은 개인 키 파일 내용
