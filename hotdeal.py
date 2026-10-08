@@ -677,13 +677,15 @@ def toss_deals(seen, best=False):
         json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
-def toss_match_log(seen):
-    """10/9 진우 '토스 딜 직접 추출' -> '하루 기록 먼저': 쉐어링크가 없는 최근 3일 [토스] 딜(뽐뿌 원글 등)을 토스 API 목록(베스트 100·하루특가·
-    최상위 카테고리별 베스트 100)에서 찾아 실행 로그에만 남김(버튼·채널 글은 안 바꿈). 검색 API가 없어서 목록 대조 — 이름 겹침으로 후보 8개 -> Claude가
-    같은 상품인지 확인(8점 이상만). 목록은 seen에 저장해 재사용(문서 권장, 일 상한 10,000개): 카테고리·하루특가 = 하루 1번(9시 갱신), 베스트 = 1시간 1번."""
+def toss_relink(seen):
+    """쉐어링크가 없는 최근 3일 [토스] 딜(뽐뿌는 서버 차단이라 상품 주소를 못 읽음)을 토스 API 목록(하루특가·최상위 카테고리별 베스트 100·베스트 100)에서
+    찾아 우리 쉐어링크를 발급하고 채널 글 버튼을 교체(진우가 사본에 답장한 것과 같은 relink_channel — 대가성 문구·사본 '교체됨'·posts.json·사이트).
+    검색 API가 없어서 목록 대조 — 이름 겹침으로 후보 8개 -> Claude가 같은 상품인지 확인(8점 이상만, 용량·수량 다르면 X). 못 찾으면 지금처럼 사본 답장.
+    10/9 기록만 해 본 첫 실행: 11개 중 6개 찾음·6개 모두 같은 상품 -> 진우 '수정하자'로 교체까지. 같은 딜은 1번(발급 실패도 다시 안 함).
+    목록은 seen에 저장해 재사용(문서 권장, 일 상한 10,000개): 카테고리·하루특가 = 하루 1번(9시 갱신), 베스트 = 1시간 1번."""
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 86400))
     todo = [p for p in load(POSTS, []) if HAS_TOSS and p["t"] >= since and not toss_share(p.get("url"))
-            and store_info(title_of(p["text"]), p.get("url")).startswith("💰 토스") and "tm_" + p["t"] + title_of(p["text"])[:20] not in seen]
+            and p.get("mid") and store_info(title_of(p["text"]), p.get("url")).startswith("💰 토스") and "tl_" + str(p["mid"]) not in seen]
     if not todo:
         return
     now = time.gmtime(time.time() + 9 * 3600)
@@ -705,9 +707,17 @@ def toss_match_log(seen):
         cand = sorted((x for x in items if near(x) >= 3), key=lambda x: -near(x))[:8]
         pick = cand and ai_pick(MATCH_PROMPT.format(title), [f"{x[1]} | {x[2]:,}원" for x in cand])
         hit = cand[pick[0]["i"]] if pick and pick[0]["score"] >= 8 else None
-        print("toss match", p["t"][5:], title[:40], "->", f"{hit[1][:40]} {hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점)" if hit else "없음",
-              f"| 후보 {len(cand)}/{len(items)}")
-        seen["tm_" + p["t"] + title_of(p["text"])[:20]] = time.time()
+        seen["tl_" + str(p["mid"])] = time.time()
+        link = None
+        if hit:
+            try:
+                link = toss("/links", {"tacaItemId": hit[0], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
+            except Exception as e:  # 발급 제한 상품 -> 사본 답장으로
+                print("toss link", repr(e))
+        if link:
+            relink_channel({"chat": {"id": ADMIN}, "message_id": p.get("cp"), "text": p["text"], "entities": p.get("entities", [])}, p["mid"], link)
+        res = f"{hit[1][:40]} {hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점) | " + ("링크 교체" if link else "발급 실패") if hit else "없음"
+        print("toss match", p["t"][5:], title[:40], "->", res, f"| 후보 {len(cand)}/{len(items)}")
 
 
 def digest(seen, posts):
@@ -1099,7 +1109,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_match_log, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
         try:
             step(seen)
         except Exception as e:
