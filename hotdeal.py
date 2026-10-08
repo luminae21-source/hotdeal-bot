@@ -868,17 +868,18 @@ def threads_deals(seen):
                     raise
 
 
-REPORT_HOUR = 22  # 이 시각(KST) 이후 하루 1번 관리자에게 성과 리포트 (10/8 진우 '토스 쉐어 정산금 들어오기 시작')
+REPORT_HOURS = (10, 14, 18, 22)  # 관리자에게 성과 리포트 보내는 시각(KST), 회차마다 1번 (10/8 진우 '토스 쉐어 정산금 들어오기 시작' → '1일 4회')
 
 
 def report(seen):
-    """하루 1번 관리자에게: 토스 쉐어링크 실적(오늘·이번 달 — 잠정, 환불되면 줄어듦) + Threads 오늘 올린 글 조회수·링크 클릭·팔로워.
+    """REPORT_HOURS마다 관리자에게: 토스 쉐어링크 실적(오늘·이번 달 — 잠정, 환불되면 줄어듦) + Threads 오늘 올린 글 조회수·링크 클릭·팔로워.
     Threads 숫자는 토큰에 threads_manage_insights 권한이 있어야 나옴(없으면 '권한 필요' 한 줄). 텔레그램 전송이 실패하면 다음 실행에 다시."""
     kst = time.gmtime(time.time() + 9 * 3600)
-    key, today = time.strftime("report_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
-    if kst.tm_hour < REPORT_HOUR or key in seen:
+    hrs = [h for h in REPORT_HOURS if h <= kst.tm_hour]  # 실행이 밀려 회차를 건너뛰면 가장 최근 회차 1번만
+    key, today = time.strftime("report_%Y%m%d_", kst) + (str(hrs[-1]) if hrs else ""), time.strftime("%Y-%m-%d", kst)
+    if not hrs or key in seen:
         return
-    lines = [f"📊 {kst.tm_mon}/{kst.tm_mday} 성과 리포트"]
+    lines = [f"📊 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}:{kst.tm_min:02d} 성과 리포트"]  # 회차가 아니라 실제 조회 시각
     if HAS_TOSS:
         try:
             for label, frm in (("오늘", today), ("이번 달", today[:8] + "01")):
