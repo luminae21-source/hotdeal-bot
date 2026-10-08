@@ -774,7 +774,8 @@ del H.E["THREADS_TOKEN"]; json.dump([{"t": kt(0), "text": "🔥 새 딜", "url":
 H.threads_deals({}); assert not calls  # 토큰 없으면 아무것도 안 함
 # 9-3) 인스타 릴스 자동 게시: 컨테이너(REELS·resumable·캡션) -> rupload에 영상 파일(OAuth 헤더·offset 0·file_size) -> 다음 실행에 처리 끝났으면 발행
 #      처리 중이면 기다림, 실패(ERROR)면 예외(main이 하루 1번 알림), 업로드 실패해도 영상은 봇 채팅으로(직접 올리기), 토큰 없으면 아무것도 안 함
-H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2 = [], ["IN_PROGRESS"], H.http
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2, ig0 = [], ["IN_PROGRESS"], H.http, H.IG
+H.IG = "https://graph.facebook.com/v25.0"  # 릴스 파일 업로드는 페이스북 페이지 토큰일 때만
 def ig_http(url, body=None, headers=None, method=None):
     ic.append((url, body, headers, method))
     if url.endswith("/178/media"):
@@ -807,6 +808,11 @@ json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — �
 sent.clear(); H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
 assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].startswith("우유 개당 100원")
 assert "🎵 테스트곡 — 작가 (Pixabay)" in vids[0]  # 캡션에 오늘 곡명
+H.IG, vids[:] = "https://graph.instagram.com/v25.0", []  # 인스타 토큰(Instagram 로그인)이면 릴스 업로드 시도 안 함(실패 알림 없음), 영상은 봇 채팅으로
+sent.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("인스타 토큰이면 릴스 업로드 호출 없음"))
+H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
+assert len(vids) == 1 and not any("업로드 실패" in p.get("text", "") for m, p in sent if m == "sendMessage")
+H.IG = ig0
 H.bgm = bg; os.remove("music.json")
 del H.E["IG_TOKEN"]; ic[:] = []; H.http = ig_http; H.ig_publish({"igc_C3": 1}); assert not ic  # 토큰 없으면 호출 없음
 time.time, H.http = tt2, ph2
@@ -866,4 +872,9 @@ t = sent[-1][1]["text"]
 assert "threads_manage_insights 권한 필요" in t and "💰 토스 이번 달" in t and "조회 465" not in t and "report_20261006_22" in seen
 H.tg, seen = lambda method, **p: None, {}; H.report(seen); assert not seen  # 텔레그램 실패 -> 다음 실행에 다시
 H.tg = fake_tg; os.remove("toss.json"); del H.E["THREADS_TOKEN"]; time.time, H.http, H.HAS_TOSS = tt2, ph2, False
+# 인스타 주소: Instagram 로그인 토큰(IGAA…) = graph.instagram.com, 페이스북 페이지 토큰(EAA…) = graph.facebook.com (10/8 앱이 Instagram 로그인 방식)
+import subprocess, sys
+for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
+    r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
+    assert r.stdout.strip() == host, (tok, r.stdout, r.stderr[-300:])
 print("OK: 모든 셀프체크 통과")
