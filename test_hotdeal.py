@@ -608,10 +608,19 @@ for d in ("2026-10-07", "2026-10-08"):
 pp = [{"t": "2026-10-07 21:00", "text": "🔥 [쿠팡] 어제딜 (1,000원)", "url": "https://old"},
       {"t": "2026-10-08 09:00", "text": "🔥 [G마켓] 첫딜 (2,000원)", "url": "https://a1"},
       {"t": "2026-10-08 12:00", "text": "📋 오늘의 딜 모아보기", "url": "https://x"},
-      {"t": "2026-10-08 15:00", "text": "🔥 [토스쇼핑] 둘째 <딜> (3,000원)"}]
+      {"t": "2026-10-08 15:00", "text": "🔥 [토스쇼핑] 둘째 <딜> (3,000원)"},
+      {"t": "2026-10-08 16:00", "text": "🔥 [우리동네gs]김치라면 대컵1+1(1,850원/픽업)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=7"}]
 S.build(pp, "docs3"); idx = open("docs3/index.html").read()
 top = idx.split('id="today"')[1].split("</section>")[0]
-assert "10월 8일 카드 딜" in top and "어제딜" not in top and "모아보기" not in top and top.count('class="pick"') == 2
+assert "10월 8일 카드 딜" in top and "어제딜" not in top and "모아보기" not in top and top.count('class="pick"') == 3
+# 커뮤니티 원글로 가는 딜(뽐뿌·루리웹·클리앙): 이름을 정확히('원글'), 원글이 지워져도 '같은 상품 찾기'(네이버쇼핑, [몰]·가격 뺀 이름) — 쇼핑몰 링크 딜엔 안 붙음 (10/8 01번 원글 삭제)
+import html, urllib.parse
+find = "https://search.shopping.naver.com/search/all?query=" + urllib.parse.quote("김치라면 대컵1+1")
+assert top.count('class="alt"') == 1 and f'<a class="alt" href="{html.escape(find)}"' in top and "3번 원글이 안 열리면 같은 상품 찾기" in top
+assert "<b>03</b><span>[우리동네gs]김치라면 대컵1+1(1,850원/픽업)</span><em>원글 →</em>" in top and "원글에서 구매 링크 보기" in top and top.count("구매 →") == 2
+deal = open("docs3/p/4.html").read()
+assert "📄 원글에서 구매 링크 보기" in deal and 'class="btn2"' in deal and "🛒 구매하러 가기" not in deal and 'class="btn2"' not in open("docs3/p/1.html").read()
+assert S.find_url("[쿠팡] 듀라셀 AA 20개입 1개/ 9,730원").endswith(urllib.parse.quote("듀라셀 AA 20개입 1개")) and not S.community("https://click.linkprice.com/x") and not S.community(None)
 assert top.index("<b>01</b><span>[G마켓] 첫딜") < top.index("<b>02</b><span>[토스쇼핑] 둘째 &lt;딜&gt;") and 'href="https://a1"' in top
 assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('id="today"') < idx.index("어제딜")
 S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임

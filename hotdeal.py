@@ -219,8 +219,8 @@ def ai_pick(prompt, lines):
 def store_link(post_url):
     """딜 글에 적힌 실제 쇼핑몰 주소 (남의 제휴 링크·추적값은 plain()으로 걷어냄). 못 찾으면 None.
     루리웹: 글 아래 '출처'(web.ruliweb.com/link.php?ol=원래주소, 네이버·토스는 주소 그대로). 클리앙: 글 위 '구매링크'(attached_link).
-    뽐뿌: 상단 링크(s.ppomppu.co.kr ... target=base64) — ponytail: GitHub 서버 IP를 403 차단(10/5 linkcheck)이라 지금은 None,
-    그동안은 검색 제휴 링크 또는 관리자 답장. 차단 풀리면 그대로 다시 동작."""
+    뽐뿌: 상단 링크(s.ppomppu.co.kr ... target=base64) — GitHub 서버 IP는 403 차단(10/5 linkcheck) -> 10/8~ 워크플로가 오라클 터널로 뽐뿌가 열리는지
+    확인하고 열리면 뽐뿌만 터널 경유(그때부터 동작). 안 열리면 None -> 검색 제휴 링크 또는 관리자 답장, 사이트엔 '같은 상품 찾기'."""
     try:
         page = http(post_url)
     except Exception as e:
