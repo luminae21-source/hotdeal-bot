@@ -45,7 +45,7 @@ jobs:
           COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
           COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
           THREADS_TOKEN: ${{ secrets.THREADS_TOKEN }}
-          IG_TOKEN: ${{ secrets.IG_TOKEN }}       # 인스타 릴스 자동 게시: 페이지 액세스 토큰(없으면 영상만 봇 채팅으로)
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}       # 인스타 자동 게시: 대시보드 '계정 추가' Instagram 토큰(IGAA…, 60일, 카드 사진) 또는 페이스북 페이지 토큰(EAA…, 릴스까지)
           IG_USER_ID: ${{ secrets.IG_USER_ID }}   # 인스타 프로페셔널 계정 ID(숫자)
           TOSS_ACCESS_KEY: ${{ secrets.TOSS_ACCESS_KEY }}
           TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
