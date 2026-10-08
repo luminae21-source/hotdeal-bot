@@ -855,6 +855,56 @@ def threads_deals(seen):
                     raise
 
 
+REPORT_HOUR = 22  # 이 시각(KST) 이후 하루 1번 관리자에게 성과 리포트 (10/8 진우 '토스 쉐어 정산금 들어오기 시작')
+
+
+def report(seen):
+    """하루 1번 관리자에게: 토스 쉐어링크 실적(오늘·이번 달 — 잠정, 환불되면 줄어듦) + Threads 오늘 올린 글 조회수·링크 클릭·팔로워.
+    Threads 숫자는 토큰에 threads_manage_insights 권한이 있어야 나옴(없으면 '권한 필요' 한 줄). 텔레그램 전송이 실패하면 다음 실행에 다시."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    key, today = time.strftime("report_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
+    if kst.tm_hour < REPORT_HOUR or key in seen:
+        return
+    lines = [f"📊 {kst.tm_mon}/{kst.tm_mday} 성과 리포트"]
+    if HAS_TOSS:
+        try:
+            for label, frm in (("오늘", today), ("이번 달", today[:8] + "01")):
+                r = toss(f"/performance?fromDate={frm}&toDate={today}&size=50")
+                s = r["summary"]
+                lines.append(f"\n💰 토스 {label}: 클릭 {s['clickCount']:,} · 판매 {s['soldQuantity']:,}개 · 예상 수익 {s['expectedCommissionAmount']:,}원"
+                             f" (구매확정 {s['confirmedCommissionAmount']:,}원)")
+            lines += [f"  · {clip(x['productName'] or str(x['productId']), 22)} {x['soldQuantity']}개 {x['expectedCommissionAmount']:,}원"
+                      + (" (링크 타고 다른 상품)" if x["attribution"] == "INDIRECT" else "") for x in r["items"][:3]]  # 이번 달, 예상 수익 높은 순(API 정렬)
+            if s.get("lastUpdatedAt"):
+                lines.append(f"  {s['lastUpdatedAt'][5:16].replace('T', ' ')} 집계 · 잠정(취소·환불되면 줄어듦)")
+        except Exception as e:
+            lines.append(f"\n💰 토스 실적 조회 실패: {e!r}"[:200])
+    tok = E.get("THREADS_TOKEN")
+    if tok:
+        try:
+            now = int(time.time())
+            since = now - (now + 9 * 3600) % 86400  # 오늘 0시(KST)
+            me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+            posts = json.loads(http(f"{THREADS}/{me}/threads?fields=id,text&since={since}&limit=50&access_token={tok}"))["data"]
+            views = []
+            for p in posts:
+                d = json.loads(http(f"{THREADS}/{p['id']}/insights?metric=views&access_token={tok}"))["data"]  # 남의 글 리포스트는 빈 목록
+                views.append((d[0]["values"][0]["value"] if d else 0, p.get("text") or ""))
+            c = json.loads(http(f"{THREADS}/{me}/threads_insights?metric=clicks&since={since}&until={now}&access_token={tok}"))["data"]
+            f = json.loads(http(f"{THREADS}/{me}/threads_insights?metric=followers_count&access_token={tok}"))["data"]  # since 안 받는 지표
+            lines.append(f"\n🧵 Threads 오늘: 글 {len(views)}개 · 조회 {sum(v for v, _ in views):,} · 링크 클릭 "
+                         f"{sum(x['value'] for x in (c[0].get('link_total_values') or [])) if c else 0:,} · 팔로워 {f[0]['total_value']['value']:,}")
+            for v, t in sorted(views, key=lambda x: -x[0])[:3]:
+                t = re.sub(r"^이 (포스팅|콘텐츠)[^\n]*\n+", "", t).split("\n")[0]  # 대가성 문구 줄 빼고 제목
+                lines.append(f"  · {v:,} — {clip(t, 26)}")
+        except Exception as e:
+            body = getattr(e, "body", "") or ""
+            lines.append("\n🧵 Threads 조회수: 토큰에 threads_manage_insights 권한 필요 → README 세팅 6번의 6"
+                         if "permission" in body.lower() else f"\n🧵 Threads 조회 실패: {e!r} {body}"[:200])
+    if tg("sendMessage", chat_id=ADMIN, text="\n".join(lines), link_preview_options={"is_disabled": True}):
+        seen[key] = time.time()
+
+
 def load(path, default):
     try:
         return json.load(open(path))
@@ -911,7 +961,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish, report):
         try:
             step(seen)
         except Exception as e:

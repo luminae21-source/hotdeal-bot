@@ -721,4 +721,57 @@ assert "🎵 테스트곡 — 작가 (Pixabay)" in vids[0]  # 캡션에 오늘 �
 H.bgm = bg; os.remove("music.json")
 del H.E["IG_TOKEN"]; ic[:] = []; H.http = ig_http; H.ig_publish({"igc_C3": 1}); assert not ic  # 토큰 없으면 호출 없음
 time.time, H.http = tt2, ph2
+# 9-4) 성과 리포트(10/8 진우 '토스 정산금 들어오기 시작'): 22시 이후 하루 1번 관리자에게 — 토스 오늘·이번 달 실적(이번 달 상품 TOP3, 간접 구매 표시)
+#      + Threads 오늘 글 조회수 합·TOP3(대가성 문구 줄 빼고 제목)·링크 클릭·팔로워 / 인사이트 권한 없으면 '권한 필요' 한 줄 / 전송 실패면 다음 실행에 다시
+from urllib.error import HTTPError
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1", THREADS_TOKEN="tk"); H.HAS_TOSS, rc, perm = True, [], [True]
+json.dump({"token": "TK", "exp": 1e10}, open("toss.json", "w"))
+NOW = 1791292800  # 10/6 22:20 KST
+def rep_http(url, body=None, headers=None, method=None):
+    rc.append(url)
+    q = parse_qs(urlsplit(url).query)
+    if url.startswith(H.TOSS_API + "/performance?"):
+        assert headers["Authorization"] == "Bearer TK" and q["toDate"] == ["2026-10-06"]
+        month = q["fromDate"] == ["2026-10-01"]
+        assert month or q["fromDate"] == ["2026-10-06"]
+        return json.dumps({"resultType": "SUCCESS", "success": {"summary": {"clickCount": 340 if month else 12, "soldQuantity": 9 if month else 1,
+                          "expectedCommissionAmount": 4150 if month else 350, "confirmedCommissionAmount": 1200 if month else 0, "lastUpdatedAt": "2026-10-06T21:30:00"},
+                          "items": [{"productId": 7, "productName": "할리스 미니 130개", "attribution": "DIRECT", "soldQuantity": 3, "expectedCommissionAmount": 2100},
+                                    {"productId": 8, "productName": "", "attribution": "INDIRECT", "soldQuantity": 1, "expectedCommissionAmount": 900},
+                                    {"productId": 9, "productName": "생수", "attribution": "DIRECT", "soldQuantity": 4, "expectedCommissionAmount": 600},
+                                    {"productId": 10, "productName": "넷째", "attribution": "DIRECT", "soldQuantity": 1, "expectedCommissionAmount": 100}] if month else []}})
+    assert url.startswith(H.THREADS) and q["access_token"] == ["tk"]
+    if "/me?" in url: return '{"id": "777"}'
+    if "/777/threads?" in url:
+        assert q["since"] == [str(NOW - 22 * 3600 - 20 * 60)] and q["fields"] == ["id,text"]  # 오늘 0시(KST)부터 올린 글
+        return json.dumps({"data": [{"id": "a", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요"}, {"id": "b", "text": "🔥 [G마켓] 우유\n\n좋음"},
+                                    {"id": "c", "text": f"{H.TOSS_NOTE}\n\n⏰ 오늘의 토스 하루특가 TOP5\n\n1. 가"}, {"id": "d", "text": "남의 글 리포스트"}]})
+    if "/insights?" in url:
+        if not perm[0]:
+            e = HTTPError(url, 400, "Bad Request", {}, None); e.body = '{"error": {"message": "Application does not have permission for this action", "code": 10}}'; raise e
+        v = {"a": 120, "b": 45, "c": 300, "d": None}[url.rsplit("/", 2)[-2]]
+        return json.dumps({"data": [] if v is None else [{"name": "views", "period": "lifetime", "values": [{"value": v}]}]})
+    if "/777/threads_insights?" in url:
+        if q["metric"] == ["clicks"]:
+            assert q["since"] == [str(NOW - 22 * 3600 - 20 * 60)] and q["until"] == [str(NOW)]
+            return json.dumps({"data": [{"name": "clicks", "link_total_values": [{"value": 11, "link_url": "https://hotdealpick.kr/p/1.html"}, {"value": 4, "link_url": "https://t.me/hotdeal_pick"}]}]})
+        assert q["metric"] == ["followers_count"] and "since" not in q  # 팔로워는 since 안 받음
+        return json.dumps({"data": [{"name": "followers_count", "total_value": {"value": 87}}]})
+    raise AssertionError(url)
+H.http, seen = rep_http, {}
+time.time = lambda: NOW - 2 * 3600; sent.clear(); H.report(seen); assert not sent and not rc  # 20:20: 아직
+time.time = lambda: NOW; H.report(seen)
+m, p = sent[-1]; t = p["text"]
+assert m == "sendMessage" and p["chat_id"] == "42" and t.startswith("📊 10/6 성과 리포트") and "report_20261006" in seen
+assert "💰 토스 오늘: 클릭 12 · 판매 1개 · 예상 수익 350원 (구매확정 0원)" in t and "💰 토스 이번 달: 클릭 340 · 판매 9개 · 예상 수익 4,150원 (구매확정 1,200원)" in t
+assert t.index("할리스 미니 130개 3개 2,100원") < t.index("· 8 1개 900원 (링크 타고 다른 상품)") < t.index("생수 4개 600원") and "넷째" not in t
+assert "10-06 21:30 집계 · 잠정" in t
+assert "🧵 Threads 오늘: 글 4개 · 조회 465 · 링크 클릭 15 · 팔로워 87" in t
+assert t.index("300 — ⏰ 오늘의 토스 하루특가 TOP5") < t.index("120 — 🔥 [쿠팡] 휴지 30롤") < t.index("45 — 🔥 [G마켓] 우유") and "이 포스팅은" not in t and "이 콘텐츠는" not in t
+rc.clear(); sent.clear(); H.report(seen); assert not sent and not rc  # 하루 1번
+perm[0], seen = False, {}; sent.clear(); H.report(seen)  # 인사이트 권한 없음(지금 토큰): 토스는 그대로, Threads는 안내 한 줄
+t = sent[-1][1]["text"]
+assert "threads_manage_insights 권한 필요" in t and "💰 토스 이번 달" in t and "조회 465" not in t and "report_20261006" in seen
+H.tg, seen = lambda method, **p: None, {}; H.report(seen); assert not seen  # 텔레그램 실패 -> 다음 실행에 다시
+H.tg = fake_tg; os.remove("toss.json"); del H.E["THREADS_TOKEN"]; time.time, H.http, H.HAS_TOSS = tt2, ph2, False
 print("OK: 모든 셀프체크 통과")
