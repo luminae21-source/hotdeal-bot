@@ -735,6 +735,29 @@ fail_ig[0], seen, sent[:], calls[:] = True, {}, [], []
 H.threads(seen)
 assert any("인스타 카드 게시 실패" in str(p.get("text")) for _, p in sent) and any("/threads_publish?" in u for _, u in calls) and not [k for k in seen if k.startswith("igc_")]
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http = th_http
+# 9-1c) 인스타 카드 다시 게시(10/8 진우 '다시 업로드'): ig_repost.txt 날짜 = 오늘일 때만 / 1번째 실행 = 새 카드(docs/cards/re/, 지금 코드)만 저장,
+#        다음 실행 = 사이트에 뜨면 새 주소 .jpg + 새 캡션으로 컨테이너(발행은 ig_publish) / 하루 1번, 지난 날짜·토큰 없음이면 아무것도 안 함 / 실행 순서 ig_publish 앞
+import shutil; shutil.rmtree("docs/cards/re", ignore_errors=True)
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ig_calls[:], fail_ig[0], seen, dep = [], False, {}, [False]
+def re_http(url, body=None, headers=None, method=None):
+    if method == "HEAD":
+        assert url == f"https://hotdealpick.kr/cards/re/{today}.jpg", url
+        if not dep[0]: raise OSError("404")
+        return ""
+    return igc_http(url, body, headers, method)
+H.http = re_http
+open("ig_repost.txt", "w").write("2020-01-01\n"); H.ig_repost(seen); assert not ig_calls and not os.path.isdir("docs/cards/re")  # 지난 날짜면 새 카드도 안 만듦
+open("ig_repost.txt", "w").write(today + "\n"); H.ig_repost(seen)
+assert os.path.exists(f"docs/cards/re/{today}.png") and os.path.exists(f"docs/cards/re/{today}.jpg") and not ig_calls and not seen
+H.ig_repost(seen); assert not ig_calls and not seen  # 사이트 배포 전
+dep[0] = True; H.ig_repost(seen)
+u, b, h, m = ig_calls[0]
+assert u == H.IG + "/178/media" and m == "POST" and b["image_url"] == f"https://hotdealpick.kr/cards/re/{today}.jpg" and "카드 번호를 누르면 바로 구매" in b["caption"] and "1. A딜" in b["caption"]
+assert "igc_IMG1" in seen and f"igre_{today}" in seen
+H.ig_repost(seen); assert len(ig_calls) == 1  # 하루 1번
+del H.E["IG_TOKEN"]; H.ig_repost({}); assert len(ig_calls) == 1  # 토큰 없으면 안 함
+os.remove("ig_repost.txt"); del H.E["IG_USER_ID"]; H.http = th_http
+assert "ig_repost, ig_publish" in inspect.getsource(H.main)
 # 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
 kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},

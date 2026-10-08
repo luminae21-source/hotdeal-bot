@@ -27,6 +27,7 @@ CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구�
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
+REPOST = "ig_repost.txt"  # 오늘 인스타 카드를 1번 다시 올릴 때 날짜(YYYY-MM-DD) 한 줄 — ig_repost()
 MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude가 고름) 또는 봇에 보낸 음악의 텔레그램 file_id. 음원 파일은 공개 저장소에 안 올림(무료 음원도 원본 재배포는 금지)
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
@@ -808,6 +809,39 @@ def blog_text(todays, kst):
 THREADS = "https://graph.threads.com/v1.0"  # 공식 문서 기준 도메인
 
 
+def card_caption(day):
+    """그날 카드의 (목록 줄 6개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에."""
+    todays = [p for p in load(POSTS, []) if p["t"].startswith(day) and not p["text"].startswith("📋")]
+    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]
+    return rows, (f"{int(day[5:7])}월 {int(day[8:])}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
+                  + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위에서 카드 번호를 누르면 바로 구매 페이지\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+                  + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
+
+
+def ig_repost(seen):
+    """ig_repost.txt 날짜 = 오늘이면 그날 카드를 지금 코드로 다시 그려 인스타에만 1번 더 게시(10/8 진우 '다시 업로드'). 지난 날짜면 무시.
+    1번째 실행: 새 카드 -> docs/cards/re/(새 주소라 사이트 캐시 영향 없음, 워크플로가 커밋) / 다음 실행: 사이트에 뜨면 컨테이너 -> ig_publish가 발행.
+    예전 게시물 삭제는 진우(Instagram 로그인 토큰은 삭제 권한 없음)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    day = open(REPOST).read().strip() if os.path.exists(REPOST) else ""
+    if day != time.strftime("%Y-%m-%d", kst) or "igre_" + day in seen or not (E.get("IG_TOKEN") and E.get("IG_USER_ID")):
+        return
+    path = f"docs/cards/re/{day}.png"
+    if not os.path.exists(path):
+        import cards
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        todays = [p for p in load(POSTS, []) if p["t"].startswith(day) and not p["text"].startswith("📋")]
+        cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", path)
+        return
+    url = f"{SITE}cards/re/{day}.jpg"
+    try:
+        http(url, method="HEAD")  # 아직 배포 전이면 다음 실행에
+    except Exception:
+        return
+    c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url, "caption": card_caption(day)[1]}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
+    seen["igc_" + c["id"]] = seen["igre_" + day] = time.time()
+
+
 def threads(seen):
     """오늘 카드가 사이트에 올라와 있으면 관리자에게 1회 보내고, IG_TOKEN 있으면 인스타(JPEG 카드, ig_publish가 발행), THREADS_TOKEN 있으면 Threads에도 게시.
     Threads 토큰은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
@@ -824,12 +858,8 @@ def threads(seen):
     auto = [n for n, on in (("인스타", ig), ("Threads", tok)) if on]
     tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 오늘의 카드" + ("" if ig else " (인스타에 그대로 올리면 돼)") + (f" · {'·'.join(auto)} 자동 게시 중" if auto else ""))
     seen[key] = time.time()  # 사진은 1번만. 인스타·Threads 실패는 관리자에게 알리고 재시도 안 함(스팸 방지)
-    todays = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋")]
-    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]  # 가격은 카드 이미지에
+    rows, cap = card_caption(today)
     if ig:  # 10/8 진우 '자동으로 올리게'. 컨테이너만 만들고 발행은 ig_publish(처리 끝나면)
-        cap = (f"{kst.tm_mon}월 {kst.tm_mday}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
-               + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위에서 카드 번호를 누르면 바로 구매 페이지\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
-               + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
         try:
             c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url[:-4] + ".jpg", "caption": cap}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
             seen["igc_" + c["id"]] = time.time()
@@ -1000,7 +1030,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish, report):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, report):
         try:
             step(seen)
         except Exception as e:
