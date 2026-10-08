@@ -8,6 +8,7 @@ BLOG = "https://blog.naver.com/hotdeal_pick"
 INSTA = "https://www.instagram.com/hotdealpick.kr/"
 THREADS = "https://www.threads.com/@hotdealpick.kr"
 GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 링크: 골드박스 페이지(coupang.com/np/goldbox), 10/6 생성. 클릭 후 24시간 안 쿠팡 구매가 실적
+CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
@@ -150,6 +151,16 @@ def grid_item(i, p):
             + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "") + f'<div class="go">{go}</div></article>')
 
 
+def toss_section(posts, days):
+    """홈 '토스' 칸(10/9 진우 '쿠팡·토스 주력'): 최근 2일 커뮤니티 딜 중 토스 쉐어링크가 붙은 것(최신 6개) + 텔레그램 토스 추천 버튼.
+    토스 API 상품(베스트·하루특가)은 사이트에 안 올림 — API 승인 범위가 채널·Threads(신청서 '사이트 전시·가격 비교 안 함')라서 버튼으로 채널에 보냄."""
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:2] and not p["text"].startswith("📋")
+          and urllib.parse.urlsplit(p.get("url") or "").netloc in TOSS_HOSTS][::-1][:6]
+    return (f'<section class="day" id="toss" aria-labelledby="tossh"><h2 id="tossh">💙 토스 딜{f" {len(ds)}개" if ds else ""}</h2>'
+            + (f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>' if ds else "")
+            + f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a></section>')
+
+
 def day_grids(posts, days):
     """날짜별 2열 격자. 날짜 안에서는 제휴 링크 딜(쿠팡·토스 등) 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자')."""
     out = []
@@ -178,9 +189,9 @@ def build(posts, out="docs"):
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
         urls.append(url)
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    tabs = ('<nav class="tabs" aria-label="날짜별 딜">' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
+    tabs = (f'<nav class="tabs" aria-label="날짜별 딜"><a href="{BASE}#toss">💙 토스</a>' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
             + f'<a href="{BASE}all.html">지난 딜 전체</a></nav>') if days else ""
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + toss_section(posts, days) + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
                                               "매일 살 만한 핫딜만 골라드려요", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", tabs + day_grids(posts, days), "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append(f"{BASE}all.html")

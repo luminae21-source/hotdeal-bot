@@ -535,7 +535,7 @@ except Exception:
     pass
 sent.clear(); H.toss_deals(seen); assert not sent
 del H.E["THREADS_TOKEN"]; H.time.sleep = sl
-# 5-3b) 토스 베스트(지금 많이 팔리는 상품, 10/7 진우 제안): 12·20시 1번씩, Claude가 '진짜 싼' 것만(없으면 안 올림), 리뷰를 판단 재료로, 3일 안에 올린 상품 제외, 사이트 미기록
+# 5-3b) 토스 베스트(지금 많이 팔리는 상품, 10/7 진우 제안): 10~20시 2시간마다 1번씩(10/9 '쿠팡·토스 주력' 6번), Claude가 '진짜 싼' 것만(없으면 안 올림), 리뷰를 판단 재료로, 3일 안에 올린 상품 제외, 사이트 미기록
 def best_http(url, body=None, headers=None, method=None):
     if url.endswith("/products/best-selling?size=30"):
         return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"베스트{i}", "displayPrice": 6930,
@@ -544,7 +544,7 @@ def best_http(url, body=None, headers=None, method=None):
 offered.clear(); H.http = best_http
 H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 8, "comment": "개당 99원"}, {"i": 1, "score": 7, "comment": "나"}]
                                                            if "할인율은 정가를 부풀린" in prompt and len(lines) == 3 else [])
-seen.clear(); sent.clear(); time.time = lambda: 1791252000; H.toss_deals(seen, True); assert not sent and not offered  # 11:00 KST: 12시 전
+seen.clear(); sent.clear(); time.time = lambda: 1791248340; H.toss_deals(seen, True); assert not sent and not offered  # 09:59 KST: 10시 전
 time.time = lambda: 1791257400; H.toss_deals(seen, True)  # 12:30
 t = sent[-1][1]["text"]
 assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
@@ -555,6 +555,9 @@ assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"
 offered.clear(); time.time = lambda: 1791285000; H.toss_deals(seen, True)  # 20:10: 낮에 올린 1·3은 후보에서 빠짐 -> 5만 남음 -> Claude가 안 고르면 안 올림
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_20" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent and not offered[1:]
+assert H.TOSS_BEST_HOURS == (10, 12, 14, 16, 18, 20)
+for hh, ts in ((10, 1791248700), (14, 1791263100), (18, 1791277500)):  # 10:05·14:05·18:05 회차도 1번씩
+    s2 = {}; time.time = lambda ts=ts: ts; H.toss_deals(s2, True); assert f"tossbest_20261006_{hh}" in s2, (hh, s2)
 # 오늘 하루특가에 올린 상품도 베스트에서 빠짐 (10/7 12시 첫 베스트 글에 9시 하루특가의 초정 탄산수가 또 나왔음)
 seen.clear(); sent.clear(); offered.clear(); time.time = lambda: 1791248400
 H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 9, "comment": "가"}, {"i": 2, "score": 8, "comment": "나"}, {"i": 1, "score": 7, "comment": "다"}]
@@ -678,6 +681,22 @@ assert '<div class="s">토스쇼핑 · 08:00</div>' in d0 and '<div class="pr">5
 assert 'class="o" href="https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no=9"' in d0 and '🔎 같은 상품 찾기' in d0 and 'aria-label="라면 원글에서 구매 링크 보기"' in d0
 assert f'class="o" href="https://hotdealpick.kr/p/2.html" aria-label="주소없는딜 자세히 보기">자세히 →' in d0
 assert all(f"{w}" in allp for w in ("10월 9일 딜 8개", "10월 8일 딜 1개", "10월 7일 딜 1개")) and 'id="today"' not in allp
+# 6-5) 토스 칸(10/9 진우 '쿠팡·토스 주력'): 홈 맨 위 카드 딜 다음 = 최근 2일 커뮤니티 딜 중 토스 쉐어링크 딜(최신 6개) + 텔레그램 토스 추천 버튼,
+#      탭 맨 앞 '💙 토스'. 토스 API 상품은 사이트에 안 올림(승인 범위 = 채널·Threads) -> 버튼은 채널 웹 보기로. 지난 딜 전체엔 토스 칸 없음
+tsec = idx.split('id="toss"')[1].split("</section>")[0]
+assert idx.index('id="today"') < idx.index('id="toss"') < idx.index('<nav class="tabs"') and "💙 토스 딜 1개" in tsec and tsec.count('class="g"') == 1 and "생수 40병" in tsec
+assert f'href="{S.CHANNEL_WEB}"' in tsec and S.CHANNEL_WEB == "https://t.me/s/hotdeal_pick" and 'id="toss"' not in allp
+assert '"날짜별 딜"><a href="https://hotdealpick.kr/#toss">💙 토스</a><a href="https://hotdealpick.kr/#d0">10/9</a>' in tabs
+tt = [{"t": f"2026-10-0{d} 1{k}:00", "text": f"🔥 [토스] 토스{d}{k} (1,000원)", "url": f"https://toss.im/_m/{d}{k}", "s": 6} for d in (7, 8, 9) for k in range(4)]
+tt += [{"t": "2026-10-09 15:00", "text": "🔥 [토스] 원글토스 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "s": 7}]
+S.build(tt, "docs6"); ts6 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
+assert ts6.count('class="g"') == 6 and "토스 딜 6개" in ts6 and ts6.index("토스93") < ts6.index("토스90") < ts6.index("토스83") < ts6.index("토스82")
+assert "토스81" not in ts6 and "토스7" not in ts6 and "원글토스" not in ts6  # 최신 6개만, 2일 지난 딜·쉐어링크 없는 토스 딜 제외
+S.build([{"t": "2026-10-07 15:00", "text": "🔥 [토스] 그제토스 (1,000원)", "url": "https://toss.im/_m/z", "s": 7},
+         {"t": "2026-10-08 15:00", "text": "🔥 [G마켓] 어제 (1,000원)", "url": "https://g", "s": 7},
+         {"t": "2026-10-09 15:00", "text": "🔥 [쿠팡] 휴지 (1,000원)", "url": "https://buy", "s": 7}], "docs6")
+ts0 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
+assert 'class="grid"' not in ts0 and "💙 토스 딜</h2>" in ts0 and S.CHANNEL_WEB in ts0  # 최근 2일엔 토스 딜이 없음(그제 딜은 제외) -> 추천 버튼만
 
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
