@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -82,6 +82,10 @@ comment: 1줄, 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
 믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
+"""
+MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
+아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
+확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
 TOSS_BEST_HOURS = (10, 12, 14, 16, 18, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
@@ -673,6 +677,39 @@ def toss_deals(seen, best=False):
         json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
+def toss_match_log(seen):
+    """10/9 진우 '토스 딜 직접 추출' -> '하루 기록 먼저': 쉐어링크가 없는 최근 3일 [토스] 딜(뽐뿌 원글 등)을 토스 API 목록(베스트 100·하루특가·
+    최상위 카테고리별 베스트 100)에서 찾아 실행 로그에만 남김(버튼·채널 글은 안 바꿈). 검색 API가 없어서 목록 대조 — 이름 겹침으로 후보 8개 -> Claude가
+    같은 상품인지 확인(8점 이상만). 목록은 seen에 저장해 재사용(문서 권장, 일 상한 10,000개): 카테고리·하루특가 = 하루 1번(9시 갱신), 베스트 = 1시간 1번."""
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 86400))
+    todo = [p for p in load(POSTS, []) if HAS_TOSS and p["t"] >= since and not toss_share(p.get("url"))
+            and store_info(title_of(p["text"]), p.get("url")).startswith("💰 토스") and "tm_" + p["t"] + title_of(p["text"])[:20] not in seen]
+    if not todo:
+        return
+    now = time.gmtime(time.time() + 9 * 3600)
+    day, hour = time.strftime("%Y%m%d", time.gmtime(time.time())), time.strftime("%Y%m%d%H", now)  # 9시(KST) = 0시(UTC) 갱신 -> UTC 날짜로 하루 1번
+    if seen.get("tosslist_cat", {}).get("d") != day:
+        raw = toss("/products/today-deals?size=30")["items"] + [x for c in toss("/categories")["categories"]
+                                                                for x in toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]]
+        seen["tosslist_cat"] = {"t": time.time(), "d": day, "items": [[x["tacaItemId"], x["displayName"], x["displayPrice"]] for x in raw]}
+    if seen.get("tosslist_best", {}).get("h") != hour:
+        seen["tosslist_best"] = {"t": time.time(), "h": hour, "items": [[x["tacaItemId"], x["displayName"], x["displayPrice"]]
+                                                                        for x in toss("/products/best-selling?size=100")["items"]]}
+    items = list({x[0]: x for x in seen["tosslist_cat"]["items"] + seen["tosslist_best"]["items"]}.values())
+    toks = lambda s: {t for t in re.findall(r"[0-9a-z.]+[가-힣a-z]*|[가-힣]+", s.lower()) if len(t) > 1}
+    ns = lambda s: re.sub(r"\s+", "", s.lower())
+    for p in todo:
+        title = title_of(p["text"]).lstrip("🔥 ")
+        name = parse(title)[1]
+        near = lambda x: sum(t in ns(x[1]) for t in toks(name)) + sum(t in ns(name) for t in toks(x[1]))  # 띄어쓰기 달라도(극조생감귤 = 극조생 감귤) 겹친 낱말 수
+        cand = sorted((x for x in items if near(x) >= 3), key=lambda x: -near(x))[:8]
+        pick = cand and ai_pick(MATCH_PROMPT.format(title), [f"{x[1]} | {x[2]:,}원" for x in cand])
+        hit = cand[pick[0]["i"]] if pick and pick[0]["score"] >= 8 else None
+        print("toss match", p["t"][5:], title[:40], "->", f"{hit[1][:40]} {hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점)" if hit else "없음",
+              f"| 후보 {len(cand)}/{len(items)}")
+        seen["tm_" + p["t"] + title_of(p["text"])[:20]] = time.time()
+
+
 def digest(seen, posts):
     """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 바로 뒤 블로그용 글(길면 나눠서, 실패하면 다음 실행에 다시)·카드·릴스."""
     kst = time.gmtime(time.time() + 9 * 3600)
@@ -1062,7 +1099,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_match_log, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
         try:
             step(seen)
         except Exception as e:

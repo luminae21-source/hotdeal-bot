@@ -615,6 +615,56 @@ except RuntimeError as e:
     assert "푸드" in str(e) and not seen and not sent
 import inspect; assert 'toss_deals(s, "cat")' in inspect.getsource(H.main)  # 실행 순서에 들어 있음
 assert len(json.load(open("posts.json"))) == n0
+# 5-3d) 토스 딜 목록 대조(10/9 진우 '토스 딜 직접 추출' -> '하루 기록 먼저'): 쉐어링크 없는 최근 3일 [토스] 딜만, 토스 API 목록(하루특가·카테고리 베스트·베스트)에서
+#       이름 겹침 2개 이상 후보 -> Claude 확인 8점 이상만 '찾음', 실행 로그에만(채널 글·posts.json 그대로), 같은 딜은 1번, 목록은 seen에 저장(카테고리 하루·베스트 1시간)
+import io, contextlib
+mcalls, mprompts = [], []
+def match_http(url, *a, **k):
+    mcalls.append(url.split("/openapi")[-1])
+    it = lambda *xs: json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p} for i, n, p in xs]}})
+    if url.endswith("/categories"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 300, "displayName": "생활용품"}]}})
+    if "/best-categories/300" in url:
+        assert url.endswith("?size=100"); return it((31, "모나리자 에코 미용티슈 300매, 12개", 11990), (32, "깨끗한나라 화장지 30롤", 15900))
+    if "/best-categories/200" in url:
+        return it((41, "제주 극조생 감귤 5kg", 9900))
+    if url.endswith("/products/today-deals?size=30"):
+        return it((51, "광동 비타500 100ml 20병", 9900))
+    if url.endswith("/products/best-selling?size=100"):
+        return it((31, "모나리자 에코 미용티슈 300매, 12개", 11990), (61, "삼다수 2L 12병", 9000))
+    raise AssertionError(url)
+def match_pick(prompt, lines):
+    mprompts.append((prompt, lines))
+    return [{"i": 0, "score": 9 if "모나리자" in lines[0] else 6, "comment": "같은 상품"}]
+H.http, H.ai_pick, pj0 = match_http, match_pick, open("posts.json").read()
+now = 1791259200  # 10/6 13:00 KST
+time.time = lambda: now
+kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - h * 3600))
+mp = [{"t": kt(2), "text": "🔥 [토스] 모나리자 에코 미용티슈 300매 12입 (10,990원/무배)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1"},
+      {"t": kt(1), "text": "🔥 [토스] 제주 극조생감귤 10kg (12,900원/무배)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=2"},
+      {"t": kt(1), "text": "🔥 [토스] 이미 링크 붙은 딜 (1,000원)", "url": "https://toss.shopping/_m/abc"},
+      {"t": kt(1), "text": "🔥 [쿠팡] 쿠팡 딜 모나리자 에코 (1,000원)", "url": "https://www.coupang.com/vp/products/1"},
+      {"t": kt(80), "text": "🔥 [토스] 모나리자 에코 오래된 딜 (1,000원)", "url": "https://www.ppomppu.co.kr/x"},
+      {"t": kt(1), "text": "🔥 [토스] 아무거나 전혀 다른 상품 (1,000원)", "url": "https://www.ppomppu.co.kr/y"}]
+json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+seen, out = {}, io.StringIO()
+with contextlib.redirect_stdout(out): H.toss_match_log(seen)
+log = out.getvalue()
+assert "toss match" in log and "모나리자 에코 미용티슈 300매 12입 (10,990원/무배) -> 모나리자 에코 미용티슈 300매, 12개 11,990원 (id 31, 9점)" in log, log
+assert "제주 극조생감귤 10kg (12,900원/무배) -> 없음" in log and "아무거나 전혀 다른 상품 (1,000원) -> 없음 | 후보 0/" in log  # 감귤 5kg = 용량 달라 Claude 6점 -> 없음, 겹침 없으면 Claude 안 부름
+assert "이미 링크" not in log and "쿠팡 딜" not in log and "오래된" not in log and len(mprompts) == 2  # 쉐어링크 있는 딜·다른 몰·3일 지난 딜 제외
+assert mprompts[0][1][0] == "모나리자 에코 미용티슈 300매, 12개 | 11,990원" and "깨끗한나라" not in str(mprompts[0][1]) and "모나리자 에코 미용티슈 300매 12입" in mprompts[0][0]
+assert sorted(mcalls) == sorted(["/products/today-deals?size=30", "/categories", "/products/best-categories/200?size=100", "/products/best-categories/300?size=100", "/products/best-selling?size=100"])
+assert json.load(open("posts.json")) == mp and seen["tosslist_cat"]["items"][0] == [51, "광동 비타500 100ml 20병", 9900]  # 기록만(글 그대로), 목록은 저장
+mcalls.clear(); mprompts.clear(); H.toss_match_log(seen); assert not mcalls and not mprompts  # 같은 딜은 1번
+mp.append({"t": kt(0), "text": "🔥 [토스쇼핑] 삼다수 2L 12병 (8,500원)", "url": "https://www.ppomppu.co.kr/z"}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+H.toss_match_log(seen); assert mcalls == [] and len(mprompts) == 1  # 같은 시간대 새 딜 -> 저장해 둔 목록 그대로(API 다시 안 부름)
+time.time = lambda: now + 3600; mp.append({"t": kt(-1), "text": "🔥 [토스] 비타500 100ml 20병 (8,900원)", "url": "https://www.ppomppu.co.kr/w"}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+H.toss_match_log(seen); assert mcalls == ["/products/best-selling?size=100"]  # 1시간 지나면 베스트만 다시(카테고리·하루특가는 하루 1번)
+H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": "https://www.ppomppu.co.kr/v"}], open("posts.json", "w"), ensure_ascii=False)
+H.toss_match_log({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
+assert "toss_match_log, lambda s: digest" in inspect.getsource(H.main)
+open("posts.json", "w").write(pj0)
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
