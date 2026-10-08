@@ -208,7 +208,10 @@ def ai_pick(prompt, lines):
         "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "auto"},
         "messages": [{"role": "user", "content": prompt + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
-    picks = next((c["input"]["picks"] for c in r["content"] if c["type"] == "tool_use"), [])
+    tu = next((c["input"] for c in r["content"] if c["type"] == "tool_use"), {"picks": []})  # 도구를 안 부르면 고른 게 없는 것
+    if "picks" not in tu:  # 빈 입력·잘린 답 = 실패(10/8 11:12 KeyError로 실행 전체가 죽음, 15분 뒤 같은 목록에서 7점 2개) -> 본 글 기록 안 하고 다음 실행에 다시
+        raise RuntimeError(f"Claude 답에 picks 없음({r.get('stop_reason')})")
+    picks = tu["picks"]
     return sorted((p for p in picks if 0 <= p["i"] < len(lines)), key=lambda p: -p["score"])
 
 
@@ -956,12 +959,17 @@ def main():
         since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
         recent = [title_of(p["text"]) for p in load(POSTS, []) if p["t"] >= since and not p["text"].startswith("📋")][-30:]
         prompt = DEAL_PROMPT + ("\n최근 24시간에 이미 올린 딜(같은 상품이면 고르지 마):\n" + "\n".join(recent) if recent else "")
-        picks = ai_pick(prompt, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}" for d in new])
+        try:
+            picks = ai_pick(prompt, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}" for d in new])
+        except Exception as e:  # Claude 오류면 이번엔 딜 판단만 건너뜀(본 글 기록 안 함 -> 다음 실행에 다시). 실행 전체가 죽으면 토스·Threads·리포트도 멈추고 seen 캐시도 안 남음
+            print("ai_pick 실패", repr(e))
+            new = picks = []
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
             if dkey(d["title"]):
                 seen[dkey(d["title"])] = time.time()
-        print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
+        if new:
+            print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         good = [p for p in picks if p["score"] >= MIN_SCORE]
         if not good and picks and quiet():
             best = max(picks, key=lambda p: p["score"])

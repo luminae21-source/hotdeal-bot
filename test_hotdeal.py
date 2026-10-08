@@ -5,6 +5,7 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
+AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
 ago = lambda m: formatdate(time.time() - m * 60, usegmt=True)
 RSS = f"""<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel>
@@ -345,6 +346,29 @@ assert drafts[0]["chat_id"] == "@ch"  # ✅ 없이 채널에 바로
 assert not [p for m, p in sent if m == "copyMessage" and p["chat_id"] == "42"]  # 이미 제휴 링크(자동 변환)면 관리자 사본 안 보냄
 sent.clear(); H.main()  # 재실행: 같은 글 다시 안 보냄
 assert not [p for m, p in sent if m == "sendMessage" and "🔥" in p["text"]]
+# 4-6) Claude 답 처리(10/8 11:12 KeyError 'picks'로 실행 전체 실패, 15분 뒤 같은 목록에서 7점 2개): 도구 입력에 picks가 없으면(빈 입력·잘린 답) 예외 = 다음 실행에 다시 /
+#      도구를 안 부르면 고른 게 없는 것([]) / 정상은 점수순·범위 밖 제외
+#      main은 Claude가 실패해도 죽지 않음: 딜은 '본 글'로 안 남겨 다음 실행에 다시, 토스·Threads·리포트 단계는 그대로 돌아감
+H.E["ANTHROPIC_API_KEY"], ph6 = "k", H.http
+claude = lambda resp: (lambda url, body=None, headers=None, method=None: json.dumps(resp))
+H.http = claude({"content": [{"type": "text", "text": "고를 게 없어요"}], "stop_reason": "end_turn"}); assert AI_PICK("p", ["a"]) == []
+for stop in ("tool_use", "max_tokens"):
+    H.http = claude({"content": [{"type": "tool_use", "name": "pick", "input": {}}], "stop_reason": stop})
+    try:
+        AI_PICK("p", ["a"]); raise AssertionError("picks 없는 답은 예외")
+    except RuntimeError as e:
+        assert stop in str(e)
+H.http = claude({"content": [{"type": "text", "text": "x"}, {"type": "tool_use", "name": "pick", "input": {"picks": [{"i": 0, "score": 6, "comment": "a"},
+                 {"i": 1, "score": 8, "comment": "b"}, {"i": 5, "score": 9, "comment": "범위 밖"}]}}], "stop_reason": "tool_use"})
+assert [p["i"] for p in AI_PICK("p", ["a", "b"])] == [1, 0]
+def ai_down(prompt, lines):
+    raise RuntimeError("Claude 답 잘림(max_tokens)")
+fd6, rp6, pa6, ran = H.fetch_deals, H.report, H.ai_pick, []
+H.fetch_deals = lambda: [{"id": "ppomppu_999", "board": "뽐뿌", "title": "[쿠팡] 새 딜 (1,000원)", "hits": "", "age": 40, "desc": "", "url": "https://x"}]
+H.report, H.ai_pick, H.http = lambda s: ran.append(1), ai_down, ph6
+sent.clear(); H.main()
+assert ran and "ppomppu_999" not in json.load(open("seen.json")) and not [p for m, p in sent if "새 딜" in str(p.get("text"))]
+H.fetch_deals, H.report, H.ai_pick = fd6, rp6, pa6; del H.E["ANTHROPIC_API_KEY"]
 
 # 4-2) 같은 딜이 여러 커뮤니티에: 이미 판단한 딜은 다른 곳에서 또 안 봄 / 동시에 올라오면 루리웹(상품 주소 있음)만 / 최근 올린 딜을 Claude에게 알려줌
 it = lambda t, link, m, extra="": f"<item><title>{t}</title><link>{link}</link><pubDate>{ago(m)}</pubDate>{extra}</item>"
