@@ -17,8 +17,9 @@ a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:1
 .btn{display:block;text-align:center;background:#0b63ce;color:#fff;border-radius:10px;padding:12px;margin-top:12px;text-decoration:none;font-weight:600}
 .gb{display:block;text-align:center;background:#fff4ec;color:#c2410c;border:1.5px solid #fdba74;border-radius:10px;padding:10px;margin:12px 0;text-decoration:none;font-weight:600}
 .tg{display:block;text-align:center;background:#229ed9;color:#fff;border-radius:10px;padding:12px;margin:16px 0;text-decoration:none;font-weight:600}
+.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff4ec;border:1.5px solid #fdba74;color:#1c1e21;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
 .dis{font-size:12px;color:#888;margin:8px 0}footer{font-size:12px;color:#888;text-align:center;padding:24px 0}
-@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}}"""
+@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#2a1f17;border-color:#9a3412;color:#eee}.pick em{color:#fdba74}}"""
 
 
 def to_html(text, entities):
@@ -64,6 +65,20 @@ def page(title, body, desc="", canonical=""):
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
+def card_picks(posts, out):
+    """홈 맨 위: 가장 최근 인스타·Threads 카드의 딜을 카드와 같은 번호로, 누르면 바로 구매 페이지(인스타 캡션 링크는 안 눌려서 프로필 링크 -> 여기서 한 번에, 10/8 진우)."""
+    days = sorted(f[:-4] for f in os.listdir(f"{out}/cards") if f.endswith(".png")) if os.path.isdir(f"{out}/cards") else []
+    picks = [(i, p) for i, p in enumerate(posts) if days and p["t"].startswith(days[-1]) and not p["text"].startswith("📋")]
+    if not picks:
+        return ""
+    rows = "".join(f'<a class="pick" href="{html.escape(p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
+                   f'aria-label="{n}번 {html.escape(title_of(p["text"]))} 구매하러 가기"><b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>구매 →</em></a>'
+                   for n, (i, p) in enumerate(picks, 1))
+    m, d = days[-1][5:7].lstrip("0"), days[-1][8:].lstrip("0")
+    return (f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {m}월 {d}일 카드 딜</h2>'
+            f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{rows}</section>')
+
+
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
@@ -78,7 +93,7 @@ def build(posts, out="docs"):
         cards.append(card)
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
         urls.append(url)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", "\n".join(cards) or "<p>첫 딜을 준비 중이에요.</p>", "매일 살 만한 핫딜만 골라드려요", BASE))
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + ("\n".join(cards) or "<p>첫 딜을 준비 중이에요.</p>"), "매일 살 만한 핫딜만 골라드려요", BASE))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>")
     return len(posts)

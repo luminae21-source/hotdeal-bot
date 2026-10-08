@@ -24,6 +24,8 @@ def parse(title):
     name = title[store.end():] if store else title
     if prices:
         name = name.replace(f"({prices[-1]})", " ")
+    elif tail := re.search(r"\s*/\s*(\d[\d,]*\s*원.*)$", name):  # 루리웹식 '…1개/ 9,730원' 꼬리(10/8 카드 03번에 가격이 제목에 붙어 나옴)
+        prices, name = [tail.group(1)], name[:tail.start()]
     return (store.group(1) if store else "", re.sub(r"\s+", " ", name).strip() or title, prices[-1] if prices else "")
 
 

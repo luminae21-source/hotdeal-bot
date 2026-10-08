@@ -390,7 +390,7 @@ RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n}
 H.http = lambda url, *a, **k: RU3 if url == H.RULIWEB_RSS else ""
 posted, pod, asked = [], H.post_or_draft, []
 H.post_or_draft = lambda d, c, sc, *a, **k: posted.append((d["id"], sc, c))
-H.ai_pick = lambda prompt, lines: asked.append(lines) or [{"i": i, "score": (8, 7, 9)[i], "comment": f"c{i}"} for i in range(len(lines))]
+H.ai_pick = lambda prompt, lines: (asked.append(lines) if lines[0].startswith("[루리웹]") else None) or [{"i": i, "score": (8, 7, 9)[i], "comment": f"c{i}"} for i in range(len(lines))]  # 딜 판단만 셈(21시 넘으면 릴스 재료 채우기도 ai_pick 호출)
 json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
 assert posted == [("ruliweb_90", 8, "c0")] and len(asked) == 1 and len(asked[0]) == 3  # 20분 된 루리웹 글도 판단
@@ -596,10 +596,25 @@ assert S.title_of("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 
 assert S.title_of("🔥 [롯데온] 파스타 (14,490원)") == "[롯데온] 파스타 (14,490원)"
 n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
-assert n == 1 and idx.count("[쿠팡] 휴지") == 1 and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr"
+assert n == 1 and idx.split("</section>")[-1].count("[쿠팡] 휴지") == 1 and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr"
 assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in idx  # 제목 줄 잘라낸 뒤에도 링크 위치 정확
 assert "p/0.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
 assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
+# 6-2) 홈 맨 위 '카드 딜': 가장 최근 카드 날짜의 딜을 카드와 같은 번호로, 누르면 바로 구매(구매 주소 없으면 딜 페이지), 모아보기 글 제외,
+#      큰 터치 버튼(.pick)·aria-label, 카드가 없으면 안 보임 (10/8 진우: 인스타 캡션 링크가 안 눌려서 프로필 링크 → 한 번에 구매)
+os.makedirs("docs3/cards", exist_ok=True)
+for d in ("2026-10-07", "2026-10-08"):
+    open(f"docs3/cards/{d}.png", "wb").write(b"x")
+pp = [{"t": "2026-10-07 21:00", "text": "🔥 [쿠팡] 어제딜 (1,000원)", "url": "https://old"},
+      {"t": "2026-10-08 09:00", "text": "🔥 [G마켓] 첫딜 (2,000원)", "url": "https://a1"},
+      {"t": "2026-10-08 12:00", "text": "📋 오늘의 딜 모아보기", "url": "https://x"},
+      {"t": "2026-10-08 15:00", "text": "🔥 [토스쇼핑] 둘째 <딜> (3,000원)"}]
+S.build(pp, "docs3"); idx = open("docs3/index.html").read()
+top = idx.split('id="today"')[1].split("</section>")[0]
+assert "10월 8일 카드 딜" in top and "어제딜" not in top and "모아보기" not in top and top.count('class="pick"') == 2
+assert top.index("<b>01</b><span>[G마켓] 첫딜") < top.index("<b>02</b><span>[토스쇼핑] 둘째 &lt;딜&gt;") and 'href="https://a1"' in top
+assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('id="today"') < idx.index("어제딜")
+S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임
 
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
@@ -633,6 +648,8 @@ import cards
 assert cards.parse("[네이버] 화장지 3겹(30m 30롤) 2팩 (18,900원/무료)") == ("네이버", "화장지 3겹(30m 30롤) 2팩", "18,900원/무료")
 assert cards.parse("[G마켓] 버짠3 (189,000원/무료) 카드할인") == ("G마켓", "버짠3 카드할인", "189,000원/무료")
 assert cards.parse("제목만") == ("", "제목만", "")
+assert cards.parse("[쿠팡] 듀라셀 AA 건전지 20개입 1개/ 9,730원") == ("쿠팡", "듀라셀 AA 건전지 20개입 1개", "9,730원")  # 루리웹식 꼬리(10/8 카드 03번)
+assert cards.parse("[지마켓] 1+1/무료 상품") == ("지마켓", "1+1/무료 상품", "")
 assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
 assert os.path.getsize("docs/cards/t.png") > 10000
 from PIL import Image as _I; _j = _I.open("docs/cards/t.jpg"); assert _j.format == "JPEG" and _j.size == (1080, 1350)  # 인스타용 JPEG도 같이(API는 JPEG만)

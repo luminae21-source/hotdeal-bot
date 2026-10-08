@@ -707,7 +707,7 @@ def digest(seen, posts):
             cap = ((top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
                    + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
                    + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if song.get("url") else "") if song else "")
-                   + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+                   + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 오늘의 딜에서 바로\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
                    + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024]
             if E.get("IG_TOKEN") and E.get("IG_USER_ID") and "facebook" in IG:  # 영상 파일 직접 업로드는 페이스북 로그인(페이지 토큰)만 됨 -> 인스타 토큰이면 릴스는 봇 채팅 영상으로 직접
                 try:
@@ -828,7 +828,7 @@ def threads(seen):
     rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]  # 가격은 카드 이미지에
     if ig:  # 10/8 진우 '자동으로 올리게'. 컨테이너만 만들고 발행은 ig_publish(처리 끝나면)
         cap = (f"{kst.tm_mon}월 {kst.tm_mday}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
-               + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+               + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위에서 카드 번호를 누르면 바로 구매 페이지\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
                + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
         try:
             c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url[:-4] + ".jpg", "caption": cap}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
