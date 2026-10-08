@@ -16,7 +16,7 @@ MIN_SCORE = int(E.get("MIN_SCORE") or 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 HAS_TOSS = bool(E.get("TOSS_ACCESS_KEY") and E.get("TOSS_SECRET_KEY") and E.get("TOSS_PUBLISHER_ID"))  # 쉐어링크 Open API(10/6 승인). 호출은 고정 IP(오라클) 터널 경유 -> hotdeal.yml
 TOSS_API, TOSS_TOKEN = "https://sharelink.toss.im/openapi", "toss.json"  # toss.json: 1년짜리 액세스 토큰 보관(Actions 캐시, 매번 재발급 금지)
-MAX_DRAFTS = 1                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻히고 뒤가 비어서 1개씩(10/6 진우 '꾸준하게') -> 넘친 딜은 다음 실행에 다시 판단
+MAX_DRAFTS = 1                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻히고 뒤가 비어서 1개씩(10/6 진우 '꾸준하게') -> 넘친 딜은 판단 그대로 보관했다가 다음 실행에 먼저
 GAP_FILL = 45                  # 분: 8~24시에 이만큼 채널 딜 글이 없으면 7점 딜이 없어도 6점 중 최고 1개로 빈틈 메움(꾸준히)
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
@@ -966,6 +966,14 @@ def main():
             continue
         keys.add(k)
         new.append(d)
+    held = []  # 지난 실행에서 넘친 좋은 딜(Claude 판단 그대로). 다시 물으면 점수가 흔들려 7점이 사라짐(10/8 17:21 갈비·MSI 7점 → 15분 뒤 5점 미만)
+    for k in [k for k in seen if k.startswith("hold_")]:
+        if seen[k]["t"] > time.time() - 3 * 3600:
+            held.append(seen[k])
+        else:  # 3시간 넘게 못 올린 딜은 식은 딜
+            seen.pop(k)
+    held.sort(key=lambda h: -h["p"]["score"])
+    good = []
     if new:
         since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
         recent = [title_of(p["text"]) for p in load(POSTS, []) if p["t"] >= since and not p["text"].startswith("📋")][-30:]
@@ -982,14 +990,16 @@ def main():
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         good = [p for p in picks if p["score"] >= MIN_SCORE]
-        if not good and picks and quiet():
+        if not good and not held and picks and quiet():
             best = max(picks, key=lambda p: p["score"])
             good = [best] if best["score"] >= MIN_SCORE - 1 else []
-        for p in good[MAX_DRAFTS:]:  # 넘친 좋은 딜은 '본 글'에서 빼서 다음 실행(15분 뒤)에 다시 판단 -> 나눠서 게시
-            seen.pop(new[p["i"]]["id"], None)
-            seen.pop(dkey(new[p["i"]]["title"]), None)
-        for p in good[:MAX_DRAFTS]:
-            post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
+        good = [{"d": new[p["i"]], "p": {k: v for k, v in p.items() if k != "i"}} for p in good]
+    for h in (held + good)[:MAX_DRAFTS]:  # 보관해 둔 딜이 먼저
+        seen.pop("hold_" + h["d"]["id"], None)
+        p = h["p"]
+        post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
+    for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
+        seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
     for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish, report):
         try:
             step(seen)
@@ -1002,7 +1012,7 @@ def main():
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN(페이지 토큰)·권한 확인 → README 세팅 6-2" if ig else threads_hint(e)))
     cutoff = time.time() - 3 * 86400
-    json.dump({k: v for k, v in seen.items() if v > cutoff}, open(SEEN, "w"))
+    json.dump({k: v for k, v in seen.items() if (v["t"] if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
     print(f"new={len(new)} seen={len(seen)}")
 
 

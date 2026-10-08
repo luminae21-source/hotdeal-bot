@@ -384,17 +384,27 @@ assert "ruliweb_1" in sj and "ppomppu_301" in sj and H.dkey("[G마켓] 코카콜
 assert "최근 24시간에 이미 올린 딜" in got[0][0] and "휴지 30롤" in got[0][0].split("이미 올린 딜")[1]
 json.dump({H.dkey("[쿠팡] 휴지 30롤"): time.time() - 2 * 86400}, open("seen.json", "w")); got.clear(); H.main()  # 24시간 지난 같은 상품은 새 딜로 판단
 assert any("휴지 30롤" in l for l in got[0][1])
-# 4-3) 한 번에 1개만 게시(꾸준히), 넘친 좋은 딜은 다음 실행(15분 뒤)에 다시 / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
+# 4-3) 한 번에 1개만 게시(꾸준히), 넘친 좋은 딜은 Claude 판단 그대로 보관 -> 다음 실행에 다시 묻지 않고 점수 높은 것부터 / 3시간 지나면 버림
+#      (10/8 17:21 갈비·MSI 7점을 다시 물었더니 15분 뒤 둘 다 5점 미만 -> 못 올림) / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
 RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
 H.http = lambda url, *a, **k: RU3 if url == H.RULIWEB_RSS else ""
-posted, pod = [], H.post_or_draft
-H.post_or_draft = lambda d, *a, **k: posted.append(d["id"])
-H.ai_pick = lambda prompt, lines: [{"i": i, "score": 8, "comment": "c"} for i in range(len(lines))]
+posted, pod, asked = [], H.post_or_draft, []
+H.post_or_draft = lambda d, c, sc, *a, **k: posted.append((d["id"], sc, c))
+H.ai_pick = lambda prompt, lines: asked.append(lines) or [{"i": i, "score": (8, 7, 9)[i], "comment": f"c{i}"} for i in range(len(lines))]
 json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
-assert posted == ["ruliweb_90"] and "ruliweb_91" not in sj and "ruliweb_92" not in sj and H.dkey("[G마켓] 상품2번 특가 묶음") not in sj  # 20분 된 루리웹 글도 판단
-posted.clear(); H.main(); assert posted == ["ruliweb_91"]  # 다음 실행에 다음 것
-posted.clear(); H.main(); assert posted == ["ruliweb_92"]
+assert posted == [("ruliweb_90", 8, "c0")] and len(asked) == 1 and len(asked[0]) == 3  # 20분 된 루리웹 글도 판단
+assert {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_91", "hold_ruliweb_92"} and "ruliweb_91" in sj and H.dkey("[G마켓] 상품2번 특가 묶음") in sj
+posted.clear(); H.main(); assert posted == [("ruliweb_92", 9, "c2")] and len(asked) == 1  # 다시 안 묻고, 높은 점수부터
+posted.clear(); H.main(); assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 1
+posted.clear(); H.main(); assert posted == [] and not [k for k in json.load(open("seen.json")) if k.startswith("hold_")]
+sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 3 * 3600 - 60, "d": {"id": "ruliweb_91", "title": "x"}, "p": {"score": 9, "comment": "c"}}
+json.dump(sj, open("seen.json", "w")); H.main()
+assert posted == [] and "hold_ruliweb_91" not in json.load(open("seen.json"))  # 3시간 넘은 보관 딜은 식은 딜
+sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 600, "d": {"id": "ruliweb_91", "title": "x"}, "p": {"score": 7, "comment": "c1"}}
+json.dump(sj, open("seen.json", "w")); RU3 = RU3.replace("</channel>", it("[G마켓] 새상품 특가 묶음 / 3,000원", "https://bbs.ruliweb.com/market/board/1020/read/93", 20) + "</channel>")
+H.main(); sj = json.load(open("seen.json"))  # 보관 딜이 있으면 그게 먼저, 새로 고른 좋은 딜은 보관
+assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 2 and "hold_ruliweb_93" in sj and "hold_ruliweb_91" not in sj
 # 4-5) 꾸준히: 8~24시에 마지막 딜 글이 45분 넘으면 7점이 없어도 6점 최고 1개 / 45분 안이거나 밤(0~8시)이거나 최고가 5점이면 안 올림
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
 tq, kfmt, pa2 = time.time, lambda s: time.strftime("%Y-%m-%d %H:%M", time.gmtime(s + 9 * 3600)), H.publish_approved
@@ -408,7 +418,7 @@ for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb
     if picks5:
         H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}]
     posted.clear(); json.dump({}, open("seen.json", "w")); H.main()
-    assert posted == want, (now, last, posted)
+    assert [p[0] for p in posted] == want, (now, last, posted)
 time.time, H.publish_approved = tq, pa2
 # 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
 BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"
