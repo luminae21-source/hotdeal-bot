@@ -625,6 +625,7 @@ assert cards.parse("[G마켓] 버짠3 (189,000원/무료) 카드할인") == ("G�
 assert cards.parse("제목만") == ("", "제목만", "")
 assert cards.make([f"[쿠팡] 상품{i} 아주 긴 이름을 가진 상품입니다 정말로 길어요 {i} (1,000원/무료)" for i in range(9)], "10월 5일", "docs/cards/t.png") == "docs/cards/t.png"
 assert os.path.getsize("docs/cards/t.png") > 10000
+from PIL import Image as _I; _j = _I.open("docs/cards/t.jpg"); assert _j.format == "JPEG" and _j.size == (1080, 1350)  # 인스타용 JPEG도 같이(API는 JPEG만)
 assert cards.make([{"title": "[G마켓] 우유 (23,740원/무료)", "unit": "팩당 495원"}, "[쿠팡] 휴지 (9,900원/무료)"], "10월 5일", "docs/cards/t2.png") == "docs/cards/t2.png"
 from PIL import Image, ImageDraw
 _d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
@@ -687,6 +688,26 @@ calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안
 del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []
 H.threads(seen)  # 토큰 없으면: 사진만 보내고 Threads 호출 없음
 assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "Threads" not in sent[-1][1]["caption"] and list(seen)[0].startswith("threads_")
+# 9-1b) 인스타 카드 자동 게시(10/8 진우 '자동으로 올리게'): IG 토큰 있으면 같은 카드의 .jpg로 이미지 컨테이너(캡션 = 오늘 딜 목록·제휴 안내·해시태그, 가격 꼬리 뺌)
+#        -> 발행은 ig_publish / 관리자 사진 캡션 '인스타·Threads 자동 게시 중' / 인스타가 실패해도 Threads는 올라가고 관리자에게 '직접 올려줘'
+ig_calls, fail_ig = [], [False]
+def igc_http(url, body=None, headers=None, method=None):
+    if url.startswith(H.IG):
+        ig_calls.append((url, body, headers, method))
+        if fail_ig[0]: raise OSError("ig down")
+        return json.dumps({"id": "IMG1"})
+    return th_http(url, body, headers, method)
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178", THREADS_TOKEN="tk"); H.http, seen, sent[:], calls[:] = igc_http, {}, [], []
+H.threads(seen)
+u, b, h, m = ig_calls[0]
+assert u == H.IG + "/178/media" and m == "POST" and h["Authorization"] == "Bearer pt" and b["image_url"] == f"https://hotdealpick.kr/cards/{today}.jpg"
+assert "오늘의 핫딜 모음" in b["caption"] and "1. A딜" in b["caption"] and "제휴 링크" in b["caption"] and "#핫딜" in b["caption"] and "15,480" not in b["caption"]
+assert "igc_IMG1" in seen and "인스타·Threads 자동 게시 중" in sent[0][1]["caption"] and "그대로 올리면" not in sent[0][1]["caption"]
+assert any("/threads_publish?" in u for _, u in calls)  # Threads도 그대로
+fail_ig[0], seen, sent[:], calls[:] = True, {}, [], []
+H.threads(seen)
+assert any("인스타 카드 게시 실패" in str(p.get("text")) for _, p in sent) and any("/threads_publish?" in u for _, u in calls) and not [k for k in seen if k.startswith("igc_")]
+del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http = th_http
 # 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
 kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},

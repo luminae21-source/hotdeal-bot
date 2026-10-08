@@ -80,6 +80,7 @@ def make(items, date_label, out):
     d.text((X0, H - 66), "일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요. 가격·재고는 게시 시점 기준.", font=pf("Regular", 22), fill=SUB)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     im.save(out, optimize=True)
+    im.save(os.path.splitext(out)[0] + ".jpg", quality=92)  # 인스타 API는 JPEG만 받음 -> 같은 카드를 .jpg로도(사이트에 같이 공개)
     return out
 
 

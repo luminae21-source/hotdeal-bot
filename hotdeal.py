@@ -778,7 +778,7 @@ def ig_upload(path, caption, seen):
 
 
 def ig_publish(seen):
-    """올려둔 릴스 컨테이너가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에, 실패(ERROR·EXPIRED)면 알림(main)."""
+    """올려둔 인스타 컨테이너(카드·릴스)가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에, 실패(ERROR·EXPIRED)면 알림(main)."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     if not (tok and uid):
         return
@@ -788,9 +788,9 @@ def ig_publish(seen):
             continue
         seen.pop(k)
         if st != "FINISHED":
-            raise RuntimeError(f"인스타 릴스 처리 실패({st}) — 오늘 영상은 봇 채팅에서 직접 올려줘")
+            raise RuntimeError(f"인스타 처리 실패({st}) — 오늘 카드·영상은 봇 채팅에 온 걸 직접 올려줘")
         json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
-        tg("sendMessage", chat_id=ADMIN, text="🎬 인스타 릴스 자동 게시 완료 (instagram.com/hotdealpick.kr)")
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료 (instagram.com/hotdealpick.kr)")
 
 
 def blog_text(todays, kst):
@@ -809,8 +809,8 @@ THREADS = "https://graph.threads.com/v1.0"  # 공식 문서 기준 도메인
 
 
 def threads(seen):
-    """오늘 카드가 사이트에 올라와 있으면 관리자에게 인스타용으로 1회 보내고, THREADS_TOKEN 있으면 Threads에도 게시.
-    토큰은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
+    """오늘 카드가 사이트에 올라와 있으면 관리자에게 1회 보내고, IG_TOKEN 있으면 인스타(JPEG 카드, ig_publish가 발행), THREADS_TOKEN 있으면 Threads에도 게시.
+    Threads 토큰은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, key = time.strftime("%Y-%m-%d", kst), time.strftime("threads_%Y%m%d", kst)
     if key in seen or not os.path.exists(f"docs/cards/{today}.png"):
@@ -820,13 +820,23 @@ def threads(seen):
         http(url, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에 다시
     except Exception:
         return
-    tok = E.get("THREADS_TOKEN")
-    tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 오늘의 카드 (인스타에 그대로 올리면 돼)" + (" · Threads는 자동 게시 중" if tok else ""))
-    seen[key] = time.time()  # 사진은 1번만. Threads 실패는 아래서 관리자에게 알리고 재시도 안 함(스팸 방지)
-    if not tok:
-        return
+    tok, ig = E.get("THREADS_TOKEN"), E.get("IG_TOKEN") and E.get("IG_USER_ID")
+    auto = [n for n, on in (("인스타", ig), ("Threads", tok)) if on]
+    tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 오늘의 카드" + ("" if ig else " (인스타에 그대로 올리면 돼)") + (f" · {'·'.join(auto)} 자동 게시 중" if auto else ""))
+    seen[key] = time.time()  # 사진은 1번만. 인스타·Threads 실패는 관리자에게 알리고 재시도 안 함(스팸 방지)
     todays = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋")]
     rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]  # 가격은 카드 이미지에
+    if ig:  # 10/8 진우 '자동으로 올리게'. 컨테이너만 만들고 발행은 ig_publish(처리 끝나면)
+        cap = (f"{kst.tm_mon}월 {kst.tm_mday}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
+               + "\n\n전체 딜·구매 링크는 프로필 링크(hotdealpick.kr)에서\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
+               + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
+        try:
+            c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url[:-4] + ".jpg", "caption": cap}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
+            seen["igc_" + c["id"]] = time.time()
+        except Exception as e:  # 인스타가 실패해도 Threads는 올림
+            tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 인스타 카드 게시 실패 — 위 카드 사진을 직접 올려줘: {e!r} {getattr(e, 'body', '')}"[:400])
+    if not tok:
+        return
     text = (f"📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
             + f"\n\n전체 딜·구매 링크 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick")[:480]
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
