@@ -479,6 +479,50 @@ assert [p["text"] for m, p in sent] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가
 assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
 sent.clear(); H.events(seen); assert not sent  # 1번만
 time.time = tt3; os.remove("events.json"); H.events({})  # 파일 없으면 아무것도 안 함
+# 5-5b) 쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴스룸 RSS 새 글(2일 안)만 Claude에 -> 고른 행사(6점 이상)만 채널에 바로
+#       (파트너스 문구·행사명·기간·혜택 3개까지·검색어·공용 파트너스 링크 버튼), 관리자 사본(채널 글 링크 먼저 -> 답장하면 버튼 교체), 1번만, Claude·채널 실패면 다음에 다시
+import inspect
+rss = lambda *xs: '<?xml version="1.0"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>' + "".join(
+    f"<item><title>{t}</title><link>https://news.coupang.com/archives/{n}/</link><pubDate>{d}</pubDate><content:encoded><![CDATA[<p>{b}</p>\n<p>둘째 줄</p>]]></content:encoded></item>"
+    for n, t, d, b in xs) + "</channel></rss>"
+cn = [(1, "[보도자료] 쿠팡, 와우회원 위한 '뷰티풀데이' 개최", "Thu, 08 Oct 2026 23:30:00 +0000", "18일까지 &amp; 5,000원 쿠폰"),
+      (2, "[보도자료] 쿠팡, 물류센터 채용", "Thu, 08 Oct 2026 05:00:00 +0000", "채용"),
+      (3, "[보도자료] 쿠팡 로켓프레시데이 (지난 글)", "Mon, 05 Oct 2026 01:00:00 +0000", "지난 행사")]
+eprompts, efail, ph5, pa5, tt5, tg5b = [], [], H.http, H.ai_pick, time.time, H.tg
+def ev_http(url, *a, **k):
+    assert url == H.CP_NEWS; return rss(*cn)
+def ev_pick(prompt, lines):
+    eprompts.append((prompt, lines))
+    if efail: raise RuntimeError("Claude 답에 picks 없음")
+    return [p for p in [{"i": 0, "score": 9, "q": "뷰티풀데이&위크", "hook": "10/18(일)까지 · 와우회원", "e": "💄", "comment": "c",
+                         "pts": ["2만 원 이상 5,000원 쿠폰", "매일 7시 골드박스 <뷰티>", "16개 브랜드", "4번째는 안 씀"]},
+                        {"i": 1, "score": 3, "q": "채용", "comment": "c"}] if p["i"] < len(lines)]
+H.http, H.ai_pick, seen = ev_http, ev_pick, {}
+time.time = lambda: 1791504000  # 10/9 09:00 KST
+sent.clear(); H.cp_events(seen)
+assert len(eprompts) == 1 and "오늘은 2026-10-09" in eprompts[0][0] and len(eprompts[0][1]) == 2  # 2일 지난 글은 Claude에 안 보냄
+assert eprompts[0][1][0] == "[보도자료] 쿠팡, 와우회원 위한 '뷰티풀데이' 개최 | 10/09 | 18일까지 & 5,000원 쿠폰 둘째 줄"  # 본문 태그·줄바꿈 정리, 게시일 KST
+assert [m for m, p in sent] == ["sendMessage", "copyMessage"]  # 3점(채용)은 안 올림
+p = sent[0][1]
+assert p["chat_id"] == "@ch" and p["text"] == (f"<i>{H.DISCLOSURE}</i>\n\n💄 <b>쿠팡 뷰티풀데이&amp;위크</b>\n10/18(일)까지 · 와우회원\n\n• 2만 원 이상 5,000원 쿠폰\n"
+                                                 "• 매일 7시 골드박스 &lt;뷰티&gt;\n• 16개 브랜드\n\n👉 쿠팡 앱 검색창에 <b>뷰티풀데이&amp;위크</b>")  # Claude 글은 HTML 이스케이프
+assert p["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 쿠팡 바로가기", "url": H.GOLDBOX}]] and H.GOLDBOX.startswith("https://link.coupang.com/")
+c = sent[1][1]
+assert c["chat_id"] == H.ADMIN and c["from_chat_id"] == "@ch" and c["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/1"  # 답장 -> 이 채널 글 교체
+assert sorted(seen) == ["cn_https://news.coupang.com/archives/1/", "cn_https://news.coupang.com/archives/2/"]
+sent.clear(); H.cp_events(seen); assert not sent and len(eprompts) == 1  # 1번만(Claude도 다시 안 부름)
+cn.insert(0, (4, "[보도자료] 쿠팡 로켓프레시데이", "Fri, 09 Oct 2026 00:00:00 +0000", "26일까지"))
+efail.append(1)
+try:
+    H.cp_events(seen); assert False
+except RuntimeError:
+    pass
+assert "cn_https://news.coupang.com/archives/4/" not in seen and not sent  # Claude 실패 -> 기록 안 함(다음 실행에 다시)
+efail.clear(); H.tg = lambda method, **p: sent.append((method, p)) and None
+H.cp_events(seen); assert "cn_https://news.coupang.com/archives/4/" not in seen and [m for m, p in sent] == ["sendMessage"]  # 채널 게시 실패 -> 다음에 다시
+H.tg = tg5b; sent.clear(); H.cp_events(seen); assert "cn_https://news.coupang.com/archives/4/" in seen and len(sent) == 2
+assert "goldbox, cp_events, toss_deals" in inspect.getsource(H.main)
+H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
 sent.clear(); seen = {}
@@ -615,37 +659,47 @@ except RuntimeError as e:
     assert "푸드" in str(e) and not seen and not sent
 import inspect; assert 'toss_deals(s, "cat")' in inspect.getsource(H.main)  # 실행 순서에 들어 있음
 assert len(json.load(open("posts.json"))) == n0
-# 5-3d) 뽐뿌 토스 딜 자동 링크(10/9 진우 '토스 딜 직접 추출' -> 기록만 -> '수정하자'): 쉐어링크 없는 최근 3일 [토스] 채널 딜만, 토스 API 목록(하루특가·카테고리 베스트·베스트)에서
-#       이름 겹침 후보 -> Claude 확인 8점 이상만 우리 쉐어링크 발급 -> 채널 글 버튼·대가성 문구·사본 '교체됨'·posts.json 교체(진우 답장과 같은 relink_channel),
-#       못 찾거나 발급 실패면 그대로(사본 답장), 같은 딜은 1번, 목록은 seen에 저장(카테고리·하루특가 하루 1번·베스트 1시간 1번)
+# 5-3d) 토스 딜 자동 링크(10/9 진우 '토스 딜 직접 추출' -> 기록만 -> '수정하자' -> '수수료 링크 안 붙은 것도 자동으로'): 쉐어링크 없는 최근 3일 [토스] 채널 딜만,
+#       ① 루리웹·클리앙 = 처음 1번 글의 상품 주소를 다시 읽어 발급 ② 토스 API 목록(3일치 모음)에서 이름 겹침 후보 -> Claude 8점 이상만 발급 -> 채널 글 버튼·대가성 문구·
+#       사본 '교체됨'·posts.json 교체(진우 답장과 같은 relink_channel). 못 찾으면 새 후보가 목록에 들어올 때만 다시(본 후보는 다시 안 물음), 찾으면(발급 실패 포함) 끝,
+#       목록 호출은 카테고리·하루특가 하루 1번·베스트 1시간 1번
 import io, contextlib
 mcalls, mprompts, medits = [], [], []
+ml = {"today": [(51, "광동 비타500 100ml 20병", 9900)], 200: [(41, "제주 극조생 감귤 5kg", 9900)],
+      300: [(31, "모나리자 에코 미용티슈 300매, 12개", 11990), (32, "깨끗한나라 화장지 30롤", 15900)],
+      "best": [(31, "모나리자 에코 미용티슈 300매, 12개", 11990), (61, "삼다수 2L 12병", 9000), (71, "아빠표 구운계란 중란 30구 2판", 16900)]}
+rb = "https://bbs.ruliweb.com/market/board/1020/read/"
 def match_http(url, body=None, headers=None, method=None):
     mcalls.append(url.split("/openapi")[-1])
-    it = lambda *xs: json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p} for i, n, p in xs]}})
+    it = lambda k: json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p} for i, n, p in ml[k]]}})
+    if url.startswith(rb):  # 루리웹 글: 1 = 출처에 토스 상품 주소, 2 = 토스 주소 없음
+        return '<div class="source_url"><a href="https://toss.shopping/t/777">' if url.endswith("/1") else '<div class="view_content">본문</article>'
     if url.endswith("/links"):
         assert body["publisherId"] == "pub-1"
-        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/L{body['tacaItemId']}"}} if body["tacaItemId"] != 61
+        i = body.get("tacaItemId") or body["tacaId"]
+        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/L{i}"}} if i != 61
                           else {"resultType": "FAIL", "error": {"reason": "발급 제한 상품"}})
     if url.endswith("/categories"):
         return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 300, "displayName": "생활용품"}]}})
-    if "/best-categories/300" in url:
-        assert url.endswith("?size=100"); return it((31, "모나리자 에코 미용티슈 300매, 12개", 11990), (32, "깨끗한나라 화장지 30롤", 15900))
-    if "/best-categories/200" in url:
-        return it((41, "제주 극조생 감귤 5kg", 9900))
+    if "/best-categories/" in url:
+        assert url.endswith("?size=100"); return it(int(url.rsplit("/", 1)[1][:3]))
     if url.endswith("/products/today-deals?size=30"):
-        return it((51, "광동 비타500 100ml 20병", 9900))
+        return it("today")
     if url.endswith("/products/best-selling?size=100"):
-        return it((31, "모나리자 에코 미용티슈 300매, 12개", 11990), (61, "삼다수 2L 12병", 9000))
+        return it("best")
     raise AssertionError(url)
 def match_pick(prompt, lines):
     mprompts.append((prompt, lines))
-    return [{"i": 0, "score": 9 if "모나리자" in lines[0] or "삼다수" in lines[0] else 6, "comment": "같은 상품"}]
+    return [{"i": 0, "score": 9 if re.search("모나리자|삼다수|계란|감귤 10kg", lines[0]) else 6, "comment": "같은 상품"}]
+def relink_run():
+    mcalls.clear(); mprompts.clear(); medits.clear(); out = io.StringIO()
+    with contextlib.redirect_stdout(out): H.toss_relink(seen)
+    return out.getvalue()
 tg5 = H.tg
 H.http, H.ai_pick, H.tg, pj0 = match_http, match_pick, (lambda method, **p: medits.append((method, p)) or {"message_id": 1}), open("posts.json").read()
 now = 1791259200  # 10/6 13:00 KST
 time.time = lambda: now
-kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - h * 3600))
+kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 pp = "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no="
 mp = [{"t": kt(2), "text": "🔥 [토스] 모나리자 에코 미용티슈 300매 12입 (10,990원/무배)\n\n코멘트", "entities": [{"type": "bold", "offset": 3, "length": 10}], "url": pp + "1", "mid": 11, "cp": 111},
       {"t": kt(1), "text": "🔥 [토스] 제주 극조생감귤 10kg (12,900원/무배)", "url": pp + "2", "mid": 12, "cp": 112},
@@ -653,35 +707,51 @@ mp = [{"t": kt(2), "text": "🔥 [토스] 모나리자 에코 미용티슈 300�
       {"t": kt(1), "text": "🔥 [쿠팡] 쿠팡 딜 모나리자 에코 (1,000원)", "url": "https://www.coupang.com/vp/products/1", "mid": 14, "cp": 114},
       {"t": kt(80), "text": "🔥 [토스] 모나리자 에코 오래된 딜 (1,000원)", "url": pp + "5", "mid": 15, "cp": 115},
       {"t": kt(1), "text": "🔥 [토스] 아무거나 전혀 다른 상품 (1,000원)", "url": pp + "6", "mid": 16, "cp": 116},
-      {"t": kt(1), "text": "🔥 [토스] 모나리자 에코 채널 실패 딜 (1,000원)", "url": pp + "7"}]  # 채널에 안 올라간 글(mid 없음)
+      {"t": kt(1), "text": "🔥 [토스] 모나리자 에코 채널 실패 딜 (1,000원)", "url": pp + "7"},  # 채널에 안 올라간 글(mid 없음)
+      {"t": kt(1), "text": "🔥 [토스] 핫식스 더킹 애플홀릭 355ml 24개 17,000원", "url": rb + "1", "mid": 20, "cp": 120},
+      {"t": kt(1), "text": "🔥 [토스] 오뚜기 진라면 매운맛 40봉 (19,900원)", "url": rb + "2", "mid": 21, "cp": 121}]
 json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
-seen, out = {}, io.StringIO()
-with contextlib.redirect_stdout(out): H.toss_relink(seen)
-log, pj = out.getvalue(), json.load(open("posts.json"))
-assert "모나리자 에코 미용티슈 300매 12입 (10,990원/무배) -> 모나리자 에코 미용티슈 300매, 12개 11,990원 (id 31, 9점) | 링크 교체" in log, log
+seen = {}
+log = relink_run()
+pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
+assert "모나리자 에코 미용티슈 300매 12입 (10,990원/무배) -> 모나리자 에코 미용티슈 300매, 12개 11,990원 (id 31, 9점) | 링크 교체 | 후보" in log, log
+assert "핫식스 더킹 애플홀릭 355ml 24개 17,000원 -> 글의 상품 주소 https://toss.shopping/t/777 | 링크 교체" in log  # 루리웹 글을 다시 읽어 발급(tacaId)
 assert "제주 극조생감귤 10kg (12,900원/무배) -> 없음" in log and "아무거나 전혀 다른 상품 (1,000원) -> 없음 | 후보 0/" in log  # 감귤 5kg = 용량 달라 6점 -> 없음, 겹침 없으면 Claude 안 부름
+assert "진라면 매운맛 40봉 (19,900원) -> 없음" in log  # 루리웹 글에 토스 주소 없음 -> 목록 대조
 assert "이미 링크" not in log and "쿠팡 딜" not in log and "오래된" not in log and "채널 실패" not in log and len(mprompts) == 2  # 쉐어링크 딜·다른 몰·3일 지난 딜·채널 글 아닌 것 제외
 assert mprompts[0][1][0] == "모나리자 에코 미용티슈 300매, 12개 | 11,990원" and "깨끗한나라" not in str(mprompts[0][1]) and "모나리자 에코 미용티슈 300매 12입" in mprompts[0][0]
 assert sorted(mcalls) == sorted(["/products/today-deals?size=30", "/categories", "/products/best-categories/200?size=100", "/products/best-categories/300?size=100",
-                                 "/products/best-selling?size=100", "/links"])
-ch = [p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL]
-ad = [p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.ADMIN]
-assert len(ch) == 1 and ch[0]["message_id"] == 11 and ch[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L31" and ch[0]["text"].startswith(H.TOSS_NOTE)
-assert ch[0]["entities"][1]["offset"] == 3 + len(H.TOSS_NOTE.encode("utf-16-le")) // 2 + 2  # 대가성 문구만큼 굵은 글씨 위치를 밂
-assert len(ad) == 1 and ad[0]["message_id"] == 111 and "채널 글 교체됨" in str(ad[0]["reply_markup"])
-assert pj[0]["url"] == "https://toss.shopping/_m/L31" and pj[0]["text"].startswith(H.TOSS_NOTE) and [p["url"] for p in pj[1:]] == [p["url"] for p in mp[1:]]  # 찾은 딜만 교체
-assert seen["tosslist_cat"]["items"][0] == [51, "광동 비타500 100ml 20병", 9900]
-mcalls.clear(); mprompts.clear(); medits.clear(); H.toss_relink(seen); assert not mcalls and not mprompts and not medits  # 같은 딜은 1번
+                                 "/products/best-selling?size=100", "/links", "/links", rb + "1", rb + "2"])  # 뽐뿌 글은 안 읽음(서버 차단, 우회 안 함)
+ch = {p["message_id"]: p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL}
+ad = {p["message_id"]: p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.ADMIN}
+assert sorted(ch) == [11, 20] and ch[11]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L31" and ch[11]["text"].startswith(H.TOSS_NOTE)
+assert ch[20]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L777"
+assert ch[11]["entities"][1]["offset"] == 3 + len(H.TOSS_NOTE.encode("utf-16-le")) // 2 + 2  # 대가성 문구만큼 굵은 글씨 위치를 밂
+assert sorted(ad) == [111, 120] and "채널 글 교체됨" in str(ad[111]["reply_markup"])
+assert pj[11]["url"] == "https://toss.shopping/_m/L31" and pj[11]["text"].startswith(H.TOSS_NOTE) and pj[20]["url"] == "https://toss.shopping/_m/L777"
+assert {k: p["url"] for k, p in pj.items() if k not in (11, 20)} == {p.get("mid"): p["url"] for p in mp if p.get("mid") not in (11, 20)}  # 찾은 딜만 교체
+assert [51, "광동 비타500 100ml 20병", 9900, now] in seen["tosscache"]["items"] and seen["tr_12"]["ids"] == [41] and seen["tr_11"]["done"] and seen["tr_20"]["done"]
+assert not relink_run() and not mcalls and not mprompts and not medits  # 같은 시간대·새 후보 없음 -> API·Claude·루리웹 다시 안 부르고 로그도 없음
 mp = json.load(open("posts.json")) + [{"t": kt(0), "text": "🔥 [토스쇼핑] 삼다수 2L 12병 (8,500원)", "url": pp + "8", "mid": 17, "cp": 117}]
 json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
-out = io.StringIO()
-with contextlib.redirect_stdout(out): H.toss_relink(seen)
-assert mcalls == ["/links"] and len(mprompts) == 1 and not medits and "삼다수 2L 12병 9,000원 (id 61, 9점) | 발급 실패" in out.getvalue()  # 같은 시간대 = 저장 목록 재사용, 발급 실패 = 그대로
-assert json.load(open("posts.json"))[-1]["url"] == pp + "8"
-mcalls.clear(); H.toss_relink(seen); assert not mcalls  # 발급 실패한 딜도 다시 안 함
-time.time = lambda: now + 3600; mp.append({"t": kt(-1), "text": "🔥 [토스] 비타500 100ml 20병 (8,900원)", "url": pp + "9", "mid": 18, "cp": 118}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
-H.toss_relink(seen); assert mcalls == ["/products/best-selling?size=100"] and not medits  # 1시간 지나면 베스트만 다시(카테고리·하루특가는 하루 1번), 6점 -> 교체 안 함
-H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "10", "mid": 19}], open("posts.json", "w"), ensure_ascii=False)
+log = relink_run()
+assert mcalls == ["/links"] and len(mprompts) == 1 and not medits and "삼다수 2L 12병 9,000원 (id 61, 9점) | 발급 실패" in log  # 같은 시간대 = 저장 목록 재사용, 발급 실패 = 그대로
+assert json.load(open("posts.json"))[-1]["url"] == pp + "8" and seen["tr_17"]["done"]
+assert not relink_run() and not mcalls  # 발급 실패한 딜은 끝(다시 안 함)
+time.time = lambda: now + 3600
+ml["best"] = [(42, "제주 극조생 감귤 10kg", 12900), (62, "제주 삼다수 2L 12병", 8800)]  # 1시간 뒤 베스트: 계란은 빠지고 감귤 10kg·다른 삼다수가 들어옴(삼다수 딜은 끝났으니 안 물음)
+mp.append({"t": kt(0), "text": "🔥 [토스] 아빠표 구운계란 중란 30구 2판(16,900원/무료)", "url": pp + "9", "mid": 22, "cp": 122}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+log = relink_run()
+assert mcalls == ["/products/best-selling?size=100", "/links", "/links"], mcalls  # 베스트만 다시(카테고리·하루특가는 하루 1번)
+assert "제주 극조생감귤 10kg (12,900원/무배) -> 제주 극조생 감귤 10kg 12,900원 (id 42, 9점) | 링크 교체 | 다시 · 후보 1/" in log, log  # 못 찾은 딜 = 새 후보만 다시 물음
+assert [x[1] for x in mprompts] == [["제주 극조생 감귤 10kg | 12,900원"], ["아빠표 구운계란 중란 30구 2판 | 16,900원"]]  # 본 후보(5kg)는 다시 안 물음
+assert "(id 71, 9점) | 링크 교체" in log and sorted(p["message_id"] for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL) == [12, 22]  # 베스트에서 빠진 계란도 3일 모음에서 찾음
+assert "진라면" not in log and "전혀 다른" not in log  # 새 후보 없는 딜 = 조용히
+time.time = lambda: now + 3 * 86400 + 7200
+for k in ml: ml[k] = []
+mp.append({"t": kt(0), "text": "🔥 [토스] 모나리자 에코 미용티슈 300매 12입 (9,990원)", "url": pp + "10", "mid": 23, "cp": 123}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+assert "후보 0/0" in relink_run() and seen["tosscache"]["items"] == []  # 3일 지난 목록 상품은 버림
+H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
 assert "toss_relink, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
