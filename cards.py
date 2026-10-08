@@ -2,6 +2,7 @@
 """오늘의 딜 카드 이미지(1080x1350 PNG) + 인스타 릴스 영상(1080x1920 MP4). Pillow 필요 (워크플로에서 설치)."""
 import os, re
 from PIL import Image, ImageDraw, ImageFont
+from build_site import parse  # 제목 -> (몰, 이름, 가격): 사이트 격자와 같이 씀
 
 W, H = 1080, 1350
 FONTS = {  # 러너: fonts/ (워크플로가 Google Fonts 저장소에서 내려받음) / 로컬: Noto CJK
@@ -15,18 +16,6 @@ def font(kind, size):
         if os.path.exists(p):
             return ImageFont.truetype(p, size)
     raise FileNotFoundError("한글 폰트 없음: " + ", ".join(FONTS[kind]))
-
-
-def parse(title):
-    """'[롯데온] 삼양 파스타 32봉 (14,490원/무료)' -> ('롯데온', '삼양 파스타 32봉', '14,490원/무료')"""
-    store = re.match(r"\s*\[(.+?)\]", title)
-    prices = re.findall(r"\(([^()]*원[^()]*)\)", title)  # 괄호 안에 '원' 들어간 마지막 묶음 = 가격
-    name = title[store.end():] if store else title
-    if prices:
-        name = name.replace(f"({prices[-1]})", " ")
-    elif tail := re.search(r"\s*/\s*(\d[\d,]*\s*원.*)$", name):  # 루리웹식 '…1개/ 9,730원' 꼬리(10/8 카드 03번에 가격이 제목에 붙어 나옴)
-        prices, name = [tail.group(1)], name[:tail.start()]
-    return (store.group(1) if store else "", re.sub(r"\s+", " ", name).strip() or title, prices[-1] if prices else "")
 
 
 def wrap(d, text, f, width, max_lines=2):

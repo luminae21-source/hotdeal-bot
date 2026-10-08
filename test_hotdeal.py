@@ -405,7 +405,9 @@ sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 6
 json.dump(sj, open("seen.json", "w")); RU3 = RU3.replace("</channel>", it("[G마켓] 새상품 특가 묶음 / 3,000원", "https://bbs.ruliweb.com/market/board/1020/read/93", 20) + "</channel>")
 H.main(); sj = json.load(open("seen.json"))  # 보관 딜이 있으면 그게 먼저, 새로 고른 좋은 딜은 보관
 assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 2 and "hold_ruliweb_93" in sj and "hold_ruliweb_91" not in sj
-# 4-5) 꾸준히: 8~24시에 마지막 딜 글이 45분 넘으면 7점이 없어도 6점 최고 1개 / 45분 안이거나 밤(0~8시)이거나 최고가 5점이면 안 올림
+# 4-5) 꾸준히(MIN_SCORE를 7로 올렸을 때): 8~24시에 마지막 딜 글이 45분 넘으면 7점이 없어도 6점 최고 1개 / 45분 안이거나 밤(0~8시)이거나 최고가 5점이면 안 올림
+assert H.MIN_SCORE == 6 and H.FILL_SCORE == 6  # 10/8 진우: 기본은 6점도 바로
+H.MIN_SCORE = 7
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
 tq, kfmt, pa2 = time.time, lambda s: time.strftime("%Y-%m-%d %H:%M", time.gmtime(s + 9 * 3600)), H.publish_approved
 H.publish_approved = lambda: None  # 앞 테스트의 텔레그램 입력(✅)이 글을 기록하지 않게
@@ -419,6 +421,13 @@ for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb
         H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}]
     posted.clear(); json.dump({}, open("seen.json", "w")); H.main()
     assert [p[0] for p in posted] == want, (now, last, posted)
+# 기본(6점): 빈틈과 상관없이(마지막 글 20분 전) 6점 최고 1개는 바로·나머지 6점은 보관, 5점은 절대 안 올림
+H.MIN_SCORE, time.time = 6, lambda: 1791248400
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
+json.dump([{"t": kfmt(1791248400 - 1200), "text": "🔥 예전 딜", "url": "https://x"}], open("posts.json", "w"))
+posted.clear(); json.dump({}, open("seen.json", "w")); H.main()
+sj = json.load(open("seen.json"))
+assert [p[0] for p in posted] == ["ruliweb_91"] and "hold_ruliweb_92" in sj and "hold_ruliweb_90" not in sj, (posted, [k for k in sj if k.startswith("hold_")])
 time.time, H.publish_approved = tq, pa2
 # 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
 BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"
@@ -541,6 +550,8 @@ t = sent[-1][1]["text"]
 assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
 assert len(offered) == 3 and "베스트4" not in str(offered) and "리뷰 4.8점 1,523개" in offered[0] and "tb_1" in seen and "tb_3" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent  # 같은 회차 1번
+offered.clear(); time.time = lambda: 1791271800; H.toss_deals(seen, True)  # 16:30 회차(10/8 하루 3번): 1·3 빠지고 5만 -> 안 고르면 안 올림
+assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_16" in seen
 offered.clear(); time.time = lambda: 1791285000; H.toss_deals(seen, True)  # 20:10: 낮에 올린 1·3은 후보에서 빠짐 -> 5만 남음 -> Claude가 안 고르면 안 올림
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_20" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent and not offered[1:]
@@ -556,11 +567,12 @@ cats_called, prompts = [], []
 def cat_http(url, body=None, headers=None, method=None):
     if url.endswith("/categories"):
         return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 100, "level": 1, "displayName": "패션", "children": []},
-                          {"categoryId": 200, "level": 1, "displayName": "식품", "children": []}, {"categoryId": 300, "level": 1, "displayName": "생활용품", "children": []}]}})
+                          {"categoryId": 200, "level": 1, "displayName": "식품", "children": []}, {"categoryId": 300, "level": 1, "displayName": "생활용품", "children": []},
+                          {"categoryId": 400, "level": 1, "displayName": "뷰티", "children": []}]}})
     if "/products/best-categories/" in url:
         assert url.endswith("?size=30"); cid = int(url.split("/best-categories/")[1].split("?")[0]); cats_called.append(cid)
         return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"카테{i}", "displayPrice": 7900, "discountRate": 0,
-                          "isSoldOut": False} for i in {200: (1, 21), 300: (21, 22)}[cid]]}})  # 1 = 이미 올린 상품, 21 = 두 카테고리에 다 있음
+                          "isSoldOut": False} for i in {200: (1, 21), 300: (21, 22), 400: (), 100: ()}[cid]]}})  # 1 = 이미 올린 상품, 21 = 두 카테고리에 다 있음
     if url.endswith("/links"):
         return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/{body['tacaItemId']}"}})
     raise AssertionError(url)
@@ -570,10 +582,11 @@ seen, sent[:] = {"tb_1": 1791241200}, []
 time.time = lambda: 1791273000; H.toss_deals(seen, "cat"); assert not sent and not cats_called  # 10/6 16:50 KST: 17시 전
 time.time = lambda: 1791274200; H.toss_deals(seen, "cat")  # 17:10
 t = sent[-1][1]["text"]
-assert cats_called == [200, 300] and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "식품·생활용품 베스트 중 살 만한 2개" in t and 'href="https://toss.im/_m/21"' in t
+assert cats_called == [200, 300, 400] and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "식품·생활용품·뷰티 베스트 중 살 만한 2개" in t and 'href="https://toss.im/_m/21"' in t  # 10/6 = 279일째 -> 다른 카테고리 [패션, 뷰티] 중 279 % 2 = 1번(뷰티)
 assert offered == ["카테21 | 7,900원 (0% 할인)", "카테22 | 7,900원 (0% 할인)"] and prompts == [H.BEST_PROMPT]
 assert "tosscat_20261006_17" in seen and "tb_21" in seen and "tb_22" in seen
 sent.clear(); H.toss_deals(seen, "cat"); assert not sent  # 하루 1번
+time.time, cats_called[:] = (lambda: 1791274200 + 86400), []; H.toss_deals(seen, "cat"); assert cats_called == [200, 300, 100]  # 다음 날은 패션(날마다 돌아감)
 def cat_renamed(url, *a, **k):
     if url.endswith("/categories"):
         return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 9, "level": 1, "displayName": "푸드", "children": []}]}})
@@ -596,9 +609,11 @@ assert S.title_of("이 포스팅은 쿠팡 파트너스 활동의 일환으로, 
 assert S.title_of("🔥 [롯데온] 파스타 (14,490원)") == "[롯데온] 파스타 (14,490원)"
 n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
-assert n == 1 and idx.split("</section>")[-1].count("[쿠팡] 휴지") == 1 and 'href="https://buy"' in idx and os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr"
-assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in idx  # 제목 줄 잘라낸 뒤에도 링크 위치 정확
-assert "p/0.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
+grid = idx.split('class="grid"')[1]  # 홈 격자(맨 위 카드 딜 칸은 앞 테스트가 오늘 카드를 만들었으면 따로 있음)
+assert n == 1 and grid.count('class="g"') == 1 and "<h3><a href=\"https://hotdealpick.kr/p/0.html\">휴지</a></h3>" in grid and "쿠팡 · " in grid and 'href="https://buy"' in grid
+assert os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr" and os.path.exists("docs/all.html")
+assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in open("docs/p/0.html").read()  # 딜 페이지: 제목 줄 잘라낸 뒤에도 링크 위치 정확
+assert "p/0.html" in open("docs/sitemap.xml").read() and "all.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
 assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
 # 6-2) 홈 맨 위 '카드 딜': 가장 최근 카드 날짜의 딜을 카드와 같은 번호로, 누르면 바로 구매(구매 주소 없으면 딜 페이지), 모아보기 글 제외,
 #      큰 터치 버튼(.pick)·aria-label, 카드가 없으면 안 보임 (10/8 진우: 인스타 캡션 링크가 안 눌려서 프로필 링크 → 한 번에 구매)
@@ -624,6 +639,45 @@ assert S.find_url("[쿠팡] 듀라셀 AA 20개입 1개/ 9,730원").endswith(urll
 assert top.index("<b>01</b><span>[G마켓] 첫딜") < top.index("<b>02</b><span>[토스쇼핑] 둘째 &lt;딜&gt;") and 'href="https://a1"' in top
 assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('id="today"') < idx.index("어제딜")
 S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임
+# 6-3) 카드 순서(10/8 진우 '쿠팡·토스 잘 팔리게'): 점수 높은 순, 같은 점수면 제휴 링크(쿠팡·토스 등) 먼저, 그다음 게시 순, 모아보기·다른 날 제외
+#      카드·인스타 캡션·릴스·사이트 맨 위 카드 딜 번호가 모두 이 순서(day_deals 하나)
+dd = [{"t": "2026-10-09 09:00", "text": "🔥 A 7점 원글", "url": "https://www.ppomppu.co.kr/x", "s": 7},
+      {"t": "2026-10-09 10:00", "text": "🔥 B 8점", "url": "https://x.com", "s": 8},
+      {"t": "2026-10-09 11:00", "text": "🔥 C 7점 쿠팡", "url": "https://link.coupang.com/a/x", "s": 7},
+      {"t": "2026-10-09 12:00", "text": "🔥 D 7점 토스", "url": "https://toss.im/_m/x", "s": 7},
+      {"t": "2026-10-09 13:00", "text": "📋 모아보기", "url": "https://x", "s": 9},
+      {"t": "2026-10-08 13:00", "text": "🔥 어제", "s": 9}]
+assert [i for i, _ in S.day_deals(dd, "2026-10-09")] == [1, 2, 3, 0] and S.aff("https://link.coupang.com/a/x") and S.aff("https://toss.im/_m/x") and not S.aff("https://www.ppomppu.co.kr/x") and not S.aff(None)
+pj = open("posts.json").read(); json.dump(dd, open("posts.json", "w"))
+assert [r.split(". ")[1][0] for r in H.card_caption("2026-10-09")[0]] == ["B", "C", "D", "A"]
+os.makedirs("docs/cards", exist_ok=True); json.dump([3, 0], open("docs/cards/2026-10-09.json", "w"))  # 카드를 만들 때 고정한 순서가 있으면 그대로(뒤에 딜이 더 올라와도 번호 유지)
+assert [r.split(". ")[1][0] for r in H.card_caption("2026-10-09")[0]] == ["D", "A"] and [i for i, _ in S.card_order(dd, "2026-10-09")] == [3, 0]
+os.remove("docs/cards/2026-10-09.json")
+open("posts.json", "w").write(pj)
+# 6-4) 모바일 격자(10/8 진우 '스크롤 길어 보기 힘듦 → 2열 격자 + 날짜 탭', '쿠팡·토스 먼저'): 홈 = 맨 위 카드 딜(카드·캡션의 6개만) + 날짜 탭(최근 2일·지난 딜 전체)
+#      + 최근 2일 격자(날짜 안에서 제휴 링크 딜 먼저, 그다음 최신 순), 지난 딜은 all.html. 칸 = 몰·이름·가격·단위가격·버튼(구매 / 원글+같은 상품 찾기 / 자세히)
+g = [{"t": "2026-10-09 08:00", "text": "🔥 [토스쇼핑] 생수 40병 (5,900원/무배)", "url": "https://toss.im/_m/w", "s": 6, "unit": "병당 148원"},
+     {"t": "2026-10-09 12:00", "text": "🔥 [뽐뿌몰] 라면 (1,850원/픽업)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=9", "s": 7},
+     {"t": "2026-10-09 13:00", "text": "🔥 [G마켓] 주소없는딜 (3,000원)", "s": 6},
+     {"t": "2026-10-08 20:00", "text": "🔥 [쿠팡] 어제딜 (1,000원)", "url": "https://link.coupang.com/a/z", "s": 9},
+     {"t": "2026-10-07 20:00", "text": "🔥 [11번가] 그제딜 (1,000원)", "url": "https://x.com/y", "s": 9}] + \
+    [{"t": f"2026-10-09 14:0{k}", "text": f"🔥 [G마켓] 추가딜{k} (1,000원)", "url": f"https://g{k}", "s": 5} for k in range(5)]
+os.makedirs("docs5/cards", exist_ok=True); open("docs5/cards/2026-10-09.png", "wb").write(b"x")
+S.build(g, "docs5"); idx, allp = open("docs5/index.html").read(), open("docs5/all.html").read()
+assert idx.split('id="today"')[1].split("</section>")[0].count('class="pick"') == 6  # 맨 위 카드 딜은 6개만(그날 딜 8개)
+json.dump([6, 2, 1], open("docs5/cards/2026-10-09.json", "w")); S.build(g, "docs5")  # 카드 순서 파일이 있으면 그 순서·개수 그대로
+top5 = open("docs5/index.html").read().split('id="today"')[1].split("</section>")[0]
+assert top5.count('class="pick"') == 3 and top5.index("<b>01</b><span>[G마켓] 추가딜1") < top5.index("<b>02</b><span>[G마켓] 주소없는딜") < top5.index("<b>03</b><span>[뽐뿌몰] 라면")
+os.remove("docs5/cards/2026-10-09.json"); S.build(g, "docs5")
+tabs = idx.split('<nav class="tabs"')[1].split("</nav>")[0]
+assert '>10/9</a>' in tabs and '>10/8</a>' in tabs and "10/7" not in tabs and 'href="https://hotdealpick.kr/all.html">지난 딜 전체' in tabs
+d0 = idx.split('id="d0"')[1].split("</section>")[0]
+assert "10월 9일 딜 8개" in d0 and d0.count('class="g"') == 8 and "그제딜" not in idx.split('<nav class="tabs"')[1] and 'id="d1"' in idx and "어제딜" in idx and 'id="d2"' not in idx
+assert d0.index("생수 40병") < d0.index("추가딜4") < d0.index("추가딜0") < d0.index("라면")  # 토스(제휴)는 오래됐어도 맨 앞, 나머지는 최신 순
+assert '<div class="s">토스쇼핑 · 08:00</div>' in d0 and '<div class="pr">5,900원</div>' in d0 and '<div class="u">병당 148원</div>' in d0 and 'href="https://toss.im/_m/w" rel="nofollow sponsored noopener"' in d0
+assert 'class="o" href="https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no=9"' in d0 and '🔎 같은 상품 찾기' in d0 and 'aria-label="라면 원글에서 구매 링크 보기"' in d0
+assert f'class="o" href="https://hotdealpick.kr/p/2.html" aria-label="주소없는딜 자세히 보기">자세히 →' in d0
+assert all(f"{w}" in allp for w in ("10월 9일 딜 8개", "10월 8일 딜 1개", "10월 7일 딜 1개")) and 'id="today"' not in allp
 
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
@@ -767,6 +821,30 @@ H.ig_repost(seen); assert len(ig_calls) == 1  # 하루 1번
 del H.E["IG_TOKEN"]; H.ig_repost({}); assert len(ig_calls) == 1  # 토큰 없으면 안 함
 os.remove("ig_repost.txt"); del H.E["IG_USER_ID"]; H.http = th_http
 assert "ig_repost, ig_publish" in inspect.getsource(H.main)
+# 9-1d) 쿠팡 링크 다시 알림(10/8 진우 '쿠팡 링크 공유 쉽게'): 13·19시 1번씩, 오늘 쿠팡 딜 중 아직 파트너스 링크가 아닌 글만 사본을 다시(채널 글 링크·파트너스 검색 버튼),
+#        새 사본 번호로 cp 갱신(링크만 보내도 그 사본에 '교체됨'), 제휴 링크로 바뀐 글·토스·다른 날 글은 제외, 없으면 아무것도 안 보냄
+pj, tg0, tt5 = open("posts.json").read(), H.tg, time.time
+cps = iter(range(500, 600))
+H.tg = lambda method, **p: sent.append((method, p)) or ({"message_id": next(cps)} if method == "copyMessage" else {"message_id": 1})
+day0 = time.strftime("%Y-%m-%d", time.gmtime(1791259200 + 9 * 3600))  # 10/6 13:00 KST
+json.dump([{"t": f"{day0} 10:00", "text": "🔥 [쿠팡] 듀라셀 건전지 20개입 (9,730원)", "url": "https://www.coupang.com/vp/products/1", "mid": 5, "cp": 77},
+           {"t": f"{day0} 11:00", "text": "🔥 [쿠팡] 이미 바꾼 딜 (1,000원)", "url": "https://link.coupang.com/a/x", "mid": 6, "cp": 78},
+           {"t": f"{day0} 11:30", "text": "🔥 [토스] 토스 딜 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "mid": 7, "cp": 79},
+           {"t": "2026-10-05 10:00", "text": "🔥 [쿠팡] 어제 딜 (1,000원)", "url": "https://www.coupang.com/vp/products/2", "mid": 4, "cp": 70}], open("posts.json", "w"), ensure_ascii=False)
+seen, sent[:] = {}, []
+time.time = lambda: 1791259200 - 60; H.coupang_remind(seen); assert not sent and not seen  # 12:59
+time.time = lambda: 1791259200 + 300; H.coupang_remind(seen)  # 13:05
+cm = [p for m, p in sent if m == "copyMessage"]
+assert len(cm) == 1 and cm[0]["message_id"] == 5 and cm[0]["chat_id"] == "42" and "쿠팡 링크 아직 안 만든 오늘 딜 1개" in sent[0][1]["text"]
+kb = cm[0]["reply_markup"]["inline_keyboard"]
+assert kb[0][0]["url"] == "https://t.me/ch/5" and kb[1][0]["url"] == H.CP_SEARCH + urllib.parse.quote("듀라셀 건전지 20개입")
+assert json.load(open("posts.json"))[0]["cp"] == 500 and json.load(open("posts.json"))[1]["cp"] == 78 and "cprem_20261006_13" in seen
+sent.clear(); H.coupang_remind(seen); assert not sent  # 같은 회차 1번
+time.time = lambda: 1791259200 + 6 * 3600 + 300; H.coupang_remind(seen); assert len([1 for m, _ in sent if m == "copyMessage"]) == 1  # 19:05 다시
+pp2 = json.load(open("posts.json")); pp2[0]["url"] = "https://link.coupang.com/a/y"; json.dump(pp2, open("posts.json", "w"))
+sent.clear(); time.time = lambda: 1791259200 + 86400 + 300; H.coupang_remind({}); assert not sent  # 다음 날: 오늘 쿠팡 딜 없음
+assert "coupang_remind, report" in inspect.getsource(H.main)
+open("posts.json", "w").write(pj); H.tg, time.time = tg0, tt5
 # 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
 kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},

@@ -18,8 +18,10 @@ a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:1
 .gb{display:block;text-align:center;background:#fff4ec;color:#c2410c;border:1.5px solid #fdba74;border-radius:10px;padding:10px;margin:12px 0;text-decoration:none;font-weight:600}
 .tg{display:block;text-align:center;background:#229ed9;color:#fff;border-radius:10px;padding:12px;margin:16px 0;text-decoration:none;font-weight:600}
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff4ec;border:1.5px solid #fdba74;color:#1c1e21;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.btn2{display:block;text-align:center;border:1.5px solid #0b63ce;color:#0b63ce;border-radius:10px;padding:11px;margin-top:8px;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:8px;overflow-x:auto;background:#f6f7f9;padding:10px 0;margin:4px 0}.tabs a{flex:none;display:flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;background:#fff;border:1px solid #d0d7de;color:#1c1e21;text-decoration:none;font-weight:600;font-size:15px}
+.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{display:flex;flex-direction:column;background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:0}.g .s{font-size:12px;color:#888}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#0b63ce;color:#fff;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:none;border:1.5px solid #0b63ce;color:#0b63ce}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#0b63ce;font-weight:600}
 .dis{font-size:12px;color:#888;margin:8px 0}footer{font-size:12px;color:#888;text-align:center;padding:24px 0}
-@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#2a1f17;border-color:#9a3412;color:#eee}.pick em{color:#fdba74}}"""
+@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#2a1f17;border-color:#9a3412;color:#eee}.pick em{color:#fdba74}.tabs{background:#111}.tabs a{background:#1c1c1e;border-color:#3a3a3c;color:#eee}.g{background:#1c1c1e}.g .go a.o,.g .go a.f{color:#6cb0ff;border-color:#6cb0ff}.g .u{color:#fdba74}}"""
 
 
 def to_html(text, entities):
@@ -65,6 +67,42 @@ def page(title, body, desc="", canonical=""):
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
+TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
+NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
+AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
+
+
+def parse(title):
+    """'[롯데온] 삼양 파스타 32봉 (14,490원/무료)' -> ('롯데온', '삼양 파스타 32봉', '14,490원/무료')"""
+    store = re.match(r"\s*\[(.+?)\]", title)
+    prices = re.findall(r"\(([^()]*원[^()]*)\)", title)  # 괄호 안에 '원' 들어간 마지막 묶음 = 가격
+    name = title[store.end():] if store else title
+    if prices:
+        name = name.replace(f"({prices[-1]})", " ")
+    elif tail := re.search(r"\s*/\s*(\d[\d,]*\s*원.*)$", name):  # 루리웹식 '…1개/ 9,730원' 꼬리(10/8 카드 03번에 가격이 제목에 붙어 나옴)
+        prices, name = [tail.group(1)], name[:tail.start()]
+    return (store.group(1) if store else "", re.sub(r"\s+", " ", name).strip() or title, prices[-1] if prices else "")
+
+
+def aff(url):
+    """제휴(수수료) 링크인지: 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트·링크프라이스 등."""
+    host = urllib.parse.urlsplit(url or "").netloc
+    return host == "link.coupang.com" or host in TOSS_HOSTS + NAVER_HOSTS + AFF_HOSTS
+
+
+def day_deals(posts, day):
+    """그날 딜의 카드 순서 [(posts 번호, 글)]: 점수 높은 순, 같은 점수면 제휴 링크 딜 먼저(10/8 진우 '쿠팡·토스 잘 팔리게'), 그다음 게시 순.
+    카드(앞 5개)·인스타 캡션(앞 6개)·릴스(앞 3개)·사이트 맨 위 카드 딜 번호가 모두 이 순서."""
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")]
+    return sorted(ds, key=lambda x: (-x[1].get("s", 0), not aff(x[1].get("url")), x[1]["t"]))
+
+
+def card_order(posts, day, out="docs"):
+    """카드 번호 순서: 카드를 만들 때 정해 둔 순서(docs/cards/날짜.json = posts 번호 목록)가 있으면 그대로 — 카드가 나간 뒤 딜이 더 올라오거나
+    점수가 바뀌어도 인스타 카드·캡션과 사이트 번호가 안 어긋남. 없으면 day_deals."""
+    f = f"{out}/cards/{day}.json"
+    return [(i, posts[i]) for i in json.load(open(f)) if i < len(posts)] if os.path.exists(f) else day_deals(posts, day)
+
 COMMUNITY = ("ppomppu.co.kr", "ruliweb.com", "clien.net")  # 구매 버튼이 커뮤니티 원글인 딜(상품 주소를 못 꺼냄) -> 원글이 지워지면 안 열림(10/8 01번)
 
 
@@ -81,7 +119,7 @@ def find_url(title):
 def card_picks(posts, out):
     """홈 맨 위: 가장 최근 인스타·Threads 카드의 딜을 카드와 같은 번호로, 누르면 바로 구매 페이지(인스타 캡션 링크는 안 눌려서 프로필 링크 -> 여기서 한 번에, 10/8 진우)."""
     days = sorted(f[:-4] for f in os.listdir(f"{out}/cards") if f.endswith(".png")) if os.path.isdir(f"{out}/cards") else []
-    picks = [(i, p) for i, p in enumerate(posts) if days and p["t"].startswith(days[-1]) and not p["text"].startswith("📋")]
+    picks = card_order(posts, days[-1], out)[:6] if days else []  # 카드·캡션에 나온 6개만(나머지는 아래 격자) — 스크롤 짧게
     if not picks:
         return ""
     rows = "".join(f'<a class="pick" href="{html.escape(p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
@@ -95,11 +133,39 @@ def card_picks(posts, out):
             f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{rows}</section>')
 
 
+def grid_item(i, p):
+    """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
+    title = title_of(p["text"])
+    store, name, price = parse(title)
+    page_url, url = f"{BASE}p/{i}.html", p.get("url")
+    if community(url):
+        go = (f'<a class="o" href="{html.escape(url)}" rel="nofollow noopener" target="_blank" aria-label="{html.escape(name)} 원글에서 구매 링크 보기">원글 →</a>'
+              f'<a class="f" href="{html.escape(find_url(title))}" rel="nofollow noopener" target="_blank" aria-label="{html.escape(name)} 같은 상품 찾기">🔎 같은 상품 찾기</a>')
+    elif url:
+        go = f'<a href="{html.escape(url)}" rel="nofollow sponsored noopener" target="_blank" aria-label="{html.escape(name)} 구매하러 가기">구매 →</a>'
+    else:
+        go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
+    return (f'<article class="g"><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div><h3><a href="{page_url}">{html.escape(name)}</a></h3>'
+            + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
+            + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "") + f'<div class="go">{go}</div></article>')
+
+
+def day_grids(posts, days):
+    """날짜별 2열 격자. 날짜 안에서는 제휴 링크 딜(쿠팡·토스 등) 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자')."""
+    out = []
+    for n, day in enumerate(days):
+        ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")),
+                    key=lambda x: (not aff(x[1].get("url")), [-ord(c) for c in x[1]["t"]]))
+        out.append(f'<section class="day" id="d{n}" aria-labelledby="d{n}h"><h2 id="d{n}h">{int(day[5:7])}월 {int(day[8:])}일 딜 {len(ds)}개</h2>'
+                   f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
+    return "".join(out)
+
+
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
     open(f"{out}/CNAME", "w").write(BASE.split("/")[2])  # GitHub Pages 커스텀 도메인 (재생성 때 안 날아가게)
-    cards, urls = [], [BASE]
+    urls = [BASE]
     for i, p in reversed(list(enumerate(posts))):
         title, rest, cut = split_title(p["text"])
         body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
@@ -109,10 +175,15 @@ def build(posts, out="docs"):
                    f'<a class="btn2" href="{html.escape(find_url(title))}" rel="nofollow noopener" target="_blank">🔎 원글이 안 열리면 같은 상품 찾기</a>')
         url = f"{BASE}p/{i}.html"
         card = f'<article class="card"><div class="t">{p["t"]}</div><h2><a href="{url}">{html.escape(title)}</a></h2><p>{body}</p>{btn}</article>'
-        cards.append(card)
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
         urls.append(url)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + ("\n".join(cards) or "<p>첫 딜을 준비 중이에요.</p>"), "매일 살 만한 핫딜만 골라드려요", BASE))
+    days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+    tabs = ('<nav class="tabs" aria-label="날짜별 딜">' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
+            + f'<a href="{BASE}all.html">지난 딜 전체</a></nav>') if days else ""
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
+                                              "매일 살 만한 핫딜만 골라드려요", BASE))
+    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", tabs + day_grids(posts, days), "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
+    urls.append(f"{BASE}all.html")
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>")
     return len(posts)

@@ -7,17 +7,17 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
 MODEL = E.get("MODEL") or "claude-sonnet-5-5"
-MIN_SCORE = int(E.get("MIN_SCORE") or 7)
+MIN_SCORE = int(E.get("MIN_SCORE") or 6)  # 10/8 진우: 6점도 바로(그 전 7)
 HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 HAS_TOSS = bool(E.get("TOSS_ACCESS_KEY") and E.get("TOSS_SECRET_KEY") and E.get("TOSS_PUBLISHER_ID"))  # 쉐어링크 Open API(10/6 승인). 호출은 고정 IP(오라클) 터널 경유 -> hotdeal.yml
 TOSS_API, TOSS_TOKEN = "https://sharelink.toss.im/openapi", "toss.json"  # toss.json: 1년짜리 액세스 토큰 보관(Actions 캐시, 매번 재발급 금지)
 MAX_DRAFTS = 1                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻히고 뒤가 비어서 1개씩(10/6 진우 '꾸준하게') -> 넘친 딜은 판단 그대로 보관했다가 다음 실행에 먼저
-GAP_FILL = 45                  # 분: 8~24시에 이만큼 채널 딜 글이 없으면 7점 딜이 없어도 6점 중 최고 1개로 빈틈 메움(꾸준히)
+GAP_FILL, FILL_SCORE = 45, 6    # 8~24시에 45분 넘게 채널 딜 글이 없으면 그 실행 후보 중 6점↑ 최고 1개로 빈틈 메움(5점은 안 올림). MIN_SCORE가 6이면 6점은 원래 바로 올라가서 MIN_SCORE를 7로 올렸을 때만 쓰임
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
 RUN_GAP = 20                   # 분: 다음 실행까지(15분 체인 + 지연 여유). 이 안에 목록에서 밀려날 글은 덜 묵었어도 지금 판단
@@ -34,9 +34,7 @@ CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_o
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 안내 대가성 문구 그대로(10/5 머천트 정보 화면)
 TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
-TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
 NAVER_NOTE = "이 포스팅은 네이버 쇼핑 커넥트 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다."  # 네이버 안내 문구 그대로(변형·누락 시 패널티), 글 맨 앞
-NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
 LP = "💰 링크프라이스 최대 {} · 딥링크 만들어 답장"
 STORES = {"쿠팡": "💰 쿠팡 파트너스 · 링크 만들어 답장", "토스": "💰 토스 쉐어링크 · 링크 만들어 답장",  # 뽐뿌 제목 [쇼핑몰] -> 초안 안내 버튼
           "g마켓": LP.format("0.6%"), "지마켓": LP.format("0.6%"), "옥션": LP.format("0.6%"), "롯데온": LP.format("1.4%"),
@@ -59,7 +57,6 @@ LP_API = "https://api.linkprice.com/ci/service/custom_link_xml?a_id={}&mode=json
 LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # API 장애 때만 쓰는 승인 몰 목록(직접 딥링크)
 HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
                "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트", "e-himart.co.kr": "하이마트", "ohou.se": "오늘의집"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
-AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
 
@@ -86,7 +83,8 @@ BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(
 믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 """
-TOSS_BEST_HOURS = (12, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 점심·저녁 1번씩 (10/7 진우 제안)
+CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
+TOSS_BEST_HOURS = (12, 16, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 점심·오후·저녁 1번씩 (10/7 진우 제안, 10/8 '더 자주' 2 -> 3번)
 TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
 
@@ -613,7 +611,7 @@ def threads_hint(e):
 def toss_deals(seen, best=False):
     """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널 + Threads에 바로. 편성 0건인 날은 다음 실행에 다시.
     best=True: 토스 베스트(지금 많이 팔리는 상품) 중 Claude가 '진짜 싼' 것만 최대 3개, TOSS_BEST_HOURS마다 1번. 3일 안에 올린 상품은 빼고, 없으면 안 올림.
-    best="cat": 같은 방식으로 카테고리 베스트(TOSS_CATS 최상위 카테고리들) 중 최대 3개, TOSS_CAT_HOUR에 1번.
+    best="cat": 같은 방식으로 카테고리 베스트(TOSS_CATS 최상위 카테고리들 + 날마다 돌아가는 다른 최상위 카테고리 1개) 중 최대 3개, TOSS_CAT_HOUR에 1번.
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
     kst, cat = time.gmtime(time.time() + 9 * 3600), best == "cat"
@@ -621,13 +619,16 @@ def toss_deals(seen, best=False):
     key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
     if not HAS_TOSS or not hrs or key in seen:
         return
-    head = ("🧺 <b>토스 식품·생활용품 베스트 중 살 만한 {}개</b>" if cat else "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best
-            else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>")
+    head = "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
     if cat:  # 카테고리 ID는 트리에서 이름으로 찾음(트리 조회는 일 상한 차감 없음)
         tree = toss("/categories")["categories"]
-        ids = [c["categoryId"] for c in tree if c["displayName"] in TOSS_CATS]
-        if not ids:
+        cats = [c for c in tree if c["displayName"] in TOSS_CATS]
+        if not cats:
             raise RuntimeError(f"토스 카테고리 이름 확인: {[c['displayName'] for c in tree]}")
+        others = [c for c in tree if c["displayName"] not in TOSS_CATS]  # 10/8 진우 '더 넓게': 다른 최상위 카테고리를 날마다 1개씩 돌아가며
+        cats += [others[kst.tm_yday % len(others)]] if others else []
+        ids = [c["categoryId"] for c in cats]
+        head = "🧺 <b>토스 " + "·".join(c["displayName"] for c in cats) + " 베스트 중 살 만한 {}개</b>"
         raw = [x for i in ids for x in toss(f"/products/best-categories/{i}?size=30")["items"]]
     else:
         raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
@@ -688,11 +689,14 @@ def digest(seen, posts):
         blog()
         import cards
         try:  # Threads/인스타용 카드 -> docs/cards/ (워크플로가 커밋 -> 사이트에 공개 -> 다음 실행 때 threads()가 올림)
-            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
+            order = day_deals(posts, today)
+            os.makedirs("docs/cards", exist_ok=True)
+            json.dump([i for i, _ in order], open(f"docs/cards/{today}.json", "w"))  # 카드 번호 순서를 고정(사이트·캡션이 같이 씀)
+            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
         except Exception as e:
             print("card", repr(e))
         try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 (저장소엔 안 올림). 점수 높은 순 TOP3
-            top = sorted(todays, key=lambda p: -p.get("s", 0))[:3]
+            top = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
             need = [p for p in top if not (p.get("hook") and p.get("pts"))]  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움
             if need:
                 try:
@@ -811,8 +815,7 @@ THREADS = "https://graph.threads.com/v1.0"  # 공식 문서 기준 도메인
 
 def card_caption(day):
     """그날 카드의 (목록 줄 6개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에."""
-    todays = [p for p in load(POSTS, []) if p["t"].startswith(day) and not p["text"].startswith("📋")]
-    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(todays[:6], 1)]
+    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, (_, p) in enumerate(card_order(load(POSTS, []), day)[:6], 1)]
     return rows, (f"{int(day[5:7])}월 {int(day[8:])}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
                   + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위에서 카드 번호를 누르면 바로 구매 페이지\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
                   + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
@@ -830,8 +833,7 @@ def ig_repost(seen):
     if not os.path.exists(path):
         import cards
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        todays = [p for p in load(POSTS, []) if p["t"].startswith(day) and not p["text"].startswith("📋")]
-        cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for p in todays], f"{kst.tm_mon}월 {kst.tm_mday}일", path)
+        cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in card_order(load(POSTS, []), day)], f"{kst.tm_mon}월 {kst.tm_mday}일", path)
         return
     url = f"{SITE}cards/re/{day}.jpg"
     try:
@@ -840,6 +842,29 @@ def ig_repost(seen):
         return
     c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url, "caption": card_caption(day)[1]}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
     seen["igc_" + c["id"]] = seen["igre_" + day] = time.time()
+
+
+def coupang_remind(seen):
+    """13·19시: 오늘 채널에 올라간 쿠팡 딜 중 아직 파트너스 링크가 아닌 글의 관리자 사본을 채팅 맨 아래로 다시 보냄(최대 5개).
+    쿠팡 API 승인 전이라 링크는 진우가 만들어야 하는데 사본이 묻혀서 놓침 -> 다시 꺼내 줌. 새 사본에 답장하거나 링크만 보내면 채널 글 교체(기존 흐름 그대로, cp 갱신)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    hrs = [h for h in CP_REMIND_HOURS if h <= kst.tm_hour]
+    key = time.strftime("cprem_%Y%m%d_", kst) + (str(hrs[-1]) if hrs else "")
+    if not hrs or key in seen:
+        return
+    seen[key] = time.time()
+    posts, today = load(POSTS, []), time.strftime("%Y-%m-%d", kst)
+    todo = [p for p in posts if p["t"].startswith(today) and p.get("mid") and p.get("cp") and not aff_note(p.get("url") or "")
+            and store_info(title_of(p["text"]), p.get("url")).startswith("💰 쿠팡")][-5:]
+    if not todo:
+        return
+    tg("sendMessage", chat_id=ADMIN, text=f"🔗 쿠팡 링크 아직 안 만든 오늘 딜 {len(todo)}개 — 사본마다 '파트너스 링크 만들기' → 만든 링크를 그 사본에 답장하면 채널 글·사이트 버튼이 바뀌어")
+    for p in todo:
+        kb = [[{"text": "📢 채널에 올라간 글", "url": post_url(p["mid"])}],
+              [{"text": "🔗 파트너스 링크 만들기", "url": CP_SEARCH + urllib.parse.quote(keyword(title_of(p["text"])))}]]
+        cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=p["mid"], reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
+        p["cp"] = cp or p["cp"]  # 링크만 보낼 때 '교체됨' 표시를 새 사본에
+    json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
 
 
 def threads(seen):
@@ -1022,7 +1047,7 @@ def main():
         good = [p for p in picks if p["score"] >= MIN_SCORE]
         if not good and not held and picks and quiet():
             best = max(picks, key=lambda p: p["score"])
-            good = [best] if best["score"] >= MIN_SCORE - 1 else []
+            good = [best] if best["score"] >= FILL_SCORE else []
         good = [{"d": new[p["i"]], "p": {k: v for k, v in p.items() if k != "i"}} for p in good]
     for h in (held + good)[:MAX_DRAFTS]:  # 보관해 둔 딜이 먼저
         seen.pop("hold_" + h["d"]["id"], None)
@@ -1030,7 +1055,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, report):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
         try:
             step(seen)
         except Exception as e:
