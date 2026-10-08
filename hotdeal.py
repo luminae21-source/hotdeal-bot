@@ -86,6 +86,7 @@ BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 """
 TOSS_BEST_HOURS = (12, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 점심·저녁 1번씩 (10/7 진우 제안)
+TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
 
 def http(url, body=None, headers=None, method=None):
@@ -608,16 +609,25 @@ def threads_hint(e):
 def toss_deals(seen, best=False):
     """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널 + Threads에 바로. 편성 0건인 날은 다음 실행에 다시.
     best=True: 토스 베스트(지금 많이 팔리는 상품) 중 Claude가 '진짜 싼' 것만 최대 3개, TOSS_BEST_HOURS마다 1번. 3일 안에 올린 상품은 빼고, 없으면 안 올림.
+    best="cat": 같은 방식으로 카테고리 베스트(TOSS_CATS 최상위 카테고리들) 중 최대 3개, TOSS_CAT_HOUR에 1번.
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
-    kst = time.gmtime(time.time() + 9 * 3600)
-    hrs = [h for h in (TOSS_BEST_HOURS if best else (9,)) if h <= kst.tm_hour]
-    key = time.strftime("tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
+    kst, cat = time.gmtime(time.time() + 9 * 3600), best == "cat"
+    hrs = [h for h in ((TOSS_CAT_HOUR,) if cat else TOSS_BEST_HOURS if best else (9,)) if h <= kst.tm_hour]
+    key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
     if not HAS_TOSS or not hrs or key in seen:
         return
-    head = "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
-    raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
-    items = [x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen]
+    head = ("🧺 <b>토스 식품·생활용품 베스트 중 살 만한 {}개</b>" if cat else "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best
+            else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>")
+    if cat:  # 카테고리 ID는 트리에서 이름으로 찾음(트리 조회는 일 상한 차감 없음)
+        tree = toss("/categories")["categories"]
+        ids = [c["categoryId"] for c in tree if c["displayName"] in TOSS_CATS]
+        if not ids:
+            raise RuntimeError(f"토스 카테고리 이름 확인: {[c['displayName'] for c in tree]}")
+        raw = [x for i in ids for x in toss(f"/products/best-categories/{i}?size=30")["items"]]
+    else:
+        raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
+    items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen}.values())  # 카테고리 겹친 상품은 1번만
     picks = items and ai_pick(BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])[:3 if best else 5]
@@ -633,7 +643,7 @@ def toss_deals(seen, best=False):
         plain.append(f"{len(plain) + 1}. {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
         rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
                     + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
-    print("toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
+    print("toss_cat" if cat else "toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
     if raw:  # 목록을 받았으면(Claude까지 돌렸으면) 이번 회차는 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
         seen[key] = time.time()
     if rows:
@@ -961,7 +971,7 @@ def main():
             seen.pop(dkey(new[p["i"]]["title"]), None)
         for p in good[:MAX_DRAFTS]:
             post_or_draft(new[p["i"]], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
-    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish, report):
+    for step in (events, playlist, goldbox, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_publish, report):
         try:
             step(seen)
         except Exception as e:

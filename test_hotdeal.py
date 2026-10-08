@@ -516,6 +516,40 @@ H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 9
                                                            if "하루특가" in prompt else [])
 H.toss_deals(seen); offered.clear(); time.time = lambda: 1791257400; H.toss_deals(seen, True)
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"]
+# 5-3c) 토스 카테고리 베스트(10/8 진우: 베스트 랭킹 페이지): 17시 1번, 카테고리 트리에서 이름으로 식품·생활용품 ID를 찾아 그 베스트만(패션 X),
+#       두 카테고리에 겹친 상품은 1번, 3일 안에 올린 상품 제외, 베스트와 같은 판단 기준, 이름이 바뀌어 못 찾으면 예외(로그에 실제 이름)
+cats_called, prompts = [], []
+def cat_http(url, body=None, headers=None, method=None):
+    if url.endswith("/categories"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 100, "level": 1, "displayName": "패션", "children": []},
+                          {"categoryId": 200, "level": 1, "displayName": "식품", "children": []}, {"categoryId": 300, "level": 1, "displayName": "생활용품", "children": []}]}})
+    if "/products/best-categories/" in url:
+        assert url.endswith("?size=30"); cid = int(url.split("/best-categories/")[1].split("?")[0]); cats_called.append(cid)
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"카테{i}", "displayPrice": 7900, "discountRate": 0,
+                          "isSoldOut": False} for i in {200: (1, 21), 300: (21, 22)}[cid]]}})  # 1 = 이미 올린 상품, 21 = 두 카테고리에 다 있음
+    if url.endswith("/links"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/{body['tacaItemId']}"}})
+    raise AssertionError(url)
+offered.clear(); H.http = cat_http
+H.ai_pick = lambda prompt, lines: prompts.append(prompt) or offered.extend(lines) or [{"i": 0, "score": 8, "comment": "단위가격 좋음"}, {"i": 1, "score": 7, "comment": "나"}]
+seen, sent[:] = {"tb_1": 1791241200}, []
+time.time = lambda: 1791273000; H.toss_deals(seen, "cat"); assert not sent and not cats_called  # 10/6 16:50 KST: 17시 전
+time.time = lambda: 1791274200; H.toss_deals(seen, "cat")  # 17:10
+t = sent[-1][1]["text"]
+assert cats_called == [200, 300] and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "식품·생활용품 베스트 중 살 만한 2개" in t and 'href="https://toss.im/_m/21"' in t
+assert offered == ["카테21 | 7,900원 (0% 할인)", "카테22 | 7,900원 (0% 할인)"] and prompts == [H.BEST_PROMPT]
+assert "tosscat_20261006_17" in seen and "tb_21" in seen and "tb_22" in seen
+sent.clear(); H.toss_deals(seen, "cat"); assert not sent  # 하루 1번
+def cat_renamed(url, *a, **k):
+    if url.endswith("/categories"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 9, "level": 1, "displayName": "푸드", "children": []}]}})
+    return cat_http(url, *a, **k)
+H.http, seen = cat_renamed, {}
+try:
+    H.toss_deals(seen, "cat"); raise AssertionError("카테고리 이름을 못 찾으면 예외")
+except RuntimeError as e:
+    assert "푸드" in str(e) and not seen and not sent
+import inspect; assert 'toss_deals(s, "cat")' in inspect.getsource(H.main)  # 실행 순서에 들어 있음
 assert len(json.load(open("posts.json"))) == n0
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
