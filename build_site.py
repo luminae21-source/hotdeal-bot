@@ -68,7 +68,7 @@ def page(title, body, desc="", canonical=""):
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
-TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.im/_m/..)·원본(toss.shopping/t/..)
+TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 
@@ -85,10 +85,16 @@ def parse(title):
     return (store.group(1) if store else "", re.sub(r"\s+", " ", name).strip() or title, prices[-1] if prices else "")
 
 
+def toss_share(url):
+    """토스 쉐어링크(수수료)인지: 단축(/_m/) 또는 원본(/t/번호?k=). k= 없는 상품 주소(/t/번호)는 아님 — 발급 실패로 사본용으로 남은 주소(10/9 확인)."""
+    p = urllib.parse.urlsplit(url or "")
+    return p.netloc in TOSS_HOSTS and (p.path.startswith("/_m/") or "k" in urllib.parse.parse_qs(p.query))
+
+
 def aff(url):
     """제휴(수수료) 링크인지: 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트·링크프라이스 등."""
     host = urllib.parse.urlsplit(url or "").netloc
-    return host == "link.coupang.com" or host in TOSS_HOSTS + NAVER_HOSTS + AFF_HOSTS
+    return host == "link.coupang.com" or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS
 
 
 def day_deals(posts, day):
@@ -155,7 +161,7 @@ def toss_section(posts, days):
     """홈 '토스' 칸(10/9 진우 '쿠팡·토스 주력'): 최근 2일 커뮤니티 딜 중 토스 쉐어링크가 붙은 것(최신 6개) + 텔레그램 토스 추천 버튼.
     토스 API 상품(베스트·하루특가)은 사이트에 안 올림 — API 승인 범위가 채널·Threads(신청서 '사이트 전시·가격 비교 안 함')라서 버튼으로 채널에 보냄."""
     ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:2] and not p["text"].startswith("📋")
-          and urllib.parse.urlsplit(p.get("url") or "").netloc in TOSS_HOSTS][::-1][:6]
+          and toss_share(p.get("url"))][::-1][:6]
     return (f'<section class="day" id="toss" aria-labelledby="tossh"><h2 id="tossh">💙 토스 딜{f" {len(ds)}개" if ds else ""}</h2>'
             + (f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>' if ds else "")
             + f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a></section>')

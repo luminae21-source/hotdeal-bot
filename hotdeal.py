@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -227,6 +227,10 @@ def store_link(post_url):
     if "ruliweb.com" in post_url:
         m = re.search(r'class="source_url.*?href="([^"]+)"', page, re.S)  # 보통 link.php?ol=원래주소, 네이버·토스 등은 주소 그대로
         u = html.unescape(m.group(1)) if m else ""
+        if not m:  # '출처' 칸 없이 본문에만 주소를 적은 글(10/8 [토스] 핫식스 -> 버튼이 루리웹 글로 감) -> 본문(view_content)의 첫 토스·쿠팡 주소
+            body = page.partition('class="view_content')[2].partition("</article>")[0]
+            u = next((x for x in re.findall(r"https?://[\w.-]+/[\w./?=&%#~+-]*", body, re.A)
+                      if urllib.parse.urlsplit(x).netloc.endswith(TOSS_HOSTS + ("coupang.com", "coupa.ng"))), "")
         return plain(urllib.parse.parse_qs(urllib.parse.urlsplit(u).query).get("ol", [None])[0] if "link.php" in u else u)
     if "clien.net" in post_url:
         m = re.search(r'class="attached_link.*?href=[\'"]([^\'"]+)', page, re.S)
@@ -264,9 +268,12 @@ def plain(url, hops=4):
     host, qs = p.netloc.lower(), urllib.parse.parse_qs(p.query)
     if host == "click.linkprice.com":
         return plain(qs["tu"][0], hops) if "tu" in qs else None
-    if host == "toss.shopping":  # 상품은 /t/번호, 쿼리(k=·referrer)는 남의 쉐어링크 표시
+    if host == "toss.shopping" and not p.path.startswith("/_m/"):  # 상품은 /t/번호, 쿼리(k=·referrer)는 남의 쉐어링크 표시
         return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
-    if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + TOSS_HOSTS + NAVER_HOSTS:
+    if host in TOSS_HOSTS:  # 남의 토스 단축 쉐어링크(/_m/) -> 따라가서 상품 주소(/t/번호)만. 상품 주소로 안 풀리면 None(남의 링크 안 씀, 10/9)
+        u = plain(location(url), hops - 1) if hops else None
+        return u if u and re.fullmatch(r"https://toss\.shopping/t/\d+", u) else None
+    if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + NAVER_HOSTS:
         return plain(location(url), hops - 1) if hops else None
     if host.endswith("coupang.com"):  # lptag·subid 등 추적값 빼고 상품·옵션만
         keep = {k: v[0] for k, v in qs.items() if k in ("itemId", "vendorItemId")}
@@ -454,7 +461,7 @@ def pending_copy(link):
 def aff_note(url):
     """제휴 링크면 그 프로그램의 대가성 문구, 일반 쇼핑몰 주소면 ''."""
     host = urllib.parse.urlsplit(url).netloc
-    return (DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if host in TOSS_HOSTS else NAVER_NOTE if host in NAVER_HOSTS
+    return (DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if toss_share(url) else NAVER_NOTE if host in NAVER_HOSTS
             else AFF_NOTE if host in AFF_HOSTS else "")
 
 

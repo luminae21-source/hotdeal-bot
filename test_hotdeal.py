@@ -86,6 +86,18 @@ H.http = lambda url, *a, **k: ('<div class="source_url box_line_with_shadow"><sp
 assert H.store_link(r["url"]) == "https://www.lotteon.com/p/product/LO1"
 H.http = lambda url, *a, **k: '<div class="source_url box_line_with_shadow"><span class="text_bar">출처 : </span> <a href="https://brand.naver.com/lottechilsung/products/127?NaPm=x" target="_blank">'
 assert H.store_link(r["url"]) == "https://brand.naver.com/lottechilsung/products/127"  # 네이버는 link.php 없이 주소 그대로(10/5 실제 글)
+# '출처' 칸 없이 본문에만 토스 주소를 적은 글(10/8 루리웹 107866 핫식스 [토스] 실제 구조: view_content 안 <p>에 글자로, 본문 밖 JSON·댓글에도 주소)
+#  -> 본문의 첫 토스·쿠팡 주소(블로그 등 다른 주소는 건너뜀) -> 남의 단축 쉐어링크는 따라가서 상품 주소(/t/번호)만 -> 우리 쉐어링크로. 상품 주소로 안 풀리면 None
+h0, loc0 = H.http, H.location
+rb = ('<script>{"articleBody": "https://toss.shopping/_m/OUT1"}</script><div class="view_content autolink" itemprop="articleBody"> <article> <div> <p>애플홀릭이 저렴하게 나왔네요<br>'
+      'https://blog.naver.com/x/1 https://toss.shopping/_m/7OD6gVy4</p></div></article></div><div class="comment">https://toss.shopping/_m/OUT2</div>')
+H.http, H.location = (lambda url, *a, **k: rb), {"https://toss.shopping/_m/7OD6gVy4": "https://toss.shopping/t/55?k=abc&referrer=affiliate"}.get
+assert H.store_link(r["url"]) == "https://toss.shopping/t/55"
+H.http = lambda url, *a, **k: rb.replace("toss.shopping/_m/7OD6gVy4", "example.com/x")
+assert H.store_link(r["url"]) is None  # 본문에 토스·쿠팡 주소가 없으면 None(본문 밖 JSON·댓글 주소는 안 씀)
+H.http, H.location = (lambda url, *a, **k: rb), {"https://toss.shopping/_m/7OD6gVy4": "https://service.toss.im/event?ref=other"}.get
+assert H.store_link(r["url"]) is None  # 상품 주소로 안 풀리면 남의 링크를 쓰지 않음
+H.http, H.location = h0, loc0
 lo = H.affiliate("https://www.lotteon.com/p/product/LO1")
 assert lo[1] and parse_qs(urlsplit(lo[0]).query)["m"] == ["lotteon"] and parse_qs(urlsplit(lo[0]).query)["tu"] == ["https://www.lotteon.com/p/product/LO1"]
 H.http = lambda url, *a, **k: ("<div class=\"attached_link top\"> <span class=\"attached_subject\">구매링크</span> "
@@ -99,6 +111,7 @@ loc = H.location; H.location = hops.get
 assert H.plain("https://link.coupang.com/a/x") == "https://www.coupang.com/vp/products/9?itemId=8&vendorItemId=7"  # 남의 쿠팡 파트너스 -> 상품
 assert H.plain("https://naver.me/Ab") == "https://smartstore.naver.com/s/products/1"  # 남의 쇼핑커넥트 -> 상품 주소만
 assert H.plain("https://link.coupang.com/a/dead") is None and H.plain("javascript:void(0)") is None  # 원래 주소 모르면 남의 링크 안 씀
+assert H.plain("https://toss.im/_m/dead") is None and H.plain("https://toss.shopping/_m/dead") is None  # 토스 단축도 풀리지 않으면 None
 H.location = loc
 import http.server, threading
 class R(http.server.BaseHTTPRequestHandler):
@@ -501,6 +514,7 @@ H.http = toss_http
 if os.path.exists("toss.json"): os.remove("toss.json")
 assert H.affiliate("https://toss.shopping/t/123") == ("https://toss.im/_m/123", True) and H.aff_note("https://toss.im/_m/123") == H.TOSS_NOTE
 assert H.affiliate("https://toss.shopping/t/999") == ("https://toss.shopping/t/999", False)  # 발급 제한 -> 주소 그대로(사본)
+assert H.aff_note("https://toss.shopping/t/999") == "" and H.aff_note("https://toss.shopping/_m/Pe9kaNsx") == H.TOSS_NOTE  # 상품 주소엔 대가성 문구 X, 진우가 붙인 단축 쉐어링크(10/7 트레비)엔 O
 assert tcalls.count("https://oauth2.cert.toss.im/token") == 1 and json.load(open("toss.json"))["token"] == "TK"  # 토큰은 1번만 발급
 offered = []
 H.ai_pick = lambda prompt, lines: offered.extend(lines) or [{"i": 0, "score": 9, "comment": "가"}, {"i": 2, "score": 8, "comment": "나"}, {"i": 1, "score": 7, "comment": "다"}]
@@ -651,6 +665,8 @@ dd = [{"t": "2026-10-09 09:00", "text": "🔥 A 7점 원글", "url": "https://ww
       {"t": "2026-10-09 13:00", "text": "📋 모아보기", "url": "https://x", "s": 9},
       {"t": "2026-10-08 13:00", "text": "🔥 어제", "s": 9}]
 assert [i for i, _ in S.day_deals(dd, "2026-10-09")] == [1, 2, 3, 0] and S.aff("https://link.coupang.com/a/x") and S.aff("https://toss.im/_m/x") and not S.aff("https://www.ppomppu.co.kr/x") and not S.aff(None)
+assert S.toss_share("https://toss.shopping/_m/x") and S.toss_share("https://toss.im/_m/x") and S.toss_share("https://toss.shopping/t/9?k=1&referrer=affiliate")
+assert not S.toss_share("https://toss.shopping/t/9") and not S.aff("https://toss.shopping/t/9") and not S.toss_share(None)  # 발급 실패로 남은 상품 주소는 제휴 아님(사이트 제휴 먼저·토스 칸 X)
 pj = open("posts.json").read(); json.dump(dd, open("posts.json", "w"))
 assert [r.split(". ")[1][0] for r in H.card_caption("2026-10-09")[0]] == ["B", "C", "D", "A"]
 os.makedirs("docs/cards", exist_ok=True); json.dump([3, 0], open("docs/cards/2026-10-09.json", "w"))  # 카드를 만들 때 고정한 순서가 있으면 그대로(뒤에 딜이 더 올라와도 번호 유지)
@@ -688,10 +704,11 @@ assert idx.index('id="today"') < idx.index('id="toss"') < idx.index('<nav class=
 assert f'href="{S.CHANNEL_WEB}"' in tsec and S.CHANNEL_WEB == "https://t.me/s/hotdeal_pick" and 'id="toss"' not in allp
 assert '"날짜별 딜"><a href="https://hotdealpick.kr/#toss">💙 토스</a><a href="https://hotdealpick.kr/#d0">10/9</a>' in tabs
 tt = [{"t": f"2026-10-0{d} 1{k}:00", "text": f"🔥 [토스] 토스{d}{k} (1,000원)", "url": f"https://toss.im/_m/{d}{k}", "s": 6} for d in (7, 8, 9) for k in range(4)]
-tt += [{"t": "2026-10-09 15:00", "text": "🔥 [토스] 원글토스 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "s": 7}]
+tt += [{"t": "2026-10-09 15:00", "text": "🔥 [토스] 원글토스 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "s": 7},
+       {"t": "2026-10-09 15:30", "text": "🔥 [토스] 상품주소토스 (1,000원)", "url": "https://toss.shopping/t/77", "s": 7}]  # 발급 실패로 남은 상품 주소(쉐어링크 아님)
 S.build(tt, "docs6"); ts6 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
 assert ts6.count('class="g"') == 6 and "토스 딜 6개" in ts6 and ts6.index("토스93") < ts6.index("토스90") < ts6.index("토스83") < ts6.index("토스82")
-assert "토스81" not in ts6 and "토스7" not in ts6 and "원글토스" not in ts6  # 최신 6개만, 2일 지난 딜·쉐어링크 없는 토스 딜 제외
+assert "토스81" not in ts6 and "토스7" not in ts6 and "원글토스" not in ts6 and "상품주소토스" not in ts6  # 최신 6개만, 2일 지난 딜·쉐어링크 없는 토스 딜 제외
 S.build([{"t": "2026-10-07 15:00", "text": "🔥 [토스] 그제토스 (1,000원)", "url": "https://toss.im/_m/z", "s": 7},
          {"t": "2026-10-08 15:00", "text": "🔥 [G마켓] 어제 (1,000원)", "url": "https://g", "s": 7},
          {"t": "2026-10-09 15:00", "text": "🔥 [쿠팡] 휴지 (1,000원)", "url": "https://buy", "s": 7}], "docs6")
