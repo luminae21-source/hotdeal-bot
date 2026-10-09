@@ -28,7 +28,7 @@ KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
 CP_NEWS = "https://newsis.com/RSS/industry.xml"  # 뉴시스 산업 RSS(기사 전문) -> 쿠팡 행사(○○데이·기획전) 자동 게시 — cp_events(). 쿠팡 뉴스룸은 GitHub 서버 403(10/9, 우회 안 함)
-CP_HOME, CP_FRESH = "https://link.coupang.com/a/hG70VLudxs", "https://link.coupang.com/a/hG75FuWz5U"  # 파트너스 간편 링크(10/9 진우): 쿠팡 홈·로켓프레시 — 행사 글 버튼
+CP_HOME, CP_FRESH = "https://link.coupang.com/a/hHgmfLTIUm", "https://link.coupang.com/a/hHgxjTMio8"  # 파트너스 간편 링크(10/9 진우, 이름 붙여 보낸 것): 쿠팡 홈·로켓프레시 — 행사 글 버튼
 REPOST = "ig_repost.txt"  # 오늘 인스타 카드를 1번 다시 올릴 때 날짜(YYYY-MM-DD) 한 줄 — ig_repost()
 MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude가 고름) 또는 봇에 보낸 음악의 텔레그램 file_id. 음원 파일은 공개 저장소에 안 올림(무료 음원도 원본 재배포는 금지)
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
