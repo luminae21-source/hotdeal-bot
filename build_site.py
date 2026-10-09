@@ -18,11 +18,11 @@ a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:1
 .btn{display:block;text-align:center;background:#0b63ce;color:#fff;border-radius:10px;padding:12px;margin-top:12px;text-decoration:none;font-weight:600}
 .gb{display:block;text-align:center;background:#fff4ec;color:#c2410c;border:1.5px solid #fdba74;border-radius:10px;padding:10px;margin:12px 0;text-decoration:none;font-weight:600}
 .tg{display:block;text-align:center;background:#229ed9;color:#fff;border-radius:10px;padding:12px;margin:16px 0;text-decoration:none;font-weight:600}
-.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff4ec;border:1.5px solid #fdba74;color:#1c1e21;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.btn2{display:block;text-align:center;border:1.5px solid #0b63ce;color:#0b63ce;border-radius:10px;padding:11px;margin-top:8px;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
-.tabs{position:sticky;top:0;z-index:5;display:flex;gap:8px;overflow-x:auto;background:#f6f7f9;padding:10px 0;margin:4px 0}.tabs a{flex:none;display:flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;background:#fff;border:1px solid #d0d7de;color:#1c1e21;text-decoration:none;font-weight:600;font-size:15px}
-.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{display:flex;flex-direction:column;background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:0}.g .s{font-size:12px;color:#888}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .rx{font-size:12px;color:#888}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#0b63ce;color:#fff;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:none;border:1.5px solid #0b63ce;color:#0b63ce}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#0b63ce;font-weight:600}
+.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff;border:1px solid #eceef1;color:#1c1e21;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.btn2{display:block;text-align:center;border:1.5px solid #0b63ce;color:#0b63ce;border-radius:10px;padding:11px;margin-top:8px;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e5e7eb;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7280;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#0b63ce;background:#eaf2ff}main:has(.bar){padding-bottom:84px}
+.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{display:flex;flex-direction:column;background:#fff;border-radius:14px;padding:12px;border:1px solid #eceef1;min-width:0}.g .s{font-size:12px;color:#888}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .rx{font-size:12px;color:#888}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#eaf2ff;color:#0b63ce;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:#f1f3f5;color:#1c1e21}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#6b7280;font-weight:600}
 .dis{font-size:12px;color:#888;margin:8px 0}footer{font-size:12px;color:#888;text-align:center;padding:24px 0}
-@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#2a1f17;border-color:#9a3412;color:#eee}.pick em{color:#fdba74}.tabs{background:#111}.tabs a{background:#1c1c1e;border-color:#3a3a3c;color:#eee}.g{background:#1c1c1e}.g .go a.o,.g .go a.f{color:#6cb0ff;border-color:#6cb0ff}.g .u{color:#fdba74}.g .hot{color:#fdba74}}"""
+@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#1c1c1e;border-color:#2c2c2e;color:#eee}.gb{background:#2a1f17;border-color:#9a3412;color:#fdba74}.pick em{color:#fdba74}.bar{background:rgba(28,28,30,.94);border-color:#2c2c2e}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6cb0ff;background:#1f2a3a}.g{background:#1c1c1e;border-color:#2c2c2e}.g .go a{background:#1f2a3a;color:#6cb0ff}.g .go a.o{background:#2c2c2e;color:#eee}.g .go a.f{background:none;color:#a1a1aa}.g .u{color:#fdba74}.g .hot{color:#fdba74}}"""
 
 
 def to_html(text, entities):
@@ -182,15 +182,13 @@ CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|�
 
 def cat_sections(posts, days):
     """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): 최근 3일 딜 중 제목 키워드(CATS)로 고른 최신 6개. 없으면 칸·탭 없음.
-    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). -> (칸 HTML, 탭 링크 HTML)"""
-    out = tabs = ""
+    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
+    out = []
     for key, name, rx in CATS:
         ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and re.search(rx, title_of(p["text"]))][::-1][:6]
-        if ds:
-            out += (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 · 최신 순</div>'
-                    f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
-            tabs += f'<a href="{BASE}#{key}">{name}</a>'
-    return out, tabs
+        out.append((key, name, ds and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 · 최신 순</div>'
+                                      f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>'))
+    return out
 
 
 def toss_section(posts, days):
@@ -214,6 +212,21 @@ def day_grids(posts, days):
     return "".join(out)
 
 
+# 홈 = 한 칸씩(10/9 진우 '홈페이지가 정신이 없네' → 아래 고정 바 + 누른 칸만). 주소 #id가 든 칸만 보이고, 없으면 첫 칸(인스타·Threads에서 왔으면 카드 딜). JS가 꺼져 있으면 전부 보임(예전처럼)
+ICONS = {  # 아래 바 아이콘 = Lucide(ISC 라이선스) 선 아이콘 — 이모지는 기기마다 모양·색이 달라 산만해서(10/9 진우 '심플하고 이쁘게')
+    "hot": '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    "today": '<path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
+    "toss": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    "life": '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>',
+    "beauty": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    "days": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>'}
+PANE_JS = """<script>(function(){var ps=[].slice.call(document.querySelectorAll('.pane'));if(!ps.length)return;
+function show(){var e=location.hash&&document.getElementById(decodeURIComponent(location.hash.slice(1))),t=document.getElementById('today'),ig=/instagram|threads/i.test(document.referrer)||/[?&](fbclid|igsh|utm_source=(ig|threads))/.test(location.search),
+p=e&&e.closest('.pane')||ig&&t&&t.parentNode||ps[0];
+ps.forEach(function(x){x.hidden=x!==p});[].forEach.call(document.querySelectorAll('.bar a'),function(a){a.setAttribute('aria-current',p.contains(document.getElementById(a.hash.slice(1)))?'true':'false')});
+if(e&&e.parentNode!==p)e.scrollIntoView();else scrollTo(0,0)}addEventListener('hashchange',show);show()})()</script>"""
+
+
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
@@ -231,12 +244,14 @@ def build(posts, out="docs"):
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
         urls.append(url)
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    cats, cat_tabs = cat_sections(posts, days)
-    tabs = (f'<nav class="tabs" aria-label="날짜별 딜"><a href="{BASE}#toss">💙 토스</a>{cat_tabs}' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
-            + f'<a href="{BASE}all.html">지난 딜 전체</a></nav>') if days else ""
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", hot_section(posts, days) + card_picks(posts, out) + toss_section(posts, days) + cats + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
+    panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)),
+             *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
+                                                          f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>')]
+    panes = [p for p in panes if p[2]]
+    bar = lambda home: ('<nav class="bar" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n.split()[-1]}</a>' for k, n, _ in panes) + "</nav>")
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", "".join(f'<div class="pane">{h}</div>' for _, _, h in panes) + bar("") + PANE_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "매일 살 만한 핫딜만 골라드려요", BASE))
-    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", tabs + day_grids(posts, days), "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
+    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", bar(BASE) + day_grids(posts, days), "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append(f"{BASE}all.html")
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>")
