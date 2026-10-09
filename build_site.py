@@ -20,7 +20,7 @@ a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:1
 .tg{display:block;text-align:center;background:#229ed9;color:#fff;border-radius:10px;padding:12px;margin:16px 0;text-decoration:none;font-weight:600}
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff4ec;border:1.5px solid #fdba74;color:#1c1e21;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.btn2{display:block;text-align:center;border:1.5px solid #0b63ce;color:#0b63ce;border-radius:10px;padding:11px;margin-top:8px;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
 .tabs{position:sticky;top:0;z-index:5;display:flex;gap:8px;overflow-x:auto;background:#f6f7f9;padding:10px 0;margin:4px 0}.tabs a{flex:none;display:flex;align-items:center;min-height:44px;padding:0 16px;border-radius:22px;background:#fff;border:1px solid #d0d7de;color:#1c1e21;text-decoration:none;font-weight:600;font-size:15px}
-.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{display:flex;flex-direction:column;background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:0}.g .s{font-size:12px;color:#888}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#0b63ce;color:#fff;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:none;border:1.5px solid #0b63ce;color:#0b63ce}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#0b63ce;font-weight:600}
+.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{display:flex;flex-direction:column;background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:0}.g .s{font-size:12px;color:#888}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .rx{font-size:12px;color:#888}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#0b63ce;color:#fff;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:none;border:1.5px solid #0b63ce;color:#0b63ce}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#0b63ce;font-weight:600}
 .dis{font-size:12px;color:#888;margin:8px 0}footer{font-size:12px;color:#888;text-align:center;padding:24px 0}
 @media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#2a1f17;border-color:#9a3412;color:#eee}.pick em{color:#fdba74}.tabs{background:#111}.tabs a{background:#1c1c1e;border-color:#3a3a3c;color:#eee}.g{background:#1c1c1e}.g .go a.o,.g .go a.f{color:#6cb0ff;border-color:#6cb0ff}.g .u{color:#fdba74}.g .hot{color:#fdba74}}"""
 
@@ -140,8 +140,15 @@ def card_picks(posts, out):
             f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{rows}</section>')
 
 
-def grid_item(i, p):
-    """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
+def react(p):
+    """반응 수치 글자(게시 때 뽐뿌·클리앙 수치, 10/9~): '분당 조회 13.5회 · 추천 1'. 10/9 이 표시 배포 전 글은 합친 값(pop)만 있어서 '반응 18.5'."""
+    if p.get("vpm") is not None:
+        return f"분당 조회 {p['vpm']:g}회" + (f" · 추천 {p['rec']}" if p.get("rec") else "")
+    return f"반응 {p['pop']:g}" if p.get("pop") else ""
+
+
+def grid_item(i, p, rx=False):
+    """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
     title = title_of(p["text"])
     store, name, price = parse(title)
     page_url, url = f"{BASE}p/{i}.html", p.get("url")
@@ -154,14 +161,15 @@ def grid_item(i, p):
         go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
     return (f'<article class="g"><div class="s">{"<b class=hot>🏆 인기</b> " if p.get("hot") else ""}{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div><h3><a href="{page_url}">{html.escape(name)}</a></h3>'
             + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
-            + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "") + f'<div class="go">{go}</div></article>')
+            + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "")
+            + (f'<div class="rx">👀 {html.escape(react(p))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
 
 
 def hot_section(posts, days):
     """홈 맨 위 '지금 반응 좋은 딜'(10/9 진우): 최근 2일 커뮤니티 딜 중 반응(pop = 게시 때 분당 조회수 + 추천×5) 높은 6개. 반응 수치가 쌓이기 전엔 안 보임."""
     ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:2] and p.get("pop")), key=lambda x: -x[1]["pop"])[:6]
     return (f'<section class="day" id="hot" aria-labelledby="hoth"><h2 id="hoth">🏆 지금 반응 좋은 딜</h2><div class="t">뽐뿌·클리앙 조회수·추천 기준</div>'
-            f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>') if len(ds) >= 2 else ""
+            f'<div class="grid">{"".join(grid_item(i, p, True) for i, p in ds)}</div></section>') if len(ds) >= 2 else ""
 
 
 CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|세제|유연제|퍼실|다우니|피죤|스너글|샴푸|린스|컨디셔너|트리트먼트|바디워시|핸드워시|손세정|비누|치약|칫솔|가글"

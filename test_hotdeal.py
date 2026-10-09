@@ -79,6 +79,8 @@ assert "</b>\n🏆 <b>인기</b> · 뽐뿌에서 지금 많이 보는 글 1위\n
 assert H.title_of(re.sub("<[^>]+>", "", th)) == d["title"]  # 배지가 있어도 사이트 제목은 그대로
 assert H.comment_of(re.sub("<[^>]+>", "", th)) == "싸다" == H.comment_of(re.sub("<[^>]+>", "", H.deal_post(d, "싸다")[0]))  # 배지 줄은 코멘트 아님(릴스·Threads·블로그·TOP5)
 assert {d["title"]: d.get("pop") for d in hd} == {"a": 50.0, "b": 60.0, "c": 30.0, "d": 16.7, "e": 30.0, "f": None, "g": 25.0, "r": None, "k": 35.0}  # 반응 = 분당 조회 + 추천×5(5분 미만·수치 없음 X)
+assert [(d.get("vpm"), d.get("rec")) for d in hd if d["title"] in "ekf"] == [(10.0, 4), (None, None), (30.0, 1)]  # 보여 줄 땐 분당 조회·추천 따로(10/9 '분당 조회 18.5회'가 추천×5까지 합친 값이던 것 고침)
+assert H.react({"vpm": 10.0, "rec": 4, "pop": 30}) == "분당 조회 10회 · 추천 4" and H.react({"vpm": 13.5, "pop": 13.5}) == "분당 조회 13.5회" and H.react({"pop": 18.5}) == "반응 18.5" and H.react({}) == ""
 import inspect; assert "mark_hot(deals)" in inspect.getsource(H.main)
 
 # 2-2) 새 출처: 루리웹 RSS·클리앙 목록(공지 제외) 파싱 / 글에서 상품 주소(남의 제휴 링크는 원래 주소로) / 승인 몰은 상품 페이지 딥링크
@@ -361,8 +363,8 @@ H.post_or_draft(D("[옥션] 마사지패드"), "싸요", 8)  # 옥션: 검색 �
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 assert b["text"] == "🛒 구매하러 가기" and parse_qs(urlsplit(b["url"]).query)["m"] == ["auction"] and len(sent) == 1
 assert sent[0][1]["text"].startswith(f"<i>{H.AFF_NOTE}</i>")
-sent.clear(); H.post_or_draft({**D("[롯데온] 신라면 40봉 (19,900원/무료)"), "hot": "뽐뿌 추천 5", "pop": 42.5}, "싸요", 8)
-assert json.load(open("posts.json"))[-1]["hot"] == "뽐뿌 추천 5" and json.load(open("posts.json"))[-1]["pop"] == 42.5  # 사이트 배지·인기 칸·TOP5용
+sent.clear(); H.post_or_draft({**D("[롯데온] 신라면 40봉 (19,900원/무료)"), "hot": "뽐뿌 추천 5", "pop": 42.5, "vpm": 17.5, "rec": 5}, "싸요", 8)
+assert {k: json.load(open("posts.json"))[-1].get(k) for k in ("hot", "pop", "vpm", "rec")} == {"hot": "뽐뿌 추천 5", "pop": 42.5, "vpm": 17.5, "rec": 5}  # 사이트 배지·인기 칸·TOP5·리포트용
 H.store_link = sl; H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
@@ -702,7 +704,7 @@ bak, cn = open("posts.json").read(), H.aff_note("https://link.coupang.com/a/x")
 json.dump([{"t": "2026-10-05 23:00", "text": "🔥 [G마켓] 어제딜 (1,000원)", "url": "https://g0", "mid": 9, "pop": 99},
            {"t": "2026-10-06 09:00", "text": "🔥 [G마켓] 우유 24팩 (12,900원/무료)\n🏆 인기 · 뽐뿌 추천 5\n\n싸다 우유\n💡 단위가격 개당 537원\n\n출처: 뽐뿌",
             "url": "https://www.ppomppu.co.kr/v?no=1", "mid": 1, "pop": 10, "hot": "뽐뿌 추천 5", "unit": "개당 537원"},
-           {"t": "2026-10-06 10:00", "text": f"{cn}\n\n🔥 [쿠팡] 휴지 30롤 (19,900원/무료)\n\n휴지 최저가\n\n출처: 클리앙", "url": "https://link.coupang.com/a/x", "mid": 2, "pop": 50},
+           {"t": "2026-10-06 10:00", "text": f"{cn}\n\n🔥 [쿠팡] 휴지 30롤 (19,900원/무료)\n\n휴지 최저가\n\n출처: 클리앙", "url": "https://link.coupang.com/a/x", "mid": 2, "pop": 50, "vpm": 45.0, "rec": 1},
            {"t": "2026-10-06 11:00", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 계란 30구 (6,900원)\n\n한 판 230원", "url": "https://toss.im/_m/5", "mid": 3, "pop": 30},
            {"t": "2026-10-06 11:10", "text": f"{cn}\n\n🔥 [쿠팡] 라면 (9,000원)\n\n싸다", "url": "https://link.coupang.com/a/y", "mid": 4, "pop": 1},
            {"t": "2026-10-06 11:20", "text": "🔥 [G마켓] 사본만 (1,000원)", "url": "https://g1", "mid": None, "pop": 80},  # 채널에 안 나감
@@ -717,7 +719,7 @@ time.time = lambda: 1791255900; H.top_deals(seen)  # 12:05
 m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and "top_20261006_12" in seen and t.startswith(f"<i>{cn}</i>\n<i>{H.TOSS_NOTE}</i>\n\n🏆 <b>지금 반응 좋은 딜 TOP4</b> (12시)")
 assert t.index("<b>휴지 30롤</b>") < t.index("<b>계란 30구</b>") < t.index("<b>우유 24팩</b>") < t.index("<b>라면</b>") and "어제딜" not in t and "사본만" not in t and "골드박스" not in t and "오후" not in t
-assert '1️⃣ <a href="https://link.coupang.com/a/x"><b>휴지 30롤</b></a>\n💰 <b>19,900원</b>\n👀 분당 조회 50회\n👉 휴지 최저가' in t
+assert '1️⃣ <a href="https://link.coupang.com/a/x"><b>휴지 30롤</b></a>\n💰 <b>19,900원</b>\n👀 분당 조회 45회 · 추천 1\n👉 휴지 최저가' in t and "\n👀 반응 30\n" in t  # 반응 수치: 분당 조회·추천 따로, 따로 값이 없는 10/9 첫 배포분은 합친 값
 assert '<b>우유 24팩</b></a>\n💰 <b>12,900원</b> · 개당 537원\n👀 뽐뿌 추천 5\n👉 싸다 우유\n\n4️⃣' in t and t.count(cn) == 1
 assert [r[0]["text"] for r in p["reply_markup"]["inline_keyboard"]] == ["1️⃣ 휴지 30롤", "2️⃣ 계란 30구", "3️⃣ 우유 24팩", "4️⃣ 라면"]
 sent.clear(); time.time = lambda: 1791256800; H.top_deals(seen); assert not sent  # 같은 회차 1번
@@ -939,7 +941,7 @@ hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900�
       {"t": "2026-10-07 10:00", "text": "🔥 [G마켓] 퍼실 세제 2L (9,900원)", "url": "https://g3", "s": 6, "pop": 77},
       {"t": "2026-10-08 10:00", "text": "🔥 [G마켓] 뷰카 샴푸 3개 (12,900원)", "url": "https://g2", "s": 6},
       {"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 크린랩 위생백 (3,000원)", "url": "https://g1", "s": 6, "pop": 12.5, "hot": "뽐뿌 추천 3"},
-      {"t": "2026-10-09 11:00", "text": "🔥 [네이버] 퓨어그램 폼클렌징 120ml (2,990원)", "url": "https://n1", "s": 6, "pop": 40},
+      {"t": "2026-10-09 11:00", "text": "🔥 [네이버] 퓨어그램 폼클렌징 120ml (2,990원)", "url": "https://n1", "s": 6, "pop": 40, "vpm": 25.0, "rec": 3},
       {"t": "2026-10-09 12:00", "text": "🔥 [쿠팡] 아이스크림 24개 (9,900원)", "url": "https://link.coupang.com/a/i", "s": 7},  # '크림'이지만 음식
       {"t": "2026-10-09 13:00", "text": "🔥 [옥션] 마스크팩 30매 (9,900원)", "url": "https://a1", "s": 6},
       {"t": "2026-10-09 13:30", "text": "🔥 [옥션] KF94 마스크 100매 (7,700원)", "url": "https://a2", "s": 6},
@@ -948,6 +950,7 @@ S.build(hp, "docs7"); i7, a7 = open("docs7/index.html").read(), open("docs7/all.
 hot7, life7, beauty7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("hot", "life", "beauty"))
 assert i7.index('id="hot"') < i7.index('id="toss"') < i7.index('id="life"') < i7.index('id="beauty"') < i7.index('<nav class="tabs"') < i7.index('id="d0"')
 assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and "<b class=hot>🏆 인기</b>" in hot7  # 세제(3일 전)·휴지(4일 전) 제외
+assert '<div class="rx">👀 분당 조회 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
 assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
 assert '#toss">💙 토스</a><a href="https://hotdealpick.kr/#life">🧻 생필품</a><a href="https://hotdealpick.kr/#beauty">💄 화장품</a><a href="https://hotdealpick.kr/#d0">' in i7
@@ -1261,7 +1264,15 @@ time.time = lambda: NOW - 12 * 3600 - 30 * 60; sent.clear(); H.report(seen); ass
 time.time = lambda: NOW - 8 * 3600 - 15 * 60; H.report(seen)  # 14:05
 assert sent[-1][1]["text"].startswith("📊 10/6 14:05 성과 리포트") and "report_20261006_14" in seen
 sent.clear(); H.report(seen); assert not sent  # 같은 회차 1번
+pj_bak = open("posts.json").read()
+json.dump([{"t": "2026-10-05 21:00", "text": "🔥 [G마켓] 어제 (1원)", "url": "https://y", "pop": 99},
+           {"t": "2026-10-06 10:00", "text": f"{H.AFF_NOTE}\n\n🔥 [쿠팡] 휴지 30롤 (19,900원/무료)\n\n싸요", "url": "https://c", "pop": 22, "vpm": 17.0, "rec": 1, "hot": "뽐뿌 추천 3"},
+           {"t": "2026-10-06 11:00", "text": "🔥 [G마켓] 우유 (9,900원)", "url": "https://g", "pop": 18.5}, {"t": "2026-10-06 12:00", "text": "🔥 [G마켓] 반응없음 (1원)", "url": "https://n"}]
+          + [{"t": f"2026-10-06 13:0{k}", "text": f"🔥 [G마켓] 작은{k} (1원)", "url": "https://s", "pop": k + 1, "vpm": k + 1.0} for k in range(4)], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: NOW; H.report(seen)  # 22:20 (18시 회차는 실행이 없어 건너뜀 -> 22시 회차 1번만)
+open("posts.json", "w").write(pj_bak)
+assert "\n\n🏆 오늘 반응 TOP5 (게시 때 뽐뿌·클리앙)\n  · 분당 조회 17회 · 추천 1 — 휴지 30롤 🏆\n  · 반응 18.5 — 우유\n  · 분당 조회 4회 — 작은3\n" in sent[-1][1]["text"]  # 오늘 딜만, 반응 높은 순 5개(10/9 진우 '반응 수치 한눈에')
+assert "작은0" not in sent[-1][1]["text"] and "어제" not in sent[-1][1]["text"] and "반응없음" not in sent[-1][1]["text"]
 m, p = sent[-1]; t = p["text"]
 assert len(sent) == 1 and m == "sendMessage" and p["chat_id"] == "42" and t.startswith("📊 10/6 22:20 성과 리포트") and "report_20261006_22" in seen and "report_20261006_18" not in seen
 assert "💰 토스 오늘: 클릭 12 · 판매 1개 · 예상 수익 350원 (구매확정 0원)" in t and "💰 토스 이번 달: 클릭 340 · 판매 9개 · 예상 수익 4,150원 (구매확정 1,200원)" in t

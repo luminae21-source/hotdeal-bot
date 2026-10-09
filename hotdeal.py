@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -212,9 +212,10 @@ def mark_hot(deals):
     """커뮤니티 반응 좋은 딜 강조(10/9 진우 '선호도 좋은 품목 딜 강조 표시', 기준 = 커뮤니티 반응): 게시판별 지금 목록에서
     분당 조회수 3위 안(분당 20회 이상) 또는 추천 3개 이상 -> d["hot"] = 이유. 루리웹은 반응 수치가 없어서 해당 없음."""
     num = lambda d, k: int(m[1]) if (m := re.search(k + r"(\d+)", d.get("hits") or "")) else 0
-    for d in deals:  # TOP5 묶음·사이트 인기 칸 순위용(분당 조회수 + 추천×5)
+    for d in deals:  # TOP5 묶음·사이트 인기 칸 순위용(분당 조회수 + 추천×5), 보여 줄 땐 분당 조회·추천을 따로(react)
         if d["age"] >= 5 and num(d, "조회"):
-            d["pop"] = round(num(d, "조회") / d["age"] + 5 * num(d, "추천"), 1)
+            d["vpm"], d["rec"] = round(num(d, "조회") / d["age"], 1), num(d, "추천")
+            d["pop"] = round(num(d, "조회") / d["age"] + 5 * d["rec"], 1)
     for board in {d["board"] for d in deals}:
         peers = sorted((d for d in deals if d["board"] == board and d["age"] >= 5 and num(d, "조회") / d["age"] >= 20), key=lambda d: -num(d, "조회") / d["age"])
         for rank, d in enumerate(peers[:3], 1):
@@ -484,7 +485,7 @@ def post_or_draft(d, comment, score, q=None, extra=None):
             kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
         cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
                  reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot"), "pop": d.get("pop")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot"), "pop": d.get("pop"), "vpm": d.get("vpm"), "rec": d.get("rec")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
 
 
 def pending_copy(link):
@@ -773,7 +774,7 @@ def top_deals(seen):
         price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
         items.append((parse(title_of(p["text"]))[1], p["url"], [
             ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
-            "👀 " + esc(p.get("hot") or f"분당 조회 {p['pop']:g}회"), "👉 " + esc(clip(why, 60)) if why else ""]))
+            "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
     text, kb = top_post(f"🏆 <b>지금 반응 좋은 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n뽐뿌·클리앙 조회수·추천 기준, 채널에 올린 딜 중에서", items)
     tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
@@ -1158,6 +1159,10 @@ def report(seen):
             body = getattr(e, "body", "") or ""
             lines.append("\n🧵 Threads 조회수: 토큰에 threads_manage_insights 권한 필요 → README 세팅 6번의 6"
                          if "permission" in body.lower() else f"\n🧵 Threads 조회 실패: {e!r} {body}"[:200])
+    top = sorted((p for p in load(POSTS, []) if p["t"].startswith(today) and p.get("pop")), key=lambda p: -p["pop"])[:5]
+    if top:  # 10/9 진우 '반응 수치 한눈에': 오늘 올린 딜 중 커뮤니티 반응 높은 순(게시 때 뽐뿌·클리앙 수치)
+        lines.append(f"\n🏆 오늘 반응 TOP{len(top)} (게시 때 뽐뿌·클리앙)")
+        lines += [f"  · {react(p)} — {clip(parse(title_of(p['text']))[1], 24)}" + (" 🏆" if p.get("hot") else "") for p in top]
     if tg("sendMessage", chat_id=ADMIN, text="\n".join(lines), link_preview_options={"is_disabled": True}):
         seen[key] = time.time()
 
