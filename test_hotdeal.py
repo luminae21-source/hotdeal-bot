@@ -67,6 +67,17 @@ assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and li
 t2 = H.deal_post(d, "싸다", None, {"unit": "100g당 990원", "warn": "쿠폰 <1인 1회>", "pts": ["x"]})[0]  # 단위가격·확인할 점은 코멘트 아래, 출처 위
 assert "싸다\n💡 단위가격 100g당 990원\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n\n출처:" in t2 and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", "")
 assert "unit:" in H.DEAL_PROMPT and "warn:" in H.DEAL_PROMPT and "unit:" in H.REEL_PROMPT
+# 1-1b) 커뮤니티 반응 좋은 딜 강조(10/9 진우): 게시판별 분당 조회수 3위 안(20회 이상) 또는 추천 3개 이상 -> 제목 바로 아래 '🏆 인기', 사이트 칸에도
+hd = [{"board": "뽐뿌", "hits": f"댓글0·조회{v}·추천{r}·비추0", "age": a, "title": n} for n, v, r, a in
+      [("a", 3000, 0, 60), ("b", 2400, 0, 40), ("c", 900, 0, 30), ("d", 1000, 0, 60), ("e", 500, 4, 50), ("f", 4000, 0, 3), ("g", 1500, 0, 60)]]
+hd += [{"board": "루리웹", "hits": "", "age": 30, "title": "r"}, {"board": "클리앙", "hits": "댓글3·조회900·추천1", "age": 30, "title": "k"}]
+H.mark_hot(hd); hot = {d["title"]: d.get("hot") for d in hd}
+assert hot == {"a": "뽐뿌에서 지금 많이 보는 글 2위", "b": "뽐뿌에서 지금 많이 보는 글 1위", "c": "뽐뿌에서 지금 많이 보는 글 3위", "d": None, "e": "뽐뿌 추천 4",
+               "f": None, "g": None, "r": None, "k": "클리앙에서 지금 많이 보는 글 1위"}, hot  # 분당 50·60·30 = 3위 안, 16.7·25(4위)·5분 미만·25(4위 밖)·루리웹 = 없음
+th = H.deal_post({**d, "hot": "뽐뿌에서 지금 많이 보는 글 1위"}, "싸다")[0]
+assert "</b>\n🏆 <b>인기</b> · 뽐뿌에서 지금 많이 보는 글 1위\n\n싸다" in th and "🏆" not in H.deal_post(d, "싸다")[0]
+assert H.title_of(re.sub("<[^>]+>", "", th)) == d["title"]  # 배지가 있어도 사이트 제목은 그대로
+import inspect; assert "mark_hot(deals)" in inspect.getsource(H.main)
 
 # 2-2) 새 출처: 루리웹 RSS·클리앙 목록(공지 제외) 파싱 / 글에서 상품 주소(남의 제휴 링크는 원래 주소로) / 승인 몰은 상품 페이지 딥링크
 RULI = f"""<rss><channel><item><title>[롯데온] 매일 피크닉 200ml 48팩 (15,600원/무료)</title><category>음식</category>
@@ -286,6 +297,7 @@ assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매�
 lp = json.load(open("posts.json"))[-1]
 assert lp["mid"] == 100 and lp["s"] == 8 and lp["e"] == "🫐" and lp["hook"] == "1kg 6,233원" and lp["pts"] == ["kg당 6,233원"] and "x" not in lp  # 릴스 재료 저장
 assert lp["unit"] == "kg당 6,233원" and "warn" not in lp and "💡 단위가격 kg당 6,233원" in sent[0][1]["text"]  # 빈 값은 저장 안 함
+assert "hot" not in lp
 sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L")  # 링크프라이스: 자동 제휴
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 qs = parse_qs(urlsplit(b["url"]).query)
@@ -347,6 +359,7 @@ H.post_or_draft(D("[옥션] 마사지패드"), "싸요", 8)  # 옥션: 검색 �
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 assert b["text"] == "🛒 구매하러 가기" and parse_qs(urlsplit(b["url"]).query)["m"] == ["auction"] and len(sent) == 1
 assert sent[0][1]["text"].startswith(f"<i>{H.AFF_NOTE}</i>")
+sent.clear(); H.post_or_draft({**D("[롯데온] 신라면 40봉 (19,900원/무료)"), "hot": "뽐뿌 추천 5"}, "싸요", 8); assert json.load(open("posts.json"))[-1]["hot"] == "뽐뿌 추천 5"  # 사이트 배지용
 H.store_link = sl; H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
@@ -794,6 +807,7 @@ n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
 grid = idx.split('class="grid"')[1]  # 홈 격자(맨 위 카드 딜 칸은 앞 테스트가 오늘 카드를 만들었으면 따로 있음)
 assert n == 1 and grid.count('class="g"') == 1 and "<h3><a href=\"https://hotdealpick.kr/p/0.html\">휴지</a></h3>" in grid and "쿠팡 · " in grid and 'href="https://buy"' in grid
+assert "🏆" not in grid and '<div class="s"><b class=hot>🏆 인기</b> 쿠팡 · ' in S.grid_item(0, {**posts[0], "hot": "뽐뿌 추천 5"})  # 커뮤니티 인기 딜 = 사이트 칸에도 배지
 assert os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr" and os.path.exists("docs/all.html")
 assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in open("docs/p/0.html").read()  # 딜 페이지: 제목 줄 잘라낸 뒤에도 링크 위치 정확
 assert "p/0.html" in open("docs/sitemap.xml").read() and "all.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()

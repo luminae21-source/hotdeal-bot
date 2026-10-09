@@ -206,6 +206,19 @@ def clien_feed():
     return deals
 
 
+def mark_hot(deals):
+    """커뮤니티 반응 좋은 딜 강조(10/9 진우 '선호도 좋은 품목 딜 강조 표시', 기준 = 커뮤니티 반응): 게시판별 지금 목록에서
+    분당 조회수 3위 안(분당 20회 이상) 또는 추천 3개 이상 -> d["hot"] = 이유. 루리웹은 반응 수치가 없어서 해당 없음."""
+    num = lambda d, k: int(m[1]) if (m := re.search(k + r"(\d+)", d.get("hits") or "")) else 0
+    for board in {d["board"] for d in deals}:
+        peers = sorted((d for d in deals if d["board"] == board and d["age"] >= 5 and num(d, "조회") / d["age"] >= 20), key=lambda d: -num(d, "조회") / d["age"])
+        for rank, d in enumerate(peers[:3], 1):
+            d["hot"] = f"{board}에서 지금 많이 보는 글 {rank}위"
+    for d in deals:
+        if num(d, "추천") >= 3:
+            d["hot"] = f"{d['board']} 추천 {num(d, '추천')}"
+
+
 def ai_pick(prompt, lines):
     """Claude가 고른 [{i, score, comment}] (점수 내림차순)."""
     tool = {"name": "pick", "description": "게시할 항목", "input_schema": {
@@ -423,7 +436,8 @@ def deal_post(d, comment, q=None, extra=None):
     head = f"<i>{note}</i>\n\n" if note else ""  # 공정위 지침: 대가성 문구는 첫 부분에
     x = extra or {}
     facts = "".join(f"\n{icon} {esc(x[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if x.get(k))
-    text = f"{head}🔥 <b>{esc(d['title'])}</b>\n\n{esc(comment)}{facts}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
+    badge = f"\n🏆 <b>인기</b> · {esc(d['hot'])}" if d.get("hot") else ""  # 제목 바로 아래(제목 줄은 사이트 split_title이 첫 줄로 읽음)
+    text = f"{head}🔥 <b>{esc(d['title'])}</b>{badge}\n\n{esc(comment)}{facts}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
     return text, link or d["url"], label
 
 
@@ -465,7 +479,7 @@ def post_or_draft(d, comment, score, q=None, extra=None):
             kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
         cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
                  reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
 
 
 def pending_copy(link):
@@ -1133,6 +1147,7 @@ def main():
     publish_approved()
     new, keys = [], set()
     deals = fetch_deals()
+    mark_hot(deals)
     cover = {}  # 출처별 목록이 덮는 시간(가장 오래된 글 나이). 뽐뿌 RSS는 15개뿐 -> 바쁜 저녁엔 30분도 안 돼서 30분 기다리면 영영 못 봄(10/6 17시대)
     for d in deals:
         cover[d["board"]] = max(cover.get(d["board"], 0), d["age"])
