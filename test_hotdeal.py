@@ -479,15 +479,16 @@ assert [p["text"] for m, p in sent] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가
 assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
 sent.clear(); H.events(seen); assert not sent  # 1번만
 time.time = tt3; os.remove("events.json"); H.events({})  # 파일 없으면 아무것도 안 함
-# 5-5b) 쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴스룸 RSS 새 글(2일 안)만 Claude에 -> 고른 행사(6점 이상)만 채널에 바로
-#       (파트너스 문구·행사명·기간·혜택 3개까지·검색어·공용 파트너스 링크 버튼), 관리자 사본(채널 글 링크 먼저 -> 답장하면 버튼 교체), 1번만, Claude·채널 실패면 다음에 다시
+# 5-5b) 쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴시스 산업 RSS의 쿠팡 기사(2일 안)만 Claude에 -> 고른 행사(6점 이상)만 채널에 바로
+#       (파트너스 문구·행사명·기간·혜택 3개까지·검색어·버튼 = 쿠팡 홈 링크, 프레시 행사는 로켓프레시 링크), 관리자 사본(채널 글 링크 먼저 -> 답장하면 버튼 교체), 1번만, Claude·채널 실패면 다음에 다시
 import inspect
 rss = lambda *xs: '<?xml version="1.0"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>' + "".join(
-    f"<item><title>{t}</title><link>https://news.coupang.com/archives/{n}/</link><pubDate>{d}</pubDate><content:encoded><![CDATA[<p>{b}</p>\n<p>둘째 줄</p>]]></content:encoded></item>"
+    f"<item><title>{t}</title><link>https://news.coupang.com/archives/{n}/</link><pubDate>{d}</pubDate><description><![CDATA[<p>{b}</p>\n<p>둘째 줄</p>]]></description></item>"
     for n, t, d, b in xs) + "</channel></rss>"
 cn = [(1, "[보도자료] 쿠팡, 와우회원 위한 '뷰티풀데이' 개최", "Thu, 08 Oct 2026 23:30:00 +0000", "18일까지 &amp; 5,000원 쿠폰"),
       (2, "[보도자료] 쿠팡, 물류센터 채용", "Thu, 08 Oct 2026 05:00:00 +0000", "채용"),
-      (3, "[보도자료] 쿠팡 로켓프레시데이 (지난 글)", "Mon, 05 Oct 2026 01:00:00 +0000", "지난 행사")]
+      (3, "[보도자료] 쿠팡 로켓프레시데이 (지난 글)", "Mon, 05 Oct 2026 01:00:00 +0000", "지난 행사"),
+      (5, "가을은 마케팅의 계절…유통가 할인 행사", "Thu, 08 Oct 2026 23:00:00 +0000", "다른 회사")]  # 제목에 쿠팡 없음 -> Claude에 안 보냄
 eprompts, efail, ph5, pa5, tt5, tg5b = [], [], H.http, H.ai_pick, time.time, H.tg
 def ev_http(url, *a, **k):
     assert url == H.CP_NEWS; return rss(*cn)
@@ -500,13 +501,13 @@ def ev_pick(prompt, lines):
 H.http, H.ai_pick, seen = ev_http, ev_pick, {}
 time.time = lambda: 1791504000  # 10/9 09:00 KST
 sent.clear(); H.cp_events(seen)
-assert len(eprompts) == 1 and "오늘은 2026-10-09" in eprompts[0][0] and len(eprompts[0][1]) == 2  # 2일 지난 글은 Claude에 안 보냄
+assert len(eprompts) == 1 and "오늘은 2026-10-09" in eprompts[0][0] and len(eprompts[0][1]) == 2  # 2일 지난 글·쿠팡 아닌 기사는 Claude에 안 보냄
 assert eprompts[0][1][0] == "[보도자료] 쿠팡, 와우회원 위한 '뷰티풀데이' 개최 | 10/09 | 18일까지 & 5,000원 쿠폰 둘째 줄"  # 본문 태그·줄바꿈 정리, 게시일 KST
 assert [m for m, p in sent] == ["sendMessage", "copyMessage"]  # 3점(채용)은 안 올림
 p = sent[0][1]
 assert p["chat_id"] == "@ch" and p["text"] == (f"<i>{H.DISCLOSURE}</i>\n\n💄 <b>쿠팡 뷰티풀데이&amp;위크</b>\n10/18(일)까지 · 와우회원\n\n• 2만 원 이상 5,000원 쿠폰\n"
                                                  "• 매일 7시 골드박스 &lt;뷰티&gt;\n• 16개 브랜드\n\n👉 쿠팡 앱 검색창에 <b>뷰티풀데이&amp;위크</b>")  # Claude 글은 HTML 이스케이프
-assert p["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 쿠팡 바로가기", "url": H.GOLDBOX}]] and H.GOLDBOX.startswith("https://link.coupang.com/")
+assert p["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 쿠팡 바로가기", "url": H.CP_HOME}]] and H.CP_HOME.startswith("https://link.coupang.com/a/")
 c = sent[1][1]
 assert c["chat_id"] == H.ADMIN and c["from_chat_id"] == "@ch" and c["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/1"  # 답장 -> 이 채널 글 교체
 assert sorted(seen) == ["cn_https://news.coupang.com/archives/1/", "cn_https://news.coupang.com/archives/2/"]
@@ -521,6 +522,9 @@ assert "cn_https://news.coupang.com/archives/4/" not in seen and not sent  # Cla
 efail.clear(); H.tg = lambda method, **p: sent.append((method, p)) and None
 H.cp_events(seen); assert "cn_https://news.coupang.com/archives/4/" not in seen and [m for m, p in sent] == ["sendMessage"]  # 채널 게시 실패 -> 다음에 다시
 H.tg = tg5b; sent.clear(); H.cp_events(seen); assert "cn_https://news.coupang.com/archives/4/" in seen and len(sent) == 2
+cn.insert(0, (6, "[보도자료] 쿠팡 로켓프레시데이", "Fri, 09 Oct 2026 00:10:00 +0000", "20일부터"))
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "q": "로켓프레시데이", "hook": "20일부터", "comment": "c"}]
+sent.clear(); H.cp_events(seen); assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH != H.CP_HOME  # 프레시 행사 = 로켓프레시 링크
 assert "goldbox, cp_events, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)

@@ -27,7 +27,8 @@ CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구�
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
 EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
-CP_NEWS = "https://news.coupang.com/feed/"  # 쿠팡 뉴스룸 RSS(보도자료) -> 쿠팡 행사(○○데이·기획전) 자동 게시 — cp_events()
+CP_NEWS = "https://newsis.com/RSS/industry.xml"  # 뉴시스 산업 RSS(기사 전문) -> 쿠팡 행사(○○데이·기획전) 자동 게시 — cp_events(). 쿠팡 뉴스룸은 GitHub 서버 403(10/9, 우회 안 함)
+CP_HOME, CP_FRESH = "https://link.coupang.com/a/hG70VLudxs", "https://link.coupang.com/a/hG75FuWz5U"  # 파트너스 간편 링크(10/9 진우): 쿠팡 홈·로켓프레시 — 행사 글 버튼
 REPOST = "ig_repost.txt"  # 오늘 인스타 카드를 1번 다시 올릴 때 날짜(YYYY-MM-DD) 한 줄 — ig_repost()
 MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude가 고름) 또는 봇에 보낸 음악의 텔레그램 file_id. 음원 파일은 공개 저장소에 안 올림(무료 음원도 원본 재배포는 금지)
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
@@ -88,7 +89,7 @@ MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
-EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 뉴스룸 새 글이야(제목 | 게시일 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
+EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
 회사 소식·실적·협약·물류·사회공헌·채용·오프라인 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이는 빼. 글에 적힌 사실만 써(지어내지 마).
 q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
@@ -619,14 +620,14 @@ def events(seen):
 
 
 def cp_events(seen):
-    """쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 쿠팡 뉴스룸 RSS의 새 글(2일 안) -> Claude가 고객 할인 행사만
-    골라 행사명·기간·혜택·검색어로 채널에 바로. 버튼 = 공용 파트너스 링크(GOLDBOX — API 승인 전엔 행사마다 링크를 못 만듦, 24시간 안 쿠팡 구매는 다 실적).
+    """쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴시스 산업 RSS의 쿠팡 기사(2일 안, 뉴스룸은 GitHub 서버 차단) -> Claude가 고객 할인 행사만
+    골라 행사명·기간·혜택·검색어로 채널에 바로. 버튼 = 공용 파트너스 링크(쿠팡 홈, 프레시 행사는 로켓프레시 — API 승인 전엔 행사마다 링크를 못 만듦, 24시간 안 쿠팡 구매는 다 실적).
     관리자 사본에 행사 페이지 파트너스 링크를 답장하면 버튼 교체(딜 사본과 같은 흐름). posts.json(사이트·모아보기)엔 안 남김(딜 아님)."""
     since = time.time() - 2 * 86400  # seen은 3일 뒤 지워짐 -> 그보다 짧게(다시 올리지 않게)
     new = [(it.findtext("link", "").strip(), it.findtext("title", "").strip(), parsedate_to_datetime(it.findtext("pubDate")).timestamp(),
-            " ".join(html.unescape(re.sub(r"<[^>]+>", " ", it.findtext("{http://purl.org/rss/1.0/modules/content/}encoded") or it.findtext("description", ""))).split()))
+            " ".join(html.unescape(re.sub(r"<[^>]+>", " ", it.findtext("description", ""))).split()))
            for it in ET.fromstring(http(CP_NEWS)).iter("item")]
-    new = [x for x in new if x[2] > since and "cn_" + x[0] not in seen]
+    new = [x for x in new if "쿠팡" in x[1] and x[2] > since and "cn_" + x[0] not in seen]
     if not new:
         return
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
@@ -640,7 +641,7 @@ def cp_events(seen):
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
                text=f"<i>{DISCLOSURE}</i>\n\n{esc(p.get('e') or '🎉')} <b>쿠팡 {esc(p['q'])}</b>\n{esc(p.get('hook', ''))}\n\n"
                     + "".join(f"• {esc(x)}\n" for x in p.get("pts", [])[:3]) + f"\n👉 쿠팡 앱 검색창에 <b>{esc(p['q'])}</b>",
-               reply_markup={"inline_keyboard": [[{"text": "🛒 쿠팡 바로가기", "url": GOLDBOX}]]})
+               reply_markup={"inline_keyboard": [[{"text": "🛒 쿠팡 바로가기", "url": CP_FRESH if "프레시" in p["q"] else CP_HOME}]]})
         if m:  # 실패하면 다음 실행에 다시
             done.add(link)
             tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": [
