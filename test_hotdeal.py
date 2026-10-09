@@ -967,6 +967,22 @@ assert hot7.count('<button class="like" type="button" data-i="') == 2 and 'data-
 assert i7.count('<div class="pane" hidden><section class="day" id="saved"') == 1 and 'id="savedg"' in i7 and "#saved" not in i7.split('<nav class="bar"')[1].split("</nav>")[0]
 assert all(S.LIKE_JS in x and f'<a class="lk" href="{S.BASE}#saved"' in x for x in (i7, a7)) and "localStorage" in S.LIKE_JS and ".slice(0,50)" in S.LIKE_JS
 assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS not in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 가는 링크만
+# 6-8) 검색 노출(10/9 진우 '구글·네이버에서 조회가 잘 안 돼'): robots.txt(사이트맵 위치), rss.xml(네이버 RSS 제출용 최근 30개), sitemap lastmod, 딜 페이지 설명 = 코멘트(대가성 문구·제목 반복 X), 홈 구조화 데이터
+import xml.etree.ElementTree as ET
+sp = [{"t": f"2026-10-0{1 + k % 9} 1{k % 10}:0{k % 6}", "text": f"{H.AFF_NOTE}\n\n🔥 [쿠팡] 휴지{k} 30롤 (19,900원/무료)\n\n싸요 & 좋아요\n💡 단위가격 롤당 663원\n\n출처: 클리앙", "url": f"https://c/{k}"} for k in range(33)] + \
+     [{"t": "2026-10-09 23:00", "text": "📋 오늘의 딜 모아보기", "url": None}]
+sp.sort(key=lambda p: p["t"]); S.build(sp, "docs8")
+assert open("docs8/robots.txt").read() == "User-agent: *\nAllow: /\n\nSitemap: https://hotdealpick.kr/sitemap.xml\n"
+rs = ET.parse("docs8/rss.xml").getroot().find("channel").findall("item")
+assert len(rs) == 30 and all("모아보기" not in i.findtext("title") for i in rs) and rs[0].findtext("pubDate").endswith(" +0900") and rs[0].findtext("link").startswith("https://hotdealpick.kr/p/")
+assert rs[0].findtext("description") == "싸요 & 좋아요 💡 단위가격 롤당 663원" and rs[0].findtext("title").startswith("[쿠팡] 휴지")
+sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+assert len(sm) == 36 and all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09"
+d8 = open("docs8/p/0.html").read()
+assert '<meta name="description" content="싸요 &amp; 좋아요 💡 단위가격 롤당 663원">' in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8
+i8 = open("docs8/index.html").read(); ld8 = json.loads(i8.split('<script type="application/ld+json">')[1].split("</script>")[0])
+assert ld8["@graph"][1]["sameAs"] == [S.INSTA, S.THREADS, S.BLOG, S.CHANNEL] and "<title>핫딜픽 - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)</title>" in i8
+assert S.summary("🔥 [G마켓] 우유 (1원)") == "" and '<meta name="description" content="[G마켓] 우유 (1원)">' in (S.build([{"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 우유 (1원)", "url": "https://g"}], "docs8") and open("docs8/p/0.html").read())  # 코멘트 없으면 제목
 os.makedirs("docs7/cards", exist_ok=True); open("docs7/cards/2026-10-09.png", "wb").write(b"x"); S.build(hp, "docs7"); i7c = open("docs7/index.html").read(); os.remove("docs7/cards/2026-10-09.png")
 assert i7c.index('<div class="pane"><section class="day" id="hot"') < i7c.index('<div class="pane"><section class="card" id="today"') < i7c.index('<div class="pane"><section class="day" id="toss"')  # 처음 보이는 칸 = 인기(10/9 진우 선택), 카드 딜은 그다음
 S.build(hp[2:3] + hp[5:6] + [{**hp[4], "text": "🔥 [네이버] 우유 (2,990원)"}], "docs7"); i7 = open("docs7/index.html").read()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """posts.json(채널에 게시된 딜) -> docs/ 정적 사이트. GitHub Pages로 서빙. 외부 패키지 없음."""
-import html, json, os, re, urllib.parse
+import html, json, os, re, time, urllib.parse
 
 BASE = "https://hotdealpick.kr/"
 CHANNEL = "https://t.me/hotdeal_pick"
@@ -61,7 +61,7 @@ def page(title, body, desc="", canonical=""):
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
 <meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
-{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<style>{CSS}</style></head><body><main>
+{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style></head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
 <p class="dis">{DISCLOSURE}</p><a class="gb" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스 · 오늘의 하루 특가 보기</a>{body}
 <a class="tg" href="{CHANNEL}">📲 텔레그램에서 실시간으로 받기</a>
@@ -239,12 +239,17 @@ if(g){g.innerHTML=L.map(function(x){return x.h}).join('');document.getElementByI
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.like');if(!b)return;var i=b.dataset.i;
 L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script>"""
 
+def summary(text):
+    """검색 결과·RSS에 보일 설명: 제목 아래 코멘트 줄들(출처·🏆 배지 줄 빼고 한 줄로). 대가성 문구·제목 반복은 안 넣음(10/9 '구글·네이버 조회가 잘 안 돼')."""
+    return " ".join(l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기")))[:150]
+
 
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
     open(f"{out}/CNAME", "w").write(BASE.split("/")[2])  # GitHub Pages 커스텀 도메인 (재생성 때 안 날아가게)
-    urls = [BASE]
+    latest = posts[-1]["t"][:10] if posts else ""
+    urls = [(BASE, latest)]
     for i, p in reversed(list(enumerate(posts))):
         title, rest, cut = split_title(p["text"])
         body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
@@ -254,20 +259,29 @@ def build(posts, out="docs"):
                    f'<a class="btn2" href="{html.escape(find_url(title))}" rel="nofollow noopener" target="_blank">🔎 원글이 안 열리면 같은 상품 찾기</a>')
         url = f"{BASE}p/{i}.html"
         card = f'<article class="card"><div class="t">{p["t"]}</div><h2><a href="{url}">{html.escape(title)}</a></h2><p>{body}</p>{btn}</article>'
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
-        urls.append(url)
+        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, summary(p["text"]) or title, url))
+        urls.append((url, p["t"][:10]))
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home: ('<nav class="bar" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
-                                              "매일 살 만한 핫딜만 골라드려요", BASE))
+    ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
+                                                                  {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+                                              "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", bar(BASE) + day_grids(posts, days) + LIKE_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
-    urls.append(f"{BASE}all.html")
+    urls.append((f"{BASE}all.html", latest))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-                                           + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>")
+                                           + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
+    open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9)
+    items = [(i, p) for i, p in enumerate(posts) if not p["text"].startswith("📋")][-30:][::-1]  # 네이버 서치어드바이저 'RSS 제출'용 최근 딜 30개
+    open(f"{out}/rss.xml", "w").write(
+        f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{TITLE}</title><link>{BASE}</link><description>매일 살 만한 핫딜만 골라드려요</description><language>ko</language>'
+        + "".join(f'<item><title>{html.escape(title_of(p["text"]))}</title><link>{BASE}p/{i}.html</link><guid>{BASE}p/{i}.html</guid>'
+                  f'<description>{html.escape(summary(p["text"]))}</description><pubDate>{time.strftime("%a, %d %b %Y %H:%M:00 +0900", time.strptime(p["t"][:16], "%Y-%m-%d %H:%M"))}</pubDate></item>'
+                  for i, p in items) + "</channel></rss>")
     return len(posts)
 
 
