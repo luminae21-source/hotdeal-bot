@@ -676,6 +676,8 @@ rb = "https://bbs.ruliweb.com/market/board/1020/read/"
 def match_http(url, body=None, headers=None, method=None):
     mcalls.append(url.split("/openapi")[-1])
     it = lambda k: json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p} for i, n, p in ml[k]]}})
+    if url.startswith("https://service.toss.im/shopping-discovery/c/"):  # 토스 앱 공유 주소 -> 상품 페이지(canonical = /t/번호, 본문엔 다른 상품 링크도)
+        return '<a href="https://toss.shopping/t/1"><link rel="canonical" href="https://toss.shopping/t/889"/>'
     if url.startswith(rb):  # 루리웹 글: 1 = 출처에 토스 상품 주소, 2 = 토스 주소 없음
         return '<div class="source_url"><a href="https://toss.shopping/t/777">' if url.endswith("/1") else '<div class="view_content">본문</article>'
     if url.endswith("/links"):
@@ -713,7 +715,8 @@ mp = [{"t": kt(2), "text": "🔥 [토스] 모나리자 에코 미용티슈 300�
       {"t": kt(1), "text": "🔥 [토스] 아무거나 전혀 다른 상품 (1,000원)", "url": pp + "6", "mid": 16, "cp": 116},
       {"t": kt(1), "text": "🔥 [토스] 모나리자 에코 채널 실패 딜 (1,000원)", "url": pp + "7"},  # 채널에 안 올라간 글(mid 없음)
       {"t": kt(1), "text": "🔥 [토스] 핫식스 더킹 애플홀릭 355ml 24개 17,000원", "url": rb + "1", "mid": 20, "cp": 120},
-      {"t": kt(1), "text": "🔥 [토스] 오뚜기 진라면 매운맛 40봉 (19,900원)", "url": rb + "2", "mid": 21, "cp": 121}]
+      {"t": kt(1), "text": "🔥 [토스] 오뚜기 진라면 매운맛 40봉 (19,900원)", "url": rb + "2", "mid": 21, "cp": 121},
+      {"t": kt(1), "text": "🔥 [토스] 펩시제로 제로카페인 355ml 48캔 (25,832원)", "url": "https://service.toss.im/shopping-discovery/c/888", "mid": 25, "cp": 125}]
 json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
 seen = {}
 log = relink_run()
@@ -722,20 +725,28 @@ assert "모나리자 에코 미용티슈 300매 12입 (10,990원/무배) -> 모�
 assert "핫식스 더킹 애플홀릭 355ml 24개 17,000원 -> 글의 상품 주소 https://toss.shopping/t/777 | 링크 교체" in log  # 루리웹 글을 다시 읽어 발급(tacaId)
 assert "제주 극조생감귤 10kg (12,900원/무배) -> 없음" in log and "아무거나 전혀 다른 상품 (1,000원) -> 없음 | 후보 0/" in log  # 감귤 5kg = 용량 달라 6점 -> 없음, 겹침 없으면 Claude 안 부름
 assert "진라면 매운맛 40봉 (19,900원) -> 없음" in log  # 루리웹 글에 토스 주소 없음 -> 목록 대조
+assert "펩시제로 제로카페인 355ml 48캔 (25,832원) -> 글의 상품 주소 https://toss.shopping/t/889 | 링크 교체" in log  # 토스 앱 공유 주소 -> 상품 페이지 canonical -> 발급
 assert "이미 링크" not in log and "쿠팡 딜" not in log and "오래된" not in log and "채널 실패" not in log and len(mprompts) == 2  # 쉐어링크 딜·다른 몰·3일 지난 딜·채널 글 아닌 것 제외
 assert mprompts[0][1][0] == "모나리자 에코 미용티슈 300매, 12개 | 11,990원" and "깨끗한나라" not in str(mprompts[0][1]) and "모나리자 에코 미용티슈 300매 12입" in mprompts[0][0]
 assert sorted(mcalls) == sorted(["/products/today-deals?size=30", "/categories", "/products/best-categories/200?size=100", "/products/best-categories/300?size=100",
-                                 "/products/best-selling?size=100", "/links", "/links", rb + "1", rb + "2"])  # 뽐뿌 글은 안 읽음(서버 차단, 우회 안 함)
+                                 "/products/best-selling?size=100", "/links", "/links", "/links", rb + "1", rb + "2",
+                                 "https://service.toss.im/shopping-discovery/c/888"])  # 뽐뿌 글은 안 읽음(서버 차단, 우회 안 함)
 ch = {p["message_id"]: p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL}
 ad = {p["message_id"]: p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.ADMIN}
-assert sorted(ch) == [11, 20] and ch[11]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L31" and ch[11]["text"].startswith(H.TOSS_NOTE)
+assert sorted(ch) == [11, 20, 25] and ch[11]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L31" and ch[11]["text"].startswith(H.TOSS_NOTE)
 assert ch[20]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/L777"
 assert ch[11]["entities"][1]["offset"] == 3 + len(H.TOSS_NOTE.encode("utf-16-le")) // 2 + 2  # 대가성 문구만큼 굵은 글씨 위치를 밂
-assert sorted(ad) == [111, 120] and "채널 글 교체됨" in str(ad[111]["reply_markup"])
+assert sorted(ad) == [111, 120, 125] and "채널 글 교체됨" in str(ad[111]["reply_markup"])
 assert pj[11]["url"] == "https://toss.shopping/_m/L31" and pj[11]["text"].startswith(H.TOSS_NOTE) and pj[20]["url"] == "https://toss.shopping/_m/L777"
-assert {k: p["url"] for k, p in pj.items() if k not in (11, 20)} == {p.get("mid"): p["url"] for p in mp if p.get("mid") not in (11, 20)}  # 찾은 딜만 교체
+assert pj[25]["url"] == "https://toss.shopping/_m/L889"
+assert {k: p["url"] for k, p in pj.items() if k not in (11, 20, 25)} == {p.get("mid"): p["url"] for p in mp if p.get("mid") not in (11, 20, 25)}  # 찾은 딜만 교체
+H.http = lambda url, *a, **k: '<a href="https://toss.shopping/t/5">'; assert H.plain("https://toss.shopping/i/5") is None; H.http = match_http  # canonical 없으면 None(남의 상품 안 씀)
 assert [51, "광동 비타500 100ml 20병", 9900, now] in seen["tosscache"]["items"] and seen["tr_12"]["ids"] == [41] and seen["tr_11"]["done"] and seen["tr_20"]["done"]
 assert not relink_run() and not mcalls and not mprompts and not medits  # 같은 시간대·새 후보 없음 -> API·Claude·루리웹 다시 안 부르고 로그도 없음
+seen["tr_26"] = {"t": now, "ids": []}; mp = json.load(open("posts.json")) + [{"t": kt(1), "text": "🔥 [토스] 펩시 제로 라임 355ml 48캔 (25,000원)", "url": "https://service.toss.im/shopping-discovery/c/890", "mid": 26, "cp": 126}]
+json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+assert "-> 글의 상품 주소 https://toss.shopping/t/889 | 링크 교체" in relink_run() and seen["tr_26"]["done"]  # 배포 전부터 못 찾고 있던 딜(src 표시 없음)도 주소 풀기 1번
+mp = json.load(open("posts.json"))
 mp = json.load(open("posts.json")) + [{"t": kt(0), "text": "🔥 [토스쇼핑] 삼다수 2L 12병 (8,500원)", "url": pp + "8", "mid": 17, "cp": 117}]
 json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
 log = relink_run()

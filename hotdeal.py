@@ -279,6 +279,13 @@ def plain(url, hops=4):
     host, qs = p.netloc.lower(), urllib.parse.parse_qs(p.query)
     if host == "click.linkprice.com":
         return plain(qs["tu"][0], hops) if "tu" in qs else None
+    if host == "service.toss.im" and p.path.startswith("/shopping-discovery/") or host == "toss.shopping" and p.path.startswith("/i/"):
+        try:  # 토스 앱 공유 주소(/shopping-discovery/c/번호 -> /i/번호, 10/9 펩시제로) -> 상품 페이지 canonical·og:url의 /t/번호(쉐어링크 API용)
+            m = re.search(r"(?:canonical|og:url)[^>]*?(https://toss\.shopping/t/\d+)", http(url))
+        except Exception as e:
+            print("toss page", url, repr(e))
+            m = None
+        return m and m.group(1)
     if host == "toss.shopping" and not p.path.startswith("/_m/"):  # 상품은 /t/번호, 쿼리(k=·referrer)는 남의 쉐어링크 표시
         return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
     if host in TOSS_HOSTS:  # 남의 토스 단축 쉐어링크(/_m/) -> 따라가서 상품 주소(/t/번호)만. 상품 주소로 안 풀리면 None(남의 링크 안 씀, 10/9)
@@ -717,7 +724,7 @@ def toss_deals(seen, best=False):
 
 def toss_relink(seen):
     """쉐어링크가 없는 최근 3일 [토스] 채널 딜에 우리 쉐어링크를 붙여 채널 글 버튼을 교체(진우가 사본에 답장한 것과 같은 relink_channel — 대가성 문구·사본 '교체됨'·posts.json·사이트).
-    ① 루리웹·클리앙 글 = 처음 1번 글의 상품 주소를 다시 읽어 발급(본문 링크 고치기 전 글·그때 실패한 글).
+    ① 루리웹·클리앙 글 = 처음 1번 글의 상품 주소를 다시 읽어 발급(본문 링크 고치기 전 글·그때 실패한 글). 버튼이 토스 앱 공유 주소(service.toss.im)면 상품 주소로 풀어 발급.
     ② 그 외(뽐뿌는 서버 차단이라 상품 주소를 못 읽음) = 토스 API 목록(하루특가·최상위 카테고리별 베스트 100·베스트 100)에서 찾기 — 검색 API가 없어서 목록 대조:
     이름 겹침 후보 8개 -> Claude가 같은 상품인지 확인(8점 이상만, 용량·수량 다르면 X). 10/9 기록만 해 본 첫 실행 11개 중 6개 찾음·6개 모두 같은 상품 -> '수정하자'로 교체.
     10/9 진우 '수수료 링크 안 붙은 것도 자동으로': 못 찾은 딜은 3일 동안 새 후보가 목록에 들어올 때마다 다시 확인(이미 본 후보는 Claude에 다시 안 물음),
@@ -748,8 +755,11 @@ def toss_relink(seen):
         first = key not in seen
         r = seen.setdefault(key, {"t": now, "ids": []})
         notice = {"chat": {"id": ADMIN}, "message_id": p.get("cp"), "text": p["text"], "entities": p.get("entities", [])}
-        u = first and re.search(r"//[\w.]*(ruliweb\.com|clien\.net)/", p.get("url") or "") and store_link(p["url"]) or ""
-        link = affiliate(u)[0] if u.startswith("https://toss.shopping/t/") else None
+        src, u = p.get("url") or "", None
+        if not r.get("src"):  # 1번만: 루리웹·클리앙 글은 상품 주소 다시 읽기, 토스 주소(앱 공유 service.toss.im 등)는 상품 주소로 풀기
+            r["src"] = 1
+            u = store_link(src) if re.search(r"//[\w.]*(ruliweb\.com|clien\.net)/", src) else plain(src) if "toss" in urllib.parse.urlsplit(src).netloc else None
+        link = affiliate(u)[0] if (u or "").startswith("https://toss.shopping/t/") else None
         if toss_share(link):
             r["done"] = True
             relink_channel(notice, p["mid"], link)
