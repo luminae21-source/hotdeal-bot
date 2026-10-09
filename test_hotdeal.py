@@ -127,6 +127,7 @@ assert H.plain("https://link.coupang.com/a/x") == "https://www.coupang.com/vp/pr
 assert H.plain("https://naver.me/Ab") == "https://smartstore.naver.com/s/products/1"  # 남의 쇼핑커넥트 -> 상품 주소만
 assert H.plain("https://link.coupang.com/a/dead") is None and H.plain("javascript:void(0)") is None  # 원래 주소 모르면 남의 링크 안 씀
 assert H.plain("https://toss.im/_m/dead") is None and H.plain("https://toss.shopping/_m/dead") is None  # 토스 단축도 풀리지 않으면 None
+assert H.plain("https://토스") is None and H.plain("https://toss") is None and H.plain("https://www.11st.co.kr:443/p/1") == "https://www.11st.co.kr:443/p/1"  # 글자만 적힌 출처 = 주소 아님(10/9 22:40 버튼 400)
 H.location = loc
 import http.server, threading
 class R(http.server.BaseHTTPRequestHandler):

@@ -296,6 +296,8 @@ def plain(url, hops=4):
         return None
     p = urllib.parse.urlsplit(url)
     host, qs = p.netloc.lower(), urllib.parse.parse_qs(p.query)
+    if not re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}(:\d+)?", host):  # '출처' 칸에 '토스'만 적은 글 -> https://토스 -> 텔레그램 버튼 400으로 딜을 못 올림(10/9 22:40 느린농장)
+        return None
     if host == "click.linkprice.com":
         return plain(qs["tu"][0], hops) if "tu" in qs else None
     if host == "service.toss.im" and p.path.startswith("/shopping-discovery/") or host == "toss.shopping" and p.path.startswith("/i/"):
