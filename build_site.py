@@ -157,6 +157,34 @@ def grid_item(i, p):
             + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "") + f'<div class="go">{go}</div></article>')
 
 
+def hot_section(posts, days):
+    """홈 맨 위 '지금 반응 좋은 딜'(10/9 진우): 최근 2일 커뮤니티 딜 중 반응(pop = 게시 때 분당 조회수 + 추천×5) 높은 6개. 반응 수치가 쌓이기 전엔 안 보임."""
+    ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:2] and p.get("pop")), key=lambda x: -x[1]["pop"])[:6]
+    return (f'<section class="day" id="hot" aria-labelledby="hoth"><h2 id="hoth">🏆 지금 반응 좋은 딜</h2><div class="t">뽐뿌·클리앙 조회수·추천 기준</div>'
+            f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>') if len(ds) >= 2 else ""
+
+
+CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|세제|유연제|퍼실|다우니|피죤|스너글|샴푸|린스|컨디셔너|트리트먼트|바디워시|핸드워시|손세정|비누|치약|칫솔|가글"
+                              r"|리스테린|생리대|라이너|기저귀|면도|마스크(?!팩)|KF\d|크린랩|위생[백랩장]|니트릴|지퍼백|쿠킹호일|종량제|쓰레기봉투|수세미|고무장갑|행주|탈취|방향제"
+                              r"|페브리즈|제습제|건전지|락스|세정제"),
+        ("beauty", "💄 화장품", r"화장품|올리브영|스킨케어|토너|에센스|세럼|앰플|로션|[수영]분크림|아이크림|선크림|핸드크림|바디크림|재생크림|선케어|선스틱|선쿠션|자외선"
+                               r"|클렌징|클렌저|폼클렌|마스크팩|시트팩|토너패드|각질|화장솜|립스틱|립밤|립글로|틴트|쿠션팩트|에어쿠션|파운데이션|컨실러|미스트|향수|메이크업"
+                               r"|마스카라|아이섀도|네일|올인원"))  # 제목 키워드(10/9 실제 딜 121개로 맞춤 — 크림·팩·쿠션·립·패드 단독은 음식·가구랑 겹쳐서 뺌)
+
+
+def cat_sections(posts, days):
+    """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): 최근 3일 딜 중 제목 키워드(CATS)로 고른 최신 6개. 없으면 칸·탭 없음.
+    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). -> (칸 HTML, 탭 링크 HTML)"""
+    out = tabs = ""
+    for key, name, rx in CATS:
+        ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and re.search(rx, title_of(p["text"]))][::-1][:6]
+        if ds:
+            out += (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 · 최신 순</div>'
+                    f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
+            tabs += f'<a href="{BASE}#{key}">{name}</a>'
+    return out, tabs
+
+
 def toss_section(posts, days):
     """홈 '토스' 칸(10/9 진우 '쿠팡·토스 주력'): 최근 2일 커뮤니티 딜 중 토스 쉐어링크가 붙은 것(최신 6개) + 텔레그램 토스 추천 버튼.
     토스 API 상품(베스트·하루특가)은 사이트에 안 올림 — API 승인 범위가 채널·Threads(신청서 '사이트 전시·가격 비교 안 함')라서 버튼으로 채널에 보냄."""
@@ -195,9 +223,10 @@ def build(posts, out="docs"):
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, p["text"], url))
         urls.append(url)
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    tabs = (f'<nav class="tabs" aria-label="날짜별 딜"><a href="{BASE}#toss">💙 토스</a>' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
+    cats, cat_tabs = cat_sections(posts, days)
+    tabs = (f'<nav class="tabs" aria-label="날짜별 딜"><a href="{BASE}#toss">💙 토스</a>{cat_tabs}' + "".join(f'<a href="{BASE}#d{n}">{int(d[5:7])}/{int(d[8:])}</a>' for n, d in enumerate(days[:2]))
             + f'<a href="{BASE}all.html">지난 딜 전체</a></nav>') if days else ""
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", card_picks(posts, out) + toss_section(posts, days) + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜 모음", hot_section(posts, days) + card_picks(posts, out) + toss_section(posts, days) + cats + tabs + (day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"),
                                               "매일 살 만한 핫딜만 골라드려요", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", tabs + day_grids(posts, days), "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append(f"{BASE}all.html")

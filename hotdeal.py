@@ -95,6 +95,8 @@ q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·�
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
 """
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
+TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
+NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_BEST_HOURS = (10, 12, 14, 16, 18, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
 TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
@@ -210,6 +212,9 @@ def mark_hot(deals):
     """커뮤니티 반응 좋은 딜 강조(10/9 진우 '선호도 좋은 품목 딜 강조 표시', 기준 = 커뮤니티 반응): 게시판별 지금 목록에서
     분당 조회수 3위 안(분당 20회 이상) 또는 추천 3개 이상 -> d["hot"] = 이유. 루리웹은 반응 수치가 없어서 해당 없음."""
     num = lambda d, k: int(m[1]) if (m := re.search(k + r"(\d+)", d.get("hits") or "")) else 0
+    for d in deals:  # TOP5 묶음·사이트 인기 칸 순위용(분당 조회수 + 추천×5)
+        if d["age"] >= 5 and num(d, "조회"):
+            d["pop"] = round(num(d, "조회") / d["age"] + 5 * num(d, "추천"), 1)
     for board in {d["board"] for d in deals}:
         peers = sorted((d for d in deals if d["board"] == board and d["age"] >= 5 and num(d, "조회") / d["age"] >= 20), key=lambda d: -num(d, "조회") / d["age"])
         for rank, d in enumerate(peers[:3], 1):
@@ -389,8 +394,8 @@ def draft(text, buy_url=None, score=None, info=None, label="🛒 구매하러 �
 
 
 def comment_of(text):
-    """채널 글(posts.json text) -> 제목 아래 코멘트 (출처 줄 제외)."""
-    return split_title(text)[1].rsplit("\n\n출처:", 1)[0].strip()
+    """채널 글(posts.json text) -> 제목 아래 코멘트 (🏆 인기 배지 줄·출처 줄 제외)."""
+    return re.sub(r"^🏆 인기 · .*\n*", "", split_title(text)[1].rsplit("\n\n출처:", 1)[0].strip())
 
 
 def store_tag(title):
@@ -479,7 +484,7 @@ def post_or_draft(d, comment, score, q=None, extra=None):
             kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
         cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
                  reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot"), "pop": d.get("pop")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
 
 
 def pending_copy(link):
@@ -693,7 +698,7 @@ def toss_deals(seen, best=False):
     key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
     if not HAS_TOSS or not hrs or key in seen:
         return
-    head = "🔥 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
+    head = "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
     if cat:  # 카테고리 ID는 트리에서 이름으로 찾음(트리 조회는 일 상한 차감 없음)
         tree = toss("/categories")["categories"]
         cats = [c for c in tree if c["displayName"] in TOSS_CATS]
@@ -719,15 +724,16 @@ def toss_deals(seen, best=False):
             print("toss link", repr(e))
             continue
         seen[f"tb_{x['tacaItemId']}"] = time.time()  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침)
-        plain.append(f"{len(plain) + 1}. {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
-        rows.append(f"{len(rows) + 1}. <a href=\"{esc(link)}\">{esc(x['displayName'])}</a> — <b>{x['displayPrice']:,}원</b>"
-                    + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + f"\n   {esc(p['comment'])}")
+        plain.append(f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
+        rows.append((x["displayName"], link, [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
+                                             + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if x.get("reviewCount") else ""), "👉 " + esc(p["comment"])]))
     print("toss_cat" if cat else "toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
     if raw:  # 목록을 받았으면(Claude까지 돌렸으면) 이번 회차는 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
         seen[key] = time.time()
     if rows:
+        text, kb = top_post(head.format(len(rows)), rows)
         tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-           text=f"<i>{TOSS_NOTE}</i>\n\n{head.format(len(rows))}\n\n" + "\n\n".join(rows))
+           text=f"<i>{TOSS_NOTE}</i>\n\n{text}", reply_markup={"inline_keyboard": kb})
     tok = E.get("THREADS_TOKEN")
     if rows and tok:  # Threads 글자 수 500 -> 넘치면 뒤 상품부터 뺌. 대가성 문구는 토스 가이드대로 맨 앞(더보기 없이 보이게)
         while len(plain) > 1 and len(TOSS_NOTE) + 40 + len("\n\n".join(plain)) > 480:
@@ -738,6 +744,40 @@ def toss_deals(seen, best=False):
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
         time.sleep(10)
         json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+
+
+def top_post(head, items):
+    """번호 목록 글 모양(10/9 진우 '시안성 좋고 사고 싶게'): 번호·굵은 이름(링크) + 줄들(💰가격·👉이유 등, HTML 이스케이프된 것) + 번호 버튼.
+    items = [(이름, 링크, [줄])] -> (본문, 버튼 줄들). 토스 하루특가·베스트·카테고리와 TOP5 묶음이 같이 씀."""
+    text = head + "\n\n" + "\n\n".join(f"{NUM[n]} <a href=\"{esc(link)}\"><b>{esc(name)}</b></a>" + "".join("\n" + l for l in lines if l)
+                                        for n, (name, link, lines) in enumerate(items))
+    return text, [[{"text": f"{NUM[n]} {clip(name, 20)}", "url": link}] for n, (name, link, _) in enumerate(items)]
+
+
+def top_deals(seen):
+    """12·18시: 그 시간대(0~12시·12~18시)에 채널에 올린 커뮤니티 딜 중 반응(분당 조회수 + 추천×5, 게시 때 뽐뿌·클리앙 수치) 높은 TOP5를 한 글로.
+    3개 미만이면 안 올림. 조회수 기준이라 '많이 보는' 딜(구매 수는 모름). 링크마다 그 제휴 프로그램 대가성 문구를 맨 앞에."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    hrs = [h for h in TOP_HOURS if h <= kst.tm_hour]
+    key = time.strftime("top_%Y%m%d_", kst) + (str(hrs[-1]) if hrs else "")
+    if not hrs or key in seen:
+        return
+    seen[key] = time.time()
+    day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
+    since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
+    top = sorted((p for p in load(POSTS, []) if since <= p["t"] < until and p.get("mid") and p.get("pop")), key=lambda p: -p["pop"])[:5]
+    if len(top) < 3:
+        return
+    items = []
+    for p in top:
+        price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
+        items.append((parse(title_of(p["text"]))[1], p["url"], [
+            ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
+            "👀 " + esc(p.get("hot") or f"분당 조회 {p['pop']:g}회"), "👉 " + esc(clip(why, 60)) if why else ""]))
+    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
+    text, kb = top_post(f"🏆 <b>지금 반응 좋은 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n뽐뿌·클리앙 조회수·추천 기준, 채널에 올린 딜 중에서", items)
+    tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+       text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb})
 
 
 def toss_relink(seen):
@@ -941,8 +981,8 @@ def blog_text(todays, kst):
     title = f"{kst.tm_mon}월 {kst.tm_mday}일 핫딜 모음 | {title_of(todays[0]['text'])}" + (f" 외 {len(todays) - 1}건" if len(todays) > 1 else "")
     items = []
     for n, p in enumerate(todays, 1):
-        t, rest, _ = split_title(p["text"])
-        items.append(f"{n}. {t}\n{rest.split(chr(10))[0]}\n👉 {p['url'] or SITE}")
+        t = title_of(p["text"])
+        items.append(f"{n}. {t}\n{comment_of(p['text']).split(chr(10))[0]}\n👉 {p['url'] or SITE}")
     return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + "\n\n".join(items)
             + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
             + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
@@ -1194,7 +1234,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
+    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
         try:
             step(seen)
         except Exception as e:

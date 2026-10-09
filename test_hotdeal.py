@@ -77,6 +77,8 @@ assert hot == {"a": "뽐뿌에서 지금 많이 보는 글 2위", "b": "뽐뿌�
 th = H.deal_post({**d, "hot": "뽐뿌에서 지금 많이 보는 글 1위"}, "싸다")[0]
 assert "</b>\n🏆 <b>인기</b> · 뽐뿌에서 지금 많이 보는 글 1위\n\n싸다" in th and "🏆" not in H.deal_post(d, "싸다")[0]
 assert H.title_of(re.sub("<[^>]+>", "", th)) == d["title"]  # 배지가 있어도 사이트 제목은 그대로
+assert H.comment_of(re.sub("<[^>]+>", "", th)) == "싸다" == H.comment_of(re.sub("<[^>]+>", "", H.deal_post(d, "싸다")[0]))  # 배지 줄은 코멘트 아님(릴스·Threads·블로그·TOP5)
+assert {d["title"]: d.get("pop") for d in hd} == {"a": 50.0, "b": 60.0, "c": 30.0, "d": 16.7, "e": 30.0, "f": None, "g": 25.0, "r": None, "k": 35.0}  # 반응 = 분당 조회 + 추천×5(5분 미만·수치 없음 X)
 import inspect; assert "mark_hot(deals)" in inspect.getsource(H.main)
 
 # 2-2) 새 출처: 루리웹 RSS·클리앙 목록(공지 제외) 파싱 / 글에서 상품 주소(남의 제휴 링크는 원래 주소로) / 승인 몰은 상품 페이지 딥링크
@@ -359,7 +361,8 @@ H.post_or_draft(D("[옥션] 마사지패드"), "싸요", 8)  # 옥션: 검색 �
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 assert b["text"] == "🛒 구매하러 가기" and parse_qs(urlsplit(b["url"]).query)["m"] == ["auction"] and len(sent) == 1
 assert sent[0][1]["text"].startswith(f"<i>{H.AFF_NOTE}</i>")
-sent.clear(); H.post_or_draft({**D("[롯데온] 신라면 40봉 (19,900원/무료)"), "hot": "뽐뿌 추천 5"}, "싸요", 8); assert json.load(open("posts.json"))[-1]["hot"] == "뽐뿌 추천 5"  # 사이트 배지용
+sent.clear(); H.post_or_draft({**D("[롯데온] 신라면 40봉 (19,900원/무료)"), "hot": "뽐뿌 추천 5", "pop": 42.5}, "싸요", 8)
+assert json.load(open("posts.json"))[-1]["hot"] == "뽐뿌 추천 5" and json.load(open("posts.json"))[-1]["pop"] == 42.5  # 사이트 배지·인기 칸·TOP5용
 H.store_link = sl; H.tg = fake_tg
 
 # 4) 전체 흐름: 30분 미만 글 제외, 점수 컷, 본 글 저장
@@ -549,7 +552,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -597,6 +600,10 @@ m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "TOP2" in t
 assert not [l for l in offered if "토스상품2" in l] and "토스상품0" not in t  # 품절은 후보에서 빼고, 발급 실패(0)는 글에서 뺌
 assert t.index('href="https://toss.im/_m/3"') < t.index('href="https://toss.im/_m/1"') and "4,000원</b> (30%↓)" in t
+assert t.endswith("TOP2</b>\n\n1️⃣ <a href=\"https://toss.im/_m/3\"><b>토스상품3</b></a>\n💰 <b>4,000원</b> (30%↓)\n👉 나\n\n2️⃣ <a href=\"https://toss.im/_m/1\"><b>토스상품1</b></a>\n💰 <b>2,000원</b> (10%↓)\n👉 다")
+assert p["reply_markup"]["inline_keyboard"] == [[{"text": "1️⃣ 토스상품3", "url": "https://toss.im/_m/3"}], [{"text": "2️⃣ 토스상품1", "url": "https://toss.im/_m/1"}]]  # 번호 버튼(10/9 TOP 모양)
+tp, kb = H.top_post("H", [("A&B", "https://x?a=1&b=2", ["💰 <b>1원</b>", "", "👉 c"])])
+assert tp == 'H\n\n1️⃣ <a href="https://x?a=1&amp;b=2"><b>A&amp;B</b></a>\n💰 <b>1원</b>\n👉 c' and kb == [[{"text": "1️⃣ A&B", "url": "https://x?a=1&b=2"}]]
 sent.clear(); H.toss_deals(seen); assert not sent  # 하루 1번
 assert len(json.load(open("posts.json"))) == n0  # API 상품은 사이트에 안 남김
 th = []  # 하루특가는 Threads에도 1개(신청서 서비스 = 텔레그램 채널 + 스레드 자동 게시): 대가성 문구 맨 앞, 500자 안, 채널과 같은 순서, HTML 태그 없음
@@ -608,6 +615,7 @@ def toss_th(url, body=None, headers=None, method=None):
 H.http, H.E["THREADS_TOKEN"], sl, H.time.sleep = toss_th, "tk", H.time.sleep, lambda s: None
 seen.clear(); sent.clear(); H.toss_deals(seen)
 txt = parse_qs(urlsplit([u for u in th if "/threads?" in u][0]).query)["text"][0]
+assert "TOP2\n\n1️⃣ 토스상품3 — 4,000원\nhttps://toss.im/_m/3\n\n2️⃣ 토스상품1 — 2,000원\nhttps://toss.im/_m/1" in txt
 assert txt.startswith(H.TOSS_NOTE) and "TOP2" in txt and txt.index("https://toss.im/_m/3") < txt.index("https://toss.im/_m/1") and "4,000원" in txt and "<" not in txt and len(txt) <= 500
 assert any("threads_publish" in u for u in th) and [m for m, p in sent] == ["sendMessage"]
 def th_fail(url, *a, **k):  # Threads가 막혀도(10/6 같은 계정 잠김) 채널 글은 이미 올라갔으니 다음 실행에 또 안 올림
@@ -634,6 +642,7 @@ seen.clear(); sent.clear(); time.time = lambda: 1791248340; H.toss_deals(seen, T
 time.time = lambda: 1791257400; H.toss_deals(seen, True)  # 12:30
 t = sent[-1][1]["text"]
 assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
+assert "<b>베스트1</b></a>\n💰 <b>6,930원</b> (88%↓) · ⭐ 4.8 (리뷰 1,523)\n👉 개당 99원" in t and len(sent[-1][1]["reply_markup"]["inline_keyboard"]) == 2
 assert len(offered) == 3 and "베스트4" not in str(offered) and "리뷰 4.8점 1,523개" in offered[0] and "tb_1" in seen and "tb_3" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent  # 같은 회차 1번
 offered.clear(); time.time = lambda: 1791271800; H.toss_deals(seen, True)  # 16:30 회차(10/8 하루 3번): 1·3 빠지고 5만 -> 안 고르면 안 올림
@@ -687,6 +696,36 @@ except RuntimeError as e:
     assert "푸드" in str(e) and not seen and not sent
 import inspect; assert 'toss_deals(s, "cat")' in inspect.getsource(H.main)  # 실행 순서에 들어 있음
 assert len(json.load(open("posts.json"))) == n0
+# 5-3e) 반응 좋은 딜 TOP5 묶음(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게'): 12시 = 0~12시, 18시 = 12~18시에 채널에 올린 딜 중 pop 높은 순 5개,
+#       3개 미만이면 안 올림, 회차마다 1번, 제휴 프로그램별 대가성 문구 맨 앞(중복 없이), 배지 줄·단위가격 줄은 이유에서 빠짐, 번호 버튼
+bak, cn = open("posts.json").read(), H.aff_note("https://link.coupang.com/a/x")
+json.dump([{"t": "2026-10-05 23:00", "text": "🔥 [G마켓] 어제딜 (1,000원)", "url": "https://g0", "mid": 9, "pop": 99},
+           {"t": "2026-10-06 09:00", "text": "🔥 [G마켓] 우유 24팩 (12,900원/무료)\n🏆 인기 · 뽐뿌 추천 5\n\n싸다 우유\n💡 단위가격 개당 537원\n\n출처: 뽐뿌",
+            "url": "https://www.ppomppu.co.kr/v?no=1", "mid": 1, "pop": 10, "hot": "뽐뿌 추천 5", "unit": "개당 537원"},
+           {"t": "2026-10-06 10:00", "text": f"{cn}\n\n🔥 [쿠팡] 휴지 30롤 (19,900원/무료)\n\n휴지 최저가\n\n출처: 클리앙", "url": "https://link.coupang.com/a/x", "mid": 2, "pop": 50},
+           {"t": "2026-10-06 11:00", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 계란 30구 (6,900원)\n\n한 판 230원", "url": "https://toss.im/_m/5", "mid": 3, "pop": 30},
+           {"t": "2026-10-06 11:10", "text": f"{cn}\n\n🔥 [쿠팡] 라면 (9,000원)\n\n싸다", "url": "https://link.coupang.com/a/y", "mid": 4, "pop": 1},
+           {"t": "2026-10-06 11:20", "text": "🔥 [G마켓] 사본만 (1,000원)", "url": "https://g1", "mid": None, "pop": 80},  # 채널에 안 나감
+           {"t": "2026-10-06 11:30", "text": "🔥 [쿠팡] 골드박스 (1,000원)", "url": "https://link.coupang.com/a/z", "mid": 5},  # 반응 수치 없음
+           {"t": "2026-10-06 12:30", "text": "🔥 [G마켓] 오후1 (1,000원)", "url": "https://g2", "mid": 6, "pop": 70},
+           {"t": "2026-10-06 13:00", "text": "🔥 [G마켓] 오후2 (2,000원)", "url": "https://g3", "mid": 7, "pop": 5},
+           {"t": "2026-10-06 14:00", "text": "🔥 [G마켓] 오후3 (3,000원)", "url": "https://g4", "mid": 8, "pop": 6},
+           {"t": "2026-10-06 18:00", "text": "🔥 [G마켓] 저녁 (3,000원)", "url": "https://g5", "mid": 10, "pop": 90}], open("posts.json", "w"))  # 18시 글은 18시 회차 밖
+seen, sent[:] = {}, []
+time.time = lambda: 1791252000; H.top_deals(seen); assert not sent and not seen  # 11:00 KST: 12시 전
+time.time = lambda: 1791255900; H.top_deals(seen)  # 12:05
+m, p = sent[-1]; t = p["text"]
+assert m == "sendMessage" and p["chat_id"] == "@ch" and "top_20261006_12" in seen and t.startswith(f"<i>{cn}</i>\n<i>{H.TOSS_NOTE}</i>\n\n🏆 <b>지금 반응 좋은 딜 TOP4</b> (12시)")
+assert t.index("<b>휴지 30롤</b>") < t.index("<b>계란 30구</b>") < t.index("<b>우유 24팩</b>") < t.index("<b>라면</b>") and "어제딜" not in t and "사본만" not in t and "골드박스" not in t and "오후" not in t
+assert '1️⃣ <a href="https://link.coupang.com/a/x"><b>휴지 30롤</b></a>\n💰 <b>19,900원</b>\n👀 분당 조회 50회\n👉 휴지 최저가' in t
+assert '<b>우유 24팩</b></a>\n💰 <b>12,900원</b> · 개당 537원\n👀 뽐뿌 추천 5\n👉 싸다 우유\n\n4️⃣' in t and t.count(cn) == 1
+assert [r[0]["text"] for r in p["reply_markup"]["inline_keyboard"]] == ["1️⃣ 휴지 30롤", "2️⃣ 계란 30구", "3️⃣ 우유 24팩", "4️⃣ 라면"]
+sent.clear(); time.time = lambda: 1791256800; H.top_deals(seen); assert not sent  # 같은 회차 1번
+time.time = lambda: 1791277800; H.top_deals(seen); t = sent[-1][1]["text"]  # 18:10 -> 12~18시만
+assert "TOP3</b> (18시)" in t and t.index("오후1") < t.index("오후3") < t.index("오후2") and "저녁" not in t and "휴지" not in t and not t.startswith("<i>") and "👉" not in t  # 코멘트 없으면 👉 줄 X
+json.dump([{"t": f"2026-10-07 1{k}:00", "text": f"🔥 [G마켓] 다음날{k} (1,000원)", "url": "https://g", "mid": 20 + k, "pop": 9} for k in (2, 3)], open("posts.json", "w"))
+sent.clear(); time.time = lambda: 1791281400 + 86400; H.top_deals(seen); assert not sent and "top_20261007_18" in seen  # 다음 날 19:10(12시 회차 놓침): 12~18시 2개 -> 3개 미만이라 안 올림, 회차는 끝
+open("posts.json", "w").write(bak)
 # 5-3d) 토스 딜 자동 링크(10/9 진우 '토스 딜 직접 추출' -> 기록만 -> '수정하자' -> '수수료 링크 안 붙은 것도 자동으로'): 쉐어링크 없는 최근 3일 [토스] 채널 딜만,
 #       ① 루리웹·클리앙 = 처음 1번 글의 상품 주소를 다시 읽어 발급 ② 토스 API 목록(3일치 모음)에서 이름 겹침 후보 -> Claude 8점 이상만 발급 -> 채널 글 버튼·대가성 문구·
 #       사본 '교체됨'·posts.json 교체(진우 답장과 같은 relink_channel). 못 찾으면 새 후보가 목록에 들어올 때만 다시(본 후보는 다시 안 물음), 찾으면(발급 실패 포함) 끝,
@@ -894,6 +933,27 @@ S.build([{"t": "2026-10-07 15:00", "text": "🔥 [토스] 그제토스 (1,000원
          {"t": "2026-10-09 15:00", "text": "🔥 [쿠팡] 휴지 (1,000원)", "url": "https://buy", "s": 7}], "docs6")
 ts0 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
 assert 'class="grid"' not in ts0 and "💙 토스 딜</h2>" in ts0 and S.CHANNEL_WEB in ts0  # 최근 2일엔 토스 딜이 없음(그제 딜은 제외) -> 추천 버튼만
+
+# 6-6) 홈 '🏆 지금 반응 좋은 딜'(최근 2일, pop 높은 6개, 2개 이상일 때만, 맨 위) + 품목별 칸 '🧻 생필품'·'💄 화장품'(10/9 진우: 최근 3일, 제목 키워드, 최신 6개, 없으면 칸·탭 없음)
+hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
+      {"t": "2026-10-07 10:00", "text": "🔥 [G마켓] 퍼실 세제 2L (9,900원)", "url": "https://g3", "s": 6, "pop": 77},
+      {"t": "2026-10-08 10:00", "text": "🔥 [G마켓] 뷰카 샴푸 3개 (12,900원)", "url": "https://g2", "s": 6},
+      {"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 크린랩 위생백 (3,000원)", "url": "https://g1", "s": 6, "pop": 12.5, "hot": "뽐뿌 추천 3"},
+      {"t": "2026-10-09 11:00", "text": "🔥 [네이버] 퓨어그램 폼클렌징 120ml (2,990원)", "url": "https://n1", "s": 6, "pop": 40},
+      {"t": "2026-10-09 12:00", "text": "🔥 [쿠팡] 아이스크림 24개 (9,900원)", "url": "https://link.coupang.com/a/i", "s": 7},  # '크림'이지만 음식
+      {"t": "2026-10-09 13:00", "text": "🔥 [옥션] 마스크팩 30매 (9,900원)", "url": "https://a1", "s": 6},
+      {"t": "2026-10-09 13:30", "text": "🔥 [옥션] KF94 마스크 100매 (7,700원)", "url": "https://a2", "s": 6},
+      {"t": "2026-10-09 14:00", "text": "📋 오늘의 딜 모아보기 휴지", "url": None}]
+S.build(hp, "docs7"); i7, a7 = open("docs7/index.html").read(), open("docs7/all.html").read()
+hot7, life7, beauty7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("hot", "life", "beauty"))
+assert i7.index('id="hot"') < i7.index('id="toss"') < i7.index('id="life"') < i7.index('id="beauty"') < i7.index('<nav class="tabs"') < i7.index('id="d0"')
+assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and "<b class=hot>🏆 인기</b>" in hot7  # 세제(3일 전)·휴지(4일 전) 제외
+assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
+assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
+assert '#toss">💙 토스</a><a href="https://hotdealpick.kr/#life">🧻 생필품</a><a href="https://hotdealpick.kr/#beauty">💄 화장품</a><a href="https://hotdealpick.kr/#d0">' in i7
+assert 'id="life"' not in a7 and 'id="hot"' not in a7 and "#life" in a7  # 지난 딜 전체엔 칸 없음(탭은 홈 칸으로)
+S.build(hp[2:3] + hp[5:6] + [{**hp[4], "text": "🔥 [네이버] 우유 (2,990원)"}], "docs7"); i7 = open("docs7/index.html").read()
+assert 'id="hot"' not in i7 and 'id="beauty"' not in i7 and "#beauty" not in i7 and 'id="life"' in i7  # 반응 딜 1개·화장품 0개 -> 칸·탭 없음
 
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
