@@ -89,7 +89,7 @@ MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
-EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
+EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사·커뮤니티 핫딜 글이야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
 회사 소식·실적·협약·물류·사회공헌·채용·오프라인 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이는 빼. 글에 적힌 사실만 써(지어내지 마).
 q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
@@ -626,15 +626,18 @@ def events(seen):
             seen[key] = time.time()
 
 
-def cp_events(seen):
-    """쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴시스 산업 RSS의 쿠팡 기사(2일 안, 뉴스룸은 GitHub 서버 차단) -> Claude가 고객 할인 행사만
+def cp_events(seen, deals=()):
+    """쿠팡 행사 자동 게시(10/9 진우 '로켓프레시데이 등 각종 데이 띄워줘' -> 공용 링크로 바로): 뉴시스 산업 RSS의 쿠팡 기사(2일 안, 뉴스룸은 GitHub 서버 차단)
+    + 기사 없는 행사도(10/9 진우): 이번 실행에 읽은 뽐뿌·루리웹·클리앙 글 중 제목에 쿠팡·행사 낱말이 있는 글 -> Claude가 고객 할인 행사만
     골라 행사명·기간·혜택·검색어로 채널에 바로. 버튼 = 공용 파트너스 링크(쿠팡 홈, 프레시 행사는 로켓프레시 — API 승인 전엔 행사마다 링크를 못 만듦, 24시간 안 쿠팡 구매는 다 실적).
     관리자 사본에 행사 페이지 파트너스 링크를 답장하면 버튼 교체(딜 사본과 같은 흐름). posts.json(사이트·모아보기)엔 안 남김(딜 아님)."""
     since = time.time() - 2 * 86400  # seen은 3일 뒤 지워짐 -> 그보다 짧게(다시 올리지 않게)
     new = [(it.findtext("link", "").strip(), it.findtext("title", "").strip(), parsedate_to_datetime(it.findtext("pubDate")).timestamp(),
             " ".join(html.unescape(re.sub(r"<[^>]+>", " ", it.findtext("description", ""))).split()))
            for it in ET.fromstring(http(CP_NEWS)).iter("item")]
-    new = [x for x in new if "쿠팡" in x[1] and x[2] > since and "cn_" + x[0] not in seen]
+    new += [(d["url"], d["title"], time.time() - d["age"] * 60, d["desc"]) for d in deals if re.search(r"데이|기획전|페스타|세일|위크|행사|쿠폰|이벤트", d["title"])]
+    posted = "\n".join(p["text"] for p in load(POSTS, [])[-80:])  # 딜로 이미 올라간 글은 빼기
+    new = [x for x in new if "쿠팡" in x[1] and x[2] > since and "cn_" + x[0] not in seen and x[1][:25] not in posted]
     if not new:
         return
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
@@ -651,6 +654,7 @@ def cp_events(seen):
                reply_markup={"inline_keyboard": [[{"text": "🛒 쿠팡 바로가기", "url": CP_FRESH if "프레시" in p["q"] else CP_HOME}]]})
         if m:  # 실패하면 다음 실행에 다시
             done.add(link)
+            seen.update({d["id"]: time.time() for d in deals if d["url"] == link})  # 커뮤니티 글이면 딜로 또 올리지 않게
             tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"], reply_markup={"inline_keyboard": [
                 [{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}], [{"text": "📰 보도자료", "url": link}],
                 [{"text": "쿠팡 행사 · 행사 페이지 파트너스 링크 답장하면 버튼 교체(선택)", "callback_data": "-"}]]})
@@ -1175,7 +1179,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, cp_events, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
+    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
         try:
             step(seen)
         except Exception as e:

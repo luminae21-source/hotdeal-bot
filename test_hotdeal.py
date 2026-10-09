@@ -525,7 +525,18 @@ H.tg = tg5b; sent.clear(); H.cp_events(seen); assert "cn_https://news.coupang.co
 cn.insert(0, (6, "[보도자료] 쿠팡 로켓프레시데이", "Fri, 09 Oct 2026 00:10:00 +0000", "20일부터"))
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "q": "로켓프레시데이", "hook": "20일부터", "comment": "c"}]
 sent.clear(); H.cp_events(seen); assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH != H.CP_HOME  # 프레시 행사 = 로켓프레시 링크
-assert "goldbox, cp_events, toss_deals" in inspect.getsource(H.main)
+pjb = open("posts.json").read(); json.dump([{"t": "2026-10-09 08:00", "text": "🔥 [쿠팡] 이미 딜로 올린 쿠팡 위크 쿠폰 (1원)", "url": "u"}], open("posts.json", "w"), ensure_ascii=False)
+cdeals = [{"id": "ppomppu_9", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=9", "title": "[쿠팡] 로켓프레시 데이 최대 50% (10/20~26)", "desc": "와우 회원 쿠폰", "age": 5},
+          {"id": "ppomppu_10", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=10", "title": "[쿠팡] 신라면 40봉 (19,900원)", "desc": "", "age": 5},
+          {"id": "ruliweb_1", "url": "https://bbs.ruliweb.com/market/board/1020/read/1", "title": "[G마켓] 빅스마일데이 시작", "desc": "", "age": 5},
+          {"id": "ppomppu_11", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=11", "title": "[쿠팡] 이미 딜로 올린 쿠팡 위크 쿠폰 (1원)", "desc": "", "age": 5},
+          {"id": "ppomppu_12", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=12", "title": "[쿠팡] 사흘 전 브랜드데이", "desc": "", "age": 4000}]  # 2일 지난 글 제외
+eprompts.clear(); H.ai_pick = lambda prompt, lines: eprompts.append(lines) or [{"i": 0, "score": 8, "q": "로켓프레시데이", "hook": "10/20~26", "comment": "c"}]
+sent.clear(); H.cp_events(seen, cdeals)
+assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
+assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
+open("posts.json", "w").write(pjb)
+assert "goldbox, lambda s: cp_events(s, deals), toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
