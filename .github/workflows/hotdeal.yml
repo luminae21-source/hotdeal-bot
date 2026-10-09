@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main                # 대기열에서 기다린 실행도 최신 main으로(기본 = 실행 예약 때 커밋 -> 앞 실행의 사이트 커밋과 충돌해 push 실패, 10/9 #376)
       - uses: actions/cache@v5     # 이미 본 글 목록(seen.json) + 카드용 한글 폰트 + 토스 API 토큰(toss.json, 1년짜리) + 릴스 배경음악(music/, Pixabay에서 1번만 받음) 유지
         with:
           path: |
