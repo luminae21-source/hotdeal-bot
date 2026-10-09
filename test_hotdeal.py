@@ -727,7 +727,7 @@ json.dump([{"t": f"2026-10-07 1{k}:00", "text": f"🔥 [G마켓] 다음날{k} (1
 sent.clear(); time.time = lambda: 1791281400 + 86400; H.top_deals(seen); assert not sent and "top_20261007_18" in seen  # 다음 날 19:10(12시 회차 놓침): 12~18시 2개 -> 3개 미만이라 안 올림, 회차는 끝
 open("posts.json", "w").write(bak)
 # 5-3d) 토스 딜 자동 링크(10/9 진우 '토스 딜 직접 추출' -> 기록만 -> '수정하자' -> '수수료 링크 안 붙은 것도 자동으로'): 쉐어링크 없는 최근 3일 [토스] 채널 딜만,
-#       ① 루리웹·클리앙 = 처음 1번 글의 상품 주소를 다시 읽어 발급 ② 토스 API 목록(3일치 모음)에서 이름 겹침 후보 -> Claude 8점 이상만 발급 -> 채널 글 버튼·대가성 문구·
+#       ① 루리웹·클리앙 = 처음 1번 글의 상품 주소를 다시 읽어 발급 ② 토스 API 목록(1일치 모음, 쉐어링크 FAQ 권장)에서 이름 겹침 후보 -> Claude 8점 이상만 발급 -> 채널 글 버튼·대가성 문구·
 #       사본 '교체됨'·posts.json 교체(진우 답장과 같은 relink_channel). 못 찾으면 새 후보가 목록에 들어올 때만 다시(본 후보는 다시 안 물음), 찾으면(발급 실패 포함) 끝,
 #       목록 호출은 카테고리·하루특가 하루 1번·베스트 1시간 1번
 import io, contextlib
@@ -823,12 +823,12 @@ log = relink_run()
 assert mcalls == ["/products/best-selling?size=100", "/links", "/links"], mcalls  # 베스트만 다시(카테고리·하루특가는 하루 1번)
 assert "제주 극조생감귤 10kg (12,900원/무배) -> 제주 극조생 감귤 10kg 12,900원 (id 42, 9점) | 링크 교체 | 다시 · 후보 1/" in log, log  # 못 찾은 딜 = 새 후보만 다시 물음
 assert [x[1] for x in mprompts] == [["제주 극조생 감귤 10kg | 12,900원"], ["아빠표 구운계란 중란 30구 2판 | 16,900원"]]  # 본 후보(5kg)는 다시 안 물음
-assert "(id 71, 9점) | 링크 교체" in log and sorted(p["message_id"] for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL) == [12, 22]  # 베스트에서 빠진 계란도 3일 모음에서 찾음
+assert "(id 71, 9점) | 링크 교체" in log and sorted(p["message_id"] for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL) == [12, 22]  # 베스트에서 빠진 계란도 1일 모음에서 찾음
 assert "진라면" not in log and "전혀 다른" not in log  # 새 후보 없는 딜 = 조용히
-time.time = lambda: now + 3 * 86400 + 7200
+time.time = lambda: now + 86400 + 7200
 for k in ml: ml[k] = []
 mp.append({"t": kt(0), "text": "🔥 [토스] 모나리자 에코 미용티슈 300매 12입 (9,990원)", "url": pp + "10", "mid": 23, "cp": 123}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
-assert "후보 0/0" in relink_run() and seen["tosscache"]["items"] == []  # 3일 지난 목록 상품은 버림
+assert "후보 0/0" in relink_run() and seen["tosscache"]["items"] == []  # 1일 지난 목록 상품은 버림(쉐어링크 FAQ '가능한 한 1일 이내')
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
 assert "toss_relink, lambda s: digest" in inspect.getsource(H.main)

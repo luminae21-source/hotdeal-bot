@@ -786,7 +786,7 @@ def toss_relink(seen):
     ② 그 외(뽐뿌는 서버 차단이라 상품 주소를 못 읽음) = 토스 API 목록(하루특가·최상위 카테고리별 베스트 100·베스트 100)에서 찾기 — 검색 API가 없어서 목록 대조:
     이름 겹침 후보 8개 -> Claude가 같은 상품인지 확인(8점 이상만, 용량·수량 다르면 X). 10/9 기록만 해 본 첫 실행 11개 중 6개 찾음·6개 모두 같은 상품 -> '수정하자'로 교체.
     10/9 진우 '수수료 링크 안 붙은 것도 자동으로': 못 찾은 딜은 3일 동안 새 후보가 목록에 들어올 때마다 다시 확인(이미 본 후보는 Claude에 다시 안 물음),
-    목록은 3일치를 모아 둠(베스트 순위에서 빠진 상품도 대조 — 10/9 계란·비타500). 찾으면(발급 실패 포함) 끝, 못 찾으면 지금처럼 사본 답장.
+    목록은 1일치를 모아 둠(베스트 순위에서 빠진 상품도 하루 동안은 대조 — 10/9 계란·비타500. 3일 -> 1일: 쉐어링크 FAQ '저장·캐싱은 가능한 한 1일 이내'). 찾으면(발급 실패 포함) 끝, 못 찾으면 지금처럼 사본 답장.
     목록은 seen에 저장해 재사용(문서 권장, 일 상한 10,000개): 카테고리·하루특가 = 하루 1번(9시 갱신), 베스트 = 1시간 1번(못 찾은 딜이 남아 있을 때만)."""
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 86400))
     todo = [p for p in load(POSTS, []) if HAS_TOSS and p["t"] >= since and not toss_share(p.get("url")) and p.get("mid")
@@ -802,7 +802,7 @@ def toss_relink(seen):
     if seen.get("tossget_best", {}).get("h") != hour:
         got += toss("/products/best-selling?size=100")["items"]
         seen["tossget_best"] = {"t": now, "h": hour}
-    cache = {x[0]: x for x in seen.get("tosscache", {}).get("items", []) if x[3] > now - 3 * 86400}  # [id, 이름, 가격, 마지막으로 본 시각]
+    cache = {x[0]: x for x in seen.get("tosscache", {}).get("items", []) if x[3] > now - 86400}  # [id, 이름, 가격, 마지막으로 본 시각]. 1일(쉐어링크 FAQ: API 데이터 저장·캐싱은 가능한 한 1일 이내, 10/9)
     cache.update({x["tacaItemId"]: [x["tacaItemId"], x["displayName"], x["displayPrice"], now] for x in got})
     items = list(cache.values())
     seen["tosscache"] = {"t": now, "items": items}
