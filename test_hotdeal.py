@@ -127,6 +127,8 @@ assert H.plain("https://link.coupang.com/a/x") == "https://www.coupang.com/vp/pr
 assert H.plain("https://naver.me/Ab") == "https://smartstore.naver.com/s/products/1"  # 남의 쇼핑커넥트 -> 상품 주소만
 assert H.plain("https://link.coupang.com/a/dead") is None and H.plain("javascript:void(0)") is None  # 원래 주소 모르면 남의 링크 안 씀
 assert H.plain("https://toss.im/_m/dead") is None and H.plain("https://toss.shopping/_m/dead") is None  # 토스 단축도 풀리지 않으면 None
+hops["https://oy.run/other"] = "https://m.oliveyoung.co.kr/m/goods/getGoodsDetail.do?goodsNo=A000000223414&dispCatNo=9&trackingCd=Best_Sellingbest&t_page=x"
+assert H.plain("https://oy.run/other") == H.plain("https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000223414&trackingCd=Today_Special") == "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A000000223414"  # 남의 큐레이터 링크·추적값 -> 상품 번호만
 assert H.plain("https://토스") is None and H.plain("https://toss") is None and H.plain("https://www.11st.co.kr:443/p/1") == "https://www.11st.co.kr:443/p/1"  # 글자만 적힌 출처 = 주소 아님(10/9 22:40 버튼 400)
 H.location = loc
 import http.server, threading
@@ -1152,7 +1154,33 @@ sent.clear(); H.coupang_remind(seen); assert not sent  # 같은 회차 1번
 time.time = lambda: 1791259200 + 6 * 3600 + 300; H.coupang_remind(seen); assert len([1 for m, _ in sent if m == "copyMessage"]) == 1  # 19:05 다시
 pp2 = json.load(open("posts.json")); pp2[0]["url"] = "https://link.coupang.com/a/y"; json.dump(pp2, open("posts.json", "w"))
 sent.clear(); time.time = lambda: 1791259200 + 86400 + 300; H.coupang_remind({}); assert not sent  # 다음 날: 오늘 쿠팡 딜 없음
-assert "coupang_remind, report" in inspect.getsource(H.main)
+assert "coupang_remind, oy_claim, report" in inspect.getsource(H.main)
+# 9-6) 올리브영 쇼핑 큐레이터(10/10 진우 가입): oy.run = 공식 광고 문구 맨 앞, 사본 안내, 매달 21일~말일 10시 이후 정산 신청 알림 1번
+assert H.OY_NOTE == "이 포스팅은 올리브영 쇼핑 큐레이터 활동의 일환으로, 구매 시 일정 금액의 수수료를 제공받습니다." and H.aff_note("https://oy.run/RGwi61ygSEUlAk") == H.OY_NOTE
+assert H.with_note("🔥 [올리브영] 세럼", [], "https://oy.run/x")[0].startswith(H.OY_NOTE + "\n\n🔥") and S.aff("https://oy.run/x") and S.title_of(H.OY_NOTE + "\n\n🔥 [올리브영] 세럼") == "[올리브영] 세럼"
+assert H.store_info("[올리브영]메디힐 세럼 1+1 (24,200원/무료)") == H.STORES["올리브영"] and H.store_info("세럼", "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A1") == H.STORES["올리브영"]
+assert H.store_info("[네이버][올리브영기프트카드] 5만원권") == H.STORES["네이버"] and H.is_oy("[올영] 립밤") and not H.is_oy("[네이버]올리브영 초콜렛")
+assert "[올리브영] 딜 comment는" in H.DEAL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - is_oy(" in inspect.getsource(H.main)  # 사실만·1점 낮춤
+oyh = [{"board": "뽐뿌", "hits": "댓글0·조회3000·추천5·비추0", "age": 60, "title": t} for t in ("[올리브영] 세럼", "[G마켓] 우유")]
+H.mark_hot(oyh); assert not any(k in oyh[0] for k in ("hot", "pop", "vpm", "rec")) and oyh[1]["hot"] and oyh[1]["pop"]  # 올영은 추천·반응 표시 X
+sent.clear(); H.post_or_draft({"title": "[올리브영]다슈 립밤 4g (8,820원)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}, "8,820원, 2만 원 이상 무료배송", 6, "다슈 립밤")
+cm = [p for m, p in sent if m == "copyMessage"][0]["reply_markup"]["inline_keyboard"]
+assert cm[1] == [{"text": "📋 상품명 복사", "copy_text": {"text": "다슈 립밤"}}] and cm[2][0]["text"].startswith("💰 올리브영 쇼핑 큐레이터")
+pjo = json.load(open("posts.json")); pjo[-1]["text"] = "🔥 [올리브영]다슈 립밤 4g (8,820원)"; json.dump(pjo, open("posts.json", "w"), ensure_ascii=False)  # 가짜 tg는 글 내용을 안 돌려줌
+assert H.pending_copy("https://oy.run/abc") == pjo[-1] and H.pending_copy("https://naver.me/x") is None  # 답장 없이 링크만 보내도 그 올영 사본으로(다른 프로그램 링크는 X)
+seen, sent[:] = {}, []
+for dt, want in ((14 * 86400, 0), (15 * 86400 - 4 * 3600, 0), (15 * 86400, 1), (15 * 86400 + 3600, 1)):  # 10/20 13시·10/21 9시·13시·14시(같은 달 1번)
+    time.time = lambda dt=dt: 1791259200 + dt; H.oy_claim(seen); assert len(sent) == want, (dt, sent)
+assert sent[0][1]["text"] == H.OY_CLAIM and "oyclaim_202610" in seen
+sent.clear(); time.time = lambda: 1791259200 + 20 * 86400; H.oy_claim({}); assert len(sent) == 1  # 10/26 = 아직 기간
+sent.clear(); time.time = lambda: 1791259200 + 26 * 86400; H.oy_claim({}); assert not sent  # 11/1 = 다음 기간 전
+time.time = lambda: 1791291600  # 10/6 22:00 KST
+oyp = [{"t": "2026-10-06 10:00", "text": f"{H.OY_NOTE}\n\n🔥 [올리브영] 세럼 (1원)\n\n1+1 구성", "url": "https://oy.run/x"}, {"t": "2026-10-06 11:00", "text": "🔥 [G마켓] 우유 (1원)\n\n싸요", "url": "https://a"}]
+d0 = H.draft; H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}; sent.clear(); H.digest({}, oyp); H.draft = d0
+dg = [p for m, p in sent if m == "draft"][0]
+assert f'href="{H.SITE}p/0.html">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
+bt = H.blog_text(oyp, time.gmtime(1791291600 + 9 * 3600))
+assert bt.split("\n\n")[2] == H.OY_NOTE and "👉 https://oy.run/x" in bt  # 블로그: 올영 문구 본문 맨 위(코멘트 있는 글이라 링크 그대로)
 open("posts.json", "w").write(pj); H.tg, time.time = tg0, tt5
 # 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
 kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))

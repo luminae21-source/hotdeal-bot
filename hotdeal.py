@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -38,13 +38,15 @@ AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을
 TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
 NAVER_NOTE = "이 포스팅은 네이버 쇼핑 커넥트 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다."  # 네이버 안내 문구 그대로(변형·누락 시 패널티), 글 맨 앞
 LP = "💰 링크프라이스 최대 {} · 딥링크 만들어 답장"
+OY_NOTE = "이 포스팅은 올리브영 쇼핑 큐레이터 활동의 일환으로, 구매 시 일정 금액의 수수료를 제공받습니다."  # 올리브영 활동 가이드 '반드시 표기해야 할 광고 표기 문구' 그대로(FAQ는 '제공 받습니다'로 띄어 씀 — 가이드·맞춤법 쪽으로), 제목·서두에(10/10)
 STORES = {"쿠팡": "💰 쿠팡 파트너스 · 링크 만들어 답장", "토스": "💰 토스 쉐어링크 · 링크 만들어 답장",  # 뽐뿌 제목 [쇼핑몰] -> 초안 안내 버튼
           "g마켓": LP.format("0.6%"), "지마켓": LP.format("0.6%"), "옥션": LP.format("0.6%"), "롯데온": LP.format("1.4%"),
           "롯데on": LP.format("1.4%"), "하이마트": LP.format("1.26%"), "이마트": LP.format("1%"),  # 하이마트(10/5 자동 승인)는 '이마트'보다 먼저(글자 포함 관계)
           # ⏳ = 아직 링크를 못 만드는 몰 -> 사본 안 보냄(💰만 보냄). 승인 나면 LP.format("1.05%")·LP.format("6.3%")·LP.format("3.18%")로 바꾸기
           "11번가": "⏳ 11번가 링크프라이스 승인 대기 · 지금은 수수료 0", "알리": "⏳ 알리 링크프라이스 승인 대기(10/5 신청) · 지금은 수수료 0",
           "오늘의집": "⏳ 오늘의집 링크프라이스 승인 대기(10/5 신청) · 지금은 수수료 0",
-          "네이버": "💰 네이버 쇼핑커넥트 · 상품 검색해 링크 발급 후 답장"}  # 10/5 가입. 활동 제한 채널(일베·오유·워마드·다모앙·더쿠·일부 카페)에 우리 채널 없음 -> 허용. 판매자가 참여한 상품만 링크 발급 가능
+          "네이버": "💰 네이버 쇼핑커넥트 · 상품 검색해 링크 발급 후 답장",  # 10/5 가입. 활동 제한 채널(일베·오유·워마드·다모앙·더쿠·일부 카페)에 우리 채널 없음 -> 허용. 판매자가 참여한 상품만 링크 발급 가능
+          "올리브영": "💰 올리브영 쇼핑 큐레이터 · 앱에서 링크 만들어 답장(건기식·의료기기는 안 됨)"}  # 10/10 가입. 기프트카드·건기식·의료기기·본인 구매는 수익 0(FAQ)
 # ponytail: 수수료율은 2026-10-05 링크프라이스 화면 기준 고정값. 바뀌면 여기만 고치면 됨
 LP_AID = "A100708461"  # 링크프라이스 사이트 코드 (모든 링크프라이스 링크에 그대로 보이는 공개 값)
 LP_SEARCH = {  # 링크프라이스 승인 몰: 제목 [쇼핑몰] -> (머천트, 표시 이름, 검색 주소). 상품 주소는 뽐뿌 차단으로 못 얻어서 검색 결과로 연결
@@ -58,7 +60,7 @@ NAVER_SC = "https://brandconnect.naver.com/1003150047355424/affiliate/products" 
 LP_API = "https://api.linkprice.com/ci/service/custom_link_xml?a_id={}&mode=json&url={}"  # 링크프라이스 딥링크 API: 승인된 몰이면 S + 링크, 아니면 F(승인거부·유효하지 않은 URL)
 LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # API 장애 때만 쓰는 승인 몰 목록(직접 딥링크)
 HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
-               "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트", "e-himart.co.kr": "하이마트", "ohou.se": "오늘의집"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
+               "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트", "e-himart.co.kr": "하이마트", "ohou.se": "오늘의집", "oliveyoung.co.kr": "올리브영"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
 
@@ -70,6 +72,7 @@ warn: 사기 전에 확인할 점 1개, 16자 이내(예: "쿠폰 1인 1회", "�
 DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 딜 중 구독자가 실제로 살 만한 것만 골라 pick 도구로 반환해.
 점수(1~10) 기준: 가격 매력, 생필품/대중성, 커뮤니티 반응(조회 대비 추천·댓글). 비추천이 많거나 품절·종료·가격오류 언급이 있으면 제외.
 comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품 효능 언급 금지, 이모지 최대 1개.
+[올리브영] 딜 comment는 가격·용량·구성·조건만: 후기·체험담·글쓴이 경험, '추천'·'좋아요'·'쟁여두기' 같은 권유, 효능·효과, '최고'·'100%' 같은 절대 표현 금지(올리브영 쇼핑 큐레이터 정책).
 q: 쇼핑몰 검색창에 넣을 짧은 검색어(브랜드+상품명+핵심 용량, 수량·가격·쿠폰 문구 빼고 20자 안팎).
 REEL_RULES
 같은 상품이 여러 커뮤니티([뽐뿌]·[루리웹]·[클리앙])에 올라왔으면 하나만 골라.
@@ -223,6 +226,10 @@ def mark_hot(deals):
     for d in deals:
         if num(d, "추천") >= 3:
             d["hot"] = f"{d['board']} 추천 {num(d, '추천')}"
+    for d in deals:  # 올리브영 딜은 '추천'·반응 수치 표시 안 함(쇼핑 큐레이터 정책: 사용자 후기·추천 표현 금지) -> 배지·인기 칸·TOP 글에서 빠짐
+        if is_oy(d["title"]):
+            for k in ("hot", "pop", "vpm", "rec"):
+                d.pop(k, None)
 
 
 def ai_pick(prompt, lines):
@@ -312,11 +319,13 @@ def plain(url, hops=4):
     if host in TOSS_HOSTS:  # 남의 토스 단축 쉐어링크(/_m/) -> 따라가서 상품 주소(/t/번호)만. 상품 주소로 안 풀리면 None(남의 링크 안 씀, 10/9)
         u = plain(location(url), hops - 1) if hops else None
         return u if u and re.fullmatch(r"https://toss\.shopping/t/\d+", u) else None
-    if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + NAVER_HOSTS:
+    if host in ("link.coupang.com", "coupa.ng") or host in AFF_HOSTS + NAVER_HOSTS + OY_HOSTS:
         return plain(location(url), hops - 1) if hops else None
     if host.endswith("coupang.com"):  # lptag·subid 등 추적값 빼고 상품·옵션만
         keep = {k: v[0] for k, v in qs.items() if k in ("itemId", "vendorItemId")}
         return urllib.parse.urlunsplit(("https", "www.coupang.com", p.path, urllib.parse.urlencode(keep), ""))
+    if host.endswith("oliveyoung.co.kr") and "goodsNo" in qs:  # 상품 번호만(추적값·남의 큐레이터 표시 빼고)
+        return "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=" + urllib.parse.quote(qs["goodsNo"][0])
     if host.endswith(("smartstore.naver.com", "brand.naver.com")):  # 상품은 경로에 있고 쿼리는 추적값(남의 쇼핑커넥트 등)
         return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
     return url
@@ -410,6 +419,11 @@ def store_tag(title):
 PRICE_TAIL = r"\s*\([^()]*(원|무료|무배|배송)[^()]*\)\s*$"  # 뽐뿌 제목 끝 (가격/배송)
 
 
+def is_oy(title):
+    """[올리브영]·[올영] 딜(올리브영 쇼핑 큐레이터 링크 대상)."""
+    return store_tag(title) in ("올리브영", "올영")
+
+
 def keyword(title):
     """Claude 검색어가 없을 때: 제목에서 [쇼핑몰]·끝의 (가격/배송) 떼고 40자."""
     t = re.sub(r"^\s*\[[^\]]*\]\s*", "", title)
@@ -483,6 +497,9 @@ def post_or_draft(d, comment, score, q=None, extra=None):
         elif info.startswith("💰 네이버"):  # 상품명 복사 -> 쇼핑커넥트 상품 찾기 검색창에 붙여넣기 -> [링크 발급] -> 링크만 봇에 보내기
             kb.insert(1, [{"text": "📋 상품명 복사", "copy_text": {"text": (q or keyword(d["title"]) or d["title"])[:256]}},
                           {"text": "🔗 쇼핑커넥트 열기", "url": NAVER_SC}])
+        elif info.startswith("💰 올리브영"):  # 앱 큐레이터에서 상품 검색 -> 링크 만들기 -> oy.run 링크 답장
+            kb.insert(1, [{"text": "📋 상품명 복사", "copy_text": {"text": (q or keyword(d["title"]) or d["title"])[:256]}}]
+                      + ([{"text": "🛒 올영 상품 열기", "url": url}] if url != d["url"] else []))
         elif url != d["url"]:  # 상품 주소를 알면: 눌러서 쇼핑앱 열기 -> 공유 -> 제휴 링크 복사 -> 답장 (뽐뿌 글 거칠 필요 없음)
             kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
         cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
@@ -492,7 +509,7 @@ def post_or_draft(d, comment, score, q=None, extra=None):
 
 def pending_copy(link):
     """답장 없이 제휴 링크만 보냈을 때 바꿀 채널 글: 같은 프로그램(쿠팡·토스·네이버) 사본 중 아직 안 바꾼 가장 최근 글(24시간 안)."""
-    shop = {DISCLOSURE: "쿠팡", TOSS_NOTE: "토스", NAVER_NOTE: "네이버"}.get(aff_note(link))
+    shop = {DISCLOSURE: "쿠팡", TOSS_NOTE: "토스", NAVER_NOTE: "네이버", OY_NOTE: "올리브영"}.get(aff_note(link))
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
     return next((p for p in reversed(load(POSTS, [])) if shop and p.get("cp") and p.get("mid") and p["t"] >= since
                  and not aff_note(p.get("url") or "") and store_info(title_of(p["text"]), p.get("url")).startswith("💰 " + shop)), None)
@@ -502,7 +519,7 @@ def aff_note(url):
     """제휴 링크면 그 프로그램의 대가성 문구, 일반 쇼핑몰 주소면 ''."""
     host = urllib.parse.urlsplit(url).netloc
     return (DISCLOSURE if host == "link.coupang.com" else TOSS_NOTE if toss_share(url) else NAVER_NOTE if host in NAVER_HOSTS
-            else AFF_NOTE if host in AFF_HOSTS else "")
+            else OY_NOTE if host in OY_HOSTS else AFF_NOTE if host in AFF_HOSTS else "")
 
 
 def with_note(text, ents, url):
@@ -862,7 +879,8 @@ def digest(seen, posts):
         if "blog_" + key[7:] not in seen:
             blog()
         return
-    rows = [f"{n}. <a href=\"{esc(p['url'])}\">{esc(title_of(p['text']))}</a>" for n, p in enumerate(todays, 1)]
+    rows = [f"{n}. <a href=\"{esc(f'{SITE}p/{posts.index(p)}.html' if aff_note(p['url'] or '') == OY_NOTE else p['url'])}\">{esc(title_of(p['text']))}</a>"  # 올영: 링크만 나열 금지(FAQ) -> 사이트
+            for n, p in enumerate(todays, 1)]
     text = (f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows)
             + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick")
     if draft(text):
@@ -979,6 +997,18 @@ def ig_publish(seen):
         tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료 (instagram.com/hotdealpick.kr)")
 
 
+OY_CLAIM = ("📅 올리브영 쇼핑 큐레이터 수익금 지급 신청 기간이에요(21일~말일)\n앱 → 큐레이터 대시보드 → 지급 신청. 확정 수익 첫 지급 5천 원·이후 1만 원 이상일 때.\n"
+            "첫 지급이면 최종 승인 신청도 같이(등록 채널 5개 링크·캡처 + 게시물 예시). 신청 안 하면 6개월 뒤 소멸.")
+
+
+def oy_claim(seen):
+    """매달 21일~말일 10시 이후 1번: 올리브영 큐레이터 수익금 지급 신청 알림(직접 신청해야 지급 — FAQ, 10/10)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    key = time.strftime("oyclaim_%Y%m", kst)
+    if kst.tm_mday >= 21 and kst.tm_hour >= 10 and key not in seen and tg("sendMessage", chat_id=ADMIN, text=OY_CLAIM):
+        seen[key] = time.time()
+
+
 def blog_text(todays, kst):
     """네이버 블로그에 그대로 복붙할 제목+본문 (일반 텍스트, 링크 그대로 노출, 대가성 문구 포함)."""
     title = f"{kst.tm_mon}월 {kst.tm_mday}일 핫딜 모음 | {title_of(todays[0]['text'])}" + (f" 외 {len(todays) - 1}건" if len(todays) > 1 else "")
@@ -986,7 +1016,8 @@ def blog_text(todays, kst):
     for n, p in enumerate(todays, 1):
         t = title_of(p["text"])
         items.append(f"{n}. {t}\n{comment_of(p['text']).split(chr(10))[0]}\n👉 {p['url'] or SITE}")
-    return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + "\n\n".join(items)
+    notes = "\n".join(n for n in dict.fromkeys(aff_note(p["url"] or "") for p in todays) if n in (OY_NOTE, NAVER_NOTE))  # 본문 맨 위 필수인 프로그램
+    return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + (notes + "\n\n" if notes else "") + "\n\n".join(items)
             + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
             + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
@@ -1230,7 +1261,7 @@ def main():
                 seen[dkey(d["title"])] = time.time()
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
-        good = [p for p in picks if p["score"] >= MIN_SCORE]
+        good = [p for p in picks if p["score"] >= MIN_SCORE - is_oy(new[p["i"]]["title"])]  # 올리브영은 1점 낮춰도(10/10 쇼핑 큐레이터 — 뽐뿌에 주 2~3개인데 6점 미만으로 다 빠지던 것)
         if not good and not held and picks and quiet():
             best = max(picks, key=lambda p: p["score"])
             good = [best] if best["score"] >= FILL_SCORE else []
@@ -1241,7 +1272,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, report):
+    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), toss_relink, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:

@@ -70,6 +70,7 @@ def page(title, body, desc="", canonical=""):
 
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
+OY_HOSTS = ("oy.run",)  # 올리브영 쇼핑 큐레이터 링크(10/10 진우 가입, 앱에서 발급)
 AFF_HOSTS = ("click.linkprice.com", "lpweb.kr", "linkmoa.kr", "lase.kr", "bestmore.net", "newtip.net", "s.click.aliexpress.com")  # 쿠팡(link.coupang.com) 외 제휴 링크 도메인
 
 
@@ -94,7 +95,7 @@ def toss_share(url):
 def aff(url):
     """제휴(수수료) 링크인지: 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트·링크프라이스 등."""
     host = urllib.parse.urlsplit(url or "").netloc
-    return host == "link.coupang.com" or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS
+    return host == "link.coupang.com" or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
 
 
 def day_deals(posts, day):
