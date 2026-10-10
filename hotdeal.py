@@ -98,6 +98,9 @@ BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(
 믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
 """
+# 10/10 진우 '기준만 완화': 진우가 보낸 토스 베스트·하루특가 22개를 쿠팡 같은 상품과 비교하니 전부 토스가 쌌는데 봇은 일부만 골랐음
+TOSS_EASE = "토스 상품은 쿠팡 같은 상품보다 싼 경우가 많아: 단위가격·구성·리뷰로 봐서 시중가보다 비싸 보이거나 비대중적인 것만 빼고, 대중적인 생필품·식품이면 골라.\n"
+BEST_PROMPT += TOSS_EASE
 MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
@@ -792,7 +795,7 @@ def toss_deals(seen, best=False):
     else:
         raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen}.values())  # 카테고리 겹친 상품은 1번만
-    picks = items and ai_pick(BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가"),
+    picks = items and ai_pick(BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])[:3 if best else 5]
     rows, plain = [], []
