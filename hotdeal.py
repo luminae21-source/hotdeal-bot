@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -466,12 +466,6 @@ def lp_search(title, q=None):
     return lp_link(m, base + urllib.parse.quote(q or keyword(title))), name
 
 
-def buy_label(title):
-    """구매 버튼에 가격(10/10 진우 'UI 편하게' → 텔레그램 글은 가격·구매 먼저): '[쿠팡] 휴지 (9,900원/무료)' -> '🛒 9,900원 구매하기'. 가격 모르면 예전 문구."""
-    m = re.search(r"\d[\d,]*\s*원", parse(title)[2])
-    return f"🛒 {m.group(0).replace(' ', '')} 구매하기" if m else "🛒 구매하러 가기"
-
-
 def deal_post(d, comment, q=None, extra=None):
     """-> (본문, 버튼 링크, 버튼 이름). 상품 주소가 있으면 쿠팡 API·링크프라이스 상품 딥링크 > 링크프라이스 검색 링크
     > 상품 페이지(제휴 없음, 관리자 사본으로 수동) > 그 몰 검색 결과(MALL_SEARCH, 10/10~) > 원글. 제휴 링크면 대가성 문구를 맨 앞에.
@@ -613,7 +607,7 @@ def admin_deal(lines, link, mid):
            link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_label(title), "url": link}]]})
     if not m:
         return False
-    record(m.get("text", ""), m.get("entities", []), link, m.get("message_id"), p["score"], {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
+    record(m.get("text", ""), m.get("entities", []), link, m.get("message_id"), p["score"], {**{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}, "own": 1})  # own: 진우가 보낸 링크 -> Threads 엄선에서 안 빠짐
     tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid}, text=f"✅ 채널에 올림 (Claude {p['score']}점{' · 특가로는 약함 표시' if weak else ''})",
        reply_markup={"inline_keyboard": [[{"text": "📢 채널 글", "url": post_url(m["message_id"])}]]})
     return True
@@ -730,7 +724,7 @@ def events(seen):
         if m:
             seen[key] = time.time()
             if ev.get("deal"):  # Claude가 예약한 상품 딜(10/10 진우 '쓰레드에 업로드 되게') -> posts.json = 사이트·모아보기·Threads에도
-                record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag")})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
+                record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag"), "own": 1})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
                 tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
 
@@ -1198,12 +1192,26 @@ def threads(seen):
     json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
+TH_BOT_MAX = 15  # 봇이 고른 딜의 하루 Threads 최대(10/11 진우 'Threads 엄선' — 10/10 하루 86개라 글당 조회가 얇았음)
+
+
+def th_pick(p, posts, todo):
+    """Threads에 올릴 딜인지: 진우 링크·예약 글(own, 점수 없음)은 전부, 봇 딜은 7점↑ 전부 + 6점은 제휴 링크 딜만 하루 TH_BOT_MAX까지(5점·제휴 없는 6점은 채널에만)."""
+    if p.get("own") or "s" not in p or p["s"] >= 7:
+        return True
+    n = sum(1 for q in posts if q["t"][:10] == p["t"][:10] and "s" in q and not q.get("own") and q.get("th")) + sum("s" in posts[j] and not posts[j].get("own") for j in todo)
+    return p["s"] >= 6 and aff(p.get("url")) and n < TH_BOT_MAX
+
+
 def threads_deals(seen):
     """채널에 올라간 딜을 Threads에도 하나씩 (링크 = 사이트 딜 페이지: 구매 버튼·대가성 문구 있음).
     사이트 반영 전(404)이면 다음 실행에. posts.json에 th 표시 -> 두 번 안 올림. 3시간 지난 딜은 안 올림(식은 딜), 1회 최대 3개(도배 방지)."""
     tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
-    todo = [i for i, p in enumerate(posts) if not p.get("th") and p["t"] >= since and not p["text"].startswith("📋")][:3]
+    todo = []
+    for i, p in enumerate(posts):
+        if len(todo) < 3 and not p.get("th") and p["t"] >= since and not p["text"].startswith("📋") and th_pick(p, posts, todo):
+            todo.append(i)
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
@@ -1215,7 +1223,8 @@ def threads_deals(seen):
             return
         note = aff_note(posts[i].get("url") or "")
         icon = "🛒" if "특가로는 약한 제품" in posts[i]["text"] else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
-        text = (f"{note}\n\n" if note else "") + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
+        sv = saving(posts[i]["text"])  # 둘째 줄 = 얼마나 싼지(첫 줄은 대가성 문구라 못 바꿈, 10/11 진우 'Threads 훅')
+        text = (f"{note}\n\n" if note else "") + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
             + f"\n\n👉 {url}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)

@@ -928,7 +928,8 @@ n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
 grid = idx.split('class="grid"')[1]  # 홈 격자(맨 위 카드 딜 칸은 앞 테스트가 오늘 카드를 만들었으면 따로 있음)
 assert n == 1 and grid.count('class="g"') == 1 and "<h3><a href=\"https://hotdealpick.kr/p/0.html\">휴지</a></h3>" in grid and "쿠팡 · " in grid and 'href="https://buy"' in grid
-assert "🏆" not in grid and '<div class="s"><b class=hot>🏆 인기</b> 쿠팡 · ' in S.grid_item(0, {**posts[0], "hot": "뽐뿌 추천 5"})  # 커뮤니티 인기 딜 = 사이트 칸에도 배지
+hg = S.grid_item(0, {**posts[0], "hot": "뽐뿌 추천 5"})  # 커뮤니티 인기 딜 = 사이트 칸에도 배지(10/11~ 배지 줄 — 몰·시각 줄은 한 줄로), '반응 좋은 딜' 칸(rx)에선 겹쳐서 뺌
+assert "🏆" not in grid and '<div class="s">쿠팡 · ' in hg and '<div class="bd"><b class="b4">🏆 인기</b></div>' in hg and hg.index('class="bd"') < hg.index("<h3>") and "🏆" not in S.grid_item(0, {**posts[0], "hot": "x"}, True)
 assert os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr" and os.path.exists("docs/all.html")
 assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in open("docs/p/0.html").read()  # 딜 페이지: 제목 줄 잘라낸 뒤에도 링크 위치 정확
 assert "p/0.html" in open("docs/sitemap.xml").read() and "all.html" in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()
@@ -1033,8 +1034,8 @@ hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900�
 S.build(hp, "docs7"); i7, a7 = open("docs7/index.html").read(), open("docs7/all.html").read()
 hot7, life7, beauty7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("hot", "life", "beauty"))
 assert i7.index('id="hot"') < i7.index('id="toss"') < i7.index('id="life"') < i7.index('id="beauty"') < i7.index('id="d0"') < i7.index('<nav class="bar"')
-assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and "<b class=hot>🏆 인기</b>" in hot7  # 세제(3일 전)·휴지(4일 전) 제외
-assert '<div class="rx">👀 분당 조회 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
+assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and 'class="b4"' not in hot7 and '<b class="b4">🏆 인기</b>' in life7  # 세제(3일 전)·휴지(4일 전) 제외, 🏆 배지는 인기 칸에선 빼고(제목이 이미 반응 좋은 딜) 다른 칸에선 보임
+assert '<div class="rx">👀 분당 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
 assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
 assert re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
@@ -1058,9 +1059,28 @@ assert [c for c, _ in S.badges(bp[0])] == ["b1"] and [c for c, _ in S.badges(bp[
 S.build(bp, "docs8"); i8, a8 = open("docs8/index.html").read(), open("docs8/all.html").read()
 br8 = i8.split('id="brand"')[1].split("</section>")[0]
 assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("탄력") < br8.index("자음") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
-assert '<b class="b2">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
+assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
 assert all(S.FIND in x and S.FIND_JS in x for x in (i8, a8)) and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
-assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS not in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 가는 링크만
+assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 링크 + '같이 보면 좋은 딜' 하트(10/11~)
+# 6-9) 더 사고 싶게(10/11 진우 '홈페이지·Threads 먼저, 디자인도 좋게'): 얼마나 싼지(비교 문장 -> '쿠팡보다 N원↓')·단위가격(없으면 글에서)·토스 선착순 남은 시간,
+#      딜 페이지 = 가격·절약 -> 큰 구매 버튼(가격) -> 왜 골랐나요 -> 같이 보면 좋은 딜 4개(최근 2일 제휴 딜, 같은 품목 먼저, 약한 딜·제휴 아님·같은 이름·자기 자신 빼고) -> 골드박스
+assert S.saving("💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원, 10매당 51원)보다 7,210원 쌈") == ("쿠팡", "7,210원") and S.saving("싸요") is None
+assert S.unit_of({"text": "x\n💡 단위가격: 10매당 31원 — 쿠팡보다 쌈"}) == "10매당 31원" and S.unit_of({"text": "x", "unit": "롤당 1원"}) == "롤당 1원" and S.unit_of({"text": "x"}) == ""
+assert S.buy_label("[쿠팡] 휴지 (9,900원/무료)") == "🛒 9,900원 구매하기" and H.buy_label is S.buy_label and S.end_at({"t": "2026-10-10 21:35"}) == 1791644400  # 10/11 0시 KST
+mp = [{"t": td + " 09:00", "text": "🔥 [토스] 모나리자 미용티슈 300매 12입 (10,990원/무료)\n\n토스 9위\n💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원)보다 7,210원 쌈\n⚠️ 확인할 점: 오늘 밤 12시까지", "url": "https://toss.shopping/_m/m"},
+      {"t": td + " 09:10", "text": "🔥 [쿠팡] 코멧 화장지 30롤 (10,990원)", "url": "https://link.coupang.com/a/1", "s": 7},
+      {"t": td + " 09:20", "text": "🔥 [쿠팡] 신라면 40개 (26,000원)", "url": "https://link.coupang.com/a/2", "s": 6},
+      {"t": td + " 09:30", "text": "🛒 [토스] 키친타월 (16,500원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/w"},
+      {"t": td + " 09:40", "text": "🔥 [G마켓] 크리넥스 각티슈 (9,900원)", "url": "https://gmarket/x", "s": 6},
+      {"t": td + " 09:50", "text": "🔥 [쿠팡] 깨끗한나라 물티슈 (6,980원)", "url": "https://link.coupang.com/a/3", "s": 6},
+      {"t": td + " 10:00", "text": "🔥 [쿠팡] 햇반 36개 (39,680원)", "url": "https://link.coupang.com/a/4", "s": 6},
+      {"t": td + " 10:10", "text": "🔥 [토스] 모나리자 미용티슈 300매 12입 (10,990원/무료)", "url": "https://toss.shopping/_m/m2"}]
+S.build(mp, "docs9"); i9, d9 = open("docs9/index.html").read(), open("docs9/p/0.html").read(); g9 = S.grid_item(0, mp[0])
+assert '<div class="pr">10,990원</div><div class="sv">쿠팡보다 7,210원↓</div><div class="u">10매당 31원</div>' in g9 and f'<b class="b2" data-end="{S.end_at(mp[0])}">' in g9 and S.END_JS in i9
+assert d9.index('<span class="pr">10,990원</span><span class="ship">무료배송</span><span class="sv">쿠팡보다 7,210원↓</span>') < d9.index("🛒 10,990원 구매하기") < d9.index("왜 골랐나요") < d9.index("같이 보면 좋은 딜") < d9.index(S.GB_LINK) < d9.index('class="tg"')
+assert d9.index(S.DISCLOSURE) < d9.index('class="card deal"') and d9.count(S.GB_LINK) == 1 and S.LIKE_JS in d9 and S.END_JS in d9 and i9.index(S.GB_LINK) < i9.index('id="q"')  # 홈은 골드박스가 위, 딜 페이지는 딜 아래
+rel9 = d9.split("같이 보면 좋은 딜")[1]
+assert rel9.count('class="g"') == 4 and rel9.index("물티슈") < rel9.index("화장지") < rel9.index("햇반") < rel9.index("신라면") and all(w not in rel9 for w in ("키친타월", "각티슈", "모나리자"))
 # 6-8) 검색 노출(10/9 진우 '구글·네이버에서 조회가 잘 안 돼'): robots.txt(사이트맵 위치), rss.xml(네이버 RSS 제출용 최근 30개), sitemap lastmod, 딜 페이지 설명 = 코멘트(대가성 문구·제목 반복 X), 홈 구조화 데이터
 import xml.etree.ElementTree as ET
 sp = [{"t": f"2026-10-0{1 + k % 9} 1{k % 10}:0{k % 6}", "text": f"{H.AFF_NOTE}\n\n🔥 [쿠팡] 휴지{k} 30롤 (19,900원/무료)\n\n싸요 & 좋아요\n💡 단위가격 롤당 663원\n\n출처: 클리앙", "url": f"https://c/{k}"} for k in range(33)] + \
@@ -1342,6 +1362,17 @@ assert sum("/777/threads?" in u for m, u in calls) == 1  # 다른 오류면 다�
 H.time.sleep, H.http, calls[:] = sl2, td_http, []
 del H.E["THREADS_TOKEN"]; json.dump([{"t": kt(0), "text": "🔥 새 딜", "url": "https://z"}], open("posts.json", "w"))
 H.threads_deals({}); assert not calls  # 토큰 없으면 아무것도 안 함
+# 9-2b) Threads 엄선·훅(10/11 진우): 둘째 줄 '💸 쿠팡보다 N원 싸요'(비교 문장 있을 때), 봇 딜은 7점↑ 전부 + 6점 제휴 딜만 하루 TH_BOT_MAX까지, 5점·제휴 없는 6점은 채널에만, 진우 링크(own)는 점수 상관없이
+t0, mx0 = time.time, H.TH_BOT_MAX; time.time, H.TH_BOT_MAX, H.E["THREADS_TOKEN"] = (lambda: 1791687600), 2, "tk"  # 10/11 12:00 KST(자정 걸침 방지)
+json.dump([{"t": kt(1), "text": "🔥 [G마켓] 6점제휴아님\n\n좋음", "url": "https://x", "s": 6}, {"t": kt(0.9), "text": "🔥 [쿠팡] 5점\n\n좋음", "url": "https://link.coupang.com/a/5", "s": 5}]
+          + [{"t": kt(0.8 - k / 10), "text": f"🔥 [쿠팡] {n}\n\n좋음", "url": f"https://link.coupang.com/a/{k}", "s": s} for k, (n, s) in enumerate((("6점A", 6), ("6점B", 6), ("8점", 8), ("6점C", 6)))]
+          + [{"t": kt(0.3), "text": "🔥 [토스] 진우링크 (10,990원)\n\n💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원)보다 7,210원 쌈", "url": "https://toss.shopping/_m/j", "s": 5, "own": 1}], open("posts.json", "w"))
+H.http, live_pages, calls[:] = td_http, set(range(7)), []
+for _ in range(3): H.threads_deals({})
+made = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
+assert [p.get("th") for p in json.load(open("posts.json"))] == [None, None, 1, 1, 1, None, 1] and len(made) == 4  # 6점C = 봇 딜 하루 한도(2) 넘음 -> 채널에만
+assert made[-1].startswith(H.TOSS_NOTE + "\n\n💸 쿠팡보다 7,210원 싸요\n🔥 [토스] 진우링크 (10,990원)\n\n") and all("💸" not in t for t in made[:-1])
+time.time, H.TH_BOT_MAX = t0, mx0; del H.E["THREADS_TOKEN"]
 # 9-3) 인스타 릴스 자동 게시: 컨테이너(REELS·resumable·캡션) -> rupload에 영상 파일(OAuth 헤더·offset 0·file_size) -> 다음 실행에 처리 끝났으면 발행
 #      처리 중이면 기다림, 실패(ERROR)면 예외(main이 하루 1번 알림), 업로드 실패해도 영상은 봇 채팅으로(직접 올리기), 토큰 없으면 아무것도 안 함
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2, ig0 = [], ["IN_PROGRESS"], H.http, H.IG
