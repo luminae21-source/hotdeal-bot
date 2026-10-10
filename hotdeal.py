@@ -466,12 +466,18 @@ def lp_search(title, q=None):
     return lp_link(m, base + urllib.parse.quote(q or keyword(title))), name
 
 
+def buy_label(title):
+    """구매 버튼에 가격(10/10 진우 'UI 편하게' → 텔레그램 글은 가격·구매 먼저): '[쿠팡] 휴지 (9,900원/무료)' -> '🛒 9,900원 구매하기'. 가격 모르면 예전 문구."""
+    m = re.search(r"\d[\d,]*\s*원", parse(title)[2])
+    return f"🛒 {m.group(0).replace(' ', '')} 구매하기" if m else "🛒 구매하러 가기"
+
+
 def deal_post(d, comment, q=None, extra=None):
     """-> (본문, 버튼 링크, 버튼 이름). 상품 주소가 있으면 쿠팡 API·링크프라이스 상품 딥링크 > 링크프라이스 검색 링크
     > 상품 페이지(제휴 없음, 관리자 사본으로 수동) > 그 몰 검색 결과(MALL_SEARCH, 10/10~) > 원글. 제휴 링크면 대가성 문구를 맨 앞에.
     extra의 unit(단위가격)·warn(확인할 점)이 있으면 코멘트 아래 한 줄씩 (다른 핫딜 채널과의 차이: 비교 근거 + 단점까지)."""
     link, aff = affiliate(store_link(d["url"]))
-    label = "🛒 구매하러 가기"
+    label = buy_label(d["title"])
     if not aff:
         lp, name = lp_search(d["title"], q)
         if not lp and not link:  # 상품 주소도 제휴 검색도 없으면 원글 대신 그 몰 검색 결과(원글은 본문 '출처' 링크로 남음). 토스·모르는 몰·앱 쿠폰은 원글 그대로
@@ -559,7 +565,7 @@ def with_note(text, ents, url):
 def relink_channel(notice, mid, url):
     """이미 올라간 채널 글(mid)의 버튼을 url로 교체 + 대가성 문구. 관리자 사본과 posts.json도 같이 고침."""
     text, ents = with_note(notice.get("text", ""), notice.get("entities", []), url)
-    kb = [[{"text": "🛒 구매하러 가기", "url": url}]]
+    kb = [[{"text": buy_label(title_of(notice.get("text", ""))), "url": url}]]
     if not tg("editMessageText", chat_id=CHANNEL, message_id=mid, text=text, entities=ents,
               link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb}):
         return
@@ -604,7 +610,7 @@ def admin_deal(lines, link, mid):
     weak = p["score"] < MIN_SCORE - earns(title)
     m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=f"<i>{aff_note(link)}</i>\n\n{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
            + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}",
-           link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": "🛒 구매하러 가기", "url": link}]]})
+           link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_label(title), "url": link}]]})
     if not m:
         return False
     record(m.get("text", ""), m.get("entities", []), link, m.get("message_id"), p["score"], {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
@@ -724,7 +730,7 @@ def events(seen):
         if m:
             seen[key] = time.time()
             if ev.get("deal"):  # Claude가 예약한 상품 딜(10/10 진우 '쓰레드에 업로드 되게') -> posts.json = 사이트·모아보기·Threads에도
-                record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"])
+                record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag")})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
                 tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
 

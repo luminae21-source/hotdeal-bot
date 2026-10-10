@@ -11,7 +11,7 @@ GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 
 CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
-CSS = """*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
+CSS = """*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font:16px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f6f7f9;color:#1c1e21}
 a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:12px 0 4px}header h1{margin:0;font-size:22px}header h1 a{color:inherit;text-decoration:none}
 .sub{color:#666;font-size:13px}.card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .card h2{margin:0 0 8px;font-size:17px;line-height:1.4}.card h2 a{color:inherit;text-decoration:none}.t{color:#888;font-size:12px}
@@ -20,9 +20,10 @@ a{color:#0b63ce}main{max-width:680px;margin:0 auto;padding:16px}header{padding:1
 .tg{display:block;text-align:center;background:#229ed9;color:#fff;border-radius:10px;padding:12px;margin:16px 0;text-decoration:none;font-weight:600}
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:12px;background:#fff;border:1px solid #eceef1;color:#1c1e21;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.btn2{display:block;text-align:center;border:1.5px solid #0b63ce;color:#0b63ce;border-radius:10px;padding:11px;margin-top:8px;text-decoration:none;font-weight:600}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}a:focus-visible{outline:3px solid #0b63ce;outline-offset:2px}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e5e7eb;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7280;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#0b63ce;background:#eaf2ff}main:has(.bar){padding-bottom:84px}
-.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:14px;padding:12px;border:1px solid #eceef1;min-width:0}.g .s{min-height:30px;padding:6px 30px 0 0;font-size:12px;color:#888}.like{position:absolute;top:8px;right:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:18px;background:none;color:#9ca3af;cursor:pointer}.like svg,.lk svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.like[aria-pressed=true]{color:#e11d48}.like[aria-pressed=true] svg,.lk svg{fill:currentColor}header{position:relative}.lk{position:absolute;right:0;top:14px;display:flex;align-items:center;gap:4px;min-height:40px;padding:0 14px;border-radius:20px;background:#fff;border:1px solid #eceef1;color:#e11d48;text-decoration:none;font-weight:700;font-size:14px}.lk svg{width:18px;height:18px}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .rx{font-size:12px;color:#888}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:#eaf2ff;color:#0b63ce;text-decoration:none;font-weight:700;font-size:15px}.g .go a.o{background:#f1f3f5;color:#1c1e21}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#6b7280;font-weight:600}
+.day h2{font-size:18px;margin:18px 2px 8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.g{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:14px;padding:12px;border:1px solid #eceef1;min-width:0}.g .s{min-height:30px;padding:6px 30px 0 0;font-size:12px;color:#888}.like{position:absolute;top:8px;right:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:18px;background:none;color:#9ca3af;cursor:pointer}.like svg,.lk svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.like[aria-pressed=true]{color:#e11d48}.like[aria-pressed=true] svg,.lk svg{fill:currentColor}header{position:relative}.lk{position:absolute;right:0;top:14px;display:flex;align-items:center;gap:4px;min-height:40px;padding:0 14px;border-radius:20px;background:#fff;border:1px solid #eceef1;color:#e11d48;text-decoration:none;font-weight:700;font-size:14px}.lk svg{width:18px;height:18px}.g .hot{color:#c2410c}.g h3{margin:4px 0 6px;font-size:15px;line-height:1.35;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{color:inherit;text-decoration:none}.g .pr{font-weight:800;font-size:17px}.g .u{font-size:12px;color:#c2410c}.g .rx{font-size:12px;color:#888}.g .go{margin-top:auto;padding-top:8px}.g .go a{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:10px;background:#0b63ce;color:#fff;text-decoration:none;font-weight:700;font-size:16px}.g .go a.o{background:#f1f3f5;color:#1c1e21}.g .go a.f{min-height:40px;font-size:13px;background:none;color:#6b7280;font-weight:600}
+.find{position:sticky;top:0;z-index:8;background:#f6f7f9;padding:8px 0 4px}.find input{width:100%;min-height:46px;border:1px solid #d9dce1;border-radius:12px;padding:0 14px;font:inherit;font-size:16px;background:#fff;color:inherit}.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chips button{flex:none;min-height:38px;padding:0 13px;border-radius:19px;border:1px solid #d9dce1;background:#fff;color:#1c1e21;font:inherit;font-size:14px;font-weight:600;cursor:pointer}.chips button[aria-pressed=true]{background:#0b63ce;border-color:#0b63ce;color:#fff}#qn{margin:6px 2px 0}.g .bd{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 4px}.g .bd b{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px}.b1{background:#e7f6ec;color:#15803d}.b2{background:#fdecec;color:#c62828}.b3{background:#f1f3f5;color:#6b7280}
 .dis{font-size:12px;color:#888;margin:8px 0}footer{font-size:12px;color:#888;text-align:center;padding:24px 0}
-@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#1c1c1e;border-color:#2c2c2e;color:#eee}.gb{background:#2a1f17;border-color:#9a3412;color:#fdba74}.pick em{color:#fdba74}.bar{background:rgba(28,28,30,.94);border-color:#2c2c2e}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6cb0ff;background:#1f2a3a}.g{background:#1c1c1e;border-color:#2c2c2e}.lk{background:#1c1c1e;border-color:#2c2c2e}.like{color:#71717a}.g .go a{background:#1f2a3a;color:#6cb0ff}.g .go a.o{background:#2c2c2e;color:#eee}.g .go a.f{background:none;color:#a1a1aa}.g .u{color:#fdba74}.g .hot{color:#fdba74}}"""
+@media(prefers-color-scheme:dark){body{background:#111;color:#eee}.card{background:#1c1c1e}.sub,.t,.dis,footer{color:#999}a{color:#6cb0ff}.pick{background:#1c1c1e;border-color:#2c2c2e;color:#eee}.gb{background:#2a1f17;border-color:#9a3412;color:#fdba74}.pick em{color:#fdba74}.bar{background:rgba(28,28,30,.94);border-color:#2c2c2e}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6cb0ff;background:#1f2a3a}.g{background:#1c1c1e;border-color:#2c2c2e}.lk{background:#1c1c1e;border-color:#2c2c2e}.like{color:#71717a}.g .go a{background:#2b6fd6;color:#fff}.find{background:#111}.find input,.chips button{background:#1c1c1e;border-color:#2c2c2e;color:#eee}.b1{background:#12301c;color:#86efac}.b2{background:#3a1616;color:#fca5a5}.b3{background:#2c2c2e;color:#a1a1aa}.g .go a.o{background:#2c2c2e;color:#eee}.g .go a.f{background:none;color:#a1a1aa}.g .u{color:#fdba74}.g .hot{color:#fdba74}}"""
 
 
 def to_html(text, entities):
@@ -148,6 +149,26 @@ def react(p):
     return f"반응 {p['pop']:g}" if p.get("pop") else ""
 
 
+BRAND = r"설화수|더\s?후|헤라|라네즈|아이오페|이니스프리|에스티\s?로더|랑콤|키엘|SK-?II|디올|샤넬|조말론|라로슈포제|아벤느|피지오겔|세타필|닥터지|다이슨|필립스|브라운|나이키|아디다스"  # 이름 있는 브랜드(10/10 진우 '브랜딩 파워 있는 제품도 꼭')
+FOOD = r"쌀|라면|햇반|생수|샘물|우유|계란|달걀|구운란|특란|삼겹|목살|한우|갈비|닭|족발|감귤|사과|망고|바나나|단감|반시|양파|과일|김치|만두|떡|커피|콜드브루|음료|소다|주스|과자|초코|견과|새우|오징어|감자탕|소스|올리브|파운드"
+
+
+def badges(p):
+    """카드 배지(10/10 진우 'UI 편하게'): 본사 정품(예약 글 tag) · 오늘 밤 12시 마감(토스 선착순특가, 오늘 올린 글만) · 약한 딜."""
+    today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    return ([("b1", "✅ 본사 정품")] if p.get("tag") == "정품" else []) + ([("b2", "⏰ 오늘 밤 12시 마감")] if "밤 12시까지" in p["text"] and p["t"][:10] == today else []) \
+        + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else [])
+
+
+def keys(p):
+    """검색 칩 필터용 키(data-k): 몰(쿠팡·토스) · 생필품·식품·화장품 · 브랜드 · 마감."""
+    title = title_of(p["text"])
+    store = parse(title)[0]
+    return " ".join([k for k in ("쿠팡", "토스") if k in store] + [n.split()[-1] for _, n, rx in CATS if re.search(rx, title)]
+                    + (["식품"] if re.search(FOOD, title) else []) + (["브랜드"] if p.get("tag") == "정품" or re.search(BRAND, title) else [])
+                    + (["마감"] if any(c == "b2" for c, _ in badges(p)) else []))
+
+
 def grid_item(i, p, rx=False):
     """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
     title = title_of(p["text"])
@@ -160,8 +181,9 @@ def grid_item(i, p, rx=False):
         go = f'<a href="{html.escape(url)}" rel="nofollow sponsored noopener" target="_blank" aria-label="{html.escape(name)} 구매하러 가기">구매 →</a>'
     else:
         go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
-    return (f'<article class="g"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{"<b class=hot>🏆 인기</b> " if p.get("hot") else ""}{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div><h3><a href="{page_url}">{html.escape(name)}</a></h3>'
-            + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
+    bd = "".join(f'<b class="{c}">{t}</b>' for c, t in badges(p))
+    return (f'<article class="g" data-k="{html.escape(keys(p))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{"<b class=hot>🏆 인기</b> " if p.get("hot") else ""}{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div><h3><a href="{page_url}">{html.escape(name)}</a></h3>'
+            + (f'<div class="bd">{bd}</div>' if bd else "") + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
             + (f'<div class="u">{html.escape(p["unit"])}</div>' if p.get("unit") else "")
             + (f'<div class="rx">👀 {html.escape(react(p))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
 
@@ -202,6 +224,14 @@ def toss_section(posts, days):
             + f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a></section>')
 
 
+def brand_section(posts, days):
+    """홈 '✨ 정품·브랜드' 칸(10/10 진우 '브랜딩 파워 있는 제품도 꼭, 정품도'): 최근 3일 딜 중 본사 정품 표시(tag)·이름 있는 브랜드(BRAND) 최신 8개."""
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋")
+          and (p.get("tag") == "정품" or re.search(BRAND, title_of(p["text"])))][::-1][:8]
+    return ds and (f'<section class="day" id="brand" aria-labelledby="brandh"><h2 id="brandh">✨ 정품·브랜드 딜</h2><div class="t">최근 3일 · 판매자(본사 정품 여부)는 배지·상세에서 확인</div>'
+                   f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
+
+
 def day_grids(posts, days):
     """날짜별 2열 격자. 날짜 안에서는 제휴 링크 딜(쿠팡·토스 등) 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자')."""
     out = []
@@ -220,6 +250,7 @@ ICONS = {  # 아래 바 아이콘 = Lucide(ISC 라이선스) 선 아이콘 — �
     "toss": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
     "life": '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>',
     "beauty": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    "brand": '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
     "saved": '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
     "days": '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>'}
 PANE_JS = """<script>(function(){var ps=[].slice.call(document.querySelectorAll('.pane'));if(!ps.length)return;
@@ -239,6 +270,19 @@ var c=document.getElementById('lc'),g=document.getElementById('savedg');if(c)c.t
 if(g){g.innerHTML=L.map(function(x){return x.h}).join('');document.getElementById('saved0').hidden=L.length>0;[].forEach.call(g.querySelectorAll('.like'),function(b){b.setAttribute('aria-pressed','true')})}}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.like');if(!b)return;var i=b.dataset.i;
 L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script>"""
+
+# 검색·필터(10/10 진우 'UI 편하게'): 맨 위 고정 검색창 + 칩. 홈은 '전체' 칸(최근 2일), all.html은 전체 딜에서 걸러 보여 줌. JS가 꺼져 있으면 그냥 안 걸러짐
+CHIPS = (("쿠팡", "쿠팡"), ("토스", "토스"), ("생필품", "🧻 생필품"), ("식품", "🍚 식품"), ("화장품", "💄 화장품"), ("브랜드", "✨ 브랜드"), ("마감", "⏰ 오늘 마감"))
+FIND = ('<div class="find" role="search"><input id="q" type="search" placeholder="🔎 딜 검색 (예: 휴지, 설화수)" aria-label="딜 검색" autocomplete="off">'
+        '<div class="chips">' + "".join(f'<button type="button" data-c="{k}" aria-pressed="false">{n}</button>' for k, n in CHIPS) + '</div><div id="qn" class="t" hidden></div></div>')
+FIND_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.getElementById('days')||document.body;
+function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0;if(on)[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.contains(host)});
+[].forEach.call(host.querySelectorAll('.g'),function(g){var ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0);g.hidden=!ok;if(ok&&on)n++});
+[].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
+if(!on)dispatchEvent(new HashChangeEvent('hashchange'))}
+q.addEventListener('input',run);cs.forEach(function(b){b.addEventListener('click',function(){c=c===b.dataset.c?'':b.dataset.c;cs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.c===c?'true':'false')});run()})});
+addEventListener('hashchange',function(){if(q.value||c){q.value='';c='';cs.forEach(function(x){x.setAttribute('aria-pressed','false')});run()}})})()</script>"""
+
 
 def summary(text):
     """검색 결과·RSS에 보일 설명: 제목 아래 코멘트 줄들(출처·🏆 배지 줄 빼고 한 줄로). 대가성 문구·제목 반복은 안 넣음(10/9 '구글·네이버 조회가 잘 안 돼')."""
@@ -263,16 +307,16 @@ def build(posts, out="docs"):
         open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", card, summary(p["text"]) or title, url))
         urls.append((url, p["t"][:10]))
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)),
+    panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home: ('<nav class="bar" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + FIND + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
-    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", bar(BASE) + day_grids(posts, days) + LIKE_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
+    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", FIND + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")

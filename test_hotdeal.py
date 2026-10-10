@@ -76,10 +76,11 @@ ms = {tt: H.deal_post({"board": "뽐뿌", "url": pp, "title": tt}, "싸다", q)[
 assert ms["[11번가] 호텔컬렉션 수건 10장 (26,520원/무료)"] == ("https://search.11st.co.kr/Search.tmall?kwd=" + quote("호텔컬렉션 40수 수건"), "🔎 11번가에서 찾기")  # Claude 검색어
 assert ms["[톡딜] 한돈 뒷고기 (9,900원)"] == ("https://store.kakao.com/search/result/product?q=" + quote("한돈 뒷고기"), "🔎 카카오에서 찾기")  # 검색어 없으면 제목에서 몰·가격 뗀 이름
 assert ms["[카카오톡] 사과 5kg (1원)"][1] == "🔎 카카오에서 찾기" and ms["[네이버] 대한떡볶이 1팩 (1,990원/무료)"] == ("https://search.shopping.naver.com/search/all?query=" + quote("대한떡볶이 1팩"), "🔎 네이버쇼핑에서 찾기")
-assert ms["[토스] 김 (1원)"] == ms["[스팀] 게임 (1원)"] == (pp, "🛒 구매하러 가기")  # 토스(쉐어링크 자동 교체가 원글 기준)·모르는 몰은 원글
+assert ms["[토스] 김 (1원)"] == ms["[스팀] 게임 (1원)"] == (pp, "🛒 1원 구매하기")  # 토스(쉐어링크 자동 교체가 원글 기준)·모르는 몰은 원글
 assert f'출처: <a href="{H.esc(pp)}">뽐뿌</a>' in H.deal_post({"board": "뽐뿌", "url": pp, "title": "[11번가] 수건 (1원)"}, "싸다")[0]  # 원글은 출처 링크로 남음
 H.store_link = lambda u: "https://www.11st.co.kr/products/1"
-assert H.deal_post({"board": "뽐뿌", "url": pp, "title": "[11번가] 수건 (1원)"}, "싸다")[1:] == ("https://www.11st.co.kr/products/1", "🛒 구매하러 가기")  # 상품 주소가 있으면 검색보다 상품 페이지
+assert H.deal_post({"board": "뽐뿌", "url": pp, "title": "[11번가] 수건 (1원)"}, "싸다")[1:] == ("https://www.11st.co.kr/products/1", "🛒 1원 구매하기")  # 상품 주소가 있으면 검색보다 상품 페이지
+assert H.buy_label("[쿠팡] 휴지 (9,900원/무료)") == "🛒 9,900원 구매하기" and H.buy_label("[쿠팡] 휴지") == "🛒 구매하러 가기" and H.buy_label("[G마켓] 초코 (16830원 무배 개당 약 140원)") == "🛒 16830원 구매하기"  # 10/10 버튼에 가격
 H.store_link = sl0
 # 1-1b) 커뮤니티 반응 좋은 딜 강조(10/9 진우): 게시판별 분당 조회수 3위 안(20회 이상) 또는 추천 3개 이상 -> 제목 바로 아래 '🏆 인기', 사이트 칸에도
 hd = [{"board": "뽐뿌", "hits": f"댓글0·조회{v}·추천{r}·비추0", "age": a, "title": n} for n, v, r, a in
@@ -344,7 +345,7 @@ def ch_tg(method, **p):
 H.tg = ch_tg
 H.post_or_draft(D("[sk스토아] 블루베리 (18,700원/무료)"), "싸요", 8, None, {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "unit": "kg당 6,233원", "warn": "", "x": None})  # 💸: 바로 게시, 사본 없음
 assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "@ch")]
-assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": D("")["url"]}]]
+assert sent[0][1]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 18,700원 구매하기", "url": D("")["url"]}]]
 lp = json.load(open("posts.json"))[-1]
 assert lp["mid"] == 100 and lp["s"] == 8 and lp["e"] == "🫐" and lp["hook"] == "1kg 6,233원" and lp["pts"] == ["kg당 6,233원"] and "x" not in lp  # 릴스 재료 저장
 assert lp["unit"] == "kg당 6,233원" and "warn" not in lp and "💡 단위가격 kg당 6,233원" in sent[0][1]["text"]  # 빈 값은 저장 안 함
@@ -552,12 +553,12 @@ json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "h
            {"at": "2026-10-06 09:30", "text": "⚡ <b>쿠가세</b>", "button": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"},
            {"at": "2026-10-06 09:40", "text": "일반", "button": "b", "url": "https://example.com"},
            {"at": "2026-10-06 09:50", "text": "📌 사용법", "button": "📤 공유", "url": "https://t.me/share/url?url=https%3A%2F%2Ft.me%2Fhotdeal_pick", "pin": True},
-           {"at": "2026-10-06 09:55", "text": "🔥 <b>[쿠팡] 계란</b>", "button": "🛒", "url": "https://link.coupang.com/a/egg", "deal": True},
+           {"at": "2026-10-06 09:55", "text": "🔥 <b>[쿠팡] 계란</b>", "button": "🛒", "url": "https://link.coupang.com/a/egg", "deal": True, "tag": "정품"},
            {"at": "2026-10-06 11:00", "text": "아직", "button": "b", "url": "https://link.coupang.com/a/y"}], open("events.json", "w"))
 seen, sent[:], tt3, npj = {}, [], time.time, len(json.load(open("posts.json")))
 time.time = lambda: 1791248400; H.events(seen)  # 10/6 10:00 KST
 assert [p["text"] for m, p in sent if m == "sendMessage"] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반", "📌 사용법", f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 계란</b>"] and sent[0][1]["chat_id"] == "@ch"
-pje = json.load(open("posts.json")); assert len(pje) == npj + 1 and pje[-1]["url"] == "https://link.coupang.com/a/egg" and pje[-1]["mid"] == 1  # "deal": true만 딜로 기록(사이트·모아보기·Threads, 10/10)
+pje = json.load(open("posts.json")); assert len(pje) == npj + 1 and pje[-1]["url"] == "https://link.coupang.com/a/egg" and pje[-1]["mid"] == 1 and pje[-1]["tag"] == "정품"  # "deal": true만 딜로 기록(사이트·모아보기·Threads, 10/10)
 assert [(m, p) for m, p in sent if m != "sendMessage"] == [("pinChatMessage", {"chat_id": "@ch", "message_id": 1, "disable_notification": True})]  # "pin": true만 고정, 알림 없이
 assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
 sent.clear(); H.events(seen); assert not sent  # 1번만
@@ -1043,6 +1044,21 @@ assert 'id="life"' not in a7 and 'id="hot"' not in a7 and "#life" in a7 and S.PA
 assert hot7.count('<button class="like" type="button" data-i="') == 2 and 'data-i="4" aria-pressed="false" aria-label="퓨어그램 폼클렌징 120ml 찜"' in hot7
 assert i7.count('<div class="pane" hidden><section class="day" id="saved"') == 1 and 'id="savedg"' in i7 and "#saved" not in i7.split('<nav class="bar"')[1].split("</nav>")[0]
 assert all(S.LIKE_JS in x and f'<a class="lk" href="{S.BASE}#saved"' in x for x in (i7, a7)) and "localStorage" in S.LIKE_JS and ".slice(0,50)" in S.LIKE_JS
+# 6-8) 검색·칩·배지·정품·브랜드 칸(10/10 진우 'UI 편하게', '브랜딩 파워 있는 제품도 꼭, 정품도')
+td = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+bp = [{"t": td + " 20:00", "text": "🔥 [토스] 설화수 자음 2종 세트 (114,000원/무료)\n\n본사 정품", "url": "https://toss.shopping/_m/a", "tag": "정품"},
+      {"t": td + " 20:10", "text": "🔥 [토스] 땡큐파머스 구운란 대란 30구 (10,490원)\n\n⚠️ 확인할 점: 오늘 밤 12시까지 토스 선착순특가", "url": "https://toss.shopping/_m/b"},
+      {"t": td + " 20:20", "text": "🛒 [토스] 설화수 탄력 3종 (146,070원)\n\n🤔 솔직히 특가로는 약한 제품 — 본사 정품보다는 쌈", "url": "https://toss.shopping/_m/c"},
+      {"t": td + " 20:30", "text": "🔥 [쿠팡] 코멧 화장지 30롤 (10,990원)", "url": "https://link.coupang.com/a/d"},
+      {"t": "2020-01-01 20:40", "text": "🔥 [토스] 구운란 30구 (9,000원)\n\n오늘 밤 12시까지 선착순", "url": "https://toss.shopping/_m/e"},
+      {"t": td + " 20:50", "text": "🔥 [쿠팡] 피죤 써니가든 6L (16,940원)", "url": "https://link.coupang.com/a/f", "tag": "정품"}]  # 브랜드 목록에 없어도 정품 표시면 칸에
+assert S.keys(bp[0]) == "토스 브랜드" and S.keys(bp[1]) == "토스 식품 마감" and S.keys(bp[3]) == "쿠팡 생필품" and "마감" not in S.keys(bp[4])  # 마감 = 오늘 올린 선착순만
+assert [c for c, _ in S.badges(bp[0])] == ["b1"] and [c for c, _ in S.badges(bp[2])] == ["b3"] and S.badges(bp[3]) == [] and S.badges(bp[4]) == []  # '본사 정품' 글자만으로는 정품 배지 X(약한 딜 글)
+S.build(bp, "docs8"); i8, a8 = open("docs8/index.html").read(), open("docs8/all.html").read()
+br8 = i8.split('id="brand"')[1].split("</section>")[0]
+assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("탄력") < br8.index("자음") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
+assert '<b class="b2">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
+assert all(S.FIND in x and S.FIND_JS in x for x in (i8, a8)) and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
 assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS not in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 가는 링크만
 # 6-8) 검색 노출(10/9 진우 '구글·네이버에서 조회가 잘 안 돼'): robots.txt(사이트맵 위치), rss.xml(네이버 RSS 제출용 최근 30개), sitemap lastmod, 딜 페이지 설명 = 코멘트(대가성 문구·제목 반복 X), 홈 구조화 데이터
 import xml.etree.ElementTree as ET
