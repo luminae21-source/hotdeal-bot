@@ -418,6 +418,8 @@ assert "ruliweb_1" in sj and "ppomppu_301" in sj and H.dkey("[G마켓] 코카콜
 assert "최근 24시간에 이미 올린 딜" in got[0][0] and "휴지 30롤" in got[0][0].split("이미 올린 딜")[1]
 json.dump({H.dkey("[쿠팡] 휴지 30롤"): time.time() - 2 * 86400}, open("seen.json", "w")); got.clear(); H.main()  # 24시간 지난 같은 상품은 새 딜로 판단
 assert any("휴지 30롤" in l for l in got[0][1])
+json.dump({"tb_7": {"t": time.time() - 3600, "n": "케라시스 샴푸 980ml 3개"}, "tb_8": {"t": time.time() - 2 * 86400, "n": "옛날 베스트"}, "tb_9": time.time()}, open("seen.json", "w")); got.clear(); H.main()
+assert "케라시스 샴푸 980ml 3개" in got[0][0].split("이미 올린 딜")[1] and "옛날 베스트" not in got[0][0]  # 토스 하루특가·베스트로 24시간 안에 올린 상품도 '이미 올린 딜'(예전 숫자 기록은 건너뜀)
 # 4-3) 한 번에 1개만 게시(꾸준히), 넘친 좋은 딜은 Claude 판단 그대로 보관 -> 다음 실행에 다시 묻지 않고 점수 높은 것부터 / 3시간 지나면 버림
 #      (10/8 17:21 갈비·MSI 7점을 다시 물었더니 15분 뒤 둘 다 5점 미만 -> 못 올림) / 루리웹은 15분 지나면 판단(반응 수치가 없어서)
 RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
@@ -651,6 +653,7 @@ t = sent[-1][1]["text"]
 assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
 assert "<b>베스트1</b></a>\n💰 <b>6,930원</b> (88%↓) · ⭐ 4.8 (리뷰 1,523)\n👉 개당 99원" in t and len(sent[-1][1]["reply_markup"]["inline_keyboard"]) == 2
 assert len(offered) == 3 and "베스트4" not in str(offered) and "리뷰 4.8점 1,523개" in offered[0] and "tb_1" in seen and "tb_3" in seen
+assert seen["tb_1"]["n"] == "베스트1" and seen["tb_1"]["t"] == 1791257400  # 이름도 남김 -> 커뮤니티 딜 판단 때 '이미 올린 딜'(10/10 케라시스 중복)
 sent.clear(); H.toss_deals(seen, True); assert not sent  # 같은 회차 1번
 offered.clear(); time.time = lambda: 1791271800; H.toss_deals(seen, True)  # 16:30 회차(10/8 하루 3번): 1·3 빠지고 5만 -> 안 고르면 안 올림
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_16" in seen
@@ -792,6 +795,7 @@ seen = {}
 log = relink_run()
 pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
 assert "모나리자 에코 미용티슈 300매 12입 (10,990원/무배) -> 모나리자 에코 미용티슈 300매, 12개 11,990원 (id 31, 9점) | 링크 교체 | 후보" in log, log
+assert seen["tb_31"] == {"t": now, "n": "모나리자 에코 미용티슈 300매, 12개"} and not any(k.startswith("tb_") and k != "tb_31" for k in seen)  # 찾은 상품만 -> 3일 동안 토스 베스트에 다시 안 나감(10/10 삼겹살)
 assert "핫식스 더킹 애플홀릭 355ml 24개 17,000원 -> 글의 상품 주소 https://toss.shopping/t/777 | 링크 교체" in log  # 루리웹 글을 다시 읽어 발급(tacaId)
 assert "제주 극조생감귤 10kg (12,900원/무배) -> 없음" in log and "아무거나 전혀 다른 상품 (1,000원) -> 없음 | 후보 0/" in log  # 감귤 5kg = 용량 달라 6점 -> 없음, 겹침 없으면 Claude 안 부름
 assert "진라면 매운맛 40봉 (19,900원) -> 없음" in log  # 루리웹 글에 토스 주소 없음 -> 목록 대조

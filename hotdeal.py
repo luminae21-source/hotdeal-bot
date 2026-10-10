@@ -746,7 +746,7 @@ def toss_deals(seen, best=False):
         except Exception as e:  # 발급 제한 상품은 빼고 나머지만
             print("toss link", repr(e))
             continue
-        seen[f"tb_{x['tacaItemId']}"] = time.time()  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침)
+        seen[f"tb_{x['tacaItemId']}"] = {"t": time.time(), "n": x["displayName"]}  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침). 이름 = 커뮤니티 딜 판단 때 '이미 올린 딜'로
         plain.append(f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
         rows.append((x["displayName"], link, [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
                                              + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if x.get("reviewCount") else ""), "👉 " + esc(p["comment"])]))
@@ -857,6 +857,7 @@ def toss_relink(seen):
         link = None
         if hit:
             r["done"] = True
+            seen[f"tb_{hit[0]}"] = {"t": now, "n": hit[1]}  # 채널에 이미 나간 상품 -> 3일 동안 토스 베스트·하루특가에 다시 안 올림(10/10 삼겹살 01:31 딜 → 12:09 베스트)
             try:
                 link = toss("/links", {"tacaItemId": hit[0], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
             except Exception as e:  # 발급 제한 상품 -> 사본 답장으로
@@ -1258,6 +1259,7 @@ def main():
     if new:
         since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
         recent = [title_of(p["text"]) for p in load(POSTS, []) if p["t"] >= since and not p["text"].startswith("📋")][-30:]
+        recent += [v["n"] for k, v in seen.items() if k.startswith("tb_") and isinstance(v, dict) and v["t"] > time.time() - 86400]  # 토스 하루특가·베스트 글(posts.json엔 없음)도 — 10/10 케라시스 베스트 10:02 → 같은 딜 10:44
         prompt = DEAL_PROMPT + ("\n최근 24시간에 이미 올린 딜(같은 상품이면 고르지 마):\n" + "\n".join(recent) if recent else "")
         try:
             picks = ai_pick(prompt, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}" for d in new])
