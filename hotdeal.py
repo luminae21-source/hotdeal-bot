@@ -798,7 +798,9 @@ def toss_deals(seen, best=False):
         raw = [x for i in ids for x in toss(f"/products/best-categories/{i}?size=30")["items"]]
     else:
         raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
-    items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen}.values())  # 카테고리 겹친 상품은 1번만
+    booked = {re.sub(r"\W", "", e["name"]) for e in load(EVENTS, []) if e.get("name") and e["at"][:10] == time.strftime("%Y-%m-%d", kst)}  # 진우 링크로 오늘 예약한 토스 상품은 자동 글에서 뺌(같은 상품 두 번 방지, 10/11)
+    items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen
+                  and re.sub(r"\W", "", x["displayName"]) not in booked}.values())  # 카테고리 겹친 상품은 1번만
     picks = items and ai_pick(BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])[:3 if best else 5]

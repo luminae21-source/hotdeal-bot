@@ -681,6 +681,9 @@ assert [l.split(" |")[0] for l in offered] == ["토스상품0"] and not sent  # 
 offered.clear(); H.toss_deals(seen); assert not offered  # 같은 회차 1번
 offered.clear(); time.time = lambda: 1791248400 + 10 * 3600 + 1800; H.toss_deals(seen); assert not offered  # 20:30: 17시 회차 3시간 지남 -> 안 올림
 H.ai_pick, time.time = pk, lambda: 1791248400
+H.EVENTS, ev0 = "ev_toss.json", H.EVENTS; json.dump([{"at": "2026-10-06 21:00", "name": "토스상품1,"}, {"at": "2026-10-05 21:00", "name": "토스상품3"}], open(H.EVENTS, "w"))
+offered.clear(); H.ai_pick = lambda prompt, lines: offered.extend(lines) or []; H.toss_deals({})  # 10/11: 진우 링크로 오늘 예약한 상품(name, 기호 무시)은 하루특가 자동 글 후보에서 뺌, 어제 예약은 상관없음
+assert [l.split(" |")[0] for l in offered] == ["토스상품0", "토스상품3"]; H.EVENTS, H.ai_pick = ev0, pk
 th = []  # 하루특가는 Threads에도 1개(신청서 서비스 = 텔레그램 채널 + 스레드 자동 게시): 대가성 문구 맨 앞, 500자 안, 채널과 같은 순서, HTML 태그 없음
 def toss_th(url, body=None, headers=None, method=None):
     if not url.startswith(H.THREADS):
