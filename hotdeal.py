@@ -149,7 +149,7 @@ def tg(method, **params):
     if method in ("sendMessage", "copyMessage", "sendPhoto") and time.gmtime(time.time() + 9 * 3600).tm_hour < 8:
         params.setdefault("disable_notification", True)
     text = params.get("text") or ""
-    if method == "sendMessage" and len(text) > 4096 and "reply_markup" not in params:  # 텔레그램 4096자 제한(10/6 블로그용 글 실패) -> 문단 단위로 나눠 보냄. 버튼 달린 초안은 안 나눔
+    if method == "sendMessage" and len(text) > 4096 and "reply_markup" not in params and "parse_mode" not in params:  # 텔레그램 4096자 제한(10/6 블로그용 글 실패) -> 문단 단위로 나눠 보냄. 버튼 달린 초안은 안 나눔, HTML 글도 안 나눔(한도는 태그·주소 뺀 글자 수 — 10/10 21시 모아보기가 <a> 중간에서 잘려 400)
         parts = []
         for para in text.split("\n\n"):
             if parts and len(parts[-1]) + 2 + len(para) <= 4096:

@@ -166,8 +166,9 @@ time.time = lambda: 1791248400; H.tg("copyMessage", chat_id="42")  # 10/6 10:00 
 time.time = tt
 assert bodies[0]["disable_notification"] is True and "disable_notification" not in bodies[1] and "disable_notification" not in bodies[2]
 bodies.clear(); long = "\n\n".join(f"{i}. " + "가" * 300 for i in range(40))  # 4096자 넘는 일반 글은 문단 단위로 나눠 보냄(10/6 블로그용 글 실패)
-H.tg("sendMessage", chat_id="42", text=long); H.tg("sendMessage", chat_id="42", text=long, reply_markup={"inline_keyboard": []})
-assert len(bodies) == 5 and all(len(b["text"]) <= 4096 for b in bodies[:4]) and "\n\n".join(b["text"] for b in bodies[:4]) == long and bodies[4]["text"] == long
+hl = "\n\n".join(f'<a href="https://example.com/{"y" * 300}">딜 {i}</a>' for i in range(20))  # HTML: 주소 때문에 4096자 넘어도 보이는 글자는 짧음 -> 한 번에(자르면 태그가 깨져 400)
+H.tg("sendMessage", chat_id="42", text=long); H.tg("sendMessage", chat_id="42", text=long, reply_markup={"inline_keyboard": []}); H.tg("sendMessage", chat_id="42", text=hl, parse_mode="HTML")
+assert len(bodies) == 6 and all(len(b["text"]) <= 4096 for b in bodies[:4]) and "\n\n".join(b["text"] for b in bodies[:4]) == long and bodies[4]["text"] == long and bodies[5]["text"] == hl and len(hl) > 4096
 H.http = fake_http
 
 # 3) 승인 처리: 관리자 ✅(중복 클릭 1회만), ❌, 타인 클릭 무시, 처리 후 offset 확인, posts.json 기록
