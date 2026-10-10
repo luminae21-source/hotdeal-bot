@@ -841,7 +841,7 @@ def match_http(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 def match_pick(prompt, lines):
     mprompts.append((prompt, lines))
-    return [{"i": 0, "score": 9 if re.search("모나리자|삼다수|계란|감귤 10kg", lines[0]) else 6, "comment": "같은 상품"}]
+    return [{"i": 0, "score": 9 if re.search("모나리자|삼다수|계란|감귤 10kg|풍천장어", lines[0]) else 6, "comment": "같은 상품"}]
 def relink_run():
     mcalls.clear(); mprompts.clear(); medits.clear(); out = io.StringIO()
     with contextlib.redirect_stdout(out): H.toss_relink(seen)
@@ -914,6 +914,15 @@ time.time = lambda: now + 86400 + 7200
 for k in ml: ml[k] = []
 mp.append({"t": kt(0), "text": "🔥 [토스] 모나리자 에코 미용티슈 300매 12입 (9,990원)", "url": pp + "10", "mid": 23, "cp": 123}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
 assert "후보 0/0" in relink_run() and seen["tosscache"]["items"] == []  # 1일 지난 목록 상품은 버림(쉐어링크 FAQ '가능한 한 1일 이내')
+H.EVENTS, ev0 = "ev_relink.json", H.EVENTS  # 10/11: 진우가 예약한 토스 링크도 후보 -> 뽐뿌 [토스] 딜이 같은 상품이면 발급 없이 그 링크로 교체(뽐뿌 민물장어 = 진우 링크 풍천장어)
+json.dump([{"at": kt(-3), "name": "고창 풍천장어 자포니카 민물장어+소스, 손질 후, 700g, 2-4미, 1개", "button": "🛒 18,900원 구매하기", "url": "https://toss.shopping/_m/DFe30tws"},
+           {"at": kt(80), "name": "민물장어 오래된 예약", "button": "🛒 1원 구매하기", "url": "https://toss.shopping/_m/OLD"}, {"at": kt(1), "name": "민물장어 쿠팡 예약", "url": "https://link.coupang.com/a/x"}], open(H.EVENTS, "w"))
+mp.append({"t": kt(0), "text": "🔥 [토스] 민물장어 1kg(손질 후 700g) (18,900원/무배)", "url": pp + "12", "mid": 27, "cp": 127}); json.dump(mp, open("posts.json", "w"), ensure_ascii=False)
+log = relink_run(); ch = [p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL]
+assert "(id ev:https://toss.shopping/_m/DFe30tws, 9점) | 링크 교체" in log and "/links" not in mcalls and not any("DFe30tws" in k for k in seen if k.startswith("tb_")), log
+assert [p["message_id"] for p in ch] == [27] and ch[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/DFe30tws" and ch[0]["text"].startswith(H.TOSS_NOTE)
+assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스, 손질 후, 700g, 2-4미, 1개 | 18,900원"]  # 3일 지난 예약·쉐어링크 아닌 예약은 후보 X
+H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
 assert "toss_relink, lambda s: digest" in inspect.getsource(H.main)

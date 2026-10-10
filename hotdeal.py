@@ -900,6 +900,8 @@ def toss_relink(seen):
     cache.update({x["tacaItemId"]: [x["tacaItemId"], x["displayName"], x["displayPrice"], now] for x in got})
     items = list(cache.values())
     seen["tosscache"] = {"t": now, "items": items}
+    items = [["ev:" + e["url"], e["name"], int(re.sub(r"\D", "", e.get("button", "")) or 0), now] for e in load(EVENTS, [])
+             if e.get("name") and toss_share(e.get("url")) and e["at"] >= since] + items  # 진우가 준 토스 링크(예약 글)도 후보 — 같은 상품이면 그 링크 그대로(10/11 뽐뿌 민물장어)
     toks = lambda s: {t for t in re.findall(r"[0-9a-z.]+[가-힣a-z]*|[가-힣]+", s.lower()) if len(t) > 1}
     ns = lambda s: re.sub(r"\s+", "", s.lower())
     for p in todo:
@@ -925,9 +927,10 @@ def toss_relink(seen):
         r["ids"] += [x[0] for x in cand]
         pick = cand and ai_pick(MATCH_PROMPT.format(title), [f"{x[1]} | {x[2]:,}원" for x in cand])
         hit = cand[pick[0]["i"]] if pick and pick[0]["score"] >= 8 else None
-        link = None
+        link = hit[0][3:] if hit and str(hit[0]).startswith("ev:") else None  # 진우 링크 = 발급 없이 그대로
         if hit:
             r["done"] = True
+        if hit and not link:
             seen[f"tb_{hit[0]}"] = {"t": now, "n": hit[1]}  # 채널에 이미 나간 상품 -> 3일 동안 토스 베스트·하루특가에 다시 안 올림(10/10 삼겹살 01:31 딜 → 12:09 베스트)
             try:
                 link = toss("/links", {"tacaItemId": hit[0], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
