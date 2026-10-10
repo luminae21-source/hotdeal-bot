@@ -865,7 +865,7 @@ def toss_relink(seen):
 
 
 def digest(seen, posts):
-    """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 초안 -> ✅ 누르면 채널 게시. 바로 뒤 블로그용 글(길면 나눠서, 실패하면 다음 실행에 다시)·카드·릴스."""
+    """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 -> 채널에 바로(10/10~, 실패하면 ✅ 초안). 바로 뒤 블로그용 글(길면 나눠서, 실패하면 다음 실행에 다시)·카드·릴스."""
     kst = time.gmtime(time.time() + 9 * 3600)
     key, today = time.strftime("digest_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
     todays = [p for p in posts if p["t"].startswith(today) and not p["text"].startswith("📋")]
@@ -879,11 +879,17 @@ def digest(seen, posts):
         if "blog_" + key[7:] not in seen:
             blog()
         return
-    rows = [f"{n}. <a href=\"{esc(f'{SITE}p/{posts.index(p)}.html' if aff_note(p['url'] or '') == OY_NOTE else p['url'])}\">{esc(title_of(p['text']))}</a>"  # 올영: 링크만 나열 금지(FAQ) -> 사이트
-            for n, p in enumerate(todays, 1)]
-    text = (f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows)
-            + f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick")
-    if draft(text):
+    urls = [f"{SITE}p/{posts.index(p)}.html" if aff_note(p["url"] or "") == OY_NOTE else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트
+    rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
+    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
+    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
+    while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
+        more = f"\n… 외 {len(todays) - len(rows)}개는 사이트에서" if len(rows) < len(todays) else ""
+        text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + tail
+        if len(html.unescape(re.sub(r"<[^>]+>", "", text))) <= 4000 or len(rows) <= 1:
+            break
+        rows.pop()
+    if tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}) or draft(text):  # 10/10 진우 '✅ 없이 자동 게시' — 채널 게시가 실패하면 예전처럼 초안
         seen[key] = time.time()
         blog()
         import cards

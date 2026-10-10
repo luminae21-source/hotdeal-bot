@@ -1003,8 +1003,8 @@ H.ai_pick = lambda prompt, lines: fills.append((prompt, lines)) or [{"i": 0, "sc
 seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
-    t = [x for m, x in sent if m == "draft"][-1]
-    assert "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_")
+    t = [x["text"] for m, x in sent if m == "sendMessage" and x["chat_id"] == "@ch"][-1]  # 10/10~ ✅ 없이 채널에 바로
+    assert not [m for m, x in sent if m == "draft"] and "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_")
     blog = [x for m, x in sent if m == "sendMessage"][-1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
     assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그
@@ -1176,8 +1176,21 @@ sent.clear(); time.time = lambda: 1791259200 + 20 * 86400; H.oy_claim({}); asser
 sent.clear(); time.time = lambda: 1791259200 + 26 * 86400; H.oy_claim({}); assert not sent  # 11/1 = 다음 기간 전
 time.time = lambda: 1791291600  # 10/6 22:00 KST
 oyp = [{"t": "2026-10-06 10:00", "text": f"{H.OY_NOTE}\n\n🔥 [올리브영] 세럼 (1원)\n\n1+1 구성", "url": "https://oy.run/x"}, {"t": "2026-10-06 11:00", "text": "🔥 [G마켓] 우유 (1원)\n\n싸요", "url": "https://a"}]
-d0 = H.draft; H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}; sent.clear(); H.digest({}, oyp); H.draft = d0
-dg = [p for m, p in sent if m == "draft"][0]
+d0 = H.draft; H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}; sent.clear(); H.digest({}, oyp)
+dg = [p["text"] for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"][0]
+assert not [m for m, p in sent if m == "draft"] and dg.startswith("📋 <b>오늘의 딜 모아보기 (10/6)</b>")  # 10/10 진우 '✅ 없이 자동 게시' -> 채널에 바로, 제휴 링크 없으면 문구 없음
+LPU = "https://click.linkprice.com/click.php?m=gmarket&a=x"
+lpp = [{"t": "2026-10-06 10:00", "text": f"{H.aff_note(LPU)}\n\n🔥 [G마켓] 우유 (1원)", "url": LPU}, {"t": "2026-10-06 11:00", "text": "🔥 [토스] 김 (2원)", "url": "https://toss.shopping/_m/a"},
+       {"t": "2026-10-06 12:00", "text": "🔥 [G마켓] 두유 (3원)", "url": LPU}]
+sent.clear(); H.digest({}, lpp); dl = [p["text"] for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"][0]
+assert dl.startswith(f"<i>{H.aff_note(LPU)}</i>\n<i>{H.aff_note('https://toss.shopping/_m/a')}</i>\n\n📋 ") and dl.count("<i>") == 2  # 프로그램마다 1줄, 맨 위
+tg9 = H.tg; H.tg = lambda method, **p: sent.append((method, p)) or (None if p.get("chat_id") == "@ch" else {"message_id": 1})
+sent.clear(); sk = {}; H.digest(sk, lpp); H.tg = tg9
+assert [x for m, x in sent if m == "draft"][0] == dl and any(k.startswith("digest_") for k in sk)  # 채널 게시 실패 -> 예전처럼 ✅ 초안
+big = [{"t": "2026-10-06 10:00", "text": f"🔥 [G마켓] 아주 긴 상품 이름 {n} " + "가" * 60 + " (1,000원/무료)", "url": f"https://a/{n}"} for n in range(80)]
+sent.clear(); H.digest({}, big); db = [p["text"] for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"][0]; H.draft = d0
+vis = H.html.unescape(re.sub(r"<[^>]+>", "", db)); kept = db.count('<a href="https://a/')
+assert len(vis) <= 4000 and 1 < kept < 80 and f"… 외 {80 - kept}개는 사이트에서" in db and db.endswith("https://t.me/hotdeal_pick")  # 딜이 아주 많은 날: 4096자 안으로, 뒤쪽은 '외 N개'
 assert f'href="{H.SITE}p/0.html">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
 bt = H.blog_text(oyp, time.gmtime(1791291600 + 9 * 3600))
 assert bt.split("\n\n")[2] == H.OY_NOTE and "👉 https://oy.run/x" in bt  # 블로그: 올영 문구 본문 맨 위(코멘트 있는 글이라 링크 그대로)
