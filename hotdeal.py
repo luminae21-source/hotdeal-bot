@@ -432,6 +432,14 @@ def is_oy(title):
     return store_tag(title) in ("올리브영", "올영")
 
 
+EARN_TAGS = ("올리브영", "올영", "g마켓", "지마켓", "롯데온", "롯데on", "토스", "쿠팡")  # 수수료 되는 몰: 링크프라이스 검색 링크·토스 자동 링크·쿠팡 파트너스(사본)·올영 큐레이터
+
+
+def earns(title):
+    """제목 [쇼핑몰]이 수수료 되는 몰이면 True -> 점수 컷 1점 낮춤·같은 점수면 먼저(10/10 진우 '수수료 되는 딜 꼭 챙겨')."""
+    return any(k in store_tag(title) for k in EARN_TAGS)
+
+
 def keyword(title):
     """Claude 검색어가 없을 때: 제목에서 [쇼핑몰]·끝의 (가격/배송) 떼고 40자."""
     t = re.sub(r"^\s*\[[^\]]*\]\s*", "", title)
@@ -817,7 +825,7 @@ def top_deals(seen):
 def toss_relink(seen):
     """쉐어링크가 없는 최근 3일 [토스] 채널 딜에 우리 쉐어링크를 붙여 채널 글 버튼을 교체(진우가 사본에 답장한 것과 같은 relink_channel — 대가성 문구·사본 '교체됨'·posts.json·사이트).
     ① 루리웹·클리앙 글 = 처음 1번 글의 상품 주소를 다시 읽어 발급(본문 링크 고치기 전 글·그때 실패한 글). 버튼이 토스 앱 공유 주소(service.toss.im)면 상품 주소로 풀어 발급.
-    ② 그 외(뽐뿌는 서버 차단이라 상품 주소를 못 읽음) = 토스 API 목록(하루특가·최상위 카테고리별 베스트 100·베스트 100)에서 찾기 — 검색 API가 없어서 목록 대조:
+    ② 그 외(뽐뿌는 서버 차단이라 상품 주소를 못 읽음) = 토스 API 목록(하루특가·최상위 카테고리별 베스트 100·식품 하위 카테고리별 베스트 100(10/10~)·베스트 100)에서 찾기 — 검색 API가 없어서 목록 대조:
     이름 겹침 후보 8개 -> Claude가 같은 상품인지 확인(8점 이상만, 용량·수량 다르면 X). 10/9 기록만 해 본 첫 실행 11개 중 6개 찾음·6개 모두 같은 상품 -> '수정하자'로 교체.
     10/9 진우 '수수료 링크 안 붙은 것도 자동으로': 못 찾은 딜은 3일 동안 새 후보가 목록에 들어올 때마다 다시 확인(이미 본 후보는 Claude에 다시 안 물음),
     목록은 1일치를 모아 둠(베스트 순위에서 빠진 상품도 하루 동안은 대조 — 10/9 계란·비타500. 3일 -> 1일: 쉐어링크 FAQ '저장·캐싱은 가능한 한 1일 이내'). 찾으면(발급 실패 포함) 끝, 못 찾으면 지금처럼 사본 답장.
@@ -830,8 +838,13 @@ def toss_relink(seen):
     now = time.time()
     day, hour, got = time.strftime("%Y%m%d", time.gmtime(now)), time.strftime("%Y%m%d%H", time.gmtime(now)), []  # 9시(KST) = 0시(UTC) 갱신 -> UTC 날짜로 하루 1번
     if seen.get("tossget_cat", {}).get("d") != day:
-        got += toss("/products/today-deals?size=30")["items"] + [x for c in toss("/categories")["categories"]
-                                                                 for x in toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]]
+        tree = toss("/categories")["categories"]
+        got += toss("/products/today-deals?size=30")["items"] + [x for c in tree for x in toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]]
+        for c in [k for c in tree if c["displayName"] == "식품" for k in c.get("children") or []][:15]:  # 10/10: 뽐뿌 [토스] 딜은 거의 식품인데 최상위 베스트엔 없던 것(청도반시·삼겹살 5kg·모짜렐라 치즈떡) -> 식품 하위 베스트도(최대 1,500개, 일 상한 10,000 안)
+            try:
+                got += toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]
+            except Exception as e:  # 하위 카테고리 베스트가 안 되는 ID면 그것만 건너뜀
+                print("toss sub", c.get("displayName"), repr(e))
         seen["tossget_cat"] = {"t": now, "d": day}
     if seen.get("tossget_best", {}).get("h") != hour:
         got += toss("/products/best-selling?size=100")["items"]
@@ -1265,7 +1278,8 @@ def main():
             held.append(seen[k])
         else:  # 3시간 넘게 못 올린 딜은 식은 딜
             seen.pop(k)
-    held.sort(key=lambda h: -h["p"]["score"])
+    rank = lambda h: (-h["p"]["score"], not earns(h["d"]["title"]))  # 점수순, 같은 점수면 수수료 되는 딜 먼저
+    held.sort(key=rank)
     good = []
     if new:
         since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
@@ -1283,11 +1297,11 @@ def main():
                 seen[dkey(d["title"])] = time.time()
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
-        good = [p for p in picks if p["score"] >= MIN_SCORE - is_oy(new[p["i"]]["title"])]  # 올리브영은 1점 낮춰도(10/10 쇼핑 큐레이터 — 뽐뿌에 주 2~3개인데 6점 미만으로 다 빠지던 것)
+        good = [p for p in picks if p["score"] >= MIN_SCORE - earns(new[p["i"]]["title"])]  # 수수료 되는 몰은 1점 낮춰도(10/10 올리브영 -> 같은 날 진우 '수수료 딜 꼭 챙겨': 5점 링크프라이스 딜 3개가 빠지던 것)
         if not good and not held and picks and quiet():
             best = max(picks, key=lambda p: p["score"])
             good = [best] if best["score"] >= FILL_SCORE else []
-        good = [{"d": new[p["i"]], "p": {k: v for k, v in p.items() if k != "i"}} for p in good]
+        good = sorted(({"d": new[p["i"]], "p": {k: v for k, v in p.items() if k != "i"}} for p in good), key=rank)
     for h in (held + good)[:MAX_DRAFTS]:  # 보관해 둔 딜이 먼저
         seen.pop("hold_" + h["d"]["id"], None)
         p = h["p"]

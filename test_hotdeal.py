@@ -443,9 +443,9 @@ H.post_or_draft = lambda d, c, sc, *a, **k: posted.append((d["id"], sc, c))
 H.ai_pick = lambda prompt, lines: (asked.append(lines) if lines[0].startswith("[루리웹]") else None) or [{"i": i, "score": (8, 7, 9)[i], "comment": f"c{i}"} for i in range(len(lines))]  # 딜 판단만 셈(21시 넘으면 릴스 재료 채우기도 ai_pick 호출)
 json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
-assert posted == [("ruliweb_90", 8, "c0")] and len(asked) == 1 and len(asked[0]) == 3  # 20분 된 루리웹 글도 판단
-assert {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_91", "hold_ruliweb_92"} and "ruliweb_91" in sj and H.dkey("[G마켓] 상품2번 특가 묶음") in sj
-posted.clear(); H.main(); assert posted == [("ruliweb_92", 9, "c2")] and len(asked) == 1  # 다시 안 묻고, 높은 점수부터
+assert posted == [("ruliweb_92", 9, "c2")] and len(asked) == 1 and len(asked[0]) == 3  # 20분 된 루리웹 글도 판단, 높은 점수부터(10/10~ 새 딜도 정렬)
+assert {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_90", "hold_ruliweb_91"} and "ruliweb_91" in sj and H.dkey("[G마켓] 상품2번 특가 묶음") in sj
+posted.clear(); H.main(); assert posted == [("ruliweb_90", 8, "c0")] and len(asked) == 1  # 다시 안 묻고, 높은 점수부터
 posted.clear(); H.main(); assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 1
 posted.clear(); H.main(); assert posted == [] and not [k for k in json.load(open("seen.json")) if k.startswith("hold_")]
 sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 3 * 3600 - 60, "d": {"id": "ruliweb_91", "title": "x"}, "p": {"score": 9, "comment": "c"}}
@@ -464,7 +464,7 @@ H.publish_approved = lambda: None  # 앞 테스트의 텔레그램 입력(✅)�
 for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb_91"]), (1791248400, 1791248400 - 1200, False, []),
                                 (1791223200, 1791223200 - 7200, False, []), (1791248400, 1791248400 - 3600, True, [])):  # 10/6 10:00 / 03:00 KST
     time.time = lambda n=now: n
-    feed = '<rss><channel>' + "".join(it(f"[G마켓] 상품{k}번 특가 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k in range(3)) + '</channel></rss>'
+    feed = '<rss><channel>' + "".join(it(f"[11번가] 상품{k}번 특가 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k in range(3)) + '</channel></rss>'  # 수수료 없는 몰(수수료 몰은 1점 낮춤 -> 4-6)
     H.http = lambda url, *a, f=feed, **k: f if url == H.RULIWEB_RSS else ""
     json.dump([{"t": kfmt(last), "text": "🔥 예전 딜", "url": "https://x"}], open("posts.json", "w"))
     if picks5:
@@ -478,6 +478,18 @@ json.dump([{"t": kfmt(1791248400 - 1200), "text": "🔥 예전 딜", "url": "htt
 posted.clear(); json.dump({}, open("seen.json", "w")); H.main()
 sj = json.load(open("seen.json"))
 assert [p[0] for p in posted] == ["ruliweb_91"] and "hold_ruliweb_92" in sj and "hold_ruliweb_90" not in sj, (posted, [k for k in sj if k.startswith("hold_")])
+# 4-6) 수수료 되는 몰(10/10 진우 '수수료 되는 딜 꼭 챙겨'): 5점도 올림(수수료 없는 몰 5점은 X), 같은 점수면 수수료 딜 먼저
+assert H.earns("[G마켓]동원 참치") and H.earns("[롯데ON] 파스타") and H.earns("[토스쇼핑] 삼겹살") and H.earns("[쿠팡] 휴지") and H.earns("[올영] 립밤")
+assert not H.earns("[11번가] 호빵") and not H.earns("[카카오톡딜] 뒷고기") and not H.earns("[네이버]토스트기") and not H.earns("[옥션] 라면") and not H.earns("토스 딜")
+feed = '<rss><channel>' + "".join(it(f"[{m}] 상품{k}번 특가 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k, m in enumerate(("11번가", "지마켓", "롯데온", "11번가"))) + '</channel></rss>'
+H.http = lambda url, *a, **k: feed if url == H.RULIWEB_RSS else ""
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": (6, 6, 5, 5)[i], "comment": "c"} for i in range(len(lines))]  # 실제 ai_pick처럼 점수순
+posted.clear(); json.dump({}, open("seen.json", "w")); H.main(); sj = json.load(open("seen.json"))
+assert [p[0] for p in posted] == ["ruliweb_91"] and {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_90", "hold_ruliweb_92"}, (posted, [k for k in sj if k.startswith("hold_")])
+posted.clear(); H.main(); assert [p[0] for p in posted] == ["ruliweb_90"]  # 보관 딜도 점수순(6점 11번가가 5점 롯데온보다 먼저)
+sj = json.load(open("seen.json")); sj["hold_ruliweb_95"] = {"t": time.time() - 600, "d": {"id": "ruliweb_95", "title": "[11번가] 수건"}, "p": {"score": 6, "comment": "c"}}
+sj["hold_ruliweb_96"] = {"t": time.time() - 600, "d": {"id": "ruliweb_96", "title": "[G마켓] 참치"}, "p": {"score": 6, "comment": "c"}}
+json.dump(sj, open("seen.json", "w")); posted.clear(); H.main(); assert [p[0] for p in posted] == ["ruliweb_96"]  # 보관 딜도 같은 점수면 수수료 딜 먼저
 time.time, H.publish_approved = tq, pa2
 # 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
 BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"
@@ -756,7 +768,7 @@ open("posts.json", "w").write(bak)
 #       목록 호출은 카테고리·하루특가 하루 1번·베스트 1시간 1번
 import io, contextlib
 mcalls, mprompts, medits = [], [], []
-ml = {"today": [(51, "광동 비타500 100ml 20병", 9900)], 200: [(41, "제주 극조생 감귤 5kg", 9900)],
+ml = {"today": [(51, "광동 비타500 100ml 20병", 9900)], 200: [(41, "제주 극조생 감귤 5kg", 9900)], 210: [(81, "씨없는 청도반시 2.5kg", 12800)],
       300: [(31, "모나리자 에코 미용티슈 300매, 12개", 11990), (32, "깨끗한나라 화장지 30롤", 15900)],
       "best": [(31, "모나리자 에코 미용티슈 300매, 12개", 11990), (61, "삼다수 2L 12병", 9000), (71, "아빠표 구운계란 중란 30구 2판", 16900)]}
 rb = "https://bbs.ruliweb.com/market/board/1020/read/"
@@ -773,7 +785,10 @@ def match_http(url, body=None, headers=None, method=None):
         return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/L{i}"}} if i != 61
                           else {"resultType": "FAIL", "error": {"reason": "발급 제한 상품"}})
     if url.endswith("/categories"):
-        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 300, "displayName": "생활용품"}]}})
+        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품", "children": [{"categoryId": 210, "displayName": "과일"}, {"categoryId": 999, "displayName": "안됨"}]},
+                                                                               {"categoryId": 300, "displayName": "생활용품", "children": [{"categoryId": 310, "displayName": "세제"}]}]}})
+    if "/best-categories/999" in url:
+        raise RuntimeError("HTTP 400")  # 하위 카테고리 베스트가 안 되는 ID
     if "/best-categories/" in url:
         assert url.endswith("?size=100"); return it(int(url.rsplit("/", 1)[1][:3]))
     if url.endswith("/products/today-deals?size=30"):
@@ -816,7 +831,9 @@ assert "진라면 매운맛 40봉 (19,900원) -> 없음" in log  # 루리웹 글
 assert "펩시제로 제로카페인 355ml 48캔 (25,832원) -> 글의 상품 주소 https://toss.shopping/t/889 | 링크 교체" in log  # 토스 앱 공유 주소 -> 상품 페이지 canonical -> 발급
 assert "이미 링크" not in log and "쿠팡 딜" not in log and "오래된" not in log and "채널 실패" not in log and len(mprompts) == 2  # 쉐어링크 딜·다른 몰·3일 지난 딜·채널 글 아닌 것 제외
 assert mprompts[0][1][0] == "모나리자 에코 미용티슈 300매, 12개 | 11,990원" and "깨끗한나라" not in str(mprompts[0][1]) and "모나리자 에코 미용티슈 300매 12입" in mprompts[0][0]
+assert [81, "씨없는 청도반시 2.5kg", 12800, now] in seen["tosscache"]["items"] and "toss sub 안됨 RuntimeError('HTTP 400')" in log  # 식품 하위 베스트도 목록에(10/10 청도반시), 안 되는 ID는 그것만 건너뜀
 assert sorted(mcalls) == sorted(["/products/today-deals?size=30", "/categories", "/products/best-categories/200?size=100", "/products/best-categories/300?size=100",
+                                 "/products/best-categories/210?size=100", "/products/best-categories/999?size=100",  # 식품 하위만(생활용품 하위 310은 안 받음)
                                  "/products/best-selling?size=100", "/links", "/links", "/links", rb + "1", rb + "2",
                                  "https://service.toss.im/shopping-discovery/c/888"])  # 뽐뿌 글은 안 읽음(서버 차단, 우회 안 함)
 ch = {p["message_id"]: p for m, p in medits if m == "editMessageText" and p["chat_id"] == H.CHANNEL}
@@ -1180,7 +1197,7 @@ assert H.OY_NOTE == "이 포스팅은 올리브영 쇼핑 큐레이터 활동의
 assert H.with_note("🔥 [올리브영] 세럼", [], "https://oy.run/x")[0].startswith(H.OY_NOTE + "\n\n🔥") and S.aff("https://oy.run/x") and S.title_of(H.OY_NOTE + "\n\n🔥 [올리브영] 세럼") == "[올리브영] 세럼"
 assert H.store_info("[올리브영]메디힐 세럼 1+1 (24,200원/무료)") == H.STORES["올리브영"] and H.store_info("세럼", "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A1") == H.STORES["올리브영"]
 assert H.store_info("[네이버][올리브영기프트카드] 5만원권") == H.STORES["네이버"] and H.is_oy("[올영] 립밤") and not H.is_oy("[네이버]올리브영 초콜렛")
-assert "[올리브영] 딜 comment는" in H.DEAL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - is_oy(" in inspect.getsource(H.main)  # 사실만·1점 낮춤
+assert "[올리브영] 딜 comment는" in H.DEAL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - earns(" in inspect.getsource(H.main) and H.earns("[올리브영] 세럼")  # 사실만·1점 낮춤(10/10~ 수수료 몰 전체, 4-6)
 oyh = [{"board": "뽐뿌", "hits": "댓글0·조회3000·추천5·비추0", "age": 60, "title": t} for t in ("[올리브영] 세럼", "[G마켓] 우유")]
 H.mark_hot(oyh); assert not any(k in oyh[0] for k in ("hot", "pop", "vpm", "rec")) and oyh[1]["hot"] and oyh[1]["pop"]  # 올영은 추천·반응 표시 X
 sent.clear(); H.post_or_draft({"title": "[올리브영]다슈 립밤 4g (8,820원)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}, "8,820원, 2만 원 이상 무료배송", 6, "다슈 립밤")
