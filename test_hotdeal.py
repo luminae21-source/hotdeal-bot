@@ -673,6 +673,12 @@ tp, kb = H.top_post("H", [("A&B", "https://x?a=1&b=2", ["💰 <b>1원</b>", "", 
 assert tp == 'H\n\n1️⃣ <a href="https://x?a=1&amp;b=2"><b>A&amp;B</b></a>\n💰 <b>1원</b>\n👉 c' and kb == [[{"text": "1️⃣ A&B", "url": "https://x?a=1&b=2"}]]
 sent.clear(); H.toss_deals(seen); assert not sent  # 하루 1번
 assert len(json.load(open("posts.json"))) == n0  # API 상품은 사이트에 안 남김
+pk = H.ai_pick; H.ai_pick = lambda prompt, lines: offered.extend(lines) or [{"i": 0, "score": 9, "comment": "가"}]  # 10/10 하루특가 9·13·17시
+offered.clear(); time.time = lambda: 1791248400 + 3 * 3600; H.toss_deals(seen)  # 13:00 회차: 9시에 올린 상품(tb_)·품절은 빼고 다시 고름
+assert [l.split(" |")[0] for l in offered] == ["토스상품0"] and not sent  # 남은 건 발급 실패 상품뿐 -> 글 없음
+offered.clear(); H.toss_deals(seen); assert not offered  # 같은 회차 1번
+offered.clear(); time.time = lambda: 1791248400 + 10 * 3600 + 1800; H.toss_deals(seen); assert not offered  # 20:30: 17시 회차 3시간 지남 -> 안 올림
+H.ai_pick, time.time = pk, lambda: 1791248400
 th = []  # 하루특가는 Threads에도 1개(신청서 서비스 = 텔레그램 채널 + 스레드 자동 게시): 대가성 문구 맨 앞, 500자 안, 채널과 같은 순서, HTML 태그 없음
 def toss_th(url, body=None, headers=None, method=None):
     if not url.startswith(H.THREADS):

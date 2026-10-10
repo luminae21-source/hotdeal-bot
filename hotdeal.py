@@ -113,6 +113,7 @@ e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객�
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
 TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
+TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 12, 14, 16, 18, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
 TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
@@ -777,8 +778,10 @@ def toss_deals(seen, best=False):
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
     kst, cat = time.gmtime(time.time() + 9 * 3600), best == "cat"
-    hrs = [h for h in ((TOSS_CAT_HOUR,) if cat else TOSS_BEST_HOURS if best else (9,)) if h <= kst.tm_hour]
-    key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
+    day = [h for h in TOSS_DAY_HOURS if h <= kst.tm_hour < h + 3]  # 하루특가는 회차 3시간 안에만(놓친 회차를 밤에 몰아 올리지 않게)
+    hrs = [h for h in ((TOSS_CAT_HOUR,) if cat else TOSS_BEST_HOURS if best else day) if h <= kst.tm_hour]
+    key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + \
+        (str(hrs[-1]) if best and hrs else f"_{hrs[-1]}" if hrs and hrs[-1] != TOSS_DAY_HOURS[0] else "")  # 9시 키는 예전 그대로
     if not HAS_TOSS or not hrs or key in seen:
         return
     head = "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
