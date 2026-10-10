@@ -87,6 +87,8 @@ REEL_RULES
 5점 미만은 반환하지 마.
 """
 DEAL_PROMPT = DEAL_PROMPT.replace("REEL_RULES", REEL_RULES)
+ADMIN_PROMPT = DEAL_PROMPT.replace("5점 미만은 반환하지 마.", "점수와 상관없이 반드시 반환해(약한 딜은 점수를 낮게).") + \
+    "이번 딜은 운영자가 쇼핑몰에서 직접 고른 상품이라 커뮤니티 반응 정보가 없어: 가격 매력·대중성만으로 점수를 매기고, 운영자가 적은 가격·조건만 사실로 써(모르는 건 지어내지 마).\n"
 REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n"
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
 대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
@@ -577,10 +579,40 @@ def relink(m, url):
     return text, ents, rows
 
 
+def admin_deal(lines, link, mid):
+    """관리자가 봇에 '상품명·가격 줄 + 제휴 링크'를 새로 보내면(10/10 진우 '봇에 링크+가격 보내면 자동') Claude가 코멘트·단위가격·확인할 점을 달아
+    채널에 바로 + posts.json(사이트·모아보기). 링크는 서버에서 열지 않음(파트너스 자기 클릭 방지) -> 적힌 정보로만 판단.
+    채널 점수 컷(MIN_SCORE, 수수료 몰 -1) 미만이면 🛒 + '솔직히 특가로는 약한 제품' 줄(10/10 진우 '특가로는 약한 제품이라고 써 보자').
+    처리했으면 True, Claude 오류·응답 없음·채널 실패면 False(-> 지금처럼 초안 ✅)."""
+    if any(x.get("url") == link for x in load(POSTS, [])[-80:]):  # 15분 안 바뀌어서 다시 보낸 링크 -> 두 번 안 올림
+        tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid}, text="이미 채널에 올린 링크야")
+        return True
+    shop = next((v for k, v in HOST_STORES.items() if k in urllib.parse.urlsplit(link).netloc), "")
+    title = lines[0] if lines[0].startswith("[") or not shop else f"[{shop}] {lines[0]}"
+    try:
+        p = (ai_pick(ADMIN_PROMPT, [f"[운영자] {title} |  | 0분 전 | {' / '.join(lines[1:])}"]) or [None])[0]
+    except Exception as e:
+        print("admin ai_pick 실패", repr(e))
+        return False
+    if not p:
+        return False
+    facts = "".join(f"\n{icon} {esc(p[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if p.get(k))
+    weak = p["score"] < MIN_SCORE - earns(title)
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=f"<i>{aff_note(link)}</i>\n\n{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
+           + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}",
+           link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": "🛒 구매하러 가기", "url": link}]]})
+    if not m:
+        return False
+    record(m.get("text", ""), m.get("entities", []), link, m.get("message_id"), p["score"], {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
+    tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid}, text=f"✅ 채널에 올림 (Claude {p['score']}점{' · 특가로는 약함 표시' if weak else ''})",
+       reply_markup={"inline_keyboard": [[{"text": "📢 채널 글", "url": post_url(m["message_id"])}]]})
+    return True
+
+
 def publish_approved():
     """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 15분 주기로 충분.
     1) 사본·초안에 링크로 답장 -> 구매 버튼 교체 (쿠팡·토스·네이버 링크는 답장 없이 링크만 보내도 가장 최근 같은 몰 사본)
-    2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 그 딜 초안 생성
+    2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 제휴 링크면 Claude 코멘트 달아 채널에 바로(admin_deal, 10/10~), 아니면·실패면 그 딜 초안 생성
     3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)
     4) 음악 파일 보내기 -> 릴스 배경음악 목록(music.json)에 추가"""
     ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
@@ -599,6 +631,9 @@ def publish_approved():
             continue
         url = re.search(r"https?://\S+", m.get("text", ""))
         if not url or str(m.get("from", {}).get("id")) != ADMIN:
+            continue
+        if "<iframe" in m["text"]:  # 파트너스 배너 코드는 사이트용 -> 단축 URL로
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="iframe 말고 단축 URL(link.coupang.com/a/…)로 보내줘")
             continue
         if m.get("reply_to_message"):
             rm = m["reply_to_message"]
@@ -620,8 +655,9 @@ def publish_approved():
                text="첫 줄에 제목을 같이 보내줘. 예)\n[G마켓] 상품명 (39,910원/무료)\n한 줄 코멘트\n링크")
             continue
         note, body = aff_note(url.group(0)), "\n".join(lines[1:])
-        draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(lines[0])}</b>" + (f"\n\n{esc(body)}" if body else ""),
-              url.group(0))
+        if not (note and admin_deal(lines, url.group(0), m["message_id"])):
+            draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(lines[0])}</b>" + (f"\n\n{esc(body)}" if body else ""),
+                  url.group(0), info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None)
     handled = set()
     for u in ups:
         q = u.get("callback_query") or {}

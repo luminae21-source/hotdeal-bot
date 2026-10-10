@@ -234,15 +234,45 @@ UP = [{"update_id": 20, "message": {"message_id": 30, "from": {"id": 42}, "text"
       {"update_id": 22, "message": {"message_id": 32, "from": {"id": 99}, "text": f"[스팸] 광고\n{LP}"}},
       {"update_id": 23, "message": {"message_id": 33, "from": {"id": 42}, "text": "[G마켓] 일반\nhttps://item.gmarket.co.kr/Item?goodscode=1"}}]
 H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 1})
+pa33, H.ai_pick = H.ai_pick, lambda prompt, lines: []  # Claude 응답 없음 -> 지금처럼 초안(3-3b가 자동 게시)
 H.publish_approved()
 ms = [p for m, p in sent if m == "sendMessage"]
 assert len(ms) == 3, ms
+assert ms[0]["reply_markup"]["inline_keyboard"][-1][0]["text"].startswith("🤖 자동 게시 실패") and len(ms[2]["reply_markup"]["inline_keyboard"]) == 2  # 제휴 링크 아니면 안내 버튼 없음
 assert ms[0]["chat_id"] == "42" and ms[0]["text"] == f"<i>{H.AFF_NOTE}</i>\n\n🔥 <b>[G마켓] 러닝화 (39,910원/무료)</b>\n\n쿠폰 &lt;필수&gt;"
 assert ms[0]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🛒 구매하러 가기", "url": LP} and ms[0]["text"].count("이 포스팅은") == 1
 assert ms[1]["reply_parameters"] == {"message_id": 31} and "제목" in ms[1]["text"]  # 링크만 -> 안내
 assert ms[2]["text"] == "🔥 <b>[G마켓] 일반</b>"  # 일반 쇼핑몰 주소: 문구 없음
 assert sent[-1] == ("getUpdates", {"offset": 24})
-H.tg = fake_tg
+# 3-3b) 제휴 링크 + '상품명 가격' -> Claude 코멘트·단위가격·확인할 점 달아 채널에 바로 + posts.json(10/10 진우 '봇에 링크+가격 보내면 자동'),
+#       몰 태그 없으면 링크로 [쿠팡], 점수 컷 미만이면 🛒 + '특가로는 약한 제품'(진우 '특가로는 약한 제품이라고 써 보자'), 같은 링크 다시 보내면 안 올림, iframe 코드는 안내, Claude 오류면 초안
+CPL, asked3 = "https://link.coupang.com/a/new1", []
+H.ai_pick = lambda prompt, lines: asked3.append((prompt, lines)) or (1 / 0 if "에러" in lines[0] else
+    [{"i": 0, "score": 4, "comment": "평소 가격"}] if "약한" in lines[0] else [{"i": 0, "score": 5, "comment": "괜찮음"}] if "오점" in lines[0] else [{"i": 0, "score": 7, "comment": "27인치 100Hz가 10만 원대", "unit": "1인치당 3,843원", "warn": "휴일특가 끝나면 오름", "e": "🖥️"}])
+UP = [{"update_id": 50, "message": {"message_id": 70, "from": {"id": 42}, "text": f"이트로이 27인치 모니터 103,770원\n휴일특가\n{CPL}"}},
+      {"update_id": 51, "message": {"message_id": 71, "from": {"id": 42}, "text": f"이트로이 27인치 모니터 103,770원\n{CPL}"}},
+      {"update_id": 52, "message": {"message_id": 72, "from": {"id": 42}, "text": '<iframe src="https://coupa.ng/cp3ajH" width="120"></iframe>'}},
+      {"update_id": 53, "message": {"message_id": 73, "from": {"id": 42}, "text": "[쿠팡] 에러 상품 1,000원\nhttps://link.coupang.com/a/new2"}},
+      {"update_id": 54, "message": {"message_id": 74, "from": {"id": 42}, "text": "[G마켓] 일반2\nhttps://item.gmarket.co.kr/Item?goodscode=2"}},
+      {"update_id": 55, "message": {"message_id": 75, "from": {"id": 42}, "text": "채널실패 상품 2,000원\nhttps://link.coupang.com/a/new3"}},
+      {"update_id": 56, "message": {"message_id": 76, "from": {"id": 42}, "text": "약한 키보드 77,900원\nhttps://link.coupang.com/a/new4"}},
+      {"update_id": 57, "message": {"message_id": 77, "from": {"id": 42}, "text": "오점 계란 7,990원\nhttps://link.coupang.com/a/new5"}}]
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else
+    None if p.get("chat_id") == "@ch" and "채널실패" in p.get("text", "") else {"message_id": 300, "text": "글", "entities": []})
+n3 = len(json.load(open("posts.json")))
+H.publish_approved()
+ch = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
+ad = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "42"]
+assert len(ch) == 4 and ch[3]["text"].endswith("🔥 <b>[쿠팡] 오점 계란 7,990원</b>\n\n괜찮음") and "채널실패" in ch[1]["text"] and ch[2]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🛒 <b>[쿠팡] 약한 키보드 77,900원</b>\n\n🤔 솔직히 특가로는 약한 제품\n평소 가격" and ch[0]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 이트로이 27인치 모니터 103,770원</b>\n\n27인치 100Hz가 10만 원대\n💡 단위가격 1인치당 3,843원\n⚠️ 확인할 점 휴일특가 끝나면 오름", ch
+assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": CPL}]]
+assert asked3[0] == (H.ADMIN_PROMPT, ["[운영자] [쿠팡] 이트로이 27인치 모니터 103,770원 |  | 0분 전 | 휴일특가"]) and len(asked3) == 5 and "지어내지 마" in H.ADMIN_PROMPT and "반드시 반환" in H.ADMIN_PROMPT and "5점 미만은 반환하지 마" not in H.ADMIN_PROMPT
+pj3 = json.load(open("posts.json"))
+assert len(pj3) == n3 + 3 and pj3[-2]["s"] == 4 and pj3[-2]["url"].endswith("new4") and pj3[-3]["url"] == CPL and pj3[-3]["mid"] == 300 and pj3[-3]["s"] == 7 and pj3[-3]["e"] == "🖥️" and pj3[-3]["unit"] == "1인치당 3,843원"
+assert [x.get("reply_parameters", {}).get("message_id") for x in ad] == [70, 71, 72, None, None, None, 76, 77] and ad[6]["text"] == "✅ 채널에 올림 (Claude 4점 · 특가로는 약함 표시)"  # 올림 안내·이미 올림·iframe 안내·오류/일반 주소/채널 실패 -> 초안
+assert ad[0]["text"] == "✅ 채널에 올림 (Claude 7점)" and ad[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/300" and "이미" in ad[1]["text"] and ad[2]["text"].startswith("iframe 말고")
+assert ad[4]["text"] == "🔥 <b>[G마켓] 일반2</b>" and "채널실패" in ad[5]["text"]   # 제휴 링크 아니면 Claude 안 부름
+assert ad[3]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 에러 상품 1,000원</b>" and ad[3]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok"
+H.tg, H.ai_pick = fake_tg, pa33
 
 # 3-7) 음악 파일 보내기 -> 릴스 배경음악 등록(file_id만 저장, 같은 곡 1번, 오디오 문서도 됨, 남이 보낸 건·일반 파일은 무시) / 오늘 차례 곡 받기
 UP = [{"update_id": 40, "message": {"message_id": 50, "from": {"id": 42}, "audio": {"file_id": "F1", "file_unique_id": "U1", "title": "Happy"}}},
