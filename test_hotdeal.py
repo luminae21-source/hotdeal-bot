@@ -493,10 +493,12 @@ time.time = tt
 json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "https://link.coupang.com/a/old"},
            {"at": "2026-10-06 09:30", "text": "⚡ <b>쿠가세</b>", "button": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"},
            {"at": "2026-10-06 09:40", "text": "일반", "button": "b", "url": "https://example.com"},
+           {"at": "2026-10-06 09:50", "text": "📌 사용법", "button": "📤 공유", "url": "https://t.me/share/url?url=https%3A%2F%2Ft.me%2Fhotdeal_pick", "pin": True},
            {"at": "2026-10-06 11:00", "text": "아직", "button": "b", "url": "https://link.coupang.com/a/y"}], open("events.json", "w"))
 seen, sent[:], tt3 = {}, [], time.time
 time.time = lambda: 1791248400; H.events(seen)  # 10/6 10:00 KST
-assert [p["text"] for m, p in sent] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반"] and sent[0][1]["chat_id"] == "@ch"
+assert [p["text"] for m, p in sent if m == "sendMessage"] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반", "📌 사용법"] and sent[0][1]["chat_id"] == "@ch"
+assert [(m, p) for m, p in sent if m != "sendMessage"] == [("pinChatMessage", {"chat_id": "@ch", "message_id": 1, "disable_notification": True})]  # "pin": true만 고정, 알림 없이
 assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
 sent.clear(); H.events(seen); assert not sent  # 1번만
 time.time = tt3; os.remove("events.json"); H.events({})  # 파일 없으면 아무것도 안 함

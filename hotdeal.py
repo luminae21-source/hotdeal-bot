@@ -653,16 +653,19 @@ def goldbox(seen):
 
 
 def events(seen):
-    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞). 놓친 지 오래된 글은 안 올림(식은 글)."""
+    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞, "pin": true면 채널 맨 위 고정). 놓친 지 오래된 글은 안 올림(식은 글)."""
     kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + h * 3600))
     for ev in load(EVENTS, []):
         key = "ev_" + ev["at"]
         if key in seen or not (kst(9 - 6) <= ev["at"] <= kst(9)):
             continue
         note = aff_note(ev["url"])
-        if tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-              text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]}):
+        m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+               text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]})
+        if m:
             seen[key] = time.time()
+            if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
+                tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
 
 
 def cp_events(seen, deals=()):
