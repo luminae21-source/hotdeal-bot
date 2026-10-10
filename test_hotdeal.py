@@ -1,6 +1,6 @@
 """셀프체크: python test_hotdeal.py  (네트워크·키 불필요)"""
 import base64, hashlib, hmac, io, json, os, re, tempfile, time
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
@@ -67,6 +67,20 @@ assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and li
 t2 = H.deal_post(d, "싸다", None, {"unit": "100g당 990원", "warn": "쿠폰 <1인 1회>", "pts": ["x"]})[0]  # 단위가격·확인할 점은 코멘트 아래, 출처 위
 assert "싸다\n💡 단위가격 100g당 990원\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n\n출처:" in t2 and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", "")
 assert "unit:" in H.DEAL_PROMPT and "warn:" in H.DEAL_PROMPT and "unit:" in H.REEL_PROMPT
+# 1-1a) 상품 주소를 못 꺼낸 딜(뽐뿌 차단) -> 원글 대신 그 몰 검색 결과(10/10 진우 '쇼핑몰로 바로'), 원글은 본문 '출처' 링크로. 토스·모르는 몰은 원글 그대로
+sl0, pp = H.store_link, "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=9"
+H.store_link = lambda u: None
+ms = {tt: H.deal_post({"board": "뽐뿌", "url": pp, "title": tt}, "싸다", q)[1:] for tt, q in
+      [("[11번가] 호텔컬렉션 수건 10장 (26,520원/무료)", "호텔컬렉션 40수 수건"), ("[톡딜] 한돈 뒷고기 (9,900원)", None), ("[카카오톡] 사과 5kg (1원)", None),
+       ("[네이버] 대한떡볶이 1팩 (1,990원/무료)", None), ("[토스] 김 (1원)", None), ("[스팀] 게임 (1원)", None)]}
+assert ms["[11번가] 호텔컬렉션 수건 10장 (26,520원/무료)"] == ("https://search.11st.co.kr/Search.tmall?kwd=" + quote("호텔컬렉션 40수 수건"), "🔎 11번가에서 찾기")  # Claude 검색어
+assert ms["[톡딜] 한돈 뒷고기 (9,900원)"] == ("https://store.kakao.com/search/result/product?q=" + quote("한돈 뒷고기"), "🔎 카카오에서 찾기")  # 검색어 없으면 제목에서 몰·가격 뗀 이름
+assert ms["[카카오톡] 사과 5kg (1원)"][1] == "🔎 카카오에서 찾기" and ms["[네이버] 대한떡볶이 1팩 (1,990원/무료)"] == ("https://search.shopping.naver.com/search/all?query=" + quote("대한떡볶이 1팩"), "🔎 네이버쇼핑에서 찾기")
+assert ms["[토스] 김 (1원)"] == ms["[스팀] 게임 (1원)"] == (pp, "🛒 구매하러 가기")  # 토스(쉐어링크 자동 교체가 원글 기준)·모르는 몰은 원글
+assert f'출처: <a href="{H.esc(pp)}">뽐뿌</a>' in H.deal_post({"board": "뽐뿌", "url": pp, "title": "[11번가] 수건 (1원)"}, "싸다")[0]  # 원글은 출처 링크로 남음
+H.store_link = lambda u: "https://www.11st.co.kr/products/1"
+assert H.deal_post({"board": "뽐뿌", "url": pp, "title": "[11번가] 수건 (1원)"}, "싸다")[1:] == ("https://www.11st.co.kr/products/1", "🛒 구매하러 가기")  # 상품 주소가 있으면 검색보다 상품 페이지
+H.store_link = sl0
 # 1-1b) 커뮤니티 반응 좋은 딜 강조(10/9 진우): 게시판별 분당 조회수 3위 안(20회 이상) 또는 추천 3개 이상 -> 제목 바로 아래 '🏆 인기', 사이트 칸에도
 hd = [{"board": "뽐뿌", "hits": f"댓글0·조회{v}·추천{r}·비추0", "age": a, "title": n} for n, v, r, a in
       [("a", 3000, 0, 60), ("b", 2400, 0, 40), ("c", 900, 0, 30), ("d", 1000, 0, 60), ("e", 500, 4, 50), ("f", 4000, 0, 3), ("g", 1500, 0, 60)]]
