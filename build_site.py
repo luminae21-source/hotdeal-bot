@@ -328,7 +328,10 @@ function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0;if(on)[].forEa
 [].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
 if(!on)dispatchEvent(new HashChangeEvent('hashchange'))}
 q.addEventListener('input',run);cs.forEach(function(b){b.addEventListener('click',function(){c=c===b.dataset.c?'':b.dataset.c;cs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.c===c?'true':'false')});run()})});
-addEventListener('hashchange',function(){if(q.value||c){q.value='';c='';cs.forEach(function(x){x.setAttribute('aria-pressed','false')});run()}})})()</script>"""
+addEventListener('hashchange',function(){if(q.value||c){q.value='';c='';cs.forEach(function(x){x.setAttribute('aria-pressed','false')});run()}});
+var u=new URLSearchParams(location.search).get('q');if(u){q.value=u;run()}})()</script>"""
+GO_FIND = ('<form class="find" role="search" action="../index.html"><input name="q" type="search" placeholder="🔎 다른 딜 검색 (예: 휴지, 설화수)"'
+           ' aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>')  # 딜 페이지 -> 홈에서 검색(10/11 진우 '딜 검색은 있었으면')
 
 
 def related(i, p, pool, n=4):
@@ -377,7 +380,7 @@ def build(posts, out="docs"):
     for i, p in reversed(list(enumerate(posts))):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", deal_card(i, p) + (more or "") + GB_LINK + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False))
+        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + deal_card(i, p) + (more or "") + GB_LINK + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
