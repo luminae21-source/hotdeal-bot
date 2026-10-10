@@ -781,7 +781,8 @@ def toss_deals(seen, best=False):
     key = time.strftime("tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + (str(hrs[-1]) if best and hrs else "")
     if not HAS_TOSS or not hrs or key in seen:
         return
-    head = "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else "⏰ <b>오늘의 토스 하루특가 TOP{}</b>"
+    head = "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
+        "⏰ <b>오늘의 토스 하루특가 TOP{}</b>\n<i>밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요</i>"  # 10/10 진우 화면: 선착순특가 유의사항
     if cat:  # 카테고리 ID는 트리에서 이름으로 찾음(트리 조회는 일 상한 차감 없음)
         tree = toss("/categories")["categories"]
         cats = [c for c in tree if c["displayName"] in TOSS_CATS]
@@ -819,7 +820,7 @@ def toss_deals(seen, best=False):
            text=f"<i>{TOSS_NOTE}</i>\n\n{text}", reply_markup={"inline_keyboard": kb})
     tok = E.get("THREADS_TOKEN")
     if rows and tok:  # Threads 글자 수 500 -> 넘치면 뒤 상품부터 뺌. 대가성 문구는 토스 가이드대로 맨 앞(더보기 없이 보이게)
-        while len(plain) > 1 and len(TOSS_NOTE) + 40 + len("\n\n".join(plain)) > 480:
+        while len(plain) > 1 and len(TOSS_NOTE) + len(head) + len("\n\n".join(plain)) > 480:
             plain.pop()
         text = f"{TOSS_NOTE}\n\n{re.sub('<.*?>', '', head).format(len(plain))}\n\n" + "\n\n".join(plain)
         me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]

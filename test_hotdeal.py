@@ -667,7 +667,7 @@ m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "TOP2" in t
 assert not [l for l in offered if "토스상품2" in l] and "토스상품0" not in t  # 품절은 후보에서 빼고, 발급 실패(0)는 글에서 뺌
 assert t.index('href="https://toss.im/_m/3"') < t.index('href="https://toss.im/_m/1"') and "4,000원</b> (30%↓)" in t
-assert t.endswith("TOP2</b>\n\n1️⃣ <a href=\"https://toss.im/_m/3\"><b>토스상품3</b></a>\n💰 <b>4,000원</b> (30%↓)\n👉 나\n\n2️⃣ <a href=\"https://toss.im/_m/1\"><b>토스상품1</b></a>\n💰 <b>2,000원</b> (10%↓)\n👉 다")
+assert t.endswith("TOP2</b>\n<i>밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요</i>\n\n1️⃣ <a href=\"https://toss.im/_m/3\"><b>토스상품3</b></a>\n💰 <b>4,000원</b> (30%↓)\n👉 나\n\n2️⃣ <a href=\"https://toss.im/_m/1\"><b>토스상품1</b></a>\n💰 <b>2,000원</b> (10%↓)\n👉 다")
 assert p["reply_markup"]["inline_keyboard"] == [[{"text": "1️⃣ 토스상품3", "url": "https://toss.im/_m/3"}], [{"text": "2️⃣ 토스상품1", "url": "https://toss.im/_m/1"}]]  # 번호 버튼(10/9 TOP 모양)
 tp, kb = H.top_post("H", [("A&B", "https://x?a=1&b=2", ["💰 <b>1원</b>", "", "👉 c"])])
 assert tp == 'H\n\n1️⃣ <a href="https://x?a=1&amp;b=2"><b>A&amp;B</b></a>\n💰 <b>1원</b>\n👉 c' and kb == [[{"text": "1️⃣ A&B", "url": "https://x?a=1&b=2"}]]
@@ -682,7 +682,7 @@ def toss_th(url, body=None, headers=None, method=None):
 H.http, H.E["THREADS_TOKEN"], sl, H.time.sleep = toss_th, "tk", H.time.sleep, lambda s: None
 seen.clear(); sent.clear(); H.toss_deals(seen)
 txt = parse_qs(urlsplit([u for u in th if "/threads?" in u][0]).query)["text"][0]
-assert "TOP2\n\n1️⃣ 토스상품3 — 4,000원\nhttps://toss.im/_m/3\n\n2️⃣ 토스상품1 — 2,000원\nhttps://toss.im/_m/1" in txt
+assert "TOP2\n밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요\n\n1️⃣ 토스상품3 — 4,000원\nhttps://toss.im/_m/3\n\n2️⃣ 토스상품1 — 2,000원\nhttps://toss.im/_m/1" in txt
 assert txt.startswith(H.TOSS_NOTE) and "TOP2" in txt and txt.index("https://toss.im/_m/3") < txt.index("https://toss.im/_m/1") and "4,000원" in txt and "<" not in txt and len(txt) <= 500
 assert any("threads_publish" in u for u in th) and [m for m, p in sent] == ["sendMessage"]
 def th_fail(url, *a, **k):  # Threads가 막혀도(10/6 같은 계정 잠김) 채널 글은 이미 올라갔으니 다음 실행에 또 안 올림
