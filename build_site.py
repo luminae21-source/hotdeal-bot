@@ -19,6 +19,7 @@ a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header
 .card{background:#fff;border-radius:16px;padding:18px 16px;margin:12px 0;border:1px solid #eef0f3;box-shadow:0 1px 2px rgba(25,31,40,.05)}.card h2{margin:0 0 8px;font-size:17px;line-height:1.4}.card h2 a{color:inherit;text-decoration:none}.t{color:#8b95a1;font-size:12px}
 .btn{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px 12px;margin-top:12px;border-radius:12px;background:#1b64da;color:#fff;text-decoration:none;font-weight:700;font-size:16px;text-align:center}
 .btn2{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 12px;margin-top:8px;border-radius:12px;border:1.5px solid #1b64da;color:#1b64da;text-decoration:none;font-weight:700;text-align:center}
+.top2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 2px}.top2 a{margin:0;min-height:46px;font-size:14px;padding:6px 8px;text-align:center}.tg2{display:flex;align-items:center;justify-content:center;border-radius:12px;background:#229ed9;color:#fff;text-decoration:none;font-weight:700}
 .tg{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px;margin:16px 0;border-radius:12px;background:#229ed9;color:#fff;text-decoration:none;font-weight:700;text-align:center}
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64da;outline-offset:2px}
@@ -81,7 +82,8 @@ def page(title, body, desc="", canonical="", gb=True):
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
-GB_LINK = f'<a class="gb" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스 · 오늘의 하루 특가 보기</a>'
+GB_LINK = (f'<div class="top2"><a class="gb" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>'  # 골드박스 + 텔레그램 한 줄(10/11 진우 '검색창+골드박스+텔레그램을 위에')
+           f'<a class="tg2" href="{CHANNEL}">📲 텔레그램 알림받기</a></div>')
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
 OY_HOSTS = ("oy.run",)  # 올리브영 쇼핑 큐레이터 링크(10/10 진우 가입, 앱에서 발급)
@@ -380,7 +382,7 @@ def build(posts, out="docs"):
     for i, p in reversed(list(enumerate(posts))):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + deal_card(i, p) + (more or "") + GB_LINK + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False))
+        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'

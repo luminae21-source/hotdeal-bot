@@ -1077,8 +1077,8 @@ mp = [{"t": td + " 09:00", "text": "🔥 [토스] 모나리자 미용티슈 300�
       {"t": td + " 10:10", "text": "🔥 [토스] 모나리자 미용티슈 300매 12입 (10,990원/무료)", "url": "https://toss.shopping/_m/m2"}]
 S.build(mp, "docs9"); i9, d9 = open("docs9/index.html").read(), open("docs9/p/0.html").read(); g9 = S.grid_item(0, mp[0])
 assert '<div class="pr">10,990원</div><div class="sv">쿠팡보다 7,210원↓</div><div class="u">10매당 31원</div>' in g9 and f'<b class="b2" data-end="{S.end_at(mp[0])}">' in g9 and S.END_JS in i9
-assert d9.index('<span class="pr">10,990원</span><span class="ship">무료배송</span><span class="sv">쿠팡보다 7,210원↓</span>') < d9.index("🛒 10,990원 구매하기") < d9.index("왜 골랐나요") < d9.index("같이 보면 좋은 딜") < d9.index(S.GB_LINK) < d9.index('class="tg"')
-assert d9.index(S.DISCLOSURE) < d9.index('class="card deal"') and d9.count(S.GB_LINK) == 1 and S.LIKE_JS in d9 and S.END_JS in d9 and i9.index(S.GB_LINK) < i9.index('id="q"') and d9.index(S.DISCLOSURE) < d9.index(S.GO_FIND) < d9.index('class="card deal"') and "get('q');if(u){q.value=u;run()}" in S.FIND_JS  # 홈은 골드박스가 위, 딜 페이지는 딜 아래
+assert d9.index('<span class="pr">10,990원</span><span class="ship">무료배송</span><span class="sv">쿠팡보다 7,210원↓</span>') < d9.index("🛒 10,990원 구매하기") < d9.index("왜 골랐나요") < d9.index("같이 보면 좋은 딜") < d9.index('class="tg"')
+assert d9.index(S.DISCLOSURE) < d9.index('class="card deal"') and d9.count(S.GB_LINK) == 1 and S.LIKE_JS in d9 and S.END_JS in d9 and i9.index(S.GB_LINK) < i9.index('id="q"') and d9.index(S.DISCLOSURE) < d9.index(S.GO_FIND) < d9.index(S.GB_LINK) < d9.index('class="card deal"') and 'class="tg2" href="https://t.me/' in S.GB_LINK and "get('q');if(u){q.value=u;run()}" in S.FIND_JS  # 홈·딜 페이지 모두 골드박스·텔레그램이 위(10/11~ 딜 페이지는 검색 → 골드박스·텔레그램 → 딜)
 rel9 = d9.split("같이 보면 좋은 딜")[1]
 assert rel9.count('class="g"') == 4 and rel9.index("물티슈") < rel9.index("화장지") < rel9.index("햇반") < rel9.index("신라면") and all(w not in rel9 for w in ("키친타월", "각티슈", "모나리자"))
 # 6-8) 검색 노출(10/9 진우 '구글·네이버에서 조회가 잘 안 돼'): robots.txt(사이트맵 위치), rss.xml(네이버 RSS 제출용 최근 30개), sitemap lastmod, 딜 페이지 설명 = 코멘트(대가성 문구·제목 반복 X), 홈 구조화 데이터
