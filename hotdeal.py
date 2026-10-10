@@ -708,7 +708,7 @@ def goldbox(seen):
 
 
 def events(seen):
-    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞, "pin": true면 채널 맨 위 고정). 놓친 지 오래된 글은 안 올림(식은 글)."""
+    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞, "pin": true면 채널 맨 위 고정, "deal": true면 딜로 기록). 놓친 지 오래된 글은 안 올림(식은 글)."""
     kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + h * 3600))
     for ev in load(EVENTS, []):
         key = "ev_" + ev["at"]
@@ -719,6 +719,8 @@ def events(seen):
                text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]})
         if m:
             seen[key] = time.time()
+            if ev.get("deal"):  # Claude가 예약한 상품 딜(10/10 진우 '쓰레드에 업로드 되게') -> posts.json = 사이트·모아보기·Threads에도
+                record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"])
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
                 tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
 
@@ -1199,7 +1201,8 @@ def threads_deals(seen):
         except Exception:
             return
         note = aff_note(posts[i].get("url") or "")
-        text = (f"{note}\n\n" if note else "") + f"🔥 {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
+        icon = "🛒" if "특가로는 약한 제품" in posts[i]["text"] else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
+        text = (f"{note}\n\n" if note else "") + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
             + f"\n\n👉 {url}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)

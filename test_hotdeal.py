@@ -552,10 +552,12 @@ json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "h
            {"at": "2026-10-06 09:30", "text": "⚡ <b>쿠가세</b>", "button": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"},
            {"at": "2026-10-06 09:40", "text": "일반", "button": "b", "url": "https://example.com"},
            {"at": "2026-10-06 09:50", "text": "📌 사용법", "button": "📤 공유", "url": "https://t.me/share/url?url=https%3A%2F%2Ft.me%2Fhotdeal_pick", "pin": True},
+           {"at": "2026-10-06 09:55", "text": "🔥 <b>[쿠팡] 계란</b>", "button": "🛒", "url": "https://link.coupang.com/a/egg", "deal": True},
            {"at": "2026-10-06 11:00", "text": "아직", "button": "b", "url": "https://link.coupang.com/a/y"}], open("events.json", "w"))
-seen, sent[:], tt3 = {}, [], time.time
+seen, sent[:], tt3, npj = {}, [], time.time, len(json.load(open("posts.json")))
 time.time = lambda: 1791248400; H.events(seen)  # 10/6 10:00 KST
-assert [p["text"] for m, p in sent if m == "sendMessage"] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반", "📌 사용법"] and sent[0][1]["chat_id"] == "@ch"
+assert [p["text"] for m, p in sent if m == "sendMessage"] == [f"<i>{H.DISCLOSURE}</i>\n\n⚡ <b>쿠가세</b>", "일반", "📌 사용법", f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 계란</b>"] and sent[0][1]["chat_id"] == "@ch"
+pje = json.load(open("posts.json")); assert len(pje) == npj + 1 and pje[-1]["url"] == "https://link.coupang.com/a/egg" and pje[-1]["mid"] == 1  # "deal": true만 딜로 기록(사이트·모아보기·Threads, 10/10)
 assert [(m, p) for m, p in sent if m != "sendMessage"] == [("pinChatMessage", {"chat_id": "@ch", "message_id": 1, "disable_notification": True})]  # "pin": true만 고정, 알림 없이
 assert sent[0][1]["reply_markup"] == {"inline_keyboard": [[{"text": "🔔 알림 신청", "url": "https://link.coupang.com/a/x"}]]}
 sent.clear(); H.events(seen); assert not sent  # 1번만
@@ -1269,7 +1271,7 @@ json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},
            {"t": kt(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x"},
            {"t": kt(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n맛있음\n\n출처: 뽐뿌", "url": "https://www.ppomppu.co.kr/1"},
            {"t": kt(0.2), "text": "🔥 [G마켓] 우유\n\n좋음\n\n출처: 뽐뿌", "url": "https://x"},
-           {"t": kt(0.1), "text": "🔥 [옥션] 라면\n\n좋음\n\n출처: 뽐뿌", "url": "https://y"}], open("posts.json", "w"))
+           {"t": kt(0.1), "text": "🛒 [옥션] 라면\n\n🤔 솔직히 특가로는 약한 제품\n좋음\n\n출처: 뽐뿌", "url": "https://y"}], open("posts.json", "w"))
 live_pages = {2, 3}
 def td_http(url, body=None, headers=None, method=None):
     calls.append((method or "GET", url))
@@ -1292,6 +1294,7 @@ assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] 
 assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, False, True, True, False, False]
 live_pages, calls[:] = {2, 3, 4, 5}, []; H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
 assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-8:] for m, u in calls if "/777/threads?" in u] == ["p/4.html", "p/5.html"]
+assert [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u][1].startswith("🛒 [옥션] 라면\n\n🤔 솔직히 특가로는 약한 제품\n좋음")  # 약한 딜은 🛒(채널 글과 같게)
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
 # 9-2b) Threads가 링크 미리보기를 못 만들면(Invalid Link Attachment·4279047, 10/7 15:51 버거킹 딜): 링크 첨부 없이 1번 더(본문 주소 그대로), 다른 오류는 그대로 예외
 import urllib.error
