@@ -143,7 +143,8 @@ def ad_on():
     return bool(AD_FIRST) and time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) >= AD_FIRST
 PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
-TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (8, 11)  # 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
+TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4  # 10/12 진우 '6시부터 해도 괜찮아, 한도 관리': 재오픈 Threads 글은 개별 5개와 따로 — 밤(0~6시) 2개 + 아침(6시~) 2개, 하루 4개까지, 일반 딜이 먼저(main 순서)
+TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (6, 11)  # (10/12: 아침 8시 -> 6시) 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
 TOSS_SPECIAL_HOURS, SPECIAL_DR, SPECIAL_RC = (8, 22), 40, 50  # 10/11 진우 '특가 탭 자동으로': 토스 특가(할인 40%↑·리뷰 50개↑) 회차 — 7일 표에서 묶음 글 없는 아침 8시(시간당 2개)·밤 22시(4개), 회차 3시간 안에만. 줄이려면 여기서 빼기
 PICK_AHEAD, PICK_LATE, PICK_SCAN, PICK_ASK = 8 * 3600, 3 * 3600, 10, 90 * 60  # 토스 이름 예약(toss_picks): 8시간 전부터 찾음 · 예약 시각 3시간 지나면 안 올림 · 못 찾으면 하위 카테고리 베스트 하루 10개(1,000개 — 일 상한 10,000 안)까지 더 봄 · 그래도 없거나 90분 전이면 진우에게 링크 요청
 BEAUTY = dict((k, rx) for k, _, rx in CATS)["beauty"]  # 화장품 제목 키워드(사이트 '💄 화장품' 칸과 같음)
@@ -1541,9 +1542,11 @@ def reopen_text(seen, e, price, am, hot):
 
 def toss_reopen(seen):
     """품절됐던 토스 딜이 밤 12시 지나 다시 열리면(toss_soldout이 채널 답글과 함께 줄 세움) Threads에도 새 글 — 10/11 진우 '품절 풀리면 다시 쓰레드에 시간 맞춰서, 자정 + 아침 8시 둘 다'.
-    0~8시 = '🔔 다시 열렸어요', 8~11시(TH_REOPEN_AM) = 같은 상품을 다시 확인해 아직 살 수 있으면 '☀️ 아침 재알림'(문구를 다르게 — 같은 글 반복은 Threads 스팸 표시 위험), 품절·조회 안 됨이면 안 올림.
+    0~6시 = 밤 글, 6~11시(TH_REOPEN_AM, 10/12 8시 -> 6시) = 같은 상품을 다시 확인해 아직 살 수 있으면 '☀️ 아침 재알림'(문구를 다르게 — 같은 글 반복은 Threads 스팸 표시 위험), 품절·조회 안 됨이면 안 올림.
     올리기 직전 상품 상세 API로 다시 확인: 가격 = 지금 가격(올린 가격보다 비싸면 특가 끝 -> 안 올림), '토스 하루특가·선착순'은 오늘 하루특가 목록에 있을 때만, 쿠팡 비교 줄은 가격이 그대로일 때만.
     몰림 방지: 재게시끼리 10분(TH_REOPEN_GAP, 실행당 1개) + 1시간 최대 TH_REOPEN_HOUR개 + 토스 묶음 글(채널·Threads)과 10분 -> 넘친 건 다음 실행에.
+    한도(10/12 진우 (나)+(다)): 개별 글 하루 5개와 따로 밤 TH_REOPEN_NIGHT·아침 TH_REOPEN_MORN·하루 TH_REOPEN_DAY개, 45분 간격은 같이(Threads 글끼리), main에서 threads_deals 뒤 = 일반 딜이 먼저.
+    줄에서 지금 올릴 수 있는(①② · 🛒 X) 첫 글을 고름 — 맨 앞이 약한 글이어도 뒤를 안 막음(4d9271a1부터 있던 것, 10/12 리뷰).
     실패는 기존 규칙(먼저 표시 -> 같은 글 다시 시도 안 함, 4279047은 첨부 없이 1번 더, main()이 하루 1번 알림). 토스 데이터는 그날만(다음 날·11시 지나면 버림)."""
     r = seen.get("reopen")
     if not r or not r["q"]:
@@ -1557,15 +1560,15 @@ def toss_reopen(seen):
     if late:
         print("toss reopen 버림(지난 회차·진우 오늘 예약)", len(late))
     todo = [e for e in r["q"] if am or not e["st"]]  # 밤: 아직 안 올린 것만 / 아침: 전부(밤에 못 올린 건 아침 글 1개만)
-    tok = E.get("THREADS_TOKEN")
-    if not todo or not tok or not HAS_TOSS or (r["ts"] and now - max(r["ts"]) < TH_REOPEN_GAP) or len(r["ts"]) >= TH_REOPEN_HOUR or busy(seen, cap=False):
-        return
+    tok, mode = E.get("THREADS_TOKEN"), "am" if am else "night"
+    if not todo or not tok or not HAS_TOSS or (r["ts"] and now - max(r["ts"]) < TH_REOPEN_GAP) or len(r["ts"]) >= TH_REOPEN_HOUR or busy(seen, cap=False) or not th_solo(seen, "", reopen=mode, gate=True):
+        return  # 간격·한도가 안 되면 상품 조회도 안 함
     try:
         d = toss("/products/detail?tacaItemIds=" + ",".join(dict.fromkeys(str(e["id"]) for e in todo[:30])))
     except Exception as e:  # 터널 끊김 등 -> 다음 실행에(Threads 실패 알림 아님)
         print("toss reopen detail", repr(e))
         return
-    data, post = {x["tacaItemId"]: x for x in d["items"]}, None
+    data, live = {x["tacaItemId"]: x for x in d["items"]}, []
     for e in todo[:30]:
         x = data.get(e["id"])
         if not x or x.get("isSoldOut") or (e["p0"] and x["displayPrice"] > e["p0"]):  # 다시 품절·조회 안 됨·비싸짐(특가 끝) -> 밤 글은 건너뛰고 아침에 다시 봄, 아침이면 안 올림
@@ -1573,18 +1576,17 @@ def toss_reopen(seen):
             if am:
                 r["q"].remove(e)
             continue
-        if not post:
-            post = (e, x["displayPrice"])
-    if not post:
-        return
-    e, price = post
+        live.append((e, x["displayPrice"]))
     ids = lambda: {v[0] for v in seen["soldmap"]["m"].values()} if seen.get("soldmap", {}).get("d") == today else set()
-    toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
-    hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가·선착순'
-    text = reopen_text(seen, e, price, am, hot)
-    if not th_solo(seen, text, fill=True, beauty=th_beauty(e["n"])):  # Threads 개별 글 하루 5개·45분 간격(10/11 진우 '나누지 말고 묶기') -> 자리 없으면 다음 실행에(늦으면 원래대로 버림)
+    for e, price in live:  # 올릴 수 있는 첫 글(①② · 🛒 X) — 약한 글은 건너뛰고 줄에 남김
+        toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
+        hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가'
+        text = reopen_text(seen, e, price, am, hot)
+        if th_solo(seen, text, fill=True, reopen=mode):
+            break
+    else:
         return
-    th_mark(seen, th_beauty(e["n"]))
+    th_mark(seen, reopen=mode)
     e["st"] = 1  # 먼저 표시: 실패해도 같은 글 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
     if am:
         r["q"].remove(e)
@@ -2150,14 +2152,20 @@ def th_note(note):
     return (("[광고] " if ad_on() else "") + note + "\n\n") if note else ""
 
 
-def th_solo(seen, plain, fill=False, beauty=0, slot=False):
+def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=False):
     """Threads 개별 글을 지금 올려도 되는지(딜 글·토스 이름 예약·재오픈·뷰티 회차 같이 셈): 오늘 TH_SOLO_MAX개 미만·앞 개별 글과 TH_SOLO_GAP 이상, 🛒 X,
     강한 딜(th_strong)만 — 18시 넘어 오늘 TH_SOLO_MIN개가 안 찼으면 fill(일반 🔥 딜)도. 올렸으면 th_mark(seen, beauty).
     beauty(th_beauty) = 화장품: 하루 TH_BEAUTY_MAX개까지, 오늘 화장품이 TH_BEAUTY_MIN개 안 찼으면 slot(진우 화장품 링크·이름 예약·뷰티 회차)은 ①② 아니어도 O.
-    화장품 아닌 글은 화장품 자리(TH_BEAUTY_MIN개)를 남기고 셈."""
+    화장품 아닌 글은 화장품 자리(TH_BEAUTY_MIN개)를 남기고 셈.
+    reopen("night"/"am") = 재오픈 글: 개별 5개·화장품 수와 따로 밤 TH_REOPEN_NIGHT·아침 TH_REOPEN_MORN·하루 TH_REOPEN_DAY개, 45분 간격은 같이, ①②만(10/12 진우). gate = 간격·한도만 봄."""
     now = time.time()
     r = th_day(seen, now)
     b = r["b"]
+    if reopen:
+        rn, ra = r.get("rn", 0), r.get("ra", 0)
+        if now - r["last"] < TH_SOLO_GAP or rn + ra >= TH_REOPEN_DAY or (rn >= TH_REOPEN_NIGHT if reopen == "night" else ra >= TH_REOPEN_MORN):
+            return False
+        return gate or ("특가로는 약한 제품" not in plain and th_strong(plain))
     if r["n"] >= TH_SOLO_MAX or now - r["last"] < TH_SOLO_GAP or "특가로는 약한 제품" in plain:
         return False
     if beauty:
@@ -2170,10 +2178,13 @@ def th_solo(seen, plain, fill=False, beauty=0, slot=False):
     return th_strong(plain) or (fill and time.gmtime(now + 9 * 3600).tm_hour >= 18 and r["n"] < TH_SOLO_MIN)
 
 
-def th_mark(seen, beauty=0):
+def th_mark(seen, beauty=0, reopen=None):
     now = time.time()
     k, r = time.strftime("thsolo_%Y%m%d", time.gmtime(now + 9 * 3600)), th_day(seen, now)
-    seen[k] = {"t": now, "n": r["n"] + 1, "b": r["b"] + bool(beauty), "last": now}
+    if reopen:  # 재오픈은 따로 셈(rn 밤 / ra 아침), 45분 간격(last)은 같이
+        seen[k] = {**seen.get(k, {"n": 0}), "t": now, "b": r["b"], "rn": r.get("rn", 0) + (reopen == "night"), "ra": r.get("ra", 0) + (reopen == "am"), "last": now}
+        return
+    seen[k] = {**seen.get(k, {}), "t": now, "n": r["n"] + 1, "b": r["b"] + bool(beauty), "last": now}
 
 
 def threads_deals(seen):
@@ -2335,7 +2346,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:
