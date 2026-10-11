@@ -1498,7 +1498,8 @@ def toss_soldout(seen):
                 cmp = next((l for l in body.split("\n") if l[:1] in ("💡", "🤔")), "")
                 if re.search(r"오늘|어제|내일|오전|오후|아침|저녁|\d{1,2}시|\d{1,2}:\d{2}", cmp):  # '오늘 18시엔'처럼 날·시각이 든 줄은 다음 날 글에선 틀림 -> 빼고, 약한 딜이면 표시만
                     cmp = cmp.split(" — ")[0] if cmp.startswith("🤔") else ""
-                ent = {"id": new[i][0], "n": new[i][1], "url": url, "p0": new[i][2], "icon": "🛒" if body.startswith("🛒") else "🔥", "cmp": clip(cmp, 120), "k": w["k"], "day": today, "st": 0}
+                ent = {"id": new[i][0], "n": new[i][1], "url": url, "p0": new[i][2], "icon": "🛒" if body.startswith("🛒") else "🔥", "cmp": clip(cmp, 120), "k": w["k"], "day": today, "st": 0,
+                       "title": body and parse(title_of(body))[1], "warn": next((l for l in body.split("\n") if l.startswith("⚠️")), "")}  # Threads 재오픈 글 제목·⚠️ 줄(진우 예약 글 그대로, 10/12 00:40)
                 rq = seen.setdefault("reopen", {"t": now, "q": [], "ts": []})
                 rq["t"] = now
                 if same:  # 같은 상품이 봇 묶음 글에도 있었으면 진우 예약 글 것으로(진우 링크·비교 줄 — 진우 링크 안 뺌), 올렸는지는 그대로
@@ -1515,6 +1516,26 @@ def toss_soldout(seen):
     if ids or fin:
         evw = [w for k, w in seen.items() if k.startswith("sold_") and w["k"] == "ev" and w["d"] == today]
         print("toss soldout", len(ids), "checked", len(nf), "notfound", n_out, "out", n_back, "reopen", edits, "edits", f"| 진우 예약 id {sum(bool(w['it']) for w in evw)}/{len(evw)}")
+
+
+REOPEN_WARN = "⚠️ 확인할 점: 사람마다 가격이 다를 수 있음 · 결제 전 최종가 확인"  # 진우 예약 글 ⚠️ 줄이 없거나 날·시각이 든 줄일 때(다음 날 글에선 틀림)
+
+
+def reopen_text(seen, e, price, am, hot):
+    """재오픈 Threads 글 = 일반 개별 글과 같은 틀(10/12 00:40 진우 '보자마자 느낌이 별로' — 0:02 샤워기 헤드 36분 조회 3):
+    고지문 → 💸 쿠팡보다 N원 싸요 → 🔥 [토스] 제목 (지금 가격) → 정보 줄 '🔔 밤 12시에 다시 열렸어요'/'☀️ 아침 재알림…'(+ 오늘 하루특가 목록에 있으면 '토스 하루특가') → 💡 비교
+    → ⚠️ 확인할 점 → 👉 링크 → 🙋 팔로우 → 📲. 제목·⚠️ 줄 = 진우 예약 글 본문(줄 세울 때 저장 — 품절 지켜보기 기록은 다시 열리면 지워짐; 그 전에 줄 선 것은 posts.json 글에서),
+    💡·💸는 가격이 그대로일 때만. 링크는 예전 그대로(그 글의 토스 링크)."""
+    src = "" if e.get("title") else next((p["text"] for p in reversed(load(POSTS, [])) if p.get("url") == e["url"]), "")
+    name = clip(e.get("title") or (src and parse(title_of(src))[1]) or e["n"], 60)
+    warn = e.get("warn") or next((l for l in src.split("\n") if l.startswith("⚠️")), "")
+    warn = REOPEN_WARN if not warn or re.search(r"오늘|어제|내일|오전|오후|아침|저녁|\d{1,2}시|\d{1,2}:\d{2}", warn) else warn
+    info = ("☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 밤 12시에 다시 열렸어요") + (" · 토스 하루특가(밤 12시까지)" + ("" if am else " · 선착순") if hot else "")
+    cmp = e["cmp"] if e["cmp"] and price == e["p0"] else ""
+    sv = saving(cmp) if cmp.startswith("💡") else None
+    main = "\n".join(x for x in (f"{e['icon']} [토스] {name} ({price:,}원)\n", info, cmp, warn) if x)[:280]
+    return th_note(TOSS_NOTE) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + main \
+        + f"\n\n👉 {e['url']}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"
 
 
 def toss_reopen(seen):
@@ -1559,9 +1580,7 @@ def toss_reopen(seen):
     ids = lambda: {v[0] for v in seen["soldmap"]["m"].values()} if seen.get("soldmap", {}).get("d") == today else set()
     toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
     hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가·선착순'
-    head = "☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 다시 열렸어요" + (" · 선착순" if hot else "")
-    text = (th_note(TOSS_NOTE) + f"{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
-            + (f"\n{e['cmp']}" if e["cmp"] and price == e["p0"] else "") + f"\n\n👉 {e['url']}\n📲 실시간 알림 t.me/hotdeal_pick")
+    text = reopen_text(seen, e, price, am, hot)
     if not th_solo(seen, text, fill=True, beauty=th_beauty(e["n"])):  # Threads 개별 글 하루 5개·45분 간격(10/11 진우 '나누지 말고 묶기') -> 자리 없으면 다음 실행에(늦으면 원래대로 버림)
         return
     th_mark(seen, th_beauty(e["n"]))

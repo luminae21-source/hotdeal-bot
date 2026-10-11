@@ -1218,9 +1218,10 @@ ro_price.update({950: 8900, 951: 6500, 952: 10000, 960: 1000})  # 진한다시�
 log = ro_run("2026-10-12 00:05")
 assert len([1 for m, p in ro_sent if m == "sendMessage"]) == 4 and len([1 for m, p in ro_sent if m == "editMessageText"]) == 4  # 채널: 답글·품절 줄 지우기는 지금 그대로
 assert [e["id"] for e in seen["reopen"]["q"]] == [950, 951, 952, 960] and len(ro_th) == 1 and "toss reopen 밤" in log  # ① 자정 첫 실행: Threads 새 글 1개(나머지는 10분 간격으로)
-assert seen["reopen"]["q"][1]["cmp"].startswith("🤔 솔직히 특가로는 약한 제품 — 쿠팡") and seen["reopen"]["q"][3]["cmp"] == ""  # 약한 딜 줄도(가격 그대로면 Threads에도 솔직하게), API 묶음 글은 비교 줄 없음
+assert seen["reopen"]["q"][1]["cmp"].startswith("🤔 솔직히 특가로는 약한 제품 — 쿠팡") and seen["reopen"]["q"][3]["cmp"] == ""
+assert [(e["title"], e["warn"]) for e in seen["reopen"]["q"]] == [("탑프룻 망고젤리 망고맛 320g 3개", "⚠️ 확인할 점: 오늘 밤 12시까지"), ("CJ제일제당 쇠고기 진한다시 1kg", ""), ("사바나나 바나나칩 100g 5봉", ""), ("", "")]  # 재오픈 글 제목·⚠️ = 진우 예약 글(줄 세울 때 저장 — 품절 기록은 다시 열리면 지워짐), API 묶음 글은 없음  # 약한 딜 줄도(가격 그대로면 Threads에도 솔직하게), API 묶음 글은 비교 줄 없음
 t0 = ro_th[0]["text"][0]
-assert t0 == f"{H.TOSS_NOTE}\n\n🔔 다시 열렸어요 · 선착순\n🔥 탑프룻 망고젤리, 망고맛, 320g, 3개\n💰 8,900원 · 토스 하루특가(밤 12시까지)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n\n👉 {MANGO}\n📲 실시간 알림 t.me/hotdeal_pick", t0
+assert t0 == f"{H.TOSS_NOTE}\n\n💸 쿠팡보다 1,800원 싸요\n🔥 [토스] 탑프룻 망고젤리 망고맛 320g 3개 (8,900원)\n\n🔔 밤 12시에 다시 열렸어요 · 토스 하루특가(밤 12시까지) · 선착순\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n{H.REOPEN_WARN}\n\n👉 {MANGO}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick", t0  # 10/12 00:40 진우: 일반 글과 같은 틀(고지문 → 💸 → 🔥 [토스] 제목 (가격) → 정보 줄 🔔 → 💡 → ⚠️ → 👉 → 🙋 → 📲), 예약 글 ⚠️ 줄 ‘오늘 밤 12시까지’는 다음 날 틀려서 기본 문구로
 assert ro_th[0]["link_attachment"] == [MANGO] and ro_th[0]["topic_tag"] == ["핫딜"] and len(t0) <= 500  # 진우 링크 그대로(미리보기도)
 assert sum("/products/today-deals" in c for c in ro_calls) == 1  # 오늘 하루특가 목록(밤 12시 새 목록)은 1번만
 assert not ro_run("2026-10-12 00:12") and not ro_th and not [c for c in ro_calls if "detail" in c and "952" in c]  # 10분 안 -> 다음 실행에(상세 조회도 안 함)
@@ -1228,22 +1229,30 @@ ro_fail["pub"] = ('{"error": {"message": "Fatal", "type": "OAuthException", "err
 ro_run("2026-10-12 00:19"); ro_fail["pub"] = None
 assert [q.get("link_attachment") for q in ro_th] == [[DASHI], None] and ro_th[0]["text"] == ro_th[1]["text"] and sum("threads_publish" in c for c in ro_calls) == 2
 t1 = ro_th[1]["text"][0]  # 가격 바뀜(6,900 -> 6,500원) -> 지금 가격, 쿠팡 비교 줄(🤔) 빠짐, 약한 딜 아이콘 🛒 그대로
-assert "🛒 CJ제일제당 쇠고기 진한다시, 1kg, 1개\n💰 6,500원 · 토스 하루특가(밤 12시까지)\n\n👉 " + DASHI in t1 and "쿠팡" not in t1 and "6,900" not in t1 and t1.startswith(H.TOSS_NOTE)
+assert f"🛒 [토스] CJ제일제당 쇠고기 진한다시 1kg (6,500원)\n\n🔔 밤 12시에 다시 열렸어요 · 토스 하루특가(밤 12시까지) · 선착순\n{H.REOPEN_WARN}\n\n👉 " + DASHI in t1 and "💸" not in t1 and "쿠팡" not in t1 and "6,900" not in t1 and t1.startswith(H.TOSS_NOTE)
 ro_run("2026-10-12 00:33"); t2 = ro_th[0]["text"][0]  # 오늘 하루특가 목록에 없음 -> '하루특가·선착순' 빠짐, 가격 그대로면 쿠팡 비교 줄은 있음
-assert t2 == f"{H.TOSS_NOTE}\n\n🔔 다시 열렸어요\n🔥 사바나나 바나나칩, 100g, 5봉\n💰 10,000원\n💡 단위가격: 100g당 2,000원 — 쿠팡 같은 상품 8봉(23,650원, 100g당 2,956원)보다 g당 32% 쌈\n\n👉 {BANANA}\n📲 실시간 알림 t.me/hotdeal_pick", t2
+assert t2 == f"{H.TOSS_NOTE}\n\n🔥 [토스] 사바나나 바나나칩 100g 5봉 (10,000원)\n\n🔔 밤 12시에 다시 열렸어요\n💡 단위가격: 100g당 2,000원 — 쿠팡 같은 상품 8봉(23,650원, 100g당 2,956원)보다 g당 32% 쌈\n{H.REOPEN_WARN}\n\n👉 {BANANA}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick", t2  # 원 단위 차이가 없으면 💸 줄 없음
 assert not [c for c in ro_calls if "today-deals" in c]  # 목록에 없는 상품이어도 2시간 안엔 목록 다시 안 받음
 assert not ro_run("2026-10-12 00:47") and not ro_th and not ro_calls  # 1시간 3개(00:05·00:19·00:33) -> 넘친 건 다음 실행에(API도 안 부름)
 ro_run("2026-10-12 01:06"); t3 = ro_th[0]["text"][0]
-assert "🔔 다시 열렸어요 · 선착순\n🔥 토스 하루특가 API 상품\n💰 1,000원 · 토스 하루특가(밤 12시까지)\n\n👉 https://toss.shopping/_m/A960" in t3  # API 묶음 글 상품 = 그 글의 쉐어링크, 쿠팡 비교 없음
+assert f"{H.TOSS_NOTE}\n\n🔥 [토스] 토스 하루특가 API 상품 (1,000원)\n\n🔔 밤 12시에 다시 열렸어요 · 토스 하루특가(밤 12시까지) · 선착순\n{H.REOPEN_WARN}\n\n👉 https://toss.shopping/_m/A960" in t3  # API 묶음 글 상품 = 그 글의 쉐어링크, 쿠팡 비교 없음
 assert not ro_run("2026-10-12 03:00") and not ro_th and not ro_calls  # 밤에 다 올렸으면 아침까지 조용
 ro_fail["detail"] = 1; assert "toss reopen detail" in ro_run("2026-10-12 08:02", ("toss_reopen",)) and not ro_th and len(seen["reopen"]["q"]) == 4  # 상세 조회 실패(터널) -> 다음 실행에(Threads 실패 알림 아님)
 ro_out.add(951); ro_price[952] = 12000  # 아침: 진한다시 다시 품절, 바나나칩은 올린 가격(10,000원)보다 비싸짐(특가 끝)
 seen["bundles"] = {"t": T("2026-10-12 08:01"), "ts": [T("2026-10-12 08:01")]}  # 08:01에 토스 묶음 글(채널·Threads) -> 10분 띄움
 assert not ro_run("2026-10-12 08:05", ("toss_reopen",)) and not ro_th
 ro_run("2026-10-12 08:15", ("toss_reopen",)); t4 = ro_th[0]["text"][0]  # ② 8시 지나 첫 실행: 같은 상품 다시 확인 -> 아직 살 수 있으면 '아침 재알림'(밤 글과 다른 문구)
-assert t4 == f"{H.TOSS_NOTE}\n\n☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요\n🔥 탑프룻 망고젤리, 망고맛, 320g, 3개\n💰 지금 8,900원 · 토스 하루특가(밤 12시까지)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n\n👉 {MANGO}\n📲 실시간 알림 t.me/hotdeal_pick", t4
+assert t4 == f"{H.TOSS_NOTE}\n\n💸 쿠팡보다 1,800원 싸요\n🔥 [토스] 탑프룻 망고젤리 망고맛 320g 3개 (8,900원)\n\n☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요 · 토스 하루특가(밤 12시까지)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n{H.REOPEN_WARN}\n\n👉 {MANGO}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick", t4  # 아침 8시 재알림도 같은 틀
+rt9 = {}; json.dump([{"t": "2026-10-11 21:10", "url": "https://toss.shopping/_m/W", "own": 1, "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 해피달링 온오프 필터 샤워기 헤드 + 필터 5개 세트 (7,620원)\n\n토스 하루특가 · 무료배송\n💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈\n⚠️ 확인할 점: 1인 1개 · 필터 규격 확인"}], open("posts.json", "w"), ensure_ascii=False)
+rt = H.reopen_text(rt9, {"url": "https://toss.shopping/_m/W", "n": "해피달링 온오프 필터 샤워기 헤드 + 필터 5개, 1세트", "icon": "🔥", "cmp": "💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈", "p0": 7620}, 7620, False, False)  # 배포 전에 줄 선 것(제목·⚠️ 없음) = posts.json 진우 글에서
+assert rt == f"{H.TOSS_NOTE}\n\n💸 쿠팡보다 7,280원 싸요\n🔥 [토스] 해피달링 온오프 필터 샤워기 헤드 + 필터 5개 세트 (7,620원)\n\n🔔 밤 12시에 다시 열렸어요\n💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈\n⚠️ 확인할 점: 1인 1개 · 필터 규격 확인\n\n👉 https://toss.shopping/_m/W\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick", rt  # 진우 0:02 글을 새 틀로(예약 글 ⚠️ 줄 그대로)
+assert not rt.startswith("[광고]") and H.th_tier(rt) == 1  # 고지문 첫 줄([광고] 접두 없이, 10/12 00:40), 💡 같은 상품 = ①
+rt = H.reopen_text(rt9, {"url": "https://toss.shopping/_m/W", "n": "x", "title": "해피달링 샤워기", "warn": "⚠️ 확인할 점: 1인 1개", "icon": "🔥", "cmp": "💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈", "p0": 7620}, 6900, True, True)
+assert rt.startswith(f"{H.TOSS_NOTE}\n\n🔥 [토스] 해피달링 샤워기 (6,900원)") and "💸" not in rt and "💡" not in rt and "☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요 · 토스 하루특가(밤 12시까지)\n⚠️ 확인할 점: 1인 1개" in rt  # 가격 바뀜 -> 💸·💡 빠짐, 지금 가격
+rt = H.reopen_text(rt9, {"url": "https://toss.shopping/_m/P", "n": "y", "title": "아주 긴 이름 " * 12, "warn": "", "icon": "🔥", "cmp": "💡 " + "가" * 118, "p0": 9}, 9, False, True)
+assert len(rt) <= 500 and "(9원)" in rt and rt.endswith("📲 실시간 알림 t.me/hotdeal_pick")  # 긴 이름·비교 줄도 500자 안(가운데만 자름), ⚠️ 없으면 기본 문구
 assert t4 != t0 and [e["id"] for e in seen["reopen"]["q"]] == [960]  # 품절(진한다시)·비싸짐(바나나칩)은 아침 글 없이 끝
-ro_run("2026-10-12 08:29", ("toss_reopen",)); assert len(ro_th) == 1 and ro_th[0]["text"][0].startswith(f"{H.TOSS_NOTE}\n\n☀️ 아침 재알림") and "A960" in ro_th[0]["text"][0] and not seen["reopen"]["q"]
+ro_run("2026-10-12 08:29", ("toss_reopen",)); assert len(ro_th) == 1 and ro_th[0]["text"][0].startswith(f"{H.TOSS_NOTE}\n\n🔥 [토스] 토스 하루특가 API 상품 (1,000원)\n\n☀️ 아침 재알림") and "A960" in ro_th[0]["text"][0] and not seen["reopen"]["q"]
 assert not ro_run("2026-10-12 08:43", ("toss_reopen",)) and not ro_calls  # 다 올림 -> 아무것도 안 함
 seen["reopen"]["q"] = [{"id": 950, "n": "n", "url": MANGO, "p0": 8900, "icon": "🔥", "cmp": "", "day": "2026-10-12", "st": 1}, {"id": 960, "n": "m", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-11", "st": 0}]
 assert "버림" in ro_run("2026-10-12 11:05", ("toss_reopen",)) and not ro_th and not seen["reopen"]["q"]  # 아침 회차(8~11시)를 놓쳤거나 어제 것 -> 낮에 몰아 안 올리고 버림(토스 데이터 그날만)
@@ -1264,7 +1273,7 @@ ro_price[951] = 6500; ro_run("2026-10-13 00:05", ("toss_soldout",))  # '오늘·
 assert [(e["id"], e["cmp"]) for e in seen["reopen"]["q"]] == [(960, "🤔 솔직히 특가로는 약한 제품"), (951, "")]
 ev4 = H.EVENTS; H.EVENTS = "ev_reopen.json"; json.dump([{"at": "2026-10-13 08:20", "name": "탑프룻 망고젤리, 망고맛, 320g, 3개", "url": MANGO, "text": "x"}], open(H.EVENTS, "w"))
 seen = {"reopen": {"t": T("2026-10-13 00:05"), "ts": [], "q": [dict(q, st=0)]}}; ro_run("2026-10-13 00:20", ("toss_reopen",))
-assert len(ro_th) == 1 and MANGO in ro_th[0]["text"][0] and "🔔 다시 열렸어요" in ro_th[0]["text"][0]  # 밤 글은 선착순이라 진우 예약(08:20)이 있어도 그대로
+assert len(ro_th) == 1 and MANGO in ro_th[0]["text"][0] and "\n\n🔔 밤 12시에 다시 열렸어요" in ro_th[0]["text"][0]  # 밤 글은 선착순이라 진우 예약(08:20)이 있어도 그대로
 seen = {"reopen": {"t": T("2026-10-13 00:05"), "ts": [], "q": [dict(q, st=1), {"id": 960, "n": "토스 하루특가 API 상품", "url": "https://toss.shopping/_m/A960", "p0": 1000, "icon": "🔥", "cmp": "", "k": "top", "day": "2026-10-13", "st": 1}]}}
 ro_price[960] = 1000; log = ro_run("2026-10-13 08:05", ("toss_reopen",))  # 진우가 오늘 같은 상품을 다시 예약 -> 아침 재알림은 진우 글이 대신(같은 상품 두 번 X), 다른 상품은 그대로
 assert "진우 오늘 예약" in log and len(ro_th) == 1 and "A960" in ro_th[0]["text"][0] and not seen["reopen"]["q"]
@@ -2451,7 +2460,7 @@ ev8 = {"at": "2026-10-14 22:20", "text": "🔥 <b>[토스] 크림 50g 2개 (17,9
 assert H.ev_head(ev8).startswith("[광고] ") and H.ev_head(ev8).endswith(f"\n<i>{H.TOSS_NOTE}</i>\n\n") and "6,000원" in H.ev_head(ev8) and H.sold_ev(ev8, "2026-10-14")["pre"] == H.ev_head(ev8)
 assert H.ev_head(dict(ev8, deal=False)) == f"<i>{H.TOSS_NOTE}</i>\n\n" and H.ev_head(dict(ev8, url="https://x.com")) == ""  # 행사 알림 = 고지문만, 제휴 아님 = 없음
 assert H.ad_head(H.TOSS_NOTE, H.plain_of("🔥 <b>[토스] 샴푸 (9,900원)</b>\n\n💰 <b>9,900원</b> (45%↓)")).split("\n")[0] in ("[광고] 🔻 45% 할인 샴푸 9,900원", "[광고] 샴푸 9,900원 — 45% 할인", "[광고] 🔻 45% 할인 · 샴푸 9,900원")  # 토스 API = 할인율(쿠팡 X)
-assert "ad_head(TOSS_NOTE, plain_of(body))" in inspect.getsource(H.toss_picks) and inspect.getsource(H.toss_picks).count("th_note(TOSS_NOTE)") == 1 and "th_note(TOSS_NOTE)" in inspect.getsource(H.toss_reopen) and "ev_head(ev)" in inspect.getsource(H.events)  # 채널 = [광고] 첫 줄, Threads = [광고] + 고지문 + 예전 본문
+assert "ad_head(TOSS_NOTE, plain_of(body))" in inspect.getsource(H.toss_picks) and inspect.getsource(H.toss_picks).count("th_note(TOSS_NOTE)") == 1 and "th_note(TOSS_NOTE)" in inspect.getsource(H.reopen_text) and "reopen_text(seen, e, price, am, hot)" in inspect.getsource(H.toss_reopen) and "ev_head(ev)" in inspect.getsource(H.events)  # 채널 = [광고] 첫 줄, Threads = [광고] + 고지문 + 예전 본문
 pj8 = open("posts.json").read(); calls[:] = []; kt8 = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 json.dump([{"t": kt8(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n💡 쿠팡 같은 상품(15,000원)보다 5,100원 쌈\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x", "s": 8, "own": 1},
            {"t": kt8(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n💡 쿠팡 같은 상품(9,000원)보다 1,000원 쌈", "url": "https://www.ppomppu.co.kr/1", "s": 8, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
