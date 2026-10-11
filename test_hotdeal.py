@@ -1251,6 +1251,22 @@ try:
 except urllib.error.HTTPError:
     pass
 ro_fail["pub"] = None; assert len(ro_th) == 1 and seen["reopen"]["q"][0]["st"] == 1 and not ro_run("2026-10-13 00:40", ("toss_reopen",)) and not ro_th  # 먼저 표시 -> 밤 글 다시 안 올림(스팸 방지), 아침에 다시 확인
+bw = {"t": T("2026-10-12 09:05"), "d": "2026-10-12", "k": "top", "pre": "", "head": "H", "rows": [["망고젤리", "https://toss.shopping/_m/BOT950", ["💰 <b>8,900원</b>"]]], "it": [[950, "탑프룻 망고젤리", 8900, 1, 1, 0]]}
+ew = {**H.sold_ev({"name": "탑프룻 망고젤리, 망고맛, 320g, 3개", "button": "🛒 8,900원 구매하기", "url": MANGO, "text": EVS[0][3]}, "2026-10-12"), "it": [[950, "탑프룻 망고젤리, 망고맛, 320g, 3개", 8900, 1, 1, 0]]}
+ro_out.clear(); ro_price[950] = 8900; seen = {"sold_201": bw, "sold_202": ew}; ro_run("2026-10-13 00:05", ("toss_soldout",))  # 같은 상품이 봇 묶음 글(먼저)과 진우 예약 글에 둘 다 -> Threads는 1번, 진우 링크·비교 줄로
+(q,) = seen["reopen"]["q"]; assert q["url"] == MANGO and q["k"] == "ev" and q["cmp"].startswith("💡 쿠팡 같은 상품") and q["st"] == 0
+WEAK = "🛒 <b>[토스] 생수 (9,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품 — 오늘 오전엔 9,900원이었는데 18시엔 20,000원"
+seen = {"sold_203": {**H.sold_ev({"name": "생수", "button": "🛒 9,900원 구매하기", "url": "https://toss.shopping/_m/W", "text": WEAK}, "2026-10-12"), "it": [[960, "생수", 9900, 1, 1, 0]]},
+        "sold_204": {**H.sold_ev({"name": "휴지", "button": "🛒 1,000원 구매하기", "url": "https://toss.shopping/_m/V", "text": "🔥 x\n\n💡 오늘 14시 토스 베스트 휴지보다도 매당 쌈"}, "2026-10-12"), "it": [[951, "휴지", 6500, 1, 1, 0]]}}
+ro_price[951] = 6500; ro_run("2026-10-13 00:05", ("toss_soldout",))  # '오늘·18시엔'처럼 날·시각이 든 비교 줄은 다음 날 글에선 틀림 -> 빼고, 약한 딜이면 표시만 남김
+assert [(e["id"], e["cmp"]) for e in seen["reopen"]["q"]] == [(960, "🤔 솔직히 특가로는 약한 제품"), (951, "")]
+ev4 = H.EVENTS; H.EVENTS = "ev_reopen.json"; json.dump([{"at": "2026-10-13 08:20", "name": "탑프룻 망고젤리, 망고맛, 320g, 3개", "url": MANGO, "text": "x"}], open(H.EVENTS, "w"))
+seen = {"reopen": {"t": T("2026-10-13 00:05"), "ts": [], "q": [dict(q, st=0)]}}; ro_run("2026-10-13 00:20", ("toss_reopen",))
+assert len(ro_th) == 1 and MANGO in ro_th[0]["text"][0] and "🔔 다시 열렸어요" in ro_th[0]["text"][0]  # 밤 글은 선착순이라 진우 예약(08:20)이 있어도 그대로
+seen = {"reopen": {"t": T("2026-10-13 00:05"), "ts": [], "q": [dict(q, st=1), {"id": 960, "n": "토스 하루특가 API 상품", "url": "https://toss.shopping/_m/A960", "p0": 1000, "icon": "🔥", "cmp": "", "k": "top", "day": "2026-10-13", "st": 1}]}}
+ro_price[960] = 1000; log = ro_run("2026-10-13 08:05", ("toss_reopen",))  # 진우가 오늘 같은 상품을 다시 예약 -> 아침 재알림은 진우 글이 대신(같은 상품 두 번 X), 다른 상품은 그대로
+assert "진우 오늘 예약" in log and len(ro_th) == 1 and "A960" in ro_th[0]["text"][0] and not seen["reopen"]["q"]
+H.EVENTS = ev4
 sw = lambda d, it: {**H.sold_ev({"name": "n", "button": "🛒 1,000원 구매하기", "url": "https://toss.shopping/_m/Z", "text": "🔥 x"}, d), "it": [it]}
 seen = {"sold_106": sw("2026-10-13", [960, "n", 1000, 0, 1, 0])}; ro_run("2026-10-13 15:00", ("toss_soldout",))  # 낮에 다시 들어온 베스트 상품 = 채널 답글만(Threads는 밤 12시 재오픈만)
 assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen

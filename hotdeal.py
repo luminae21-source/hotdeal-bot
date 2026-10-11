@@ -1144,12 +1144,19 @@ def toss_soldout(seen):
             note = aff_note(url)
             w.setdefault("rp", []).append(i)
             n_back += 1
-            if w["d"] != today and E.get("THREADS_TOKEN") and all(e["id"] != new[i][0] for e in seen.get("reopen", {}).get("q", [])):  # 밤 12시 지나 다시 열림 -> Threads 새 글도(toss_reopen, 10/11 진우)
+            same = next((e for e in seen.get("reopen", {}).get("q", []) if e["id"] == new[i][0]), None)
+            if w["d"] != today and E.get("THREADS_TOKEN") and (not same or (w["k"] == "ev" and same["k"] != "ev")):  # 밤 12시 지나 다시 열림 -> Threads 새 글도(toss_reopen, 10/11 진우)
                 body = html.unescape(re.sub(r"<[^>]+>", "", w.get("body", "")))  # 진우 예약 글의 쿠팡 비교·단위가격 줄(💡·🤔) = 가격이 그대로일 때만 다시 씀
+                cmp = next((l for l in body.split("\n") if l[:1] in ("💡", "🤔")), "")
+                if re.search(r"오늘|어제|내일|오전|오후|아침|저녁|\d{1,2}시|\d{1,2}:\d{2}", cmp):  # '오늘 18시엔'처럼 날·시각이 든 줄은 다음 날 글에선 틀림 -> 빼고, 약한 딜이면 표시만
+                    cmp = cmp.split(" — ")[0] if cmp.startswith("🤔") else ""
+                ent = {"id": new[i][0], "n": new[i][1], "url": url, "p0": new[i][2], "icon": "🛒" if body.startswith("🛒") else "🔥", "cmp": clip(cmp, 120), "k": w["k"], "day": today, "st": 0}
                 rq = seen.setdefault("reopen", {"t": now, "q": [], "ts": []})
                 rq["t"] = now
-                rq["q"].append({"id": new[i][0], "n": new[i][1], "url": url, "p0": new[i][2], "icon": "🛒" if body.startswith("🛒") else "🔥", "day": today, "st": 0,
-                                "cmp": next((clip(l, 120) for l in body.split("\n") if l[:1] in ("💡", "🤔")), "")})
+                if same:  # 같은 상품이 봇 묶음 글에도 있었으면 진우 예약 글 것으로(진우 링크·비교 줄 — 진우 링크 안 뺌), 올렸는지는 그대로
+                    same.update({x: v for x, v in ent.items() if x not in ("day", "st")})
+                else:
+                    rq["q"].append(ent)
             try:
                 tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_parameters={"message_id": int(k[5:])},
                    text=(f"<i>{note}</i>\n\n" if note else "") + f"🔔 <b>다시 열렸어요!</b> {esc(new[i][1])} — {price:,}원", reply_markup={"inline_keyboard": [[{"text": f"🛒 {price:,}원 구매하기", "url": url}]]})
@@ -1173,11 +1180,12 @@ def toss_reopen(seen):
         return
     now, kst = time.time(), time.gmtime(time.time() + 9 * 3600)
     today, am = time.strftime("%Y-%m-%d", kst), TH_REOPEN_AM[0] <= kst.tm_hour
-    late = [e for e in r["q"] if e["day"] != today or kst.tm_hour >= TH_REOPEN_AM[1]]
+    booked = {re.sub(r"\W", "", ev["name"]) for ev in load(EVENTS, []) if am and ev.get("name") and ev["at"].startswith(today)}  # 진우가 오늘 같은 상품을 다시 예약 -> 아침 재알림은 진우 글이 대신(toss_deals와 같은 규칙, 밤 글은 선착순이라 그대로)
+    late = [e for e in r["q"] if e["day"] != today or kst.tm_hour >= TH_REOPEN_AM[1] or re.sub(r"\W", "", e["n"]) in booked]
     r["q"] = [e for e in r["q"] if e not in late]
     r["ts"] = [t for t in r.get("ts", []) if now - 3600 < t <= now]  # 최근 1시간 재게시 시각(시계가 뒤로 간 기록은 무시)
     if late:
-        print("toss reopen 버림(지난 회차)", len(late))
+        print("toss reopen 버림(지난 회차·진우 오늘 예약)", len(late))
     todo = [e for e in r["q"] if am or not e["st"]]  # 밤: 아직 안 올린 것만 / 아침: 전부(밤에 못 올린 건 아침 글 1개만)
     tok = E.get("THREADS_TOKEN")
     if not todo or not tok or not HAS_TOSS or (r["ts"] and now - max(r["ts"]) < TH_REOPEN_GAP) or len(r["ts"]) >= TH_REOPEN_HOUR or busy(seen, cap=False):
