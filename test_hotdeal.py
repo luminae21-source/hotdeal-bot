@@ -5,6 +5,7 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
+H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
 ago = lambda m: formatdate(time.time() - m * 60, usegmt=True)
@@ -2272,12 +2273,58 @@ sent7.clear(); json.dump(EV7, open("events.json", "w"), ensure_ascii=False); dg7
 assert "🌙" not in [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]  # 3개 이상이면 모아보기엔 안 넣음(밤 10시 미리보기)
 json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 딜{k} (1,000원)", "url": f"https://oy.run/{k}" if k % 2 else f"https://link.coupang.com/a/{k}", "s": 7} for k in range(130)], open("posts.json", "w"))
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
-assert len(re.findall(r"<(?:a|b|i)[ >]", d7)) + html.unescape(re.sub(r"<[^>]+>", "", d7)).count("http") <= 90 and "개는 사이트에서" in d7 and any(k.startswith("digest_") for k in dg7)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
+assert len(re.findall(r"<(?:a|b|i)[ >]", d7)) + html.unescape(re.sub(r"<[^>]+>", "", d7)).count("http") <= 90 and "개는 사이트에서" in d7 and any(k.startswith("digest_") for k in dg7)
+json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000원)", "url": "https://click.linkprice.com/click.php?m=gmarket&a=A&l=" + "%EC%9A%B0" * 40 + str(k), "s": 7} for k in range(60)], open("posts.json", "w"))
+sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
+hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
 assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "toss_reopen, preview, ig_cards" in inspect.getsource(H.main)  # 토스 22시 회차보다 먼저 · 실패 알림(Threads)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
+# 9-8) 첫 줄 '[광고] + 훅 + 상품 + 가격'(10/11 진우 결정 — 조회는 되는데 구매가 적음): 개별 딜 글(채널·Threads) 1줄 [광고]…, 2줄 제휴 고지문 그대로(공정위: 첫 부분),
+#      훅 = 같은 상품 쿠팡 차이 > 단위가격 > 30일 최저가·순위 > 할인율(토스 API 상품은 쿠팡 비교 없음), 틀 3가지(제목으로 — 같은 글은 고쳐도 같은 틀), 제휴 아니면 [광고] 없음, AD_FIRST=False면 예전
+assert H.AD_FIRST == "" and H.ad_on() is False
+H.AD_FIRST = "2000-01-01"
+assert H.ad_hook("💡 쿠팡 같은 상품(14,000원)보다 6,060원 쌈") == ("💸", "쿠팡보다 6,060원 싼", "쿠팡보다 6,060원 쌈")
+assert H.ad_hook("💡 쿠팡 비슷한 상품(14,000원)보다 6,060원 쌈") is None and H.ad_hook("💡 단위가격: 10ml당 593원 — 쿠팡 톤업(…)보다 ml당 33% 쌈")[0] == "📏"  # 같은 상품만 💸
+assert H.ad_hook("x", "개당 약 496원 (1L당 248원)") == ("📏", "개당 약 496원꼴", "개당 약 496원") and H.ad_hook("토스 하루특가 · ⭐ 4.7 · 30일 내 최저가")[0] == "📉"
+assert H.ad_hook("토스 최대할인가 · 클렌징 폼 2위 · 내일 출발") == ("🏆", "클렌징 폼 2위", "클렌징 폼 2위") and H.ad_hook("💰 18,900원 (45%↓) · ⭐ 4.8")[1] == "45% 할인" and H.ad_hook("그냥 글") is None
+forms8 = {H.ad_line(f"🔥 [쿠팡] 배스킨라빈스 {n}병 (7,900원/무료)\n\n💡 쿠팡 같은 상품(13,960원)보다 6,060원 쌈") for n in range(4, 30)}
+assert {re.sub(r"\d+병", "N병", x) for x in forms8} == {"[광고] 💸 쿠팡보다 6,060원 싼 배스킨라빈스 N병 7,900원", "[광고] 배스킨라빈스 N병 7,900원 — 쿠팡보다 6,060원 쌈", "[광고] 💸 쿠팡보다 6,060원 쌈 · 배스킨라빈스 N병 7,900원"}  # 틀 3가지(제목에 따라)
+assert H.ad_line("🔥 [쿠팡] 배스킨라빈스 12병 (7,900원/무료)\n\n💡 쿠팡 같은 상품(13,960원)보다 6,060원 쌈") == "[광고] 💸 쿠팡보다 6,060원 싼 배스킨라빈스 12병 7,900원"  # 진우 예시 그대로
+assert H.ad_line("🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n싸요") == "[광고] 🔥 휴지 30롤 9,900원"  # 훅 없으면 🔥
+d8 = {"title": "[쿠팡] 우유 48팩 (23,740원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=8", "board": "뽐뿌", "hot": None}
+af8, sl8, lp8 = H.affiliate, H.store_link, H.lp_search
+H.store_link, H.lp_search, H.affiliate = (lambda u: u), (lambda t, q=None: (None, None)), (lambda u: ("https://naver.me/u8", True))
+t8, l8, _ = H.deal_post(dict(d8, title="[네이버] 우유 48팩 (23,740원/무료)"), "<싸다>", extra={"unit": "팩당 495원"})
+assert t8.startswith("[광고] ") and "\n<i>" + H.NAVER_NOTE + "</i>\n\n🔥 <b>[네이버] 우유 48팩" in t8 and t8.split("\n")[0] in ("[광고] 📏 팩당 495원꼴 우유 48팩 23,740원", "[광고] 우유 48팩 23,740원 — 팩당 495원", "[광고] 📏 팩당 495원 · 우유 48팩 23,740원")
+assert S.title_of(H.plain_of(t8)) == "[네이버] 우유 48팩 (23,740원/무료)" and not S.title_of(H.plain_of(t8)).startswith("[광고]")  # 사이트 제목·코멘트는 그대로([광고] 줄은 고지문처럼 건너뜀)
+H.affiliate = lambda u: ("https://www.coupang.com/vp/1", False); t8, _, _ = H.deal_post(d8, "싸다"); assert not t8.startswith("[광고]") and t8.startswith("🔥 <b>")  # 제휴 링크 아니면 [광고] X
+H.affiliate, H.store_link, H.lp_search = af8, sl8, lp8
+wt, we = H.with_note("🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n💡 쿠팡 같은 상품(15,000원)보다 5,100원 쌈", [{"type": "bold", "offset": 2, "length": 3}], "https://link.coupang.com/a/w8")
+a8 = wt.split("\n")[0]; la8 = len(a8.encode("utf-16-le")) // 2
+assert a8.startswith("[광고] ") and "5,100원" in a8 and wt.split("\n")[1] == H.DISCLOSURE and we[0] == {"type": "italic", "offset": la8 + 1, "length": len(H.DISCLOSURE.encode("utf-16-le")) // 2}
+assert we[1]["offset"] == 2 + la8 + 1 + len(H.DISCLOSURE.encode("utf-16-le")) // 2 + 2 and H.with_note(wt, we, "https://link.coupang.com/a/w8") == (wt, we)  # 굵게 위치 그대로 밀림, 같은 링크로 또 = 그대로
+nt, ne = H.with_note(wt, we, "https://naver.me/w8"); assert nt.count("[광고]") == 1 and nt.split("\n")[1] == H.NAVER_NOTE and H.DISCLOSURE not in nt and ne[-1]["type"] == "bold"  # 다른 프로그램 링크 = 머리 다시
+ev8 = {"at": "2026-10-14 22:20", "text": "🔥 <b>[토스] 크림 50g 2개 (17,900원)</b>\n\n💡 쿠팡 같은 상품(23,900원)보다 6,000원 쌈", "url": "https://toss.shopping/_m/e8", "button": "b", "deal": True, "name": "크림"}
+assert H.ev_head(ev8).startswith("[광고] ") and H.ev_head(ev8).endswith(f"\n<i>{H.TOSS_NOTE}</i>\n\n") and "6,000원" in H.ev_head(ev8) and H.sold_ev(ev8, "2026-10-14")["pre"] == H.ev_head(ev8)
+assert H.ev_head(dict(ev8, deal=False)) == f"<i>{H.TOSS_NOTE}</i>\n\n" and H.ev_head(dict(ev8, url="https://x.com")) == ""  # 행사 알림 = 고지문만, 제휴 아님 = 없음
+assert H.ad_head(H.TOSS_NOTE, H.plain_of("🔥 <b>[토스] 샴푸 (9,900원)</b>\n\n💰 <b>9,900원</b> (45%↓)"), html_=False).split("\n")[0] in ("[광고] 🔻 45% 할인 샴푸 9,900원", "[광고] 샴푸 9,900원 — 45% 할인", "[광고] 🔻 45% 할인 · 샴푸 9,900원")  # 토스 API = 할인율(쿠팡 X)
+assert "ad_head(TOSS_NOTE" in inspect.getsource(H.toss_picks) and "ad_head(TOSS_NOTE" in inspect.getsource(H.toss_reopen) and "ev_head(ev)" in inspect.getsource(H.events)
+pj8 = open("posts.json").read(); calls[:] = []; kt8 = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
+json.dump([{"t": kt8(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n💡 쿠팡 같은 상품(15,000원)보다 5,100원 쌈\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x", "s": 8, "own": 1},
+           {"t": kt8(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n💡 쿠팡 같은 상품(9,000원)보다 1,000원 쌈", "url": "https://www.ppomppu.co.kr/1", "s": 8, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+live_pages = {0, 1}; H.http = td_http; H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
+m8 = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
+assert m8[0].startswith("[광고] ") and "5,100원" in m8[0].split("\n")[0] and m8[0].split("\n")[1] == H.DISCLOSURE and "\n\n🔥 [쿠팡] 휴지 30롤" in m8[0] and "💸" not in m8[0].split("\n\n", 1)[1][:20]  # 훅은 첫 줄에(따로 💸 줄 X)
+assert m8[1].startswith("💸 쿠팡보다 1,000원 싸요\n🔥 [카카오] 고구마") and "[광고]" not in m8[1] and all(len(t) < 500 for t in m8)  # 제휴 아니면 예전 그대로
+open("posts.json", "w").write(pj8); del H.E["THREADS_TOKEN"]
+H.AD_FIRST = ""; assert H.ad_head(H.TOSS_NOTE, "x") == f"<i>{H.TOSS_NOTE}</i>\n\n" and H.with_note("🔥 a", [], "https://link.coupang.com/a/1")[0] == H.DISCLOSURE + "\n\n🔥 a"  # 끄면 예전
+tt8 = time.time; H.AD_FIRST = "2026-10-12"
+time.time = lambda: TK("2026-10-11 23:59"); assert not H.ad_on() and H.ad_head(H.TOSS_NOTE, "x").startswith("<i>")
+time.time = lambda: TK("2026-10-12 00:00"); assert H.ad_on() and H.ad_head(H.TOSS_NOTE, "🔥 [토스] a (1원)").startswith("[광고]")  # 10/12 0시(KST)부터 저절로
+time.time = tt8; H.AD_FIRST = ""
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, shutil, tempfile, time, urllib
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -134,6 +134,11 @@ NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
 TOSS_BEAUTY_HOURS = (15, 19)  # 토스 뷰티(화장품) 카테고리 베스트 중 살 만한 것 (10/11 진우 '화장품도 올리자' -> '화장품도 발굴': 저녁 1번 더 = 7일 표에서 저녁 중 가장 조용하고 묶음 글 없는 19시)
+AD_FIRST = "2026-10-12"  # 10/11 진우 결정(조회는 되는데 구매가 적음 -> 집중 모드 10/12~10/25): 이 날(KST)부터 개별 딜 글(채널·Threads) 첫 줄 '[광고] + 훅 + 상품 + 가격', 둘째 줄 제휴 고지문 그대로. "" = 예전(고지문이 첫 줄)
+
+
+def ad_on():
+    return bool(AD_FIRST) and time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) >= AD_FIRST
 PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
 TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (8, 11)  # 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
@@ -506,9 +511,9 @@ def deal_post(d, comment, q=None, extra=None):
         if lp:
             link, label = lp, f"🔎 {name}에서 찾기"
     note = aff_note(link or "")
-    head = f"<i>{note}</i>\n\n" if note else ""  # 공정위 지침: 대가성 문구는 첫 부분에
     x = extra or {}
     facts = "".join(f"\n{icon} {esc(x[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if x.get(k))
+    head = ad_head(note, f"🔥 {d['title']}\n\n{comment}", x.get("unit") or "")  # 공정위 지침: 대가성 문구는 첫 부분에 — 1줄 [광고] 첫 줄 + 2줄 고지문(10/11 진우 결정)
     badge = f"\n🏆 <b>인기</b> · {esc(d['hot'])}" if d.get("hot") else ""  # 제목 바로 아래(제목 줄은 사이트 split_title이 첫 줄로 읽음)
     text = f"{head}🔥 <b>{esc(d['title'])}</b>{badge}\n\n{esc(comment)}{facts}\n\n출처: <a href=\"{esc(d['url'])}\">{d['board']}</a>"
     return text, link or d["url"], label
@@ -573,6 +578,52 @@ def aff_note(url):
             else OY_NOTE if host in OY_HOSTS else AFF_NOTE if host in AFF_HOSTS else "")
 
 
+def ad_hook(plain, unit=""):
+    """첫 줄 훅(10/11 진우 결정 우선순위): 같은 상품 쿠팡 차이 > 단위가격 > 30일 최저가·순위 > 할인율 -> (이모지, 꾸밈말, 문장) / 없으면 None.
+    쿠팡 차이는 글에 '같은 상품…보다 N원 쌈'이 있을 때만(토스 API 상품엔 없음 -> 3·4번)."""
+    m = re.search(rf"({SAVE_STORES})\s*같은 상품[^\n—]*?보다\s*([\d,]+원)\s*쌈", plain)
+    if m:
+        return "💸", f"{m.group(1)}보다 {m.group(2)} 싼", f"{m.group(1)}보다 {m.group(2)} 쌈"
+    u = (unit or unit_of({"text": plain})).split(" (")[0].strip()
+    if u and re.search(r"\d", u) and len(u) <= 20:
+        return "📏", f"{u}꼴", u
+    if re.search(r"30일 (내 )?최저가", plain):
+        return "📉", "30일 최저가", "30일 최저가"
+    r = re.search(r"(?:^|· |\n)([^·\n💰⭐]{1,16}?\d{1,2}위)", plain)
+    if r:
+        return "🏆", r.group(1).strip(), r.group(1).strip()
+    d = re.search(r"(\d{1,2})%\s*(?:할인|↓)|할인율\s*(\d{1,2})%", plain)
+    if d:
+        return "🔻", f"{d.group(1) or d.group(2)}% 할인", f"{d.group(1) or d.group(2)}% 할인"
+    return None
+
+
+def ad_line(plain, unit=""):
+    """개별 딜 글 첫 줄(10/11 진우 결정 — 공정위: 광고 표시는 첫 부분): '[광고] + 훅 + 상품 + 가격'. 둘째 줄은 제휴사 고지문 그대로(ad_head).
+    틀 3가지를 제목으로 정해 돌림(같은 모양 반복 X, 같은 글은 고쳐도 같은 틀)."""
+    store, name, price = parse(title_of(plain))
+    pp = f"{clip(name, 24)} {price.split('/')[0].strip()}".strip()
+    h = ad_hook(plain, unit)
+    if not h:
+        return f"[광고] 🔥 {pp}"
+    k = int(hashlib.md5(name.encode()).hexdigest(), 16) % 3
+    return ("[광고] {e} {adj} {pp}", "[광고] {pp} — {sent}", "[광고] {e} {sent} · {pp}")[k].format(e=h[0], adj=h[1], sent=h[2], pp=pp)
+
+
+def ad_head(note, plain, unit="", html_=True):
+    """개별 딜 글 머리: 1줄 [광고] 첫 줄 + 2줄 제휴 고지문(그대로) + 빈 줄. 제휴 링크가 아니면(note 없음) ''."""
+    if not note:
+        return ""
+    if not ad_on():
+        return f"<i>{note}</i>\n\n" if html_ else f"{note}\n\n"
+    a = ad_line(plain, unit)
+    return f"{esc(a)}\n<i>{note}</i>\n\n" if html_ else f"{a}\n{note}\n\n"
+
+
+def plain_of(html_text):
+    return html.unescape(re.sub(r"<[^>]+>", "", html_text))
+
+
 def with_note(text, ents, url):
     """제휴 링크면 대가성 문구를 맨 앞에 붙인 (text, entities). 텔레그램 오프셋은 UTF-16 단위라 그만큼 뒤로 밂."""
     note = aff_note(url)
@@ -580,9 +631,17 @@ def with_note(text, ents, url):
         head, sep, rest = text.partition("\n\n")
         cut = len((head + sep).encode("utf-16-le")) // 2
         text, ents = rest, [{**e, "offset": e["offset"] - cut} for e in ents if e["offset"] >= cut]
-    if note and not text.startswith(NOTE_STARTS):
+    if ad_on() and note and text.startswith("[광고]"):  # 첫 줄·고지문 머리를 지금 링크 기준으로 다시(10/11~ 첫 줄)
+        head, sep, rest = text.partition("\n\n")
+        cut = len((head + sep).encode("utf-16-le")) // 2
+        text, ents = rest, [{**e, "offset": e["offset"] - cut} for e in ents if e["offset"] >= cut]
+    if note and not text.startswith(NOTE_STARTS) and not ad_on():
         n = len(note.encode("utf-16-le")) // 2
         return f"{note}\n\n{text}", [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
+    if note and not text.startswith(NOTE_STARTS):
+        a = ad_line(text)
+        la, n = len(a.encode("utf-16-le")) // 2, len(note.encode("utf-16-le")) // 2
+        return f"{a}\n{note}\n\n{text}", [{"type": "italic", "offset": la + 1, "length": n}] + [{**e, "offset": e["offset"] + la + 1 + n + 2} for e in ents]
     return text, ents
 
 
@@ -648,7 +707,7 @@ def admin_deal(lines, link, mid):
         return False
     facts = "".join(f"\n{icon} {esc(p[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if p.get(k))
     weak = p["score"] < MIN_SCORE - (earns(title) or aff(link))  # 진우 제휴 링크 = 수수료 되는 딜 -> 1점 완화(네이버는 EARN_TAGS에 없음: 커뮤니티 [네이버] 딜은 진우가 링크를 만들어야 수수료라서)
-    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=f"<i>{aff_note(link)}</i>\n\n{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=ad_head(aff_note(link), f"🔥 {title}\n\n{p['comment']}", p.get("unit") or "") + f"{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
            + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}",
            link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_label(title), "url": link}]]})
     if not m:
@@ -718,7 +777,7 @@ def publish_approved():
         note, body = aff_note(link), "\n".join(lines[1:])
         if not (note and admin_deal(lines, link, m["message_id"])):
             title = admin_title(lines[0], link) if note else lines[0]  # 초안도 채널 글과 같은 제목·버튼([몰]·가격)
-            draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(title)}</b>" + (f"\n\n{esc(body)}" if body else ""),
+            draft(ad_head(note, f"🔥 {title}\n\n{body}") + f"🔥 <b>{esc(title)}</b>" + (f"\n\n{esc(body)}" if body else ""),
                   link, info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None, label=buy_label(title) if note else "🛒 구매하러 가기")
     handled = set()
     for u in ups:
@@ -778,7 +837,7 @@ def events(seen):
             continue
         note = aff_note(ev["url"])
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-               text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]})
+               text=ev_head(ev) + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]})
         if m:
             seen[key] = time.time()
             if ev.get("name") and toss_share(ev["url"]):  # 진우 토스 예약 -> 품절 지켜보기(toss_soldout): 이 글 번호·이 예약의 본문 그대로(같은 링크를 두 번 예약해도 안 섞임)
@@ -1244,17 +1303,17 @@ def toss_picks(seen):
         btn = f"🛒 {price:,}원 구매하기"
         r["st"] = "done"  # 먼저 표시: 채널·Threads 실패해도 같은 글 반복 안 함
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-               text=f"<i>{TOSS_NOTE}</i>\n\n{body}", reply_markup={"inline_keyboard": [[{"text": btn, "url": r["link"]}]]})
+               text=ad_head(TOSS_NOTE, plain_of(body)) + body, reply_markup={"inline_keyboard": [[{"text": btn, "url": r["link"]}]]})
         if not m:
             r["st"] = None  # 채널 실패 -> 다음 실행에 다시
             continue
         seen[f"tb_{r['id']}"] = {"t": now, "n": r["n"]}  # 3일 동안 토스 자동 회차에 다시 안 올림
         bundled(seen)  # 토스 자동 회차가 이 글과 10분 띄우고 1시간 글 수에도 셈
-        seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": f"<i>{TOSS_NOTE}</i>\n\n", "body": body, "btn": btn, "url": r["link"],
+        seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": ad_head(TOSS_NOTE, plain_of(body)), "body": body, "btn": btn, "url": r["link"],
                                            "n": r["n"], "p": price, "it": [[r["id"], r["n"], price, night, 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
         print("toss pick", e["at"], clip(r["n"], 30), f"{price:,}원 게시")
         if tok:  # Threads: 대가성 문구 맨 앞, 실패는 main()이 알림
-            text = f"{TOSS_NOTE}\n\n🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
+            text = ad_head(TOSS_NOTE, plain_of(body), html_=False) + f"🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
                 + f"\n\n🛒 {r['link']}\n📲 실시간 알림 t.me/hotdeal_pick"
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
             th_text(tok, me, text, r["link"])
@@ -1265,10 +1324,16 @@ SOLD = ([None, ("⛔ <b>품절</b> — 다시 들어오면 답글로 알려드�
 SOLD_EDITS = 8  # 한 실행에 고치는 채널 글 수(텔레그램 채널 분당 약 20개 — 밤 12시에 한꺼번에 열려도 나머지는 다음 실행에)
 
 
+def ev_head(ev):
+    """예약 글 머리: 상품 딜(deal)이고 제휴 링크면 [광고] 첫 줄 + 고지문, 행사 알림 등은 고지문만(예전 그대로)."""
+    note = aff_note(ev["url"])
+    return ad_head(note, plain_of(ev["text"])) if ev.get("deal") else (f"<i>{note}</i>\n\n" if note else "")
+
+
 def sold_ev(ev, day):
     """진우 예약 글(토스 쉐어링크 + 상품명) -> 품절 지켜보기 항목. 가격 = 버튼 'N원', 없으면 본문 첫 'N원'(그래도 없으면 id 찾을 때 API 가격)."""
     note, won = aff_note(ev["url"]), re.search(r"([\d,]+)원", ev.get("button", "")) or re.search(r"([\d,]+)원", ev.get("text", ""))
-    return {"t": time.time(), "d": day, "k": "ev", "pre": f"<i>{note}</i>\n\n" if note else "", "body": ev["text"], "btn": ev.get("button", "🛒 구매하기"),
+    return {"t": time.time(), "d": day, "k": "ev", "pre": ev_head(ev), "body": ev["text"], "btn": ev.get("button", "🛒 구매하기"),
             "url": ev["url"], "n": ev["name"], "p": int(won[1].replace(",", "")) if won else 0, "it": []}
 
 
@@ -1463,7 +1528,7 @@ def toss_reopen(seen):
     toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
     hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가·선착순'
     head = "☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 다시 열렸어요" + (" · 선착순" if hot else "")
-    text = (f"{TOSS_NOTE}\n\n{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
+    text = (ad_head(TOSS_NOTE, f"🔥 [토스] {e['n']} ({price:,}원)\n" + (e["cmp"] if e["cmp"] and price == e["p0"] else ""), html_=False) + f"{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
             + (f"\n{e['cmp']}" if e["cmp"] and price == e["p0"] else "") + f"\n\n👉 {e['url']}\n📲 실시간 알림 t.me/hotdeal_pick")
     e["st"] = 1  # 먼저 표시: 실패해도 같은 글 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
     if am:
@@ -1505,7 +1570,7 @@ def digest(seen, posts):
         return
     if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
         return
-    urls = [f"{SITE}p/{posts.index(p)}.html" if aff_note(p["url"] or "") == OY_NOTE else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트
+    urls = [f"{SITE}p/{posts.index(p)}.html" if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
     rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
     tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
@@ -1516,7 +1581,8 @@ def digest(seen, posts):
         more = f"\n… 외 {len(todays) - len(rows)}개는 사이트에서" if len(rows) < len(todays) else ""
         text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + tail
         seen_text = html.unescape(re.sub(r"<[^>]+>", "", text))
-        if (len(seen_text) <= 4000 and len(re.findall(r"<(?:a|b|i)[ >]", text)) + seen_text.count("http") <= 90) or len(rows) <= 1:
+        if (len(seen_text) <= 4000 and len(re.findall(r"<(?:a|b|i)[ >]", text)) + seen_text.count("http") <= 90
+                and sum(map(len, re.findall(r'href="([^"]*)"', text))) <= 5000) or len(rows) <= 1:  # 링크 주소 합도(10/11 21:39: 82개·9,863자 -> ENTITIES_TOO_LONG)
             break
         rows.pop()
     if (tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}) and not bundled(seen)) or draft(text):  # 10/10 진우 '✅ 없이 자동 게시' — 채널 게시가 실패하면 예전처럼 초안
@@ -1963,8 +2029,10 @@ def threads_deals(seen):
             return
         note = aff_note(posts[i].get("url") or "")
         icon = "🛒" if "특가로는 약한 제품" in posts[i]["text"] else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
-        sv = saving(posts[i]["text"])  # 둘째 줄 = 얼마나 싼지(첫 줄은 대가성 문구라 못 바꿈, 10/11 진우 'Threads 훅')
-        text = (f"{note}\n\n" if note else "") + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
+        sv = None if note and ad_on() else saving(posts[i]["text"])  # 제휴 링크면 첫 줄 [광고]에 훅(10/11 진우 결정), 아니면 예전처럼 '💸 …보다 N원 싸요'
+        head = ad_head(note, posts[i]["text"], posts[i].get("unit") or "", html_=False)
+        text = head + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") \
+            + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250 - max(0, len(head) - len(note) - 2)] \
             + f"\n\n👉 {url}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
