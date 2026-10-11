@@ -25,6 +25,7 @@
 
 ## 3. 배포
 - `python3 test_hotdeal.py` → 마지막 줄 `OK: 모든 셀프체크 통과` 확인 후 main에 커밋·push.
+  - 컨테이너엔 한글 폰트가 없어 카드 단계에서 `한글 폰트 없음` → 먼저 `apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra`(테스트가 임시 폴더로 옮겨 돌아서 `fonts/`에 받으면 못 찾음, 컨테이너가 새로 뜨면 다시).
 - 새 로직은 셀프체크 추가 + 그 로직을 빼면 테스트가 실패하는지(변이) 확인.
 - 봇 실행: GitHub Actions `hotdeal`(tick 타이머로 약 14분마다), 사이트는 `build_site.py` → `docs/` → GitHub Pages(hotdealpick.kr).
 - 봇이 매 실행 `posts.json`·`docs/`를 커밋하므로 push 전에 `git pull --rebase`.
@@ -49,6 +50,19 @@
 
 옮기는 순서: ① `list_triggers`로 위 예약의 프롬프트를 읽음 → ② 이 작업에 **같은 프롬프트로 send_later** 다시 만듦(배포 방법만 'git push'로) → ③ 옛 예약은 `update_trigger enabled=false`로 끔(삭제 말고) → ④ README 검증 기록에 1행.
 **겹치지 않게**: 같은 점검이 두 대화에서 돌면 README가 충돌하니 반드시 옛 것을 끈 뒤에 새것을 켤 것.
+
+✅ **10/11 13:22 옮김** — 옛 6개 전부 `enabled=false`(삭제 X) → 이 작업에 새로 만듦. 각 점검이 끝나면 다음 날 같은 시각으로 스스로 다시 예약하므로 id는 매일 바뀜(지금 것은 `list_triggers`로).
+
+| 점검 | 새 예약 id(첫 회차) | 첫 실행(UTC) |
+|---|---|---|
+| 16:00 | trig_01LKuEVKjrWZB3gonWVrUTxz | 10/11 07:00 |
+| 19:00 | trig_01VrFuAQNBkmWsRab1oc3ntt | 10/11 10:00 |
+| 22:30 | trig_01HvF2JtS5aDemY79ibUGchJ | 10/11 13:30 |
+| 09:00 | trig_016i38rh6zdBxrhYymBL6qsG | 10/12 00:00 |
+| 12:30 | trig_012WB7jPXqbEko8ykPcQdnjA | 10/12 03:30 |
+| 주간 플레이리스트(월 10:30) | trig_01DXGv7LU5H8XqwF349dhMwH | 10/12 01:30 |
+
+이 작업에서 점검하는 법(프롬프트 '방법 메모'와 같음): 실행 목록·로그 = GitHub MCP `actions_list`·`get_job_logs` / 채널 = Firecrawl `t.me/s/hotdeal_pick`(시각 = 뉴욕, KST−13h), 구독자 = Firecrawl `t.me/hotdeal_pick` — 이 컨테이너는 t.me·hotdealpick.kr 직접 접속이 프록시에 막힘(403) / 메일 = Gmail MCP / 오라클 콘솔은 못 봄 → 터널은 로그, 청구는 메일로.
 
 ## 6. 남은 일 (10/11 12:40 기준)
 | 할 일 | 누가 | 상태 |
