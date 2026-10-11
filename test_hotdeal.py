@@ -992,7 +992,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_soldout, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1118,7 +1118,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_soldout, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -1165,6 +1165,104 @@ H.digest(seen, [{"t": "2026-10-12 20:00", "text": "🔥 [G마켓] 딜 (1원)", "
 assert H.earns("[11번가] 토리든 다이브인 세럼 50ml (19,900원)") and H.earns("[네이버] 라운드랩 독도 토너 500ml (15,900원)") and not H.earns("[11번가] 삼다수 2L 12병 (9,900원)") and H.earns("[쿠팡] 휴지")  # 화장품은 어느 몰이든 1점 완화
 assert all("화장품 효능(미백·주름·탄력 개선 등) 언급 금지" in x for x in (H.DEAL_PROMPT, H.ADMIN_PROMPT, H.GOLD_PROMPT, H.BEST_PROMPT))  # 효능 문구 금지는 그대로(커뮤니티·하루특가 글에도)
 open("posts.json", "w").write(pj5); H.http, H.tg, H.ai_pick, H.HAS_TOSS = ph5, tg7, pa5, False
+if os.path.exists("toss.json"): os.remove("toss.json")
+time.time = tt
+
+# 5-3g) 토스 품절 -> 밤 12시 지나 다시 열리면 Threads에도(10/11 진우 '품절 풀리면 다시 쓰레드에 시간 맞춰서, 자정 + 아침 8시 둘 다'): 채널 답글은 그대로 + Threads 새 글(대가성 문구 맨 앞·상품명·지금 가격·진우 링크 그대로),
+#       8~11시엔 같은 상품을 다시 확인해 아직 살 수 있으면 '아침 재알림'(다른 문구) 1번 더, 품절·비싸짐이면 안 올림. '하루특가·선착순'은 오늘 목록에 있을 때만, 쿠팡 비교 줄은 가격이 그대로일 때만.
+#       재게시끼리 10분(실행당 1개)·1시간 3개·토스 묶음 글과 10분 -> 넘친 건 다음 실행에. 4279047은 첨부 없이 1번 더, 다른 오류는 예외(main이 알림)·같은 글 다시 안 올림
+import urllib.error
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1", THREADS_TOKEN="tk")
+H.HAS_TOSS, ph6, tg8, sl6 = True, H.http, H.tg, H.time.sleep
+ro_out, ro_price, ro_calls, ro_th, ro_sent, ro_fail = set(), {}, [], [], [], {"pub": None}
+RO_DAY = [(950, "탑프룻 망고젤리, 망고맛, 320g, 3개", 8900), (951, "CJ제일제당 쇠고기 진한다시, 1kg, 1개", 6900), (960, "토스 하루특가 API 상품", 1000)]  # 바나나칩(952)은 오늘 목록에 없음
+def ro_http(url, body=None, headers=None, method=None):
+    if url == "https://oauth2.cert.toss.im/token":
+        return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if url.startswith(H.THREADS):
+        ro_calls.append(url)
+        if "/me?" in url: return '{"id": "me7"}'
+        if "/me7/threads?" in url: ro_th.append(parse_qs(urlsplit(url).query)); return '{"id": "c"}'
+        if "/threads_publish?" in url:
+            if ro_fail["pub"] and (ro_fail["pub"][1] or "link_attachment" in ro_th[-1]):
+                e = urllib.error.HTTPError(url, 400, "Bad Request", {}, None); e.body = ro_fail["pub"][0]; raise e
+            return '{"id": "p"}'
+    ro_calls.append(url.split("/openapi")[-1])
+    if "/products/today-deals?size=30" in url:
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p, "isSoldOut": False} for i, n, p in RO_DAY], "hasNext": False}})
+    if "/products/detail?tacaItemIds=" in url:
+        if ro_fail.get("detail"):
+            ro_fail["detail"] -= 1; raise OSError("tunnel down")
+        ids = [int(x) for x in url.split("=")[1].split(",")]
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"상품{i}", "displayPrice": ro_price[i], "isSoldOut": i in ro_out} for i in ids], "notFoundIds": []}})
+    raise AssertionError(url)
+H.http, H.tg, H.time.sleep = ro_http, (lambda method, **p: ro_sent.append((method, p)) or {"message_id": 800 + len(ro_sent)}), lambda s: None
+def ro_run(at, steps=("toss_soldout", "toss_reopen")):
+    ro_calls.clear(); ro_th.clear(); ro_sent.clear(); time.time = lambda: T(at); out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        for s in steps: getattr(H, s)(seen)
+    return out.getvalue()
+MANGO, DASHI, BANANA = "https://toss.shopping/_m/3NnboSsc", "https://toss.shopping/_m/lGFCZsRq", "https://toss.shopping/_m/FCYKrPn4"
+EVS = [(950, MANGO, 8900, "🔥 <b>[토스] 탑프룻 망고젤리 망고맛 320g 3개 (8,900원)</b>\n\n토스 하루특가 · ⭐ 4.7 (리뷰 4,193)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n⚠️ 확인할 점: 오늘 밤 12시까지"),
+       (951, DASHI, 6900, "🛒 <b>[토스] CJ제일제당 쇠고기 진한다시 1kg (6,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품 — 쿠팡 같은 상품(이츠웰(CJ) 쇠고기 진한다시 1kg)이 6,430원으로 470원 더 쌈\n토스 하루특가"),
+       (952, BANANA, 10000, "🔥 <b>[토스] 사바나나 바나나칩 100g 5봉 (10,000원)</b>\n\n💡 단위가격: 100g당 2,000원 — 쿠팡 같은 상품 8봉(23,650원, 100g당 2,956원)보다 g당 32% 쌈")]
+seen = {}
+for j, (i, u, p, body) in enumerate(EVS):  # 어제(10/11) 진우 예약 글 3개 + API 하루특가 묶음 1개가 품절인 채로 밤 12시
+    seen[f"sold_{101 + j}"] = {**H.sold_ev({"name": dict((a, b) for a, b, c in RO_DAY).get(i, "사바나나 바나나칩, 100g, 5봉"), "button": f"🛒 {p:,}원 구매하기", "url": u, "text": body}, "2026-10-11"), "it": [[i, "", p, 1, 1, 0]]}
+    seen[f"sold_{101 + j}"]["it"][0][1] = seen[f"sold_{101 + j}"]["n"]
+seen["sold_104"] = {"t": T("2026-10-11 13:10"), "d": "2026-10-11", "k": "top", "pre": f"<i>{H.TOSS_NOTE}</i>\n\n", "head": "⏰ <b>오늘의 토스 하루특가 TOP1</b>",
+                    "rows": [["토스 하루특가 API 상품", "https://toss.shopping/_m/A960", ["💰 <b>1,000원</b>", "👉 가"]]], "it": [[960, "토스 하루특가 API 상품", 1000, 1, 1, 0]]}
+ro_price.update({950: 8900, 951: 6500, 952: 10000, 960: 1000})  # 진한다시는 밤 12시에 더 싸게(6,900 -> 6,500원) 열림
+log = ro_run("2026-10-12 00:05")
+assert len([1 for m, p in ro_sent if m == "sendMessage"]) == 4 and len([1 for m, p in ro_sent if m == "editMessageText"]) == 4  # 채널: 답글·품절 줄 지우기는 지금 그대로
+assert [e["id"] for e in seen["reopen"]["q"]] == [950, 951, 952, 960] and len(ro_th) == 1 and "toss reopen 밤" in log  # ① 자정 첫 실행: Threads 새 글 1개(나머지는 10분 간격으로)
+assert seen["reopen"]["q"][1]["cmp"].startswith("🤔 솔직히 특가로는 약한 제품 — 쿠팡") and seen["reopen"]["q"][3]["cmp"] == ""  # 약한 딜 줄도(가격 그대로면 Threads에도 솔직하게), API 묶음 글은 비교 줄 없음
+t0 = ro_th[0]["text"][0]
+assert t0 == f"{H.TOSS_NOTE}\n\n🔔 다시 열렸어요 · 선착순\n🔥 탑프룻 망고젤리, 망고맛, 320g, 3개\n💰 8,900원 · 토스 하루특가(밤 12시까지)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n\n👉 {MANGO}\n📲 실시간 알림 t.me/hotdeal_pick", t0
+assert ro_th[0]["link_attachment"] == [MANGO] and ro_th[0]["topic_tag"] == ["핫딜"] and len(t0) <= 500  # 진우 링크 그대로(미리보기도)
+assert sum("/products/today-deals" in c for c in ro_calls) == 1  # 오늘 하루특가 목록(밤 12시 새 목록)은 1번만
+assert not ro_run("2026-10-12 00:12") and not ro_th and not [c for c in ro_calls if "detail" in c and "952" in c]  # 10분 안 -> 다음 실행에(상세 조회도 안 함)
+ro_fail["pub"] = ('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', False)  # 링크 미리보기 실패(4279047) -> 첨부 없이 1번 더
+ro_run("2026-10-12 00:19"); ro_fail["pub"] = None
+assert [q.get("link_attachment") for q in ro_th] == [[DASHI], None] and ro_th[0]["text"] == ro_th[1]["text"] and sum("threads_publish" in c for c in ro_calls) == 2
+t1 = ro_th[1]["text"][0]  # 가격 바뀜(6,900 -> 6,500원) -> 지금 가격, 쿠팡 비교 줄(🤔) 빠짐, 약한 딜 아이콘 🛒 그대로
+assert "🛒 CJ제일제당 쇠고기 진한다시, 1kg, 1개\n💰 6,500원 · 토스 하루특가(밤 12시까지)\n\n👉 " + DASHI in t1 and "쿠팡" not in t1 and "6,900" not in t1 and t1.startswith(H.TOSS_NOTE)
+ro_run("2026-10-12 00:33"); t2 = ro_th[0]["text"][0]  # 오늘 하루특가 목록에 없음 -> '하루특가·선착순' 빠짐, 가격 그대로면 쿠팡 비교 줄은 있음
+assert t2 == f"{H.TOSS_NOTE}\n\n🔔 다시 열렸어요\n🔥 사바나나 바나나칩, 100g, 5봉\n💰 10,000원\n💡 단위가격: 100g당 2,000원 — 쿠팡 같은 상품 8봉(23,650원, 100g당 2,956원)보다 g당 32% 쌈\n\n👉 {BANANA}\n📲 실시간 알림 t.me/hotdeal_pick", t2
+assert not [c for c in ro_calls if "today-deals" in c]  # 목록에 없는 상품이어도 2시간 안엔 목록 다시 안 받음
+assert not ro_run("2026-10-12 00:47") and not ro_th and not ro_calls  # 1시간 3개(00:05·00:19·00:33) -> 넘친 건 다음 실행에(API도 안 부름)
+ro_run("2026-10-12 01:06"); t3 = ro_th[0]["text"][0]
+assert "🔔 다시 열렸어요 · 선착순\n🔥 토스 하루특가 API 상품\n💰 1,000원 · 토스 하루특가(밤 12시까지)\n\n👉 https://toss.shopping/_m/A960" in t3  # API 묶음 글 상품 = 그 글의 쉐어링크, 쿠팡 비교 없음
+assert not ro_run("2026-10-12 03:00") and not ro_th and not ro_calls  # 밤에 다 올렸으면 아침까지 조용
+ro_fail["detail"] = 1; assert "toss reopen detail" in ro_run("2026-10-12 08:02", ("toss_reopen",)) and not ro_th and len(seen["reopen"]["q"]) == 4  # 상세 조회 실패(터널) -> 다음 실행에(Threads 실패 알림 아님)
+ro_out.add(951); ro_price[952] = 12000  # 아침: 진한다시 다시 품절, 바나나칩은 올린 가격(10,000원)보다 비싸짐(특가 끝)
+seen["bundles"] = {"t": T("2026-10-12 08:01"), "ts": [T("2026-10-12 08:01")]}  # 08:01에 토스 묶음 글(채널·Threads) -> 10분 띄움
+assert not ro_run("2026-10-12 08:05", ("toss_reopen",)) and not ro_th
+ro_run("2026-10-12 08:15", ("toss_reopen",)); t4 = ro_th[0]["text"][0]  # ② 8시 지나 첫 실행: 같은 상품 다시 확인 -> 아직 살 수 있으면 '아침 재알림'(밤 글과 다른 문구)
+assert t4 == f"{H.TOSS_NOTE}\n\n☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요\n🔥 탑프룻 망고젤리, 망고맛, 320g, 3개\n💰 지금 8,900원 · 토스 하루특가(밤 12시까지)\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n\n👉 {MANGO}\n📲 실시간 알림 t.me/hotdeal_pick", t4
+assert t4 != t0 and [e["id"] for e in seen["reopen"]["q"]] == [960]  # 품절(진한다시)·비싸짐(바나나칩)은 아침 글 없이 끝
+ro_run("2026-10-12 08:29", ("toss_reopen",)); assert len(ro_th) == 1 and ro_th[0]["text"][0].startswith(f"{H.TOSS_NOTE}\n\n☀️ 아침 재알림") and "A960" in ro_th[0]["text"][0] and not seen["reopen"]["q"]
+assert not ro_run("2026-10-12 08:43", ("toss_reopen",)) and not ro_calls  # 다 올림 -> 아무것도 안 함
+seen["reopen"]["q"] = [{"id": 950, "n": "n", "url": MANGO, "p0": 8900, "icon": "🔥", "cmp": "", "day": "2026-10-12", "st": 1}, {"id": 960, "n": "m", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-11", "st": 0}]
+assert "버림" in ro_run("2026-10-12 11:05", ("toss_reopen",)) and not ro_th and not seen["reopen"]["q"]  # 아침 회차(8~11시)를 놓쳤거나 어제 것 -> 낮에 몰아 안 올리고 버림(토스 데이터 그날만)
+seen["reopen"]["q"] = [{"id": 950, "n": "n", "url": MANGO, "p0": 8900, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}]; ro_fail["pub"] = ('{"error": {"message": "expired"}}', True)
+try:
+    ro_run("2026-10-13 00:20", ("toss_reopen",)); raise AssertionError("다른 오류는 예외로 올라가야 함(main이 Threads 실패 알림)")
+except urllib.error.HTTPError:
+    pass
+ro_fail["pub"] = None; assert len(ro_th) == 1 and seen["reopen"]["q"][0]["st"] == 1 and not ro_run("2026-10-13 00:40", ("toss_reopen",)) and not ro_th  # 먼저 표시 -> 밤 글 다시 안 올림(스팸 방지), 아침에 다시 확인
+sw = lambda d, it: {**H.sold_ev({"name": "n", "button": "🛒 1,000원 구매하기", "url": "https://toss.shopping/_m/Z", "text": "🔥 x"}, d), "it": [it]}
+seen = {"sold_106": sw("2026-10-13", [960, "n", 1000, 0, 1, 0])}; ro_run("2026-10-13 15:00", ("toss_soldout",))  # 낮에 다시 들어온 베스트 상품 = 채널 답글만(Threads는 밤 12시 재오픈만)
+assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen
+seen = {"sold_107": sw("2026-10-12", [960, "n", 1000, 1, 1, 0]), "sold_108": sw("2026-10-12", [960, "n", 1000, 1, 1, 0])}; ro_run("2026-10-13 00:05", ("toss_soldout",))
+assert [e["id"] for e in seen["reopen"]["q"]] == [960]  # 같은 상품이 두 글에 있어도 Threads 줄은 1번
+del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button": "🛒 1,000원 구매하기", "url": "https://toss.shopping/_m/Z", "text": "🔥 x"}, "2026-10-12"), "it": [[960, "n", 1000, 1, 1, 0]]}}
+ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
+H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
+assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
+assert "toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and "(threads, threads_deals, toss_reopen, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (8, 11))
+del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
 

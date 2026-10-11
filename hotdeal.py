@@ -118,6 +118,7 @@ TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선�
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
 TOSS_BEAUTY_HOURS = (15, 19)  # 토스 뷰티(화장품) 카테고리 베스트 중 살 만한 것 (10/11 진우 '화장품도 올리자' -> '화장품도 발굴': 저녁 1번 더 = 7일 표에서 저녁 중 가장 조용하고 묶음 글 없는 19시)
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
+TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (8, 11)  # 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
 BEAUTY = dict((k, rx) for k, _, rx in CATS)["beauty"]  # 화장품 제목 키워드(사이트 '💄 화장품' 칸과 같음)
 TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
@@ -1032,6 +1033,28 @@ def sold_render(w):
     return w["pre"] + text, kb
 
 
+def toss_daymap(seen, now, today, need):
+    """오늘 하루특가 목록 전체(커서 페이지) -> seen["soldmap"] = {"m": {이름(기호·띄어쓰기 뺌): [id, 가격]}}. 목록은 그날만(endAt = 밤 12시),
+    need면 받음: 하루 최대 3번(처음 + 못 찾은 게 있으면 2시간 뒤), 실패해도 받은 만큼 저장(부르는 쪽 확인은 계속)."""
+    norm = lambda s: re.sub(r"\W", "", s or "")
+    if seen.get("soldmap", {}).get("d") != today:
+        seen.pop("soldmap", None)
+    sm = seen.get("soldmap")
+    if need and (not sm or (sm["n"] < 3 and now - sm["t"] > 7200)):
+        got, cur = dict(sm["m"]) if sm else {}, None
+        try:
+            for _ in range(10):
+                r = toss("/products/today-deals?size=30" + (f"&cursor={urllib.parse.quote(str(cur), safe='')}" if cur else ""))
+                got.update({norm(x["displayName"]): [x["tacaItemId"], x["displayPrice"]] for x in r["items"]})
+                cur = r.get("nextCursor")
+                if not (r.get("hasNext") and cur):
+                    break
+        except Exception as e:
+            print("toss soldout list", repr(e))
+        sm = seen["soldmap"] = {"t": now, "d": today, "n": (sm["n"] if sm else 0) + 1, "m": got}
+    return sm
+
+
 def toss_soldout(seen):
     """오늘 올린 토스 글(API 묶음 + 진우 예약 중 API 상품과 이름이 같은 것)의 품절을 매 실행 상품 상세 API 1번(최대 30개, 오래 안 본 것부터)으로 다시 봄(10/11 진우 '품절 뜨는 경우는 속상해').
     품절 -> 채널 글 수정('⛔ 품절 — 밤 12시부터 다시 살 수 있어요' + 버튼 글자 '품절 · 밤 12시 재오픈', 링크는 그대로 — 진우 링크 안 뺌).
@@ -1049,22 +1072,8 @@ def toss_soldout(seen):
         ps = [p for p in own if p.get("url") == ev["url"]]
         if len(ps) == 1 and sum(e["url"] == ev["url"] for e in evs) == 1:
             seen.setdefault(f"sold_{ps[0]['mid']}", sold_ev(ev, today))
-    if seen.get("soldmap", {}).get("d") != today:  # 하루특가 목록은 그날만(endAt = 밤 12시)
-        seen.pop("soldmap", None)
-    sm = seen.get("soldmap")
     need = [w for k, w in seen.items() if k.startswith("sold_") and w["k"] == "ev" and w["d"] == today and not w["it"] and not w.get("off")]
-    if need and (not sm or (sm["n"] < 3 and now - sm["t"] > 7200)):  # 오늘 하루특가 목록 전체(커서): 하루 최대 3번(처음 + 못 찾은 이름이 있으면 2시간 뒤), 실패해도 아래 확인은 계속
-        got, cur = dict(sm["m"]) if sm else {}, None
-        try:
-            for _ in range(10):
-                r = toss("/products/today-deals?size=30" + (f"&cursor={urllib.parse.quote(str(cur), safe='')}" if cur else ""))
-                got.update({norm(x["displayName"]): [x["tacaItemId"], x["displayPrice"]] for x in r["items"]})
-                cur = r.get("nextCursor")
-                if not (r.get("hasNext") and cur):
-                    break
-        except Exception as e:
-            print("toss soldout list", repr(e))
-        sm = seen["soldmap"] = {"t": now, "d": today, "n": (sm["n"] if sm else 0) + 1, "m": got}
+    sm = toss_daymap(seen, now, today, bool(need))
     if need and sm:  # 하루특가 목록에 없으면 toss_relink가 모아 둔 1일 목록(베스트·카테고리)에서 같은 이름
         cache = {norm(x[1]): [x[0], x[2]] for x in seen.get("tosscache", {}).get("items", []) if x[3] > now - 86400}
         for w in need:
@@ -1135,6 +1144,12 @@ def toss_soldout(seen):
             note = aff_note(url)
             w.setdefault("rp", []).append(i)
             n_back += 1
+            if w["d"] != today and E.get("THREADS_TOKEN") and all(e["id"] != new[i][0] for e in seen.get("reopen", {}).get("q", [])):  # 밤 12시 지나 다시 열림 -> Threads 새 글도(toss_reopen, 10/11 진우)
+                body = html.unescape(re.sub(r"<[^>]+>", "", w.get("body", "")))  # 진우 예약 글의 쿠팡 비교·단위가격 줄(💡·🤔) = 가격이 그대로일 때만 다시 씀
+                rq = seen.setdefault("reopen", {"t": now, "q": [], "ts": []})
+                rq["t"] = now
+                rq["q"].append({"id": new[i][0], "n": new[i][1], "url": url, "p0": new[i][2], "icon": "🛒" if body.startswith("🛒") else "🔥", "day": today, "st": 0,
+                                "cmp": next((clip(l, 120) for l in body.split("\n") if l[:1] in ("💡", "🤔")), "")})
             try:
                 tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_parameters={"message_id": int(k[5:])},
                    text=(f"<i>{note}</i>\n\n" if note else "") + f"🔔 <b>다시 열렸어요!</b> {esc(new[i][1])} — {price:,}원", reply_markup={"inline_keyboard": [[{"text": f"🛒 {price:,}원 구매하기", "url": url}]]})
@@ -1145,6 +1160,73 @@ def toss_soldout(seen):
     if ids or fin:
         evw = [w for k, w in seen.items() if k.startswith("sold_") and w["k"] == "ev" and w["d"] == today]
         print("toss soldout", len(ids), "checked", len(nf), "notfound", n_out, "out", n_back, "reopen", edits, "edits", f"| 진우 예약 id {sum(bool(w['it']) for w in evw)}/{len(evw)}")
+
+
+def toss_reopen(seen):
+    """품절됐던 토스 딜이 밤 12시 지나 다시 열리면(toss_soldout이 채널 답글과 함께 줄 세움) Threads에도 새 글 — 10/11 진우 '품절 풀리면 다시 쓰레드에 시간 맞춰서, 자정 + 아침 8시 둘 다'.
+    0~8시 = '🔔 다시 열렸어요', 8~11시(TH_REOPEN_AM) = 같은 상품을 다시 확인해 아직 살 수 있으면 '☀️ 아침 재알림'(문구를 다르게 — 같은 글 반복은 Threads 스팸 표시 위험), 품절·조회 안 됨이면 안 올림.
+    올리기 직전 상품 상세 API로 다시 확인: 가격 = 지금 가격(올린 가격보다 비싸면 특가 끝 -> 안 올림), '토스 하루특가·선착순'은 오늘 하루특가 목록에 있을 때만, 쿠팡 비교 줄은 가격이 그대로일 때만.
+    몰림 방지: 재게시끼리 10분(TH_REOPEN_GAP, 실행당 1개) + 1시간 최대 TH_REOPEN_HOUR개 + 토스 묶음 글(채널·Threads)과 10분 -> 넘친 건 다음 실행에.
+    실패는 기존 규칙(먼저 표시 -> 같은 글 다시 시도 안 함, 4279047은 첨부 없이 1번 더, main()이 하루 1번 알림). 토스 데이터는 그날만(다음 날·11시 지나면 버림)."""
+    r = seen.get("reopen")
+    if not r or not r["q"]:
+        return
+    now, kst = time.time(), time.gmtime(time.time() + 9 * 3600)
+    today, am = time.strftime("%Y-%m-%d", kst), TH_REOPEN_AM[0] <= kst.tm_hour
+    late = [e for e in r["q"] if e["day"] != today or kst.tm_hour >= TH_REOPEN_AM[1]]
+    r["q"] = [e for e in r["q"] if e not in late]
+    r["ts"] = [t for t in r.get("ts", []) if now - 3600 < t <= now]  # 최근 1시간 재게시 시각(시계가 뒤로 간 기록은 무시)
+    if late:
+        print("toss reopen 버림(지난 회차)", len(late))
+    todo = [e for e in r["q"] if am or not e["st"]]  # 밤: 아직 안 올린 것만 / 아침: 전부(밤에 못 올린 건 아침 글 1개만)
+    tok = E.get("THREADS_TOKEN")
+    if not todo or not tok or not HAS_TOSS or (r["ts"] and now - max(r["ts"]) < TH_REOPEN_GAP) or len(r["ts"]) >= TH_REOPEN_HOUR or busy(seen, cap=False):
+        return
+    try:
+        d = toss("/products/detail?tacaItemIds=" + ",".join(dict.fromkeys(str(e["id"]) for e in todo[:30])))
+    except Exception as e:  # 터널 끊김 등 -> 다음 실행에(Threads 실패 알림 아님)
+        print("toss reopen detail", repr(e))
+        return
+    data, post = {x["tacaItemId"]: x for x in d["items"]}, None
+    for e in todo[:30]:
+        x = data.get(e["id"])
+        if not x or x.get("isSoldOut") or (e["p0"] and x["displayPrice"] > e["p0"]):  # 다시 품절·조회 안 됨·비싸짐(특가 끝) -> 밤 글은 건너뛰고 아침에 다시 봄, 아침이면 안 올림
+            e["st"] = 1
+            if am:
+                r["q"].remove(e)
+            continue
+        if not post:
+            post = (e, x["displayPrice"])
+    if not post:
+        return
+    e, price = post
+    ids = lambda: {v[0] for v in seen["soldmap"]["m"].values()} if seen.get("soldmap", {}).get("d") == today else set()
+    toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
+    hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가·선착순'
+    head = "☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 다시 열렸어요" + (" · 선착순" if hot else "")
+    text = (f"{TOSS_NOTE}\n\n{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
+            + (f"\n{e['cmp']}" if e["cmp"] and price == e["p0"] else "") + f"\n\n👉 {e['url']}\n📲 실시간 알림 t.me/hotdeal_pick")
+    e["st"] = 1  # 먼저 표시: 실패해도 같은 글 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
+    if am:
+        r["q"].remove(e)
+    r["t"] = now
+    r["ts"].append(now)
+    print("toss reopen", "아침" if am else "밤", clip(e["n"], 30), f"{price:,}원", "하루특가" if hot else "목록 없음", f"| 남은 {len(r['q'])}")
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    th_text(tok, me, text, e["url"])
+
+
+def th_text(tok, me, text, link):
+    """Threads 글 1개(TEXT + 링크 미리보기). 미리보기를 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로."""
+    for att in ({"link_attachment": link}, {}):
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": "핫딜", "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(10)
+        try:
+            return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+        except urllib.error.HTTPError as e:
+            if not att or "4279047" not in (getattr(e, "body", "") or ""):
+                raise
 
 
 def digest(seen, posts):
@@ -1441,16 +1523,7 @@ def threads_deals(seen):
             + f"\n\n👉 {url}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        for att in ({"link_attachment": url}, {}):  # 링크 미리보기를 Threads가 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로
-            q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": "핫딜", "access_token": tok})
-            cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-            time.sleep(10)
-            try:
-                json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
-                break
-            except urllib.error.HTTPError as e:
-                if not att or "4279047" not in (getattr(e, "body", "") or ""):
-                    raise
+        th_text(tok, me, text, url)
 
 
 REPORT_HOURS = (10, 14, 18, 22)  # 관리자에게 성과 리포트 보내는 시각(KST), 회차마다 1번 (10/8 진우 '토스 쉐어 정산금 들어오기 시작' → '1일 4회')
@@ -1582,14 +1655,14 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), toss_relink, toss_soldout, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), toss_relink, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
             ig = step is ig_publish
             alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            if step in (threads, threads_deals, toss_reopen, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))
