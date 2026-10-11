@@ -1583,7 +1583,8 @@ def toss_reopen(seen):
         text = reopen_text(seen, e, price, am, hot)
         if th_solo(seen, text, fill=True, reopen=mode):
             break
-    else:
+    else:  # 올릴 게 없음 -> 이유를 로그로(10/12 아침 재오픈 0개가 로그로 안 보이던 것): 살 수 있는 것 중 ①② 없음(값이 바뀌어 쿠팡 비교 줄 빠짐·🛒 등) / 다 품절·비싸짐
+        print("toss reopen", "아침" if am else "밤", f"줄 {len(todo)}개 중 살 수 있는 것 {len(live)}개 — " + ("①② 아님(값 바뀜·🛒 등)이라 안 올림" if live else "다 품절·비싸짐"))
         return
     th_mark(seen, reopen=mode)
     e["st"] = 1  # 먼저 표시: 실패해도 같은 글 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
