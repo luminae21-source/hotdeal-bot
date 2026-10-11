@@ -1325,8 +1325,8 @@ def sp_pick(prompt, lines):
     sp_ai.append((prompt, lines))
     if prompt.startswith("커뮤니티 핫딜 글 제목"):  # 같은 상품 확인: 에이지랩 크림·선크림만 같은 상품
         want = "올인원 크림" if "올인원 크림" in prompt else "브라이트닝 선크림" if "브라이트닝 선크림" in prompt else "니들 패치" if "니들 패치" in prompt else "국물떡볶이" if "국물떡볶이" in prompt else "없는"
-        if "카본히터" in prompt:  # 비슷한 다른 모델(Q1000) = 6점 -> 같은 상품 아님
-            return [{"i": i, "score": 6, "comment": "모델 다름"} for i, l in enumerate(lines) if "Q1000" in l][:1]
+        if "카본히터" in prompt:  # 비슷한 다른 모델(Q1000) = 6점 -> 같은 상품 아님, 같은 모델(Q2000)이면 9점
+            return sorted([{"i": i, "score": 9 if "Q2000" in l else 6, "comment": "c"} for i, l in enumerate(lines) if "카본히터" in l], key=lambda p: -p["score"])[:1]
         return [{"i": i, "score": 9, "comment": "같음"} for i, l in enumerate(lines) if want in l][:1]
     if prompt.startswith("아래는 토스쇼핑 하위 카테고리"): return [{"i": i, "score": 8, "comment": "c"} for i, l in enumerate(lines) if ("> 패치" in l and "니들" in prompt) or ("선케어" in l and "선크림" in prompt)]
     if prompt.startswith("토스쇼핑 상품 1개야"): return [{"i": 0, "score": 8, "comment": "50g 3개 + 선크림 증정, 리뷰 812개"}]
@@ -1362,6 +1362,8 @@ ask = [p["text"] for m, p in sp_sent if p["chat_id"] == H.ADMIN]
 assert len(ask) == 1 and "23:50 '한경희 2단 자동회전 나노 카본히터 Q2000'" in ask[0] and "못 찾았어" in ask[0] and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 sp_run("2026-10-11 18:28"); assert not sp_sent and not [c for c in sp_calls if "best-categories/41" in c]  # 다시 안 물음·하위 카테고리도 다 봄(하루 PICK_SCAN 안)
 assert not [a for a, l in sp_ai if "카본히터" in a]  # 진우에게 요청한 상품은 그만 찾음(나중에 찾아 올리면 진우 링크 예약과 두 번)
+LISTS["/products/best-selling?size=100"].append(it(520, "한경희 2단 자동회전 나노 카본히터, Q2000", 59000))  # 요청 뒤에 베스트에 들어와도(19시 새 베스트) 안 찾음 -> 진우 링크 예약만
+sp_run("2026-10-11 19:05"); assert not seen["pk_2026-10-11 23:50"].get("id") and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]; LISTS["/products/best-selling?size=100"].pop()
 sp_run("2026-10-11 23:20", H.events); assert [p["text"] for m, p in sp_sent] == [f"<i>{H.TOSS_NOTE}</i>\n\n진우 예약"]
 sv9 = json.loads(json.dumps(seen)); sp_run("2026-10-11 23:36", H.events); assert not sp_sent; seen = sv9  # 23:30 api 행이 시각이 돼도 events()는 안 올림(url·text 없음 -> toss_picks가)  # events()는 api 행을 안 올림(진우 예약만)
 log = sp_run("2026-10-11 23:33")  # ② 예약 시각: 상세로 지금 가격(1,000원 내림)·품절 재확인 -> 채널 + Threads
@@ -1420,6 +1422,8 @@ seen = {"tb_501": 1, "tb_502": 1, "tb_503": 1, "tb_506": 1, "tb_508": 1, "tb_510
 seen = {"tossget_cat": {"t": T("2026-10-12 10:00"), "d": "20261012"}, "tosscache": {"t": 0, "items": [[1, "옛 목록", 100, T("2026-10-12 10:00")]]}}; time.time = lambda: T("2026-10-12 10:30"); sp_calls.clear(); H.toss_pool(seen)
 assert "/categories" in sp_calls and seen["tossget_cat"]["v"] == 2 and [x for x in seen["tosscache"]["items"] if x[0] == 503][0][4:] == [70, 4.7, 900]  # 예전(할인율·리뷰 없는) 목록이면 1번 다시 받음
 sp_calls.clear(); H.toss_pool(seen); assert "/categories" not in sp_calls  # 그다음부터는 하루 1번 그대로
+seen = {}; time.time = lambda: T("2026-10-12 10:00"); sp_ai.clear(); H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]); H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"])
+assert len([a for a, l in sp_ai if a.startswith("아래는")]) == 1 and seen["pickscan"]["names"] == ["에이지랩 스네일 뮤신 브라이트닝 선크림"]  # 이미 물은 이름은 Claude에 다시 안 물음
 ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12 10:00"); H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림", "화이트벨라 마이크로 니들 패치"])
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
