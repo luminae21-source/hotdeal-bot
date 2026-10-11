@@ -157,15 +157,16 @@ def card_order(posts, stem, out="docs"):
 
 
 def card_stems(out):
-    """사이트 맨 위 카드: 인스타에 올라간 카드(docs/cards/ig.json, ig_publish가 기록) + 하루 카드(.png — 인스타 없이도 Threads·봇 채팅용)
-    -> 가장 최근 날짜의 카드들, 시각 순(하루 카드 = 21시). 아직 인스타에 안 올라간 시간대 카드는 안 보임(인스타 번호와 어긋나지 않게)."""
+    """사이트 맨 위 카드: 인스타에 올리는 카드(docs/cards/ig.json — 컨테이너 만든 실행에 기록, 다음 실행에 발행 -> 사이트가 먼저) + 하루 카드(.png — 인스타 없이도 Threads·봇 채팅용)
+    -> 가장 최근 카드부터 24시간 안 카드들, 시각 순(하루 카드 = 21시). 만들기만 하고 인스타에 안 올리는 시간대 카드는 안 보임(인스타 번호와 어긋나지 않게)."""
     d = f"{out}/cards"
     if not os.path.isdir(d):
         return []
     live = list(json.load(open(f"{d}/ig.json"))) if os.path.exists(f"{d}/ig.json") else []
     daily = [f[:-4] for f in os.listdir(d) if f.endswith(".png") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", f[:-4])]
-    stems = sorted({x for x in live + daily if STEM.fullmatch(x)}, key=lambda x: (x[:10], int(STEM.fullmatch(x).group(2) or 21)))
-    return [x for x in stems if x[:10] == stems[-1][:10]] if stems else []
+    at = lambda x: calendar.timegm(time.strptime(x[:10], "%Y-%m-%d")) + 3600 * int(STEM.fullmatch(x).group(2) or 21)
+    stems = sorted({x for x in live + daily if STEM.fullmatch(x)}, key=at)
+    return [x for x in stems if at(stems[-1]) - at(x) < 86400]  # 가장 최근 카드부터 24시간 안 카드(어제 저녁·밤 카드도 다음 날 낮까지 접어서 — 늦게 본 사람도 같은 번호)
 
 COMMUNITY = ("ppomppu.co.kr", "ruliweb.com", "clien.net")  # 구매 버튼이 커뮤니티 원글인 딜(상품 주소를 못 꺼냄) -> 원글이 지워지면 안 열림(10/8 01번)
 
@@ -180,15 +181,20 @@ def find_url(title):
     return "https://search.shopping.naver.com/search/all?query=" + urllib.parse.quote(q[:60])
 
 
+def card_name(stem):
+    """사이트 맨 위 카드 칸 이름 '10월 12일 낮 12시 카드 딜' / 하루 카드 '10월 12일 카드 딜' — 인스타·Threads 캡션이 이 이름 그대로 가리킴."""
+    return f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (SLOT_NAMES.get(stem[11:], stem[11:] + "시") + " " if len(stem) > 10 else "") + "카드 딜"
+
+
 def card_picks(posts, out):
     """홈 맨 위: 가장 최근 인스타·Threads 카드의 딜을 카드와 같은 번호로, 누르면 바로 구매 페이지(인스타 캡션 링크는 안 눌려서 프로필 링크 -> 여기서 한 번에, 10/8 진우).
-    인스타 하루 3번(10/11~): 가장 최근 카드는 펼치고, 그날 앞선 카드(낮 12시·저녁 6시)는 접어서 — 앞 게시물을 보고 온 사람도 같은 번호로."""
+    인스타 하루 3번(10/11~): 가장 최근 카드는 펼치고, 24시간 안 앞선 카드(어제 밤·오늘 낮 12시 등)는 접어서 — 앞 게시물을 보고 온 사람도 같은 번호로."""
     stems = card_stems(out)
     blocks = [(x, card_order(posts, x, out)[:CARD_N]) for x in reversed(stems)]  # 카드·캡션에 나온 CARD_N개만(나머지는 아래 격자) — 스크롤 짧게
     blocks = [(x, ps) for x, ps in blocks if ps]
     if not blocks:
         return ""
-    name = lambda x: f"{int(x[5:7])}월 {int(x[8:10])}일 " + (SLOT_NAMES.get(x[11:], x[11:] + "시") + " " if len(x) > 10 else "") + "카드 딜"
+    name = card_name
     first = f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{pick_rows(blocks[0][1])}'
     more = "".join(f'<details><summary>{html.escape(name(x))}</summary>{pick_rows(ps)}</details>' for x, ps in blocks[1:])
     return f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {name(blocks[0][0])}</h2>{first}{more}</section>'

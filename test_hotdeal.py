@@ -1637,16 +1637,17 @@ seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     t = [x["text"] for m, x in sent if m == "sendMessage" and x["chat_id"] == "@ch"][-1]  # 10/10~ ✅ 없이 채널에 바로
-    assert not [m for m, x in sent if m == "draft"] and "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_") and "bundles" in seen  # 모아보기도 묶음 글로 기록(10/11 간격)
+    assert not [m for m, x in sent if m == "draft"] and "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and any(k.startswith("digest_") for k in seen) and "bundles" in seen  # 모아보기도 묶음 글로 기록(10/11 간격)
     blog = [x for m, x in sent if m == "sendMessage"][-1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
     assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그
-    assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and v[0]["caption"].startswith("B딜 개당 99원 · ") and "가성비 TOP2" in v[0]["caption"]
+    assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and v[0]["caption"].split("\n\n")[1].startswith("B딜 개당 99원 · ") and "가성비 TOP2" in v[0]["caption"]
+    assert v[0]["caption"].split("\n\n")[0] == H.ig_notes([]) and "맨 위 '" + S.card_name(today) + "'에서 1~2번" in v[0]["caption"]  # 대가성 문구 맨 앞(릴스도), 사이트 칸 이름 그대로
     assert v[0]["caption"].index("1. [G마켓] B딜") < v[0]["caption"].index("2. A딜") and "옛날딜" not in v[0]["caption"]
     assert "제휴 링크" in v[0]["caption"] and "#핫딜" in v[0]["caption"] and len(v[0]["caption"]) <= 1024
     assert fills == [(H.REEL_PROMPT, ["A딜 | "])] and "B딜" not in str(fills)  # B딜은 이미 hook·pts 있음
     sent.clear(); H.digest(seen, P); assert not sent
-    seen.pop("blog_" + list(seen)[0][7:]); sent.clear(); H.digest(seen, P)  # 블로그용 글만 실패했던 날: 초안·릴스 없이 블로그용 글만 다시
+    seen.pop("blog_" + next(k for k in seen if k.startswith("digest_"))[7:]); sent.clear(); H.digest(seen, P)  # 블로그용 글만 실패했던 날: 초안·릴스 없이 블로그용 글만 다시
     assert [m for m, x in sent] == ["sendMessage"] and "제목: " in sent[0][1]["text"] and any(k.startswith("blog_") for k in seen)
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
@@ -1729,6 +1730,7 @@ assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "Thr
 import calendar, shutil
 TK = lambda s: calendar.timegm(time.strptime(s, "%Y-%m-%d %H:%M")) - 9 * 3600
 D9 = "2026-10-12"; tt9, pj9 = time.time, open("posts.json").read()
+cards9 = "docs/cards9"; shutil.rmtree(cards9, ignore_errors=True); os.rename("docs/cards", cards9); os.makedirs("docs/cards")  # 앞 절(실제 오늘 날짜) 카드와 안 섞이게 -> 끝나고 되돌림
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 json.dump([{"t": f"{D9} 08:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://link.coupang.com/a/h", "s": 7},
@@ -1761,21 +1763,24 @@ at9("12:19"); assert [m for m, u, b in ig9] == ["HEAD"] and "igs_" + D9 + "_12" 
 live9.add(f"{D9}_12.jpg"); at9("12:33")
 (m, u, b), = [x for x in ig9 if x[0] == "POST"]
 assert u == H.IG + "/178/media" and b["image_url"] == f"https://hotdealpick.kr/cards/{D9}_12.jpg" and seen["igc_IMG1"]["card"] == f"{D9}_12" and "igs_" + D9 + "_12" in seen
+import build_site as S9
+assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"] and S9.card_stems("docs") == [f"{D9}_12"]  # 사이트 맨 위에 먼저(이번 실행 배포)
+at9("12:34", H.ig_publish); assert [m for m, u, b in ig9] == ["GET"] and "igc_IMG1" in seen  # 만든 실행엔 발행 X(사이트 먼저) -> 다음 실행에
 cap = b["caption"]
-assert cap.startswith(H.AFF_NOTE + "\n" + H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n10월 12일 낮 12시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다), 번호 줄 = 카드 순서·가격 꼬리 뺌
-assert "맨 위 '낮 12시 카드 딜'에서 번호를 누르면 바로 구매 페이지" in cap and cap.endswith("#핫딜 #특가 #핫딜픽 #생필품 #화장품") and "#최저가" not in cap and len(cap) <= 2200
+assert cap.startswith(H.NAVER_NOTE + "\n" + H.DISCLOSURE + "\n" + H.AFF_NOTE + "\n\n10월 12일 낮 12시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다, 네이버·올영 먼저), 번호 줄 = 카드 순서·가격 꼬리 뺌
+assert "맨 위 '10월 12일 낮 12시 카드 딜'에서 번호를 누르면 바로 구매 페이지" in cap and cap.endswith("#핫딜 #특가 #핫딜픽 #생필품 #화장품") and "#최저가" not in cap and len(cap) <= 2200
 at9("12:47"); assert not ig9  # 회차마다 1번
+sv9 = seen; seen = {}; at9("12:47"); assert not ig9; seen = sv9  # seen 캐시를 잃어도 기록(ig.json, 커밋됨)에 있으면 다시 안 올림
 seen9 = dict(seen); seen = {}; at9("15:01"); assert not ig9 and not seen; seen = seen9  # 3시간 지나면 그 회차는 안 함(낮에 몰아 X)
 at9("18:05"); assert not ig9 and seen["igs_" + D9 + "_18"]["skip"] == 2 and not os.path.exists(f"docs/cards/{D9}_18.jpg")  # 12~18시 딜 2개 -> 건너뜀
 shutil.copy(f"docs/cards/{D9}_12.jpg", f"docs/cards/{D9}.jpg"); open(f"docs/cards/{D9}.png", "wb").write(b"p"); live9.add(f"{D9}.jpg")
 json.dump([4, 1, 0, 5, 2, 3], open(f"docs/cards/{D9}.json", "w"))  # 21시 하루 카드(모아보기가 만듦)
 at9("20:59"); assert not [x for x in ig9 if x[0] == "POST"]
 at9("21:20"); (m, u, b), = [x for x in ig9 if x[0] == "POST"]
-assert b["image_url"] == f"https://hotdealpick.kr/cards/{D9}.jpg" and "10월 12일 오늘의 핫딜 모음\n\n1. [옥션] 12시 딜\n" in b["caption"] and "맨 위에서 카드 번호를 누르면" in b["caption"]
+assert b["image_url"] == f"https://hotdealpick.kr/cards/{D9}.jpg" and "10월 12일 오늘의 핫딜 모음\n\n1. [옥션] 12시 딜\n" in b["caption"] and "맨 위 '10월 12일 카드 딜'에서 번호를 누르면" in b["caption"]
 assert b["caption"].count("\n") and b["caption"].split("\n\n")[2].count("\n") == 4  # 번호 줄은 카드에 든 5개만(CARD_N)
 # 발행: 사이트 맨 위 카드 = 인스타에 올라간 카드
-import build_site as S9
-assert S9.card_stems("docs") == [D9] and "📸 10월 12일 카드 딜" in S9.card_picks(json.load(open("posts.json")), "docs")  # 아직 인스타 발행 전: 하루 카드(.png)만
+assert S9.card_stems("docs") == [f"{D9}_12", D9] and "📸 10월 12일 카드 딜" in S9.card_picks(json.load(open("posts.json")), "docs")  # 발행 전에도 사이트 먼저(컨테이너 만든 실행)
 at9("21:34", H.ig_publish)
 assert [u.rsplit("/", 1)[-1] for m, u, b in ig9 if u.endswith("media_publish")] == ["media_publish"] * 2 and set(json.load(open(H.IG_LIVE))) == {f"{D9}_12", D9}
 assert [p["text"] for m, p in sent] == ["📸 인스타 자동 게시 완료 — 낮 12시 카드 (instagram.com/hotdealpick.kr)", "📸 인스타 자동 게시 완료 — 오늘 카드 (instagram.com/hotdealpick.kr)"]
@@ -1795,6 +1800,52 @@ assert seen["ig_hold"] > TK(f"{D9} 22:14") + 86000; at9("22:28"); assert not ig9
 sv9 = seen; seen = {"ig_hold": TK(f"{D9} 22:14") + 86400}; os.rename(f"docs/cards/{D9}_12.jpg", "h9.jpg"); at9("12:05"); assert not ig9 and not os.path.exists(f"docs/cards/{D9}_12.jpg"); os.rename("h9.jpg", f"docs/cards/{D9}_12.jpg"); seen = sv9  # 쉬는 동안엔 시간대 카드도 안 만듦
 assert S9.card_order(json.load(open("posts.json")), f"{D9}_15") == [] and len(S9.card_order(json.load(open("posts.json")), "2026-10-11")) == 1  # 순서 파일 없는 시간대 카드 = 번호 없음(하루 카드는 그날 딜 순서)
 st9.pop("spam"); del seen["ig_hold"]
+# 리뷰(10/11) 고침: 발행 오류(인스타 5xx·응답 끊김)는 컨테이너 그대로 -> 다음 실행에 상태 다시(사실 올라갔으면 기록만, 아니면 다시 발행), 다른 컨테이너는 계속
+def ig9e_http(url, body=None, headers=None, method=None):
+    if (url.endswith("/media_publish") and st9.get("e500")) or (url.endswith("/178/media") and method == "POST" and st9.get("mk500")):
+        ig9.append((method, url, body)); e = urllib.error.HTTPError(url, 500, "x", {}, None); e.body = '{"error":{"is_transient":true}}'; raise e
+    return ig9_http(url, body, headers, method)
+H.http, st9["e500"] = ig9e_http, True
+json.dump({}, open(H.IG_LIVE, "w")); seen = {"igc_C": {"t": 1, "card": f"{D9}_18"}, "igc_R": 1.0}
+try:
+    at9("22:30", H.ig_publish); raise AssertionError("발행 오류는 예외(main이 알림)")
+except urllib.error.HTTPError:
+    pass
+assert set(seen) == {"igc_C", "igc_R"} and len([1 for m, u, b in ig9 if u.endswith("media_publish")]) == 2 and not sent  # 둘 다 시도, 컨테이너 그대로
+st9.pop("e500"); st9["v"] = "PUBLISHED"; at9("22:44", H.ig_publish)
+assert not seen and list(json.load(open(H.IG_LIVE))) == [f"{D9}_18"] and not sent  # 사실 올라갔음 -> 기록만(알림 X)
+st9.update(v="FINISHED", e500=True); seen = {"igc_D": {"t": 1, "card": f"{D9}_18"}}
+try:
+    at9("22:50", H.ig_publish); raise AssertionError("발행 오류는 예외")
+except urllib.error.HTTPError:
+    pass
+st9.pop("e500"); at9("23:04", H.ig_publish); assert not seen.get("igc_D") and sent[-1][1]["text"].startswith("📸 인스타 자동 게시 완료 — 저녁 6시 카드")  # 안 올라갔음 -> 다시 발행
+st9["v"], seen = "ERROR", {"igc_E": {"t": 1, "card": f"{D9}_18"}}
+try:
+    at9("23:10", H.ig_publish); raise AssertionError("처리 실패는 예외")
+except RuntimeError as e:
+    assert f"https://hotdealpick.kr/cards/{D9}_18.jpg 카드를 직접 올려줘" in str(e) and not seen  # 시간대 카드는 봇 채팅에 안 옴 -> 카드 주소
+# 컨테이너 만들기 실패(인스타 일시 오류): 회차 안에서 IG_TRIES번까지 다음 실행에 다시(안 올라간 컨테이너는 안 보여서 두 번 안 올라감), 마지막엔 카드 주소
+st9.update(v="FINISHED", mk500=True); seen = {}; json.dump({}, open(H.IG_LIVE, "w"))
+for k, t in enumerate(["12:40", "12:54", "13:08"], 1):
+    try:
+        at9(t); raise AssertionError("만들기 실패는 예외")
+    except RuntimeError as e:
+        assert seen["igs_" + D9 + "_12"]["fail"] == k and (f"https://hotdealpick.kr/cards/{D9}_12.jpg 카드를 직접 올려줘" in str(e)) == (k == H.IG_TRIES), str(e)
+at9("13:22"); assert not ig9 and not json.load(open(H.IG_LIVE))  # 3번 실패 -> 그 회차 끝
+st9.pop("mk500"); seen = {"igs_" + D9 + "_12": {"t": 1, "fail": 1}}; at9("13:36")
+assert len([1 for m, u, b in ig9 if m == "POST"]) == 1 and seen["igs_" + D9 + "_12"] == {"t": TK(f"{D9} 13:36")} and list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"]  # 다시 해서 성공 = 회차 끝
+# 사이트 맨 위 카드 = 가장 최근 카드부터 24시간 안(다음 날 낮 12시 카드가 올라가도 어제 저녁·밤 카드는 접어서, 딱 24시간 된 어제 낮 12시는 빠짐)
+json.dump({f"{D9}_12": 1, f"{D9}_18": 1, "2026-10-13_12": 1}, open(H.IG_LIVE, "w"))
+assert S9.card_stems("docs") == [f"{D9}_18", D9, "2026-10-13_12"]
+# 캡션 대가성 문구는 늘 맨 앞: 제휴 링크 없는 카드 = 일반 안내 1줄, 토스·쿠팡 딜 = 올린 뒤 제휴 링크로 바뀔 수 있어서(toss_relink·진우 파트너스 링크) 그 문구 미리
+pj = json.load(open("posts.json")); pj.append({"t": f"{D9} 13:30", "text": "🔥 [토스] 김 20봉 (5,000원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?no=9", "s": 7})
+json.dump(pj, open("posts.json", "w"), ensure_ascii=False); o9 = next(i for i, p in enumerate(pj) if "오후 딜" in p["text"])
+json.dump([o9], open(f"docs/cards/{D9}_18.json", "w"))
+assert H.card_caption(f"{D9}_18")[1].startswith("일부 링크는 제휴 링크로 수수료를 받을 수 있어요.\n\n10월 12일 저녁 6시 핫딜\n\n1. [옥션] 오후 딜\n")
+json.dump([o9, len(pj) - 1], open(f"docs/cards/{D9}_18.json", "w"))
+assert H.card_caption(f"{D9}_18")[1].startswith(H.TOSS_NOTE + "\n\n10월 12일 저녁 6시 핫딜\n") and "제휴 링크로 수수료" not in H.card_caption(f"{D9}_18")[1]
+shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
 assert "threads, threads_deals, ig_cards, ig_repost, ig_publish" in inspect.getsource(H.main) and "ig = step in (ig_cards, ig_publish)" in inspect.getsource(H.main)
@@ -1825,7 +1876,7 @@ assert os.path.exists(f"docs/cards/re/{today}.png") and os.path.exists(f"docs/ca
 H.ig_repost(seen); assert not ig_calls and not seen  # 사이트 배포 전
 dep[0] = True; H.ig_repost(seen)
 u, b, h, m = ig_calls[0]
-assert u == H.IG + "/178/media" and m == "POST" and b["image_url"] == f"https://hotdealpick.kr/cards/re/{today}.jpg" and "카드 번호를 누르면 바로 구매" in b["caption"] and "1. A딜" in b["caption"]
+assert u == H.IG + "/178/media" and m == "POST" and b["image_url"] == f"https://hotdealpick.kr/cards/re/{today}.jpg" and "카드 딜'에서 번호를 누르면 바로 구매" in b["caption"] and "1. A딜" in b["caption"]
 assert "igc_IMG1" in seen and f"igre_{today}" in seen
 H.ig_repost(seen); assert len(ig_calls) == 1  # 하루 1번
 del H.E["IG_TOKEN"]; H.ig_repost({}); assert len(ig_calls) == 1  # 토큰 없으면 안 함
@@ -1994,7 +2045,7 @@ H.http, vids, tt2 = ig_down, [], time.time
 H.tg_video, H.draft, time.time = lambda path, cap: vids.append(cap), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
 json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst: "docs/bgm_t.m4a"
 sent.clear(); H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
-assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].startswith("우유 개당 100원")
+assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].split("\n\n")[1].startswith("우유 개당 100원") and vids[0].split("\n\n")[0] in (H.ig_notes([]), H.DISCLOSURE, H.AFF_NOTE, H.TOSS_NOTE)
 assert "🎵 테스트곡 — 작가 (Pixabay)" in vids[0]  # 캡션에 오늘 곡명
 H.IG, vids[:] = "https://graph.instagram.com/v25.0", []  # 인스타 토큰(Instagram 로그인)이면 릴스 업로드 시도 안 함(실패 알림 없음), 영상은 봇 채팅으로
 sent.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("인스타 토큰이면 릴스 업로드 호출 없음"))
