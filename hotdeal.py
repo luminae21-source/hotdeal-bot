@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -131,6 +131,7 @@ NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
 TOSS_BEAUTY_HOURS = (15, 19)  # 토스 뷰티(화장품) 카테고리 베스트 중 살 만한 것 (10/11 진우 '화장품도 올리자' -> '화장품도 발굴': 저녁 1번 더 = 7일 표에서 저녁 중 가장 조용하고 묶음 글 없는 19시)
+PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
 TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (8, 11)  # 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
 TOSS_SPECIAL_HOURS, SPECIAL_DR, SPECIAL_RC = (8, 22), 40, 50  # 10/11 진우 '특가 탭 자동으로': 토스 특가(할인 40%↑·리뷰 50개↑) 회차 — 7일 표에서 묶음 글 없는 아침 8시(시간당 2개)·밤 22시(4개), 회차 3시간 안에만. 줄이려면 여기서 빼기
@@ -783,6 +784,71 @@ def events(seen):
                 record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag"), "own": 1})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
                 tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
+
+
+def night_deals(seen, since, until):
+    """진우 예약 딜(events.json의 링크 있는 deal — 토스 API 이름 예약은 빼고, 사이트 표시·쿠팡 비교 금지 그대로) 중 since~until(KST 'YYYY-MM-DD HH:MM')에 나갈,
+    아직 안 나간 것 -> [{"at", "icon", "name", "price", "sv", "url"}] 시각 순. sv = 같은 상품 쿠팡 비교('…보다 N원 쌈' 문장)일 때만 ('쿠팡', 'N원')."""
+    out = []
+    for ev in sorted(load(EVENTS, []), key=lambda e: e["at"]):
+        if not (ev.get("url") and ev.get("deal") and not ev.get("api")) or "ev_" + ev["at"] in seen or not since <= ev["at"] < until:
+            continue
+        plain = html.unescape(re.sub(r"<[^>]+>", "", ev["text"]))
+        store, name, price = parse(re.sub(r"^[^\[]*", "", plain.split("\n")[0]).strip())
+        sv = re.search(rf"({SAVE_STORES})\s*같은 상품[^\n—]*?보다\s*([\d,]+원)\s*쌈", plain)  # '같은 상품'이라고 쓴 비교만(다른 상품·단위가격 참고는 X)
+        out.append({"at": ev["at"], "icon": "🛒" if "특가로는 약한 제품" in plain else "🔥", "name": clip(name, 26), "price": price.split("/")[0].strip(),
+                    "sv": sv and sv.groups(), "url": ev["url"]})
+    return out
+
+
+def night_window(now):
+    """미리보기 범위: 지금(KST) ~ 다음 아침 8시."""
+    kst = time.gmtime(now + 9 * 3600)
+    return time.strftime("%Y-%m-%d %H:%M", kst), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 + (86400 if kst.tm_hour >= 8 else 0))) + " 08:00"
+
+
+def night_line(d, link=True):
+    """미리보기 한 줄: '22:20 🔥 메르헨트 폼클렌징 500ml 2개 11,900원 · 💡 쿠팡 같은 상품보다 6,000원 쌈'."""
+    name = f'<a href="{esc(d["url"])}">{esc(d["name"])}</a>' if link else d["name"]
+    return f"{d['at'][11:]} {d['icon']} {name} {d['price']}" + (f" · 💡 {d['sv'][0]} 같은 상품보다 {d['sv'][1]} 쌈" if d["sv"] else "")
+
+
+def preview(seen):
+    """매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(10/11 진우 '리스트 필요, 꾸준함이 중요' — 팔로워가 이 시간엔 리스트가 뜬다고 알게): 진우 예약 딜 중
+    지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads(앞 PREVIEW_TH개 + 전체 목록 링크).
+    개별 글은 예약대로 그대로 나감. 묶음 글이라 BUNDLE_GAP(토스 22시 회차보다 먼저 — main 순서), 23시 넘으면 안 올림(이미 나가기 시작), 적은 날은 21시 모아보기에(digest)."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key = time.strftime("preview_%Y%m%d", kst)
+    if kst.tm_hour != PREVIEW_HOUR or key in seen or busy(seen, cap=False):  # 시간당 상한(HOUR_CAP)은 안 봄: 하루 1번이고 진우 예약(시간당 6개)이 몰린 밤엔 늘 걸려서 첫 글 뒤로 밀림
+        return
+    ds = night_deals(seen, *night_window(now))
+    if len(ds) < PREVIEW_MIN:
+        seen[key] = {"t": now, "n": len(ds)}  # 적은 날 = 21시 모아보기에 합침
+        return
+    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(d["url"]) for d in ds) if n)
+    rows = [night_line(d) for d in ds[:20]]
+    text = (notes + "\n\n" if notes else "") + f"🌙 <b>오늘 밤 특가 미리보기</b> ({kst.tm_mon}/{kst.tm_mday} · {len(ds)}개)\n시간이 되면 하나씩 채널에 올라와요 — 미리 찜해 두세요\n\n" \
+        + "\n".join(rows) + (f"\n… 외 {len(ds) - len(rows)}개" if len(ds) > len(rows) else "") + "\n\n🔔 매일 밤 10시 미리보기 · 알림 켜두면 안 놓쳐요"
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=text)
+    if not m:
+        return  # 다음 실행에 다시(10시대 안에서)
+    seen[key] = {"t": now, "n": len(ds), "mid": m["message_id"]}
+    bundled(seen)
+    tok = E.get("THREADS_TOKEN")
+    if not tok:
+        return
+    top = sorted(sorted(ds, key=lambda d: d["icon"] == "🛒")[:PREVIEW_TH], key=lambda d: d["at"])  # 약한 딜(🛒)은 뒤로 -> 앞 5개, 다시 시각 순
+    notes = "\n".join(dict.fromkeys(aff_note(d["url"]) for d in ds if aff_note(d["url"])))
+    full = post_url(m["message_id"])
+    head, lines = (notes + "\n\n" if notes else "") + f"🌙 오늘 밤 특가 미리보기 ({len(ds)}개)\n\n", [night_line(d, False) for d in top]
+    while True:  # Threads 500자: 대가성 문구·전체 링크는 그대로, 줄을 줄임
+        th = head + "\n".join(lines) + (f"\n… 외 {len(ds) - len(lines)}개" if len(ds) > len(lines) else "") + f"\n\n전체 {len(ds)}개·구매 링크 👉 {full}"
+        if len(th) <= 480 or len(lines) <= 1:
+            break
+        lines = lines[:-1]
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    th_text(tok, me, th, full)
 
 
 def cp_events(seen, deals=()):
@@ -1440,6 +1506,9 @@ def digest(seen, posts):
     rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
     tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
+    night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
+    if 0 < len(night) < PREVIEW_MIN:
+        tail = "\n\n🌙 <b>오늘 밤 예약 특가</b>\n" + "\n".join(night_line(d) for d in night) + tail
     while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
         more = f"\n… 외 {len(todays) - len(rows)}개는 사이트에서" if len(rows) < len(todays) else ""
         text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + tail
@@ -1963,14 +2032,14 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
             ig = step in (ig_cards, ig_publish)
             alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, toss_picks, toss_reopen, ig_cards, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))

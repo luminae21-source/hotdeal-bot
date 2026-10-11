@@ -1276,7 +1276,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and "(threads, threads_deals, toss_picks, toss_reopen, ig_cards, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and "(threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (8, 11))
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -2130,6 +2130,72 @@ assert "threads_manage_insights 권한 필요" in t and "💰 토스 이번 달"
 H.tg, seen = lambda method, **p: None, {}; H.report(seen); assert not seen  # 텔레그램 실패 -> 다음 실행에 다시
 H.tg = fake_tg; os.remove("toss.json"); del H.E["THREADS_TOKEN"]; time.time, H.http, H.HAS_TOSS = tt2, ph2, False
 # 인스타 주소: Instagram 로그인 토큰(IGAA…) = graph.instagram.com, 페이스북 페이지 토큰(EAA…) = graph.facebook.com (10/8 앱이 Instagram 로그인 방식)
+# 9-7) 밤 미리보기(10/11 진우 '묶음 리스트도, 꾸준함이 중요'): 매일 밤 10시 '🌙 오늘 밤 특가 미리보기' 1번 — 진우 예약 딜(링크 있는 deal)만, 지금~다음 날 8시, 이미 나간 것·토스 API 이름 예약·딜 아닌 예약 X,
+#      시간표(시각·아이콘·짧은 이름 링크·가격·'같은 상품' 쿠팡 차이만), 대가성 문구 맨 앞, 묶음 간격(BUNDLE_GAP)·시간당 상한은 안 봄, 23시 넘으면 X, 3개 미만이면 21시 모아보기에 합침
+#      Threads = 앞 5개(약한 딜 뒤로) + 전체 목록 링크(채널 글), 500자
+D7 = "2026-10-14"
+EV7 = [{"at": f"{D7} 21:50", "text": "🔥 <b>[토스] 지난 딜 (1,000원)</b>", "url": "https://toss.shopping/_m/p0", "button": "b", "deal": True},
+       {"at": f"{D7} 22:20", "text": "🔥 <b>[토스] 메르헨트 어성초 히알루론산 폼클렌징 500ml 2개 (11,900원)</b>\n\n토스 최대할인가\n💡 쿠팡 같은 상품(15,350원)보다 3,450원 쌈", "url": "https://toss.shopping/_m/a", "button": "b", "deal": True},
+       {"at": f"{D7} 22:30", "text": "🔥 <b>[토스] 선크림 70ml 2개 (8,300원)</b>\n\n💡 단위가격: 10ml당 593원 — 쿠팡 톤업 선크림(12,300원)보다 ml당 33% 쌈 (다른 이름이라 참고)", "url": "https://toss.shopping/_m/b", "button": "b", "deal": True},
+       {"at": f"{D7} 22:40", "text": "🔥 <b>[토스] 쿠팡 비슷한 히터 (39,900원)</b>\n\n💡 쿠팡 비슷한 상품(49,900원)보다 10,000원 쌈", "url": "https://toss.shopping/_m/c", "button": "b", "deal": True},
+       {"at": f"{D7} 23:00", "text": "🛒 <b>[토스] 약한 리무버 (12,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/d", "button": "b", "deal": True},
+       {"at": f"{D7} 23:10", "text": "🔥 <b>[쿠팡] 휴지 30롤 (9,900원/무료)</b>", "url": "https://link.coupang.com/a/e", "button": "b", "deal": True},
+       {"at": f"{D7} 23:20", "text": "🔥 <b>[토스] 여섯째 (5,000원)</b>", "url": "https://toss.shopping/_m/f", "button": "b", "deal": True},
+       {"at": f"{D7} 23:30", "name": "토스 API 이름 예약", "api": True},
+       {"at": f"{D7} 23:35", "text": "🔥 <b>[토스] API 링크 붙은 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/api", "button": "b", "deal": True, "api": True},
+       {"at": f"{D7} 22:45", "text": "🔥 <b>[토스] 이미 나간 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/gone", "button": "b", "deal": True},
+       {"at": f"{D7} 23:40", "text": "📢 행사 안내", "url": "https://x", "button": "b"},
+       {"at": "2026-10-15 07:50", "text": "🔥 <b>[토스] 아침 딜 (3,000원)</b>", "url": "https://toss.shopping/_m/g", "button": "b", "deal": True},
+       {"at": "2026-10-15 08:00", "text": "🔥 <b>[토스] 8시 딜 (3,000원)</b>", "url": "https://toss.shopping/_m/h", "button": "b", "deal": True}]
+ev7 = open("events.json").read() if os.path.exists("events.json") else None
+json.dump(EV7, open("events.json", "w"), ensure_ascii=False)
+sent7, th7 = [], []
+H.tg = lambda m, **p: sent7.append((m, p)) or {"message_id": 777}
+def http7(url, body=None, headers=None, method=None):
+    th7.append(url)
+    if "/me?" in url: return json.dumps({"id": "9"})
+    if "/threads?" in url or "/threads_publish?" in url: return json.dumps({"id": "c7"})
+    raise AssertionError(url)
+H.http, H.E["THREADS_TOKEN"], H.time.sleep, tt7 = http7, "tk", (lambda s: None), time.time
+at7 = lambda t, step=None, sv=None: (time.__setattr__("time", lambda: TK(f"{D7} {t}")), sent7.clear(), th7.clear(), (step or H.preview)(sv if sv is not None else seen7))
+seen7 = {f"ev_{D7} 21:50": 1, f"ev_{D7} 22:45": 1}
+at7("21:59"); assert not sent7 and not seen7.get(f"preview_{D7.replace('-', '')}")  # 10시 전
+seen7["bundles"] = {"t": TK(f"{D7} 21:55"), "ts": [TK(f"{D7} 21:55")]}; at7("22:03"); assert not sent7  # 묶음 글 10분 안 -> 다음 실행에
+json.dump([{"t": f"{D7} 22:0{k}", "text": f"🔥 글{k}", "url": ""} for k in range(9)], open("posts.json", "w"))  # 최근 1시간 글 9개(HOUR_CAP 넘음)도
+H.tg = lambda m, **p: sent7.append((m, p)) or None; at7("22:05"); assert len(sent7) == 1 and f"preview_{D7.replace('-', '')}" not in seen7 and not th7  # 전송 실패 -> 다음 실행에 다시
+H.tg = lambda m, **p: sent7.append((m, p)) or {"message_id": 777}
+at7("22:07"); (m, p), = sent7; t7 = p["text"]
+assert m == "sendMessage" and p["chat_id"] == H.CHANNEL and p["link_preview_options"] == {"is_disabled": True}  # 시간당 상한 안 봄(하루 1번 고정 글)
+assert t7.startswith(f"<i>{H.TOSS_NOTE}</i>\n<i>{H.DISCLOSURE}</i>\n\n🌙 <b>오늘 밤 특가 미리보기</b> (10/14 · 7개)\n"), t7  # 대가성 문구 맨 앞(프로그램마다)
+rows7 = t7.split("\n\n")[2].split("\n")
+assert [r[:5] for r in rows7] == ["22:20", "22:30", "22:40", "23:00", "23:10", "23:20", "07:50"]  # 시각 순, 지난 것·API 이름 예약·딜 아닌 예약·8시 이후 X
+assert rows7[0] == '22:20 🔥 <a href="https://toss.shopping/_m/a">메르헨트 어성초 히알루론산 폼클렌징 500ml…</a> 11,900원 · 💡 쿠팡 같은 상품보다 3,450원 쌈'
+assert "쌈" not in rows7[1] and "쌈" not in rows7[2] and rows7[3].startswith("23:00 🛒 ") and rows7[4].endswith("휴지 30롤</a> 9,900원")  # '같은 상품' 비교만 · 약한 딜 🛒 · 배송 꼬리 뺌
+assert t7.endswith("🔔 매일 밤 10시 미리보기 · 알림 켜두면 안 놓쳐요") and seen7[f"preview_{D7.replace('-', '')}"]["mid"] == 777 and seen7["bundles"]["ts"][-1] == TK(f"{D7} 22:07")
+q7 = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)
+tt = q7["text"][0]
+assert tt.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🌙 오늘 밤 특가 미리보기 (7개)\n\n22:20 🔥 메르헨트") and len(tt) <= 480 and "toss.shopping" not in tt  # 상품 링크 X
+assert [l[:5] for l in tt.split("\n\n")[2].split("\n")] == ["22:20", "22:30", "22:40", "23:10", "23:20", "… 외 2"] and tt.endswith(f"전체 7개·구매 링크 👉 {H.post_url(777)}") and q7["link_attachment"] == [H.post_url(777)]  # 약한 딜 빼고 앞 5개
+at7("22:21"); assert not sent7 and not th7  # 하루 1번
+json.dump([{"at": f"{D7} 22:{10 + k}", "text": f"🔥 <b>[토스] 아주 긴 상품 이름 {k}번 대용량 기획 세트 묶음 (19,900원)</b>\n\n💡 쿠팡 같은 상품(29,900원)보다 10,000원 쌈", "url": f"https://toss.shopping/_m/L{k}", "deal": True, "button": "b"} for k in range(12)], open("events.json", "w"), ensure_ascii=False)
+H.PREVIEW_TH = 20; at7("22:05", sv={}); tl = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)["text"][0]
+assert len(tl) <= 480 and tl.endswith(f"전체 12개·구매 링크 👉 {H.post_url(777)}") and tl.startswith(H.TOSS_NOTE) and 1 <= len(re.findall(r"\n22:\d\d ", tl)) < 12; H.PREVIEW_TH = 5  # 길면 줄을 줄여 480자(문구·전체 링크는 그대로)
+json.dump(EV7, open("events.json", "w"), ensure_ascii=False)
+seen7 = {}; at7("23:01"); assert not sent7  # 23시 넘으면 X(이미 나가기 시작)
+json.dump(EV7[:3], open("events.json", "w"), ensure_ascii=False); seen7 = {f"ev_{D7} 21:50": 1}
+at7("22:05"); assert not sent7 and seen7[f"preview_{D7.replace('-', '')}"]["n"] == 2  # 3개 미만 -> 21시 모아보기에 합침
+json.dump([{"t": f"{D7} 10:00", "text": "🔥 A딜 (15,480원/무료)", "url": "https://a", "s": 7}], open("posts.json", "w"))
+H.draft = lambda *a, **k: {"message_id": 1}; dg7 = {}; time.time = lambda: TK(f"{D7} 21:05")
+import sys; cm7 = sys.modules.get("cards"); sys.modules["cards"] = type(sys)("cards"); sys.modules["cards"].make = lambda *a, **k: None; sys.modules["cards"].reel = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("x"))
+H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
+assert "\n\n🌙 <b>오늘 밤 예약 특가</b>\n22:20 🔥 <a href=\"https://toss.shopping/_m/a\">메르헨트" in d7 and "22:30 🔥 " in d7 and "_m/p0" not in d7 and d7.index("🌙") < d7.index("🔎 지난 딜 전체 보기")
+sent7.clear(); json.dump(EV7, open("events.json", "w"), ensure_ascii=False); dg7 = {}; H.digest(dg7, json.load(open("posts.json")))
+assert "🌙" not in [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]  # 3개 이상이면 모아보기엔 안 넣음(밤 10시 미리보기)
+sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
+assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "toss_reopen, preview, ig_cards" in inspect.getsource(H.main)  # 토스 22시 회차보다 먼저 · 실패 알림(Threads)
+time.time = tt7; del H.E["THREADS_TOKEN"]
+if ev7 is not None: open("events.json", "w").write(ev7)
+else: os.remove("events.json")
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
