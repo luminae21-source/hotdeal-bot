@@ -242,7 +242,7 @@ ms = [p for m, p in sent if m == "sendMessage"]
 assert len(ms) == 3, ms
 assert ms[0]["reply_markup"]["inline_keyboard"][-1][0]["text"].startswith("🤖 자동 게시 실패") and len(ms[2]["reply_markup"]["inline_keyboard"]) == 2  # 제휴 링크 아니면 안내 버튼 없음
 assert ms[0]["chat_id"] == "42" and ms[0]["text"] == f"<i>{H.AFF_NOTE}</i>\n\n🔥 <b>[G마켓] 러닝화 (39,910원/무료)</b>\n\n쿠폰 &lt;필수&gt;"
-assert ms[0]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🛒 구매하러 가기", "url": LP} and ms[0]["text"].count("이 포스팅은") == 1
+assert ms[0]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🛒 39,910원 구매하기", "url": LP} and ms[0]["text"].count("이 포스팅은") == 1  # 초안도 채널 글과 같은 가격 버튼(10/11)
 assert ms[1]["reply_parameters"] == {"message_id": 31} and "제목" in ms[1]["text"]  # 링크만 -> 안내
 assert ms[2]["text"] == "🔥 <b>[G마켓] 일반</b>"  # 일반 쇼핑몰 주소: 문구 없음
 assert sent[-1] == ("getUpdates", {"offset": 24})
@@ -265,16 +265,73 @@ n3 = len(json.load(open("posts.json")))
 H.publish_approved()
 ch = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
 ad = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "42"]
-assert len(ch) == 4 and ch[3]["text"].endswith("🔥 <b>[쿠팡] 오점 계란 7,990원</b>\n\n괜찮음") and "채널실패" in ch[1]["text"] and ch[2]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🛒 <b>[쿠팡] 약한 키보드 77,900원</b>\n\n🤔 솔직히 특가로는 약한 제품\n평소 가격" and ch[0]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 이트로이 27인치 모니터 103,770원</b>\n\n27인치 100Hz가 10만 원대\n💡 단위가격 1인치당 3,843원\n⚠️ 확인할 점 휴일특가 끝나면 오름", ch
-assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": CPL}]]
-assert asked3[0] == (H.ADMIN_PROMPT, ["[운영자] [쿠팡] 이트로이 27인치 모니터 103,770원 |  | 0분 전 | 휴일특가"]) and len(asked3) == 5 and "지어내지 마" in H.ADMIN_PROMPT and "반드시 반환" in H.ADMIN_PROMPT and "5점 미만은 반환하지 마" not in H.ADMIN_PROMPT
+assert len(ch) == 4 and ch[3]["text"].endswith("🔥 <b>[쿠팡] 오점 계란 (7,990원)</b>\n\n괜찮음") and "채널실패" in ch[1]["text"] and ch[2]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🛒 <b>[쿠팡] 약한 키보드 (77,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품\n평소 가격" and ch[0]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 이트로이 27인치 모니터 (103,770원)</b>\n\n27인치 100Hz가 10만 원대\n💡 단위가격 1인치당 3,843원\n⚠️ 확인할 점 휴일특가 끝나면 오름", ch
+assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 103,770원 구매하기", "url": CPL}]]  # 끝 가격을 (가격)으로 묶어 버튼·사이트가 가격을 읽음(10/11)
+assert asked3[0] == (H.ADMIN_PROMPT, ["[운영자] [쿠팡] 이트로이 27인치 모니터 (103,770원) |  | 0분 전 | 휴일특가"]) and len(asked3) == 5 and "지어내지 마" in H.ADMIN_PROMPT and "반드시 반환" in H.ADMIN_PROMPT and "5점 미만은 반환하지 마" not in H.ADMIN_PROMPT
 pj3 = json.load(open("posts.json"))
 assert len(pj3) == n3 + 3 and pj3[-2]["s"] == 4 and pj3[-2]["url"].endswith("new4") and pj3[-3]["url"] == CPL and pj3[-3]["mid"] == 300 and pj3[-3]["s"] == 7 and pj3[-3]["e"] == "🖥️" and pj3[-3]["unit"] == "1인치당 3,843원"
 assert [x.get("reply_parameters", {}).get("message_id") for x in ad] == [70, 71, 72, None, None, None, 76, 77] and ad[6]["text"] == "✅ 채널에 올림 (Claude 4점 · 특가로는 약함 표시)"  # 올림 안내·이미 올림·iframe 안내·오류/일반 주소/채널 실패 -> 초안
 assert ad[0]["text"] == "✅ 채널에 올림 (Claude 7점)" and ad[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/300" and "이미" in ad[1]["text"] and ad[2]["text"].startswith("iframe 말고")
 assert ad[4]["text"] == "🔥 <b>[G마켓] 일반2</b>" and "채널실패" in ad[5]["text"]   # 제휴 링크 아니면 Claude 안 부름
-assert ad[3]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 에러 상품 1,000원</b>" and ad[3]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok"
+assert ad[3]["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🔥 <b>[쿠팡] 에러 상품 (1,000원)</b>" and ad[3]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok"
 H.tg, H.ai_pick = fake_tg, pa33
+
+# 3-3c) 네이버 쇼핑커넥트(naver.me) 진우 딜 끝까지(10/11 점검): 봇에 '상품명 가격 + naver.me 링크' -> [네이버]·(가격/배송)·네이버 문구 맨 앞·1점 완화(5점도 🔥)
+#       -> ① 채널 글 ② posts.json(own) ③ Threads(문구 맨 앞, 사이트 딜 페이지) ④ 21시 블로그용 글(문구 맨 위·코멘트) + 사이트 딜 페이지(문구 그대로 맨 앞)
+#       링크는 서버에서 안 엶(자동 발급·열기 X), 같은 링크 다시 = 안 올림, (링크)·사진 캡션·[단독기획] 올영 제목도
+import shutil, html
+NV, OYL, asked4, opened4 = "https://naver.me/AbCd1234", "https://oy.run/Tor1", [], []
+def no_open(url, *a, **k):
+    opened4.append(url); raise AssertionError(url)
+H.http, H.ai_pick = no_open, (lambda prompt, lines: asked4.append(lines) or [{"i": 0, "score": 5, "comment": "2L 24병 무료배송" if "삼다수" in lines[0] else "1+1 구성", "unit": "1L당 269원" if "삼다수" in lines[0] else ""}])
+UP = [{"update_id": 60, "message": {"message_id": 80, "from": {"id": 42}, "text": f"삼다수 2L 24병 12,900원/무료\n({NV})"}},
+      {"update_id": 61, "message": {"message_id": 81, "from": {"id": 42}, "text": f"삼다수 2L 24병 12,900원/무료\n{NV}/"}},
+      {"update_id": 62, "message": {"message_id": 82, "from": {"id": 42}, "photo": [{"file_id": "P"}], "caption": f"[단독기획] 토리든 세럼 50ml 1+1 (19,900원/무료)\n{OYL}"}}]
+pj4 = open("posts.json").read(); json.dump([], open("posts.json", "w"))
+sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if method == "getUpdates" and "offset" not in p else {"message_id": 500 + len(sent), "text": re.sub(r"<[^>]+>", "", p.get("text", "")), "entities": []})
+H.publish_approved()
+ch = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
+ad = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "42"]
+assert not opened4 and len(ch) == 2  # ① 채널: 네이버 문구 그대로 맨 앞, [네이버] + 가격 괄호, 5점이어도 수수료 링크라 🔥(약한 제품 X), 버튼 = 진우 링크 그대로·가격
+assert ch[0]["text"] == f"<i>{H.NAVER_NOTE}</i>\n\n🔥 <b>[네이버] 삼다수 2L 24병 (12,900원/무료)</b>\n\n2L 24병 무료배송\n💡 단위가격 1L당 269원"
+assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 12,900원 구매하기", "url": NV}]] and asked4[0] == ["[운영자] [네이버] 삼다수 2L 24병 (12,900원/무료) |  | 0분 전 | "]
+assert ad[1]["reply_parameters"] == {"message_id": 81} and ad[1]["text"] == "이미 채널에 올린 링크야"  # 같은 링크(끝 / 달라도) 다시 -> 안 올림
+assert ch[1]["text"].startswith(f"<i>{H.OY_NOTE}</i>\n\n🔥 <b>[올리브영] [단독기획] 토리든 세럼 50ml 1+1 (19,900원/무료)</b>") and ch[1]["reply_markup"]["inline_keyboard"][0][0]["url"] == OYL  # 사진 캡션·몰 아닌 대괄호 제목도 [올리브영](올영 문구 규칙)
+assert H.admin_title("⚡[네이버] 다시다 6,900원", NV) == "[네이버] 다시다 (6,900원)" and H.admin_title("[G마켓] x (1원)", NV) == "[G마켓] x (1원)" and H.admin_title("삼다수 12,900원 무료배송", "https://x.com") == "삼다수 (12,900원 무료배송)"
+pjn = json.load(open("posts.json"))  # ② posts.json: 진우 딜(own) = 사이트·모아보기·Threads 엄선에서 안 빠짐
+assert [(p["url"], p["own"], p["s"]) for p in pjn] == [(NV, 1, 5), (OYL, 1, 5)] and pjn[0]["text"].startswith(H.NAVER_NOTE + "\n\n🔥 [네이버] 삼다수") and H.store_info(H.title_of(pjn[0]["text"]), NV).startswith("💰 네이버")
+th4 = []
+def th4_http(url, body=None, headers=None, method=None):
+    if method == "HEAD": return ""
+    if "/me?" in url: return '{"id": "me"}'
+    if "/threads?" in url: th4.append(parse_qs(urlsplit(url).query)["text"][0]); return '{"id": "c"}'
+    if "threads_publish" in url: return '{"id": "p"}'
+    raise AssertionError(url)
+H.http, H.E["THREADS_TOKEN"], sl4, H.time.sleep = th4_http, "tk", H.time.sleep, lambda s: None
+H.threads_deals({})  # ③ Threads: 진우 딜은 점수와 상관없이, 문구 맨 앞, 링크 = 사이트 딜 페이지(구매 버튼·문구 있음)
+assert len(th4) == 2 and th4[0].startswith(H.NAVER_NOTE + "\n\n") and "🔥 [네이버] 삼다수 2L 24병 (12,900원/무료)" in th4[0] and f"{H.SITE}p/0.html" in th4[0] and th4[1].startswith(H.OY_NOTE + "\n\n")
+del H.E["THREADS_TOKEN"]; H.time.sleep = sl4
+pjn = json.load(open("posts.json")) + [{"t": pjn[0]["t"], "text": f"{H.NAVER_NOTE}\n\n🛒 [네이버] 약한 생수 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품\n평소 가격", "url": "https://naver.me/Weak", "own": 1, "s": 3}]
+bt = H.blog_text(pjn, time.gmtime(time.time() + 9 * 3600))  # ④ 블로그용 글: 네이버·올영 문구 본문 맨 위, 진우 링크 그대로, 약한 딜도 코멘트(🤔 줄 말고)
+assert bt.split("\n\n")[2] == H.NAVER_NOTE + "\n" + H.OY_NOTE and f"1. [네이버] 삼다수 2L 24병 (12,900원/무료)\n2L 24병 무료배송\n👉 {NV}" in bt and "3. [네이버] 약한 생수 (9,900원)\n평소 가격\n👉 https://naver.me/Weak" in bt
+site4 = tempfile.mkdtemp(); day4 = pjn[0]["t"][:10]; os.makedirs(f"{site4}/cards"); open(f"{site4}/cards/{day4}.png", "w").close(); json.dump([1, 0], open(f"{site4}/cards/{day4}.json", "w"))
+S4 = __import__("build_site"); S4.build(pjn, site4)  # 사이트: 네이버·올영 딜 페이지에 그 문구 그대로 맨 앞(일반 안내보다 먼저), 몰 이름, 올영은 홈 카드 딜에서도 사이트 딜 페이지로(링크만 나열 금지)
+p0, p1, home = (open(f"{site4}/{f}").read() for f in ("p/0.html", "p/1.html", "index.html"))
+assert p0.index(html.escape(H.NAVER_NOTE)) < p0.index(S4.DISCLOSURE) < p0.index(f'href="{NV}"') and ">네이버 · " in p0 and html.escape(H.OY_NOTE) in p1 and html.escape(H.NAVER_NOTE) not in p1
+assert "네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터" in S4.DISCLOSURE and f'class="pick" href="{S4.BASE}p/1.html"' in home and f'class="pick" href="{NV}"' in home and "식품" not in S4.keys(pjn[1]) and "식품" in S4.keys({"text": "🔥 [G마켓] 올리브유 1L (1원)", "url": "https://g"})
+shutil.rmtree(site4)
+# 답장 흐름: '✅ 채널에 올림' 안내에 새 링크로 답장 -> 채널 글은 posts.json 본문 그대로(안내 문구로 안 바뀜) / 쿠팡 문구 초안에 네이버 링크로 답장 -> 쿠팡 문구 떼고 네이버 문구로
+CF = {"message_id": 600, "chat": {"id": 42}, "text": "✅ 채널에 올림 (Claude 5점)", "reply_markup": {"inline_keyboard": [[{"text": "📢 채널 글", "url": f"https://t.me/ch/{pjn[0]['mid']}"}]]}}
+UP = [{"update_id": 70, "message": {"message_id": 90, "from": {"id": 42}, "text": "https://naver.me/NEW2", "reply_to_message": CF}}]
+sent.clear(); H.publish_approved(); ed = [p for m, p in sent if m == "editMessageText" and p["chat_id"] == "@ch"]
+assert len(ed) == 1 and ed[0]["text"].startswith(H.NAVER_NOTE + "\n\n🔥 [네이버] 삼다수") and "채널에 올림" not in ed[0]["text"] and ed[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://naver.me/NEW2"
+n4, nn = len(H.DISCLOSURE.encode("utf-16-le")) // 2, len(H.NAVER_NOTE.encode("utf-16-le")) // 2
+t4, e4 = H.with_note(f"{H.DISCLOSURE}\n\n🔥 상품", [{"type": "italic", "offset": 0, "length": n4}, {"type": "bold", "offset": n4 + 4, "length": 2}], NV)
+assert t4 == f"{H.NAVER_NOTE}\n\n🔥 상품" and e4 == [{"type": "italic", "offset": 0, "length": nn}, {"type": "bold", "offset": nn + 4, "length": 2}]
+UP = [{"update_id": 71, "message": {"message_id": 91, "from": {"id": 42}, "text": "CJ 비비고 왕교자 1.05kg 2개 (15,900원/무료)\nhttps://smartstore.naver.com/cj/products/1\nhttps://naver.me/Two"}}]
+sent.clear(); H.publish_approved(); ch = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]  # 상품 주소 + naver.me 같이 보냄 -> 제휴 링크로, 본문에 다른 링크 안 남김
+assert len(ch) == 1 and ch[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://naver.me/Two" and ch[0]["text"].startswith(f"<i>{H.NAVER_NOTE}</i>") and "smartstore" not in ch[0]["text"] + str(asked4[-1])
+open("posts.json", "w").write(pj4); H.tg, H.ai_pick, H.http = fake_tg, pa33, fake_http
 
 # 3-7) 음악 파일 보내기 -> 릴스 배경음악 등록(file_id만 저장, 같은 곡 1번, 오디오 문서도 됨, 남이 보낸 건·일반 파일은 무시) / 오늘 차례 곡 받기
 UP = [{"update_id": 40, "message": {"message_id": 50, "from": {"id": 42}, "audio": {"file_id": "F1", "file_unique_id": "U1", "title": "Happy"}}},
@@ -395,7 +452,10 @@ H.publish_approved()
 ed = [(p["chat_id"], p["message_id"], p["reply_markup"]["inline_keyboard"][0][0]["url"]) for m, p in sent if m == "editMessageText"]
 assert ed == [("@ch", 103, "https://link.coupang.com/a/yy"), ("42", 1, "https://link.coupang.com/a/yy"),
               ("@ch", 104, "https://toss.im/_m/abc"), ("42", 1, "https://toss.im/_m/abc")]  # 쿠팡 링크는 쿠팡 글(103)에, 토스는 토스 글(104)에
-assert [p["text"] for m, p in sent if m == "sendMessage"][0].startswith("첫 줄에 제목")  # 바꿀 쿠팡 글이 더 없음(102·103 교체 끝) -> 안내
+sm = [p for m, p in sent if m == "sendMessage"]  # 바꾼 글마다 어느 글인지 답장(10/11: 새 딜인데 제목을 빠뜨리면 다른 글 버튼이 조용히 바뀌던 것), 바꿀 쿠팡 글이 더 없음(102·103 교체 끝) -> 안내
+assert [x["text"][:1] for x in sm] == ["🔁", "🔁", "첫"] and "[쿠팡] 물티슈 100매" in sm[0]["text"] and sm[0]["reply_parameters"] == {"message_id": 61} and sm[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/103"
+UP = [msg(4, "https://link.coupang.com/a/yy")]; sent.clear(); H.publish_approved()  # 같은 링크만 또 보냄 -> 다른 글 버튼을 또 바꾸지 않음
+assert not [1 for m, p in sent if m == "editMessageText"] and [p["text"] for m, p in sent if m == "sendMessage"][0].startswith("이미 채널 글에 붙인 링크야")
 pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
 assert pj[103]["url"] == "https://link.coupang.com/a/yy" and pj[104]["text"].startswith(H.TOSS_NOTE) and H.pending_copy("https://toss.im/_m/x") is None
 # 3-6) 상품 주소가 있는 딜(루리웹·클리앙): 채널 버튼은 상품 페이지 / 사본에 '상품 열기' / 옥션도 상품 페이지 딥링크

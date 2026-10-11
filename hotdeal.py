@@ -68,7 +68,8 @@ NAVER_SC = "https://brandconnect.naver.com/1003150047355424/affiliate/products" 
 LP_API = "https://api.linkprice.com/ci/service/custom_link_xml?a_id={}&mode=json&url={}"  # 링크프라이스 딥링크 API: 승인된 몰이면 S + 링크, 아니면 F(승인거부·유효하지 않은 URL)
 LP_HOSTS = {"gmarket.co.kr": "gmarket", "auction.co.kr": "auction", "lotteon.com": "lotteon", "emart.ssg.com": "emart"}  # API 장애 때만 쓰는 승인 몰 목록(직접 딥링크)
 HOST_STORES = {"coupang.com": "쿠팡", "naver.com": "네이버", "toss.im": "토스", "toss.shopping": "토스", "11st.co.kr": "11번가",
-               "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트", "e-himart.co.kr": "하이마트", "ohou.se": "오늘의집", "oliveyoung.co.kr": "올리브영"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
+               "aliexpress": "알리", "auction.co.kr": "옥션", "emart.ssg.com": "이마트", "e-himart.co.kr": "하이마트", "ohou.se": "오늘의집", "oliveyoung.co.kr": "올리브영",
+               "naver.me": "네이버", "oy.run": "올리브영"}  # 제목에 [쇼핑몰]이 없을 때(클리앙) 주소로 몰 판단
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 esc = html.escape
 
@@ -551,6 +552,10 @@ def aff_note(url):
 def with_note(text, ents, url):
     """제휴 링크면 대가성 문구를 맨 앞에 붙인 (text, entities). 텔레그램 오프셋은 UTF-16 단위라 그만큼 뒤로 밂."""
     note = aff_note(url)
+    if note and text.startswith(NOTE_STARTS) and not text.startswith(note):  # 다른 프로그램 문구(쿠팡 초안에 네이버 링크로 답장 등) -> 그 문구를 떼고 새 문구로(네이버: 문구 누락·변형 시 패널티)
+        head, sep, rest = text.partition("\n\n")
+        cut = len((head + sep).encode("utf-16-le")) // 2
+        text, ents = rest, [{**e, "offset": e["offset"] - cut} for e in ents if e["offset"] >= cut]
     if note and not text.startswith(NOTE_STARTS):
         n = len(note.encode("utf-16-le")) // 2
         return f"{note}\n\n{text}", [{"type": "italic", "offset": 0, "length": n}] + [{**e, "offset": e["offset"] + n + 2} for e in ents]
@@ -571,6 +576,7 @@ def relink_channel(notice, mid, url):
         if p.get("mid") == mid:
             p.update(text=text, entities=ents, url=url)
     json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    return True
 
 
 def relink(m, url):
@@ -584,16 +590,31 @@ def relink(m, url):
     return text, ents, rows
 
 
+def link_key(u):
+    """같은 링크인지 비교용: 도메인 대소문자·끝 / 무시(쿼리는 그대로)."""
+    s = urllib.parse.urlsplit(u or "")
+    return s.netloc.lower(), s.path.rstrip("/"), s.query
+
+
+def admin_title(t, link):
+    """진우가 보낸 첫 줄 -> 채널 제목. 앞 이모지·기호를 떼고, 끝 가격이 괄호 밖이면 (가격/배송)으로 묶고(버튼·사이트가 가격을 읽게),
+    링크 주소로 몰을 알면 [몰]을 붙임 — 제목이 [단독기획]·[1+1]처럼 몰 아닌 대괄호로 시작해도(10/11 naver.me·oy.run 점검)."""
+    t = re.sub(r"^[^\w\[]+", "", t).strip()
+    if not re.search(r"\([^()]*원[^()]*\)", t):
+        t = re.sub(r"\s+(\d[\d,]*\s*원(?:\s*/\s*\S+|\s+(?:무료|무배)\S*)?)\s*$", r" (\1)", t)
+    shop, tag = next((v for k, v in HOST_STORES.items() if k in urllib.parse.urlsplit(link).netloc), ""), store_tag(t)
+    return t if not shop or tag and any(k in tag for k in (shop.lower(), *STORES, *EARN_TAGS)) else f"[{shop}] {t}"
+
+
 def admin_deal(lines, link, mid):
     """관리자가 봇에 '상품명·가격 줄 + 제휴 링크'를 새로 보내면(10/10 진우 '봇에 링크+가격 보내면 자동') Claude가 코멘트·단위가격·확인할 점을 달아
     채널에 바로 + posts.json(사이트·모아보기). 링크는 서버에서 열지 않음(파트너스 자기 클릭 방지) -> 적힌 정보로만 판단.
     채널 점수 컷(MIN_SCORE, 수수료 몰 -1) 미만이면 🛒 + '솔직히 특가로는 약한 제품' 줄(10/10 진우 '특가로는 약한 제품이라고 써 보자').
     처리했으면 True, Claude 오류·응답 없음·채널 실패면 False(-> 지금처럼 초안 ✅)."""
-    if any(x.get("url") == link for x in load(POSTS, [])[-80:]):  # 15분 안 바뀌어서 다시 보낸 링크 -> 두 번 안 올림
+    if any(link_key(x.get("url")) == link_key(link) for x in load(POSTS, [])[-80:]):  # 15분 안 바뀌어서 다시 보낸 링크(대소문자·끝 / 달라도) -> 두 번 안 올림
         tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid}, text="이미 채널에 올린 링크야")
         return True
-    shop = next((v for k, v in HOST_STORES.items() if k in urllib.parse.urlsplit(link).netloc), "")
-    title = lines[0] if lines[0].startswith("[") or not shop else f"[{shop}] {lines[0]}"
+    title = admin_title(lines[0], link)
     try:
         p = (ai_pick(ADMIN_PROMPT, [f"[운영자] {title} |  | 0분 전 | {' / '.join(lines[1:])}"]) or [None])[0]
     except Exception as e:
@@ -602,7 +623,7 @@ def admin_deal(lines, link, mid):
     if not p:
         return False
     facts = "".join(f"\n{icon} {esc(p[k])}" for k, icon in (("unit", "💡 단위가격"), ("warn", "⚠️ 확인할 점")) if p.get(k))
-    weak = p["score"] < MIN_SCORE - earns(title)
+    weak = p["score"] < MIN_SCORE - (earns(title) or aff(link))  # 진우 제휴 링크 = 수수료 되는 딜 -> 1점 완화(네이버는 EARN_TAGS에 없음: 커뮤니티 [네이버] 딜은 진우가 링크를 만들어야 수수료라서)
     m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=f"<i>{aff_note(link)}</i>\n\n{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
            + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}",
            link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_label(title), "url": link}]]})
@@ -634,35 +655,47 @@ def publish_approved():
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
                text=f"🎵 릴스 배경음악 등록 (총 {len(mus)}곡, 날마다 돌아가며 사용)")
             continue
-        url = re.search(r"https?://\S+", m.get("text", ""))
-        if not url or str(m.get("from", {}).get("id")) != ADMIN:
+        text = m.get("text") or m.get("caption") or ""  # 사진에 글을 붙여 보내도(캡션)
+        urls = [u.rstrip(").,]>」』'\"") for u in re.findall(r"https?://\S+", text)]  # (링크) 처럼 괄호·문장부호가 붙어도 링크만
+        link = next((u for u in urls if aff_note(u)), urls[0] if urls else None)  # 상품 주소 + 제휴 링크를 같이 보내면 제휴 링크로
+        if not link or str(m.get("from", {}).get("id")) != ADMIN:
             continue
-        if "<iframe" in m["text"]:  # 파트너스 배너 코드는 사이트용 -> 단축 URL로
+        if "<iframe" in text:  # 파트너스 배너 코드는 사이트용 -> 단축 URL로
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="iframe 말고 단축 URL(link.coupang.com/a/…)로 보내줘")
             continue
         if m.get("reply_to_message"):
             rm = m["reply_to_message"]
             ch = next((b["url"] for r in rm.get("reply_markup", {}).get("inline_keyboard", []) for b in r
                        if b.get("url", "").startswith("https://t.me/")), None)
-            if ch:  # 채널에 이미 올라간 글의 사본 -> 채널 글 교체
-                relink_channel(rm, int(ch.rsplit("/", 1)[1]), url.group(0))
+            if ch:  # 채널에 이미 올라간 글의 사본 -> 채널 글 교체. 답장한 글이 사본이 아니면('✅ 채널에 올림' 안내 등) posts.json 채널 글 본문으로(채널 글이 안내 문구로 안 바뀌게)
+                cm = int(ch.rsplit("/", 1)[1])
+                p = next((x for x in load(POSTS, []) if x.get("mid") == cm), None)
+                relink_channel({**rm, "text": p["text"], "entities": p.get("entities", [])} if p and title_of(p["text"]) != title_of(rm.get("text", "")) else rm, cm, link)
             else:   # 아직 초안 -> 초안 버튼 교체(✅ 때 반영)
-                fixed[rm["message_id"]] = relink(rm, url.group(0))
+                fixed[rm["message_id"]] = relink(rm, link)
             continue
-        lines = [l.strip().lstrip("🔥").strip() for l in m["text"].replace(url.group(0), "").split("\n")]
+        for u in urls:  # 링크는 본문에서 빼고(남은 빈 괄호도) 제목·코멘트 줄만
+            text = text.replace(u, "")
+        lines = [re.sub(r"[(\[]\s*[)\]]", "", l).strip().lstrip("🔥").strip() for l in text.split("\n")]
         lines = [l for l in lines if l and not l.startswith(NOTE_STARTS)]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
-        p = None if lines else pending_copy(url.group(0))
-        if p:  # 링크만 보냄 -> 가장 최근 같은 몰 사본의 채널 글 교체 (사본에 '✅ 채널 글 교체됨' 표시로 어느 글인지 보임)
-            relink_channel({"chat": {"id": ADMIN}, "message_id": p["cp"], "text": p["text"], "entities": p["entities"]}, p["mid"], url.group(0))
+        if not lines and any(link_key(x.get("url")) == link_key(link) for x in load(POSTS, [])[-80:]):  # 링크만 또 보냄 -> 다른 글 버튼을 또 바꾸지 않음
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="이미 채널 글에 붙인 링크야 (새 딜이면 첫 줄에 상품명 (가격/배송)도 같이)")
+            continue
+        p = None if lines else pending_copy(link)
+        if p:  # 링크만 보냄 -> 가장 최근 같은 몰 사본의 채널 글 교체 + 어느 글을 바꿨는지 답장(새 딜인데 제목을 빠뜨렸으면 바로 알게)
+            if relink_channel({"chat": {"id": ADMIN}, "message_id": p["cp"], "text": p["text"], "entities": p["entities"]}, p["mid"], link):
+                tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text=f"🔁 '{title_of(p['text'])}' 채널 글 버튼을 이 링크로 바꿨어. 새 딜이면 첫 줄에 상품명 (가격/배송)도 같이 보내줘",
+                   reply_markup={"inline_keyboard": [[{"text": "📢 채널 글", "url": post_url(p["mid"])}]]})
             continue
         if not lines:
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
                text="첫 줄에 제목을 같이 보내줘. 예)\n[G마켓] 상품명 (39,910원/무료)\n한 줄 코멘트\n링크")
             continue
-        note, body = aff_note(url.group(0)), "\n".join(lines[1:])
-        if not (note and admin_deal(lines, url.group(0), m["message_id"])):
-            draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(lines[0])}</b>" + (f"\n\n{esc(body)}" if body else ""),
-                  url.group(0), info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None)
+        note, body = aff_note(link), "\n".join(lines[1:])
+        if not (note and admin_deal(lines, link, m["message_id"])):
+            title = admin_title(lines[0], link) if note else lines[0]  # 초안도 채널 글과 같은 제목·버튼([몰]·가격)
+            draft((f"<i>{note}</i>\n\n" if note else "") + f"🔥 <b>{esc(title)}</b>" + (f"\n\n{esc(body)}" if body else ""),
+                  link, info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None, label=buy_label(title) if note else "🛒 구매하러 가기")
     handled = set()
     for u in ups:
         q = u.get("callback_query") or {}
@@ -1245,7 +1278,8 @@ def blog_text(todays, kst):
     items = []
     for n, p in enumerate(todays, 1):
         t = title_of(p["text"])
-        items.append(f"{n}. {t}\n{comment_of(p['text']).split(chr(10))[0]}\n👉 {p['url'] or SITE}")
+        why = next((l for l in comment_of(p["text"]).split("\n") if l and not l.startswith("🤔")), "")  # 약한 딜 표시 줄 말고 코멘트(10/11 점검: 5점 진우 딜이 '약한 제품'만 남던 것)
+        items.append(f"{n}. {t}\n{why}\n👉 {p['url'] or SITE}")
     notes = "\n".join(n for n in dict.fromkeys(aff_note(p["url"] or "") for p in todays) if n in (OY_NOTE, NAVER_NOTE))  # 본문 맨 위 필수인 프로그램
     return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + (notes + "\n\n" if notes else "") + "\n\n".join(items)
             + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"

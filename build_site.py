@@ -10,7 +10,7 @@ THREADS = "https://www.threads.com/@hotdealpick.kr"
 GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 링크: 골드박스 페이지(coupang.com/np/goldbox), 10/6 생성. 클릭 후 24시간 안 쿠팡 구매가 실적
 CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
-DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
+DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f5f7;color:#191f28;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header{position:relative;padding:8px 0 0}header h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.3px}header h1 a{color:inherit;text-decoration:none}
 .sub{color:#6b7684;font-size:13px;margin-top:1px}.lk{position:absolute;right:0;top:6px;display:flex;align-items:center;gap:4px;min-height:40px;padding:0 14px;border-radius:20px;background:#fff;border:1px solid #e8eaee;color:#e42939;text-decoration:none;font-weight:700;font-size:14px}.lk svg{width:18px;height:18px}
@@ -70,14 +70,14 @@ def title_of(text):
     return split_title(text)[0]
 
 
-def page(title, body, desc="", canonical="", gb=True):
+def page(title, body, desc="", canonical="", gb=True, note=""):
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
 <meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style></head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
-<p class="dis">{DISCLOSURE}</p>{GB_LINK if gb else ""}{body}
+<p class="dis">{html.escape(note) + "<br>" if note else ""}{DISCLOSURE}</p>{GB_LINK if gb else ""}{body}
 <a class="tg" href="{CHANNEL}">📲 텔레그램에서 실시간으로 받기</a>
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
@@ -167,7 +167,7 @@ def card_picks(posts, out):
     picks = card_order(posts, days[-1], out)[:6] if days else []  # 카드·캡션에 나온 6개만(나머지는 아래 격자) — 스크롤 짧게
     if not picks:
         return ""
-    rows = "".join(f'<a class="pick" href="{html.escape(p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
+    rows = "".join(f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
                    f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}">'
                    f'<b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
                    + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>'
@@ -186,7 +186,7 @@ def react(p):
 
 
 BRAND = r"설화수|더\s?후|헤라|라네즈|아이오페|이니스프리|에스티\s?로더|랑콤|키엘|SK-?II|디올|샤넬|조말론|라로슈포제|아벤느|피지오겔|세타필|닥터지|다이슨|필립스|브라운|나이키|아디다스"  # 이름 있는 브랜드(10/10 진우 '브랜딩 파워 있는 제품도 꼭')
-FOOD = r"쌀|라면|햇반|생수|샘물|우유|계란|달걀|구운란|특란|삼겹|목살|한우|갈비|닭|족발|감귤|사과|망고|바나나|단감|반시|양파|과일|김치|만두|떡|커피|콜드브루|음료|소다|주스|과자|초코|견과|새우|오징어|감자탕|소스|올리브|파운드"
+FOOD = r"쌀|라면|햇반|생수|샘물|우유|계란|달걀|구운란|특란|삼겹|목살|한우|갈비|닭|족발|감귤|사과|망고|바나나|단감|반시|양파|과일|김치|만두|떡|커피|콜드브루|음료|소다|주스|과자|초코|견과|새우|오징어|감자탕|소스|올리브(?!영)|파운드"
 
 
 def badges(p):
@@ -382,7 +382,8 @@ def build(posts, out="docs"):
     for i, p in reversed(list(enumerate(posts))):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False))
+        note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
+        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
