@@ -789,8 +789,8 @@ assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"
 offered.clear(); time.time = lambda: 1791285000; H.toss_deals(seen, True)  # 20:10: 낮에 올린 1·3은 후보에서 빠짐 -> 5만 남음 -> Claude가 안 고르면 안 올림
 assert offered == ["베스트5 | 6,930원 (88% 할인) | 리뷰 4.8점 1,523개"] and not sent and "tossbest_20261006_20" in seen
 sent.clear(); H.toss_deals(seen, True); assert not sent and not offered[1:]
-assert H.TOSS_BEST_HOURS == (10, 12, 14, 16, 18, 20)
-for hh, ts in ((10, 1791248700), (14, 1791263100), (18, 1791277500)):  # 10:05·14:05·18:05 회차도 1번씩
+assert H.TOSS_BEST_HOURS == (10, 11, 12, 14, 16, 18, 20) and H.TOSS_BEAUTY_HOURS == (15, 19)  # 10/11 '회차 늘리기': 묶음 글 없는 11시(베스트)·19시(뷰티)
+for hh, ts in ((10, 1791248700), (11, 1791252300), (14, 1791263100), (18, 1791277500)):  # 10:05·11:05·14:05·18:05 회차도 1번씩
     s2 = {}; time.time = lambda ts=ts: ts; H.toss_deals(s2, True); assert f"tossbest_20261006_{hh}" in s2, (hh, s2)
 # 오늘 하루특가에 올린 상품도 베스트에서 빠짐 (10/7 12시 첫 베스트 글에 9시 하루특가의 초정 탄산수가 또 나왔음)
 seen.clear(); sent.clear(); offered.clear(); time.time = lambda: 1791248400
@@ -1123,6 +1123,51 @@ open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOS
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
 
+# 5-3f) 봇 자동 글 회차 늘리기 + 몰림 방지 + 화장품 발굴(10/11 진우 '회차 늘리기, 너무 자주 올리면 역효과 — 적절하게', '화장품도 발굴'): 7일 표(README)에서 묶음 글 없는 11시(베스트)·19시(뷰티) 추가,
+#       묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄우고, 토스 회차는 최근 1시간 글 8개 이상이면 미룸(API도 안 부름), 화장품 딜은 어느 몰이든 1점 완화(효능 문구 금지는 그대로)
+H.HAS_TOSS, ph5, tg7, pa5, pj5 = True, H.http, H.tg, H.ai_pick, open("posts.json").read()
+c_calls, c_sent = [], []
+def c_http(url, body=None, headers=None, method=None):
+    if url == "https://oauth2.cert.toss.im/token":
+        return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    c_calls.append(url.split("/openapi")[-1])
+    if url.endswith("/links"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/C{body['tacaItemId']}"}})
+    if url.endswith("/categories"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 400, "displayName": "뷰티"}, {"categoryId": 200, "displayName": "식품"}]}})
+    if "/products/best-selling" in url or "/best-categories/400" in url:
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": 700 + k + ("400" in url) * 50, "displayName": f"상품C{k}", "displayPrice": 5000, "isSoldOut": False} for k in range(5)]}})
+    raise AssertionError(url)
+H.http, H.tg, H.ai_pick = c_http, (lambda method, **p: c_sent.append((method, p)) or {"message_id": 900 + len(c_sent)}), (lambda prompt, lines: [{"i": 0, "score": 8, "comment": "가"}])
+json.dump([], open("posts.json", "w"))
+seen = {"bundles": {"t": T("2026-10-12 11:02"), "ts": [T("2026-10-12 11:02")]}}  # 11:02에 다른 묶음 글이 나감
+out = io.StringIO(); time.time = lambda: T("2026-10-12 11:05")
+with contextlib.redirect_stdout(out): H.toss_deals(seen, True)
+assert not c_calls and not c_sent and "toss_best 미룸" in out.getvalue() and "tossbest_20261012_11" not in seen  # 10분 안 -> API도 안 부르고 다음 실행에
+time.time = lambda: T("2026-10-12 11:16"); H.toss_deals(seen, True)
+assert [m for m, p in c_sent] == ["sendMessage"] and "tossbest_20261012_11" in seen and seen["bundles"]["ts"] == [T("2026-10-12 11:02"), T("2026-10-12 11:16")]  # 11시 새 회차
+json.dump([{"t": "2026-10-12 13:%02d" % (10 + k), "text": "x", "url": "u"} for k in range(7)], open("posts.json", "w"))  # 시간당 상한: 최근 1시간 글(딜 + 묶음 글) 8개 이상이면 토스 회차 미룸
+seen = {}; time.time = lambda: T("2026-10-12 14:05"); assert not H.busy(seen)  # 딜 7개 = 평소 수준 -> 그대로
+seen = {"bundles": {"t": T("2026-10-12 13:20"), "ts": [T("2026-10-12 13:20")]}}; assert H.busy(seen) and not H.busy(seen, cap=False)  # 딜 7 + 묶음 1 = 8 -> 토스 회차는 미룸, TOP5·모아보기는 간격만 봄
+c_calls.clear(); c_sent.clear(); out = io.StringIO()
+with contextlib.redirect_stdout(out): H.toss_deals(seen, True)
+assert not c_calls and not c_sent and "미룸" in out.getvalue()
+time.time = lambda: T("2026-10-12 14:21"); assert not H.busy(seen)  # 1시간 지난 글은 안 셈
+json.dump([{"t": "2026-10-12 11:%02d" % (10 + k), "text": f"🔥 [G마켓] 딜{k} (1원)", "url": f"https://g/{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)], open("posts.json", "w"))
+seen, c_sent[:] = {"bundles": {"t": T("2026-10-12 12:01"), "ts": [T("2026-10-12 12:01")]}}, []; time.time = lambda: T("2026-10-12 12:05"); H.top_deals(seen); assert not c_sent and "top_20261012_12" not in seen  # TOP5도 10분 안 묶음 글이면 다음 실행에
+seen, c_sent[:] = {}, []; time.time = lambda: T("2026-10-12 12:05"); H.top_deals(seen); H.toss_deals(seen, True)  # 12시: TOP5가 먼저 나가면 같은 실행의 베스트는 다음 실행으로(10/10·10/11 12시 두 글이 18초 간격이던 것)
+assert len(c_sent) == 1 and "반응 좋은 딜 TOP3" in c_sent[0][1]["text"] and "tossbest_20261012_12" not in seen
+time.time = lambda: T("2026-10-12 12:19"); H.toss_deals(seen, True); assert len(c_sent) == 2 and "tossbest_20261012_12" in seen and "많이 팔리는" in c_sent[1][1]["text"]
+seen, c_sent[:] = {}, []; time.time = lambda: T("2026-10-12 19:10"); H.toss_deals(seen, "beauty")  # 19시 뷰티 저녁 회차
+assert "tossbeauty_20261012_19" in seen and "💄 <b>토스 뷰티 베스트 중 살 만한 1개</b>" in c_sent[0][1]["text"]
+seen = {"bundles": {"t": T("2026-10-12 21:01"), "ts": [T("2026-10-12 21:01")]}}; c_sent.clear(); time.time = lambda: T("2026-10-12 21:05")  # 모아보기도 10분 안 묶음 글이면 다음 실행에
+H.digest(seen, [{"t": "2026-10-12 20:00", "text": "🔥 [G마켓] 딜 (1원)", "url": "https://g"}]); assert not c_sent and "digest_20261012" not in seen
+assert H.earns("[11번가] 토리든 다이브인 세럼 50ml (19,900원)") and H.earns("[네이버] 라운드랩 독도 토너 500ml (15,900원)") and not H.earns("[11번가] 삼다수 2L 12병 (9,900원)") and H.earns("[쿠팡] 휴지")  # 화장품은 어느 몰이든 1점 완화
+assert all("화장품 효능(미백·주름·탄력 개선 등) 언급 금지" in x for x in (H.DEAL_PROMPT, H.ADMIN_PROMPT, H.GOLD_PROMPT, H.BEST_PROMPT))  # 효능 문구 금지는 그대로(커뮤니티·하루특가 글에도)
+open("posts.json", "w").write(pj5); H.http, H.tg, H.ai_pick, H.HAS_TOSS = ph5, tg7, pa5, False
+if os.path.exists("toss.json"): os.remove("toss.json")
+time.time = tt
+
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
 import build_site as S
 assert 'href="' + S.GOLDBOX + '"' in S.page("t", "") and S.GOLDBOX.startswith("https://link.coupang.com/a/")  # 사이트 위쪽 골드박스 버튼(파트너스 링크)
@@ -1322,7 +1367,7 @@ seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     t = [x["text"] for m, x in sent if m == "sendMessage" and x["chat_id"] == "@ch"][-1]  # 10/10~ ✅ 없이 채널에 바로
-    assert not [m for m, x in sent if m == "draft"] and "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_")
+    assert not [m for m, x in sent if m == "draft"] and "A딜" in t and "옛날딜" not in t and t.count("모아보기") == 1 and "hotdealpick.kr" in t and "blog.naver.com" in t and list(seen)[0].startswith("digest_") and "bundles" in seen  # 모아보기도 묶음 글로 기록(10/11 간격)
     blog = [x for m, x in sent if m == "sendMessage"][-1]["text"]  # 블로그용은 버튼 없는 일반 메시지로 뒤따라옴
     assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" in blog
     v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그

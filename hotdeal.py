@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -80,7 +80,7 @@ unit: 단위가격 한 줄(예: "100g당 990원", "개당 495원", "1L당 1,980�
 warn: 사기 전에 확인할 점 1개, 16자 이내(예: "쿠폰 1인 1회", "옵션별 가격 다름", "카드할인 적용가"). 글에 근거 있을 때만, 없으면 빈 문자열."""
 DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 딜 중 구독자가 실제로 살 만한 것만 골라 pick 도구로 반환해.
 점수(1~10) 기준: 가격 매력, 생필품/대중성, 커뮤니티 반응(조회 대비 추천·댓글). 비추천이 많거나 품절·종료·가격오류 언급이 있으면 제외.
-comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품 효능 언급 금지, 이모지 최대 1개.
+comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지, 이모지 최대 1개.
 [올리브영] 딜 comment는 가격·용량·구성·조건만: 후기·체험담·글쓴이 경험, '추천'·'좋아요'·'쟁여두기' 같은 권유, 효능·효과, '최고'·'100%' 같은 절대 표현 금지(올리브영 쇼핑 큐레이터 정책).
 q: 쇼핑몰 검색창에 넣을 짧은 검색어(브랜드+상품명+핵심 용량, 수량·가격·쿠폰 문구 빼고 20자 안팎).
 REEL_RULES
@@ -93,7 +93,7 @@ ADMIN_PROMPT = DEAL_PROMPT.replace("5점 미만은 반환하지 마.", "점수�
 REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n"
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
 대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
-comment: 1줄, 사실 위주, 과장 금지, 건강식품 효능 언급 금지.
+comment: 1줄, 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
 """
 BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
 믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
@@ -115,8 +115,10 @@ CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본�
 TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
-TOSS_BEST_HOURS = (10, 12, 14, 16, 18, 20)  # 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
-TOSS_BEAUTY_HOUR = 15  # 토스 뷰티(화장품) 카테고리 베스트 중 살 만한 것: 하루 1번 (10/11 진우 '화장품도 올리자')
+TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
+TOSS_BEAUTY_HOURS = (15, 19)  # 토스 뷰티(화장품) 카테고리 베스트 중 살 만한 것 (10/11 진우 '화장품도 올리자' -> '화장품도 발굴': 저녁 1번 더 = 7일 표에서 저녁 중 가장 조용하고 묶음 글 없는 19시)
+BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
+BEAUTY = dict((k, rx) for k, _, rx in CATS)["beauty"]  # 화장품 제목 키워드(사이트 '💄 화장품' 칸과 같음)
 TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스트(매일 9시 갱신) 중 살 만한 것: 하루 1번 (10/8 진우: 베스트 랭킹 페이지). 이름 = 카테고리 트리 최상위
 
 
@@ -444,8 +446,9 @@ EARN_TAGS = ("올리브영", "올영", "g마켓", "지마켓", "롯데온", "롯
 
 
 def earns(title):
-    """제목 [쇼핑몰]이 수수료 되는 몰이면 True -> 점수 컷 1점 낮춤·같은 점수면 먼저(10/10 진우 '수수료 되는 딜 꼭 챙겨')."""
-    return any(k in store_tag(title) for k in EARN_TAGS)
+    """제목 [쇼핑몰]이 수수료 되는 몰이거나 화장품이면 True -> 점수 컷 1점 낮춤·같은 점수면 먼저(10/10 진우 '수수료 되는 딜 꼭 챙겨').
+    화장품(10/11 진우 '화장품도 발굴'): 어느 몰 딜이든 올리브영 큐레이터 링크로 수익 연결 -> 같이 완화(효능 문구 금지 규칙은 그대로)."""
+    return any(k in store_tag(title) for k in EARN_TAGS) or bool(re.search(BEAUTY, title))
 
 
 def keyword(title):
@@ -815,10 +818,13 @@ def toss_deals(seen, best=False):
     커머스형 전시·가격 비교 안 함) 그대로."""
     kst, cat, beauty = time.gmtime(time.time() + 9 * 3600), best in ("cat", "beauty"), best == "beauty"  # beauty = 뷰티 카테고리만 따로 1회차
     day = [h for h in TOSS_DAY_HOURS if h <= kst.tm_hour < h + 3]  # 하루특가는 회차 3시간 안에만(놓친 회차를 밤에 몰아 올리지 않게)
-    hrs = [h for h in ((TOSS_BEAUTY_HOUR,) if beauty else (TOSS_CAT_HOUR,) if cat else TOSS_BEST_HOURS if best else day) if h <= kst.tm_hour]
+    hrs = [h for h in (TOSS_BEAUTY_HOURS if beauty else (TOSS_CAT_HOUR,) if cat else TOSS_BEST_HOURS if best else day) if h <= kst.tm_hour]
     key = time.strftime("tossbeauty_%Y%m%d_" if beauty else "tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + \
         (str(hrs[-1]) if best and hrs else f"_{hrs[-1]}" if hrs and hrs[-1] != TOSS_DAY_HOURS[0] else "")  # 9시 키는 예전 그대로
     if not HAS_TOSS or not hrs or key in seen:
+        return
+    if busy(seen):  # 10분 안에 다른 묶음 글이 나갔거나 최근 1시간 글이 많음 -> 다음 실행(14분 뒤)에 다시(API도 안 부름)
+        print("toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", "미룸(묶음 글 간격·1시간 글 수)")
         return
     head = "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
         "⏰ <b>오늘의 토스 하루특가 TOP{}</b>\n<i>밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요</i>"  # 10/10 진우 화면: 선착순특가 유의사항
@@ -860,6 +866,8 @@ def toss_deals(seen, best=False):
         text, kb = top_post(head.format(len(rows)), rows)
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
                text=f"<i>{TOSS_NOTE}</i>\n\n{text}", reply_markup={"inline_keyboard": kb})
+        if m:
+            bundled(seen)
         if m:  # 품절 지켜보기(toss_soldout): 글을 다시 그릴 재료 + 상품별 [id, 이름, 올린 가격, 하루특가?, 상태, 마지막 확인]
             seen[f"sold_{m['message_id']}"] = {"t": time.time(), "d": time.strftime("%Y-%m-%d", kst), "k": "top", "pre": f"<i>{TOSS_NOTE}</i>\n\n",
                                                "head": head.format(len(rows)), "rows": rows, "it": [[x["tacaItemId"], x["displayName"], x["displayPrice"], int(not best), 0, 0] for x in got]}
@@ -889,7 +897,7 @@ def top_deals(seen):
     kst = time.gmtime(time.time() + 9 * 3600)
     hrs = [h for h in TOP_HOURS if h <= kst.tm_hour]
     key = time.strftime("top_%Y%m%d_", kst) + (str(hrs[-1]) if hrs else "")
-    if not hrs or key in seen:
+    if not hrs or key in seen or busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에
         return
     seen[key] = time.time()
     day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
@@ -905,8 +913,26 @@ def top_deals(seen):
             "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
     text, kb = top_post(f"🏆 <b>지금 반응 좋은 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n뽐뿌·클리앙 조회수·추천 기준, 채널에 올린 딜 중에서", items)
-    tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-       text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb})
+    if tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+          text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb}):
+        bundled(seen)
+
+
+def busy(seen, cap=True):
+    """묶음 글(토스 회차·TOP5·모아보기)을 지금 올리면 몰리는지(10/11 진우 '너무 자주 올리면 역효과'): 10분(BUNDLE_GAP) 안에 다른 묶음 글이 나갔거나,
+    cap이면 최근 1시간 채널 글(posts.json 딜 + 묶음 글)이 HOUR_CAP 이상. 미루면 다음 실행에 다시 봄."""
+    now = time.time()
+    ts = [t for t in seen.get("bundles", {}).get("ts", []) if now - 3600 < t <= now]  # 최근 1시간(시계가 뒤로 간 기록은 무시)
+    if ts and now - max(ts) < BUNDLE_GAP:
+        return True
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - 3600))
+    return cap and sum(p["t"] >= since for p in load(POSTS, [])) + len(ts) >= HOUR_CAP
+
+
+def bundled(seen):
+    """묶음 글을 올린 시각 기록(최근 1시간만) -> busy()가 간격·시간당 수를 셈."""
+    now = time.time()
+    seen["bundles"] = {"t": now, "ts": [t for t in seen.get("bundles", {}).get("ts", []) if now - 3600 < t <= now] + [now]}
 
 
 def toss_relink(seen):
@@ -1136,6 +1162,8 @@ def digest(seen, posts):
         if "blog_" + key[7:] not in seen:
             blog()
         return
+    if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
+        return
     urls = [f"{SITE}p/{posts.index(p)}.html" if aff_note(p["url"] or "") == OY_NOTE else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트
     rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
@@ -1146,7 +1174,7 @@ def digest(seen, posts):
         if len(html.unescape(re.sub(r"<[^>]+>", "", text))) <= 4000 or len(rows) <= 1:
             break
         rows.pop()
-    if tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}) or draft(text):  # 10/10 진우 '✅ 없이 자동 게시' — 채널 게시가 실패하면 예전처럼 초안
+    if (tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}) and not bundled(seen)) or draft(text):  # 10/10 진우 '✅ 없이 자동 게시' — 채널 게시가 실패하면 예전처럼 초안
         seen[key] = time.time()
         blog()
         import cards
