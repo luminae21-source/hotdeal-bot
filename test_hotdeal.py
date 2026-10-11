@@ -1755,7 +1755,7 @@ H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); H.http, seen, sent[:] = ig9_http, {
 def at9(t, step=None):
     ig9.clear(); sent.clear(); time.time = lambda: TK(f"{D9} {t}"); (step or H.ig_cards)(seen)
 at9("11:50"); assert not ig9 and not seen and not os.path.exists(f"docs/cards/{D9}_12.jpg")  # 12시 전
-at9("12:05"); assert not ig9 and os.path.exists(f"docs/cards/{D9}_12.jpg") and not os.path.exists(f"docs/cards/{D9}_12.png")  # 만들기만(HTTP 없음), JPEG만
+at9("12:05"); assert not ig9 and open(f"docs/cards/{D9}_12.jpg", "rb").read(2) == b"\xff\xd8" and not os.path.exists(f"docs/cards/{D9}_12.png")  # 만들기만(HTTP 없음), 진짜 JPEG만
 assert json.load(open(f"docs/cards/{D9}_12.json")) == [1, 0, 3, 2] and "igs_" + D9 + "_12" not in seen  # 0~12시 딜만(12:00·어제 딜 X), 점수·제휴 먼저
 at9("12:19"); assert [m for m, u, b in ig9] == ["HEAD"] and "igs_" + D9 + "_12" not in seen  # 사이트 배포 전 -> 다음 실행에
 live9.add(f"{D9}_12.jpg"); at9("12:33")
@@ -1792,8 +1792,8 @@ try:
 except urllib.error.HTTPError:
     pass
 assert seen["ig_hold"] > TK(f"{D9} 22:14") + 86000; at9("22:28"); assert not ig9  # 24시간 인스타 쉼(카드 만들기·올리기 X)
-sv9 = seen; seen = {"ig_hold": TK(f"{D9} 22:14") + 86400}; at9("12:05"); assert not ig9 and not os.path.exists(f"docs/cards/{D9}_12.png"); seen = sv9  # 쉬는 동안엔 시간대 카드도 안 만듦
-assert S9.card_order(json.load(open("posts.json")), "2026-10-13_12") == [] and len(S9.card_order(json.load(open("posts.json")), "2026-10-11")) == 1  # 순서 파일 없는 시간대 카드 = 번호 없음(하루 카드는 그날 딜 순서)
+sv9 = seen; seen = {"ig_hold": TK(f"{D9} 22:14") + 86400}; os.rename(f"docs/cards/{D9}_12.jpg", "h9.jpg"); at9("12:05"); assert not ig9 and not os.path.exists(f"docs/cards/{D9}_12.jpg"); os.rename("h9.jpg", f"docs/cards/{D9}_12.jpg"); seen = sv9  # 쉬는 동안엔 시간대 카드도 안 만듦
+assert S9.card_order(json.load(open("posts.json")), f"{D9}_15") == [] and len(S9.card_order(json.load(open("posts.json")), "2026-10-11")) == 1  # 순서 파일 없는 시간대 카드 = 번호 없음(하루 카드는 그날 딜 순서)
 st9.pop("spam"); del seen["ig_hold"]
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
