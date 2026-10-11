@@ -1090,14 +1090,18 @@ def toss_picks(seen):
     ns = lambda s: re.sub(r"\s+", "", s.lower())
     need = [e for e in todo if not seen.get("pk_" + e["at"], {}).get("id")]
     if need:
-        items = toss_pool(seen)
-        sm = toss_daymap(seen, now, today, True)  # 오늘 하루특가 전체(커서 페이지)
-        items = items + [[v[0], v[2], v[1], now] for v in (sm or {}).get("m", {}).values() if len(v) > 2]
-        if any(not seen.get("pk_" + e["at"], {}).get("ids") for e in need):  # 처음 보는 예약이 있으면 1일 목록부터
-            scanned = False
-        else:
-            scanned = pick_scan(seen, [e["name"] for e in need])
-            items = seen.get("tosscache", {}).get("items", []) + [[v[0], v[2], v[1], now] for v in (sm or {}).get("m", {}).values() if len(v) > 2]
+        try:  # 터널 끊김 등 -> 이번 실행은 찾기만 건너뜀(Threads 실패 알림 아님), 예약 시각 게시는 아래에서 그대로
+            items = toss_pool(seen)
+            sm = toss_daymap(seen, now, today, True)  # 오늘 하루특가 전체(커서 페이지)
+            items = items + [[v[0], v[2], v[1], now] for v in (sm or {}).get("m", {}).values() if len(v) > 2]
+            if any(not seen.get("pk_" + e["at"], {}).get("ids") for e in need):  # 처음 보는 예약이 있으면 1일 목록부터
+                scanned = False
+            else:
+                scanned = pick_scan(seen, [e["name"] for e in need])
+                items = seen.get("tosscache", {}).get("items", []) + [[v[0], v[2], v[1], now] for v in (sm or {}).get("m", {}).values() if len(v) > 2]
+        except Exception as ex:
+            print("toss pick list", repr(ex))
+            need = []
         for e in need:
             r = seen.setdefault("pk_" + e["at"], {"t": now, "ids": [], "n0": e["name"]})
             near = lambda x: sum(t in ns(x[1]) for t in toks(e["name"])) + sum(t in ns(e["name"]) for t in toks(x[1]))

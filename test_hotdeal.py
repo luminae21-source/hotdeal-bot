@@ -1309,7 +1309,8 @@ def sp_http(url, body=None, headers=None, method=None):
     path = url.split("/openapi")[-1]; sp_calls.append(path)
     ok = lambda x: json.dumps({"resultType": "SUCCESS", "success": x})
     if path == "/categories": return ok({"categories": TREE})
-    if path.startswith("/products/today-deals"): return ok({"items": DAY, "hasNext": False})
+    if path.startswith("/products/today-deals"):  # 2쪽(커서): 떡볶이는 2쪽에만 = 1일 목록(1쪽)엔 없고 오늘 하루특가 전체에만
+        return ok({"items": DAY[1:], "hasNext": False}) if "cursor=" in path else ok({"items": DAY[:1], "nextCursor": "p2", "hasNext": True})
     if path in LISTS: return ok({"items": LISTS[path]})
     if path.startswith("/products/detail?tacaItemIds="):
         ids = [int(x) for x in path.split("=")[1].split(",")]; assert len(ids) <= 30
@@ -1326,7 +1327,7 @@ def sp_pick(prompt, lines):
         if "카본히터" in prompt:  # 비슷한 다른 모델(Q1000) = 6점 -> 같은 상품 아님
             return [{"i": i, "score": 6, "comment": "모델 다름"} for i, l in enumerate(lines) if "Q1000" in l][:1]
         return [{"i": i, "score": 9, "comment": "같음"} for i, l in enumerate(lines) if want in l][:1]
-    if prompt.startswith("아래는 토스쇼핑 하위 카테고리"): return [{"i": i, "score": 8, "comment": "c"} for i, l in enumerate(lines) if ("> 패치" in l if "니들" in prompt else "선케어" in l)]
+    if prompt.startswith("아래는 토스쇼핑 하위 카테고리"): return [{"i": i, "score": 8, "comment": "c"} for i, l in enumerate(lines) if ("> 패치" in l and "니들" in prompt) or ("선케어" in l and "선크림" in prompt)]
     if prompt.startswith("토스쇼핑 상품 1개야"): return [{"i": 0, "score": 8, "comment": "50g 3개 + 선크림 증정, 리뷰 812개"}]
     if prompt.startswith("토스쇼핑 특가 후보"):
         sc = {"특가 비싼 상품 전기요": 7, "특가 싼 상품 휴지": 9, "특가 중간 상품 샴푸": 8, "할인 적은 상품": 9, "리뷰 적은 특가": 9, "에이지랩": 6, "특가 이미 올린 상품": 9}
@@ -1359,7 +1360,8 @@ assert "/products/best-categories/410?size=100" in sp_calls and seen["pk_2026-10
 ask = [p["text"] for m, p in sp_sent if p["chat_id"] == H.ADMIN]
 assert len(ask) == 1 and "23:50 '한경희 2단 자동회전 나노 카본히터 Q2000'" in ask[0] and "못 찾았어" in ask[0] and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 sp_run("2026-10-11 18:28"); assert not sp_sent and not [c for c in sp_calls if "best-categories/41" in c]  # 다시 안 물음·하위 카테고리도 다 봄(하루 PICK_SCAN 안)
-sp_run("2026-10-11 23:20", H.events); assert [p["text"] for m, p in sp_sent] == [f"<i>{H.TOSS_NOTE}</i>\n\n진우 예약"]  # events()는 api 행을 안 올림(진우 예약만)
+sp_run("2026-10-11 23:20", H.events); assert [p["text"] for m, p in sp_sent] == [f"<i>{H.TOSS_NOTE}</i>\n\n진우 예약"]
+sv9 = json.loads(json.dumps(seen)); sp_run("2026-10-11 23:36", H.events); assert not sp_sent; seen = sv9  # 23:30 api 행이 시각이 돼도 events()는 안 올림(url·text 없음 -> toss_picks가)  # events()는 api 행을 안 올림(진우 예약만)
 log = sp_run("2026-10-11 23:33")  # ② 예약 시각: 상세로 지금 가격(1,000원 내림)·품절 재확인 -> 채널 + Threads
 (m, p), = [(m, p) for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 assert p["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n🔥 <b>[토스] 에이지랩 달팽이 뮤신 올인원 크림, 50g, 3개 + 선크림 증정</b>\n\n💰 <b>18,900원</b> (62%↓) · ⭐ 4.7 (리뷰 812)\n👉 50g 3개 + 선크림 증정, 리뷰 812개", p["text"]
@@ -1381,6 +1383,10 @@ assert len(ask) == 1 and "발급이 막힌" in ask[0] and seen["pk_2026-10-12 01
 sp_fail["link"].clear(); seen = {}; sp_fail["tg"] = 1; sp_run("2026-10-12 01:05"); assert seen["pk_2026-10-12 01:00"]["st"] is None and "tb_501" not in seen  # 채널 실패 -> 다음 실행에 다시
 sp_run("2026-10-12 01:19"); assert seen["pk_2026-10-12 01:00"]["st"] == "done" and len([p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]) == 1
 seen = {}; assert not sp_run("2026-10-12 04:30") and not sp_sent and not sp_calls  # 예약 3시간 지남 -> 안 올림
+def sp_down(url, *a, **k):
+    if "/openapi/" in url: raise OSError("tunnel down")
+    return sp_http(url, *a, **k)
+H.http = sp_down; seen = {}; assert "toss pick list OSError" in sp_run("2026-10-12 00:10") and not sp_sent and seen == {}; H.http = sp_http  # 터널 끊김 -> 예외 없이(Threads 실패 알림 X) 다음 실행에
 json.dump([{"at": "2026-10-12 01:00", "name": "에이지랩 달팽이 뮤신 올인원 크림 50g 3개 + 선크림 증정", "url": "https://toss.shopping/_m/Jin", "button": "🛒", "text": "진우", "name2": 1}], open(H.EVENTS, "w"))
 seen = {}; sp_run("2026-10-12 00:10"); assert not sp_calls and not sp_sent  # 진우 링크로 바꾼 행(api 없음) -> toss_picks는 아무것도 안 함
 H.HAS_TOSS = False; json.dump([{"at": "2026-10-12 01:00", "name": "x", "api": True}], open(H.EVENTS, "w")); sp_run("2026-10-12 00:10"); assert not sp_calls; H.HAS_TOSS = True
