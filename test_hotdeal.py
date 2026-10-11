@@ -764,6 +764,13 @@ assert offered == ["카테21 | 7,900원 (0% 할인)", "카테22 | 7,900원 (0% �
 assert "tosscat_20261006_17" in seen and "tb_21" in seen and "tb_22" in seen
 sent.clear(); H.toss_deals(seen, "cat"); assert not sent  # 하루 1번
 time.time, cats_called[:] = (lambda: 1791274200 + 86400), []; H.toss_deals(seen, "cat"); assert cats_called == [200, 300, 100]  # 다음 날은 패션(날마다 돌아감)
+sent.clear(); cats_called[:] = []; time.time = lambda: 1791265800; H.toss_deals(seen, "beauty"); assert not sent and not cats_called  # 10/11 '화장품도': 10/6 14:50 = 15시 전
+H.http = lambda url, *a, **k: (cats_called.append(400) or json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": 41, "displayName": "뷰티41", "displayPrice": 9900, "isSoldOut": False}]}})
+                               if "/best-categories/400" in url else cat_http(url, *a, **k))
+pk2, H.ai_pick = H.ai_pick, (lambda prompt, lines: prompts.append(prompt) or [{"i": 0, "score": 8, "comment": "단위가격 좋음"}])
+time.time = lambda: 1791267000; H.toss_deals(seen, "beauty"); t = sent[-1][1]["text"]; H.http, H.ai_pick = cat_http, pk2  # 15:10: 뷰티 카테고리만(식품·생활용품·돌아가는 칸 X)
+assert cats_called == [400] and "💄 <b>토스 뷰티 베스트 중 살 만한" in t and "tossbeauty_20261006_15" in seen and "화장품 효능" in prompts[-1]
+sent.clear(); H.toss_deals(seen, "beauty"); assert not sent and "lambda s: toss_deals(s, \"beauty\")" in inspect.getsource(H.main); time.time = lambda: 1791274200 + 86400  # 하루 1번, main에 들어 있음 (시각은 앞 테스트 그대로 되돌림)
 def cat_renamed(url, *a, **k):
     if url.endswith("/categories"):
         return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 9, "level": 1, "displayName": "푸드", "children": []}]}})
