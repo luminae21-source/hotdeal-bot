@@ -2092,9 +2092,11 @@ def th_beauty(name):
 
 
 def th_day(seen, now):
-    """오늘(KST) Threads 개별 글 기록 {n: 글 수, b: 그중 화장품, last: 마지막 시각}. b 없는 기록(10/12 0시~화장품 규칙 배포 전 = 진우 BB크림 ①뿐)은 전부 화장품으로 셈."""
-    r = seen.get(time.strftime("thsolo_%Y%m%d", time.gmtime(now + 9 * 3600)), {"n": 0, "b": 0, "last": 0})
-    return r if "b" in r else {**r, "b": r["n"]}
+    """오늘(KST) Threads 개별 글 기록 {n: 글 수, b: 그중 화장품, last: 마지막 시각 — 어제 마지막 글도(45분 간격은 밤 12시를 넘어서도)}.
+    b 없는 기록(화장품 규칙 배포 전 = 10/12 0:02 재오픈 샤워기 헤드 1개)은 화장품 0개."""
+    kst = time.gmtime(now + 9 * 3600)
+    r = seen.get(time.strftime("thsolo_%Y%m%d", kst), {"n": 0, "last": 0})
+    return {**r, "b": r.get("b", 0), "last": max(r["last"], seen.get(time.strftime("thsolo_%Y%m%d", time.gmtime(now + 9 * 3600 - 86400)), {}).get("last", 0))}
 
 
 def jw_beauty(now):

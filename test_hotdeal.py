@@ -2159,7 +2159,11 @@ time.time = lambda: TK("2026-10-12 10:46")
 assert not H.th_solo(s9c, "🔥 x", beauty=1, slot=True) and H.th_solo(s9c, S9c, beauty=1)  # 1개 찼으면 진우 화장품도 ①②만
 H.th_mark(s9c, 1); H.th_mark(s9c); assert (s9c["thsolo_20261012"]["n"], s9c["thsolo_20261012"]["b"]) == (3, 2)
 s9c["thsolo_20261012"]["last"] = 0; assert not H.th_solo(s9c, S9c, beauty=2, slot=True) and H.th_solo(s9c, S9c)  # 화장품은 하루 2개까지(①이어도), 다른 글은 됨
-assert H.th_day({"thsolo_20261012": {"t": 1, "n": 2, "last": 5}}, time.time()) == {"t": 1, "n": 2, "b": 2, "last": 5} and H.th_day({}, time.time()) == {"n": 0, "b": 0, "last": 0}  # b 없는 기록(10/12 0시~배포 전 = BB크림 ①뿐) = 전부 화장품
+assert H.th_day({"thsolo_20261012": {"t": 1, "n": 1, "last": 5}}, time.time()) == {"t": 1, "n": 1, "b": 0, "last": 5} and H.th_day({}, time.time()) == {"n": 0, "b": 0, "last": 0}  # b 없는 기록(배포 전 = 0:02 재오픈 샤워기 헤드) = 화장품 0개
+s9c = {"thsolo_20261011": {"t": 1, "n": 3, "b": 0, "last": TK("2026-10-11 23:33")}}; time.time = lambda: TK("2026-10-12 00:02")  # 45분 간격은 밤 12시를 넘어서도(10/11 23:33 글 -> 10/12 0:02 재오픈이 29분 만에 나가던 것)
+assert H.th_day(s9c, time.time())["last"] == TK("2026-10-11 23:33") and not H.th_solo(s9c, S9c) and not H.th_solo(s9c, "🔥 x", beauty=2, slot=True)
+time.time = lambda: TK("2026-10-12 00:18"); assert H.th_solo(s9c, S9c); H.th_mark(s9c); assert s9c["thsolo_20261012"] == {"t": TK("2026-10-12 00:18"), "n": 1, "b": 0, "last": TK("2026-10-12 00:18")}
+time.time = lambda: TK("2026-10-12 10:00")
 s9c = {"thsolo_20261012": {"t": 1, "n": 4, "b": 0, "last": 0}}  # 화장품 0개 + 다른 글 4개 -> 마지막 자리는 화장품 몫
 assert not H.th_solo(s9c, S9c) and H.th_solo(s9c, S9c, beauty=1) and H.th_solo(s9c, "🔥 x", beauty=2, slot=True)
 assert H.th_solo({"thsolo_20261012": {"t": 1, "n": 4, "b": 1, "last": 0}}, S9c) and not H.th_solo({"thsolo_20261012": {"t": 1, "n": 5, "b": 1, "last": 0}}, S9c, beauty=1, slot=True)  # 화장품 찼으면 5개까지, 5개면 끝
