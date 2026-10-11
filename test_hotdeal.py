@@ -1666,6 +1666,20 @@ from PIL import Image, ImageDraw
 _d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
 assert cards.wrap(_d, "건국 멸균우유 200ml 48팩", cards.font("bold", 84), 880, 3) == ["건국 멸균우유 200ml", "48팩"]  # 띄어쓰기 단위
 assert len(cards.wrap(_d, "가" * 100, cards.font("bold", 84), 880, 2)) == 2  # 띄어쓰기 없어도 글자 단위로 2줄 + …
+# 8-1b) 딜 한 장 카드(10/11 진우 '인스타 업그레이드 2번' 넘기기): 1080x1350 JPEG·200KB 미만, 제일 긴 경우(이름 2줄·단위·이유·확인할 점)도 아래 사이트 줄 안 침범,
+#       재료(이모지·이유) 없어도 그려짐, 배송비만 있으면 '배송비 N원', 이유 대신 코멘트 문장(🤔 약한 딜 줄 빼고)
+from PIL import ImageChops as _C
+_long = {"title": "[올리브영] 토리든 다이브인 저분자 히알루론산 세럼 50ml 1+1 기획 세트 아주 긴 이름 (19,900원/3,000원)", "comment": "", "e": "💧",
+         "pts": ["1+1 구성이라 개당 9,950원", "평소 단품 가격대보다 낮음", "리뷰 많은 기본 세럼"], "unit": "개당 9,950원", "warn": "기획 구성은 재고 소진 시 종료"}
+for _k, _it in enumerate([_long, dict(_long, warn=""), {"title": "[쿠팡] 휴지 (9,900원/무료)"}], 1):
+    assert cards.deal_card(_it, _k, 5, f"docs/cards/d{_k}.jpg", why="체크 포인트") == f"docs/cards/d{_k}.jpg"
+    _j = _I.open(f"docs/cards/d{_k}.jpg"); assert _j.format == "JPEG" and _j.size == (1080, 1350) and os.path.getsize(f"docs/cards/d{_k}.jpg") < 200_000
+    assert not _C.difference(_j.crop((0, 1110, 1080, 1196)), _I.new("RGB", (1080, 86), cards.CREAM)).point(lambda v: 255 if v > 40 else 0).getbbox()  # 내용 끝 ~ 아래 줄(1200) 사이 빈칸
+for _t in ("[11번가] 신라면 120g 40개 (티멤 카카오 23,470원/무료)", "[11번가] 신라면 40개 (와우회원 쿠폰적용 카드할인 최종 23,470원/무료)"):  # 앞말 붙은 긴 가격: 가격·알약이 오른쪽 여백 안에(안 되면 알약 아랫줄)
+    cards.deal_card({"title": _t}, 1, 5, "docs/cards/dw.jpg"); _j = _I.open("docs/cards/dw.jpg")
+    assert not _C.difference(_j.crop((990, 0, 1080, 1180)), _I.new("RGB", (90, 1180), cards.CREAM)).point(lambda v: 255 if v > 40 else 0).getbbox(), _t
+assert cards._norm({"title": "[네이버] 햇반 (22,000원/3,000원)"})["ship"] == "배송비 3,000원" and cards._norm({"title": "[쿠팡] 휴지 (9,900원/무료)"})["ship"] == "무료배송"
+assert cards._norm({"title": "[쿠팡] 휴지 (9,900원/무료)", "comment": "롤당 330원이에요.\n🤔 다른 날도 비슷한 가격"})["pts"] == ["롤당 330원이에요."]
 # 8-2) 릴스 영상: 1080x1920 · 30fps · H.264 · 딜 3개면 15초
 import subprocess
 rv = cards.reel([{"title": "[G마켓] 건국 멸균우유 200ml 48팩 (23,740원/무료)", "comment": "쿠폰가예요", "e": "🥛", "hook": "우유 팩당 495원",
@@ -1762,10 +1776,11 @@ def ig9_http(url, body=None, headers=None, method=None):
         st9["n"] = st9.get("n", 0) + 1; return json.dumps({"id": "IMG%d" % st9["n"]})
     raise AssertionError(url)
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); H.http, seen, sent[:] = ig9_http, {}, []
+H.IG_CAROUSEL = False  # 9-1b = 한 장 카드(넘기기 끈 상태 — 되돌리기 스위치), 넘기기는 9-1e
 def at9(t, step=None):
     ig9.clear(); sent.clear(); time.time = lambda: TK(f"{D9} {t}"); (step or H.ig_cards)(seen)
 at9("11:50"); assert not ig9 and not seen and not os.path.exists(f"docs/cards/{D9}_12.jpg")  # 12시 전
-at9("12:05"); assert not ig9 and open(f"docs/cards/{D9}_12.jpg", "rb").read(2) == b"\xff\xd8" and not os.path.exists(f"docs/cards/{D9}_12.png")  # 만들기만(HTTP 없음), 진짜 JPEG만
+at9("12:05"); assert not ig9 and open(f"docs/cards/{D9}_12.jpg", "rb").read(2) == b"\xff\xd8" and not os.path.exists(f"docs/cards/{D9}_12.png") and not os.path.exists(f"docs/cards/{D9}_12")  # 만들기만(HTTP 없음), 진짜 JPEG만, 넘기기 끄면 딜 카드 X
 assert json.load(open(f"docs/cards/{D9}_12.json")) == [1, 0, 3, 2] and "igs_" + D9 + "_12" not in seen  # 0~12시 딜만(12:00·어제 딜 X), 점수·제휴 먼저
 at9("12:19"); assert [m for m, u, b in ig9] == ["HEAD"] and "igs_" + D9 + "_12" not in seen  # 사이트 배포 전 -> 다음 실행에
 live9.add(f"{D9}_12.jpg"); at9("12:33")
@@ -1855,6 +1870,70 @@ json.dump([o9], open(f"docs/cards/{D9}_18.json", "w"))
 assert H.card_caption(f"{D9}_18")[1].startswith("일부 링크는 제휴 링크로 수수료를 받을 수 있어요.\n\n10월 12일 저녁 6시 핫딜\n\n1. [옥션] 오후 딜\n")
 json.dump([o9, len(pj) - 1], open(f"docs/cards/{D9}_18.json", "w"))
 assert H.card_caption(f"{D9}_18")[1].startswith(H.TOSS_NOTE + "\n\n10월 12일 저녁 6시 핫딜\n") and "제휴 링크로 수수료" not in H.card_caption(f"{D9}_18")[1]
+# 9-1e) 인스타 넘기기(10/11 진우 '인스타 업그레이드 2번'): 카드 만들 때 딜마다 1장(docs/cards/날짜_시/01.jpg… = 표지·캡션·사이트 번호 순서, 재료 없는 딜은 Claude로 1번에)
+#       -> 올릴 때 표지 + 딜 카드 조각(캡션 X) -> 다 처리되면 묶음(CAROUSEL·캡션·순서 그대로) -> 사이트 먼저 -> 다음 실행에 묶음만 1번 발행
+#       조각 처리 중 = 다음 실행에 묶음 / 조각 실패·1시간 넘음 = 버리고 카드 주소 알림 / 올리브영 딜 = '체크 포인트' / 2일 지난 딜 카드 폴더 정리
+import cards as C9
+dc9, real_dc9, ap9 = [], C9.deal_card, H.ai_pick
+C9.deal_card = lambda it, n, total, out, why="살 만한 이유": dc9.append((it["title"], n, total, why, it.get("e"))) or real_dc9(it, n, total, out, why)
+fills9 = []; H.ai_pick = lambda prompt, lines: fills9.append((prompt, lines)) or [{"i": 0, "e": "🧴", "hook": "세럼 1+1", "pts": ["50ml 2개"]}]
+H.IG_CAROUSEL, H.http, seen, st9["v"] = True, ig9e_http, {}, "FINISHED"
+json.dump({}, open(H.IG_LIVE, "w")); [os.remove(f"docs/cards/{D9}_12.{x}") for x in ("jpg", "json")]
+at9("12:05"); assert not ig9 and sorted(os.listdir(f"docs/cards/{D9}_12")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg"]
+o12 = [p for _, p in S9.card_order(json.load(open("posts.json")), f"{D9}_12")]
+assert [(t, n, tot) for t, n, tot, w, e in dc9] == [(H.title_of(p["text"]), n, 4) for n, p in enumerate(o12, 1)] and dc9[0][4] == "🧴"  # 번호 = 표지 순서, 채운 재료로 그림
+assert fills9 == [(H.REEL_PROMPT, [f"{H.title_of(p['text'])} | {H.comment_of(p['text'])}" for p in o12])]  # 재료 없는 딜 한 번에
+live9.add(f"{D9}_12.jpg"); at9("12:19"); assert [m for m, u, b in ig9] == ["HEAD", "HEAD"] and "igs_" + D9 + "_12" not in seen  # 마지막 딜 카드가 배포 전 -> 다음 실행에
+live9.add("04.jpg"); n0 = st9.get("n", 0); at9("12:33")
+pb9 = [b for m, u, b in ig9 if m == "POST"]
+assert [b["image_url"].split("cards/")[1] for b in pb9[:5]] == [f"{D9}_12.jpg"] + [f"{D9}_12/0{n}.jpg" for n in range(1, 5)] and all(b["is_carousel_item"] and "caption" not in b for b in pb9[:5])
+assert len(pb9) == 6 and pb9[5] == {"media_type": "CAROUSEL", "children": ",".join(f"IMG{n0 + n}" for n in range(1, 6)), "caption": H.card_caption(f"{D9}_12")[1]}  # 묶음: 표지·딜 순서, 캡션은 묶음에만
+assert seen["igc_IMG%d" % (n0 + 6)] == {"t": TK(f"{D9} 12:33"), "card": f"{D9}_12"} and len([k for k in seen if k.startswith("igc_")]) == 1 and not [k for k in seen if k.startswith("igk_")]
+assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"]  # 사이트 먼저
+at9("12:34", H.ig_publish); assert not [1 for m, u, b in ig9 if u.endswith("media_publish")]
+at9("12:47", H.ig_publish); assert [b for m, u, b in ig9 if u.endswith("media_publish")] == [{"creation_id": "IMG%d" % (n0 + 6)}] and "낮 12시 카드" in sent[-1][1]["text"]  # 묶음만 1번
+at9("13:01"); assert not ig9  # 회차 끝
+# 조각 처리 중 -> 묶음은 다음 실행에(시간 창 지나도) / 조각 실패 -> 버리고 카드 주소 / 1시간 넘게 처리 중 -> 버림
+seen, st9["v"] = {}, "IN_PROGRESS"; json.dump({}, open(H.IG_LIVE, "w")); n0 = st9.get("n", 0); at9("14:50")
+assert len([1 for m, u, b in ig9 if m == "POST"]) == 5 and seen["igk_" + D9 + "_12"]["kids"] == [f"IMG{n0 + n}" for n in range(1, 6)] and not [k for k in seen if k.startswith("igc_")]
+st9["v"] = "FINISHED"; at9("15:04"); assert [b["media_type"] for m, u, b in ig9 if m == "POST"] == ["CAROUSEL"] and "igk_" + D9 + "_12" not in seen and "igc_IMG%d" % (n0 + 6) in seen
+for st, t, why in (("ERROR", "15:10", "ERROR"), ("IN_PROGRESS", "16:11", "IN_PROGRESS")):
+    seen, st9["v"] = {"igk_" + D9 + "_12": {"t": TK(f"{D9} 15:10"), "kids": ["K1", "K2"]}}, st
+    try:
+        at9(t); raise AssertionError("조각 실패는 예외(main이 알림)")
+    except RuntimeError as e:
+        assert f"({why}) — https://hotdealpick.kr/cards/{D9}_12.jpg 카드를 직접 올려줘" in str(e) and not seen and not [1 for m, u, b in ig9 if m == "POST"]
+seen, st9["v"] = {"igk_" + D9 + "_12": {"t": TK(f"{D9} 15:10"), "kids": ["K1"]}}, "IN_PROGRESS"; at9("16:09"); assert "igk_" + D9 + "_12" in seen  # 1시간 안이면 기다림
+def ig9k_http(url, body=None, headers=None, method=None):  # 조각마다 다른 상태
+    if "?fields=status_code" in url and url.split("?")[0].rsplit("/", 1)[-1] in st9.get("per", {}):
+        ig9.append((method or "GET", url, body)); return json.dumps({"status_code": st9["per"][url.split("?")[0].rsplit("/", 1)[-1]]})
+    return ig9e_http(url, body, headers, method)
+H.http, st9["per"], st9["v"] = ig9k_http, {"K1": "FINISHED", "K2": "IN_PROGRESS"}, "FINISHED"
+seen = {"igk_" + D9 + "_12": {"t": TK(f"{D9} 16:00"), "kids": ["K1", "K2"]}}; at9("16:20"); assert not [1 for m, u, b in ig9 if m == "POST"] and "igk_" + D9 + "_12" in seen  # 하나라도 처리 중이면 묶음 X
+st9.pop("per"); [os.remove(f"docs/cards/{D9}_18.{x}") for x in ("jpg", "json") if os.path.exists(f"docs/cards/{D9}_18.{x}")]
+at9("18:05"); assert [b["media_type"] for m, u, b in ig9 if m == "POST"] == ["CAROUSEL"] and os.path.exists(f"docs/cards/{D9}_18.jpg") and os.path.isdir(f"docs/cards/{D9}_18")  # 카드 만드는 실행에도 지난 조각 묶음
+H.IG_CAROUSEL, seen = False, {}; json.dump({}, open(H.IG_LIVE, "w")); live9.add(f"{D9}_18.jpg"); at9("18:40")
+assert [(b.get("is_carousel_item"), b.get("media_type"), b["image_url"].split("cards/")[1]) for m, u, b in ig9 if m == "POST"] == [(None, None, f"{D9}_18.jpg")]; H.IG_CAROUSEL = True  # 끄면 딜 카드가 있어도 한 장
+# 올리브영 딜 = '체크 포인트'(권유 문구 X), 딜 카드 하나라도 실패하면 폴더째 지움(-> 한 장 카드), 2일 지난 딜 카드 폴더 정리(json·표지·다른 폴더는 그대로)
+H.deal_slides(f"{D9}_oy", [{"text": "🔥 [올리브영] 선크림 50ml (9,900원/무료)", "url": "https://oy.run/x", "hook": "h", "pts": ["SPF50"]}, {"text": "🔥 [쿠팡] 휴지 (9,900원/무료)", "url": "", "hook": "h", "pts": ["30롤"]}])
+assert [w for *_, w, e in dc9[-2:]] == ["체크 포인트", "살 만한 이유"] and sorted(os.listdir(f"docs/cards/{D9}_oy")) == ["01.jpg", "02.jpg"]
+rc9, cap9 = C9.deal_card, []; C9.deal_card = lambda it, *a, **k: cap9.append(it)
+H.deal_slides(f"{D9}_oy2", [{"text": "🔥 [올리브영] 선크림 50ml (9,900원/무료)\n\n후기가 좋아요", "url": "https://oy.run/x", "hook": "h", "pts": ["후기 반응 좋음", "50ml 2개 구성", "미백 기능성", "추천 6·댓글 10"]},
+                            {"text": "🔥 [쿠팡] 휴지 (9,900원/무료)\n\n후기 많아요", "url": "", "hook": "h", "pts": ["후기 많음"]}])
+assert cap9[0]["pts"] == ["50ml 2개 구성"] and cap9[0]["comment"] == "" and cap9[1]["pts"] == ["후기 많음"] and cap9[1]["comment"] == "후기 많아요"; C9.deal_card = rc9  # 올리브영만 후기·추천·반응·효능 문장 빼고 코멘트도 X
+C9.deal_card = lambda *a, **k: 1 / 0; H.deal_slides(f"{D9}_x", [{"text": "🔥 [쿠팡] 휴지 (9,900원/무료)", "url": "", "hook": "h", "pts": ["30롤"]}]); assert not os.path.exists(f"docs/cards/{D9}_x")
+for x in ("2026-10-09_12", "2026-10-10", "re"):
+    os.makedirs(f"docs/cards/{x}", exist_ok=True)
+open("docs/cards/2026-10-09_12.json", "w").write("[]"); seen = {}; at9("08:00")  # 정리는 ig_cards가 실행마다
+assert not os.path.exists("docs/cards/2026-10-09_12") and os.path.isdir("docs/cards/2026-10-10") and os.path.isdir("docs/cards/re") and os.path.exists("docs/cards/2026-10-09_12.json")
+# 21시 하루 카드: 모아보기가 표지와 같이 딜 카드도(인스타 토큰 있을 때) -> 릴스는 같은 재료
+C9.deal_card, ds9 = real_dc9, []
+rl9, tv9, sd9 = C9.reel, H.tg_video, H.deal_slides
+C9.reel, H.tg_video, H.deal_slides = (lambda items, d, out, music=None: ds9.append(("reel", [i.get("e") for i in items])) or out), (lambda path, cap: None), (lambda stem, ps: ds9.append((stem, len(ps))) or sd9(stem, ps))
+seen, sent[:] = {}, []; time.time = lambda: TK(f"{D9} 21:05"); H.digest(seen, json.load(open("posts.json")))
+assert ds9[0] == (D9, 5) and sorted(os.listdir(f"docs/cards/{D9}")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg"] and ds9[1][0] == "reel" and ds9[1][1][0] == "🧴"  # 딜 카드 때 채운 재료를 릴스도
+H.E.pop("IG_TOKEN"); shutil.rmtree(f"docs/cards/{D9}"); seen, ds9[:] = {}, []; H.digest(seen, json.load(open("posts.json"))); assert ds9[0][0] == "reel" and ds9[0][1][0] == "🧴" and not os.path.exists(f"docs/cards/{D9}")  # 인스타 없으면 딜 카드 X, 릴스 재료는 그대로 채움
+H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick = rl9, tv9, sd9, ap9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
@@ -1920,7 +1999,7 @@ assert H.OY_NOTE == "이 포스팅은 올리브영 쇼핑 큐레이터 활동의
 assert H.with_note("🔥 [올리브영] 세럼", [], "https://oy.run/x")[0].startswith(H.OY_NOTE + "\n\n🔥") and S.aff("https://oy.run/x") and S.title_of(H.OY_NOTE + "\n\n🔥 [올리브영] 세럼") == "[올리브영] 세럼"
 assert H.store_info("[올리브영]메디힐 세럼 1+1 (24,200원/무료)") == H.STORES["올리브영"] and H.store_info("세럼", "https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=A1") == H.STORES["올리브영"]
 assert H.store_info("[네이버][올리브영기프트카드] 5만원권") == H.STORES["네이버"] and H.is_oy("[올영] 립밤") and not H.is_oy("[네이버]올리브영 초콜렛")
-assert "[올리브영] 딜 comment는" in H.DEAL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - earns(" in inspect.getsource(H.main) and H.earns("[올리브영] 세럼")  # 사실만·1점 낮춤(10/10~ 수수료 몰 전체, 4-6)
+assert "[올리브영] 딜 comment·hook·pts·warn은" in H.DEAL_PROMPT and "[올리브영] 딜은 가격·용량·구성·조건만" in H.REEL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - earns(" in inspect.getsource(H.main) and H.earns("[올리브영] 세럼")  # 사실만·1점 낮춤(10/10~ 수수료 몰 전체, 4-6)
 oyh = [{"board": "뽐뿌", "hits": "댓글0·조회3000·추천5·비추0", "age": 60, "title": t} for t in ("[올리브영] 세럼", "[G마켓] 우유")]
 H.mark_hot(oyh); assert not any(k in oyh[0] for k in ("hot", "pop", "vpm", "rec")) and oyh[1]["hot"] and oyh[1]["pop"]  # 올영은 추천·반응 표시 X
 sent.clear(); H.post_or_draft({"title": "[올리브영]다슈 립밤 4g (8,820원)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}, "8,820원, 2만 원 이상 무료배송", 6, "다슈 립밤")

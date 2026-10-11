@@ -3,11 +3,11 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, hashlib, hmac, html, json, os, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -81,7 +81,7 @@ warn: 사기 전에 확인할 점 1개, 16자 이내(예: "쿠폰 1인 1회", "�
 DEAL_PROMPT = """너는 한국 핫딜 텔레그램 채널 편집자야. 아래 딜 중 구독자가 실제로 살 만한 것만 골라 pick 도구로 반환해.
 점수(1~10) 기준: 가격 매력, 생필품/대중성, 커뮤니티 반응(조회 대비 추천·댓글). 비추천이 많거나 품절·종료·가격오류 언급이 있으면 제외.
 comment: 구독자용 1~2줄. 핵심 조건(쿠폰·카드할인·무배 등)을 사실대로. 과장 금지, 확인 안 된 '역대최저' 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지, 이모지 최대 1개.
-[올리브영] 딜 comment는 가격·용량·구성·조건만: 후기·체험담·글쓴이 경험, '추천'·'좋아요'·'쟁여두기' 같은 권유, 효능·효과, '최고'·'100%' 같은 절대 표현 금지(올리브영 쇼핑 큐레이터 정책).
+[올리브영] 딜 comment·hook·pts·warn은 가격·용량·구성·조건만: 후기·체험담·글쓴이 경험, '추천'·'좋아요'·'쟁여두기' 같은 권유, 효능·효과, '최고'·'100%' 같은 절대 표현 금지(올리브영 쇼핑 큐레이터 정책).
 q: 쇼핑몰 검색창에 넣을 짧은 검색어(브랜드+상품명+핵심 용량, 수량·가격·쿠폰 문구 빼고 20자 안팎).
 REEL_RULES
 같은 상품이 여러 커뮤니티([뽐뿌]·[루리웹]·[클리앙])에 올라왔으면 하나만 골라.
@@ -90,7 +90,8 @@ REEL_RULES
 DEAL_PROMPT = DEAL_PROMPT.replace("REEL_RULES", REEL_RULES)
 ADMIN_PROMPT = DEAL_PROMPT.replace("5점 미만은 반환하지 마.", "점수와 상관없이 반드시 반환해(약한 딜은 점수를 낮게).") + \
     "이번 딜은 운영자가 쇼핑몰에서 직접 고른 상품이라 커뮤니티 반응 정보가 없어: 가격 매력·대중성만으로 점수를 매기고, 운영자가 적은 가격·조건만 사실로 써(모르는 건 지어내지 마).\n"
-REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n"
+REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n" \
+    + "건강식품·화장품 효능(미백·주름·탄력 개선 등) 금지. [올리브영] 딜은 가격·용량·구성·조건만(후기·추천·권유·효능·'최고' 같은 절대 표현 금지 — 올리브영 쇼핑 큐레이터 정책).\n"
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
 대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
 comment: 1줄, 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
@@ -124,6 +125,8 @@ e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객�
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
 IG_SLOTS = {12: "점심에 볼 딜", 18: "퇴근길에 볼 딜"}  # 인스타 하루 3번(10/11 진우 '인스타 업그레이드 1번'): 12시 = 0~12시 딜, 18시 = 12~18시 딜 카드 + 21시 하루 카드(모아보기) — 7일 표에서 채널 글이 가장 많은 12·18시(TOP5 회차와 같은 시간대)
 IG_LATE, IG_MIN, IG_DAY_MAX = 3, 3, 5  # 시간대 카드는 그 시각 3시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀 · 인스타 하루 발행 최대 5개(카드 3 + 릴스 1 + 다시 올리기 1, 오류로 몰려 올라가지 않게 — API 상한 50)
+IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
+OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 카드 컨테이너 만들기 실패(인스타 일시 오류)는 회차 안에서 3번까지 다시(안 올라간 컨테이너는 안 보여서 두 번 안 올라감) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#특가", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#살림템", "#쇼핑정보"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만)
 TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
@@ -1524,17 +1527,13 @@ def digest(seen, posts):
             os.makedirs("docs/cards", exist_ok=True)
             json.dump([i for i, _ in order], open(f"docs/cards/{today}.json", "w"))  # 카드 번호 순서를 고정(사이트·캡션이 같이 씀)
             cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
+            if IG_CAROUSEL and E.get("IG_TOKEN"):
+                deal_slides(today, [p for _, p in order[:CARD_N]])  # 인스타 넘기기용 딜 카드(재료 채운 글은 아래 릴스도 같이 씀)
         except Exception as e:
             print("card", repr(e))
         try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 (저장소엔 안 올림). 점수 높은 순 TOP3
             top = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
-            need = [p for p in top if not (p.get("hook") and p.get("pts"))]  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움
-            if need:
-                try:
-                    for f in ai_pick(REEL_PROMPT, [f"{title_of(p['text'])} | {comment_of(p['text'])}" for p in need]):
-                        need[f["i"]].update({k: f[k] for k in ("e", "hook", "pts", "unit", "warn") if f.get(k)})
-                except Exception as e:
-                    print("reel fill", repr(e))
+            fill_reel(top)  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움(딜 카드 때 채웠으면 그대로)
             music, mus = bgm(kst), load(MUSIC, [])
             song = mus[kst.tm_yday % len(mus)] if music else None  # 캡션에 곡명(인스타에서도 무슨 곡인지 보이게)
             path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]),
@@ -1735,15 +1734,73 @@ def card_caption(stem):
                   + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(stem)}'에서 번호를 누르면 바로 구매 페이지\n\n" + ig_tags(ps))[:2200]
 
 
+def fill_reel(ps):
+    """릴스·딜 카드 재료(e·hook·pts·unit·warn)가 없는 딜(✅로 올린 글·예전 글)만 Claude로 채움(글 dict에 바로). 실패하면 그대로(제목·코멘트로 그림)."""
+    need = [p for p in ps if not (p.get("hook") and p.get("pts"))]
+    if not need:
+        return
+    try:
+        for f in ai_pick(REEL_PROMPT, [f"{title_of(p['text'])} | {comment_of(p['text'])}" for p in need]):
+            need[f["i"]].update({k: f[k] for k in ("e", "hook", "pts", "unit", "warn") if f.get(k)})
+    except Exception as e:
+        print("reel fill", repr(e))
+
+
+def deal_slides(stem, ps):
+    """넘기기 딜 카드: 카드 번호 순서대로 딜마다 1장 -> docs/cards/{stem}/01.jpg…(표지 다음 장들, 워크플로가 커밋 -> 사이트 공개 -> ig_cards가 올림).
+    올리브영 딜은 이유 제목 '체크 포인트'(큐레이터 정책: 권유 문구 X). 한 장이라도 실패하면 폴더째 지움 -> 한 장짜리 카드로."""
+    import cards
+    fill_reel(ps)
+    d = f"docs/cards/{stem}"
+    try:
+        os.makedirs(d, exist_ok=True)
+        for n, p in enumerate(ps, 1):
+            oy = aff_note(p.get("url") or "") == OY_NOTE or is_oy(title_of(p["text"]))
+            pts = [x for x in p.get("pts") or [] if not (oy and re.search(OY_DENY, x))]  # 올리브영: 후기·추천·반응·효능 문장은 빼고(큐레이터 정책 — 그림은 못 고침)
+            cards.deal_card({"title": title_of(p["text"]), "comment": "" if oy else comment_of(p["text"]), **{k: p.get(k) for k in ("e", "unit", "warn")}, "pts": pts},
+                            n, len(ps), f"{d}/{n:02d}.jpg", why="체크 포인트" if oy else "살 만한 이유")
+    except Exception as e:
+        print("slides", stem, repr(e))
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def ig_carousel(seen, tok, uid, now):
+    """넘기기 묶기: 조각(표지·딜 카드) 컨테이너가 다 처리되면(FINISHED) 묶음(CAROUSEL, 캡션) 컨테이너 -> igc_(ig_publish가 발행).
+    처리 중이면 다음 실행에, 조각 실패(ERROR·EXPIRED)·KIDS_WAIT 넘게 처리 중이면 그 회차는 버리고 알림(카드 주소). 조각은 igc_에 안 둠(따로 발행되면 안 됨)."""
+    h = {"Authorization": "Bearer " + tok}
+    for k in [k for k in seen if k.startswith("igk_")]:
+        v, stem = seen[k], k[4:]
+        sts = [json.loads(http(f"{IG}/{c}?fields=status_code", headers=h))["status_code"] for c in v["kids"]]
+        if all(st == "FINISHED" for st in sts):
+            c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": card_caption(stem)[1]}, h, "POST"))
+            seen.pop(k)
+            seen["igc_" + c["id"]] = {"t": now, "card": stem}
+            print("ig carousel", stem, len(v["kids"]), "장")
+        elif any(st not in ("IN_PROGRESS", "FINISHED") for st in sts) or now - v["t"] > KIDS_WAIT:
+            seen.pop(k)
+            raise RuntimeError(f"인스타 넘기기 카드 처리 실패({'·'.join(dict.fromkeys(sts))}) — {SITE}cards/{stem}.jpg 카드를 직접 올려줘")
+
+
+def prune_slides(now):
+    """딜 카드 폴더(docs/cards/날짜[_시]/)는 SLIDE_KEEP일 지나면 지움(인스타가 이미 가져감, 사이트는 표지만 씀 — 저장소 크기). git add -A가 지운 것도 커밋."""
+    cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - SLIDE_KEEP * 86400))
+    for f in os.listdir("docs/cards") if os.path.isdir("docs/cards") else []:
+        if STEM.fullmatch(f) and f[:10] < cut and os.path.isdir(f"docs/cards/{f}"):
+            shutil.rmtree(f"docs/cards/{f}")
+
+
 def ig_cards(seen):
     """인스타 하루 3번(10/11 진우 '인스타 업그레이드 1번'): 12시·18시(IG_SLOTS) 시간대 카드 + 21시 하루 카드(모아보기 때 만든 것).
     시간대 카드: 그 시각 첫 실행에 카드(JPEG)·번호 순서를 docs/cards/날짜_시에 만들고(워크플로가 커밋 -> 사이트 공개) 다음 실행에 사이트에 뜨면 인스타 컨테이너
     -> 사이트 맨 위 카드 기록(ig_live, 사이트 먼저) -> 다음 실행에 ig_publish가 발행. 그 시각 IG_LATE시간 안에만, 딜 IG_MIN개 미만이면 건너뜀, 회차마다 1번
-    (기록에 있으면 seen을 잃어도 다시 안 올림). 컨테이너 만들기 실패는 IG_TRIES번까지 다음 실행에 다시, 마지막엔 카드 주소와 함께 알림(main)."""
+    (기록에 있으면 seen을 잃어도 다시 안 올림). 컨테이너 만들기 실패는 IG_TRIES번까지 다음 실행에 다시, 마지막엔 카드 주소와 함께 알림(main).
+    넘기기(IG_CAROUSEL, 10/11 진우 '인스타 업그레이드 2번'): 카드 만들 때 딜 카드(deal_slides)도 -> 올릴 때 표지·딜 카드 조각 컨테이너 -> ig_carousel이 묶음."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     now = time.time()
     if not (tok and uid) or seen.get("ig_hold", 0) > now:
         return
+    prune_slides(now)
+    ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
     for h in (*IG_SLOTS, 21):
@@ -1764,25 +1821,35 @@ def ig_cards(seen):
             json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
             cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
                        head=IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False)
+            if IG_CAROUSEL:
+                deal_slides(stem, [p for _, p in order])
             print("ig card", stem, f"만듦 {len(order)}개")
             return
         if not os.path.exists(jpg):  # 21시: 모아보기(digest)가 아직 카드를 안 만듦
             continue
-        url = f"{SITE}cards/{stem}.jpg"
+        url, d = f"{SITE}cards/{stem}.jpg", f"docs/cards/{stem}"
+        slides = [f"{SITE}cards/{stem}/{f}" for f in sorted(os.listdir(d)) if re.fullmatch(r"\d\d\.jpg", f)] if IG_CAROUSEL and os.path.isdir(d) else []
         try:
-            http(url, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에
+            for u in [url] + slides[-1:]:
+                http(u, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에 (표지·딜 카드는 같은 커밋)
         except Exception:
             continue
         fail = (tried or {}).get("fail", 0)
         seen["igs_" + stem] = {"t": now}  # 먼저 표시(만들기 성공 = 회차 끝)
+        auth = {"Authorization": "Bearer " + tok}
         try:
-            c = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": card_caption(stem)[1]}, {"Authorization": "Bearer " + tok}, "POST"))
+            if slides:  # 넘기기: 조각(캡션 X) -> 다 처리되면 묶음(ig_carousel)
+                seen["igk_" + stem] = {"t": now, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in [url] + slides]}
+            else:
+                c = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": card_caption(stem)[1]}, auth, "POST"))
         except Exception as e:
             seen["igs_" + stem] = {"t": now, "fail": fail + 1}  # 다음 실행에 다시(IG_TRIES번까지)
             raise RuntimeError(f"인스타 카드 컨테이너 실패({fail + 1}/{IG_TRIES}) — " + ("다음 실행에 다시" if fail + 1 < IG_TRIES else f"{url} 카드를 직접 올려줘") + f": {e!r} {getattr(e, 'body', '') or ''}")
-        seen["igc_" + c["id"]] = {"t": now, "card": stem}
+        if not slides:
+            seen["igc_" + c["id"]] = {"t": now, "card": stem}
         ig_live(stem, now)
-        print("ig card", stem, "컨테이너")
+        print("ig card", stem, f"넘기기 조각 {len(slides) + 1}장" if slides else "컨테이너")
+    ig_carousel(seen, tok, uid, now)  # 이번에 만든 조각(이미지는 보통 바로 처리 끝)
 
 
 def ig_repost(seen):

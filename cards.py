@@ -217,6 +217,71 @@ def _rule(frame, y, t, delay, color=LINE):
         ImageDraw.Draw(frame).rectangle((X0, y, X0 + XW * k, y + 2), fill=color)
 
 
+def _norm(it):
+    """딜 재료 정리(릴스·딜 카드 같이): 제목 -> 몰·이름·가격·배송, 단위가격·확인할 점, 이유 2~3개(없으면 코멘트 문장 — 배송·단위가격과 같은 건 따로 표시라 뺌)."""
+    it = dict(it)
+    store, name, price = parse(it["title"])
+    main, _, ship = price.partition("/")
+    ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
+    ship = "배송비 " + ship if re.fullmatch(r"[\d,]+원", ship) else ship  # '3,000원'만 있으면 가격처럼 보임
+    sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n", it.get("comment") or "") if s.strip() and not s.lstrip().startswith(("💡", "⚠", "🤔"))]
+    unit, warn = (it.get("unit") or "").strip(), (it.get("warn") or "").strip()
+    it.update(store=store, name=name, main=main.strip(), ship=ship, unit=unit, warn=warn,
+              pts=[p for p in (it.get("pts") or sents) if p.replace(" ", "") not in (ship.replace(" ", ""), unit.replace(" ", ""))][:3 - bool(warn)])
+    return it
+
+
+def deal_card(it, n, total, out, why="살 만한 이유"):
+    """딜 한 장 카드(인스타 넘기기 2~6장째, 10/11 진우 '인스타 업그레이드 2번'): 1080x1350 JPEG, 릴스 딜 장면과 같은 디자인(움직임 없이).
+    번호(= 표지·캡션·사이트 번호)·몰·이모지·이름·가격·배송·단위가격·이유·확인할 점 + 아래 사이트·번호/전체·제휴 안내.
+    it: {"title", "comment", "e", "pts", "unit", "warn"}. why: 이유 제목(올리브영은 '체크 포인트' — 큐레이터 정책상 권유 문구 X). -> out"""
+    it = _norm(it)
+    im = Image.new("RGBA", (W, H), CREAM + (255,))
+    d = ImageDraw.Draw(im)
+    d.text((X0, 84), f"{n:02d}", font=pf("ExtraBold", 48), fill=ACCENT)
+    if it["store"]:
+        d.text((X0 + 96, 90), it["store"], font=pf("SemiBold", 40), fill=SUB)
+    f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 92), "핫딜픽", font=f, fill=ACCENT)
+    tile = _tile(it.get("e"), 190)
+    im.alpha_composite(tile, (X0 - 40, 150))
+    y = 150 + tile.height - 30
+    if it["name"]:
+        nm = _rich(it["name"], pf("Bold", 60), XW, 2, fill=INK2, lh=1.22, accent=False)
+        im.alpha_composite(nm, (X0, y)); y += nm.height + 6
+    pill = _pill(it["ship"]) if it["ship"] else None
+    if it["main"]:
+        side = pill.width + 20 if pill else 0  # 배송 알약을 가격 오른쪽에 둘 자리
+        size = next((z for z in (120, 104, 92) if pf("ExtraBold", z).getlength(it["main"]) + 8 + side <= XW), None)
+        if size is None:  # '티멤 카카오 23,470원'처럼 앞말 붙은 가격: 가격만 한 줄에 맞추고 알약은 아랫줄(그래도 길면 2줄)
+            size, side = next((z for z in (92, 80, 68) if pf("ExtraBold", z).getlength(it["main"]) + 8 <= XW), None), 0
+        pr = _text(it["main"], pf("ExtraBold", size), INK2) if size else _rich(it["main"], pf("ExtraBold", 68), XW, 2, fill=INK2, accent=False)
+        im.alpha_composite(pr, (X0, y))
+        if pill and side:  # 가격 오른쪽, 글자 아래쪽에 맞춤
+            im.alpha_composite(pill, (X0 + pr.width + 20, y + pr.height - pill.height - 20))
+        y += pr.height + 4
+        if pill and not side:
+            im.alpha_composite(pill, (X0, y)); y += 84
+    elif pill:
+        im.alpha_composite(pill, (X0, y)); y += 84
+    if it["unit"]:
+        u = _rich(it["unit"], pf("SemiBold", 46), XW); im.alpha_composite(u, (X0, y - 6)); y += 70
+    if it["pts"] or it["warn"]:
+        d.rectangle((X0, y + 10, X0 + XW, y + 12), fill=LINE)
+        d.text((X0, y + 34), why, font=pf("SemiBold", 36), fill=SUB)
+        y += 96
+        for p in it["pts"]:
+            im.alpha_composite(_check(p), (X0, y)); y += 80
+        if it["warn"]:  # 단점·조건까지(광고 계정과의 차이)
+            d.text((X0, y + 8), "확인할 점", font=pf("SemiBold", 36), fill=SUB)
+            d.text((X0 + 180, y + 4), wrap(d, it["warn"], pf("Medium", 40), XW - 180, 1)[0], font=pf("Medium", 40), fill=INK2)
+    d.rectangle((X0, H - 150, W - X0, H - 148), fill=LINE)
+    d.text((X0, H - 124), "hotdealpick.kr", font=pf("Bold", 40), fill=ACCENT)
+    s = f"{n:02d} / {total:02d}"; f = pf("SemiBold", 36); d.text((W - X0 - d.textlength(s, font=f), H - 120), s, font=f, fill=SUB)
+    d.text((X0, H - 62), "프로필 링크 → 맨 위 카드 번호로 구매 · 일부 링크는 제휴 링크(수수료)", font=pf("Regular", 26), fill=SUB)
+    im.convert("RGB").save(out, quality=85)
+    return out
+
+
 def reel(items, date_label, out, music=None):
     """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 15초 1080x1920 MP4. music(음악 파일 경로) 있으면 배경음악(짧으면 반복·앞뒤 페이드), 없으면 무음. -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
@@ -224,16 +289,9 @@ def reel(items, date_label, out, music=None):
     은은한 페이드·떠오름 + 장면 사이 0.2초 디졸브. 마지막은 어두운 바탕에 저장·공유 유도.
     글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치."""
     import subprocess
-    items = [dict(it) for it in items[:3]]
+    items = [_norm(it) for it in items[:3]]
     for it in items:
-        store, name, price = parse(it["title"])
-        main, _, ship = price.partition("/")
-        ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
-        sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n", it.get("comment") or "") if s.strip() and not s.lstrip().startswith(("💡", "⚠"))]
-        unit, warn = (it.get("unit") or "").strip(), (it.get("warn") or "").strip()
-        it.update(store=store, name=name, main=main.strip(), ship=ship, unit=unit, warn=warn,  # 배송·단위가격은 따로 표시 -> 이유 목록에서 뺌
-                  pts=[p for p in (it.get("pts") or sents) if p.replace(" ", "") not in (ship.replace(" ", ""), unit.replace(" ", ""))][:3 - bool(warn)],
-                  hook=it.get("hook") or f"{name[:12]} {main.strip()}".strip())
+        it["hook"] = it.get("hook") or f"{it['name'][:12]} {it['main']}".strip()
     cream, night = Image.new("RGB", (RW, RH), CREAM), Image.new("RGB", (RW, RH), NIGHT)
     scenes = []  # (배경, 초, 그리기(frame, t), 진행 막대 색)
 
