@@ -611,14 +611,13 @@ def ad_line(plain, unit=""):
     return ("[광고] {e} {adj} {pp}", "[광고] {pp} — {sent}", "[광고] {e} {sent} · {pp}")[k].format(e=h[0], adj=h[1], sent=h[2], pp=pp)
 
 
-def ad_head(note, plain, unit="", html_=True):
-    """개별 딜 글 머리: 1줄 [광고] 첫 줄 + 2줄 제휴 고지문(그대로) + 빈 줄. 제휴 링크가 아니면(note 없음) ''."""
+def ad_head(note, plain, unit=""):
+    """채널 개별 딜 글 머리(HTML): 1줄 [광고] 첫 줄 + 2줄 제휴 고지문(그대로) + 빈 줄. 제휴 링크가 아니면(note 없음) ''. Threads 글은 th_note."""
     if not note:
         return ""
     if not ad_on():
-        return f"<i>{note}</i>\n\n" if html_ else f"{note}\n\n"
-    a = ad_line(plain, unit)
-    return f"{esc(a)}\n<i>{note}</i>\n\n" if html_ else f"{a}\n{note}\n\n"
+        return f"<i>{note}</i>\n\n"
+    return f"{esc(ad_line(plain, unit))}\n<i>{note}</i>\n\n"
 
 
 def plain_of(html_text):
@@ -1333,7 +1332,7 @@ def toss_picks(seen):
         print("toss pick", e["at"], clip(r["n"], 30), f"{price:,}원 게시")
         if tok and th_solo(seen, plain_of(body), fill=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈): 대가성 문구 맨 앞, 실패는 main()이 알림
             th_mark(seen)
-            text = ad_head(TOSS_NOTE, plain_of(body), html_=False) + f"🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
+            text = th_note(TOSS_NOTE) + f"🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
                 + f"\n\n🛒 {r['link']}\n📲 실시간 알림 t.me/hotdeal_pick"
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
             th_text(tok, me, text, r["link"])
@@ -1548,7 +1547,7 @@ def toss_reopen(seen):
     toss_daymap(seen, now, today, e["id"] not in ids())  # 오늘 목록이 없거나 그 상품이 없으면 받음(하루 3번·2시간 간격 규칙 그대로)
     hot = e["id"] in ids()  # 오늘 하루특가 목록에 있을 때만 '토스 하루특가·선착순'
     head = "☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 다시 열렸어요" + (" · 선착순" if hot else "")
-    text = (ad_head(TOSS_NOTE, f"🔥 [토스] {e['n']} ({price:,}원)\n" + (e["cmp"] if e["cmp"] and price == e["p0"] else ""), html_=False) + f"{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
+    text = (th_note(TOSS_NOTE) + f"{head}\n{e['icon']} {clip(e['n'], 60)}\n💰 {'지금 ' if am else ''}{price:,}원" + (" · 토스 하루특가(밤 12시까지)" if hot else "")
             + (f"\n{e['cmp']}" if e["cmp"] and price == e["p0"] else "") + f"\n\n👉 {e['url']}\n📲 실시간 알림 t.me/hotdeal_pick")
     if not th_solo(seen, text, fill=True):  # Threads 개별 글 하루 5개·45분 간격(10/11 진우 '나누지 말고 묶기') -> 자리 없으면 다음 실행에(늦으면 원래대로 버림)
         return
@@ -2046,15 +2045,33 @@ def threads(seen):
     json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
-TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 5, 3, 45 * 60, 3000, 1, (12, 18), ("best",)  # 10/11 진우 결정 '나누지 말고 묶기, 꾸준하게'(2주 동결 ~10/25):
-# Threads 개별 글 = 하루 최대 5개·45분 간격·🔥만(같은 상품 쿠팡 차이 3,000원↑ 또는 30일 최저가 위주, 18시까지 3개가 안 차면 일반 🔥도), 나머지는 리스트로
+TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 5, 0, 45 * 60, 1, 1, (12, 18), ("best",)
+TH_SOLO_RANK = 3  # 10/11 23:40 진우 '이 방식 유지하면서 경과 보기'(밤 메르헨트 💸 2,000원 글 50분에 조회 20 — 낮 글보다 빠름): 개별 글 기준 못 박음 —
+# ① 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥(💸 훅, 금액 상관없이) 먼저 ② 30일 최저가·순위 1~3위 ③ 🛒·단위가격 참고만은 리스트로(18시 채움 없음 = TH_SOLO_MIN 0)  # 10/11 진우 결정 '나누지 말고 묶기, 꾸준하게'(2주 동결 ~10/25):
+# Threads 개별 글 = 하루 최대 5개·45분 간격·1회 1개·위 ①② 순서로만, 나머지는 리스트로
 # (12·18시 '지금 살 만한 딜'·토스 베스트 리스트, 21시 모아보기 카드, 22시 미리보기). 텔레그램 채널은 개별 글 그대로
 
 
-def th_strong(plain):
-    """Threads 개별 글감: 약한 딜(🛒) 아니고, 같은 상품 쿠팡 차이 TH_SOLO_SAVE원↑ 또는 30일 최저가."""
+def th_tier(plain):
+    """Threads 개별 글감 순위: 1 = 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥('같은 상품…보다 N원 쌈', TH_SOLO_SAVE원↑) · 2 = 30일 최저가·순위 1~TH_SOLO_RANK위
+    · 0 = 리스트로(🛒 약한 딜·단위가격 참고만·나머지)."""
+    if "특가로는 약한 제품" in plain:
+        return 0
     m = re.search(rf"({SAVE_STORES})\s*같은 상품[^\n—]*?보다\s*([\d,]+)원\s*쌈", plain)
-    return "특가로는 약한 제품" not in plain and (bool(m and int(m.group(2).replace(",", "")) >= TH_SOLO_SAVE) or bool(re.search(r"30일 (내 )?최저가", plain)))
+    if m and int(m.group(2).replace(",", "")) >= TH_SOLO_SAVE:
+        return 1
+    r = re.search(r"(?:^|· |\n)[^·\n💰⭐]{1,16}?(\d{1,2})위", plain)
+    return 2 if re.search(r"30일 (내 )?최저가", plain) or (r and 1 <= int(r.group(1)) <= TH_SOLO_RANK) else 0
+
+
+def th_strong(plain):
+    """Threads 개별 글감인지(th_tier 1·2)."""
+    return th_tier(plain) > 0
+
+
+def th_note(note):
+    """Threads 개별 글 머리: 제휴 고지문 맨 앞, 10/12~ 그 앞에 '[광고] '(10/11 23:40 진우: 본문 틀 💸 훅 → 🔥 제목 → … → 👉 링크는 그대로, [광고]만 맨 앞)."""
+    return (("[광고] " if ad_on() else "") + note + "\n\n") if note else ""
 
 
 def th_solo(seen, plain, fill=False):
@@ -2079,7 +2096,8 @@ def threads_deals(seen):
     tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
     fresh = [i for i, p in enumerate(posts) if not p.get("th") and p["t"] >= since and not p["text"].startswith("📋")]
-    todo = ([i for i in fresh if th_solo(seen, posts[i]["text"])] or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True)])[:TH_SOLO_RUN]
+    strong = sorted((i for i in fresh if th_solo(seen, posts[i]["text"])), key=lambda i: th_tier(posts[i]["text"]))  # ① 같은 상품 쿠팡 차이 먼저, 같은 순위면 먼저 올라온 것
+    todo = (strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True)])[:TH_SOLO_RUN]
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
@@ -2091,10 +2109,8 @@ def threads_deals(seen):
             return
         note = aff_note(posts[i].get("url") or "")
         icon = "🛒" if "특가로는 약한 제품" in posts[i]["text"] else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
-        sv = None if note and ad_on() else saving(posts[i]["text"])  # 제휴 링크면 첫 줄 [광고]에 훅(10/11 진우 결정), 아니면 예전처럼 '💸 …보다 N원 싸요'
-        head = ad_head(note, posts[i]["text"], posts[i].get("unit") or "", html_=False)
-        text = head + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") \
-            + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250 - max(0, len(head) - len(note) - 2)] \
+        sv = saving(posts[i]["text"])  # 고지문 다음 줄 = 얼마나 싼지(10/11 진우 'Threads 훅')
+        text = th_note(note) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] \
             + f"\n\n👉 {url}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen)
