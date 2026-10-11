@@ -1288,13 +1288,13 @@ time.time = tt
 #       ② 특가 회차(toss_deals "special", 8·22시 3시간 안): 1일 목록 중 할인 40%↑·리뷰 50개↑ -> 할인 높은 순 30개 상세로 재확인 -> Claude 7점↑ 중 점수 × 가격(수수료 8% = 개당 수익) 높은 순 3개
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1", THREADS_TOKEN="tk")
 H.HAS_TOSS, ph7, tg9, pa7, sl7, ev7, pj7 = True, H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, open("posts.json").read()
-sp_calls, sp_sent, sp_th, sp_ai, sp_out, sp_fail = [], [], [], [], set(), {"link": set(), "tg": 0}
+sp_calls, sp_sent, sp_th, sp_ai, sp_out, sp_fail, sp_det = [], [], [], [], set(), {"link": set(), "tg": 0, "net": 0}, {}
 TREE = [{"categoryId": 400, "displayName": "뷰티", "children": [{"categoryId": 410, "displayName": "선케어"}, {"categoryId": 411, "displayName": "스킨케어", "children": [{"categoryId": 4111, "displayName": "패치"}]}]},
         {"categoryId": 200, "displayName": "식품", "children": [{"categoryId": 210, "displayName": "간편식"}]}]
 it = lambda i, n, p, dr=10, rc=100, rs=4.7: {"tacaItemId": i, "displayName": n, "displayPrice": p, "discountRate": dr, "reviewScore": rs, "reviewCount": rc, "isSoldOut": i in sp_out}
 LISTS = {"/products/best-selling?size=100": [it(501, "에이지랩 달팽이 뮤신 올인원 크림, 50g, 3개 + 선크림 증정", 19900, 62, 812), it(502, "특가 비싼 상품 전기요", 89000, 55, 300),
                                              it(503, "특가 싼 상품 휴지", 9900, 70, 900), it(504, "리뷰 적은 특가", 5000, 80, 10), it(505, "할인 적은 상품", 5000, 20, 900),
-                                             it(507, "한경희 카본히터 Q1000 다른 모델", 39000, 10, 50), it(508, "특가 이미 올린 상품", 7000, 60, 500)],
+                                             it(507, "한경희 카본히터 Q1000 다른 모델", 39000, 10, 50), it(508, "특가 이미 올린 상품", 7000, 60, 500), it(510, "어제 하루특가 끝난 상품", 8000, 65, 300)],
          "/products/best-categories/400?size=100": [it(506, "특가 중간 상품 샴푸", 30000, 45, 120)], "/products/best-categories/200?size=100": [], "/products/best-categories/210?size=100": [],
          "/products/best-categories/410?size=100": [it(511, "에이지랩 스네일 뮤신 브라이트닝 선크림, 70ml, 4개", 15900, 50, 222)], "/products/best-categories/411?size=100": [],
          "/products/best-categories/4111?size=100": [it(512, "화이트벨라 마이크로 니들 패치, 12매, 1개", 9900, 30, 80)]}
@@ -1315,13 +1315,14 @@ def sp_http(url, body=None, headers=None, method=None):
     if path.startswith("/products/detail?tacaItemIds="):
         ids = [int(x) for x in path.split("=")[1].split(",")]; assert len(ids) <= 30
         alls = {x["tacaItemId"]: x for l in list(LISTS.values()) + [DAY] for x in l}
-        return ok({"items": [dict(alls[i], isSoldOut=i in sp_out, displayPrice=alls[i]["displayPrice"] - (1000 if i == 501 else 0)) for i in ids if i in alls], "notFoundIds": [i for i in ids if i not in alls]})
+        return ok({"items": [dict(alls[i], isSoldOut=i in sp_out, displayPrice=alls[i]["displayPrice"] - (1000 if i == 501 else 0), **sp_det.get(i, {})) for i in ids if i in alls], "notFoundIds": [i for i in ids if i not in alls]})
     if path == "/links":
         if body["tacaItemId"] in sp_fail["link"]: return json.dumps({"resultType": "FAIL", "error": {"reason": "발급 제한"}})
+        if sp_fail["net"]: sp_fail["net"] -= 1; raise OSError("tunnel down")
         return ok({"shortUrl": f"https://toss.shopping/_m/P{body['tacaItemId']}"})
     raise AssertionError(url)
 def sp_pick(prompt, lines):
-    sp_ai.append((prompt.split("\n")[0][:20], lines))
+    sp_ai.append((prompt, lines))
     if prompt.startswith("커뮤니티 핫딜 글 제목"):  # 같은 상품 확인: 에이지랩 크림·선크림만 같은 상품
         want = "올인원 크림" if "올인원 크림" in prompt else "브라이트닝 선크림" if "브라이트닝 선크림" in prompt else "니들 패치" if "니들 패치" in prompt else "국물떡볶이" if "국물떡볶이" in prompt else "없는"
         if "카본히터" in prompt:  # 비슷한 다른 모델(Q1000) = 6점 -> 같은 상품 아님
@@ -1360,6 +1361,7 @@ assert "/products/best-categories/410?size=100" in sp_calls and seen["pk_2026-10
 ask = [p["text"] for m, p in sp_sent if p["chat_id"] == H.ADMIN]
 assert len(ask) == 1 and "23:50 '한경희 2단 자동회전 나노 카본히터 Q2000'" in ask[0] and "못 찾았어" in ask[0] and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 sp_run("2026-10-11 18:28"); assert not sp_sent and not [c for c in sp_calls if "best-categories/41" in c]  # 다시 안 물음·하위 카테고리도 다 봄(하루 PICK_SCAN 안)
+assert not [a for a, l in sp_ai if "카본히터" in a]  # 진우에게 요청한 상품은 그만 찾음(나중에 찾아 올리면 진우 링크 예약과 두 번)
 sp_run("2026-10-11 23:20", H.events); assert [p["text"] for m, p in sp_sent] == [f"<i>{H.TOSS_NOTE}</i>\n\n진우 예약"]
 sv9 = json.loads(json.dumps(seen)); sp_run("2026-10-11 23:36", H.events); assert not sp_sent; seen = sv9  # 23:30 api 행이 시각이 돼도 events()는 안 올림(url·text 없음 -> toss_picks가)  # events()는 api 행을 안 올림(진우 예약만)
 log = sp_run("2026-10-11 23:33")  # ② 예약 시각: 상세로 지금 가격(1,000원 내림)·품절 재확인 -> 채널 + Threads
@@ -1387,25 +1389,41 @@ def sp_down(url, *a, **k):
     if "/openapi/" in url: raise OSError("tunnel down")
     return sp_http(url, *a, **k)
 H.http = sp_down; seen = {}; assert "toss pick list OSError" in sp_run("2026-10-12 00:10") and not sp_sent and seen == {}; H.http = sp_http  # 터널 끊김 -> 예외 없이(Threads 실패 알림 X) 다음 실행에
+seen = {}; sp_fail["net"] = 1; sp_run("2026-10-12 00:10"); assert not seen["pk_2026-10-12 01:00"].get("id") and not sp_sent  # 발급 때 터널 끊김 = 막힌 상품 아님 -> 진우에게 안 물음, 다음 실행에 다시
+sp_run("2026-10-12 00:24"); assert seen["pk_2026-10-12 01:00"]["link"] == "https://toss.shopping/_m/P501"
+seen["tb_501"] = {"t": T("2026-10-12 00:30"), "n": "x"}; sp_run("2026-10-12 01:05"); assert seen["pk_2026-10-12 01:00"]["st"] == "skip" and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]  # 오늘 이미 나간 상품(특가 회차 등) -> 같은 날 두 번 X
+seen = {"pk_2026-10-12 01:00": {"t": T("2026-10-12 00:00"), "ids": [501], "n0": "옛 이름", "id": 501, "n": "x", "link": "L"}}; sp_run("2026-10-12 00:10")
+assert seen["pk_2026-10-12 01:00"]["n0"] == "에이지랩 달팽이 뮤신 올인원 크림 50g 3개 + 선크림 증정" and seen["pk_2026-10-12 01:00"]["link"] == "https://toss.shopping/_m/P501"  # 같은 시각 행 이름이 바뀌면 처음부터
+json.dump([{"at": "2026-10-12 01:00", "name": "에이지랩 달팽이 뮤신 올인원 크림 50g 3개 + 선크림 증정", "api": True, "url": "https://toss.shopping/_m/Jin", "button": "🛒 구매", "text": "진우 글"}], open(H.EVENTS, "w"))
+seen = {}; sp_run("2026-10-12 01:05"); assert not sp_calls and not sp_sent  # api 표시가 남아 있어도 url이 있으면 진우 예약 -> toss_picks는 안 건드림
+sp_run("2026-10-12 01:05", H.events); assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for m, p in sp_sent] == ["https://toss.shopping/_m/Jin"]  # events()가 진우 링크로
 json.dump([{"at": "2026-10-12 01:00", "name": "에이지랩 달팽이 뮤신 올인원 크림 50g 3개 + 선크림 증정", "url": "https://toss.shopping/_m/Jin", "button": "🛒", "text": "진우", "name2": 1}], open(H.EVENTS, "w"))
 seen = {}; sp_run("2026-10-12 00:10"); assert not sp_calls and not sp_sent  # 진우 링크로 바꾼 행(api 없음) -> toss_picks는 아무것도 안 함
 H.HAS_TOSS = False; json.dump([{"at": "2026-10-12 01:00", "name": "x", "api": True}], open(H.EVENTS, "w")); sp_run("2026-10-12 00:10"); assert not sp_calls; H.HAS_TOSS = True
 # ② 특가 회차: 8시(3시간 안)·22시, 할인 40%↑·리뷰 50개↑·3일 안 X·오늘 이름 예약 X -> 상세 재확인 -> Claude 7점↑ 중 점수 × 가격 높은 순 3개
 json.dump([{"at": "2026-10-12 12:30", "name": "샴푸(진우가 쓴 다른 이름)", "api": True}], open(H.EVENTS, "w"))  # 오늘 이름 예약으로 찾은 상품 = 이름이 달라도 id로 자동 회차에서 뺌
+sp_det[510] = {"discountRate": 5}  # 1일 된 목록엔 65%였지만 지금은 하루특가가 끝나 5% -> 상세 값으로 다시 거름
 seen = {"tb_508": {"t": T("2026-10-12 07:00"), "n": "x"}, "pk_2026-10-12 12:30": {"t": T("2026-10-12 07:00"), "id": 506, "n": "특가 중간 상품 샴푸"}}; log = sp_run("2026-10-12 08:05", lambda s: H.toss_deals(s, "special"))
 det = [c for c in sp_calls if c.startswith("/products/detail")]
-assert len(det) == 1 and set(det[0].split("=")[1].split(",")) == {"501", "502", "503", "506"}, det  # 리뷰 적은 것·할인 적은 것·3일 안에 올린 것(508) X(이름 예약 상품은 상세 뒤 후보에서)
+assert len(det) == 1 and set(det[0].split("=")[1].split(",")) == {"501", "502", "503", "506", "510"}, det  # 리뷰 적은 것·할인 적은 것·3일 안에 올린 것(508) X(이름 예약 상품은 상세 뒤 후보에서)
 (m, p), = [(m, p) for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 assert p["text"].startswith(f"<i>{H.TOSS_NOTE}</i>\n\n🔥 <b>토스 특가 중 살 만한 2개</b>") and "샴푸" not in p["text"] and "toss_special 3 items 2 picks 2 links" in log, log
 assert p["text"].index("전기요") < p["text"].index("휴지")  # 7점 × 89,000원 > 9점 × 9,900원(개당 수익 = 가격 × 8%)
+assert "휴지</b></a>\n⏰ 토스 하루특가 · 밤 12시까지\n💰" in p["text"] and "전기요</b></a>\n💰" in p["text"]  # 오늘 하루특가 상품만 '밤 12시까지'
+assert "끝난 상품" not in str(sp_ai) and not [a for a, l in sp_ai if H.TOSS_EASE in a]  # 끝난 하루특가 X · 쿠팡 언급 있는 TOSS_EASE X(진우 '쿠팡 안 씀')
 w = next(v for k, v in seen.items() if k.startswith("sold_") and v["k"] == "top")
 assert [x[0] for x in w["it"]] == [502, 503] and [x[3] for x in w["it"]] == [0, 1] and "tossspecial_20261012_8" in seen  # 하루특가 목록에 있는 휴지만 품절 땐 '밤 12시 재오픈'
 assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n🔥 토스 특가 중 살 만한 2개") and "샴푸" not in str(sp_ai)  # Threads도, 이름 예약 상품은 Claude 후보에도 없음
 seen = {}; assert not sp_run("2026-10-12 11:05", lambda s: H.toss_deals(s, "special")) and not sp_calls  # 8시 회차는 3시간 안에만(놓치면 낮에 몰아 안 올림)
 seen = {"bundles": {"t": T("2026-10-12 22:01"), "ts": [T("2026-10-12 22:01")]}}; assert "toss_special 미룸" in sp_run("2026-10-12 22:05", lambda s: H.toss_deals(s, "special")) and not sp_calls
-seen = {"tb_501": 1, "tb_502": 1, "tb_503": 1, "tb_506": 1, "tb_508": 1}; sp_run("2026-10-12 22:20", lambda s: H.toss_deals(s, "special")); assert "tossspecial_20261012_22" in seen and not sp_sent and not [c for c in sp_calls if "detail" in c]  # 후보 0 -> 회차 끝
+seen = {"tb_501": 1, "tb_502": 1, "tb_503": 1, "tb_506": 1, "tb_508": 1, "tb_510": 1}; sp_run("2026-10-12 22:20", lambda s: H.toss_deals(s, "special")); assert "tossspecial_20261012_22" in seen and not sp_sent and not [c for c in sp_calls if "detail" in c]  # 후보 0 -> 회차 끝
+seen = {"tossget_cat": {"t": T("2026-10-12 10:00"), "d": "20261012"}, "tosscache": {"t": 0, "items": [[1, "옛 목록", 100, T("2026-10-12 10:00")]]}}; time.time = lambda: T("2026-10-12 10:30"); sp_calls.clear(); H.toss_pool(seen)
+assert "/categories" in sp_calls and seen["tossget_cat"]["v"] == 2 and [x for x in seen["tosscache"]["items"] if x[0] == 503][0][4:] == [70, 4.7, 900]  # 예전(할인율·리뷰 없는) 목록이면 1번 다시 받음
+sp_calls.clear(); H.toss_pool(seen); assert "/categories" not in sp_calls  # 그다음부터는 하루 1번 그대로
 ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12 10:00"); H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림", "화이트벨라 마이크로 니들 패치"])
-assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1; H.PICK_SCAN = ps9  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
+assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
+assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
+time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
 assert 'lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")

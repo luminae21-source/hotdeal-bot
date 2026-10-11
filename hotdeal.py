@@ -766,7 +766,7 @@ def events(seen):
     kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + h * 3600))
     for ev in load(EVENTS, []):
         key = "ev_" + ev["at"]
-        if key in seen or ev.get("api") or not (kst(9 - 6) <= ev["at"] <= kst(9)):  # api = 토스 API 상품 이름 예약 -> toss_picks가 찾아서 올림
+        if key in seen or (ev.get("api") and not ev.get("url")) or not (kst(9 - 6) <= ev["at"] <= kst(9)):  # api(링크 없음) = 토스 API 상품 이름 예약 -> toss_picks가 찾아서 올림
             continue
         note = aff_note(ev["url"])
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
@@ -854,14 +854,15 @@ def toss_deals(seen, best=False):
     elif special:  # API엔 '특가' 탭·개당 수익·30일 최저가가 없음(10/11 문서 확인) -> 1일 목록(하루특가·베스트·카테고리 베스트) 중 할인 SPECIAL_DR%↑·리뷰 SPECIAL_RC개↑,
         cand = [x for x in toss_pool(seen) if len(x) > 6 and (x[4] or 0) >= SPECIAL_DR and (x[6] or 0) >= SPECIAL_RC and f"tb_{x[0]}" not in seen]  # 할인율 높은 순 30개를 상세로 지금 가격·품절 다시 확인
         ids = [x[0] for x in sorted(cand, key=lambda x: -x[4])[:30]]
-        raw = toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if ids else []
+        raw = [x for x in (toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if ids else [])
+               if (x.get("discountRate") or 0) >= SPECIAL_DR and (x.get("reviewCount") or 0) >= SPECIAL_RC]  # 지금 값으로 다시 거름(1일 된 목록의 끝난 하루특가 할인 X)
     else:
         raw = toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"]
     booked = {re.sub(r"\W", "", e["name"]) for e in load(EVENTS, []) if e.get("name") and e["at"][:10] == time.strftime("%Y-%m-%d", kst)}  # 진우 링크로 오늘 예약한 토스 상품은 자동 글에서 뺌(같은 상품 두 번 방지, 10/11)
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + time.strftime("%Y-%m-%d", kst)) and isinstance(v, dict)}  # 오늘 이름 예약(toss_picks)으로 찾은 상품도(이름이 달라도 id로)
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen
                   and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked}.values())  # 카테고리 겹친 상품은 1번만
-    picks = items and ai_pick(SPECIAL_PROMPT + TOSS_EASE if special else BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE,
+    picks = items and ai_pick(SPECIAL_PROMPT if special else BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])[:5 if special or not best else 3]
     if special and picks:  # 진우 '개당 수익 × Claude 점수': 수수료가 일괄 8%(10/1~, 쉐어링크 공지)라 개당 수익 = 가격 × 8% -> 7점↑ 중 점수 × 가격 높은 순 3개
@@ -879,7 +880,7 @@ def toss_deals(seen, best=False):
         seen[f"tb_{x['tacaItemId']}"] = {"t": time.time(), "n": x["displayName"]}  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침). 이름 = 커뮤니티 딜 판단 때 '이미 올린 딜'로
         got.append(x)
         plain.append(f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
-        rows.append((x["displayName"], link, [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
+        rows.append((x["displayName"], link, (["⏰ 토스 하루특가 · 밤 12시까지"] if x["tacaItemId"] in night else []) + [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
                                              + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if x.get("reviewCount") else ""), "👉 " + esc(p["comment"])]))
     print("toss_special" if special else "toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
     if raw or special:  # 목록을 받았으면(Claude까지 돌렸으면, 특가는 후보 0개여도) 이번 회차는 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
@@ -962,7 +963,7 @@ def toss_pool(seen):
     카테고리·하루특가 = UTC 날짜로 하루 1번(9시 갱신), 베스트 = 1시간 1번. 같은 실행에서 두 번 불러도 API는 1번(일 상한 아끼기)."""
     now = time.time()
     day, hour, got = time.strftime("%Y%m%d", time.gmtime(now)), time.strftime("%Y%m%d%H", time.gmtime(now)), []  # 9시(KST) = 0시(UTC) 갱신 -> UTC 날짜로 하루 1번
-    if seen.get("tossget_cat", {}).get("d") != day:
+    if seen.get("tossget_cat", {}).get("d") != day or seen["tossget_cat"].get("v") != 2:  # v2(10/11) = 할인율·리뷰도 저장 -> 예전 목록이면 1번 다시
         tree = toss("/categories")["categories"]
         got += toss("/products/today-deals?size=30")["items"] + [x for c in tree for x in toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]]
         for c in [k for c in tree if c["displayName"] == "식품" for k in c.get("children") or []][:15]:  # 10/10: 뽐뿌 [토스] 딜은 거의 식품인데 최상위 베스트엔 없던 것(청도반시·삼겹살 5kg·모짜렐라 치즈떡) -> 식품 하위 베스트도(최대 1,500개, 일 상한 10,000 안)
@@ -970,7 +971,7 @@ def toss_pool(seen):
                 got += toss(f"/products/best-categories/{c['categoryId']}?size=100")["items"]
             except Exception as e:  # 하위 카테고리 베스트가 안 되는 ID면 그것만 건너뜀
                 print("toss sub", c.get("displayName"), repr(e))
-        seen["tossget_cat"] = {"t": now, "d": day}
+        seen["tossget_cat"] = {"t": now, "d": day, "v": 2}
     if seen.get("tossget_best", {}).get("h") != hour:
         got += toss("/products/best-selling?size=100")["items"]
         seen["tossget_best"] = {"t": now, "h": hour}
@@ -1040,9 +1041,10 @@ def toss_relink(seen):
 
 def pick_scan(seen, names):
     """이름 예약 상품이 1일 목록에 없을 때: Claude가 이름에 맞는 하위 카테고리(2·3단계)를 고르고(카테고리 트리는 일 상한 차감 없음, 새 이름이 생기면 그 이름만 더 물음),
-    그 하위 카테고리 베스트 100을 실행마다 3개씩, 하루(UTC) PICK_SCAN개까지 더 받아 1일 목록(tosscache)에 넣음. 고른 걸 다 봤으면 True."""
+    그 하위 카테고리 베스트 100을 실행마다 3개씩, 하루(KST — 밤 12시에 새로) PICK_SCAN개까지 더 받아 1일 목록(tosscache)에 넣음.
+    이 이름들의 하위 카테고리를 다 봤으면 True(하루 상한에 걸려 못 고른 이름이 있으면 False -> 진우에게 묻지 않고 다음 날 상한·예약 90분 전까지 기다림)."""
     now = time.time()
-    day = time.strftime("%Y%m%d", time.gmtime(now))
+    day = time.strftime("%Y%m%d", time.gmtime(now + 9 * 3600))
     sc = seen.get("pickscan") if seen.get("pickscan", {}).get("d") == day else None
     sc = seen["pickscan"] = sc or {"t": now, "d": day, "plan": [], "done": [], "names": []}
     new = [n for n in names if n not in sc["names"]]
@@ -1053,7 +1055,7 @@ def pick_scan(seen, names):
         subs += [(g["categoryId"], f"{c['displayName']} > {k['displayName']} > {g['displayName']}") for c in tree for k in c.get("children") or [] for g in k.get("children") or []]
         picks = subs and ai_pick(SCAN_PROMPT.format("\n".join(new)), [n for _, n in subs]) or []
         sc["plan"] += [c for c in dict.fromkeys(subs[p["i"]][0] for p in picks) if c not in sc["plan"]][:PICK_SCAN - len(sc["plan"])]
-        sc["names"] += new
+        sc["names"] += new  # (상한이 남아 있을 때만 — 다 찼으면 이 이름들은 안 넣어서 아래가 False)
     got = []
     for cid in [c for c in sc["plan"] if c not in sc["done"]][:3]:
         sc["done"].append(cid)
@@ -1066,7 +1068,7 @@ def pick_scan(seen, names):
         cache.update({x["tacaItemId"]: [x["tacaItemId"], x["displayName"], x["displayPrice"], now, x.get("discountRate"), x.get("reviewScore"), x.get("reviewCount")] for x in got})
         seen["tosscache"] = {"t": now, "items": list(cache.values())}
     sc["t"] = now
-    return len(sc["done"]) >= len(sc["plan"])
+    return all(n in sc["names"] for n in names) and len(sc["done"]) >= len(sc["plan"])
 
 
 def toss_picks(seen):
@@ -1082,13 +1084,16 @@ def toss_picks(seen):
     kst = time.gmtime(now + 9 * 3600)
     nowk, today = time.strftime("%Y-%m-%d %H:%M", kst), time.strftime("%Y-%m-%d", kst)
     at = lambda d: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 + d))
-    todo = [e for e in load(EVENTS, []) if e.get("api") and e.get("name") and at(-PICK_LATE) <= e["at"] <= at(PICK_AHEAD)
+    todo = [e for e in load(EVENTS, []) if e.get("api") and not e.get("url") and e.get("name") and at(-PICK_LATE) <= e["at"] <= at(PICK_AHEAD)
             and seen.get("pk_" + e["at"], {}).get("st") not in ("done", "skip")]
     if not todo:
         return
+    for e in todo:  # 같은 시각 행의 상품명이 바뀌었으면(옛 대화가 고침) 처음부터
+        if seen.get("pk_" + e["at"], {}).get("n0", e["name"]) != e["name"]:
+            del seen["pk_" + e["at"]]
     toks = lambda s: {t for t in re.findall(r"[0-9a-z.]+[가-힣a-z]*|[가-힣]+", s.lower()) if len(t) > 1}
     ns = lambda s: re.sub(r"\s+", "", s.lower())
-    need = [e for e in todo if not seen.get("pk_" + e["at"], {}).get("id")]
+    need = [e for e in todo if not seen.get("pk_" + e["at"], {}).get("id") and not seen.get("pk_" + e["at"], {}).get("asked")]  # 진우에게 링크를 요청했으면 그만 찾음(나중에 찾아 올리면 진우 링크와 두 번)
     if need:
         try:  # 터널 끊김 등 -> 이번 실행은 찾기만 건너뜀(Threads 실패 알림 아님), 예약 시각 게시는 아래에서 그대로
             items = toss_pool(seen)
@@ -1117,16 +1122,20 @@ def toss_picks(seen):
             if hit:
                 try:
                     link = toss("/links", {"tacaItemId": hit[0], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
-                except Exception as ex:  # 발급 제한 상품
+                except RuntimeError as ex:  # resultType FAIL = 발급 제한 상품 -> 진우에게
                     print("toss link", repr(ex))
                     link = None
+                except Exception as ex:  # 터널·네트워크 -> 이 후보 다시(다음 실행), 이번엔 진우에게 안 물음
+                    print("toss link", repr(ex))
+                    r["ids"], r["net"] = [i for i in r["ids"] if i != hit[0]] or ["-"], now
+                    continue
                 r.update(id=hit[0], n=hit[1], link=link, t=now)
                 print("toss pick", e["at"], clip(e["name"], 30), "->", clip(hit[1], 30), f"{hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점)", "| 링크" if link else "| 발급 실패")
             else:
                 print("toss pick", e["at"], clip(e["name"], 30), "-> 없음", f"| 후보 {len(cand)}/{len(items)}" + (" · 하위 카테고리까지 봄" if scanned else ""))
     for e in todo:  # 못 찾음·발급 실패 -> 진우에게 1번(하위 카테고리까지 다 봤거나 예약 90분 전)
         r = seen.get("pk_" + e["at"])
-        if r and not r.get("link") and not r.get("asked") and (r.get("id") or (need and scanned) or e["at"] <= at(PICK_ASK)):
+        if r and not r.get("link") and not r.get("asked") and r.get("net") != now and (r.get("id") or (need and scanned) or e["at"] <= at(PICK_ASK)):
             r["asked"] = 1
             tg("sendMessage", chat_id=ADMIN, text=f"🔎 토스 이름 예약 {e['at']} '{e['name']}' — " + ("쉐어링크 발급이 막힌 상품이야" if r.get("id") else "토스 API 목록에서 못 찾았어")
                + " → 이 상품 쉐어링크 공유 문구를 Claude 대화에 주면 그 시각 진우 예약으로 바꿀게(안 주면 이 상품만 안 올라감)")
@@ -1134,6 +1143,10 @@ def toss_picks(seen):
     for e in todo:  # ② 예약 시각
         r = seen.get("pk_" + e["at"])
         if e["at"] > nowk or not r or not r.get("link"):
+            continue
+        if seen.get(f"tb_{r['id']}", {}).get("t", 0) >= now - (kst.tm_hour * 3600 + kst.tm_min * 60 + kst.tm_sec):  # 오늘 이미 나간 상품(특가 회차·다른 이름 예약) -> 같은 날 두 번 X
+            r["st"] = "skip"
+            print("toss pick", e["at"], clip(r["n"], 30), "오늘 이미 올린 상품 -> 안 올림")
             continue
         try:
             d = toss(f"/products/detail?tacaItemIds={r['id']}")
