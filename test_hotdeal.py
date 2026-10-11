@@ -2032,7 +2032,7 @@ big = [{"t": "2026-10-06 10:00", "text": f"🔥 [G마켓] 아주 긴 상품 이�
 sent.clear(); H.digest({}, big); db = [p["text"] for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"][0]; H.draft = d0
 vis = H.html.unescape(re.sub(r"<[^>]+>", "", db)); kept = db.count('<a href="https://a/')
 assert len(vis) <= 4000 and 1 < kept < 80 and f"… 외 {80 - kept}개는 사이트에서" in db and db.endswith("https://t.me/hotdeal_pick")  # 딜이 아주 많은 날: 4096자 안으로, 뒤쪽은 '외 N개'
-assert f'href="{H.SITE}p/0.html">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
+assert f'href="{H.SITE}p/0.html?ref=tg">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
 bt = H.blog_text(oyp, time.gmtime(1791291600 + 9 * 3600))
 assert bt.split("\n\n")[2] == H.OY_NOTE and "👉 https://oy.run/x" in bt  # 블로그: 올영 문구 본문 맨 위(코멘트 있는 글이라 링크 그대로)
 open("posts.json", "w").write(pj); H.tg, time.time = tg0, tt5
@@ -2058,14 +2058,14 @@ H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
 from urllib.parse import parse_qs, urlsplit
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
 assert [m for m, _ in calls] == ["GET", "HEAD", "POST", "POST", "HEAD", "POST", "POST", "HEAD"]  # 4번 페이지 404 -> 멈춤
-assert [q["link_attachment"][0] for q in made] == ["https://hotdealpick.kr/p/2.html", "https://hotdealpick.kr/p/3.html"]
+assert [q["link_attachment"][0] for q in made] == ["https://hotdealpick.kr/p/2.html?ref=th", "https://hotdealpick.kr/p/3.html?ref=th"]
 t2, t3 = made[0]["text"][0], made[1]["text"][0]
-assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://hotdealpick.kr/p/2.html") and "출처" not in t2
+assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://hotdealpick.kr/p/2.html?ref=th") and "출처" not in t2
 assert t3.startswith("🔥 [카카오] 고구마 3kg\n\n맛있음") and "이 포스팅은" not in t3 and t3.endswith("t.me/hotdeal_pick") and all("🙋 팔로우하면" in t for t in (t2, t3))
 assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and max(len(t2.encode()), len(t3.encode())) < 500
 assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, False, True, True, False, False]
 live_pages, calls[:] = {2, 3, 4, 5}, []; H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
-assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-8:] for m, u in calls if "/777/threads?" in u] == ["p/4.html"]  # 🛒(약한 딜) 5번은 Threads 개별 글 X(10/11 진우: 리스트에만)
+assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-15:-7] for m, u in calls if "/777/threads?" in u] == ["p/4.html"]  # 🛒(약한 딜) 5번은 Threads 개별 글 X(10/11 진우: 리스트에만)
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
 # 9-2b) Threads가 링크 미리보기를 못 만들면(Invalid Link Attachment·4279047, 10/7 15:51 버거킹 딜): 링크 첨부 없이 1번 더(본문 주소 그대로), 다른 오류는 그대로 예외
 import urllib.error
@@ -2079,7 +2079,7 @@ sl2, H.time.sleep, live_pages = H.time.sleep, lambda s: None, {0}
 json.dump([{"t": kt(0), "text": "🔥 [11번가] 버거킹\n\n싸요\n\n출처: 뽐뿌", "url": "https://w"}], open("posts.json", "w"))
 H.http, calls[:] = pub_fail('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', True), []; H.threads_deals({})
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert [q.get("link_attachment") for q in made] == [["https://hotdealpick.kr/p/0.html"], None] and "👉 https://hotdealpick.kr/p/0.html" in made[1]["text"][0]
+assert [q.get("link_attachment") for q in made] == [["https://hotdealpick.kr/p/0.html?ref=th"], None] and "👉 https://hotdealpick.kr/p/0.html?ref=th" in made[1]["text"][0]
 assert sum("/threads_publish?" in u for m, u in calls) == 1  # 두 번째(첨부 없음)는 발행됨
 json.dump([{"t": kt(0), "text": "🔥 [G마켓] 우유\n\n좋음", "url": "https://x"}], open("posts.json", "w")); H.http, calls[:] = pub_fail('{"error": {"message": "expired"}}', False), []
 try:
@@ -2355,6 +2355,14 @@ tt8 = time.time; H.AD_FIRST = "2026-10-12"
 time.time = lambda: TK("2026-10-11 23:59"); assert not H.ad_on() and H.ad_head(H.TOSS_NOTE, "x").startswith("<i>")
 time.time = lambda: TK("2026-10-12 00:00"); assert H.ad_on() and H.ad_head(H.TOSS_NOTE, "🔥 [토스] a (1원)").startswith("[광고]")  # 10/12 0시(KST)부터 저절로
 time.time = tt8; H.AD_FIRST = ""
+# 9-10) 측정(10/11 진우 결정 — 집중 모드 2번): GoatCounter 코드가 있을 때만 모든 페이지에 스크립트 + 구매 링크(nofollow) 클릭 = 이벤트 'buy/몰 주소',
+#       채널 구분 = 글 속 사이트 링크에 ?ref=th(Threads)·tg(텔레그램)·blog(블로그) — 인스타는 프로필 링크(진우가 ?ref=ig로)
+assert S.GC_CODE == "" and S.gc_tag() == "" and "goatcounter" not in S.page("t", "<p>b</p>")  # 코드 전엔 없음(진우 가입 뒤 코드 한 줄)
+S.GC_CODE = "hdp"; pg = S.page("t", "<p>b</p>")
+assert '<script data-goatcounter="https://hdp.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>' in pg and "path:'buy/'+h" in pg and "event:true" in pg and pg.index("goatcounter") < pg.index("</head>")
+S.GC_CODE = ""
+src10 = inspect.getsource(H)
+assert 'f"{SITE}p/{i}.html?ref=th"' in src10 and '👉 {SITE}p/{posts.index(p)}.html?ref=th"' in src10 and "지난 딜 전체 보기: {SITE}?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

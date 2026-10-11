@@ -1081,7 +1081,7 @@ def top_deals(seen):
         return
     posts = load(POSTS, [])  # Threads 12·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 사이트 딜 페이지(구매 버튼), 500자
     head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in top if aff_note(p["url"])))
-    lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {SITE}p/{posts.index(p)}.html" for n, p in enumerate(top)]
+    lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {SITE}p/{posts.index(p)}.html?ref=th" for n, p in enumerate(top)]
     while True:
         th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines) + "\n\n📲 실시간 알림 t.me/hotdeal_pick"
         if len(th) <= 480 or len(lines) <= 3:
@@ -1592,10 +1592,10 @@ def digest(seen, posts):
         return
     if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
         return
-    urls = [f"{SITE}p/{posts.index(p)}.html" if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
+    urls = [f"{SITE}p/{posts.index(p)}.html?ref=tg" if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
     rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
-    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
+    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}?ref=tg\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
     if 0 < len(night) < PREVIEW_MIN:
         tail = "\n\n🌙 <b>오늘 밤 예약 특가</b>\n" + "\n".join(night_line(d) for d in night) + tail
@@ -1785,7 +1785,7 @@ def blog_text(todays, kst):
         items.append(f"{n}. {t}\n{why}\n👉 {p['url'] or SITE}")
     notes = "\n".join(n for n in dict.fromkeys(aff_note(p["url"] or "") for p in todays) if n in (OY_NOTE, NAVER_NOTE))  # 본문 맨 위 필수인 프로그램
     return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + (notes + "\n\n" if notes else "") + "\n\n".join(items)
-            + f"\n\n더 많은 핫딜 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
+            + f"\n\n더 많은 핫딜 👉 {SITE}?ref=blog\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
             + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
 
@@ -2008,7 +2008,7 @@ def threads(seen):
         return
     while True:  # 대가성 문구는 맨 앞 그대로, 길면 번호 줄을 줄임(Threads 500자)
         text = (cap.split("\n\n")[0] + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
-                + f"\n\n전체 딜·구매 링크 👉 {SITE}\n실시간 알림 👉 https://t.me/hotdeal_pick")
+                + f"\n\n전체 딜·구매 링크 👉 {SITE}?ref=th\n실시간 알림 👉 https://t.me/hotdeal_pick")
         if len(text) <= 480 or len(rows) <= 1:
             break
         rows = rows[:-1]
@@ -2058,7 +2058,7 @@ def threads_deals(seen):
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     for i in todo:
-        url = f"{SITE}p/{i}.html"
+        url = f"{SITE}p/{i}.html?ref=th"  # ?ref = GoatCounter 출처(채널 구분, 10/11 진우 결정 '측정')
         try:
             http(url, method="HEAD")
         except Exception:

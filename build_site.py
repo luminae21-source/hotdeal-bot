@@ -3,6 +3,15 @@
 import calendar, html, json, os, re, time, urllib.parse
 
 BASE = "https://hotdealpick.kr/"
+GC_CODE = ""  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 진우가 goatcounter.com 가입 때 정한 코드, 예: hotdealpick). 비어 있으면 측정 X
+GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소
+         "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href).hostname}catch(x){return}"
+         "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});")
+
+
+def gc_tag():
+    """GoatCounter(무료·쿠키 없음): 방문 + 구매 링크 클릭(이벤트 'buy/몰 주소'). 채널 구분은 글 속 사이트 링크의 ?ref=th·tg·ig(GoatCounter가 출처로 셈)."""
+    return f'<script data-goatcounter="https://{GC_CODE}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script><script>{GC_JS}</script>' if GC_CODE else ""
 CHANNEL = "https://t.me/hotdeal_pick"
 BLOG = "https://blog.naver.com/hotdeal_pick"
 INSTA = "https://www.instagram.com/hotdealpick.kr/"
@@ -75,7 +84,7 @@ def page(title, body, desc="", canonical="", gb=True, note=""):
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
 <meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
-{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style></head><body><main>
+{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style>{gc_tag()}</head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
 <p class="dis">{html.escape(note) + "<br>" if note else ""}{DISCLOSURE}</p>{GB_LINK if gb else ""}{body}
 <a class="tg" href="{CHANNEL}">📲 텔레그램에서 실시간으로 받기</a>
