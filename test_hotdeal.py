@@ -1720,6 +1720,14 @@ assert "image_url=https%3A%2F%2Fhotdealpick.kr%2Fcards%2F" in calls[2][1] and "A
 assert H.clip("코카콜라 190ml 30캔 + 스프라이트 제로 위드 티 350ml 24캔", 34) == "코카콜라 190ml 30캔 + 스프라이트 제로 위드 티…" and H.clip("짧은 제목", 34) == "짧은 제목"  # 단어 중간에서 안 끊김
 assert sent[-1][0] == "sendPhoto" and list(seen)[0].startswith("threads_")
 calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안 올림
+th9 = lambda: urllib.parse.parse_qs(urllib.parse.urlsplit(calls[2][1]).query)["text"][0]
+seen, calls[:] = {}, []; H.threads(seen); assert th9().startswith("일부 링크는 제휴 링크로 수수료를 받을 수 있어요.\n\n📋 ")  # 하루 카드 글도 대가성 문구 맨 앞(카드 캡션과 같게)
+pj8, oj8 = open("posts.json").read(), f"docs/cards/{today}.json"; os.path.exists(oj8) and os.rename(oj8, "oj8.json")  # 21시 이후면 모아보기 절이 만든 순서 파일 -> 잠깐 치움
+json.dump([{"t": f"{today} 1{n}:00", "text": f"🔥 [{m}] 아주 긴 상품 이름 {n}번 대용량 기획 세트 묶음 구성 (9,900원/무료)", "url": u, "s": 8} for n, (m, u) in enumerate(
+    [("네이버", "https://naver.me/a"), ("올리브영", "https://oy.run/b"), ("쿠팡", "https://link.coupang.com/a/c"), ("토스", "https://toss.shopping/_m/d"), ("G마켓", "https://click.linkprice.com/x")])], open("posts.json", "w"), ensure_ascii=False)
+seen, calls[:] = {}, []; H.threads(seen); t8 = th9()
+assert len(t8) <= 480 and t8.startswith(H.NAVER_NOTE + "\n" + H.OY_NOTE + "\n" + H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n" + H.AFF_NOTE + "\n\n📋 ") and t8.endswith("https://t.me/hotdeal_pick") and 1 <= t8.count("번 대용량") < 5  # 길면 문구 말고 번호 줄을 줄임
+open("posts.json", "w").write(pj8); seen = {"threads_" + today.replace("-", ""): 1}; os.path.exists("oj8.json") and os.rename("oj8.json", oj8)
 del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []
 H.threads(seen)  # 토큰 없으면: 사진만 보내고 Threads 호출 없음
 assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "Threads" not in sent[-1][1]["caption"] and list(seen)[0].startswith("threads_")
@@ -1796,7 +1804,7 @@ try:
     at9("22:14", H.ig_publish); raise AssertionError("스팸 의심 오류는 예외(main이 알림)")
 except urllib.error.HTTPError:
     pass
-assert seen["ig_hold"] > TK(f"{D9} 22:14") + 86000; at9("22:28"); assert not ig9  # 24시간 인스타 쉼(카드 만들기·올리기 X)
+assert seen["ig_hold"] > TK(f"{D9} 22:14") + 86000 and "igc_B" not in seen; at9("22:28"); assert not ig9  # 24시간 인스타 쉼(카드 만들기·올리기 X), 그 컨테이너는 버림
 sv9 = seen; seen = {"ig_hold": TK(f"{D9} 22:14") + 86400}; os.rename(f"docs/cards/{D9}_12.jpg", "h9.jpg"); at9("12:05"); assert not ig9 and not os.path.exists(f"docs/cards/{D9}_12.jpg"); os.rename("h9.jpg", f"docs/cards/{D9}_12.jpg"); seen = sv9  # 쉬는 동안엔 시간대 카드도 안 만듦
 assert S9.card_order(json.load(open("posts.json")), f"{D9}_15") == [] and len(S9.card_order(json.load(open("posts.json")), "2026-10-11")) == 1  # 순서 파일 없는 시간대 카드 = 번호 없음(하루 카드는 그날 딜 순서)
 st9.pop("spam"); del seen["ig_hold"]
@@ -1836,6 +1844,8 @@ at9("13:22"); assert not ig9 and not json.load(open(H.IG_LIVE))  # 3번 실패 -
 st9.pop("mk500"); seen = {"igs_" + D9 + "_12": {"t": 1, "fail": 1}}; at9("13:36")
 assert len([1 for m, u, b in ig9 if m == "POST"]) == 1 and seen["igs_" + D9 + "_12"] == {"t": TK(f"{D9} 13:36")} and list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"]  # 다시 해서 성공 = 회차 끝
 # 사이트 맨 위 카드 = 가장 최근 카드부터 24시간 안(다음 날 낮 12시 카드가 올라가도 어제 저녁·밤 카드는 접어서, 딱 24시간 된 어제 낮 12시는 빠짐)
+H.ig_live("2026-10-13_12", TK(f"{D9} 23:00")); assert json.load(open(H.IG_LIVE)) == {f"{D9}_12": TK(f"{D9} 13:36"), "2026-10-13_12": TK(f"{D9} 23:00")}  # 기록 = 만든 시각
+json.dump({"2026-10-01": TK(f"{D9} 23:00") - 8 * 86400, f"{D9}_12": 1}, open(H.IG_LIVE, "w")); H.ig_live(f"{D9}_18", TK(f"{D9} 23:00")); assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_18"]  # 7일 지난 기록 정리
 json.dump({f"{D9}_12": 1, f"{D9}_18": 1, "2026-10-13_12": 1}, open(H.IG_LIVE, "w"))
 assert S9.card_stems("docs") == [f"{D9}_18", D9, "2026-10-13_12"]
 # 캡션 대가성 문구는 늘 맨 앞: 제휴 링크 없는 카드 = 일반 안내 1줄, 토스·쿠팡 딜 = 올린 뒤 제휴 링크로 바뀔 수 있어서(toss_relink·진우 파트너스 링크) 그 문구 미리

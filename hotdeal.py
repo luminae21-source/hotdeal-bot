@@ -1551,7 +1551,7 @@ def ig_live(stem, now):
     """IG_LIVE에 카드 기록(7일치). 컨테이너 만든 실행에 기록 -> 같은 실행의 사이트 만들기가 맨 위 카드를 바꿈 -> 다음 실행에 인스타 발행(사이트가 먼저).
     커밋된 기록이라 seen 캐시를 잃어도 같은 카드를 다시 안 올림(ig_cards)."""
     led = {k: t for k, t in load(IG_LIVE, {}).items() if t > now - 7 * 86400}
-    led[stem] = led.get(stem, now)
+    led[stem] = now
     os.makedirs(os.path.dirname(IG_LIVE), exist_ok=True)
     json.dump(led, open(IG_LIVE, "w"), ensure_ascii=False)
 
