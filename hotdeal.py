@@ -130,7 +130,7 @@ OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = False, 22, 1500  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 카드 컨테이너 만들기 실패(인스타 일시 오류)는 회차 안에서 3번까지 다시(안 올라간 컨테이너는 안 보여서 두 번 안 올라감) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#특가", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#살림템", "#쇼핑정보"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만)
-TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
+TOP_HOURS = (12, 15, 18)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
@@ -916,8 +916,7 @@ def preview(seen):
         if len(th) <= 480 or len(lines) <= 1:
             break
         lines = lines[:-1]
-    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    th_text(tok, me, th, full)
+    th_bundle(seen, "preview", th, full)
 
 
 def cp_events(seen, deals=()):
@@ -975,7 +974,7 @@ def toss_deals(seen, best=False):
         (str(hrs[-1]) if best and hrs else f"_{hrs[-1]}" if hrs and hrs[-1] != TOSS_DAY_HOURS[0] else "")  # 9시 키는 예전 그대로
     if not HAS_TOSS or not hrs or key in seen:
         return
-    if busy(seen):  # 10분 안에 다른 묶음 글이 나갔거나 최근 1시간 글이 많음 -> 다음 실행(14분 뒤)에 다시(API도 안 부름)
+    if busy(seen, cap=not (best is True and "best" in TH_TOSS_KINDS and hrs[-1] in TH_LIST_HOURS)):  # 12·18시 Threads 베스트 리스트는 시간당 글 수에 안 막힘(10/12 진우 '묶음 글은 반드시') · 10분 안에 다른 묶음 글이 나갔거나 최근 1시간 글이 많음 -> 다음 실행(14분 뒤)에 다시(API도 안 부름)
         print("toss_special" if special else "toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", "미룸(묶음 글 간격·1시간 글 수)")
         return
     head = "🔥 <b>토스 특가 중 살 만한 {}개</b>" if special else "🏆 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
@@ -1039,17 +1038,15 @@ def toss_deals(seen, best=False):
         while len(plain) > 1 and len(TOSS_NOTE) + len(head) + len("\n\n".join(plain)) > 480:
             plain.pop()
         text = f"{TOSS_NOTE}\n\n{re.sub('<.*?>', '', head).format(len(plain))}\n\n" + "\n\n".join(plain)
-        me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
-        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-        time.sleep(10)
-        json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+        th_bundle(seen, f"toss{hrs[-1]}", text[:500])
     elif rows and tok and beauty and th_day(seen, time.time())["b"] < TH_BEAUTY_MIN and not jw_beauty(seen, time.time()):  # 오늘 화장품 자리가 비었고 진우 화장품 링크가 더 없으면
         k = next((n for n, x in enumerate(got) if th_beauty(x["displayName"]) == 2), 0)  # 이 회차 1개를 Threads 개별 글로(소모품 먼저, 없으면 Claude 1순위) — 10/11 23:50 진우
         bt, (name, link, lines) = max(1, th_beauty(got[k]["displayName"])), rows[k]
         text = th_note(TOSS_NOTE) + f"🔥 {clip(name, 60)}\n" + "\n".join(clip(html.unescape(re.sub(r"<[^>]+>", "", l)), 120) for l in lines) \
             + f"\n\n🛒 {link}\n📲 실시간 알림 t.me/hotdeal_pick"  # 토스 이름 예약 글과 같은 틀(API 상품 = 사이트·쿠팡 비교 X, 링크는 쉐어링크)
-        if th_solo(seen, plain_of(text), beauty=bt, slot=True):
+        if TH_SLOTS:  # 슬롯 방식: 줄에(15시 슬롯·20시 슬롯에 1순위로 골리면 나감)
+            th_queue(seen, text, link, bt)
+        elif th_solo(seen, plain_of(text), beauty=bt, slot=True):
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
             th_text(tok, me, text, link)
@@ -1074,7 +1071,8 @@ def top_deals(seen):
     seen[key] = time.time()
     day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
     since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
-    top = sorted((p for p in load(POSTS, []) if since <= p["t"] < until and p.get("mid") and p.get("pop")), key=lambda p: -p["pop"])[:5]
+    top = sorted((p for p in load(POSTS, []) if since <= p["t"] < until and p.get("mid") and (p.get("pop") or th_tier(p["text"]))),
+                 key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) < 3:
         return
     items = []
@@ -1084,7 +1082,7 @@ def top_deals(seen):
             ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
             "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
-    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n뽐뿌·클리앙 조회수·추천 기준, 채널에 올린 딜 중에서", items)
+    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n쿠팡보다 싼 딜·30일 최저가 먼저, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
               text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb}):
         return
@@ -1100,8 +1098,7 @@ def top_deals(seen):
         if len(th) <= 480 or len(lines) <= 3:
             break
         lines = lines[:-1]
-    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    th_text(tok, me, th, SITE)
+    th_bundle(seen, f"top{hrs[-1]}", th, SITE)
 
 
 def busy(seen, cap=True):
@@ -1344,10 +1341,12 @@ def toss_picks(seen):
                                            "n": r["n"], "p": price, "it": [[r["id"], r["n"], price, night, 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
         print("toss pick", e["at"], clip(r["n"], 30), f"{price:,}원 게시")
         bt = th_beauty(r["n"])
-        if tok and th_solo(seen, plain_of(body), fill=True, beauty=bt, slot=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈, 진우 화장품 이름 예약은 화장품 자리 채움): 대가성 문구 맨 앞, 실패는 main()이 알림
+        text = th_note(TOSS_NOTE) + f"🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
+            + f"\n\n🛒 {r['link']}\n📲 실시간 알림 t.me/hotdeal_pick"
+        if tok and TH_SLOTS:  # 슬롯 방식: 줄에 → 슬롯에 1순위로 골리면 나감
+            th_queue(seen, text, r["link"], bt)
+        elif tok and th_solo(seen, plain_of(body), fill=True, beauty=bt, slot=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈, 진우 화장품 이름 예약은 화장품 자리 채움): 대가성 문구 맨 앞, 실패는 main()이 알림
             th_mark(seen, bt)
-            text = th_note(TOSS_NOTE) + f"🔥 {clip(r['n'], 60)}\n" + html.unescape(re.sub(r"<[^>]+>", "", line)) + (f"\n👉 {clip(p['comment'], 120)}" if p else "") \
-                + f"\n\n🛒 {r['link']}\n📲 실시간 알림 t.me/hotdeal_pick"
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
             th_text(tok, me, text, r["link"])
 
@@ -2072,15 +2071,40 @@ def threads(seen):
         if len(text) <= 480 or len(rows) <= 1:
             break
         rows = rows[:-1]
-    text = text[:480]
+    th_bundle(seen, "card", text[:480], image=url)
+
+
+def th_post(tok, text, link=None, image=None):
+    """Threads 글 1개: image = 사진 글(30초 처리 대기), link = 링크 미리보기(th_text), 둘 다 없으면 글만."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    q = urllib.parse.urlencode({"media_type": "IMAGE", "image_url": url, "text": text, "topic_tag": "핫딜", "access_token": tok})
+    if link and not image:
+        return th_text(tok, me, text, link)
+    q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-    time.sleep(30)  # 미디어 처리 대기 (공식 권장값)
-    json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+    time.sleep(30 if image else 10)  # 미디어 처리 대기 (공식 권장값)
+    return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
 
 
-TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 5, 0, 45 * 60, 1, 1, (12, 18), ("best",)
+def th_bundle(seen, kind, text, link=None, image=None):
+    """묶음 글 Threads(12·18시 리스트·토스 베스트 리스트·21시 카드·22시 미리보기 — 10/12 진우 '묶음 글은 반드시'): 실패하면 다음 실행에 1번 더(th_retry), 예외는 그대로(main 알림)."""
+    try:
+        th_post(E.get("THREADS_TOKEN"), text, link, image)
+    except Exception:
+        seen.setdefault(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, {"t": time.time(), "text": text, "link": link, "img": image})
+        raise
+
+
+def th_retry(seen):
+    """실패한 묶음 글 Threads를 같은 날 다음 실행에 1번만 더."""
+    tok, today = E.get("THREADS_TOKEN"), time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600))
+    for k in [k for k, v in seen.items() if k.startswith("thretry_") and isinstance(v, dict) and not v.get("done")]:
+        seen[k]["done"] = 1
+        if tok and k.startswith(today):
+            th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"))
+
+
+TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), ("best",)  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시
+TH_SLOTS = None  # 개별 글 고정 슬롯(예: (9, 11, 15, 20, 23) — 슬롯 시각 뒤 첫 실행에 대기 중 1순위 1개, 토스 이름 예약·뷰티 회차 글은 줄에서 기다림). 10/12 01:10 진우 요청 -> 01:20 취소('45분 간격 유지') = None
 TH_SOLO_RANK = 3  # 10/11 23:40 진우 '이 방식 유지하면서 경과 보기'(밤 메르헨트 💸 2,000원 글 50분에 조회 20 — 낮 글보다 빠름): 개별 글 기준 못 박음 —
 # ① 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥(💸 훅, 금액 상관없이) 먼저 ② 30일 최저가·순위 1~3위 ③ 🛒·단위가격 참고만은 리스트로(18시 채움 없음 = TH_SOLO_MIN 0)  # 10/11 진우 결정 '나누지 말고 묶기, 꾸준하게'(2주 동결 ~10/25):
 # Threads 개별 글 = 하루 최대 5개·45분 간격·1회 1개·위 ①② 순서로만, 나머지는 리스트로
@@ -2163,10 +2187,10 @@ def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=Fal
     b = r["b"]
     if reopen:
         rn, ra = r.get("rn", 0), r.get("ra", 0)
-        if now - r["last"] < TH_SOLO_GAP or rn + ra >= TH_REOPEN_DAY or (rn >= TH_REOPEN_NIGHT if reopen == "night" else ra >= TH_REOPEN_MORN):
+        if now - r["last"] < (TH_SOLO_GAP if TH_SLOTS is None else TH_REOPEN_GAP) or rn + ra >= TH_REOPEN_DAY or (rn >= TH_REOPEN_NIGHT if reopen == "night" else ra >= TH_REOPEN_MORN):
             return False
         return gate or ("특가로는 약한 제품" not in plain and th_strong(plain))
-    if r["n"] >= TH_SOLO_MAX or now - r["last"] < TH_SOLO_GAP or "특가로는 약한 제품" in plain:
+    if r["n"] >= TH_SOLO_MAX or "특가로는 약한 제품" in plain or (now - r["last"] < TH_SOLO_GAP if TH_SLOTS is None else th_slot(r, now) is None):
         return False
     if beauty:
         if b >= TH_BEAUTY_MAX:
@@ -2184,7 +2208,20 @@ def th_mark(seen, beauty=0, reopen=None):
     if reopen:  # 재오픈은 따로 셈(rn 밤 / ra 아침), 45분 간격(last)은 같이
         seen[k] = {**seen.get(k, {"n": 0}), "t": now, "b": r["b"], "rn": r.get("rn", 0) + (reopen == "night"), "ra": r.get("ra", 0) + (reopen == "am"), "last": now}
         return
-    seen[k] = {**seen.get(k, {}), "t": now, "n": r["n"] + 1, "b": r["b"] + bool(beauty), "last": now}
+    h = time.gmtime(now + 9 * 3600).tm_hour
+    seen[k] = {**seen.get(k, {}), "t": now, "n": r["n"] + 1, "b": r["b"] + bool(beauty), "last": now, **({"slots": r.get("slots", []) + ([h] if h in TH_SLOTS else [])} if TH_SLOTS else {})}
+
+
+def th_slot(r, now):
+    """지금 열린 개별 글 슬롯(TH_SLOTS 시각부터 1시간 안, 오늘 아직 안 씀) — 없으면 None."""
+    h = time.gmtime(now + 9 * 3600).tm_hour
+    return h if TH_SLOTS and h in TH_SLOTS and h not in r.get("slots", []) else None
+
+
+def th_queue(seen, text, link, bt):
+    """슬롯 방식에서 토스 이름 예약·15·19시 뷰티 회차 개별 글은 바로 안 올리고 줄에 — threads_deals가 슬롯에 채널 딜과 같이 1순위를 고름(3시간 지나면 버림)."""
+    now = time.time()
+    seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt}]}
 
 
 def threads_deals(seen):
@@ -2193,14 +2230,23 @@ def threads_deals(seen):
     tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
     fresh = [i for i, p in enumerate(posts) if not p.get("th") and p["t"] >= since and not p["text"].startswith("📋")]
-    bt, need = {i: th_beauty(title_of(posts[i]["text"])) for i in fresh}, th_day(seen, time.time())["b"] < TH_BEAUTY_MIN
-    strong = sorted((i for i in fresh if th_solo(seen, posts[i]["text"], beauty=bt[i], slot=bool(posts[i].get("own")))),  # 진우 화장품 링크는 화장품 자리 채움
-                    key=lambda i: (not (need and bt[i]), th_tier(posts[i]["text"]) or 3, not (need and bt[i] == 2)))  # 화장품 자리 먼저(소모품 먼저) · ① 같은 상품 쿠팡 차이 · ② · 먼저 올라온 것
+    bt = {i: th_beauty(title_of(posts[i]["text"])) for i in fresh}
+    now = time.time()
+    q = [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600]  # 슬롯 기다리는 토스 이름 예약·뷰티 회차 글
+    cand = [(i, posts[i]["text"], bt[i], posts[i]["t"]) for i in fresh if th_solo(seen, posts[i]["text"], beauty=bt[i], slot=bool(posts[i].get("own")))] \
+        + [(x, x["text"], x["bt"], time.strftime("%Y-%m-%d %H:%M", time.gmtime(x["t"] + 9 * 3600))) for x in q if th_solo(seen, x["text"], beauty=x["bt"], slot=True)]  # 진우 화장품 링크·이름 예약은 화장품 자리 채움
+    grp = lambda c: 0 if th_tier(c[1]) == 1 else 1 if c[2] and TH_BEAUTY_MIN else 2  # 10/12 01:10 진우: ① 쿠팡 같은 상품 차이 > 화장품(하루 1~2) > ② 30일 최저가·순위
+    strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
     todo = (strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])])[:TH_SOLO_RUN]
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     for i in todo:
+        if isinstance(i, dict):  # 줄 선 토스 글(쉐어링크 그대로 — API 상품은 사이트 X)
+            seen["thq"]["q"] = [x for x in seen["thq"]["q"] if x is not i]
+            th_mark(seen, i["bt"])
+            th_text(tok, me, i["text"], i["link"])
+            continue
         url = f"{SITE}p/{i}.html?ref=th"  # ?ref = GoatCounter 출처(채널 구분, 10/11 진우 결정 '측정')
         try:
             http(url, method="HEAD")
@@ -2346,14 +2392,14 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
             ig = step in (ig_cards, ig_reel, ig_publish)
             alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_reel, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, th_retry, ig_cards, ig_reel, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))
