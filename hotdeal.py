@@ -1522,19 +1522,20 @@ REOPEN_WARN = "⚠️ 확인할 점: 사람마다 가격이 다를 수 있음 ·
 
 
 def reopen_text(seen, e, price, am, hot):
-    """재오픈 Threads 글 = 일반 개별 글과 같은 틀(10/12 00:40 진우 '보자마자 느낌이 별로' — 0:02 샤워기 헤드 36분 조회 3):
-    고지문 → 💸 쿠팡보다 N원 싸요 → 🔥 [토스] 제목 (지금 가격) → 정보 줄 '🔔 밤 12시에 다시 열렸어요'/'☀️ 아침 재알림…'(+ 오늘 하루특가 목록에 있으면 '토스 하루특가') → 💡 비교
-    → ⚠️ 확인할 점 → 👉 링크 → 🙋 팔로우 → 📲. 제목·⚠️ 줄 = 진우 예약 글 본문(줄 세울 때 저장 — 품절 지켜보기 기록은 다시 열리면 지워짐; 그 전에 줄 선 것은 posts.json 글에서),
+    """재오픈 Threads 글 = 일반 개별 글 틀 + 맨 위 '🔔 다시 열렸어요'(10/12 00:40·00:55 진우 — 0:02 샤워기 36분 조회 3, '🔔 줄은 좋아, 눈에 띄게'):
+    고지문 → 🔔 다시 열렸어요 → 💸 쿠팡보다 N원 싸요 → 🔥 [토스] 제목 (지금 가격) → 정보 줄 '토스 하루특가 · 밤 12시 재오픈'(하루특가는 오늘 목록에 있을 때만) → 💡 비교 → ⚠️ 확인할 점
+    → 👉 링크 → 🙋 팔로우 → 📲. 아침 8시 글도 같은 틀(같은 상품 두 번째 글이라 🔔·정보 줄 끝만 조금 다르게 — 같은 글 반복은 Threads 스팸 표시 위험).
+    제목·⚠️ 줄 = 진우 예약 글 본문(줄 세울 때 저장 — 품절 지켜보기 기록은 다시 열리면 지워짐; 그 전에 줄 선 것은 posts.json 글에서), 날·시각 든 ⚠️ 줄은 기본 문구.
     💡·💸는 가격이 그대로일 때만. 링크는 예전 그대로(그 글의 토스 링크)."""
     src = "" if e.get("title") else next((p["text"] for p in reversed(load(POSTS, [])) if p.get("url") == e["url"]), "")
     name = clip(e.get("title") or (src and parse(title_of(src))[1]) or e["n"], 60)
     warn = e.get("warn") or next((l for l in src.split("\n") if l.startswith("⚠️")), "")
     warn = REOPEN_WARN if not warn or re.search(r"오늘|어제|내일|오전|오후|아침|저녁|\d{1,2}시|\d{1,2}:\d{2}", warn) else warn
-    info = ("☀️ 아침 재알림 — 밤사이 다시 열렸고 아직 살 수 있어요" if am else "🔔 밤 12시에 다시 열렸어요") + (" · 토스 하루특가(밤 12시까지)" + ("" if am else " · 선착순") if hot else "")
+    info = ("토스 하루특가 · " if hot else "") + "밤 12시 재오픈" + (" · 아침에도 살 수 있어요" if am else "")
     cmp = e["cmp"] if e["cmp"] and price == e["p0"] else ""
     sv = saving(cmp) if cmp.startswith("💡") else None
     main = "\n".join(x for x in (f"{e['icon']} [토스] {name} ({price:,}원)\n", info, cmp, warn) if x)[:280]
-    return th_note(TOSS_NOTE) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + main \
+    return th_note(TOSS_NOTE) + "🔔 다시 열렸어요" + (" · 아침 재알림" if am else "") + "\n" + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + main \
         + f"\n\n👉 {e['url']}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"
 
 
