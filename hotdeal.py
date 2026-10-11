@@ -1132,7 +1132,8 @@ def toss_picks(seen):
                 r.update(id=hit[0], n=hit[1], link=link, t=now)
                 print("toss pick", e["at"], clip(e["name"], 30), "->", clip(hit[1], 30), f"{hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점)", "| 링크" if link else "| 발급 실패")
             else:
-                print("toss pick", e["at"], clip(e["name"], 30), "-> 없음", f"| 후보 {len(cand)}/{len(items)}" + (" · 하위 카테고리까지 봄" if scanned else ""))
+                print("toss pick", e["at"], clip(e["name"], 30), "-> 없음", f"| 후보 {len(cand)}/{len(items)}" + (" · 하위 카테고리까지 봄" if scanned else "")
+                      + (f" | 가장 비슷: {clip(cand[pick[0]['i']][1], 40)} {pick[0]['score']}점" if pick else f" | 겹침 1위: {clip(cand[0][1], 40)}" if cand else ""))  # 이름 찾기 판단 근거(점검용)
     for e in todo:  # 못 찾음·발급 실패 -> 진우에게 1번(하위 카테고리까지 다 봤거나 예약 90분 전)
         r = seen.get("pk_" + e["at"])
         if r and not r.get("link") and not r.get("asked") and r.get("net") != now and (r.get("id") or (need and scanned) or e["at"] <= at(PICK_ASK)):
