@@ -1278,7 +1278,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and "(threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_reopen, lambda s: digest" in inspect.getsource(H.main) and "(threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_reel, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (8, 11))
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -1697,6 +1697,8 @@ rm = cards.reel([{"title": "[G마켓] 우유 (1,000원/무료)", "comment": "싸
 au = subprocess.run([cards.ffmpeg(), "-i", rm], capture_output=True, text=True).stderr
 dur = lambda s: sum(float(x) * m for x, m in zip(re.search(r"Duration: (\d+):(\d+):([\d.]+)", s).groups(), (3600, 60, 1)))
 assert "Audio: aac" in au and "Video: h264" in au and abs(dur(au) - dur(subprocess.run([cards.ffmpeg(), "-i", cards.reel([{"title": "[G마켓] 우유 (1,000원/무료)", "comment": "싸요"}], "10월 7일", "docs/reel_n.mp4")], capture_output=True, text=True).stderr)) < 0.3
+for _m in (rv, rm):  # 인스타 릴스 규격(10/11 릴스 자동): edit list(elst) 없음 · moov가 mdat 앞(바로 재생)
+    _b = open(_m, "rb").read(); assert b"elst" not in _b and _b.index(b"moov") < _b.index(b"mdat")
 # 8-3) 영상 업로드는 multipart (chat_id·caption·video 파일)
 import urllib.request
 class _R:
@@ -1922,6 +1924,7 @@ assert [w for *_, w, e in dc9[-2:]] == ["체크 포인트", "살 만한 이유"]
 rc9, cap9 = C9.deal_card, []; C9.deal_card = lambda it, *a, **k: cap9.append(it)
 H.deal_slides(f"{D9}_oy2", [{"text": "🔥 [올리브영] 선크림 50ml (9,900원/무료)\n\n후기가 좋아요", "url": "https://oy.run/x", "hook": "h", "pts": ["후기 반응 좋음", "50ml 2개 구성", "미백 기능성", "추천 6·댓글 10"]},
                             {"text": "🔥 [쿠팡] 휴지 (9,900원/무료)\n\n후기 많아요", "url": "", "hook": "h", "pts": ["후기 많음"]}])
+assert H.card_item({"text": "🔥 [올리브영] 크림 (9,900원)\n\n좋아요", "url": "https://oy.run/y", "hook": "후기 대박 크림", "pts": ["리뷰 1만", "50ml"]})[0] == {"title": "[올리브영] 크림 (9,900원)", "comment": "", "e": None, "hook": "", "unit": None, "warn": None, "pts": ["50ml"]}  # 릴스도 같은 거르기
 assert cap9[0]["pts"] == ["50ml 2개 구성"] and cap9[0]["comment"] == "" and cap9[1]["pts"] == ["후기 많음"] and cap9[1]["comment"] == "후기 많아요"; C9.deal_card = rc9  # 올리브영만 후기·추천·반응·효능 문장 빼고 코멘트도 X
 C9.deal_card = lambda *a, **k: 1 / 0; H.deal_slides(f"{D9}_x", [{"text": "🔥 [쿠팡] 휴지 (9,900원/무료)", "url": "", "hook": "h", "pts": ["30롤"]}]); assert not os.path.exists(f"docs/cards/{D9}_x")
 for x in ("2026-10-09_12", "2026-10-10", "re"):
@@ -1939,7 +1942,7 @@ H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick = rl9, tv9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, ig_cards, ig_repost, ig_publish" in inspect.getsource(H.main) and "ig = step in (ig_cards, ig_publish)" in inspect.getsource(H.main)
+assert "threads, threads_deals, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and "ig = step in (ig_cards, ig_reel, ig_publish)" in inspect.getsource(H.main)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -2131,50 +2134,60 @@ tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 지금 살 만한 딜 TOP") and f"{H.SITE}p/0.html" in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
-# 9-3) 인스타 릴스 자동 게시: 컨테이너(REELS·resumable·캡션) -> rupload에 영상 파일(OAuth 헤더·offset 0·file_size) -> 다음 실행에 처리 끝났으면 발행
-#      처리 중이면 기다림, 실패(ERROR)면 예외(main이 하루 1번 알림), 업로드 실패해도 영상은 봇 채팅으로(직접 올리기), 토큰 없으면 아무것도 안 함
-H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2, ig0 = [], ["IN_PROGRESS"], H.http, H.IG
-H.IG = "https://graph.facebook.com/v25.0"  # 릴스 파일 업로드는 페이스북 페이지 토큰일 때만
+# 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
+#      -> 22시(REEL_HOUR) 넘고 사이트에 뜨면(HEAD) REELS 컨테이너(video_url·캡션·피드·표지 1.5초) 1번 -> ig_publish가 처리 끝나면 발행('오늘 릴스')
+#      처리 중이면 기다림, 실패(ERROR)면 예외(알림), 만들기 실패는 3번까지 다시, 꺼져 있으면(기본) 예전처럼 봇 채팅 영상만(공개 X), 토큰 없으면 아무것도 안 함
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); ic, st, ph2, rp0 = [], ["IN_PROGRESS"], H.http, H.REEL_PUBLIC
 def ig_http(url, body=None, headers=None, method=None):
     ic.append((url, body, headers, method))
+    if method == "HEAD":
+        if st[-1] == "404": raise OSError("404")
+        return ""
     if url.endswith("/178/media"):
-        return '{"id": "C1", "uri": "https://rupload.facebook.com/ig-api-upload/v25.0/C1"}'
-    if "rupload" in url:
-        return '{"success": true}'
+        if st[-1] == "500": raise RuntimeError("500")
+        return '{"id": "R1"}'
     if "status_code" in url:
         return json.dumps({"status_code": st[0]})
     if url.endswith("/178/media_publish"):
         return '{"id": "M1"}'
     raise AssertionError(url)
-H.http = ig_http; open("r.mp4", "wb").write(b"0" * 1234); seen = {}
-H.ig_upload("r.mp4", "캡션 #핫딜", seen)
-assert ic[0][1] == {"media_type": "REELS", "upload_type": "resumable", "caption": "캡션 #핫딜", "share_to_feed": True} and ic[0][2]["Authorization"] == "Bearer pt"
-assert ic[1][0] == "https://rupload.facebook.com/ig-api-upload/v25.0/C1" and ic[1][1] == b"0" * 1234 and ic[1][2] == {"Authorization": "OAuth pt", "offset": "0", "file_size": "1234"}
-assert list(seen) == ["igc_C1"]
-sent.clear(); H.ig_publish(seen); assert "igc_C1" in seen and not sent and not any("media_publish" in c[0] for c in ic)  # 처리 중 -> 다음 실행에
+H.http, vids, tt2 = ig_http, [], time.time
+H.tg_video, H.draft, time.time = lambda path, cap: vids.append((path, cap)), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
+json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst: "docs/bgm_t.m4a"
+P3 = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}]
+seen = {}; H.REEL_PUBLIC = False; sent.clear(); H.digest(seen, P3)  # 기본(꺼짐): 공개 X, 봇 채팅 영상만(예전 그대로)
+assert len(vids) == 1 and not vids[0][0].startswith("docs/") and not os.path.exists("docs/reels") and "reel_2026-10-06" not in seen and not ic
+assert vids[0][1].split("\n\n")[1].startswith("우유 개당 100원") and vids[0][1].split("\n\n")[0] == H.ig_notes([]) and "🎵 테스트곡 — 작가 (Pixabay)" in vids[0][1]  # 문구 맨 앞·곡명
+H.REEL_PUBLIC, seen, vids[:] = True, {}, []; H.digest(seen, P3)
+assert vids[0][0] == "docs/reels/2026-10-06.mp4" and os.path.getsize(vids[0][0]) > 10000 and vids[0][1].startswith("🎬 22시에 인스타 자동 게시돼요(직접 올리지 마세요)")
+assert seen["reel_2026-10-06"]["cap"] == vids[0][1].split("\n\n", 1)[1] and not ic  # 모아보기는 HTTP 없음(올리기는 ig_reel)
+time.time = lambda: 1791291600 - 60; H.ig_reel(seen); assert not ic  # 21:59 -> 아직
+st[-1] = "404"; time.time = lambda: 1791291600; H.ig_reel(seen); assert [c[3] for c in ic] == ["HEAD"] and "igr_2026-10-06" not in seen  # 배포 전 -> 다음 실행에
+st[-1] = "500"; ic[:] = []
+for k in range(1, 4):
+    try:
+        H.ig_reel(seen); raise AssertionError("만들기 실패는 예외")
+    except RuntimeError as e:
+        assert seen["igr_2026-10-06"]["fail"] == k and ("봇 채팅에 온 영상을 직접" in str(e)) == (k == 3)
+ic[:] = []; H.ig_reel(seen); assert not ic  # 3번 실패 -> 끝
+st[-1], seen["igr_2026-10-06"] = "IN_PROGRESS", {"t": 1, "fail": 1}; ic[:] = []; H.ig_reel(seen)
+(u, b, h, m), = [c for c in ic if c[3] == "POST"]
+assert u == H.IG + "/178/media" and b == {"media_type": "REELS", "video_url": "https://hotdealpick.kr/reels/2026-10-06.mp4", "caption": seen["reel_2026-10-06"]["cap"], "share_to_feed": True, "thumb_offset": 1500}
+assert seen["igc_R1"] == {"t": 1791291600, "kind": "reel"} and seen["igr_2026-10-06"] == {"t": 1791291600}
+ic[:] = []; H.ig_reel(seen); assert not ic  # 하루 1번
+sent.clear(); H.ig_publish(seen); assert "igc_R1" in seen and not sent and not any("media_publish" in c[0] for c in ic)  # 처리 중 -> 다음 실행에
 st[0] = "FINISHED"; H.ig_publish(seen)
-assert ic[-1][0].endswith("/178/media_publish") and ic[-1][1] == {"creation_id": "C1"} and list(seen) == [time.strftime("igpub_%Y%m%d", time.gmtime(time.time() + 9 * 3600))] and "자동 게시 완료" in sent[-1][1]["text"]  # 발행 수(하루 상한)만 남음
-st[0], seen = "ERROR", {"igc_C2": 1}
+assert ic[-1][0].endswith("/178/media_publish") and ic[-1][1] == {"creation_id": "R1"} and "igc_R1" not in seen and sent[-1][1]["text"] == "📸 인스타 자동 게시 완료 — 오늘 릴스 (instagram.com/hotdealpick.kr)"
+st[0], seen = "ERROR", {"igc_C2": {"t": 1, "kind": "reel"}}
 try:
     H.ig_publish(seen); assert False
 except RuntimeError as e:
-    assert "ERROR" in str(e) and not seen  # 실패한 컨테이너는 다시 안 봄
-def ig_down(url, *a, **k):
-    raise RuntimeError("down")
-H.http, vids, tt2 = ig_down, [], time.time
-H.tg_video, H.draft, time.time = lambda path, cap: vids.append(cap), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
-json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst: "docs/bgm_t.m4a"
-sent.clear(); H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
-assert any("업로드 실패" in p["text"] for m, p in sent if m == "sendMessage") and len(vids) == 1 and vids[0].split("\n\n")[1].startswith("우유 개당 100원") and vids[0].split("\n\n")[0] in (H.ig_notes([]), H.DISCLOSURE, H.AFF_NOTE, H.TOSS_NOTE)
-assert "🎵 테스트곡 — 작가 (Pixabay)" in vids[0]  # 캡션에 오늘 곡명
-H.IG, vids[:] = "https://graph.instagram.com/v25.0", []  # 인스타 토큰(Instagram 로그인)이면 릴스 업로드 시도 안 함(실패 알림 없음), 영상은 봇 채팅으로
-sent.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("인스타 토큰이면 릴스 업로드 호출 없음"))
-H.digest({}, [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}])
-assert len(vids) == 1 and not any("업로드 실패" in p.get("text", "") for m, p in sent if m == "sendMessage")
-H.IG = ig0
-H.bgm = bg; os.remove("music.json")
-del H.E["IG_TOKEN"]; ic[:] = []; H.http = ig_http; H.ig_publish({"igc_C3": 1}); assert not ic  # 토큰 없으면 호출 없음
-time.time, H.http = tt2, ph2
+    assert "ERROR" in str(e) and "봇 채팅에 온 걸 직접" in str(e) and not seen  # 실패한 컨테이너는 다시 안 봄
+seen = {"reel_2026-10-06": {"t": 1, "cap": "x"}, "ig_hold": 1791291600 + 3600}; ic[:] = []; st[:] = ["FINISHED"]; H.ig_reel(seen); assert not ic  # 스팸 의심 쉼
+open("docs/reels/2026-10-03.mp4", "wb").write(b"0"); H.prune_slides(1791291600); assert sorted(os.listdir("docs/reels")) == ["2026-10-06.mp4"]  # 2일 지난 영상 정리
+H.bgm = bg; os.remove("music.json"); shutil.rmtree("docs/reels")
+del H.E["IG_TOKEN"]; ic[:] = []; H.ig_publish({"igc_C3": 1}); H.ig_reel({"reel_2026-10-06": {"t": 1, "cap": "x"}}); assert not ic  # 토큰 없으면 호출 없음
+time.time, H.http, H.REEL_PUBLIC = tt2, ph2, rp0
 # 9-4) 성과 리포트(10/8 진우 '토스 정산금 들어오기 시작' → '1일 4회'): 10·14·18·22시 회차마다 1번 관리자에게(밀리면 최근 회차만) — 토스 오늘·이번 달 실적(이번 달 상품 TOP3, 간접 구매 표시)
 #      + Threads 오늘 글 조회수 합·TOP3(대가성 문구 줄 빼고 제목)·링크 클릭·팔로워 / 인사이트 권한 없으면 '권한 필요' 한 줄 / 전송 실패면 다음 실행에 다시
 from urllib.error import HTTPError

@@ -380,7 +380,7 @@ def reel(items, date_label, out, music=None):
     if music:
         cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-shortest",
                 "-af", f"afade=t=in:d=0.5,afade=t=out:st={total - 1.5}:d=1.5"]
-    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", out]
+    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", "-use_editlist", "0", out]  # 인스타 릴스 규격: edit list 없음·moov 앞
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     proc, last = subprocess.Popen(cmd, stdin=subprocess.PIPE), None
     for si, (bg, sec, draw, bar) in enumerate(scenes):

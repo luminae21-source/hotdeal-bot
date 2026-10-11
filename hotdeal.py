@@ -127,6 +127,7 @@ IG_SLOTS = {12: "점심에 볼 딜", 18: "퇴근길에 볼 딜"}  # 인스타 �
 IG_LATE, IG_MIN, IG_DAY_MAX = 3, 3, 5  # 시간대 카드는 그 시각 3시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀 · 인스타 하루 발행 최대 5개(카드 3 + 릴스 1 + 다시 올리기 1, 오류로 몰려 올라가지 않게 — API 상한 50)
 IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
 OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
+REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = False, 22, 1500  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 카드 컨테이너 만들기 실패(인스타 일시 오류)는 회차 안에서 3번까지 다시(안 올라간 컨테이너는 안 보여서 두 번 안 올라감) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#특가", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#살림템", "#쇼핑정보"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만)
 TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
@@ -1620,26 +1621,22 @@ def digest(seen, posts):
                 deal_slides(today, [p for _, p in order[:CARD_N]])  # 인스타 넘기기용 딜 카드(재료 채운 글은 아래 릴스도 같이 씀)
         except Exception as e:
             print("card", repr(e))
-        try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 (저장소엔 안 올림). 점수 높은 순 TOP3
+        try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 + REEL_PUBLIC이면 docs/reels/에 공개 -> 22시 ig_reel이 인스타에. 점수 높은 순 TOP3
             top = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
             fill_reel(top)  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움(딜 카드 때 채웠으면 그대로)
             music, mus = bgm(kst), load(MUSIC, [])
             song = mus[kst.tm_yday % len(mus)] if music else None  # 캡션에 곡명(인스타에서도 무슨 곡인지 보이게)
-            path = cards.reel([{"title": title_of(p["text"]), "comment": comment_of(p["text"]),
-                                **{k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")}} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",
-                              os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), music)
+            auto = REEL_PUBLIC and E.get("IG_TOKEN") and E.get("IG_USER_ID")
+            path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",  # 올리브영 딜은 딜 카드처럼 거른 재료
+                              f"docs/reels/{today}.mp4" if auto else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), music)
             cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
                    + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
                    + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if song.get("url") else "") if song else "")
                    + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(today)}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
                    + "\n\n" + ig_tags(top))[:1024]
-            if E.get("IG_TOKEN") and E.get("IG_USER_ID") and "facebook" in IG:  # 영상 파일 직접 업로드는 페이스북 로그인(페이지 토큰)만 됨 -> 인스타 토큰이면 릴스는 봇 채팅 영상으로 직접
-                try:
-                    ig_upload(path, cap, seen)
-                except Exception as e:
-                    print("ig upload", repr(e), getattr(e, "body", ""))
-                    tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 인스타 릴스 업로드 실패 — 아래 영상을 직접 올려줘: {e!r} {getattr(e, 'body', '')}"[:400])
-            tg_video(path, cap)
+            if auto:
+                seen["reel_" + today] = {"t": time.time(), "cap": cap}  # 22시 ig_reel이 같은 캡션으로
+            tg_video(path, (f"🎬 {REEL_HOUR}시에 인스타 자동 게시돼요(직접 올리지 마세요) — 확인용\n\n" if auto else "") + cap)
         except Exception as e:
             print("reel", repr(e))
 
@@ -1692,15 +1689,6 @@ def playlist(seen):
     json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
 
 
-def ig_upload(path, caption, seen):
-    """릴스 영상 -> 인스타 컨테이너 생성 + 영상 파일 업로드(rupload). 인스타가 처리하는 동안 기다리지 않고 다음 실행의 ig_publish()가 발행."""
-    h = {"Authorization": "Bearer " + E["IG_TOKEN"]}
-    c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"media_type": "REELS", "upload_type": "resumable", "caption": caption, "share_to_feed": True}, h, "POST"))
-    data = open(path, "rb").read()
-    http(c["uri"], data, {"Authorization": "OAuth " + E["IG_TOKEN"], "offset": "0", "file_size": str(len(data))}, "POST")
-    seen["igc_" + c["id"]] = time.time()
-
-
 IG_LIVE = "docs/cards/ig.json"  # 인스타에 올리는(컨테이너 만든)·올라간 카드 {카드 이름: 시각} — 사이트 맨 위 카드 딜이 인스타 게시물과 같은 번호(build_site.card_stems)
 
 
@@ -1736,7 +1724,7 @@ def ig_publish(seen):
             continue
         if st != "FINISHED":
             seen.pop(k)
-            errs.append(RuntimeError(f"인스타 처리 실패({st}) — " + (f"{SITE}cards/{card(v)}.jpg 카드를 직접 올려줘" if card(v) else "오늘 카드·영상은 봇 채팅에 온 걸 직접 올려줘")))
+            errs.append(RuntimeError(f"인스타 처리 실패({st}) — " + (f"{SITE}cards/{card(v)}.jpg 카드를 직접 올려줘" if card(v) else "오늘 릴스 영상은 봇 채팅에 온 걸 직접 올려줘")))
             continue
         if card(v) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(이번 실행 배포) -> 다음 실행에 발행
             continue
@@ -1758,7 +1746,8 @@ def ig_publish(seen):
         if card(v):
             ig_live(card(v), now)
         label = card(v) or ""
-        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else "") + " (instagram.com/hotdealpick.kr)")
+        reel = isinstance(v, dict) and v.get("kind") == "reel"
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if reel else "") + " (instagram.com/hotdealpick.kr)")
     if errs:
         raise errs[0]
 
@@ -1835,6 +1824,14 @@ def fill_reel(ps):
         print("reel fill", repr(e))
 
 
+def card_item(p):
+    """딜 카드·릴스 한 장 재료 -> (재료, 올리브영인지). 올리브영 딜은 후기·추천·반응·효능 말 든 이유·첫 화면 문구와 코멘트를 뺌(큐레이터 정책 — 그림·영상은 못 고침)."""
+    oy = aff_note(p.get("url") or "") == OY_NOTE or is_oy(title_of(p["text"]))
+    ok = lambda x: not (oy and re.search(OY_DENY, x or ""))
+    return {"title": title_of(p["text"]), "comment": "" if oy else comment_of(p["text"]), "e": p.get("e"), "hook": p.get("hook") if ok(p.get("hook")) else "",
+            "unit": p.get("unit"), "warn": p.get("warn"), "pts": [x for x in p.get("pts") or [] if ok(x)]}, oy
+
+
 def deal_slides(stem, ps):
     """넘기기 딜 카드: 카드 번호 순서대로 딜마다 1장 -> docs/cards/{stem}/01.jpg…(표지 다음 장들, 워크플로가 커밋 -> 사이트 공개 -> ig_cards가 올림).
     올리브영 딜은 이유 제목 '체크 포인트'(큐레이터 정책: 권유 문구 X). 한 장이라도 실패하면 폴더째 지움 -> 한 장짜리 카드로."""
@@ -1844,10 +1841,8 @@ def deal_slides(stem, ps):
     try:
         os.makedirs(d, exist_ok=True)
         for n, p in enumerate(ps, 1):
-            oy = aff_note(p.get("url") or "") == OY_NOTE or is_oy(title_of(p["text"]))
-            pts = [x for x in p.get("pts") or [] if not (oy and re.search(OY_DENY, x))]  # 올리브영: 후기·추천·반응·효능 문장은 빼고(큐레이터 정책 — 그림은 못 고침)
-            cards.deal_card({"title": title_of(p["text"]), "comment": "" if oy else comment_of(p["text"]), **{k: p.get(k) for k in ("e", "unit", "warn")}, "pts": pts},
-                            n, len(ps), f"{d}/{n:02d}.jpg", why="체크 포인트" if oy else "살 만한 이유")
+            it, oy = card_item(p)
+            cards.deal_card(it, n, len(ps), f"{d}/{n:02d}.jpg", why="체크 포인트" if oy else "살 만한 이유")
     except Exception as e:
         print("slides", stem, repr(e))
         shutil.rmtree(d, ignore_errors=True)
@@ -1871,11 +1866,42 @@ def ig_carousel(seen, tok, uid, now):
 
 
 def prune_slides(now):
-    """딜 카드 폴더(docs/cards/날짜[_시]/)는 SLIDE_KEEP일 지나면 지움(인스타가 이미 가져감, 사이트는 표지만 씀 — 저장소 크기). git add -A가 지운 것도 커밋."""
+    """딜 카드 폴더(docs/cards/날짜[_시]/)·릴스 영상(docs/reels/날짜.mp4)은 SLIDE_KEEP일 지나면 지움(인스타가 이미 가져감, 사이트는 표지만 씀 — 저장소 크기).
+    git add -A가 지운 것도 커밋."""
     cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - SLIDE_KEEP * 86400))
     for f in os.listdir("docs/cards") if os.path.isdir("docs/cards") else []:
         if STEM.fullmatch(f) and f[:10] < cut and os.path.isdir(f"docs/cards/{f}"):
             shutil.rmtree(f"docs/cards/{f}")
+    for f in os.listdir("docs/reels") if os.path.isdir("docs/reels") else []:
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.mp4", f) and f[:10] < cut:
+            os.remove(f"docs/reels/{f}")
+
+
+def ig_reel(seen):
+    """릴스 하루 1개 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_HOUR시~자정, 모아보기(digest)가 docs/reels/에 공개한 오늘 영상이 사이트에 뜨면(HEAD)
+    REELS 컨테이너(video_url·캡션·피드에도·표지 1.5초) -> ig_publish가 처리 끝나면 발행(영상은 보통 1~10분). 만들기 실패는 IG_TRIES번까지 다음 실행에 다시."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    r, tried = seen.get("reel_" + today), seen.get("igr_" + today)
+    if not (tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
+        return
+    url = f"{SITE}reels/{today}.mp4"
+    try:
+        http(url, method="HEAD")  # 아직 배포 전이면 다음 실행에
+    except Exception:
+        return
+    fail = (tried or {}).get("fail", 0)
+    seen["igr_" + today] = {"t": now}
+    try:
+        c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "REELS", "video_url": url, "caption": r["cap"], "share_to_feed": True, "thumb_offset": REEL_THUMB_MS},
+                            {"Authorization": "Bearer " + tok}, "POST"))
+    except Exception as e:
+        seen["igr_" + today] = {"t": now, "fail": fail + 1}
+        raise RuntimeError(f"인스타 릴스 컨테이너 실패({fail + 1}/{IG_TRIES}) — " + ("다음 실행에 다시" if fail + 1 < IG_TRIES else "봇 채팅에 온 영상을 직접 올려줘") + f": {e!r} {getattr(e, 'body', '') or ''}")
+    seen["igc_" + c["id"]] = {"t": now, "kind": "reel"}
+    print("ig reel 컨테이너", today)
 
 
 def ig_cards(seen):
@@ -2205,14 +2231,14 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
-            ig = step in (ig_cards, ig_publish)
+            ig = step in (ig_cards, ig_reel, ig_publish)
             alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, ig_cards, ig_reel, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))
