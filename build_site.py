@@ -21,7 +21,7 @@ a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header
 .btn2{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 12px;margin-top:8px;border-radius:12px;border:1.5px solid #1b64da;color:#1b64da;text-decoration:none;font-weight:700;text-align:center}
 .top2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 2px}.top2 a{margin:0;min-height:46px;font-size:14px;padding:6px 8px;text-align:center}.tg2{display:flex;align-items:center;justify-content:center;border-radius:12px;background:#229ed9;color:#fff;text-decoration:none;font-weight:700}
 .tg{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px;margin:16px 0;border-radius:12px;background:#229ed9;color:#fff;text-decoration:none;font-weight:700;text-align:center}
-.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}
+.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}#today details{margin-top:10px}#today summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:#4e5968}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64da;outline-offset:2px}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e8eaee;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7684;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#1b64da;background:#e8f1fd}main:has(.bar){padding-bottom:84px}
 .day h2{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:22px 2px 2px}.day>.t{margin:0 2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
@@ -135,18 +135,37 @@ def aff(url):
     return host == "link.coupang.com" or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
 
 
+CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
+STEM = re.compile(r"(\d{4}-\d{2}-\d{2})(?:_(\d{2}))?")  # 카드 이름: 하루 카드 = 날짜, 시간대 카드(인스타 하루 3번, 10/11~) = 날짜_시
+SLOT_NAMES = {"12": "낮 12시", "18": "저녁 6시"}  # 시간대 카드 이름(hotdeal.IG_SLOTS와 같은 시각)
+
+
 def day_deals(posts, day):
     """그날 딜의 카드 순서 [(posts 번호, 글)]: 점수 높은 순, 같은 점수면 제휴 링크 딜 먼저(10/8 진우 '쿠팡·토스 잘 팔리게'), 그다음 게시 순.
-    카드(앞 5개)·인스타 캡션(앞 6개)·릴스(앞 3개)·사이트 맨 위 카드 딜 번호가 모두 이 순서."""
+    카드·인스타 캡션·사이트 맨 위 카드 딜(앞 CARD_N개)·릴스(앞 3개) 번호가 모두 이 순서."""
     ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")]
     return sorted(ds, key=lambda x: (-x[1].get("s", 0), not aff(x[1].get("url")), x[1]["t"]))
 
 
-def card_order(posts, day, out="docs"):
-    """카드 번호 순서: 카드를 만들 때 정해 둔 순서(docs/cards/날짜.json = posts 번호 목록)가 있으면 그대로 — 카드가 나간 뒤 딜이 더 올라오거나
-    점수가 바뀌어도 인스타 카드·캡션과 사이트 번호가 안 어긋남. 없으면 day_deals."""
-    f = f"{out}/cards/{day}.json"
-    return [(i, posts[i]) for i in json.load(open(f)) if i < len(posts)] if os.path.exists(f) else day_deals(posts, day)
+def card_order(posts, stem, out="docs"):
+    """카드 번호 순서: 카드를 만들 때 정해 둔 순서(docs/cards/카드이름.json = posts 번호 목록)가 있으면 그대로 — 카드가 나간 뒤 딜이 더 올라오거나
+    점수가 바뀌어도 인스타 카드·캡션과 사이트 번호가 안 어긋남. 없으면 하루 카드는 day_deals, 시간대 카드는 없음."""
+    f = f"{out}/cards/{stem}.json"
+    if os.path.exists(f):
+        return [(i, posts[i]) for i in json.load(open(f)) if i < len(posts)]
+    return day_deals(posts, stem) if len(stem) == 10 else []
+
+
+def card_stems(out):
+    """사이트 맨 위 카드: 인스타에 올라간 카드(docs/cards/ig.json, ig_publish가 기록) + 하루 카드(.png — 인스타 없이도 Threads·봇 채팅용)
+    -> 가장 최근 날짜의 카드들, 시각 순(하루 카드 = 21시). 아직 인스타에 안 올라간 시간대 카드는 안 보임(인스타 번호와 어긋나지 않게)."""
+    d = f"{out}/cards"
+    if not os.path.isdir(d):
+        return []
+    live = list(json.load(open(f"{d}/ig.json"))) if os.path.exists(f"{d}/ig.json") else []
+    daily = [f[:-4] for f in os.listdir(d) if f.endswith(".png") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", f[:-4])]
+    stems = sorted({x for x in live + daily if STEM.fullmatch(x)}, key=lambda x: (x[:10], int(STEM.fullmatch(x).group(2) or 21)))
+    return [x for x in stems if x[:10] == stems[-1][:10]] if stems else []
 
 COMMUNITY = ("ppomppu.co.kr", "ruliweb.com", "clien.net")  # 구매 버튼이 커뮤니티 원글인 딜(상품 주소를 못 꺼냄) -> 원글이 지워지면 안 열림(10/8 01번)
 
@@ -162,20 +181,27 @@ def find_url(title):
 
 
 def card_picks(posts, out):
-    """홈 맨 위: 가장 최근 인스타·Threads 카드의 딜을 카드와 같은 번호로, 누르면 바로 구매 페이지(인스타 캡션 링크는 안 눌려서 프로필 링크 -> 여기서 한 번에, 10/8 진우)."""
-    days = sorted(f[:-4] for f in os.listdir(f"{out}/cards") if f.endswith(".png")) if os.path.isdir(f"{out}/cards") else []
-    picks = card_order(posts, days[-1], out)[:6] if days else []  # 카드·캡션에 나온 6개만(나머지는 아래 격자) — 스크롤 짧게
-    if not picks:
+    """홈 맨 위: 가장 최근 인스타·Threads 카드의 딜을 카드와 같은 번호로, 누르면 바로 구매 페이지(인스타 캡션 링크는 안 눌려서 프로필 링크 -> 여기서 한 번에, 10/8 진우).
+    인스타 하루 3번(10/11~): 가장 최근 카드는 펼치고, 그날 앞선 카드(낮 12시·저녁 6시)는 접어서 — 앞 게시물을 보고 온 사람도 같은 번호로."""
+    stems = card_stems(out)
+    blocks = [(x, card_order(posts, x, out)[:CARD_N]) for x in reversed(stems)]  # 카드·캡션에 나온 CARD_N개만(나머지는 아래 격자) — 스크롤 짧게
+    blocks = [(x, ps) for x, ps in blocks if ps]
+    if not blocks:
         return ""
-    rows = "".join(f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
+    name = lambda x: f"{int(x[5:7])}월 {int(x[8:10])}일 " + (SLOT_NAMES.get(x[11:], x[11:] + "시") + " " if len(x) > 10 else "") + "카드 딜"
+    first = f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{pick_rows(blocks[0][1])}'
+    more = "".join(f'<details><summary>{html.escape(name(x))}</summary>{pick_rows(ps)}</details>' for x, ps in blocks[1:])
+    return f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {name(blocks[0][0])}</h2>{first}{more}</section>'
+
+
+def pick_rows(picks):
+    """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도)."""
+    return "".join(f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
                    f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}">'
                    f'<b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
                    + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>'
                       if community(p.get("url")) else "")
                    for n, (i, p) in enumerate(picks, 1))
-    m, d = days[-1][5:7].lstrip("0"), days[-1][8:].lstrip("0")
-    return (f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {m}월 {d}일 카드 딜</h2>'
-            f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{rows}</section>')
 
 
 def react(p):

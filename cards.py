@@ -2,7 +2,7 @@
 """오늘의 딜 카드 이미지(1080x1350 PNG) + 인스타 릴스 영상(1080x1920 MP4). Pillow 필요 (워크플로에서 설치)."""
 import os, re
 from PIL import Image, ImageDraw, ImageFont
-from build_site import parse  # 제목 -> (몰, 이름, 가격): 사이트 격자와 같이 씀
+from build_site import parse, CARD_N  # 제목 -> (몰, 이름, 가격): 사이트 격자와 같이 씀 · 카드 딜 수(캡션·사이트 번호와 같게)
 
 W, H = 1080, 1350
 FONTS = {  # 러너: fonts/ (워크플로가 Google Fonts 저장소에서 내려받음) / 로컬: Noto CJK
@@ -34,16 +34,17 @@ def wrap(d, text, f, width, max_lines=2):
     return lines + ([cur.rstrip()] if cur.strip() else [])
 
 
-def make(items, date_label, out):
-    """오늘의 딜 카드(1080x1350, 릴스와 같은 크림·먹색·숫자 포인트색 디자인). items: 딜 제목 문자열 또는 {"title", "unit"} (최대 5개). -> out"""
+def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 가성비 딜", png=True):
+    """오늘의 딜 카드(1080x1350, 릴스와 같은 크림·먹색·숫자 포인트색 디자인). items: 딜 제목 문자열 또는 {"title", "unit"} (최대 CARD_N개). -> out
+    시간대 카드(인스타 하루 3번, 10/11~)는 head·label만 다르고 png=False(인스타는 JPEG만 — 사이트 카드 칸은 하루 카드 .png만 봄)."""
     im = Image.new("RGB", (W, H), CREAM)
     d = ImageDraw.Draw(im)
-    d.text((X0, 84), f"{date_label}  ·  오늘의 가성비 딜", font=pf("SemiBold", 34), fill=SUB)
+    d.text((X0, 84), f"{date_label}  ·  {label}", font=pf("SemiBold", 34), fill=SUB)
     f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 84), "핫딜픽", font=f, fill=ACCENT)
-    d.text((X0, 136), "오늘 살 만한 딜", font=pf("ExtraBold", 76), fill=INK2)
+    d.text((X0, 136), head, font=pf("ExtraBold", 76), fill=INK2)
     d.rectangle((X0, 262, W - X0, 264), fill=LINE)
     y = 292
-    for n, it in enumerate([{"title": i} if isinstance(i, str) else i for i in items][:5], 1):
+    for n, it in enumerate([{"title": i} if isinstance(i, str) else i for i in items][:CARD_N], 1):
         store, name, price = parse(it["title"])
         d.text((X0, y), f"{n:02d}", font=pf("ExtraBold", 34), fill=ACCENT)
         if store:
@@ -62,7 +63,7 @@ def make(items, date_label, out):
             if ship:
                 d.text((x, y + 112), ("·  " if unit else "") + ship, font=fs, fill=SUB)
         y += 170
-        if n < min(len(items), 5):
+        if n < min(len(items), CARD_N):
             d.rectangle((X0, y - 14, W - X0, y - 13), fill=LINE)
     d.rectangle((X0, H - 200, W - X0, H - 198), fill=LINE)
     d.text((X0, H - 170), "전체 딜 · 구매 링크", font=pf("SemiBold", 32), fill=INK2)
@@ -70,7 +71,8 @@ def make(items, date_label, out):
     d.text((X0, H - 112), "실시간 알림 t.me/hotdeal_pick  ·  블로그 blog.naver.com/hotdeal_pick", font=pf("Regular", 26), fill=SUB)
     d.text((X0, H - 66), "일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요. 가격·재고는 게시 시점 기준.", font=pf("Regular", 22), fill=SUB)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-    im.save(out, optimize=True)
+    if png:
+        im.save(out, optimize=True)
     im.save(os.path.splitext(out)[0] + ".jpg", quality=92)  # 인스타 API는 JPEG만 받음 -> 같은 카드를 .jpg로도(사이트에 같이 공개)
     return out
 

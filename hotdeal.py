@@ -7,7 +7,7 @@ import base64, hashlib, hmac, html, json, os, re, tempfile, time, urllib.error, 
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -122,6 +122,9 @@ q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·�
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
 """
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
+IG_SLOTS = {12: "점심에 볼 딜", 18: "퇴근길에 볼 딜"}  # 인스타 하루 3번(10/11 진우 '인스타 업그레이드 1번'): 12시 = 0~12시 딜, 18시 = 12~18시 딜 카드 + 21시 하루 카드(모아보기) — 7일 표에서 채널 글이 가장 많은 12·18시(TOP5 회차와 같은 시간대)
+IG_LATE, IG_MIN, IG_DAY_MAX = 3, 3, 5  # 시간대 카드는 그 시각 3시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀 · 인스타 하루 발행 최대 5개(카드 3 + 릴스 1 + 다시 올리기 1, 오류로 몰려 올라가지 않게 — API 상한 50)
+IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#특가", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#살림템", "#쇼핑정보"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만)
 TOP_HOURS = (12, 18)  # 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
@@ -1471,7 +1474,7 @@ def digest(seen, posts):
                    + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
                    + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if song.get("url") else "") if song else "")
                    + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 오늘의 딜에서 바로\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
-                   + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")[:1024]
+                   + "\n\n" + ig_tags(top))[:1024]
             if E.get("IG_TOKEN") and E.get("IG_USER_ID") and "facebook" in IG:  # 영상 파일 직접 업로드는 페이스북 로그인(페이지 토큰)만 됨 -> 인스타 토큰이면 릴스는 봇 채팅 영상으로 직접
                 try:
                     ig_upload(path, cap, seen)
@@ -1540,20 +1543,50 @@ def ig_upload(path, caption, seen):
     seen["igc_" + c["id"]] = time.time()
 
 
+IG_LIVE = "docs/cards/ig.json"  # 인스타에 올라간 카드 {카드 이름: 시각} — 사이트 맨 위 카드 딜이 인스타 게시물과 같은 번호(build_site.card_stems)
+
+
 def ig_publish(seen):
-    """올려둔 인스타 컨테이너(카드·릴스)가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에, 실패(ERROR·EXPIRED)면 알림(main)."""
+    """올려둔 인스타 컨테이너(카드·릴스)가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에, 실패(ERROR·EXPIRED)면 알림(main).
+    카드면 발행 뒤 IG_LIVE에 기록(7일치) -> 같은 실행의 사이트 만들기가 맨 위 카드를 바꿈. 이미 발행됨(PUBLISHED — 기록 전에 실행이 끊김)은 기록만.
+    하루 IG_DAY_MAX개까지(넘으면 다음 날 — 컨테이너는 24시간 유효), 스팸 의심(2207051)이면 24시간 인스타 쉼."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    now = time.time()
     if not (tok and uid):
         return
+    day = time.strftime("igpub_%Y%m%d", time.gmtime(now + 9 * 3600))
+
+    def live(v):
+        if isinstance(v, dict) and v.get("card"):
+            led = {k: t for k, t in load(IG_LIVE, {}).items() if t > now - 7 * 86400}
+            led[v["card"]] = now
+            os.makedirs(os.path.dirname(IG_LIVE), exist_ok=True)
+            json.dump(led, open(IG_LIVE, "w"), ensure_ascii=False)
     for k in [k for k in seen if k.startswith("igc_")]:
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
         if st == "IN_PROGRESS":
             continue
-        seen.pop(k)
+        if st == "PUBLISHED":
+            live(seen.pop(k))
+            continue
         if st != "FINISHED":
+            seen.pop(k)
             raise RuntimeError(f"인스타 처리 실패({st}) — 오늘 카드·영상은 봇 채팅에 온 걸 직접 올려줘")
-        json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
-        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료 (instagram.com/hotdealpick.kr)")
+        n = seen.get(day, {}).get("n", 0)
+        if n >= IG_DAY_MAX or seen.get("ig_hold", 0) > now:
+            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 스팸 의심으로 쉼" if seen.get("ig_hold", 0) > now else ""))
+            continue
+        v = seen.pop(k)
+        try:
+            json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
+        except Exception as e:
+            if "2207051" in (getattr(e, "body", "") or ""):
+                seen["ig_hold"] = now + 86400
+            raise
+        seen[day] = {"t": now, "n": n + 1}
+        live(v)
+        label = v.get("card", "") if isinstance(v, dict) else ""
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else "") + " (instagram.com/hotdealpick.kr)")
 
 
 OY_CLAIM = ("📅 올리브영 쇼핑 큐레이터 수익금 지급 신청 기간이에요(21일~말일)\n앱 → 큐레이터 대시보드 → 지급 신청. 확정 수익 첫 지급 5천 원·이후 1만 원 이상일 때.\n"
@@ -1585,12 +1618,72 @@ def blog_text(todays, kst):
 THREADS = "https://graph.threads.com/v1.0"  # 공식 문서 기준 도메인
 
 
-def card_caption(day):
-    """그날 카드의 (목록 줄 6개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에."""
-    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, (_, p) in enumerate(card_order(load(POSTS, []), day)[:6], 1)]
-    return rows, (f"{int(day[5:7])}월 {int(day[8:])}일 오늘의 핫딜 모음\n\n" + "\n".join(rows)
-                  + "\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위에서 카드 번호를 누르면 바로 구매 페이지\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
-                  + "\n\n#핫딜 #오늘의핫딜 #특가 #최저가 #살림템 #쇼핑정보")
+def ig_tags(ps):
+    """인스타 해시태그 IG_TAG_MAX개: 기본 + 그날 딜에 있는 카테고리(사이트 '🧻 생필품'·'💄 화장품'과 같은 낱말) + 채움."""
+    titles = " ".join(title_of(p["text"]) for p in ps)
+    cat = [IG_CAT_TAGS[k] for k, _, rx in CATS if k in IG_CAT_TAGS and re.search(rx, titles)]
+    return " ".join(list(dict.fromkeys(IG_TAGS + tuple(cat) + IG_FILL_TAGS))[:IG_TAG_MAX])
+
+
+def slot_deals(posts, day, h):
+    """시간대 카드 딜 = 그 시간대(앞 시간대 시각 ~ h시)에 올린 딜, 하루 카드와 같은 순서(점수·제휴 먼저) 앞 CARD_N개."""
+    since = day + f" {max([0] + [x for x in IG_SLOTS if x < h]):02d}:00"
+    return [x for x in day_deals(posts, day) if since <= x[1]["t"] < day + f" {h:02d}:00"][:CARD_N]
+
+
+def card_caption(stem):
+    """카드의 (목록 줄 CARD_N개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에.
+    대가성 문구는 맨 앞(카드에 든 딜의 제휴 프로그램마다 1줄, 모아보기 글과 같은 방식), 시간대 카드면 사이트 맨 위 어느 카드인지."""
+    ps = [p for _, p in card_order(load(POSTS, []), stem)[:CARD_N]]
+    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(ps, 1)]
+    slot = SLOT_NAMES.get(stem[11:]) if len(stem) > 10 else None
+    notes = "\n".join(dict.fromkeys(n for n in (aff_note(p.get("url") or "") for p in ps) if n))
+    head = f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} 핫딜" if slot else "오늘의 핫딜 모음")
+    return rows, ((notes + "\n\n" if notes else "") + head + "\n\n" + "\n".join(rows)
+                  + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위" + (f" '{slot} 카드 딜'에서 번호를" if slot else "에서 카드 번호를") + " 누르면 바로 구매 페이지"
+                  + ("" if notes else "\n일부 링크는 제휴 링크로 수수료를 받을 수 있어요.") + "\n\n" + ig_tags(ps))[:2200]
+
+
+def ig_cards(seen):
+    """인스타 하루 3번(10/11 진우 '인스타 업그레이드 1번'): 12시·18시(IG_SLOTS) 시간대 카드 + 21시 하루 카드(모아보기 때 만든 것).
+    시간대 카드: 그 시각 첫 실행에 카드(JPEG)·번호 순서를 docs/cards/날짜_시에 만들고(워크플로가 커밋 -> 사이트 공개) 다음 실행에 사이트에 뜨면 인스타 컨테이너
+    -> ig_publish가 발행·사이트 맨 위 카드 기록. 그 시각 IG_LATE시간 안에만, 딜 IG_MIN개 미만이면 건너뜀, 회차마다 1번(먼저 표시 — 실패해도 다시 안 올림, 알림은 main)."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    now = time.time()
+    if not (tok and uid) or seen.get("ig_hold", 0) > now:
+        return
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    for h in (*IG_SLOTS, 21):
+        stem = today if h == 21 else f"{today}_{h}"
+        if not h <= kst.tm_hour < h + IG_LATE or "igs_" + stem in seen:
+            continue
+        jpg = f"docs/cards/{stem}.jpg"
+        if h != 21 and not os.path.exists(jpg):  # 시간대 카드 만들기(이번 실행) -> 다음 실행에 올림
+            posts = load(POSTS, [])
+            order = slot_deals(posts, today, h)
+            if len(order) < IG_MIN:
+                seen["igs_" + stem] = {"t": now, "skip": len(order)}
+                print("ig card", stem, f"딜 {len(order)}개 -> 건너뜀")
+                continue
+            import cards
+            os.makedirs("docs/cards", exist_ok=True)
+            json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
+            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
+                       head=IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False)
+            print("ig card", stem, f"만듦 {len(order)}개")
+            return
+        if not os.path.exists(jpg):  # 21시: 모아보기(digest)가 아직 카드를 안 만듦
+            continue
+        url = f"{SITE}cards/{stem}.jpg"
+        try:
+            http(url, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에
+        except Exception:
+            continue
+        seen["igs_" + stem] = {"t": now}  # 먼저 표시: 실패해도 같은 카드 다시 안 올림(스팸 방지), 실패는 main()이 알림
+        c = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": card_caption(stem)[1]}, {"Authorization": "Bearer " + tok}, "POST"))
+        seen["igc_" + c["id"]] = {"t": now, "card": stem}
+        print("ig card", stem, "컨테이너")
 
 
 def ig_repost(seen):
@@ -1640,7 +1733,7 @@ def coupang_remind(seen):
 
 
 def threads(seen):
-    """오늘 카드가 사이트에 올라와 있으면 관리자에게 1회 보내고, IG_TOKEN 있으면 인스타(JPEG 카드, ig_publish가 발행), THREADS_TOKEN 있으면 Threads에도 게시.
+    """오늘 카드가 사이트에 올라와 있으면 관리자에게 1회 보내고, THREADS_TOKEN 있으면 Threads에도 게시(인스타는 ig_cards — 10/11~ 하루 3번).
     Threads 토큰은 60일마다 만료 -> 실패하면 main()이 관리자에게 알림."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, key = time.strftime("%Y-%m-%d", kst), time.strftime("threads_%Y%m%d", kst)
@@ -1655,13 +1748,7 @@ def threads(seen):
     auto = [n for n, on in (("인스타", ig), ("Threads", tok)) if on]
     tg("sendPhoto", chat_id=ADMIN, photo=url, caption="📸 오늘의 카드" + ("" if ig else " (인스타에 그대로 올리면 돼)") + (f" · {'·'.join(auto)} 자동 게시 중" if auto else ""))
     seen[key] = time.time()  # 사진은 1번만. 인스타·Threads 실패는 관리자에게 알리고 재시도 안 함(스팸 방지)
-    rows, cap = card_caption(today)
-    if ig:  # 10/8 진우 '자동으로 올리게'. 컨테이너만 만들고 발행은 ig_publish(처리 끝나면)
-        try:
-            c = json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": url[:-4] + ".jpg", "caption": cap}, {"Authorization": "Bearer " + E["IG_TOKEN"]}, "POST"))
-            seen["igc_" + c["id"]] = time.time()
-        except Exception as e:  # 인스타가 실패해도 Threads는 올림
-            tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 인스타 카드 게시 실패 — 위 카드 사진을 직접 올려줘: {e!r} {getattr(e, 'body', '')}"[:400])
+    rows, cap = card_caption(today)  # 인스타는 ig_cards(10/11~ 하루 3번 — 21시 하루 카드 포함)
     if not tok:
         return
     text = (f"📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
@@ -1841,14 +1928,14 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_repost, ig_publish, coupang_remind, oy_claim, report):
+    for step in (events, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_reopen, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, ig_cards, ig_repost, ig_publish, coupang_remind, oy_claim, report):
         try:
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
-            ig = step is ig_publish
+            ig = step in (ig_cards, ig_publish)
             alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, toss_picks, toss_reopen, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
+            if step in (threads, threads_deals, toss_picks, toss_reopen, ig_cards, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
                 seen[alert] = time.time()
                 tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
                    + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))
