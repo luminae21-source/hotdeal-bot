@@ -2159,6 +2159,16 @@ H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = tbm0; assert tbm0 == (1, 2) and "TH_BEAUTY_MI
 assert [H.th_beauty(n) for n in ("[토스] 메르헨트 미셀라 클렌징워터 500ml", "아스파시아 립앤아이 리무버", "에이지랩 선크림 70ml", "토너패드 70매", "콜라겐 에센스 마스크팩 100개입", "화이트벨라 마이크로 니들 패치 12매")] == [2] * 6  # 소모품
 assert [H.th_beauty(n) for n in ("레이데이 살몬퓨어 리페어 비비크림 50ml 3개", "앙쥬 365 썬BB크림 1+1", "에이지랩 달팽이 뮤신 올인원 크림", "오에스알 EGF 리페어 크림 70ml", "토리든 세럼 50ml")] == [1] * 5  # 다른 화장품(BB크림 = 10/12 진우 링크)
 assert [H.th_beauty(n) for n in ("한경희 카본히터 Q2000", "로지텍 마우스패드", "서울우유 생크림 500ml", "배스킨라빈스 아이스크림", "쿠션 방석", "커밍글 노워시 트리트먼트")] == [0] * 6  # 화장품 아님(크림·패드·쿠션 단독 X)
+# 10/12 리뷰 고침: 화장품 판별(썬·선 표기·흔적 패드·세라마이드 크림·기초 N종 / 충전기·재생 토너·살균기·세제·스티커·욕실·몰 이름 [올리브영]은 X)
+assert [H.th_beauty(n) for n in ("닥터지 그린 마일드 업 썬크림 50ml", "라운드랩 수분 선블럭", "넘버즈인 썬스틱", "메디힐 흔적 패드 100매", "이니스프리 선로션", "키스미 마스카라 리무버")] == [2] * 6
+assert [H.th_beauty(n) for n in ("토리든 솔리드인 세라마이드 크림", "설화수 탄력 3종 기초 세트", "AHC 기초 5종 선물세트")] == [1] * 3
+assert [H.th_beauty(n) for n in ("[토스] 에센스웨어 GaN 65W 멀티 충전기", "삼성 호환 재생 토너 카트리지", "자외선 칫솔 살균기", "올인원 캡슐세제", "쿨링 미스트 선풍기", "스티커 리무버", "욕실 클렌저", "[올리브영] 오리온 초코파이")] == [0] * 8
+# 순위: 토스 카테고리 이름의 '·'도(②), 봇 '🏆 인기 · 뽐뿌에서 지금 많이 보는 글 N위'는 커뮤니티 조회 순위라 X, '10위'·'13위'를 1~3위로 안 읽음, '30일 최저가는 아니지만' X
+assert [H.th_tier(x) for x in ("🔥 a\n\n토스 최대할인가 · 선블록·선크림·선로션 2위 · 무료배송", "🔥 a\n\n토스 건강·발패치 1위", "🔥 a\n🏆 인기 · 뽐뿌에서 지금 많이 보는 글 1위\n\n좋음",
+                               "🔥 a\n🏆 인기 · 클리앙에서 지금 많이 보는 글 2위", "🔥 a\n\n토스 최대할인가 · BB크림 10위", "🔥 a\n\n토스 · 13위", "🔥 a\n\n30일 최저가는 아니지만 괜찮음")] == [2, 2, 0, 0, 0, 0, 0]
+# 🛒 = 문구 없이 제목만 🛒여도 약한 딜(10/11 로로보아·삭스팡·후드 필터가 ②로 읽혀 Threads에 🔥로 나가던 것), 토스 Threads 글 끝 '🛒 https://' 링크 줄은 아님
+assert H.th_weak("🛒 [토스] 삭스팡 양말 (9,900원)\n\n30일 내 최저가 · 쿠팡에선 같은 상품을 못 찾아") and H.th_tier("🛒 [토스] 삭스팡 양말 (9,900원)\n\n30일 내 최저가") == 0
+assert H.th_weak(f"[광고] x\n{H.TOSS_NOTE}\n\n🛒 [토스] y") and not H.th_weak("🔥 x\n\n🛒 https://toss.im/_m/1") and not H.th_weak("🔥 [토스] 립앤아이 리무버")
 S9c, W9c = "🔥 x\n💡 쿠팡 같은 상품(10,000원)보다 1,000원 쌈", "🛒 x\n🤔 솔직히 특가로는 약한 제품"
 time.time = lambda: TK("2026-10-12 10:00"); s9c = {}
 assert H.th_solo(s9c, "🔥 x", beauty=1, slot=True) and not H.th_solo(s9c, "🔥 x", beauty=1) and not H.th_solo(s9c, "🔥 x", slot=True)  # 화장품 자리: 진우 화장품은 ①② 아니어도 O, 봇 화장품·화장품 아닌 진우 링크는 ①②만
@@ -2198,6 +2208,8 @@ assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [True, True
 seen9b = {}; json.dump([{"t": f"{D9c} {t}", "text": x, "url": u, **e} for t, x, u, e in P9c[4:]], open("posts.json", "w"), ensure_ascii=False)
 m9 = th9c("00:50"); assert len(m9) == 1 and "클렌징워터" in m9[0]  # ①② 화장품이 없으면 진우 화장품 링크가 자리 채움 — 소모품 먼저
 assert th9c("01:40") == []  # 채운 뒤엔 일반 🔥 진우 화장품도 리스트로
+seen9b = {}; json.dump([{"t": f"{D9c} 00:40", "text": f"{H.TOSS_NOTE}\n\n🛒 [토스] 앙쥬 비비크림 (9,900원)\n\n30일 내 최저가 · 쿠팡에선 같은 상품을 못 찾아", "url": "https://toss.shopping/_m/w2", "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+assert th9c("00:50") == []  # 🛒(문구 없이 제목만)인 진우 화장품 = 화장품 자리에도 X(리스트로)
 seen9b = {}; json.dump([{"t": f"{D9c} 00:40", "text": "🔥 [쿠팡] 봇 클렌징폼 (5,900원)\n\n좋음", "url": "https://link.coupang.com/a/c", "s": 8}], open("posts.json", "w"), ensure_ascii=False)
 assert th9c("00:50") == []  # 봇 딜은 화장품이어도 ①②만
 assert "beauty=bt, slot=True" in inspect.getsource(H.toss_picks) and "th_mark(seen, bt)" in inspect.getsource(H.toss_picks) and "beauty=th_beauty(e[\"n\"])" in inspect.getsource(H.toss_reopen)  # 토스 이름 예약 = 진우 화장품(자리 채움), 재오픈은 화장품 수에만 셈
@@ -2222,10 +2234,19 @@ assert len(sent) == 1 and "💄 <b>토스 뷰티 베스트 중 살 만한 2개</
 t9 = b9[0]["text"][0]
 assert t9.startswith(H.TOSS_NOTE + "\n\n🔥 메르헨트 미셀라 클렌징워터 500ml\n💰 11,900원 (30%↓) · ⭐ 4.8 (리뷰 1,200)\n👉 500ml 대용량 <싸다>\n\n🛒 https://toss.im/_m/92") and b9[0]["link_attachment"] == ["https://toss.im/_m/92"]  # 소모품 먼저, 토스 이름 예약 글 틀, 쉐어링크
 assert "hotdealpick.kr" not in t9 and "쿠팡" not in t9  # API 상품 = 사이트·쿠팡 비교 X
-s9c = {}; beauty9c("15:05", s9c); assert s9c["thsolo_20261012"]["b"] == 1 and beauty9c("19:05", s9c) == []  # 채웠으면 19시엔 채널만
+s9c = {}; beauty9c("15:05", s9c); assert s9c["thsolo_20261012"]["b"] == 1
+for k in [k for k in s9c if k.startswith("tb_")]: del s9c[k]  # 같은 상품도 다시 후보로(19시 회차가 채널 글은 올리게)
+assert beauty9c("19:05", s9c) == [] and len(sent) == 1  # 채웠으면 19시엔 채널만(채널 글은 그대로)
 assert beauty9c("15:05", {"thsolo_20261012": {"t": 1, "n": 1, "b": 1, "last": 0}}) == []  # 오늘 화장품 이미 1개(진우 아침 이름 예약 등) -> 채널만
 assert beauty9c("15:05", {}, [{"at": f"{D9c} 22:20", "name": "메르헨트 폼클렌징 500ml 2개", "url": "https://toss.shopping/_m/n", "deal": True, "text": "🔥 <b>[토스] 메르헨트 폼클렌징</b>"}]) == []  # 밤에 진우 화장품 링크 -> 그게 채움
 assert beauty9c("15:05", {}, [{"at": f"{D9c} 22:20", "name": "레이데이 비비크림 3개", "api": True}]) == []  # 진우 화장품 이름 예약도
+json.dump([{"t": f"{D9c} 18:40", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 에이지랩 선크림 70ml 2개 (8,300원)\n\n토스 최대할인가 · 4위", "url": "https://toss.shopping/_m/s", "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+assert beauty9c("19:05", {}) == []  # 18:40 진우 화장품 링크가 채널엔 나갔고 Threads 차례 대기(45분 간격 등) -> 뷰티 회차가 자리 안 뺏음(10/12 리뷰)
+json.dump([{"t": f"{D9c} 18:40", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 에이지랩 선크림 70ml 2개 (8,300원)\n\n토스 최대할인가 · 4위", "url": "https://toss.shopping/_m/s", "own": 1, "th": 1}], open("posts.json", "w"), ensure_ascii=False)
+assert len(beauty9c("19:05", {})) == 1; json.dump([], open("posts.json", "w"))  # 이미 Threads에 나갔으면 기다릴 것 없음(b는 그 글이 셈 — 여기선 기록 없이 회차만 봄)
+assert beauty9c("19:05", {}, [{"at": f"{D9c} 19:00", "name": "니들 패치 12매", "api": True}]) == []  # 19:00 이름 예약 = 같은 실행 뒤 순서 toss_picks가 올림 -> 기다림
+assert len(beauty9c("19:05", {"pk_2026-10-12 19:00": {"st": "done"}}, [{"at": f"{D9c} 19:00", "name": "니들 패치 12매", "api": True}])) == 1  # 이미 처리됨 -> 안 기다림
+assert len(beauty9c("15:05", {}, [{"at": f"{D9c} 22:20", "name": "올리브영 클렌징 세일", "url": "https://oy.run/x", "text": "📢 <b>올리브영 클렌징 행사</b>"}])) == 1  # 링크 있어도 상품 딜(deal) 아니면 안 셈
 assert len(beauty9c("19:05", {}, [{"at": f"{D9c} 07:30", "name": "니들 패치 12매", "api": True}, {"at": f"{D9c} 22:20", "name": "한경희 카본히터", "url": "https://toss.shopping/_m/h", "deal": True},
                                     {"at": f"{D9c} 23:00", "name": "디오프러스 비비크림", "url": "https://toss.shopping/_m/d", "deal": True, "text": "🛒 <b>[토스] 디오프러스</b>\n\n🤔 솔직히 특가로는 약한 제품"},
                                     {"at": "2026-10-13 22:20", "name": "레이데이 비비크림", "api": True}])) == 1  # 지난 예약·화장품 아님·🛒·내일 것은 안 셈 -> 뷰티 회차가 채움
