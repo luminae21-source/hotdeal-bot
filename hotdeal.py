@@ -1512,10 +1512,11 @@ def digest(seen, posts):
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
     if 0 < len(night) < PREVIEW_MIN:
         tail = "\n\n🌙 <b>오늘 밤 예약 특가</b>\n" + "\n".join(night_line(d) for d in night) + tail
-    while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
+    while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자)·서식 100개(링크·굵게·기울임 + 글 속 주소 — 10/11 21시 딜 100개 넘어 ENTITIES_TOO_LONG) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
         more = f"\n… 외 {len(todays) - len(rows)}개는 사이트에서" if len(rows) < len(todays) else ""
         text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + tail
-        if len(html.unescape(re.sub(r"<[^>]+>", "", text))) <= 4000 or len(rows) <= 1:
+        seen_text = html.unescape(re.sub(r"<[^>]+>", "", text))
+        if (len(seen_text) <= 4000 and len(re.findall(r"<(?:a|b|i)[ >]", text)) + seen_text.count("http") <= 90) or len(rows) <= 1:
             break
         rows.pop()
     if (tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}) and not bundled(seen)) or draft(text):  # 10/10 진우 '✅ 없이 자동 게시' — 채널 게시가 실패하면 예전처럼 초안

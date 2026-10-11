@@ -2270,6 +2270,9 @@ H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 
 assert "\n\n🌙 <b>오늘 밤 예약 특가</b>\n22:20 🔥 <a href=\"https://toss.shopping/_m/a\">메르헨트" in d7 and "22:30 🔥 " in d7 and "_m/p0" not in d7 and d7.index("🌙") < d7.index("🔎 지난 딜 전체 보기")
 sent7.clear(); json.dump(EV7, open("events.json", "w"), ensure_ascii=False); dg7 = {}; H.digest(dg7, json.load(open("posts.json")))
 assert "🌙" not in [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]  # 3개 이상이면 모아보기엔 안 넣음(밤 10시 미리보기)
+json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 딜{k} (1,000원)", "url": f"https://oy.run/{k}" if k % 2 else f"https://link.coupang.com/a/{k}", "s": 7} for k in range(130)], open("posts.json", "w"))
+sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
+assert len(re.findall(r"<(?:a|b|i)[ >]", d7)) + html.unescape(re.sub(r"<[^>]+>", "", d7)).count("http") <= 90 and "개는 사이트에서" in d7 and any(k.startswith("digest_") for k in dg7)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
 assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "toss_reopen, preview, ig_cards" in inspect.getsource(H.main)  # 토스 22시 회차보다 먼저 · 실패 알림(Threads)
 time.time = tt7; del H.E["THREADS_TOKEN"]
