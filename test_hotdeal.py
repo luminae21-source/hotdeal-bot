@@ -1319,6 +1319,7 @@ def sp_http(url, body=None, headers=None, method=None):
     if path == "/links":
         if body["tacaItemId"] in sp_fail["link"]: return json.dumps({"resultType": "FAIL", "error": {"reason": "발급 제한"}})
         if sp_fail["net"]: sp_fail["net"] -= 1; raise OSError("tunnel down")
+        if sp_fail.get("deny"): sp_fail["deny"] -= 1; return json.dumps({"resultType": "FAIL", "error": {"errorCode": "ACCESS_DENIED", "reason": "IP"}})
         return ok({"shortUrl": f"https://toss.shopping/_m/P{body['tacaItemId']}"})
     raise AssertionError(url)
 def sp_pick(prompt, lines):
@@ -1395,6 +1396,8 @@ def sp_down(url, *a, **k):
 H.http = sp_down; seen = {}; assert "toss pick list OSError" in sp_run("2026-10-12 00:10") and not sp_sent and seen == {}; H.http = sp_http  # 터널 끊김 -> 예외 없이(Threads 실패 알림 X) 다음 실행에
 seen = {}; sp_fail["net"] = 1; sp_run("2026-10-12 00:10"); assert not seen["pk_2026-10-12 01:00"].get("id") and not sp_sent  # 발급 때 터널 끊김 = 막힌 상품 아님 -> 진우에게 안 물음, 다음 실행에 다시
 sp_run("2026-10-12 00:24"); assert seen["pk_2026-10-12 01:00"]["link"] == "https://toss.shopping/_m/P501"
+seen = {}; sp_fail["deny"] = 1; sp_run("2026-10-12 00:10"); assert not seen["pk_2026-10-12 01:00"].get("id") and not sp_sent  # 터널 실패로 직접 호출 = ACCESS_DENIED -> 막힌 상품 아님(진우에게 안 물음)
+sp_run("2026-10-12 00:24"); assert seen["pk_2026-10-12 01:00"]["link"] == "https://toss.shopping/_m/P501"
 seen["tb_501"] = {"t": T("2026-10-12 00:30"), "n": "x"}; sp_run("2026-10-12 01:05"); assert seen["pk_2026-10-12 01:00"]["st"] == "skip" and not [p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]  # 오늘 이미 나간 상품(특가 회차 등) -> 같은 날 두 번 X
 seen = {"pk_2026-10-12 01:00": {"t": T("2026-10-12 00:00"), "ids": [501], "n0": "옛 이름", "id": 501, "n": "x", "link": "L"}}; sp_run("2026-10-12 00:10")
 assert seen["pk_2026-10-12 01:00"]["n0"] == "에이지랩 달팽이 뮤신 올인원 크림 50g 3개 + 선크림 증정" and seen["pk_2026-10-12 01:00"]["link"] == "https://toss.shopping/_m/P501"  # 같은 시각 행 이름이 바뀌면 처음부터
@@ -1417,7 +1420,7 @@ assert "휴지</b></a>\n⏰ 토스 하루특가 · 밤 12시까지\n💰" in p["
 assert "끝난 상품" not in str(sp_ai) and not [a for a, l in sp_ai if H.TOSS_EASE in a]  # 끝난 하루특가 X · 쿠팡 언급 있는 TOSS_EASE X(진우 '쿠팡 안 씀')
 w = next(v for k, v in seen.items() if k.startswith("sold_") and v["k"] == "top")
 assert [x[0] for x in w["it"]] == [502, 503] and [x[3] for x in w["it"]] == [0, 1] and "tossspecial_20261012_8" in seen  # 하루특가 목록에 있는 휴지만 품절 땐 '밤 12시 재오픈'
-assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n🔥 토스 특가 중 살 만한 2개") and "샴푸" not in str(sp_ai)  # Threads도, 이름 예약 상품은 Claude 후보에도 없음
+assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n🔥 토스 특가 중 살 만한 2개") and "휴지 — 9,900원 (하루특가·밤 12시까지)" in sp_th[0]["text"][0] and "전기요 — 89,000원\n" in sp_th[0]["text"][0] and "샴푸" not in str(sp_ai)  # Threads도, 이름 예약 상품은 Claude 후보에도 없음
 seen = {}; assert not sp_run("2026-10-12 11:05", lambda s: H.toss_deals(s, "special")) and not sp_calls  # 8시 회차는 3시간 안에만(놓치면 낮에 몰아 안 올림)
 seen = {"bundles": {"t": T("2026-10-12 22:01"), "ts": [T("2026-10-12 22:01")]}}; assert "toss_special 미룸" in sp_run("2026-10-12 22:05", lambda s: H.toss_deals(s, "special")) and not sp_calls
 seen = {"tb_501": 1, "tb_502": 1, "tb_503": 1, "tb_506": 1, "tb_508": 1, "tb_510": 1}; sp_run("2026-10-12 22:20", lambda s: H.toss_deals(s, "special")); assert "tossspecial_20261012_22" in seen and not sp_sent and not [c for c in sp_calls if "detail" in c]  # 후보 0 -> 회차 끝

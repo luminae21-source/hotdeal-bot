@@ -879,7 +879,7 @@ def toss_deals(seen, best=False):
             continue
         seen[f"tb_{x['tacaItemId']}"] = {"t": time.time(), "n": x["displayName"]}  # 올린 상품은 3일(seen 보관 기간) 안엔 베스트에 다시 안 올림 (베스트는 며칠씩 그대로, 하루특가와도 겹침). 이름 = 커뮤니티 딜 판단 때 '이미 올린 딜'로
         got.append(x)
-        plain.append(f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원\n{link}")
+        plain.append(f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원" + (" (하루특가·밤 12시까지)" if x["tacaItemId"] in night else "") + f"\n{link}")
         rows.append((x["displayName"], link, (["⏰ 토스 하루특가 · 밤 12시까지"] if x["tacaItemId"] in night else []) + [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
                                              + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if x.get("reviewCount") else ""), "👉 " + esc(p["comment"])]))
     print("toss_special" if special else "toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
@@ -1124,13 +1124,12 @@ def toss_picks(seen):
             if hit:
                 try:
                     link = toss("/links", {"tacaItemId": hit[0], "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
-                except RuntimeError as ex:  # resultType FAIL = 발급 제한 상품 -> 진우에게
+                except Exception as ex:  # resultType FAIL(발급 제한 상품) -> 진우에게 / 터널·네트워크·ACCESS_DENIED(터널 실패로 직접 호출)·호출 제한 -> 이 후보 다시(다음 실행), 이번엔 진우에게 안 물음
                     print("toss link", repr(ex))
+                    if not isinstance(ex, RuntimeError) or re.search(r"ACCESS|DENIED|UNAUTH|\bIP\b|RATE|LIMIT|429|TOO_MANY|500", str(ex), re.I):
+                        r["ids"], r["net"] = [i for i in r["ids"] if i != hit[0]] or ["-"], now
+                        continue
                     link = None
-                except Exception as ex:  # 터널·네트워크 -> 이 후보 다시(다음 실행), 이번엔 진우에게 안 물음
-                    print("toss link", repr(ex))
-                    r["ids"], r["net"] = [i for i in r["ids"] if i != hit[0]] or ["-"], now
-                    continue
                 r.update(id=hit[0], n=hit[1], link=link, t=now)
                 print("toss pick", e["at"], clip(e["name"], 30), "->", clip(hit[1], 30), f"{hit[2]:,}원 (id {hit[0]}, {pick[0]['score']}점)", "| 링크" if link else "| 발급 실패")
             else:
