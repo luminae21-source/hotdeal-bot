@@ -724,6 +724,8 @@ def events(seen):
                text=(f"<i>{note}</i>\n\n" if note else "") + ev["text"], reply_markup={"inline_keyboard": [[{"text": ev["button"], "url": ev["url"]}]]})
         if m:
             seen[key] = time.time()
+            if ev.get("name") and toss_share(ev["url"]):  # 진우 토스 예약 -> 품절 지켜보기(toss_soldout): 이 글 번호·이 예약의 본문 그대로(같은 링크를 두 번 예약해도 안 섞임)
+                seen[f"sold_{m['message_id']}"] = sold_ev(ev, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
             if ev.get("deal"):  # Claude가 예약한 상품 딜(10/10 진우 '쓰레드에 업로드 되게') -> posts.json = 사이트·모아보기·Threads에도
                 record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag"), "own": 1})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
@@ -948,7 +950,15 @@ def toss_relink(seen):
 
 
 SOLD = ([None, ("⛔ <b>품절</b> — 다시 들어오면 답글로 알려드릴게요", "품절"), ("⛔ <b>품절</b>", "품절")],  # [하루특가 아님 / 하루특가][상태 1 = 품절, 2 = 끝]: (글 줄, 버튼 글자)
-        [None, ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈"), ("⛔ <b>품절</b> — 하루특가가 끝났어요", "품절 · 특가 끝")])  # 토스 화면 '품절 · 밤 12시부터 구매할 수 있어요'(10/11 진한다시)
+        [None, ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈"), ("⛔ <b>특가 끝</b> — 이 가격으로는 다시 안 열렸어요", "특가 끝")])  # 토스 화면 '품절 · 밤 12시부터 구매할 수 있어요'(10/11 진한다시)
+SOLD_EDITS = 8  # 한 실행에 고치는 채널 글 수(텔레그램 채널 분당 약 20개 — 밤 12시에 한꺼번에 열려도 나머지는 다음 실행에)
+
+
+def sold_ev(ev, day):
+    """진우 예약 글(토스 쉐어링크 + 상품명) -> 품절 지켜보기 항목. 가격 = 버튼 'N원', 없으면 본문 첫 'N원'(그래도 없으면 id 찾을 때 API 가격)."""
+    note, won = aff_note(ev["url"]), re.search(r"([\d,]+)원", ev.get("button", "")) or re.search(r"([\d,]+)원", ev.get("text", ""))
+    return {"t": time.time(), "d": day, "k": "ev", "pre": f"<i>{note}</i>\n\n" if note else "", "body": ev["text"], "btn": ev.get("button", "🛒 구매하기"),
+            "url": ev["url"], "n": ev["name"], "p": int(won[1].replace(",", "")) if won else 0, "it": []}
 
 
 def sold_render(w):
@@ -966,81 +976,116 @@ def sold_render(w):
 def toss_soldout(seen):
     """오늘 올린 토스 글(API 묶음 + 진우 예약 중 API 상품과 이름이 같은 것)의 품절을 매 실행 상품 상세 API 1번(최대 30개, 오래 안 본 것부터)으로 다시 봄(10/11 진우 '품절 뜨는 경우는 속상해').
     품절 -> 채널 글 수정('⛔ 품절 — 밤 12시부터 다시 살 수 있어요' + 버튼 글자 '품절 · 밤 12시 재오픈', 링크는 그대로 — 진우 링크 안 뺌).
-    다시 열림(품절 아님 + 올린 가격 이하) -> 그 글에 답글 '🔔 다시 열렸어요'(알림) + 품절 줄 지움. 하루특가는 밤 12시에 끝나서 다음 날 1시까지만 품절 상품을 보고,
-    그때도 안 열리면 '하루특가가 끝났어요'로 바꾸고 그만 봄(토스 API 데이터 보관은 1일 이내). Threads는 글 수정 API가 없어 채널만."""
+    다시 열림(올린 가격 이하) -> 그 글에 답글 '🔔 다시 열렸어요'(상품당 하루 1번) + 품절 줄 지움. 품절된 하루특가는 밤 12시 전엔 안 열려서 다시 안 보고,
+    밤 12시 지나 한 번은 꼭 + 1시까지 봄 -> 그래도 안 열리면 '특가 끝 — 이 가격으로는 다시 안 열렸어요'로 바꾸고 그만 봄(토스 API 데이터 보관은 1일 이내).
+    상태는 채널 글 수정이 성공해야 바꿈(실패하면 다음 실행에 다시, 3번 실패 = 지운 글 등 -> 그만 봄). Threads는 글 수정 API가 없어 채널만."""
     if not HAS_TOSS:
         return
     now, kst = time.time(), time.gmtime(time.time() + 9 * 3600)
-    today, yday = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
+    today, midnight = time.strftime("%Y-%m-%d", kst), now - (kst.tm_hour * 3600 + kst.tm_min * 60 + kst.tm_sec)  # 오늘 0시(KST)
     norm = lambda s: re.sub(r"\W", "", s or "")
-    mids = {p["url"]: p["mid"] for p in load(POSTS, []) if p["t"].startswith(today) and p.get("mid") and p.get("own")}
-    for ev in load(EVENTS, []):  # 진우 예약(토스 쉐어링크 + 상품명)으로 오늘 채널에 나간 글 -> 지켜보기에 추가(posts.json의 채널 글 번호)
-        if ev.get("name") and toss_share(ev.get("url")) and ev["at"].startswith(today) and "ev_" + ev["at"] in seen and ev["url"] in mids:
-            note, won = aff_note(ev["url"]), re.search(r"([\d,]+)원", ev.get("button", ""))
-            seen.setdefault(f"sold_{mids[ev['url']]}", {"t": now, "d": today, "k": "ev", "pre": f"<i>{note}</i>\n\n" if note else "", "body": ev["text"],
-                                                        "btn": ev["button"], "url": ev["url"], "n": ev["name"], "p": int(won[1].replace(",", "")) if won else 0, "it": []})
-    watch = {k: w for k, w in seen.items() if k.startswith("sold_")}
-    need = [w for w in watch.values() if w["k"] == "ev" and w["d"] == today and not w["it"]]
-    if need:  # 진우 예약 상품 id: 오늘 하루특가 목록 전체(커서, 하루 1번 저장) -> 없으면 toss_relink가 모아 둔 1일 목록(베스트·카테고리)에서 이름으로
-        if seen.get("soldmap", {}).get("d") != today:
-            got, cur = {}, None
+    evs = [e for e in load(EVENTS, []) if e.get("name") and toss_share(e.get("url")) and e["at"].startswith(today) and "ev_" + e["at"] in seen]
+    own = [p for p in load(POSTS, []) if p["t"].startswith(today) and p.get("mid") and p.get("own")]
+    for ev in evs:  # events()가 지켜보기를 만들기 전(10/11 배포 전)에 나간 예약 글: 같은 링크가 오늘 예약·글 모두 1개일 때만 그 글 번호로(다른 글에 잘못 붙지 않게)
+        ps = [p for p in own if p.get("url") == ev["url"]]
+        if len(ps) == 1 and sum(e["url"] == ev["url"] for e in evs) == 1:
+            seen.setdefault(f"sold_{ps[0]['mid']}", sold_ev(ev, today))
+    if seen.get("soldmap", {}).get("d") != today:  # 하루특가 목록은 그날만(endAt = 밤 12시)
+        seen.pop("soldmap", None)
+    sm = seen.get("soldmap")
+    need = [w for k, w in seen.items() if k.startswith("sold_") and w["k"] == "ev" and w["d"] == today and not w["it"] and not w.get("off")]
+    if need and (not sm or (sm["n"] < 3 and now - sm["t"] > 7200)):  # 오늘 하루특가 목록 전체(커서): 하루 최대 3번(처음 + 못 찾은 이름이 있으면 2시간 뒤), 실패해도 아래 확인은 계속
+        got, cur = dict(sm["m"]) if sm else {}, None
+        try:
             for _ in range(10):
-                r = toss("/products/today-deals?size=30" + (f"&cursor={urllib.parse.quote(cur, safe='')}" if cur else ""))
-                got.update({norm(x["displayName"]): x["tacaItemId"] for x in r["items"]})
+                r = toss("/products/today-deals?size=30" + (f"&cursor={urllib.parse.quote(str(cur), safe='')}" if cur else ""))
+                got.update({norm(x["displayName"]): [x["tacaItemId"], x["displayPrice"]] for x in r["items"]})
                 cur = r.get("nextCursor")
                 if not (r.get("hasNext") and cur):
                     break
-            seen["soldmap"] = {"t": now, "d": today, "m": got}
-        day, cache = seen["soldmap"]["m"], {norm(x[1]): x[0] for x in seen.get("tosscache", {}).get("items", [])}
+        except Exception as e:
+            print("toss soldout list", repr(e))
+        sm = seen["soldmap"] = {"t": now, "d": today, "n": (sm["n"] if sm else 0) + 1, "m": got}
+    if need and sm:  # 하루특가 목록에 없으면 toss_relink가 모아 둔 1일 목록(베스트·카테고리)에서 같은 이름
+        cache = {norm(x[1]): [x[0], x[2]] for x in seen.get("tosscache", {}).get("items", []) if x[3] > now - 86400}
         for w in need:
-            i = day.get(norm(w["n"])) or cache.get(norm(w["n"]))
-            if i:
-                w["it"] = [[i, w["n"], w["p"], int(norm(w["n"]) in day), 0, 0]]
-    cand = []  # (마지막 확인, 글, 상품 번호)
-    for k, w in watch.items():
+            hit = sm["m"].get(norm(w["n"])) or cache.get(norm(w["n"]))
+            if hit:
+                w["it"] = [[hit[0], w["n"], w["p"] or hit[1], int(norm(w["n"]) in sm["m"]), 0, 0]]
+    cand, fin = [], []  # (마지막 확인, 글, 상품 번호) / 끝 문구로 바꿀 글
+    for k, w in [(k, w) for k, w in seen.items() if k.startswith("sold_")]:
+        if w.get("off"):
+            if w["d"] != today:
+                del seen[k]
+            continue
         if w["d"] == today:  # 오늘: 안 품절된 상품 + 하루특가 아닌 품절 상품(다시 들어올 수 있음). 품절된 하루특가는 밤 12시 전엔 안 열려서 안 봄(일 상한 아끼기)
             cand += [(x[5], k, i) for i, x in enumerate(w["it"]) if not x[4] or not x[3]]
             continue
-        if w["d"] == yday and kst.tm_hour < 1:  # 밤 12시 ~ 1시: 품절이던 상품이 다시 열렸는지만
-            cand += [(x[5], k, i) for i, x in enumerate(w["it"]) if x[4] == 1]
-            if not any(x[4] == 1 for x in w["it"]):
-                del seen[k]
-            continue
-        for x in w["it"]:  # 1시 넘어도 안 열림 -> '하루특가가 끝났어요'로 바꾸고 그만 봄
-            x[4] = 2 if x[4] == 1 else x[4]
-        if any(x[4] == 2 for x in w["it"]):
-            text, kb = sold_render(w)
-            tg("editMessageText", chat_id=CHANNEL, message_id=int(k[5:]), text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
-        del seen[k]
-    ids = list(dict.fromkeys(watch[k]["it"][i][0] for _, k, i in sorted(cand)))[:30]  # 상세 조회 한 번에 최대 30개(일 상한 = 받은 상품 10,000개)
-    if not ids:
-        return
-    r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))
-    data, out, back = {x["tacaItemId"]: x for x in r["items"]}, 0, 0
-    for k in dict.fromkeys(k for _, k, _ in cand):
-        w, changed, opened = watch[k], False, []
-        for i, x in enumerate(w["it"]):
+        out = [i for i, x in enumerate(w["it"]) if x[4] == 1]
+        if not out:
+            del seen[k]
+        elif kst.tm_hour < 1 or any(w["it"][i][5] < midnight for i in out):  # 밤 12시 지나 한 번은 꼭 보고(실행이 늦어도), 1시까지는 계속
+            cand += [(w["it"][i][5], k, i) for i in out]
+        else:
+            fin.append(k)
+    ids = list(dict.fromkeys(seen[k]["it"][i][0] for _, k, i in sorted(cand)))[:30]  # 상세 조회 한 번에 최대 30개(일 상한 = 받은 상품 10,000개)
+    data, nf = {}, []
+    if ids:
+        r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))
+        data, nf = {x["tacaItemId"]: x for x in r["items"]}, r.get("notFoundIds") or []
+    edits, n_out, n_back = 0, 0, 0
+    for k in list(dict.fromkeys(k for _, k, _ in cand)) + fin:
+        w = seen[k]
+        new, opened = [list(x) for x in w["it"]], []
+        for i, x in enumerate(new):
+            if k in fin:
+                x[4] = 2 if x[4] == 1 else x[4]
+                continue
+            d = data.get(x[0])
             if x[0] not in ids:
                 continue
-            x[5], d = now, data.get(x[0])
-            if not d:  # 판매 종료·페널티 등으로 조회 안 됨 -> 그대로 둠(문서: 재시도 X, 영구 제외 X)
+            x[5] = w["it"][i][5] = now if d else now + 7200  # 조회 안 되는 상품(판매 종료·페널티)은 2시간 뒤에(문서: 바로 재시도 X, 영구 제외 X)
+            if not d:
                 continue
-            if not x[4] and d.get("isSoldOut") and w["d"] == today:
-                x[4], changed, out = 1, True, out + 1
-            elif x[4] == 1 and not d.get("isSoldOut") and (not x[2] or d["displayPrice"] <= x[2]):
-                x[4], changed, back = 0, True, back + 1
-                opened.append((w["url"] if w["k"] == "ev" else w["rows"][i][1], x[1], d["displayPrice"]))
-        if changed:
-            text, kb = sold_render(w)
-            tg("editMessageText", chat_id=CHANNEL, message_id=int(k[5:]), text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
-        for url, name, price in opened:  # 답글 = 채널 알림(밤 0~8시는 tg()가 무음). 버튼 링크 = 원래 글과 같은 링크
+            avail, cheap = not d.get("isSoldOut"), bool(x[2]) and d["displayPrice"] <= x[2]
+            if not x[4] and not avail and w["d"] == today:
+                x[4] = 1
+            elif x[4] == 1 and avail and (cheap or not x[3]):  # 하루특가는 올린 가격 이하로 열려야 다시 열림(비싸지면 = 특가 끝), 다른 상품은 들어오면 품절 줄 지움
+                x[4] = 0
+                if cheap and i not in w.get("rp", []):
+                    opened.append((i, d["displayPrice"]))
+        if [x[4] for x in new] == [x[4] for x in w["it"]]:
+            continue
+        if edits >= SOLD_EDITS:  # 상태를 안 바꿨으니 다음 실행에 다시 잡힘
+            continue
+        edits += 1
+        text, kb = sold_render({**w, "it": new})
+        try:
+            ok = tg("editMessageText", chat_id=CHANNEL, message_id=int(k[5:]), text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
+        except Exception as e:  # 네트워크 오류도 이 글만 건너뜀(다른 글·다른 단계는 계속)
+            print("toss soldout edit", k, repr(e))
+            ok = None
+        if not ok:
+            w["fail"] = w.get("fail", 0) + 1
+            w["off"] = 1 if w["fail"] >= 3 else w.get("off")  # 지운 글 등 -> 그만 봄
+            continue
+        n_out += sum(x[4] == 1 and y[4] != 1 for x, y in zip(new, w["it"]))
+        w["it"], w["fail"] = new, 0
+        for i, price in opened:  # 답글 = 채널 알림(밤 0~8시는 tg()가 무음). 버튼 링크 = 원래 글과 같은 링크
+            url = w["url"] if w["k"] == "ev" else w["rows"][i][1]
             note = aff_note(url)
-            tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_parameters={"message_id": int(k[5:]), "allow_sending_without_reply": True},
-               text=(f"<i>{note}</i>\n\n" if note else "") + f"🔔 <b>다시 열렸어요!</b> {esc(name)} — {price:,}원", reply_markup={"inline_keyboard": [[{"text": f"🛒 {price:,}원 구매하기", "url": url}]]})
-        if w["d"] != today and not any(x[4] == 1 for x in w["it"]):
+            w.setdefault("rp", []).append(i)
+            n_back += 1
+            try:
+                tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_parameters={"message_id": int(k[5:])},
+                   text=(f"<i>{note}</i>\n\n" if note else "") + f"🔔 <b>다시 열렸어요!</b> {esc(new[i][1])} — {price:,}원", reply_markup={"inline_keyboard": [[{"text": f"🛒 {price:,}원 구매하기", "url": url}]]})
+            except Exception as e:
+                print("toss soldout reply", k, repr(e))
+        if k in fin or (w["d"] != today and not any(x[4] == 1 for x in w["it"])):
             del seen[k]
-    evs = [w for w in watch.values() if w["k"] == "ev" and w["d"] == today]
-    print("toss soldout", len(ids), "checked", len(r.get("notFoundIds") or []), "notfound", out, "out", back, "reopen", f"| 진우 예약 id {sum(bool(w['it']) for w in evs)}/{len(evs)}")
+    if ids or fin:
+        evw = [w for k, w in seen.items() if k.startswith("sold_") and w["k"] == "ev" and w["d"] == today]
+        print("toss soldout", len(ids), "checked", len(nf), "notfound", n_out, "out", n_back, "reopen", edits, "edits", f"| 진우 예약 id {sum(bool(w['it']) for w in evw)}/{len(evw)}")
 
 
 def digest(seen, posts):
