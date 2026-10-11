@@ -932,9 +932,100 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_soldout, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
+
+# 5-3e) 토스 품절 표시(10/11 진우 '품절 뜨는 경우는 속상해 — 구매하는 사람이 알 수 있게, 알람도'): 오늘 올린 토스 글(진우 예약 = 이름으로 API id, API 묶음 = 게시 때 id 저장)을
+#       매 실행 상품 상세 1번(최대 30개, 오래 안 본 것부터)으로 다시 봄 -> 품절이면 채널 글에 ⛔ 줄 + 버튼 글자만(링크 그대로), 밤 12시~1시에 다시 열리면(올린 가격 이하) 답글 🔔 + 줄 지움,
+#       1시 넘어도 안 열리면 '하루특가가 끝났어요'로 바꾸고 그만 봄. 품절된 하루특가는 낮엔 다시 안 봄(일 상한)
+import calendar, copy
+T = lambda s: calendar.timegm(time.strptime(s, "%Y-%m-%d %H:%M")) - 9 * 3600  # KST 시각 -> epoch
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1"); H.E.pop("THREADS_TOKEN", None)
+H.HAS_TOSS, ph3, tg6, pa3, pj3, ev3 = True, H.http, H.tg, H.ai_pick, open("posts.json").read(), H.EVENTS
+so_out, so_price, so_calls, so_sent = set(), {}, [], []
+SO_DAY = [(901 + k, f"하루특가{k}", 1000 * (k + 1)) for k in range(35)] + [(950, "CJ제일제당 쇠고기 진한다시 1kg", 6900)]
+def so_http(url, body=None, headers=None, method=None):
+    if url == "https://oauth2.cert.toss.im/token":
+        return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    so_calls.append(url.split("/openapi")[-1])
+    if url.endswith("/links"):
+        return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/A{body['tacaItemId']}"}})
+    if "/products/today-deals?size=30" in url:  # 커서 페이징: 1쪽 30개 + 2쪽 6개(진한다시는 2쪽)
+        page = SO_DAY[30:] if "cursor=c%2F2" in url else SO_DAY[:30]
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": n, "displayPrice": pr, "isSoldOut": False} for i, n, pr in page],
+                                                                "nextCursor": None if "cursor=" in url else "c/2", "hasNext": "cursor=" not in url}})
+    if "/products/detail?tacaItemIds=" in url:
+        ids = [int(x) for x in url.split("=")[1].split(",")]
+        assert len(ids) <= 30 and len(set(ids)) == len(ids), ids
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": i, "displayName": f"상품{i}", "displayPrice": so_price.get(i, 6900), "isSoldOut": i in so_out}
+                                                                          for i in ids if i != 999], "notFoundIds": [i for i in ids if i == 999]}})
+    raise AssertionError(url)
+def so_run(at):
+    so_calls.clear(); so_sent.clear(); time.time = lambda: T(at); out = io.StringIO()
+    with contextlib.redirect_stdout(out): H.toss_soldout(seen)
+    return out.getvalue()
+H.http, H.tg = so_http, (lambda method, **p: so_sent.append((method, p)) or {"message_id": 700 + len(so_sent), "text": p.get("text", "")})
+JIN, BODY = "https://toss.shopping/_m/lGFCZsRq", "🛒 <b>[토스] CJ제일제당 쇠고기 진한다시 1kg (6,900원)</b>\n\n토스 하루특가 · 30일 내 최저가"
+H.EVENTS = "ev_sold.json"
+json.dump([{"at": "2026-10-11 11:50", "name": "CJ제일제당 쇠고기 진한다시 1kg", "button": "🛒 6,900원 구매하기", "url": JIN, "deal": True, "text": BODY},
+           {"at": "2026-10-11 11:40", "name": "API 목록에 없는 상품", "button": "🛒 1,000원 구매하기", "url": "https://toss.shopping/_m/NoApi", "deal": True, "text": "🛒 없음"},
+           {"at": "2026-10-11 11:30", "name": "쿠팡 예약", "button": "🛒 1원", "url": "https://link.coupang.com/a/x", "deal": True, "text": "쿠팡"}], open(H.EVENTS, "w"))
+seen = {}; time.time = lambda: T("2026-10-11 11:55"); H.events(seen)
+mid = next(p["mid"] for p in json.load(open("posts.json")) if p.get("url") == JIN)
+assert so_run("2026-10-11 11:58") and so_calls == ["/products/today-deals?size=30", "/products/today-deals?size=30&cursor=c%2F2", "/products/detail?tacaItemIds=950"], so_calls
+assert not so_sent and f"sold_{mid}" in seen and seen["soldmap"]["d"] == "2026-10-11" and not any(seen[k]["url"].startswith("https://link.coupang") for k in seen if k.startswith("sold_"))
+assert "| 진우 예약 id 1/2" in so_run("2026-10-11 12:12") and so_calls == ["/products/detail?tacaItemIds=950"] and not so_sent  # 목록은 하루 1번, 쿠팡 예약은 안 봄
+so_out.add(950); log = so_run("2026-10-11 12:26")
+(m, p), = so_sent
+assert m == "editMessageText" and p["chat_id"] == H.CHANNEL and p["message_id"] == mid and p["parse_mode"] == "HTML" and "1 out" in log
+assert p["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요\n\n{BODY}"  # 대가성 문구는 그대로 맨 앞, 그 바로 아래 품절 줄
+assert p["reply_markup"]["inline_keyboard"] == [[{"text": "품절 · 밤 12시 재오픈", "url": JIN}]]  # 진우 링크 그대로, 글자만
+assert not so_run("2026-10-11 12:40") and not so_calls and not so_sent  # 품절된 하루특가는 밤 12시 전엔 다시 안 봄(일 상한)
+night = copy.deepcopy(seen)
+so_run("2026-10-12 00:05"); assert so_calls == ["/products/detail?tacaItemIds=950"] and not so_sent  # 밤 12시 지남: 아직 품절 -> 그대로
+so_out.discard(950); so_price[950] = 9900; so_run("2026-10-12 00:19"); assert not so_sent and f"sold_{mid}" in seen  # 열렸지만 올린 가격(6,900원)보다 비쌈 = 특가 끝 -> 다시 열림 아님
+so_price[950] = 6900; log = so_run("2026-10-12 00:33")
+ed = [p for m, p in so_sent if m == "editMessageText"]; rp = [p for m, p in so_sent if m == "sendMessage"]
+assert len(ed) == 1 and ed[0]["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n{BODY}" and ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 6,900원 구매하기", "url": JIN}]]  # 품절 줄 지우고 원래대로
+assert len(rp) == 1 and rp[0]["reply_parameters"]["message_id"] == mid and rp[0]["chat_id"] == H.CHANNEL and "1 reopen" in log  # 그 글에 답글 = 알림
+assert rp[0]["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n🔔 <b>다시 열렸어요!</b> CJ제일제당 쇠고기 진한다시 1kg — 6,900원" and rp[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 6,900원 구매하기", "url": JIN}]]
+assert f"sold_{mid}" not in seen and not so_run("2026-10-12 00:47") and not so_calls  # 다 열림 -> 그만 봄(토스 데이터 1일 이내)
+seen = night; so_out.add(950); so_run("2026-10-12 00:10"); assert not so_sent
+so_run("2026-10-12 01:05"); (m, p), = so_sent  # 1시 넘어도 안 열림 -> '하루특가가 끝났어요', 그만 봄(API 안 부름)
+assert m == "editMessageText" and p["text"].startswith(f"<i>{H.TOSS_NOTE}</i>\n\n⛔ <b>품절</b> — 하루특가가 끝났어요\n\n") and p["reply_markup"]["inline_keyboard"] == [[{"text": "품절 · 특가 끝", "url": JIN}]]
+assert not so_calls and not any(k.startswith("sold_") for k in seen)
+# API 묶음 글(하루특가 13시 회차): 게시 때 상품 id 저장 -> 품절된 상품만 그 줄·그 번호 버튼, 다른 상품·링크는 그대로
+seen, so_out = {}, set(); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "가"}, {"i": 1, "score": 8, "comment": "나"}]
+time.time = lambda: T("2026-10-11 13:10"); so_sent.clear(); H.toss_deals(seen)
+(m, p), = so_sent; bid = 701; w = seen[f"sold_{bid}"]
+assert w["k"] == "top" and [x[0] for x in w["it"]] == [901, 902] and [x[3] for x in w["it"]] == [1, 1] and p["text"].startswith(f"<i>{H.TOSS_NOTE}</i>")
+so_out.add(902); so_run("2026-10-11 13:24"); (m, e), = so_sent
+assert m == "editMessageText" and e["message_id"] == bid and e["text"] == p["text"].replace("👉 나", "👉 나\n⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요")
+assert e["reply_markup"]["inline_keyboard"] == [p["reply_markup"]["inline_keyboard"][0], [{"text": "2️⃣ 품절 · 밤 12시 재오픈", "url": "https://toss.shopping/_m/A902"}]]
+so_run("2026-10-11 13:38"); assert so_calls == ["/products/detail?tacaItemIds=901"] and not so_sent  # 품절된 902는 낮엔 안 봄
+# 30개 넘으면 오래 안 본 것부터(상세 조회 한 번에 최대 30개), 조회 안 되는 상품(notFoundIds)은 그대로, 하루특가 아닌 상품은 품절이어도 낮에 계속 봄(다시 들어오면 답글)
+seen = {f"sold_{800 + j}": {"t": T("2026-10-11 10:00"), "d": "2026-10-11", "k": "top", "pre": "", "head": "H", "rows": [[f"n{5 * j + i}", f"https://toss.shopping/_m/R{5 * j + i}", ["💰 <b>100원</b>"]] for i in range(5)],
+                               "it": [[1000 + 5 * j + i, f"n{5 * j + i}", 100, 0, 0, 0] for i in range(5)]} for j in range(7)}  # 베스트 묶음 7개 x 5 = 35개 + 조회 안 되는 상품 1개
+seen["sold_807"] = {"t": T("2026-10-11 10:00"), "d": "2026-10-11", "k": "top", "pre": "", "head": "H", "rows": [["없어진 상품", "https://toss.shopping/_m/G", []]], "it": [[999, "없어진 상품", 100, 0, 0, 0]]}
+so_price.update({1000 + i: 100 for i in range(35)})
+so_run("2026-10-11 14:00"); a = [int(x) for x in so_calls[0].split("=")[1].split(",")]
+lb = so_run("2026-10-11 14:14"); b = [int(x) for x in so_calls[0].split("=")[1].split(",")]
+assert len(a) == len(b) == 30 and set(a) | set(b) == {1000 + i for i in range(35)} | {999} and not set(b[:6]) & set(a) and not so_sent and "1 notfound" in lb
+so_out.add(1001); so_run("2026-10-11 14:42"); so_run("2026-10-11 14:56")
+assert seen["sold_800"]["it"][1][4] == 1 and seen["sold_807"]["it"][0][4] == 0  # 하루특가 아님: '다시 들어오면 답글로 알려드릴게요'
+so_out.discard(1001); got = []
+for at in ("2026-10-11 15:10", "2026-10-11 15:24"):
+    so_run(at); got += so_sent
+assert seen["sold_800"]["it"][1][4] == 0 and [p["text"].endswith("🔔 <b>다시 열렸어요!</b> n1 — 100원") for m, p in got if m == "sendMessage"] == [True]  # 낮에 다시 들어옴 -> 답글 + 원래대로
+assert [p["reply_markup"]["inline_keyboard"][1][0] for m, p in got if m == "editMessageText"] == [{"text": "2️⃣ n1", "url": "https://toss.shopping/_m/R1"}]
+seen["sold_800"]["it"][1][4] = 1; t1 = H.sold_render(seen["sold_800"])
+assert "n1</b></a>\n💰 <b>100원</b>\n⛔ <b>품절</b> — 다시 들어오면 답글로 알려드릴게요" in t1[0] and t1[1][1][0] == {"text": "2️⃣ 품절", "url": "https://toss.shopping/_m/R1"}
+H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
+assert "toss_relink, toss_soldout, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1][0].startswith("⛔") and H.SOLD[1][1][1] == "품절 · 밤 12시 재오픈"
+open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
+if os.path.exists("toss.json"): os.remove("toss.json")
+time.time = tt
 
 # 6) 사이트 생성: 이모지(UTF-16 2유닛) 뒤 링크 오프셋, 제목 추출, 페이지/사이트맵 생성
 import build_site as S
