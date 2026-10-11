@@ -604,6 +604,8 @@ def ad_line(plain, unit=""):
     틀 3가지를 제목으로 정해 돌림(같은 모양 반복 X, 같은 글은 고쳐도 같은 틀)."""
     store, name, price = parse(title_of(plain))
     pp = f"{clip(name, 24)} {price.split('/')[0].strip()}".strip()
+    if "특가로는 약한 제품" in plain:  # 🛒 약한 딜 = 훅·🔥 없이(본문 🛒·솔직 메모와 같게 — 10/12 0시 Q3500 '[광고] 🔥' 고침)
+        return f"[광고] 🛒 {pp}"
     h = ad_hook(plain, unit)
     if not h:
         return f"[광고] 🔥 {pp}"
