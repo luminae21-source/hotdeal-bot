@@ -1084,6 +1084,8 @@ def toss_picks(seen):
     kst = time.gmtime(now + 9 * 3600)
     nowk, today = time.strftime("%Y-%m-%d %H:%M", kst), time.strftime("%Y-%m-%d", kst)
     at = lambda d: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 + d))
+    for k in [k for k in seen if k.startswith("pk_") and k[3:] < at(-86400)]:  # 토스 API 데이터(상품명·id)는 1일 안에 지움(쉐어링크 FAQ)
+        del seen[k]
     todo = [e for e in load(EVENTS, []) if e.get("api") and not e.get("url") and e.get("name") and at(-PICK_LATE) <= e["at"] <= at(PICK_AHEAD)
             and seen.get("pk_" + e["at"], {}).get("st") not in ("done", "skip")]
     if not todo:

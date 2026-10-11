@@ -1387,6 +1387,8 @@ assert len(ask) == 1 and "발급이 막힌" in ask[0] and seen["pk_2026-10-12 01
 sp_fail["link"].clear(); seen = {}; sp_fail["tg"] = 1; sp_run("2026-10-12 01:05"); assert seen["pk_2026-10-12 01:00"]["st"] is None and "tb_501" not in seen  # 채널 실패 -> 다음 실행에 다시
 sp_run("2026-10-12 01:19"); assert seen["pk_2026-10-12 01:00"]["st"] == "done" and len([p for m, p in sp_sent if p["chat_id"] == H.CHANNEL]) == 1
 seen = {}; assert not sp_run("2026-10-12 04:30") and not sp_sent and not sp_calls  # 예약 3시간 지남 -> 안 올림
+seen = {"pk_2026-10-11 01:00": {"t": T("2026-10-11 00:00"), "id": 1, "n": "x"}, "pk_2026-10-11 05:00": {"t": T("2026-10-11 00:00"), "id": 2, "n": "y"}}; sp_run("2026-10-12 04:30")
+assert list(seen) == ["pk_2026-10-11 05:00"]  # 이름 예약 기록(토스 상품명·id)은 1일 지나면 지움
 def sp_down(url, *a, **k):
     if "/openapi/" in url: raise OSError("tunnel down")
     return sp_http(url, *a, **k)
