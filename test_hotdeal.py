@@ -2364,6 +2364,7 @@ H.http, H.TH_SOLO_FILL = td_http, True
 json.dump([{"t": "2026-10-12 21:00", "text": c9f.replace("BB크림 4위", "BB크림 1위"), "url": "https://toss.shopping/_m/r", "own": 1}], open("posts.json", "w"), ensure_ascii=False)
 calls.clear(); H.threads_deals(s9f); th9f = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u][0]
 assert "💸" not in th9f and "쿠팡" not in th9f and "⚠️ 10/12 21:00 게시 시점 가격" in th9f and th9f.startswith(H.TOSS_NOTE)
+assert "🙋 팔로우하면 매일 이런 특가가 피드에 떠요" in th9f and "가격 비교" not in th9f and H.th_follow(False) == "🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요"  # 10/13 00:35 진우: 팔로우 줄도 토스 글만 '특가', 다른 몰은 그대로
 # 미리보기: 토스 = 같은 상품 쿠팡 차이·'쿠팡과 N원 차이' X
 evf, H.EVENTS = H.EVENTS, "ev9f.json"; json.dump([{"at": "2026-10-12 22:20", "url": "https://toss.shopping/_m/a", "deal": True, "name": "a", "text": "🔥 <b>[토스] 앙쥬 (9,900원)</b>\n\n💡 쿠팡 같은 상품(15,460원)보다 5,560원 쌈"},
                                                   {"at": "2026-10-12 22:30", "url": "https://toss.shopping/_m/b", "deal": True, "name": "b", "text": "🛒 <b>[토스] 미샤 (10,800원)</b>\n\n🤔 솔직히 특가로는 약한 제품 — 쿠팡과 1,000원 차이"}], open(H.EVENTS, "w"), ensure_ascii=False)
@@ -2371,7 +2372,7 @@ nd9 = H.night_deals({}, "2026-10-12 22:00", "2026-10-13 08:00"); assert [(d["sv"
 H.EVENTS = evf
 # 재오픈: 비교 줄 X, 게시 시점 가격
 rt9f = H.reopen_text({}, {"url": "https://toss.shopping/_m/W", "n": "x", "title": "해피달링 샤워기", "warn": "⚠️ 확인할 점: 1인 1개", "icon": "🔥", "cmp": "💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈", "p0": 7620}, 7620, False, False)
-assert "쿠팡" not in rt9f and "💸" not in rt9f and "⚠️ 10/12 21:30 게시 시점 가격" in rt9f
+assert "쿠팡" not in rt9f and "💸" not in rt9f and "⚠️ 10/12 21:30 게시 시점 가격" in rt9f and "이런 특가가 피드" in rt9f
 H.http, H.TH_SOLO_FILL, H.TOSS_NO_CMP, time.time = h9f, f9f, False, tt9f; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w"))
 # 9-2g) 10/12 22:45·22:50 진우 '토스 인기 생필품·많이 팔리는 제품 꾸준하게': 17시 생필품(식품·생활용품) 리스트도 Threads(대가성 문구·게시 시점 가격·링크 5개·비교 X),
 #       토스 회차(하루특가·베스트·생필품) 픽 = Threads 채움 후보 — 45분 칸이 비었고 ①·화장품·② 없으면 토스 픽 먼저(회차 1순위·생필품 먼저), 품절 X, 사이트·posts.json X

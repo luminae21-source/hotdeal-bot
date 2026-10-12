@@ -1681,7 +1681,7 @@ def reopen_text(seen, e, price, am, hot):
     sv = saving(cmp) if cmp.startswith("💡") else None
     main = "\n".join(x for x in (f"{e['icon']} [토스] {name} ({price:,}원)\n", info, cmp, warn) if x)[:280]
     return th_note(TOSS_NOTE) + "🔔 다시 열렸어요" + (" · 아침 재알림" if am else "") + "\n" + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + main \
-        + f"\n\n👉 {e['url']}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"
+        + f"\n\n👉 {e['url']}\n{th_follow(TOSS_NO_CMP and is_toss(e['url'], main))}\n📲 실시간 알림 t.me/hotdeal_pick"
 
 
 def toss_reopen(seen):
@@ -2323,6 +2323,11 @@ def jw_beauty(seen, now):
                and (e["at"] >= nowk or (e.get("api") and e["at"] >= since and seen.get("pk_" + e["at"], {}).get("st") not in ("done", "skip"))) for e in load(EVENTS, []))
 
 
+def th_follow(toss):
+    """Threads 개별·재오픈 글 끝 팔로우 줄: 토스 글 = '특가'(10/13 00:35 진우 — 토스 요청 '타 쇼핑몰과의 가격 비교 없이'), 다른 몰 글 = 예전 '가격 비교' 그대로."""
+    return f"🙋 팔로우하면 매일 이런 {'특가가' if toss else '가격 비교가'} 피드에 떠요"
+
+
 def th_note(note):
     """Threads 개별 글 머리: 제휴 고지문 맨 앞, 10/12~ 그 앞에 '[광고] '(10/11 23:40 진우: 본문 틀 💸 훅 → 🔥 제목 → … → 👉 링크는 그대로, [광고]만 맨 앞)."""
     return (("[광고] " if ad_on() else "") + note + "\n\n") if note else ""
@@ -2425,7 +2430,7 @@ def threads_deals(seen):
         tw = f"\n{toss_when(posts[i]['t'])}" if TOSS_NO_CMP and is_toss(posts[i].get("url"), posts[i]["text"]) and "게시 시점" not in posts[i]["text"] else ""
         sv = None if tw or (TOSS_NO_CMP and is_toss(posts[i].get("url"), posts[i]["text"])) else sv  # 토스 딜 = 💸 쿠팡 줄 X
         text = th_note(note) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + (f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] + tw) \
-            + f"\n\n👉 {url}\n🙋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
+            + f"\n\n👉 {url}\n{th_follow(TOSS_NO_CMP and is_toss(posts[i].get('url'), posts[i]['text']))}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen, bt[i])
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
