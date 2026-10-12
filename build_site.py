@@ -114,6 +114,39 @@ def parse(title):
 SAVE_STORES = r"쿠팡|네이버|G마켓|지마켓|11번가|이마트|롯데온|올리브영|오늘의집|컬리|토스"
 
 
+OTHER_STORES = r"쿠팡|네이버|G마켓|지마켓|11번가|이마트|롯데온|올리브영|오늘의집|컬리|다이소|옥션|위메프|티몬"  # 토스 딜 글에서 빼는 다른 몰 이름(10/12 토스 비즈니스 '타 쇼핑몰과의 가격 비교 없이')
+
+
+def strip_cmp(text, ents=()):
+    """토스 딜 글에서 다른 쇼핑몰 가격 비교를 뺀 (text, entities): 다른 몰 이름 + 비교 말(보다·대비·차이·같은 상품 등)이 든 줄을 지움 — '🤔 솔직히 특가로는 약한 제품 — …'·'💡 단위가격: … — …'는
+    ' — ' 앞만 남기고, '[광고] …' 첫 줄은 훅만 뺌. entities(텔레그램 UTF-16 오프셋)는 지운 만큼 당기고 바뀐 줄 안의 것은 뺌."""
+    u = lambda s: len(s.encode("utf-16-le")) // 2
+    out, spans, pos = [], [], 0
+    for line in text.split("\n"):
+        new = line
+        if re.search(OTHER_STORES, line) and re.search(r"보다|대비|차이|같은 상품|더 싸|더 쌈|비싸|최저가는", line):
+            if line.startswith("[광고]"):
+                new = re.sub(rf"\s*—\s*({OTHER_STORES})보다 [\d,]+원 쌈", "", re.sub(rf"💸 ({OTHER_STORES})보다 [\d,]+원 (싼 |쌈 · )", "🔥 ", line))
+            elif line.startswith(("🤔", "💡 단위가격")) and " — " in line:
+                new = line.split(" — ")[0]
+            else:
+                new = None
+        if new != line:
+            spans.append((pos, u(line) + 1, 0 if new is None else u(new) + 1))
+        if new is not None:
+            out.append(new)
+        pos += u(line) + 1
+    if not spans:
+        return text, list(ents or [])
+    res = []
+    for e in ents or []:
+        o = e["offset"]
+        if any(s <= o < s + old for s, old, _ in spans):
+            continue
+        res.append({**e, "offset": o - sum(old - new for s, old, new in spans if s + old <= o)})
+    return "\n".join(out), res
+
+
 def saving(text):
     """글의 비교 문장 -> ('쿠팡', '7,210원'): '쿠팡 같은 상품(18,200원)보다 7,210원 쌈'(진우 링크 글·Claude 코멘트). 없으면 None (10/11 진우 '얼마나 싼지')."""
     m = re.search(rf"({SAVE_STORES})[^\n—]*?보다\s*([\d,]+원)\s*쌈", text)
