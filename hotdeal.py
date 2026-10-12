@@ -1094,11 +1094,11 @@ def top_deals(seen):
     head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in top if aff_note(p["url"])))
     lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {SITE}p/{posts.index(p)}.html?ref=th" for n, p in enumerate(top)]
     while True:
-        th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines) + "\n\n📲 실시간 알림 t.me/hotdeal_pick"
+        th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines)
         if len(th) <= 480 or len(lines) <= 3:
             break
         lines = lines[:-1]
-    th_bundle(seen, f"top{hrs[-1]}", th, SITE)
+    th_bundle(seen, f"top{hrs[-1]}", th, f"{SITE}p/{posts.index(top[0])}.html?ref=th")  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
 
 
 def busy(seen, cap=True):
