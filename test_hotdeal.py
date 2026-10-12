@@ -2321,6 +2321,20 @@ json.dump([{"t": f"{D9e} 21:00", "text": "🔥 [카카오] 다른 9점 (1,000원
 m9 = th9e("21:40"); assert len(m9) == 1 and "최저가 5점" in m9[0]  # ①② 후보가 있으면 그게 먼저(점수 낮아도)
 H.TH_SOLO_FILL = False; json.dump([{"t": f"{D9e} 21:50", "text": "🔥 [카카오] 끔 9점 (1,000원)\n\n좋음", "url": "https://x/f", "s": 9, "mid": 9}], open("posts.json", "w"), ensure_ascii=False)
 assert th9e("22:30") == []  # 끄면 예전처럼(①② 없으면 안 올림)
+# 변경 전후 채널 게시 수 같음(10/12 19:15 진우 '올리지 마라는 게 아니야, 지금처럼 그대로'): 채움을 켜도 끄도 채널 글(12시 리스트 + 딜 글)은 똑같이 나가고, Threads 쪽만 더해짐
+pt9e, tg9e2 = H.th_post, H.tg
+def chan9e(fill):
+    H.TH_SOLO_FILL, sb, sent9e = fill, {}, []
+    H.tg, H.th_post = (lambda m, **p: sent9e.append(m) or {"message_id": 1}), (lambda *a, **k: None)
+    json.dump([{"t": f"{D9e} 0{k + 5}:00", "text": f"🔥 [G마켓] 반응{k} (1,000원)\n\n좋음", "url": f"https://g/{k}", "mid": 30 + k, "pop": 9 - k, "s": 8} for k in range(4)]
+              + [{"t": "2026-10-11 22:00", "text": "🔥 [토스] 어젯밤 좋은딜 (1,000원)\n\n💡 쿠팡 같은 상품(3,000원)보다 2,000원 쌈", "url": "https://toss.shopping/_m/n", "mid": 40, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+    time.time = lambda: TK(f"{D9e} 12:05"); H.top_deals(sb); H.threads_deals(sb)
+    return sent9e, [m for m, u in calls if "/777/threads?" in u]
+calls.clear(); c_off = chan9e(False); calls.clear(); c_on = chan9e(True)
+assert c_off[0] == c_on[0] == ["sendMessage"]  # 채널 글 수 같음(리스트 1개, threads_deals는 채널에 안 올림)
+H.TH_SOLO_FILL = True; sent9e2 = []; H.tg = lambda m, **p: sent9e2.append((m, p)) or {"message_id": 1}; time.time = lambda: TK(f"{D9e} 12:05"); H.top_deals({})
+assert "어젯밤 좋은딜" in sent9e2[0][1]["text"] and sent9e2[0][1]["text"].index("어젯밤 좋은딜") < sent9e2[0][1]["text"].index("반응0") and "TOP5" in sent9e2[0][1]["text"]  # 누락 없이: 어젯밤(18시 뒤) Threads에 못 나간 ①②도 12시 리스트에, 먼저
+H.th_post, H.tg = pt9e, tg9e2
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.http = sv9e; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w")); time.time = t0
 # 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
 #      -> 22시(REEL_HOUR) 넘고 사이트에 뜨면(HEAD) REELS 컨테이너(video_url·캡션·피드·표지 1.5초) 1번 -> ig_publish가 처리 끝나면 발행('오늘 릴스')

@@ -1071,8 +1071,10 @@ def top_deals(seen):
     seen[key] = time.time()
     day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
     since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
-    top = sorted((p for p in load(POSTS, []) if since <= p["t"] < until and p.get("mid") and (p.get("pop") or th_tier(p["text"]))),
-                 key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
+    prev = time.strftime("%Y-%m-%d ", time.gmtime(time.time() + 9 * 3600 - 86400)) + f"{TOP_HOURS[-1]:02d}:00" if hrs[-1] == TOP_HOURS[0] else since  # 첫 리스트(12시)는 어젯밤(전날 마지막 리스트 뒤) 좋은 딜도
+    top = sorted((p for p in load(POSTS, []) if p.get("mid") and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
+                                                              or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
+                 key=lambda p: (not th_tier(p["text"]), bool(p.get("th")), -(p.get("pop") or 0)))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) < 3:
         return
     items = []
@@ -2245,6 +2247,10 @@ def threads_deals(seen):
         todo = sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
                       key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), [-ord(c) for c in posts[i]["t"]]))
     todo = todo[:TH_SOLO_RUN]
+    r, today = th_day(seen, now), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 실행마다 1줄(10/12 진우 '누락 없이'): 후보 · ①② · 개별 · 빠짐 이유
+    print("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
+          "· 화장품 한도", sum(bool(bt[i]) and r["b"] >= TH_BEAUTY_MAX and th_tier(posts[i]["text"]) > 0 for i in fresh), "· 간격", "대기" if now - r["last"] < TH_SOLO_GAP else "열림",
+          "· 3시간 지난 ①②(리스트로)", sum(p["t"].startswith(today) and p["t"] < since and not p.get("th") and th_tier(p["text"]) > 0 for p in posts))
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
