@@ -141,6 +141,7 @@ AD_FIRST = ""  # 10/12 00:40 진우 결정 '첫 줄 변경 취소': 예전 형�
 
 def ad_on():
     return bool(AD_FIRST) and time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) >= AD_FIRST
+TH_REPLY = True  # 10/13 00:50 진우 '타래 + 브랜드 섞기': Threads 22시 미리보기 나머지는 댓글(타래)로 — 토큰이 댓글을 못 달면(th_reply_ok) 자동으로 댓글 없이. False = 댓글 안 씀
 PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
 TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4  # 10/12 진우 '6시부터 해도 괜찮아, 한도 관리': 재오픈 Threads 글은 개별 5개와 따로 — 밤(0~6시) 2개 + 아침(6시~) 2개, 하루 4개까지, 일반 딜이 먼저(main 순서)
@@ -1007,7 +1008,7 @@ def night_line(d, link=True):
 
 def preview(seen):
     """매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(10/11 진우 '리스트 필요, 꾸준함이 중요' — 팔로워가 이 시간엔 리스트가 뜬다고 알게): 진우 예약 딜 중
-    지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads(앞 PREVIEW_TH개 + 전체 목록 링크).
+    지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads 타래(10/13: 본문 = 🔥 먼저·브랜드 1개씩 PREVIEW_TH개, 나머지 = 댓글, 링크 미리보기 = 사이트).
     개별 글은 예약대로 그대로 나감. 묶음 글이라 BUNDLE_GAP(토스 22시 회차보다 먼저 — main 순서), 23시 넘으면 안 올림(이미 나가기 시작), 적은 날은 21시 모아보기에(digest)."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -1030,16 +1031,46 @@ def preview(seen):
     tok = E.get("THREADS_TOKEN")
     if not tok:
         return
-    top = sorted(sorted(ds, key=lambda d: d["icon"] == "🛒")[:PREVIEW_TH], key=lambda d: d["at"])  # 약한 딜(🛒)은 뒤로 -> 앞 5개, 다시 시각 순
-    notes = "\n".join(dict.fromkeys(aff_note(d["url"]) for d in ds if aff_note(d["url"])))
-    full = post_url(m["message_id"])
-    head, lines = (notes + "\n\n" if notes else "") + f"🌙 오늘 밤 특가 미리보기 ({len(ds)}개)\n\n", [night_line(d, False) for d in top]
-    while True:  # Threads 500자: 대가성 문구·전체 링크는 그대로, 줄을 줄임
-        th = head + "\n".join(lines) + (f"\n… 외 {len(ds) - len(lines)}개" if len(ds) > len(lines) else "") + f"\n\n전체 {len(ds)}개·구매 링크 👉 {full}"
-        if len(th) <= 480 or len(lines) <= 1:
+    top, brands = [], set()  # 10/13 진우 '타래 + 브랜드 섞기': 본문 = 🔥 먼저(🛒 뒤로) · 같은 브랜드(이름 첫 단어)는 1개만 -> 시각 순 PREVIEW_TH개, 나머지는 댓글(타래)로
+    for d in sorted(ds, key=lambda d: d["icon"] == "🛒"):
+        if len(top) < PREVIEW_TH and (d["name"].split() or [""])[0] not in brands:
+            top.append(d)
+            brands.add((d["name"].split() or [""])[0])
+    note = lambda xs: "\n".join(dict.fromkeys(aff_note(d["url"]) for d in xs if aff_note(d["url"])))
+    can = TH_REPLY and th_reply_ok(seen)  # 댓글(reply_to_id)이 되는 토큰일 때만 '댓글에 👇'(10/13 — 안 되면 댓글 없이 끝 문구만)
+    while True:  # Threads 500자: 대가성 문구·끝 문구는 그대로, 본문 줄을 줄임(뺀 줄은 댓글로)
+        top.sort(key=lambda d: d["at"])
+        rest = [d for d in ds if d not in top]
+        end = lambda reply: (f"\n\n나머지 {len(rest)}개는 댓글에 👇\n🔔 시간 되면 이 계정에 하나씩 올라와요" if rest and reply else f"\n\n나머지 {len(rest)}개도 시간 되면 여기 하나씩 올라와요" if rest
+                             else "\n\n🔔 시간 되면 이 계정에 하나씩 올라와요") + "\n📲 실시간 알림 t.me/hotdeal_pick"
+        head = (note(ds) + "\n\n" if note(ds) else "") + f"🌙 오늘 밤 특가 미리보기 ({len(ds)}개)\n\n" + "\n".join(night_line(d, False) for d in top)
+        if len(head + end(can)) <= 480 or len(top) <= 1:
             break
-        lines = lines[:-1]
-    th_bundle(seen, "preview", th, full)
+        top = top[:-1]
+    try:  # 링크 미리보기 = 사이트(텔레그램 카드 X), 전체 목록 줄·'… 외 N개' X
+        r = th_bundle(seen, "preview", head + end(can), f"{SITE}?ref=th")
+    except Exception:
+        if can and rest:  # 다음 실행 재시도(th_retry)는 본문만 -> 댓글 없는 끝 문구로
+            seen[time.strftime("thretry_%Y%m%d_preview", kst)]["text"] = head + end(False)
+        raise
+    if not (can and rest):
+        return
+    parts, cur = [], []  # 댓글 = 나머지 시각 순, 댓글마다 대가성 문구 맨 앞 · 480자 이하, 본문 -> 댓글1 -> 댓글2 순으로 이어 붙임
+    txt = lambda xs: (note(xs) + "\n\n" if note(xs) else "") + "\n".join(night_line(d, False) for d in xs)
+    for d in rest:
+        if cur and len(txt(cur + [d])) > 480:
+            parts.append(txt(cur))
+            cur = []
+        cur.append(d)
+    parts.append(txt(cur))
+    try:
+        to = r["id"]
+        for p in parts:
+            to = th_reply(tok, to, p)
+        seen["threply"] = {**seen["threply"], "t": time.time()}  # 되면 3일마다 다시 확인 안 함(계속 씀)
+    except Exception as e:  # 본문은 이미 나감 -> 로그만, 다음 날부터 댓글 없는 끝 문구
+        seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
+        print("preview 댓글 실패", seen["threply"]["err"])
 
 
 def cp_events(seen, deals=()):
@@ -2234,10 +2265,43 @@ def th_post(tok, text, link=None, image=None):
 def th_bundle(seen, kind, text, link=None, image=None):
     """묶음 글 Threads(12·18시 리스트·토스 베스트 리스트·21시 카드·22시 미리보기 — 10/12 진우 '묶음 글은 반드시'): 실패하면 다음 실행에 1번 더(th_retry), 예외는 그대로(main 알림)."""
     try:
-        th_post(E.get("THREADS_TOKEN"), text, link, image)
+        return th_post(E.get("THREADS_TOKEN"), text, link, image)
     except Exception:
         seen.setdefault(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, {"t": time.time(), "text": text, "link": link, "img": image})
         raise
+
+
+def th_reply(tok, to, text):
+    """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(링크 첨부 X) -> 새 댓글 id."""
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, "access_token": tok})
+    cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+    time.sleep(10)
+    return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))["id"]
+
+
+def th_reply_ok(seen):
+    """지금 토큰으로 댓글(reply_to_id)을 달 수 있는지 — 내 최근 글에 댓글 컨테이너만 만들고 발행은 안 함(Threads에 안 보임, 24시간 뒤 사라짐).
+    결과 = seen["threply"](3일 보관 -> 그 뒤 다시 확인). 권한 오류(HTTP 4xx)만 '안 됨'으로 남기고, 네트워크 오류는 이번엔 안 됨으로 보고 다음에 다시."""
+    tok, r = E.get("THREADS_TOKEN"), seen.get("threply")
+    if r or not tok or not TH_REPLY:
+        return bool(r and r.get("ok"))
+    try:
+        me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+        last = json.loads(http(f"{THREADS}/{me}/threads?fields=id&limit=1&access_token={tok}"))["data"][0]["id"]
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": "댓글 권한 확인", "reply_to_id": last, "access_token": tok})
+        json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        seen["threply"] = {"t": time.time(), "ok": 1}
+    except urllib.error.HTTPError as e:
+        if e.code >= 500:
+            print("threads 댓글 권한 확인 실패(다음에 다시)", e.code)
+            return False
+        seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
+    except Exception as e:
+        print("threads 댓글 권한 확인 실패(다음에 다시)", repr(e))
+        return False
+    print("threads 댓글 권한", "됨" if seen["threply"]["ok"] else "안 됨 — " + seen["threply"]["err"])
+    return bool(seen["threply"]["ok"])
 
 
 def th_retry(seen):
@@ -2568,7 +2632,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok):
         try:
             step(seen)
         except Exception as e:

@@ -2612,7 +2612,7 @@ def http7(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, H.E["THREADS_TOKEN"], H.time.sleep, tt7 = http7, "tk", (lambda s: None), time.time
 at7 = lambda t, step=None, sv=None: (time.__setattr__("time", lambda: TK(f"{D7} {t}")), sent7.clear(), th7.clear(), (step or H.preview)(sv if sv is not None else seen7))
-seen7 = {f"ev_{D7} 21:50": 1, f"ev_{D7} 22:45": 1}
+seen7 = {f"ev_{D7} 21:50": 1, f"ev_{D7} 22:45": 1, "threply": {"t": TK(f"{D7} 21:00"), "ok": 0}}  # 댓글 권한 없음 -> 댓글 없이(아래 9-7b에서 댓글)
 at7("21:59"); assert not sent7 and not seen7.get(f"preview_{D7.replace('-', '')}")  # 10시 전
 seen7["bundles"] = {"t": TK(f"{D7} 21:55"), "ts": [TK(f"{D7} 21:55")]}; at7("22:03"); assert not sent7  # 묶음 글 10분 안 -> 다음 실행에
 json.dump([{"t": f"{D7} 22:0{k}", "text": f"🔥 글{k}", "url": ""} for k in range(9)], open("posts.json", "w"))  # 최근 1시간 글 9개(HOUR_CAP 넘음)도
@@ -2629,11 +2629,54 @@ assert t7.endswith("🔔 매일 밤 10시 미리보기 · 알림 켜두면 안 �
 q7 = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)
 tt = q7["text"][0]
 assert tt.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🌙 오늘 밤 특가 미리보기 (7개)\n\n22:20 🔥 메르헨트") and len(tt) <= 480 and "toss.shopping" not in tt  # 상품 링크 X
-assert [l[:5] for l in tt.split("\n\n")[2].split("\n")] == ["22:20", "22:30", "22:40", "23:10", "23:20", "… 외 2"] and tt.endswith(f"전체 7개·구매 링크 👉 {H.post_url(777)}") and q7["link_attachment"] == [H.post_url(777)]  # 약한 딜 빼고 앞 5개
+assert [l[:5] for l in tt.split("\n\n")[2].split("\n")] == ["22:20", "22:30", "22:40", "23:10", "23:20"] and tt.endswith("\n\n나머지 2개도 시간 되면 여기 하나씩 올라와요\n📲 실시간 알림 t.me/hotdeal_pick")  # 약한 딜 빼고 앞 5개
+assert q7["link_attachment"] == [f"{H.SITE}?ref=th"] and "외 " not in tt and "전체" not in tt and "t.me/s" not in tt and not [u for u in th7 if "reply_to_id" in u]  # 10/13 진우: 텔레그램 카드·'외 N개'·전체 링크 X, 댓글 권한 없으면 댓글 X
 at7("22:21"); assert not sent7 and not th7  # 하루 1번
 json.dump([{"at": f"{D7} 22:{10 + k}", "text": f"🔥 <b>[토스] 아주 긴 상품 이름 {k}번 대용량 기획 세트 묶음 (19,900원)</b>\n\n💡 쿠팡 같은 상품(29,900원)보다 10,000원 쌈", "url": f"https://toss.shopping/_m/L{k}", "deal": True, "button": "b"} for k in range(12)], open("events.json", "w"), ensure_ascii=False)
-H.PREVIEW_TH = 20; at7("22:05", sv={}); tl = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)["text"][0]
-assert len(tl) <= 480 and tl.endswith(f"전체 12개·구매 링크 👉 {H.post_url(777)}") and tl.startswith(H.TOSS_NOTE) and 1 <= len(re.findall(r"\n22:\d\d ", tl)) < 12; H.PREVIEW_TH = 5  # 길면 줄을 줄여 480자(문구·전체 링크는 그대로)
+H.PREVIEW_TH = 20; at7("22:05", sv={"threply": {"t": 1, "ok": 0}}); tl = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)["text"][0]
+assert len(tl) <= 480 and tl.endswith("개도 시간 되면 여기 하나씩 올라와요\n📲 실시간 알림 t.me/hotdeal_pick") and tl.startswith(H.TOSS_NOTE) and len(re.findall(r"\n22:\d\d ", tl)) == 1; H.PREVIEW_TH = 5  # 같은 브랜드('아주')는 본문에 1개만
+# 9-7b) 10/13 00:50 진우 '타래 + 브랜드 섞기': Threads 미리보기 본문 = 🔥 먼저·브랜드 1개씩 5개(시각 순) + '나머지 N개는 댓글에 👇' + '🔔 시간 되면…' + 📲 한 줄,
+#       나머지 = 댓글(시각 순, 댓글마다 대가성 문구 맨 앞·480자 이하, 본문 -> 댓글1 -> 댓글2 reply_to_id로 이어서), 토스 = 다른 몰 비교 X, 댓글 권한은 발행 없이 1번 확인
+B7 = ["메르헨트", "메르헨트", "레이데이", "파스쿠찌", "한경희", "스파클", "맥콜", "수뜰리에", "베라", "모나리자", "킬로", "올리", "땡큐파머스", "예진원", "웨이크비", "과일꾼", "포천이동", "배스킨라빈스", "맘스케이크", "푸드앳홈"]
+json.dump([{"at": f"{D7} 22:{10 + 2 * k}", "text": f"🔥 <b>[토스] {b} 상품 {k}번 대용량 세트 (9,900원)</b>\n\n💡 쿠팡 같은 상품(19,900원)보다 10,000원 쌈", "url": f"https://toss.shopping/_m/B{k}", "deal": True, "button": "b"} for k, b in enumerate(B7)]
+          + [{"at": f"{D7} 23:59", "text": "🔥 <b>[쿠팡] 휴지 30롤 (9,900원/무료)</b>\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": "https://link.coupang.com/a/z", "deal": True, "button": "b"}], open("events.json", "w"), ensure_ascii=False)
+rp7, nc7 = [], [0]
+def http7b(url, body=None, headers=None, method=None):
+    th7.append(url)
+    if "/me?" in url: return json.dumps({"id": "9"})
+    if "fields=id&limit=1" in url: return json.dumps({"data": [{"id": "p0"}]})
+    if "/threads?" in url:
+        nc7[0] += 1
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query); rp7.append((q.get("reply_to_id", [None])[0], q["text"][0], q.get("link_attachment", [None])[0], nc7[0]))
+        return json.dumps({"id": f"c{nc7[0]}"})
+    if "/threads_publish?" in url: return json.dumps({"id": "m" + url.split("creation_id=c")[1].split("&")[0]})
+    raise AssertionError(url)
+H.http, H.TOSS_NO_CMP = http7b, True; at7("22:05", sv={"threply": {"t": 1, "ok": 1}})
+(_, b7, l7, _), *r7 = rp7
+assert l7 == f"{H.SITE}?ref=th" and len(b7) <= 480 and b7.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🌙 오늘 밤 특가 미리보기 (21개)\n\n22:10 🔥 메르헨트 상품 0번")
+assert b7.endswith("\n\n나머지 16개는 댓글에 👇\n🔔 시간 되면 이 계정에 하나씩 올라와요\n📲 실시간 알림 t.me/hotdeal_pick") and b7.count("메르헨트") == 1 and "쌈" not in b7 and "외 " not in b7  # 토스 = 쿠팡 비교 X
+assert len(r7) >= 2 and r7[0][0] == "m1" and all(r7[k][0] == f"m{r7[k - 1][3]}" for k in range(1, len(r7))) and all(x[2] is None for x in r7)  # 본문 -> 댓글1 -> 댓글2(이어서), 링크 첨부 X
+assert all(len(x[1]) <= 480 and x[1].startswith(H.TOSS_NOTE) for x in r7) and "쿠팡 같은 상품보다 3,000원 쌈" in r7[-1][1] and H.DISCLOSURE in r7[-1][1]  # 댓글마다 대가성 문구, 토스 아닌 몰(쿠팡)은 그대로
+rl7 = [l for x in r7 for l in x[1].split("\n\n", 1)[1].split("\n")]
+assert [l[:5] for l in rl7] == sorted(l[:5] for l in rl7) and len(rl7) == 16 and sum("쌈" in l for l in rl7) == 1 and "휴지" in rl7[-1]  # 나머지 16개 전부·시각 순, 비교는 쿠팡 딜만
+rp7.clear(); pk7 = {}; at7("22:05", sv=pk7); pr7 = [x[3] for x in rp7 if x[0] == "p0"]
+assert pk7["threply"]["ok"] == 1 and len(pr7) == 1 and not any(f"creation_id=c{pr7[0]}&" in u for u in th7) and sum(x[0] not in (None, "p0") for x in rp7) >= 2  # 권한 확인 = 내 최근 글에 컨테이너만(발행 X, 안 보임) -> 되면 댓글까지
+th7.clear(); H.th_reply_ok(pk7); assert not th7  # 결과는 seen에(3일) — 다시 안 부름
+def http7c(url, body=None, headers=None, method=None):
+    if "reply_to_id" in url:
+        e = urllib.error.HTTPError(url, 400, "Bad", None, None); e.body = '{"error": {"message": "Application does not have permission for this action", "code": 10}}'; raise e
+    return http7b(url, body, headers, method)
+H.http, pk7 = http7c, {}; at7("22:05", sv=pk7)
+assert pk7["threply"]["ok"] == 0 and "permission" in pk7["threply"]["err"] and rp7[-1][1].endswith("나머지 16개도 시간 되면 여기 하나씩 올라와요\n📲 실시간 알림 t.me/hotdeal_pick")  # 안 되면 댓글 없이 끝 문구
+def http7d(url, body=None, headers=None, method=None):
+    if "threads_publish" in url: raise urllib.error.HTTPError(url, 500, "x", None, None)
+    return http7b(url, body, headers, method)
+H.http, pk7 = http7d, {"threply": {"t": 1, "ok": 1}}
+try:
+    at7("22:05", sv=pk7); raise AssertionError("본문 실패는 예외(main 알림)")
+except urllib.error.HTTPError:
+    assert pk7[f"thretry_{D7.replace('-', '')}_preview"]["text"].endswith("나머지 16개도 시간 되면 여기 하나씩 올라와요\n📲 실시간 알림 t.me/hotdeal_pick")  # 재시도는 댓글 없이 -> '댓글에 👇' X
+H.http, H.TOSS_NO_CMP = http7, False
 json.dump(EV7, open("events.json", "w"), ensure_ascii=False)
 seen7 = {}; at7("23:01"); assert not sent7  # 23시 넘으면 X(이미 나가기 시작)
 json.dump(EV7[:3], open("events.json", "w"), ensure_ascii=False); seen7 = {f"ev_{D7} 21:50": 1}
