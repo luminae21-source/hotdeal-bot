@@ -1100,6 +1100,14 @@ def top_deals(seen):
         if len(th) <= 480 or len(lines) <= 3:
             break
         lines = lines[:-1]
+    links, beauty = len(lines), []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
+    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
+        line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {SITE}p/{posts.index(p)}.html?ref=th" if links < 5 else "")
+        if len(th) + len("\n\n💄 화장품" * (not beauty)) + len(line) + 1 > 480:
+            break
+        links += "👉" in line
+        beauty.append(line)
+    th += "\n\n💄 화장품\n" + "\n".join(beauty) if beauty else ""
     th_bundle(seen, f"top{hrs[-1]}", th, f"{SITE}p/{posts.index(top[0])}.html?ref=th")  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
 
 
@@ -2113,7 +2121,7 @@ TH_SOLO_RANK = 3  # 10/11 23:40 진우 '이 방식 유지하면서 경과 보기
 # ① 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥(💸 훅, 금액 상관없이) 먼저 ② 30일 최저가·순위 1~3위 ③ 🛒·단위가격 참고만은 리스트로(18시 채움 없음 = TH_SOLO_MIN 0)  # 10/11 진우 결정 '나누지 말고 묶기, 꾸준하게'(2주 동결 ~10/25):
 # Threads 개별 글 = 하루 최대 5개·45분 간격·1회 1개·위 ①② 순서로만, 나머지는 리스트로
 # (12·18시 '지금 살 만한 딜'·토스 베스트 리스트, 21시 모아보기 카드, 22시 미리보기). 텔레그램 채널은 개별 글 그대로
-TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 2  # 10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰': 개별 글 3~5개 중 매일 화장품 1~2개 —
+TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 4  # (10/12 19:50 진우 '화장품 개별 한도 늘려도 돼' 2 -> 4) 10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰': 개별 글 3~5개 중 매일 화장품 1~2개 —
 # 화장품이 TH_BEAUTY_MIN개 안 찼으면 그 자리는 남겨둠(다른 글은 TH_SOLO_MAX - 1개까지), 화장품은 하루 TH_BEAUTY_MAX개까지. 자리 채우는 순서: ①② 화장품(소모품 먼저)
 # > 진우 화장품 링크·이름 예약(🛒 X) > 오늘 진우 화장품 링크가 더 없으면 15·19시 토스 뷰티 회차 1개(소모품 먼저). 시간은 그대로(진우 예약·뷰티 회차 시각)
 TH_BEAUTY_USE = (r"클렌징|클렌저|폼클렌|(?:립|아이|립앤아이|메이크업|포인트|네일|마스카라)\s*리무버|[선썬]\s*(?:크림|스틱|쿠션|블[록럭]|로션|젤|세럼|밀크|스프레이)"  # 소모품(썬·선 둘 다)

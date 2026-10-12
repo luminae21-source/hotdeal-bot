@@ -2159,7 +2159,7 @@ H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_
 #       > 오늘 진우 화장품 링크가 더 없으면 15·19시 토스 뷰티 회차 1개(소모품 먼저). 시간·본문 틀은 그대로
 sv9c = (H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, H.E["THREADS_TOKEN"] = 5, 45 * 60, 1, th_strong0, tlh0, ("best",), "tk"
-H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = tbm0; assert tbm0 == (1, 2) and "TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 2" in inspect.getsource(H)  # 기본값(예전 셀프체크는 화장품 자리 없이 0, 99)
+H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = 1, 2; assert tbm0 == (1, 4) and "TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 4" in inspect.getsource(H)  # 기본값 1·4(10/12 19:50 진우 2 -> 4) — 아래 한도 검사는 2로  # 기본값(예전 셀프체크는 화장품 자리 없이 0, 99)
 assert [H.th_beauty(n) for n in ("[토스] 메르헨트 미셀라 클렌징워터 500ml", "아스파시아 립앤아이 리무버", "에이지랩 선크림 70ml", "토너패드 70매", "콜라겐 에센스 마스크팩 100개입", "화이트벨라 마이크로 니들 패치 12매")] == [2] * 6  # 소모품
 assert [H.th_beauty(n) for n in ("레이데이 살몬퓨어 리페어 비비크림 50ml 3개", "앙쥬 365 썬BB크림 1+1", "에이지랩 달팽이 뮤신 올인원 크림", "오에스알 EGF 리페어 크림 70ml", "토리든 세럼 50ml")] == [1] * 5  # 다른 화장품(BB크림 = 10/12 진우 링크)
 assert [H.th_beauty(n) for n in ("한경희 카본히터 Q2000", "로지텍 마우스패드", "서울우유 생크림 500ml", "배스킨라빈스 아이스크림", "쿠션 방석", "커밍글 노워시 트리트먼트")] == [0] * 6  # 화장품 아님(크림·패드·쿠션 단독 X)
@@ -2334,6 +2334,16 @@ calls.clear(); c_off = chan9e(False); calls.clear(); c_on = chan9e(True)
 assert c_off[0] == c_on[0] == ["sendMessage"]  # 채널 글 수 같음(리스트 1개, threads_deals는 채널에 안 올림)
 H.TH_SOLO_FILL = True; sent9e2 = []; H.tg = lambda m, **p: sent9e2.append((m, p)) or {"message_id": 1}; time.time = lambda: TK(f"{D9e} 12:05"); H.top_deals({})
 assert "어젯밤 좋은딜" in sent9e2[0][1]["text"] and sent9e2[0][1]["text"].index("어젯밤 좋은딜") < sent9e2[0][1]["text"].index("반응0") and "TOP5" in sent9e2[0][1]["text"]  # 누락 없이: 어젯밤(18시 뒤) Threads에 못 나간 ①②도 12시 리스트에, 먼저
+# 💄 화장품 칸(10/12 19:50 진우 '리스트로 만들어도 좋아'): 개별 글이 못 된 화장품 🔥를 12·15·18시 Threads 리스트에 더함 — 기존 딜·링크 그대로, 링크 합쳐 5개까지(넘으면 이름·가격만), 🛒·Threads에 나간 것 X
+thp9 = []; H.th_post = lambda tok, text, link=None, image=None: thp9.append((text, link)); H.tg = lambda m, **p: {"message_id": 1}; H.E["THREADS_TOKEN"] = "tk"
+json.dump([{"t": f"{D9e} 12:{10 + k}", "text": f"🔥 [G마켓] 반응{k} (1,000원)\n\n좋음", "url": f"https://g/{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)]
+          + [{"t": f"{D9e} 13:{10 + k}", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 클렌징폼{k} (9,900원)\n\n토스 최대할인가", "url": f"https://toss.shopping/_m/c{k}", "mid": 60 + k, "own": 1} for k in range(3)]
+          + [{"t": f"{D9e} 13:20", "text": f"{H.TOSS_NOTE}\n\n🛒 [토스] 약한 선크림 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/w", "mid": 70, "own": 1},
+             {"t": f"{D9e} 13:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 나간 리무버 (9,900원)\n\n토스 최대할인가", "url": "https://toss.shopping/_m/t", "mid": 71, "own": 1, "th": 1}], open("posts.json", "w"), ensure_ascii=False)
+time.time = lambda: TK(f"{D9e} 15:05"); H.top_deals({}); (t9b, l9b), = thp9
+assert t9b.index("반응0") < t9b.index("반응2") < t9b.index("\n\n💄 화장품\n· 클렌징폼0 9,900원\n👉 ") and "클렌징폼1" in t9b and "약한 선크림" not in t9b and "나간 리무버" not in t9b  # 기존 딜 그대로 + 화장품 칸
+assert len(set(re.findall(r"https?://\S+", t9b)) | {l9b}) <= 5 and t9b.count("👉") == 5 and "· 클렌징폼2 9,900원" in t9b and len(t9b) <= 480  # 링크 5개까지(3번째 화장품은 이름·가격만)
+H.TH_LIST_HOURS = tlh0
 H.th_post, H.tg = pt9e, tg9e2
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.http = sv9e; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w")); time.time = t0
 # 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
