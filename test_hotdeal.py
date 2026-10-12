@@ -5,6 +5,7 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
+tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
@@ -1289,7 +1290,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards" in inspect.getsource(H.main) and "(threads, threads_deals, toss_picks, toss_reopen, preview, th_retry, ig_cards, ig_reel, ig_publish)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (6, 11)) and trn0 == (2, 2, 4)  # 10/12 진우: 아침 재알림 6시부터, 재오픈 한도 밤 2·아침 2·하루 4
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -1953,7 +1954,7 @@ H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick = rl9, tv9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and "ig = step in (ig_cards, ig_reel, ig_publish)" in inspect.getsource(H.main)
+assert "threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -2679,6 +2680,52 @@ try:
 except urllib.error.HTTPError:
     assert pk7[f"thretry_{D7.replace('-', '')}_preview"]["text"].endswith("나머지 16개도 시간 되면 여기 하나씩 올라와요" + H.PREVIEW_LINKS)  # 재시도는 댓글 없이 -> '댓글에 👇' X
 H.http, H.TOSS_NO_CMP = http7, False
+# 9-7c) 10/13 01:50 진우 '업로드 안 되면 바로 알람': ① 미리보기 댓글 실패 -> 관리자에게 바로(못 올린 댓글 본문 그대로) ② 업로드 단계 실패 -> 바로(같은 단계·오류는 3시간에 1번),
+#       텔레그램 채널 글 실패도, 다시 올라가면 '✅ 다시 올라감' ③ 8~24시 Threads 2시간 글 없음 -> '⏸' 1번 · 예약 글 시각 + 20분 안 나감 -> 예약마다 1번
+def http7e(url, body=None, headers=None, method=None):
+    if "reply_to_id" in url and sum("reply_to_id" in u for u in th7) >= 1:  # 둘째 댓글에서 실패
+        e = urllib.error.HTTPError(url, 400, "Bad", None, None); e.body = '{"error": {"message": "Service temporarily unavailable", "code": 2}}'; raise e
+    return http7b(url, body, headers, method)
+H.http, H.TOSS_NO_CMP, rp7[:] = http7e, True, []; at7("22:05", sv={"threply": {"t": 1, "ok": 1}})
+a7 = [p["text"] for m, p in sent7 if p.get("chat_id") == H.ADMIN]; np7 = len([x for x in rp7 if x[0] not in (None, "p0")]) - 1  # 올라간 댓글 수(마지막 1개는 실패)
+assert len(a7) == 1 and a7[0].startswith("⚠️ 22시 미리보기 댓글 실패 — 본문은 나갔고 댓글 ") and "개 중 " in a7[0] and "Service temporarily unavailable" in a7[0] and "Threads 앱에서 댓글로 붙여넣거나 본문 삭제" in a7[0]
+pa7 = a7[0].split("본문 삭제\n\n", 1)[1]
+assert pa7.startswith(H.TOSS_NOTE) and "휴지 30롤" in pa7 and rp7[-1][1] not in pa7 and "댓글 2개 중 1개 못 올림" in a7[0]  # 못 올린 댓글(둘째)만 본문 그대로(붙여넣기용)
+H.http, H.TOSS_NO_CMP = http7, False
+al7, tt7c, tg7c = [], time.time, H.tg
+H.tg = lambda m, **p: al7.append(p.get("text")) or {"message_id": 1}
+e7 = urllib.error.HTTPError("https://graph.threads.com/v1.0/9/threads_publish", 400, "x", None, None); e7.body = '{"error": {"message": "Fatal", "error_subcode": 4279009}}'
+s7c = {}; time.time = lambda: TK(f"{D7} 14:00"); H.RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="")
+H.step_alert(s7c, H.threads_deals, e7); H.step_alert(s7c, H.threads_deals, e7)
+assert len(al7) == 1 and al7[0].startswith("⚠️ Threads 개별 글 (Threads) 게시 실패: 400 Fatal") and "alert_threads_deals_HTTPError_400_4279009" in s7c  # 바로, 같은 단계·오류는 3시간에 1번
+H.step_alert(s7c, lambda s: H.toss_deals(s, "cat"), RuntimeError("toss 500")); H.step_alert(s7c, H.report, RuntimeError("x"))
+assert len(al7) == 2 and al7[1].startswith("⚠️ 토스 회차 글 게시 실패: RuntimeError('toss 500')") and "다음 실행" in al7[1]  # 채널 글 단계도, 업로드 아닌 단계(리포트)는 X
+time.time = lambda: TK(f"{D7} 17:01"); H.step_alert(s7c, H.threads_deals, e7); assert len(al7) == 3  # 3시간 지나면 다시
+H.RUN.update(ok={"th"}, failch=set()); H.watch(s7c); assert al7[-1] == "✅ 다시 올라감: Threads 개별 글 (Threads)" and not s7c["alert_open"]["v"]  # 다시 올라가면 1줄
+H.watch(s7c); assert al7[-1].startswith("✅") and len(al7) == 4  # 1번만
+def http7f(url, body=None, headers=None, method=None):
+    e = urllib.error.HTTPError(url, 400, "x", None, None); e.body = '{"ok": false, "description": "Bad Request: message is too long"}'; raise e
+H.http, H.RUN["ok"] = http7f, set()
+assert tg_real("sendMessage", chat_id=H.CHANNEL, text="x") is None and tg_real("editMessageText", chat_id=H.CHANNEL, message_id=1, text="x") is None and list(H.RUN["fail"]) == ["sendMessage 400"]  # 채널 '올리기'만(수정 X)
+H.watch(s7c); assert al7[-1].startswith("⚠️ 텔레그램 채널 게시 실패: sendMessage 400 Bad Request: message is too long")
+H.RUN.update(ok={"tg"}, fail={}, failch=set()); H.watch(s7c); assert al7[-1] == "✅ 다시 올라감: 텔레그램 채널"
+# Threads 2시간 글 없음(8~24시, 밤은 안 셈) · 예약 글 20분 늦음
+H.E["THREADS_TOKEN"], H.RUN["ok"] = "tk", set(); json.dump([{"t": f"{D7} 13:30", "text": "🔥 [쿠팡] 휴지 (9,900원)", "url": "https://x"}], open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"at": f"{D7} 13:30", "text": "🔥 <b>[토스] 늦은 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/q", "deal": True, "button": "b"},
+           {"at": f"{D7} 13:35", "text": "🔥 <b>[토스] 나간 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/r", "deal": True, "button": "b"},
+           {"at": f"{D7} 13:36", "name": "이름 예약 끝남", "api": True}, {"at": f"{D7} 13:37", "name": "이름 예약 못 찾음", "api": True},
+           {"at": f"{D7} 13:50", "text": "🔥 아직 20분 안 됨", "url": "https://x", "button": "b"}, {"at": f"{D7} 07:00", "text": "🔥 6시간 넘은 예약", "url": "https://x", "button": "b"}], open("events.json", "w"), ensure_ascii=False)
+s7d = {"th_last": {"t": TK(f"{D7} 02:00")}, f"ev_{D7} 13:35": 1, f"pk_{D7} 13:36": {"t": 1, "st": "done"}, f"pk_{D7} 13:37": {"t": 1, "st": None}}
+al7.clear(); H.RUN["th_why"] = "threads 후보 3 · ①② 0 · 간격 열림"; time.time = lambda: TK(f"{D7} 09:59"); H.watch(s7d)
+assert not [a for a in al7 if a.startswith("⏸ Threads")] and len(al7) == 1 and al7[0].startswith("⏸ 텔레그램 예약 글 안 나감 — 10-14 07:00 🔥 6시간 넘은 예약 (예약 + 20분 지남)"); al7.clear()  # 밤 글 없음은 안 셈(8시부터 2시간) · 07:00 예약은 6시간 안이라 알림
+time.time = lambda: TK(f"{D7} 13:58"); H.watch(s7d)
+assert al7[0].startswith("⏸ Threads 5시간째 글 없음 — 마지막 글 02:00, 대기 중 1개, 이유: threads 후보 3 · ①② 0 · 간격 열림") and "quiet_th" in s7d
+ev7c = sorted(a for a in al7 if a.startswith("⏸ 텔레그램 예약 글 안 나감"))
+assert len(ev7c) == 2 and "13:30 🔥 [토스] 늦은 예약 (1,000원)" in ev7c[0] and "13:37 이름 예약 못 찾음" in ev7c[1] and "토스 이름 예약" in ev7c[1]  # 나간 것·끝난 이름 예약·20분 안 됨·6시간 넘은 것 X
+al7.clear(); H.watch(s7d); assert not al7  # 다시 올라가기 전까지 반복 X
+H.RUN["th_last"] = TK(f"{D7} 14:05"); time.time = lambda: TK(f"{D7} 14:05"); H.watch(s7d); assert "quiet_th" not in s7d and s7d["th_last"]["t"] == TK(f"{D7} 14:05")  # 올라가면 감시 다시
+H.tg, H.http, time.time = tg7c, http7, tt7c; del H.E["THREADS_TOKEN"]; H.RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err=""); json.dump(EV7, open("events.json", "w"), ensure_ascii=False)
+H.E["THREADS_TOKEN"] = "tk"
 json.dump(EV7, open("events.json", "w"), ensure_ascii=False)
 seen7 = {}; at7("23:01"); assert not sent7  # 23시 넘으면 X(이미 나가기 시작)
 json.dump(EV7[:3], open("events.json", "w"), ensure_ascii=False); seen7 = {f"ev_{D7} 21:50": 1}
@@ -2697,7 +2744,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "toss_reopen, preview, th_retry, ig_cards" in inspect.getsource(H.main)  # 토스 22시 회차보다 먼저 · 실패 알림(Threads)
+assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")

@@ -196,9 +196,14 @@ def tg(method, **params):
             r = tg(method, **{**params, "text": p[:4096]})
         return r
     try:
-        return json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
+        r = json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
+        if params.get("chat_id") == CHANNEL and method in TG_SEND:
+            RUN["ok"].add("tg")
+        return r
     except urllib.error.HTTPError as e:
         print("TG", method, e.code, e.body)
+        if params.get("chat_id") == CHANNEL and method in TG_SEND:  # 채널 글 실패 = 실행 끝에 관리자에게 바로(watch)
+            RUN["fail"][f"{method} {e.code}"] = RUN["tg_err"] = f"{method} {err_brief(e)}"
 
 
 def fetch_deals():
@@ -551,6 +556,8 @@ def toss_clean_posts():
         print("toss 비교 뺌", n)
 
 
+RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": ""}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유
+TG_SEND = ("sendMessage", "sendPhoto", "sendVideo", "copyMessage", "sendMediaGroup")  # 채널 '올리기' 호출(수정·답장 수정은 X)
 TOSS_FIX, TOSS_FIX_RUN = "tossfix.json", 8  # 10/12 22:50 진우 '앞서 올라간 글에서 쿠팡 비교글은 수정하자': 채널 옛 토스 딜 글 고칠 번호 목록(1번만) · 한 실행 고치는 글 수(채널 분당 약 20개, 품절 지켜보기 8개와 같이)
 
 
@@ -1064,14 +1071,18 @@ def preview(seen):
             cur = []
         cur.append(d)
     parts.append(txt(cur))
+    done = 0
     try:
         to = r["id"]
         for p in parts:
             to = th_reply(tok, to, p)
+            done += 1
         seen["threply"] = {**seen["threply"], "t": time.time()}  # 되면 3일마다 다시 확인 안 함(계속 씀)
-    except Exception as e:  # 본문은 이미 나감 -> 로그만, 다음 날부터 댓글 없는 끝 문구
+    except Exception as e:  # 본문은 이미 나감 -> 관리자에게 바로(못 올린 댓글 붙여넣기용), 다음 날부터 댓글 없는 끝 문구
         seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
         print("preview 댓글 실패", seen["threply"]["err"])
+        tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 22시 미리보기 댓글 실패 — 본문은 나갔고 댓글 {len(parts)}개 중 {len(parts) - done}개 못 올림({err_brief(e)}). "
+           "본문에 \"댓글에 👇\"가 남아 있어 — 아래 글을 Threads 앱에서 댓글로 붙여넣거나 본문 삭제\n\n" + "\n\n— — —\n\n".join(parts[done:]))
 
 
 def cp_events(seen, deals=()):
@@ -1781,7 +1792,7 @@ def th_text(tok, me, text, link):
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
         time.sleep(10)
         try:
-            return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+            return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
         except urllib.error.HTTPError as e:
             if not att or "4279047" not in (getattr(e, "body", "") or ""):
                 raise
@@ -1945,6 +1956,7 @@ def ig_publish(seen):
             continue
         try:
             json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
+            RUN["ok"].add("ig")
         except Exception as e:
             if "2207051" in (getattr(e, "body", "") or ""):  # 스팸 의심: 이 컨테이너는 버리고 24시간 쉼
                 seen["ig_hold"] = now + 86400
@@ -2260,7 +2272,7 @@ def th_post(tok, text, link=None, image=None):
     q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(30 if image else 10)  # 미디어 처리 대기 (공식 권장값)
-    return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))
+    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
 
 
 def th_bundle(seen, kind, text, link=None, image=None):
@@ -2278,7 +2290,7 @@ def th_reply(tok, to, text):
     q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(10)
-    return json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST"))["id"]
+    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))["id"]
 
 
 def th_reply_ok(seen):
@@ -2469,10 +2481,11 @@ def threads_deals(seen):
                       key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), [-ord(c) for c in posts[i]["t"]]))
     todo = todo[:TH_SOLO_RUN]
     r, today = th_day(seen, now), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 실행마다 1줄(10/12 진우 '누락 없이'): 후보 · ①② · 개별 · 빠짐 이유
-    print("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
+    RUN["th_why"] = " ".join(map(str, ("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
           "· 화장품 한도", sum(bool(bt[i]) and r["b"] >= TH_BEAUTY_MAX and th_tier(posts[i]["text"]) > 0 for i in fresh), "· 간격", "대기" if now - r["last"] < TH_SOLO_GAP else "열림",
           "· 3시간 지난 ①②(리스트로)", sum(p["t"].startswith(today) and p["t"] < since and not p.get("th") and th_tier(p["text"]) > 0 for p in posts),
-          "· 토스 픽 대기", sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", [])))
+          "· 토스 픽 대기", sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", [])))))
+    print(RUN["th_why"])
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
@@ -2577,7 +2590,92 @@ def quiet():
     return time.gmtime(now).tm_hour >= 8 and last < time.strftime("%Y-%m-%d %H:%M", time.gmtime(now - GAP_FILL * 60))
 
 
+ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
+ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글",
+               "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
+               "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
+
+
+def err_brief(e):
+    """알림용 오류 한 줄: API 오류 message가 있으면 그것, 없으면 repr."""
+    m = re.search(r'"(?:message|description)":\s*"([^"]+)"', getattr(e, "body", "") or "")
+    return clip(f"{getattr(e, 'code', '')} {m[1]}".strip() if m else repr(e), 160)
+
+
+def alert(seen, key, text, ch=None, label=None):
+    """관리자 텔레그램에 바로 알림 — 같은 key는 ALERT_GAP(3시간)에 1번. ch(th·ig·tg) = 그 채널이 다시 올라가면 '✅ 다시 올라감' 1줄(watch)."""
+    now = time.time()
+    if ch:
+        RUN["failch"].add(ch)
+        seen["alert_open"] = {"t": now, "v": {**seen.get("alert_open", {}).get("v", {}), ch: label}}
+    if now - (seen.get(key) or {}).get("t", 0) < ALERT_GAP:
+        return
+    seen[key] = {"t": now}
+    tg("sendMessage", chat_id=ADMIN, text=text[:3500])
+
+
+def step_alert(seen, step, e):
+    """업로드 단계(ALERT_STEPS)가 예외로 멈춤 -> 바로 알림(단계·오류 종류마다 3시간에 1번). Threads·인스타는 토큰 안내도."""
+    name = step.__name__ if step.__name__ != "<lambda>" else next((n for n in step.__code__.co_names if n in ALERT_STEPS), "lambda")  # lambda s: toss_deals(s, "cat") -> toss_deals
+    if name not in ALERT_STEPS:
+        return
+    url = str(getattr(e, "url", "") or getattr(e, "filename", "") or "")
+    ch = "ig" if name.startswith("ig_") or "instagram" in url or "facebook" in url else "th" if "threads" in url or name in ("threads", "threads_deals", "toss_reopen", "th_retry") else None
+    kind = type(e).__name__ + (f" {e.code}" if isinstance(getattr(e, "code", None), int) else "") + "".join(f" {x}" for x in re.findall(r'"error_subcode":\s*(\d+)', getattr(e, "body", "") or "")[:1])
+    label = ALERT_STEPS[name] + {"th": " (Threads)", "ig": "", None: ""}[ch]
+    hint = "IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ch == "ig" else threads_hint(e) if ch == "th" else "다음 실행(14분 뒤)에 다시 시도해요"
+    alert(seen, f"alert_{name}_{kind.replace(' ', '_')}", f"⚠️ {label} 게시 실패: {err_brief(e)}\n{hint}", ch, label)
+
+
+def th_ok(r):
+    """Threads 글·댓글이 올라감 -> 이번 실행 기록(watch: '✅ 다시 올라감'·2시간 글 없음 감시)."""
+    RUN["ok"].add("th")
+    RUN["th_last"] = time.time()
+    return r
+
+
+def watch(seen):
+    """실행 끝 감시(10/13 진우): ① 텔레그램 채널 글 실패 -> 바로 알림 ② 실패했던 채널이 다시 올라가면 '✅ 다시 올라감' 1줄
+    ③ 8~24시 Threads 글(개별·묶음·댓글) QUIET_TH(2시간) 넘게 0개 -> '⏸' 1번(다시 올라가기 전까지 반복 X) ④ 예약 글이 시각 + QUIET_EV(20분) 넘게 안 나감 -> 예약마다 1번."""
+    now, kst = time.time(), time.gmtime(time.time() + 9 * 3600)
+    for k, why in RUN["fail"].items():
+        alert(seen, "alert_tg_" + k.replace(" ", "_"), f"⚠️ 텔레그램 채널 게시 실패: {why}\n다음 실행(14분 뒤)에 다시 시도해요", "tg", "텔레그램 채널")
+    op = seen.get("alert_open", {}).get("v", {})
+    for ch in [c for c in op if c in RUN["ok"] and c not in RUN["failch"]]:
+        tg("sendMessage", chat_id=ADMIN, text=f"✅ 다시 올라감: {op.pop(ch)}")
+    seen["alert_open"] = {"t": now, "v": op}
+    if RUN["th_last"]:
+        seen["th_last"] = {"t": RUN["th_last"]}
+        seen.pop("quiet_th", None)
+    last = seen.setdefault("th_last", {"t": now})["t"]
+    ref = max(last, now - (kst.tm_hour - 8) * 3600 - kst.tm_min * 60 - kst.tm_sec)  # 밤(0~8시)은 안 셈 -> 8시부터
+    if E.get("THREADS_TOKEN") and kst.tm_hour >= 8 and now - ref > QUIET_TH and "quiet_th" not in seen:
+        since, posts = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 6 * 3600)), load(POSTS, [])
+        wait = sum(not p.get("th") and p["t"] >= since and not p["text"].startswith("📋") and not th_weak(p["text"]) for p in posts) \
+            + sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", []))
+        tg("sendMessage", chat_id=ADMIN, text=f"⏸ Threads {int((now - ref) // 3600)}시간째 글 없음 — 마지막 글 {time.strftime('%H:%M', time.gmtime(last + 9 * 3600))}, "
+                                              f"대기 중 {wait}개, 이유: {RUN['th_why'] or '로그 확인'}"[:1000])
+        seen["quiet_th"] = {"t": now}
+    old, late = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600)), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - QUIET_EV))
+    for ev in load(EVENTS, []):
+        at = ev.get("at", "")
+        if not old <= at <= late or f"quietev_{at}" in seen:
+            continue
+        if ev.get("api") and not ev.get("url"):  # 토스 이름 예약 = toss_picks가 찾아서 올림
+            st = (seen.get("pk_" + at) or {}).get("st") if isinstance(seen.get("pk_" + at), dict) else None
+            if st in ("done", "skip"):
+                continue
+            why = "토스 이름 예약 — 상품을 아직 못 찾았거나 채널 전송 실패(toss pick 로그)"
+        elif "ev_" + at in seen:
+            continue
+        else:
+            why = RUN["tg_err"] or "events 로그 확인"
+        tg("sendMessage", chat_id=ADMIN, text=f"⏸ 텔레그램 예약 글 안 나감 — {at[5:]} {clip(ev.get('name') or plain_of(ev.get('text') or '').split(chr(10))[0], 40)} (예약 + {QUIET_EV // 60}분 지남), 이유: {why}")
+        seen[f"quietev_{at}"] = {"t": now}
+
+
 def main():
+    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="")
     if TOSS_NO_CMP:
         toss_clean_posts()
     seen = load(SEEN, {})
@@ -2638,12 +2736,11 @@ def main():
             step(seen)
         except Exception as e:
             print(step.__name__, repr(e))
-            ig = step in (ig_cards, ig_reel, ig_publish)
-            alert = time.strftime(("ig" if ig else "th") + "_alert_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
-            if step in (threads, threads_deals, toss_picks, toss_reopen, preview, th_retry, ig_cards, ig_reel, ig_publish) and alert not in seen:  # 토큰 만료 등: 하루 1번만 알림
-                seen[alert] = time.time()
-                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {'인스타' if ig else 'Threads'} 게시 실패: {e!r}"[:300] + "\n"
-                   + ("IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ig else threads_hint(e)))
+            step_alert(seen, step, e)  # 10/13 진우 '업로드 안 되면 바로 알람': 하루 1번 -> 바로(같은 단계·같은 오류는 3시간에 1번), Threads·인스타 + 채널 글 단계(ALERT_STEPS)
+    try:
+        watch(seen)
+    except Exception as e:  # 감시가 실패해도 seen은 저장
+        print("watch", repr(e))
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if (v["t"] if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
     print(f"new={len(new)} seen={len(seen)}")
