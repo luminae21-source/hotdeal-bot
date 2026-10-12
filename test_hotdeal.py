@@ -2159,7 +2159,7 @@ H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_
 #       > 오늘 진우 화장품 링크가 더 없으면 15·19시 토스 뷰티 회차 1개(소모품 먼저). 시간·본문 틀은 그대로
 sv9c = (H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, H.E["THREADS_TOKEN"] = 5, 45 * 60, 1, th_strong0, tlh0, ("best",), "tk"
-H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = 1, 2; assert tbm0 == (1, 4) and "TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 4" in inspect.getsource(H)  # 기본값 1·4(10/12 19:50 진우 2 -> 4) — 아래 한도 검사는 2로  # 기본값(예전 셀프체크는 화장품 자리 없이 0, 99)
+H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = 1, 2; assert tbm0 == (1, 7) and "TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 7" in inspect.getsource(H)  # 기본값 1·7(10/12 20:00 진우 2 -> 4 -> 7) — 아래 한도 검사는 2로  # 기본값(예전 셀프체크는 화장품 자리 없이 0, 99)
 assert [H.th_beauty(n) for n in ("[토스] 메르헨트 미셀라 클렌징워터 500ml", "아스파시아 립앤아이 리무버", "에이지랩 선크림 70ml", "토너패드 70매", "콜라겐 에센스 마스크팩 100개입", "화이트벨라 마이크로 니들 패치 12매")] == [2] * 6  # 소모품
 assert [H.th_beauty(n) for n in ("레이데이 살몬퓨어 리페어 비비크림 50ml 3개", "앙쥬 365 썬BB크림 1+1", "에이지랩 달팽이 뮤신 올인원 크림", "오에스알 EGF 리페어 크림 70ml", "토리든 세럼 50ml")] == [1] * 5  # 다른 화장품(BB크림 = 10/12 진우 링크)
 assert [H.th_beauty(n) for n in ("한경희 카본히터 Q2000", "로지텍 마우스패드", "서울우유 생크림 500ml", "배스킨라빈스 아이스크림", "쿠션 방석", "커밍글 노워시 트리트먼트")] == [0] * 6  # 화장품 아님(크림·패드·쿠션 단독 X)

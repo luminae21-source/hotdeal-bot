@@ -12,7 +12,7 @@
 > | **알림** | 진우에게는 하루 1번(Cowork 08:30 아침 보고) — 진우가 직접 해야 할 일이 생겼을 때만 따로(PushNotification), 나머지 보고는 README 점검 행 |
 > | **진우 할 일** | 매일 21시 전에 토스 링크 3~7개(좋은 것만) · 일요일 토스 수익 화면 캡처 |
 > | **10/25 비교(수익 순)** | 1순위 **구매 링크 클릭**(GoatCounter 클릭 이벤트 + 쿠팡 클릭 + 토스 방문 캡처) · 2순위 **구매·수수료** · 참고 조회수(Threads 48시간 지난 글끼리) — 기준선 10/11: Threads 30일 조회 5,822·본 사람 2,678·반응 2·팔로워 5 · 쿠팡 10월 클릭 15·구매 0 · 사이트 측정 없음 · 텔레그램 구독 2 |
-> | **설정값(2주 동결)** | `TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45분, 1원, 1, (12, 15, 18), ("best",)`(10/12 01:20 하루 한도 없이 45분마다 · 01:25 리스트 15시 추가) · `TOP_HOURS = (12, 15, 18)` · `TH_SLOTS = None` · `TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4` · `TH_REOPEN_AM = (6, 11)` · `TH_SOLO_RANK = 3`(10/11 23:40 기준: ① 같은 상품 쿠팡 차이 ② 30일 최저가·1~3위 ③ 나머지 리스트) · `TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 4`(10/11 23:50 매일 1~2개 → 10/12 19:50 최대 4개) · `AD_FIRST = ""`(10/12 00:40 첫 줄 변경 취소) · `PREVIEW_HOUR, PREVIEW_MIN = 22, 3` (되돌리기 = 이 값만) |
+> | **설정값(2주 동결)** | `TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45분, 1원, 1, (12, 15, 18), ("best",)`(10/12 01:20 하루 한도 없이 45분마다 · 01:25 리스트 15시 추가) · `TOP_HOURS = (12, 15, 18)` · `TH_SLOTS = None` · `TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4` · `TH_REOPEN_AM = (6, 11)` · `TH_SOLO_RANK = 3`(10/11 23:40 기준: ① 같은 상품 쿠팡 차이 ② 30일 최저가·1~3위 ③ 나머지 리스트) · `TH_BEAUTY_MIN, TH_BEAUTY_MAX = 1, 7`(10/11 23:50 매일 1~2개 → 10/12 20:00 최대 7개) · `AD_FIRST = ""`(10/12 00:40 첫 줄 변경 취소) · `PREVIEW_HOUR, PREVIEW_MIN = 22, 3` (되돌리기 = 이 값만) |
 
 ```
 GitHub Actions (15분마다 24시간 · 밤 0~8시 채널 글·사본은 알림 없이 무음 · tick 타이머가 15분마다 실행시킴 → 아래 7번)
