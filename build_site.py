@@ -117,6 +117,9 @@ SAVE_STORES = r"쿠팡|네이버|G마켓|지마켓|11번가|이마트|롯데온|
 OTHER_STORES = r"쿠팡|네이버|G마켓|지마켓|11번가|이마트|롯데온|올리브영|오늘의집|컬리|다이소|옥션|위메프|티몬"  # 토스 딜 글에서 빼는 다른 몰 이름(10/12 토스 비즈니스 '타 쇼핑몰과의 가격 비교 없이')
 
 
+CMP_WORDS = r"보다|대비|차이|같은 상품|더 싸|더 쌈|비싸|최저가는"  # 다른 몰 비교 말
+
+
 def strip_cmp(text, ents=()):
     """토스 딜 글에서 다른 쇼핑몰 가격 비교를 뺀 (text, entities): 다른 몰 이름 + 비교 말(보다·대비·차이·같은 상품 등)이 든 줄을 지움 — '🤔 솔직히 특가로는 약한 제품 — …'·'💡 단위가격: … — …'는
     ' — ' 앞만 남기고, '[광고] …' 첫 줄은 훅만 뺌. entities(텔레그램 UTF-16 오프셋)는 지운 만큼 당기고 바뀐 줄 안의 것은 뺌."""
@@ -124,12 +127,15 @@ def strip_cmp(text, ents=()):
     out, spans, pos = [], [], 0
     for line in text.split("\n"):
         new = line
-        if re.search(OTHER_STORES, line) and re.search(r"보다|대비|차이|같은 상품|더 싸|더 쌈|비싸|최저가는", line):
-            if line.startswith("[광고]"):
-                new = re.sub(rf"\s*—\s*({OTHER_STORES})보다 [\d,]+원 쌈", "", re.sub(rf"💸 ({OTHER_STORES})보다 [\d,]+원 (싼 |쌈 · )", "🔥 ", line))
-            elif line.startswith(("🤔", "💡 단위가격")) and " — " in line:
-                new = line.split(" — ")[0]
-            else:
+        if line.startswith("[광고]") and re.search(OTHER_STORES, line) and re.search(CMP_WORDS, line):
+            new = re.sub(rf"\s*—\s*({OTHER_STORES})보다 [\d,]+원 쌈", "", re.sub(rf"💸 ({OTHER_STORES})보다 [\d,]+원 (싼 |쌈 · )", "🔥 ", line))
+        elif re.search(OTHER_STORES, line) and not re.match(r"(?:🔥|🛒) (?:<b>)?\[|출처:|\[광고\]", line) and not line.startswith(NOTE_STARTS):  # 10/13 진우 '토스 글 전부 다른 몰 이름·가격 비교 없이'(제목·고지문·출처 줄은 그대로)
+            m = re.match(r"((?:💡|🤔|⚠️|👉|💰)\s*(?:[가-힣 ]{1,8}:\s*)?)(.*)$", line)
+            if m and not line.startswith("💡 참고"):  # 💡·🤔·⚠️ 줄 = ' — '·' · ' 조각 중 다른 몰 이름이 든 조각과 비교만 남는 조각(절반·비교·차이 등)을 빼고, 남는 게 없으면 줄째
+                tok = re.split(r"( — | · )", m[2])
+                kept = [(tok[i - 1] if i else "", tok[i]) for i in range(0, len(tok), 2) if tok[i].strip() and not re.search(OTHER_STORES, tok[i]) and not re.search(CMP_WORDS + "|절반|비교", tok[i])]
+                new = m[1] + kept[0][1] + "".join(sep + p for sep, p in kept[1:]) if kept else None
+            else:  # '💡 참고: 쿠팡 …'·다른 몰 이름이 든 다른 줄 = 줄째
                 new = None
         if new != line:
             spans.append((pos, u(line) + 1, 0 if new is None else u(new) + 1))

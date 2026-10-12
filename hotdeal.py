@@ -567,11 +567,13 @@ def toss_fix_channel(seen):
     품절 지켜보기 기록 본문도 비교를 빼 둠(나중에 품절 줄을 고칠 때 비교가 돌아오지 않게). 글마다 1번만(실패 = 로그, 지운 글 등)."""
     for w in [w for k, w in seen.items() if k.startswith("sold_") and isinstance(w, dict) and w.get("k") == "ev"]:
         w["pre"], w["body"] = strip_cmp(w.get("pre", ""))[0], strip_cmp(w.get("body", ""))[0]
-    done = seen.get("tossfix", {}).get("done", [])
-    todo = [m for m in load(TOSS_FIX, {}).get("mids", []) if m not in done]
+    fx = load(TOSS_FIX, {})
+    key = "tossfix" + str(fx.get("v") or "")  # 목록이 바뀌면(v) 처음부터(10/13 2차 28개)
+    done = seen.get(key, {}).get("done", [])
+    todo = [m for m in fx.get("mids", []) if m not in done]
     if not todo:
         return
-    st = seen["tossfix"] = {"t": time.time(), "done": done}
+    st = seen[key] = {"t": time.time(), "done": done}
     posts, evs, ok = {p["mid"]: p for p in load(POSTS, []) if p.get("mid")}, load(EVENTS, []), 0
     for mid in todo[:TOSS_FIX_RUN]:
         st["done"].append(mid)  # 먼저 표시: 실패해도 같은 글 반복 안 함

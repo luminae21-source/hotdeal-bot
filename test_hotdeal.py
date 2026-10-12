@@ -2359,6 +2359,14 @@ json.dump([{"t": "2026-10-12 21:00", "text": T9f, "url": "https://toss.shopping/
 H.toss_clean_posts(); p9f = json.load(open("posts.json"))
 assert "쿠팡" not in p9f[0]["text"] and p9f[0]["text"].endswith("⚠️ 확인할 점: 결제 전 최종가 확인") and p9f[0]["entities"][0]["offset"] == len(p9f[0]["text"].encode("utf-16-le")) // 2 - 2 and "3,000원 쌈" in p9f[1]["text"]  # 토스만, 링크 위치 맞게
 H.record(T9f, [], "https://toss.shopping/_m/r2"); assert "쿠팡" not in json.load(open("posts.json"))[-1]["text"]  # 새로 기록하는 토스 딜도
+# 10/13 08:30 '토스 글 전부 다른 몰 이름 없이'(2차 28개): 💡·🤔·⚠️ 줄은 다른 몰 조각·비교만 남는 조각(절반·비교·차이)만 빼고, '💡 참고: 쿠팡…'·다른 몰 이름 든 다른 줄은 줄째, 제목·고지문·출처 줄은 그대로
+for a9, b9 in (("⚠️ 확인할 점: 88% 할인율은 정가 기준이라 쿠팡 가격 비교가 더 정확 · 토스 앱 가격(10/10 18시) 기준", "⚠️ 확인할 점: 토스 앱 가격(10/10 18시) 기준"),
+               ("💡 단위가격: 100g당 798원 — 쿠팡 미국산 삼겹살 4kg(63,720원 와우가, 100g당 1,593원)의 절반 값", "💡 단위가격: 100g당 798원"),
+               ("💡 쿠팡에선 같은 모델을 못 찾아 비교 못 함 — 토스 30일 내 최저가 기준", "💡 토스 30일 내 최저가 기준"), ("💡 참고: 쿠팡 다른 판매자 전라도 파김치 1kg 14,900원 — 거의 절반 값", None),
+               ("💡 참고: 쿠팡 애슐리 크림빠네 756g 2개 21,880원 — 이 세트는 4종", None), ("🤔 솔직히 특가로는 약한 제품 — 100ml당 430원인데 쿠팡이 조금 쌈", "🤔 솔직히 특가로는 약한 제품"),
+               ("💡 1개 1,750원꼴 — 쿠팡 애슐리 케이준 볶음밥 6개(다른 맛) 15,890원", "💡 1개 1,750원꼴"), ("올리브영보다 싸요", None)):
+    r9 = H.strip_cmp(f"{H.TOSS_NOTE}\n\n🔥 [토스] 쿠팡 없는 제목 (1원)\n\n{a9}\n\n출처: 뽐뿌")[0]
+    assert r9 == f"{H.TOSS_NOTE}\n\n🔥 [토스] 쿠팡 없는 제목 (1원)\n\n" + (f"{b9}\n\n" if b9 else "\n") + "출처: 뽐뿌", (a9, r9)
 # Threads 개별 글: 토스 = 💸 쿠팡 줄 X·게시 시점 가격, 토스 아님 = 그대로
 s9f, live_pages, H.E["THREADS_TOKEN"], h9f, f9f = {}, set(range(5)), "tk", H.http, H.TH_SOLO_FILL
 H.http, H.TH_SOLO_FILL = td_http, True
@@ -2441,6 +2449,7 @@ assert "쿠팡" not in s9g["sold_33"]["body"]  # 품절 지켜보기 기록도 �
 g_sent[:] = []; H.toss_fix_channel(s9g); (m9, p9), = g_sent
 assert p9["message_id"] == 33 and p9["parse_mode"] == "HTML" and "⛔ <b>특가 끝</b>" in p9["text"] and "쿠팡" not in p9["text"] and p9["reply_markup"]["inline_keyboard"][0][0] == {"text": "특가 끝", "url": "https://toss.shopping/_m/C"}  # 품절 줄·버튼 글자 그대로
 g_sent[:] = []; H.toss_fix_channel(s9g); assert not g_sent  # 글마다 1번만
+json.dump({"v": 2, "mids": [31]}, open("tossfix.json", "w")); g_sent[:] = []; H.toss_fix_channel(s9g); assert [p["message_id"] for m, p in g_sent] == [31] and s9g["tossfix2"]["done"] == [31]  # 목록 v2 = 처음부터(2차 28개)
 H.TOSS_FIX_RUN = 8
 # Threads·인스타 비교 글 목록(로그): 토스 글 + 비교 있는 것만, 출처·하루특가·지금 목록 가격
 json.dump([{"t": "2026-10-11 09:00", "text": "x", "url": "https://toss.shopping/_m/B"}], open("posts.json", "w"))
