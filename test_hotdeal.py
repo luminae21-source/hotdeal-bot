@@ -2655,7 +2655,7 @@ H.http, H.TOSS_NO_CMP = http7b, True; at7("22:05", sv={"threply": {"t": 1, "ok":
 (_, b7, l7, _), *r7 = rp7
 assert l7 == f"{H.SITE}?ref=th" and len(b7) <= 480 and b7.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🌙 오늘 밤 특가 미리보기 (21개)\n\n22:10 🔥 메르헨트 상품 0번")
 assert b7.endswith("\n\n나머지 16개는 댓글에 👇\n🔔 시간 되면 이 계정에 하나씩 올라와요" + H.PREVIEW_LINKS)  # 10/13 01:25 진우: 끝 블록 = 댓글 안내 + 사이트·텔레그램 링크(장점 설명)
-assert H.PREVIEW_LINKS == f"\n\n🛍 지금 살 수 있는 딜 한눈에(앱 설치 없이) 👉 {H.SITE}?ref=th\n📲 올라오는 순간 알림(선착순 특가 놓치지 않게) 👉 t.me/hotdeal_pick" and b7.count("http") == 1 and "실시간 알림 t.me" not in b7
+assert H.PREVIEW_LINKS == f"\n\n🛍 지금 살 수 있는 딜 한눈에(앱 설치 없이) 👉 {H.SITE}?ref=th\n📲 텔레그램 쓰는 분은 올라오는 순간 알림 👉 t.me/hotdeal_pick" and b7.count("http") == 1 and "실시간 알림 t.me" not in b7
 assert b7.count("메르헨트") == 1 and "쌈" not in b7 and "외 " not in b7  # 토스 = 쿠팡 비교 X
 assert len(r7) >= 2 and r7[0][0] == "m1" and all(r7[k][0] == f"m{r7[k - 1][3]}" for k in range(1, len(r7))) and all(x[2] is None for x in r7)  # 본문 -> 댓글1 -> 댓글2(이어서), 링크 첨부 X
 assert all(len(x[1]) <= 480 and x[1].startswith(H.TOSS_NOTE) for x in r7) and "쿠팡 같은 상품보다 3,000원 쌈" in r7[-1][1] and H.DISCLOSURE in r7[-1][1]  # 댓글마다 대가성 문구, 토스 아닌 몰(쿠팡)은 그대로
