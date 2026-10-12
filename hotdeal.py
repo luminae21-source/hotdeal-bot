@@ -2105,6 +2105,7 @@ def th_retry(seen):
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), ("best",)  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시
+TH_SOLO_FILL = True  # 10/12 18:55 진우 '상위 딜로 채우기': 45분이 됐는데 ①·화장품·② 후보가 없으면 최근 3시간 채널 딜 중 점수 높은 것 1개(같은 점수면 제휴 링크 먼저, 그다음 최근 것) — Threads에 나간 것·🛒·품절 X, 화장품 하루 2개·45분 간격 그대로. False = 끔
 TH_SLOTS = None  # 개별 글 고정 슬롯(예: (9, 11, 15, 20, 23) — 슬롯 시각 뒤 첫 실행에 대기 중 1순위 1개, 토스 이름 예약·뷰티 회차 글은 줄에서 기다림). 10/12 01:10 진우 요청 -> 01:20 취소('45분 간격 유지') = None
 TH_SOLO_RANK = 3  # 10/11 23:40 진우 '이 방식 유지하면서 경과 보기'(밤 메르헨트 💸 2,000원 글 50분에 조회 20 — 낮 글보다 빠름): 개별 글 기준 못 박음 —
 # ① 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥(💸 훅, 금액 상관없이) 먼저 ② 30일 최저가·순위 1~3위 ③ 🛒·단위가격 참고만은 리스트로(18시 채움 없음 = TH_SOLO_MIN 0)  # 10/11 진우 결정 '나누지 말고 묶기, 꾸준하게'(2주 동결 ~10/25):
@@ -2177,7 +2178,7 @@ def th_note(note):
     return (("[광고] " if ad_on() else "") + note + "\n\n") if note else ""
 
 
-def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=False):
+def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=False, top=False):
     """Threads 개별 글을 지금 올려도 되는지(딜 글·토스 이름 예약·재오픈·뷰티 회차 같이 셈): 오늘 TH_SOLO_MAX개 미만·앞 개별 글과 TH_SOLO_GAP 이상, 🛒 X,
     강한 딜(th_strong)만 — 18시 넘어 오늘 TH_SOLO_MIN개가 안 찼으면 fill(일반 🔥 딜)도. 올렸으면 th_mark(seen, beauty).
     beauty(th_beauty) = 화장품: 하루 TH_BEAUTY_MAX개까지, 오늘 화장품이 TH_BEAUTY_MIN개 안 찼으면 slot(진우 화장품 링크·이름 예약·뷰티 회차)은 ①② 아니어도 O.
@@ -2200,7 +2201,7 @@ def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=Fal
             return True
     elif r["n"] - b >= TH_SOLO_MAX - TH_BEAUTY_MIN:
         return False
-    return th_strong(plain) or (fill and time.gmtime(now + 9 * 3600).tm_hour >= 18 and r["n"] < TH_SOLO_MIN)
+    return th_strong(plain) or (top and not th_weak(plain)) or (fill and time.gmtime(now + 9 * 3600).tm_hour >= 18 and r["n"] < TH_SOLO_MIN)  # top = 상위 딜 채우기(TH_SOLO_FILL)
 
 
 def th_mark(seen, beauty=0, reopen=None):
@@ -2238,7 +2239,12 @@ def threads_deals(seen):
         + [(x, x["text"], x["bt"], time.strftime("%Y-%m-%d %H:%M", time.gmtime(x["t"] + 9 * 3600))) for x in q if th_solo(seen, x["text"], beauty=x["bt"], slot=True)]  # 진우 화장품 링크·이름 예약은 화장품 자리 채움
     grp = lambda c: 0 if th_tier(c[1]) == 1 else 1 if c[2] and TH_BEAUTY_MIN else 2  # 10/12 01:10 진우: ① 쿠팡 같은 상품 차이 > 화장품(하루 1~2) > ② 30일 최저가·순위
     strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
-    todo = (strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])])[:TH_SOLO_RUN]
+    todo = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])]
+    if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 상위 딜로 채움(10/12 진우): 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
+        out = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}
+        todo = sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
+                      key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), [-ord(c) for c in posts[i]["t"]]))
+    todo = todo[:TH_SOLO_RUN]
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]

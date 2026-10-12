@@ -5,7 +5,7 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
-H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -2298,6 +2298,30 @@ json.dump([{"t": "2026-10-12 13:00", "text": "🔥 [G마켓] 인기1 (1,000원)"
 H.TH_LIST_HOURS = tlh0; time.time = lambda: TK("2026-10-12 15:05"); H.top_deals({})
 t9d = sent[-1][1]["text"]; assert "TOP3</b> (15시)" in t9d and t9d.index("좋은딜") < t9d.index("인기1") < t9d.index("인기2") and "약한딜" not in t9d and tries9[-1][0] == "ok"  # 15시 = 12~15시, 좋은 딜 먼저, 🛒(반응 수치 없음) X, Threads에도
 H.th_post, H.tg, time.time = pt9, tg9d, tt9; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w"))
+# 9-2e) 상위 딜로 채우기(10/12 18:55 진우, TH_SOLO_FILL): 45분이 됐는데 ①·화장품·② 후보가 없으면 최근 3시간 채널 딜 중 점수 높은 것 1개(같은 점수면 제휴 링크 먼저, 그다음 최근 것) —
+#       Threads에 나간 것·🛒·품절(품절 지켜보기 기록) X, ①② 있으면 그게 먼저, 글 틀 그대로(비교 줄 없으면 💸 줄 없음)
+assert tfill0 is True
+sv9e = (H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.http)
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.E["THREADS_TOKEN"], H.http, live_pages = 99, 45 * 60, 1, th_strong0, True, "tk", td_http, set(range(10))
+D9e = "2026-10-12"
+P9e = [("17:00", "🔥 [롯데온] 오래된 9점 (1,000원)\n\n좋음", "https://x/old", {"s": 9, "mid": 1}),  # 3시간 지남
+       ("19:00", "🔥 [카카오] 일반 8점 (2,000원)\n\n좋음", "https://x/k", {"s": 8, "mid": 2}),
+       ("19:10", "🔥 [G마켓] 제휴 8점 (3,000원)\n\n좋음\n💡 단위가격: 100g당 300원", "https://link.coupang.com/a/g", {"s": 8, "mid": 3}),
+       ("19:20", "🛒 [토스] 약한 9점 (4,000원)\n\n🤔 솔직히 특가로는 약한 제품", "https://toss.shopping/_m/w", {"s": 9, "mid": 4}),
+       ("19:25", "🔥 [토스] 품절 9점 (5,000원)\n\n좋음", "https://toss.shopping/_m/o", {"s": 9, "mid": 5}),
+       ("19:30", "🔥 [쿠팡] 나간 9점 (6,000원)\n\n좋음", "https://link.coupang.com/a/t", {"s": 9, "mid": 6, "th": 1})]
+json.dump([{"t": f"{D9e} {t}", "text": x, "url": u, **e} for t, x, u, e in P9e], open("posts.json", "w"), ensure_ascii=False)
+s9e = {"sold_5": {"t": 1, "k": "ev", "it": [[55, "품절 9점", 5000, 1, 1, 0]]}}
+def th9e(hm):
+    calls.clear(); time.time = lambda: TK(f"{D9e} {hm}"); H.threads_deals(s9e)
+    return [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
+m9 = th9e("20:05"); assert len(m9) == 1 and "제휴 8점" in m9[0] and "💸" not in m9[0] and m9[0].startswith(H.DISCLOSURE + "\n\n🔥 [G마켓] 제휴 8점 (3,000원)\n\n좋음\n💡 단위가격") and "🙋 팔로우" in m9[0]  # 같은 8점이면 제휴 링크 먼저(🛒·품절·나간 것·3시간 지난 것 X), 틀 그대로
+assert th9e("20:30") == [] and len(th9e("20:51")) == 1  # 45분 간격 그대로 -> 다음은 일반 8점
+json.dump([{"t": f"{D9e} 21:00", "text": "🔥 [카카오] 다른 9점 (1,000원)\n\n좋음", "url": "https://x/9", "s": 9, "mid": 7}, {"t": f"{D9e} 21:05", "text": "🔥 [토스] 최저가 5점 (1,000원)\n\n토스 하루특가 · 30일 내 최저가", "url": "https://toss.shopping/_m/z", "s": 5, "mid": 8}], open("posts.json", "w"), ensure_ascii=False)
+m9 = th9e("21:40"); assert len(m9) == 1 and "최저가 5점" in m9[0]  # ①② 후보가 있으면 그게 먼저(점수 낮아도)
+H.TH_SOLO_FILL = False; json.dump([{"t": f"{D9e} 21:50", "text": "🔥 [카카오] 끔 9점 (1,000원)\n\n좋음", "url": "https://x/f", "s": 9, "mid": 9}], open("posts.json", "w"), ensure_ascii=False)
+assert th9e("22:30") == []  # 끄면 예전처럼(①② 없으면 안 올림)
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.http = sv9e; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w")); time.time = t0
 # 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
 #      -> 22시(REEL_HOUR) 넘고 사이트에 뜨면(HEAD) REELS 컨테이너(video_url·캡션·피드·표지 1.5초) 1번 -> ig_publish가 처리 끝나면 발행('오늘 릴스')
 #      처리 중이면 기다림, 실패(ERROR)면 예외(알림), 만들기 실패는 3번까지 다시, 꺼져 있으면(기본) 예전처럼 봇 채팅 영상만(공개 X), 토큰 없으면 아무것도 안 함
