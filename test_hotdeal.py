@@ -1603,7 +1603,7 @@ assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감<
 assert all(S.FIND[:-len("</div>")] + '<nav class="bar top"' in x and S.FIND_JS in x for x in (i8, a8)) and f'<nav class="bar top" aria-label="바로가기"><a href="{S.BASE}#' in a8 and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
 d7m = open("docs7/p/4.html").read()
 # 10/13 09:40 진우 '눈에 더 띄게'(구매 버튼은 1순위 그대로): 카테고리 색(인기·토스·생필품·화장품·전체·카드·브랜드) — 딜 페이지 = 연한 박스·3열·색 원 28px, 앱 안 위 줄 = 색 원 22px·40px·선택 칸 꽉 채움, 아래 바 = 아이콘만 색
-assert all(f".k-{k}{{--c:{c}" in S.CSS for k, c in (("hot", "#ff5a3c"), ("toss", "#1b64da"), ("life", "#12a150"), ("beauty", "#e64980"), ("days", "#4e5968"), ("today", "#f59f00"), ("brand", "#7048e8")))
+assert all(f".k-{k}{{--c:{c}" in S.CSS for k, c in (("hot", "#e03131"), ("toss", "#1b64da"), ("life", "#0b7d3e"), ("beauty", "#d6336c"), ("days", "#4e5968"), ("today", "#f59f00"), ("brand", "#7048e8")))
 assert ".more{background:#eef4ff;border-radius:16px;padding:14px" in S.CSS and "grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "min-height:52px" in S.CSS and "width:28px;height:28px;border-radius:14px;background:var(--c)" in S.CSS and ".more{background:#15233a}" in S.CSS
 assert ".inapp .bar.top i{width:22px;height:22px" in S.CSS and "min-height:40px" in S.CSS and ".inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}" in S.CSS and ".bar i{display:flex;color:var(--c)}" in S.CSS
 assert ".k-today{--c:#f59f00;--t:#191f28}" in S.CSS and ".bar .k-days i{color:#a1a1aa}" in S.CSS  # 대비: 카드 선택 칸 = 어두운 글씨(흰 글씨 2.1), 다크 아래 바 '전체' 아이콘 = 밝게(2.4 -> 7)
