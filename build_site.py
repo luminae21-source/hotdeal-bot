@@ -33,6 +33,8 @@ a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}#today details{margin-top:10px}#today summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:#4e5968}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64da;outline-offset:2px}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e8eaee;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7684;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#1b64da;background:#e8f1fd}main:has(.bar){padding-bottom:84px}
+.bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}.inapp .bar.top{display:flex;position:static;justify-content:flex-start;overflow-x:auto;gap:6px;padding:8px 0 2px;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}.inapp .bar.top::-webkit-scrollbar{display:none}.inapp .bar.top a{flex:none;max-width:none;flex-direction:row;min-height:36px;padding:0 12px;gap:5px;border-radius:18px;background:#fff;border:1px solid #e1e4e8;font-size:13px}.inapp .bar.top svg{width:16px;height:16px}.inapp .bar.top a[aria-current=true]{background:#e8f1fd;border-color:#1b64da}
+.more h2{font-size:16px;font-weight:800;margin:22px 2px 8px}.more div{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.more div::-webkit-scrollbar{display:none}.more a{flex:none;display:flex;align-items:center;gap:5px;min-height:40px;padding:0 14px;border-radius:20px;background:#fff;border:1px solid #e1e4e8;color:#333d4b;text-decoration:none;font-size:14px;font-weight:600}.more svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .day h2{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:22px 2px 2px}.day>.t{margin:0 2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
 .g{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:16px;padding:12px;border:1px solid #eef0f3;box-shadow:0 1px 2px rgba(25,31,40,.04);min-width:0}.g .s{min-height:22px;padding:2px 30px 0 0;font-size:12px;color:#8b95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .like{position:absolute;top:4px;right:2px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:20px;background:none;color:#b0b8c1;cursor:pointer}.like svg,.lk svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.like svg{width:20px;height:20px}.like[aria-pressed=true]{color:#e42939}.like[aria-pressed=true] svg,.lk svg{fill:currentColor}
@@ -44,7 +46,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64
 .deal .s{font-size:13px;color:#8b95a1}.deal h2{font-size:20px;letter-spacing:-.3px;margin:4px 0 12px}.hero{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}.hero .pr{font-size:30px;font-weight:800;letter-spacing:-.6px;line-height:1.2}.ship{font-size:13px;color:#6b7684}.hero .sv{font-size:15px}.deal .u{font-size:14px;color:#6b7684;margin-top:2px}
 .deal .btn{min-height:56px;font-size:18px;margin-top:16px}.deal .note{font-size:12px;color:#8b95a1;text-align:center;margin:8px 0 0}.why{font-size:14px;color:#6b7684;font-weight:700;margin:18px 0 6px;padding-top:16px;border-top:1px solid #f2f4f6}.deal p{margin:0;font-size:15px;line-height:1.65;color:#333d4b}
 @media(prefers-color-scheme:dark){body{background:#101012;color:#ececf0}.card,.g,.pick,.lk{background:#1c1c1f;border-color:#2b2b30;box-shadow:none}.pick{color:#ececf0}.sub,.t,.dis,footer,.g .s,.deal .s,.deal .note,.g .rx{color:#8e8e96}a{color:#6ea8ff}.gb{background:#2a1f17;border-color:#7c2d12;color:#fdba74}.pick em{color:#fdba74}
-.bar{background:rgba(28,28,31,.94);border-color:#2b2b30}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6ea8ff;background:#1f2a3a}.like{color:#71717a}.btn,.g .go a{background:#2b6fd6;color:#fff}.btn2{border-color:#6ea8ff;color:#6ea8ff}.find{background:#101012}.find input,.chips button{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.chips button[aria-pressed=true]{background:#ececf0;border-color:#ececf0;color:#101012}
+.bar{background:rgba(28,28,31,.94);border-color:#2b2b30}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6ea8ff;background:#1f2a3a}.inapp .bar.top{background:none}.inapp .bar.top a,.more a{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.inapp .bar.top a[aria-current=true]{background:#1f2a3a;border-color:#6ea8ff;color:#6ea8ff}.like{color:#71717a}.btn,.g .go a{background:#2b6fd6;color:#fff}.btn2{border-color:#6ea8ff;color:#6ea8ff}.find{background:#101012}.find input,.chips button{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.chips button[aria-pressed=true]{background:#ececf0;border-color:#ececf0;color:#101012}
 .b1{background:#12301c;color:#86efac}.b2{background:#3a1616;color:#fca5a5}.b3{background:#2b2b30;color:#a1a1aa}.b4{background:#2a1f17;color:#fdba74}.g .go a.o{background:#2b2b30;color:#ececf0}.g .go a.f{background:none;color:#a1a1aa}.sv{color:#ff6b78}.g .u,.deal .u,.ship,.why{color:#a1a1aa}.why{border-color:#2b2b30}.deal p{color:#d4d4d8}}"""
 
 
@@ -84,13 +86,14 @@ def page(title, body, desc="", canonical="", gb=True, note=""):
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
 <meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
-{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style>{gc_tag()}</head><body><main>
+{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style>{INAPP_JS}{gc_tag()}</head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
 <p class="dis">{html.escape(note) + "<br>" if note else ""}{DISCLOSURE}</p>{GB_LINK if gb else ""}{body}
 <a class="tg" href="{CHANNEL}">📲 텔레그램에서 실시간으로 받기</a>
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main></body></html>"""
 
 
+INAPP_JS = "<script>if(/Barcelona|Instagram|FBAN|FBAV|KAKAOTALK|NAVER\\(inapp|Line\\/|DaumApps/i.test(navigator.userAgent))document.documentElement.classList.add('inapp')</script>"  # 10/13 진우: 앱 안 브라우저(Threads=Barcelona·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가려서 -> 검색창 아래 한 줄 메뉴 + 아래 여백
 GB_LINK = (f'<div class="top2"><a class="gb" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>'  # 골드박스 + 텔레그램 한 줄(10/11 진우 '검색창+골드박스+텔레그램을 위에')
            f'<a class="tg2" href="{CHANNEL}">📲 텔레그램 알림받기</a></div>')
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
@@ -416,6 +419,10 @@ GO_FIND = ('<form class="find" role="search" action="../index.html"><input name=
            ' aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>')  # 딜 페이지 -> 홈에서 검색(10/11 진우 '딜 검색은 있었으면')
 
 
+MORE = ('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">다른 딜 보기</h2><div>'  # 딜 페이지(10/13 진우): '같이 보면 좋은 딜' 아래 페이지 안 메뉴 줄(고정 X — 앱 안 브라우저 툴바에 안 가림), 홈 칸으로
+        + "".join(f'<a href="{BASE}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n}</a>' for k, n in (("hot", "인기"), ("toss", "토스"), ("life", "생필품"), ("beauty", "화장품"), ("days", "전체"))) + "</div></nav>")
+
+
 def related(i, p, pool, n=4):
     """딜 페이지 아래 '같이 보면 좋은 딜'(10/11 진우 '더 사고 싶게'): pool(최근 2일 제휴 링크 딜, 약한 딜 빼고) 중 같은 품목 먼저, 그다음 최신. 같은 이름 제외.
     쿠팡은 클릭 후 24시간 안 산 건 다 실적 -> 들어온 사람이 한 번 더 둘러보게."""
@@ -463,18 +470,19 @@ def build(posts, out="docs"):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
         note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False, note=note))
+        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + MORE + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
-    bar = lambda home: ('<nav class="bar" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
+    bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
+    find = lambda home: FIND[:-len("</div>")] + bar(home, "bar top") + "</div>"  # 앱 안 브라우저 = 검색창 아래 한 줄(가로 스크롤, 같은 아이콘·이름 — 아래 바는 숨김, CSS .inapp)
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + FIND + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("") + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
-    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", FIND + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
+    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
