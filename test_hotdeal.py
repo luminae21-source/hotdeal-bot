@@ -6,7 +6,7 @@ from email.utils import formatdate
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
-H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -996,7 +996,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1122,7 +1122,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -1447,7 +1447,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -2489,6 +2489,48 @@ del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]
 H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, time.time, H.HAS_TOSS = sv9g
 H.TH_TOSS_FILL, H.TH_TOSS_KINDS, H.TOSS_NO_CMP, H.TH_SOLO_GAP, H.TH_SOLO_MAX, H.TH_SOLO_FILL, H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX = (), ("day", "best", "cat", "beauty", "special"), False, 0, 99, False, 0, 99
 H.th_strong, H.TH_SOLO_RUN = (lambda plain: "특가로는 약한 제품" not in plain), 3; json.dump([], open("posts.json", "w"))
+# 9-2i) 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 — 매시 1개': 8~23시 매시 첫 실행에 토스 API 상품 개별 글 1개(진우 예약 시각은 건너뜀), 출처 돌아가며(순위·화장품·생필품·하루특가),
+#       품절·3일 안 게시·오늘 진우 예약 이름·이름 예약 id 빼고 7점↑ 최고점, 진우 예약 글 틀(문구·제목·정보 줄·💡·⚠️ 게시 시점·버튼), 품절 지켜보기·Threads 채움 후보, posts.json X
+assert tsh0 == range(8, 24) and H.TOSS_SOLO_MIN == 7
+sv9i = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS)
+i_calls, i_sent, i_prompts = [], [], []
+LST9 = {"best-selling": [{"tacaItemId": k, "displayName": f"베스트{k}", "displayPrice": 9900, "discountRate": 40, "reviewScore": 4.8, "reviewCount": 1234, "isSoldOut": k == 3} for k in (1, 2, 3, 4)],
+        "today-deals": [{"tacaItemId": 50, "displayName": "하루특가50", "displayPrice": 5000, "isSoldOut": False}], "best-categories/400": [{"tacaItemId": 41, "displayName": "뷰티41", "displayPrice": 12000, "isSoldOut": False}]}
+def i_http(url, body=None, headers=None, method=None):
+    i_calls.append(url)
+    if url == "https://oauth2.cert.toss.im/token": return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if url.endswith("/categories"): return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 300, "displayName": "생활용품"}, {"categoryId": 400, "displayName": "뷰티"}]}})
+    if url.endswith("/links"): return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/S{body['tacaItemId']}"}})
+    k = next(k for k in LST9 if f"/products/{k}?" in url) if any(f"/products/{k}?" in url for k in LST9) else None
+    if k: return json.dumps({"resultType": "SUCCESS", "success": {"items": LST9[k]}})
+    if "/products/best-categories/" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": []}})
+    raise AssertionError(url)
+H.http, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.EVENTS, nc9i, H.TOSS_NO_CMP = i_http, True, tsh0, "ev9i.json", H.TOSS_NO_CMP, True
+H.tg = lambda m, **p: i_sent.append((m, p)) or {"message_id": 700 + len(i_sent)}
+H.ai_pick = lambda prompt, lines: i_prompts.append((prompt, lines)) or [{"i": 0, "score": 8, "comment": "1개 9,900원 · 10개입"}, {"i": 1, "score": 9, "comment": "롤당 330원"}]
+json.dump([{"at": "2026-10-14 11:30", "url": "https://toss.shopping/_m/j", "deal": True, "name": "베스트1", "text": "x", "button": "b"}], open("ev9i.json", "w"), ensure_ascii=False)
+json.dump([], open("posts.json", "w")); H.E["THREADS_TOKEN"] = "tk"
+s9i = {"tb_4": {"t": 1, "n": "베스트4"}}; time.time = lambda: TK("2026-10-14 12:05"); H.toss_solo(s9i)  # 12시 = 순위(12 % 4 = 0)
+(m9i, p9i), = i_sent
+assert [l.split(" |")[0] for l in i_prompts[0][1]] == ["베스트2"]  # 품절(3)·3일 안 게시(4)·오늘 진우 예약 이름(1) 빼고
+assert H.TOSS_NOTE in p9i["text"].split("🔥")[0]  # 대가성 문구 맨 앞(진우 예약 글과 같은 머리)
+assert "🔥 <b>[토스] 베스트2 (9,900원)</b>\n\n10/14 12시 토스 많이 팔린 순위 2위 · 40% 할인 · ⭐ 4.8 (리뷰 1,234)\n💡 1개 9,900원 · 10개입\n⚠️ 확인할 점: 10/14 12:05 게시 시점 가격 · 사람마다 가격이 다를 수 있음 · 결제 전 최종가 확인" in p9i["text"] and "쿠팡" not in p9i["text"]
+assert p9i["reply_markup"] == {"inline_keyboard": [[{"text": "🛒 9,900원 구매하기", "url": "https://toss.im/_m/S2"}]]} and p9i["chat_id"] == H.CHANNEL and p9i["parse_mode"] == "HTML"
+assert "tb_2" in s9i and s9i["sold_701"]["it"] == [[2, "베스트2", 9900, 0, 0, 0]] and s9i["sold_701"]["btn"] == "🛒 9,900원 구매하기" and "tsolo_20261014_12" in s9i  # 품절 지켜보기·묶음 회차에서 빠짐
+q9i = s9i["thtoss"]["q"][-1]; assert q9i["k"] == "solo" and q9i["link"] == "https://toss.im/_m/S2" and q9i["text"].startswith(H.TOSS_NOTE) and "많이 팔린 순위 2위" in q9i["text"] and "게시 시점 가격" in q9i["text"]  # Threads 채움 후보
+assert json.load(open("posts.json")) == [] and i_prompts[0][0] == H.SOLO_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SOLO_PROMPT and "사실 한 줄" in H.SOLO_PROMPT  # 사이트 X
+i_sent.clear(); i_calls.clear(); H.toss_solo(s9i); assert not i_sent and not i_calls  # 그 시각 1번
+time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo({}); assert not i_sent and not i_calls  # 11시 = 진우 예약 시각 -> 건너뜀(API도 안 부름)
+time.time = lambda: TK("2026-10-14 07:59"); H.toss_solo({}); assert not i_calls  # 8시 전 X
+H.ai_pick = lambda prompt, lines: i_prompts.append((prompt, lines)) or ([{"i": 0, "score": 6, "comment": "x"}] if "하루특가50" in lines[0] else [{"i": 0, "score": 8, "comment": "롤당 330원"}])
+i_sent.clear(); i_calls.clear(); time.time = lambda: TK("2026-10-14 15:05"); s9j = {}; H.toss_solo(s9j)  # 15시 = 하루특가(15 % 4 = 3) 6점 -> 다음 출처(순위)
+assert len(i_sent) == 1 and "베스트1" not in i_sent[0][1]["text"] and "15시 토스 많이 팔린 순위" in i_sent[0][1]["text"] and sum("/products/" in u and "/links" not in u for u in i_calls) == 2  # 출처 2곳까지
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "x"}]; i_sent.clear(); time.time = lambda: TK("2026-10-14 13:05"); s9k = {}; H.toss_solo(s9k)
+assert not i_sent and "tsolo_20261014_13" in s9k  # 7점↑ 없으면 그 시각은 끝(다시 안 물음)
+time.time = lambda: TK("2026-10-14 08:05"); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "개당 사실"}]; i_sent.clear(); H.toss_solo({})  # 8시 = 순위 · 하루특가는 9시 전 X
+assert "8시 토스 많이 팔린 순위" in i_sent[0][1]["text"]
+assert "toss_relink, toss_picks, toss_solo, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
+H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS = sv9i; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = nc9i
 # 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
 #      -> 22시(REEL_HOUR) 넘고 사이트에 뜨면(HEAD) REELS 컨테이너(video_url·캡션·피드·표지 1.5초) 1번 -> ig_publish가 처리 끝나면 발행('오늘 릴스')
 #      처리 중이면 기다림, 실패(ERROR)면 예외(알림), 만들기 실패는 3번까지 다시, 꺼져 있으면(기본) 예전처럼 봇 채팅 영상만(공개 X), 토큰 없으면 아무것도 안 함
