@@ -1527,9 +1527,9 @@ top5 = open("docs5/index.html").read().split('id="today"')[1].split("</section>"
 assert top5.count('class="pick"') == 3 and top5.index("<b>01</b><span>[G마켓] 추가딜1") < top5.index("<b>02</b><span>[G마켓] 주소없는딜") < top5.index("<b>03</b><span>[뽐뿌몰] 라면")
 os.remove("docs5/cards/2026-10-09.json"); S.build(g, "docs5")
 bar = idx.split('<nav class="bar"')[1].split("</nav>")[0]
-assert re.findall(r'<a href="([^"]*)"><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg>([^<]+)</a>', bar) == [("#today", "카드"), ("#toss", "토스"), ("#days", "전체")]  # 반응 딜·품목 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg></i>([^<]+)</a>', bar) == [("#today", "카드"), ("#toss", "토스"), ("#days", "전체")]  # 반응 딜·품목 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
 assert "fbclid" in S.PANE_JS and "ig&&t&&t.parentNode||ps[0]" in S.PANE_JS  # 인스타·Threads에서 오면 첫 칸 = 카드 딜(캡션 '맨 위에서 카드 번호')
-assert '<nav class="bar" aria-label="바로가기"><a href="https://hotdealpick.kr/#today">' in allp  # 지난 딜 전체에선 홈 칸으로
+assert '<nav class="bar" aria-label="바로가기"><a href="https://hotdealpick.kr/#today" class="k-today">' in allp  # 지난 딜 전체에선 홈 칸으로
 assert idx.count('<div class="pane">') == 3 and idx.index('<div class="pane"><section class="card" id="today"') < idx.index('<div class="pane"><div id="days">') < idx.index('<nav class="bar"') < idx.index(S.PANE_JS)
 assert 'href="https://hotdealpick.kr/all.html">지난 딜 전체 보기' in idx.split('id="days"')[1]  # 날짜 탭 대신 '📅 전체' 칸 끝에 지난 딜 링크
 d0 = idx.split('id="d0"')[1].split("</section>")[0]
@@ -1573,7 +1573,7 @@ assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index(
 assert '<div class="rx">👀 분당 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
 assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
-assert re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
 assert i7.count('<div class="pane">') == 5 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
 assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "life", "beauty"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
 # 10/13 진우: 앱 안 브라우저(Threads·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가림 -> 검색창 아래 sticky 한 줄(같은 아이콘·이름, 가로 스크롤) + 아래 여백, 일반 브라우저는 아래 바 그대로
@@ -1599,11 +1599,17 @@ assert [c for c, _ in S.badges(bp[0])] == ["b1"] and [c for c, _ in S.badges(bp[
 S.build(bp, "docs8"); i8, a8 = open("docs8/index.html").read(), open("docs8/all.html").read()
 br8 = i8.split('id="brand"')[1].split("</section>")[0]
 assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("탄력") < br8.index("자음") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
-assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
+assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
 assert all(S.FIND[:-len("</div>")] + '<nav class="bar top"' in x and S.FIND_JS in x for x in (i8, a8)) and f'<nav class="bar top" aria-label="바로가기"><a href="{S.BASE}#' in a8 and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
 d7m = open("docs7/p/4.html").read()
-assert d7m.index('id="relh"') < d7m.index('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">다른 딜 보기</h2>') < d7m.index('<a class="tg"') and '<nav class="bar' not in d7m  # 딜 페이지 = '같이 보면 좋은 딜' 아래 페이지 안 메뉴(고정 X), 텔레그램 버튼은 그 아래
-assert re.findall(r'<a href="([^"]*)"><svg[^>]*>.*?</svg>([^<]+)</a>', d7m.split('<nav class="more"')[1].split("</nav>")[0]) == [(f"{S.BASE}#{k}", n) for k, n in (("hot", "인기"), ("toss", "토스"), ("life", "생필품"), ("beauty", "화장품"), ("days", "전체"))]
+# 10/13 09:40 진우 '눈에 더 띄게'(구매 버튼은 1순위 그대로): 카테고리 색(인기·토스·생필품·화장품·전체·카드·브랜드) — 딜 페이지 = 연한 박스·3열·색 원 28px, 앱 안 위 줄 = 색 원 22px·40px·선택 칸 꽉 채움, 아래 바 = 아이콘만 색
+assert all(f".k-{k}{{--c:{c}" in S.CSS for k, c in (("hot", "#ff5a3c"), ("toss", "#1b64da"), ("life", "#12a150"), ("beauty", "#e64980"), ("days", "#4e5968"), ("today", "#f59f00"), ("brand", "#7048e8")))
+assert ".more{background:#eef4ff;border-radius:16px;padding:14px" in S.CSS and "grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "min-height:52px" in S.CSS and "width:28px;height:28px;border-radius:14px;background:var(--c)" in S.CSS and ".more{background:#15233a}" in S.CSS
+assert ".inapp .bar.top i{width:22px;height:22px" in S.CSS and "min-height:40px" in S.CSS and ".inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}" in S.CSS and ".bar i{display:flex;color:var(--c)}" in S.CSS
+assert ".k-today{--c:#f59f00;--t:#191f28}" in S.CSS and ".bar .k-days i{color:#a1a1aa}" in S.CSS  # 대비: 카드 선택 칸 = 어두운 글씨(흰 글씨 2.1), 다크 아래 바 '전체' 아이콘 = 밝게(2.4 -> 7)
+assert ".btn{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px 12px;margin-top:12px;border-radius:12px;background:#1b64da;color:#fff" in S.CSS  # 구매 버튼(파랑) 그대로
+assert d7m.index('id="relh"') < d7m.index('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">🔥 다른 특가도 둘러보세요</h2>') < d7m.index('<a class="tg"') and '<nav class="bar' not in d7m  # 딜 페이지 = '같이 보면 좋은 딜' 아래 페이지 안 메뉴(고정 X), 텔레그램 버튼은 그 아래
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', d7m.split('<nav class="more"')[1].split("</nav>")[0]) == [(f"{S.BASE}#{k}", n) for k, n in (("hot", "인기"), ("toss", "토스"), ("life", "생필품"), ("beauty", "화장품"), ("days", "전체"))]
 assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 링크 + '같이 보면 좋은 딜' 하트(10/11~)
 # 6-9) 더 사고 싶게(10/11 진우 '홈페이지·Threads 먼저, 디자인도 좋게'): 얼마나 싼지(비교 문장 -> '쿠팡보다 N원↓')·단위가격(없으면 글에서)·토스 선착순 남은 시간,
 #      딜 페이지 = 가격·절약 -> 큰 구매 버튼(가격) -> 왜 골랐나요 -> 같이 보면 좋은 딜 4개(최근 2일 제휴 딜, 같은 품목 먼저, 약한 딜·제휴 아님·같은 이름·자기 자신 빼고) -> 골드박스
