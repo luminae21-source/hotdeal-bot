@@ -586,11 +586,30 @@ def toss_fix_channel(seen):
             btn = max(ev, key=lambda e: e["at"])["button"] if ev else buy_label(title_of(p["text"]))
             r = tg("editMessageText", chat_id=CHANNEL, message_id=mid, text=p["text"], entities=p.get("entities", []), link_preview_options={"is_disabled": True},
                    reply_markup={"inline_keyboard": [[{"text": btn, "url": p["url"]}]]})
-        else:
-            r = None
+        else:  # 묶음 글(미리보기·TOP5) = posts.json에 없음 -> 관리자 방에 전달해 글·엔티티·버튼을 읽고 비교 조각만 바꿔 다시 씀(전달본은 바로 지움)
+            f = tg("forwardMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=mid, disable_notification=True) or {}
+            t, ents = cut_cmp(f.get("text", ""), f.get("entities", []))
+            kb = f.get("reply_markup")
+            r = t != f.get("text", "") and (kb or "1️⃣" not in t) and tg(  # 번호 버튼이 있어야 할 글인데 못 읽었으면 안 고침(버튼이 지워짐)
+                "editMessageText", chat_id=CHANNEL, message_id=mid, text=t, entities=ents, link_preview_options={"is_disabled": True}, **({"reply_markup": kb} if kb else {}))
+            if f.get("message_id"):
+                tg("deleteMessage", chat_id=ADMIN, message_id=f["message_id"])
         ok += bool(r)
         time.sleep(1)
     print("toss 채널 비교 뺌", ok, "/", min(len(todo), TOSS_FIX_RUN), "· 남음", max(0, len(todo) - TOSS_FIX_RUN))
+
+
+def cut_cmp(text, ents):
+    """옛 채널 묶음 글의 쿠팡 비교 조각만 바꿈: 미리보기 줄 끝 ' · 💡 쿠팡 같은 상품보다 N원 쌈' 지움, TOP5 부제 TOP_SUB -> TOP_SUB_TOSS.
+    entities(UTF-16)는 바뀐 만큼 밀고, 바뀐 조각과 겹치는 건 뺌(조각을 감싸는 건 길이만 바꿈)."""
+    u = lambda s: len(s.encode("utf-16-le")) // 2
+    for pat, rep in ((rf" · 💡 ?(?:{OTHER_STORES})[^\n]*?쌈", ""), (TOP_SUB, TOP_SUB_TOSS)):
+        while m := re.search(pat, text):
+            s, old, new = u(text[:m.start()]), u(m[0]), u(rep)
+            ents = [{**e, "offset": e["offset"] + new - old} if e["offset"] >= s + old else e if e["offset"] + e["length"] <= s
+                    else {**e, "length": e["length"] + new - old} for e in ents if e["offset"] >= s + old or e["offset"] + e["length"] <= s or e["offset"] <= s and e["offset"] + e["length"] >= s + old]
+            text = text[:m.start()] + rep + text[m.end():]
+    return text, ents
 
 
 CMP_REPORT = True  # 10/12 22:50·23:00 진우: Threads·인스타 토스 비교 글 목록(로그, 하루 1번) — 진우가 보고 삭제·재업로드 정함. 다 보면 False
@@ -1238,6 +1257,9 @@ def top_post(head, items):
     return text, [[{"text": f"{NUM[n]} {clip(name, 20)}", "url": link}] for n, (name, link, _) in enumerate(items)]
 
 
+TOP_SUB, TOP_SUB_TOSS = "쿠팡보다 싼 딜·30일 최저가 먼저", "30일 최저가·순위 먼저"
+
+
 def top_deals(seen):
     """12·18시: 그 시간대(0~12시·12~18시)에 채널에 올린 커뮤니티 딜 중 반응(분당 조회수 + 추천×5, 게시 때 뽐뿌·클리앙 수치) 높은 TOP5를 한 글로.
     3개 미만이면 안 올림. 조회수 기준이라 '많이 보는' 딜(구매 수는 모름). 링크마다 그 제휴 프로그램 대가성 문구를 맨 앞에."""
@@ -1262,7 +1284,8 @@ def top_deals(seen):
             ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
             "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
-    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n쿠팡보다 싼 딜·30일 최저가 먼저, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
+    sub = TOP_SUB_TOSS if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top) else TOP_SUB  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검)
+    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n{sub}, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
               text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb}):
         return

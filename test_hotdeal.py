@@ -862,17 +862,18 @@ json.dump([{"t": "2026-10-05 23:00", "text": "🔥 [G마켓] 어제딜 (1,000원
            {"t": "2026-10-06 18:00", "text": "🔥 [G마켓] 저녁 (3,000원)", "url": "https://g5", "mid": 10, "pop": 90}], open("posts.json", "w"))  # 18시 글은 18시 회차 밖
 seen, sent[:] = {}, []
 time.time = lambda: 1791252000; H.top_deals(seen); assert not sent and not seen  # 11:00 KST: 12시 전
-time.time = lambda: 1791255900; H.top_deals(seen)  # 12:05
+H.TOSS_NO_CMP = True; time.time = lambda: 1791255900; H.top_deals(seen); H.TOSS_NO_CMP = False  # 12:05
 m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and "top_20261006_12" in seen and t.startswith(f"<i>{cn}</i>\n<i>{H.TOSS_NOTE}</i>\n\n🏆 <b>지금 살 만한 딜 TOP4</b> (12시)")
 assert t.index("<b>휴지 30롤</b>") < t.index("<b>계란 30구</b>") < t.index("<b>우유 24팩</b>") < t.index("<b>라면</b>") and "어제딜" not in t and "사본만" not in t and "골드박스" not in t and "오후" not in t
 assert '1️⃣ <a href="https://link.coupang.com/a/x"><b>휴지 30롤</b></a>\n💰 <b>19,900원</b>\n👀 분당 조회 45회 · 추천 1\n👉 휴지 최저가' in t and "\n👀 반응 30\n" in t  # 반응 수치: 분당 조회·추천 따로, 따로 값이 없는 10/9 첫 배포분은 합친 값
 assert '<b>우유 24팩</b></a>\n💰 <b>12,900원</b> · 개당 537원\n👀 뽐뿌 추천 5\n👉 싸다 우유\n\n4️⃣' in t and t.count(cn) == 1
 assert [r[0]["text"] for r in p["reply_markup"]["inline_keyboard"]] == ["1️⃣ 휴지 30롤", "2️⃣ 계란 30구", "3️⃣ 우유 24팩", "4️⃣ 라면"]
+assert f"(12시)\n{H.TOP_SUB_TOSS}, 그다음" in t and "쿠팡보다" not in t  # 토스 딜이 든 리스트 = 부제에 다른 몰 이름 X(10/14)
 sent.clear(); time.time = lambda: 1791256800; H.top_deals(seen); assert not sent  # 같은 회차 1번
 time.time = lambda: 1791267000; H.top_deals(seen); t = sent[-1][1]["text"]  # 15:10 -> 12~15시만(10/12 진우 '중간에 리스트도' = 12·15·18시)
 sent.clear(); time.time = lambda: 1791277800; H.top_deals(seen); assert not sent and "top_20261006_18" in seen  # 18:10 -> 15~18시 글 없음(18시 글은 다음 회차) -> 안 올림
-assert "TOP3</b> (15시)" in t and t.index("오후1") < t.index("오후3") < t.index("오후2") and "저녁" not in t and "휴지" not in t and not t.startswith("<i>") and "👉" not in t  # 코멘트 없으면 👉 줄 X
+assert f"(15시)\n{H.TOP_SUB}, 그다음" in t and "TOP3</b> (15시)" in t and t.index("오후1") < t.index("오후3") < t.index("오후2") and "저녁" not in t and "휴지" not in t and not t.startswith("<i>") and "👉" not in t  # 코멘트 없으면 👉 줄 X
 json.dump([{"t": f"2026-10-07 1{k}:00", "text": f"🔥 [G마켓] 다음날{k} (1,000원)", "url": "https://g", "mid": 20 + k, "pop": 9} for k in (2, 3)], open("posts.json", "w"))
 sent.clear(); time.time = lambda: 1791281400 + 86400; H.top_deals(seen); assert not sent and "top_20261007_18" in seen  # 다음 날 19:10(12시 회차 놓침): 12~18시 2개 -> 3개 미만이라 안 올림, 회차는 끝
 open("posts.json", "w").write(bak)
@@ -2464,6 +2465,23 @@ g_sent[:] = []; H.toss_fix_channel(s9g); (m9, p9), = g_sent
 assert p9["message_id"] == 33 and p9["parse_mode"] == "HTML" and "⛔ <b>특가 끝</b>" in p9["text"] and "쿠팡" not in p9["text"] and p9["reply_markup"]["inline_keyboard"][0][0] == {"text": "특가 끝", "url": "https://toss.shopping/_m/C"}  # 품절 줄·버튼 글자 그대로
 g_sent[:] = []; H.toss_fix_channel(s9g); assert not g_sent  # 글마다 1번만
 json.dump({"v": 2, "mids": [31]}, open("tossfix.json", "w")); g_sent[:] = []; H.toss_fix_channel(s9g); assert [p["message_id"] for m, p in g_sent] == [31] and s9g["tossfix2"]["done"] == [31]  # 목록 v2 = 처음부터(2차 28개)
+# 묶음 글(posts.json에 없음, 10/14): 관리자 방에 전달해 읽고 비교 조각만 바꿈 -> 엔티티 오프셋 맞춤·버튼 그대로·전달본 지움, 번호 버튼을 못 읽으면 안 고침
+pv = f"{H.TOSS_NOTE}\n\n🌙 오늘 밤 특가 미리보기 (10/11 · 2개)\n\n22:20 🔥 폼클렌징 11,900원 · 💡 쿠팡 같은 상품보다 3,450원 쌈\n22:30 🔥 크림 8,000원\n\n🔔 매일"
+i1, i2 = pv.index("폼클렌징"), pv.index("크림 8")
+u9 = lambda s: len(s.encode("utf-16-le")) // 2
+e9 = [{"type": "italic", "offset": 0, "length": u9(H.TOSS_NOTE)}, {"type": "text_link", "offset": u9(pv[:i1]), "length": 4, "url": "https://toss.shopping/_m/X"}, {"type": "text_link", "offset": u9(pv[:i2]), "length": 2, "url": "https://toss.shopping/_m/Y"}]
+t9, n9 = H.cut_cmp(pv, e9)
+assert "쿠팡" not in t9 and "폼클렌징 11,900원\n22:30" in t9 and n9[:2] == e9[:2] and [t9_ for t9_ in [(lambda e: t9.encode("utf-16-le")[2 * e["offset"]:2 * (e["offset"] + e["length"])].decode("utf-16-le"))(n9[2])]] == ["크림"]
+tp = f"{H.TOSS_NOTE}\n\n🏆 지금 살 만한 딜 TOP2 (12시)\n{H.TOP_SUB}, 그다음 뽐뿌·클리앙 조회수·추천 순\n\n1️⃣ 비비크림"
+t9, n9 = H.cut_cmp(tp, [{"type": "bold", "offset": u9(tp[:tp.index("비비")]), "length": 4}, {"type": "bold", "offset": u9(tp[:tp.index(H.TOP_SUB) - 1]) - 3, "length": 50}])
+assert H.TOP_SUB_TOSS in t9 and "쿠팡" not in t9 and t9.encode("utf-16-le")[2 * n9[0]["offset"]:2 * (n9[0]["offset"] + 4)].decode("utf-16-le") == "비비크림" and n9[1]["length"] == 50 + u9(H.TOP_SUB_TOSS) - u9(H.TOP_SUB)
+fw = {481: {"message_id": 77, "text": pv, "entities": e9}, 565: {"message_id": 78, "text": tp, "entities": [], "reply_markup": {"inline_keyboard": [[{"text": "1️⃣ 비비크림", "url": "https://toss.shopping/_m/Z"}]]}},
+      566: {"message_id": 79, "text": tp, "entities": []}, 567: {"message_id": 80, "text": "그대로 1️⃣", "entities": []}}
+tgf = H.tg; H.tg = lambda m, **p: g_sent.append((m, p)) or (fw.get(p["message_id"]) if m == "forwardMessage" else {"message_id": 1})
+json.dump({"v": 3, "mids": [481, 565, 566, 567]}, open("tossfix.json", "w")); H.TOSS_FIX_RUN, g_sent[:] = 8, []; s9h = {}; H.toss_fix_channel(s9h); H.tg = tgf
+assert [(m, p["message_id"]) for m, p in g_sent if m != "forwardMessage"] == [("editMessageText", 481), ("deleteMessage", 77), ("editMessageText", 565), ("deleteMessage", 78), ("deleteMessage", 79), ("deleteMessage", 80)] and s9h["tossfix3"]["done"] == [481, 565, 566, 567]
+ed = [p for m, p in g_sent if m == "editMessageText"]
+assert "reply_markup" not in ed[0] and "쿠팡" not in ed[0]["text"] and ed[1]["reply_markup"] == fw[565]["reply_markup"] and H.TOP_SUB_TOSS in ed[1]["text"] and all(p["chat_id"] == H.ADMIN for m, p in g_sent if m == "forwardMessage")
 H.TOSS_FIX_RUN = 8
 # Threads·인스타 비교 글 목록(로그): 토스 글 + 비교 있는 것만, 출처·하루특가·지금 목록 가격
 json.dump([{"t": "2026-10-11 09:00", "text": "x", "url": "https://toss.shopping/_m/B"}], open("posts.json", "w"))
