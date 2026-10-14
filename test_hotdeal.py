@@ -1643,10 +1643,15 @@ assert rs[0].findtext("description") == "싸요 & 좋아요 💡 단위가격 �
 sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 assert len(sm) == 36 and all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09"
 d8 = open("docs8/p/0.html").read()
-assert '<meta name="description" content="싸요 &amp; 좋아요 💡 단위가격 롤당 663원">' in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8
+assert '<meta name="description" content="19,900원 · 롤당 663원 · 쿠팡 · 10/1 게시 · 핫딜픽">' in d8 and "<title>휴지0 30롤 19,900원 (쿠팡) | 핫딜픽</title>" in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8  # 10/14 '검색 유입': 상품명 가격 (몰), 가격·단위가격·몰·날짜
+ld0 = json.loads(d8.split('<script type="application/ld+json">')[1].split("</script>")[0])
+assert ld0 == {"@context": "https://schema.org", "@type": "Product", "name": "휴지0 30롤", "offers": {"@type": "Offer", "price": "19900", "priceCurrency": "KRW", "url": "https://hotdealpick.kr/p/0.html"}} and "google-site-verification" not in d8
+gv0, S.GOOGLE_VERIFY = S.GOOGLE_VERIFY, "ab\"c"; assert '<meta name="google-site-verification" content="ab&quot;c">' in S.page("t", ""); S.GOOGLE_VERIFY = gv0
+assert S.seo(3, {"t": "2026-10-05 09:00", "text": "🔥 [롯데온] 생수 2L 24개 (10,000/무료)\n\n싸요"})[:2] == ("생수 2L 24개 10,000원 (롯데온) | 핫딜픽", "10,000원 · 롯데온 · 10/5 게시 · 핫딜픽")  # '원' 없는 가격
+assert S.seo(3, {"t": "2026-10-05 09:00", "text": f"{S.NOTE_STARTS[1]} x\n\n🔥 [토스] 젤리 (</script>)"}) == ("젤리 (</script>) (토스) | 핫딜픽", "토스 · 10/5 게시 · 핫딜픽", "")  # 고지문 X, 가격 못 읽으면 JSON-LD X
 i8 = open("docs8/index.html").read(); ld8 = json.loads(i8.split('<script type="application/ld+json">')[1].split("</script>")[0])
 assert ld8["@graph"][1]["sameAs"] == [S.INSTA, S.THREADS, S.BLOG, S.CHANNEL] and "<title>핫딜픽 - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)</title>" in i8
-assert S.summary("🔥 [G마켓] 우유 (1원)") == "" and '<meta name="description" content="[G마켓] 우유 (1원)">' in (S.build([{"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 우유 (1원)", "url": "https://g"}], "docs8") and open("docs8/p/0.html").read())  # 코멘트 없으면 제목
+assert S.summary("🔥 [G마켓] 우유 (1원)") == "" and '<meta name="description" content="1원 · G마켓 · 10/9 게시 · 핫딜픽">' in (S.build([{"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 우유 (1원)", "url": "https://g"}], "docs8") and open("docs8/p/0.html").read())  # 코멘트 없으면 제목
 os.makedirs("docs7/cards", exist_ok=True); open("docs7/cards/2026-10-09.png", "wb").write(b"x"); S.build(hp, "docs7"); i7c = open("docs7/index.html").read(); os.remove("docs7/cards/2026-10-09.png")
 assert i7c.index('<div class="pane"><section class="day" id="hot"') < i7c.index('<div class="pane"><section class="card" id="today"') < i7c.index('<div class="pane"><section class="day" id="toss"')  # 처음 보이는 칸 = 인기(10/9 진우 선택), 카드 딜은 그다음
 S.build(hp[2:3] + hp[5:6] + [{**hp[4], "text": "🔥 [네이버] 우유 (2,990원)"}], "docs7"); i7 = open("docs7/index.html").read()

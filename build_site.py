@@ -84,7 +84,7 @@ def title_of(text):
 def page(title, body, desc="", canonical="", gb=True, note=""):
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
-<meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">
+<meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style>{INAPP_JS}{gc_tag()}</head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
@@ -452,6 +452,23 @@ def deal_card(i, p):
             + (f'<p class="note">가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p>' if btn else "") + f'<h3 class="why">왜 골랐나요</h3><p>{body}</p></article>')
 
 
+GOOGLE_VERIFY = ""  # 구글 서치콘솔 'HTML 태그' content 값(10/14 진우 '검색 유입' — 진우 코드 오면 Cowork가 전달). 비면 출력 X
+
+
+def seo(i, p):
+    """딜 페이지 검색용 (제목, 설명, JSON-LD) — 10/14 진우 '검색 유입': '상품명 11,990원 (쿠팡) | 핫딜픽', '11,990원 · 개당 400원 · 쿠팡 · 10/14 게시 · 핫딜픽'
+    (고지문·이모지 X), Product+Offer(가격 못 읽으면 X)."""
+    store, name, price = parse(title_of(p["text"]))
+    if not re.search(r"\d원", price) and (m := re.search(r"\s*\((\d[\d,]{2,})\s*/[^()]*\)", name)):  # '(10,000/무료)'처럼 '원' 없는 가격
+        price, name = m[1] + "원", (name[:m.start()] + name[m.end():]).strip()
+    won = (re.search(r"\d[\d,]*원", price) or [""])[0]
+    ld = won and json.dumps({"@context": "https://schema.org", "@type": "Product", "name": name, "offers": {"@type": "Offer", "price": won[:-1].replace(",", ""), "priceCurrency": "KRW",
+                                                                                                         "url": f"{BASE}p/{i}.html"}}, ensure_ascii=False).replace("</", "<\\/")
+    return (" ".join(x for x in (name, won, store and f"({store})") if x) + f" | {TITLE}",
+            " · ".join(x for x in (won, unit_of(p), store, f"{int(p['t'][5:7])}/{int(p['t'][8:10])} 게시", TITLE) if x),
+            ld and f'<script type="application/ld+json">{ld}</script>')
+
+
 def summary(text):
     """검색 결과·RSS에 보일 설명: 제목 아래 코멘트 줄들(출처·🏆 배지 줄 빼고 한 줄로). 대가성 문구·제목 반복은 안 넣음(10/9 '구글·네이버 조회가 잘 안 돼')."""
     return " ".join(l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기")))[:150]
@@ -470,7 +487,8 @@ def build(posts, out="docs"):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
         note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
-        open(f"{out}/p/{i}.html", "w").write(page(f"{title} | {TITLE}", GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + MORE + LIKE_JS + END_JS, summary(p["text"]) or title, url, gb=False, note=note))
+        st, sd, ld = seo(i, p)
+        open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
              *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
