@@ -6,7 +6,7 @@ from email.utils import formatdate
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
-H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -585,6 +585,22 @@ posted.clear(); H.main(); assert [p[0] for p in posted] == ["ruliweb_90"]  # 보
 sj = json.load(open("seen.json")); sj["hold_ruliweb_95"] = {"t": time.time() - 600, "d": {"id": "ruliweb_95", "title": "[11번가] 수건"}, "p": {"score": 6, "comment": "c"}}
 sj["hold_ruliweb_96"] = {"t": time.time() - 600, "d": {"id": "ruliweb_96", "title": "[G마켓] 참치"}, "p": {"score": 6, "comment": "c"}}
 json.dump(sj, open("seen.json", "w")); posted.clear(); H.main(); assert [p[0] for p in posted] == ["ruliweb_96"]  # 보관 딜도 같은 점수면 수수료 딜 먼저
+# 4-7) 3사 위주(10/14 23:55 진우 '토스·쿠팡·네이버 위주'): 3사 = 예전 규칙(6점↑), 그 밖의 몰 = 8점↑·KST 하루 3개(진우 예약 글은 안 셈), 못 미치면 보관도 X(보관 중이던 것도)
+H.OTHER_MIN, H.OTHER_MAX = tof0
+assert H.focus("[쿠팡] 휴지") and H.focus("[네이버스마트스토어] 귤") and H.focus("[토스쇼핑] 삼겹살") and H.focus("[스마트스토어] 쌀") and not H.focus("[G마켓] 참치") and not H.focus("[올리브영] 립밤") and not H.focus("토스 딜")
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": int(re.search(r"점수(\d)", l)[1]), "comment": "c"} for i, l in enumerate(lines)]
+feed = '<rss><channel>' + "".join(it(f"[{m}] 상품{k}번 점수{sc} 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k, (m, sc) in enumerate((("G마켓", 7), ("G마켓", 8), ("쿠팡", 6)))) + '</channel></rss>'
+H.http = lambda url, *a, **k: feed if url == H.RULIWEB_RSS else ""
+p47 = [{"t": kfmt(time.time() - 3600 * h), "text": f"🔥 [{m}] 예전{h} (1,000원)", "url": "https://x", **o} for h, m, o in ((1, "G마켓", {}), (2, "롯데온", {}), (3, "G마켓", {"own": 1}), (4, "쿠팡", {}))]
+json.dump(p47, open("posts.json", "w"), ensure_ascii=False)  # 오늘 3사 아닌 딜 2개(진우 예약 글·쿠팡은 안 셈) -> 1개 남음
+posted.clear(); json.dump({}, open("seen.json", "w")); H.main(); sj = json.load(open("seen.json"))
+assert posted == [("ruliweb_91", 8, "c")] and {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_92"}, (posted, [k for k in sj if k.startswith("hold_")])  # 8점 = 올림 · 3사 6점 = 보관(다음 차례) · 3사 아님 7점 = 버림
+json.dump(p47 + [{"t": kfmt(time.time() - 60), "text": "🔥 [G마켓] 상품1번 (1,000원)", "url": "https://y"}], open("posts.json", "w"), ensure_ascii=False)  # 방금 올린 것 = 오늘 3개째
+feed = feed.replace("</channel>", it("[롯데온] 상품3번 점수8 묶음 / 3,000원", "https://bbs.ruliweb.com/market/board/1020/read/93", 20) + "</channel>")
+sj["hold_ruliweb_97"] = {"t": time.time() - 600, "d": {"id": "ruliweb_97", "title": "[11번가] 수건"}, "p": {"score": 7, "comment": "c"}}  # 예전 규칙으로 보관돼 있던 3사 아닌 7점
+json.dump(sj, open("seen.json", "w")); posted.clear(); H.main(); sj = json.load(open("seen.json"))
+assert posted == [("ruliweb_92", 6, "c")] and not [k for k in sj if k.startswith("hold_")], (posted, [k for k in sj if k.startswith("hold_")])  # 같은 날 4번째 8점 = 버림 · 보관 7점 = 버림 · 3사 6점 = 올림
+H.OTHER_MIN, H.OTHER_MAX = 0, 99
 time.time, H.publish_approved = tq, pa2
 # 4-4) 바쁜 시간 뽐뿌 RSS(15개가 32분치): 다음 실행 전에 밀려날 글(32-20=12분↑)은 지금 판단 / 한가하면(목록 50분치) 그대로 30분↑만
 BUSY = lambda ages: "<rss><channel>" + "".join(it(f"[G마켓] 바쁜상품{m}호 묶음 (1,000원)", f"http://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no={500 + m}", m, "<hits> [0|10|0|0]</hits>") for m in ages) + "</channel></rss>"

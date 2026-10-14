@@ -481,6 +481,14 @@ def is_oy(title):
 EARN_TAGS = ("올리브영", "올영", "g마켓", "지마켓", "롯데온", "롯데on", "토스", "쿠팡")  # 수수료 되는 몰: 링크프라이스 검색 링크·토스 자동 링크·쿠팡 파트너스(사본)·올영 큐레이터
 
 
+FOCUS_TAGS, OTHER_MIN, OTHER_MAX = ("토스", "쿠팡", "네이버", "스마트스토어"), 8, 3  # 10/14 23:55 진우 '토스·쿠팡·네이버 위주': 그 밖의 몰 커뮤니티 딜은 8점↑·KST 하루 3개까지(되돌리기 = 0, 99)
+
+
+def focus(title):
+    """제목 [쇼핑몰]이 3사(토스·쿠팡·네이버·스마트스토어)인지 — 3사 딜은 예전 규칙 그대로."""
+    return any(k in store_tag(title) for k in FOCUS_TAGS)
+
+
 def earns(title):
     """제목 [쇼핑몰]이 수수료 되는 몰이거나 화장품이면 True -> 점수 컷 1점 낮춤·같은 점수면 먼저(10/10 진우 '수수료 되는 딜 꼭 챙겨').
     화장품(10/11 진우 '화장품도 발굴'): 어느 몰 딜이든 올리브영 큐레이터 링크로 수익 연결 -> 같이 완화(효능 문구 금지 규칙은 그대로)."""
@@ -2816,11 +2824,22 @@ def main():
                 seen[dkey(d["title"])] = time.time()
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
-        good = [p for p in picks if p["score"] >= MIN_SCORE - earns(new[p["i"]]["title"])]  # 수수료 되는 몰은 1점 낮춰도(10/10 올리브영 -> 같은 날 진우 '수수료 딜 꼭 챙겨': 5점 링크프라이스 딜 3개가 빠지던 것)
+        ok = lambda p: focus(new[p["i"]]["title"]) or p["score"] >= OTHER_MIN  # 3사가 아니면 대박(8점↑)만
+        good = [p for p in picks if ok(p) and p["score"] >= MIN_SCORE - earns(new[p["i"]]["title"])]  # 수수료 되는 몰은 1점 낮춰도(10/10 올리브영 -> 같은 날 진우 '수수료 딜 꼭 챙겨': 5점 링크프라이스 딜 3개가 빠지던 것)
         if not good and not held and picks and quiet():
-            best = max(picks, key=lambda p: p["score"])
-            good = [best] if best["score"] >= FILL_SCORE else []
+            best = max(filter(ok, picks), key=lambda p: p["score"], default=None)
+            good = [best] if best and best["score"] >= FILL_SCORE else []
         good = sorted(({"d": new[p["i"]], "p": {k: v for k, v in p.items() if k != "i"}} for p in good), key=rank)
+    today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    left, drop = OTHER_MAX - sum(p["t"].startswith(today) and not p.get("own") and not p["text"].startswith("📋") and not focus(title_of(p["text"])) for p in load(POSTS, [])), set()
+    for h in held + good:  # 3사가 아닌 딜: 8점 미만·오늘 OTHER_MAX개 넘김 = 버림(보관도 X, 보관 중이던 것도)
+        if not focus(h["d"]["title"]):
+            if h["p"]["score"] < OTHER_MIN or left <= 0:
+                drop.add(h["d"]["id"])
+                seen.pop("hold_" + h["d"]["id"], None)
+            else:
+                left -= 1
+    held, good = [h for h in held if h["d"]["id"] not in drop], [h for h in good if h["d"]["id"] not in drop]
     for h in (held + good)[:MAX_DRAFTS]:  # 보관해 둔 딜이 먼저
         seen.pop("hold_" + h["d"]["id"], None)
         p = h["p"]
