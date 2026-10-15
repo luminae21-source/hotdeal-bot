@@ -85,7 +85,7 @@ def title_of(text):
 def page(title, body, desc="", canonical="", gb=True, note=""):
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc[:150])}">
-<meta name="naver-site-verification" content="31caccebc9de97ffa6547f7d55966278daf9c469">{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
+{"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc[:150])}"><meta property="og:type" content="website">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml"><style>{CSS}</style>{INAPP_JS}{gc_tag()}</head><body><main>
 <header><h1><a href="{BASE}">🔥 {TITLE}</a></h1><a class="lk" href="{BASE}#saved" aria-label="찜한 딜 보기"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg>찜<b id="lc"></b></a><div class="sub">매일 살 만한 핫딜만 골라드려요</div></header>
@@ -484,6 +484,7 @@ def deal_card(i, p):
             + (f'<p class="note">가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p>' if btn else "") + f'<h3 class="why">왜 골랐나요</h3><p>{body}</p></article>')
 
 
+NAVER_VERIFY = ("31caccebc9de97ffa6547f7d55966278daf9c469", "58af553d8879edfe3bc3a5189d9744ddc33bfcb9")  # 네이버 서치어드바이저 소유확인 — 값마다 meta 1줄(10/15 진우 'woori pd' 계정 = 두 번째, 첫 번째는 다른 계정일 수 있어 그대로)
 GOOGLE_VERIFY = ""  # 구글 서치콘솔 'HTML 태그' content 값(10/14 진우 '검색 유입' — 진우 코드 오면 Cowork가 전달). 비면 출력 X
 
 

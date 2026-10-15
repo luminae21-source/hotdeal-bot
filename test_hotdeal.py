@@ -1713,6 +1713,7 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     sent.clear(); H.digest(seen, P); assert not sent
     seen.pop("blog_" + next(k for k in seen if k.startswith("digest_"))[7:]); sent.clear(); H.digest(seen, P)  # 블로그용 글만 실패했던 날: 초안·릴스 없이 블로그용 글만 다시
     assert [m for m, x in sent] == ["sendMessage"] and "제목: " in sent[0][1]["text"] and any(k.startswith("blog_") for k in seen)
+assert all(f'<meta name="naver-site-verification" content="{v}">' in idx for v in ("31caccebc9de97ffa6547f7d55966278daf9c469", "58af553d8879edfe3bc3a5189d9744ddc33bfcb9"))  # 10/15 네이버 소유확인 2개
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
 # 8) 카드 이미지: 제목 파싱(중첩 괄호·뒤 꼬리말), 6개 넘어도 하단 박스 안 침범, PNG 생성
