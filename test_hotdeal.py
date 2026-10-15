@@ -1604,7 +1604,9 @@ assert S.keys({"t": "2026-10-09 10:00", "text": "🔥 [네이버멤버쉽] 휴�
 assert [n for _, n in S.CHIPS] == ["💸 1만원 이하", "📉 30일 최저가", "🎁 1+1·증정", "🚚 무료배송", "🍚 식품", "⏰ 오늘 마감"]
 assert S.conds({"text": "🔥 [토스] 땅콩버터 (1,950원 · 5천원 쿠폰가)\n\n토스 하루특가 · 30일 내 최저가"}) == "1만원 최저가" and S.conds({"text": "🔥 [롯데온] 생수 (10,000/무료)"}) == "1만원 무배"
 assert S.conds({"text": "🔥 [옥션] 잠옷 2+1 (10,010원)"}) == "증정" and S.conds({"text": "🔥 [G마켓] 귤 +500g 증정 (12,000원/무배)\n\n30일 무료반품 · 최저가보상"}) == "증정 무배" and S.price_won("[쿠팡] 휴지 (19,900원/무료)") == 19900
-assert "overflow-x:auto" in S.CSS.split(".bar{", 1)[1].split("}", 1)[0] and ".bar a:first-child{margin-left:auto}.bar a:last-child{margin-right:auto}" in S.CSS and "white-space:nowrap" in S.CSS  # 좁으면 가로 스크롤(넓으면 가운데)
+bar0 = S.CSS.split(".bar{", 1)[1].split("}", 1)[0]  # 10/15 진우 '오른쪽으로 밀지 않아도 한 화면에': 가로 스크롤 X — 아래 바 = 넓으면 한 줄·420px 미만 2줄(5+4), 앱 안 위 메뉴 = 5칸씩 2줄(아이콘 위·이름 아래), 칩 = 3열 2줄
+assert "overflow-x" not in bar0 and "flex-wrap:wrap;justify-content:center" in bar0 and "white-space:nowrap" in S.CSS and "@media(max-width:419px){.bar a{flex:0 0 calc((100% - 8px)/5);min-height:46px}main:has(.bar){padding-bottom:124px}" in S.CSS
+assert ".inapp .bar.top{display:flex;position:static;flex-wrap:wrap;justify-content:center" in S.CSS and ".inapp .bar.top a{flex:0 0 calc((100% - 24px)/5);max-width:none;flex-direction:column;min-height:52px" in S.CSS and ".chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "overflow-x" not in S.CSS.split(".chips{", 1)[1].split("}", 1)[0]
 # 10/13 진우: 앱 안 브라우저(Threads·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가림 -> 검색창 아래 sticky 한 줄(같은 아이콘·이름, 가로 스크롤) + 아래 여백, 일반 브라우저는 아래 바 그대로
 top7 = i7.split('<nav class="bar top" aria-label="바로가기">')[1].split("</nav>")[0]; bot7 = i7.split('<nav class="bar"')[1].split("</nav>")[0]
 assert top7 == bot7.split(">", 1)[1] and i7.index('<div class="find"') < i7.index('<nav class="bar top"') < i7.index('<div class="pane">')  # 같은 메뉴, 검색창(sticky) 안
@@ -1634,7 +1636,7 @@ d7m = open("docs7/p/4.html").read()
 # 10/13 09:40 진우 '눈에 더 띄게'(구매 버튼은 1순위 그대로): 카테고리 색(인기·토스·생필품·화장품·전체·카드·브랜드) — 딜 페이지 = 연한 박스·3열·색 원 28px, 앱 안 위 줄 = 색 원 22px·40px·선택 칸 꽉 채움, 아래 바 = 아이콘만 색
 assert all(f".k-{k}{{--c:{c}" in S.CSS for k, c in (("hot", "#e03131"), ("toss", "#1b64da"), ("life", "#0b7d3e"), ("beauty", "#d6336c"), ("days", "#4e5968"), ("today", "#f59f00"), ("brand", "#7048e8")))
 assert ".more{background:#eef4ff;border-radius:16px;padding:14px" in S.CSS and "grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "min-height:52px" in S.CSS and "width:28px;height:28px;border-radius:14px;background:var(--c)" in S.CSS and ".more{background:#15233a}" in S.CSS
-assert ".inapp .bar.top i{width:22px;height:22px" in S.CSS and "min-height:40px" in S.CSS and ".inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}" in S.CSS and ".bar i{display:flex;color:var(--c)}" in S.CSS
+assert ".inapp .bar.top i{width:22px;height:22px" in S.CSS and ".inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}" in S.CSS and ".bar i{display:flex;color:var(--c)}" in S.CSS
 assert ".k-today{--c:#f59f00;--t:#191f28}" in S.CSS and ".bar .k-days i{color:#a1a1aa}" in S.CSS  # 대비: 카드 선택 칸 = 어두운 글씨(흰 글씨 2.1), 다크 아래 바 '전체' 아이콘 = 밝게(2.4 -> 7)
 assert ".btn{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px 12px;margin-top:12px;border-radius:12px;background:#1b64da;color:#fff" in S.CSS  # 구매 버튼(파랑) 그대로
 assert d7m.index('id="relh"') < d7m.index('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">🔥 다른 특가도 둘러보세요</h2>') < d7m.index('<a class="tg"') and '<nav class="bar' not in d7m  # 딜 페이지 = '같이 보면 좋은 딜' 아래 페이지 안 메뉴(고정 X), 텔레그램 버튼은 그 아래
