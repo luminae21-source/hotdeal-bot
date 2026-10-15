@@ -2662,7 +2662,7 @@ WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운
     (lambda w: "11-01" <= w["date"][5:] <= "11-11", "빼빼로데이", (), ("빼빼로",), "빼빼로 누구 주실 거예요?"),
     (lambda w: 0 <= (kst_ts(SUNEUNG + " 00:00") - kst_ts(w["date"] + " 00:00")) // 86400 <= 6, "수능 주간", (), ("찹쌀떡", "초콜릿", "견과"), "수능 응원 간식 뭐가 좋을까요?"))
 SNACK_WORDS = ("과자", "젤리", "견과", "초콜릿", "초코", "커피", "아이스크림", "빵", "떡", "음료")  # 15:30 간식 글(+ 오늘 날씨 간식 키워드)
-SNACK_NOT = r"머신|포트|메이커|그라인더|드리퍼|텀블러|제빵기|토스터|빵칼|떡갈비|케이스|필터|냉장고|배터리|제조기|금액권"  # 간식 아님(커피머신·떡갈비·젤리 케이스·커피 필터·쿠폰 행사 등 — '할인'은 X: 떡볶이 64%할인)
+SNACK_NOT = r"머신|포트|메이커|그라인더|드리퍼|텀블러|제빵기|토스터|빵칼|떡갈비|케이스|필터|냉장고|배터리|제조기|금액권|과탄산"  # 간식 아님(커피머신·떡갈비·젤리 케이스·커피 필터·쿠폰 행사·과탄산소다(더운 날 '탄산') 등 — '할인'은 X: 떡볶이 64%할인)
 WX_FILL = ("휴지", "물티슈", "세제", "생수", "라면", "햇반", "칫솔", "샴푸", "섬유유연제", "김")  # 일요일 DM: 날씨 키워드가 10개 안 되면 생필품·식품으로(쿠팡 전략 생필품·식품 70)
 LOG_DENY = ("써봤", "써보니", "사용해보니", "제가 직접", "내돈내산", "우리 집")  # 운영 일지 금지어 — 지어낸 경험담 X(공정위 추천·보증 심사지침 2026.6), 들어가면 안 올림
 DAILY_DIR = "docs/daily"  # #일상 사진(사이트 주소로 Threads에 — 봇 토큰 든 텔레그램 파일 주소는 안 씀)
@@ -2732,7 +2732,7 @@ def wx_deals(seen, words, n=3, deny=None):
         if p["t"] < since or p["text"].startswith("📋") or is_toss(p.get("url"), p["text"]):  # 토스는 아래에서(지금 가격)
             continue
         title = title_of(p["text"])
-        name, won = re.sub(r"\s*\((?=[^()]*\d)[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)' 같은 가격 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
+        name, won = re.sub(r"\s*\((?=[^()]*(?:\d|무료|무배))[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)'·'(무료)' 같은 가격·배송 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
         if ok(name):
             out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"] if aff(p.get("url")) else None, "i": i,
                         "hot": not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
@@ -2822,7 +2822,7 @@ def snack_post(seen):
 
 
 def log_text(seen):
-    """운영 일지(Threads, 링크 X) — posts.json·seen 사실로만: 오늘 본 커뮤니티 딜 수 · 고른 수 · 커뮤니티 조회 1등 + 날씨 질문 한 줄. 금지어(LOG_DENY)가 들어가면 None."""
+    """운영 일지(Threads, 링크 X) — posts.json·seen 사실로만: 오늘 본 커뮤니티 딜 수 · 고른 수 · 반응(분당 조회) 1등 + 날씨 질문 한 줄. 금지어(LOG_DENY)가 들어가면 None."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
     t0, ids = kst_ts(today + " 00:00"), "|".join([*FEEDS, "ruliweb", "clien"])
@@ -2834,7 +2834,7 @@ def log_text(seen):
     ws = weather(seen)
     rules = wx_rules(ws[0]) if ws else []
     text = (f"📝 핫딜픽 운영 일지 · {kst.tm_mon}/{kst.tm_mday}\n" + (f"오늘 핫딜픽이 본 커뮤니티 딜 {judged}개 중 {len(picked)}개만 골랐어요." if judged >= len(picked) else f"오늘 커뮤니티 딜 {len(picked)}개를 골랐어요.")
-            + (f"\n커뮤니티에서 제일 많이 본 딜: {clip(parse(title_of(top['text']))[1], 30)}" if top.get("vpm") or top.get("pop") else "")
+            + (f"\n커뮤니티 반응이 제일 빨랐던 딜: {clip(parse(title_of(top['text']))[1], 30)}" if top.get("vpm") or top.get("pop") else "")
             + f"\n\n{rules[0][4] if rules else '오늘 하루 어땠어요?'}")
     return None if any(w in text for w in LOG_DENY) else text
 
@@ -2875,9 +2875,8 @@ def wx_dm(seen):
     if not WEATHER_DM or kst.tm_wday != WEATHER_DM[0] or kst.tm_hour < WEATHER_DM[1] or key in seen:
         return
     ws = weather(seen)
-    seen[key] = time.time()
-    if ws and len(ws) > 1:
-        tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]), link_preview_options={"is_disabled": True})
+    if ws and len(ws) > 1 and tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]), link_preview_options={"is_disabled": True}):
+        seen[key] = time.time()  # 보낸 뒤에만: 날씨·텔레그램 실패면 그날 밤 다음 실행에 다시
 
 
 def daily_text(cap):
@@ -2896,10 +2895,14 @@ def daily_in(seen, m, cap):
     if not m.get("photo"):
         reply("📷 #일상은 사진으로 보내줘(파일로 보낸 원본엔 위치 정보가 남고, 글만은 안 올려요)" if m.get("document") else "📷 #일상은 사진과 같이 보내줘(글만은 안 올려요)")
         return
-    if len(daily_text(cap)) > 480:  # th_post가 500자에서 자르면 대가성 문구·게시 시점 줄·링크가 잘림
-        reply(f"✂️ 글이 {len(daily_text(cap))}자라 Threads에 다 안 들어가요(대가성 문구 포함 480자까지) — 캡션 줄여서 다시 보내줘")
-        return
-    try:
+    try:  # 깨진 주소('[https://…]')도 여기서 잡음 — publish_approved는 main 단계 밖이라 예외면 실행 전체가 멈춤
+        n = sum(len(c.encode()) if ord(c) > 0xFFFF or 0x2000 <= ord(c) <= 0x2BFF or c == "\ufe0f" else 1 for c in daily_text(cap))  # Threads는 이모지를 바이트로 셈
+        if n > 480:  # th_post가 500자에서 자르면 대가성 문구·게시 시점 줄·링크가 잘림
+            reply(f"✂️ 글이 {n}자라 Threads에 다 안 들어가요(대가성 문구 포함 480자까지, 이모지는 3~4자로 셈) — 캡션 줄여서 다시 보내줘")
+            return
+        if TOSS_NO_CMP and any(map(toss_share, re.findall(r"https?://\S+", cap))) and strip_cmp(cap)[0] != cap:
+            reply("🙅 토스 링크 글엔 다른 몰 이름·가격 비교를 못 넣어요(토스 규칙) — 빼고 다시 보내줘")
+            return
         f = tg("getFile", file_id=m["photo"][-1]["file_id"])
         name = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600)) + f"_{m['message_id']}.jpg"
         with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:

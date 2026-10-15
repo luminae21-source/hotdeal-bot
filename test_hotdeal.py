@@ -3123,11 +3123,12 @@ P12.append({"t": "2026-10-15 16:00", "text": "🔥 [토스] 하리보 젤리 10�
 P12.append({"t": "2026-10-15 17:00", "text": "🔥 [쿠팡] 진라면 매운맛 20개 (13,900원)\n\n좋아요", "url": "https://link.coupang.com/a/r1", "mid": 9}); json.dump(P12, open("posts.json", "w"), ensure_ascii=False)
 s12f = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.snack_post(s12f)  # 비 -> 라면도 간식 · 토스 커뮤니티 딜(posts.json)은 지금 가격을 못 봐서 X
 t12s = out12[0][1]["text"]
-assert all(re.search(H.SNACK_NOT, t) for t in ("한돈 갈빗살 떡갈비 20개", "투명 젤리 케이스", "칼리타 커피 필터", "메가커피 금액권 10% 할인")) and not re.search(H.SNACK_NOT, "슬림떡볶이 로제맛 4개 64%할인")  # 간식 아님
+assert all(re.search(H.SNACK_NOT, t) for t in ("한돈 갈빗살 떡갈비 20개", "투명 젤리 케이스", "칼리타 커피 필터", "메가커피 금액권 10% 할인", "홈블리 과탄산소다 5kg")) and not re.search(H.SNACK_NOT, "슬림떡볶이 로제맛 4개 64%할인")  # 간식 아님
 assert "<b>🍪 출출할 때 간식 2</b>" in t12s and "진라면 매운맛 20개" in t12s and "초코파이" in t12s and "커피머신" not in t12s and "하리보" not in t12s and t12s.startswith(f"<i>{H.DISCLOSURE}</i>")
 json.dump(P12 + [{"t": "2026-10-15 18:00", "text": "🔥 [G마켓] 마이핫 보온대 핫팩 150g (30개) (12,900원/무료)\n\n좋아요", "url": "u", "mid": 10},
-                 {"t": "2026-10-15 18:30", "text": "🔥 [쿠팡] 3단 자동 우산 (1+1) (21,920/무료)\n\n좋아요", "url": "u", "mid": 11}], open("posts.json", "w"), ensure_ascii=False)
-assert [(c["n"], c["p"]) for c in H.wx_deals(s12f, ["핫팩", "자동 우산"])][:2] == [("3단 자동 우산 (1+1)", "21,920원"), ("마이핫 보온대 핫팩 150g (30개)", "12,900원")]  # 가격 괄호만 빼고 수량·1+1은 그대로
+                 {"t": "2026-10-15 18:30", "text": "🔥 [쿠팡] 3단 자동 우산 (1+1) (21,920/무료)\n\n좋아요", "url": "u", "mid": 11},
+                 {"t": "2026-10-15 18:40", "text": "🔥 [쿠팡] 신라면 5개 (2,400원) (무료)\n\n좋아요", "url": "u", "mid": 12}], open("posts.json", "w"), ensure_ascii=False)
+assert [(c["n"], c["p"]) for c in H.wx_deals(s12f, ["핫팩", "자동 우산", "신라면"])] == [("신라면 5개", "2,400원"), ("3단 자동 우산 (1+1)", "21,920원"), ("마이핫 보온대 핫팩 150g (30개)", "12,900원")]  # 가격 괄호만 빼고 수량·1+1은 그대로
 out12.clear()
 J12 = {"t": TK("2026-10-16 01:00")}
 s12g = {"wx_20261016": {"t": 1, "w": [W12(8, 15)]}, "ppomppu_1": TK("2026-10-16 01:00"), "ppomppu_2": TK("2026-10-16 02:00"), "clien_3": TK("2026-10-16 03:00"),
@@ -3135,7 +3136,7 @@ s12g = {"wx_20261016": {"t": 1, "w": [W12(8, 15)]}, "ppomppu_1": TK("2026-10-16 
 json.dump([{"t": "2026-10-16 09:00", "text": "🔥 [쿠팡] 휴지 30롤 (19,900원)", "url": "u", "vpm": 3.1}, {"t": "2026-10-16 10:00", "text": "🔥 [쿠팡] 핫팩 30개 (9,900원)", "url": "u", "vpm": 9.5},
            {"t": "2026-10-16 11:00", "text": "🔥 [토스] 진우 예약", "url": "u", "own": 1}], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-16 20:35"); H.daily_log(s12g)
-assert out12 == [("th", {"text": "📝 핫딜픽 운영 일지 · 10/16\n오늘 핫딜픽이 본 커뮤니티 딜 4개 중 2개만 골랐어요.\n커뮤니티에서 제일 많이 본 딜: 핫팩 30개\n\n다들 전기요 꺼냈어요?",
+assert out12 == [("th", {"text": "📝 핫딜픽 운영 일지 · 10/16\n오늘 핫딜픽이 본 커뮤니티 딜 4개 중 2개만 골랐어요.\n커뮤니티 반응이 제일 빨랐던 딜: 핫팩 30개\n\n다들 전기요 꺼냈어요?",
                           "link": None, "image": None, "tag": "핫딜"})], out12  # 사실만(오늘 본 딜·고른 딜·조회 1등) + 날씨 질문 · 링크 X · Threads만
 assert s12g["bundles"]["ts"] and "cap=False" in inspect.getsource(H.daily_log)  # 묶음 간격 기록 · 채널 시간당 상한은 안 셈(Threads만이라)
 out12.clear(); H.LOG_DENY, ld0 = H.LOG_DENY + ("핫팩",), H.LOG_DENY; s12g.pop("dlog_20261016"); H.daily_log(s12g); assert not out12 and "dlog_20261016" in s12g; H.LOG_DENY = ld0  # 금지어 -> 안 올림
@@ -3144,7 +3145,9 @@ assert H.log_text(s12g) is None and all(w in H.LOG_DENY for w in ("써봤", "써
 s12h = {"wx_20261018": {"t": 1, "w": [W12(9, 16, day=f"2026-10-{d}", rain=70 if d in (19, 20) else 0) for d in range(18, 26)]}}
 time.time = lambda: TK("2026-10-17 20:05"); H.wx_dm({"wx_20261017": s12h["wx_20261018"]}); assert not out12  # 토요일 X
 time.time = lambda: TK("2026-10-18 19:55"); H.wx_dm(s12h); assert not out12  # 20시 전 X
-time.time = lambda: TK("2026-10-18 20:05"); H.wx_dm(s12h); H.wx_dm(s12h)
+time.time = lambda: TK("2026-10-18 20:05"); H.wx_dm({"wx_20261018": {"t": time.time(), "w": []}}); assert not out12  # 날씨 못 받으면 안 보냄(키도 안 남김 -> 다음 실행에 다시)
+s12k = {"wx_20261018": {"t": time.time() - 4000, "w": []}}; H.http = http12; H.wx_dm(s12k); assert "wxdm_20261018" in s12k and len(out12) == 1; out12.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("down"))
+H.wx_dm(s12h); H.wx_dm(s12h)
 (m12, p12), = out12
 d12 = p12["text"]
 assert p12["chat_id"] == H.ADMIN and p12["link_preview_options"] == {"is_disabled": True} and d12.startswith("🗓 다음 7일 서울 예보(10/19~10/25) — 쿠팡 링크 만들 시즌 키워드")
@@ -3184,13 +3187,18 @@ UP[:] = [{"update_id": 11, "message": {"message_id": 79, "from": {"id": 42}, "ch
          {"update_id": 12, "message": {"message_id": 80, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p80"}],
                                        "caption": "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9."}},
          {"update_id": 13, "message": {"message_id": 81, "from": {"id": 42}, "chat": {"id": 42}, "document": {"file_id": "doc", "mime_type": "image/jpeg"}, "caption": "#일상 원본"}},
-         {"update_id": 14, "message": {"message_id": 82, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p82"}], "caption": "#일상 " + "가" * 440 + " https://link.coupang.com/a/z"}}]
+         {"update_id": 14, "message": {"message_id": 82, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p82"}], "caption": "#일상 " + "가" * 440 + " https://link.coupang.com/a/z"}},
+         {"update_id": 15, "message": {"message_id": 83, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p83"}], "caption": "#일상 [https://hotdealpick.kr]에서 봐요"}},
+         {"update_id": 16, "message": {"message_id": 84, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p84"}], "caption": "#일상 " + "😀" * 130}},
+         {"update_id": 17, "message": {"message_id": 85, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p85"}], "caption": "#일상 장 봤어요\n쿠팡보다 3,000원 싸서 https://toss.im/_m/abc"}}]
 out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"file_path": "photos/f.jpg"} if m == "getFile" else {"message_id": 1})
 H.urllib.request.urlopen = lambda url, timeout=None: R12(b"JPG"); H.publish_approved(s12i); H.urllib.request.urlopen = real_open12
 rp12 = {p["reply_parameters"]["message_id"]: p["text"] for m, p in out12 if m == "sendMessage" and p.get("reply_parameters")}
 assert "dly_79" not in s12i and "사진과 같이" in rp12[79]  # 사진 없으면 답장만(글만은 안 올림)
 assert [p["file_id"] for m, p in out12 if m == "getFile"] == ["p80"] and s12i["dly_80"]["img"] == "https://hotdealpick.kr/daily/20261016_80.jpg"
 assert "dly_81" not in s12i and "사진으로 보내줘" in rp12[81]  # 파일(원본)로 보내면 X — 원본엔 위치(GPS) 정보가 남아 사이트에 공개됨
+assert "dly_83" not in s12i and "못 받았어요" in rp12[83]  # 깨진 주소 -> 답장만(예외로 실행 전체가 멈추지 않음)
+assert "dly_84" not in s12i and rp12[84].startswith("✂️ 글이 52") and "dly_85" not in s12i and "토스 규칙" in rp12[85]  # 이모지 = 바이트로 셈 · 토스 링크 글에 다른 몰 비교 X
 assert "dly_82" not in s12i and rp12[82].startswith("✂️ 글이 ") and len(H.daily_text("#일상 " + "가" * 440 + " https://link.coupang.com/a/z")) > 480  # 대가성 문구 포함 480자 넘으면 답장만(잘린 글 X)
 out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or {"message_id": 1}; H.busy = lambda seen, cap=True: True; H.daily_post(s12i); assert not out12  # 묶음 간격 -> 다음 실행에
 H.http, H.busy = http12, (lambda seen, cap=True: False); H.daily_post(s12i); th12d = [p for m, p in out12 if m == "th"][0]["text"]
