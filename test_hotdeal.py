@@ -1634,7 +1634,7 @@ assert ".inapp .bar.top i{width:22px;height:22px" in S.CSS and "min-height:40px"
 assert ".k-today{--c:#f59f00;--t:#191f28}" in S.CSS and ".bar .k-days i{color:#a1a1aa}" in S.CSS  # 대비: 카드 선택 칸 = 어두운 글씨(흰 글씨 2.1), 다크 아래 바 '전체' 아이콘 = 밝게(2.4 -> 7)
 assert ".btn{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px 12px;margin-top:12px;border-radius:12px;background:#1b64da;color:#fff" in S.CSS  # 구매 버튼(파랑) 그대로
 assert d7m.index('id="relh"') < d7m.index('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">🔥 다른 특가도 둘러보세요</h2>') < d7m.index('<a class="tg"') and '<nav class="bar' not in d7m  # 딜 페이지 = '같이 보면 좋은 딜' 아래 페이지 안 메뉴(고정 X), 텔레그램 버튼은 그 아래
-assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', d7m.split('<nav class="more"')[1].split("</nav>")[0]) == [(f"{S.BASE}#{k}", n) for k, n in (("hot", "인기"), ("toss", "토스"), ("life", "생필품"), ("beauty", "화장품"), ("days", "전체"))]
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', d7m.split('<nav class="more"')[1].split("</nav>")[0]) == [(f"{S.BASE}#{k}", n) for k, n in (("hot", "인기"), ("toss", "토스"), ("coupang", "쿠팡"), ("naver", "네이버"), ("life", "생필품"), ("beauty", "화장품"), ("days", "전체 딜 보기"))] and ".more .k-days{grid-column:1/-1}" in S.CSS  # 10/15: 6개 3열 2줄 + 전체 한 줄
 assert '<a class="lk" href="https://hotdealpick.kr/#saved"' in open("docs7/p/4.html").read() and S.LIKE_JS in open("docs7/p/4.html").read()  # 딜 페이지 = 찜 목록 링크 + '같이 보면 좋은 딜' 하트(10/11~)
 # 6-9) 더 사고 싶게(10/11 진우 '홈페이지·Threads 먼저, 디자인도 좋게'): 얼마나 싼지(비교 문장 -> '쿠팡보다 N원↓')·단위가격(없으면 글에서)·토스 선착순 남은 시간,
 #      딜 페이지 = 가격·절약 -> 큰 구매 버튼(가격) -> 왜 골랐나요 -> 같이 보면 좋은 딜 4개(최근 2일 제휴 딜, 같은 품목 먼저, 약한 딜·제휴 아님·같은 이름·자기 자신 빼고) -> 골드박스
