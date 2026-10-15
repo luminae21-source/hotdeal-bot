@@ -1599,7 +1599,11 @@ cp7, nv7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("coupang",
 assert "🚀 쿠팡 딜 1개" in cp7 and "아이스크림" in cp7 and S.SHOP_NOTES["coupang"] in cp7 and f'href="{S.GOLDBOX}"' in cp7 and not re.search("옥션|G마켓|네이버", cp7)
 assert "💚 네이버 딜 1개" in nv7 and "폼클렌징" in nv7 and S.SHOP_NOTES["naver"] in nv7 and "아이스크림" not in nv7
 assert [S.shop_of({"text": f"🔥 [{m}] x (1원)", "url": u}) for m, u in (("쿠팡와우", ""), ("G마켓", "https://coupa.ng/x"), ("스마트스토어", ""), ("G마켓", "https://smartstore.naver.com/x"), ("토스", ""), ("G마켓", "https://g"))] == ["coupang", "coupang", "naver", "naver", "toss", ""]
-assert S.keys({"t": "2026-10-09 10:00", "text": "🔥 [네이버멤버쉽] 휴지 (1원)"}).startswith("네이버 ") and [k for k, _ in S.CHIPS[:3]] == ["토스", "쿠팡", "네이버"]
+assert S.keys({"t": "2026-10-09 10:00", "text": "🔥 [네이버멤버쉽] 휴지 (1원)"}).startswith("네이버 ")
+# 10/15 진우 '중복 메뉴니까 다른 메뉴': 검색 칩 = 조건 필터(몰·품목은 탭), 결과 0개 칩은 안 보임
+assert [n for _, n in S.CHIPS] == ["💸 1만원 이하", "📉 30일 최저가", "🎁 1+1·증정", "🚚 무료배송", "🍚 식품", "⏰ 오늘 마감"]
+assert S.conds({"text": "🔥 [토스] 땅콩버터 (1,950원 · 5천원 쿠폰가)\n\n토스 하루특가 · 30일 내 최저가"}) == "1만원 최저가" and S.conds({"text": "🔥 [롯데온] 생수 (10,000/무료)"}) == "1만원 무배"
+assert S.conds({"text": "🔥 [옥션] 잠옷 2+1 (10,010원)"}) == "증정" and S.conds({"text": "🔥 [G마켓] 귤 +500g 증정 (12,000원/무배)\n\n30일 무료반품 · 최저가보상"}) == "증정 무배" and S.price_won("[쿠팡] 휴지 (19,900원/무료)") == 19900
 assert "overflow-x:auto" in S.CSS.split(".bar{", 1)[1].split("}", 1)[0] and ".bar a:first-child{margin-left:auto}.bar a:last-child{margin-right:auto}" in S.CSS and "white-space:nowrap" in S.CSS  # 좁으면 가로 스크롤(넓으면 가운데)
 # 10/13 진우: 앱 안 브라우저(Threads·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가림 -> 검색창 아래 sticky 한 줄(같은 아이콘·이름, 가로 스크롤) + 아래 여백, 일반 브라우저는 아래 바 그대로
 top7 = i7.split('<nav class="bar top" aria-label="바로가기">')[1].split("</nav>")[0]; bot7 = i7.split('<nav class="bar"')[1].split("</nav>")[0]
@@ -1624,8 +1628,8 @@ assert [c for c, _ in S.badges(bp[0])] == ["b1"] and [c for c, _ in S.badges(bp[
 S.build(bp, "docs8"); i8, a8 = open("docs8/index.html").read(), open("docs8/all.html").read()
 br8 = i8.split('id="brand"')[1].split("</section>")[0]
 assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("탄력") < br8.index("자음") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
-assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
-assert all(S.FIND[:-len("</div>")] + '<nav class="bar top"' in x and S.FIND_JS in x for x in (i8, a8)) and f'<nav class="bar top" aria-label="바로가기"><a href="{S.BASE}#' in a8 and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
+assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and 'data-k="토스 브랜드 무배"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
+assert all('</div><div id="qn" class="t" hidden></div><nav class="bar top"' in x and S.FIND_JS in x for x in (i8, a8)) and 'data-c="마감"' in i8 and 'data-c="최저가"' not in i8 and f'<nav class="bar top" aria-label="바로가기"><a href="{S.BASE}#' in a8 and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
 d7m = open("docs7/p/4.html").read()
 # 10/13 09:40 진우 '눈에 더 띄게'(구매 버튼은 1순위 그대로): 카테고리 색(인기·토스·생필품·화장품·전체·카드·브랜드) — 딜 페이지 = 연한 박스·3열·색 원 28px, 앱 안 위 줄 = 색 원 22px·40px·선택 칸 꽉 채움, 아래 바 = 아이콘만 색
 assert all(f".k-{k}{{--c:{c}" in S.CSS for k, c in (("hot", "#e03131"), ("toss", "#1b64da"), ("life", "#0b7d3e"), ("beauty", "#d6336c"), ("days", "#4e5968"), ("today", "#f59f00"), ("brand", "#7048e8")))

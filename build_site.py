@@ -300,6 +300,19 @@ def keys(p):
                     + (["마감"] if any(c == "b2" for c, _ in badges(p)) else []))
 
 
+def price_won(title):
+    """제목 가격(원): '(1,950원 · 5천원 쿠폰가)' -> 1950, '(10,000/무료)' -> 10000, 못 읽으면 None."""
+    m = re.search(r"(\d[\d,]*)\s*원", parse(title)[2]) or re.search(r"\((\d{1,3}(?:,\d{3})+)\s*/", title)
+    return m and int(m[1].replace(",", ""))
+
+
+def conds(p):
+    """검색 칩 '조건' 키(10/15 진우 '중복 메뉴니까 다른 메뉴' — 몰·품목은 탭으로): 1만원 이하 · 30일 최저가 · 1+1·증정 · 무료배송 (제목·본문 그대로)."""
+    title, w = title_of(p["text"]), price_won(title_of(p["text"]))
+    return " ".join(k for k, ok in (("1만원", w is not None and w <= 10000), ("최저가", re.search(r"30일\s*(?:내\s*)?최저가", p["text"])),
+                                    ("증정", re.search(r"\d\s*\+\s*\d|증정|사은품", title)), ("무배", re.search("무료|무배", title))) if ok)
+
+
 def grid_item(i, p, rx=False):
     """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
     title = title_of(p["text"])
@@ -313,7 +326,7 @@ def grid_item(i, p, rx=False):
     else:
         go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
     bd, sv, u = badge_html(p, ("b4",) if rx else ()), saving(p["text"]), unit_of(p)  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
-    return (f'<article class="g" data-k="{html.escape(keys(p))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div>'
+    return (f'<article class="g" data-k="{html.escape(" ".join(filter(None, (keys(p), conds(p)))))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div>'
             + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
             + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
             + (f'<div class="rx">👀 {html.escape(react(p).replace("분당 조회 ", "분당 "))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
@@ -420,9 +433,10 @@ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.c
 L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script>"""
 
 # 검색·필터(10/10 진우 'UI 편하게'): 맨 위 고정 검색창 + 칩. 홈은 '전체' 칸(최근 2일), all.html은 전체 딜에서 걸러 보여 줌. JS가 꺼져 있으면 그냥 안 걸러짐
-CHIPS = (("토스", "토스"), ("쿠팡", "쿠팡"), ("네이버", "네이버"), ("생필품", "🧻 생필품"), ("식품", "🍚 식품"), ("화장품", "💄 화장품"), ("브랜드", "✨ 브랜드"), ("마감", "⏰ 오늘 마감"))
-FIND = ('<div class="find" role="search"><input id="q" type="search" placeholder="🔎 딜 검색 (예: 휴지, 설화수)" aria-label="딜 검색" autocomplete="off">'
-        '<div class="chips">' + "".join(f'<button type="button" data-c="{k}" aria-pressed="false">{n}</button>' for k, n in CHIPS) + '</div><div id="qn" class="t" hidden></div></div>')
+CHIPS = (("1만원", "💸 1만원 이하"), ("최저가", "📉 30일 최저가"), ("증정", "🎁 1+1·증정"), ("무배", "🚚 무료배송"), ("식품", "🍚 식품"), ("마감", "⏰ 오늘 마감"))  # 10/15 몰·품목 칩은 탭과 겹쳐서 조건 칩으로
+find_box = lambda chips: ('<div class="find" role="search"><input id="q" type="search" placeholder="🔎 딜 검색 (예: 휴지, 설화수)" aria-label="딜 검색" autocomplete="off">'
+                          '<div class="chips">' + "".join(f'<button type="button" data-c="{k}" aria-pressed="false">{n}</button>' for k, n in chips) + '</div><div id="qn" class="t" hidden></div></div>')
+FIND = find_box(CHIPS)
 FIND_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.getElementById('days')||document.body;
 function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0;if(on)[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.contains(host)});
 [].forEach.call(host.querySelectorAll('.g'),function(g){var ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0);g.hidden=!ok;if(ok&&on)n++});
@@ -443,7 +457,7 @@ MORE = ('<nav class="more" aria-labelledby="moreh"><h2 id="moreh">🔥 다른 �
 def related(i, p, pool, n=4):
     """딜 페이지 아래 '같이 보면 좋은 딜'(10/11 진우 '더 사고 싶게'): pool(최근 2일 제휴 링크 딜, 약한 딜 빼고) 중 같은 품목 먼저, 그다음 최신. 같은 이름 제외.
     쿠팡은 클릭 후 24시간 안 산 건 다 실적 -> 들어온 사람이 한 번 더 둘러보게."""
-    me, k = title_of(p["text"]), set(keys(p).split()) - {"쿠팡", "토스", "마감"}
+    me, k = title_of(p["text"]), set(keys(p).split()) - {"쿠팡", "토스", "네이버", "마감"}
     c = sorted(((j, q, ks) for j, q, ks in pool if j != i and title_of(q["text"]) != me), key=lambda x: x[1]["t"], reverse=True)
     return [(j, q) for j, q, _ in sorted(c, key=lambda x: -len(k & x[2]))[:n]]
 
@@ -512,12 +526,12 @@ def build(posts, out="docs"):
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
-    find = lambda home: FIND[:-len("</div>")] + bar(home, "bar top") + "</div>"  # 앱 안 브라우저 = 검색창 아래 한 줄(가로 스크롤, 같은 아이콘·이름 — 아래 바는 숨김, CSS .inapp)
+    find = lambda home, ps: find_box([(k, n) for k, n in CHIPS if any(k in (keys(p) + " " + conds(p)).split() for p in ps)])[:-len("</div>")] + bar(home, "bar top") + "</div>"  # 결과 0개 칩은 안 보임  # 앱 안 브라우저 = 검색창 아래 한 줄(가로 스크롤, 같은 아이콘·이름 — 아래 바는 숨김, CSS .inapp)
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("") + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for p in posts if p["t"][:10] in days[:2] and not p["text"].startswith("📋")]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
-    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
+    open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE, [p for p in posts if not p["text"].startswith("📋")]) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
