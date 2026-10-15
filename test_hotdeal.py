@@ -3029,6 +3029,8 @@ assert "mt_2026-10-14" in s10d  # 4xx·빈 응답은 다시 해도 같음 -> 끝
 def http10e(url, body=None, headers=None, method=None): raise H.urllib.error.URLError("timed out")
 H.http = http10e; s10e = {}; H.metrics(s10e); assert s10e == {}  # 네트워크 오류 = 8시까지 다음 실행에 다시
 time.time = lambda: TK("2026-10-15 08:07"); H.metrics(s10e); assert "mt_2026-10-14" in s10e and json.load(open(H.METRICS))["2026-10-14"]["miss"]["tg"] == "채널 웹 못 읽음: URLError('timed out')"
+u10 = []; H.http = lambda url, body=None, headers=None, method=None: u10.append(url) or json.dumps({"data": []}); H.E["METRICS_DAY"] = "2026-10-15"; time.time = lambda: TK("2026-10-15 15:30"); H.metrics({})
+assert any(f"&until={TK('2026-10-15 15:30')}&" in u for u in u10); del H.E["METRICS_DAY"]; m10x = json.load(open(H.METRICS)); m10x.pop("2026-10-15"); json.dump(m10x, open(H.METRICS, "w"))  # 오늘치(수동) = 지금까지 — 미래 until은 Threads가 거절(10/15 실행 점검: 500 'Timestamp must be less than or equal to')
 del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda: TK("2026-10-17 06:00"); H.http = http10; H.metrics({})  # 토큰 없음 = 이유만, 14일만 남김·최신 맨 위
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})

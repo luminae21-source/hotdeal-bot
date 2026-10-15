@@ -2814,7 +2814,7 @@ def metrics(seen):
     if not tok:
         miss["th"] = "THREADS_TOKEN 없음"
     try:
-        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp&since={int(t0)}&until={int(t0) + 86400}&limit=100&access_token={tok}"
+        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp&since={int(t0)}&until={int(min(t0 + 86400, now))}&limit=100&access_token={tok}"
         while url and len(ths) < 1000:
             r = json.loads(http(url))
             ths, url = ths + r.get("data", []), r.get("data") and r.get("paging", {}).get("next")
