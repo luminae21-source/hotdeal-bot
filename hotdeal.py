@@ -3,11 +3,11 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, hashlib, hmac, html, json, os, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, collections, hashlib, hmac, html, json, os, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, shop_of, price_won, FOOD, CHANNEL_WEB  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -199,6 +199,8 @@ def tg(method, **params):
         r = json.loads(http(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", params))["result"]
         if params.get("chat_id") == CHANNEL and method in TG_SEND:
             RUN["ok"].add("tg")
+            if "reply_parameters" not in params and not re.search(r"^📋", text, re.M):  # 채널 딜 글 시각(재오픈 답장·모아보기 X) -> toss_solo 빈틈 채움
+                RUN["ch_last"] = time.time()
         return r
     except urllib.error.HTTPError as e:
         print("TG", method, e.code, e.body)
@@ -564,7 +566,7 @@ def toss_clean_posts():
         print("toss 비교 뺌", n)
 
 
-RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": ""}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유
+RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": "", "ch_last": 0}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유 · 채널 마지막 딜 글(빈틈 채움)
 TG_SEND = ("sendMessage", "sendPhoto", "sendVideo", "copyMessage", "sendMediaGroup")  # 채널 '올리기' 호출(수정·답장 수정은 X)
 TOSS_FIX, TOSS_FIX_RUN = "tossfix.json", 8  # 10/12 22:50 진우 '앞서 올라간 글에서 쿠팡 비교글은 수정하자': 채널 옛 토스 딜 글 고칠 번호 목록(1번만) · 한 실행 고치는 글 수(채널 분당 약 20개, 품절 지켜보기 8개와 같이)
 
@@ -1556,6 +1558,7 @@ def toss_picks(seen):
             continue
         seen[f"tb_{r['id']}"] = {"t": now, "n": r["n"]}  # 3일 동안 토스 자동 회차에 다시 안 올림
         bundled(seen)  # 토스 자동 회차가 이 글과 10분 띄우고 1시간 글 수에도 셈
+        seen["ev_" + e["at"]] = now  # 실제 게시 시각(events()와 같은 키 — api 예약은 events()가 안 봄) -> toss_solo가 뒤 10분 쉼
         seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": ad_head(TOSS_NOTE, plain_of(body)), "body": body, "btn": btn, "url": r["link"],
                                            "n": r["n"], "p": price, "it": [[r["id"], r["n"], price, night, 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
         print("toss pick", e["at"], clip(r["n"], 30), f"{price:,}원 게시")
@@ -1570,30 +1573,49 @@ def toss_picks(seen):
             th_text(tok, me, text, r["link"])
 
 
-TOSS_SOLO_HOURS = range(8, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(진우 예약 있는 시각은 건너뜀). () = 끔
+TOSS_SOLO_HOURS = range(8, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개. () = 끔
+TOSS_GAP_MIN, TOSS_EV_PAD = 30, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
 TOSS_SOLO_SRC, TOSS_SOLO_MIN, TOSS_SOLO_TRY = ("best", "beauty", "life", "day"), 7, 2  # 시각마다 돌아가며(많이 팔린 순위 -> 화장품 -> 생필품 -> 하루특가) · 점수 7↑ · 출처 2곳까지(Claude·API 아낌)
 SOLO_PROMPT = SPECIAL_PROMPT.replace("특가 후보 목록이야(할인율 높고 리뷰 있는 상품, ", "상품 목록이야(") + TOSS_EASE + "\ncomment는 단위가격·구성 같은 사실 한 줄만.\n"
 
 
+def kst_ts(at):
+    """'YYYY-MM-DD HH:MM'(KST) -> epoch."""
+    return datetime.strptime(at[:16], "%Y-%m-%d %H:%M").replace(tzinfo=KST).timestamp()
+
+
+def ch_last(seen):
+    """텔레그램 채널 마지막 딜 글 시각(epoch): 이번 실행(RUN) · 지난 실행 기록(seen) · posts.json 마지막 딜(토스 API 글은 posts.json에 없어서 기록이 주, 첫 배포 땐 posts.json)."""
+    t = max((p["t"] for p in load(POSTS, []) if not p["text"].startswith("📋")), default="")
+    return max(RUN["ch_last"], seen.get("ch_last", {}).get("t", 0), t and kst_ts(t) or 0)
+
+
 def toss_solo(seen):
-    """토스 API 상품 개별 글(진우 토스 예약 글과 같은 틀): TOSS_SOLO_HOURS 매시 첫 실행에 1개 — 그 시각에 진우 예약(events deal·이름 예약)이 있으면 건너뜀.
+    """토스 API 상품 개별 글(진우 토스 예약 글과 같은 틀): TOSS_SOLO_HOURS 매시 첫 실행에 1개 + 채널 딜 글이 TOSS_GAP_MIN분 넘게 없으면 그 실행에 1개(빈틈 채움, 못 찾으면 TOSS_GAP_MIN 뒤 다시).
+    진우 예약(events.json) 시각 앞뒤 TOSS_EV_PAD 안이면 이번 실행은 쉼(기록 X -> 다음 실행에 다시).
     후보 = 그 시각 출처 목록 1번(30개, 순위 그대로) 중 품절·3일 안 게시(tb_)·오늘 진우 예약 이름·이름 예약 id 빼고 Claude 7점↑ 최고점. 텔레그램 채널 글 + 품절 지켜보기 + Threads 채움 후보(thtoss).
     사이트·posts.json X(API 범위). 묶음 회차는 tb_로 이 상품을 뺌."""
     now, kst = time.time(), time.gmtime(time.time() + 9 * 3600)
     h, key, today = kst.tm_hour, time.strftime("tsolo_%Y%m%d_%H", kst), time.strftime("%Y-%m-%d", kst)
-    if not HAS_TOSS or h not in TOSS_SOLO_HOURS or key in seen:
+    if not HAS_TOSS or h not in TOSS_SOLO_HOURS:
+        return
+    gap = TOSS_GAP_MIN and int(now - max(ch_last(seen), seen.get("tgap", {}).get("t", 0))) // 60
+    gap = gap if gap > TOSS_GAP_MIN else 0
+    if key in seen and not gap:
         return
     evs, norm = load(EVENTS, []), lambda s: re.sub(r"\W", "", s or "")
-    if any(e.get("at", "").startswith(f"{today} {h:02d}:") and (e.get("deal") or e.get("api")) for e in evs):  # 진우 것 먼저
-        seen[key] = now
-        print(f"toss solo {h:02d}: 건너뜀(진우 예약)")
+    ats = [e["at"] for e in evs if re.match(r"\d{4}-\d\d-\d\d ([01]\d|2[0-3]):[0-5]\d$", e.get("at", ""))]  # 손으로 넣은 시각 모양이 틀려도 멈추지 않게
+    if any(abs(kst_ts(a) - now) <= TOSS_EV_PAD or now - seen.get("ev_" + a, 0) <= TOSS_EV_PAD for a in ats):  # 진우 것 먼저(예약은 실행 간격만큼 늦게 나가서 실제 게시 시각으로도)
+        print(f"toss solo {h:02d}: 쉼(진우 예약 앞뒤 {TOSS_EV_PAD // 60}분)")
         return
+    if gap:
+        seen["tgap"] = {"t": now}  # 빈틈 채움 시도 — 못 찾아도 TOSS_GAP_MIN 동안 다시 안 찾음(API·Claude 아낌)
     booked = {norm(e["name"]) for e in evs if e.get("name") and e.get("at", "")[:10] == today}
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + today) and isinstance(v, dict)}
     tree, tried, best = None, 0, None
     for n in range(len(TOSS_SOLO_SRC)):
         src = TOSS_SOLO_SRC[(h + n) % len(TOSS_SOLO_SRC)]
-        if src == "day" and h < 9 or tried >= TOSS_SOLO_TRY:  # 하루특가 목록은 9시에 바뀜(그 전엔 어제 것)
+        if src == "day" and (h < 9 or h == 23 and kst.tm_min >= 30) or tried >= TOSS_SOLO_TRY:  # 하루특가 목록은 9시에 바뀜(그 전엔 어제 것) · 23:30 넘으면 '밤 12시까지'가 몇 분 안 남음
             continue
         label = None
         if src in ("beauty", "life"):
@@ -1616,7 +1638,7 @@ def toss_solo(seen):
             break
     if not best:
         seen[key] = now
-        print(f"toss solo {h:02d}: 7점↑ 없음(출처 {tried}곳)")
+        print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: 7점↑ 없음(출처 {tried}곳)")
         return
     src, label, p = best
     rank, x = items[p["i"]]
@@ -1638,7 +1660,7 @@ def toss_solo(seen):
     if E.get("THREADS_TOKEN"):  # Threads = 채움 후보(45분 간격·화장품 한도 그대로)
         seen["thtoss"] = {"t": now, "q": [q for q in seen.get("thtoss", {}).get("q", []) if now - q["t"] < 3 * 3600] + [
             {"t": now, "l": False, "id": x["tacaItemId"], "k": "solo", "r": 0, "s": p["score"], "bt": th_beauty(name), "text": toss_th(name, link, [info, "💡 " + p["comment"]]), "link": link}]}
-    print(f"toss solo {h:02d}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점)")
+    print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점)")
 
 
 SOLD = ([None, ("⛔ <b>품절</b> — 다시 들어오면 답글로 알려드릴게요", "품절"), ("⛔ <b>품절</b>", "품절")],  # [하루특가 아님 / 하루특가][상태 1 = 품절, 2 = 끝]: (글 줄, 버튼 글자)
@@ -2738,6 +2760,116 @@ def th_ok(r):
     return r
 
 
+METRICS, METRICS_HOUR, METRICS_KEEP = "metrics.json", 5, 14  # 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 조회·반응 -> metrics.json(최근 14일, 그 전은 git 기록) — 아침 08:30 보고가 Chrome 없이 읽음
+PRICE_BANDS = ((10000, "~1만"), (30000, "1~3만"), (50000, "3~5만"), (100000, "5~10만"))  # 가격대(넘으면 '10만~', 못 읽으면 '')
+
+
+def tg_num(v):
+    """채널 웹 숫자 '1.2K'·'3M'·'15' -> 정수."""
+    v = v.strip().replace(",", "")
+    return int(float(v[:-1]) * {"K": 1000, "M": 10 ** 6}[v[-1]]) if v[-1:] in ("K", "M") else int(v)
+
+
+def metrics(seen):
+    """하루 1번 어제(KST) 글별 성과 -> metrics.json {날짜: {"at", "miss": {채널: 빈 칸 이유}, "rows": [{date, ch, id, shop, cat, price, at, views, react, (likes, replies)}]}}.
+    텔레그램(tg) = 채널 웹(t.me/s) 조회·반응(posts.json 글이면 그 글·링크로 몰·품목), Threads(th) = 글 목록 + insights(views·likes·replies·reposts·quotes),
+    인스타(ig) = 미디어 목록(좋아요·댓글) + insights(views). 못 읽은 칸 = None, 이유는 miss(권한 없음 등). 수동 실행에 METRICS_DAY(YYYY-MM-DD)면 그날을 바로(점검·다시 모으기)."""
+    now = time.time()
+    day = E.get("METRICS_DAY") or (time.gmtime(now + 9 * 3600).tm_hour >= METRICS_HOUR and time.strftime("%Y-%m-%d", time.gmtime(now - 15 * 3600)))
+    if not day or "mt_" + day in seen and not E.get("METRICS_DAY"):
+        return
+    t0 = kst_ts(day + " 00:00")
+    rows, miss, stamp = [], {}, lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S%z").timestamp()
+    soft = []  # 일시 오류(네트워크·5xx) -> 그날은 아직 안 끝남(8시까지 다음 실행에 다시), 4xx(권한 등)는 다시 해도 같음
+    blame = lambda e: soft.append(isinstance(e, OSError) and not (isinstance(e, urllib.error.HTTPError) and e.code < 500)) or err_brief(e)
+    denied = lambda e: re.search(r'"code":\s*(10|190|200)\b', getattr(e, "body", "") or "")  # 권한 없음·토큰 = 나머지 글도 같음 -> 그만 물음, 그 밖(지운 글·빈 응답)은 그 글만 빈 칸
+
+    def row(ch, i, text, url, t, views, react, **more):
+        title = title_of(text)
+        w = price_won(title)
+        cat = "묶음" if re.search(r"2️⃣|^2\. ", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
+        rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": url}) or "기타", "cat": cat,
+                     "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more})
+
+    pm, url, n = {p["mid"]: p for p in load(POSTS, []) if p.get("mid")}, CHANNEL_WEB, 0
+    try:
+        while url and n < 40:  # 한 쪽 20개, 오래된 쪽으로(?before=)
+            n += 1
+            bs = [(int(m[1]), stamp(t[1]), b) for b in http(url).split('<div class="tgme_widget_message_wrap')[1:]
+                  for m, t in [(re.search(r'data-post="[^"]+/(\d+)"', b), re.search(r'<time datetime="([^"]+)"', b))] if m and t]
+            for mid, t, b in bs:
+                if t0 <= t < t0 + 86400:
+                    p, tx = pm.get(mid), re.search(r'js-message_text[^"]*"[^>]*>(.*?)</div>', b, re.S)  # 답장 글의 인용(js-message_reply_text) 말고 본문
+                    btn, v = re.search(r'inline_button url_button" href="([^"]+)"', b), re.search(r'tgme_widget_message_views">([^<]+)<', b)
+                    rx = re.findall(r"(?:</i>|</tg-emoji>)\s*([\d.,]+[KM]?)\s*</span>", b.split("tgme_widget_message_reactions", 1)[1]) if "tgme_widget_message_reactions" in b else []  # 이모지 뒤 숫자(맞춤 이모지 포함)
+                    row("tg", mid, p["text"] if p else html.unescape(re.sub(r"<[^>]+>", "", re.sub(r"<br\s*/?>", "\n", tx[1]))) if tx else "",
+                        p and p.get("url") or btn and html.unescape(btn[1]) or "", t, v and tg_num(v[1]), sum(map(tg_num, rx)))
+            url = bs and bs[0][1] >= t0 and f"{CHANNEL_WEB}?before={bs[0][0]}"
+    except Exception as e:  # 막히면 그 칸만 비움(다른 채널은 계속)
+        miss["tg"] = "채널 웹 못 읽음: " + blame(e)
+    if not rows:
+        miss.setdefault("tg", "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)")
+
+    tok, ths = E.get("THREADS_TOKEN"), []
+    if not tok:
+        miss["th"] = "THREADS_TOKEN 없음"
+    try:
+        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp&since={int(t0)}&until={int(t0) + 86400}&limit=100&access_token={tok}"
+        while url and len(ths) < 1000:
+            r = json.loads(http(url))
+            ths, url = ths + r.get("data", []), r.get("data") and r.get("paging", {}).get("next")
+    except Exception as e:
+        miss["th"] = "글 목록 못 읽음: " + blame(e)
+    for x in ths:
+        if not t0 <= stamp(x["timestamp"]) < t0 + 86400:
+            continue
+        ins = {}
+        if "th" not in miss:  # 한 번 막히면(권한 없음 등) 나머지는 안 물음
+            try:
+                ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{THREADS}/{x['id']}/insights?metric=views,likes,replies,reposts,quotes&access_token={tok}"))["data"]}
+            except Exception as e:
+                why = blame(e)
+                if denied(e):
+                    miss["th"] = "insights 권한 없음(토큰 권한 threads_manage_insights 확인): " + why
+                else:
+                    miss.setdefault("th_part", "일부 글 insights 못 읽음: " + why)
+        row("th", x["id"], x.get("text") or "", "", stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
+            likes=ins.get("likes"), replies=ins.get("replies"))
+
+    itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
+    h = {"Authorization": f"Bearer {itok}"}
+    if not (itok and uid):
+        miss["ig"] = "IG_TOKEN·IG_USER_ID 없음"
+    try:  # 하루 글 몇 개라 최근 50개면 어제까지 덮음
+        ms = itok and uid and json.loads(http(f"{IG}/{uid}/media?fields=id,caption,timestamp,like_count,comments_count&limit=50", None, h))["data"] or []
+    except Exception as e:
+        miss["ig"] = "미디어 목록 못 읽음: " + blame(e)
+    for x in ms:
+        if not t0 <= stamp(x["timestamp"]) < t0 + 86400:
+            continue
+        v = None
+        if "ig" not in miss:
+            try:
+                v = json.loads(http(f"{IG}/{x['id']}/insights?metric=views", None, h))["data"][0]["values"][0]["value"]
+            except Exception as e:
+                why = blame(e)
+                if denied(e):
+                    miss["ig"] = "조회수 권한 없음(토큰 권한 instagram_business_manage_insights 확인): " + why
+                else:
+                    miss.setdefault("ig_part", "일부 글 조회수 못 읽음: " + why)
+        lk, cm = x.get("like_count"), x.get("comments_count")
+        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm)
+
+    m, js = load(METRICS, {}), lambda x: json.dumps(x, ensure_ascii=False)
+    m[day] = {"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "miss": miss, "rows": rows}
+    open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
+                                                                 for d, v in sorted(m.items(), reverse=True)[:METRICS_KEEP]) + "}\n")  # 최신 날짜 맨 위 · 글 1개 = 1줄(보고가 읽기 쉽게)
+    if not E.get("METRICS_DAY") and (not any(soft) or time.gmtime(now + 9 * 3600).tm_hour >= 8):  # 수동 실행(오늘치 점검 등)은 기록 X -> 다음 날 5시에 그날 전체를 다시
+        seen["mt_" + day] = now
+    c = collections.Counter(r["ch"] for r in rows)
+    print(f"metrics {day}: " + " · ".join(f"{ch} {c[ch]}개 빈 칸 {sum(r['views'] is None or r['react'] is None for r in rows if r['ch'] == ch)}" for ch in ("tg", "th", "ig")), miss or "")
+
+
 def watch(seen):
     """실행 끝 감시(10/13 진우): ① 텔레그램 채널 글 실패 -> 바로 알림 ② 실패했던 채널이 다시 올라가면 '✅ 다시 올라감' 1줄
     ③ 8~24시 Threads 글(개별·묶음·댓글) QUIET_TH(2시간) 넘게 0개 -> '⏸' 1번(다시 올라가기 전까지 반복 X) ④ 예약 글이 시각 + QUIET_EV(20분) 넘게 안 나감 -> 예약마다 1번."""
@@ -2779,7 +2911,7 @@ def watch(seen):
 
 
 def main():
-    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="")
+    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0)
     if TOSS_NO_CMP:
         toss_clean_posts()
     seen = load(SEEN, {})
@@ -2846,7 +2978,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
         try:
             step(seen)
         except Exception as e:
@@ -2856,6 +2988,8 @@ def main():
         watch(seen)
     except Exception as e:  # 감시가 실패해도 seen은 저장
         print("watch", repr(e))
+    if RUN["ch_last"]:
+        seen["ch_last"] = {"t": RUN["ch_last"]}
     cutoff = time.time() - 3 * 86400
     json.dump({k: v for k, v in seen.items() if (v["t"] if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
     print(f"new={len(new)} seen={len(seen)}")

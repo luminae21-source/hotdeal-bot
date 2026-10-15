@@ -6,7 +6,7 @@ from email.utils import formatdate
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
-H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -2546,7 +2546,7 @@ H.th_strong, H.TH_SOLO_RUN = (lambda plain: "특가로는 약한 제품" not in 
 #       품절·3일 안 게시·오늘 진우 예약 이름·이름 예약 id 빼고 7점↑ 최고점, 진우 예약 글 틀(문구·제목·정보 줄·💡·⚠️ 게시 시점·버튼), 품절 지켜보기·Threads 채움 후보, posts.json X
 assert tsh0 == range(8, 24) and H.TOSS_SOLO_MIN == 7
 sv9i = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS)
-i_calls, i_sent, i_prompts = [], [], []
+i_calls, i_sent, i_prompts = [], [], []; tgm0, H.TOSS_GAP_MIN = H.TOSS_GAP_MIN, 0  # 매시 1개만 먼저(빈틈 채움은 9-2j)
 LST9 = {"best-selling": [{"tacaItemId": k, "displayName": f"베스트{k}", "displayPrice": 9900, "discountRate": 40, "reviewScore": 4.8, "reviewCount": 1234, "isSoldOut": k == 3} for k in (1, 2, 3, 4)],
         "today-deals": [{"tacaItemId": 50, "displayName": "하루특가50", "displayPrice": 5000, "isSoldOut": False}], "best-categories/400": [{"tacaItemId": 41, "displayName": "뷰티41", "displayPrice": 12000, "isSoldOut": False}]}
 def i_http(url, body=None, headers=None, method=None):
@@ -2573,8 +2573,11 @@ assert "tb_2" in s9i and s9i["sold_701"]["it"] == [[2, "베스트2", 9900, 0, 0,
 q9i = s9i["thtoss"]["q"][-1]; assert q9i["k"] == "solo" and q9i["link"] == "https://toss.im/_m/S2" and q9i["text"].startswith(H.TOSS_NOTE) and "많이 팔린 순위 2위" in q9i["text"] and "게시 시점 가격" in q9i["text"]  # Threads 채움 후보
 assert json.load(open("posts.json")) == [] and i_prompts[0][0] == H.SOLO_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SOLO_PROMPT and "사실 한 줄" in H.SOLO_PROMPT  # 사이트 X
 i_sent.clear(); i_calls.clear(); H.toss_solo(s9i); assert not i_sent and not i_calls  # 그 시각 1번
-time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo({}); assert not i_sent and not i_calls  # 11시 = 진우 예약 시각 -> 건너뜀(API도 안 부름)
+s9e = {}; time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 진우 예약 11:30 앞뒤 10분 = 쉼(API도 안 부름, 기록 X -> 다음 실행에 다시)
+time.time = lambda: TK("2026-10-14 11:20"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 10분 앞도 쉼
 time.time = lambda: TK("2026-10-14 07:59"); H.toss_solo({}); assert not i_calls  # 8시 전 X
+time.time = lambda: TK("2026-10-14 11:41"); H.toss_solo(s9e); assert len(i_sent) == 1 and "tsolo_20261014_11" in s9e  # 예약 있는 시각도 앞뒤 10분 밖이면 올림(10/15 — 예전엔 그 시각 통째로 건너뜀)
+i_sent.clear(); i_calls.clear()
 H.ai_pick = lambda prompt, lines: i_prompts.append((prompt, lines)) or ([{"i": 0, "score": 6, "comment": "x"}] if "하루특가50" in lines[0] else [{"i": 0, "score": 8, "comment": "롤당 330원"}])
 i_sent.clear(); i_calls.clear(); time.time = lambda: TK("2026-10-14 15:05"); s9j = {}; H.toss_solo(s9j)  # 15시 = 하루특가(15 % 4 = 3) 6점 -> 다음 출처(순위)
 assert len(i_sent) == 1 and "베스트1" not in i_sent[0][1]["text"] and "15시 토스 많이 팔린 순위" in i_sent[0][1]["text"] and sum("/products/" in u and "/links" not in u for u in i_calls) == 2  # 출처 2곳까지
@@ -2583,6 +2586,38 @@ assert not i_sent and "tsolo_20261014_13" in s9k  # 7점↑ 없으면 그 시각
 time.time = lambda: TK("2026-10-14 08:05"); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "개당 사실"}]; i_sent.clear(); H.toss_solo({})  # 8시 = 순위 · 하루특가는 9시 전 X
 assert "8시 토스 많이 팔린 순위" in i_sent[0][1]["text"]
 assert "toss_relink, toss_picks, toss_solo, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
+# 9-2j) 10/15 진우 '꾸준하게': 8~23시 채널 딜 글이 마지막 글 뒤 TOSS_GAP_MIN(30)분 넘게 없으면 그 실행에 토스 1개 더(같은 후보·틀·거르기) — 못 찾으면 30분 뒤 다시(API·Claude 아낌),
+#       진우 예약 앞뒤 10분은 쉼, 마지막 글 = tg() 채널 올리기 기록(재오픈 답장·📋 모아보기 X, 다른 채팅 X) · seen(지난 실행) · posts.json
+assert tgm0 == 30 and H.TOSS_EV_PAD == 600; H.TOSS_GAP_MIN, H.RUN["ch_last"] = tgm0, 0
+json.dump([{"t": "2026-10-14 13:20", "text": "🔥 [쿠팡] 휴지 (9,000원)"}, {"t": "2026-10-14 13:40", "text": "📋 모아보기"}], open("posts.json", "w"), ensure_ascii=False)
+assert H.ch_last({}) == TK("2026-10-14 13:20") and H.ch_last({"ch_last": {"t": TK("2026-10-14 13:30")}}) == TK("2026-10-14 13:30")  # posts.json 📋 X
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "롤당 330원"}]; s9g = {"tsolo_20261014_13": 1}; i_sent.clear(); i_calls.clear()
+for at, n in (("13:45", 0), ("13:52", 1), ("14:07", 2), ("14:22", 2)):  # 25분 = 아직 · 32분 = 빈틈 1개 · 14시 = 매시 1개 · 그 뒤 15분(빈틈 시도 기록부터) = 아직
+    time.time = lambda: TK("2026-10-14 " + at); H.toss_solo(s9g); assert len(i_sent) == n, (at, len(i_sent))
+assert "tsolo_20261014_14" in s9g and s9g["tgap"]["t"] == TK("2026-10-14 13:52") and all(p["chat_id"] == H.CHANNEL and "🔥 <b>[토스] " in p["text"] and "게시 시점 가격" in p["text"] for _, p in i_sent)
+s9g["ch_last"] = {"t": TK("2026-10-14 14:07")}; i_sent.clear(); s9g.pop("tb_50")  # 실제론 tg()가 기록 · 14시 출처(생필품 빈 목록 -> 하루특가)에 후보 다시
+for at, n in (("14:37", 0), ("14:52", 1)):  # 30분 = 아직(넘어야) · 45분 = 1개
+    time.time = lambda: TK("2026-10-14 " + at); H.toss_solo(s9g); assert len(i_sent) == n, (at, len(i_sent))
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 6, "comment": "x"}]; i_sent.clear(); i_calls.clear(); s9g["ch_last"] = {"t": TK("2026-10-14 14:00")}; s9g.pop("tgap")
+time.time = lambda: TK("2026-10-14 14:52"); H.toss_solo(s9g); assert not i_sent and i_calls and s9g["tgap"]["t"] == TK("2026-10-14 14:52")  # 7점↑ 없음 -> 기록
+i_calls.clear(); time.time = lambda: TK("2026-10-14 15:07"); s9g["tsolo_20261014_15"] = 1; H.toss_solo(s9g); assert not i_calls  # 15분 뒤 = 다시 안 찾음
+time.time = lambda: TK("2026-10-14 15:23"); H.toss_solo(s9g); assert i_calls  # 31분 뒤 = 다시 찾음
+json.dump([{"at": "2026-10-14 16:00", "name": "x", "api": True}], open("ev9i.json", "w")); i_calls.clear(); s9g.pop("tgap")
+time.time = lambda: TK("2026-10-14 15:52"); H.toss_solo(s9g); assert not i_calls and "tgap" not in s9g  # 빈틈이어도 진우 예약 8분 전 = 쉼
+H.TOSS_GAP_MIN = 0; i_calls.clear(); H.toss_solo({"tsolo_20261014_15": 1, "ch_last": {"t": 0}}); assert not i_calls; H.TOSS_GAP_MIN = tgm0  # 0 = 끔
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "c"}]; json.dump([{"at": "2026-10-14 21:30", "deal": True}, {"at": "2026-10-14T21:10"}, {"at": "2026-10-14 24:00"}], open("ev9i.json", "w"))
+s9l = {"ev_2026-10-14 21:30": TK("2026-10-14 21:43")}; i_sent.clear(); time.time = lambda: TK("2026-10-14 21:43"); H.toss_solo(s9l); assert not i_sent  # 21:30 예약이 21:43에 나감 -> 실제 게시 뒤 10분도 쉼
+time.time = lambda: TK("2026-10-14 21:54"); H.toss_solo(s9l); assert len(i_sent) == 1  # 11분 뒤 = 올림 · 모양 틀린 예약 시각('T'·24시)은 건너뜀(멈추지 않음)
+assert 'seen["ev_" + e["at"]] = now' in inspect.getsource(H.toss_picks)  # 토스 이름 예약(api)도 실제 게시 시각을 남김 -> 같은 규칙으로 쉼
+i_sent.clear(); i_calls.clear(); time.time = lambda: TK("2026-10-14 23:40"); H.toss_solo({"tsolo_20261014_23": 1, "ch_last": {"t": TK("2026-10-14 23:00")}})
+assert len(i_sent) == 1 and "많이 팔린 순위" in i_sent[0][1]["text"] and not any("today-deals" in u for u in i_calls)  # 23:30 넘으면 하루특가('밤 12시까지') 출처 X
+tg9j, tg9s = tg_real, []; H.http = lambda url, body=None, headers=None, method=None: tg9s.append(body) or json.dumps({"ok": True, "result": {"message_id": 5}})
+H.RUN["ch_last"] = 0; time.time = lambda: TK("2026-10-14 16:10")
+tg9j("sendMessage", chat_id=H.CHANNEL, text="<i>n</i>\n\n📋 <b>오늘의 딜 모아보기</b>"); tg9j("sendMessage", chat_id=H.CHANNEL, text="🔔 다시 열렸어요", reply_parameters={"message_id": 3}); tg9j("sendMessage", chat_id=H.ADMIN, text="x")
+assert len(tg9s) == 3 and H.RUN["ch_last"] == 0  # 모아보기·재오픈 답장·관리자 방 = 딜 글 아님
+tg9j("sendMessage", chat_id=H.CHANNEL, text="🔥 <b>[토스] x</b>"); assert H.RUN["ch_last"] == TK("2026-10-14 16:10")
+tg9j("copyMessage", chat_id=H.CHANNEL, from_chat_id=1, message_id=2); assert H.RUN["ch_last"] == TK("2026-10-14 16:10")  # 승인 복사도 딜 글
+assert 'if RUN["ch_last"]:\n        seen["ch_last"] = {"t": RUN["ch_last"]}' in inspect.getsource(H.main) and "ch_last=0" in inspect.getsource(H.main); H.RUN["ch_last"] = 0
 H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS = sv9i; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = nc9i
 # 9-3) 인스타 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_PUBLIC이면 모아보기가 영상을 docs/reels/날짜.mp4(공개)에 + 캡션 저장, 봇 채팅엔 '자동 게시돼요' 확인용
 #      -> 22시(REEL_HOUR) 넘고 사이트에 뜨면(HEAD) REELS 컨테이너(video_url·캡션·피드·표지 1.5초) 1번 -> ig_publish가 처리 끝나면 발행('오늘 릴스')
@@ -2921,6 +2956,86 @@ assert '<script data-goatcounter="https://hdp.goatcounter.com/count" async src="
 S.GC_CODE = ""
 src10 = inspect.getsource(H)
 assert 'f"{SITE}p/{i}.html?ref=th"' in src10 and '👉 {SITE}p/{posts.index(p)}.html?ref=th"' in src10 and "지난 딜 전체 보기: {SITE}?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
+# 9-11) 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 성과 -> metrics.json(날짜·채널·글 id·몰·품목·가격대·시각·조회·반응), 수동 실행 METRICS_DAY면 그날 바로
+#       텔레그램 = 채널 웹(?before= 로 그날 처음까지, posts.json 글은 그 글·링크로), Threads = 글 목록 + insights, 인스타 = 목록(좋아요·댓글) + insights(views), 권한 없으면 빈 칸 + 이유(miss)
+assert mh0 == 5 and not os.path.exists(H.METRICS); H.METRICS_HOUR = mh0  # 앞 셀프체크(main 실행)에선 꺼 둠(99)
+sv10, m10 = (H.http, time.time, H.POSTS), []
+def tme10(mid, utc, text, views, btn="", react="", pre=""):
+    return (f'<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="hotdeal_pick/{mid}">{pre}<div class="tgme_widget_message_text js-message_text" dir="auto">{text}</div>'
+            f'{react}<span class="tgme_widget_message_views">{views}</span><time datetime="{utc}" class="time">x</time></div>' + (f'<a class="tgme_widget_message_inline_button url_button" href="{btn}">b</a>' if btn else "") + "</div>")
+P10 = {"https://t.me/s/hotdeal_pick": tme10(901, "2026-10-14T14:50:00+00:00", "<b>[토스] 다음날 글</b>", "3") + tme10(902, "2026-10-14T15:10:00+00:00", "x", "1"),  # 10/14 23:50 · 10/15 00:10(KST)
+       "https://t.me/s/hotdeal_pick?before=901": tme10(899, "2026-10-14T01:00:00+00:00", "<b>[광고] 훅</b><br><i>이 콘텐츠는 토스</i><br><br>🔥 <b>[토스] 크리넥스 3겹 휴지 30롤 (21,900원)</b><br>💡 롤당 730원", "1.2K", "https://toss.im/_m/A",
+                                                     '<div class="tgme_widget_message_reactions"><span class="tgme_reaction"><i class="emoji"><b>👍</b></i>12</span><span class="tgme_reaction tgme_reaction_paid"><i class="emoji">⭐</i>3</span>'
+                                                     '<span class="tgme_reaction"><tg-emoji emoji-id="5"><span class="tg-emoji-wrap"><i class="emoji"><b>❤</b></i></span></tg-emoji>2</span></div>')
+       + tme10(900, "2026-10-14T03:00:00+00:00", "🏆 리스트", "40")
+       + tme10(903, "2026-10-14T05:00:00+00:00", "🔔 <b>다시 열렸어요!</b> 크리넥스 휴지 30롤 — 21,900원", "7", pre='<div class="tgme_widget_message_reply"><div class="tgme_widget_message_text js-message_reply_text">🔥 [쿠팡] 프라이팬 (55,000원)</div></div>'),
+       "https://t.me/s/hotdeal_pick?before=899": tme10(897, "2026-10-13T14:00:00+00:00", "그제", "9") + tme10(898, "2026-10-13T14:59:00+00:00", "어제", "9")}
+json.dump([{"t": "2026-10-14 12:00", "mid": 900, "text": "🏆 지금 살 만한 딜 TOP5 (12시)\n1️⃣ a\n2️⃣ b", "url": None},
+           {"t": "2026-10-14 23:50", "mid": 901, "text": "🔥 [쿠팡] 피지오겔 페이셜 로션 150ml (21,670원)", "url": "https://link.coupang.com/a/x"}], open("posts.json", "w"), ensure_ascii=False)
+TH10 = [{"id": "t1", "text": "이 콘텐츠는 토스\n🔥 [토스] 비비고 왕만두 1.05kg 2개 (12,900원)", "timestamp": "2026-10-14T03:00:00+0000"}, {"id": "t2", "text": "🔥 [쿠팡] 샴푸 (55,000원)", "timestamp": "2026-10-14T09:00:00+0000"}]
+def http10(url, body=None, headers=None, method=None):
+    m10.append(url)
+    if url in P10: return P10[url]
+    if "/me/threads?" in url:
+        assert "since=1791903600&until=1791990000" in url and "access_token=tk" in url  # 10/14 0시~24시 KST
+        return json.dumps({"data": TH10 if "after=" not in url else [], "paging": {"next": url + "&after=c"}})
+    if url.endswith("/t1/insights?metric=views,likes,replies,reposts,quotes&access_token=tk"):
+        return json.dumps({"data": [{"name": "views", "values": [{"value": 340}]}, {"name": "likes", "values": [{"value": 5}]}, {"name": "replies", "values": [{"value": 0}]},
+                                    {"name": "reposts", "values": [{"value": 1}]}, {"name": "quotes", "total_value": {"value": 0}}]})
+    if url.endswith("/t2/insights?metric=views,likes,replies,reposts,quotes&access_token=tk"): return json.dumps({"data": [{"name": n, "values": [{"value": 0}]} for n in ("views", "likes", "replies", "reposts", "quotes")]})
+    if "/178/media?fields=id,caption,timestamp,like_count,comments_count" in url:
+        assert headers == {"Authorization": "Bearer pt"}
+        return json.dumps({"data": [{"id": "g1", "caption": "📌 오늘의 딜", "timestamp": "2026-10-14T12:00:00+0000", "like_count": 4, "comments_count": 1},
+                                    {"id": "g0", "caption": "x", "timestamp": "2026-10-13T12:00:00+0000", "like_count": 1, "comments_count": 0}]})
+    if "/g1/insights?metric=views" in url:
+        e = H.urllib.error.HTTPError(url, 403, "x", {}, None); e.body = '{"error":{"message":"(#10) Application does not have permission for this action","code":10}}'; raise e
+    raise AssertionError(url)
+H.http, H.E["THREADS_TOKEN"] = http10, "tk"; H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); H.E.pop("METRICS_DAY", None)
+s10 = {}; time.time = lambda: TK("2026-10-15 04:52"); H.metrics(s10); assert not m10 and not s10  # 5시 전 X
+time.time = lambda: TK("2026-10-15 05:07"); H.metrics(s10)
+d10 = json.load(open(H.METRICS)); r10 = d10["2026-10-14"]["rows"]
+assert list(d10) == ["2026-10-14"] and "mt_2026-10-14" in s10 and d10["2026-10-14"]["at"] == "2026-10-15 05:07"
+assert [(r["ch"], r["id"]) for r in r10] == [("tg", 901), ("tg", 899), ("tg", 900), ("tg", 903), ("th", "t1"), ("th", "t2"), ("ig", "g1")]  # 그날 것만(00:10·전날 X), 쪽 넘김은 그날 처음 지나면 멈춤
+assert r10[0] == {"date": "2026-10-14", "ch": "tg", "id": 901, "shop": "coupang", "cat": "화장품", "price": "1~3만", "at": "23:50", "views": 3, "react": 0}  # posts.json 글 = 그 글·링크로
+assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "1~3만", "at": "10:00", "views": 1200, "react": 17}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함)
+assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] == 40
+assert (r10[3]["cat"], r10[3]["shop"], r10[3]["price"]) == ("생필품", "기타", "")  # 재오픈 답장 = 인용(원글 쿠팡 프라이팬 55,000원) 말고 답장 본문(괄호 없는 가격은 못 읽음 = 사이트 price_won 그대로)
+r10 = [r for r in r10 if r["id"] != 903]
+assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "1~3만", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0}
+assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0  # 0 = 빈 칸 아님
+assert r10[5] == {"date": "2026-10-14", "ch": "ig", "id": "g1", "shop": "기타", "cat": "기타", "price": "", "at": "21:00", "views": None, "react": 5, "likes": 4, "replies": 1}
+assert d10["2026-10-14"]["miss"] == {"ig": "조회수 권한 없음(토큰 권한 instagram_business_manage_insights 확인): 403 (#10) Application does not have permission for this action"}
+assert sum(1 for l in open(H.METRICS, encoding="utf-8") if l.startswith('{"date"')) == 7  # 글 1개 = 1줄
+m10.clear(); time.time = lambda: TK("2026-10-15 05:22"); H.metrics(s10); assert not m10  # 하루 1번
+i10 = []
+def http10b(url, body=None, headers=None, method=None):  # Threads insights 권한 없음 -> 첫 글에서 멈추고 이유만
+    if "/insights?metric=views,likes" in url:
+        i10.append(url); e = H.urllib.error.HTTPError(url, 400, "x", {}, None); e.body = '{"error":{"message":"Application does not have permission for this action","code":10}}'; raise e
+    if "t.me/s/" in url: raise H.urllib.error.URLError("blocked")
+    return http10(url, body, headers, method)
+H.http, H.E["METRICS_DAY"] = http10b, "2026-10-14"; m10.clear(); H.metrics(s10); s10b = {}; H.metrics(s10b); assert s10b == {}  # 수동 실행 = 이미 모은 날도 다시, 기록 X(오늘치 점검 뒤 다음 날 5시에 전체 다시)
+d10 = json.load(open(H.METRICS)); r10 = d10["2026-10-14"]["rows"]
+assert len(i10) == 2 and [r["views"] for r in r10 if r["ch"] == "th"] == [None, None] and [r["react"] for r in r10 if r["ch"] == "th"] == [None, None]  # 실행마다 첫 글에서 멈춤(2번 실행 = 2번)
+assert d10["2026-10-14"]["miss"]["th"].startswith("insights 권한 없음(토큰 권한 threads_manage_insights 확인): 400 Application does not have permission") and d10["2026-10-14"]["miss"]["tg"].startswith("채널 웹 못 읽음: ")
+del H.E["METRICS_DAY"]
+def http10d(url, body=None, headers=None, method=None):  # 지운 글(400 code 100)·빈 insights = 그 글만 빈 칸, 나머지는 계속 물음
+    if url.endswith("/t1/insights?metric=views,likes,replies,reposts,quotes&access_token=tk"):
+        e = H.urllib.error.HTTPError(url, 400, "x", {}, None); e.body = '{"error":{"message":"Object does not exist","code":100}}'; raise e
+    if "/g1/insights?metric=views" in url: return json.dumps({"data": []})
+    return http10(url, body, headers, method)
+H.http = http10d; s10d = {}; time.time = lambda: TK("2026-10-15 05:37"); H.metrics(s10d); r10 = json.load(open(H.METRICS))["2026-10-14"]
+assert [(r["views"], r["react"]) for r in r10["rows"] if r["ch"] != "tg"] == [(None, None), (0, 0), (None, 5)] and set(r10["miss"]) == {"th_part", "ig_part"} and r10["miss"]["th_part"] == "일부 글 insights 못 읽음: 400 Object does not exist"
+assert "mt_2026-10-14" in s10d  # 4xx·빈 응답은 다시 해도 같음 -> 끝
+def http10e(url, body=None, headers=None, method=None): raise H.urllib.error.URLError("timed out")
+H.http = http10e; s10e = {}; H.metrics(s10e); assert s10e == {}  # 네트워크 오류 = 8시까지 다음 실행에 다시
+time.time = lambda: TK("2026-10-15 08:07"); H.metrics(s10e); assert "mt_2026-10-14" in s10e and json.load(open(H.METRICS))["2026-10-14"]["miss"]["tg"] == "채널 웹 못 읽음: URLError('timed out')"
+del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda: TK("2026-10-17 06:00"); H.http = http10; H.metrics({})  # 토큰 없음 = 이유만, 14일만 남김·최신 맨 위
+d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
+json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
+assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics):" in inspect.getsource(H.main)
+wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
+os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
