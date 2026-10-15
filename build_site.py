@@ -32,8 +32,8 @@ a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header
 .tg{display:flex;align-items:center;justify-content:center;min-height:50px;padding:10px;margin:16px 0;border-radius:12px;background:#229ed9;color:#fff;text-decoration:none;font-weight:700;text-align:center}
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}#today details{margin-top:10px}#today summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:#4e5968}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64da;outline-offset:2px}
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e8eaee;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1;max-width:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7684;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#1b64da;background:#e8f1fd}main:has(.bar){padding-bottom:84px}
-.bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}.k-hot{--c:#e03131}.k-toss{--c:#1b64da}.k-life{--c:#0b7d3e}.k-beauty{--c:#d6336c}.k-days{--c:#4e5968}.k-today{--c:#f59f00;--t:#191f28}.k-brand{--c:#7048e8}.bar i{display:flex;color:var(--c)}.inapp .find{box-shadow:0 8px 10px -10px rgba(25,31,40,.35)}.inapp .bar.top{display:flex;position:static;justify-content:flex-start;overflow-x:auto;gap:6px;padding:8px 0 4px;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}.inapp .bar.top::-webkit-scrollbar{display:none}.inapp .bar.top a{flex:none;max-width:none;flex-direction:row;min-height:40px;padding:0 13px 0 5px;gap:6px;border-radius:20px;background:#fff;border:1px solid #e1e4e8;color:#333d4b;font-size:14px;font-weight:700}.inapp .bar.top i{width:22px;height:22px;border-radius:11px;background:var(--c);color:#fff;align-items:center;justify-content:center}.inapp .bar.top svg{width:13px;height:13px;stroke-width:2.4}.inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}.inapp .bar.top a[aria-current=true] i{background:rgba(255,255,255,.28);color:var(--t,#fff)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e8eaee;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar::-webkit-scrollbar{display:none}.bar a:first-child{margin-left:auto}.bar a:last-child{margin-right:auto}.bar a{flex:1 0 54px;max-width:88px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7684;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#1b64da;background:#e8f1fd}main:has(.bar){padding-bottom:84px}
+.bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}.k-hot{--c:#e03131}.k-toss{--c:#1b64da}.k-coupang{--c:#c2410c}.k-naver{--c:#087f5b}.k-life{--c:#0b7d3e}.k-beauty{--c:#d6336c}.k-days{--c:#4e5968}.k-today{--c:#f59f00;--t:#191f28}.k-brand{--c:#7048e8}.bar i{display:flex;color:var(--c)}.inapp .find{box-shadow:0 8px 10px -10px rgba(25,31,40,.35)}.inapp .bar.top{display:flex;position:static;justify-content:flex-start;overflow-x:auto;gap:6px;padding:8px 0 4px;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}.inapp .bar.top::-webkit-scrollbar{display:none}.inapp .bar.top a{flex:none;max-width:none;flex-direction:row;min-height:40px;padding:0 13px 0 5px;gap:6px;border-radius:20px;background:#fff;border:1px solid #e1e4e8;color:#333d4b;font-size:14px;font-weight:700}.inapp .bar.top i{width:22px;height:22px;border-radius:11px;background:var(--c);color:#fff;align-items:center;justify-content:center}.inapp .bar.top svg{width:13px;height:13px;stroke-width:2.4}.inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}.inapp .bar.top a[aria-current=true] i{background:rgba(255,255,255,.28);color:var(--t,#fff)}
 .more{background:#eef4ff;border-radius:16px;padding:14px;margin:18px 0 0}.more h2{font-size:17px;font-weight:800;margin:0 2px 10px}.more div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.more a{display:flex;align-items:center;justify-content:center;gap:6px;min-height:52px;padding:0 4px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(25,31,40,.06);color:#191f28;text-decoration:none;font-size:15px;font-weight:700;min-width:0}.more i{flex:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:14px;background:var(--c);color:#fff}.more svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .day h2{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:22px 2px 2px}.day>.t{margin:0 2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
 .g{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:16px;padding:12px;border:1px solid #eef0f3;box-shadow:0 1px 2px rgba(25,31,40,.04);min-width:0}.g .s{min-height:22px;padding:2px 30px 0 0;font-size:12px;color:#8b95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -295,8 +295,7 @@ b.textContent=s<=0?'⏰ 마감됐어요':s<60?'⏰ 곧 마감':'⏰ 마감까지
 def keys(p):
     """검색 칩 필터용 키(data-k): 몰(쿠팡·토스) · 생필품·식품·화장품 · 브랜드 · 마감."""
     title = title_of(p["text"])
-    store = parse(title)[0]
-    return " ".join([k for k in ("쿠팡", "토스") if k in store] + [n.split()[-1] for _, n, rx in CATS if re.search(rx, title)]
+    return " ".join([{"toss": "토스", "coupang": "쿠팡", "naver": "네이버"}[k] for k in [shop_of(p)] if k] + [n.split()[-1] for _, n, rx in CATS if re.search(rx, title)]
                     + (["식품"] if re.search(FOOD, title) else []) + (["브랜드"] if p.get("tag") == "정품" or re.search(BRAND, title) else [])
                     + (["마감"] if any(c == "b2" for c, _ in badges(p)) else []))
 
@@ -346,14 +345,29 @@ def cat_sections(posts, days):
     return out
 
 
-def toss_section(posts, days):
-    """홈 '토스' 칸(10/9 진우 '쿠팡·토스 주력'): 최근 2일 커뮤니티 딜 중 토스 쉐어링크가 붙은 것(최신 6개) + 텔레그램 토스 추천 버튼.
-    토스 API 상품(베스트·하루특가)은 사이트에 안 올림 — API 승인 범위가 채널·Threads(신청서 '사이트 전시·가격 비교 안 함')라서 버튼으로 채널에 보냄."""
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:2] and not p["text"].startswith("📋")
-          and toss_share(p.get("url"))][::-1][:6]
-    return (f'<section class="day" id="toss" aria-labelledby="tossh"><h2 id="tossh">💙 토스 딜{f" {len(ds)}개" if ds else ""}</h2>'
-            + (f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>' if ds else "")
-            + f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a></section>')
+SHOP_NOTES = {  # 몰 칸 맨 위 대가성 문구 — hotdeal.py DISCLOSURE·TOSS_NOTE·NAVER_NOTE와 같은 글자(변형 금지, 셀프체크로 맞춤)
+    "toss": "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다.",
+    "coupang": "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+    "naver": "이 포스팅은 네이버 쇼핑 커넥트 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다."}
+
+
+def shop_of(p):
+    """3사 몰('toss'·'coupang'·'naver', 아니면 ''): 제목 [몰] 또는 구매 링크 주소(토스 = 쉐어링크)."""
+    tag, url = parse(title_of(p["text"]))[0], p.get("url") or ""
+    host = urllib.parse.urlsplit(url).netloc
+    return ("toss" if toss_share(url) or "토스" in tag else "coupang" if "쿠팡" in tag or host in ("link.coupang.com", "coupa.ng")
+            else "naver" if re.search("네이버|스마트스토어", tag) or host in NAVER_HOSTS + ("smartstore.naver.com", "brand.naver.com") else "")
+
+
+def shop_section(posts, days, key):
+    """홈 몰 칸(10/15 진우 '토스·쿠팡·네이버 탭'): 최근 3일 그 몰 딜 최신 24개 + 맨 위 그 몰 대가성 문구. 쿠팡·네이버는 0개면 칸·탭 없음,
+    토스는 텔레그램 추천 버튼 때문에 늘 있음 — 토스 API 상품(베스트·하루특가)은 사이트에 안 올림(API 승인 범위 = 채널·Threads, '사이트 전시·가격 비교 안 함')."""
+    head, extra = {"toss": ("💙 토스", f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a>'),
+                   "coupang": ("🚀 쿠팡", f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>'),
+                   "naver": ("💚 네이버", "")}[key]
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and shop_of(p) == key and (key != "toss" or toss_share(p.get("url")))][::-1][:24]  # 토스 칸 = 쉐어링크 딜만(예전 그대로)
+    return (ds or key == "toss") and (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{head} 딜{f" {len(ds)}개" if ds else ""}</h2>'
+                                      f'<div class="t">{SHOP_NOTES[key]}</div>' + (f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>' if ds else "") + f'{extra}</section>')
 
 
 def brand_section(posts, days):
@@ -365,11 +379,11 @@ def brand_section(posts, days):
 
 
 def day_grids(posts, days):
-    """날짜별 2열 격자. 날짜 안에서는 제휴 링크 딜(쿠팡·토스 등) 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자')."""
+    """날짜별 2열 격자. 날짜 안에서는 3사(토스·쿠팡·네이버) 딜 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자' · 10/15 3사 먼저)."""
     out = []
     for n, day in enumerate(days):
         ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")),
-                    key=lambda x: (not aff(x[1].get("url")), [-ord(c) for c in x[1]["t"]]))
+                    key=lambda x: (not shop_of(x[1]), [-ord(c) for c in x[1]["t"]]))
         out.append(f'<section class="day" id="d{n}" aria-labelledby="d{n}h"><h2 id="d{n}h">{int(day[5:7])}월 {int(day[8:])}일 딜 {len(ds)}개</h2>'
                    f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
     return "".join(out)
@@ -380,6 +394,8 @@ ICONS = {  # 아래 바 아이콘 = Lucide(ISC 라이선스) 선 아이콘 — �
     "hot": '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
     "today": '<path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
     "toss": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    "coupang": '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+    "naver": '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
     "life": '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>',
     "beauty": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
     "brand": '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
@@ -404,7 +420,7 @@ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.c
 L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script>"""
 
 # 검색·필터(10/10 진우 'UI 편하게'): 맨 위 고정 검색창 + 칩. 홈은 '전체' 칸(최근 2일), all.html은 전체 딜에서 걸러 보여 줌. JS가 꺼져 있으면 그냥 안 걸러짐
-CHIPS = (("쿠팡", "쿠팡"), ("토스", "토스"), ("생필품", "🧻 생필품"), ("식품", "🍚 식품"), ("화장품", "💄 화장품"), ("브랜드", "✨ 브랜드"), ("마감", "⏰ 오늘 마감"))
+CHIPS = (("토스", "토스"), ("쿠팡", "쿠팡"), ("네이버", "네이버"), ("생필품", "🧻 생필품"), ("식품", "🍚 식품"), ("화장품", "💄 화장품"), ("브랜드", "✨ 브랜드"), ("마감", "⏰ 오늘 마감"))
 FIND = ('<div class="find" role="search"><input id="q" type="search" placeholder="🔎 딜 검색 (예: 휴지, 설화수)" aria-label="딜 검색" autocomplete="off">'
         '<div class="chips">' + "".join(f'<button type="button" data-c="{k}" aria-pressed="false">{n}</button>' for k, n in CHIPS) + '</div><div id="qn" class="t" hidden></div></div>')
 FIND_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.getElementById('days')||document.body;
@@ -490,8 +506,8 @@ def build(posts, out="docs"):
         st, sd, ld = seo(i, p)
         open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
-    panes = [("hot", "🏆 인기", hot_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("toss", "💙 토스", toss_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)),
-             *cat_sections(posts, days), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
+    panes = [("hot", "🏆 인기", hot_section(posts, days)), *((k, n, shop_section(posts, days, k)) for k, n in (("toss", "💙 토스"), ("coupang", "🚀 쿠팡"), ("naver", "💚 네이버"))),
+             *cat_sections(posts, days), ("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로

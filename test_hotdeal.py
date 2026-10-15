@@ -1508,7 +1508,7 @@ deal = open("docs3/p/4.html").read()
 assert "📄 원글에서 구매 링크 보기" in deal and 'class="btn2"' in deal and "🛒 구매하러 가기" not in deal and 'class="btn2"' not in open("docs3/p/1.html").read()
 assert S.find_url("[쿠팡] 듀라셀 AA 20개입 1개/ 9,730원").endswith(urllib.parse.quote("듀라셀 AA 20개입 1개")) and not S.community("https://click.linkprice.com/x") and not S.community(None)
 assert top.index("<b>01</b><span>[G마켓] 첫딜") < top.index("<b>02</b><span>[토스쇼핑] 둘째 &lt;딜&gt;") and 'href="https://a1"' in top
-assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('id="today"') < idx.index("어제딜")
+assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('id="today"') < idx.index('id="d0"')
 S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임
 # 6-3) 카드 순서(10/8 진우 '쿠팡·토스 잘 팔리게'): 점수 높은 순, 같은 점수면 제휴 링크(쿠팡·토스 등) 먼저, 그다음 게시 순, 모아보기·다른 날 제외
 #      카드·인스타 캡션·릴스·사이트 맨 위 카드 딜 번호가 모두 이 순서(day_deals 하나)
@@ -1544,14 +1544,14 @@ top5 = open("docs5/index.html").read().split('id="today"')[1].split("</section>"
 assert top5.count('class="pick"') == 3 and top5.index("<b>01</b><span>[G마켓] 추가딜1") < top5.index("<b>02</b><span>[G마켓] 주소없는딜") < top5.index("<b>03</b><span>[뽐뿌몰] 라면")
 os.remove("docs5/cards/2026-10-09.json"); S.build(g, "docs5")
 bar = idx.split('<nav class="bar"')[1].split("</nav>")[0]
-assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg></i>([^<]+)</a>', bar) == [("#today", "카드"), ("#toss", "토스"), ("#days", "전체")]  # 반응 딜·품목 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg></i>([^<]+)</a>', bar) == [("#toss", "토스"), ("#coupang", "쿠팡"), ("#today", "카드"), ("#days", "전체")]  # 반응 딜·품목 딜·네이버 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
 assert "fbclid" in S.PANE_JS and "ig&&t&&t.parentNode||ps[0]" in S.PANE_JS  # 인스타·Threads에서 오면 첫 칸 = 카드 딜(캡션 '맨 위에서 카드 번호')
-assert '<nav class="bar" aria-label="바로가기"><a href="https://hotdealpick.kr/#today" class="k-today">' in allp  # 지난 딜 전체에선 홈 칸으로
-assert idx.count('<div class="pane">') == 3 and idx.index('<div class="pane"><section class="card" id="today"') < idx.index('<div class="pane"><div id="days">') < idx.index('<nav class="bar"') < idx.index(S.PANE_JS)
+assert '<nav class="bar" aria-label="바로가기"><a href="https://hotdealpick.kr/#toss" class="k-toss">' in allp  # 지난 딜 전체에선 홈 칸으로
+assert idx.count('<div class="pane">') == 4 and idx.index('<div class="pane"><section class="card" id="today"') < idx.index('<div class="pane"><div id="days">') < idx.index('<nav class="bar"') < idx.index(S.PANE_JS)
 assert 'href="https://hotdealpick.kr/all.html">지난 딜 전체 보기' in idx.split('id="days"')[1]  # 날짜 탭 대신 '📅 전체' 칸 끝에 지난 딜 링크
 d0 = idx.split('id="d0"')[1].split("</section>")[0]
 assert "10월 9일 딜 8개" in d0 and d0.count('class="g"') == 8 and "그제딜" not in idx and 'id="d1"' in idx and "어제딜" in idx and 'id="d2"' not in idx
-assert d0.index("생수 40병") < d0.index("추가딜4") < d0.index("추가딜0") < d0.index("라면")  # 토스(제휴)는 오래됐어도 맨 앞, 나머지는 최신 순
+assert d0.index("생수 40병") < d0.index("추가딜4") < d0.index("추가딜0") < d0.index("라면")  # 3사(토스)는 오래됐어도 맨 앞, 나머지는 최신 순(10/15~ 링크프라이스 G마켓도 3사 뒤)
 assert '<div class="s">토스쇼핑 · 08:00</div>' in d0 and '<div class="pr">5,900원</div>' in d0 and '<div class="u">병당 148원</div>' in d0 and 'href="https://toss.im/_m/w" rel="nofollow sponsored noopener"' in d0
 assert 'class="o" href="https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&amp;no=9"' in d0 and '🔎 같은 상품 찾기' in d0 and 'aria-label="라면 원글에서 구매 링크 보기"' in d0
 assert f'class="o" href="https://hotdealpick.kr/p/2.html" aria-label="주소없는딜 자세히 보기">자세히 →' in d0
@@ -1559,19 +1559,19 @@ assert all(f"{w}" in allp for w in ("10월 9일 딜 8개", "10월 8일 딜 1개"
 # 6-5) 토스 칸(10/9 진우 '쿠팡·토스 주력'): 홈 맨 위 카드 딜 다음 = 최근 2일 커뮤니티 딜 중 토스 쉐어링크 딜(최신 6개) + 텔레그램 토스 추천 버튼,
 #      탭 맨 앞 '💙 토스'. 토스 API 상품은 사이트에 안 올림(승인 범위 = 채널·Threads) -> 버튼은 채널 웹 보기로. 지난 딜 전체엔 토스 칸 없음
 tsec = idx.split('id="toss"')[1].split("</section>")[0]
-assert idx.index('id="today"') < idx.index('id="toss"') < idx.index('id="days"') and "💙 토스 딜 1개" in tsec and tsec.count('class="g"') == 1 and "생수 40병" in tsec
+assert idx.index('id="toss"') < idx.index('id="today"') < idx.index('id="days"') and "💙 토스 딜 1개" in tsec and S.SHOP_NOTES["toss"] in tsec and tsec.count('class="g"') == 1 and "생수 40병" in tsec
 assert f'href="{S.CHANNEL_WEB}"' in tsec and S.CHANNEL_WEB == "https://t.me/s/hotdeal_pick" and 'id="toss"' not in allp
 tt = [{"t": f"2026-10-0{d} 1{k}:00", "text": f"🔥 [토스] 토스{d}{k} (1,000원)", "url": f"https://toss.im/_m/{d}{k}", "s": 6} for d in (7, 8, 9) for k in range(4)]
 tt += [{"t": "2026-10-09 15:00", "text": "🔥 [토스] 원글토스 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "s": 7},
        {"t": "2026-10-09 15:30", "text": "🔥 [토스] 상품주소토스 (1,000원)", "url": "https://toss.shopping/t/77", "s": 7}]  # 발급 실패로 남은 상품 주소(쉐어링크 아님)
 S.build(tt, "docs6"); ts6 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
-assert ts6.count('class="g"') == 6 and "토스 딜 6개" in ts6 and ts6.index("토스93") < ts6.index("토스90") < ts6.index("토스83") < ts6.index("토스82")
-assert "토스81" not in ts6 and "토스7" not in ts6 and "원글토스" not in ts6 and "상품주소토스" not in ts6  # 최신 6개만, 2일 지난 딜·쉐어링크 없는 토스 딜 제외
-S.build([{"t": "2026-10-07 15:00", "text": "🔥 [토스] 그제토스 (1,000원)", "url": "https://toss.im/_m/z", "s": 7},
+assert ts6.count('class="g"') == 12 and "토스 딜 12개" in ts6 and ts6.index("토스93") < ts6.index("토스90") < ts6.index("토스83") < ts6.index("토스70")  # 10/15: 최근 3일·최대 24개
+assert "원글토스" not in ts6 and "상품주소토스" not in ts6  # 쉐어링크 없는 토스 딜 제외
+S.build([{"t": "2026-10-06 15:00", "text": "🔥 [토스] 그제토스 (1,000원)", "url": "https://toss.im/_m/z", "s": 7}, {"t": "2026-10-07 15:00", "text": "🔥 [G마켓] 그제 (1,000원)", "url": "https://g", "s": 7},
          {"t": "2026-10-08 15:00", "text": "🔥 [G마켓] 어제 (1,000원)", "url": "https://g", "s": 7},
          {"t": "2026-10-09 15:00", "text": "🔥 [쿠팡] 휴지 (1,000원)", "url": "https://buy", "s": 7}], "docs6")
 ts0 = open("docs6/index.html").read().split('id="toss"')[1].split("</section>")[0]
-assert 'class="grid"' not in ts0 and "💙 토스 딜</h2>" in ts0 and S.CHANNEL_WEB in ts0  # 최근 2일엔 토스 딜이 없음(그제 딜은 제외) -> 추천 버튼만
+assert 'class="grid"' not in ts0 and "💙 토스 딜</h2>" in ts0 and S.CHANNEL_WEB in ts0  # 최근 3일엔 토스 딜이 없음(나흘 전 딜은 제외) -> 추천 버튼만
 
 # 6-6) 홈 '🏆 지금 반응 좋은 딜'(최근 2일, pop 높은 6개, 2개 이상일 때만, 맨 위) + 품목별 칸 '🧻 생필품'·'💄 화장품'(10/9 진우: 최근 3일, 제목 키워드, 최신 6개, 없으면 칸·탭 없음)
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
@@ -1590,9 +1590,17 @@ assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index(
 assert '<div class="rx">👀 분당 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
 assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
-assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
-assert i7.count('<div class="pane">') == 5 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
-assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "life", "beauty"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#coupang", "쿠팡"), ("#naver", "네이버"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
+assert i7.count('<div class="pane">') == 7 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
+assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "coupang", "naver", "life", "beauty"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
+# 6-6b) 3사 탭(10/15 진우 '토스·쿠팡·네이버 탭'): 쿠팡·네이버 칸 = 제목 [몰] 또는 구매 링크 · 최근 3일 · 최신 24개 · 맨 위 그 몰 대가성 문구(hotdeal.py와 같은 글자) · 쿠팡 칸 = 골드박스 버튼
+assert S.SHOP_NOTES == {"toss": H.TOSS_NOTE, "coupang": H.DISCLOSURE, "naver": H.NAVER_NOTE}
+cp7, nv7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("coupang", "naver"))
+assert "🚀 쿠팡 딜 1개" in cp7 and "아이스크림" in cp7 and S.SHOP_NOTES["coupang"] in cp7 and f'href="{S.GOLDBOX}"' in cp7 and not re.search("옥션|G마켓|네이버", cp7)
+assert "💚 네이버 딜 1개" in nv7 and "폼클렌징" in nv7 and S.SHOP_NOTES["naver"] in nv7 and "아이스크림" not in nv7
+assert [S.shop_of({"text": f"🔥 [{m}] x (1원)", "url": u}) for m, u in (("쿠팡와우", ""), ("G마켓", "https://coupa.ng/x"), ("스마트스토어", ""), ("G마켓", "https://smartstore.naver.com/x"), ("토스", ""), ("G마켓", "https://g"))] == ["coupang", "coupang", "naver", "naver", "toss", ""]
+assert S.keys({"t": "2026-10-09 10:00", "text": "🔥 [네이버멤버쉽] 휴지 (1원)"}).startswith("네이버 ") and [k for k, _ in S.CHIPS[:3]] == ["토스", "쿠팡", "네이버"]
+assert "overflow-x:auto" in S.CSS.split(".bar{", 1)[1].split("}", 1)[0] and ".bar a:first-child{margin-left:auto}.bar a:last-child{margin-right:auto}" in S.CSS and "white-space:nowrap" in S.CSS  # 좁으면 가로 스크롤(넓으면 가운데)
 # 10/13 진우: 앱 안 브라우저(Threads·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가림 -> 검색창 아래 sticky 한 줄(같은 아이콘·이름, 가로 스크롤) + 아래 여백, 일반 브라우저는 아래 바 그대로
 top7 = i7.split('<nav class="bar top" aria-label="바로가기">')[1].split("</nav>")[0]; bot7 = i7.split('<nav class="bar"')[1].split("</nav>")[0]
 assert top7 == bot7.split(">", 1)[1] and i7.index('<div class="find"') < i7.index('<nav class="bar top"') < i7.index('<div class="pane">')  # 같은 메뉴, 검색창(sticky) 안
@@ -1669,7 +1677,7 @@ i8 = open("docs8/index.html").read(); ld8 = json.loads(i8.split('<script type="a
 assert ld8["@graph"][1]["sameAs"] == [S.INSTA, S.THREADS, S.BLOG, S.CHANNEL] and "<title>핫딜픽 - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)</title>" in i8
 assert S.summary("🔥 [G마켓] 우유 (1원)") == "" and '<meta name="description" content="1원 · G마켓 · 10/9 게시 · 핫딜픽">' in (S.build([{"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 우유 (1원)", "url": "https://g"}], "docs8") and open("docs8/p/0.html").read())  # 코멘트 없으면 제목
 os.makedirs("docs7/cards", exist_ok=True); open("docs7/cards/2026-10-09.png", "wb").write(b"x"); S.build(hp, "docs7"); i7c = open("docs7/index.html").read(); os.remove("docs7/cards/2026-10-09.png")
-assert i7c.index('<div class="pane"><section class="day" id="hot"') < i7c.index('<div class="pane"><section class="card" id="today"') < i7c.index('<div class="pane"><section class="day" id="toss"')  # 처음 보이는 칸 = 인기(10/9 진우 선택), 카드 딜은 그다음
+assert i7c.index('<div class="pane"><section class="day" id="hot"') < i7c.index('<div class="pane"><section class="day" id="toss"') < i7c.index('<div class="pane"><section class="card" id="today"')  # 처음 보이는 칸 = 인기(10/9 진우 선택), 카드 딜은 그다음
 S.build(hp[2:3] + hp[5:6] + [{**hp[4], "text": "🔥 [네이버] 우유 (2,990원)"}], "docs7"); i7 = open("docs7/index.html").read()
 assert 'id="hot"' not in i7 and 'id="beauty"' not in i7 and "#beauty" not in i7 and 'id="life"' in i7  # 반응 딜 1개·화장품 0개 -> 칸·탭 없음
 
