@@ -883,12 +883,13 @@ def admin_deal(lines, link, mid):
     return True
 
 
-def publish_approved():
+def publish_approved(seen=None):
     """관리자 입력 처리. 텔레그램이 입력을 24시간 보관하므로 15분 주기로 충분.
     1) 사본·초안에 링크로 답장 -> 구매 버튼 교체 (쿠팡·토스·네이버 링크는 답장 없이 링크만 보내도 가장 최근 같은 몰 사본)
     2) 봇에게 '제목 줄 + 링크' 새로 보내기 -> 제휴 링크면 Claude 코멘트 달아 채널에 바로(admin_deal, 10/10~), 아니면·실패면 그 딜 초안 생성
     3) ✅/❌ -> 채널 게시/패스 (답장하고 바로 ✅ 눌러도 교체된 링크로 게시)
-    4) 음악 파일 보내기 -> 릴스 배경음악 목록(music.json)에 추가"""
+    4) 음악 파일 보내기 -> 릴스 배경음악 목록(music.json)에 추가
+    5) '#일상 …'(사진 + 캡션) -> daily_in(사이트에 사진 저장 -> daily_post가 Threads에)"""
     ups = tg("getUpdates", allowed_updates=["callback_query", "message"]) or []
     fixed = {}
     for u in ups:
@@ -904,6 +905,9 @@ def publish_approved():
                text=f"🎵 릴스 배경음악 등록 (총 {len(mus)}곡, 날마다 돌아가며 사용)")
             continue
         text = m.get("text") or m.get("caption") or ""  # 사진에 글을 붙여 보내도(캡션)
+        if text.lstrip().startswith("#일상") and str(m.get("from", {}).get("id")) == ADMIN:
+            daily_in({} if seen is None else seen, m, text.strip())
+            continue
         urls = [u.rstrip(").,]>」』'\"") for u in re.findall(r"https?://\S+", text)]  # (링크) 처럼 괄호·문장부호가 붙어도 링크만
         link = next((u for u in urls if aff_note(u)), urls[0] if urls else None)  # 상품 주소 + 제휴 링크를 같이 보내면 제휴 링크로
         if not link or str(m.get("from", {}).get("id")) != ADMIN:
@@ -1279,12 +1283,13 @@ def top_deals(seen):
     if not hrs or key in seen or busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에
         return
     seen[key] = time.time()
+    wb = wx_bonus(seen)  # 날씨 가점(10/15 진우): 반응 점수까지 같을 때만 먼저 — 🔥 등급·Threads 표시·반응 순서는 그대로
     day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
     since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
     prev = time.strftime("%Y-%m-%d ", time.gmtime(time.time() + 9 * 3600 - 86400)) + f"{TOP_HOURS[-1]:02d}:00" if hrs[-1] == TOP_HOURS[0] else since  # 첫 리스트(12시)는 어젯밤(전날 마지막 리스트 뒤) 좋은 딜도
     top = sorted((p for p in load(POSTS, []) if p.get("mid") and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
                                                               or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
-                 key=lambda p: (not th_tier(p["text"]), bool(p.get("th")), -(p.get("pop") or 0)))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
+                 key=lambda p: (not th_tier(p["text"]), bool(p.get("th")), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) < 3:
         return
     items = []
@@ -2390,12 +2395,12 @@ def threads(seen):
     th_bundle(seen, "card", text[:480], image=url)
 
 
-def th_post(tok, text, link=None, image=None):
+def th_post(tok, text, link=None, image=None, tag="핫딜"):
     """Threads 글 1개: image = 사진 글(30초 처리 대기), link = 링크 미리보기(th_text), 둘 다 없으면 글만."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     if link and not image:
         return th_text(tok, me, text, link)
-    q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
+    q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": tag, "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(30 if image else 10)  # 미디어 처리 대기 (공식 권장값)
     return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
@@ -2597,14 +2602,15 @@ def threads_deals(seen):
     cand = [(i, posts[i]["text"], bt[i], posts[i]["t"]) for i in fresh if th_solo(seen, posts[i]["text"], beauty=bt[i], slot=bool(posts[i].get("own")), top=i in rei)] \
         + [(x, x["text"], x["bt"], time.strftime("%Y-%m-%d %H:%M", time.gmtime(x["t"] + 9 * 3600))) for x in q if th_solo(seen, x["text"], beauty=x["bt"], slot=True)]  # 진우 화장품 링크·이름 예약은 화장품 자리 채움
     grp = lambda c: -1 if isinstance(c[0], int) and c[0] in rei else 0 if th_tier(c[1]) == 1 else 1 if c[2] and TH_BEAUTY_MIN else 2  # 10/12 01:10 진우: ① 쿠팡 같은 상품 차이 > 화장품(하루 1~2) > ② 30일 최저가·순위 (재업로드는 맨 먼저, 23:05)
-    strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
+    wb = wx_bonus(seen)  # 날씨 가점(10/15 진우): 같은 등급 안에서만 먼저(🔥·30일 최저가 순서 그대로)
+    strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
     todo = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])]
     if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 상위 딜로 채움(10/12 진우): 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
         out = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}
         gone = {x[0] for k, v in seen.items() if k.startswith("sold_") and isinstance(v, dict) for x in v.get("it", []) if x[4]}  # 품절·특가 끝 토스 상품
         tq = [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone and th_solo(seen, x["text"], beauty=x["bt"], top=True)]
-        todo = sorted(tq, key=lambda x: (x["r"], x["k"] != "cat", -x["s"], -x["t"])) or sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
-                      key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), [-ord(c) for c in posts[i]["t"]]))
+        todo = sorted(tq, key=lambda x: (x["r"], x["k"] != "cat", -x["s"], -wb(title_of(x["text"])), -x["t"])) or sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
+                      key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), -wb(title_of(posts[i]["text"])), [-ord(c) for c in posts[i]["t"]]))
     todo = todo[:TH_SOLO_RUN]
     r, today = th_day(seen, now), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 실행마다 1줄(10/12 진우 '누락 없이'): 후보 · ①② · 개별 · 빠짐 이유
     RUN["th_why"] = " ".join(map(str, ("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
@@ -2639,6 +2645,286 @@ def threads_deals(seen):
         th_mark(seen, bt[i])
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         th_text(tok, me, text, url)
+
+
+WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
+WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
+SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
+WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
+    (lambda w: w["rain"] >= 60, "비 소식", ("우산", "우비", "제습제", "실내 건조"), ("라면", "부침가루", "어묵"), "우산 챙기셨어요?"),
+    (lambda w: w["tmin"] <= 3, "많이 추움", ("핫팩", "발열 내의", "전기 매트", "가습기"), ("군고구마", "어묵", "유자차"), "핫팩 벌써 꺼냈어요?"),
+    (lambda w: w["tmin"] <= 10, "쌀쌀함", ("전기요", "기모", "보습 크림"), ("호빵", "핫초코", "고구마"), "다들 전기요 꺼냈어요?"),
+    (lambda w: w["tmax"] >= 28, "더움", ("선풍기", "쿨 매트"), ("아이스크림", "탄산"), "선풍기 아직 안 넣으셨죠?"),
+    (lambda w: w["hum"] <= 35, "건조함", ("가습기", "립밤", "핸드 크림", "바디 로션"), (), "가습기 트셨어요?"),
+    (lambda w: w["tmax"] - w["tmin"] >= 10, "일교차 큼", ("가디건", "경량 조끼"), (), "겉옷 하나 챙기셨어요?"),
+    (lambda w: (w["pm"] or 0) >= 36, "초미세먼지 나쁨", ("KF94", "KF80", "공기청정기 필터"), (), "오늘 마스크 쓰셨어요?"),
+    (lambda w: "11-01" <= w["date"][5:] <= "11-30", "김장철", ("김장 비닐", "고무장갑", "천일염"), (), "올해 김장 하세요?"),
+    (lambda w: "11-01" <= w["date"][5:] <= "11-11", "빼빼로데이", (), ("빼빼로",), "빼빼로 누구 주실 거예요?"),
+    (lambda w: 0 <= (kst_ts(SUNEUNG + " 00:00") - kst_ts(w["date"] + " 00:00")) // 86400 <= 6, "수능 주간", (), ("찹쌀떡", "초콜릿", "견과"), "수능 응원 간식 뭐가 좋을까요?"))
+SNACK_WORDS = ("과자", "젤리", "견과", "초콜릿", "초코", "커피", "아이스크림", "빵", "떡", "음료")  # 15:30 간식 글(+ 오늘 날씨 간식 키워드)
+SNACK_NOT = r"머신|포트|메이커|그라인더|드리퍼|텀블러|제빵기|토스터|빵칼"  # 간식 아님(커피머신 등)
+WX_FILL = ("휴지", "물티슈", "세제", "생수", "라면", "햇반", "칫솔", "샴푸", "섬유유연제", "김")  # 일요일 DM: 날씨 키워드가 10개 안 되면 생필품·식품으로(쿠팡 전략 생필품·식품 70)
+LOG_DENY = ("써봤", "써보니", "사용해보니", "제가 직접", "내돈내산", "우리 집")  # 운영 일지 금지어 — 지어낸 경험담 X(공정위 추천·보증 심사지침 2026.6), 들어가면 안 올림
+DAILY_DIR = "docs/daily"  # #일상 사진(사이트 주소로 Threads에 — 봇 토큰 든 텔레그램 파일 주소는 안 씀)
+
+
+def weather(seen):
+    """서울 날씨 [오늘, 내일 … 7일 뒤] — Open-Meteo 예보(최저·최고·강수확률·최저습도) + 대기질(초미세먼지 하루 평균), 하루 1번 seen 캐시.
+    예보를 못 받으면 None(날씨 글·간식 날씨 키워드·가점 X, 딜 글은 그대로 — 1시간 뒤 다시 받아 봄). 대기질만 실패면 pm = None."""
+    key = time.strftime("wx_%Y%m%d", time.gmtime(time.time() + 9 * 3600))
+    if key not in seen or not seen[key]["w"] and time.time() - seen[key]["t"] >= 3600:  # 못 받았으면 1시간 뒤 다시(0시 첫 실패 하나로 하루 종일 X)
+        q, pm = f"latitude={WEATHER_LAT}&longitude={WEATHER_LON}&timezone=Asia%2FSeoul", {}
+        try:
+            d = json.loads(http(f"https://api.open-meteo.com/v1/forecast?{q}&forecast_days=8&daily=temperature_2m_min,temperature_2m_max,"
+                                "precipitation_probability_max,relative_humidity_2m_min"))["daily"]
+            try:
+                a = json.loads(http(f"https://air-quality-api.open-meteo.com/v1/air-quality?{q}&forecast_days=7&hourly=pm2_5"))["hourly"]
+                for t, v in zip(a["time"], a["pm2_5"]):
+                    if v is not None:
+                        pm.setdefault(t[:10], []).append(v)
+            except Exception as e:
+                print("weather pm", repr(e))
+            seen[key] = {"t": time.time(), "w": [{"date": dt, "tmin": round(lo), "tmax": round(hi), "rain": pr or 0, "hum": 100 if hu is None else hu,
+                                                  "pm": round(sum(pm[dt]) / len(pm[dt])) if pm.get(dt) else None}
+                                                 for dt, lo, hi, pr, hu in zip(d["time"], d["temperature_2m_min"], d["temperature_2m_max"],
+                                                                               d["precipitation_probability_max"], d["relative_humidity_2m_min"]) if lo is not None and hi is not None]}
+        except Exception as e:
+            print("weather", repr(e))
+            seen[key] = {"t": time.time(), "w": []}
+    return seen[key]["w"] or None
+
+
+def wx_rules(w):
+    return [r for r in WEATHER_RULES if r[0](w)]
+
+
+def wx_words(seen, snack=False):
+    """오늘 날씨에 맞는 아이템(snack이면 간식) 키워드. 날씨 없으면 []."""
+    ws = weather(seen)
+    return [k for r in wx_rules(ws[0]) for k in r[3 if snack else 2]] if ws else []
+
+
+def wx_hit(name, words):  # 띄어쓰기는 키워드에 띄어 쓴 자리만 무시 — 제목 띄어쓰기를 다 지우면 '소고기 모듬'이 '기모'에 걸림
+    return any(re.search(re.escape(w).replace(r"\ ", r"\s*"), name or "", re.I) for w in words)
+
+
+def wx_bonus(seen):
+    """딜 제목 -> 날씨 가점(오늘 아이템·간식 키워드에 맞으면 WEATHER_BONUS). 0이면 날씨도 안 받음."""
+    kw = wx_words(seen) + wx_words(seen, True) if WEATHER_BONUS else []
+    return lambda title: WEATHER_BONUS * wx_hit(title, kw) if kw else 0
+
+
+def wx_line(w):
+    """'오늘 서울 13~22도, 일교차 9도' + 비·건조·초미세먼지 해당되면 덧붙임."""
+    return (f"오늘 서울 {w['tmin']}~{w['tmax']}도, 일교차 {w['tmax'] - w['tmin']}도" + (f" · 비 올 확률 {w['rain']}%" if w["rain"] >= 60 else "")
+            + (f" · 습도 {w['hum']}%" if w["hum"] <= 35 else "") + (f" · 초미세먼지 {w['pm']}㎍" if (w["pm"] or 0) >= 36 else ""))
+
+
+def wx_deals(seen, words, n=3, deny=None):
+    """최근 3일 딜 중 제목(이름)에 words가 든 것 최대 n개: 3사 먼저 · 🔥 먼저 · 최근 먼저, 같은 이름 1번.
+    커뮤니티·진우 딜 = posts.json(링크 = 제휴 링크, 아니면 사이트 딜 페이지), 토스 = 품절 지켜보기 기록(sold_)의 API 상품 — 지금 가격·품절을 다시 봄(게시 시점 가격)."""
+    if not words:
+        return []
+    now, posts, out = time.time(), load(POSTS, []), []
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - 3 * 86400))
+    ok = lambda name: wx_hit(name, words) and not (deny and re.search(deny, name))
+    for i, p in enumerate(posts):
+        if p["t"] < since or p["text"].startswith("📋") or is_toss(p.get("url"), p["text"]):  # 토스는 아래에서(지금 가격)
+            continue
+        title = title_of(p["text"])
+        name, won = re.sub(r"\s*\([^()]*\d[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)' 같은 가격 괄호는 이름에서 빼고 가격으로
+        if ok(name):
+            out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"] if aff(p.get("url")) else None, "i": i,
+                        "hot": not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
+    cand = {}
+    for k, v in seen.items():
+        if HAS_TOSS and k.startswith("sold_") and isinstance(v, dict) and now - v.get("t", 0) < 3 * 86400:
+            for link, x in zip([v.get("url")] if v.get("k") == "ev" else [r[1] for r in v.get("rows", [])], v.get("it", [])):
+                if not x[4] and link and ok(x[1]):
+                    cand[x[0]] = {"n": x[1], "u": link, "hot": True, "top3": True, "t": v["t"], "toss": 1}
+    try:
+        got = cand and {x["tacaItemId"]: x for x in toss("/products/detail?tacaItemIds=" + ",".join(map(str, list(cand)[:30])))["items"]}
+        out += [{**c, "p": f"{got[i]['displayPrice']:,}원"} for i, c in cand.items() if i in got and not got[i].get("isSoldOut")]
+    except Exception as e:  # 토스 API가 안 되면 토스 딜만 빼고
+        print("wx toss", repr(e))
+    picked, names = [], set()
+    for c in sorted(out, key=lambda c: (not c["top3"], not c["hot"], -c["t"])):
+        k = re.sub(r"\W", "", c["n"])[:20]
+        if k not in names:
+            names.add(k)
+            picked.append(c)
+    return picked[:n]
+
+
+def wx_render(items, ref, html_text):
+    """딜 줄(🔥/🛒 이름 가격 + 링크) -> (머리 대가성 문구, 줄들, 꼬리). 대가성 문구 = 링크 몰마다 맨 앞, 토스가 있으면 꼬리에 게시 시점 줄. 몰 이름·비교 없음.
+    Threads = 사이트 딜 페이지(TOP5 리스트처럼 — 링크프라이스 주소는 450자라 500자 넘음), 토스 API 상품은 공유 링크 그대로."""
+    links = [c["u"] if c["u"] and (html_text or c.get("toss")) else f"{SITE}p/{c['i']}.html?ref={ref}" for c in items]
+    notes = list(dict.fromkeys(n for n in (aff_note(c["u"] or "") for c in items) if n))
+    rows = [f"{'🔥' if c['hot'] else '🛒'} " + (f'<a href="{esc(u)}">{esc(clip(c["n"], 40))}</a>' + (f" {esc(c['p'])}" if c["p"] else "") if html_text else f"{clip(c['n'], 30)} {c['p']}".rstrip() + f"\n👉 {u}")
+            for c, u in zip(items, links)]
+    tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(c.get("toss") for c in items) else ""
+    return "\n".join(f"<i>{n}</i>" if html_text else n for n in notes) + ("\n\n" if notes else ""), rows, tail, links
+
+
+def due(at, name, seen):
+    """at(KST (시, 분))이 지났고 WX_LATE 안이고 오늘 아직이면 오늘 키, 아니면 None."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    k = time.strftime(name + "_%Y%m%d", kst)
+    return k if at and k not in seen and 0 <= (kst.tm_hour * 60 + kst.tm_min - at[0] * 60 - at[1]) * 60 < WX_LATE else None
+
+
+def wx_post(seen, key, head, items, alone, kind, lo=1):
+    """채널(HTML) + Threads(글) 묶음 글 1개: head = 첫 줄(굵게, {n} = 딜 수), items 없으면 alone(날씨 + 질문, 링크 X). 시간당 상한·묶음 간격(busy) 같이 셈.
+    Threads 480자를 넘으면 뒤 딜부터 빼고(lo개까지), 그래도 넘으면 alone(없으면 Threads X)."""
+    if busy(seen):
+        return
+    tag, rows, tail, links = wx_render(items, "tg", True)
+    text = tag + f"<b>{esc(head.format(n=len(items)))}</b>\n\n" + "\n".join(rows) + tail if items else esc(alone)
+    if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=text):
+        return
+    seen[key] = time.time()
+    bundled(seen)
+    for n in range(len(items), lo - 1, -1) if E.get("THREADS_TOKEN") and items else ():  # Threads 500자(링크 미리보기는 글자를 안 자름) — 넘으면 뒤 딜부터 뺌
+        tag, rows, tail, links = wx_render(items[:n], "th", False)
+        th = tag + f"{head.format(n=n)}\n\n" + "\n".join(rows) + tail
+        if len(th) <= 480:
+            return th_bundle(seen, kind, th, links[0])
+    if E.get("THREADS_TOKEN") and alone:
+        th_bundle(seen, kind, alone)
+
+
+def weather_post(seen):
+    """아침 7:30 '☁️ 오늘 서울 13~22도, 일교차 9도 — 이런 날 필요한 것' + 키워드 맞는 최근 3일 딜 최대 3개(채널 + Threads). 맞는 딜 0개면 날씨 + 질문 한 줄."""
+    key = due(WEATHER_HOUR, "wxpost", seen)
+    ws = key and weather(seen)
+    if not key or not ws:
+        if key:
+            seen[key] = time.time()
+            print("weather post: 날씨 못 받음 -> 오늘 건너뜀")
+        return
+    rules = wx_rules(ws[0])
+    wx_post(seen, key, f"☁️ {wx_line(ws[0])} — 이런 날 필요한 것", wx_deals(seen, [k for r in rules for k in r[2]]),
+            f"☁️ {wx_line(ws[0])}\n{rules[0][4] if rules else '오늘은 뭐 챙기셨어요?'}", "wx")
+
+
+def snack_post(seen):
+    """15:30 '🍪 출출할 때 간식 N' — 최근 3일 간식 딜(SNACK_WORDS + 오늘 날씨 간식) 최대 3개, 2개 미만이면 안 올림(빈 글 X)."""
+    key = due(SNACK_HOUR, "snack", seen)
+    if not key:
+        return
+    items = wx_deals(seen, SNACK_WORDS + tuple(wx_words(seen, True)), deny=SNACK_NOT)
+    if len(items) < 2:
+        seen[key] = time.time()
+        print(f"snack post: 간식 딜 {len(items)}개 -> 안 올림")
+        return
+    wx_post(seen, key, "🍪 출출할 때 간식 {n}", items, "", "snack", lo=2)
+
+
+def log_text(seen):
+    """운영 일지(Threads, 링크 X) — posts.json·seen 사실로만: 오늘 본 커뮤니티 딜 수 · 고른 수 · 커뮤니티 조회 1등 + 날씨 질문 한 줄. 금지어(LOG_DENY)가 들어가면 None."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    t0, ids = kst_ts(today + " 00:00"), "|".join([*FEEDS, "ruliweb", "clien"])
+    judged = sum(1 for k, v in seen.items() if re.match(rf"(?:{ids})_", k) and isinstance(v, (int, float)) and v >= t0)
+    picked = [p for p in load(POSTS, []) if p["t"].startswith(today) and not p["text"].startswith("📋") and not p.get("own")]
+    if not picked:
+        return None
+    top = max(picked, key=lambda p: p.get("vpm") or p.get("pop") or 0)
+    ws = weather(seen)
+    rules = wx_rules(ws[0]) if ws else []
+    text = (f"📝 핫딜픽 운영 일지 · {kst.tm_mon}/{kst.tm_mday}\n" + (f"오늘 핫딜픽이 본 커뮤니티 딜 {judged}개 중 {len(picked)}개만 골랐어요." if judged >= len(picked) else f"오늘 커뮤니티 딜 {len(picked)}개를 골랐어요.")
+            + (f"\n커뮤니티에서 제일 많이 본 딜: {clip(parse(title_of(top['text']))[1], 30)}" if top.get("vpm") or top.get("pop") else "")
+            + f"\n\n{rules[0][4] if rules else '오늘 하루 어땠어요?'}")
+    return None if any(w in text for w in LOG_DENY) else text
+
+
+def daily_log(seen):
+    """20:30 운영 일지 1번(Threads만, 링크 X). 금지어면 안 올림. 채널 글이 아니라 묶음 간격만 봄(시간당 상한 X — 22시 미리보기처럼)."""
+    key = due(DAILY_LOG_HOUR, "dlog", seen)
+    if not key or not E.get("THREADS_TOKEN") or busy(seen, cap=False):
+        return
+    text = log_text(seen)
+    seen[key] = time.time()
+    if not text:
+        print("daily log: 고른 딜 없음·금지어 -> 안 올림")
+        return
+    bundled(seen)
+    th_bundle(seen, "log", text)
+
+
+def wx_dm_text(days):
+    """다음 7일 예보 -> 진우 DM: 쿠팡 링크 만들 시즌 키워드 10개 + 간식 5개(날씨 맞는 날 수 많은 순, 모자라면 WX_FILL·SNACK_WORDS) + 파트너스 검색 주소(텍스트만)."""
+    its, sn = collections.Counter(), collections.Counter()
+    for w in days:  # 키워드마다 그날 1번(가습기·어묵처럼 규칙 두 개에 든 것도)
+        its.update(dict.fromkeys((k for r in wx_rules(w) for k in r[2]), 1))
+        sn.update(dict.fromkeys((k for r in wx_rules(w) for k in r[3]), 1))
+    pick = lambda c, fill, n: ([(k, d) for k, d in c.most_common()] + [(k, 0) for k in fill if k not in c])[:n]
+    line = lambda n, k, d: f"{n}. {k}" + (f" ({d}일)" if d else "") + f" {CP_SEARCH}{urllib.parse.quote(k)}"
+    lo, hi = [w["tmin"] for w in days], [w["tmax"] for w in days]
+    return (f"🗓 다음 7일 서울 예보({int(days[0]['date'][5:7])}/{int(days[0]['date'][8:])}~{int(days[-1]['date'][5:7])}/{int(days[-1]['date'][8:])}) — 쿠팡 링크 만들 시즌 키워드\n"
+            f"최저 {min(lo)}~{max(lo)}도 · 최고 {min(hi)}~{max(hi)}도 · 비 {sum(w['rain'] >= 60 for w in days)}일 · 건조 {sum(w['hum'] <= 35 for w in days)}일 · 미세먼지 나쁨 {sum((w['pm'] or 0) >= 36 for w in days)}일\n\n"
+            "🔑 키워드 10\n" + "\n".join(line(n, k, d) for n, (k, d) in enumerate(pick(its, WX_FILL, 10), 1))
+            + "\n\n🍪 간식 5\n" + "\n".join(line(n, k, d) for n, (k, d) in enumerate(pick(sn, SNACK_WORDS, 5), 1)) + "\n\n(주소 = 파트너스 상품 링크 검색 — 골라서 링크 만들어 보내줘)")
+
+
+def wx_dm(seen):
+    """매주 일요일 20시 관리자 DM 1번: 다음 7일 예보 기준 시즌 키워드."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    key = time.strftime("wxdm_%Y%m%d", kst)
+    if not WEATHER_DM or kst.tm_wday != WEATHER_DM[0] or kst.tm_hour < WEATHER_DM[1] or key in seen:
+        return
+    ws = weather(seen)
+    seen[key] = time.time()
+    if ws and len(ws) > 1:
+        tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]), link_preview_options={"is_disabled": True})
+
+
+def daily_in(seen, m, cap):
+    """진우 '#일상 …'(사진 + 캡션): 사진 = docs/daily/에 저장(사이트 반영 뒤 공개 주소 hotdealpick.kr/daily/… — 봇 토큰 든 텔레그램 파일 주소는 저장·게시 X) -> daily_post가 Threads에.
+    사진을 파일(jpg·png)로 보내도 됨, 사진 없으면 답장만(글만은 안 올림), 같은 메시지가 다시 와도 1번."""
+    k, doc = f"dly_{m['message_id']}", m.get("document") or {}
+    fid = m["photo"][-1]["file_id"] if m.get("photo") else doc.get("file_id") if doc.get("mime_type") in ("image/jpeg", "image/png") else None
+    reply = lambda t: tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text=t)
+    if k in seen:
+        return
+    if not fid:
+        reply("📷 #일상은 사진과 같이 보내줘(글만은 안 올려요)")
+        return
+    try:
+        f = tg("getFile", file_id=fid)
+        name = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600)) + f"_{m['message_id']}" + (".png" if doc.get("mime_type") == "image/png" and not m.get("photo") else ".jpg")
+        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
+            data = r.read()
+        os.makedirs(DAILY_DIR, exist_ok=True)
+        open(f"{DAILY_DIR}/{name}", "wb").write(data)
+        seen[k] = {"t": time.time(), "text": cap, "img": f"{SITE}daily/{name}"}
+        reply("📝 받았어요 — 사이트에 사진이 올라가면(15분쯤) Threads에 올릴게요")
+    except Exception as e:
+        print("daily in", repr(e))
+        reply(f"⚠️ #일상 사진을 못 받았어요: {err_brief(e)} — 다시 보내줘")
+
+
+def daily_post(seen):
+    """#일상(daily_in)이 사이트에 올라가면(사진 주소 HEAD) Threads에 1번 — 사진 + 캡션 그대로(우리 링크 X, 캡션에 제휴 링크가 있으면 프로그램마다 대가성 문구 맨 앞,
+    토스 링크면 게시 시점 줄) + 진우에게 '올렸어요'. 묶음 글 간격(busy, 시간당 상한 X) 같이 셈. 1시간 넘게 사이트에 안 뜨면 진우에게 알리고 그만."""
+    tok, now = E.get("THREADS_TOKEN"), time.time()
+    for k in [k for k in seen if k.startswith("dly_") and not seen[k].get("done")] if tok and not busy(seen, cap=False) else []:
+        v = seen[k]
+        try:
+            http(v["img"], method="HEAD")
+        except Exception:
+            if now - v["t"] > 3600:
+                v["done"] = now
+                tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="⚠️ 사이트에 사진이 안 떠서 Threads에 못 올렸어요 — 다시 보내줘")
+            continue
+        urls = [u.rstrip(").,]>」』'\"") for u in re.findall(r"https?://\S+", v["text"])]
+        notes = "\n".join(dict.fromkeys(n for n in map(aff_note, urls) if n))
+        v["done"] = now  # 먼저 표시: 실패해도 두 번 안 올림(실패는 main 알림)
+        th_post(tok, th_note(notes) + v["text"] + (f"\n\n{toss_when()}" if TOSS_NO_CMP and any(map(toss_share, urls)) else ""), image=v["img"], tag="일상")
+        bundled(seen)
+        tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요")
+        return  # 1번에 1개(묶음 간격)
 
 
 REPORT_HOURS = (10, 14, 18, 22)  # 관리자에게 성과 리포트 보내는 시각(KST), 회차마다 1번 (10/8 진우 '토스 쉐어 정산금 들어오기 시작' → '1일 4회')
@@ -2719,7 +3005,8 @@ def quiet():
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
 ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
-               "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
+               "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
+               "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
 
 
 def err_brief(e):
@@ -2917,7 +3204,7 @@ def main():
     if TOSS_NO_CMP:
         toss_clean_posts()
     seen = load(SEEN, {})
-    publish_approved()
+    publish_approved(seen)
     new, keys = [], set()
     deals = fetch_deals()
     mark_hot(deals)
@@ -2980,7 +3267,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
         try:
             step(seen)
         except Exception as e:

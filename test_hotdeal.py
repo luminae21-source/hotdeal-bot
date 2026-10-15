@@ -6,7 +6,7 @@ from email.utils import formatdate
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
-H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -555,7 +555,7 @@ assert H.MIN_SCORE == 6 and H.FILL_SCORE == 6  # 10/8 진우: 기본은 6점도 
 H.MIN_SCORE = 7
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
 tq, kfmt, pa2 = time.time, lambda s: time.strftime("%Y-%m-%d %H:%M", time.gmtime(s + 9 * 3600)), H.publish_approved
-H.publish_approved = lambda: None  # 앞 테스트의 텔레그램 입력(✅)이 글을 기록하지 않게
+H.publish_approved = lambda seen=None: None  # 앞 테스트의 텔레그램 입력(✅)이 글을 기록하지 않게
 for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb_91"]), (1791248400, 1791248400 - 1200, False, []),
                                 (1791223200, 1791223200 - 7200, False, []), (1791248400, 1791248400 - 3600, True, [])):  # 10/6 10:00 / 03:00 KST
     time.time = lambda n=now: n
@@ -700,7 +700,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -1307,7 +1307,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (6, 11)) and trn0 == (2, 2, 4)  # 10/12 진우: 아침 재알림 6시부터, 재오픈 한도 밤 2·아침 2·하루 4
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -2005,7 +2005,7 @@ H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick = rl9, tv9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
+assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -2321,7 +2321,7 @@ assert rq9["thsolo_20261012"] == {"t": TK(f"{D9c} 01:42"), "n": 1, "b": 1, "rn":
 time.time = lambda: TK(f"{D9c} 06:10"); assert H.th_solo(rq9, S9c, reopen="am"); H.th_mark(rq9, reopen="am"); time.time = lambda: TK(f"{D9c} 07:00"); H.th_mark(rq9, reopen="am")
 time.time = lambda: TK(f"{D9c} 07:50"); assert not H.th_solo(rq9, S9c, reopen="am") and H.th_solo(rq9, S9c)  # 아침 2개 찼음
 H.TH_REOPEN_MORN = 3; assert not H.th_solo(rq9, S9c, reopen="am"); H.TH_REOPEN_MORN = trn0[1]  # 하루 4개(밤 2 + 아침 2)도
-assert H.TH_REOPEN_AM == (6, 11) and "threads, threads_deals, toss_reopen, ig_cards" in inspect.getsource(H.main)  # 아침 재알림 6시부터, 재오픈은 일반 딜 뒤
+assert H.TH_REOPEN_AM == (6, 11) and "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main)  # 아침 재알림 6시부터, 재오픈은 일반 딜 뒤
 # 줄 맨 앞이 약한 글(🛒)이어도 뒤 ① 재오픈이 나감(4d9271a1부터 있던 막힘, 10/12 리뷰) — 약한 글은 줄에 남음
 H.toss = lambda path, body=None: {"items": [{"tacaItemId": i, "displayPrice": p, "isSoldOut": False} for i, p in ((71, 12900), (72, 7620))]} if path.startswith("/products/detail") else {"items": [], "hasNext": False}
 rq9 = {"reopen": {"t": TK(f"{D9c} 00:00"), "ts": [], "q": [{"id": 71, "n": "약한 크림", "url": "https://toss.shopping/_m/q1", "p0": 12900, "icon": "🛒", "cmp": "🤔 솔직히 특가로는 약한 제품", "k": "ev", "day": D9c, "st": 0, "title": "약한 크림", "warn": ""},
@@ -3040,6 +3040,160 @@ assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and 
 assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
+# 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
+#       일요일 20시 시즌 키워드 DM, TOP5·Threads 개별 날씨 가점(🔥·30일 최저가 순서는 그대로), '#일상' 사진 = 사이트 주소로 Threads(텔레그램 파일 주소 X)
+assert wx0 == ((7, 30), (15, 30), (20, 30), (6, 20), 5) and (H.WEATHER_LAT, H.WEATHER_LON) == (37.57, 126.98)
+H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = wx0
+sv12 = (H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy); tnc12, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True  # 지금 규칙(토스 = 게시 시점 가격)
+W12 = lambda lo, hi, rain=0, hum=60, pm=10, day="2026-10-16": {"date": day, "tmin": lo, "tmax": hi, "rain": rain, "hum": hum, "pm": pm}
+names = lambda w: [r[1] for r in H.wx_rules(w)]
+assert "우산" in [k for r in H.wx_rules(W12(15, 20, rain=78)) for k in r[2]] and "라면" in [k for r in H.wx_rules(W12(15, 20, rain=78)) for k in r[3]]  # 강수 78% -> 우산·라면
+assert "핫팩" in [k for r in H.wx_rules(W12(2, 9)) for k in r[2]] and names(W12(2, 9)) == ["많이 추움", "쌀쌀함"]  # 최저 2도 -> 핫팩(+ 10도 이하 규칙도)
+assert "가습기" in [k for r in H.wx_rules(W12(15, 20, hum=30)) for k in r[2]] and names(W12(15, 24)) == []  # 습도 30 -> 가습기 · 9도 차·맑음 = 없음
+assert names(W12(13, 25)) == ["일교차 큼"] and names(W12(22, 29, pm=40)) == ["더움", "초미세먼지 나쁨"] and "김장철" in names(W12(8, 15, day="2026-11-05")) and "빼빼로데이" in names(W12(8, 15, day="2026-11-05"))
+assert "수능 주간" in names(W12(8, 15, day="2026-11-13")) and "수능 주간" not in names(W12(8, 15, day="2026-11-12")) and "수능 주간" not in names(W12(8, 15, day="2026-11-20"))
+assert H.wx_hit("오뚜기 진라면 매운맛 20개", ["라면"]) and H.wx_hit("3M 공기청정기 필터 2개", ["공기청정기 필터"]) and H.wx_hit("공기청정기필터 2개", ["공기청정기 필터"]) and not H.wx_hit("휴지 30롤", ["우산"])
+assert not H.wx_hit("소고기 모듬 1.2kg", ["기모"]) and H.wx_hit("융기모 레깅스", ["기모"]) and H.wx_hit("kf94 마스크", ["KF94"])  # 제목 띄어쓰기는 그대로(뒷고기 모듬 ≠ 기모)
+FC12 = {"daily": {"time": ["2026-10-16", "2026-10-17", "2026-10-18"], "temperature_2m_min": [14.6, 2.2, 9.0], "temperature_2m_max": [23.8, 9.4, 15.0],
+                  "precipitation_probability_max": [78, 3, 10], "relative_humidity_2m_min": [52, 30, 60]}}
+AQ12 = {"hourly": {"time": ["2026-10-16T00:00", "2026-10-16T01:00", "2026-10-17T00:00"], "pm2_5": [30.0, 44.0, None]}}
+c12 = []
+def http12(url, body=None, headers=None, method=None):
+    c12.append(url)
+    if "air-quality-api.open-meteo.com" in url: return json.dumps(AQ12)
+    if "api.open-meteo.com/v1/forecast" in url:
+        assert "latitude=37.57&longitude=126.98" in url and "relative_humidity_2m_min" in url and "forecast_days=8" in url
+        return json.dumps(FC12)
+    if method == "HEAD": return ""
+    raise AssertionError(url)
+H.http, s12 = http12, {}; time.time = lambda: TK("2026-10-16 06:10")
+w12 = H.weather(s12); H.weather(s12)
+assert len(c12) == 2 and w12[0] == {"date": "2026-10-16", "tmin": 15, "tmax": 24, "rain": 78, "hum": 52, "pm": 37} and w12[1]["pm"] is None  # 하루 1번(캐시) · 초미세먼지 하루 평균
+assert H.wx_line(w12[0]) == "오늘 서울 15~24도, 일교차 9도 · 비 올 확률 78% · 초미세먼지 37㎍"
+H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("down")); s12b = {}
+assert H.weather(s12b) is None and H.wx_words(s12b) == [] and H.wx_bonus(s12b)("우산") == 0  # 예보 못 받음 -> 날씨 X(가점도 X)
+s12r = {}; H.weather(s12r); c12.clear(); H.http = http12; assert H.weather(s12r) is None and not c12  # 1시간 안엔 다시 안 받음
+time.time = lambda: TK("2026-10-16 07:11"); assert H.weather(s12r)[0]["tmin"] == 15 and len(c12) == 2; H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("down"))  # 1시간 뒤 다시 받음(0시 실패 하나로 하루 종일 X)
+out12 = []
+H.tg = lambda m, **p: out12.append((m, p)) or {"message_id": 1}
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": out12.append(("th", {"text": text, "link": link, "image": image, "tag": tag})) or {"id": "1"}
+H.E["THREADS_TOKEN"], H.busy = "tk", (lambda seen, cap=True: False)
+time.time = lambda: TK("2026-10-16 07:35"); H.weather_post(s12b)
+assert not out12 and "wxpost_20261016" in s12b  # 날씨 없으면 그날 날씨 글 건너뜀
+P12 = [{"t": "2026-10-15 10:00", "text": "🔥 [쿠팡] 3단 자동 장우산 (12,900원)\n\n좋아요", "url": "https://link.coupang.com/a/u1", "mid": 1},
+       {"t": "2026-10-15 11:00", "text": "🛒 [G마켓] 투명 우비 (3,000원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://www.ppomppu.co.kr/x", "mid": 2},
+       {"t": "2026-10-15 12:00", "text": "🔥 [네이버] 제습제 18개 (9,900원)\n\n좋아요", "url": "https://naver.me/abc", "mid": 3},
+       {"t": "2026-10-15 13:00", "text": "🔥 [옥션] 실내건조 세제 3L (8,800원)\n\n좋아요", "url": "https://www.ppomppu.co.kr/y", "mid": 4},
+       {"t": "2026-10-11 13:00", "text": "🔥 [쿠팡] 우산 꽂이 (5,000원)\n\n좋아요", "url": "https://link.coupang.com/a/old", "mid": 5},
+       {"t": "2026-10-15 14:00", "text": "🔥 [쿠팡] 오리온 초코파이 24개 (6,900원)\n\n좋아요", "url": "https://link.coupang.com/a/c1", "mid": 6},
+       {"t": "2026-10-15 15:00", "text": "🔥 [G마켓] 캡슐 커피머신 (59,000원)\n\n좋아요", "url": "https://www.ppomppu.co.kr/z", "mid": 7}]
+json.dump(P12, open("posts.json", "w"), ensure_ascii=False)
+s12["sold_901"] = {"t": TK("2026-10-15 20:00"), "k": "ev", "url": "https://toss.im/_m/T1", "n": "토스 우산", "p": 9000, "it": [[71, "토스 자동 우산 1개", 9000, 0, 0, 0]]}
+s12["sold_902"] = {"t": TK("2026-10-15 21:00"), "k": "top", "rows": [["품절 우비", "https://toss.im/_m/T2", []], ["우비 판초", "https://toss.im/_m/T3", []]],
+                   "it": [[72, "품절 우비", 3000, 0, 1, 0], [73, "우비 판초", 4500, 0, 0, 0]]}
+H.HAS_TOSS, H.toss = True, lambda path, body=None: {"items": [{"tacaItemId": 71, "displayPrice": 8500, "isSoldOut": False}, {"tacaItemId": 73, "displayPrice": 4500, "isSoldOut": True}]}
+time.time = lambda: TK("2026-10-16 07:20"); H.weather_post(s12); assert not out12  # 7:30 전 X
+time.time = lambda: TK("2026-10-16 07:35"); H.weather_post(s12)
+(m12, p12), th12 = out12[0], out12[1][1]
+assert m12 == "sendMessage" and p12["chat_id"] == "@ch" and p12["parse_mode"] == "HTML" and "wxpost_20261016" in s12
+t12 = p12["text"]
+assert t12.index(H.DISCLOSURE) < t12.index("☁️") and H.NAVER_NOTE in t12 and H.TOSS_NOTE in t12  # 링크 있는 몰의 대가성 문구 맨 앞
+assert "<b>☁️ 오늘 서울 15~24도, 일교차 9도 · 비 올 확률 78% · 초미세먼지 37㎍ — 이런 날 필요한 것</b>" in t12
+rows12 = [l for l in t12.split("\n") if l.startswith(("🔥", "🛒"))]
+assert rows12 == ['🔥 <a href="https://toss.im/_m/T1">토스 자동 우산 1개</a> 8,500원', '🔥 <a href="https://naver.me/abc">제습제 18개</a> 9,900원',
+                  '🔥 <a href="https://link.coupang.com/a/u1">3단 자동 장우산</a> 12,900원'], rows12  # 3사 먼저 · 🔥 먼저 · 최근 먼저, 3개까지 · 토스 = 지금 가격 · 품절(73)·품절 표시(72)·3일 지난 딜 X
+assert t12.rstrip().endswith("게시 시점 가격") and not re.search(H.OTHER_STORES + r"|보다|대비|차이|같은 상품", rows12[0])  # 토스 줄 = 다른 몰 이름·비교 X, 게시 시점 가격 줄
+assert th12["text"].startswith(H.TOSS_NOTE) and "🔥 토스 자동 우산 1개 8,500원\n👉 https://toss.im/_m/T1" in th12["text"] and th12["link"] == "https://toss.im/_m/T1" and len(th12["text"]) <= 500
+assert "🔥 제습제 18개 9,900원\n👉 https://hotdealpick.kr/p/2.html?ref=th" in th12["text"] and H.NAVER_NOTE in th12["text"] and "naver.me" not in th12["text"]  # Threads = 사이트 딜 페이지(대가성 문구는 실제 링크 기준)
+out12.clear(); time.time = lambda: TK("2026-10-16 07:50"); H.weather_post(s12); assert not out12  # 하루 1번
+L12 = [{"n": "아주아주 긴 상품 이름 " * 4, "p": "12,900원", "u": f"https://toss.im/_m/{'x' * 100}{k}", "hot": True, "toss": 1} for k in range(3)]
+H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", L12, "", "snack", lo=2); th12b = out12[-1][1]
+assert "<b>🍪 출출할 때 간식 3</b>" in out12[0][1]["text"] and th12b["text"].count("👉") == 2 and "🍪 출출할 때 간식 2\n" in th12b["text"] and len(th12b["text"]) <= 480 and th12b["link"] == L12[0]["u"]; out12.clear()  # Threads 500자 넘으면 뒤 딜부터 뺌 · 머리 수도 같이
+H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", L12, "", "snack", lo=3); assert [m for m, p in out12] == ["sendMessage"]; out12.clear()  # lo개로도 넘으면 Threads X(500자 넘는 글 안 보냄)
+L12b = [{"n": "롯데 빼빼로 오리지널 12갑", "p": "9,900원", "u": "https://click.linkprice.com/click.php?m=lotteon&a=A100&l=9999&u_id=" + "z" * 400, "i": 5, "hot": True}]
+H.wx_post({}, "k", "☁️ 오늘", L12b, "", "wx"); th12c = out12[-1][1]
+assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5.html?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 사이트 딜 페이지
+s12c = {"wx_20261016": {"t": 1, "w": [W12(16, 24)]}}; H.weather_post(s12c)
+assert [p["text"] for m, p in out12 if m == "sendMessage"] == ["☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?"] and out12[1][1]["text"] == "☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?" and out12[1][1]["link"] is None  # 맞는 딜 0개 = 날씨 + 질문(링크 X)
+out12.clear(); s12d = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.busy = lambda seen, cap=True: True; H.weather_post(s12d); assert not out12 and "wxpost_20261016" not in s12d  # 묶음 간격·시간당 상한 -> 다음 실행에
+time.time = lambda: TK("2026-10-16 09:31"); H.busy = lambda seen, cap=True: False; H.weather_post(s12d); assert not out12  # 2시간 지나면 안 올림
+H.HAS_TOSS = False; time.time = lambda: TK("2026-10-16 15:35"); s12e = {"wx_20261016": {"t": 1, "w": [W12(15, 20)]}}; H.snack_post(s12e)
+assert not out12 and "snack_20261016" in s12e  # 간식 딜 1개(초코파이 — 커피머신은 간식 아님) -> 안 올림
+P12.append({"t": "2026-10-15 16:00", "text": "🔥 [토스] 하리보 젤리 10봉 (7,900원)\n\n좋아요", "url": "https://toss.im/_m/J", "mid": 8})
+P12.append({"t": "2026-10-15 17:00", "text": "🔥 [쿠팡] 진라면 매운맛 20개 (13,900원)\n\n좋아요", "url": "https://link.coupang.com/a/r1", "mid": 9}); json.dump(P12, open("posts.json", "w"), ensure_ascii=False)
+s12f = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.snack_post(s12f)  # 비 -> 라면도 간식 · 토스 커뮤니티 딜(posts.json)은 지금 가격을 못 봐서 X
+t12s = out12[0][1]["text"]
+assert "<b>🍪 출출할 때 간식 2</b>" in t12s and "진라면 매운맛 20개" in t12s and "초코파이" in t12s and "커피머신" not in t12s and "하리보" not in t12s and t12s.startswith(f"<i>{H.DISCLOSURE}</i>")
+out12.clear()
+J12 = {"t": TK("2026-10-16 01:00")}
+s12g = {"wx_20261016": {"t": 1, "w": [W12(8, 15)]}, "ppomppu_1": TK("2026-10-16 01:00"), "ppomppu_2": TK("2026-10-16 02:00"), "clien_3": TK("2026-10-16 03:00"),
+        "ruliweb_4": TK("2026-10-16 04:00"), "ppomppu_old": TK("2026-10-15 23:00"), "k:abc": TK("2026-10-16 05:00")}
+json.dump([{"t": "2026-10-16 09:00", "text": "🔥 [쿠팡] 휴지 30롤 (19,900원)", "url": "u", "vpm": 3.1}, {"t": "2026-10-16 10:00", "text": "🔥 [쿠팡] 핫팩 30개 (9,900원)", "url": "u", "vpm": 9.5},
+           {"t": "2026-10-16 11:00", "text": "🔥 [토스] 진우 예약", "url": "u", "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-10-16 20:35"); H.daily_log(s12g)
+assert out12 == [("th", {"text": "📝 핫딜픽 운영 일지 · 10/16\n오늘 핫딜픽이 본 커뮤니티 딜 4개 중 2개만 골랐어요.\n커뮤니티에서 제일 많이 본 딜: 핫팩 30개\n\n다들 전기요 꺼냈어요?",
+                          "link": None, "image": None, "tag": "핫딜"})], out12  # 사실만(오늘 본 딜·고른 딜·조회 1등) + 날씨 질문 · 링크 X · Threads만
+assert s12g["bundles"]["ts"] and "cap=False" in inspect.getsource(H.daily_log)  # 묶음 간격 기록 · 채널 시간당 상한은 안 셈(Threads만이라)
+out12.clear(); H.LOG_DENY, ld0 = H.LOG_DENY + ("핫팩",), H.LOG_DENY; s12g.pop("dlog_20261016"); H.daily_log(s12g); assert not out12 and "dlog_20261016" in s12g; H.LOG_DENY = ld0  # 금지어 -> 안 올림
+json.dump([{"t": "2026-10-16 09:00", "text": "🔥 [쿠팡] 써봤는데 좋은 휴지 (9,900원)", "url": "u", "vpm": 2.0}], open("posts.json", "w"), ensure_ascii=False)
+assert H.log_text(s12g) is None and all(w in H.LOG_DENY for w in ("써봤", "써보니", "사용해보니", "제가 직접", "내돈내산", "우리 집"))  # 일지에 '써봤' -> 안 올림
+s12h = {"wx_20261018": {"t": 1, "w": [W12(9, 16, day=f"2026-10-{d}", rain=70 if d in (19, 20) else 0) for d in range(18, 26)]}}
+time.time = lambda: TK("2026-10-17 20:05"); H.wx_dm({"wx_20261017": s12h["wx_20261018"]}); assert not out12  # 토요일 X
+time.time = lambda: TK("2026-10-18 19:55"); H.wx_dm(s12h); assert not out12  # 20시 전 X
+time.time = lambda: TK("2026-10-18 20:05"); H.wx_dm(s12h); H.wx_dm(s12h)
+(m12, p12), = out12
+d12 = p12["text"]
+assert p12["chat_id"] == H.ADMIN and p12["link_preview_options"] == {"is_disabled": True} and d12.startswith("🗓 다음 7일 서울 예보(10/19~10/25) — 쿠팡 링크 만들 시즌 키워드")
+k12 = [l for l in d12.split("\n") if re.match(r"\d+\. ", l)]
+assert len(k12) == 15 and k12[0] == "1. 전기요 (7일) " + H.CP_SEARCH + "%EC%A0%84%EA%B8%B0%EC%9A%94" and "4. 우산 (2일) " in k12[3] and k12[7].startswith("8. 휴지 ") and k12[9].startswith("10. 세제 ") and k12[10].startswith("1. 호빵 (7일)")
+assert ". 가습기 (1일) " in H.wx_dm_text([W12(2, 9, hum=30)]) and ". 어묵 (1일) " in H.wx_dm_text([W12(2, 9, rain=80)])  # 규칙 두 개에 든 키워드도 그날 1번
+out12.clear(); H.http = http12
+UP = [{"update_id": 9, "message": {"message_id": 77, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "small"}, {"file_id": "big"}],
+                                   "caption": "#일상 오늘 저녁은 집밥 🍚 https://link.coupang.com/a/rice"}}]
+real_open12 = H.urllib.request.urlopen
+class R12:
+    def __init__(s, d): s.d = d
+    def read(s): return s.d
+    def __enter__(s): return s
+    def __exit__(s, *a): pass
+got12 = []
+H.urllib.request.urlopen = lambda url, timeout=None: got12.append(url) or R12(b"JPEGDATA")
+H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"file_path": "photos/f.jpg"} if m == "getFile" else {"message_id": 1})
+s12i = {}; time.time = lambda: TK("2026-10-16 19:00"); H.publish_approved(s12i)
+H.urllib.request.urlopen = real_open12
+assert got12 == ["https://api.telegram.org/file/bott/photos/f.jpg"] and open("docs/daily/20261016_77.jpg", "rb").read() == b"JPEGDATA"  # 사진 = 가장 큰 것, 사이트 폴더에 저장
+assert s12i["dly_77"] == {"t": TK("2026-10-16 19:00"), "text": "#일상 오늘 저녁은 집밥 🍚 https://link.coupang.com/a/rice", "img": "https://hotdealpick.kr/daily/20261016_77.jpg"}
+assert ("getFile", {"file_id": "big"}) in out12 and not any(m == "sendMessage" and p.get("chat_id") == "@ch" for m, p in out12)  # 채널·딜 초안으로 안 감
+out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or {"message_id": 1}
+H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("404")) if method == "HEAD" else http12(url)
+H.daily_post(s12i); assert not out12  # 사이트 반영 전 -> 기다림
+H.http = http12; time.time = lambda: TK("2026-10-16 19:16"); H.daily_post(s12i); H.daily_post(s12i)
+th12 = [p for m, p in out12 if m == "th"]
+assert len(th12) == 1 and th12[0] == {"text": H.th_note(H.DISCLOSURE) + "#일상 오늘 저녁은 집밥 🍚 https://link.coupang.com/a/rice", "link": None, "image": "https://hotdealpick.kr/daily/20261016_77.jpg", "tag": "일상"}
+assert "api.telegram.org" not in json.dumps(th12) and ("sendMessage", {"chat_id": H.ADMIN, "reply_parameters": {"message_id": 77}, "text": "✅ Threads에 올렸어요"}) in out12  # 사이트 주소만 · '올렸어요' 답장
+out12.clear(); s12j = {"dly_78": {"t": TK("2026-10-16 18:00"), "text": "#일상 산책", "img": "https://hotdealpick.kr/daily/x.jpg"}}
+H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("404")); H.daily_post(s12j)
+assert s12j["dly_78"]["done"] and not [p for m, p in out12 if m == "th"] and "못 올렸어요" in out12[0][1]["text"]  # 1시간 넘게 안 뜨면 알리고 그만
+UP[0]["update_id"] = 10; out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"message_id": 1}); H.publish_approved(s12i)
+assert not [m for m, p in out12 if m == "getFile"] and s12i["dly_77"]["done"]  # 같은 메시지가 다시 와도 1번
+UP[:] = [{"update_id": 11, "message": {"message_id": 79, "from": {"id": 42}, "chat": {"id": 42}, "text": "#일상 오늘 비 와요"}},
+         {"update_id": 12, "message": {"message_id": 80, "from": {"id": 42}, "chat": {"id": 42}, "document": {"file_id": "doc", "mime_type": "image/png"},
+                                       "caption": "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9."}}]
+out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"file_path": "documents/f.png"} if m == "getFile" else {"message_id": 1})
+H.urllib.request.urlopen = lambda url, timeout=None: R12(b"PNG"); H.publish_approved(s12i); H.urllib.request.urlopen = real_open12
+assert "dly_79" not in s12i and any(p.get("reply_parameters") == {"message_id": 79} and "사진과 같이" in p["text"] for m, p in out12 if m == "sendMessage")  # 사진 없으면 답장만(글만은 안 올림)
+assert ("getFile", {"file_id": "doc"}) in out12 and s12i["dly_80"]["img"] == "https://hotdealpick.kr/daily/20261016_80.png"  # 사진을 파일(png)로 보내도
+out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or {"message_id": 1}; H.busy = lambda seen, cap=True: True; H.daily_post(s12i); assert not out12  # 묶음 간격 -> 다음 실행에
+H.http, H.busy = http12, (lambda seen, cap=True: False); H.daily_post(s12i); th12d = [p for m, p in out12 if m == "th"][0]["text"]
+assert th12d == H.th_note(H.DISCLOSURE + "\n" + H.TOSS_NOTE) + "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9.\n\n" + H.toss_when() and s12i["bundles"]["ts"]  # 프로그램마다 대가성 문구 · 토스 = 게시 시점 줄
+out12.clear()
+H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}
+assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
+H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
+assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
+assert "top_deals, weather_post, snack_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
+H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
