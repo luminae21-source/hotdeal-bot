@@ -2662,7 +2662,7 @@ WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운
     (lambda w: "11-01" <= w["date"][5:] <= "11-11", "빼빼로데이", (), ("빼빼로",), "빼빼로 누구 주실 거예요?"),
     (lambda w: 0 <= (kst_ts(SUNEUNG + " 00:00") - kst_ts(w["date"] + " 00:00")) // 86400 <= 6, "수능 주간", (), ("찹쌀떡", "초콜릿", "견과"), "수능 응원 간식 뭐가 좋을까요?"))
 SNACK_WORDS = ("과자", "젤리", "견과", "초콜릿", "초코", "커피", "아이스크림", "빵", "떡", "음료")  # 15:30 간식 글(+ 오늘 날씨 간식 키워드)
-SNACK_NOT = r"머신|포트|메이커|그라인더|드리퍼|텀블러|제빵기|토스터|빵칼"  # 간식 아님(커피머신 등)
+SNACK_NOT = r"머신|포트|메이커|그라인더|드리퍼|텀블러|제빵기|토스터|빵칼|떡갈비|케이스|필터|냉장고|배터리|제조기|금액권"  # 간식 아님(커피머신·떡갈비·젤리 케이스·커피 필터·쿠폰 행사 등 — '할인'은 X: 떡볶이 64%할인)
 WX_FILL = ("휴지", "물티슈", "세제", "생수", "라면", "햇반", "칫솔", "샴푸", "섬유유연제", "김")  # 일요일 DM: 날씨 키워드가 10개 안 되면 생필품·식품으로(쿠팡 전략 생필품·식품 70)
 LOG_DENY = ("써봤", "써보니", "사용해보니", "제가 직접", "내돈내산", "우리 집")  # 운영 일지 금지어 — 지어낸 경험담 X(공정위 추천·보증 심사지침 2026.6), 들어가면 안 올림
 DAILY_DIR = "docs/daily"  # #일상 사진(사이트 주소로 Threads에 — 봇 토큰 든 텔레그램 파일 주소는 안 씀)
@@ -2732,7 +2732,7 @@ def wx_deals(seen, words, n=3, deny=None):
         if p["t"] < since or p["text"].startswith("📋") or is_toss(p.get("url"), p["text"]):  # 토스는 아래에서(지금 가격)
             continue
         title = title_of(p["text"])
-        name, won = re.sub(r"\s*\([^()]*\d[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)' 같은 가격 괄호는 이름에서 빼고 가격으로
+        name, won = re.sub(r"\s*\((?=[^()]*\d)[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)' 같은 가격 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
         if ok(name):
             out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"] if aff(p.get("url")) else None, "i": i,
                         "hot": not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
@@ -2880,20 +2880,28 @@ def wx_dm(seen):
         tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]), link_preview_options={"is_disabled": True})
 
 
+def daily_text(cap):
+    """#일상 Threads 글: 캡션 그대로(우리 링크 X) + 캡션에 제휴 링크가 있으면 프로그램마다 대가성 문구 맨 앞, 토스 링크면 게시 시점 줄."""
+    urls = [u.rstrip(").,]>」』'\"") for u in re.findall(r"https?://\S+", cap)]
+    return th_note("\n".join(dict.fromkeys(n for n in map(aff_note, urls) if n))) + cap + (f"\n\n{toss_when()}" if TOSS_NO_CMP and any(map(toss_share, urls)) else "")
+
+
 def daily_in(seen, m, cap):
     """진우 '#일상 …'(사진 + 캡션): 사진 = docs/daily/에 저장(사이트 반영 뒤 공개 주소 hotdealpick.kr/daily/… — 봇 토큰 든 텔레그램 파일 주소는 저장·게시 X) -> daily_post가 Threads에.
-    사진을 파일(jpg·png)로 보내도 됨, 사진 없으면 답장만(글만은 안 올림), 같은 메시지가 다시 와도 1번."""
-    k, doc = f"dly_{m['message_id']}", m.get("document") or {}
-    fid = m["photo"][-1]["file_id"] if m.get("photo") else doc.get("file_id") if doc.get("mime_type") in ("image/jpeg", "image/png") else None
+    사진으로 보낸 것만(텔레그램이 위치 정보를 지움 — 파일로 보낸 원본엔 GPS가 남아 사이트에 공개됨), 사진 없거나 글이 Threads 500자를 넘으면 답장만, 같은 메시지가 다시 와도 1번."""
+    k = f"dly_{m['message_id']}"
     reply = lambda t: tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text=t)
     if k in seen:
         return
-    if not fid:
-        reply("📷 #일상은 사진과 같이 보내줘(글만은 안 올려요)")
+    if not m.get("photo"):
+        reply("📷 #일상은 사진으로 보내줘(파일로 보낸 원본엔 위치 정보가 남고, 글만은 안 올려요)" if m.get("document") else "📷 #일상은 사진과 같이 보내줘(글만은 안 올려요)")
+        return
+    if len(daily_text(cap)) > 480:  # th_post가 500자에서 자르면 대가성 문구·게시 시점 줄·링크가 잘림
+        reply(f"✂️ 글이 {len(daily_text(cap))}자라 Threads에 다 안 들어가요(대가성 문구 포함 480자까지) — 캡션 줄여서 다시 보내줘")
         return
     try:
-        f = tg("getFile", file_id=fid)
-        name = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600)) + f"_{m['message_id']}" + (".png" if doc.get("mime_type") == "image/png" and not m.get("photo") else ".jpg")
+        f = tg("getFile", file_id=m["photo"][-1]["file_id"])
+        name = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600)) + f"_{m['message_id']}.jpg"
         with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
             data = r.read()
         os.makedirs(DAILY_DIR, exist_ok=True)
@@ -2906,8 +2914,8 @@ def daily_in(seen, m, cap):
 
 
 def daily_post(seen):
-    """#일상(daily_in)이 사이트에 올라가면(사진 주소 HEAD) Threads에 1번 — 사진 + 캡션 그대로(우리 링크 X, 캡션에 제휴 링크가 있으면 프로그램마다 대가성 문구 맨 앞,
-    토스 링크면 게시 시점 줄) + 진우에게 '올렸어요'. 묶음 글 간격(busy, 시간당 상한 X) 같이 셈. 1시간 넘게 사이트에 안 뜨면 진우에게 알리고 그만."""
+    """#일상(daily_in)이 사이트에 올라가면(사진 주소 HEAD) Threads에 1번 — daily_text(사진 + 캡션 그대로, 대가성 문구·게시 시점 줄) + 진우에게 '올렸어요'.
+    묶음 글 간격(busy, 시간당 상한 X) 같이 셈. 1시간 넘게 사이트에 안 뜨면 진우에게 알리고 그만."""
     tok, now = E.get("THREADS_TOKEN"), time.time()
     for k in [k for k in seen if k.startswith("dly_") and not seen[k].get("done")] if tok and not busy(seen, cap=False) else []:
         v = seen[k]
@@ -2918,10 +2926,8 @@ def daily_post(seen):
                 v["done"] = now
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="⚠️ 사이트에 사진이 안 떠서 Threads에 못 올렸어요 — 다시 보내줘")
             continue
-        urls = [u.rstrip(").,]>」』'\"") for u in re.findall(r"https?://\S+", v["text"])]
-        notes = "\n".join(dict.fromkeys(n for n in map(aff_note, urls) if n))
         v["done"] = now  # 먼저 표시: 실패해도 두 번 안 올림(실패는 main 알림)
-        th_post(tok, th_note(notes) + v["text"] + (f"\n\n{toss_when()}" if TOSS_NO_CMP and any(map(toss_share, urls)) else ""), image=v["img"], tag="일상")
+        th_post(tok, daily_text(v["text"]), image=v["img"], tag="일상")
         bundled(seen)
         tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요")
         return  # 1번에 1개(묶음 간격)

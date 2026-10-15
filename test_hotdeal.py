@@ -3123,7 +3123,11 @@ P12.append({"t": "2026-10-15 16:00", "text": "🔥 [토스] 하리보 젤리 10�
 P12.append({"t": "2026-10-15 17:00", "text": "🔥 [쿠팡] 진라면 매운맛 20개 (13,900원)\n\n좋아요", "url": "https://link.coupang.com/a/r1", "mid": 9}); json.dump(P12, open("posts.json", "w"), ensure_ascii=False)
 s12f = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.snack_post(s12f)  # 비 -> 라면도 간식 · 토스 커뮤니티 딜(posts.json)은 지금 가격을 못 봐서 X
 t12s = out12[0][1]["text"]
+assert all(re.search(H.SNACK_NOT, t) for t in ("한돈 갈빗살 떡갈비 20개", "투명 젤리 케이스", "칼리타 커피 필터", "메가커피 금액권 10% 할인")) and not re.search(H.SNACK_NOT, "슬림떡볶이 로제맛 4개 64%할인")  # 간식 아님
 assert "<b>🍪 출출할 때 간식 2</b>" in t12s and "진라면 매운맛 20개" in t12s and "초코파이" in t12s and "커피머신" not in t12s and "하리보" not in t12s and t12s.startswith(f"<i>{H.DISCLOSURE}</i>")
+json.dump(P12 + [{"t": "2026-10-15 18:00", "text": "🔥 [G마켓] 마이핫 보온대 핫팩 150g (30개) (12,900원/무료)\n\n좋아요", "url": "u", "mid": 10},
+                 {"t": "2026-10-15 18:30", "text": "🔥 [쿠팡] 3단 자동 우산 (1+1) (21,920/무료)\n\n좋아요", "url": "u", "mid": 11}], open("posts.json", "w"), ensure_ascii=False)
+assert [(c["n"], c["p"]) for c in H.wx_deals(s12f, ["핫팩", "자동 우산"])][:2] == [("3단 자동 우산 (1+1)", "21,920원"), ("마이핫 보온대 핫팩 150g (30개)", "12,900원")]  # 가격 괄호만 빼고 수량·1+1은 그대로
 out12.clear()
 J12 = {"t": TK("2026-10-16 01:00")}
 s12g = {"wx_20261016": {"t": 1, "w": [W12(8, 15)]}, "ppomppu_1": TK("2026-10-16 01:00"), "ppomppu_2": TK("2026-10-16 02:00"), "clien_3": TK("2026-10-16 03:00"),
@@ -3177,12 +3181,17 @@ assert s12j["dly_78"]["done"] and not [p for m, p in out12 if m == "th"] and "�
 UP[0]["update_id"] = 10; out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"message_id": 1}); H.publish_approved(s12i)
 assert not [m for m, p in out12 if m == "getFile"] and s12i["dly_77"]["done"]  # 같은 메시지가 다시 와도 1번
 UP[:] = [{"update_id": 11, "message": {"message_id": 79, "from": {"id": 42}, "chat": {"id": 42}, "text": "#일상 오늘 비 와요"}},
-         {"update_id": 12, "message": {"message_id": 80, "from": {"id": 42}, "chat": {"id": 42}, "document": {"file_id": "doc", "mime_type": "image/png"},
-                                       "caption": "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9."}}]
-out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"file_path": "documents/f.png"} if m == "getFile" else {"message_id": 1})
-H.urllib.request.urlopen = lambda url, timeout=None: R12(b"PNG"); H.publish_approved(s12i); H.urllib.request.urlopen = real_open12
-assert "dly_79" not in s12i and any(p.get("reply_parameters") == {"message_id": 79} and "사진과 같이" in p["text"] for m, p in out12 if m == "sendMessage")  # 사진 없으면 답장만(글만은 안 올림)
-assert ("getFile", {"file_id": "doc"}) in out12 and s12i["dly_80"]["img"] == "https://hotdealpick.kr/daily/20261016_80.png"  # 사진을 파일(png)로 보내도
+         {"update_id": 12, "message": {"message_id": 80, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p80"}],
+                                       "caption": "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9."}},
+         {"update_id": 13, "message": {"message_id": 81, "from": {"id": 42}, "chat": {"id": 42}, "document": {"file_id": "doc", "mime_type": "image/jpeg"}, "caption": "#일상 원본"}},
+         {"update_id": 14, "message": {"message_id": 82, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p82"}], "caption": "#일상 " + "가" * 440 + " https://link.coupang.com/a/z"}}]
+out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or (UP if m == "getUpdates" and "offset" not in p else {"file_path": "photos/f.jpg"} if m == "getFile" else {"message_id": 1})
+H.urllib.request.urlopen = lambda url, timeout=None: R12(b"JPG"); H.publish_approved(s12i); H.urllib.request.urlopen = real_open12
+rp12 = {p["reply_parameters"]["message_id"]: p["text"] for m, p in out12 if m == "sendMessage" and p.get("reply_parameters")}
+assert "dly_79" not in s12i and "사진과 같이" in rp12[79]  # 사진 없으면 답장만(글만은 안 올림)
+assert [p["file_id"] for m, p in out12 if m == "getFile"] == ["p80"] and s12i["dly_80"]["img"] == "https://hotdealpick.kr/daily/20261016_80.jpg"
+assert "dly_81" not in s12i and "사진으로 보내줘" in rp12[81]  # 파일(원본)로 보내면 X — 원본엔 위치(GPS) 정보가 남아 사이트에 공개됨
+assert "dly_82" not in s12i and rp12[82].startswith("✂️ 글이 ") and len(H.daily_text("#일상 " + "가" * 440 + " https://link.coupang.com/a/z")) > 480  # 대가성 문구 포함 480자 넘으면 답장만(잘린 글 X)
 out12.clear(); H.tg = lambda m, **p: out12.append((m, p)) or {"message_id": 1}; H.busy = lambda seen, cap=True: True; H.daily_post(s12i); assert not out12  # 묶음 간격 -> 다음 실행에
 H.http, H.busy = http12, (lambda seen, cap=True: False); H.daily_post(s12i); th12d = [p for m, p in out12 if m == "th"][0]["text"]
 assert th12d == H.th_note(H.DISCLOSURE + "\n" + H.TOSS_NOTE) + "#일상 간식 https://link.coupang.com/a/s1 https://toss.im/_m/T9.\n\n" + H.toss_when() and s12i["bundles"]["ts"]  # 프로그램마다 대가성 문구 · 토스 = 게시 시점 줄
