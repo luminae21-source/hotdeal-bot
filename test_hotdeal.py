@@ -2972,7 +2972,7 @@ P10 = {"https://t.me/s/hotdeal_pick": tme10(901, "2026-10-14T14:50:00+00:00", "<
        "https://t.me/s/hotdeal_pick?before=899": tme10(897, "2026-10-13T14:00:00+00:00", "그제", "9") + tme10(898, "2026-10-13T14:59:00+00:00", "어제", "9")}
 json.dump([{"t": "2026-10-14 12:00", "mid": 900, "text": "🏆 지금 살 만한 딜 TOP5 (12시)\n1️⃣ a\n2️⃣ b", "url": None},
            {"t": "2026-10-14 23:50", "mid": 901, "text": "🔥 [쿠팡] 피지오겔 페이셜 로션 150ml (21,670원)", "url": "https://link.coupang.com/a/x"}], open("posts.json", "w"), ensure_ascii=False)
-TH10 = [{"id": "t1", "text": "이 콘텐츠는 토스\n🔥 [토스] 비비고 왕만두 1.05kg 2개 (12,900원)", "timestamp": "2026-10-14T03:00:00+0000"}, {"id": "t2", "text": "🔥 [쿠팡] 샴푸 (55,000원)", "timestamp": "2026-10-14T09:00:00+0000"}]
+TH10 = [{"id": "t1", "text": "이 콘텐츠는 토스\n🔥 [토스] 비비고 왕만두 1.05kg 2개 (12,900원)", "timestamp": "2026-10-14T03:00:00+0000"}, {"id": "t2", "text": "🔥 샴푸 (55,000원)\n\n👉 https://link.coupang.com/a/abc\n📲 실시간 알림 t.me/hotdeal_pick", "timestamp": "2026-10-14T09:00:00+0000"}]
 def http10(url, body=None, headers=None, method=None):
     m10.append(url)
     if url in P10: return P10[url]
@@ -3003,7 +3003,7 @@ assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] =
 assert (r10[3]["cat"], r10[3]["shop"], r10[3]["price"]) == ("생필품", "기타", "")  # 재오픈 답장 = 인용(원글 쿠팡 프라이팬 55,000원) 말고 답장 본문(괄호 없는 가격은 못 읽음 = 사이트 price_won 그대로)
 r10 = [r for r in r10 if r["id"] != 903]
 assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "1~3만", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0}
-assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0  # 0 = 빈 칸 아님
+assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0 and r10[4]["shop"] == "coupang"  # 0 = 빈 칸 아님 · [몰] 없는 Threads 글 = 글 속 구매 링크로 몰
 assert r10[5] == {"date": "2026-10-14", "ch": "ig", "id": "g1", "shop": "기타", "cat": "기타", "price": "", "at": "21:00", "views": None, "react": 5, "likes": 4, "replies": 1}
 assert d10["2026-10-14"]["miss"] == {"ig": "조회수 권한 없음(토큰 권한 instagram_business_manage_insights 확인): 403 (#10) Application does not have permission for this action"}
 assert sum(1 for l in open(H.METRICS, encoding="utf-8") if l.startswith('{"date"')) == 7  # 글 1개 = 1줄

@@ -2833,7 +2833,8 @@ def metrics(seen):
                     miss["th"] = "insights 권한 없음(토큰 권한 threads_manage_insights 확인): " + why
                 else:
                     miss.setdefault("th_part", "일부 글 insights 못 읽음: " + why)
-        row("th", x["id"], x.get("text") or "", "", stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
+        lk = re.search(r"https?://\S+", x.get("text") or "")  # Threads 글은 [몰] 없이 쓰는 일이 많아 글 속 구매 링크로 몰
+        row("th", x["id"], x.get("text") or "", lk[0] if lk else "", stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
             likes=ins.get("likes"), replies=ins.get("replies"))
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
