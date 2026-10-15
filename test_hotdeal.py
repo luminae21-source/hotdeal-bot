@@ -2995,7 +2995,8 @@ s10 = {}; time.time = lambda: TK("2026-10-15 04:52"); H.metrics(s10); assert not
 time.time = lambda: TK("2026-10-15 05:07"); H.metrics(s10)
 d10 = json.load(open(H.METRICS)); r10 = d10["2026-10-14"]["rows"]
 assert list(d10) == ["2026-10-14"] and "mt_2026-10-14" in s10 and d10["2026-10-14"]["at"] == "2026-10-15 05:07"
-assert [(r["ch"], r["id"]) for r in r10] == [("tg", 901), ("tg", 899), ("tg", 900), ("tg", 903), ("th", "t1"), ("th", "t2"), ("ig", "g1")]  # 그날 것만(00:10·전날 X), 쪽 넘김은 그날 처음 지나면 멈춤
+assert [(r["ch"], r["id"]) for r in r10] == [("tg", 899), ("tg", 900), ("tg", 903), ("tg", 901), ("th", "t1"), ("th", "t2"), ("ig", "g1")]  # 그날 것만(00:10·전날 X), 쪽 넘김은 그날 처음 지나면 멈춤, 채널별 시각 순
+r10 = [r10[i] for i in (3, 0, 1, 2, 4, 5, 6)]
 assert r10[0] == {"date": "2026-10-14", "ch": "tg", "id": 901, "shop": "coupang", "cat": "화장품", "price": "1~3만", "at": "23:50", "views": 3, "react": 0}  # posts.json 글 = 그 글·링크로
 assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "1~3만", "at": "10:00", "views": 1200, "react": 17}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함)
 assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] == 40

@@ -2860,6 +2860,7 @@ def metrics(seen):
         lk, cm = x.get("like_count"), x.get("comments_count")
         row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm)
 
+    rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
     m, js = load(METRICS, {}), lambda x: json.dumps(x, ensure_ascii=False)
     m[day] = {"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "miss": miss, "rows": rows}
     open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
