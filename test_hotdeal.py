@@ -7,6 +7,7 @@ os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCE
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -700,7 +701,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -1671,7 +1672,7 @@ rs = ET.parse("docs8/rss.xml").getroot().find("channel").findall("item")
 assert len(rs) == 30 and all("모아보기" not in i.findtext("title") for i in rs) and rs[0].findtext("pubDate").endswith(" +0900") and rs[0].findtext("link").startswith("https://hotdealpick.kr/p/")
 assert rs[0].findtext("description") == "싸요 & 좋아요 💡 단위가격 롤당 663원" and rs[0].findtext("title").startswith("[쿠팡] 휴지")
 sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
-assert len(sm) == 36 and all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09"
+assert len(sm) == 37 and all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09" and sm[1].findtext(ns + "loc") == "https://hotdealpick.kr/c/toilet-paper.html"  # +1 = 화장지 최저가 기록(10/17)
 d8 = open("docs8/p/0.html").read()
 assert '<meta name="description" content="19,900원 · 롤당 663원 · 쿠팡 · 10/1 게시 · 핫딜픽">' in d8 and "<title>휴지0 30롤 19,900원 (쿠팡) | 핫딜픽</title>" in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8  # 10/14 '검색 유입': 상품명 가격 (몰), 가격·단위가격·몰·날짜
 ld0 = json.loads(d8.split('<script type="application/ld+json">')[1].split("</script>")[0])
@@ -3211,9 +3212,83 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, weather_post, snack_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
+# 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
+import build_site as S13
+assert pl0 == (12, 30) and H.POLL_REUSE == 7 and S13.PRICE_MIN == 3
+def p13(t, title, unit, url="https://link.coupang.com/a/x", mid=1):
+    return {"t": t, "text": f"🔥 {title}\n\n좋아요\n\n💡 단위가격 {unit}", "url": url, "mid": mid}
+P13 = [p13("2026-10-10 10:00", "[쿠팡] 신라면 40개 (23,480원)", "개당 587원"), p13("2026-10-12 10:00", "[쿠팡] 신라면 5개 (2,400원)", "개당 480원"),
+       p13("2026-10-13 10:00", "[지마켓] 안성탕면 20봉 (13,400원)", "봉당 약 670원"), p13("2026-10-14 10:00", "[네이버] 컵누들 12개 (9,400원)", "100g당 1,910원"),  # 100g당 = 다른 단위 -> X
+       p13("2026-10-14 11:00", "[토스] 진라면 30개 (12,000원)", "개당 400원", "https://toss.shopping/_m/T1"),  # 토스 = 기록 X(더 싸도)
+       p13("2026-10-15 10:00", "[쿠팡] 라면 냄비 2개 (9,000원)", "개당 4,500원"),  # 품목 아님
+       p13("2026-10-11 10:00", "[네이버] 풀무원생수 2L 24개 (11,900원)", "개당 약 496원 (1L당 248원)"), p13("2026-10-12 10:00", "[쿠팡] 삼다수 500ml 40병 (16,000원)", "병당 400원"),
+       p13("2026-10-13 10:00", "[네이버] 삼다수 2L 6개 (6,040원)", "1L당 503원"),  # 생수 1L당 2개 = 기록 2개 품목 -> 페이지·투표 X
+       {"t": "2026-10-13 11:00", "text": "📋 진우 메모 신라면 개당 1원", "url": None}]
+json.dump(P13, open("posts.json", "w"), ensure_ascii=False)
+r13 = S13.price_records(P13)
+assert list(r13) == ["ramen"] and [x[1] for x in r13["ramen"][2]] == ["개당 480원", "개당 587원", "개당 670원"]  # 같은 단위만(봉당 = 개당, 100g당 X)·싼 순, 토스·냄비·📋 X, 생수(1L당 2개) = 3개 미만 X
+assert S13.price_records(P13[6:9] + [p13("2026-10-14 10:00", "[네이버] 삼다수 2L 12개 (12,000원)", "1L당 500원")])["water"][2][0][1] == "1L당 248원"  # 한 줄에 두 단위 -> 품목 단위(1L당)만
+assert S13.price_records(P13 + [p13("2026-10-16 10:00", "[쿠팡] 신라면 5개 (2,400원)", "개당 480원")])["ramen"][2][0][2] == len(P13)  # 같은 상품·같은 단위가격 다시 = 최근 1개
+d13 = tempfile.mkdtemp(); os.makedirs(f"{d13}/c"); open(f"{d13}/c/old.html", "w").write("x"); S13.build(P13, d13)
+assert sorted(os.listdir(f"{d13}/c")) == ["ramen.html"]  # 기록 3개↑ 품목만 · 옛 페이지 지움
+c13, sm13, ix13 = (open(f"{d13}/{f}").read() for f in ("c/ramen.html", "sitemap.xml", "index.html"))
+assert "<title>라면 최저가 기록 — 개당 가격 | 핫딜픽</title>" in c13 and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
+assert "진라면" not in c13 and "toss.shopping" not in c13 and "컵누들" not in c13 and "냄비" not in c13 and 'href="https://hotdealpick.kr/#toss">토스 탭에서 보기' in c13  # 토스 행 X(링크 한 줄만)
+assert c13.count("<tr") == 4 and "<td>10/12</td><td>쿠팡</td>" in c13 and 'href="https://hotdealpick.kr/p/1.html">신라면 5개</a></td><td>2,400원</td><td>480원</td>' in c13 and "평균 · 기록 3개" in c13 and "<b>579원</b>" in c13
+assert sm13.count("/c/") == 1 and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
+assert ('id="life"' in ix13) == ('href="https://hotdealpick.kr/c/ramen.html">라면 개당</a>' in ix13)  # 홈 생필품 칸 링크(칸이 있으면)
+assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 최저가 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
+assert "c/ramen.html" not in open(f"{d13}/p/4.html").read() and "c/ramen.html" not in open(f"{d13}/p/6.html").read()  # 토스 딜·다른 품목 페이지엔 X
+assert S13.cat_sections([p13("2026-10-16 10:00", "[쿠팡] 크리넥스 휴지 30롤 (19,900원)", "롤당 663원")], ["2026-10-16"], "<nav>R</nav>")[0][2].endswith("<nav>R</nav></section>")
+assert H.poll_opts(480) == ["500원 이하", "600원까지", "700원까지", "더 줘도 사요"] and H.poll_opts(120)[:2] == ["120원 이하", "140원까지"] and H.poll_opts(2590)[0] == "2,500원 이하" and H.poll_opts(4.7)[0] == "10원 이하"
+assert H.poll_text(r13["ramen"]) == ("🗳️ 라면 개당 얼마면 '싸다' 싶어요?\n\n내일 이 글 답글로 핫딜픽 기록 최저가 알려드릴게요", H.poll_opts(480))
+c13h = []
+def http13(url, body=None, headers=None, method=None):
+    c13h.append((url, body, headers, method))
+    if "/me?fields=id" in url: return json.dumps({"id": "me"})
+    if "/me/threads?" in url and method == "POST": return json.dumps({"id": "c1"})
+    if "/threads_publish?" in url: return json.dumps({"id": "pol1"})
+    if "/pol1?fields=poll_attachment{" in url:
+        return json.dumps({"id": "pol1", "poll_attachment": {"option_a": "500원 이하", "option_b": "600원까지", "option_c": "700원까지", "option_d": "더 줘도 사요", "option_a_votes_percentage": 0.25,
+                                                             "option_b_votes_percentage": 0.5, "option_c_votes_percentage": 0.25, "option_d_votes_percentage": 0, "total_votes": 8}})
+    raise AssertionError(url)
+sv13 = (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.tg, H.TH_SOLO_GAP); H.TH_SOLO_GAP = 45 * 60
+rp13, al13 = [], []
+H.http, H.time.sleep, H.busy, H.E["THREADS_TOKEN"], H.POLL_HOUR = http13, (lambda s: None), (lambda seen, cap=True: False), "tk", pl0
+H.th_reply, H.th_reply_ok, H.tg = (lambda tok, to, text: rp13.append((to, text)) or "r1"), (lambda seen: True), (lambda m, **p: al13.append(p.get("text")) or {"message_id": 1})
+try: H.th_poll("tk", "x", ["가" * 26, "b"]); raise AssertionError("26자 보기")
+except ValueError: assert not c13h  # 보기 25자 넘으면 안 올림(API 안 부름)
+try: H.th_poll("tk", "x", ["a"]); raise AssertionError("보기 1개")
+except ValueError: pass
+s13 = {}; time.time = lambda: TK("2026-10-17 12:20"); H.poll_post(s13); assert not c13h and not s13  # 12:30 전 X
+time.time = lambda: TK("2026-10-17 12:34"); H.poll_post(s13)
+q13 = [x for x in c13h if "/me/threads?" in x[0]][0]
+assert parse_qs(urlsplit(q13[0]).query)["text"] == [H.poll_text(r13["ramen"])[0]] and parse_qs(urlsplit(q13[0]).query)["media_type"] == ["TEXT"] and "link_attachment" not in q13[0]
+assert json.loads(parse_qs(q13[1].decode())["poll_attachment"][0]) == {"option_a": "500원 이하", "option_b": "600원까지", "option_c": "700원까지", "option_d": "더 줘도 사요"}  # 문서 예시처럼 본문(-d)
+assert s13["poll_20261017"] and s13["polls"]["open"]["id"] == "pol1" and s13["polls"]["used"] == {"ramen": TK("2026-10-17 12:34")} and s13["thsolo_20261017"]["last"] == TK("2026-10-17 12:34") and s13["thsolo_20261017"]["n"] == 0  # 45분 간격만 같이(개수 X)
+c13h.clear(); H.poll_post(s13); assert not c13h  # 하루 1번
+s13b = {"thsolo_20261018": {"n": 1, "last": TK("2026-10-18 12:10")}}; time.time = lambda: TK("2026-10-18 12:31"); H.poll_post(s13b); assert not c13h and "poll_20261018" not in s13b  # Threads 45분 간격 -> 다음 실행에
+H.busy = lambda seen, cap=True: True; H.poll_post({}); assert not c13h; H.busy = lambda seen, cap=True: False  # 묶음 간격·시간당 상한 -> 다음 실행에
+H.poll_post(s13); assert "poll_20261018" in s13 and s13["polls"]["used"] == {"ramen": TK("2026-10-17 12:34")}  # 다음 날: 기록 3개↑ 품목(라면뿐)이 7일 안에 쓰임 -> 투표 X(답글은 먼저)
+assert len(rp13) == 1 and rp13[0][0] == "pol1" and "📊 1등 600원까지 50% (8명) · 핫딜픽 기록 최저 개당 480원 (10/12)" in rp13[0][1] and "👉 https://hotdealpick.kr/c/ramen.html?ref=th" in rp13[0][1]
+assert rp13[0][1].startswith(H.th_note(H.DISCLOSURE)) and s13["polls"]["open"] is None  # 사이트 링크 글 규칙(그 딜들 대가성 문구 맨 앞) · 답글 1번
+rp13.clear(); del s13["poll_20261018"]; H.poll_post(s13); assert not rp13  # 답글은 1번만
+s13["polls"]["open"] = {"id": "pol1", "slug": "ramen", "t": TK("2026-10-17 12:34")}; del s13["poll_20261018"]; H.th_reply_ok = lambda seen: False; s13["threply"] = {"t": 1, "ok": 0, "err": "(#10) no permission"}
+H.poll_post(s13); assert not rp13 and len(al13) == 1 and "가격 투표 결과 답글 못 달았어요" in al13[0] and "(#10) no permission" in al13[0] and s13["polls"]["open"] is None  # 댓글 권한 X -> 건너뜀·알림
+z13 = H.poll_reply_text("ramen", r13["ramen"], {"option_a": "500원 이하", "option_b": "600원까지", "total_votes": 0, "option_a_votes_percentage": 0, "option_b_votes_percentage": 0})
+assert "1등" not in z13 and "📊 핫딜픽 기록 최저 개당 480원 (10/12)" in z13 and H.poll_reply_text("ramen", r13["ramen"], None) == z13  # 투표 0명(못 읽음) = 기록 줄만
+assert "1등 600원까지 50%" in H.poll_reply_text("ramen", r13["ramen"], {"option_a": "500원 이하", "option_b": "600원까지", "total_votes": 4, "option_a_votes_percentage": 50, "option_b_votes_percentage": 50.0001})  # 0~100으로 와도
+H.th_reply_ok = lambda seen: True; u13 = {"t": 1, "used": {"ramen": TK("2026-10-15 12:30")}, "open": None}; P13b = P13 + [p13(f"2026-10-1{d} 10:00", f"[쿠팡] 크리넥스 화장지 30롤 {d} (19,900원)", f"롤당 {600 + d}원") for d in (1, 2, 3)]
+json.dump(P13b, open("posts.json", "w"), ensure_ascii=False); c13h.clear(); time.time = lambda: TK("2026-10-19 12:31"); s13c = {"polls": u13}; H.poll_post(s13c)
+assert s13c["polls"]["used"] == {"ramen": TK("2026-10-15 12:30"), "toilet-paper": TK("2026-10-19 12:31")} and "🗳️ 화장지 롤당" in parse_qs(urlsplit([x for x in c13h if "/me/threads?" in x[0]][0][0]).query)["text"][0]  # 7일 안 쓴 품목만(라면 = 4일 전에 씀 -> 화장지)
+time.time = lambda: TK("2026-10-22 12:31"); rp13.clear(); H.poll_post(s13c); assert s13c["polls"]["used"] == {"toilet-paper": TK("2026-10-19 12:31"), "ramen": TK("2026-10-22 12:31")} and len(rp13) == 1  # 7일 지난 라면 다시(어제 투표 답글 먼저)
+H.E["METRICS_DAY"] = "2026-10-16"; th13 = [{"id": "v1", "text": H.poll_text(r13["ramen"])[0], "timestamp": "2026-10-16T03:30:00+0000"}, {"id": "w1", "text": "☁️ 오늘 서울 13~24도\n겉옷 챙기셨어요?", "timestamp": "2026-10-15T22:30:00+0000"}]
+H.http = lambda url, body=None, headers=None, method=None: json.dumps({"data": th13} if "/me/threads?" in url else {"data": []}) if "threads" in url else ""
+H.metrics({}); m13 = {r["id"]: r["cat"] for r in json.load(open(H.METRICS))["2026-10-16"]["rows"]}; assert m13 == {"v1": "투표", "w1": "날씨"}, m13  # 투표 글·날씨 글 따로(딜 글과 조회 비교)
+del H.E["METRICS_DAY"], H.E["THREADS_TOKEN"]; (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.tg, H.TH_SOLO_GAP), H.POLL_HOUR = sv13, None; json.dump([], open("posts.json", "w"))
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

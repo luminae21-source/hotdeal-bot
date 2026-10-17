@@ -48,6 +48,10 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64
 @media(prefers-color-scheme:dark){body{background:#101012;color:#ececf0}.card,.g,.pick,.lk{background:#1c1c1f;border-color:#2b2b30;box-shadow:none}.pick{color:#ececf0}.sub,.t,.dis,footer,.g .s,.deal .s,.deal .note,.g .rx{color:#8e8e96}a{color:#6ea8ff}.gb{background:#2a1f17;border-color:#7c2d12;color:#fdba74}.pick em{color:#fdba74}
 .bar{background:rgba(28,28,31,.94);border-color:#2b2b30}.bar a{color:#a1a1aa}.bar a[aria-current=true]{color:#6ea8ff;background:#1f2a3a}.inapp .bar.top{background:#101012}.inapp .bar.top a,.more a{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}.inapp form.find,.inapp .bar.top{box-shadow:0 8px 10px -10px rgba(0,0,0,.8)}.more{background:#15233a}.more a{box-shadow:none}.bar .k-toss i{color:#6ea8ff}.bar .k-days i{color:#a1a1aa}.bar .k-brand i{color:#9775fa}.inapp .bar.top i{color:#fff}.like{color:#71717a}.btn,.g .go a{background:#2b6fd6;color:#fff}.btn2{border-color:#6ea8ff;color:#6ea8ff}.find{background:#101012}.find input,.chips button{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.chips button[aria-pressed=true]{background:#ececf0;border-color:#ececf0;color:#101012}
 .b1{background:#12301c;color:#86efac}.b2{background:#3a1616;color:#fca5a5}.b3{background:#2b2b30;color:#a1a1aa}.b4{background:#2a1f17;color:#fdba74}.g .go a.o{background:#2b2b30;color:#ececf0}.g .go a.f{background:none;color:#a1a1aa}.sv{color:#ff6b78}.g .u,.deal .u,.ship,.why{color:#a1a1aa}.why{border-color:#2b2b30}.deal p{color:#d4d4d8}}
+.rec h3{font-size:16px;margin:18px 2px 2px}.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.stat div{background:#fff;border:1px solid #eef0f3;border-radius:14px;padding:12px;font-size:12px;color:#6b7684}.stat b{display:block;font-size:20px;font-weight:800;color:#191f28;letter-spacing:-.3px}
+.tw{overflow-x:auto;margin:14px 0 8px;background:#fff;border:1px solid #eef0f3;border-radius:14px}.tw table{width:100%;border-collapse:collapse;font-size:13px}.tw th,.tw td{padding:9px 6px;border-bottom:1px solid #f2f4f6;text-align:left;vertical-align:top}.tw th{color:#6b7684;font-weight:600;white-space:nowrap}.tw td:nth-child(-n+2),.tw td:nth-child(n+4){white-space:nowrap}.tw tr.min td{background:#fff9db}
+.recs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}.recs h3{width:100%;margin:4px 2px 2px;font-size:15px}.recs a{display:flex;align-items:center;min-height:40px;padding:0 12px;border-radius:20px;background:#fff;border:1px solid #e1e4e8;text-decoration:none;font-size:14px;color:#333d4b}
+@media(prefers-color-scheme:dark){.stat div,.tw,.recs a{background:#1c1c1f;border-color:#2b2b30;color:#ececf0}.stat b{color:#ececf0}.tw th,.tw td{border-color:#2b2b30}.tw tr.min td{background:#2a2614}}
 @media(max-width:419px){.bar a{flex:0 0 calc((100% - 8px)/5);min-height:46px}main:has(.bar){padding-bottom:124px}.chips button,.inapp .bar.top a{font-size:13px}}@media(max-width:359px){.chips button,.inapp .bar.top a{font-size:12px}}"""
 
 
@@ -348,15 +352,78 @@ CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|�
                                r"|마스카라|아이섀도|네일|올인원"))  # 제목 키워드(10/9 실제 딜 121개로 맞춤 — 크림·팩·쿠션·립·패드 단독은 음식·가구랑 겹쳐서 뺌)
 
 
-def cat_sections(posts, days):
+def cat_sections(posts, days, nav=""):
     """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): 최근 3일 딜 중 제목 키워드(CATS)로 고른 최신 6개. 없으면 칸·탭 없음.
-    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
+    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). nav = 생필품 칸 아래 최저가 기록 링크. -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
     out = []
     for key, name, rx in CATS:
         ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and re.search(rx, title_of(p["text"]))][::-1][:6]
         out.append((key, name, ds and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 · 최신 순</div>'
-                                      f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>'))
+                                      f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>{nav if key == "life" else ""}</section>'))
     return out
+
+
+PRICE_ITEMS = (  # 10/17 진우 '유입 늘리기 ② 최저가 기록 페이지'(/c/주소.html): (주소, 품목, 제목 낱말, 비교 단위, 그 단위로 보는 '…당' 낱말 — 1L당 = 'l') — 같은 단위끼리만
+    ("ramen", "라면", r"라면|너구리|짜파게티|안성탕면|컵누들|사발면", "개당", ("개", "봉", "봉지")),
+    ("water", "생수", r"생수|샘물|삼다수|아이시스|백산수", "1L당", ("l",)),  # 병당·개당은 병 크기(500ml·2L)가 달라서 X
+    ("toilet-paper", "화장지", r"화장지|두루마리|휴지(?!통)", "롤당", ("롤",)),
+    ("detergent", "세탁세제", r"세탁\s*세제|액체\s*세제|퍼실|리큐|(?:테크|비트)\s*(?:액체|세제|파워)", "1L당", ("l",)),
+    ("coffee-mix", "커피믹스", r"커피\s*믹스|모카\s*골드|화이트\s*골드", "개당", ("개", "개입", "t", "스틱")),
+    ("wet-wipes", "물티슈", r"물티슈", "팩당", ("팩",)),
+    ("eggs", "계란", r"계란|달걀|특란|왕란|구운란", "개당", ("개", "구", "알")),
+    ("instant-rice", "즉석밥", r"햇반|즉석밥|오뚜기\s*(?:밥|흑미밥|잡곡밥)", "개당", ("개",)),
+    ("shampoo", "샴푸", r"샴푸", "100ml당", ("100ml",)),
+    ("rice", "쌀", r"햅쌀|백미|쌀\s*\d+\s*kg|\d+\s*kg\s*쌀", "1kg당", ("kg",)))
+PRICE_NOT = r"냄비|그릇|용기|포트|머신|거치대|케이스|홀더|디스펜서|정리함|브러시|의자"  # 품목 낱말이 들어도 그 품목 아님(라면 냄비·샴푸 의자 등)
+PRICE_MIN = 3  # 기록이 이보다 적으면 페이지·투표 X
+PAIR = re.compile(r"((?:\d+(?:\.\d+)?\s*)?[^\d\s(),·~/]+?)\s*당\s*(?:약\s*|평균\s*)?(\d[\d,]*(?:\.\d+)?)\s*원")  # '개당 약 496원 (1L당 248원)' -> ('개','496'), ('1L','248')
+
+
+def price_item(p):
+    """이 딜의 최저가 기록 품목(PRICE_ITEMS 줄) — 토스 딜은 None(토스 요청 '타 쇼핑몰과의 가격 비교 없이': 다른 몰과 한 표에 놓는 것도 비교)."""
+    title = title_of(p["text"])
+    if p["text"].startswith("📋") or shop_of(p) == "toss" or re.search(PRICE_NOT, title):
+        return None
+    return next((it for it in PRICE_ITEMS if re.search(it[2], title)), None)
+
+
+def price_records(posts):
+    """최저가 기록 {주소: (품목, 단위, [(단위가격, '1L당 248원', i, p), …] 싼 순)} — 품목 딜 중 💡 단위가격에 그 단위가 있는 것만, PRICE_MIN개↑ 품목만.
+    같은 상품이 같은 단위가격으로 다시 올라오면 최근 1개(숫자는 글에 적힌 그대로 — 단위 바꿔 셈 X)."""
+    rows = {}
+    for i, p in enumerate(posts):
+        it = price_item(p)
+        lab = it and next(((float(v.replace(",", "")), f"{it[3]} {v}원") for lb, v in PAIR.findall(unit_of(p)) if re.sub(r"^1(?=\D)|\s", "", lb).lower() in it[4]), None)
+        if lab:
+            rows.setdefault(it[0], {})[(parse(title_of(p["text"]))[1], lab[0])] = (*lab, i, p)
+    return {k: (it[1], it[3], sorted(rows[k].values(), key=lambda r: (r[0], -r[2]))) for it in PRICE_ITEMS for k in [it[0]] if len(rows.get(k, ())) >= PRICE_MIN}
+
+
+def rec_nav(recs, skip=""):
+    """최저가 기록 페이지 링크 줄(홈 생필품 칸·기록 페이지 아래) — 검색 로봇이 /c/ 페이지를 찾게."""
+    ls = [f'<a href="{BASE}c/{k}.html">{n} {u}</a>' for k, (n, u, _) in recs.items() if k != skip]
+    return ls and f'<nav class="recs" aria-label="최저가 기록"><h3>📈 {"다른 " * bool(skip)}최저가 기록</h3>{"".join(ls)}</nav>'
+
+
+def record_page(k, rec, recs):
+    """/c/{k}.html 본문·설명: 지금(24시간 안) 올라온 딜(맨 위) → 기록 최저·평균 → 표(날짜·몰·상품·가격·단위가격, 상품 = 딜 페이지 링크) → 토스 탭 → 다른 기록.
+    날짜 = 실제 게시 날짜, 숫자 = 글에 적힌 단위가격 그대로(평균만 계산)."""
+    name, unit, rows = rec
+    md = lambda p: f'{int(p["t"][5:7])}/{int(p["t"][8:10])}'
+    low, avg, first = rows[0], round(sum(r[0] for r in rows) / len(rows)), min(r[3]["t"][:10] for r in rows)
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
+    now = sorted((r for r in rows if r[3]["t"] >= since), key=lambda r: r[3]["t"], reverse=True)[:4]
+    tr = "".join(f'<tr{" class=min" if r is low else ""}><td>{md(r[3])}</td><td>{html.escape(parse(title_of(r[3]["text"]))[0] or "-")}</td>'
+                 f'<td><a href="{BASE}p/{r[2]}.html">{html.escape(parse(title_of(r[3]["text"]))[1])}</a></td>'
+                 f'<td>{f"{w:,}원" if (w := price_won(title_of(r[3]["text"]))) else ""}</td><td>{html.escape(r[1].split()[-1])}</td></tr>' for r in rows)
+    body = (f'<section class="day rec" aria-labelledby="rech"><h2 id="rech">📈 {name} 최저가 기록 — {unit} 가격</h2>'
+            f'<div class="t">핫딜픽이 {md({"t": first})}부터 올린 {name} 딜 {len(rows)}개를 {unit} 가격으로 모았어요. 단위가 다른 기록은 섞지 않아요 · 날짜 = 게시 날짜</div>'
+            + (f'<h3>🔥 지금 올라온 {name} 딜</h3><div class="t">최근 24시간 · 가격·재고는 바뀔 수 있어요</div><div class="grid">{"".join(grid_item(r[2], r[3]) for r in now)}</div>' if now else "")
+            + f'<div class="stat"><div><b>{html.escape(low[1].split()[-1])}</b>기록 최저 · {md(low[3])} {html.escape(parse(title_of(low[3]["text"]))[0])}</div><div><b>{avg:,}원</b>평균 · 기록 {len(rows)}개</div></div>'
+            + f'<div class="tw"><table><thead><tr><th>날짜</th><th>몰</th><th>상품</th><th>가격</th><th>{unit}</th></tr></thead><tbody>{tr}</tbody></table></div>'
+            + f'<p class="t">💙 토스 특가는 이 표에 넣지 않아요 — <a href="{BASE}#toss">토스 탭에서 보기</a></p>{rec_nav(recs, k) or ""}</section>')
+    note = " ".join(dict.fromkeys(r[3]["text"].split("\n", 1)[0] for r in now if urllib.parse.urlsplit(r[3].get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and r[3]["text"].startswith(NOTE_STARTS)))  # 네이버·올영 링크 = 그 문구 맨 앞(딜 페이지와 같게)
+    return body, f"{name} {unit} 가격 기록 {len(rows)}개 · 최저 {low[1].split()[-1]} ({md(low[3])}) · 평균 {avg:,}원 · {TITLE}", note
 
 
 SHOP_NOTES = {  # 몰 칸 맨 위 대가성 문구 — hotdeal.py DISCLOSURE·TOSS_NOTE·NAVER_NOTE와 같은 글자(변형 금지, 셀프체크로 맞춤)
@@ -516,15 +583,26 @@ def build(posts, out="docs"):
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
     pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋")
             and aff(q.get("url")) and "특가로는 약한 제품" not in q["text"]]
+    recs = price_records(posts)
+    os.makedirs(f"{out}/c", exist_ok=True)
+    for f in os.listdir(f"{out}/c"):  # 품목에서 빠진 옛 기록 페이지는 지움(사이트맵과 맞게)
+        if f[:-5] not in recs:
+            os.remove(f"{out}/c/{f}")
+    for k, rec in recs.items():
+        body, desc, note = record_page(k, rec, recs)
+        open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", GO_FIND + body + MORE + LIKE_JS + END_JS, desc, f"{BASE}c/{k}.html", gb=False, note=note))
+        urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     for i, p in reversed(list(enumerate(posts))):
         title, url, rel = title_of(p["text"]), f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="day rel" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="grid">{"".join(grid_item(j, q) for j, q in rel)}</div></section>'
         note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
         st, sd, ld = seo(i, p)
-        open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
+        it = price_item(p)
+        rl = it and it[0] in recs and f'<a class="btn2" href="{BASE}c/{it[0]}.html">📈 {it[1]} {it[3]} 최저가 기록 보기</a>'  # 그 품목 기록 페이지로(내부 링크 — 검색 로봇이 찾게)
+        open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (rl or "") + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), *((k, n, shop_section(posts, days, k)) for k, n in (("toss", "💙 토스"), ("coupang", "🚀 쿠팡"), ("naver", "💚 네이버"))),
-             *cat_sections(posts, days), ("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
+             *cat_sections(posts, days, rec_nav(recs) or ""),("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로

@@ -7,7 +7,7 @@ import base64, collections, hashlib, hmac, html, json, os, re, shutil, tempfile,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, shop_of, price_won, FOOD, CHANNEL_WEB  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -2424,6 +2424,18 @@ def th_reply(tok, to, text):
     return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))["id"]
 
 
+def th_poll(tok, text, opts):
+    """Threads 투표 글 1개(TEXT + poll_attachment, 공식 문서 create-posts/polls: 보기 2~4개·1~25자, 글만 있는 글에만) -> 글 id. 보기가 규칙 밖이면 안 올림(ValueError)."""
+    if not 2 <= len(opts) <= 4 or not all(1 <= len(o) <= 25 for o in opts):
+        raise ValueError(f"투표 보기는 2~4개·1~25자: {opts}")
+    me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
+    form = urllib.parse.urlencode({"poll_attachment": json.dumps(dict(zip(POLL_KEYS, opts)), ensure_ascii=False)}).encode()  # 문서 예시처럼 본문(-d)으로
+    cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", form, {"Content-Type": "application/x-www-form-urlencoded"}, method="POST"))["id"]
+    time.sleep(10)
+    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))["id"]
+
+
 def th_reply_ok(seen):
     """지금 토큰으로 댓글(reply_to_id)을 달 수 있는지 — 내 최근 글에 댓글 컨테이너만 만들고 발행은 안 함(Threads에 안 보임, 24시간 뒤 사라짐).
     결과 = seen["threply"](3일 보관 -> 그 뒤 다시 확인). 권한 오류(HTTP 4xx)만 '안 됨'으로 남기고, 네트워크 오류는 이번엔 안 됨으로 보고 다음에 다시."""
@@ -2649,6 +2661,8 @@ def threads_deals(seen):
 
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
+POLL_HOUR, POLL_REUSE = (12, 30), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 '{단위} 얼마면 싸다?' 보기 4개 + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. None = 끔
+POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25자 — 공식 문서 create-posts/polls)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
     (lambda w: w["rain"] >= 60, "비 소식", ("우산", "우비", "제습제", "실내 건조"), ("라면", "부침가루", "어묵"), "우산 챙기셨어요?"),
@@ -2819,6 +2833,62 @@ def snack_post(seen):
         print(f"snack post: 간식 딜 {len(items)}개 -> 안 올림")
         return
     wx_post(seen, key, "🍪 출출할 때 간식 {n}", items, "", "snack", lo=2)
+
+
+def poll_opts(low):
+    """기록 최저 단위가격 근처 구간 보기 4개 — 간격 = 최저의 1/3 이하 1·2·5×10ⁿ원: 120 -> 120원 이하 / 140원까지 / 160원까지 / 더 줘도 사요."""
+    s = max((x for x in (10, 20, 50, 100, 200, 500, 1000, 2000, 5000) if x <= low / 3), default=10)
+    a = max(s, round(low / s) * s)
+    return [f"{a:,}원 이하", f"{a + s:,}원까지", f"{a + 2 * s:,}원까지", "더 줘도 사요"]
+
+
+def poll_text(rec):
+    """투표 글 (본문, 보기) — 링크·상품명·몰 이름 없음 = 대가성 문구 X."""
+    name, unit, rows = rec
+    return f"🗳️ {name} {unit} 얼마면 '싸다' 싶어요?\n\n내일 이 글 답글로 핫딜픽 기록 최저가 알려드릴게요", poll_opts(rows[0][0])
+
+
+def poll_reply_text(k, rec, pa):
+    """어제 투표 결과 답글: 1등 보기·%·총 인원(0명이면 기록 줄만) + 기록 최저(게시 날짜) + 기록 페이지 — 사이트 링크 글 규칙 그대로(맨 앞 대가성 문구 = 기록 딜들의 프로그램, 👉 링크·팔로우·텔레그램 줄)."""
+    name, unit, rows = rec
+    low, n, ks = rows[0], (pa or {}).get("total_votes") or 0, [x for x in POLL_KEYS if x in (pa or {})]
+    pct = {x: pa.get(x + "_votes_percentage") or 0 for x in ks}
+    top = n and ks and max(ks, key=pct.get)
+    scale = 100 if sum(pct.values()) <= 1.01 else 1  # 문서 예시 = 0.10(비율) — 0~100으로 와도 그대로
+    t = th_note(ig_notes([r[3] for r in rows])) + (f"📊 1등 {pa[top]} {round(pct[top] * scale)}% ({n:,}명) · " if top else "📊 ") \
+        + f"핫딜픽 기록 최저 {low[1]} ({int(low[3]['t'][5:7])}/{int(low[3]['t'][8:10])})\n\n👉 {SITE}c/{k}.html?ref=th\n{th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"
+    return t if len(t) <= 480 else t.rsplit("\n", 2)[0]  # 넘치면 팔로우·텔레그램 줄을 뺌(링크는 남김)
+
+
+def poll_post(seen):
+    """12:30 Threads 가격 투표(10/17 진우 '유입 늘리기 ①'): 어제 투표가 있으면 먼저 결과 답글(댓글 권한 없으면 건너뜀·알림, 실패해도 다시 X),
+    그다음 오늘 투표 1개 — 기록 PRICE_MIN개↑ 품목 중 최근 POLL_REUSE일 안 쓴 것, 기록 많은 순. 묶음 간격·시간당 상한(busy)·Threads 45분 간격 안에서(막히면 다음 실행에, 2시간 안)."""
+    tok, key = E.get("THREADS_TOKEN"), due(POLL_HOUR, "poll", seen)
+    if not tok or not key:
+        return
+    now, recs = time.time(), price_records(load(POSTS, []))
+    op = seen.get("polls", {}).get("open")
+    if op and now - op["t"] >= 20 * 3600:  # 24시간 투표가 닫힐 즈음(다음 날 같은 회차)
+        seen["polls"] = {**seen["polls"], "t": now, "open": None}  # 먼저 지움: 실패해도 같은 답글 반복 X
+        if op["slug"] not in recs:
+            print("poll reply: 기록 품목이 없어짐 -> 답글 X")
+        elif not th_reply_ok(seen):
+            alert(seen, "alert_poll_reply", "⚠️ 가격 투표 결과 답글 못 달았어요 — Threads 댓글 권한 확인: " + clip((seen.get("threply") or {}).get("err") or "권한 확인 실패(네트워크)", 160))
+        else:
+            pa = json.loads(http(f"{THREADS}/{op['id']}?fields=poll_attachment{{{','.join(POLL_KEYS + tuple(x + '_votes_percentage' for x in POLL_KEYS))},total_votes}}&access_token={tok}")).get("poll_attachment")
+            th_reply(tok, op["id"], poll_reply_text(op["slug"], recs[op["slug"]], pa))
+    if busy(seen) or now - th_day(seen, now)["last"] < TH_SOLO_GAP:
+        return
+    used = {k: t for k, t in seen.get("polls", {}).get("used", {}).items() if now - t < POLL_REUSE * 86400}
+    k = next((k for k, v in sorted(recs.items(), key=lambda x: -len(x[1][2])) if k not in used), None)
+    seen[key] = now  # 먼저 표시: 실패해도 오늘 다시 안 올림(스팸 방지) — 실패는 main 알림
+    if not k:
+        print(f"poll: 기록 {PRICE_MIN}개↑ 품목이 없거나 {POLL_REUSE}일 안에 다 씀 -> 오늘 X")
+        return
+    pid = th_poll(tok, *poll_text(recs[k]))
+    th_mark(seen, reopen="poll")  # 개별 글 수엔 안 셈(재오픈처럼) — 45분 간격만 같이
+    seen["polls"] = {"t": now, "used": {**used, k: now}, "open": {"id": pid, "slug": k, "t": now}}
+    print("poll:", k, len(recs[k][2]), "records")
 
 
 def log_text(seen):
@@ -3015,7 +3085,7 @@ ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진�
 ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
                "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
-               "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
+               "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지", "poll_post": "Threads 가격 투표"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
 
 
 def err_brief(e):
@@ -3086,7 +3156,7 @@ def metrics(seen):
     def row(ch, i, text, url, t, views, react, **more):
         title = title_of(text)
         w = price_won(title)
-        cat = "묶음" if re.search(r"2️⃣|^2\. ", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
+        cat = "투표" if text.startswith("🗳️") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. ", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
         rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": url}) or "기타", "cat": cat,
                      "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more})
 
@@ -3279,7 +3349,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
         try:
             step(seen)
         except Exception as e:
