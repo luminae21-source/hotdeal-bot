@@ -3032,8 +3032,11 @@ def alert(seen, key, text, ch=None, label=None):
         seen["alert_open"] = {"t": now, "v": {**seen.get("alert_open", {}).get("v", {}), ch: label}}
     if now - (seen.get(key) or {}).get("t", 0) < ALERT_GAP:
         return
-    seen[key] = {"t": now}
-    tg("sendMessage", chat_id=ADMIN, text=text[:3500])
+    try:
+        tg("sendMessage", chat_id=ADMIN, text=text[:3500])
+        seen[key] = {"t": now}
+    except Exception as e:  # 알림이 실패해도(텔레그램 시간 초과) 실행은 계속 — 안 그러면 seen이 저장 안 돼 같은 글이 다시 올라감(10/17 10:11·10:26 토스 베스트 두 번)
+        print("alert", repr(e))
 
 
 def step_alert(seen, step, e):

@@ -2855,6 +2855,9 @@ assert len(al7) == 1 and al7[0].startswith("⚠️ Threads 개별 글 (Threads) 
 H.step_alert(s7c, lambda s: H.toss_deals(s, "cat"), RuntimeError("toss 500")); H.step_alert(s7c, H.report, RuntimeError("x"))
 assert len(al7) == 2 and al7[1].startswith("⚠️ 토스 회차 글 게시 실패: RuntimeError('toss 500')") and "다음 실행" in al7[1]  # 채널 글 단계도, 업로드 아닌 단계(리포트)는 X
 time.time = lambda: TK(f"{D7} 17:01"); H.step_alert(s7c, H.threads_deals, e7); assert len(al7) == 3  # 3시간 지나면 다시
+def tg7t(m, **p): raise TimeoutError("The read operation timed out")
+H.tg = tg7t; H.step_alert(s7c, H.toss_deals, TimeoutError("x")); assert "alert_toss_deals_TimeoutError" not in s7c  # 알림 전송이 시간 초과여도 실행은 안 죽음(10/17 10:11 run 1207), 다음 실행에 다시 알림
+H.tg = lambda m, **p: al7.append(p.get("text")) or {"message_id": 1}
 H.RUN.update(ok={"th"}, failch=set()); H.watch(s7c); assert al7[-1] == "✅ 다시 올라감: Threads 개별 글 (Threads)" and not s7c["alert_open"]["v"]  # 다시 올라가면 1줄
 H.watch(s7c); assert al7[-1].startswith("✅") and len(al7) == 4  # 1번만
 def http7f(url, body=None, headers=None, method=None):
