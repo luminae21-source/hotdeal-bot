@@ -8,6 +8,7 @@ import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
+iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -3289,6 +3290,33 @@ H.E["METRICS_DAY"] = "2026-10-16"; th13 = [{"id": "v1", "text": H.poll_text(r13[
 H.http = lambda url, body=None, headers=None, method=None: json.dumps({"data": th13} if "/me/threads?" in url else {"data": []}) if "threads" in url else ""
 H.metrics({}); m13 = {r["id"]: r["cat"] for r in json.load(open(H.METRICS))["2026-10-16"]["rows"]}; assert m13 == {"v1": "투표", "w1": "날씨"}, m13  # 투표 글·날씨 글 따로(딜 글과 조회 비교)
 del H.E["METRICS_DAY"], H.E["THREADS_TOKEN"]; (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.tg, H.TH_SOLO_GAP), H.POLL_HOUR = sv13, None; json.dump([], open("posts.json", "w"))
+# 9-14) 10/17 23시 진우 '인스타 자동 게시 멈춤'(IG_AUTO 꺼짐 기본): 카드·넘기기·릴스·다시 올리기·발행 인스타 API 0번, 남은 컨테이너는 발행 없이 지움, 2207051 알림 = 스팸 의심(토큰 X)
+assert iga0 is False  # 기본 꺼짐
+c14 = []
+def http14(url, body=None, headers=None, method=None):
+    c14.append(url)
+    if "graph.instagram.com" in url or "graph.facebook.com" in url:
+        return json.dumps({"status_code": "FINISHED", "id": "pub1"})
+    if method == "HEAD": return ""
+    raise AssertionError(url)
+sv14 = (H.http, time.time, H.tg); H.http, H.tg = http14, (lambda m, **p: {"message_id": 1})
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); time.time = lambda: TK("2026-10-17 22:40"); os.makedirs("docs/cards", exist_ok=True)
+open("docs/cards/2026-10-17.jpg", "wb").write(b"J"); open(H.REPOST, "w").write("2026-10-17"); os.makedirs("docs/cards/re", exist_ok=True); open("docs/cards/re/2026-10-17.png", "wb").write(b"P")  # 다시 올리기 카드는 이미 그려 둠(켜져 있으면 바로 컨테이너)
+s14 = {"igc_111": {"t": TK("2026-10-17 21:10"), "card": "2026-10-17"}, "igc_222": TK("2026-10-17 22:10"), "igk_2026-10-17_18": {"t": TK("2026-10-17 18:05"), "kids": ["k1", "k2"]},
+       "reel_2026-10-17": {"t": 1, "cap": "릴스"}, "igpub_20261017": {"t": 1, "n": 0}}
+H.IG_AUTO = True; H.ig_publish(dict(s14)); assert any("graph.instagram.com" in u for u in c14); c14.clear()  # 켜면 그대로 부름(아래 '0번'이 꺼짐 덕분인지 확인)
+H.IG_AUTO = False
+for f14 in (H.ig_cards, H.ig_reel, H.ig_repost, H.ig_publish):
+    f14(s14)
+assert not [u for u in c14 if "graph.instagram.com" in u or "graph.facebook.com" in u] and not any(k.startswith(("igc_", "igk_")) for k in s14)  # 인스타 API 0번 · 남은 컨테이너 발행 없이 지움
+assert "igr_2026-10-17" not in s14 and "igre_2026-10-17" not in s14 and "igs_2026-10-17" not in s14 and s14["igpub_20261017"]["n"] == 0  # 릴스·다시 올리기·카드 회차 안 건드림
+os.remove(H.REPOST)
+e14 = urllib.error.HTTPError("https://graph.instagram.com/v25.0/178/media_publish", 403, "x", None, None); e14.body = '{"error":{"message":"Application request limit reached","code":4,"error_subcode":2207051}}'
+al14 = []; H.tg = lambda m, **p: al14.append(p.get("text")) or {"message_id": 1}; s14b = {}
+H.step_alert(s14b, H.ig_publish, e14); assert "인스타 스팸 의심 차단(토큰 문제 아님)" in al14[0] and "IG_TOKEN 만료" not in al14[0], al14
+e14b = urllib.error.HTTPError("https://graph.instagram.com/v25.0/178/media", 400, "x", None, None); e14b.body = '{"error":{"message":"Invalid OAuth access token","code":190}}'
+H.step_alert(s14b, H.ig_cards, e14b); assert "IG_TOKEN 만료(60일)" in al14[-1]  # 토큰 오류는 예전 안내 그대로
+(H.http, time.time, H.tg) = sv14; del H.E["IG_TOKEN"], H.E["IG_USER_ID"]
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

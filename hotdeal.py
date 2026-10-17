@@ -2042,6 +2042,7 @@ def playlist(seen):
     json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
 
 
+IG_AUTO = False  # 10/17 23시 진우 '인스타 자동 게시 멈춤'(3일 연속 code 4·2207051 스팸 의심 차단 · 카드 7개 좋아요 1 · 같은 계정에 묶인 Threads 보호, 10/31 다시 판단): 카드(12·18·21시)·넘기기·릴스·다시 올리기 컨테이너·발행 전부 X, 남은 컨테이너는 발행 없이 지움 — 21시 카드 이미지·사이트·Threads 카드·metrics 인스타 읽기는 그대로. True = 다시 켬
 IG_LIVE = "docs/cards/ig.json"  # 인스타에 올리는(컨테이너 만든)·올라간 카드 {카드 이름: 시각} — 사이트 맨 위 카드 딜이 인스타 게시물과 같은 번호(build_site.card_stems)
 
 
@@ -2061,6 +2062,13 @@ def ig_publish(seen):
     하루 IG_DAY_MAX개까지(넘으면 다음 날 — 컨테이너는 24시간 유효), 스팸 의심(2207051)이면 24시간 인스타 쉼."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     now = time.time()
+    if not IG_AUTO:  # 꺼짐: 남은 컨테이너(igc_ 발행 대기·igk_ 넘기기 조각)는 발행 없이 지움(인스타 API 안 부름)
+        drop = [k for k in seen if k.startswith(("igc_", "igk_"))]
+        for k in drop:
+            seen.pop(k)
+        if drop:
+            print("ig 꺼짐 -> 남은 컨테이너 발행 없이 지움", len(drop))
+        return
     if not (tok and uid):
         return
     day = time.strftime("igpub_%Y%m%d", time.gmtime(now + 9 * 3600))
@@ -2239,7 +2247,7 @@ def ig_reel(seen):
     kst = time.gmtime(now + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
     r, tried = seen.get("reel_" + today), seen.get("igr_" + today)
-    if not (tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
+    if not (IG_AUTO and tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
         return
     url = f"{SITE}reels/{today}.mp4"
     try:
@@ -2266,9 +2274,10 @@ def ig_cards(seen):
     넘기기(IG_CAROUSEL, 10/11 진우 '인스타 업그레이드 2번'): 카드 만들 때 딜 카드(deal_slides)도 -> 올릴 때 표지·딜 카드 조각 컨테이너 -> ig_carousel이 묶음."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     now = time.time()
-    if not (tok and uid) or seen.get("ig_hold", 0) > now:
+    if tok and uid:
+        prune_slides(now)  # 지난 넘기기 카드 정리는 인스타를 꺼도(모아보기가 21시 딜 카드를 계속 만듦)
+    if not (IG_AUTO and tok and uid) or seen.get("ig_hold", 0) > now:
         return
-    prune_slides(now)
     ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
@@ -2327,7 +2336,7 @@ def ig_repost(seen):
     예전 게시물 삭제는 진우(Instagram 로그인 토큰은 삭제 권한 없음)."""
     kst = time.gmtime(time.time() + 9 * 3600)
     day = open(REPOST).read().strip() if os.path.exists(REPOST) else ""
-    if day != time.strftime("%Y-%m-%d", kst) or "igre_" + day in seen or not (E.get("IG_TOKEN") and E.get("IG_USER_ID")):
+    if not IG_AUTO or day != time.strftime("%Y-%m-%d", kst) or "igre_" + day in seen or not (E.get("IG_TOKEN") and E.get("IG_USER_ID")):
         return
     path = f"docs/cards/re/{day}.png"
     if not os.path.exists(path):
@@ -3118,7 +3127,7 @@ def step_alert(seen, step, e):
     ch = "ig" if name.startswith("ig_") or "instagram" in url or "facebook" in url else "th" if "threads" in url or name in ("threads", "threads_deals", "toss_reopen", "th_retry") else None
     kind = type(e).__name__ + (f" {e.code}" if isinstance(getattr(e, "code", None), int) else "") + "".join(f" {x}" for x in re.findall(r'"error_subcode":\s*(\d+)', getattr(e, "body", "") or "")[:1])
     label = ALERT_STEPS[name] + {"th": " (Threads)", "ig": "", None: ""}[ch]
-    hint = "IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2" if ch == "ig" else threads_hint(e) if ch == "th" else "다음 실행(14분 뒤)에 다시 시도해요"
+    hint = ("인스타 스팸 의심 차단(토큰 문제 아님) — 24시간 쉼, 계속되면 IG_AUTO로 끄기" if "2207051" in (getattr(e, "body", "") or "") else "IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2") if ch == "ig" else threads_hint(e) if ch == "th" else "다음 실행(14분 뒤)에 다시 시도해요"
     alert(seen, f"alert_{name}_{kind.replace(' ', '_')}", f"⚠️ {label} 게시 실패: {err_brief(e)}\n{hint}", ch, label)
 
 
