@@ -3118,6 +3118,9 @@ def alert(seen, key, text, ch=None, label=None):
         print("alert", repr(e))
 
 
+CREDIT_HINT = "Claude API 크레딧이 바닥났어요 — console.anthropic.com → Plans & Billing에서 충전하면 다음 실행부터 다시(그동안 커뮤니티 딜·토스 회차 고르기 멈춤, 예약 글·날씨·투표는 그대로)"
+
+
 def step_alert(seen, step, e):
     """업로드 단계(ALERT_STEPS)가 예외로 멈춤 -> 바로 알림(단계·오류 종류마다 3시간에 1번). Threads·인스타는 토큰 안내도."""
     name = step.__name__ if step.__name__ != "<lambda>" else next((n for n in step.__code__.co_names if n in ALERT_STEPS), "lambda")  # lambda s: toss_deals(s, "cat") -> toss_deals
@@ -3127,7 +3130,7 @@ def step_alert(seen, step, e):
     ch = "ig" if name.startswith("ig_") or "instagram" in url or "facebook" in url else "th" if "threads" in url or name in ("threads", "threads_deals", "toss_reopen", "th_retry") else None
     kind = type(e).__name__ + (f" {e.code}" if isinstance(getattr(e, "code", None), int) else "") + "".join(f" {x}" for x in re.findall(r'"error_subcode":\s*(\d+)', getattr(e, "body", "") or "")[:1])
     label = ALERT_STEPS[name] + {"th": " (Threads)", "ig": "", None: ""}[ch]
-    hint = ("인스타 스팸 의심 차단(토큰 문제 아님) — 24시간 쉼, 계속되면 IG_AUTO로 끄기" if "2207051" in (getattr(e, "body", "") or "") else "IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2") if ch == "ig" else threads_hint(e) if ch == "th" else "다음 실행(14분 뒤)에 다시 시도해요"
+    hint = CREDIT_HINT if "credit balance" in (getattr(e, "body", "") or "") else ("인스타 스팸 의심 차단(토큰 문제 아님) — 24시간 쉼, 계속되면 IG_AUTO로 끄기" if "2207051" in (getattr(e, "body", "") or "") else "IG_TOKEN 만료(60일)면 앱 대시보드에서 토큰 다시 생성 → README 세팅 6-2") if ch == "ig" else threads_hint(e) if ch == "th" else "다음 실행(14분 뒤)에 다시 시도해요"
     alert(seen, f"alert_{name}_{kind.replace(' ', '_')}", f"⚠️ {label} 게시 실패: {err_brief(e)}\n{hint}", ch, label)
 
 
@@ -3329,6 +3332,8 @@ def main():
             picks = ai_pick(prompt, [f"[{d['board']}] {d['title']} | {d['hits']} | {d['age']:.0f}분 전 | {d['desc']}" for d in new])
         except Exception as e:  # Claude 오류면 이번엔 딜 판단만 건너뜀(본 글 기록 안 함 -> 다음 실행에 다시). 실행 전체가 죽으면 토스·Threads·리포트도 멈추고 seen 캐시도 안 남음
             print("ai_pick 실패", repr(e))
+            if "credit balance" in (getattr(e, "body", "") or ""):  # 10/18 03시쯤 크레딧 바닥 -> 커뮤니티 딜이 조용히 멈춤(토스 단계 알림은 '다음 실행에 다시'로 읽힘)
+                alert(seen, "alert_credit", "⚠️ 커뮤니티 딜 판단 멈춤 — " + CREDIT_HINT)
             new = picks = []
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()

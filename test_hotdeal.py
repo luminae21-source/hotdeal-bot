@@ -3317,6 +3317,10 @@ H.step_alert(s14b, H.ig_publish, e14); assert "인스타 스팸 의심 차단(�
 e14b = urllib.error.HTTPError("https://graph.instagram.com/v25.0/178/media", 400, "x", None, None); e14b.body = '{"error":{"message":"Invalid OAuth access token","code":190}}'
 H.step_alert(s14b, H.ig_cards, e14b); assert "IG_TOKEN 만료(60일)" in al14[-1]  # 토큰 오류는 예전 안내 그대로
 (H.http, time.time, H.tg) = sv14; del H.E["IG_TOKEN"], H.E["IG_USER_ID"]
+e14c = urllib.error.HTTPError("https://api.anthropic.com/v1/messages", 400, "x", None, None); e14c.body = '{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}'
+al14.clear(); H.tg = lambda m, **p: al14.append(p.get("text")) or {"message_id": 1}; H.step_alert({}, lambda s: H.toss_deals(s, True), e14c)
+assert H.CREDIT_HINT in al14[0] and "다음 실행(14분 뒤)" not in al14[0]  # 크레딧 바닥 = 충전 안내(10/18 03시 — '다음 실행에 다시'로 읽혀서)
+assert 'alert(seen, "alert_credit", "⚠️ 커뮤니티 딜 판단 멈춤 — " + CREDIT_HINT)' in inspect.getsource(H.main) and '"credit balance" in (getattr(e, "body", "") or "")' in inspect.getsource(H.main); H.tg = sv14[2]
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
