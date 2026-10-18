@@ -1466,7 +1466,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_relink, toss_picks, toss_solo, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -3321,6 +3321,86 @@ e14c = urllib.error.HTTPError("https://api.anthropic.com/v1/messages", 400, "x",
 al14.clear(); H.tg = lambda m, **p: al14.append(p.get("text")) or {"message_id": 1}; H.step_alert({}, lambda s: H.toss_deals(s, True), e14c)
 assert H.CREDIT_HINT in al14[0] and "다음 실행(14분 뒤)" not in al14[0]  # 크레딧 바닥 = 충전 안내(10/18 03시 — '다음 실행에 다시'로 읽혀서)
 assert 'alert(seen, "alert_credit", "⚠️ 커뮤니티 딜 판단 멈춤 — " + CREDIT_HINT)' in inspect.getsource(H.main) and '"credit balance" in (getattr(e, "body", "") or "")' in inspect.getsource(H.main); H.tg = sv14[2]
+# 9-15) 10/18 진우 '나머지 토스 링크는 뽐뿌 말고 바로 연결': ① 쉐어링크 못 찾은 토스 커뮤니티 딜은 뽐뿌 링크로 안 올림(tw_ 보관) -> 실행마다 다시 찾아 찾으면 그때 게시(대가성 문구 맨 앞·게시 시점 가격),
+#       2시간 지나도 없으면 진우에게 링크 요청 1번 -> 답장 오면 그 링크로 게시 ② 뽐뿌 버튼으로 남은 옛 글(TOSS_BACKFILL) = 1번 새로 찾아 교체(게시 시점 줄 = 그 글 시각),
+#       하루 넘은 글이 지금 15% 넘게 비싸면 특가 끝·못 찾으면 진우에게 요청(답장 = 교체) ③ Claude 오류면 후보를 '본 후보'로 안 넘김(10/18 크레딧 바닥 1204)
+sv15 = (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP)
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1"); H.HAS_TOSS = H.TOSS_NO_CMP = True
+json.dump({"token": "TK", "exp": 9e9}, open(H.TOSS_TOKEN, "w")); H.EVENTS = "ev15.json"; json.dump([], open(H.EVENTS, "w"))
+L15, s15, U15 = [(501, "CJ 비비고 왕교자 1.05kg 2개", 15900)], [], []
+def http15(url, body=None, headers=None, method=None):
+    ok = lambda x: json.dumps({"resultType": "SUCCESS", "success": x})
+    if url.endswith("/links"): return ok({"shortUrl": f"https://toss.shopping/_m/W{body['tacaItemId']}"})
+    if url.endswith("/categories"): return ok({"categories": []})
+    if "today-deals" in url: return ok({"items": []})
+    if "best-selling" in url: return ok({"items": [{"tacaItemId": i, "displayName": n, "displayPrice": p} for i, n, p in L15]})
+    raise OSError("down")  # 그 밖(뽐뿌·RSS·Threads 등) = 막힘
+def tg15(method, **p):
+    if method == "getUpdates": return [] if "offset" in p else U15
+    s15.append((method, p)); return {"message_id": 700 + len(s15), "text": p.get("text", ""), "entities": p.get("entities", [])}
+def pick15(prompt, lines):
+    if prompt.startswith("커뮤니티 핫딜 글 제목"):  # MATCH_PROMPT
+        return [{"i": 0, "score": 9 if "비비고" in lines[0] else 5, "comment": "같은 상품"}]
+    return [{"i": i, "score": 8, "comment": "싸요"} for i, l in enumerate(lines) if "[토스]" in l]
+pp15 = "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no="
+H.fetch_deals = lambda: [{"id": f"ppomppu_{n}", "board": "뽐뿌", "title": t, "hits": "", "age": 40, "desc": "", "url": pp15 + str(n)}
+                         for n, t in ((915, "[토스] 비비고 왕교자 1.05kg 2봉 (13,900원/무료)"), (916, "[토스] 없는 상품 김치 10kg (19,900원/무료)"))]
+json.dump({}, open("seen.json", "w")); json.dump([], open("posts.json", "w"))
+H.http, H.ai_pick, H.tg = http15, pick15, tg15; time.time = lambda: TK("2026-10-18 14:00")
+H.main(); H.main()  # 1번째: 비비고 -> 보관 -> 같은 실행 toss_wait가 찾아 게시 / 2번째: 넘쳐 보관된 김치 -> 못 찾음 -> 기다림
+chm = [p for m, p in s15 if m == "sendMessage" and p["chat_id"] == "@ch" and "[토스]" in p["text"]]
+assert len(chm) == 1 and chm[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/W501", [p["text"][:60] for p in chm]
+assert chm[0]["text"].startswith(f"<i>{H.TOSS_NOTE}</i>") and "⚠️ 10/18 14:00 게시 시점 가격" in chm[0]["text"] and "비비고" in chm[0]["text"]  # 대가성 문구 맨 앞 + 게시 시점 가격
+assert not [p for m, p in s15 if pp15 in json.dumps(p.get("reply_markup", {}))]  # 뽐뿌 링크 버튼으로 올라간 글 0
+sj15 = json.load(open("seen.json")); assert "tw_ppomppu_915" not in sj15 and "tw_ppomppu_916" in sj15 and not sj15["tw_ppomppu_916"].get("ask") and "tb_501" in sj15
+assert json.load(open("posts.json"))[-1]["url"] == "https://toss.shopping/_m/W501"
+s15.clear(); time.time = lambda: TK("2026-10-18 15:59"); H.toss_wait(sj15); assert not s15  # 2시간 안 = 조용히 다시 찾기만
+time.time = lambda: TK("2026-10-18 16:01"); H.toss_wait(sj15)
+assert len(s15) == 1 and s15[0][1]["chat_id"] == "42" and "토스 링크 필요 — [토스] 없는 상품 김치 10kg" in s15[0][1]["text"] and pp15 + "916" in s15[0][1]["text"]
+ask15 = sj15["tw_ppomppu_916"]["ask"]; assert ask15 == 701; H.toss_wait(sj15); assert len(s15) == 1  # 1번만 물음
+s15.clear(); U15[:] = [{"update_id": 1, "message": {"message_id": 900, "from": {"id": 42}, "chat": {"id": 42}, "text": "https://toss.shopping/_m/JW1",
+                                                   "reply_to_message": {"message_id": ask15, "chat": {"id": 42}, "text": s15 and "" or "🔗 토스 링크 필요"}}}]
+H.publish_approved(sj15)
+chm = [p for m, p in s15 if m == "sendMessage" and p["chat_id"] == "@ch"]
+assert len(chm) == 1 and chm[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/JW1" and chm[0]["text"].startswith(f"<i>{H.TOSS_NOTE}</i>")
+assert "⚠️ 10/18 16:01 게시 시점 가격" in chm[0]["text"] and "김치" in chm[0]["text"] and "tw_ppomppu_916" not in sj15 and "올렸어" in s15[-1][1]["text"]  # 진우 링크 = 그때 게시
+# ② 옛 글 백필
+u16 = lambda s, e: s.encode("utf-16-le")[2 * e["offset"]:2 * (e["offset"] + e["length"])].decode("utf-16-le")
+t59 = "🔥 [토스] 비비고 왕교자 1.05kg 2봉 (14,900원/무료)\n\n코멘트\n\n출처: 뽐뿌"
+P15 = [{"t": "2026-10-07 20:15", "text": t59, "entities": [{"type": "bold", "offset": 3, "length": 4}, {"type": "text_link", "offset": len(t59.encode("utf-16-le")) // 2 - 2, "length": 2, "url": pp15 + "59"}], "url": pp15 + "59", "mid": 59, "cp": 159},
+       {"t": "2026-10-08 10:00", "text": "🔥 [토스] 비비고 왕교자 1.05kg 2봉 (9,900원)\n\n출처: 뽐뿌", "url": pp15 + "88", "mid": 88},
+       {"t": "2026-10-09 10:00", "text": "🔥 [토스] 아무도 모르는 상품 (1,000원)\n\n출처: 뽐뿌", "url": pp15 + "97", "mid": 97},
+       {"t": "2026-10-07 21:00", "text": "🔥 [토스] 비비고 왕교자 1.05kg 2봉 (14,900원)", "url": pp15 + "60", "mid": 60},  # 목록에 없는 옛 글 = 그대로
+       {"t": "2026-10-18 01:17", "text": "🔥 [토스] 비비고 왕교자 1.05kg 2봉 (13,900원)\n⚠️ 10/18 01:17 게시 시점 가격\n\n출처: 뽐뿌", "url": pp15 + "1204", "mid": 1204, "cp": 1300}]
+json.dump(P15, open("posts.json", "w"), ensure_ascii=False)
+s15.clear(); sb15 = {"tr_1204": {"t": TK("2026-10-18 01:20"), "ids": [501], "src": 1}}  # 크레딧 바닥 때 Claude 없이 '본 후보'가 된 1204
+time.time = lambda: TK("2026-10-18 16:30"); out15 = io.StringIO()
+with contextlib.redirect_stdout(out15): H.toss_relink(sb15)
+log15, pj15 = out15.getvalue(), {p["mid"]: p for p in json.load(open("posts.json"))}
+ed = {p["message_id"]: p for m, p in s15 if m == "editMessageText" and p["chat_id"] == "@ch"}
+assert sorted(ed) == [59, 1204] and all(ed[k]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/W501" for k in ed), log15
+t = ed[59]["text"]; assert t.startswith(H.TOSS_NOTE) and "\n⚠️ 10/7 20:15 게시 시점 가격\n\n출처: 뽐뿌" in t and t.count("게시 시점 가격") == 1
+assert [u16(t, e) for e in ed[59]["entities"]] == [H.TOSS_NOTE, "[토스]", "뽐뿌"]  # 문구·게시 시점 줄만큼 오프셋 밂(UTF-16)
+assert ed[1204]["text"].count("게시 시점 가격") == 1 and "10/18 01:17 게시 시점 가격" in ed[1204]["text"]  # 이미 있으면 그대로
+assert pj15[59]["url"] == pj15[1204]["url"] == "https://toss.shopping/_m/W501" and pj15[59]["text"] == t and pj15[60]["url"] == pp15 + "60"
+assert "(9,900원) -> CJ 비비고 왕교자 1.05kg 2개 15,900원 (id 501, 9점) | 특가 끝" in log15, log15  # 하루 넘은 글 + 지금 15% 넘게 비쌈 = 연결 X
+asks = {p["text"].split(" — ")[1].split("\n")[0]: p for m, p in s15 if m == "sendMessage" and p["chat_id"] == "42"}
+assert sorted(asks) == ["[토스] 비비고 왕교자 1.05kg 2봉 (9,900원)", "[토스] 아무도 모르는 상품 (1,000원)"] and asks["[토스] 아무도 모르는 상품 (1,000원)"]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/97"
+assert pj15[97]["ask"] == 1 and pj15[97]["cp"] and pj15[88]["ask"] == 1 and "ask" not in pj15[59] and "toss ask [88, 97]" in log15
+s15.clear(); H.toss_relink(sb15); assert not s15  # 1번만 물음
+amsg = asks["[토스] 아무도 모르는 상품 (1,000원)"]
+s15.clear(); U15[:] = [{"update_id": 2, "message": {"message_id": 901, "from": {"id": 42}, "chat": {"id": 42}, "text": "https://toss.shopping/_m/JW97",
+                                                   "reply_to_message": {"message_id": pj15[97]["cp"], "chat": {"id": 42}, "text": amsg["text"], "reply_markup": amsg["reply_markup"]}}}]
+H.publish_approved(sb15)
+ed = {p["message_id"]: p for m, p in s15 if m == "editMessageText" and p["chat_id"] == "@ch"}
+assert list(ed) == [97] and ed[97]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/JW97" and ed[97]["text"].startswith(H.TOSS_NOTE) and "⚠️ 10/9 10:00 게시 시점 가격" in ed[97]["text"]
+assert json.load(open("posts.json"))[2]["url"] == "https://toss.shopping/_m/JW97"  # 답장 = 그 글 교체(사본 답장과 같은 길)
+r15 = {}; H.ai_pick = lambda p, l: (_ for _ in ()).throw(RuntimeError("credit balance"))
+try:
+    H.toss_match({}, r15, "[토스] 비비고 왕교자 1.05kg 2봉 (13,900원)", pp15 + "1", [[501, "CJ 비비고 왕교자 1.05kg 2개", 15900, 0]]); raise AssertionError
+except RuntimeError:
+    assert r15["ids"] == []  # Claude가 답 못 하면 후보를 넘기지 않음 -> 다음 실행에 다시 물음
+(H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP) = sv15; os.remove(H.TOSS_TOKEN); json.dump([], open("posts.json", "w")); U15.clear()
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
