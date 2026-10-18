@@ -1278,7 +1278,7 @@ def toss_deals(seen, best=False):
         elif th_solo(seen, plain_of(text), beauty=bt, slot=True):
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-            th_text(tok, me, text, link)
+            th_deal(seen, tok, me, text, link)
 
 
 def toss_th(name, link, lines):
@@ -1666,7 +1666,7 @@ def toss_picks(seen):
         elif tok and th_solo(seen, plain_of(body), fill=True, beauty=bt, slot=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈, 진우 화장품 이름 예약은 화장품 자리 채움): 대가성 문구 맨 앞, 실패는 main()이 알림
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-            th_text(tok, me, text, r["link"])
+            th_deal(seen, tok, me, text, r["link"])
 
 
 TOSS_SOLO_HOURS = range(8, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개. () = 끔
@@ -2004,12 +2004,42 @@ def toss_reopen(seen):
     r["ts"].append(now)
     print("toss reopen", "아침" if am else "밤", clip(e["n"], 30), f"{price:,}원", "하루특가" if hot else "목록 없음", f"| 남은 {len(r['q'])}")
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    th_text(tok, me, text, e["url"])
+    th_deal(seen, tok, me, text, e["url"])
+
+
+TH_LINK_AB, TH_AB_MARK = True, "👇 구매 링크는 첫 댓글에"  # 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 점검 때 비교해 이긴 쪽으로): False = 지금처럼 A만
+TH_AB_URL = re.compile(r"https?://|t\.me/|\.kr(?![a-z])")  # B 본문에서 뺄 주소 든 줄(👉·🛒 링크, 📲 t.me)
+
+
+def th_ab(text, link):
+    """A 본문(지금 개별 딜 글) -> (B 본문, 첫 댓글). B 본문 = 주소 든 줄만 빼고(대가성 문구 첫 줄·💸·제목·코멘트·토스 게시 시점 가격·팔로우 줄 그대로) 끝에 TH_AB_MARK.
+    첫 댓글 = 대가성 문구 한 줄(공정위: 표시문구는 댓글 X -> 본문 첫 줄에도 그대로) + 👉 링크(사이트 딜 페이지는 ?ref=thc — A ?ref=th와 출처 구분) + 📲."""
+    body = re.sub(r"\n{3,}", "\n\n", "\n".join(l for l in text.split("\n") if not TH_AB_URL.search(l))).strip()
+    head = text.split("\n\n", 1)[0] + "\n\n" if text.startswith(NOTE_STARTS) else ""
+    return f"{body}\n\n{TH_AB_MARK}", f"{head}👉 {re.sub(r'[?]ref=th$', '?ref=thc', link)}\n📲 실시간 알림 t.me/hotdeal_pick"
+
+
+def th_deal(seen, tok, me, text, link):
+    """Threads 개별 딜 글 1개(threads_deals·토스 픽 채움·슬롯 줄·뷰티 채움·토스 이름 예약·재오픈 — 묶음·날씨·간식·투표·#일상은 th_post 그대로).
+    TH_LINK_AB면 직전 개별 딜 글이 A였으면 B: 본문 주소 없이(미리보기 X) 올리고 바로 첫 댓글 = 링크. 댓글 못 다는 토큰(th_reply_ok)이면 A.
+    B 댓글이 실패하면 관리자 알림 + 다음 실행에 1번 더(th_retry — 링크 없는 딜 글이 남지 않게). 글마다 A/B·댓글 id -> seen(metrics.json 줄 ab·rv·48시간 v48·rv48)."""
+    st, now = seen.get("thab", {}), time.time()
+    ab = "B" if TH_LINK_AB and st.get("last") == "A" and th_reply_ok(seen) else "A"
+    body, reply = th_ab(text, link) if ab == "B" else (text, None)
+    pid, rid = (th_text(tok, me, body, None if reply else link) or {}).get("id"), None
+    if reply:
+        try:
+            rid = th_reply(tok, pid, reply)
+        except Exception as e:
+            seen[f"thabq_{pid}"] = {"t": now, "id": pid, "text": reply}
+            alert(seen, f"alert_thab_{pid}", f"⚠️ Threads 개별 딜 글(B: 링크는 첫 댓글)의 링크 댓글 실패: {err_brief(e)}\n다음 실행에 1번 더 달아요 — 그래도 안 되면 다시 알려요\n링크: {reply.split('👉 ')[-1].split(chr(10))[0]}")
+    seen["thab"] = {"t": now, "last": ab, "m": {**{k: v for k, v in st.get("m", {}).items() if now - v["ts"] < 4 * 86400}, **({pid: {"ab": ab, "ts": now, **({"r": rid} if rid else {})}} if pid else {})}}
+    return pid
 
 
 def th_text(tok, me, text, link):
     """Threads 글 1개(TEXT + 링크 미리보기). 미리보기를 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로."""
-    for att in ({"link_attachment": link}, {}):
+    for att in ({"link_attachment": link}, {}) if link else ({},):  # 링크 없음(A/B 시험 B 본문) = 미리보기 없이
         q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": "핫딜", "access_token": tok})
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
         time.sleep(10)
@@ -2567,6 +2597,13 @@ def th_retry(seen):
         seen[k]["done"] = 1
         if tok and k.startswith(today):
             th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"))
+    for k in [k for k in seen if k.startswith("thabq_")]:  # A/B 시험 B 글의 링크 댓글이 실패했던 것 -> 1번만 더(안 되면 알림, 그 뒤엔 안 함)
+        v = seen.pop(k)
+        try:
+            rid = th_reply(tok, v["id"], v["text"])
+            seen.get("thab", {}).get("m", {}).get(v["id"], {})["r"] = rid
+        except Exception as e:
+            alert(seen, f"alert_thab2_{v['id']}", f"⚠️ Threads 링크 댓글 2번째도 실패: {err_brief(e)}\n링크 없는 딜 글이 남았어요 — 직접 첫 댓글로 달거나 글을 지워 주세요\n{v['text']}")
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
@@ -2739,7 +2776,7 @@ def threads_deals(seen):
                 if k in seen:
                     seen[k]["q"] = [x for x in seen[k]["q"] if x is not i]
             th_mark(seen, i["bt"])
-            th_text(tok, me, i["text"], i["link"])
+            th_deal(seen, tok, me, i["text"], i["link"])
             continue
         url = f"{SITE}p/{i}.html?ref=th"  # ?ref = GoatCounter 출처(채널 구분, 10/11 진우 결정 '측정')
         try:
@@ -2756,7 +2793,7 @@ def threads_deals(seen):
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen, bt[i])
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        th_text(tok, me, text, url)
+        th_deal(seen, tok, me, text, url)
 
 
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
@@ -3242,10 +3279,41 @@ def tg_num(v):
     return int(float(v[:-1]) * {"K": 1000, "M": 10 ** 6}[v[-1]]) if v[-1:] in ("K", "M") else int(v)
 
 
+def metrics_save(m):
+    js = lambda x: json.dumps(x, ensure_ascii=False)
+    open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
+                                                                 for d, v in sorted(m.items(), reverse=True)[:METRICS_KEEP]) + "}\n")  # 최신 날짜 맨 위 · 글 1개 = 1줄(보고가 읽기 쉽게)
+
+
+def th_views(tok, i):
+    """Threads 글·댓글 1개 조회수(insights views)."""
+    return next(((x.get("total_value") or x["values"][0])["value"] for x in json.loads(http(f"{THREADS}/{i}/insights?metric=views&access_token={tok}"))["data"]), None)
+
+
+def th_ab_48(seen):
+    """A/B 시험 글이 올린 지 48시간 지나면(실행마다 확인) 1번: 글 조회(B는 링크 댓글 조회도) -> metrics.json 그 글 줄에 v48·rv48(10/25 A·B 글당 조회 비교)."""
+    tok, mm, now = E.get("THREADS_TOKEN"), seen.get("thab", {}).get("m", {}), time.time()
+    due = [(k, v) for k, v in mm.items() if "v48" not in v and now - v["ts"] >= 48 * 3600]
+    if not tok or not due:
+        return
+    m = load(METRICS, {})
+    for k, v in due:
+        try:
+            v.update(v48=th_views(tok, k), **({"rv48": th_views(tok, v["r"])} if v.get("r") else {}))
+        except Exception as e:  # 지운 글·권한 -> 빈 칸으로 끝(다시 안 물음)
+            v["v48"] = None
+            print("th ab 48h", k, repr(e))
+        for r in (r for d in m.values() for r in d["rows"] if r["ch"] == "th" and r["id"] == k):
+            r.update(v48=v["v48"], **({"rv48": v.get("rv48")} if v.get("r") else {}))
+    metrics_save(m)
+    print("th ab 48h", [(v["ab"], v["v48"], v.get("rv48")) for _, v in due])
+
+
 def metrics(seen):
     """하루 1번 어제(KST) 글별 성과 -> metrics.json {날짜: {"at", "miss": {채널: 빈 칸 이유}, "rows": [{date, ch, id, shop, cat, price, at, views, react, (likes, replies)}]}}.
     텔레그램(tg) = 채널 웹(t.me/s) 조회·반응(posts.json 글이면 그 글·링크로 몰·품목), Threads(th) = 글 목록 + insights(views·likes·replies·reposts·quotes),
     인스타(ig) = 미디어 목록(좋아요·댓글) + insights(views). 못 읽은 칸 = None, 이유는 miss(권한 없음 등). 수동 실행에 METRICS_DAY(YYYY-MM-DD)면 그날을 바로(점검·다시 모으기)."""
+    th_ab_48(seen)
     now = time.time()
     day = E.get("METRICS_DAY") or (time.gmtime(now + 9 * 3600).tm_hour >= METRICS_HOUR and time.strftime("%Y-%m-%d", time.gmtime(now - 15 * 3600)))
     if not day or "mt_" + day in seen and not E.get("METRICS_DAY"):
@@ -3306,8 +3374,14 @@ def metrics(seen):
                 else:
                     miss.setdefault("th_part", "일부 글 insights 못 읽음: " + why)
         lk = re.search(r"https?://\S+", x.get("text") or "")  # Threads 글은 [몰] 없이 쓰는 일이 많아 글 속 구매 링크로 몰
+        ab, rv = seen.get("thab", {}).get("m", {}).get(x["id"]) or {}, None  # 링크 위치 A/B 시험(10/18~): B = 링크 댓글 조회(rv)도
+        if ab.get("r") and "th" not in miss:
+            try:
+                rv = th_views(tok, ab["r"])
+            except Exception as e:
+                miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else "", stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            likes=ins.get("likes"), replies=ins.get("replies"))
+            likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"]} if ab else {}), **({"rv": rv} if ab.get("r") else {}))
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
@@ -3334,10 +3408,9 @@ def metrics(seen):
         row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm)
 
     rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
-    m, js = load(METRICS, {}), lambda x: json.dumps(x, ensure_ascii=False)
+    m = load(METRICS, {})
     m[day] = {"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "miss": miss, "rows": rows}
-    open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
-                                                                 for d, v in sorted(m.items(), reverse=True)[:METRICS_KEEP]) + "}\n")  # 최신 날짜 맨 위 · 글 1개 = 1줄(보고가 읽기 쉽게)
+    metrics_save(m)
     if not E.get("METRICS_DAY") and (not any(soft) or time.gmtime(now + 9 * 3600).tm_hour >= 8):  # 수동 실행(오늘치 점검 등)은 기록 X -> 다음 날 5시에 그날 전체를 다시
         seen["mt_" + day] = now
     c = collections.Counter(r["ch"] for r in rows)

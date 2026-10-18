@@ -9,6 +9,7 @@ tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
+lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -3431,6 +3432,60 @@ H.http = lambda url, *a, **k: json.dumps({"id": "777"}) if "/me?" in url else js
 with contextlib.redirect_stdout(io.StringIO()) as o16: H.cmp_report({})
 assert "cmp th 10-18 12:00 | " in o16.getvalue() and "[토스쇼핑] 토종순대" in o16.getvalue(), o16.getvalue()  # 토스 문구·링크 없는 [토스쇼핑] Threads 글도 목록에
 del H.E["THREADS_TOKEN"]; (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP) = sv16; os.remove(H.TOSS_TOKEN); json.dump([], open("posts.json", "w"))
+# 9-17) 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 비교): 개별 딜 글(th_deal로 나가는 것 전부)이 A(본문 👉 링크 + 미리보기)·B(본문 주소 없이 + 첫 댓글 링크) 번갈아,
+#       대가성 문구는 A·B 모두 본문 첫 줄(공정위 — 댓글 X), 토스 B 글도 게시 시점 가격 줄, 댓글 권한 없으면 A, 댓글 실패 = 알림 + 다음 실행 1번 더, metrics.json 줄에 ab·rv·48시간 v48·rv48
+assert lab0 is True  # 기본 켜짐(예전 셀프체크만 A로 돌림)
+sv17 = (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB); H.time.sleep = lambda s: None; H.TOSS_NO_CMP = H.TH_LINK_AB = True
+U = H.TH_AB_URL
+tA = H.th_note(H.TOSS_NOTE) + "🔥 [토스] 비비고 왕교자 (13,900원)\n\n맛있어요\n⚠️ 10/18 19:00 게시 시점 가격\n\n👉 " + H.SITE + "p/5.html?ref=th\n" + H.th_follow(True) + "\n📲 실시간 알림 t.me/hotdeal_pick"
+bB, rB = H.th_ab(tA, H.SITE + "p/5.html?ref=th")
+assert not re.search(r"http|t\.me|\.kr", bB) and bB.startswith(H.TOSS_NOTE + "\n\n🔥 [토스] 비비고") and bB.endswith("\n\n" + H.TH_AB_MARK) and "⚠️ 10/18 19:00 게시 시점 가격" in bB and H.th_follow(True) in bB
+assert rB == f"{H.TOSS_NOTE}\n\n👉 {H.SITE}p/5.html?ref=thc\n📲 실시간 알림 t.me/hotdeal_pick"  # 첫 댓글 = 대가성 문구 + 링크(사이트 ?ref=thc) + 📲
+tT = H.toss_th("에브리워터 무라벨 500ml 20개", "https://toss.shopping/_m/W1", ["💰 4,445원", "👉 병당 약 222원"])
+bT, rT = H.th_ab(tT, "https://toss.shopping/_m/W1")
+assert not re.search(r"http|t\.me|\.kr", bT) and "게시 시점 가격" in bT and "👉 병당 약 222원" in bT and bT.startswith(H.TOSS_NOTE) and rT.endswith("👉 https://toss.shopping/_m/W1\n📲 실시간 알림 t.me/hotdeal_pick")  # 링크 없는 👉 코멘트 줄은 그대로
+c17, al17, n17, fail17, v17 = [], [], [0], [False], {}
+def http17(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url and method == "POST":
+        q = {k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}; c17.append(q)
+        if "reply_to_id" in q and fail17[0]: raise OSError("reply down")
+        return json.dumps({"id": "c%d" % len(c17)})
+    if "/threads_publish?" in url:
+        n17[0] += 1; return json.dumps({"id": "p%d" % n17[0]})
+    if "/insights?" in url:
+        i = url.split(H.THREADS + "/")[1].split("/")[0]; return json.dumps({"data": [{"name": "views", "values": [{"value": v17.get(i, 0)}]}, {"name": "likes", "values": [{"value": 1}]}]})
+    raise AssertionError(url)
+H.http, H.tg = http17, (lambda m, **p: al17.append(p.get("text")) or {"message_id": 1}); now17 = TK("2026-10-18 19:00"); time.time = lambda: now17
+s17 = {"threply": {"t": now17, "ok": 1}}
+ids17 = [H.th_deal(s17, "tk", "777", tA, H.SITE + "p/5.html?ref=th") for _ in range(4)]
+posts17 = [q for q in c17 if "reply_to_id" not in q]; reps17 = [q for q in c17 if "reply_to_id" in q]
+assert ["link_attachment" in q for q in posts17] == [True, False, True, False] and [s17["thab"]["m"][i]["ab"] for i in ids17] == ["A", "B", "A", "B"]  # 번갈아
+assert posts17[0]["text"] == tA and posts17[1]["text"] == bB and all(q["text"].startswith(H.TOSS_NOTE) for q in posts17)  # A·B 둘 다 첫 줄 대가성 문구
+assert [q["reply_to_id"] for q in reps17] == [ids17[1], ids17[3]] and reps17[0]["text"] == rB and "topic_tag" not in reps17[0]  # B만 바로 첫 댓글(링크)
+assert s17["thab"]["m"][ids17[1]]["r"] and "r" not in s17["thab"]["m"][ids17[0]]
+c17.clear(); s17b = {"threply": {"t": now17, "ok": 0}, "thab": {"t": now17, "last": "A", "m": {}}}; H.th_deal(s17b, "tk", "777", tA, "https://x")
+assert "link_attachment" in c17[0] and len(c17) == 1 and s17b["thab"]["last"] == "A"  # 댓글 권한 없음 = A
+c17.clear(); H.TH_LINK_AB = False; s17c = {"threply": {"t": now17, "ok": 1}, "thab": {"t": now17, "last": "A", "m": {}}}; H.th_deal(s17c, "tk", "777", tA, "https://x"); H.TH_LINK_AB = True
+assert "link_attachment" in c17[0] and len(c17) == 1  # 상수 끄면 A만
+c17.clear(); fail17[0] = True; s17d = {"threply": {"t": now17, "ok": 1}, "thab": {"t": now17, "last": "A", "m": {}}}; pd = H.th_deal(s17d, "tk", "777", tA, H.SITE + "p/5.html?ref=th")
+assert "링크 댓글 실패" in al17[-1] and "?ref=thc" in al17[-1] and s17d[f"thabq_{pd}"]["text"] == rB  # 댓글 실패 -> 알림 + 다음 실행에 1번 더
+c17.clear(); H.th_retry(s17d); assert [q["reply_to_id"] for q in c17] == [pd] and "2번째도 실패" in al17[-1] and not any(k.startswith("thabq_") for k in s17d)
+c17.clear(); H.th_retry(s17d); assert not c17  # 3번째는 안 함
+fail17[0] = False; s17d[f"thabq_{pd}"] = {"t": now17, "id": pd, "text": rB}; c17.clear(); H.th_retry(s17d)
+assert [q["reply_to_id"] for q in c17] == [pd] and s17d["thab"]["m"][pd]["r"] and not any(k.startswith("thabq_") for k in s17d)  # 다시 달리면 댓글 id 기록
+v17.update({ids17[0]: 40, ids17[1]: 55, s17["thab"]["m"][ids17[1]]["r"]: 9})
+json.dump({}, open(H.METRICS, "w")); H.E.update(THREADS_TOKEN="tk", METRICS_DAY="2026-10-18"); ph17 = H.http
+H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-18T10:00:00+0000"} for i, t in ((ids17[0], tA), (ids17[1], bB))]}) if "/me/threads?" in url else ph17(url, *a, **k)
+H.metrics(s17); m17 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-18"]["rows"] if r["ch"] == "th"}
+assert m17[ids17[0]]["ab"] == "A" and "rv" not in m17[ids17[0]] and m17[ids17[1]]["ab"] == "B" and m17[ids17[1]]["rv"] == 9 and m17[ids17[1]]["views"] == 55, m17  # 줄마다 A/B, B는 링크 댓글 조회
+H.http = ph17; del H.E["METRICS_DAY"]; v17.update({ids17[0]: 140, ids17[1]: 150, s17["thab"]["m"][ids17[1]]["r"]: 30}); time.time = lambda: now17 + 49 * 3600  # 다음 날 metrics 실행(그날 모으기는 따로)
+H.metrics(s17); m17 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-18"]["rows"] if r["ch"] == "th"}
+assert (m17[ids17[0]]["v48"], m17[ids17[1]]["v48"], m17[ids17[1]]["rv48"]) == (140, 150, 30) and "rv48" not in m17[ids17[0]]  # 48시간 조회(B는 링크 댓글도)
+c17.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("다시 묻지 않음")); H.th_ab_48(s17)  # 1번만
+assert all(src.count("th_deal(seen, tok, me,") == 1 for src in map(inspect.getsource, (H.toss_picks, H.toss_reopen))) and inspect.getsource(H.threads_deals).count("th_deal(seen, tok, me,") == 2 \
+    and "th_deal(seen, tok, me, text, link)" in inspect.getsource(H.toss_deals) and "th_text(" not in inspect.getsource(H.threads_deals)  # 개별 딜 글 5곳 전부 A/B, 묶음(th_post)은 그대로
+del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB) = sv17
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
