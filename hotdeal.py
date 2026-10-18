@@ -541,9 +541,12 @@ def deal_post(d, comment, q=None, extra=None):
     return text, link or d["url"], label
 
 
+TOSS_TAG = r"\[토스(?:쇼핑)?\]"  # 토스 딜 제목 [몰] — 10/18 진우 '[토스쇼핑]도 토스'(같은 토스쇼핑: 비교 X·게시 시점 가격·뽐뿌 말고 바로 연결)
+
+
 def is_toss(url, text=""):
-    """토스 딜인지: 쉐어링크(toss.shopping·toss.im) 또는 제목이 [토스]."""
-    return bool(toss_share(url or "") or re.search(r"(^|\n)(?:\[광고\][^\n]*\n)?[^\n]*\[토스\]", text[:400]))
+    """토스 딜인지: 쉐어링크(toss.shopping·toss.im) 또는 제목이 [토스]·[토스쇼핑]."""
+    return bool(toss_share(url or "") or re.search(r"(^|\n)(?:\[광고\][^\n]*\n)?[^\n]*" + TOSS_TAG, text[:400]))
 
 
 def toss_when(t=None):
@@ -643,7 +646,7 @@ def cmp_report(seen):
     · 하루특가(지난 날 = 끝남, 재업로드 X) · 제목 · 비교 문구 · 지금 토스 목록 가격(1일 목록에 이름이 같은 게 있을 때만 — 진우 링크는 안 엶) · 주소. 묶음 글(리스트·미리보기)은 '묶음'.
     읽기만 함(삭제 X — 지금 토큰엔 threads_delete 권한 없음)."""
     kst = time.gmtime(time.time() + 9 * 3600)
-    key, today = time.strftime("cmprep_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)
+    key, today = time.strftime("cmprep2_%Y%m%d", kst), time.strftime("%Y-%m-%d", kst)  # 2 = [토스쇼핑]도(10/18) -> 그날 1번 더
     if not CMP_REPORT or key in seen:
         return
     norm = lambda x: re.sub(r"\W", "", x or "")
@@ -654,7 +657,7 @@ def cmp_report(seen):
 
     def line(where, ts, text, url):
         clean = strip_cmp(text)[0].split("\n")
-        if not (TOSS_NOTE in text or "[토스]" in text or re.search(r"toss\.(?:shopping|im)/", text)) or "\n".join(clean) == text:
+        if not (TOSS_NOTE in text or re.search(TOSS_TAG, text) or re.search(r"toss\.(?:shopping|im)/", text)) or "\n".join(clean) == text:
             return
         cmp = [l for l in text.split("\n") if l not in clean]  # 지워지거나 바뀐 줄 = 비교 문구
         sp = re.search(rf"{re.escape(SITE)}p/(\d+)\.html", text)

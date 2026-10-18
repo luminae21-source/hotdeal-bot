@@ -3401,6 +3401,36 @@ try:
 except RuntimeError:
     assert r15["ids"] == []  # Claude가 답 못 하면 후보를 넘기지 않음 -> 다음 실행에 다시 물음
 (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP) = sv15; os.remove(H.TOSS_TOKEN); json.dump([], open("posts.json", "w")); U15.clear()
+# 9-16) 10/18 13시 '[토스쇼핑]도 토스': 제목 판정 공용(TOSS_TAG) -> 보류 흐름(쉐어링크 없으면 뽐뿌로 안 올림 → 2시간 뒤 진우 요청 → 답장 링크로 게시)·다른 몰 비교 X·게시 시점 줄·대가성 문구 맨 앞,
+#       posts.json 정리(toss_clean_posts)·Threads 비교 목록(cmp_report)도 같은 규칙
+assert H.is_toss("", "🔥 [토스쇼핑] 삼겹살 (1원)") and H.is_toss("", "[광고] 🔥 삼겹살\n🔥 [토스쇼핑]삼겹살 (1원)") and H.is_toss("", "🔥 [토스] 삼겹살") and not H.is_toss("", "🔥 [G마켓] 토스쇼핑 아님")
+sv16 = (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP)
+H.HAS_TOSS = H.TOSS_NO_CMP = True; json.dump({"token": "TK", "exp": 9e9}, open(H.TOSS_TOKEN, "w")); H.EVENTS = "ev16.json"; json.dump([], open(H.EVENTS, "w"))
+L15[:] = [(601, "전혀 다른 상품", 1000)]; s15.clear(); U15.clear()
+pick16 = lambda prompt, lines: [{"i": i, "score": 8, "comment": "쿠팡 같은 상품보다 2,000원 싸요\n순대국 3팩이에요"} for i, l in enumerate(lines) if "[토스쇼핑]" in l] if not prompt.startswith("커뮤니티 핫딜 글 제목") else []
+H.fetch_deals = lambda: [{"id": "ppomppu_984", "board": "뽐뿌", "title": "[토스쇼핑] 토종순대 얼큰술국 1KG x 3팩 (18,840원/무배)", "hits": "", "age": 40, "desc": "", "url": pp15 + "984"}]
+json.dump({}, open("seen.json", "w")); json.dump([], open("posts.json", "w"))
+H.http, H.ai_pick, H.tg = http15, pick16, tg15; time.time = lambda: TK("2026-10-18 13:00")
+H.main()
+assert not [p for m, p in s15 if p.get("chat_id") == "@ch" and "토종순대" in str(p.get("text"))] and not [p for m, p in s15 if pp15 in json.dumps(p.get("reply_markup", {}))]  # 뽐뿌 버튼으로 안 올림
+sj16 = json.load(open("seen.json")); assert "tw_ppomppu_984" in sj16 and not sj16["tw_ppomppu_984"].get("ask")  # 보류
+s15.clear(); time.time = lambda: TK("2026-10-18 15:01"); H.toss_wait(sj16)
+assert len(s15) == 1 and "토스 링크 필요 — [토스쇼핑] 토종순대" in s15[0][1]["text"] and sj16["tw_ppomppu_984"]["ask"]  # 2시간 뒤 진우에게
+U15[:] = [{"update_id": 3, "message": {"message_id": 902, "from": {"id": 42}, "chat": {"id": 42}, "text": "https://toss.shopping/_m/SD1",
+                                       "reply_to_message": {"message_id": sj16["tw_ppomppu_984"]["ask"], "chat": {"id": 42}, "text": "🔗"}}}]
+s15.clear(); H.publish_approved(sj16); U15.clear()
+ch16 = [p for m, p in s15 if m == "sendMessage" and p["chat_id"] == "@ch"]
+assert len(ch16) == 1 and ch16[0]["text"].startswith(f"<i>{H.TOSS_NOTE}</i>") and "⚠️ 10/18 15:01 게시 시점 가격" in ch16[0]["text"] and "쿠팡" not in ch16[0]["text"] and "순대국 3팩이에요" in ch16[0]["text"]
+assert ch16[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/SD1"  # 대가성 문구 맨 앞 · 게시 시점 줄 · 다른 몰 비교 줄 없음
+H.HAS_TOSS = False; t16 = H.deal_post({"title": "[토스쇼핑] 토종순대 3팩 (18,840원)", "url": pp15 + "985", "board": "뽐뿌"}, "쿠팡보다 2,000원 싸요\n맛있어요")[0]
+assert "게시 시점 가격" in t16 and "쿠팡" not in t16 and "맛있어요" in t16; H.HAS_TOSS = True  # 토스 API 없을 때(제목만)도 같은 규칙
+json.dump([{"t": "2026-10-08 21:36", "text": "🔥 [토스쇼핑]광동제약 비타500 40병(15,700원)\n\n💸 쿠팡 같은 상품보다 3,000원 쌈\n맛있어요", "entities": [], "url": pp15 + "102", "mid": 102}], open("posts.json", "w"), ensure_ascii=False)
+H.toss_clean_posts(); assert json.load(open("posts.json"))[0]["text"] == "🔥 [토스쇼핑]광동제약 비타500 40병(15,700원)\n\n맛있어요"  # 사이트·카드·Threads 재료도 비교 X
+H.E["THREADS_TOKEN"] = "tk"; TH16 = [{"id": "5", "timestamp": "2026-10-18T03:00:00+0000", "permalink": "https://threads.net/p/5", "text": "💸 쿠팡보다 2,000원 싸요\n🔥 [토스쇼핑] 토종순대 (18,840원)\n\n👉 https://hotdealpick.kr/p/0.html"}]
+H.http = lambda url, *a, **k: json.dumps({"id": "777"}) if "/me?" in url else json.dumps({"data": TH16})
+with contextlib.redirect_stdout(io.StringIO()) as o16: H.cmp_report({})
+assert "cmp th 10-18 12:00 | " in o16.getvalue() and "[토스쇼핑] 토종순대" in o16.getvalue(), o16.getvalue()  # 토스 문구·링크 없는 [토스쇼핑] Threads 글도 목록에
+del H.E["THREADS_TOKEN"]; (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP) = sv16; os.remove(H.TOSS_TOKEN); json.dump([], open("posts.json", "w"))
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
