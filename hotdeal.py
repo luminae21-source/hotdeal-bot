@@ -299,7 +299,7 @@ def ai_pick(prompt, lines):
                            "q": {"type": "string"}, "e": {"type": "string"}, "hook": {"type": "string"},
                            "pts": {"type": "array", "items": {"type": "string"}}, "unit": {"type": "string"}, "warn": {"type": "string"}}}}}}}
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
-        "model": MODEL, "max_tokens": 4000, "tools": [tool], "tool_choice": {"type": "auto"},
+        "model": MODEL, "max_tokens": 8000, "tools": [tool], "tool_choice": {"type": "auto"},  # 10/19 17:23 커뮤니티 글 많은 회차에 4000으로 picks가 잘림(다음 실행 복구) -> 8000(쓴 만큼만 과금)
         "messages": [{"role": "user", "content": prompt + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
     tu = next((c["input"] for c in r["content"] if c["type"] == "tool_use"), {"picks": []})  # 도구를 안 부르면 고른 게 없는 것

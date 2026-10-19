@@ -507,6 +507,8 @@ for stop in ("tool_use", "max_tokens"):
 H.http = claude({"content": [{"type": "text", "text": "x"}, {"type": "tool_use", "name": "pick", "input": {"picks": [{"i": 0, "score": 6, "comment": "a"},
                  {"i": 1, "score": 8, "comment": "b"}, {"i": 5, "score": 9, "comment": "범위 밖"}]}}], "stop_reason": "tool_use"})
 assert [p["i"] for p in AI_PICK("p", ["a", "b"])] == [1, 0]
+bd6, ok6 = [], H.http; H.http = lambda url, body=None, headers=None, method=None: bd6.append(body) or ok6(url, body, headers, method)
+AI_PICK("p", ["a", "b"]); assert bd6[0]["max_tokens"] == 8000  # 10/19 17:23 커뮤니티 글 많은 회차에 4000으로 picks 잘림 -> 8000
 def ai_down(prompt, lines):
     raise RuntimeError("Claude 답 잘림(max_tokens)")
 fd6, rp6, pa6, ran = H.fetch_deals, H.report, H.ai_pick, []
