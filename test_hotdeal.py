@@ -3483,6 +3483,10 @@ H.http = ph17; del H.E["METRICS_DAY"]; v17.update({ids17[0]: 140, ids17[1]: 150,
 H.metrics(s17); m17 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-18"]["rows"] if r["ch"] == "th"}
 assert (m17[ids17[0]]["v48"], m17[ids17[1]]["v48"], m17[ids17[1]]["rv48"]) == (140, 150, 30) and "rv48" not in m17[ids17[0]]  # 48시간 조회(B는 링크 댓글도)
 c17.clear(); H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("다시 묻지 않음")); H.th_ab_48(s17)  # 1번만
+c17.clear(); H.http = http17; s17t = {"threply": {"t": now17, "ok": 1}, "thab": {"t": now17, "last": "A", "m": {}}}; pt = H.th_deal(s17t, "tk", "777", tT, "https://toss.shopping/_m/W1")  # 토스 픽 B(제목에 [토스] 없음)
+H.E["METRICS_DAY"] = "2026-10-20"; H.http = lambda url, *a, **k: json.dumps({"data": [{"id": pt, "text": bT, "timestamp": "2026-10-20T10:00:00+0000"}]}) if "/me/threads?" in url else http17(url, *a, **k)
+H.metrics(s17t); r17 = [r for r in json.load(open(H.METRICS))["2026-10-20"]["rows"] if r["ch"] == "th"]; del H.E["METRICS_DAY"]
+assert r17[0]["ab"] == "B" and r17[0]["shop"] == "toss", r17  # B 본문엔 주소가 없어도 올린 링크로 몰(10/19 점검: B 줄 몰이 '기타'로 찍히던 것)
 assert all(src.count("th_deal(seen, tok, me,") == 1 for src in map(inspect.getsource, (H.toss_picks, H.toss_reopen))) and inspect.getsource(H.threads_deals).count("th_deal(seen, tok, me,") == 2 \
     and "th_deal(seen, tok, me, text, link)" in inspect.getsource(H.toss_deals) and "th_text(" not in inspect.getsource(H.threads_deals)  # 개별 딜 글 5곳 전부 A/B, 묶음(th_post)은 그대로
 del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB) = sv17

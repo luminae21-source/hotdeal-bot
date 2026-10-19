@@ -2033,7 +2033,7 @@ def th_deal(seen, tok, me, text, link):
         except Exception as e:
             seen[f"thabq_{pid}"] = {"t": now, "id": pid, "text": reply}
             alert(seen, f"alert_thab_{pid}", f"⚠️ Threads 개별 딜 글(B: 링크는 첫 댓글)의 링크 댓글 실패: {err_brief(e)}\n다음 실행에 1번 더 달아요 — 그래도 안 되면 다시 알려요\n링크: {reply.split('👉 ')[-1].split(chr(10))[0]}")
-    seen["thab"] = {"t": now, "last": ab, "m": {**{k: v for k, v in st.get("m", {}).items() if now - v["ts"] < 4 * 86400}, **({pid: {"ab": ab, "ts": now, **({"r": rid} if rid else {})}} if pid else {})}}
+    seen["thab"] = {"t": now, "last": ab, "m": {**{k: v for k, v in st.get("m", {}).items() if now - v["ts"] < 4 * 86400}, **({pid: {"ab": ab, "ts": now, "u": link, **({"r": rid} if rid else {})}} if pid else {})}}  # u = 링크(B 본문엔 주소가 없어 metrics가 몰을 못 읽음)
     return pid
 
 
@@ -3374,13 +3374,13 @@ def metrics(seen):
                 else:
                     miss.setdefault("th_part", "일부 글 insights 못 읽음: " + why)
         lk = re.search(r"https?://\S+", x.get("text") or "")  # Threads 글은 [몰] 없이 쓰는 일이 많아 글 속 구매 링크로 몰
-        ab, rv = seen.get("thab", {}).get("m", {}).get(x["id"]) or {}, None  # 링크 위치 A/B 시험(10/18~): B = 링크 댓글 조회(rv)도
+        ab, rv = seen.get("thab", {}).get("m", {}).get(x["id"]) or {}, None  # 링크 위치 A/B 시험(10/18~): B = 링크 댓글 조회(rv)도, 본문에 주소 없으면 올린 링크(u)로 몰
         if ab.get("r") and "th" not in miss:
             try:
                 rv = th_views(tok, ab["r"])
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
-        row("th", x["id"], x.get("text") or "", lk[0] if lk else "", stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
+        row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
             likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"]} if ab else {}), **({"rv": rv} if ab.get("r") else {}))
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
