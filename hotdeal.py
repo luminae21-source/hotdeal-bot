@@ -117,6 +117,8 @@ MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
+NAVER_SHOP = "https://openapi.naver.com/v1/search/shop.json"  # 네이버 검색 API 쇼핑(하루 25,000회, developers.naver.com/docs/serviceapi/search/shopping) — 키 = NAVER_CLIENT_ID·NAVER_CLIENT_SECRET, 없으면 안 부름
+NAVER_MATCH_PROMPT = MATCH_PROMPT.replace("토스쇼핑 상품 목록", "네이버쇼핑 검색 결과(상품명 | 최저가 | 판매처)")
 EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사·커뮤니티 핫딜 글이야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
 회사 소식·실적·협약·물류·사회공헌·채용·오프라인 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이는 빼. 글에 적힌 사실만 써(지어내지 마).
 q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
@@ -525,7 +527,10 @@ def deal_post(d, comment, q=None, extra=None):
     label = buy_label(d["title"])
     if not aff:
         lp, name = lp_search(d["title"], q)
-        if not lp and not link:  # 상품 주소도 제휴 검색도 없으면 원글 대신 그 몰 검색 결과(원글은 본문 '출처' 링크로 남음). 토스·모르는 몰·앱 쿠폰은 원글 그대로
+        nv = not lp and not link and re.search("네이버|스마트스토어", store_tag(d["title"])) and naver_match(d["title"], q)  # 10/19 진우 '직접 링크로': 네이버 딜은 검색 결과 대신 같은 상품 페이지
+        if nv:
+            link, label = nv, "🛒 구매하러 가기"
+        elif not lp and not link:  # 상품 주소도 제휴 검색도 없으면 원글 대신 그 몰 검색 결과(원글은 본문 '출처' 링크로 남음). 토스·모르는 몰·앱 쿠폰은 원글 그대로
             name, base = next((v for k, v in MALL_SEARCH.items() if k in store_tag(d["title"])), (None, None))
             lp = base and base + urllib.parse.quote(q or keyword(d["title"]))
         if lp:
@@ -539,6 +544,25 @@ def deal_post(d, comment, q=None, extra=None):
     if TOSS_NO_CMP and is_toss(link or d["url"], f"[{store_tag(d['title'])}]"):  # 토스 딜: 다른 몰 비교 빼고 게시 시점 가격(10/12 토스 비즈니스 요청)
         text = strip_cmp(text)[0].replace("\n\n출처: ", f"\n{toss_when()}\n\n출처: ", 1)
     return text, link or d["url"], label
+
+
+def naver_match(title, q=None):
+    """상품 주소를 못 꺼낸 [네이버]·스마트스토어 딜 -> 네이버 쇼핑 검색 API(Claude 검색어, 10개) -> Claude가 같은 상품(용량·수량·구성, 쿠폰가라 가격은 달라도 됨) 8점 이상이면
+    상품 정보 페이지(item.link), 아니면 None(지금처럼 검색 링크). 제휴 링크 아님(대가성 문구 X) — 진우 naver.me 답장이 오면 그 링크로 교체(관리자 사본 흐름 그대로). 키 없으면 안 부름."""
+    if not (E.get("NAVER_CLIENT_ID") and E.get("NAVER_CLIENT_SECRET")):
+        return None
+    try:
+        items = json.loads(http(NAVER_SHOP + "?" + urllib.parse.urlencode({"query": q or keyword(title), "display": 10, "exclude": "used:rental:cbshop"}),
+                                headers={"X-Naver-Client-Id": E["NAVER_CLIENT_ID"], "X-Naver-Client-Secret": E["NAVER_CLIENT_SECRET"]})).get("items", [])
+        items = [x for x in items if x.get("link")]
+        name = lambda x: html.unescape(re.sub(r"<[^>]+>", "", x["title"]))
+        pick = items and ai_pick(NAVER_MATCH_PROMPT.format(title), [f"{name(x)} | {int(x.get('lprice') or 0):,}원 | {x.get('mallName', '')}" for x in items])
+    except Exception as e:  # API·Claude 실패 = 검색 링크(딜은 그대로 올림)
+        print("naver match", clip(title, 30), repr(e))
+        return None
+    hit = items[pick[0]["i"]] if pick and pick[0]["score"] >= 8 else None
+    print("naver match", clip(title, 30), "->", f"{clip(name(hit), 40)} {int(hit.get('lprice') or 0):,}원 ({pick[0]['score']}점)" if hit else "없음", f"| 후보 {len(items)}")
+    return hit and hit["link"]
 
 
 TOSS_TAG = r"\[토스(?:쇼핑)?\]"  # 토스 딜 제목 [몰] — 10/18 진우 '[토스쇼핑]도 토스'(같은 토스쇼핑: 비교 X·게시 시점 가격·뽐뿌 말고 바로 연결)
@@ -1336,21 +1360,21 @@ def top_deals(seen):
         return
     posts = load(POSTS, [])  # Threads 12·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 사이트 딜 페이지(구매 버튼), 500자
     head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in top if aff_note(p["url"])))
-    lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {SITE}p/{posts.index(p)}.html?ref=th" for n, p in enumerate(top)]
+    lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {th_url(p, posts.index(p))}" for n, p in enumerate(top)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
     while True:
         th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines)
-        if len(th) + len(tail) <= 480 or len(lines) <= 3:
+        if len(th) + len(tail) <= 480 or len(lines) <= 1:  # 직접 링크는 사이트 주소보다 길 수 있어(검색 링크 ~210자) 1개까지 줄임
             break
         lines = lines[:-1]
     links, beauty = len(lines), []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
     for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
-        line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {SITE}p/{posts.index(p)}.html?ref=th" if links < 5 else "")
+        line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
         if len(th) + len("\n\n💄 화장품" * (not beauty)) + len(line) + 1 + len(tail) > 480:
             break
         links += "👉" in line
         beauty.append(line)
     th += "\n\n💄 화장품\n" + "\n".join(beauty) if beauty else ""
-    th_bundle(seen, f"top{hrs[-1]}", th + tail, f"{SITE}p/{posts.index(top[0])}.html?ref=th")  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    th_bundle(seen, f"top{hrs[-1]}", th + tail, th_url(top[0], posts.index(top[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
 
 
 def busy(seen, cap=True):
@@ -2011,11 +2035,27 @@ def toss_reopen(seen):
 
 TH_LINK_AB, TH_AB_MARK = True, "👇 구매 링크는 첫 댓글에"  # 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 점검 때 비교해 이긴 쪽으로): False = 지금처럼 A만
 TH_AB_URL = re.compile(r"https?://|t\.me/|\.kr(?![a-z])")  # B 본문에서 뺄 주소 든 줄(👉·🛒 링크, 📲 t.me)
+TH_LINK_MAX = 300  # 10/19 17시 진우 '경유 링크 말고 직접 링크로': Threads 딜 링크 = 텔레그램 버튼 링크. 이보다 긴 주소(링크프라이스 딥링크 ~450자)만 500자에 못 들어가서 사이트 딜 페이지
+
+
+def th_url(p, i, ref="th"):
+    """Threads 글에 넣을 딜 링크: 텔레그램 버튼과 같은 링크(제휴·상품 페이지, 아직 검색 링크인 딜은 검색 링크 그대로). 주소가 없거나 TH_LINK_MAX보다 길면 사이트 딜 페이지."""
+    u = p.get("url") or ""
+    return u if u and len(u) <= TH_LINK_MAX else f"{SITE}p/{i}.html?ref={ref}"
+
+
+def link_kind(u):
+    """Threads A/B 비교용 링크 종류(10/25 점검: 바뀐 뒤 글끼리만): site = 사이트 딜 페이지 경유 · search = 쇼핑몰 검색 결과 · direct = 제휴·상품 페이지."""
+    if (u or "").startswith(SITE):
+        return "site"
+    p = urllib.parse.urlsplit(u or "")
+    tu = urllib.parse.parse_qs(p.query).get("tu")  # 링크프라이스 = 가는 곳(tu)으로 판단
+    return "search" if "search" in urllib.parse.urlsplit(tu[0] if tu else u or "").path.lower() else "direct"
 
 
 def th_ab(text, link):
     """A 본문(지금 개별 딜 글) -> (B 본문, 첫 댓글). B 본문 = 주소 든 줄만 빼고(대가성 문구 첫 줄·💸·제목·코멘트·토스 게시 시점 가격·팔로우 줄 그대로) 끝에 TH_AB_MARK.
-    첫 댓글 = 대가성 문구 한 줄(공정위: 표시문구는 댓글 X -> 본문 첫 줄에도 그대로) + 👉 링크(사이트 딜 페이지는 ?ref=thc — A ?ref=th와 출처 구분) + 📲."""
+    첫 댓글 = 대가성 문구 한 줄(공정위: 표시문구는 댓글 X -> 본문 첫 줄에도 그대로) + 👉 링크(A와 같은 직접 링크 — 사이트 딜 페이지일 때만 ?ref=thc) + 📲."""
     body = re.sub(r"\n{3,}", "\n\n", "\n".join(l for l in text.split("\n") if not TH_AB_URL.search(l))).strip()
     head = text.split("\n\n", 1)[0] + "\n\n" if text.startswith(NOTE_STARTS) else ""
     return f"{body}\n\n{TH_AB_MARK}", f"{head}👉 {re.sub(r'[?]ref=th$', '?ref=thc', link)}\n📲 실시간 알림 t.me/hotdeal_pick"
@@ -2780,18 +2820,20 @@ def threads_deals(seen):
             th_mark(seen, i["bt"])
             th_deal(seen, tok, me, i["text"], i["link"])
             continue
-        url = f"{SITE}p/{i}.html?ref=th"  # ?ref = GoatCounter 출처(채널 구분, 10/11 진우 결정 '측정')
-        try:
-            http(url, method="HEAD")
-        except Exception:
-            return
+        url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
+        if url.startswith(SITE):
+            try:
+                http(url, method="HEAD")
+            except Exception:
+                return
         note = aff_note(posts[i].get("url") or "")
         icon = "🛒" if th_weak(posts[i]["text"]) else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
         sv = saving(posts[i]["text"])  # 고지문 다음 줄 = 얼마나 싼지(10/11 진우 'Threads 훅')
         tw = f"\n{toss_when(posts[i]['t'])}" if TOSS_NO_CMP and is_toss(posts[i].get("url"), posts[i]["text"]) and "게시 시점" not in posts[i]["text"] else ""
         sv = None if tw or (TOSS_NO_CMP and is_toss(posts[i].get("url"), posts[i]["text"])) else sv  # 토스 딜 = 💸 쿠팡 줄 X
-        text = th_note(note) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "") + (f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:250] + tw) \
-            + f"\n\n👉 {url}\n{th_follow(TOSS_NO_CMP and is_toss(posts[i].get('url'), posts[i]['text']))}\n📲 실시간 알림 t.me/hotdeal_pick"  # Threads 500자 제한(이모지는 바이트로 셈)
+        head = th_note(note) + (f"💸 {sv[0]}보다 {sv[1]} 싸요\n" if sv else "")
+        tail = f"\n\n👉 {url}\n{th_follow(TOSS_NO_CMP and is_toss(posts[i].get('url'), posts[i]['text']))}\n📲 실시간 알림 t.me/hotdeal_pick"
+        text = head + f"{icon} {title_of(posts[i]['text'])}\n\n{comment_of(posts[i]['text'])}"[:min(250, 480 - len(head) - len(tw) - len(tail))] + tw + tail  # Threads 500자 제한 — 링크가 길면(검색 링크 ~210자) 코멘트를 줄임
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen, bt[i])
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
@@ -2911,8 +2953,8 @@ def wx_deals(seen, words, n=3, deny=None):
 
 def wx_render(items, ref, html_text):
     """딜 줄(🔥/🛒 이름 가격 + 링크) -> (머리 대가성 문구, 줄들, 꼬리). 대가성 문구 = 링크 몰마다 맨 앞, 토스가 있으면 꼬리에 게시 시점 줄. 몰 이름·비교 없음.
-    Threads = 사이트 딜 페이지(TOP5 리스트처럼 — 링크프라이스 주소는 450자라 500자 넘음), 토스 API 상품은 공유 링크 그대로."""
-    links = [c["u"] if c["u"] and (html_text or c.get("toss")) else f"{SITE}p/{c['i']}.html?ref={ref}" for c in items]
+    Threads = 텔레그램 버튼과 같은 링크(10/19 진우 '직접 링크로' — TH_LINK_MAX보다 긴 링크프라이스 주소만 사이트 딜 페이지), 토스 API 상품은 공유 링크 그대로."""
+    links = [c["u"] if c["u"] and (html_text or c.get("toss") or len(c["u"]) <= TH_LINK_MAX) else f"{SITE}p/{c['i']}.html?ref={ref}" for c in items]
     notes = list(dict.fromkeys(n for n in (aff_note(c["u"] or "") for c in items) if n))
     rows = [f"{'🔥' if c['hot'] else '🛒'} " + (f'<a href="{esc(u)}">{esc(clip(c["n"], 40))}</a>' + (f" {esc(c['p'])}" if c["p"] else "") if html_text else f"{clip(c['n'], 30)} {c['p']}".rstrip() + f"\n👉 {u}")
             for c, u in zip(items, links)]
@@ -3383,7 +3425,7 @@ def metrics(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"]} if ab else {}), **({"rv": rv} if ab.get("r") else {}))
+            likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}))  # lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}

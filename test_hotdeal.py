@@ -314,8 +314,8 @@ def th4_http(url, body=None, headers=None, method=None):
     if "threads_publish" in url: return '{"id": "p"}'
     raise AssertionError(url)
 H.http, H.E["THREADS_TOKEN"], sl4, H.time.sleep = th4_http, "tk", H.time.sleep, lambda s: None
-H.threads_deals({})  # ③ Threads: 진우 딜은 점수와 상관없이, 문구 맨 앞, 링크 = 사이트 딜 페이지(구매 버튼·문구 있음)
-assert len(th4) == 2 and th4[0].startswith(H.NAVER_NOTE + "\n\n") and "🔥 [네이버] 삼다수 2L 24병 (12,900원/무료)" in th4[0] and f"{H.SITE}p/0.html" in th4[0] and th4[1].startswith(H.OY_NOTE + "\n\n")
+H.threads_deals({})  # ③ Threads: 진우 딜은 점수와 상관없이, 문구 맨 앞, 링크 = 텔레그램 버튼과 같은 진우 링크(10/19 진우 '경유 말고 직접')
+assert len(th4) == 2 and th4[0].startswith(H.NAVER_NOTE + "\n\n") and "🔥 [네이버] 삼다수 2L 24병 (12,900원/무료)" in th4[0] and f"👉 {NV}\n" in th4[0] and th4[1].startswith(H.OY_NOTE + "\n\n") and f"👉 {OYL}\n" in th4[1] and not any("/p/" in t for t in th4)
 del H.E["THREADS_TOKEN"]; H.time.sleep = sl4
 pjn = json.load(open("posts.json")) + [{"t": pjn[0]["t"], "text": f"{H.NAVER_NOTE}\n\n🛒 [네이버] 약한 생수 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품\n평소 가격", "url": "https://naver.me/Weak", "own": 1, "s": 3}]
 bt = H.blog_text(pjn, time.gmtime(time.time() + 9 * 3600))  # ④ 블로그용 글: 네이버·올영 문구 본문 맨 위, 진우 링크 그대로, 약한 딜도 코멘트(🤔 줄 말고)
@@ -2106,13 +2106,14 @@ assert f'href="{H.SITE}p/0.html?ref=tg">[올리브영] 세럼' in dg and "oy.run
 bt = H.blog_text(oyp, time.gmtime(1791291600 + 9 * 3600))
 assert bt.split("\n\n")[2] == H.OY_NOTE and "👉 https://oy.run/x" in bt  # 블로그: 올영 문구 본문 맨 위(코멘트 있는 글이라 링크 그대로)
 open("posts.json", "w").write(pj); H.tg, time.time = tg0, tt5
-# 9-2) 딜마다 Threads: 사이트 페이지 링크, 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
+# 9-2) 딜마다 Threads: 텔레그램 버튼과 같은 링크(10/19~, 예전엔 사이트 딜 페이지), 제휴 링크면 대가성 문구 맨 앞, 3시간 지난 딜·모아보기 제외, 1회 3개, 미배포면 다음에, 두 번 안 올림
 kt = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
+LP9 = "https://click.linkprice.com/click.php?m=gmarket&a=A1&l=9999&l_cd1=3&l_cd2=0&tu=" + "https%3A%2F%2Fwww.gmarket.co.kr%2Fn%2Fsearch%3Fkeyword%3D" + "%EC%9A%B0%EC%9C%A0" * 30  # 링크프라이스 딥링크(~450자) = Threads 500자에 못 들어감 -> 사이트 딜 페이지
 json.dump([{"t": kt(4), "text": "🔥 [옛날] 딜", "url": "https://a"},
            {"t": kt(0), "text": "📋 모아보기", "url": None},
            {"t": kt(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x"},
            {"t": kt(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n맛있음\n\n출처: 뽐뿌", "url": "https://www.ppomppu.co.kr/1"},
-           {"t": kt(0.2), "text": "🔥 [G마켓] 우유\n\n좋음\n\n출처: 뽐뿌", "url": "https://x"},
+           {"t": kt(0.2), "text": "🔥 [G마켓] 우유\n\n좋음\n\n출처: 뽐뿌", "url": LP9},
            {"t": kt(0.1), "text": "🛒 [옥션] 라면\n\n🤔 솔직히 특가로는 약한 제품\n좋음\n\n출처: 뽐뿌", "url": "https://y"}], open("posts.json", "w"))
 live_pages = {2, 3}
 def td_http(url, body=None, headers=None, method=None):
@@ -2127,10 +2128,10 @@ H.http, calls[:] = td_http, []
 H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
 from urllib.parse import parse_qs, urlsplit
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert [m for m, _ in calls] == ["GET", "HEAD", "POST", "POST", "HEAD", "POST", "POST", "HEAD"]  # 4번 페이지 404 -> 멈춤
-assert [q["link_attachment"][0] for q in made] == ["https://hotdealpick.kr/p/2.html?ref=th", "https://hotdealpick.kr/p/3.html?ref=th"]
+assert [m for m, _ in calls] == ["GET", "POST", "POST", "POST", "POST", "HEAD"]  # 직접 링크 = 사이트 확인 X · 4번(링크프라이스 450자 -> 사이트 딜 페이지)만 HEAD, 404 -> 멈춤
+assert [q["link_attachment"][0] for q in made] == ["https://link.coupang.com/a/x", "https://www.ppomppu.co.kr/1"]  # 10/19 진우 '경유 말고 직접': 텔레그램 버튼과 같은 링크
 t2, t3 = made[0]["text"][0], made[1]["text"][0]
-assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://hotdealpick.kr/p/2.html?ref=th") and "출처" not in t2
+assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://link.coupang.com/a/x\n") and "출처" not in t2 and "hotdealpick.kr/p/" not in t2 + t3
 assert t3.startswith("🔥 [카카오] 고구마 3kg\n\n맛있음") and "이 포스팅은" not in t3 and t3.endswith("t.me/hotdeal_pick") and all("🙋 팔로우하면" in t for t in (t2, t3))
 assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and max(len(t2.encode()), len(t3.encode())) < 500
 assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, False, True, True, False, False]
@@ -2149,7 +2150,7 @@ sl2, H.time.sleep, live_pages = H.time.sleep, lambda s: None, {0}
 json.dump([{"t": kt(0), "text": "🔥 [11번가] 버거킹\n\n싸요\n\n출처: 뽐뿌", "url": "https://w"}], open("posts.json", "w"))
 H.http, calls[:] = pub_fail('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', True), []; H.threads_deals({})
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert [q.get("link_attachment") for q in made] == [["https://hotdealpick.kr/p/0.html?ref=th"], None] and "👉 https://hotdealpick.kr/p/0.html?ref=th" in made[1]["text"][0]
+assert [q.get("link_attachment") for q in made] == [["https://w"], None] and "👉 https://w\n" in made[1]["text"][0]
 assert sum("/threads_publish?" in u for m, u in calls) == 1  # 두 번째(첨부 없음)는 발행됨
 json.dump([{"t": kt(0), "text": "🔥 [G마켓] 우유\n\n좋음", "url": "https://x"}], open("posts.json", "w")); H.http, calls[:] = pub_fail('{"error": {"message": "expired"}}', False), []
 try:
@@ -2199,20 +2200,24 @@ seen9b = {}; assert th9b("18:30") == []; H.TH_SOLO_MIN = 0  # 채움은 7점↑�
 assert "th_solo(seen, text, fill=True, reopen=mode)" in inspect.getsource(H.toss_reopen) and "th_solo(seen, plain_of(body), fill=True, beauty=" in inspect.getsource(H.toss_picks)  # 재오픈·토스 이름 예약도 하루 5개에 셈
 assert (tlh0, sv9b[5]) == ((12, 15, 18), ("day", "best", "cat", "beauty", "special")) and 'kind in TH_TOSS_KINDS and (hrs[-1] in TH_LIST_HOURS or kind == "cat")' in inspect.getsource(H.toss_deals)
 assert H.TH_TOSS_KINDS != ("best",) and "TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), (\"best\", \"cat\")" in inspect.getsource(H) and H.TH_SLOTS is None  # 기본값: 개별 글 하루 한도 없음(99)·45분 간격(슬롯 X, 10/12 01:20), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
-# 12·18시 '지금 살 만한 딜' 리스트는 Threads에도(대가성 문구 맨 앞·번호·이름·가격·사이트 딜 페이지·480자), 다른 시각엔 채널만
+# 12·18시 '지금 살 만한 딜' 리스트는 Threads에도(대가성 문구 맨 앞·번호·이름·가격·텔레그램 버튼과 같은 링크(10/19~)·480자), 다른 시각엔 채널만
 H.TH_LIST_HOURS = (12, 18); sent[:] = []
 tg9b = H.tg; H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 1}
 json.dump([{"t": f"{D9b} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 리스트상품{k} 아주 긴 이름 대용량 기획 (9,900원/무료)\n\n좋음", "url": f"https://link.coupang.com/a/L{k}", "mid": 10 + k, "pop": 10 - k} for k in range(5)], open("posts.json", "w"), ensure_ascii=False)
 calls.clear(); time.time = lambda: TK(f"{D9b} 12:05"); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 지금 살 만한 딜 TOP") and f"{H.SITE}p/0.html" in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
+assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 지금 살 만한 딜 TOP") and "👉 https://link.coupang.com/a/L0\n" in tl9[0]["text"][0] and "/p/" not in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
 lk9 = set(re.findall(r"https?://\S+|t\.me/\S+", tl9[0]["text"][0])) | set(tl9[0].get("link_attachment", []))
-assert len(lk9) <= 5 and "t.me" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == [f"{H.SITE}p/0.html?ref=th"]  # Threads 글 하나에 서로 다른 링크 5개까지(4279111 — 10/12 12·15·18시 리스트 실패): 딜 링크만, 미리보기 = 1번 딜
+assert len(lk9) <= 5 and "t.me" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://link.coupang.com/a/L0"]  # Threads 글 하나에 서로 다른 링크 5개까지(4279111 — 10/12 12·15·18시 리스트 실패): 딜 링크만, 미리보기 = 1번 딜
 assert "게시 시점" not in tl9[0]["text"][0]  # 토스 딜 없는 리스트 = 게시 시점 줄 X
 ps9 = json.load(open("posts.json")); ps9[0].update(text=f"{H.TOSS_NOTE}\n\n🔥 [토스] 리스트상품0 아주 긴 이름 대용량 기획 (9,900원)\n\n좋음", url="https://toss.shopping/_m/L0"); json.dump(ps9, open("posts.json", "w"), ensure_ascii=False)
 H.TOSS_NO_CMP = True; calls.clear(); H.top_deals({}); H.TOSS_NO_CMP = False
 tl9 = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and tl9[0].endswith("\n\n⚠️ 10/11 12:05 게시 시점 가격") and len(tl9[0]) <= 480 and sent[-1][1]["text"].endswith("\n\n⚠️ 10/11 12:05 게시 시점 가격")  # 토스 딜이 든 리스트 = Threads·채널 끝에 게시 시점 줄(480자 안)
+SR9 = "https://search.shopping.naver.com/search/all?query=" + "%EC%82%BC%EB%8B%A4%EC%88%98" * 4  # 아직 검색 링크인 딜(~160자) = 검색 링크 그대로, 길어서 480자 안에 들어가는 만큼만
+json.dump([{**p, "url": SR9 + str(k)} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
+tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
+assert len(tl9) == 1 and len(tl9[0]["text"][0]) <= 480 and f"👉 {SR9}0\n" in tl9[0]["text"][0] and tl9[0]["text"][0].endswith(f"👉 {SR9}1") and "/p/" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == [SR9 + "0"]
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
 # 9-2c) 화장품 매일 1~2개(10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰'): Threads 개별 글 3~5개 중 화장품 1~2개 —
@@ -2968,7 +2973,7 @@ S.GC_CODE = "hdp"; pg = S.page("t", "<p>b</p>")
 assert '<script data-goatcounter="https://hdp.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>' in pg and "path:'buy/'+h" in pg and "event:true" in pg and pg.index("goatcounter") < pg.index("</head>")
 S.GC_CODE = ""
 src10 = inspect.getsource(H)
-assert 'f"{SITE}p/{i}.html?ref=th"' in src10 and '👉 {SITE}p/{posts.index(p)}.html?ref=th"' in src10 and "지난 딜 전체 보기: {SITE}?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
+assert 'f"{SITE}p/{i}.html?ref={ref}"' in src10 and 'def th_url(p, i, ref="th")' in src10 and "지난 딜 전체 보기: {SITE}?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
 # 9-11) 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 성과 -> metrics.json(날짜·채널·글 id·몰·품목·가격대·시각·조회·반응), 수동 실행 METRICS_DAY면 그날 바로
 #       텔레그램 = 채널 웹(?before= 로 그날 처음까지, posts.json 글은 그 글·링크로), Threads = 글 목록 + insights, 인스타 = 목록(좋아요·댓글) + insights(views), 권한 없으면 빈 칸 + 이유(miss)
 assert mh0 == 5 and not os.path.exists(H.METRICS); H.METRICS_HOUR = mh0  # 앞 셀프체크(main 실행)에선 꺼 둠(99)
@@ -3116,7 +3121,7 @@ assert rows12 == ['🔥 <a href="https://toss.im/_m/T1">토스 자동 우산 1�
                   '🔥 <a href="https://link.coupang.com/a/u1">3단 자동 장우산</a> 12,900원'], rows12  # 3사 먼저 · 🔥 먼저 · 최근 먼저, 3개까지 · 토스 = 지금 가격 · 품절(73)·품절 표시(72)·3일 지난 딜 X
 assert t12.rstrip().endswith("게시 시점 가격") and not re.search(H.OTHER_STORES + r"|보다|대비|차이|같은 상품", rows12[0])  # 토스 줄 = 다른 몰 이름·비교 X, 게시 시점 가격 줄
 assert th12["text"].startswith(H.TOSS_NOTE) and "🔥 토스 자동 우산 1개 8,500원\n👉 https://toss.im/_m/T1" in th12["text"] and th12["link"] == "https://toss.im/_m/T1" and len(th12["text"]) <= 500
-assert "🔥 제습제 18개 9,900원\n👉 https://hotdealpick.kr/p/2.html?ref=th" in th12["text"] and H.NAVER_NOTE in th12["text"] and "naver.me" not in th12["text"]  # Threads = 사이트 딜 페이지(대가성 문구는 실제 링크 기준)
+assert "🔥 제습제 18개 9,900원\n👉 https://naver.me/abc" in th12["text"] and H.NAVER_NOTE in th12["text"] and "hotdealpick.kr/p/" not in th12["text"]  # Threads = 텔레그램 버튼과 같은 링크(10/19 진우 '경유 말고 직접'), 대가성 문구는 그 링크 기준
 out12.clear(); time.time = lambda: TK("2026-10-16 07:50"); H.weather_post(s12); assert not out12  # 하루 1번
 L12 = [{"n": "아주아주 긴 상품 이름 " * 4, "p": "12,900원", "u": f"https://toss.im/_m/{'x' * 100}{k}", "hot": True, "toss": 1} for k in range(3)]
 H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", L12, "", "snack", lo=2); th12b = out12[-1][1]
@@ -3124,7 +3129,7 @@ assert "<b>🍪 출출할 때 간식 3</b>" in out12[0][1]["text"] and th12b["te
 H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", L12, "", "snack", lo=3); assert [m for m, p in out12] == ["sendMessage"]; out12.clear()  # lo개로도 넘으면 Threads X(500자 넘는 글 안 보냄)
 L12b = [{"n": "롯데 빼빼로 오리지널 12갑", "p": "9,900원", "u": "https://click.linkprice.com/click.php?m=lotteon&a=A100&l=9999&u_id=" + "z" * 400, "i": 5, "hot": True}]
 H.wx_post({}, "k", "☁️ 오늘", L12b, "", "wx"); th12c = out12[-1][1]
-assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5.html?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 사이트 딜 페이지
+assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5.html?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 500자에 못 들어가는 긴 링크(TH_LINK_MAX 넘음)만 사이트 딜 페이지
 s12c = {"wx_20261016": {"t": 1, "w": [W12(16, 24)]}}; H.weather_post(s12c)
 assert [p["text"] for m, p in out12 if m == "sendMessage"] == ["☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?"] and out12[1][1]["text"] == "☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?" and out12[1][1]["link"] is None  # 맞는 딜 0개 = 날씨 + 질문(링크 X)
 out12.clear(); s12d = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.busy = lambda seen, cap=True: True; H.weather_post(s12d); assert not out12 and "wxpost_20261016" not in s12d  # 묶음 간격·시간당 상한 -> 다음 실행에
@@ -3496,6 +3501,96 @@ assert r17[0]["ab"] == "B" and r17[0]["shop"] == "toss", r17  # B 본문엔 주�
 assert all(src.count("th_deal(seen, tok, me,") == 1 for src in map(inspect.getsource, (H.toss_picks, H.toss_reopen))) and inspect.getsource(H.threads_deals).count("th_deal(seen, tok, me,") == 2 \
     and "th_deal(seen, tok, me, text, link)" in inspect.getsource(H.toss_deals) and "th_text(" not in inspect.getsource(H.threads_deals)  # 개별 딜 글 5곳 전부 A/B, 묶음(th_post)은 그대로
 del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB) = sv17
+# 9-18) 10/19 17시 진우 '경유 링크 말고 직접 링크로': ① Threads 딜 링크 = 텔레그램 버튼과 같은 링크(개별 A·B 첫 댓글·리스트·간식/날씨 — 아직 검색 링크인 딜은 검색 링크 그대로,
+#       500자에 못 들어가는 TH_LINK_MAX 넘는 링크만 사이트 딜 페이지), 500자 안(링크가 길면 코멘트를 줄임), metrics.json Threads 줄 = 링크 종류(lk: direct·search·site)
+#       ② 상품 주소를 못 꺼낸 [네이버]·스마트스토어 딜 = 네이버 쇼핑 검색 API 후보 -> Claude 8점↑ 같은 상품이면 상품 페이지 버튼('🛒 구매하러 가기', 대가성 문구 X, posts.json·사이트도 같은 링크),
+#       못 찾거나·키 없거나·API 실패면 검색 링크 그대로, 진우 naver.me 답장은 관리자 사본 흐름 그대로(우선), 쿠팡·토스 딜은 안 부름
+sv18 = (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, {k: H.E.get(k) for k in ("THREADS_TOKEN", "NAVER_CLIENT_ID", "NAVER_CLIENT_SECRET")})
+H.time.sleep, H.POSTS, H.TH_LINK_AB, H.th_solo = (lambda s: None), "posts18.json", True, (lambda *a, **k: True)
+assert [H.link_kind(u) for u in ("https://link.coupang.com/a/x", "https://naver.me/A", "https://smartstore.naver.com/main/products/1", "https://search.shopping.naver.com/catalog/123",
+        "https://search.shopping.naver.com/search/all?query=a", "https://www.coupang.com/np/search?q=a", H.SITE + "p/1.html?ref=th", H.lp_link("gmarket", "https://www.gmarket.co.kr/n/search?keyword=a"),
+        H.lp_link("gmarket", "https://item.gmarket.co.kr/Item?goodscode=1"), "")] == ["direct", "direct", "direct", "direct", "search", "search", "site", "search", "direct", "direct"]
+assert m17[ids17[0]]["lk"] == "site" and r17[0]["lk"] == "direct"  # metrics.json Threads 줄 = 링크 종류(10/25: 바뀐 뒤 글끼리 비교)
+SR18 = "https://search.shopping.naver.com/search/all?query=" + "%EC%84%9C%EC%9A%B8%EC%9A%B0%EC%9C%A0%20%EB%94%B8%EA%B8%B0" * 3  # 아직 검색 링크인 [네이버] 딜(~220자)
+P18 = [{"t": kt(0), "text": "🔥 [네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)\n\n" + "딸기우유 24팩이 13,900원, 무료배송이에요. " * 12 + "\n💡 단위가격 개당 579원\n\n출처: 뽐뿌", "url": SR18, "mid": 1297, "own": 1, "s": 7},
+       {"t": kt(0), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤 (19,900원/무료)\n\n싸요\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/Z18", "mid": 1298, "own": 1, "s": 6}]
+c18, now18 = [], time.time()
+def http18(url, body=None, headers=None, method=None):
+    if method == "HEAD": raise AssertionError("직접 링크는 사이트 확인 X: " + url)
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: c18.append({k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}); return json.dumps({"id": "c%d" % len(c18)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(c18)})
+    raise AssertionError(url)
+H.http, H.E["THREADS_TOKEN"], s18 = http18, "tk", {"threply": {"t": now18, "ok": 1}}
+json.dump(P18[:1], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals(s18)  # A(직전 없음): 본문 👉 검색 링크 그대로 + 미리보기
+a18 = c18[0]["text"]
+assert c18[0]["link_attachment"] == SR18 and f"\n\n👉 {SR18}\n" in a18 and len(a18) <= 480 and "/p/" not in a18 and a18.startswith("🔥 [네이버] 서울우유 딸기우유") and a18.endswith("📲 실시간 알림 t.me/hotdeal_pick")  # 500자 안: 링크 길면 코멘트를 줄임
+assert s18["thab"]["m"]["p1"] == {"ab": "A", "ts": s18["thab"]["m"]["p1"]["ts"], "u": SR18} and H.link_kind(SR18) == "search"
+json.dump([{**P18[0], "th": 1}, P18[1]], open(H.POSTS, "w"), ensure_ascii=False); c18.clear(); H.threads_deals(s18)  # B: 본문 주소 X, 첫 댓글 = 같은 제휴 링크(?ref=thc X)
+b18, r18 = c18[0], c18[1]
+assert "link_attachment" not in b18 and not re.search(r"http|/p/", b18["text"]) and b18["text"].startswith(H.th_note(H.DISCLOSURE)) and b18["text"].endswith(H.TH_AB_MARK)
+assert r18["reply_to_id"] == "p1" and r18["text"] == f"{H.th_note(H.DISCLOSURE)}👉 https://link.coupang.com/a/Z18\n📲 실시간 알림 t.me/hotdeal_pick" and "ref=thc" not in r18["text"]  # 대가성 문구는 본문·댓글 첫 줄
+LP18 = H.lp_link("gmarket", "https://www.gmarket.co.kr/n/search?keyword=" + "%EC%9A%B0%EC%9C%A0" * 40)  # TH_LINK_MAX 넘는 링크프라이스 = 500자에 못 들어감 -> 사이트 딜 페이지(사이트에 올라온 뒤)
+assert len(LP18) > H.TH_LINK_MAX and H.th_url({"url": LP18}, 7) == H.SITE + "p/7.html?ref=th" and H.th_url({"url": SR18}, 7) == SR18 and H.th_url({"url": None}, 7) == H.SITE + "p/7.html?ref=th"
+# ② 네이버 상품 매칭
+nv18, ap18, log18 = [], [], io.StringIO()
+NI18 = [{"title": "<b>서울우유</b> 딸기우유 200ml 18팩", "link": "https://smartstore.naver.com/main/products/111", "lprice": "11000", "mallName": "A몰"},
+        {"title": "<b>서울우유</b> 딸기 우유 200ml x 24팩", "link": "https://smartstore.naver.com/main/products/222", "lprice": "14900", "mallName": "서울우유공식"},
+        {"title": "링크 없는 상품", "link": "", "lprice": "1", "mallName": "x"}]
+def http18n(url, body=None, headers=None, method=None):
+    if url.startswith(H.NAVER_SHOP):
+        nv18.append((url, headers)); return json.dumps({"items": NI18})
+    if "ppomppu" in url: raise OSError("403")
+    raise AssertionError(url)
+H.http, H.ai_pick = http18n, (lambda prompt, lines: ap18.append((prompt, lines)) or [{"i": 1, "score": 9, "comment": "같은 24팩"}])
+H.E.pop("NAVER_CLIENT_ID", None); H.E.pop("NAVER_CLIENT_SECRET", None)
+with contextlib.redirect_stdout(log18):
+    assert H.naver_match("[네이버] 서울우유 딸기우유 (13,900원)") is None
+assert not nv18 and not ap18 and log18.getvalue() == ""  # 키 없음 = 조용히 건너뜀(API·Claude·로그 X — 지금처럼 검색 링크)
+H.E.update(NAVER_CLIENT_ID="cid", NAVER_CLIENT_SECRET="csec")
+with contextlib.redirect_stdout(log18):
+    got18 = H.naver_match("[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)", "서울우유 딸기 200ml 24팩")
+q18 = parse_qs(urlsplit(nv18[0][0]).query)
+assert got18 == "https://smartstore.naver.com/main/products/222" and q18["query"] == ["서울우유 딸기 200ml 24팩"] and q18["display"] == ["10"] and nv18[0][1] == {"X-Naver-Client-Id": "cid", "X-Naver-Client-Secret": "csec"}
+assert ap18[0][0] == H.NAVER_MATCH_PROMPT.format("[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)") and "같은 상품" in ap18[0][0] and "네이버쇼핑" in ap18[0][0] and "토스" not in ap18[0][0]
+assert ap18[0][1] == ["서울우유 딸기우유 200ml 18팩 | 11,000원 | A몰", "서울우유 딸기 우유 200ml x 24팩 | 14,900원 | 서울우유공식"]  # <b> 태그 뺌, 링크 없는 후보 X
+assert log18.getvalue().strip() == "naver match [네이버] 서울우유 딸기우유 200ml 24팩… -> 서울우유 딸기 우유 200ml x 24팩 14,900원 (9점) | 후보 2", log18.getvalue()
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 7, "comment": "용량 다름"}]; log18 = io.StringIO()
+with contextlib.redirect_stdout(log18):
+    assert H.naver_match("[네이버] 서울우유 딸기우유 24팩") is None  # 8점 미만 = 검색 링크 그대로
+assert log18.getvalue().strip().endswith("-> 없음 | 후보 2")
+H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("naver down")); log18 = io.StringIO()
+with contextlib.redirect_stdout(log18):
+    assert H.naver_match("[네이버] 서울우유 딸기우유 24팩") is None  # API 실패 = 검색 링크(딜은 그대로 올림)
+assert "naver match" in log18.getvalue() and "naver down" in log18.getvalue()
+H.http, H.ai_pick = http18n, (lambda prompt, lines: [{"i": 1, "score": 9, "comment": ""}])
+D18 = {"title": "[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1297", "board": "뽐뿌"}
+with contextlib.redirect_stdout(io.StringIO()):
+    t18, l18, lb18 = H.deal_post(D18, "딸기우유 24팩", "서울우유 딸기 200ml 24팩")
+assert (l18, lb18) == ("https://smartstore.naver.com/main/products/222", "🛒 구매하러 가기") and not t18.startswith(("<i>", "[광고]")) and H.aff_note(l18) == ""  # 상품 페이지 = 제휴 X, 대가성 문구 X
+H.ai_pick = lambda prompt, lines: []
+with contextlib.redirect_stdout(io.StringIO()):
+    t18b, l18b, lb18b = H.deal_post(D18, "딸기우유 24팩", "서울우유 딸기 200ml 24팩")
+assert l18b == "https://search.shopping.naver.com/search/all?query=" + quote("서울우유 딸기 200ml 24팩") and lb18b == "🔎 네이버쇼핑에서 찾기"  # 못 찾음 = 지금처럼 검색 링크
+nv18.clear(); H.ai_pick = lambda prompt, lines: (_ for _ in ()).throw(AssertionError("쿠팡·토스 딜은 네이버 매칭 X"))
+with contextlib.redirect_stdout(io.StringIO()):
+    H.deal_post({**D18, "title": "[쿠팡] 서울우유 딸기우유 (13,900원)"}, "c", "q"); H.deal_post({**D18, "title": "[토스] 서울우유 딸기우유 (13,900원)"}, "c", "q")
+assert not nv18
+H.ai_pick = lambda prompt, lines: [{"i": 1, "score": 9, "comment": ""}]
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.deal_post({**D18, "title": "[스마트스토어] 서울우유 딸기우유 (13,900원)"}, "c", "q")[1] == "https://smartstore.naver.com/main/products/222"  # 스마트스토어도 네이버
+tg18 = []
+H.tg = lambda m, **p: tg18.append((m, p)) or ({"message_id": 1297, "text": "🔥 [네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)\n\n딸기우유 24팩", "entities": []} if m == "sendMessage" else {"message_id": 77})
+json.dump([], open(H.POSTS, "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    H.post_or_draft(D18, "딸기우유 24팩", 7, "서울우유 딸기 200ml 24팩")
+ch18 = [p for m, p in tg18 if m == "sendMessage"][0]; cp18 = [p for m, p in tg18 if m == "copyMessage"]
+assert ch18["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": "https://smartstore.naver.com/main/products/222"}]] and json.load(open(H.POSTS))[0]["url"] == "https://smartstore.naver.com/main/products/222"  # 사이트 /p/도 같은 링크
+assert len(cp18) == 1 and "쇼핑커넥트" in json.dumps(cp18[0]["reply_markup"], ensure_ascii=False) and H.pending_copy("https://naver.me/Jw18")["cp"] == 77  # 관리자 사본 그대로 -> 진우 naver.me 답장이 매칭 링크를 바꿈(우선)
+assert "NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+(H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, e18) = sv18
+for k, v in e18.items():
+    H.E.pop(k, None) if v is None else H.E.update({k: v})
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

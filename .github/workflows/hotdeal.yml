@@ -57,6 +57,8 @@ jobs:
           TOSS_ACCESS_KEY: ${{ secrets.TOSS_ACCESS_KEY }}
           TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
           TOSS_PUBLISHER_ID: ${{ secrets.TOSS_PUBLISHER_ID }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}           # 네이버 검색 API(쇼핑): [네이버] 딜 검색 링크 -> 같은 상품 페이지(10/19). 없으면 건너뜀
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           MIN_SCORE: ${{ vars.MIN_SCORE }}
           MODEL: ${{ vars.MODEL }}
           METRICS_DAY: ${{ inputs.metrics_day }}
