@@ -886,10 +886,10 @@ time.time = lambda: 1791252000; H.top_deals(seen); assert not sent and not seen 
 H.TOSS_NO_CMP = True; time.time = lambda: 1791255900; H.top_deals(seen); H.TOSS_NO_CMP = False  # 12:05
 m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and "top_20261006_12" in seen and t.startswith(f"<i>{cn}</i>\n<i>{H.TOSS_NOTE}</i>\n\n🏆 <b>지금 살 만한 딜 TOP4</b> (12시)")
-assert t.index("<b>휴지 30롤</b>") < t.index("<b>계란 30구</b>") < t.index("<b>우유 24팩</b>") < t.index("<b>라면</b>") and "어제딜" not in t and "사본만" not in t and "골드박스" not in t and "오후" not in t
+assert t.index("<b>휴지 30롤</b>") < t.index("<b>계란 30구</b>") < t.index("<b>라면</b>") < t.index("<b>우유 24팩</b>") and "어제딜" not in t and "사본만" not in t and "골드박스" not in t and "오후" not in t
 assert '1️⃣ <a href="https://link.coupang.com/a/x"><b>휴지 30롤</b></a>\n💰 <b>19,900원</b>\n👀 분당 조회 45회 · 추천 1\n👉 휴지 최저가' in t and "\n👀 반응 30\n" in t  # 반응 수치: 분당 조회·추천 따로, 따로 값이 없는 10/9 첫 배포분은 합친 값
-assert '<b>우유 24팩</b></a>\n💰 <b>12,900원</b> · 개당 537원\n👀 뽐뿌 추천 5\n👉 싸다 우유\n\n4️⃣' in t and t.count(cn) == 1
-assert [r[0]["text"] for r in p["reply_markup"]["inline_keyboard"]] == ["1️⃣ 휴지 30롤", "2️⃣ 계란 30구", "3️⃣ 우유 24팩", "4️⃣ 라면"]
+assert '4️⃣ <a href="https://www.ppomppu.co.kr/v?no=1"><b>우유 24팩</b></a>\n💰 <b>12,900원</b> · 개당 537원\n👀 뽐뿌 추천 5\n👉 싸다 우유\n\n⚠️' in t and t.count(cn) == 1  # 수수료 링크 아닌 딜(뽐뿌 원글) = Threads에 나간 딜처럼 뒤로(10/19 밤)
+assert [r[0]["text"] for r in p["reply_markup"]["inline_keyboard"]] == ["1️⃣ 휴지 30롤", "2️⃣ 계란 30구", "3️⃣ 라면", "4️⃣ 우유 24팩"]
 assert f"(12시)\n{H.TOP_SUB_TOSS}, 그다음" in t and "쿠팡보다" not in t  # 토스 딜이 든 리스트 = 부제에 다른 몰 이름 X(10/14)
 assert "<b>라면</b></a>\n💰 <b>9,000원</b>\n👀 반응 1\n👉 1인 1개" in t and "네이버" not in t and t.endswith("\n\n⚠️ 10/6 12:05 게시 시점 가격")  # 토스 딜이 든 리스트 = 👉 줄 다른 몰 이름 조각 빼고, 끝에 게시 시점 줄(10/19 12:30 점검)
 sent.clear(); time.time = lambda: 1791256800; H.top_deals(seen); assert not sent  # 같은 회차 1번
@@ -1788,7 +1788,7 @@ urllib.request.urlopen = _uo
 H.E["THREADS_TOKEN"] = "tk"; H.time.sleep = lambda s: None
 today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
 open(f"docs/cards/{today}.png", "wb").write(b"png")
-json.dump([{"t": f"{today} 10:00", "text": "🔥 A딜 (15,480원/무료)", "url": "https://a"}], open("posts.json", "w"))
+json.dump([{"t": f"{today} 10:00", "text": "🔥 A딜 (15,480원/무료)", "url": "https://link.coupang.com/a/A"}], open("posts.json", "w"))
 live, calls[:] = False, []
 def th_http(url, body=None, headers=None, method=None):
     calls.append((method or "GET", url))
@@ -1808,12 +1808,18 @@ assert H.clip("코카콜라 190ml 30캔 + 스프라이트 제로 위드 티 350m
 assert sent[-1][0] == "sendPhoto" and list(seen)[0].startswith("threads_")
 calls.clear(); H.threads(seen); assert not calls  # 같은 날 재실행 시 안 올림
 th9 = lambda: urllib.parse.parse_qs(urllib.parse.urlsplit(calls[2][1]).query)["text"][0]
-seen, calls[:] = {}, []; H.threads(seen); assert th9().startswith("일부 링크는 제휴 링크로 수수료를 받을 수 있어요.\n\n📋 ")  # 하루 카드 글도 대가성 문구 맨 앞(카드 캡션과 같게)
+seen, calls[:] = {}, []; H.threads(seen); assert th9().startswith(H.DISCLOSURE + "\n\n📋 ")  # 하루 카드 글도 대가성 문구 맨 앞(카드 캡션과 같게)
 pj8, oj8 = open("posts.json").read(), f"docs/cards/{today}.json"; os.path.exists(oj8) and os.rename(oj8, "oj8.json")  # 21시 이후면 모아보기 절이 만든 순서 파일 -> 잠깐 치움
 json.dump([{"t": f"{today} 1{n}:00", "text": f"🔥 [{m}] 아주 긴 상품 이름 {n}번 대용량 기획 세트 묶음 구성 (9,900원/무료)", "url": u, "s": 8} for n, (m, u) in enumerate(
     [("네이버", "https://naver.me/a"), ("올리브영", "https://oy.run/b"), ("쿠팡", "https://link.coupang.com/a/c"), ("토스", "https://toss.shopping/_m/d"), ("G마켓", "https://click.linkprice.com/x")])], open("posts.json", "w"), ensure_ascii=False)
 seen, calls[:] = {}, []; H.threads(seen); t8 = th9()
 assert len(t8) <= 480 and t8.startswith(H.NAVER_NOTE + "\n" + H.OY_NOTE + "\n" + H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n" + H.AFF_NOTE + "\n\n📋 ") and t8.endswith("https://t.me/hotdeal_pick") and 1 <= t8.count("번 대용량") < 5  # 길면 문구 말고 번호 줄을 줄임
+ps8 = [{**p, "url": "https://www.ppomppu.co.kr/1"} if k in (0, 2) else p for k, p in enumerate(json.load(open("posts.json")))]; json.dump(ps8, open("posts.json", "w"), ensure_ascii=False)
+seen, calls[:] = {}, []; H.threads(seen); t8 = th9()  # 10/19 밤 진우 'Threads는 수수료 딜만': 카드 줄도 수수료 링크 딜만(카드 번호 그대로), 사진·인스타는 그대로
+assert re.findall(r"^\d\. .*$", t8, re.M) == [r for r, (_, p) in zip(H.card_caption(today)[0], H.card_order(ps8, today)) if "ppomppu" not in p["url"]] and "[네이버] 아주" not in t8 and "[쿠팡] 아주" not in t8 and "[토스] 아주" in t8
+json.dump([{**p, "url": "https://www.ppomppu.co.kr/1"} for p in ps8], open("posts.json", "w"), ensure_ascii=False); seen, calls[:], sent[:], o8 = {}, [], [], io.StringIO()
+with contextlib.redirect_stdout(o8): H.threads(seen)
+assert [m for m, _ in calls] == ["HEAD"] and sent[-1][0] == "sendPhoto" and "threads skip (수수료 링크 아님) card 묶음 | 항목 0개\n" in o8.getvalue()  # 0개 = Threads 카드 X(관리자 사진은 그대로)
 open("posts.json", "w").write(pj8); seen = {"threads_" + today.replace("-", ""): 1}; os.path.exists("oj8.json") and os.rename("oj8.json", oj8)
 del H.E["THREADS_TOKEN"]; seen, sent[:], calls[:] = {}, [], []
 H.threads(seen)  # 토큰 없으면: 사진만 보내고 Threads 호출 없음
@@ -2127,18 +2133,20 @@ def td_http(url, body=None, headers=None, method=None):
     if "/threads?" in url or "/threads_publish?" in url: return json.dumps({"id": "c1"})
     raise AssertionError(url)
 H.http, calls[:] = td_http, []
-H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
+H.E["THREADS_TOKEN"] = "tk"; out9 = io.StringIO()
+with contextlib.redirect_stdout(out9): H.threads_deals({})
 from urllib.parse import parse_qs, urlsplit
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert [m for m, _ in calls] == ["GET", "POST", "POST", "POST", "POST", "HEAD"]  # 직접 링크 = 사이트 확인 X · 4번(링크프라이스 450자 -> 사이트 딜 페이지)만 HEAD, 404 -> 멈춤
-assert [q["link_attachment"][0] for q in made] == ["https://link.coupang.com/a/x", "https://www.ppomppu.co.kr/1"]  # 10/19 진우 '경유 말고 직접': 텔레그램 버튼과 같은 링크
-t2, t3 = made[0]["text"][0], made[1]["text"][0]
-assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://link.coupang.com/a/x\n") and "출처" not in t2 and "hotdealpick.kr/p/" not in t2 + t3
-assert t3.startswith("🔥 [카카오] 고구마 3kg\n\n맛있음") and "이 포스팅은" not in t3 and t3.endswith("t.me/hotdeal_pick") and all("🙋 팔로우하면" in t for t in (t2, t3))
-assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and max(len(t2.encode()), len(t3.encode())) < 500
-assert [bool(p.get("th")) for p in json.load(open("posts.json"))] == [False, False, True, True, False, False]
-live_pages, calls[:] = {2, 3, 4, 5}, []; H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
-assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-15:-7] for m, u in calls if "/777/threads?" in u] == ["p/4.html"]  # 🛒(약한 딜) 5번은 Threads 개별 글 X(10/11 진우: 리스트에만)
+assert [m for m, _ in calls] == ["GET", "POST", "POST", "HEAD"]  # 직접 링크 = 사이트 확인 X · 4번(링크프라이스 450자 -> 사이트 딜 페이지)만 HEAD, 404 -> 멈춤
+assert [q["link_attachment"][0] for q in made] == ["https://link.coupang.com/a/x"]  # 10/19 진우 '경유 말고 직접': 텔레그램 버튼과 같은 링크 · 10/19 밤 'Threads는 수수료 딜만': 3번(뽐뿌 원글) X
+t2 = made[0]["text"][0]
+assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://link.coupang.com/a/x\n") and "출처" not in t2 and "hotdealpick.kr/p/" not in t2 and "🙋 팔로우하면" in t2
+assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and len(t2.encode()) < 500
+assert [p.get("th") for p in json.load(open("posts.json"))] == [None, None, 1, 0, None, 0]  # 수수료 링크 아닌 3·5번 = th 0(로그 1번 표시, 거짓값이라 리스트 셈은 그대로)
+assert "threads skip (수수료 링크 아님) [카카오] 고구마 3kg | direct\n" in out9.getvalue() and "threads skip (수수료 링크 아님) [옥션] 라면 | direct\n" in out9.getvalue() and "· 수수료 링크 아님 2" in out9.getvalue()
+live_pages, calls[:], out9 = {2, 3, 4, 5}, [], io.StringIO()
+with contextlib.redirect_stdout(out9): H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
+assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-15:-7] for m, u in calls if "/777/threads?" in u] == ["p/4.html"] and "threads skip" not in out9.getvalue()  # 건너뜀 로그는 딜마다 1번
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
 # 9-2b) Threads가 링크 미리보기를 못 만들면(Invalid Link Attachment·4279047, 10/7 15:51 버거킹 딜): 링크 첨부 없이 1번 더(본문 주소 그대로), 다른 오류는 그대로 예외
 import urllib.error
@@ -2149,12 +2157,12 @@ def pub_fail(body, only_first):
         return td_http(url, b, headers, method)
     return f
 sl2, H.time.sleep, live_pages = H.time.sleep, lambda s: None, {0}
-json.dump([{"t": kt(0), "text": "🔥 [11번가] 버거킹\n\n싸요\n\n출처: 뽐뿌", "url": "https://w"}], open("posts.json", "w"))
+json.dump([{"t": kt(0), "text": "🔥 [11번가] 버거킹\n\n싸요\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/w"}], open("posts.json", "w"))
 H.http, calls[:] = pub_fail('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', True), []; H.threads_deals({})
 made = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert [q.get("link_attachment") for q in made] == [["https://w"], None] and "👉 https://w\n" in made[1]["text"][0]
+assert [q.get("link_attachment") for q in made] == [["https://link.coupang.com/a/w"], None] and "👉 https://link.coupang.com/a/w\n" in made[1]["text"][0]
 assert sum("/threads_publish?" in u for m, u in calls) == 1  # 두 번째(첨부 없음)는 발행됨
-json.dump([{"t": kt(0), "text": "🔥 [G마켓] 우유\n\n좋음", "url": "https://x"}], open("posts.json", "w")); H.http, calls[:] = pub_fail('{"error": {"message": "expired"}}', False), []
+json.dump([{"t": kt(0), "text": "🔥 [G마켓] 우유\n\n좋음", "url": "https://link.coupang.com/a/x9"}], open("posts.json", "w")); H.http, calls[:] = pub_fail('{"error": {"message": "expired"}}', False), []
 try:
     H.threads_deals({}); raise AssertionError("다른 오류는 예외로 올라가야 함(main이 알림)")
 except urllib.error.HTTPError:
@@ -2217,9 +2225,13 @@ H.TOSS_NO_CMP = True; calls.clear(); H.top_deals({}); H.TOSS_NO_CMP = False
 tl9 = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and tl9[0].endswith("\n\n⚠️ 10/11 12:05 게시 시점 가격") and len(tl9[0]) <= 480 and sent[-1][1]["text"].endswith("\n\n⚠️ 10/11 12:05 게시 시점 가격")  # 토스 딜이 든 리스트 = Threads·채널 끝에 게시 시점 줄(480자 안)
 SR9 = "https://search.shopping.naver.com/search/all?query=" + "%EC%82%BC%EB%8B%A4%EC%88%98" * 4  # 아직 검색 링크인 딜(~160자) = 검색 링크 그대로, 길어서 480자 안에 들어가는 만큼만
-json.dump([{**p, "url": SR9 + str(k)} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
+json.dump([{**p, "url": SR9 + str(k)} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
+with contextlib.redirect_stdout(out9): H.top_deals({})
+assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and SR9 + "4" in sent[-1][1]["text"] and "threads skip (수수료 링크 아님) top12 리스트 | 항목 0개\n" in out9.getvalue()  # 10/19 밤 진우 'Threads는 수수료 딜만': 검색 링크뿐이면 Threads 리스트 X, 텔레그램은 그대로
+json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and len(tl9[0]["text"][0]) <= 480 and f"👉 {SR9}0\n" in tl9[0]["text"][0] and tl9[0]["text"][0].endswith(f"👉 {SR9}1") and "/p/" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == [SR9 + "0"]
+assert len(tl9) == 1 and "TOP3 (12시)" in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
+assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🏆") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
 # 9-2c) 화장품 매일 1~2개(10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰'): Threads 개별 글 3~5개 중 화장품 1~2개 —
@@ -2384,10 +2396,10 @@ def th9e(hm):
     calls.clear(); time.time = lambda: TK(f"{D9e} {hm}"); H.threads_deals(s9e)
     return [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
 m9 = th9e("20:05"); assert len(m9) == 1 and "제휴 8점" in m9[0] and "💸" not in m9[0] and m9[0].startswith(H.DISCLOSURE + "\n\n🔥 [G마켓] 제휴 8점 (3,000원)\n\n좋음\n💡 단위가격") and "🙋 팔로우" in m9[0]  # 같은 8점이면 제휴 링크 먼저(🛒·품절·나간 것·3시간 지난 것 X), 틀 그대로
-assert th9e("20:30") == [] and len(th9e("20:51")) == 1  # 45분 간격 그대로 -> 다음은 일반 8점
-json.dump([{"t": f"{D9e} 21:00", "text": "🔥 [카카오] 다른 9점 (1,000원)\n\n좋음", "url": "https://x/9", "s": 9, "mid": 7}, {"t": f"{D9e} 21:05", "text": "🔥 [토스] 최저가 5점 (1,000원)\n\n토스 하루특가 · 30일 내 최저가", "url": "https://toss.shopping/_m/z", "s": 5, "mid": 8}], open("posts.json", "w"), ensure_ascii=False)
+assert th9e("20:30") == [] and th9e("20:51") == []  # 45분 간격 그대로 · 남은 일반 8점(카카오 원글)은 수수료 링크 아님 -> Threads X(10/19 밤 진우)
+json.dump([{"t": f"{D9e} 21:00", "text": "🔥 [카카오] 다른 9점 (1,000원)\n\n좋음", "url": "https://link.coupang.com/a/k9", "s": 9, "mid": 7}, {"t": f"{D9e} 21:05", "text": "🔥 [토스] 최저가 5점 (1,000원)\n\n토스 하루특가 · 30일 내 최저가", "url": "https://toss.shopping/_m/z", "s": 5, "mid": 8}], open("posts.json", "w"), ensure_ascii=False)
 m9 = th9e("21:40"); assert len(m9) == 1 and "최저가 5점" in m9[0]  # ①② 후보가 있으면 그게 먼저(점수 낮아도)
-H.TH_SOLO_FILL = False; json.dump([{"t": f"{D9e} 21:50", "text": "🔥 [카카오] 끔 9점 (1,000원)\n\n좋음", "url": "https://x/f", "s": 9, "mid": 9}], open("posts.json", "w"), ensure_ascii=False)
+H.TH_SOLO_FILL = False; json.dump([{"t": f"{D9e} 21:50", "text": "🔥 [카카오] 끔 9점 (1,000원)\n\n좋음", "url": "https://link.coupang.com/a/kf", "s": 9, "mid": 9}], open("posts.json", "w"), ensure_ascii=False)
 assert th9e("22:30") == []  # 끄면 예전처럼(①② 없으면 안 올림)
 # 변경 전후 채널 게시 수 같음(10/12 19:15 진우 '올리지 마라는 게 아니야, 지금처럼 그대로'): 채움을 켜도 끄도 채널 글(12시 리스트 + 딜 글)은 똑같이 나가고, Threads 쪽만 더해짐
 pt9e, tg9e2 = H.th_post, H.tg
@@ -2404,7 +2416,7 @@ H.TH_SOLO_FILL = True; sent9e2 = []; H.tg = lambda m, **p: sent9e2.append((m, p)
 assert "어젯밤 좋은딜" in sent9e2[0][1]["text"] and sent9e2[0][1]["text"].index("어젯밤 좋은딜") < sent9e2[0][1]["text"].index("반응0") and "TOP5" in sent9e2[0][1]["text"]  # 누락 없이: 어젯밤(18시 뒤) Threads에 못 나간 ①②도 12시 리스트에, 먼저
 # 💄 화장품 칸(10/12 19:50 진우 '리스트로 만들어도 좋아'): 개별 글이 못 된 화장품 🔥를 12·15·18시 Threads 리스트에 더함 — 기존 딜·링크 그대로, 링크 합쳐 5개까지(넘으면 이름·가격만), 🛒·Threads에 나간 것 X
 thp9 = []; H.th_post = lambda tok, text, link=None, image=None: thp9.append((text, link)); H.tg = lambda m, **p: {"message_id": 1}; H.E["THREADS_TOKEN"] = "tk"
-json.dump([{"t": f"{D9e} 12:{10 + k}", "text": f"🔥 [G마켓] 반응{k} (1,000원)\n\n좋음", "url": f"https://g/{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)]
+json.dump([{"t": f"{D9e} 12:{10 + k}", "text": f"🔥 [G마켓] 반응{k} (1,000원)\n\n좋음", "url": f"https://link.coupang.com/a/g{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)]
           + [{"t": f"{D9e} 13:{10 + k}", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 클렌징폼{k} (9,900원)\n\n토스 최대할인가", "url": f"https://toss.shopping/_m/c{k}", "mid": 60 + k, "own": 1} for k in range(3)]
           + [{"t": f"{D9e} 13:20", "text": f"{H.TOSS_NOTE}\n\n🛒 [토스] 약한 선크림 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/w", "mid": 70, "own": 1},
              {"t": f"{D9e} 13:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 나간 리무버 (9,900원)\n\n토스 최대할인가", "url": "https://toss.shopping/_m/t", "mid": 71, "own": 1, "th": 1}], open("posts.json", "w"), ensure_ascii=False)
@@ -2883,7 +2895,7 @@ assert tg_real("sendMessage", chat_id=H.CHANNEL, text="x") is None and tg_real("
 H.watch(s7c); assert al7[-1].startswith("⚠️ 텔레그램 채널 게시 실패: sendMessage 400 Bad Request: message is too long")
 H.RUN.update(ok={"tg"}, fail={}, failch=set()); H.watch(s7c); assert al7[-1] == "✅ 다시 올라감: 텔레그램 채널"
 # Threads 2시간 글 없음(8~24시, 밤은 안 셈) · 예약 글 20분 늦음
-H.E["THREADS_TOKEN"], H.RUN["ok"] = "tk", set(); json.dump([{"t": f"{D7} 13:30", "text": "🔥 [쿠팡] 휴지 (9,900원)", "url": "https://x"}], open("posts.json", "w"), ensure_ascii=False)
+H.E["THREADS_TOKEN"], H.RUN["ok"] = "tk", set(); json.dump([{"t": f"{D7} 13:30", "text": "🔥 [쿠팡] 휴지 (9,900원)", "url": "https://link.coupang.com/a/q7"}, {"t": f"{D7} 13:31", "text": "🔥 [쿠팡] 검색 링크 (9,900원)", "url": "https://www.coupang.com/np/search?q=a"}], open("posts.json", "w"), ensure_ascii=False)  # 수수료 링크 아닌 딜은 대기로 안 셈(10/19 밤)
 json.dump([{"at": f"{D7} 13:30", "text": "🔥 <b>[토스] 늦은 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/q", "deal": True, "button": "b"},
            {"at": f"{D7} 13:35", "text": "🔥 <b>[토스] 나간 예약 (1,000원)</b>", "url": "https://toss.shopping/_m/r", "deal": True, "button": "b"},
            {"at": f"{D7} 13:36", "name": "이름 예약 끝남", "api": True}, {"at": f"{D7} 13:37", "name": "이름 예약 못 찾음", "api": True},
@@ -2960,7 +2972,7 @@ json.dump([{"t": kt8(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤 
 live_pages = {0, 1}; H.http = td_http; H.E["THREADS_TOKEN"] = "tk"; H.threads_deals({})
 m8 = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
 assert m8[0].startswith("[광고] " + H.DISCLOSURE + "\n\n💸 쿠팡보다 5,100원 싸요\n🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n")  # Threads = [광고]만 맨 앞, 본문 틀(고지문 → 💸 훅 → 🔥 제목 → …) 그대로(10/11 23:40 진우)
-assert m8[1].startswith("💸 쿠팡보다 1,000원 싸요\n🔥 [카카오] 고구마") and "[광고]" not in m8[1] and all(len(t) < 500 for t in m8)  # 제휴 아니면 예전 그대로
+assert len(m8) == 1 and len(m8[0]) < 500 and json.load(open("posts.json"))[1]["th"] == 0  # 제휴 아니면(뽐뿌 원글) Threads X(10/19 밤 진우 'Threads는 수수료 딜만' — 텔레그램은 그대로)
 open("posts.json", "w").write(pj8); del H.E["THREADS_TOKEN"]
 assert H.th_note(H.TOSS_NOTE) == "[광고] " + H.TOSS_NOTE + "\n\n" and H.th_note("") == ""  # Threads 머리 = [광고] + 고지문(켜짐), 제휴 아니면 없음
 H.AD_FIRST = ""; assert H.th_note(H.TOSS_NOTE) == H.TOSS_NOTE + "\n\n" and H.ad_head(H.TOSS_NOTE, "x") == f"<i>{H.TOSS_NOTE}</i>\n\n" and H.with_note("🔥 a", [], "https://link.coupang.com/a/1")[0] == H.DISCLOSURE + "\n\n🔥 a"  # 끄면 예전
@@ -3506,6 +3518,7 @@ del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP,
 # 9-18) 10/19 17시 진우 '경유 링크 말고 직접 링크로': ① Threads 딜 링크 = 텔레그램 버튼과 같은 링크(개별 A·B 첫 댓글·리스트·간식/날씨 — 아직 검색 링크인 딜은 검색 링크 그대로,
 #       500자에 못 들어가는 TH_LINK_MAX 넘는 링크만 사이트 딜 페이지), 500자 안(링크가 길면 코멘트를 줄임), metrics.json Threads 줄 = 링크 종류(lk: direct·search·site)
 #       ② 네이버 매칭은 10/19 밤 취소(쇼핑 검색 API 2026-07-31 종료) -> [네이버] 딜 = 검색 링크 그대로 + 진우 naver.me 답장(관리자 사본 흐름)
+#       (10/19 밤 진우 'Threads는 수수료 딜만' 뒤: 검색 링크 딜은 Threads X — 직접 링크·A/B는 수수료 링크 딜로 봄, 9-19)
 sv18 = (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, {k: H.E.get(k) for k in ("THREADS_TOKEN",)})
 H.time.sleep, H.POSTS, H.TH_LINK_AB, H.th_solo = (lambda s: None), "posts18.json", True, (lambda *a, **k: True)
 assert [H.link_kind(u) for u in ("https://link.coupang.com/a/x", "https://naver.me/A", "https://smartstore.naver.com/main/products/1", "https://search.shopping.naver.com/catalog/123",
@@ -3523,10 +3536,15 @@ def http18(url, body=None, headers=None, method=None):
     if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(c18)})
     raise AssertionError(url)
 H.http, H.E["THREADS_TOKEN"], s18 = http18, "tk", {"threply": {"t": now18, "ok": 1}}
-json.dump(P18[:1], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals(s18)  # A(직전 없음): 본문 👉 검색 링크 그대로 + 미리보기
+json.dump(P18[:1], open(H.POSTS, "w"), ensure_ascii=False); out18 = io.StringIO()
+with contextlib.redirect_stdout(out18): H.threads_deals(s18)  # 10/19 밤 진우 'Threads는 수수료 딜만': 아직 검색 링크인 [네이버] 딜 = Threads X(텔레그램·사이트는 그대로)
+assert c18 == [] and re.search(r"^threads skip \(수수료 링크 아님\) \[네이버\] 서울우유 딸기우유.* \| search$", out18.getvalue(), re.M) and json.load(open(H.POSTS))[0]["th"] == 0 and "thab" not in s18
+LPD18 = H.lp_link("gmarket", "https://item.gmarket.co.kr/Item?goodscode=" + "1234567890" * 6)  # 300자 안 링크프라이스 상품 링크(수수료 O) = 직접 링크 그대로
+assert 200 < len(LPD18) <= H.TH_LINK_MAX and H.aff_note(LPD18) == H.AFF_NOTE
+json.dump([{**P18[0], "url": LPD18}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals(s18)  # A(직전 없음): 본문 👉 같은 링크 + 미리보기
 a18 = c18[0]["text"]
-assert c18[0]["link_attachment"] == SR18 and f"\n\n👉 {SR18}\n" in a18 and len(a18) <= 480 and "/p/" not in a18 and a18.startswith("🔥 [네이버] 서울우유 딸기우유") and a18.endswith("📲 실시간 알림 t.me/hotdeal_pick")  # 500자 안: 링크 길면 코멘트를 줄임
-assert s18["thab"]["m"]["p1"] == {"ab": "A", "ts": s18["thab"]["m"]["p1"]["ts"], "u": SR18} and H.link_kind(SR18) == "search"
+assert c18[0]["link_attachment"] == LPD18 and f"\n\n👉 {LPD18}\n" in a18 and len(a18) <= 480 and "/p/" not in a18 and a18.startswith(H.th_note(H.AFF_NOTE) + "🔥 [네이버] 서울우유 딸기우유") and a18.endswith("📲 실시간 알림 t.me/hotdeal_pick")  # 500자 안: 링크 길면 코멘트를 줄임
+assert s18["thab"]["m"]["p1"] == {"ab": "A", "ts": s18["thab"]["m"]["p1"]["ts"], "u": LPD18} and H.link_kind(LPD18) == "direct" and H.link_kind(SR18) == "search"
 json.dump([{**P18[0], "th": 1}, P18[1]], open(H.POSTS, "w"), ensure_ascii=False); c18.clear(); H.threads_deals(s18)  # B: 본문 주소 X, 첫 댓글 = 같은 제휴 링크(?ref=thc X)
 b18, r18 = c18[0], c18[1]
 assert "link_attachment" not in b18 and not re.search(r"http|/p/", b18["text"]) and b18["text"].startswith(H.th_note(H.DISCLOSURE)) and b18["text"].endswith(H.TH_AB_MARK)
@@ -3552,6 +3570,99 @@ assert len(cp18) == 1 and "쇼핑커넥트" in json.dumps(cp18[0]["reply_markup"
 (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, e18) = sv18
 for k, v in e18.items():
     H.E.pop(k, None) if v is None else H.E.update({k: v})
+# 9-19) 10/19 밤 진우 'Threads는 수수료 딜만'(3개 안 중 이것만 — A/B·네이버 답장 흐름은 그대로): 판단 = 대가성 문구가 붙는 링크(aff_note)
+#       개별 글 = 수수료 링크 딜만(아니면 Threads 건너뜀 + 로그 'threads skip (수수료 링크 아님) 제목 | 링크 종류' 딜마다 1번, 텔레그램·사이트는 그대로 — 9-18 ②)
+#       묶음(TOP 9-2b·22시 미리보기·간식) 항목도 수수료 링크만, 0개면 그 회차 Threads 묶음 X · 날씨 글은 그대로 · 진우 naver.me 답장으로 바뀐 딜은 그 뒤에 자연히
+sv19 = (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.POSTS, H.th_solo, H.TOSS_NO_CMP, H.E.get("THREADS_TOKEN"))
+ev19 = open(H.EVENTS).read() if os.path.exists(H.EVENTS) else None
+H.time.sleep, H.POSTS, H.TH_LINK_AB, H.th_solo, H.TOSS_NO_CMP, H.E["THREADS_TOKEN"] = (lambda s: None), "posts19.json", True, (lambda *a, **k: True), True, "tk"
+c19 = []
+def http19(url, body=None, headers=None, method=None):
+    if method == "HEAD": raise AssertionError("직접 링크는 사이트 확인 X: " + url)
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: c19.append({k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}); return json.dumps({"id": "c%d" % len(c19)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(c19)})
+    raise AssertionError(url)
+H.http, s19 = http19, {"threply": {"t": time.time(), "ok": 1}}
+N19 = [("[네이버] 검색 링크 딜 (9,900원)", "https://search.shopping.naver.com/search/all?query=a", "search"), ("[쿠팡] 검색 링크 딜 (9,900원)", "https://www.coupang.com/np/search?q=a", "search"),
+       ("[쿠팡] 일반 상품 딜 (9,900원)", "https://www.coupang.com/vp/products/1", "direct"), ("[네이버] 일반 상품 딜 (9,900원)", "https://smartstore.naver.com/main/products/1", "direct")]
+json.dump([{"t": kt(0), "text": f"🔥 {t}\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": u, "mid": 1900 + k, "s": 9} for k, (t, u, _) in enumerate(N19)], open(H.POSTS, "w"), ensure_ascii=False)
+o19 = io.StringIO()
+with contextlib.redirect_stdout(o19): H.threads_deals(s19)
+assert c19 == [] and [p["th"] for p in json.load(open(H.POSTS))] == [0, 0, 0, 0] and "· 수수료 링크 아님 4" in o19.getvalue()  # 네이버·쿠팡 검색 링크·일반 상품 링크 = Threads X(①등급 💸 딜이어도)
+assert [l for l in o19.getvalue().split("\n") if l.startswith("threads skip")] == [f"threads skip (수수료 링크 아님) {t} | {k}" for t, _, k in N19]  # 딜마다 로그 1줄
+o19 = io.StringIO()
+with contextlib.redirect_stdout(o19): H.threads_deals(s19)
+assert c19 == [] and "threads skip (" not in o19.getvalue()  # 다음 실행엔 로그 다시 X
+ps19 = json.load(open(H.POSTS)); ps19[0].update(url="https://naver.me/x19", text=f"{H.NAVER_NOTE}\n\n" + ps19[0]["text"]); json.dump(ps19, open(H.POSTS, "w"), ensure_ascii=False)  # 진우 naver.me 답장 = 링크 교체(p.update(url=…))
+H.threads_deals(s19)
+assert len(c19) == 1 and c19[0]["link_attachment"] == "https://naver.me/x19" and c19[0]["text"].startswith(H.th_note(H.NAVER_NOTE)) and [bool(p.get("th")) for p in json.load(open(H.POSTS))] == [True, False, False, False]  # 바뀐 딜은 그 뒤에 자연히(따로 흐름 X)
+assert "p.update(text=text, entities=ents, url=url)" in inspect.getsource(H.relink_channel)  # 진우 링크 답장 = posts.json url도 교체 -> 위처럼 다음 실행에 후보
+C19 = [("[토스] 토스 딜 (9,900원)", "https://toss.shopping/_m/T19"), ("[네이버] 쇼핑커넥트 딜 (9,900원)", "https://naver.me/N19"), ("[쿠팡] 파트너스 딜 (9,900원)", "https://link.coupang.com/a/C19")]
+json.dump([{"t": kt(0), "text": f"{H.aff_note(u)}\n\n🔥 {t}\n\n좋음", "url": u, "mid": 1910 + k, "s": 9} for k, (t, u) in enumerate(C19)], open(H.POSTS, "w"), ensure_ascii=False)
+c19.clear(); s19 = {"threply": {"t": time.time(), "ok": 1}}
+for _ in C19:
+    H.threads_deals(s19)
+assert [m["ab"] for m in s19["thab"]["m"].values()] == ["A", "B", "A"] and len(c19) == 4 and c19[2]["reply_to_id"] == "p2"  # 토스·naver.me·쿠팡 파트너스 = Threads O, A/B 그대로(B = 본문 + 첫 댓글 링크)
+assert c19[0]["link_attachment"] == "https://toss.shopping/_m/T19" and "게시 시점" in c19[0]["text"] and "link_attachment" not in c19[1] and c19[2]["text"].startswith(H.th_note(H.NAVER_NOTE) + "👉 https://naver.me/N19\n") and c19[3]["link_attachment"] == "https://link.coupang.com/a/C19"
+assert [x["text"].split("\n")[0] for x in c19] == [H.th_note(n).split("\n")[0] for n in (H.TOSS_NOTE, H.NAVER_NOTE, H.NAVER_NOTE, H.DISCLOSURE)]  # Threads 글·B 댓글 모두 첫 줄 대가성 문구([광고] 켜지면 그 앞)
+assert all(t in inspect.getsource(f) for f, t in ((H.toss_th, "th_note(TOSS_NOTE)"), (H.toss_picks, "th_note(TOSS_NOTE)"), (H.reopen_text, "th_note(TOSS_NOTE)")))  # 나머지 개별 글(토스 픽·뷰티 채움·이름 예약·재오픈) = 늘 토스 쉐어링크 + 고지문
+# TOP 리스트 💄 화장품 칸도 수수료 링크만(10/12 '리스트로 만들어도 좋아' 칸)
+D19, tg19 = "2026-10-20", []
+H.tg = lambda m, **p: tg19.append((m, p)) or {"message_id": 1919}
+json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지{k} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/T{k}", "mid": 1930 + k, "pop": 9 - k} for k in range(3)]
+          + [{"t": f"{D19} 09:00", "text": "🔥 [네이버] 검색 선크림 (9,900원)\n\n좋음", "url": "https://search.shopping.naver.com/search/all?query=sun", "mid": 1940},
+             {"t": f"{D19} 09:10", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 커넥트 선크림 (9,900원)\n\n좋음", "url": "https://naver.me/S19", "mid": 1941}], open(H.POSTS, "w"), ensure_ascii=False)
+c19.clear(); time.time = lambda: TK(f"{D19} 12:05"); H.top_deals({})
+assert len(c19) == 1 and "\n\n💄 화장품\n· 커넥트 선크림 9,900원\n👉 https://naver.me/S19" in c19[0]["text"] and "검색 선크림" not in c19[0]["text"] and "search.shopping" not in c19[0]["text"]
+assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n🏆 지금 살 만한 딜 TOP3") and "게시 시점" not in c19[0]["text"]  # 💄 링크도 그 프로그램 대가성 문구 맨 앞(10/19 밤 점검: 리스트 딜 문구만 있던 것)
+ps19 = json.load(open(H.POSTS)); ps19[-1].update(url="https://toss.shopping/_m/S19", text=ps19[-1]["text"].replace(H.NAVER_NOTE, H.TOSS_NOTE).replace("[네이버]", "[토스]")); json.dump(ps19, open(H.POSTS, "w"), ensure_ascii=False)
+c19.clear(); H.top_deals({})
+assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n\n🏆") and c19[0]["text"].endswith("\n\n⚠️ 10/20 12:05 게시 시점 가격") and len(c19[0]["text"]) <= 480 and "👉 https://toss.shopping/_m/S19" in c19[0]["text"]  # 💄 토스 = 게시 시점 줄
+json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지{k} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/T{k}", "mid": 1930 + k, "pop": 9 - k} for k in range(3)]
+          + [{"t": "2026-10-19 20:00", "text": "🔥 [네이버] 어젯밤 원글 (9,900원)\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=20", "mid": 1944, "th": 0},
+             {"t": "2026-10-19 20:10", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 어젯밤 커넥트 (9,900원)\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": "https://naver.me/Y19", "mid": 1945}], open(H.POSTS, "w"), ensure_ascii=False)
+c19.clear(); tg19.clear(); H.top_deals({})
+assert "어젯밤 커넥트" in tg19[-1][1]["text"] and "어젯밤 원글" not in tg19[-1][1]["text"]  # 12시 '누락 없이'(개별 글로 못 나간 ①②) = 수수료 링크 딜만(아닌 딜은 원래 Threads에 안 나감 — 채널 순서 그대로 두려고)
+json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지{k} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/T{k}", "mid": 1930 + k, "pop": 9 - k} for k in range(3)]
+          + [{"t": f"{D19} 09:00", "text": "🔥 [토스] 원글 토스 딜 (9,900원)\n\n좋음", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=19", "mid": 1942, "pop": 99}], open(H.POSTS, "w"), ensure_ascii=False)
+c19.clear(); tg19.clear(); H.top_deals({})
+assert tg19[-1][1]["text"].endswith("게시 시점 가격") and "원글 토스 딜" in tg19[-1][1]["text"] and len(c19) == 1 and "원글 토스 딜" not in c19[0]["text"] and "게시 시점" not in c19[0]["text"]  # 게시 시점 줄 = Threads에 든 토스 딜 기준(채널은 그대로)
+json.dump([{"t": f"{D19} 11:00", "text": "🔥 [네이버] 진우 선크림 (9,900원)\n\n좋음", "url": "https://search.shopping.naver.com/search/all?query=sun", "own": 1, "mid": 1943}], open(H.POSTS, "w"), ensure_ascii=False)
+json.dump([], open(H.EVENTS, "w"))  # events.json은 9-19 끝에서 되돌림
+assert not H.jw_beauty({}, TK(f"{D19} 12:05"))  # 수수료 링크 아닌 진우 화장품 링크는 Threads에 안 나가니 화장품 자리를 안 막음(토스 뷰티 채움 그대로)
+json.dump([{"t": f"{D19} 11:00", "text": "🔥 [네이버] 진우 선크림 (9,900원)\n\n좋음", "url": "https://naver.me/J19", "own": 1, "mid": 1943}], open(H.POSTS, "w"), ensure_ascii=False)
+assert H.jw_beauty({}, TK(f"{D19} 12:05"))
+json.dump([], open(H.POSTS, "w")); jv19 = {"at": f"{D19} 21:00", "text": "🔥 <b>[쿠팡] 클렌징폼 (9,900원)</b>", "url": "https://www.coupang.com/vp/products/9", "deal": True, "button": "b"}
+json.dump([jv19], open(H.EVENTS, "w"), ensure_ascii=False); assert not H.jw_beauty({}, TK(f"{D19} 12:05"))  # 수수료 링크 아닌 진우 화장품 예약도 자리 안 막음
+json.dump([dict(jv19, url="https://link.coupang.com/a/J19")], open(H.EVENTS, "w"), ensure_ascii=False); assert H.jw_beauty({}, TK(f"{D19} 12:05"))
+# 22시 미리보기: 수수료 링크 예약만 Threads(채널은 그대로), 0개면 Threads X
+E19 = [("22:20", "[토스] 토스 예약 (9,900원)", "https://toss.shopping/_m/P1"), ("22:30", "[네이버] 쇼핑커넥트 예약 (8,900원)", "https://naver.me/P2"), ("22:40", "[쿠팡] 일반 상품 예약 (7,900원)", "https://www.coupang.com/vp/products/3")]
+json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>{t}</b>", "url": u, "button": "b", "deal": True} for a, t, u in E19], open(H.EVENTS, "w"), ensure_ascii=False); json.dump([], open(H.POSTS, "w"))
+c19.clear(); time.time = lambda: TK(f"{D19} 22:05"); H.preview({"threply": {"t": TK(f"{D19} 21:00"), "ok": 0}})
+assert "(10/20 · 3개)" in tg19[-1][1]["text"] and "일반 상품 예약" in tg19[-1][1]["text"] and len(c19) == 1  # 채널 = 3개 그대로
+assert c19[0]["text"].startswith(H.TOSS_NOTE + "\n" + H.NAVER_NOTE + "\n\n🌙 오늘 밤 특가 미리보기 (2개)\n\n22:20 🔥 토스 예약") and "일반 상품 예약" not in c19[0]["text"] and "이 포스팅은 쿠팡" not in c19[0]["text"]
+json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>[쿠팡] 일반 {k} (7,900원)</b>", "url": f"https://www.coupang.com/vp/products/{k}", "button": "b", "deal": True} for k, (a, _, _) in enumerate(E19)], open(H.EVENTS, "w"), ensure_ascii=False)
+c19.clear(); tg19.clear(); o19 = io.StringIO()
+with contextlib.redirect_stdout(o19): H.preview({"threply": {"t": 1, "ok": 0}})
+assert len(tg19) == 1 and c19 == [] and "threads skip (수수료 링크 아님) preview 묶음 | 항목 0개\n" in o19.getvalue()  # 수수료 0개 = Threads 미리보기 X, 채널은 그대로
+# 간식(묶음): 수수료 링크 딜만(사이트 딜 페이지로 가던 제휴 아닌 딜 X), 0개면 Threads X · 날씨 글은 그대로
+S19 = [{"n": "빼빼로", "p": "1,000원", "u": "https://link.coupang.com/a/S1", "i": 1, "hot": True}, {"n": "초코파이", "p": "2,000원", "u": None, "i": 2, "hot": True},
+       {"n": "칸쵸", "p": "3,000원", "u": "https://naver.me/S3", "i": 3, "hot": True}]
+c19.clear(); tg19.clear(); time.time = lambda: TK(f"{D19} 15:35"); H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", S19, "", "snack", lo=2)
+assert "<b>🍪 출출할 때 간식 3</b>" in tg19[0][1]["text"] and len(c19) == 1 and c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n🍪 출출할 때 간식 2\n") and "초코파이" not in c19[0]["text"] and "/p/" not in c19[0]["text"]
+c19.clear(); tg19.clear(); H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", [S19[0], S19[1], dict(S19[2], u=None)], "", "snack", lo=2)
+assert "<b>🍪 출출할 때 간식 3</b>" in tg19[0][1]["text"] and len(c19) == 1 and c19[0]["text"].startswith(H.DISCLOSURE + "\n\n🍪 출출할 때 간식 1\n\n🔥 빼빼로 1,000원\n👉 https://link.coupang.com/a/S1")  # 1개만 남아도 Threads(0개일 때만 X)
+c19.clear(); tg19.clear(); o19 = io.StringIO()
+with contextlib.redirect_stdout(o19): H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", [dict(x, u=None) for x in S19], "", "snack", lo=2)
+assert len(tg19) == 1 and c19 == [] and "threads skip (수수료 링크 아님) snack 묶음 | 항목 0개\n" in o19.getvalue()
+c19.clear(); tg19.clear(); H.wx_post({}, "k", "☁️ 오늘", S19[1:2], "☁️ 오늘\n질문", "wx")
+assert len(c19) == 1 and "초코파이" in c19[0]["text"] and c19[0]["link_attachment"] == H.SITE + "p/2.html?ref=th"  # 날씨 글은 그대로(10/19 밤 Cowork '날씨 그대로')
+if ev19 is None: os.remove(H.EVENTS)
+else: open(H.EVENTS, "w").write(ev19)
+os.remove("posts19.json")
+(H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.POSTS, H.th_solo, H.TOSS_NO_CMP, tk19) = sv19
+H.E.pop("THREADS_TOKEN", None) if tk19 is None else H.E.update(THREADS_TOKEN=tk19)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

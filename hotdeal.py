@@ -1098,6 +1098,10 @@ def preview(seen):
     tok = E.get("THREADS_TOKEN")
     if not tok:
         return
+    ds = [d for d in ds if aff_note(d["url"])]  # 10/19 밤 진우 'Threads는 수수료 딜만'(채널 미리보기는 그대로)
+    if not ds:
+        print("threads skip (수수료 링크 아님) preview 묶음 | 항목 0개")
+        return
     top, brands = [], set()  # 10/13 진우 '타래 + 브랜드 섞기': 본문 = 🔥 먼저(🛒 뒤로) · 같은 브랜드(이름 첫 단어)는 1개만 -> 시각 순 PREVIEW_TH개, 나머지는 댓글(타래)로
     for d in sorted(ds, key=lambda d: d["icon"] == "🛒"):
         if len(top) < PREVIEW_TH and (d["name"].split() or [""])[0] not in brands:
@@ -1312,8 +1316,8 @@ def top_deals(seen):
     since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
     prev = time.strftime("%Y-%m-%d ", time.gmtime(time.time() + 9 * 3600 - 86400)) + f"{TOP_HOURS[-1]:02d}:00" if hrs[-1] == TOP_HOURS[0] else since  # 첫 리스트(12시)는 어젯밤(전날 마지막 리스트 뒤) 좋은 딜도
     top = sorted((p for p in load(POSTS, []) if p.get("mid") and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
-                                                              or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
-                 key=lambda p: (not th_tier(p["text"]), bool(p.get("th")), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
+                                                              or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th") and aff_note(p["url"] or "")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
+                 key=lambda p: (not th_tier(p["text"]), bool(p.get("th")) or not aff_note(p["url"] or ""), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 수수료 링크 아닌 딜 = Threads에 나간 딜처럼 셈(10/19 밤 'Threads는 수수료 딜만' 전엔 대부분 개별 글로 나가 th 1 -> 채널 순서 그대로)  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) < 3:
         return
     toss_in = TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top)  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검) + 게시 시점 줄(10/19 12:30 점검)
@@ -1335,22 +1339,28 @@ def top_deals(seen):
     if not tok or hrs[-1] not in TH_LIST_HOURS:
         return
     posts = load(POSTS, [])  # Threads 12·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 사이트 딜 페이지(구매 버튼), 500자
-    head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in top if aff_note(p["url"])))
+    top = [p for p in top if aff_note(p["url"] or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만'
+    if not top:
+        print(f"threads skip (수수료 링크 아님) top{hrs[-1]} 리스트 | 항목 0개")
+        return
     lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {th_url(p, posts.index(p))}" for n, p in enumerate(top)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
-    while True:
-        th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines)
-        if len(th) + len(tail) <= 480 or len(lines) <= 1:  # 직접 링크는 사이트 주소보다 길 수 있어(검색 링크 ~210자) 1개까지 줄임
-            break
-        lines = lines[:-1]
-    links, beauty = len(lines), []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
-    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
+
+    def render(n, bs):  # 리스트 n줄 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
+        used = top[:n] + [p for p, _ in bs]
+        head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in used))
+        tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in used) else ""
+        return f"{head}\n\n🏆 지금 살 만한 딜 TOP{n} ({hrs[-1]}시)\n\n" + "\n".join(lines[:n]) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
+    n = len(lines)
+    while n > 1 and len(render(n, [])) > 480:  # 직접 링크는 사이트 주소보다 길 수 있어 1개까지 줄임
+        n -= 1
+    links, beauty = n, []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
+    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
         line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
-        if len(th) + len("\n\n💄 화장품" * (not beauty)) + len(line) + 1 + len(tail) > 480:
+        if len(render(n, beauty + [(p, line)])) > 480:
             break
         links += "👉" in line
-        beauty.append(line)
-    th += "\n\n💄 화장품\n" + "\n".join(beauty) if beauty else ""
-    th_bundle(seen, f"top{hrs[-1]}", th + tail, th_url(top[0], posts.index(top[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+        beauty.append((p, line))
+    th_bundle(seen, f"top{hrs[-1]}", render(n, beauty), th_url(top[0], posts.index(top[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
 
 
 def busy(seen, cap=True):
@@ -2534,6 +2544,10 @@ def threads(seen):
     rows, cap = card_caption(today)  # 인스타는 ig_cards(10/11~ 하루 3번 — 21시 하루 카드 포함)
     if not tok:
         return
+    rows = [r for r, (_, p) in zip(rows, card_order(load(POSTS, []), today)) if aff_note(p.get("url") or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만': 줄도 수수료 링크 딜만(카드 번호 그대로 — card_caption과 같은 순서)
+    if not rows:
+        print("threads skip (수수료 링크 아님) card 묶음 | 항목 0개")
+        return
     while True:  # 대가성 문구는 맨 앞 그대로, 길면 번호 줄을 줄임(Threads 500자)
         text = (cap.split("\n\n")[0] + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
                 + f"\n\n전체 딜·구매 링크 👉 {SITE}?ref=th\n실시간 알림 👉 https://t.me/hotdeal_pick")
@@ -2691,9 +2705,9 @@ def jw_beauty(seen, now):
     19:00 진우 링크가 19:04 실행의 뷰티 회차에 자리를 뺏기던 것)."""
     kst = time.gmtime(now + 9 * 3600)
     today, nowk, since = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d %H:%M", kst), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 6 * 3600))
-    if any(p.get("own") and not p.get("th") and p["t"] >= max(since, today) and not th_weak(p["text"]) and th_beauty(title_of(p["text"])) for p in load(POSTS, [])):
+    if any(p.get("own") and not p.get("th") and p["t"] >= max(since, today) and aff(p.get("url")) and not th_weak(p["text"]) and th_beauty(title_of(p["text"])) for p in load(POSTS, [])):
         return True
-    return any(e["at"].startswith(today) and (e.get("api") or (e.get("url") and e.get("deal"))) and not th_weak(plain_of(e.get("text") or ""))
+    return any(e["at"].startswith(today) and (e.get("api") or (e.get("deal") and aff(e.get("url")))) and not th_weak(plain_of(e.get("text") or ""))
                and th_beauty(e.get("name") or plain_of(e.get("text") or "").split("\n")[0])
                and (e["at"] >= nowk or (e.get("api") and e["at"] >= since and seen.get("pk_" + e["at"], {}).get("st") not in ("done", "skip"))) for e in load(EVENTS, []))
 
@@ -2762,6 +2776,14 @@ def threads_deals(seen):
     tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
     fresh = [i for i, p in enumerate(posts) if not p.get("th") and p["t"] >= since and not p["text"].startswith("📋")]
+    skip = [i for i in fresh if not aff_note(posts[i].get("url") or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만': 대가성 문구가 붙는 링크만 — 나머지는 텔레그램·사이트에만(나중에 진우 링크로 바뀌면 그때 후보)
+    new = [i for i in skip if "th" not in posts[i]] if tok else []  # 로그는 딜마다 1번(th = 0: 거짓값이라 리스트 셈은 그대로)
+    for i in new:
+        print("threads skip (수수료 링크 아님)", clip(title_of(posts[i]["text"]), 40), "|", link_kind(posts[i].get("url")))
+        posts[i]["th"] = 0
+    if new:
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    fresh = [i for i in fresh if i not in skip]
     rei = {i for i in fresh if posts[i].get("own") and posts[i].get("url") in {e["url"] for e in load(EVENTS, []) if e.get("re") and e.get("url")}}  # 10/12 23:05 진우 재업로드(events "re": true, 같은 진우 링크로 전에 나간 강점 품목)
     bt = {i: 0 if i in rei else th_beauty(title_of(posts[i]["text"])) for i in fresh}  # 재업로드는 화장품 하루 한도에서 뺌(밤 화장품 글이 한도를 채워도 막히지 않게)
     now = time.time()
@@ -2783,7 +2805,7 @@ def threads_deals(seen):
     RUN["th_why"] = " ".join(map(str, ("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
           "· 화장품 한도", sum(bool(bt[i]) and r["b"] >= TH_BEAUTY_MAX and th_tier(posts[i]["text"]) > 0 for i in fresh), "· 간격", "대기" if now - r["last"] < TH_SOLO_GAP else "열림",
           "· 3시간 지난 ①②(리스트로)", sum(p["t"].startswith(today) and p["t"] < since and not p.get("th") and th_tier(p["text"]) > 0 for p in posts),
-          "· 토스 픽 대기", sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", [])))))
+          "· 토스 픽 대기", sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", [])), "· 수수료 링크 아님", len(skip))))
     print(RUN["th_why"])
     if not tok or not todo:
         return
@@ -2956,7 +2978,10 @@ def wx_post(seen, key, head, items, alone, kind, lo=1):
         return
     seen[key] = time.time()
     bundled(seen)
-    for n in range(len(items), lo - 1, -1) if E.get("THREADS_TOKEN") and items else ():  # Threads 500자(링크 미리보기는 글자를 안 자름) — 넘으면 뒤 딜부터 뺌
+    items = items if kind == "wx" else [c for c in items if aff_note(c["u"] or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만'(날씨 글은 그대로)
+    if E.get("THREADS_TOKEN") and not items and not alone:
+        print(f"threads skip (수수료 링크 아님) {kind} 묶음 | 항목 0개")
+    for n in range(len(items), min(lo, len(items)) - 1, -1) if E.get("THREADS_TOKEN") and items else ():  # Threads 500자(링크 미리보기는 글자를 안 자름) — 넘으면 뒤 딜부터 뺌
         tag, rows, tail, links = wx_render(items[:n], "th", False)
         th = tag + f"{head.format(n=n)}\n\n" + "\n".join(rows) + tail
         if len(th) <= 480:
@@ -3454,7 +3479,7 @@ def watch(seen):
     ref = max(last, now - (kst.tm_hour - 8) * 3600 - kst.tm_min * 60 - kst.tm_sec)  # 밤(0~8시)은 안 셈 -> 8시부터
     if E.get("THREADS_TOKEN") and kst.tm_hour >= 8 and now - ref > QUIET_TH and "quiet_th" not in seen:
         since, posts = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 6 * 3600)), load(POSTS, [])
-        wait = sum(not p.get("th") and p["t"] >= since and not p["text"].startswith("📋") and not th_weak(p["text"]) for p in posts) \
+        wait = sum(not p.get("th") and p["t"] >= since and not p["text"].startswith("📋") and not th_weak(p["text"]) and aff(p.get("url")) for p in posts) \
             + sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", []))
         tg("sendMessage", chat_id=ADMIN, text=f"⏸ Threads {int((now - ref) // 3600)}시간째 글 없음 — 마지막 글 {time.strftime('%H:%M', time.gmtime(last + 9 * 3600))}, "
                                               f"대기 중 {wait}개, 이유: {RUN['th_why'] or '로그 확인'}"[:1000])
