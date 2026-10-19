@@ -1316,17 +1316,19 @@ def top_deals(seen):
                  key=lambda p: (not th_tier(p["text"]), bool(p.get("th")), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) < 3:
         return
+    toss_in = TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top)  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검) + 게시 시점 줄(10/19 12:30 점검)
+    tail = f"\n\n{toss_when()}" if toss_in else ""
     items = []
     for p in top:
         price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
+        why = strip_cmp("👉 " + why)[0][2:] if toss_in and why else why  # 👉 줄의 다른 몰 이름 조각(예: '네이버 지금배달 …')은 뺌, 다 빠지면 줄째
         items.append((parse(title_of(p["text"]))[1], p["url"], [
             ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
             "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
-    sub = TOP_SUB_TOSS if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top) else TOP_SUB  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검)
-    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n{sub}, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
+    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n{TOP_SUB_TOSS if toss_in else TOP_SUB}, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-              text=(notes + "\n\n" if notes else "") + text, reply_markup={"inline_keyboard": kb}):
+              text=(notes + "\n\n" if notes else "") + text + tail, reply_markup={"inline_keyboard": kb}):
         return
     bundled(seen)
     tok = E.get("THREADS_TOKEN")
@@ -1337,18 +1339,18 @@ def top_deals(seen):
     lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {SITE}p/{posts.index(p)}.html?ref=th" for n, p in enumerate(top)]
     while True:
         th = (head + "\n\n" if head else "") + f"🏆 지금 살 만한 딜 TOP{len(lines)} ({hrs[-1]}시)\n\n" + "\n".join(lines)
-        if len(th) <= 480 or len(lines) <= 3:
+        if len(th) + len(tail) <= 480 or len(lines) <= 3:
             break
         lines = lines[:-1]
     links, beauty = len(lines), []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
     for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
         line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {SITE}p/{posts.index(p)}.html?ref=th" if links < 5 else "")
-        if len(th) + len("\n\n💄 화장품" * (not beauty)) + len(line) + 1 > 480:
+        if len(th) + len("\n\n💄 화장품" * (not beauty)) + len(line) + 1 + len(tail) > 480:
             break
         links += "👉" in line
         beauty.append(line)
     th += "\n\n💄 화장품\n" + "\n".join(beauty) if beauty else ""
-    th_bundle(seen, f"top{hrs[-1]}", th, f"{SITE}p/{posts.index(top[0])}.html?ref=th")  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    th_bundle(seen, f"top{hrs[-1]}", th + tail, f"{SITE}p/{posts.index(top[0])}.html?ref=th")  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
 
 
 def busy(seen, cap=True):
