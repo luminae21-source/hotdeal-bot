@@ -3505,9 +3505,8 @@ assert all(src.count("th_deal(seen, tok, me,") == 1 for src in map(inspect.getso
 del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB) = sv17
 # 9-18) 10/19 17시 진우 '경유 링크 말고 직접 링크로': ① Threads 딜 링크 = 텔레그램 버튼과 같은 링크(개별 A·B 첫 댓글·리스트·간식/날씨 — 아직 검색 링크인 딜은 검색 링크 그대로,
 #       500자에 못 들어가는 TH_LINK_MAX 넘는 링크만 사이트 딜 페이지), 500자 안(링크가 길면 코멘트를 줄임), metrics.json Threads 줄 = 링크 종류(lk: direct·search·site)
-#       ② 상품 주소를 못 꺼낸 [네이버]·스마트스토어 딜 = 네이버 쇼핑 검색 API 후보 -> Claude 8점↑ 같은 상품이면 상품 페이지 버튼('🛒 구매하러 가기', 대가성 문구 X, posts.json·사이트도 같은 링크),
-#       못 찾거나·키 없거나·API 실패면 검색 링크 그대로, 진우 naver.me 답장은 관리자 사본 흐름 그대로(우선), 쿠팡·토스 딜은 안 부름
-sv18 = (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, {k: H.E.get(k) for k in ("THREADS_TOKEN", "NAVER_CLIENT_ID", "NAVER_CLIENT_SECRET")})
+#       ② 네이버 매칭은 10/19 밤 취소(쇼핑 검색 API 2026-07-31 종료) -> [네이버] 딜 = 검색 링크 그대로 + 진우 naver.me 답장(관리자 사본 흐름)
+sv18 = (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, {k: H.E.get(k) for k in ("THREADS_TOKEN",)})
 H.time.sleep, H.POSTS, H.TH_LINK_AB, H.th_solo = (lambda s: None), "posts18.json", True, (lambda *a, **k: True)
 assert [H.link_kind(u) for u in ("https://link.coupang.com/a/x", "https://naver.me/A", "https://smartstore.naver.com/main/products/1", "https://search.shopping.naver.com/catalog/123",
         "https://search.shopping.naver.com/search/all?query=a", "https://www.coupang.com/np/search?q=a", H.SITE + "p/1.html?ref=th", H.lp_link("gmarket", "https://www.gmarket.co.kr/n/search?keyword=a"),
@@ -3534,62 +3533,22 @@ assert "link_attachment" not in b18 and not re.search(r"http|/p/", b18["text"]) 
 assert r18["reply_to_id"] == "p1" and r18["text"] == f"{H.th_note(H.DISCLOSURE)}👉 https://link.coupang.com/a/Z18\n📲 실시간 알림 t.me/hotdeal_pick" and "ref=thc" not in r18["text"]  # 대가성 문구는 본문·댓글 첫 줄
 LP18 = H.lp_link("gmarket", "https://www.gmarket.co.kr/n/search?keyword=" + "%EC%9A%B0%EC%9C%A0" * 40)  # TH_LINK_MAX 넘는 링크프라이스 = 500자에 못 들어감 -> 사이트 딜 페이지(사이트에 올라온 뒤)
 assert len(LP18) > H.TH_LINK_MAX and H.th_url({"url": LP18}, 7) == H.SITE + "p/7.html?ref=th" and H.th_url({"url": SR18}, 7) == SR18 and H.th_url({"url": None}, 7) == H.SITE + "p/7.html?ref=th"
-# ② 네이버 상품 매칭
-nv18, ap18, log18 = [], [], io.StringIO()
-NI18 = [{"title": "<b>서울우유</b> 딸기우유 200ml 18팩", "link": "https://smartstore.naver.com/main/products/111", "lprice": "11000", "mallName": "A몰"},
-        {"title": "<b>서울우유</b> 딸기 우유 200ml x 24팩", "link": "https://smartstore.naver.com/main/products/222", "lprice": "14900", "mallName": "서울우유공식"},
-        {"title": "링크 없는 상품", "link": "", "lprice": "1", "mallName": "x"}]
-def http18n(url, body=None, headers=None, method=None):
-    if url.startswith(H.NAVER_SHOP):
-        nv18.append((url, headers)); return json.dumps({"items": NI18})
-    if "ppomppu" in url: raise OSError("403")
-    raise AssertionError(url)
-H.http, H.ai_pick = http18n, (lambda prompt, lines: ap18.append((prompt, lines)) or [{"i": 1, "score": 9, "comment": "같은 24팩"}])
-H.E.pop("NAVER_CLIENT_ID", None); H.E.pop("NAVER_CLIENT_SECRET", None)
-with contextlib.redirect_stdout(log18):
-    assert H.naver_match("[네이버] 서울우유 딸기우유 (13,900원)") is None
-assert not nv18 and not ap18 and log18.getvalue() == ""  # 키 없음 = 조용히 건너뜀(API·Claude·로그 X — 지금처럼 검색 링크)
-H.E.update(NAVER_CLIENT_ID="cid", NAVER_CLIENT_SECRET="csec")
-with contextlib.redirect_stdout(log18):
-    got18 = H.naver_match("[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)", "서울우유 딸기 200ml 24팩")
-q18 = parse_qs(urlsplit(nv18[0][0]).query)
-assert got18 == "https://smartstore.naver.com/main/products/222" and q18["query"] == ["서울우유 딸기 200ml 24팩"] and q18["display"] == ["10"] and nv18[0][1] == {"X-Naver-Client-Id": "cid", "X-Naver-Client-Secret": "csec"}
-assert ap18[0][0] == H.NAVER_MATCH_PROMPT.format("[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)") and "같은 상품" in ap18[0][0] and "네이버쇼핑" in ap18[0][0] and "토스" not in ap18[0][0]
-assert ap18[0][1] == ["서울우유 딸기우유 200ml 18팩 | 11,000원 | A몰", "서울우유 딸기 우유 200ml x 24팩 | 14,900원 | 서울우유공식"]  # <b> 태그 뺌, 링크 없는 후보 X
-assert log18.getvalue().strip() == "naver match [네이버] 서울우유 딸기우유 200ml 24팩… -> 서울우유 딸기 우유 200ml x 24팩 14,900원 (9점) | 후보 2", log18.getvalue()
-H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 7, "comment": "용량 다름"}]; log18 = io.StringIO()
-with contextlib.redirect_stdout(log18):
-    assert H.naver_match("[네이버] 서울우유 딸기우유 24팩") is None  # 8점 미만 = 검색 링크 그대로
-assert log18.getvalue().strip().endswith("-> 없음 | 후보 2")
-H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("naver down")); log18 = io.StringIO()
-with contextlib.redirect_stdout(log18):
-    assert H.naver_match("[네이버] 서울우유 딸기우유 24팩") is None  # API 실패 = 검색 링크(딜은 그대로 올림)
-assert "naver match" in log18.getvalue() and "naver down" in log18.getvalue()
-H.http, H.ai_pick = http18n, (lambda prompt, lines: [{"i": 1, "score": 9, "comment": ""}])
+# ② [네이버] 딜 = 검색 링크 그대로(10/19 밤 정정: 네이버 쇼핑 검색 API 2026-07-31 종료라 상품 매칭 취소) + 관리자 사본 -> 진우 naver.me 답장으로 교체
 D18 = {"title": "[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1297", "board": "뽐뿌"}
+H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("403")) if "ppomppu" in url else (_ for _ in ()).throw(AssertionError(url))
+H.ai_pick = lambda prompt, lines: (_ for _ in ()).throw(AssertionError("[네이버] 딜에 상품 매칭 X"))
+SR18n = "https://search.shopping.naver.com/search/all?query=" + quote("서울우유 딸기 200ml 24팩")
 with contextlib.redirect_stdout(io.StringIO()):
     t18, l18, lb18 = H.deal_post(D18, "딸기우유 24팩", "서울우유 딸기 200ml 24팩")
-assert (l18, lb18) == ("https://smartstore.naver.com/main/products/222", "🛒 구매하러 가기") and not t18.startswith(("<i>", "[광고]")) and H.aff_note(l18) == ""  # 상품 페이지 = 제휴 X, 대가성 문구 X
-H.ai_pick = lambda prompt, lines: []
-with contextlib.redirect_stdout(io.StringIO()):
-    t18b, l18b, lb18b = H.deal_post(D18, "딸기우유 24팩", "서울우유 딸기 200ml 24팩")
-assert l18b == "https://search.shopping.naver.com/search/all?query=" + quote("서울우유 딸기 200ml 24팩") and lb18b == "🔎 네이버쇼핑에서 찾기"  # 못 찾음 = 지금처럼 검색 링크
-nv18.clear(); H.ai_pick = lambda prompt, lines: (_ for _ in ()).throw(AssertionError("쿠팡·토스 딜은 네이버 매칭 X"))
-with contextlib.redirect_stdout(io.StringIO()):
-    H.deal_post({**D18, "title": "[쿠팡] 서울우유 딸기우유 (13,900원)"}, "c", "q"); H.deal_post({**D18, "title": "[토스] 서울우유 딸기우유 (13,900원)"}, "c", "q")
-assert not nv18
-H.ai_pick = lambda prompt, lines: [{"i": 1, "score": 9, "comment": ""}]
-with contextlib.redirect_stdout(io.StringIO()):
-    assert H.deal_post({**D18, "title": "[스마트스토어] 서울우유 딸기우유 (13,900원)"}, "c", "q")[1] == "https://smartstore.naver.com/main/products/222"  # 스마트스토어도 네이버
+assert (l18, lb18) == (SR18n, "🔎 네이버쇼핑에서 찾기") and H.aff_note(l18) == "" and not t18.startswith(("<i>", "[광고]"))
 tg18 = []
 H.tg = lambda m, **p: tg18.append((m, p)) or ({"message_id": 1297, "text": "🔥 [네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)\n\n딸기우유 24팩", "entities": []} if m == "sendMessage" else {"message_id": 77})
 json.dump([], open(H.POSTS, "w"))
 with contextlib.redirect_stdout(io.StringIO()):
     H.post_or_draft(D18, "딸기우유 24팩", 7, "서울우유 딸기 200ml 24팩")
 ch18 = [p for m, p in tg18 if m == "sendMessage"][0]; cp18 = [p for m, p in tg18 if m == "copyMessage"]
-assert ch18["reply_markup"]["inline_keyboard"] == [[{"text": "🛒 구매하러 가기", "url": "https://smartstore.naver.com/main/products/222"}]] and json.load(open(H.POSTS))[0]["url"] == "https://smartstore.naver.com/main/products/222"  # 사이트 /p/도 같은 링크
-assert len(cp18) == 1 and "쇼핑커넥트" in json.dumps(cp18[0]["reply_markup"], ensure_ascii=False) and H.pending_copy("https://naver.me/Jw18")["cp"] == 77  # 관리자 사본 그대로 -> 진우 naver.me 답장이 매칭 링크를 바꿈(우선)
-assert "NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+assert ch18["reply_markup"]["inline_keyboard"] == [[{"text": "🔎 네이버쇼핑에서 찾기", "url": SR18n}]] and json.load(open(H.POSTS))[0]["url"] == SR18n
+assert len(cp18) == 1 and "쇼핑커넥트" in json.dumps(cp18[0]["reply_markup"], ensure_ascii=False) and H.pending_copy("https://naver.me/Jw18")["cp"] == 77  # 관리자 사본 그대로 -> 진우 naver.me 답장이 교체
 (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, e18) = sv18
 for k, v in e18.items():
     H.E.pop(k, None) if v is None else H.E.update({k: v})

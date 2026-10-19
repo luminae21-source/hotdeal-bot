@@ -117,8 +117,6 @@ MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
-NAVER_SHOP = "https://openapi.naver.com/v1/search/shop.json"  # 네이버 검색 API 쇼핑(하루 25,000회, developers.naver.com/docs/serviceapi/search/shopping) — 키 = NAVER_CLIENT_ID·NAVER_CLIENT_SECRET, 없으면 안 부름
-NAVER_MATCH_PROMPT = MATCH_PROMPT.replace("토스쇼핑 상품 목록", "네이버쇼핑 검색 결과(상품명 | 최저가 | 판매처)")
 EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사·커뮤니티 핫딜 글이야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
 회사 소식·실적·협약·물류·사회공헌·채용·오프라인 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이는 빼. 글에 적힌 사실만 써(지어내지 마).
 q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
@@ -527,10 +525,7 @@ def deal_post(d, comment, q=None, extra=None):
     label = buy_label(d["title"])
     if not aff:
         lp, name = lp_search(d["title"], q)
-        nv = not lp and not link and re.search("네이버|스마트스토어", store_tag(d["title"])) and naver_match(d["title"], q)  # 10/19 진우 '직접 링크로': 네이버 딜은 검색 결과 대신 같은 상품 페이지
-        if nv:
-            link, label = nv, "🛒 구매하러 가기"
-        elif not lp and not link:  # 상품 주소도 제휴 검색도 없으면 원글 대신 그 몰 검색 결과(원글은 본문 '출처' 링크로 남음). 토스·모르는 몰·앱 쿠폰은 원글 그대로
+        if not lp and not link:  # 상품 주소도 제휴 검색도 없으면 원글 대신 그 몰 검색 결과(원글은 본문 '출처' 링크로 남음). 토스·모르는 몰·앱 쿠폰은 원글 그대로
             name, base = next((v for k, v in MALL_SEARCH.items() if k in store_tag(d["title"])), (None, None))
             lp = base and base + urllib.parse.quote(q or keyword(d["title"]))
         if lp:
@@ -544,25 +539,6 @@ def deal_post(d, comment, q=None, extra=None):
     if TOSS_NO_CMP and is_toss(link or d["url"], f"[{store_tag(d['title'])}]"):  # 토스 딜: 다른 몰 비교 빼고 게시 시점 가격(10/12 토스 비즈니스 요청)
         text = strip_cmp(text)[0].replace("\n\n출처: ", f"\n{toss_when()}\n\n출처: ", 1)
     return text, link or d["url"], label
-
-
-def naver_match(title, q=None):
-    """상품 주소를 못 꺼낸 [네이버]·스마트스토어 딜 -> 네이버 쇼핑 검색 API(Claude 검색어, 10개) -> Claude가 같은 상품(용량·수량·구성, 쿠폰가라 가격은 달라도 됨) 8점 이상이면
-    상품 정보 페이지(item.link), 아니면 None(지금처럼 검색 링크). 제휴 링크 아님(대가성 문구 X) — 진우 naver.me 답장이 오면 그 링크로 교체(관리자 사본 흐름 그대로). 키 없으면 안 부름."""
-    if not (E.get("NAVER_CLIENT_ID") and E.get("NAVER_CLIENT_SECRET")):
-        return None
-    try:
-        items = json.loads(http(NAVER_SHOP + "?" + urllib.parse.urlencode({"query": q or keyword(title), "display": 10, "exclude": "used:rental:cbshop"}),
-                                headers={"X-Naver-Client-Id": E["NAVER_CLIENT_ID"], "X-Naver-Client-Secret": E["NAVER_CLIENT_SECRET"]})).get("items", [])
-        items = [x for x in items if x.get("link")]
-        name = lambda x: html.unescape(re.sub(r"<[^>]+>", "", x["title"]))
-        pick = items and ai_pick(NAVER_MATCH_PROMPT.format(title), [f"{name(x)} | {int(x.get('lprice') or 0):,}원 | {x.get('mallName', '')}" for x in items])
-    except Exception as e:  # API·Claude 실패 = 검색 링크(딜은 그대로 올림)
-        print("naver match", clip(title, 30), repr(e))
-        return None
-    hit = items[pick[0]["i"]] if pick and pick[0]["score"] >= 8 else None
-    print("naver match", clip(title, 30), "->", f"{clip(name(hit), 40)} {int(hit.get('lprice') or 0):,}원 ({pick[0]['score']}점)" if hit else "없음", f"| 후보 {len(items)}")
-    return hit and hit["link"]
 
 
 TOSS_TAG = r"\[토스(?:쇼핑)?\]"  # 토스 딜 제목 [몰] — 10/18 진우 '[토스쇼핑]도 토스'(같은 토스쇼핑: 비교 X·게시 시점 가격·뽐뿌 말고 바로 연결)
