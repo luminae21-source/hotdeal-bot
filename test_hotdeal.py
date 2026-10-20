@@ -2596,7 +2596,7 @@ s9i = {"tb_4": {"t": 1, "n": "베스트4"}}; time.time = lambda: TK("2026-10-14 
 (m9i, p9i), = i_sent
 assert [l.split(" |")[0] for l in i_prompts[0][1]] == ["베스트2"]  # 품절(3)·3일 안 게시(4)·오늘 진우 예약 이름(1) 빼고
 assert H.TOSS_NOTE in p9i["text"].split("🔥")[0]  # 대가성 문구 맨 앞(진우 예약 글과 같은 머리)
-assert "🔥 <b>[토스] 베스트2 (9,900원)</b>\n\n10/14 12시 토스 많이 팔린 순위 2위 · 40% 할인 · ⭐ 4.8 (리뷰 1,234)\n💡 1개 9,900원 · 10개입\n⚠️ 확인할 점: 10/14 12:05 게시 시점 가격 · 사람마다 가격이 다를 수 있음 · 결제 전 최종가 확인" in p9i["text"] and "쿠팡" not in p9i["text"]
+assert "🔥 <b>[토스] 베스트2 (9,900원)</b>\n\n10/14 12시 토스 많이 팔린 순위 2위 · 40% 할인 · ⭐ 4.8 (리뷰 1,234)\n💰 1개 9,900원 · 10개입\n⚠️ 확인할 점: 10/14 12:05 게시 시점 가격 · 사람마다 가격이 다를 수 있음 · 결제 전 최종가 확인" in p9i["text"] and "쿠팡" not in p9i["text"]
 assert p9i["reply_markup"] == {"inline_keyboard": [[{"text": "🛒 9,900원 구매하기", "url": "https://toss.im/_m/S2"}]]} and p9i["chat_id"] == H.CHANNEL and p9i["parse_mode"] == "HTML"
 assert "tb_2" in s9i and s9i["sold_701"]["it"] == [[2, "베스트2", 9900, 0, 0, 0]] and s9i["sold_701"]["btn"] == "🛒 9,900원 구매하기" and "tsolo_20261014_12" in s9i  # 품절 지켜보기·묶음 회차에서 빠짐
 q9i = s9i["thtoss"]["q"][-1]; assert q9i["k"] == "solo" and q9i["link"] == "https://toss.im/_m/S2" and q9i["text"].startswith(H.TOSS_NOTE) and "많이 팔린 순위 2위" in q9i["text"] and "게시 시점 가격" in q9i["text"]  # Threads 채움 후보
@@ -2965,7 +2965,7 @@ ev8 = {"at": "2026-10-14 22:20", "text": "🔥 <b>[토스] 크림 50g 2개 (17,9
 assert H.ev_head(ev8).startswith("[광고] ") and H.ev_head(ev8).endswith(f"\n<i>{H.TOSS_NOTE}</i>\n\n") and "6,000원" in H.ev_head(ev8) and H.sold_ev(ev8, "2026-10-14")["pre"] == H.ev_head(ev8)
 assert H.ev_head(dict(ev8, deal=False)) == f"<i>{H.TOSS_NOTE}</i>\n\n" and H.ev_head(dict(ev8, url="https://x.com")) == ""  # 행사 알림 = 고지문만, 제휴 아님 = 없음
 assert H.ad_head(H.TOSS_NOTE, H.plain_of("🔥 <b>[토스] 샴푸 (9,900원)</b>\n\n💰 <b>9,900원</b> (45%↓)")).split("\n")[0] in ("[광고] 🔻 45% 할인 샴푸 9,900원", "[광고] 샴푸 9,900원 — 45% 할인", "[광고] 🔻 45% 할인 · 샴푸 9,900원")  # 토스 API = 할인율(쿠팡 X)
-assert "ad_head(TOSS_NOTE, plain_of(body))" in inspect.getsource(H.toss_picks) and inspect.getsource(H.toss_picks).count("th_note(TOSS_NOTE)") == 1 and "th_note(TOSS_NOTE)" in inspect.getsource(H.reopen_text) and "reopen_text(seen, e, price, am, hot)" in inspect.getsource(H.toss_reopen) and "ev_head(ev)" in inspect.getsource(H.events)  # 채널 = [광고] 첫 줄, Threads = [광고] + 고지문 + 예전 본문
+assert "ad_head(TOSS_NOTE, plain_of(body))" in inspect.getsource(H.toss_picks) and 'text = toss_th(r["n"], r["link"], lines)' in inspect.getsource(H.toss_picks) and "th_note(TOSS_NOTE)" in inspect.getsource(H.toss_th) and "th_note(TOSS_NOTE)" in inspect.getsource(H.reopen_text) and "reopen_text(seen, e, price, am, hot)" in inspect.getsource(H.toss_reopen) and "ev_head(ev)" in inspect.getsource(H.events)  # 채널 = [광고] 첫 줄, Threads = [광고] + 고지문 + 예전 본문
 pj8 = open("posts.json").read(); calls[:] = []; kt8 = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
 json.dump([{"t": kt8(1), "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n💡 쿠팡 같은 상품(15,000원)보다 5,100원 쌈\n\n출처: 뽐뿌", "url": "https://link.coupang.com/a/x", "s": 8, "own": 1},
            {"t": kt8(0.5), "text": "🔥 [카카오] 고구마 3kg\n\n💡 쿠팡 같은 상품(9,000원)보다 1,000원 쌈", "url": "https://www.ppomppu.co.kr/1", "s": 8, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
@@ -3606,7 +3606,7 @@ for _ in C19:
 assert [m["ab"] for m in s19["thab"]["m"].values()] == ["A", "B", "A"] and len(c19) == 4 and c19[2]["reply_to_id"] == "p2"  # 토스·naver.me·쿠팡 파트너스 = Threads O, A/B 그대로(B = 본문 + 첫 댓글 링크)
 assert c19[0]["link_attachment"] == "https://toss.shopping/_m/T19" and "게시 시점" in c19[0]["text"] and "link_attachment" not in c19[1] and c19[2]["text"].startswith(H.th_note(H.NAVER_NOTE) + "👉 https://naver.me/N19\n") and c19[3]["link_attachment"] == "https://link.coupang.com/a/C19"
 assert [x["text"].split("\n")[0] for x in c19] == [H.th_note(n).split("\n")[0] for n in (H.TOSS_NOTE, H.NAVER_NOTE, H.NAVER_NOTE, H.DISCLOSURE)]  # Threads 글·B 댓글 모두 첫 줄 대가성 문구([광고] 켜지면 그 앞)
-assert all(t in inspect.getsource(f) for f, t in ((H.toss_th, "th_note(TOSS_NOTE)"), (H.toss_picks, "th_note(TOSS_NOTE)"), (H.reopen_text, "th_note(TOSS_NOTE)")))  # 나머지 개별 글(토스 픽·뷰티 채움·이름 예약·재오픈) = 늘 토스 쉐어링크 + 고지문
+assert all(t in inspect.getsource(f) for f, t in ((H.toss_th, "th_note(TOSS_NOTE)"), (H.toss_picks, "toss_th("), (H.reopen_text, "th_note(TOSS_NOTE)")))  # 나머지 개별 글(토스 픽·뷰티 채움·이름 예약·재오픈) = 늘 토스 쉐어링크 + 고지문
 # TOP 리스트 💄 화장품 칸도 수수료 링크만(10/12 '리스트로 만들어도 좋아' 칸)
 D19, tg19 = "2026-10-20", []
 H.tg = lambda m, **p: tg19.append((m, p)) or {"message_id": 1919}
@@ -3663,6 +3663,106 @@ else: open(H.EVENTS, "w").write(ev19)
 os.remove("posts19.json")
 (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.POSTS, H.th_solo, H.TOSS_NO_CMP, tk19) = sv19
 H.E.pop("THREADS_TOKEN", None) if tk19 is None else H.E.update(THREADS_TOKEN=tk19)
+# 9-20) 10/20 저녁 진우 '토스 글 멘트 사고 싶게 — 간단하게, 사고 싶은 맘이 들게, 필요한 사람이 살 수 있게'(시안 3개 OK): 토스 쉐어링크 개별 글(토스 API 개별·토스 픽 채움·뷰티 채움·
+#       이름 예약·쉐어링크 커뮤니티 [토스] 딜·진우 토스 링크) 💡 한 줄 -> 💰 단위가격 · 🙋 누가(30자 안, 2개까지) · 👍 언제(40자 안, 한 가지) — 💰 가격 줄이 이미 있으면(하루특가·이름 예약 틀) 단위가격은
+#       그 줄 끝에(💰 줄 하나), 금지어(써 본 척·효능·다른 몰·과장·클릭 유도)·너무 긴 줄 = 그 줄만 뺌(글은 나감), Threads 480자 넘으면 👍 -> 🙋 순서로 뺌. 묶음 글·쿠팡·네이버 딜은 그대로
+assert all(k in H.BEST_PROMPT and k in H.SPECIAL_PROMPT and k in H.SOLO_PROMPT and k in H.PICK_PROMPT and k in H.DEAL_PROMPT and k in H.ADMIN_PROMPT for k in ("who:", "use:", "30자 안", "40자 안", "먹어보니", "클릭"))
+assert "토스 상품(제목 [토스]·[토스쇼핑]이거나 본문에 토스·토스쇼핑 링크)일 때만" in H.DEAL_PROMPT and "토스 링크 글에만" in H.ADMIN_PROMPT and "who" in H.TOSS_WU and "다른 쇼핑몰 이름·비교 없이" in H.TOSS_WU
+sv20 = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.E.get("THREADS_TOKEN"))
+F20 = [({"tacaItemId": 901, "displayName": "웅진식품 애사비 오리지널, 500ml, 24개", "displayPrice": 12850, "discountRate": 55, "reviewScore": 4.9, "reviewCount": 2303},
+        {"unit": "병당 약 535원 (24병)", "who": "새콤한 음료 좋아하는 분 · 사무실 냉장고", "use": "차갑게 해서 식후 한 병"}),
+       ({"tacaItemId": 902, "displayName": "맘스럽 라임 주방세제, 4L, 2개", "displayPrice": 9400, "discountRate": 27, "reviewScore": 4.7, "reviewCount": 5057},
+        {"unit": "1L당 약 1,175원 (총 8L)", "who": "설거지 많은 집 · 사무실 탕비실", "use": "펌프 통에 덜어 쓰고 나머지는 보관"}),
+       ({"tacaItemId": 903, "displayName": "14Brix 초고당도 제주 감귤, 5kg, 1박스", "displayPrice": 10900, "discountRate": 71, "reviewScore": 4.8, "reviewCount": 25},
+        {"unit": "kg당 약 2,180원 (배송비 포함)", "who": "귤 박스로 두는 집 · 아이 간식 찾는 분", "use": "눌린 귤 골라내고 서늘한 곳에 펼쳐 두기"})]
+cur20, sent20 = [None], []
+def http20(url, body=None, headers=None, method=None):
+    if url == "https://oauth2.cert.toss.im/token": return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if url.endswith("/links"): return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.shopping/_m/F{body['tacaItemId']}"}})
+    if "/products/best-selling?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": [cur20[0][0]]}})
+    raise AssertionError(url)
+json.dump([], open("ev20.json", "w"))
+H.http, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.EVENTS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.E["THREADS_TOKEN"] = http20, True, range(8, 24), "ev20.json", 0, True, "tk"
+H.tg = lambda m, **p: sent20.append(p) or {"message_id": 2000 + len(sent20)}
+ch20, th20 = [], []
+for h20, f20 in zip((12, 16, 20), F20):  # 순위 출처 시각(12·16·20 % 4 = 0) — 시안 3개를 토스 API 개별 글로(채널 + Threads 채움 후보, 실제 게시 X)
+    cur20[0], s20 = f20, {}
+    H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "사실 한 줄", **cur20[0][1]}]
+    time.time = lambda: TK(f"2026-10-21 {h20}:05"); H.toss_solo(s20)
+    ch20.append(sent20[-1]["text"]); th20.append(s20["thtoss"]["q"][-1]["text"])
+for (x20, p20), c20, t20 in zip(F20, ch20, th20):
+    assert c20.split("\n")[0].startswith("<i>" + H.TOSS_NOTE) or c20.split("\n")[1].startswith("<i>" + H.TOSS_NOTE)  # 대가성 문구 맨 앞([광고] 켜지면 그 다음 줄)
+    assert f"\n💰 {p20['unit']}\n🙋 {p20['who']}\n👍 {p20['use']}\n⚠️ 확인할 점: 10/21 " in H.html.unescape(c20) and "💡" not in c20 and "사실 한 줄" not in c20 and c20.count("💰") == 1
+    assert t20.startswith(H.th_note(H.TOSS_NOTE)) and f"\n💰 {p20['unit']}\n🙋 {p20['who']}\n👍 {p20['use']}\n⚠️ 10/21 " in t20 and "게시 시점 가격" in t20 and len(t20) <= 480 and t20.endswith("📲 실시간 알림 t.me/hotdeal_pick")
+# 금지어·너무 긴 줄 = 그 줄만 뺌(글은 나감)
+assert H.wu({"who": "제가 써보니 좋아요", "use": "차갑게 해서 한 병"}) == ["👍 차갑게 해서 한 병"] and H.wu({"who": "🙋 설거지 많은 집", "use": "👍 덜어 쓰기"}) == ["🙋 설거지 많은 집", "👍 덜어 쓰기"]
+assert [H.wu({"who": w}) for w in ("다이어트 하는 분", "피부 미백 원하는 분", "쿠팡보다 싸게 사고 싶은 분", "역대급 가격 노리는 분", "클릭해서 확인할 분", "먹어보니 맛있어요", "면역 챙기는 분", "가" * 41)] == [[]] * 8
+assert H.wu({"use": "무조건 지금 사세요"}) == [] and H.wu({"use": "마지막 기회예요"}) == [] and H.wu({"use": "다" * 50}) == ["👍 " + "다" * 50] and H.wu({"use": "다" * 51}) == [] and H.wu(None) == []
+cur20[0] = (F20[0][0], {"unit": "병당 약 535원 (24병)", "who": "제가 먹어보니 좋아요", "use": "차갑게 해서 식후 한 병"}); s20 = {}; time.time = lambda: TK("2026-10-21 12:05"); H.toss_solo(s20)
+assert "\n💰 병당 약 535원 (24병)\n👍 차갑게 해서 식후 한 병\n⚠️" in sent20[-1]["text"] and "🙋" not in sent20[-1]["text"] and "🙋" not in s20["thtoss"]["q"][-1]["text"]  # 🙋만 빠지고 글은 나감
+# 리뷰 보강: 생활 문장은 안 걸림(세제가·펌프 눌러·곰팡이 예방·추위 대비·먹어 보세요), 써 본 척 모양(봤·본·마셔)·탈모 등·비교 말은 걸림 · 단위가격도 다른 몰·비교면 버림
+assert [H.wu({"who": w}) for w in ("주방세제가 금방 떨어지는 집", "펌프 한 번 눌러 덜어 쓰기", "장마철 곰팡이 예방", "겨울 추위 대비용", "한 번 먹어 보세요")] == [["🙋 " + w] for w in ("주방세제가 금방 떨어지는 집", "펌프 한 번 눌러 덜어 쓰기", "장마철 곰팡이 예방", "겨울 추위 대비용", "한 번 먹어 보세요")]
+assert [H.wu({"use": w}) for w in ("먹어봤는데 맛있음", "써 본 사람은 재구매", "마셔 보니 시원", "탈모 고민인 분", "마트보다 싸게 쟁이기", "코스트코 대용량 부담인 집", "눌러 보세요")] == [[]] * 7
+assert H.wu_unit({"unit": "개당 약 450원 — 쿠팡 같은 상품보다 20% 쌈"}) == "" and H.wu_unit({"unit": " 병당 약 535원 (24병) "}) == "병당 약 535원 (24병)" and H.wu_unit(None) == ""
+assert H.solo_lines(["💰 <b>9,900원</b>", "👉 x"], {"unit": "개당 450원 — 쿠팡보다 쌈", "who": "탄산 좋아하는 집"}) == ["💰 <b>9,900원</b>", "🙋 탄산 좋아하는 집"]  # 비교 든 단위가격은 안 붙임
+assert 'l.startswith("💰") and "<b>" not in l' in inspect.getsource(H.toss_soldout)  # 재오픈 글 = 토스 단독 글의 💰 단위가격 줄(💡 대신)
+# 하루특가·이름 예약 틀(💰 가격 줄이 이미 있음) = 단위가격은 그 줄 끝에, 💰 줄 하나 · 👉 코멘트 대신 🙋·👍 · 새 칸이 하나도 없으면 예전 줄 그대로
+L20 = ["⏰ 토스 하루특가 · 밤 12시까지", "💰 <b>7,920원</b> (77%↓) · ⭐ 4.7 (리뷰 451)", "👉 80매 4개 7,920원"]
+o20 = H.solo_lines(L20, {"unit": "1매당 약 25원 (총 320매)", "who": "설거지·청소 자주 하는 집", "use": "싱크대 옆에 두고 한 장씩"})
+assert o20 == ["⏰ 토스 하루특가 · 밤 12시까지", "💰 <b>7,920원</b> (77%↓) · ⭐ 4.7 (리뷰 451) · 1매당 약 25원 (총 320매)", "🙋 설거지·청소 자주 하는 집", "👍 싱크대 옆에 두고 한 장씩"]
+t20 = H.toss_th("쟈니베어 일회용 수세미, 그레이, 80매, 4개", "https://toss.shopping/_m/pXHwvwt7", o20)
+assert t20.count("💰") == 1 and "\n⏰ 토스 하루특가 · 밤 12시까지\n💰 7,920원 (77%↓) · ⭐ 4.7 (리뷰 451) · 1매당 약 25원 (총 320매)\n🙋 설거지·청소 자주 하는 집\n👍 싱크대 옆에 두고 한 장씩\n⚠️ " in t20 and "👉" not in t20
+assert H.solo_lines(L20, {"comment": "x"}) == L20 and H.solo_lines(L20, None) == L20 and H.solo_lines(L20, {"who": "제가 써보니"}) == L20  # 새 칸 없음(못 받음·다 걸러짐) = 예전 줄
+# Threads 480자 넘으면 👍 -> 🙋 순서로 뺌(💰·대가성 문구·게시 시점·링크는 그대로)
+N20 = "아주 긴 상품 이름 " * 6
+for a20, keep20 in ((20, ("🙋",)), (27, ())):
+    t20 = H.toss_th(N20, "https://toss.shopping/_m/XWQOcF6x", ["토스 하루특가 · " + "가나다 " * a20, "💰 <b>18,900원</b> · " + "라마바 " * 30, "🙋 " + "나" * 28, "👍 " + "다" * 38])
+    assert len(t20) <= 480 and "👍" not in t20 and ("🙋" in t20) == bool(keep20) and "\n💰 18,900원" in t20 and t20.startswith(H.th_note(H.TOSS_NOTE)) and "게시 시점 가격" in t20 and "🛒 https://toss.shopping/_m/XWQOcF6x" in t20
+# 커뮤니티 [토스] 딜(쉐어링크 버튼)·진우 토스 링크 = 💡 단위가격 아래 🙋·👍 → ⚠️ / 쿠팡·네이버·쉐어링크 아닌 [토스] 딜 = 안 나옴
+X20 = {"unit": "개당 413원", "who": "탄산 좋아하는 집 · 캠핑 가는 분", "use": "냉장고에 넣어 두고 손님 오면 한 캔", "warn": "배송비 확인"}
+assert H.facts_of(X20, True) == "\n💡 단위가격 개당 413원\n🙋 탄산 좋아하는 집 · 캠핑 가는 분\n👍 냉장고에 넣어 두고 손님 오면 한 캔\n⚠️ 확인할 점 배송비 확인" and H.facts_of(X20) == "\n💡 단위가격 개당 413원\n⚠️ 확인할 점 배송비 확인"
+sl20, af20 = H.store_link, H.affiliate
+H.store_link = lambda u: None
+D20 = {"title": "[토스] 썬키스트 오렌지소다 355ml 24입 (9,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=2020", "board": "뽐뿌"}
+with contextlib.redirect_stdout(io.StringIO()):
+    tt20, lt20, _ = H.deal_post({**D20, "toss": "https://toss.shopping/_m/C20"}, "24입 9,900원", None, X20)
+    H.affiliate = lambda u: (None, False); tn20, ln20, _ = H.deal_post(D20, "24입 9,900원", None, X20)  # 쉐어링크 아닌 [토스] 딜(원글)
+    tv20, lv20, _ = H.deal_post({**D20, "title": "[네이버] 썬키스트 오렌지소다 355ml 24입 (9,900원/무료)"}, "24입 9,900원", None, X20)
+    H.affiliate = lambda u: ("https://link.coupang.com/a/C20", True); tc20, lc20, _ = H.deal_post({**D20, "title": "[쿠팡] 썬키스트 오렌지소다 355ml 24입 (9,900원/무료)"}, "24입 9,900원", None, X20)
+assert lt20 == "https://toss.shopping/_m/C20" and "\n💡 단위가격 개당 413원\n🙋 탄산 좋아하는 집 · 캠핑 가는 분\n👍 냉장고에 넣어 두고 손님 오면 한 캔\n⚠️ 확인할 점 배송비 확인" in tt20 and "게시 시점 가격" in tt20
+assert all("🙋" not in t and "👍" not in t and "💡 단위가격 개당 413원" in t for t in (tn20, tv20, tc20)) and lc20 == "https://link.coupang.com/a/C20" and "search.shopping.naver.com" in lv20
+H.store_link, H.affiliate = sl20, af20
+# 묶음 글(토스 베스트·하루특가 리스트·TOP·미리보기·간식·카드)은 그대로: 👉 코멘트 줄 그대로, 🙋·👍 X
+assert '"👉 " + esc(p["comment"])' in inspect.getsource(H.toss_deals) and all("wu(" not in inspect.getsource(f) and "solo_lines(" not in inspect.getsource(f) for f in (H.top_post, H.top_deals, H.preview, H.wx_post, H.threads))
+assert inspect.getsource(H.toss_deals).count("solo_lines(") == 2 and "toss_th(name, link, [info] + lines)" in inspect.getsource(H.toss_solo)  # 개별 글(토스 픽 채움·뷰티 채움·단독)만
+# Threads 개별 글(posts.json 커뮤니티 토스 딜) = 480자 넘으면 👍 -> 🙋 순서로 뺌, 게시 시점 줄은 남김
+c20 = []
+def http20b(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: c20.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(c20)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(c20)})
+    raise AssertionError(url)
+sv20b = (H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep)
+H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep = http20b, "posts20.json", (lambda *a, **k: True), False, (lambda s: None)
+T20 = f"{H.TOSS_NOTE}\n\n🔥 [토스] 썬키스트 오렌지소다 355ml 24입 (9,900원/무료)\n\n" + "탄산 24캔 구성이에요. " * 16 + "\n💡 단위가격 개당 413원\n🙋 탄산 좋아하는 집 · 캠핑 가는 분\n👍 냉장고에 넣어 두고 손님 오면 한 캔\n⚠️ 10/21 12:05 게시 시점 가격\n\n출처: 뽐뿌"
+json.dump([{"t": kt(0), "text": T20, "url": "https://toss.shopping/_m/C20", "mid": 2020, "s": 8}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals({})
+(t20,) = c20
+assert len(t20) <= 480 and "👍" not in t20 and "🙋 탄산 좋아하는 집 · 캠핑 가는 분" in t20 and "⚠️ 10/21 12:05 게시 시점 가격" in t20 and t20.startswith(H.th_note(H.TOSS_NOTE)), (len(t20), t20)
+# 진우 토스 링크(관리자 딜) = 🙋·👍 O / 진우 쿠팡 링크 = X · 커뮤니티 딜 게시 경로(main·toss_post)가 who·use를 넘김
+a20 = []; H.tg = lambda m, **p: a20.append((m, p)) or {"message_id": 3000 + len(a20), "text": p.get("text", ""), "entities": []}
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "24입 9,900원", **X20}]
+json.dump([], open(H.POSTS, "w"))
+for l20, yes20 in (("https://toss.shopping/_m/A20", True), ("https://link.coupang.com/a/A20", False)):
+    a20.clear(); assert H.admin_deal(["[토스] 썬키스트 오렌지소다 355ml 24입 9,900원"], l20, 77)
+    c20 = [p["text"] for m, p in a20 if p.get("chat_id") == H.CHANNEL][0]
+    assert ("\n🙋 탄산 좋아하는 집 · 캠핑 가는 분\n👍 냉장고에 넣어 두고 손님 오면 한 캔\n" in c20) == yes20 and "💡 단위가격 개당 413원" in c20, (l20, c20)
+assert all('"warn", "who", "use")' in inspect.getsource(f) for f in (H.main, H.toss_post, H.admin_deal))
+c20 = []; json.dump([{"t": kt(0), "text": T20.replace("탄산 24캔 구성이에요. " * 16, "탄산 24캔 구성이에요. " * 17), "url": "https://toss.shopping/_m/C21", "mid": 2021, "s": 8}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals({})
+assert len(c20) == 1 and len(c20[0]) <= 480 and "⚠️ 10/21 12:05 게시 시점 가격" in c20[0] and "💡 단위가격 개당 413원" in c20[0], c20  # 🙋·👍가 빠져도 게시 시점 줄은 그대로
+os.remove("posts20.json"); os.remove("ev20.json")
+(H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep) = sv20b
+(H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, tk20) = sv20
+H.E.pop("THREADS_TOKEN", None) if tk20 is None else H.E.update(THREADS_TOKEN=tk20)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
