@@ -179,7 +179,7 @@
 {"date": "2026-10-18", "ch": "th", "id": "18130053178800415", "shop": "기타", "cat": "묶음", "price": "", "at": "21:20", "views": 18, "react": 0, "likes": 0, "replies": 0},
 {"date": "2026-10-18", "ch": "th", "id": "17880254565627660", "shop": "기타", "cat": "생필품", "price": "", "at": "21:48", "views": 1, "react": 1, "likes": 0, "replies": 1, "ab": "B", "rv": 0, "v48": 3, "rv48": 1},
 {"date": "2026-10-18", "ch": "th", "id": "18145370818575536", "shop": "toss", "cat": "생필품", "price": "", "at": "22:45", "views": 13, "react": 0, "likes": 0, "replies": 0, "ab": "A", "v48": 21},
-{"date": "2026-10-18", "ch": "th", "id": "18155164684522048", "shop": "기타", "cat": "기타", "price": "", "at": "23:41", "views": 5, "react": 1, "likes": 0, "replies": 1, "ab": "B", "rv": 0}]},
+{"date": "2026-10-18", "ch": "th", "id": "18155164684522048", "shop": "기타", "cat": "기타", "price": "", "at": "23:41", "views": 5, "react": 1, "likes": 0, "replies": 1, "ab": "B", "rv": 0, "v48": 7, "rv48": 1}]},
 "2026-10-17": {"at": "2026-10-18 05:03", "miss": {}, "rows": [
 {"date": "2026-10-17", "ch": "tg", "id": 1135, "shop": "toss", "cat": "식품", "price": "", "at": "00:02", "views": 1, "react": 0},
 {"date": "2026-10-17", "ch": "tg", "id": 1136, "shop": "toss", "cat": "기타", "price": "", "at": "00:02", "views": 1, "react": 0},
