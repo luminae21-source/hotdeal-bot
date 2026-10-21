@@ -10,6 +10,7 @@ H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, t
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
+vc0, (H.TH_VOICE, H.TH_GAP_JITTER) = (H.TH_VOICE, H.TH_GAP_JITTER), (False, 0)  # 예전 Threads 셀프체크는 지금 틀·45분 그대로 — 사람 느낌 글·간격 흔들기(10/21 밤)는 맨 아래 9-24에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
 AI_PICK = H.ai_pick  # 진짜 함수(아래에서 대부분 가짜로 바꿔 씀)
 
@@ -3544,7 +3545,7 @@ assert 200 < len(LPD18) <= H.TH_LINK_MAX and H.aff_note(LPD18) == H.AFF_NOTE
 json.dump([{**P18[0], "url": LPD18}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals(s18)  # A(직전 없음): 본문 👉 같은 링크 + 미리보기
 a18 = c18[0]["text"]
 assert c18[0]["link_attachment"] == LPD18 and f"\n\n👉 {LPD18}\n" in a18 and len(a18) <= 480 and "/p/" not in a18 and a18.startswith(H.th_note(H.AFF_NOTE) + "🔥 [네이버] 서울우유 딸기우유") and a18.endswith("📲 실시간 알림 t.me/hotdeal_pick")  # 500자 안: 링크 길면 코멘트를 줄임
-assert s18["thab"]["m"]["p1"] == {"ab": "A", "ts": s18["thab"]["m"]["p1"]["ts"], "u": LPD18} and H.link_kind(LPD18) == "direct" and H.link_kind(SR18) == "search"
+assert s18["thab"]["m"]["p1"] == {"ab": "A", "ts": s18["thab"]["m"]["p1"]["ts"], "u": LPD18, "n": H.title_of(a18)} and H.link_kind(LPD18) == "direct" and H.link_kind(SR18) == "search"
 json.dump([{**P18[0], "th": 1}, P18[1]], open(H.POSTS, "w"), ensure_ascii=False); c18.clear(); H.threads_deals(s18)  # B: 본문 주소 X, 첫 댓글 = 같은 제휴 링크(?ref=thc X)
 b18, r18 = c18[0], c18[1]
 assert "link_attachment" not in b18 and not re.search(r"http|/p/", b18["text"]) and b18["text"].startswith(H.th_note(H.DISCLOSURE)) and b18["text"].endswith(H.TH_AB_MARK)
@@ -3907,6 +3908,243 @@ for n23, src23 in enumerate((K23, G23)):
 os.remove("posts23.json")
 (H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, tk23) = sv23
 H.E.pop("THREADS_TOKEN", None) if tk23 is None else H.E.update(THREADS_TOKEN=tk23)
+# 9-24 (10/21 밤 진우 'Threads 개별 딜 글 사람이 올리는 느낌' -> '너무 AI 같다' -> 두 시안 섞어서): th_deal로 가는 글 = 대가성 문구 첫 줄 → Claude 문장(글마다 무작위 A 반말 / B 음슴체, 해요체 X,
+#       둘째 줄까지 상품명 · 가격은 어딘가에) → 가격 기준 줄(토스 = '⚠️ M/D HH:MM 게시 시점 가격' 그대로) → A일 때만 3개에 1개쯤 질문 → 👉 링크. 이모지 0~1개.
+#       라벨 줄·써 본 척·효능·과장·클릭 유도(토스 + 다른 몰·비교)·재료에 없는 원 금액 문장은 빠짐, 상품명·가격 빠짐·~요 줄/같은 첫 문장 2번·480자 못 넣음·Claude 실패 = 지금 틀
+#       · 개별 글 간격 35~55분(앞 글 시각으로 정함)
+import inspect
+sv24 = (H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, H.E.get("THREADS_TOKEN"), H.TOSS_NO_CMP, H.ai_voice, H.TH_SOLO_GAP, time.time, H.random)
+c24, p24, a24, n24, ST24 = [], [], [], [0], []  # Threads 글 · Claude에 간 프롬프트 · 가짜 Claude 답(차례대로) · 글 id · 말투(차례대로)
+def http24(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: c24.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(c24)})
+    if "/threads_publish?" in url: n24[0] += 1; return json.dumps({"id": "p%d" % n24[0]})
+    raise AssertionError(url)
+def voice24(prompt):
+    p24.append(prompt); a = a24.pop(0)
+    if isinstance(a, Exception): raise a
+    return a
+class R24:  # 말투 무작위 = 차례대로(셀프체크용)
+    choice = staticmethod(lambda xs: ST24.pop(0))
+H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, H.E["THREADS_TOKEN"] = http24, "posts24.json", (lambda *a, **k: True), False, (lambda s: None), "tk"
+H.TH_VOICE, H.TOSS_NO_CMP, H.ai_voice, H.random, time.time = True, True, voice24, R24, lambda: TK("2026-10-21 21:00")
+YO24, EMO24 = H.VOICE_YO, H.VOICE_EMOJI
+S24 = "🔥 [토스] 웅진식품 애사비 파인애플맛500ml*24(13070원/무배) 외 2\n\n웅진식품 애사비 파인애플맛 500ml 24병이 13,070원, 무료배송입니다. 선착순 3,000개 한정이고 다른 맛 옵션은 가격이 다를 수 있어요.\n💡 단위가격 병당 545원\n🙋 음료 박스로 사는 집 · 사무실 탕비실\n👍 냉장고에 넣어 두고 차갑게 한 병씩\n⚠️ 확인할 점 선착순 3,000개 한정\n⚠️ 10/21 09:20 게시 시점 가격\n\n출처: 뽐뿌"
+KA24 = {"lines": ["핫팩 가격 비교해봤는데", "로켓 100g 중엔 코멧이 개당 295원으로 젤 싸네", "버튼 눌러서 받아 가", "제가 써보니 진짜 따뜻함", "⭐ 리뷰 1,419", "30개 8,860원, 150개로 사면 개당 269원까지 내려감",
+                  "역대급 가격이라 무조건 사야 함", "리뷰도 1,400개 넘고"], "q": "다들 핫팩 몇 개씩 쟁여둬?"}  # A 반말(Cowork 시안)
+GA24 = {"lines": ["출퇴근용 큰 핫팩도 개당 가격 봄 🧤", "하루온 군인핫팩 160g 30개 13,520원 → 개당 451원", "피로 풀릴 만큼 따뜻함", "지금 9,990원", "어제 샀는데 오래 감", "나도 30개 질렀음", "다들 몇 개씩 씀?",
+                  "리뷰 1만 개 넘음, 한 달 4,000명 넘게 삼", "포장 표기 최고 70도·20시간 🔥"], "q": "핫팩 어디에 붙여?"}  # B 음슴체(이모지 2개 -> 다 뺌, 질문 X)
+TA24 = {"lines": ["퇴근하고 한 병씩 마시기 좋은 거 있길래", "쿠팡에서도 많이 사는 맛", "다른 데선 더 비쌈", "웅진식품 애사비 파인애플맛 500ml 24병에 13,070원", "온라인 최저가임", "다이어트할 때 좋음",
+                  "정가 1만6천원짜리", "40% 할인 들어감", "병당 545원꼴, 무료배송", "젤 싼 구성임", "가격 비교해봤는데", "사무실 탕비실에 박스로 두기 좋겠다 🍍"], "q": "다들 탄산 대신 뭐 마셔?"}  # 토스 A(다른 몰·비교 X, 이모지 = ⚠️ 1개)
+def deal24(seen, src, url, ans, style, own=1):
+    c24.clear(); a24[:] = ans; ST24[:] = [style]
+    json.dump([{"t": "2026-10-21 19:43", "text": src, "url": url, "mid": 2400, "own": own}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals(seen)
+    (t,) = c24
+    return t
+seen24, KU24, GU24, TU24 = {"thvoice": {"t": TK("2026-10-21 20:00"), "k": 1}}, "https://link.coupang.com/a/h1NpZ1ygAT", "https://link.coupang.com/a/h1Nvu1bRx6", "https://toss.shopping/_m/5DR27WGo"
+k24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [KA24], "A")  # 시안 A 코멧(질문 차례)
+assert k24 == f"""{H.DISCLOSURE}
+
+핫팩 가격 비교해봤는데
+로켓 100g 중엔 코멧이 개당 295원으로 젤 싸네
+30개 8,860원, 150개로 사면 개당 269원까지 내려감
+리뷰도 1,400개 넘고
+가격은 바뀌니까 결제 전에 한번 확인 (오늘 저녁 7시 기준)
+다들 핫팩 몇 개씩 쟁여둬?
+
+👉 {KU24}""", k24
+g24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{G23}", GU24, [GA24], "B")  # 시안 B 하루온 군인 핫팩(B = 질문 X)
+assert g24 == f"""{H.DISCLOSURE}
+
+출퇴근용 큰 핫팩도 개당 가격 봄
+하루온 군인핫팩 160g 30개 13,520원 → 개당 451원
+리뷰 1만 개 넘음, 한 달 4,000명 넘게 삼
+포장 표기 최고 70도·20시간
+결제 전 가격 확인 필수 (10/21 19시 기준)
+
+👉 {GU24}""", g24
+t24 = deal24(seen24, f"{H.TOSS_NOTE}\n\n{S24}", TU24, [TA24], "A", own=None)  # 토스 애사비(커뮤니티 토스 딜, A — 앞 질문 뒤 1개 쉼 -> 질문 차례)
+assert t24 == f"""{H.TOSS_NOTE}
+
+퇴근하고 한 병씩 마시기 좋은 거 있길래
+웅진식품 애사비 파인애플맛 500ml 24병에 13,070원
+병당 545원꼴, 무료배송
+사무실 탕비실에 박스로 두기 좋겠다
+⚠️ 10/21 09:20 게시 시점 가격
+다들 탄산 대신 뭐 마셔?
+
+👉 {TU24}""", t24
+def body24(t):  # 대가성 문구와 링크 사이 줄들(토스 게시 시점 줄 빼고)
+    return [l for l in t.split("\n\n")[1].split("\n") if "게시 시점" not in l]
+for t, note, url, name, won, bad in ((k24, H.DISCLOSURE, KU24, "코멧", "8860원", ("써보니", "역대급", "눌러", "⭐")), (g24, H.DISCLOSURE, GU24, "하루온", "13520원", ("피로", "9,990원", "샀는데", "질렀", "씀?", "어디에 붙여", "🧤", "🔥")),
+                                     (t24, H.TOSS_NOTE, TU24, "애사비", "13070원", ("쿠팡", "보다", "비쌈", "최저", "다이어트", "1만6천원", "40%", "젤 싼", "비교", "🍍"))):
+    b = body24(t)
+    assert t.split("\n")[0] == note and len(t) <= 480 and t.endswith(f"\n\n👉 {url}") and not any(x in t for x in bad), t  # 첫 줄 대가성 문구 · 480자 · 링크 끝 · 거른 문장 X
+    assert not any(l.startswith(H.VOICE_LABEL) for l in b) and "👋" not in t and "📲" not in t and "🔥 [" not in t, t  # 라벨·제목 줄 X · 팔로우·📲 X
+    assert name in " ".join(b[:2]) and won in re.sub(r"[,\s]", "", " ".join(b)) and t.count("⚠️") == (note == H.TOSS_NOTE), t  # 상품명 = 둘째 줄 안 · 가격 · 빈 ⚠️ 줄 X
+    assert not any(re.search(YO24, l) for l in b) and sum(len(re.findall(EMO24, l)) for l in t.split("\n\n")[1].split("\n")) <= 1, t  # ~요 줄 0 · 이모지 ≤1(👉 링크 줄 빼고 — 토스 ⚠️ 줄도 셈)
+assert "말투 = 반말" in p24[0] and "말투 = 음슴체" in p24[1] and "말투 = 반말" in p24[2] and all("~요'로 끝나는 말" in p for p in p24[:3])  # 말투 = 그 글의 A·B 하나
+assert "상품명: 코멧 포켓형 손난로 핫팩 100g, 30개\n가격: 8,860원\n재료:\n" in p24[0] and "150개 40,310원이면 1개당 269원" in p24[0] and "q = 마지막에" in p24[0] and "토스 딜:" not in p24[0], p24[0]  # 재료 = 줄이기 전 글(250자 th_fit 전)
+assert "👋" not in p24[0] and "t.me" not in p24[0] and "link.coupang" not in p24[0] and "q = 빈 문자열" in p24[1] and "최근 글 1:\n핫팩 가격 비교해봤는데" in p24[1], p24[1]  # 최근 글 본문을 프롬프트에 · B = 질문 X
+assert "토스 딜:" in p24[2] and "최근 글 2:\n출퇴근용" in p24[2] and "q = 마지막에" in p24[2] and "최근 질문: 다들 핫팩 몇 개씩 쟁여둬?" in p24[2] and "게시 시점" not in p24[2].split("재료:")[1], p24[2]
+v24 = seen24["thvoice"]; assert v24["s"] == "A" and v24["k"] == 0 and len(v24["f"]) == 3 and v24["q"] == ["다들 핫팩 몇 개씩 쟁여둬?", "다들 탄산 대신 뭐 마셔?"] and len(v24["b"]) == 3, v24
+# Claude 실패 = 지금 틀 그대로(👋·📲·⚠️ 줄 — 빈 ⚠️ 줄 X), seen 그대로
+f24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [RuntimeError("api")], "B")
+assert "👋" in f24 and "📲" in f24 and "🔥 [쿠팡] 코멧" in f24 and not re.search(EMPTY23, f24) and "결제 전 최종가 확인 (10/21 19:12 가격)" in f24 and seen24["thvoice"] == v24, f24
+m24 = seen24["thab"]["m"]; assert m24["p1"]["n"] == m24["p4"]["n"] == "[쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)" and (m24["p1"]["v"], m24["p2"]["v"], m24["p3"]["v"]) == ("A", "B", "A") and "v" not in m24["p4"], m24  # 지금 틀 제목 · 말투
+json.dump({}, open(H.METRICS, "w")); H.E["METRICS_DAY"] = "2026-10-21"  # metrics.json: 사람 느낌 글도 분류·가격대는 지금 틀 제목으로 + v = 말투
+H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-21T10:43:00+0000"} for i, t in (("p1", k24), ("p2", g24), ("p4", f24))]}) if "/me/threads?" in url \
+    else json.dumps({"data": [{"name": "views", "values": [{"value": 7}]}]}) if "/insights?" in url else http24(url)
+H.metrics(seen24); r24 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-21"]["rows"] if r["ch"] == "th"}
+assert r24["p1"]["price"] == r24["p4"]["price"] == "~1만" and r24["p2"]["price"] == "1~3만" and r24["p1"]["cat"] == r24["p4"]["cat"] and r24["p1"]["shop"] == "coupang" and (r24["p1"]["v"], r24["p2"]["v"]) == ("A", "B") and "v" not in r24["p4"], r24
+del H.E["METRICS_DAY"]; H.http = http24
+# 바로 부르기(th_voice): 지금 틀 = F24
+F24 = f"{H.DISCLOSURE}\n\n{K23}\n\n👉 {KU24}\n{H.th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"
+def tv24(ans, seen=None, link=KU24, text=F24, style="A"):
+    a24[:] = ans; p24.clear(); ST24[:] = [style]; s = seen if seen is not None else {}
+    return H.th_voice(s, text, link), s
+L24 = ["바람 차가워져서 손난로 값 봤는데", "코멧 손난로 30개 8,860원", "개당 295원꼴", "리뷰도 1,400개 넘게 달림"]
+for ls in (["핫팩 쟁일 때 됐음", "1개 295원이면 괜찮은 가격", "30개 8,860원 · 코멧"],  # 둘째 줄까지 상품명 X
+           ["핫팩 쟁일 때 됐음", "코멧 손난로 괜찮음", "30개짜리 개당 295원"],  # 가격(8,860원) X
+           ["제가 써보니 따뜻함", "역대급 코멧 8,860원", "클릭!"], []):  # 다 걸러짐·빈 답
+    assert tv24([{"lines": ls, "q": ""}]) == (F24, {}), ls
+o24 = tv24([{"lines": ["핫팩 쟁일 때 됐음", "코멧 손난로 괜찮네", "30개 8,860원"], "q": ""}])[0]; assert o24.split("\n")[4] == "30개 8,860원", o24  # 가격은 셋째 줄이어도 O(시안 A)
+o24 = tv24([{"lines": L24 + ["추가 한 줄", "또 한 줄"], "q": ""}])[0]; assert all(l in o24 for l in L24) and "추가 한 줄" not in o24, o24  # 문장은 4줄까지
+YA24 = {"lines": ["핫팩 쟁일 때 됐어요", "코멧 손난로 30개 8,860원이에요"], "q": ""}  # 해요체
+assert tv24([YA24, YA24])[0] == F24 and len(p24) == 2 and "~요로 끝나는 말 X(반말로)" in p24[1]  # ~요 줄 2번 = 지금 틀
+assert tv24([YA24, YA24], style="B")[0] == F24 and "~요로 끝나는 말 X(음슴체로)" in p24[1]
+o24 = tv24([{"lines": ["코멧 손난로 30개 8,860원 · 와우 회원가라 확인 필요", "주요 구성 그대로 30개", "추워지면 샀대요, 다들"], "q": ""}, {"lines": L24, "q": ""}])[0]
+assert len(p24) == 2 and o24.split("\n")[2] == L24[0], o24  # 줄 중간 '~대요'도 해요체 -> 1번 다시
+o24 = tv24([{"lines": ["코멧 손난로 30개 8,860원 · 와우 회원가라 확인 필요", "주요 구성 그대로 30개"], "q": ""}])[0]
+assert len(p24) == 1 and "확인 필요\n주요 구성" in o24, o24  # '필요'·'주요'는 해요체 아님
+for yo in ("개당 295원 30개요", "핫팩 쟁일 때죠"):
+    assert tv24([{"lines": ["코멧 손난로 30개 8,860원", yo], "q": ""}] * 2)[0] == F24 and len(p24) == 2, yo  # '30개요'·'~죠'도 해요체
+o24 = tv24([{"lines": ["요기요 상품권 2만원권 쓸 데 있으면", "요기요 2만원권 18,000원"], "q": ""}], None, "https://link.coupang.com/a/YG",
+           f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG")[0]
+assert len(p24) == 1 and "\n요기요 2만원권 18,000원\n" in o24, o24  # 상품명 속 '요'는 해요체 아님
+o24 = tv24([{"lines": ["요기요 상품권 2만원권 쓸 데 있으면", "요기요 2만원권 18,000원"], "q": "요기요 자주 써?"}], {"thvoice": {"t": 1, "k": 1}}, "https://link.coupang.com/a/YG",
+           f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG")[0]
+assert o24.endswith("\n요기요 자주 써?\n\n👉 https://link.coupang.com/a/YG"), o24  # 질문도 상품명 속 '요'는 빼고 봄
+assert tv24([{"lines": ["주말에 구워 먹을 고기 찾다가 봄", "국내산이라 리뷰 많음", "1kg 12,900원"], "q": ""}], None, "https://link.coupang.com/a/PK",
+            f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 국내산 한돈 삼겹살 구이용 1kg (12,900원)\n\n로켓배송\n\n👉 https://link.coupang.com/a/PK")[0].startswith(H.DISCLOSURE + "\n\n🔥")  # '국내산' 같은 낱말은 상품명 아님
+assert tv24([{"lines": ["코멧 손난로 30개 8,860원"], "q": ""}])[0] == F24  # 1줄 = 지금 틀
+LK24 = "https://link.coupang.com/a/" + "z" * 330
+assert tv24([{"lines": ["바람 차가워져서 손난로 값 비교해봤는데 다들 많이 사고 리뷰도 많고", "코멧 손난로 30개 8,860원", "리뷰도 1,400개 넘고 한 달에 2,000명 넘게 삼"], "q": ""}], None, LK24, F24.replace(KU24, LK24))[0] == F24.replace(KU24, LK24)  # 480자 맞추다 1줄 = 지금 틀
+assert tv24([{"lines": ["무료배송이라 부담 없음", "핫팩 쟁일 때", "30개 8,860원"], "q": ""}], None, KU24, F24.replace("🔥 [쿠팡] 코멧", "🔥 [쿠팡] 무료배송 코멧"))[0].startswith(H.DISCLOSURE + "\n\n🔥")  # '무료배송' 같은 낱말은 상품명 아님
+assert tv24([{"lines": ["코멧 손난로 30개 8,860원입니다", "개당 295원"], "q": ""}] * 2)[0] == F24 and "들고 다니다" in tv24([{"lines": ["코멧 손난로 30개 8,860원", "주머니에 넣고 들고 다니다 보면 금방 씀"], "q": ""}])[0]  # ~니다(다니다는 X)
+o24 = tv24([{"lines": L24[:2] + ["정가 16,000에서 내려옴", "다들 몇 개씩 씀？"] + L24[2:], "q": ""}], style="B")[0]; assert o24 != F24 and "16,000" not in o24 and "？" not in o24, o24  # 재료에 없는 기준 가격 · 전각 물음표
+assert all(re.search(H.VOICE_BAN, x) for x in ("저는 30개 샀음", "어제 30개 샀음", "재구매함", "요즘 쓰는 중", "이거 나도", "바로 질렀음")) and not any(
+    re.search(H.VOICE_BAN, x) for x in ("2,000명 넘게 샀음", "한 달 2,000명 넘게 삼", "난방비 아끼기", "가격 비교해봤는데", "토스 30일 내 최저가"))  # 써 본 척(반말·음슴체) — 남이 산 수·'비교해봤는데'는 OK
+o24 = tv24([{"lines": L24 + ["다들 몇 개씩 씀?"], "q": ""}], style="B")[0]; assert "?" not in o24, o24  # 질문은 q에만(B·질문 차례 아님 = 질문 X)
+assert tv24([{"lines": KA24["lines"], "q": ""}] * 2, {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", KA24["lines"][0])]}})[0] == F24 and len(p24) == 2 and "다른 문장으로 시작" in p24[1]  # 같은 첫 문장 2번 = 지금 틀
+o24, s24 = tv24([{"lines": KA24["lines"], "q": ""}, {"lines": L24, "q": ""}], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", KA24["lines"][0])]}})
+assert len(p24) == 2 and o24.split("\n")[2] == L24[0] and s24["thvoice"]["f"][-1] == re.sub(r"[\W_]+", "", L24[0]), o24  # 1번 다시 쓰면 그 글
+o24, s24 = tv24([{"lines": L24, "q": "다들 핫팩 몇 개씩 쟁여둬"}], {"thvoice": {"t": 1, "k": 2, "q": ["다들 핫팩 몇 개씩 쟁여둬?"]}})
+assert "쟁여" not in o24 and s24["thvoice"]["q"] == ["다들 핫팩 몇 개씩 쟁여둬?"] and s24["thvoice"]["k"] == 3, o24  # 최근 10개와 같은 질문 X(띄어쓰기·물음표만 다른 것도)
+for q in ("클릭해 봤어?", "핫팩 몇 개 쟁이세요?"):
+    assert q not in tv24([{"lines": L24, "q": q}], {"thvoice": {"t": 1, "k": 5}})[0]  # 질문도 거름(금지어·~요)
+o24, s24 = tv24([{"lines": L24, "q": "핫팩은 주머니파야, 붙이는파야?"}], {"thvoice": {"t": 1, "k": 5}}, style="B")
+assert "주머니파" not in o24 and "q = 빈 문자열" in p24[0] and s24["thvoice"]["k"] == 6, o24  # B(음슴체) = 질문 X
+o24 = tv24([{"lines": L24, "q": "핫팩은 주머니파야?"}], {"thvoice": {"t": 1, "k": 0}})[0]; assert "q = 빈 문자열" in p24[0] and "주머니파" not in o24  # A라도 바로 앞 글이 질문이면(k 0) X
+o24 = tv24([{"lines": L24, "q": "핫팩은 주머니파야, 붙이는파야?"}], {"thvoice": {"t": 1, "k": 1}})[0]
+assert o24.endswith(f"(오늘 저녁 7시 기준)\n핫팩은 주머니파야, 붙이는파야?\n\n👉 {KU24}"), o24  # 질문 = 마지막 줄(가격 기준 줄 다음)
+time.time = lambda: TK("2026-10-22 09:00"); assert "\n가격은 바뀌니까 결제 전에 한번 확인 (어제 저녁 7시 기준)\n" in tv24([{"lines": L24, "q": ""}])[0]  # 다음 날 = '어제 저녁 7시'(Cowork 시안)
+time.time = lambda: TK("2026-10-24 09:00"); assert "(10/21 저녁 7시 기준)" in tv24([{"lines": L24, "q": ""}])[0] and "(10/21 19시 기준)" in tv24([{"lines": L24, "q": ""}], style="B")[0]
+time.time = lambda: TK("2026-10-21 21:00")
+o24 = tv24([{"lines": ["🔥 오늘 핫팩 값 봄 🧤", "코멧 손난로 30개 8,860원 🔥", "개당 295원 ✨"], "q": ""}], style="B")[0]
+assert not re.search(EMO24, o24.split("\n\n")[1]) and "\n코멧 손난로 30개 8,860원\n개당 295원\n" in o24, o24  # 이모지 2개↑ = 다 뺌(🔥로 시작하는 줄은 라벨이라 빠짐)
+assert "↘" not in tv24([{"lines": ["핫팩 값 봄 🧤", "코멧 손난로 30개 8,860원 ↘️", "개당 295원 ▶️ 150개면 269원"], "q": ""}], style="B")[0]  # VS16 붙은 기호(↘️·▶️)도 이모지
+o24 = tv24([{"lines": ["오늘 밤까지 ⏰ 핫팩 값 봄", "코멧 손난로 30개 8,860원 🆕", "개당 295원 ⬇️ → 젤 쌈‼️"], "q": ""}], style="B")[0]
+assert not re.search(EMO24, o24.split("\n\n")[1]) and "\n개당 295원 → 젤 쌈\n" in o24, o24  # ⏰·🆕·⬇️·‼️도 이모지(→는 아님)
+o24 = tv24([{"lines": L24[:2] + ["⚠ 22% 할인은 정가 기준"] + L24[2:], "q": ""}])[0]; assert o24 != F24 and "⚠ 22%" not in o24, o24  # ⚠(VS16 없이)도 라벨 줄
+LONG24 = "https://link.coupang.com/a/" + "x" * 273  # 300자 링크(TH_LINK_MAX) -> 질문 먼저, 그다음 뒤 줄부터 — 상품명·가격 줄·대가성 문구·가격 기준·링크는 그대로
+LP24 = ["바람 차가워져서 손난로 값 봤는데 생각보다 다들 많이 사더라", "코멧 손난로 괜찮네", "리뷰도 1,400개 넘게 달렸고 한 달에 2,000명 넘게 삼", "30개 8,860원이고 개당 295원꼴"]
+o24 = tv24([{"lines": L24, "q": "다들 핫팩 몇 개씩 쟁여 두고 겨울 나는 편이야, 30개면 충분할까?"}], {"thvoice": {"t": 1, "k": 1}}, LONG24, F24.replace(KU24, LONG24))[0]
+assert len(o24) <= 480 and "쟁여" not in o24 and all(l in o24 for l in L24), o24  # 질문만 빼면 들어감
+o24 = tv24([{"lines": LP24, "q": "핫팩 몇 개 쟁여?"}], {"thvoice": {"t": 1, "k": 1}}, LONG24, F24.replace(KU24, LONG24))[0]
+assert len(o24) <= 480 and "쟁여" not in o24 and LP24[2] not in o24 and all(l in o24 for l in (LP24[0], LP24[1], LP24[3])) and "(오늘 저녁 7시 기준)" in o24 and o24.startswith(H.DISCLOSURE) and o24.endswith(LONG24), o24
+o24 = tv24([{"lines": LP24, "q": ""}], None, LONG24 + "y" * 30, F24.replace(KU24, LONG24 + "y" * 30))[0]
+assert len(o24) <= 480 and o24.split("\n\n")[1].split("\n")[:2] == [LP24[1], LP24[3]], o24  # 더 길면 첫 줄도 — 상품명·가격 줄은 끝까지 남김
+assert tv24([{"lines": LP24, "q": ""}], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", LP24[1])]}}, LONG24 + "y" * 30, F24.replace(KU24, LONG24 + "y" * 30))[0] == F24.replace(KU24, LONG24 + "y" * 30)  # 줄여서 바뀐 첫 줄도 최근 글과 같으면 X
+x24 = F24.replace(KU24, LONG24 + "y" * 120); assert tv24([{"lines": L24, "q": ""}], None, LONG24 + "y" * 120, x24)[0] == x24  # 그래도 480자 넘음 = 지금 틀
+# 토스 API 개별 글(toss_th: 💰 줄·🛒 링크 줄·게시 시점 줄) -> 게시 시점 줄 그대로 + 👉 링크
+tt24 = H.toss_th("웅진식품 애사비 파인애플맛 500ml 24병", "https://toss.shopping/_m/T24", ["💰 <b>13,070원</b> (20%↓)", "🙋 음료 박스로 사는 집"])
+o24 = tv24([{"lines": ["시원하게 쟁여 두기 좋은 음료", "애사비 파인애플맛 24병 13,070원", "다른 곳보다 쌈"], "q": ""}], None, "https://toss.shopping/_m/T24", tt24, "B")[0]
+assert o24 == f"{H.TOSS_NOTE}\n\n시원하게 쟁여 두기 좋은 음료\n애사비 파인애플맛 24병 13,070원\n⚠️ 10/21 21:00 게시 시점 가격\n\n👉 https://toss.shopping/_m/T24", o24
+assert "💰 13,070원 (20%↓)" in p24[0] and "🛒" not in p24[0], p24[0]
+tm24 = H.toss_th("웅진식품 애사비 파인애플맛 500ml 24병", "https://toss.shopping/_m/T24", ["💰 <b>13,070원</b> (20%↓) · 30일 내 최저가"])
+o24 = tv24([{"lines": ["토스 30일 내 최저가 찍음", "애사비 24병 13,070원, 20% 할인", "온라인 최저가임", "시중보다 쌈"], "q": ""}], None, "https://toss.shopping/_m/T24", tm24, "B")[0]
+assert "\n토스 30일 내 최저가 찍음\n애사비 24병 13,070원, 20% 할인\n⚠️" in o24 and "온라인" not in o24 and "시중" not in o24, o24  # 토스 자체 '30일 내 최저가'는 OK, 다른 곳과 비교는 X
+assert tv24([], None, KU24, "🔥 [쿠팡] 대가성 문구 없는 글")[0] == "🔥 [쿠팡] 대가성 문구 없는 글" and not p24  # 대가성 문구 없는 글 = 그대로(Claude 안 부름)
+b24, r24 = H.th_ab(k24, KU24)  # 링크 B(첫 댓글): 본문 주소 X + '👇', 첫 댓글 = 대가성 문구 + 👉 링크 + 📲
+assert b24.startswith(H.DISCLOSURE) and b24.endswith("다들 핫팩 몇 개씩 쟁여둬?\n\n" + H.TH_AB_MARK) and "http" not in b24 and r24 == f"{H.DISCLOSURE}\n\n👉 {KU24}\n📲 실시간 알림 t.me/hotdeal_pick", (b24, r24)
+assert len(re.findall(r"(?<!def )\bth_voice\(", inspect.getsource(H))) == 1 and "vt = th_voice(seen, text, link, src) if TH_VOICE else text" in inspect.getsource(H.th_deal)  # th_deal(Threads 개별 딜 글)만 — 채널·묶음 글 X
+assert H.TH_VOICE is True and vc0 == (True, 10 * 60)  # 기본값: 켬 · ±10분
+H.random = sv24[10]; sty24 = []  # 진짜 무작위: A·B 둘 다 나옴
+for n in range(40):
+    s = {}; a24[:] = [{"lines": [f"핫팩 {n}번째로 봄", "코멧 손난로 30개 8,860원"], "q": ""}]; H.th_voice(s, F24, KU24); sty24.append(s["thvoice"]["s"])
+assert set(sty24) == {"A", "B"}, sty24
+# 개별 글 간격 35~55분: 앞 글 시각으로 정함(같은 글 뒤엔 실행마다 같은 값), 글마다 다름
+H.th_solo, H.TH_SOLO_GAP, H.TH_GAP_JITTER = sv24[2], 45 * 60, 10 * 60
+gp24 = [H.th_gap(TK("2026-10-21 12:00") + k * 137) for k in range(300)]
+assert 35 * 60 <= min(gp24) < 37 * 60 and 53 * 60 < max(gp24) <= 55 * 60 and len(set(gp24)) > 200 and H.th_gap(TK("2026-10-21 12:00") + 137) == gp24[1], (min(gp24), max(gp24))
+gq24 = [H.th_gap(TK("2026-10-21 12:00") + k * 3420) // 60 for k in range(40)]  # 실제 글 간격(~57분 = 실행 4번)마다: 글마다 고르게 흔들림(앞 글과 거의 같은 값 X)
+assert min(gq24) < 40 and max(gq24) > 50 and len({b - a for a, b in zip(gq24, gq24[1:])}) >= 12, gq24  # 앞 글 값에서 일정하게 밀리는 것 X
+for k in range(5):
+    last = TK("2026-10-21 20:00") + 997 * k; g = H.th_gap(last); s = {"thsolo_20261021": {"t": last, "n": 1, "b": 0, "last": last}}
+    time.time = lambda: last + g - 1; assert not H.th_solo(s, "x") and not H.th_solo(s, "", reopen="night", gate=True)
+    time.time = lambda: last + g; assert H.th_solo(s, "x") and H.th_solo(s, "", reopen="night", gate=True)
+os.remove("posts24.json")
+(H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, tk24, H.TOSS_NO_CMP, H.ai_voice, H.TH_SOLO_GAP, time.time, H.random) = sv24
+H.E.pop("THREADS_TOKEN", None) if tk24 is None else H.E.update(THREADS_TOKEN=tk24)
+H.TH_VOICE, H.TH_GAP_JITTER = False, 0
+# 9-25 (10/22 00:15 진우 '끝나가는 🔥 먼저'): 채움 칸 — 기다리는 진우 🔥 딜 중 다음 칸(간격 최대 55분 + 다음 실행 RUN_GAP 20분)까지 기다리면 3시간 창이 지나는 것
+#       = 차례와 상관없이 이번 칸(창이 먼저 끝나는 것부터, thfill = own -> 다음 칸 토스) · 진우 딜 없거나 창 여유 있으면 예전 번갈아 그대로
+sv25 = (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, H.E.get("THREADS_TOKEN"), H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER)
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER = 99, 45 * 60, 1, th_strong0, True, 10 * 60  # 실제 값(간격 흔들기 켬)
+H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, H.E["THREADS_TOKEN"] = http21, "posts25.json", False, (lambda s: None), "tk"
+HB25 = "🔥 [쿠팡] 하루온 붙이는 핫팩 50g 10매 × 4개 (40매, 13,370원)\n\n와우 할인 1,600원 → 1매당 334원 — 같은 상품 다른 구성보다 싸요(10매 490원 · 20매 390원 · 30매 와우 359원)\n⭐ 리뷰 52,427 · 한 달 600명 이상 구매 · 🚀 로켓배송(새벽) · 최고 63도·15시간(포장 표기)\n⚠️ 확인할 점: 와우 회원가(와우 아니면 14,970원·1매 374원) · 결제 전 최종가 확인 (10/21 19:19 가격)"
+own25 = lambda mid, at, src: {"t": "2026-10-21 " + at, "url": f"https://link.coupang.com/a/W{mid}", "mid": mid, "own": 1, "text": f"{H.DISCLOSURE}\n\n{src}"}
+def night25(rule_runs):  # 10/21 밤 재현: 19:43 진우 🔥 2(코멧 · 하루온 군인 = 구매 2위 ② strong) + 19:57 진우 🔥 1(하루온 붙이는) + 토스 대기 3
+    json.dump([own25(2501, "19:43", K23), own25(2502, "19:43", G23), own25(2503, "19:57", HB25)], open(H.POSTS, "w"), ensure_ascii=False)
+    s = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 19:26")}, "thfill": {"t": 1, "k": "toss"},
+         "thtoss": {"t": 1, "q": [tq21(1, "19:50", 0), tq21(2, "20:50", 0), tq21(3, "21:50", 0)]}}
+    got, logs = {}, []
+    for at in rule_runs:
+        names, log = run21(s, at); logs.append((at, log))
+        got.update({n: at for n in names if n.startswith("토스")})
+        got.update({p["mid"]: at for p in json.load(open(H.POSTS)) if p.get("th") and p["mid"] not in got})
+    return got, logs, s
+runs25 = [time.strftime("%H:%M", time.gmtime(TK("2026-10-21 19:57") + 9 * 3600 + 14 * 60 * k)) for k in range(18)]  # 그날처럼 ~14분마다(19:57·20:11·…·23:55), 간격 흔들기 없음(배포 전)
+H.TH_GAP_JITTER = 0; got25, logs25, s25 = night25(runs25); H.TH_GAP_JITTER = 10 * 60
+assert (got25[2502], got25[2501], got25[2503]) == ("20:11", "21:07", "22:03") and all(m in got25 and got25[m] < ("22:43" if m < 2503 else "22:57") for m in (2501, 2502, 2503)), got25  # 진우 🔥 3개 다 3시간 안에(예전 = 22:03 토스 -> 22:59엔 창 끝남)
+when25 = sorted(got25.values()); assert all(TK(f"2026-10-21 {b}") - TK(f"2026-10-21 {a}") >= 35 * 60 for a, b in zip(when25, when25[1:])), got25  # 개별 글 간격 35분↑ 그대로
+due25 = [(at, l) for at, log in logs25 for l in log.splitlines() if "창 끝남" in l]
+assert due25 == [("22:03", "threads fill turn own(창 끝남 54분 전) (대기 own 1·toss 3)")], (due25, got25)
+nxt25 = min(at for at in got25.values() if at > got25[2503]) if any(at > got25[2503] for at in got25.values()) else None
+assert nxt25 is None or [k for k, v in got25.items() if v == nxt25][0] in ("토스1", "토스2", "토스3"), got25  # 다음 칸 = 토스(thfill own)
+assert got25[2502] == min(got25.values()), got25  # strong(② 구매 2위)은 그대로 먼저
+gj25, _, _ = night25(runs25); assert all(m in gj25 and gj25[m] < ("22:43" if m < 2503 else "22:57") for m in (2501, 2502, 2503)), gj25  # 간격 흔들기 켜도 3개 다
+json.dump([own25(2514, "19:50", K23)], open(H.POSTS, "w"), ensure_ascii=False)
+s25 = {"thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq21(8, "21:40", 0)]}}
+g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill turn own (대기 own 1·toss 1)" in log25 and "창 끝남" not in log25, log25  # 원래 진우 차례면 '창 끝남' 로그 X(규칙이 차례를 바꿀 때만)
+# 창 여유 있음 = 예전 번갈아 그대로(직전 채움 own -> 토스) · 진우 딜 없음 = 토스
+json.dump([own25(2511, "21:30", K23)], open(H.POSTS, "w"), ensure_ascii=False)
+s25 = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(4, "21:40", 0)]}}
+g25, log25 = run21(s25, "22:00"); assert g25 == ["토스4"] and "threads fill turn toss (대기 own 1·toss 1)" in log25 and "창 끝남" not in log25, (g25, log25)  # 21:30 진우 딜 = 창 00:30, 22:00 + 75분 = 23:15 < 00:30
+s25 = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(5, "21:40", 0)]}}
+json.dump([own25(2512, "20:16", K23)], open(H.POSTS, "w"), ensure_ascii=False)
+g25, log25 = run21(s25, "22:00"); assert g25 == ["토스5"] and "창 끝남" not in log25, log25  # 창 23:16 = 22:00 + 76분 > 75분 -> 아직 차례대로
+s25 = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(6, "21:40", 0)]}}
+json.dump([own25(2513, "20:14", K23)], open(H.POSTS, "w"), ensure_ascii=False)
+g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill turn own(창 끝남 74분 전) (대기 own 1·toss 1)" in log25 and s25["thfill"]["k"] == "own", log25  # 74분 < 75분 -> 이번 칸
+# 여러 개 = 창이 먼저 끝나는 것부터(직전 채움이 own이어도)
+json.dump([own25(2521, "19:40", G23.replace("구매 2위", "구매 9위")), own25(2522, "19:30", K23), own25(2523, "21:50", HB25)], open(H.POSTS, "w"), ensure_ascii=False)
+s25 = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(7, "21:40", 0)]}}
+g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill turn own(창 끝남 30분 전) (대기 own 3·toss 1)" in log25, (g25, log25)
+os.remove("posts25.json")
+(H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk25, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER) = sv25
+H.E.pop("THREADS_TOKEN", None) if tk25 is None else H.E.update(THREADS_TOKEN=tk25)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
