@@ -76,7 +76,7 @@
 {"date": "2026-10-20", "ch": "tg", "id": 1398, "shop": "toss", "cat": "생필품", "price": "~1만", "at": "22:56", "views": 1, "react": 0},
 {"date": "2026-10-20", "ch": "tg", "id": 1399, "shop": "toss", "cat": "기타", "price": "~1만", "at": "23:10", "views": 1, "react": 0},
 {"date": "2026-10-20", "ch": "tg", "id": 1400, "shop": "naver", "cat": "식품", "price": "~1만", "at": "23:38", "views": 1, "react": 0},
-{"date": "2026-10-20", "ch": "th", "id": "18468981778191278", "shop": "toss", "cat": "화장품", "price": "", "at": "00:00", "views": 11, "react": 3, "likes": 0, "replies": 3, "ab": "B", "lk": "direct", "rv": 2},
+{"date": "2026-10-20", "ch": "th", "id": "18468981778191278", "shop": "toss", "cat": "화장품", "price": "", "at": "00:00", "views": 11, "react": 3, "likes": 0, "replies": 3, "ab": "B", "lk": "direct", "rv": 2, "v48": 11, "rv48": 2},
 {"date": "2026-10-20", "ch": "th", "id": "18166417240469219", "shop": "기타", "cat": "날씨", "price": "", "at": "07:36", "views": 18, "react": 0, "likes": 0, "replies": 0},
 {"date": "2026-10-20", "ch": "th", "id": "18500374228101748", "shop": "toss", "cat": "기타", "price": "", "at": "08:04", "views": 8, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct"},
 {"date": "2026-10-20", "ch": "th", "id": "18155826079516097", "shop": "toss", "cat": "기타", "price": "", "at": "08:55", "views": 2, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 1},
