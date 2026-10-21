@@ -3822,6 +3822,57 @@ H.TH_SOLO_FILL = fill21
 os.remove("posts21.json")
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk21, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL) = sv21
 H.E.pop("THREADS_TOKEN", None) if tk21 is None else H.E.update(THREADS_TOKEN=tk21)
+# 9-22 (10/21 22:30 점검): 토스 딜이 든 하루 리스트(21시 모아보기·카드 이미지·Threads 카드 글·블로그 초안) = [몰] 태그·다른 몰 이름 X + 게시 시점 줄
+#       (10/14 22:30 TOP 리스트와 같은 규칙 — 10/21 모아보기에 [토스]와 [네이버]·[쿠팡]이 같이 나감) · 토스 딜 없으면 예전 그대로
+import cards as C22
+sv22 = (H.tg, H.POSTS, time.time, C22.make, C22.reel, H.fill_reel, H.tg_video, H.TOSS_NO_CMP, H.E.get("IG_TOKEN"), H.E.get("THREADS_TOKEN"), H.http, H.th_bundle)
+D22, sent22, made22, tb22 = "2026-10-22", [], [], []
+P22 = [{"t": f"{D22} 09:20", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 웅진식품 애사비 파인애플맛 500ml 24병 (13,070원/무배)\n\n선착순 3,000개예요\n💡 단위가격 병당 545원", "url": "https://toss.shopping/_m/A22", "mid": 2201, "s": 7},
+       {"t": f"{D22} 10:31", "text": "🔥 [네이버] 포크밸리 한돈 삼겹살 1kg (네멤18,900원/네멤무료)\n\n쿠팡보다 싸요 · 100g당 1,890원", "url": "https://search.shopping.naver.com/search/all?query=x", "mid": 2202, "s": 8},
+       {"t": f"{D22} 19:43", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)\n\n1개당 295원이에요", "url": "https://link.coupang.com/a/K22", "mid": 2203, "own": 1, "s": 6}]
+H.tg = lambda m, **p: sent22.append((m, p)) or {"message_id": 7000 + len(sent22)}
+C22.make, C22.reel, H.fill_reel, H.tg_video, H.TOSS_NO_CMP = (lambda items, *a, **k: made22.append([i["title"] for i in items])), (lambda *a, **k: "reel22.mp4"), (lambda ps: None), (lambda *a, **k: None), True
+H.E.pop("IG_TOKEN", None); time.time = lambda: TK(f"{D22} 21:05")
+plain22 = lambda x: H.html.unescape(re.sub(r"<[^>]+>", "", x))
+names22 = lambda txt: [plain22(l) for l in txt.split("\n") if re.match(r"\d+\. ", plain22(l))]
+assert H.toss_list(P22) and not H.toss_list(P22[1:]) and H.list_name(P22[1], True) == "포크밸리 한돈 삼겹살 1kg (네멤18,900원)" and H.list_name(P22[1], False) == H.title_of(P22[1]["text"])
+for ps22, toss22 in ((P22, True), (P22[1:], False)):
+    sent22.clear(); made22.clear(); H.digest({}, ps22)
+    ch22 = next(p["text"] for m, p in sent22 if p.get("chat_id") == H.CHANNEL)
+    bl22 = next(p["text"] for m, p in sent22 if p.get("chat_id") == H.ADMIN and "블로그용" in p.get("text", ""))
+    rows22 = names22(ch22)
+    assert len(rows22) == len(ps22) and ("게시 시점 가격" in ch22) == toss22, ch22
+    assert (not any(re.search(H.OTHER_STORES + r"|\[", r) for r in rows22)) == toss22 and ("1. 웅진식품 애사비 파인애플맛 500ml 24병 (13,070원)" in rows22) == toss22, rows22
+    assert (H.TOSS_NOTE in ch22.split("📋")[0]) == toss22 and H.DISCLOSURE in ch22.split("📋")[0], ch22[:200]  # 대가성 문구는 맨 위 그대로(목록 앞)
+    assert (not any(re.search(r"\[(?:토스|네이버|쿠팡)\]", t) for t in made22[0])) == toss22 and len(made22[0]) == len(ps22), made22  # 카드 이미지 = 몰 이름 칸 X
+    body22 = [l for l in bl22.split("\n") if l and not l.startswith(H.NOTE_STARTS + ("이 포스팅은", "👉 http", "더 많은 핫딜", "실시간 알림"))]
+    assert (not any(re.search(H.OTHER_STORES + r"|\[토스\]", l) for l in body22)) == toss22, body22  # 블로그 초안도(제목·코멘트 줄 — 다른 몰 이름 조각 뺌)
+    assert ("100g당 1,890원" in bl22) and (("쿠팡보다 싸요" in bl22) != toss22) and ("게시 시점 가격" in bl22) == toss22, bl22  # 블로그 초안도 게시 시점 줄
+    assert ("포크밸리 한돈 삼겹살 1kg (네멤18,900원/네멤무료)" in made22[0]) == toss22, made22  # 카드 이미지 배송 칸('/무료')은 그대로
+# 21시 모아보기에 합친 '🌙 오늘 밤 예약 특가' 줄(PREVIEW_MIN개 미만)도 같은 글: 토스 딜이 든 모아보기 = 밤 줄 쿠팡 비교 X · 토스 딜이 밤 줄에만 있어도 규칙 · 밤 줄 링크의 대가성 문구도 맨 위
+ev22 = H.EVENTS; H.EVENTS = "ev22.json"
+NE22 = {"at": f"{D22} 23:10", "deal": True, "url": "https://link.coupang.com/a/N22", "text": "🔥 <b>[쿠팡] 메르헨트 폼클렌징 500ml 2개 (11,900원)</b>\n\n💡 쿠팡 같은 상품(17,900원)보다 6,000원 쌈"}
+NT22 = {"at": f"{D22} 23:20", "deal": True, "url": "https://toss.shopping/_m/N22", "text": "🔥 <b>[토스] 밤 토스 특가 우유 24팩 (12,000원)</b>\n\n좋아요"}
+for ps22, evs22, toss22 in (([P22[0], P22[1]], [NE22], True), ([P22[1]], [NE22], False), ([P22[1]], [NT22], True)):
+    json.dump(evs22, open(H.EVENTS, "w"), ensure_ascii=False); sent22.clear(); time.time = lambda: TK(f"{D22} 21:05"); H.digest({}, ps22)
+    ch22 = next(p["text"] for m, p in sent22 if p.get("chat_id") == H.CHANNEL)
+    assert "🌙" in ch22 and ("쿠팡 같은 상품보다 6,000원 쌈" in ch22) == (not toss22 and evs22 == [NE22]) and ("게시 시점 가격" in ch22) == toss22, ch22
+    assert (not any(re.search(H.OTHER_STORES + r"|\[", r) for r in names22(ch22))) == toss22 and (H.DISCLOSURE in ch22.split("📋")[0]) == (evs22 == [NE22]), ch22  # 밤 줄 쿠팡 링크 = 쿠팡 대가성 문구
+os.remove(H.EVENTS); H.EVENTS = ev22
+# Threads 21시 카드 글: 줄 = 몰 이름 X, 토스 딜이 든 카드 = 게시 시점 줄 · 토스 딜 없으면 예전 그대로
+H.POSTS, H.http, H.th_bundle, H.E["THREADS_TOKEN"] = "posts22.json", (lambda url, body=None, headers=None, method=None: ""), (lambda seen, kind, text, link=None, image=None: tb22.append(text)), "tk"
+os.makedirs("docs/cards", exist_ok=True); open(f"docs/cards/{D22}.png", "wb").write(b"png"); os.path.exists(f"docs/cards/{D22}.json") and os.remove(f"docs/cards/{D22}.json")  # 번호 순서 파일은 posts22 기준으로 새로
+PT22 = {**P22[0], "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=22", "text": P22[0]["text"].replace(H.TOSS_NOTE + "\n\n", "")}  # [토스] 제목 + 쉐어링크 아님 = 수수료 줄 X, 카드 이미지엔 나옴
+for ps22, toss22 in ((P22, True), (P22[1:], False), ([PT22] + P22[1:], True)):
+    json.dump(ps22, open(H.POSTS, "w"), ensure_ascii=False); tb22.clear(); time.time = lambda: TK(f"{D22} 21:30"); H.threads({})
+    (th22,) = tb22; rows22 = names22(th22)
+    assert ("게시 시점 가격" in th22) == toss22 and (not any(re.search(H.OTHER_STORES + r"|\[", r) for r in rows22)) == toss22 and len(rows22) == len([p for p in ps22 if H.aff_note(p["url"])]), th22
+    assert (not any(re.search(r"\[", r) for r in H.card_caption(D22)[0])) == toss22  # 인스타 캡션 줄도 같은 줄
+for f in (f"docs/cards/{D22}.png", f"docs/cards/{D22}.json", "posts22.json"):
+    os.path.exists(f) and os.remove(f)
+(H.tg, H.POSTS, time.time, C22.make, C22.reel, H.fill_reel, H.tg_video, H.TOSS_NO_CMP, ig22, tk22, H.http, H.th_bundle) = sv22
+H.E.pop("IG_TOKEN", None) if ig22 is None else H.E.update(IG_TOKEN=ig22)
+H.E.pop("THREADS_TOKEN", None) if tk22 is None else H.E.update(THREADS_TOKEN=tk22)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

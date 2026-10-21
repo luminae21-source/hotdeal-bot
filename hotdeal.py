@@ -571,6 +571,21 @@ def toss_when(t=None):
     return f"⚠️ {int(t[5:7])}/{int(t[8:10])} {t[11:16]} 게시 시점 가격"
 
 
+def toss_list(ps):
+    """토스 딜이 든 리스트인지 — 그런 리스트는 다른 몰 이름 X·게시 시점 줄(10/14 22:30 TOP 리스트와 같은 규칙)."""
+    return TOSS_NO_CMP and any(is_toss(p.get("url"), p["text"]) for p in ps)
+
+
+def list_name(p, toss_in, ship=False):
+    """리스트 줄 제목: 토스 딜이 든 리스트면 [몰] 태그 없이 '상품명 (가격)'(10/21 22:30 점검: 21시 모아보기·카드·블로그에 [토스]와 [네이버]·[쿠팡]이 같이 나가던 것).
+    ship = 가격 뒤 배송 조각('/무배')도 그대로(카드 이미지의 배송 칸)."""
+    t = title_of(p["text"])
+    if not toss_in:
+        return t
+    _, name, price = parse(t)
+    return f"{name} ({price if ship else price.split('/')[0].strip()})" if price else name
+
+
 def add_when(text, ents, t=None):
     """토스 글에 게시 시점 가격 줄이 없으면 출처 줄 앞(없으면 끝)에 넣음(deal_post와 같은 자리). 엔티티 오프셋은 UTF-16 단위로 뒤로 밂."""
     if "게시 시점 가격" in text:
@@ -2147,15 +2162,19 @@ def digest(seen, posts):
     if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
         return
     urls = [f"{SITE}p/{posts.index(p)}.html?ref=tg" if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
-    rows = [f"{n}. <a href=\"{esc(u)}\">{esc(title_of(p['text']))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
-    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식)
-    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}?ref=tg\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
-    if 0 < len(night) < PREVIEW_MIN:
+    night = night if len(night) < PREVIEW_MIN else []
+    toss_in = toss_list(todays) or (TOSS_NO_CMP and any(is_toss(d["url"]) for d in night))  # 합친 밤 줄도 같은 글
+    if toss_in:  # 토스 딜이 든 모아보기 = 밤 줄도 다른 몰 비교 X(toss 밤 딜과 같은 처리)
+        night = [{**d, "sv": None, "weak": d["weak"] and "특가로는 약함"} for d in night]
+    rows = [f"{n}. <a href=\"{esc(u)}\">{esc(list_name(p, toss_in))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
+    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls + [d["url"] for d in night]) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식) — 밤 줄 링크도
+    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}?ref=tg\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
+    if night:
         tail = "\n\n🌙 <b>오늘 밤 예약 특가</b>\n" + "\n".join(night_line(d) for d in night) + tail
     while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자)·서식 100개(링크·굵게·기울임 + 글 속 주소 — 10/11 21시 딜 100개 넘어 ENTITIES_TOO_LONG) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
         more = f"\n… 외 {len(todays) - len(rows)}개는 사이트에서" if len(rows) < len(todays) else ""
-        text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + tail
+        text = (notes + "\n\n" if notes else "") + f"📋 <b>오늘의 딜 모아보기 ({kst.tm_mon}/{kst.tm_mday})</b>\n\n" + "\n".join(rows) + more + (f"\n\n{toss_when()}" if toss_in else "") + tail
         seen_text = html.unescape(re.sub(r"<[^>]+>", "", text))
         if (len(seen_text) <= 4000 and len(re.findall(r"<(?:a|b|i)[ >]", text)) + seen_text.count("http") <= 90
                 and sum(map(len, re.findall(r'href="([^"]*)"', text))) <= 5000) or len(rows) <= 1:  # 링크 주소 합도(10/11 21:39: 82개·9,863자 -> ENTITIES_TOO_LONG)
@@ -2169,7 +2188,8 @@ def digest(seen, posts):
             order = day_deals(posts, today)
             os.makedirs("docs/cards", exist_ok=True)
             json.dump([i for i, _ in order], open(f"docs/cards/{today}.json", "w"))  # 카드 번호 순서를 고정(사이트·캡션이 같이 씀)
-            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
+            ct = toss_list([p for _, p in order[:CARD_N]])  # 카드에 토스 딜이 있으면 몰 이름 X
+            cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", f"docs/cards/{today}.png")
             if IG_CAROUSEL and E.get("IG_TOKEN"):
                 deal_slides(today, [p for _, p in order[:CARD_N]])  # 인스타 넘기기용 딜 카드(재료 채운 글은 아래 릴스도 같이 씀)
         except Exception as e:
@@ -2328,14 +2348,16 @@ def oy_claim(seen):
 
 def blog_text(todays, kst):
     """네이버 블로그에 그대로 복붙할 제목+본문 (일반 텍스트, 링크 그대로 노출, 대가성 문구 포함)."""
-    title = f"{kst.tm_mon}월 {kst.tm_mday}일 핫딜 모음 | {title_of(todays[0]['text'])}" + (f" 외 {len(todays) - 1}건" if len(todays) > 1 else "")
+    toss_in = toss_list(todays)
+    title = f"{kst.tm_mon}월 {kst.tm_mday}일 핫딜 모음 | {list_name(todays[0], toss_in)}" + (f" 외 {len(todays) - 1}건" if len(todays) > 1 else "")
     items = []
     for n, p in enumerate(todays, 1):
-        t = title_of(p["text"])
+        t = list_name(p, toss_in)
         why = next((l for l in comment_of(p["text"]).split("\n") if l and not l.startswith("🤔")), "")  # 약한 딜 표시 줄 말고 코멘트(10/11 점검: 5점 진우 딜이 '약한 제품'만 남던 것)
+        why = strip_cmp("👉 " + why)[0][2:] if toss_in and why else why  # 토스 딜이 든 글 = 다른 몰 이름 조각 뺌(TOP 👉 줄과 같게)
         items.append(f"{n}. {t}\n{why}\n👉 {p['url'] or SITE}")
     notes = "\n".join(n for n in dict.fromkeys(aff_note(p["url"] or "") for p in todays) if n in (OY_NOTE, NAVER_NOTE))  # 본문 맨 위 필수인 프로그램
-    return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + (notes + "\n\n" if notes else "") + "\n\n".join(items)
+    return (f"📝 블로그용 (제목·본문 그대로 복붙)\n\n제목: {title}\n\n" + (notes + "\n\n" if notes else "") + "\n\n".join(items) + (f"\n\n{toss_when()}" if toss_in else "")
             + f"\n\n더 많은 핫딜 👉 {SITE}?ref=blog\n실시간 알림 👉 https://t.me/hotdeal_pick\n\n"
             + "이 포스팅은 쿠팡 파트너스·토스쇼핑 쉐어링크 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다.")
 
@@ -2368,7 +2390,8 @@ def card_caption(stem):
     """카드의 (목록 줄 CARD_N개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에.
     대가성 문구는 늘 맨 앞(ig_notes), 사이트 맨 위 어느 카드 칸인지(칸 이름 그대로 — 24시간 동안 접힌 칸으로 남음)."""
     ps = [p for _, p in card_order(load(POSTS, []), stem)[:CARD_N]]
-    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', title_of(p['text'])).strip(), 34)}" for n, p in enumerate(ps, 1)]
+    toss_in = toss_list(ps)
+    rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, toss_in)).strip(), 34)}" for n, p in enumerate(ps, 1)]
     slot = SLOT_NAMES.get(stem[11:]) if len(stem) > 10 else None
     return rows, (ig_notes(ps) + "\n\n" + f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} 핫딜" if slot else "오늘의 핫딜 모음") + "\n\n" + "\n".join(rows)
                   + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(stem)}'에서 번호를 누르면 바로 구매 페이지\n\n" + ig_tags(ps))[:2200]
@@ -2497,7 +2520,8 @@ def ig_cards(seen):
             import cards
             os.makedirs("docs/cards", exist_ok=True)
             json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
-            cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
+            ct = toss_list([p for _, p in order[:CARD_N]])
+            cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
                        head=IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False)
             if IG_CAROUSEL:
                 deal_slides(stem, [p for _, p in order])
@@ -2542,7 +2566,9 @@ def ig_repost(seen):
     if not os.path.exists(path):
         import cards
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        cards.make([{"title": title_of(p["text"]), "unit": p.get("unit")} for _, p in card_order(load(POSTS, []), day)], f"{kst.tm_mon}월 {kst.tm_mday}일", path)
+        order = card_order(load(POSTS, []), day)
+        ct = toss_list([p for _, p in order[:CARD_N]])
+        cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", path)
         return
     url = f"{SITE}cards/re/{day}.jpg"
     try:
@@ -2595,12 +2621,14 @@ def threads(seen):
     rows, cap = card_caption(today)  # 인스타는 ig_cards(10/11~ 하루 3번 — 21시 하루 카드 포함)
     if not tok:
         return
-    rows = [r for r, (_, p) in zip(rows, card_order(load(POSTS, []), today)) if aff_note(p.get("url") or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만': 줄도 수수료 링크 딜만(카드 번호 그대로 — card_caption과 같은 순서)
+    order = card_order(load(POSTS, []), today)
+    rows = [r for r, (_, p) in zip(rows, order) if aff_note(p.get("url") or "")]
+    when = f"\n\n{toss_when()}" if toss_list([p for _, p in order[:CARD_N]]) else ""  # 토스 딜이 든 카드 = 게시 시점 줄(카드 이미지의 딜·가격 기준 — 수수료 줄만이 아니라)  # 10/19 밤 진우 'Threads는 수수료 딜만': 줄도 수수료 링크 딜만(카드 번호 그대로 — card_caption과 같은 순서)
     if not rows:
         print("threads skip (수수료 링크 아님) card 묶음 | 항목 0개")
         return
     while True:  # 대가성 문구는 맨 앞 그대로, 길면 번호 줄을 줄임(Threads 500자)
-        text = (cap.split("\n\n")[0] + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows)
+        text = (cap.split("\n\n")[0] + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows) + when
                 + f"\n\n전체 딜·구매 링크 👉 {SITE}?ref=th\n실시간 알림 👉 https://t.me/hotdeal_pick")
         if len(text) <= 480 or len(rows) <= 1:
             break
