@@ -202,7 +202,7 @@
 {"date": "2026-10-19", "ch": "th", "id": "18144774952593342", "shop": "기타", "cat": "기타", "price": "", "at": "20:41", "views": 177, "react": 0, "likes": 0, "replies": 0},
 {"date": "2026-10-19", "ch": "th", "id": "17993056161058668", "shop": "toss", "cat": "화장품", "price": "", "at": "21:10", "views": 11, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct", "v48": 15},
 {"date": "2026-10-19", "ch": "th", "id": "17949443628319939", "shop": "기타", "cat": "묶음", "price": "", "at": "21:38", "views": 49, "react": 0, "likes": 0, "replies": 0},
-{"date": "2026-10-19", "ch": "th", "id": "18105439475459836", "shop": "toss", "cat": "생필품", "price": "", "at": "22:07", "views": 10, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 2},
+{"date": "2026-10-19", "ch": "th", "id": "18105439475459836", "shop": "toss", "cat": "생필품", "price": "", "at": "22:07", "views": 10, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 2, "v48": 11, "rv48": 3},
 {"date": "2026-10-19", "ch": "th", "id": "18083901536514972", "shop": "toss", "cat": "식품", "price": "", "at": "23:03", "views": 7, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct"}]},
 "2026-10-18": {"at": "2026-10-19 05:06", "miss": {}, "rows": [
 {"date": "2026-10-18", "ch": "tg", "id": 1200, "shop": "naver", "cat": "기타", "price": "1~3만", "at": "00:34", "views": 2, "react": 0},
