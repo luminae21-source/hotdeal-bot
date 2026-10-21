@@ -3765,6 +3765,63 @@ os.remove("posts20.json"); os.remove("ev20.json")
 (H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep) = sv20b
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, tk20) = sv20
 H.E.pop("THREADS_TOKEN", None) if tk20 is None else H.E.update(THREADS_TOKEN=tk20)
+# 9-21 (10/21 진우 '번갈아'): Threads 채움 칸 = 토스 픽 ↔ 진우 🔥 딜 번갈아(직전 채움 종류 seen thfill), 진우 딜끼리는 먼저 올라온 것부터 ·
+#       진우 대기 없으면 토스 연속 · 토스 대기 없으면 진우 연속 · ①② 좋은 딜은 그대로 먼저 · 🛒 진우 딜은 개별 X · 45분 간격 그대로
+import io, contextlib
+sv21 = (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, H.E.get("THREADS_TOKEN"), H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL)
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL = 99, 45 * 60, 1, th_strong0, True  # 실제 값(45분·1회 1개·진짜 ①② 판단·채움 켬)
+p21 = []
+def http21(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: p21.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(p21)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(p21)})
+    raise AssertionError(url)
+H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, H.E["THREADS_TOKEN"] = http21, "posts21.json", False, (lambda s: None), "tk"
+tq21 = lambda n, at, r: {"t": TK("2026-10-21 " + at), "text": f"{H.TOSS_NOTE}\n\n🔥 토스{n}\n💰 7,900원\n⚠️ 10/21 {at} 게시 시점 가격\n\n🛒 https://toss.shopping/_m/T{n}",
+                         "link": f"https://toss.shopping/_m/T{n}", "bt": 0, "id": 2100 + n, "r": r, "k": "best", "s": 8}
+def post21(mid, name, at, own=True, weak=False, body="쿠팡 평균가보다 낮아요", url=None, s=None):
+    p = {"t": "2026-10-21 " + at, "url": url or f"https://link.coupang.com/a/J{mid}", "mid": mid,
+         "text": f"{H.DISCLOSURE}\n\n" + (f"🛒 [쿠팡] {name} (10,370원)\n\n🤔 솔직히 특가로는 약한 제품 — 평소 가격" if weak else f"🔥 [쿠팡] {name} (16,940원)\n\n{body}")}
+    return {**p, **({"own": 1} if own else {}), **({"s": s} if s else {})}
+def run21(s21, at):
+    p21.clear(); time.time = lambda: TK("2026-10-21 " + at); o = io.StringIO()
+    with contextlib.redirect_stdout(o): H.threads_deals(s21)
+    return [re.search(r"[🔥🛒] (?:\[\S+\] )?(\S+)", x).group(1) for x in p21], o.getvalue()
+def seq21(s21, times):
+    out = []
+    for at in times:
+        got, log = run21(s21, at); out.append((at, got, s21.get("thfill", {}).get("k"), log))
+    return out
+# 토스 대기 3 + 진우 🔥 2(+ 🛒 1) -> toss·own·toss·own·toss, 진우 딜은 먼저 올라온 것부터, 45분 안엔 아무것도 X(직전 채움 종류도 그대로)
+json.dump([post21(2111, "진우A", "20:31"), post21(2112, "진우약함", "20:32", weak=True), post21(2113, "진우B", "20:35")], open(H.POSTS, "w"), ensure_ascii=False)
+s21 = {"thtoss": {"t": TK("2026-10-21 22:00"), "q": [tq21(1, "20:30", 0), tq21(2, "21:00", 1), tq21(3, "22:00", 2)]}}
+r21 = seq21(s21, ("20:40", "21:26", "21:46", "22:12", "22:58", "23:44"))
+assert [x[:3] for x in r21] == [("20:40", ["토스1"], "toss"), ("21:26", ["진우A"], "own"), ("21:46", [], "own"), ("22:12", ["토스2"], "toss"), ("22:58", ["진우B"], "own"), ("23:44", ["토스3"], "toss")], [x[:3] for x in r21]
+assert "threads fill turn toss (대기 own 2·toss 1)" in r21[0][3] and "threads fill turn own (대기 own 2·toss 1)" in r21[1][3] and "fill turn" not in r21[2][3], [x[3] for x in r21]
+assert [(p["mid"], p.get("th")) for p in json.load(open(H.POSTS))] == [(2111, 1), (2112, None), (2113, 1)] and s21["thtoss"]["q"] == []  # 🛒 진우 딜은 개별 X
+assert {k: v for k, v in s21.items() if (v["t"] if isinstance(v, dict) else v) > 0}.get("thfill") == s21["thfill"]  # seen 정리(main 끝)에 걸려도 안 깨짐(t 있음)
+# 진우 대기 없으면 토스 연속(직전이 토스여도) · 토스 대기 없으면 진우 연속(먼저 올라온 것부터) -> 둘 다 없으면 예전처럼 점수 순 다른 수수료 딜
+json.dump([post21(2121, "진우약함", "20:32", weak=True)], open(H.POSTS, "w"), ensure_ascii=False)
+s21 = {"thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq21(4, "20:30", 0), tq21(5, "20:31", 1)]}}
+assert [x[:3] for x in seq21(s21, ("20:40", "21:26"))] == [("20:40", ["토스4"], "toss"), ("21:26", ["토스5"], "toss")]
+json.dump([post21(2131, "진우C", "20:35"), post21(2132, "링크프라이스9점", "20:33", own=False, s=9, url="https://click.linkprice.com/click.php?m=gmarket&a=A1&l=9999&tu=x"), post21(2133, "진우D", "20:34")], open(H.POSTS, "w"), ensure_ascii=False)
+s21 = {"thfill": {"t": 1, "k": "own"}}
+r21 = seq21(s21, ("20:40", "21:26", "22:12"))
+assert [x[:3] for x in r21] == [("20:40", ["진우D"], "own"), ("21:26", ["진우C"], "own"), ("22:12", ["링크프라이스9점"], "post")], [x[:3] for x in r21]
+assert "threads fill turn own (대기 own 2·toss 0)" in r21[0][3] and "threads fill turn post (대기 own 0·toss 0)" in r21[2][3]
+# ①② 좋은 딜(strong)은 그대로 먼저 — 채움 칸이 아니라 직전 채움 종류는 안 바뀜 -> 다음 채움 칸은 진우 딜
+json.dump([post21(2141, "진우E", "20:35"), post21(2142, "같은상품차이", "20:36", own=False, s=8, body="💡 쿠팡 같은 상품(20,000원)보다 3,060원 쌈")], open(H.POSTS, "w"), ensure_ascii=False)
+s21 = {"thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq21(6, "20:30", 0)]}}
+assert [x[:3] for x in seq21(s21, ("20:40", "21:26", "22:12"))] == [("20:40", ["같은상품차이"], "toss"), ("21:26", ["진우E"], "own"), ("22:12", ["토스6"], "toss")]
+# 채움 끄면(TH_SOLO_FILL False) 진우 🔥 딜도 토스 픽도 채움 X — 예전 그대로
+fill21, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False
+json.dump([post21(2151, "진우F", "20:35")], open(H.POSTS, "w"), ensure_ascii=False)
+s21 = {"thtoss": {"t": 1, "q": [tq21(7, "20:30", 0)]}}
+assert [x[:3] for x in seq21(s21, ("20:40",))] == [("20:40", [], None)]
+H.TH_SOLO_FILL = fill21
+os.remove("posts21.json")
+(H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk21, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL) = sv21
+H.E.pop("THREADS_TOKEN", None) if tk21 is None else H.E.update(THREADS_TOKEN=tk21)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

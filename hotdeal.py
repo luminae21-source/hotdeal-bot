@@ -2844,13 +2844,21 @@ def threads_deals(seen):
     grp = lambda c: -1 if isinstance(c[0], int) and c[0] in rei else 0 if th_tier(c[1]) == 1 else 1 if c[2] and TH_BEAUTY_MIN else 2  # 10/12 01:10 진우: ① 쿠팡 같은 상품 차이 > 화장품(하루 1~2) > ② 30일 최저가·순위 (재업로드는 맨 먼저, 23:05)
     wb = wx_bonus(seen)  # 날씨 가점(10/15 진우): 같은 등급 안에서만 먼저(🔥·30일 최저가 순서 그대로)
     strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
-    todo = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])]
-    if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 상위 딜로 채움(10/12 진우): 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
+    todo, turn = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])], None  # turn = 채움 칸 종류(own·toss·post)
+    if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 채움(10/12 진우): 토스 픽 ↔ 진우 🔥 딜 번갈아(10/21), 둘 다 없으면 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
         out = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}
         gone = {x[0] for k, v in seen.items() if k.startswith("sold_") and isinstance(v, dict) for x in v.get("it", []) if x[4]}  # 품절·특가 끝 토스 상품
         tq = [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone and th_solo(seen, x["text"], beauty=x["bt"], top=True)]
-        todo = sorted(tq, key=lambda x: (x["r"], x["k"] != "cat", -x["s"], -wb(title_of(x["text"])), -x["t"])) or sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
-                      key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), -wb(title_of(posts[i]["text"])), [-ord(c) for c in posts[i]["t"]]))
+        own = sorted((i for i in fresh if posts[i].get("own") and posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)), key=lambda i: posts[i]["t"])  # 기다리는 진우 🔥 딜(🛒는 th_solo가 거름), 먼저 올라온 것부터
+        if own and (not tq or seen.get("thfill", {}).get("k") == "toss"):  # 10/21 진우 '번갈아': 직전 채움이 토스 픽이면 이번 칸 = 진우 딜(토스 대기 줄이 비어도 진우 딜)
+            todo, turn = own, "own"
+        elif tq:
+            todo, turn = sorted(tq, key=lambda x: (x["r"], x["k"] != "cat", -x["s"], -wb(title_of(x["text"])), -x["t"])), "toss"
+        else:
+            todo, turn = sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
+                                key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), -wb(title_of(posts[i]["text"])), [-ord(c) for c in posts[i]["t"]])), "post"
+        if todo:
+            print("threads fill turn", turn, f"(대기 own {len(own)}·toss {len(tq)})")
     todo = todo[:TH_SOLO_RUN]
     r, today = th_day(seen, now), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 실행마다 1줄(10/12 진우 '누락 없이'): 후보 · ①② · 개별 · 빠짐 이유
     RUN["th_why"] = " ".join(map(str, ("threads 후보", len(fresh), "· ①②", sum(th_tier(posts[i]["text"]) > 0 for i in fresh), "· 개별", len(todo) if tok else 0, "· 🛒", sum(th_weak(posts[i]["text"]) for i in fresh),
@@ -2867,6 +2875,8 @@ def threads_deals(seen):
                 if k in seen:
                     seen[k]["q"] = [x for x in seen[k]["q"] if x is not i]
             th_mark(seen, i["bt"])
+            if turn:
+                seen["thfill"] = {"t": now, "k": turn}  # 직전 채움 종류(번갈아) — seen 정리가 t를 봄
             th_deal(seen, tok, me, i["text"], i["link"])
             continue
         url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
@@ -2889,6 +2899,8 @@ def threads_deals(seen):
         text = head + body[:lim] + tw + tail  # Threads 500자 제한 — 링크가 길면(검색 링크 ~210자) 코멘트를 줄임
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen, bt[i])
+        if turn:
+            seen["thfill"] = {"t": now, "k": turn}
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         th_deal(seen, tok, me, text, url)
 
