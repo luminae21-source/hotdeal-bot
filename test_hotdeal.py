@@ -3873,6 +3873,40 @@ for f in (f"docs/cards/{D22}.png", f"docs/cards/{D22}.json", "posts22.json"):
 (H.tg, H.POSTS, time.time, C22.make, C22.reel, H.fill_reel, H.tg_video, H.TOSS_NO_CMP, ig22, tk22, H.http, H.th_bundle) = sv22
 H.E.pop("IG_TOKEN", None) if ig22 is None else H.E.update(IG_TOKEN=ig22)
 H.E.pop("THREADS_TOKEN", None) if tk22 is None else H.E.update(THREADS_TOKEN=tk22)
+# 9-23 (10/21 밤 Cowork): Threads 개별 글이 250자에 줄 중간에서 잘려 '⚠️ 확인할 점:'·'⚠️'만 남던 것 -> 줄 단위로 줄이고 ⚠️ 줄은 끝에 남김
+#       (넘치면 마지막 조각 '결제 전 최종가 확인 (M/D H시 가격)'만, 그래도 안 되면 줄째 뺌) — 빈 ⚠️ 줄 X
+K23 = "🔥 [쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)\n\n로켓배송 100g 손난로 중 1개당 가장 싸요 — 오늘 쿠팡 검색 상위 기준 1개당 295원(참고: 충성 100g 317원·해피데이 100g 373원)\n⭐ 리뷰 1,419 · 한 달 2,000명 이상 구매 · 손난로/핫팩 구매 8위 · 🚀 로켓배송 · 무료반품 30일\n💡 150개 40,310원이면 1개당 269원 · 최고 70도·18시간 이하(포장 표기)\n⚠️ 확인할 점: '22% 할인'은 정가 기준이라 참고만 · 결제 전 최종가 확인 (10/21 19:12 가격)"
+G23 = "🔥 [쿠팡] 하루온 군인핫팩 포켓용 대용량 160g, 30개 (13,520원)\n\n로켓배송 160g 대형 핫팩 중 1개당 가장 싸요 — 오늘 쿠팡 검색 상위 기준 1개당 451원(참고: 충성 160g 60개 469원·마이핫 160g 750원)\n⭐ 리뷰 10,548 · 한 달 4,000명 이상 구매 · 손난로/핫팩 구매 2위 · 🚀 로켓배송(새벽) · 무료반품 30일\n💡 최고 70도·20시간 지속(포장 표기) · 대형이라 야외 활동·출퇴근용\n⚠️ 확인할 점: '30% 할인'은 정가 기준이라 참고만 · 결제 전 최종가 확인 (10/21 19:15 가격)"
+EMPTY23 = r"(?m)^⚠️\s*(?:확인할 점:?)?\s*$"
+def ok23(src, out, lim):  # lim 안 · 빈 ⚠️ 줄 X · 줄 = 원래 줄 그대로 / '…'로 줄인 앞부분 / ⚠️ 줄의 마지막 조각
+    org = src.split("\n")
+    return len(out) <= lim and not re.search(EMPTY23, out) and all(l in org or (l.endswith("…") and any(o.startswith(l[:-1]) for o in org))
+                                                                 or (l.startswith("⚠️") and any(o.startswith("⚠️") and o.endswith(l.split(": ", 1)[-1]) for o in org)) for l in out.split("\n"))
+for src23, at23 in ((K23, "19:12"), (G23, "19:15")):
+    for lim23 in (250, 200, 160):
+        o23 = H.th_fit(src23, lim23)
+        assert ok23(src23, o23, lim23) and o23.endswith(f"⚠️ 확인할 점: 결제 전 최종가 확인 (10/21 {at23} 가격)") and o23.startswith(src23.split("\n")[0]), (lim23, o23)
+    assert H.th_fit(src23, 400) == src23  # 들어가면 그대로
+assert "\n💡 150개 40,310원이면…\n" in H.th_fit(K23, 250), H.th_fit(K23, 250)  # 처음 넘치는 줄은 띄어쓰기에서 '…'(그 뒤 줄은 뺌, ⚠️ 줄은 끝에)
+o23 = H.th_fit(K23, len(K23) - 1); assert ok23(K23, o23, len(K23) - 1) and K23.split("\n")[-2] in o23.split("\n") and o23.endswith("⚠️ 확인할 점: 결제 전 최종가 확인 (10/21 19:12 가격)"), o23  # 1자 넘침 = 다른 줄은 그대로, ⚠️ 줄만 마지막 조각
+tiny23 = H.th_fit(K23, 60); assert ok23(K23, tiny23, 60) and "⚠️" not in tiny23 and tiny23.startswith("🔥 [쿠팡] 코멧")  # 제목만 겨우 = ⚠️ 줄째 뺌(빈 줄 X)
+two23 = "🔥 [토스] 탄산 24캔 (9,900원)\n\n" + "탄산 24캔 구성이에요. " * 20 + "\n💡 단위가격 개당 413원\n⚠️ 확인할 점 배송비 확인\n⚠️ 10/21 12:05 게시 시점 가격"
+o23 = H.th_fit(two23, 200); assert ok23(two23, o23, 200) and o23.endswith("⚠️ 확인할 점 배송비 확인\n⚠️ 10/21 12:05 게시 시점 가격"), o23  # ⚠️ 줄 여럿(토스 게시 시점 줄)도 끝에 그대로
+# Threads 글 전체(threads_deals): 진우 쿠팡 핫팩 글 = 빈 ⚠️ 줄 X, 끝 ⚠️ 줄 = 결제 전 최종가 확인 (가격 시각)
+c23, sv23 = [], (H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, H.E.get("THREADS_TOKEN"))
+def http23(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: c23.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(c23)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(c23)})
+    raise AssertionError(url)
+H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, H.E["THREADS_TOKEN"] = http23, "posts23.json", (lambda *a, **k: True), False, (lambda s: None), "tk"
+for n23, src23 in enumerate((K23, G23)):
+    c23.clear(); json.dump([{"t": kt(0), "text": f"{H.DISCLOSURE}\n\n{src23}", "url": f"https://link.coupang.com/a/H{n23}", "mid": 2300 + n23, "own": 1}], open(H.POSTS, "w"), ensure_ascii=False); H.threads_deals({})
+    (t23,) = c23
+    assert not re.search(EMPTY23, t23) and re.search(r"\n⚠️ 확인할 점: 결제 전 최종가 확인 \(10/21 19:1\d 가격\)\n\n👉 https://link\.coupang\.com/a/H", t23) and len(t23) <= 500 and t23.startswith(H.th_note(H.aff_note(f"https://link.coupang.com/a/H{n23}")).split("\n")[0]), t23
+os.remove("posts23.json")
+(H.http, H.POSTS, H.th_solo, H.TH_LINK_AB, H.time.sleep, tk23) = sv23
+H.E.pop("THREADS_TOKEN", None) if tk23 is None else H.E.update(THREADS_TOKEN=tk23)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

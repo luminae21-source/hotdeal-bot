@@ -2849,6 +2849,32 @@ def th_queue(seen, text, link, bt):
     seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt}]}
 
 
+def th_fit(body, lim):
+    """Threads 개별 글 본문을 lim자 안으로 — 줄 중간에서 안 자름(10/21 밤 Cowork: 쿠팡 글이 '⚠️ 확인할 점:'·'⚠️'만 남던 것). ⚠️ 줄은 끝에 남기고
+    (넘치면 마지막 조각 '결제 전 최종가 확인 (… 가격)'만, 그래도 안 되면 줄째 뺌), 나머지 줄은 앞에서부터 들어가는 만큼 — 처음 넘치는 줄은 '…'로 줄이고 그 뒤는 뺌."""
+    if len(body) <= lim:
+        return body
+    lines = body.split("\n")
+    ws = [l for l in lines if l.startswith("⚠️")]
+    short = [re.sub(r"^(⚠️\s*(?:확인할 점:?\s*)?).* · ", r"\1", w) for w in ws]  # 앞 조각들 빼고 마지막 조각만
+    size = lambda xs: len("\n".join(xs)) + bool(xs)  # 줄들 + 앞 줄바꿈
+    if len(lines[0]) + size(short) > lim:  # 제목과 ⚠️ 짧은 줄도 같이 못 들어감 = ⚠️ 줄째 뺌(제목 먼저)
+        ws, short = [], []
+    out = []
+    for l in (l for l in lines if not l.startswith("⚠️")):
+        room = lim - size(short) - (size(out) - bool(out)) - bool(out)
+        if len(l) <= room:
+            out.append(l)
+            continue
+        if room >= 15 and l.strip():
+            out.append(clip(l, room - 1))
+        break
+    for k, (w, sw) in enumerate(zip(ws, short)):
+        room = lim - (size(out) - bool(out)) - bool(out) - size(short[k + 1:])
+        out += [w] if len(w) <= room else [sw] if len(sw) <= room else []
+    return "\n".join(out).rstrip("\n")
+
+
 def threads_deals(seen):
     """채널에 올라간 딜 중 골라서 Threads 개별 글로(10/11 진우 '나누지 말고 묶기': th_solo — 하루 5개·45분 간격·강한 🔥만, 나머지는 리스트로).
     링크 = 사이트 딜 페이지(구매 버튼·대가성 문구 있음). 사이트 반영 전(404)이면 다음 실행에. posts.json에 th 표시 -> 두 번 안 올림. 3시간 지난 딜은 안 올림(식은 딜), 1회 1개."""
@@ -2924,7 +2950,7 @@ def threads_deals(seen):
         lim = lim if re.search(r"\n[🙋👍] ", body) else min(250, lim)  # 🙋·👍 줄 있는 토스 글 = 480자까지(빼기 전에 정함 — 10/20 리뷰)
         for e in ("👍", "🙋"):  # 10/20 진우 '사고 싶게': 토스 글 🙋·👍 줄 = 480자 넘으면 👍 -> 🙋 순서로 뺌
             body = re.sub(rf"\n{e} [^\n]*", "", body) if len(body) > lim else body
-        text = head + body[:lim] + tw + tail  # Threads 500자 제한 — 링크가 길면(검색 링크 ~210자) 코멘트를 줄임
+        text = head + th_fit(body, lim) + tw + tail  # Threads 500자 제한 — 링크가 길면(검색 링크 ~210자) 코멘트를 줄임(줄 단위, ⚠️ 줄은 끝에 남김)
         posts[i]["th"] = 1  # 먼저 표시: 실패해도 같은 딜 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
         th_mark(seen, bt[i])
         if turn:
