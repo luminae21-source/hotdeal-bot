@@ -1599,6 +1599,82 @@ def top_post(head, items):
 
 
 TOP_SUB, TOP_SUB_TOSS = "쿠팡보다 싼 딜·30일 최저가 먼저", "30일 최저가·순위 먼저"
+STEADY_AT, STEADY_END, STEADY_DAYS, STEADY_N, STEADY_MIN_BUY, STEADY_FILE = "19:50", "21:00", 14, 5, 1000, "docs/steady.json"  # 10/22 진우 '꾸준템 리스트도': 하루 1번 19:50(KST, 늦어도 21시 전) · 후보 14일 · 5개 · 🛒는 한 달 1,000명+ 구매만 · 사이트 페이지 재료
+
+
+def steady_cands(seen, now):
+    """👍 꾸준템 리스트 후보(수수료 링크만, 같은 링크·이름 1번, 최대 STEADY_N): ① 최근 STEADY_DAYS일 진우 👍 글(최근 것부터, 품절 표시 X)
+    → ② 잘 된 상품 표(top.json 순서 — 토스 = 상세 API로 지금 가격·리뷰·품절, 그 밖 = 같은 링크 채널 글의 가격·숫자) → ③ 진우 🛒 중 한 달 STEADY_MIN_BUY명+ 구매(많은 순).
+    -> [{"n": 이름, "p": 가격, "st": '한 달 N명+ 구매'·'리뷰 N'·'', "u": 채널 링크, "tu": Threads 링크, "i": posts 번호(없으면 None)}]
+    shortcut: 쿠팡 판매 중 확인은 못 함(쿠팡 API 승인 전) — 토스만 품절 거름."""
+    posts = load(POSTS, [])
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - STEADY_DAYS * 86400))
+    gone = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}  # 품절 표시된 채널 글
+    num = lambda x: int(x.replace(",", ""))
+    def item(i):
+        p = posts[i]
+        _, name, price = parse(title_of(p["text"]))
+        b, r = re.search(STEADY_BUY, p["text"]), re.search(STEADY_REV, p["text"])
+        return {"n": name, "p": price.split("/")[0].strip(), "st": f"한 달 {b[1]}명+ 구매" if b else f"리뷰 {r[1]}" if r else "", "u": p["url"], "tu": th_url(p, i), "i": i}
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i]["t"] >= since and aff_note(posts[i].get("url") or "") and posts[i].get("mid") not in gone]
+    out = [item(i) for i in own if th_steady(posts[i]["text"])]
+    tops = [x for x in load(TOP, {}).get("items", []) if aff_note(x.get("url") or "")]
+    ids = [int(str(x["key"])[5:]) for x in tops if str(x.get("key", "")).startswith("toss:")]
+    try:
+        det = {d["tacaItemId"]: d for d in (toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids[:30])))["items"] if ids and HAS_TOSS else [])}
+    except Exception as e:  # 터널 끊김 등 = 토스 표 상품만 빼고 리스트는 그대로
+        print("steady toss detail", repr(e))
+        det = {}
+    for x in tops:
+        k = str(x.get("key", ""))
+        if k.startswith("toss:"):
+            d = det.get(int(k[5:]))
+            if d and not d.get("isSoldOut"):
+                out.append({"n": x.get("name") or d["displayName"], "p": f"{d['displayPrice']:,}원", "st": f"리뷰 {d['reviewCount']:,}" if d.get("reviewCount") else "", "u": x["url"], "tu": x["url"], "i": None})
+        elif (i := next((i for i in range(len(posts) - 1, -1, -1) if posts[i].get("url") == x["url"] and posts[i].get("mid") not in gone), None)) is not None:
+            out.append(item(i))
+    buys = lambda i: next((num(b[1]) for b in [re.search(STEADY_BUY, posts[i]["text"])] if b), 0)
+    out += [item(i) for i in sorted((i for i in own if th_weak(posts[i]["text"]) and buys(i) >= STEADY_MIN_BUY), key=lambda i: -buys(i))]
+    keep, us, ns = [], set(), set()
+    for x in out:
+        n = re.sub(r"\W", "", x["n"].lower())
+        if x["p"] and x["u"] not in us and n not in ns:
+            keep.append(x)
+            us.add(x["u"])
+            ns.add(n)
+    return keep[:STEADY_N]
+
+
+def steady_list(seen):
+    """하루 1번 STEADY_AT~STEADY_END(KST): 채널·Threads 목록 글 '👍 꾸준히 팔리는 것 모음'(steady_cands, 상품마다 가격 · 한 달 N명+ 또는 리뷰 N · 링크) —
+    대가성 문구 맨 앞(링크마다 그 프로그램) · 게시 시점 줄 · 다른 묶음 글 10분 안이면 다음 실행 · 후보 0개면 그 회차 생략. 사이트 꾸준템 페이지 재료(STEADY_FILE)도 씀."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key = time.strftime("steady_%Y%m%d", kst)
+    if not STEADY_AT <= time.strftime("%H:%M", kst) < STEADY_END or key in seen or busy(seen, cap=False):
+        return
+    seen[key] = now
+    items = steady_cands(seen, now)
+    if not items:
+        print("steady 후보 0개 — 이번 회차 생략")
+        return
+    notes = list(dict.fromkeys(aff_note(x["u"]) for x in items))
+    text, kb = top_post("👍 <b>꾸준히 팔리는 것 모음</b>\n최저가는 아니어도 꾸준히 많이 사는 것", [(x["n"], x["u"], [f"💰 <b>{esc(x['p'])}</b>" + (f" · {esc(x['st'])}" if x["st"] else "")]) for x in items])
+    if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+              text="\n".join(f"<i>{n}</i>" for n in notes) + f"\n\n{text}\n\n{toss_when()}", reply_markup={"inline_keyboard": kb}):
+        return
+    bundled(seen)
+    print("steady", len(items), "items |", " / ".join(clip(x["n"], 20) for x in items))
+    os.makedirs(os.path.dirname(STEADY_FILE), exist_ok=True)
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", kst), "notes": notes, "items": items}, open(STEADY_FILE, "w"), ensure_ascii=False)
+    if not E.get("THREADS_TOKEN"):
+        return
+    render = lambda n: "\n".join(dict.fromkeys(aff_note(x["u"]) for x in items[:n])) + "\n\n👍 꾸준히 팔리는 것 모음\n\n" \
+        + "\n".join(f"{NUM[k]} {clip(x['n'], 30)} {x['p']}" + (f" · {x['st']}" if x["st"] else "") + f"\n👉 {x['tu']}" for k, x in enumerate(items[:n])) + f"\n\n{toss_when()}"
+    n = len(items)
+    while n > 1 and len(render(n)) > 480:
+        n -= 1
+    th_bundle(seen, "steady", render(n), items[0]["tu"])
 
 
 def top_deals(seen):
@@ -3869,7 +3945,7 @@ def quiet():
 
 
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
-ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
+ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
                "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
                "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지", "poll_post": "Threads 가격 투표"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
@@ -4318,7 +4394,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
         try:
             step(seen)
         except Exception as e:

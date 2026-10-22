@@ -707,7 +707,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3250,7 +3250,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -4679,6 +4679,57 @@ assert K30["x1"]["kind"] == "etc" and (K30["x2"]["kind"], K30["x2"]["name"], K30
 (H.http, time.time, H.METRICS_HOUR, tk30) = sv30; H.E.pop("THREADS_TOKEN", None) if tk30 is None else H.E.update(THREADS_TOKEN=tk30)
 for f30 in (H.TOP, H.METRICS, "posts30.json"):
     os.path.exists(f30) and os.remove(f30)
+# 9-32 (10/22 20:0x 진우 '꾸준템 리스트도'): 하루 1번 19:50(KST, 21시 전) 채널·Threads '👍 꾸준히 팔리는 것 모음' 최대 5개 —
+#       후보 = ① 14일 진우 👍 글(최근 것부터·품절 표시 X) → ② top.json(수수료 링크, 토스 = 상세 API 가격·리뷰·품절) → ③ 진우 🛒 중 한 달 1,000명+ 구매, 같은 링크·이름 1번
+#       대가성 문구 맨 앞·게시 시점 줄 · 묶음 글 10분 안 = 다음 실행 · 후보 0개 = 그 회차 생략 · 사이트 steady.html
+sv32 = (H.tg, H.POSTS, H.TOP, H.HAS_TOSS, H.STEADY_FILE, time.time, H.toss, H.th_post, H.E.get("THREADS_TOKEN"))
+ch32, th32, tc32 = [], [], []
+H.tg = lambda method, **p: ch32.append(p) or {"message_id": 1}
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": th32.append((text, link)) or "t1"
+def toss32(path, body=None):
+    tc32.append(path); ids = path.split("=")[1].split(",")
+    return {"items": [{"tacaItemId": int(i), "displayName": f"토스{i}", "displayPrice": 12900, "reviewCount": 5432, "isSoldOut": i == "78"} for i in ids]}
+H.toss, H.HAS_TOSS, H.POSTS, H.TOP, H.STEADY_FILE, H.E["THREADS_TOKEN"] = toss32, True, "posts32.json", "top32.json", "steady32/steady.json", "tk"
+cp32 = lambda mid, at, body, url=None, own=1: {"t": at, "url": url or f"https://link.coupang.com/a/S{mid}", "mid": mid, **({"own": 1} if own else {}), "text": f"{H.DISCLOSURE}\n\n{body}"}
+STD32 = "🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n{n}\n{p} · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 선물 포장"
+P32 = [cp32(3101, "2026-10-22 20:30", STD32.format(n="록시땅 시어 버터 핸드크림 75ml", p="25,800원")),
+       cp32(3102, "2026-10-22 18:00", "🛒 [쿠팡] 해피데이 핫팩 100g 30개 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품\n⭐ 리뷰 3,210 · 한 달 2,000명 이상 구매"),
+       cp32(3103, "2026-10-22 18:10", "🛒 [쿠팡] 적게 팔린 것 (5,000원)\n\n🤔 솔직히 특가로는 약한 제품\n한 달 500명 이상 구매"),
+       cp32(3104, "2026-10-22 18:20", STD32.format(n="네이버 꾸준템", p="7,000원"), url="https://search.shopping.naver.com/search/all?query=x"),  # 수수료 링크 아님
+       cp32(3105, "2026-10-01 18:20", STD32.format(n="오래된 꾸준템", p="7,000원")),  # 14일 지남
+       cp32(3106, "2026-10-22 18:30", STD32.format(n="품절 꾸준템", p="7,000원")),  # 품절 표시
+       cp32(3107, "2026-10-22 12:00", "🔥 [쿠팡] 펩시 제로 라임 48캔 (26,550원)\n\n쿠팡보다 싸요", own=0),
+       cp32(3108, "2026-10-23 10:00", STD32.format(n="꾸준 세제 3L", p="15,900원"))]
+json.dump(P32, open("posts32.json", "w"), ensure_ascii=False)
+json.dump({"d": "2026-10-22", "items": [{"key": "toss:77", "name": "베베앙 물티슈 10팩", "url": "https://toss.shopping/_m/T77"}, {"key": "toss:78", "name": "품절 토스", "url": "https://toss.shopping/_m/T78"},
+                                        {"key": "https://link.coupang.com/a/S3107", "name": "펩시", "url": "https://link.coupang.com/a/S3107"}, {"key": "x", "name": "제휴 아님", "url": "https://www.coupang.com/vp/products/1"},
+                                        {"key": "https://link.coupang.com/a/S3101", "name": "록시땅", "url": "https://link.coupang.com/a/S3101"}]}, open("top32.json", "w"), ensure_ascii=False)
+s32 = {"sold_3106": {"t": 1, "it": [[1, "n", 1, 0, 1, 0]]}}
+time.time = lambda: TK("2026-10-23 19:49"); H.steady_list(s32); assert not ch32 and "steady_20261023" not in s32  # 19:50 전 X
+time.time = lambda: TK("2026-10-23 19:52"); o32 = io.StringIO()
+with contextlib.redirect_stdout(o32): H.steady_list(s32)
+(c32,) = ch32; x32 = c32["text"]
+assert x32.startswith(f"<i>{H.DISCLOSURE}</i>\n<i>{H.TOSS_NOTE}</i>\n\n👍 <b>꾸준히 팔리는 것 모음</b>\n최저가는 아니어도 꾸준히 많이 사는 것\n\n1️⃣ <a href=\"https://link.coupang.com/a/S3108\"><b>꾸준 세제 3L</b></a>\n💰 <b>15,900원</b> · 한 달 1,000명+ 구매\n\n2️⃣ "), x32
+assert [b[0]["text"][:4] for b in c32["reply_markup"]["inline_keyboard"]] == [f"{n} " for n in H.NUM] and [b[0]["url"] for b in c32["reply_markup"]["inline_keyboard"]] == \
+    ["https://link.coupang.com/a/S3108", "https://link.coupang.com/a/S3101", "https://toss.shopping/_m/T77", "https://link.coupang.com/a/S3107", "https://link.coupang.com/a/S3102"], c32  # 👍 최근 순 → 표(토스·링크) → 🛒 한 달 2,000명
+assert "💰 <b>12,900원</b> · 리뷰 5,432" in x32 and "베베앙 물티슈 10팩" in x32 and "💰 <b>26,550원</b>\n" in x32 and "💰 <b>9,900원</b> · 한 달 2,000명+ 구매" in x32 and x32.endswith("\n\n⚠️ 10/23 19:52 게시 시점 가격"), x32
+assert not re.search("적게 팔린|네이버 꾸준템|오래된|품절|제휴 아님|토스78", x32) and tc32 == ["/products/detail?tacaItemIds=77,78"] and "steady 5 items" in o32.getvalue()
+(tx32, tl32), = th32; assert tx32.startswith(f"{H.DISCLOSURE}\n{H.TOSS_NOTE}\n\n👍 꾸준히 팔리는 것 모음\n\n1️⃣ 꾸준 세제 3L 15,900원 · 한 달 1,000명+ 구매\n👉 https://link.coupang.com/a/S3108\n") and len(tx32) <= 480 and tl32 == "https://link.coupang.com/a/S3108", tx32
+assert "steady_20261023" in s32 and s32["bundles"]["ts"]; ch32.clear(); th32.clear(); H.steady_list(s32); assert not ch32  # 하루 1번
+sj32 = json.load(open("steady32/steady.json")); assert sj32["at"] == "2026-10-23 19:52" and len(sj32["items"]) == 5 and sj32["notes"] == [H.DISCLOSURE, H.TOSS_NOTE]
+su32 = S.steady_page("steady32"); hp32 = open("steady32/steady.html").read()
+assert su32 == (f"{S.BASE}steady.html", "2026-10-23") and "👍 꾸준히 팔리는 것 모음" in hp32 and 'href="https://toss.shopping/_m/T77" rel="nofollow sponsored noopener"' in hp32 and "10/23 19:52 게시 시점 가격" in hp32 and html.escape(H.TOSS_NOTE) in hp32
+assert S.steady_page("없는폴더32") is None  # 리스트 전 = 페이지 X
+s32 = {"bundles": {"t": 1, "ts": [TK("2026-10-24 19:45")]}}; time.time = lambda: TK("2026-10-24 19:52"); H.steady_list(s32); assert not ch32 and "steady_20261024" not in s32  # 다른 묶음 글 10분 안 = 다음 실행
+json.dump([], open("posts32.json", "w")); json.dump({"items": []}, open("top32.json", "w")); s32 = {}; o32 = io.StringIO()
+with contextlib.redirect_stdout(o32): H.steady_list(s32)
+assert not ch32 and not th32 and "steady_20261024" in s32 and "steady 후보 0개 — 이번 회차 생략" in o32.getvalue()  # 후보 0개 = 그 회차 생략
+time.time = lambda: TK("2026-10-25 21:00"); H.steady_list({}); assert not ch32  # 21시 넘으면 그날은 X
+assert (H.STEADY_AT, H.STEADY_END, H.STEADY_N, H.STEADY_DAYS, H.STEADY_MIN_BUY) == ("19:50", "21:00", 5, 14, 1000) and "steady_list" in H.ALERT_STEPS
+(H.tg, H.POSTS, H.TOP, H.HAS_TOSS, H.STEADY_FILE, time.time, H.toss, H.th_post, tk32) = sv32; H.E.pop("THREADS_TOKEN", None) if tk32 is None else H.E.update(THREADS_TOKEN=tk32)
+for f32 in ("posts32.json", "top32.json"):
+    os.remove(f32)
+shutil.rmtree("steady32")
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

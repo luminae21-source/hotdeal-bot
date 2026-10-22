@@ -598,6 +598,22 @@ def summary(text):
     return " ".join(l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기")))[:150]
 
 
+def steady_page(out):
+    """👍 꾸준템 페이지(steady.html, 10/22 진우 '꾸준템 리스트'): 마지막 19:50 리스트(steady.json — hotdeal.steady_list가 씀) 그대로. 리스트가 아직 없으면 안 만듦 -> (주소, 날짜) 또는 None."""
+    try:
+        d = json.load(open(f"{out}/steady.json"))
+    except (OSError, ValueError):
+        return None
+    link = lambda x: f"{BASE}p/{x['i']}.html" if x.get("i") is not None and urllib.parse.urlsplit(x["u"]).netloc in OY_HOSTS else x["u"]  # 올영 = 딜 페이지 거쳐(사이트 규칙 그대로)
+    rows = "".join(f'<li><b>{html.escape(x["n"])}</b><br>💰 {html.escape(x["p"])}{" · " + html.escape(x["st"]) if x.get("st") else ""}<br>'
+                   f'<a class="btn2" href="{html.escape(link(x))}" rel="nofollow sponsored noopener" target="_blank">구매하러 가기 →</a></li>' for x in d["items"])
+    body = (f'<section class="day" aria-labelledby="sth"><h2 id="sth">👍 꾸준히 팔리는 것 모음</h2><div class="t">최저가는 아니어도 꾸준히 많이 사는 것 · '
+            f'{int(d["at"][5:7])}/{int(d["at"][8:10])} {d["at"][11:16]} 게시 시점 가격 · 가격·재고는 바뀔 수 있어요</div><ol>{rows}</ol></section>')
+    open(f"{out}/steady.html", "w").write(page(f"꾸준히 팔리는 것 모음 | {TITLE}", body + MORE + END_JS, "최저가는 아니어도 꾸준히 많이 사는 생필품·화장품 모음(매일 저녁 갱신)",
+                                               f"{BASE}steady.html", gb=False, note="\n".join(d.get("notes") or [])))
+    return f"{BASE}steady.html", d["at"][:10]
+
+
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
@@ -637,6 +653,7 @@ def build(posts, out="docs"):
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE, [p for p in posts if not p["text"].startswith("📋")]) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))
+    urls += [u for u in [steady_page(out)] if u]
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9)
