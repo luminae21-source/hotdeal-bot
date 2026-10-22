@@ -1496,10 +1496,10 @@ def toss_deals(seen, best=False):
         raw = [{**x, "_src": f"많이 팔린 순위 {r + 1}위" if best else "하루특가 · 밤 12시까지"} for r, x in enumerate(toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"])]
     evs, ti = load(EVENTS, []), seen.get("tossid", {}).get("m", {})
     booked = {re.sub(r"\W", "", e["name"]) for e in evs if e.get("name") and e["at"][:10] == time.strftime("%Y-%m-%d", kst)}  # 진우 링크로 오늘 예약한 토스 상품은 자동 글에서 뺌(같은 상품 두 번 방지, 10/11)
-    booked_id = {ti[e["url"]][0] for e in evs if e.get("url") in ti and ti[e["url"]][0] and e["at"][:10] == time.strftime("%Y-%m-%d", kst)}  # 같은 상품 = 토스 id 기준도(10/23 진우)
+    booked_id = {x for e in evs if e.get("url") in ti and e["at"][:10] == time.strftime("%Y-%m-%d", kst) for x in (("g", ti[e["url"]][0]), ti[e["url"]][7] if len(ti[e["url"]]) > 7 else 0) if x and x != ("g", 0)}  # 같은 상품 = 토스 id 기준도(10/23 진우 — 옵션 id·상품 그룹 id)
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + time.strftime("%Y-%m-%d", kst)) and isinstance(v, dict)}  # 오늘 이름 예약(toss_picks)으로 찾은 상품도(이름이 달라도 id로)
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen and toss_ok(seen, x["tacaItemId"])
-                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
+                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
     tone, tsuf = tone_ask(seen, "ch") if items else (0, "")
     picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE + TOSS_WU) + tsuf,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
@@ -2119,7 +2119,7 @@ def toss_solo(seen):
     recent = lambda at: at[:10] == today or at >= since  # 오늘 + 지난 24시간(밤 12시 넘어 어젯밤 진우 예약 상품이 다시 나가지 않게 — 10/22 0~8시 글 켜며)
     booked = {norm(e["name"]) for e in evs if e.get("name") and recent(e.get("at", ""))}
     ti = seen.get("tossid", {}).get("m", {})
-    booked_id = {ti[e["url"]][0] for e in evs if e.get("url") in ti and ti[e["url"]][0] and recent(e.get("at", ""))}  # 같은 상품 = 토스 id 기준(10/23 진우)
+    booked_id = {x for e in evs if e.get("url") in ti and recent(e.get("at", "")) for x in (("g", ti[e["url"]][0]), ti[e["url"]][7] if len(ti[e["url"]]) > 7 else 0) if x and x != ("g", 0)}  # 같은 상품 = 토스 id 기준(10/23 진우 — 옵션 id·상품 그룹 id)
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_") and recent(k[3:]) and isinstance(v, dict)}
     tree, tried, best, tops = None, 0, None, top_toss(seen, now)  # tops = 잘 된 토스 상품(top.json) — 후보면 +TOP_BONUS점(하루 TOP_BONUS_DAY번)
     fill = key in seen  # 매시 글은 이미 = 이번은 빈틈 채움
@@ -2139,7 +2139,7 @@ def toss_solo(seen):
             for q in load(POSTS, []):
                 if q.get("own") and toss_share(q.get("url")):
                     last[q["url"]] = q
-            jw = {ti[u][0]: (u, q.get("tgt", "")) for u, q in last.items() if q.get("st") == "wait" and q.get("stdy") and ti.get(u, [0])[0]} if src == "steady" \
+            jw = {ti[u][7]: (u, q.get("tgt", "")) for u, q in last.items() if q.get("st") == "wait" and q.get("stdy") and len(ti.get(u, [])) > 7 and ti[u][7]} if src == "steady" \
                 else {q["id"]: (q["u"], q["tgt"]) for q in seen.get("rehot", {}).get("q", [])}
             jw = {i: x for i, x in jw.items() if f"tb_{i}" not in seen}
             ids = list(dict.fromkeys(list(jw)[(kst.tm_yday * 24 + h) * 30 % len(jw):] + list(jw)))[:30] if jw else []  # 시각마다 다음 30개(끝에서 처음으로 이어서, 같은 id 두 번 X)
@@ -2159,7 +2159,7 @@ def toss_solo(seen):
             raw = toss(f"/products/{'best-selling' if src == 'best' else 'today-deals'}?size=30")["items"]
         tried += 1
         items = [(r + 1, x) for r, x in enumerate(raw) if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen and (src in ("steady", "rehot") or toss_ok(seen, x["tacaItemId"]))
-                 and norm(x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id]
+                 and norm(x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id]
         tone, tsuf = tone_ask(seen, "ch") if items and src != "rehot" else (0, "")
         picks = [{"i": 0, "score": 10}] if src == "rehot" and items else [p for p in (items and ai_pick(SOLO_PROMPT + tsuf, [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for _, x in items]) or []) if 0 <= p["i"] < len(items)]
@@ -2301,8 +2301,8 @@ def toss_soldout(seen):
             m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
             ti[u] = [int(m[1]) if m else 0, now, 0]
     for w in need:  # 10/23 진우 '같은 상품 짝짓기는 토스 상품 id 기준'(이름 비슷한 다른 구성과 안 섞이게): 진우 링크 -> id 먼저, 없으면 이름
-        if ti.get(w.get("url"), [0])[0]:
-            w["it"] = [[ti[w["url"]][0], w["n"], w["p"] or 0, int(bool(re.search(DAY_ONLY, w.get("body", "")))), 0, 0]]
+        if len(ti.get(w.get("url"), [])) > 7 and ti[w["url"]][7]:  # 대표 옵션 id(own_end가 tacaIds로 확인한 것) — 주소 /t/번호(tacaId)는 상세 tacaItemIds가 아님
+            w["it"] = [[ti[w["url"]][7], w["n"], w["p"] or 0, int(bool(re.search(DAY_ONLY, w.get("body", "")))), 0, 0]]
     need = [w for w in need if not w["it"]]
     sm = toss_daymap(seen, now, today, bool(need))
     if need and sm:  # 하루특가 목록에 없으면 toss_relink가 모아 둔 1일 목록(베스트·카테고리)에서 같은 이름
@@ -4549,7 +4549,8 @@ def own_end(seen):
     tgt = 목표가(처음 🔥로 소개한 진우 글 가격, 🔥 글이 없으면 events target), now = 지금가(쿠팡·네이버만 = events now — 토스 API 가격은 posts·사이트 X, API 신청 범위), chk = 확인 시각,
     stdy = 👍 꾸준템(토스 = 리뷰 toss_steady, 쿠팡·네이버 = 👍 글), rehot = ⏳ -> 🔥 된 날(사이트 🔁 배지 · 토스는 seen rehot 줄 -> toss_solo '🔁 다시 특가' 글).
     토스 = 상세 API(실행마다 1번, 마지막 확인이 OWN_END_GAP 지난 id 30개까지 — 단축 링크 -> id는 seen tossid에 1번, 확인 뒤 다시 올린 글은 바로) · 쿠팡·네이버 = events 진우 항목 now·chk·target·end·why(Cowork).
-    seen tossid m[url] = [id, 푼 시각, 마지막 확인, 'ok'|'out', 조회 안 됨 날짜들, 지금가(내부 — 1일 캐시), 꾸준템]."""
+    seen tossid m[url] = [상품 그룹 id(tacaId = 주소 /t/번호), 푼 시각, 마지막 확인, 'ok'|'out', 조회 안 됨 날짜들, 지금가(내부 — 1일 캐시), 꾸준템, 대표 옵션 id(tacaItemId)]
+    — 상세는 tacaIds로(10/23: 그 전엔 tacaItemIds로 물어 대부분 '조회 안 됨' = 잘못된 일시 품절 → 8칸 아닌 기록은 다시 확인, 그 상태로는 🔁 X)."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     posts, today = load(POSTS, []), time.strftime("%Y-%m-%d", kst)
@@ -4561,6 +4562,7 @@ def own_end(seen):
     tossy = [u for u in urls if toss_share(u)]
     tt = seen.setdefault("tossid", {"m": {}})
     tt["t"], ti = now, tt["m"]  # seen 정리(t 기준)에서 안 지워지게
+    valid = {u for u in tossy if len(ti.get(u, [])) > 7}  # 상품 그룹 id(tacaIds)로 확인한 기록 — 그 전(10/23 새벽까지 tacaItemIds로 잘못 물은 것)은 다시 확인 · 그 상태에서 🔁 X
     if HAS_TOSS:
         for u in [u for u in tossy if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]:
             if time.time() - now > OWN_END_SEC:
@@ -4568,26 +4570,26 @@ def own_end(seen):
             m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
             ti[u] = [int(m[1]) if m else 0, now, 0]
         by = {}
-        for _, u in sorted(((ti[u] + [0])[2], u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 7 or stale(u))):  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
+        for _, u in sorted(((ti[u] + [0])[2], u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 8 or stale(u))):  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
             if len(by) < 30 or ti[u][0] in by:
                 by.setdefault(ti[u][0], []).append(u)
         if by:
             try:
-                r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, by)))
+                r = toss("/products/detail?tacaIds=" + ",".join(map(str, by)))  # 쉐어링크 주소 /t/번호 = 상품 그룹 id(tacaId) — 대표 옵션으로 조회(10/23: tacaItemIds로 물어 대부분 '조회 안 됨'이던 것, 공식 문서)
             except Exception as e:  # 터널 끊김 등 = 다음 실행에 다시(상태는 그대로)
                 print("own end", repr(e))
                 r = None
-            got, nf = ({x["tacaItemId"]: x for x in r["items"]}, {int(i) for i in r.get("notFoundIds") or []}) if r else ({}, set())
+            got, nf = ({x.get("tacaId"): x for x in r["items"]}, {int(i) for i in r.get("notFoundIds") or []}) if r else ({}, set())
             for i, us in by.items():
                 for u in us:
                     x, v = got.get(i), ti[u]
                     if not x and i not in nf:  # 응답에 없음 = 그대로, 다음에
                         continue
-                    nfd = [] if x else [d for d in (v[4] if len(v) > 4 else []) if d != today] + [today]  # 조회 안 됨이 이어진 날들(조회되면 처음부터)
-                    v[2:] = [now, "out" if not x or x.get("isSoldOut") else "ok", nfd, x and x["displayPrice"], bool(x and toss_steady(x))]
+                    nfd = [] if x else [d for d in (v[4] if len(v) > 7 else []) if d != today] + [today]  # 조회 안 됨이 이어진 날들(조회되면 처음부터 · 예전 잘못 물은 기록은 버림)
+                    v[2:] = [now, "out" if not x or x.get("isSoldOut") else "ok", nfd, x and x["displayPrice"], bool(x and toss_steady(x)), x and x.get("tacaItemId") or (v[7] if len(v) > 7 else 0)]  # v[7] = 대표 옵션 id(tacaItemId — 꾸준템·🔁 글·품절 지켜보기·같은 상품 거르기)
     ev, chk = ev_info(), f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시"
     rq = seen.setdefault("rehot", {"q": []})
-    rq["t"], n, c = now, 0, collections.Counter()
+    rq["t"], rq["q"], n, c = now, [q for q in rq["q"] if q.get("g")], 0, collections.Counter()  # g 없는 줄 = 예전(잘못 물은 id) 기록 — 버림
     for u, idxs in urls.items():
         p, tsy = posts[idxs[-1]], u in tossy
         first = next((posts[i] for i in idxs if icon_of(posts[i]["text"]) == "🔥"), None)  # 목표가 = 처음 🔥로 소개한 글 가격
@@ -4597,7 +4599,7 @@ def own_end(seen):
         f = {"tgt": tp} if tw else {}
         if e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):
             f["st"] = "gone"
-        elif tsy and len(v) > 6:
+        elif tsy and len(v) > 7:
             f.update(st="gone" if len(v[4]) >= 3 else "out" if v[3] == "out" else "hot" if tw and not stale(u) and v[5] <= (tw + cp) * (100 + OWN_HOT_PCT) / 100 else "wait",
                      chk=(lambda k: f"{k.tm_mon}/{k.tm_mday} {k.tm_hour}시")(time.gmtime(v[2] + 9 * 3600)))
             if v[6]:
@@ -4616,9 +4618,9 @@ def own_end(seen):
                 f["stl"] = 1
         if not tsy and any(icon_of(posts[i]["text"]) == "👍" for i in idxs):
             f["stdy"] = 1
-        f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" else p.get("rehot")
-        if f["rehot"] == today and p.get("rehot") != today and tsy and v and v[0]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격)
-            rq["q"] = [q for q in rq["q"] if q["id"] != v[0]] + [{"id": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
+        f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" and (not tsy or u in valid) else p.get("rehot")  # 토스 = 앞 상태도 맞는 id로 확인한 것일 때만
+        if f["rehot"] == today and p.get("rehot") != today and tsy and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
+            rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
         f = {k: x for k, x in f.items() if x}
         c[f["st"]] += 1
         for i in idxs:
@@ -4686,7 +4688,7 @@ def toss_roster(seen):
             last[p["url"]] = p
             dates.setdefault(p["url"], []).append(p["t"][:10])
     items = [{"n": parse(title_of(p["text"]))[1], "st": p.get("st", ""), "tgt": p.get("tgt", ""), "chk": p.get("chk", ""), "stdy": bool(p.get("stdy")),
-              "last": max(dates[u] + ([day(tb[ti[u][0]])] if ti.get(u, [0])[0] in tb else [])), "url": u} for u, p in last.items()]
+              "last": max(dates[u] + ([day(tb[ti[u][7]])] if len(ti.get(u, [])) > 7 and ti[u][7] in tb else [])), "url": u} for u, p in last.items()]
     items.sort(key=lambda x: ({"hot": 0, "wait": 1, "out": 2, "gone": 3}.get(x["st"], 1), not x["stdy"]))
     old = load(TOSS_LIST, {})
     new = {d: n for d, n in {**old.get("new", {}), yd: sum(day(t) == yd for t in tb.values()) + sum(d == yd for ds in dates.values() for d in ds)}.items() if d > day(now - 8 * 86400)}
