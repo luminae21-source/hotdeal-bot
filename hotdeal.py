@@ -589,20 +589,22 @@ def buy_btn(title, url):
     return mall_btn(mall, parse(title)[2]) if mall else buy_label(title)
 
 
-def mall_head(mall, src, icon):
-    """몰별 머리 줄: '💙 토스 특가 · {출처} 🔥' / '🚀 쿠팡 로켓 · {각도} 🛒'(출처·각도 모르면 칸 없이)."""
-    return f"{MALLS[mall][0]}{f' · {src}' if src else ''} {icon}"
+def mall_head(mall, src, icon, rocket=True):
+    """몰별 머리 줄: '💙 토스 특가 · {출처} 🔥' / '🚀 쿠팡 로켓 · {각도} 🛒'(출처·각도 모르면 칸 없이). 로켓 근거 없는 쿠팡 = '🚀 쿠팡 · …'(10/22 진우 '사실 아닌 표기 X')."""
+    return f"{MALLS[mall][0] if rocket or mall != 'coupang' else '🚀 쿠팡'}{f' · {src}' if src else ''} {icon}"
 
 
-def mall_body(mall, src, icon, name, price, lines):
+def mall_body(mall, src, icon, name, price, lines, rocket=True):
     """몰별 개별 글 본문(HTML, 대가성 문구 아래): 머리 줄 → 상품명(굵게) → 가격 줄 → 줄들(HTML).
     저장된 글은 split_title이 '[몰] 상품명 (가격)'으로 읽음(사이트·리스트·Threads 그대로)."""
-    return f"{esc(mall_head(mall, src, icon))}\n<b>{esc(name)}</b>\n{esc(price)}" + "".join(f"\n{l}" for l in lines if l)
+    return f"{esc(mall_head(mall, src, icon, rocket))}\n<b>{esc(name)}</b>\n{esc(price)}" + "".join(f"\n{l}" for l in lines if l)
 
 
 def mall_dr(plain):
-    """글의 할인율(머리 줄·가격 줄) — 정가 기준·참고·비교 말이 든 줄의 %는 X(10/22 리뷰: '88% 할인율보다 쿠팡 가격 비교가 정확')."""
-    return next((m[1] for l in plain.split("\n") if not re.search(rf"정가 기준|참고|{CMP_WORDS}", l) for m in [re.search(r"(\d{1,2})\s*%\s*(?:할인|↓)", l)] if m), "")
+    """글의 할인율 -> (조건, %): 정가 기준·참고·비교 말이 든 줄의 %는 X(10/22 리뷰 '88% 할인율보다 쿠팡 …'),
+    % 바로 앞 와우·쿠폰·멤버십·회원·카드 조건은 같이(10/22 Cowork: '와우 쿠폰 44% 할인'이 머리 줄에 '44% 할인'만 — 누구나 받는 할인처럼)."""
+    return next(((m[1].strip(), m[2]) for l in plain.split("\n") if not re.search(rf"정가 기준|참고|{CMP_WORDS}", l)
+                 for m in [re.search(r"((?:(?:와우|쿠폰|멤버십|회원|카드)\S*(?:\s+(?:적용|할인|가|즉시))?\s*)*)(\d{1,2})\s*%\s*(?:할인|↓)", l)] if m), ("", ""))
 
 
 def mall_src(mall, plain, title=""):
@@ -613,16 +615,17 @@ def mall_src(mall, plain, title=""):
     rank = re.search(r"(많이 팔린 순위 \d{1,2}위|[가-힣/·]{1,12} ?(?:베스트|구매|판매) ?\d{1,2}위)" if mall == "coupang" else r"(많이 팔린 순위 \d{1,2}위|[가-힣/·]{1,12} 베스트 \d{1,2}위)", fresh)
     rank = rank if rank and not re.search(f"{OTHER_STORES}|{WU_CMP}", rank[1]) else None  # 토스 머리 줄에 다른 몰 순위(예 '쿠팡 판매 1위') X — 토스 글은 토스 순위 말만
     low = re.search(r"30일 (?:내 )?최저가(?!는 아니|가 아니| 아님)", plain)
-    dr = mall_dr(plain)
+    cond, dr = mall_dr(plain)
+    dr = dr and f"{cond} {dr}% 할인".strip()  # 조건째('와우 쿠폰 44% 할인')
     if mall == "toss":
-        return rank[1] if rank else "하루특가" if "하루특가" in plain else "30일 최저가" if low else f"{dr}% 할인" if dr else ""
+        return rank[1] if rank else "하루특가" if "하루특가" in plain else "30일 최저가" if low else dr
     if saving(plain) or re.search(r"같은 상품[^\n—]*?(?:최저|가장 싸|제일 싸|젤 싸)", plain):
         return "같은 상품 최저"
     if re.search(r"1개당 (?:최저|가장 싸|제일 싸|젤 싸)", plain):
         return "1개당 최저"
     if "와우" in store_tag(title) or re.search(r"와우\s*(?:회원|할인|전용|가)", plain):
         return "와우 할인"
-    return "30일 최저가" if low else rank[1] if rank else f"{dr}% 할인" if dr else ""
+    return "30일 최저가" if low else rank[1] if rank else dr
 
 
 def mall_view(body, url):
@@ -640,8 +643,8 @@ def mall_view(body, url):
     line, _, extra = main.partition(" · ")  # '33,900원 · 5천원 쿠폰가' -> 할인·평점·단위가격은 금액 바로 뒤
     line = line.strip()
     if mall == "toss":
-        dr, star = mall_dr(plain), re.search(r"⭐\s*([\d.]+)\s*\(리뷰\s*([\d,]+)\)", plain)
-        line += (f" ({dr}%↓)" if dr else "") + (f" · ⭐ {star[1]} ({star[2]})" if star else "")
+        (cond, dr), star = mall_dr(plain), re.search(r"⭐\s*([\d.]+)\s*\(리뷰\s*([\d,]+)\)", plain)
+        line += (f" ({dr}%↓)" if dr and not cond else "") + (f" · ⭐ {star[1]} ({star[2]})" if star else "")  # 조건 붙은 %는 가격 줄에 X(누구나 받는 할인처럼 보임)
     elif u := re.search(r"\n💡 (?:단위가격:?[^\S\n]*)?((?:[\d.]*[가-힣A-Za-z]+당|1[가-힣]+)[^\S\n]*(?:약[^\S\n]*)?[\d,]+원꼴?(?:[^\S\n]?\([^)\n]*\))?)([^\n]*)", rest):  # 💡 줄 맨 앞 단위가격('1개당 373원'·'100ml당 24원'·'단위가격 개당 534원')만 가격 줄로, 나머지 조각은 💡 줄에 남김
         more = re.sub(r"^\s*(?:·|—)\s*", "", u[2]).strip()  # (HTML에서 꺼낸 글자 -> mall_body가 다시 이스케이프)
         rest, line = rest[:u.start()] + (f"\n💡 {more}" if more else "") + rest[u.end():], f"{line} → {re.sub(r'^1?개당 ', '1개 ', html.unescape(u[1]))}"
@@ -652,7 +655,7 @@ def mall_view(body, url):
         i = rest.find("\n\n출처: ")
         i = len(rest) if i < 0 else i
         rest = rest[:i] + f"\n⚠️ 결제 전 최종가 ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시)" + rest[i:]
-    return mall_body(mall, "" if m[1] == "🛒" else mall_src(mall, plain, title), m[1], name, line, []) + rest
+    return mall_body(mall, "" if m[1] == "🛒" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(r"로켓|새벽\s*도착", plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만
 
 
 def toss_when(t=None):
