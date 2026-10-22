@@ -4839,6 +4839,11 @@ it34 = [{"name": L34, "short": L34, "price": "1,234,567,890원", "chip": "1L당 
          "kind": "세탁세제", "line": "세제 떨어진 집이면 이참에 쟁여도 됨, 그리고 아주 긴 멘트가 두 줄로 넘어가도 괜찮은지 보는 줄 🧺", "when": "10/22 21시"},
         {"name": "휴지 30롤", "short": "휴지", "price": "9,900원", "chip": "", "badge": "💙 토스 특가", "ship": "", "photo": "t34/ph.jpg", "e": "🧻", "kind": "휴지", "line": "", "when": ""},
         {"name": "깨진 사진", "short": "깨진 사진", "price": "", "chip": "47%↓", "badge": "", "ship": "무료배송", "photo": "t34/bad.jpg", "e": None, "kind": "", "line": "", "when": "10/22 9시"}]
+# 10/22 진우 '눈에 잘 들어와야(폰 피드 1초)': 제목 2줄 · 보조 글자 40px↑(그린 글꼴 크기 전부 기록) · 글자·바탕 대비 4.5:1↑(WCAG, 큰 글자 기준 3:1보다 높게) · 1/3 크기로도 렌더
+assert all(C34.contrast(a, b) >= 4.5 for a, b in C34.IG_PAIRS.values()), sorted((round(C34.contrast(a, b), 2), k) for k, (a, b) in C34.IG_PAIRS.items())[:3]
+assert all(len(x.split("\n")) == 2 for xs in H.IG_TITLES.values() for x in xs) and round(C34.contrast("white", "black"), 1) == 21.0 and round(C34.contrast("#777777", "white"), 2) == 4.48
+sz34, pf34 = [], C34.pf
+C34.pf = lambda w, z: sz34.append(z) or pf34(w, z)
 for d34 in "AB":
     for n34 in (1, 3, 5):  # 5개 미만·1개도(타일·칩 자리만큼)
         o34 = C34.ig_cover(d34, (it34 * 2)[:n34], "10월 22일 목요일" if d34 == "A" else "10.22 목", "오늘 밤\n장바구니에\n넣을 만한 5개" if d34 == "A" else "퇴근길에 골라 둔\n살 만한 거 5개",
@@ -4846,6 +4851,12 @@ for d34 in "AB":
         assert I34.open(o34).size == (1080, 1350)
     for k34, x34 in enumerate(it34, 1):  # 긴 이름·긴 가격·긴 칩·이모지 멘트·사진(있음·없음·깨짐)
         assert I34.open(C34.ig_slide(d34, x34, k34, 3, f"t34/{d34}s{k34}.jpg")).size == (1080, 1350)
+C34.pf = pf34
+assert min(sz34) >= 40, sorted(set(sz34))[:5]  # 보조 글자까지 40px↑
+for f34 in os.listdir("t34"):  # 1/3 크기(폰 피드 썸네일 정도)
+    if f34[0] in "AB" and f34.endswith(".jpg"):
+        I34.open(f"t34/{f34}").resize((360, 450), I34.LANCZOS).save(f"t34/{f34[:-4]}_small.png")
+assert len([f for f in os.listdir("t34") if f.endswith("_small.png")]) == 12
 px34 = I34.open("t34/A3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.NAVY)) < 10, px34  # A 표지 = 남색
 px34 = I34.open("t34/B3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.PAPER)) < 10, px34  # B 표지 = 크림
 px34 = I34.open("t34/As2.jpg").convert("RGB").getpixel((540, 400)); assert max(abs(a - b) for a, b in zip(px34, (200, 210, 230))) < 12, px34  # A 상품 장 = 위 사진
