@@ -7,7 +7,7 @@ import base64, collections, hashlib, hmac, html, json, math, os, random, re, shu
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -2121,9 +2121,9 @@ def toss_solo(seen):
         elif src == "steady":  # 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘': 진우 토스 상품 중 own_end가 꾸준템으로 본 것 -> 상세로 지금 가격·품절·꾸준템 다시, 링크 = 진우 쉐어링크(점검 땐 재사용 모드 그대로)
             jw = {}
             for u, v in seen.get("tossid", {}).get("m", {}).items():
-                if v[3:] == ["steady"] and f"tb_{v[0]}" not in seen:
+                if v[3:4] == ["steady"] and f"tb_{v[0]}" not in seen:
                     jw.setdefault(v[0], u)
-            ids = list(jw)[(kst.tm_yday * 24 + h) * 30 % len(jw):][:30] if jw else []
+            ids = (list(jw)[(kst.tm_yday * 24 + h) * 30 % len(jw):] + list(jw))[:30] if jw else []  # 시각마다 다음 30개(끝에서 처음으로 이어서)
             raw = [x for x in toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if toss_steady(x)] if ids else []
             if not raw:
                 continue
@@ -4351,11 +4351,11 @@ def toss_steady(x):
 
 
 def own_end(seen):
-    """사이트 홈에 남는 진우 토스 상품(own 쉐어링크 전부 — 같은 url 최신 글 가격과 비교)의 판매 상태를 상세 API로, 실행마다 1번·마지막 확인이 OWN_END_GAP 지난 id 30개까지(오래 안 본 것부터):
-    품절·조회 안 됨 = 종료(gone) · 판매 중 + 특가 진행(지금가 ≤ 올린 가격) = 그대로(sale) · 판매 중 + 특가 끝남(지금가 > 올린 가격, 하루특가·선착순은 글 날 지남) = 꾸준템(toss_steady)이면 남김(steady) 아니면 뺌(drop).
-    -> 그 url 진우 글: gone·drop = "end": 오늘(KST, 처음 날짜 그대로), steady = "tst": 'M/D H시'(확인 시각 — 사이트 카드 '특가 끝남 · 지금 가격은 링크에서 확인'), sale = 둘 다 지움.
-    토스 API 가격·리뷰는 posts.json·사이트에 안 남김(API 신청 범위 · 보관 1일) — 상태만. 상품 id = 단축 링크를 1번 풀어 seen["tossid"]["m"][url] = [id(못 풀면 0 — 하루 뒤 다시), 푼 시각, 마지막 확인, 상태].
-    steady 상태는 toss_solo 'steady' 출처(채널·Threads 다시 올리기)가 씀. 쿠팡·네이버는 자동 확인 X(쿠팡 API 승인 전) — Cowork가 events.json 그 항목에 "end"."""
+    """사이트 진열(build_site.shelf)용 진우 토스 상품(own 쉐어링크 전부 — 같은 url 최신 글 가격과 비교) 상태를 상세 API로, 실행마다 1번·마지막 확인이 OWN_END_GAP 지난 id 30개까지(오래 안 본 것부터):
+    hot = 판매 중 + 지금가 ≤ 올린 가격(특가 진행) · steady = 특가 끝남(지금가 > 올린 가격, 하루특가·선착순은 날 지남) + 꾸준템(toss_steady) · sale = 특가 끝남 · out = 품절, 또는 조회 안 됨(없는 상품·판매 중지)이
+    서로 다른 날 3번 전까지 · gone = 조회 안 됨이 연속 서로 다른 날 3번(10/23 진우 '아예 없어지는 제품이 아니라면 계속 유지' — 사이트에서 빼는 건 이것뿐, 다시 조회되면 처음부터).
+    -> 그 url 진우 글 ts(상태)·chk('M/D H시' 확인 시각). 토스 API 가격·리뷰는 posts.json·사이트에 안 남김(API 신청 범위 · 보관 1일) — 상태만. 예전 규칙의 end·tst는 지움.
+    상품 id = 단축 링크를 1번 풀어 seen["tossid"]["m"][url] = [id(못 풀면 0 — 하루 뒤 다시), 푼 시각, 마지막 확인, 상태, 조회 안 됨 날짜들]. steady는 toss_solo 'steady' 출처(채널·Threads)도 씀."""
     now = time.time()
     if not HAS_TOSS:
         return
@@ -4370,7 +4370,7 @@ def own_end(seen):
         m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
         ti[u] = [int(m[1]) if m else 0, now, 0]
     by = {}
-    for _, u in sorted(((ti[u] + [0])[2], u) for u in last if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < now - OWN_END_GAP or len(ti[u]) < 4)):  # 상태 없는 것(이 규칙 전 확인)도 바로
+    for _, u in sorted(((ti[u] + [0])[2], u) for u in last if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(last[u]["t"])) or len(ti[u]) < 5)):  # 이 규칙 전 기록(상태 이름이 다름)·확인 뒤 다시 올린 글도 바로
         if len(by) < 30 or ti[u][0] in by:
             by.setdefault(ti[u][0], []).append(u)
     if by:
@@ -4382,33 +4382,64 @@ def own_end(seen):
         got, nf = {x["tacaItemId"]: x for x in r["items"]}, {int(i) for i in r.get("notFoundIds") or []}
         for i, us in by.items():
             for u in us:
-                ti[u][2:] = [now] + ti[u][3:4]
-                x, p = got.get(i), last[u]
+                x, p, v = got.get(i), last[u], ti[u]
+                v[2:] = [now] + v[3:5]
                 if not x and i not in nf:  # 응답에 없음 = 상태 그대로, 다음에
                     continue
+                nfd = [] if x else (v[4] if len(v) > 4 else [])  # 조회 안 됨이 이어진 날들(조회되면 처음부터)
+                if not x and today not in nfd:
+                    nfd = nfd + [today]
+                pr = parse(title_of(p["text"]))[2]
+                cp = re.search(r"(\d+)\s*천\s*원\s*쿠폰|([\d,]+)\s*원\s*쿠폰", pr)  # '(1,950원 · 5천원 쿠폰가)' = 쿠폰 뒤 가격 — 상세 API 가격엔 사람마다 쿠폰이 없어서 쿠폰만큼 더해 비교(10/23 리뷰)
                 w = price_won(title_of(p["text"]))
+                w = w and w + (cp and (int(cp[1]) * 1000 if cp[1] else int(cp[2].replace(",", ""))) or 0)
                 over = x and (re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today or w and x["displayPrice"] > w)  # 특가 끝남
-                ti[u][3:] = ["gone" if not x or x.get("isSoldOut") else ("steady" if toss_steady(x) else "drop") if over else "sale"]
-    st, checked, n = {u: ti[u][3] for u in last if len(ti.get(u, [])) > 3}, {u for us in by.values() for u in us}, 0
+                state = ("gone" if len(nfd) >= 3 else "out") if not x else "out" if x.get("isSoldOut") else ("steady" if toss_steady(x) else "sale") if over else "hot"
+                v[3:] = [state, nfd]
+    checked, n, chk = {u for us in by.values() for u in us}, 0, f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시"
     for p in posts:
-        s = p.get("own") and st.get(p.get("url"))
-        if not s:
+        if not p.get("own"):
             continue
-        was = (p.get("end"), p.get("tst"))
-        if s != "steady":
-            p.pop("tst", None)
-        elif p["url"] in checked or not p.get("tst"):
-            p["tst"] = f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시"  # 확인 시각(사이트 카드)
-        if s in ("gone", "drop"):
-            p.setdefault("end", today)
-        else:
-            p.pop("end", None)
-        n += was != (p.get("end"), p.get("tst"))
+        was = (p.get("ts"), p.get("chk"), p.pop("end", None), p.pop("tst", None))  # 예전 규칙(10/23 새벽 — 품절·특가 끝을 홈에서 뺌)의 end·tst는 지움
+        v = ti.get(p.get("url"), [])
+        if len(v) > 4 and kst_ts(p["t"]) <= v[2]:  # 확인 뒤에 다시 올린 글엔 옛 상태 X(다음 실행에 바로 확인)
+            p["ts"] = v[3]
+            if p["url"] in checked or not p.get("chk"):
+                p["chk"] = chk
+        n += was != (p.get("ts"), p.get("chk"), None, None)
     if n:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-    c = collections.Counter(st.values())
+    c = collections.Counter(v[3] for u, v in ti.items() if u in last and len(v) > 4)
     if by or n:
-        print("own end", f"토스 {len(last)}개 중 이번 {len(by)}개 확인 · 지금까지 종료 {c['gone']} · 판매 중(특가 진행) {c['sale']} · 특가 끝·꾸준템 남김 {c['steady']} · 특가 끝·뺌 {c['drop']} · 아직 {len(last) - len(st)} · 글 바꿈 {n}")
+        print("own end", f"토스 {len(last)}개 중 이번 {len(by)}개 확인 · 🔥 특가 진행 {c['hot']} · 👍 꾸준템 {c['steady']} · 판매 중(특가 끝) {c['sale']} · 일시 품절 {c['out']} · 뺌(3일 없음) {c['gone']} · 아직 {len(last) - sum(c.values())} · 글 바꿈 {n}")
+
+
+CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
+CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, life = 생필품(휴지·세제·위생·욕실 소모품), "
+              "beauty = 화장품·뷰티·헤어·바디, home = 생활·주방·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), etc = 그 밖.\n")
+
+
+def cat_fill(seen):
+    """사이트 품목 칸(build_site.SHELF_CATS, 10/23 진우 '사이트에도 제품 카테고리 구분'): 제목 정규식에 안 맞는 글(진우 상품 전부 + 최근 3일 커뮤니티 딜)은
+    Claude 한 번에 한 단어씩(CAT_PROMPT) 받아 글 cat에 저장(etc = 칸 없음, 한 번만). 실패·개수 다름 = 다음 실행에 다시."""
+    posts = load(POSTS, [])
+    since = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 3 * 86400))
+    todo = [p for p in posts if not p["text"].startswith("📋") and "cat" not in p and not cat_of(p) and (p.get("own") or p["t"][:10] >= since)][-CAT_FILL_N:]
+    if not todo or not E.get("ANTHROPIC_API_KEY"):
+        return
+    keys = [k for k, _, _ in SHELF_CATS] + ["etc"]
+    try:
+        cats = ai_json(CAT_PROMPT + "\n".join(f"{k + 1}. {parse(title_of(p['text']))[1]}" for k, p in enumerate(todo)), {"cats": {"type": "array", "items": {"type": "string", "enum": keys}}})["cats"]
+    except Exception as e:
+        print("cat fill", repr(e))
+        return
+    if len(cats) != len(todo):
+        print("cat fill", f"개수 다름 {len(cats)}/{len(todo)}")
+        return
+    for p, c in zip(todo, cats):
+        p["cat"] = c
+    json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    print("cat fill", len(todo), dict(collections.Counter(cats)))
 
 
 def toss_ids(seen):
@@ -4774,7 +4805,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill):
         try:
             step(seen)
         except Exception as e:

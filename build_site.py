@@ -33,7 +33,7 @@ a{color:#1b64da}main{max-width:680px;margin:0 auto;padding:12px 16px 16px}header
 .pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:#fff;border:1px solid #eef0f3;color:#191f28;text-decoration:none;font-weight:600}.alt{display:block;margin:-4px 0 8px 56px;font-size:15px;padding:12px 0}.pick b{color:#e8590c;font-size:20px;min-width:30px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:#c2410c;font-size:14px;white-space:nowrap}#today details{margin-top:10px}#today summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:#4e5968}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #1b64da;outline-offset:2px}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid #e8eaee;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}.bar a{flex:1 1 0;min-width:0;max-width:88px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:12px;color:#6b7684;text-decoration:none;font-size:12px;font-weight:600}.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.bar a[aria-current=true]{color:#1b64da;background:#e8f1fd}main:has(.bar){padding-bottom:84px}
-.bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}.k-hot{--c:#e03131}.k-toss{--c:#1b64da}.k-coupang{--c:#c2410c}.k-naver{--c:#087f5b}.k-life{--c:#0b7d3e}.k-beauty{--c:#d6336c}.k-days{--c:#4e5968}.k-today{--c:#f59f00;--t:#191f28}.k-brand{--c:#7048e8}.bar i{display:flex;color:var(--c)}.inapp form.find,.inapp .bar.top{box-shadow:0 8px 10px -10px rgba(25,31,40,.35)}.inapp .bar.top{display:flex;position:sticky;top:0;z-index:8;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px 0 4px;background:#f4f5f7;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}.inapp .bar.top::-webkit-scrollbar{display:none}.inapp .bar.top a{flex:0 0 calc((100% - 24px)/5);max-width:none;flex-direction:column;min-height:52px;padding:5px 0 4px;gap:3px;border-radius:14px;background:#fff;border:1px solid #e1e4e8;color:#333d4b;font-size:14px;font-weight:700}.inapp .bar.top i{width:22px;height:22px;border-radius:11px;background:var(--c);color:#fff;align-items:center;justify-content:center}.inapp .bar.top svg{width:13px;height:13px;stroke-width:2.4}.inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}.inapp .bar.top a[aria-current=true] i{background:rgba(255,255,255,.28);color:var(--t,#fff)}
+.bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}.k-hot{--c:#e03131}.k-toss{--c:#1b64da}.k-coupang{--c:#c2410c}.k-naver{--c:#087f5b}.k-life{--c:#0b7d3e}.k-cats{--c:#0b7d3e}.mo{margin-top:10px}.mo summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:#4e5968}@media(prefers-color-scheme:dark){.mo summary{color:#a1a1aa}}.k-beauty{--c:#d6336c}.k-days{--c:#4e5968}.k-today{--c:#f59f00;--t:#191f28}.k-brand{--c:#7048e8}.bar i{display:flex;color:var(--c)}.inapp form.find,.inapp .bar.top{box-shadow:0 8px 10px -10px rgba(25,31,40,.35)}.inapp .bar.top{display:flex;position:sticky;top:0;z-index:8;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px 0 4px;background:#f4f5f7;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;scrollbar-width:none}.inapp .bar.top::-webkit-scrollbar{display:none}.inapp .bar.top a{flex:0 0 calc((100% - 24px)/5);max-width:none;flex-direction:column;min-height:52px;padding:5px 0 4px;gap:3px;border-radius:14px;background:#fff;border:1px solid #e1e4e8;color:#333d4b;font-size:14px;font-weight:700}.inapp .bar.top i{width:22px;height:22px;border-radius:11px;background:var(--c);color:#fff;align-items:center;justify-content:center}.inapp .bar.top svg{width:13px;height:13px;stroke-width:2.4}.inapp .bar.top a[aria-current=true]{background:var(--c);border-color:var(--c);color:var(--t,#fff)}.inapp .bar.top a[aria-current=true] i{background:rgba(255,255,255,.28);color:var(--t,#fff)}
 .more{background:#eef4ff;border-radius:16px;padding:14px;margin:18px 0 0}.more h2{font-size:17px;font-weight:800;margin:0 2px 10px}.more div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.more .k-days{grid-column:1/-1}.more a{display:flex;align-items:center;justify-content:center;gap:6px;min-height:52px;padding:0 4px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(25,31,40,.06);color:#191f28;text-decoration:none;font-size:15px;font-weight:700;min-width:0}.more i{flex:none;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:14px;background:var(--c);color:#fff}.more svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .day h2{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:22px 2px 2px}.day>.t{margin:0 2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
 .g{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:16px;padding:12px;border:1px solid #eef0f3;box-shadow:0 1px 2px rgba(25,31,40,.04);min-width:0}.g .s{min-height:22px;padding:2px 30px 0 0;font-size:12px;color:#8b95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -311,7 +311,7 @@ def badges(p):
     """카드 배지(10/10 진우 'UI 편하게'): 🏆 인기(커뮤니티 반응, 10/11 몰·시각 줄에서 옮김 — 좁은 칸에서 시각이 잘려서) · 본사 정품(예약 글 tag) · 오늘 밤 12시 마감(토스 선착순특가, 오늘 올린 글만) · 약한 딜."""
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     return ([("b4", "🏆 인기")] if p.get("hot") else []) + ([("b1", "✅ 본사 정품")] if p.get("tag") == "정품" else []) + ([("b2", "⏰ 오늘 밤 12시 마감")] if "밤 12시까지" in p["text"] and p["t"][:10] == today else []) \
-        + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else []) + ([("b1", "👍 꾸준템")] if p.get("tst") else [])  # tst = 토스 특가 끝났어도 꾸준히 팔리는 진우 상품(hotdeal.own_end)
+        + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else [])
 
 
 def end_at(p):
@@ -348,12 +348,14 @@ def conds(p):
                                     ("증정", re.search(r"\d\s*\+\s*\d|증정|사은품", title)), ("무배", re.search("무료|무배", title))) if ok)
 
 
-def grid_item(i, p, rx=False, old=False):
+def grid_item(i, p, rx=False, old=False, sh=None):
     """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히).
-    old = 3일 지난 진우 상품(home_pool) -> 가격 아래 'M/D 가격 · 지금 가격은 링크에서 확인'(옛 가격이 지금 가격처럼 안 보이게).
-    글 tst(토스 특가 끝남 + 꾸준템, hotdeal.own_end) -> 옛 특가 가격·단위가격 대신 '특가 끝남 · 지금 가격은 링크에서 확인 (M/D H시 확인)' — 토스 API 가격은 사이트에 안 씀(API 신청 범위)."""
+    sh = 진열 상태(shelf: 단계, 가격, 가격 아래 줄, 배지) — 가격 None = 올린 때 가격, '' = 가격 숨김(토스 특가 끝남), 'N원' = 마지막 확인 가격.
+    old = 3일 지난 진우 상품이고 확인 기록 없음 -> 'M/D 가격 · 지금 가격은 링크에서 확인'(옛 가격이 지금 가격처럼 안 보이게)."""
     title = title_of(p["text"])
     store, name, price = parse(title)
+    _, now, note, badge = sh or (0, None, "", None)
+    shown = price.split("/")[0].strip() if now is None else now
     page_url, url = f"{BASE}p/{i}.html", p.get("url")
     if community(url):
         go = (f'<a class="o" href="{html.escape(url)}" rel="nofollow noopener" target="_blank" aria-label="{html.escape(name)} 원글에서 구매 링크 보기">원글 →</a>'
@@ -362,11 +364,12 @@ def grid_item(i, p, rx=False, old=False):
         go = f'<a href="{html.escape(url)}" rel="nofollow sponsored noopener" target="_blank" aria-label="{html.escape(name)} 구매하러 가기">구매 →</a>'
     else:
         go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
-    bd, sv, u, st = badge_html(p, ("b4",) if rx else ()), saving(p["text"]), unit_of(p), p.get("tst")  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
+    bd = badge_html(p, ("b4",) if rx else ()) + (f'<b class="{badge[0]}">{html.escape(badge[1])}</b>' if badge else "")  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
+    sv, u = (saving(p["text"]), unit_of(p)) if now is None else (None, "")  # 올린 때 가격 기준 줄은 그 가격을 보일 때만
     return (f'<article class="g" data-k="{html.escape(" ".join(filter(None, (keys(p), conds(p)))))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div>'
-            + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price and not st else "")
-            + (f'<div class="u">특가 끝남 · 지금 가격은 링크에서 확인 ({html.escape(st)} 확인)</div>' if st else f'<div class="u">{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인</div>' if old else "")
-            + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u and not st else "")
+            + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
+            + (f'<div class="u">{html.escape(note)}</div>' if note else f'<div class="u">{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인</div>' if old else "")
+            + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
             + (f'<div class="rx">👀 {html.escape(react(p).replace("분당 조회 ", "분당 "))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
 
 
@@ -374,24 +377,82 @@ DAY_ONLY = r"하루\s*특가|선착순|밤 12시까지"  # 토스 하루특가·
 EVENTS = "events.json"
 
 
-def home_pool(posts, days):
-    """홈 몰·품목·브랜드 칸에 둘 딜 번호(10/23 진우 '기존에 있던 제품은 판매 중이면 없애버리지 마'): 커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음),
-    진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개, 판매 종료 표시가 없으면 — 종료 = 글 "end"(토스 품절·조회 안 됨, hotdeal.own_end가 붙이고 다시 팔면 지움) ·
-    events.json 그 url "end"(YYYY-MM-DD)가 글 날짜 이후(쿠팡·네이버 — Cowork가 품절·검색에서 사라진 상품에 붙임) · 토스 하루특가·선착순(밤 12시 마감) 글 날이 지남
-    (단 own_end가 '특가 끝났어도 꾸준히 팔림'(tst)으로 본 글은 남김 — 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘')."""
-    today, ends = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), {}
+def ev_info():
+    """events.json 진우 항목 -> {url: {now, chk, end, why}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
     try:
         evs = json.load(open(EVENTS)) if os.path.exists(EVENTS) else []
-    except ValueError:  # 손으로 고치다 깨진 파일 = 종료 표시 없음으로(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)
+    except ValueError:
         evs = []
-    for e in evs:
-        if isinstance(e, dict) and isinstance(e.get("end"), str) and e.get("url"):
-            ends[e["url"]] = max(ends.get(e["url"], ""), e["end"])
+    out = {}
+    for e in evs if isinstance(evs, list) else []:
+        if isinstance(e, dict) and isinstance(e.get("url"), str):
+            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why") if isinstance(e.get(k), str)})
+    return out
+
+
+def md_h(chk):
+    """'YYYY-MM-DD HH:MM' -> 'M/D H시'(못 읽으면 그대로)."""
+    m = re.match(r"\d{4}-(\d\d)-(\d\d) (\d\d)", chk)
+    return f"{int(m[1])}/{int(m[2])} {int(m[3])}시" if m else chk
+
+
+def icon_of(text):
+    """글 아이콘: 몰별 틀 머리 줄 끝(🔥·🛒·👍) 또는 예전 틀 제목 줄 앞('🔥 [몰] …'), 없으면 ''."""
+    for l in text.split("\n"):
+        if m := MALL_HEAD.fullmatch(l):
+            return m[2]
+        if m := re.match(r"([🔥🛒👍]) \[", l):
+            return m[1]
+    return ""
+
+
+def shelf(p, ev, today):
+    """진열 상태(10/23 진우 '진열 = 기본 유지 — 아예 없어지는 제품이나 문제 제품이 아니면 계속, 가격 체크하고 변동하면 수정. 소매업이고 진열이라 삭제하면 사려던 사람이 못 산다'):
+    -> (단계 0 🔥 목표 특가 · 1 👍 꾸준템 · 2 판매 중 · 3 일시 품절, 가격(None = 올린 때 · '' = 숨김 · 'N원' = 마지막 확인), 가격 아래 줄, 배지) / None = 목록에서 뺌(진우 상품만, 딱 2가지).
+    토스 진우 상품 = 글 ts·chk(hotdeal.own_end — hot 지금가 ≤ 올린 가격 · steady 특가 끝 + 꾸준템 · sale 특가 끝 · out 품절(없는 상품도 서로 다른 날 3번 전까지) · gone 3번 = 뺌),
+    확인 전이면 아이콘대로(하루특가·선착순 날 지남 = 특가 끝). 토스 지금 가격은 사이트에 안 씀(API 신청 범위 '사이트 전시·가격 비교 안 함' — 진우 확인 전).
+    쿠팡·네이버 진우 상품 = events.json 그 url now·chk(Cowork 아침 확인 — 지금가 > 올린 가격 = 특가 끝) · end + why gone/issue(why 없으면 gone, end 뒤 다시 올린 글은 X) = 뺌.
+    커뮤니티 딜 = 🔥면 0 아니면 2(표시는 그대로)."""
+    ic, w = icon_of(p["text"]), price_won(title_of(p["text"]))
+    base = 1 if ic == "👍" else 2 if ic == "🛒" else 0
+    if not p.get("own"):
+        return (0 if ic == "🔥" else 2), None, "", None
+    if shop_of(p) == "toss" and toss_share(p.get("url")):
+        ts, chk = p.get("ts"), p.get("chk", "")
+        if ts == "gone":
+            return None
+        if ts == "out":
+            return 3, None, f"{int(p['t'][5:7])}/{int(p['t'][8:10])} 가격 · 다시 들어오면 링크에서 확인", ("b3", f"일시 품절 ({chk.split()[0]} 확인)")
+        if ts in ("steady", "sale"):
+            return (1 if ts == "steady" else 2), "", f"특가 끝남 · 지금 가격은 링크에서 확인 ({chk} 확인)", ("b1", "👍 꾸준템") if ts == "steady" else None
+        if ts == "hot":
+            return base, None, f"지금도 이 가격 이하 ({chk} 확인)", None
+        if re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today:
+            return 2, "", "특가 끝남 · 지금 가격은 링크에서 확인", None
+        return base, None, "", None
+    e = ev.get(p.get("url"), {})
+    if e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):
+        return None
+    if e.get("now"):
+        n = int(re.sub(r"\D", "", e["now"]) or 0)
+        return (2 if base == 0 and w and n > w else base), e["now"], f"지금 가격 ({md_h(e.get('chk', ''))} 확인)", None
+    return base, None, "", None
+
+
+def home_pool(posts, days):
+    """홈 몰·품목·브랜드 칸에 둘 딜 -> {posts 번호: shelf 상태}(10/23 진우 '우리가 업로드한 제품들을 리스트에서 그냥 빼지 않기' · '진열 = 기본 유지'):
+    커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음), 진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개(같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만) — 빼는 건 shelf가 None인 것뿐."""
+    today, ev = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), ev_info()
     recent = lambda p: p["t"][:10] in days[:3] and not p["text"].startswith("📋")
-    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own") and (p.get("tst") or not (shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today))}  # 끝난 하루특가 재게시면 그 전 보통 글
+    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
     newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
-    return {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and (last.get(p.get("url")) == i and newer.get(p.get("url"), -1) < i and not p.get("end")
-                                                                                  and ends.get(p.get("url"), "") < p["t"][:10] if p.get("own") else recent(p))}
+    out = {}
+    for i, p in enumerate(posts):
+        if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)):
+            continue
+        if (s := shelf(p, ev, today)) is not None:
+            out[i] = s
+    return out
 
 
 def cap(ds, n):
@@ -402,6 +463,18 @@ def cap(ds, n):
             out.append((i, p))
             k += not p.get("own")
     return out
+
+
+SHOW_MIN = 6  # 칸마다 처음 보이는 카드 수(🔥 목표 특가가 더 많으면 🔥 전부) — 나머지는 '더 보기'로 접음(10/23 진우 '🔥 강점 유지')
+
+
+def shelf_grid(ds, home, n, days):
+    """칸 격자(최신 순 ds): 🔥 목표 특가 → 👍 꾸준템 → 판매 중 → 일시 품절(같은 단계는 진우 상품 먼저, 그다음 최신), 커뮤니티 딜은 n개까지(cap).
+    🔥는 다 보이고 나머지는 SHOW_MIN칸까지 보인 뒤 '더 보기 N개'(접힘, 삭제 X). -> (카드 수, HTML)"""
+    ds = cap(sorted(ds, key=lambda x: (home[x[0]][0], not x[1].get("own"))), n)
+    k = max(SHOW_MIN, sum(home[i][0] == 0 for i, _ in ds))
+    g = [grid_item(i, p, old=p["t"][:10] not in days[:3], sh=home[i]) for i, p in ds]
+    return len(g), f'<div class="grid">{"".join(g[:k])}</div>' + (f'<details class="mo"><summary>더 보기 {len(g) - k}개</summary><div class="grid">{"".join(g[k:])}</div></details>' if g[k:] else "")
 
 
 def hot_section(posts, days):
@@ -419,15 +492,42 @@ CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|�
                                r"|마스카라|아이섀도|네일|올인원"))  # 제목 키워드(10/9 실제 딜 121개로 맞춤 — 크림·팩·쿠션·립·패드 단독은 음식·가구랑 겹쳐서 뺌)
 
 
+HEAT = r"핫팩|손난로|발난로|보온대|온열|전기\s*(?:요|매트|장판)|온수\s*매트|난로|히터|발열\s*(?:내의|조끼)|방한"
+HOME_RX = (r"모기|살충|홈키파|에프킬라|킨칸|퇴치|샤워기|샤워\s*헤드|수전|조리\s*도구|프라이팬|후라이팬|냄비|도마|주방|수저|젓가락|텀블러|밀폐\s*용기|보관\s*용기|정수|필터|수납|정리함|옷걸이|빨래|건조대|"
+           r"청소포|물걸레|밀대|청소\s*(?:솔|도구)|매트(?!리스)|러그|이불|베개|커튼|전구|LED|가위|집게|휴지통|분리수거|화분|방충|문풍지|단열")
+FASHION = r"양말|스타킹|레깅스|팬티|속옷|브라(?!운)|티셔츠|셔츠|바지|청바지|후드|맨투맨|패딩|자켓|재킷|코트|모자|비니|장갑|목도리|머플러|운동화|슬리퍼|신발|가방|백팩|지갑|벨트|우산|내의|잠옷|파자마|조끼"
+DIGI = (r"충전기|케이블|보조\s*배터리|이어폰|헤드폰|헤드셋|블루투스|마우스|키보드|모니터|노트북|태블릿|아이패드|갤럭시|스마트\s*워치|SSD|USB|메모리|카메라|청소기|에어\s*프라이어|전기\s*포트|드라이기|"
+        r"가습기|공기\s*청정|선풍기|제습기|밥솥|믹서|블렌더|토스터|면도기|멀티탭|스피커|TV|프린터|전동")
+FOOD7 = FOOD + (r"|잡곡|현미|귀리|오트|돼지|돈육|소고기|우삼겹|차돌|불고기|닭가슴살|볶음밥|주먹밥|도시락|동그랑땡|떡갈비|돈까스|돈가스|너겟|간식|젤리|사탕|쿠키|비스킷|빵|베이글|두유|녹차|홍차|티백|보리차|"
+                r"옥수수|참치|스팸|햄(?!스터)|소시지|피자|떡볶이|어묵|곤약|요거트|요구르트|치즈|버터|꿀|잼|시리얼|그래놀라|두부|고구마|감자(?!탕)|토마토|딸기|귤|포도|키위|블루베리|아몬드|호두|땅콩|"
+                r"김밥|라떼|아메리카노|원두|탄산수|콜라|사이다|식혜|국수|우동|냉면|파스타|소면|당면|밀키트|밀가루|설탕|식용유|참기름|간장|된장|고추장|케첩|마요|분유|이유식")
+SHELF_CATS = (("food", "🍚 식품·음료", FOOD7), ("life", "🧻 생필품", CATS[0][2]), ("beauty", "💄 화장품·뷰티", CATS[1][2]), ("home", "🏠 생활·주방", HOME_RX),
+              ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT))  # 10/23 진우 '사이트에도 제품 카테고리 구분' — 홈 '품목' 탭 한 칸 안에 7칸(겨울 난방 = 계절 칸, 없으면 안 보임)
+CAT_ORDER = ("heat", "beauty", "life", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 크림·클렌징 = 화장품, 세제·휴지 = 생필품)
+
+
+def cat_of(p):
+    """품목 칸 1개: 제목 정규식(CAT_ORDER 순) -> 안 맞으면 글 cat(hotdeal.cat_fill이 Claude 한 단어로 채움 — etc = 칸 없음) -> ''."""
+    t, rx = title_of(p["text"]), {k: r for k, _, r in SHELF_CATS}
+    return next((k for k in CAT_ORDER if re.search(rx[k], t)), p.get("cat") if p.get("cat") in rx else "")
+
+
 def cat_sections(posts, days, nav=""):
-    """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): home_pool(최근 3일 + 판매 중 진우 상품) 중 제목 키워드(CATS)로 고른 최신 순(커뮤니티 딜 6개까지). 없으면 칸·탭 없음.
-    posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). nav = 생필품 칸 아래 최저가 기록 링크. -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
+    """홈 품목 칸 7개(SHELF_CATS — 10/9 생필품·화장품 2칸 -> 10/23 진우 '제품 카테고리 구분' 7칸): home_pool(커뮤니티 최근 3일 + 진우 상품 진열) 중 cat_of가 그 칸인 것,
+    shelf_grid 순서(🔥 → 👍 → 판매 중 → 일시 품절, 커뮤니티 딜 6개까지). 없는 칸은 빈 값. nav = 생필품 칸 아래 최저가 기록 링크. -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
     out, home = [], home_pool(posts, days)
-    for key, name, rx in CATS:
-        ds = cap([(i, p) for i, p in enumerate(posts) if i in home and re.search(rx, title_of(p["text"]))][::-1], 6)
-        out.append((key, name, ds and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 + 핫딜픽 추천 상품 · 최신 순</div>'
-                                      f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div>{nav if key == "life" else ""}</section>'))
+    for key, name, _ in SHELF_CATS:
+        n, g = shelf_grid([(i, p) for i, p in reversed(list(enumerate(posts))) if i in home and cat_of(p) == key], home, 6, days)
+        out.append((key, name, n and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name} {n}개</h2><div class="t">🔥 목표 특가 먼저 · 최근 3일 딜 + 핫딜픽 추천 상품</div>'
+                                   f'{g}{nav if key == "life" else ""}</section>'))
     return out
+
+
+def cats_pane(secs):
+    """홈 '품목' 탭(바 1칸 — 7칸을 바에 다 넣으면 폰에서 3줄이 돼서): 맨 위 칸 바로가기 + 칸들(감싼 div — PANE_JS가 칸으로 스크롤)."""
+    secs = [(k, n, h) for k, n, h in secs if h]
+    return secs and (f'<section class="day" id="cats" aria-labelledby="catsh"><h2 id="catsh">🗂 품목별 딜</h2><div class="recs">'
+                     + "".join(f'<a href="#{k}">{n} {h.count(chr(60) + "article")}</a>' for k, n, h in secs) + f'</div></section><div class="cats">{"".join(h for _, _, h in secs)}</div>')
 
 
 PRICE_ITEMS = (  # 10/17 진우 '유입 늘리기 ② 최저가 기록 페이지'(/c/주소.html): (주소, 품목, 제목 낱말, 비교 단위, 그 단위로 보는 '…당' 낱말 — 1L당 = 'l') — 같은 단위끼리만
@@ -514,17 +614,17 @@ def shop_section(posts, days, key):
                    "coupang": ("🚀 쿠팡", f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>'),
                    "naver": ("💚 네이버", "")}[key]
     home = home_pool(posts, days)
-    ds = cap([(i, p) for i, p in enumerate(posts) if i in home and shop_of(p) == key and (key != "toss" or toss_share(p.get("url")))][::-1], 24)  # 토스 칸 = 쉐어링크 딜만(예전 그대로)
-    return (ds or key == "toss") and (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{head} 딜{f" {len(ds)}개" if ds else ""}</h2>'
-                                      f'<div class="t">{SHOP_NOTES[key]}</div>' + (f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div>' if ds else "") + f'{extra}</section>')
+    n, g = shelf_grid([(i, p) for i, p in reversed(list(enumerate(posts))) if i in home and shop_of(p) == key and (key != "toss" or toss_share(p.get("url")))], home, 24, days)  # 토스 칸 = 쉐어링크 딜만(예전 그대로)
+    return (n or key == "toss") and (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{head} 딜{f" {n}개" if n else ""}</h2>'
+                                     f'<div class="t">{SHOP_NOTES[key]}</div>' + (g if n else "") + f'{extra}</section>')
 
 
 def brand_section(posts, days):
     """홈 '✨ 정품·브랜드' 칸(10/10 진우 '브랜딩 파워 있는 제품도 꼭, 정품도'): home_pool(최근 3일 + 판매 중 진우 상품) 중 본사 정품 표시(tag)·이름 있는 브랜드(BRAND) 최신 순(커뮤니티 딜 8개까지)."""
     home = home_pool(posts, days)
-    ds = cap([(i, p) for i, p in enumerate(posts) if i in home and (p.get("tag") == "정품" or re.search(BRAND, title_of(p["text"])))][::-1], 8)
-    return ds and (f'<section class="day" id="brand" aria-labelledby="brandh"><h2 id="brandh">✨ 정품·브랜드 딜</h2><div class="t">최근 3일 + 핫딜픽 추천 상품 · 판매자(본사 정품 여부)는 배지·상세에서 확인</div>'
-                   f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div></section>')
+    n, g = shelf_grid([(i, p) for i, p in reversed(list(enumerate(posts))) if i in home and (p.get("tag") == "정품" or re.search(BRAND, title_of(p["text"])))], home, 8, days)
+    return n and (f'<section class="day" id="brand" aria-labelledby="brandh"><h2 id="brandh">✨ 정품·브랜드 딜</h2><div class="t">최근 3일 + 핫딜픽 추천 상품 · 판매자(본사 정품 여부)는 배지·상세에서 확인</div>'
+                  f'{g}</section>')
 
 
 def day_grids(posts, days):
@@ -545,6 +645,7 @@ ICONS = {  # 아래 바 아이콘 = Lucide(ISC 라이선스) 선 아이콘 — �
     "toss": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
     "coupang": '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
     "naver": '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
+    "cats": '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>',
     "life": '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>',
     "beauty": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
     "brand": '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>',
@@ -686,7 +787,7 @@ def build(posts, out="docs"):
         open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (rl or "") + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
         urls.append((url, p["t"][:10]))
     panes = [("hot", "🏆 인기", hot_section(posts, days)), *((k, n, shop_section(posts, days, k)) for k, n in (("toss", "💙 토스"), ("coupang", "🚀 쿠팡"), ("naver", "💚 네이버"))),
-             *cat_sections(posts, days, rec_nav(recs) or ""),("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
+             ("cats", "🗂 품목", cats_pane(cat_sections(posts, days, rec_nav(recs) or ""))), ("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'
                                                           f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a></div>'), ("saved", "❤️ 찜", SAVED)]
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로

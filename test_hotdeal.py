@@ -1559,10 +1559,10 @@ top5 = open("docs5/index.html").read().split('id="today"')[1].split("</section>"
 assert top5.count('class="pick"') == 3 and top5.index("<b>01</b><span>[G마켓] 추가딜1") < top5.index("<b>02</b><span>[G마켓] 주소없는딜") < top5.index("<b>03</b><span>[뽐뿌몰] 라면")
 os.remove("docs5/cards/2026-10-09.json"); S.build(g, "docs5")
 bar = idx.split('<nav class="bar"')[1].split("</nav>")[0]
-assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg></i>([^<]+)</a>', bar) == [("#toss", "토스"), ("#coupang", "쿠팡"), ("#today", "카드"), ("#days", "전체")]  # 반응 딜·품목 딜·네이버 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg viewBox="0 0 24 24" aria-hidden="true">.*?</svg></i>([^<]+)</a>', bar) == [("#toss", "토스"), ("#coupang", "쿠팡"), ("#cats", "품목"), ("#today", "카드"), ("#days", "전체")]  # (10/23 품목 = 7칸을 한 탭에 — 생수·라면 = 식품) 반응 딜·네이버 딜 없음 -> 그 버튼 없음, 홈 안에선 #칸만, 아이콘 = 선 아이콘(이모지 X)
 assert "fbclid" in S.PANE_JS and "ig&&t&&t.parentNode||ps[0]" in S.PANE_JS  # 인스타·Threads에서 오면 첫 칸 = 카드 딜(캡션 '맨 위에서 카드 번호')
 assert '<nav class="bar" aria-label="바로가기"><a href="https://hotdealpick.kr/#toss" class="k-toss">' in allp  # 지난 딜 전체에선 홈 칸으로
-assert idx.count('<div class="pane">') == 4 and idx.index('<div class="pane"><section class="card" id="today"') < idx.index('<div class="pane"><div id="days">') < idx.index('<nav class="bar"') < idx.index(S.PANE_JS)
+assert idx.count('<div class="pane">') == 5 and idx.index('<div class="pane"><section class="card" id="today"') < idx.index('<div class="pane"><div id="days">') < idx.index('<nav class="bar"') < idx.index(S.PANE_JS)
 assert 'href="https://hotdealpick.kr/all.html">지난 딜 전체 보기' in idx.split('id="days"')[1]  # 날짜 탭 대신 '📅 전체' 칸 끝에 지난 딜 링크
 d0 = idx.split('id="d0"')[1].split("</section>")[0]
 assert "10월 9일 딜 8개" in d0 and d0.count('class="g"') == 8 and "그제딜" not in idx and 'id="d1"' in idx and "어제딜" in idx and 'id="d2"' not in idx
@@ -1604,10 +1604,10 @@ assert i7.index('id="hot"') < i7.index('id="toss"') < i7.index('id="life"') < i7
 assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and 'class="b4"' not in hot7 and '<b class="b4">🏆 인기</b>' in life7  # 세제(3일 전)·휴지(4일 전) 제외, 🏆 배지는 인기 칸에선 빼고(제목이 이미 반응 좋은 딜) 다른 칸에선 보임
 assert '<div class="rx">👀 분당 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
 assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
-assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품</h2>" in life7
-assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#coupang", "쿠팡"), ("#naver", "네이버"), ("#life", "생필품"), ("#beauty", "화장품"), ("#days", "전체")]
-assert i7.count('<div class="pane">') == 7 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
-assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "coupang", "naver", "life", "beauty"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
+assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품 4개</h2>" in life7 and "💄 화장품·뷰티 2개</h2>" in beauty7
+assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#coupang", "쿠팡"), ("#naver", "네이버"), ("#cats", "품목"), ("#days", "전체")]  # 10/23 품목 7칸 = 한 탭(맨 위 칸 바로가기)
+assert i7.count('<div class="pane">') == 6 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
+assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "coupang", "naver", "cats"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
 # 6-6b) 3사 탭(10/15 진우 '토스·쿠팡·네이버 탭'): 쿠팡·네이버 칸 = 제목 [몰] 또는 구매 링크 · 최근 3일 · 최신 24개 · 맨 위 그 몰 대가성 문구(hotdeal.py와 같은 글자) · 쿠팡 칸 = 골드박스 버튼
 assert S.SHOP_NOTES == {"toss": H.TOSS_NOTE, "coupang": H.DISCLOSURE, "naver": H.NAVER_NOTE}
 cp7, nv7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("coupang", "naver"))
@@ -1627,7 +1627,7 @@ top7 = i7.split('<nav class="bar top" aria-label="바로가기">')[1].split("</n
 assert top7 == bot7.split(">", 1)[1] and i7.index('<div class="find"') < i7.index('<nav class="bar top"') < i7.index('<div class="pane">')  # 같은 메뉴, 검색창(sticky) 안
 assert S.INAPP_JS in i7.split("</head>")[0] and all(x in S.INAPP_JS for x in ("Barcelona", "Instagram", "FBAN", "KAKAOTALK", "NAVER\\(inapp")) and "classList.add('inapp')" in S.INAPP_JS
 assert ".bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}" in S.CSS and ".inapp .bar.top{display:flex;position:sticky" in S.CSS  # 기본 = 아래 바만, 앱 안 = 위 한 줄만 + 여백
-assert 'id="life"' not in a7 and 'id="hot"' not in a7 and "#life" in a7 and S.PANE_JS not in a7 and 'class="pane"' not in a7  # 지난 딜 전체엔 칸 없음(바는 홈 칸으로)
+assert 'id="life"' not in a7 and 'id="hot"' not in a7 and "#cats" in a7 and S.PANE_JS not in a7 and 'class="pane"' not in a7  # 지난 딜 전체엔 칸 없음(바는 홈 칸으로)
 # 6-7) 찜(10/9 진우 '핫딜도 장바구니처럼'): 격자 카드마다 하트(번호·이름), 맨 위 '찜' -> 홈 숨은 '찜한 딜' 칸(바에는 없음), 저장은 브라우저(JS)
 assert hot7.count('<button class="like" type="button" data-i="') == 2 and 'data-i="4" aria-pressed="false" aria-label="퓨어그램 폼클렌징 120ml 찜"' in hot7
 assert i7.count('<div class="pane" hidden><section class="day" id="saved"') == 1 and 'id="savedg"' in i7 and "#saved" not in i7.split('<nav class="bar"')[1].split("</nav>")[0]
@@ -1644,7 +1644,7 @@ assert S.keys(bp[0]) == "토스 브랜드" and S.keys(bp[1]) == "토스 식품 �
 assert [c for c, _ in S.badges(bp[0])] == ["b1"] and [c for c, _ in S.badges(bp[2])] == ["b3"] and S.badges(bp[3]) == [] and S.badges(bp[4]) == []  # '본사 정품' 글자만으로는 정품 배지 X(약한 딜 글)
 S.build(bp, "docs8"); i8, a8 = open("docs8/index.html").read(), open("docs8/all.html").read()
 br8 = i8.split('id="brand"')[1].split("</section>")[0]
-assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("탄력") < br8.index("자음") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
+assert br8.count('class="g"') == 3 and br8.index("피죤") < br8.index("자음") < br8.index("탄력") and S.keys(bp[5]) == "쿠팡 생필품 브랜드" and "구운란" not in br8 and '<b class="b1">✅ 본사 정품</b>' in br8 and '<b class="b3">🛒 약한 딜</b>' in br8
 assert f'<b class="b2" data-end="{S.end_at(bp[1])}">⏰ 오늘 밤 12시 마감</b>' in i8 and 'data-k="토스 식품 마감"' in i8 and 'data-k="토스 브랜드 무배"' in i8 and ("#brand", "브랜드") in re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i8.split('<nav class="bar"')[1].split("</nav>")[0])
 assert all('<div id="qn" class="t" hidden></div></div><nav class="bar top"' in x and S.FIND_JS in x for x in (i8, a8)) and 'data-c="마감"' in i8 and 'data-c="최저가"' not in i8 and f'<nav class="bar top" aria-label="바로가기"><a href="{S.BASE}#' in a8 and i8.index('id="q"') < i8.index('class="pane"') and 'data-c="마감"' in S.FIND and "[hidden]{display:none!important}" in S.CSS
 d7m = open("docs7/p/4.html").read()
@@ -3079,7 +3079,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, own_end):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, own_end, cat_fill):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -3280,7 +3280,7 @@ assert sm13.count("/c/") == 1 and "<loc>https://hotdealpick.kr/c/ramen.html</loc
 assert ('id="life"' in ix13) == ('href="https://hotdealpick.kr/c/ramen.html">라면 개당</a>' in ix13)  # 홈 생필품 칸 링크(칸이 있으면)
 assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 최저가 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
 assert "c/ramen.html" not in open(f"{d13}/p/4.html").read() and "c/ramen.html" not in open(f"{d13}/p/6.html").read()  # 토스 딜·다른 품목 페이지엔 X
-assert S13.cat_sections([p13("2026-10-16 10:00", "[쿠팡] 크리넥스 휴지 30롤 (19,900원)", "롤당 663원")], ["2026-10-16"], "<nav>R</nav>")[0][2].endswith("<nav>R</nav></section>")
+assert {k: h for k, _, h in S13.cat_sections([p13("2026-10-16 10:00", "[쿠팡] 크리넥스 휴지 30롤 (19,900원)", "롤당 663원")], ["2026-10-16"], "<nav>R</nav>")}["life"].endswith("<nav>R</nav></section>")
 assert H.poll_opts(480) == ["500원 이하", "600원까지", "700원까지", "더 줘도 사요"] and H.poll_opts(120)[:2] == ["120원 이하", "140원까지"] and H.poll_opts(2590)[0] == "2,500원 이하" and H.poll_opts(4.7)[0] == "10원 이하"
 assert H.poll_text(r13["ramen"]) == ("🗳️ 라면 개당 얼마면 '싸다' 싶어요?\n\n내일 이 글 답글로 핫딜픽 기록 최저가 알려드릴게요", H.poll_opts(480))
 c13h = []
@@ -4975,43 +4975,60 @@ P35 += [q35("2026-10-10 17:00", "[토스] 선크림 2개 (11,900원)", "https://
         q35("2026-10-10 18:00", "[토스] 볶음밥 10개 (12,900원)", "https://toss.shopping/_m/W1", own=1),  # 36: 같은 url 커뮤니티 글(37)이 더 새로 칸에 있음 -> X
         q35("2026-10-15 18:00", "[토스] 볶음밥 10개 (11,900원)", "https://toss.shopping/_m/W1")]  # 37: 커뮤니티 최근 -> 남음
 d35 = ["2026-10-16", "2026-10-15", "2026-10-14"]
-assert S35.home_pool(P35, d35) == {1, 6, 8, 34, 37} | set(range(9, 34)), sorted(S35.home_pool(P35, d35))
+h35 = S35.home_pool(P35, d35)
+assert set(h35) == {1, 4, 5, 6, 8, 35, 37} | set(range(9, 34)), sorted(h35)  # 10/23 진우 '진열 = 기본 유지': 0·7·34 = 같은 url 최신 글이 따로 · 2 = events end(why 없음 = gone) · 3 = 커뮤니티 3일 지남 · 36 = 같은 url 커뮤니티 글이 더 새로
+#   4 = 예전 규칙의 글 end는 안 봄 · 5·35 = 토스 하루특가·선착순 날 지남 = 특가 끝남(남음, 가격 숨김) · 8 = end(10/12) 뒤 다시 올린 글
+assert h35[5][:3] == (2, "", "특가 끝남 · 지금 가격은 링크에서 확인") and h35[1] == (0, None, "", None) and h35[37][0] == 0
 co35 = S35.shop_section(P35, d35, "coupang")
-assert "🚀 쿠팡 딜 26개" in co35 and all(f'{S35.BASE}p/{i}.html"' in co35 for i in (1, 8)) and f'{S35.BASE}p/9.html"' not in co35  # 커뮤니티 24개 + 진우 2개(밀려나지 않음), 가장 옛 커뮤니티 1개만 빠짐
-assert co35.count("지금 가격은 링크에서 확인") == 1 and "10/11 가격 · 지금 가격은 링크에서 확인" in co35  # 3일 지난 진우 상품만(8 = 최근 3일 글이라 X)
-to35 = S35.shop_section(P35, d35, "toss"); assert f'{S35.BASE}p/6.html"' in to35 and f'{S35.BASE}p/5.html"' not in to35
-li35 = S35.cat_sections(P35, d35)[0][2]; assert re.findall(r'p/(\d+)\.html"', li35) == ["8", "1"]  # 생필품 칸도: 진우 휴지·바디워시만(옛 커뮤니티 휴지·end 붙은 휴지·바디워시 X), 최신 순
-open("ev35.json", "w").write('[{"url": "https://link.coupang.com/a/END", "end": "2026-10-12"},'); assert 2 in S35.home_pool(P35, d35)  # 깨진 events.json = 종료 표시 없음(빌드 안 멈춤)
+assert "🚀 쿠팡 딜 27개" in co35 and all(f'{S35.BASE}p/{i}.html"' in co35 for i in (1, 4, 8)) and f'{S35.BASE}p/9.html"' not in co35  # 커뮤니티 24개 + 진우 3개(밀려나지 않음)
+assert co35.index('p/8.html"') < co35.index('p/4.html"') < co35.index('p/1.html"') < co35.index('p/33.html"')  # 같은 🔥면 진우 상품 먼저(그다음 최신)
+assert co35.count("지금 가격은 링크에서 확인") == 2 and "10/11 가격 · 지금 가격은 링크에서 확인" in co35  # 3일 지난 진우 상품(확인 기록 없음)만
+to35 = S35.shop_section(P35, d35, "toss"); assert f'{S35.BASE}p/6.html"' in to35 and f'{S35.BASE}p/35.html"' in to35 and to35.index('p/6.html"') < to35.index('p/35.html"')  # 🔥 먼저, 특가 끝남 뒤
+li35 = {k: h for k, _, h in S35.cat_sections(P35, d35)}["life"]; assert re.findall(r'p/(\d+)\.html"', li35) == ["8", "4", "1", "5"], re.findall(r'p/(\d+)\.html"', li35)
+# events 진우 항목: now·chk = 마지막 확인 가격(Cowork 아침 쿠팡 확인 — 카드 가격을 바꿈) · end + why gone/issue만 뺌(그 밖 why = 그대로) · 깨진 파일 = 표시 없음(빌드 안 멈춤)
+json.dump([{"url": "https://link.coupang.com/a/OLD", "now": "21,500원", "chk": "2026-10-23 08:30"}, {"url": "https://link.coupang.com/a/GONE", "end": "2026-10-20", "why": "issue"},
+           {"url": "https://link.coupang.com/a/END", "end": "2026-10-12", "why": "soldout"}], open("ev35.json", "w"))
+h35 = S35.home_pool(P35, d35); assert 4 not in h35 and 2 in h35 and h35[1] == (2, "21,500원", "지금 가격 (10/23 8시 확인)", None), h35[1]  # 지금가 > 올린 가격(18,900원) = 판매 중(특가 끝)
+g35 = S35.grid_item(1, P35[1], old=True, sh=h35[1]); assert '<div class="pr">21,500원</div>' in g35 and "지금 가격 (10/23 8시 확인)" in g35 and "18,900" not in g35 and "가격 · 지금 가격은" not in g35
+open("ev35.json", "w").write('[{"url": "https://link.coupang.com/a/END", "end": "2026-10-12"},'); assert 2 in S35.home_pool(P35, d35)
 json.dump([{"url": "https://link.coupang.com/a/END", "end": True}], open("ev35.json", "w")); assert 2 in S35.home_pool(P35, d35)
 os.remove("ev35.json"); S35.EVENTS = ev35
-# own_end(토스, 10/23 진우 '특가 끝났으면 가격만 확인하고, 특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘'): 진우 쉐어링크 전부(하루특가·선착순도) -> 단축 링크 id(1번) -> 상세 API 3갈래:
-#   품절·조회 안 됨 = end · 판매 중 + 지금가 ≤ 올린 가격 = 그대로 · 특가 끝남(지금가 > 올린 가격, 하루특가·선착순은 날 지남) = 꾸준템(리뷰 1,000↑ 또는 4.7점↑·300↑)이면 tst(확인 시각) 아니면 end
+# own_end(토스 — 10/23 진우 '가격 체크하고 변동하면 수정 · 아예 없어지는 제품이 아니면 계속'): 진우 쉐어링크 전부(하루특가·선착순도) -> 단축 링크 id(1번) -> 상세 API 상태(글 ts·chk, 토스 가격·리뷰는 안 남김):
+#   hot 지금가 ≤ 올린 가격 · steady 특가 끝 + 리뷰 1,000↑ 또는 4.7점·300↑ · sale 특가 끝 · out 품절 또는 조회 안 됨(서로 다른 날 3번 전) · gone 조회 안 됨 서로 다른 날 3번 = 사이트에서 뺌(이것뿐)
 sv35 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time)
 tq35 = lambda t, n, pr, **k: {"t": t, "text": f"🔥 [토스] {n} ({pr})", "url": f"https://toss.shopping/_m/{n}", "own": 1, **k}
 json.dump([tq35("2026-10-10 10:00", "A", "9,000원"), tq35("2026-10-11 10:00", "B", "10,000원", end="2026-10-20"),
-           {**tq35("2026-10-11 11:00", "C", "8,000원"), "text": "💙 토스 특가 · 하루특가 🔥\nC\n8,000원"}, tq35("2026-10-12 10:00", "D", "1,000원"), tq35("2026-10-12 11:00", "E", "1,000원"),
-           tq35("2026-10-12 12:00", "F", "5,000원"), tq35("2026-10-12 13:00", "G", "5,000원"), {**tq35("2026-10-12 14:00", "A", "9,000원"), "own": None}], open("posts35.json", "w"), ensure_ascii=False)
-c35, id35 = [], {"A": 11, "B": 22, "C": 44, "D": None, "E": 33, "F": 55, "G": 66}
+           {**tq35("2026-10-11 11:00", "C", "8,000원"), "text": "💙 토스 특가 · 하루특가 🔥\nC\n8,000원", "tst": "10/23 1시"}, tq35("2026-10-12 10:00", "D", "1,000원"), tq35("2026-10-12 11:00", "E", "1,000원"),
+           tq35("2026-10-12 12:00", "F", "5,000원"), tq35("2026-10-12 13:00", "G", "5,000원"), {**tq35("2026-10-12 14:00", "A", "9,000원"), "own": None},
+           tq35("2026-10-12 15:00", "H", "1,950원 · 5천원 쿠폰가")], open("posts35.json", "w"), ensure_ascii=False)
+c35, id35 = [], {"A": 11, "B": 22, "C": 44, "D": None, "E": 33, "F": 55, "G": 66, "H": 77}
 H.plain = lambda u, hops=4: c35.append(u) or (id35[u[-1]] and f"https://toss.shopping/t/{id35[u[-1]]}")
 X35 = {11: {"isSoldOut": True, "displayPrice": 9000}, 22: {"displayPrice": 10000, "reviewCount": 5}, 44: {"displayPrice": 8000, "reviewCount": 2000, "reviewScore": 4.1},
-       55: {"displayPrice": 7000, "reviewCount": 100, "reviewScore": 4.9}, 66: {"displayPrice": 7000, "reviewCount": 400, "reviewScore": 4.8}}
+       55: {"displayPrice": 7000, "reviewCount": 100, "reviewScore": 4.9}, 66: {"displayPrice": 7000, "reviewCount": 400, "reviewScore": 4.8}, 77: {"displayPrice": 6950, "reviewCount": 10}}
 H.toss = lambda path, body=None: c35.append(path) or {"items": [{"tacaItemId": i, **X35[i]} for i in map(int, path.split("=")[1].split(",")) if i in X35], "notFoundIds": [33]}
 H.POSTS, H.HAS_TOSS, time.time = "posts35.json", True, lambda: TK("2026-10-23 10:00")
 s35 = {}; H.own_end(s35); g35 = json.load(open("posts35.json"))
-assert [(p.get("end"), p.get("tst")) for p in g35] == [("2026-10-23", None), (None, None), (None, "10/23 10시"), (None, None), ("2026-10-23", None), ("2026-10-23", None), (None, "10/23 10시"), (None, None)], g35
-# A 품절 · B 판매 중(가격 그대로 -> end 지움) · C 하루특가 날 지남 + 리뷰 2,000 = 꾸준템 · D 못 풂 · E 조회 안 됨 · F 특가 끝(7,000 > 5,000) + 리뷰 100 = 뺌 · G 특가 끝 + 4.8점·400 = 꾸준템 · 커뮤니티 글 X
+st35 = lambda: [(p.get("ts"), p.get("chk"), p.get("end"), p.get("tst")) for p in json.load(open("posts35.json"))]
+k35 = "10/23 10시"
+assert st35() == [("out", k35, None, None), ("hot", k35, None, None), ("steady", k35, None, None), (None, None, None, None), ("out", k35, None, None), ("sale", k35, None, None), ("steady", k35, None, None), (None, None, None, None), ("hot", k35, None, None)], st35()
+# A 품절 = 일시 품절 · B 지금가 = 올린 가격 = 🔥(예전 end 지움) · C 하루특가 날 지남 + 리뷰 2,000 = 👍(예전 tst 지움) · D 못 풂 · E 조회 안 됨 1번 = 일시 품절 · F 특가 끝 + 리뷰 100 = 판매 중 · G 특가 끝 + 4.8점·400 = 👍
+#   H '1,950원 · 5천원 쿠폰가' = 상세 가격엔 쿠폰이 없어서 쿠폰만큼 더해 비교(6,950 = 그대로 🔥)
 assert "displayPrice" not in json.dumps(g35) and "리뷰" not in json.dumps(g35)  # 토스 API 가격·리뷰는 posts.json에 안 남김(상태만)
-assert c35[-1] == "/products/detail?tacaItemIds=11,22,44,33,55,66" and len(c35) == 8, c35  # 진우 글 url 7개 풀기(하루특가 C도) + 상세 1번
-assert {u[-1]: v[3] for u, v in s35["tossid"]["m"].items() if len(v) > 3} == {"A": "gone", "B": "sale", "C": "steady", "E": "gone", "F": "drop", "G": "steady"}
+assert c35[-1] == "/products/detail?tacaItemIds=11,22,44,33,55,66,77" and len(c35) == 9, c35  # 진우 글 url 8개 풀기(하루특가 C도) + 상세 1번
+X35[55]["displayPrice"] = 7000; json.dump(json.load(open("posts35.json")) + [tq35("2026-10-23 12:00", "F", "7,000원")], open("posts35.json", "w"), ensure_ascii=False)  # 진우가 F를 다시 올림(7,000원)
+c35.clear(); time.time = lambda: TK("2026-10-23 12:10"); H.own_end(s35); assert c35 == ["/products/detail?tacaItemIds=55"] and [x[0] for x in st35()][5::4] == ["hot", "hot"], (c35, st35())  # 확인 뒤 다시 올린 글 = 바로 다시 확인(옛 상태 X)
 c35.clear(); time.time = lambda: TK("2026-10-23 21:00"); H.own_end(s35); assert not c35  # 12시간 안·새 id 없음 = 안 물음(D 못 푼 건 하루 뒤 다시)
-time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,44,33,55,66"], c35
-assert json.load(open("posts35.json"))[2]["tst"] == "10/24 11시" and json.load(open("posts35.json"))[0]["end"] == "2026-10-23"  # 꾸준템 = 확인 시각 새로, 종료 날짜 = 처음 그대로
-# 사이트: 꾸준템(tst) = 옛 특가 가격·단위가격 대신 '특가 끝남 · 지금 가격은 링크에서 확인 (M/D H시 확인)' + 👍 배지, 하루특가 날 지났어도 홈에 남음
-S35.EVENTS = "ev35x.json"; g35 = json.load(open("posts35.json")); d35b = ["2026-10-24", "2026-10-23", "2026-10-22"]
-assert S35.home_pool(g35, d35b) == {1, 2, 3, 6}, sorted(S35.home_pool(g35, d35b))  # B 판매 중 · C 꾸준템(하루특가 날 지났어도) · D 아직 확인 전 보통 글 · G 꾸준템 / A·E·F end
-gc35, gb35 = S35.grid_item(2, g35[2], old=True), S35.grid_item(1, g35[1], old=True)
-assert "특가 끝남 · 지금 가격은 링크에서 확인 (10/24 11시 확인)" in gc35 and "👍 꾸준템" in gc35 and "8,000원" not in gc35 and "가격 · 지금 가격은" not in gc35  # 옛 특가 가격 X
-assert "10,000원" in gb35 and "10/11 가격 · 지금 가격은 링크에서 확인" in gb35 and "👍" not in gb35 and "특가 끝남" not in gb35
+time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,44,33,66,77,55"], c35  # 오래 안 본 것부터(F = 12:10에 봄)
+assert st35()[4][0] == "out" and s35["tossid"]["m"]["https://toss.shopping/_m/E"][4] == ["2026-10-23", "2026-10-24"]  # 조회 안 됨 2일째 = 아직 일시 품절
+time.time = lambda: TK("2026-10-25 11:00"); H.own_end(s35); assert [x[0] for x in st35()] == ["out", "hot", "steady", None, "gone", "hot", "steady", None, "hot", "hot"]  # 3일째 = gone(품절 A는 계속 일시 품절)
+# 사이트: gone만 빠지고 나머지는 진열 — 🔥 → 👍 → 판매 중 → 일시 품절, 토스는 지금 가격 대신 상태(API 신청 범위)
+S35.EVENTS = "ev35x.json"; g35 = json.load(open("posts35.json")); d35b = ["2026-10-25", "2026-10-24", "2026-10-23"]; h35 = S35.home_pool(g35, d35b)
+assert set(h35) == {0, 1, 2, 3, 6, 8, 9}, sorted(h35)  # E = gone만 빠짐 · F는 다시 올린 글(9)로
+to35 = S35.shop_section(g35, d35b, "toss"); assert [int(x) for x in re.findall(r'p/(\d+)\.html"', to35)] == [9, 8, 3, 1, 6, 2, 0], re.findall(r'p/(\d+)\.html"', to35)  # 🔥 → 👍 → 일시 품절
+ga35, gb35, gc35 = (S35.grid_item(i, g35[i], old=True, sh=h35[i]) for i in (0, 1, 2))
+assert "일시 품절 (10/25 확인)" in ga35 and "10/10 가격 · 다시 들어오면 링크에서 확인" in ga35  # 그 자리 그대로 + 배지
+assert "10,000원" in gb35 and "지금도 이 가격 이하 (10/25 11시 확인)" in gb35 and "가격 · 지금 가격은" not in gb35 and "👍" not in gb35
+assert "특가 끝남 · 지금 가격은 링크에서 확인 (10/25 11시 확인)" in gc35 and "👍 꾸준템" in gc35 and "8,000원" not in gc35  # 옛 특가 가격 X
 S35.EVENTS = ev35
 # 채널·Threads(10/23 진우 '꾸준하게 제품 올라오는 게 좋지'): TOSS_STEADY_HOURS 매시 글은 진우 토스 꾸준템(own_end steady) 먼저 — 상세로 지금 가격·품절·꾸준템 다시, 링크 = 진우 쉐어링크, 머리 줄 👍, 3일 tb_
 sv35b, t35 = (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS), []
@@ -5033,4 +5050,19 @@ for t35 in ("10:00", "10:00", "10:15", "22:30", "22:31"):
 q35 = [x.split("=")[1].split(",") for x in c35]
 assert [len(x) for x in q35] == [20, 12, 30, 2] and q35[3] == ["1030", "1031"], q35  # 20 푼 것 -> 다음 12 -> 15분 뒤 X -> 12시간 지나 30 + 남은 2
 H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv35; os.remove("posts35.json")
+# 품목 7칸(10/23 진우 '사이트에도 제품 카테고리 구분'): 제목 정규식(겨울 난방 > 화장품 > 생필품 > 식품 > 생활·주방 > 패션 > 가전) -> 안 맞으면 cat_fill이 Claude 한 단어로 글 cat(한 번만, etc = 칸 없음)
+ct35 = lambda t, **k: {"t": "2026-10-12 10:00", "text": f"🔥 [쿠팡] {t} (1,000원)", "url": "https://link.coupang.com/a/" + t, "own": 1, **k}
+assert [S35.cat_of(ct35(t)) for t in ("하루온 핫팩 30개", "메르헨트 폼클렌징 2개", "깨끗한나라 휴지 30롤", "햇반 24개", "홈키파 에어졸", "양말 10켤레", "보조배터리 10000", "애터미 비비크림")] == \
+    ["heat", "beauty", "life", "food", "home", "fashion", "digital", ""]
+assert S35.cat_of(ct35("애터미 비비크림", cat="beauty")) == "beauty" and S35.cat_of(ct35("사다리", cat="etc")) == "" and S35.cat_of(ct35("햇반", cat="beauty")) == "food"  # 정규식 먼저
+sv35c, a35 = (H.ai_json, H.POSTS, H.E.get("ANTHROPIC_API_KEY")), []
+json.dump([ct35("애터미 비비크림"), ct35("국내산 햇밤 1kg"), ct35("햇반 24개"), ct35("사다리", cat="etc"), {**ct35("옛 커뮤니티 이름없음"), "own": None}], open("posts35.json", "w"), ensure_ascii=False)
+H.POSTS, H.E["ANTHROPIC_API_KEY"] = "posts35.json", "k"
+H.ai_json = lambda prompt, props: a35.append(prompt) or {"cats": ["beauty"]}  # 개수 다름 = 안 씀(다음 실행에 다시)
+H.cat_fill({}); assert all("cat" not in p for p in json.load(open("posts35.json"))[:3]) and "1. 애터미 비비크림\n2. 국내산 햇밤 1kg" in a35[0] and "햇반" not in a35[0] and "사다리" not in a35[0] and "이름없음" not in a35[0]
+H.ai_json = lambda prompt, props: {"cats": ["beauty", "food"]}; H.cat_fill({}); assert [p.get("cat") for p in json.load(open("posts35.json"))] == ["beauty", "food", None, "etc", None]
+a35.clear(); H.ai_json = lambda prompt, props: a35.append(prompt); H.cat_fill({}); assert not a35  # 다 채웠으면 안 부름
+H.ai_json, H.POSTS = sv35c[:2]; H.E.pop("ANTHROPIC_API_KEY") if sv35c[2] is None else H.E.update(ANTHROPIC_API_KEY=sv35c[2]); os.remove("posts35.json")
+cp35 = S35.cats_pane([("food", "🍚 식품·음료", '<section id="food"><article class="g"></article><article class="g"></article></section>'), ("life", "🧻 생필품", "")])
+assert 'id="cats"' in cp35 and '<a href="#food">🍚 식품·음료 2</a>' in cp35 and "#life" not in cp35 and '<div class="cats"><section id="food">' in cp35  # 빈 칸은 바로가기·칸 X, 칸들은 감싼 div 안(바로가기 = 그 칸으로 스크롤)
 print("OK: 모든 셀프체크 통과")
