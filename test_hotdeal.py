@@ -4402,6 +4402,9 @@ KK28 = H.mall_view("🔥 <b>[쿠팡] 깨끗한나라 30롤 (15,500원)</b>\n\n�
 assert KK28.split("\n")[:3] == ["🚀 쿠팡 로켓 · 와우 쿠폰 44% 할인 🔥", "<b>깨끗한나라 30롤</b>", "15,500원 → 1롤 517원꼴"], KK28  # 12:29 실제 글(머리 '44% 할인'만이던 것)
 assert H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n판매자로켓 배송", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 로켓 🔥") and H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n내일 새벽 도착", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 로켓 🔥")
 assert H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n판매자 배송", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 🔥") and H.title_of("🚀 쿠팡 · 22% 할인 🔥\n핫팩\n8,860원") == "[쿠팡] 핫팩 (8,860원)" and H.th_weak("🚀 쿠팡 🛒\n핫팩\n1원")
+GB28 = H.mall_view("🔥 <b>[쿠팡] 기가바이트 GS24F14A 144Hz 모니터 (89,890/무료)</b>\n\n싸다", "https://www.coupang.com/np/search?q=x")  # 10/22 13:26 '원' 없는 가격 = 예전 틀로 남던 것
+assert GB28.split("\n")[:3] == ["🚀 쿠팡 🔥", "<b>기가바이트 GS24F14A 144Hz 모니터</b>", "89,890원 · 무료"] and H.title_of(H.plain_of(GB28)) == "[쿠팡] 기가바이트 GS24F14A 144Hz 모니터 (89,890원/무료)", GB28
+assert H.mall_view("🔥 <b>[쿠팡] 우유 (7,890, 무배)</b>\n\n싸다", "https://www.coupang.com/vp/1").split("\n")[2] == "7,890원 · 무배" and H.mall_view("🔥 <b>[쿠팡] 우유 (2개)</b>", "https://www.coupang.com/vp/1") == "🔥 <b>[쿠팡] 우유 (2개)</b>"  # 숫자 아닌 괄호 = 그대로
 TQ28 = H.mall_view("🔥 <b>[토스] 오일 (1,000원)</b>\n\n쿠폰 적용 61% 할인", "https://toss.shopping/_m/q").split("\n")
 assert TQ28[0] == "💙 토스 특가 · 쿠폰 적용 61% 할인 🔥" and TQ28[2] == "1,000원", TQ28  # 토스는 '로켓' 상관없이 💙 · 조건 붙은 %는 가격 줄 (N%↓) X
 assert H.mall_view("🔥 <b>[토스] 수뜰리에 2.5L 4개 (4,620원)</b>\n\n토스 하루특가\n⚠️ 88% 할인율보다 쿠팡 가격 비교가 정확", "https://toss.shopping/_m/x").split("\n")[:3] == ["💙 토스 특가 · 하루특가 🔥", "<b>수뜰리에 2.5L 4개</b>", "4,620원"]

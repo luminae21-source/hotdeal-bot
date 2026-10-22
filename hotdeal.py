@@ -636,6 +636,8 @@ def mall_view(body, url):
     title = html.unescape(m[2]) if m else ""
     mall = m and mall_of(url, title)
     _, name, price = parse(title)
+    if not price and (p := re.search(r"\s*\((\d{1,3}(?:,\d{3})+|\d{4,})\s*(?:[/,]\s*([^()]*))?\)\s*$", title)):  # 뽐뿌 '(89,890/무료)'처럼 '원' 없는 가격(10/22 13:26 기가바이트 글이 예전 틀로)
+        _, name, price = parse(f"{title[:p.start()]} ({p[1]}원{'/' + p[2] if p[2] else ''})")
     if not mall or not price:
         return body
     plain, rest = plain_of(body), body[m.end():]
