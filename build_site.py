@@ -69,7 +69,7 @@ def to_html(text, entities):
 
 
 NOTE_STARTS = ("이 포스팅은", "이 콘텐츠는", "[광고]")  # 대가성 문구 줄 시작(쿠팡·링크프라이스·네이버 = 이 포스팅은, 토스 = 이 콘텐츠는)
-MALL_HEAD = re.compile(r"(💙 토스 특가|🚀 쿠팡(?: 로켓)?)(?: · [^\n]*)? ([🔥🛒])$")  # 10/22 진우 '토스·쿠팡 한눈에': 몰별 개별 글 머리 줄 -> 다음 줄 상품명, 그다음 줄 가격
+MALL_HEAD = re.compile(r"(💙 토스 특가|🚀 쿠팡(?: 로켓)?)(?: · [^\n]*)? ([🔥🛒👍])$")  # 👍 = 꾸준템(10/22 20:0x 진우) · 10/22 진우 '토스·쿠팡 한눈에': 몰별 개별 글 머리 줄 -> 다음 줄 상품명, 그다음 줄 가격
 MALL_TAG = {"💙 토스 특가": "토스", "🚀 쿠팡 로켓": "쿠팡", "🚀 쿠팡": "쿠팡"}  # 로켓 근거 없는 쿠팡 딜 = '🚀 쿠팡'(10/22 진우 '사실 아닌 표기 X')
 
 
@@ -81,7 +81,7 @@ def mall_title(lines, i):
         return None
     seg = [s.strip() for s in lines[i + 2].split(" · ")]
     ship = next((s for s in seg[1:] if re.search(r"무료|무배|배송", s) and not s.startswith("⭐")), "")
-    price = " · ".join([re.split(r" → | \(\d+%↓\)", seg[0])[0].strip()] + [s for s in seg[1:] if s and s != ship and not s.startswith("⭐")]) + (f"/{ship}" if ship else "")
+    price = " · ".join([re.split(r" → | \(\d+%↓\)", seg[0])[0].strip()] + [s for s in seg[1:] if s and s != ship and not s.startswith("⭐") and not re.match(r"(?:한 달|리뷰) ", s)]) + (f"/{ship}" if ship else "")
     return f"[{MALL_TAG[m[1]]}] {lines[i + 1].strip()}" + (f" ({price})" if price else "")
 
 

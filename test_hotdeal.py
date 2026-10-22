@@ -3790,7 +3790,7 @@ def post21(mid, name, at, own=True, weak=False, body="쿠팡 평균가보다 낮
 def run21(s21, at):
     p21.clear(); time.time = lambda: TK("2026-10-21 " + at); o = io.StringIO()
     with contextlib.redirect_stdout(o): H.threads_deals(s21)
-    return [re.search(r"[🔥🛒] (?:\[\S+\] )?(\S+)", x).group(1) for x in p21], o.getvalue()
+    return [re.search(r"[🔥🛒👍] (?:\[\S+\] )?(\S+)", x).group(1) for x in p21], o.getvalue()
 def seq21(s21, times):
     out = []
     for at in times:
@@ -4178,6 +4178,15 @@ g25, log25 = run21(s25, "14:30"); assert g25 == ["코멧"] and "창 끝남 10분
 json.dump([own25(2542, "11:47", K23), own25(2543, "11:47", G23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([], open("ev25.json", "w"))
 s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}}
 g25, log25 = run21(s25, "14:37"); assert g25 == ["하루온"] and "창 끝남" not in log25, (g25, log25)  # 같은 분에 끝나가는 진우 딜 2개 = 강한 후보(② 구매 2위) 먼저(posts.json 순서 상관없이 — 리뷰)
+# 9-31 👍 꾸준템 Threads: 개별 글 O(수수료 링크만 — 그대로) · 🔥(강한 후보·채움) 다 나간 뒤 · 끝나가는 칸 X(👍는 놓치면 다음 날) · 강한 후보(②·화장품 자리) X
+ST25 = "👍 [쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)\n\n한 달 1,000명+ 구매 · 리뷰 1,969 · 손/발 크림 판매 2위\n🎁 백화점 선물 포장"
+json.dump([own25(2550, "13:00", ST25), own25(2551, "13:30", K23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "toss"}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["코멧"] and "창 끝남" not in log25, (g25, log25)  # 👍(먼저 올라옴·'판매 2위'·화장품)보다 🔥 먼저
+g25, log25 = run21(s25, "15:30"); assert g25 == ["록시땅"] and p21[0].startswith(H.th_note(H.DISCLOSURE) + "👍 [쿠팡] 록시땅"), (g25, p21)  # 🔥 다 나간 뒤 = 👍(진우 채움 칸)
+json.dump([own25(2552, "12:00", ST25)], open(H.POSTS, "w"), ensure_ascii=False)
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(10, "14:00", 0)]}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["토스10"] and "창 끝남" not in log25, (g25, log25)  # 👍 창 15:00(23분 남음)이어도 끝나가는 칸 X -> 차례대로 토스
 os.remove("ev25.json"); H.EVENTS = ev25
 os.remove("posts25.json")
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk25, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER) = sv25
@@ -4345,6 +4354,23 @@ assert [H.title_of(p["text"]) for p in pj28] == ["[쿠팡] 코멧 손난로 100g
 nd28 = H.night_deals({}, "2026-10-22 09:00", "2026-10-22 11:00")  # 22시 미리보기도 새 틀에서 이름·가격
 assert [(d["name"], d["price"], d["icon"]) for d in nd28][:3] == [("코멧 손난로 100g 30개", "8,860원", "🔥"), ("하루온 군인핫팩 160g, 30개", "13,520원", "🔥"), ("더건강플러스 올리브오일 1L", "15,580원", "🔥")], nd28
 assert H.ev_view({"deal": True, "url": "https://link.coupang.com/a/w", "button": "🛒 구매하러 가기", "text": "🛒 <b>[쿠팡] 약한 상품 (1,000원)</b>\n\n🤔 솔직히 특가로는 약한 제품"})[0].startswith("🚀 쿠팡 🛒\n<b>약한 상품</b>\n1,000원\n🤔")  # 약한 딜 = 각도 칸 없이 🛒
+# 9-31 (10/22 20:0x 진우 '최저가 아니어도 꾸준히 팔리는 제품' -> 👍 꾸준템): 예약 글 첫 글자 👍 = '🚀 쿠팡 · 꾸준히 팔리는 상품 👍'(로켓 근거면 '🚀 쿠팡 로켓 · …') / 상품명 /
+#       '가격 · 한 달 N명+ 구매 · 리뷰 N'(글에 있는 숫자만, 그 숫자만 있던 줄은 뺌) · 참고 줄 그대로 · 버튼 🚀 쿠팡에서 N원 · 토스 👍 = 그대로 · 제목·약한 딜·[광고] 첫 줄·미리보기
+ST31 = {"deal": True, "url": "https://link.coupang.com/a/ROX", "button": "🛒 25,800원 구매하기", "at": "2026-10-22 10:30",
+        "text": "👍 <b>[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)</b>\n\n📊 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착"}
+b31, k31 = H.ev_view(ST31)
+assert b31.startswith("🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n<b>록시땅 시어 버터 핸드크림 75ml</b>\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착") and k31 == "🚀 쿠팡에서 25,800원", b31
+p31 = H.plain_of(b31)
+assert H.title_of(p31) == "[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)" and H.th_steady(p31) and H.th_steady(H.plain_of(ST31["text"])) and not H.th_weak(p31) and "특가로는 약한" not in p31  # 제목엔 구매·리뷰 숫자 X
+assert H.ad_line(H.plain_of(ST31["text"])) == "[광고] 👍 록시땅 시어 버터 핸드크림 75ml 25,800원" and H.th_beauty("👍 [쿠팡] 록시땅 시어 버터 핸드크림 75ml") > 0
+assert H.ev_view({**ST31, "text": ST31["text"].replace("롯데택배", "로켓배송")})[0].startswith("🚀 쿠팡 로켓 · 꾸준히 팔리는 상품 👍\n")
+assert H.ev_view({**ST31, "text": ST31["text"].replace("📊 한 달 1,000명+ 구매 · 리뷰 1,969\n", "")})[0].split("\n")[2] == "25,800원"  # 숫자 없으면 가격만
+assert H.ev_view({**ST31, "url": "https://toss.shopping/_m/X", "text": ST31["text"].replace("[쿠팡]", "[토스]")})[0].startswith("👍 <b>[토스]")  # 토스 👍 = 범위 밖(그대로)
+assert not H.th_steady("💙 토스 특가 🔥\n휴지\n9,900원\n👍 리뷰 4.8점 많이 삼")
+ev31, H.EVENTS = H.EVENTS, "ev31.json"; json.dump([{**ST31, "at": "2026-10-22 10:40", "text": ST31["text"].replace("75ml", "150ml")}, {**ST31, "at": "2026-10-22 10:50", "url": "https://link.coupang.com/a/W1", "text": "🛒 <b>[쿠팡] 약한 것 (1,000원)</b>\n\n🤔 솔직히 특가로는 약한 제품"},
+                                                         {**ST31, "at": "2026-10-22 10:55", "url": "https://link.coupang.com/a/F1", "text": "🔥 <b>[쿠팡] 센 것 (2,000원)</b>\n\n30일 최저가"}], open("ev31.json", "w"), ensure_ascii=False)
+nd31 = H.night_deals({}, "2026-10-22 09:00", "2026-10-22 11:00"); os.remove("ev31.json"); H.EVENTS = ev31
+assert [d["icon"] for d in nd31] == ["👍", "🛒", "🔥"] and [d["icon"] for d in sorted(nd31, key=lambda d: "🔥👍🛒".index(d["icon"]))] == ["🔥", "👍", "🛒"], nd31  # 미리보기: 🔥 -> 👍 -> 🛒
 # Threads 개별 글(지금 틀 = th_voice 꺼짐): 대가성 문구 다음 줄 = 채널 글과 같은 머리 줄, 본문 그대로(출처·🏆 줄 X)
 os.makedirs("docs/p", exist_ok=True)
 c28 = []
