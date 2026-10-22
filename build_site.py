@@ -311,7 +311,7 @@ def badges(p):
     """카드 배지(10/10 진우 'UI 편하게'): 🏆 인기(커뮤니티 반응, 10/11 몰·시각 줄에서 옮김 — 좁은 칸에서 시각이 잘려서) · 본사 정품(예약 글 tag) · 오늘 밤 12시 마감(토스 선착순특가, 오늘 올린 글만) · 약한 딜."""
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     return ([("b4", "🏆 인기")] if p.get("hot") else []) + ([("b1", "✅ 본사 정품")] if p.get("tag") == "정품" else []) + ([("b2", "⏰ 오늘 밤 12시 마감")] if "밤 12시까지" in p["text"] and p["t"][:10] == today else []) \
-        + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else [])
+        + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else []) + ([("b1", "👍 꾸준템")] if p.get("tst") else [])  # tst = 토스 특가 끝났어도 꾸준히 팔리는 진우 상품(hotdeal.own_end)
 
 
 def end_at(p):
@@ -350,7 +350,8 @@ def conds(p):
 
 def grid_item(i, p, rx=False, old=False):
     """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히).
-    old = 3일 지난 진우 상품(home_pool) -> 가격 아래 'M/D 가격 · 지금 가격은 링크에서 확인'(옛 가격이 지금 가격처럼 안 보이게)."""
+    old = 3일 지난 진우 상품(home_pool) -> 가격 아래 'M/D 가격 · 지금 가격은 링크에서 확인'(옛 가격이 지금 가격처럼 안 보이게).
+    글 tst(토스 특가 끝남 + 꾸준템, hotdeal.own_end) -> 옛 특가 가격·단위가격 대신 '특가 끝남 · 지금 가격은 링크에서 확인 (M/D H시 확인)' — 토스 API 가격은 사이트에 안 씀(API 신청 범위)."""
     title = title_of(p["text"])
     store, name, price = parse(title)
     page_url, url = f"{BASE}p/{i}.html", p.get("url")
@@ -361,11 +362,11 @@ def grid_item(i, p, rx=False, old=False):
         go = f'<a href="{html.escape(url)}" rel="nofollow sponsored noopener" target="_blank" aria-label="{html.escape(name)} 구매하러 가기">구매 →</a>'
     else:
         go = f'<a class="o" href="{page_url}" aria-label="{html.escape(name)} 자세히 보기">자세히 →</a>'
-    bd, sv, u = badge_html(p, ("b4",) if rx else ()), saving(p["text"]), unit_of(p)  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
+    bd, sv, u, st = badge_html(p, ("b4",) if rx else ()), saving(p["text"]), unit_of(p), p.get("tst")  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
     return (f'<article class="g" data-k="{html.escape(" ".join(filter(None, (keys(p), conds(p)))))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div>'
-            + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
-            + (f'<div class="u">{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인</div>' if old else "")
-            + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
+            + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price and not st else "")
+            + (f'<div class="u">특가 끝남 · 지금 가격은 링크에서 확인 ({html.escape(st)} 확인)</div>' if st else f'<div class="u">{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인</div>' if old else "")
+            + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u and not st else "")
             + (f'<div class="rx">👀 {html.escape(react(p).replace("분당 조회 ", "분당 "))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
 
 
@@ -376,7 +377,8 @@ EVENTS = "events.json"
 def home_pool(posts, days):
     """홈 몰·품목·브랜드 칸에 둘 딜 번호(10/23 진우 '기존에 있던 제품은 판매 중이면 없애버리지 마'): 커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음),
     진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개, 판매 종료 표시가 없으면 — 종료 = 글 "end"(토스 품절·조회 안 됨, hotdeal.own_end가 붙이고 다시 팔면 지움) ·
-    events.json 그 url "end"(YYYY-MM-DD)가 글 날짜 이후(쿠팡·네이버 — Cowork가 품절·검색에서 사라진 상품에 붙임) · 토스 하루특가·선착순(밤 12시 마감) 글 날이 지남."""
+    events.json 그 url "end"(YYYY-MM-DD)가 글 날짜 이후(쿠팡·네이버 — Cowork가 품절·검색에서 사라진 상품에 붙임) · 토스 하루특가·선착순(밤 12시 마감) 글 날이 지남
+    (단 own_end가 '특가 끝났어도 꾸준히 팔림'(tst)으로 본 글은 남김 — 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘')."""
     today, ends = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), {}
     try:
         evs = json.load(open(EVENTS)) if os.path.exists(EVENTS) else []
@@ -386,7 +388,7 @@ def home_pool(posts, days):
         if isinstance(e, dict) and isinstance(e.get("end"), str) and e.get("url"):
             ends[e["url"]] = max(ends.get(e["url"], ""), e["end"])
     recent = lambda p: p["t"][:10] in days[:3] and not p["text"].startswith("📋")
-    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own") and not (shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today)}  # 끝난 하루특가 재게시면 그 전 보통 글
+    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own") and (p.get("tst") or not (shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today))}  # 끝난 하루특가 재게시면 그 전 보통 글
     newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
     return {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and (last.get(p.get("url")) == i and newer.get(p.get("url"), -1) < i and not p.get("end")
                                                                                   and ends.get(p.get("url"), "") < p["t"][:10] if p.get("own") else recent(p))}

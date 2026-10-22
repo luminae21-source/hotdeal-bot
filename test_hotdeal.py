@@ -3743,7 +3743,7 @@ assert all("🙋" not in t and "👍" not in t for t in (tn20, tv20, tc20)) and 
 H.store_link, H.affiliate = sl20, af20
 # 묶음 글(토스 베스트·하루특가 리스트·TOP·미리보기·간식·카드)은 그대로: 👉 코멘트 줄 그대로, 🙋·👍 X
 assert '"👉 " + esc(p["comment"])' in inspect.getsource(H.toss_deals) and all("wu(" not in inspect.getsource(f) and "toss_lines(" not in inspect.getsource(f) for f in (H.top_post, H.top_deals, H.preview, H.wx_post, H.threads))
-assert inspect.getsource(H.toss_deals).count("toss_lines(") == 2 and "toss_th(info, name, toss_price(x), lines, link)" in inspect.getsource(H.toss_solo)  # 개별 글(토스 픽 채움·뷰티 채움·단독)만
+assert inspect.getsource(H.toss_deals).count("toss_lines(") == 2 and "toss_th(info, name, toss_price(x), lines, link, icon)" in inspect.getsource(H.toss_solo)  # 개별 글(토스 픽 채움·뷰티 채움·단독)만
 # Threads 개별 글(posts.json 커뮤니티 토스 딜) = 480자 넘으면 👍 -> 🙋 순서로 뺌, 게시 시점 줄은 남김
 c20 = []
 def http20b(url, body=None, headers=None, method=None):
@@ -4984,26 +4984,53 @@ li35 = S35.cat_sections(P35, d35)[0][2]; assert re.findall(r'p/(\d+)\.html"', li
 open("ev35.json", "w").write('[{"url": "https://link.coupang.com/a/END", "end": "2026-10-12"},'); assert 2 in S35.home_pool(P35, d35)  # 깨진 events.json = 종료 표시 없음(빌드 안 멈춤)
 json.dump([{"url": "https://link.coupang.com/a/END", "end": True}], open("ev35.json", "w")); assert 2 in S35.home_pool(P35, d35)
 os.remove("ev35.json"); S35.EVENTS = ev35
-# own_end(토스): 진우 쉐어링크(하루특가·선착순 빼고, 같은 url 최신 글) -> 단축 링크 id(1번만) -> 상세 API 품절·조회 안 됨 = 글 end 오늘, 다시 판매 = end 지움
+# own_end(토스, 10/23 진우 '특가 끝났으면 가격만 확인하고, 특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘'): 진우 쉐어링크 전부(하루특가·선착순도) -> 단축 링크 id(1번) -> 상세 API 3갈래:
+#   품절·조회 안 됨 = end · 판매 중 + 지금가 ≤ 올린 가격 = 그대로 · 특가 끝남(지금가 > 올린 가격, 하루특가·선착순은 날 지남) = 꾸준템(리뷰 1,000↑ 또는 4.7점↑·300↑)이면 tst(확인 시각) 아니면 end
 sv35 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time)
-json.dump([{"t": "2026-10-10 10:00", "text": "🔥 [토스] A", "url": "https://toss.shopping/_m/A", "own": 1}, {"t": "2026-10-11 10:00", "text": "🔥 [토스] B", "url": "https://toss.shopping/_m/B", "own": 1, "end": "2026-10-20"},
-           {"t": "2026-10-11 11:00", "text": "💙 토스 특가 · 하루특가 🔥\nC", "url": "https://toss.shopping/_m/C", "own": 1}, {"t": "2026-10-12 10:00", "text": "🔥 [토스] D", "url": "https://toss.shopping/_m/D", "own": 1},
-           {"t": "2026-10-12 11:00", "text": "🔥 [토스] E", "url": "https://toss.shopping/_m/E", "own": 1}, {"t": "2026-10-12 12:00", "text": "🔥 [토스] 커뮤니티", "url": "https://toss.shopping/_m/A"}], open("posts35.json", "w"), ensure_ascii=False)
-c35 = []
-H.plain = lambda u, hops=4: c35.append(u) or {"A": "https://toss.shopping/t/11", "B": "https://toss.shopping/t/22", "D": None, "E": "https://toss.shopping/t/33"}[u[-1]]
-H.toss = lambda path, body=None: c35.append(path) or {"items": [{"tacaItemId": 11, "isSoldOut": True}, {"tacaItemId": 22, "isSoldOut": False}], "notFoundIds": [33]}
+tq35 = lambda t, n, pr, **k: {"t": t, "text": f"🔥 [토스] {n} ({pr})", "url": f"https://toss.shopping/_m/{n}", "own": 1, **k}
+json.dump([tq35("2026-10-10 10:00", "A", "9,000원"), tq35("2026-10-11 10:00", "B", "10,000원", end="2026-10-20"),
+           {**tq35("2026-10-11 11:00", "C", "8,000원"), "text": "💙 토스 특가 · 하루특가 🔥\nC\n8,000원"}, tq35("2026-10-12 10:00", "D", "1,000원"), tq35("2026-10-12 11:00", "E", "1,000원"),
+           tq35("2026-10-12 12:00", "F", "5,000원"), tq35("2026-10-12 13:00", "G", "5,000원"), {**tq35("2026-10-12 14:00", "A", "9,000원"), "own": None}], open("posts35.json", "w"), ensure_ascii=False)
+c35, id35 = [], {"A": 11, "B": 22, "C": 44, "D": None, "E": 33, "F": 55, "G": 66}
+H.plain = lambda u, hops=4: c35.append(u) or (id35[u[-1]] and f"https://toss.shopping/t/{id35[u[-1]]}")
+X35 = {11: {"isSoldOut": True, "displayPrice": 9000}, 22: {"displayPrice": 10000, "reviewCount": 5}, 44: {"displayPrice": 8000, "reviewCount": 2000, "reviewScore": 4.1},
+       55: {"displayPrice": 7000, "reviewCount": 100, "reviewScore": 4.9}, 66: {"displayPrice": 7000, "reviewCount": 400, "reviewScore": 4.8}}
+H.toss = lambda path, body=None: c35.append(path) or {"items": [{"tacaItemId": i, **X35[i]} for i in map(int, path.split("=")[1].split(",")) if i in X35], "notFoundIds": [33]}
 H.POSTS, H.HAS_TOSS, time.time = "posts35.json", True, lambda: TK("2026-10-23 10:00")
-s35 = {}; H.own_end(s35)
-assert [p.get("end") for p in json.load(open("posts35.json"))] == ["2026-10-23", None, None, None, "2026-10-23", None], json.load(open("posts35.json"))  # A 품절·E 조회 안 됨 = 종료, B 다시 판매 = end 지움, 커뮤니티 글 X
-assert c35 == ["https://toss.shopping/_m/A", "https://toss.shopping/_m/B", "https://toss.shopping/_m/D", "https://toss.shopping/_m/E", "/products/detail?tacaItemIds=11,22,33"], c35  # 하루특가 C는 안 물음
-c35.clear(); time.time = lambda: TK("2026-10-23 11:00"); H.own_end(s35); assert not c35  # 3시간 안·새 id 없음 = 안 물음(D 못 푼 건 하루 뒤 다시)
-time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,33"], c35
-json.dump([{"t": "2026-10-12 10:00", "text": f"🔥 [토스] R{k}", "url": f"https://toss.shopping/_m/R{k:02d}", "own": 1} for k in range(32)], open("posts35.json", "w"), ensure_ascii=False)
-H.plain, H.toss = (lambda u, hops=4: f"https://toss.shopping/t/{1000 + int(u[-2:])}"), (lambda path, body=None: c35.append(path) or {"items": [], "notFoundIds": []})
-c35.clear(); s35 = {}
-for t35 in ("10:00", "10:00", "10:15", "13:30", "13:31"):  # 한 실행 = 단축 링크 20개까지 · 상세는 3시간 지난 id 30개까지(오래 안 본 것부터)
-    time.time = lambda: TK(f"2026-10-23 {t35}"); H.own_end(s35)
+s35 = {}; H.own_end(s35); g35 = json.load(open("posts35.json"))
+assert [(p.get("end"), p.get("tst")) for p in g35] == [("2026-10-23", None), (None, None), (None, "10/23 10시"), (None, None), ("2026-10-23", None), ("2026-10-23", None), (None, "10/23 10시"), (None, None)], g35
+# A 품절 · B 판매 중(가격 그대로 -> end 지움) · C 하루특가 날 지남 + 리뷰 2,000 = 꾸준템 · D 못 풂 · E 조회 안 됨 · F 특가 끝(7,000 > 5,000) + 리뷰 100 = 뺌 · G 특가 끝 + 4.8점·400 = 꾸준템 · 커뮤니티 글 X
+assert "displayPrice" not in json.dumps(g35) and "리뷰" not in json.dumps(g35)  # 토스 API 가격·리뷰는 posts.json에 안 남김(상태만)
+assert c35[-1] == "/products/detail?tacaItemIds=11,22,44,33,55,66" and len(c35) == 8, c35  # 진우 글 url 7개 풀기(하루특가 C도) + 상세 1번
+assert {u[-1]: v[3] for u, v in s35["tossid"]["m"].items() if len(v) > 3} == {"A": "gone", "B": "sale", "C": "steady", "E": "gone", "F": "drop", "G": "steady"}
+c35.clear(); time.time = lambda: TK("2026-10-23 21:00"); H.own_end(s35); assert not c35  # 12시간 안·새 id 없음 = 안 물음(D 못 푼 건 하루 뒤 다시)
+time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,44,33,55,66"], c35
+assert json.load(open("posts35.json"))[2]["tst"] == "10/24 11시" and json.load(open("posts35.json"))[0]["end"] == "2026-10-23"  # 꾸준템 = 확인 시각 새로, 종료 날짜 = 처음 그대로
+# 사이트: 꾸준템(tst) = 옛 특가 가격·단위가격 대신 '특가 끝남 · 지금 가격은 링크에서 확인 (M/D H시 확인)' + 👍 배지, 하루특가 날 지났어도 홈에 남음
+S35.EVENTS = "ev35x.json"; g35 = json.load(open("posts35.json")); d35b = ["2026-10-24", "2026-10-23", "2026-10-22"]
+assert S35.home_pool(g35, d35b) == {1, 2, 3, 6}, sorted(S35.home_pool(g35, d35b))  # B 판매 중 · C 꾸준템(하루특가 날 지났어도) · D 아직 확인 전 보통 글 · G 꾸준템 / A·E·F end
+gc35, gb35 = S35.grid_item(2, g35[2], old=True), S35.grid_item(1, g35[1], old=True)
+assert "특가 끝남 · 지금 가격은 링크에서 확인 (10/24 11시 확인)" in gc35 and "👍 꾸준템" in gc35 and "8,000원" not in gc35 and "가격 · 지금 가격은" not in gc35  # 옛 특가 가격 X
+assert "10,000원" in gb35 and "10/11 가격 · 지금 가격은 링크에서 확인" in gb35 and "👍" not in gb35 and "특가 끝남" not in gb35
+S35.EVENTS = ev35
+# 채널·Threads(10/23 진우 '꾸준하게 제품 올라오는 게 좋지'): TOSS_STEADY_HOURS 매시 글은 진우 토스 꾸준템(own_end steady) 먼저 — 상세로 지금 가격·품절·꾸준템 다시, 링크 = 진우 쉐어링크, 머리 줄 👍, 3일 tb_
+sv35b, t35 = (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS), []
+H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS = (lambda m, **p: t35.append(p) or {"message_id": 990}), (lambda prompt, lines: [{"i": 0, "score": 8, "comment": "구성 그대로"}]), "ev35s.json", range(24)
+json.dump([], open("ev35s.json", "w")); X35[44]["displayName"], X35[66]["displayName"] = "C 상품", "G 상품"
+assert H.TOSS_STEADY_HOURS == (10, 15, 20); time.time = lambda: TK("2026-10-24 15:05"); H.toss_solo(s35)
+(p35,) = t35; u35 = p35["reply_markup"]["inline_keyboard"][0][0]["url"]
+assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "💙 토스 특가 · 꾸준히 팔리는 상품 👍" in p35["text"] and p35["text"].startswith(f"<i>{H.TOSS_NOTE}") and "쿠팡" not in p35["text"], p35
+assert f"tb_{id35[u35[-1]]}" in s35 and H.th_steady(H.plain_of(p35["text"].split("\n\n", 1)[1]))  # 3일 간격 · 👍 꾸준템(Threads 순서 규칙)
+t35.clear(); H.toss_solo(s35); assert not t35  # 그 시각 1번
+H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS = sv35b; os.remove("ev35s.json")
+# 상세 호출 = 실행마다 1번, 12시간 지난 id 30개까지(오래 안 본 것부터) · 단축 링크 풀기 20개까지
+json.dump([{"t": "2026-10-12 10:00", "text": f"🔥 [토스] R{k} (1,000원)", "url": f"https://toss.shopping/_m/R{k:02d}", "own": 1} for k in range(32)], open("posts35.json", "w"), ensure_ascii=False)
+H.plain = lambda u, hops=4: f"https://toss.shopping/t/{1000 + int(u[-2:])}"
+H.toss = lambda path, body=None: c35.append(path) or {"items": [{"tacaItemId": i, "displayPrice": 1000} for i in map(int, path.split("=")[1].split(","))], "notFoundIds": []}
+c35.clear(); s35r = {}
+for t35 in ("10:00", "10:00", "10:15", "22:30", "22:31"):
+    time.time = lambda: TK(f"2026-10-23 {t35}"); H.own_end(s35r)
 q35 = [x.split("=")[1].split(",") for x in c35]
-assert [len(x) for x in q35] == [20, 12, 30, 2] and q35[3] == ["1030", "1031"], q35  # 20 푼 것 -> 다음 12 -> 15분 뒤 X -> 3시간 지나 30 + 남은 2
+assert [len(x) for x in q35] == [20, 12, 30, 2] and q35[3] == ["1030", "1031"], q35  # 20 푼 것 -> 다음 12 -> 15분 뒤 X -> 12시간 지나 30 + 남은 2
 H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv35; os.remove("posts35.json")
 print("OK: 모든 셀프체크 통과")
