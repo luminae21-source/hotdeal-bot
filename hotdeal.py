@@ -7,7 +7,7 @@ import base64, collections, hashlib, hmac, html, json, math, os, random, re, shu
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -4328,6 +4328,51 @@ def prod_cols(title, cat, links, ids, deal=None):
     return {"kind": kind, "name": parse(title)[1], **({"url": ls[0], **({"tid": ids[ls[0]]} if ls[0] in ids else {})} if ls else {})}
 
 
+OWN_END_GAP, OWN_END_RES = 3 * 3600, 20  # 10/23 진우 '사이트에서 판매 중이면 없애지 마': 진우 토스 상품 판매 확인 간격 · 한 실행에 단축 링크(/_m/) 푸는 최대 수
+
+
+def own_end(seen):
+    """사이트 홈에 남는 진우 토스 상품(own 쉐어링크 · 같은 url 최신 글 · 하루특가·선착순 빼고 — build_site.home_pool)의 판매 종료를 상세 API로(30개씩, OWN_END_GAP마다 + 새로 id 찾은 실행):
+    품절·조회 안 됨 -> 그 url 글에 "end": 오늘(KST), 다시 판매 중 -> "end" 지움(posts.json — 사이트 홈 칸이 빼고/다시 넣음). 상품 id = 단축 링크를 1번 풀어 seen["tossid"]["m"](못 풀면 하루 뒤 다시).
+    쿠팡·네이버는 자동 확인 X(쿠팡 API 승인 전) — Cowork가 events.json 그 항목에 "end"."""
+    now = time.time()
+    if not HAS_TOSS:
+        return
+    posts, today = load(POSTS, []), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    last = {p["url"]: p for p in posts if p.get("own") and toss_share(p.get("url"))}
+    urls, tt = [u for u, p in last.items() if not re.search(DAY_ONLY, p["text"])], seen.setdefault("tossid", {"m": {}})
+    tt["t"], ti = now, tt["m"]  # seen 정리(t 기준)에서 안 지워지게
+    new = [u for u in urls if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]
+    for u in new:
+        m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
+        ti[u] = [int(m[1]) if m else 0, now]
+    if now - seen.get("ownend", 0) < OWN_END_GAP and not any(ti[u][0] for u in new):
+        return
+    by = {}
+    for u in urls:
+        if ti.get(u, [0])[0]:
+            by.setdefault(ti[u][0], []).append(u)
+    ok = {}
+    try:
+        for k in range(0, len(by), 30):
+            r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, list(by)[k:k + 30])))
+            ok.update({x["tacaItemId"]: not x.get("isSoldOut") for x in r["items"]} | {int(i): False for i in r.get("notFoundIds") or []})
+    except Exception as e:  # 터널 끊김 등 = 받은 만큼만, 다음 실행에 다시
+        print("own end", repr(e))
+    else:
+        seen["ownend"] = now
+    st = {u: v for i, v in ok.items() for u in by.get(i, [])}
+    n = 0
+    for p in posts:
+        if p.get("own") and st.get(p.get("url")) is False and not p.get("end"):
+            p["end"], n = today, n + 1
+        elif p.get("own") and st.get(p.get("url")) and p.pop("end", None):
+            n += 1
+    if n:
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    print("own end", f"토스 {len(urls)}개 중 id {len(by)}개 확인 {len(st)}개 — 판매 중 {sum(st.values())} · 종료 {sum(not v for v in st.values())} · 글 바꿈 {n}")
+
+
 def toss_ids(seen):
     """우리 토스 쉐어링크 -> 상품 id(toss_link가 만든 것 전부 — 같은 상품을 다시 만들어도 옛 링크 그대로)."""
     return {k: v[0] for k, v in seen.get("tlink", {}).get("r", {}).items()}
@@ -4691,7 +4736,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end):
         try:
             step(seen)
         except Exception as e:

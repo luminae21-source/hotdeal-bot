@@ -348,8 +348,9 @@ def conds(p):
                                     ("증정", re.search(r"\d\s*\+\s*\d|증정|사은품", title)), ("무배", re.search("무료|무배", title))) if ok)
 
 
-def grid_item(i, p, rx=False):
-    """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히)."""
+def grid_item(i, p, rx=False, old=False):
+    """격자 칸 1개: 몰·이름(3줄까지)·가격·단위가격·(rx면 반응 수치)·버튼(제휴·쇼핑몰 = 구매, 원글 = 원글 + 같은 상품 찾기, 주소 없음 = 자세히).
+    old = 3일 지난 진우 상품(home_pool) -> 가격 아래 'M/D 가격 · 지금 가격은 링크에서 확인'(옛 가격이 지금 가격처럼 안 보이게)."""
     title = title_of(p["text"])
     store, name, price = parse(title)
     page_url, url = f"{BASE}p/{i}.html", p.get("url")
@@ -363,8 +364,36 @@ def grid_item(i, p, rx=False):
     bd, sv, u = badge_html(p, ("b4",) if rx else ()), saving(p["text"]), unit_of(p)  # '반응 좋은 딜' 칸에선 🏆 배지가 겹쳐서 뺌
     return (f'<article class="g" data-k="{html.escape(" ".join(filter(None, (keys(p), conds(p)))))}"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜"><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS["saved"]}</svg></button><div class="s">{html.escape(store) or "핫딜"} · {p["t"][11:16]}</div>'
             + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h3><a href="{page_url}">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(price.split("/")[0].strip())}</div>' if price else "")
+            + (f'<div class="u">{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인</div>' if old else "")
             + (f'<div class="sv">{sv[0]}보다 {sv[1]}↓</div>' if sv else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
             + (f'<div class="rx">👀 {html.escape(react(p).replace("분당 조회 ", "분당 "))}</div>' if rx and react(p) else "") + f'<div class="go">{go}</div></article>')
+
+
+DAY_ONLY = r"하루\s*특가|선착순|밤 12시까지"  # 토스 하루특가·선착순특가 = 올린 날 밤 12시 마감
+EVENTS = "events.json"
+
+
+def home_pool(posts, days):
+    """홈 몰·품목·브랜드 칸에 둘 딜 번호(10/23 진우 '기존에 있던 제품은 판매 중이면 없애버리지 마'): 커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음),
+    진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개, 판매 종료 표시가 없으면 — 종료 = 글 "end"(토스 품절·조회 안 됨, hotdeal.own_end가 붙이고 다시 팔면 지움) ·
+    events.json 그 url "end"(YYYY-MM-DD)가 글 날짜 이후(쿠팡·네이버 — Cowork가 품절·검색에서 사라진 상품에 붙임) · 토스 하루특가·선착순(밤 12시 마감) 글 날이 지남."""
+    today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    ends, last = {}, {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
+    for e in json.load(open(EVENTS)) if os.path.exists(EVENTS) else []:
+        if e.get("end") and e.get("url"):
+            ends[e["url"]] = max(ends.get(e["url"], ""), e["end"])
+    gone = lambda p: p.get("end") or ends.get(p.get("url"), "") >= p["t"][:10] or shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today
+    return {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and (last[p.get("url")] == i and not gone(p) if p.get("own") else p["t"][:10] in days[:3])}
+
+
+def cap(ds, n):
+    """칸 개수 제한 n은 커뮤니티 딜에만 — 진우 상품(own)은 안 밀려남(10/23)."""
+    out, k = [], 0
+    for i, p in ds:
+        if p.get("own") or k < n:
+            out.append((i, p))
+            k += not p.get("own")
+    return out
 
 
 def hot_section(posts, days):
@@ -383,13 +412,13 @@ CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|�
 
 
 def cat_sections(posts, days, nav=""):
-    """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): 최근 3일 딜 중 제목 키워드(CATS)로 고른 최신 6개. 없으면 칸·탭 없음.
+    """홈 품목별 칸(10/9 진우 '생필품 화장품이 있음 좋겠어'): home_pool(최근 3일 + 판매 중 진우 상품) 중 제목 키워드(CATS)로 고른 최신 순(커뮤니티 딜 6개까지). 없으면 칸·탭 없음.
     posts.json = 커뮤니티 딜만이라 토스 API 상품은 안 들어감(승인 범위). nav = 생필품 칸 아래 최저가 기록 링크. -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
-    out = []
+    out, home = [], home_pool(posts, days)
     for key, name, rx in CATS:
-        ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and re.search(rx, title_of(p["text"]))][::-1][:6]
-        out.append((key, name, ds and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 · 최신 순</div>'
-                                      f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>{nav if key == "life" else ""}</section>'))
+        ds = cap([(i, p) for i, p in enumerate(posts) if i in home and re.search(rx, title_of(p["text"]))][::-1], 6)
+        out.append((key, name, ds and f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{name}</h2><div class="t">최근 3일 + 핫딜픽 추천 상품 · 최신 순</div>'
+                                      f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div>{nav if key == "life" else ""}</section>'))
     return out
 
 
@@ -471,22 +500,23 @@ def shop_of(p):
 
 
 def shop_section(posts, days, key):
-    """홈 몰 칸(10/15 진우 '토스·쿠팡·네이버 탭'): 최근 3일 그 몰 딜 최신 24개 + 맨 위 그 몰 대가성 문구. 쿠팡·네이버는 0개면 칸·탭 없음,
+    """홈 몰 칸(10/15 진우 '토스·쿠팡·네이버 탭'): home_pool(최근 3일 + 판매 중 진우 상품) 중 그 몰 딜 최신 순(커뮤니티 딜 24개까지) + 맨 위 그 몰 대가성 문구. 쿠팡·네이버는 0개면 칸·탭 없음,
     토스는 텔레그램 추천 버튼 때문에 늘 있음 — 토스 API 상품(베스트·하루특가)은 사이트에 안 올림(API 승인 범위 = 채널·Threads, '사이트 전시·가격 비교 안 함')."""
     head, extra = {"toss": ("💙 토스", f'<a class="btn2" href="{CHANNEL_WEB}" rel="noopener" target="_blank">🧺 토스 베스트·하루특가 추천 보기 (텔레그램)</a>'),
                    "coupang": ("🚀 쿠팡", f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>'),
                    "naver": ("💚 네이버", "")}[key]
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋") and shop_of(p) == key and (key != "toss" or toss_share(p.get("url")))][::-1][:24]  # 토스 칸 = 쉐어링크 딜만(예전 그대로)
+    home = home_pool(posts, days)
+    ds = cap([(i, p) for i, p in enumerate(posts) if i in home and shop_of(p) == key and (key != "toss" or toss_share(p.get("url")))][::-1], 24)  # 토스 칸 = 쉐어링크 딜만(예전 그대로)
     return (ds or key == "toss") and (f'<section class="day" id="{key}" aria-labelledby="{key}h"><h2 id="{key}h">{head} 딜{f" {len(ds)}개" if ds else ""}</h2>'
-                                      f'<div class="t">{SHOP_NOTES[key]}</div>' + (f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div>' if ds else "") + f'{extra}</section>')
+                                      f'<div class="t">{SHOP_NOTES[key]}</div>' + (f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div>' if ds else "") + f'{extra}</section>')
 
 
 def brand_section(posts, days):
-    """홈 '✨ 정품·브랜드' 칸(10/10 진우 '브랜딩 파워 있는 제품도 꼭, 정품도'): 최근 3일 딜 중 본사 정품 표시(tag)·이름 있는 브랜드(BRAND) 최신 8개."""
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"][:10] in days[:3] and not p["text"].startswith("📋")
-          and (p.get("tag") == "정품" or re.search(BRAND, title_of(p["text"])))][::-1][:8]
-    return ds and (f'<section class="day" id="brand" aria-labelledby="brandh"><h2 id="brandh">✨ 정품·브랜드 딜</h2><div class="t">최근 3일 · 판매자(본사 정품 여부)는 배지·상세에서 확인</div>'
-                   f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
+    """홈 '✨ 정품·브랜드' 칸(10/10 진우 '브랜딩 파워 있는 제품도 꼭, 정품도'): home_pool(최근 3일 + 판매 중 진우 상품) 중 본사 정품 표시(tag)·이름 있는 브랜드(BRAND) 최신 순(커뮤니티 딜 8개까지)."""
+    home = home_pool(posts, days)
+    ds = cap([(i, p) for i, p in enumerate(posts) if i in home and (p.get("tag") == "정품" or re.search(BRAND, title_of(p["text"])))][::-1], 8)
+    return ds and (f'<section class="day" id="brand" aria-labelledby="brandh"><h2 id="brandh">✨ 정품·브랜드 딜</h2><div class="t">최근 3일 + 핫딜픽 추천 상품 · 판매자(본사 정품 여부)는 배지·상세에서 확인</div>'
+                   f'<div class="grid">{"".join(grid_item(i, p, old=p["t"][:10] not in days[:3]) for i, p in ds)}</div></section>')
 
 
 def day_grids(posts, days):
@@ -653,9 +683,10 @@ def build(posts, out="docs"):
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
     find = lambda home, ps: find_box([(k, n) for k, n in CHIPS if any(k in (keys(p) + " " + conds(p)).split() for p in ps)]) + bar(home, "bar top")  # 10/15 진우 '탭만 고정': 검색창·칩은 같이 스크롤, 앱 안 탭 줄만 sticky(.find 밖이어야 끝까지 붙음)  # 결과 0개 칩은 안 보임  # 앱 안 브라우저 = 검색창 아래 한 줄(가로 스크롤, 같은 아이콘·이름 — 아래 바는 숨김, CSS .inapp)
+    home = home_pool(posts, days)  # 검색 칩(결과 0개 칩 숨김)도 홈에 남는 진우 상품까지
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for p in posts if p["t"][:10] in days[:2] and not p["text"].startswith("📋")]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for i, p in enumerate(posts) if p["t"][:10] in days[:2] and not p["text"].startswith("📋") or i in home]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE, [p for p in posts if not p["text"].startswith("📋")]) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))

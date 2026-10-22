@@ -3079,7 +3079,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, own_end):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -4953,4 +4953,44 @@ import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
     assert r.stdout.strip() == host, (tok, r.stdout, r.stderr[-300:])
+# 9-35 (10/23 진우 '사이트에서 기존에 있던 제품은 판매 중이면 없애버리지 마'): 홈 몰·품목·브랜드 칸 = 커뮤니티 딜 최근 3일 그대로 + 진우 상품(own)은 날짜 상관없이
+#       (같은 url 최신 글 1개) 판매 종료 표시 없으면 남음 — 종료 = 글 end(토스 own_end) · events.json end(쿠팡·네이버, 글 날짜 이후) · 토스 하루특가·선착순 날 지남 ·
+#       3일 지난 진우 상품 = 'M/D 가격 · 지금 가격은 링크에서 확인' · 칸 개수 제한은 커뮤니티 딜만(진우 상품 안 밀려남)
+import build_site as S35
+ev35, S35.EVENTS = S35.EVENTS, "ev35.json"
+json.dump([{"at": "2026-10-10 10:00", "url": "https://link.coupang.com/a/END", "end": "2026-10-12"}, {"at": "2026-10-10 10:00", "url": "https://link.coupang.com/a/RE", "end": "2026-10-12"}], open("ev35.json", "w"))
+q35 = lambda t, title, url, **k: {"t": t, "text": f"🔥 {title}\n\n좋아요", "url": url, "mid": 1, **k}
+P35 = [q35("2026-10-10 10:00", "[쿠팡] 크리넥스 휴지 30롤 (19,900원)", "https://link.coupang.com/a/OLD", own=1),  # 0: 같은 url 옛 글 -> X(1이 최신)
+       q35("2026-10-11 10:00", "[쿠팡] 크리넥스 휴지 30롤 (18,900원)", "https://link.coupang.com/a/OLD", own=1),  # 1: 3일 지난 진우 쿠팡 -> 남음 + 'M/D 가격'
+       q35("2026-10-10 11:00", "[쿠팡] 도브 바디워시 1L (9,900원)", "https://link.coupang.com/a/END", own=1),  # 2: events end(10/12 ≥ 글 날) -> X
+       q35("2026-10-10 12:00", "[쿠팡] 오래된 커뮤니티 휴지 (5,000원)", "https://www.ppomppu.co.kr/x"),  # 3: 커뮤니티 3일 지남 -> X
+       q35("2026-10-10 13:00", "[쿠팡] 휴지 끝난 글 (9,000원)", "https://link.coupang.com/a/GONE", own=1, end="2026-10-11"),  # 4: 글 end -> X
+       {**q35("2026-10-10 14:00", "[토스] 물티슈 10팩 (8,900원)", "https://toss.shopping/_m/D1", own=1), "text": "💙 토스 특가 · 하루특가 🔥\n물티슈 10팩\n8,900원"},  # 5: 하루특가 날 지남 -> X
+       q35("2026-10-10 15:00", "[토스] 폼클렌징 2개 (11,900원)", "https://toss.shopping/_m/T2", own=1),  # 6: 토스 진우 상품(종료 표시 없음) -> 남음
+       q35("2026-10-10 16:00", "[쿠팡] 바디워시 다시 (8,900원)", "https://link.coupang.com/a/RE", own=1),  # 7: 옛 글(8이 최신)
+       q35("2026-10-15 16:00", "[쿠팡] 바디워시 다시 (8,900원)", "https://link.coupang.com/a/RE", own=1)]  # 8: end(10/12) 뒤 다시 올린 글 -> 남음
+P35 += [q35(f"2026-10-16 {h:02d}:00", f"[쿠팡] 커뮤니티 딜 {h} (1,000원)", f"https://www.ppomppu.co.kr/{h}") for h in range(25)]  # 9~33: 최근 커뮤니티 25개(칸 24개 제한)
+d35 = ["2026-10-16", "2026-10-15", "2026-10-14"]
+assert S35.home_pool(P35, d35) == {1, 6, 8} | set(range(9, 34)), sorted(S35.home_pool(P35, d35))
+co35 = S35.shop_section(P35, d35, "coupang")
+assert "🚀 쿠팡 딜 26개" in co35 and all(f'{S35.BASE}p/{i}.html"' in co35 for i in (1, 8)) and f'{S35.BASE}p/9.html"' not in co35  # 커뮤니티 24개 + 진우 2개(밀려나지 않음), 가장 옛 커뮤니티 1개만 빠짐
+assert co35.count("지금 가격은 링크에서 확인") == 1 and "10/11 가격 · 지금 가격은 링크에서 확인" in co35  # 3일 지난 진우 상품만(8 = 최근 3일 글이라 X)
+to35 = S35.shop_section(P35, d35, "toss"); assert f'{S35.BASE}p/6.html"' in to35 and f'{S35.BASE}p/5.html"' not in to35
+li35 = S35.cat_sections(P35, d35)[0][2]; assert re.findall(r'p/(\d+)\.html"', li35) == ["8", "1"]  # 생필품 칸도: 진우 휴지·바디워시만(옛 커뮤니티 휴지·end 붙은 휴지·바디워시 X), 최신 순
+os.remove("ev35.json"); S35.EVENTS = ev35
+# own_end(토스): 진우 쉐어링크(하루특가·선착순 빼고, 같은 url 최신 글) -> 단축 링크 id(1번만) -> 상세 API 품절·조회 안 됨 = 글 end 오늘, 다시 판매 = end 지움
+sv35 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time)
+json.dump([{"t": "2026-10-10 10:00", "text": "🔥 [토스] A", "url": "https://toss.shopping/_m/A", "own": 1}, {"t": "2026-10-11 10:00", "text": "🔥 [토스] B", "url": "https://toss.shopping/_m/B", "own": 1, "end": "2026-10-20"},
+           {"t": "2026-10-11 11:00", "text": "💙 토스 특가 · 하루특가 🔥\nC", "url": "https://toss.shopping/_m/C", "own": 1}, {"t": "2026-10-12 10:00", "text": "🔥 [토스] D", "url": "https://toss.shopping/_m/D", "own": 1},
+           {"t": "2026-10-12 11:00", "text": "🔥 [토스] E", "url": "https://toss.shopping/_m/E", "own": 1}, {"t": "2026-10-12 12:00", "text": "🔥 [토스] 커뮤니티", "url": "https://toss.shopping/_m/A"}], open("posts35.json", "w"), ensure_ascii=False)
+c35 = []
+H.plain = lambda u, hops=4: c35.append(u) or {"A": "https://toss.shopping/t/11", "B": "https://toss.shopping/t/22", "D": None, "E": "https://toss.shopping/t/33"}[u[-1]]
+H.toss = lambda path, body=None: c35.append(path) or {"items": [{"tacaItemId": 11, "isSoldOut": True}, {"tacaItemId": 22, "isSoldOut": False}], "notFoundIds": [33]}
+H.POSTS, H.HAS_TOSS, time.time = "posts35.json", True, lambda: TK("2026-10-23 10:00")
+s35 = {}; H.own_end(s35)
+assert [p.get("end") for p in json.load(open("posts35.json"))] == ["2026-10-23", None, None, None, "2026-10-23", None], json.load(open("posts35.json"))  # A 품절·E 조회 안 됨 = 종료, B 다시 판매 = end 지움, 커뮤니티 글 X
+assert c35 == ["https://toss.shopping/_m/A", "https://toss.shopping/_m/B", "https://toss.shopping/_m/D", "https://toss.shopping/_m/E", "/products/detail?tacaItemIds=11,22,33"], c35  # 하루특가 C는 안 물음
+c35.clear(); time.time = lambda: TK("2026-10-23 11:00"); H.own_end(s35); assert not c35  # 3시간 안·새 id 없음 = 안 물음(D 못 푼 건 하루 뒤 다시)
+time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,33"], c35
+H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv35; os.remove("posts35.json")
 print("OK: 모든 셀프체크 통과")
