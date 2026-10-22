@@ -2823,6 +2823,110 @@ def ig_card_copy(seen, day, out):
     return v
 
 
+IG_TITLES = {"A": ("오늘 밤\n장바구니에\n넣을 만한 {n}개", "퇴근길에\n볼 만한\n{n}개", "이번 주\n쟁여 둘\n{n}개", "자기 전에\n담아 둘\n{n}개"),
+             "B": ("퇴근길에 골라 둔\n살 만한 거 {n}개", "오늘 장보기 메모\n쟁여 둘 거 {n}개", "이번 주 장바구니\n채울 거 {n}개")}  # 회차마다 무작위(같은 표지 반복 X)
+IG_KIND_SKIP = r"리필|무향|대용량|국내산|국산|프리미엄|오리지널|오리지날|기획|세트|증정|무료|무배|한정|특가|신상|정품|클래식|에디션|퍼플에디션|용기|본품"
+IG_LINE_PROMPT = """인스타 넘기기 카드에 상품마다 붙일 한 줄 멘트를 사람이 직접 쓰듯 써 주세요(lines[i] = i번 상품, 개수 그대로). 아래 상품 정보에 있는 사실만(없는 숫자 X).
+- 말투 = 반말 또는 음슴체(줄마다 섞어도 됨). 해요체 X('~요'로 끝나는 말 쓰지 않기). 30자 안팎, 이모지 0~1개.
+- 결 예시(그대로 쓰지 말고 느낌만): 휴지·물티슈 떨어진 집이면 지금 쟁여도 됨 / 커피 매일 마시면 개당 가격 보고 고르기
+- 써 본 척(샀는데·써보니·나도), 효능·건강 말, 과장(역대급·무조건), 클릭·링크·프로필 유도, 광고·수수료 말은 쓰지 않기."""
+
+
+def ig_design(day):
+    """인스타 카드 디자인 날마다 번갈아(10/22 진우 '번갈아'): 10/22(목) = A 매거진형, 다음 날 B 일상 스티커형, …"""
+    return "AB"[(datetime(int(day[:4]), int(day[5:7]), int(day[8:10])).toordinal() + 1) % 2]
+
+
+def ig_line_ok(x, recent, facts):
+    """사람 멘트 한 줄 거르기(th_voice 규칙): ~요·써 본 척·효능·과장·클릭/링크/프로필 유도·광고 말·재료에 없는 금액 X, 60자 안, 최근 멘트와 다르게."""
+    money = lambda t: set(re.findall(r"\d[\d,]*(?=\s*원)", t))
+    return bool(x) and len(x) <= 60 and not x.startswith(VOICE_LABEL) and x not in recent and not re.search(VOICE_YO, x) and not re.search(VOICE_BAN, x) \
+        and not re.search(r"링크|클릭|눌러|프로필|팔로우|광고|수수료|댓글|저장|#", x) and money(x) <= money(facts)
+
+
+def ig_lines(seen, ps):
+    """넘기기 상품 장의 한 줄 멘트(상품마다, Claude 1번) — 규칙에 안 맞거나 실패면 ''(그 장은 멘트 없이)."""
+    facts = "\n".join(f"{k}. {list_name(p, False)}" + (f" · {p['unit']}" if p.get("unit") else "") for k, p in enumerate(ps))
+    recent = seen.get("ighum", {}).get("l", [])
+    try:
+        a = ai_json(IG_LINE_PROMPT + f"\n\n상품 정보:\n{facts}", {"lines": {"type": "array", "items": {"type": "string"}}})
+        got = [re.sub(r"\s+", " ", str(x)).strip() for x in a.get("lines") or []]
+    except Exception as e:
+        print("ig lines 없이", clip(repr(e), 120))
+        got = []
+    out = [x if k < len(got) and ig_line_ok(x := got[k], recent, facts) and len(re.findall(VOICE_EMOJI, x)) <= 1 else "" for k in range(len(ps))]
+    seen["ighum"] = {"t": time.time(), "l": (recent + [x for x in out if x])[-20:]}
+    return out
+
+
+def ig_kind(name):
+    """사진이 없을 때 칸에 쓸 상품 종류 낱말: 상품명 한글 낱말 중 브랜드(첫 낱말)·수식어 빼고 마지막(예 '도브 바디워시 1000ml 3개' -> '바디워시')."""
+    ws = [w for w in re.findall(r"[가-힣]{2,}", re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", name)) if not re.fullmatch(IG_KIND_SKIP, w)]
+    return (ws[1:] or ws or [""])[-1]
+
+
+def ig_photo(p, d):
+    """몰이 주는 상품 이미지만(10/22 진우): 토스 = 상세 API의 이미지 칸, 그 밖 = 상품 페이지 og:image -> d/에 저장한 경로, 못 구하면 None(상품 종류 글자 칸).
+    shortcut: 쿠팡 상품 페이지는 서버 접근이 막혀 대개 None — 쿠팡 파트너스 API(이미지 포함) 승인 뒤 그걸로 바꾸기."""
+    u = p.get("url") or ""
+    try:
+        img = None
+        if urllib.parse.urlsplit(u).netloc in TOSS_HOSTS and HAS_TOSS and (iid := toss_ids({}).get(u) or p.get("tid")):
+            x = (toss(f"/products/detail?tacaItemIds={iid}")["items"] or [{}])[0]
+            img = next((v for k, v in x.items() if re.search(r"(?i)image|thumbnail", k) and isinstance(v, str) and v.startswith("http")), None)
+        elif u.startswith("http") and not urllib.parse.urlsplit(u).netloc.endswith(("ppomppu.co.kr", "search.shopping.naver.com")):
+            req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            html_ = urllib.request.urlopen(req, timeout=6).read(400000).decode("utf-8", "ignore")
+            m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html_) or re.search(r'content=["\']([^"\']+)["\'][^>]+property=["\']og:image', html_)
+            img = m and html.unescape(m[1])
+        if not img:
+            return None
+        img = "https:" + img if img.startswith("//") else img
+        os.makedirs(d, exist_ok=True)
+        f = os.path.join(d, hashlib.md5(img.encode()).hexdigest()[:12] + ".img")
+        data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
+        open(f, "wb").write(data)
+        __import__("PIL.Image", fromlist=["Image"]).open(f).verify()
+        return f
+    except Exception as e:
+        print("ig photo 없음", clip(u, 50), clip(repr(e), 80))
+        return None
+
+
+def ig_items(seen, ps, photos=True):
+    """인스타 새 카드 재료(cards.ig_cover·ig_slide의 it) — 이름·짧은 이름·가격·칩(단위가격 > '와우 할인' > 'N%↓')·몰 배지(채널 머리 줄 규칙)·배송·사진·이모지·종류·한 줄 멘트·가격 시각."""
+    lines = ig_lines(seen, ps)
+    out = []
+    for p, line in zip(ps, lines):
+        t, plain = title_of(p["text"]), p["text"]
+        _, name, price = parse(t)
+        main, _, ship = price.partition("/")
+        mall = mall_of(p.get("url"), t)
+        cond, dr = mall_dr(plain)
+        rocket = bool(re.search(r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착", plain))
+        badge = "💙 토스 특가" if mall == "toss" else ("🚀 쿠팡 로켓" if rocket else "🚀 쿠팡") if mall == "coupang" else store_tag(t)
+        arrive = re.search(r"(내일|모레|오늘)(?:\s*\([월화수목금토일]\))?\s*(?:새벽\s*)?도착", plain)
+        out.append({"name": name, "short": re.sub(r",?\s*\d+\s*(?:개|팩|입|매|롤|병|캔|봉)\s*$", "", name).strip() or name, "price": main.strip(),
+                    "chip": (p.get("unit") or "").split(" (")[0].strip() or ("와우 할인" if "와우" in cond else f"{dr}%↓" if dr and not cond else ""),
+                    "badge": badge, "ship": arrive[0].replace("  ", " ") if arrive else "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else "",
+                    "photo": ig_photo(p, "ig_photos") if photos else None, "e": p.get("e") or "🛒", "kind": ig_kind(name), "line": line,
+                    "when": f"{int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시"})
+    return out
+
+
+def ig_set(seen, day, ps, d, design=None):
+    """인스타 새 디자인 한 벌(표지 + 상품 장) -> d/cover.jpg, d/01.jpg… (design 없으면 날짜로 A·B). 표지 문구·칩 순서는 회차마다 무작위. -> (표지, [상품 장], 디자인)"""
+    import cards
+    design = design or ig_design(day)
+    its = ig_items(seen, ps[:CARD_N])
+    k = datetime(int(day[:4]), int(day[5:7]), int(day[8:10]))
+    date_text = f"{k.month}월 {k.day}일 {'월화수목금토일'[k.weekday()]}요일" if design == "A" else f"{k.month}.{k.day} {'월화수목금토일'[k.weekday()]}"
+    chips = random.sample(its, len(its))
+    cover = cards.ig_cover(design, chips, date_text, random.choice(IG_TITLES[design]).format(n=len(its)), f"{d}/cover.jpg",
+                           sub="최저가 아니어도 꾸준히 팔리는 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
+    return cover, [cards.ig_slide(design, it, n, len(its), f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1)], design
+
+
 def ig_due(seen, key, base):
     """인스타 게시 무작위 지연: base(이번 회차 시작) + IG_JITTER 사이 아무 때(회차마다 1번 정해 seen에) -> 이 시각 전엔 컨테이너 X."""
     if key not in seen:
@@ -3021,9 +3125,10 @@ def prune_slides(now):
     """딜 카드 폴더(docs/cards/날짜[_시]/)·릴스 영상(docs/reels/날짜.mp4)은 SLIDE_KEEP일 지나면 지움(인스타가 이미 가져감, 사이트는 표지만 씀 — 저장소 크기).
     git add -A가 지운 것도 커밋."""
     cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - SLIDE_KEEP * 86400))
-    for f in os.listdir("docs/cards") if os.path.isdir("docs/cards") else []:
-        if STEM.fullmatch(f) and f[:10] < cut and os.path.isdir(f"docs/cards/{f}"):
-            shutil.rmtree(f"docs/cards/{f}")
+    for base in ("docs/cards", "docs/cards/igv"):  # igv = 인스타 새 디자인 한 벌(IG_HUMAN)
+        for f in os.listdir(base) if os.path.isdir(base) else []:
+            if STEM.fullmatch(f) and f[:10] < cut and os.path.isdir(f"{base}/{f}"):
+                shutil.rmtree(f"{base}/{f}")
     for f in os.listdir("docs/reels") if os.path.isdir("docs/reels") else []:
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.mp4", f) and f[:10] < cut:
             os.remove(f"docs/reels/{f}")
@@ -3088,24 +3193,24 @@ def ig_cards(seen):
             os.makedirs("docs/cards", exist_ok=True)
             json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
             ct = toss_list([p for _, p in order[:CARD_N]])
-            theme, head = ig_theme(ig_variant(seen)) if IG_HUMAN else (None, IG_SLOTS[h])
             cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
-                       head=head if IG_HUMAN and head != IG_THEMES["head"][0] else IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False, theme=theme)
+                       head=IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False)
             if IG_CAROUSEL:
                 deal_slides(stem, [p for _, p in order])
             print("ig card", stem, f"만듦 {len(order)}개")
             return
         if not os.path.exists(jpg):  # 21시: 모아보기(digest)가 아직 카드를 안 만듦
             continue
-        if IG_HUMAN and now < ig_due(seen, "igd_" + stem, kst_ts(f"{today} {h:02d}:00")):  # 회차 시각 + 15~20분 무작위 뒤에 컨테이너
-            continue
         url, d = f"{SITE}cards/{stem}.jpg", f"docs/cards/{stem}"
-        if IG_HUMAN and h == 21:  # 하루 카드는 텔레그램·사이트와 같은 그림 -> 인스타엔 변주 사본(만든 실행 다음에 올림)
-            if not os.path.exists(f"docs/cards/igv/{stem}.jpg"):
-                ig_card_copy(seen, stem, f"docs/cards/igv/{stem}.png")
+        if IG_HUMAN:  # 인스타엔 새 디자인 한 벌(A·B 날마다 번갈아, docs/cards/igv/ — 사이트·텔레그램 카드는 그대로) -> 만든 실행 다음에 올림
+            iv = f"docs/cards/igv/{stem}"
+            if not os.path.exists(f"{iv}/cover.jpg"):
+                ig_set(seen, today, [p for _, p in card_order(load(POSTS, []), stem)], iv)
                 continue
-            url = f"{SITE}cards/igv/{stem}.jpg"
-        slides = [f"{SITE}cards/{stem}/{f}" for f in sorted(os.listdir(d)) if re.fullmatch(r"\d\d\.jpg", f)] if IG_CAROUSEL and os.path.isdir(d) else []
+            url, d = f"{SITE}cards/igv/{stem}/cover.jpg", iv
+        if IG_HUMAN and now < ig_due(seen, "igd_" + stem, kst_ts(f"{today} {h:02d}:00")):  # 회차 시각 + 15~20분 무작위 뒤에 컨테이너(한 벌은 먼저 만들어 둠)
+            continue
+        slides = [f"{SITE}{d[5:]}/{f}" for f in sorted(os.listdir(d)) if re.fullmatch(r"\d\d\.jpg", f)] if IG_CAROUSEL and os.path.isdir(d) else []  # d = docs/… -> 사이트 주소
         try:
             for u in [url] + slides[-1:]:
                 http(u, method="HEAD")  # 아직 배포 전(404)이면 다음 실행에 (표지·딜 카드는 같은 커밋)

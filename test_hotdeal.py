@@ -4827,6 +4827,63 @@ for k33, v33 in ie33.items():
     H.E.pop(k33, None) if v33 is None else H.E.update({k33: v33})
 for f33x in ("posts33.json", "igt33.txt"):
     os.remove(f33x)
+# 9-34 (10/22 22:3x 진우 '인스타 카드 디자인 업그레이드' — 시안 A 매거진형 · B 일상 스티커형, 날마다 번갈아): 인스타 카드만(cards.ig_cover·ig_slide, 1080x1350),
+#       텔레그램·Threads·사이트 카드는 그대로 · 사진 = 몰 상품 이미지만(없으면 상품 종류 글자 칸) · 표지 문구·칩 순서 회차마다 · IG_HUMAN(= IG_AUTO, 지금 꺼짐) 때 docs/cards/igv/에 한 벌
+import cards as C34
+from PIL import Image as I34
+assert (H.ig_design("2026-10-22"), H.ig_design("2026-10-23"), H.ig_design("2026-10-24")) == ("A", "B", "A")
+assert (H.ig_kind("도브 바디워시 1000ml 3개"), H.ig_kind("카누 미니 마일드/다크 아메리카노 240T"), H.ig_kind("휴지"), H.ig_kind("1000ml")) == ("바디워시", "아메리카노", "휴지", "")
+L34 = "아주 아주 긴 상품 이름 프리미엄 대용량 고농축 세탁세제 리필 3.2L 4개 + 계량컵 증정 한정 기획 세트 구성"
+os.makedirs("t34", exist_ok=True); I34.new("RGB", (300, 500), (200, 210, 230)).save("t34/ph.jpg"); open("t34/bad.jpg", "w").write("x")
+it34 = [{"name": L34, "short": L34, "price": "1,234,567,890원", "chip": "1L당 9,999원 · 아주 긴 칩 문구까지 붙음", "badge": "🚀 쿠팡 로켓", "ship": "내일(금) 도착", "photo": None, "e": "🧴",
+         "kind": "세탁세제", "line": "세제 떨어진 집이면 이참에 쟁여도 됨, 그리고 아주 긴 멘트가 두 줄로 넘어가도 괜찮은지 보는 줄 🧺", "when": "10/22 21시"},
+        {"name": "휴지 30롤", "short": "휴지", "price": "9,900원", "chip": "", "badge": "💙 토스 특가", "ship": "", "photo": "t34/ph.jpg", "e": "🧻", "kind": "휴지", "line": "", "when": ""},
+        {"name": "깨진 사진", "short": "깨진 사진", "price": "", "chip": "47%↓", "badge": "", "ship": "무료배송", "photo": "t34/bad.jpg", "e": None, "kind": "", "line": "", "when": "10/22 9시"}]
+for d34 in "AB":
+    for n34 in (1, 3, 5):  # 5개 미만·1개도(타일·칩 자리만큼)
+        o34 = C34.ig_cover(d34, (it34 * 2)[:n34], "10월 22일 목요일" if d34 == "A" else "10.22 목", "오늘 밤\n장바구니에\n넣을 만한 5개" if d34 == "A" else "퇴근길에 골라 둔\n살 만한 거 5개",
+                           f"t34/{d34}{n34}.jpg", sub="최저가 아니어도 꾸준히 팔리는 것까지" * (n34 == 5))
+        assert I34.open(o34).size == (1080, 1350)
+    for k34, x34 in enumerate(it34, 1):  # 긴 이름·긴 가격·긴 칩·이모지 멘트·사진(있음·없음·깨짐)
+        assert I34.open(C34.ig_slide(d34, x34, k34, 3, f"t34/{d34}s{k34}.jpg")).size == (1080, 1350)
+px34 = I34.open("t34/A3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.NAVY)) < 10, px34  # A 표지 = 남색
+px34 = I34.open("t34/B3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.PAPER)) < 10, px34  # B 표지 = 크림
+px34 = I34.open("t34/As2.jpg").convert("RGB").getpixel((540, 400)); assert max(abs(a - b) for a, b in zip(px34, (200, 210, 230))) < 12, px34  # A 상품 장 = 위 사진
+shutil.rmtree("t34")
+# ig_items: 몰 배지(채널 머리 줄 규칙)·칩(단위가격 > 와우 할인 > N%↓)·배송·가격 시각, 사진 끄기
+sv34 = (H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"))
+H.ai_json = lambda prompt, props: {"lines": ["휴지 떨어진 집이면 지금 쟁여도 됨", "이거 진짜 좋아요", "커피 매일 마시면 개당 가격 보고 고르기"]}
+P34 = [{"t": "2026-11-07 10:00", "url": "https://link.coupang.com/a/A1", "mid": 3401, "unit": "1롤당 330원", "e": "🧻", "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n깨끗한나라 휴지 30롤\n9,900원\n로켓배송 · 내일(토) 도착"},
+       {"t": "2026-11-07 11:00", "url": "https://link.coupang.com/a/A2", "mid": 3402, "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 와우 할인 🔥\n맥심 커피믹스 180개\n21,000원\n와우 쿠폰 10% 할인 · 로켓배송 아님"},
+       {"t": "2026-11-07 12:00", "url": "https://toss.shopping/_m/A3", "mid": 3403, "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n물티슈 10팩\n8,900원 (47%↓)\n47% 할인"},
+       {"t": "2026-11-07 13:00", "url": "https://naver.me/A4", "mid": 3404, "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 생수 2L 12병 (5,720원/무료)\n\n좋음"}]
+i34 = H.ig_items({}, P34, photos=False)
+assert [(x["badge"], x["chip"], x["ship"]) for x in i34] == [("🚀 쿠팡 로켓", "1롤당 330원", "내일(토) 도착"), ("🚀 쿠팡", "와우 할인", ""), ("💙 토스 특가", "47%↓", ""), ("네이버", "", "무료배송")], i34
+assert [x["line"] for x in i34] == ["휴지 떨어진 집이면 지금 쟁여도 됨", "", "커피 매일 마시면 개당 가격 보고 고르기", ""] and i34[0]["when"] == "11/7 10시" and i34[3]["kind"] == "생수" and i34[0]["photo"] is None
+# IG_HUMAN(10/31 IG_AUTO 켤 때): 21시 = 새 디자인 한 벌(igv) 만든 실행 -> 회차 + 15~20분 뒤 -> igv 표지·상품 장으로 넘기기 컨테이너 + 사람 멘트 캡션
+c34 = []
+def http34(url, body=None, headers=None, method=None):
+    c34.append((url, body, method))
+    if method == "HEAD": return ""
+    if url.endswith("/178/media"): return json.dumps({"id": f"K{len(c34)}"})
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    raise AssertionError(url)
+json.dump(P34, open("posts34.json", "w"), ensure_ascii=False); os.makedirs("docs/cards", exist_ok=True); I34.new("RGB", (10, 10)).save("docs/cards/2026-11-07.jpg")
+H.http, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides = http34, "posts34.json", True, True, "ig34/ig.json", (lambda now: None)
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
+s34 = {}; time.time = lambda: TK("2026-11-07 21:05"); H.ig_cards(s34)
+assert sorted(os.listdir("docs/cards/igv/2026-11-07")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "cover.jpg"] and not c34  # 이번 실행 = 한 벌만(인스타 X)
+cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((20, 20)); assert H.ig_design("2026-11-07") == "A" and max(abs(a - b) for a, b in zip(cv34, C34.NAVY)) < 10  # 11/7 = 10/22에서 16일 = A
+time.time = lambda: TK("2026-11-07 21:12"); H.ig_cards(s34); assert not c34  # 21:00 + 15~20분 전
+time.time = lambda: TK("2026-11-07 21:25"); H.ig_cards(s34)
+imgs34 = [b["image_url"] for u, b, m in c34 if m == "POST" and b.get("is_carousel_item")]
+assert imgs34 == [f"{H.SITE}cards/igv/2026-11-07/{f}" for f in ("cover.jpg", "01.jpg", "02.jpg", "03.jpg", "04.jpg")], imgs34  # 사이트 하루 카드(cards/2026-11-07.jpg) X
+cap34 = next(b["caption"] for u, b, m in c34 if m == "POST" and b.get("media_type") == "CAROUSEL")
+assert cap34.split("\n\n")[0].startswith(H.NAVER_NOTE) and cap34.split("\n\n")[1].split("\n")[0] in ("휴지 떨어진 집이면 지금 쟁여도 됨", "커피 매일 마시면 개당 가격 보고 고르기") or len(cap34.split("\n\n")[1].split("\n")) in (2, 3), cap34  # 대가성 문구 -> 사람 멘트
+(H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, tk34, uid34) = sv34
+H.E.pop("IG_TOKEN", None) if tk34 is None else H.E.update(IG_TOKEN=tk34); H.E.pop("IG_USER_ID", None) if uid34 is None else H.E.update(IG_USER_ID=uid34)
+shutil.rmtree("docs/cards/igv"); os.remove("docs/cards/2026-11-07.jpg"); os.remove("posts34.json"); shutil.rmtree("ig34", ignore_errors=True)
+assert H.IG_HUMAN is False and H.IG_AUTO is False
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

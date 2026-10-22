@@ -418,3 +418,239 @@ if __name__ == "__main__":
     posts = json.load(open("posts.json")) if os.path.exists("posts.json") else []
     kst = time.gmtime(time.time() + 9 * 3600)
     print(make([title_of(p["text"]) for p in posts], f"{kst.tm_mon}월 {kst.tm_mday}일", sys.argv[1] if len(sys.argv) > 1 else "card.png"))
+
+
+# ── 인스타 카드 새 디자인(10/22 22:3x 진우 '디자인 업그레이드' — 시안 A·B 번갈아, 인스타만: 텔레그램·Threads·사이트 카드는 위 make·deal_card 그대로) ──
+# it(상품 1개) = {"name", "short"(칩·타일용 짧은 이름), "price", "chip"(단위가격·'와우 할인'·'47%↓'), "badge"('🚀 쿠팡 로켓'·'💙 토스 특가'·'네이버' — 채널 머리 줄 규칙),
+#                 "ship"('내일 도착'·'무료배송'), "photo"(몰 상품 이미지 경로, 없으면 None -> 상품 종류 글자 칸), "e"(이모지), "kind"(상품 종류 낱말), "line"(한 줄 멘트), "when"('10/22 21시')}
+NAVY, NAVY2, ORANGE, PAPER, BROWN, INKB, RUST, HIGHLIGHT = (29, 39, 64), (43, 55, 87), (255, 138, 61), (246, 241, 231), (138, 123, 102), (43, 36, 27), (217, 72, 15), (255, 216, 77)
+
+
+def _hex(c):
+    return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)) if isinstance(c, str) else c
+
+
+def _fit(f, s, width):
+    """한 줄 말줄임(넘치면 …)."""
+    if f.getlength(s) <= width:
+        return s
+    while s and f.getlength(s + "…") > width:
+        s = s[:-1]
+    return s.rstrip() + "…"
+
+
+def _em_text(d, im, xy, s, f, fill):
+    """'🚀 쿠팡 로켓'처럼 맨 앞 이모지는 컬러 이모지 그림으로, 나머지는 글자로 -> 끝 x."""
+    x, y = xy
+    m = re.match(r"([^\w\s\[\]()·.,%+-]{1,2})\s*", s)
+    if m and not re.match(r"[가-힣A-Za-z0-9]", m[1]):
+        try:
+            e = emoji(m[1], int(f.size * 1.05))
+            im.alpha_composite(e, (int(x), int(y + f.size * 0.12)))
+            x, s = x + e.width + int(f.size * 0.3), s[m.end():]
+        except Exception:
+            pass
+    d.text((x, y), s, font=f, fill=fill)
+    return x + d.textlength(s, font=f)
+
+
+def _pill_w(f, s, padx, emo=True):
+    m = re.match(r"([^\w\s\[\]()·.,%+-]{1,2})\s*", s) if emo else None
+    w = f.getlength(s[m.end():] if m and not re.match(r"[가-힣A-Za-z0-9]", m[1]) else s)
+    return int(w + (f.size * 1.35 if m and not re.match(r"[가-힣A-Za-z0-9]", m[1]) else 0) + padx * 2)
+
+
+def _photo(it, w, h, radius, bg=(227, 231, 239), ink=NAVY):
+    """상품 사진(꽉 차게 잘라 넣음) — 없으면 상품 종류 글자 칸(이모지 + 종류 낱말). 둥근 모서리 RGBA."""
+    tile = Image.new("RGBA", (w, h), bg + (255,))
+    ph = None
+    if it.get("photo"):
+        try:
+            ph = Image.open(it["photo"]).convert("RGB")
+        except Exception:
+            ph = None
+    if ph:
+        k = max(w / ph.width, h / ph.height)
+        ph = ph.resize((max(w, int(ph.width * k + 0.5)), max(h, int(ph.height * k + 0.5))), Image.LANCZOS)
+        l, t = (ph.width - w) // 2, (ph.height - h) // 2
+        tile.paste(ph.crop((l, t, l + w, t + h)), (0, 0))
+    else:
+        d = ImageDraw.Draw(tile)
+        es = int(min(w, h) * 0.34)
+        try:
+            e = emoji(it.get("e") or "🛒", es)
+            tile.alpha_composite(e, ((w - e.width) // 2, int(h * 0.5 - e.height * 0.8)))
+        except Exception:
+            pass
+        kind = it.get("kind") or ""
+        if kind:
+            f = pf("ExtraBold", max(26, int(min(w, h) * 0.11)))
+            s = _fit(f, kind, w - 40)
+            d.text(((w - f.getlength(s)) / 2, h * 0.5 + es * 0.35), s, font=f, fill=ink)
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, w - 1, h - 1), radius=radius, fill=255)
+    tile.putalpha(mask)
+    return tile
+
+
+def _save(im, out):
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    im.convert("RGB").save(out, quality=90)
+    return out
+
+
+def ig_cover(design, items, date_text, title, out, sub="", note="넘겨서 보기 → · 일부 제휴 링크(수수료) · 가격은 게시 시점 기준"):
+    """인스타 표지(1080x1350 JPEG). design 'A' = 매거진형(남색·큰 제목 3줄·상품 알약 칩), 'B' = 일상 스티커형(크림·형광펜 제목 2줄·2x2 기울인 타일).
+    title = 줄바꿈(\\n)으로 나눈 제목(숫자는 포인트색), sub = 부제(👍 꾸준템이 있을 때 등, A만). date_text: A '10월 22일 목요일' / B '10.22 목'. -> out"""
+    if design == "A":
+        im = Image.new("RGBA", (W, H), NAVY + (255,))
+        d, P = ImageDraw.Draw(im), 88
+        d.text((P, P), date_text, font=pf("SemiBold", 32), fill=_hex("#aab4c8"))
+        f = pf("Bold", 32); d.text((W - P - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=ORANGE)
+        y, ft = 176, pf("ExtraBold", 104)
+        for line in title.split("\n")[:3]:
+            x = P
+            for tok in re.findall(r"\S+\s*", _fit(ft, line, W - 2 * P)):
+                d.text((x, y), tok, font=ft, fill=ORANGE if re.search(r"\d", tok) else "white")
+                x += d.textlength(tok, font=ft)
+            y += 122
+        if sub:
+            d.text((P, y + 22), sub, font=pf("Medium", 36), fill=_hex("#c9d1e0"))
+        fc, fp = pf("SemiBold", 34), pf("Bold", 34)
+        rows, row, rw = [], [], 0
+        for it in items:
+            name = _fit(fc, it.get("short") or it["name"], 420)
+            w = int(fc.getlength(name + "  ") + fp.getlength(it.get("price") or "") + 56)
+            if row and rw + w > W - 2 * P:
+                rows.append(row); row, rw = [], 0
+            row.append((name, it.get("price") or "", w)); rw += w + 16
+        rows += [row] if row else []
+        y = H - 150 - len(rows) * 88
+        for row in rows:
+            x = P
+            for name, price, w in row:
+                d.rounded_rectangle((x, y, x + w, y + 70), radius=35, fill=NAVY2)
+                d.text((x + 28, y + 15), name + "  ", font=fc, fill="white")
+                d.text((x + 28 + fc.getlength(name + "  "), y + 15), price, font=fp, fill=ORANGE)
+                x += w + 16
+            y += 88
+        d.text((P, H - P - 30), note, font=pf("Regular", 26), fill=_hex("#7f8aa3"))
+        return _save(im, out)
+    im = Image.new("RGBA", (W, H), PAPER + (255,))
+    d, P = ImageDraw.Draw(im), 76
+    d.text((P, 74), f"{date_text} · 핫딜픽 일상 장보기", font=pf("SemiBold", 30), fill=BROWN)
+    ft, y = pf("ExtraBold", 84), 138
+    for k, line in enumerate(title.split("\n")[:2]):
+        line = _fit(ft, line, W - 2 * P)
+        if k == 1:  # 둘째 줄 형광펜 밑줄(글자 아래 42%)
+            bb = d.textbbox((P, y), line, font=ft)
+            d.rectangle((bb[0] - 6, bb[3] - int((bb[3] - bb[1]) * 0.42), bb[2] + 6, bb[3] + 4), fill=HIGHLIGHT)
+        d.text((P, y), line, font=ft, fill=INKB)
+        y += 104
+    from PIL import ImageFilter
+    tw, th, gx, gy = 440, 392, 44, 40
+    x0, y0 = (W - 2 * tw - gx) // 2, 392
+    for k, it in enumerate(items[:4]):
+        card = Image.new("RGBA", (tw + 40, th + 50), (0, 0, 0, 0))
+        cd = ImageDraw.Draw(card)
+        cd.rounded_rectangle((20, 26, 20 + tw, 26 + th), radius=26, fill=_hex("#e6dccb"))  # 아래 그림자 6px
+        cd.rounded_rectangle((20, 20, 20 + tw, 20 + th), radius=26, fill="white")
+        card.alpha_composite(_photo(it, tw - 36, 230, 18, bg=(244, 238, 226), ink=INKB), (38, 38))
+        f1, f2 = pf("SemiBold", 27), pf("ExtraBold", 38)
+        cd.text((38, 284), _fit(f1, it.get("short") or it["name"], tw - 36), font=f1, fill=INKB)
+        cd.text((38, 326), _fit(f2, it.get("price") or "", tw - 36), font=f2, fill=RUST)
+        card = card.rotate((-2, 1.5, 1, -1.5)[k], resample=Image.BICUBIC, expand=True)
+        cx, cy = x0 + (k % 2) * (tw + gx) + tw // 2, y0 + (k // 2) * (th + gy) + th // 2
+        im.alpha_composite(card, (cx - card.width // 2, cy - card.height // 2))
+    more = len(items) - 4
+    if more > 0:
+        f = pf("Bold", 30); s = f"+{more}개 더 →"; w = int(f.getlength(s)) + 56
+        d.rounded_rectangle((W - P - w, H - 128, W - P, H - 64), radius=32, fill=INKB)
+        d.text((W - P - w + 28, H - 117), s, font=f, fill="white")
+    d.text((P, H - 108), "제휴 링크 수수료 · 게시 시점 가격", font=pf("Regular", 24), fill=BROWN)
+    return _save(im, out)
+
+
+def ig_slide(design, it, n, total, out):
+    """인스타 상품 장(1080x1350 JPEG, 표지 다음 장들). A = 위 700px 사진(몰 배지·n/total 알약) + 상품명·큰 가격·칩·한 줄 멘트,
+    B = 기울인 폴라로이드 사진 + 노란 원 스티커(가격·단위가격) + 말풍선 멘트 + 몰·배송 줄. 사진 없으면 상품 종류 글자 칸. -> out"""
+    when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
+    if design == "A":
+        im = Image.new("RGBA", (W, H), _hex("#f4f5f8") + (255,))
+        d, P = ImageDraw.Draw(im), 60
+        im.alpha_composite(_photo(it, W - 2 * P, 700, 28), (P, P))
+        fb = pf("SemiBold", 30)
+        if it.get("badge"):
+            w = _pill_w(fb, it["badge"], 24)
+            d.rounded_rectangle((P + 24, P + 24, P + 24 + w, P + 84), radius=30, fill=NAVY)
+            _em_text(d, im, (P + 48, P + 35), it["badge"], fb, "white")
+        s = f"{n:02d} / {total:02d}"; w = int(fb.getlength(s)) + 48
+        d.rounded_rectangle((W - P - 24 - w, P + 24, W - P - 24, P + 84), radius=30, fill="white")
+        d.text((W - P - 24 - w + 24, P + 35), s, font=fb, fill=NAVY)
+        X, y = 80, 800
+        fn = pf("SemiBold", 44)
+        for line in wrap(d, it["name"], fn, W - 2 * X, 2):
+            d.text((X, y), line, font=fn, fill=NAVY); y += 56
+        y += 10
+        fpz = next((z for z in (96, 84, 72, 60) if pf("ExtraBold", z).getlength(it.get("price") or "") <= W - 2 * X - (260 if it.get("chip") else 0)), 60)
+        fp = pf("ExtraBold", fpz)
+        d.text((X, y), it.get("price") or "", font=fp, fill=NAVY)
+        if it.get("chip"):
+            fc = pf("SemiBold", 34); c = _fit(fc, it["chip"], W - 2 * X - fp.getlength(it.get("price") or "") - 70)
+            cx, cw = X + fp.getlength(it.get("price") or "") + 24, int(fc.getlength(c)) + 40
+            cy = y + fpz - 62
+            d.rounded_rectangle((cx, cy, cx + cw, cy + 56), radius=28, fill=_hex("#ffe7d6"))
+            d.text((cx + 20, cy + 8), c, font=fc, fill=_hex("#e8590c"))
+        y += int(fpz * 1.18) + 12
+        if it.get("line"):
+            fl = pf("Medium", 36)
+            for line in wrap(d, f"“{it['line']}”", fl, W - 2 * X, 2):
+                d.text((X, y), line, font=fl, fill=_hex("#4a5568")); y += 48
+        d.text((X, H - 70), f"핫딜픽 · 제휴 링크로 수수료를 받을 수 있음 · {when}", font=pf("Regular", 24), fill=_hex("#9aa3b2"))
+        return _save(im, out)
+    from PIL import ImageFilter
+    im = Image.new("RGBA", (W, H), PAPER + (255,))
+    d = ImageDraw.Draw(im)
+    pw, b, bb = 640, 26, 90
+    pol = Image.new("RGBA", (pw + 2 * b + 60, pw + b + bb + 60), (0, 0, 0, 0))
+    sh = Image.new("RGBA", pol.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rectangle((30, 42, 30 + pw + 2 * b, 42 + pw + b + bb), fill=(80, 60, 30, 70))
+    pol.alpha_composite(sh.filter(ImageFilter.GaussianBlur(14)))
+    pd = ImageDraw.Draw(pol)
+    pd.rectangle((30, 30, 30 + pw + 2 * b, 30 + pw + b + bb), fill="white")
+    pol.alpha_composite(_photo(it, pw, pw, 6, bg=(244, 238, 226), ink=INKB), (30 + b, 30 + b))
+    fn = pf("SemiBold", 34)
+    pd.text((30 + b, 30 + b + pw + 24), _fit(fn, it.get("short") or it["name"], pw), font=fn, fill=INKB)
+    pol = pol.rotate(-2, resample=Image.BICUBIC, expand=True)
+    im.alpha_composite(pol, (36, 40))
+    st = Image.new("RGBA", (300, 300), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(st)
+    sd.ellipse((25, 25, 275, 275), fill=HIGHLIGHT)
+    price = it.get("price") or ""
+    fpz = next((z for z in (52, 46, 40, 34) if pf("ExtraBold", z).getlength(price) <= 210), 34)
+    fp = pf("ExtraBold", fpz)
+    unit = it.get("chip") or ""
+    fu = pf("SemiBold", 28); unit = _fit(fu, unit, 200)
+    top = 150 - (fpz + (36 if unit else 0)) // 2
+    sd.text((150 - fp.getlength(price) / 2, top), price, font=fp, fill=INKB)
+    if unit:
+        sd.text((150 - fu.getlength(unit) / 2, top + fpz + 8), unit, font=fu, fill=INKB)
+    st = st.rotate(-8, resample=Image.BICUBIC)
+    im.alpha_composite(st, (W - 340, 150))
+    y = 900
+    if it.get("line"):
+        fl = pf("SemiBold", 38)
+        rows = wrap(d, it["line"], fl, W - 2 * 76 - 80, 2)
+        bh = 52 * len(rows) + 56
+        d.rounded_rectangle((76, y, W - 76, y + bh), radius=28, fill="white")
+        d.polygon([(150, y), (190, y), (160, y - 30)], fill="white")
+        for k, line in enumerate(rows):
+            _em_text(d, im, (116, y + 28 + 52 * k), line, fl, INKB)
+        y += bh + 34
+    else:
+        y += 20
+    meta = " · ".join(x for x in (it.get("badge"), it.get("ship")) if x)
+    if meta:
+        _em_text(d, im, (80, y), meta, pf("SemiBold", 28), BROWN)
+    d.text((80, H - 70), f"{when} · 제휴 링크로 수수료를 받을 수 있음 · 핫딜픽", font=pf("Regular", 24), fill=BROWN)
+    return _save(im, out)
