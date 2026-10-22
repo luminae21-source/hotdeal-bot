@@ -4166,6 +4166,12 @@ g25, log25 = run21(s25, "15:15"); assert g25 == [], (g25, log25)  # (진우 🔥
 json.dump([own25(2536, "11:47", K23), own25(2537, "11:50", G23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([], open("ev25.json", "w"))
 s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}}
 g25, log25 = run21(s25, "14:37"); assert g25 == ["코멧"] and "re·①②·화장품 1개 앞" in log25, (g25, log25)  # ②(구매 2위) 진우 딜도 창 14:50 — 먼저 올라온 진우 🔥(14:47)부터
+json.dump([own25(2540, "13:00", G23), own25(2541, "11:40", K23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([{"at": "2026-10-21 11:40", "url": "https://link.coupang.com/a/W2541", "re": True}, {"at": "2026-10-21 13:00", "url": "https://link.coupang.com/a/W2540", "re": True}], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "toss"}}
+g25, log25 = run21(s25, "14:30"); assert g25 == ["코멧"] and "창 끝남 10분 전" in log25 and s25["thfill"]["k"] == "toss", (g25, log25)  # 끝나가는 re(11:40)가 다른 re(②) 앞으로 = 채움 차례(진우 🔥 다음)는 그대로(리뷰)
+json.dump([own25(2542, "11:47", K23), own25(2543, "11:47", G23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["하루온"] and "창 끝남" not in log25, (g25, log25)  # 같은 분에 끝나가는 진우 딜 2개 = 강한 후보(② 구매 2위) 먼저(posts.json 순서 상관없이 — 리뷰)
 os.remove("ev25.json"); H.EVENTS = ev25
 os.remove("posts25.json")
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk25, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER) = sv25

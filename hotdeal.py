@@ -3266,7 +3266,7 @@ def threads_deals(seen):
     wb = wx_bonus(seen)  # 날씨 가점(10/15 진우): 같은 등급 안에서만 먼저(🔥·30일 최저가 순서 그대로)
     strong = [c[0] for c in sorted(cand, key=lambda c: (grp(c), grp(c) == 1 and c[2] != 2, th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]))]  # 화장품은 소모품 먼저, 같으면 먼저 올라온 것
     out = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}
-    own = sorted((i for i in fresh if posts[i].get("own") and posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)), key=lambda i: posts[i]["t"])  # 기다리는 진우 🔥 딜(🛒는 th_solo가 거름), 먼저 올라온 것부터
+    own = sorted((i for i in fresh if posts[i].get("own") and posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)), key=lambda i: (posts[i]["t"], i not in strong))  # 기다리는 진우 🔥 딜(🛒는 th_solo가 거름), 먼저 올라온 것부터(같은 분이면 강한 후보 먼저)
     left = own and kst_ts(posts[own[0]]["t"]) + 3 * 3600 - now  # 10/22 진우 '끝나가는 🔥 먼저': 다음 칸(간격 최대 + 다음 실행)까지 기다리면 3시간 창이 지나는 진우 딜이면
     late = [i for i in own if kst_ts(posts[i]["t"]) + 3 * 3600 - now < TH_SOLO_GAP + TH_GAP_JITTER + RUN_GAP * 60] if TH_SOLO_FILL else []  # 끝나가는 진우 🔥(창이 먼저 끝나는 것 = 먼저 올라온 것부터)
     first = strong[:1]  # 10/22 Cowork(14:37 re 깨끗한나라(창 15:29)가 먼저 나가 11:47 진우 🔥 홈키파 창 14:47 놓침): 끝나가는 진우 🔥 = re·①②·화장품보다도 먼저(re도 끝나가면 그 안에서 먼저 올라온 순)
@@ -3274,7 +3274,7 @@ def threads_deals(seen):
     jump = strong[:1] != first  # 순서가 바뀔 때만 로그·채움 차례(own)
     if jump:
         print(f"threads turn own(창 끝남 {max(0, int(left)) // 60}분 전) — re·①②·화장품 {len(first)}개 앞")
-    todo, turn = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])], "own" if jump else None  # turn = 채움 칸 종류(own·toss·post)
+    todo, turn = strong or [i for i in fresh if (posts[i].get("own") or posts[i].get("s", 0) >= 7) and th_solo(seen, posts[i]["text"], fill=True, beauty=bt[i])], "own" if jump and strong[0] not in rei else None  # turn = 채움 칸 종류(own·toss·post) — 앞으로 온 게 re면 채움 차례 X
     if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 채움(10/12 진우): 토스 픽 ↔ 진우 🔥 딜 번갈아(10/21), 둘 다 없으면 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
         gone = {x[0] for k, v in seen.items() if k.startswith("sold_") and isinstance(v, dict) for x in v.get("it", []) if x[4]}  # 품절·특가 끝 토스 상품
         rd = th_day(seen, now)  # 밤(0~6시) 재오픈이 기다리면 토스 픽 칸은 비워 둠(같은 실행 뒤 toss_reopen 차례 — 10/22 새벽 토스 글이 자정 재오픈 칸을 가져가던 것)
