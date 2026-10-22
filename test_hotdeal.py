@@ -4909,9 +4909,9 @@ for f34 in os.listdir("t34"):  # 1/3 크기(폰 피드 썸네일 정도)
     if f34[0] in "AB" and f34.endswith(".jpg"):
         I34.open(f"t34/{f34}").resize((360, 450), I34.LANCZOS).save(f"t34/{f34[:-4]}_small.png")
 assert len([f for f in os.listdir("t34") if f.endswith("_small.png")]) == 12
-im34 = I34.open("t34/A3.jpg").convert("RGB")  # A 표지 = 파스텔 매거진(10/22 진우): 둥근 모서리 밖 라벤더 안개 · 왼쪽 위 라벤더 -> 오른쪽 아래 핑크
-assert [max(abs(a - b) for a, b in zip(im34.getpixel(xy), c)) < 10 for xy, c in (((6, 6), C34.LMIST), ((60, 60), C34.LAV), ((1020, 1290), C34.BLUSH))] == [True] * 3
-assert all(C34.contrast(c, tuple(a + (b - a) * t / 10 for a, b in zip(C34.LAV, C34.BLUSH))) >= 4.5 for c in (C34.INKA, C34.BERRY, C34.SUBA) for t in range(11))  # 그라데이션 중간색 위에서도
+px34 = I34.open("t34/A3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.NAVY)) < 10, px34  # A 표지 = 남색(10/22 진우 A 최종 '남색 쪽이 시인성이 더 좋다')
+px34 = I34.open("t34/As3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.LMIST)) < 10, px34  # A 상품 장 = 파스텔(라벤더 안개)
+assert C34.contrast(*C34.IG_PAIRS["A 칩 가격"]) >= 5  # 표지 칩 가격(전 4.51 제일 낮음) 5:1↑
 px34 = I34.open("t34/B3.jpg").convert("RGB").getpixel((20, 20)); assert max(abs(a - b) for a, b in zip(px34, C34.PAPER)) < 10, px34  # B 표지 = 크림
 px34 = I34.open("t34/As2.jpg").convert("RGB").getpixel((540, 400)); assert max(abs(a - b) for a, b in zip(px34, (200, 210, 230))) < 12, px34  # A 상품 장 = 위 사진
 shutil.rmtree("t34")
@@ -4938,7 +4938,7 @@ H.http, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides = http34, "pos
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
 s34 = {}; time.time = lambda: TK("2026-11-07 21:05"); H.ig_cards(s34)
 assert sorted(os.listdir("docs/cards/igv/2026-11-07")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "cover.jpg"] and not c34  # 이번 실행 = 한 벌만(인스타 X)
-cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((60, 60)); assert H.ig_design("2026-11-07") == "A" and max(abs(a - b) for a, b in zip(cv34, C34.LAV)) < 10  # 11/7 = 10/22에서 16일 = A
+cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((20, 20)); assert H.ig_design("2026-11-07") == "A" and max(abs(a - b) for a, b in zip(cv34, C34.NAVY)) < 10  # 11/7 = 10/22에서 16일 = A
 time.time = lambda: TK("2026-11-07 21:12"); H.ig_cards(s34); assert not c34  # 21:00 + 15~20분 전
 time.time = lambda: TK("2026-11-07 21:25"); H.ig_cards(s34)
 imgs34 = [b["image_url"] for u, b, m in c34 if m == "POST" and b.get("is_carousel_item")]
