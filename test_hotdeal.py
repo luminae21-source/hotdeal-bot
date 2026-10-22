@@ -3658,6 +3658,11 @@ json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>[쿠팡] 일반 {k} (7,900원)
 c19.clear(); tg19.clear(); o19 = io.StringIO()
 with contextlib.redirect_stdout(o19): H.preview({"threply": {"t": 1, "ok": 0}})
 assert len(tg19) == 1 and c19 == [] and "threads skip (수수료 링크 아님) preview 묶음 | 항목 0개\n" in o19.getvalue()  # 수수료 0개 = Threads 미리보기 X, 채널은 그대로
+json.dump([{"at": f"{D19} 22:20", "text": "👍 <b>[쿠팡] 꾸준 핸드크림 (25,800원)</b>\n\n한 달 1,000명+ 구매", "url": "https://link.coupang.com/a/PV1", "button": "b", "deal": True},
+           {"at": f"{D19} 22:25", "text": "🛒 <b>[쿠팡] 약한 샴푸 (7,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://link.coupang.com/a/PV2", "button": "b", "deal": True},
+           {"at": f"{D19} 22:30", "text": "🔥 <b>[쿠팡] 센 휴지 (9,900원)</b>\n\n30일 최저가", "url": "https://link.coupang.com/a/PV3", "button": "b", "deal": True}], open(H.EVENTS, "w"), ensure_ascii=False)
+pth19, H.PREVIEW_TH = H.PREVIEW_TH, 1; c19.clear(); tg19.clear(); H.preview({"threply": {"t": 1, "ok": 0}}); H.PREVIEW_TH = pth19
+assert "\n\n22:30 🔥 센 휴지" in c19[0]["text"] and "👍 꾸준" not in c19[0]["text"] and "나머지 2개" in c19[0]["text"], c19  # 9-31 본문 자리 = 🔥 -> 👍 -> 🛒(👍가 먼저 올라와도 🔥 먼저)
 # 간식(묶음): 수수료 링크 딜만(사이트 딜 페이지로 가던 제휴 아닌 딜 X), 0개면 Threads X · 날씨 글은 그대로
 S19 = [{"n": "빼빼로", "p": "1,000원", "u": "https://link.coupang.com/a/S1", "i": 1, "hot": True}, {"n": "초코파이", "p": "2,000원", "u": None, "i": 2, "hot": True},
        {"n": "칸쵸", "p": "3,000원", "u": "https://naver.me/S3", "i": 3, "hot": True}]
@@ -4393,6 +4398,11 @@ assert TT28.startswith(H.th_note(H.TOSS_NOTE) + "💙 토스 특가 · 생필품
 vv28[:] = [{"lines": ["더건강플러스 올리브오일 1L 오늘 특가", "생필품 베스트 3위, 60% 할인해서 15,580원", "집밥 자주 하는 집이면 쟁여 둘 만함"], "q": ""}]; pv28.clear()
 o28 = H.th_voice({}, TT28, "https://toss.shopping/_m/t28")
 assert o28.startswith(f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L 오늘 특가\n") and "토스 '오늘 특가 소식'" in pv28[0] and re.search(r"⚠️ \d+/\d+ \d\d:\d\d 게시 시점 가격\n\n👉 https://toss.shopping/_m/t28$", o28), o28
+ST28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장\n⚠️ 결제 전 최종가 (10/22 20시)\n\n👉 https://link.coupang.com/a/st28"
+vv28[:] = [{"lines": ["록시땅 시어 버터 핸드크림 75ml 25,800원", "최저가는 아니지만 한 달 1,000명 넘게 사는 거", "오늘 특가로 싸게 나옴", "리뷰 1,969개 쌓임"], "q": ""}]; pv28.clear()
+o28 = H.th_voice({}, ST28, "https://link.coupang.com/a/st28")  # 9-31 👍 꾸준템 결: '최저가는 아니지만'은 O, 특가·최저(주장)·할인 줄은 뺌
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml 25,800원\n최저가는 아니지만 한 달 1,000명 넘게 사는 거\n리뷰 1,969개 쌓임\n결제 전 가격 확인 필수 (10/22 20시 기준)\n\n👉 https://link.coupang.com/a/st28", o28
+assert "'꾸준히 팔리는 상품'" in pv28[0] and "로켓 가격 비교" not in pv28[0], pv28[0]
 H.ai_voice, H.random = sv28b
 # 토스 목록: 하루특가 TOP5·17시 생필품 등 머리 = 💙 · 품절 고칠 때 게시 시점 줄(꼬리)도 남김
 assert '"💙 <b>오늘의 토스 하루특가 TOP{}</b>' in inspect.getsource(H.toss_deals) and 'head = "💙 <b>토스 "' in inspect.getsource(H.toss_deals) and "⏰ <b>오늘의 토스" not in inspect.getsource(H.toss_deals)
@@ -4699,7 +4709,8 @@ P32 = [cp32(3101, "2026-10-22 20:30", STD32.format(n="록시땅 시어 버터 �
        cp32(3105, "2026-10-01 18:20", STD32.format(n="오래된 꾸준템", p="7,000원")),  # 14일 지남
        cp32(3106, "2026-10-22 18:30", STD32.format(n="품절 꾸준템", p="7,000원")),  # 품절 표시
        cp32(3107, "2026-10-22 12:00", "🔥 [쿠팡] 펩시 제로 라임 48캔 (26,550원)\n\n쿠팡보다 싸요", own=0),
-       cp32(3108, "2026-10-23 10:00", STD32.format(n="꾸준 세제 3L", p="15,900원"))]
+       cp32(3108, "2026-10-23 10:00", STD32.format(n="꾸준 세제 3L", p="15,900원")),
+       cp32(3109, "2026-10-22 13:00", "🔥 [쿠팡] 제휴 아님 상품 (3,000원)\n\n좋음", url="https://www.coupang.com/vp/products/1", own=0)]  # top.json에 있어도 수수료 링크 아님
 json.dump(P32, open("posts32.json", "w"), ensure_ascii=False)
 json.dump({"d": "2026-10-22", "items": [{"key": "toss:77", "name": "베베앙 물티슈 10팩", "url": "https://toss.shopping/_m/T77"}, {"key": "toss:78", "name": "품절 토스", "url": "https://toss.shopping/_m/T78"},
                                         {"key": "https://link.coupang.com/a/S3107", "name": "펩시", "url": "https://link.coupang.com/a/S3107"}, {"key": "x", "name": "제휴 아님", "url": "https://www.coupang.com/vp/products/1"},
@@ -4715,6 +4726,8 @@ assert [b[0]["text"][:4] for b in c32["reply_markup"]["inline_keyboard"]] == [f"
 assert "💰 <b>12,900원</b> · 리뷰 5,432" in x32 and "베베앙 물티슈 10팩" in x32 and "💰 <b>26,550원</b>\n" in x32 and "💰 <b>9,900원</b> · 한 달 2,000명+ 구매" in x32 and x32.endswith("\n\n⚠️ 10/23 19:52 게시 시점 가격"), x32
 assert not re.search("적게 팔린|네이버 꾸준템|오래된|품절|제휴 아님|토스78", x32) and tc32 == ["/products/detail?tacaItemIds=77,78"] and "steady 5 items" in o32.getvalue()
 (tx32, tl32), = th32; assert tx32.startswith(f"{H.DISCLOSURE}\n{H.TOSS_NOTE}\n\n👍 꾸준히 팔리는 것 모음\n\n1️⃣ 꾸준 세제 3L 15,900원 · 한 달 1,000명+ 구매\n👉 https://link.coupang.com/a/S3108\n") and len(tx32) <= 480 and tl32 == "https://link.coupang.com/a/S3108", tx32
+H.STEADY_N = 9; n32 = [x["n"] for x in H.steady_cands(s32, TK("2026-10-23 19:52"))]; H.STEADY_N = 5
+assert n32 == ["꾸준 세제 3L", "록시땅 시어 버터 핸드크림 75ml", "베베앙 물티슈 10팩", "펩시 제로 라임 48캔", "해피데이 핫팩 100g 30개"], n32  # 5개 상한 없이도 같음(수수료 아님·500명·14일·품절·중복 X)
 assert "steady_20261023" in s32 and s32["bundles"]["ts"]; ch32.clear(); th32.clear(); H.steady_list(s32); assert not ch32  # 하루 1번
 sj32 = json.load(open("steady32/steady.json")); assert sj32["at"] == "2026-10-23 19:52" and len(sj32["items"]) == 5 and sj32["notes"] == [H.DISCLOSURE, H.TOSS_NOTE]
 su32 = S.steady_page("steady32"); hp32 = open("steady32/steady.html").read()
