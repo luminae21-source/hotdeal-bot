@@ -65,4 +65,5 @@ jobs:
           git add -A docs && [ -f posts.json ] && git add posts.json
           [ ! -f music.json ] || git add music.json   # 릴스 배경음악 목록(텔레그램 file_id만, 음원 파일 아님)
           [ ! -f metrics.json ] || git add metrics.json   # 글별 조회·반응(아침 보고용)
+          [ ! -f top.json ] || git add top.json   # 잘 된 상품 표(Cowork 재게시·토스 후보 가산)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도

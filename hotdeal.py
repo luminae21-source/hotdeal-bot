@@ -3,7 +3,7 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, collections, hashlib, hmac, html, json, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, collections, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -437,6 +437,7 @@ def toss_link(seen, iid, name=""):
         return link
     link = toss("/links", {"tacaItemId": iid, "publisherId": E["TOSS_PUBLISHER_ID"]})["shortUrl"]
     st["m"][str(iid)] = [link, time.time()]
+    st.setdefault("r", {})[link] = [int(iid), time.time()]  # 링크 -> 상품 id(metrics 잘 된 상품 표 — 옛 링크도)
     return link
 
 
@@ -463,6 +464,7 @@ def toss_mode(seen, now=None):
         return
     st = seen.setdefault("tlink", {"t": now, "m": {}})
     st["m"] = {i: v for i, v in st["m"].items() if v[1] > now - TOSS_LINK_KEEP}
+    st["r"] = {u: v for u, v in st.get("r", {}).items() if v[1] > now - TOSS_LINK_KEEP}
     def say(t):  # 알림이 실패해도(텔레그램 시간 초과 — tg는 HTTPError만 잡음) 기록·모드는 그대로
         try:
             tg("sendMessage", chat_id=ADMIN, text=t)
@@ -486,10 +488,16 @@ def toss_mode(seen, now=None):
     if k <= TOSS_PAUSE[1] or now - tp.get("probe", 0) < 3600:
         return
     tp["probe"] = now
-    try:  # 점검 끝난 뒤 = 지금 베스트 중 품절 아닌 상품으로 1개 만들어 봄(보관 상품은 그사이 발급 제한·판매 끝일 수 있어서 — 10/22 리뷰)
-        iid = next(x["tacaItemId"] for x in toss("/products/best-selling?size=5")["items"] if not x.get("isSoldOut"))
-        RUN["treuse"] = False
-        toss_link(seen, iid)
+    try:  # 점검 끝난 뒤 = 지금 베스트 중 품절 아닌 상품으로 만들어 봄(보관 상품은 그사이 발급 제한·판매 끝일 수 있어서 — 10/22 리뷰), 그 상품만 막혔을 수 있어 3개까지
+        RUN["treuse"], err = False, None
+        for x in [x for x in toss("/products/best-selling?size=10")["items"] if not x.get("isSoldOut")][:3]:
+            try:
+                toss_link(seen, x["tacaItemId"])
+                break
+            except RuntimeError as e:
+                err = e
+        else:
+            raise err or RuntimeError("베스트 목록 비어 있음")
     except Exception as e:
         RUN["treuse"] = True
         print("toss probe", repr(e))
@@ -503,29 +511,39 @@ def toss_mode(seen, now=None):
 
 
 def toss_stock(seen):
-    """점검 대비 미리 만들기(10/22 Cowork ③ — TOSS_STOCK_DAYS, TOSS_STOCK_GAP마다): 베스트 100·생필품(TOSS_CATS)·뷰티 베스트 30·하루특가 30 중 품절 아닌 새 상품의 쉐어링크를 보관(tlink).
-    다 올리진 않음 — 점검 기간 회차·개별 글이 이 중에서 지금처럼 Claude로 고름(7점↑ 등 점수는 올릴 때). 발급이 1번이라도 막히면 이번 회차는 거기서 멈춤(다음 회차에 다시)."""
+    """점검 대비 미리 만들기(10/22 Cowork ③ — TOSS_STOCK_DAYS): TOSS_STOCK_GAP마다 베스트 100·생필품(TOSS_CATS)·뷰티 베스트 30·하루특가 30 중 품절 아닌 상품 id를 줄(q)에 받아
+    한 실행 TOSS_STOCK_RUN개씩 쉐어링크를 만들어 보관(tlink — 남은 줄은 다음 실행에, 목록은 회차에 1번만 조회). 다 올리진 않음 — 점검 기간 회차·개별 글이 이 중에서 지금처럼 Claude로 고름.
+    발급 제한 상품(FAIL)은 그 상품만 빼고(tstockbad) 계속, 3번 연달아 막히거나 네트워크 오류면 이번 실행은 거기서 멈춤."""
     now = time.time()
-    if not HAS_TOSS or RUN.get("treuse") or time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)) not in TOSS_STOCK_DAYS or now - seen.get("tstock", {}).get("t", 0) < TOSS_STOCK_GAP:
+    if not HAS_TOSS or RUN.get("treuse") or time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)) not in TOSS_STOCK_DAYS:
         return
-    seen["tstock"] = {"t": now}
-    tree = toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
-    raw = toss("/products/best-selling?size=100")["items"] + toss("/products/today-deals?size=30")["items"] + [
-        x for c in tree if c["displayName"] in TOSS_CATS or re.search("뷰티|화장품", c["displayName"]) for x in toss(f"/products/best-categories/{c['categoryId']}?size=30")["items"]]
-    have = seen.setdefault("tlink", {"t": now, "m": {}})["m"]
-    new = [x for x in {x["tacaItemId"]: x for x in raw if not x.get("isSoldOut")}.values() if str(x["tacaItemId"]) not in have]
-    n = 0
-    for x in new[:TOSS_STOCK_RUN]:
+    st, have = seen.get("tstock", {}), seen.setdefault("tlink", {"t": now, "m": {}})["m"]
+    bad = set(seen.get("tstockbad", {}).get("ids", []))
+    if now - st.get("t", 0) >= TOSS_STOCK_GAP:  # 새 회차
+        tree = toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
+        raw = toss("/products/best-selling?size=100")["items"] + toss("/products/today-deals?size=30")["items"] + [
+            x for c in tree if c["displayName"] in TOSS_CATS or re.search("뷰티|화장품", c["displayName"]) for x in toss(f"/products/best-categories/{c['categoryId']}?size=30")["items"]]
+        st = seen["tstock"] = {"t": now, "q": list(dict.fromkeys(x["tacaItemId"] for x in raw if not x.get("isSoldOut")))}
+    q = [i for i in st.get("q", []) if str(i) not in have and i not in bad]
+    n = fails = 0
+    for i in q[:TOSS_STOCK_RUN]:
         try:
-            toss_link(seen, x["tacaItemId"])
-        except Exception as e:  # 막힘 -> 다음 회차(4시간 뒤)에
+            toss_link(seen, i)
+        except RuntimeError as e:  # 발급 제한 상품 등(FAIL) = 그 상품만 빼고 계속
+            print("toss stock", i, repr(e))
+            bad.add(i)
+            fails += 1
+            if fails >= 3:
+                break
+            continue
+        except Exception as e:  # 네트워크 -> 다음 실행에 이어서
             print("toss stock", repr(e))
             break
-        n += 1
-    else:
-        if len(new) > TOSS_STOCK_RUN:  # 남은 것 = 다음 실행에 이어서(회차 시각은 그대로 두지 않음)
-            seen["tstock"]["t"] = now - TOSS_STOCK_GAP
-    print(f"toss stock: 새 링크 {n}/{len(new)} · 보관 {len(have)}개")
+        n, fails = n + 1, 0
+    if bad:
+        seen["tstockbad"] = {"t": now, "ids": sorted(bad)}
+    st["q"] = [i for i in q if str(i) not in have and i not in bad]
+    print(f"toss stock: 새 링크 {n} · 남은 줄 {len(st['q'])} · 보관 {len(have)}개" + (f" · 발급 제한 {len(bad)}" if bad else ""))
 
 
 def affiliate(url):
@@ -818,7 +836,7 @@ def toss_clean_posts():
 RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": "", "ch_last": 0, "treuse": False}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유 · 채널 마지막 딜 글(빈틈 채움) · 토스 점검 재사용 모드(toss_mode)
 TG_SEND = ("sendMessage", "sendPhoto", "sendVideo", "copyMessage", "sendMediaGroup")  # 채널 '올리기' 호출(수정·답장 수정은 X)
 TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59")  # 10/22 Cowork·진우: 토스 쉐어링크 점검(새 링크 X·공유 수익 0)에도 토스 글은 채널·Threads 둘 다 계속 -> 이 동안(KST, 끝 분 포함) 새로 안 만들고 만들어 둔 링크(tlink) 재사용(toss_mode)
-TOSS_STOCK_DAYS, TOSS_STOCK_GAP, TOSS_STOCK_RUN, TOSS_LINK_KEEP = ("2026-10-28", "2026-10-29"), 4 * 3600, 30, 14 * 86400  # 점검 전 미리 만들기 날(KST, 4시간마다 — toss_stock) · 한 실행 발급 수(실행 6분 한도 — 남으면 다음 실행에 이어서) · 만든 링크 보관 14일(10/22~ 만든 것도 11/4까지 남게)
+TOSS_STOCK_DAYS, TOSS_STOCK_GAP, TOSS_STOCK_RUN, TOSS_LINK_KEEP = ("2026-10-28", "2026-10-29"), 4 * 3600, 30, 14 * 86400  # 점검 전 미리 만들기 날(KST, 4시간마다 목록 1번 — toss_stock) · 한 실행 발급 수(실행 6분 한도 — 남으면 다음 실행에 이어서) · 만든 링크 보관 14일(10/22~ 만든 것도 11/4까지 남게)
 TOSS_WAIT = 2 * 3600  # 10/18 진우 '토스 링크는 뽐뿌 말고 바로 연결': 쉐어링크 못 찾은 토스 딜은 이만큼 실행마다 다시 찾고 -> 그래도 없으면 진우에게 링크 요청(toss_wait·toss_relink)
 TOSS_BACKFILL = (59, 88, 97, 102, 128, 171, 223, 810, 932, 1002, 1049, 1087, 1102, 1204)  # 10/18 뽐뿌 버튼으로 남은 채널 토스 딜(10/7~10/18) -> toss_relink가 1번 새로 찾고 못 찾으면 진우에게
 TOSS_FIX, TOSS_FIX_RUN = "tossfix.json", 8  # 10/12 22:50 진우 '앞서 올라간 글에서 쿠팡 비교글은 수정하자': 채널 옛 토스 딜 글 고칠 번호 목록(1번만) · 한 실행 고치는 글 수(채널 분당 약 20개, 품절 지켜보기 8개와 같이)
@@ -1506,7 +1524,7 @@ def toss_deals(seen, best=False):
     lst = kind in TH_TOSS_KINDS and (hrs[-1] in TH_LIST_HOURS or kind == "cat")  # 이 회차가 Threads 리스트로도 나가는지
     if rows and tok and kind in TH_TOSS_FILL:  # 10/12 22:45·22:50 진우 '토스 인기 생필품·많이 팔리는 제품 꾸준하게': 이 회차 픽을 Threads 개별 글 채움 후보로(45분 칸이 비었을 때 토스 픽 먼저, 3시간 안)
         seen["thtoss"] = {"t": time.time(), "q": [x for x in seen.get("thtoss", {}).get("q", []) if time.time() - x["t"] < 3 * 3600] + [  # 사이트·posts.json X, 쉐어링크 그대로
-            {"t": time.time(), "l": lst, "id": x["tacaItemId"], "k": kind, "r": n, "s": next((p.get("score", 0) for p in picks if items[p["i"]] is x), 0), "bt": th_beauty(x["displayName"]),
+            {"t": time.time(), "l": lst, "id": x["tacaItemId"], "n": x["displayName"], "k": kind, "r": n, "s": next((p.get("score", 0) for p in picks if items[p["i"]] is x), 0), "bt": th_beauty(x["displayName"]),
              "text": toss_th("하루특가 · 밤 12시까지" if x["tacaItemId"] in night else x.get("_src", ""), name, toss_price(x), toss_lines(gp[n]), link), "link": link} for n, (x, (name, link, lines)) in enumerate(zip(got, rows))]}
     if rows and tok and lst:  # Threads는 12·15·18시 베스트 리스트 + 17시 생필품(식품·생활용품) 리스트(10/12 22:45 진우)만(10/11 진우 '나누지 말고 묶기' — 나머지 회차는 채널에만). 500자 -> 넘치면 뒤 상품부터 뺌, 대가성 문구 맨 앞
         while len(plain) > 1 and len(TOSS_NOTE) + len(head) + len("\n\n".join(plain)) > 480:
@@ -1727,7 +1745,7 @@ def toss_match(seen, r, title, src, items, maxp=None):
     maxp = 받아들일 지금 가격 상한(넘으면 특가 끝 — 다른 가격에 억지로 연결 안 함)."""
     first, u = "ids" not in r, None
     r.setdefault("ids", [])
-    if not r.get("src"):
+    if not r.get("src") and not RUN.get("treuse"):  # (토스 점검 땐 발급이 안 돼 상품 주소 1번 읽기는 아껴 둠)
         r["src"] = 1
         u = store_link(src) if re.search(r"//[\w.]*(ruliweb\.com|clien\.net)/", src) else plain(src) if "toss" in urllib.parse.urlsplit(src).netloc else None
     link = affiliate(u)[0] if (u or "").startswith("https://toss.shopping/t/") else None
@@ -1901,11 +1919,12 @@ def toss_picks(seen):
     for e in todo:  # 못 찾음·발급 실패 -> 진우에게 1번(하위 카테고리까지 다 봤거나 예약 90분 전)
         r = seen.get("pk_" + e["at"])
         if r and not r.get("link") and not r.get("asked") and r.get("net") != now and (r.get("id") or (need and scanned) or e["at"] <= at(PICK_ASK)):
-            r["asked"] = 1
-            if RUN.get("treuse"):  # 토스 점검 = 진우도 새 링크를 못 만듦 -> 안 묻고 하루 요약에 1줄(st skip = watch '예약 글 안 나감' 알림도 X)
-                tnote(seen, "miss", f"이름 예약 {e['name']}")
-                r["st"] = "skip"
+            if RUN.get("treuse"):  # 토스 점검 = 진우도 새 링크를 못 만듦 -> 안 물음: 점검 안 예약은 하루 요약 1줄로 끝(st skip = watch 알림 X), 점검 뒤 예약은 복귀 뒤 다시 찾음
+                if e["at"] <= TOSS_PAUSE[1]:
+                    r.update(asked=1, st="skip")
+                    tnote(seen, "miss", f"이름 예약 {e['name']}")
                 continue
+            r["asked"] = 1
             tg("sendMessage", chat_id=ADMIN, text=f"🔎 토스 이름 예약 {e['at']} '{e['name']}' — " + ("쉐어링크 발급이 막힌 상품이야" if r.get("id") else "토스 API 목록에서 못 찾았어")
                + " → 이 상품 쉐어링크 공유 문구를 Claude 대화에 주면 그 시각 진우 예약으로 바꿀게(안 주면 이 상품만 안 올라감)")
     tok = E.get("THREADS_TOKEN")
@@ -1999,13 +2018,14 @@ def toss_solo(seen):
     recent = lambda at: at[:10] == today or at >= since  # 오늘 + 지난 24시간(밤 12시 넘어 어젯밤 진우 예약 상품이 다시 나가지 않게 — 10/22 0~8시 글 켜며)
     booked = {norm(e["name"]) for e in evs if e.get("name") and recent(e.get("at", ""))}
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_") and recent(k[3:]) and isinstance(v, dict)}
-    tree, tried, best = None, 0, None
+    tree, tried, best, tops = None, 0, None, top_toss(seen, now)  # tops = 잘 된 토스 상품(top.json) — 후보면 +TOP_BONUS점(하루 TOP_BONUS_DAY번)
     for src in [TOSS_SOLO_SRC[(h + n) % len(TOSS_SOLO_SRC)] for n in range(len(TOSS_SOLO_SRC))] + (["stock"] if RUN.get("treuse") else []):  # 토스 점검 = 마지막에 보관 링크 상품(stock)도
         if src == "day" and (h < 9 or h == 23 and kst.tm_min >= 30) or tried >= TOSS_SOLO_TRY and src != "stock":  # 하루특가 목록은 9시에 바뀜(그 전엔 어제 것) · 23:30 넘으면 '밤 12시까지'가 몇 분 안 남음
             continue
         label = None
         if src == "stock":  # 3일 안 안 올린 보관 링크 상품 최근 것 30개 -> 상세로 지금 가격·품절(순위는 옛 것이라 머리 줄 출처 X)
-            ids = [i for i, _ in sorted(seen.get("tlink", {}).get("m", {}).items(), key=lambda kv: -kv[1][1]) if f"tb_{i}" not in seen][:30]
+            ids = [i for i, _ in sorted(seen.get("tlink", {}).get("m", {}).items(), key=lambda kv: -kv[1][1]) if f"tb_{i}" not in seen]
+            ids = (ids[(kst.tm_yday * 24 + h) * 30 % len(ids):] + ids)[:30] if ids else []  # 시각마다 다음 30개(같은 30개만 보지 않게 — 10/22 리뷰)
             raw = toss("/products/detail?tacaItemIds=" + ",".join(ids))["items"] if ids else []
         elif src in ("beauty", "life"):
             tree = tree or toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
@@ -2020,10 +2040,13 @@ def toss_solo(seen):
         items = [(r + 1, x) for r, x in enumerate(raw) if not x.get("isSoldOut") and f"tb_{x['tacaItemId']}" not in seen and toss_ok(seen, x["tacaItemId"])
                  and norm(x["displayName"]) not in booked and x["tacaItemId"] not in picked]
         picks = [p for p in (items and ai_pick(SOLO_PROMPT, [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
-                                                               + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for _, x in items]) or [])
-                 if p["score"] >= TOSS_SOLO_MIN and 0 <= p["i"] < len(items)]
+                                                               + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for _, x in items]) or []) if 0 <= p["i"] < len(items)]
+        for p in picks:  # 10/22 Cowork: 잘 된 토스 상품(판매 중·3일 지남 = 위 품절·tb_ 거름 그대로)은 +TOP_BONUS점
+            if top_hit(tops, items[p["i"]][1]["tacaItemId"], items[p["i"]][1]["displayName"]):
+                p.update(score=p["score"] + TOP_BONUS, top=1)
+        picks = [p for p in picks if p["score"] >= TOSS_SOLO_MIN]
         if picks:
-            best = (src, label, max(picks, key=lambda p: p["score"]))
+            best = (src, label, max(picks, key=lambda p: (p["score"], p.get("top", 0))))  # 같은 점수면 잘 된 상품
             break
     if not best:
         seen[key] = now
@@ -2045,13 +2068,15 @@ def toss_solo(seen):
         return  # 다음 실행에 다시(실패는 바로 알림)
     seen[key] = now
     seen[f"tb_{x['tacaItemId']}"] = {"t": now, "n": name}  # 3일 동안 묶음 회차·다음 개별 글에서 빠짐
+    if p.get("top"):
+        top_mark(seen, now, x["tacaItemId"])
     bundled(seen)
     seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": head, "body": body, "btn": btn, "url": link, "n": name, "p": price,
                                        "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
     if E.get("THREADS_TOKEN"):  # Threads = 채움 후보(45분 간격·화장품 한도 그대로)
         seen["thtoss"] = {"t": now, "q": [q for q in seen.get("thtoss", {}).get("q", []) if now - q["t"] < 3 * 3600] + [
-            {"t": now, "l": False, "id": x["tacaItemId"], "k": "solo", "r": 0, "s": p["score"], "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link), "link": link}]}
-    print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점)")
+            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link), "link": link}]}
+    print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점{' · 잘 된 상품 +' + str(TOP_BONUS) if p.get('top') else ''})")
 
 
 SOLD = ([None, ("⛔ <b>품절</b> — 다시 들어오면 답글로 알려드릴게요", "품절"), ("⛔ <b>품절</b>", "품절")],  # [하루특가 아님 / 하루특가][상태 1 = 품절, 2 = 끝]: (글 줄, 버튼 글자)
@@ -3285,7 +3310,9 @@ def threads_deals(seen):
         if own and (due or not tq or seen.get("thfill", {}).get("k") == "toss"):  # 10/21 진우 '번갈아': 직전 채움이 토스 픽이면 이번 칸 = 진우 딜(토스 대기 줄이 비어도 진우 딜)
             todo, turn = own, "own"
         elif tq:
-            todo, turn = sorted(tq, key=lambda x: (x["r"], x["k"] != "cat", -x["s"], -wb(title_of(x["text"])), -x["t"])), "toss"
+            tops = top_toss(seen, now)  # 10/22 Cowork: 잘 된 토스 상품 = 순위 한 칸·점수 +TOP_BONUS(하루 TOP_BONUS_DAY개)
+            hit = lambda x: top_hit(tops, x["id"], x.get("n"))
+            todo, turn = sorted(tq, key=lambda x: (x["r"] - hit(x), x["k"] != "cat", -x["s"] - TOP_BONUS * hit(x), -wb(title_of(x["text"])), -x["t"])), "toss"
         else:
             todo, turn = sorted((i for i in fresh if posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)),
                                 key=lambda i: (-(posts[i].get("s") or 0), not aff(posts[i].get("url")), -wb(title_of(posts[i]["text"])), [-ord(c) for c in posts[i]["t"]])), "post"
@@ -3309,6 +3336,8 @@ def threads_deals(seen):
             th_mark(seen, i["bt"])
             if turn:
                 seen["thfill"] = {"t": now, "k": turn}  # 직전 채움 종류(번갈아) — seen 정리가 t를 봄
+            if turn == "toss" and i.get("id") and top_hit(top_toss(seen, now), i["id"], i.get("n")):
+                top_mark(seen, now, i["id"])
             th_deal(seen, tok, me, i["text"], i["link"])
             continue
         url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
@@ -3877,6 +3906,9 @@ def th_ok(r):
 
 METRICS, METRICS_HOUR, METRICS_KEEP = "metrics.json", 5, 14  # 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 조회·반응 -> metrics.json(최근 14일, 그 전은 git 기록) — 아침 08:30 보고가 Chrome 없이 읽음
 PRICE_BANDS = ((10000, "~1만"), (30000, "1~3만"), (50000, "3~5만"), (100000, "5~10만"))  # 가격대(넘으면 '10만~', 못 읽으면 '')
+TOP, TOP_DAYS, TOP_SHARE, TOP_FILL, TOP_BONUS, TOP_BONUS_DAY = "top.json", 14, 0.2, 40, 1, 2  # 10/22 진우 '잘 되는 제품은 꾸준하게': 잘 된 상품 표(top_build) — 지난 14일 Threads 개별 글 상위 20% · 예전 줄 채우기 한 실행 40개 · 토스 후보 가산 +1점 하루 2번까지
+NOT_PROD = r"^https?://(?:[\w-]+\.)*(?:ppomppu\.co\.kr|ruliweb\.com|clien\.net|quasarzone\.com|fmkorea\.com|t\.me)(?:[/?#]|$)"  # 상품 링크 아님(커뮤니티 출처·채널)
+TH_AB_START = "2026-10-18"  # 이날부터 Threads 개별 딜 글은 전부 thab 기록(metrics 줄 ab) -> ab 없는 Threads 글 = 개별 딜 아님(미리보기·카드 모음 등)
 
 
 def tg_num(v):
@@ -3889,6 +3921,25 @@ def metrics_save(m):
     js = lambda x: json.dumps(x, ensure_ascii=False)
     open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
                                                                  for d, v in sorted(m.items(), reverse=True)[:METRICS_KEEP]) + "}\n")  # 최신 날짜 맨 위 · 글 1개 = 1줄(보고가 읽기 쉽게)
+
+
+def prod_cols(title, cat, links, ids, deal=None):
+    """metrics 줄 상품 칸(10/22 Cowork — 어떤 상품 글이 잘 됐는지 잇기): kind = deal(상품 1개 글)·list(묶음·목록 = urls)·etc(투표·날씨·#일상·미리보기 등),
+    url·name(상품명) · tid = 토스 상품 id(우리가 만든 쉐어링크 — 쉐어링크는 만들 때마다 주소가 달라 상품은 id로 묶음).
+    deal = True(Threads 개별 딜 글 — th_deal 기록, B 글은 링크를 못 읽어도 이름으로) / False(개별 딜 아님) / None(모름 = 링크 수로). 사이트 첫 화면·블로그·골드박스·쿠팡 홈 링크는 상품 X."""
+    junk = lambda u: re.search(NOT_PROD, u) or u.startswith((BLOG, GOLDBOX, CP_HOME, CP_FRESH)) or u.startswith(SITE) and "/p/" not in u
+    ls = [u for u in dict.fromkeys(links) if u and not junk(u)]
+    kind = "deal" if deal else "etc" if cat in ("투표", "날씨") or not ls else "list" if cat == "묶음" or len(ls) > 1 else "etc" if deal is False else "deal"
+    if kind == "etc":
+        return {"kind": kind}
+    if kind == "list":
+        return {"kind": kind, "name": clip(title, 40), "urls": ls}
+    return {"kind": kind, "name": parse(title)[1], **({"url": ls[0], **({"tid": ids[ls[0]]} if ls[0] in ids else {})} if ls else {})}
+
+
+def toss_ids(seen):
+    """우리 토스 쉐어링크 -> 상품 id(toss_link가 만든 것 전부 — 같은 상품을 다시 만들어도 옛 링크 그대로)."""
+    return {k: v[0] for k, v in seen.get("tlink", {}).get("r", {}).items()}
 
 
 def th_views(tok, i):
@@ -3916,10 +3967,17 @@ def th_ab_48(seen):
 
 
 def metrics(seen):
+    """성과 숫자: A/B 48시간 조회(th_ab_48) → 어제 글별 성과(metrics_rows) → 잘 된 상품 표(top_build)."""
+    th_ab_48(seen)
+    metrics_rows(seen)
+    top_build(seen)
+
+
+def metrics_rows(seen):
     """하루 1번 어제(KST) 글별 성과 -> metrics.json {날짜: {"at", "miss": {채널: 빈 칸 이유}, "rows": [{date, ch, id, shop, cat, price, at, views, react, (likes, replies)}]}}.
     텔레그램(tg) = 채널 웹(t.me/s) 조회·반응(posts.json 글이면 그 글·링크로 몰·품목), Threads(th) = 글 목록 + insights(views·likes·replies·reposts·quotes),
-    인스타(ig) = 미디어 목록(좋아요·댓글) + insights(views). 못 읽은 칸 = None, 이유는 miss(권한 없음 등). 수동 실행에 METRICS_DAY(YYYY-MM-DD)면 그날을 바로(점검·다시 모으기)."""
-    th_ab_48(seen)
+    인스타(ig) = 미디어 목록(좋아요·댓글) + insights(views). 못 읽은 칸 = None, 이유는 miss(권한 없음 등). 수동 실행에 METRICS_DAY(YYYY-MM-DD)면 그날을 바로(점검·다시 모으기).
+    tg·th 줄엔 상품 칸(prod_cols — kind·url·name·tid, 목록은 urls)도."""
     now = time.time()
     day = E.get("METRICS_DAY") or (time.gmtime(now + 9 * 3600).tm_hour >= METRICS_HOUR and time.strftime("%Y-%m-%d", time.gmtime(now - 15 * 3600)))
     if not day or "mt_" + day in seen and not E.get("METRICS_DAY"):
@@ -3930,12 +3988,15 @@ def metrics(seen):
     blame = lambda e: soft.append(isinstance(e, OSError) and not (isinstance(e, urllib.error.HTTPError) and e.code < 500)) or err_brief(e)
     denied = lambda e: re.search(r'"code":\s*(10|190|200)\b', getattr(e, "body", "") or "")  # 권한 없음·토큰 = 나머지 글도 같음 -> 그만 물음, 그 밖(지운 글·빈 응답)은 그 글만 빈 칸
 
-    def row(ch, i, text, url, t, views, react, title=None, **more):
+    ids = toss_ids(seen)  # 우리 토스 쉐어링크 -> 상품 id
+
+    def row(ch, i, text, url, t, views, react, title=None, links=None, deal=None, **more):
         title = title or title_of(text)
         w = price_won(title)
         cat = "투표" if text.startswith("🗳️") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. ", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
         rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": url}) or "기타", "cat": cat,
-                     "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more})
+                     "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more,
+                     **(prod_cols(title, cat, links, ids, deal) if links is not None else {})})
 
     pm, url, n = {p["mid"]: p for p in load(POSTS, []) if p.get("mid")}, CHANNEL_WEB, 0
     try:
@@ -3949,7 +4010,8 @@ def metrics(seen):
                     btn, v = re.search(r'inline_button url_button" href="([^"]+)"', b), re.search(r'tgme_widget_message_views">([^<]+)<', b)
                     rx = re.findall(r"(?:</i>|</tg-emoji>)\s*([\d.,]+[KM]?)\s*</span>", b.split("tgme_widget_message_reactions", 1)[1]) if "tgme_widget_message_reactions" in b else []  # 이모지 뒤 숫자(맞춤 이모지 포함)
                     row("tg", mid, p["text"] if p else html.unescape(re.sub(r"<[^>]+>", "", re.sub(r"<br\s*/?>", "\n", tx[1]))) if tx else "",
-                        p and p.get("url") or btn and html.unescape(btn[1]) or "", t, v and tg_num(v[1]), sum(map(tg_num, rx)))
+                        p and p.get("url") or btn and html.unescape(btn[1]) or "", t, v and tg_num(v[1]), sum(map(tg_num, rx)),
+                        links=[p and p.get("url")] + [html.unescape(u) for u in re.findall(r'inline_button url_button" href="([^"]+)"', b) + re.findall(r'href="([^"]+)"', tx[1] if tx else "")])  # 버튼·본문 링크(목록 = 상품 여러 개)
             url = bs and bs[0][1] >= t0 and f"{CHANNEL_WEB}?before={bs[0][0]}"
     except Exception as e:  # 막히면 그 칸만 비움(다른 채널은 계속)
         miss["tg"] = "채널 웹 못 읽음: " + blame(e)
@@ -3987,7 +4049,7 @@ def metrics(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}), **({"v": ab["v"]} if ab.get("v") else {}))  # lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=[ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}), **({"v": ab["v"]} if ab.get("v") else {}))  # lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
@@ -4021,6 +4083,97 @@ def metrics(seen):
         seen["mt_" + day] = now
     c = collections.Counter(r["ch"] for r in rows)
     print(f"metrics {day}: " + " · ".join(f"{ch} {c[ch]}개 빈 칸 {sum(r['views'] is None or r['react'] is None for r in rows if r['ch'] == ch)}" for ch in ("tg", "th", "ig")), miss or "")
+
+
+def top_build(seen):
+    """잘 된 상품 표 -> top.json(10/22 Cowork·진우 '잘 되는 제품은 꾸준하게' — Cowork 진우 🔥 재게시·토스 후보 가산이 읽음), 하루 1번(METRICS_HOUR 넘어, 어제 줄 모은 뒤):
+    지난 TOP_DAYS일 metrics Threads 개별 글(kind deal) 중 조회(v48, 없으면 views) 상위 TOP_SHARE ∪ 답글 상위 TOP_SHARE(1개↑ — B 글의 우리 링크 댓글 1개는 뺌)를
+    상품별로(토스 = 상품 id, id 없는 토스 글 = 이름, 그 밖 = 링크 — 링크 모르는 글은 같은 이름 글의 링크) — 이름·링크·몰·최고 조회·최고 답글·Threads 글 수·마지막 게시(tg·th 통틀어), 최고 조회 순.
+    상품 칸 없는 예전 Threads 줄은 글을 다시 읽어 채움(한 실행 TOP_FILL개 — B 글은 링크 댓글, 댓글 권한 없으면 이름으로 · 지운 글 = etc · 일시 오류면 다음 실행에 이어서, 다 채우기 전엔 그날 끝 표시 X)."""
+    now, tok = time.time(), E.get("THREADS_TOKEN")
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    if kst.tm_hour < METRICS_HOUR or load(TOP, {}).get("d") == today or "mt_" + time.strftime("%Y-%m-%d", time.gmtime(now - 15 * 3600)) not in seen and kst.tm_hour < 8:  # 어제 줄을 다 모은 뒤(늦어도 8시)
+        return
+    m, ids, thab = load(METRICS, {}), toss_ids(seen), seen.get("thab", {}).get("m", {})
+    days = sorted(d for d in m if d >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - TOP_DAYS * 86400)))
+    old, n_fill, no_rep = [r for d in days for r in m[d]["rows"] if r["ch"] == "th" and "kind" not in r], 0, False
+    url_rx = r"https?://[^\s<>\"]+"
+    for r in old[:TOP_FILL] if tok else []:
+        try:
+            text = json.loads(http(f"{THREADS}/{r['id']}?fields=text&access_token={tok}")).get("text") or ""
+            links = [thab.get(r["id"], {}).get("u")] + re.findall(url_rx, text)
+            if not any(links) and r.get("ab") == "B" and not no_rep:  # B = 본문에 주소 없음, 첫 댓글 = 링크
+                try:
+                    links = [u for c in json.loads(http(f"{THREADS}/{r['id']}/replies?fields=text&access_token={tok}")).get("data", []) for u in re.findall(url_rx, c.get("text") or "")][:1]
+                except urllib.error.HTTPError as e:  # 댓글 읽기 권한 없음(threads_read_replies) 등 -> 이번 실행은 이름으로만
+                    if e.code >= 500:
+                        raise
+                    no_rep = True
+        except urllib.error.HTTPError as e:
+            if e.code >= 500:
+                break
+            r["kind"] = "etc"  # 지운 글·권한 = 상품 칸 없음으로 끝
+            print("top fill", r["id"], repr(e))
+            continue
+        except Exception as e:  # 시간 초과·터널 등 = 다음 실행에 이어서
+            print("top fill", r["id"], repr(e))
+            break
+        r.update(prod_cols(title_of(text), r["cat"], links, ids, True if r.get("ab") else False if r["date"] >= TH_AB_START else None))
+        n_fill += 1
+    if old and tok:
+        metrics_save(m)
+    left = sum("kind" not in r for r in old) if tok else 0
+    rows = [r for d in days for r in m[d]["rows"]]
+    deals = [r for r in rows if r["ch"] == "th" and r.get("kind") == "deal" and (r.get("v48") or r.get("views")) is not None]
+    sv, rp = (lambda r: r.get("v48") or r.get("views") or 0), (lambda r: max(0, (r.get("replies") or 0) - (r.get("ab") == "B")))  # B 글 답글 = 우리 링크 댓글 1개 빼고
+    norm = lambda x: re.sub(r"\W", "", (x or "").lower())
+    tn = {norm(r.get("name")): r["tid"] for r in rows if r.get("tid")}
+    nu = {norm(r.get("name")): r["url"] for r in sorted(rows, key=lambda r: (r["date"], r["at"])) if r.get("kind") == "deal" and r.get("url") and r["shop"] != "toss"}
+
+    def key(r):
+        tid = r.get("tid") or (r["shop"] == "toss" and tn.get(norm(r.get("name"))))
+        return f"toss:{tid}" if tid else "tname:" + norm(r.get("name")) if r["shop"] == "toss" else r.get("url") or nu.get(norm(r.get("name"))) or "name:" + norm(r.get("name"))
+    n = math.ceil(len(deals) * TOP_SHARE)
+    pick = {r["id"]: r for r in sorted(deals, key=lambda r: (-sv(r), -rp(r)))[:n]}
+    pick.update({r["id"]: r for r in sorted(deals, key=lambda r: -rp(r))[:n] if rp(r)})
+    last, lu, cnt = {}, {}, collections.Counter(key(r) for r in deals)
+    for r in sorted(rows, key=lambda r: (r["date"], r["at"])):
+        if r.get("kind") == "deal":
+            last[key(r)] = f"{r['date']} {r['at']}"
+            lu[key(r)] = r.get("url") or lu.get(key(r), "")
+    items = {}
+    for r in sorted(pick.values(), key=lambda r: (r["date"], r["at"])):  # 같은 상품은 최근 글 이름으로
+        k, x = key(r), items.get(key(r), {})
+        items[k] = {"key": k, "name": r.get("name") or x.get("name", ""), "url": lu.get(k, ""), "mall": r["shop"], "best": max(sv(r), x.get("best", 0)),
+                    "replies": max(rp(r), x.get("replies", 0)), "n": cnt[k], "last": last.get(k, "")}
+    js = lambda x: json.dumps(x, ensure_ascii=False)
+    out = sorted(items.values(), key=lambda x: (-x["best"], -x["replies"]))
+    open(TOP, "w", encoding="utf-8").write(f'{{"d": {js("" if left else today)}, "at": {js(time.strftime("%Y-%m-%d %H:%M", kst))}, "days": {TOP_DAYS}, '
+                                           f'"rule": {js(f"Threads 개별 글 조회(v48, 없으면 views) 상위 {int(TOP_SHARE * 100)}% + 답글(우리 링크 댓글 빼고) 상위 {int(TOP_SHARE * 100)}%(1개↑), 상품(토스 = 상품 id·이름, 그 밖 = 링크)별 · 최고 조회 순")}, '
+                                           f'"posts": {len(deals)}, "items": [\n' + ",\n".join(map(js, out)) + "]}\n")  # 상품 1개 = 1줄
+    print(f"top: Threads 개별 글 {len(deals)}개 -> 잘 된 상품 {len(out)}개" + (f" · 예전 줄 채움 {n_fill}/{len(old)}" + (" · 댓글 권한 없음(이름으로)" if no_rep else "") if old else ""))
+
+
+def top_toss(seen, now):
+    """잘 된 토스 상품(top.json) -> (상품 id 집합, 이름(기호·띄어쓰기 뺌) 집합) — 토스 개별·토스 픽 채움 후보 가산용. 오늘(KST) 가산으로 TOP_BONUS_DAY개 상품을 올렸으면 빈 집합."""
+    d = seen.get("topb", {})
+    if d.get("d") == time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)) and len(d.get("ids", [])) >= TOP_BONUS_DAY:
+        return set(), set()
+    ks = [str(x.get("key", "")) for x in load(TOP, {}).get("items", [])]
+    return {int(k[5:]) for k in ks if k.startswith("toss:")}, {k[6:] for k in ks if k.startswith("tname:")}
+
+
+def top_hit(tops, iid, name):
+    """이 토스 상품이 잘 된 상품 표에 있나(id 또는 이름)."""
+    return iid in tops[0] or re.sub(r"\W", "", (name or "").lower()) in tops[1]
+
+
+def top_mark(seen, now, iid):
+    """잘 된 상품 가산으로 올림 -> 오늘 상품 수(같은 상품 = 채널 글·Threads 글 합쳐 1번)."""
+    day, d = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), seen.get("topb", {})
+    ids = d.get("ids", []) if d.get("d") == day else []
+    seen["topb"] = {"t": now, "d": day, "ids": ids + [iid] if iid not in ids else ids}
 
 
 def watch(seen):

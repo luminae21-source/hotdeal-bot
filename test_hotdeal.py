@@ -3034,13 +3034,14 @@ d10 = json.load(open(H.METRICS)); r10 = d10["2026-10-14"]["rows"]
 assert list(d10) == ["2026-10-14"] and "mt_2026-10-14" in s10 and d10["2026-10-14"]["at"] == "2026-10-15 05:07"
 assert [(r["ch"], r["id"]) for r in r10] == [("tg", 899), ("tg", 900), ("tg", 903), ("tg", 901), ("th", "t1"), ("th", "t2"), ("ig", "g1")]  # 그날 것만(00:10·전날 X), 쪽 넘김은 그날 처음 지나면 멈춤, 채널별 시각 순
 r10 = [r10[i] for i in (3, 0, 1, 2, 4, 5, 6)]
-assert r10[0] == {"date": "2026-10-14", "ch": "tg", "id": 901, "shop": "coupang", "cat": "화장품", "price": "1~3만", "at": "23:50", "views": 3, "react": 0}  # posts.json 글 = 그 글·링크로
-assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "1~3만", "at": "10:00", "views": 1200, "react": 17}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함)
-assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] == 40
+assert r10[0] == {"date": "2026-10-14", "ch": "tg", "id": 901, "shop": "coupang", "cat": "화장품", "price": "1~3만", "at": "23:50", "views": 3, "react": 0,
+                  "kind": "deal", "name": "피지오겔 페이셜 로션 150ml", "url": "https://link.coupang.com/a/x"}  # posts.json 글 = 그 글·링크로 · 상품 칸(10/22 Cowork — kind·상품명·제휴 링크)
+assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "1~3만", "at": "10:00", "views": 1200, "react": 17, "kind": "deal", "name": "크리넥스 3겹 휴지 30롤", "url": "https://toss.im/_m/A"}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함)
+assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] == 40 and r10[2]["kind"] == "etc"  # (상품 링크 없는 묶음 = etc)
 assert (r10[3]["cat"], r10[3]["shop"], r10[3]["price"]) == ("생필품", "기타", "")  # 재오픈 답장 = 인용(원글 쿠팡 프라이팬 55,000원) 말고 답장 본문(괄호 없는 가격은 못 읽음 = 사이트 price_won 그대로)
 r10 = [r for r in r10 if r["id"] != 903]
-assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "1~3만", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0}
-assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0 and r10[4]["shop"] == "coupang"  # 0 = 빈 칸 아님 · [몰] 없는 Threads 글 = 글 속 구매 링크로 몰
+assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "1~3만", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0, "kind": "etc"}
+assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0 and r10[4]["shop"] == "coupang" and (r10[4]["kind"], r10[4]["name"], r10[4]["url"]) == ("deal", "샴푸", "https://link.coupang.com/a/abc")  # 0 = 빈 칸 아님 · [몰] 없는 Threads 글 = 글 속 구매 링크로 몰
 assert r10[5] == {"date": "2026-10-14", "ch": "ig", "id": "g1", "shop": "기타", "cat": "기타", "price": "", "at": "21:00", "views": None, "react": 5, "likes": 4, "replies": 1}
 assert d10["2026-10-14"]["miss"] == {"ig": "조회수 권한 없음(토큰 권한 instagram_business_manage_insights 확인): 403 (#10) Application does not have permission for this action"}
 assert sum(1 for l in open(H.METRICS, encoding="utf-8") if l.startswith('{"date"')) == 7  # 글 1개 = 1줄
@@ -4444,7 +4445,7 @@ assert "토스 특가 오늘만" not in o28 and o28.count("💙") == 1 and "\n�
 # 9-29 (10/22 15:3x Cowork·진우 '점검 기간에도 토스 글 채널·Threads 둘 다 계속(수익 0이어도)'): 토스 쉐어링크 점검 10/30 00:00~11/4 23:59(KST) = 새 링크 X·만들어 둔 링크(tlink) 재사용,
 #      점검 때문인 실패는 바로 안 알리고 하루 1번 요약, 11/5 첫 실행에 링크 1개 만들어 보고 되면 보통 모드 + 알림 1번, 10/28~29 미리 만들기(toss_stock)
 sv29 = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP)
-c29, s29m, lk29, LF29 = [], [], [], []  # API 호출 · 관리자 알림 · 링크 발급(tacaItemId) · 비어 있지 않으면 발급 FAIL
+c29, s29m, lk29, LF29, BAD29 = [], [], [], [], set()  # API 호출 · 관리자 알림 · 링크 발급(tacaItemId) · 비어 있지 않으면 발급 FAIL · 이 상품만 발급 FAIL(발급 제한)
 L29 = {"best-selling": [{"tacaItemId": k, "displayName": f"베스트{k}", "displayPrice": 9900, "discountRate": 40, "reviewScore": 4.8, "reviewCount": 1234, "isSoldOut": k == 3} for k in (1, 2, 3, 4)],
        "today-deals": [{"tacaItemId": 50, "displayName": "하루특가50", "displayPrice": 5000, "isSoldOut": False}]}
 D29 = {7: {"tacaItemId": 7, "displayName": "보관7", "displayPrice": 7700, "discountRate": 30, "reviewScore": 4.5, "reviewCount": 99, "isSoldOut": False}}
@@ -4454,7 +4455,7 @@ def h29(url, body=None, headers=None, method=None):
     if url.endswith("/categories"): return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 400, "displayName": "뷰티"}, {"categoryId": 900, "displayName": "가전"}]}})
     if url.endswith("/links"):
         lk29.append(body["tacaItemId"])
-        return json.dumps({"resultType": "FAIL", "error": {"reason": "점검"}} if LF29 else {"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/N{body['tacaItemId']}"}})
+        return json.dumps({"resultType": "FAIL", "error": {"reason": "점검"}} if LF29 or body["tacaItemId"] in BAD29 else {"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/N{body['tacaItemId']}"}})
     if "/products/detail?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": [D29[int(i)] for i in parse_qs(urlsplit(url).query)["tacaItemIds"][0].split(",") if int(i) in D29]}})
     for k, v in L29.items():
         if f"/products/{k}?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": v}})
@@ -4477,10 +4478,10 @@ assert s29["tlink"]["m"]["1"][0] == "https://toss.im/_m/N1" and s29["tpause"]["b
 H.toss_mode(s29, TK("2026-11-05 00:14")); H.toss_mode(s29, TK("2026-11-06 09:00")); assert H.RUN["treuse"] is False and lk29 == [1] and len(s29m) == 5  # 복귀 뒤 = 확인·요약·알림 X
 H.toss_mode({}, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is False and len(s29m) == 5 and lk29 == [1]  # 점검 중 한 번도 안 돈 seen(새로 시작) = 보통
 s29b = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")]}}, "tpause": {"t": 1, "d": "2026-11-04"}}; s29m.clear(); lk29.clear(); LF29.append(1)
-H.toss_mode(s29b, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is True and lk29 == [1] and len(s29m) == 2 and s29m[1].startswith("⚠️ 토스 쉐어링크 점검 기간(11/4까지)이 끝났는데 링크 새로 만들기가 아직 안 돼요"), s29m  # 안 되면 재사용 그대로 + 알림 1번
-H.toss_mode(s29b, TK("2026-11-05 00:30")); assert H.RUN["treuse"] is True and lk29 == [1] and len(s29m) == 2  # 1시간 안 = 다시 안 해 봄
-H.toss_mode(s29b, TK("2026-11-05 01:01")); assert H.RUN["treuse"] is True and lk29 == [1, 1] and len(s29m) == 2  # 또 안 됨 = 알림 X
-H.tnote(s29b, "miss", "이름 예약 장어"); LF29.clear(); H.toss_mode(s29b, TK("2026-11-05 02:02")); assert H.RUN["treuse"] is False and lk29 == [1, 1, 1] and len(s29m) == 3 and s29m[2].startswith("✅") and "(오늘 재사용 모드 동안: 보관 링크 꺼내 씀 0번 · 링크 없어 못 올림 1개(이름 예약 장어))" in s29m[2], s29m  # 복귀 날 메모도 '끝' 알림에
+H.toss_mode(s29b, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is True and lk29 == [1, 2, 4] and len(s29m) == 2 and s29m[1].startswith("⚠️ 토스 쉐어링크 점검 기간(11/4까지)이 끝났는데 링크 새로 만들기가 아직 안 돼요"), s29m  # 안 되면 재사용 그대로 + 알림 1번
+H.toss_mode(s29b, TK("2026-11-05 00:30")); assert H.RUN["treuse"] is True and lk29 == [1, 2, 4] and len(s29m) == 2  # 1시간 안 = 다시 안 해 봄 (막히면 베스트 3개까지 해 봄)
+H.toss_mode(s29b, TK("2026-11-05 01:01")); assert H.RUN["treuse"] is True and lk29 == [1, 2, 4] * 2 and len(s29m) == 2  # 또 안 됨 = 알림 X
+H.tnote(s29b, "miss", "이름 예약 장어"); LF29.clear(); BAD29.add(1); H.toss_mode(s29b, TK("2026-11-05 02:02")); BAD29.clear(); assert H.RUN["treuse"] is False and lk29 == [1, 2, 4] * 2 + [1, 2] and len(s29m) == 3 and s29m[2].startswith("✅") and "(오늘 재사용 모드 동안: 보관 링크 꺼내 씀 0번 · 링크 없어 못 올림 1개(이름 예약 장어))" in s29m[2], s29m  # 복귀 날 메모도 '끝' 알림에
 assert H.toss_mode(s29b, TK("2026-11-24 00:00")) is None and "7" not in s29b["tlink"]["m"]  # 보관 14일 지나면 정리
 def tg29x(m, **p): raise TimeoutError("read")  # 텔레그램 시간 초과(tg는 HTTPError만 잡음)여도 tpause에 t(seen 정리 KeyError X)·모드 그대로
 H.tg = tg29x; s29x = {}; H.toss_mode(s29x, TK("2026-10-30 00:07")); assert H.RUN["treuse"] is True and s29x["tpause"]["t"] == TK("2026-10-30 00:07")
@@ -4524,19 +4525,109 @@ time.time = lambda: TK("2026-10-31 10:30"); H.toss_wait(s29g); assert not ch29 a
 H.toss_wait(s29g); assert not ch29  # 그만 찾음
 json.dump([{"at": "2026-10-31 11:00", "name": "없는상품 500g", "api": True}], open("ev29.json", "w"), ensure_ascii=False); s29h = {"tpause": {"t": 1, "d": "2026-10-31"}}
 H.toss_picks(s29h); assert not ch29 and s29h["pk_2026-10-31 11:00"]["asked"] == 1 and s29h["pk_2026-10-31 11:00"]["st"] == "skip" and s29h["tpause"]["miss"] == ["이름 예약 없는상품 500g"]  # st skip = watch '예약 글 안 나감' 알림 X
+json.dump([{"at": "2026-11-05 07:00", "name": "없는상품 500g", "api": True}], open("ev29.json", "w"), ensure_ascii=False); s29k = {"tpause": {"t": 1, "d": "2026-11-04"}}
+time.time = lambda: TK("2026-11-04 23:30"); H.toss_picks(s29k); r29k = s29k["pk_2026-11-05 07:00"]
+assert not ch29 and "asked" not in r29k and "st" not in r29k and "miss" not in s29k["tpause"]  # 점검 뒤(11/5 07:00) 예약 = 안 묻고 끝내지도 않음 -> 복귀 뒤 다시 찾음(10/22 리뷰)
+sl29, H.store_link = H.store_link, lambda u: c29.append(("store", u)) or ""; c29.clear(); r29m = {}
+H.toss_match(s29k, r29m, "[토스] 휴지 (1원)", "https://bbs.ruliweb.com/market/board/1020/read/1", []); assert ("store", "https://bbs.ruliweb.com/market/board/1020/read/1") not in c29 and "src" not in r29m  # 상품 주소 1번 읽기는 점검 뒤로 아껴 둠
+H.store_link = sl29
 # ⑥ 미리 만들기(10/28~29, 4시간마다): 베스트·하루특가·생필품·뷰티 중 품절 아닌 새 상품(이미 보관 X) · 다른 날·재사용 모드 = X
 H.RUN["treuse"] = False; s29i = {"tlink": {"t": 1, "m": {"2": ["https://toss.im/_m/K2", 1]}}}; lk29.clear(); json.dump([], open("ev29.json", "w"))
 time.time = lambda: TK("2026-10-27 23:59"); H.toss_stock(s29i); assert not lk29
 time.time = lambda: TK("2026-10-28 00:10"); H.toss_stock(s29i); assert sorted(lk29) == [1, 4, 50, 201, 401] and s29i["tlink"]["m"]["4"][0] == "https://toss.im/_m/N4", lk29  # 품절(3)·보관(2)·가전(900) X
 lk29.clear(); time.time = lambda: TK("2026-10-28 04:09"); H.toss_stock(s29i); assert not lk29 and not any("best-selling" in u for u in c29[-1:])  # 4시간 안 = API도 안 부름
 L29["best-selling"].append({"tacaItemId": 6, "displayName": "베스트6", "displayPrice": 1, "isSoldOut": False}); time.time = lambda: TK("2026-10-29 23:00"); H.toss_stock(s29i); assert lk29 == [6]
-LF29.append(1); L29["best-selling"].append({"tacaItemId": 8, "displayName": "베스트8", "displayPrice": 1, "isSoldOut": False}); s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert lk29 == [8] and "8" not in s29i["tlink"]["m"]  # 막히면 거기서 멈춤
+LF29.append(1); L29["best-selling"].append({"tacaItemId": 8, "displayName": "베스트8", "displayPrice": 1, "isSoldOut": False}); s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert lk29 == [8] and "8" not in s29i["tlink"]["m"] and s29i["tstockbad"]["ids"] == [8]  # 막힌 상품은 빼 둠
+s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert not lk29  # (다시 안 함)
 LF29.clear(); H.RUN["treuse"] = True; s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert not lk29
 H.RUN["treuse"], tsr29, H.TOSS_STOCK_RUN = False, H.TOSS_STOCK_RUN, 2; s29j = {}; lk29.clear()  # 한 실행 발급 수 제한(실행 6분 한도) — 남으면 다음 실행에 이어서
 H.toss_stock(s29j); assert len(lk29) == 2; H.toss_stock(s29j); assert len(lk29) == 4; H.toss_stock(s29j); assert len(lk29) == 6; H.toss_stock(s29j); assert len(lk29) == 8; H.toss_stock(s29j); assert len(lk29) == 8 and len(set(lk29)) == 8 and tsr29 == 30  # 8개 = 2·2·2·2 -> 다 했으면 4시간 쉼
 H.TOSS_STOCK_RUN = tsr29
+LF29.clear(); BAD29.update({1}); s29l = {}; lk29.clear(); H.toss_stock(s29l); assert lk29[0] == 1 and len(lk29) == 8 and "1" not in s29l["tlink"]["m"] and len(s29l["tlink"]["m"]) == 7  # 발급 제한 1개 = 그것만 빼고 계속(10/22 리뷰 — 예전엔 맨 앞에서 매번 멈춤)
+BAD29.update({2, 4}); s29l = {}; lk29.clear(); H.toss_stock(s29l); assert lk29 == [1, 2, 4] and s29l["tstock"]["q"][:1] == [6]  # 3번 연달아 막힘 = 이번 실행 멈춤(남은 줄은 다음 실행)
+c29.clear(); BAD29.clear(); lk29.clear(); H.toss_stock(s29l); assert len(lk29) == 5 and not any("best-selling" in u for u in c29 if isinstance(u, str))  # 이어서(목록 다시 안 읽음 — 조회 상한)
 H.RUN["treuse"] = False; L29["best-selling"][-2:] = []
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP) = sv29; H.E.pop("THREADS_TOKEN", None); json.dump([], open("posts.json", "w"))
+# 9-30 (10/22 15:5x Cowork·진우 '잘 되는 제품은 꾸준하게'): ① metrics 줄 상품 칸(kind deal·list·etc, 상품명·제휴 링크·토스 상품 id, 목록 = urls)
+#      ② 잘 된 상품 표 top.json(지난 14일 Threads 개별 글 조회 v48(없으면 views) 상위 20% ∪ 답글 상위 20%(1개↑), 상품별, 하루 1번 — 예전 줄은 Threads 글을 다시 읽어 채움)
+#      ③ 토스 개별·토스 픽 채움 후보 = 표의 토스 상품이면 +1점·먼저(하루 2번)
+A30, C30 = "https://toss.im/_m/A", "https://link.coupang.com/a/b"
+assert H.prod_cols("🏆 리스트", "묶음", [None, A30, C30, "https://www.ppomppu.co.kr/zboard/view.php?id=1", A30], {}) == {"kind": "list", "name": "🏆 리스트", "urls": [A30, C30]}  # 출처(커뮤니티) 링크 X, 같은 링크 1번
+assert H.prod_cols("[토스] 휴지 30롤 (9,900원)", "생필품", [A30, "https://bbs.ruliweb.com/x"], {A30: 7}) == {"kind": "deal", "name": "휴지 30롤", "url": A30, "tid": 7}  # 우리 쉐어링크 = 토스 상품 id
+assert H.prod_cols("🗳️ 투표", "투표", [C30], {}) == {"kind": "etc"} and H.prod_cols("x", "기타", ["https://t.me/hotdeal_pick"], {}) == {"kind": "etc"} and H.prod_cols("[쿠팡] 샴푸 (1원)", "묶음", [C30, A30], {}, deal=True)["kind"] == "deal"
+assert [H.prod_cols("오늘 밤 특가 미리보기 (5개)", "기타", [u], {}) for u in ("https://hotdealpick.kr/?ref=th", H.GOLDBOX, H.CP_HOME, H.BLOG + "/1")] == [{"kind": "etc"}] * 4  # 사이트 첫 화면·골드박스·쿠팡 홈·블로그 = 상품 X(리뷰)
+assert H.prod_cols("x", "기타", ["https://hotdealpick.kr/p/12.html?ref=th"], {})["url"] == "https://hotdealpick.kr/p/12.html?ref=th" and H.prod_cols("📋 모음", "기타", [C30], {}, deal=False) == {"kind": "etc"}  # 사이트 딜 페이지 = 상품 · Threads 개별 딜 아님(10/18~ ab 없음) = 링크 1개여도 X
+assert H.prod_cols("[쿠팡] 물티슈 (5,000원)", "생필품", [], {}, deal=True) == {"kind": "deal", "name": "물티슈"}  # B 글 링크를 못 읽어도 이름으로
+assert "[ ! -f top.json ] || git add top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()  # Actions가 top.json도 커밋
+sv30 = (H.http, time.time, H.METRICS_HOUR, H.E.get("THREADS_TOKEN")); H.METRICS_HOUR, H.E["THREADS_TOKEN"] = 5, "tk"; c30 = []
+th30 = lambda i, d, v, url=None, name="", tid=None, rep=0, v48=None, **kw: {"date": d, "ch": "th", "id": i, "shop": "toss" if tid else "coupang", "cat": "생필품", "price": "", "at": "12:00", "views": v, "react": 0, "likes": 0, "replies": rep,
+                                                                              **({"v48": v48} if v48 else {}), **({"kind": "deal", "name": name, "url": url, **({"tid": tid} if tid else {})} if url else {}), **kw}
+R30 = {"2026-10-07": [th30("old", "2026-10-07", 5000, "https://link.coupang.com/a/OLD", "옛날")],  # 14일 전 = X
+       "2026-10-15": [th30("a", "2026-10-15", 900, "https://link.coupang.com/a/U1", "쿠팡A")] + [th30(f"f{k}", "2026-10-15", 10 + k * 10, f"https://link.coupang.com/a/F{k}", f"채움{k}") for k in range(5)],
+       "2026-10-18": [th30("c", "2026-10-18", 1000, "https://toss.im/_m/T7a", "토스7", tid=7), th30("o1", "2026-10-18", 700, ab="A"), th30("o2", "2026-10-18", 5, ab="B", rep=1), th30("o3", "2026-10-18", 3),
+                      th30("bb", "2026-10-18", 2, "https://link.coupang.com/a/BB", "B 글", rep=1, ab="B")],  # B 글 답글 1 = 우리 링크 댓글(리뷰) -> 답글 상위 X
+       "2026-10-20": [th30("b", "2026-10-20", 300, "https://link.coupang.com/a/U1", "쿠팡A 다시"), th30("f", "2026-10-20", 100, "https://link.coupang.com/a/U3", "쿠팡B", v48=850),
+                      th30("r", "2026-10-20", 20, "https://link.coupang.com/a/U4", "답글 많은 것", rep=5)],
+       "2026-10-21": [th30("d", "2026-10-21", 50, "https://toss.im/_m/T7b", "토스7", tid=7),
+                      {"date": "2026-10-21", "ch": "tg", "id": 1500, "shop": "coupang", "cat": "생필품", "price": "", "at": "22:00", "views": 9, "react": 0, "kind": "deal", "name": "쿠팡A", "url": "https://link.coupang.com/a/U1"}]}
+json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30.items()}, open(H.METRICS, "w"), ensure_ascii=False)
+def h30(url, body=None, headers=None, method=None):
+    c30.append(url)
+    if "/o1?fields=text" in url: return json.dumps({"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 휴지 (9,900원)\n\n👉 https://link.coupang.com/a/O1\n📲 실시간 알림 t.me/hotdeal_pick"})
+    if "/o2?fields=text" in url: return json.dumps({"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 물티슈 (5,000원)"})
+    if "/o2/replies?fields=text" in url: return json.dumps({"data": [{"text": "👉 https://link.coupang.com/a/O2"}]})
+    if "/o3?fields=text" in url: return json.dumps({"text": "🗳️ 오늘 투표"})
+    raise AssertionError(url)
+H.http, s30 = h30, {"mt_2026-10-21": 1}; os.path.exists(H.TOP) and os.remove(H.TOP)  # (앞 9-11 metrics가 만든 표)
+time.time = lambda: TK("2026-10-22 04:59"); H.top_build(s30); assert not c30 and not os.path.exists(H.TOP)  # 5시 전 X
+time.time = lambda: TK("2026-10-22 06:00"); H.top_build({}); assert not c30 and not os.path.exists(H.TOP)  # 어제 줄 아직(8시 전) X
+time.time = lambda: TK("2026-10-22 16:30"); H.top_build(s30)
+T30 = json.load(open(H.TOP)); M30 = {r["id"]: r for d in json.load(open(H.METRICS)).values() for r in d["rows"]}
+assert (M30["o1"]["kind"], M30["o1"]["url"], M30["o1"]["name"], M30["o2"]["url"], M30["o3"]["kind"]) == ("deal", "https://link.coupang.com/a/O1", "휴지", "https://link.coupang.com/a/O2", "etc"), M30  # 예전 줄 채움(B = 링크 댓글)
+assert T30["d"] == "2026-10-22" and T30["posts"] == 14 and T30["days"] == 14 and "상위 20%" in T30["rule"]  # 개별 글 14개(14일 전·투표 X) -> 상위 3개 + 답글
+assert [(x["key"], x["best"], x["n"], x["last"]) for x in T30["items"]] == [("toss:7", 1000, 2, "2026-10-21 12:00"), ("https://link.coupang.com/a/U1", 900, 2, "2026-10-21 22:00"),
+                                                                            ("https://link.coupang.com/a/U3", 850, 1, "2026-10-20 12:00"), ("https://link.coupang.com/a/U4", 20, 1, "2026-10-20 12:00")], T30["items"]  # 토스 = 상품 id로 묶음(링크 달라도) · v48 먼저 · 답글 5개 · 마지막 게시 = tg 포함
+assert T30["items"][1] == {"key": "https://link.coupang.com/a/U1", "name": "쿠팡A", "url": "https://link.coupang.com/a/U1", "mall": "coupang", "best": 900, "replies": 0, "n": 2, "last": "2026-10-21 22:00"}
+assert sum(1 for l in open(H.TOP, encoding="utf-8") if l.startswith('{"key"')) == 4  # 상품 1개 = 1줄
+c30.clear(); H.top_build(s30); assert not c30 and json.load(open(H.TOP))["at"] == T30["at"]  # 하루 1번
+json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); ft30, H.TOP_FILL = H.TOP_FILL, 2
+H.top_build(s30); assert json.load(open(H.TOP))["d"] == "" and len(c30) == 3; H.top_build(s30); assert json.load(open(H.TOP))["d"] == "2026-10-22" and len(c30) == 4  # 한 실행 2개씩 — 다 채운 뒤에 그날 끝
+H.TOP_FILL = ft30
+def h30b(url, body=None, headers=None, method=None):  # 댓글 권한 없음(code 10) · o3 = 서버 오류(500)
+    c30.append(url)
+    if "/replies?" in url or "/o3?" in url:
+        e = H.urllib.error.HTTPError(url, 500 if "/o3?" in url else 403, "x", {}, None); e.body = '{"error":{"code":10}}'; raise e
+    return h30(url)
+json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); H.http = h30b; c30.clear()
+H.top_build(s30); M30 = {r["id"]: r for d in json.load(open(H.METRICS)).values() for r in d["rows"]}
+assert M30["o2"]["kind"] == "deal" and M30["o2"]["name"] == "물티슈" and "url" not in M30["o2"] and "kind" not in M30["o3"] and json.load(open(H.TOP))["d"] == ""  # 댓글 권한 없음 = 이름으로 · 500 = 그 줄부터 다음 실행에
+# 토스 글 id 없음(10/22 전 링크) = 같은 이름끼리(토스 = tname, id 있는 글이 있으면 그 id로) · 쿠팡 링크 모르는 글 = 같은 이름 글의 링크
+R30b = {"2026-10-20": [th30("t1", "2026-10-20", 900, "https://toss.im/_m/OLD1", "토스 휴지 30롤", shop="toss"), th30("t2", "2026-10-20", 10, "https://toss.im/_m/OLD2", "토스 휴지 30롤", shop="toss"),
+                       th30("t3", "2026-10-20", 800, "https://toss.im/_m/OLD3", "토스7 상품", shop="toss"), th30("t4", "2026-10-21", 5, "https://toss.im/_m/NEW", "토스7 상품", tid=7)] + [th30(f"z{k}", "2026-10-20", 1, f"https://link.coupang.com/a/Z{k}", f"z{k}") for k in range(6)]}
+json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30b.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); H.top_build(s30)
+assert [(x["key"], x["n"]) for x in json.load(open(H.TOP))["items"]] == [("tname:토스휴지30롤", 2), ("toss:7", 2)] and H.top_toss({}, TK("2026-10-22 16:30")) == ({7}, {"토스휴지30롤"})
+assert H.top_hit(({7}, {"토스휴지30롤"}), 99, "토스 휴지 30롤") and not H.top_hit(({7}, set()), 99, "x")
+# ③ 토스 개별 글: 표의 토스 상품(id 2) = +1점(6점 -> 7점 = 올림) · 하루 2번까지 · 표 없으면 6점 X
+json.dump({"d": "2026-10-23", "items": [{"key": "toss:2", "name": "베스트2"}, {"key": "https://link.coupang.com/a/U1"}]}, open(H.TOP, "w"), ensure_ascii=False)
+ch30 = []; sv30b = (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.HAS_TOSS)
+H.HAS_TOSS, H.http, H.tg, H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP = True, h29, (lambda m, **p: ch30.append(p) or {"message_id": 990 + len(ch30)}), "ev29.json", range(24), 0, True
+H.ai_pick = lambda prompt, lines: [{"i": 1, "score": 6, "comment": "c"}]; H.RUN["treuse"] = False; json.dump([], open("ev29.json", "w")); H.E.pop("THREADS_TOKEN", None)
+assert H.top_toss({}, TK("2026-10-23 12:05")) == ({2}, set())
+s30b = {}; time.time = lambda: TK("2026-10-23 12:05"); H.E["THREADS_TOKEN"] = "tk"; H.toss_solo(s30b); H.E.pop("THREADS_TOKEN")
+assert len(ch30) == 1 and "베스트2" in ch30[0]["text"] and s30b["topb"]["ids"] == [2] and "tb_2" in s30b and s30b["thtoss"]["q"][-1]["s"] == 6 and s30b["thtoss"]["q"][-1]["n"] == "베스트2"  # 줄엔 원래 점수(가산은 채움에서 따로)
+ch30.clear(); s30c = {"topb": {"t": 1, "d": "2026-10-23", "ids": [1, 99]}}; H.toss_solo(s30c); assert not ch30 and s30c["topb"]["ids"] == [1, 99]  # 하루 2개 다 씀 = 가산 X(6점 그대로)
+os.remove(H.TOP); H.toss_solo({}); assert not ch30  # 표 없음 = 6점 X
+# 토스 픽 채움(Threads): 표의 토스 상품 먼저(대기 순서 상관없이) + 횟수
+json.dump({"d": "2026-10-21", "items": [{"key": "toss:2109"}]}, open(H.TOP, "w")); json.dump([], open("posts30.json", "w"))
+sv30c = (H.POSTS, H.TH_SOLO_FILL); H.http, H.POSTS, H.TH_SOLO_FILL, H.E["THREADS_TOKEN"] = http21, "posts30.json", True, "tk"
+s30d = {"thtoss": {"t": 1, "q": [tq21(5, "20:00", 0), tq21(9, "20:05", 1)]}}
+g30, log30 = run21(s30d, "20:40"); assert g30 == ["토스9", "토스5"] and s30d["topb"]["ids"] == [2109], (g30, log30)  # (셀프체크는 한 실행 3개) 표의 9 = 순위 한 칸·점수 +1 -> 바로 앞 순위(5)보다 먼저, 횟수는 9만
+s30e = {"topb": {"t": 1, "d": "2026-10-21", "ids": [2109]}, "thtoss": {"t": 1, "q": [tq21(9, "20:05", 1)]}}; run21(s30e, "20:40"); assert s30e["topb"]["ids"] == [2109]  # 같은 상품(채널 글로 이미 셈) = 1번만(리뷰)
+s30f = {"thtoss": {"t": 1, "q": [tq21(5, "20:00", 0), tq21(9, "20:05", 3)]}}; g30, _ = run21(s30f, "20:40"); assert g30 == ["토스5", "토스9"]  # 순위 3칸 뒤 = 한 칸만 당겨져서 5 먼저(점수 +1, 맨 앞 고정 X — 리뷰)
+(H.POSTS, H.TH_SOLO_FILL) = sv30c; (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.HAS_TOSS) = sv30b
+(H.http, time.time, H.METRICS_HOUR, tk30) = sv30; H.E.pop("THREADS_TOKEN", None) if tk30 is None else H.E.update(THREADS_TOKEN=tk30)
+for f30 in (H.TOP, H.METRICS, "posts30.json"):
+    os.path.exists(f30) and os.remove(f30)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
