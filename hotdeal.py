@@ -4119,9 +4119,16 @@ def top_build(seen):
         except Exception as e:  # 시간 초과·터널 등 = 다음 실행에 이어서
             print("top fill", r["id"], repr(e))
             break
-        r.update(prod_cols(title_of(text), r["cat"], links, ids, True if r.get("ab") else False if r["date"] >= TH_AB_START else None))
+        r.update(prod_cols(title_of(re.sub(r"^💸[^\n]*\n?", "", text, flags=re.M)), r["cat"], links, ids, True if r.get("ab") else False if r["date"] >= TH_AB_START else None))  # 💸 훅 줄(10/11~19 Threads 첫 줄) = 상품명 X
         n_fill += 1
-    if old and tok:
+    posts, fixed = load(POSTS, []), 0
+    for r in (r for d in days for r in m[d]["rows"] if r.get("kind") == "deal"):  # 사이트 딜 페이지 링크(10/19 직접 링크 전 Threads 글) -> 그 글의 구매 링크·상품명·몰(posts.json 번호 = 페이지 번호)
+        pn = re.match(re.escape(SITE) + r"p/(\d+)\.html", r.get("url") or "")
+        if pn and int(pn[1]) < len(posts) and posts[int(pn[1])].get("url"):
+            pp = posts[int(pn[1])]
+            r.update(url=pp["url"], name=parse(title_of(pp["text"]))[1], shop=shop_of(pp) or r["shop"])
+            fixed += 1
+    if old and tok or fixed:
         metrics_save(m)
     left = sum("kind" not in r for r in old) if tok else 0
     rows = [r for d in days for r in m[d]["rows"]]

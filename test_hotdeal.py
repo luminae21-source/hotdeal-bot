@@ -4601,6 +4601,16 @@ def h30b(url, body=None, headers=None, method=None):  # 댓글 권한 없음(cod
 json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); H.http = h30b; c30.clear()
 H.top_build(s30); M30 = {r["id"]: r for d in json.load(open(H.METRICS)).values() for r in d["rows"]}
 assert M30["o2"]["kind"] == "deal" and M30["o2"]["name"] == "물티슈" and "url" not in M30["o2"] and "kind" not in M30["o3"] and json.load(open(H.TOP))["d"] == ""  # 댓글 권한 없음 = 이름으로 · 500 = 그 줄부터 다음 실행에
+# 사이트 딜 페이지 링크(10/19 전 Threads 글) = posts.json 그 글의 구매 링크·상품명·몰 · 💸 훅 첫 줄은 상품명 X
+json.dump([{"t": "2026-10-14 12:00", "text": "x", "url": None}] * 3 + [{"t": "2026-10-14 12:00", "text": "🔥 [쿠팡] 펩시 제로 라임 48캔 (26,550원)", "url": "https://link.coupang.com/a/PEP"}], open(H.POSTS, "w"), ensure_ascii=False)
+R30c = {"2026-10-20": [th30("s1", "2026-10-20", 900, "https://hotdealpick.kr/p/3.html?ref=th", "쿠팡보다 260원 싸요"), th30("s2", "2026-10-20", 5, "https://hotdealpick.kr/p/1.html?ref=th", "y"), th30("s3", "2026-10-20", 4, ab="A")]}
+def h30d(url, body=None, headers=None, method=None):
+    c30.append(url); return json.dumps({"text": f"{H.DISCLOSURE}\n\n💸 쿠팡보다 500원 싸요\n🔥 [쿠팡] 휴지 (9,900원)\n\n👉 https://link.coupang.com/a/S3"})
+json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30c.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); H.http = h30d; H.top_build(s30)
+M30 = {r["id"]: r for d in json.load(open(H.METRICS)).values() for r in d["rows"]}
+assert (M30["s1"]["url"], M30["s1"]["name"], M30["s1"]["shop"]) == ("https://link.coupang.com/a/PEP", "펩시 제로 라임 48캔", "coupang") and M30["s2"]["url"] == "https://hotdealpick.kr/p/1.html?ref=th" and M30["s3"]["name"] == "휴지", M30  # (구매 링크 없는 글 = 그대로)
+assert json.load(open(H.TOP))["items"][0]["url"] == "https://link.coupang.com/a/PEP" and os.path.exists(H.POSTS); json.dump([], open(H.POSTS, "w"))
+H.http = h30b
 # 토스 글 id 없음(10/22 전 링크) = 같은 이름끼리(토스 = tname, id 있는 글이 있으면 그 id로) · 쿠팡 링크 모르는 글 = 같은 이름 글의 링크
 R30b = {"2026-10-20": [th30("t1", "2026-10-20", 900, "https://toss.im/_m/OLD1", "토스 휴지 30롤", shop="toss"), th30("t2", "2026-10-20", 10, "https://toss.im/_m/OLD2", "토스 휴지 30롤", shop="toss"),
                        th30("t3", "2026-10-20", 800, "https://toss.im/_m/OLD3", "토스7 상품", shop="toss"), th30("t4", "2026-10-21", 5, "https://toss.im/_m/NEW", "토스7 상품", tid=7)] + [th30(f"z{k}", "2026-10-20", 1, f"https://link.coupang.com/a/Z{k}", f"z{k}") for k in range(6)]}
