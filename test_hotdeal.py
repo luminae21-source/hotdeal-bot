@@ -4624,6 +4624,16 @@ s30d = {"thtoss": {"t": 1, "q": [tq21(5, "20:00", 0), tq21(9, "20:05", 1)]}}
 g30, log30 = run21(s30d, "20:40"); assert g30 == ["토스9", "토스5"] and s30d["topb"]["ids"] == [2109], (g30, log30)  # (셀프체크는 한 실행 3개) 표의 9 = 순위 한 칸·점수 +1 -> 바로 앞 순위(5)보다 먼저, 횟수는 9만
 s30e = {"topb": {"t": 1, "d": "2026-10-21", "ids": [2109]}, "thtoss": {"t": 1, "q": [tq21(9, "20:05", 1)]}}; run21(s30e, "20:40"); assert s30e["topb"]["ids"] == [2109]  # 같은 상품(채널 글로 이미 셈) = 1번만(리뷰)
 s30f = {"thtoss": {"t": 1, "q": [tq21(5, "20:00", 0), tq21(9, "20:05", 3)]}}; g30, _ = run21(s30f, "20:40"); assert g30 == ["토스5", "토스9"]  # 순위 3칸 뒤 = 한 칸만 당겨져서 5 먼저(점수 +1, 맨 앞 고정 X — 리뷰)
+def h30c(url, body=None, headers=None, method=None):  # 10/18~ Threads 글: th_deal 기록(thab) 없는 링크 1개 글(카드 모음 등) = 개별 딜 아님
+    if url.startswith(H.CHANNEL_WEB): return ""
+    if "/me/threads?" in url: return json.dumps({"data": [{"id": "x1", "text": "📋 10/20 오늘의 핫딜 모음\n1. 휴지\n👉 https://link.coupang.com/a/Q1", "timestamp": "2026-10-20T03:00:00+0000"},
+                                                          {"id": "x2", "text": "B 글 본문(주소 없음)", "timestamp": "2026-10-20T04:00:00+0000"}]})
+    if "/insights?" in url: return json.dumps({"data": [{"name": n, "values": [{"value": 1}]} for n in ("views", "likes", "replies", "reposts", "quotes")]})
+    raise AssertionError(url)
+H.http, H.E["METRICS_DAY"], H.E["THREADS_TOKEN"] = h30c, "2026-10-20", "tk"; H.E.pop("IG_TOKEN", None)
+H.metrics_rows({"thab": {"m": {"x2": {"ab": "B", "ts": 1, "u": "https://toss.im/_m/Q2", "n": "[토스] 휴지 30롤 (9,900원)"}}}, "tlink": {"t": 1, "r": {"https://toss.im/_m/Q2": [5, 1]}}})
+K30 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-20"]["rows"]}; H.E.pop("METRICS_DAY")
+assert K30["x1"]["kind"] == "etc" and (K30["x2"]["kind"], K30["x2"]["name"], K30["x2"]["url"], K30["x2"]["tid"]) == ("deal", "휴지 30롤", "https://toss.im/_m/Q2", 5), K30  # B 글 = thab 링크 · 토스 링크 -> 상품 id
 (H.POSTS, H.TH_SOLO_FILL) = sv30c; (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.HAS_TOSS) = sv30b
 (H.http, time.time, H.METRICS_HOUR, tk30) = sv30; H.E.pop("THREADS_TOKEN", None) if tk30 is None else H.E.update(THREADS_TOKEN=tk30)
 for f30 in (H.TOP, H.METRICS, "posts30.json"):
