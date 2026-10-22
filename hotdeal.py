@@ -164,6 +164,8 @@ TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스
 
 
 def http(url, body=None, headers=None, method=None):
+    if url.startswith(IG):  # 인스타 그래프 API 호출 수(10/22 'Application request limit reached' — 실행마다 로그 'ig api N calls')
+        RUN["igc"] = RUN.get("igc", 0) + 1
     h = {"User-Agent": UA, **(headers or {})}
     if body is not None and not isinstance(body, bytes):  # bytes = 폼 등 이미 인코딩된 본문(Content-Type은 headers로)
         body, h["Content-Type"] = json.dumps(body).encode(), "application/json"
@@ -2927,6 +2929,20 @@ def ig_set(seen, day, ps, d, design=None):
     return cover, [cards.ig_slide(design, it, n, len(its), f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1)], design
 
 
+def ig_landed(tok, uid, cid, cap="", since=0):
+    """발행 오류 응답 뒤 실제로 올라갔는지(10/22 #1804: code 4·2207051 'action is blocked'인데 게시됨 — 오탐): 컨테이너 status_code = PUBLISHED이거나
+    최근 게시물 1개(GET /{uid}/media?limit=1)의 캡션 앞부분이 cap과 같고 시각이 since(발행 시도) 2분 전 뒤면 -> 게시물 id(모르면 'published'), 아니면 None. 확인 실패도 None."""
+    h = {"Authorization": "Bearer " + tok}
+    try:
+        st = json.loads(http(f"{IG}/{cid}?fields=status_code", headers=h)).get("status_code")
+        x = (json.loads(http(f"{IG}/{uid}/media?fields=id,caption,timestamp&limit=1", headers=h)).get("data") or [{}])[0]
+        same = cap and (x.get("caption") or "")[:80] == cap[:80] and datetime.strptime(x.get("timestamp", "1970-01-01T00:00:00+0000"), "%Y-%m-%dT%H:%M:%S%z").timestamp() >= since - 120
+        return x.get("id") if same else ("published" if st == "PUBLISHED" else None)
+    except Exception as e:
+        print("ig landed 확인 실패", clip(repr(e), 120))
+        return None
+
+
 def ig_due(seen, key, base):
     """인스타 게시 무작위 지연: base(이번 회차 시작) + IG_JITTER 사이 아무 때(회차마다 1번 정해 seen에) -> 이 시각 전엔 컨테이너 X."""
     if key not in seen:
@@ -2988,12 +3004,16 @@ def ig_publish(seen):
             json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
             RUN["ok"].add("ig")
         except Exception as e:
-            if "2207051" in (getattr(e, "body", "") or ""):  # 스팸 의심: 이 컨테이너는 버리고 24시간 쉼
+            if ig_landed(tok, uid, k[4:], since=now):  # 오류 응답이어도 실제로 올라감(10/22 #1804 code 4·2207051 오탐) -> 성공 처리(다시 발행 X)
+                print("ig publish 오류 응답이지만 게시됨", k, clip(repr(e), 80))
+                RUN["ok"].add("ig")
+            elif "2207051" in (getattr(e, "body", "") or ""):  # 스팸 의심: 이 컨테이너는 버리고 24시간 쉼
                 seen["ig_hold"] = now + 86400
                 seen.pop(k)
                 raise
-            errs.append(e)  # 컨테이너는 그대로 -> 다음 실행에 상태 다시
-            continue
+            else:
+                errs.append(e)  # 컨테이너는 그대로 -> 다음 실행에 상태 다시
+                continue
         seen.pop(k)
         seen[day] = {"t": now, "n": n + 1}
         if card(v):
@@ -3110,7 +3130,11 @@ def ig_carousel(seen, tok, uid, now):
     h = {"Authorization": "Bearer " + tok}
     for k in [k for k in seen if k.startswith("igk_")]:
         v, stem = seen[k], k[4:]
-        sts = [json.loads(http(f"{IG}/{c}?fields=status_code", headers=h))["status_code"] for c in v["kids"]]
+        sts = []
+        for c in v["kids"]:  # 처리 안 끝난 조각을 만나면 거기서 멈춤(나머지는 다음 실행에 — 그래프 API 호출 줄이기)
+            sts.append(json.loads(http(f"{IG}/{c}?fields=status_code", headers=h))["status_code"])
+            if sts[-1] != "FINISHED":
+                break
         if all(st == "FINISHED" for st in sts):
             c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": ig_caption(seen, stem, IG_HUMAN)}, h, "POST"))
             seen.pop(k)
@@ -3277,27 +3301,34 @@ def ig_test(seen):
         except Exception:
             return
         try:
-            r["c"] = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": ig_caption(seen, day, True)}, h, "POST"))["id"]
-            r["ct"] = now
+            cap = ig_caption(seen, day, True)
+            r["c"] = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": cap}, h, "POST"))["id"]
+            r["ct"], r["cap"] = now, cap[:80]
             save()
         except Exception as e:
             return done(False, "컨테이너 " + err(e))
-    try:
-        for k in range(3):
-            st = json.loads(http(f"{IG}/{r['c']}?fields=status_code", headers=h))["status_code"]
-            if st != "IN_PROGRESS" or k == 2:
-                break
-            time.sleep(10)
-        if st == "IN_PROGRESS" and now - r["ct"] < KIDS_WAIT:
-            print("ig test 처리 중 -> 다음 실행에 발행")
-            return
-        if st != "FINISHED":
-            return done(False, f"컨테이너 처리 {st}")
-        pid = json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": r["c"]}, h, "POST")).get("id")
+    try:  # 상태는 실행마다 1번만(폴링 X — 그래프 API 호출 줄이기), 처리 중이면 다음 실행에
+        st = json.loads(http(f"{IG}/{r['c']}?fields=status_code", headers=h))["status_code"]
     except Exception as e:
-        return done(False, "발행 " + err(e))
+        return done(False, "상태 " + err(e))
+    if st == "IN_PROGRESS" and now - r["ct"] < KIDS_WAIT:
+        print("ig test 처리 중 -> 다음 실행에 발행")
+        return
+    if st == "PUBLISHED":  # 지난 실행이 발행 뒤 기록 전에 끊김
+        r["id"] = "published"
+        return done(True, "이미 게시됨(컨테이너 PUBLISHED) · instagram.com/hotdealpick.kr")
+    if st != "FINISHED":
+        return done(False, f"컨테이너 처리 {st}")
+    try:
+        pid = json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": r["c"]}, h, "POST")).get("id")
+    except Exception as e:  # 오류 응답이어도 실제로 올라갔을 수 있음(10/22 #1804) -> 확인 뒤에만 실패, 다시 시도 X
+        pid = ig_landed(tok, uid, r["c"], r.get("cap", ""), now)
+        if not pid:
+            return done(False, "발행 " + err(e))
+        r["warn"] = err(e)[:160]
+        print("ig test 발행 오류 응답이지만 게시됨", pid)
     r["id"] = pid
-    done(True, f"변주 {r['v']} · 게시 {time.strftime('%H:%M', kst)}(카드 {time.strftime('%H:%M', time.gmtime(r['t'] + 9 * 3600))} + {round((now - r['t']) / 60)}분) · instagram.com/hotdealpick.kr")
+    done(True, ("(API는 오류 응답 — 게시 확인됨) " if r.get("warn") else "") + f"변주 {r['v']} · 게시 {time.strftime('%H:%M', kst)}(카드 {time.strftime('%H:%M', time.gmtime(r['t'] + 9 * 3600))} + {round((now - r['t']) / 60)}분) · instagram.com/hotdealpick.kr")
 
 
 def ig_repost(seen):
@@ -4666,6 +4697,8 @@ def main():
         except Exception as e:
             print(step.__name__, repr(e))
             step_alert(seen, step, e)  # 10/13 진우 '업로드 안 되면 바로 알람': 하루 1번 -> 바로(같은 단계·같은 오류는 3시간에 1번), Threads·인스타 + 채널 글 단계(ALERT_STEPS)
+    if RUN.get("igc"):
+        print("ig api", RUN["igc"], "calls")
     try:
         watch(seen)
     except Exception as e:  # 감시가 실패해도 seen은 저장

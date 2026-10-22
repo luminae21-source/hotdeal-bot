@@ -4822,6 +4822,58 @@ assert len(t33) == 1 and t33[0][1]["text"].startswith("⚠️ 인스타 테스�
 c33.clear(); t33.clear(); time.time = lambda: TK("2026-10-30 22:40"); H.ig_test(s33); H.ig_test({}); assert not c33 and not t33  # 다시 X
 time.time = lambda: TK("2026-11-02 21:40"); H.ig_test({}); assert not c33 and not t33  # 지난 날짜 = 아무것도 X
 del H.E["IG_TOKEN"]; time.time = lambda: TK("2026-10-30 21:40"); open("igt33.txt", "w").write("2026-10-30\n"); shutil.rmtree("docs/cards/igt33"); H.ig_test({}); assert not os.path.exists("docs/cards/igt33")  # 토큰 없으면 X
+# 10/22 정정(Cowork): #1804 발행 응답 code 4·2207051인데 실제로 게시됨(오탐) -> 발행 오류면 컨테이너 상태·최근 게시물(캡션·시각)로 확인 뒤에만 실패, 다시 시도 X
+H.E["IG_TOKEN"] = "pt"; open("igt33.txt", "w").write("2026-10-31\n"); json.dump([dict(p, t=p["t"].replace("10-29", "10-31")) for p in ps33], open("posts33.json", "w"), ensure_ascii=False)
+f33["post"], g33 = None, {"pub": '{"error":{"message":"Application request limit reached","code":4,"error_subcode":2207051}}', "cap": None, "st": "FINISHED"}
+def http33b(url, body=None, headers=None, method=None):
+    if url.endswith("/178/media_publish"):
+        c33.append((url, method)); g33["st"] = "PUBLISHED" if g33["cap"] else "FINISHED"; e = E33("HTTP 403"); e.body = g33["pub"]; raise e
+    if "/178/media?fields=id,caption,timestamp&limit=1" in url:
+        c33.append((url, method)); return json.dumps({"data": [{"id": "M31", "caption": g33["cap"] or "다른 글", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(time.time()))}]})
+    if "status_code" in url and "c33" in url:
+        c33.append((url, method)); return json.dumps({"status_code": g33["st"]})
+    return http33(url.replace("2026-10-31", "2026-10-29") if method == "HEAD" else url, body, headers, method)
+H.http = http33b; c33.clear(); t33.clear(); cap33.clear(); s33 = {}
+time.time = lambda: TK("2026-10-31 21:10"); H.ig_test(s33); r33b = json.load(open("docs/cards/igt33/2026-10-31.json")); g33["cap"] = "x"
+time.time = lambda: r33b["at"] + 60; H.ig_test(s33)
+g33["cap"] = cap33[0]; s33.pop("igt_2026-10-31"); json.dump({**r33b, "c": "c33", "ct": r33b["at"], "cap": cap33[0][:80]}, open("docs/cards/igt33/2026-10-31.json", "w")); c33.clear(); t33.clear()
+H.ig_test(s33)  # 컨테이너 있음 -> 상태 FINISHED -> 발행 오류 -> 최근 게시물 캡션·시각이 같음 = 게시됨
+r33c = json.load(open("docs/cards/igt33/2026-10-31.json"))
+assert r33c["st"] == "done" and r33c["id"] == "M31" and "2207051" in r33c["warn"] and len(t33) == 1 and t33[0][1]["text"].startswith("📸 인스타 테스트 1건 게시 완료 — (API는 오류 응답 — 게시 확인됨) "), (r33c, t33)
+assert [m for _, m in c33].count("POST") == 1  # 발행 1번만(다시 시도 X)
+c33.clear(); t33.clear(); H.ig_test(s33); assert not c33 and not t33
+open("igt33.txt", "w").write("2026-11-01\n"); json.dump([dict(p, t=p["t"].replace("10-29", "11-01")) for p in ps33], open("posts33.json", "w"), ensure_ascii=False)
+g33["cap"], g33["st"] = None, "FINISHED"; s33 = {}; time.time = lambda: TK("2026-11-01 21:10"); H.ig_test(s33); r33d = json.load(open("docs/cards/igt33/2026-11-01.json"))
+json.dump({**r33d, "c": "c33", "ct": r33d["at"], "cap": "내 캡션"}, open("docs/cards/igt33/2026-11-01.json", "w")); s33.pop("igt_2026-11-01"); c33.clear(); t33.clear()
+time.time = lambda: r33d["at"] + 60; H.ig_test(s33)  # 최근 게시물 캡션이 다르고 컨테이너도 PUBLISHED 아님 = 실패(다시 X)
+assert json.load(open("docs/cards/igt33/2026-11-01.json"))["st"] == "fail" and t33[0][1]["text"].startswith("⚠️ 인스타 테스트 실패(다시 시도 X) — 발행 ") and [m for _, m in c33].count("POST") == 1, t33
+# 정기 발행(ig_publish, IG_AUTO 켰을 때): 2207051인데 컨테이너가 PUBLISHED = 성공 처리(24시간 쉼 X·다시 발행 X), 아니면 예전처럼 쉼 + 알림
+sv33b = (H.IG_AUTO, H.IG_LIVE); H.IG_AUTO, H.IG_LIVE = True, "igl33/ig.json"; os.makedirs("igl33", exist_ok=True)
+g33["cap"], g33["st"] = "x", "FINISHED"
+def http33c(url, body=None, headers=None, method=None):
+    return http33b(url.replace("/K1?", "/c33?"), body, headers, method)
+H.http = http33c; s33 = {"igc_K1": {"t": TK("2026-11-01 21:00"), "card": "2026-11-01"}}; t33.clear(); c33.clear(); time.time = lambda: TK("2026-11-01 21:30")
+H.ig_publish(s33)
+assert "igc_K1" not in s33 and "ig_hold" not in s33 and s33["igpub_20261101"]["n"] == 1 and t33[0][1]["text"].startswith("📸 인스타 자동 게시 완료") and "2026-11-01" in json.load(open("igl33/ig.json")), (s33, t33)
+g33["cap"], g33["st"] = None, "FINISHED"; s33 = {"igc_K1": {"t": TK("2026-11-01 21:00"), "card": "2026-11-01"}}; t33.clear()
+try:
+    H.ig_publish(s33); raise AssertionError("안 올라간 2207051 = 예외(main 알림)")
+except E33:
+    pass
+assert s33["ig_hold"] > TK("2026-11-01 21:30") and "igc_K1" not in s33 and not t33
+H.IG_AUTO, H.IG_LIVE = sv33b; shutil.rmtree("igl33")
+# 인스타 그래프 API 호출 수(실행마다 로그 'ig api N calls'): 진짜 http()가 인스타 주소만 셈
+class R33:
+    headers = type("HH", (), {"get_content_charset": lambda self: "utf-8"})()
+    def read(self): return b"{}"
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+import importlib.util as iu33
+sp33 = iu33.spec_from_file_location("hd33", H.__file__); hd33 = iu33.module_from_spec(sp33); sp33.loader.exec_module(hd33)  # 하네스가 바꾼 http 말고 진짜 http
+uo33 = urllib.request.urlopen; urllib.request.urlopen = lambda req, timeout=30: R33()
+hd33.http(hd33.IG + "/178/media?fields=id&limit=1"); hd33.http("https://api.telegram.org/botx/getMe"); hd33.http(hd33.IG + "/c1?fields=status_code")
+urllib.request.urlopen = uo33; assert hd33.RUN["igc"] == 2 and 'print("ig api", RUN["igc"], "calls")' in inspect.getsource(H.main)
+shutil.rmtree("docs/cards/igt33")
 (H.ai_json, H.http, H.tg, H.POSTS, H.IG_TEST, H.IG_TEST_DIR, time.time, H.time.sleep, ie33) = sv33
 for k33, v33 in ie33.items():
     H.E.pop(k33, None) if v33 is None else H.E.update({k33: v33})
