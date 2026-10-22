@@ -17,7 +17,7 @@ HAS_CP = bool(E.get("COUPANG_ACCESS_KEY") and E.get("COUPANG_SECRET_KEY"))
 HAS_TOSS = bool(E.get("TOSS_ACCESS_KEY") and E.get("TOSS_SECRET_KEY") and E.get("TOSS_PUBLISHER_ID"))  # 쉐어링크 Open API(10/6 승인). 호출은 고정 IP(오라클) 터널 경유 -> hotdeal.yml
 TOSS_API, TOSS_TOKEN = "https://sharelink.toss.im/openapi", "toss.json"  # toss.json: 1년짜리 액세스 토큰 보관(Actions 캐시, 매번 재발급 금지)
 MAX_DRAFTS = 1                 # 1회 실행(15분)당 채널 게시 최대 개수. 몰아 올리면 묻히고 뒤가 비어서 1개씩(10/6 진우 '꾸준하게') -> 넘친 딜은 판단 그대로 보관했다가 다음 실행에 먼저
-GAP_FILL, FILL_SCORE = 45, 6    # 8~24시에 45분 넘게 채널 딜 글이 없으면 그 실행 후보 중 6점↑ 최고 1개로 빈틈 메움(5점은 안 올림). MIN_SCORE가 6이면 6점은 원래 바로 올라가서 MIN_SCORE를 7로 올렸을 때만 쓰임
+GAP_FILL, FILL_SCORE = 45, 6    # 45분(0~8시 90분, 10/22~) 넘게 채널 딜 글이 없으면 그 실행 후보 중 6점↑ 최고 1개로 빈틈 메움(5점은 안 올림). MIN_SCORE가 6이면 6점은 원래 바로 올라가서 MIN_SCORE를 7로 올렸을 때만 쓰임
 MIN_AGE, MAX_AGE = 30, 360     # 분: 반응이 쌓인 뒤 판단, 너무 오래된 글은 무시
 MIN_AGE_RULIWEB = 15           # 루리웹 RSS엔 추천·댓글 수가 없어 기다려도 판단 근거가 안 늘어남 -> 빨리
 RUN_GAP = 20                   # 분: 다음 실행까지(15분 체인 + 지연 여유). 이 안에 목록에서 밀려날 글은 덜 묵었어도 지금 판단
@@ -1747,8 +1747,8 @@ def toss_picks(seen):
             th_deal(seen, tok, me, text, r["link"])
 
 
-TOSS_SOLO_HOURS = range(8, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개. () = 끔
-TOSS_GAP_MIN, TOSS_EV_PAD = 30, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
+TOSS_SOLO_HOURS = range(0, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(10/22 진우 '새벽에도' -> 0~8시도, 밤 발송은 무음). () = 끔
+TOSS_GAP_MIN, TOSS_GAP_NIGHT, TOSS_EV_PAD = 30, 60, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분(0~8시는 60분, 10/22) 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
 TOSS_SOLO_SRC, TOSS_SOLO_MIN, TOSS_SOLO_TRY = ("best", "beauty", "life", "day"), 7, 2  # 시각마다 돌아가며(많이 팔린 순위 -> 화장품 -> 생필품 -> 하루특가) · 점수 7↑ · 출처 2곳까지(Claude·API 아낌)
 SOLO_PROMPT = SPECIAL_PROMPT.replace("특가 후보 목록이야(할인율 높고 리뷰 있는 상품, ", "상품 목록이야(") + TOSS_EASE + "\ncomment는 단위가격·구성 같은 사실 한 줄만.\n"
 
@@ -1774,7 +1774,7 @@ def toss_solo(seen):
     if not HAS_TOSS or h not in TOSS_SOLO_HOURS:
         return
     gap = TOSS_GAP_MIN and int(now - max(ch_last(seen), seen.get("tgap", {}).get("t", 0))) // 60
-    gap = gap if gap > TOSS_GAP_MIN else 0
+    gap = gap if gap > (TOSS_GAP_NIGHT if h < 8 else TOSS_GAP_MIN) else 0
     if key in seen and not gap:
         return
     evs, norm = load(EVENTS, []), lambda s: re.sub(r"\W", "", s or "")
@@ -1784,8 +1784,10 @@ def toss_solo(seen):
         return
     if gap:
         seen["tgap"] = {"t": now}  # 빈틈 채움 시도 — 못 찾아도 TOSS_GAP_MIN 동안 다시 안 찾음(API·Claude 아낌)
-    booked = {norm(e["name"]) for e in evs if e.get("name") and e.get("at", "")[:10] == today}
-    picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + today) and isinstance(v, dict)}
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - 86400))
+    recent = lambda at: at[:10] == today or at >= since  # 오늘 + 지난 24시간(밤 12시 넘어 어젯밤 진우 예약 상품이 다시 나가지 않게 — 10/22 0~8시 글 켜며)
+    booked = {norm(e["name"]) for e in evs if e.get("name") and recent(e.get("at", ""))}
+    picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_") and recent(k[3:]) and isinstance(v, dict)}
     tree, tried, best = None, 0, None
     for n in range(len(TOSS_SOLO_SRC)):
         src = TOSS_SOLO_SRC[(h + n) % len(TOSS_SOLO_SRC)]
@@ -2074,6 +2076,8 @@ def toss_reopen(seen):
             break
     else:  # 올릴 게 없음 -> 이유를 로그로(10/12 아침 재오픈 0개가 로그로 안 보이던 것): 살 수 있는 것 중 ①② 없음(값이 바뀌어 쿠팡 비교 줄 빠짐·🛒 등) / 다 품절·비싸짐
         print("toss reopen", "아침" if am else "밤", f"줄 {len(todo)}개 중 살 수 있는 것 {len(live)}개 — " + ("①② 아님(값 바뀜·🛒 등)이라 안 올림" if live else "다 품절·비싸짐"))
+        for e, _ in [] if am else live:  # 밤 = 아침에 다시(품절·비싸짐과 같이) — threads_deals가 토스 픽 칸을 비워 둔 채 밤새 기다리지 않게(10/22)
+            e["st"] = 1
         return
     th_mark(seen, reopen=mode)
     e["st"] = 1  # 먼저 표시: 실패해도 같은 글 반복 시도 안 함(스팸 방지), 실패는 main()이 알림
@@ -2133,14 +2137,17 @@ VOICE_STYLE = {  # 10/21 밤 진우 '너무 AI 같다' -> 두 시안 '섞어서'
 
 
 def ai_voice(prompt):
-    """Claude가 쓴 Threads 개별 글 문장 {lines, q}(th_voice)."""
-    tool = {"name": "voice", "description": "Threads 글 본문", "input_schema": {"type": "object", "required": ["lines", "q"], "properties": {
-        "lines": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}}}}
+    """Claude가 쓴 Threads 개별 글 문장 {lines, q}(th_voice) — 구조화 출력(JSON). 10/22 08:00 첫 글이 400(이 모델은 강제 tool_choice X) -> 지금 틀로 나가던 것.
+    effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(지금 틀)."""
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
-        "model": MODEL, "max_tokens": 1500, "tools": [tool], "tool_choice": {"type": "tool", "name": "voice"},
+        "model": MODEL, "max_tokens": 4000, "output_config": {"effort": "low", "format": {"type": "json_schema", "schema": {
+            "type": "object", "required": ["lines", "q"], "additionalProperties": False,
+            "properties": {"lines": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}}}}},
         "messages": [{"role": "user", "content": prompt}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
-    return next((c["input"] for c in r["content"] if c["type"] == "tool_use"), {})
+    if r.get("stop_reason") != "end_turn":
+        raise RuntimeError(f"Claude 답 안 끝남({r.get('stop_reason')})")
+    return json.loads(next(c["text"] for c in r["content"] if c["type"] == "text"))
 
 
 def th_voice(seen, text, link, src=None):
@@ -3015,7 +3022,10 @@ def threads_deals(seen):
     if not todo and TH_SOLO_FILL:  # ①·화장품·② 없음 -> 채움(10/12 진우): 토스 픽 ↔ 진우 🔥 딜 번갈아(10/21), 둘 다 없으면 점수 높은 순 · 같은 점수면 제휴 링크 · 최근 것, 품절(품절 지켜보기 기록) X
         out = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}
         gone = {x[0] for k, v in seen.items() if k.startswith("sold_") and isinstance(v, dict) for x in v.get("it", []) if x[4]}  # 품절·특가 끝 토스 상품
-        tq = [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone and th_solo(seen, x["text"], beauty=x["bt"], top=True)]
+        rd = th_day(seen, now)  # 밤(0~6시) 재오픈이 기다리면 토스 픽 칸은 비워 둠(같은 실행 뒤 toss_reopen 차례 — 10/22 새벽 토스 글이 자정 재오픈 칸을 가져가던 것)
+        rw = HAS_TOSS and time.gmtime(now + 9 * 3600).tm_hour < TH_REOPEN_AM[0] and rd.get("rn", 0) < TH_REOPEN_NIGHT and rd.get("rn", 0) + rd.get("ra", 0) < TH_REOPEN_DAY \
+            and any(not e.get("st") for e in seen.get("reopen", {}).get("q", []))
+        tq = [] if rw else [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone and th_solo(seen, x["text"], beauty=x["bt"], top=True)]
         own = sorted((i for i in fresh if posts[i].get("own") and posts[i].get("mid") not in out and th_solo(seen, posts[i]["text"], beauty=bt[i], top=True)), key=lambda i: posts[i]["t"])  # 기다리는 진우 🔥 딜(🛒는 th_solo가 거름), 먼저 올라온 것부터
         left = own and kst_ts(posts[own[0]]["t"]) + 3 * 3600 - now  # 10/22 진우 '끝나가는 🔥 먼저': 다음 칸(간격 최대 + 다음 실행)까지 기다리면 3시간 창이 지나는 진우 딜이면
         due = own and left < TH_SOLO_GAP + TH_GAP_JITTER + RUN_GAP * 60 and tq and seen.get("thfill", {}).get("k") != "toss"  # 차례와 상관없이 이번 칸(창이 먼저 끝나는 것 = 먼저 올라온 것부터), 다음 칸은 토스
@@ -3494,10 +3504,10 @@ def dkey(title):
 
 
 def quiet():
-    """8~24시(KST)인데 마지막 채널 딜 글이 GAP_FILL분보다 오래됐으면 True -> 6점 딜로 빈틈 메움."""
+    """마지막 채널 딜 글이 GAP_FILL분(0~8시는 2배 — 10/22 진우 '새벽에도')보다 오래됐으면 True -> 6점 딜로 빈틈 메움."""
     now = time.time() + 9 * 3600
     last = max((p["t"] for p in load(POSTS, []) if not p["text"].startswith("📋")), default="")
-    return time.gmtime(now).tm_hour >= 8 and last < time.strftime("%Y-%m-%d %H:%M", time.gmtime(now - GAP_FILL * 60))
+    return last < time.strftime("%Y-%m-%d %H:%M", time.gmtime(now - GAP_FILL * 60 * (2 if time.gmtime(now).tm_hour < 8 else 1)))
 
 
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음

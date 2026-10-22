@@ -556,14 +556,14 @@ sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 6
 json.dump(sj, open("seen.json", "w")); RU3 = RU3.replace("</channel>", it("[G마켓] 새상품 특가 묶음 / 3,000원", "https://bbs.ruliweb.com/market/board/1020/read/93", 20) + "</channel>")
 H.main(); sj = json.load(open("seen.json"))  # 보관 딜이 있으면 그게 먼저, 새로 고른 좋은 딜은 보관
 assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 2 and "hold_ruliweb_93" in sj and "hold_ruliweb_91" not in sj
-# 4-5) 꾸준히(MIN_SCORE를 7로 올렸을 때): 8~24시에 마지막 딜 글이 45분 넘으면 7점이 없어도 6점 최고 1개 / 45분 안이거나 밤(0~8시)이거나 최고가 5점이면 안 올림
+# 4-5) 꾸준히(MIN_SCORE를 7로 올렸을 때): 마지막 딜 글이 45분(0~8시는 90분 — 10/22 진우 '새벽에도') 넘으면 7점이 없어도 6점 최고 1개 / 그 안이거나 최고가 5점이면 안 올림
 assert H.MIN_SCORE == 6 and H.FILL_SCORE == 6  # 10/8 진우: 기본은 6점도 바로
 H.MIN_SCORE = 7
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "c"}, {"i": 1, "score": 6, "comment": "c"}, {"i": 2, "score": 6, "comment": "c"}][:len(lines)]
 tq, kfmt, pa2 = time.time, lambda s: time.strftime("%Y-%m-%d %H:%M", time.gmtime(s + 9 * 3600)), H.publish_approved
 H.publish_approved = lambda seen=None: None  # 앞 테스트의 텔레그램 입력(✅)이 글을 기록하지 않게
 for now, last, picks5, want in ((1791248400, 1791248400 - 3600, False, ["ruliweb_91"]), (1791248400, 1791248400 - 1200, False, []),
-                                (1791223200, 1791223200 - 7200, False, []), (1791248400, 1791248400 - 3600, True, [])):  # 10/6 10:00 / 03:00 KST
+                                (1791223200, 1791223200 - 7200, False, ["ruliweb_91"]), (1791223200, 1791223200 - 3600, False, []), (1791248400, 1791248400 - 3600, True, [])):  # 10/6 10:00 / 03:00 KST(밤 2시간 = 1개 · 1시간 = 아직)
     time.time = lambda n=now: n
     feed = '<rss><channel>' + "".join(it(f"[11번가] 상품{k}번 특가 묶음 / {k},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{k}", 20) for k in range(3)) + '</channel></rss>'  # 수수료 없는 몰(수수료 몰은 1점 낮춤 -> 4-6)
     H.http = lambda url, *a, f=feed, **k: f if url == H.RULIWEB_RSS else ""
@@ -2574,7 +2574,7 @@ H.TH_TOSS_FILL, H.TH_TOSS_KINDS, H.TOSS_NO_CMP, H.TH_SOLO_GAP, H.TH_SOLO_MAX, H.
 H.th_strong, H.TH_SOLO_RUN = (lambda plain: "특가로는 약한 제품" not in plain), 3; json.dump([], open("posts.json", "w"))
 # 9-2i) 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 — 매시 1개': 8~23시 매시 첫 실행에 토스 API 상품 개별 글 1개(진우 예약 시각은 건너뜀), 출처 돌아가며(순위·화장품·생필품·하루특가),
 #       품절·3일 안 게시·오늘 진우 예약 이름·이름 예약 id 빼고 7점↑ 최고점, 진우 예약 글 틀(문구·제목·정보 줄·💡·⚠️ 게시 시점·버튼), 품절 지켜보기·Threads 채움 후보, posts.json X
-assert tsh0 == range(8, 24) and H.TOSS_SOLO_MIN == 7
+assert tsh0 == range(0, 24) and H.TOSS_SOLO_MIN == 7  # 10/22 진우 '새벽에도' -> 0~23시
 sv9i = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS)
 i_calls, i_sent, i_prompts = [], [], []; tgm0, H.TOSS_GAP_MIN = H.TOSS_GAP_MIN, 0  # 매시 1개만 먼저(빈틈 채움은 9-2j)
 LST9 = {"best-selling": [{"tacaItemId": k, "displayName": f"베스트{k}", "displayPrice": 9900, "discountRate": 40, "reviewScore": 4.8, "reviewCount": 1234, "isSoldOut": k == 3} for k in (1, 2, 3, 4)],
@@ -2605,7 +2605,7 @@ assert json.load(open("posts.json")) == [] and i_prompts[0][0] == H.SOLO_PROMPT 
 i_sent.clear(); i_calls.clear(); H.toss_solo(s9i); assert not i_sent and not i_calls  # 그 시각 1번
 s9e = {}; time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 진우 예약 11:30 앞뒤 10분 = 쉼(API도 안 부름, 기록 X -> 다음 실행에 다시)
 time.time = lambda: TK("2026-10-14 11:20"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 10분 앞도 쉼
-time.time = lambda: TK("2026-10-14 07:59"); H.toss_solo({}); assert not i_calls  # 8시 전 X
+time.time = lambda: TK("2026-10-14 07:59"); H.toss_solo({}); assert i_calls and len(i_sent) == 1; i_sent.clear(); i_calls.clear()  # 10/22~ 0~8시도 매시 1개(밤 무음은 tg가 — 9-26)
 time.time = lambda: TK("2026-10-14 11:41"); H.toss_solo(s9e); assert len(i_sent) == 1 and "tsolo_20261014_11" in s9e  # 예약 있는 시각도 앞뒤 10분 밖이면 올림(10/15 — 예전엔 그 시각 통째로 건너뜀)
 i_sent.clear(); i_calls.clear()
 H.ai_pick = lambda prompt, lines: i_prompts.append((prompt, lines)) or ([{"i": 0, "score": 6, "comment": "x"}] if "하루특가50" in lines[0] else [{"i": 0, "score": 8, "comment": "롤당 330원"}])
@@ -4080,6 +4080,12 @@ b24, r24 = H.th_ab(k24, KU24)  # 링크 B(첫 댓글): 본문 주소 X + '👇',
 assert b24.startswith(H.DISCLOSURE) and b24.endswith("다들 핫팩 몇 개씩 쟁여둬?\n\n" + H.TH_AB_MARK) and "http" not in b24 and r24 == f"{H.DISCLOSURE}\n\n👉 {KU24}\n📲 실시간 알림 t.me/hotdeal_pick", (b24, r24)
 assert len(re.findall(r"(?<!def )\bth_voice\(", inspect.getsource(H))) == 1 and "vt = th_voice(seen, text, link, src) if TH_VOICE else text" in inspect.getsource(H.th_deal)  # th_deal(Threads 개별 딜 글)만 — 채널·묶음 글 X
 assert H.TH_VOICE is True and vc0 == (True, 10 * 60)  # 기본값: 켬 · ±10분
+aq24, ar24 = [], [{"stop_reason": "end_turn", "content": [{"type": "thinking", "thinking": ""}, {"type": "text", "text": '{"lines": ["a"], "q": ""}'}]}, {"stop_reason": "refusal", "content": []}]
+H.E["ANTHROPIC_API_KEY"], H.http = "k", lambda url, body=None, headers=None, method=None: aq24.append(body) or json.dumps(ar24.pop(0))  # 진짜 ai_voice: 구조화 출력(JSON) — 강제 tool_choice는 이 모델에서 400(10/22 08:00)
+assert sv24[7]("p") == {"lines": ["a"], "q": ""} and "tool_choice" not in aq24[0] and "tools" not in aq24[0] and aq24[0]["output_config"]["format"]["type"] == "json_schema" and aq24[0]["model"] == H.MODEL
+try: sv24[7]("p"); raise AssertionError("refusal")
+except RuntimeError as e: assert "refusal" in str(e)
+H.http = http24; H.E.pop("ANTHROPIC_API_KEY")
 H.random = sv24[10]; sty24 = []  # 진짜 무작위: A·B 둘 다 나옴
 for n in range(40):
     s = {}; a24[:] = [{"lines": [f"핫팩 {n}번째로 봄", "코멧 손난로 30개 8,860원"], "q": ""}]; H.th_voice(s, F24, KU24); sty24.append(s["thvoice"]["s"])
@@ -4145,6 +4151,57 @@ g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill tur
 os.remove("posts25.json")
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk25, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER) = sv25
 H.E.pop("THREADS_TOKEN", None) if tk25 is None else H.E.update(THREADS_TOKEN=tk25)
+# 9-26 (10/22 07:2x 진우 '핫딜은 새벽에도 올라가게, 밤에 안 올리니까 너무 조용해'): 0~8시도 토스 매시 개별 1개(TOSS_SOLO_HOURS 0~23) · 토스 빈틈 채움 밤 60분(낮 30분 그대로)
+#       · 커뮤니티 6점 빈틈 채움(quiet) 밤 GAP_FILL × 2 · 밤 발송 무음 그대로 · Threads 개별 글은 밤에도 간격대로 후보 꺼냄
+assert tsh0 == range(0, 24) and (tgm0, H.TOSS_GAP_NIGHT, H.GAP_FILL) == (30, 60, 45)
+sv26 = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.POSTS, H.TOSS_NO_CMP, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN)
+H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN = tsh0, tgm0  # 실제 값
+tg26 = []
+def http26(url, body=None, headers=None, method=None):
+    if "api.telegram.org" in url: tg26.append((url.rsplit("/", 1)[-1], body)); return json.dumps({"ok": True, "result": {"message_id": 800 + len(tg26)}})
+    return i_http(url, body, headers, method)
+H.http, H.tg, H.HAS_TOSS, H.EVENTS, H.POSTS, H.TOSS_NO_CMP = http26, tg_real, True, "ev26.json", "posts26.json", True
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "롤당 330원"}]
+json.dump([], open("ev26.json", "w")); json.dump([], open("posts26.json", "w"))
+def solo26(at, last, hourly_done=True):  # 마지막 채널 딜 글 last분 전 · 그 시각 매시 1개는 이미(빈틈 채움만 봄)
+    tg26.clear(); H.RUN["ch_last"] = 0; time.time = lambda: TK("2026-10-22 " + at)
+    s = {"ch_last": {"t": TK("2026-10-22 " + at) - last * 60}, **({f"tsolo_20261022_{at[:2]}": 1} if hourly_done else {})}
+    H.toss_solo(s); return [b for m, b in tg26 if m == "sendMessage" and b.get("chat_id") == H.CHANNEL]
+for at, last, n in (("03:00", 70, 1), ("05:30", 70, 1), ("03:00", 40, 0), ("03:00", 59, 0), ("14:07", 35, 1), ("14:07", 25, 0)):  # 밤 60분 · 낮 30분 그대로
+    got = solo26(at, last); assert len(got) == n, (at, last, got)
+    assert all(b["disable_notification"] is True for b in got) if at < "08" else all("disable_notification" not in b for b in got), got  # 밤 글 = 무음 그대로
+got = solo26("02:05", 10, hourly_done=False); assert len(got) == 1 and got[0]["disable_notification"] is True and "[토스]" in got[0]["text"]  # 0~8시도 매시 1개(무음)
+for ev_at, want in (("2026-10-22 23:40", "베스트2"), ("2026-10-21 23:00", "베스트1")):  # 밤 12시 넘어도 지난 24시간 진우 예약 상품은 뺌(10/22 리뷰) — 24시간 넘은 예약은 그대로 후보
+    json.dump([{"at": ev_at, "deal": True, "name": "베스트1", "url": "https://toss.shopping/_m/j"}], open("ev26.json", "w"), ensure_ascii=False)
+    tg26.clear(); H.RUN["ch_last"] = 0; time.time = lambda: TK("2026-10-23 00:05"); H.toss_solo({})
+    got = [b for m, b in tg26 if m == "sendMessage" and b.get("chat_id") == H.CHANNEL]; assert len(got) == 1 and f"[토스] {want} " in got[0]["text"], (ev_at, got)
+json.dump([], open("ev26.json", "w"))
+for at, ago, want in (("03:00", 80, False), ("03:00", 100, True), ("14:00", 40, False), ("14:00", 50, True)):  # 커뮤니티 6점 빈틈 채움: 밤 90분 · 낮 45분 그대로
+    time.time = lambda: TK("2026-10-22 " + at)
+    json.dump([{"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(TK("2026-10-22 " + at) + 9 * 3600 - ago * 60)), "text": "🔥 [쿠팡] 휴지"}], open("posts26.json", "w"), ensure_ascii=False)
+    assert H.quiet() is want, (at, ago)
+# Threads 개별 글: 밤에도 간격대로 토스 픽 대기 줄에서 꺼냄(시각 제한 없음)
+sv26b = (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, H.E.get("THREADS_TOKEN"), H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL)
+H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL = 99, 45 * 60, 1, th_strong0, True
+H.http, H.TH_LINK_AB, H.time.sleep, H.E["THREADS_TOKEN"] = http21, False, (lambda s: None), "tk"; json.dump([], open("posts26.json", "w"))
+s26 = {"thsolo_20261021": {"t": 1, "n": 3, "b": 0, "last": TK("2026-10-21 02:10")}, "thtoss": {"t": 1, "q": [tq21(9, "02:30", 0)]}}
+assert run21(s26, "02:40")[0] == [] and run21(s26, "03:00")[0] == ["토스9"], s26  # 02:10 글 뒤 30분 = 아직 · 50분 = 꺼냄
+trn26, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), trn0  # 실제 재오픈 한도
+for at, rn, st, want in (("00:50", 0, 0, []), ("00:50", 0, 1, ["토스10"]), ("00:50", 2, 0, ["토스10"]), ("06:50", 0, 0, ["토스10"])):  # 밤 재오픈이 기다리면 토스 픽 칸은 비워 둠(10/22 리뷰) — 다 봤거나·밤 한도 찼거나·아침이면 예전 그대로
+    s26 = {"thsolo_20261021": {"t": 1, "n": 1, "b": 0, "rn": rn, "last": TK(f"2026-10-21 {at}") - 50 * 60}, "thtoss": {"t": 1, "q": [tq21(10, f"{at[:2]}:20", 0)]}, "reopen": {"q": [{"id": 1, "st": st, "day": "2026-10-21"}]}}
+    assert run21(s26, at)[0] == want, (at, rn, st)
+(H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = trn26
+(H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, tk26, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL) = sv26b
+H.E.pop("THREADS_TOKEN", None) if tk26 is None else H.E.update(THREADS_TOKEN=tk26)
+def http26r(url, body=None, headers=None, method=None):  # 재오픈 상품 상세(살 수 있음·같은 가격)
+    if "/products/detail?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": 77, "displayName": "리오픈77", "displayPrice": 9000, "isSoldOut": False}], "notFoundIds": []}})
+    return http26(url, body, headers, method)
+H.http, H.E["THREADS_TOKEN"], ths26, H.th_strong = http26r, "tk", H.th_strong, th_strong0; time.time = lambda: TK("2026-10-22 00:30"); tg26.clear()  # 진짜 ①② 판단
+s26 = {"reopen": {"q": [{"id": 77, "day": "2026-10-22", "st": 0, "p0": 9000, "url": "https://toss.shopping/_m/R77", "n": "리오픈77", "title": "리오픈77", "icon": "🔥", "cmp": "", "warn": ""}], "ts": []}}
+H.toss_reopen(s26); assert s26["reopen"]["q"][0]["st"] == 1 and not any("threads" in m for m, _ in tg26), s26  # 밤 ①② 아님 = 아침에 다시(밤새 토스 픽 칸을 막지 않게)
+H.http, H.th_strong = http26, ths26; H.E.pop("THREADS_TOKEN", None) if tk26 is None else H.E.update(THREADS_TOKEN=tk26)
+os.remove("ev26.json"); os.remove("posts26.json")
+(H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.POSTS, H.TOSS_NO_CMP, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN) = sv26
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
