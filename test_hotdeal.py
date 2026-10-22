@@ -4515,7 +4515,7 @@ def h29(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, H.HAS_TOSS, H.tg = h29, True, lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
-assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, toss_stock, coupang_remind" in inspect.getsource(H.main)
+assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
 # ① 경계: 10/29 23:59 보통 · 10/30 00:00 재사용(시작 알림 1번) · 11/4 23:59 재사용(날 바뀌면 전날 요약 1번) · 11/5 00:00 링크 1개 만들어 봄 -> 되면 보통 + '끝' 1번
 s29 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")], "2": ["https://toss.im/_m/K2", TK("2026-10-29 10:00")]}}, "tb_7": {"t": TK("2026-10-29 12:00")}}
 H.toss_mode(s29, TK("2026-10-29 23:59")); assert H.RUN["treuse"] is False and not s29m and "tpause" not in s29 and not lk29
@@ -4759,6 +4759,74 @@ assert (H.STEADY_AT, H.STEADY_END, H.STEADY_N, H.STEADY_DAYS, H.STEADY_MIN_BUY) 
 for f32 in ("posts32.json", "top32.json"):
     os.remove(f32)
 shutil.rmtree("steady32")
+# 9-33 (10/22 22시 진우 '인스타 자동게시 테스트 1건 — 시간 오차 15~20분·카드 수정·사람 멘트'): 인스타만(텔레그램·Threads X), IG_AUTO 정기 게시는 그대로 꺼짐,
+#       ig_test.txt 날짜 = 그날 하루 카드를 변주로 다시 그림 -> 15~20분 무작위 뒤 컨테이너(캡션 = 대가성 문구 + 사람 멘트 2~3줄) -> 발행 -> 관리봇 1번, 실패면 다시 X
+#       정기 게시 스위치 IG_HUMAN = IG_AUTO(지금 꺼짐)
+assert H.IG_HUMAN is False and H.IG_AUTO is False and H.IG_JITTER == (900, 1200) and "ig_publish, ig_test, toss_stock" in inspect.getsource(H.main)
+s33 = {}
+for _ in range(300):  # 변주: 직전 회차와 1~2개(표지 문구·배치·색) 다름, 지난주 막힌 기본 모양 X
+    pv33 = dict(s33.get("igvar") or {"pal": 0, "head": 0, "band": 0}); v33 = H.ig_variant(s33)
+    assert 1 <= sum(v33[k] != pv33[k] for k in ("pal", "head", "band")) <= 2 and v33 != {"pal": 0, "head": 0, "band": 0}, (pv33, v33)
+for _ in range(100):
+    a33 = H.ig_due(s33, f"d{_}", 1000.0); assert 1900 <= a33 <= 2200 and H.ig_due(s33, f"d{_}", 9999.0) == a33  # 15~20분, 회차마다 1번 정하면 그대로
+ps33 = [{"t": f"2026-10-29 1{k}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({p})\n\n좋음", "url": f"https://link.coupang.com/a/I{k}", "mid": 3300 + k}
+        for k, (n, p) in enumerate((("휴지 30롤", "9,900원"), ("세제 3L", "12,900원"), ("물티슈 10팩", "8,900원"), ("핫팩 30개", "8,860원")))]
+sv33 = (H.ai_json, H.http, H.tg, H.POSTS, H.IG_TEST, H.IG_TEST_DIR, time.time, H.time.sleep, {k: H.E.get(k) for k in ("IG_TOKEN", "IG_USER_ID")})
+pr33 = []
+H.ai_json = lambda prompt, props: pr33.append(prompt) or {"lines": ["휴지 떨어진 집 손 ㅋㅋ", "이거 진짜 좋아요", "링크 눌러봐", "샀는데 좋음", "99,000원이면 개이득", "오늘 밤엔 이 정도면 살 만한 듯"]}
+l33 = H.ig_human({}, ps33); assert l33 == ["휴지 떨어진 집 손 ㅋㅋ", "오늘 밤엔 이 정도면 살 만한 듯"] and "휴지 30롤 (9,900원)" in pr33[0], (l33, pr33)  # ~요·클릭 유도·써 본 척·없는 금액 X
+H.ai_json = lambda prompt, props: {"lines": ["휴지 쟁여둘 타이밍 🔥", "세제도 같이 보면 좋음 🧺"]}; assert H.ig_human({}, ps33) == ["휴지 쟁여둘 타이밍", "세제도 같이 보면 좋음"]  # 이모지 0~1
+def aj33(prompt, props): raise RuntimeError("x")
+H.ai_json, h33 = aj33, {}
+l33a, l33b = H.ig_human(h33, ps33), H.ig_human(h33, ps33)
+assert len(l33a) == len(l33b) == 2 and not set(l33a) & set(l33b) and set(l33a + l33b) <= set(H.IG_HUMAN_POOL)  # Claude 실패 = 기본 멘트(매번 다른 문장)
+assert all(not re.search(H.VOICE_YO, x) and not re.search(H.VOICE_BAN, x) for x in H.IG_HUMAN_POOL)
+# 1건 테스트: 카드(변주) -> 15~20분 대기 -> 컨테이너·발행 -> 관리봇 1번, 인스타 외 채널 X
+H.ai_json = lambda prompt, props: {"lines": ["오늘 밤엔 이 정도면 살 만한 듯", "휴지 떨어진 집 손 ㅋㅋ"]}
+json.dump(ps33, open("posts33.json", "w"), ensure_ascii=False); open("igt33.txt", "w").write("2026-10-29\n")
+H.POSTS, H.IG_TEST, H.IG_TEST_DIR, H.time.sleep = "posts33.json", "igt33.txt", "igt33", (lambda s: None)
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
+c33, t33, cap33 = [], [], []
+class E33(Exception): pass
+f33 = {"post": None}
+def http33(url, body=None, headers=None, method=None):
+    c33.append((url, method))
+    if method == "HEAD": assert url.startswith(f"{H.SITE}cards/igt33/2026-10-"); return ""
+    if url.endswith("/178/media"):
+        if f33["post"]: e = E33("HTTP 400"); e.body = f33["post"]; raise e
+        cap33.append(body["caption"]); assert body["image_url"] == f"{H.SITE}cards/igt33/2026-10-29.jpg"; return json.dumps({"id": "c33"})
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    if url.endswith("/178/media_publish"): assert body == {"creation_id": "c33"}; return json.dumps({"id": "m33"})
+    raise AssertionError(url)
+H.http, H.tg = http33, (lambda method, **p: t33.append((method, p)) or {"message_id": 1})
+s33 = {}; time.time = lambda: TK("2026-10-29 22:40"); H.ig_test(s33)
+r33 = json.load(open("docs/cards/igt33/2026-10-29.json"))
+assert os.path.exists("docs/cards/igt33/2026-10-29.jpg") and not os.path.exists("docs/cards/igt33/2026-10-29.png") and not c33 and not t33  # 카드만(인스타 API X)
+assert TK("2026-10-29 22:40") + 900 <= r33["at"] <= TK("2026-10-29 22:40") + 1200 and r33["v"] == {k: s33["igvar"][k] for k in ("pal", "head", "band")}
+th33, hd33 = H.ig_theme(r33["v"]); im33 = __import__("PIL.Image", fromlist=["Image"]).open("docs/cards/igt33/2026-10-29.jpg").convert("RGB")
+assert max(abs(a - b) for a, b in zip(im33.getpixel((8, 8)), th33["accent"] if th33["band"] else th33["bg"])) < 12, (im33.getpixel((8, 8)), th33)  # 카드에 변주 색·띠
+time.time = lambda: TK("2026-10-29 22:54"); H.ig_test(s33); assert not c33 and not t33  # 14분 = 아직(15~20분)
+time.time = lambda: r33["at"] + 60; H.ig_test(s33)
+assert [m for _, m in c33] == ["HEAD", "POST", None, "POST"] and len(t33) == 1 and t33[0][1]["chat_id"] == H.ADMIN and t33[0][1]["text"].startswith("📸 인스타 테스트 1건 게시 완료 — 변주 "), (c33, t33)
+assert all(u.startswith((H.IG, H.SITE)) for u, _ in c33)  # 인스타·사이트 확인만(텔레그램 채널·Threads X)
+(cp33,) = cap33; L33 = cp33.split("\n")
+assert L33[0] == H.DISCLOSURE and L33[1] == "" and L33[2:4] == ["오늘 밤엔 이 정도면 살 만한 듯", "휴지 떨어진 집 손 ㅋㅋ"] and L33[4] == "" and "10월 29일 오늘의 핫딜 모음" in cp33, cp33  # 대가성 문구 첫 줄 → 사람 멘트 → 원래 캡션
+assert len(re.findall(r"#", cp33)) <= 5 and not any(re.search(H.VOICE_YO, x) for x in L33[2:4])
+assert json.load(open("docs/cards/igt33/2026-10-29.json"))["st"] == "done" and s33["igt_2026-10-29"]["id"] == "m33"
+c33.clear(); t33.clear(); H.ig_test(s33); H.ig_test({}); assert not c33 and not t33  # 1건만(seen을 잃어도 커밋된 기록으로)
+# 실패(code 4·2207051) = 관리봇 1번, 다시 시도 X · 지난 날짜 X
+open("igt33.txt", "w").write("2026-10-30\n"); json.dump([dict(p, t=p["t"].replace("10-29", "10-30")) for p in ps33], open("posts33.json", "w"), ensure_ascii=False)
+f33["post"] = '{"error":{"message":"spam","code":4,"error_subcode":2207051}}'
+s33 = {}; time.time = lambda: TK("2026-10-30 21:10"); H.ig_test(s33); time.time = lambda: TK("2026-10-30 21:40"); H.ig_test(s33)
+assert len(t33) == 1 and t33[0][1]["text"].startswith("⚠️ 인스타 테스트 실패(다시 시도 X) — 컨테이너 ") and "2207051" in t33[0][1]["text"] and json.load(open("docs/cards/igt33/2026-10-30.json"))["st"] == "fail", t33
+c33.clear(); t33.clear(); time.time = lambda: TK("2026-10-30 22:40"); H.ig_test(s33); H.ig_test({}); assert not c33 and not t33  # 다시 X
+time.time = lambda: TK("2026-11-02 21:40"); H.ig_test({}); assert not c33 and not t33  # 지난 날짜 = 아무것도 X
+del H.E["IG_TOKEN"]; time.time = lambda: TK("2026-10-30 21:40"); open("igt33.txt", "w").write("2026-10-30\n"); shutil.rmtree("docs/cards/igt33"); H.ig_test({}); assert not os.path.exists("docs/cards/igt33")  # 토큰 없으면 X
+(H.ai_json, H.http, H.tg, H.POSTS, H.IG_TEST, H.IG_TEST_DIR, time.time, H.time.sleep, ie33) = sv33
+for k33, v33 in ie33.items():
+    H.E.pop(k33, None) if v33 is None else H.E.update({k33: v33})
+for f33x in ("posts33.json", "igt33.txt"):
+    os.remove(f33x)
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

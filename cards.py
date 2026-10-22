@@ -34,19 +34,26 @@ def wrap(d, text, f, width, max_lines=2):
     return lines + ([cur.rstrip()] if cur.strip() else [])
 
 
-def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 가성비 딜", png=True):
+def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 가성비 딜", png=True, theme=None):
     """오늘의 딜 카드(1080x1350, 릴스와 같은 크림·먹색·숫자 포인트색 디자인). items: 딜 제목 문자열 또는 {"title", "unit"} (최대 CARD_N개). -> out
-    시간대 카드(인스타 하루 3번, 10/11~)는 head·label만 다르고 png=False(인스타는 JPEG만 — 사이트 카드 칸은 하루 카드 .png만 봄)."""
-    im = Image.new("RGB", (W, H), CREAM)
+    시간대 카드(인스타 하루 3번, 10/11~)는 head·label만 다르고 png=False(인스타는 JPEG만 — 사이트 카드 칸은 하루 카드 .png만 봄).
+    theme = 인스타 카드 변주(10/22 진우 '같은 템플릿 반복 X'): {"bg": 바탕색, "accent": 포인트색, "band": 머리 칸을 포인트색 띠로(글자 흰색)} — 없으면 기본."""
+    th = theme or {}
+    bg, accent = tuple(th.get("bg") or CREAM), tuple(th.get("accent") or ACCENT)
+    im = Image.new("RGB", (W, H), bg)
     d = ImageDraw.Draw(im)
-    d.text((X0, 84), f"{date_label}  ·  {label}", font=pf("SemiBold", 34), fill=SUB)
-    f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 84), "핫딜픽", font=f, fill=ACCENT)
-    d.text((X0, 136), head, font=pf("ExtraBold", 76), fill=INK2)
-    d.rectangle((X0, 262, W - X0, 264), fill=LINE)
+    top, ink, sub = (accent, (255, 255, 255), (255, 255, 255)) if th.get("band") else (None, INK2, SUB)
+    if top:
+        d.rectangle((0, 0, W, 270), fill=top)
+    d.text((X0, 84), f"{date_label}  ·  {label}", font=pf("SemiBold", 34), fill=sub)
+    f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 84), "핫딜픽", font=f, fill=ink if top else accent)
+    d.text((X0, 136), head, font=pf("ExtraBold", 76), fill=ink)
+    d.rectangle((X0, 262, W - X0, 264), fill=top or LINE)
+    ACC = accent
     y = 292
     for n, it in enumerate([{"title": i} if isinstance(i, str) else i for i in items][:CARD_N], 1):
         store, name, price = parse(it["title"])
-        d.text((X0, y), f"{n:02d}", font=pf("ExtraBold", 34), fill=ACCENT)
+        d.text((X0, y), f"{n:02d}", font=pf("ExtraBold", 34), fill=ACC)
         if store:
             d.text((X0 + 68, y + 4), store, font=pf("SemiBold", 28), fill=SUB)
         d.text((X0, y + 44), wrap(d, name, pf("Bold", 40), W - 2 * X0, 1)[0] if name else "", font=pf("Bold", 40), fill=INK2)
@@ -58,7 +65,7 @@ def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 
             fs, unit = pf("SemiBold", 30), (it.get("unit") or "").strip()
             ship = "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else ship.strip()
             if unit:  # 단위가격은 포인트색, 배송은 회색
-                d.text((x, y + 112), unit, font=fs, fill=ACCENT)
+                d.text((x, y + 112), unit, font=fs, fill=ACC)
                 x += d.textlength(unit + "  ", font=fs)
             if ship:
                 d.text((x, y + 112), ("·  " if unit else "") + ship, font=fs, fill=SUB)
@@ -67,7 +74,7 @@ def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 
             d.rectangle((X0, y - 14, W - X0, y - 13), fill=LINE)
     d.rectangle((X0, H - 200, W - X0, H - 198), fill=LINE)
     d.text((X0, H - 170), "전체 딜 · 구매 링크", font=pf("SemiBold", 32), fill=INK2)
-    f = pf("Bold", 40); d.text((W - X0 - d.textlength("hotdealpick.kr", font=f), H - 176), "hotdealpick.kr", font=f, fill=ACCENT)
+    f = pf("Bold", 40); d.text((W - X0 - d.textlength("hotdealpick.kr", font=f), H - 176), "hotdealpick.kr", font=f, fill=ACC)
     d.text((X0, H - 112), "실시간 알림 t.me/hotdeal_pick  ·  블로그 blog.naver.com/hotdeal_pick", font=pf("Regular", 26), fill=SUB)
     d.text((X0, H - 66), "일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요. 가격·재고는 게시 시점 기준.", font=pf("Regular", 22), fill=SUB)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)

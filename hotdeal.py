@@ -2745,6 +2745,91 @@ def playlist(seen):
 
 
 IG_AUTO = False  # 10/17 23시 진우 '인스타 자동 게시 멈춤'(3일 연속 code 4·2207051 스팸 의심 차단 · 카드 7개 좋아요 1 · 같은 계정에 묶인 Threads 보호, 10/31 다시 판단): 카드(12·18·21시)·넘기기·릴스·다시 올리기 컨테이너·발행 전부 X, 남은 컨테이너는 발행 없이 지움 — 21시 카드 이미지·사이트·Threads 카드·metrics 인스타 읽기는 그대로. True = 다시 켬
+IG_HUMAN = IG_AUTO  # 10/22 22시 진우 '사람처럼': 정기 카드 게시에도 ±15~20분 무작위 지연(IG_JITTER) + 카드 변주(ig_variant) + 사람 멘트 캡션(ig_human) — IG_AUTO 켤 때 같이(10/31 판단)
+IG_TEST, IG_TEST_DIR, IG_JITTER = "ig_test.txt", "igt", (15 * 60, 20 * 60)  # 인스타만 1번 테스트(ig_test): 날짜 한 줄 = 그날 하루 카드를 변주·지연·사람 멘트로 1건(실패해도 다시 X)
+IG_THEMES = {"pal": [((246, 244, 239), (255, 84, 28)), ((250, 250, 250), (37, 99, 235)), ((238, 246, 240), (22, 128, 74)), ((247, 242, 250), (124, 58, 237))],  # 0 = 지난주 막힌 카드(크림·주황)
+             "head": ["오늘 살 만한 딜", "오늘 밤 살 만한 딜", "자기 전에 볼 딜", "오늘 고른 가성비 딜", "지금 담아둘 만한 딜"], "band": [False, True]}
+IG_HUMAN_POOL = ("오늘 밤엔 이 정도면 살 만한 듯", "생필품 떨어진 집은 한번 볼 만함", "필요한 거 있으면 이참에 담아 둘 만함", "자기 전에 한 번 훑어보기 좋은 구성",
+                 "가격 괜찮은 것만 골라 봄", "이번 주 장바구니 채울 때 참고용", "급한 거 아니면 천천히 비교하고 사도 됨", "쟁여 두는 거 좋아하면 체크해 둘 만함")  # Claude 실패 때 대신(~요·경험담·클릭 유도 X)
+IG_HUMAN_PROMPT = """인스타 '오늘의 딜 카드' 게시글 아래에 붙일 짧은 멘트를 사람이 직접 쓰듯 2~3줄 써 주세요. 아래 '오늘 카드 딜'에 있는 사실만(없는 숫자 X).
+- {style}. 해요체 X('~요'로 끝나는 말 쓰지 않기). 줄마다 문장 틀을 다르게, 짧은 조각 문장도 OK. 이모지는 전체 0~1개.
+- 결 예시(그대로 쓰지 말고 비슷한 느낌만): 오늘 밤엔 이 정도면 살 만한 듯 / 휴지 떨어진 집 손 ㅋㅋ
+- 써 본 척(샀는데·써보니·나도 등), 효능·건강 말, 과장(역대급·무조건), 클릭·링크·프로필·팔로우 유도, 해시태그, 광고·수수료 말은 쓰지 않기.
+- '최근 멘트'와 다른 문장으로."""
+
+
+def ig_variant(seen):
+    """인스타 카드 변주: 직전 회차(처음이면 지난주 막힌 기본 카드)에서 표지 문구·배치(머리 띠)·색 조합 중 1~2개를 바꿈(같은 템플릿 반복 = 스팸 신호 줄이기, 10/22 진우).
+    -> {"pal", "head", "band"} 번호(seen igvar에 기록) — cards.make theme·head는 ig_theme로."""
+    prev = seen.get("igvar") or {"pal": 0, "head": 0, "band": 0}
+    while True:
+        v = dict(prev)
+        for k in random.sample(sorted(IG_THEMES), random.choice((1, 2))):
+            v[k] = random.choice([i for i in range(len(IG_THEMES[k])) if i != prev.get(k)])
+        if v != {"pal": 0, "head": 0, "band": 0}:  # 지난주 막힌 카드와 똑같은 모양은 X
+            seen["igvar"] = {**v, "t": time.time()}
+            return v
+
+
+def ig_theme(v):
+    """ig_variant 번호 -> (cards.make theme, 표지 문구)."""
+    bg, accent = IG_THEMES["pal"][v["pal"]]
+    return {"bg": bg, "accent": accent, "band": IG_THEMES["band"][v["band"]]}, IG_THEMES["head"][v["head"]]
+
+
+def ig_human(seen, ps):
+    """인스타 캡션 대가성 문구 아래 사람 멘트 2~3줄(10/22 진우 '사람이 표현하는 다양한 멘트'): Claude(반말·음슴체 무작위, th_voice 규칙 — ~요·써 본 척·클릭 유도 X,
+    재료에 없는 금액 X, 이모지 0~1, 최근 멘트와 다른 문장) — 2줄 못 채우면 IG_HUMAN_POOL에서(최근 것 빼고). 쓴 멘트는 seen ighum(최근 20개)."""
+    recent = seen.get("ighum", {}).get("l", [])
+    facts = "\n".join(f"- {list_name(p, False)}" for p in ps)
+    money = lambda x: set(re.findall(r"\d[\d,]*(?=\s*원)", x))
+    ok = lambda x: x and len(x) <= 60 and not x.startswith(VOICE_LABEL) and x not in recent and not re.search(VOICE_YO, x) and not re.search(VOICE_BAN, x) \
+        and not re.search(r"링크|클릭|눌러|프로필|팔로우|광고|수수료|댓글|저장|#", x) and money(x) <= money(facts)
+    lines = []
+    try:
+        a = ai_json(IG_HUMAN_PROMPT.format(style=random.choice(VOICE_STYLE["A"].split(".")[:1] + VOICE_STYLE["B"].split(".")[:1]))
+                    + f"\n\n오늘 카드 딜:\n{facts}" + ("\n\n최근 멘트: " + " / ".join(recent[-8:]) if recent else ""), {"lines": {"type": "array", "items": {"type": "string"}}})
+        lines = [x for x in (re.sub(r"\s+", " ", str(x)).strip() for x in a.get("lines") or []) if ok(x)][:3]
+    except Exception as e:
+        print("ig human 기본 멘트로", clip(repr(e), 120))
+    if len(lines) < 2:
+        lines = random.sample([x for x in IG_HUMAN_POOL if x not in recent] or list(IG_HUMAN_POOL), 2)
+    if sum(len(re.findall(VOICE_EMOJI, x)) for x in lines) > 1:  # 이모지 0~1개 -> 넘으면 다 뺌
+        lines = [x for x in (re.sub(r"\s{2,}", " ", re.sub(VOICE_EMOJI, "", x)).strip() for x in lines) if x]
+    seen["ighum"] = {"t": time.time(), "l": (recent + lines)[-20:]}
+    return lines
+
+
+def ig_caption(seen, stem, human=False, ps=None):
+    """인스타 카드 캡션: card_caption 그대로, human이면 대가성 문구(첫 줄·공정위) 바로 아래에 사람 멘트 2~3줄(ig_human)."""
+    cap = card_caption(stem)[1]
+    if not human:
+        return cap
+    notes, _, rest = cap.partition("\n\n")
+    ps = ps if ps is not None else [p for _, p in card_order(load(POSTS, []), stem)[:CARD_N]]
+    return (notes + "\n\n" + "\n".join(ig_human(seen, ps)) + "\n\n" + rest)[:2200]
+
+
+def ig_card_copy(seen, day, out):
+    """그날 하루 카드(21시 카드와 같은 딜·순서)를 변주(ig_variant)로 인스타용 사본 out(.jpg로 저장 — 텔레그램·사이트 하루 카드는 그대로) -> 변주 번호, 딜 IG_MIN개 미만이면 None."""
+    order = card_order(load(POSTS, []), day)
+    if len(order) < IG_MIN:
+        return None
+    import cards
+    v = ig_variant(seen)
+    theme, head = ig_theme(v)
+    ct = toss_list([p for _, p in order[:CARD_N]])
+    cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{int(day[5:7])}월 {int(day[8:10])}일", out, head=head, png=False, theme=theme)
+    return v
+
+
+def ig_due(seen, key, base):
+    """인스타 게시 무작위 지연: base(이번 회차 시작) + IG_JITTER 사이 아무 때(회차마다 1번 정해 seen에) -> 이 시각 전엔 컨테이너 X."""
+    if key not in seen:
+        seen[key] = {"t": base, "at": base + random.uniform(*IG_JITTER)}
+    return seen[key]["at"]
+
+
 IG_LIVE = "docs/cards/ig.json"  # 인스타에 올리는(컨테이너 만든)·올라간 카드 {카드 이름: 시각} — 사이트 맨 위 카드 딜이 인스타 게시물과 같은 번호(build_site.card_stems)
 
 
@@ -2923,7 +3008,7 @@ def ig_carousel(seen, tok, uid, now):
         v, stem = seen[k], k[4:]
         sts = [json.loads(http(f"{IG}/{c}?fields=status_code", headers=h))["status_code"] for c in v["kids"]]
         if all(st == "FINISHED" for st in sts):
-            c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": card_caption(stem)[1]}, h, "POST"))
+            c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": ig_caption(seen, stem, IG_HUMAN)}, h, "POST"))
             seen.pop(k)
             seen["igc_" + c["id"]] = {"t": now, "card": stem}
             print("ig carousel", stem, len(v["kids"]), "장")
@@ -3003,15 +3088,23 @@ def ig_cards(seen):
             os.makedirs("docs/cards", exist_ok=True)
             json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
             ct = toss_list([p for _, p in order[:CARD_N]])
+            theme, head = ig_theme(ig_variant(seen)) if IG_HUMAN else (None, IG_SLOTS[h])
             cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
-                       head=IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False)
+                       head=head if IG_HUMAN and head != IG_THEMES["head"][0] else IG_SLOTS[h], label=f"{SLOT_NAMES[str(h)]} 핫딜", png=False, theme=theme)
             if IG_CAROUSEL:
                 deal_slides(stem, [p for _, p in order])
             print("ig card", stem, f"만듦 {len(order)}개")
             return
         if not os.path.exists(jpg):  # 21시: 모아보기(digest)가 아직 카드를 안 만듦
             continue
+        if IG_HUMAN and now < ig_due(seen, "igd_" + stem, kst_ts(f"{today} {h:02d}:00")):  # 회차 시각 + 15~20분 무작위 뒤에 컨테이너
+            continue
         url, d = f"{SITE}cards/{stem}.jpg", f"docs/cards/{stem}"
+        if IG_HUMAN and h == 21:  # 하루 카드는 텔레그램·사이트와 같은 그림 -> 인스타엔 변주 사본(만든 실행 다음에 올림)
+            if not os.path.exists(f"docs/cards/igv/{stem}.jpg"):
+                ig_card_copy(seen, stem, f"docs/cards/igv/{stem}.png")
+                continue
+            url = f"{SITE}cards/igv/{stem}.jpg"
         slides = [f"{SITE}cards/{stem}/{f}" for f in sorted(os.listdir(d)) if re.fullmatch(r"\d\d\.jpg", f)] if IG_CAROUSEL and os.path.isdir(d) else []
         try:
             for u in [url] + slides[-1:]:
@@ -3025,7 +3118,7 @@ def ig_cards(seen):
             if slides:  # 넘기기: 조각(캡션 X) -> 다 처리되면 묶음(ig_carousel)
                 seen["igk_" + stem] = {"t": now, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in [url] + slides]}
             else:
-                c = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": card_caption(stem)[1]}, auth, "POST"))
+                c = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": ig_caption(seen, stem, IG_HUMAN)}, auth, "POST"))
         except Exception as e:
             seen["igs_" + stem] = {"t": now, "fail": fail + 1}  # 다음 실행에 다시(IG_TRIES번까지)
             raise RuntimeError(f"인스타 카드 컨테이너 실패({fail + 1}/{IG_TRIES}) — " + ("다음 실행에 다시" if fail + 1 < IG_TRIES else f"{url} 카드를 직접 올려줘") + f": {e!r} {getattr(e, 'body', '') or ''}")
@@ -3034,6 +3127,72 @@ def ig_cards(seen):
         ig_live(stem, now)
         print("ig card", stem, f"넘기기 조각 {len(slides) + 1}장" if slides else "컨테이너")
     ig_carousel(seen, tok, uid, now)  # 이번에 만든 조각(이미지는 보통 바로 처리 끝)
+
+
+def ig_test(seen):
+    """인스타만 1건 테스트(10/22 22시 진우 — 텔레그램·Threads 그대로, IG_AUTO 정기 게시는 그대로 멈춤): ig_test.txt 날짜 = 오늘(밤 3시까지는 어제 날짜도)이면
+    1) 그날 하루 카드(21시 카드와 같은 딜·순서)를 변주(ig_variant)로 다시 그려 docs/cards/igt/에(워크플로가 커밋 -> 사이트 공개), 게시 시각 = 지금 + 15~20분 무작위(IG_JITTER)
+    2) 그 시각 뒤 실행에서 사이트에 뜨면 컨테이너(캡션 = 대가성 문구 + 사람 멘트 ig_human + 원래 캡션) -> 처리 끝나면(최대 30초 봄) 바로 발행, 아직이면 다음 실행에 발행
+    3) 결과(성공·실패 코드)를 관리봇에 1번. 실패(code 4·2207051 등)·오류는 다시 시도 X — 기록(docs/cards/igt/날짜.json + seen)이 있으면 다시 안 함."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    day = open(IG_TEST).read().strip() if os.path.exists(IG_TEST) else ""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    if not day or not (tok and uid) or day not in (time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(now + 6 * 3600))):  # 오늘 · 밤 3시까지는 어제 날짜도
+        return
+    rec = f"docs/cards/{IG_TEST_DIR}/{day}.json"
+    r = {**seen.get("igt_" + day, {}), **load(rec, {})}
+    if r.get("st"):
+        return
+    def save():
+        os.makedirs(os.path.dirname(rec), exist_ok=True)
+        json.dump(r, open(rec, "w"), ensure_ascii=False)
+        seen["igt_" + day] = dict(r)
+    def done(ok, msg):
+        r.update(st="done" if ok else "fail", end=now, msg=msg)
+        save()
+        tg("sendMessage", chat_id=ADMIN, text=("📸 인스타 테스트 1건 게시 완료 — " if ok else "⚠️ 인스타 테스트 실패(다시 시도 X) — ") + msg)
+        print("ig test", r["st"], msg)
+    if not r:
+        v = ig_card_copy(seen, day, f"docs/cards/{IG_TEST_DIR}/{day}.png")
+        if v is None:
+            return done(False, f"{day} 딜 {IG_MIN}개 미만 — 카드 X")
+        r.update(t=now, at=ig_due(seen, "igtd_" + day, now), v=v)
+        save()
+        print("ig test 카드 만듦", v, f"· {round((r['at'] - now) / 60)}분 뒤부터 게시")
+        return
+    if now < r["at"]:
+        print("ig test 대기", f"{round((r['at'] - now) / 60)}분 남음")
+        return
+    h, url = {"Authorization": "Bearer " + tok}, f"{SITE}cards/{IG_TEST_DIR}/{day}.jpg"
+    err = lambda e: f"{e!r} {getattr(e, 'body', '') or ''}"[:300]
+    if not r.get("c"):
+        try:
+            http(url, method="HEAD")  # 아직 배포 전이면 다음 실행에
+        except Exception:
+            return
+        try:
+            r["c"] = json.loads(http(f"{IG}/{uid}/media", {"image_url": url, "caption": ig_caption(seen, day, True)}, h, "POST"))["id"]
+            r["ct"] = now
+            save()
+        except Exception as e:
+            return done(False, "컨테이너 " + err(e))
+    try:
+        for k in range(3):
+            st = json.loads(http(f"{IG}/{r['c']}?fields=status_code", headers=h))["status_code"]
+            if st != "IN_PROGRESS" or k == 2:
+                break
+            time.sleep(10)
+        if st == "IN_PROGRESS" and now - r["ct"] < KIDS_WAIT:
+            print("ig test 처리 중 -> 다음 실행에 발행")
+            return
+        if st != "FINISHED":
+            return done(False, f"컨테이너 처리 {st}")
+        pid = json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": r["c"]}, h, "POST")).get("id")
+    except Exception as e:
+        return done(False, "발행 " + err(e))
+    r["id"] = pid
+    done(True, f"변주 {r['v']} · 게시 {time.strftime('%H:%M', kst)}(카드 {time.strftime('%H:%M', time.gmtime(r['t'] + 9 * 3600))} + {round((now - r['t']) / 60)}분) · instagram.com/hotdealpick.kr")
 
 
 def ig_repost(seen):
@@ -4396,7 +4555,7 @@ def main():
         post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use")})
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics):
         try:
             step(seen)
         except Exception as e:
