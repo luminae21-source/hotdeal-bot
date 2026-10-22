@@ -85,6 +85,12 @@ def mall_title(lines, i):
     return f"[{MALL_TAG[m[1]]}] {lines[i + 1].strip()}" + (f" ({price})" if price else "")
 
 
+def steady_st(text):
+    """👍 꾸준템 가격 줄의 '한 달 N명+ 구매 · 리뷰 N' — 제목(mall_title)엔 안 넣으니 딜 페이지·설명에 따로(10/22 리뷰)."""
+    m = re.search(r"^🚀 쿠팡[^\n]* 👍\n[^\n]*\n([^\n]*)", text, re.M)
+    return " · ".join(s.strip() for s in m[1].split(" · ") if re.match(r"(?:한 달|리뷰) ", s.strip())) if m else ""
+
+
 def split_title(text):
     """(제목, 제목 아래 본문, 잘라낸 UTF-16 길이). 본문에 제목이 한 번 더 나오지 않게 제목 줄까지 잘라냄.
     몰별 글(💙 토스 특가 · … / 🚀 쿠팡 로켓 · …)은 머리·상품명·가격 세 줄 = 제목 '[몰] 상품명 (가격)'."""
@@ -559,7 +565,7 @@ def deal_card(i, p):
     title, rest, cut = split_title(p["text"])
     store, name, price = parse(title)
     body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
-    url, sv, u = f"{BASE}p/{i}.html", saving(p["text"]), unit_of(p)
+    url, sv, u = f"{BASE}p/{i}.html", saving(p["text"]), " · ".join(x for x in (unit_of(p), steady_st(p["text"])) if x)  # 👍 = 한 달 구매·리뷰도
     if community(p.get("url")):  # 원글로 가는 버튼이면 이름을 정확히 + 원글이 지워져도 찾을 수 있게
         btn = (f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow noopener" target="_blank">📄 원글에서 구매 링크 보기</a>'
                f'<a class="btn2" href="{html.escape(find_url(title))}" rel="nofollow noopener" target="_blank">🔎 원글이 안 열리면 같은 상품 찾기</a>')
@@ -595,7 +601,7 @@ def seo(i, p):
 
 def summary(text):
     """검색 결과·RSS에 보일 설명: 제목 아래 코멘트 줄들(출처·🏆 배지 줄 빼고 한 줄로). 대가성 문구·제목 반복은 안 넣음(10/9 '구글·네이버 조회가 잘 안 돼')."""
-    return " ".join(l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기")))[:150]
+    return " ".join([steady_st(text)] * bool(steady_st(text)) + [l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기"))])[:150]
 
 
 def steady_page(out):

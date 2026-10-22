@@ -688,7 +688,8 @@ def is_toss(url, text=""):
     return bool(toss_share(url or "") or re.search(r"(^|\n)(?:(?:\[광고\][^\n]*\n)?[^\n]*" + TOSS_TAG + "|💙 토스 특가)", text[:400]))
 
 
-STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d)(?![\d,]*\s*(?:원|%))"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'리뷰 1,969' — 숫자로 쓴 것만)
+STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)(?![\d,.]*\s*[천만]?\s*(?:원|%))(?:\s*개)?"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'한 달 1만명+'·'리뷰 1,969(개)'·'리뷰 1.6만' — 쿠팡은 만 단위가 많음, 10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 만원·% 숫자 X
+steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만" in x else 1000 if "천" in x else 1))  # '1.6만' -> 16000
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
 
@@ -775,7 +776,7 @@ def mall_view(body, url):
         more = re.sub(r"^\s*(?:·|—)\s*", "", u[2]).strip()  # (HTML에서 꺼낸 글자 -> mall_body가 다시 이스케이프)
         rest, line = rest[:u.start()] + (f"\n💡 {more}" if more else "") + rest[u.end():], f"{line} → {re.sub(r'^1?개당 ', '1개 ', html.unescape(u[1]))}"
     if m[1] == "👍":  # 10/22 진우 👍 꾸준템: 가격 줄 = 가격 · 한 달 N명+ 구매 · 리뷰 N(글에 있는 숫자만), 그 숫자만 있던 줄은 뺌(두 번 X)
-        st = [f"한 달 {n[1]}명+ 구매" for n in [re.search(STEADY_BUY, plain)] if n] + [f"리뷰 {n[1]}" for n in [re.search(STEADY_REV, plain)] if n]
+        st = [f"한 달 {re.sub(r'\s', '', n[1])}명+ 구매" for n in [re.search(STEADY_BUY, plain)] if n] + [f"리뷰 {re.sub(r'\s', '', n[1])}" for n in [re.search(STEADY_REV, plain)] if n]
         line += "".join(f" · {x}" for x in st)
         rest = "\n".join(l for l in rest.split("\n") if not (st and re.search(f"{STEADY_BUY}|{STEADY_REV}", plain_of(l)) and re.fullmatch(r"[\W_]*", re.sub(f"{STEADY_BUY}|{STEADY_REV}", "", plain_of(l)))))
     line += "".join(f" · {x.strip()}" for x in (extra, ship) if x.strip())
@@ -785,7 +786,7 @@ def mall_view(body, url):
         i = rest.find("\n\n출처: ")
         i = len(rest) if i < 0 else i
         rest = rest[:i] + f"\n⚠️ 결제 전 최종가 ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시)" + rest[i:]
-    return mall_body(mall, "" if m[1] == "🛒" else "꾸준히 팔리는 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(r"로켓|새벽\s*도착", plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만
+    return mall_body(mall, "" if m[1] == "🛒" else "꾸준히 팔리는 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착", plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만('로켓배송 아님' X — 10/22 리뷰)
 
 
 def toss_when(t=None):
@@ -1603,45 +1604,46 @@ STEADY_AT, STEADY_END, STEADY_DAYS, STEADY_N, STEADY_MIN_BUY, STEADY_FILE = "19:
 
 
 def steady_cands(seen, now):
-    """👍 꾸준템 리스트 후보(수수료 링크만, 같은 링크·이름 1번, 최대 STEADY_N): ① 최근 STEADY_DAYS일 진우 👍 글(최근 것부터, 품절 표시 X)
-    → ② 잘 된 상품 표(top.json 순서 — 토스 = 상세 API로 지금 가격·리뷰·품절, 그 밖 = 같은 링크 채널 글의 가격·숫자) → ③ 진우 🛒 중 한 달 STEADY_MIN_BUY명+ 구매(많은 순).
+    """👍 꾸준템 리스트 후보(수수료 링크만, 같은 링크·이름 1번, 최대 STEADY_N): ① 최근 STEADY_DAYS일 진우 👍 글(최근 것부터)
+    → ② 잘 된 상품 표(top.json 순서 — 토스 = 상세 API로만 지금 가격·리뷰·품절(id = 표 키·우리 쉐어링크·1일 목록 이름, 못 찾으면 뺌), 그 밖 = 같은 링크 최근 채널 글의 가격·숫자)
+    → ③ 진우 🛒 중 한 달 STEADY_MIN_BUY명+ 구매(많은 순). 채널 글에서 가져온 가격이 오늘 글이 아니면 '(M/D 글 가격)'(리스트 게시 시점 줄과 안 맞게 X).
     -> [{"n": 이름, "p": 가격, "st": '한 달 N명+ 구매'·'리뷰 N'·'', "u": 채널 링크, "tu": Threads 링크, "i": posts 번호(없으면 None)}]
-    shortcut: 쿠팡 판매 중 확인은 못 함(쿠팡 API 승인 전) — 토스만 품절 거름."""
-    posts = load(POSTS, [])
-    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - STEADY_DAYS * 86400))
-    gone = {int(k[5:]) for k, v in seen.items() if k.startswith("sold_") and k[5:].isdigit() and isinstance(v, dict) and any(x[4] for x in v.get("it", []))}  # 품절 표시된 채널 글
-    num = lambda x: int(x.replace(",", ""))
+    shortcut: 쿠팡 판매 중 확인은 못 함(쿠팡 API 승인 전) — 토스만 API로 품절 거름(토스 채널 글은 후보 X — 품절 기록이 그날만 남아서)."""
+    posts, kst = load(POSTS, []), time.gmtime(now + 9 * 3600)
+    today, since = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - STEADY_DAYS * 86400))
+    tossy, sp, norm = lambda u: urllib.parse.urlsplit(u or "").netloc in TOSS_HOSTS, lambda x: re.sub(r"\s", "", x), lambda x: re.sub(r"\W", "", str(x or "").lower())
     def item(i):
         p = posts[i]
         _, name, price = parse(title_of(p["text"]))
-        b, r = re.search(STEADY_BUY, p["text"]), re.search(STEADY_REV, p["text"])
-        return {"n": name, "p": price.split("/")[0].strip(), "st": f"한 달 {b[1]}명+ 구매" if b else f"리뷰 {r[1]}" if r else "", "u": p["url"], "tu": th_url(p, i), "i": i}
-    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i]["t"] >= since and aff_note(posts[i].get("url") or "") and posts[i].get("mid") not in gone]
+        b, r, pr = re.search(STEADY_BUY, p["text"]), re.search(STEADY_REV, p["text"]), price.split("/")[0].strip()
+        return {"n": name, "p": pr and pr + ("" if p["t"][:10] == today else f" ({int(p['t'][5:7])}/{int(p['t'][8:10])} 글 가격)"),
+                "st": f"한 달 {sp(b[1])}명+ 구매" if b else f"리뷰 {sp(r[1])}" if r else "", "u": p["url"], "tu": th_url(p, i), "i": i}
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i]["t"] >= since and aff_note(posts[i].get("url") or "") and not tossy(posts[i].get("url"))]
     out = [item(i) for i in own if th_steady(posts[i]["text"])]
     tops = [x for x in load(TOP, {}).get("items", []) if aff_note(x.get("url") or "")]
-    ids = [int(str(x["key"])[5:]) for x in tops if str(x.get("key", "")).startswith("toss:")]
+    tu, tc = toss_ids(seen), {norm(c[1]): c[0] for c in seen.get("tosscache", {}).get("items", []) if len(c) > 1}
+    tid = lambda x: int(k[5:]) if (k := str(x.get("key", ""))).startswith("toss:") else tu.get(x["url"]) or tc.get(norm(k[6:] if k.startswith("tname:") else x.get("name")))
+    ids = list(dict.fromkeys(tid(x) for x in tops if tossy(x["url"]) and tid(x)))[:30]
     try:
-        det = {d["tacaItemId"]: d for d in (toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids[:30])))["items"] if ids and HAS_TOSS else [])}
+        det = {d["tacaItemId"]: d for d in (toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if ids and HAS_TOSS else [])}
     except Exception as e:  # 터널 끊김 등 = 토스 표 상품만 빼고 리스트는 그대로
         print("steady toss detail", repr(e))
         det = {}
     for x in tops:
-        k = str(x.get("key", ""))
-        if k.startswith("toss:"):
-            d = det.get(int(k[5:]))
+        if tossy(x["url"]):
+            d = det.get(tid(x))
             if d and not d.get("isSoldOut"):
                 out.append({"n": x.get("name") or d["displayName"], "p": f"{d['displayPrice']:,}원", "st": f"리뷰 {d['reviewCount']:,}" if d.get("reviewCount") else "", "u": x["url"], "tu": x["url"], "i": None})
-        elif (i := next((i for i in range(len(posts) - 1, -1, -1) if posts[i].get("url") == x["url"] and posts[i].get("mid") not in gone), None)) is not None:
+        elif (i := next((i for i in range(len(posts) - 1, -1, -1) if posts[i].get("url") == x["url"]), None)) is not None:
             out.append(item(i))
-    buys = lambda i: next((num(b[1]) for b in [re.search(STEADY_BUY, posts[i]["text"])] if b), 0)
+    buys = lambda i: next((steady_n(b[1]) for b in [re.search(STEADY_BUY, posts[i]["text"])] if b), 0)
     out += [item(i) for i in sorted((i for i in own if th_weak(posts[i]["text"]) and buys(i) >= STEADY_MIN_BUY), key=lambda i: -buys(i))]
     keep, us, ns = [], set(), set()
     for x in out:
-        n = re.sub(r"\W", "", x["n"].lower())
-        if x["p"] and x["u"] not in us and n not in ns:
+        if x["p"] and x["u"] not in us and norm(x["n"]) not in ns:
             keep.append(x)
             us.add(x["u"])
-            ns.add(n)
+            ns.add(norm(x["n"]))
     return keep[:STEADY_N]
 
 
@@ -2531,7 +2533,7 @@ def th_voice(seen, text, link, src=None):
             part = "새벽" if h < 6 else "오전" if h < 12 else "오후" if h < 18 else "저녁" if h < 21 else "밤"
             basis = f"가격은 바뀌니까 결제 전에 한번 확인 ({day} {part} {h % 12 or 12}시 기준)" if style == "A" else f"결제 전 가격 확인 필수 ({mo}/{d} {h}시 기준)"
         ask = style == "A" and st.get("k", 0) >= 1  # 질문 = A(반말)일 때만, 앞 질문 뒤 1개 쉬고 A면 -> 3개에 1개쯤
-        ban = VOICE_BAN + (f"|{TOSS_BAN}" if toss else "") + (r"|특가|최저(?!가?는\s*아니|가\s*아니)|할인" if steady else "")
+        ban = VOICE_BAN + (f"|{TOSS_BAN}" if toss else "") + (r"|특가|최저(?!가?는?\s*아[니닌님냐])|할인" if steady else "")
         yd, dated, flat = time.gmtime(time.time() + 9 * 3600 - 86400), {}, set()  # 날짜 붙은 숫자(10/22 Cowork: '10/21 쿠팡 검색 기준 469원'이 날짜 없이 '오늘 10시 기준' 글에 — 어제 숫자가 오늘 숫자처럼)
         for l in facts:  # 가격 확인 시각 '(10/22 10시 가격)'은 숫자 날짜가 아님
             ds = set(re.findall(r"(?<![\d/])\d{1,2}/\d{1,2}(?![\d/])|어제|그제", re.sub(r"\(\d{1,2}/\d{1,2} \d{1,2}(?::\d{2})?시?(?: 가격)?\)", "", l)))
@@ -3220,7 +3222,7 @@ TH_BEAUTY_NOT = r"충전기|케이블|카트리지|프린터|살균기|선풍기
 def th_tier(plain):
     """Threads 개별 글감 순위: 1 = 쿠팡 같은 상품 대비 N원 쌈이 확실한 🔥('같은 상품…보다 N원 쌈', TH_SOLO_SAVE원↑) · 2 = 30일 최저가·순위 1~TH_SOLO_RANK위
     · 0 = 리스트로(🛒 약한 딜·단위가격 참고만·나머지)."""
-    if th_weak(plain):
+    if th_weak(plain) or th_steady(plain):  # 👍 꾸준템 = 순위가 있어도 강한 딜(①②) X — TOP 리스트 앞자리·놓친 ①② 이월 X(10/22 리뷰)
         return 0
     m = re.search(rf"({SAVE_STORES})\s*같은 상품[^\n—]*?보다\s*([\d,]+)원\s*쌈", plain)
     if m and int(m.group(2).replace(",", "")) >= TH_SOLO_SAVE:
@@ -3270,9 +3272,9 @@ def jw_beauty(seen, now):
     19:00 진우 링크가 19:04 실행의 뷰티 회차에 자리를 뺏기던 것)."""
     kst = time.gmtime(now + 9 * 3600)
     today, nowk, since = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d %H:%M", kst), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 6 * 3600))
-    if any(p.get("own") and not p.get("th") and p["t"] >= max(since, today) and aff(p.get("url")) and not th_weak(p["text"]) and th_beauty(title_of(p["text"])) for p in load(POSTS, [])):
+    if any(p.get("own") and not p.get("th") and p["t"] >= max(since, today) and aff(p.get("url")) and not th_weak(p["text"]) and not th_steady(p["text"]) and th_beauty(title_of(p["text"])) for p in load(POSTS, [])):  # 👍는 화장품 자리를 안 가져감(threads_deals) -> 대신 막지도 X
         return True
-    return any(e["at"].startswith(today) and (e.get("api") or (e.get("deal") and aff(e.get("url")))) and not th_weak(plain_of(e.get("text") or ""))
+    return any(e["at"].startswith(today) and (e.get("api") or (e.get("deal") and aff(e.get("url")))) and not th_weak(plain_of(e.get("text") or "")) and not th_steady(plain_of(e.get("text") or ""))
                and th_beauty(e.get("name") or title_of(plain_of(e.get("text") or "")))
                and (e["at"] >= nowk or (e.get("api") and e["at"] >= since and seen.get("pk_" + e["at"], {}).get("st") not in ("done", "skip"))) for e in load(EVENTS, []))
 
@@ -3558,7 +3560,7 @@ def wx_deals(seen, words, n=3, deny=None):
         name, won = re.sub(r"\s*\((?=[^()]*(?:\d|무료|무배))[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)'·'(무료)' 같은 가격·배송 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
         if ok(name):
             out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"] if aff(p.get("url")) else None, "i": i,
-                        "hot": not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
+                        "hot": not th_weak(p["text"]) and not th_steady(p["text"]), "steady": th_steady(p["text"]) and not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
     cand = {}
     for k, v in seen.items():
         if HAS_TOSS and k.startswith("sold_") and isinstance(v, dict) and now - v.get("t", 0) < 3 * 86400:
@@ -3571,7 +3573,7 @@ def wx_deals(seen, words, n=3, deny=None):
     except Exception as e:  # 토스 API가 안 되면 토스 딜만 빼고
         print("wx toss", repr(e))
     picked, names = [], set()
-    for c in sorted(out, key=lambda c: (not c["top3"], not c["hot"], -c["t"])):
+    for c in sorted(out, key=lambda c: (not c["top3"], not c["hot"], not c.get("steady"), -c["t"])):  # 🔥 -> 👍 -> 🛒
         k = re.sub(r"\W", "", c["n"])[:20]
         if k not in names:
             names.add(k)
@@ -3584,7 +3586,7 @@ def wx_render(items, ref, html_text):
     Threads = 텔레그램 버튼과 같은 링크(10/19 진우 '직접 링크로' — TH_LINK_MAX보다 긴 링크프라이스 주소만 사이트 딜 페이지), 토스 API 상품은 공유 링크 그대로."""
     links = [c["u"] if c["u"] and (html_text or c.get("toss") or len(c["u"]) <= TH_LINK_MAX) else f"{SITE}p/{c['i']}.html?ref={ref}" for c in items]
     notes = list(dict.fromkeys(n for n in (aff_note(c["u"] or "") for c in items) if n))
-    rows = [f"{'🔥' if c['hot'] else '🛒'} " + (f'<a href="{esc(u)}">{esc(clip(c["n"], 40))}</a>' + (f" {esc(c['p'])}" if c["p"] else "") if html_text else f"{clip(c['n'], 30)} {c['p']}".rstrip() + f"\n👉 {u}")
+    rows = [f"{'🔥' if c['hot'] else '👍' if c.get('steady') else '🛒'} " + (f'<a href="{esc(u)}">{esc(clip(c["n"], 40))}</a>' + (f" {esc(c['p'])}" if c["p"] else "") if html_text else f"{clip(c['n'], 30)} {c['p']}".rstrip() + f"\n👉 {u}")
             for c, u in zip(items, links)]
     tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(c.get("toss") for c in items) else ""
     return "\n".join(f"<i>{n}</i>" if html_text else n for n in notes) + ("\n\n" if notes else ""), rows, tail, links
