@@ -3245,7 +3245,7 @@ H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
 import build_site as S13
-assert pl0 == (12, 30) and H.POLL_REUSE == 7 and S13.PRICE_MIN == 3
+assert pl0 == (21, 40) and H.POLL_REUSE == 7 and S13.PRICE_MIN == 3  # 10/22~ 21:40(이 셀프체크는 예전 12:30으로 회차 동작만 — Claude 투표 글·21:40은 9-27)
 def p13(t, title, unit, url="https://link.coupang.com/a/x", mid=1):
     return {"t": t, "text": f"🔥 {title}\n\n좋아요\n\n💡 단위가격 {unit}", "url": url, "mid": mid}
 P13 = [p13("2026-10-10 10:00", "[쿠팡] 신라면 40개 (23,480원)", "개당 587원"), p13("2026-10-12 10:00", "[쿠팡] 신라면 5개 (2,400원)", "개당 480원"),
@@ -3285,7 +3285,7 @@ def http13(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 sv13 = (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.tg, H.TH_SOLO_GAP); H.TH_SOLO_GAP = 45 * 60
 rp13, al13 = [], []
-H.http, H.time.sleep, H.busy, H.E["THREADS_TOKEN"], H.POLL_HOUR = http13, (lambda s: None), (lambda seen, cap=True: False), "tk", pl0
+H.http, H.time.sleep, H.busy, H.E["THREADS_TOKEN"], H.POLL_HOUR = http13, (lambda s: None), (lambda seen, cap=True: False), "tk", (12, 30)  # Claude 없음(API 키 X) = 지금 틀(poll_text)로
 H.th_reply, H.th_reply_ok, H.tg = (lambda tok, to, text: rp13.append((to, text)) or "r1"), (lambda seen: True), (lambda m, **p: al13.append(p.get("text")) or {"message_id": 1})
 try: H.th_poll("tk", "x", ["가" * 26, "b"]); raise AssertionError("26자 보기")
 except ValueError: assert not c13h  # 보기 25자 넘으면 안 올림(API 안 부름)
@@ -3301,17 +3301,18 @@ c13h.clear(); H.poll_post(s13); assert not c13h  # 하루 1번
 s13b = {"thsolo_20261018": {"n": 1, "last": TK("2026-10-18 12:10")}}; time.time = lambda: TK("2026-10-18 12:31"); H.poll_post(s13b); assert not c13h and "poll_20261018" not in s13b  # Threads 45분 간격 -> 다음 실행에
 H.busy = lambda seen, cap=True: True; H.poll_post({}); assert not c13h; H.busy = lambda seen, cap=True: False  # 묶음 간격·시간당 상한 -> 다음 실행에
 H.poll_post(s13); assert "poll_20261018" in s13 and s13["polls"]["used"] == {"ramen": TK("2026-10-17 12:34")}  # 다음 날: 기록 3개↑ 품목(라면뿐)이 7일 안에 쓰임 -> 투표 X(답글은 먼저)
-assert len(rp13) == 1 and rp13[0][0] == "pol1" and "📊 1등 600원까지 50% (8명) · 핫딜픽 기록 최저 개당 480원 (10/12)" in rp13[0][1] and "👉 https://hotdealpick.kr/c/ramen.html?ref=th" in rp13[0][1] and "\n👋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n" in rp13[0][1] and "🙋" not in rp13[0][1]  # 투표 결과 답글 팔로우 줄 = 👋(10/21)
+assert len(rp13) == 1 and rp13[0][0] == "pol1" and '📊 어제 1등은 "600원까지" 50% ㅋㅋ\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 라면 개당 480원 (10/12)' in rp13[0][1] and "👉 https://hotdealpick.kr/c/ramen.html?ref=th" in rp13[0][1] and "\n👋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n" in rp13[0][1] and "🙋" not in rp13[0][1]  # 투표 결과 답글 팔로우 줄 = 👋(10/21)
 assert rp13[0][1].startswith(H.th_note(H.DISCLOSURE)) and s13["polls"]["open"] is None  # 사이트 링크 글 규칙(그 딜들 대가성 문구 맨 앞) · 답글 1번
 rp13.clear(); del s13["poll_20261018"]; H.poll_post(s13); assert not rp13  # 답글은 1번만
 s13["polls"]["open"] = {"id": "pol1", "slug": "ramen", "t": TK("2026-10-17 12:34")}; del s13["poll_20261018"]; H.th_reply_ok = lambda seen: False; s13["threply"] = {"t": 1, "ok": 0, "err": "(#10) no permission"}
 H.poll_post(s13); assert not rp13 and len(al13) == 1 and "가격 투표 결과 답글 못 달았어요" in al13[0] and "(#10) no permission" in al13[0] and s13["polls"]["open"] is None  # 댓글 권한 X -> 건너뜀·알림
 z13 = H.poll_reply_text("ramen", r13["ramen"], {"option_a": "500원 이하", "option_b": "600원까지", "total_votes": 0, "option_a_votes_percentage": 0, "option_b_votes_percentage": 0})
-assert "1등" not in z13 and "📊 핫딜픽 기록 최저 개당 480원 (10/12)" in z13 and H.poll_reply_text("ramen", r13["ramen"], None) == z13  # 투표 0명(못 읽음) = 기록 줄만
-assert "1등 600원까지 50%" in H.poll_reply_text("ramen", r13["ramen"], {"option_a": "500원 이하", "option_b": "600원까지", "total_votes": 4, "option_a_votes_percentage": 50, "option_b_votes_percentage": 50.0001})  # 0~100으로 와도
+assert "1등" not in z13 and "📊 어제는 아무도 안 찍음 ㅋㅋ 그래도 알려줌\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 라면 개당 480원 (10/12)" in z13 and H.poll_reply_text("ramen", r13["ramen"], None) == z13  # 투표 0명(못 읽음)
+assert '1등은 "600원까지" 50%' in H.poll_reply_text("ramen", r13["ramen"], {"option_a": "500원 이하", "option_b": "600원까지", "total_votes": 4, "option_a_votes_percentage": 50, "option_b_votes_percentage": 50.0001})  # 0~100으로 와도
 H.th_reply_ok = lambda seen: True; u13 = {"t": 1, "used": {"ramen": TK("2026-10-15 12:30")}, "open": None}; P13b = P13 + [p13(f"2026-10-1{d} 10:00", f"[쿠팡] 크리넥스 화장지 30롤 {d} (19,900원)", f"롤당 {600 + d}원") for d in (1, 2, 3)]
 json.dump(P13b, open("posts.json", "w"), ensure_ascii=False); c13h.clear(); time.time = lambda: TK("2026-10-19 12:31"); s13c = {"polls": u13}; H.poll_post(s13c)
 assert s13c["polls"]["used"] == {"ramen": TK("2026-10-15 12:30"), "toilet-paper": TK("2026-10-19 12:31")} and "🗳️ 화장지 롤당" in parse_qs(urlsplit([x for x in c13h if "/me/threads?" in x[0]][0][0]).query)["text"][0]  # 7일 안 쓴 품목만(라면 = 4일 전에 씀 -> 화장지)
+os.path.exists("docs/cards/2026-10-22.png") and os.remove("docs/cards/2026-10-22.png")  # 앞 셀프체크가 남긴 카드(21시 카드가 아직 안 나간 걸로 보여 투표가 기다림 — 9-27)
 time.time = lambda: TK("2026-10-22 12:31"); rp13.clear(); H.poll_post(s13c); assert s13c["polls"]["used"] == {"toilet-paper": TK("2026-10-19 12:31"), "ramen": TK("2026-10-22 12:31")} and len(rp13) == 1  # 7일 지난 라면 다시(어제 투표 답글 먼저)
 H.E["METRICS_DAY"] = "2026-10-16"; th13 = [{"id": "v1", "text": H.poll_text(r13["ramen"])[0], "timestamp": "2026-10-16T03:30:00+0000"}, {"id": "w1", "text": "☁️ 오늘 서울 13~24도\n겉옷 챙기셨어요?", "timestamp": "2026-10-15T22:30:00+0000"}]
 H.http = lambda url, body=None, headers=None, method=None: json.dumps({"data": th13} if "/me/threads?" in url else {"data": []}) if "threads" in url else ""
@@ -4202,6 +4203,72 @@ H.toss_reopen(s26); assert s26["reopen"]["q"][0]["st"] == 1 and not any("threads
 H.http, H.th_strong = http26, ths26; H.E.pop("THREADS_TOKEN", None) if tk26 is None else H.E.update(THREADS_TOKEN=tk26)
 os.remove("ev26.json"); os.remove("posts26.json")
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.POSTS, H.TOSS_NO_CMP, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN) = sv26
+# 9-27 (10/22 진우 '투표 재미있게' + 저녁 9시대): Claude가 품목 투표 질문·보기 4개를 반말로(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만),
+#       검사(질문 60자·보기 4개 1~25자·~요 X·몰·브랜드·링크 X·없는 금액 X) 실패 -> 1번 다시 -> 그래도면 지금 틀 · 결과 답글 '어제 1등은 "…" N% ㅋㅋ'(0표 = '아무도 안 찍음') · 21:40
+assert pl0 == (21, 40)
+P27 = P13b + [p13("2026-10-16 10:00", "[쿠팡] 삼다수 2L 12개 (12,000원)", "1L당 500원")]
+r27 = S13.price_records(P27); assert set(r27) == {"ramen", "toilet-paper", "water"}, list(r27)
+a27, pr27, ST27 = [], [], []
+class R27:
+    choice = staticmethod(lambda xs: ST27.pop(0))
+sv27 = (H.ai_json, H.random)
+H.ai_json, H.random = (lambda prompt, props: pr27.append((prompt, props)) or (lambda a: (_ for _ in ()).throw(a) if isinstance(a, Exception) else a)(a27.pop(0))), R27
+def poll27(k, kind, *ans):
+    a27[:], ST27[:] = list(ans), [kind]; pr27.clear(); return H.poll_ai(r27[k])
+TAIL27 = "\n\n내일 이 시간에 답글로 핫딜픽 기록 최저가 알려줌"
+o1 = poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]})
+assert o1 == ("🗳️ 라면 쟁이는 스타일 골라봐" + TAIL27, ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]) and "생활형" in pr27[0][0] and "품목: 라면" in pr27[0][0], (o1, pr27)
+oa = H.poll_opts(r27["toilet-paper"][2][0][0]); n27 = [re.match(r"[\d,]+원", x)[0] for x in oa[:3]]
+o2 = poll27("toilet-paper", "price", {"q": "화장지 롤당, 얼마면 \"오 싸다\" 해?", "opts": [f"{n27[0]}이면 바로 삼", f"{n27[1]}까진 OK", f"{n27[2]} 넘으면 고민", "가격 안 보고 집음"]})
+assert o2[0] == "🗳️ 화장지 롤당, 얼마면 \"오 싸다\" 해?" + TAIL27 and o2[1][0] == f"{n27[0]}이면 바로 삼" and "가격형" in pr27[0][0] and ", ".join(oa[:3]) in pr27[0][0], (o2, pr27[0][0])
+assert f"예: 화장지 롤당, 얼마면 \"오 싸다\" 해? / {n27[0]}이면 바로 삼 · {n27[1]}까진 OK · {n27[2]} 넘으면 고민" in pr27[0][0] and "까지까진" not in pr27[0][0], pr27[0][0]  # 예시 = 숫자만(10/22 리뷰)
+o3 = poll27("water", "life", {"q": "물 떨어지면 어떻게 함?", "opts": ["2L 6개 바로 주문", "수돗물 끓여 먹음", "편의점 생수로 버팀", "콜라로 대체 (진짜임)"]})
+assert o3[0] == "🗳️ 물 떨어지면 어떻게 함?" + TAIL27 and len(o3[1]) == 4
+for t, opts in (o1, o2, o3):  # 보기 4개·25자 이하·~요 0·대가성 문구·링크 X
+    assert len(opts) == 4 and all(1 <= len(o) <= 25 for o in opts) and not any(re.search(H.VOICE_YO, x) for x in opts + [t]) and "http" not in t and not t.startswith(H.NOTE_STARTS), (t, opts)
+assert pr27[0][1] == {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}}
+GOOD27 = {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]}
+o4 = poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐요", "opts": GOOD27["opts"]}, GOOD27)
+assert o4[1] == GOOD27["opts"] and len(pr27) == 2 and "다시: '라면 쟁이는 스타일 골라봐요' ~요로 끝남" in pr27[1][0], pr27  # ~요 -> 걸린 말 알려 주고 1번 다시
+poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["신라면 박스째", "b", "c", "d"]}, GOOD27); assert "'신라면' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
+FP27 = {"q": "라면 먹는 스타일 골라봐", "opts": ["국내산 김치랑 먹음", "계란 토스트랑 먹음", "참치마요 섞어 먹음", "요 정도면 이건 아니다"]}
+assert poll27("ramen", "life", FP27)[1] == FP27["opts"] and len(pr27) == 1  # 흔한 말(국내산·토스트·참치마요·요 정도·아니다)은 통과(10/22 리뷰)
+OLD27 = H.poll_text(r27["ramen"])
+for bad in ({"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 26, "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["a", "b", "c"]},  # 26자 · 보기 3개
+            {"q": "라면 쟁이는 스타일 골라봐", "opts": ["신라면 박스째", "b", "c", "d"]}, {"q": "쿠팡에서 라면 사는 스타일", "opts": ["a", "b", "c", "d"]},  # 브랜드(기록 딜 상품명) · 몰
+            {"q": "라면 쟁이는 스타일 골라봐", "opts": ["a", "b", "c", "hotdealpick.kr 봄"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["500원이면 삼", "b", "c", "d"]},  # 링크 · 생활형에 금액
+            {"q": "라" * 61, "opts": ["a", "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둬요", "b", "c", "d"]}):  # 질문 61자 · ~요
+    assert poll27("ramen", "life", bad, bad) == OLD27 and len(pr27) == 2, bad  # 2번 다 = 지금 틀
+assert poll27("ramen", "price", {"q": "라면 개당 얼마면 오 싸다 해?", "opts": ["450원이면 삼", "b", "c", "d"]}, {"q": "x", "opts": ["450원", "b", "c", "d"]}) == OLD27  # 가격형 = 구간 값만(450원 X)
+assert poll27("ramen", "price", {"q": "라면 개당 얼마면 오 싸다 해?", "opts": ["500원 이하면 바로 삼", "600원까진 OK", "700원 넘으면 고민", "가격 안 봄"]})[1][0] == "500원 이하면 바로 삼"  # 구간 값 = OK
+assert poll27("ramen", "life", RuntimeError("api")) == OLD27  # Claude 실패 = 지금 틀
+assert H.wons("5천원대면 바로 삼 · 1만2천원 · 1,500원 · 30개") == {5000, 12000, 1500}
+H.random = sv27[1]; k27 = set()  # 진짜 무작위: 가·나 둘 다
+for n in range(30):
+    a27[:] = [GOOD27]; pr27.clear(); H.poll_ai(r27["ramen"]); k27.add("life" if "생활형" in pr27[0][0] else "price")
+assert k27 == {"life", "price"}, k27
+# 결과 답글: 1표 / 0표
+R1 = H.poll_reply_text("ramen", r27["ramen"], {"option_a": "박스째 쌓아둠", "option_b": "5개입 하나면 충분", "option_a_votes_percentage": 1.0, "option_b_votes_percentage": 0, "total_votes": 1})
+assert R1.startswith(H.th_note(H.DISCLOSURE) + '📊 어제 1등은 "박스째 쌓아둠" 100% ㅋㅋ\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 라면 개당 480원 (10/12)\n\n👉 https://hotdealpick.kr/c/ramen.html?ref=th'), R1
+R0 = H.poll_reply_text("ramen", r27["ramen"], {"option_a": "박스째 쌓아둠", "option_a_votes_percentage": 0, "total_votes": 0})
+assert '📊 어제는 아무도 안 찍음 ㅋㅋ 그래도 알려줌\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 라면 개당 480원 (10/12)\n' in R0 and H.poll_reply_text("ramen", r27["ramen"], None) == R0 and len(R0) <= 480
+# 21:40 회차: 21:35 X · 21:41 투표(Claude 글) · 다음 날 21:41 결과 답글 먼저
+json.dump(P27, open("posts.json", "w"), ensure_ascii=False); H.random = R27
+sv27b = (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.TH_SOLO_GAP, H.POLL_HOUR); H.TH_SOLO_GAP, H.POLL_HOUR = 45 * 60, pl0
+H.http, H.time.sleep, H.busy, H.E["THREADS_TOKEN"] = http13, (lambda s: None), (lambda seen, cap=True: False), "tk"; rp13.clear()
+H.th_reply, H.th_reply_ok = (lambda tok, to, text: rp13.append((to, text)) or "r1"), (lambda seen: True)
+c13h.clear(); s27 = {}; time.time = lambda: TK("2026-10-22 21:35"); H.poll_post(s27); assert not c13h and not s27
+H.busy = lambda seen, cap=True: cap  # 채널 시간당 상한에만 걸린 저녁 = 그래도 투표(묶음 간격 10분은 봄)
+os.makedirs("docs/cards", exist_ok=True); open("docs/cards/2026-10-22.png", "wb").close(); a27[:], ST27[:] = [GOOD27], ["life"]; time.time = lambda: TK("2026-10-22 21:41")
+H.poll_post(s27); assert not [x for x in c13h if "/me/threads?" in x[0]] and "poll_20261022" not in s27  # 21시 카드가 아직 Threads에 안 나감 = 기다림
+s27["threads_20261022"] = TK("2026-10-22 21:36"); H.poll_post(s27); assert not [x for x in c13h if "/me/threads?" in x[0]]  # 카드 5분 뒤 = 아직(10분)
+s27 = {"threads_20261022": TK("2026-10-22 21:30")}; os.remove("docs/cards/2026-10-22.png")
+a27[:], ST27[:] = [GOOD27], ["life"]; time.time = lambda: TK("2026-10-22 21:41"); H.poll_post(s27)
+q27 = [x for x in c13h if "/me/threads?" in x[0]][0]
+assert parse_qs(urlsplit(q27[0]).query)["text"] == ["🗳️ 라면 쟁이는 스타일 골라봐" + TAIL27] and json.loads(parse_qs(q27[1].decode())["poll_attachment"][0]) == dict(zip(H.POLL_KEYS, GOOD27["opts"])) and s27["polls"]["open"]["slug"] == "ramen"
+c13h.clear(); a27[:], ST27[:] = [GOOD27], ["life"]; time.time = lambda: TK("2026-10-23 21:41"); H.poll_post(s27)
+assert len(rp13) == 1 and rp13[0][0] == "pol1" and '📊 어제 1등은 "600원까지" 50% ㅋㅋ' in rp13[0][1], rp13  # 다음 날 같은 회차에 결과 답글(가짜 API 결과 = 600원까지 50%)
+del H.E["THREADS_TOKEN"]; (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.TH_SOLO_GAP, H.POLL_HOUR) = sv27b; (H.ai_json, H.random) = sv27; json.dump([], open("posts.json", "w"))
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)

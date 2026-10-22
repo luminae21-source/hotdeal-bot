@@ -2121,7 +2121,7 @@ def th_ab(text, link):
 TH_VOICE, TH_GAP_JITTER = True, 10 * 60  # 10/21 밤 진우 'Threads 개별 딜 글 사람이 올리는 느낌': 본문을 Claude가 반말·음슴체 문장으로(th_voice, False = 지금 틀) · 개별 글 간격 45분 ± 10분(th_gap, 0 = 45분 그대로)
 VOICE_LABEL = ("⭐", "💰", "🙋", "👍", "💡", "⚠", "🔥", "🛒", "👉", "👇", "📲", "👋", "💸", "🔔", "🏆", "⏰", "🤔", "🚀", "[", "#")  # 이걸로 시작하는 줄 = 라벨·제목 줄(문장 아님)
 VOICE_BAN = "|".join((WU_FAKE, r"샀는데|사\s*봤|사봄|사\s*보니|질렀|재구매|쓰는\s*중|(?:어제|작년|지난번|저번|예전)에?\s*\S*\s*샀|(?<![가-힣])(?:내가|나도|난|나는|저는|저도|우리\s*집)(?![가-힣])", WU_HEALTH, WU_HYPE, r"눌러"))  # 써 본 척(반말·음슴체 '나도·질렀' 포함, '비교해봤는데'·'N명 넘게 삼'은 OK)·효능·과장·조급·클릭 유도(토스 글은 + 다른 몰·비교)
-VOICE_YO = r"(?<![필중주수소])요(?![가-힣])|죠(?![가-힣])|(?<!다)니다(?![가-힣])"  # 해요체(~요·~죠)·~니다로 끝나는 말('확인 필요'·'중요' 같은 낱말은 아님, '30개요'는 해요체)
+VOICE_YO = r"(?<![필중주수소])요(?![가-힣])|죠(?![가-힣])|(?<![다아])니다(?![가-힣])"  # 해요체(~요·~죠)·~니다로 끝나는 말('확인 필요'·'중요' 같은 낱말은 아님, '30개요'는 해요체)
 VOICE_EMOJI = r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u231A-\u23FA\u2B05-\u2B55\u203C\u2049]\uFE0F?|[#*0-9]\uFE0F?\u20E3|\S\uFE0F|\u200D"  # → 같은 화살표는 아님(음슴체 예시)
 VOICE_PROMPT = """Threads에 올릴 핫딜 글 본문을 사람이 직접 쓰듯 써 주세요. 아래 '재료'에 있는 사실만(없는 내용·숫자 X, 숫자는 재료 그대로 — 어림은 '넘게'처럼 아래로만).
 - lines = 3~4줄. 줄 길이는 들쭉날쭉하게, 짧은 조각 문장도 OK. 맞춤법은 정상(일부러 틀리지 않기). 이모지는 0~1개. 질문은 lines에 쓰지 않기(q에만).
@@ -2136,18 +2136,22 @@ VOICE_STYLE = {  # 10/21 밤 진우 '너무 AI 같다' -> 두 시안 '섞어서'
     "B": "말투 = 음슴체(핫딜 커뮤니티 글처럼 ~함·~음·~임 또는 명사로 끝냄). 말투 예시일 뿐 내용·숫자는 재료에서: 로켓 핫팩 100g 개당 가격 비교함 / 코멧 30개 8,860원 → 개당 295원으로 젤 쌈 / 150개짜리는 개당 269원 / 리뷰 1,400개 넘음"}
 
 
-def ai_voice(prompt):
-    """Claude가 쓴 Threads 개별 글 문장 {lines, q}(th_voice) — 구조화 출력(JSON). 10/22 08:00 첫 글이 400(이 모델은 강제 tool_choice X) -> 지금 틀로 나가던 것.
-    effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(지금 틀)."""
+def ai_json(prompt, props):
+    """Claude 답을 JSON으로(구조화 출력 — props = 칸 이름: JSON 스키마, 전부 필수). 10/22 08:00 강제 tool_choice가 이 모델에서 400 -> 이 방식.
+    effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(부른 곳이 지금 틀로)."""
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 4000, "output_config": {"effort": "low", "format": {"type": "json_schema", "schema": {
-            "type": "object", "required": ["lines", "q"], "additionalProperties": False,
-            "properties": {"lines": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}}}}},
+            "type": "object", "required": list(props), "additionalProperties": False, "properties": props}}},
         "messages": [{"role": "user", "content": prompt}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
     if r.get("stop_reason") != "end_turn":
         raise RuntimeError(f"Claude 답 안 끝남({r.get('stop_reason')})")
     return json.loads(next(c["text"] for c in r["content"] if c["type"] == "text"))
+
+
+def ai_voice(prompt):
+    """Claude가 쓴 Threads 개별 글 문장 {lines, q}(th_voice)."""
+    return ai_json(prompt, {"lines": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}})
 
 
 def th_voice(seen, text, link, src=None):
@@ -3087,7 +3091,7 @@ def threads_deals(seen):
 
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
-POLL_HOUR, POLL_REUSE = (12, 30), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 '{단위} 얼마면 싸다?' 보기 4개 + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. None = 끔
+POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 반말 질문·보기 4개 — poll_ai) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
 POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25자 — 공식 문서 create-posts/polls)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
@@ -3277,20 +3281,70 @@ def poll_text(rec):
     return f"🗳️ {name} {unit} 얼마면 '싸다' 싶어요?\n\n내일 이 글 답글로 핫딜픽 기록 최저가 알려드릴게요", poll_opts(rows[0][0])
 
 
+POLL_PROMPT = """Threads 가격 투표 글을 반말로 써 주세요. 품목: {name}(핫딜픽이 {unit} 가격 기록을 모으는 생활용품).
+- q = 질문 한 줄(40자 안팎), opts = 보기 정확히 4개(보기마다 25자 이하, 짧게).
+- 반말·공감형('~요'로 끝나는 말 X). 마지막 보기는 가볍게 웃긴 것.
+- 상품명·브랜드(신라면·삼다수·햇반 같은 것)·쇼핑몰·편의점 이름·링크·광고 문구 X, 과장(역대급·무조건·손해) X.
+- {kind}"""
+POLL_KIND = {  # 10/22 진우 시안 고름(반말·공감형 보기·마지막 보기는 가볍게 웃기게): 글마다 무작위 가 생활형 / 나 가격형
+    "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입 하나면 충분 · 땡길 때 편의점 직행 · 라면 끊음 (진짜임)",
+    "price": "유형: 가격형 — '{unit} 얼마면 오 싸다 해?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 해? / {a}이면 바로 삼 · {b}까진 OK · {c} 넘으면 고민 · 가격 안 보고 집음"}
+POLL_BRANDS = (r"신라면|진라면|너구리|짜파게티|안성탕면|컵누들|사발면|농심|삼양|오뚜기|팔도|삼다수|아이시스|백산수|풀무원|크리넥스|깨끗한나라|모나리자|잘풀리는|"  # 기록 품목(PRICE_ITEMS) 브랜드
+               r"퍼실|리큐|테크|피죤|맥심|모카\s*골드|화이트\s*골드|카누|베베숲|몽드드|햇반|엘라스틴|케라시스|GS25|세븐일레븐|이마트24|(?<![A-Za-z])CU(?![A-Za-z])")  # + 편의점(몰)
+POLL_YO = r"(?<![필중주수소])요[?!.~ㅋㅎ\s]*$|죠[?!.~ㅋㅎ\s]*$|(?<![다아])니다[?!.~ㅋㅎ\s]*$"  # 투표 보기 = 끝에서만(‘요 정도면’·‘참치마요’는 반말)
+
+
+def wons(s):
+    """글 속 원 금액(숫자) — '5천원대' 5000 · '1만2천원' 12000 · '1,500원' 1500."""
+    return {int(m[1].replace(",", "")) * {"만": 10000, "천": 1000, "": 1}[m[2]] + int(m[3] or 0) * 1000
+            for m in re.finditer(r"(\d[\d,]*)\s*(만|천|)\s*(?:(\d+)\s*천)?\s*원", s)}
+
+
+def poll_ai(rec):
+    """10/22 진우 '재미있게': Claude가 반말 질문·보기 4개(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만) -> (본문, 보기).
+    검사(질문 60자·보기 4개 1~25자·끝이 ~요 X·몰·편의점·브랜드(POLL_BRANDS)·링크·광고·과장 X·없는 금액 X) 실패 -> 걸린 말을 알려 주고 1번 다시, 그래도면 지금 틀(poll_text).
+    링크·상품명 없음 = 대가성 문구 X 그대로."""
+    name, unit, rows = rec
+    kind, opts0 = random.choice(("life", "price")), poll_opts(rows[0][0])
+    nums = wons(" ".join(opts0)) if kind == "price" else set()
+    ban = "|".join((OTHER_STORES, SAVE_STORES.replace("토스", "토스(?!트)"), POLL_BRANDS, r"https?://|www\.|\.com|\.kr|t\.me|링크|광고|수수료", WU_HYPE))
+    def why(s):  # 걸린 이유('' = 통과)
+        m = re.search(ban, s, re.I)
+        return ("빈 칸" if not s else f"'{s}' ~요로 끝남" if any(re.search(POLL_YO, x) for x in re.split(r"[,·/()]", s))
+                else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else "")
+    a, b, c = (re.match(r"[\d,]+원", x)[0] for x in opts0[:3])
+    prompt = POLL_PROMPT.format(name=name, unit=unit, kind=POLL_KIND[kind].format(unit=unit, name=name, nums=", ".join(opts0[:3]), a=a, b=b, c=c))
+    try:
+        again = ""
+        for _ in (0, 1):
+            r = ai_json(prompt + again, {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}})
+            q, opts = re.sub(r"\s+", " ", str(r.get("q") or "")).strip(), [re.sub(r"\s+", " ", str(o)).strip() for o in r.get("opts") or []]
+            bad = [x for x in [f"질문 {len(q)}자" if len(q) > 60 else "", f"보기 {len(opts)}개" if len(opts) != 4 else "", *(f"'{o}' {len(o)}자" for o in opts if len(o) > 25),
+                               why(q), *map(why, opts)] if x]
+            if not bad:
+                print("poll ai", kind, q, "|", " / ".join(opts))
+                return f"🗳️ {q}\n\n내일 이 시간에 답글로 핫딜픽 기록 최저가 알려줌", opts
+            again = "\n\n다시: " + " · ".join(bad[:4])
+        raise ValueError(f"검사 실패: {bad}")
+    except Exception as e:  # Claude 실패·검사 실패 = 지금 틀
+        print("poll ai 지금 틀로", clip(repr(e), 160))
+        return poll_text(rec)
+
+
 def poll_reply_text(k, rec, pa):
-    """어제 투표 결과 답글: 1등 보기·%·총 인원(0명이면 기록 줄만) + 기록 최저(게시 날짜) + 기록 페이지 — 사이트 링크 글 규칙 그대로(맨 앞 대가성 문구 = 기록 딜들의 프로그램, 👉 링크·팔로우·텔레그램 줄)."""
+    """어제 투표 결과 답글: '📊 어제 1등은 "보기" N% ㅋㅋ'(0명 = '아무도 안 찍음 ㅋㅋ') + '쟁일 거면 … → 기록 최저(게시 날짜)' + 기록 페이지 — 사이트 링크 글 규칙 그대로(맨 앞 대가성 문구 = 기록 딜들의 프로그램, 👉 링크·팔로우·텔레그램 줄)."""
     name, unit, rows = rec
     low, n, ks = rows[0], (pa or {}).get("total_votes") or 0, [x for x in POLL_KEYS if x in (pa or {})]
     pct = {x: pa.get(x + "_votes_percentage") or 0 for x in ks}
     top = n and ks and max(ks, key=pct.get)
     scale = 100 if sum(pct.values()) <= 1.01 else 1  # 문서 예시 = 0.10(비율) — 0~100으로 와도 그대로
-    t = th_note(ig_notes([r[3] for r in rows])) + (f"📊 1등 {pa[top]} {round(pct[top] * scale)}% ({n:,}명) · " if top else "📊 ") \
-        + f"핫딜픽 기록 최저 {low[1]} ({int(low[3]['t'][5:7])}/{int(low[3]['t'][8:10])})\n\n👉 {SITE}c/{k}.html?ref=th\n{th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"
+    t = th_note(ig_notes([r[3] for r in rows])) + (f'📊 어제 1등은 "{pa[top]}" {round(pct[top] * scale)}% ㅋㅋ' if top else "📊 어제는 아무도 안 찍음 ㅋㅋ 그래도 알려줌") \
+        + f"\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 {name} {low[1]} ({int(low[3]['t'][5:7])}/{int(low[3]['t'][8:10])})\n\n👉 {SITE}c/{k}.html?ref=th\n{th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"  # 10/22 진우 '재미있게'(반말)
     return t if len(t) <= 480 else t.rsplit("\n", 2)[0]  # 넘치면 팔로우·텔레그램 줄을 뺌(링크는 남김)
 
 
 def poll_post(seen):
-    """12:30 Threads 가격 투표(10/17 진우 '유입 늘리기 ①'): 어제 투표가 있으면 먼저 결과 답글(댓글 권한 없으면 건너뜀·알림, 실패해도 다시 X),
+    """POLL_HOUR(21:40) Threads 가격 투표(10/17 진우 '유입 늘리기 ①', 10/22 '재미있게' — Claude 반말 질문·보기, poll_ai): 어제 투표가 있으면 먼저 결과 답글(댓글 권한 없으면 건너뜀·알림, 실패해도 다시 X),
     그다음 오늘 투표 1개 — 기록 PRICE_MIN개↑ 품목 중 최근 POLL_REUSE일 안 쓴 것, 기록 많은 순. 묶음 간격·시간당 상한(busy)·Threads 45분 간격 안에서(막히면 다음 실행에, 2시간 안)."""
     tok, key = E.get("THREADS_TOKEN"), due(POLL_HOUR, "poll", seen)
     if not tok or not key:
@@ -3306,7 +3360,8 @@ def poll_post(seen):
         else:
             pa = json.loads(http(f"{THREADS}/{op['id']}?fields=poll_attachment{{{','.join(POLL_KEYS + tuple(x + '_votes_percentage' for x in POLL_KEYS))},total_votes}}&access_token={tok}")).get("poll_attachment")
             th_reply(tok, op["id"], poll_reply_text(op["slug"], recs[op["slug"]], pa))
-    if busy(seen) or now - th_day(seen, now)["last"] < TH_SOLO_GAP:
+    card = os.path.exists(time.strftime("docs/cards/%Y-%m-%d.png", time.gmtime(now + 9 * 3600))) and now - seen.get(time.strftime("threads_%Y%m%d", time.gmtime(now + 9 * 3600)), now) < BUNDLE_GAP
+    if busy(seen, cap=False) or card or now - th_day(seen, now)["last"] < TH_SOLO_GAP:  # 21:40 = 시간당 상한(채널 글 수)은 안 봄 · 21시 카드 Threads 글과 10분 띄움(10/22 리뷰)
         return
     used = {k: t for k, t in seen.get("polls", {}).get("used", {}).items() if now - t < POLL_REUSE * 86400}
     k = next((k for k, v in sorted(recs.items(), key=lambda x: -len(x[1][2])) if k not in used), None)
@@ -3314,7 +3369,7 @@ def poll_post(seen):
     if not k:
         print(f"poll: 기록 {PRICE_MIN}개↑ 품목이 없거나 {POLL_REUSE}일 안에 다 씀 -> 오늘 X")
         return
-    pid = th_poll(tok, *poll_text(recs[k]))
+    pid = th_poll(tok, *poll_ai(recs[k]))
     th_mark(seen, reopen="poll")  # 개별 글 수엔 안 셈(재오픈처럼) — 45분 간격만 같이
     seen["polls"] = {"t": now, "used": {**used, k: now}, "open": {"id": pid, "slug": k, "t": now}}
     print("poll:", k, len(recs[k][2]), "records")
