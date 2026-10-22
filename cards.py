@@ -423,8 +423,9 @@ if __name__ == "__main__":
 # ── 인스타 카드 새 디자인(10/22 22:3x 진우 '디자인 업그레이드' — 시안 A·B 번갈아, 인스타만: 텔레그램·Threads·사이트 카드는 위 make·deal_card 그대로) ──
 # it(상품 1개) = {"name", "short"(칩·타일용 짧은 이름), "price", "chip"(단위가격·'와우 할인'·'47%↓'), "badge"('🚀 쿠팡 로켓'·'💙 토스 특가'·'네이버' — 채널 머리 줄 규칙),
 #                 "ship"('내일 도착'·'무료배송'), "photo"(몰 상품 이미지 경로, 없으면 None -> 상품 종류 글자 칸), "e"(이모지), "kind"(상품 종류 낱말), "line"(한 줄 멘트), "when"('10/22 21시')}
-NAVY, NAVY2, PINK, PAPER, BROWN, INKB, BERRY, MARK, STICKER = (29, 39, 64), (43, 55, 87), (255, 111, 163), (255, 241, 244), (74, 63, 48), (26, 26, 26), (176, 18, 79), (255, 194, 214), (255, 143, 179)
-LIGHT, SLATE, MIST, CHIPBG, PALE = (244, 245, 248), (45, 55, 72), (201, 209, 224), (255, 227, 238), (227, 231, 239)
+INKA, SUBA, PLUM, PINK, PAPER, BROWN, INKB, BERRY, MARK, STICKER = (31, 26, 46), (74, 64, 96), (45, 36, 64), (255, 111, 163), (255, 241, 244), (74, 63, 48), (26, 26, 26), (176, 18, 79), (255, 194, 214), (255, 143, 179)
+LAV, BLUSH, LMIST, CHIPBG = (236, 230, 255), (255, 230, 239), (247, 243, 255), (255, 227, 238)
+ATILES = [(255, 227, 238), (255, 230, 217), (223, 245, 236), (232, 228, 255)]  # 10/22 진우 'A도 파스텔 톤으로 감성 있게': A = 파스텔 매거진(라벤더 중심 + 핑크 포인트 — 표지 라벤더→핑크 대각선, 상품 장 라벤더 안개, 글자 자두 먹색·로즈, 알약 진한 자두), 종류 칸 핑크·피치·민트·라벤더 번갈아
 TILES, SHADOW, EDGE = [(239, 230, 255), (255, 230, 217), (255, 227, 238)], (240, 196, 210), (247, 212, 223)  # 10/22 진우 '분홍색 들어가게': A = 남색 + 핑크 강조, B = 블러시 핑크 톤(종류 칸 라벤더·피치·핑크 번갈아) — 흰 글자는 중간 핑크 위 X  # 10/22 진우 '눈에 잘 들어와야': 크림 위 회색 X — 글자는 먹색·진한 갈색, 보조 글자 40px↑
 
 
@@ -463,7 +464,7 @@ def _pill_w(f, s, padx, emo=True):
     return int(w + (f.size * 1.35 if m and not re.match(r"[가-힣A-Za-z0-9]", m[1]) else 0) + padx * 2)
 
 
-def _photo(it, w, h, radius, bg=(227, 231, 239), ink=NAVY):
+def _photo(it, w, h, radius, bg=LMIST, ink=INKA):
     """상품 사진(꽉 차게 잘라 넣음) — 없으면 상품 종류 글자 칸(이모지 + 종류 낱말). 둥근 모서리 RGBA."""
     tile = Image.new("RGBA", (w, h), bg + (255,))
     ph = None
@@ -518,8 +519,10 @@ def contrast(a, b):
 
 
 IG_PAIRS = {  # 인스타 새 카드에 쓰는 글자색·바탕색 전부(셀프체크가 4.5:1 이상인지 봄 — 글자는 모두 40px↑라 큰 글자 기준 3:1보다 높게). 10/22 핑크 톤(진우)
-    "A 표지 제목·칩 이름": ("white", NAVY), "A 표지 숫자·핫딜픽·넘겨 보기": (PINK, NAVY), "A 표지 날짜·부제·안내": (MIST, NAVY), "A 칩 이름": ("white", NAVY2), "A 칩 가격": (PINK, NAVY2),
-    "A 상품명·가격": (NAVY, LIGHT), "A 몰 배지": ("white", NAVY), "A 번호 알약": (NAVY, "white"), "A 단위가격 칩": (BERRY, CHIPBG), "A 멘트": (SLATE, LIGHT), "A 안내": (SLATE, LIGHT), "A 종류 칸": (NAVY, PALE),
+    "A 표지 제목(라벤더 끝)": (INKA, LAV), "A 표지 제목(핑크 끝)": (INKA, BLUSH), "A 표지 숫자·핫딜픽·넘겨 보기(라벤더 끝)": (BERRY, LAV), "A 표지 숫자·핫딜픽·넘겨 보기(핑크 끝)": (BERRY, BLUSH),
+    "A 표지 날짜·부제·안내(라벤더 끝)": (SUBA, LAV), "A 표지 날짜·부제·안내(핑크 끝)": (SUBA, BLUSH), "A 칩 이름": (INKA, "white"), "A 칩 가격": (BERRY, "white"),
+    "A 상품명·가격·멘트": (INKA, LMIST), "A 하단 줄": (SUBA, LMIST), "A 몰 배지·번호 알약": ("white", PLUM), "A 단위가격 칩": (BERRY, CHIPBG),
+    "A 종류 칸 핑크": (INKA, ATILES[0]), "A 종류 칸 피치": (INKA, ATILES[1]), "A 종류 칸 민트": (INKA, ATILES[2]), "A 종류 칸 라벤더": (INKA, ATILES[3]),
     "B 제목·가격(먹색)": (INKB, PAPER), "B 형광펜 위": (INKB, MARK), "B 타일·폴라로이드 글자": (INKB, "white"), "B 날짜·안내·몰 줄(갈색)": (BROWN, PAPER), "B 더보기 알약": ("white", INKB),
     "B 종류 칸 라벤더": (INKB, TILES[0]), "B 종류 칸 피치": (INKB, TILES[1]), "B 종류 칸 핑크": (INKB, TILES[2]), "B 가격 스티커": (INKB, STICKER), "B 말풍선": (INKB, "white")}
 
@@ -536,25 +539,38 @@ def _marker(d, xy, s, f, fill, mark):
     d.text(xy, s, font=f, fill=fill)
 
 
+def _sparkle(d, cx, cy, r, fill):
+    """✦ 반짝이(네 갈래 별) — 장식만, 글자 위에는 X."""
+    k = r * 0.28
+    d.polygon([(cx, cy - r), (cx + k, cy - k), (cx + r, cy), (cx + k, cy + k), (cx, cy + r), (cx - k, cy + k), (cx - r, cy), (cx - k, cy - k)], fill=fill)
+
+
 def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(수수료) · 게시 시점 가격"):
     """인스타 표지(1080x1350 JPEG) — 폰 피드에서 1초 안에 읽히게(10/22 진우): 제목 2줄(크게, 숫자 1개만 포인트색), 보조 글자 40px↑, 대비 4.5:1↑(IG_PAIRS).
-    design 'A' = 매거진형(남색·제목·상품 알약 칩), 'B' = 일상 스티커형(크림·형광펜 제목·2x2 기울인 타일). title = 2줄(\n). date_text: A '10월 22일 목요일' / B '10.22 목'. -> out"""
+    design 'A' = 파스텔 매거진형(라벤더→핑크 대각선·둥근 모서리·제목·흰 상품 알약 칩·✦), 'B' = 일상 스티커형(크림·형광펜 제목·2x2 기울인 타일). title = 2줄(\n). date_text: A '10월 22일 목요일' / B '10.22 목'. -> out"""
     lines = title.split("\n")[:2]
     if design == "A":
-        im = Image.new("RGBA", (W, H), NAVY + (255,))
+        from PIL import ImageChops, ImageFilter
+        g = Image.linear_gradient("L")
+        m = ImageChops.add(g.rotate(90).resize((W, H)), g.resize((W, H)), scale=2)  # 왼쪽 위 0 -> 오른쪽 아래 255
+        im = Image.new("RGBA", (W, H), LMIST + (255,))
+        card = Image.new("L", (W, H), 0)
+        ImageDraw.Draw(card).rounded_rectangle((24, 24, W - 25, H - 25), radius=56, fill=255)  # 감성 포인트 ① 둥근 모서리
+        im.paste(Image.composite(Image.new("RGBA", (W, H), BLUSH + (255,)), Image.new("RGBA", (W, H), LAV + (255,)), m), (0, 0), card)
         d, P = ImageDraw.Draw(im), 88
-        f = pf("SemiBold", 40); d.text((P, P), date_text, font=f, fill=MIST)
-        f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=PINK)
+        f = pf("SemiBold", 40); d.text((P, P), date_text, font=f, fill=SUBA)
+        f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=BERRY)
         z = _sized("\n".join(lines), "ExtraBold", (128, 120, 112, 104, 96, 88), W - 2 * P)
         ft, y = pf("ExtraBold", z), 196
         for line in lines:
             x = P
             for tok in re.findall(r"\S+\s*", _fit(ft, line, W - 2 * P)):
-                d.text((x, y), tok, font=ft, fill=PINK if re.search(r"\d", tok) else "white")
+                d.text((x, y), tok, font=ft, fill=BERRY if re.search(r"\d", tok) else INKA)
                 x += d.textlength(tok, font=ft)
             y += int(z * 1.2)
         if sub:
-            d.text((P, y + 16), _fit(pf("SemiBold", 40), sub, W - 2 * P), font=pf("SemiBold", 40), fill=MIST)
+            d.text((P, y + 16), _fit(pf("SemiBold", 40), sub, W - 2 * P), font=pf("SemiBold", 40), fill=SUBA)
+            y += 16 + 56
         fc, fp = pf("SemiBold", 40), pf("Bold", 40)
         rows, row, rw = [], [], 0
         for it in items:
@@ -564,18 +580,27 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
                 rows.append(row); row, rw = [], 0
             row.append((name, it.get("price") or "", w)); rw += w + 16
         rows += [row] if row else []
-        y = H - P - 60 - 30 - len(rows) * 100
-        for row in rows:
+        y0 = H - P - 60 - 30 - len(rows) * 100
+        if y0 - y >= 150:  # 감성 포인트 ② ✦ 반짝이 — 제목과 칩 사이 빈 곳 오른쪽에만(글자와 안 겹치게)
+            cy = (y + y0) // 2
+            _sparkle(d, W - P - 48, cy + 14, 40, PINK); _sparkle(d, W - P - 128, cy - 44, 20, BERRY)
+        sh = Image.new("RGBA", (W, H), (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)
+        for k, row in enumerate(rows):
             x = P
             for name, price, w in row:
-                d.rounded_rectangle((x, y, x + w, y + 84), radius=42, fill=NAVY2)
-                d.text((x + 32, y + 18), name + "  ", font=fc, fill="white")
-                d.text((x + 32 + fc.getlength(name + "  "), y + 18), price, font=fp, fill=PINK)
+                sd.rounded_rectangle((x, y0 + k * 100 + 6, x + w, y0 + k * 100 + 90), radius=42, fill=(61, 44, 110, 34))
                 x += w + 16
-            y += 100
+        im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(8)))  # 아주 옅은 그림자
+        for k, row in enumerate(rows):
+            x, y = P, y0 + k * 100
+            for name, price, w in row:
+                d.rounded_rectangle((x, y, x + w, y + 84), radius=42, fill="white")
+                d.text((x + 32, y + 18), name + "  ", font=fc, fill=INKA)
+                d.text((x + 32 + fc.getlength(name + "  "), y + 18), price, font=fp, fill=BERRY)
+                x += w + 16
         f = pf("SemiBold", 40)
-        d.text((P, H - P - 48), _fit(f, note, W - 2 * P - 260), font=f, fill=MIST)
-        d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=PINK)
+        d.text((P, H - P - 48), _fit(f, note, W - 2 * P - 260), font=f, fill=SUBA)
+        d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=BERRY)
         return _save(im, out)
     im = Image.new("RGBA", (W, H), PAPER + (255,))
     d, P = ImageDraw.Draw(im), 76
@@ -616,24 +641,24 @@ def ig_slide(design, it, n, total, out):
     when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
     price = it.get("price") or ""
     if design == "A":
-        im = Image.new("RGBA", (W, H), LIGHT + (255,))
+        im = Image.new("RGBA", (W, H), LMIST + (255,))
         d, P = ImageDraw.Draw(im), 56
-        im.alpha_composite(_photo(it, W - 2 * P, 680, 28, bg=PALE, ink=NAVY), (P, P))
+        im.alpha_composite(_photo(it, W - 2 * P, 680, 28, bg=ATILES[(n - 1) % 4], ink=INKA), (P, P))
         fb = pf("ExtraBold", 44)
         if it.get("badge"):
             w = _pill_w(fb, it["badge"], 30)
-            d.rounded_rectangle((P + 24, P + 24, P + 24 + w, P + 112), radius=44, fill=NAVY)
+            d.rounded_rectangle((P + 24, P + 24, P + 24 + w, P + 112), radius=44, fill=PLUM)
             _em_text(d, im, (P + 54, P + 42), it["badge"], fb, "white")
         fn_ = pf("Bold", 40); s = f"{n:02d} / {total:02d}"; w = int(fn_.getlength(s)) + 56
-        d.rounded_rectangle((W - P - 24 - w, P + 24, W - P - 24, P + 112), radius=44, fill="white")
-        d.text((W - P - 24 - w + 28, P + 46), s, font=fn_, fill=NAVY)
+        d.rounded_rectangle((W - P - 24 - w, P + 24, W - P - 24, P + 112), radius=44, fill=PLUM)
+        d.text((W - P - 24 - w + 28, P + 46), s, font=fn_, fill="white")
         X, y = 76, P + 680 + 34
         fn = pf("Bold", 44)
         for line in wrap(d, it["name"], fn, W - 2 * X, 2):
-            d.text((X, y), line, font=fn, fill=NAVY); y += 56
+            d.text((X, y), line, font=fn, fill=INKA); y += 56
         fpz = _sized(price, "ExtraBold", (128, 116, 104, 92, 80, 68), W - 2 * X)
         fp = pf("ExtraBold", fpz)
-        d.text((X, y), price, font=fp, fill=NAVY)
+        d.text((X, y), price, font=fp, fill=INKA)
         pb = d.textbbox((X, y), price or "0", font=fp)  # 실제 글자 상자(큰 글자는 위아래 여백이 커서 — 아래 줄과 안 겹치게)
         chip = it.get("chip") or ""
         fc = pf("Bold", 40)
@@ -648,9 +673,9 @@ def ig_slide(design, it, n, total, out):
         if it.get("line"):
             fl = pf("SemiBold", 40)
             for line in wrap(d, f"“{it['line']}”", fl, W - 2 * X, 2 if y < H - 260 else 1):
-                d.text((X, y), line, font=fl, fill=SLATE); y += 52
+                d.text((X, y), line, font=fl, fill=INKA); y += 52
         f = pf("SemiBold", 40)
-        d.text((X, H - 92), _fit(f, f"제휴 링크(수수료) · {when}", W - 2 * X), font=f, fill=SLATE)
+        d.text((X, H - 92), _fit(f, f"제휴 링크(수수료) · {when}", W - 2 * X), font=f, fill=SUBA)
         return _save(im, out)
     from PIL import ImageFilter
     im = Image.new("RGBA", (W, H), PAPER + (255,))
