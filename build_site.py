@@ -69,14 +69,31 @@ def to_html(text, entities):
 
 
 NOTE_STARTS = ("이 포스팅은", "이 콘텐츠는", "[광고]")  # 대가성 문구 줄 시작(쿠팡·링크프라이스·네이버 = 이 포스팅은, 토스 = 이 콘텐츠는)
+MALL_HEAD = re.compile(r"(💙 토스 특가|🚀 쿠팡 로켓)(?: · [^\n]*)? ([🔥🛒])$")  # 10/22 진우 '토스·쿠팡 한눈에': 몰별 개별 글 머리 줄 -> 다음 줄 상품명, 그다음 줄 가격
+MALL_TAG = {"💙 토스 특가": "토스", "🚀 쿠팡 로켓": "쿠팡"}
+
+
+def mall_title(lines, i):
+    """lines[i]가 몰별 머리 줄이면 '[몰] 상품명 (가격)'(예전 제목 모양 — 사이트·카드·리스트가 그대로 읽게), 아니면 None.
+    가격 = 셋째 줄 금액(' → 1개 …'·' (60%↓)' 앞) + 나머지 ' · ' 조각(쿠폰가·회원가 등, ⭐ 평점 X) + 배송 조각(' · 무료' -> '/무료', 카드 배송 칸) = 예전 제목 가격 그대로."""
+    m = MALL_HEAD.fullmatch(lines[i])
+    if not m or len(lines) < i + 3 or not lines[i + 1].strip():
+        return None
+    seg = [s.strip() for s in lines[i + 2].split(" · ")]
+    ship = next((s for s in seg[1:] if re.search(r"무료|무배|배송", s) and not s.startswith("⭐")), "")
+    price = " · ".join([re.split(r" → | \(\d+%↓\)", seg[0])[0].strip()] + [s for s in seg[1:] if s and s != ship and not s.startswith("⭐")]) + (f"/{ship}" if ship else "")
+    return f"[{MALL_TAG[m[1]]}] {lines[i + 1].strip()}" + (f" ({price})" if price else "")
 
 
 def split_title(text):
-    """(제목, 제목 아래 본문, 잘라낸 UTF-16 길이). 본문에 제목이 한 번 더 나오지 않게 제목 줄까지 잘라냄."""
+    """(제목, 제목 아래 본문, 잘라낸 UTF-16 길이). 본문에 제목이 한 번 더 나오지 않게 제목 줄까지 잘라냄.
+    몰별 글(💙 토스 특가 · … / 🚀 쿠팡 로켓 · …)은 머리·상품명·가격 세 줄 = 제목 '[몰] 상품명 (가격)'."""
     lines = text.split("\n")
     for i, line in enumerate(lines):
         t = re.sub(r"^[^\w가-ퟣ\[]+", "", line).strip()  # 앞 이모지 제거
         if t and not t.startswith(NOTE_STARTS):  # 대가성 문구 줄(쿠팡·토스·기타 제휴)은 제목이 아님
+            mt = mall_title(lines, i)
+            t, i = (mt, i + 2) if mt else (t, i)
             rest = "\n".join(lines[i + 1:]).lstrip("\n")
             return t, rest, (len(text.encode("utf-16-le")) - len(rest.encode("utf-16-le"))) // 2
     return TITLE, text, 0
@@ -132,10 +149,17 @@ def strip_cmp(text, ents=()):
     """토스 딜 글에서 다른 쇼핑몰 가격 비교를 뺀 (text, entities): 다른 몰 이름 + 비교 말(보다·대비·차이·같은 상품 등)이 든 줄을 지움 — '🤔 솔직히 특가로는 약한 제품 — …'·'💡 단위가격: … — …'는
     ' — ' 앞만 남기고, '[광고] …' 첫 줄은 훅만 뺌. entities(텔레그램 UTF-16 오프셋)는 지운 만큼 당기고 바뀐 줄 안의 것은 뺌."""
     u = lambda s: len(s.encode("utf-16-le")) // 2
-    out, spans, pos = [], [], 0
-    for line in text.split("\n"):
+    out, spans, pos, lines = [], [], 0, text.split("\n")
+    heads = [i for i in range(len(lines)) if mall_title(lines, i)]
+    keep = {i + k for i in heads for k in (1, 2)}  # 몰별 글 상품명·가격 줄 = 제목(상품명에 몰 이름이 있어도 그대로)
+    for i, line in enumerate(lines):
         new = line
-        if line.startswith("[광고]") and re.search(OTHER_STORES, line) and re.search(CMP_WORDS, line):
+        if i in heads:  # 머리 줄 '· …' 칸에 다른 몰(예 '쿠팡 판매 1위')이면 칸만 뺌(머리 줄은 남겨야 제목이 읽힘)
+            m = MALL_HEAD.fullmatch(line)
+            new = f"{m[1]} {m[2]}" if re.search(OTHER_STORES, line) else line
+        elif i in keep:
+            pass
+        elif line.startswith("[광고]") and re.search(OTHER_STORES, line) and re.search(CMP_WORDS, line):
             new = re.sub(rf"\s*—\s*({OTHER_STORES})보다 [\d,]+원 쌈", "", re.sub(rf"💸 ({OTHER_STORES})보다 [\d,]+원 (싼 |쌈 · )", "🔥 ", line))
         elif re.search(OTHER_STORES, line) and not re.match(r"(?:🔥|🛒) (?:<b>)?\[|출처:|\[광고\]", line) and not line.startswith(NOTE_STARTS):  # 10/13 진우 '토스 글 전부 다른 몰 이름·가격 비교 없이'(제목·고지문·출처 줄은 그대로)
             m = re.match(r"((?:💡|🤔|⚠️|👉|💰)\s*(?:[가-힣 ]{1,8}:\s*)?)(.*)$", line)
