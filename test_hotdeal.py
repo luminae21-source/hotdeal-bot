@@ -1326,7 +1326,7 @@ time.time = tt
 # 5-3h) 토스 '특가' 자동(10/11 진우 '특가 탭 추천 자동으로 찾아줘'·'뺀 것도 자동으로'): API엔 특가 탭·개당 수익·30일 최저가가 없음(문서 확인) ->
 #       ① 이름 예약(events.json {"at","name","api": true}): 8시간 전부터 1일 목록(+ Claude가 고른 하위 카테고리 베스트)에서 이름 겹침 -> Claude 8점↑ -> 자동 발급, 못 찾거나 발급 막히면 진우에게 1번 요청,
 #          예약 시각에 상세로 지금 가격·품절 재확인 -> 채널(대가성 문구 맨 앞·효능·쿠팡 비교 없음) + Threads, posts.json X, 품절 지켜보기·3일 중복·자동 회차에서 빠짐
-#       ② 특가 회차(toss_deals "special", 8·22시 3시간 안): 1일 목록 중 할인 40%↑·리뷰 50개↑ -> 할인 높은 순 30개 상세로 재확인 -> Claude 7점↑ 중 점수 × 가격(수수료 8% = 개당 수익) 높은 순 3개
+#       ② 특가 회차(toss_deals "special", 8·22시 3시간 안): 1일 목록 중 할인 40%↑·리뷰 50개↑ -> 할인 높은 순 30개 상세로 재확인 -> Claude 7점↑ 중 점수 × 개당 수익(가격 × 수수료: 일괄 8%, 11/5~ 5%·하루특가 3%) 높은 순 3개
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1", THREADS_TOKEN="tk")
 H.HAS_TOSS, ph7, tg9, pa7, sl7, ev7, pj7 = True, H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, open("posts.json").read()
 sp_calls, sp_sent, sp_th, sp_ai, sp_out, sp_fail, sp_det = [], [], [], [], set(), {"link": set(), "tg": 0, "net": 0}, {}
@@ -1456,12 +1456,17 @@ det = [c for c in sp_calls if c.startswith("/products/detail")]
 assert len(det) == 1 and set(det[0].split("=")[1].split(",")) == {"501", "502", "503", "506", "510"}, det  # 리뷰 적은 것·할인 적은 것·3일 안에 올린 것(508) X(이름 예약 상품은 상세 뒤 후보에서)
 (m, p), = [(m, p) for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
 assert p["text"].startswith(f"<i>{H.TOSS_NOTE}</i>\n\n💙 <b>토스 특가 중 살 만한 2개</b>") and "샴푸" not in p["text"] and "toss_special 3 items 2 picks 2 links" in log, log
-assert p["text"].index("전기요") < p["text"].index("휴지")  # 7점 × 89,000원 > 9점 × 9,900원(개당 수익 = 가격 × 8%)
+assert p["text"].index("전기요") < p["text"].index("휴지")  # 7점 × 89,000원 > 9점 × 9,900원(개당 수익 = 가격 × 일괄 8%)
 assert "휴지</b></a>\n⏰ 토스 하루특가 · 밤 12시까지\n💰" in p["text"] and "전기요</b></a>\n💰" in p["text"]  # 오늘 하루특가 상품만 '밤 12시까지'
 assert "끝난 상품" not in str(sp_ai) and not [a for a, l in sp_ai if H.TOSS_EASE in a]  # 끝난 하루특가 X · 쿠팡 언급 있는 TOSS_EASE X(진우 '쿠팡 안 씀')
 w = next(v for k, v in seen.items() if k.startswith("sold_") and v["k"] == "top")
 assert [x[0] for x in w["it"]] == [502, 503] and [x[3] for x in w["it"]] == [0, 1] and "tossspecial_20261012_8" in seen  # 하루특가 목록에 있는 휴지만 품절 땐 '밤 12시 재오픈'
 assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 중 살 만한 2개") and "휴지 — 9,900원 (하루특가·밤 12시까지)" in sp_th[0]["text"][0] and "전기요 — 89,000원\n" in sp_th[0]["text"][0] and "샴푸" not in str(sp_ai)  # Threads도, 이름 예약 상품은 Claude 후보에도 없음
+e502 = next(x for x in LISTS["/products/best-selling?size=100"] if x["tacaItemId"] == 502); e502["displayPrice"] = 12000  # 11/5~(TOSS_FEE_DAY) 개당 수익 = 기본 5%·하루특가(선착순특가) 3%: 전기요 7 × 12,000 × 5% > 휴지 9 × 9,900 × 3% (일괄 8%면 휴지 먼저)
+for fd, first in (("2026-11-05", "휴지"), ("2026-10-12", "전기요")):
+    H.TOSS_FEE_DAY = fd; seen = {"tb_508": {"t": T("2026-10-12 07:00"), "n": "x"}, "pk_2026-10-12 12:30": {"t": T("2026-10-12 07:00"), "id": 506, "n": "x"}}; sp_run("2026-10-12 08:05", lambda s: H.toss_deals(s, "special"))
+    (m, p), = [(m, p) for m, p in sp_sent if p["chat_id"] == H.CHANNEL]; assert p["text"].index(first) < p["text"].index({"휴지": "전기요", "전기요": "휴지"}[first]), (fd, p["text"])
+H.TOSS_FEE_DAY = "2026-11-05"; e502["displayPrice"] = 89000
 seen = {}; assert not sp_run("2026-10-12 11:05", lambda s: H.toss_deals(s, "special")) and not sp_calls  # 8시 회차는 3시간 안에만(놓치면 낮에 몰아 안 올림)
 seen = {"bundles": {"t": T("2026-10-12 22:01"), "ts": [T("2026-10-12 22:01")]}}; assert "toss_special 미룸" in sp_run("2026-10-12 22:05", lambda s: H.toss_deals(s, "special")) and not sp_calls
 seen = {"tb_501": 1, "tb_502": 1, "tb_503": 1, "tb_506": 1, "tb_508": 1, "tb_510": 1}; sp_run("2026-10-12 22:20", lambda s: H.toss_deals(s, "special")); assert "tossspecial_20261012_22" in seen and not sp_sent and not [c for c in sp_calls if "detail" in c]  # 후보 0 -> 회차 끝
