@@ -1967,9 +1967,10 @@ assert len(ig9) == 7 and seen["igk_" + D9 + "_12"]["kids"] == [f"IMG{n0 + n}" fo
 assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"]  # 사이트 먼저
 at9("12:47"); g9 = [(m, u.split("?")[0].rsplit("/", 1)[-1]) for m, u, b in ig9 if u.startswith(H.IG)]
 assert g9 == [("GET", f"IMG{n0 + 5}"), ("POST", "media")] and ig9[-1][2] == {"media_type": "CAROUSEL", "children": ",".join(f"IMG{n0 + n}" for n in range(1, 6)), "caption": H.card_caption(f"{D9}_12")[1]}, g9  # 다음 실행: 마지막 조각 상태 1번 + 묶음(캡션은 묶음에만)
-assert seen["igc_IMG%d" % (n0 + 6)] == {"t": TK(f"{D9} 12:33"), "card": f"{D9}_12"} and not [k for k in seen if k.startswith("igk_")]  # 시각 = 조각 만든 때(사이트 먼저는 지남)
-at9("12:47", H.ig_publish); assert [b for m, u, b in ig9 if u.endswith("media_publish")] == [{"creation_id": "IMG%d" % (n0 + 6)}] and len(ig9) == 2 and "낮 12시 카드" in sent[-1][1]["text"]  # 같은 실행에 묶음 상태 1번 + 발행(묶음만 1번)
-at9("13:01"); assert not ig9  # 회차 끝
+assert seen["igc_IMG%d" % (n0 + 6)] == {"t": TK(f"{D9} 12:47"), "card": f"{D9}_12"} and not [k for k in seen if k.startswith("igk_")]  # 발행은 다음 실행(묶은 실행 seen이 안 남아도 두 번 X — 10/23 리뷰)
+at9("12:47", H.ig_publish); assert not ig9  # 묶은 실행엔 발행 X(상태도 안 봄)
+at9("13:01", H.ig_publish); assert [b for m, u, b in ig9 if u.endswith("media_publish")] == [{"creation_id": "IMG%d" % (n0 + 6)}] and len(ig9) == 2 and "낮 12시 카드" in sent[-1][1]["text"]  # 묶음 상태 1번 + 발행(묶음만 1번)
+at9("13:15"); assert not ig9  # 회차 끝
 # 마지막 조각 처리 중 -> 묶음은 다음 실행에(시간 창 지나도) / 조각 실패·1시간 넘게 처리 중 = 진짜 실패(버림, 다시 X, 예외 X)
 seen, st9["v"] = {}, "IN_PROGRESS"; json.dump({}, open(H.IG_LIVE, "w")); n0 = st9.get("n", 0); at9("14:50")
 assert len([1 for m, u, b in ig9 if m == "POST"]) == 5 and seen["igk_" + D9 + "_12"]["kids"] == [f"IMG{n0 + n}" for n in range(1, 6)] and not [k for k in seen if k.startswith("igc_")]
@@ -5125,4 +5126,25 @@ assert s36g["ig_hold"] == TK("2026-10-26 21:30") + 86400 and not [k for k in s36
 H.ig_fail(s36g, TK("2026-10-27 12:30"), "z"); assert len(s36g["igslow"]["f"]) == 1 and len(al36) == 1  # 날이 바뀌면 다시 셈
 assert H.ig_err(type("E", (Exception,), {"body": '{"error":{"message":"spam","code":4,"error_subcode":2207051}}'})()) == "spam (4/2207051)"
 H.tg, H.ai_json = sv36[5:]
+# db939ec93 리뷰 고침: 상품명 = 개수 지킴(6개+·1+1·괄호 속 30롤)·모델명·천 단위 쉼표 그대로, 낱말 임의로 안 뺌 · ⏰ 조건 = 카드·페이·와우쿠폰도, 길면 짧게, 적립·배송 조건 X
+#   · ✔ 리뷰 수 = 이 상품 것(참고 상품 X) · '1개당 N원 추가 할인'은 단가 X · 말투 줄 = 써 본 척·'지금 바로' X · 올리브영 = 큐레이터 정책(맞는 줄 없으면 말투 줄 없이) · 말투 기록 = 쓴 줄만
+assert [H.th_name(n) for n in ("센소다인 민감성 치약 100g 6개+미니치약 증정", "[1+1] 메디힐 마스크 100매", "로얄라이프 3겹(30m 30롤) 2팩", "뉴클 보조배터리 20,000mAh", "싸이닉 썬크림 EX 50ml 1+1+1", "삼성 오디세이 IPX500A 모니터")] == \
+    ["센소다인 민감성 치약 100g 6개+미니치약", "1+1 메디힐 마스크 100매", "로얄라이프 3겹 30m × 30롤 2팩", "뉴클 보조배터리 20,000mAh", "싸이닉 썬크림 EX 50ml 1+1+1", "삼성 오디세이 IPX500A 모니터"]
+sv36v = (H.ai_voice, H.random, H.TOSS_NO_CMP); q36 = []; H.ai_voice, H.TOSS_NO_CMP = (lambda p: {"line": q36.pop(0) if q36 else ""}), True
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 4 if 4 in xs else xs[0])})
+def tv36(t, link="https://link.coupang.com/a/c", lines=("주머니에 넣어 두기 좋음",)):
+    q36[:] = list(lines); return [l for l in H.th_voice({}, t, link).split("\n") if l.startswith(("⏰", "✔"))]
+C36 = CAMIL24.split("\n\n👉")[0]
+assert tv36(C36.replace("100원 쿠폰 적용가", "2,000원 쿠폰 적용가"))[-1] == "⏰ 10/22 19시 쿠폰가 · 결제 전 확인"  # 길면 짧은 이름(조건은 남김)
+assert tv36(C36.replace("100원 쿠폰 적용가(쿠폰 없으면 8,730원)", "삼성카드 할인 적용가"))[-1] == "⏰ 10/22 19시 카드할인가 · 결제 전 확인"
+assert tv36(C36.replace("100원 쿠폰 적용가(쿠폰 없으면 8,730원)", "적립은 멤버십 조건 확인"))[-1] == "⏰ 10/22 19시 가격 · 결제 전 확인"  # 적립 조건 = 가격 조건 아님
+assert tv36(C36.replace("100원 쿠폰 적용가(쿠폰 없으면 8,730원)", "향 옵션 선택 · 100원 쿠폰 적용가"))[-1] == "⏰ 10/22 19시 100원 쿠폰가 · 결제 전 확인"  # 옵션 조각이 앞이어도 쿠폰
+assert tv36(C36.replace("쿠팡 검색 상위 핸드크림 중", "참고: 아트릭스 핸드크림 3개 리뷰 312 · 쿠팡 검색 상위 핸드크림 중"))[0] == "✔ 리뷰 5만+ · 한 달 2,000명+ 구매"  # 참고 상품 리뷰 X
+assert not re.search(H.TH_UNIT, "1개당 500원 추가 할인") and re.search(H.TH_UNIT, "1개당 500원")
+s36v = {}; q36[:] = ["나도 하나 샀음", "지금 바로 담아 둘 만함"]; assert H.th_voice(s36v, C36, "https://link.coupang.com/a/c").split("\n\n")[3] == H.TH_TONE_POOL[4][0] and s36v["tone_th"]["l"] == [4]  # 써 본 척·재촉 X -> 기본 한 줄(쓴 말투 기록)
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 1 if 1 in xs else xs[0])}); s36v = {}; q36[:] = ["추천해요", "강추해요"]
+o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50ml (19,900원)\n\n50ml 2개", "https://oy.run/x")
+assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
+H.ai_voice, H.random, H.TOSS_NO_CMP = sv36v
+assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and '"t": now, "card": stem}  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
 print("OK: 모든 셀프체크 통과")
