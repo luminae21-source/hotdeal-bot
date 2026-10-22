@@ -4145,6 +4145,28 @@ g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill tur
 json.dump([own25(2521, "19:40", G23.replace("구매 2위", "구매 9위")), own25(2522, "19:30", K23), own25(2523, "21:50", HB25)], open(H.POSTS, "w"), ensure_ascii=False)
 s25 = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq21(7, "21:40", 0)]}}
 g25, log25 = run21(s25, "22:00"); assert g25 == ["코멧"] and "threads fill turn own(창 끝남 30분 전) (대기 own 3·toss 1)" in log25, (g25, log25)
+# 10/22 Cowork(실제 — 14:37 re 깨끗한나라(채널 12:29, 창 15:29)가 먼저 나가 11:47 진우 🔥 홈키파(창 14:47) Threads 못 나감): 끝나가는 진우 🔥 = re·①②·화장품보다도 먼저
+#       (strong 단계 — grp -1 re보다 먼저) · re도 끝나가면 그 안에서 먼저 올라온 순 · 창 여유 있으면 re 먼저 그대로
+ev25, H.EVENTS = H.EVENTS, "ev25.json"; H.TH_GAP_JITTER = 0
+re25 = own25(2531, "12:29", HB25); json.dump([{"at": "2026-10-21 12:29", "url": re25["url"], "re": True, "deal": True, "text": "x"}], open("ev25.json", "w"), ensure_ascii=False)
+json.dump([own25(2530, "11:47", K23), re25], open(H.POSTS, "w"), ensure_ascii=False)
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq21(9, "14:00", 0)]}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["코멧"] and "threads turn own(창 끝남 10분 전) — re·①②·화장품 1개 앞" in log25 and s25["thfill"]["k"] == "own", (g25, log25)  # 진우 🔥(창 10분 남음) 먼저
+g25, log25 = run21(s25, "15:22"); assert g25 == ["하루온"], (g25, log25)  # 다음 칸 = re(창 15:29 — 끝나기 전에 나감)
+json.dump([own25(2532, "13:30", K23), own25(2533, "13:00", HB25)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([{"at": "2026-10-21 13:00", "url": "https://link.coupang.com/a/W2533", "re": True}], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "toss"}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["하루온"] and "창 끝남" not in log25 and s25["thfill"]["k"] == "toss", (g25, log25)  # 진우 🔥 창 16:30(113분)·re 창 16:00(83분) 둘 다 여유 = re 먼저 그대로(채움 차례도 그대로)
+json.dump([own25(2538, "13:30", K23), own25(2539, "12:29", HB25)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([{"at": "2026-10-21 12:29", "url": "https://link.coupang.com/a/W2539", "re": True}], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}, "thfill": {"t": 1, "k": "toss"}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["하루온"] and "창 끝남" not in log25 and s25["thfill"]["k"] == "toss", (g25, log25)  # re만 끝나감(창 15:29) = 원래도 맨 먼저 -> 순서 그대로면 로그·채움 차례 X
+json.dump([own25(2534, "11:47", K23), own25(2535, "11:40", HB25)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([{"at": "2026-10-21 11:40", "url": "https://link.coupang.com/a/W2535", "re": True}], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}}
+g25, log25 = run21(s25, "14:30"); assert g25 == ["하루온"] and "창 끝남" not in log25, (g25, log25)  # re도 끝나감(창 14:40) = 먼저 올라온 순(re 11:40 → 진우 🔥 11:47 — re가 원래도 맨 먼저라 로그 X)
+g25, log25 = run21(s25, "15:15"); assert g25 == [], (g25, log25)  # (진우 🔥 창 14:47 이미 지남 — 이 경우 둘 다 못 살림: 같은 칸 1개)
+json.dump([own25(2536, "11:47", K23), own25(2537, "11:50", G23)], open(H.POSTS, "w"), ensure_ascii=False); json.dump([], open("ev25.json", "w"))
+s25 = {"thsolo_20261021": {"t": 1, "n": 5, "b": 0, "last": TK("2026-10-21 13:40")}}
+g25, log25 = run21(s25, "14:37"); assert g25 == ["코멧"] and "re·①②·화장품 1개 앞" in log25, (g25, log25)  # ②(구매 2위) 진우 딜도 창 14:50 — 먼저 올라온 진우 🔥(14:47)부터
+os.remove("ev25.json"); H.EVENTS = ev25
 os.remove("posts25.json")
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, time.time, tk25, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_GAP_JITTER) = sv25
 H.E.pop("THREADS_TOKEN", None) if tk25 is None else H.E.update(THREADS_TOKEN=tk25)
@@ -4413,6 +4435,102 @@ sv28c = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: vv28.pop(
 o28 = H.th_voice({}, TT28, "https://toss.shopping/_m/t28"); H.ai_voice, H.random = sv28c
 assert "토스 특가 오늘만" not in o28 and o28.count("💙") == 1 and "\n더건강플러스 올리브오일 1L 오늘 특가\n" in o28, o28  # 라벨 줄(💙) = 문장 아님
 (H.tg, H.EVENTS, time.time, H.TOSS_NO_CMP, H.toss, H.ai_pick, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN) = sv28[:9]; H.E.pop("THREADS_TOKEN", None); H.http = fake_http; json.dump([], open("posts.json", "w"))
+# 9-29 (10/22 15:3x Cowork·진우 '점검 기간에도 토스 글 채널·Threads 둘 다 계속(수익 0이어도)'): 토스 쉐어링크 점검 10/30 00:00~11/4 23:59(KST) = 새 링크 X·만들어 둔 링크(tlink) 재사용,
+#      점검 때문인 실패는 바로 안 알리고 하루 1번 요약, 11/5 첫 실행에 링크 1개 만들어 보고 되면 보통 모드 + 알림 1번, 10/28~29 미리 만들기(toss_stock)
+sv29 = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP)
+c29, s29m, lk29, LF29 = [], [], [], []  # API 호출 · 관리자 알림 · 링크 발급(tacaItemId) · 비어 있지 않으면 발급 FAIL
+L29 = {"best-selling": [{"tacaItemId": k, "displayName": f"베스트{k}", "displayPrice": 9900, "discountRate": 40, "reviewScore": 4.8, "reviewCount": 1234, "isSoldOut": k == 3} for k in (1, 2, 3, 4)],
+       "today-deals": [{"tacaItemId": 50, "displayName": "하루특가50", "displayPrice": 5000, "isSoldOut": False}]}
+D29 = {7: {"tacaItemId": 7, "displayName": "보관7", "displayPrice": 7700, "discountRate": 30, "reviewScore": 4.5, "reviewCount": 99, "isSoldOut": False}}
+def h29(url, body=None, headers=None, method=None):
+    c29.append(url)
+    if url == "https://oauth2.cert.toss.im/token": return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if url.endswith("/categories"): return json.dumps({"resultType": "SUCCESS", "success": {"categories": [{"categoryId": 200, "displayName": "식품"}, {"categoryId": 400, "displayName": "뷰티"}, {"categoryId": 900, "displayName": "가전"}]}})
+    if url.endswith("/links"):
+        lk29.append(body["tacaItemId"])
+        return json.dumps({"resultType": "FAIL", "error": {"reason": "점검"}} if LF29 else {"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/N{body['tacaItemId']}"}})
+    if "/products/detail?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": [D29[int(i)] for i in parse_qs(urlsplit(url).query)["tacaItemIds"][0].split(",") if int(i) in D29]}})
+    for k, v in L29.items():
+        if f"/products/{k}?" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": v}})
+    if "/products/best-categories/" in url: return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": int(url.split("/")[-1].split("?")[0]) + 1, "displayName": "카테", "displayPrice": 1000, "isSoldOut": False}]}})
+    raise AssertionError(url)
+H.http, H.HAS_TOSS, H.tg = h29, True, lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
+assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, toss_stock, coupang_remind" in inspect.getsource(H.main)
+# ① 경계: 10/29 23:59 보통 · 10/30 00:00 재사용(시작 알림 1번) · 11/4 23:59 재사용(날 바뀌면 전날 요약 1번) · 11/5 00:00 링크 1개 만들어 봄 -> 되면 보통 + '끝' 1번
+s29 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")], "2": ["https://toss.im/_m/K2", TK("2026-10-29 10:00")]}}, "tb_7": {"t": TK("2026-10-29 12:00")}}
+H.toss_mode(s29, TK("2026-10-29 23:59")); assert H.RUN["treuse"] is False and not s29m and "tpause" not in s29 and not lk29
+H.toss_mode(s29, TK("2026-10-30 00:00")); assert H.RUN["treuse"] is True and len(s29m) == 1 and s29m[0].startswith("🔧 토스 쉐어링크 점검 모드 시작(10/30~11/4) — 새 링크 안 만들고 보관 링크 2개(3일 안 올린 것 빼면 1개)를 재사용") and not lk29, s29m
+H.toss_mode(s29, TK("2026-10-30 00:14")); assert H.RUN["treuse"] is True and len(s29m) == 1  # 시작 알림은 1번
+H.tnote(s29, "ok", "베스트2"); H.tnote(s29, "miss", "이름 예약 장어"); H.tnote(s29, "err", "토스 회차 글 RuntimeError"); H.tnote(s29, "err", "토스 회차 글 RuntimeError")
+H.toss_mode(s29, TK("2026-10-30 23:59")); assert len(s29m) == 1  # 같은 날 = 요약 X
+H.toss_mode(s29, TK("2026-10-31 00:00")); assert H.RUN["treuse"] is True and len(s29m) == 2 and s29m[1] == "🔧 토스 점검 모드 10/30 요약 — 보관 링크 꺼내 씀 1번 · 링크 없어 못 올림 1개(이름 예약 장어) · 토스 단계 오류 2번(토스 회차 글 RuntimeError) · 남은 보관 링크 2개(3일 안 올린 것 빼면 1개)", s29m
+H.toss_mode(s29, TK("2026-11-04 23:59")); assert H.RUN["treuse"] is True and len(s29m) == 3 and "10/31 요약 — 보관 링크 꺼내 씀 0번 · 링크 없어 못 올림 0개 · 남은" in s29m[2] and not lk29  # 끝 분까지 점검(새 링크 X)
+H.toss_mode(s29, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is False and lk29 == [1] and len(s29m) == 5 and "11/4 요약" in s29m[3] and s29m[4].startswith("✅ 토스 쉐어링크 점검 끝 — 링크 새로 만들기 확인, 보통 모드로") and "토스 5%·선착순특가 3%" in s29m[4] and "오늘 재사용" not in s29m[4]
+assert s29["tlink"]["m"]["1"][0] == "https://toss.im/_m/N1" and s29["tpause"]["back"] == 1  # 지금 베스트 중 품절 아닌 첫 상품(1)으로 만들어 봄(보관 상품은 그사이 발급 제한일 수 있음)
+H.toss_mode(s29, TK("2026-11-05 00:14")); H.toss_mode(s29, TK("2026-11-06 09:00")); assert H.RUN["treuse"] is False and lk29 == [1] and len(s29m) == 5  # 복귀 뒤 = 확인·요약·알림 X
+H.toss_mode({}, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is False and len(s29m) == 5 and lk29 == [1]  # 점검 중 한 번도 안 돈 seen(새로 시작) = 보통
+s29b = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")]}}, "tpause": {"t": 1, "d": "2026-11-04"}}; s29m.clear(); lk29.clear(); LF29.append(1)
+H.toss_mode(s29b, TK("2026-11-05 00:00")); assert H.RUN["treuse"] is True and lk29 == [1] and len(s29m) == 2 and s29m[1].startswith("⚠️ 토스 쉐어링크 점검 기간(11/4까지)이 끝났는데 링크 새로 만들기가 아직 안 돼요"), s29m  # 안 되면 재사용 그대로 + 알림 1번
+H.toss_mode(s29b, TK("2026-11-05 00:30")); assert H.RUN["treuse"] is True and lk29 == [1] and len(s29m) == 2  # 1시간 안 = 다시 안 해 봄
+H.toss_mode(s29b, TK("2026-11-05 01:01")); assert H.RUN["treuse"] is True and lk29 == [1, 1] and len(s29m) == 2  # 또 안 됨 = 알림 X
+H.tnote(s29b, "miss", "이름 예약 장어"); LF29.clear(); H.toss_mode(s29b, TK("2026-11-05 02:02")); assert H.RUN["treuse"] is False and lk29 == [1, 1, 1] and len(s29m) == 3 and s29m[2].startswith("✅") and "(오늘 재사용 모드 동안: 보관 링크 꺼내 씀 0번 · 링크 없어 못 올림 1개(이름 예약 장어))" in s29m[2], s29m  # 복귀 날 메모도 '끝' 알림에
+assert H.toss_mode(s29b, TK("2026-11-24 00:00")) is None and "7" not in s29b["tlink"]["m"]  # 보관 14일 지나면 정리
+def tg29x(m, **p): raise TimeoutError("read")  # 텔레그램 시간 초과(tg는 HTTPError만 잡음)여도 tpause에 t(seen 정리 KeyError X)·모드 그대로
+H.tg = tg29x; s29x = {}; H.toss_mode(s29x, TK("2026-10-30 00:07")); assert H.RUN["treuse"] is True and s29x["tpause"]["t"] == TK("2026-10-30 00:07")
+H.tg = lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
+# ② toss_link·toss_ok: 재사용 모드 = 발급 X·보관 링크(없으면 None) + 요약 · 보통 = 발급하고 보관
+H.RUN["treuse"] = True; s29c = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", 1e12]}}, "tpause": {"t": 1, "d": "2026-10-30"}}; lk29.clear()
+assert H.toss_link(s29c, 7, "보관7") == "https://toss.im/_m/K7" and H.toss_link(s29c, 8, "없음8") is None and not lk29 and s29c["tpause"]["ok"] == ["보관7"] and s29c["tpause"]["miss"] == ["없음8"]
+assert H.toss_ok(s29c, 7) and H.toss_ok(s29c, "7") and not H.toss_ok(s29c, 8) and H.toss_ok(s29c, "ev:https://toss.im/_m/j")
+c29.clear(); assert H.affiliate("https://toss.shopping/t/123") == ("https://toss.shopping/t/123", False) and not c29  # 상품 주소 발급(tacaId)도 점검 땐 안 부름
+assert H.aff_note("https://toss.im/_m/K7") == H.TOSS_NOTE  # 재사용 링크도 쉐어링크 = Threads '수수료 딜만'에 안 걸림(대가성 첫 줄 그대로 — Cowork ② 점검 중 예외)
+H.RUN["treuse"] = False; assert H.toss_link(s29c, 8) == "https://toss.im/_m/N8" and lk29 == [8] and s29c["tlink"]["m"]["8"][0] == "https://toss.im/_m/N8" and H.toss_ok(s29c, 9)
+# ③ 재사용 모드 토스 개별 글(toss_solo): 보관 링크 있는 상품만 Claude에 · 발급 X · 틀 그대로(대가성 첫 줄·💙 머리·게시 시점·💙 버튼 = 보관 링크) · 목록에 없으면 보관 상품(상세로 지금 가격, 머리 출처 X)
+ch29 = []; H.tg = lambda m, **p: ch29.append(p) or {"message_id": 950 + len(ch29)}
+H.ai_pick = lambda prompt, lines: c29.append(("ai", lines)) or [{"i": 0, "score": 8, "comment": "1개 9,900원"}]
+H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP = "ev29.json", range(24), 0, True; json.dump([], open("ev29.json", "w")); H.E["THREADS_TOKEN"] = "tk"
+s29d = {"tlink": {"t": 1, "m": {"2": ["https://toss.im/_m/K2", 1e12], "7": ["https://toss.im/_m/K7", 1e12 - 1]}}, "tpause": {"t": 1, "d": "2026-10-31"}}
+time.time = lambda: TK("2026-10-31 12:05"); H.RUN["treuse"] = True; lk29.clear(); c29.clear(); H.toss_solo(s29d)
+(p29,) = ch29
+assert not lk29 and [l.split(" |")[0] for l in next(x[1] for x in c29 if x[0] == "ai")] == ["베스트2"]  # 1·4 = 보관 링크 없음, 3 = 품절
+assert H.TOSS_NOTE in p29["text"].split("💙")[0] and "💙 토스 특가 · 많이 팔린 순위 2위 🔥\n<b>베스트2</b>\n9,900원 (40%↓) · ⭐ 4.8 (1,234)\n👉 1개 9,900원\n⚠️ 10/31 12:05 게시 시점 가격" in p29["text"], p29["text"]
+assert p29["reply_markup"] == {"inline_keyboard": [[{"text": "💙 토스에서 9,900원", "url": "https://toss.im/_m/K2"}]]} and "tb_2" in s29d and s29d["tpause"]["ok"] == ["베스트2"]
+q29 = s29d["thtoss"]["q"][-1]; assert q29["link"] == "https://toss.im/_m/K2" and q29["text"].startswith(H.TOSS_NOTE) and "💙 토스 특가 · 많이 팔린 순위 2위 🔥" in q29["text"] and "게시 시점 가격" in q29["text"]  # Threads 채움 후보도 보관 링크
+ch29.clear(); c29.clear(); time.time = lambda: TK("2026-10-31 13:05"); H.toss_solo(s29d)  # 13시 = 뷰티·생필품 목록엔 보관 링크 없음 -> 보관 상품(7)
+(p29b,) = ch29
+assert "💙 토스 특가 🔥\n<b>보관7</b>\n7,700원 (30%↓) · ⭐ 4.5 (99)\n👉 1개 9,900원\n⚠️ 10/31 13:05 게시 시점 가격" in p29b["text"] and p29b["reply_markup"]["inline_keyboard"][0][0] == {"text": "💙 토스에서 7,700원", "url": "https://toss.im/_m/K7"} and not lk29, p29b["text"]
+assert any("/products/detail?tacaItemIds=7" in u for u in c29 if isinstance(u, str)) and H.TOSS_NOTE in p29b["text"].split("💙")[0]
+ch29.clear(); time.time = lambda: TK("2026-10-31 14:05"); H.toss_solo(s29d); assert not ch29 and not lk29 and "tsolo_20261031_14" in s29d  # 다 3일 안에 올림 -> 안 올림(같은 상품 3일 규칙 그대로)
+# ④ 재사용 모드 토스 목록(하루특가 TOP): 보관 링크 있는 것만 · 대가성 첫 줄·💙 머리·게시 시점 끝 줄 · 발급 X
+H.E.pop("THREADS_TOKEN", None); s29e = {"tlink": {"t": 1, "m": {"50": ["https://toss.im/_m/K50", 1e12]}}, "tpause": {"t": 1, "d": "2026-10-31"}}; ch29.clear()
+time.time = lambda: TK("2026-10-31 10:00"); H.toss_deals(s29e)
+(p29c,) = ch29
+assert p29c["text"].startswith(f"<i>{H.TOSS_NOTE}</i>\n\n💙 <b>오늘의 토스 하루특가 TOP1</b>") and p29c["text"].endswith("\n\n⚠️ 10/31 10:00 게시 시점 가격") and "https://toss.im/_m/K50" in json.dumps(p29c["reply_markup"]) and not lk29, p29c
+# ⑤ 알림 폭탄 X: 점검 중 토스 단계 오류 = 요약으로(보통 땐 바로 알림) · 커뮤니티 토스 딜·이름 예약 = 진우에게 안 물음(진우도 새 링크 못 만듦)
+def boom29(s): raise RuntimeError("x")
+boom29.__name__ = "toss_solo"; s29f = {"tpause": {"t": 1, "d": "2026-10-31"}}; ch29.clear()
+H.step_alert(s29f, boom29, RuntimeError("점검")); assert not ch29 and s29f["tpause"]["err"] == ["토스 자동 개별 글 RuntimeError"]
+H.step_alert(s29f, boom29, KeyError("x")); assert len(ch29) == 1 and "토스 자동 개별 글 게시 실패" in ch29[0]["text"] and len(s29f["tpause"]["err"]) == 1  # 토스 API 오류 아님(코드·Claude 등) = 점검 중에도 바로
+ch29.clear(); H.RUN["treuse"] = False; H.step_alert(s29f, boom29, RuntimeError("점검")); assert len(ch29) == 1 and "토스 자동 개별 글 게시 실패" in ch29[0]["text"]
+H.RUN["treuse"] = True; ch29.clear(); s29g = {"tw_x": {"t": TK("2026-10-31 08:00"), "d": {"title": "[토스] 삼겹살 1kg (9,900원)", "url": "https://www.ppomppu.co.kr/x"}, "p": {"comment": "c", "score": 7}}, "tpause": {"t": 1, "d": "2026-10-31"}}
+time.time = lambda: TK("2026-10-31 10:30"); H.toss_wait(s29g); assert not ch29 and s29g["tw_x"]["ask"] == -1 and s29g["tpause"]["miss"][0].startswith("커뮤니티 [토스] 삼겹살")
+H.toss_wait(s29g); assert not ch29  # 그만 찾음
+json.dump([{"at": "2026-10-31 11:00", "name": "없는상품 500g", "api": True}], open("ev29.json", "w"), ensure_ascii=False); s29h = {"tpause": {"t": 1, "d": "2026-10-31"}}
+H.toss_picks(s29h); assert not ch29 and s29h["pk_2026-10-31 11:00"]["asked"] == 1 and s29h["pk_2026-10-31 11:00"]["st"] == "skip" and s29h["tpause"]["miss"] == ["이름 예약 없는상품 500g"]  # st skip = watch '예약 글 안 나감' 알림 X
+# ⑥ 미리 만들기(10/28~29, 4시간마다): 베스트·하루특가·생필품·뷰티 중 품절 아닌 새 상품(이미 보관 X) · 다른 날·재사용 모드 = X
+H.RUN["treuse"] = False; s29i = {"tlink": {"t": 1, "m": {"2": ["https://toss.im/_m/K2", 1]}}}; lk29.clear(); json.dump([], open("ev29.json", "w"))
+time.time = lambda: TK("2026-10-27 23:59"); H.toss_stock(s29i); assert not lk29
+time.time = lambda: TK("2026-10-28 00:10"); H.toss_stock(s29i); assert sorted(lk29) == [1, 4, 50, 201, 401] and s29i["tlink"]["m"]["4"][0] == "https://toss.im/_m/N4", lk29  # 품절(3)·보관(2)·가전(900) X
+lk29.clear(); time.time = lambda: TK("2026-10-28 04:09"); H.toss_stock(s29i); assert not lk29 and not any("best-selling" in u for u in c29[-1:])  # 4시간 안 = API도 안 부름
+L29["best-selling"].append({"tacaItemId": 6, "displayName": "베스트6", "displayPrice": 1, "isSoldOut": False}); time.time = lambda: TK("2026-10-29 23:00"); H.toss_stock(s29i); assert lk29 == [6]
+LF29.append(1); L29["best-selling"].append({"tacaItemId": 8, "displayName": "베스트8", "displayPrice": 1, "isSoldOut": False}); s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert lk29 == [8] and "8" not in s29i["tlink"]["m"]  # 막히면 거기서 멈춤
+LF29.clear(); H.RUN["treuse"] = True; s29i["tstock"]["t"] = 0; lk29.clear(); H.toss_stock(s29i); assert not lk29
+H.RUN["treuse"], tsr29, H.TOSS_STOCK_RUN = False, H.TOSS_STOCK_RUN, 2; s29j = {}; lk29.clear()  # 한 실행 발급 수 제한(실행 6분 한도) — 남으면 다음 실행에 이어서
+H.toss_stock(s29j); assert len(lk29) == 2; H.toss_stock(s29j); assert len(lk29) == 4; H.toss_stock(s29j); assert len(lk29) == 6; H.toss_stock(s29j); assert len(lk29) == 8; H.toss_stock(s29j); assert len(lk29) == 8 and len(set(lk29)) == 8 and tsr29 == 30  # 8개 = 2·2·2·2 -> 다 했으면 4시간 쉼
+H.TOSS_STOCK_RUN = tsr29
+H.RUN["treuse"] = False; L29["best-selling"][-2:] = []
+(H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP) = sv29; H.E.pop("THREADS_TOKEN", None); json.dump([], open("posts.json", "w"))
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
