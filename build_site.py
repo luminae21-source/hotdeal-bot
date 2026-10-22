@@ -377,13 +377,19 @@ def home_pool(posts, days):
     """홈 몰·품목·브랜드 칸에 둘 딜 번호(10/23 진우 '기존에 있던 제품은 판매 중이면 없애버리지 마'): 커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음),
     진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개, 판매 종료 표시가 없으면 — 종료 = 글 "end"(토스 품절·조회 안 됨, hotdeal.own_end가 붙이고 다시 팔면 지움) ·
     events.json 그 url "end"(YYYY-MM-DD)가 글 날짜 이후(쿠팡·네이버 — Cowork가 품절·검색에서 사라진 상품에 붙임) · 토스 하루특가·선착순(밤 12시 마감) 글 날이 지남."""
-    today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-    ends, last = {}, {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
-    for e in json.load(open(EVENTS)) if os.path.exists(EVENTS) else []:
-        if e.get("end") and e.get("url"):
+    today, ends = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), {}
+    try:
+        evs = json.load(open(EVENTS)) if os.path.exists(EVENTS) else []
+    except ValueError:  # 손으로 고치다 깨진 파일 = 종료 표시 없음으로(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)
+        evs = []
+    for e in evs:
+        if isinstance(e, dict) and isinstance(e.get("end"), str) and e.get("url"):
             ends[e["url"]] = max(ends.get(e["url"], ""), e["end"])
-    gone = lambda p: p.get("end") or ends.get(p.get("url"), "") >= p["t"][:10] or shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today
-    return {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and (last[p.get("url")] == i and not gone(p) if p.get("own") else p["t"][:10] in days[:3])}
+    recent = lambda p: p["t"][:10] in days[:3] and not p["text"].startswith("📋")
+    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own") and not (shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today)}  # 끝난 하루특가 재게시면 그 전 보통 글
+    newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
+    return {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and (last.get(p.get("url")) == i and newer.get(p.get("url"), -1) < i and not p.get("end")
+                                                                                  and ends.get(p.get("url"), "") < p["t"][:10] if p.get("own") else recent(p))}
 
 
 def cap(ds, n):
@@ -683,10 +689,9 @@ def build(posts, out="docs"):
     panes = [p for p in panes if p[2]]
     bar = lambda home, cls="bar": (f'<nav class="{cls}" aria-label="바로가기">' + "".join(f'<a href="{home}#{k}" class="k-{k}"><i><svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg></i>{n.split()[-1]}</a>' for k, n, _ in panes if k != "saved") + "</nav>")  # 찜은 맨 위 '찜' 버튼으로
     find = lambda home, ps: find_box([(k, n) for k, n in CHIPS if any(k in (keys(p) + " " + conds(p)).split() for p in ps)]) + bar(home, "bar top")  # 10/15 진우 '탭만 고정': 검색창·칩은 같이 스크롤, 앱 안 탭 줄만 sticky(.find 밖이어야 끝까지 붙음)  # 결과 0개 칩은 안 보임  # 앱 안 브라우저 = 검색창 아래 한 줄(가로 스크롤, 같은 아이콘·이름 — 아래 바는 숨김, CSS .inapp)
-    home = home_pool(posts, days)  # 검색 칩(결과 0개 칩 숨김)도 홈에 남는 진우 상품까지
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for i, p in enumerate(posts) if p["t"][:10] in days[:2] and not p["text"].startswith("📋") or i in home]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for p in posts if p["t"][:10] in days[:2] and not p["text"].startswith("📋")]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE))
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE, [p for p in posts if not p["text"].startswith("📋")]) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))

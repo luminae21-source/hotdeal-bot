@@ -4328,40 +4328,43 @@ def prod_cols(title, cat, links, ids, deal=None):
     return {"kind": kind, "name": parse(title)[1], **({"url": ls[0], **({"tid": ids[ls[0]]} if ls[0] in ids else {})} if ls else {})}
 
 
-OWN_END_GAP, OWN_END_RES = 3 * 3600, 20  # 10/23 진우 '사이트에서 판매 중이면 없애지 마': 진우 토스 상품 판매 확인 간격 · 한 실행에 단축 링크(/_m/) 푸는 최대 수
+OWN_END_GAP, OWN_END_RES, OWN_END_SEC = 3 * 3600, 20, 30  # 10/23 진우 '사이트에서 판매 중이면 없애지 마': 진우 토스 상품마다 판매 확인 간격 · 한 실행에 단축 링크(/_m/) 푸는 최대 수·시간(초)
 
 
 def own_end(seen):
-    """사이트 홈에 남는 진우 토스 상품(own 쉐어링크 · 같은 url 최신 글 · 하루특가·선착순 빼고 — build_site.home_pool)의 판매 종료를 상세 API로(30개씩, OWN_END_GAP마다 + 새로 id 찾은 실행):
-    품절·조회 안 됨 -> 그 url 글에 "end": 오늘(KST), 다시 판매 중 -> "end" 지움(posts.json — 사이트 홈 칸이 빼고/다시 넣음). 상품 id = 단축 링크를 1번 풀어 seen["tossid"]["m"](못 풀면 하루 뒤 다시).
+    """사이트 홈에 남는 진우 토스 상품(own 쉐어링크 · 같은 url 최신 보통 글 — 하루특가·선착순 글 빼고, build_site.home_pool)의 판매 종료를 상세 API로:
+    실행마다 1번, 마지막 확인이 OWN_END_GAP 지난 상품 id 30개까지(오래 안 본 것부터 — 상품이 늘어도 하루 호출 상한 안에서 돌아감).
+    품절·조회 안 됨 -> 그 url 글에 "end": 오늘(KST), 다시 판매 중 -> "end" 지움(posts.json — 사이트 홈 칸이 빼고/다시 넣음).
+    상품 id = 단축 링크를 1번 풀어 seen["tossid"]["m"][url] = [id(못 풀면 0 — 하루 뒤 다시), 푼 시각, 마지막 확인]. 한 실행에 OWN_END_RES개·OWN_END_SEC초까지(토스가 안 받아도 실행이 안 길어지게).
     쿠팡·네이버는 자동 확인 X(쿠팡 API 승인 전) — Cowork가 events.json 그 항목에 "end"."""
     now = time.time()
     if not HAS_TOSS:
         return
     posts, today = load(POSTS, []), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
-    last = {p["url"]: p for p in posts if p.get("own") and toss_share(p.get("url"))}
-    urls, tt = [u for u, p in last.items() if not re.search(DAY_ONLY, p["text"])], seen.setdefault("tossid", {"m": {}})
+    urls = list({p["url"]: 1 for p in posts if p.get("own") and toss_share(p.get("url")) and not re.search(DAY_ONLY, p["text"])})
+    tt = seen.setdefault("tossid", {"m": {}})
     tt["t"], ti = now, tt["m"]  # seen 정리(t 기준)에서 안 지워지게
-    new = [u for u in urls if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]
-    for u in new:
+    for u in [u for u in urls if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]:
+        if time.time() - now > OWN_END_SEC:
+            break
         m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
-        ti[u] = [int(m[1]) if m else 0, now]
-    if now - seen.get("ownend", 0) < OWN_END_GAP and not any(ti[u][0] for u in new):
-        return
+        ti[u] = [int(m[1]) if m else 0, now, 0]
     by = {}
-    for u in urls:
-        if ti.get(u, [0])[0]:
+    for _, u in sorted(((ti[u] + [0])[2], u) for u in urls if ti.get(u, [0])[0] and (ti[u] + [0])[2] < now - OWN_END_GAP):
+        if len(by) < 30 or ti[u][0] in by:
             by.setdefault(ti[u][0], []).append(u)
-    ok = {}
+    if not by:
+        return
     try:
-        for k in range(0, len(by), 30):
-            r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, list(by)[k:k + 30])))
-            ok.update({x["tacaItemId"]: not x.get("isSoldOut") for x in r["items"]} | {int(i): False for i in r.get("notFoundIds") or []})
-    except Exception as e:  # 터널 끊김 등 = 받은 만큼만, 다음 실행에 다시
+        r = toss("/products/detail?tacaItemIds=" + ",".join(map(str, by)))
+    except Exception as e:  # 터널 끊김 등 = 다음 실행에 다시
         print("own end", repr(e))
-    else:
-        seen["ownend"] = now
-    st = {u: v for i, v in ok.items() for u in by.get(i, [])}
+        return
+    ok = {x["tacaItemId"]: not x.get("isSoldOut") for x in r["items"]} | {int(i): False for i in r.get("notFoundIds") or []}
+    st = {u: ok[i] for i, us in by.items() for u in us if i in ok}
+    for us in by.values():
+        for u in us:
+            ti[u][2:] = [now]
     n = 0
     for p in posts:
         if p.get("own") and st.get(p.get("url")) is False and not p.get("end"):
@@ -4370,7 +4373,7 @@ def own_end(seen):
             n += 1
     if n:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-    print("own end", f"토스 {len(urls)}개 중 id {len(by)}개 확인 {len(st)}개 — 판매 중 {sum(st.values())} · 종료 {sum(not v for v in st.values())} · 글 바꿈 {n}")
+    print("own end", f"토스 {len(urls)}개 중 이번 {len(by)}개 확인 — 판매 중 {sum(st.values())} · 종료 {sum(not v for v in st.values())} · 글 바꿈 {n}")
 
 
 def toss_ids(seen):

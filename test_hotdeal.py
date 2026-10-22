@@ -4970,13 +4970,19 @@ P35 = [q35("2026-10-10 10:00", "[쿠팡] 크리넥스 휴지 30롤 (19,900원)",
        q35("2026-10-10 16:00", "[쿠팡] 바디워시 다시 (8,900원)", "https://link.coupang.com/a/RE", own=1),  # 7: 옛 글(8이 최신)
        q35("2026-10-15 16:00", "[쿠팡] 바디워시 다시 (8,900원)", "https://link.coupang.com/a/RE", own=1)]  # 8: end(10/12) 뒤 다시 올린 글 -> 남음
 P35 += [q35(f"2026-10-16 {h:02d}:00", f"[쿠팡] 커뮤니티 딜 {h} (1,000원)", f"https://www.ppomppu.co.kr/{h}") for h in range(25)]  # 9~33: 최근 커뮤니티 25개(칸 24개 제한)
+P35 += [q35("2026-10-10 17:00", "[토스] 선크림 2개 (11,900원)", "https://toss.shopping/_m/V1", own=1),  # 34: 보통 글 -> 남음(뒤 재게시가 끝난 선착순특가)
+        {**q35("2026-10-11 17:00", "[토스] 선크림 2개 (8,390원)", "https://toss.shopping/_m/V1", own=1), "text": "🔥 [토스] 선크림 2개 (8,390원)\n\n토스 선착순특가 · 오늘 자정쯤 끝날 수 있음"},  # 35: X
+        q35("2026-10-10 18:00", "[토스] 볶음밥 10개 (12,900원)", "https://toss.shopping/_m/W1", own=1),  # 36: 같은 url 커뮤니티 글(37)이 더 새로 칸에 있음 -> X
+        q35("2026-10-15 18:00", "[토스] 볶음밥 10개 (11,900원)", "https://toss.shopping/_m/W1")]  # 37: 커뮤니티 최근 -> 남음
 d35 = ["2026-10-16", "2026-10-15", "2026-10-14"]
-assert S35.home_pool(P35, d35) == {1, 6, 8} | set(range(9, 34)), sorted(S35.home_pool(P35, d35))
+assert S35.home_pool(P35, d35) == {1, 6, 8, 34, 37} | set(range(9, 34)), sorted(S35.home_pool(P35, d35))
 co35 = S35.shop_section(P35, d35, "coupang")
 assert "🚀 쿠팡 딜 26개" in co35 and all(f'{S35.BASE}p/{i}.html"' in co35 for i in (1, 8)) and f'{S35.BASE}p/9.html"' not in co35  # 커뮤니티 24개 + 진우 2개(밀려나지 않음), 가장 옛 커뮤니티 1개만 빠짐
 assert co35.count("지금 가격은 링크에서 확인") == 1 and "10/11 가격 · 지금 가격은 링크에서 확인" in co35  # 3일 지난 진우 상품만(8 = 최근 3일 글이라 X)
 to35 = S35.shop_section(P35, d35, "toss"); assert f'{S35.BASE}p/6.html"' in to35 and f'{S35.BASE}p/5.html"' not in to35
 li35 = S35.cat_sections(P35, d35)[0][2]; assert re.findall(r'p/(\d+)\.html"', li35) == ["8", "1"]  # 생필품 칸도: 진우 휴지·바디워시만(옛 커뮤니티 휴지·end 붙은 휴지·바디워시 X), 최신 순
+open("ev35.json", "w").write('[{"url": "https://link.coupang.com/a/END", "end": "2026-10-12"},'); assert 2 in S35.home_pool(P35, d35)  # 깨진 events.json = 종료 표시 없음(빌드 안 멈춤)
+json.dump([{"url": "https://link.coupang.com/a/END", "end": True}], open("ev35.json", "w")); assert 2 in S35.home_pool(P35, d35)
 os.remove("ev35.json"); S35.EVENTS = ev35
 # own_end(토스): 진우 쉐어링크(하루특가·선착순 빼고, 같은 url 최신 글) -> 단축 링크 id(1번만) -> 상세 API 품절·조회 안 됨 = 글 end 오늘, 다시 판매 = end 지움
 sv35 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time)
@@ -4992,5 +4998,12 @@ assert [p.get("end") for p in json.load(open("posts35.json"))] == ["2026-10-23",
 assert c35 == ["https://toss.shopping/_m/A", "https://toss.shopping/_m/B", "https://toss.shopping/_m/D", "https://toss.shopping/_m/E", "/products/detail?tacaItemIds=11,22,33"], c35  # 하루특가 C는 안 물음
 c35.clear(); time.time = lambda: TK("2026-10-23 11:00"); H.own_end(s35); assert not c35  # 3시간 안·새 id 없음 = 안 물음(D 못 푼 건 하루 뒤 다시)
 time.time = lambda: TK("2026-10-24 11:00"); H.own_end(s35); assert c35 == ["https://toss.shopping/_m/D", "/products/detail?tacaItemIds=11,22,33"], c35
+json.dump([{"t": "2026-10-12 10:00", "text": f"🔥 [토스] R{k}", "url": f"https://toss.shopping/_m/R{k:02d}", "own": 1} for k in range(32)], open("posts35.json", "w"), ensure_ascii=False)
+H.plain, H.toss = (lambda u, hops=4: f"https://toss.shopping/t/{1000 + int(u[-2:])}"), (lambda path, body=None: c35.append(path) or {"items": [], "notFoundIds": []})
+c35.clear(); s35 = {}
+for t35 in ("10:00", "10:00", "10:15", "13:30", "13:31"):  # 한 실행 = 단축 링크 20개까지 · 상세는 3시간 지난 id 30개까지(오래 안 본 것부터)
+    time.time = lambda: TK(f"2026-10-23 {t35}"); H.own_end(s35)
+q35 = [x.split("=")[1].split(",") for x in c35]
+assert [len(x) for x in q35] == [20, 12, 30, 2] and q35[3] == ["1030", "1031"], q35  # 20 푼 것 -> 다음 12 -> 15분 뒤 X -> 3시간 지나 30 + 남은 2
 H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv35; os.remove("posts35.json")
 print("OK: 모든 셀프체크 통과")
