@@ -103,8 +103,8 @@
 {"date": "2026-10-21", "ch": "th", "id": "18134721829661019", "shop": "coupang", "cat": "기타", "price": "~1만", "at": "21:09", "views": 10, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 5, "kind": "deal", "name": "코멧 포켓형 손난로 핫팩 100g, 30개", "url": "https://link.coupang.com/a/h1NpZ1ygAT"},
 {"date": "2026-10-21", "ch": "th", "id": "18112708598578411", "shop": "기타", "cat": "묶음", "price": "", "at": "21:37", "views": 11, "react": 0, "likes": 0, "replies": 0, "kind": "etc"},
 {"date": "2026-10-21", "ch": "th", "id": "18343758379285483", "shop": "toss", "cat": "생필품", "price": "", "at": "22:06", "views": 9, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct", "kind": "deal", "name": "메르헨트 퍼퓸 대용량 바디워시, 피치블라썸, 1L, 2개", "url": "https://toss.shopping/_m/pjMK2rEz"},
-{"date": "2026-10-21", "ch": "th", "id": "18034496174853809", "shop": "toss", "cat": "생필품", "price": "", "at": "23:02", "views": 7, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 1},
-{"date": "2026-10-21", "ch": "th", "id": "18140407444715239", "shop": "toss", "cat": "화장품", "price": "", "at": "23:59", "views": 6, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct"}]},
+{"date": "2026-10-21", "ch": "th", "id": "18034496174853809", "shop": "toss", "cat": "생필품", "price": "", "at": "23:02", "views": 7, "react": 1, "likes": 0, "replies": 1, "ab": "B", "lk": "direct", "rv": 1, "kind": "deal", "name": "모나리자 에코 미용티슈, 300매, 12입, 1박스", "url": "https://toss.shopping/_m/hrMOMrL9"},
+{"date": "2026-10-21", "ch": "th", "id": "18140407444715239", "shop": "toss", "cat": "화장품", "price": "", "at": "23:59", "views": 6, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct", "kind": "deal", "name": "메르헨트 약알칼리 미셀라 폼클렌징, 230ml, 4개", "url": "https://toss.shopping/_m/VhsDiUd7"}]},
 "2026-10-20": {"at": "2026-10-21 05:05", "miss": {}, "rows": [
 {"date": "2026-10-20", "ch": "tg", "id": 1324, "shop": "toss", "cat": "식품", "price": "", "at": "00:00", "views": 1, "react": 0},
 {"date": "2026-10-20", "ch": "tg", "id": 1325, "shop": "toss", "cat": "기타", "price": "", "at": "00:00", "views": 1, "react": 0},
