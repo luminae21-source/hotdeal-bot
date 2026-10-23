@@ -1630,7 +1630,9 @@ def steady_cands(seen, now):
     out = [item(i) for i in own if th_steady(posts[i]["text"])]
     tops = [x for x in load(TOP, {}).get("items", []) if aff_note(x.get("url") or "")]
     tu, tc = toss_ids(seen), {norm(c[1]): c[0] for c in seen.get("tosscache", {}).get("items", []) if len(c) > 1}
-    tid = lambda x: int(k[5:]) if (k := str(x.get("key", ""))).startswith("toss:") else tu.get(x["url"]) or tc.get(norm(k[6:] if k.startswith("tname:") else x.get("name")))
+    ti = seen.get("tossid", {}).get("m", {})  # 진우 쉐어링크 -> 대표 옵션 id(own_end가 tacaIds로 확인한 것 — 주소 /t/번호는 그룹 id라 여기 X)
+    tid = lambda x: int(k[5:]) if (k := str(x.get("key", ""))).startswith("toss:") else tu.get(x["url"]) or (len(ti.get(x["url"], [])) > 7 and ti[x["url"]][7]) \
+        or tc.get(norm(k[6:] if k.startswith("tname:") else x.get("name")))  # 전부 옵션 id(tacaItemId): 우리 링크(toss_link)·진우 링크(tossid)·1일 목록 이름
     ids = list(dict.fromkeys(tid(x) for x in tops if tossy(x["url"]) and tid(x)))[:30]
     try:
         det = {d["tacaItemId"]: d for d in (toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if ids and HAS_TOSS else [])}

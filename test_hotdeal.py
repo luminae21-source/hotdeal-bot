@@ -4705,6 +4705,8 @@ assert [b[0]["text"][:4] for b in c32["reply_markup"]["inline_keyboard"]] == [f"
 assert "💰 <b>25,800원 (10/22 글 가격)</b> · 한 달 1,000명+ 구매" in x32 and "💰 <b>12,900원</b> · 리뷰 5,432" in x32 and "💰 <b>26,550원 (10/22 글 가격)</b>\n" in x32 and x32.endswith("\n\n⚠️ 10/23 19:52 게시 시점 가격"), x32  # 지난 글 가격 = 그 글 날짜
 assert not re.search("적게 팔린|네이버 꾸준템|오래된|토스 꾸준템|제휴 아님|토스78|품절 토스|토스 옛 글", x32) and tc32 == ["/products/detail?tacaItemIds=77,78,79,81"] and "steady 5 items" in o32.getvalue(), (x32, tc32)
 (tx32, tl32), = th32; assert tx32.startswith(f"{H.DISCLOSURE}\n{H.TOSS_NOTE}\n\n👍 꾸준히 팔리는 것 모음\n\n1️⃣ 꾸준 세제 3L 15,900원 · 한 달 1만명+ 구매\n👉 https://link.coupang.com/a/S3108\n") and len(tx32) <= 480 and tl32 == "https://link.coupang.com/a/S3108", tx32
+tc32.clear(); H.steady_cands({**s32, "tossid": {"t": 1, "m": {"https://toss.shopping/_m/T80": [8000, 1, 1, "ok", [], 1000, False, 80]}}}, TK("2026-10-23 19:52"))
+assert tc32 == ["/products/detail?tacaItemIds=77,78,79,81,80"], tc32  # 10/23 Cowork 확인: 상세 id = 전부 옵션 id(tacaItemId) — 진우 쉐어링크는 tossid 8칸째(own_end가 tacaIds로 확인), 주소 /t/번호(그룹 id) X
 H.STEADY_N = 9; n32 = [x["n"] for x in H.steady_cands(s32, TK("2026-10-23 19:52"))]; H.STEADY_N = 5
 assert n32 == ["꾸준 세제 3L", "록시땅 시어 버터 핸드크림 75ml", "베베앙 물티슈 10팩", "펩시 제로 라임 48캔", "토스 물티슈79", "캐시 상품", "만명 핫팩", "해피데이 핫팩 100g 30개"], n32  # 상한 없이: 🛒 = 한 달 3만 > 2,000 순(500명·수수료 아님·14일·토스 글·id 없는 토스 X)
 assert "steady_20261023" in s32 and s32["bundles"]["ts"]; ch32.clear(); th32.clear(); H.steady_list(s32); assert not ch32  # 하루 1번
