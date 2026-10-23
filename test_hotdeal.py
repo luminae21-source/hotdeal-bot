@@ -74,7 +74,7 @@ assert method == "POST" and hdr["Authorization"].endswith("signature=" + want) a
 text, link, label = H.deal_post(d, "<싸다>")
 assert text.startswith("<i>" + H.DISCLOSURE) and "&lt;싸다&gt;" in text and link == "https://link.coupang.com/a/AFF"
 t2 = H.deal_post(d, "싸다", None, {"unit": "100g당 990원", "warn": "쿠폰 <1인 1회>", "pts": ["x"]})[0]  # 단위가격·확인할 점은 코멘트 아래, 출처 위
-assert "🚀 쿠팡 🔥\n<b>휴지 30롤</b>\n9,900원 → 100g당 990원 · 무료\n싸다\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n⚠️ 결제 전 최종가 (시각)\n\n출처:" in CPT(t2) and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", ""), t2  # 10/22 쿠팡 = 몰별 틀(단위가격 -> 가격 줄 '→', 결제 전 줄)
+assert "📦 쿠팡 🔥\n<b>휴지 30롤</b>\n9,900원 → 100g당 990원 · 무료\n싸다\n⚠️ 확인할 점 쿠폰 &lt;1인 1회&gt;\n⚠️ 결제 전 최종가 (시각)\n\n출처:" in CPT(t2) and "x" not in t2.split("싸다")[1].split("출처")[0].replace("확인", ""), t2  # 10/22 쿠팡 = 몰별 틀(단위가격 -> 가격 줄 '→', 결제 전 줄)
 assert "unit:" in H.DEAL_PROMPT and "warn:" in H.DEAL_PROMPT and "unit:" in H.REEL_PROMPT
 # 1-1a) 상품 주소를 못 꺼낸 딜(뽐뿌 차단) -> 원글 대신 그 몰 검색 결과(10/10 진우 '쇼핑몰로 바로'), 원글은 본문 '출처' 링크로. 토스·모르는 몰은 원글 그대로
 sl0, pp = H.store_link, "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=9"
@@ -219,7 +219,7 @@ assert ed[0]["entities"][1]["offset"] == 16 + n + 2 and ed[0]["reply_markup"]["i
 u16 = ed[0]["text"].encode("utf-16-le"); e = ed[0]["entities"][1]
 assert u16[e["offset"] * 2:(e["offset"] + e["length"]) * 2].decode("utf-16-le") == "뽐뿌"  # 링크 위치 그대로
 cp = [p for m, p in sent if m == "copyMessage"][0]
-assert cp["reply_markup"]["inline_keyboard"] == [[{"text": "🚀 쿠팡에서 보기", "url": "https://link.coupang.com/a/xyz"}]]  # 쿠팡 링크 = 🚀 버튼(가격 모름 = 보기, 10/22)
+assert cp["reply_markup"]["inline_keyboard"] == [[{"text": "📦 쿠팡에서 보기", "url": "https://link.coupang.com/a/xyz"}]]  # 쿠팡 링크 = 🚀 버튼(가격 모름 = 보기, 10/22)
 last = json.load(open("posts.json"))[-1]
 assert last["url"] == "https://link.coupang.com/a/xyz" and last["text"].startswith(H.DISCLOSURE)
 sent.clear(); H.relink(DR, "https://item.gmarket.co.kr/Item?goodscode=1")  # 일반 쇼핑몰 링크: 문구 없이 버튼만
@@ -274,15 +274,15 @@ n3 = len(json.load(open("posts.json")))
 H.publish_approved()
 ch = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
 ad = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "42"]
-assert len(ch) == 4 and "🚀 쿠팡 🔥\n<b>오점 계란</b>\n7,990원\n괜찮음\n⚠️ 결제 전 최종가 (시각)" in CPT(ch[3]["text"]) and "채널실패" in ch[1]["text"] and CPT(ch[2]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n🚀 쿠팡 🛒\n<b>약한 키보드</b>\n77,900원\n🤔 솔직히 특가로는 약한 제품\n평소 가격\n⚠️ 결제 전 최종가 (시각)" and CPT(ch[0]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n🚀 쿠팡 🔥\n<b>이트로이 27인치 모니터</b>\n103,770원 → 1인치당 3,843원\n27인치 100Hz가 10만 원대\n⚠️ 확인할 점 휴일특가 끝나면 오름\n⚠️ 결제 전 최종가 (시각)", ch  # 10/22 쿠팡 몰별 틀
-assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🚀 쿠팡에서 103,770원", "url": CPL}]]  # 끝 가격을 (가격)으로 묶어 버튼·사이트가 가격을 읽음(10/11) · 쿠팡 = 🚀 버튼(10/22)
+assert len(ch) == 4 and "📦 쿠팡 🔥\n<b>오점 계란</b>\n7,990원\n괜찮음\n⚠️ 결제 전 최종가 (시각)" in CPT(ch[3]["text"]) and "채널실패" in ch[1]["text"] and CPT(ch[2]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n📦 쿠팡 🛒\n<b>약한 키보드</b>\n77,900원\n🤔 솔직히 특가로는 약한 제품\n평소 가격\n⚠️ 결제 전 최종가 (시각)" and CPT(ch[0]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n📦 쿠팡 🔥\n<b>이트로이 27인치 모니터</b>\n103,770원 → 1인치당 3,843원\n27인치 100Hz가 10만 원대\n⚠️ 확인할 점 휴일특가 끝나면 오름\n⚠️ 결제 전 최종가 (시각)", ch  # 10/22 쿠팡 몰별 틀
+assert ch[0]["reply_markup"]["inline_keyboard"] == [[{"text": "📦 쿠팡에서 103,770원", "url": CPL}]]  # 끝 가격을 (가격)으로 묶어 버튼·사이트가 가격을 읽음(10/11) · 쿠팡 = 🚀 버튼(10/22)
 assert asked3[0][0].startswith(H.ADMIN_PROMPT) and "comment·who·use 말투 — 말투 = " in asked3[0][0] and asked3[0][1] == ["[운영자] [쿠팡] 이트로이 27인치 모니터 (103,770원) |  | 0분 전 | 휴일특가"] and len(asked3) == 5 and "지어내지 마" in H.ADMIN_PROMPT and "반드시 반환" in H.ADMIN_PROMPT and "5점 미만은 반환하지 마" not in H.ADMIN_PROMPT
 pj3 = json.load(open("posts.json"))
 assert len(pj3) == n3 + 3 and pj3[-2]["s"] == 4 and pj3[-2]["url"].endswith("new4") and pj3[-3]["url"] == CPL and pj3[-3]["mid"] == 300 and pj3[-3]["s"] == 7 and pj3[-3]["e"] == "🖥️" and pj3[-3]["unit"] == "1인치당 3,843원"
 assert [x.get("reply_parameters", {}).get("message_id") for x in ad] == [70, 71, 72, None, None, None, 76, 77] and ad[6]["text"] == "✅ 채널에 올림 (Claude 4점 · 특가로는 약함 표시)"  # 올림 안내·이미 올림·iframe 안내·오류/일반 주소/채널 실패 -> 초안
 assert ad[0]["text"] == "✅ 채널에 올림 (Claude 7점)" and ad[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/300" and "이미" in ad[1]["text"] and ad[2]["text"].startswith("iframe 말고")
 assert ad[4]["text"] == "🔥 <b>[G마켓] 일반2</b>" and "채널실패" in ad[5]["text"]   # 제휴 링크 아니면 Claude 안 부름
-assert CPT(ad[3]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n🚀 쿠팡 🔥\n<b>에러 상품</b>\n1,000원\n⚠️ 결제 전 최종가 (시각)" and ad[3]["reply_markup"]["inline_keyboard"][0][0]["text"] == "🚀 쿠팡에서 1,000원" and ad[3]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok", ad[3]
+assert CPT(ad[3]["text"]) == f"<i>{H.DISCLOSURE}</i>\n\n📦 쿠팡 🔥\n<b>에러 상품</b>\n1,000원\n⚠️ 결제 전 최종가 (시각)" and ad[3]["reply_markup"]["inline_keyboard"][0][0]["text"] == "📦 쿠팡에서 1,000원" and ad[3]["reply_markup"]["inline_keyboard"][1][0]["callback_data"] == "ok", ad[3]
 H.tg, H.ai_pick = fake_tg, pa33
 
 # 3-3c) 네이버 쇼핑커넥트(naver.me) 진우 딜 끝까지(10/11 점검): 봇에 '상품명 가격 + naver.me 링크' -> [네이버]·(가격/배송)·네이버 문구 맨 앞·1점 완화(5점도 🔥)
@@ -447,7 +447,7 @@ ed = [p for m, p in sent if m == "editMessageText"]
 n = len(H.DISCLOSURE.encode("utf-16-le")) // 2
 assert [(p["chat_id"], p["message_id"]) for p in ed] == [("@ch", 102), (42, 50)]
 assert ed[0]["text"].startswith(H.DISCLOSURE + "\n\n🔥") and ed[0]["entities"][1]["offset"] == 3 + n + 2
-assert ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "🚀 쿠팡에서 보기", "url": "https://link.coupang.com/a/zz"}]]  # 쿠팡 = 🚀 버튼(10/22, 예전 틀 글은 본문 그대로)
+assert ed[0]["reply_markup"]["inline_keyboard"] == [[{"text": "📦 쿠팡에서 보기", "url": "https://link.coupang.com/a/zz"}]]  # 쿠팡 = 🚀 버튼(10/22, 예전 틀 글은 본문 그대로)
 pj = {p.get("mid"): p for p in json.load(open("posts.json"))}
 assert pj[102]["url"] == "https://link.coupang.com/a/zz" and pj[102]["text"].startswith(H.DISCLOSURE) and pj[100]["url"] == D("")["url"]
 assert H.post_url(5) == "https://t.me/ch/5"
@@ -2953,7 +2953,7 @@ H.store_link, H.lp_search, H.affiliate = (lambda u: u), (lambda t, q=None: (None
 t8, l8, _ = H.deal_post(dict(d8, title="[네이버] 우유 48팩 (23,740원/무료)"), "<싸다>", extra={"unit": "팩당 495원"})
 assert t8.startswith("[광고] ") and "\n<i>" + H.NAVER_NOTE + "</i>\n\n🔥 <b>[네이버] 우유 48팩" in t8 and t8.split("\n")[0] in ("[광고] 📏 팩당 495원꼴 우유 48팩 23,740원", "[광고] 우유 48팩 23,740원 — 팩당 495원", "[광고] 📏 팩당 495원 · 우유 48팩 23,740원")
 assert S.title_of(H.plain_of(t8)) == "[네이버] 우유 48팩 (23,740원/무료)" and not S.title_of(H.plain_of(t8)).startswith("[광고]")  # 사이트 제목·코멘트는 그대로([광고] 줄은 고지문처럼 건너뜀)
-H.affiliate = lambda u: ("https://www.coupang.com/vp/1", False); t8, _, _ = H.deal_post(d8, "싸다"); assert not t8.startswith("[광고]") and t8.startswith("🚀 쿠팡 🔥"), t8  # 제휴 링크 아니면 [광고] X(쿠팡 = 몰별 틀, 로켓 근거 없으면 '🚀 쿠팡' — 10/22)
+H.affiliate = lambda u: ("https://www.coupang.com/vp/1", False); t8, _, _ = H.deal_post(d8, "싸다"); assert not t8.startswith("[광고]") and t8.startswith("📦 쿠팡 🔥"), t8  # 제휴 링크 아니면 [광고] X(쿠팡 = 몰별 틀, 로켓 근거 없으면 '📦 쿠팡' — 10/23)
 H.affiliate, H.store_link, H.lp_search = af8, sl8, lp8
 wt, we = H.with_note("🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n💡 쿠팡 같은 상품(15,000원)보다 5,100원 쌈", [{"type": "bold", "offset": 2, "length": 3}], "https://link.coupang.com/a/w8")
 a8 = wt.split("\n")[0]; la8 = len(a8.encode("utf-16-le")) // 2
@@ -4014,7 +4014,7 @@ o24, s24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋음"}] * 2, {
 assert f"\n\n{H.TH_TONE_POOL[4][0]}\n\n" in o24 and len(p24) == 2 and s24["thvoice"]["f"][-1] == re.sub(r"[\W_]+", "", H.TH_TONE_POOL[4][0]), o24  # 최근 10개와 같은 줄 = 다시 -> 기본 한 줄
 o24, s24 = tv24([RuntimeError("x")], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", H.TH_TONE_POOL[4][0])]}}, style=4); assert f"\n\n{H.TH_TONE_POOL[4][1]}\n\n" in o24  # 기본 한 줄도 최근 것 빼고
 o24 = tv24([{"line": "요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함"}], None, "https://link.coupang.com/a/YG", f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG", 4)[0]
-assert "\n\n요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함\n\n" in o24 and len(p24) == 1 and o24.split("\n\n")[1] == "🚀 쿠팡 · 10% 할인 🔥\n요기요 상품권 2만원권\n💰 18,000원", o24  # 상품명 속 '요'는 해요체 아님 · 예전 틀 = mall_head(로켓 근거 없으면 🚀 쿠팡)
+assert "\n\n요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함\n\n" in o24 and len(p24) == 1 and o24.split("\n\n")[1] == "📦 쿠팡 · 10% 할인 🔥\n요기요 상품권 2만원권\n💰 18,000원", o24  # 상품명 속 '요'는 해요체 아님 · 예전 틀 = mall_head(로켓 근거 없으면 📦 쿠팡)
 assert tv24([], None, KU24, "🔥 [쿠팡] 대가성 문구 없는 글")[0] == "🔥 [쿠팡] 대가성 문구 없는 글" and not p24  # 대가성 문구 없는 글 = 그대로(Claude 안 부름)
 X24 = f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 가격 없는 글\n\n싸다"; assert tv24([], None, KU24, X24)[0] == X24 and not p24  # 가격 못 읽음 = 지금 틀(Claude 안 부름)
 LONG24 = "https://link.coupang.com/a/" + "x" * 273  # 300자 링크(TH_LINK_MAX) -> 480자 넘으면 💡 -> ✔ -> 말투 줄 순서로 뺌(대가성 문구·머리·상품명·💰·시점·링크는 그대로)
@@ -4324,13 +4324,13 @@ pj28 = json.load(open("posts.json"))
 assert [H.title_of(p["text"]) for p in pj28] == ["[쿠팡] 코멧 손난로 100g 30개 (8,860원)", "[쿠팡] 하루온 군인핫팩 160g, 30개 (13,520원)", "[토스] 더건강플러스 올리브오일 1L (15,580원)", "[네이버] 샴푸 (9,000원)"]
 nd28 = H.night_deals({}, "2026-10-22 09:00", "2026-10-22 11:00")  # 22시 미리보기도 새 틀에서 이름·가격
 assert [(d["name"], d["price"], d["icon"]) for d in nd28][:3] == [("코멧 손난로 100g 30개", "8,860원", "🔥"), ("하루온 군인핫팩 160g, 30개", "13,520원", "🔥"), ("더건강플러스 올리브오일 1L", "15,580원", "🔥")], nd28
-assert H.ev_view({"deal": True, "url": "https://link.coupang.com/a/w", "button": "🛒 구매하러 가기", "text": "🛒 <b>[쿠팡] 약한 상품 (1,000원)</b>\n\n🤔 솔직히 특가로는 약한 제품"})[0].startswith("🚀 쿠팡 🛒\n<b>약한 상품</b>\n1,000원\n🤔")  # 약한 딜 = 각도 칸 없이 🛒
+assert H.ev_view({"deal": True, "url": "https://link.coupang.com/a/w", "button": "🛒 구매하러 가기", "text": "🛒 <b>[쿠팡] 약한 상품 (1,000원)</b>\n\n🤔 솔직히 특가로는 약한 제품"})[0].startswith("📦 쿠팡 🛒\n<b>약한 상품</b>\n1,000원\n🤔")  # 약한 딜 = 각도 칸 없이 🛒
 # 9-31 (10/22 20:0x 진우 '최저가 아니어도 꾸준히 팔리는 제품' -> 👍 꾸준템): 예약 글 첫 글자 👍 = '🚀 쿠팡 · 꾸준히 팔리는 상품 👍'(로켓 근거면 '🚀 쿠팡 로켓 · …') / 상품명 /
 #       '가격 · 한 달 N명+ 구매 · 리뷰 N'(글에 있는 숫자만, 그 숫자만 있던 줄은 뺌) · 참고 줄 그대로 · 버튼 🚀 쿠팡에서 N원 · 토스 👍 = 그대로 · 제목·약한 딜·[광고] 첫 줄·미리보기
 ST31 = {"deal": True, "url": "https://link.coupang.com/a/ROX", "button": "🛒 25,800원 구매하기", "at": "2026-10-22 10:30",
         "text": "👍 <b>[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)</b>\n\n📊 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착"}
 b31, k31 = H.ev_view(ST31)
-assert b31.startswith("🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n<b>록시땅 시어 버터 핸드크림 75ml</b>\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착") and k31 == "🚀 쿠팡에서 25,800원", b31
+assert b31.startswith("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n<b>록시땅 시어 버터 핸드크림 75ml</b>\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착") and k31 == "📦 쿠팡에서 25,800원", b31
 p31 = H.plain_of(b31)
 assert H.title_of(p31) == "[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)" and H.th_steady(p31) and H.th_steady(H.plain_of(ST31["text"])) and not H.th_weak(p31) and "특가로는 약한" not in p31  # 제목엔 구매·리뷰 숫자 X
 assert H.ad_line(H.plain_of(ST31["text"])) == "[광고] 👍 록시땅 시어 버터 핸드크림 75ml 25,800원" and H.th_beauty("👍 [쿠팡] 록시땅 시어 버터 핸드크림 75ml") > 0
@@ -4342,7 +4342,7 @@ for a31, b31x in (("📊 한 달 1만명+ 구매 · 리뷰 1.6만", "25,800원 �
                   ("📊 한 달 2만 명 이상 구매 · ⭐ 4.5 (리뷰 93만)", "25,800원 · 한 달 2만명+ 구매 · 리뷰 93만")):  # 만 단위·'개'(10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 숫자만 있던 줄은 뺌
     l31 = H.ev_view({**ST31, "text": ST31["text"].replace("📊 한 달 1,000명+ 구매 · 리뷰 1,969", a31)})[0].split("\n")
     assert l31[2] == b31x and (l31[3] == "🎁 백화점 선물 포장·쇼핑백" or "⭐ 4.5" in l31[3]), l31
-assert H.ev_view({**ST31, "text": ST31["text"].replace("롯데택배", "로켓배송 아님 · 롯데택배")})[0].startswith("🚀 쿠팡 · 꾸준히")  # '로켓배송 아님' = 로켓 X
+assert H.ev_view({**ST31, "text": ST31["text"].replace("롯데택배", "로켓배송 아님 · 롯데택배")})[0].startswith("📦 쿠팡 · 꾸준히")  # '로켓배송 아님' = 로켓 X
 assert H.th_tier(p31.replace("🎁", "손/발 크림 판매 2위 · 🎁")) == 0 and H.th_tier(p31.replace("🎁", "손/발 크림 판매 2위 · 🎁").replace("상품 👍", "상품 🔥")) == 2  # 👍 = 순위 있어도 강한 딜 X(TOP 앞자리 X)
 assert S.steady_st(p31) == "한 달 1,000명+ 구매 · 리뷰 1,969" and S.summary(p31).startswith("한 달 1,000명+ 구매 · 리뷰 1,969 ") and S.steady_st("🚀 쿠팡 로켓 🔥\n휴지\n9,900원 · 리뷰 3") == ""  # 사이트 딜 페이지·설명에 숫자
 ev31, H.EVENTS = H.EVENTS, "ev31.json"; json.dump([{**ST31, "at": "2026-10-22 10:40", "text": ST31["text"].replace("75ml", "150ml")}, {**ST31, "at": "2026-10-22 10:50", "url": "https://link.coupang.com/a/W1", "text": "🛒 <b>[쿠팡] 약한 것 (1,000원)</b>\n\n🤔 솔직히 특가로는 약한 제품"},
@@ -4410,7 +4410,7 @@ assert [H.toss_lines({"comment": c}) for c in ("시중가 대비 40% 저렴", "�
 assert H.toss_body("🔥 <b>[토스] 오일 (1원)</b>\n\n쿠팡 판매 1위 오일\n좋음", "https://toss.shopping/_m/x").startswith("🔥 <b>[토스] 오일 (1원)</b>\n\n좋음\n⚠️ ") and "게시 시점 가격" in H.toss_body("🔥 <b>[토스] 오일 (1원)</b>", "https://toss.shopping/_m/x")
 assert H.toss_body("🔥 <b>[쿠팡] 오일 (1원)</b>\n\n쿠팡 판매 1위", "https://link.coupang.com/a/x") == "🔥 <b>[쿠팡] 오일 (1원)</b>\n\n쿠팡 판매 1위"  # 쿠팡 = 그대로
 dp28 = H.mall_view("🔥 <b>[쿠팡] 삼양라면 120g 10개 (4,920원/무료)</b>\n\n개당 492원 계산\n💡 단위가격 개당 492원\n\n출처: <a href=\"x\">루리웹</a>", "https://www.coupang.com/vp/1")
-assert CPT(dp28) == "🚀 쿠팡 🔥\n<b>삼양라면 120g 10개</b>\n4,920원 → 1개 492원 · 무료\n개당 492원 계산\n⚠️ 결제 전 최종가 (시각)\n\n출처: <a href=\"x\">루리웹</a>", dp28  # 단위가격 줄만 빠지고 출처 앞 빈 줄 그대로(⚠️는 출처 위)
+assert CPT(dp28) == "📦 쿠팡 🔥\n<b>삼양라면 120g 10개</b>\n4,920원 → 1개 492원 · 무료\n개당 492원 계산\n⚠️ 결제 전 최종가 (시각)\n\n출처: <a href=\"x\">루리웹</a>", dp28  # 단위가격 줄만 빠지고 출처 앞 빈 줄 그대로(⚠️는 출처 위)
 assert H.sold_render({"k": "top", "t": TK("2026-10-22 09:05"), "pre": "", "head": "H", "rows": [["a", "u", []]], "it": [[1, "a", 1, 1, 0, 0]]})[0].endswith("\n\n⚠️ 10/22 09:05 게시 시점 가격")  # 배포 전 묶음 기록(꼬리 없음) = 그 글 시각
 assert "mall_view(toss_body(" in inspect.getsource(H.admin_deal) and "mall_view(toss_body(" in inspect.getsource(H.publish_approved)
 # 몰별 틀 약한 딜(머리 줄 끝 🛒)도 예전 🛒 제목처럼: 22시 미리보기 🛒 · 재오픈 Threads 🛒 · 진우 화장품 예약 셈(새 틀 제목)
@@ -4448,9 +4448,9 @@ assert [H.mall_src("coupang", t) for t in ("로켓배송 · 와우 쿠폰 44% �
 KK28 = H.mall_view("🔥 <b>[쿠팡] 깨끗한나라 30롤 (15,500원)</b>\n\n로켓배송 · 와우 쿠폰 44% 할인 · 내일 새벽 도착\n💡 1롤 517원꼴 · 10m당 191원", "https://link.coupang.com/a/k")
 assert KK28.split("\n")[:3] == ["🚀 쿠팡 로켓 · 와우 쿠폰 44% 할인 🔥", "<b>깨끗한나라 30롤</b>", "15,500원 → 1롤 517원꼴"], KK28  # 12:29 실제 글(머리 '44% 할인'만이던 것)
 assert H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n판매자로켓 배송", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 로켓 🔥") and H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n내일 새벽 도착", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 로켓 🔥")
-assert H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n판매자 배송", "https://link.coupang.com/a/k").startswith("🚀 쿠팡 🔥") and H.title_of("🚀 쿠팡 · 22% 할인 🔥\n핫팩\n8,860원") == "[쿠팡] 핫팩 (8,860원)" and H.th_weak("🚀 쿠팡 🛒\n핫팩\n1원")
+assert H.mall_view("🔥 <b>[쿠팡] 핫팩 (8,860원)</b>\n\n판매자 배송", "https://link.coupang.com/a/k").startswith("📦 쿠팡 🔥") and H.title_of("🚀 쿠팡 · 22% 할인 🔥\n핫팩\n8,860원") == "[쿠팡] 핫팩 (8,860원)" and H.th_weak("🚀 쿠팡 🛒\n핫팩\n1원") and H.th_weak("📦 쿠팡 🛒\n핫팩\n1원") and H.title_of("📦 쿠팡 · 22% 할인 🔥\n핫팩\n8,860원") == "[쿠팡] 핫팩 (8,860원)"
 GB28 = H.mall_view("🔥 <b>[쿠팡] 기가바이트 GS24F14A 144Hz 모니터 (89,890/무료)</b>\n\n싸다", "https://www.coupang.com/np/search?q=x")  # 10/22 13:26 '원' 없는 가격 = 예전 틀로 남던 것
-assert GB28.split("\n")[:3] == ["🚀 쿠팡 🔥", "<b>기가바이트 GS24F14A 144Hz 모니터</b>", "89,890원 · 무료"] and H.title_of(H.plain_of(GB28)) == "[쿠팡] 기가바이트 GS24F14A 144Hz 모니터 (89,890원/무료)", GB28
+assert GB28.split("\n")[:3] == ["📦 쿠팡 🔥", "<b>기가바이트 GS24F14A 144Hz 모니터</b>", "89,890원 · 무료"] and H.title_of(H.plain_of(GB28)) == "[쿠팡] 기가바이트 GS24F14A 144Hz 모니터 (89,890원/무료)", GB28
 assert H.mall_view("🔥 <b>[쿠팡] 우유 (7,890, 무배)</b>\n\n싸다", "https://www.coupang.com/vp/1").split("\n")[2] == "7,890원 · 무배" and H.mall_view("🔥 <b>[쿠팡] 우유 (2개)</b>", "https://www.coupang.com/vp/1") == "🔥 <b>[쿠팡] 우유 (2개)</b>"  # 숫자 아닌 괄호 = 그대로
 TQ28 = H.mall_view("🔥 <b>[토스] 오일 (1,000원)</b>\n\n쿠폰 적용 61% 할인", "https://toss.shopping/_m/q").split("\n")
 assert TQ28[0] == "💙 토스 특가 · 쿠폰 적용 61% 할인 🔥" and TQ28[2] == "1,000원", TQ28  # 토스는 '로켓' 상관없이 💙 · 조건 붙은 %는 가격 줄 (N%↓) X
@@ -4897,7 +4897,7 @@ P34 = [{"t": "2026-11-07 10:00", "url": "https://link.coupang.com/a/A1", "mid": 
        {"t": "2026-11-07 12:00", "url": "https://toss.shopping/_m/A3", "mid": 3403, "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n물티슈 10팩\n8,900원 (47%↓)\n47% 할인"},
        {"t": "2026-11-07 13:00", "url": "https://naver.me/A4", "mid": 3404, "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 생수 2L 12병 (5,720원/무료)\n\n좋음"}]
 i34 = H.ig_items({"tone_ig": {"t": 1, "l": [1, 3]}}, P34, photos=False)  # 말투 = 반말·음슴체 차례(~요 줄 X)
-assert [(x["badge"], x["chip"], x["ship"]) for x in i34] == [("🚀 쿠팡 로켓", "1롤당 330원", "내일(토) 도착"), ("🚀 쿠팡", "와우 할인", ""), ("💙 토스 특가", "47%↓", ""), ("네이버", "", "무료배송")], i34
+assert [(x["badge"], x["chip"], x["ship"]) for x in i34] == [("🚀 쿠팡 로켓", "1롤당 330원", "내일(토) 도착"), ("📦 쿠팡", "와우 할인", ""), ("💙 토스 특가", "47%↓", ""), ("네이버", "", "무료배송")], i34
 assert [x["line"] for x in i34] == ["휴지 떨어진 집이면 지금 쟁여도 됨", "", "커피 매일 마시면 개당 가격 보고 고르기", ""] and i34[0]["when"] == "11/7 10시" and i34[3]["kind"] == "생수" and i34[0]["photo"] is None
 # IG_HUMAN(10/31 IG_AUTO 켤 때): 21시 = 새 디자인 한 벌(igv) 만든 실행 -> 회차 + 15~20분 뒤 -> igv 표지·상품 장으로 넘기기 컨테이너 + 사람 멘트 캡션
 c34 = []
@@ -5468,4 +5468,30 @@ assert "th_reply_ok, th_verify, metrics" in inspect.getsource(H.main) and "top=F
 H.http, H.tg, time.time = sv43; H.RUN["thids"] = []
 if tk43 is None: H.E.pop("THREADS_TOKEN")
 else: H.E["THREADS_TOKEN"] = tk43
+# 9-44) 로켓 근거 없는 쿠팡 = 📦(10/23 22:3x 진우): 채널 머리 줄 '📦 쿠팡'·구매 버튼 '📦 쿠팡에서 …' · 로켓 = '🚀 쿠팡 로켓'·'🚀 쿠팡에서' 그대로 ·
+#       예약에 써 둔 '🚀 쿠팡 · …' 머리 줄·'🚀 쿠팡에서' 버튼도 근거대로(이미 올라간 글은 안 고침) · 인스타 배지·사이트(제목·꾸준템 줄)·Threads 예전 틀 머리 줄도 같은 기준
+sv44, s44 = (H.tg, time.time, H.EVENTS), []
+H.tg = lambda m, **p: s44.append((m, p)) or {"message_id": 4400 + len(s44), "text": H.plain_of(p.get("text", "")), "entities": []}
+H.EVENTS = "ev44.json"; json.dump([], open("posts.json", "w"))
+json.dump([{"at": "2026-10-23 23:00", "button": "🛒 구매하러 가기", "url": "https://link.coupang.com/a/r44", "deal": True, "text": "🔥 <b>[쿠팡] 곰곰 특란 30구 (7,990원)</b>\n\n로켓프레시 · 내일 새벽 도착 보장"},
+           {"at": "2026-10-23 23:01", "button": "🛒 구매하러 가기", "url": "https://link.coupang.com/a/n44", "deal": True, "text": "🔥 <b>[쿠팡] 해남 호박고구마 3kg (12,900원)</b>\n\n산지 직송 · 판매자 배송"},
+           {"at": "2026-10-23 23:02", "button": "🚀 쿠팡에서 9,900원", "url": "https://link.coupang.com/a/c44", "deal": True, "text": "🚀 쿠팡 · 와우 할인 🔥\n<b>제주 감귤 5kg</b>\n9,900원\n산지 발송"},
+           {"at": "2026-10-23 23:03", "button": "🚀 쿠팡에서 8,860원", "url": "https://link.coupang.com/a/k44", "deal": True, "text": "🚀 쿠팡 로켓 · 1개당 최저 🔥\n<b>코멧 손난로 30개</b>\n8,860원\n🚚 내일 도착"}],
+          open(H.EVENTS, "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-10-23 23:05"); H.events({})
+e44 = [p for m, p in s44 if m == "sendMessage" and p["chat_id"] == "@ch"]
+hd44 = [next(l for l in H.plain_of(p["text"]).split("\n") if H.MALL_HEAD.fullmatch(l)) for p in e44]
+assert hd44 == ["🚀 쿠팡 로켓 🔥", "📦 쿠팡 🔥", "📦 쿠팡 · 와우 할인 🔥", "🚀 쿠팡 로켓 · 1개당 최저 🔥"], hd44
+assert [p["reply_markup"]["inline_keyboard"][0][0]["text"] for p in e44] == ["🚀 쿠팡에서 7,990원", "📦 쿠팡에서 12,900원", "📦 쿠팡에서 9,900원", "🚀 쿠팡에서 8,860원"], e44
+print("미리보기(로켓):\n" + H.plain_of(e44[0]["text"]) + "\n[" + e44[0]["reply_markup"]["inline_keyboard"][0][0]["text"] + "]")
+print("미리보기(로켓 아님):\n" + H.plain_of(e44[1]["text"]) + "\n[" + e44[1]["reply_markup"]["inline_keyboard"][0][0]["text"] + "]")
+assert [H.cp_rocket(H.plain_of(p["text"])) for p in e44] == [True, False, False, True] and not H.cp_rocket("🚀 쿠팡 · 와우 할인 🔥\n옛 글\n1원")  # 10/23 전 '🚀 쿠팡' 머리 줄 = 로켓 아님
+assert [H.title_of(H.plain_of(p["text"])) for p in e44][1] == "[쿠팡] 해남 호박고구마 3kg (12,900원)" and S40.steady_st("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n휴지\n9,900원 · 리뷰 1,969") == "리뷰 1,969"  # 사이트 제목·꾸준템 줄
+assert H.mall_head("coupang", "", "🔥", False) == "📦 쿠팡 🔥" and H.mall_btn("coupang", "1,000원", False) == "📦 쿠팡에서 1,000원" and H.mall_btn("toss", "1,000원", False) == "💙 토스에서 1,000원"
+assert H.buy_btn("[쿠팡] 고구마 (1,000원)", "https://link.coupang.com/a/x", "그냥 좋음") == "📦 쿠팡에서 1,000원" and H.buy_btn("[쿠팡] 고구마 (1,000원)", "https://link.coupang.com/a/x", "로켓배송 아님") == "📦 쿠팡에서 1,000원"
+sl44 = (H.store_link, H.affiliate); H.store_link, H.affiliate = (lambda u: "https://www.coupang.com/vp/products/1"), (lambda u: ("https://link.coupang.com/a/AFF", True))
+D44 = {"title": "[쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=101", "board": "뽐뿌"}
+assert [H.deal_post(D44, c)[2] for c in ("싸다", "로켓배송 내일 도착")] == ["📦 쿠팡에서 9,900원", "🚀 쿠팡에서 9,900원"]  # 커뮤니티 쿠팡 딜 버튼 = 머리 줄과 같은 근거
+H.store_link, H.affiliate = sl44
+H.tg, time.time, H.EVENTS = sv44
 print("OK: 모든 셀프체크 통과")

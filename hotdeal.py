@@ -720,7 +720,8 @@ def deal_post(d, comment, q=None, extra=None):
     if TOSS_NO_CMP and is_toss(link or d["url"], f"[{store_tag(d['title'])}]"):  # 토스 딜: 다른 몰 비교 빼고 게시 시점 가격(10/12 토스 비즈니스 요청)
         text = strip_cmp(text)[0].replace("\n\n출처: ", f"\n{toss_when()}\n\n출처: ", 1)
     pre = head if text.startswith(head) else ""  # (토스 [광고] 첫 줄은 strip_cmp가 훅을 뺄 수 있음 -> 그땐 글 전체를 봄 = 몰별 틀 X)
-    return pre + mall_view(text[len(pre):], link or d["url"]), link or d["url"], label  # 토스·쿠팡 = 몰별 틀(10/22 진우 '한눈에')
+    text = pre + mall_view(text[len(pre):], link or d["url"])  # 토스·쿠팡 = 몰별 틀(10/22 진우 '한눈에')
+    return text, link or d["url"], label if label.startswith("🔎") else buy_btn(d["title"], link or d["url"], plain_of(text))  # 쿠팡 버튼 🚀/📦 = 머리 줄과 같게
 
 
 TOSS_TAG = r"\[토스(?:쇼핑)?\]"  # 토스 딜 제목 [몰] — 10/18 진우 '[토스쇼핑]도 토스'(같은 토스쇼핑: 비교 X·게시 시점 가격·뽐뿌 말고 바로 연결)
@@ -733,6 +734,8 @@ def is_toss(url, text=""):
 
 STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)(?![\d,.]*\s*[천만]?\s*(?:원|%))(?:\s*개)?"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'한 달 1만명+'·'리뷰 1,969(개)'·'리뷰 1.6만' — 쿠팡은 만 단위가 많음, 10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 만원·% 숫자 X
 steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만" in x else 1000 if "천" in x else 1))  # '1.6만' -> 16000
+CP_ROCKET = r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님' X — 10/22 리뷰)
+CP_PLAIN = ("📦 쿠팡", "📦 쿠팡에서")  # 10/23 진우: 로켓 근거 없는 쿠팡 글 = 📦(🚀는 로켓으로 오해) — 머리 줄·구매 버튼(Threads·인스타 배지도). 로켓 = '🚀 쿠팡 로켓' 그대로
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
 
@@ -744,21 +747,27 @@ def mall_of(url, title=""):
     return "coupang" if "쿠팡" in tag or host in ("link.coupang.com", "coupa.ng", "coupang.com") or host.endswith(".coupang.com") else None
 
 
-def mall_btn(mall, price):
-    """몰별 구매 버튼: '💙 토스에서 15,580원' · '🚀 쿠팡에서 8,860원'(가격 모르면 '… 보기')."""
+def cp_rocket(plain):
+    """쿠팡 글이 로켓인지: 몰별 머리 줄이 있으면 그 줄('🚀 쿠팡 로켓'만 로켓 — 📦 쿠팡·10/23 전 '🚀 쿠팡' = 아님, 버튼·배지가 머리 줄과 같게), 없으면 글에 로켓 근거(CP_ROCKET)."""
+    m = next((m for m in map(MALL_HEAD.fullmatch, (plain or "").split("\n")) if m and "쿠팡" in m[1]), None)
+    return m[1] == MALLS["coupang"][0] if m else bool(re.search(CP_ROCKET, plain or ""))
+
+
+def mall_btn(mall, price, rocket=True):
+    """몰별 구매 버튼: '💙 토스에서 15,580원' · '🚀 쿠팡에서 8,860원'(로켓 근거 없는 쿠팡 = '📦 쿠팡에서 …', 가격 모르면 '… 보기')."""
     won = re.search(r"\d[\d,]*\s*원", price or "")
-    return f"{MALLS[mall][1]} {won[0].replace(' ', '') if won else '보기'}"
+    return f"{MALLS[mall][1] if rocket or mall != 'coupang' else CP_PLAIN[1]} {won[0].replace(' ', '') if won else '보기'}"
 
 
-def buy_btn(title, url):
-    """채널 개별 딜 버튼: 토스·쿠팡 = mall_btn, 그 밖의 몰 = 예전 buy_label('🛒 N원 구매하기')."""
+def buy_btn(title, url, plain=None):
+    """채널 개별 딜 버튼: 토스·쿠팡 = mall_btn(쿠팡 🚀/📦 = 글 plain의 cp_rocket — 글을 모르면 🚀), 그 밖의 몰 = 예전 buy_label('🛒 N원 구매하기')."""
     mall = mall_of(url, title)
-    return mall_btn(mall, parse(title)[2]) if mall else buy_label(title)
+    return mall_btn(mall, parse(title)[2], plain is None or cp_rocket(plain)) if mall else buy_label(title)
 
 
 def mall_head(mall, src, icon, rocket=True):
-    """몰별 머리 줄: '💙 토스 특가 · {출처} 🔥' / '🚀 쿠팡 로켓 · {각도} 🛒'(출처·각도 모르면 칸 없이). 로켓 근거 없는 쿠팡 = '🚀 쿠팡 · …'(10/22 진우 '사실 아닌 표기 X')."""
-    return f"{MALLS[mall][0] if rocket or mall != 'coupang' else '🚀 쿠팡'}{f' · {src}' if src else ''} {icon}"
+    """몰별 머리 줄: '💙 토스 특가 · {출처} 🔥' / '🚀 쿠팡 로켓 · {각도} 🛒'(출처·각도 모르면 칸 없이). 로켓 근거 없는 쿠팡 = '📦 쿠팡 · …'(10/22 진우 '사실 아닌 표기 X' · 10/23 🚀 -> 📦)."""
+    return f"{MALLS[mall][0] if rocket or mall != 'coupang' else CP_PLAIN[0]}{f' · {src}' if src else ''} {icon}"
 
 
 def mall_body(mall, src, icon, name, price, lines, rocket=True):
@@ -799,6 +808,7 @@ def mall_view(body, url):
     """예전 틀 개별 글 본문(HTML, 첫 줄 '🔥|🛒 <b>[몰] 제목 (가격)</b>')이 토스·쿠팡이면 몰별 틀로(커뮤니티 딜·진우 링크·예전 틀로 쓴 예약 글):
     제목 -> 머리 줄(mall_src, 🛒 약한 딜은 칸 없이) + 상품명 + 가격 줄(토스 = 가격 (할인%↓) · ⭐ 평점 (리뷰), 쿠팡 = 가격 → 단위가격 — '💡 단위가격' 줄을 옮김),
     제목 아래 빈 줄은 뺌, 쿠팡에 '결제 전' 줄이 없으면 '⚠️ 결제 전 최종가 (M/D H시)'. 토스·쿠팡 아님·가격 모름·이미 몰별 틀 = 그대로."""
+    body = re.sub(r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)", CP_PLAIN[0], body, flags=re.M)  # 이미 몰별 틀로 쓴 글(예약)의 로켓 근거 없는 '🚀 쿠팡' 머리 줄 = 📦(10/23 진우)
     m = re.match(r"([🔥🛒👍]) <b>(.+?)</b>", body)
     title = html.unescape(m[2]) if m else ""
     mall = m and mall_of(url, title)
@@ -829,7 +839,7 @@ def mall_view(body, url):
         i = rest.find("\n\n출처: ")
         i = len(rest) if i < 0 else i
         rest = rest[:i] + f"\n⚠️ 결제 전 최종가 ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시)" + rest[i:]
-    return mall_body(mall, "" if m[1] == "🛒" else "꾸준히 팔리는 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착", plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만('로켓배송 아님' X — 10/22 리뷰)
+    return mall_body(mall, "" if m[1] == "🛒" else "꾸준히 팔리는 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(CP_ROCKET, plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만('로켓배송 아님' X — 10/22 리뷰)
 
 
 def toss_when(t=None):
@@ -1138,7 +1148,7 @@ def relink_channel(notice, mid, url):
     text, ents = with_note(notice.get("text", ""), notice.get("entities", []), url)
     if TOSS_NO_CMP and is_toss(url):  # 토스 링크로 바꾼 글 = 다른 몰 비교 뺌 + 게시 시점 가격 줄(10/12 전 글엔 없음 — 그 글을 올린 시각으로)
         text, ents = add_when(*strip_cmp(text, ents), next((p["t"] for p in posts if p.get("mid") == mid), None))
-    kb = [[{"text": buy_btn(title_of(notice.get("text", "")), url), "url": url}]]  # 토스·쿠팡 = 몰별 버튼(10/22)
+    kb = [[{"text": buy_btn(title_of(notice.get("text", "")), url, text), "url": url}]]  # 토스·쿠팡 = 몰별 버튼(10/22, 쿠팡 🚀/📦 = 그 글 머리 줄)
     if not tg("editMessageText", chat_id=CHANNEL, message_id=mid, text=text, entities=ents,
               link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb}):
         return
@@ -1154,7 +1164,7 @@ def relink_channel(notice, mid, url):
 def relink(m, url):
     """초안 m의 구매 버튼을 url로 교체(제휴 링크면 대가성 문구를 맨 앞에) -> (text, entities, 버튼 rows)."""
     text, ents = with_note(m.get("text", ""), m.get("entities", []), url)
-    rows = [[{"text": buy_btn(title_of(text), url) if mall_of(url, title_of(text)) else "🛒 구매하러 가기", "url": url}]]  # 토스·쿠팡 링크 = 몰별 버튼(10/22)
+    rows = [[{"text": buy_btn(title_of(text), url, text) if mall_of(url, title_of(text)) else "🛒 구매하러 가기", "url": url}]]  # 토스·쿠팡 링크 = 몰별 버튼(10/22)
     rest = [r for r in m.get("reply_markup", {}).get("inline_keyboard", []) if "url" not in r[0]] or \
         [[{"text": "✅ 게시", "callback_data": "ok"}, {"text": "❌ 패스", "callback_data": "no"}]]
     tg("editMessageText", chat_id=m["chat"]["id"], message_id=m["message_id"], text=text, entities=ents,
@@ -1197,9 +1207,10 @@ def admin_deal(lines, link, mid, seen=None):
         return False
     facts = facts_of(p, aff_note(link) == TOSS_NOTE)
     weak = p["score"] < MIN_SCORE - (earns(title) or aff(link))  # 진우 제휴 링크 = 수수료 되는 딜 -> 1점 완화(네이버는 EARN_TAGS에 없음: 커뮤니티 [네이버] 딜은 진우가 링크를 만들어야 수수료라서)
-    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=ad_head(aff_note(link), f"🔥 {title}\n\n{p['comment']}", p.get("unit") or "") + mall_view(toss_body(f"{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
-           + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}", link), link),  # 토스·쿠팡 = 몰별 틀(10/22)
-           link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_btn(title, link), "url": link}]]})
+    body = ad_head(aff_note(link), f"🔥 {title}\n\n{p['comment']}", p.get("unit") or "") + mall_view(toss_body(f"{'🛒' if weak else '🔥'} <b>{esc(title)}</b>\n\n"
+           + ("🤔 솔직히 특가로는 약한 제품\n" if weak else "") + f"{esc(p['comment'])}{facts}", link), link)  # 토스·쿠팡 = 몰별 틀(10/22)
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", text=body,
+           link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": [[{"text": buy_btn(title, link, plain_of(body)), "url": link}]]})
     if not m:
         return False
     tone_keep(RUN if seen is None else seen, "ch", tone)
@@ -1282,8 +1293,8 @@ def publish_approved(seen=None):
         note, body = aff_note(link), "\n".join(lines[1:])
         if not (note and admin_deal(lines, link, m["message_id"], seen)):
             title = admin_title(lines[0], link) if note else lines[0]  # 초안도 채널 글과 같은 제목·버튼([몰]·가격)
-            draft(ad_head(note, f"🔥 {title}\n\n{body}") + mall_view(toss_body(f"🔥 <b>{esc(title)}</b>" + (f"\n\n{esc(body)}" if body else ""), link), link),
-                  link, info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None, label=buy_btn(title, link) if note or mall_of(link, title) else "🛒 구매하러 가기")
+            dt = ad_head(note, f"🔥 {title}\n\n{body}") + mall_view(toss_body(f"🔥 <b>{esc(title)}</b>" + (f"\n\n{esc(body)}" if body else ""), link), link)
+            draft(dt, link, info="🤖 자동 게시 실패(Claude 오류·채널 실패) · ✅ 누르면 게시" if note else None, label=buy_btn(title, link, plain_of(dt)) if note or mall_of(link, title) else "🛒 구매하러 가기")
     handled = set()
     for u in ups:
         q = u.get("callback_query") or {}
@@ -2352,7 +2363,7 @@ def ev_view(ev):
     text = mall_view(text, ev.get("url"))
     t = title_of(plain_of(text))
     mall, won = mall_of(ev.get("url"), t), re.search(r"\d[\d,]*\s*원", btn)
-    return text, mall_btn(mall, won[0] if won else parse(t)[2]) if mall and btn.startswith("🛒") else btn
+    return text, mall_btn(mall, won[0] if won else parse(t)[2], cp_rocket(plain_of(text))) if mall and btn.startswith(("🛒", "🚀 쿠팡에서", "📦 쿠팡에서")) else btn  # 쿠팡 🚀/📦 = 머리 줄과 같게(예약에 써 둔 '🚀 쿠팡에서'도)
 
 
 def sold_ev(ev, day):
@@ -2639,7 +2650,7 @@ def th_ab(text, link):
 
 
 TH_VOICE, TH_GAP_JITTER = True, 10 * 60  # 10/21 밤 진우 'Threads 개별 딜 글 사람이 올리는 느낌': 본문을 Claude가 반말·음슴체 문장으로(th_voice, False = 지금 틀) · 개별 글 간격 45분 ± 10분(th_gap, 0 = 45분 그대로)
-VOICE_LABEL = ("⭐", "💰", "🙋", "👍", "💡", "⚠", "🔥", "🛒", "👉", "👇", "📲", "👋", "💸", "🔔", "🏆", "⏰", "🤔", "🚀", "💙", "📊", "🚚", "[", "#")  # 이걸로 시작하는 줄 = 라벨·제목 줄(문장 아님)
+VOICE_LABEL = ("⭐", "💰", "🙋", "👍", "💡", "⚠", "🔥", "🛒", "👉", "👇", "📲", "👋", "💸", "🔔", "🏆", "⏰", "🤔", "🚀", "📦", "💙", "📊", "🚚", "[", "#")  # 이걸로 시작하는 줄 = 라벨·제목 줄(문장 아님)
 VOICE_BAN = "|".join((WU_FAKE, r"샀는데|사\s*봤|사봄|사\s*보니|질렀|재구매|쓰는\s*중|(?:어제|작년|지난번|저번|예전)에?\s*\S*\s*샀|(?<![가-힣])(?:내가|나도|난|나는|저는|저도|우리\s*집)(?![가-힣])", WU_HEALTH, WU_HYPE, r"눌러"))  # 써 본 척(반말·음슴체 '나도·질렀' 포함, '비교해봤는데'·'N명 넘게 삼'은 OK)·효능·과장·조급·클릭 유도(토스 글은 + 다른 몰·비교)
 VOICE_YO = r"(?<![필중주수소])요(?![가-힣])|죠(?![가-힣])|(?<![다아])니다(?![가-힣])"  # 해요체(~요·~죠)·~니다로 끝나는 말('확인 필요'·'중요' 같은 낱말은 아님, '30개요'는 해요체)
 VOICE_EMOJI = r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u231A-\u23FA\u2B05-\u2B55\u203C\u2049]\uFE0F?|[#*0-9]\uFE0F?\u20E3|\S\uFE0F|\u200D"  # → 같은 화살표는 아님(음슴체 예시)
@@ -2773,7 +2784,7 @@ def th_voice(seen, text, link, src=None):
             ti = next(i for i, l in enumerate(ls) if l.startswith(("🔥", "🛒", "👍")))
             icon, title = ls[ti][0], re.sub(r"^[🔥🛒👍]\s*", "", ls[ti])
             mall, tag = mall_of(link, title), parse(title)[0]
-            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or "로켓" in full) if mall else f"{icon} [{tag}]" if tag else icon
+            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or cp_rocket(full)) if mall else f"{icon} [{tag}]" if tag else icon
             pline, body = "", ls[:ti] + ls[ti + 1:]
         _, name, price = parse(title)
         won = re.search(r"\d[\d,]*(?=\s*원)", price) or re.search(r"^\d[\d,]{3,}", price)
@@ -3205,8 +3216,7 @@ def ig_items(seen, ps, photos=True):
         main, _, ship = price.partition("/")
         mall = mall_of(p.get("url"), t)
         cond, dr = mall_dr(plain)
-        rocket = bool(re.search(r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착", plain))
-        badge = "💙 토스 특가" if mall == "toss" else ("🚀 쿠팡 로켓" if rocket else "🚀 쿠팡") if mall == "coupang" else store_tag(t)
+        badge = "💙 토스 특가" if mall == "toss" else (MALLS["coupang"][0] if cp_rocket(plain) else CP_PLAIN[0]) if mall == "coupang" else store_tag(t)
         arrive = re.search(r"(내일|모레|오늘)(?:\s*\([월화수목금토일]\))?\s*(?:새벽\s*)?도착", plain)
         out.append({"name": name, "short": re.sub(r",?\s*\d+\s*(?:개|팩|입|매|롤|병|캔|봉)\s*$", "", name).strip() or name, "price": main.strip(),
                     "chip": (p.get("unit") or "").split(" (")[0].strip() or ("와우 할인" if "와우" in cond else f"{dr}%↓" if dr and not cond else ""),
