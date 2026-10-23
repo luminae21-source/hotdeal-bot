@@ -11,6 +11,9 @@ on:
         description: "봇 기억(seen.json) 없이 처음부터 실행 (캐시가 다 지워졌을 때만)"
         type: boolean
         required: false
+      restore_seen:                # 캐시 복구(1번): 예전 캐시 key(seen-실행번호)의 seen.json을 지금 것과 합침(같은 칸은 지금 값) + music/ 되살림, toss.json은 지금 것. 평소엔 비움
+        description: "캐시 복구: 합칠 예전 캐시 key (예: seen-39915733544, 보통 비움)"
+        required: false
 concurrency: hotdeal
 permissions:
   contents: write                  # posts.json / docs(웹사이트·카드) 커밋용
@@ -31,6 +34,23 @@ jobs:
             music
           key: seen-${{ github.run_id }}
           restore-keys: seen-
+      - if: ${{ inputs.restore_seen }}   # 캐시 복구(10/23 16:21 빈 seen 저장 뒤 3일 기록 되살리기): 지금 seen·토큰을 옆에 두고 예전 캐시를 받은 다음 합침
+        run: mkdir -p .seen_now && cp seen.json .seen_now/ && { [ ! -f toss.json ] || cp toss.json .seen_now/; }
+      - if: ${{ inputs.restore_seen }}
+        uses: actions/cache/restore@v5
+        with:
+          path: |                  # 위 캐시와 똑같은 목록이어야 받아짐(캐시 버전 = 경로 목록)
+            seen.json
+            fonts
+            toss.json
+            music
+          key: ${{ inputs.restore_seen }}
+          fail-on-cache-miss: true
+      - if: ${{ inputs.restore_seen }}
+        run: |
+          python3 -c "import json; o, n = json.load(open('seen.json')), json.load(open('.seen_now/seen.json')); print('seen 합침', len(o), '+', len(n), end=' -> '); o.update(n); json.dump(o, open('seen.json', 'w')); print(len(o))"
+          [ ! -f .seen_now/toss.json ] || cp .seen_now/toss.json toss.json
+          rm -rf .seen_now
       - run: |                     # 카드 이미지용: Pillow + 나눔고딕(Google Fonts, OFL). 있으면 건너뜀
           python -c "import PIL" 2>/dev/null || pip install -q pillow
           mkdir -p fonts && for w in ExtraBold Regular; do

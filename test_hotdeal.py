@@ -5389,9 +5389,21 @@ H.http = lambda url, *a, **k: c41.append((url, None)) or json.dumps({"rCode": "0
 o41 = io.StringIO()
 with contextlib.redirect_stdout(o41): H.cp_price(seen41)
 assert quote("새 상품") in c41[0][0] and seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 0, c41  # 10/4 확인 글이 먼저
-assert "pid 222 · 검색어 '새 상품' · pid 있음 1개 = 옵션 다름(cp_same) · 결과 2개" in o41.getvalue() and "  9 다른 상품\n" in o41.getvalue() and "  777 새 상품, 2개 ← 같은 pid" in o41.getvalue(), o41.getvalue()
+assert "pid 222 · 검색어 '새 상품' · pid 있음 1개 = 옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로 · 결과 2개" in o41.getvalue() and "  9 다른 상품\n" in o41.getvalue() and "  777 새 상품, 2개 ← 같은 pid · item 1" in o41.getvalue(), o41.getvalue()
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": [{"productId": 777, "productName": "새 상품, 1개", "productPrice": 5100, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=222"}]}})
 seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"; H.RUN.pop("cpn"); H.cp_price(seen41); assert seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 5100  # productId가 달라도 pageKey = pid면 같은 상품
+# events item(옵션 itemId)이 있으면 이름 대신 그 옵션(10/23 고려은단 '180정' — 쿠팡 이름엔 옵션이 없고 같은 pid 4개 이름이 같음) · 없는 item이면 못 찾음 로그
+json.dump([{**e, "item": "55"} if e["url"] == P222 else e for e in ev41], open("events.json", "w"))
+GO41 = [{"productId": 222, "productName": "새 상품", "productPrice": p, "productUrl": f"https://link.coupang.com/re/AFFSDP?pageKey=222&itemId={i}"} for p, i in ((9800, 54), (5300, 55), (15000, 56))]
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": GO41}})
+seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"; H.RUN.pop("cpn"); H.cp_price(seen41); assert seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 5300
+json.dump([{**e, "item": "99"} if e["url"] == P222 else e for e in ev41], open("events.json", "w")); o41 = io.StringIO()
+seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"; H.RUN.pop("cpn")
+with contextlib.redirect_stdout(o41): H.cp_price(seen41)
+assert seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 0 and "pid 있음 3개 = item 99 없음" in o41.getvalue() and "← 같은 pid · item 55" in o41.getvalue(), o41.getvalue()
+o41 = io.StringIO(); H.RUN["cpu"] = {"s": [time.time()] * 6, "a": [time.time()] * 6}; H.RUN.pop("cpn"); seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"
+with contextlib.redirect_stdout(o41): H.cp_price(seen41)
+assert "cp price 상한(실행 1·시간 6)" in o41.getvalue(); H.RUN["cpu"] = {}; json.dump(ev41, open("events.json", "w"))  # 1시간 상한으로 하나도 못 하면 로그 1줄
 assert H.cp_same("칠성사이다 190ml 30캔", "칠성사이다, 190ml, 30개") and H.cp_same("도브 뷰티 크림바 90g 12개입", "도브 뷰티 크림바, 90g, 12개") and not H.cp_same("칠성사이다 190ml 30캔", "칠성사이다, 190ml, 60개")
 assert not H.cp_same("리스테린 쿨민트 1L 2+1", "리스테린 쿨민트, 1L, 1개") and not H.cp_same("비비고 왕교자 1.05kg x2", "비비고 왕교자, 1.05kg, 1개") and not H.cp_same("수면양말 6켤레", "수면양말, 12켤레")
 assert H.cp_same("맥스웰하우스 커피믹스 오리지날 180개입 × 2개", "맥스웰하우스 커피믹스 오리지날, 180개입, 2개") and H.cp_same("IPX500A 청소기", "IPX500A 무선 청소기")
@@ -5427,5 +5439,10 @@ try: H.main(); raise AssertionError("안 지나감")
 except Past42: pass  # 평소(받은 seen) = 그대로
 wf42 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "cold_start:" in wf42 and "type: boolean" in wf42 and "COLD_START: ${{ inputs.cold_start }}" in wf42 and "    seen = load(SEEN, {})" not in inspect.getsource(H.main)
+# 캐시 복구(1번, Run workflow restore_seen = 예전 캐시 key): 같은 경로 목록으로 받아(fail-on-cache-miss) 지금 seen과 합침 — 같은 칸은 지금 값, 예전에만 있는 칸은 되살림
+assert "restore_seen:" in wf42 and wf42.count("            seen.json\n            fonts\n            toss.json\n            music\n") == 2 and "fail-on-cache-miss: true" in wf42 and "key: ${{ inputs.restore_seen }}" in wf42
+import subprocess; m42, d42 = re.search(r'python3 -c "(import json; o, n = .*?)"\n', wf42)[1], tempfile.mkdtemp(); os.makedirs(f"{d42}/.seen_now")
+json.dump({"tsolo_20261023_16": 1, "b": 1}, open(f"{d42}/seen.json", "w")); json.dump({"b": 2, "c": 2}, open(f"{d42}/.seen_now/seen.json", "w"))
+assert "seen 합침 2 + 2 -> 3" in subprocess.run([sys.executable, "-c", m42], cwd=d42, capture_output=True, text=True).stdout and json.load(open(f"{d42}/seen.json")) == {"tsolo_20261023_16": 1, "b": 2, "c": 2}
 (H.tg, H.http, H.publish_approved, H.toss_clean_posts), H.SEEN_COLD = sv42, sc0
 print("OK: 모든 셀프체크 통과")
