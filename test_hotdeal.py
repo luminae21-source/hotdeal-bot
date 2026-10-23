@@ -5560,6 +5560,11 @@ def tg45(method, **p):
 H.http, H.tg, seen45 = http45, tg45, {}; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None); H.RUN["ch_last"] = 0
 assert [e["url"] for e in H.load(H.EVENTS, [])] == ["https://link.coupang.com/a/ch1"]  # 채널 쪽(events·미리보기·토스 쉼·알림)은 shelf를 아예 못 봄
 H.shelf_posts(seen45); assert [p["url"][-3:] for p in json.load(open("posts.json"))] == ["old", "sh2", "sh3", "sh5"]  # 딥링크 전 쿠팡 상품 주소 = 진열 X(생 주소 X) · 시각 전(sh4) X
+json.dump(ev45 + [SH45(f"https://www.coupang.com/vp/products/9{k}", f"진열 {k}", "2026-10-20 09:00") for k in range(8)]
+          + [{"at": "2026-10-24 21:00", "deal": True, "url": "https://www.coupang.com/vp/products/99999", "button": "x", "text": "🔥 <b>[쿠팡] 채널 상품 (1원)</b>"}], open("events.json", "w"))
+H.cp_links(seen45); cl45 = json.load(open(H.CP_LINKS))
+assert "https://www.coupang.com/vp/products/99999" in cl45 and len(cl45) == H.CP_RUN - 2, cl45  # 채널 예약 먼저(주소 순서 뒤여도) · 진열 변환은 이 실행 CP_RUN-2개째까지(남은 2개 = 가격 확인·골드박스 몫)
+json.dump(ev45, open("events.json", "w")); os.remove(H.CP_LINKS); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); seen45.pop("cpdl", None)
 H.cp_links(seen45); DL45 = json.load(open(H.CP_LINKS))[P45]
 assert DL45 == "https://link.coupang.com/a/b45" and any(u.endswith("/deeplink") for u in c45)  # at 6시간 지났어도 shelf는 변환
 H.shelf_posts(seen45); po45 = json.load(open("posts.json"))
@@ -5572,7 +5577,12 @@ H.shelf_posts(seen45); assert len(json.load(open("posts.json"))) == len(po45)  #
 t45, ents45 = H.html_ents('<i>고지</i>\n\n🔥 <b>[쿠팡] 이름</b> <a href="https://x.y/?a=1&amp;b=2">링크</a> 😀 <a href="https://z">끝</a>')
 assert t45 == "고지\n\n🔥 [쿠팡] 이름 링크 😀 끝" and [(t45.encode("utf-16-le")[e["offset"] * 2:(e["offset"] + e["length"]) * 2].decode("utf-16-le"), e["url"]) for e in ents45] == [("링크", "https://x.y/?a=1&b=2"), ("끝", "https://z")]  # UTF-16 오프셋(😀 = 2)
 # 채널 쪽 계산에 안 섞임: 시간당 상한·마지막 채널 글 시각·관리자 중복 링크·카드·모아보기·Threads 후보·날씨/간식
-assert not H.busy(seen45) and H.ch_last(seen45) == T45 - 25 * 60  # 진열 4개(지금)가 시간당 상한·'방금 채널 글'로 안 셈
+bk45 = open("posts.json").read(); json.dump(po45 + [{**sh45[0], "url": f"https://link.coupang.com/a/z{k}"} for k in range(80 + H.HOUR_CAP)], open("posts.json", "w"))  # 한 번에 많이 진열해도
+assert not H.busy(seen45) and H.ch_last(seen45) == T45 - 25 * 60  # 시간당 상한·'방금 채널 글'로 안 셈
+assert H.admin_deal(["[쿠팡] 예전 채널 글 (1원)"], "https://link.coupang.com/a/old", 5, seen45) and sent45[-1][1]["text"] == "이미 채널에 올린 링크야"; sent45.clear()  # 관리자 중복 확인 = 채널 글 80개(진열 글이 자리 X)
+open("posts.json", "w").write(bk45)
+import inspect
+assert 'not p.get("shelf") and p["t"] >= since' in inspect.getsource(H.threads_deals) and 'and not p.get("shelf")]  # 사이트 진열(shelf) = 모아보기' in inspect.getsource(H.digest)  # Threads 개별 후보·21시 모아보기·블로그 X
 assert [i for i, _ in S45.day_deals(po45, "2026-10-24")] == [0]  # 카드·인스타·릴스·Threads 카드 = 채널 글만
 H.events(seen45); assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for m, p in sent45 if m == "sendMessage"] == ["https://link.coupang.com/a/ch1"]  # 채널 = 보통 예약만
 # 사이트: 품목 칸(🧻 생필품)·상태(own_end: Cowork now·chk)·상품 페이지·사이트맵
@@ -5600,10 +5610,14 @@ for p in po45:
 json.dump(po45, open("posts.json", "w"))
 time.time = lambda: T45 - 5 * 60
 os.makedirs("docs", exist_ok=True); sent45.clear()
+po45 += [{**sh45[0], "text": sh45[0]["text"].replace("깨끗한나라 물티슈 100매 10팩", "품절 물티슈"), "url": "https://link.coupang.com/a/so", "st": "out"},
+          {**sh45[0], "text": sh45[0]["text"].replace("깨끗한나라 물티슈 100매 10팩", "많이 산 진열").replace("👍", "🛒") + "\n한 달 3만명+ 구매", "url": "https://link.coupang.com/a/bu"}]
+assert [(H.th_steady(p["text"]), H.th_weak(p["text"]), S45.parse(S45.title_of(p["text"]))[1]) for p in po45[-2:]] == [(True, False, "품절 물티슈"), (False, True, "많이 산 진열")]  # 일시 품절 👍 진열 · 많이 산 🛒 진열
+json.dump(po45, open("posts.json", "w"))
 cd45 = H.steady_cands(seen45, time.time(), 99)
-assert {x["n"] for x in cd45} >= {"깨끗한나라 물티슈 100매 10팩", "페리오 치약 120g 10개"} and "피죤 세탁세제 3L" not in {x["n"] for x in cd45}  # 👍 진열만(🔥 진열 X)
+assert {x["n"] for x in cd45} >= {"깨끗한나라 물티슈 100매 10팩", "페리오 치약 120g 10개"} and not {x["n"] for x in cd45} & {"피죤 세탁세제 3L", "품절 물티슈", "많이 산 진열"}, cd45  # 👍 진열만(🔥·🛒·일시 품절 진열 X)
 H.steady_list(seen45); st45 = [p for m, p in sent45 if m == "sendMessage"]
-assert len(st45) == 1 and "🧻 <b>생필품 스테디셀러 모음</b>" in st45[0]["text"] and json.load(open(H.STEADY_FILE))["head"] == "🧻 생필품 스테디셀러 모음", st45
+assert len(st45) == 1 and "🧻 <b>생필품 스테디셀러 모음</b>" in st45[0]["text"] and "12,500원 (10/24 9시 확인)" in st45[0]["text"] and json.load(open(H.STEADY_FILE))["head"] == "🧻 생필품 스테디셀러 모음", st45
 S45.steady_page("docs"); assert "<h2 id=\"sth\">🧻 생필품 스테디셀러 모음</h2>" in open("docs/steady.html").read()
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS = sv45[:6]
 os.chdir(cwd45)

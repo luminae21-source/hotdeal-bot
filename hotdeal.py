@@ -1194,7 +1194,7 @@ def admin_deal(lines, link, mid, seen=None):
     채널에 바로 + posts.json(사이트·모아보기). 링크는 서버에서 열지 않음(파트너스 자기 클릭 방지) -> 적힌 정보로만 판단.
     채널 점수 컷(MIN_SCORE, 수수료 몰 -1) 미만이면 🛒 + '솔직히 특가로는 약한 제품' 줄(10/10 진우 '특가로는 약한 제품이라고 써 보자').
     처리했으면 True, Claude 오류·응답 없음·채널 실패면 False(-> 지금처럼 초안 ✅)."""
-    if any(link_key(x.get("url")) == link_key(link) for x in load(POSTS, [])[-80:] if not x.get("shelf")):  # 사이트 진열(shelf)은 채널 글 아님 · 15분 안 바뀌어서 다시 보낸 링크(대소문자·끝 / 달라도) -> 두 번 안 올림
+    if any(link_key(x.get("url")) == link_key(link) for x in [x for x in load(POSTS, []) if not x.get("shelf")][-80:]):  # 사이트 진열(shelf)은 채널 글 아님 · 15분 안 바뀌어서 다시 보낸 링크(대소문자·끝 / 달라도) -> 두 번 안 올림
         tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": mid}, text="이미 채널에 올린 링크야")
         return True
     title = admin_title(lines[0], link)
@@ -1278,7 +1278,7 @@ def publish_approved(seen=None):
             text = text.replace(u, "")
         lines = [re.sub(r"[(\[]\s*[)\]]", "", l).strip().lstrip("🔥").strip() for l in text.split("\n")]
         lines = [l for l in lines if l and not l.startswith(NOTE_STARTS)]  # 붙여넣은 대가성 문구는 빼고 링크 기준으로 다시 붙임
-        if not lines and any(link_key(x.get("url")) == link_key(link) for x in load(POSTS, [])[-80:] if not x.get("shelf")):  # 링크만 또 보냄 -> 다른 글 버튼을 또 바꾸지 않음
+        if not lines and any(link_key(x.get("url")) == link_key(link) for x in [x for x in load(POSTS, []) if not x.get("shelf")][-80:]):  # 링크만 또 보냄 -> 다른 글 버튼을 또 바꾸지 않음
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="이미 채널 글에 붙인 링크야 (새 딜이면 첫 줄에 상품명 (가격/배송)도 같이)")
             continue
         p = None if lines else pending_copy(link)
@@ -1352,9 +1352,13 @@ def cp_links(seen):
         return
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
     st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
-    for u in sorted({e["url"] for e in ev_list(EVENTS) if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))}):  # 사이트 진열(shelf)은 시각 상관없이 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    evs = [e for e in ev_list(EVENTS) if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
+    chan = {e["url"] for e in evs if not e.get("shelf")}
+    for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)):  # 채널 예약 먼저 · 진열 변환은 이 실행 CP_RUN-2개째까지(남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크 — 10/24 리뷰) · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
         if now - st["x"].get(u, 0) < 86400:
             continue
+        if u not in chan and n >= CP_RUN - 2:
+            break
         try:
             cl[u] = cp_deeplink(u)
             n += 1
@@ -1796,8 +1800,8 @@ def steady_cands(seen, now, n=None):
         b, r, pr = re.search(STEADY_BUY, p["text"]), re.search(STEADY_REV, p["text"]), price.split("/")[0].strip()
         return {"n": name, "p": p.get("shelf") and p.get("now") and p["now"] + (f" ({p['chk']} 확인)" if p.get("chk") else "") or pr and pr + ("" if p["t"][:10] == today else f" ({int(p['t'][5:7])}/{int(p['t'][8:10])} 글 가격)"),  # 진열 글 = 지금 확인 가격
                 "st": f"한 달 {sp(b[1])}명+ 구매" if b else f"리뷰 {sp(r[1])}" if r else "", "u": p["url"], "tu": th_url(p, i), "i": i}
-    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and (posts[i]["t"] >= since and not posts[i].get("shelf") or posts[i].get("shelf") and posts[i].get("st") != "gone" and th_steady(posts[i]["text"]))
-           and aff_note(posts[i].get("url") or "") and not tossy(posts[i].get("url"))]  # 사이트 진열(shelf)은 👍만, 날짜 상관없이(진열에서 빠진 것 X — 10/24 진우)
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and (posts[i]["t"] >= since and not posts[i].get("shelf") or posts[i].get("shelf") and posts[i].get("st") not in ("gone", "out") and th_steady(posts[i]["text"]))
+           and aff_note(posts[i].get("url") or "") and not tossy(posts[i].get("url"))]  # 사이트 진열(shelf)은 👍만, 날짜 상관없이(진열에서 빠진 것·일시 품절 X — 10/24 진우)
     out = [item(i) for i in own if th_steady(posts[i]["text"])]
     tops = [x for x in load(TOP, {}).get("items", []) if aff_note(x.get("url") or "")]
     tu, tc = toss_ids(seen), {norm(c[1]): c[0] for c in seen.get("tosscache", {}).get("items", []) if len(c) > 1}
