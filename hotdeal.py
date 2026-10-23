@@ -2768,11 +2768,11 @@ def th_gap(last):
     return TH_SOLO_GAP + (random.Random(int(last)).randint(-TH_GAP_JITTER, TH_GAP_JITTER) if TH_GAP_JITTER else 0)
 
 
-def th_deal(seen, tok, me, text, link, src=None):
+def th_deal(seen, tok, me, text, link, src=None, cat=None):
     """Threads 개별 딜 글 1개(threads_deals·토스 픽 채움·슬롯 줄·뷰티 채움·토스 이름 예약·재오픈 — 묶음·날씨·간식·투표·#일상은 th_post 그대로).
     TH_LINK_AB면 직전 개별 딜 글이 A였으면 B: 본문 주소 없이(미리보기 X) 올리고 바로 첫 댓글 = 링크. 댓글 못 다는 토큰(th_reply_ok)이면 A.
     B 댓글이 실패하면 관리자 알림 + 다음 실행에 1번 더(th_retry — 링크 없는 딜 글이 남지 않게). 글마다 A/B·댓글 id -> seen(metrics.json 줄 ab·rv·48시간 v48·rv48)."""
-    tt, topic = title_of(text), th_topic(seen, text)  # 지금 틀 제목(사람 느낌 글은 첫 줄이 문장 -> metrics 분류·가격대는 이걸로) · 주제 = 품목 칸(10/23 진우)
+    tt, topic = title_of(text), th_topic(seen, text, cat=cat)  # 지금 틀 제목(사람 느낌 글은 첫 줄이 문장 -> metrics 분류·가격대는 이걸로) · 주제 = 품목 칸(10/23 진우)
     vt = th_voice(seen, text, link, src) if TH_VOICE else text  # 10/21 밤 진우 '사람이 올리는 느낌'(실패·조건 안 맞으면 지금 틀)
     voiced, text = vt != text, vt
     st, now = seen.get("thab", {}), time.time()
@@ -3708,11 +3708,13 @@ TH_TOPICS = {"food": "장보기", "life": "생필품", "beauty": "화장품", "h
 TH_TOPIC_RUN = 3  # 같은 주제 연달아 3번까지 — 넘으면 '핫딜'(핫딜이면 '특가')
 
 
-def th_topic(seen, text=None, base=None):
+def th_topic(seen, text=None, base=None, cat=None):
     """Threads 글 주제(topic_tag — 글당 1개, 1~50자, '.'·'&' X, 공식 문서 posts·publishing): 딜 글(text — 토스 포함) = 품목 칸 주제(TH_TOPICS, 칸 없음 = 핫딜),
-    묶음·리스트·운영 일지·날씨·투표 = '핫딜', base = 정해 둔 주제(#일상). 방금 TH_TOPIC_RUN번 연달아 같은 주제면 '핫딜'(핫딜이면 '특가').
-    고른 주제는 seen thtopic l(최근 10개)에 바로 — 글별 주제는 metrics가 Threads 글 목록 topic_tag로 다시 읽음."""
-    t = base or (TH_TOPICS.get(cat_of({"text": text}), "핫딜") if text else "핫딜")
+    묶음·리스트·운영 일지·날씨·투표 = '핫딜', base = 정해 둔 주제(#일상). 품목 칸 = 사이트와 같은 cat_of(제목 -> 글 cat = Claude 한 단어), 칸 없음이면 화장품 낱말(th_beauty).
+    방금 TH_TOPIC_RUN번 연달아 같은 주제면 '핫딜'(핫딜이면 '특가'). 고른 주제는 seen thtopic l(최근 10개)에 바로 — 글별 주제는 metrics가 Threads 글 목록 topic_tag로 다시 읽음.
+    shortcut: 올리기 전에 기록 -> 올리기가 실패하면 그 주제도 셈(실패 직후 같은 주제가 1번 더 나갈 수 있음), 실패가 잦아지면 올린 뒤 기록으로."""
+    c = text and (cat_of({"text": text, "cat": cat}) or ("beauty" if th_beauty(title_of(text)) else ""))
+    t = base or TH_TOPICS.get(c, "핫딜")
     r = seen.get("thtopic", {}).get("l", [])
     if r[-TH_TOPIC_RUN:] == [t] * TH_TOPIC_RUN:
         t = "특가" if t == "핫딜" else "핫딜"
@@ -4070,7 +4072,7 @@ def threads_deals(seen):
         if turn:
             seen["thfill"] = {"t": now, "k": turn}
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        th_deal(seen, tok, me, text, url, full)
+        th_deal(seen, tok, me, text, url, full, posts[i].get("cat"))  # 주제 = 사이트 품목 칸(글 cat까지)
 
 
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
@@ -5178,7 +5180,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill, toss_roster):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, toss_roster):
         try:
             step(seen)
         except Exception as e:
