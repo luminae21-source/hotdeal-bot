@@ -799,13 +799,26 @@ def app_logo(n, mini=False):
     return im.resize((n, n), Image.LANCZOS)
 
 
+SC_ICONS = {"fire": ("🔥", (255, 230, 218), (255, 186, 164)), "wait": ("⏳", (255, 246, 210), (255, 222, 140)), "life": ("🧻", (224, 248, 238), (166, 228, 206))}  # 웹앱 바로가기 'V1 파스텔 이모지'(10/24 진우): 이모지·위·아래 색
+
+
+def sc_icon(ch, top, bottom, n):
+    """웹앱 바로가기(아이콘 길게 누르기 메뉴) 아이콘 n×n: 위 -> 아래 파스텔 그라데이션 꽉 찬 정사각(런처가 깎음) + 가운데 컬러 이모지(긴 변 = 0.5n — maskable 안전 영역 안)."""
+    im = Image.composite(Image.new("RGB", (n, n), bottom), Image.new("RGB", (n, n), top), Image.linear_gradient("L").resize((n, n), Image.BILINEAR))
+    e = emoji(ch, n // 2)
+    im.paste(e, ((n - e.width) // 2, (n - e.height) // 2), e)
+    return im
+
+
 def app_icons(d="docs/icons", root="docs"):
     """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로', 'A 레드') -> d/: icon-192·512(any)·icon-512-maskable·apple-touch-icon(180) = 같은 꽉 찬 그림(투명 X — 런처·iOS가 모양을 깎음),
-    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
+    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48) + 바로가기 sc-fire·wait·life(192·96). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
     os.makedirs(d, exist_ok=True)
     big = app_logo(512).convert("RGB")
     out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": big,
            f"{d}/apple-touch-icon.png": app_logo(180).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True)}
+    for k, (ch, a, b) in SC_ICONS.items():  # 바로가기 sc-{k}.png(192) · sc-{k}-96.png
+        out[f"{d}/sc-{k}.png"], out[f"{d}/sc-{k}-96.png"] = sc_icon(ch, a, b, 192), sc_icon(ch, a, b, 96)
     for p, im in out.items():
         im.save(p, optimize=True)
     app_logo(256, mini=True).save(f"{root}/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])

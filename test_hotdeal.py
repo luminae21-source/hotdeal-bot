@@ -5266,7 +5266,7 @@ for f40 in ("index.html", "all.html", "p/0.html"):
                                   'apple-mobile-web-app-capable', 'apple-mobile-web-app-title" content="핫딜픽"', 'apple-mobile-web-app-status-bar-style', "serviceWorker.register('/sw.js')")), f40
 assert 'id="inst"' in ix40 and ix40.index('id="inst"') < ix40.index('class="dis"') and 'id="inst"' not in open(f"{d40}/all.html").read()  # 설치 버튼 = 홈 맨 위만
 assert "u.origin!==location.origin)return" in sw40 and "r.method!=='GET'" in sw40 and "fetch(r).then(function(res){if(res.ok&&r.mode==='navigate')" in sw40 and ".catch(function(){return caches.match(r)" in sw40  # 외부 몰·제휴 X · HTML 네트워크 먼저
-assert re.search(r"var V='hdp-([0-9a-f]{10})'", sw40)[1] == hashlib.md5(ix40.encode()).hexdigest()[:10] and "caches.delete(k)" in sw40  # 배포(홈 내용)마다 캐시 이름 -> 옛 캐시 지움
+assert re.search(r"var V='hdp-([0-9a-f]{10})'", sw40)[1] == hashlib.md5((ix40 + open(f"{d40}/manifest.webmanifest").read()).encode()).hexdigest()[:10] and "caches.delete(k)" in sw40  # 배포(홈·manifest 내용)마다 캐시 이름 -> 옛 캐시 지움
 S40.build([{"t": "2026-10-23 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://link.coupang.com/a/x", "s": 7}], d40); assert open(f"{d40}/sw.js").read() == sw40  # 홈이 같으면 sw.js도 그대로(실행마다 커밋 X)
 g40, S40.GC_CODE = S40.GC_CODE, "hdp"; assert S40.gc_tag().index(S40.GC_APP) < S40.gc_tag().index("count.js") and "'app'" in S40.GC_APP; S40.GC_CODE = g40  # count.js 전에(GoatCounter 문서)
 assert S40.gc_tag() == "" if not g40 else True
@@ -5289,7 +5289,22 @@ assert sum(near40(c, C40.PICK_RED, 6) for c in pk40) > 300  # 알약 안 빨간 
 for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):
     i40 = I40.open(f40); n40 = i40.width
     assert i40.getpixel((0, 0))[3] == 0 and i40.getpixel((n40 // 2, n40 - 2))[3] == 255 and max(min(i40.getpixel((x, y))[:3]) for x in range(n40) for y in range(n40)) > 200, f40  # 둥근 네모(모서리 투명) + 흰 '딜'
-assert "/icons/icon-192.png?v=2" in sw40 and "/favicon.ico?v=2" in sw40 and all(i["src"].endswith("?v=2") for i in m40["icons"] + m40["shortcuts"][0]["icons"]) and 'href="/icons/apple-touch-icon.png?v=2"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
+assert "/icons/icon-192.png?v=2" in sw40 and "/favicon.ico?v=2" in sw40 and all(i["src"].endswith("?v=2") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=2"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
+# 바로가기 아이콘 'V1 파스텔 이모지'(10/24 진우): 🔥·⏳·🧻 각자 파일(192 any·maskable + 96, ?v=) · 위 -> 아래 파스텔 꽉 찬 정사각 · 이모지 가운데, 긴 변 = 0.5n(안전 영역 안)
+assert [[(i["src"], i["sizes"], i["purpose"]) for i in x["icons"]] for x in m40["shortcuts"]] == [[(f"/icons/sc-{k}-96.png{S40.SV}", "96x96", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "maskable")] for k in ("fire", "wait", "life")]
+assert S40.SV.startswith("?v=") and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"] and [C40.SC_ICONS[k][0] for k in ("fire", "wait", "life")] == ["🔥", "⏳", "🧻"]
+sc40 = {}
+for k40, (e40, t40, b40) in C40.SC_ICONS.items():
+    for n40 in (192, 96):
+        i40 = I40.open(f"{d40}/icons/sc-{k40}{'' if n40 == 192 else '-96'}.png"); c40 = n40 // 2
+        assert i40.size == (n40, n40) and i40.mode == "RGB" and near40(i40.getpixel((0, 0)), t40, 2) and near40(i40.getpixel((n40 - 1, n40 - 1)), b40, 2) and near40(i40.getpixel((0, n40 - 1)), b40, 2), (k40, n40)  # 위 -> 아래(가로는 같은 색)
+        bg40 = lambda x, y: near40(i40.getpixel((x, y)), tuple(round(a + (b - a) * y / (n40 - 1)) for a, b in zip(t40, b40)), 3)
+        em40 = [(x, y) for x in range(n40) for y in range(n40) if not bg40(x, y)]
+        bx40 = bb40([(x * 512 / n40, y * 512 / n40) for x, y in em40])
+        assert abs(max(bx40[2] - bx40[0], bx40[3] - bx40[1]) - 0.5) < 0.03 and abs((bx40[0] + bx40[2]) / 2 - 0.5) < 0.02 and abs((bx40[1] + bx40[3]) / 2 - 0.5) < 0.02, (k40, n40, bx40)  # 긴 변 50%, 가운데
+        assert all((x + 0.5 - c40) ** 2 + (y + 0.5 - c40) ** 2 <= (0.4 * n40) ** 2 for x, y in em40), (k40, n40)  # 원·둥근 네모로 깎아도 안 잘림
+        sc40[k40, n40] = round(bx40[2] - bx40[0], 2)
+assert len({v for (k, n), v in sc40.items() if n == 192}) == 3, sc40  # 셋 다 다른 이모지(폭 🔥 0.40·⏳ 0.34·🧻 0.38 — 못 그려 🛒로 바뀌면 같아짐)
 assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
 # 9-41) 쿠팡 파트너스 API(10/23 최종 승인 — 진우가 키를 Secrets에 넣기 전 준비): 키 없으면 아무것도 안 바뀜 ·
 #       ① events·관리자 쿠팡 상품 주소 -> 딥링크(cp_links.json, events.json 그대로, 진우 단축 링크 그대로, coupa.ng도 대가성 문구) ② pid 하루 1번 검색 API -> seen cpq -> own_end

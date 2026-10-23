@@ -127,13 +127,15 @@ def page(title, body, desc="", canonical="", gb=True, note="", top=""):
 
 
 PWA_BG, PWA_DARK = "#f4f5f7", "#101012"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
-IV = "?v=2"  # 아이콘 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드'
+IV, SV = "?v=2", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드'
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
             "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},
                       {"src": f"/icons/icon-512-maskable.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
-            "shortcuts": [{"name": n, "short_name": n[2:], "url": u, "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png"}]}
-                          for n, u in (("🔥 지금 특가", "/#fire"), ("⏳ 특가 대기", "/#wait"), ("🧻 생필품", "/#life"))]}
+            "shortcuts": [{"name": n, "short_name": n[2:], "url": f"/#{k}", "icons": [{"src": f"/icons/sc-{k}-96.png{SV}", "sizes": "96x96", "type": "image/png", "purpose": "any"},
+                                                                             {"src": f"/icons/sc-{k}.png{SV}", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                                                                             {"src": f"/icons/sc-{k}.png{SV}", "sizes": "192x192", "type": "image/png", "purpose": "maskable"}]}
+                          for n, k in (("🔥 지금 특가", "fire"), ("⏳ 특가 대기", "wait"), ("🧻 생필품", "life"))]}  # 바로가기 아이콘 = cards.SC_ICONS(10/24 진우 'V1 파스텔 이모지')
 PWA_HEAD = (f'<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png{IV}">'
             f'<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png{IV}"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
             f'<meta name="theme-color" content="{PWA_BG}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">'
@@ -875,7 +877,7 @@ def build(posts, out="docs"):
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", f'<script type="application/ld+json">{ld}</script>' + find("", [p for p in posts if p["t"][:10] in days[:2] and not p["text"].startswith("📋")]) + "".join(f'<div class="pane"{" hidden" * (k == "saved")}>{h}</div>' for k, _, h in panes) + bar("") + PANE_JS + LIKE_JS + FIND_JS + END_JS,  # 홈에선 #칸만(인스타 ?fbclid 붙어 와도 새로 안 불러옴)
                                               "뽐뿌·클리앙·루리웹에 올라온 핫딜 중 살 만한 것만 매일 골라 정리해요. 지금 반응 좋은 딜, 생필품·화장품, 토스 특가까지 한눈에.", BASE, top=INSTALL))
     open(f"{out}/manifest.webmanifest", "w").write(json.dumps(MANIFEST, ensure_ascii=False, indent=1))  # 웹앱(10/23 진우) — 아이콘은 cards.app_icons(docs/icons, 한 번 만들어 커밋)
-    open(f"{out}/sw.js", "w").write(SW_JS % hashlib.md5(open(f"{out}/index.html", "rb").read()).hexdigest()[:10])  # 홈 내용이 바뀐 배포마다 캐시 이름 바뀜(같으면 그대로 — 실행마다 커밋 X)
+    open(f"{out}/sw.js", "w").write(SW_JS % hashlib.md5(open(f"{out}/index.html", "rb").read() + open(f"{out}/manifest.webmanifest", "rb").read()).hexdigest()[:10])  # 홈·manifest(아이콘 주소)가 바뀐 배포마다 캐시 이름 바뀜(같으면 그대로 — 실행마다 커밋 X)
     open(f"{out}/all.html", "w").write(page(f"지난 딜 전체 | {TITLE}", find(BASE, [p for p in posts if not p["text"].startswith("📋")]) + bar(BASE) + day_grids(posts, days) + LIKE_JS + FIND_JS + END_JS, "핫딜픽에 올라온 딜 전체", f"{BASE}all.html"))
     urls.append((f"{BASE}all.html", latest))
     urls += [u for u in [steady_page(out)] if u]

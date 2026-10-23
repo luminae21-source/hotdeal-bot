@@ -40,9 +40,22 @@
    "url": "/#fire",
    "icons": [
     {
-     "src": "/icons/icon-192.png?v=2",
+     "src": "/icons/sc-fire-96.png?v=1",
+     "sizes": "96x96",
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-fire.png?v=1",
      "sizes": "192x192",
-     "type": "image/png"
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-fire.png?v=1",
+     "sizes": "192x192",
+     "type": "image/png",
+     "purpose": "maskable"
     }
    ]
   },
@@ -52,9 +65,22 @@
    "url": "/#wait",
    "icons": [
     {
-     "src": "/icons/icon-192.png?v=2",
+     "src": "/icons/sc-wait-96.png?v=1",
+     "sizes": "96x96",
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-wait.png?v=1",
      "sizes": "192x192",
-     "type": "image/png"
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-wait.png?v=1",
+     "sizes": "192x192",
+     "type": "image/png",
+     "purpose": "maskable"
     }
    ]
   },
@@ -64,9 +90,22 @@
    "url": "/#life",
    "icons": [
     {
-     "src": "/icons/icon-192.png?v=2",
+     "src": "/icons/sc-life-96.png?v=1",
+     "sizes": "96x96",
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-life.png?v=1",
      "sizes": "192x192",
-     "type": "image/png"
+     "type": "image/png",
+     "purpose": "any"
+    },
+    {
+     "src": "/icons/sc-life.png?v=1",
+     "sizes": "192x192",
+     "type": "image/png",
+     "purpose": "maskable"
     }
    ]
   }

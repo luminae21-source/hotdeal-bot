@@ -28,7 +28,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
     assert.deepStrictEqual([m.name, m.short_name, m.start_url, m.scope, m.display, m.lang, m.background_color, m.theme_color], ['핫딜픽 — 매일 살 만한 핫딜', '핫딜픽', '/?src=app', '/', 'standalone', 'ko', '#f4f5f7', '#f4f5f7']);
     assert.deepStrictEqual(m.shortcuts.map(s => s.url), ['/#fire', '/#wait', '/#life']);
-    for (const i of m.icons) {
+    for (const i of [...m.icons, ...m.shortcuts.flatMap(s => s.icons)]) {  // 바로가기 아이콘(🔥·⏳·🧻)도 선언한 크기로 열림
       const [w, h] = await pg.evaluate(src => new Promise(ok => { const im = new Image(); im.onload = () => ok([im.naturalWidth, im.naturalHeight]); im.src = src; }), i.src);
       assert.strictEqual(`${w}x${h}`, i.sizes, i.src);
     }
@@ -187,11 +187,11 @@ def badge(im):  # 크롬 '바로가기' 배지 = 픽셀(Launcher3) 아이콘 오
     im = im.copy(); dd = ImageDraw.Draw(im); w = im.width; s = round(w * .444)
     dd.ellipse((w - s, w - s, w - 1, w - 1), fill=(255, 255, 255, 255)); dd.ellipse((w - s + 3, w - s + 3, w - 4, w - 4), fill=(66, 133, 244, 255)); return im
 y = top + max(i.height for i in ims) + 24
-d.text((G, y), "아이콘(A 레드, 96·48px): 192 · 512 · 안드로이드 원 · 스쿼클 · 애플 둥근 네모 · 크롬 '바로가기' 배지(픽셀 크기 — 앱 설치는 배지 X) · 48px · 파비콘 32", font=f, fill=(25, 31, 40))
+d.text((G, y), "아이콘(A 레드, 96·48px): 192 · 512 · 안드로이드 원 · 스쿼클 · 애플 둥근 네모 · 크롬 '바로가기' 배지(픽셀 크기 — 앱 설치는 배지 X) · 48px · 파비콘 32 · 바로가기 지금 특가·특가 대기·생필품(안드로이드 원)", font=f, fill=(25, 31, 40))
 z = lambda n, k=96: Image.open(icons + "/" + n).convert("RGBA").resize((k, k), Image.LANCZOS)
 ic = [z("icon-192.png"), z("icon-512.png"), mask(phone("icon-512-maskable.png"), "c"), mask(phone("icon-512-maskable.png"), "r", .35),
       mask(z("apple-touch-icon.png"), "r", .2237), badge(mask(phone("icon-512-maskable.png"), "c")), mask(phone("icon-512-maskable.png", 48), "c"),
-      Image.open(icons + "/favicon-32.png").convert("RGBA")]
+      Image.open(icons + "/favicon-32.png").convert("RGBA")] + [mask(phone(f"sc-{k}.png"), "c") for k in ("fire", "wait", "life")]
 x = G
 for im in ic: c.paste(im, (x, y + 40 + (96 - im.height) // 2), im); x += im.width + 24
 c.save(out, optimize=True)
