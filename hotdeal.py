@@ -33,8 +33,10 @@ REPOST = "ig_repost.txt"  # 오늘 인스타 카드를 1번 다시 올릴 때 �
 MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude가 고름) 또는 봇에 보낸 음악의 텔레그램 file_id. 음원 파일은 공개 저장소에 안 올림(무료 음원도 원본 재배포는 금지)
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
-CP_HOUR, CP_SEARCH_HOUR = 25, 8  # 쿠팡 API 최근 1시간 호출 상한(전체·검색) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
-CP_CHK_HOUR = 7  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 검색 상한 안에서 실행마다 나눠서(80개면 ~17시)
+CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
+CP_RUN, CP_SEARCH_RUN = 6, 1  # 실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
+CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
+CP_QTY = r"\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉)(?![a-z])"  # 수량·용량 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 안내 대가성 문구 그대로(10/5 머천트 정보 화면)
 TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
@@ -406,24 +408,34 @@ def plain(url, hops=4):
     return url
 
 
+class CpLimit(RuntimeError):
+    """쿠팡 API 호출 상한(이번 실행·최근 1시간) — 안 부르고 다음 실행에."""
+
+
 def coupang(method, path, body=None):
-    """쿠팡 파트너스 Open API(HMAC). 최근 1시간 호출이 상한이면 RuntimeError(안 부름 — seen cpu에 시각들), 응답 rCode가 0이 아니면 ValueError(HTTP 200으로 오는 실패)."""
-    now, u = time.time(), RUN.setdefault("cpu", {})
+    """쿠팡 파트너스 Open API(HMAC). 상한(최근 1시간 seen cpuse · 이번 실행)이면 CpLimit(안 부름). 응답 rCode 400(그 주소·상품 실패, HTTP 200으로 옴) = ValueError,
+    그 밖 rCode·JSON 아닌 응답 = RuntimeError(다음 실행에 다시)."""
+    now, u, n = time.time(), RUN.setdefault("cpu", {}), RUN.setdefault("cpn", [0, 0])
     u["a"], u["s"] = [x for x in u.get("a", []) if x > now - 3600], [x for x in u.get("s", []) if x > now - 3600]
     srch = path.startswith("/products/search")
-    if len(u["a"]) >= CP_HOUR or srch and len(u["s"]) >= CP_SEARCH_HOUR:
-        raise RuntimeError("coupang 시간당 상한")
+    if len(u["a"]) >= CP_HOUR or n[0] >= CP_RUN or srch and (len(u["s"]) >= CP_SEARCH_HOUR or n[1] >= CP_SEARCH_RUN):
+        raise CpLimit("coupang 시간당 상한")
     u["t"] = now
     u["a"].append(now)
+    n[0] += 1
     if srch:
         u["s"].append(now)
+        n[1] += 1
     dt = time.strftime("%y%m%dT%H%M%SZ", time.gmtime())
     p, _, q = (CP_BASE + path).partition("?")
     sig = hmac.new(E["COUPANG_SECRET_KEY"].encode(), (dt + method + p + q).encode(), hashlib.sha256).hexdigest()
     auth = f"CEA algorithm=HmacSHA256, access-key={E['COUPANG_ACCESS_KEY']}, signed-date={dt}, signature={sig}"
-    r = json.loads(http(CP_HOST + CP_BASE + path, body, {"Authorization": auth}, method))
+    try:
+        r = json.loads(http(CP_HOST + CP_BASE + path, body, {"Authorization": auth}, method))
+    except ValueError as e:  # HTTP 200인데 JSON 아님 = 게이트웨이 문제(상품 탓 X)
+        raise RuntimeError(f"coupang 응답 {e!r}")
     if str(r.get("rCode", "0")) != "0":
-        raise ValueError(f"coupang rCode {r.get('rCode')} {r.get('rMessage')}")
+        raise (ValueError if str(r.get("rCode")) == "400" else RuntimeError)(f"coupang rCode {r.get('rCode')} {r.get('rMessage')}")
     return r["data"]
 
 
@@ -1326,8 +1338,8 @@ def cp_links(seen):
     if not HAS_CP:
         return
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
-    st["t"], n = now, 0
-    for u in sorted({e["url"] for e in load(EVENTS, []) if re.match(CP_PROD, e.get("url") or "")}):  # 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
+    for u in sorted({e["url"] for e in load(EVENTS, []) if re.match(CP_PROD, e.get("url") or "") and e.get("at", "") >= since}):  # 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
         if now - st["x"].get(u, 0) < 86400:
             continue
         try:
@@ -1337,7 +1349,7 @@ def cp_links(seen):
             print("cp link", u, repr(e))
             st["x"][u] = now
             alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약은 안 올라감. 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
-        except Exception as e:
+        except Exception as e:  # 상한·접속·게이트웨이 = 다음 실행에
             print("cp link", repr(e))
             break
     if n:
@@ -1346,8 +1358,9 @@ def cp_links(seen):
 
 
 def cp_price(seen):
-    """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): events pid마다 하루 1번(CP_CHK_HOUR~) 글 상품명으로 검색 API -> 결과(최대 10개) 중 productId == pid만
-    -> seen cpq m[pid] = [가격(못 찾으면 0), 'YYYY-MM-DD HH:MM'(KST)] -> own_end가 events now·chk보다 새것이면 그 값(사이트 ⏳/🔥 같은 값). 상한(CP_SEARCH_HOUR)·오류 = 다음 실행에. 키 없으면 아무것도 안 함."""
+    """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): events pid마다 하루 1번(CP_CHK_HOUR~, 실행마다 1개) 글 상품명으로 검색 API -> 결과(최대 10개) 중 productId == pid이고
+    같은 옵션(cp_same)인 것만 -> seen cpq m[pid] = [가격(못 찾으면 0), 'YYYY-MM-DD HH:MM'(KST)] -> own_end가 events now·chk보다 새것이면 그 값(사이트 ⏳/🔥 같은 값).
+    상한 = 다음 실행에, 그 밖 오류 = 오늘은 그 상품 못 찾음(한 상품이 줄을 막지 않게). 키 없으면 아무것도 안 함."""
     kst = time.gmtime(time.time() + 9 * 3600)
     if not HAS_CP or kst.tm_hour < CP_CHK_HOUR:
         return
@@ -1359,17 +1372,24 @@ def cp_price(seen):
     for pid, name in todo.items():
         try:
             r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(name[:50])}&limit=10")
-        except ValueError as e:  # 검색 안 되는 이름(rCode) = 오늘은 못 찾음
+        except CpLimit:
+            break
+        except Exception as e:
             print("cp price", pid, repr(e))
             r = {}
-        except Exception as e:
-            print("cp price", repr(e))
-            break
-        x = next((x for x in (r or {}).get("productData") or [] if str(x.get("productId")) == pid and x.get("productPrice")), None)
+        x = next((x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if str(x.get("productId")) == pid and x.get("productPrice") and cp_same(name, x.get("productName"))), None)
         q["m"][pid] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst)]
         got, miss = got + bool(x), miss + (not x)
     if got or miss:
-        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 검색에 없음 {miss} · 오늘 남음 {len(todo) - got - miss}")
+        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 검색에 없음(옵션 다름 포함) {miss} · 오늘 남음 {len(todo) - got - miss}")
+
+
+def cp_same(name, api):
+    """검색 결과 이름이 진우 글과 같은 옵션인지: 글의 수량·용량 글자가 다 있고 글에 없는 묶음 수(개·팩…)는 없음. 글에 수량이 없으면 결과에도 없어야(1개·1팩은 무시)."""
+    qty = lambda s: {re.sub(r"\s", "", t).lower() for t in re.findall(CP_QTY, s or "", re.I)} - {"1개", "1팩", "1세트", "1입", "1박스", "1봉"}
+    need, got = qty(name), qty(api)
+    extra = got - need
+    return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|입)$", t)})
 
 
 def events(seen):
@@ -4797,7 +4817,7 @@ def own_end(seen):
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
         cq = not tsy and cpq.get(e.get("pid"))
-        if cq and cq[0] and cq[1] > e.get("chk", ""):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것
+        if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
         f = {"tgt": tp} if tw else {}
         if e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):
@@ -5191,6 +5211,7 @@ def watch(seen):
 def main():
     RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False)
     RUN.pop("cpu", None)
+    RUN.pop("cpn", None)
     if TOSS_NO_CMP:
         toss_clean_posts()
     seen = load(SEEN, {})

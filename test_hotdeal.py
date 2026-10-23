@@ -5277,13 +5277,15 @@ assert wh40 and all((x - 256) ** 2 + (y - 256) ** 2 <= (0.4 * 512) ** 2 for x, y
 assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
 # 9-41) 쿠팡 파트너스 API(10/23 최종 승인 — 진우가 키를 Secrets에 넣기 전 준비): 키 없으면 아무것도 안 바뀜 ·
 #       ① events·관리자 쿠팡 상품 주소 -> 딥링크(cp_links.json, events.json 그대로, 진우 단축 링크 그대로, coupa.ng도 대가성 문구) ② pid 하루 1번 검색 API -> seen cpq -> own_end
-#       ③ 골드박스 🚀(isRocket만)·게시 시점 가격 · 호출 상한(최근 1시간: 검색 8·전체 25) · rCode 실패(HTTP 200) = ValueError
+#       ③ 골드박스 🚀(isRocket만)·게시 시점 가격 · 호출 상한(실행마다 검색 1·전체 6 + 최근 1시간 검색 6·전체 25) · rCode 400(HTTP 200) = ValueError, 그 밖 = RuntimeError
+#       · 검색 결과는 같은 옵션(수량·용량)만 · Cowork 쿠폰·와우 가격은 그대로 · 6시간 지난 예약은 안 바꿈(리뷰 10/23)
 sv41 = (H.http, H.tg, H.ai_pick, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.draft)
 H.EVENTS, H.POSTS, c41 = "events.json", "posts.json", []
 EG41, P222, P333 = "https://link.coupang.com/a/egg", "https://www.coupang.com/vp/products/222?itemId=5", "https://www.coupang.com/vp/products/333"
 ev41 = [{"at": "2026-10-06 09:50", "deal": True, "url": P222, "text": "🔥 <b>[쿠팡] 새 상품 (5,000원)</b>\n\n좋음", "button": "🛒 구매하러 가기"},
         {"at": "2026-10-06 09:55", "deal": True, "url": P333, "text": "🔥 <b>[쿠팡] 안 되는 상품 (1,000원)</b>", "button": "🛒 구매하러 가기"},
-        {"at": "2026-10-05 10:00", "deal": True, "url": EG41, "pid": "111", "now": "8,990원", "chk": "2026-10-06 09:30", "text": "🔥 <b>[쿠팡] 곰곰 특란 30구 (7,990원/무료)</b>", "button": "x"}]
+        {"at": "2026-10-05 10:00", "deal": True, "url": EG41, "pid": "111", "now": "8,990원", "chk": "2026-10-06 09:30", "text": "🔥 <b>[쿠팡] 곰곰 특란 30구 (7,990원/무료)</b>", "button": "x"},
+        {"at": "2026-10-06 03:59", "deal": True, "url": "https://www.coupang.com/vp/products/666", "text": "🔥 <b>[쿠팡] 지난 예약 (1원)</b>", "button": "x"}]  # 6시간 지남 = 안 올라감 -> 안 바꿈
 po41 = [{"t": "2026-10-05 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원/무료)", "url": EG41, "own": 1, "mid": 1}]
 def http41(url, body=None, headers=None, method=None):
     c41.append((url, body))
@@ -5291,7 +5293,8 @@ def http41(url, body=None, headers=None, method=None):
         u = body["coupangUrls"][0]
         return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if "/333" in u else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]}]})
     if "/products/search?" in url:
-        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productPrice": 1}, {"productId": 111, "productPrice": 7490}] if quote("곰곰 특란 30구") in url else []}})
+        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productName": "곰곰 특란, 30구, 1개", "productPrice": 1}, {"productId": 111, "productName": "곰곰 특란, 30구, 2개", "productPrice": 14000},
+                                                                 {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
     if "linkprice" in url:
         return json.dumps({"result": "F", "url": ""})
     raise AssertionError(url)
@@ -5299,7 +5302,7 @@ tg41 = lambda m, **p: sent.append((m, p)) or {"message_id": 90 + len(sent), "tex
 def reset41(keys):
     json.dump(ev41, open("events.json", "w")); json.dump(po41, open("posts.json", "w")); [os.path.exists(f) and os.remove(f) for f in ("cp_links.json",)]
     H.HAS_CP, H.http, H.tg, time.time = keys, http41, tg41, lambda: 1791248400  # 10/6 10:00 KST
-    H.RUN.pop("cpu", None); c41.clear(); sent.clear(); return {}
+    H.RUN.pop("cpu", None); H.RUN.pop("cpn", None); c41.clear(); sent.clear(); return {}
 # 키 없음 = 지금과 같음: API 안 부르고 seen·파일 그대로, 상품 주소 예약은 그 주소로(예전처럼), 가격은 events now
 seen41 = reset41(False); raw41 = json.load(open("events.json"))
 H.cp_links(seen41); H.cp_price(seen41)
@@ -5335,36 +5338,50 @@ for k41 in (True, False):
     dl41 = [b for u, b in c41 if u.endswith("/deeplink")]
     assert dl41 == ([{"coupangUrls": ["https://www.coupang.com/vp/products/555?itemId=1&vendorItemId=2"]}] if k41 else []), (k41, dl41)
     assert len(dr41) == 1 and (dr41[0][1] == "https://coupa.ng/b555") == k41 and dr41[0][0].startswith("<i>" + H.DISCLOSURE) == k41, dr41  # 키 없으면 예전처럼 상품 주소·문구 없음
-# ② 가격 확인: 7시 전 X · pid마다 하루 1번(검색 결과 중 productId == pid만) · own_end = 더 새것(봇 vs Cowork chk)
+# ② 가격 확인: 시작 시각 전 X · 실행마다 1개 · pid마다 하루 1번(검색 결과 중 productId == pid이고 같은 옵션만) · own_end = 더 새것(봇 vs Cowork chk), 쿠폰·와우는 Cowork 그대로
 seen41 = reset41(True); H.cp_links(seen41); H.events(seen41); c41.clear()
-time.time = lambda: 1791248400 - 3 * 3600 - 60; H.cp_price(seen41); assert "cpq" not in seen41 and not c41  # 06:59
-time.time = lambda: 1791248400; H.cp_price(seen41)
+ch0, H.CP_CHK_HOUR = H.CP_CHK_HOUR, 11; H.cp_price(seen41); assert "cpq" not in seen41 and not c41; H.CP_CHK_HOUR = ch0  # 10시 < 11시
+H.cp_price(seen41); assert seen41["cpq"]["m"] == {"111": [7490, "2026-10-06 10:00"]} and len(c41) == 1  # 실행마다 검색 1번
+H.RUN.pop("cpn"); H.cp_price(seen41)
 assert seen41["cpq"]["m"] == {"111": [7490, "2026-10-06 10:00"], "222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
 assert any(quote("곰곰 특란 30구") in u and u.endswith("&limit=10") for u, _ in c41)
-c41.clear(); H.cp_price(seen41); assert not c41  # 오늘은 끝
+c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘은 끝
+assert H.cp_same("햇반 24개", "햇반 백미밥, 210g, 24개") and H.cp_same("리큐 리필 2.1L 4개", "리큐 진한겔 리필, 2.1L, 4개") and not H.cp_same("곰곰 특란 30구", "곰곰 특란, 30구, 2개") and not H.cp_same("에어팟 5", "에어팟 5, 2개")
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"], e41["st"]) == ("7,490원", "10/6 10시", "hot")  # 사이트 ⏳/🔥 = 같은 값
 seen41["cpq"]["m"]["111"][1] = "2026-10-06 09:00"; H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시")  # Cowork 확인(09:30)이 더 새것이면 그것
-# 호출 상한(최근 1시간 — 시계 시각 경계에서 두 배 안 되게) · rCode 실패
-H.RUN["cpu"] = {}; c41.clear()
-for _ in range(8): H.coupang("GET", "/products/search?keyword=a&limit=10")
-try: H.coupang("GET", "/products/search?keyword=a&limit=10"); raise AssertionError("상한")
-except RuntimeError: pass
-assert len(c41) == 8 and H.coupang("POST", "/deeplink", {"coupangUrls": [P222]})[0]["shortenUrl"] == "https://coupa.ng/b222"  # 검색 아닌 건 전체 상한까지
-time.time = lambda: 1791248400 + 3601; H.coupang("GET", "/products/search?keyword=a&limit=10")
-H.RUN["cpu"] = {"a": [1791248400 + 3600] * 25}
-try: H.coupang("POST", "/deeplink", {"coupangUrls": [P222]}); raise AssertionError("전체 상한")
-except RuntimeError: pass
-H.RUN["cpu"] = {}
-try: H.coupang("POST", "/deeplink", {"coupangUrls": [P333]}); raise AssertionError("rCode")
+seen41["cpq"]["m"]["111"][1] = "2026-10-06 10:00"; json.dump([{**e, "now": "8,990원 와우가"} if e["url"] == EG41 else e for e in ev41], open("events.json", "w"))
+H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41); assert e41["now"] == "8,990원 와우가"  # 검색 가격엔 와우·쿠폰 없음 -> Cowork 값
+json.dump(ev41, open("events.json", "w"))
+# 호출 상한: 이번 실행(검색 1·전체 6 — 실패한 실행의 호출은 다음 실행에 안 보여도 1시간 합 ≤ 실행 수) · 최근 1시간(시계 시각 경계에서 두 배 안 되게) · rCode
+def lim41(*a):
+    try: H.coupang(*a)
+    except H.CpLimit: return True
+H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); c41.clear()
+H.coupang("GET", "/products/search?keyword=a&limit=10"); assert lim41("GET", "/products/search?keyword=b&limit=10")  # 실행마다 검색 1
+for _ in range(5): H.coupang("POST", "/deeplink", {"coupangUrls": [P222]})
+assert lim41("POST", "/deeplink", {"coupangUrls": [P222]}) and len(c41) == 6  # 실행마다 전체 6
+H.RUN.pop("cpn"); H.RUN["cpu"] = {"s": [1791248400 - 100] * 6, "a": [1791248400 - 100] * 6}; assert lim41("GET", "/products/search?keyword=a&limit=10")  # 최근 1시간 검색 6
+time.time = lambda: 1791248400 + 3501; H.coupang("GET", "/products/search?keyword=a&limit=10")  # 1시간 지나면 다시
+H.RUN.pop("cpn"); H.RUN["cpu"] = {"a": [time.time()] * 25}; assert lim41("POST", "/deeplink", {"coupangUrls": [P222]})  # 최근 1시간 전체 25
+H.RUN.pop("cpn"); H.RUN["cpu"] = {}
+try: H.coupang("POST", "/deeplink", {"coupangUrls": [P333]}); raise AssertionError("rCode 400")
 except ValueError: pass
+for body41 in (json.dumps({"rCode": "500", "rMessage": "x"}), "<html>502</html>"):  # 그 밖 rCode·JSON 아님 = 상품 탓 X(다음 실행에)
+    H.http = lambda url, *a, b=body41, **k: b
+    try: H.coupang("POST", "/deeplink", {"coupangUrls": [P222]}); raise AssertionError(body41)
+    except ValueError: raise AssertionError("상품 실패로 보면 안 됨 " + body41)
+    except RuntimeError: pass
+seen41 = reset41(True); H.http = lambda url, *a, **k: json.dumps({"rCode": "500"}); H.cp_links(seen41)
+assert seen41["cpdl"]["x"] == {} and not sent and not os.path.exists("cp_links.json")  # 게이트웨이 오류 = 알림·하루 쉼 X, 다음 실행에
+H.cp_price(seen41); assert seen41["cpq"]["m"] == {"111": [0, "2026-10-06 10:00"]}  # 검색 오류 = 그 상품만 오늘 못 찾음(줄을 막지 않음)
 # ③ 골드박스(API): 🚀 = isRocket true인 것만, 끝에 게시 시점 가격
 reset41(True); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 1, "score": 8, "comment": "b"}]
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "로켓상품", "productPrice": 1000.0, "productUrl": "https://link.coupang.com/re/1", "isRocket": True},
                                                                     {"productName": "일반상품", "productPrice": 2000.0, "productUrl": "https://link.coupang.com/re/2", "isRocket": False}]})
 H.goldbox({}); t41 = sent[-1][1]["text"]
 assert t41.startswith("<i>" + H.DISCLOSURE) and "1. 🚀 <a" in t41 and "2. <a" in t41 and t41.endswith("⚠️ 10/6 10:00 게시 시점 가격"), t41
-os.path.exists("cp_links.json") and os.remove("cp_links.json"); H.RUN.pop("cpu", None)
+os.path.exists("cp_links.json") and os.remove("cp_links.json"); H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 H.http, H.tg, H.ai_pick, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.draft = sv41
 print("OK: 모든 셀프체크 통과")
