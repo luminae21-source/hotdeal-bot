@@ -5251,4 +5251,5 @@ assert H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)", cat="
 assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비비크림 40ml\n9,900원") == "화장품" and H.th_topic({}, "🔥 [쿠팡] 햇반 24개", cat="beauty") == "장보기"  # 칸 없음 -> 화장품 낱말 · 제목 칸이 먼저(사이트와 같게)
 assert 'posts[i].get("cat"))' in src39(H.threads_deals) and "cat_fill, threads, threads_deals" in src39(H.main)  # 같은 실행에 올린 글도 cat 채운 뒤 Threads
 assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
+assert 'print("ig publish", card(v) or "릴스", pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
 print("OK: 모든 셀프체크 통과")

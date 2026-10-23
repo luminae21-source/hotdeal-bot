@@ -3188,11 +3188,13 @@ def ig_publish(seen):
             seen.pop(k)
             ig_fail(seen, now, (card(v) or "릴스") + (f" 발행 {failed}" if failed else f" 처리 {st}"))
             continue
+        pid = None
         if st != "PUBLISHED":
             try:
-                json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST"))
+                pid = json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST")).get("id")
             except Exception as e:
-                if not ig_landed(tok, uid, k[4:], since=now):  # 오류 응답이어도 실제로 올라감(10/22 #1804 code 4·2207051 오탐)이면 성공 · 아니면 다음 실행에 상태만 다시 봄
+                pid = ig_landed(tok, uid, k[4:], since=now)
+                if not pid:  # 오류 응답이어도 실제로 올라감(10/22 #1804 code 4·2207051 오탐)이면 성공 · 아니면 다음 실행에 상태만 다시 봄
                     seen[k] = {**(v if isinstance(v, dict) else {"t": v}), "fail": ig_err(e)}
                     print("ig publish 오류 — 다음 실행에 게시 여부만 확인(다시 발행 X)", k, clip(repr(e), 80))
                     continue
@@ -3200,6 +3202,7 @@ def ig_publish(seen):
         elif failed:
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
         RUN["ok"].add("ig")
+        print("ig publish", card(v) or "릴스", pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         seen[day] = {"t": now, "n": n + 1}
         if card(v):
