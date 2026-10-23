@@ -9,6 +9,7 @@ tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
+sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
 vc0, (H.TH_VOICE, H.TH_GAP_JITTER) = (H.TH_VOICE, H.TH_GAP_JITTER), (False, 0)  # 예전 Threads 셀프체크는 지금 틀·45분 그대로 — 사람 느낌 글·간격 흔들기(10/21 밤)는 맨 아래 9-24에서
 H.AD_FIRST = ""  # 예전 모양(고지문 첫 줄) 셀프체크는 그대로 — [광고] 첫 줄(10/11 진우 결정)은 맨 아래 9-8에서
@@ -5384,4 +5385,29 @@ H.goldbox({}); t41 = sent[-1][1]["text"]
 assert t41.startswith("<i>" + H.DISCLOSURE) and "1. 🚀 <a" in t41 and "2. <a" in t41 and t41.endswith("⚠️ 10/6 10:00 게시 시점 가격"), t41
 os.path.exists("cp_links.json") and os.remove("cp_links.json"); H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 H.http, H.tg, H.ai_pick, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.draft = sv41
+# 9-42) seen.json(Actions 캐시)을 못 받으면 실행 건너뜀(10/23 16:22 KST 캐시 받기가 85%에서 멈춤 -> 빈 seen으로 골드박스·간식 또 게시): 아무것도 안 올리고·안 쓰고(posts·seen),
+#       관리자 알림 1줄, 실패(종료 코드 1)로 끝나 캐시가 안 덮임 -> 다음 실행이 다시 받음. 깨진 seen.json도 같음. Run workflow의 cold_start(COLD_START=true)면 예전처럼 처음부터
+class Past42(BaseException): pass
+def stop42(*a, **k): raise Past42()
+sv42, H.SEEN_COLD = (H.tg, H.http, H.publish_approved, H.toss_clean_posts), False
+H.tg, H.http = lambda m, **p: sent.append((m, p)) or {"message_id": 1}, lambda *a, **k: (_ for _ in ()).throw(AssertionError("네트워크 X"))
+H.publish_approved = H.toss_clean_posts = stop42
+pj42 = open("posts.json").read() if os.path.exists("posts.json") else None
+for bad in (None, '{"goldbox_20261023": 1'):
+    os.path.exists("seen.json") and os.remove("seen.json")
+    if bad: open("seen.json", "w").write(bad)
+    sent.clear()
+    try: H.main(); raise AssertionError("안 멈춤")
+    except SystemExit as e: assert e.code == 1
+    assert [(m, p["chat_id"]) for m, p in sent] == [("sendMessage", "42")] and "seen.json" in sent[0][1]["text"] and "cold_start" in sent[0][1]["text"], sent
+    assert (open("seen.json").read() == bad if bad else not os.path.exists("seen.json")) and (open("posts.json").read() if os.path.exists("posts.json") else None) == pj42
+H.SEEN_COLD = True; os.remove("seen.json")
+try: H.main(); raise AssertionError("안 지나감")
+except Past42: pass  # cold_start = 기억 없이 다음 단계로
+json.dump({"x": time.time()}, open("seen.json", "w")); H.SEEN_COLD = False
+try: H.main(); raise AssertionError("안 지나감")
+except Past42: pass  # 평소(받은 seen) = 그대로
+wf42 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert "cold_start:" in wf42 and "type: boolean" in wf42 and "COLD_START: ${{ inputs.cold_start }}" in wf42 and "    seen = load(SEEN, {})" not in inspect.getsource(H.main)
+(H.tg, H.http, H.publish_approved, H.toss_clean_posts), H.SEEN_COLD = sv42, sc0
 print("OK: 모든 셀프체크 통과")

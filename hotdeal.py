@@ -26,6 +26,7 @@ RULIWEB_RSS = "https://bbs.ruliweb.com/market/board/1020/rss"  # 루리웹 핫�
 CLIEN_LIST = "https://www.clien.net/service/board/jirum"  # 클리앙 알뜰구매: RSS 없음 -> 목록 HTML, 글 위 '구매링크' (robots: 쿼리 없는 /service/board/ 허용)
 KST = timezone(timedelta(hours=9))
 SEEN, POSTS = "seen.json", "posts.json"  # posts.json: 채널에 게시된 딜 -> build_site.py가 웹사이트로 만듦
+SEEN_COLD = E.get("COLD_START") == "true"  # seen.json(Actions 캐시)을 못 받으면 실행을 건너뜀(10/23 16:22 KST 캐시 받기가 85%에서 멈춤 -> 빈 seen으로 골드박스·간식 또 게시). 캐시가 다 지워졌을 때만 Run workflow의 cold_start로 처음부터
 EVENTS = "events.json"  # 예약 게시(쿠가세 같은 행사): [{"at": "YYYY-MM-DD HH:MM"(KST), "text": HTML, "button", "url": 파트너스 링크}] — Claude가 저장소에 넣음
 CP_NEWS = "https://newsis.com/RSS/industry.xml"  # 뉴시스 산업 RSS(기사 전문) -> 쿠팡 행사(○○데이·기획전) 자동 게시 — cp_events(). 쿠팡 뉴스룸은 GitHub 서버 403(10/9, 우회 안 함)
 CP_HOME, CP_FRESH = "https://link.coupang.com/a/hHgmfLTIUm", "https://link.coupang.com/a/hHgxjTMio8"  # 파트너스 간편 링크(10/9 진우, 이름 붙여 보낸 것): 쿠팡 홈·로켓프레시 — 행사 글 버튼
@@ -5209,12 +5210,25 @@ def watch(seen):
 
 
 def main():
+    try:
+        seen = json.load(open(SEEN))
+    except (OSError, ValueError) as e:
+        seen = repr(e)
+    if not isinstance(seen, dict):
+        if not SEEN_COLD:  # 캐시 못 받음 = 아무것도 안 올림·seen도 안 씀 -> 실패로 끝나 캐시가 안 덮이고(성공 때만 저장) 다음 실행이 다시 받음
+            msg = f"⚠️ 봇 기억(seen.json) 못 받음 — 이번 실행 건너뜀(하루 1번 글·예약 중복 게시 방지): {str(seen)[:120]}\n계속되면(캐시가 다 지워짐) Actions → Run workflow → cold_start 체크"
+            print(msg)
+            try:
+                tg("sendMessage", chat_id=ADMIN, text=msg)
+            except Exception as e:
+                print("alert", repr(e))
+            raise SystemExit(1)
+        seen = {}
     RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False)
     RUN.pop("cpu", None)
     RUN.pop("cpn", None)
     if TOSS_NO_CMP:
         toss_clean_posts()
-    seen = load(SEEN, {})
     if HAS_CP:  # 쿠팡 API 최근 1시간 호출 시각(실행 사이에도 상한 — coupang())
         RUN["cpu"] = seen.setdefault("cpuse", {"t": 0})
     try:
