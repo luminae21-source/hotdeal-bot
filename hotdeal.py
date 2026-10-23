@@ -133,11 +133,11 @@ q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·�
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
 """
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
-IG_SLOTS = {8: "출근길에 볼 딜", 10: "오전에 볼 딜", 12: "점심에 볼 딜", 14: "오후에 볼 딜", 16: "간식 시간에 볼 딜", 18: "퇴근길에 볼 딜", 20: "저녁에 볼 딜"}  # 10/23 진우 '인스타 하루 6~8번': 2시간마다 '앞 칸 뒤 새로 올라온 딜' 카드
-IG_DAY_HOUR = 22  # + 22시 하루 카드(21시 모아보기가 만든 카드를 인스타엔 22시에 — 10/23 진우)
-IG_HOURS = (*IG_SLOTS, IG_DAY_HOUR)
-IG_FILL = {"hot": "특가 모아보기", "stdy": "꾸준템 모아보기"}  # 하루 IG_DAY_MIN번 밑이 될 칸은 진우 🔥 특가 중·👍 꾸준템 카드로 채움(ig_fill)
-IG_LATE, IG_MIN, IG_DAY_MIN, IG_DAY_MAX = 2, 3, 6, 8  # 칸은 그 시각 2시간 안에만(다음 칸 전) · 딜 3개 미만이면 건너뜀(하루 6번 밑이 되면 채움) · 인스타 하루 발행 최대 8개(오류로 몰려 올라가지 않게 — API 상한 50)
+IG_SLOTS = {11: "점심 전에 볼 딜", 13: "점심에 볼 딜", 15: "오후에 볼 딜", 17: "퇴근 전에 볼 딜", 19: "퇴근길에 볼 딜"}  # 10/23 진우 '너무 자주 말고 하루 4번' + 단계적 늘리기: 칸 = 오늘 앞 칸 시각(첫 칸 0시) ~ 그 시각 딜
+IG_STAGES = ((11, 15, 19), (11, 13, 15, 19), (11, 13, 15, 17, 19))  # 단계 0 = 하루 4번(+22시 하루 카드) · 1 = 5번(+13시) · 2 = 6번(+17시) — ig_stage가 매일 0시에 판정
+IG_DAY_HOUR, IG_OWN_HOUR = 22, 19  # 22시 = 하루 카드(21시 모아보기 카드를 인스타엔 22시에) · 19시 칸은 진우 쿠팡 🔥·👍 먼저
+IG_START = "2026-10-23 15"  # shortcut: 첫날(10/23)은 15시 칸부터(진우 '11시 칸이 이미 지났으면 15시부터') — 10/24부터는 안 씀, 그 뒤 지워도 됨
+IG_LATE, IG_MIN = 2, 3  # 칸은 그 시각 2시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀(억지로 안 채움) · 하루 발행 최대 = 그 단계 횟수 + 1(ig_day_max — 오류로 몰려 올라가지 않게, API 상한 50)
 IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
 OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = False, 22, 1500  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
@@ -2919,7 +2919,7 @@ def playlist(seen):
     json.dump(mus, open(MUSIC, "w"), ensure_ascii=False, indent=1)
 
 
-IG_AUTO = True  # 10/23 진우 '인스타그램에도 꾸준하게 올라가게 하자'(10/31 판단 앞당김 — 지난주 '3일 연속 차단'은 3번 다 실제 게시된 오탐, README 9d926fc70 대조): 카드(IG_HOURS 하루 6~8번 — 10/23 진우 '하루 8회~6회', 첫 3일 램프는 취소)·넘기기. 릴스는 REEL_PUBLIC(꺼짐) 그대로
+IG_AUTO = True  # 10/23 진우 '인스타그램에도 꾸준하게 올라가게 하자'(10/31 판단 앞당김 — 지난주 '3일 연속 차단'은 3번 다 실제 게시된 오탐, README 9d926fc70 대조): 카드(ig_hours — 10/23 진우 '하루 4번' 11·15·19·22시, 3일씩 진짜 실패 0이면 5번·6번으로 — ig_stage)·넘기기. 릴스는 REEL_PUBLIC(꺼짐) 그대로
 #   (10/17~10/23 꺼 둠: code 4·2207051 — False = 다시 멈춤, 남은 컨테이너는 발행 없이 지움 · 21시 카드 이미지·사이트·Threads 카드·metrics 인스타 읽기는 그대로)
 IG_HUMAN = IG_AUTO  # 10/22 22시 진우 '사람처럼': 정기 카드 게시에도 15~20분 무작위 지연(IG_JITTER) + 새 디자인 한 벌(ig_set — 표지 A 남색·B 핑크·P 파스텔 칸마다 돌림, 제목은 그날 안 겹치게) + 사람 멘트 캡션(ig_human — 말투 4가지)
 IG_FAIL_MAX = 2  # 10/23 진우: 진짜 실패(ig_landed 기준 안 올라감) = 그 회차만 건너뜀(다시 시도 X), 하루 IG_FAIL_MAX번이면 24시간 쉼 + 관리봇 알림
@@ -2979,7 +2979,7 @@ def ig_human(seen, ps):
 
 def ig_caption(seen, stem, human=False, ps=None):
     """인스타 카드 캡션: card_caption 그대로, human이면 대가성 문구(첫 줄·공정위) 바로 아래에 사람 멘트 2~3줄(ig_human)."""
-    cap = card_caption(stem, seen.get("igf_" + stem, {}).get("k"))[1]
+    cap = card_caption(stem)[1]
     if not human:
         return cap
     notes, _, rest = cap.partition("\n\n")
@@ -3002,9 +3002,7 @@ def ig_card_copy(seen, day, out):
 
 IG_TITLES = {"A": ("오늘 밤 장바구니에\n넣을 만한 {n}개", "퇴근길에 볼 만한\n딜 {n}개", "이번 주 쟁여 둘\n딜 {n}개", "자기 전에 담아 둘\n딜 {n}개",  # 제목 최대 2줄(10/22 진우 '1초 안에')
                    "지금 담아 둘 만한\n딜 {n}개", "가격 보고 고른\n딜 {n}개", "떨어지기 전에\n채워 둘 거 {n}개", "오늘 새로 올라온\n딜 {n}개", "장바구니 채울\n후보 {n}개"),
-             "B": ("퇴근길에 골라 둔\n살 만한 거 {n}개", "오늘 장보기 메모\n쟁여 둘 거 {n}개", "이번 주 장바구니\n채울 거 {n}개", "생필품 체크\n살 만한 거 {n}개", "가격 괜찮은 거만\n골라 둔 {n}개"),
-             "hot": ("특가 모아보기\n다시 볼 거 {n}개", "놓치기 아까운\n특가 {n}개", "아직 특가인\n것만 {n}개"),
-             "stdy": ("꾸준히 팔리는\n살림템 {n}개", "최저가 아니어도\n잘 팔리는 {n}개", "꾸준템 모아보기\n{n}개")}  # 칸마다 무작위, 그날 쓴 제목은 X(10/23 진우) · 밤·퇴근 말은 18시부터
+             "B": ("퇴근길에 골라 둔\n살 만한 거 {n}개", "오늘 장보기 메모\n쟁여 둘 거 {n}개", "이번 주 장바구니\n채울 거 {n}개", "생필품 체크\n살 만한 거 {n}개", "가격 괜찮은 거만\n골라 둔 {n}개")}  # 칸마다 무작위, 그날 쓴 제목은 X(10/23 진우) · 밤·퇴근 말은 18시부터
 IG_KIND_SKIP = r"리필|무향|대용량|국내산|국산|프리미엄|오리지널|오리지날|기획|세트|증정|무료|무배|한정|특가|신상|정품|클래식|에디션|퍼플에디션|용기|본품"
 IG_LINE_PROMPT = """인스타 넘기기 카드에 상품마다 붙일 한 줄 멘트를 사람이 직접 쓰듯 써 주세요(lines[i] = i번 상품, 개수 그대로). 아래 상품 정보에 있는 사실만(없는 숫자 X).
 - {style} 30자 안팎.
@@ -3012,10 +3010,10 @@ IG_LINE_PROMPT = """인스타 넘기기 카드에 상품마다 붙일 한 줄 �
 - 써 본 척(샀는데·써보니·나도), 효능·건강 말, 과장(역대급·무조건), 클릭·링크·프로필 유도, 광고·수수료 말은 쓰지 않기."""
 
 
-def ig_design(day, h=IG_DAY_HOUR):
-    """인스타 카드 디자인 칸마다 돌림(10/22 진우 '번갈아' -> 10/23 '파스텔 A 표지도 좋다' 3가지 -> 10/23 하루 6~8번 '칸마다 돌려도 됨'): A 남색 표지 -> B 핑크 스티커 -> P 파스텔 표지 …
+def ig_design(day, k=0):
+    """인스타 카드 디자인 칸마다 돌림(10/22 진우 '번갈아' -> 10/23 '파스텔 A 표지도 좋다' 3가지 -> 10/23 '칸마다 다르게'): k = 오늘 몇 번째 칸, A 남색 표지 -> B 핑크 스티커 -> P 파스텔 표지 …
     (날짜만큼 밀어서 날마다 첫 칸이 다름 · A·P 상품 장 = 파스텔, B = B 그대로)."""
-    return "ABP"[(datetime(int(day[:4]), int(day[5:7]), int(day[8:10])).toordinal() - datetime(2026, 10, 22).toordinal() + IG_HOURS.index(h)) % 3]
+    return "ABP"[(datetime(int(day[:4]), int(day[5:7]), int(day[8:10])).toordinal() - datetime(2026, 10, 22).toordinal() + k) % 3]
 
 
 def tone_style(tone):
@@ -3100,13 +3098,14 @@ def ig_items(seen, ps, photos=True):
     return out
 
 
-def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR, fill=None):
-    """인스타 새 디자인 한 벌(표지 + 상품 장) -> d/cover.jpg, d/01.jpg… (design 없으면 날짜·칸으로 A·B·P). 표지 문구(그날 쓴 것 빼고, 채움 칸은 IG_TITLES[fill])·칩 순서는 회차마다 무작위.
+def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
+    """인스타 새 디자인 한 벌(표지 + 상품 장) -> d/cover.jpg, d/01.jpg… (design 없으면 날짜·오늘 몇 번째 칸으로 A·B·P). 표지 문구(그날 쓴 것 빼고)·칩 순서는 회차마다 무작위.
     -> (표지, [상품 장], 디자인)"""
     import cards
-    design = design or ig_design(day, h)
+    hs = ig_hours(seen)
+    design = design or ig_design(day, hs.index(h) if h in hs else 0)
     r = seen.get("igday", {}) if seen.get("igday", {}).get("d") == day else {"d": day, "ti": []}
-    pool = [x for x in IG_TITLES[fill or ("A" if design == "P" else design)] if h >= 18 or not re.search(r"밤|자기 전|퇴근", x)]
+    pool = [x for x in IG_TITLES["A" if design == "P" else design] if h >= 18 or not re.search(r"밤|자기 전|퇴근", x)]
     title = random.choice([x for x in pool if x not in r["ti"]] or pool)
     seen["igday"] = {**r, "t": time.time(), "ti": r["ti"] + [title]}
     its = ig_items(seen, ps[:CARD_N])
@@ -3155,7 +3154,7 @@ def ig_publish(seen):
     """올려둔 인스타 컨테이너(카드·릴스)가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에.
     카드는 만든 실행에 사이트 맨 위에 먼저 뜨고(ig_live) IG_SITE_LAG 지난 뒤 발행(상태 조회도 그때부터 — 그래프 API 호출 줄이기). 이미 PUBLISHED = 게시 완료로.
     10/23 진우: 발행 오류 -> ig_landed로 확인, 올라갔으면 성공(쉼 X) · 아니면 다음 실행에 상태만 다시 봄(다시 발행 X) -> 그래도 안 올라감·처리 ERROR·EXPIRED = 진짜 실패(ig_fail — 그 회차만 건너뜀,
-    하루 IG_FAIL_MAX번이면 24시간 쉼 + 알림). 하루 IG_DAY_MAX개까지(넘으면 다음 날 — 컨테이너는 24시간 유효)."""
+    하루 IG_FAIL_MAX번이면 24시간 쉼 + 알림). 하루 ig_day_max개까지(그 단계 횟수 + 1, 넘으면 다음 날 — 컨테이너는 24시간 유효)."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     now = time.time()
     if not IG_AUTO:  # 꺼짐: 남은 컨테이너(igc_ 발행 대기·igk_ 넘기기 조각)는 발행 없이 지움(인스타 API 안 부름)
@@ -3177,7 +3176,7 @@ def ig_publish(seen):
         if card(v) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기)
             continue
         n = seen.get(day, {}).get("n", 0)
-        if not failed and (n >= IG_DAY_MAX or seen.get("ig_hold", 0) > now):
+        if not failed and (n >= ig_day_max(seen) or seen.get("ig_hold", 0) > now):
             print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else ""))
             continue
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
@@ -3212,6 +3211,16 @@ def ig_err(e):
     """인스타 오류 한 줄(진짜 실패 기록·README 점검용): 메시지 + code·subcode(예 'Application request limit reached (4/2207051)')."""
     c = re.findall(r'"(?:code|error_subcode)":\s*(\d+)', getattr(e, "body", "") or "")
     return clip(err_brief(e) + (f" ({'/'.join(c)})" if c else ""), 80)
+
+
+def ig_hours(seen):
+    """오늘 인스타 칸(ig_cards): 단계(seen igstage s — ig_stage가 매일 0시) 시간대 칸 + 22시 하루 카드. seen을 잃으면 단계 0(조심 쪽)."""
+    return (*IG_STAGES[seen.get("igstage", {}).get("s", 0)], IG_DAY_HOUR)
+
+
+def ig_day_max(seen):
+    """하루 발행 상한 = 그 단계 횟수 + 1(10/23 진우 — 다시 올리기·늦게 올라간 것 여유)."""
+    return len(ig_hours(seen)) + 1
 
 
 def ig_fail(seen, now, why):
@@ -3273,23 +3282,15 @@ def ig_used(day):
     return {i for f in (os.listdir(d) if os.path.isdir(d) else []) if re.fullmatch(re.escape(day) + r"_\d\d\.json", f) for i in json.load(open(f"{d}/{f}"))}
 
 
-def slot_deals(posts, day, h):
-    """시간대 카드 딜 = 어제 IG_DAY_HOUR시(하루 카드) 뒤 ~ h시에 올린 딜 중 오늘 앞 칸 카드에 아직 안 든 것(건너뛴 칸 딜은 다음 칸으로), 하루 카드와 같은 순서(점수·제휴 먼저) 앞 CARD_N개."""
-    since, used = (datetime.strptime(day, "%Y-%m-%d") - timedelta(days=1)).strftime(f"%Y-%m-%d {IG_DAY_HOUR}:00"), ig_used(day)
-    return [x for x in day_deals(posts, "") if since <= x[1]["t"] < f"{day} {h:02d}:00" and x[0] not in used][:CARD_N]  # day "" = 모든 날(같은 순서)
-
-
-def ig_fill(posts, day, prev=None):
-    """채움 칸(하루 IG_DAY_MIN번 밑일 때, 10/23 진우): 진우 글 중 🔥 특가 중(own_end st hot) 또는 👍 꾸준템(stdy, 일시 품절·뺌 X) — url마다 최근 글 1개, 오늘 카드에 든 url 빼고 최근 것부터 CARD_N개.
-    직전 채움(prev)과 다른 종류 먼저 -> (종류, [(번호, 글)]), 둘 다 IG_MIN개 밑이면 (None, [])."""
-    used = {posts[i].get("url") for i in ig_used(day) if i < len(posts)}
-    last = {p["url"]: i for i, p in enumerate(posts) if p.get("own") and p.get("url") and not p["text"].startswith("📋")}
-    for k in sorted(IG_FILL, key=lambda k: k == prev):
-        got = [(i, posts[i]) for i in sorted(last.values(), reverse=True) if posts[i]["url"] not in used
-               and (posts[i].get("st") == "hot" if k == "hot" else posts[i].get("stdy") and posts[i].get("st") not in ("out", "gone"))][:CARD_N]
-        if len(got) >= IG_MIN:
-            return k, got
-    return None, []
+def slot_deals(posts, day, h, hours=IG_STAGES[0]):
+    """시간대 카드 딜 = 오늘 앞 칸 시각(첫 칸은 0시) ~ h시에 올린 딜(10/23 진우 '11시 = 0~11시, 15시 = 11~15시, 19시 = 15~19시') 중 오늘 다른 칸 카드에 안 든 것,
+    하루 카드와 같은 순서(점수·제휴 먼저 — 19시 칸은 진우 쿠팡 🔥·👍 먼저) 앞 CARD_N개. hours = 오늘 칸(ig_hours)."""
+    since, used = f"{day} {max([0] + [x for x in hours if x < h]):02d}:00", ig_used(day)
+    ds = [x for x in day_deals(posts, day) if since <= x[1]["t"] < f"{day} {h:02d}:00" and x[0] not in used]
+    if h == IG_OWN_HOUR:
+        ds.sort(key=lambda x: not (x[1].get("own") and mall_of(x[1].get("url"), title_of(x[1]["text"])) == "coupang"
+                                   and any(m[2] in ("🔥", "👍") for m in map(MALL_HEAD.fullmatch, x[1]["text"].split("\n")) if m)))
+    return ds[:CARD_N]
 
 
 def ig_notes(ps):
@@ -3300,15 +3301,14 @@ def ig_notes(ps):
     return "\n".join(n for n in (NAVER_NOTE, OY_NOTE, DISCLOSURE, TOSS_NOTE, AFF_NOTE) if n in ns) or "일부 링크는 제휴 링크로 수수료를 받을 수 있어요."
 
 
-def card_caption(stem, fill=None):
+def card_caption(stem):
     """카드의 (목록 줄 CARD_N개, 인스타 캡션). 목록 번호 = 카드·사이트 맨 위 번호. 가격은 카드 이미지에.
-    대가성 문구는 늘 맨 앞(ig_notes), 사이트 맨 위 어느 카드 칸인지(칸 이름 그대로 — 24시간 동안 접힌 칸으로 남음). fill = 채움 칸(IG_FILL — 지난 글 가격이라 시점 줄)."""
+    대가성 문구는 늘 맨 앞(ig_notes), 사이트 맨 위 어느 카드 칸인지(칸 이름 그대로 — 24시간 동안 접힌 칸으로 남음)."""
     ps = [p for _, p in card_order(load(POSTS, []), stem)[:CARD_N]]
     toss_in = toss_list(ps)
     rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, toss_in)).strip(), 34)}" for n, p in enumerate(ps, 1)]
     slot = SLOT_NAMES.get(stem[11:]) if len(stem) > 10 else None
-    return rows, (ig_notes(ps) + "\n\n" + f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} {IG_FILL[fill]}" if fill else f"{slot} 핫딜" if slot else "오늘의 핫딜 모음") + "\n\n" + "\n".join(rows)
-                  + ("\n\n⏰ 카드 가격은 처음 올린 때 기준 · 지금 가격은 링크에서 확인" if fill else "")
+    return rows, (ig_notes(ps) + "\n\n" + f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} 핫딜" if slot else "오늘의 핫딜 모음") + "\n\n" + "\n".join(rows)
                   + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(stem)}'에서 번호를 누르면 바로 구매 페이지\n\n" + ig_tags(ps, int(stem[11:] or IG_DAY_HOUR) // 2))[:2200]
 
 
@@ -3414,10 +3414,10 @@ def ig_reel(seen):
 
 
 def ig_cards(seen):
-    """인스타 하루 6~8번(10/23 진우): 08~20시 2시간마다(IG_SLOTS) 시간대 카드 + 22시 하루 카드(21시 모아보기 때 만든 것).
+    """인스타 하루 4번부터(10/23 진우 '너무 자주 말고' — 단계적 늘리기 ig_stage): 오늘 칸(ig_hours, 11·15·19시 …) 시간대 카드 + 22시 하루 카드(21시 모아보기 때 만든 것).
     시간대 카드: 그 시각 첫 실행에 카드(JPEG)·번호 순서를 docs/cards/날짜_시에 만들고(워크플로가 커밋 -> 사이트 공개) 다음 실행에 사이트에 뜨면 인스타 컨테이너
-    -> 사이트 맨 위 카드 기록(ig_live, 사이트 먼저) -> 다음 실행에 ig_publish가 발행. 그 시각 IG_LATE시간 안에만, 딜 IG_MIN개 미만이면 건너뜀(그러면 오늘 IG_DAY_MIN번 밑이 될 때는
-    진우 🔥·👍 카드로 채움 — ig_fill), 회차마다 1번(기록에 있으면 seen을 잃어도 다시 안 올림). 컨테이너 만들기 실패 = 진짜 실패(ig_fail — 그 회차 건너뜀, 다시 시도 X · 10/23 진우).
+    -> 사이트 맨 위 카드 기록(ig_live, 사이트 먼저) -> 다음 실행에 ig_publish가 발행. 그 시각 IG_LATE시간 안에만, 딜 IG_MIN개 미만이면 건너뜀(억지로 안 채움), 회차마다 1번
+    (기록에 있으면 seen을 잃어도 다시 안 올림). 컨테이너 만들기 실패 = 진짜 실패(ig_fail — 그 회차 건너뜀, 다시 시도 X · 10/23 진우).
     넘기기(IG_CAROUSEL, 10/11 진우 '인스타 업그레이드 2번'): 카드 만들 때 딜 카드(deal_slides)도 -> 올릴 때 표지·딜 카드 조각 컨테이너 -> ig_carousel이 묶음."""
     tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
     now = time.time()
@@ -3428,19 +3428,16 @@ def ig_cards(seen):
     ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
-    for h in IG_HOURS:
+    hours = ig_hours(seen)
+    for h in hours:
         stem = today if h == IG_DAY_HOUR else f"{today}_{h:02d}"
         tried = seen.get("igs_" + stem)
-        if not h <= kst.tm_hour < h + IG_LATE or stem in led or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):  # 끝난 회차(올림·건너뜀)는 fail 없음
+        if not h <= kst.tm_hour < h + IG_LATE or (today == IG_START[:10] and h < int(IG_START[11:])) or stem in led or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):  # 끝난 회차(올림·건너뜀)는 fail 없음
             continue
         jpg = f"docs/cards/{stem}.jpg"
         if h != IG_DAY_HOUR and not os.path.exists(jpg):  # 시간대 카드 만들기(이번 실행) -> 다음 실행에 올림
             posts = load(POSTS, [])
-            order, fill = slot_deals(posts, today, h), None
-            made = {s for s in led if s[:10] == today} | {k[4:] for k, v in seen.items() if k.startswith(f"igs_{today}_") and not ({"skip", "fail"} & set(v))}
-            if len(order) < IG_MIN and len(made) + sum(x > h for x in IG_HOURS) < IG_DAY_MIN:  # 건너뛰면 하루 6번 밑 -> 진우 🔥·👍 카드로 채움
-                k, got = ig_fill(posts, today, max((v for k, v in seen.items() if k.startswith("igf_")), key=lambda v: v["t"], default={}).get("k"))
-                fill, order = (k, got) if k else (None, order)
+            order = slot_deals(posts, today, h, hours)
             if len(order) < IG_MIN:
                 seen["igs_" + stem] = {"t": now, "skip": len(order)}
                 print("ig card", stem, f"딜 {len(order)}개 -> 건너뜀")
@@ -3450,12 +3447,10 @@ def ig_cards(seen):
             json.dump([i for i, _ in order], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서 고정(캡션·사이트가 같이 씀)
             ct = toss_list([p for _, p in order[:CARD_N]])
             cards.make([{"title": list_name(p, ct, True), "unit": p.get("unit")} for _, p in order], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg,
-                       head=IG_FILL[fill] if fill else IG_SLOTS[h], label=f"{SLOT_NAMES[f'{h:02d}']} " + (IG_FILL[fill] if fill else "핫딜"), png=False)
-            if fill:
-                seen["igf_" + stem] = {"t": now, "k": fill}  # 캡션·표지 제목(채움 칸)
+                       head=IG_SLOTS[h], label=f"{SLOT_NAMES[f'{h:02d}']} 핫딜", png=False)
             if IG_CAROUSEL:
                 deal_slides(stem, [p for _, p in order])
-            print("ig card", stem, f"만듦 {len(order)}개" + (f" (채움 {fill})" if fill else ""))
+            print("ig card", stem, f"만듦 {len(order)}개")
             return
         if not os.path.exists(jpg):  # 22시: 모아보기(digest, 21시)가 카드를 안 만듦(딜 부족)
             continue
@@ -3463,7 +3458,7 @@ def ig_cards(seen):
         if IG_HUMAN:  # 인스타엔 새 디자인 한 벌(A·B 날마다 번갈아, docs/cards/igv/ — 사이트·텔레그램 카드는 그대로) -> 만든 실행 다음에 올림
             iv = f"docs/cards/igv/{stem}"
             if not os.path.exists(f"{iv}/cover.jpg"):
-                ig_set(seen, today, [p for _, p in card_order(load(POSTS, []), stem)], iv, h=h, fill=seen.get("igf_" + stem, {}).get("k"))
+                ig_set(seen, today, [p for _, p in card_order(load(POSTS, []), stem)], iv, h=h)
                 continue
             url, d = f"{SITE}cards/igv/{stem}/cover.jpg", iv
         if IG_HUMAN and now < ig_due(seen, "igd_" + stem, kst_ts(f"{today} {h:02d}:00")):  # 회차 시각 + 15~20분 무작위 뒤에 컨테이너(한 벌은 먼저 만들어 둠)
