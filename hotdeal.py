@@ -135,6 +135,7 @@ e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객�
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
 IG_SLOTS = {11: "점심 전에 볼 딜", 13: "점심에 볼 딜", 15: "오후에 볼 딜", 17: "퇴근 전에 볼 딜", 19: "퇴근길에 볼 딜"}  # 10/23 진우 '너무 자주 말고 하루 4번' + 단계적 늘리기: 칸 = 오늘 앞 칸 시각(첫 칸 0시) ~ 그 시각 딜
 IG_STAGES = ((11, 15, 19), (11, 13, 15, 19), (11, 13, 15, 17, 19))  # 단계 0 = 하루 4번(+22시 하루 카드) · 1 = 5번(+13시) · 2 = 6번(+17시) — ig_stage가 매일 0시에 판정
+IG_STAGE_FILE, IG_STAGE_DAYS = "ig_stage.json", 3  # 단계 기록(커밋 — seen을 잃어도 단계 그대로, 판정 줄 log = README 점검 표) · 올림 = 그 단계로 3일 + 앞 3일 진짜 실패 0(5 -> 6번은 + 글당 조회)
 IG_DAY_HOUR, IG_OWN_HOUR = 22, 19  # 22시 = 하루 카드(21시 모아보기 카드를 인스타엔 22시에) · 19시 칸은 진우 쿠팡 🔥·👍 먼저
 IG_START = "2026-10-23 15"  # shortcut: 첫날(10/23)은 15시 칸부터(진우 '11시 칸이 이미 지났으면 15시부터') — 10/24부터는 안 씀, 그 뒤 지워도 됨
 IG_LATE, IG_MIN = 2, 3  # 칸은 그 시각 2시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀(억지로 안 채움) · 하루 발행 최대 = 그 단계 횟수 + 1(ig_day_max — 오류로 몰려 올라가지 않게, API 상한 50)
@@ -3214,7 +3215,7 @@ def ig_err(e):
 
 
 def ig_hours(seen):
-    """오늘 인스타 칸(ig_cards): 단계(seen igstage s — ig_stage가 매일 0시) 시간대 칸 + 22시 하루 카드. seen을 잃으면 단계 0(조심 쪽)."""
+    """오늘 인스타 칸(ig_cards): 단계(seen igstage s — ig_stage가 실행마다 ig_stage.json에 맞춤) 시간대 칸 + 22시 하루 카드. 기록이 없으면 단계 0(조심 쪽)."""
     return (*IG_STAGES[seen.get("igstage", {}).get("s", 0)], IG_DAY_HOUR)
 
 
@@ -3223,10 +3224,60 @@ def ig_day_max(seen):
     return len(ig_hours(seen)) + 1
 
 
+def ig_stage_get(today):
+    """인스타 단계 기록 {s 단계, since 그 단계(또는 내린 날)부터, fd 진짜 실패 날짜들, h {날짜: 단계}, j 마지막 판정 날, log 판정 줄}: ig_stage.json > 처음(오늘 단계 0)."""
+    return {"s": 0, "since": today, "fd": [], "h": {today: 0}, "j": "", "log": [], **load(IG_STAGE_FILE, {})}
+
+
+def ig_stage_put(seen, r):
+    json.dump(r, open(IG_STAGE_FILE, "w"), ensure_ascii=False, indent=1)
+    seen["igstage"] = {"t": time.time(), "s": r["s"]}
+
+
+def ig_views(days):
+    """metrics.json 인스타 글당 조회(views — 다음 날 아침에 모은 값) 평균, 그날들에 숫자가 없으면 None."""
+    m = load(METRICS, {})
+    v = [x["views"] for d in days for x in m.get(d, {}).get("rows", []) if x["ch"] == "ig" and x.get("views") is not None]
+    return round(sum(v) / len(v), 1) if v else None
+
+
+def ig_stage(seen):
+    """인스타 단계(10/23 진우 '단계적 늘리기' — 하루 4번 11·15·19 -> 5번 +13시 -> 6번 +17시, 22시 하루 카드는 늘 따로): 실행마다 seen igstage를 ig_stage.json에 맞추고,
+    매일 0시(KST) 뒤 첫 실행에 1번 판정 — 그 단계로 IG_STAGE_DAYS일 지났고 앞 3일 진짜 실패 0이면 한 단계 올림(5 -> 6번은 + 그 단계 글당 조회 평균 >= 앞 단계 평균 —
+    metrics.json 인스타 views는 다음 날 아침에 모아서 어제 글은 아직 없음, 숫자가 없으면 안 올림). 내림 = 진짜 실패 난 날 ig_fail이 바로(그날부터 다시 셈).
+    판정 줄 -> 로그·기록 log(README 점검 표 — 단계·실패 수·글당 조회), 단계가 바뀌면 관리봇."""
+    if not IG_AUTO:
+        return
+    now = time.time()
+    today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    r = ig_stage_get(today)
+    if r["j"] != today:
+        ago = lambda k: (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=k)).strftime("%Y-%m-%d")
+        s, fails = r["s"], sum(ago(IG_STAGE_DAYS) <= d < today for d in r["fd"])
+        avg = ig_views([d for d, k in r["h"].items() if k == s and d >= r["since"]])
+        prev = ig_views([d for d, k in r["h"].items() if k == s - 1]) if s else None
+        up = s + 1 < len(IG_STAGES) and r["since"] <= ago(IG_STAGE_DAYS) and not fails and (s == 0 or None not in (avg, prev) and avg >= prev)
+        r.update(s=s + up, since=today if up else r["since"], j=today, h={**{d: k for d, k in r["h"].items() if d >= ago(14)}, today: s + up})
+        line = f"{today} 단계 {s + up}(하루 {len(IG_STAGES[s + up]) + 1}번{' — 올림' if up else ''}) · 앞 3일 진짜 실패 {fails} · 글당 조회 {avg} (앞 단계 {prev})"
+        r["log"] = (r["log"] + [line])[-30:]
+        print("ig stage", line)
+        if up:
+            tg("sendMessage", chat_id=ADMIN, text=f"📸 인스타 단계 올림 — 오늘부터 하루 {len(IG_STAGES[s + up]) + 1}번(" + "·".join(map(str, ig_hours({"igstage": {"s": s + up}}))) + f"시)\n{line}")
+        ig_stage_put(seen, r)
+    seen["igstage"] = {"t": now, "s": r["s"]}
+
+
 def ig_fail(seen, now, why):
     """인스타 진짜 실패(게시 안 됨 — 컨테이너·묶음 만들기 실패, 처리 ERROR·EXPIRED, 발행 오류 뒤 ig_landed·다음 실행 상태로도 안 올라감):
-    그 회차만 건너뜀(다시 시도 X, 10/23 진우) · 오늘 IG_FAIL_MAX번째면 24시간 쉼(남은 컨테이너는 발행 없이 지움) + 관리봇 알림. seen igfail f = 오늘 진짜 실패."""
+    그 회차만 건너뜀(다시 시도 X, 10/23 진우) · 그날 첫 실패면 단계 한 단계 내림(ig_stage — 그날부터 다시 셈) · 오늘 IG_FAIL_MAX번째면 24시간 쉼(남은 컨테이너는 발행 없이 지움) + 관리봇 알림.
+    seen igfail f = 오늘 진짜 실패."""
     today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    st = ig_stage_get(today)
+    if today not in st["fd"]:
+        st.update(s=max(0, st["s"] - 1), since=today, h={**st["h"], today: max(0, st["s"] - 1)})
+        st["log"] = (st["log"] + [f"{today} 진짜 실패 -> 단계 {st['s']}(하루 {len(IG_STAGES[st['s']]) + 1}번) · 그날부터 다시 셈"])[-30:]
+    st["fd"] = (st["fd"] + [today])[-30:]
+    ig_stage_put(seen, st)
     r = seen.setdefault("igfail", {"f": []})
     r.update(t=now, f=[x for x in r["f"] if x[:10] == today] + [f"{today} {clip(why, 80)}"])
     print("ig 진짜 실패", why, f"(오늘 {len(r['f'])}번)")
@@ -5098,7 +5149,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill, toss_roster):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_stage, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill, toss_roster):
         try:
             step(seen)
         except Exception as e:
