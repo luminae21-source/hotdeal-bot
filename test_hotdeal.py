@@ -5284,7 +5284,6 @@ dl40, pl40 = bb40([p for p in px40 if p[1] < 0.6 * 512]), bb40([p for p in px40 
 assert abs((dl40[0] + dl40[2]) / 2 - 0.5) < 0.01 and abs((dl40[1] + dl40[3]) / 2 - 0.42) < 0.01 and 0.27 < dl40[3] - dl40[1] < 0.40, dl40  # '딜' 가운데 x · 글자 상자 가운데 y 0.42
 assert all(abs(a - b) < 0.006 for a, b in zip(pl40, (0.31, 0.625, 0.69, 0.765))), pl40  # 알약 0.38 × 0.14, 가운데 (0.5, 0.695)
 assert all(0.2 <= v <= 0.8 for v in dl40 + pl40) and all((x - 255.5) ** 2 + (y - 255.5) ** 2 <= (0.4 * 512) ** 2 for x, y in px40)  # 가운데 60% 안 = maskable 안전 영역(지름 80%)·원·둥근 네모로 깎아도 안 잘림
-assert not [p for p in px40 if p[0] > 0.7 * 512 and p[1] > 0.7 * 512]  # 크롬 바로가기 배지(오른쪽 아래)에 안 가림
 pk40 = [mk40.getpixel((x, y)) for x in range(int(0.36 * 512), int(0.64 * 512)) for y in range(int(0.63 * 512), int(0.76 * 512))]
 assert sum(near40(c, C40.PICK_RED, 6) for c in pk40) > 300  # 알약 안 빨간 'pick'
 for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):

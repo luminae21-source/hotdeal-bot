@@ -180,14 +180,17 @@ def mask(im, kind, r=.22):
     if kind == "c": dd.ellipse((0, 0, im.width - 1, im.height - 1), fill=255)
     else: dd.rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=int(im.width * r), fill=255)
     o = Image.new("RGBA", im.size, (0, 0, 0, 0)); o.paste(im, (0, 0), m); return o
-def badge(im):  # 크롬 '바로가기' 배지 자리(오른쪽 아래)
-    im = im.copy(); dd = ImageDraw.Draw(im); w = im.width; s = int(w * .34)
+def phone(n, k=96):  # 안드로이드가 보여 주는 부분: 크롬이 maskable 안전 영역(80%)을 66/108에 맞추고 런처는 가운데 72/108만 -> 원본 0.0636~0.9364
+    im = Image.open(icons + "/" + n).convert("RGBA"); a, b = round(im.width * .0636), round(im.width * .9364)
+    return im.crop((a, a, b, b)).resize((k, k), Image.LANCZOS)
+def badge(im):  # 크롬 '바로가기' 배지 = 픽셀(Launcher3) 아이콘 오른쪽 아래 0.444(ICON_BADGE_SCALE)
+    im = im.copy(); dd = ImageDraw.Draw(im); w = im.width; s = round(w * .444)
     dd.ellipse((w - s, w - s, w - 1, w - 1), fill=(255, 255, 255, 255)); dd.ellipse((w - s + 3, w - s + 3, w - 4, w - 4), fill=(66, 133, 244, 255)); return im
 y = top + max(i.height for i in ims) + 24
-d.text((G, y), "아이콘(A 레드, 폰 홈 화면 96·48px): 192 · 512 · maskable 원 · 스쿼클 · 애플 둥근 네모 · 크롬 배지 · 48px · 파비콘 32", font=f, fill=(25, 31, 40))
+d.text((G, y), "아이콘(A 레드, 96·48px): 192 · 512 · 안드로이드 원 · 스쿼클 · 애플 둥근 네모 · 크롬 '바로가기' 배지(픽셀 크기 — 앱 설치는 배지 X) · 48px · 파비콘 32", font=f, fill=(25, 31, 40))
 z = lambda n, k=96: Image.open(icons + "/" + n).convert("RGBA").resize((k, k), Image.LANCZOS)
-ic = [z("icon-192.png"), z("icon-512.png"), mask(z("icon-512-maskable.png"), "c"), mask(z("icon-512-maskable.png"), "r", .35),
-      mask(z("apple-touch-icon.png"), "r", .2237), badge(mask(z("icon-512-maskable.png"), "r")), mask(z("icon-512-maskable.png", 48), "c"),
+ic = [z("icon-192.png"), z("icon-512.png"), mask(phone("icon-512-maskable.png"), "c"), mask(phone("icon-512-maskable.png"), "r", .35),
+      mask(z("apple-touch-icon.png"), "r", .2237), badge(mask(phone("icon-512-maskable.png"), "c")), mask(phone("icon-512-maskable.png", 48), "c"),
       Image.open(icons + "/favicon-32.png").convert("RGBA")]
 x = G
 for im in ic: c.paste(im, (x, y + 40 + (96 - im.height) // 2), im); x += im.width + 24

@@ -771,7 +771,8 @@ LOGO_GRAD, PICK_RED = ((255, 104, 96), (220, 34, 48)), (222, 38, 52)  # 웹앱 �
 
 def app_logo(n, mini=False):
     """웹앱 아이콘 1장(n×n) 'A 레드'(10/23 진우 — 원 아이콘은 런처가 확대해 '딜'이 잘림): 꽉 찬 정사각 대각선 그라데이션(any·maskable·애플 같은 그림, 모양은 런처가 깎음)
-    + 흰 '딜'(Black, 0.40n, 가운데 y 0.42n) + 흰 알약(0.38n×0.14n, 가운데 y 0.695n) 안 빨간 'pick'(Bold, 0.095n, 자간 0.006n, 가운데 y 0.69n) — 다 가운데 60% 안(maskable 안전 영역·크롬 배지 피함).
+    + 흰 '딜'(Black, 0.40n, 가운데 y 0.42n) + 흰 알약(0.38n×0.14n, 가운데 y 0.695n) 안 빨간 'pick'(Bold, 0.095n, 자간 0.006n, 가운데 y 0.69n) — 다 가운데 60% 안(maskable 안전 영역 안 — 원·둥근 네모로 깎아도 안 잘림).
+    shortcut: 크롬 '바로가기'(배지) = 픽셀 런처 배지(아이콘 0.444)가 알약 오른쪽 끝·k를 가림 — 앱 설치(WebAPK)는 배지 X, 바로가기도 피하려면 진우 결정.
     mini = 파비콘(16·32·48): '딜'만, 같은 그라데이션 둥근 네모(모서리 투명). 4배로 그려 줄여서 가장자리를 매끈하게."""
     k = 4
     N = n * k
@@ -800,7 +801,7 @@ def app_logo(n, mini=False):
 
 def app_icons(d="docs/icons", root="docs"):
     """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로', 'A 레드') -> d/: icon-192·512(any)·icon-512-maskable·apple-touch-icon(180) = 같은 꽉 찬 그림(투명 X — 런처·iOS가 모양을 깎음),
-    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48). 바꾸면 build_site.ICON_V 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
+    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
     os.makedirs(d, exist_ok=True)
     big = app_logo(512).convert("RGB")
     out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": big,
