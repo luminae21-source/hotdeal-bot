@@ -266,7 +266,7 @@ SLOT_NAMES = {"11": "오전 11시", "13": "낮 1시", "15": "오후 3시", "17":
 def day_deals(posts, day):
     """그날 딜의 카드 순서 [(posts 번호, 글)]: 점수 높은 순, 같은 점수면 제휴 링크 딜 먼저(10/8 진우 '쿠팡·토스 잘 팔리게'), 그다음 게시 순.
     카드·인스타 캡션·사이트 맨 위 카드 딜(앞 CARD_N개)·릴스(앞 3개) 번호가 모두 이 순서."""
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")]
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and not p.get("shelf")]  # 사이트 진열(shelf) = 카드·인스타·릴스·Threads X
     return sorted(ds, key=lambda x: (-x[1].get("s", 0), not aff(x[1].get("url")), x[1]["t"]))
 
 
@@ -491,6 +491,12 @@ def shelf(p, ev, today):
     return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else f"{wait} · 지금 가격은 링크에서 확인"), bd + [("b3", "⏳ 특가 대기")], False
 
 
+def shelf_gone(posts):
+    """같은 url 진우 글이 뒤에 또 올라온 사이트 진열(shelf) 글 번호 — 사이트엔 글 하나로(10/24 진우 '합치기' — home_pool과 같은 기준: url마다 최신 진우 글)."""
+    last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
+    return {i for i, p in enumerate(posts) if p.get("shelf") and last[p.get("url")] != i}
+
+
 def home_pool(posts, days):
     """홈 몰·품목·브랜드 칸에 둘 딜 -> {posts 번호: shelf 상태}(10/23 진우 '우리가 업로드한 제품들을 리스트에서 그냥 빼지 않기' · '진열 = 기본 유지'):
     커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음), 진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개(같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만) — 빼는 건 shelf가 None인 것뿐."""
@@ -630,12 +636,12 @@ def price_item(p):
     return next((it for it in PRICE_ITEMS if re.search(it[2], title)), None)
 
 
-def price_records(posts):
+def price_records(posts, shelf=True):
     """최저가 기록 {주소: (품목, 단위, [(단위가격, '1L당 248원', i, p), …] 싼 순)} — 품목 딜 중 💡 단위가격에 그 단위가 있는 것만, PRICE_MIN개↑ 품목만.
     같은 상품이 같은 단위가격으로 다시 올라오면 최근 1개(숫자는 글에 적힌 그대로 — 단위 바꿔 셈 X)."""
     rows = {}
     for i, p in enumerate(posts):
-        it = price_item(p)
+        it = (shelf or not p.get("shelf")) and price_item(p)  # shelf=False = 채널 글만(Threads 투표)
         lab = it and next(((float(v.replace(",", "")), f"{it[3]} {v}원") for lb, v in PAIR.findall(unit_of(p)) if re.sub(r"^1(?=\D)|\s", "", lb).lower() in it[4]), None)
         if lab:
             rows.setdefault(it[0], {})[(parse(title_of(p["text"]))[1], lab[0])] = (*lab, i, p)
@@ -704,10 +710,10 @@ def brand_section(posts, days):
 
 
 def day_grids(posts, days):
-    """날짜별 2열 격자. 날짜 안에서는 3사(토스·쿠팡·네이버) 딜 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자' · 10/15 3사 먼저)."""
-    out = []
+    """날짜별 2열 격자. 날짜 안에서는 3사(토스·쿠팡·네이버) 딜 먼저, 그다음 최신 순(10/8 진우 '쿠팡·토스 먼저', '모바일 격자' · 10/15 3사 먼저). 채널 글로 이어진 진열 글은 X."""
+    out, gone = [], shelf_gone(posts)
     for n, day in enumerate(days):
-        ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋")),
+        ds = sorted(((i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and i not in gone),
                     key=lambda x: (not shop_of(x[1]), [-ord(c) for c in x[1]["t"]]))
         out.append(f'<section class="day" id="d{n}" aria-labelledby="d{n}h"><h2 id="d{n}h">{int(day[5:7])}월 {int(day[8:])}일 딜 {len(ds)}개</h2>'
                    f'<div class="grid">{"".join(grid_item(i, p) for i, p in ds)}</div></section>')
@@ -830,9 +836,10 @@ def steady_page(out):
     link = lambda x: f"{BASE}p/{x['i']}.html" if x.get("i") is not None and urllib.parse.urlsplit(x["u"]).netloc in OY_HOSTS else x["u"]  # 올영 = 딜 페이지 거쳐(사이트 규칙 그대로)
     rows = "".join(f'<li><b>{html.escape(x["n"])}</b><br>💰 {html.escape(x["p"] or "가격은 링크에서 확인")}{" · " + html.escape(x["st"]) if x.get("st") else ""}<br>'
                    f'<a class="btn2" href="{html.escape(link(x))}" rel="nofollow sponsored noopener" target="_blank">구매하러 가기 →</a></li>' for x in d["items"])
-    body = (f'<section class="day" aria-labelledby="sth"><h2 id="sth">👍 꾸준히 팔리는 것 모음</h2><div class="t">최저가는 아니어도 꾸준히 많이 사는 것 · '
+    head = d.get("head") or "👍 꾸준히 팔리는 것 모음"  # 품목 모음 날 = '💄 화장품 스테디셀러 모음'(10/24)
+    body = (f'<section class="day" aria-labelledby="sth"><h2 id="sth">{html.escape(head)}</h2><div class="t">최저가는 아니어도 꾸준히 많이 사는 것 · '
             f'{int(d["at"][5:7])}/{int(d["at"][8:10])} {d["at"][11:16]} 게시 시점 가격 · 가격·재고는 바뀔 수 있어요</div><ol>{rows}</ol></section>')
-    open(f"{out}/steady.html", "w").write(page(f"꾸준히 팔리는 것 모음 | {TITLE}", body + MORE + END_JS, "최저가는 아니어도 꾸준히 많이 사는 생필품·화장품 모음(매일 저녁 갱신)",
+    open(f"{out}/steady.html", "w").write(page(f"{head.split(' ', 1)[-1]} | {TITLE}", body + MORE + END_JS, "최저가는 아니어도 꾸준히 많이 사는 생필품·화장품 모음(매일 저녁 갱신)",
                                                f"{BASE}steady.html", gb=False, note="\n".join(d.get("notes") or [])))
     return f"{BASE}steady.html", d["at"][:10]
 
@@ -844,7 +851,8 @@ def build(posts, out="docs"):
     latest = posts[-1]["t"][:10] if posts else ""
     urls = [(BASE, latest)]
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋")
+    gone = shelf_gone(posts)  # 채널 글로 이어진 진열 글 = 같이 보기·사이트맵 X(페이지는 그대로)
+    pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋") and j not in gone
             and aff(q.get("url")) and "특가로는 약한 제품" not in q["text"]]
     recs = price_records(posts)
     os.makedirs(f"{out}/c", exist_ok=True)
@@ -863,7 +871,8 @@ def build(posts, out="docs"):
         it = price_item(p)
         rl = it and it[0] in recs and f'<a class="btn2" href="{BASE}c/{it[0]}.html">📈 {it[1]} {it[3]} 최저가 기록 보기</a>'  # 그 품목 기록 페이지로(내부 링크 — 검색 로봇이 찾게)
         open(f"{out}/p/{i}.html", "w").write(page(st, (ld or "") + GO_FIND + GB_LINK + deal_card(i, p) + (rl or "") + (more or "") + MORE + LIKE_JS + END_JS, sd, url, gb=False, note=note))
-        urls.append((url, p["t"][:10]))
+        if i not in gone:
+            urls.append((url, p["t"][:10]))
     fire, react = fire_section(posts, days), hot_section(posts, days)
     panes = [("hot" if react else "fire", "🏆 인기", (fire or "") + (react or "")), *((k, n, shop_section(posts, days, k)) for k, n in (("toss", "💙 토스"), ("coupang", "🚀 쿠팡"), ("naver", "💚 네이버"))),
              ("cats", "🗂 품목", cats_pane(cat_sections(posts, days, rec_nav(recs) or ""))), ("wait", "⏳ 대기", wait_section(posts, days)), ("brand", "✨ 브랜드", brand_section(posts, days)), ("today", "📸 카드", card_picks(posts, out)), ("days", "📅 전체", f'<div id="days">{day_grids(posts, days[:2]) or "<p>첫 딜을 준비 중이에요.</p>"}'

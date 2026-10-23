@@ -2928,7 +2928,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (cp_links, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (cp_links, shelf_posts, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -5530,4 +5530,81 @@ D44 = {"title": "[쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://www.p
 assert [H.deal_post(D44, c)[2] for c in ("싸다", "로켓배송 내일 도착")] == ["📦 쿠팡에서 9,900원", "🚀 쿠팡에서 9,900원"]  # 커뮤니티 쿠팡 딜 버튼 = 머리 줄과 같은 근거
 H.store_link, H.affiliate = sl44
 H.tg, time.time, H.EVENTS = sv44
+# 9-45) 사이트 진열 전용(10/24 02:1x 진우 '생필품·화장품은 사이트에 먼저 빠르게'): events "shelf": true -> 채널·Threads·인스타 X, 사이트만(품목 칸·🔥/⏳·상품 페이지·사이트맵) ·
+#       쿠팡 상품 주소 = 딥링크로 바뀐 뒤(6시간 조건 X) · 같은 url 채널 예약이 나중에 오면 채널엔 평소대로, 사이트 글은 하나 · 19:50 꾸준템 = shelf 👍도(날짜 상관없이), 가끔 품목 모음
+#       · 채널 쪽 계산(시간당 상한·마지막 글 시각·관리자 중복·미리보기·모아보기·카드·Threads 후보)에 안 섞임
+import build_site as S45
+sv45 = (H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.CP_LINKS if hasattr(H, "CP_LINKS") else None)
+d45 = tempfile.mkdtemp(); cwd45 = os.getcwd(); os.chdir(d45)
+H.EVENTS, H.POSTS, H.HAS_CP, sent45, c45 = "events.json", "posts.json", True, [], []
+import calendar; T45 = calendar.timegm(time.strptime("2026-10-24 19:55", "%Y-%m-%d %H:%M")) - 9 * 3600  # KST 10/24 19:55 (1년 중 297일 = 3의 배수 -> 품목 모음 날)
+time.time = lambda: T45
+P45 = "https://www.coupang.com/vp/products/45"
+SH45 = lambda u, n, at, ic="👍", **k: {"at": at, "shelf": True, "url": u, "button": "🛒 구매하러 가기", "text": f"{ic} <b>[쿠팡] {n} (12,900원/무료)</b>\n\n꾸준히 잘 팔리는 생필품", **k}
+ev45 = [SH45(P45, "크리넥스 화장지 30롤", "2026-10-20 09:00", pid="45", now="12,500원", chk="2026-10-24 09:10", target="11,900원"),  # 6시간 지난 shelf도 딥링크·진열
+        SH45("https://link.coupang.com/a/sh2", "깨끗한나라 물티슈 100매 10팩", "2026-10-24 19:00"),
+        SH45("https://link.coupang.com/a/sh3", "페리오 치약 120g 10개", "2026-10-24 19:10"),
+        SH45("https://link.coupang.com/a/sh4", "다우니 섬유유연제 1L", "2026-10-24 23:00"),  # 아직 시각 전 = 진열 X
+        SH45("https://link.coupang.com/a/sh5", "피죤 세탁세제 3L", "2026-10-24 19:20", ic="🔥"),
+        {"at": "2026-10-24 19:50", "deal": True, "url": "https://link.coupang.com/a/ch1", "button": "🛒 구매하러 가기", "text": "🔥 <b>[쿠팡] 채널 예약 상품 (5,000원)</b>"}]
+json.dump(ev45, open("events.json", "w")); json.dump([{"t": "2026-10-24 19:30", "text": "🔥 [쿠팡] 예전 채널 글 (1원)", "url": "https://link.coupang.com/a/old", "mid": 7}], open("posts.json", "w"))
+def http45(url, body=None, headers=None, method=None):
+    c45.append(url)
+    if url.endswith("/deeplink"):
+        u = body["coupangUrls"][0]
+        return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/b" + re.search(r"/products/(\d+)", u)[1]}]})
+    return "{}"
+def tg45(method, **p):
+    sent45.append((method, p))
+    return {"message_id": 900 + len(sent45), "text": H.plain_of(p.get("text", "")), "entities": []}
+H.http, H.tg, seen45 = http45, tg45, {}; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None); H.RUN["ch_last"] = 0
+assert [e["url"] for e in H.load(H.EVENTS, [])] == ["https://link.coupang.com/a/ch1"]  # 채널 쪽(events·미리보기·토스 쉼·알림)은 shelf를 아예 못 봄
+H.shelf_posts(seen45); assert [p["url"][-3:] for p in json.load(open("posts.json"))] == ["old", "sh2", "sh3", "sh5"]  # 딥링크 전 쿠팡 상품 주소 = 진열 X(생 주소 X) · 시각 전(sh4) X
+H.cp_links(seen45); DL45 = json.load(open(H.CP_LINKS))[P45]
+assert DL45 == "https://link.coupang.com/a/b45" and any(u.endswith("/deeplink") for u in c45)  # at 6시간 지났어도 shelf는 변환
+H.shelf_posts(seen45); po45 = json.load(open("posts.json"))
+sh45 = [p for p in po45 if p.get("shelf")]
+assert [S45.parse(S45.title_of(p["text"]))[1] for p in sh45] == ["깨끗한나라 물티슈 100매 10팩", "페리오 치약 120g 10개", "피죤 세탁세제 3L", "크리넥스 화장지 30롤"], sh45  # 시각 지난 것만
+assert all(p["own"] == 1 and "mid" not in p and p["t"] == "2026-10-24 19:55" and p["text"].startswith("이 포스팅은 쿠팡 파트너스") for p in sh45) and sh45[3]["url"] == DL45  # 대가성 문구 맨 앞 · 채널 글 번호 X
+assert "📦 쿠팡" in sh45[0]["text"] and "결제 전 최종가" in sh45[0]["text"], sh45[0]["text"]  # 채널과 같은 몰별 틀
+assert not sent45  # 채널·관리자 아무것도 안 보냄
+H.shelf_posts(seen45); assert len(json.load(open("posts.json"))) == len(po45)  # 같은 url = 1번만
+t45, ents45 = H.html_ents('<i>고지</i>\n\n🔥 <b>[쿠팡] 이름</b> <a href="https://x.y/?a=1&amp;b=2">링크</a> 😀 <a href="https://z">끝</a>')
+assert t45 == "고지\n\n🔥 [쿠팡] 이름 링크 😀 끝" and [(t45.encode("utf-16-le")[e["offset"] * 2:(e["offset"] + e["length"]) * 2].decode("utf-16-le"), e["url"]) for e in ents45] == [("링크", "https://x.y/?a=1&b=2"), ("끝", "https://z")]  # UTF-16 오프셋(😀 = 2)
+# 채널 쪽 계산에 안 섞임: 시간당 상한·마지막 채널 글 시각·관리자 중복 링크·카드·모아보기·Threads 후보·날씨/간식
+assert not H.busy(seen45) and H.ch_last(seen45) == T45 - 25 * 60  # 진열 4개(지금)가 시간당 상한·'방금 채널 글'로 안 셈
+assert [i for i, _ in S45.day_deals(po45, "2026-10-24")] == [0]  # 카드·인스타·릴스·Threads 카드 = 채널 글만
+H.events(seen45); assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for m, p in sent45 if m == "sendMessage"] == ["https://link.coupang.com/a/ch1"]  # 채널 = 보통 예약만
+# 사이트: 품목 칸(🧻 생필품)·상태(own_end: Cowork now·chk)·상품 페이지·사이트맵
+H.own_end(seen45); po45 = json.load(open("posts.json")); i45 = next(i for i, p in enumerate(po45) if p.get("url") == DL45)
+assert po45[i45]["now"] == "12,500원" and po45[i45]["st"] == "wait" and po45[i45]["chk"] == "10/24 9시", po45[i45]  # 진열 글 = events now·chk 그대로(글 시각보다 옛 확인이어도)
+S45.build(po45, "site"); ix45, sm45 = open("site/index.html").read(), open("site/sitemap.xml").read()
+lf45 = ix45.split('id="life"')[1].split("</section>")[0]
+assert f"p/{i45}.html" in lf45 and "지금 가격 (10/24 9시 확인)" in lf45 and f"/p/{i45}.html" in sm45 and os.path.exists(f"site/p/{i45}.html")
+pg45 = open(f"site/p/{i45}.html").read(); assert "제휴 마케팅 활동의 일환으로" in pg45 and f'href="{DL45}"' in pg45  # 상품 페이지 = 채널 글 페이지와 같은 대가성 문구·구매 버튼(딥링크)
+# 같은 url 채널 예약이 나중에 오면: 채널엔 평소대로 · 사이트 카드는 채널 글 하나(진열 글은 칸·날짜 목록·사이트맵에서 빠짐, 페이지는 그대로)
+time.time = lambda: T45 + 3600
+json.dump(ev45 + [{"at": "2026-10-24 20:50", "deal": True, "url": P45, "button": "🛒 구매하러 가기", "text": "🔥 <b>[쿠팡] 크리넥스 화장지 30롤 (11,500원/무료)</b>"}], open("events.json", "w"))
+sent45.clear(); H.events(seen45); po45 = json.load(open("posts.json"))
+assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for m, p in sent45 if m == "sendMessage"] == [DL45]  # 같은 상품 채널 예약 = 그대로 채널에(딥링크)
+j45 = max(i for i, p in enumerate(po45) if p.get("url") == DL45); assert j45 > i45 and po45[j45].get("mid") and not po45[j45].get("shelf")
+assert S45.shelf_gone(po45) == {i45}
+S45.build(po45, "site"); ix45, al45, sm45 = open("site/index.html").read(), open("site/all.html").read(), open("site/sitemap.xml").read()
+assert f"p/{i45}.html" not in ix45 and f"p/{i45}.html" not in al45 and f"/p/{i45}.html<" not in sm45 and f"p/{j45}.html" in ix45 and os.path.exists(f"site/p/{i45}.html")
+assert H.admin_deal is not None and not any(H.link_key(x.get("url")) == H.link_key("https://link.coupang.com/a/sh2") for x in json.load(open("posts.json"))[-80:] if not x.get("shelf"))  # 관리자 중복 확인은 채널 글만
+# 19:50 꾸준템: shelf 👍 = 날짜 상관없이 · 생필품 3개+ & 품목 모음 날 = '🧻 생필품 스테디셀러 모음'(채널·Threads·사이트 페이지 같은 제목)
+po45 = json.load(open("posts.json"))
+for p in po45:
+    if p.get("shelf"):
+        p["t"] = "2026-09-01 10:00"  # 한 달 전 진열이어도
+json.dump(po45, open("posts.json", "w"))
+time.time = lambda: T45 - 5 * 60
+os.makedirs("docs", exist_ok=True); sent45.clear()
+cd45 = H.steady_cands(seen45, time.time(), 99)
+assert {x["n"] for x in cd45} >= {"깨끗한나라 물티슈 100매 10팩", "페리오 치약 120g 10개"} and "피죤 세탁세제 3L" not in {x["n"] for x in cd45}  # 👍 진열만(🔥 진열 X)
+H.steady_list(seen45); st45 = [p for m, p in sent45 if m == "sendMessage"]
+assert len(st45) == 1 and "🧻 <b>생필품 스테디셀러 모음</b>" in st45[0]["text"] and json.load(open(H.STEADY_FILE))["head"] == "🧻 생필품 스테디셀러 모음", st45
+S45.steady_page("docs"); assert "<h2 id=\"sth\">🧻 생필품 스테디셀러 모음</h2>" in open("docs/steady.html").read()
+H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS = sv45[:6]
+os.chdir(cwd45)
 print("OK: 모든 셀프체크 통과")
