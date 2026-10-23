@@ -127,26 +127,27 @@ def page(title, body, desc="", canonical="", gb=True, note="", top=""):
 
 
 PWA_BG, PWA_DARK = "#f4f5f7", "#101012"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
+IV = "?v=2"  # 아이콘 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드'
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
-            "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-                      {"src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
-            "shortcuts": [{"name": n, "short_name": n[2:], "url": u, "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]}
+            "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+                      {"src": f"/icons/icon-512-maskable.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
+            "shortcuts": [{"name": n, "short_name": n[2:], "url": u, "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png"}]}
                           for n, u in (("🔥 지금 특가", "/#fire"), ("⏳ 특가 대기", "/#wait"), ("🧻 생필품", "/#life"))]}
-PWA_HEAD = ('<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">'
-            '<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">'
+PWA_HEAD = (f'<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png{IV}">'
+            f'<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png{IV}"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
             f'<meta name="theme-color" content="{PWA_BG}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">'
             '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="핫딜픽">'
             '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
             "<script>if('serviceWorker'in navigator)addEventListener('load',function(){if(!document.documentElement.classList.contains('inapp'))navigator.serviceWorker.register('/sw.js').catch(function(){})})</script>")  # 앱 안 브라우저는 설치 X -> 미리 받기(약 150KB)도 X
-SW_JS = r"""var V='hdp-%s',PRE=['/','/icons/icon-192.png','/icons/icon-512.png','/icons/apple-touch-icon.png','/favicon.ico'];
+SW_JS = r"""var V='hdp-%s',PRE=['/','/icons/icon-192.png{IV}','/icons/icon-512.png{IV}','/icons/apple-touch-icon.png{IV}','/favicon.ico{IV}'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(PRE)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==V}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request,u=new URL(r.url);
 if(r.method!=='GET'||u.origin!==location.origin)return;
 if(/^\/icons\/|^\/favicon\.ico$|\.(css|woff2?|otf|ttf)$/.test(u.pathname)){e.respondWith(caches.match(r).then(function(c){return c||fetch(r).then(function(res){if(res.ok){var x=res.clone();caches.open(V).then(function(k){k.put(r,x)})}return res})}));return}
 e.respondWith(fetch(r).then(function(res){if(res.ok&&r.mode==='navigate'){var x=res.clone();caches.open(V).then(function(k){k.put(r,x)})}return res}).catch(function(){return caches.match(r).then(function(c){return c||(r.mode==='navigate'?caches.match('/'):Response.error())})}))});
-"""  # 웹앱 서비스워커(최소): 같은 출처 GET만 — 쿠팡·토스·네이버·제휴 리다이렉트·GoatCounter는 안 건드림 · 아이콘·폰트·CSS = 캐시 먼저 · HTML·딜 데이터 = 네트워크 먼저(옛 가격 X, 오프라인일 때만 저장해 둔 쪽) · V = 배포(홈 내용)마다 바뀜 -> 옛 캐시 지움
+""".replace("{IV}", IV)  # 웹앱 서비스워커(최소): 같은 출처 GET만 — 쿠팡·토스·네이버·제휴 리다이렉트·GoatCounter는 안 건드림 · 아이콘·폰트·CSS = 캐시 먼저 · HTML·딜 데이터 = 네트워크 먼저(옛 가격 X, 오프라인일 때만 저장해 둔 쪽) · V = 배포(홈 내용)마다 바뀜 -> 옛 캐시 지움
 INSTALL = ('<div class="inst" id="inst" hidden><span id="instt"></span><button type="button" id="instb">📲 앱으로 설치</button><button type="button" id="instx" aria-label="닫기">✕</button></div>'
            "<script>(function(){var b=document.getElementById('inst'),t=document.getElementById('instt'),ok=document.getElementById('instb'),ev=null,ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;"
            "if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;try{if(Date.now()-(+localStorage.getItem('instx')||0)<6048e5)return}catch(e){}"

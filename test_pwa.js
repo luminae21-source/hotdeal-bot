@@ -171,22 +171,26 @@ shots, out, icons = json.loads(sys.argv[1]), sys.argv[2], sys.argv[3]
 ims = [Image.open(f).convert("RGB") for f, _ in shots]
 G, top = 24, 56
 W = sum(i.width for i in ims) + G * (len(ims) + 1)
-H = top + max(i.height for i in ims) + 150
+H = top + max(i.height for i in ims) + 190
 c = Image.new("RGB", (W, H), (226, 229, 234)); d = ImageDraw.Draw(c); f = cards.pf("Bold", 22); x = G
 for im, (_, t) in zip(ims, shots):
     d.text((x, 18), t, font=f, fill=(25, 31, 40)); c.paste(im, (x, top)); x += im.width + G
-def mask(im, kind):
+def mask(im, kind, r=.22):
     m = Image.new("L", im.size, 0); dd = ImageDraw.Draw(m)
     if kind == "c": dd.ellipse((0, 0, im.width - 1, im.height - 1), fill=255)
-    else: dd.rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=int(im.width * .22), fill=255)
+    else: dd.rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=int(im.width * r), fill=255)
     o = Image.new("RGBA", im.size, (0, 0, 0, 0)); o.paste(im, (0, 0), m); return o
+def badge(im):  # 크롬 '바로가기' 배지 자리(오른쪽 아래)
+    im = im.copy(); dd = ImageDraw.Draw(im); w = im.width; s = int(w * .34)
+    dd.ellipse((w - s, w - s, w - 1, w - 1), fill=(255, 255, 255, 255)); dd.ellipse((w - s + 3, w - s + 3, w - 4, w - 4), fill=(66, 133, 244, 255)); return im
 y = top + max(i.height for i in ims) + 24
-d.text((G, y), "아이콘 48px(폰 홈 화면 크기): 기본 · maskable(안드로이드 원형) · 애플(둥근 네모)", font=f, fill=(25, 31, 40))
-ic = [Image.open(icons + "/icon-512.png").convert("RGBA").resize((48, 48), Image.LANCZOS),
-      mask(Image.open(icons + "/icon-512-maskable.png").convert("RGBA").resize((48, 48), Image.LANCZOS), "c"),
-      mask(Image.open(icons + "/apple-touch-icon.png").convert("RGBA").resize((48, 48), Image.LANCZOS), "r")]
+d.text((G, y), "아이콘(A 레드, 폰 홈 화면 96·48px): 192 · 512 · maskable 원 · 스쿼클 · 애플 둥근 네모 · 크롬 배지 · 48px · 파비콘 32", font=f, fill=(25, 31, 40))
+z = lambda n, k=96: Image.open(icons + "/" + n).convert("RGBA").resize((k, k), Image.LANCZOS)
+ic = [z("icon-192.png"), z("icon-512.png"), mask(z("icon-512-maskable.png"), "c"), mask(z("icon-512-maskable.png"), "r", .35),
+      mask(z("apple-touch-icon.png"), "r", .2237), badge(mask(z("icon-512-maskable.png"), "r")), mask(z("icon-512-maskable.png", 48), "c"),
+      Image.open(icons + "/favicon-32.png").convert("RGBA")]
 x = G
-for im in ic: c.paste(im, (x, y + 44), im); x += 72
+for im in ic: c.paste(im, (x, y + 40 + (96 - im.height) // 2), im); x += im.width + 24
 c.save(out, optimize=True)
 `, JSON.stringify(shots), path.join(ROOT, 'cards', 'pwa_preview.png'), path.join(ROOT, 'icons')]);
     console.log('OK: 웹앱 셀프체크 통과');

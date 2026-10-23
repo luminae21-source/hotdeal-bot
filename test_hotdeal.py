@@ -5254,7 +5254,7 @@ assert 'posts[i].get("cat"))' in src39(H.threads_deals) and "cat_fill, threads, 
 assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
 assert 'print("ig publish", card(v) or "릴스", pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
 # 9-40) 웹앱(PWA, 10/23 진우 '웹앱으로 진행'): 모든 페이지 head(manifest·아이콘·theme-color·애플 웹앱·SW 등록) · manifest 필드 · sw.js(같은 출처 GET만, HTML 네트워크 먼저, 아이콘 캐시 먼저,
-#       홈 내용마다 캐시 이름) · 홈 맨 위 설치 버튼(홈만) · GoatCounter 웹앱 출처 · 아이콘 크기(브라우저 확인은 node test_pwa.js — 설치 가능·SW·오프라인·설치 버튼·캡처)
+#       홈 내용마다 캐시 이름) · 홈 맨 위 설치 버튼(홈만) · GoatCounter 웹앱 출처 · 아이콘 크기·'A 레드' 그림(브라우저 확인은 node test_pwa.js — 설치 가능·SW·오프라인·설치 버튼·캡처)
 import build_site as S40, cards as C40
 d40 = tempfile.mkdtemp(); S40.build([{"t": "2026-10-23 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://link.coupang.com/a/x", "s": 7}], d40)
 m40, sw40, ix40 = json.load(open(f"{d40}/manifest.webmanifest")), open(f"{d40}/sw.js").read(), open(f"{d40}/index.html").read()
@@ -5262,7 +5262,7 @@ assert (m40["name"], m40["short_name"], m40["start_url"], m40["scope"], m40["dis
 assert [(i["sizes"], i["purpose"]) for i in m40["icons"]] == [("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")] and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"]
 for f40 in ("index.html", "all.html", "p/0.html"):
     h40 = open(f"{d40}/{f40}").read().split("</head>")[0]
-    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico"', 'name="theme-color" content="#f4f5f7"', 'content="#101012" media="(prefers-color-scheme: dark)"',
+    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico?v=2"', 'name="theme-color" content="#f4f5f7"', 'content="#101012" media="(prefers-color-scheme: dark)"',
                                   'apple-mobile-web-app-capable', 'apple-mobile-web-app-title" content="핫딜픽"', 'apple-mobile-web-app-status-bar-style', "serviceWorker.register('/sw.js')")), f40
 assert 'id="inst"' in ix40 and ix40.index('id="inst"') < ix40.index('class="dis"') and 'id="inst"' not in open(f"{d40}/all.html").read()  # 설치 버튼 = 홈 맨 위만
 assert "u.origin!==location.origin)return" in sw40 and "r.method!=='GET'" in sw40 and "fetch(r).then(function(res){if(res.ok&&r.mode==='navigate')" in sw40 and ".catch(function(){return caches.match(r)" in sw40  # 외부 몰·제휴 X · HTML 네트워크 먼저
@@ -5272,9 +5272,25 @@ g40, S40.GC_CODE = S40.GC_CODE, "hdp"; assert S40.gc_tag().index(S40.GC_APP) < S
 assert S40.gc_tag() == "" if not g40 else True
 ic40 = C40.app_icons(f"{d40}/icons", d40); from PIL import Image as I40
 assert [I40.open(f).size for f in ic40[:6]] == [(192, 192), (512, 512), (512, 512), (180, 180), (32, 32), (16, 16)] and I40.open(f"{d40}/icons/apple-touch-icon.png").mode == "RGB"  # 애플 = 투명 X
-assert I40.open(f"{d40}/icons/icon-192.png").getpixel((2, 2))[3] == 0 and I40.open(f"{d40}/icons/icon-512-maskable.png").getpixel((2, 2)) == (*C40.LOGO_RED, 255)  # any = 빨간 원(모서리 투명) · maskable = 꽉 찬 빨강
-mk40 = I40.open(f"{d40}/icons/icon-512-maskable.png").convert("RGB"); wh40 = [(x, y) for x in range(0, 512, 4) for y in range(0, 512, 4) if mk40.getpixel((x, y))[1] > 200]
-assert wh40 and all((x - 256) ** 2 + (y - 256) ** 2 <= (0.4 * 512) ** 2 for x, y in wh40)  # maskable 글자(흰색)는 안전 영역(가운데 지름 80%) 안
+# 'A 레드'(10/23 진우 — 원 아이콘은 런처가 확대해 '딜'이 잘림): any·maskable·애플 = 같은 꽉 찬 그라데이션 정사각(투명 X), 파비콘 = '딜'만 둥근 네모
+assert open(f"{d40}/icons/icon-512.png", "rb").read() == open(f"{d40}/icons/icon-512-maskable.png", "rb").read() and all(I40.open(f).mode == "RGB" for f in ic40[:4])
+near40 = lambda a, b, t=4: all(abs(x - y) <= t for x, y in zip(a, b))
+for f40 in ic40[:4]:
+    i40 = I40.open(f40); n40 = i40.width - 1
+    assert near40(i40.getpixel((0, 0)), C40.LOGO_GRAD[0]) and near40(i40.getpixel((n40, n40)), C40.LOGO_GRAD[1]) and near40(i40.getpixel((n40, 0)), i40.getpixel((0, n40)), 6), f40  # 왼쪽 위 -> 오른쪽 아래
+mk40 = I40.open(f"{d40}/icons/icon-512.png"); px40 = [(x, y) for x in range(512) for y in range(512) if min(mk40.getpixel((x, y))) > 200]  # 흰색 = '딜'·알약
+bb40 = lambda ps: (min(x for x, _ in ps) / 512, min(y for _, y in ps) / 512, (max(x for x, _ in ps) + 1) / 512, (max(y for _, y in ps) + 1) / 512)
+dl40, pl40 = bb40([p for p in px40 if p[1] < 0.6 * 512]), bb40([p for p in px40 if p[1] >= 0.6 * 512])
+assert abs((dl40[0] + dl40[2]) / 2 - 0.5) < 0.01 and abs((dl40[1] + dl40[3]) / 2 - 0.42) < 0.01 and 0.27 < dl40[3] - dl40[1] < 0.40, dl40  # '딜' 가운데 x · 글자 상자 가운데 y 0.42
+assert all(abs(a - b) < 0.006 for a, b in zip(pl40, (0.31, 0.625, 0.69, 0.765))), pl40  # 알약 0.38 × 0.14, 가운데 (0.5, 0.695)
+assert all(0.2 <= v <= 0.8 for v in dl40 + pl40) and all((x - 255.5) ** 2 + (y - 255.5) ** 2 <= (0.4 * 512) ** 2 for x, y in px40)  # 가운데 60% 안 = maskable 안전 영역(지름 80%)·원·둥근 네모로 깎아도 안 잘림
+assert not [p for p in px40 if p[0] > 0.7 * 512 and p[1] > 0.7 * 512]  # 크롬 바로가기 배지(오른쪽 아래)에 안 가림
+pk40 = [mk40.getpixel((x, y)) for x in range(int(0.36 * 512), int(0.64 * 512)) for y in range(int(0.63 * 512), int(0.76 * 512))]
+assert sum(near40(c, C40.PICK_RED, 6) for c in pk40) > 300  # 알약 안 빨간 'pick'
+for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):
+    i40 = I40.open(f40); n40 = i40.width
+    assert i40.getpixel((0, 0))[3] == 0 and i40.getpixel((n40 // 2, n40 - 2))[3] == 255 and max(min(i40.getpixel((x, y))[:3]) for x in range(n40) for y in range(n40)) > 200, f40  # 둥근 네모(모서리 투명) + 흰 '딜'
+assert "/icons/icon-192.png?v=2" in sw40 and "/favicon.ico?v=2" in sw40 and all(i["src"].endswith("?v=2") for i in m40["icons"] + m40["shortcuts"][0]["icons"]) and 'href="/icons/apple-touch-icon.png?v=2"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
 assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
 # 9-41) 쿠팡 파트너스 API(10/23 최종 승인 — 진우가 키를 Secrets에 넣기 전 준비): 키 없으면 아무것도 안 바뀜 ·
 #       ① events·관리자 쿠팡 상품 주소 -> 딥링크(cp_links.json, events.json 그대로, 진우 단축 링크 그대로, coupa.ng도 대가성 문구) ② pid 하루 1번 검색 API -> seen cpq -> own_end

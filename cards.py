@@ -766,36 +766,45 @@ def ig_slide(design, it, n, total, out):
     return _save(im, out)
 
 
-LOGO_RED = (224, 49, 49)  # 사이트 🔥(k-hot)와 같은 빨강 — 인스타·텔레그램 프로필 '딜 / pick' 로고
+LOGO_GRAD, PICK_RED = ((255, 104, 96), (220, 34, 48)), (222, 38, 52)  # 웹앱 아이콘 'A 레드'(10/23 진우): 왼쪽 위 -> 오른쪽 아래 그라데이션 · 알약 안 'pick' 색
 
 
-def app_logo(n, bleed=False, scale=1.0, mini=False):
-    """웹앱 아이콘 1장(n×n RGBA): 빨간 원(bleed면 꽉 찬 빨간 네모 — maskable·애플) 위 흰 '딜' + 'pick'(mini = '딜'만, 16·32px 파비콘).
-    scale = 글자 묶음이 차지하는 비율(maskable은 안전 영역 80% 안). 4배로 그려 줄여서 가장자리를 매끈하게."""
+def app_logo(n, mini=False):
+    """웹앱 아이콘 1장(n×n) 'A 레드'(10/23 진우 — 원 아이콘은 런처가 확대해 '딜'이 잘림): 꽉 찬 정사각 대각선 그라데이션(any·maskable·애플 같은 그림, 모양은 런처가 깎음)
+    + 흰 '딜'(Black, 0.40n, 가운데 y 0.42n) + 흰 알약(0.38n×0.14n, 가운데 y 0.695n) 안 빨간 'pick'(Bold, 0.095n, 자간 0.006n, 가운데 y 0.69n) — 다 가운데 60% 안(maskable 안전 영역·크롬 배지 피함).
+    mini = 파비콘(16·32·48): '딜'만, 같은 그라데이션 둥근 네모(모서리 투명). 4배로 그려 줄여서 가장자리를 매끈하게."""
     k = 4
     N = n * k
-    im = Image.new("RGBA", (N, N), LOGO_RED + (255,) if bleed else (0, 0, 0, 0))
+    g = Image.linear_gradient("L").resize((N, N), Image.BILINEAR)
+    im = Image.composite(Image.new("RGBA", (N, N), LOGO_GRAD[1] + (255,)), Image.new("RGBA", (N, N), LOGO_GRAD[0] + (255,)),
+                         Image.blend(g, g.transpose(Image.TRANSPOSE), 0.5))  # (x + y) / 2 = 대각선
+    if mini:
+        m = Image.new("L", (N, N), 0)
+        ImageDraw.Draw(m).rounded_rectangle((0, 0, N - 1, N - 1), radius=N * 0.22, fill=255)
+        im.putalpha(m)
     d = ImageDraw.Draw(im)
-    if not bleed:
-        d.ellipse((0, 0, N - 1, N - 1), fill=LOGO_RED + (255,))
-    s = N * scale
-    parts = [("딜", pf("ExtraBold", int(s * (0.64 if mini else 0.48))))] + ([] if mini else [("pick", pf("Bold", int(s * 0.2)))])
-    boxes = [d.textbbox((0, 0), t, font=f) for t, f in parts]
-    gap = 0 if mini else s * 0.02
-    total = sum(b[3] - b[1] for b in boxes) + gap * (len(parts) - 1)
-    y = (N - total) / 2
-    for (t, f), b in zip(parts, boxes):
-        d.text(((N - (b[2] - b[0])) / 2 - b[0], y - b[1]), t, font=f, fill="white")
-        y += b[3] - b[1] + gap
+    f = pf("Black", int(N * (0.7 if mini else 0.40)))
+    b = d.textbbox((0, 0), "딜", font=f)
+    d.text((N / 2 - (b[0] + b[2]) / 2, N * (0.5 if mini else 0.42) - (b[1] + b[3]) / 2), "딜", font=f, fill="white")
+    if not mini:
+        w, h, cy = N * 0.38, N * 0.14, N * 0.695
+        d.rounded_rectangle((N / 2 - w / 2, cy - h / 2, N / 2 + w / 2, cy + h / 2), radius=h / 2, fill="white")
+        f, sp = pf("Bold", int(N * 0.095)), N * 0.006
+        xs = [sum(f.getlength(c) + sp for c in "pick"[:i]) for i in range(4)]
+        x0, x1 = xs[0] + f.getbbox("p")[0], xs[3] + f.getbbox("k")[2]  # 글자 잉크 기준 가운데
+        b = d.textbbox((0, 0), "pick", font=f)
+        for x, c in zip(xs, "pick"):
+            d.text((N / 2 - (x0 + x1) / 2 + x, N * 0.69 - (b[1] + b[3]) / 2), c, font=f, fill=PICK_RED)
     return im.resize((n, n), Image.LANCZOS)
 
 
 def app_icons(d="docs/icons", root="docs"):
-    """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로') -> d/: icon-192·512(any, 빨간 원), icon-512-maskable(꽉 찬 빨강, 글자는 안전 영역 80% 안),
-    apple-touch-icon(180, 꽉 찬 빨강 — iOS가 모서리를 둥글게), favicon-32·16('딜'만) + root/favicon.ico(16·32·48). -> 만든 파일 목록"""
+    """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로', 'A 레드') -> d/: icon-192·512(any)·icon-512-maskable·apple-touch-icon(180) = 같은 꽉 찬 그림(투명 X — 런처·iOS가 모양을 깎음),
+    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48). 바꾸면 build_site.ICON_V 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
     os.makedirs(d, exist_ok=True)
-    out = {f"{d}/icon-192.png": app_logo(192), f"{d}/icon-512.png": app_logo(512), f"{d}/icon-512-maskable.png": app_logo(512, True, 0.92),
-           f"{d}/apple-touch-icon.png": app_logo(180, True, 0.95).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True)}
+    big = app_logo(512).convert("RGB")
+    out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": big,
+           f"{d}/apple-touch-icon.png": app_logo(180).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True)}
     for p, im in out.items():
         im.save(p, optimize=True)
     app_logo(256, mini=True).save(f"{root}/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
