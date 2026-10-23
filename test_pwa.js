@@ -183,15 +183,18 @@ def mask(im, kind, r=.22):
 def phone(n, k=96):  # 안드로이드가 보여 주는 부분: 크롬이 maskable 안전 영역(80%)을 66/108에 맞추고 런처는 가운데 72/108만 -> 원본 0.0636~0.9364
     im = Image.open(icons + "/" + n).convert("RGBA"); a, b = round(im.width * .0636), round(im.width * .9364)
     return im.crop((a, a, b, b)).resize((k, k), Image.LANCZOS)
+def legacy(n, k=96):  # 바로가기 아이콘 = 크롬이 'any' 비트맵 그대로 -> 픽셀(Launcher3)은 흰 원 위에 0.807×0.7 ≈ 0.565로 줄여 둠(안 깎음)
+    o = Image.new("RGBA", (k, k), (0, 0, 0, 0)); ImageDraw.Draw(o).ellipse((0, 0, k - 1, k - 1), fill=(255, 255, 255, 255)); s = round(k * .565)
+    o.paste(Image.open(icons + "/" + n).convert("RGBA").resize((s, s), Image.LANCZOS), ((k - s) // 2, (k - s) // 2)); return o
 def badge(im):  # 크롬 '바로가기' 배지 = 픽셀(Launcher3) 아이콘 오른쪽 아래 0.444(ICON_BADGE_SCALE)
     im = im.copy(); dd = ImageDraw.Draw(im); w = im.width; s = round(w * .444)
     dd.ellipse((w - s, w - s, w - 1, w - 1), fill=(255, 255, 255, 255)); dd.ellipse((w - s + 3, w - s + 3, w - 4, w - 4), fill=(66, 133, 244, 255)); return im
 y = top + max(i.height for i in ims) + 24
-d.text((G, y), "아이콘(A 레드, 96·48px): 192 · 512 · 안드로이드 원 · 스쿼클 · 애플 둥근 네모 · 크롬 '바로가기' 배지(픽셀 크기 — 앱 설치는 배지 X) · 48px · 파비콘 32 · 바로가기 지금 특가·특가 대기·생필품(안드로이드 원)", font=f, fill=(25, 31, 40))
+d.text((G, y), "아이콘(A 레드, 96·48px): 192 · 512 · 안드로이드 원 · 스쿼클 · 애플 둥근 네모 · 크롬 '바로가기' 배지(픽셀 크기 — 앱 설치는 배지 X) · 48px · 파비콘 32 · 바로가기 특가·대기·생필품(파일 · 픽셀 런처 = 흰 원 안 작은 네모)", font=f, fill=(25, 31, 40))
 z = lambda n, k=96: Image.open(icons + "/" + n).convert("RGBA").resize((k, k), Image.LANCZOS)
 ic = [z("icon-192.png"), z("icon-512.png"), mask(phone("icon-512-maskable.png"), "c"), mask(phone("icon-512-maskable.png"), "r", .35),
       mask(z("apple-touch-icon.png"), "r", .2237), badge(mask(phone("icon-512-maskable.png"), "c")), mask(phone("icon-512-maskable.png", 48), "c"),
-      Image.open(icons + "/favicon-32.png").convert("RGBA")] + [mask(phone(f"sc-{k}.png"), "c") for k in ("fire", "wait", "life")]
+      Image.open(icons + "/favicon-32.png").convert("RGBA")] + [z(f"sc-{k}-96.png") for k in ("fire", "wait", "life")] + [legacy(f"sc-{k}.png") for k in ("fire", "wait", "life")]
 x = G
 for im in ic: c.paste(im, (x, y + 40 + (96 - im.height) // 2), im); x += im.width + 24
 c.save(out, optimize=True)

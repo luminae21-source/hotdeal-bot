@@ -803,7 +803,8 @@ SC_ICONS = {"fire": ("🔥", (255, 230, 218), (255, 186, 164)), "wait": ("⏳", 
 
 
 def sc_icon(ch, top, bottom, n):
-    """웹앱 바로가기(아이콘 길게 누르기 메뉴) 아이콘 n×n: 위 -> 아래 파스텔 그라데이션 꽉 찬 정사각(런처가 깎음) + 가운데 컬러 이모지(긴 변 = 0.5n — maskable 안전 영역 안)."""
+    """웹앱 바로가기(아이콘 길게 누르기 메뉴) 아이콘 n×n: 위 -> 아래 파스텔 그라데이션 꽉 찬 정사각 + 가운데 컬러 이모지(긴 변 = 0.5n).
+    shortcut: 크롬은 바로가기에 'any' 아이콘만 그대로(비트맵) 넘김 -> 픽셀 런처는 안 깎고 흰 원 안에 약 0.56로 줄여 둠(이모지 ≈ 원의 28%) — 더 크게는 진우 결정."""
     im = Image.composite(Image.new("RGB", (n, n), bottom), Image.new("RGB", (n, n), top), Image.linear_gradient("L").resize((n, n), Image.BILINEAR))
     e = emoji(ch, n // 2)
     im.paste(e, ((n - e.width) // 2, (n - e.height) // 2), e)

@@ -133,8 +133,7 @@ MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_
             "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},
                       {"src": f"/icons/icon-512-maskable.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
             "shortcuts": [{"name": n, "short_name": n[2:], "url": f"/#{k}", "icons": [{"src": f"/icons/sc-{k}-96.png{SV}", "sizes": "96x96", "type": "image/png", "purpose": "any"},
-                                                                             {"src": f"/icons/sc-{k}.png{SV}", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-                                                                             {"src": f"/icons/sc-{k}.png{SV}", "sizes": "192x192", "type": "image/png", "purpose": "maskable"}]}
+                                                                             {"src": f"/icons/sc-{k}.png{SV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}]}
                           for n, k in (("🔥 지금 특가", "fire"), ("⏳ 특가 대기", "wait"), ("🧻 생필품", "life"))]}  # 바로가기 아이콘 = cards.SC_ICONS(10/24 진우 'V1 파스텔 이모지')
 PWA_HEAD = (f'<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png{IV}">'
             f'<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png{IV}"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'

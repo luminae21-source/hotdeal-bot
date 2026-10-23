@@ -5290,8 +5290,8 @@ for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):
     i40 = I40.open(f40); n40 = i40.width
     assert i40.getpixel((0, 0))[3] == 0 and i40.getpixel((n40 // 2, n40 - 2))[3] == 255 and max(min(i40.getpixel((x, y))[:3]) for x in range(n40) for y in range(n40)) > 200, f40  # 둥근 네모(모서리 투명) + 흰 '딜'
 assert "/icons/icon-192.png?v=2" in sw40 and "/favicon.ico?v=2" in sw40 and all(i["src"].endswith("?v=2") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=2"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
-# 바로가기 아이콘 'V1 파스텔 이모지'(10/24 진우): 🔥·⏳·🧻 각자 파일(192 any·maskable + 96, ?v=) · 위 -> 아래 파스텔 꽉 찬 정사각 · 이모지 가운데, 긴 변 = 0.5n(안전 영역 안)
-assert [[(i["src"], i["sizes"], i["purpose"]) for i in x["icons"]] for x in m40["shortcuts"]] == [[(f"/icons/sc-{k}-96.png{S40.SV}", "96x96", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "maskable")] for k in ("fire", "wait", "life")]
+# 바로가기 아이콘 'V1 파스텔 이모지'(10/24 진우): 🔥·⏳·🧻 각자 파일(96·192 any — 크롬은 바로가기에 any만 씀, ?v=) · 위 -> 아래 파스텔 꽉 찬 정사각 · 이모지 가운데, 긴 변 = 0.5n
+assert [[(i["src"], i["sizes"], i["purpose"]) for i in x["icons"]] for x in m40["shortcuts"]] == [[(f"/icons/sc-{k}-96.png{S40.SV}", "96x96", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "any")] for k in ("fire", "wait", "life")]
 assert S40.SV.startswith("?v=") and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"] and [C40.SC_ICONS[k][0] for k in ("fire", "wait", "life")] == ["🔥", "⏳", "🧻"]
 sc40 = {}
 for k40, (e40, t40, b40) in C40.SC_ICONS.items():
@@ -5304,7 +5304,7 @@ for k40, (e40, t40, b40) in C40.SC_ICONS.items():
         assert abs(max(bx40[2] - bx40[0], bx40[3] - bx40[1]) - 0.5) < 0.03 and abs((bx40[0] + bx40[2]) / 2 - 0.5) < 0.02 and abs((bx40[1] + bx40[3]) / 2 - 0.5) < 0.02, (k40, n40, bx40)  # 긴 변 50%, 가운데
         assert all((x + 0.5 - c40) ** 2 + (y + 0.5 - c40) ** 2 <= (0.4 * n40) ** 2 for x, y in em40), (k40, n40)  # 원·둥근 네모로 깎아도 안 잘림
         sc40[k40, n40] = round(bx40[2] - bx40[0], 2)
-assert len({v for (k, n), v in sc40.items() if n == 192}) == 3, sc40  # 셋 다 다른 이모지(폭 🔥 0.40·⏳ 0.34·🧻 0.38 — 못 그려 🛒로 바뀌면 같아짐)
+assert len({v for (k, n), v in sc40.items() if n == 192}) == 3 and all(v < 0.45 for v in sc40.values()), sc40  # 셋 다 다른 이모지(폭 🔥 0.40·⏳ 0.34·🧻 0.38 — 못 그려 🛒(0.49)로 바뀌면 걸림)
 assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
 # 9-41) 쿠팡 파트너스 API(10/23 최종 승인 — 진우가 키를 Secrets에 넣기 전 준비): 키 없으면 아무것도 안 바뀜 ·
 #       ① events·관리자 쿠팡 상품 주소 -> 딥링크(cp_links.json, events.json 그대로, 진우 단축 링크 그대로, coupa.ng도 대가성 문구) ② pid 하루 1번 검색 API -> seen cpq -> own_end
