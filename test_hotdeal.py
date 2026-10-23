@@ -1849,7 +1849,7 @@ json.dump([{"t": f"{D9} 08:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/�
            {"t": f"{D9} 11:59", "text": "🔥 [네이버] 햇반 24개 (22,000원/무료)", "url": "https://naver.me/abc", "s": 6},
            {"t": f"{D9} 12:00", "text": "🔥 [옥션] 12시 딜 (1,000원)", "url": "https://www.auction.co.kr/p", "s": 9},
            {"t": f"{D9} 13:00", "text": "🔥 [옥션] 오후 딜 (2,000원)", "url": "https://www.auction.co.kr/q", "s": 7},
-           {"t": "2026-10-11 23:00", "text": "🔥 [쿠팡] 어제 딜 (1,000원)", "url": "https://link.coupang.com/a/y", "s": 9}], open("posts.json", "w"), ensure_ascii=False)
+           {"t": "2026-10-11 21:00", "text": "🔥 [쿠팡] 어제 딜 (1,000원)", "url": "https://link.coupang.com/a/y", "s": 9}], open("posts.json", "w"), ensure_ascii=False)
 ig9, live9, st9 = [], set(), {"v": "FINISHED"}
 def ig9_http(url, body=None, headers=None, method=None):
     ig9.append((method or "GET", url, body))
@@ -1867,9 +1867,10 @@ H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); H.http, seen, sent[:] = ig9_http, {
 H.IG_CAROUSEL, ig9h = False, H.IG_HUMAN; H.IG_HUMAN = False  # 9-1b = 한 장 카드(넘기기 끈 상태 — 되돌리기 스위치), 넘기기는 9-1e · 사람처럼(IG_HUMAN 새 디자인·지연)은 9-33
 def at9(t, step=None):
     ig9.clear(); sent.clear(); time.time = lambda: TK(f"{D9} {t}"); (step or H.ig_cards)(seen)
-at9("11:50"); assert not ig9 and not seen and not os.path.exists(f"docs/cards/{D9}_12.jpg")  # 12시 전
+at9("07:50"); assert not ig9 and not seen  # 첫 칸(8시) 전
+at9("11:50"); assert not ig9 and seen == {"igs_" + D9 + "_10": {"t": TK(f"{D9} 11:50"), "skip": 2}} and not os.path.exists(f"docs/cards/{D9}_10.jpg") and not os.path.exists(f"docs/cards/{D9}_12.jpg")  # 10시 칸: 어제 22시 뒤 ~ 10시 딜 2개 -> 건너뜀(남은 칸 6개로 하루 6번 가능 -> 채움 X)
 at9("12:05"); assert not ig9 and open(f"docs/cards/{D9}_12.jpg", "rb").read(2) == b"\xff\xd8" and not os.path.exists(f"docs/cards/{D9}_12.png") and not os.path.exists(f"docs/cards/{D9}_12")  # 만들기만(HTTP 없음), 진짜 JPEG만, 넘기기 끄면 딜 카드 X
-assert json.load(open(f"docs/cards/{D9}_12.json")) == [1, 0, 3, 2] and "igs_" + D9 + "_12" not in seen  # 0~12시 딜만(12:00·어제 딜 X), 점수·제휴 먼저
+assert json.load(open(f"docs/cards/{D9}_12.json")) == [1, 0, 3, 2] and "igs_" + D9 + "_12" not in seen  # 건너뛴 10시 칸 딜도 다음 칸으로(어제 22시 뒤 ~ 12시 전 — 12:00·어제 21시 딜 X), 점수·제휴 먼저
 at9("12:19"); assert [m for m, u, b in ig9] == ["HEAD"] and "igs_" + D9 + "_12" not in seen  # 사이트 배포 전 -> 다음 실행에
 live9.add(f"{D9}_12.jpg"); at9("12:33")
 (m, u, b), = [x for x in ig9 if x[0] == "POST"]
@@ -1879,20 +1880,21 @@ assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"] and S9.card_stems("docs"
 at9("12:34", H.ig_publish); assert not ig9 and "igc_IMG1" in seen  # 만든 실행엔 발행 X(사이트 먼저) — 상태 조회도 그 뒤(10/23 그래프 API 호출 줄이기) -> 다음 실행에
 cap = b["caption"]
 assert cap.startswith(H.NAVER_NOTE + "\n" + H.DISCLOSURE + "\n" + H.AFF_NOTE + "\n\n10월 12일 낮 12시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다, 네이버·올영 먼저), 번호 줄 = 카드 순서·가격 꼬리 뺌
-assert "맨 위 '10월 12일 낮 12시 카드 딜'에서 번호를 누르면 바로 구매 페이지" in cap and cap.endswith("#핫딜 #특가 #핫딜픽 #생필품 #화장품") and "#최저가" not in cap and len(cap) <= 2200
+assert "맨 위 '10월 12일 낮 12시 카드 딜'에서 번호를 누르면 바로 구매 페이지" in cap and cap.endswith("#핫딜 #핫딜픽 #생필품 #화장품 #장바구니") and "#최저가" not in cap and len(cap) <= 2200
+assert H.ig_tags([], 4) == "#핫딜 #핫딜픽 #가성비템 #쟁여템 #장바구니" and len({H.ig_tags([], h // 2) for h in H.IG_HOURS}) == 8  # 10/23 진우 '해시태그 세트도 칸마다 조금씩 다르게' — 기본 2 + 카테고리 + 칸마다 돌린 채움
 at9("12:47"); assert not ig9  # 회차마다 1번
 sv9 = seen; seen = {}; at9("12:47"); assert not ig9; seen = sv9  # seen 캐시를 잃어도 기록(ig.json, 커밋됨)에 있으면 다시 안 올림
-seen9 = dict(seen); seen = {}; at9("15:01"); assert not ig9 and not seen; seen = seen9  # 3시간 지나면 그 회차는 안 함(낮에 몰아 X)
+seen9 = dict(seen); seen = {}; at9("14:01"); assert not ig9 and list(seen) == ["igs_" + D9 + "_14"]; seen = seen9  # 2시간 지나면 그 회차는 안 함(다음 칸 — 낮에 몰아 X)
 at9("18:05"); assert not ig9 and seen["igs_" + D9 + "_18"]["skip"] == 2 and not os.path.exists(f"docs/cards/{D9}_18.jpg")  # 12~18시 딜 2개 -> 건너뜀
 shutil.copy(f"docs/cards/{D9}_12.jpg", f"docs/cards/{D9}.jpg"); open(f"docs/cards/{D9}.png", "wb").write(b"p"); live9.add(f"{D9}.jpg")
 json.dump([4, 1, 0, 5, 2, 3], open(f"docs/cards/{D9}.json", "w"))  # 21시 하루 카드(모아보기가 만듦)
-at9("20:59"); assert not [x for x in ig9 if x[0] == "POST"]
-at9("21:20"); (m, u, b), = [x for x in ig9 if x[0] == "POST"]
+at9("21:59"); assert not [x for x in ig9 if x[0] == "POST"] and seen["igs_" + D9 + "_20"]["skip"] == 2  # 인스타엔 22시에(10/23 진우) · 20시 칸도 12~20시 딜 2개(채울 진우 글 없음) -> 건너뜀
+at9("22:20"); (m, u, b), = [x for x in ig9 if x[0] == "POST"]
 assert b["image_url"] == f"https://hotdealpick.kr/cards/{D9}.jpg" and "10월 12일 오늘의 핫딜 모음\n\n1. [옥션] 12시 딜\n" in b["caption"] and "맨 위 '10월 12일 카드 딜'에서 번호를 누르면" in b["caption"]
 assert b["caption"].count("\n") and b["caption"].split("\n\n")[2].count("\n") == 4  # 번호 줄은 카드에 든 5개만(CARD_N)
 # 발행: 사이트 맨 위 카드 = 인스타에 올라간 카드
 assert S9.card_stems("docs") == [f"{D9}_12", D9] and "📸 10월 12일 카드 딜" in S9.card_picks(json.load(open("posts.json")), "docs")  # 발행 전에도 사이트 먼저(컨테이너 만든 실행)
-at9("21:34", H.ig_publish)
+at9("22:34", H.ig_publish)
 assert [u.rsplit("/", 1)[-1] for m, u, b in ig9 if u.endswith("media_publish")] == ["media_publish"] * 2 and set(json.load(open(H.IG_LIVE))) == {f"{D9}_12", D9}
 assert [p["text"] for m, p in sent] == ["📸 인스타 자동 게시 완료 — 낮 12시 카드 (instagram.com/hotdealpick.kr)", "📸 인스타 자동 게시 완료 — 오늘 카드 (instagram.com/hotdealpick.kr)"]
 pk9 = S9.card_picks(json.load(open("posts.json")), "docs")
@@ -1901,10 +1903,10 @@ assert pk9.split("<details>")[0].count('class="pick"') == 5 and pk9.split("<deta
 open(f"docs/cards/{D9}_18.jpg", "wb").write(b"j"); json.dump([5], open(f"docs/cards/{D9}_18.json", "w")); assert S9.card_stems("docs") == [f"{D9}_12", D9]  # 인스타에 안 올라간 카드는 사이트에 안 보임
 seen.update({"igc_A": {"t": 1, "card": f"{D9}_18"}}); st9["v"] = "PUBLISHED"; at9("21:48", H.ig_publish)
 assert not [1 for m, u, b in ig9 if u.endswith("media_publish")] and "igc_A" not in seen and f"{D9}_18" in json.load(open(H.IG_LIVE)) and sent[-1][1]["text"].startswith("📸 인스타 자동 게시 완료 — 저녁 6시 카드")  # 이미 발행됨 = 게시 완료(다시 발행 X)
-st9["v"] = "FINISHED"; seen.update({"igpub_20261012": {"t": 1, "n": 5}, "igc_B": {"t": 1}}); at9("22:00", H.ig_publish); assert "igc_B" in seen and not sent  # 하루 5개 상한 -> 다음 날
+st9["v"] = "FINISHED"; seen.update({"igpub_20261012": {"t": 1, "n": 8}, "igc_B": {"t": 1}}); at9("22:00", H.ig_publish); assert "igc_B" in seen and not sent and H.IG_DAY_MAX == 8  # 하루 8개 상한(10/23 진우 5 -> 8) -> 다음 날
 seen["igpub_20261012"]["n"], st9["spam"] = 0, True  # 10/23 진우: 발행 오류(2207051 포함) -> ig_landed 확인 -> 안 올라감 = 다음 실행에 상태만(다시 발행 X) · 예외·쉼 X
 at9("22:14", H.ig_publish); assert seen["igc_B"]["fail"] and "ig_hold" not in seen and len([1 for m, u, b in ig9 if u.endswith("media_publish")]) == 1 and not sent
-at9("22:28", H.ig_publish); assert not [1 for m, u, b in ig9 if u.endswith("media_publish")] and "igc_B" not in seen and "ig_hold" not in seen and len(seen["igslow"]["f"]) == 1 and not sent  # 그래도 FINISHED = 진짜 실패 1번 = 그 회차만 건너뜀
+at9("22:28", H.ig_publish); assert not [1 for m, u, b in ig9 if u.endswith("media_publish")] and "igc_B" not in seen and "ig_hold" not in seen and len(seen["igfail"]["f"]) == 1 and not sent  # 그래도 FINISHED = 진짜 실패 1번 = 그 회차만 건너뜀
 seen["igc_B2"] = {"t": 1, "card": f"{D9}_18", "fail": "x"}; seen["igk_K"] = {"t": 1, "kids": ["k1"]}; at9("22:42", H.ig_publish)  # 진짜 실패 하루 2번 = 24시간 쉼 + 관리봇 알림, 남은 컨테이너·조각은 버림
 assert seen["ig_hold"] > TK(f"{D9} 22:42") + 86000 and not [k for k in seen if k.startswith(("igc_", "igk_"))] and sent[-1][1]["text"].startswith("⚠️ 인스타 진짜 실패(게시 안 됨) 오늘 2번 — 24시간 쉼, 다시 시도 X"), sent
 at9("22:56"); assert not ig9  # 24시간 인스타 쉼(카드 만들기·올리기 X)
@@ -1925,12 +1927,12 @@ assert not [k for k in seen if k.startswith("igc_")] and not [1 for m, u, b in i
 assert [p["text"] for m, p in sent] == ["📸 인스타 자동 게시 완료 — 저녁 6시 카드 (instagram.com/hotdealpick.kr)", "📸 인스타 자동 게시 완료 (instagram.com/hotdealpick.kr)"]  # 늦게 올라감 = 게시 완료(예전 릴스 기록 = 시각만)
 st9.update(v="FINISHED", e500=True); seen = {"igc_D": {"t": 1, "card": f"{D9}_18"}}
 at9("22:50", H.ig_publish); st9.pop("e500"); at9("23:04", H.ig_publish)
-assert "igc_D" not in seen and not [1 for m, u, b in ig9 if u.endswith("media_publish")] and len(seen["igslow"]["f"]) == 1 and "발행" in seen["igslow"]["f"][0] and not sent  # 그래도 안 올라감 = 진짜 실패(다시 발행 X)
+assert "igc_D" not in seen and not [1 for m, u, b in ig9 if u.endswith("media_publish")] and len(seen["igfail"]["f"]) == 1 and "발행" in seen["igfail"]["f"][0] and not sent  # 그래도 안 올라감 = 진짜 실패(다시 발행 X)
 st9["v"], seen = "ERROR", {"igc_E": {"t": 1, "card": f"{D9}_18"}}
-at9("23:10", H.ig_publish); assert not [k for k in seen if k.startswith("igc_")] and "처리 ERROR" in seen["igslow"]["f"][0] and not sent  # 처리 실패 = 진짜 실패(예외 X, 1번째는 알림 X)
+at9("23:10", H.ig_publish); assert not [k for k in seen if k.startswith("igc_")] and "처리 ERROR" in seen["igfail"]["f"][0] and not sent  # 처리 실패 = 진짜 실패(예외 X, 1번째는 알림 X)
 # 컨테이너 만들기 실패: 다시 시도 X(10/23 진우) — 진짜 실패, 그 회차 끝(안 올라간 컨테이너는 안 보임)
 st9.update(v="FINISHED", mk500=True); seen = {}; json.dump({}, open(H.IG_LIVE, "w"))
-at9("12:40"); assert seen["igs_" + D9 + "_12"]["fail"] == H.IG_TRIES and len(seen["igslow"]["f"]) == 1 and "컨테이너" in seen["igslow"]["f"][0] and not sent
+at9("12:40"); assert seen["igs_" + D9 + "_12"]["fail"] == H.IG_TRIES and len(seen["igfail"]["f"]) == 1 and "컨테이너" in seen["igfail"]["f"][0] and not sent
 at9("12:54"); assert not ig9 and not json.load(open(H.IG_LIVE))
 st9.pop("mk500"); seen = {}; at9("13:36")
 assert len([1 for m, u, b in ig9 if m == "POST"]) == 1 and seen["igs_" + D9 + "_12"] == {"t": TK(f"{D9} 13:36")} and list(json.load(open(H.IG_LIVE))) == [f"{D9}_12"]  # 실패 없으면 그대로 1번
@@ -1972,13 +1974,13 @@ at9("12:47", H.ig_publish); assert not ig9  # 묶은 실행엔 발행 X(상태�
 at9("13:01", H.ig_publish); assert [b for m, u, b in ig9 if u.endswith("media_publish")] == [{"creation_id": "IMG%d" % (n0 + 6)}] and len(ig9) == 2 and "낮 12시 카드" in sent[-1][1]["text"]  # 묶음 상태 1번 + 발행(묶음만 1번)
 at9("13:15"); assert not ig9  # 회차 끝
 # 마지막 조각 처리 중 -> 묶음은 다음 실행에(시간 창 지나도) / 조각 실패·1시간 넘게 처리 중 = 진짜 실패(버림, 다시 X, 예외 X)
-seen, st9["v"] = {}, "IN_PROGRESS"; json.dump({}, open(H.IG_LIVE, "w")); n0 = st9.get("n", 0); at9("14:50")
+seen, st9["v"] = {}, "IN_PROGRESS"; json.dump({}, open(H.IG_LIVE, "w")); n0 = st9.get("n", 0); at9("13:50")
 assert len([1 for m, u, b in ig9 if m == "POST"]) == 5 and seen["igk_" + D9 + "_12"]["kids"] == [f"IMG{n0 + n}" for n in range(1, 6)] and not [k for k in seen if k.startswith("igc_")]
-at9("15:04"); assert not [1 for m, u, b in ig9 if m == "POST"] and "igk_" + D9 + "_12" in seen  # 처리 중 = 기다림
-st9["v"] = "FINISHED"; at9("15:18"); assert [b["media_type"] for m, u, b in ig9 if m == "POST"] == ["CAROUSEL"] and "igk_" + D9 + "_12" not in seen and "igc_IMG%d" % (n0 + 6) in seen
+at9("14:04"); assert not [1 for m, u, b in ig9 if m == "POST"] and "igk_" + D9 + "_12" in seen  # 처리 중 = 기다림(다음 칸 시간이어도)
+st9["v"] = "FINISHED"; at9("14:18"); assert [b["media_type"] for m, u, b in ig9 if m == "POST"] == ["CAROUSEL"] and "igk_" + D9 + "_12" not in seen and "igc_IMG%d" % (n0 + 6) in seen
 for st, t in (("ERROR", "15:30"), ("IN_PROGRESS", "16:11")):
     seen, st9["v"] = {"igk_" + D9 + "_12": {"t": TK(f"{D9} 15:10"), "kids": ["K1", "K2"]}}, st
-    at9(t); assert not [k for k in seen if k.startswith("igk_")] and not [1 for m, u, b in ig9 if m == "POST"] and len(seen["igslow"]["f"]) == 1 and "넘기기" in seen["igslow"]["f"][0] and not sent, seen
+    at9(t); assert not [k for k in seen if k.startswith("igk_")] and not [1 for m, u, b in ig9 if m == "POST"] and len(seen["igfail"]["f"]) == 1 and "넘기기" in seen["igfail"]["f"][0] and not sent, seen
 seen, st9["v"] = {"igk_" + D9 + "_12": {"t": TK(f"{D9} 15:10"), "kids": ["K1"]}}, "IN_PROGRESS"; at9("16:09"); assert "igk_" + D9 + "_12" in seen  # 1시간 안이면 기다림
 def ig9k_http(url, body=None, headers=None, method=None):  # 조각마다 다른 상태
     if "?fields=status_code" in url and url.split("?")[0].rsplit("/", 1)[-1] in st9.get("per", {}):
@@ -2692,7 +2694,7 @@ sent.clear(); H.ig_publish(seen); assert "igc_R1" in seen and not sent and not a
 st[0] = "FINISHED"; H.ig_publish(seen)
 assert ic[-1][0].endswith("/178/media_publish") and ic[-1][1] == {"creation_id": "R1"} and "igc_R1" not in seen and sent[-1][1]["text"] == "📸 인스타 자동 게시 완료 — 오늘 릴스 (instagram.com/hotdealpick.kr)"
 st[0], seen = "ERROR", {"igc_C2": {"t": 1, "kind": "reel"}}; sent.clear()
-H.ig_publish(seen); assert not [k for k in seen if k.startswith("igc_")] and "릴스 처리 ERROR" in seen["igslow"]["f"][0] and not sent  # 처리 실패 = 진짜 실패(다시 안 봄·예외 X, 1번째는 알림 X — 10/23)
+H.ig_publish(seen); assert not [k for k in seen if k.startswith("igc_")] and "릴스 처리 ERROR" in seen["igfail"]["f"][0] and not sent  # 처리 실패 = 진짜 실패(다시 안 봄·예외 X, 1번째는 알림 X — 10/23)
 seen = {"reel_2026-10-06": {"t": 1, "cap": "x"}, "ig_hold": 1791291600 + 3600}; ic[:] = []; st[:] = ["FINISHED"]; H.ig_reel(seen); assert not ic  # 스팸 의심 쉼
 open("docs/reels/2026-10-03.mp4", "wb").write(b"0"); H.prune_slides(1791291600); assert sorted(os.listdir("docs/reels")) == ["2026-10-06.mp4"]  # 2일 지난 영상 정리
 H.bgm = bg; os.remove("music.json"); shutil.rmtree("docs/reels")
@@ -4827,7 +4829,7 @@ assert "igc_K1" not in s33 and "ig_hold" not in s33 and s33["igpub_20261101"]["n
 g33["cap"], g33["st"] = None, "FINISHED"; s33 = {"igc_K1": {"t": TK("2026-11-01 21:00"), "card": "2026-11-01"}}; t33.clear()
 H.ig_publish(s33); assert "2207051" in s33["igc_K1"]["fail"] and "ig_hold" not in s33 and not t33, s33  # 10/23: 안 올라간 2207051 = 쉼·예외 X, 다음 실행에 상태만(다시 발행 X)
 c33.clear(); time.time = lambda: TK("2026-11-01 21:44"); H.ig_publish(s33)
-assert "igc_K1" not in s33 and "ig_hold" not in s33 and [m for _, m in c33].count("POST") == 0 and len(s33["igslow"]["f"]) == 1 and not t33, (s33, c33)  # 그래도 안 올라감 = 진짜 실패 1번(그 회차만 건너뜀)
+assert "igc_K1" not in s33 and "ig_hold" not in s33 and [m for _, m in c33].count("POST") == 0 and len(s33["igfail"]["f"]) == 1 and not t33, (s33, c33)  # 그래도 안 올라감 = 진짜 실패 1번(그 회차만 건너뜀)
 H.IG_AUTO, H.IG_LIVE = sv33b; shutil.rmtree("igl33")
 # 인스타 그래프 API 호출 수(실행마다 로그 'ig api N calls'): 진짜 http()가 인스타 주소만 셈
 class R33:
@@ -4839,7 +4841,7 @@ import importlib.util as iu33
 sp33 = iu33.spec_from_file_location("hd33", H.__file__); hd33 = iu33.module_from_spec(sp33); sp33.loader.exec_module(hd33)  # 하네스가 바꾼 http 말고 진짜 http
 uo33 = urllib.request.urlopen; urllib.request.urlopen = lambda req, timeout=30: R33()
 hd33.http(hd33.IG + "/178/media?fields=id&limit=1"); hd33.http("https://api.telegram.org/botx/getMe"); hd33.http(hd33.IG + "/c1?fields=status_code")
-urllib.request.urlopen = uo33; assert hd33.RUN["igc"] == 2 and 'print("ig api", RUN["igc"], "calls")' in inspect.getsource(H.main)
+urllib.request.urlopen = uo33; assert hd33.RUN["igc"] == 2 and 'print("ig api", RUN["igc"], "calls · 오늘", d["n"])' in inspect.getsource(H.main) and 'time.strftime("igapi_%Y%m%d"' in inspect.getsource(H.main)  # 실행당 + 하루 합계(KST, README 점검 표)
 shutil.rmtree("docs/cards/igt33")
 (H.ai_json, H.http, H.tg, H.POSTS, H.IG_TEST, H.IG_TEST_DIR, time.time, H.time.sleep, ie33) = sv33
 for k33, v33 in ie33.items():
@@ -4850,7 +4852,8 @@ for f33x in ("posts33.json", "igt33.txt"):
 #       텔레그램·Threads·사이트 카드는 그대로 · 사진 = 몰 상품 이미지만(없으면 상품 종류 글자 칸) · 표지 문구·칩 순서 회차마다 · IG_HUMAN(= IG_AUTO, 지금 꺼짐) 때 docs/cards/igv/에 한 벌
 import cards as C34
 from PIL import Image as I34
-assert [H.ig_design(f"2026-10-{d}") for d in (22, 23, 24, 25)] == ["A", "B", "P", "A"]  # 10/23 진우 '파스텔 A 표지도 좋다' — A 남색 -> B 핑크 -> P 파스텔
+assert [H.ig_design(f"2026-10-{d}", 8) for d in (22, 23, 24, 25)] == ["A", "B", "P", "A"]  # 10/23 진우 '파스텔 A 표지도 좋다' — A 남색 -> B 핑크 -> P 파스텔
+assert "".join(H.ig_design("2026-10-23", h) for h in H.IG_HOURS) == "BPABPABP"  # 10/23 하루 6~8번: 칸마다 돌림(붙은 칸끼리 같은 표지 X), 날마다 첫 칸이 밀림
 assert (H.ig_kind("도브 바디워시 1000ml 3개"), H.ig_kind("카누 미니 마일드/다크 아메리카노 240T"), H.ig_kind("휴지"), H.ig_kind("1000ml")) == ("바디워시", "아메리카노", "휴지", "")
 L34 = "아주 아주 긴 상품 이름 프리미엄 대용량 고농축 세탁세제 리필 3.2L 4개 + 계량컵 증정 한정 기획 세트 구성"
 os.makedirs("t34", exist_ok=True); I34.new("RGB", (300, 500), (200, 210, 230)).save("t34/ph.jpg"); open("t34/bad.jpg", "w").write("x")
@@ -4906,15 +4909,15 @@ def http34(url, body=None, headers=None, method=None):
 json.dump(P34, open("posts34.json", "w"), ensure_ascii=False); os.makedirs("docs/cards", exist_ok=True); I34.new("RGB", (10, 10)).save("docs/cards/2026-11-07.jpg")
 H.http, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides = http34, "posts34.json", True, True, "ig34/ig.json", (lambda now: None)
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
-s34 = {}; time.time = lambda: TK("2026-11-07 21:05"); H.ig_cards(s34)
+s34 = {}; time.time = lambda: TK("2026-11-07 22:05"); H.ig_cards(s34)
 assert sorted(os.listdir("docs/cards/igv/2026-11-07")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "cover.jpg"] and not c34  # 이번 실행 = 한 벌만(인스타 X)
-cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((20, 20)); assert H.ig_design("2026-11-07") == "B" and max(abs(a - b) for a, b in zip(cv34, C34.PAPER)) < 10  # 11/7 = 10/22에서 16일 = A
-time.time = lambda: TK("2026-11-07 21:12"); H.ig_cards(s34); assert not c34  # 21:00 + 15~20분 전
-time.time = lambda: TK("2026-11-07 21:25"); H.ig_cards(s34)
+cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((20, 20)); assert H.ig_design("2026-11-07") == "P" and max(abs(a - b) for a, b in zip(cv34, C34.LMIST)) < 10  # 11/7 22시 칸 = 10/22에서 16일 + 8번째 칸 = P
+time.time = lambda: TK("2026-11-07 22:12"); H.ig_cards(s34); assert not c34  # 22:00 + 15~20분 전(하루 카드 = 인스타 22시, 10/23 진우)
+time.time = lambda: TK("2026-11-07 22:25"); H.ig_cards(s34)
 imgs34 = [b["image_url"] for u, b, m in c34 if m == "POST" and b.get("is_carousel_item")]
 assert imgs34 == [f"{H.SITE}cards/igv/2026-11-07/{f}" for f in ("cover.jpg", "01.jpg", "02.jpg", "03.jpg", "04.jpg")], imgs34  # 사이트 하루 카드(cards/2026-11-07.jpg) X
-assert not [1 for u, b, m in c34 if b and b.get("media_type") == "CAROUSEL"] and s34["igslow"]["since"] == "2026-11-07"  # 묶음은 다음 실행에(조각 만든 실행엔 상태 X) · seen에 기록 없음 = 오늘부터 느린 시작(12·21시)
-c34.clear(); time.time = lambda: TK("2026-11-07 21:39"); H.ig_cards(s34)
+assert not [1 for u, b, m in c34 if b and b.get("media_type") == "CAROUSEL"] and s34["igday"]["d"] == "2026-11-07" and len(s34["igday"]["ti"]) == 1  # 묶음은 다음 실행에(조각 만든 실행엔 상태 X) · 표지 제목 = 그날 기록(안 겹치게)
+c34.clear(); time.time = lambda: TK("2026-11-07 22:39"); H.ig_cards(s34)
 cap34 = next(b["caption"] for u, b, m in c34 if m == "POST" and b.get("media_type") == "CAROUSEL")
 assert cap34.split("\n\n")[0].startswith(H.NAVER_NOTE) and cap34.split("\n\n")[1].split("\n")[0] in ("휴지 떨어진 집이면 지금 쟁여도 됨", "커피 매일 마시면 개당 가격 보고 고르기") or len(cap34.split("\n\n")[1].split("\n")) in (2, 3), cap34  # 대가성 문구 -> 사람 멘트
 (H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, tk34, uid34) = sv34
@@ -5117,15 +5120,14 @@ assert '"tone": tone}} for p in good' in inspect.getsource(H.main) and 'tone_kee
 assert '**({"tone": p["tone"]} if p and p.get("tone") else {})' in inspect.getsource(H.metrics_rows)
 s36i = {}; H.ai_json = lambda prompt, props: {"lines": []}; H.ig_lines(s36i, []); n36 = s36i["ighum"]["next"]; H.ig_human(s36i, [])
 assert s36i["ighum"]["tone"] == n36 and "next" not in s36i["ighum"], s36i  # 상품 장 멘트·캡션 같은 말투(다음 게시물은 다시 뽑음)
-# 인스타 느린 시작(IG_SLOW): 10/23~25 = 12·21시 → 진짜 실패 없으면 10/26부터 12·18·21시 · 진짜 실패 = 다음 날부터 다시 3일 · 하루 2번 = 24시간 쉼 + 알림 · 10/23 전 날짜 = 예전대로
-s36g = {}; assert H.ig_hours(s36g, "2026-10-22") == (12, 18, 21) and not s36g
-assert H.ig_hours(s36g, "2026-10-23") == (12, 21) and s36g["igslow"]["since"] == "2026-10-23" and H.ig_hours(s36g, "2026-10-25") == (12, 21) and H.ig_hours(s36g, "2026-10-26") == (12, 18, 21)
-al36 = []; H.tg = lambda m, **p: al36.append(p["text"]) or {"message_id": 1}
-H.ig_fail(s36g, TK("2026-10-26 12:30"), "2026-10-26_12 컨테이너 x"); assert s36g["igslow"]["since"] == "2026-10-27" and H.ig_hours(s36g, "2026-10-29") == (12, 21) and H.ig_hours(s36g, "2026-10-30") == (12, 18, 21)
-assert "ig_hold" not in s36g and not al36  # 1번째 = 그 회차만 건너뜀(알림 X)
+# 인스타 하루 6~8번(10/23 진우 — 첫 3일 램프 취소): 08~20시 2시간마다 + 22시 하루 카드 · 진짜 실패 = 그 회차만 건너뜀 · 하루 2번 = 24시간 쉼 + 알림
+assert H.IG_HOURS == (8, 10, 12, 14, 16, 18, 20, 22) and not hasattr(H, "IG_SLOW") and not hasattr(H, "ig_hours") and set(S.SLOT_NAMES) == {f"{h:02d}" for h in H.IG_SLOTS} and H.IG_DAY_MIN == 6
+s36g = {}; al36 = []; H.tg = lambda m, **p: al36.append(p["text"]) or {"message_id": 1}
+H.ig_fail(s36g, TK("2026-10-26 12:30"), "2026-10-26_12 컨테이너 x")
+assert "ig_hold" not in s36g and not al36 and s36g["igfail"]["f"] == ["2026-10-26 2026-10-26_12 컨테이너 x"]  # 1번째 = 그 회차만 건너뜀(알림 X)
 s36g.update(igc_X={"t": 1}, igk_Y={"t": 1, "kids": ["k"]}); H.ig_fail(s36g, TK("2026-10-26 21:30"), "2026-10-26 발행 y")
 assert s36g["ig_hold"] == TK("2026-10-26 21:30") + 86400 and not [k for k in s36g if k.startswith(("igc_", "igk_"))] and "오늘 2번 — 24시간 쉼" in al36[0], al36
-H.ig_fail(s36g, TK("2026-10-27 12:30"), "z"); assert len(s36g["igslow"]["f"]) == 1 and len(al36) == 1  # 날이 바뀌면 다시 셈
+H.ig_fail(s36g, TK("2026-10-27 12:30"), "z"); assert len(s36g["igfail"]["f"]) == 1 and len(al36) == 1 and "느린 시작" not in al36[0]  # 날이 바뀌면 다시 셈
 assert H.ig_err(type("E", (Exception,), {"body": '{"error":{"message":"spam","code":4,"error_subcode":2207051}}'})()) == "spam (4/2207051)"
 H.tg, H.ai_json = sv36[5:]
 # db939ec93 리뷰 고침: 상품명 = 개수 지킴(6개+·1+1·괄호 속 30롤)·모델명·천 단위 쉼표 그대로, 낱말 임의로 안 뺌 · ⏰ 조건 = 카드·페이·와우쿠폰도, 길면 짧게, 적립·배송 조건 X
@@ -5149,4 +5151,42 @@ o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50m
 assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
 H.ai_voice, H.random, H.TOSS_NO_CMP = sv36v
 assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and '"t": now, "card": stem}  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
+# 9-37) 인스타 하루 6~8번(10/23 진우): 칸 = 앞 칸 뒤 새 딜(어제 22시 하루 카드 뒤부터, 건너뛴 칸 딜은 다음 칸으로) · 딜 3개 밑이라 하루 6번 밑이 되는 칸 = 진우 🔥 특가 중·👍 꾸준템 카드로 채움(종류 번갈아)
+#       · 그날 표지 제목 안 겹침(밤·퇴근 말은 18시부터) · 채움 캡션 = '특가 모아보기' + 가격 시점 줄
+D37, own37 = "2026-11-20", lambda n, **k: {"t": f"2026-11-18 20:{n:02d}", "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n진우 상품 {n}\n9,900원", "url": f"https://link.coupang.com/a/o{n}", "own": 1, **k}
+P37 = [{"t": "2026-11-19 21:30", "text": "🔥 [쿠팡] 어제 밤 딜A (1,000원)", "url": "https://link.coupang.com/a/1", "s": 5},
+       {"t": "2026-11-19 22:30", "text": "🔥 [쿠팡] 어제 밤 딜B (1,000원)", "url": "https://link.coupang.com/a/2", "s": 5},
+       {"t": f"{D37} 07:00", "text": "🔥 [쿠팡] 아침 딜 (1,000원)", "url": "https://link.coupang.com/a/3", "s": 6},
+       {"t": f"{D37} 09:00", "text": "🔥 [쿠팡] 오전 딜 (1,000원)", "url": "https://link.coupang.com/a/4", "s": 4},
+       own37(1, st="hot"), own37(2, st="hot"), own37(3, st="hot"), own37(4, st="hot"), {**own37(4, st="hot"), "t": "2026-11-18 21:00"},  # 같은 url = 최근 글 1개
+       own37(5, st="wait", stdy=1), own37(6, st="wait", stdy=1), own37(7, st="out", stdy=1), own37(8, st="hot", stdy=1), own37(9, st="wait"), own37(10, st="wait", stdy=1)]
+for f in [f for f in os.listdir("docs/cards") if f.startswith(D37)]: os.remove(f"docs/cards/{f}")
+assert [i for i, _ in H.slot_deals(P37, D37, 8)] == [2, 1] and [i for i, _ in H.slot_deals(P37, D37, 10)] == [2, 1, 3]  # 어제 22시 뒤 ~ 그 칸 전(어제 21:30 X), 점수 순
+json.dump([2], open(f"docs/cards/{D37}_08.json", "w")); assert [i for i, _ in H.slot_deals(P37, D37, 10)] == [1, 3] and H.ig_used(D37) == {2}  # 앞 칸 카드에 든 딜 X
+assert [(k, [i for i, _ in g]) for k, g in (H.ig_fill(P37, D37), H.ig_fill(P37, D37, "hot"))] == [("hot", [12, 8, 6, 5, 4]), ("stdy", [14, 12, 10, 9])]  # url마다 최근 글 · 직전과 다른 종류 먼저 · 일시 품절 X
+json.dump([1, 3, 8], open(f"docs/cards/{D37}_10.json", "w")); assert [i for i, _ in H.ig_fill(P37, D37)[1]] == [12, 6, 5, 4] and H.ig_fill(P37[:6], D37) == (None, [])  # 오늘 카드에 든 상품 X · 둘 다 3개 밑 = 못 채움
+sv37 = (H.POSTS, H.IG_LIVE, H.IG_CAROUSEL, H.IG_AUTO, H.prune_slides, time.time, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"))
+json.dump(P37, open("posts37.json", "w"), ensure_ascii=False)
+H.POSTS, H.IG_LIVE, H.IG_CAROUSEL, H.IG_AUTO, H.prune_slides = "posts37.json", "ig37/ig.json", False, True, (lambda now: None)
+H.E.update(IG_TOKEN="pt", IG_USER_ID="178"); time.time = lambda: TK(f"{D37} 16:05")
+s37 = {f"igs_{D37}_{h}": {"t": 1} for h in ("10", "12", "14")}; H.ig_cards(s37)
+assert s37[f"igs_{D37}_16"]["skip"] == 0 and not os.path.exists(f"docs/cards/{D37}_16.jpg")  # 3번 + 남은 칸 3개 = 하루 6번 가능 -> 채움 X, 건너뜀
+s37 = {f"igs_{D37}_{h}": {"t": 1} for h in ("12", "14")}; s37[f"igs_{D37}_08"] = {"t": 1, "skip": 1}; H.ig_cards(s37)  # 2번 + 남은 3 = 5 -> 채움
+assert s37[f"igf_{D37}_16"]["k"] == "hot" and json.load(open(f"docs/cards/{D37}_16.json")) == [12, 6, 5, 4] and f"igs_{D37}_16" not in s37
+c37 = H.ig_caption(s37, f"{D37}_16")
+assert "\n\n11월 20일 오후 4시 특가 모아보기\n\n1. " in c37 and "⏰ 카드 가격은 처음 올린 때 기준 · 지금 가격은 링크에서 확인" in c37 and "맨 위 '11월 20일 오후 4시 카드 딜'" in c37
+assert "특가 모아보기" not in H.card_caption(f"{D37}_10")[1] and "\n\n11월 20일 오전 10시 핫딜\n\n" in H.card_caption(f"{D37}_10")[1]
+s37[f"igs_{D37}_16"] = {"t": 1}; time.time = lambda: TK(f"{D37} 18:05"); H.ig_cards(s37)
+assert s37[f"igf_{D37}_18"]["k"] == "stdy" and json.load(open(f"docs/cards/{D37}_18.json")) == [14, 10, 9]  # 다음 채움 = 👍(직전 🔥) · 오늘 카드에 든 상품 X
+ti37, rc37 = [], (H.ig_items, C34.ig_cover, C34.ig_slide)
+H.ig_items, C34.ig_cover, C34.ig_slide = (lambda seen, ps, photos=True: [{}] * len(ps)), (lambda design, chips, date_text, title, out, sub="": ti37.append((design, title))), (lambda *a: None)
+s37 = {}
+for h in H.IG_HOURS: H.ig_set(s37, D37, P37[:3], "x37", h=h)
+assert len({t for _, t in ti37}) == 8 and not [t for (_, t), h in zip(ti37, H.IG_HOURS) if h < 18 and re.search("밤|자기 전|퇴근", t)] and "".join(d for d, _ in ti37) == "PABPABPA", ti37  # 그날 제목 안 겹침
+H.ig_set(s37, D37, P37[:3], "x37", h=20, fill="stdy"); H.ig_set(s37, "2026-11-21", P37[:3], "x37", h=8)
+assert ti37[8][1] in [x.format(n=3) for x in H.IG_TITLES["stdy"]] and s37["igday"]["d"] == "2026-11-21" and len(s37["igday"]["ti"]) == 1  # 채움 칸 = 채움 제목 · 날이 바뀌면 다시
+(H.ig_items, C34.ig_cover, C34.ig_slide), (H.POSTS, H.IG_LIVE, H.IG_CAROUSEL, H.IG_AUTO, H.prune_slides, time.time, tk37, uid37) = rc37, sv37
+H.E.pop("IG_TOKEN", None) if tk37 is None else H.E.update(IG_TOKEN=tk37); H.E.pop("IG_USER_ID", None) if uid37 is None else H.E.update(IG_USER_ID=uid37)
+for f in [f for f in os.listdir("docs/cards") if f.startswith(D37)]: os.remove(f"docs/cards/{f}")
+os.remove("posts37.json"); shutil.rmtree("ig37", ignore_errors=True)
 print("OK: 모든 셀프체크 통과")
