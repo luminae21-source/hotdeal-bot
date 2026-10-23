@@ -73,6 +73,14 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.deepStrictEqual(gc, ['/', '/?x=1', '/p/1.html']);
     const ref = await pg.evaluate(js => { history.replaceState(null, '', '/?src=app'); eval(js); return window.goatcounter.referrer('https://www.instagram.com/'); }, require('child_process').execSync("python3 -c \"import build_site; print(build_site.GC_APP)\"").toString());
     assert.strictEqual(ref, 'app');
+    // GoatCounter 실제 태그(10/23 hotdealpick): 바깥 count.js는 서비스워커가 안 막음(가짜 count.js가 실행됨) · 구매 링크 클릭 = 이벤트 buy/몰 주소 · ?ref=th 출처는 그대로('app'으로 안 바꿈 — count.js가 location.search를 보냄)
+    await ctx.route(/\/\/gc\.zgo\.at\/count\.js/, r => r.fulfill({ contentType: 'text/javascript', body: 'window.__gcl=1;goatcounter.count=function(v){(window.__gc=window.__gc||[]).push(v)}' }));
+    await pg.goto(U + '/?ref=th', { waitUntil: 'load' });
+    await pg.waitForFunction(() => window.__gcl === 1 && navigator.serviceWorker.controller);
+    assert.strictEqual(await pg.getAttribute('script[data-goatcounter]', 'data-goatcounter'), 'https://hotdealpick.goatcounter.com/count');
+    assert.strictEqual(await pg.evaluate(() => goatcounter.referrer('https://www.threads.net/')), 'https://www.threads.net/');
+    const buy = await pg.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [new URL(a.href).hostname, window.__gc]; });
+    assert.ok(buy[1] && buy[1].some(v => v.event === true && v.path === 'buy/' + buy[0]), JSON.stringify(buy));
     await ctx.close();
     // 5) 설치 버튼: 안드로이드 크롬 = beforeinstallprompt -> 설치 / 아이폰 = 2줄 안내 / 앱 안 브라우저 = 브라우저 안내 / 설치됨 = 숨김 / 닫기 = 7일
     const show = async (opt, init, fire) => {

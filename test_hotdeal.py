@@ -2980,10 +2980,10 @@ time.time = lambda: TK("2026-10-12 00:00"); assert H.ad_on() and H.ad_head(H.TOS
 time.time = tt8; H.AD_FIRST = ""
 # 9-10) 측정(10/11 진우 결정 — 집중 모드 2번): GoatCounter 코드가 있을 때만 모든 페이지에 스크립트 + 구매 링크(nofollow) 클릭 = 이벤트 'buy/몰 주소',
 #       채널 구분 = 글 속 사이트 링크에 ?ref=th(Threads)·tg(텔레그램)·blog(블로그) — 인스타는 프로필 링크(진우가 ?ref=ig로)
-assert S.GC_CODE == "" and S.gc_tag() == "" and "goatcounter" not in S.page("t", "<p>b</p>")  # 코드 전엔 없음(진우 가입 뒤 코드 한 줄)
-S.GC_CODE = "hdp"; pg = S.page("t", "<p>b</p>")
-assert '<script data-goatcounter="https://hdp.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>' in pg and "path:'buy/'+h" in pg and "event:true" in pg and pg.index("goatcounter") < pg.index("</head>")
-S.GC_CODE = ""
+gc10, S.GC_CODE = S.GC_CODE, ""; assert S.gc_tag() == "" and "goatcounter" not in S.page("t", "<p>b</p>"); S.GC_CODE = gc10  # 코드 없으면 없음
+assert S.GC_CODE == "hotdealpick"  # 10/23 진우 가입(hotdealpick.goatcounter.com)
+pg = S.page("t", "<p>b</p>")
+assert '<script data-goatcounter="https://hotdealpick.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>' in pg and "path:'buy/'+h" in pg and "event:true" in pg and pg.index("goatcounter") < pg.index("</head>")
 src10 = inspect.getsource(H)
 assert 'f"{SITE}p/{i}.html?ref={ref}"' in src10 and 'def th_url(p, i, ref="th")' in src10 and "지난 딜 전체 보기: {SITE}?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
 # 9-11) 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 성과 -> metrics.json(날짜·채널·글 id·몰·품목·가격대·시각·조회·반응), 수동 실행 METRICS_DAY면 그날 바로

@@ -3,7 +3,7 @@
 import calendar, hashlib, html, json, os, re, time, urllib.parse
 
 BASE = "https://hotdealpick.kr/"
-GC_CODE = ""  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 진우가 goatcounter.com 가입 때 정한 코드, 예: hotdealpick). 비어 있으면 측정 X
+GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
 GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소
          "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href).hostname}catch(x){return}"
          "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});")
