@@ -2772,13 +2772,13 @@ def th_deal(seen, tok, me, text, link, src=None):
     """Threads 개별 딜 글 1개(threads_deals·토스 픽 채움·슬롯 줄·뷰티 채움·토스 이름 예약·재오픈 — 묶음·날씨·간식·투표·#일상은 th_post 그대로).
     TH_LINK_AB면 직전 개별 딜 글이 A였으면 B: 본문 주소 없이(미리보기 X) 올리고 바로 첫 댓글 = 링크. 댓글 못 다는 토큰(th_reply_ok)이면 A.
     B 댓글이 실패하면 관리자 알림 + 다음 실행에 1번 더(th_retry — 링크 없는 딜 글이 남지 않게). 글마다 A/B·댓글 id -> seen(metrics.json 줄 ab·rv·48시간 v48·rv48)."""
-    tt = title_of(text)  # 지금 틀 제목(사람 느낌 글은 첫 줄이 문장 -> metrics 분류·가격대는 이걸로)
+    tt, topic = title_of(text), th_topic(seen, text)  # 지금 틀 제목(사람 느낌 글은 첫 줄이 문장 -> metrics 분류·가격대는 이걸로) · 주제 = 품목 칸(10/23 진우)
     vt = th_voice(seen, text, link, src) if TH_VOICE else text  # 10/21 밤 진우 '사람이 올리는 느낌'(실패·조건 안 맞으면 지금 틀)
     voiced, text = vt != text, vt
     st, now = seen.get("thab", {}), time.time()
     ab = "B" if TH_LINK_AB and st.get("last") == "A" and th_reply_ok(seen) else "A"
     body, reply = th_ab(text, link) if ab == "B" else (text, None)
-    pid, rid = (th_text(tok, me, body, None if reply else link) or {}).get("id"), None
+    pid, rid = (th_text(tok, me, body, None if reply else link, topic) or {}).get("id"), None
     if reply:
         try:
             rid = th_reply(tok, pid, reply)
@@ -2789,10 +2789,10 @@ def th_deal(seen, tok, me, text, link, src=None):
     return pid
 
 
-def th_text(tok, me, text, link):
+def th_text(tok, me, text, link, tag="핫딜"):
     """Threads 글 1개(TEXT + 링크 미리보기). 미리보기를 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로."""
     for att in ({"link_attachment": link}, {}) if link else ({},):  # 링크 없음(A/B 시험 B 본문) = 미리보기 없이
-        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": "핫딜", "access_token": tok})
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text, **att, "topic_tag": tag, "access_token": tok})
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
         time.sleep(10)
         try:
@@ -3704,11 +3704,28 @@ def threads(seen):
     th_bundle(seen, "card", text[:480], image=url)
 
 
+TH_TOPICS = {"food": "장보기", "life": "생필품", "beauty": "화장품", "home": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
+TH_TOPIC_RUN = 3  # 같은 주제 연달아 3번까지 — 넘으면 '핫딜'(핫딜이면 '특가')
+
+
+def th_topic(seen, text=None, base=None):
+    """Threads 글 주제(topic_tag — 글당 1개, 1~50자, '.'·'&' X, 공식 문서 posts·publishing): 딜 글(text — 토스 포함) = 품목 칸 주제(TH_TOPICS, 칸 없음 = 핫딜),
+    묶음·리스트·운영 일지·날씨·투표 = '핫딜', base = 정해 둔 주제(#일상). 방금 TH_TOPIC_RUN번 연달아 같은 주제면 '핫딜'(핫딜이면 '특가').
+    고른 주제는 seen thtopic l(최근 10개)에 바로 — 글별 주제는 metrics가 Threads 글 목록 topic_tag로 다시 읽음."""
+    t = base or (TH_TOPICS.get(cat_of({"text": text}), "핫딜") if text else "핫딜")
+    r = seen.get("thtopic", {}).get("l", [])
+    if r[-TH_TOPIC_RUN:] == [t] * TH_TOPIC_RUN:
+        t = "특가" if t == "핫딜" else "핫딜"
+    seen["thtopic"] = {"t": time.time(), "l": (r + [t])[-10:]}
+    print("th topic", t)
+    return t
+
+
 def th_post(tok, text, link=None, image=None, tag="핫딜"):
     """Threads 글 1개: image = 사진 글(30초 처리 대기), link = 링크 미리보기(th_text), 둘 다 없으면 글만."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     if link and not image:
-        return th_text(tok, me, text, link)
+        return th_text(tok, me, text, link, tag)
     q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": tag, "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(30 if image else 10)  # 미디어 처리 대기 (공식 권장값)
@@ -3718,7 +3735,7 @@ def th_post(tok, text, link=None, image=None, tag="핫딜"):
 def th_bundle(seen, kind, text, link=None, image=None):
     """묶음 글 Threads(12·18시 리스트·토스 베스트 리스트·21시 카드·22시 미리보기 — 10/12 진우 '묶음 글은 반드시'): 실패하면 다음 실행에 1번 더(th_retry), 예외는 그대로(main 알림)."""
     try:
-        return th_post(E.get("THREADS_TOKEN"), text, link, image)
+        return th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen))
     except Exception:
         seen.setdefault(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, {"t": time.time(), "text": text, "link": link, "img": image})
         raise
@@ -3733,12 +3750,12 @@ def th_reply(tok, to, text):
     return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))["id"]
 
 
-def th_poll(tok, text, opts):
+def th_poll(tok, text, opts, tag="핫딜"):
     """Threads 투표 글 1개(TEXT + poll_attachment, 공식 문서 create-posts/polls: 보기 2~4개·1~25자, 글만 있는 글에만) -> 글 id. 보기가 규칙 밖이면 안 올림(ValueError)."""
     if not 2 <= len(opts) <= 4 or not all(1 <= len(o) <= 25 for o in opts):
         raise ValueError(f"투표 보기는 2~4개·1~25자: {opts}")
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": "핫딜", "access_token": tok})
+    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": tag, "access_token": tok})
     form = urllib.parse.urlencode({"poll_attachment": json.dumps(dict(zip(POLL_KEYS, opts)), ensure_ascii=False)}).encode()  # 문서 예시처럼 본문(-d)으로
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", form, {"Content-Type": "application/x-www-form-urlencoded"}, method="POST"))["id"]
     time.sleep(10)
@@ -3775,7 +3792,7 @@ def th_retry(seen):
     for k in [k for k, v in seen.items() if k.startswith("thretry_") and isinstance(v, dict) and not v.get("done")]:
         seen[k]["done"] = 1
         if tok and k.startswith(today):
-            th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"))
+            th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"), th_topic(seen))
     for k in [k for k in seen if k.startswith("thabq_")]:  # A/B 시험 B 글의 링크 댓글이 실패했던 것 -> 1번만 더(안 되면 알림, 그 뒤엔 안 함)
         v = seen.pop(k)
         try:
@@ -4336,7 +4353,7 @@ def poll_post(seen):
     if not k:
         print(f"poll: 기록 {PRICE_MIN}개↑ 품목이 없거나 {POLL_REUSE}일 안에 다 씀 -> 오늘 X")
         return
-    pid = th_poll(tok, *poll_ai(recs[k]))
+    pid = th_poll(tok, *poll_ai(recs[k]), th_topic(seen))
     th_mark(seen, reopen="poll")  # 개별 글 수엔 안 셈(재오픈처럼) — 45분 간격만 같이
     seen["polls"] = {"t": now, "used": {**used, k: now}, "open": {"id": pid, "slug": k, "t": now}}
     print("poll:", k, len(recs[k][2]), "records")
@@ -4451,7 +4468,7 @@ def daily_post(seen):
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="⚠️ 사이트에 사진이 안 떠서 Threads에 못 올렸어요 — 다시 보내줘")
             continue
         v["done"] = now  # 먼저 표시: 실패해도 두 번 안 올림(실패는 main 알림)
-        th_post(tok, daily_text(v["text"]), image=v["img"], tag="일상")
+        th_post(tok, daily_text(v["text"]), image=v["img"], tag=th_topic(seen, base="일상"))
         bundled(seen)
         tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요")
         return  # 1번에 1개(묶음 간격)
@@ -4880,7 +4897,7 @@ def metrics_rows(seen):
     if not tok:
         miss["th"] = "THREADS_TOKEN 없음"
     try:
-        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp&since={int(t0)}&until={int(min(t0 + 86400, now))}&limit=100&access_token={tok}"
+        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp,topic_tag&since={int(t0)}&until={int(min(t0 + 86400, now))}&limit=100&access_token={tok}"
         while url and len(ths) < 1000:
             r = json.loads(http(url))
             ths, url = ths + r.get("data", []), r.get("data") and r.get("paging", {}).get("next")
@@ -4907,7 +4924,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=[ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}))  # lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=[ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}

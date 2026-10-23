@@ -1252,7 +1252,7 @@ assert seen["reopen"]["q"][1]["cmp"].startswith("🤔 솔직히 특가로는 약
 assert [(e["title"], e["warn"]) for e in seen["reopen"]["q"]] == [("탑프룻 망고젤리 망고맛 320g 3개", "⚠️ 확인할 점: 오늘 밤 12시까지"), ("CJ제일제당 쇠고기 진한다시 1kg", ""), ("사바나나 바나나칩 100g 5봉", ""), ("", "")]  # 재오픈 글 제목·⚠️ = 진우 예약 글(줄 세울 때 저장 — 품절 기록은 다시 열리면 지워짐), API 묶음 글은 없음  # 약한 딜 줄도(가격 그대로면 Threads에도 솔직하게), API 묶음 글은 비교 줄 없음
 t0 = ro_th[0]["text"][0]
 assert t0 == f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 🔔 다시 열렸어요 🔥\n탑프룻 망고젤리 망고맛 320g 3개\n8,900원\n💸 쿠팡보다 1,800원 싸요\n토스 하루특가 · 밤 12시 재오픈\n💡 쿠팡 같은 상품(탑프루츠 주시 젤리 망고 320g 3개 10,700원)보다 1,800원 쌈\n{H.REOPEN_WARN}\n\n👉 {MANGO}\n👋 팔로우하면 매일 이런 가격 비교가 피드에 떠요\n📲 실시간 알림 t.me/hotdeal_pick", t0  # 10/12 00:40 진우: 일반 글과 같은 틀+ 00:55 맨 위 🔔(고지문 → 🔔 다시 열렸어요 → 💸 → 🔥 [토스] 제목 (가격) → 정보 줄 → 💡 → ⚠️ → 👉 → 🙋 → 📲), 예약 글 ⚠️ 줄 ‘오늘 밤 12시까지’는 다음 날 틀려서 기본 문구로
-assert ro_th[0]["link_attachment"] == [MANGO] and ro_th[0]["topic_tag"] == ["핫딜"] and len(t0) <= 500  # 진우 링크 그대로(미리보기도)
+assert ro_th[0]["link_attachment"] == [MANGO] and ro_th[0]["topic_tag"] == ["장보기"] and len(t0) <= 500  # 진우 링크 그대로(미리보기도) · 주제 = 품목 칸(망고젤리 = 식품 -> 장보기, 10/23 진우)
 assert sum("/products/today-deals" in c for c in ro_calls) == 1  # 오늘 하루특가 목록(밤 12시 새 목록)은 1번만
 assert not ro_run("2026-10-12 00:12") and not ro_th and not [c for c in ro_calls if "detail" in c and "952" in c]  # 10분 안 -> 다음 실행에(상세 조회도 안 함)
 ro_fail["pub"] = ('{"error": {"message": "Fatal", "type": "OAuthException", "error_subcode": 4279047}}', False)  # 링크 미리보기 실패(4279047) -> 첨부 없이 1번 더
@@ -2141,7 +2141,7 @@ assert [m for m, _ in calls] == ["GET", "POST", "POST", "HEAD"]  # 직접 링크
 assert [q["link_attachment"][0] for q in made] == ["https://link.coupang.com/a/x"]  # 10/19 진우 '경유 말고 직접': 텔레그램 버튼과 같은 링크 · 10/19 밤 'Threads는 수수료 딜만': 3번(뽐뿌 원글) X
 t2 = made[0]["text"][0]
 assert t2.startswith(H.DISCLOSURE + "\n\n🔥 [쿠팡] 휴지 30롤\n\n싸요\n\n👉 https://link.coupang.com/a/x\n") and "출처" not in t2 and "hotdealpick.kr/p/" not in t2 and "👋 팔로우하면" in t2
-assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["핫딜"] and len(t2.encode()) < 500
+assert made[0]["media_type"] == ["TEXT"] and made[0]["topic_tag"] == ["생필품"] and len(t2.encode()) < 500  # 주제 = 품목 칸(휴지 = 생필품, 10/23 진우)
 assert [p.get("th") for p in json.load(open("posts.json"))] == [None, None, 1, 0, None, 0]  # 수수료 링크 아닌 3·5번 = th 0(로그 1번 표시, 거짓값이라 리스트 셈은 그대로)
 assert "threads skip (수수료 링크 아님) [카카오] 고구마 3kg | direct\n" in out9.getvalue() and "threads skip (수수료 링크 아님) [옥션] 라면 | direct\n" in out9.getvalue() and "· 수수료 링크 아님 2" in out9.getvalue()
 live_pages, calls[:], out9 = {2, 3, 4, 5}, [], io.StringIO()
@@ -2363,7 +2363,7 @@ time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOL
 
 # 9-2d) 10/12 진우 '묶음 글은 반드시' + '좋은 딜은 묶어서 중간에 리스트도': 묶음 글 Threads 실패 -> 같은 날 다음 실행에 1번만 더 / 리스트 12·15·18시, 🔥 좋은 딜(①②) 먼저 그다음 반응 순
 pt9, tt9, tg9d, tries9 = H.th_post, time.time, H.tg, []
-def bad9(tok, text, link=None, image=None): tries9.append(text); raise OSError("5xx")
+def bad9(tok, text, link=None, image=None, tag=None): tries9.append(text); raise OSError("5xx")
 H.th_post, H.E["THREADS_TOKEN"] = bad9, "tk"; time.time = lambda: TK("2026-10-12 12:05"); sb9 = {}
 for f9 in (lambda: H.th_bundle(sb9, "top12", "리스트", "https://x"), lambda: H.th_retry(sb9)):
     try:
@@ -2371,7 +2371,7 @@ for f9 in (lambda: H.th_bundle(sb9, "top12", "리스트", "https://x"), lambda: 
     except OSError:
         pass
 H.th_retry(sb9); assert len(tries9) == 2 and sb9["thretry_20261012_top12"]["done"] == 1  # 1번만 더(세 번째 X)
-H.th_post = lambda tok, text, link=None, image=None: tries9.append(("ok", text)); H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 9}; sent.clear()
+H.th_post = lambda tok, text, link=None, image=None, tag=None: tries9.append(("ok", text)); H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 9}; sent.clear()
 json.dump([{"t": "2026-10-12 13:00", "text": "🔥 [G마켓] 인기1 (1,000원)", "url": "https://g1", "mid": 1, "pop": 50}, {"t": "2026-10-12 13:10", "text": "🔥 [G마켓] 인기2 (2,000원)", "url": "https://g2", "mid": 2, "pop": 40},
            {"t": "2026-10-12 14:00", "text": "🔥 [토스] 좋은딜 (3,000원)\n\n💡 쿠팡 같은 상품(9,000원)보다 6,000원 쌈", "url": "https://toss.shopping/_m/a", "mid": 3, "own": 1},
            {"t": "2026-10-12 14:10", "text": "🛒 [토스] 약한딜 (3,000원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/b", "mid": 4, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
@@ -2415,7 +2415,7 @@ assert c_off[0] == c_on[0] == ["sendMessage"]  # 채널 글 수 같음(리스트
 H.TH_SOLO_FILL = True; sent9e2 = []; H.tg = lambda m, **p: sent9e2.append((m, p)) or {"message_id": 1}; time.time = lambda: TK(f"{D9e} 12:05"); H.top_deals({})
 assert "어젯밤 좋은딜" in sent9e2[0][1]["text"] and sent9e2[0][1]["text"].index("어젯밤 좋은딜") < sent9e2[0][1]["text"].index("반응0") and "TOP5" in sent9e2[0][1]["text"]  # 누락 없이: 어젯밤(18시 뒤) Threads에 못 나간 ①②도 12시 리스트에, 먼저
 # 💄 화장품 칸(10/12 19:50 진우 '리스트로 만들어도 좋아'): 개별 글이 못 된 화장품 🔥를 12·15·18시 Threads 리스트에 더함 — 기존 딜·링크 그대로, 링크 합쳐 5개까지(넘으면 이름·가격만), 🛒·Threads에 나간 것 X
-thp9 = []; H.th_post = lambda tok, text, link=None, image=None: thp9.append((text, link)); H.tg = lambda m, **p: {"message_id": 1}; H.E["THREADS_TOKEN"] = "tk"
+thp9 = []; H.th_post = lambda tok, text, link=None, image=None, tag=None: thp9.append((text, link)); H.tg = lambda m, **p: {"message_id": 1}; H.E["THREADS_TOKEN"] = "tk"
 json.dump([{"t": f"{D9e} 12:{10 + k}", "text": f"🔥 [G마켓] 반응{k} (1,000원)\n\n좋음", "url": f"https://link.coupang.com/a/g{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)]
           + [{"t": f"{D9e} 13:{10 + k}", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 클렌징폼{k} (9,900원)\n\n토스 최대할인가", "url": f"https://toss.shopping/_m/c{k}", "mid": 60 + k, "own": 1} for k in range(3)]
           + [{"t": f"{D9e} 13:20", "text": f"{H.TOSS_NOTE}\n\n🛒 [토스] 약한 선크림 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/w", "mid": 70, "own": 1},
@@ -5234,4 +5234,18 @@ day38("2026-11-29", s38); assert s38["igstage"]["s"] == 2 and "(앞 단계 100.0
 assert "ig_publish, ig_stage" in inspect.getsource(H.main)  # 리뷰: 판정은 발행 뒤(0시 넘어 확인된 전날 22시 실패 -> 올림 알림 뒤 바로 내림 X)
 H.METRICS, H.tg, time.time, H.IG_AUTO = sv38
 for f in ("metrics38.json", "st38.json", H.IG_STAGE_FILE): os.remove(f)
+# 9-39) Threads 주제 태그(10/23 진우 '주제 하나씩 자동으로 — 그 주제 보는 사람에게도'): topic_tag 파라미터(공식 문서 — 글당 1개, 1~50자, '.'·'&' X)
+#       딜 글 = 품목 칸(식품 장보기·생필품·화장품·살림템·가전·패션·겨울준비), 묶음·리스트·운영 일지·날씨·투표·칸 없음 = 핫딜 · 같은 주제 연달아 3번 넘게 X(핫딜, 핫딜이면 특가)
+assert all(1 <= len(v) <= 50 and not re.search(r"[.&]", v) for v in [*H.TH_TOPICS.values(), "핫딜", "특가", "일상"])
+s39, tp39 = {}, lambda t: H.th_topic(s39, f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n{t}\n9,900원")
+assert [tp39(n) for n in ("깨끗한나라 휴지 30롤", "세타필 로션 591ml", "햇반 210g 24개", "락앤락 밀폐용기 10개", "보조배터리 20000mAh", "등산 양말 10켤레", "핫팩 10개")] == \
+       ["생필품", "화장품", "장보기", "살림템", "가전", "패션", "겨울준비"], s39
+assert H.th_topic(s39) == "핫딜" and H.th_topic(s39, "🔥 [옥션] 무언가 특별한 것 (1,000원)") == "핫딜" and H.th_topic(s39, base="일상") == "일상"  # 묶음·칸 없음 = 핫딜 · #일상은 그대로
+s39 = {}; assert [tp39("휴지 30롤") for _ in range(5)] == ["생필품"] * 3 + ["핫딜", "생필품"]  # 4번째 연달아 = 핫딜
+s39 = {}; assert [H.th_topic(s39) for _ in range(5)] == ["핫딜"] * 3 + ["특가", "핫딜"] and len(s39["thtopic"]["l"]) == 5
+s39 = {"thtopic": {"t": 1, "l": ["가전"] * 12}}; tp39("휴지"); assert len(s39["thtopic"]["l"]) == 10  # 최근 10개만
+src39 = inspect.getsource
+assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen))' in src39(H.th_bundle) and "th_topic(seen))" in src39(H.th_retry) and "th_topic(seen))" in src39(H.poll_post)
+assert 'tag=th_topic(seen, base="일상")' in src39(H.daily_post) and "th_topic(seen, text)" in src39(H.th_deal) and "link, topic)" in src39(H.th_deal) and '"topic_tag": tag' in src39(H.th_text) and '"topic_tag": tag' in src39(H.th_poll)
+assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
 print("OK: 모든 셀프체크 통과")
