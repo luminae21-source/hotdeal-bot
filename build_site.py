@@ -253,7 +253,7 @@ def toss_share(url):
 def aff(url):
     """제휴(수수료) 링크인지: 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트·링크프라이스 등."""
     host = urllib.parse.urlsplit(url or "").netloc
-    return host == "link.coupang.com" or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
+    return host in CP_SHORT or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
 
 
 CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
@@ -410,18 +410,35 @@ def grid_item(i, p, rx=False, old=False, sh=None):
 
 DAY_ONLY = r"하루\s*특가|선착순|밤 12시까지"  # 토스 하루특가·선착순특가 = 올린 날 밤 12시 마감
 EVENTS = "events.json"
+CP_LINKS = "cp_links.json"  # {쿠팡 상품 주소: 파트너스 링크} — 봇이 딥링크 API로 만듦(쿠팡 키 있을 때만 생김, 10/23 hotdeal.cp_links). events 그 주소 대신 씀
+CP_PROD = r"https://(?:www\.|m\.)?coupang\.com/vp/products/(\d+)"  # 쿠팡 상품 주소(번호 = pid). 진우 단축 링크(link.coupang.com)는 그대로
+CP_SHORT = ("link.coupang.com", "coupa.ng")  # 쿠팡 파트너스 링크 도메인(딥링크 API 단축 주소 = coupa.ng일 수도 — 공식 샘플)
+
+
+def ev_list(path=None):
+    """events.json(Cowork 예약) 그대로 — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호). 깨진 파일 = []."""
+    path = path or EVENTS
+    try:
+        evs = json.load(open(path)) if os.path.exists(path) else []
+    except ValueError:
+        evs = []
+    try:
+        cl = json.load(open(CP_LINKS)) if os.path.exists(CP_LINKS) else {}
+    except ValueError:
+        cl = {}
+    for e in evs if isinstance(evs, list) and isinstance(cl, dict) else []:
+        if isinstance(e, dict) and isinstance(e.get("url"), str) and isinstance(cl.get(e["url"]), str) and (m := re.match(CP_PROD, e["url"])):
+            e.setdefault("pid", m[1])
+            e["url"] = cl[e["url"]]
+    return evs
 
 
 def ev_info():
-    """events.json 진우 항목 -> {url: {now, chk, end, why, target}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
-    try:
-        evs = json.load(open(EVENTS)) if os.path.exists(EVENTS) else []
-    except ValueError:
-        evs = []
-    out = {}
+    """events.json 진우 항목 -> {url: {now, chk, end, why, target, pid}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
+    evs, out = ev_list(), {}
     for e in evs if isinstance(evs, list) else []:
         if isinstance(e, dict) and isinstance(e.get("url"), str):
-            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target") if isinstance(e.get(k), str)})
+            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid") if isinstance(e.get(k), str)})
     return out
 
 

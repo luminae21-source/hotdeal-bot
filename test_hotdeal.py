@@ -2927,7 +2927,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (cp_links, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -3067,7 +3067,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, own_end, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, cp_price, own_end, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -5275,4 +5275,96 @@ assert I40.open(f"{d40}/icons/icon-192.png").getpixel((2, 2))[3] == 0 and I40.op
 mk40 = I40.open(f"{d40}/icons/icon-512-maskable.png").convert("RGB"); wh40 = [(x, y) for x in range(0, 512, 4) for y in range(0, 512, 4) if mk40.getpixel((x, y))[1] > 200]
 assert wh40 and all((x - 256) ** 2 + (y - 256) ** 2 <= (0.4 * 512) ** 2 for x, y in wh40)  # maskable 글자(흰색)는 안전 영역(가운데 지름 80%) 안
 assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
+# 9-41) 쿠팡 파트너스 API(10/23 최종 승인 — 진우가 키를 Secrets에 넣기 전 준비): 키 없으면 아무것도 안 바뀜 ·
+#       ① events·관리자 쿠팡 상품 주소 -> 딥링크(cp_links.json, events.json 그대로, 진우 단축 링크 그대로, coupa.ng도 대가성 문구) ② pid 하루 1번 검색 API -> seen cpq -> own_end
+#       ③ 골드박스 🚀(isRocket만)·게시 시점 가격 · 호출 상한(최근 1시간: 검색 8·전체 25) · rCode 실패(HTTP 200) = ValueError
+sv41 = (H.http, H.tg, H.ai_pick, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.draft)
+H.EVENTS, H.POSTS, c41 = "events.json", "posts.json", []
+EG41, P222, P333 = "https://link.coupang.com/a/egg", "https://www.coupang.com/vp/products/222?itemId=5", "https://www.coupang.com/vp/products/333"
+ev41 = [{"at": "2026-10-06 09:50", "deal": True, "url": P222, "text": "🔥 <b>[쿠팡] 새 상품 (5,000원)</b>\n\n좋음", "button": "🛒 구매하러 가기"},
+        {"at": "2026-10-06 09:55", "deal": True, "url": P333, "text": "🔥 <b>[쿠팡] 안 되는 상품 (1,000원)</b>", "button": "🛒 구매하러 가기"},
+        {"at": "2026-10-05 10:00", "deal": True, "url": EG41, "pid": "111", "now": "8,990원", "chk": "2026-10-06 09:30", "text": "🔥 <b>[쿠팡] 곰곰 특란 30구 (7,990원/무료)</b>", "button": "x"}]
+po41 = [{"t": "2026-10-05 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원/무료)", "url": EG41, "own": 1, "mid": 1}]
+def http41(url, body=None, headers=None, method=None):
+    c41.append((url, body))
+    if url.endswith("/deeplink"):
+        u = body["coupangUrls"][0]
+        return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if "/333" in u else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]}]})
+    if "/products/search?" in url:
+        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productPrice": 1}, {"productId": 111, "productPrice": 7490}] if quote("곰곰 특란 30구") in url else []}})
+    if "linkprice" in url:
+        return json.dumps({"result": "F", "url": ""})
+    raise AssertionError(url)
+tg41 = lambda m, **p: sent.append((m, p)) or {"message_id": 90 + len(sent), "text": re.sub(r"<[^>]+>", "", p.get("text", "")), "entities": []}
+def reset41(keys):
+    json.dump(ev41, open("events.json", "w")); json.dump(po41, open("posts.json", "w")); [os.path.exists(f) and os.remove(f) for f in ("cp_links.json",)]
+    H.HAS_CP, H.http, H.tg, time.time = keys, http41, tg41, lambda: 1791248400  # 10/6 10:00 KST
+    H.RUN.pop("cpu", None); c41.clear(); sent.clear(); return {}
+# 키 없음 = 지금과 같음: API 안 부르고 seen·파일 그대로, 상품 주소 예약은 그 주소로(예전처럼), 가격은 events now
+seen41 = reset41(False); raw41 = json.load(open("events.json"))
+H.cp_links(seen41); H.cp_price(seen41)
+assert seen41 == {} and not os.path.exists("cp_links.json") and not c41 and H.load(H.EVENTS, []) == raw41 and "cpu" not in H.RUN
+assert H.affiliate("https://www.coupang.com/vp/products/222") == ("https://www.coupang.com/vp/products/222", False) and not any("coupang.com/v2" in u for u, _ in c41)
+H.events(seen41); ch41 = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
+assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for p in ch41] == [P222, P333] and not any(H.DISCLOSURE in p["text"] for p in ch41)
+H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
+assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시") and not any(k.startswith("cp") for k in seen41)
+assert 'if HAS_CP:  # 쿠팡 API 최근 1시간 호출 시각' in inspect.getsource(H.main) and 'RUN["cpu"] = seen.setdefault("cpuse", {"t": 0})' in inspect.getsource(H.main)
+# ① 키 있음: 상품 주소 -> 파트너스 링크(1번만, cp_links.json), 안 되는 상품 = 관리자 알림 + 그 예약은 안 올림(하루 뒤 다시), events.json은 Cowork 것 그대로
+seen41 = reset41(True)
+H.cp_links(seen41)
+assert json.load(open("cp_links.json")) == {P222: "https://coupa.ng/b222"} and P333 in seen41["cpdl"]["x"] and [u for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/deeplink"] * 2
+assert any(p["chat_id"] == "42" and "쿠팡 링크 변환 안 됨" in p["text"] and P333 in p["text"] for m, p in sent)
+n41 = len(c41); H.cp_links(seen41); assert len(c41) == n41  # 바꾼 건 다시 안 부름 · 안 되는 건 하루 뒤
+ld41 = H.load(H.EVENTS, [])
+assert (ld41[0]["url"], ld41[0]["pid"], ld41[1]["url"], ld41[2]["url"]) == ("https://coupa.ng/b222", "222", P333, EG41) and json.load(open("events.json")) == raw41
+assert S40.ev_info()["https://coupa.ng/b222"]["pid"] == "222" and S40.aff("https://coupa.ng/b222") and H.aff_note("https://coupa.ng/b222") == H.DISCLOSURE  # 사이트도 같은 링크·제휴
+sent.clear(); H.events(seen41); ch41 = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
+assert len(ch41) == 1 and ch41[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://coupa.ng/b222" and H.DISCLOSURE in ch41[0]["text"] and "ev_2026-10-06 09:55" not in seen41
+assert json.load(open("posts.json"))[-1]["url"] == "https://coupa.ng/b222"  # 사이트·Threads도 파트너스 링크
+assert H.affiliate("https://www.coupang.com/vp/products/444") == ("https://coupa.ng/b444", True)  # 커뮤니티 쿠팡 딜(예전 그대로 + 응답 검사)
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"shortenUrl": "https://evil.example/x"}]}) if "deeplink" in url else http41(url, *a, **k)
+assert H.affiliate("https://www.coupang.com/vp/products/444") == ("https://www.coupang.com/vp/products/444", False); H.http = http41  # 파트너스 도메인 아니면 안 씀(대가성 문구 빠짐 방지)
+# ① 관리자(진우)가 봇에 보낸 쿠팡 상품 주소도(추적값 빼고) -> 파트너스 링크 / 키 없으면 그대로
+UP41 = [{"update_id": 90, "message": {"message_id": 91, "from": {"id": 42}, "text": "[쿠팡] 휴지 30롤 9,900원\nhttps://www.coupang.com/vp/products/555?itemId=1&vendorItemId=2&lptag=x"}}]
+for k41 in (True, False):
+    reset41(k41); H.ai_pick = lambda prompt, lines: []
+    H.tg = lambda m, **p: sent.append((m, p)) or (UP41 if m == "getUpdates" and "offset" not in p else {"message_id": 95, "text": "", "entities": []})
+    dr41, H.draft = [], lambda text, link, **k: dr41.append((text, link)) or {"message_id": 1}
+    H.publish_approved({})
+    dl41 = [b for u, b in c41 if u.endswith("/deeplink")]
+    assert dl41 == ([{"coupangUrls": ["https://www.coupang.com/vp/products/555?itemId=1&vendorItemId=2"]}] if k41 else []), (k41, dl41)
+    assert len(dr41) == 1 and (dr41[0][1] == "https://coupa.ng/b555") == k41 and dr41[0][0].startswith("<i>" + H.DISCLOSURE) == k41, dr41  # 키 없으면 예전처럼 상품 주소·문구 없음
+# ② 가격 확인: 7시 전 X · pid마다 하루 1번(검색 결과 중 productId == pid만) · own_end = 더 새것(봇 vs Cowork chk)
+seen41 = reset41(True); H.cp_links(seen41); H.events(seen41); c41.clear()
+time.time = lambda: 1791248400 - 3 * 3600 - 60; H.cp_price(seen41); assert "cpq" not in seen41 and not c41  # 06:59
+time.time = lambda: 1791248400; H.cp_price(seen41)
+assert seen41["cpq"]["m"] == {"111": [7490, "2026-10-06 10:00"], "222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
+assert any(quote("곰곰 특란 30구") in u and u.endswith("&limit=10") for u, _ in c41)
+c41.clear(); H.cp_price(seen41); assert not c41  # 오늘은 끝
+H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
+assert (e41["now"], e41["chk"], e41["st"]) == ("7,490원", "10/6 10시", "hot")  # 사이트 ⏳/🔥 = 같은 값
+seen41["cpq"]["m"]["111"][1] = "2026-10-06 09:00"; H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
+assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시")  # Cowork 확인(09:30)이 더 새것이면 그것
+# 호출 상한(최근 1시간 — 시계 시각 경계에서 두 배 안 되게) · rCode 실패
+H.RUN["cpu"] = {}; c41.clear()
+for _ in range(8): H.coupang("GET", "/products/search?keyword=a&limit=10")
+try: H.coupang("GET", "/products/search?keyword=a&limit=10"); raise AssertionError("상한")
+except RuntimeError: pass
+assert len(c41) == 8 and H.coupang("POST", "/deeplink", {"coupangUrls": [P222]})[0]["shortenUrl"] == "https://coupa.ng/b222"  # 검색 아닌 건 전체 상한까지
+time.time = lambda: 1791248400 + 3601; H.coupang("GET", "/products/search?keyword=a&limit=10")
+H.RUN["cpu"] = {"a": [1791248400 + 3600] * 25}
+try: H.coupang("POST", "/deeplink", {"coupangUrls": [P222]}); raise AssertionError("전체 상한")
+except RuntimeError: pass
+H.RUN["cpu"] = {}
+try: H.coupang("POST", "/deeplink", {"coupangUrls": [P333]}); raise AssertionError("rCode")
+except ValueError: pass
+# ③ 골드박스(API): 🚀 = isRocket true인 것만, 끝에 게시 시점 가격
+reset41(True); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 1, "score": 8, "comment": "b"}]
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "로켓상품", "productPrice": 1000.0, "productUrl": "https://link.coupang.com/re/1", "isRocket": True},
+                                                                    {"productName": "일반상품", "productPrice": 2000.0, "productUrl": "https://link.coupang.com/re/2", "isRocket": False}]})
+H.goldbox({}); t41 = sent[-1][1]["text"]
+assert t41.startswith("<i>" + H.DISCLOSURE) and "1. 🚀 <a" in t41 and "2. <a" in t41 and t41.endswith("⚠️ 10/6 10:00 게시 시점 가격"), t41
+os.path.exists("cp_links.json") and os.remove("cp_links.json"); H.RUN.pop("cpu", None)
+H.http, H.tg, H.ai_pick, time.time, H.HAS_CP, H.EVENTS, H.POSTS, H.draft = sv41
 print("OK: 모든 셀프체크 통과")

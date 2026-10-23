@@ -68,4 +68,5 @@ jobs:
           [ ! -f top.json ] || git add top.json   # 잘 된 상품 표(Cowork 재게시·토스 후보 가산)
           [ ! -f toss_list.json ] || git add toss_list.json   # 진우 토스 상품 목록(매일 아침 8시 전 — Cowork 8:30 보고, 토스 API 가격 X)
           [ ! -f ig_stage.json ] || git add ig_stage.json   # 인스타 단계 기록(하루 4번 -> 5 -> 6, 매일 0시 판정 줄)
+          [ ! -f cp_links.json ] || git add cp_links.json   # 쿠팡 상품 주소 -> 파트너스 링크(쿠팡 키 있을 때만 생김 — 사이트 빌드도 씀)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도
