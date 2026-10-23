@@ -1620,13 +1620,13 @@ assert [n for _, n in S.CHIPS] == ["💸 1만원 이하", "📉 30일 최저가"
 assert S.conds({"text": "🔥 [토스] 땅콩버터 (1,950원 · 5천원 쿠폰가)\n\n토스 하루특가 · 30일 내 최저가"}) == "1만원 최저가" and S.conds({"text": "🔥 [롯데온] 생수 (10,000/무료)"}) == "1만원 무배"
 assert S.conds({"text": "🔥 [옥션] 잠옷 2+1 (10,010원)"}) == "증정" and S.conds({"text": "🔥 [G마켓] 귤 +500g 증정 (12,000원/무배)\n\n30일 무료반품 · 최저가보상"}) == "증정 무배" and S.price_won("[쿠팡] 휴지 (19,900원/무료)") == 19900
 bar0 = S.CSS.split(".bar{", 1)[1].split("}", 1)[0]  # 10/15 진우 '오른쪽으로 밀지 않아도 한 화면에': 가로 스크롤 X — 아래 바 = 넓으면 한 줄·420px 미만 2줄(5+4), 앱 안 위 메뉴 = 5칸씩 2줄(아이콘 위·이름 아래), 칩 = 3열 2줄
-assert "overflow-x" not in bar0 and "flex-wrap:wrap;justify-content:center" in bar0 and "white-space:nowrap" in S.CSS and "@media(max-width:419px){.bar a{flex:0 0 calc((100% - 8px)/5);min-height:46px}main:has(.bar){padding-bottom:124px}" in S.CSS
-assert ".inapp .bar.top{display:flex;position:sticky;top:0;z-index:8;flex-wrap:wrap;justify-content:center" in S.CSS and ".find{background:#f4f5f7;padding:8px 0 4px}form.find{position:sticky;top:0;z-index:8}" in S.CSS  # 10/15 '탭만 고정': 홈 검색창·칩은 스크롤, 딜 페이지 검색창(form)은 고정 그대로 and ".inapp .bar.top a{flex:0 0 calc((100% - 24px)/5);max-width:none;flex-direction:column;min-height:52px" in S.CSS and ".chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "overflow-x" not in S.CSS.split(".chips{", 1)[1].split("}", 1)[0]
+assert "overflow-x" not in bar0 and "flex-wrap:wrap;justify-content:center" in bar0 and "white-space:nowrap" in S.CSS and "@media(max-width:419px){.bar a{flex:0 0 calc((100% - 8px)/5);min-height:46px}main:has(.bar){padding-bottom:calc(124px + env(safe-area-inset-bottom))}" in S.CSS
+assert ".inapp .bar.top{display:flex;position:sticky;top:env(safe-area-inset-top);z-index:8;flex-wrap:wrap;justify-content:center" in S.CSS and ".find{background:#f4f5f7;padding:8px 0 4px}form.find{position:sticky;top:env(safe-area-inset-top);z-index:8}" in S.CSS  # 10/15 '탭만 고정': 홈 검색창·칩은 스크롤, 딜 페이지 검색창(form)은 고정 그대로 and ".inapp .bar.top a{flex:0 0 calc((100% - 24px)/5);max-width:none;flex-direction:column;min-height:52px" in S.CSS and ".chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in S.CSS and "overflow-x" not in S.CSS.split(".chips{", 1)[1].split("}", 1)[0]
 # 10/13 진우: 앱 안 브라우저(Threads·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가림 -> 검색창 아래 sticky 한 줄(같은 아이콘·이름, 가로 스크롤) + 아래 여백, 일반 브라우저는 아래 바 그대로
 top7 = i7.split('<nav class="bar top" aria-label="바로가기">')[1].split("</nav>")[0]; bot7 = i7.split('<nav class="bar"')[1].split("</nav>")[0]
 assert top7 == bot7.split(">", 1)[1] and i7.index('<div class="find"') < i7.index('<nav class="bar top"') < i7.index('<div class="pane">')  # 같은 메뉴, 검색창(sticky) 안
 assert S.INAPP_JS in i7.split("</head>")[0] and all(x in S.INAPP_JS for x in ("Barcelona", "Instagram", "FBAN", "KAKAOTALK", "NAVER\\(inapp")) and "classList.add('inapp')" in S.INAPP_JS
-assert ".bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:96px}" in S.CSS and ".inapp .bar.top{display:flex;position:sticky" in S.CSS  # 기본 = 아래 바만, 앱 안 = 위 한 줄만 + 여백
+assert ".bar.top{display:none}.inapp .bar:not(.top){display:none}.inapp main,.inapp main:has(.bar){padding-bottom:calc(96px + env(safe-area-inset-bottom))}" in S.CSS and ".inapp .bar.top{display:flex;position:sticky" in S.CSS  # 기본 = 아래 바만, 앱 안 = 위 한 줄만 + 여백
 assert 'id="life"' not in a7 and 'id="hot"' not in a7 and "#cats" in a7 and S.PANE_JS not in a7 and 'class="pane"' not in a7  # 지난 딜 전체엔 칸 없음(바는 홈 칸으로)
 # 6-7) 찜(10/9 진우 '핫딜도 장바구니처럼'): 격자 카드마다 하트(번호·이름), 맨 위 '찜' -> 홈 숨은 '찜한 딜' 칸(바에는 없음), 저장은 브라우저(JS)
 assert hot7.count('<button class="like" type="button" data-i="') == 2 and 'data-i="4" aria-pressed="false" aria-label="퓨어그램 폼클렌징 120ml 찜"' in hot7
@@ -5252,4 +5252,27 @@ assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비�
 assert 'posts[i].get("cat"))' in src39(H.threads_deals) and "cat_fill, threads, threads_deals" in src39(H.main)  # 같은 실행에 올린 글도 cat 채운 뒤 Threads
 assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
 assert 'print("ig publish", card(v) or "릴스", pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
+# 9-40) 웹앱(PWA, 10/23 진우 '웹앱으로 진행'): 모든 페이지 head(manifest·아이콘·theme-color·애플 웹앱·SW 등록) · manifest 필드 · sw.js(같은 출처 GET만, HTML 네트워크 먼저, 아이콘 캐시 먼저,
+#       홈 내용마다 캐시 이름) · 홈 맨 위 설치 버튼(홈만) · GoatCounter 웹앱 출처 · 아이콘 크기(브라우저 확인은 node test_pwa.js — 설치 가능·SW·오프라인·설치 버튼·캡처)
+import build_site as S40, cards as C40
+d40 = tempfile.mkdtemp(); S40.build([{"t": "2026-10-23 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://link.coupang.com/a/x", "s": 7}], d40)
+m40, sw40, ix40 = json.load(open(f"{d40}/manifest.webmanifest")), open(f"{d40}/sw.js").read(), open(f"{d40}/index.html").read()
+assert (m40["name"], m40["short_name"], m40["start_url"], m40["scope"], m40["display"], m40["lang"], m40["background_color"], m40["theme_color"]) == ("핫딜픽 — 매일 살 만한 핫딜", "핫딜픽", "/?src=app", "/", "standalone", "ko", "#f4f5f7", "#f4f5f7")
+assert [(i["sizes"], i["purpose"]) for i in m40["icons"]] == [("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")] and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"]
+for f40 in ("index.html", "all.html", "p/0.html"):
+    h40 = open(f"{d40}/{f40}").read().split("</head>")[0]
+    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico"', 'name="theme-color" content="#f4f5f7"', 'content="#101012" media="(prefers-color-scheme: dark)"',
+                                  'apple-mobile-web-app-capable', 'apple-mobile-web-app-title" content="핫딜픽"', 'apple-mobile-web-app-status-bar-style', "serviceWorker.register('/sw.js')")), f40
+assert 'id="inst"' in ix40 and ix40.index('id="inst"') < ix40.index('class="dis"') and 'id="inst"' not in open(f"{d40}/all.html").read()  # 설치 버튼 = 홈 맨 위만
+assert "u.origin!==location.origin)return" in sw40 and "r.method!=='GET'" in sw40 and "fetch(r).then(function(res){if(res.ok&&r.mode==='navigate')" in sw40 and ".catch(function(){return caches.match(r)" in sw40  # 외부 몰·제휴 X · HTML 네트워크 먼저
+assert re.search(r"var V='hdp-([0-9a-f]{10})'", sw40)[1] == hashlib.md5(ix40.encode()).hexdigest()[:10] and "caches.delete(k)" in sw40  # 배포(홈 내용)마다 캐시 이름 -> 옛 캐시 지움
+S40.build([{"t": "2026-10-23 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://link.coupang.com/a/x", "s": 7}], d40); assert open(f"{d40}/sw.js").read() == sw40  # 홈이 같으면 sw.js도 그대로(실행마다 커밋 X)
+g40, S40.GC_CODE = S40.GC_CODE, "hdp"; assert S40.gc_tag().index(S40.GC_APP) < S40.gc_tag().index("count.js") and "'app'" in S40.GC_APP; S40.GC_CODE = g40  # count.js 전에(GoatCounter 문서)
+assert S40.gc_tag() == "" if not g40 else True
+ic40 = C40.app_icons(f"{d40}/icons", d40); from PIL import Image as I40
+assert [I40.open(f).size for f in ic40[:6]] == [(192, 192), (512, 512), (512, 512), (180, 180), (32, 32), (16, 16)] and I40.open(f"{d40}/icons/apple-touch-icon.png").mode == "RGB"  # 애플 = 투명 X
+assert I40.open(f"{d40}/icons/icon-192.png").getpixel((2, 2))[3] == 0 and I40.open(f"{d40}/icons/icon-512-maskable.png").getpixel((2, 2)) == (*C40.LOGO_RED, 255)  # any = 빨간 원(모서리 투명) · maskable = 꽉 찬 빨강
+mk40 = I40.open(f"{d40}/icons/icon-512-maskable.png").convert("RGB"); wh40 = [(x, y) for x in range(0, 512, 4) for y in range(0, 512, 4) if mk40.getpixel((x, y))[1] > 200]
+assert wh40 and all((x - 256) ** 2 + (y - 256) ** 2 <= (0.4 * 512) ** 2 for x, y in wh40)  # maskable 글자(흰색)는 안전 영역(가운데 지름 80%) 안
+assert set(I40.open(f"{d40}/favicon.ico").info["sizes"]) == {(16, 16), (32, 32), (48, 48)}
 print("OK: 모든 셀프체크 통과")

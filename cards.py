@@ -764,3 +764,39 @@ def ig_slide(design, it, n, total, out):
     f = pf("SemiBold", 40)
     d.text((76, H - 92), _fit(f, f"{when} · 제휴 링크(수수료)", W - 152), font=f, fill=BROWN)
     return _save(im, out)
+
+
+LOGO_RED = (224, 49, 49)  # 사이트 🔥(k-hot)와 같은 빨강 — 인스타·텔레그램 프로필 '딜 / pick' 로고
+
+
+def app_logo(n, bleed=False, scale=1.0, mini=False):
+    """웹앱 아이콘 1장(n×n RGBA): 빨간 원(bleed면 꽉 찬 빨간 네모 — maskable·애플) 위 흰 '딜' + 'pick'(mini = '딜'만, 16·32px 파비콘).
+    scale = 글자 묶음이 차지하는 비율(maskable은 안전 영역 80% 안). 4배로 그려 줄여서 가장자리를 매끈하게."""
+    k = 4
+    N = n * k
+    im = Image.new("RGBA", (N, N), LOGO_RED + (255,) if bleed else (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    if not bleed:
+        d.ellipse((0, 0, N - 1, N - 1), fill=LOGO_RED + (255,))
+    s = N * scale
+    parts = [("딜", pf("ExtraBold", int(s * (0.64 if mini else 0.48))))] + ([] if mini else [("pick", pf("Bold", int(s * 0.2)))])
+    boxes = [d.textbbox((0, 0), t, font=f) for t, f in parts]
+    gap = 0 if mini else s * 0.02
+    total = sum(b[3] - b[1] for b in boxes) + gap * (len(parts) - 1)
+    y = (N - total) / 2
+    for (t, f), b in zip(parts, boxes):
+        d.text(((N - (b[2] - b[0])) / 2 - b[0], y - b[1]), t, font=f, fill="white")
+        y += b[3] - b[1] + gap
+    return im.resize((n, n), Image.LANCZOS)
+
+
+def app_icons(d="docs/icons", root="docs"):
+    """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로') -> d/: icon-192·512(any, 빨간 원), icon-512-maskable(꽉 찬 빨강, 글자는 안전 영역 80% 안),
+    apple-touch-icon(180, 꽉 찬 빨강 — iOS가 모서리를 둥글게), favicon-32·16('딜'만) + root/favicon.ico(16·32·48). -> 만든 파일 목록"""
+    os.makedirs(d, exist_ok=True)
+    out = {f"{d}/icon-192.png": app_logo(192), f"{d}/icon-512.png": app_logo(512), f"{d}/icon-512-maskable.png": app_logo(512, True, 0.92),
+           f"{d}/apple-touch-icon.png": app_logo(180, True, 0.95).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True)}
+    for p, im in out.items():
+        im.save(p, optimize=True)
+    app_logo(256, mini=True).save(f"{root}/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+    return [*out, f"{root}/favicon.ico"]
