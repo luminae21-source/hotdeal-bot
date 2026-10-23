@@ -3100,11 +3100,12 @@ def ig_items(seen, ps, photos=True):
 
 
 def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
-    """인스타 새 디자인 한 벌(표지 + 상품 장) -> d/cover.jpg, d/01.jpg… (design 없으면 날짜·오늘 몇 번째 칸으로 A·B·P). 표지 문구(그날 쓴 것 빼고)·칩 순서는 회차마다 무작위.
-    -> (표지, [상품 장], 디자인)"""
+    """인스타 새 디자인 한 벌(표지 + 상품 장) -> d/cover.jpg, d/01.jpg… (design 없으면 직전에 만든 표지 다음 것 — 밤 22시 -> 다음 날 11시도 다르게, 기록이 없으면 날짜·오늘 몇 번째 칸으로 A·B·P).
+    표지 문구(그날 쓴 것 빼고)·칩 순서는 회차마다 무작위. -> (표지, [상품 장], 디자인)"""
     import cards
-    hs = ig_hours(seen)
-    design = design or ig_design(day, hs.index(h) if h in hs else 0)
+    hs, last = ig_hours(seen), seen.get("igdz", {}).get("d")
+    design = design or ("ABP"[("ABP".index(last) + 1) % 3] if last in ("A", "B", "P") else ig_design(day, hs.index(h) if h in hs else 0))
+    seen["igdz"] = {"t": time.time(), "d": design}
     r = seen.get("igday", {}) if seen.get("igday", {}).get("d") == day else {"d": day, "ti": []}
     pool = [x for x in IG_TITLES["A" if design == "P" else design] if h >= 18 or not re.search(r"밤|자기 전|퇴근", x)]
     title = random.choice([x for x in pool if x not in r["ti"]] or pool)
@@ -3225,8 +3226,8 @@ def ig_day_max(seen):
 
 
 def ig_stage_get(today):
-    """인스타 단계 기록 {s 단계, since 그 단계(또는 내린 날)부터, fd 진짜 실패 날짜들, h {날짜: 단계}, j 마지막 판정 날, log 판정 줄}: ig_stage.json > 처음(오늘 단계 0)."""
-    return {"s": 0, "since": today, "fd": [], "h": {today: 0}, "j": "", "log": [], **load(IG_STAGE_FILE, {})}
+    """인스타 단계 기록 {s 단계, since 그 단계(또는 내린 날)부터, fd 진짜 실패 날짜들, h {날짜: 단계}, j 마지막 판정 날, log 판정 줄, b {단계: 마지막 글당 조회 평균}}: ig_stage.json > 처음(오늘 단계 0)."""
+    return {"s": 0, "since": today, "fd": [], "h": {today: 0}, "j": "", "log": [], "b": {}, **load(IG_STAGE_FILE, {})}
 
 
 def ig_stage_put(seen, r):
@@ -3245,7 +3246,8 @@ def ig_stage(seen):
     """인스타 단계(10/23 진우 '단계적 늘리기' — 하루 4번 11·15·19 -> 5번 +13시 -> 6번 +17시, 22시 하루 카드는 늘 따로): 실행마다 seen igstage를 ig_stage.json에 맞추고,
     매일 0시(KST) 뒤 첫 실행에 1번 판정 — 그 단계로 IG_STAGE_DAYS일 지났고 앞 3일 진짜 실패 0이면 한 단계 올림(5 -> 6번은 + 그 단계 글당 조회 평균 >= 앞 단계 평균 —
     metrics.json 인스타 views는 다음 날 아침에 모아서 어제 글은 아직 없음, 숫자가 없으면 안 올림). 내림 = 진짜 실패 난 날 ig_fail이 바로(그날부터 다시 셈).
-    판정 줄 -> 로그·기록 log(README 점검 표 — 단계·실패 수·글당 조회), 단계가 바뀌면 관리봇."""
+    판정을 건너뛴 날(인스타 꺼짐·실행 없음)이 있으면 3일을 그날부터 다시 셈(안 올린 날은 실패 0이어도 셈 X). 앞 단계 평균은 metrics(14일)에 없으면 그때 적어 둔 b.
+    판정 줄 -> 로그·기록 log(README 점검 표 — 단계·실패 수·글당 조회), 올리면 관리봇(내림은 ig_fail 로그 줄 — 1번째 실패 알림 X 그대로, 2번째 = 24시간 쉼 알림)."""
     if not IG_AUTO:
         return
     now = time.time()
@@ -3253,9 +3255,14 @@ def ig_stage(seen):
     r = ig_stage_get(today)
     if r["j"] != today:
         ago = lambda k: (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=k)).strftime("%Y-%m-%d")
+        if r["j"] and r["j"] < ago(1):  # 판정을 건너뛴 날 = 인스타 꺼짐·실행 없음 -> 안 올린 날을 '실패 0'으로 세지 않게 다시 셈
+            r["since"] = today
         s, fails = r["s"], sum(ago(IG_STAGE_DAYS) <= d < today for d in r["fd"])
         avg = ig_views([d for d, k in r["h"].items() if k == s and d >= r["since"]])
         prev = ig_views([d for d, k in r["h"].items() if k == s - 1]) if s else None
+        prev = r["b"].get(str(s - 1)) if s and prev is None else prev  # 앞 단계 날이 14일(metrics·h)보다 오래되면 그때 적어 둔 평균
+        if avg is not None:
+            r["b"] = {**r["b"], str(s): avg}
         up = s + 1 < len(IG_STAGES) and r["since"] <= ago(IG_STAGE_DAYS) and not fails and (s == 0 or None not in (avg, prev) and avg >= prev)
         r.update(s=s + up, since=today if up else r["since"], j=today, h={**{d: k for d, k in r["h"].items() if d >= ago(14)}, today: s + up})
         line = f"{today} 단계 {s + up}(하루 {len(IG_STAGES[s + up]) + 1}번{' — 올림' if up else ''}) · 앞 3일 진짜 실패 {fails} · 글당 조회 {avg} (앞 단계 {prev})"
@@ -3479,7 +3486,8 @@ def ig_cards(seen):
     ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
-    hours = ig_hours(seen)
+    built = {int(f[11:13]) for f in (os.listdir("docs/cards") if os.path.isdir("docs/cards") else []) if re.fullmatch(re.escape(today) + r"_\d\d\.json", f)}
+    hours = tuple(sorted(set(ig_hours(seen)) | built))  # 이미 만든 칸 카드는 낮에 단계가 내려가도 마저 올림(그 딜이 다른 칸에서 빠지니까)
     for h in hours:
         stem = today if h == IG_DAY_HOUR else f"{today}_{h:02d}"
         tried = seen.get("igs_" + stem)
@@ -3503,7 +3511,11 @@ def ig_cards(seen):
                 deal_slides(stem, [p for _, p in order])
             print("ig card", stem, f"만듦 {len(order)}개")
             return
-        if not os.path.exists(jpg):  # 22시: 모아보기(digest, 21시)가 카드를 안 만듦(딜 부족)
+        if not os.path.exists(jpg):  # 22시: 모아보기(digest, 21시)가 카드를 안 만듦(딜 없음)
+            continue
+        if h == IG_DAY_HOUR and (n := len(card_order(load(POSTS, []), stem))) < IG_MIN:  # 하루 카드도 딜 3개 밑이면 건너뜀(10/23 진우)
+            seen["igs_" + stem] = {"t": now, "skip": n}
+            print("ig card", stem, f"딜 {n}개 -> 건너뜀")
             continue
         url, d = f"{SITE}cards/{stem}.jpg", f"docs/cards/{stem}"
         if IG_HUMAN:  # 인스타엔 새 디자인 한 벌(A·B 날마다 번갈아, docs/cards/igv/ — 사이트·텔레그램 카드는 그대로) -> 만든 실행 다음에 올림
@@ -5149,7 +5161,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_stage, ig_cards, ig_reel, ig_repost, ig_publish, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill, toss_roster):
+    for step in (events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, own_end, cat_fill, toss_roster):
         try:
             step(seen)
         except Exception as e:

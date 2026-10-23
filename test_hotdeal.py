@@ -1317,7 +1317,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_stage, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (6, 11)) and trn0 == (2, 2, 4)  # 10/12 진우: 아침 재알림 6시부터, 재오픈 한도 밤 2·아침 2·하루 4
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -2017,7 +2017,7 @@ shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 H.IG_HUMAN = ig9h
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_stage, ig_cards, ig_reel, ig_repost, ig_publish" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
+assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -2349,7 +2349,7 @@ assert rq9["thsolo_20261012"] == {"t": TK(f"{D9c} 01:42"), "n": 1, "b": 1, "rn":
 time.time = lambda: TK(f"{D9c} 06:10"); assert H.th_solo(rq9, S9c, reopen="am"); H.th_mark(rq9, reopen="am"); time.time = lambda: TK(f"{D9c} 07:00"); H.th_mark(rq9, reopen="am")
 time.time = lambda: TK(f"{D9c} 07:50"); assert not H.th_solo(rq9, S9c, reopen="am") and H.th_solo(rq9, S9c)  # 아침 2개 찼음
 H.TH_REOPEN_MORN = 3; assert not H.th_solo(rq9, S9c, reopen="am"); H.TH_REOPEN_MORN = trn0[1]  # 하루 4개(밤 2 + 아침 2)도
-assert H.TH_REOPEN_AM == (6, 11) and "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_stage, ig_cards" in inspect.getsource(H.main)  # 아침 재알림 6시부터, 재오픈은 일반 딜 뒤
+assert H.TH_REOPEN_AM == (6, 11) and "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main)  # 아침 재알림 6시부터, 재오픈은 일반 딜 뒤
 # 줄 맨 앞이 약한 글(🛒)이어도 뒤 ① 재오픈이 나감(4d9271a1부터 있던 막힘, 10/12 리뷰) — 약한 글은 줄에 남음
 H.toss = lambda path, body=None: {"items": [{"tacaItemId": i, "displayPrice": p, "isSoldOut": False} for i, p in ((71, 12900), (72, 7620))]} if path.startswith("/products/detail") else {"items": [], "hasNext": False}
 rq9 = {"reopen": {"t": TK(f"{D9c} 00:00"), "ts": [], "q": [{"id": 71, "n": "약한 크림", "url": "https://toss.shopping/_m/q1", "p0": 12900, "icon": "🛒", "cmp": "🤔 솔직히 특가로는 약한 제품", "k": "ev", "day": D9c, "st": 0, "title": "약한 크림", "warn": ""},
@@ -4480,7 +4480,7 @@ def h29(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, H.HAS_TOSS, H.tg = h29, True, lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
-assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
+assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_stage, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
 # ① 경계: 10/29 23:59 보통 · 10/30 00:00 재사용(시작 알림 1번) · 11/4 23:59 재사용(날 바뀌면 전날 요약 1번) · 11/5 00:00 링크 1개 만들어 봄 -> 되면 보통 + '끝' 1번
 s29 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")], "2": ["https://toss.im/_m/K2", TK("2026-10-29 10:00")]}}, "tb_7": {"t": TK("2026-10-29 12:00")}}
 H.toss_mode(s29, TK("2026-10-29 23:59")); assert H.RUN["treuse"] is False and not s29m and "tpause" not in s29 and not lk29
@@ -4730,7 +4730,7 @@ shutil.rmtree("steady32")
 # 9-33 (10/22 22시 진우 '인스타 자동게시 테스트 1건 — 시간 오차 15~20분·카드 수정·사람 멘트'): 인스타만(텔레그램·Threads X), IG_AUTO 정기 게시는 그대로 꺼짐,
 #       ig_test.txt 날짜 = 그날 하루 카드를 변주로 다시 그림 -> 15~20분 무작위 뒤 컨테이너(캡션 = 대가성 문구 + 사람 멘트 2~3줄) -> 발행 -> 관리봇 1번, 실패면 다시 X
 #       정기 게시 스위치 IG_HUMAN = IG_AUTO(10/23 진우 다시 켬)
-assert ig9h is True and iga0 is True and H.REEL_PUBLIC is False and H.IG_JITTER == (900, 1200) and "ig_publish, ig_test, toss_stock" in inspect.getsource(H.main)
+assert ig9h is True and iga0 is True and H.REEL_PUBLIC is False and H.IG_JITTER == (900, 1200) and "ig_publish, ig_stage, ig_test, toss_stock" in inspect.getsource(H.main)
 s33 = {}
 for _ in range(300):  # 변주: 직전 회차와 1~2개(표지 문구·배치·색) 다름, 지난주 막힌 기본 모양 X
     pv33 = dict(s33.get("igvar") or {"pal": 0, "head": 0, "band": 0}); v33 = H.ig_variant(s33)
@@ -5182,6 +5182,13 @@ s37 = {}
 for h in H.ig_hours(s37): H.ig_set(s37, D37, P37[:3], "x37", h=h)
 assert len({t for _, t in ti37}) == 4 and not [t for (_, t), h in zip(ti37, H.ig_hours(s37)) if h < 18 and re.search("밤|자기 전|퇴근", t)] and "".join(d for d, _ in ti37) == "PABP", ti37  # 그날 제목 안 겹침 · 표지 칸마다
 H.ig_set(s37, "2026-11-21", P37[:3], "x37", h=11); assert s37["igday"]["d"] == "2026-11-21" and len(s37["igday"]["ti"]) == 1  # 날이 바뀌면 다시
+assert ti37[4][0] != ti37[3][0] == "P" and ti37[4][0] == "A"  # 리뷰: 밤 22시(P) -> 다음 날 11시도 직전 표지 다음 것(5번 단계 날짜·칸 계산이면 같은 표지)
+json.dump(P37, open("posts37.json", "w"), ensure_ascii=False); open(f"docs/cards/{D37}.jpg", "wb").write(b"j"); json.dump([1, 2], open(f"docs/cards/{D37}.json", "w"))
+s37 = {}; time.time = lambda: TK(f"{D37} 22:05"); H.ig_cards(s37); assert s37 == {f"igs_{D37}": {"t": TK(f"{D37} 22:05"), "skip": 2}} and not os.path.exists(f"docs/cards/igv/{D37}")  # 리뷰: 하루 카드도 딜 3개 밑 = 건너뜀
+json.dump([3, 4, 7], open(f"docs/cards/{D37}_13.json", "w")); open(f"docs/cards/{D37}_13.jpg", "wb").write(b"j")  # 5번 단계 13시 카드를 만든 뒤 진짜 실패로 단계 0(11·15·19)이 됨
+s37 = {"igstage": {"s": 0}}; time.time = lambda: TK(f"{D37} 13:40"); n37 = len(ti37); H.ig_cards(s37); assert len(ti37) == n37 + 1 and s37["igday"]["d"] == D37, ti37  # 만든 칸 카드는 단계가 내려가도 마저(새 디자인 한 벌 만듦 -> 다음 실행에 올림)
+assert [i for i, _ in H.slot_deals(P37, D37, 15, (11, 13, 15, 19))] == []  # 15시 = 13~15시(13시 카드 딜은 13시 카드로)
+shutil.rmtree(f"docs/cards/igv", ignore_errors=True)
 (H.ig_items, C34.ig_cover, C34.ig_slide), (H.POSTS, H.IG_LIVE, H.IG_CAROUSEL, H.IG_AUTO, H.prune_slides, time.time, tk37, uid37) = rc37, sv37
 H.E.pop("IG_TOKEN", None) if tk37 is None else H.E.update(IG_TOKEN=tk37); H.E.pop("IG_USER_ID", None) if uid37 is None else H.E.update(IG_USER_ID=uid37)
 for f in [f for f in os.listdir("docs/cards") if f.startswith(D37)]: os.remove(f"docs/cards/{f}")
@@ -5210,13 +5217,21 @@ m38["2026-10-27"]["rows"][0]["views"] = 50; json.dump(m38, open("metrics38.json"
 assert s38["igstage"]["s"] == 1 and "글당 조회 70.0 (앞 단계 100.0)" in json.load(open(H.IG_STAGE_FILE))["log"][-1]  # 조회 평균이 떨어짐 -> 그대로 5번
 shutil.copy("st38.json", H.IG_STAGE_FILE); m38["2026-10-27"]["rows"][0]["views"] = 110; json.dump(m38, open("metrics38.json", "w")); day38("2026-10-29", s38)
 assert s38["igstage"]["s"] == 2 and H.ig_hours(s38) == (11, 13, 15, 17, 19, 22) and H.ig_day_max(s38) == 7 and "하루 6번" in al38[-1]  # 100.0 >= 100.0 -> 6번(+17시)
-time.time = lambda: TK("2026-10-30 13:20"); H.ig_fail(s38, TK("2026-10-30 13:20"), "x"); H.ig_fail(s38, TK("2026-10-30 15:20"), "y")
+day38("2026-10-30", s38); time.time = lambda: TK("2026-10-30 13:20"); H.ig_fail(s38, TK("2026-10-30 13:20"), "x"); H.ig_fail(s38, TK("2026-10-30 15:20"), "y")
 r38 = json.load(open(H.IG_STAGE_FILE)); assert s38["igstage"]["s"] == 1 and r38["since"] == "2026-10-30" and r38["fd"] == ["2026-10-30"] * 2 and "진짜 실패 -> 단계 1(하루 5번)" in r38["log"][-1]  # 그날 한 단계만 내림
 del s38["ig_hold"]
 for d in ("2026-10-31", "2026-11-01", "2026-11-02"): day38(d, s38); assert s38["igstage"]["s"] == 1, d  # 실패 난 날이 앞 3일 안 = 안 올림
 day38("2026-11-03", s38); assert s38["igstage"]["s"] == 1 and "글당 조회 None" in json.load(open(H.IG_STAGE_FILE))["log"][-1]  # 이번 5번 기간 조회 숫자 없음 -> 안 올림
 for d in ("2026-10-30", "2026-10-31"): m38[d] = {"rows": [{"ch": "ig", "views": 101}]}
 json.dump(m38, open("metrics38.json", "w")); day38("2026-11-04", s38); assert s38["igstage"]["s"] == 2  # 101 >= 앞 단계(4번) 100
+# 리뷰: 앞 단계(4번) 날이 14일보다 오래돼도 적어 둔 평균(b)으로 다시 6번 · 판정을 건너뛴 날(인스타 꺼짐)은 실패 0이어도 세지 않음
+r38 = json.load(open(H.IG_STAGE_FILE)); assert r38["b"]["0"] == 100.0 and r38["s"] == 2
+day38("2026-11-25", s38); r38 = json.load(open(H.IG_STAGE_FILE)); assert r38["since"] == "2026-11-25" and r38["s"] == 2  # 11/5~24 판정 없음 -> 다시 셈(올림 X)
+time.time = lambda: TK("2026-11-25 13:00"); H.ig_fail(s38, TK("2026-11-25 13:00"), "z")
+m38 = {d: {"rows": [{"ch": "ig", "views": 100}]} for d in ("2026-11-25", "2026-11-26", "2026-11-27")}; json.dump(m38, open("metrics38.json", "w"))
+for d in ("2026-11-26", "2026-11-27", "2026-11-28"): day38(d, s38); assert s38["igstage"]["s"] == 1, d
+day38("2026-11-29", s38); assert s38["igstage"]["s"] == 2 and "(앞 단계 100.0)" in json.load(open(H.IG_STAGE_FILE))["log"][-1]  # 4번 날(10/23~25)은 metrics에 없음 -> b로
+assert "ig_publish, ig_stage" in inspect.getsource(H.main)  # 리뷰: 판정은 발행 뒤(0시 넘어 확인된 전날 22시 실패 -> 올림 알림 뒤 바로 내림 X)
 H.METRICS, H.tg, time.time, H.IG_AUTO = sv38
 for f in ("metrics38.json", "st38.json", H.IG_STAGE_FILE): os.remove(f)
 print("OK: 모든 셀프체크 통과")
