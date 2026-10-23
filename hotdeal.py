@@ -1352,7 +1352,7 @@ def cp_links(seen):
         return
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
     st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
-    for u in sorted({e["url"] for e in load(EVENTS, []) if re.match(CP_PROD, e.get("url") or "") and e.get("at", "") >= since}):  # 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    for u in sorted({e["url"] for e in ev_list() if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))}):  # 사이트 진열(shelf)은 시각 상관없이 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
         if now - st["x"].get(u, 0) < 86400:
             continue
         try:
@@ -1419,6 +1419,40 @@ def cp_same(name, api):
     need, got = qty(name), qty(api)
     extra = got - need
     return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|켤레|족|판|장|p|\d)$", t)})
+
+
+def html_ents(h):
+    """텔레그램 HTML(<b>·<i>·<a href>) -> (글자, text_link 엔티티 — UTF-16 오프셋): 채널에 안 보내는 사이트 진열 글(shelf)을 채널 글과 같은 posts.json 모양으로."""
+    text, ents, u16 = "", [], lambda x: len(x.encode("utf-16-le")) // 2
+    for m in re.finditer(r'<a href="([^"]*)">(.*?)</a>|<[^>]*>|[^<]+', h, re.S):
+        if m[1] is not None:
+            ents.append({"type": "text_link", "offset": u16(text), "length": u16(plain_of(m[2])), "url": html.unescape(m[1])})
+            text += plain_of(m[2])
+        elif not m[0].startswith("<"):
+            text += html.unescape(m[0])
+    return text.strip(), ents
+
+
+def shelf_posts(seen):
+    """사이트 진열 전용(10/24 진우 '생필품·화장품은 사이트에 먼저 빠르게'): events "shelf": true 항목 -> at이 지나면 posts.json에만 1번(own·shelf, 채널 글 번호 mid 없음)
+    = 사이트 품목 칸·🔥/⏳(target·now — own_end)·상품 페이지·사이트맵 · 채널·Threads·인스타 X(load(EVENTS)가 shelf를 빼고, posts 쪽은 shelf 글을 건너뜀).
+    글 = 채널에 나갈 것과 같은 틀(대가성 문구·몰별 머리 줄·버튼 가격). 쿠팡 상품 주소는 딥링크로 바뀐 뒤(cp_links — 시각 상관없이). 같은 url·pid 진우 글이 이미 있으면 안 만듦(사이트 카드 하나 —
+    나중에 같은 url 채널 예약이 나가면 그 글이 진열 자리를 이어받음: build_site.home_pool = url마다 최신 진우 글)."""
+    now, posts, ev = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info()
+    have = {p.get("url") for p in posts if p.get("own")}
+    pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")}, 0
+    for e in ev_list():
+        if not (isinstance(e, dict) and e.get("shelf") and isinstance(e.get("url"), str) and e.get("text") and str(e.get("at", "9")) <= now) or e["url"] in have or e.get("pid") in pids:
+            continue
+        if HAS_CP and re.match(CP_PROD, e["url"]):  # 딥링크 전(상한·오류면 다음 실행)
+            continue
+        e = {**e, "deal": True}  # 진열 = 상품 글 틀(몰별 머리 줄·[광고] 첫 줄)
+        record(*html_ents(ev_head(e) + ev_view(e)[0]), e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag")})
+        have.add(e["url"])
+        pids.add(e.get("pid"))
+        n += 1
+    if n:
+        print("shelf", f"사이트 진열 {n}개")
 
 
 def events(seen):
@@ -1744,7 +1778,10 @@ TOP_SUB, TOP_SUB_TOSS = "쿠팡보다 싼 딜·30일 최저가 먼저", "30일 �
 STEADY_AT, STEADY_END, STEADY_DAYS, STEADY_N, STEADY_MIN_BUY, STEADY_FILE = "19:50", "21:00", 14, 5, 1000, "docs/steady.json"  # 10/22 진우 '꾸준템 리스트도': 하루 1번 19:50(KST, 늦어도 21시 전) · 후보 14일 · 5개 · 🛒는 한 달 1,000명+ 구매만 · 사이트 페이지 재료
 
 
-def steady_cands(seen, now):
+STEADY_CAT_EVERY, STEADY_CAT_MIN = 3, 3  # 10/24 진우 '가끔 품목 하나로 묶어(💄 화장품 스테디셀러 모음)': 사흘에 1번(1년 중 날짜 % 3 == 0), 한 품목 후보 3개+일 때만
+
+
+def steady_cands(seen, now, n=STEADY_N):
     """👍 꾸준템 리스트 후보(수수료 링크만, 같은 링크·이름 1번, 최대 STEADY_N): ① 최근 STEADY_DAYS일 진우 👍 글(최근 것부터)
     → ② 잘 된 상품 표(top.json 순서 — 토스 = 상세 API로만 지금 가격·리뷰·품절(id = 표 키·우리 쉐어링크·1일 목록 이름, 못 찾으면 뺌), 그 밖 = 같은 링크 최근 채널 글의 가격·숫자)
     → ③ 진우 🛒 중 한 달 STEADY_MIN_BUY명+ 구매(많은 순). 채널 글에서 가져온 가격이 오늘 글이 아니면 '(M/D 글 가격)'(리스트 게시 시점 줄과 안 맞게 X).
@@ -1759,7 +1796,8 @@ def steady_cands(seen, now):
         b, r, pr = re.search(STEADY_BUY, p["text"]), re.search(STEADY_REV, p["text"]), price.split("/")[0].strip()
         return {"n": name, "p": pr and pr + ("" if p["t"][:10] == today else f" ({int(p['t'][5:7])}/{int(p['t'][8:10])} 글 가격)"),
                 "st": f"한 달 {sp(b[1])}명+ 구매" if b else f"리뷰 {sp(r[1])}" if r else "", "u": p["url"], "tu": th_url(p, i), "i": i}
-    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i]["t"] >= since and aff_note(posts[i].get("url") or "") and not tossy(posts[i].get("url"))]
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and (posts[i]["t"] >= since or posts[i].get("shelf") and posts[i].get("st") != "gone")
+           and aff_note(posts[i].get("url") or "") and not tossy(posts[i].get("url"))]  # 사이트 진열(shelf) 👍 = 날짜 상관없이(진열에서 빠진 것만 X — 10/24 진우)
     out = [item(i) for i in own if th_steady(posts[i]["text"])]
     tops = [x for x in load(TOP, {}).get("items", []) if aff_note(x.get("url") or "")]
     tu, tc = toss_ids(seen), {norm(c[1]): c[0] for c in seen.get("tosscache", {}).get("items", []) if len(c) > 1}
@@ -1787,7 +1825,7 @@ def steady_cands(seen, now):
             keep.append(x)
             us.add(x["u"])
             ns.add(norm(x["n"]))
-    return keep[:STEADY_N]
+    return keep[:n]
 
 
 def steady_list(seen):
@@ -1799,23 +1837,30 @@ def steady_list(seen):
     if not STEADY_AT <= time.strftime("%H:%M", kst) < STEADY_END or key in seen or busy(seen, cap=False):
         return
     seen[key] = now
-    items = steady_cands(seen, now)
+    items, posts, names = steady_cands(seen, now, 99), load(POSTS, []), {k: n.split("·")[0] for k, n, _ in SHELF_CATS}
+    cats = {}
+    for x in items:
+        if x["i"] is not None and (c := cat_of(posts[x["i"]])):
+            cats.setdefault(c, []).append(x)
+    cat = kst.tm_yday % STEADY_CAT_EVERY == 0 and max((c for c in cats if len(cats[c]) >= STEADY_CAT_MIN), key=lambda c: len(cats[c]), default=None)  # 가끔 한 품목 모음
+    items = cats[cat][:STEADY_N] if cat else items[:STEADY_N]
     if not items:
         print("steady 후보 0개 — 이번 회차 생략")
         return
+    head = "{} <b>{} 스테디셀러 모음</b>".format(*names[cat].split(" ", 1)) if cat else "👍 <b>꾸준히 팔리는 것 모음</b>"
     notes = list(dict.fromkeys(aff_note(x["u"]) for x in items))
-    text, kb = top_post("👍 <b>꾸준히 팔리는 것 모음</b>\n최저가는 아니어도 꾸준히 많이 사는 것", [(x["n"], x["u"], [f"💰 <b>{esc(x['p'])}</b>" + (f" · {esc(x['st'])}" if x["st"] else "")]) for x in items])
+    text, kb = top_post(head + "\n최저가는 아니어도 꾸준히 많이 사는 것", [(x["n"], x["u"], [f"💰 <b>{esc(x['p'])}</b>" + (f" · {esc(x['st'])}" if x["st"] else "")]) for x in items])
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
               text="\n".join(f"<i>{n}</i>" for n in notes) + f"\n\n{text}\n\n{toss_when()}", reply_markup={"inline_keyboard": kb}):
         return
     bundled(seen)
-    print("steady", len(items), "items |", " / ".join(clip(x["n"], 20) for x in items))
+    print("steady", len(items), "items" + (f" ({cat} 모음)" if cat else ""), "|", " / ".join(clip(x["n"], 20) for x in items))
     os.makedirs(os.path.dirname(STEADY_FILE), exist_ok=True)
     api = lambda x: x["i"] is None and urllib.parse.urlsplit(x["u"]).netloc in TOSS_HOSTS  # 토스 상세 API로 가격·리뷰를 받은 상품 = 사이트엔 가격·리뷰 X(API 신청 범위 — 10/23 Cowork 정정)
     json.dump({"at": time.strftime("%Y-%m-%d %H:%M", kst), "notes": notes, "items": [{**x, "p": "", "st": ""} if api(x) else x for x in items]}, open(STEADY_FILE, "w"), ensure_ascii=False)
     if not E.get("THREADS_TOKEN"):
         return
-    render = lambda n: "\n".join(dict.fromkeys(aff_note(x["u"]) for x in items[:n])) + "\n\n👍 꾸준히 팔리는 것 모음\n\n" \
+    render = lambda n: "\n".join(dict.fromkeys(aff_note(x["u"]) for x in items[:n])) + f"\n\n{plain_of(head)}\n\n" \
         + "\n".join(f"{NUM[k]} {clip(x['n'], 30)} {x['p']}" + (f" · {x['st']}" if x["st"] else "") + f"\n👉 {x['tu']}" for k, x in enumerate(items[:n])) + f"\n\n{toss_when()}"
     n = len(items)
     while n > 1 and len(render(n)) > 480:
@@ -4663,8 +4708,8 @@ def report(seen):
 
 
 def load(path, default):
-    if path == EVENTS:  # 쿠팡 상품 주소 -> 봇이 만든 파트너스 링크(cp_links.json, 키 있을 때만) — 사이트와 같은 값
-        return ev_list(path)
+    if path == EVENTS:  # 쿠팡 상품 주소 -> 봇이 만든 파트너스 링크(cp_links.json, 키 있을 때만) — 사이트와 같은 값 · "shelf" 항목 = 사이트 진열 전용(shelf_posts·cp_links·ev_info만 봄 — 채널·Threads·미리보기·토스 쉼·알림 X)
+        return [e for e in ev_list(path) if not (isinstance(e, dict) and e.get("shelf"))]
     try:
         return json.load(open(path))
     except (OSError, ValueError):
@@ -5359,7 +5404,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
+    for step in (cp_links, shelf_posts, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
         try:
             step(seen)
         except Exception as e:
