@@ -679,7 +679,7 @@ assert [m for m, p in sent] == ["sendMessage", "copyMessage"]  # 3점(채용)은
 p = sent[0][1]
 assert p["chat_id"] == "@ch" and p["text"] == (f"<i>{H.DISCLOSURE}</i>\n\n💄 <b>쿠팡 뷰티풀데이&amp;위크</b>\n10/18(일)까지 · 와우회원\n\n• 2만 원 이상 5,000원 쿠폰\n"
                                                  "• 매일 7시 골드박스 &lt;뷰티&gt;\n• 16개 브랜드\n\n👉 쿠팡 앱 검색창에 <b>뷰티풀데이&amp;위크</b>")  # Claude 글은 HTML 이스케이프
-assert p["reply_markup"]["inline_keyboard"] == [[{"text": "🚀 쿠팡 바로가기", "url": H.CP_HOME}]] and H.CP_HOME.startswith("https://link.coupang.com/a/")  # 쿠팡 버튼 = 🚀(10/22)
+assert p["reply_markup"]["inline_keyboard"] == [[{"text": "📦 쿠팡 바로가기", "url": H.CP_HOME}]] and H.CP_HOME.startswith("https://link.coupang.com/a/")  # 쿠팡 행사 버튼 = 📦(로켓프레시 행사만 🚀 — 10/23)
 c = sent[1][1]
 assert c["chat_id"] == H.ADMIN and c["from_chat_id"] == "@ch" and c["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://t.me/ch/1"  # 답장 -> 이 채널 글 교체
 assert sorted(seen) == ["cn_https://news.coupang.com/archives/1/", "cn_https://news.coupang.com/archives/2/"]
@@ -706,7 +706,7 @@ cdeals = [{"id": "ppomppu_9", "url": "https://www.ppomppu.co.kr/zboard/view.php?
 eprompts.clear(); H.ai_pick = lambda prompt, lines: eprompts.append(lines) or [{"i": 0, "score": 8, "q": "로켓프레시데이", "hook": "10/20~26", "comment": "c"}]
 sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
-assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["url"] == H.CP_FRESH and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
+assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
 assert "goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
@@ -5489,6 +5489,12 @@ assert [H.cp_rocket(H.plain_of(p["text"])) for p in e44] == [True, False, False,
 assert [H.title_of(H.plain_of(p["text"])) for p in e44][1] == "[쿠팡] 해남 호박고구마 3kg (12,900원)" and S40.steady_st("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n휴지\n9,900원 · 리뷰 1,969") == "리뷰 1,969"  # 사이트 제목·꾸준템 줄
 assert H.mall_head("coupang", "", "🔥", False) == "📦 쿠팡 🔥" and H.mall_btn("coupang", "1,000원", False) == "📦 쿠팡에서 1,000원" and H.mall_btn("toss", "1,000원", False) == "💙 토스에서 1,000원"
 assert H.buy_btn("[쿠팡] 고구마 (1,000원)", "https://link.coupang.com/a/x", "그냥 좋음") == "📦 쿠팡에서 1,000원" and H.buy_btn("[쿠팡] 고구마 (1,000원)", "https://link.coupang.com/a/x", "로켓배송 아님") == "📦 쿠팡에서 1,000원"
+NO44 = ["로켓배송은 아니지만 무료배송", "로켓 아님 · 판매자 배송", "비로켓 상품", "로켓배송이 아니라 업체 직배송", "로켓배송 미적용", "로켓배송이 아닌 판매자 상품", "로켓배송 아님", "로켓와우 할인"]
+assert not [x for x in NO44 if H.cp_rocket(x)] and all(H.cp_rocket(x) for x in ("로켓배송 · 57% 할인", "로켓프레시 새벽 도착", "로켓배송 내일 도착"))  # 리뷰: '아닌·미적용·비로켓·로켓와우(멤버십)' = 근거 X
+OLD44 = "이 포스팅은 …\n\n🚀 쿠팡 · 와우 할인 🔥\n제주 감귤 5kg\n9,900원"
+assert H.buy_btn("[쿠팡] 제주 감귤 5kg (9,900원)", "https://link.coupang.com/a/x", OLD44) == "🚀 쿠팡에서 9,900원"  # 10/23 전 글 링크 교체 = 머리 줄(🚀 쿠팡)과 같은 버튼
+assert re.sub(H.CP_OLD, H.CP_PLAIN[0], OLD44, flags=re.M).split("\n")[2] == "📦 쿠팡 · 와우 할인 🔥" and re.sub(H.CP_OLD, H.CP_PLAIN[0], "🚀 쿠팡 로켓 · 1개당 최저 🔥", flags=re.M) == "🚀 쿠팡 로켓 · 1개당 최저 🔥"
+assert 're.sub(CP_OLD, CP_PLAIN[0], posts[i]["text"], flags=re.M).split' in inspect.getsource(H.threads_deals)  # 10/23 전 채널 글이 새 Threads 글로 갈 때 = 📦
 sl44 = (H.store_link, H.affiliate); H.store_link, H.affiliate = (lambda u: "https://www.coupang.com/vp/products/1"), (lambda u: ("https://link.coupang.com/a/AFF", True))
 D44 = {"title": "[쿠팡] 휴지 30롤 (9,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=101", "board": "뽐뿌"}
 assert [H.deal_post(D44, c)[2] for c in ("싸다", "로켓배송 내일 도착")] == ["📦 쿠팡에서 9,900원", "🚀 쿠팡에서 9,900원"]  # 커뮤니티 쿠팡 딜 버튼 = 머리 줄과 같은 근거

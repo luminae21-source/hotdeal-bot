@@ -734,7 +734,8 @@ def is_toss(url, text=""):
 
 STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)(?![\d,.]*\s*[천만]?\s*(?:원|%))(?:\s*개)?"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'한 달 1만명+'·'리뷰 1,969(개)'·'리뷰 1.6만' — 쿠팡은 만 단위가 많음, 10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 만원·% 숫자 X
 steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만" in x else 1000 if "천" in x else 1))  # '1.6만' -> 16000
-CP_ROCKET = r"로켓(?!\s*배송\s*(?:아님|아니|X|x|없))|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님' X — 10/22 리뷰)
+CP_ROCKET = r"(?<!비)로켓(?!\s*(?:배송)?\s*[은는이가도]?\s*(?:아님|아니|아닌|안\s*[돼됨되]|불가|미적용|X|x|없)|\s*와우)|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님·이 아닌·미적용'·'비로켓'·'로켓와우'(멤버십) X — 10/22·10/23 리뷰)
+CP_OLD = r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)"  # 10/23 전 로켓 근거 없는 쿠팡 머리 줄('🚀 쿠팡 · … 🔥') — 새로 내보낼 땐 📦(예약·Threads), 이미 올라간 글은 그대로
 CP_PLAIN = ("📦 쿠팡", "📦 쿠팡에서")  # 10/23 진우: 로켓 근거 없는 쿠팡 글 = 📦(🚀는 로켓으로 오해) — 머리 줄·구매 버튼(Threads·인스타 배지도). 로켓 = '🚀 쿠팡 로켓' 그대로
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
@@ -762,7 +763,7 @@ def mall_btn(mall, price, rocket=True):
 def buy_btn(title, url, plain=None):
     """채널 개별 딜 버튼: 토스·쿠팡 = mall_btn(쿠팡 🚀/📦 = 글 plain의 cp_rocket — 글을 모르면 🚀), 그 밖의 몰 = 예전 buy_label('🛒 N원 구매하기')."""
     mall = mall_of(url, title)
-    return mall_btn(mall, parse(title)[2], plain is None or cp_rocket(plain)) if mall else buy_label(title)
+    return mall_btn(mall, parse(title)[2], plain is None or bool(re.search(CP_OLD, plain, re.M)) or cp_rocket(plain)) if mall else buy_label(title)  # 10/23 전 글('🚀 쿠팡' 머리 줄)의 링크 교체 = 버튼도 🚀(머리 줄과 같게)
 
 
 def mall_head(mall, src, icon, rocket=True):
@@ -808,7 +809,7 @@ def mall_view(body, url):
     """예전 틀 개별 글 본문(HTML, 첫 줄 '🔥|🛒 <b>[몰] 제목 (가격)</b>')이 토스·쿠팡이면 몰별 틀로(커뮤니티 딜·진우 링크·예전 틀로 쓴 예약 글):
     제목 -> 머리 줄(mall_src, 🛒 약한 딜은 칸 없이) + 상품명 + 가격 줄(토스 = 가격 (할인%↓) · ⭐ 평점 (리뷰), 쿠팡 = 가격 → 단위가격 — '💡 단위가격' 줄을 옮김),
     제목 아래 빈 줄은 뺌, 쿠팡에 '결제 전' 줄이 없으면 '⚠️ 결제 전 최종가 (M/D H시)'. 토스·쿠팡 아님·가격 모름·이미 몰별 틀 = 그대로."""
-    body = re.sub(r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)", CP_PLAIN[0], body, flags=re.M)  # 이미 몰별 틀로 쓴 글(예약)의 로켓 근거 없는 '🚀 쿠팡' 머리 줄 = 📦(10/23 진우)
+    body = re.sub(CP_OLD, CP_PLAIN[0], body, flags=re.M)  # 이미 몰별 틀로 쓴 글(예약)의 로켓 근거 없는 '🚀 쿠팡' 머리 줄 = 📦(10/23 진우)
     m = re.match(r"([🔥🛒👍]) <b>(.+?)</b>", body)
     title = html.unescape(m[2]) if m else ""
     mall = m and mall_of(url, title)
@@ -1574,7 +1575,7 @@ def cp_events(seen, deals=()):
         m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
                text=f"<i>{DISCLOSURE}</i>\n\n{esc(p.get('e') or '🎉')} <b>쿠팡 {esc(p['q'])}</b>\n{esc(p.get('hook', ''))}\n\n"
                     + "".join(f"• {esc(x)}\n" for x in p.get("pts", [])[:3]) + f"\n👉 쿠팡 앱 검색창에 <b>{esc(p['q'])}</b>",
-               reply_markup={"inline_keyboard": [[{"text": "🚀 쿠팡 바로가기", "url": CP_FRESH if "프레시" in p["q"] else CP_HOME}]]})  # 쿠팡 버튼 = 🚀(10/22)
+               reply_markup={"inline_keyboard": [[{"text": ("🚀 쿠팡" if "프레시" in p["q"] else CP_PLAIN[0]) + " 바로가기", "url": CP_FRESH if "프레시" in p["q"] else CP_HOME}]]})  # 로켓프레시 행사만 🚀, 그 밖 행사 = 📦(10/23)  # 쿠팡 버튼 = 🚀(10/22)
         if m:  # 실패하면 다음 실행에 다시
             done.add(link)
             seen.update({d["id"]: time.time() for d in deals if d["url"] == link})  # 커뮤니티 글이면 딜로 또 올리지 않게
@@ -4179,7 +4180,7 @@ def threads_deals(seen):
                 return
         note = aff_note(posts[i].get("url") or "")
         icon = "👍" if th_steady(posts[i]["text"]) else "🛒" if th_weak(posts[i]["text"]) else "🔥"  # 채널 글과 같게(약한 딜에 🔥 안 붙임)
-        ls = posts[i]["text"].split("\n")
+        ls = re.sub(CP_OLD, CP_PLAIN[0], posts[i]["text"], flags=re.M).split("\n")  # 10/23 전 채널 글의 '🚀 쿠팡' 머리 줄 = 새 Threads 글엔 📦(채널 글은 그대로)
         mi = next((k for k in range(len(ls)) if mall_title(ls, k)), None)  # 몰별 틀(10/22 진우 '한눈에') = 대가성 문구 다음 줄이 채널 글과 같은 머리 줄
         sv = None if mi is not None else saving(posts[i]["text"])  # 고지문 다음 줄 = 얼마나 싼지(10/11 진우 'Threads 훅') — 몰별 틀은 머리 줄이 먼저(각도 칸)
         tw = f"\n{toss_when(posts[i]['t'])}" if TOSS_NO_CMP and is_toss(posts[i].get("url"), posts[i]["text"]) and "게시 시점" not in posts[i]["text"] else ""
