@@ -5339,20 +5339,23 @@ for k41 in (True, False):
     dl41 = [b for u, b in c41 if u.endswith("/deeplink")]
     assert dl41 == ([{"coupangUrls": ["https://www.coupang.com/vp/products/555?itemId=1&vendorItemId=2"]}] if k41 else []), (k41, dl41)
     assert len(dr41) == 1 and (dr41[0][1] == "https://coupa.ng/b555") == k41 and dr41[0][0].startswith("<i>" + H.DISCLOSURE) == k41, dr41  # 키 없으면 예전처럼 상품 주소·문구 없음
-# ② 가격 확인: 시작 시각 전 X · 실행마다 1개 · pid마다 하루 1번(검색 결과 중 productId == pid이고 같은 옵션만) · own_end = 더 새것(봇 vs Cowork chk), 쿠폰·와우는 Cowork 그대로
+# ② 가격 확인: 시작 시각 전 X · 실행마다 1개 · 글(url)마다 하루 1번(검색 결과 중 pid(productId·pageKey) 같고 같은 옵션만) · own_end = 더 새것(봇 vs Cowork chk), 쿠폰·와우는 Cowork 그대로
+#   · 가장 오래전에 확인한 글 먼저 · 오류 = 오늘은 건너뜀(어제 가격 그대로) · 못 찾으면 로그에 pid·검색어·결과 위 3개(pid 있음 = 옵션 다름 / pid 없음)
 seen41 = reset41(True); H.cp_links(seen41); H.events(seen41); c41.clear()
 ch0, H.CP_CHK_HOUR = H.CP_CHK_HOUR, 11; H.cp_price(seen41); assert "cpq" not in seen41 and not c41; H.CP_CHK_HOUR = ch0  # 10시 < 11시
-H.cp_price(seen41); assert seen41["cpq"]["m"] == {"111": [7490, "2026-10-06 10:00"]} and len(c41) == 1  # 실행마다 검색 1번
-H.RUN.pop("cpn"); H.cp_price(seen41)
-assert seen41["cpq"]["m"] == {"111": [7490, "2026-10-06 10:00"], "222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
+H.cp_price(seen41); assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"]} and len(c41) == 1  # 실행마다 검색 1번
+H.RUN.pop("cpn"); o41 = io.StringIO(); import contextlib
+with contextlib.redirect_stdout(o41): H.cp_price(seen41)
+assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"], "https://coupa.ng/b222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
+assert "cp price 못 찾음 pid 222 · 검색어 '새 상품' · pid 없음 · 결과 0개" in o41.getvalue() and "sk" not in o41.getvalue().replace("검색", ""), o41.getvalue()  # 원인 찾기 로그(키·주소 쿼리 X)
 assert any(quote("곰곰 특란 30구") in u and u.endswith("&limit=10") for u, _ in c41)
 c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘은 끝
 assert H.cp_same("햇반 24개", "햇반 백미밥, 210g, 24개") and H.cp_same("리큐 리필 2.1L 4개", "리큐 진한겔 리필, 2.1L, 4개") and not H.cp_same("곰곰 특란 30구", "곰곰 특란, 30구, 2개") and not H.cp_same("에어팟 5", "에어팟 5, 2개")
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"], e41["st"]) == ("7,490원", "10/6 10시", "hot")  # 사이트 ⏳/🔥 = 같은 값
-seen41["cpq"]["m"]["111"][1] = "2026-10-06 09:00"; H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
+seen41["cpq"]["m"][EG41][1] = "2026-10-06 09:00"; H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시")  # Cowork 확인(09:30)이 더 새것이면 그것
-seen41["cpq"]["m"]["111"][1] = "2026-10-06 10:00"; json.dump([{**e, "now": "8,990원 와우가"} if e["url"] == EG41 else e for e in ev41], open("events.json", "w"))
+seen41["cpq"]["m"][EG41][1] = "2026-10-06 10:00"; json.dump([{**e, "now": "8,990원 와우가"} if e["url"] == EG41 else e for e in ev41], open("events.json", "w"))
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41); assert e41["now"] == "8,990원 와우가"  # 검색 가격엔 와우·쿠폰 없음 -> Cowork 값
 json.dump(ev41, open("events.json", "w"))
 # 호출 상한: 이번 실행(검색 1·전체 6 — 실패한 실행의 호출은 다음 실행에 안 보여도 1시간 합 ≤ 실행 수) · 최근 1시간(시계 시각 경계에서 두 배 안 되게) · rCode
@@ -5376,7 +5379,22 @@ for body41 in (json.dumps({"rCode": "500", "rMessage": "x"}), "<html>502</html>"
     except RuntimeError: pass
 seen41 = reset41(True); H.http = lambda url, *a, **k: json.dumps({"rCode": "500"}); H.cp_links(seen41)
 assert seen41["cpdl"]["x"] == {} and not sent and not os.path.exists("cp_links.json")  # 게이트웨이 오류 = 알림·하루 쉼 X, 다음 실행에
-H.cp_price(seen41); assert seen41["cpq"]["m"] == {"111": [0, "2026-10-06 10:00"]}  # 검색 오류 = 그 상품만 오늘 못 찾음(줄을 막지 않음)
+seen41["cpq"] = {"m": {EG41: [7490, "2026-10-05 10:00"]}}; H.cp_price(seen41)
+assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-05 10:00"]} and seen41["cpq"]["e"] == {EG41: "2026-10-06"}  # 검색 오류 = 오늘은 그 글 건너뜀(어제 가격 그대로, 줄을 막지 않음)
+c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘 다시 X
+# 가장 오래전에 확인한 글 먼저 · 결과에 pid는 있는데 옵션이 다름 = 'pid 있음' 로그 + 위 3개 · pageKey(파트너스 링크의 상품 번호)로도 같은 상품
+seen41 = reset41(True); json.dump(po41 + [{"t": "2026-10-05 11:00", "text": "🔥 [쿠팡] 새 상품 (5,000원)", "url": "https://coupa.ng/b222", "own": 1, "mid": 2}], open("posts.json", "w")); H.cp_links(seen41)
+seen41["cpq"] = {"m": {EG41: [7490, "2026-10-05 10:00"], "https://coupa.ng/b222": [0, "2026-10-04 10:00"]}}; c41.clear(); H.RUN.pop("cpn")
+H.http = lambda url, *a, **k: c41.append((url, None)) or json.dumps({"rCode": "0", "data": {"productData": [{"productId": 9, "productName": "다른 상품", "productPrice": 1}, {"productId": 777, "productName": "새 상품, 2개", "productPrice": 9000, "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=x&pageKey=222&itemId=1"}]}})
+o41 = io.StringIO()
+with contextlib.redirect_stdout(o41): H.cp_price(seen41)
+assert quote("새 상품") in c41[0][0] and seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 0, c41  # 10/4 확인 글이 먼저
+assert "pid 222 · 검색어 '새 상품' · pid 있음 1개 = 옵션 다름(cp_same) · 결과 2개" in o41.getvalue() and "  9 다른 상품\n" in o41.getvalue() and "  777 새 상품, 2개 ← 같은 pid" in o41.getvalue(), o41.getvalue()
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": [{"productId": 777, "productName": "새 상품, 1개", "productPrice": 5100, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=222"}]}})
+seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"; H.RUN.pop("cpn"); H.cp_price(seen41); assert seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 5100  # productId가 달라도 pageKey = pid면 같은 상품
+assert H.cp_same("칠성사이다 190ml 30캔", "칠성사이다, 190ml, 30개") and H.cp_same("도브 뷰티 크림바 90g 12개입", "도브 뷰티 크림바, 90g, 12개") and not H.cp_same("칠성사이다 190ml 30캔", "칠성사이다, 190ml, 60개")
+assert not H.cp_same("리스테린 쿨민트 1L 2+1", "리스테린 쿨민트, 1L, 1개") and not H.cp_same("비비고 왕교자 1.05kg x2", "비비고 왕교자, 1.05kg, 1개") and not H.cp_same("수면양말 6켤레", "수면양말, 12켤레")
+assert H.cp_same("맥스웰하우스 커피믹스 오리지날 180개입 × 2개", "맥스웰하우스 커피믹스 오리지날, 180개입, 2개") and H.cp_same("IPX500A 청소기", "IPX500A 무선 청소기")
 # ③ 골드박스(API): 🚀 = isRocket true인 것만, 끝에 게시 시점 가격
 reset41(True); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 1, "score": 8, "comment": "b"}]
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "로켓상품", "productPrice": 1000.0, "productUrl": "https://link.coupang.com/re/1", "isRocket": True},

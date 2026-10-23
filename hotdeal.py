@@ -37,7 +37,7 @@ CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_o
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
 CP_RUN, CP_SEARCH_RUN = 6, 1  # 실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
-CP_QTY = r"\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉)(?![a-z])"  # 수량·용량 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
+CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 안내 대가성 문구 그대로(10/5 머천트 정보 화면)
 TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
@@ -1359,38 +1359,50 @@ def cp_links(seen):
 
 
 def cp_price(seen):
-    """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): events pid마다 하루 1번(CP_CHK_HOUR~, 실행마다 1개) 글 상품명으로 검색 API -> 결과(최대 10개) 중 productId == pid이고
-    같은 옵션(cp_same)인 것만 -> seen cpq m[pid] = [가격(못 찾으면 0), 'YYYY-MM-DD HH:MM'(KST)] -> own_end가 events now·chk보다 새것이면 그 값(사이트 ⏳/🔥 같은 값).
-    상한 = 다음 실행에, 그 밖 오류 = 오늘은 그 상품 못 찾음(한 상품이 줄을 막지 않게). 키 없으면 아무것도 안 함."""
+    """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): 진우 글(url)마다 하루 1번(CP_CHK_HOUR~, 실행마다 1개, 가장 오래전에 확인한 것 먼저) 글 상품명으로 검색 API
+    -> 결과(최대 10개) 중 events pid와 같은 상품(productId 또는 파트너스 링크 pageKey)이고 같은 옵션(cp_same)인 것만 -> seen cpq m[url] = [가격(못 찾으면 0), 'YYYY-MM-DD HH:MM'(KST)]
+    -> own_end가 events now·chk보다 새것이면 그 값(사이트 ⏳/🔥 같은 값). 못 찾으면 로그에 pid·보낸 검색어·결과 위 3개(pid 있음 = 옵션 다름 / pid 없음 구분).
+    상한 = 다음 실행에, 그 밖 오류 = 오늘은 그 글 건너뜀(어제 가격 그대로 · 한 글이 줄을 막지 않게). 키 없으면 아무것도 안 함."""
     kst = time.gmtime(time.time() + 9 * 3600)
     if not HAS_CP or kst.tm_hour < CP_CHK_HOUR:
         return
     today, q = time.strftime("%Y-%m-%d", kst), seen.setdefault("cpq", {"m": {}})
     q["t"], ev = time.time(), ev_info()
     names = {p["url"]: parse(title_of(p["text"]))[1] for p in load(POSTS, []) if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
-    todo = {ev[u]["pid"]: n for u, n in names.items() if ev[u].get("pid") and n and not q["m"].get(ev[u]["pid"], [0, ""])[1].startswith(today)}
-    got = miss = 0
-    for pid, name in todo.items():
+    q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
+    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n) for u, n in names.items() if ev[u].get("pid") and n and not q["m"].get(u, [0, ""])[1].startswith(today) and u not in q["e"]),
+                  key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
+    got = miss = err = 0
+    for _, u, pid, name in todo:
+        kw = name[:50]
         try:
-            r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(name[:50])}&limit=10")
+            r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
         except CpLimit:
             break
         except Exception as e:
             print("cp price", pid, repr(e))
-            r = {}
-        x = next((x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if str(x.get("productId")) == pid and x.get("productPrice") and cp_same(name, x.get("productName"))), None)
-        q["m"][pid] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst)]
+            q["e"][u], err = today, err + 1
+            continue
+        ds = [x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(x, dict)]
+        same = [x for x in ds if pid in (str(x.get("productId")), *urllib.parse.parse_qs(urllib.parse.urlsplit(str(x.get("productUrl") or "")).query).get("pageKey", []))]
+        x = next((x for x in same if x.get("productPrice") and cp_same(name, x.get("productName"))), None)
+        q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst)]
         got, miss = got + bool(x), miss + (not x)
-    if got or miss:
-        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 검색에 없음(옵션 다름 포함) {miss} · 오늘 남음 {len(todo) - got - miss}")
+        if not x:  # 원인 찾기(10/23 Cowork — 적중 0): 결과에 pid가 있는데 옵션이 다른지 / 아예 없는지 · 위 3개(키·주소 쿼리 X)
+            print(f"cp price 못 찾음 pid {pid} · 검색어 '{kw}' · " + (f"pid 있음 {len(same)}개 = 옵션 다름(cp_same)" if same else "pid 없음") + f" · 결과 {len(ds)}개")
+            for y in ds[:3] + [y for y in same if y not in ds[:3]][:3]:
+                print(f"  {y.get('productId')} {str(y.get('productName') or '')[:30]}" + (" ← 같은 pid" if y in same else ""))
+    if got or miss or err:
+        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - got - miss - err}")
 
 
 def cp_same(name, api):
-    """검색 결과 이름이 진우 글과 같은 옵션인지: 글의 수량·용량 글자가 다 있고 글에 없는 묶음 수(개·팩…)는 없음. 글에 수량이 없으면 결과에도 없어야(1개·1팩은 무시)."""
-    qty = lambda s: {re.sub(r"\s", "", t).lower() for t in re.findall(CP_QTY, s or "", re.I)} - {"1개", "1팩", "1세트", "1입", "1박스", "1봉"}
+    """검색 결과 이름이 진우 글과 같은 옵션인지: 글의 수량·용량 글자가 다 있고 글에 없는 묶음 수(개·팩·켤레·2+1·x2…)는 없음. 글에 수량이 없으면 결과에도 없어야(1개·1팩은 무시).
+    캔·병·개입·입 = 개(쿠팡 이름은 '24개' — 글은 '24캔')."""
+    qty = lambda s: {re.sub(r"(캔|병|개입|입)$", "개", re.sub(r"\s", "", t).lower()) for t in re.findall(CP_QTY, s or "", re.I)} - {"1개", "1팩", "1세트", "1박스", "1봉", "1p"}
     need, got = qty(name), qty(api)
     extra = got - need
-    return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|입)$", t)})
+    return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|켤레|족|판|장|p|\d)$", t)})
 
 
 def events(seen):
@@ -4817,7 +4829,7 @@ def own_end(seen):
         tp = parse(title_of(first["text"]))[2].split("/")[0].strip() if first else ev.get(u, {}).get("target", "")
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
-        cq = not tsy and cpq.get(e.get("pid"))
+        cq = not tsy and e.get("pid") and cpq.get(u)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
         f = {"tgt": tp} if tw else {}
