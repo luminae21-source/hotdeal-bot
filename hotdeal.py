@@ -3869,7 +3869,7 @@ def th_reply(tok, to, text):
     q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(10)
-    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))["id"]
+    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")), top=False)["id"]
 
 
 def th_poll(tok, text, opts, tag="핫딜"):
@@ -4720,11 +4720,37 @@ def step_alert(seen, step, e):
     alert(seen, f"alert_{name}_{kind.replace(' ', '_')}", f"⚠️ {label} 게시 실패: {err_brief(e)}\n{hint}", ch, label)
 
 
-def th_ok(r):
-    """Threads 글·댓글이 올라감 -> 이번 실행 기록(watch: '✅ 다시 올라감'·2시간 글 없음 감시)."""
+def th_ok(r, top=True):
+    """Threads 글·댓글이 올라감 -> 이번 실행 기록(watch: '✅ 다시 올라감'·2시간 글 없음 감시). top = 글(댓글 X) -> id를 th_verify가 계정 글 목록에서 확인."""
     RUN["ok"].add("th")
     RUN["th_last"] = time.time()
+    if top and isinstance(r, dict) and r.get("id"):
+        RUN.setdefault("thids", []).append([time.time(), str(r["id"])])
+        print("th ok", r["id"])
     return r
+
+
+TH_VERIFY_MIN = 10 * 60  # 올린 지 10분 지난 글부터 계정 글 목록에서 확인
+
+
+def th_verify(seen):
+    """10/23 저녁 Cowork: 18:16 뒤 Threads 글이 프로필에 안 보임(봇은 올렸다고 기록·오류 0) -> 실행마다 계정 글 목록(/me/threads 최근 25개, 호출 1번)의 위 3개를 로그로 +
+    올린 지 10분~24시간 된 우리 글 id(seen thids)가 목록에 없으면 관리자 알림(3시간에 1번 — 계정 제한·검토 확인). 목록 밖으로 밀려난 옛 글은 안 셈."""
+    tok, now = E.get("THREADS_TOKEN"), time.time()
+    st = seen.setdefault("thids", {"l": []})
+    st["t"], st["l"] = now, [x for x in st["l"] + RUN.get("thids", []) if now - x[0] < 86400][-30:]
+    if not tok:
+        return
+    ds = json.loads(http(f"{THREADS}/me/threads?fields=id,timestamp,permalink,text&limit=25&access_token={tok}")).get("data") or []
+    ts = lambda x: datetime.strptime(x["timestamp"], "%Y-%m-%dT%H:%M:%S%z").timestamp()
+    for x in ds[:3]:
+        print("th 계정 최근 글", time.strftime("%m/%d %H:%M", time.gmtime(ts(x) + 9 * 3600)), x.get("permalink", ""), (x.get("text") or "")[:24].replace("\n", " "))
+    have, edge = {str(x.get("id")) for x in ds}, (min(map(ts, ds)) if len(ds) >= 25 else 0)
+    miss = [(t, i) for t, i in st["l"] if now - t > TH_VERIFY_MIN and t >= edge and i not in have]
+    if miss:
+        print("th 계정 목록에 없음", len(miss), "개:", " ".join(f"{time.strftime('%H:%M', time.gmtime(t + 9 * 3600))} {i}" for t, i in miss))
+        alert(seen, "alert_thmiss", f"⚠️ Threads에 올렸다고 기록된 글 {len(miss)}개가 계정 글 목록에 없음(첫 글 {time.strftime('%m/%d %H:%M', time.gmtime(miss[0][0] + 9 * 3600))}) — "
+                                     f"Meta가 지웠거나 계정 제한일 수 있음. Threads 앱 → 설정 → 계정 → 계정 상태 확인")
 
 
 METRICS, METRICS_HOUR, METRICS_KEEP = "metrics.json", 5, 14  # 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 조회·반응 -> metrics.json(최근 14일, 그 전은 git 기록) — 아침 08:30 보고가 Chrome 없이 읽음
@@ -5240,7 +5266,7 @@ def main():
                 print("alert", repr(e))
             raise SystemExit(1)
         seen = {}
-    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False)
+    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, thids=[])
     RUN.pop("cpu", None)
     RUN.pop("cpn", None)
     if TOSS_NO_CMP:
@@ -5322,7 +5348,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, metrics, cp_price, own_end, toss_roster):
+    for step in (cp_links, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
         try:
             step(seen)
         except Exception as e:

@@ -3068,7 +3068,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, metrics, cp_price, own_end, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -5445,4 +5445,27 @@ import subprocess; m42, d42 = re.search(r'python3 -c "(import json; o, n = .*?)"
 json.dump({"tsolo_20261023_16": 1, "b": 1}, open(f"{d42}/seen.json", "w")); json.dump({"b": 2, "c": 2}, open(f"{d42}/.seen_now/seen.json", "w"))
 assert "seen 합침 2 + 2 -> 3" in subprocess.run([sys.executable, "-c", m42], cwd=d42, capture_output=True, text=True).stdout and json.load(open(f"{d42}/seen.json")) == {"tsolo_20261023_16": 1, "b": 2, "c": 2}
 (H.tg, H.http, H.publish_approved, H.toss_clean_posts), H.SEEN_COLD = sv42, sc0
+# 9-43) Threads 게시 확인(10/23 저녁 Cowork: 18:16 뒤 프로필에 글이 안 보임 — 봇은 올렸다고 기록·오류 0): 글(댓글 X) publish id를 기록·로그,
+#       실행마다 계정 글 목록(/me/threads 최근 25개) 위 3개 로그 + 올린 지 10분~24시간 된 우리 글이 목록에 없으면 관리자 알림(3시간 1번). 목록 밖 옛 글은 안 셈
+sv43, tk43 = (H.http, H.tg, time.time), H.E.get("THREADS_TOKEN"); H.E["THREADS_TOKEN"] = "x"; sent.clear(); H.RUN["thids"] = []
+H.th_ok({"id": "111"}); H.th_ok({"id": "c9"}, top=False); assert [i for _, i in H.RUN["thids"]] == ["111"]  # 댓글은 계정 글 목록에 없음 -> 안 셈
+t43 = 1792745000; seen43 = {"thids": {"t": t43, "l": [[t43 - 3600, "111"], [t43 - 1800, "222"], [t43 - 60, "333"], [t43 - 90000, "old"]]}}; H.RUN["thids"] = []
+c43 = []
+def http43(url, *a, **k):
+    c43.append(url); return json.dumps({"data": [{"id": "111", "timestamp": "2026-11-11T09:00:00+0000", "permalink": "https://www.threads.com/@x/post/A", "text": "첫 글\n둘째 줄"}]})
+H.http, H.tg, time.time = http43, (lambda m, **p: sent.append((m, p)) or {"message_id": 1}), (lambda: t43)
+o43 = io.StringIO()
+with contextlib.redirect_stdout(o43): H.th_verify(seen43)
+assert len(c43) == 1 and "/me/threads?fields=id,timestamp,permalink,text&limit=25" in c43[0] and "th 계정 최근 글 11/11 18:00 https://www.threads.com/@x/post/A 첫 글 둘째 줄" in o43.getvalue(), o43.getvalue()
+assert "th 계정 목록에 없음 1 개:" in o43.getvalue() and " 222" in o43.getvalue() and "333" not in o43.getvalue().split("목록에 없음")[1] and [x[1] for x in seen43["thids"]["l"]] == ["111", "222", "333"]  # 10분 안 = 아직, 24시간 지난 건 버림
+assert len(sent) == 1 and sent[0][1]["chat_id"] == "42" and "계정 글 목록에 없음" in sent[0][1]["text"] and "계정 상태" in sent[0][1]["text"]
+sent.clear(); H.th_verify(seen43); assert not sent  # 같은 알림 3시간에 1번
+H.http = lambda url, *a, **k: json.dumps({"data": [{"id": str(n), "timestamp": "2026-11-11T09:00:00+0000"} for n in range(25)]})
+seen43 = {"thids": {"l": [[t43 - 3600, "222"]]}}; o43 = io.StringIO()
+with contextlib.redirect_stdout(o43): H.th_verify(seen43)
+assert "목록에 없음" not in o43.getvalue()  # 목록 25개가 다 그보다 새 글 = 밀려난 것(안 셈)
+assert "th_reply_ok, th_verify, metrics" in inspect.getsource(H.main) and "top=False)[\"id\"]" in inspect.getsource(H.th_reply)
+H.http, H.tg, time.time = sv43; H.RUN["thids"] = []
+if tk43 is None: H.E.pop("THREADS_TOKEN")
+else: H.E["THREADS_TOKEN"] = tk43
 print("OK: 모든 셀프체크 통과")
