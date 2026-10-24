@@ -494,7 +494,7 @@ def shelf(p, ev, today):
 def shelf_gone(posts):
     """같은 url 진우 글이 뒤에 또 올라온 사이트 진열(shelf) 글 번호 — 사이트엔 글 하나로(10/24 진우 '합치기' — home_pool과 같은 기준: url마다 최신 진우 글)."""
     last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
-    return {i for i, p in enumerate(posts) if p.get("shelf") and last[p.get("url")] != i}
+    return {i for i, p in enumerate(posts) if p.get("shelf") and last.get(p.get("url"), i) != i}
 
 
 def home_pool(posts, days):

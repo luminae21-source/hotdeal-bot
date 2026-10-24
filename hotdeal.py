@@ -2287,7 +2287,8 @@ def toss_picks(seen):
 TOSS_SOLO_HOURS = range(0, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(10/22 진우 '새벽에도' -> 0~8시도, 밤 발송은 무음). () = 끔
 TOSS_GAP_MIN, TOSS_GAP_NIGHT, TOSS_EV_PAD = 30, 60, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분(0~8시는 60분, 10/22) 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
 TOSS_SOLO_SRC, TOSS_SOLO_MIN, TOSS_SOLO_TRY = ("best", "beauty", "life", "day"), 7, 2  # 시각마다 돌아가며(많이 팔린 순위 -> 화장품 -> 생필품 -> 하루특가) · 점수 7↑ · 출처 2곳까지(Claude·API 아낌)
-TOSS_SITE = False  # 10/23 진우 '토스도 웹사이트에 계속, 하루 최대 수량' -> 토스쇼핑에 사용 범위('웹사이트 hotdealpick.kr 상품 전시·가격 표시') 추가 문의 중: 승인되면 True = 토스 API 개별 글도 posts.json(사이트 몰·품목·⏳ 칸)에. 지금은 False 고정(API 신청 범위)
+TOSS_SITE = True  # 10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량'(Cowork가 10/6 신청서 'API 상품·가격 사이트 전시 X'·개발 문서 위험 설명 뒤 진우 결정) = 토스 API 개별 글 + 토스 목록 대량 진열(toss_shelf)도 사이트에(toss_site — 사이트 전용, 리뷰 수·평점 X) · False = 끔
+TOSS_SHELF_RUN = 10  # 토스 사이트 진열: 실행마다 새로 진열하는 상품 수(쉐어링크 발급 = API 호출, 하루 상한 X) — shortcut: 공식 호출 상한 문서 없음 -> 오류 응답이면 그 상품은 하루 쉬고 그 실행은 멈춤
 TOSS_STEADY_HOURS = (10, 15, 20)  # 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘 — 꾸준하게 제품 올라오는 게 좋지': 이 시각 매시 글은 진우 토스 꾸준템(own_end) 먼저(하루 3개까지, 같은 상품 3일 간격 tb_)
 SOLO_PROMPT = SPECIAL_PROMPT.replace("특가 후보 목록이야(할인율 높고 리뷰 있는 상품, ", "상품 목록이야(") + TOSS_EASE + "\ncomment는 단위가격·구성 같은 사실 한 줄만.\n"
 
@@ -2301,6 +2302,56 @@ def ch_last(seen):
     """텔레그램 채널 마지막 딜 글 시각(epoch): 이번 실행(RUN) · 지난 실행 기록(seen) · posts.json 마지막 딜(토스 API 글은 posts.json에 없어서 기록이 주, 첫 배포 땐 posts.json)."""
     t = max((p["t"] for p in load(POSTS, []) if not p["text"].startswith("📋") and not p.get("shelf")), default="")
     return max(RUN["ch_last"], seen.get("ch_last", {}).get("t", 0), t and kst_ts(t) or 0)
+
+
+def toss_site(seen, x, link, text):
+    """토스 API 상품 -> 사이트 전용 글(TOSS_SITE, 10/24 진우 '웹사이트엔 최대한 많은 수량'): posts.json에 own·shelf·tid 1번(같은 상품 id·링크 진우 글이 있으면 X)
+    = 사이트 몰·품목 칸·상품 페이지·사이트맵, 채널·Threads·인스타·모아보기 X(shelf) · 리뷰 수·평점 X(가격·게시 시점만) · 진열 규칙 그대로(own_end: 판매 중 유지·⏳·🔁 —
+    상품 그룹 id를 tossid에 미리 넣어 단축 링크를 안 풂)."""
+    if any(p.get("tid") == x["tacaItemId"] or p.get("own") and p.get("url") == link for p in load(POSTS, [])):
+        return False
+    record(re.sub(r" · ⭐ [\d.]+ \([\d,]+\)", "", text), [], link, extra={"own": 1, "shelf": 1, "tid": x["tacaItemId"]})
+    if x.get("tacaId"):
+        seen.setdefault("tossid", {"m": {}})["m"].setdefault(link, [int(x["tacaId"]), time.time(), 0])
+    return True
+
+
+def toss_shelf(seen):
+    """토스 대량 사이트 진열(10/24 진우 '하루특가·BEST(카테고리별) API 목록 -> 쉐어링크 -> 사이트 전용 진열, API가 허용하는 만큼'): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 ->
+    카테고리 베스트들, 돌아가며) 중 사이트에 없는·판매 중 상품을 TOSS_SHELF_RUN개까지 -> 쉐어링크(만든 것 있으면 재사용) -> toss_site. 글 = 토스 개별 글 틀(대가성 문구·💙 머리 줄·
+    가격(할인)·게시 시점 가격 — 다른 몰 비교·리뷰 X). 토스 점검(재사용 모드)·키 없음·TOSS_SITE False면 X. 링크 오류 = 그 상품 하루 쉬고 그 실행 멈춤."""
+    if not (TOSS_SITE and HAS_TOSS) or RUN.get("treuse"):
+        return
+    now, st = time.time(), seen.setdefault("tshelf", {"i": 0, "x": {}})
+    st["t"], st["x"] = now, {k: t for k, t in st.get("x", {}).items() if now - t < 86400}
+    have = {p.get("tid") for p in load(POSTS, []) if p.get("tid")}
+    try:
+        tree = toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
+        srcs = [("하루특가 · 밤 12시까지", "/products/today-deals?size=30"), ("많이 팔린 순위 {}위", "/products/best-selling?size=30")] \
+            + [(f"{c['displayName']} 베스트 {{}}위", f"/products/best-categories/{c['categoryId']}?size=30") for c in tree]
+        info, path = srcs[st["i"] % len(srcs)]
+        st["i"] += 1
+        raw = toss(path)["items"]
+    except Exception as e:  # 터널 끊김 등 = 다음 실행에
+        print("toss shelf", repr(e))
+        return
+    n, links = 0, seen.get("tlink", {}).get("m", {})
+    for r, x in enumerate(raw):
+        if n >= TOSS_SHELF_RUN:
+            break
+        if x.get("isSoldOut") or x["tacaItemId"] in have or str(x["tacaItemId"]) in st["x"]:
+            continue
+        try:
+            link = (links.get(str(x["tacaItemId"])) or [None])[0] or toss_link(seen, x["tacaItemId"], x["displayName"])
+        except Exception as e:  # 발급 제한 상품·호출 제한·접속 = 그 상품 하루 쉬고 이 실행은 멈춤
+            print("toss shelf link", x["tacaItemId"], repr(e))
+            st["x"][str(x["tacaItemId"])] = now
+            break
+        body = mall_body("toss", info.format(r + 1), "🔥", x["displayName"], toss_price({**x, "reviewCount": 0}), [toss_when()])
+        if toss_site(seen, x, link, html_ents(ad_head(TOSS_NOTE, plain_of(body)) + body)[0]):
+            n += 1
+        have.add(x["tacaItemId"])
+    print("toss shelf", f"{info.format('N')} · 사이트 진열 {n}개")
 
 
 def toss_solo(seen):
@@ -2405,8 +2456,8 @@ def toss_solo(seen):
         seen["rehot"]["q"] = [q for q in seen["rehot"]["q"] if q["id"] != x["tacaItemId"]]
     if p.get("top"):
         top_mark(seen, now, x["tacaItemId"])
-    if TOSS_SITE:  # 사용 범위 승인 뒤에만(지금 False) — 리뷰 수·평점은 안 남김(승인 범위 = 가격, 10/23 리뷰)
-        record(re.sub(r" · ⭐ [\d.]+ \([\d,]+\)", "", m.get("text", "")), [], link, m["message_id"], p.get("score"), {"tid": x["tacaItemId"]})
+    if TOSS_SITE and src not in ("steady", "rehot"):  # 진우 토스 상품(꾸준템·다시 특가)은 진우 글이 이미 사이트에
+        toss_site(seen, x, link, html_ents(head + body)[0])
     bundled(seen)
     seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": head, "body": body, "btn": btn, "url": link, "n": name, "p": price,
                                        "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
@@ -5431,7 +5482,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
         try:
             step(seen)
         except Exception as e:

@@ -2602,7 +2602,8 @@ assert "💙 토스 특가 · 많이 팔린 순위 2위 🔥\n<b>베스트2</b>\
 assert p9i["reply_markup"] == {"inline_keyboard": [[{"text": "💙 토스에서 9,900원", "url": "https://toss.im/_m/S2"}]]} and p9i["chat_id"] == H.CHANNEL and p9i["parse_mode"] == "HTML"
 assert "tb_2" in s9i and s9i["sold_701"]["it"] == [[2, "베스트2", 9900, 0, 0, 0]] and s9i["sold_701"]["btn"] == "💙 토스에서 9,900원" and "tsolo_20261014_12" in s9i  # 품절 지켜보기·묶음 회차에서 빠짐
 q9i = s9i["thtoss"]["q"][-1]; assert q9i["k"] == "solo" and q9i["link"] == "https://toss.im/_m/S2" and q9i["text"].startswith(H.TOSS_NOTE) and "많이 팔린 순위 2위" in q9i["text"] and "게시 시점 가격" in q9i["text"]  # Threads 채움 후보
-assert json.load(open("posts.json")) == [] and i_prompts[0][0].startswith(H.SOLO_PROMPT) and "말투 — " in i_prompts[0][0] and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SOLO_PROMPT and "사실 한 줄" in H.SOLO_PROMPT  # 사이트 X
+(o9i,) = json.load(open("posts.json")); assert (o9i["own"], o9i["shelf"], o9i["tid"], o9i["url"], "mid" in o9i) == (1, 1, 2, "https://toss.im/_m/S2", False) and "⭐" not in o9i["text"] and o9i["text"].startswith(H.TOSS_NOTE) and "💙 토스 특가 · 많이 팔린 순위 2위 🔥\n베스트2\n9,900원 (40%↓)\n" in o9i["text"], o9i  # 10/24 TOSS_SITE = 사이트 전용 진열(리뷰 수·평점 X, 채널 글 번호 X)
+assert i_prompts[0][0].startswith(H.SOLO_PROMPT) and "말투 — " in i_prompts[0][0] and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SOLO_PROMPT and "사실 한 줄" in H.SOLO_PROMPT
 i_sent.clear(); i_calls.clear(); H.toss_solo(s9i); assert not i_sent and not i_calls  # 그 시각 1번
 s9e = {}; time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 진우 예약 11:30 앞뒤 10분 = 쉼(API도 안 부름, 기록 X -> 다음 실행에 다시)
 time.time = lambda: TK("2026-10-14 11:20"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 10분 앞도 쉼
@@ -2928,7 +2929,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (cp_links, shelf_posts, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -5113,7 +5114,7 @@ H.own_end(s36m); assert json.load(open("posts36.json"))[0]["st"] == "hot"  # 7�
 assert "ti[w[\"url\"]][7]" in inspect.getsource(H.toss_soldout) and "ti[u][7]: (u," in inspect.getsource(H.toss_solo) and '("g", x.get("tacaId")) not in booked_id' in inspect.getsource(H.toss_deals)
 H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv36[:5]; os.remove("posts36.json")
 assert "toss_steady(x) and not near(x)" in inspect.getsource(H.toss_solo)  # 다시 특가 가격이면 꾸준템 글 X(own_end 🔁로)
-assert re.search(r"record\(re\.sub\(r\" · ⭐", inspect.getsource(H.toss_solo))  # TOSS_SITE 켜도 리뷰 수·평점은 posts.json X
+assert re.search(r"record\(re\.sub\(r\" · ⭐", inspect.getsource(H.toss_site)) and "toss_site(" in inspect.getsource(H.toss_solo)  # TOSS_SITE 켜도 리뷰 수·평점은 posts.json X
 # 말투 기록 = 게시한 글만(채널 tone_ask는 안 씀 -> tone_keep) · 보관했다 올린 딜 = 코멘트 쓴 회차 말투 · admin_deal = seen 기록 · metrics 채널 줄 tone · 인스타 한 게시물 = 말투 하나
 s36t = {}; t36 = H.tone_ask(s36t, "ch")[0]; assert "tone_ch" not in s36t; H.tone_keep(s36t, "ch", t36); H.tone_keep(s36t, "ch", 0); assert s36t["tone_ch"]["l"] == [t36]
 assert "이모지 최대 1개" in H.tone_ask({}, "ch")[1] and "이모지 0~2개" not in H.tone_ask({}, "ch")[1]  # 채널 프롬프트 이모지 규칙 하나(DEAL_PROMPT와 같게)
@@ -5622,4 +5623,39 @@ assert len(st45) == 1 and "🧻 <b>생필품 스테디셀러 모음</b>" in st45
 S45.steady_page("docs"); assert "<h2 id=\"sth\">🧻 생필품 스테디셀러 모음</h2>" in open("docs/steady.html").read()
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS = sv45[:6]
 os.chdir(cwd45)
+# 9-47) 토스 대량 사이트 진열(10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량' — TOSS_SITE True): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 -> 카테고리 베스트) 돌아가며
+#       사이트에 없는·판매 중 상품 -> 쉐어링크(있으면 재사용) -> 사이트 전용 글(own·shelf·tid, 채널·Threads X, 리뷰 X, 대가성 문구·게시 시점 가격) · 링크 오류 = 그 상품 하루 쉬고 실행 멈춤
+sv47 = (H.toss, H.HAS_TOSS, H.tg, time.time, dict(H.RUN), H.POSTS); d47 = tempfile.mkdtemp(); cwd47 = os.getcwd(); os.chdir(d47)
+H.HAS_TOSS, H.POSTS, sent47, calls47 = True, "posts.json", [], []
+H.RUN.pop("treuse", None); time.time = lambda: 1793000000.0
+X47 = lambda i, g, n, p, so=False: {"tacaItemId": i, "tacaId": g, "displayName": n, "displayPrice": p, "discountRate": 30, "reviewScore": 4.9, "reviewCount": 1234, "isSoldOut": so}
+def toss47(path, body=None):
+    calls47.append(path)
+    if path == "/categories":
+        return {"categories": [{"categoryId": 5, "displayName": "생활용품"}]}
+    if path == "/links":
+        if body["tacaItemId"] == 21:
+            raise RuntimeError("발급 제한 상품")
+        return {"shortUrl": f"https://toss.im/_m/L{body['tacaItemId']}"}
+    return {"items": {"/products/today-deals?size=30": [X47(10, 100, "하루 물티슈", 5900), X47(11, 110, "이미 있는 것", 1000), X47(12, 120, "품절 상품", 1000, True)],
+                      "/products/best-selling?size=30": [X47(20, 200, "베스트 세제", 12900), X47(21, 210, "링크 안 됨", 1000), X47(22, 220, "베스트 휴지", 15900)],
+                      "/products/best-categories/5?size=30": [X47(30, 300, "생활 수세미", 3900)]}[path]}
+H.toss, H.tg = toss47, lambda m, **p: sent47.append((m, p)) or {"message_id": 1}
+json.dump([{"t": "2026-10-20 10:00", "text": "💙 토스 특가 🔥\n이미 있는 것\n1,000원", "url": "https://toss.im/_m/OLD", "own": 1, "tid": 11}], open("posts.json", "w"))
+s47 = {"tlink": {"m": {"20": ["https://toss.im/_m/MADE20", 1]}}}
+names47 = lambda: [S40.parse(S40.title_of(p["text"]))[1] for p in json.load(open("posts.json")) if p.get("shelf")]
+H.toss_shelf(s47); assert names47() == ["하루 물티슈"]  # 하루특가 목록: 품절·이미 사이트에 있는 것 X
+p47 = json.load(open("posts.json"))[-1]
+assert (p47["own"], p47["shelf"], p47["tid"], p47["url"], "mid" in p47) == (1, 1, 10, "https://toss.im/_m/L10", False) and p47["text"].startswith(H.TOSS_NOTE), p47
+assert "💙 토스 특가 · 하루특가 · 밤 12시까지 🔥\n하루 물티슈\n5,900원 (30%↓)\n⚠️" in p47["text"] and "⭐" not in p47["text"] and "게시 시점 가격" in p47["text"] and "쿠팡" not in p47["text"], p47["text"]
+assert s47["tossid"]["m"]["https://toss.im/_m/L10"][0] == 100 and not sent47  # own_end가 상품 그룹 id로 바로 확인(단축 링크 안 풂) · 채널·관리자 X
+H.toss_shelf(s47); assert names47() == ["하루 물티슈", "베스트 세제"] and "https://toss.im/_m/MADE20" in [p["url"] for p in json.load(open("posts.json"))] and "21" in s47["tshelf"]["x"]  # 만든 링크 재사용 · 링크 오류 = 그 상품 쉬고 멈춤(22는 다음에)
+H.toss_shelf(s47); assert names47()[-1] == "생활 수세미" and "생활용품 베스트 1위" in json.load(open("posts.json"))[-1]["text"]  # 카테고리 베스트
+H.toss_shelf(s47); H.toss_shelf(s47); assert names47() == ["하루 물티슈", "베스트 세제", "생활 수세미", "베스트 휴지"] and calls47.count("/links") == 4  # 다시 돌아옴: 있는 것 X · 오류 난 21은 하루 쉼(발급 10·21 실패·30·22)
+H.RUN["treuse"] = True; n47 = len(calls47); H.toss_shelf(s47); assert len(calls47) == n47; H.RUN.pop("treuse")  # 토스 점검(재사용 모드) = X
+H.TOSS_SITE = False; H.toss_shelf(s47); assert len(calls47) == n47; H.TOSS_SITE = True
+po47 = json.load(open("posts.json")); assert not [i for i, _ in S40.day_deals(po47, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))] and not sent47  # 카드·인스타 X · 채널 X
+S40.build(po47, "site"); tz47 = open("site/index.html").read().split('id="toss"')[1].split("</section>")[0]
+assert all(f"p/{i}.html" in tz47 for i in range(1, 5)) and "⭐" not in tz47  # 사이트 💙 토스 칸에 진열(리뷰 X)
+H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS = sv47[5]; os.chdir(cwd47)
 print("OK: 모든 셀프체크 통과")
