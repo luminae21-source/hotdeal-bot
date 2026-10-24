@@ -263,19 +263,19 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       assert.ok(bA.some(p => p.startsWith('buy/') && p.includes('/', 4)) && bA.includes('layout/A/buy'), '구매 클릭 = buy/ 그대로 + 화면 꼬리표 layout/A/buy ' + bA);
       await pa.reload({ waitUntil: 'load' }); await pa.waitForFunction(() => window.__gcl === 1); await pa.waitForTimeout(100);
       assert.ok(!(await pa.evaluate(() => (window.__gc || []).some(v => v.path === 'layout/A'))), '방문 = 탭 세션 1번');
-      await pa.click('.lsw button');
-      const sw = await pa.evaluate(() => [document.documentElement.className, localStorage.getItem('hp_layout'), scrollY, getComputedStyle(document.querySelector('main > .lb')).display, getComputedStyle(document.querySelector('main > .la')).display, (window.__gc || []).map(v => v.path), document.querySelector('.lsw small.lb').offsetWidth > 0]);
-      assert.ok(/\blay-b\b/.test(sw[0]) && !/\blay-a\b/.test(sw[0]) && sw[1] === 'b' && sw[2] === 0 && sw[3] !== 'none' && sw[4] === 'none' && sw[5].includes('layout/switch') && sw[6], '바꾸기(홈 맨 아래) = 아이콘형 + 기억 + 맨 위로 + layout/switch ' + JSON.stringify(sw));
+      await pa.click('.lsw [data-l=b]');
+      const sw = await pa.evaluate(() => [document.documentElement.className, localStorage.getItem('hp_layout'), scrollY, getComputedStyle(document.querySelector('main > .lb')).display, getComputedStyle(document.querySelector('main > .la')).display, (window.__gc || []).map(v => v.path), document.querySelector('.lsw [data-l=b]').getAttribute('aria-pressed') === 'true' && document.querySelector('.lsw [data-l=a]').getAttribute('aria-pressed') === 'false']);
+      assert.ok(/\blay-b\b/.test(sw[0]) && !/\blay-a\b/.test(sw[0]) && sw[1] === 'b' && sw[2] === 0 && sw[3] !== 'none' && sw[4] === 'none' && sw[5].includes('layout/switch/B') && sw[6], '바꾸기(홈 맨 아래 — 화면: 목록형·아이콘형·혼합형) = 아이콘형 + 기억 + 맨 위로 + 눌림 표시 + layout/switch/B ' + JSON.stringify(sw));
       const bS = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
       assert.ok(bS.includes('layout/A/buy') && !bS.includes('layout/B/buy'), '바꾼 탭의 구매 = 방문을 센 화면(A) 꼬리표 ' + bS);
       await pa.reload({ waitUntil: 'load' }); assert.ok(await pa.evaluate(() => document.documentElement.classList.contains('lay-b')), '다시 열어도 고른 화면');
-      await pa.goto(U + '/c/', { waitUntil: 'load' }); await pa.click('.lsw button');
+      await pa.goto(U + '/c/', { waitUntil: 'load' }); await pa.click('.lsw [data-l=a]');
       assert.ok(await pa.evaluate(() => document.documentElement.classList.contains('lay-a') && localStorage.getItem('hp_layout') === 'a' && getComputedStyle(document.querySelector('.sb')).position === 'absolute'), '/c/ 바꾸기 버튼(헤더도 목록형)');
       assert.deepStrictEqual(errA, [], '화면 고르기 스크립트 오류 X');
       await A.close();
-      for (const [x, l] of [[0.2, 'a'], [0.7, 'b']]) {  // 첫 방문 = 무작위 50:50 → 저장
+      for (const [x, l] of [[0.2, 'a'], [0.5, 'b'], [0.8, 'c']]) {  // 첫 방문 = 무작위 1/3(10/25 C 혼합형 — 이미 정해진 A·B는 그대로) → 저장
         const c = await browser.newContext({ viewport: { width: 390, height: 844 } }, null), p = await c.newPage(); await p.addInitScript(x => { Math.random = () => x; }, x); await p.goto(U + '/p/' + p0, { waitUntil: 'load' });
-        assert.deepStrictEqual(await p.evaluate(() => [(document.documentElement.className.match(/lay-[ab]/) || [''])[0], localStorage.getItem('hp_layout')]), ['lay-' + l, l], '첫 방문 무작위 ' + x); await c.close();
+        assert.deepStrictEqual(await p.evaluate(() => [(document.documentElement.className.match(/lay-[abc]/) || [''])[0], localStorage.getItem('hp_layout')]), ['lay-' + l, l], '첫 방문 무작위 ' + x); await c.close();
       }
       const cB = await browser.newContext({ viewport: { width: 390, height: 844 } }, null); await cB.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
       await cB.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);
@@ -283,25 +283,106 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       const gB = await pB.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return (window.__gc || []).map(v => v.path); });
       assert.ok(gB.some(p => p.startsWith('buy/')) && !gB.some(p => p.startsWith('layout/')), '저장소 막힘 = 무작위 X → 화면 실험 밖(layout/ 방문·구매 꼬리표 X, buy/는 그대로) ' + gB);
       const LB = await pB.evaluate(() => [document.documentElement.classList.contains('lay-a'), getComputedStyle(document.querySelector('main > .la')).display !== 'none', getComputedStyle(document.querySelector('main > .lb')).display === 'none', document.documentElement.scrollWidth <= innerWidth]);
-      await pB.click('.lsw button'); const LB2 = await pB.evaluate(() => document.documentElement.classList.contains('lay-b') && getComputedStyle(document.querySelector('main > .lb')).display !== 'none');
+      await pB.click('.lsw [data-l=b]'); const LB2 = await pB.evaluate(() => document.documentElement.classList.contains('lay-b') && getComputedStyle(document.querySelector('main > .lb')).display !== 'none');
       assert.ok(LB.every(Boolean) && LB2 && !errB.length, '저장소 막힘 = A 목록형 정상(바꾸기는 이 쪽에서만) ' + JSON.stringify([LB, LB2, errB]));
       await cB.close();
-      for (const [w, h, ua, name] of PHONES) for (const l of ['a', 'b']) for (const ia of [false, true]) {  // 두 화면 × 일반·앱 안 브라우저 = 옆으로 안 넘침 · 🔥 첫 줄이 첫 화면에
+      for (const [w, h, ua, name] of PHONES) for (const l of ['a', 'b', 'c']) for (const ia of [false, true]) {  // 세 화면 × 일반·앱 안 브라우저 = 옆으로 안 넘침 · 🔥 첫 줄이 첫 화면에
         const c = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ia ? IG : ua, isMobile: true, hasTouch: true }, l), p = await c.newPage(); await p.goto(U + '/', { waitUntil: 'load' }); await p.evaluate(() => scrollTo(0, 0));
         const o = await p.evaluate(() => [document.documentElement.scrollWidth - innerWidth, document.querySelector('#fire .rows:not([hidden]) .r').getBoundingClientRect().top, innerHeight, document.documentElement.className]);
         assert.ok(o[3].includes('lay-' + l) && o[0] <= 0 && (ia || o[1] < o[2]), `${name} ${l}${ia ? ' 앱 안' : ''} 옆 넘침 0·🔥 첫 화면 ` + JSON.stringify(o)); await c.close();
       }
+      for (const old of ['a', 'b']) {  // 이미 A·B인 사람 = 그대로(C로 안 바뀜)
+        const c = await browser.newContext({ viewport: { width: 390, height: 844 } }, old), p = await c.newPage(); await p.addInitScript(() => { Math.random = () => 0.9; }); await p.goto(U + '/', { waitUntil: 'load' });
+        assert.ok(await p.evaluate(o => document.documentElement.classList.contains('lay-' + o) && localStorage.getItem('hp_layout') === o, old), '기존 화면 유지 ' + old); await c.close();
+      }
+      // 7b) C 혼합형(10/25 진우 '둘의 장점을 합친 화면' · Cowork): 헤더 1줄(로고·빨강 검색·🔔·♡) + B 배너 + 바로가기 1줄(끝 ▦ 품목 전체) + 대가성 + A 🔥 탭·목록 — 390×660 첫 화면 = 배너 + 아이콘 1줄 + 🔥 4줄(아래 메뉴 위) · layout/C
+      const C = await browser.newContext({ viewport: { width: 390, height: 660 }, userAgent: IOS, isMobile: true, hasTouch: true }, 'c'), pc = await C.newPage(), errC = []; pc.on('pageerror', e => errC.push(String(e)));
+      await C.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} }); await C.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);
+      await pc.goto(U + '/', { waitUntil: 'load' }); await pc.waitForFunction(() => window.__gcl === 1 && (window.__gc || []).length);
+      const LC = await pc.evaluate(() => { const V = e => !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 1, r = e => e.getBoundingClientRect(), Q = s => document.querySelector(s);
+        const rows = [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].slice(0, 4).map(e => r(e).bottom), ev = Q('.evb');
+        return { cls: document.documentElement.className, la: V(Q('main > .la')), lb: V(Q('main > .lb')), ev: !!ev, evb: V(ev), evh: ev && Math.round(r(ev.querySelector('.ev')).height), qr: [...document.querySelectorAll('.qr')].filter(V).length, qc: V(Q('.qr .qc')), qch: Q('.qr .qc').getAttribute('href'),
+                 t6: V(Q('.t6')), mb: V(Q('.mb')), sb: r(Q('.sb')).toJSON(), hr: r(Q('.hr')).bottom, ib: [...document.querySelectorAll('.hr .ib')].map(e => V(e) && r(e).left), red: getComputedStyle(Q('.sb input')).borderTopColor, rows, nav: r(Q('.nav')).top,
+                 dis: r(Q('main > .dis')).top > r(Q('.qr')).bottom && r(Q('main > .dis')).bottom < r(Q('#fire')).top, over: document.documentElement.scrollWidth - innerWidth, gc: (window.__gc || []).map(v => v.event && v.path) }; });
+      assert.ok(/\blay-c\b/.test(LC.cls) && !LC.la && LC.lb && LC.evb === LC.ev && (!LC.ev || LC.evh === 84) && LC.qr === 1 && LC.qc && LC.qch.endsWith('/c/') && !LC.t6 && !LC.mb && LC.dis && LC.over <= 0, 'C = 배너(84px) + 바로가기 1줄 + ▦ 품목 전체 → 대가성 → 🔥 · 품목 12칸·몰 버튼 X ' + JSON.stringify(LC));
+      assert.ok(LC.sb.top < LC.hr && LC.ib.length === 2 && LC.ib.every(x => x !== false && x >= LC.sb.right) && LC.red === 'rgb(229, 48, 63)', 'C 헤더 1줄 = 로고 · 빨강 테두리 검색 · 🔔 · ♡(안 겹침) ' + JSON.stringify(LC));
+      assert.ok(LC.rows.length === 4 && LC.rows[3] <= LC.nav, '390×660 첫 화면 = (기획전 있으면 배너 +) 아이콘 1줄 + 🔥 4줄(아래 메뉴 위) ' + JSON.stringify([LC.ev, LC.rows, LC.nav]));  // 배너 없는 날도(행사 끝나면) 확인
+      assert.ok(LC.gc.includes('layout/C'), 'GoatCounter 방문 layout/C ' + LC.gc);
+      const bC = await pc.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
+      assert.ok(bC.includes('layout/C/buy'), '구매 클릭 꼬리표 layout/C/buy ' + bC);
+      assert.ok(await pc.evaluate(() => document.querySelector('.lsw [data-l=c]').getAttribute('aria-pressed') === 'true' && /화면:\s*목록형\s*아이콘형\s*혼합형/.test(document.querySelector('.lsw').textContent)), '고르기 = 화면: 목록형 · 아이콘형 · 혼합형(지금 = 혼합형)');
+      await pc.evaluate(() => { window.__gc = []; }); await pc.click('.lsw [data-l=c]');
+      assert.ok(await pc.evaluate(() => document.documentElement.classList.contains('lay-c') && !(window.__gc || []).length), '지금 화면 버튼 = 바꿈 X·GoatCounter X');
+      assert.ok(!LC.gc.some(p => p && p.startsWith('layout3/')) && !bC.some(p => p.startsWith('layout3/')), '예전 배정(hp_lc 없음) = layout3/ X');
+      await pc.click('.lsw [data-l=a]');
+      assert.ok(await pc.evaluate(() => document.documentElement.classList.contains('lay-a') && localStorage.getItem('hp_layout') === 'a' && getComputedStyle(document.querySelector('main > .la')).display !== 'none' && (window.__gc || []).some(v => v.path === 'layout/switch/A')), 'C → 목록형 바꾸기');
+      assert.deepStrictEqual(errC, [], 'C 스크립트 오류 X'); await C.close();
+      const N3 = await browser.newContext({ viewport: { width: 390, height: 844 } }, null), p3 = await N3.newPage(); await N3.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);  // C 연 뒤 새로 배정된 사람 = layout3/ 꼬리표(A·B·C 공정 비교 — 예전 A·B 사람은 다시 오는 사람)
+      await p3.addInitScript(() => { Math.random = () => 0.9; }); await p3.goto(U + '/', { waitUntil: 'load' }); await p3.waitForFunction(() => window.__gcl === 1 && (window.__gc || []).length);
+      const g3 = await p3.evaluate(() => { const v = (window.__gc || []).map(x => x.path); window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [v, window.__gc.map(x => x.path), localStorage.getItem('hp_lc')]; });
+      assert.ok(g3[0].includes('layout/C') && g3[0].includes('layout3/C') && g3[1].includes('layout/C/buy') && g3[1].includes('layout3/C/buy') && g3[2] === '3', '새 배정 = layout3/C 방문·구매 ' + JSON.stringify(g3)); await N3.close();
     }
-    const rd = [];
-    for (const [w, h, ua, url, dark, name, lay = 'b'] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 660, IOS, '/', false, '홈 390×660'],
+    {  // 7c) TOP/END(10/25 진우 '맨 위로 올라가는 TOP 혹은 END 버튼 — 있으면 의외로 좋더라'): 모든 쪽 오른쪽 아래 ↑ 맨 위 / ↓ 맨 아래 — 100vh 넘게 내렸을 때만 · 맨 아래 근처 ↓ 숨김 · 44px · 아래 메뉴·설치 띠 안 가림 · 움직임 줄이기 = 바로 · nav/top·nav/end
+      const GCT = r => r.fulfill({ contentType: 'text/javascript', body: 'window.__gcl=1;goatcounter.count=function(v){(window.__gc=window.__gc||[]).push(v)}' });
+      const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3], R4 = 'const R=e=>{const x=e.getBoundingClientRect();return [x.left,x.top,x.right,x.bottom]};';
+      for (const u of ['index.html', 'c/index.html', 'c/coupang/index.html', 'c/life/index.html', 'p/' + p0, 'saved/index.html', 'alarm/index.html'])
+        assert.ok(/<div class="tb" hidden><button type="button" data-gc="nav\/top" aria-label="맨 위로">.*<button type="button" data-gc="nav\/end" aria-label="맨 아래로">/.test(fs.readFileSync(path.join(ROOT, u), 'utf8')), 'TOP/END 모든 쪽 ' + u);
+      for (const l of ['a', 'b', 'c']) for (const dark of [false, true]) {
+        const c = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IOS, isMobile: true, hasTouch: true, reducedMotion: 'reduce', colorScheme: dark ? 'dark' : 'light' }, l), p = await c.newPage(), err = []; p.on('pageerror', e => err.push(String(e)));
+        await c.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} }); await c.route(/\/\/gc\.zgo\.at\/count\.js/, GCT);
+        await p.goto(U + '/', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);
+        const st = () => p.evaluate(R4 + "const b=document.querySelector('.tb'),u=b.children[0],d=b.children[1],V=e=>!e.closest('[hidden]')&&getComputedStyle(e).display!=='none'&&getComputedStyle(e).visibility!=='hidden';"
+          + "({y:scrollY,u:V(u),d:V(d),ur:R(u),dr:R(d),nav:R(document.querySelector('.nav')),bg:getComputedStyle(u).backgroundColor,max:document.documentElement.scrollHeight-innerHeight})");
+        let s = await st(); assert.ok(!s.u && !s.d, '맨 위 = 버튼 X ' + l);
+        await p.evaluate(() => scrollTo(0, innerHeight * 0.9)); await p.waitForTimeout(80); s = await st(); assert.ok(!s.u && !s.d, '100vh 안 = X ' + l);
+        await p.evaluate(() => scrollTo(0, innerHeight * 1.5)); await p.waitForTimeout(80); s = await st();
+        assert.ok(s.u && s.d && s.ur[2] - s.ur[0] === 44 && s.ur[3] - s.ur[1] === 44 && s.dr[3] - s.dr[1] === 44 && s.dr[1] > s.ur[3] && s.dr[3] <= s.nav[1] && !hit(s.dr, s.nav) && s.ur[2] <= 390, 'TOP/END = 44px 세로 2개 · 아래 메뉴 위 ' + l + JSON.stringify(s));
+        const n = s.bg.match(/[\d.]+/g).map(Number), lum = (s.bg.startsWith('color(') ? n.slice(0, 3).map(v => v * 255) : n.slice(0, 3)).reduce((a, b) => a + b, 0), al = s.bg.startsWith('color(') ? n[3] : n[3];
+        assert.ok((dark ? lum < 200 : lum > 600) && al > 0.5 && al < 1, '다크·라이트 반투명 바탕 ' + s.bg);
+        const ur0 = s.ur; await p.evaluate(() => { window.__gc = []; }); await p.click('.tb [aria-label="맨 아래로"]'); await p.waitForTimeout(80); s = await st();
+        assert.ok(s.y >= s.max - 2 && s.u && !s.d && JSON.stringify(s.ur) === JSON.stringify(ur0), '↓ = 맨 아래(움직임 줄이기 = 바로) · 맨 아래 근처 ↓ 숨김(↑ 자리 그대로 — 두 번 눌러도 ↑ X) ' + JSON.stringify(s));
+        assert.ok(await p.evaluate(() => document.activeElement === document.querySelector('.tb [aria-label="맨 위로"]')), '↓ 누른 뒤 초점 = ↑');
+        await p.click('.tb [aria-label="맨 위로"]'); await p.waitForTimeout(80); s = await st();
+        assert.ok(s.y === 0 && !s.u && await p.evaluate(() => document.activeElement === document.querySelector('.lg')), '↑ = 맨 위 + 버튼 숨김 · 초점 = 로고 ' + JSON.stringify(s));
+        assert.deepStrictEqual(await p.evaluate(() => window.__gc.filter(v => v.event).map(v => v.path)), ['nav/end', 'nav/top'], 'GoatCounter nav/end·nav/top');
+        assert.deepStrictEqual(err, [], 'TOP/END 오류 X'); await c.close();
+      }
+      const cs = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }), ps = await cs.newPage(); await ps.goto(U + '/', { waitUntil: 'load' });  // 움직임 줄이기 X = 부드럽게(바로 0 아님 → 결국 맨 위)
+      await ps.evaluate(() => scrollTo(0, innerHeight * 3)); await ps.waitForTimeout(80); await ps.click('.tb [aria-label="맨 위로"]');
+      assert.ok(await ps.evaluate(() => scrollY) > 0, '부드럽게 올라감'); await ps.waitForFunction(() => scrollY === 0, null, { timeout: 5000 }); await cs.close();
+      const ci = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IOS, isMobile: true, hasTouch: true }, 'c'), pi = await ci.newPage();  // 설치 띠 있을 때 = 그 위로
+      await ci.addInitScript(() => { try { localStorage.setItem('hv', '5'); } catch (e) {} }); await pi.goto(U + '/', { waitUntil: 'load' });
+      await pi.evaluate(() => scrollTo(0, innerHeight * 1.5)); await pi.waitForTimeout(150);
+      const si = await pi.evaluate(R4 + "const i=document.getElementById('inst'),b=document.querySelector('.tb');({inst:!i.hidden&&R(i),tb:!b.hidden,u:R(b.children[0]),d:R(b.children[1]),nav:R(document.querySelector('.nav'))})");
+      assert.ok(si.inst && si.tb && !hit(si.u, si.inst) && !hit(si.d, si.inst) && si.d[3] <= si.inst[1] && !hit(si.d, si.nav), '설치 띠·아래 메뉴 안 가림 ' + JSON.stringify(si));
+      await pi.evaluate(() => { const i = document.getElementById('inst'); i.style.minHeight = '120px'; dispatchEvent(new Event('resize')); }); await pi.waitForTimeout(80);  // 띠가 높아져도(큰 글자) 그 위로
+      const sj = await pi.evaluate(R4 + "const i=document.getElementById('inst'),b=document.querySelector('.tb');({inst:R(i),d:R(b.children[1])})");
+      assert.ok(sj.d[3] <= sj.inst[1], '높은 설치 띠도 안 가림 ' + JSON.stringify(sj)); await ci.close();
+      const cw = await browser.newContext({ viewport: { width: 1024, height: 768 } }), pw = await cw.newPage(); await pw.goto(U + '/', { waitUntil: 'load' }); await pw.evaluate(() => scrollTo(0, innerHeight * 1.5)); await pw.waitForTimeout(80);  // 넓은 화면 = 본문 칸 밖(카드·♡ 안 가림)
+      assert.ok(await pw.evaluate(() => !document.querySelector('.tb').hidden && document.querySelector('.tb').getBoundingClientRect().left >= document.querySelector('main').getBoundingClientRect().right), '넓은 화면 = 본문 밖'); await cw.close();
+      const cg = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IG, isMobile: true, hasTouch: true }), pg2 = await cg.newPage(); await pg2.goto(U + '/', { waitUntil: 'load' });  // 앱 안 브라우저(아래 메뉴 = 검색 아래) = 맨 아래 쪽
+      await pg2.evaluate(() => scrollTo(0, innerHeight * 1.5)); await pg2.waitForTimeout(80);
+      assert.ok(await pg2.evaluate(() => { const r = document.querySelector('.tb').getBoundingClientRect(); return !document.querySelector('.tb').hidden && r.bottom <= innerHeight - 90 && r.bottom >= innerHeight - 160; }), '앱 안 = 앱 툴바(아래 ~85px) 위'); await cg.close();
+      for (const [ua, lay] of [[IOS, 'a'], [IG, 'c']]) {  // 좁은 폰(320) 맨 아래 = ↑가 꼬리말 링크(블로그·인스타·Threads·텔레그램) 안 가림
+        const cn = await browser.newContext({ viewport: { width: 320, height: 640 }, userAgent: ua, isMobile: true, hasTouch: true }, lay), pn = await cn.newPage(); await pn.goto(U + '/', { waitUntil: 'load' });
+        await pn.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await pn.waitForTimeout(120);
+        const fo = await pn.evaluate(R4 + "const u=document.querySelector('.tb').children[0];({tb:!document.querySelector('.tb').hidden,u:R(u),a:[...document.querySelectorAll('footer a')].map(R)})");
+        assert.ok(fo.tb && fo.a.length >= 4 && fo.a.every(a => !hit(a, fo.u)), '320 맨 아래 ↑ ≠ 꼬리말 링크 ' + lay + JSON.stringify(fo)); await cn.close();
+      }
+    }
+    const rd = [], rc = [];
+    for (const [w, h, ua, url, dark, name, lay = 'b', sc = 0] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 660, IOS, '/', false, '홈 390×660'],
                                                 [360, 780, AND, '/', true, '홈 360 다크'], [390, 844, IOS, '/', true, '홈 390 다크'], [412, 915, AND, '/', true, '홈 412 다크'], [390, 844, IOS, '/c/', false, '카테고리 390'], [390, 844, IOS, '/c/coupang/', false, '쿠팡 쪽 390'], [390, 844, IOS, '/alarm/', false, '알림 390'], [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390'],
-                                                [360, 780, AND, '/', false, '홈 A 목록형 360', 'a'], [390, 844, IOS, '/', false, '홈 A 목록형 390', 'a'], [412, 915, AND, '/', true, '홈 A 목록형 412 다크', 'a']]) {
+                                                [360, 780, AND, '/', false, '홈 A 목록형 360', 'a'], [390, 844, IOS, '/', false, '홈 A 목록형 390', 'a'], [412, 915, AND, '/', true, '홈 A 목록형 412 다크', 'a'],
+                                                [360, 780, AND, '/', false, '홈 C 혼합형 360', 'c'], [390, 844, IOS, '/', false, '홈 C 혼합형 390', 'c'], [412, 915, AND, '/', false, '홈 C 혼합형 412', 'c'], [390, 660, IOS, '/', false, '홈 C 390×660', 'c'],
+                                                [360, 780, AND, '/', true, '홈 C 360 다크', 'c'], [390, 844, IOS, '/', true, '홈 C 390 다크', 'c'], [412, 915, AND, '/', true, '홈 C 412 다크', 'c'],
+                                                [390, 844, IOS, '/', false, 'TOP/END 390', 'c', 1.5], [390, 844, IOS, '/', true, 'TOP/END 390 다크', 'b', 1.5], [390, 844, IOS, '/c/life/', false, 'TOP/END 생필품 쪽 390', 'b', 1.5]]) {
       const c4 = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' }, lay), p4 = await c4.newPage();
       await p4.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} });
-      await p4.goto(U + url, { waitUntil: 'load' }); await p4.waitForTimeout(300);
-      const f = path.join(tmp, `rd${rd.length}.png`); await p4.screenshot({ path: f }); rd.push([f, name]); await c4.close();
+      await p4.goto(U + url, { waitUntil: 'load' }); if (sc) await p4.evaluate(k => scrollTo(0, innerHeight * k), sc); await p4.waitForTimeout(300);
+      const to = /^(홈 C|TOP\/END)/.test(name) ? rc : rd, f = path.join(tmp, `rd${rd.length}_${rc.length}.png`); await p4.screenshot({ path: f }); to.push([f, name]); await c4.close();
     }
-    require('child_process').execFileSync('python3', ['-c', `
+    const SHEET = `
 import json, sys
 from PIL import Image, ImageDraw
 sys.path.insert(0, ${JSON.stringify(__dirname)})
@@ -313,7 +394,9 @@ c = Image.new("RGB", (sum(i.width for i in ims) + G * (len(ims) + 1), top + max(
 for im, (_, t) in zip(ims, shots):
     d.text((x, 22), t, font=f, fill=(20, 22, 27)); c.paste(im, (x, top)); x += im.width + G
 c.save(out, optimize=True)
-`, JSON.stringify(rd), path.join(ROOT, 'cards', 'redesign_preview.png')]);
+`;
+    for (const [sh, n] of [[rd, 'redesign_preview.png'], [rc, 'layout_c_preview.png']]) require('child_process').execFileSync('python3', ['-c', SHEET, JSON.stringify(sh), path.join(ROOT, 'cards', n)]);  // C 혼합형·TOP/END(10/25) = 따로 한 장
+
     require('child_process').execFileSync('python3', ['-c', `
 import json, sys
 from PIL import Image, ImageDraw
