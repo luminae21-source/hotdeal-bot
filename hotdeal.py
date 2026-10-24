@@ -5200,7 +5200,8 @@ def own_end(seen):
     """진우 상품 진열 상태(10/23 진우 '진열 = 기본 유지' · '지금 특가가 아닌 제품은 특가를 기다릴 제품으로 알려주고, 나중에 특가가 되면 다시 특가 제품으로') — url마다(같은 url 진우 글 전부에) posts에:
     st = hot 🔥 특가 중(지금가 ≤ 목표가 +OWN_HOT_PCT%) | wait ⏳ 특가 대기(판매 중, 그보다 비쌈 · 목표가 없으면 🔥 X) | out 일시 품절 | gone 빼기(토스 '조회 안 됨' 서로 다른 날 연속 3번 · events end + why gone/issue — 이 2가지뿐),
     tgt = 목표가(처음 🔥로 소개한 진우 글 가격, 🔥 글이 없으면 events target), now = 지금가(쿠팡·네이버만 = events now — 토스 API 가격은 posts·사이트 X, API 신청 범위), chk = 확인 시각,
-    stdy = 👍 꾸준템(토스 = 리뷰 toss_steady, 쿠팡·네이버 = 👍 글), rehot = ⏳ -> 🔥 된 날(사이트 🔁 배지 · 토스는 seen rehot 줄 -> toss_solo '🔁 다시 특가' 글).
+    stdy = 👍 꾸준템(토스 = 리뷰 toss_steady, 쿠팡·네이버 = 👍 글), rehot = ⏳ -> 🔥 된 날(사이트 🔁 배지 · 토스는 seen rehot 줄 -> toss_solo '🔁 다시 특가' 글),
+    std·stp = st가 바뀐 날·앞 st(10/24) · cpp·cpt = 옵션을 맞춘(events item 또는 이름 수량·용량) 쿠팡 검색 API 가격·시각(10/24 — 사이트 📉·drop_check).
     토스 = 상세 API(실행마다 1번, 마지막 확인이 OWN_END_GAP 지난 id 30개까지 — 단축 링크 -> id는 seen tossid에 1번, 확인 뒤 다시 올린 글은 바로) · 쿠팡·네이버 = events 진우 항목 now·chk·target·end·why(Cowork).
     seen tossid m[url] = [상품 그룹 id(tacaId = 주소 /t/번호), 푼 시각, 마지막 확인, 'ok'|'out', 조회 안 됨 날짜들, 지금가(내부 — 1일 캐시), 꾸준템, 대표 옵션 id(tacaItemId)]
     — 상세는 tacaIds로(10/23: 그 전엔 tacaItemIds로 물어 대부분 '조회 안 됨' = 잘못된 일시 품절 → 8칸 아닌 기록은 다시 확인, 그 상태로는 🔁 X)."""
@@ -5249,10 +5250,12 @@ def own_end(seen):
         tp = parse(title_of(first["text"]))[2].split("/")[0].strip() if first else ev.get(u, {}).get("target", "")
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
-        cq = not tsy and e.get("pid") and cpq.get(u)
+        cq = not tsy and e.get("pid") and (e.get("item") or re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cpq.get(u)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
         f = {"tgt": tp} if tw else {}
+        if cq and cq[0]:
+            f.update(cpp=int(cq[0]), cpt=cq[1])  # 검증된 쿠팡 API 가격·시각(10/24 Cowork — 사이트 📉·drop_check 근거, 지금 가격을 덮었든 아니든)
         if e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):
             f["st"] = "gone"
         elif tsy and len(v) > 7:
@@ -5275,6 +5278,7 @@ def own_end(seen):
         if not tsy and any(icon_of(posts[i]["text"]) == "👍" for i in idxs):
             f["stdy"] = 1
         f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" and (not tsy or u in valid) else p.get("rehot")  # 토스 = 앞 상태도 맞는 id로 확인한 것일 때만
+        f["std"], f["stp"] = (today, p["st"]) if p.get("st") and p["st"] != f["st"] else (p.get("std"), p.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
             rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
         if not tsy and e.get("pid") and cpi.get(u):
@@ -5283,8 +5287,8 @@ def own_end(seen):
         c[f["st"]] += 1
         for i in idxs:
             q = posts[i]
-            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "end", "tst", "ts", "img")}
-            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
+            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "cpp", "cpt", "end", "tst", "ts", "img")}
+            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "cpp", "cpt", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
                 q.pop(k, None)
             q.update(f)
             n += was != {k: q.get(k) for k in was}
@@ -5293,6 +5297,48 @@ def own_end(seen):
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
     if n or HAS_TOSS and by:
         print("own end", f"진우 상품 {len(urls)}개(토스 {len(tossy)}) · 🔥 {c['hot']} · ⏳ {c['wait']} · 일시 품절 {c['out']} · 뺌 {c['gone']} · 글 바꿈 {n}" + (f" · 토스 이번 확인 {len(by)}개" if HAS_TOSS else ""))
+
+
+DROP_PCT, DROP_AT = 30, "09:30"  # 옵션 바뀜 의심(10/24 Cowork): 첫 글 가격보다 30%↓인데 API 확인 X -> 하루 1번 관리자 DM(9:30~ KST)
+
+
+def drop_rows(posts, ev, now_ts):
+    """쿠팡·네이버 진우 상품(url마다 최신 진우 글 — gone·out·📋 X)의 가격 내림 -> [(i, p, base, nowp, pct, verified)] — pct ≥ 3 · 확인(chkt) 24시간 안만.
+    base = 그 url 첫 진우 글 제목 가격, nowp = 지금 확인 가격(p now 첫 숫자) · verified = 옵션 맞춘 API 가격(cpp)이 48시간 안(cpt)이고 지금가 ±5% 또는 base×0.7 이하.
+    ev(ev_info) = 사이트(build_site) 쪽과 같은 모양 — 여기선 안 씀. 사이트도 같은 계산을 따로 씀."""
+    first, last = {}, {}
+    for i, p in enumerate(posts):
+        if p.get("own") and p.get("url") and not p["text"].startswith("📋") and shop_of(p) in ("coupang", "naver"):
+            first.setdefault(p["url"], p)
+            last[p["url"]] = i
+    out = []
+    for u, i in last.items():
+        p = posts[i]
+        base, nowp = won_of(parse(title_of(first[u]["text"]))[2])[0], won_of(p.get("now"))[0]
+        if p.get("st") in ("gone", "out") or not base or not nowp or not re.match(AT_RX, p.get("chkt") or "") or kst_ts(p["chkt"]) < now_ts - 86400:
+            continue
+        pct = round((base - nowp) * 100 / base)
+        if pct >= 3:
+            cpp = p.get("cpp")
+            out.append((i, p, base, nowp, pct, bool(cpp and re.match(AT_RX, p.get("cpt") or "") and kst_ts(p["cpt"]) >= now_ts - 48 * 3600 and (abs(cpp - nowp) <= nowp * 0.05 or cpp <= base * 0.7))))
+    return out
+
+
+def drop_check(seen):
+    """하루 1번(DROP_AT~ KST, seen dropchk) 관리자 DM: drop_rows 중 ▼DROP_PCT%↑ + API 확인 X = 옵션 바뀜 의심(가격 = DM에만, 로그엔 pid·%만) · 없으면 DM X."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    if time.strftime("%H:%M", kst) < DROP_AT or seen.get("dropchk", {}).get("d") == today:
+        return
+    seen["dropchk"], ev = {"t": now, "d": today}, ev_info()
+    rows = sorted((r for r in drop_rows(load(POSTS, []), ev, now) if r[4] >= DROP_PCT and not r[5]), key=lambda r: -r[4])
+    pid = lambda p: ev.get(p["url"], {}).get("pid")
+    for _, p, _, _, pct, _ in rows:
+        print(f"drop check {pid(p) or '-'} ▼{pct}% 옵션 확인 필요")
+    if rows:
+        tg("sendMessage", chat_id=ADMIN, text="\n".join(f"· {parse(title_of(p['text']))[1][:24]} {base:,}→{nw:,}원 ▼{pct}%" + (f" (pid {pid(p)})" if pid(p) else "") for _, p, base, nw, pct, _ in rows[:20])
+           + "\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. events item(옵션 itemId) 확인해 줘")
 
 
 CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
@@ -5566,6 +5612,39 @@ def cp_score(seen):
             except Exception as e:
                 d["dg"] = today
                 print("cp score GoatCounter", type(e).__name__)
+
+
+GC_TOP = "gc_top.json"  # 사이트 '많이 본' 순서(10/24 Cowork 개편) — 순서만, 숫자 X(공개 저장소)
+
+
+def gc_top(seen):
+    """1시간에 1번(seen gct) GoatCounter 최근 24시간(cp_score와 같은 호출): 딜 쪽 조회('/p/N.html' -> 그 글 url) + 구매 클릭('buy/<주소>') × 3
+    -> gc_top.json {at: KST 'YYYY-MM-DD HH:MM', urls: 높은 순 30개(쿼리 뺀 주소)} — 순서만(조회·클릭 수 X). 토큰 없으면 X · 오류 = 옛 파일 그대로."""
+    now, tok = time.time(), E.get("GOATCOUNTER_TOKEN")
+    if not tok or now - seen.get("gct", {}).get("t", 0) < 3600:
+        return
+    seen["gct"] = {"t": now}
+    hr = lambda t: time.strftime("%Y-%m-%dT%H:00:00Z", time.gmtime(t))
+    sc, seen_ids, posts = collections.Counter(), [], load(POSTS, [])
+    try:
+        for _ in range(CPS_GC_PAGES):  # shortcut: 많이 본 순 앞쪽 경로만(100개 × CPS_GC_PAGES) — 24시간이라 보통 1~2쪽
+            q = urllib.parse.urlencode({"start": hr(now - 86400), "end": hr(now), "limit": 100, **({"exclude_paths": ",".join(seen_ids)} if seen_ids else {})})
+            r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
+            for h in r.get("hits") or []:
+                seen_ids.append(str(h.get("path_id")))
+                path, n = str(h.get("path") or ""), int(h.get("count") or 0)
+                if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
+                    sc["https://" + path[4:]] += 3 * n
+                elif (m := re.fullmatch(r"/p/(\d+)\.html", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
+                    sc[posts[int(m[1])]["url"].split("?")[0]] += n
+            if not r.get("more"):
+                break
+            time.sleep(0.3)  # 초당 4번 상한
+    except Exception as e:
+        print("gc top GoatCounter", type(e).__name__)
+        return
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(30)]}, open(GC_TOP, "w"), ensure_ascii=False)
+    print("gc top GoatCounter 읽음")
 
 
 def cp_repost(seen):
@@ -5861,7 +5940,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, gc_top, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:
