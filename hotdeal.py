@@ -1415,6 +1415,12 @@ def goldbox(seen):
                     reply_markup={"inline_keyboard": [[{"text": "⏰ 골드박스 전체 보기", "url": GOLDBOX}]]})
     if m:
         record(m.get("text", ""), m.get("entities", []), GOLDBOX, m.get("message_id"))
+    if not rows and seen.get("gold0", {}).get("d") != key:  # 고른 것 0 = 다음 실행에 1번 더(Claude 판단 흔들림 — 10/25 07:03 40개 중 0개로 그날 조용히 안 올라감)
+        seen["gold0"] = {"t": time.time(), "d": key}
+        print("goldbox", len(items), "개 중 고른 것 0 — 다음 실행에 1번 더")
+        return
+    if not rows:
+        print("goldbox", len(items), "개 중 고른 것 0(2번째) — 오늘 안 올림")
     if m or not rows:  # 살 만한 게 없으면 오늘은 안 올림(15분마다 다시 고르지 않게)
         seen[key] = time.time()
 
@@ -4931,6 +4937,11 @@ def threads_deals(seen):
           "· 3시간 지난 ①②(리스트로)", sum(p["t"].startswith(today) and p["t"] < since and not p.get("th") and not p.get("shelf") and th_tier(p["text"]) > 0 for p in posts),
           "· 토스 픽 대기", sum(now - x["t"] < 3 * 3600 for x in seen.get("thtoss", {}).get("q", [])), "· 수수료 링크 아님", len(skip))))
     print(RUN["th_why"])
+    tm = seen.setdefault("thmiss", {"u": []})
+    tm["t"] = now
+    for u in sorted(th_missed(posts, now) - set(tm["u"])):  # 3시간 창이 끝나 Threads를 놓친 진우 🔥 = 1번 로그(재게시 루틴 후보 — 10/25)
+        print("threads 놓침(3시간 지남 · 3일 뒤 재게시 루틴이 지금 🔥·24시간 안 확인 가격이면 고름):", clip(title_of(next(p["text"] for p in reversed(posts) if p.get("url") == u)), 40))
+        tm["u"] = (tm["u"] + [u])[-200:]
     if not tok or not todo:
         return
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
@@ -6086,7 +6097,7 @@ def api_check(seen):
 def cp_repost(seen):
     """E 자동 재게시(10/24 진우 '반응 좋은 품목 자동 재게시 — 잘 된 쿠팡 품목 3일마다 재게시 순서 앞으로'): CPRE_HOURS 칸마다 1개(그 시각부터 CPRE_SPAN시간 안 첫 빈 실행).
     후보 = 진우 쿠팡 상품(파트너스 링크·채널에 나간 적 있음) 중 지금 🔥(own_end st hot) · 보이는 가격의 확인(own_end chkt)이 CPRE_FRESH 안 · 같은 상품(url·pid) 채널 글/진우·Cowork 예약이 앞뒤 CPRE_DAYS일 없음 · 반응 신호 있음.
-    순서 = 주문(cp_score o) > 사이트 구매 클릭(c) > 딜 쪽 조회(v) > 잘 된 상품 표(top.json Threads 조회) — 점수·순서 근거·후보 수는 로그에 X(공개 로그).
+    순서 = 주문(cp_score o) > 사이트 구매 클릭(c) > 딜 쪽 조회(v) > 잘 된 상품 표(top.json Threads 조회) > Threads 놓친 진우 🔥(th_missed — 10/25) — 점수·순서 근거·후보 수는 로그에 X(공개 로그).
     글 = 새 글(옛 글 안 고침): 쿠팡 대가성 문구 첫 줄 · '🔁 다시 소개' · 가격 = 확인 가격 '(M/D H시 확인)' · '처음 소개 때' = 진짜 첫 🔥 글이 있을 때만 · 🚀 = 검색 API isRocket일 때만(아니면 📦)
     · posts re:1(지금 진열 상태 그대로 — 🔁 다시 특가 배지 유지) -> Threads 맨 앞. 진우 예약 앞뒤 TOSS_EV_PAD·묶음 간격·시간당 상한(busy)이면 다음 실행에(칸 안)."""
     now = time.time()
@@ -6120,8 +6131,9 @@ def cp_repost(seen):
     sc, bare = seen.get("cps", {}), lambda u: u.split("?")[0]
     top = {x.get("url"): n for n, x in enumerate(load(TOP, {}).get("items", [])) if x.get("url")}
     sig = lambda u: tuple(-sc.get(k, {}).get(bare(u), 0) for k in "ocv") + (top.get(u, len(top)),)
+    miss = th_missed(posts, now)  # Threads 개별 글 칸에 밀려 3시간 창이 끝난 진우 🔥(10/25 Cowork '밀렸으면 재게시 루틴 대상으로') = 반응 신호 다음 차례
     cand = [u for u in chan if u not in block and ev.get(u, {}).get("pid") not in bpid and last[u].get("st") == "hot" and last[u].get("now") and last[u].get("chkt", "") >= fresh_at
-            and (any(sig(u)[:3]) or u in top)]
+            and (any(sig(u)[:3]) or u in top or u in miss)]
     seen[key] = now
     if not cand:
         print(f"cp repost {slot:02d}: 후보 없음")
@@ -6139,6 +6151,19 @@ def cp_repost(seen):
     bundled(seen)
     record(m.get("text", ""), m.get("entities", []), u, m["message_id"], extra={"own": 1, "re": 1, **{k: p.get(k) for k in ("cat", "tag", "st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "img")}})
     print(f"cp repost {slot:02d}: {clip(name, 30)}")
+
+
+TH_MISS_DAYS = 7  # Threads 놓친 진우 🔥 = 채널 글 뒤 이 날 수 안만 재게시 후보(cp_repost — 3일 간격 규칙은 그대로)
+
+
+def th_missed(posts, now):
+    """Threads 개별 글을 못 받은 진우 쿠팡 🔥 채널 글(10/25 Cowork — 35~55분 간격·칸마다 1개에 밀려 3시간 창이 끝남) -> 링크 집합.
+    = 채널에 나감(mid)·사이트 진열만 X·대가성 쿠팡·🔥·올린 지 3시간~TH_MISS_DAYS일 · 같은 링크 글 중 Threads에 나간(th) 글·재게시(re) 글이 하나도 없음
+    (재게시는 1번만 — 재게시 글도 Threads를 놓치면 3일마다 되풀이 X, 10/25 리뷰)."""
+    lo, hi = (time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - x)) for x in (TH_MISS_DAYS * 86400, 3 * 3600))
+    th = {p.get("url") for p in posts if p.get("th") or p.get("re")}
+    return {p["url"] for p in posts if p.get("own") and p.get("mid") and not p.get("shelf") and p.get("url") and p["url"] not in th and lo <= p["t"] < hi
+            and aff_note(p["url"]) == DISCLOSURE and icon_of(p["text"]) == "🔥" and not p["text"].startswith("📋")}
 
 
 def top_build(seen):

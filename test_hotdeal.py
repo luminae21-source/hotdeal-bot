@@ -639,7 +639,10 @@ assert json.load(open("posts.json"))[-1]["url"] == H.GOLDBOX  # 사이트·모�
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
 gp = []  # 살 만한 것만(10/7 진우): Claude가 하나도 안 고르면 안 올리고, 그날은 다시 안 고름(15분마다 Claude 호출 안 함)
 H.ai_pick = lambda prompt, lines: gp.append(prompt) or []
-seen.clear(); H.goldbox(seen); H.goldbox(seen); assert not sent and len(gp) == 1 and "억지로 5개 채우지 말고" in gp[0] and "goldbox_20261006" in seen
+seen.clear(); og = io.StringIO()
+with __import__("contextlib").redirect_stdout(og): H.goldbox(seen); assert "goldbox_20261006" not in seen and len(gp) == 1; H.goldbox(seen); H.goldbox(seen)
+assert not sent and len(gp) == 2 and "억지로 5개 채우지 말고" in gp[0] and "goldbox_20261006" in seen, gp  # 0개 = 다음 실행에 1번 더(10/25 07:03 0개로 그날 조용히 X), 2번째도 0개 = 그날 끝
+assert "고른 것 0 — 다음 실행에 1번 더" in og.getvalue() and "고른 것 0(2번째) — 오늘 안 올림" in og.getvalue(), og.getvalue()  # 로그로 보임
 time.time = tt
 # 5-5) 예약 게시(행사 알림): 시각 됐고 6시간 안이면 채널에 1번, 쿠팡 파트너스 링크면 대가성 문구 맨 앞 + 버튼, 지난 지 오래됐거나 아직이면 안 올림
 json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "https://link.coupang.com/a/old"},
@@ -5849,7 +5852,7 @@ d52 = tempfile.mkdtemp(); cwd52 = os.getcwd(); os.chdir(d52)
 H.POSTS, H.EVENTS, H.TOP, H.CPRE_HOURS, H.CPS_HOUR = "posts.json", "events.json", "top.json", (12, 18), 5
 U52 = {k: f"https://link.coupang.com/a/{k}" for k in "ABCDEFGHJK"}; U52["I"] = "https://naver.me/x52"
 own52 = lambda k, t="2026-10-20 10:00", ic="🔥", **x: {"t": t, "text": f"{ic} [{'네이버' if k == 'I' else '쿠팡'}] 상품{k} 2kg (9,900원)", "url": U52[k], "own": 1, "mid": 100 + ord(k), "st": "hot", "now": "9,900원", "chk": "10/24 9시",
-                                                      "chkt": "2026-10-24 09:10", "tgt": "9,900원", "cat": "food", **x}
+                                                      "chkt": "2026-10-24 09:10", "tgt": "9,900원", "cat": "food", "th": 1, **x}
 P52 = [own52(k) for k in "ABCDE"] + [own52("F", st="wait"), own52("G", chkt="2026-10-23 06:00", chk="10/23 6시"), own52("H", mid=None, shelf=1), own52("I")]  # F 대기 · G 확인 30시간 전(쿠폰가 옛 확인 = own_end chkt) · H 사이트 진열만 · I 네이버(신호·확인 다 있음)
 json.dump(P52, open("posts.json", "w"), ensure_ascii=False)
 EV52 = [{"at": "2026-10-20 10:00", "url": U52[k], "text": "x", "pid": str(110 + n)} for n, k in enumerate("ABCDEFGHIJK")] + [{"at": "2026-10-24T09:00", "url": "https://toss.shopping/_m/bad", "text": "시각 모양 틀림"}]
@@ -5900,6 +5903,23 @@ assert len(sent52) == n52 and "cpre_20261028_12" not in s52h and o52.getvalue() 
 fr52("2026-10-28", P52[:5]); s52f = {"cps": {"o": {U52["B"]: 1}}, "bundles": {"t": TK("2026-10-28 12:00"), "ts": [TK("2026-10-28 12:00")]}}; H.cp_repost(s52f); assert len(sent52) == n52 and "cpre_20261028_12" not in s52f  # 묶음 글 10분 안
 json.dump(EV52 + [{"at": "2026-10-28 12:10", "url": "https://toss.shopping/_m/z", "text": "y"}], open("events.json", "w")); H.cp_repost(s52f := {"cps": {"o": {U52["B"]: 1}}}); assert len(sent52) == n52  # 진우 예약 앞뒤 10분 = 쉼
 json.dump(EV52, open("events.json", "w")); H.cp_repost(s52f); assert url52()[-1] == U52["B"]  # 예약 지나면 같은 칸 안에 다시
+# Threads 놓친 진우 🔥(10/25 Cowork — 35~55분 간격·칸마다 1개에 밀려 3시간 창이 끝남) = 반응 신호 다음 차례 · 3일 간격·🔥·확인 가격 규칙 그대로 · 7일 지나면 X
+pj52 = open("posts.json").read()  # 아래 cp_score 셀프체크용 그대로 되돌림
+mi52 = [{**own52(k), "t": t, "th": None} for k, t in (("C", "2026-10-24 20:12"), ("D", "2026-10-24 20:55"), ("E", "2026-10-21 21:33"))] + [{**own52("F"), "st": "hot", "t": "2026-10-17 09:00", "th": None},
+        {**own52("G"), "t": "2026-10-22 10:00", "th": None}, {**own52("G"), "t": "2026-10-22 13:00", "re": 1}, {**own52("H"), "t": "2026-10-22 10:00", "th": None, "shelf": 1}, {**own52("J"), "t": "2026-10-22 10:00", "th": None, "text": "🛒 [쿠팡] 상품J 2kg (9,900원)"}]
+assert H.th_missed(mi52, TK("2026-10-25 08:40")) == {U52["C"], U52["D"], U52["E"]}, H.th_missed(mi52, TK("2026-10-25 08:40"))  # F = 7일 넘음 · G = 다시 올린 글이 Threads에 나감(th) · H 진열만 · J 🛒
+assert H.th_missed(mi52, TK("2026-10-24 22:00")) == {U52["E"]}  # C·D = 아직 3시간 창 안
+assert H.th_missed(mi52 + [{**own52("E"), "t": "2026-10-24 18:05", "re": 1, "th": None}], TK("2026-10-25 08:40")) == {U52["C"], U52["D"]}  # 이미 재게시한 상품 = X(재게시 글도 놓쳐도 되풀이 X)
+fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])] + [own52("B")]); n52 = len(sent52)
+time.time = lambda: TK("2026-10-25 12:05"); H.cp_repost({"cps": {"c": {U52["B"]: 1}}}); assert url52()[-1] == U52["B"]  # 반응 신호(B) 먼저
+fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])]); time.time = lambda: TK("2026-10-25 18:05"); H.cp_repost({}); assert url52()[-1] == U52["E"]  # 신호 없음 = 놓친 글(C = 채널 글 3일 안 X)
+fr52("2026-10-28", [x for x in mi52 if x["url"] == U52["C"]]); time.time = lambda: TK("2026-10-28 12:05"); H.cp_repost({}); assert url52()[-1] == U52["C"]  # 3일 지나면 C도
+fr52("2026-11-02", [x for x in mi52 if x["url"] == U52["D"]]); time.time = lambda: TK("2026-11-02 12:05"); n52 = len(sent52); H.cp_repost({}); assert len(sent52) == n52  # 7일 지남 = X
+fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])]); time.time = lambda: TK("2026-10-25 08:40"); tk52 = H.E.pop("THREADS_TOKEN", None); stm52 = {}; o52 = io.StringIO()
+with __import__("contextlib").redirect_stdout(o52): H.threads_deals(stm52); H.threads_deals(stm52)
+assert o52.getvalue().count("threads 놓침(3시간 지남 · 3일 뒤 재게시 루틴이") == 2 and "상품C 2kg" in o52.getvalue() and sorted(stm52["thmiss"]["u"]) == [U52["C"], U52["E"]], o52.getvalue()  # 놓친 글 = 1번씩 로그
+if tk52: H.E["THREADS_TOKEN"] = tk52
+open("posts.json", "w").write(pj52)
 # cp_score: 주문 리포트(같은 pid만·D-14~D-1) + GoatCounter(Bearer · 상품 경로 클릭·딜 쪽 조회 · 옛 buy/몰 X) · 하루 1번 · 숫자 로그 X
 c52, h52 = [], []
 H.HAS_CP, H.E["GOATCOUNTER_TOKEN"] = True, "gtok"
