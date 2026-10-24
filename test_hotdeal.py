@@ -12,6 +12,7 @@ pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13�
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
 ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
+tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Threads C·3장면·첫 30분 답글 알림(10/25)은 맨 아래 9-64에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -3122,7 +3123,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -3549,10 +3550,12 @@ c17.clear(); H.TH_LINK_AB = False; s17c = {"threply": {"t": now17, "ok": 1}, "th
 assert "link_attachment" in c17[0] and len(c17) == 1  # 상수 끄면 A만
 c17.clear(); fail17[0] = True; s17d = {"threply": {"t": now17, "ok": 1}, "thab": {"t": now17, "last": "A", "m": {}}}; pd = H.th_deal(s17d, "tk", "777", tA, H.SITE + "p/5.html?ref=th")
 assert "링크 댓글 실패" in al17[-1] and "?ref=thc" in al17[-1] and s17d[f"thabq_{pd}"]["text"] == rB  # 댓글 실패 -> 알림 + 다음 실행에 1번 더
-c17.clear(); H.th_retry(s17d); assert [q["reply_to_id"] for q in c17] == [pd] and "2번째도 실패" in al17[-1] and not any(k.startswith("thabq_") for k in s17d)
+c17.clear(); H.th_retry(s17d); assert not c17 and f"thabq_{pd}" in s17d  # 같은 실행 = X(다음 실행에 — 10/25 리뷰)
+time.time = lambda: now17 + 900; c17.clear(); H.th_retry(s17d); assert [q["reply_to_id"] for q in c17] == [pd] and "2번째도 실패" in al17[-1] and not any(k.startswith("thabq_") for k in s17d)
 c17.clear(); H.th_retry(s17d); assert not c17  # 3번째는 안 함
 fail17[0] = False; s17d[f"thabq_{pd}"] = {"t": now17, "id": pd, "text": rB}; c17.clear(); H.th_retry(s17d)
 assert [q["reply_to_id"] for q in c17] == [pd] and s17d["thab"]["m"][pd]["r"] and not any(k.startswith("thabq_") for k in s17d)  # 다시 달리면 댓글 id 기록
+time.time = lambda: now17
 v17.update({ids17[0]: 40, ids17[1]: 55, s17["thab"]["m"][ids17[1]]["r"]: 9})
 json.dump({}, open(H.METRICS, "w")); H.E.update(THREADS_TOKEN="tk", METRICS_DAY="2026-10-18"); ph17 = H.http
 H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-18T10:00:00+0000"} for i, t in ((ids17[0], tA), (ids17[1], bB))]}) if "/me/threads?" in url else ph17(url, *a, **k)
@@ -5559,7 +5562,7 @@ H.http = lambda url, *a, **k: json.dumps({"data": [{"id": str(n), "timestamp": "
 seen43 = {"thids": {"l": [[t43 - 3600, "222"]]}}; o43 = io.StringIO()
 with contextlib.redirect_stdout(o43): H.th_verify(seen43)
 assert "목록에 없음" not in o43.getvalue()  # 목록 25개가 다 그보다 새 글 = 밀려난 것(안 셈)
-assert "th_reply_ok, th_verify, metrics" in inspect.getsource(H.main) and "top=False)[\"id\"]" in inspect.getsource(H.th_reply)
+assert "th_reply_ok, th_verify, th_watch, metrics" in inspect.getsource(H.main) and "top=False)[\"id\"]" in inspect.getsource(H.th_reply)
 H.http, H.tg, time.time = sv43; H.RUN["thids"] = []
 if tk43 is None: H.E.pop("THREADS_TOKEN")
 else: H.E["THREADS_TOKEN"] = tk43
@@ -6202,7 +6205,7 @@ json.dump([{**p, "now": "12,000원"} if p["url"] == U58("A") and p.get("now") el
 time.time = lambda: TK("2026-10-27 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sent58[1][1]["text"] == f"· {L58[:24]} 20,000→12,000원 ▼40% (pid 600)\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. 쿠팡 = events item(옵션 itemId) 확인해 줘", sent58[1][1]["text"]  # 지금가 바뀐 줄만
 json.dump([p for p in P58d if p["url"] not in (U58("A"), U58("J"), "https://naver.me/D")], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-28 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sd58["dropchk"]["d"] == "2026-10-28"  # 없음 = DM X(그날 끝)
-assert "metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
+assert "th_verify, th_watch, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
 assert "[ ! -f gc_top.json ] || git add gc_top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E.clear(); H.E.update(sv58[7]); os.chdir(cwd58)
 # 9-59) (10/24 Cowork 포털형 홈 + 변경 찾기) 홈 = 몰 버튼·품목 아이콘 12칸 → 🔥 실시간 핫딜(가격 근거 3일 안 🔥만 · 기획전 X · 같은 브랜드 1개 · 전체 = 몰 돌아가며 · 몰 탭 · 🆕 올린 순 · 빈 탭 X)
@@ -6623,4 +6626,159 @@ with contextlib.redirect_stdout(o63):
     except urllib.error.HTTPError: pass
 H.urllib.request.urlopen = uo63; assert "SECRET63" not in o63.getvalue() and "project=12345" not in o63.getvalue() and o63.getvalue().startswith("HTTP 403 https://texttospeech.googleapis.com/v1/text:synthesize "), o63.getvalue()  # http() 오류 로그 = 쿼리 X
 (time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, _e63, H.tg, _c63) = sv63; H.E.clear(); H.E.update(_e63); H.API_ST.clear(); os.chdir(_c63)
+# 9-64) (10/25 Cowork·진우) Threads 글 틀 C = 본문 '[광고] 상황 훅'(상품명·가격·숫자·링크 X) + 바로 첫 댓글(대가성 문구 전문 + 답·상품·가격·시각 + 지금 확인할 이유 + 👉 링크 — 여기에만)
+#      · 10/25 20시(19시 A/B 비교 뒤)부터 A→B→C 돌림(v48·rv48) · '상황 3장면' S = 하루 1개(19~22시 첫 B·C 차례 — 돌림 차례 그대로) · Claude 실패·규칙 X = A · 첫 30분 답글 = 관리자 알림(글 링크 + 답글, 로그엔 내용 X)
+sv64 = (H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.th_voice, H.POSTS, H.TH_LINK_AB, H.TH_VOICE, os.getcwd()); os.chdir(tempfile.mkdtemp()); H.time.sleep = lambda s: None; H.TH_C, H.TH_LINK_AB, H.TH_VOICE, H.POSTS = True, True, True, "posts.json"
+assert tc0 is True and H.TH_C_FROM == "2026-10-25 20:00" and H.TH_SCENE_H == (19, 22)
+NT64 = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+L64 = "https://link.coupang.com/a/egg"
+VT64 = f"{NT64}\n\n🚀 쿠팡 · 로켓배송\n곰곰 특란 30구\n💰 8,990원 (1구 300원꼴)\n\n✔ 리뷰 2,000+\n\n쟁여 둘 만함\n\n⏰ 10/25 21시 가격 · 결제 전 확인\n👉 {L64}"
+T64 = f"{NT64}\n\n🔥 [쿠팡] 곰곰 특란 30구 (8,990원)\n💰 1구당 300원꼴\n\n👉 {L64}"
+assert H.th_parts(VT64) == (NT64, "🚀 쿠팡 · 로켓배송", "곰곰 특란 30구", "💰 8,990원 (1구 300원꼴)", "⏰ 10/25 21시 가격 · 결제 전 확인") and H.th_parts(T64) is None  # 지금 틀(고정 레이아웃 X) = C·S X
+nm64 = ["곰곰", "특란"]
+assert H.th_c_line(" 퇴근하고  냉장고 열었는데 ", nm64, False) == "퇴근하고 냉장고 열었는데" and not H.th_c_line("특란이 떨어짐", nm64, False) and not H.th_c_line("계란 30개 사러 감", nm64, False)
+assert not any(H.th_c_line(x, nm64, False) for x in ("이거 인생템임", "강추하는 계란", "최저가 떴다", "나도 샀는데 좋더라", "써 보니 괜찮음", "링크는 아래", "지금 바로 사세요", "면역에 좋은 계란"))
+assert not H.th_c_line("쿠팡보다 싸게 산 계란", nm64, True) and H.th_c_line("특란 얘기", nm64, False, True) == "특란 얘기"  # 토스 = 다른 몰 말 X · 답 줄은 상품명 OK
+assert not any(H.th_c_line(x, [], False, True) for x in ("요즘 이거 쓰고부터 편해짐", "이걸로 바꿨더니 편함", "그래서 요즘 이거 먹는 중", "계란은 한 판씩 쟁여 둠", "아침마다 한 포 챙김", "이거 들인 뒤로 여유로움"))  # 내가 샀다·쓴다(써 본 척 — 10/25 리뷰)
+assert not any(H.th_c_line(x, [], False, True) for x in ("그래서 요즘은 박스로 쟁여 둔다", "쟁여 두는 중", "쟁였음", "요즘 이거만 씀", "이거 쓰니까 편함", "이거 쓰고 나서 편함", "요즘은 이걸로 정착", "아침마다 한 잔씩 마시는 중",
+                                                    "그래서 바꿈", "그래서 바꿨음", "그래서 갈아탐", "그래서 사다 둠", "주문해 둠", "정기배송 걸어 둠", "요즘 매일 마심", "챙겨 둠", "써 보는 중", "입는 중", "신는 중",
+                                                    "그래서 박스로 쟁여 둬", "요즘 이거 써", "요즘 이거 먹어", "이걸로 바꿨어", "바꿨는데 편해", "그래서 미리 사 둬"))  # 리뷰 2번째 — 내 경험 꼴 넓게(반말 포함)
+assert not any(H.th_c_line(x, [], False) for x in ("어깨가 늘 뻐근함", "머리 감을 때마다 빠진 머리카락", "밥만 먹으면 더부룩", "환절기만 되면 목이 칼칼함", "거울 볼 때마다 잡티가 신경 쓰임"))  # 몸·피부 증상 장면 X
+assert all(H.th_c_line(x, [], False) for x in ("쟁여 두면 편함", "쟁여 둘 만한 구성", "신경 쓰이는 중", "양말 신는 중에 또 구멍", "바꿀 때 됐나 싶음"))  # 권유·장면 꼴은 OK
+assert H.th_c_line("쟁여 두면 편함", [], False, True) and H.th_c_line("계란은 한 판씩 미리 쟁여 두기", [], False, True) and H.th_c_line("그래서 찾아본 게 계란 한 판", [], False) and H.th_len("가a👉") == 6  # 방법·물건 소개 = OK · 이모지 = UTF-8 바이트(Threads 500자)
+GC64 = {"hook": "계란 사러 또 마트 가는 길", "lines": ["퇴근하고 냉장고 열었는데", "계란 칸이 텅 비어 있음", "라면에 넣을 것도 없네"], "tease": "이럴 때 답은 하나 👇", "answer": "계란은 한 판씩 미리 쟁여 두기"}
+GS64 = {"hook": "이 세 개 다 겪어 봤으면 손", "scenes": [["아침에 프라이 하려는데", "계란이 하나도 없음", "결국 빵만 먹고 나감"], ["주말에 장 보러 갔는데", "계란 코너만 텅 비었음", "다른 마트까지 또 감"],
+        ["야식으로 라면 끓이는데", "계란 넣으려다 멈칫", "냉장고엔 마지막 하나"]], "close": "그래서 찾아본 게 계란 한 판"}
+aq64, ap64 = [], []
+def ai64(prompt, props):
+    ap64.append((prompt, sorted(props)))
+    x = aq64.pop(0)
+    if isinstance(x, Exception):
+        raise x
+    return x
+H.ai_json = ai64
+aq64[:] = [{**GC64, "hook": "계란 30개 사러 감"}, GC64]; assert H.th_c_gen("C", "곰곰 특란 30구", "식품", False) == GC64 and len(ap64) == 2 and "다시:" in ap64[1][0] and "상품: 곰곰 특란 30구" in ap64[0][0]  # 숫자 = 1번 다시
+aq64[:] = [{**GC64, "lines": ["하나뿐"]}, {**GC64, "lines": ["하나뿐"]}]; assert H.th_c_gen("C", "곰곰 특란 30구", "식품", False) is None  # 상황 2~4줄 아니면 2번째도 X = None
+aq64[:] = [{**GC64, "tease": "궁금하지 👇🥚"}, RuntimeError("down")]; assert H.th_c_gen("C", "곰곰 특란 30구", "식품", False) is None  # 이모지 2개↑ · Claude 실패 = None
+aq64[:] = [GS64]; assert H.th_c_gen("S", "곰곰 특란 30구", "식품", False) == GS64 and ap64[-1][1] == ["close", "hook", "scenes"]
+aq64[:] = [{**GS64, "scenes": GS64["scenes"][:2]}, {**GS64, "scenes": [["a", "b"]] * 3}]; assert H.th_c_gen("S", "곰곰 특란 30구", "식품", False) is None  # 장면 3개·3~5줄
+aq64[:] = [{**GC64, "hook": "생수 사러 또 마트 가는 길"}]; assert H.th_c_gen("C", "삼다수 생수 2L 12병", "식품", False)["hook"] == "생수 사러 또 마트 가는 길"  # 종류 말 = 상황 말로 OK
+aq64[:] = [{**GC64, "hook": "화장실 갔는데 화장지가 없음"}]; assert H.th_c_gen("C", "깨끗한나라 화장지 30m 30롤", "생필품", False)["hook"] == "화장실 갔는데 화장지가 없음"  # 3자 종류 말도 OK(브랜드만 X)
+aq64[:] = [{**GC64, "hook": "삼다수 또 떨어짐"}] * 2; assert H.th_c_gen("C", "삼다수 생수 2L 12병", "식품", False) is None and not aq64  # 브랜드(첫 낱말) = X
+# 지금 확인할 이유(우리 데이터): 오늘 밤 12시 마감 > 이번 주 같은 품목 단위가 순위 > 가격 시각
+now64 = TK("2026-10-25 20:30"); time.time = lambda: now64
+P64 = [{"t": "2026-10-25 09:00", "text": f"{NT64}\n\n🔥 [쿠팡] 곰곰 쌀 10kg (29,900원)\n💰 100g당 299원꼴", "url": "https://link.coupang.com/a/rice"},
+       {"t": "2026-10-24 09:00", "text": f"{NT64}\n\n🔥 [쿠팡] 햇반 210g 24개 (20,000원)\n💰 100g당 397원꼴", "url": "https://link.coupang.com/a/hb1"},
+       {"t": "2026-10-23 09:00", "text": f"{NT64}\n\n🔥 [쿠팡] 햇반 210g 36개 (32,000원)\n💰 100g당 420원꼴", "url": "https://link.coupang.com/a/hb2"},
+       {"t": "2026-10-25 08:00", "text": f"{NT64}\n\n🔥 [쿠팡] 곰곰 특란 30구 (8,990원) 밤 12시까지\n💰 1구당 300원꼴", "url": L64},
+       {"t": "2026-10-22 09:00", "text": f"{NT64}\n\n🔥 [쿠팡] 햇반 작은공기 130g 36개 (25,000원)\n💰 100g당 534원꼴", "url": "https://link.coupang.com/a/hb3"},
+       {"t": "2026-10-25 09:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 햇반 210g 30개 (9,000원)\n💰 100g당 143원꼴", "url": "https://toss.shopping/_m/hbt"}]
+json.dump(P64, open("posts.json", "w"), ensure_ascii=False)
+assert H.th_why(L64, "⏰ 10/25 21시 가격") == "오늘 밤 12시에 끝나는 가격이라 지금 한 번 확인해 봐"
+assert H.th_why("https://link.coupang.com/a/hb1", "⏰ 10/25 21시 가격") == "이번 주 핫딜픽 즉석밥 중 단위가 1위라 지금 볼 만해"  # 같은 품목끼리만(토스 햇반 = 비교 X)
+assert H.th_why(H.SITE + "p/2.html?ref=th", "⏰ 10/25 21시 가격") == "이번 주 핫딜픽 즉석밥 중 단위가 2위라 지금 볼 만해"  # 사이트 딜 쪽 링크 = 글 번호로
+assert H.th_why("https://link.coupang.com/a/rice", "⏰ 10/25 9시 쿠폰가 · 결제 전 확인") == "10/25 9시 기준 가격이라 바뀌기 전에 확인해 봐"  # 쌀 = 다른 품목(햇반과 순위 X) · 3개 안 됨
+assert H.th_why("https://x/none", "⏰ 10/25 21시 가격 · 결제 전 확인") == "10/25 21시 기준 가격이라 바뀌기 전에 확인해 봐" and H.th_why("https://x/none", "") == "가격은 바뀔 수 있어서 결제 전에 한 번 확인해 봐"
+# th_deal: 돌림 A→B→C(10/25 20시부터) · S = 19~22시 하루 1개(첫 B·C 차례) · 본문·첫 댓글 모양
+c64, n64, fail64 = [], [0], [False]
+def http64(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url and method == "POST":
+        q = {k: v[0] for k, v in parse_qs(urlsplit(url).query).items()}; c64.append(q)
+        if "reply_to_id" in q and fail64[0]: raise OSError("reply down")
+        return json.dumps({"id": "c%d" % len(c64)})
+    if "/threads_publish?" in url:
+        n64[0] += 1; return json.dumps({"id": "p%d" % n64[0]})
+    raise AssertionError(url)
+al64 = []; H.http, H.tg = http64, (lambda m, **p: al64.append(p.get("text")) or {"message_id": 1})
+H.th_voice = lambda seen, text, link, src=None: VT64
+def run64(seen, k, at, link=L64):
+    global now64
+    now64 = TK(at); out = []
+    for _ in range(k):
+        c64.clear(); o = io.StringIO()
+        with contextlib.redirect_stdout(o): pid = H.th_deal(seen, "tk", "777", T64, link)
+        out.append((pid, seen["thab"]["m"][pid]["ab"], [q for q in c64 if "reply_to_id" not in q][0], [q for q in c64 if "reply_to_id" in q], o.getvalue()))
+    return out
+s64 = {"threply": {"t": TK("2026-10-25 19:00"), "ok": 1}}
+na64 = len(ap64); assert [x[1] for x in run64(s64, 3, "2026-10-25 19:40")] == ["A", "B", "A"] and len(ap64) == na64  # 20시 전 = A↔B 그대로(Claude 안 부름)
+aq64[:] = [GS64, GC64]; n0 = len(ap64)
+r64 = run64(s64, 5, "2026-10-25 20:30")
+assert [x[1] for x in r64] == ["S", "B", "C", "A", "B"] and len(ap64) - n0 == 2 and s64["thscene"]["d"] == "2026-10-25", [x[1] for x in r64]  # 첫 B 차례 = 3장면(차례 그대로) → B → C → A → B
+pS, pC = r64[0], r64[2]
+assert pS[2]["text"].startswith("[광고] 이 세 개 다 겪어 봤으면 손\n\n아침에 프라이 하려는데") and pS[2]["text"].endswith("그래서 찾아본 게 계란 한 판\n곰곰 특란 30구") and "link_attachment" not in pS[2] and not re.search(r"http|원", pS[2]["text"])  # 상품 = 끝 2줄(가격 X)
+assert pS[3][0]["text"] == f"{NT64}\n\n🚀 쿠팡 · 로켓배송\n곰곰 특란 30구\n💰 8,990원 (1구 300원꼴)\n⏰ 10/25 21시 가격 · 결제 전 확인\n\n오늘 밤 12시에 끝나는 가격이라 지금 한 번 확인해 봐\n👉 {L64}" and pS[3][0]["reply_to_id"] == pS[0]  # 3장면 첫 댓글 = 대가성 문구 + 상품·가격·시각 + 이유 + 링크
+assert pC[2]["text"] == "[광고] 계란 사러 또 마트 가는 길\n\n퇴근하고 냉장고 열었는데\n계란 칸이 텅 비어 있음\n라면에 넣을 것도 없네\n\n이럴 때 답은 하나 👇" and "link_attachment" not in pC[2]
+assert not re.search(r"\d|http|곰곰|특란|추천", pC[2]["text"].split("\n", 1)[1]) and pC[2]["text"].startswith("[광고] ")  # 본문 = [광고] 맨 앞 · 상품명·숫자·링크·'추천' X
+assert pC[3][0]["text"] == f"{NT64}\n\n계란은 한 판씩 미리 쟁여 두기\n🚀 쿠팡 · 로켓배송\n곰곰 특란 30구\n💰 8,990원 (1구 300원꼴)\n⏰ 10/25 21시 가격 · 결제 전 확인\n\n오늘 밤 12시에 끝나는 가격이라 지금 한 번 확인해 봐\n👉 {L64}" and "topic_tag" not in pC[3][0]
+assert s64["thab"]["m"][pC[0]]["r"] and s64["thab"]["m"][pS[0]]["r"] and "th C [쿠팡] 곰곰 특란 30구" in pC[4] and "th S [쿠팡] 곰곰 특란 30구" in pS[4]  # 댓글 id = rv48(링크 댓글 조회)
+aq64[:] = [GC64, GC64]; assert [x[1] for x in run64(s64, 4, "2026-10-25 21:30")] == ["C", "A", "B", "C"] and not aq64  # 3장면 = 하루 1번(같은 날 다시 X)
+aq64[:] = [RuntimeError("down")]; r64b = run64({"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "B", "m": {}}}, 1, "2026-10-26 10:00")
+assert r64b[0][1] == "A" and "link_attachment" in r64b[0][2] and not r64b[0][3]  # C를 못 만들면 A(본문 링크)
+aq64[:] = [{**GS64, "scenes": GS64["scenes"][:1]}, {**GS64, "scenes": GS64["scenes"][:1]}]; s64c = {"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "A", "m": {}}}
+r64c = run64(s64c, 1, "2026-10-26 19:10"); assert r64c[0][1] == "B" and "thscene" not in s64c and s64c["thab"]["last"] == "B"  # 3장면 못 만듦 = 그 차례(B) 그대로 · 다음 칸에 다시
+aq64[:] = [GC64]; r64d = run64({"threply": {"t": now64, "ok": 0}, "thab": {"t": now64, "last": "B", "m": {}}}, 1, "2026-10-26 10:00"); assert r64d[0][1] == "A" and len(aq64) == 1  # 댓글 권한 없음 = A(Claude X)
+pf64 = [True]; http64b = http64
+def http64(url, body=None, headers=None, method=None):
+    if "/threads_publish?" in url and pf64[0]: raise OSError("publish down")
+    return http64b(url, body, headers, method)
+H.http = http64; aq64[:] = [GS64]; s64p = {"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "A", "m": {}}}
+try: run64(s64p, 1, "2026-10-27 19:30")
+except OSError: pass
+assert "thscene" not in s64p and not aq64  # 3장면 글이 못 올라가면 그날 다음 칸에 다시
+pf64[0] = False; aq64[:] = [GS64]; assert run64(s64p, 1, "2026-10-27 20:30")[0][1] == "S" and s64p["thscene"]["d"] == "2026-10-27"; H.http = http64b
+H.th_voice = lambda seen, text, link, src=None: text; r64e = run64({"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "B", "m": {}}}, 1, "2026-10-26 10:00"); assert r64e[0][1] == "A"  # 지금 틀 글 = A↔B만
+H.th_voice = lambda seen, text, link, src=None: VT64; fail64[0] = True; aq64[:] = [GC64]; al64.clear(); s64f = {"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "B", "m": {}}}
+r64f = run64(s64f, 1, "2026-10-26 10:00"); fail64[0] = False
+assert r64f[0][1] == "C" and s64f[f"thabq_{r64f[0][0]}"]["text"].endswith(L64) and "(C: 링크는 첫 댓글)" in al64[0]  # 댓글 실패 = B와 같이 알림 + 다음 실행 1번 더(th_retry)
+aq64[:] = [GC64]; r64g = run64({"threply": {"t": now64, "ok": 1}, "thab": {"t": now64, "last": "B", "m": {}}}, 1, "2026-10-26 10:00", H.SITE + "p/2.html?ref=th")
+assert r64g[0][3][0]["text"].endswith(f"👉 {H.SITE}p/2.html?ref=thC") and "즉석밥 중 단위가 2위" in r64g[0][3][0]["text"]  # 사이트 딜 쪽 링크 = GoatCounter 꼬리표 thC
+assert "tone" not in s64["thab"]["m"][pC[0]] and "tone" not in s64["thab"]["m"][pS[0]]  # C·S = 말투 줄 없음 → 말투 비교 X
+H.th_retry(s64f); assert f"thabq_{r64f[0][0]}" in s64f  # 링크 댓글 다시 = 다음 실행(같은 실행 X)
+now64 += 900; c64.clear(); H.th_retry(s64f); assert [q.get("reply_to_id") for q in c64] == [r64f[0][0]] and s64f["thab"]["m"][r64f[0][0]]["r"]  # 다음 실행 = 1번 더 → 댓글 id
+# C·S = 쿠팡 딜만(네이버·올영 = 프로그램 문구 본문 맨 앞 · 토스 = 게시 시점 가격) · 화장품·건강 품목 X(상황→상품 = 효능 주장) — Claude 안 부름
+for h64, nm in ((H.NAVER_NOTE, "곰곰 특란 30구"), (H.OY_NOTE, "곰곰 특란 30구"), (H.TOSS_NOTE, "곰곰 특란 30구"), (NT64, "라운드랩 자작나무 선크림 50ml"), (NT64, "종근당 락토핏 유산균 60포"), (NT64, "고려은단 비타민C 300정"),
+                (NT64, "TS 탈모 샴푸 500g"), (NT64, "종근당 락토핏 골드 50포"), (NT64, "뉴트리원 프로폴리스 60캡슐"), (NT64, "쏘팔메토 옥타코사놀 90정"), (NT64, "나우푸드 밀크시슬 120정"),
+                (NT64, "GNC 크릴오일 60캡슐"), (NT64, "종근당 아르기닌 6000 30포"), (NT64, "센트룸 멀티 112정")):
+    na = len(ap64); assert H.th_c_post("C", VT64.replace(NT64, h64).replace("곰곰 특란 30구", nm), L64, None, False) is None and len(ap64) == na, (h64[:12], nm)
+na = len(ap64); assert H.th_c_post("C", VT64, L64, None, False, "[쿠팡] 곰곰 특란 30구 (면역 강화) (8,990원)") is None and len(ap64) == na  # 전체 제목(괄호 안 효능 말)까지 봄
+assert H.th_c_post("C", VT64, L64, "beauty", False) is None
+aq64[:] = [GC64, GC64]; assert all(H.th_c_post("C", VT64.replace("곰곰 특란 30구", nm), L64, None, False) for nm in ("돌체구스토 캡슐 16개", "깨끗한나라 화장지 30롤")) and not aq64  # 커피 캡슐·화장지 = 건강 품목 X(C OK)
+assert inspect.getsource(H).count('r.get("ab") in ("B", "C", "S")') == 2  # metrics: B·C·S = 본문 주소 X(링크 = 첫 댓글) · 답글 수에서 우리 링크 댓글 1개 뺌
+# 첫 30분 대응: 우리 글(올린 지 45분 안)에 다른 사람 답글 = 관리자 알림 1번(글 링크 + 답글) · 우리 댓글·알린 답글 X · 권한 없음 = 하루 1번 · 로그엔 내용 X
+RT64 = lambda m: f"2026-10-26T01:{m:02d}:00+0000"
+hw64, rp64 = [], {"p1": [{"id": "r1", "username": "hotdeal_pick", "text": "👉 링크", "timestamp": RT64(21)}, {"id": "r2", "username": "kim", "text": "어디서 사요?", "timestamp": RT64(30)}],
+                  "p2": [{"id": "r3", "username": "lee", "text": "옛 글 답글", "timestamp": "2026-10-25T22:30:00+0000"}], "p3": [{"id": "r5", "username": "choi", "text": "늦은 답글", "timestamp": RT64(35)}]}
+def httpw64(url, body=None, headers=None, method=None):
+    hw64.append(url)
+    if "/me?fields=id,username" in url: return json.dumps({"id": "777", "username": "hotdeal_pick"})
+    if "/777/threads?fields=id,permalink,timestamp" in url:
+        return json.dumps({"data": [{"id": "p1", "permalink": "https://www.threads.com/@hotdeal_pick/post/AAA", "timestamp": "2026-10-26T01:20:00+0000"},
+                                    {"id": "p2", "permalink": "https://www.threads.com/@hotdeal_pick/post/BBB", "timestamp": "2026-10-25T22:20:00+0000"},
+                                    {"id": "p3", "permalink": "https://www.threads.com/@hotdeal_pick/post/CCC", "timestamp": "2026-10-26T00:00:00+0000"}]})
+    m = re.search(r"/(p\d)/conversation\?", url)
+    if m:
+        if rp64.get("err") and m[1] in rp64["err"]:
+            e = urllib.error.HTTPError(url, rp64["err"][m[1]][0], "x", {}, None); e.body = rp64["err"][m[1]][1]; raise e
+        return json.dumps({"data": rp64[m[1]]})
+    raise AssertionError(url)
+H.http, H.th_watch = httpw64, tw0; H.E["THREADS_TOKEN"] = "tk"; al64.clear(); sw64 = {}; now64 = TK("2026-10-26 10:40"); o64 = io.StringIO()  # p1 = 20분 전 · p2 = 80분 전
+with contextlib.redirect_stdout(o64): H.th_watch(sw64)
+assert len(al64) == 1 and al64[0].startswith("💬 Threads 답글 — 올린 지 20분 된 글\nhttps://www.threads.com/@hotdeal_pick/post/AAA\n\n@kim: 어디서 사요?") and not any("/p2/" in u for u in hw64) and any("/p3/conversation" in u for u in hw64)  # p2 = 140분 전(안 봄) · p3 = 100분 전(봄) — 첫 35분 뒤 답글(r5) X
+assert o64.getvalue() == "th watch 답글 알림 1\n" and sw64["thw"]["ids"] == ["r2"]  # 로그 = 개수만(답글 내용·아이디 X — 공개 로그)
+rp64["p1"].append({"id": "r4", "username": "park", "text": "좋네요", "timestamp": RT64(40)}); H.th_watch(sw64); assert len(al64) == 2 and "@park: 좋네요" in al64[1]  # 새 답글만(우리 링크 댓글 밑 답글도 — /conversation)
+rp64["p3"].append({"id": "r6", "username": "jung", "text": "실행 늦어도 알림", "timestamp": "2026-10-26T00:20:00+0000"}); H.th_watch(sw64); assert len(al64) == 3 and "@jung: 실행 늦어도 알림" in al64[2]  # 실행이 늦어도(글 100분 전) 첫 35분 안 답글은 알림
+H.tg = lambda m, **p: (_ for _ in ()).throw(TimeoutError()); rp64["p1"].append({"id": "r7", "username": "han", "text": "시간 초과", "timestamp": RT64(41)}); o64 = io.StringIO()
+with contextlib.redirect_stdout(o64): H.th_watch(sw64)
+assert "th watch 알림 실패 TimeoutError" in o64.getvalue() and "r7" not in sw64["thw"]["ids"]; H.tg = lambda m, **p: al64.append(p.get("text")) or {"message_id": 1}; H.th_watch(sw64); assert "@han: 시간 초과" in al64[-1] and len(al64) == 4  # 텔레그램 시간 초과 = 다음 실행에
+H.th_watch(sw64); assert len(al64) == 4  # 새 답글 없음 = 알림 X
+rp64["err"] = {"p1": (500, "server")}; rp64["p3"].append({"id": "r8", "username": "yoon", "text": "다른 글 답글", "timestamp": "2026-10-26T00:21:00+0000"}); o64 = io.StringIO()
+with contextlib.redirect_stdout(o64): H.th_watch(sw64)
+assert len(al64) == 5 and "@yoon" in al64[-1] and "th watch 답글 읽기 실패 500" in o64.getvalue()  # 일시 오류 = 그 글만 건너뜀(권한 알림 X)
+rp64["err"] = {"p1": (400, '{"error":{"code":4,"message":"Application request limit reached"}}')}; H.th_watch(sw64); assert len(al64) == 5  # 속도 제한 = 권한 알림 X
+rp64["err"] = {"p1": (403, '{"error":{"code":10,"message":"Application does not have permission for this action"}}')}; o64 = io.StringIO()
+with contextlib.redirect_stdout(o64): H.th_watch(sw64); H.th_watch(sw64)
+assert len(al64) == 6 and "threads_read_replies" in al64[5] and o64.getvalue().count("th watch 답글 읽기 실패 403") == 2  # 권한 없음 = 알림 하루 1번
+H.E.pop("THREADS_TOKEN"); hw64.clear(); H.th_watch(sw64); assert not hw64  # 토큰 없음 = 안 부름
+(H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.th_voice, H.POSTS, H.TH_LINK_AB, H.TH_VOICE, _c64) = sv64; H.TH_C = False; os.chdir(_c64)
 print("OK: 모든 셀프체크 통과")
