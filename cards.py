@@ -824,3 +824,24 @@ def app_icons(d="docs/icons", root="docs"):
         im.save(p, optimize=True)
     app_logo(256, mini=True).save(f"{root}/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
     return [*out, f"{root}/favicon.ico"]
+
+def og_image(path="docs/og.png"):
+    """사이트 대표 공유 그림 1200×630(10/24 진우 개편 'A 클린 화이트' + 핑크 포인트 — og:image 기본값, 쿠팡 사진·그날 카드가 없을 때): 앱 아이콘 + 핫딜픽 + 한 줄 + 핑크 알약 3개. 한 번 만들어 커밋."""
+    W, H = 1200, 630
+    im = Image.new("RGB", (W, H), (246, 247, 249))
+    d = ImageDraw.Draw(im)
+    logo = app_logo(220).convert("RGB")
+    m = Image.new("L", (220, 220), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, 219, 219), radius=58, fill=255)
+    im.paste(logo, (96, 118), m)
+    d.text((360, 128), "핫딜픽", font=pf("ExtraBold", 112), fill=(20, 22, 27))
+    d.text((364, 272), "쿠팡·토스·네이버 특가를 매일 골라드려요", font=pf("SemiBold", 40), fill=(107, 113, 128))
+    x, f = 96, pf("Bold", 36)
+    for t in ("오늘의 픽 3", "지금 특가", "꾸준히 팔리는 것"):
+        w = d.textlength(t, font=f) + 64
+        d.rounded_rectangle((x, 420, x + w, 500), radius=40, fill=(255, 227, 232))
+        d.text((x + 32, 460), t, font=f, fill=(232, 67, 90), anchor="lm")
+        x += w + 20
+    d.text((96, 560), "hotdealpick.kr", font=pf("Bold", 30), fill=(229, 48, 63))
+    im.save(path, optimize=True)
+    return path

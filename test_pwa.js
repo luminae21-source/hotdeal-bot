@@ -4,7 +4,7 @@
 const http = require('http'), fs = require('fs'), path = require('path'), assert = require('assert');
 const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, 'docs');
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json', '.xml': 'application/xml' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.woff2': 'font/woff2', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json', '.xml': 'application/xml' };
 let OFF = false;  // true = 서버가 끊김(진짜 오프라인 — Playwright setOffline은 서비스워커 요청은 안 막음, 10/23 리뷰)
 const server = http.createServer((q, s) => {  // GitHub Pages처럼: / -> index.html, 쿼리 무시
   if (OFF) return q.socket.destroy();
@@ -26,7 +26,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     const pg = await ctx.newPage();
     await pg.goto(U + '/?src=app', { waitUntil: 'load' });
     const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
-    assert.deepStrictEqual([m.name, m.short_name, m.start_url, m.scope, m.display, m.lang, m.background_color, m.theme_color], ['핫딜픽 — 매일 살 만한 핫딜', '핫딜픽', '/?src=app', '/', 'standalone', 'ko', '#f4f5f7', '#f4f5f7']);
+    assert.deepStrictEqual([m.name, m.short_name, m.start_url, m.scope, m.display, m.lang, m.background_color, m.theme_color], ['핫딜픽 — 매일 살 만한 핫딜', '핫딜픽', '/?src=app', '/', 'standalone', 'ko', '#F6F7F9', '#F6F7F9']);
     assert.deepStrictEqual(m.shortcuts.map(s => s.url), ['/#fire', '/#wait', '/#life']);
     for (const i of [...m.icons, ...m.shortcuts.flatMap(s => s.icons)]) {  // 바로가기 아이콘(🔥·⏳·🧻)도 선언한 크기로 열림
       const [w, h] = await pg.evaluate(src => new Promise(ok => { const im = new Image(); im.onload = () => ok([im.naturalWidth, im.naturalHeight]); im.src = src; }), i.src);
@@ -49,30 +49,34 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.ok(await pg.evaluate(() => !!navigator.serviceWorker.controller));
     OFF = true;  // 서버 끊김: 홈 = 저장해 둔 홈, 처음 여는 딜 페이지 = 저장해 둔 홈으로(빈 화면 X)
     await pg.goto(U + '/', { waitUntil: 'load' });
-    assert.ok((await pg.title()).includes('핫딜픽') && (await pg.$('#wait')), '오프라인 홈');
+    assert.ok((await pg.title()).includes('핫딜픽') && (await pg.$('#fire')), '오프라인 홈');
     const p0 = fs.readdirSync(path.join(ROOT, 'p')).find(f => f.endsWith('.html'));
     await pg.goto(U + '/p/' + p0, { waitUntil: 'load' });
     assert.ok((await pg.title()).includes('오늘의 핫딜'), '오프라인 처음 여는 쪽 = 저장해 둔 홈');
     OFF = false;
-    // 3) 지금 사이트 동작: 탭(칸 바꿈)·찜(localStorage)·검색
+    // 3) 지금 사이트 동작(10/24 개편): 아래 메뉴 5개 · 찜(localStorage -> /saved/) · 검색(search.json = 진열 상품 전부, 🔥 먼저) · 옛 홈 #칸 주소(웹앱 바로가기 #wait·#life) -> 새 쪽
     await pg.goto(U + '/', { waitUntil: 'load' });
-    const tab = h => pg.evaluate(h => document.querySelector(`nav.bar:not(.top) a[href="${h}"]`).click(), h);  // 아래 탭 줄(가로 스크롤 — 화면 밖 칸도 누르면 같음)
-    await tab('#wait');
-    assert.ok(await pg.evaluate(() => !document.getElementById('wait').closest('.pane').hidden), '탭 = 대기 칸');
-    await tab('#hot');
-    const lk = await pg.$('.pane:not([hidden]) .like');
+    assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '찜', '알림']);
+    const lk = await pg.$('#fire .like');
     await lk.click();
     assert.strictEqual(await pg.evaluate(() => JSON.parse(localStorage.getItem('likes')).length), 1, '찜 1개');
     assert.strictEqual(await lk.getAttribute('aria-pressed'), 'true');
+    assert.strictEqual(await pg.textContent('#lc'), ' 1', '헤더 ♡ 숫자');
+    await pg.goto(U + '/saved/', { waitUntil: 'load' });
+    assert.ok(await pg.evaluate(() => document.querySelectorAll('#savedg .g').length === 1 && document.getElementById('saved0').hidden), '찜 쪽');
+    await pg.goto(U + '/', { waitUntil: 'load' });
     await pg.fill('#q', '화장지');
-    await pg.waitForTimeout(400);
-    const fd = await pg.evaluate(() => { const qn = document.getElementById('qn'), g = [...document.querySelectorAll('.g:not([hidden])')], ids = g.map(x => (x.querySelector('.like') || {}).dataset.i);
-      return { line: !qn.hidden && qn.textContent === g.length + '개 찾았어요', n: g.length, uniq: new Set(ids).size === ids.length, seen: g.every(x => x.offsetParent !== null && x.textContent.includes('화장지')),
-               all: new Set([...document.querySelectorAll('.g')].filter(x => x.textContent.includes('화장지')).map(x => (x.querySelector('.like') || {}).dataset.i)).size === g.length, fire: !g.some(x => x.closest('#fire')) || !!g[0].closest('#fire') }; });
-    assert.deepStrictEqual([fd.line, fd.n > 0, fd.uniq, fd.seen, fd.all, fd.fire], [true, true, true, true, true, true], '홈 검색 = 모든 탭(품목 칸 진열 상품까지 — 홈에 있는 딜 전부) · 같은 딜 1번 · 다 보임(접힌 더 보기 펼침) · 🔥 칸 먼저 ' + JSON.stringify(fd));
-    await pg.fill('#q', '');
-    await pg.waitForTimeout(200);
-    assert.strictEqual(await pg.evaluate(() => [...document.querySelectorAll('.pane')].filter(p => !p.hidden).length), 1, '검색 지우면 탭 1개로');
+    await pg.waitForFunction(() => document.getElementById('qn'));
+    const ix = JSON.parse(fs.readFileSync(path.join(ROOT, 'search.json'), 'utf8')).filter(x => x.k.includes('화장지'));
+    const fd = await pg.evaluate(() => { const g = [...document.querySelectorAll('#sr .g')]; return { line: document.getElementById('qn').textContent, ids: g.map(x => x.querySelector('.like').dataset.i), seen: g.every(x => x.textContent.includes('화장지')),
+                                                                     hid: document.getElementById('fire').hidden, liked: g.filter(x => x.querySelector('.like').getAttribute('aria-pressed') === 'true').length }; });
+    assert.ok(ix.length > 0 && fd.line === ix.length + '개 찾았어요' && fd.ids.join() === ix.slice(0, 60).map(x => String(x.i)).join() && fd.seen && fd.hid, '검색 = 진열 상품 전부(색인 순서 = 🔥 먼저) ' + JSON.stringify([fd, ix.length]));
+    await pg.fill('#q', ''); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(() => !document.getElementById('sr') && !document.getElementById('fire').hidden), '검색 지우면 그대로');
+    for (const [h, to] of [['#wait', '/c/wait/'], ['#life', '/c/life/'], ['#toss', '/c/toss/']]) {
+      await pg.goto(U + '/' + h, { waitUntil: 'load' }); await pg.waitForURL(u => new URL(u).pathname === to, { timeout: 5000 });
+    }
+    await pg.goto(U + '/#fire', { waitUntil: 'load' }); await pg.waitForTimeout(200); assert.strictEqual(new URL(pg.url()).pathname, '/', '#fire = 홈 그대로');
     // 4) GoatCounter 웹앱 출처: ?src=app = 'app', 경로는 ?src 뺌
     const gc = await pg.evaluate(js => { eval(js); return [window.goatcounter.path('/?src=app'), window.goatcounter.path('/?src=app&x=1'), window.goatcounter.path('/p/1.html')]; }, require('child_process').execSync("python3 -c \"import build_site; print(build_site.GC_APP)\"").toString());
     assert.deepStrictEqual(gc, ['/', '/?x=1', '/p/1.html']);
@@ -127,16 +131,15 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     [r, c, p] = await show({ viewport: { width: 390, height: 844 } }, STANDALONE, true);
     assert.ok(!r.shown, '설치됨 = 숨김');
     await c.close();
-    // 6) 휴대폰 기준(10/23 진우 '모바일이 중요'): 360(갤럭시 S)·393(아이폰 15)·412(갤럭시 플러스) × 일반 브라우저·설치 앱(standalone) 첫 화면
+    // 6) 휴대폰 기준(10/23 진우 '모바일이 중요' · 10/24 개편 360·390·412): 갤럭시 S·아이폰·갤럭시 플러스 × 일반 브라우저·설치 앱(standalone) 첫 화면
     //    설치 띠 = 작은 띠(48~80px)·버튼 44px+·아래 고정 바·앱 안 탭 줄과 안 겹침·첫 딜이 첫 화면에 보임 · 노치·홈 바(safe-area) 여백 -> 한 장(docs/cards/pwa_preview.png)
     const AND = 'Mozilla/5.0 (Linux; Android 15; SM-S921N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36';
-    const PHONES = [[360, 780, AND, 'Galaxy S 360'], [393, 852, IOS, 'iPhone 15 393'], [412, 915, AND, 'Galaxy+ 412']];
+    const PHONES = [[360, 780, AND, 'Galaxy S 360'], [390, 844, IOS, 'iPhone 390'], [412, 915, AND, 'Galaxy+ 412']];
     const shots = [], tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pwa'));
-    const layout = p => p.evaluate(() => {
-      const R = e => e && getComputedStyle(e).display !== 'none' && !e.hidden ? e.getBoundingClientRect() : null, i = document.getElementById('inst');
-      const g = [...document.querySelectorAll('.pane:not([hidden]) .g')].map(x => x.getBoundingClientRect())[0];
-      return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: R(document.querySelector('nav.bar:not(.top)')), top: R(document.querySelector('nav.bar.top')), g, vh: innerHeight,
-               pb: parseFloat(getComputedStyle(document.querySelector('nav.bar:not(.top)')).paddingBottom), pt: parseFloat(getComputedStyle(document.querySelector('main')).paddingTop) };
+    const layout = p => p.evaluate(() => {  // 아래 메뉴: 보통 = 아래 고정(fixed), 앱 안 브라우저 = 헤더 아래 한 줄(static)
+      const R = e => e && getComputedStyle(e).display !== 'none' && !e.hidden ? e.getBoundingClientRect() : null, i = document.getElementById('inst'), nav = document.querySelector('nav.nav'), fx = getComputedStyle(nav).position === 'fixed';
+      return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: fx ? R(nav) : null, top: fx ? null : R(nav), g: R(document.querySelector('#pick .pk') || document.querySelector('.g')), vh: innerHeight,
+               pb: parseFloat(getComputedStyle(nav).paddingBottom), pt: 0 };
     });
     const over = (a, b) => a && b && a.top < b.bottom && b.top < a.bottom;
     for (const [w, h, ua, name] of PHONES) for (const app of [false, true]) {
@@ -153,20 +156,42 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         assert.ok(L.x.width >= 44 && L.x.height >= 44 && (!L.btn || L.btn.height >= 44), tag + ' 버튼 44px+');
         assert.ok(!over(L.inst, L.bottom) && !over(L.inst, L.top), tag + ' 띠가 고정 바와 안 겹침');
       }
-      assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 첫 딜이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
+      assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 오늘의 픽 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
+      assert.ok(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ' 옆으로 안 넘침');
       if (safe) assert.ok(L.pb >= 40, tag + ' 홈 바 여백 ' + L.pb);
       const f = path.join(tmp, `${w}${app ? 'a' : 'b'}.png`);
       await p2.screenshot({ path: f });
       shots.push([f, tag + (safe ? ' (홈 바 34px)' : '')]);
       await c2.close();
     }
-    const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IG, isMobile: true, hasTouch: true }), p3 = await c3.newPage();  // 앱 안 브라우저(인스타) — 띠 + 위 탭 줄
+    const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IG, isMobile: true, hasTouch: true }), p3 = await c3.newPage();  // 앱 안 브라우저(인스타) — 띠 + 헤더 아래 메뉴 한 줄
     await p3.goto(U + '/', { waitUntil: 'load' });
     const L3 = await layout(p3);
     assert.ok(L3.inst && L3.top && !over(L3.inst, L3.top) && !L3.bottom, '앱 안: 띠·탭 줄 안 겹침 ' + JSON.stringify([L3.inst, L3.top]));
     await p3.evaluate(() => scrollTo(0, 600)); const L4 = await layout(p3);
     assert.ok(!over(L4.inst, L4.top) || L4.inst.bottom <= 0, '앱 안: 내려도 탭 줄이 띠를 안 덮음');
     await c3.close();
+    const rd = [];
+    for (const [w, h, ua, url, dark, name] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 844, IOS, '/', true, '홈 390 다크'],
+                                                [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390']]) {
+      const c4 = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' }), p4 = await c4.newPage();
+      await p4.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} });
+      await p4.goto(U + url, { waitUntil: 'load' }); await p4.waitForTimeout(300);
+      const f = path.join(tmp, `rd${rd.length}.png`); await p4.screenshot({ path: f }); rd.push([f, name]); await c4.close();
+    }
+    require('child_process').execFileSync('python3', ['-c', `
+import json, sys
+from PIL import Image, ImageDraw
+sys.path.insert(0, ${JSON.stringify(__dirname)})
+import cards
+shots, out = json.loads(sys.argv[1]), sys.argv[2]
+ims = [Image.open(f).convert("RGB") for f, _ in shots]
+G, top = 32, 72
+c = Image.new("RGB", (sum(i.width for i in ims) + G * (len(ims) + 1), top + max(i.height for i in ims) + G), (226, 229, 234)); d = ImageDraw.Draw(c); f = cards.pf("Bold", 30); x = G
+for im, (_, t) in zip(ims, shots):
+    d.text((x, 22), t, font=f, fill=(20, 22, 27)); c.paste(im, (x, top)); x += im.width + G
+c.save(out, optimize=True)
+`, JSON.stringify(rd), path.join(ROOT, 'cards', 'redesign_preview.png')]);
     require('child_process').execFileSync('python3', ['-c', `
 import json, sys
 from PIL import Image, ImageDraw

@@ -1427,6 +1427,7 @@ def cp_price(seen):
     q["t"], ev = time.time(), ev_info()
     names = {p["url"]: parse(title_of(p["text"]))[1] for p in load(POSTS, []) if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
+    q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
     todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and not q["m"].get(u, [0, ""])[1].startswith(today) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     got = miss = err = 0
@@ -1447,6 +1448,9 @@ def cp_price(seen):
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
         q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst)]
+        y = x or (same[0] if same else None)  # 사진 = 같은 pid면 옵션이 달라도(가격 적중이 낮아도 사진은 채움 — 추가 호출 X)
+        if y and str(y.get("productImage") or "").startswith("https://"):
+            q.setdefault("i", {})[u] = y["productImage"]
         got, miss = got + bool(x), miss + (not x)
         if not x:  # 원인 찾기(10/23 Cowork — 적중 0): 결과에 pid가 있는데 옵션이 다른지 / 아예 없는지 · 위 3개(키·주소 쿼리 X)
             print(f"cp price 못 찾음 pid {pid} · 검색어 '{kw}' · " + (f"pid 있음 {len(same)}개 = " + (f"item {item} 없음" if item else "옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로") if same else "pid 없음") + f" · 결과 {len(ds)}개")
@@ -3096,7 +3100,7 @@ def digest(seen, posts):
         night = [{**d, "sv": None, "weak": d["weak"] and "특가로는 약함"} for d in night]
     rows = [f"{n}. <a href=\"{esc(u)}\">{esc(list_name(p, toss_in))}</a>" for n, (p, u) in enumerate(zip(todays, urls), 1)]
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(u or "") for u in urls + [d["url"] for d in night]) if n)  # 제휴 링크 프로그램마다 1줄 맨 위(TOP 글과 같은 방식) — 밤 줄 링크도
-    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}?ref=tg\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
+    tail = f"\n\n🔎 지난 딜 전체 보기: {SITE}all.html?ref=tg\n📝 블로그: {BLOG}\n📲 실시간 알림: https://t.me/hotdeal_pick"
     if night:
         tail = "\n\n🌙 <b>오늘 밤 예약 특가</b>\n" + "\n".join(night_line(d) for d in night) + tail
     while True:  # 텔레그램 4096자(링크 주소 빼고 보이는 글자)·서식 100개(링크·굵게·기울임 + 글 속 주소 — 10/11 21시 딜 100개 넘어 ENTITIES_TOO_LONG) — 딜이 아주 많은 날은 뒤쪽을 '외 N개'로 줄임
@@ -5001,7 +5005,7 @@ def own_end(seen):
                         continue
                     nfd = [] if x else [d for d in (v[4] if len(v) > 7 else []) if d != today] + [today]  # 조회 안 됨이 이어진 날들(조회되면 처음부터 · 예전 잘못 물은 기록은 버림)
                     v[2:] = [now, "out" if not x or x.get("isSoldOut") else "ok", nfd, x and x["displayPrice"], bool(x and toss_steady(x)), x and x.get("tacaItemId") or (v[7] if len(v) > 7 else 0)]  # v[7] = 대표 옵션 id(tacaItemId — 꾸준템·🔁 글·품절 지켜보기·같은 상품 거르기)
-    ev, chk, cpq = ev_info(), f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시", seen.get("cpq", {}).get("m", {})
+    ev, chk, cpq, cpi = ev_info(), f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시", seen.get("cpq", {}).get("m", {}), seen.get("cpq", {}).get("i", {})
     rq = seen.setdefault("rehot", {"q": []})
     rq["t"], rq["q"], n, c = now, [q for q in rq["q"] if q.get("g")], 0, collections.Counter()  # g 없는 줄 = 예전(잘못 물은 id) 기록 — 버림
     for u, idxs in urls.items():
@@ -5038,11 +5042,13 @@ def own_end(seen):
         f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" and (not tsy or u in valid) else p.get("rehot")  # 토스 = 앞 상태도 맞는 id로 확인한 것일 때만
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
             rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
+        if not tsy and e.get("pid") and cpi.get(u):
+            f["img"] = cpi[u]  # 쿠팡 상품 사진(cp_price) — 캐시가 비어도 글의 옛 사진은 그대로(아래 지우는 칸에 없음)
         f = {k: x for k, x in f.items() if x}
         c[f["st"]] += 1
         for i in idxs:
             q = posts[i]
-            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "stdy", "rehot", "stl", "end", "tst", "ts")}
+            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "stdy", "rehot", "stl", "end", "tst", "ts", "img")}
             for k in ("st", "tgt", "now", "chk", "stdy", "rehot", "stl", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
                 q.pop(k, None)
             q.update(f)
