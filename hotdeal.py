@@ -2287,7 +2287,7 @@ def toss_picks(seen):
 TOSS_SOLO_HOURS = range(0, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(10/22 진우 '새벽에도' -> 0~8시도, 밤 발송은 무음). () = 끔
 TOSS_GAP_MIN, TOSS_GAP_NIGHT, TOSS_EV_PAD = 30, 60, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분(0~8시는 60분, 10/22) 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
 TOSS_SOLO_SRC, TOSS_SOLO_MIN, TOSS_SOLO_TRY = ("best", "beauty", "life", "day"), 7, 2  # 시각마다 돌아가며(많이 팔린 순위 -> 화장품 -> 생필품 -> 하루특가) · 점수 7↑ · 출처 2곳까지(Claude·API 아낌)
-TOSS_SITE = True  # 10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량'(Cowork가 10/6 신청서 'API 상품·가격 사이트 전시 X'·개발 문서 위험 설명 뒤 진우 결정) = 토스 API 개별 글 + 토스 목록 대량 진열(toss_shelf)도 사이트에(toss_site — 사이트 전용, 리뷰 수·평점 X) · False = 끔
+TOSS_SITE = False  # 10/24 10:0x 보류(Cowork 확인: API 데이터로 사이트 전시 = 10/6 신청서 범위 밖) — 토스는 쉐어링크 웹에서 진우 계정으로 만든 링크를 events shelf로(진우 직접 링크와 같은 방식). True = 토스 API 개별 글 + toss_shelf 대량 진열도 사이트에(toss_site — 사이트 전용, 리뷰 수·평점 X)
 TOSS_SHELF_RUN = 10  # 토스 사이트 진열: 실행마다 새로 진열하는 상품 수(쉐어링크 발급 = API 호출, 하루 상한 X) — shortcut: 공식 호출 상한 문서 없음 -> 오류 응답이면 그 상품은 하루 쉬고 그 실행은 멈춤
 TOSS_STEADY_HOURS = (10, 15, 20)  # 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘 — 꾸준하게 제품 올라오는 게 좋지': 이 시각 매시 글은 진우 토스 꾸준템(own_end) 먼저(하루 3개까지, 같은 상품 3일 간격 tb_)
 SOLO_PROMPT = SPECIAL_PROMPT.replace("특가 후보 목록이야(할인율 높고 리뷰 있는 상품, ", "상품 목록이야(") + TOSS_EASE + "\ncomment는 단위가격·구성 같은 사실 한 줄만.\n"

@@ -2602,7 +2602,7 @@ assert "💙 토스 특가 · 많이 팔린 순위 2위 🔥\n<b>베스트2</b>\
 assert p9i["reply_markup"] == {"inline_keyboard": [[{"text": "💙 토스에서 9,900원", "url": "https://toss.im/_m/S2"}]]} and p9i["chat_id"] == H.CHANNEL and p9i["parse_mode"] == "HTML"
 assert "tb_2" in s9i and s9i["sold_701"]["it"] == [[2, "베스트2", 9900, 0, 0, 0]] and s9i["sold_701"]["btn"] == "💙 토스에서 9,900원" and "tsolo_20261014_12" in s9i  # 품절 지켜보기·묶음 회차에서 빠짐
 q9i = s9i["thtoss"]["q"][-1]; assert q9i["k"] == "solo" and q9i["link"] == "https://toss.im/_m/S2" and q9i["text"].startswith(H.TOSS_NOTE) and "많이 팔린 순위 2위" in q9i["text"] and "게시 시점 가격" in q9i["text"]  # Threads 채움 후보
-(o9i,) = json.load(open("posts.json")); assert (o9i["own"], o9i["shelf"], o9i["tid"], o9i["url"], "mid" in o9i) == (1, 1, 2, "https://toss.im/_m/S2", False) and "⭐" not in o9i["text"] and o9i["text"].startswith(H.TOSS_NOTE) and "💙 토스 특가 · 많이 팔린 순위 2위 🔥\n베스트2\n9,900원 (40%↓)\n" in o9i["text"], o9i  # 10/24 TOSS_SITE = 사이트 전용 진열(리뷰 수·평점 X, 채널 글 번호 X)
+assert json.load(open("posts.json")) == []  # TOSS_SITE False(10/24 10시 보류) = 사이트 X — 켜면 사이트 전용 진열(9-47)
 assert i_prompts[0][0].startswith(H.SOLO_PROMPT) and "말투 — " in i_prompts[0][0] and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SOLO_PROMPT and "사실 한 줄" in H.SOLO_PROMPT
 i_sent.clear(); i_calls.clear(); H.toss_solo(s9i); assert not i_sent and not i_calls  # 그 시각 1번
 s9e = {}; time.time = lambda: TK("2026-10-14 11:40"); H.toss_solo(s9e); assert not i_sent and not i_calls and s9e == {}  # 진우 예약 11:30 앞뒤 10분 = 쉼(API도 안 부름, 기록 X -> 다음 실행에 다시)
@@ -5625,7 +5625,8 @@ H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS = sv45[:6]
 os.chdir(cwd45)
 # 9-47) 토스 대량 사이트 진열(10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량' — TOSS_SITE True): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 -> 카테고리 베스트) 돌아가며
 #       사이트에 없는·판매 중 상품 -> 쉐어링크(있으면 재사용) -> 사이트 전용 글(own·shelf·tid, 채널·Threads X, 리뷰 X, 대가성 문구·게시 시점 가격) · 링크 오류 = 그 상품 하루 쉬고 실행 멈춤
-sv47 = (H.toss, H.HAS_TOSS, H.tg, time.time, dict(H.RUN), H.POSTS); d47 = tempfile.mkdtemp(); cwd47 = os.getcwd(); os.chdir(d47)
+sv47 = (H.toss, H.HAS_TOSS, H.tg, time.time, dict(H.RUN), H.POSTS, H.TOSS_SITE); d47 = tempfile.mkdtemp(); cwd47 = os.getcwd(); os.chdir(d47)
+H.TOSS_SITE = True  # 10/24 10시 보류(False)지만 켰을 때 동작은 그대로 확인
 H.HAS_TOSS, H.POSTS, sent47, calls47 = True, "posts.json", [], []
 H.RUN.pop("treuse", None); time.time = lambda: 1793000000.0
 X47 = lambda i, g, n, p, so=False: {"tacaItemId": i, "tacaId": g, "displayName": n, "displayPrice": p, "discountRate": 30, "reviewScore": 4.9, "reviewCount": 1234, "isSoldOut": so}
@@ -5657,5 +5658,6 @@ H.TOSS_SITE = False; H.toss_shelf(s47); assert len(calls47) == n47; H.TOSS_SITE 
 po47 = json.load(open("posts.json")); assert not [i for i, _ in S40.day_deals(po47, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))] and not sent47  # 카드·인스타 X · 채널 X
 S40.build(po47, "site"); tz47 = open("site/index.html").read().split('id="toss"')[1].split("</section>")[0]
 assert all(f"p/{i}.html" in tz47 for i in range(1, 5)) and "⭐" not in tz47  # 사이트 💙 토스 칸에 진열(리뷰 X)
-H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS = sv47[5]; os.chdir(cwd47)
+H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS, H.TOSS_SITE = sv47[5:7]; os.chdir(cwd47)
+assert H.TOSS_SITE is False  # 보류 중(10/24 10시 Cowork — API 신청 범위)
 print("OK: 모든 셀프체크 통과")
