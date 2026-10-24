@@ -5954,4 +5954,94 @@ x55 = f"{H.TOSS_NOTE}\n\n💙 토스 · 꾸준히 팔리는 상품 👍\n수세�
 assert S.title_of(x55) == "[토스] 수세미 10개 (9,000원)" and S.icon_of(x55) == "👍" and S.shop_of({"text": x55, "url": "https://toss.shopping/_m/S"}) == "toss" and H.is_toss("", x55)  # 사이트·리스트가 제목·몰·아이콘 그대로 읽음
 assert H.ig_items({}, [{"t": "2026-10-24 15:00", "text": x55, "url": "https://toss.shopping/_m/S"}], photos=False)[0]["badge"] == "💙 토스" and \
     H.ig_items({}, [{"t": "2026-10-24 15:00", "text": x55.replace("💙 토스 · 꾸준히 팔리는 상품 👍", "💙 토스 특가 · 생필품 베스트 3위 🔥"), "url": "https://toss.shopping/_m/S"}], photos=False)[0]["badge"] == "💙 토스 특가"  # 인스타 카드 배지
+# 9-56) (10/24 진우 '쿠팡 행사가 있으면 3개 + 목록 1개') 행사 목록 글: events "list" + title·until·items(쿠팡 상품 주소 = cp_links로 바뀐 뒤 · 토스 링크·단축 링크 그대로)
+#   -> 채널(대가성 문구 + 🎉 제목 · 핫딜픽이 고른 N개 (~M/D) + 번호 줄 <a> + 확인 줄, 버튼 = 1번) · Threads(같은 순서·가격, 480자) · posts.json('📋' = 사이트 카드 X, metrics kind list)
+#   · 바뀐 것 3개↑만(안 된 것 뺌) · 3개 밑 = 관리자 알림 1번(안 올림) · 바뀌는 중 = 기다림(30분 지나면 바뀐 것만) · deal 없는 텍스트 목록(임시 방식)은 그대로
+sv56 = (H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_CP, H.th_post, dict(H.E))
+d56 = tempfile.mkdtemp(); cwd56 = os.getcwd(); os.chdir(d56)
+H.POSTS, H.EVENTS = "posts.json", "events.json"
+PP56 = lambda n: f"https://www.coupang.com/vp/products/{n}?itemId={n}5"
+IT56 = [{"url": PP56(9991), "name": "제주 감귤 3kg", "price": "12,900원", "unit": "100g당 430원"}, {"url": PP56(9992), "name": "부사 사과 2kg", "price": "15,900원"},
+        {"url": PP56(9993), "name": "안 되는 곱창김", "price": "9,900원"}, {"url": PP56(9994), "name": "은갈치 4마리", "price": "19,900원", "unit": "와우가"},
+        {"url": "https://link.coupang.com/a/crab56", "name": "꽃게 1kg", "price": "13,900원"}, {"url": PP56(9995), "name": "신동진 햅쌀 10kg", "price": "29,900원", "unit": "1kg당 2,990원"}]
+EV56 = [{"at": "2026-10-25 20:50", "url": "https://link.coupang.com/a/tmp56", "text": "🎉 <b>쿠팡 임시 목록</b>\n\n1️⃣ <a href=\"https://link.coupang.com/a/tmp56\"><b>배</b></a> 9,900원", "button": "1️⃣ 배"},
+        {"at": "2026-10-25 21:00", "list": True, "title": "쿠팡 로켓프레시 햇상품 기획전", "until": "2026-10-25", "items": IT56}]
+SH56 = {"t": "2026-10-24 09:00", "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 제철 🔥\n제주 감귤 3kg\n12,900원", "url": "https://coupa.ng/b9991", "own": 1, "shelf": 1}
+json.dump(EV56, open("events.json", "w"), ensure_ascii=False); json.dump([SH56], open("posts.json", "w"), ensure_ascii=False)
+c56, sent56, thx56 = [], [], []
+def http56(url, body=None, headers=None, method=None):
+    c56.append(url)
+    if url.endswith("/deeplink"):
+        us = body["coupangUrls"]
+        return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if any("/9993" in u for u in us) else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]} for u in us]})
+    raise AssertionError(url)
+H.http, H.HAS_CP, H.E["THREADS_TOKEN"] = http56, True, "tk"
+H.tg = lambda m, **p: sent56.append((m, p)) or {"message_id": 700 + len(sent56), "text": H.plain_of(p.get("text", "")), "entities": [{"type": "text_link", "offset": 5, "length": 2, "url": "u"}]}
+H.th_post = lambda tok, text, link=None, image=None, tag=None: thx56.append((text, link)) or "th1"
+ch56 = lambda: [p for m, p in sent56 if m == "sendMessage" and p["chat_id"] == H.CHANNEL]
+ad56 = lambda: [p["text"] for m, p in sent56 if m == "sendMessage" and p["chat_id"] == H.ADMIN]
+s56 = {}; time.time = lambda: TK("2026-10-25 20:00")
+H.cp_links(s56); H.events(s56)
+assert json.load(open("cp_links.json")) == {PP56(n): f"https://coupa.ng/b{n}" for n in (9991, 9992, 9994, 9995)} and PP56(9993) in s56["cpdl"]["x"] and not ch56()  # 목록 상품 = 채널 예약처럼 먼저 바꿈 · 시각 전 = 안 올림
+assert any("쿠팡 링크 변환 안 됨" in x and "안 되는 곱창김 (pid 9993)\n행사 목록 글에서 그 상품만 빠짐" in x and "itemId" not in x for x in ad56())  # 목록 상품 = 이름·pid(주소 쿼리 X)
+time.time = lambda: TK("2026-10-25 21:05"); H.events(s56)
+tmp56, lst56 = ch56()
+assert tmp56["text"].endswith(EV56[0]["text"]) and tmp56["reply_markup"]["inline_keyboard"] == [[{"text": "1️⃣ 배", "url": "https://link.coupang.com/a/tmp56"}]]  # 임시 방식 그대로
+G56 = lambda n, name, rest: f'<a href="https://coupa.ng/b{n}"><b>{name}</b></a> {rest}'
+assert lst56["text"] == f"<i>{H.DISCLOSURE}</i>\n\n🎉 <b>쿠팡 로켓프레시 햇상품 기획전 · 핫딜픽이 고른 5개</b> (~10/25)\n\n" \
+    f"1️⃣ {G56(9991, '제주 감귤 3kg', '12,900원 · 100g당 430원')}\n2️⃣ {G56(9992, '부사 사과 2kg', '15,900원')}\n3️⃣ {G56(9994, '은갈치 4마리', '19,900원 · 와우가')}\n" \
+    f'4️⃣ <a href="https://link.coupang.com/a/crab56"><b>꽃게 1kg</b></a> 13,900원\n5️⃣ {G56(9995, "신동진 햅쌀 10kg", "29,900원 · 1kg당 2,990원")}\n\n⚠️ 행사 상품 여부·최종가는 결제 전 확인', lst56["text"]
+assert lst56["reply_markup"]["inline_keyboard"] == [[{"text": "1️⃣ 제주 감귤 3kg", "url": "https://coupa.ng/b9991"}]] and "ev_2026-10-25 21:00" in s56 and len(s56["bundles"]["ts"]) == 1
+r56, mid56 = json.load(open("posts.json")), 700 + next(k for k, (m, p) in enumerate(sent56, 1) if p is lst56)
+assert len(r56) == 2 and r56[0] == SH56 and r56[1]["text"] == "📋 " + H.plain_of(lst56["text"]) and r56[1]["url"] == f"https://t.me/ch/{mid56}" and r56[1]["mid"] == mid56 and not r56[1].get("own") \
+    and r56[1]["entities"] == [{"type": "text_link", "offset": 8, "length": 2, "url": "u"}]  # 임시 방식(deal X) = posts.json X(예전 그대로) · 목록 = '📋 ' 3칸 밀림 · url = 채널 글(상품 링크 X)
+assert not any(H.link_key(x.get("url")) == H.link_key("https://coupa.ng/b9991") for x in r56 if not x.get("shelf"))  # 1번 상품 단독 글(진우 링크)을 '이미 올린 링크'로 막지 않음
+assert H.prod_cols(S.title_of(r56[1]["text"]), "묶음", [r56[1]["url"]] + [f"https://coupa.ng/b{n}" for n in (9991, 9992, 9994)] + ["https://link.coupang.com/a/crab56", f"https://t.me/ch/{mid56}"], {}) == \
+    {"kind": "list", "name": H.clip("쿠팡 로켓프레시 햇상품 기획전 · 핫딜픽이 고른 5개 (~10/25)", 40), "urls": ["https://coupa.ng/b9991", "https://coupa.ng/b9992", "https://coupa.ng/b9994", "https://link.coupang.com/a/crab56"]} \
+    and re.search(r"2️⃣|^2\. ", r56[1]["text"], re.M)  # metrics = 묶음(2️⃣) -> kind list(urls)
+(x56, l56), = thx56
+assert len(x56) <= 480 and l56 == "https://coupa.ng/b9991" and x56.startswith(H.DISCLOSURE + "\n\n🎉 쿠팡 로켓프레시 햇상품 기획전 · 핫딜픽이 고른 5개 (~10/25)\n\n1️⃣ 제주 감귤 3kg\n💰 12,900원 · 100g당 430원\n👉 https://coupa.ng/b9991\n2️⃣ 부사 사과 2kg\n💰 15,900원\n👉 https://coupa.ng/b9992") \
+    and x56.endswith(f"\n\n전체 5개 → https://t.me/ch/{mid56}\n\n⚠️ 행사 상품 여부·최종가는 결제 전 확인") and len(re.findall(r"https://", x56)) <= 5, x56  # Threads = 같은 순서·가격 · 링크 5개 한도
+assert S.home_pool(r56, ["2026-10-25", "2026-10-24"]).keys() == {0}  # 사이트 = 진열 카드 그대로(같은 url 목록 글이 이어받지 않음)·목록 글 카드 X
+o56 = tempfile.mkdtemp(); S.build(r56, o56); sm56 = open(f"{o56}/sitemap.xml").read()
+assert "p/0.html" in sm56 and "로켓프레시" not in open(f"{o56}/index.html").read() and "로켓프레시" not in open(f"{o56}/rss.xml").read()  # 📋 = 홈 카드·RSS X(딜 쪽 페이지는 예전 📋 모아보기처럼)
+sent56.clear(); thx56.clear(); H.events(s56); assert not sent56 and not thx56  # 1번만
+# 3개 밑 = 관리자 알림 1번(안 올림) · 키 없음 = 쿠팡 상품 주소는 못 바꿈(실패와 같음) · 토스 링크 = 토스 문구 + 게시 시점 줄
+EV56b = [{"at": "2026-10-26 21:00", "list": True, "title": "쿠팡 X", "items": [IT56[2], IT56[4], {"url": PP56(8001), "name": "아직 안 바꾼 것"}]},
+         {"at": "2026-10-27 21:30", "list": True, "title": "토스 목록", "until": "10/27", "items": [{"url": f"https://toss.shopping/_m/T{k}", "name": f"토스 {k}", "price": "5,000원"} for k in "ABC"] + [{"url": "http://x", "name": "버림"}]},
+         {"at": "2026-10-27 21:50", "list": True, "title": "쿠팡 섞인 목록", "items": [{"url": "https://toss.shopping/_m/T0", "name": "토스 첫째"}, IT56[4], {"url": "https://link.coupang.com/a/b56", "name": "B"}, {"url": "https://link.coupang.com/a/c56", "name": "C"}]}]
+json.dump(EV56b, open("events.json", "w"), ensure_ascii=False); sent56.clear(); thx56.clear()
+time.time = lambda: TK("2026-10-26 21:05"); H.events(s56); assert not sent56 and "ev_2026-10-26 21:00" not in s56  # 8001 = 아직 안 바뀜(키 있음) -> 기다림
+time.time = lambda: TK("2026-10-27 02:10"); H.events(s56)
+assert "ev_2026-10-26 21:00" in s56 and not ch56() and len(ad56()) == 1 and "행사 목록 글 안 올림" in ad56()[0] and "안 되는 곱창김" in ad56()[0] and "아직 안 바꾼 것" in ad56()[0]
+H.events(s56); assert len(ad56()) == 1  # 알림 1번
+H.HAS_CP, H.E["THREADS_TOKEN"], tnc56, H.TOSS_NO_CMP = False, "", H.TOSS_NO_CMP, True  # 운영값(토스 = 게시 시점 줄)
+time.time = lambda: TK("2026-10-27 21:35"); s56b = {}; json.dump([], open("posts.json", "w")); H.events(s56b)
+x56b = ch56()[-1]["text"]
+assert x56b.startswith(f"<i>{H.TOSS_NOTE}</i>\n\n🎉 <b>토스 목록 · 핫딜픽이 고른 3개</b> (~10/27)") and x56b.endswith("⚠️ 행사 상품 여부·최종가는 결제 전 확인\n⚠️ 10/27 21:35 게시 시점 가격") and "버림" not in x56b and not thx56, x56b
+assert json.load(open("posts.json"))[-1]["text"].startswith("📋 이 콘텐츠는 토스쇼핑")  # 토스 목록도 '📋' 그대로(비교 줄 지우기 X) = 사이트 카드 X
+time.time = lambda: TK("2026-10-27 21:55"); H.events(s56b); x56c = ch56()[-1]["text"]
+assert "쿠팡 섞인 목록 · 핫딜픽이 고른 3개" in x56c and "토스" not in x56c.replace("쿠팡 섞인", "") and H.TOSS_NOTE not in x56c and ch56()[-1]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://link.coupang.com/a/crab56"  # 섞이면 토스 뺌(토스는 토스끼리)
+assert json.load(open("posts.json"))[-1]["text"].startswith("📋 이 포스팅은 쿠팡") and S.home_pool(json.load(open("posts.json")), ["2026-10-27"]) == {}
+# 개수 제한 X(10/24 Cowork ⑥): 4,000자 넘으면 글 여러 개 — 번호 이어서(11번부터 '11.'), 글마다 대가성 문구·확인 줄·첫 상품 버튼, posts.json 글마다 '📋'
+json.dump([{"at": "2026-10-29 21:00", "list": True, "title": "큰 행사", "until": "2026-10-30", "items": [{"url": f"https://link.coupang.com/a/z{k}", "name": f"아주 긴 상품 이름 {k}번 " + "가" * 30, "price": "12,345원", "unit": "100g당 1,234원꼴 · 와우가"} for k in range(100)]}], open("events.json", "w"), ensure_ascii=False)
+n56 = len(ch56()); time.time = lambda: TK("2026-10-29 21:05"); s56d = {}; H.events(s56d); big56 = ch56()[n56:]
+ent56 = lambda h: len(re.findall(r"<(?:a|b|i)[ >]", h))  # 텔레그램 엔티티(링크·굵게·기울임) — 100개 넘으면 뒤 링크가 사라짐
+assert len(big56) == 3 and all(len(H.plain_of(p["text"]).encode("utf-16-le")) // 2 <= H.LIST_MAX and ent56(p["text"]) <= 90 and p["text"].startswith(f"<i>{H.DISCLOSURE}</i>") and p["text"].endswith(H.LIST_CHECK) for p in big56), [ent56(p["text"]) for p in big56]
+assert "핫딜픽이 고른 100개</b> (~10/30) (1/3)" in big56[0]["text"] and "(3/3)" in big56[2]["text"] and "\n🔟 " in big56[0]["text"] and "\n11. " in big56[0]["text"] and [p["text"].count("\n") for p in big56][0] - [p["text"].count("\n") for p in big56][2] <= 2  # 고르게(34·34·32)
+k56 = int(re.search(r"\n\n(\d+)\. ", big56[1]["text"])[1]); assert big56[1]["reply_markup"]["inline_keyboard"][0][0] == {"text": f"{k56}. {H.clip(f'아주 긴 상품 이름 {k56 - 1}번 ' + '가' * 30, 20)}", "url": f"https://link.coupang.com/a/z{k56 - 1}"}
+assert [p["text"][:2] for p in json.load(open("posts.json"))[-3:]] == ["📋 "] * 3 and "ev_2026-10-29 21:00" in s56d
+# 짧은 이름 60개 = 글자는 1개에 들어가도 링크 90개 넘으면 나눔 · 토스 상품 주소(쉐어링크 X) = 뺌 · 📋 글 = 토스 링크 교체(pending_copy)·딜 쪽 구매 버튼 X
+json.dump([{"at": "2026-10-30 21:00", "list": True, "title": "짧은", "items": [{"url": "https://toss.shopping/t/123", "name": "토스 상품 주소"}] + [{"url": f"https://link.coupang.com/a/s{k}", "name": f"감귤{k}", "price": "9,900원"} for k in range(60)]}], open("events.json", "w"), ensure_ascii=False)
+n56 = len(ch56()); time.time = lambda: TK("2026-10-30 21:05"); H.events({}); sh56 = ch56()[n56:]
+assert len(sh56) == 2 and all(ent56(p["text"]) <= 90 for p in sh56) and "토스" not in "".join(p["text"] for p in sh56) and sh56[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://link.coupang.com/a/s0", [ent56(p["text"]) for p in sh56]
+json.dump([{"t": "2026-10-30 21:05", "text": "📋 " + H.TOSS_NOTE + "\n\n🎉 [토스] 하루특가 모음 · 핫딜픽이 고른 3개", "entities": [], "url": "https://t.me/ch/9", "mid": 9, "cp": 1}], open("posts.json", "w"), ensure_ascii=False)
+assert H.pending_copy("https://toss.shopping/_m/NEW56") is None  # 진우가 보낸 토스 링크가 목록 글 버튼을 바꾸지 않음
+o56b = tempfile.mkdtemp(); S.build(json.load(open("posts.json")), o56b); pg56 = open(f"{o56b}/p/0.html").read()
+assert '<a class="btn" href="https://t.me/ch/9" rel="noopener" target="_blank">📢 텔레그램에서 전체 목록 보기</a>' in pg56 and "sponsored" not in pg56.split('class="btn"')[1][:120]
+# 5개 미만이 30분 지나도록 안 바뀜 = 바뀐 것만(3개↑) · 쿠팡 상품 주소 남은 동안 Threads·posts X
+H.HAS_CP = True; json.dump([{"at": "2026-10-28 21:00", "list": True, "title": "Y", "items": [IT56[0], IT56[1], IT56[4], {"url": PP56(8002), "name": "느린 것"}]}], open("events.json", "w")); s56c = {}
+time.time = lambda: TK("2026-10-28 21:10"); H.events(s56c); assert "ev_2026-10-28 21:00" not in s56c
+time.time = lambda: TK("2026-10-28 21:31"); H.events(s56c); assert "Y · 핫딜픽이 고른 3개" in ch56()[-1]["text"] and "느린 것" not in ch56()[-1]["text"]
+H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_CP, H.th_post, H.TOSS_NO_CMP = *sv56[:7], tnc56; H.E.clear(); H.E.update(sv56[7]); os.chdir(cwd56)
 print("OK: 모든 셀프체크 통과")

@@ -430,7 +430,7 @@ CP_SHORT = ("link.coupang.com", "coupa.ng")  # 쿠팡 파트너스 링크 도메
 
 
 def ev_list(path=None):
-    """events.json(Cowork 예약) 그대로 — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호). 깨진 파일 = []."""
+    """events.json(Cowork 예약) 그대로 — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호 · 행사 목록 글 items도). 깨진 파일 = []."""
     path = path or EVENTS
     try:
         evs = json.load(open(path)) if os.path.exists(path) else []
@@ -441,9 +441,10 @@ def ev_list(path=None):
     except ValueError:
         cl = {}
     for e in evs if isinstance(evs, list) and isinstance(cl, dict) else []:
-        if isinstance(e, dict) and isinstance(e.get("url"), str) and isinstance(cl.get(e["url"]), str) and (m := re.match(CP_PROD, e["url"])):
-            e.setdefault("pid", m[1])
-            e["url"] = cl[e["url"]]
+        for x in [e] + (e["items"] if isinstance(e, dict) and isinstance(e.get("items"), list) else []):  # items = 행사 목록 글(list)의 상품들
+            if isinstance(x, dict) and isinstance(x.get("url"), str) and isinstance(cl.get(x["url"]), str) and (m := re.match(CP_PROD, x["url"])):
+                x.setdefault("pid", m[1])
+                x["url"] = cl[x["url"]]
     return evs
 
 
@@ -913,6 +914,8 @@ def deal_card(i, p):
     if community(p.get("url")):  # 원글로 가는 버튼이면 이름을 정확히 + 원글이 지워져도 찾을 수 있게
         btn = (f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow noopener" target="_blank">📄 원글에서 구매 링크 보기</a>'
                f'<a class="btn2" href="{html.escape(find_url(title))}" rel="nofollow noopener" target="_blank">🔎 원글이 안 열리면 같은 상품 찾기</a>')
+    elif p["text"].startswith("📋") and (p.get("url") or "").startswith("https://t.me/"):  # 행사 목록 글(url = 채널 글) = 구매 버튼 X
+        btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="noopener" target="_blank">📢 텔레그램에서 전체 목록 보기</a>'
     else:
         btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow sponsored noopener" target="_blank">{buy_label(title)}</a>' if p.get("url") else ""
     main, _, ship = price.partition("/")

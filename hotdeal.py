@@ -1031,7 +1031,7 @@ def record(text, ents, url, mid=None, score=None, extra=None):
     """채널에 올라간 글 -> posts.json (웹사이트·모아보기·카드·릴스 재료). mid = 채널 메시지 번호(나중에 링크 교체용),
     s = Claude 점수(릴스 TOP3), extra = 릴스용 e(이모지)·hook(첫 화면 한 줄)·pts(합리적인 이유)."""
     posts = load(POSTS, [])
-    if TOSS_NO_CMP and is_toss(url, text):  # 토스 딜 = 다른 몰 비교 없이(사이트·카드·리스트·Threads)
+    if TOSS_NO_CMP and is_toss(url, text) and not text.startswith("📋"):  # 토스 딜 = 다른 몰 비교 없이(사이트·카드·리스트·Threads) — 📋 묶음 글(행사 목록)은 그대로(첫 줄 '📋'가 지워지면 사이트 카드가 됨)
         text, ents = strip_cmp(text, ents)
     posts.append({"t": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "text": text,
                   "entities": ents, "url": url, **({"mid": mid} if mid else {}), **({"s": score} if score else {}),
@@ -1077,7 +1077,7 @@ def pending_copy(link):
     """답장 없이 제휴 링크만 보냈을 때 바꿀 채널 글: 같은 프로그램(쿠팡·토스·네이버) 사본 중 아직 안 바꾼 가장 최근 글(24시간 안)."""
     shop = {DISCLOSURE: "쿠팡", TOSS_NOTE: "토스", NAVER_NOTE: "네이버", OY_NOTE: "올리브영"}.get(aff_note(link))
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
-    return next((p for p in reversed(load(POSTS, [])) if shop and p.get("cp") and p.get("mid") and p["t"] >= since
+    return next((p for p in reversed(load(POSTS, [])) if shop and p.get("cp") and p.get("mid") and p["t"] >= since and not p["text"].startswith("📋")
                  and not aff_note(p.get("url") or "") and store_info(title_of(p["text"]), p.get("url")).startswith("💰 " + shop)), None)
 
 
@@ -1373,7 +1373,11 @@ def cp_links(seen):
         return
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
     st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
-    evs = [e for e in ev_list(EVENTS) if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
+    raw = ev_list(EVENTS)
+    evs = [e for e in raw if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
+    lst = {i["url"]: str(i.get("name") or "") for e in raw if e.get("list") and isinstance(e.get("items"), list) and e.get("at", "") >= since
+           for i in e["items"] if isinstance(i, dict) and re.match(CP_PROD, str(i.get("url") or ""))}  # 행사 목록 글(list_post) 상품 = 채널 예약
+    evs += [{"url": u, "text": esc(n)} for u, n in lst.items()]
     chan, kst = {e["url"] for e in evs if not e.get("shelf")}, time.gmtime(now + 9 * 3600)
     today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
     st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
@@ -1407,7 +1411,8 @@ def cp_links(seen):
         for u in miss:
             st["x"][u] = now
             if u in chan:  # 채널 예약 = 바로 알림
-                alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약은 안 올라감. 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
+                alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — "
+                      + (f"{lst[u] or '?'} (pid {re.match(CP_PROD, u)[1]})\n행사 목록 글에서 그 상품만 빠짐(바뀐 상품 {LIST_MIN}개 밑이면 목록 글 안 올라감)" if u in lst else f"{u}\n그 예약은 안 올라감") + ". 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
             else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고')
                 st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
                 st.setdefault("q", {})[u] = names.get(u, "")
@@ -1522,11 +1527,14 @@ def shelf_posts(seen):
 
 
 def events(seen):
-    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞, "pin": true면 채널 맨 위 고정, "deal": true면 딜로 기록). 놓친 지 오래된 글은 안 올림(식은 글)."""
+    """예약 게시: 시각이 됐고 6시간 안 지났으면 채널에 1번(제휴 링크면 그 대가성 문구 맨 앞, "pin": true면 채널 맨 위 고정, "deal": true면 딜로 기록, "list": true면 행사 목록 글 — list_post). 놓친 지 오래된 글은 안 올림(식은 글)."""
     kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + h * 3600))
     for ev in load(EVENTS, []):
         key = "ev_" + ev["at"]
         if key in seen or (ev.get("api") and not ev.get("url")) or not (kst(9 - 6) <= ev["at"] <= kst(9)):  # api(링크 없음) = 토스 API 상품 이름 예약 -> toss_picks가 찾아서 올림
+            continue
+        if ev.get("list"):
+            list_post(seen, ev, key)
             continue
         if HAS_CP and re.match(CP_PROD, ev.get("url") or ""):  # 쿠팡 상품 주소 = 파트너스 링크로 바뀐 뒤에(cp_links — 상한·오류면 다음 실행, 6시간 안)
             continue
@@ -1547,6 +1555,91 @@ def events(seen):
                 record(m.get("text", ""), m.get("entities", []), ev["url"], m["message_id"], extra={"tag": ev.get("tag"), "own": 1})  # "tag": "정품" -> 사이트 정품 배지·칸(10/10)
             if ev.get("pin"):  # 10/10 채널 고정 글(사용법). 봇에 고정 권한이 없으면 글만 남음 -> 진우가 길게 눌러 고정
                 tg("pinChatMessage", chat_id=CHANNEL, message_id=m["message_id"], disable_notification=True)
+
+
+LIST_NUM, LIST_MIN, LIST_WAIT, LIST_MAX = NUM + "6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟".split(), 3, 30 * 60, 4000  # 행사 목록 글: 번호(11번부터 '11.') · 쿠팡 링크로 바뀐 상품 3개↑ · 안 바뀐 게 남아도 예약 30분 지나면 바뀐 것만 · 텔레그램 글 1개 글자 수(넘으면 나눔)
+LIST_CHECK = "⚠️ 행사 상품 여부·최종가는 결제 전 확인"
+
+
+def list_post(seen, ev, key):
+    """쿠팡 행사 목록 글(10/24 진우 '행사가 있으면 3개 + 목록 1개' · 개수 제한 X): events {"at", "list": true, "title", "until": "YYYY-MM-DD", "items": [{"url": 쿠팡 상품 주소·토스 링크, "name", "price", "unit"}]}
+    -> 채널: 대가성 문구 + '🎉 <b>{title} · 핫딜픽이 고른 N개</b> (~M/D)' + 번호 줄('1️⃣ <a>이름</a> 가격 · 단가') + 확인 줄, 버튼 1개(그 글 첫 상품 — 묶음 글 버튼처럼 번호·이름) — LIST_MAX자 넘으면 글 여러 개('(1/2)')
+    + Threads 묶음 글(같은 순서·가격 · 수수료 링크 앞 4개까지 480자, 남은 건 '전체 N개 → 채널 글') + posts.json('📋' = 사이트 카드·Threads 딜·리스트 X — 상품마다 진열 카드가 따로 · url = 채널 글 · metrics = kind list).
+    쿠팡 상품 주소 = cp_links가 바꾼 뒤(ev_list가 items도): 안 바뀐 게 없으면(실패 = 하루 뒤 다시라 이 예약엔 X) 바로, 남았어도 예약 LIST_WAIT 지나면 바뀐 것만 — LIST_MIN개↑일 때.
+    LIST_MIN개 밑 = 관리자 알림 1번 + 안 올림(바뀌는 중이면 5시간까지 기다림). 토스는 토스끼리(다른 몰과 섞이면 토스 상품을 뺌 — 토스 = 다른 몰 이름·비교 X)."""
+    now, x = time.time(), seen.get("cpdl", {}).get("x", {})
+    at = lambda sec: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - sec))
+    its = [i for i in ev.get("items") or [] if isinstance(i, dict) and str(i.get("url") or "").startswith("https://") and str(i.get("name") or "").strip()]
+    tossy = lambda u: urllib.parse.urlsplit(u).netloc in TOSS_HOSTS
+    its = [i for i in its if not tossy(i["url"]) or toss_share(i["url"])]  # 토스 상품 주소(쉐어링크 아님) = 수수료 X
+    if any(tossy(i["url"]) for i in its) and not all(tossy(i["url"]) for i in its):
+        print("events list 토스 상품 뺌(다른 몰과 섞임)", ev["at"], sum(tossy(i["url"]) for i in its))
+        its = [i for i in its if not tossy(i["url"])]
+    ok = [i for i in its if not re.match(CP_PROD, i["url"])]
+    wait = [i for i in its if re.match(CP_PROD, i["url"]) and HAS_CP and i["url"] not in x]  # 실패한 것(x) = 하루 뒤 다시 · 키 없음 = 못 바꿈
+    if len(ok) < LIST_MIN or wait and ev["at"] > at(LIST_WAIT):
+        if wait and ev["at"] > at(5 * 3600):
+            return  # 아직 바뀌는 중(상한·오류면 다음 실행)
+        seen[key] = now
+        print("events list 안 올림", ev["at"], f"바뀐 상품 {len(ok)}개")
+        tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {ev['at']} 행사 목록 글 안 올림 — 쿠팡 링크로 바뀐 상품 {len(ok)}개({LIST_MIN}개 밑) · {clip(str(ev.get('title') or ''), 40)}\n"
+                                              f"안 바뀐 상품: {', '.join(clip(str(i['name']), 20) for i in its if i not in ok)[:1500]}\n진우 단축 링크로 items를 바꿔 다시 예약해 줘")
+        return
+    md = re.match(r"(?:\d{4}-)?(\d{1,2})[-/.](\d{1,2})", str(ev.get("until") or ""))
+    title, till = clip(str(ev.get("title") or "기획전").strip(), 60), f" (~{int(md[1])}/{int(md[2])})" if md else ""
+    tail = lambda i: " · ".join(clip(t, 30) for t in (str(i.get("price") or "").strip(), str(i.get("unit") or "").strip()) if t)  # 한 줄이 글 1개를 넘지 않게
+    name = lambda i, n: clip(str(i["name"]).strip(), n)
+    num = lambda k: LIST_NUM[k] if k < len(LIST_NUM) else f"{k + 1}."
+    end = lambda xs: f"\n\n{LIST_CHECK}" + (f"\n{toss_when()}" if TOSS_NO_CMP and any(toss_share(i["url"]) for i in xs) else "")  # 토스 = 게시 시점 가격
+    notes = "\n".join(f"<i>{n}</i>" for n in aff_notes(i["url"] for i in ok).split("\n") if n)
+    rows = [f'{num(k)} <a href="{esc(i["url"])}"><b>{esc(name(i, 40))}</b></a>' + (f" {esc(tail(i))}" if tail(i) else "") for k, i in enumerate(ok)]
+    text = lambda rs, part: (notes + "\n\n" if notes else "") + f"🎉 <b>{esc(title)} · 핫딜픽이 고른 {len(ok)}개</b>{esc(till)}{part}\n\n" + "\n".join(rs) + end(ok)
+    u16 = lambda h: len(plain_of(h).encode("utf-16-le")) // 2
+    fit = lambda ks: len(ks) <= (90 - notes.count("<i>") - 1) // 2 and sum(len(ok[k]["url"]) for k in ks) <= 5000 and u16(text([rows[k] for k in ks], " (99/99)")) <= LIST_MAX  # 글자 수(태그 뺀) · 링크·굵게 90개(텔레그램 100개 넘으면 뒤 링크가 사라짐 — 10/11 모아보기)·주소 5,000자
+    parts, cur = [], []  # 줄을 나눔 — 번호는 이어서
+    for k in range(len(rows)):
+        if cur and not fit(cur + [k]):
+            parts.append(cur)
+            cur = []
+        cur.append(k)
+    parts.append(cur)
+    size = -(-len(rows) // len(parts))
+    even = [list(range(j, min(j + size, len(rows)))) for j in range(0, len(rows), size)]
+    parts = even if len(even) == len(parts) and all(map(fit, even)) else parts  # 고르게(마지막 글이 1~2줄만 남지 않게)
+    mids = []
+    for n, ks in enumerate(parts):
+        m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=text([rows[k] for k in ks], f" ({n + 1}/{len(parts)})" if len(parts) > 1 else ""),
+               reply_markup={"inline_keyboard": [[{"text": str(ev.get("button") or "") if not n and ev.get("button") else f"{num(ks[0])} {name(ok[ks[0]], 20)}", "url": ok[ks[0]]["url"]}]]})
+        if not m:
+            if n:  # 첫 글은 나갔음 = 다시 안 보냄(같은 목록 두 번 X) — 남은 쪽만 알림
+                tg("sendMessage", chat_id=ADMIN, text=f"⚠️ {ev['at']} 행사 목록 글 {n + 1}/{len(parts)}쪽 전송 실패({RUN['tg_err'] or '텔레그램 오류'}) — 앞쪽만 올라감")
+                break
+            return  # 다음 실행에 다시(6시간 안)
+        if not n:
+            seen[key] = now
+            bundled(seen)
+        mids.append(m["message_id"])
+        record("📋 " + m.get("text", ""), [{**e, "offset": e["offset"] + 3} for e in m.get("entities", [])], post_url(m["message_id"]), m["message_id"])  # '📋 ' = UTF-16 3칸 · url = 채널 글(상품 링크 X — 같은 링크 단독 글·👍 리스트 후보를 안 막게)
+    print("events list", ev["at"], f"{len(ok)}개" + (f" · 글 {len(mids)}개" if len(parts) > 1 else "") + (f" · 안 바뀐 상품 {len(its) - len(ok)}개 뺌" if len(its) > len(ok) else ""))
+    ts = [i for i in ok if aff_note(i["url"]) and len(i["url"]) <= 150]  # Threads = 수수료 링크만(10/19 밤 진우) · 긴 링크 X(500자)
+    if not E.get("THREADS_TOKEN") or len(ts) < 2:
+        return
+
+    def th(n):
+        return aff_notes(i["url"] for i in ts[:n]) + f"\n\n🎉 {title} · 핫딜픽이 고른 {len(ok)}개{till}\n\n" \
+            + "\n".join(f"{num(j)} {name(i, 28)}" + (f"\n💰 {tail(i)}" if tail(i) else "") + f"\n👉 {i['url']}" for j, i in enumerate(ts[:n])) \
+            + (f"\n\n전체 {len(ok)}개 → {post_url(mids[0])}" if len(ok) > n else "") + end(ts[:n])
+    n = min(len(ts), 4)  # 상품 링크 4개 + 채널 글 1개 = Threads 5개 한도
+    while n > 2 and len(th(n)) > 480:
+        n -= 1
+    if len(th(n)) > 480:
+        print("threads list 500자 넘음 — Threads 생략", ev["at"])
+        return
+    try:
+        th_bundle(seen, "list" + ev["at"][11:13], th(n), ts[0]["url"])
+        print("th list", n, "items")
+    except Exception as e:  # th_bundle이 다음 실행에 1번 더(th_retry) — 같은 실행의 다른 예약은 계속
+        print("threads list", repr(e))
 
 
 def night_deals(seen, since, until):
@@ -2163,7 +2256,7 @@ def toss_relink(seen):
     kst = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - h * 3600))
     since, late, old = kst(72), kst(TOSS_WAIT / 3600), kst(24)
     key = lambda p: ("trb_" if p["mid"] in TOSS_BACKFILL else "tr_") + str(p["mid"])  # 백필 = 새 기록(10/18 01시 크레딧 바닥 때 Claude 없이 '본 후보'로 넘어간 1204 등)
-    todo = [p for p in load(POSTS, []) if HAS_TOSS and p.get("mid") and (p["t"] >= since or p["mid"] in TOSS_BACKFILL) and not toss_share(p.get("url")) and not p.get("ask")
+    todo = [p for p in load(POSTS, []) if HAS_TOSS and p.get("mid") and (p["t"] >= since or p["mid"] in TOSS_BACKFILL) and not toss_share(p.get("url")) and not p.get("ask") and not p["text"].startswith("📋")
             and store_info(title_of(p["text"]), p.get("url")).startswith("💰 토스") and (not seen.get(key(p), {}).get("done") or p["t"] <= late)]
     if not todo:
         return
@@ -5320,8 +5413,8 @@ def metrics_rows(seen):
     def row(ch, i, text, url, t, views, react, title=None, links=None, deal=None, **more):
         title = title or title_of(text)
         w = price_won(title)
-        cat = "투표" if text.startswith("🗳️") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. ", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
-        rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": url}) or "기타", "cat": cat,
+        cat = "투표" if text.startswith("🗳️") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. |핫딜픽이 고른 \d+개", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
+        rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": next((u for u in links or [] if u and not re.search(NOT_PROD, u)), url) if (url or "").startswith("https://t.me/") else url}) or "기타", "cat": cat,
                      "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more,
                      **(prod_cols(title, cat, links, ids, deal) if links is not None else {})})
 
@@ -5494,7 +5587,8 @@ def cp_repost(seen):
     posts, ev, rk = load(POSTS, []), ev_info(), seen.get("cpq", {}).get("r", {})
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - CPRE_DAYS * 86400))
     last, first, chan = {}, {}, set()
-    block = {e["url"] for e in evs if e.get("url") and re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400}  # 진우·Cowork 예약(지난·앞으로 3일)
+    block = {x["url"] for e in evs if re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400
+             for x in [e] + (e["items"] if e.get("list") and isinstance(e.get("items"), list) else []) if isinstance(x, dict) and x.get("url")}  # 진우·Cowork 예약(지난·앞으로 3일 · 행사 목록 글 상품도)
     for p in posts:
         u = p.get("url") or ""
         if not p.get("own") or aff_note(u) != DISCLOSURE or p["text"].startswith("📋"):
@@ -5665,8 +5759,8 @@ def watch(seen):
         elif "ev_" + at in seen:
             continue
         else:
-            why = RUN["tg_err"] or "events 로그 확인"
-        tg("sendMessage", chat_id=ADMIN, text=f"⏸ 텔레그램 예약 글 안 나감 — {at[5:]} {clip(ev.get('name') or plain_of(ev.get('text') or '').split(chr(10))[0], 40)} (예약 + {QUIET_EV // 60}분 지남), 이유: {why}")
+            why = "행사 목록 — 쿠팡 링크 변환 기다리는 중(cp link 로그)" if ev.get("list") else RUN["tg_err"] or "events 로그 확인"
+        tg("sendMessage", chat_id=ADMIN, text=f"⏸ 텔레그램 예약 글 안 나감 — {at[5:]} {clip(ev.get('name') or ev.get('title') or plain_of(ev.get('text') or '').split(chr(10))[0], 40)} (예약 + {QUIET_EV // 60}분 지남), 이유: {why}")
         seen[f"quietev_{at}"] = {"t": now}
 
 
