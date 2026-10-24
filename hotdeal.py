@@ -3462,13 +3462,14 @@ def reel_voice(rows):
             segs = [cards._wav(w)[3] for w in wavs]
             total = sum(cards.reel_plan(segs, len(rows) - 2))
             if total <= 20:
+                print("reel narration", f"{total:.1f}초 · {rate:.2f}배")  # 정기 점검용(몇 초·몇 배로 됐는지)
                 return [(sub, w) for (sub, _), w in zip(rows, wavs)]
             sp = sum(x for x in segs if cards.LEAD + x + cards.TAIL > 3)  # 줄일 수 있는 건 3초 넘는 장의 말뿐(여백·3초 기본은 그대로)
             rate = min(1.4, rate * sp / max(0.1, sp - (total - 19.5)))
     except Exception as e:  # 깨진 음성(WAV 아님 등) = 글자 + 음악
         print("reel voice", type(e).__name__)
         return None
-    print("reel narration 20초 넘음 — 글자 + 음악만")
+    print("reel narration 20초 넘음", f"({rows[1][0][:20]}…)" if len(rows) > 2 else "")
     return None
 
 
@@ -3483,6 +3484,8 @@ def make_reel(top, kst, out, k=0):
         voice = reel_voice(reel_say(top, kst, **kw))
         if voice:
             break
+    if E.get("GOOGLE_TTS_KEY"):
+        print("reel", "나레이션 " + (("이름 8자" if kw.get("nmax") else "단위가격 뺌" if kw else "기본") if voice else "X — 글자 + 음악"))
     path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice)  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
