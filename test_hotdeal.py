@@ -5352,7 +5352,8 @@ def http41(url, body=None, headers=None, method=None):
         return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if any("/333" in u for u in us) else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]} for u in us]})
     if "/products/search?" in url:
         return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productName": "곰곰 특란, 30구, 1개", "productPrice": 1}, {"productId": 111, "productName": "곰곰 특란, 30구, 2개", "productPrice": 14000},
-                                                                 {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490, "productImage": "https://ads-partners.coupang.com/image1/t111", "isRocket": True}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
+                                                                 {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490, "productImage": "https://ads-partners.coupang.com/image1/t111", "isRocket": True},
+                                                                 {"productId": 222, "productName": "새 상품 다른 옵션", "productPrice": 1, "productImage": "https://ads-partners.coupang.com/image1/t222"}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
     if "linkprice" in url:
         return json.dumps({"result": "F", "url": ""})
     raise AssertionError(url)
@@ -5400,11 +5401,11 @@ for k41 in (True, False):
 #   · 가장 오래전에 확인한 글 먼저 · 오류 = 오늘은 건너뜀(어제 가격 그대로) · 못 찾으면 로그에 pid·검색어·결과 위 3개(pid 있음 = 옵션 다름 / pid 없음)
 seen41 = reset41(True); H.cp_links(seen41); H.events(seen41); c41.clear()
 ch0, H.CP_CHK_HOUR = H.CP_CHK_HOUR, 11; H.cp_price(seen41); assert "cpq" not in seen41 and not c41; H.CP_CHK_HOUR = ch0  # 10시 < 11시
-H.cp_price(seen41); assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"]} and len(c41) == 1 and seen41["cpq"]["i"] == {EG41: "https://ads-partners.coupang.com/image1/t111"} and seen41["cpq"]["r"] == {EG41: True}  # 실행마다 검색 1번 · 상품 사진(10/24 개편 — 추가 호출 X) · 로켓 근거(isRocket — E)
-H.RUN.pop("cpn"); o41 = io.StringIO(); import contextlib
+o41 = io.StringIO(); import contextlib
 with contextlib.redirect_stdout(o41): H.cp_price(seen41)
-assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"], "https://coupa.ng/b222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
-assert seen41["cpq"]["r"] == {EG41: True, "https://coupa.ng/b222": False}  # 못 찾음 = 로켓 근거 없음
+assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"], "https://coupa.ng/b222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2  # 실행마다 검색 2번(10/24 1주 ① — 시간당 6 그대로)
+assert seen41["cpq"]["i"] == {EG41: "https://ads-partners.coupang.com/image1/t111", "https://coupa.ng/b222": "https://ads-partners.coupang.com/image1/t222"}  # 상품 사진 · 같은 검색 결과에 다른 진우 글 상품(pid 222)이면 그 사진도(추가 호출 X)
+assert seen41["cpq"]["r"] == {EG41: True, "https://coupa.ng/b222": False}  # 로켓 근거(isRocket — E) · 못 찾음 = 근거 없음
 assert "cp price 못 찾음 pid 222 · 검색어 '새 상품' · pid 없음 · 결과 0개" in o41.getvalue() and "sk" not in o41.getvalue().replace("검색", ""), o41.getvalue()  # 원인 찾기 로그(키·주소 쿼리 X)
 assert any(quote("곰곰 특란 30구") in u and u.endswith("&limit=10") for u, _ in c41)
 c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘은 끝
@@ -5417,13 +5418,13 @@ assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시")  # Cowork 확인(09
 seen41["cpq"]["m"][EG41][1] = "2026-10-06 10:00"; json.dump([{**e, "now": "8,990원 와우가"} if e["url"] == EG41 else e for e in ev41], open("events.json", "w"))
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41); assert e41["now"] == "8,990원 와우가"  # 검색 가격엔 와우·쿠폰 없음 -> Cowork 값
 json.dump(ev41, open("events.json", "w"))
-# 호출 상한: 이번 실행(검색 1·전체 6 — 실패한 실행의 호출은 다음 실행에 안 보여도 1시간 합 ≤ 실행 수) · 최근 1시간(시계 시각 경계에서 두 배 안 되게) · rCode
+# 호출 상한: 이번 실행(검색 2·전체 6 — 실패한 실행의 호출은 다음 실행에 안 보여도 1시간 합 ≤ 실행 수) · 최근 1시간(시계 시각 경계에서 두 배 안 되게) · rCode
 def lim41(*a):
     try: H.coupang(*a)
     except H.CpLimit: return True
 H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); c41.clear()
-H.coupang("GET", "/products/search?keyword=a&limit=10"); assert lim41("GET", "/products/search?keyword=b&limit=10")  # 실행마다 검색 1
-for _ in range(5): H.coupang("POST", "/deeplink", {"coupangUrls": [P222]})
+H.coupang("GET", "/products/search?keyword=a&limit=10"); H.coupang("GET", "/products/search?keyword=b&limit=10"); assert lim41("GET", "/products/search?keyword=c&limit=10")  # 실행마다 검색 2(10/24 1주 ①)
+for _ in range(4): H.coupang("POST", "/deeplink", {"coupangUrls": [P222]})
 assert lim41("POST", "/deeplink", {"coupangUrls": [P222]}) and len(c41) == 6  # 실행마다 전체 6
 H.RUN.pop("cpn"); H.RUN["cpu"] = {"s": [1791248400 - 100] * 6, "a": [1791248400 - 100] * 6}; assert lim41("GET", "/products/search?keyword=a&limit=10")  # 최근 1시간 검색 6
 time.time = lambda: 1791248400 + 3501; H.coupang("GET", "/products/search?keyword=a&limit=10")  # 1시간 지나면 다시
@@ -5935,4 +5936,14 @@ assert pk53("🔥 [쿠팡] 샤프란 섬유유연제, 2.1L (1원)")[1] == pk53("
 assert H.pick_price({"t": "2026-10-23 20:00", "text": "🔥 [쿠팡] 라네즈 (19,020원 · 와우회원 쿠폰가)", "url": "u"}) == "19,020원 · 와우회원 쿠폰가 (10/23 글 가격)"  # 조건 그대로
 H.th_post, time.time, H.POSTS = sv53[:3]; H.E.pop("THREADS_TOKEN") if sv53[3] is None else H.E.update(THREADS_TOKEN=sv53[3])
 assert "pair_post, " in open(H.__file__).read().split("for step in (", 1)[1].split("):\n", 1)[0] and "pair_post" in H.ALERT_STEPS  # 메인 실행 단계 · 실패 알림
+# 9-54) (10/24 진우 1주 ③) 간식·날씨 묶음 글 = 오늘 채널에 나간 딜 X(15:43 간식 글에 14:32 그래놀라·11:43 콘푸로스트가 또 나간 것) — 커뮤니티·진우 글(posts.json)·토스 개별 글(sold_) 둘 다
+sv54 = (H.POSTS, H.HAS_TOSS, H.toss, time.time); d54 = tempfile.mkdtemp(); H.POSTS = f"{d54}/posts.json"
+json.dump([{"t": "2026-10-23 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 어제 견과 30봉 (9,900원)", "url": "https://link.coupang.com/a/y54"},
+           {"t": "2026-10-24 14:32", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 오늘 그래놀라 과자 1+1 (9,920원)", "url": "https://link.coupang.com/a/t54"}], open(H.POSTS, "w"), ensure_ascii=False)
+H.HAS_TOSS, H.toss = True, lambda path: {"items": [{"tacaItemId": i, "displayPrice": 5000} for i in (1, 2)]}
+s54 = {"sold_1": {"t": TK("2026-10-24 13:00"), "k": "ev", "url": "https://toss.shopping/_m/a", "it": [[1, "오늘 토스 젤리", 5000, 0, 0, 0]]},
+       "sold_2": {"t": TK("2026-10-23 13:00"), "k": "ev", "url": "https://toss.shopping/_m/b", "it": [[2, "어제 토스 초코", 5000, 0, 0, 0]]}}
+time.time = lambda: TK("2026-10-24 15:35")
+assert sorted(c["n"] for c in H.wx_deals(s54, ["견과", "과자", "젤리", "초코"])) == ["어제 견과 30봉", "어제 토스 초코"]  # 오늘 나간 그래놀라·토스 젤리 X
+H.POSTS, H.HAS_TOSS, H.toss, time.time = sv54
 print("OK: 모든 셀프체크 통과")

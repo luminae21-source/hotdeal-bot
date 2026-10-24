@@ -35,7 +35,7 @@ MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
-CP_RUN, CP_SEARCH_RUN = 6, 1  # 실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
+CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
 CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
@@ -1436,6 +1436,10 @@ def cp_price(seen):
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
     q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
+    bypid = {}
+    for u in names:
+        if ev[u].get("pid"):
+            bypid.setdefault(ev[u]["pid"], []).append(u)
     todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and not q["m"].get(u, [0, ""])[1].startswith(today) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     got = miss = err = 0
@@ -1460,6 +1464,10 @@ def cp_price(seen):
         y = x or (same[0] if same else None)  # 사진 = 같은 pid면 옵션이 달라도(가격 적중이 낮아도 사진은 채움 — 추가 호출 X)
         if y and str(y.get("productImage") or "").startswith("https://"):
             q.setdefault("i", {})[u] = y["productImage"]
+        for z in ds:  # 같은 검색 결과에 다른 진우 글 상품(같은 pid)도 있으면 그 사진도(10/24 진우 1주 ① — 사진 212개 중 14개뿐이던 것, 추가 호출 X)
+            for u2 in bypid.get(str(z.get("productId")), ()):
+                if u2 != u and u2 not in q.setdefault("i", {}) and str(z.get("productImage") or "").startswith("https://"):
+                    q["i"][u2] = z["productImage"]
         got, miss = got + bool(x), miss + (not x)
         if not x:  # 원인 찾기(10/23 Cowork — 적중 0): 결과에 pid가 있는데 옵션이 다른지 / 아예 없는지 · 위 3개(키·주소 쿼리 X)
             print(f"cp price 못 찾음 pid {pid} · 검색어 '{kw}' · " + (f"pid 있음 {len(same)}개 = " + (f"item {item} 없음" if item else "옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로") if same else "pid 없음") + f" · 결과 {len(ds)}개")
@@ -4562,9 +4570,10 @@ def wx_deals(seen, words, n=3, deny=None):
         return []
     now, posts, out = time.time(), load(POSTS, []), []
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - 3 * 86400))
+    today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 오늘 채널에 나간 딜은 X(10/24 진우 1주 ③ — 15:43 간식 글에 14:32 그래놀라·11:43 콘푸로스트가 또)
     ok = lambda name: wx_hit(name, words) and not (deny and re.search(deny, name))
     for i, p in enumerate(posts):
-        if p["t"] < since or p["text"].startswith("📋") or p.get("shelf") or is_toss(p.get("url"), p["text"]):  # 사이트 진열 X · 토스는 아래에서(지금 가격)
+        if p["t"] < since or p["t"][:10] == today or p["text"].startswith("📋") or p.get("shelf") or is_toss(p.get("url"), p["text"]):  # 사이트 진열 X · 토스는 아래에서(지금 가격)
             continue
         title = title_of(p["text"])
         name, won = re.sub(r"\s*\((?=[^()]*(?:\d|무료|무배))[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)'·'(무료)' 같은 가격·배송 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
@@ -4575,7 +4584,7 @@ def wx_deals(seen, words, n=3, deny=None):
     for k, v in seen.items():
         if HAS_TOSS and k.startswith("sold_") and isinstance(v, dict) and now - v.get("t", 0) < 3 * 86400:
             for link, x in zip([v.get("url")] if v.get("k") == "ev" else [r[1] for r in v.get("rows", [])], v.get("it", [])):
-                if not x[4] and link and ok(x[1]):
+                if not x[4] and link and ok(x[1]) and time.strftime("%Y-%m-%d", time.gmtime(v["t"] + 9 * 3600)) != today:
                     cand[x[0]] = {"n": x[1], "u": link, "hot": True, "top3": True, "t": v["t"], "toss": 1}
     try:
         got = cand and {x["tacaItemId"]: x for x in toss("/products/detail?tacaItemIds=" + ",".join(map(str, list(cand)[:30])))["items"]}
