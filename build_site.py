@@ -1047,6 +1047,7 @@ def build(posts, out="docs"):
         malls = "·".join(dict.fromkeys(n for k, n, _ in MALLS for _, p, _ in dps if shop_of(p) == k)) or "핫딜"
         nav = '<nav class="pg" aria-label="날짜">' + (f'<a class="btn2" href="{BASE}today/{pdays[n_ - 1]}/" rel="prev">← {int(pdays[n_ - 1][5:7])}/{int(pdays[n_ - 1][8:10])} 픽</a>' if n_ else "") \
             + (f'<a class="btn2" href="{BASE}today/{pdays[n_ + 1]}/" rel="next">{int(pdays[n_ + 1][5:7])}/{int(pdays[n_ + 1][8:10])} 픽 →</a>' if n_ + 1 < len(pdays) else "") + "</nav>"
+        nav = "" if nav.endswith('"날짜"></nav>') else nav  # 앞뒤 날짜 없음(첫날) = 빈 칸 X(16:00 점검)
         write(out, f"today/{d}/", page(f"오늘의 픽 — {mdk} {malls} 특가 | {TITLE}", f'<h1 class="h">오늘의 픽 · {mdk}</h1>' + (pick_section(d, dps, True) or '<p class="t">이날 고른 상품은 지금 진열에서 빠졌어요.</p>') + nav
                                        + top4("fire", "hot", "🔥 지금 특가", ls["hot"][2], {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
                                        head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 og.png(인스타 카드는 다른 5개 딜이라 X)

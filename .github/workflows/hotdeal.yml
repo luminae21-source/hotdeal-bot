@@ -59,7 +59,7 @@ jobs:
       - run: |                     # 토스 쉐어링크 API는 등록한 고정 IP에서만 받음 -> 오라클 무료 서버로 SSH 터널, sharelink.toss.im 호출만 그 서버를 거침 (시크릿 없으면 건너뜀)
           [ -n "$HOST" ] || exit 0
           install -m 600 /dev/null ~/toss_key && printf '%s\n' "$KEY" > ~/toss_key
-          sudo ssh -i ~/toss_key -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ConnectTimeout=15 \
+          sudo ssh -i ~/toss_key -o StrictHostKeyChecking=accept-new -o LogLevel=ERROR -o ExitOnForwardFailure=yes -o ConnectTimeout=15 \
             -f -N -L 127.0.0.2:443:sharelink.toss.im:443 "$HOST" \
             && echo "127.0.0.2 sharelink.toss.im" | sudo tee -a /etc/hosts >/dev/null \
             || { echo "::warning::토스 터널 연결 실패 -> 이번 실행은 토스 딜을 사본(수동)으로"; exit 0; }
