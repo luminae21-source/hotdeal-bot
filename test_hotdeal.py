@@ -5321,8 +5321,8 @@ po41 = [{"t": "2026-10-05 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,
 def http41(url, body=None, headers=None, method=None):
     c41.append((url, body))
     if url.endswith("/deeplink"):
-        u = body["coupangUrls"][0]
-        return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if "/333" in u else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]}]})
+        us = body["coupangUrls"]  # 묶음 변환(10/24) — 안 되는 주소가 끼면 묶음 전체 rCode 400
+        return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if any("/333" in u for u in us) else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]} for u in us]})
     if "/products/search?" in url:
         return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productName": "곰곰 특란, 30구, 1개", "productPrice": 1}, {"productId": 111, "productName": "곰곰 특란, 30구, 2개", "productPrice": 14000},
                                                                  {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
@@ -5347,7 +5347,7 @@ assert 'if HAS_CP:  # 쿠팡 API 최근 1시간 호출 시각' in inspect.getsou
 # ① 키 있음: 상품 주소 -> 파트너스 링크(1번만, cp_links.json), 안 되는 상품 = 관리자 알림 + 그 예약은 안 올림(하루 뒤 다시), events.json은 Cowork 것 그대로
 seen41 = reset41(True)
 H.cp_links(seen41)
-assert json.load(open("cp_links.json")) == {P222: "https://coupa.ng/b222"} and P333 in seen41["cpdl"]["x"] and [u for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/deeplink"] * 2
+assert json.load(open("cp_links.json")) == {P222: "https://coupa.ng/b222"} and P333 in seen41["cpdl"]["x"] and [u for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/deeplink"] * 3 and [len(b["coupangUrls"]) for _, b in c41] == [2, 1, 1]
 assert any(p["chat_id"] == "42" and "쿠팡 링크 변환 안 됨" in p["text"] and P333 in p["text"] for m, p in sent)
 n41 = len(c41); H.cp_links(seen41); assert len(c41) == n41  # 바꾼 건 다시 안 부름 · 안 되는 건 하루 뒤
 ld41 = H.load(H.EVENTS, [])
@@ -5551,8 +5551,7 @@ json.dump(ev45, open("events.json", "w")); json.dump([{"t": "2026-10-24 19:30", 
 def http45(url, body=None, headers=None, method=None):
     c45.append(url)
     if url.endswith("/deeplink"):
-        u = body["coupangUrls"][0]
-        return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/b" + re.search(r"/products/(\d+)", u)[1]}]})
+        return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/b" + re.search(r"/products/(\d+)", u)[1]} for u in body["coupangUrls"]]})
     return "{}"
 def tg45(method, **p):
     sent45.append((method, p))
@@ -5562,8 +5561,10 @@ assert [e["url"] for e in H.load(H.EVENTS, [])] == ["https://link.coupang.com/a/
 H.shelf_posts(seen45); assert [p["url"][-3:] for p in json.load(open("posts.json"))] == ["old", "sh2", "sh3", "sh5"]  # 딥링크 전 쿠팡 상품 주소 = 진열 X(생 주소 X) · 시각 전(sh4) X
 json.dump(ev45 + [SH45(f"https://www.coupang.com/vp/products/9{k}", f"진열 {k}", "2026-10-20 09:00") for k in range(8)]
           + [{"at": "2026-10-24 21:00", "deal": True, "url": "https://www.coupang.com/vp/products/99999", "button": "x", "text": "🔥 <b>[쿠팡] 채널 상품 (1원)</b>"}], open("events.json", "w"))
-H.cp_links(seen45); cl45 = json.load(open(H.CP_LINKS))
-assert "https://www.coupang.com/vp/products/99999" in cl45 and len(cl45) == H.CP_RUN - 2, cl45  # 채널 예약 먼저(주소 순서 뒤여도) · 진열 변환은 이 실행 CP_RUN-2개째까지(남은 2개 = 가격 확인·골드박스 몫)
+nc45 = len(c45); H.cp_links(seen45); cl45 = json.load(open(H.CP_LINKS))
+assert "https://www.coupang.com/vp/products/99999" in cl45 and len(cl45) == 10 and sum(u.endswith("/deeplink") for u in c45[nc45:]) == 1, (cl45, c45[nc45:])  # 10/24 진우 '수량 제한 X': 한 호출에 묶어 다(채널 예약 먼저)
+json.dump(ev45 + [SH45(f"https://www.coupang.com/vp/products/8{k:02d}", f"진열 {k}", "2026-10-20 09:00") for k in range(45)], open("events.json", "w")); os.remove(H.CP_LINKS); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+nc45 = len(c45); H.cp_links(seen45); assert len(json.load(open(H.CP_LINKS))) == 46 and sum(u.endswith("/deeplink") for u in c45[nc45:]) == 3  # 46개 = 20·20·6 세 번 호출(진열만 = 실행마다 CP_RUN-2번까지)
 json.dump(ev45, open("events.json", "w")); os.remove(H.CP_LINKS); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); seen45.pop("cpdl", None)
 H.cp_links(seen45); DL45 = json.load(open(H.CP_LINKS))[P45]
 assert DL45 == "https://link.coupang.com/a/b45" and any(u.endswith("/deeplink") for u in c45)  # at 6시간 지났어도 shelf는 변환

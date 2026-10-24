@@ -36,6 +36,7 @@ IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startsw
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
 CP_RUN, CP_SEARCH_RUN = 6, 1  # 실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
+CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
 CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
@@ -440,12 +441,24 @@ def coupang(method, path, body=None):
     return r["data"]
 
 
+def cp_deeplinks(urls):
+    """쿠팡 주소 여러 개 -> {원래 주소: 파트너스 링크}(딥링크 API 1번 — coupangUrls 배열). 응답 originalUrl로 짝짓고(못 읽으면 같은 개수일 때 순서대로),
+    파트너스 도메인 아닌 링크·응답에 없는 주소는 빠짐(대가성 문구가 빠지지 않게). 묶음 전체 오류(rCode 400) = ValueError."""
+    r = coupang("POST", "/deeplink", {"coupangUrls": list(urls)})
+    ds, out = r if isinstance(r, list) else [], {}
+    for k, d in enumerate(ds):
+        d = d if isinstance(d, dict) else {}
+        o = d.get("originalUrl") if d.get("originalUrl") in urls else urls[k] if len(ds) == len(urls) else None
+        if o and urllib.parse.urlsplit(d.get("shortenUrl") or "").netloc in CP_SHORT:
+            out[o] = d["shortenUrl"]
+    return out
+
+
 def cp_deeplink(url):
-    """쿠팡 주소 -> 파트너스 링크(딥링크 API). 안 되는 상품(성인·판매자 요청 등)·파트너스 도메인 아닌 응답 = ValueError(대가성 문구가 빠지지 않게)."""
-    r = coupang("POST", "/deeplink", {"coupangUrls": [url]})
-    s = r[0].get("shortenUrl", "") if isinstance(r, list) and r and isinstance(r[0], dict) else ""
-    if urllib.parse.urlsplit(s).netloc not in CP_SHORT:
-        raise ValueError(f"deeplink {s!r}")
+    """쿠팡 주소 1개 -> 파트너스 링크. 안 되는 상품(성인·판매자 요청 등)·파트너스 도메인 아닌 응답 = ValueError(대가성 문구가 빠지지 않게)"""
+    s = cp_deeplinks([url]).get(url)
+    if not s:
+        raise ValueError(f"deeplink {url}")
     return s
 
 
@@ -1354,21 +1367,31 @@ def cp_links(seen):
     st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
     evs = [e for e in ev_list(EVENTS) if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
     chan = {e["url"] for e in evs if not e.get("shelf")}
-    for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)):  # 채널 예약 먼저 · 진열 변환은 이 실행 CP_RUN-2개째까지(남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크 — 10/24 리뷰) · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
-        if now - st["x"].get(u, 0) < 86400:
-            continue
-        if u not in chan and n >= CP_RUN - 2:
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= 86400]  # 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    q, calls = [todo[k:k + CP_DL_BATCH] for k in range(0, len(todo), CP_DL_BATCH)], 0
+    while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
+        b = q.pop(0)
+        if calls >= CP_RUN - 2 and not chan & set(b):
             break
         try:
-            cl[u] = cp_deeplink(u)
-            n += 1
-        except ValueError as e:
-            print("cp link", u, repr(e))
-            st["x"][u] = now
-            alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약은 안 올라감. 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
+            got = cp_deeplinks(b)
+        except ValueError as e:  # 묶음 오류 = 반씩 나눠 다시 · 1개짜리 오류 = 그 상품만 안 됨
+            got = {}
+            if len(b) == 1:
+                print("cp link", b[0], repr(e))
         except Exception as e:  # 상한·접속·게이트웨이 = 다음 실행에
             print("cp link", repr(e))
             break
+        calls += 1
+        cl.update(got)
+        n += len(got)
+        miss = [u for u in b if u not in got]
+        if miss and len(b) > 1:  # 응답에 빠진 주소 = 따로 다시(어느 것이 안 되는지 — 전부 빠졌으면 반씩)
+            q[:0] = [miss] if len(miss) < len(b) else [b[:len(b) // 2], b[len(b) // 2:]]
+            continue
+        for u in miss:
+            st["x"][u] = now
+            alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약·진열은 안 올라감(하루 뒤 다시). 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
     if n:
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
         print("cp link", f"쿠팡 상품 주소 {n}개 -> 파트너스 링크")
