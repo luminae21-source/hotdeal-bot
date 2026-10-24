@@ -6,10 +6,12 @@ from email.utils import formatdate
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
+http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
+ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -3120,7 +3122,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, metrics, gc_top, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -6172,7 +6174,7 @@ assert not re.search(r"\d", o58.getvalue()) and "gtok" not in o58.getvalue(), o5
 time.time = lambda: TK("2026-10-24 12:29"); H.gc_top(sg58); assert len(h58) == 2  # 1시간 안 = X
 H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("down")); time.time = lambda: TK("2026-10-24 12:31"); o58 = io.StringIO()
 with __import__("contextlib").redirect_stdout(o58): H.gc_top(sg58)
-assert json.load(open("gc_top.json"))["at"] == "2026-10-24 11:30" and o58.getvalue() == "gc top GoatCounter OSError\n" and sg58["gct"]["t"] == TK("2026-10-24 12:31")  # 오류 = 옛 파일 그대로 · 다음 시간에
+assert json.load(open("gc_top.json"))["at"] == "2026-10-24 11:30" and o58.getvalue() == "gc fail OSError\n" and sg58["gct"]["t"] == TK("2026-10-24 12:31")  # 오류 = 옛 파일 그대로 · 다음 시간에
 # drop_rows·drop_check: base = 첫 진우 글 가격 · 확인 24시간 안 · 확인됨(cpp 48시간 안 + 지금가 ±5% 또는 base×0.7 이하) X · gone·토스·📋 X · ▼30%↑만 DM(큰 순, pid 있으면)
 L58 = "무접점 3겹 데코 화장지 30롤 x 2팩 대용량 묶음"
 o58p = lambda k, pr, t="2026-10-20 10:00", mall="쿠팡", nm=None, **x: {"t": t, "text": f"🔥 [{mall}] {nm or '상품' + k} ({pr})", "url": U58(k) if mall != "네이버" else f"https://naver.me/{k}", "own": 1, **x}
@@ -6200,7 +6202,7 @@ json.dump([{**p, "now": "12,000원"} if p["url"] == U58("A") and p.get("now") el
 time.time = lambda: TK("2026-10-27 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sent58[1][1]["text"] == f"· {L58[:24]} 20,000→12,000원 ▼40% (pid 600)\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. 쿠팡 = events item(옵션 itemId) 확인해 줘", sent58[1][1]["text"]  # 지금가 바뀐 줄만
 json.dump([p for p in P58d if p["url"] not in (U58("A"), U58("J"), "https://naver.me/D")], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-28 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sd58["dropchk"]["d"] == "2026-10-28"  # 없음 = DM X(그날 끝)
-assert "metrics, gc_top, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
+assert "metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
 assert "[ ! -f gc_top.json ] || git add gc_top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E.clear(); H.E.update(sv58[7]); os.chdir(cwd58)
 # 9-59) (10/24 Cowork 포털형 홈 + 변경 찾기) 홈 = 몰 버튼·품목 아이콘 12칸 → 🔥 실시간 핫딜(가격 근거 3일 안 🔥만 · 기획전 X · 같은 브랜드 1개 · 전체 = 몰 돌아가며 · 몰 탭 · 🆕 올린 순 · 빈 탭 X)
@@ -6524,4 +6526,100 @@ H.urllib.request.urlopen = uo62
 root62 = os.path.dirname(os.path.abspath(H.__file__)); md62 = open(f"{root62}/docs/reels/MUSIC.md").read(); mj62 = json.load(open(f"{root62}/music.json"))
 assert "Pixabay Content License" in md62 and all(m["page"] in md62 for m in mj62 if m.get("page")) and all(m.get("page") for m in mj62 if m.get("url"))
 (H.http, H.tg_video, _e62, time.time, H.POSTS, H.fill_reel, H.make_reel, H.tts, C62.reel, H.bgm, _c62, H.tg) = sv62; H.E.clear(); H.E.update(_e62); os.chdir(_c62)
+# 9-63) (10/25 Cowork) 사진 채움 속도 ① 검색 말고 카테고리 베스트·골드박스 응답의 productId·productImage를 진열 pid와 맞춤(events item이면 그 옵션만) ② 검색 순서 홈 → /c/ 칸 첫 화면 → 나머지
+#      ③ 로그 'img 쿠팡 N/M · … · season a/b' 하루 1줄 · GOOGLE_TTS_KEY·GOATCOUNTER_TOKEN 첫 호출 'tts ok/fail'·'gc ok/fail' 줄 + 관리자 알림 1번(바뀔 때만 다시) — 키 값 X
+import urllib.error; sv63 = (time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, dict(H.E), H.tg, os.getcwd()); os.chdir(tempfile.mkdtemp())
+U63 = lambda k: f"https://link.coupang.com/a/b{k}"; IM63 = lambda k: f"https://ads-partners.coupang.com/image1/{k}"
+P63 = [{"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {n} (9,900원)", "url": U63(k), "own": 1} for k, n in (("A", "곶감 1kg"), ("B", "꿀고구마 3kg"), ("C", "햇반 24개"), ("D", "밤 2kg"))]
+P63 += [{"t": "2026-10-24 10:00", "text": "📋 [쿠팡] 행사 목록 (1원)", "url": U63("E"), "own": 1}, {"t": "2026-10-24 10:00", "text": "🔥 [쿠팡] 남의 딜 (1원)", "url": U63("F")}]
+json.dump(P63, open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-10-20 10:00", "url": U63(k), "text": "x", "pid": pid, **({"item": "I9"} if k == "B" else {})} for k, pid in (("A", "80"), ("B", "81"), ("C", "82"), ("D", "83"), ("E", "84"), ("F", "85"))], open("events.json", "w"))
+H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.json", True
+s63 = {"cpq": {"m": {}, "i": {U63("C"): IM63("old")}}}
+G63 = [{"productId": 80, "productImage": IM63(80)}, {"productId": 81, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=81&itemId=I1", "productImage": IM63("81a")},
+       {"productId": 81, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=81&itemId=I9", "productImage": IM63("81b")}, {"productId": 82, "productImage": IM63("82new")},
+       {"productId": 83, "productImage": "http://x/83"}, {"productId": 84, "productImage": IM63(84)}, {"productId": 85, "productImage": IM63(85)}, "깨진 줄"]
+assert H.cp_photos(s63, G63) == 2 and s63["cpq"]["i"] == {U63("A"): IM63(80), U63("B"): IM63("81b"), U63("C"): IM63("old")}, s63["cpq"]["i"]  # 같은 pid · 옵션 정해진 B = 그 옵션(I9)만 · 있는 사진 그대로 · https만 · 📋·남의 딜 X
+assert "cp_photos(seen, allg)" in inspect.getsource(H.goldbox)  # 골드박스(하루 1번 부르는 것)도 같은 응답으로 — 추가 호출 X
+cl63 = []
+def cp63(method, path, body=None):
+    cl63.append(path)
+    if "/1013?" in path:
+        raise ValueError("400")
+    if len(cl63) > 5:
+        raise H.CpLimit()
+    return [{"productId": 83, "productImage": IM63(83)}] if "/1014?" in path else []
+H.coupang, H.cp_best = cp63, cb0; time.time = lambda: TK("2026-10-25 09:00"); o63 = io.StringIO()
+with contextlib.redirect_stdout(o63): H.cp_best(s63)
+assert cl63 == ["/products/bestcategories/1012?limit=100", "/products/bestcategories/1014?limit=100"] and s63["cpq"]["i"][U63("D")] == IM63(83), cl63
+assert o63.getvalue() == "cp best 사진 1012 +0 · 1014 +1 (오늘 2/12 카테고리)\n", o63.getvalue()
+o63 = io.StringIO()
+with contextlib.redirect_stdout(o63): H.cp_best(s63)
+assert len(cl63) == 2 and not o63.getvalue()  # 사진 없는 진열 쿠팡 상품이 없으면 안 부름
+del s63["cpq"]["i"][U63("A")]
+with contextlib.redirect_stdout(o63): H.cp_best(s63)
+assert cl63[2:] == ["/products/bestcategories/1013?limit=100", "/products/bestcategories/1010?limit=100"] and "cp best 1013 ValueError\n" in o63.getvalue() and s63["cpbest"]["d"] == {"1012": 0, "1014": 1, "1013": 0, "1010": 0}  # 오류 = 그 카테고리 오늘 건너뜀
+H.cp_best(s63); assert cl63[4:] == ["/products/bestcategories/1024?limit=100", "/products/bestcategories/1011?limit=100"] and "1011" not in s63["cpbest"]["d"]  # 상한(CpLimit) = 기록 X(다음 실행에 그 카테고리)
+time.time = lambda: TK("2026-10-26 09:00"); cl63.clear(); H.coupang = lambda m, p, b=None: cl63.append(p) or []; H.cp_best(s63)
+assert cl63 == ["/products/bestcategories/1012?limit=100", "/products/bestcategories/1014?limit=100"] and s63["cpbest"]["day"] == "2026-10-26"  # 다음 날 = 처음부터
+H.HAS_CP = False; cl63.clear(); H.cp_best(s63); assert not cl63; H.HAS_CP = True
+# ② 검색 순서: 사진 없는 것 중 홈 → /c/ 칸 첫 화면(12개) → 나머지
+kw63 = []
+def cps63(method, path, body=None):
+    kw63.append(urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]))
+    if len(kw63) >= 3:
+        raise H.CpLimit()
+    return {"productData": []}
+os.makedirs("docs/c/season"); os.makedirs("docs/c/food")
+open("docs/index.html", "w").write('<a href="https://hotdealpick.kr/p/3.html">'); open("docs/c/food/index.html", "w").write("".join(f'<a href="/p/{k}.html">' for k in [5] * 12 + [0]))
+open("docs/c/season/index.html", "w").write('<head><script type="application/ld+json">' + "".join(f'"url":"https://hotdealpick.kr/p/{k}.html",' for k in [0] * 12) + '</script></head><body><a href="/p/1.html">'); H.coupang = cps63; s63s = {"cpq": {"m": {}}}; H.cp_price(s63s)  # 머리 JSON-LD(사진 있는 상품) = 첫 화면 셈 X
+assert kw63 == ["밤 2kg", "꿀고구마 3kg", "곶감 1kg"], kw63  # D(홈) → B(season 첫 화면) → A(food 13번째 = 첫 화면 밖 → 나머지 · C와 같으면 글 순서)
+# ③ img 하루 1줄(몰 + 품목 칸) — 사진 줄('사진')은 실행마다 그대로
+N63 = {"t": "2026-10-24 10:00", "text": "🛒 [네이버] 광천 김 20봉 (9,500원)", "url": "https://naver.me/k1", "own": 1}
+json.dump([{**p, **({"img": IM63(k)} if k in "AC" else {})} for p, k in zip(P63, "ABCDEF")] + [N63], open("posts.json", "w"), ensure_ascii=False)
+ct63 = __import__("collections").Counter(S.cat_of(p) for p in json.load(open("posts.json")) if p.get("own") and not p["text"].startswith("📋"))
+o63 = io.StringIO(); time.time = lambda: TK("2026-10-25 09:00"); s63i = {}
+with contextlib.redirect_stdout(o63): H.own_end(s63i); H.own_end(s63i)
+im63 = [l for l in o63.getvalue().splitlines() if l.startswith("img ")]
+assert len(im63) == 1 and im63[0].startswith("img 쿠팡 2/4 · 네이버 0/1 · 토스 X · ") and o63.getvalue().count("사진 쿠팡 2/4 · 네이버 0/1 · 토스 X(규칙)") == 2, o63.getvalue()
+assert sum(int(x.split("/")[1]) for x in re.findall(r" \d+/\d+", im63[0].split("토스 X")[1])) == sum(v for k, v in ct63.items() if k) == 4 and all(S.CAT_META[k][0] + " " in im63[0] for k in ct63 if k), (im63, ct63)  # 칸 = /c/ 주소(heat → winter) · 칸 없는 상품은 몰 줄에만
+time.time = lambda: TK("2026-10-26 09:00"); o63 = io.StringIO()
+with contextlib.redirect_stdout(o63): H.own_end(s63i)
+assert o63.getvalue().count("\nimg 쿠팡 ") + o63.getvalue().startswith("img 쿠팡 ") == 1 and s63i["imgl"]["t"] == TK("2026-10-26 09:00")  # 다음 날 = 다시 1줄 · t 새로(seen 정리 X)
+# tts·gc 첫 호출 = 로그 줄 + 관리자 알림 1번(처음·성공↔실패 바뀔 때만) — 키 값·주소 X
+sent63, ht63, mode63 = [], [], {"tts": "ok", "gc": "ok"}
+def http63(url, body=None, headers=None, method=None):
+    ht63.append(url); k = "tts" if url == H.TTS_URL else "gc"
+    if mode63[k] != "ok":
+        raise urllib.error.HTTPError(url + "?key=gk63", int(mode63[k]), "Forbidden", {}, None)
+    return json.dumps({"audioContent": base64.b64encode(b"RIFF").decode()} if k == "tts" else {"hits": [], "more": False})
+H.http, H.tg = http63, (lambda method, **p: sent63.append(p["text"]) or {"message_id": 1}); H.api_check = ac0
+def run63(at):
+    H.API_ST.clear(); time.time = lambda: TK(at); o = io.StringIO()
+    with contextlib.redirect_stdout(o): H.gc_top(s63a); H.api_check(s63a)
+    return o.getvalue()
+H.E.pop("GOOGLE_TTS_KEY", None); H.E["GOATCOUNTER_TOKEN"] = ""; s63a = {}
+assert run63("2026-10-25 09:00") == "" and not ht63 and not sent63  # 키·토큰 없음 = 안 부름·알림 X
+H.E["GOOGLE_TTS_KEY"], H.E["GOATCOUNTER_TOKEN"] = "gk63", "gt63"; mode63["gc"] = "403"
+o63 = run63("2026-10-25 10:00")
+assert o63 == "gc fail HTTPError 403\ntts ok ko-KR-Wavenet-A\n" and ht63.count(H.TTS_URL) == 1 and s63a["apichk"]["tts"] == "ok" and s63a["apichk"]["gc"] == "fail", (o63, s63a)
+assert len(sent63) == 2 and sent63[0].startswith("✅ Google TTS 키(릴스 나레이션) 첫 호출 성공") and sent63[1].startswith("⚠️ GoatCounter 토큰(통계 읽기) 호출 실패(HTTPError 403)"), sent63
+o63 = run63("2026-10-25 11:01"); assert o63 == "gc fail HTTPError 403\n" and ht63.count(H.TTS_URL) == 1 and len(sent63) == 2  # 같은 상태 = 알림 X · TTS 확인은 처음 1번만(그 뒤는 릴스 호출 결과)
+mode63["gc"] = "ok"; o63 = run63("2026-10-25 12:02"); assert o63 == "gc ok · 많이 본 순서 갱신\n" and len(sent63) == 3 and sent63[2].startswith("✅ GoatCounter 토큰(통계 읽기) 첫 호출 성공")
+mode63["tts"] = "403"; H.API_ST.clear(); o63 = io.StringIO()
+with contextlib.redirect_stdout(o63): r63 = H.tts("우유"); H.api_check(s63a)
+assert r63 is None and o63.getvalue() == "tts ko-KR-Wavenet-A HTTPError 403\ntts ko-KR-Standard-A HTTPError 403\ntts fail HTTPError 403\n" and len(sent63) == 4 and "나레이션 없이 글자+음악" in sent63[3], (o63.getvalue(), sent63)  # 성공 -> 실패 = 다시 1번
+assert not any("gk63" in x or "gt63" in x for x in sent63 + [o63.getvalue(), json.dumps(s63a)])  # 키·주소 X
+mode63["gc"] = "503"; H.API_ST.clear(); o63 = run63("2026-10-25 13:03"); assert o63 == "gc fail HTTPError 503\n" and len(sent63) == 4 and s63a["apichk"]["gc"] == "ok"  # 네트워크·5xx = 로그만(키 탓 알림 X·상태 그대로)
+mode63["tts"] = "500"; H.API_ST.clear(); assert H.tts("우유") is None and "tts" not in H.API_ST  # TTS도 같음
+H.tg = lambda method, **p: None; mode63["gc"] = "403"; o63 = run63("2026-10-25 14:04"); assert s63a["apichk"]["gc"] == "ok" and len(sent63) == 4  # 알림 못 보냄 = 기록 X(다음 실행에 다시)
+H.tg = lambda method, **p: sent63.append(p["text"]) or {"message_id": 1}; o63 = run63("2026-10-25 15:05"); assert s63a["apichk"]["gc"] == "fail" and len(sent63) == 5
+def u63(req, timeout=None):
+    raise urllib.error.HTTPError(req.full_url, 403, "Forbidden", {}, io.BytesIO(b'{"error": "API has not been used in project 12345 before. Enable it: https://console.developers.google.com/apis/x?project=12345"}'))
+H.urllib.request.urlopen, uo63 = u63, H.urllib.request.urlopen; o63 = io.StringIO()
+with contextlib.redirect_stdout(o63):
+    try: http_real("https://texttospeech.googleapis.com/v1/text:synthesize?key=SECRET63", {"a": 1})
+    except urllib.error.HTTPError: pass
+H.urllib.request.urlopen = uo63; assert "SECRET63" not in o63.getvalue() and "project=12345" not in o63.getvalue() and o63.getvalue().startswith("HTTP 403 https://texttospeech.googleapis.com/v1/text:synthesize "), o63.getvalue()  # http() 오류 로그 = 쿼리 X
+(time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, _e63, H.tg, _c63) = sv63; H.E.clear(); H.E.update(_e63); H.API_ST.clear(); os.chdir(_c63)
 print("OK: 모든 셀프체크 통과")

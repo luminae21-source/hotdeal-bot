@@ -3,7 +3,7 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, collections, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -185,7 +185,7 @@ def http(url, body=None, headers=None, method=None):
             return r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
     except urllib.error.HTTPError as e:
         e.body = e.read().decode("utf-8", "replace")[:300]  # 로그에서 원인 바로 보이게
-        print("HTTP", e.code, url.split("/bot")[0], e.body)
+        print("HTTP", e.code, url.split("/bot")[0].split("?")[0], re.sub(r"\?[^\s\"'<>]*", "?…", e.body))  # 주소·오류 글의 쿼리(토큰·키·프로젝트 번호) = 공개 로그 X(10/25 리뷰)
         raise
 
 
@@ -411,6 +411,53 @@ def plain(url, hops=4):
     if host.endswith(("smartstore.naver.com", "brand.naver.com")):  # 상품은 경로에 있고 쿼리는 추적값(남의 쇼핑커넥트 등)
         return urllib.parse.urlunsplit(("https", host, p.path, "", ""))
     return url
+
+
+cp_qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
+CP_BEST, CP_BEST_RUN = (1012, 1014, 1013, 1010, 1024, 1011, 1029, 1016, 1015, 1001, 1018, 1021), 2  # 카테고리 베스트(사진 채움 10/25): 식품·생활용품·주방·뷰티·건강식품·출산유아·반려·가전·홈인테리어·여성패션·자동차·문구 — 하루 1번씩, 실행마다 2개(시간당 상한 CP_HOUR 안)
+
+
+def cp_photos(seen, items):
+    """검색 말고 다른 API 응답(카테고리 베스트·골드박스)의 productId·productImage를 진우·진열 쿠팡 글(events pid)과 맞춰 사진 채움(10/25 진우 '사이트 제품 사진 교체')
+    — 같은 pid만, events item이 있으면 그 옵션(itemId)만, https 사진만, 이미 있으면 그대로. -> 채운 수(own_end가 글 img로)."""
+    q, ev = seen.setdefault("cpq", {"m": {}}), ev_info()
+    i, by = q.setdefault("i", {}), collections.defaultdict(list)
+    for p in load(POSTS, []):
+        u = p.get("url")
+        if p.get("own") and u in ev and ev[u].get("pid") and not p["text"].startswith("📋") and u not in by[str(ev[u]["pid"])]:
+            by[str(ev[u]["pid"])].append(u)
+    n = 0
+    for z in items or []:
+        img = str(z.get("productImage") or "") if isinstance(z, dict) else ""
+        for u in by.get(str(z.get("productId")), ()) if img.startswith("https://") else ():
+            if u not in i and (not ev[u].get("item") or cp_qs(z, "itemId") == str(ev[u]["item"])):
+                i[u], n = img, n + 1
+    return n
+
+
+def cp_best(seen):
+    """사진 채움(10/25 Cowork ①): 카테고리 베스트(/products/bestcategories — 검색 아닌 API, limit 100)를 카테고리마다 하루 1번(실행마다 CP_BEST_RUN개) -> cp_photos.
+    사진 없는 진우·진열 쿠팡 상품이 없으면 안 부름. 상한 = 다음 실행에, 그 밖 오류 = 그 카테고리 오늘은 건너뜀."""
+    if not HAS_CP:
+        return
+    q, ev, today = seen.get("cpq", {}), ev_info(), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    if not any(p.get("own") and ev.get(p.get("url"), {}).get("pid") and p["url"] not in q.get("i", {}) and not p["text"].startswith("📋") for p in load(POSTS, [])):
+        return
+    b = seen.setdefault("cpbest", {})
+    if b.get("day") != today:
+        b.update(day=today, d={})
+    b["t"], got = time.time(), []
+    for c in [c for c in CP_BEST if str(c) not in b["d"]][:CP_BEST_RUN]:
+        try:
+            got.append((c, cp_photos(seen, coupang("GET", f"/products/bestcategories/{c}?limit=100"))))
+        except CpLimit:
+            break
+        except Exception as e:
+            print("cp best", c, type(e).__name__)
+            got.append((c, 0))
+        b["d"][str(c)] = got[-1][1]
+    if got:
+        print("cp best 사진", " · ".join(f"{c} +{k}" for c, k in got), f"(오늘 {len(b['d'])}/{len(CP_BEST)} 카테고리)")
 
 
 class CpLimit(RuntimeError):
@@ -1355,7 +1402,11 @@ def goldbox(seen):
         return
     if key in seen or kst.tm_hour < 7:  # 최종 승인 후: 7시 골드박스가 바뀌면 TOP5도 ✅ 없이 채널에 바로 (다른 딜과 같은 방식)
         return
-    items = coupang("GET", "/products/goldbox")[:40]
+    allg = coupang("GET", "/products/goldbox")
+    n = cp_photos(seen, allg)  # 진열 상품 사진 채움(10/25 — 추가 호출 X)
+    if n:
+        print("goldbox 사진", n)
+    items = allg[:40]
     picks = ai_pick(GOLD_PROMPT, [f"{x['productName']} | {int(x['productPrice']):,}원" for x in items])[:5]
     rows = [f"{n}. {'🚀 ' if x.get('isRocket') is True else ''}<a href=\"{esc(x['productUrl'])}\">{esc(x['productName'])}</a> — <b>{int(x['productPrice']):,}원</b>\n"
             f"   {esc(p['comment'])}" for n, p in enumerate(picks, 1) for x in [items[p["i"]]]]
@@ -1454,15 +1505,18 @@ def cp_price(seen):
     todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
-    try:  # 홈에 나오는 상품(지난 빌드 docs/index.html의 딜 쪽 링크) — 사진 채움 먼저(10/24 Cowork A①)
-        home = {posts[int(k)].get("url") for k in re.findall(r'/p/(\d+)\.html', open("docs/index.html", encoding="utf-8").read()) if int(k) < len(posts)}
-    except OSError:
-        home = set()
-    pho = sorted((t for t in todo if t[1] not in q.get("i", {})), key=lambda t: (t[1] not in home, t[0]))  # 사진 없는 것(홈 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
+    def shown(f, k=None):  # 지난 빌드 쪽에 보이는 딜(쪽 링크 순서 — k = 첫 화면 몇 개)
+        try:
+            return {posts[int(x)].get("url") for x in re.findall(r'/p/(\d+)\.html', open(f, encoding="utf-8").read().split("<body", 1)[-1])[:k] if int(x) < len(posts)}  # 본문만(머리 JSON-LD = 사진 있는 상품 목록 X — 10/25 리뷰)
+        except OSError:
+            return set()
+    home = shown("docs/index.html")  # 홈에 나오는 상품 — 사진 채움 먼저(10/24 Cowork A①)
+    cfirst = set().union(*[shown(f, 12) for f in sorted(glob.glob("docs/c/*/index.html"))])  # 그다음 /c/ 칸마다 첫 화면(10/25 Cowork ② — /c/season/ 사진 1/21)
+    pho = sorted((t for t in todo if t[1] not in q.get("i", {})), key=lambda t: (t[1] not in home, t[1] not in cfirst, t[0]))  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
     old = [t for t in todo if t[1] in q.get("i", {})]
     todo = [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]]
     got = miss = err = 0
-    qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
+    qs = cp_qs
     for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
         kws = cp_kws(name)
         v = q["v"].get(u, 0) % len(kws) if u not in q.get("i", {}) else 0  # 사진 있는 글 = 늘 이름 그대로(옵션 가격 맞추기) · 없는 글 = 오늘 못 찾은 만큼 다음 검색어
@@ -3407,13 +3461,23 @@ def tts(text, rate=TTS_RATE):
     key = E.get("GOOGLE_TTS_KEY")
     if not key or not text:
         return None
+    err, auth = "", False
     for v in TTS_VOICES:
         try:
             r = json.loads(http(TTS_URL, {"input": {"text": text}, "voice": {"languageCode": "ko-KR", "name": v},
                                           "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000, "speakingRate": round(rate, 2)}}, {"X-Goog-Api-Key": key}, "POST"))
-            return base64.b64decode(r["audioContent"])
+            wav = base64.b64decode(r["audioContent"])
         except Exception as e:
-            print("tts", v, type(e).__name__, getattr(e, "code", ""))
+            err, auth = f"{type(e).__name__} {getattr(e, 'code', '')}".strip(), getattr(e, "code", 0) in API_AUTH
+            print("tts", v, err)
+            continue
+        if "tts" not in API_ST:
+            print("tts ok", v)
+        API_ST.setdefault("tts", "ok")
+        return wav
+    print("tts fail", err)
+    if auth:  # 키·권한 오류만 '실패' 알림(네트워크·5xx·429 = 로그만 — 한 번 끊겼다고 키 탓 알림 X, 10/25 리뷰)
+        API_ST.setdefault("tts", "fail " + err)
     return None
 
 
@@ -5448,7 +5512,13 @@ def own_end(seen):
     if n or HAS_TOSS and by:
         print("own end", f"진우 상품 {len(urls)}개(토스 {len(tossy)}) · 🔥 {c['hot']} · ⏳ {c['wait']} · 일시 품절 {c['out']} · 뺌 {c['gone']} · 글 바꿈 {n}" + (f" · 토스 이번 확인 {len(by)}개" if HAS_TOSS else ""))
     ph = collections.Counter((shop_of(posts[ix[-1]]), any(posts[i].get("img") for i in ix)) for ix in urls.values() if posts[ix[-1]].get("st") != "gone")
-    print("사진", " · ".join(f"{n} {ph[(k, True)]}/{ph[(k, True)] + ph[(k, False)]}" for k, n in (("coupang", "쿠팡"), ("naver", "네이버"))) + " · 토스 X(규칙)")  # 몰별 사진 비율(10/24 Cowork A⑤ — 정기 점검 README 줄)
+    mr = [f"{n} {ph[(k, True)]}/{ph[(k, True)] + ph[(k, False)]}" for k, n in (("coupang", "쿠팡"), ("naver", "네이버"))]
+    print("사진", " · ".join(mr) + " · 토스 X(규칙)")  # 몰별 사진 비율(10/24 Cowork A⑤ — 정기 점검 README 줄)
+    il = seen.setdefault("imgl", {})
+    if il.get("d") != today:  # 하루 1줄(10/25 Cowork ③): 몰 + 품목 칸(/c/ 주소 — 진우 상품 전체, 토스·네이버 포함 = 사이트에 보이는 비율)
+        il.update(d=today, t=now)
+        cc = collections.Counter((cat_of(posts[ix[-1]]), any(posts[i].get("img") for i in ix)) for ix in urls.values() if posts[ix[-1]].get("st") != "gone")
+        print("img", " · ".join(mr + ["토스 X"] + [f"{m[0]} {cc[(k, True)]}/{cc[(k, True)] + cc[(k, False)]}" for k, m in CAT_META.items() if cc[(k, True)] + cc[(k, False)]]))
 
 
 DROP_PCT, DROP_AT = 30, "09:30"  # 옵션 바뀜 의심(10/24 Cowork): 첫 글 가격보다 30%↓인데 API 확인 X -> 하루 1번 관리자 DM(9:30~ KST)
@@ -5799,10 +5869,32 @@ def gc_top(seen):
                 break
             time.sleep(0.3)  # 초당 4번 상한
     except Exception as e:
-        print("gc top GoatCounter", type(e).__name__)
+        err = f"{type(e).__name__} {getattr(e, 'code', '')}".strip()
+        print("gc fail", err)
+        if getattr(e, "code", 0) in API_AUTH:  # 토큰·권한 오류만 '실패' 알림(네트워크·5xx·429·응답 깨짐 = 로그만)
+            API_ST.setdefault("gc", "fail " + err)
         return
     json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(60)]}, open(GC_TOP, "w"), ensure_ascii=False)
-    print("gc top GoatCounter 읽음")
+    print("gc ok · 많이 본 순서 갱신")
+    API_ST.setdefault("gc", "ok")
+
+
+API_ST, API_AUTH = {}, (400, 401, 403)  # API_ST = 이번 실행 첫 호출 결과 {'tts'|'gc': 'ok' | 'fail <오류>'} — tts·gc_top이 채우고 api_check가 관리자 알림
+API_MSG = {"tts": ("Google TTS 키(릴스 나레이션)", "릴스 나레이션 켜짐", "릴스는 나레이션 없이 글자+음악으로 계속 — GCP 키의 API 제한(Cloud Text-to-Speech API)·결제 연결 확인"),
+           "gc": ("GoatCounter 토큰(통계 읽기)", "🏆 TOP 10 '많이 본'·화면 비교 데이터 씀", "사이트 TOP 10은 옛 순서 그대로 — 토큰 권한(Read statistics)·사이트(hotdealpick) 확인")}
+
+
+def api_check(seen):
+    """GOOGLE_TTS_KEY·GOATCOUNTER_TOKEN 첫 호출 성공/실패(10/25 Cowork) -> 처음이거나 성공↔실패가 바뀔 때만 관리자 알림 1번(로그 줄 = tts·gc_top의 'tts ok/fail'·'gc ok/fail').
+    TTS는 키가 생기고 아직 확인 기록이 없으면 짧은 말 1번 불러 봄(릴스는 하루 1번이라) · GoatCounter = gc_top(1시간에 1번) 결과 그대로. 키 값·주소는 알림·로그 X."""
+    c = seen.setdefault("apichk", {})
+    c["t"] = time.time()  # seen 정리(t 기준)에서 안 지워지게
+    if E.get("GOOGLE_TTS_KEY") and "tts" not in c and "tts" not in API_ST:
+        tts("확인")
+    for k, (name, ok, bad) in API_MSG.items():
+        v = API_ST.get(k)
+        if v and v.split()[0] != c.get(k) and tg("sendMessage", chat_id=ADMIN, text=f"✅ {name} 첫 호출 성공 — {ok}" if v == "ok" else f"⚠️ {name} 호출 실패({v[5:] or '오류'}) — {bad}"):
+            c[k] = v.split()[0]  # 보낸 뒤에만 기록(텔레그램 실패 = 다음 실행에 다시)
 
 
 def cp_repost(seen):
@@ -6098,7 +6190,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, gc_top, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:
