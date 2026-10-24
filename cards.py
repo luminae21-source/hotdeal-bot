@@ -289,18 +289,75 @@ def deal_card(it, n, total, out, why="살 만한 이유"):
     return out
 
 
-def reel(items, date_label, out, music=None):
-    """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 15초 1080x1920 MP4. music(음악 파일 경로) 있으면 배경음악(짧으면 반복·앞뒤 페이드), 없으면 무음. -> out
+LEAD, TAIL, XF, KB, DUCK = 0.35, 0.35, 9, 0.06, 0.251  # 나레이션 앞뒤 여백(초) · 장 사이 크로스페이드 9프레임(0.3초) · 켄번스 줌 6% · 나레이션 동안 음악 -12dB
+SUB_Y = RH - 430  # 자막 아래 끝(인스타 아래 UI ~420px 위 — 안전 영역)
+
+
+def reel_plan(segs, n):
+    """장면 길이(초) = 표지·딜 n개·끝 3초씩(10/24 Cowork 대본 틀 0~3·3~12·12~15초 — 딜이 적어도 15초), 나레이션 있으면 그 장 = 앞 여백 + 나레이션 + 뒤 여백.
+    segs = 장마다 나레이션 초(없으면 None). -> [초…] (합이 20초 넘으면 부르는 쪽이 더 빠르게 다시 읽힘·안 되면 나레이션 X)"""
+    durs = [max(3.0, LEAD + s + TAIL) if s else 3.0 for s in (segs or [None] * (n + 2))]
+    return [d * 15 / sum(durs) for d in durs] if sum(durs) < 15 else durs
+
+
+def duck_expr(wins, r=0.15):
+    """음악 볼륨 식(ffmpeg volume eval=frame): 나레이션 구간(wins = [(시작, 끝)…])만 -12dB, 앞뒤 r초 부드럽게."""
+    w = [f"clip(min((t-{a - r:.3f})/{r},({b + r:.3f}-t)/{r}),0,1)" for a, b in wins]
+    while len(w) > 1:
+        w = [f"max({w[0]},{w[1]})"] + w[2:]
+    return f"1-{1 - DUCK:.3f}*{w[0]}" if w else "1"
+
+
+def _sub(s):
+    """자막(나레이션 글자): 어두운 둥근 띠 + 흰 글자 최대 2줄, 가운데."""
+    f = pf("SemiBold", 46)
+    rows = wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), s, f, 820, 2)
+    w = int(max(f.getlength(r) for r in rows)) + 64
+    im = Image.new("RGBA", (w, 58 * len(rows) + 34), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, w - 1, im.height - 1), radius=26, fill=(22, 24, 29, 214))
+    for k, r in enumerate(rows):
+        d.text(((w - f.getlength(r)) / 2, 14 + 58 * k), r, font=f, fill="white")
+    return im
+
+
+def _wav(b):
+    """WAV bytes -> (16bit PCM 프레임, 샘플레이트, 채널, 초)"""
+    import io, wave
+    with wave.open(io.BytesIO(b)) as w:
+        if w.getsampwidth() != 2:
+            raise ValueError("16bit WAV만")
+        fr = w.readframes(w.getnframes())
+        return fr, w.getframerate(), w.getnchannels(), w.getnframes() / w.getframerate()
+
+
+def reel(items, date_label, out, music=None, say=None):
+    """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 1080x1920 MP4(15~20초). -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
+    music(음악 파일): 배경음악(짧으면 반복·앞뒤 페이드) · say(10/24 Cowork·진우 릴스 업그레이드): [(자막, WAV bytes)] 표지·딜·끝 장마다 나레이션
+    -> 그 장은 나레이션 길이에 맞추고(합 15~20초) 아래 안전 영역에 자막, 나레이션 동안 음악 -12dB(덕킹). 없거나 20초 넘으면 글자 + 음악만(15초).
     디자인: 크림색 바탕 + 먹색 글자 + 포인트색은 숫자에만, 왼쪽 정렬 한 기준선, 프리텐다드, 흰 타일 위 이모지,
-    은은한 페이드·떠오름 + 장면 사이 0.2초 디졸브. 마지막은 어두운 바탕에 저장·공유 유도.
-    글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치."""
-    import subprocess
+    장마다 켄번스(1.00→1.06 줌인·줌아웃 번갈아 — 소수점 확대라 글자 안 떨림) + 장 사이 0.3초 크로스페이드, 가격은 이름보다 0.2초 늦게 떠오름.
+    첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치."""
+    import subprocess, tempfile, wave
     items = [_norm(it) for it in items[:3]]
     for it in items:
         it["hook"] = it.get("hook") or f"{it['name'][:12]} {it['main']}".strip()
+    n_sc = len(items) + 2
+    try:
+        say = [(s, _wav(b)) for s, b in say] if say and len(say) == n_sc and all(b for _, b in say) else None
+        if say and len({(w[1], w[2]) for _, w in say}) > 1:
+            raise ValueError("나레이션 형식이 장마다 다름")
+    except Exception as e:  # 깨진 음성 = 글자 + 음악만
+        print("reel narration", repr(e))
+        say = None
+    durs = reel_plan([w[3] for _, w in say] if say else None, len(items))
+    if say and sum(durs) > 20.05:
+        print("reel narration 20초 넘음", round(sum(durs), 1))
+        say, durs = None, reel_plan(None, len(items))
+    low = SUB_Y - 58 * 2 - 34 - 26 if say else RH - 450  # 장 내용 아래 끝(자막 띠 위)
     cream, night = Image.new("RGB", (RW, RH), CREAM), Image.new("RGB", (RW, RH), NIGHT)
-    scenes = []  # (배경, 초, 그리기(frame, t), 진행 막대 색)
+    scenes = []  # (배경, 그리기(frame, t), 진행 막대 색)
 
     top = items[0] if items else {"hook": "오늘의 핫딜", "e": "🛒"}
     i_lab = _text(f"{date_label}  ·  오늘의 가성비 1위", pf("SemiBold", 40), SUB)
@@ -318,7 +375,7 @@ def reel(items, date_label, out, music=None):
         y = 720 + i_hook.height + 50
         _rule(fr, y, t, 0.45)
         _in(fr, i_next, X0, y + 44, t, 0.6)
-    scenes.append((cream, 2.0, intro, INK2))
+    scenes.append((cream, intro, INK2))
 
     for n, it in enumerate(items, 1):
         lab = Image.new("RGBA", (XW, 70), (0, 0, 0, 0))
@@ -341,30 +398,34 @@ def reel(items, date_label, out, music=None):
         checks = [_check(p) for p in it["pts"]]
 
         def deal(fr, t, lab=lab, tile=tile, name=name, price=price, pill=pill, why=why, checks=checks, unit=unit, warn=warn):
-            _in(fr, lab, X0, 300, t, 0.0)
-            _in(fr, tile, X0 - 40, 362, t, 0.05)
+            _in(fr, lab, X0, 300, t, 0.05)
+            _in(fr, tile, X0 - 40, 362, t, 0.1)
             y = 700
-            _in(fr, name, X0, y, t, 0.12)
+            _in(fr, name, X0, y, t, 0.18)
             y += name.height + 8
             if price:
-                _in(fr, price, X0, y, t, 0.22)
+                _in(fr, price, X0, y, t, 0.38)  # 가격 = 이름보다 0.2초 늦게(10/24 Cowork)
                 if pill:  # 가격 오른쪽, 글자 아래쪽에 맞춤
-                    _in(fr, pill, X0 + price.width + 20, y + price.height - pill.height - 22, t, 0.32)
+                    _in(fr, pill, X0 + price.width + 20, y + price.height - pill.height - 22, t, 0.48)
                 y += price.height + 10
             elif pill:
-                _in(fr, pill, X0, y, t, 0.32)
+                _in(fr, pill, X0, y, t, 0.48)
                 y += 90
             if unit:  # 비교 근거: 단위가격
-                _in(fr, unit, X0, y - 14, t, 0.36)
+                _in(fr, unit, X0, y - 14, t, 0.52)
                 y += 80
-            if checks or warn:
-                _rule(fr, y, t, 0.42)
-                _in(fr, why, X0, y + 36, t, 0.5)
-                for k, c in enumerate(checks):
-                    _in(fr, c, X0, y + 104 + 84 * k, t, 0.6 + 0.15 * k)
-                if warn:
-                    _in(fr, warn, X0, y + 104 + 84 * len(checks) + 6, t, 0.6 + 0.15 * len(checks))
-        scenes.append((cream, 3.5, deal, INK2))
+            rows = ([warn] if warn else []) + checks if low < RH - 450 else checks + ([warn] if warn else [])  # 자리가 좁으면(자막) 확인할 점(가격 조건) 먼저
+            hd = 104 if y + 104 + 70 <= low else 36  # 한 줄도 안 들어가면 '살 만한 이유' 머리 없이
+            k = 0
+            while k < len(rows) and y + hd + 84 * k + 70 <= low:  # 자막 띠와 안 겹치게
+                k += 1
+            if k:
+                _rule(fr, y, t, 0.56)
+                if hd == 104:
+                    _in(fr, why, X0, y + 36, t, 0.62)
+                for j, c in enumerate(rows[:k]):
+                    _in(fr, c, X0, y + hd + 84 * j + (6 if c is warn else 0), t, 0.72 + 0.15 * j)
+        scenes.append((cream, deal, INK2))
 
     light, dim = (172, 176, 184), (112, 116, 124)
     o = [(_text("저장해두고", pf("Bold", 84), "white"), 500, 0.0), (_text("장보기 전에 꺼내보세요", pf("Bold", 84), "white"), 604, 0.06),
@@ -373,41 +434,92 @@ def reel(items, date_label, out, music=None):
          (_text("hotdealpick.kr", pf("Bold", 58), ACCENT), 990, 0.36),
          (_text("프로필 링크에서 전체 딜 · 구매 링크", pf("Regular", 40), light), 1075, 0.42),
          (_text("텔레그램 실시간 알림  @hotdeal_pick", pf("Regular", 40), light), 1135, 0.48),
-         (_text("일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요.", pf("Regular", 30), dim), 1380, 0.55)]
+         (_text("일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요.", pf("Regular", 30), dim), 1210 if say else 1380, 0.55)]
 
     def outro(fr, t):
         for im, y, dl in o:
             _in(fr, im, X0, y, t, dl)
         _rule(fr, 860, t, 0.24, (58, 61, 68))
-    scenes.append((night, 2.5, outro, "white"))
+    scenes.append((night, outro, "white"))
 
-    total, n_sc = sum(s for _, s, _, _ in scenes), len(scenes)
-    seg = (XW - 12 * (n_sc - 1)) / n_sc
+    ad = _pill("광고·제휴")  # 첫 장 위 작게(대가성 — 캡션 맨 앞 문구와 같이)
+    subs = [_sub(s) for s, _ in say] if say else []
+    starts = [sum(durs[:k]) for k in range(n_sc)]
+    total, seg = sum(durs), (XW - 12 * (n_sc - 1)) / n_sc
+    AX, AY = RW / 2, 820  # 켄번스 기준점(글자 덩어리 가운데 — 가장자리 글자가 덜 움직이게)
+
+    def shot(si, t):
+        """장면 si의 t초 그림(켄번스까지) — 크로스페이드 때 앞 장면은 t가 길이를 넘어도 그대로 이어 그림."""
+        bg, draw, _ = scenes[si]
+        fr = bg.copy()
+        draw(fr, t)
+        k = min(1.0, max(0.0, t / durs[si]))
+        z = 1 + KB * (k if si % 2 == 0 else 1 - k)  # 줌인·줌아웃 번갈아
+        if z > 1.0005:
+            fr = fr.resize((RW, RH), Image.BILINEAR, box=(AX - AX / z, AY - AY / z, AX - AX / z + RW / z, AY - AY / z + RH / z))
+        return fr
+
+    tmp = tempfile.mkdtemp()
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{RW}x{RH}", "-r", str(FPS), "-i", "-"]
-    if music:
-        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-shortest",
-                "-af", f"afade=t=in:d=0.5,afade=t=out:st={total - 1.5}:d=1.5"]
-    cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", "-use_editlist", "0", out]  # 인스타 릴스 규격: edit list 없음·moov 앞
+    fade = f"afade=t=in:d=0.5,afade=t=out:st={total - 1.5:.3f}:d=1.5"
+    if say:  # 나레이션 한 줄(장마다 시작 + LEAD초에) -> WAV
+        rate, ch = say[0][1][1], say[0][1][2]
+        buf = bytearray(int(total * rate) * 2 * ch)
+        for k, (_, (frames, *_x)) in enumerate(say):
+            at = int((starts[k] + LEAD) * rate) * 2 * ch
+            part = frames[:max(0, len(buf) - at)]
+            buf[at:at + len(part)] = part
+        nar = os.path.join(tmp, "say.wav")
+        with wave.open(nar, "wb") as w:
+            w.setnchannels(ch); w.setsampwidth(2); w.setframerate(rate); w.writeframes(bytes(buf))
+        wins = [(starts[k] + LEAD, starts[k] + LEAD + w[3]) for k, (_, w) in enumerate(say)]
+        if music:
+            cmd += ["-stream_loop", "-1", "-i", music, "-i", nar, "-filter_complex",
+                    f"[1:a]atrim=0:{total:.3f},asetpts=PTS-STARTPTS,aresample=48000,volume=0.8,volume='{duck_expr(wins)}':eval=frame,{fade}[m];"
+                    f"[2:a]aresample=48000,volume=1.6[v];[m][v]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.89:level=0[a]", "-map", "0:v", "-map", "[a]"]
+        else:
+            cmd += ["-i", nar, "-map", "0:v", "-map", "1:a", "-af", "aresample=48000,volume=1.6,alimiter=limit=0.89:level=0"]
+        cmd += ["-c:a", "aac", "-b:a", "128k"]
+    elif music:
+        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-af", fade]
+    cmd += ["-t", f"{total:.3f}", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", "-use_editlist", "0", out]  # 인스타 릴스 규격: edit list 없음·moov 앞
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-    proc, last = subprocess.Popen(cmd, stdin=subprocess.PIPE), None
-    for si, (bg, sec, draw, bar) in enumerate(scenes):
-        frames = int(sec * FPS)
-        for i in range(frames):
-            frame = bg.copy()
-            draw(frame, i / FPS)
-            d = ImageDraw.Draw(frame)  # 위쪽 장면별 진행 막대 (스토리처럼)
-            for k in range(n_sc):
-                x = X0 + k * (seg + 12)
-                d.rounded_rectangle((x, 150, x + seg, 155), radius=3, fill=LINE if bg is cream else (58, 61, 68))
-                fill = 1.0 if k < si else (i + 1) / frames if k == si else 0
-                if fill:
-                    d.rounded_rectangle((x, 150, x + seg * fill, 155), radius=3, fill=bar)
-            if last is not None and i < 6:  # 장면 사이 0.2초 디졸브
-                frame = Image.blend(last, frame, (i + 1) / 6)
-            proc.stdin.write(frame.tobytes())
-        last = frame
-    proc.stdin.close()
-    if proc.wait():
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    try:
+        for si in range(n_sc):
+            frames = round((starts[si] + durs[si]) * FPS) - round(starts[si] * FPS)  # 누적 경계로(장면 컷·나레이션·자막이 같은 시각)
+            for i in range(frames):
+                t = i / FPS
+                frame = shot(si, t)
+                if si and i < XF:  # 장 사이 0.3초 크로스페이드(앞 장면은 계속 움직임)
+                    frame = Image.blend(shot(si - 1, durs[si - 1] + t), frame, (i + 1) / (XF + 1))
+                d = ImageDraw.Draw(frame)  # 위쪽 장면별 진행 막대 (스토리처럼)
+                for k in range(n_sc):
+                    x = X0 + k * (seg + 12)
+                    d.rounded_rectangle((x, 150, x + seg, 155), radius=3, fill=LINE if scenes[si][0] is cream else (58, 61, 68))
+                    fill = 1.0 if k < si else (i + 1) / frames if k == si else 0
+                    if fill:
+                        d.rounded_rectangle((x, 150, x + seg * fill, 155), radius=3, fill=scenes[si][2])
+                if si == 0:
+                    frame.paste(ad, (RW - X0 - ad.width, 296), ad)
+                if say:  # 자막 = 나레이션 하는 동안(앞뒤 0.15초 페이드)
+                    a = min(1.0, (t - LEAD + 0.15) / 0.15, (LEAD + say[si][1][3] + 0.2 - t) / 0.15)
+                    if a > 0:
+                        sb = subs[si] if a >= 1 else subs[si].copy()
+                        if a < 1:
+                            sb.putalpha(sb.getchannel("A").point(lambda v: int(v * a)))
+                        frame.paste(sb, ((RW - sb.width) // 2, SUB_Y - sb.height), sb)
+                proc.stdin.write(frame.tobytes())
+        proc.stdin.close()
+        rc = proc.wait()
+    except BaseException:
+        proc.kill()
+        proc.wait()
+        raise
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+    if rc:
         raise RuntimeError("ffmpeg 실패")
     return out
 

@@ -9,6 +9,7 @@ tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
+rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -354,17 +355,16 @@ sent.clear(); H.tg = lambda method, **p: sent.append((method, p)) or (UP if meth
 json.dump([{"url": "https://cdn.pixabay.com/download/audio/p.mp3", "name": "Pixabay"}], open("music.json", "w"))  # Claude가 넣은 Pixabay 곡 뒤에 추가
 H.publish_approved()
 assert [(x.get("id"), x["name"]) for x in json.load(open("music.json"))] == [(None, "Pixabay"), ("F1", "Happy"), ("F3", "b.wav")]
-assert [p["reply_parameters"]["message_id"] for m, p in sent if m == "sendMessage" and "배경음악" in p["text"]] == [50, 51, 54] and sent[-1] == ("getUpdates", {"offset": 45})
+assert [p["reply_parameters"]["message_id"] for m, p in sent if m == "sendMessage" and "플레이리스트에 등록" in p["text"] and "릴스엔 안 써요" in p["text"]] == [50, 51, 54] and sent[-1] == ("getUpdates", {"offset": 45})  # 출처 없는 곡 = 릴스 X라고 정확히 답함
 got_url, uo = [], H.urllib.request.urlopen
 H.urllib.request.urlopen = lambda req, timeout=None: got_url.append(getattr(req, "full_url", req)) or io.BytesIO(b"ID3-music")
-bp = H.bgm(time.gmtime(86400 * 4))  # tm_yday 5 -> 5 % 3곡 = 세 번째 곡(F3)
-assert open(bp, "rb").read() == b"ID3-music" and got_url == ["https://api.telegram.org/file/bott/music/f.mp3"] and ("getFile", {"file_id": "F3"}) in sent
-json.dump([{"url": "https://cdn.pixabay.com/download/audio/a.mp3", "name": "Pixabay 곡"}], open("music.json", "w")); got_url.clear()
+assert H.bgm(time.gmtime(86400 * 4)) is None and not got_url and not any(m == "getFile" for m, _ in sent)  # 출처(page) 없는 곡(봇에 보낸 음악·page 없는 Pixabay) = 릴스 X(10/24 Cowork '라이선스 곡만' — MUSIC.md)
+json.dump([{"url": "https://cdn.pixabay.com/download/audio/a.mp3", "name": "Pixabay 곡", "page": "https://pixabay.com/music/a/"}], open("music.json", "w")); got_url.clear()
 pp = H.bgm(time.gmtime(0)); pp2 = H.bgm(time.gmtime(0))  # Pixabay 음원: 처음 1번만 받아 music/에 보관(캐시), 다음부턴 안 받음
 assert pp == pp2 and pp.startswith("music" + os.sep) and open(pp, "rb").read() == b"ID3-music" and got_url == ["https://cdn.pixabay.com/download/audio/a.mp3"]
 def no_net(req, timeout=None):
     raise OSError("403")
-H.urllib.request.urlopen = no_net; json.dump([{"url": "https://cdn.pixabay.com/download/audio/b.mp3"}], open("music.json", "w"))
+H.urllib.request.urlopen = no_net; json.dump([{"url": "https://cdn.pixabay.com/download/audio/b.mp3", "page": "https://pixabay.com/music/b/"}], open("music.json", "w"))
 assert H.bgm(time.gmtime(0)) is None and len(os.listdir("music")) == 1  # 못 받으면 무음, 깨진 파일 안 남김
 os.remove("music.json"); assert H.bgm(time.gmtime(0)) is None  # 등록된 곡 없으면 무음
 # 플레이리스트(관리자 채팅): 새 곡이 들어오면 목록 글 + 전 곡 오디오(곡명·아티스트 표시, 누르면 재생·다음 곡 이어서), 받은 file_id 저장, 못 보내면 링크 글, 두 번 안 보냄
@@ -376,7 +376,7 @@ def pl_tg(method, **p):
 sent.clear(); H.tg = pl_tg; tq4 = time.time; time.time = lambda: 1791248400  # 10/6 (279일째 -> 279 % 3 = 0번 곡이 오늘)
 H.playlist({})
 assert [(m, p.get("audio")) for m, p in sent] == [("sendMessage", None), ("sendAudio", "https://cdn.pixabay.com/a.mp3"), ("sendAudio", "F1"), ("sendAudio", "https://cdn.pixabay.com/c.mp3"), ("sendMessage", None)]
-assert "3곡" in sent[0][1]["text"] and "1. A — x ← 오늘 릴스" in sent[0][1]["text"] and "누르면 재생" in sent[0][1]["text"]
+assert "3곡" in sent[0][1]["text"] and "3. C ← 오늘 릴스" in sent[0][1]["text"] and "2. b.wav (출처 없음 — 릴스 X)" in sent[0][1]["text"] and "누르면 재생" in sent[0][1]["text"]  # 오늘 곡 = 출처 있는 곡(A·C) 중 279 % 2
 assert (sent[1][1]["title"], sent[1][1]["performer"]) == ("A", "x") and "performer" not in sent[2][1] and "https://pixabay.com/music/c/" in sent[4][1]["text"]
 assert [(m.get("fid"), m.get("sent")) for m in json.load(open("music.json"))] == [("FA", 1), ("F1", 1), (None, 1)]
 sent.clear(); H.playlist({}); assert not sent  # 새 곡 없으면 안 보냄
@@ -2057,7 +2057,7 @@ assert not os.path.exists("docs/cards/2026-10-09_11") and os.path.isdir("docs/ca
 # 21시 하루 카드: 모아보기가 표지와 같이 딜 카드도(인스타 토큰 있을 때) -> 릴스는 같은 재료
 C9.deal_card, ds9 = real_dc9, []
 rl9, tv9, sd9 = C9.reel, H.tg_video, H.deal_slides
-C9.reel, H.tg_video, H.deal_slides = (lambda items, d, out, music=None: ds9.append(("reel", [i.get("e") for i in items])) or out), (lambda path, cap: None), (lambda stem, ps: ds9.append((stem, len(ps))) or sd9(stem, ps))
+C9.reel, H.tg_video, H.deal_slides = (lambda items, d, out, music=None, say=None: ds9.append(("reel", [i.get("e") for i in items])) or out), (lambda path, cap: None), (lambda stem, ps: ds9.append((stem, len(ps))) or sd9(stem, ps))
 seen, sent[:] = {}, []; time.time = lambda: TK(f"{D9} 21:05"); H.digest(seen, json.load(open("posts.json")))
 assert ds9[0] == (D9, 5) and sorted(os.listdir(f"docs/cards/{D9}")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg"] and ds9[1][0] == "reel" and ds9[1][1][0] == "🧴"  # 딜 카드 때 채운 재료를 릴스도
 H.E.pop("IG_TOKEN"); shutil.rmtree(f"docs/cards/{D9}"); seen, ds9[:] = {}, []; H.digest(seen, json.load(open("posts.json"))); assert ds9[0][0] == "reel" and ds9[0][1][0] == "🧴" and not os.path.exists(f"docs/cards/{D9}")  # 인스타 없으면 딜 카드 X, 릴스 재료는 그대로 채움
@@ -2066,7 +2066,7 @@ shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 H.IG_HUMAN = ig9h
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
+assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -2718,7 +2718,7 @@ def ig_http(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, vids, tt2 = ig_http, [], time.time
 H.tg_video, H.draft, time.time = lambda path, cap: vids.append((path, cap)), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
-json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst: "docs/bgm_t.m4a"
+json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가", "page": "https://pixabay.com/music/s/"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst, k=0: "docs/bgm_t.m4a"
 P3 = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}]
 seen = {}; H.REEL_PUBLIC = False; sent.clear(); H.digest(seen, P3)  # 기본(꺼짐): 공개 X, 봇 채팅 영상만(예전 그대로)
 assert len(vids) == 1 and not vids[0][0].startswith("docs/") and not os.path.exists("docs/reels") and "reel_2026-10-06" not in seen and not ic
@@ -2747,6 +2747,9 @@ st[0], seen = "ERROR", {"igc_C2": {"t": 1, "kind": "reel"}}; sent.clear()
 H.ig_publish(seen); assert not [k for k in seen if k.startswith("igc_")] and "릴스 처리 ERROR" in seen["igfail"]["f"][0] and not sent  # 처리 실패 = 진짜 실패(다시 안 봄·예외 X, 1번째는 알림 X — 10/23)
 seen = {"reel_2026-10-06": {"t": 1, "cap": "x"}, "ig_hold": 1791291600 + 3600}; ic[:] = []; st[:] = ["FINISHED"]; H.ig_reel(seen); assert not ic  # 스팸 의심 쉼
 open("docs/reels/2026-10-03.mp4", "wb").write(b"0"); H.prune_slides(1791291600); assert sorted(os.listdir("docs/reels")) == ["2026-10-06.mp4"]  # 2일 지난 영상 정리
+ff62, cards.ffmpeg = cards.ffmpeg, (lambda: (_ for _ in ()).throw(FileNotFoundError("ffmpeg")))  # ffmpeg 없음 = 릴스만 건너뜀(모아보기 글·나머지 단계는 그대로 — 10/24 Cowork 셀프체크)
+H.REEL_PUBLIC, seen, vids[:] = False, {}, []; sent.clear(); H.digest(seen, P3); cards.ffmpeg = ff62
+assert not vids and any(m == "sendMessage" and p.get("chat_id") == H.CHANNEL for m, p in sent)
 H.bgm = bg; os.remove("music.json"); shutil.rmtree("docs/reels")
 del H.E["IG_TOKEN"]; ic[:] = []; H.ig_publish({"igc_C3": 1}); H.ig_reel({"reel_2026-10-06": {"t": 1, "cap": "x"}}); assert not ic  # 토큰 없으면 호출 없음
 time.time, H.http, H.REEL_PUBLIC = tt2, ph2, rp0
@@ -6398,4 +6401,123 @@ assert "⏳" not in r60 and "👍" not in r60 and "▼18%" in r60 and "⏳ " in 
 c60 = S.card(0, D60, sh60, plain=True); assert "bdg" not in c60 and "▼ 18% 내림" in c60 and '<div class="u">10/24 9시 확인</div><div class="u">목표가 3,900원</div>' in c60 and "특가 기다리는 중" not in c60, c60  # /c/drop/ 카드 = 배지 X · 목표가 작게
 assert '<b class="bdg w">⏳ 대기</b>' in S.card(0, D60, sh60); S.DROPS.pop(0)
 time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS = sv60[:7]; H.E.clear(); H.E.update(sv60[7]); os.chdir(cwd60)
+# 9-62) 릴스 업그레이드(10/24 Cowork·진우 '나레이션·움직임·배경음악'): Google TTS 공식(키 = 헤더만·없으면 안 부름·WaveNet 안 되면 Standard) · 대본 = 사실만(마감·TOPn / 이름·가격·단위가격 / 핫딜픽에서 더 보기)
+#      · 읽을 말 = 단위 한국어 · 장 길이 = 나레이션 맞춤 15~20초(넘으면 빠르게 다시, 그래도 넘으면 글자+음악) · 음악 나레이션 동안 -12dB · 자막·'광고·제휴' · TTS 실패·ffmpeg 없음 = 계속
+#      · 샘플 3편 = 관리자만(처음 1번 + 키 생기면 1번 더) · 밤 영상 = 무음 · 배경음악 = MUSIC.md에 출처·라이선스 적힌 곡만
+import wave as _wv, base64 as _b64, contextlib
+import cards as C62
+def wav62(sec, rate=24000, v=b"\x00\x10"):
+    b = io.BytesIO()
+    with _wv.open(b, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate); w.writeframes(v * int(sec * rate))
+    return b.getvalue()
+sv62, calls62, fail62 = (H.http, H.tg_video, dict(H.E), time.time, H.POSTS, H.fill_reel, H.make_reel, H.tts, C62.reel, H.bgm, os.getcwd(), H.tg), [], set()
+os.chdir(tempfile.mkdtemp()); os.makedirs("docs"); H.bgm = lambda kst, k=0: None  # 빈 폴더(카드 순서 파일 X) · 음원 안 받음
+def http62(url, body=None, headers=None, method=None):
+    calls62.append((url, body, headers, method))
+    if body["voice"]["name"] in fail62:
+        raise OSError("400")
+    return json.dumps({"audioContent": _b64.b64encode(wav62(len(body["input"]["text"]) * 0.1 / body["audioConfig"]["speakingRate"])).decode()})
+H.http = http62; H.E.pop("GOOGLE_TTS_KEY", None)
+assert H.tts("안녕") is None and not calls62  # 키 없음 = 안 부름
+H.E["GOOGLE_TTS_KEY"] = "gk-secret"; o62 = io.StringIO()
+with contextlib.redirect_stdout(o62): w62 = H.tts("우유 23,740원")
+u62, b62, h62, m62 = calls62[-1]
+assert u62 == H.TTS_URL and "gk-secret" not in u62 and h62 == {"X-Goog-Api-Key": "gk-secret"} and m62 == "POST" and b62["voice"] == {"languageCode": "ko-KR", "name": "ko-KR-Wavenet-A"} \
+    and b62["audioConfig"]["audioEncoding"] == "LINEAR16" and C62._wav(w62)[1] == 24000  # 키 = 헤더만(주소·로그 X)
+fail62.add("ko-KR-Wavenet-A"); calls62.clear()
+with contextlib.redirect_stdout(o62): w62 = H.tts("우유")
+assert [c[1]["voice"]["name"] for c in calls62] == ["ko-KR-Wavenet-A", "ko-KR-Standard-A"] and w62  # WaveNet 안 되면 Standard
+fail62.add("ko-KR-Standard-A")
+with contextlib.redirect_stdout(o62): assert H.tts("우유") is None
+assert "gk-secret" not in o62.getvalue(); fail62.clear()
+assert H.say_ko("100g당 1,100원") == "100그램당 1,100원" and H.say_ko("건국 멸균우유 200ml 48팩 · 23,740원") == "건국 멸균우유 200밀리리터 48팩, 23,740원"
+assert H.say_ko("🥛 생수 2L x 12병 (무료배송)") == "생수 2리터 12병" and H.say_ko("1+1 1.5kg") == "1 플러스 1 1.5킬로그램" and H.say_ko("팩당 약 495원") == "팩당 약 495원"
+assert [H.say_ko(x) for x in ("웍스 WORX WX242", "190mlX32", "3.1Lx2개", "25~35과", "1+ 한우", "갤럭시 A35 5G 128G", "1KG")] == ["웍스 WORX WX242", "190밀리리터 32", "3.1리터 2개", "25에서 35과", "1 플러스 한우", "갤럭시 A35 5G 128G", "1킬로그램"]  # 영문 모델명 그대로 · 단위에 붙은 x · 범위 · 등급
+k62 = time.gmtime(TK("2026-10-24 21:00") + 9 * 3600)
+P62 = [{"t": "2026-10-24 10:00", "text": "🔥 [토스] 매일두유 99.9 190ml 24팩 (12,900원/무료)\n\n하루특가 · 밤 12시까지", "url": "https://toss.shopping/_m/a", "own": 1, "unit": "팩당 538원", "hook": "두유 팩당 538원", "pts": ["24팩 구성"]},
+       {"t": "2026-10-24 11:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (8,990원/무료)\n\n좋아요", "url": "https://link.coupang.com/a/x", "hook": "계란 개당 300원", "pts": ["30구"]}]
+r62 = H.reel_say(P62, k62)
+assert r62[0] == ("오늘 밤 12시 마감 포함 · 오늘의 가성비 TOP2", "오늘 밤 12시 마감 포함, 오늘의 가성비 탑 투") and r62[-1] == ("핫딜픽에서 더 보기", "핫딜픽에서 더 보세요") and len(r62) == 4, r62
+assert r62[1] == ("매일두유 99.9 190ml 24팩 · 12,900원 · 팩당 538원", "매일두유 99.9 190밀리리터 24팩, 12,900원, 팩당 538원") and r62[2][0] == "곰곰 특란 30구 · 8,990원", r62  # 단위가격 없으면 이름·가격만
+assert not H.reel_say(P62[1:], k62)[0][0].startswith("오늘 밤")  # 마감 없으면 TOPn만
+nm62 = lambda title: H.reel_say([{"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {title} (9,900원/무료)", "url": "https://x"}], k62)[1][0].split(" · ")[0]
+assert [nm62(x) for x in ("퍼실 딥클린 파워젤 액체세제 1.5L 2개", "생수 지리산 물하나 무라벨 2L X 24개", "제주 삼다수 무라벨 생수 2L 24병 + 500ml 20병", "곰곰 특란 30구")] \
+    == ["퍼실 딥클린 파워젤 액체세제 1.5L 2개", "생수 지리산 물하나 무라벨 2L 24개", "제주 삼다수 무라벨 생수", "곰곰 특란 30구"]  # 24자 안 = 그대로(X·+ 뺌) · 길면 수량 낱말은 다 빼고(일부만 남기면 가격이 그 양인 것처럼 들림)
+assert C62.reel_plan(None, 3) == [3.0] * 5 and [round(x, 2) for x in C62.reel_plan(None, 1)] == [5.0] * 3 and [round(x, 2) for x in C62.reel_plan([2.6, 3.6, 3.9, 3.1, 1.4], 3)] == [3.3, 4.3, 4.6, 3.8, 3.0]
+assert C62.duck_expr([]) == "1" and C62.duck_expr([(1, 2)]).startswith("1-0.749*clip(") and C62.DUCK == round(10 ** (-12 / 20), 3)  # 나레이션 동안 -12dB
+rt62 = []
+H.tts = lambda text, rate=H.TTS_RATE: rt62.append(round(rate, 3)) or wav62(7 / rate)  # 장마다 7초 -> 빠르게(최대 1.4배) 1번 다시 -> 그래도 넘음 = 나레이션 X
+with contextlib.redirect_stdout(o62): assert H.reel_voice(r62) is None
+assert rt62 == [1.1] * 4 + [1.4] * 4, rt62
+rt62.clear(); H.tts = lambda text, rate=H.TTS_RATE: rt62.append(round(rate, 3)) or wav62({"h": 2.0, "o": 1.3}.get(text, 4.5) * 1.1 / rate)  # 딜 4.5초 × 3 = 21.6초 -> 말만 줄여 계산 -> 1.30배로 19.5초
+assert H.reel_voice([("h", "h"), ("a", "a"), ("b", "b"), ("c", "c"), ("o", "o")]) and 1.29 < rt62[-1] < 1.32, rt62
+H.tts = lambda text, rate=H.TTS_RATE: b"not-wav"
+with contextlib.redirect_stdout(o62): assert H.reel_voice(r62) is None  # 깨진 음성 = 예외 X, 글자 + 음악
+rt62.clear(); H.tts = lambda text, rate=H.TTS_RATE: rt62.append(text) and None
+assert H.reel_voice(r62) is None and len(rt62) == 1  # 첫 실패에서 멈춤(멈춘 API를 장마다 기다리지 X)
+H.tts = lambda text, rate=H.TTS_RATE: wav62(4 / rate); v62 = H.reel_voice(r62)
+assert [s for s, _ in v62] == [s for s, _ in r62] and 15 <= sum(C62.reel_plan([C62._wav(w)[3] for _, w in v62], 2)) <= 20
+H.tts = lambda text, rate=H.TTS_RATE: None; assert H.reel_voice(r62) is None  # TTS 실패 = 글자 + 음악
+# 영상: 나레이션 맞춤 길이·음성 있음·자막 띠·'광고·제휴' / 깨진 음성·20초 넘음 = 글자만 15초(예외 X)
+subprocess.run([C62.ffmpeg(), "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=330:duration=2", "docs/bgm62.m4a"], check=True)
+it62 = [{"title": "[쿠팡] 곰곰 특란 30구 (8,990원/무료)", "e": "🥚", "hook": "계란 개당 300원", "pts": ["30구 구성", "무료배송"], "unit": "개당 300원"}]
+sy62 = [("오늘의 가성비 TOP1", wav62(2.0, v=b"\x00\x00")), ("곰곰 특란 30구 · 8,990원 · 개당 300원", wav62(4.4, v=b"\x00\x00")), ("핫딜픽에서 더 보기", wav62(1.2, v=b"\x00\x00"))]  # 무음 나레이션 = 들리는 건 음악뿐
+pl62 = C62.reel_plan([2.0, 4.4, 1.2], 1); C62.reel(it62, "10월 24일", "docs/reel62.mp4", "docs/bgm62.m4a", sy62)
+pr62 = subprocess.run([C62.ffmpeg(), "-i", "docs/reel62.mp4"], capture_output=True, text=True).stderr
+assert "Audio: aac" in pr62 and "1080x1920" in pr62 and abs(dur(pr62) - sum(pl62)) < 0.15 and sum(pl62) >= 15, (dur(pr62), pl62)
+mv62 = lambda a, b: float(re.search(r"mean_volume: (-?[\d.]+) dB", subprocess.run([C62.ffmpeg(), "-ss", str(a), "-t", str(b - a), "-i", "docs/reel62.mp4", "-af", "volumedetect", "-f", "null", "-"], capture_output=True, text=True).stderr)[1])
+assert 10 <= mv62(2.8, 3.8) - mv62(1.0, 2.0) <= 14, (mv62(2.8, 3.8), mv62(1.0, 2.0))  # 나레이션 구간(0.35~2.35초) 음악 = 쉬는 구간(2.5~4.25초)보다 -12dB
+def fr62(t):
+    raw = subprocess.run([C62.ffmpeg(), "-v", "error", "-ss", str(t), "-i", "docs/reel62.mp4", "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout
+    return _I.frombytes("RGB", (1080, 1920), raw)
+f62 = fr62(pl62[0] + C62.LEAD + 1.0)  # 딜 장면 나레이션 중 = 자막 띠(어두운 바탕) · 첫 장 아님 = '광고·제휴' X
+assert f62.getpixel((540, C62.SUB_Y - 8))[0] < 80 and f62.crop((1080 - 96 - 200, 296, 1080 - 96, 360)).convert("L").getextrema()[0] > 200
+g62 = fr62(1.0); assert g62.crop((1080 - 96 - 200, 296, 1080 - 96, 360)).convert("L").getextrema()[0] < 170  # 첫 장 위 오른쪽 '광고·제휴'
+C62.reel(it62, "10월 24일", "docs/reel62b.mp4", "docs/bgm62.m4a", [(s, b"broken") for s, _ in sy62])
+C62.reel(it62, "10월 24일", "docs/reel62c.mp4", None, [(s, wav62(9)) for s, _ in sy62])
+for f in ("docs/reel62b.mp4", "docs/reel62c.mp4"):
+    assert abs(dur(subprocess.run([C62.ffmpeg(), "-i", f], capture_output=True, text=True).stderr) - 15) < 0.15, f
+# make_reel: 키 없음·TTS 실패 = say None(글자+음악) · 키 있음 = 나레이션
+said62 = []; C62.reel = lambda items, d, out, music=None, say=None: said62.append(say) or out; H.fill_reel = lambda ps: None
+H.E.pop("GOOGLE_TTS_KEY"); H.make_reel(P62, k62, "x.mp4")
+H.E["GOOGLE_TTS_KEY"] = "k"; H.tts = lambda text, rate=H.TTS_RATE: None; H.make_reel(P62, k62, "x.mp4")
+H.tts = lambda text, rate=H.TTS_RATE: wav62(2); p62, c62, s62 = H.make_reel(P62, k62, "x.mp4")
+assert said62[0] is None and said62[1] is None and len(said62[2]) == 4 and s62 and c62.startswith(H.ig_notes(P62)) and p62 == "x.mp4"  # 캡션 맨 앞 = 대가성 문구
+# 샘플 3편: 최근 4일 중 딜 있는 날 3개 × TOP3 · 실행마다 1편 · 곡 편마다 다르게 · 관리자만 · 키 없었으면 키 생길 때 바로 1벌 더 · 키 있는데 실패면 하루 뒤(최대 2번) · 1편 실패 = 알림, 다음 편은 다음 실행
+H.POSTS = "posts62.json"; json.dump([{"t": f"2026-10-{d} 10:00", "text": f"🔥 [쿠팡] 상품{d}{k} (1,000원/무료)", "url": f"https://link.coupang.com/a/{d}{k}", "s": 5} for d in ("21", "22", "23", "24") for k in "ab"], open("posts62.json", "w"), ensure_ascii=False)
+mk62, tv62, ok62 = [], [], [True]
+def mkr62(ps, kst, out, k=0):
+    if not ok62[0]:
+        raise OSError("upload")
+    mk62.append((len(ps), time.strftime("%m-%d", kst), kst.tm_yday + k)); return out, "CAP", bool(H.E.get("GOOGLE_TTS_KEY")) and ok62[-1] != "fail"
+H.make_reel, H.tg_video, H.tg = mkr62, (lambda path, cap: tv62.append(cap)), (lambda method, **p: sent.append((method, p)) or {"message_id": 1}); H.E.pop("GOOGLE_TTS_KEY"); s62 = {}; sent.clear()
+run62 = lambda hm, n=1: [time.__setattr__("time", lambda: TK(f"2026-10-{hm}")) or rs0(s62) for _ in range(n)]
+run62("25 00:30", 4)
+assert [x[:2] for x in mk62] == [(2, "10-24"), (2, "10-23"), (2, "10-22")] and len({x[2] for x in mk62}) == 3 and len(tv62) == 3, (mk62, tv62)  # 실행마다 1편 · 곡 다름 · 3편 뒤 끝
+assert all("나레이션 X" in c and c.endswith("CAP") and "공개 X" in c for c in tv62) and s62["reel_v2"]["n"] == 3 and s62["reel_v2"]["key"] is False
+H.E["GOOGLE_TTS_KEY"] = "k"; run62("25 01:00", 4)
+assert len(tv62) == 6 and all("나레이션 O" in c for c in tv62[3:]) and s62["reel_v2"]["tts"] is True; run62("27 01:00", 2); assert len(tv62) == 6  # 키 생기면 바로 1벌 더, 그다음 X
+run62("31 01:00", 1); assert len(tv62) == 6 and time.time() - s62["reel_v2"]["t"] < 3 * 86400  # 실행마다 t 새로 = seen.json 3일 정리에도 안 지워짐(샘플 또 X)
+s62.clear(); tv62.clear(); ok62.append("fail"); run62("25 02:00", 3); run62("25 23:00", 2); assert len(tv62) == 3  # 키 있는데 실패 = 하루 안엔 다시 X
+run62("26 03:00", 3); run62("27 04:00", 3); n62 = len(tv62); run62("28 05:00", 3)
+assert n62 == len(tv62) == 3 + 2 + 1 and s62["reel_v2"]["r"] == 2, (len(tv62), s62)  # 하루 뒤 다시 최대 2번(그 뒤 X) · 한 벌 = 그때 최근 4일 중 딜 있는 날
+s62.clear(); tv62.clear(); ok62[0] = False; run62("25 02:00", 1); ok62[0] = True; run62("25 02:15", 1)
+assert [p["text"] for m, p in sent if m == "sendMessage" and "샘플" in p.get("text", "")] == ["🎬 릴스 샘플 1 실패(OSError) — 다음 편은 다음 실행에"] and len(tv62) == 1 and "샘플 2/3" in tv62[0]  # 1편 실패 = 알림 · 다음 실행엔 다음 편
+assert "reel_samples" in inspect.getsource(H.main) and "GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+# 밤 영상 = 무음(관리자 안 깨움)
+bd62 = []
+class _R62:
+    def __enter__(self): return self
+    def __exit__(self, *a): pass
+    def read(self): return b'{"result": {"message_id": 1}}'
+uo62 = H.urllib.request.urlopen; H.urllib.request.urlopen = lambda req, timeout=None: bd62.append(req.data) or _R62(); open("v62.mp4", "wb").write(b"0")
+for hh in ("02:00", "10:00"):
+    time.time = lambda hh=hh: TK(f"2026-10-25 {hh}"); H._tv_real("v62.mp4", "c")
+assert b'name="disable_notification"' in bd62[0] and b'name="disable_notification"' not in bd62[1]
+H.urllib.request.urlopen = uo62
+# 배경음악 = MUSIC.md에 출처·라이선스 적힌 곡만
+root62 = os.path.dirname(os.path.abspath(H.__file__)); md62 = open(f"{root62}/docs/reels/MUSIC.md").read(); mj62 = json.load(open(f"{root62}/music.json"))
+assert "Pixabay Content License" in md62 and all(m["page"] in md62 for m in mj62 if m.get("page")) and all(m.get("page") for m in mj62 if m.get("url"))
+(H.http, H.tg_video, _e62, time.time, H.POSTS, H.fill_reel, H.make_reel, H.tts, C62.reel, H.bgm, _c62, H.tg) = sv62; H.E.clear(); H.E.update(_e62); os.chdir(_c62)
 print("OK: 모든 셀프체크 통과")

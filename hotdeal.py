@@ -7,7 +7,7 @@ import base64, collections, hashlib, hmac, html, json, math, os, random, re, shu
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -193,6 +193,8 @@ def tg_video(path, caption):
     """관리자에게 영상 파일 업로드 (sendVideo, multipart). -> 보낸 메시지"""
     b = "hotdeal" + os.urandom(8).hex()
     fields = {"chat_id": ADMIN, "caption": caption, "supports_streaming": "true", "width": "1080", "height": "1920"}
+    if time.gmtime(time.time() + 9 * 3600).tm_hour < 8:  # 밤(KST 0~8시) = 무음(tg와 같게 — 관리자 안 깨움)
+        fields["disable_notification"] = "true"
     body = ("".join(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields.items())
             + f'--{b}\r\nContent-Disposition: form-data; name="video"; filename="reel.mp4"\r\nContent-Type: video/mp4\r\n\r\n').encode() \
         + open(path, "rb").read() + f"\r\n--{b}--\r\n".encode()
@@ -1261,7 +1263,7 @@ def publish_approved(seen=None):
                 mus.append({"id": au["file_id"], "u": au["file_unique_id"], "name": au.get("title") or au.get("file_name", "")})
                 json.dump(mus, open(MUSIC, "w"), ensure_ascii=False)
             tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]},
-               text=f"🎵 릴스 배경음악 등록 (총 {len(mus)}곡, 날마다 돌아가며 사용)")
+               text=f"🎵 플레이리스트에 등록 (총 {len(mus)}곡) — 출처·라이선스가 없는 곡이라 릴스엔 안 써요(docs/reels/MUSIC.md에 적힌 곡만)")
             continue
         text = m.get("text") or m.get("caption") or ""  # 사진에 글을 붙여 보내도(캡션)
         if text.lstrip().startswith("#일상") and str(m.get("from", {}).get("id")) == ADMIN:
@@ -3385,19 +3387,10 @@ def digest(seen, posts):
                 deal_slides(today, [p for _, p in order[:CARD_N]])  # 인스타 넘기기용 딜 카드(재료 채운 글은 아래 릴스도 같이 씀)
         except Exception as e:
             print("card", repr(e))
-        try:  # 인스타 릴스용 15초 영상 -> 관리자에게 바로 전송 + REEL_PUBLIC이면 docs/reels/에 공개 -> 22시 ig_reel이 인스타에. 점수 높은 순 TOP3
+        try:  # 인스타 릴스용 15~20초 영상 -> 관리자에게 바로 전송 + REEL_PUBLIC이면 docs/reels/에 공개 -> 22시 ig_reel이 인스타에. 점수 높은 순 TOP3
             top = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
-            fill_reel(top)  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움(딜 카드 때 채웠으면 그대로)
-            music, mus = bgm(kst), load(MUSIC, [])
-            song = mus[kst.tm_yday % len(mus)] if music else None  # 캡션에 곡명(인스타에서도 무슨 곡인지 보이게)
             auto = REEL_PUBLIC and E.get("IG_TOKEN") and E.get("IG_USER_ID")
-            path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일",  # 올리브영 딜은 딜 카드처럼 거른 재료
-                              f"docs/reels/{today}.mp4" if auto else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"), music)
-            cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
-                   + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
-                   + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if song.get("url") else "") if song else "")
-                   + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(today)}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
-                   + "\n\n" + ig_tags(top))[:1024]
+            path, cap, _ = make_reel(top, kst, f"docs/reels/{today}.mp4" if auto else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
             if auto:
                 seen["reel_" + today] = {"t": time.time(), "cap": cap}  # 22시 ig_reel이 같은 캡션으로
             tg_video(path, (f"🎬 {REEL_HOUR}시에 인스타 자동 게시돼요(직접 올리지 마세요) — 확인용\n\n" if auto else "") + cap)
@@ -3405,26 +3398,148 @@ def digest(seen, posts):
             print("reel", repr(e))
 
 
-def bgm(kst):
-    """music.json 중 오늘 차례 1곡 -> 파일 경로. 없거나 못 받으면 None(무음 릴스).
-    url = Pixabay 음원(Claude가 고름): 처음 1번만 받아 Actions 캐시 music/에 보관(공개 저장소엔 안 올림) / id = 봇에 보낸 음악(텔레그램 file_id)."""
-    mus = load(MUSIC, [])
-    if not mus:
+TTS_URL, TTS_VOICES, TTS_RATE = "https://texttospeech.googleapis.com/v1/text:synthesize", ("ko-KR-Wavenet-A", "ko-KR-Standard-A"), 1.1  # 릴스 나레이션(10/24 Cowork·진우): Google Cloud TTS 공식만(edge-tts X)
+
+
+def tts(text, rate=TTS_RATE):
+    """Google Cloud Text-to-Speech 한국어 -> WAV bytes(LINEAR16 24kHz) 또는 None. 키 = GOOGLE_TTS_KEY(진우가 GCP에서 만들어 Secrets에 직접) — 헤더로만 보냄(주소·로그 X).
+    키 없거나 실패 = None(릴스는 글자 + 음악). WaveNet이 안 되면 Standard 목소리로 한 번 더."""
+    key = E.get("GOOGLE_TTS_KEY")
+    if not key or not text:
         return None
-    m = mus[kst.tm_yday % len(mus)]
+    for v in TTS_VOICES:
+        try:
+            r = json.loads(http(TTS_URL, {"input": {"text": text}, "voice": {"languageCode": "ko-KR", "name": v},
+                                          "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000, "speakingRate": round(rate, 2)}}, {"X-Goog-Api-Key": key}, "POST"))
+            return base64.b64decode(r["audioContent"])
+        except Exception as e:
+            print("tts", v, type(e).__name__, getattr(e, "code", ""))
+    return None
+
+
+def say_ko(s):
+    """나레이션으로 읽을 말(자막은 그대로): 괄호·이모지·기호 빼고 숫자 뒤 단위를 한국어로(100g -> 100그램 · 1+1 -> 1 플러스 1)."""
+    s = re.sub(r"\([^)]*\)|\[[^\]]*\]", " ", s)
+    s = re.sub(r"(?<=[\dgGlL가-힣])\s*[x×X*]\s*(?=\d)", " ", s)  # 2L x 24개·190mlX32(영문 모델명 WX242는 그대로)
+    s = re.sub(r"(?<=\d)\s*~\s*(?=\d)", "에서 ", s)
+    for a, b in ((r"kg", "킬로그램"), (r"mg", "밀리그램"), (r"(?-i:g)", "그램"), (r"ml", "밀리리터"), (r"l", "리터"), (r"cm", "센티미터"), (r"mm", "밀리미터")):
+        s = re.sub(r"(?<=\d)\s*" + a + r"(?![a-z])", b, s, flags=re.I)
+    s = re.sub(r"(?<=\d)\s*\+\s*", " 플러스 ", s)  # 1+1 · 1+ 한우
+    s = re.sub(r"\s*[·/|~]\s*", ", ", s)
+    s = re.sub(r"[^0-9A-Za-z가-힣\s,.%]", " ", s)
+    return re.sub(r"\s+", " ", re.sub(r"(\s*,)+", ",", s)).strip(" ,")
+
+
+def reel_say(top, kst):
+    """릴스 나레이션 대본(10/24 Cowork·진우 — 사실만, 효능·과장·'써보니' X) -> [(자막, 읽을 말)] 표지·딜마다·끝.
+    표지 = 우리 데이터 한 줄('오늘 밤 12시 마감 포함' — 사이트 '오늘 마감'과 같은 판단 + 오늘의 가성비 TOPn) · 딜 = 이름, 가격, 단위가격 · 끝 = 핫딜픽에서 더 보기."""
+    import cards
+    day = time.strftime("%Y-%m-%d", kst)
+    head = ("오늘 밤 12시 마감 포함 · " if any(day_end(p, day) for p in top) else "") + f"오늘의 가성비 TOP{len(top)}"
+    rows = [(head, say_ko(head.replace(f"TOP{len(top)}", "탑 " + ("원", "투", "쓰리")[len(top) - 1])))]
+    for p in top:
+        it = cards._norm(card_item(p)[0])
+        w = [x for x in re.sub(r"\([^)]*\)|\[[^\]]*\]", " ", it["name"]).split() if not re.fullmatch(r"[+xX×*,·/]+", x)]
+        if len(" ".join(w)) > 24:  # 길면 수량·용량 낱말은 다 빼고(일부만 남으면 가격이 그 양인 것처럼 들림 — 단위가격이 따로) 앞에서 낱말 단위로
+            w = [x for x in w if not re.search(r"\d", x)] or w
+            w = w[:next((k for k in range(len(w), 0, -1) if len(" ".join(w[:k])) <= 24), 1)]
+        name = " ".join(w)
+        parts = [x for x in (name, it["main"], it["unit"]) if x]
+        rows.append((" · ".join(parts), say_ko(", ".join(parts))))
+    return rows + [("핫딜픽에서 더 보기", "핫딜픽에서 더 보세요")]
+
+
+def reel_voice(rows):
+    """대본 -> [(자막, WAV)] 또는 None(키 없음·실패 — 글자 + 음악). 장 길이 합이 20초 넘으면 더 빠르게 한 번 더 읽힘(최대 1.4배), 그래도 넘으면 None."""
+    import cards
+    rate = TTS_RATE
     try:
-        if m.get("url"):
-            path = os.path.join("music", hashlib.sha1(m["url"].encode()).hexdigest()[:12] + ".mp3")
-            if not os.path.exists(path):
-                with urllib.request.urlopen(urllib.request.Request(m["url"], headers={"User-Agent": UA}), timeout=60) as r:
-                    data = r.read()
-                os.makedirs("music", exist_ok=True)
-                open(path, "wb").write(data)
-            return path
-        f = tg("getFile", file_id=m["id"])
-        path = os.path.join(tempfile.gettempdir(), "bgm")
-        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
-            open(path, "wb").write(r.read())
+        for _ in range(2):
+            wavs = []
+            for _s, sp in rows:  # 하나라도 실패하면 바로 그만(멈춘 API를 장마다 기다리지 않게)
+                wavs.append(tts(sp, rate))
+                if not wavs[-1]:
+                    return None
+            segs = [cards._wav(w)[3] for w in wavs]
+            total = sum(cards.reel_plan(segs, len(rows) - 2))
+            if total <= 20:
+                return [(sub, w) for (sub, _), w in zip(rows, wavs)]
+            sp = sum(x for x in segs if cards.LEAD + x + cards.TAIL > 3)  # 줄일 수 있는 건 3초 넘는 장의 말뿐(여백·3초 기본은 그대로)
+            rate = min(1.4, rate * sp / max(0.1, sp - (total - 19.5)))
+    except Exception as e:  # 깨진 음성(WAV 아님 등) = 글자 + 음악
+        print("reel voice", type(e).__name__)
+        return None
+    print("reel narration 20초 넘음 — 글자 + 음악만")
+    return None
+
+
+def make_reel(top, kst, out, k=0):
+    """릴스 1편(모아보기·샘플 같이): 재료 채움 -> 나레이션(GOOGLE_TTS_KEY 있으면) -> 영상(cards.reel) -> (경로, 캡션, 나레이션 됐는지).
+    배경음악 = 라이선스 기록된 곡(MUSIC.md) 중 오늘 차례 + k. 캡션 = 대가성 문구 맨 앞(ig_notes) 그대로."""
+    import cards
+    fill_reel(top)  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움(딜 카드 때 채웠으면 그대로)
+    music, song = bgm(kst, k), song_of(kst, k)
+    voice = reel_voice(reel_say(top, kst)) if E.get("GOOGLE_TTS_KEY") else None
+    path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice)  # 올리브영 딜은 딜 카드처럼 거른 재료
+    cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
+           + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
+           + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
+           + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(time.strftime('%Y-%m-%d', kst))}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
+           + "\n\n" + ig_tags(top))[:1024]
+    return path, cap, bool(voice)
+
+
+def reel_samples(seen):
+    """릴스 새 틀 샘플 3편(10/24 Cowork·진우 '나레이션·움직임·배경음악'): 관리자에게만(공개 X — REEL_PUBLIC은 진우 OK 뒤), 실행마다 1편(작업 6분 제한).
+    한 벌 = 최근 4일 중 딜 있는 날 3개 × 그날 TOP3, 곡은 편마다 다르게. 처음 1벌 -> 나레이션이 안 됐으면 키가 새로 생길 때 바로, 키가 있었는데 실패였으면 하루 뒤 다시(최대 2번)."""
+    v, key, now = seen.get("reel_v2"), bool(E.get("GOOGLE_TTS_KEY")), time.time()
+    if v:
+        v["t"] = now  # seen.json은 t가 3일 지난 칸을 버림 -> 실행마다 새로(안 그러면 3일마다 샘플을 또 보냄) · 한 벌 만든 때 = t0
+    if v and v.get("n", 0) >= 3 and (v.get("tts") or not key or v.get("key") and (now - v["t0"] < 86400 or v.get("r", 0) >= 2)):
+        return
+    if not v or v.get("n", 0) >= 3:  # 새 한 벌(r = 키가 있었는데 나레이션 실패로 다시 — 최대 2번)
+        v = seen["reel_v2"] = {"t": now, "t0": now, "key": key, "tts": False, "n": 0, "r": v.get("r", 0) + 1 if v and v.get("key") else 0}
+    posts, n = load(POSTS, []), v["n"] + 1
+    days = [time.gmtime(v["t0"] + 9 * 3600 - d * 86400) for d in range(4)]
+    sets = [x for x in ((k, [p for _, p in card_order(posts, time.strftime("%Y-%m-%d", k))][:3]) for k in days) if x[1]][:3]
+    v["n"] = n if n < len(sets) else 3  # 먼저 기록(보내다 실패해도 15분마다 같은 편을 또 만들지 않게)
+    if n > len(sets):
+        return
+    kst, ps = sets[n - 1]
+    try:
+        path, cap, said = make_reel(ps, kst, os.path.join(tempfile.gettempdir(), f"reel_sample{n}.mp4"), n + days[0].tm_yday - kst.tm_yday)  # 곡 = 오늘 차례 + n(편마다 다름)
+        v["tts"] = v["tts"] or said
+        tg_video(path, f"🎬 릴스 새 틀 샘플 {n}/{len(sets)} — " + ("나레이션 O" if said else "나레이션 X(GOOGLE_TTS_KEY 없음·실패 — 글자 + 음악)")
+                 + " · 켄번스·0.3초 전환·자막 · 공개 X(진우 OK 뒤 REEL_PUBLIC)\n\n" + cap)
+    except Exception as e:
+        print("reel sample", n, repr(e))
+        tg("sendMessage", chat_id=ADMIN, text=f"🎬 릴스 샘플 {n} 실패({type(e).__name__}) — 다음 편은 다음 실행에")
+
+
+def licensed():
+    """릴스에 쓰는 곡 = 출처(page)·라이선스가 docs/reels/MUSIC.md에 기록된 곡만(10/24 Cowork '상업 이용 무료 라이선스 곡만') — 봇에 보낸 음악(출처 없음)은 X."""
+    return [m for m in load(MUSIC, []) if m.get("page") and m.get("url")]
+
+
+def song_of(kst, k=0):
+    """오늘 차례 곡(+k — 샘플마다 다르게) -> music.json 항목 또는 None."""
+    mus = licensed()
+    return mus[(kst.tm_yday + k) % len(mus)] if mus else None
+
+
+def bgm(kst, k=0):
+    """오늘 차례 1곡(song_of) -> 파일 경로. 없거나 못 받으면 None(무음 릴스).
+    url = Pixabay 음원(Claude가 고름): 처음 1번만 받아 Actions 캐시 music/에 보관(공개 저장소엔 안 올림 — 음원 단독 재배포 금지)."""
+    m = song_of(kst, k)
+    if not m:
+        return None
+    try:
+        path = os.path.join("music", hashlib.sha1(m["url"].encode()).hexdigest()[:12] + ".mp3")
+        if not os.path.exists(path):
+            with urllib.request.urlopen(urllib.request.Request(m["url"], headers={"User-Agent": UA}), timeout=60) as r:
+                data = r.read()
+            os.makedirs("music", exist_ok=True)
+            open(path, "wb").write(data)
         return path
     except Exception as e:
         print("bgm", repr(e))
@@ -3437,9 +3552,9 @@ def playlist(seen):
     if all(m.get("sent") for m in mus):
         return
     kst = time.gmtime(time.time() + 9 * 3600)
-    today = kst.tm_yday % len(mus)
+    today = song_of(kst)
     tg("sendMessage", chat_id=ADMIN, text=f"🎵 릴스 배경음악 플레이리스트 ({kst.tm_mon}/{kst.tm_mday} 갱신, {len(mus)}곡)\n\n"
-       + "\n".join(f"{i}. {m['name']}" + (" ← 오늘 릴스" if i - 1 == today else "") for i, m in enumerate(mus, 1))
+       + "\n".join(f"{i}. {m['name']}" + (" ← 오늘 릴스" if m is today or m == today else "") + ("" if m.get("page") else " (출처 없음 — 릴스 X)") for i, m in enumerate(mus, 1))
        + "\n\n아래 곡을 누르면 재생돼요(다음 곡으로 이어서). Pixabay 콘텐츠 라이선스·Content ID 미등록 곡만")
     for m in mus:
         title, _, artist = m["name"].partition(" — ")
@@ -5977,7 +6092,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, gc_top, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, gc_top, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

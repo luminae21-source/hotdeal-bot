@@ -76,6 +76,7 @@ jobs:
           COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
           COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
           THREADS_TOKEN: ${{ secrets.THREADS_TOKEN }}
+          GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}  # 릴스 나레이션(Google Cloud Text-to-Speech — 진우가 GCP에서 키 만들어 Secrets에 직접, 'Text-to-Speech API만' 제한 권장 · 없으면 글자+음악)
           GOATCOUNTER_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}  # E 반응 점수(사이트 구매 클릭·딜 쪽 조회 읽기 — 진우가 GoatCounter API 키 Read statistics만 만들어 시크릿에 직접)
           IG_TOKEN: ${{ secrets.IG_TOKEN }}       # 인스타 자동 게시: 대시보드 '계정 추가' Instagram 토큰(IGAA…, 60일, 카드 사진) 또는 페이스북 페이지 토큰(EAA…, 릴스까지)
           IG_USER_ID: ${{ secrets.IG_USER_ID }}   # 인스타 프로페셔널 계정 ID(숫자)
