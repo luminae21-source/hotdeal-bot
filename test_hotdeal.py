@@ -5055,7 +5055,7 @@ H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS = (lambda m, **p: t35.append(p) or 
 json.dump([], open("ev35s.json", "w")); X35[44]["displayName"], X35[66]["displayName"] = "C 상품", "G 상품"
 assert H.TOSS_STEADY_HOURS == (10, 15, 20); time.time = lambda: TK("2026-10-25 15:05"); H.toss_solo(s35)
 (p35,) = t35; u35 = p35["reply_markup"]["inline_keyboard"][0][0]["url"]
-assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "💙 토스 특가 · 꾸준히 팔리는 상품 👍" in p35["text"] and p35["text"].startswith(f"<i>{H.TOSS_NOTE}") and "쿠팡" not in p35["text"], p35
+assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "💙 토스 · 꾸준히 팔리는 상품 👍" in p35["text"] and "토스 특가" not in p35["text"] and p35["text"].startswith(f"<i>{H.TOSS_NOTE}") and "쿠팡" not in p35["text"], p35
 assert ("지금은 특가 아님 · 특가 때 8,000원" if u35.endswith("C") else "지금은 특가 아님 · 특가 때 5,000원") in p35["text"], p35["text"]
 assert f"tb_{id35[u35[-1]] * 10}" in s35 and H.th_steady(H.plain_of(p35["text"].split("\n\n", 1)[1]))  # 3일 간격 · 👍 꾸준템(Threads 순서 규칙)
 t35.clear(); H.toss_solo(s35); assert not t35  # 그 시각 1번
@@ -5946,4 +5946,12 @@ s54 = {"sold_1": {"t": TK("2026-10-24 13:00"), "k": "ev", "url": "https://toss.s
 time.time = lambda: TK("2026-10-24 15:35")
 assert sorted(c["n"] for c in H.wx_deals(s54, ["견과", "과자", "젤리", "초코"])) == ["어제 견과 30봉", "어제 토스 초코"]  # 오늘 나간 그래놀라·토스 젤리 X
 H.POSTS, H.HAS_TOSS, H.toss, time.time = sv54
+# 9-55) (10/24 17:5x 진우) 토스 꾸준템(👍 = 특가 아님) 머리 줄 = '💙 토스 · 꾸준히 팔리는 상품 👍' — 특가 글은 '💙 토스 특가 · …' 그대로 · 채널·Threads·사이트(제목 읽기)·인스타 카드 배지 같은 규칙
+assert H.mall_head("toss", "꾸준히 팔리는 상품", "👍") == "💙 토스 · 꾸준히 팔리는 상품 👍" and H.mall_head("toss", "생필품 베스트 3위", "🔥") == "💙 토스 특가 · 생필품 베스트 3위 🔥" and H.mall_head("coupang", "꾸준히 팔리는 상품", "👍") == "🚀 쿠팡 로켓 · 꾸준히 팔리는 상품 👍"
+th55 = H.toss_th("꾸준히 팔리는 상품", "수세미 10개", "9,000원", ["지금은 특가 아님 · 특가 때 8,000원"], "https://toss.shopping/_m/S", "👍")
+assert "\n💙 토스 · 꾸준히 팔리는 상품 👍\n" in th55 and "토스 특가" not in th55  # Threads
+x55 = f"{H.TOSS_NOTE}\n\n💙 토스 · 꾸준히 팔리는 상품 👍\n수세미 10개\n9,000원\n지금은 특가 아님 · 특가 때 8,000원"
+assert S.title_of(x55) == "[토스] 수세미 10개 (9,000원)" and S.icon_of(x55) == "👍" and S.shop_of({"text": x55, "url": "https://toss.shopping/_m/S"}) == "toss" and H.is_toss("", x55)  # 사이트·리스트가 제목·몰·아이콘 그대로 읽음
+assert H.ig_items({}, [{"t": "2026-10-24 15:00", "text": x55, "url": "https://toss.shopping/_m/S"}], photos=False)[0]["badge"] == "💙 토스" and \
+    H.ig_items({}, [{"t": "2026-10-24 15:00", "text": x55.replace("💙 토스 · 꾸준히 팔리는 상품 👍", "💙 토스 특가 · 생필품 베스트 3위 🔥"), "url": "https://toss.shopping/_m/S"}], photos=False)[0]["badge"] == "💙 토스 특가"  # 인스타 카드 배지
 print("OK: 모든 셀프체크 통과")

@@ -743,7 +743,7 @@ TOSS_TAG = r"\[토스(?:쇼핑)?\]"  # 토스 딜 제목 [몰] — 10/18 진우 
 
 def is_toss(url, text=""):
     """토스 딜인지: 쉐어링크(toss.shopping·toss.im) 또는 제목이 [토스]·[토스쇼핑](몰별 틀 = '💙 토스 특가' 머리 줄)."""
-    return bool(toss_share(url or "") or re.search(r"(^|\n)(?:(?:\[광고\][^\n]*\n)?[^\n]*" + TOSS_TAG + "|💙 토스 특가)", text[:400]))
+    return bool(toss_share(url or "") or re.search(r"(^|\n)(?:(?:\[광고\][^\n]*\n)?[^\n]*" + TOSS_TAG + "|💙 토스 특가|💙 토스 · )", text[:400]))
 
 
 STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)(?![\d,.]*\s*[천만]?\s*(?:원|%))(?:\s*개)?"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'한 달 1만명+'·'리뷰 1,969(개)'·'리뷰 1.6만' — 쿠팡은 만 단위가 많음, 10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 만원·% 숫자 X
@@ -751,6 +751,7 @@ steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만
 CP_ROCKET = r"(?<!비)로켓(?!\s*(?:배송)?\s*[은는이가도]?\s*(?:아님|아니|아닌|안\s*[돼됨되]|불가|미적용|X|x|없)|\s*와우)|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님·이 아닌·미적용'·'비로켓'·'로켓와우'(멤버십) X — 10/22·10/23 리뷰)
 CP_OLD = r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)"  # 10/23 전 로켓 근거 없는 쿠팡 머리 줄('🚀 쿠팡 · … 🔥') — 새로 내보낼 땐 📦(예약·Threads), 이미 올라간 글은 그대로
 CP_PLAIN = ("📦 쿠팡", "📦 쿠팡에서")  # 10/23 진우: 로켓 근거 없는 쿠팡 글 = 📦(🚀는 로켓으로 오해) — 머리 줄·구매 버튼(Threads·인스타 배지도). 로켓 = '🚀 쿠팡 로켓' 그대로
+TOSS_STEADY_HEAD = "💙 토스"  # 10/24 17:5x 진우: 토스 꾸준템(👍 = 특가 아님) 머리 줄 = '💙 토스 · 꾸준히 팔리는 상품 👍'(특가 글은 '💙 토스 특가 · …' 그대로) — 채널·Threads·사이트·인스타 카드 같은 규칙
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
 
@@ -782,7 +783,7 @@ def buy_btn(title, url, plain=None):
 
 def mall_head(mall, src, icon, rocket=True):
     """몰별 머리 줄: '💙 토스 특가 · {출처} 🔥' / '🚀 쿠팡 로켓 · {각도} 🛒'(출처·각도 모르면 칸 없이). 로켓 근거 없는 쿠팡 = '📦 쿠팡 · …'(10/22 진우 '사실 아닌 표기 X' · 10/23 🚀 -> 📦)."""
-    return f"{MALLS[mall][0] if rocket or mall != 'coupang' else CP_PLAIN[0]}{f' · {src}' if src else ''} {icon}"
+    return f"{TOSS_STEADY_HEAD if mall == 'toss' and icon == '👍' else MALLS[mall][0] if rocket or mall != 'coupang' else CP_PLAIN[0]}{f' · {src}' if src else ''} {icon}"  # 토스 👍 꾸준템 = '특가' X(10/24 진우)
 
 
 def mall_body(mall, src, icon, name, price, lines, rocket=True):
@@ -3500,7 +3501,7 @@ def ig_items(seen, ps, photos=True):
         main, _, ship = price.partition("/")
         mall = mall_of(p.get("url"), t)
         cond, dr = mall_dr(plain)
-        badge = "💙 토스 특가" if mall == "toss" else (MALLS["coupang"][0] if cp_rocket(plain) else CP_PLAIN[0]) if mall == "coupang" else store_tag(t)
+        badge = (TOSS_STEADY_HEAD if icon_of(plain) == "👍" else MALLS["toss"][0]) if mall == "toss" else (MALLS["coupang"][0] if cp_rocket(plain) else CP_PLAIN[0]) if mall == "coupang" else store_tag(t)
         arrive = re.search(r"(내일|모레|오늘)(?:\s*\([월화수목금토일]\))?\s*(?:새벽\s*)?도착", plain)
         out.append({"name": name, "short": re.sub(r",?\s*\d+\s*(?:개|팩|입|매|롤|병|캔|봉)\s*$", "", name).strip() or name, "price": main.strip(),
                     "chip": (p.get("unit") or "").split(" (")[0].strip() or ("와우 할인" if "와우" in cond else f"{dr}%↓" if dr and not cond else ""),
