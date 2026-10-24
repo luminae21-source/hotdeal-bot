@@ -6439,19 +6439,21 @@ P62 = [{"t": "2026-10-24 10:00", "text": "🔥 [토스] 매일두유 99.9 190ml 
        {"t": "2026-10-24 11:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (8,990원/무료)\n\n좋아요", "url": "https://link.coupang.com/a/x", "hook": "계란 개당 300원", "pts": ["30구"]}]
 r62 = H.reel_say(P62, k62)
 assert r62[0] == ("오늘 밤 12시 마감 포함 · 오늘의 가성비 TOP2", "오늘 밤 12시 마감 포함, 오늘의 가성비 탑 투") and r62[-1] == ("핫딜픽에서 더 보기", "핫딜픽에서 더 보세요") and len(r62) == 4, r62
-assert r62[1] == ("매일두유 99.9 190ml 24팩 · 12,900원 · 팩당 538원", "매일두유 99.9 190밀리리터 24팩, 12,900원, 팩당 538원") and r62[2][0] == "곰곰 특란 30구 · 8,990원", r62  # 단위가격 없으면 이름·가격만
+assert r62[1] == ("매일두유 · 12,900원 · 팩당 538원", "매일두유, 12,900원, 팩당 538원") and r62[2][0] == "곰곰 특란 · 8,990원", r62  # 이름 = 수량 낱말 빼고 짧게 · 단위가격 없으면 이름·가격만
+assert H.reel_say(P62, k62, unit=False)[1] == ("매일두유 · 12,900원", "매일두유, 12,900원")
+assert H.reel_say([{"t": "2026-10-24 10:00", "text": "🔥 [쿠팡] 퍼실 딥클린 파워젤 액체세제 1.5L 2개 (9,900원/무료)", "url": "https://x"}], k62, nmax=8)[1][0] == "퍼실 딥클린 · 9,900원"  # 이름 더 짧게(8자)
 assert not H.reel_say(P62[1:], k62)[0][0].startswith("오늘 밤")  # 마감 없으면 TOPn만
 nm62 = lambda title: H.reel_say([{"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {title} (9,900원/무료)", "url": "https://x"}], k62)[1][0].split(" · ")[0]
-assert [nm62(x) for x in ("퍼실 딥클린 파워젤 액체세제 1.5L 2개", "생수 지리산 물하나 무라벨 2L X 24개", "제주 삼다수 무라벨 생수 2L 24병 + 500ml 20병", "곰곰 특란 30구")] \
-    == ["퍼실 딥클린 파워젤 액체세제 1.5L 2개", "생수 지리산 물하나 무라벨 2L 24개", "제주 삼다수 무라벨 생수", "곰곰 특란 30구"]  # 24자 안 = 그대로(X·+ 뺌) · 길면 수량 낱말은 다 빼고(일부만 남기면 가격이 그 양인 것처럼 들림)
-assert C62.reel_plan(None, 3) == [3.0] * 5 and [round(x, 2) for x in C62.reel_plan(None, 1)] == [5.0] * 3 and [round(x, 2) for x in C62.reel_plan([2.6, 3.6, 3.9, 3.1, 1.4], 3)] == [3.3, 4.3, 4.6, 3.8, 3.0]
+assert [nm62(x) for x in ("퍼실 딥클린 파워젤 액체세제 1.5L 2개", "생수 지리산 물하나 무라벨 2L X 24개", "제주 삼다수 무라벨 생수 2L 24병 + 500ml 20병", "곰곰 특란 30구", "1+1 2080 치약")] \
+    == ["퍼실 딥클린 파워젤", "생수 지리산 물하나 무라벨", "제주 삼다수 무라벨 생수", "곰곰 특란", "치약"]  # 이름 = 수량·용량 낱말 빼고 14자 안(딜 한 장 ~3초 — 일부 수량만 남기면 가격이 그 양인 것처럼 들림)
+assert C62.reel_plan(None, 3) == [3.0] * 5 and [round(x, 2) for x in C62.reel_plan(None, 1)] == [5.0] * 3 and [round(x, 2) for x in C62.reel_plan([2.6, 3.6, 3.9, 3.1, 1.4], 3)] == [3.15, 4.15, 4.45, 3.65, 3.0]
 assert C62.duck_expr([]) == "1" and C62.duck_expr([(1, 2)]).startswith("1-0.749*clip(") and C62.DUCK == round(10 ** (-12 / 20), 3)  # 나레이션 동안 -12dB
 rt62 = []
 H.tts = lambda text, rate=H.TTS_RATE: rt62.append(round(rate, 3)) or wav62(7 / rate)  # 장마다 7초 -> 빠르게(최대 1.4배) 1번 다시 -> 그래도 넘음 = 나레이션 X
 with contextlib.redirect_stdout(o62): assert H.reel_voice(r62) is None
 assert rt62 == [1.1] * 4 + [1.4] * 4, rt62
 rt62.clear(); H.tts = lambda text, rate=H.TTS_RATE: rt62.append(round(rate, 3)) or wav62({"h": 2.0, "o": 1.3}.get(text, 4.5) * 1.1 / rate)  # 딜 4.5초 × 3 = 21.6초 -> 말만 줄여 계산 -> 1.30배로 19.5초
-assert H.reel_voice([("h", "h"), ("a", "a"), ("b", "b"), ("c", "c"), ("o", "o")]) and 1.29 < rt62[-1] < 1.32, rt62
+assert H.reel_voice([("h", "h"), ("a", "a"), ("b", "b"), ("c", "c"), ("o", "o")]) and 1.24 < rt62[-1] < 1.27, rt62
 H.tts = lambda text, rate=H.TTS_RATE: b"not-wav"
 with contextlib.redirect_stdout(o62): assert H.reel_voice(r62) is None  # 깨진 음성 = 예외 X, 글자 + 음악
 rt62.clear(); H.tts = lambda text, rate=H.TTS_RATE: rt62.append(text) and None
@@ -6484,6 +6486,8 @@ H.E.pop("GOOGLE_TTS_KEY"); H.make_reel(P62, k62, "x.mp4")
 H.E["GOOGLE_TTS_KEY"] = "k"; H.tts = lambda text, rate=H.TTS_RATE: None; H.make_reel(P62, k62, "x.mp4")
 H.tts = lambda text, rate=H.TTS_RATE: wav62(2); p62, c62, s62 = H.make_reel(P62, k62, "x.mp4")
 assert said62[0] is None and said62[1] is None and len(said62[2]) == 4 and s62 and c62.startswith(H.ig_notes(P62)) and p62 == "x.mp4"  # 캡션 맨 앞 = 대가성 문구
+H.tts = lambda text, rate=H.TTS_RATE: wav62((16 if "당" in text else 2) / rate); H.make_reel(P62, k62, "x.mp4")  # 단위가격 든 줄이 너무 길면 단위가격 빼고 다시 = 나레이션 있음
+assert [s for s, _ in said62[3]][1] == "매일두유 · 12,900원", [s for s, _ in said62[3]]
 # 샘플 3편: 최근 4일 중 딜 있는 날 3개 × TOP3 · 실행마다 1편 · 곡 편마다 다르게 · 관리자만 · 키 없었으면 키 생길 때 바로 1벌 더 · 키 있는데 실패면 하루 뒤(최대 2번) · 1편 실패 = 알림, 다음 편은 다음 실행
 H.POSTS = "posts62.json"; json.dump([{"t": f"2026-10-{d} 10:00", "text": f"🔥 [쿠팡] 상품{d}{k} (1,000원/무료)", "url": f"https://link.coupang.com/a/{d}{k}", "s": 5} for d in ("21", "22", "23", "24") for k in "ab"], open("posts62.json", "w"), ensure_ascii=False)
 mk62, tv62, ok62 = [], [], [True]
@@ -6495,13 +6499,13 @@ H.make_reel, H.tg_video, H.tg = mkr62, (lambda path, cap: tv62.append(cap)), (la
 run62 = lambda hm, n=1: [time.__setattr__("time", lambda: TK(f"2026-10-{hm}")) or rs0(s62) for _ in range(n)]
 run62("25 00:30", 4)
 assert [x[:2] for x in mk62] == [(2, "10-24"), (2, "10-23"), (2, "10-22")] and len({x[2] for x in mk62}) == 3 and len(tv62) == 3, (mk62, tv62)  # 실행마다 1편 · 곡 다름 · 3편 뒤 끝
-assert all("나레이션 X" in c and c.endswith("CAP") and "공개 X" in c for c in tv62) and s62["reel_v2"]["n"] == 3 and s62["reel_v2"]["key"] is False
+assert all("나레이션 X" in c and c.endswith("CAP") and "공개 X" in c for c in tv62) and s62["reel_v3"]["n"] == 3 and s62["reel_v3"]["key"] is False
 H.E["GOOGLE_TTS_KEY"] = "k"; run62("25 01:00", 4)
-assert len(tv62) == 6 and all("나레이션 O" in c for c in tv62[3:]) and s62["reel_v2"]["tts"] is True; run62("27 01:00", 2); assert len(tv62) == 6  # 키 생기면 바로 1벌 더, 그다음 X
-run62("31 01:00", 1); assert len(tv62) == 6 and time.time() - s62["reel_v2"]["t"] < 3 * 86400  # 실행마다 t 새로 = seen.json 3일 정리에도 안 지워짐(샘플 또 X)
+assert len(tv62) == 6 and all("나레이션 O" in c for c in tv62[3:]) and s62["reel_v3"]["tts"] is True; run62("27 01:00", 2); assert len(tv62) == 6  # 키 생기면 바로 1벌 더, 그다음 X
+run62("31 01:00", 1); assert len(tv62) == 6 and time.time() - s62["reel_v3"]["t"] < 3 * 86400  # 실행마다 t 새로 = seen.json 3일 정리에도 안 지워짐(샘플 또 X)
 s62.clear(); tv62.clear(); ok62.append("fail"); run62("25 02:00", 3); run62("25 23:00", 2); assert len(tv62) == 3  # 키 있는데 실패 = 하루 안엔 다시 X
 run62("26 03:00", 3); run62("27 04:00", 3); n62 = len(tv62); run62("28 05:00", 3)
-assert n62 == len(tv62) == 3 + 2 + 1 and s62["reel_v2"]["r"] == 2, (len(tv62), s62)  # 하루 뒤 다시 최대 2번(그 뒤 X) · 한 벌 = 그때 최근 4일 중 딜 있는 날
+assert n62 == len(tv62) == 3 + 2 + 1 and s62["reel_v3"]["r"] == 2, (len(tv62), s62)  # 하루 뒤 다시 최대 2번(그 뒤 X) · 한 벌 = 그때 최근 4일 중 딜 있는 날
 s62.clear(); tv62.clear(); ok62[0] = False; run62("25 02:00", 1); ok62[0] = True; run62("25 02:15", 1)
 assert [p["text"] for m, p in sent if m == "sendMessage" and "샘플" in p.get("text", "")] == ["🎬 릴스 샘플 1 실패(OSError) — 다음 편은 다음 실행에"] and len(tv62) == 1 and "샘플 2/3" in tv62[0]  # 1편 실패 = 알림 · 다음 실행엔 다음 편
 assert "reel_samples" in inspect.getsource(H.main) and "GOOGLE_TTS_KEY: ${{ secrets.GOOGLE_TTS_KEY }}" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()

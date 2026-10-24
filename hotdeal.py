@@ -3430,9 +3430,10 @@ def say_ko(s):
     return re.sub(r"\s+", " ", re.sub(r"(\s*,)+", ",", s)).strip(" ,")
 
 
-def reel_say(top, kst):
+def reel_say(top, kst, unit=True, nmax=14):
     """릴스 나레이션 대본(10/24 Cowork·진우 — 사실만, 효능·과장·'써보니' X) -> [(자막, 읽을 말)] 표지·딜마다·끝.
-    표지 = 우리 데이터 한 줄('오늘 밤 12시 마감 포함' — 사이트 '오늘 마감'과 같은 판단 + 오늘의 가성비 TOPn) · 딜 = 이름, 가격, 단위가격 · 끝 = 핫딜픽에서 더 보기."""
+    표지 = 우리 데이터 한 줄('오늘 밤 12시 마감 포함' — 사이트 '오늘 마감'과 같은 판단 + 오늘의 가성비 TOPn) · 딜 = 짧은 이름(nmax자), 가격, 단위가격(unit=False면 빼고) · 끝 = 핫딜픽에서 더 보기.
+    딜 한 장 ~3초(10/24 첫 실행: 긴 이름이면 1.4배로도 20초 넘음) -> 이름 = 수량·용량 낱말 빼고 nmax자 안(일부 수량만 남으면 가격이 그 양인 것처럼 들림 — 단위가격이 따로)."""
     import cards
     day = time.strftime("%Y-%m-%d", kst)
     head = ("오늘 밤 12시 마감 포함 · " if any(day_end(p, day) for p in top) else "") + f"오늘의 가성비 TOP{len(top)}"
@@ -3440,11 +3441,9 @@ def reel_say(top, kst):
     for p in top:
         it = cards._norm(card_item(p)[0])
         w = [x for x in re.sub(r"\([^)]*\)|\[[^\]]*\]", " ", it["name"]).split() if not re.fullmatch(r"[+xX×*,·/]+", x)]
-        if len(" ".join(w)) > 24:  # 길면 수량·용량 낱말은 다 빼고(일부만 남으면 가격이 그 양인 것처럼 들림 — 단위가격이 따로) 앞에서 낱말 단위로
-            w = [x for x in w if not re.search(r"\d", x)] or w
-            w = w[:next((k for k in range(len(w), 0, -1) if len(" ".join(w[:k])) <= 24), 1)]
-        name = " ".join(w)
-        parts = [x for x in (name, it["main"], it["unit"]) if x]
+        w = [x for x in w if not re.search(r"\d", x)] or w[:1]
+        name = " ".join(w[:next((k for k in range(len(w), 0, -1) if len(" ".join(w[:k])) <= nmax), 1)])
+        parts = [x for x in (name, it["main"], it["unit"] if unit else "") if x]
         rows.append((" · ".join(parts), say_ko(", ".join(parts))))
     return rows + [("핫딜픽에서 더 보기", "핫딜픽에서 더 보세요")]
 
@@ -3479,7 +3478,11 @@ def make_reel(top, kst, out, k=0):
     import cards
     fill_reel(top)  # ✅로 올린 글·예전 글은 릴스 재료가 없음 -> 여기서 채움(딜 카드 때 채웠으면 그대로)
     music, song = bgm(kst, k), song_of(kst, k)
-    voice = reel_voice(reel_say(top, kst)) if E.get("GOOGLE_TTS_KEY") else None
+    voice = None
+    for kw in ({}, {"nmax": 8}, {"unit": False}) if E.get("GOOGLE_TTS_KEY") else ():  # 20초 넘으면 이름 더 짧게 -> 그래도 넘으면 단위가격 빼고
+        voice = reel_voice(reel_say(top, kst, **kw))
+        if voice:
+            break
     path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice)  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
@@ -3492,13 +3495,13 @@ def make_reel(top, kst, out, k=0):
 def reel_samples(seen):
     """릴스 새 틀 샘플 3편(10/24 Cowork·진우 '나레이션·움직임·배경음악'): 관리자에게만(공개 X — REEL_PUBLIC은 진우 OK 뒤), 실행마다 1편(작업 6분 제한).
     한 벌 = 최근 4일 중 딜 있는 날 3개 × 그날 TOP3, 곡은 편마다 다르게. 처음 1벌 -> 나레이션이 안 됐으면 키가 새로 생길 때 바로, 키가 있었는데 실패였으면 하루 뒤 다시(최대 2번)."""
-    v, key, now = seen.get("reel_v2"), bool(E.get("GOOGLE_TTS_KEY")), time.time()
+    v, key, now = seen.get("reel_v3"), bool(E.get("GOOGLE_TTS_KEY")), time.time()  # v3 = 10/25 대본 줄인 뒤 새 한 벌(v2 첫 편은 20초 넘어 나레이션 X)
     if v:
         v["t"] = now  # seen.json은 t가 3일 지난 칸을 버림 -> 실행마다 새로(안 그러면 3일마다 샘플을 또 보냄) · 한 벌 만든 때 = t0
     if v and v.get("n", 0) >= 3 and (v.get("tts") or not key or v.get("key") and (now - v["t0"] < 86400 or v.get("r", 0) >= 2)):
         return
     if not v or v.get("n", 0) >= 3:  # 새 한 벌(r = 키가 있었는데 나레이션 실패로 다시 — 최대 2번)
-        v = seen["reel_v2"] = {"t": now, "t0": now, "key": key, "tts": False, "n": 0, "r": v.get("r", 0) + 1 if v and v.get("key") else 0}
+        v = seen["reel_v3"] = {"t": now, "t0": now, "key": key, "tts": False, "n": 0, "r": v.get("r", 0) + 1 if v and v.get("key") else 0}
     posts, n = load(POSTS, []), v["n"] + 1
     days = [time.gmtime(v["t0"] + 9 * 3600 - d * 86400) for d in range(4)]
     sets = [x for x in ((k, [p for _, p in card_order(posts, time.strftime("%Y-%m-%d", k))][:3]) for k in days) if x[1]][:3]
