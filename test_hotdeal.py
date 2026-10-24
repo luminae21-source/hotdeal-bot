@@ -8,6 +8,7 @@ import hotdeal as H
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
+cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
@@ -1022,7 +1023,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1150,7 +1151,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -1480,7 +1481,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -2636,7 +2637,7 @@ H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "x"}]; i_sent
 assert not i_sent and "tsolo_20261014_13" in s9k  # 7점↑ 없으면 그 시각은 끝(다시 안 물음)
 time.time = lambda: TK("2026-10-14 08:05"); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "개당 사실"}]; i_sent.clear(); H.toss_solo({})  # 8시 = 순위 · 하루특가는 9시 전 X
 assert "💙 토스 특가 · 많이 팔린 순위" in i_sent[0][1]["text"]
-assert "toss_relink, toss_picks, toss_solo, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
+assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
 # 9-2j) 10/15 진우 '꾸준하게': 8~23시 채널 딜 글이 마지막 글 뒤 TOSS_GAP_MIN(30)분 넘게 없으면 그 실행에 토스 1개 더(같은 후보·틀·거르기) — 못 찾으면 30분 뒤 다시(API·Claude 아낌),
 #       진우 예약 앞뒤 10분은 쉼, 마지막 글 = tg() 채널 올리기 기록(재오픈 답장·📋 모아보기 X, 다른 채팅 X) · seen(지난 실행) · posts.json
 assert tgm0 == 30 and H.TOSS_EV_PAD == 600; H.TOSS_GAP_MIN, H.RUN["ch_last"] = tgm0, 0
@@ -5351,7 +5352,7 @@ def http41(url, body=None, headers=None, method=None):
         return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if any("/333" in u for u in us) else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://coupa.ng/b" + re.search(r"/products/(\d+)", u)[1]} for u in us]})
     if "/products/search?" in url:
         return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productName": "곰곰 특란, 30구, 1개", "productPrice": 1}, {"productId": 111, "productName": "곰곰 특란, 30구, 2개", "productPrice": 14000},
-                                                                 {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490, "productImage": "https://ads-partners.coupang.com/image1/t111"}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
+                                                                 {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490, "productImage": "https://ads-partners.coupang.com/image1/t111", "isRocket": True}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
     if "linkprice" in url:
         return json.dumps({"result": "F", "url": ""})
     raise AssertionError(url)
@@ -5399,16 +5400,17 @@ for k41 in (True, False):
 #   · 가장 오래전에 확인한 글 먼저 · 오류 = 오늘은 건너뜀(어제 가격 그대로) · 못 찾으면 로그에 pid·검색어·결과 위 3개(pid 있음 = 옵션 다름 / pid 없음)
 seen41 = reset41(True); H.cp_links(seen41); H.events(seen41); c41.clear()
 ch0, H.CP_CHK_HOUR = H.CP_CHK_HOUR, 11; H.cp_price(seen41); assert "cpq" not in seen41 and not c41; H.CP_CHK_HOUR = ch0  # 10시 < 11시
-H.cp_price(seen41); assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"]} and len(c41) == 1 and seen41["cpq"]["i"] == {EG41: "https://ads-partners.coupang.com/image1/t111"}  # 실행마다 검색 1번 · 상품 사진(10/24 개편 — 추가 호출 X)
+H.cp_price(seen41); assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"]} and len(c41) == 1 and seen41["cpq"]["i"] == {EG41: "https://ads-partners.coupang.com/image1/t111"} and seen41["cpq"]["r"] == {EG41: True}  # 실행마다 검색 1번 · 상품 사진(10/24 개편 — 추가 호출 X) · 로켓 근거(isRocket — E)
 H.RUN.pop("cpn"); o41 = io.StringIO(); import contextlib
 with contextlib.redirect_stdout(o41): H.cp_price(seen41)
 assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-06 10:00"], "https://coupa.ng/b222": [0, "2026-10-06 10:00"]} and [u.split("?")[0] for u, _ in c41] == [H.CP_HOST + H.CP_BASE + "/products/search"] * 2
+assert seen41["cpq"]["r"] == {EG41: True, "https://coupa.ng/b222": False}  # 못 찾음 = 로켓 근거 없음
 assert "cp price 못 찾음 pid 222 · 검색어 '새 상품' · pid 없음 · 결과 0개" in o41.getvalue() and "sk" not in o41.getvalue().replace("검색", ""), o41.getvalue()  # 원인 찾기 로그(키·주소 쿼리 X)
 assert any(quote("곰곰 특란 30구") in u and u.endswith("&limit=10") for u, _ in c41)
 c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘은 끝
 assert H.cp_same("햇반 24개", "햇반 백미밥, 210g, 24개") and H.cp_same("리큐 리필 2.1L 4개", "리큐 진한겔 리필, 2.1L, 4개") and not H.cp_same("곰곰 특란 30구", "곰곰 특란, 30구, 2개") and not H.cp_same("에어팟 5", "에어팟 5, 2개")
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
-assert (e41["now"], e41["chk"], e41["st"], e41["img"]) == ("7,490원", "10/6 10시", "hot", "https://ads-partners.coupang.com/image1/t111")  # 사이트 ⏳/🔥 = 같은 값 · 사진 = 글 img(사이트 썸네일)
+assert (e41["now"], e41["chk"], e41["chkt"], e41["st"], e41["img"]) == ("7,490원", "10/6 10시", "2026-10-06 10:00", "hot", "https://ads-partners.coupang.com/image1/t111")  # chkt = 보이는 가격의 확인 시각 원문(E 재게시 24시간)  # 사이트 ⏳/🔥 = 같은 값 · 사진 = 글 img(사이트 썸네일)
 ci41 = seen41["cpq"].pop("i"); H.own_end(seen41); assert next(p for p in json.load(open("posts.json")) if p["url"] == EG41)["img"] == ci41[EG41]; seen41["cpq"]["i"] = ci41  # 캐시가 비어도 글의 사진은 그대로
 seen41["cpq"]["m"][EG41][1] = "2026-10-06 09:00"; H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시")  # Cowork 확인(09:30)이 더 새것이면 그것
@@ -5797,4 +5799,92 @@ H.http = lambda url, *a, **k: ""; s51c = {"bundles": {"t": TK("2026-10-24 10:35"
 json.dump({"2026-10-23": [0]}, open(H.PICKS_FILE, "w")); H.pick_post({}); assert len(p51) == 1  # 오늘 픽 없음(사이트가 아직 안 고름) = X
 H.http, H.th_post, time.time, H.POSTS = sv51[:4]; H.PICKS_FILE = sv51[5]; H.E.pop("THREADS_TOKEN") if sv51[4] is None else H.E.update(THREADS_TOKEN=sv51[4])
 assert "pick_post, " in open(H.__file__).read().split("for step in (", 1)[1].split("):\n", 1)[0] and "pick_post" in H.ALERT_STEPS  # 메인 실행 단계 · 실패 알림
+# 9-52) E(10/24 진우 '반응 좋은 품목 자동 재게시 — GoatCounter 클릭·파트너스 리포트로 잘 된 쿠팡 품목 3일마다 재게시 순서 앞으로'):
+#   cp_score = 하루 1번 5시~ · 주문 리포트 D-14~D-1(events pid와 같은 상품만) · GoatCounter 구매 클릭(buy/주소+경로, 옛 buy/몰 X)·딜 쪽 조회 -> seen만(로그에 숫자 X) · 상한 = 다음 실행, 오류 = 어제 값
+#   cp_repost = 12·18시 칸(2시간 안) 1개 · 진우 쿠팡(파트너스·채널 글) 🔥·보이는 가격 확인(chkt) 24시간 안·같은 상품(url·pid) 채널 글/예약 앞뒤 3일 X · 주문 > 클릭 > 조회 > top.json(신호 없으면 X)
+#   · 새 글(대가성 문구·확인 가격·'처음 소개 때' = 진짜 첫 🔥 글만·📦/🚀 isRocket만·로켓배송 X) + posts re(진열 상태 그대로) -> Threads 맨 앞 · 봇 재게시 3일 안 Cowork 재게시 예약 = 건너뜀 + 관리자 알림
+sv52 = (H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.TOP, H.HAS_CP, H.coupang, dict(H.E))
+d52 = tempfile.mkdtemp(); cwd52 = os.getcwd(); os.chdir(d52)
+H.POSTS, H.EVENTS, H.TOP, H.CPRE_HOURS, H.CPS_HOUR = "posts.json", "events.json", "top.json", (12, 18), 5
+U52 = {k: f"https://link.coupang.com/a/{k}" for k in "ABCDEFGHJK"}; U52["I"] = "https://naver.me/x52"
+own52 = lambda k, t="2026-10-20 10:00", ic="🔥", **x: {"t": t, "text": f"{ic} [{'네이버' if k == 'I' else '쿠팡'}] 상품{k} 2kg (9,900원)", "url": U52[k], "own": 1, "mid": 100 + ord(k), "st": "hot", "now": "9,900원", "chk": "10/24 9시",
+                                                      "chkt": "2026-10-24 09:10", "tgt": "9,900원", "cat": "food", **x}
+P52 = [own52(k) for k in "ABCDE"] + [own52("F", st="wait"), own52("G", chkt="2026-10-23 06:00", chk="10/23 6시"), own52("H", mid=None, shelf=1), own52("I")]  # F 대기 · G 확인 30시간 전(쿠폰가 옛 확인 = own_end chkt) · H 사이트 진열만 · I 네이버(신호·확인 다 있음)
+json.dump(P52, open("posts.json", "w"), ensure_ascii=False)
+EV52 = [{"at": "2026-10-20 10:00", "url": U52[k], "text": "x", "pid": str(110 + n)} for n, k in enumerate("ABCDEFGHIJK")] + [{"at": "2026-10-24T09:00", "url": "https://toss.shopping/_m/bad", "text": "시각 모양 틀림"}]
+json.dump(EV52, open("events.json", "w")); json.dump({"items": [{"url": U52["D"]}, {"url": U52["G"]}]}, open("top.json", "w"))
+sent52 = []
+H.tg = lambda m, **p: sent52.append((m, p)) or {"message_id": 900 + len(sent52), "text": H.plain_of(p.get("text", "")), "entities": []}
+url52 = lambda: [p["reply_markup"]["inline_keyboard"][0][0]["url"] for m, p in sent52 if m == "sendMessage" and p.get("chat_id") == H.CHANNEL]
+sc52 = {"o": {U52["A"]: 2, U52["G"]: 9, U52["I"]: 9}, "c": {U52["B"]: 3, U52["F"]: 9, U52["H"]: 9}, "v": {U52["C"]: 5}}
+s52 = {"cps": dict(sc52), "cpq": {"r": {}}}
+time.time = lambda: TK("2026-10-24 11:55"); H.cp_repost(s52); assert not sent52  # 12시 전
+time.time = lambda: TK("2026-10-24 12:05"); o52 = io.StringIO()
+with __import__("contextlib").redirect_stdout(o52): H.cp_repost(s52)
+(m52, p52), = sent52; x52 = p52["text"]
+assert m52 == "sendMessage" and H.plain_of(x52) == H.DISCLOSURE + "\n\n📦 쿠팡 · 🔁 다시 소개 🔥\n상품A 2kg\n9,900원 (10/24 9시 확인)\n💡 처음 소개 때 9,900원\n⚠️ 결제 전 최종가 확인" and "로켓배송" not in x52, x52  # 주문 = 1번 (G 주문 더 많아도 확인 30시간 · I 네이버 X)
+assert p52["reply_markup"]["inline_keyboard"] == [[{"text": "📦 쿠팡에서 9,900원", "url": U52["A"]}]] and o52.getvalue() == "cp repost 12: 상품A 2kg\n", o52.getvalue()  # 로그 = 이름만(점수·후보 수 X)
+r52 = json.load(open("posts.json"))
+assert r52[:-1] == P52 and {k: r52[-1].get(k) for k in ("url", "own", "re", "mid", "cat", "st", "now", "chkt")} == {"url": U52["A"], "own": 1, "re": 1, "mid": 901, "cat": "food", "st": "hot", "now": "9,900원", "chkt": "2026-10-24 09:10"} and r52[-1]["t"] == "2026-10-24 12:05"
+assert S.parse(S.title_of(r52[-1]["text"])) == ("쿠팡", "상품A 2kg", "9,900원")  # '(M/D H시 확인)'은 제목 가격 X — 이름·가격 그대로(사이트·검색어·다음 재게시)
+H.cp_repost(s52); time.time = lambda: TK("2026-10-24 13:50"); H.cp_repost(s52); assert len(sent52) == 1  # 칸마다 1번(13시도 12시 칸)
+time.time = lambda: TK("2026-10-24 18:05"); H.cp_repost(s52); assert url52()[-1] == U52["B"]  # A = 방금(3일 X) -> 클릭 1등 B (F 대기·H 진열만)
+# Cowork가 봇 재게시 3일 안에 같은 상품 재게시 예약 = 건너뜀 + 관리자 알림(두 번 X)
+json.dump(EV52 + [{"at": "2026-10-24 20:00", "url": U52["A"], "text": "x", "re": True, "deal": True}], open("events.json", "w")); time.time = lambda: TK("2026-10-24 20:05"); n52 = len(sent52); se52 = {}
+H.events(se52); assert len(url52()) == 2 and "ev_2026-10-24 20:00" in se52 and any(p.get("chat_id") == H.ADMIN and "건너뜀" in p["text"] for _, p in sent52[n52:]), sent52[n52:]
+json.dump(EV52, open("events.json", "w"))
+# 점수 없음 = top.json 순서(앞 것) · 🚀 = isRocket일 때만 · '처음 소개 때' = 진짜 첫 🔥 글만(🛒로만 나간 상품 X)
+fr52 = lambda day, ps: json.dump([{**p, "chkt": f"{day} 09:10", "chk": f"{int(day[5:7])}/{int(day[8:10])} 9시"} if p["url"] != U52["G"] else p for p in ps], open("posts.json", "w"), ensure_ascii=False)
+fr52("2026-10-25", P52); json.dump({"items": [{"url": U52["D"]}, {"url": U52["C"]}, {"url": U52["G"]}]}, open("top.json", "w"))
+time.time = lambda: TK("2026-10-25 12:05"); H.cp_repost({"cpq": {"r": {U52["D"]: True}}})
+assert sent52[-1][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡에서 9,900원", "url": U52["D"]} and "🚀 쿠팡 로켓 · 🔁 다시 소개 🔥" in sent52[-1][1]["text"]
+json.dump({"items": [{"url": U52["D"]}, {"url": U52["C"]}]}, open("top.json", "w")); time.time = lambda: TK("2026-10-25 18:05"); H.cp_repost({}); assert url52()[-1] == U52["C"]  # D = 방금(3일 X) -> top.json 다음(C)
+fr52("2026-10-25", [own52("J", ic="🛒")]); json.dump({"items": [{"url": U52["J"]}]}, open("top.json", "w"))
+time.time = lambda: TK("2026-10-25 19:30"); H.cp_repost({}); x52 = H.plain_of(sent52[-1][1]["text"]); assert "상품J" in x52 and "처음 소개" not in x52, x52  # 🛒로만 나간 상품 = 첫 🔥 글 없음
+fr52("2026-10-25", P52[:5]); n52 = len(sent52)
+time.time = lambda: TK("2026-10-25 18:05"); s52c = {}; H.cp_repost(s52c); assert len(sent52) == n52 and "cpre_20261025_18" in s52c  # E = 신호 없음 -> 안 올림(D·C는 3일 안)
+# 3일 경계: 봇 재게시 2.5일 뒤 X, 3.5일 뒤 O · 같은 pid 다른 링크 예약 = X · 시간당 상한·묶음 간격·예약 앞뒤 = 미룸(칸 기록 X)
+fr52("2026-10-27", P52[:5] + [{**own52("A"), "t": "2026-10-24 12:05", "re": 1}]); sA = {"cps": {"o": {U52["A"]: 9}}}
+json.dump({"items": []}, open("top.json", "w")); n52 = len(sent52)
+time.time = lambda: TK("2026-10-27 00:05"); H.CPRE_HOURS = (0,); H.cp_repost(sA); assert len(sent52) == n52 and "cpre_20261027_00" in sA  # 2.5일 = 후보 없음(신호 = A뿐)
+fr52("2026-10-28", P52[:5] + [{**own52("A"), "t": "2026-10-24 12:05", "re": 1}]); time.time = lambda: TK("2026-10-28 00:05"); H.cp_repost({"cps": {"o": {U52["A"]: 9}}}); assert url52()[-1] == U52["A"]  # 3.5일
+json.dump(EV52 + [{"at": "2026-10-27 20:00", "url": U52["K"], "text": "x", "pid": "110"}], open("events.json", "w")); n52 = len(sent52)
+fr52("2026-10-28", P52[:5]); H.cp_repost({"cps": {"o": {U52["A"]: 9}}}); assert len(sent52) == n52  # 같은 pid(110) 다른 링크 K를 Cowork가 어제 예약 = A도 X
+json.dump(EV52, open("events.json", "w")); H.CPRE_HOURS = (12, 18)
+n52 = len(sent52)
+cap52 = [{**own52("E"), "t": f"2026-10-28 11:{10 + m}", "mid": None} for m in range(H.HOUR_CAP)]
+fr52("2026-10-28", P52[:5] + cap52); time.time = lambda: TK("2026-10-28 12:05"); s52h = {"cps": {"o": {U52["B"]: 1}}}; o52 = io.StringIO()
+with __import__("contextlib").redirect_stdout(o52): H.cp_repost(s52h)
+assert len(sent52) == n52 and "cpre_20261028_12" not in s52h and o52.getvalue() == "cp repost 12: 미룸(진우 예약 앞뒤·묶음 간격·시간당 상한)\n"  # 시간당 상한
+fr52("2026-10-28", P52[:5]); s52f = {"cps": {"o": {U52["B"]: 1}}, "bundles": {"t": TK("2026-10-28 12:00"), "ts": [TK("2026-10-28 12:00")]}}; H.cp_repost(s52f); assert len(sent52) == n52 and "cpre_20261028_12" not in s52f  # 묶음 글 10분 안
+json.dump(EV52 + [{"at": "2026-10-28 12:10", "url": "https://toss.shopping/_m/z", "text": "y"}], open("events.json", "w")); H.cp_repost(s52f := {"cps": {"o": {U52["B"]: 1}}}); assert len(sent52) == n52  # 진우 예약 앞뒤 10분 = 쉼
+json.dump(EV52, open("events.json", "w")); H.cp_repost(s52f); assert url52()[-1] == U52["B"]  # 예약 지나면 같은 칸 안에 다시
+# cp_score: 주문 리포트(같은 pid만·D-14~D-1) + GoatCounter(Bearer · 상품 경로 클릭·딜 쪽 조회 · 옛 buy/몰 X) · 하루 1번 · 숫자 로그 X
+c52, h52 = [], []
+H.HAS_CP, H.E["GOATCOUNTER_TOKEN"] = True, "gtok"
+H.coupang = lambda m, path, body=None: c52.append(path) or [{"productId": 110, "quantity": 2}, {"productId": 999, "quantity": 5}, {"productId": "111"}]
+H.http = lambda url, body=None, headers=None, method=None: h52.append((url, headers)) or json.dumps({"hits": [{"path_id": 1, "path": "buy/link.coupang.com/a/B", "count": 3}, {"path_id": 2, "path": "buy/link.coupang.com", "count": 50}, {"path_id": 3, "path": "/p/2.html", "count": 4}, {"path_id": 4, "path": "/p/99.html", "count": 1}], "more": False})
+time.time = lambda: TK("2026-10-24 04:50"); s52s = {}; H.cp_score(s52s); assert not c52 and not h52 and "cps" not in s52s  # 5시 전
+time.time = lambda: TK("2026-10-24 05:10"); o52 = io.StringIO()
+with __import__("contextlib").redirect_stdout(o52): H.cp_score(s52s)
+assert c52 == ["/reports/orders?startDate=20261010&endDate=20261023&page=0"] and s52s["cps"]["o"] == {U52["A"]: 2, U52["B"]: 1} and s52s["cps"]["c"] == {U52["B"]: 3} and s52s["cps"]["v"] == {U52["C"]: 4}, s52s
+assert h52[0][0].startswith("https://hotdealpick.goatcounter.com/api/v0/stats/hits?start=2026-10-09T20%3A00%3A00Z&end=2026-10-23T20%3A00%3A00Z&limit=100") and h52[0][1]["Authorization"] == "Bearer gtok"
+assert not re.search(r"\d", o52.getvalue()) and "gtok" not in o52.getvalue()  # 로그에 숫자·토큰 X(공개 저장소 Actions 로그)
+H.cp_score(s52s); assert len(c52) == 1 and len(h52) == 1  # 하루 1번
+H.http = lambda url, body=None, headers=None, method=None: h52.append(url) or json.dumps({"hits": [{"path_id": 5, "path": "/p/1.html", "count": 1}], "more": len(h52) < 9})
+time.time = lambda: TK("2026-10-25 05:10"); h52.clear(); H.cp_score(s52s); assert len(h52) == H.CPS_GC_PAGES and "exclude_paths=5" in h52[1]  # 다음 쪽 = 본 경로 빼고 · 최대 CPS_GC_PAGES번
+def lim52(m, path, body=None):
+    raise H.CpLimit("x")
+H.coupang, H.E["GOATCOUNTER_TOKEN"] = lim52, ""; time.time = lambda: TK("2026-10-26 05:10"); H.cp_score(s52s)
+assert s52s["cps"]["do"] == "2026-10-25" and s52s["cps"]["dg"] == "2026-10-26" and s52s["cps"]["c"] == {} and s52s["cps"]["o"] == {U52["A"]: 2, U52["B"]: 1}  # 상한 = 다음 실행에 다시(어제 값) · 토큰 없음 = GoatCounter X
+H.coupang = lambda m, path, body=None: (_ for _ in ()).throw(RuntimeError("coupang rCode 500"))
+H.cp_score(s52s); assert s52s["cps"]["do"] == "2026-10-26" and s52s["cps"]["o"] == {U52["A"]: 2, U52["B"]: 1}  # 그 밖 오류 = 오늘은 그만, 어제 값
+H.HAS_CP = False; time.time = lambda: TK("2026-10-27 05:10"); H.cp_score(s52s); assert s52s["cps"]["o"] == {} and s52s["cps"]["do"] == "2026-10-27"  # 키 없음 = 주문 X
+H.HAS_CP, c52[:] = True, []; H.coupang = lambda m, path, body=None: c52.append(path) or []; cpn52 = H.RUN.get("cpn"); H.RUN["cpn"] = [H.CP_RUN - 1, 0]
+time.time = lambda: TK("2026-10-28 05:10"); H.cp_score(s52s); assert not c52 and s52s["cps"]["do"] == "2026-10-27"  # 이번 실행 쿠팡 호출 거의 다 씀 = 다음 실행에(cp_price 몫)
+H.RUN["cpn"] = [0, 0]; H.cp_score(s52s); assert len(c52) == 1 and s52s["cps"]["do"] == "2026-10-28"; H.RUN.pop("cpn") if cpn52 is None else H.RUN.update(cpn=cpn52)
+import inspect as insp52
+assert 'p.get("re")' in insp52.getsource(H.own_end) and 'posts[i].get("re")' in insp52.getsource(H.threads_deals) and "cp_score(seen)" in insp52.getsource(H.metrics)  # 재게시 글 = 확인 가격 그대로 · Threads 맨 앞 · 점수는 metrics 끝
+assert "h.hostname+h.pathname" in S.GC_JS and "path:'buy/'+h" in S.GC_JS and "cp_repost" in H.ALERT_STEPS and "toss_solo, cp_repost, toss_soldout" in insp52.getsource(H.main)  # 구매 클릭 = 링크 경로까지(쿼리 X)
+H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.TOP, H.HAS_CP, H.coupang = sv52[:8]; H.E.clear(); H.E.update(sv52[8]); H.CPRE_HOURS, H.CPS_HOUR = cpre0, cps0; os.chdir(cwd52)
 print("OK: 모든 셀프체크 통과")
