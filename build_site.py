@@ -6,7 +6,9 @@ BASE = "https://hotdealpick.kr/"
 GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
 GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소+경로(10/24 E — 상품마다 셈, 쿼리 X)
          "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href);h=h.hostname+h.pathname}catch(x){return}"
-         "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});")
+         "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});"
+         "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('a[data-ev]');"  # 기획전 배너 클릭 = 이벤트 banner/행사 이름(10/24 Cowork — 1주 보고 팝업 여부)
+         "if(b&&window.goatcounter&&goatcounter.count)goatcounter.count({path:'banner/'+b.getAttribute('data-ev'),title:'기획전 배너',event:true})});")
 
 
 GC_APP = ("window.goatcounter={referrer:function(r){return /[?&]src=app(&|$)/.test(location.search)||matchMedia('(display-mode: standalone)').matches&&!document.referrer?'app':r},"
@@ -25,8 +27,8 @@ CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(�
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
-:root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--accf:#E5303F;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--card:#1A1C21;--ink:#ECEEF2;--sub:#9AA0AC;--line:#262931;--acc:#FF5A66;--chip:#24272E;--btn:#ECEEF2;--btnt:#14161B;--pkbg:linear-gradient(160deg,#3A1E27,#33261F);--pkln:rgba(255,92,114,.18);color-scheme:dark}}
+:root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--pkt:#B3202F;--accf:#E5303F;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--card:#1A1C21;--ink:#ECEEF2;--sub:#9AA0AC;--line:#262931;--acc:#FF5A66;--chip:#24272E;--btn:#ECEEF2;--btnt:#14161B;--pkbg:linear-gradient(160deg,#3A1E27,#33261F);--pkln:rgba(255,92,114,.18);--pkt:#FF9AA6;color-scheme:dark}}
 @font-face{font-family:"HDP Sans";src:url(/fonts/hdpsans-v1.woff2) format("woff2");font-weight:400 800;font-display:swap}
 body{margin:0;font:15px/1.5 "HDP Sans",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 a{color:inherit}main{max-width:560px;margin:0 auto;padding:0 calc(16px + env(safe-area-inset-right)) calc(88px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
@@ -42,6 +44,10 @@ html{scroll-padding:calc(124px + env(safe-area-inset-top)) 0 calc(76px + env(saf
 .dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}
 .t{color:var(--sub);font-size:12.5px}
 .tp{margin:16px 0 0;padding:20px 16px 6px;border-radius:24px;background:var(--pkbg)}
+.evb{display:flex;gap:8px;margin:14px 0 0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.evb::-webkit-scrollbar{display:none}
+.ev{flex:0 0 88%;min-width:0;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:18px;background:var(--pkbg);box-shadow:inset 0 0 0 1px var(--pkln);text-decoration:none;color:var(--ink)}.ev:only-child{flex-basis:100%}
+.ev .em{font-size:24px;line-height:1}.ev .tx{display:flex;flex-direction:column;flex:1;min-width:0}.ev b{font-size:15.5px;font-weight:800;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev small{color:var(--sub);font-size:12.5px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev .go{flex:none;color:var(--pkt);font-size:13.5px;font-weight:800}
+.evn{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:13.5px;font-weight:600;letter-spacing:-.3px}.dd{color:var(--acc);font-weight:800}
 .tp .pn{margin:0 0 6px;font-size:11px;line-height:1.5;color:var(--sub)}.tp .k{color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.2px}.tp h2{margin:6px 0 2px;font-size:23px;line-height:1.3;font-weight:800;letter-spacing:-.8px}.tp .d{color:var(--sub);font-size:13px;margin:0 0 6px}
 .pk{display:grid;grid-template-columns:16px 64px minmax(0,1fr) auto;align-items:center;gap:10px;padding:14px 0;border-top:1px solid var(--pkln)}.pk:first-of-type{border-top:0}
 .pk .rk{color:var(--acc);font-size:17px;font-weight:800;text-align:center}.pk .im{width:64px;height:64px;border-radius:16px;font-size:30px}
@@ -723,16 +729,16 @@ def badge(p, sh):
     return {1: '<b class="bdg">👍 꾸준템</b>', 2: '<b class="bdg w">⏳ 대기</b>', 3: f'<b class="bdg w">{html.escape(out)}</b>'}.get(st, "")
 
 
-def card(i, p, sh):
+def card(i, p, sh, more=()):
     """상품 카드(10/24 진우 개편 A): 흰 r20 · 위 118px 썸네일(+ 배지·♡) · 몰 칩 · 이름 2줄 · 가격 800 17px · 빨강 줄 · 회색 줄. 카드 전체 = 딜 쪽(구매 버튼·왜 골랐나요).
-    .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태."""
+    .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태, more = 회색 줄 더(행사 쪽 단위가)."""
     name = parse(title_of(p["text"]))[1]
     shown, ex, grey = price_bits(p, sh)
     end = [f'<div class="ex" data-end="{end_at(p)}">⏰ 오늘 밤 12시 마감</div>'] if any(c == "b2" for c, _ in badges(p)) else []
     return (f'<article class="g"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
             + thumb(p, badge(p, sh)) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
             + f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
-            + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in grey) + "</article>")
+            + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
 
 
 def go_url(i, p):
@@ -859,6 +865,101 @@ def chips_html(cur):
     ks = [("hot", "🔥 특가"), ("steady", "👍 꾸준템"), ("wait", "⏳ 대기")] + [(m[0], f"{m[2]} {m[1]}") for m in CAT_META.values()] + [(k, f"{e} {n}") for k, n, e in MALLS]
     return ('<nav class="chips" aria-label="목록">' + "".join(f'<a href="{c_url(s)}"' + (' aria-current="page"' if s == cur else "") + f">{t}</a>" for s, t in ks) + "</nav>"
             + "<script>(function(a){if(a)a.parentNode.scrollLeft=a.offsetLeft-16})(document.querySelector('.chips [aria-current]'))</script>" * bool(cur))  # 옆으로 밀기 한 줄 — 지금 칸이 보이게
+
+
+EV_KINDS = (("쌀", r"쌀|현미|찹쌀|잡곡"), ("수산", r"새우|꽃게|홍게|대게|킹크랩|갈치|고등어|오징어|굴비|조기|전복|굴(?=[\s\d(]|$)|연어|광어|대하|낙지|문어|멸치|과메기|꼬막|홍합|가리비|생선"),
+            ("고구마·땅콩", r"고구마|감자|땅콩|밤(?=[\s\d(]|$)|호두|잣(?=[\s\d(]|$)|견과"), ("김·김장", r"김(?=[\s\d,()]|$)|김장|절임배추|배추|무(?=[\s\d(]|$)|고춧가루|젓갈|표고|버섯"),
+            ("과일", r"감귤|귤(?=[\s\d(]|$)|사과|배(?=[\s\d(]|$)|샤인머스[캣켓]|포도|단감|홍시|키위|딸기|한라봉|레드향|천혜향|곶감|자두|복숭아|참외|수박|멜론"))  # 행사 쪽 소제목(이 순서로 찾음 — 배추·꿀밤고구마가 과일로 안 가게)
+EV_ORDER = ("쌀", "과일", "고구마·땅콩", "수산", "김·김장")  # 쪽 순서(10/24 Cowork) — 못 찾은 것 = '그 밖'(맨 뒤), events "kind"가 있으면 그것
+MALL_KO = {"coupang": "쿠팡", "toss": "토스", "naver": "네이버"}
+
+
+def ev_day(u, today):
+    """events until -> 'YYYY-MM-DD'(없는 날짜·다른 모양 = '' — 손으로 쓴 값 하나가 빌드를 멈추거나 행사 전체를 내리지 않게) · 'M/D'·'~10/25' = 올해."""
+    m = re.fullmatch(r"~?\s*(?:(\d{4})[-/.])?(\d{1,2})[-/.](\d{1,2})", str(u or "").strip()[:16].split(" ")[0])
+    d = m and f"{m[1] or today[:4]}-{int(m[2]):02d}-{int(m[3]):02d}"
+    try:
+        return d if d and time.strptime(d, "%Y-%m-%d") else ""
+    except ValueError:
+        return ""
+
+
+def events_on(it, today):
+    """진행 중 기획전(10/24 Cowork '기획전 = 배너 + 행사 쪽' — 진우 '홈을 도배하지 말고 배너로'): events "tag"(정품 X)마다 마감 = 그 tag 항목 중 가장 늦은 "until"(YYYY-MM-DD) ≥ 오늘이고
+    진열 중인 상품(같은 url) 1개↑ -> [{"tag", "slug", "until", "chk", "mall", "urls": {url: kind}, "xs": [(i, p, 상태)]}] 마감 빠른 순. until 없는 tag = 행사 아님(배너 X).
+    slug = events "slug"(영문 소문자·숫자·-) 또는 tag 해시('e' + 6자 — 같은 tag면 늘 같은 주소)."""
+    evs, gs = ev_list(), {}
+    for e in evs if isinstance(evs, list) else []:
+        if isinstance(e, dict) and isinstance(e.get("tag"), str) and e["tag"].strip() and e["tag"] != "정품" and isinstance(e.get("url"), str):
+            g = gs.setdefault(e["tag"], {"tag": e["tag"].strip(), "until": "", "chk": "", "slug": "", "urls": {}})
+            g["until"], g["chk"] = max(g["until"], ev_day(e.get("until"), today)), max(g["chk"], str(e.get("chk") or "")[:16])
+            g["slug"] = g["slug"] or (e["slug"] if re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(e.get("slug") or "")) else "")
+            g["urls"][e["url"]] = str(e.get("kind") or g["urls"].get(e["url"]) or "")
+    out = []
+    for g in gs.values():
+        xs = [x for x in it if x[1].get("url") in g["urls"]]
+        if xs and g["until"] >= today:
+            ms = {shop_of(p) for _, p, _ in xs}
+            out.append({**g, "slug": g["slug"] or "e" + hashlib.md5(g["tag"].encode()).hexdigest()[:6], "xs": xs, "mall": MALL_KO.get(ms.pop(), "") if len(ms) == 1 else ""})
+    return sorted(out, key=lambda g: (g["until"], g["tag"]))
+
+
+def ev_n(g):
+    """행사 상품 수(일시 품절 뺌)."""
+    return sum(x[2][0] != 3 for x in g["xs"])
+
+
+def ev_name(g):
+    """'쿠팡 햇상품 기획전'(상품이 한 몰이면 몰 이름 앞에 — tag에 이미 있으면 그대로)."""
+    return g["tag"] if not g["mall"] or g["tag"].startswith(g["mall"]) else f"{g['mall']} {g['tag']}"
+
+
+def ev_banner(evs):
+    """홈 기획전 배너(검색창 아래·오늘의 픽 위 · 64px 안팎 연분홍 · 2개↑ = 옆으로 밀기): '🎉 쿠팡 햇상품 기획전' / '핫딜픽이 고른 N개 · ~M/D' + '보기 →' -> 행사 쪽.
+    클릭 = GoatCounter 이벤트 'banner/slug'(GC_JS) — 팝업은 X(10/24 Cowork: 모바일 첫 화면 가리면 이탈↑·구글 '방해되는 전면 광고')."""
+    md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
+    return "" if not evs else ('<nav class="evb" aria-label="기획전">' + "".join(
+        f'<a class="ev" href="{BASE}e/{g["slug"]}.html" data-ev="{g["slug"]}"><span class="em" aria-hidden="true">🎉</span><span class="tx"><b>{html.escape(ev_name(g))}</b>'
+        f'<small>핫딜픽이 고른 {ev_n(g)}개 · ~{md(g["until"])}</small></span><span class="go">보기 →</span></a>' for g in evs) + "</nav>")
+
+
+def unit_line(p):
+    """글의 단위가 줄 조각('💰 100g당 339원꼴 · 와우 할인 중' -> '100g당 339원꼴', 없으면 unit_of)."""
+    return next((x for l in p["text"].split("\n") if l.startswith(("💰", "💡")) for x in l[1:].strip().split(" · ") if PAIR.search(x)), "") or unit_of(p)
+
+
+def per_unit(p):
+    """단위가 비교 값 (단위, 1단위 값) — '100g당 339원' -> ('g', 3.39) · '1kg당' = g, 'L' = ml로 · 못 읽으면 None(맨 뒤)."""
+    m = PAIR.search(unit_line(p))
+    q = m and re.fullmatch(r"(\d+(?:\.\d+)?)?\s*([^\d\s]+)", m[1].strip())
+    if not q:
+        return None
+    k, f = {"kg": ("g", 1000), "l": ("ml", 1000)}.get(q[2].lower(), (q[2].lower(), 1))
+    return k, float(m[2].replace(",", "")) / (float(q[1] or 1) * f)
+
+
+def ev_page(g, today):
+    """행사 쪽 docs/e/slug.html: 제목·N개·마감 D-day + '같은 종류 쿠팡 검색에서 단위가 하위 20%만 골랐어요 (M/D H시)' + 몰 대가성 문구 + 소제목(EV_ORDER, 그 밖 = 맨 뒤)마다 카드 — 단위가 싼 순(같은 단위끼리, 못 읽으면 뒤).
+    -> (제목, 설명, 본문, JSON-LD)."""
+    kind = lambda p: g["urls"].get(p.get("url")) or next((k for k, rx in EV_KINDS if re.search(rx, parse(title_of(p["text"]))[1])), "그 밖")
+    grp = {}
+    for x in g["xs"]:
+        grp.setdefault(kind(x[1]), []).append(x)
+    order = sorted(grp, key=lambda k: (k not in EV_ORDER, EV_ORDER.index(k) if k in EV_ORDER else 0, k == "그 밖", k))
+    key = lambda x: (lambda u: (x[2][0] == 3, u is None, u or ("", 0)))(per_unit(x[1]))  # 일시 품절 = 칸 맨 뒤
+    n, md, name, chk = ev_n(g), f"{int(g['until'][5:7])}/{int(g['until'][8:10])}", ev_name(g), g["chk"] and f" ({md_h(g['chk'])})"
+    left = (calendar.timegm(time.strptime(g["until"], "%Y-%m-%d")) - calendar.timegm(time.strptime(today, "%Y-%m-%d"))) // 86400
+    notes = " ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in g["xs"] if shop_of(p) in SHOP_NOTES))
+    body = (f'<h1 class="h">🎉 {html.escape(name)}</h1><div class="t">핫딜픽이 고른 {n}개 · ~{md} 마감 · <b class="dd">{"오늘 마감" if left <= 0 else f"D-{int(left)}"}</b></div>'
+            + f'<p class="evn">같은 종류 {g["mall"] + " " if g["mall"] else ""}검색에서 단위가 하위 20%만 골랐어요{chk}</p>'
+            + (f'<p class="t">{notes}</p>' if notes else "")
+            + ('<nav class="chips" aria-label="종류">' + "".join(f'<a href="#k{j}">{html.escape(k)} {len(grp[k])}</a>' for j, k in enumerate(order)) + "</nav>" if len(order) > 1 else "")
+            + "".join(f'<section class="sec" id="k{j}" aria-labelledby="k{j}h"><h2 id="k{j}h">{html.escape(k)}<small>{len(grp[k])}개</small></h2><div class="cards">'
+                      + "".join(card(i, p, sh, [unit_line(p)]) for i, p, sh in sorted(grp[k], key=key)) + "</div></section>" for j, k in enumerate(order))
+            + f'<a class="all" href="{BASE}">🏠 홈으로</a>')
+    li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for k in order for i, p, _ in sorted(grp[k], key=key) if img_of(p)), 1)]
+    return (f"{name} — 핫딜픽이 고른 {n}개 (~{md}) | {TITLE}", f"{name} 상품 중 같은 종류 단위가 싼 것만 {n}개 골랐어요 · {' · '.join(order)} · ~{md} 마감", body,
+            len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} (~{md})", "itemListElement": li})
 
 
 def list_pages(slug, head, desc, xs, mall, recs):
@@ -1034,7 +1135,18 @@ def build(posts, out="docs"):
     write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">품목·몰별로 골라 보세요</div>' + tiles(tuple(CAT_META)) + chips_html("") + (rec_nav(recs) or ""),
                          "생필품·식품·뷰티·주방·세탁·간식·여성용품·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
-    day, ps = today_picks(posts, it, recs, out)
+    evs = events_on(it, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
+    evi = {i for g in evs for i, _, _ in g["xs"]}  # 진행 중 기획전 상품 = 홈 오늘의 픽·🔥·👍 TOP 칸 X(배너로만 — 품목 칸·검색·목록 쪽은 그대로)
+    top = lambda xs: [x for x in xs if x[0] not in evi]
+    day, ps = today_picks(posts, top(it), recs, out)
+    os.makedirs(f"{out}/e", exist_ok=True)
+    for f in os.listdir(f"{out}/e"):  # 마감 지난(또는 없어진) 행사 쪽 = 내림(상품 카드는 품목 칸에 그대로)
+        if f.endswith(".html") and f[:-5] not in {g["slug"] for g in evs}:
+            os.remove(f"{out}/e/{f}")
+    for g in evs:
+        ti, sd, body, ld = ev_page(g, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
+        open(f"{out}/e/{g['slug']}.html", "w").write(page(ti, body, sd, f"{BASE}e/{g['slug']}.html", cur="fire", head=ld and ld_tag(ld) or ""))
+        urls.append((f"{BASE}e/{g['slug']}.html", latest))
     try:
         saved_picks = json.load(open(f"{out}/{PICKS}"))
     except (OSError, ValueError):
@@ -1052,14 +1164,14 @@ def build(posts, out="docs"):
             + (f'<a class="btn2" href="{BASE}today/{pdays[n_ + 1]}/" rel="next">{int(pdays[n_ + 1][5:7])}/{int(pdays[n_ + 1][8:10])} 픽 →</a>' if n_ + 1 < len(pdays) else "") + "</nav>"
         nav = "" if nav.endswith('"날짜"></nav>') else nav  # 앞뒤 날짜 없음(첫날) = 빈 칸 X(16:00 점검)
         write(out, f"today/{d}/", page(f"오늘의 픽 — {mdk} {malls} 특가 | {TITLE}", f'<h1 class="h">오늘의 픽 · {mdk}</h1>' + (pick_section(d, dps, True) or '<p class="t">이날 고른 상품은 지금 진열에서 빠졌어요.</p>') + nav
-                                       + top4("fire", "hot", "🔥 지금 특가", ls["hot"][2], {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
+                                       + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
                                        head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 og.png(인스타 카드는 다른 5개 딜이라 X)
         urls.append((f"{BASE}today/{d}/", d))
     cp = card_picks(posts, out)
     cp = cp.replace('<div class="t">번호를 누르면', f'<p class="t">{" ".join(SHOP_NOTES.values())}</p><div class="t">번호를 누르면', 1)  # 카드 번호 칸도 몰로 바로 -> 3사 문구
-    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + pick_section(day, ps)
+    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + ev_banner(evs) + pick_section(day, ps)
             + ('<a class="u" style="display:block;padding:6px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "") + tiles()
-            + top4("fire", "hot", "🔥 지금 특가", ls["hot"][2], {i for i, _, _ in ps}) + top4("steady", "steady", "👍 꾸준히 팔리는 것", ls["steady"][2]) + (rec_nav(recs) or "")
+            + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in ps}) + top4("steady", "steady", "👍 꾸준히 팔리는 것", top(ls["steady"][2])) + (rec_nav(recs) or "")
             + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>') if posts else "<p>첫 딜을 준비 중이에요.</p>"
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)

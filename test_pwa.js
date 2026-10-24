@@ -90,6 +90,8 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.strictEqual(await pg.evaluate(() => goatcounter.referrer('https://www.threads.net/')), 'https://www.threads.net/');
     const buy = await pg.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); const u = new URL(a.href); return [u.hostname + u.pathname, window.__gc, u.search]; });
     assert.ok(buy[1] && buy[1].some(v => v.event === true && v.path === 'buy/' + buy[0]) && buy[0].includes('/') && !buy[1].some(v => buy[2] && v.path.includes(buy[2])), JSON.stringify(buy));
+    const bn = await pg.evaluate(() => { const a = document.createElement('a'); a.href = '#ev'; a.dataset.ev = 'e1a2b3c'; a.textContent = '배너'; document.querySelector('main').append(a); a.click(); a.remove(); return window.__gc; });
+    assert.ok(bn.some(v => v.event === true && v.path === 'banner/e1a2b3c'), JSON.stringify(bn));  // 기획전 배너 클릭 = 이벤트 banner/행사(10/24 Cowork — 1주 보고 팝업 여부)
     await ctx.close();
     // 5) 설치 버튼: 안드로이드 크롬 = beforeinstallprompt -> 설치 / 아이폰 = 2줄 안내 / 앱 안 브라우저 = 브라우저 안내 / 설치됨 = 숨김 / 닫기 = 7일
     const show = async (opt, init, fire) => {

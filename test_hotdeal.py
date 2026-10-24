@@ -6044,4 +6044,48 @@ H.HAS_CP = True; json.dump([{"at": "2026-10-28 21:00", "list": True, "title": "Y
 time.time = lambda: TK("2026-10-28 21:10"); H.events(s56c); assert "ev_2026-10-28 21:00" not in s56c
 time.time = lambda: TK("2026-10-28 21:31"); H.events(s56c); assert "Y · 핫딜픽이 고른 3개" in ch56()[-1]["text"] and "느린 것" not in ch56()[-1]["text"]
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_CP, H.th_post, H.TOSS_NO_CMP = *sv56[:7], tnc56; H.E.clear(); H.E.update(sv56[7]); os.chdir(cwd56)
+# 9-57) (10/24 Cowork·진우 '기획전이 있으면 홈을 도배하지 말고 배너로') 기획전 = 홈 배너 1줄 + 행사 쪽 e/slug.html: events "tag"(정품 X) + 가장 늦은 "until" ≥ 오늘 + 진열 중 상품
+#   · 홈 🔥·👍 TOP 칸에서 뺌(품목 칸·검색·목록 쪽 그대로) · 행사 쪽 = 소제목(쌀·과일·고구마·땅콩·수산·김·김장, 그 밖 맨 뒤 · events kind 우선)마다 단위가 싼 순 + '하위 20%' 줄(M/D H시) + D-day · 사이트맵
+#   · 마감 지나면 배너·쪽 내림(카드는 그대로) · until 없는 tag = 행사 아님 · GoatCounter 배너 클릭 = 이벤트 banner/slug
+sv57 = (time.time, S.EVENTS, S.CP_LINKS) if hasattr(S, "CP_LINKS") else (time.time, S.EVENTS, None)
+d57 = tempfile.mkdtemp(); cwd57 = os.getcwd(); os.chdir(d57)
+L57 = lambda k: f"https://link.coupang.com/a/ev{k}"
+def p57(k, name, price, unit, ic="🔥", **x):
+    return {"t": "2026-10-24 19:30", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 · 와우 할인 {ic}\n{name}\n{price}\n💰 {unit} · 와우 할인 중\n✔ 리뷰 1만", "entities": [], "url": L57(k), "own": 1, "shelf": 1, "tag": "햇상품 기획전", "st": "hot" if ic == "🔥" else "wait", **x}
+N57 = [("a", "곰곰 햅쌀 10kg", "33,890원", "100g당 339원꼴"), ("b", "새청무 햅쌀 20kg", "61,500원", "100g당 308원꼴"), ("c", "해남 절임배추 20kg", "38,900원", "100g당 195원꼴"), ("d", "제주 감귤 10kg", "19,100원", "100g당 191원꼴"),
+       ("e", "다복 나주배 5kg", "13,900원", "100g당 278원꼴"), ("f", "늘해랑 꿀밤고구마 10kg", "25,860원", "100g당 259원꼴"), ("g", "자연나라 도시락김 5g 24개", "9,900원", "10g당 825원꼴"), ("h", "서산 표고버섯 5kg", "30,650원", "1kg당 6,130원꼴"),
+       ("i", "곰곰 간고등어 1kg", "15,590원", "100g당 1,559원꼴"), ("j", "신진도 꽃게 2kg", "29,900원", "100g당 1,495원꼴"), ("k", "이름 없는 상품", "5,000원", "")]
+P57 = [p57(*x) for x in N57] + [{"t": "2026-10-24 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n크리넥스 화장지 30롤\n19,900원", "url": L57("x"), "own": 1, "st": "hot", "mid": 5}]
+EV57 = [{"at": "2026-10-24 19:20", "url": L57(k), "text": "x", "deal": True, "shelf": True, "tag": "햇상품 기획전", "chk": "2026-10-24 19:00", **({"until": "2026-10-25"} if k == "a" else {}), **({"kind": "김·김장"} if k == "h" else {})} for k, *_ in N57] \
+    + [{"at": "2026-10-20 10:00", "url": L57("x"), "text": "x", "deal": True}, {"at": "2026-10-24 19:20", "url": L57("y"), "text": "x", "tag": "마감 없는 행사"}]
+json.dump(EV57, open("events.json", "w"), ensure_ascii=False); json.dump(P57, open("posts.json", "w"), ensure_ascii=False)
+assert H.mall_head("coupang", "와우 할인", "🔥", False) == "📦 쿠팡 · 와우 할인 🔥" and S.parse(S.title_of(P57[0]["text"])) == ("쿠팡", "곰곰 햅쌀 10kg", "33,890원")  # 글 모양 = shelf_posts가 남기는 몰별 틀
+assert S.per_unit(P57[0]) == ("g", 3.39) and S.per_unit(P57[6]) == ("g", 82.5) and S.per_unit(P57[7]) == ("g", 6.13) and S.per_unit(P57[10]) is None and S.per_unit({"text": "💡 단위가격: 1L당 248원 — x"}) == ("ml", 0.248)
+time.time = lambda: TK("2026-10-24 20:00"); o57 = tempfile.mkdtemp(); S.build(P57, o57)
+ix57 = open(f"{o57}/index.html").read(); g57, = S.events_on(S.items(P57, ["2026-10-24"]), "2026-10-24"); sl57 = g57["slug"]
+assert re.fullmatch(r"e[0-9a-f]{6}", sl57) and g57["mall"] == "쿠팡" and g57["until"] == "2026-10-25" and len(g57["xs"]) == 11  # until = 그 tag 항목 중 가장 늦은 것(한 항목만 있어도) · '마감 없는 행사' = X
+assert f'<nav class="evb" aria-label="기획전"><a class="ev" href="https://hotdealpick.kr/e/{sl57}.html" data-ev="{sl57}"><span class="em" aria-hidden="true">🎉</span><span class="tx"><b>쿠팡 햇상품 기획전</b><small>핫딜픽이 고른 11개 · ~10/25</small></span><span class="go">보기 →</span></a></nav><section class="tp"' in ix57  # 오늘의 픽 바로 위
+fire57 = re.search(r'id="fire".*?</section>', ix57, re.S)[0]
+assert "<small>1개</small>" in fire57 and not any(n in fire57 for _, n, *_ in N57)  # 홈 🔥 TOP = 행사 상품 X(배너로만 — 개수도 빼고 셈)
+assert all(n in json.dumps(json.load(open(f"{o57}/search.json")), ensure_ascii=False) for _, n, *_ in N57) and "곰곰 햅쌀" in open(f"{o57}/c/hot/index.html").read()  # 검색·목록 쪽 그대로
+ev57 = open(f"{o57}/e/{sl57}.html").read()
+assert '<h1 class="h">🎉 쿠팡 햇상품 기획전</h1><div class="t">핫딜픽이 고른 11개 · ~10/25 마감 · <b class="dd">D-1</b></div><p class="evn">같은 종류 쿠팡 검색에서 단위가 하위 20%만 골랐어요 (10/24 19시)</p>' in ev57 and S.SHOP_NOTES["coupang"] in ev57
+assert re.findall(r'<h2 id="k\d+h">(.*?)<small>', ev57) == ["쌀", "과일", "고구마·땅콩", "수산", "김·김장", "그 밖"]  # Cowork 순서 · 표고 = events kind · 못 찾음 = 맨 뒤
+nm57 = lambda k: re.findall(r'<h3><a href="[^"]+">([^<]+)', re.search(rf'id="k{k}".*?</section>', ev57, re.S)[0])
+assert nm57(0) == ["새청무 햅쌀 20kg", "곰곰 햅쌀 10kg"] and nm57(1) == ["제주 감귤 10kg", "다복 나주배 5kg"] and nm57(3) == ["신진도 꽃게 2kg", "곰곰 간고등어 1kg"] and nm57(4) == ["해남 절임배추 20kg", "서산 표고버섯 5kg", "자연나라 도시락김 5g 24개"] and nm57(5) == ["이름 없는 상품"]  # 단위가 싼 순(같은 단위 g끼리 1g 값)
+assert '<div class="u">100g당 308원꼴</div>' in ev57 and f"<loc>https://hotdealpick.kr/e/{sl57}.html</loc>" in open(f"{o57}/sitemap.xml").read() and f'"{sl57}"' not in open(f"{o57}/rss.xml").read()
+time.time = lambda: TK("2026-10-25 23:50"); S.build(P57, o57); assert "오늘 마감" in open(f"{o57}/e/{sl57}.html").read() and 'class="evb"' in open(f"{o57}/index.html").read()  # 마감날 = 그날 끝까지
+time.time = lambda: TK("2026-10-26 00:10"); S.build(P57, o57); ix57 = open(f"{o57}/index.html").read()
+assert not os.path.exists(f"{o57}/e/{sl57}.html") and 'class="evb"' not in ix57 and "/e/" not in open(f"{o57}/sitemap.xml").read() and re.search(r'id="fire".*?</section>', ix57, re.S)[0].count("<article") == 4  # 마감 = 배너·쪽 내림, 카드는 🔥 칸으로
+assert "banner/'+b.getAttribute('data-ev')" in S.GC_JS and "a[data-ev]" in S.GC_JS
+# 리뷰(10/24): 손으로 쓴 until — 없는 날짜·다른 모양 1개가 빌드를 멈추거나 행사 전체를 내리지 않음('M/D'·'~M/D' = 올해) · 일시 품절 = 칸 맨 뒤·N에서 뺌 · 오늘의 픽 후보에서도 뺌
+assert [S.ev_day(u, "2026-10-24") for u in ("2026-10-25", "10/25", "~10/25", "2026/10/26", "2026-11-31", "2026-10-32", "", None, "내일")] == ["2026-10-25", "2026-10-25", "2026-10-25", "2026-10-26", "", "", "", "", ""]
+json.dump(EV57[:1] + [{**e, "until": "2026-11-31"} for e in EV57[1:3]] + [{**e, "until": "~10/25"} for e in EV57[3:4]] + EV57[4:], open("events.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-10-24 20:00"); P57o = [{**p, "st": "out"} if p["url"] == L57("b") else p for p in P57]
+(g57o,) = S.events_on(S.items(P57o, ["2026-10-24"]), "2026-10-24"); assert g57o["until"] == "2026-10-25" and S.ev_n(g57o) == 10
+S.build(P57o, o57); ev57 = open(f"{o57}/e/{sl57}.html").read()
+assert nm57(0) == ["곰곰 햅쌀 10kg", "새청무 햅쌀 20kg"] and "핫딜픽이 고른 10개" in ev57 and "핫딜픽이 고른 10개" in open(f"{o57}/index.html").read()  # 품절(새청무) = 더 싸도 뒤
+assert S.unit_line({"text": "💰 와우 할인 중 · 100g당 339원꼴"}) == "100g당 339원꼴"  # 단위가가 뒤 조각이어도
+pk57 = json.load(open(f"{o57}/today/picks.json")); assert not set(pk57.get("2026-10-24", [])) & {i for i, p in enumerate(P57) if p.get("tag")}  # 오늘의 픽 = 행사 상품 X(배너로만)
+time.time = sv57[0]; os.chdir(cwd57)
 print("OK: 모든 셀프체크 통과")
