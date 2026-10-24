@@ -57,11 +57,11 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     // 3) 지금 사이트 동작(10/24 개편): 아래 메뉴 5개 · 찜(localStorage -> /saved/) · 검색(search.json = 진열 상품 전부, 🔥 먼저) · 옛 홈 #칸 주소(웹앱 바로가기 #wait·#life) -> 새 쪽
     await pg.goto(U + '/', { waitUntil: 'load' });
     assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '찜', '알림']);
-    const lk = await pg.$('#fire .like');
+    const lk = await pg.$('#pick .like, #steady .like');  // 10/24 포털형: 🔥 실시간 핫딜 = 목록형 줄(♡ X) — 가로 카드(오늘의 픽·꾸준템)에 ♡
     await lk.click();
     assert.strictEqual(await pg.evaluate(() => JSON.parse(localStorage.getItem('likes')).length), 1, '찜 1개');
     assert.strictEqual(await lk.getAttribute('aria-pressed'), 'true');
-    assert.strictEqual(await pg.textContent('#lc'), ' 1', '헤더 ♡ 숫자');
+    assert.strictEqual(await pg.textContent('#lc'), ' 1', '아래 메뉴 찜 숫자(헤더 ♡ X — 포털형 헤더 1줄)');
     await pg.goto(U + '/saved/', { waitUntil: 'load' });
     assert.ok(await pg.evaluate(() => document.querySelectorAll('#savedg .g').length === 1 && document.getElementById('saved0').hidden), '찜 쪽');
     await pg.goto(U + '/', { waitUntil: 'load' });
@@ -92,16 +92,62 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.ok(buy[1] && buy[1].some(v => v.event === true && v.path === 'buy/' + buy[0]) && buy[0].includes('/') && !buy[1].some(v => buy[2] && v.path.includes(buy[2])), JSON.stringify(buy));
     const bn = await pg.evaluate(() => { const a = document.createElement('a'); a.href = '#ev'; a.dataset.ev = 'e1a2b3c'; a.textContent = '배너'; document.querySelector('main').append(a); a.click(); a.remove(); return window.__gc; });
     assert.ok(bn.some(v => v.event === true && v.path === 'banner/e1a2b3c'), JSON.stringify(bn));  // 기획전 배너 클릭 = 이벤트 banner/행사(10/24 Cowork — 1주 보고 팝업 여부)
+    const gcm = await pg.evaluate(() => { window.__gc = []; const a = document.querySelector('.mb [data-gc]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [a.dataset.gc, window.__gc]; });
+    assert.ok(gcm[0] === 'mall/coupang' && gcm[1].some(v => v.event === true && v.path === 'mall/coupang'), JSON.stringify(gcm));  // 칸별 클릭 data-gc(mall/·top/·deadline/·drop/·changes/)
+    // 3b) 포털형 홈·몰 쪽·변경 찾기(10/24 Cowork): 🔥 탭 · 몰 쪽 품목 칩·상태 탭·20개씩 더 보기 · 찜 변경 배지·요약 · 🔔 빨간 점 → 알림 탭 보면 꺼짐(changes.json = 가짜로)
+    const c5 = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' }), p5 = await c5.newPage();
+    await p5.goto(U + '/', { waitUntil: 'load' });
+    const tb = await p5.$('#fire [data-t]:not([data-t="all"])'), tk = await tb.getAttribute('data-t'); await tb.click();
+    assert.ok(await p5.evaluate(k => [...document.querySelectorAll('#fire .rows')].every(o => o.hidden === (o.dataset.p !== k)) && document.querySelector('#fire [data-t="' + k + '"]').getAttribute('aria-selected') === 'true', tk), '🔥 탭 ' + tk);
+    await p5.goto(U + '/c/coupang/', { waitUntil: 'load' });
+    const vis = () => p5.evaluate(() => [...document.querySelectorAll('#mg > .g')].filter(e => !e.hidden).map(e => [e.dataset.c, e.dataset.s]));
+    let v5 = await vis(); const all5 = await p5.evaluate(() => document.querySelectorAll('#mg > .g').length);
+    assert.ok(v5.length === Math.min(20, all5) && (all5 <= 20) === (await p5.evaluate(() => document.getElementById('mm').hidden)), '몰 쪽 20개 + 더 보기 ' + [v5.length, all5]);
+    if (all5 > 20) { await p5.click('#mm'); assert.strictEqual((await vis()).length, Math.min(40, all5), '더 보기 = 20개 더'); }
+    const cb = await p5.$('.mf [data-c]:not([data-c=""])'), cc = await cb.getAttribute('data-c'); await cb.click(); v5 = await vis();
+    assert.ok(v5.length > 0 && v5.every(x => x[0] === cc), '품목 칩 ' + cc);
+    await p5.click('[role=tab][data-s="h"]'); v5 = await vis();
+    assert.ok(v5.every(x => x[0] === cc && x[1].split(' ').includes('h')), '상태 탭 🔥 + 품목');
+    await p5.goto(U + '/c/coupang/?s=h', { waitUntil: 'load' });
+    assert.ok(await p5.evaluate(() => document.querySelector('[role=tab][data-s="h"]').getAttribute('aria-selected') === 'true' && [...document.querySelectorAll('#mg > .g')].filter(e => !e.hidden).every(e => e.dataset.s.split(' ').includes('h'))), '?s=h = 🔥 탭(특가 쪽 몰 칩)');
+    const li5 = await p5.evaluate(() => { const g = document.querySelector('#mg > .g'); return [g.querySelector('.like').dataset.i, g.outerHTML]; });
+    const D5 = Math.floor(Date.now() / 1000) - 60;  // 바뀐 때 = 지금보다 1분 전(알림 탭 본 뒤엔 점 X)
+    await c5.route('**/changes.json', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ at: '', n: {}, a: { [li5[0]]: '99999' }, items: { 99999: { m: 'coupang', n: 'x', r: '10,000원', c: '8,000원', t: '10/24 10시', k: ['drop'], d: D5, p: 20 } } }) }));
+    await p5.evaluate(h => localStorage.setItem('likes', JSON.stringify([{ i: h[0], h: h[1] }])), li5);
+    await p5.goto(U + '/saved/', { waitUntil: 'load' }); await p5.waitForFunction(() => document.querySelector('#savedg .chg'));
+    assert.ok(await p5.evaluate(() => document.querySelector('#savedg .chg').textContent === '▼ 20% 내림 · 10/24 확인' && !document.getElementById('chgsum').hidden && document.getElementById('chgsum').textContent.includes('가격 내려간 1개') && !document.getElementById('savn').hidden), '찜 변경 배지·요약(옛 글 번호 = a로 지금 글)');
+    await p5.goto(U + '/', { waitUntil: 'load' }); await p5.waitForFunction(() => !document.getElementById('adot').hidden, null, { timeout: 5000 });
+    await p5.goto(U + '/alarm/', { waitUntil: 'load' }); await p5.waitForFunction(() => document.getElementById('chgn').textContent === '1');
+    assert.ok(await p5.evaluate(() => +localStorage.getItem('chgseen') > 0 && document.getElementById('adot').hidden), '알림 탭 = 내 찜 변경 1 · 본 시각');
+    await p5.evaluate(() => sessionStorage.clear()); await p5.goto(U + '/', { waitUntil: 'load' }); await p5.waitForTimeout(500);
+    assert.ok(await p5.evaluate(() => document.getElementById('adot').hidden), '본 뒤 = 빨간 점 X');
+    await c5.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
+    const p6 = await c5.newPage(); const err6 = []; p6.on('pageerror', e => err6.push(String(e)));
+    for (const u of ['/', '/saved/', '/alarm/', '/c/coupang/']) await p6.goto(U + u, { waitUntil: 'load' });
+    assert.deepStrictEqual(err6, [], '저장소 막힘에도 스크립트 오류 X');
+    await c5.close();
     await ctx.close();
     // 5) 설치 버튼: 안드로이드 크롬 = beforeinstallprompt -> 설치 / 아이폰 = 2줄 안내 / 앱 안 브라우저 = 브라우저 안내 / 설치됨 = 숨김 / 닫기 = 7일
+    const V2 = () => { try { if (!localStorage.getItem('hv')) localStorage.setItem('hv', '1'); } catch (e) {} };  // 두 번째 방문(10/24 Cowork: 첫 방문엔 띠 X)
     const show = async (opt, init, fire) => {
       const c = await browser.newContext(opt), p = await c.newPage();
+      await p.addInitScript(V2);
       if (init) await p.addInitScript(init);
       await p.goto(U + '/', { waitUntil: 'load' });
       if (fire) await p.evaluate(() => { const e = new Event('beforeinstallprompt'); e.prompt = () => { window.__prompted = 1; }; e.userChoice = Promise.resolve({ outcome: 'accepted' }); dispatchEvent(e); });
       const r = await p.evaluate(() => ({ shown: !document.getElementById('inst').hidden, text: document.getElementById('instt').textContent, btn: !document.getElementById('instb').hidden }));
       return [r, c, p];
     };
+    const c0 = await browser.newContext({ viewport: { width: 412, height: 915 } }), p0a = await c0.newPage();  // 첫 방문 = 띠 X, 같은 탭 새로 고침도 X(세션 1번), 새 탭(두 번째 방문) = 보임
+    const fire0 = () => p0a.evaluate(() => { const e = new Event('beforeinstallprompt'); e.prompt = () => {}; e.userChoice = Promise.resolve({}); dispatchEvent(e); });
+    await p0a.goto(U + '/', { waitUntil: 'load' }); await fire0();
+    assert.ok(await p0a.evaluate(() => document.getElementById('inst').hidden), '첫 방문 = 설치 띠 X');
+    await p0a.reload({ waitUntil: 'load' }); await fire0();
+    assert.ok(await p0a.evaluate(() => document.getElementById('inst').hidden), '같은 방문(새로 고침) = 띠 X');
+    const p0b = await c0.newPage(); await p0b.goto(U + '/', { waitUntil: 'load' });
+    await p0b.evaluate(() => { const e = new Event('beforeinstallprompt'); e.prompt = () => {}; e.userChoice = Promise.resolve({}); dispatchEvent(e); });
+    assert.ok(await p0b.evaluate(() => !document.getElementById('inst').hidden && +localStorage.getItem('hv') === 2), '두 번째 방문 = 띠');
+    await c0.close();
     let [r, c, p] = await show({ viewport: { width: 412, height: 915 } }, null, true);
     assert.ok(r.shown && r.btn && r.text.includes('홈 화면') && (await p.textContent('#instb')) === '📲 앱으로 설치', JSON.stringify(r));
     await p.click('#instb'); await p.waitForTimeout(100);
@@ -140,13 +186,15 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     const shots = [], tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pwa'));
     const layout = p => p.evaluate(() => {  // 아래 메뉴: 보통 = 아래 고정(fixed), 앱 안 브라우저 = 헤더 아래 한 줄(static)
       const R = e => e && getComputedStyle(e).display !== 'none' && !e.hidden ? e.getBoundingClientRect() : null, i = document.getElementById('inst'), nav = document.querySelector('nav.nav'), fx = getComputedStyle(nav).position === 'fixed';
-      return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: fx ? R(nav) : null, top: fx ? null : R(nav), g: R(document.querySelector('#pick .pk') || document.querySelector('.g')), vh: innerHeight,
-               pb: parseFloat(getComputedStyle(nav).paddingBottom), pt: 0 };
+      const navTop = fx ? nav.getBoundingClientRect().top : innerHeight;
+      return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: fx ? R(nav) : null, top: fx ? null : R(nav), g: R(document.querySelector('#fire .rows:not([hidden]) .r')), vh: innerHeight,
+               pb: parseFloat(getComputedStyle(nav).paddingBottom), pt: 0, rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= navTop).length,
+               mb: R(document.querySelector('.mb')), t6: R(document.querySelector('.tiles.t6')), tiles: document.querySelectorAll('.tiles.t6 .tile').length };
     });
     const over = (a, b) => a && b && a.top < b.bottom && b.top < a.bottom;
     for (const [w, h, ua, name] of PHONES) for (const app of [false, true]) {
       const c2 = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }), p2 = await c2.newPage();
-      if (app) await p2.addInitScript(STANDALONE);
+      if (app) await p2.addInitScript(STANDALONE); else await p2.addInitScript(V2);
       let safe = false;
       if (app && ua === IOS) try { const s = await c2.newCDPSession(p2); await s.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 34, left: 0, right: 0 } }); safe = true; } catch (e) {}  // 아이폰 홈 바(크롬 DevTools가 지원하면)
       await p2.goto(U + (app ? '/?src=app' : '/'), { waitUntil: 'load' });
@@ -154,11 +202,12 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       const L = await layout(p2), tag = `${name} ${app ? '앱' : '브라우저'}`;
       if (app) assert.ok(!L.inst, tag + ': 설치 앱 = 띠 없음');
       else {
-        assert.ok(L.inst && L.inst.height >= 48 && L.inst.height <= 80 && L.inst.top < 220, tag + ' 띠 ' + JSON.stringify(L.inst));
+        assert.ok(L.inst && L.inst.height >= 48 && L.inst.height <= 80 && L.inst.bottom <= L.vh - (L.bottom ? L.bottom.height : 0), tag + ' 띠(아래 메뉴 위 얇게) ' + JSON.stringify(L.inst));
         assert.ok(L.x.width >= 44 && L.x.height >= 44 && (!L.btn || L.btn.height >= 44), tag + ' 버튼 44px+');
         assert.ok(!over(L.inst, L.bottom) && !over(L.inst, L.top), tag + ' 띠가 고정 바와 안 겹침');
       }
-      assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 오늘의 픽 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
+      assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 실시간 핫딜 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
+      assert.ok(L.mb && L.t6 && L.tiles === 12 && L.t6.bottom <= L.vh && L.rows >= (w >= 390 ? 4 : 3), tag + ' 첫 화면 = 몰 버튼·품목 12개·핫딜 줄 4개↑(10/24 Cowork 포털형) ' + JSON.stringify([L.rows, L.t6, L.vh]));
       assert.ok(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ' 옆으로 안 넘침');
       if (safe) assert.ok(L.pb >= 40, tag + ' 홈 바 여백 ' + L.pb);
       const f = path.join(tmp, `${w}${app ? 'a' : 'b'}.png`);
@@ -167,7 +216,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       await c2.close();
     }
     const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IG, isMobile: true, hasTouch: true }), p3 = await c3.newPage();  // 앱 안 브라우저(인스타) — 띠 + 헤더 아래 메뉴 한 줄
-    await p3.goto(U + '/', { waitUntil: 'load' });
+    await p3.addInitScript(V2); await p3.goto(U + '/', { waitUntil: 'load' });
     const L3 = await layout(p3);
     assert.ok(L3.inst && L3.top && !over(L3.inst, L3.top) && !L3.bottom, '앱 안: 띠·탭 줄 안 겹침 ' + JSON.stringify([L3.inst, L3.top]));
     await p3.evaluate(() => scrollTo(0, 600)); const L4 = await layout(p3);
@@ -175,7 +224,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     await c3.close();
     const rd = [];
     for (const [w, h, ua, url, dark, name] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 844, IOS, '/', true, '홈 390 다크'],
-                                                [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390']]) {
+                                                [390, 844, IOS, '/c/', false, '카테고리 390'], [390, 844, IOS, '/c/coupang/', false, '쿠팡 쪽 390'], [390, 844, IOS, '/alarm/', false, '알림 390'], [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390']]) {
       const c4 = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' }), p4 = await c4.newPage();
       await p4.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} });
       await p4.goto(U + url, { waitUntil: 'load' }); await p4.waitForTimeout(300);

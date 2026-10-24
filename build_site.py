@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """posts.json(채널에 게시된 딜) -> docs/ 정적 사이트. GitHub Pages로 서빙. 외부 패키지 없음."""
-import calendar, hashlib, html, json, os, re, shutil, time, urllib.parse
+import calendar, collections, hashlib, html, itertools, json, os, re, shutil, time, urllib.parse
 
 BASE = "https://hotdealpick.kr/"
 GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
 GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소+경로(10/24 E — 상품마다 셈, 쿼리 X)
          "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href);h=h.hostname+h.pathname}catch(x){return}"
          "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});"
-         "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('a[data-ev]');"  # 기획전 배너 클릭 = 이벤트 banner/행사 이름(10/24 Cowork — 1주 보고 팝업 여부)
-         "if(b&&window.goatcounter&&goatcounter.count)goatcounter.count({path:'banner/'+b.getAttribute('data-ev'),title:'기획전 배너',event:true})});")
+         "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('a[data-ev],[data-gc]');"  # 기획전 배너 = 이벤트 banner/행사 · 칸별(data-gc) = mall/몰·top/N·deadline/글·drop/글·changes/종류(10/24 Cowork — 어느 칸을 누르는지)
+         "if(b&&window.goatcounter&&goatcounter.count)goatcounter.count({path:b.getAttribute('data-gc')||'banner/'+b.getAttribute('data-ev'),title:(b.getAttribute('aria-label')||b.textContent||'').trim().slice(0,80),event:true})});")
 
 
 GC_APP = ("window.goatcounter={referrer:function(r){return /[?&]src=app(&|$)/.test(location.search)||matchMedia('(display-mode: standalone)').matches&&!document.referrer?'app':r},"
@@ -27,20 +27,20 @@ CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(�
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
-:root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--pkt:#B3202F;--accf:#E5303F;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--card:#1A1C21;--ink:#ECEEF2;--sub:#9AA0AC;--line:#262931;--acc:#FF5A66;--chip:#24272E;--btn:#ECEEF2;--btnt:#14161B;--pkbg:linear-gradient(160deg,#3A1E27,#33261F);--pkln:rgba(255,92,114,.18);--pkt:#FF9AA6;color-scheme:dark}}
+:root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--pkt:#B3202F;--accf:#E5303F;--cpb:linear-gradient(160deg,#FFE5E3,#FFF2EE);--cpt:#C2202C;--tsb:linear-gradient(160deg,#E3EEFF,#EEF5FF);--tst:#1B64DA;--nvb:linear-gradient(160deg,#E2F7EA,#F0FAF3);--nvt:#00703A;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--card:#1A1C21;--ink:#ECEEF2;--sub:#9AA0AC;--line:#262931;--acc:#FF5A66;--chip:#24272E;--btn:#ECEEF2;--btnt:#14161B;--pkbg:linear-gradient(160deg,#3A1E27,#33261F);--pkln:rgba(255,92,114,.18);--pkt:#FF9AA6;--cpb:linear-gradient(160deg,#3A1E22,#2E2224);--cpt:#FF8A8F;--tsb:linear-gradient(160deg,#1B2A44,#1E2633);--tst:#6AA5FF;--nvb:linear-gradient(160deg,#17332A,#1D2B26);--nvt:#3DDC84;color-scheme:dark}}
 @font-face{font-family:"HDP Sans";src:url(/fonts/hdpsans-v1.woff2) format("woff2");font-weight:400 800;font-display:swap}
 body{margin:0;font:15px/1.5 "HDP Sans",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 a{color:inherit}main{max-width:560px;margin:0 auto;padding:0 calc(16px + env(safe-area-inset-right)) calc(88px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-html{scroll-padding:calc(124px + env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom))}html.inapp{scroll-padding:120px 0 16px}
-.hd{position:sticky;top:0;z-index:10;margin:0 -16px;padding:env(safe-area-inset-top) 16px 10px;background:var(--bg);box-shadow:0 1px 0 var(--line)}
-.hr{display:flex;align-items:center;gap:8px;height:56px}.hr .lg{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:auto}
-.logo{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#FF6860,#DC2230);color:#fff;font-weight:900;font-size:15px;letter-spacing:-.8px}
-.lg b,.lg h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.8px;line-height:1.3}
+html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom))}html.inapp{scroll-padding:128px 0 16px}
+.hd{position:sticky;top:0;z-index:10;margin:0 -16px;padding:env(safe-area-inset-top) 16px 0;background:var(--bg);box-shadow:0 1px 0 var(--line)}
+.hr{display:flex;align-items:center;gap:8px;height:56px}.hr .lg{flex:none;display:flex;align-items:center;text-decoration:none}
+.logo{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#FF6860,#DC2230);color:#fff;font-weight:900;font-size:15px;letter-spacing:-.8px}
+.lg b,.lg h1{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ib::before{content:"";position:absolute;inset:-3px}.ib{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 .ib svg,.nav svg,.sb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ib b{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accf);color:#fff;font-size:10.5px;line-height:17px;text-align:center}.ib b:empty{display:none}
-.sb{position:relative;display:block}.sb svg{position:absolute;left:14px;top:13px;color:var(--sub)}.sb input{width:100%;height:46px;border:1px solid var(--line);border-radius:14px;padding:0 14px 0 42px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
+.sb{position:relative;display:block;flex:1;min-width:0}.sb svg{position:absolute;left:12px;top:10px;color:var(--sub)}.sb input{width:100%;height:40px;border:1px solid var(--line);border-radius:12px;padding:0 10px 0 38px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
 .dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}
 .t{color:var(--sub);font-size:12.5px}
 .tp{margin:16px 0 0;padding:20px 16px 6px;border-radius:24px;background:var(--pkbg)}
@@ -75,7 +75,7 @@ html{scroll-padding:calc(124px + env(safe-area-inset-top)) 0 calc(76px + env(saf
 h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;line-height:1.3}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:4px calc(4px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));background:var(--card);border-top:1px solid var(--line)}
 .nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;color:var(--sub);text-decoration:none;font-size:11.5px;font-weight:600}.nav a[aria-current=page]{color:var(--ink)}.nav a[aria-current=page] svg{stroke-width:2.4}
-.inapp .hd{top:-56px}.inapp .nav{position:static;margin:10px -16px 0;padding:0;background:none;border:0}.inapp main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
+.inapp .nav{position:static;margin:10px -16px 0;padding:0;background:none;border:0}.inapp main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
 .card,.deal{background:var(--card);border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 1px 0 var(--line)}.card h2{margin:0 0 8px;font-size:18px;letter-spacing:-.5px}
 .deal .im{height:220px;border-radius:16px;font-size:80px;margin:-4px -4px 12px}.deal .dn{margin:6px 0 10px;font-size:20px;line-height:1.4;letter-spacing:-.6px}.deal .dn a{text-decoration:none}.hero{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}.hero .pr{font-size:28px;font-weight:800;letter-spacing:-.8px}.ship{font-size:13px;color:var(--sub)}
 .deal .note{font-size:12px;color:var(--sub);text-align:center;margin:8px 0 0}.why{font-size:14px;color:var(--sub);font-weight:700;margin:18px 0 6px;padding-top:16px;border-top:1px solid var(--line)}.deal p{margin:0;font-size:15px;line-height:1.65}.deal p a{color:var(--acc)}
@@ -84,10 +84,30 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 .recs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}.recs h3{width:100%;margin:4px 2px 2px;font-size:15px}.recs a{display:flex;align-items:center;min-height:38px;padding:0 12px;border-radius:19px;background:var(--card);border:1px solid var(--line);text-decoration:none;font-size:13.5px}
 .rec h3{font-size:16px;margin:18px 2px 2px}.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.stat div{background:var(--card);border-radius:14px;padding:12px;font-size:12px;color:var(--sub);box-shadow:0 1px 0 var(--line)}.stat b{display:block;font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.4px}
 .tw{overflow-x:auto;margin:14px 0 8px;background:var(--card);border-radius:14px;box-shadow:0 1px 0 var(--line)}.tw table{width:100%;border-collapse:collapse;font-size:13px}.tw th,.tw td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.tw th{color:var(--sub);font-weight:600;white-space:nowrap}.tw td:nth-child(-n+2),.tw td:nth-child(n+4){white-space:nowrap}.tw tr.min td{background:rgba(255,212,59,.18)}
-.inst{display:flex;align-items:center;gap:4px;margin:10px 0 0;padding:2px 0 2px 12px;min-height:48px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:13px;line-height:1.35}.inst span{flex:1;min-width:0}.inst button{min-height:44px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}#instb{background:var(--accf);color:#fff;padding:0 12px;font-size:14px}#instx{min-width:44px;background:none;color:var(--sub);font-size:16px}
+.inst{position:fixed;z-index:8;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:4px;max-width:528px;margin:0 auto;padding:2px 0 2px 12px;min-height:48px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:0 6px 20px rgba(20,22,27,.14);font-size:13px;line-height:1.35}@media(max-width:560px){.inst{left:10px;right:10px}}.inapp .inst{bottom:calc(10px + env(safe-area-inset-bottom))}main:has(>#inst:not([hidden])){padding-bottom:calc(150px + env(safe-area-inset-bottom))}.inst span{flex:1;min-width:0}.inst button{min-height:44px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}#instb{background:var(--accf);color:#fff;padding:0 12px;font-size:14px}#instx{min-width:44px;background:none;color:var(--sub);font-size:16px}
 footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}footer a{color:var(--sub)}
 #sr .t{margin:12px 2px 0}
 @media(max-width:359px){main{padding-left:12px;padding-right:12px}.hd{margin:0 -12px;padding-left:12px;padding-right:12px}.tile{font-size:12px}.tp h2{font-size:21px}.pk{grid-template-columns:14px 56px minmax(0,1fr) auto;gap:8px}.pk .im{width:56px;height:56px}.pk .go{padding:0 10px}}
+.mb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:10px 0 0}.m{display:flex;align-items:center;justify-content:center;height:36px;border-radius:12px;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+.coupang.m,.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.m,.toss.mt{background:var(--tsb);color:var(--tst)}.naver.m,.naver.mt{background:var(--nvb);color:var(--nvt)}.m.evt{background:var(--pkbg);color:var(--pkt)}
+.mk{flex:none;margin-right:5px;font-weight:800;color:var(--sub)}.mk.coupang{color:var(--cpt)}.mk.toss{color:var(--tst)}.mk.naver{color:var(--nvt)}
+.tiles.t6{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
+.sec>h2>span{display:flex;align-items:baseline;gap:6px;min-width:0}.sec>h2 .more{flex:none;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
+.tabs{display:flex;gap:6px;margin:10px -16px 0;padding:0 16px 2px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button,.mf button{flex:none;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}.tabs button[aria-selected=true],.mf button[aria-pressed=true]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
+.rows{list-style:none;margin:8px 0 0;padding:0 12px;background:var(--card);border-radius:18px;box-shadow:0 1px 0 var(--line)}.r a{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:10px;min-height:68px;padding:8px 0;border-top:1px solid var(--line);text-decoration:none}.r:first-child a{border-top:0}
+.r .im{width:52px;height:52px;border-radius:12px;font-size:26px}.rt{display:flex;flex-direction:column;gap:1px;min-width:0}.l1{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:14px;font-weight:600;letter-spacing:-.3px}
+.l2{display:flex;align-items:baseline;gap:0 6px;overflow:hidden;white-space:nowrap;font-size:12px;color:var(--sub)}.l2 b{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.5px}.l2 i{flex:none;font-style:normal;font-weight:700;color:var(--pkt)}.l2 small{overflow:hidden;text-overflow:ellipsis;font-size:12px}.tl{margin:6px 2px 0;font-size:11.5px}
+.t10{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column;gap:0 12px;margin:8px 0 0;padding:6px 12px;background:var(--card);border-radius:18px;box-shadow:0 1px 0 var(--line)}
+.t10 a{display:flex;align-items:center;gap:6px;min-width:0;min-height:34px;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:-.3px}.t10 span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.t10 .n{flex:none;width:16px;text-align:center;font-weight:800;color:var(--sub)}.t10 .n.r{color:var(--acc)}.t10 .mk{margin:0;font-size:11.5px}
+.more2{display:block;margin:8px 2px 0;text-align:right;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
+.hs{display:flex;gap:10px;margin:10px -16px 0;padding:0 16px 4px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}.hs::-webkit-scrollbar{display:none}.hs>.g,.hs>.hc{flex:0 0 150px;min-width:0;scroll-snap-align:start}.hs .g .im{height:96px;font-size:40px}#pick .hs>.g{flex-basis:132px}#pick .hs .g .im{height:88px}
+.hc{display:flex;flex-direction:column;gap:6px}.hc .cd{color:var(--pkt);font-size:11.5px;font-weight:800;letter-spacing:-.3px}.hc>.g{flex:1}.evc{gap:4px;padding:12px;border-radius:20px;background:var(--pkbg);color:var(--ink);text-decoration:none}.evc .em{font-size:30px}.evc small{color:var(--sub);font-size:12px}
+.ch{margin:22px 2px 0;font-size:17px;font-weight:800;letter-spacing:-.5px}.mt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 0}.mt{display:flex;flex-direction:column;justify-content:center;gap:1px;height:96px;padding:0 12px;border-radius:18px;text-decoration:none}.mt b{font-size:16px;font-weight:800;letter-spacing:-.4px}.mt small{font-size:11.5px;font-weight:600}.mt i{font-style:normal;font-size:11.5px}
+.nav a{position:relative}.nav b{position:absolute;top:4px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accf);color:#fff;font-size:10px;line-height:16px;text-align:center}.nav b:empty{display:none}.nav .dot{position:absolute;top:7px;left:calc(50% + 7px);width:8px;height:8px;border-radius:4px;background:var(--accf)}
+.chgs{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:14px;font-weight:700}.g .chg{align-self:flex-start;margin:6px 2px 0;padding:2px 7px;border-radius:7px;background:var(--accf);color:#fff;font-size:11.5px;font-weight:800}
+.chgb>.btn2{margin-top:14px}.chgb ul{list-style:none;margin:6px 0 0;padding:0}.chgb li a{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:6px 0 0;padding:0 14px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:700}.chgb li b{color:var(--acc)}
+@media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}.m{font-size:12.5px}}
 .deal .s{margin:2px 0 0;font-size:12.5px;color:var(--sub)}.deal h2 a{text-decoration:none}.hero .sv,.g .sv{color:var(--acc);font-size:14px;font-weight:700}
 @media(prefers-color-scheme:dark){.im,.tile i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
@@ -147,31 +167,32 @@ def title_of(text):
     return split_title(text)[0]
 
 
-def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website"):
-    """모든 쪽 틀(10/24 진우 개편 A): 고정 헤더(딜 로고·핫딜픽·🔔 알림·♡ 찜) + 검색칸 + 대가성 문구(11.5px 회색 한 덩어리) + 본문 + 아래 메뉴 5개(앱 안 브라우저 = 헤더 아래 한 줄)."""
+def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website", lead="", dis=""):
+    """모든 쪽 틀(10/24 진우 개편 A → 포털형): 고정 헤더 1줄(딜 로고 32 · 검색칸 · 🔔 알림 — ♡ 찜은 아래 메뉴에 개수) + lead(홈 = 몰 버튼·품목 아이콘) + 대가성 문구(dis = 홈 짧은 문구) + 본문 + 아래 메뉴 5개(🔔 = 찜 변경 빨간 점)."""
     t, d = html.escape(title), html.escape(desc[:150])
-    nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}</a>" for k, n, u in NAV) + "</nav>"
+    nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-label="찜한 딜 보기"' if k == "saved" else "") + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}"
+                                                       + ('<b id="lc"></b>' if k == "saved" else '<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i>' if k == "alarm" else "") + "</a>" for k, n, u in NAV) + "</nav>"
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{gc_tag()}{head}</head><body><main>
-<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜한 딜 보기">{svg("saved")}<b id="lc"></b></a></div>
-<form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="무엇을 찾으세요? 휴지, 라면, 토너…" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
-{top}<p class="dis">{html.escape(note) + "<br>" if note else ""}{DISCLOSURE}</p>{body}
-<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main>{LIKE_JS}{SEARCH_JS}{END_JS}</body></html>"""
+<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="무엇을 찾으세요? 휴지, 라면, 토너…" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form><a class="ib" href="{BASE}alarm/" aria-label="알림 받기">{svg("alarm")}</a></div>{nav}</header>
+{top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:8px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
+<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main>{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
 
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function card(x){return "<article class='g'><button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button><div class='im' style='--c:"+esc(x.c)+"'><span aria-hidden='true'>"+esc(x.m)+"</span>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onerror='this.remove()'>":"")+(x.b||"")+"</div><span class='mc'>"+esc(x.s)+"</span><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
 function hide(on){[].forEach.call(M.children,function(e){if(/^(HEADER|FOOTER|SCRIPT)$/.test(e.tagName)||e.id==='sr'||e.className==='dis')return;if(on){if(!e.hidden){e.hidden=true;e.dataset.sh=1}}else if(e.dataset.sh){e.hidden=false;delete e.dataset.sh}})}
+function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}
 function run(){var v=q.value.trim().toLowerCase();if(!v){if(sr){sr.remove();sr=null}hide(false);return}
 if(!D){fetch('/search.json').then(function(r){return r.json()}).then(function(j){D=j;run()}).catch(function(){});return}
 var w=v.split(/\\s+/),r=D.filter(function(x){return w.every(function(k){return x.k.indexOf(k)>=0})});
 if(!sr){sr=document.createElement('section');sr.id='sr';sr.className='sec';M.querySelector('.dis').insertAdjacentElement('afterend',sr);scrollTo(0,0)}hide(true);
-sr.innerHTML="<h2>검색 결과</h2><p id='qn' class='t' role='status'>"+(r.length?r.length+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요')+"</p>"+(r.length?"<div class='cards'>"+r.slice(0,60).map(card).join('')+"</div>":'');if(window.hdpLike)hdpLike()}
-q.addEventListener('input',function(){clearTimeout(tm);tm=setTimeout(run,120)});q.form.addEventListener('submit',function(e){e.preventDefault();q.blur();run()});
+var g=go(v);sr.innerHTML="<h2>검색 결과</h2>"+(g?"<a class='btn2' href='"+g+"'>"+(g==='/c/drop/'?'📉 가격 내려간 상품 보기 →':'⏰ 오늘 마감 보기 →')+"</a>":'')+"<p id='qn' class='t' role='status'>"+(r.length?r.length+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요')+"</p>"+(r.slice(0,60).some(function(x){return x.s==='토스'})?"<p class='t'>토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인</p>":'')+(r.length?"<div class='cards'>"+r.slice(0,60).map(card).join('')+"</div>":'');if(window.hdpLike)hdpLike()}
+q.addEventListener('input',function(){clearTimeout(tm);tm=setTimeout(run,120)});q.form.addEventListener('submit',function(e){e.preventDefault();q.blur();var g=go(q.value.trim().toLowerCase());if(g)return location.assign(g);run()});
 var u=new URLSearchParams(location.search).get('q');if(u){q.value=u;run()}})()</script>"""  # 10/24 개편: 홈이 TOP 4만 담아서 검색은 사이트 색인(search.json, 진열 상품 전부 — 처음 입력 때 1번 받음) — 🔥 먼저(목록 순서 그대로)·같은 상품 1번, 결과는 그 쪽 본문 자리에(지우면 그대로)
 
 
@@ -204,6 +225,7 @@ e.respondWith(fetch(r).then(function(res){if(res.ok&&r.mode==='navigate'){var x=
 INSTALL = ('<div class="inst" id="inst" hidden><span id="instt"></span><button type="button" id="instb">📲 앱으로 설치</button><button type="button" id="instx" aria-label="닫기">✕</button></div>'
            "<script>(function(){var b=document.getElementById('inst'),t=document.getElementById('instt'),ok=document.getElementById('instb'),ev=null,ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;"
            "if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;try{if(Date.now()-(+localStorage.getItem('instx')||0)<6048e5)return}catch(e){}"
+           "var v=0;try{if(!sessionStorage.getItem('hv')){sessionStorage.setItem('hv','1');localStorage.setItem('hv',(+localStorage.getItem('hv')||0)+1)}v=+localStorage.getItem('hv')||0}catch(e){}if(v<2)return;"  # 10/24 Cowork: 첫 방문엔 X, 두 번째 방문부터 아래쪽 얇은 띠
            "function show(m,btn){t.innerHTML=m;ok.hidden=!btn;b.hidden=false}"
            "document.getElementById('instx').onclick=function(){b.hidden=true;try{localStorage.setItem('instx',Date.now())}catch(e){}};"
            "if(document.documentElement.classList.contains('inapp')||/Telegram|; wv\\)/.test(ua)||ios&&!/Safari\\//.test(ua))return show('📲 크롬·사파리에서 열면 앱으로 설치할 수 있어요',0);"
@@ -397,8 +419,13 @@ FOOD = r"쌀|라면|햇반|생수|샘물|우유|계란|달걀|구운란|특란|�
 def badges(p):
     """카드 배지(10/10 진우 'UI 편하게'): 🏆 인기(커뮤니티 반응, 10/11 몰·시각 줄에서 옮김 — 좁은 칸에서 시각이 잘려서) · 본사 정품(예약 글 tag) · 오늘 밤 12시 마감(토스 선착순특가, 오늘 올린 글만) · 약한 딜."""
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-    return ([("b4", "🏆 인기")] if p.get("hot") else []) + ([("b1", "✅ 본사 정품")] if p.get("tag") == "정품" else []) + ([("b2", "⏰ 오늘 밤 12시 마감")] if "밤 12시까지" in p["text"] and p["t"][:10] == today else []) \
+    return ([("b4", "🏆 인기")] if p.get("hot") else []) + ([("b1", "✅ 본사 정품")] if p.get("tag") == "정품" else []) + ([("b2", "⏰ 오늘 밤 12시 마감")] if day_end(p, today) else []) \
         + ([("b3", "🛒 약한 딜")] if "특가로는 약한 제품" in p["text"] else [])
+
+
+def day_end(p, today):
+    """오늘 밤 12시에 끝나는 딜(10/24 Cowork '오늘 마감'): 오늘 올린 글 중 '밤 12시까지' 또는 토스 하루특가·선착순(커뮤니티 '선착순 쿠폰' 같은 다른 몰 X) — 확인 뒤 대기(st wait·out)면 X."""
+    return p.get("t", "")[:10] == today and p.get("st", "hot") == "hot" and ("밤 12시까지" in p["text"] or shop_of(p) == "toss" and bool(re.search(DAY_ONLY, p["text"])))
 
 
 def end_at(p):
@@ -410,8 +437,13 @@ def badge_html(p, skip=()):
     return "".join(f'<b class="{c}"' + (f' data-end="{end_at(p)}"' if c == "b2" else "") + f">{t}</b>" for c, t in badges(p) if c not in skip)
 
 
-END_JS = """<script>(function(){function f(){var n=Date.now()/1000;[].forEach.call(document.querySelectorAll('[data-end]'),function(b){var s=b.dataset.end-n,h=Math.floor(s/3600),m=Math.floor(s%3600/60);
-b.textContent=s<=0?'⏰ 마감됐어요':s<60?'⏰ 곧 마감':'⏰ 마감까지 '+(h?h+'시간 ':'')+m+'분'})}f();setInterval(f,30000)})()</script>"""
+END_JS = """<script>(function(){function f(){var n=Date.now()/1000;[].forEach.call(document.querySelectorAll('[data-end]'),function(b){var s=b.dataset.end-n,h=Math.floor(s/3600),m=Math.floor(s%3600/60),k=b.dataset.k,c=k&&b.closest('.hc');
+if(c&&s<=0){c.hidden=true;delete c.dataset.sh;var x=c.closest('section');if(x&&!x.querySelector('.hc:not([hidden])')){x.hidden=true;delete x.dataset.sh}return}
+b.textContent=k?'⏰ '+(s<60?'곧 마감':(h?h+'시간 ':'')+m+'분 남음')+' · '+k:s<=0?'⏰ 마감됐어요':s<60?'⏰ 곧 마감':'⏰ 마감까지 '+(h?h+'시간 ':'')+m+'분'})}f();setInterval(f,30000)})()</script>"""  # 오늘 마감 칸(data-k) = 남은 시간 · 종류, 자정 지나면 카드·빈 칸 숨김(10/24 Cowork — 빌드 시각 X, 브라우저 시계)
+DOT_JS = """<script>(function(){var L,s=0;try{L=JSON.parse(localStorage.getItem('likes'))||[];s=+localStorage.getItem('chgseen')||0}catch(e){return}if(!L.length||/^\\/alarm\\//.test(location.pathname))return;
+function on(j){if(L.some(function(x){var c=j.items[j.a[x.i]||x.i];return c&&c.d*1000>s&&c.k.some(function(k){return k!=='new'})})){var d=document.getElementById('adot');if(d)d.hidden=false}}
+try{var c=JSON.parse(sessionStorage.getItem('chg'));if(c&&Date.now()-c.t<6e5)return on(c.j)}catch(e){}
+fetch('/changes.json').then(function(r){return r.json()}).then(function(j){try{sessionStorage.setItem('chg',JSON.stringify({t:Date.now(),j:j}))}catch(e){}on(j)}).catch(function(){})})()</script>"""  # 아래 메뉴 🔔 빨간 점 = 마지막으로 알림 탭 본 뒤 찜한 상품이 바뀜(changes.json, 10분 한 번 받음 · 찜 0개·저장소 막힘 = 아무것도 안 함)
 
 
 def keys(p):
@@ -429,6 +461,7 @@ def price_won(title):
 
 
 DAY_ONLY = r"하루\s*특가|선착순|밤 12시까지"  # 토스 하루특가·선착순특가 = 올린 날 밤 12시 마감
+TOSS_LINE = "토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인"  # 토스 카드 1줄('M/D 가격') 안내 — 칸 머리에 한 번(10/24 Cowork)
 EVENTS = "events.json"
 CP_LINKS = "cp_links.json"  # {쿠팡 상품 주소: 파트너스 링크} — 봇이 딥링크 API로 만듦(쿠팡 키 있을 때만 생김, 10/23 hotdeal.cp_links). events 그 주소 대신 씀
 CP_PROD = r"https://(?:www\.|m\.)?coupang\.com/vp/products/(\d+)"  # 쿠팡 상품 주소(번호 = pid). 진우 단축 링크(link.coupang.com)는 그대로
@@ -507,7 +540,7 @@ def shelf(p, ev, today):
     if st == "hot":
         return 0, now or None, (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else "", bd, rehot
     wait = f"특가 때 {tgt} · 특가 기다리는 중" if tgt else f"{md} 가격 · 특가 기다리는 중"  # 목표가 없으면 올린 가격을 날짜와 같이(지금 가격처럼 안 보이게)
-    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else f"{wait} · 지금 가격은 링크에서 확인"), bd + [("b3", "⏳ 특가 대기")], False
+    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · 지금 가격은 링크에서 확인"), bd + [("b3", "⏳ 특가 대기")], False
 
 
 def shelf_gone(posts):
@@ -649,10 +682,33 @@ def shop_of(p):
             else "naver" if re.search("네이버|스마트스토어", tag) or host in NAVER_HOSTS + ("smartstore.naver.com", "brand.naver.com") else "")
 
 
-SAVED = ('<h1 class="h">♡ 찜한 딜</h1><div class="t">이 폰(브라우저)에만 저장돼요 · 가격은 올린 때 기준이라 바뀌었을 수 있어요</div>'
+SAVED = ('<h1 class="h">♡ 찜한 딜</h1><div class="t">이 폰(브라우저)에만 저장돼요<span id="savn"> · 가격은 올린 때 기준이라 바뀌었을 수 있어요</span></div><p class="chgs" id="chgsum" hidden></p>'
          '<section id="saved" aria-label="찜한 딜"><div class="cards" id="savedg"></div><p id="saved0" class="t">아직 찜한 딜이 없어요. 상품 카드의 ♡를 누르면 여기 모여요.</p></section>')  # 10/24 개편: /saved/ 쪽(아래 메뉴 ♡ 찜·헤더 ♡) — 옛 카드 HTML도 그대로 보임
-ALARM = (f'<h1 class="h">🔔 알림 받기</h1><div class="t">새 특가·다시 특가를 바로 받아 보세요</div><a class="btn" href="{CHANNEL}">📲 텔레그램 채널에서 실시간 알림 받기</a>'
+ALARM = (f'<h2 class="ch">📲 새 특가 알림 받기</h2><div class="t">새 특가·다시 특가를 바로 받아 보세요</div><a class="btn" href="{CHANNEL}">📲 텔레그램 채널에서 실시간 알림 받기</a>'
          f'<a class="btn2" href="{THREADS}">Threads에서 팔로우</a><a class="btn2" href="{INSTA}">인스타그램에서 팔로우</a>')  # 아래 메뉴 🔔(웹 푸시 전까지 텔레그램 채널)
+HOME_DIS = "쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑 커넥트 등 제휴로 수수료를 받을 수 있어요."  # 홈 대가성 문구 1~2줄(10/24 Cowork 포털형 — 몰 바로 가는 링크 옆엔 그 몰 문구 그대로)
+CHG_JS = """<script>document.addEventListener('DOMContentLoaded',function(){var L=[];try{L=JSON.parse(localStorage.getItem('likes'))||[]}catch(e){}
+var g=document.getElementById('savedg'),sum=document.getElementById('chgsum'),cn=document.getElementById('chgn'),al=/^\\/alarm\\//.test(location.pathname);
+function lab(c){var k=c.k;return k.indexOf('gone')>=0?'판매 종료':k.indexOf('deadline')>=0?'⏰ 오늘 밤 마감':k.indexOf('drop')>=0?'▼ '+c.p+'% 내림 · '+(c.t.split(' ')[0]||'')+' 확인':k.indexOf('rehot')>=0?'🔁 다시 특가':k.indexOf('ended')>=0?'⏳ 특가 끝남':''}
+function deco(j){var n={drop:0,deadline:0,rehot:0,ended:0,gone:0},m=0;
+if(g){var C=[].slice.call(g.querySelectorAll('.g')),ch=[];C.forEach(function(c){var b=c.querySelector('.like'),i=b&&b.dataset.i,x=i&&j.items[j.a[i]||i],t=x&&lab(x),o=c.querySelector('.chg');if(o)o.remove();if(!t)return;
+var d=document.createElement('div');d.className='chg';d.textContent=t;var h=c.querySelector('h3');if(h)h.parentNode.insertBefore(d,h);ch.push(c);x.k.forEach(function(k){if(k in n)n[k]++})});
+ch.concat(C.filter(function(c){return ch.indexOf(c)<0})).forEach(function(c){g.appendChild(c)});m=ch.length;
+var w=[['drop','가격 내려간'],['deadline','오늘 마감'],['rehot','다시 특가'],['ended','특가 끝난'],['gone','판매 종료']].filter(function(x){return n[x[0]]}).map(function(x){return x[1]+' '+n[x[0]]+'개'});
+if(sum){sum.textContent=w.length?'찜한 딜 중 '+w.join(' · '):'';sum.hidden=!w.length}}
+else{m=L.filter(function(x){var c=j.items[j.a[x.i]||x.i];return c&&lab(c)}).length}
+if(cn)cn.textContent=m;if(al){try{localStorage.setItem('chgseen',Date.now())}catch(e){}var d=document.getElementById('adot');if(d)d.hidden=true}}
+function get(){fetch('/changes.json').then(function(r){return r.json()}).then(deco).catch(function(){})}
+get();if(g)document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.like'))setTimeout(get,0)})})</script>"""  # 찜 쪽 = 바뀐 카드에 배지·맨 위 요약·바뀐 것 먼저(안내 문구는 바뀐 게 없을 때만) · 알림 탭 = '내 찜 변경 N' + 본 시각(빨간 점 끔) — 찜 0개·변경 0개·저장소 막힘 = 그대로
+
+
+def alarm_body(ch):
+    """알림 탭(10/24 Cowork '변경 찾기'): 맨 위 '♡ 내 찜 변경 N'(CHG_JS) + '오늘 바뀐 것' 줄(📉 가격 내려감·⏰ 오늘 마감·🔁 다시 특가 → 그 쪽, GoatCounter changes/종류) + 아래 텔레그램·SNS(ALARM)."""
+    n = ch.get("n") or {}
+    rows = [(c_url("drop"), "drop", "📉 가격 내려감"), (c_url("today"), "deadline", "⏰ 오늘 마감"), (c_url("hot"), "rehot", "🔁 다시 특가")]
+    return ('<h1 class="h">🔔 알림</h1><section class="chgb" aria-label="바뀐 것">'
+            f'<a class="btn2" href="{BASE}saved/" data-gc="changes/saved"><span>♡ 내 찜 변경 <b id="chgn">0</b>개 보기 →</span></a><h2 class="ch">오늘 바뀐 것</h2><ul>'
+            + "".join(f'<li><a href="{u}" data-gc="changes/{k}"><span>{t}</span><b>{n.get(k, 0)}개 →</b></a></li>' for u, k, t in rows) + "</ul></section>" + ALARM)
 
 LIKE_JS = """<script>(function(){var L;try{L=JSON.parse(localStorage.getItem('likes'))||[]}catch(e){L=[]}
 function has(i){return L.some(function(x){return x.i===i})}
@@ -696,12 +752,127 @@ def img_of(p):
     return u if shop_of(p) == "coupang" and u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com"))) else ""
 
 
+# 썸네일 이모지(10/24 Cowork '미스트·크림 → 💄, 샴푸·물티슈 → 🧻' 오매칭): 이름 낱말 -> 이모지(위에서부터 첫 맞음 — 순서가 중요: 기기·차·펫·운동 -> 세탁·주방 도구 -> 옷 -> 생필품 -> 뷰티 -> 먹거리), 안 맞으면 품목 이모지. Unicode 12 이하만
+ICONS = (
+    (r"송장|택배", "📦"),
+    (r"이어폰|에어팟|헤드셋|헤드폰", "🎧"),
+    (r"보조\s*배터리|건전지", "🔋"),
+    (r"충전기|케이블|멀티\s*탭", "🔌"),
+    (r"모니터|노트북|장패드", "🖥️"),
+    (r"선풍기", "🌀"),
+    (r"가습기|드라이기|드라이어", "💨"),
+    (r"오븐|에어\s*프라이어|밥솥|전기\s*포트|전자레인지", "🍳"),
+    (r"차량용|자동차|요소수|워셔액|와이퍼|엔진|불스원|카플레이|햇빛\s*가리개", "🚗"),
+    (r"고양이|(?<![A-Za-z])CAT|캣누리|두부모래|스크래쳐", "🐱"),
+    (r"강아지|DOG|(?<!핫)도그|배변|펫|사료", "🐶"),
+    (r"양말|삭스|덧신", "🧦"),
+    (r"보호대|아령|요가|짐볼|풀업|푸쉬업|스트레칭|운동|자이로볼", "🏋️"),
+    (r"마사지기|EMS|괄사", "💆"),
+    (r"(?<!제)모기|홈매트|홈키파|훈증", "🦟"),
+    (r"핫팩|손난로|발난로|보온대|온열|히터|난로", "♨️"),
+    (r"안대", "😴"),
+    (r"샤워기|샤워\s*헤드", "🚿"),
+    (r"이불|담요|베개|침대|방석", "🛏️"),
+    (r"디퓨저|탈취|방향제|페브리즈", "🌿"),
+    (r"변기|락스|곰팡이|청소포|물걸레|크리너|클리너", "🧹"),
+    (r"주방\s*세제|식기\s*세척|수세미|행주|스펀지", "🧽"),
+    (r"세제|유연제|빨래|세탁|건조기\s*시트|옷걸이|바지걸이|울샴푸", "🧺"),
+    (r"밀폐\s*용기|보관\s*용기|김치통|용기\s*\d", "🥡"),
+    (r"칼\s*세트|주방\s*칼|식칼|과도|가위|도마", "🔪"),
+    (r"프라이팬|후라이팬|냄비|곰솥|에그팬|무쇠팬", "🍳"),
+    (r"텀블러|보온병|쉐이커|종이컵", "🥤"),
+    (r"식기|그릇|접시", "🍽️"),
+    (r"장갑", "🧤"),
+    (r"생리|오버\s*나이트|라이너|탐폰", "🌸"),
+    (r"팬티|브라탑|속옷", "🩲"),
+    (r"티셔츠|조끼|셔츠|파자마|잠옷|앞치마", "👕"),
+    (r"바지|팬츠|몸빼", "👖"),
+    (r"자켓|재킷|패딩|코트|(?<!주방 )후드", "🧥"),
+    (r"스카프|머플러|목도리", "🧣"),
+    (r"가방|백팩|보스턴백|숄더백|파우치", "👜"),
+    (r"지갑", "👛"),
+    (r"귀걸이|목걸이|반지", "💍"),
+    (r"안경", "👓"),
+    (r"(?<![가-힣])펜|중성펜|마카펜|연필|복사용지|스티커|카드\s*슬리브", "✏️"),
+    (r"물티슈", "💧"),
+    (r"휴지|화장지|키친\s*타[월올]|티슈", "🧻"),
+    (r"면도기|면도날|쉐이빙|제모기|코털", "🪒"),
+    (r"칫솔|치약|치실|가글|가그린|구강", "🦷"),
+    (r"KF\s*\d|덴탈\s*마스크|일회용\s*마스크|새부리", "😷"),
+    (r"헤어(?!\s*밴드)|샴푸|린스|트리트먼트|바디\s*워시|핸드\s*워시|스킨\s*워시|새니타이저|컬크림", "🧴"),
+    (r"리무버|클렌징(?!패드)|클렌저|폼클렌|비누|뷰티\s*바|(?<!아이스)크림\s*바|세안", "🧼"),
+    (r"립\s*(?:밤|스틱|글로|큐어|슬리핑)|립밤|틴트|마스카라|팩트|쿠션|파운데이션|컨실러|비비\s*크림|(?<![A-Za-z])BB(?![A-Za-z])", "💄"),
+    (r"마스크|시트팩|패드|패치", "🧖"),
+    (r"(?<!아이스)(?<!콘)(?<!앤)크림(?!\s*(?:화이트|빠네|치즈|파이|빵|맛)|화이트)|로션|세럼|앰플|에센스|토너|미스트|(?<!배)스킨(?!온)|에멀젼|올인원|기초\s*세트|시카플라스트", "🧴"),
+    (r"퍼퓸|향수", "💐"),
+    (r"손톱|네일", "💅"),
+    (r"식물|모종|토양|화분", "🌱"),
+    (r"LED|무드등|터치등", "💡"),
+    (r"생수|샘물|삼다수|아이시스|에브리워터|트레비|탄산수|스파클\s*탄산", "💧"),
+    (r"고구마칩|칩|새우깡|과자|감자\s*튀김|구운감자", "🍟"),
+    (r"시리얼|콘푸로스트|그래놀라|크리스피롤", "🥣"),
+    (r"우유|두유|요거트|요구르트|오트(?!밀)|(?<![가-힣])윌(?![가-힣])", "🥛"),
+    (r"분유|앱솔루트", "🍼"),
+    (r"(?:(?<![가-힣])김\s*\d|곱창김|돌김|파래김|생김|김자반|도시락김|식탁김|전장김|광천김|맛김|성경김)(?!치)", "🍙"),
+    (r"땅콩|견과|아몬드|호두", "🥜"),
+    (r"캔디|사탕|젤리", "🍬"),
+    (r"초코|빼빼로|칸쵸|오레오|몽쉘|제티", "🍫"),
+    (r"라면|짬뽕|불닭|우동|칼국수|국수|파스타|스파게티|[가-힣]면\s+\d", "🍜"),
+    (r"계란|달걀|유정란|구운란|[대특중]란|메추리알", "🥚"),
+    (r"커피|아메리카노|카누|맥심|라떼|원두|할리스", "☕"),
+    (r"보리차|하늘보리|녹차|여주차|유자차|쌍화", "🍵"),
+    (r"(?<!쇼)콜라|사이다|맥콜|음료|주스(?!용)|에이드|청포도|과채|매실|스프라이트|워터(?!뱅크|\s*슬리핑)", "🥤"),
+    (r"레몬즙|자몽즙", "🍋"),
+    (r"비타민|영양제|유산균|루테인|마그네슘|\d\s*정(?:\s|$|\+)|\d\s*캡슐|아르기닌|프로틴|뉴케어|낙산균|레몬컷|배양근", "💊"),
+    (r"햅쌀|(?<![가-힣])쌀|쌀\s*\d|흑미|잡곡|현미|보리쌀|햇반|오뚜기밥|누룽지|볶음밥|주먹밥", "🍚"),
+    (r"고구마", "🍠"),
+    (r"김치|깍두기|겉절이|배추|열무|상추|쌈채소|샐러드|콩나물|애호박", "🥬"),
+    (r"햄|소세지|소시지|비엔나|후랑크|핫도그|스팸|천하장사", "🌭"),
+    (r"어묵|오뎅|고등어|갈치|과메기|생선|장어|명란|멸치|황태", "🐟"),
+    (r"새우|대하", "🦐"),
+    (r"꽃게|게장|홍게|대게", "🦀"),
+    (r"오징어|낙지|문어", "🦑"),
+    (r"닭|치킨|윙|가라아게|넓적다리|오리(?!온|지)", "🍗"),
+    (r"삼겹|목살|한돈|한우|소고기|갈비|불고기|제육|등심|국거리|대패|잡육|돼지|족발|살치|떡갈비|함박|(?<!쇠)고기", "🥩"),
+    (r"참치|카레", "🥫"),
+    (r"곰탕|도가니|탕|국밥|찌개|해장국", "🍲"),
+    (r"교자|만두|동그랑땡", "🥟"),
+    (r"떡볶이", "🍢"),
+    (r"떡|쫀드기|약과|강정", "🍡"),
+    (r"빵|베이글|크로와상|바게트|카스테라|포카치아|파운드|도나스|와플|빠네", "🍞"),
+    (r"치즈", "🧀"),
+    (r"꿀|벌집", "🍯"),
+    (r"올리브\s*(?:오일|유)|올리브유|식용유|카놀라|참기름|들기름", "🍶"),
+    (r"간장|고추장|된장|소스|다시|퓨레|가루|분말|설탕|소금", "🧂"),
+    (r"햇밤|생밤|대보밤|옥광밤|맛밤|공주밤", "🌰"),
+    (r"빙수|아이스크림", "🍧"),
+    (r"감귤|(?<![가-힣])귤|한라봉|레드향|천혜향|반시|홍시|대봉|단감", "🍊"),
+    (r"사과|시나노|홍로|부사", "🍎"),
+    (r"(?<![가-힣])배(?:\s|$)|나주배|가정용배", "🍐"),
+    (r"샤인\s*머스[캣켓]|포도|블루베리", "🍇"),
+    (r"딸기", "🍓"),
+    (r"바나나", "🍌"),
+    (r"망고", "🥭"),
+    (r"토마토", "🍅"),
+    (r"당근", "🥕"),
+    (r"양파", "🧅"),
+    (r"옥수수", "🌽"),
+    (r"버섯|표고|능이", "🍄"),
+)
+
+
+def icon_of_p(p):
+    """카드 썸네일 이모지: ICONS(이름) -> 품목(CAT_META) -> 🛍️."""
+    name = parse(title_of(p["text"]))[1]
+    return next((e for r, e in ICONS if re.search(r, name)), (CAT_META.get(cat_of(p)) or ("", "", "🛍️"))[2])
+
+
 def thumb(p, inner=""):
     """썸네일: 품목 파스텔 네모 + 이모지, 쿠팡 사진이 있으면 그 위에(못 불러오면 사진만 지워져 이모지가 보임)."""
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
-    return f'<div class="im"{bg}><span aria-hidden="true">{c[2] if c else "🛍️"}</span>{pic}{inner}</div>'
+    return f'<div class="im"{bg}><span aria-hidden="true">{icon_of_p(p)}</span>{pic}{inner}</div>'
 
 
 def price_bits(p, sh):
@@ -713,7 +884,8 @@ def price_bits(p, sh):
     shown = (seg[0] if seg else "") if now is None else m[1] if m else now
     sv = now is None and saving(p["text"])
     ex = (seg[1:] if now is None else [m[2]] if m else []) + ([f"{sv[0]}보다 {sv[1]}↓"] if sv else [])
-    old = not note and (p.get("own") or shop_of(p) == "toss") and f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격 · 지금 가격은 링크에서 확인'
+    toss = shop_of(p) == "toss"
+    old = not note and (p.get("own") or toss) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격' + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
     grey = [x for x in (note or old, unit_of(p) if now is None else "") if x]  # 날짜·상태 줄 먼저(픽 줄·검색은 첫 줄만 — 토스 = 게시 시점 표기 필수)
     return shown, ex, grey
 
@@ -729,13 +901,14 @@ def badge(p, sh):
     return {1: '<b class="bdg">👍 꾸준템</b>', 2: '<b class="bdg w">⏳ 대기</b>', 3: f'<b class="bdg w">{html.escape(out)}</b>'}.get(st, "")
 
 
-def card(i, p, sh, more=()):
+def card(i, p, sh, more=(), attrs=""):
     """상품 카드(10/24 진우 개편 A): 흰 r20 · 위 118px 썸네일(+ 배지·♡) · 몰 칩 · 이름 2줄 · 가격 800 17px · 빨강 줄 · 회색 줄. 카드 전체 = 딜 쪽(구매 버튼·왜 골랐나요).
     .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태, more = 회색 줄 더(행사 쪽 단위가)."""
     name = parse(title_of(p["text"]))[1]
     shown, ex, grey = price_bits(p, sh)
     end = [f'<div class="ex" data-end="{end_at(p)}">⏰ 오늘 밤 12시 마감</div>'] if any(c == "b2" for c, _ in badges(p)) else []
-    return (f'<article class="g"><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
+    ex = ([f"▼ {DROPS[i][0]}% 내림 ({DROPS[i][1]} 기록 대비)"] if i in DROPS else []) + ex  # 📉 같은 구성 내림(10/24 Cowork '카드에서도 바로')
+    return (f'<article class="g"{attrs}><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
             + thumb(p, badge(p, sh)) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
             + f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
             + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
@@ -843,14 +1016,14 @@ def pick_section(day, ps, page=False):
     md = f"{int(day[5:7])}/{int(day[8:10])}"
     return (f'<section class="tp" id="pick" aria-labelledby="tph"><div class="k">TODAY\'S PICK · {md}</div><h2 id="tph">고민은 줄이고, 오늘은 이 {len(ps)}개만 보세요</h2>'
             f'<p class="d">특가 중인 것 중 단위가격 좋은 것·다시 특가로 돌아온 것을 몰마다 골랐어요</p><ol style="list-style:none;margin:0;padding:0">'
-            + "".join(pick_row(n, i, p, sh) for n, (i, p, sh) in enumerate(ps, 1)) + "</ol>"
+            + "".join(pick_row(n, i, p, sh) for n, (i, p, sh) in enumerate(ps, 1)) + "</ol>" + (f'<p class="pn">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in ps) else "")
             + f'<p class="pn">{" ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in ps if shop_of(p) in SHOP_NOTES))}</p>'  # '보기'가 몰로 바로 -> 바로 아래 그 몰 대가성 문구 그대로(옛 홈 = 몰 칸 맨 위) — 맨 위 회색 덩어리는 사이트 공통 1개 그대로
             + ("" if page else f'<a class="u" style="display:block;padding:4px 0 10px;text-align:right;text-decoration:none" href="{BASE}today/{day}/">{md} 오늘의 픽 쪽 →</a>') + "</section>")
 
 
-def tiles(keys=TILES):
+def tiles(keys=TILES, six=False):
     """카테고리 타일(4×2, 옆으로 밀기 X): 흰 r18 + 40px 파스텔 네모 이모지 -> /c/slug/."""
-    return ('<nav class="tiles" aria-label="카테고리">' + "".join(f'<a class="tile" href="{c_url(CAT_META[k][0])}"><i style="--c:{CAT_META[k][3]}" aria-hidden="true">{CAT_META[k][2]}</i>{CAT_META[k][1].split("·")[0].split()[0]}</a>'
+    return (f'<nav class="tiles{" t6" if six else ""}" aria-label="카테고리">' + "".join(f'<a class="tile" href="{c_url(CAT_META[k][0])}"><i style="--c:{CAT_META[k][3]}" aria-hidden="true">{CAT_META[k][2]}</i>{CAT_META[k][1].split("·")[0].split()[0]}</a>'
                                                               for k in keys) + "</nav>")
 
 
@@ -925,7 +1098,7 @@ def ev_banner(evs):
 
 def unit_line(p):
     """글의 단위가 줄 조각('💰 100g당 339원꼴 · 와우 할인 중' -> '100g당 339원꼴', 없으면 unit_of)."""
-    return next((x for l in p["text"].split("\n") if l.startswith(("💰", "💡")) for x in l[1:].strip().split(" · ") if PAIR.search(x)), "") or unit_of(p)
+    return re.sub(r"^단위\s*가격:?\s*", "", next((x for l in p["text"].split("\n") if l.startswith(("💰", "💡")) for x in l[1:].strip().split(" · ") if PAIR.search(x)), "") or unit_of(p))
 
 
 def per_unit(p):
@@ -974,7 +1147,8 @@ def list_pages(slug, head, desc, xs, mall, recs):
         nav = ('<nav class="pg" aria-label="쪽">' + (f'<a class="btn2" href="{c_url(slug, k - 1)}" rel="prev">← 이전 20개</a>' if k > 1 else "")
                + (f'<a class="btn2" href="{c_url(slug, k + 1)}" rel="next">다음 20개 보기 →</a>' if k < n else "") + "</nav>") if n > 1 else ""
         body = (f'<h1 class="h">{html.escape(head)}{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md} 업데이트</div>'
-                + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + chips_html(slug)
+                + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in part) else "") + (stat_chips(slug) if slug in dict(STAT_CHIPS) else chips_html(slug))
+                + ('<nav class="chips" aria-label="몰">' + "".join(f'<a href="{c_url(k)}?s=h" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN) + "</nav>" if slug == "hot" else "")
                 + (f'<div class="cards">{"".join(card(i, p, sh) for i, p, sh in part)}</div>' if part else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
                 + nav + (rec_nav(recs) or "" if slug == "life" and k == 1 else "") + (f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>' if mall == "coupang" and k == 1 else ""))
         li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for i, p, _ in part if img_of(p)), 1)]
@@ -993,7 +1167,7 @@ def search_index(it):
         shown, ex, grey = price_bits(p, sh)
         c = CAT_META.get(cat_of(p))
         name = parse(title_of(p["text"]))[1]
-        out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": c[2] if c else "🛍️", "c": c[3] if c else "",
+        out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_of_p(p), "c": c[3] if c else "",
                     "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name)) if x).lower()})
     return out
 
@@ -1023,7 +1197,7 @@ def deal_card(i, p):
     ship = {"무료": "무료배송", "무배": "무료배송"}.get(ship.strip(), ship.strip())
     hero = ((f'<div class="hero"><span class="pr">{html.escape(main.strip())}</span>' + (f'<span class="ship">{html.escape(ship.strip())}</span>' if ship.strip() else "")
              + (f'<span class="sv">{sv[0]}보다 {sv[1]}↓</span>' if sv else "") + "</div>") if price else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
-    bd = badge_html(p)
+    bd = badge_html(p) + (f'<b class="b2">▼ {DROPS[i][0]}% 내림 · {DROPS[i][1]} 기록 대비</b>' if i in DROPS else "")
     return (f'<article class="card deal">{thumb(p)}<div class="s">{html.escape(store or "핫딜")} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
             + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h1 class="dn"><a href="{url}">{html.escape(name if price else title)}</a></h1>{hero}{btn}'
             + (f'<p class="note">가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p>' if btn else "") + f'<h3 class="why">왜 골랐나요</h3><p>{body}</p></article>')
@@ -1084,6 +1258,296 @@ def write(out, rel, text):
     open(f, "w").write(text)
 
 
+MALL_BTN = (("coupang", "🚀 쿠팡", "로켓·와우 특가"), ("toss", "💙 토스", "하루특가·베스트"), ("naver", "💚 네이버", "쇼핑 특가"))  # 몰 버튼·쇼핑몰 칸(10/24 Cowork 포털형)
+HOT_N, HOT_DAYS, DROP_MIN, DROP_BIG, DROP_N = 10, 3, 3, 30, 6  # 🔥 실시간 핫딜 탭마다 줄 수 · 가격 확인 n일 안만 · 📉 가격 내림 n%↑(30%↑ = 쿠팡 API로 옵션 맞을 때만) · 홈 줄 수
+STAT_CHIPS = (("hot", "🔥 특가"), ("steady", "👍 꾸준템"), ("wait", "⏳ 대기"), ("drop", "📉 가격 내림"), ("today", "⏰ 오늘 마감"), ("top", "🏆 TOP 10"))  # 상태로 찾기(10/24 Cowork '변경 찾기')
+DROPS = {}  # 글 번호 -> (▼%, 'M/D' 기록, 'M/D' 확인) — build가 채움(카드·딜 쪽 배지)
+
+
+def won(s):
+    """'10,430원 와우가' -> 10430(첫 'N원'), 없으면 0."""
+    m = re.search(r"(\d[\d,]*)\s*원", s or "")
+    return int(m[1].replace(",", "")) if m else 0
+
+
+def md_of(d):
+    """'YYYY-MM-DD…' -> 'M/D'."""
+    return f"{int(d[5:7])}/{int(d[8:10])}"
+
+
+def fresh_day(p, today):
+    """가격 근거 날(YYYY-MM-DD): 진우 상품 = 확인 시각(chkt·chk 'M/D H시')·다시 특가 날, 그 밖 = 올린 날 — 가장 새것."""
+    m = re.match(r"(\d{1,2})/(\d{1,2})", p.get("chk") or "")
+    d = m and f"{today[:4]}-{int(m[1]):02d}-{int(m[2]):02d}"
+    d = d and (d if d <= today else f"{int(today[:4]) - 1}{d[4:]}")  # 해 넘김(12/31 확인을 1/1에 봄)
+    return max(x for x in ((p.get("chkt") or "")[:10], d or "", p.get("rehot") or "", p["t"][:10]) if x)
+
+
+def brand(p):
+    """같은 브랜드 판단 = 상품명 첫 낱말."""
+    return (parse(title_of(p["text"]))[1].split() or [""])[0]
+
+
+def mix(xs, n):
+    """몰 섞기(쿠팡·토스·네이버·그 밖 돌아가며, 몰 안 순서 그대로) + 같은 브랜드 1개 -> 앞 n개(10/24 Cowork ② 신뢰)."""
+    by = {}
+    for x in xs:
+        by.setdefault(shop_of(x[1]), []).append(x)
+    its, out, seen = [iter(by[k]) for k in ("coupang", "toss", "naver", "") if k in by], [], set()
+    while its and len(out) < n:
+        for g in its[:]:
+            x = next((x for x in g if brand(x[1]) not in seen), None)  # 같은 브랜드면 그 몰 다음 것(차례 안 잃게)
+            if x is None:
+                its.remove(g)
+            elif len(out) < n:
+                out.append(x)
+                seen.add(brand(x[1]))
+    return out
+
+
+def uniq(xs, n):
+    """같은 브랜드 1개 -> 앞 n개(순서 그대로)."""
+    out, seen = [], set()
+    for x in xs:
+        if len(out) < n and brand(x[1]) not in seen:
+            out.append(x)
+            seen.add(brand(x[1]))
+    return out
+
+
+def short_note(p, sh, today):
+    """목록형 줄 2줄째 회색: 단위가 > 확인 시각('19시 확인'·'10/23 확인') > 'M/D 가격'(토스 = 올린 날 가격)."""
+    u = "" if sh[1] else unit_line(p)  # 지금가(확인가)가 있으면 글의 단위가 = 옛 가격 기준 -> X(카드 price_bits와 같음)
+    if shop_of(p) == "toss":  # 토스 = 올린 날 표기 필수(단위가보다 먼저 — 말줄임에 안 잘리게)
+        return f"{md_of(p['t'])} 가격" + (f" · {u}" if u else "")
+    if u:
+        return u
+    if sh[1] and p.get("chk"):
+        d, _, h = p["chk"].partition(" ")
+        return f"{h} 확인" if h and d == md_of(today) else f"{p['chk']} 확인"
+    return f"{md_of(p['t'])} 가격"
+
+
+def row(i, p, sh, today, gc="", extra=""):
+    """목록형 한 줄(68px — 10/24 Cowork 포털형): 썸네일 52 · 1줄 = 몰 글자(몰 색) + 🔁/⏰/▼ + 이름 말줄임 · 2줄 = 가격 굵게 + 빨강 라벨 + 회색(단위가·확인 시각·M/D 가격). 누르면 딜 쪽."""
+    name = parse(title_of(p["text"]))[1]
+    shown, ex, _ = price_bits(p, sh)
+    k = shop_of(p)
+    flag = "🔁 " if sh[4] else "⏰ " if day_end(p, today) else {1: "👍 ", 2: "⏳ "}.get(sh[0], "") if p.get("own") else ""  # 🆕 탭 대기 상품 = 카드 badge()처럼
+    d = DROPS.get(i)
+    return (f'<li class="r"><a href="{BASE}p/{i}.html"' + (f' data-gc="{gc}"' if gc else "") + f'>{thumb(p)}<span class="rt"><span class="l1"><b class="mk {k}">{html.escape(chip_of(p).split(" ")[0])}</b>{flag}{html.escape(name)}</span>'
+            + f'<span class="l2">' + (extra or ((f"<b>{html.escape(shown)}</b>" if shown else "") + (f"<i>{html.escape(ex[0])}</i>" if ex else "") + (f'<i>▼{d[0]}%</i>' if d else "")
+                                                 + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span></span></a></li>")
+
+
+def mall_nav(evs):
+    """홈 몰 버튼 1줄(검색 아래 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
+    return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN)
+            + (f'<a class="m evt" href="{BASE}e/{evs[0]["slug"]}.html" data-gc="mall/event">🎉 기획전</a>' if evs else "") + "</nav>")
+
+
+def hot_section(it, evi, today):
+    """🔥 실시간 핫딜(10/24 Cowork 포털형 ⑤ + ② 신뢰): 🔥 상품 중 가격 근거(fresh_day)가 HOT_DAYS일 안 · 기획전 상품 X(배너로만) -> 탭 전체(몰 섞기)·몰별·🆕 새로 올라온(올린 순) 10줄씩, 같은 브랜드 1개.
+    -> (HTML, 전체 탭 글 번호들)."""
+    since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
+    xs = [x for x in it if x[2][0] == 0 and x[0] not in evi and fresh_day(x[1], today) >= since]
+    tabs = [("all", "전체", mix(xs, HOT_N))] + [(k, n, uniq([x for x in xs if shop_of(x[1]) == k], HOT_N)) for k, n, _ in MALL_BTN] \
+        + [("new", "🆕 새로 올라온", uniq(sorted((x for x in it if x[2][0] != 3 and x[0] not in evi), key=lambda x: x[1]["t"], reverse=True), HOT_N))]
+    tabs = [t for t in tabs if t[2]]
+    if not tabs:
+        return "", []
+    toss = any(shop_of(p) == "toss" for _, _, ys in tabs for _, p, _ in ys)
+    return (f'<section class="sec" id="fire" aria-labelledby="fireh"><h2 id="fireh"><span>🔥 실시간 핫딜<small>{len(xs)}개</small></span><a class="more" href="{c_url("hot")}">전체 →</a></h2>'
+            + '<div class="tabs" role="tablist" aria-label="몰">' + "".join(f'<button type="button" role="tab" aria-selected="{"true" if not j else "false"}" aria-controls="fp-{k}" data-t="{k}">{n}</button>' for j, (k, n, _) in enumerate(tabs)) + "</div>"
+            + "".join(f'<ol class="rows" role="tabpanel" id="fp-{k}" data-p="{k}"' + (" hidden" if j else "") + ">" + "".join(row(i, p, sh, today) for i, p, sh in ys) + "</ol>" for j, (k, _, ys) in enumerate(tabs))
+            + (f'<p class="t tl">{TOSS_LINE}</p>' if toss else "") + f'<a class="all" href="{c_url("hot")}">실시간 핫딜 더 보기 →</a></section>'), [x[0] for k, _, ys in tabs if k == "all" for x in ys]  # 👍 칸에서 뺄 = 전체 탭 줄만
+
+
+def top_list(posts, it, evi, gc_file="gc_top.json", top_file="top.json"):
+    """🏆 TOP 10(10/24 Cowork): GoatCounter 최근 24시간 많이 본 순(hotdeal.gc_top -> gc_top.json, 3시간 안) — 10개 안 되면 반응 좋은 순(top.json Threads 조회 · 커뮤니티 pop)으로 채우고 머리를 '👍 반응 좋은 딜'로('많이 본' = 진짜 조회 데이터일 때만).
+    품절·기획전 X, 같은 상품(주소·이름) 1번. -> (머리, 작은 글, [(i, p, sh)])."""
+    pool = [x for x in it if x[2][0] != 3 and x[0] not in evi and not x[1]["text"].startswith("📋")]
+    n = collections.Counter(u.split("?")[0] for u in {x[1].get("url") for x in it if x[1].get("url")})
+    key = lambda u: u.split("?")[0] if n[u.split("?")[0]] == 1 else u  # 검색·클릭 주소(search/all·click.php)는 ?뒤가 상품 -> 그대로
+    by = {key(x[1]["url"]): x for x in pool if x[1].get("url")}
+    out, seen = [], set()
+    def add(x):
+        k = (x[1].get("url"), parse(title_of(x[1]["text"]))[1])
+        if len(out) < 10 and not seen & set(k):
+            out.append(x)
+            seen.update(k)
+    try:
+        g = json.load(open(gc_file))
+        ok = isinstance(g, dict) and g.get("at", "") >= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
+    except (OSError, ValueError):
+        g, ok = {}, False
+    for u in (g.get("urls") or [])[:60] if ok else []:
+        if isinstance(u, str) and key(u) in by:
+            add(by[key(u)])
+    if len(out) >= 10:
+        return "🏆 많이 본 딜 TOP 10", f"최근 24시간 · {int(g['at'][11:13])}시 기준", out
+    try:
+        tj = json.load(open(top_file)).get("items") or []
+    except (OSError, ValueError, AttributeError):
+        tj = []
+    a = [by[key(t.get("url") or "")] for t in tj if isinstance(t, dict) and key(t.get("url") or "") in by]
+    b = sorted((x for x in pool if x[1].get("pop")), key=lambda x: -x[1]["pop"])
+    for x in (x for t in itertools.zip_longest(a, b) for x in t if x):
+        add(x)
+    return "👍 반응 좋은 딜 TOP 10", "Threads 조회·커뮤니티 반응", out
+
+
+def top_section(head, small, xs):
+    """🏆/👍 TOP 10 칸: 2열 번호 목록(왼 1~5 · 오른 6~10, 1~3 빨강) — 몰 글자 색 + 이름 1줄 말줄임 · GoatCounter top/N."""
+    return "" if not xs else (f'<section class="sec" id="t10" aria-labelledby="t10h"><h2 id="t10h"><span>{head}</span><small>{small}</small></h2><ol class="t10">'
+                              + "".join(f'<li><a href="{BASE}p/{i}.html" data-gc="top/{n}"><b class="n{" r" if n <= 3 else ""}">{n}</b><b class="mk {shop_of(p)}">{html.escape(chip_of(p).split(" ")[0])}</b>'
+                                        f'<span>{html.escape(parse(title_of(p["text"]))[1])}</span></a></li>' for n, (i, p, sh) in enumerate(xs, 1)) + f'</ol><a class="more2" href="{c_url("top")}">TOP 10 카드로 보기 →</a></section>')
+
+
+def deadline_list(it, evi, today):
+    """⏰ 오늘 마감(10/24 Cowork): 진열 🔥 중 오늘 밤 12시 끝(day_end — 토스 하루특가·선착순·'밤 12시까지') · 기획전 X(마지막 날은 행사 카드 1장) -> 할인 큰 순."""
+    dr = lambda p: max([int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", p["text"])] or [0])
+    return sorted((x for x in it if x[2][0] == 0 and x[0] not in evi and day_end(x[1], today)), key=lambda x: -dr(x[1]))
+
+
+def dl_card(i, p, sh, today):
+    """오늘 마감 가로 카드(150px): 카드 + 위 '⏰ 3시간 12분 남음 · 하루특가'(END_JS가 자정까지 셈, 지나면 카드·칸 숨김)."""
+    k = "하루특가" if re.search(r"하루\s*특가", p["text"]) else "선착순" if "선착순" in p["text"] else "오늘 마감"
+    c = card(i, p, sh).replace(f'<div class="ex" data-end="{end_at(p)}">⏰ 오늘 밤 12시 마감</div>', "")  # 카드 안 '마감까지' 줄 = 위 한 줄과 겹침
+    c = c.replace(f'<a href="{BASE}p/{i}.html">', f'<a href="{BASE}p/{i}.html" data-gc="deadline/{i}">', 1)  # 상품 링크만 셈(♡ 찜 X)
+    return f'<div class="hc"><b class="cd" data-end="{end_at(p)}" data-k="{k}">⏰ 오늘 밤 12시 마감 · {k}</b>{c}</div>'
+
+
+def deadline_section(xs, evs, today):
+    """⏰ 오늘 마감 칸(머리 옆 '밤 12시까지', 없으면 칸 X): 가로 카드 + 기획전 마지막 날 = 행사 카드 1장."""
+    end = calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600
+    evc = [f'<a class="hc evc" href="{BASE}e/{g["slug"]}.html" data-gc="deadline/event"><b class="cd" data-end="{end}" data-k="기획전">⏰ 오늘 밤 12시 마감 · 기획전</b><span class="em" aria-hidden="true">🎉</span>'
+           f'<b>{html.escape(ev_name(g))}</b><small>핫딜픽이 고른 {ev_n(g)}개 · 오늘 마감</small></a>' for g in evs if g["until"] == today]
+    return "" if not (xs or evc) else (f'<section class="sec" id="dl" aria-labelledby="dlh"><h2 id="dlh"><span>⏰ 오늘 마감<small>{len(xs) + len(evc)}개</small></span><small>밤 12시까지</small></h2>'
+                                       + f'<div class="hs">{"".join(evc)}{"".join(dl_card(i, p, sh, today) for i, p, sh in xs[:12])}</div>'
+                                       + (f'<a class="more2" href="{c_url("today")}">오늘 마감 전체 →</a>' if len(xs) > 12 else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in xs[:12]) else "") + "</section>")
+
+
+def drops(posts, it, now_ts):
+    """📉 가격 내려간 상품(10/24 Cowork): 쿠팡·네이버 진우 상품(진열 중, 일시 품절 X) 중 지금 확인가(now — 확인 chkt 24시간 안)가 처음 올린 가격(같은 링크 = 같은 구성, 첫 진우 글) 대비 DROP_MIN%↑ 내림.
+    DROP_BIG%↑는 쿠팡 검색 API 가격(own_end cpp·cpt — 옵션 itemId 또는 이름 수량·용량 토큰이 맞은 것, 48시간 안)이 지금가 ±5% 또는 기록가×0.7 밑일 때만(아니면 hotdeal.drop_check가 관리자에게 — 옵션 바뀜 의심).
+    토스 X(사람마다 가격 다름·API 가격 사이트 X). -> [(i, p, sh, 기록가, 지금가, ▼%, 'M/D' 기록, 'M/D' 확인)] 내림 큰 순."""
+    first, out = {}, []
+    for p in posts:
+        if p.get("own") and p.get("url") and not p["text"].startswith("📋"):
+            first.setdefault(p["url"], p)
+    day = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now_ts + 9 * 3600 - h * 3600))
+    for i, p, sh in it:
+        if not p.get("own") or shop_of(p) not in ("coupang", "naver") or sh[0] == 3 or p["url"] not in first:
+            continue
+        f = first[p["url"]]
+        base, nw = won(parse(title_of(f["text"]))[2]), won(p.get("now"))
+        if not (base and nw and re.fullmatch(r"\d{4}-\d\d-\d\d ([01]\d|2[0-3]):[0-5]\d", p.get("chkt") or "") and p["chkt"] >= day(24)):  # 손으로 쓴 chk 모양 틀림 -> 빌드 멈춤 X
+            continue
+        pct = round((base - nw) * 100 / base)
+        cpp = p.get("cpp") or 0
+        if pct < DROP_MIN or pct >= DROP_BIG and not (cpp and (p.get("cpt") or "") >= day(48) and (abs(cpp - nw) <= nw * 0.05 or cpp <= base * 0.7)):
+            continue
+        rec = re.search(r"\((\d{1,2}/\d{1,2}) \d{1,2}시 (?:확인|가격)\)", f["text"])  # 첫 글 '(M/D H시 가격)' 줄 = 기록 날, 없으면 올린 날
+        out.append((i, p, sh, base, nw, pct, rec[1] if rec else md_of(f["t"]), md_of(p["chkt"])))
+    return sorted(out, key=lambda d: -d[5])
+
+
+def drop_section(ds, today):
+    """📉 가격 내려간 상품 칸(머리 옆 '같은 구성 · 우리 기록 대비', 없으면 X): 줄 DROP_N개 — 취소선 기록가 → 지금가 + ▼N% + 'M/D 기록 대비 · M/D 확인'('N원 쌈' X) · GoatCounter drop/글."""
+    lab = lambda p: (re.match(r"[\d,]+원\s*(\S.*)", p.get("now") or "") or ["", ""])[1]
+    return "" if not ds else (f'<section class="sec" id="drop" aria-labelledby="droph"><h2 id="droph"><span>📉 가격 내려간 상품<small>{len(ds)}개</small></span><small>같은 구성 · 우리 기록 대비</small></h2><ol class="rows">'
+                              + "".join(row(i, p, sh, today, f"drop/{i}", f"<s>{b:,}원</s> → <b>{n:,}원</b>" + (f"<i>{html.escape(lab(p))}</i>" if lab(p) else "") + f"<i>▼{d}%</i><small>{r} 기록 대비 · {c} 확인</small>")
+                                        for i, p, sh, b, n, d, r, c in ds[:DROP_N]) + f'</ol><a class="more2" href="{c_url("drop")}">가격 내려간 상품 전체 →</a></section>')
+
+
+def hs_section(sid, head, small, xs, more="", cls="hs"):
+    """가로 카드 줄(오늘의 픽 118px·꾸준템): 카드(♡ 찜 그대로) 옆으로 밀기 + '전체 →'."""
+    return "" if not xs else (f'<section class="sec" id="{sid}" aria-labelledby="{sid}h"><h2 id="{sid}h"><span>{head}' + (f"<small>{small}</small>" if small else "") + "</span>"
+                              + (f'<a class="more" href="{more}">전체 →</a>' if more else "") + f'</h2><div class="{cls}">{"".join(card(i, p, sh) for i, p, sh in xs)}</div>'
+                              + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in xs) else "") + "</section>")
+
+
+def stat_chips(cur):
+    """상태로 찾기 칩 6개(🔥 특가 · 👍 꾸준템 · ⏳ 대기 · 📉 가격 내림 · ⏰ 오늘 마감 · 🏆 TOP 10 — 10/24 Cowork '변경 찾기')."""
+    return '<nav class="chips" aria-label="상태">' + "".join(f'<a href="{c_url(s)}"' + (' aria-current="page"' if s == cur else "") + f">{t}</a>" for s, t in STAT_CHIPS) + "</nav>"
+
+
+def mall_page(slug, head, desc, xs, recs):
+    """몰 쪽(/c/coupang/ 등 — 10/24 Cowork '쇼핑몰 위주로 찾을 수 있게'): 한 쪽에 그 몰 전부 + 품목 칩(있는 품목만)·상태 탭(🔥 특가·👍 꾸준템·⏳ 대기 — 없는 건 X)으로 좁히기 + 20개씩 '더 보기'(MALL_JS — 스크립트 없으면 전부 보임).
+    -> [(주소, 1, 제목, 설명, 본문, JSON-LD)]."""
+    today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    st = lambda x: " ".join(t for t, ok in (("h", x[2][0] == 0), ("s", steady_of(x)), ("w", x[1].get("own") and x[2][0] in (1, 2))) if ok)
+    ma = lambda x: ' data-c="%s" data-s="%s"' % ((CAT_META.get(cat_of(x[1])) or ("etc",))[0], st(x))  # 카드 = 품목·상태(좁히기)
+    cs = collections.Counter(cat_of(p) or "etc" for _, p, _ in xs)
+    ss = collections.Counter(t for x in xs for t in st(x).split())
+    name = head.split(" ", 1)[1]
+    body = (f'<h1 class="h">{html.escape(head)}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md_of(today)} 업데이트</div><p class="t">{SHOP_NOTES[slug]}</p>'
+            + (f'<p class="t">{TOSS_LINE}</p>' if slug == "toss" else "")
+            + '<div class="tabs" role="tablist" aria-label="상태"><button type="button" role="tab" aria-selected="true" data-s="">전체</button>'
+            + "".join(f'<button type="button" role="tab" aria-selected="false" data-s="{t}">{n} {ss[t]}</button>' for t, n in (("h", "🔥 특가"), ("s", "👍 꾸준템"), ("w", "⏳ 대기")) if ss[t]) + "</div>"
+            + '<nav class="chips mf" aria-label="품목"><button type="button" aria-pressed="true" data-c="">전체</button>'
+            + "".join(f'<button type="button" aria-pressed="false" data-c="{CAT_META[k][0]}">{CAT_META[k][2]} {CAT_META[k][1].split("·")[0]} {cs[k]}</button>' for k in CAT_META if cs[k]) + "</nav>"
+            + (f'<div class="cards" id="mg">{"".join(card(i, p, sh, attrs=ma((i, p, sh))) for i, p, sh in xs)}</div>'
+               f'<p class="t" id="m0" hidden>이 조건에 맞는 상품이 없어요.</p><button type="button" class="btn2 mm" id="mm" hidden>더 보기</button>' if xs else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
+            + (f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>' if slug == "coupang" else "") + MALL_JS)
+    li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for i, p, _ in xs[:20] if img_of(p)), 1)]
+    return [(c_url(slug), 1, f"{name} ({md_of(today)}) | {TITLE}", f"{desc} — {name} {len(xs)}개, {md_of(today)} 기준 · {TITLE}", body, len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} ({md_of(today)})", "itemListElement": li})]
+
+
+MALL_JS = """<script>(function(){var g=document.getElementById('mg');if(!g)return;var C=[].slice.call(g.children),s=(location.search.match(/[?&]s=([hsw])/)||['',''])[1],c='',n=20,mm=document.getElementById('mm'),z=document.getElementById('m0');
+function run(){var k=0;C.forEach(function(e){var ok=(!s||(' '+e.dataset.s+' ').indexOf(' '+s+' ')>=0)&&(!c||e.dataset.c===c);e.hidden=!ok||k>=n;if(ok)k++});mm.hidden=k<=n;z.hidden=k>0}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-s],[data-c],#mm');if(!b||b.tagName!=='BUTTON')return;if(b.id==='mm'){n+=20;return run()}
+if(b.hasAttribute('data-s')){s=b.dataset.s;[].forEach.call(document.querySelectorAll('[data-s][role=tab]'),function(x){x.setAttribute('aria-selected',x===b?'true':'false')})}
+else{c=b.dataset.c;[].forEach.call(document.querySelectorAll('.mf [data-c]'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false')})}n=20;run()});
+[].forEach.call(document.querySelectorAll('[data-s][role=tab]'),function(x){x.setAttribute('aria-selected',x.dataset.s===s?'true':'false')});run()})()</script>"""  # 몰 쪽 좁히기·더 보기(10/24 Cowork) — 스크립트 없으면 전부 보임
+TAB_JS = """<script>document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.tabs [data-t]');if(!b)return;var s=b.closest('section');
+[].forEach.call(s.querySelectorAll('.tabs [data-t]'),function(x){x.setAttribute('aria-selected',x===b?'true':'false')});[].forEach.call(s.querySelectorAll('[data-p]'),function(x){x.hidden=x.dataset.p!==b.dataset.t;delete x.dataset.sh})})</script>"""  # 🔥 실시간 핫딜 탭(전체·몰별·새로 올라온)
+
+
+def changes_json(posts, it, ds, dl, now_ts, prev=None):
+    """docs/changes.json(10/24 Cowork '변경 찾기' — 찜 배지·알림 탭·🔔 빨간 점이 읽음): 최근 3일 바뀐 상품
+    {"at", "n": {종류: 수}, "items": {글 번호: {m 몰, n 이름, r 기록가, c 지금가(쿠팡·네이버만 — 토스 API 가격 X), t 확인('M/D H시'), k [종류], d 바뀐 때(epoch 초), p ▼%}}, "a": {같은 상품 옛 글 번호: 지금 글 번호}}.
+    종류 = drop(같은 구성 3%↑ 내림 — 📉 칸과 같음) · deadline(오늘 밤 12시) · rehot(🔁 다시 특가) · ended(특가 끝 → ⏳ — own_end std·stp) · gone(판매 종료) + n.new(오늘 올라온 수 — 상품 칸 X).
+    d = 이 변경이 처음 보인 빌드 시각(prev = 지난 changes.json — std·rehot은 날짜만, chkt는 다시 확인마다 바뀜 -> 🔔 점이 늦거나 매일 다시 X)."""
+    kst = lambda d: calendar.timegm(time.strptime(d[:16] if len(d) > 10 else d[:10] + " 00:00", "%Y-%m-%d %H:%M")) - 9 * 3600
+    today, since = time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600)), time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600 - 2 * 86400))
+    items, idx, new = {}, {}, 0
+    for j, p in enumerate(posts):
+        if p.get("url") and not p["text"].startswith("📋"):
+            idx.setdefault(p["url"], []).append(j)
+    def put(i, q, k, d, **x):
+        e = items.setdefault(str(i), {"m": shop_of(q) or "", "n": parse(title_of(q["text"]))[1][:60], "r": parse(title_of(q["text"]))[2].split("/")[0].strip()[:30],
+                                      "c": (q.get("now") or "") if shop_of(q) != "toss" else "", "t": q.get("chk") or "", "k": [], "d": 0})
+        e["k"].append(k)
+        e["d"] = max(e["d"], int(d))
+        e.update(x)
+    for i, p, sh, b, n, pct, r, c in ds:
+        put(i, p, "drop", kst(p["chkt"]), p=pct, r=f"{b:,}원")
+    for i, p, sh in dl:
+        put(i, p, "deadline", kst(p["t"]))
+    last = {p.get("url"): j for j, p in enumerate(posts) if p.get("own") and not p["text"].startswith("📋")}
+    for i, p, sh in it:
+        if sh[4]:
+            put(i, p, "rehot", kst(p.get("rehot") or today))
+        if p.get("own") and p.get("st") == "wait" and p.get("stp") == "hot" and (p.get("std") or "") >= since:
+            put(i, p, "ended", kst(p["std"]))
+        new += p["t"][:10] == today  # new = 수만(찜한 상품은 늘 옛것 — 파일 작게) · 오늘 날짜로(24시간 창이면 빌드마다 파일이 바뀜)
+    for u, j in last.items():
+        p = posts[j]
+        if p.get("st") == "gone" and (p.get("std") or "") >= since:
+            put(j, p, "gone", kst(p["std"]))
+    alias = {str(j): k for k in items for j in idx.get(posts[int(k)].get("url"), []) if str(j) != k}
+    po = (prev or {}).get("items") or {}
+    for i, e in items.items():
+        o = po.get(i)
+        if isinstance(o, dict) and set(e["k"]) <= set(o.get("k") or []) and e.get("p") == o.get("p") and isinstance(o.get("d"), int):
+            e["d"] = o["d"]  # 같은 변경 = 처음 본 때 그대로
+        elif prev is not None:
+            e["d"] = int(now_ts)
+    return {"at": today, "n": {**collections.Counter(k for e in items.values() for k in e["k"]), "new": new}, "items": items, "a": alias}  # at = 날짜만(분까지 쓰면 빌드마다 파일이 바뀌어 15분 실행마다 docs 커밋)
+
+
 def build(posts, out="docs"):
     os.makedirs(f"{out}/p", exist_ok=True)
     open(f"{out}/.nojekyll", "w").close()
@@ -1095,6 +1559,14 @@ def build(posts, out="docs"):
     gone = shelf_gone(posts)  # 채널 글로 이어진 진열 글 = 같이 보기·목록·사이트맵 X(페이지는 그대로)
     home = home_pool(posts, days)
     it = items(posts, days, home)
+    now_ts = time.time()
+    today = time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600))
+    ds = drops(posts, it, now_ts)
+    DROPS.clear()
+    DROPS.update({i: (pct, r, c) for i, _, _, _, _, pct, r, c in ds})
+    evs = events_on(it, today)
+    evi = {i for g in evs for i, _, _ in g["xs"]}  # 진행 중 기획전 상품 = 홈 오늘의 픽·🔥·👍·TOP 10·오늘 마감 칸 X(배너로만 — 품목 칸·검색·목록 쪽은 그대로)
+    dl = deadline_list(it, evi, today)
     cur = {posts[j].get("url"): j for j in sorted(home) if posts[j].get("url")}  # 주소 -> 지금 진열 글(같은 상품 최신)
     st = lambda i, p: home.get(i) or (p.get("own") and p.get("url") in cur and home[cur[p["url"]]]) or (4, None, f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 게시' if p["t"][:10] not in days[:3] else "", [], False)  # 목록 밖 = 같은 상품 지금 상태, 없으면 배지 X(지난 딜을 🔥 특가라고 X) + 게시 날짜
     pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋") and j not in gone
@@ -1110,7 +1582,7 @@ def build(posts, out="docs"):
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     for i, p in reversed(list(enumerate(posts))):
         url, rel = f"{BASE}p/{i}.html", related(i, p, pool)
-        more = rel and f'<section class="sec" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="cards">{"".join(card(j, q, st(j, q)) for j, q in rel)}</div></section>'
+        more = rel and f'<section class="sec" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="cards">{"".join(card(j, q, st(j, q)) for j, q in rel)}</div>' + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(q) == "toss" for _, q in rel) else "") + '</section>'
         note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
         ti, sd, ld = seo(i, p)
         it_ = price_item(p)
@@ -1121,22 +1593,26 @@ def build(posts, out="docs"):
         if i not in gone:
             urls.append((url, p["t"][:10]))
     ls = lists(posts, days, home)
+    tops = top_list(posts, it, evi)
+    ls.update(drop=("📉 가격 내려간 상품", f"같은 구성(같은 링크) 처음 올린 가격보다 {DROP_MIN}%↑ 내린 쿠팡·네이버 상품 · 우리 기록 대비", [(i, p, sh) for i, p, sh, *_ in ds], ""),
+              today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
     for slug, (head, desc, xs, mall) in ls.items():
-        for u, k, ti, sd, body, ld in list_pages(slug, head, desc, xs, mall, recs):
-            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in ("hot", "steady", "wait") else "cats", head=ld and ld_tag(ld) or ""))
+        for u, k, ti, sd, body, ld in (mall_page(slug, head, desc, xs, recs) if mall else list_pages(slug, head, desc, xs, mall, recs)):
+            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", head=ld and ld_tag(ld) or ""))
             urls.append((u, latest))
-        n = max(1, -(-len(xs) // PER))
+        n = 1 if mall else max(1, -(-len(xs) // PER))
         for d in os.listdir(f"{out}/c/{slug}"):  # 목록이 줄면 뒤쪽 옛 쪽(c/이름/N/) 지움 — 남으면 옛 카드·자기 canonical로 검색에 남음
             if d.isdigit() and int(d) > n:
                 shutil.rmtree(f"{out}/c/{slug}/{d}")
     for d in os.listdir(f"{out}/c"):  # 없어진 목록 이름 폴더도
         if os.path.isdir(f"{out}/c/{d}") and d not in ls:
             shutil.rmtree(f"{out}/c/{d}")
-    write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">품목·몰별로 골라 보세요</div>' + tiles(tuple(CAT_META)) + chips_html("") + (rec_nav(recs) or ""),
+    mc = collections.Counter(shop_of(p) for _, p, _ in it)
+    write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">쇼핑몰·상태·품목으로 골라 보세요</div><h2 class="ch">🛍 쇼핑몰로 찾기</h2><nav class="mt3" aria-label="쇼핑몰">'
+                          + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{n}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
+                          + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (rec_nav(recs) or ""),
                          "생필품·식품·뷰티·주방·세탁·간식·여성용품·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
-    evs = events_on(it, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
-    evi = {i for g in evs for i, _, _ in g["xs"]}  # 진행 중 기획전 상품 = 홈 오늘의 픽·🔥·👍 TOP 칸 X(배너로만 — 품목 칸·검색·목록 쪽은 그대로)
     top = lambda xs: [x for x in xs if x[0] not in evi]
     day, ps = today_picks(posts, top(it), recs, out)
     os.makedirs(f"{out}/e", exist_ok=True)
@@ -1144,7 +1620,7 @@ def build(posts, out="docs"):
         if f.endswith(".html") and f[:-5] not in {g["slug"] for g in evs}:
             os.remove(f"{out}/e/{f}")
     for g in evs:
-        ti, sd, body, ld = ev_page(g, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
+        ti, sd, body, ld = ev_page(g, today)
         open(f"{out}/e/{g['slug']}.html", "w").write(page(ti, body, sd, f"{BASE}e/{g['slug']}.html", cur="fire", head=ld and ld_tag(ld) or ""))
         urls.append((f"{BASE}e/{g['slug']}.html", latest))
     try:
@@ -1169,18 +1645,28 @@ def build(posts, out="docs"):
         urls.append((f"{BASE}today/{d}/", d))
     cp = card_picks(posts, out)
     cp = cp.replace('<div class="t">번호를 누르면', f'<p class="t">{" ".join(SHOP_NOTES.values())}</p><div class="t">번호를 누르면', 1)  # 카드 번호 칸도 몰로 바로 -> 3사 문구
-    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + ev_banner(evs) + pick_section(day, ps)
-            + ('<a class="u" style="display:block;padding:6px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "") + tiles()
-            + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in ps}) + top4("steady", "steady", "👍 꾸준히 팔리는 것", top(ls["steady"][2])) + (rec_nav(recs) or "")
-            + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>') if posts else "<p>첫 딜을 준비 중이에요.</p>"
+    hot, hot_ids = hot_section(it, evi, today)
+    stx = mix([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
+    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(ds, today) + ev_banner(evs)
+            + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", ps, f"{BASE}today/{day}/" if day else "")
+            + hs_section("steady", "👍 꾸준히 팔리는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
+            + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
+            + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
-                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home"))
+                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=mall_nav(evs) + tiles(tuple(CAT_META), True) if posts else "", dis=HOME_DIS))
     json.dump(search_index(it), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
-    write(out, "saved/", page(f"찜한 딜 | {TITLE}", SAVED, "이 폰에 찜해 둔 딜", f"{BASE}saved/", cur="saved", noindex=True))
-    write(out, "alarm/", page(f"알림 받기 | {TITLE}", ALARM, "새 특가를 바로 받아 보는 방법", f"{BASE}alarm/", cur="alarm", noindex=True, top=INSTALL))
+    try:
+        prev = json.load(open(f"{out}/changes.json"))
+        prev = prev if isinstance(prev, dict) else None
+    except (OSError, ValueError):
+        prev = None
+    ch = changes_json(posts, it, ds, dl, now_ts, prev)
+    json.dump(ch, open(f"{out}/changes.json", "w"), ensure_ascii=False, separators=(",", ":"))  # 10/24 Cowork '변경 찾기'(찜·알림 탭·🔔 점) — 나중 푸시(OneSignal)도 이것으로
+    write(out, "saved/", page(f"찜한 딜 | {TITLE}", SAVED + CHG_JS, "이 폰에 찜해 둔 딜", f"{BASE}saved/", cur="saved", noindex=True))
+    write(out, "alarm/", page(f"알림 받기 | {TITLE}", alarm_body(ch) + CHG_JS, "새 특가를 바로 받아 보는 방법", f"{BASE}alarm/", cur="alarm", noindex=True, top=INSTALL))
     open(f"{out}/manifest.webmanifest", "w").write(json.dumps(MANIFEST, ensure_ascii=False, indent=1))  # 웹앱(10/23 진우) — 아이콘은 cards.app_icons(docs/icons, 한 번 만들어 커밋)
     open(f"{out}/sw.js", "w").write(SW_JS % hashlib.md5(open(f"{out}/index.html", "rb").read() + open(f"{out}/manifest.webmanifest", "rb").read()).hexdigest()[:10])  # 홈·manifest(아이콘 주소)가 바뀐 배포마다 캐시 이름 바뀜(같으면 그대로 — 실행마다 커밋 X)
     hist = sorted(((i, p) for i, p in enumerate(posts) if not p["text"].startswith("📋") and i not in gone), key=lambda x: (x[1]["t"][:10], bool(shop_of(x[1])), x[1]["t"]), reverse=True)  # 날짜 최신 -> 그날 3사 먼저 -> 최신
@@ -1192,7 +1678,7 @@ def build(posts, out="docs"):
             grp.setdefault(p["t"][:10], []).append((i, p))
         nav = '<nav class="pg" aria-label="쪽">' + (f'<a class="btn2" href="{BASE}all.html" rel="prev">← 처음</a>' if k == 2 else f'<a class="btn2" href="{BASE}all/{k - 1}/" rel="prev">← 이전 20개</a>' if k > 2 else "") \
             + (f'<a class="btn2" href="{BASE}all/{k + 1}/" rel="next">다음 20개 보기 →</a>' if k < n else "") + "</nav>"
-        body = (f'<h1 class="h">지난 딜 전체{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">핫딜픽에 올라온 딜 {len(hist)}개 · 최신 순</div>'
+        body = (f'<h1 class="h">지난 딜 전체{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">핫딜픽에 올라온 딜 {len(hist)}개 · 최신 순</div>' + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p in part) else "")
                 + "".join(f'<section class="sec day" id="d{m}" aria-labelledby="d{m}h"><h2 id="d{m}h">{int(d[5:7])}월 {int(d[8:])}일 딜</h2><div class="cards">{"".join(card(i, p, st(i, p)) for i, p in g)}</div></section>'
                           for m, (d, g) in enumerate(grp.items())) + nav)
         write(out, u[len(BASE):], page(f"지난 딜 전체{f' {k}쪽' if k > 1 else ''} | {TITLE}", body, f"핫딜픽에 올라온 딜 전체{f' · {k}쪽' if k > 1 else ''}", u))

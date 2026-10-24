@@ -1446,7 +1446,7 @@ def cp_price(seen):
     for u in names:
         if ev[u].get("pid"):
             bypid.setdefault(ev[u]["pid"], []).append(u)
-    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and not q["m"].get(u, [0, ""])[1].startswith(today) and u not in q["e"]),
+    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     got = miss = err = 0
     for _, u, pid, name, item in todo:
@@ -1465,7 +1465,7 @@ def cp_price(seen):
         qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
-        q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst)]
+        q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""]  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
         y = x or (same[0] if same else None)  # 사진 = 같은 pid면 옵션이 달라도(가격 적중이 낮아도 사진은 채움 — 추가 호출 X)
         if y and str(y.get("productImage") or "").startswith("https://"):
@@ -5250,7 +5250,8 @@ def own_end(seen):
         tp = parse(title_of(first["text"]))[2].split("/")[0].strip() if first else ev.get(u, {}).get("target", "")
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
-        cq = not tsy and e.get("pid") and (e.get("item") or re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cpq.get(u)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
+        cq = cpq.get(u) or []
+        cq = not tsy and e.get("pid") and (cq[2:3] == [e["item"]] if e.get("item") else cq[2:3] in ([], [""]) and re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cq  # item = 그 itemId로 맞춘 가격만(약한 이름 매칭 캐시 X — 10/24 리뷰)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
         f = {"tgt": tp} if tw else {}
@@ -5278,7 +5279,8 @@ def own_end(seen):
         if not tsy and any(icon_of(posts[i]["text"]) == "👍" for i in idxs):
             f["stdy"] = 1
         f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" and (not tsy or u in valid) else p.get("rehot")  # 토스 = 앞 상태도 맞는 id로 확인한 것일 때만
-        f["std"], f["stp"] = (today, p["st"]) if p.get("st") and p["st"] != f["st"] else (p.get("std"), p.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
+        pv = next((posts[i] for i in reversed(idxs) if posts[i].get("st")), {})  # 앞 상태 = st가 있는 최신 글(막 다시 올린 글엔 st 없음 — 기록 안 잃게)
+        f["std"], f["stp"] = (today, pv["st"]) if pv.get("st") and pv["st"] != f["st"] else (pv.get("std"), pv.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
             rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
         if not tsy and e.get("pid") and cpi.get(u):
@@ -5331,14 +5333,17 @@ def drop_check(seen):
     today = time.strftime("%Y-%m-%d", kst)
     if time.strftime("%H:%M", kst) < DROP_AT or seen.get("dropchk", {}).get("d") == today:
         return
-    seen["dropchk"], ev = {"t": now, "d": today}, ev_info()
+    old, ev = set(seen.get("dropchk", {}).get("k") or []), ev_info()
     rows = sorted((r for r in drop_rows(load(POSTS, []), ev, now) if r[4] >= DROP_PCT and not r[5]), key=lambda r: -r[4])
+    seen["dropchk"] = {"t": now, "d": today, "k": [f"{r[1]['url']}|{r[3]}" for r in rows]}
+    rows = [r for r in rows if f"{r[1]['url']}|{r[3]}" not in old]  # 어제 알린 같은 줄(같은 지금가) = 다시 X(네이버는 API 확인이 없어 매일 나옴)
     pid = lambda p: ev.get(p["url"], {}).get("pid")
     for _, p, _, _, pct, _ in rows:
         print(f"drop check {pid(p) or '-'} ▼{pct}% 옵션 확인 필요")
     if rows:
-        tg("sendMessage", chat_id=ADMIN, text="\n".join(f"· {parse(title_of(p['text']))[1][:24]} {base:,}→{nw:,}원 ▼{pct}%" + (f" (pid {pid(p)})" if pid(p) else "") for _, p, base, nw, pct, _ in rows[:20])
-           + "\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. events item(옵션 itemId) 확인해 줘")
+        nv = any(shop_of(r[1]) == "naver" for r in rows)
+        tg("sendMessage", chat_id=ADMIN, text="\n".join(f"· {parse(title_of(p['text']))[1][:24]} {base:,}→{nw:,}원 ▼{pct}%" + (f" (pid {pid(p)})" if pid(p) else " (네이버)" if shop_of(p) == "naver" else "") for _, p, base, nw, pct, _ in rows[:20])
+           + "\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. " + " · ".join(x for x in ("쿠팡 = events item(옵션 itemId) 확인해 줘" if any(shop_of(r[1]) != "naver" for r in rows) else "", "네이버 = API 확인이 없어 가격·구성만 봐 줘" if nv else "") if x))
 
 
 CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
@@ -5619,13 +5624,15 @@ GC_TOP = "gc_top.json"  # 사이트 '많이 본' 순서(10/24 Cowork 개편) —
 
 def gc_top(seen):
     """1시간에 1번(seen gct) GoatCounter 최근 24시간(cp_score와 같은 호출): 딜 쪽 조회('/p/N.html' -> 그 글 url) + 구매 클릭('buy/<주소>') × 3
-    -> gc_top.json {at: KST 'YYYY-MM-DD HH:MM', urls: 높은 순 30개(쿼리 뺀 주소)} — 순서만(조회·클릭 수 X). 토큰 없으면 X · 오류 = 옛 파일 그대로."""
+    -> gc_top.json {at: KST 'YYYY-MM-DD HH:MM', urls: 높은 순 60개(쿼리 뺀 주소 — 그 주소가 상품 1개일 때만, 검색·클릭 주소는 ?뒤가 상품이라 그대로)} — 순서만(조회·클릭 수 X). 토큰 없으면 X · 오류 = 옛 파일 그대로."""
     now, tok = time.time(), E.get("GOATCOUNTER_TOKEN")
     if not tok or now - seen.get("gct", {}).get("t", 0) < 3600:
         return
     seen["gct"] = {"t": now}
     hr = lambda t: time.strftime("%Y-%m-%dT%H:00:00Z", time.gmtime(t))
     sc, seen_ids, posts = collections.Counter(), [], load(POSTS, [])
+    nb = collections.Counter(u.split("?")[0] for u in {p.get("url") for p in posts if p.get("url")})
+    key = lambda u: u.split("?")[0] if nb[u.split("?")[0]] == 1 else u  # build_site.top_list와 같은 규칙(search/all·click.php 여러 상품이 한 주소로 합쳐지지 않게)
     try:
         for _ in range(CPS_GC_PAGES):  # shortcut: 많이 본 순 앞쪽 경로만(100개 × CPS_GC_PAGES) — 24시간이라 보통 1~2쪽
             q = urllib.parse.urlencode({"start": hr(now - 86400), "end": hr(now), "limit": 100, **({"exclude_paths": ",".join(seen_ids)} if seen_ids else {})})
@@ -5634,16 +5641,17 @@ def gc_top(seen):
                 seen_ids.append(str(h.get("path_id")))
                 path, n = str(h.get("path") or ""), int(h.get("count") or 0)
                 if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
-                    sc["https://" + path[4:]] += 3 * n
+                    if nb["https://" + path[4:]] == 1:  # 상품 1개로 정해지는 주소만(검색·클릭 주소 = 어느 상품인지 모름)
+                        sc["https://" + path[4:]] += 3 * n
                 elif (m := re.fullmatch(r"/p/(\d+)\.html", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
-                    sc[posts[int(m[1])]["url"].split("?")[0]] += n
+                    sc[key(posts[int(m[1])]["url"])] += n
             if not r.get("more"):
                 break
             time.sleep(0.3)  # 초당 4번 상한
     except Exception as e:
         print("gc top GoatCounter", type(e).__name__)
         return
-    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(30)]}, open(GC_TOP, "w"), ensure_ascii=False)
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(60)]}, open(GC_TOP, "w"), ensure_ascii=False)
     print("gc top GoatCounter 읽음")
 
 
