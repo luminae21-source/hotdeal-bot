@@ -1596,7 +1596,7 @@ d0 = allp.split('id="d0"')[1].split("</section>")[0]
 assert "10월 9일 딜" in d0 and d0.count('class="g"') == 8 and "나흘전딜" in allp and "모아보기" not in allp
 assert d0.index("생수 40병") < d0.index("추가딜4") < d0.index("추가딜0") < d0.index("라면")  # 3사(토스)는 오래됐어도 맨 앞, 나머지는 최신 순(10/15~ 링크프라이스 G마켓도 3사 뒤)
 assert '<span class="mc">토스</span><h3><a href="https://hotdealpick.kr/p/0.html">생수 40병</a></h3><div class="pr">5,900원</div><div class="u">10/9 가격</div><div class="u">병당 148원</div>' in d0 and 'href="https://toss.im/_m/w"' in open("docs5/p/0.html").read()  # 토스 = 'M/D 가격' 1줄(안내는 칸 머리 TOSS_LINE)
-assert '<b class="bdg f">🔥 특가</b>' in d0 and '<div class="im" style="--c:#EAF6EE"><span aria-hidden="true">💧</span>' in d0 and '<div class="im" style="--c:#EAF6EE"><span aria-hidden="true">🍜</span>' in d0  # 썸네일 = 상품 이모지(ICONS — 생수 💧·라면 🍜, 바탕 = 품목 색) · 🔥 배지
+assert '<b class="bdg f">🔥 특가</b>' in d0 and d0.count('<div class="im" style="--c:#EAF6EE"><i class="ci ci-food" aria-hidden="true"></i>') >= 2  # 썸네일 = 품목 선 아이콘(10/24 진우 — 이모지 X, 생수·라면 = 식품 밥그릇, 바탕 = 품목 색) · 🔥 배지
 assert all(f'<a href="https://hotdealpick.kr/p/{i}.html">' in allp for i in (1, 2)) and 'href="https://www.ppomppu.co.kr' not in allp  # 원글·주소 없는 딜도 카드 = 딜 쪽(원글 버튼·같은 상품 찾기는 딜 쪽에)
 gp = [{"t": f"2026-10-09 {10 + k // 6:02d}:{k % 6}0", "text": f"🔥 [G마켓] 많은딜{k:02d} (1,000원)", "url": f"https://m{k}", "s": 5} for k in range(45)]
 S.build(gp, "docs5b"); a1, a2, a3 = (open(f).read() for f in ("docs5b/all.html", "docs5b/all/2/index.html", "docs5b/all/3/index.html"))
@@ -5002,12 +5002,13 @@ assert set(h35) == {1, 4, 5, 6, 8, 35, 37} | set(range(9, 34)), sorted(h35)  # 1
 #   4 = 예전 규칙의 글 end는 안 봄 · 5·35 = 토스 하루특가·선착순 날 지남 = ⏳ 특가 대기(남음) · 8 = end(10/12) 뒤 다시 올린 글 — 봇(own_end)이 아직 안 본 글 = 아이콘대로
 assert h35[5] == (2, None, "10/10 가격 · 특가 기다리는 중", [("b3", "⏳ 특가 대기")], False) and h35[1] == (0, None, "", [], False) and h35[37][0] == 0, (h35[5], h35[1])
 ids35 = lambda xs: [i for i, _, _ in xs]; html35 = lambda xs: "".join(S35.card(i, p, sh) for i, p, sh in xs)  # 10/24 개편: 칸 대신 목록 쪽(lists — 20개씩 쪽)
+tt35, time.time = time.time, lambda: TK("2026-10-16 12:00")  # 목록 위 8개 = 가격 날 3일 안(9-60 B) — 오늘 = 이 글들의 날
 co35 = S35.lists(P35, d35)["coupang"][2]
 assert len(co35) == 28 and {1, 4, 8} <= set(ids35(co35)) and 9 in ids35(co35)  # 커뮤니티 25개 + 진우 3개 — 목록 쪽은 개수 제한 X(20개씩 쪽 나눔)
-assert ids35(co35)[:4] == [8, 4, 1, 33]  # 같은 🔥면 진우 상품 먼저(그다음 최신)
+assert ids35(co35)[:10] == [8, 33, 32, 31, 30, 29, 28, 27, 4, 1], ids35(co35)[:10]  # 같은 🔥면 진우 상품 먼저(그다음 최신) — 옛 가격(10/10·10/11) 진우 상품은 위 8개 뒤
 assert html35(co35).count("지금 가격은 링크에서 확인") == 3 and "10/11 가격 · 지금 가격은 링크에서 확인" in html35(co35) and "10/15 가격 · 지금 가격은 링크에서 확인" in html35(co35)  # 진우 상품(확인 기록 없음)은 날짜와 상관없이 'M/D 가격'
-to35 = ids35(S35.lists(P35, d35)["toss"][2]); assert to35 == [6, 37, 35, 5], to35  # 🔥(진우 먼저) → ⏳
-li35 = ids35(S35.lists(P35, d35)["life"][2]); assert li35 == [8, 4, 1, 5], li35
+to35 = ids35(S35.lists(P35, d35)["toss"][2]); assert to35 == [37, 35, 5, 6], to35  # 🔥 → ⏳ · 10/10 가격 토스 🔥(6)는 위 8개 뒤
+li35 = ids35(S35.lists(P35, d35)["life"][2]); assert li35 == [8, 5, 4, 1], li35; time.time = tt35
 # own_end(쿠팡·네이버): events 진우 항목 now·chk(Cowork 아침 확인) -> 글 st·tgt·now·chk — 목표가 = 처음 🔥로 소개한 글 가격, 🔥 = 지금가 ≤ 목표가 +5% · end + why gone/issue만 뺌 · ⏳ -> 🔥 = 🔁 다시 특가
 sv35 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time)
 json.dump([{"url": "https://link.coupang.com/a/OLD", "now": "21,500원", "chk": "2026-10-23 08:30"}, {"url": "https://link.coupang.com/a/GONE", "end": "2026-10-20", "why": "issue"},
@@ -5065,7 +5066,7 @@ time.time = lambda: TK("2026-10-25 11:00"); H.own_end(s35); assert [x[0] for x i
 # 사이트: gone만 빠지고 나머지는 진열 — 🔥(🔁 먼저) → ⏳(👍 먼저) → 일시 품절, 토스 카드엔 API 가격 X(올린 가격 + 'M/D 가격', ⏳는 가격 숨기고 '특가 때 M원')
 S35.EVENTS = "ev35x.json"; g35 = json.load(open("posts35.json")); d35b = ["2026-10-25", "2026-10-24", "2026-10-23"]; h35 = S35.home_pool(g35, d35b)
 assert set(h35) == {0, 1, 2, 3, 6, 8, 9}, sorted(h35)  # E = gone만 빠짐 · F는 다시 올린 글(9)로
-to35 = ids35(S35.lists(g35, d35b)["toss"][2]); assert to35 == [9, 8, 3, 1, 6, 2, 0], to35
+to35 = ids35(S35.lists(g35, d35b)["toss"][2]); assert to35 == [9, 6, 2, 0, 8, 3, 1], to35  # 위 8개 = 옛 가격(10/23 전) 🔥 X(9-60 B) — 3일 안 🔥(9) → ⏳·일시 품절 → 옛 가격 🔥
 ga35, gb35, gc35, gf35 = (S35.card(i, g35[i], h35[i]) for i in (0, 1, 2, 9))
 assert '<b class="bdg w">일시 품절 (10/25 확인)</b>' in ga35 and "10/10 가격 · 다시 들어오면 링크에서 확인" in ga35  # 그 자리 그대로 + 배지
 assert "10,000원" in gb35 and '<div class="u">10/11 가격</div>' in gb35 and "지금 가격은 링크에서 확인" not in gb35 and "👍" not in gb35  # 토스 🔥 = 올린 가격 + 날짜 1줄(API 가격 X · 안내는 칸 머리 TOSS_LINE)
@@ -5470,11 +5471,11 @@ assert seen41["cpq"]["m"] == {EG41: [7490, "2026-10-05 10:00"]} and seen41["cpq"
 c41.clear(); H.RUN.pop("cpn"); H.cp_price(seen41); assert not c41  # 오늘 다시 X
 # 가장 오래전에 확인한 글 먼저 · 결과에 pid는 있는데 옵션이 다름 = 'pid 있음' 로그 + 위 3개 · pageKey(파트너스 링크의 상품 번호)로도 같은 상품
 seen41 = reset41(True); json.dump(po41 + [{"t": "2026-10-05 11:00", "text": "🔥 [쿠팡] 새 상품 (5,000원)", "url": "https://coupa.ng/b222", "own": 1, "mid": 2}], open("posts.json", "w")); H.cp_links(seen41)
-seen41["cpq"] = {"m": {EG41: [7490, "2026-10-05 10:00"], "https://coupa.ng/b222": [0, "2026-10-04 10:00"]}}; c41.clear(); H.RUN.pop("cpn")
+seen41["cpq"] = {"m": {EG41: [7490, "2026-10-05 10:00"], "https://coupa.ng/b222": [0, "2026-10-04 10:00"]}, "i": {EG41: "https://ads-partners.coupang.com/image1/e"}}; c41.clear(); H.RUN.pop("cpn")  # EG41 = 사진 있음(사진 없는 글 먼저 — 10/24 A①)
 H.http = lambda url, *a, **k: c41.append((url, None)) or json.dumps({"rCode": "0", "data": {"productData": [{"productId": 9, "productName": "다른 상품", "productPrice": 1}, {"productId": 777, "productName": "새 상품, 2개", "productPrice": 9000, "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=x&pageKey=222&itemId=1"}]}})
 o41 = io.StringIO()
 with contextlib.redirect_stdout(o41): H.cp_price(seen41)
-assert quote("새 상품") in c41[0][0] and seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 0, c41  # 10/4 확인 글이 먼저
+assert quote("새 상품") in c41[0][0] and seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 0 and len(c41) == 2, c41  # 사진 없는 글(b222) 먼저 · pid 있음 = 다른 검색어 X · 다음 = 사진 있는 오래된 확인
 assert "pid 222 · 검색어 '새 상품' · pid 있음 1개 = 옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로 · 결과 2개" in o41.getvalue() and "  9 다른 상품\n" in o41.getvalue() and "  777 새 상품, 2개 ← 같은 pid · item 1" in o41.getvalue(), o41.getvalue()
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": [{"productId": 777, "productName": "새 상품, 1개", "productPrice": 5100, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=222"}]}})
 seen41["cpq"]["m"]["https://coupa.ng/b222"][1] = "2026-10-04 10:00"; H.RUN.pop("cpn"); H.cp_price(seen41); assert seen41["cpq"]["m"]["https://coupa.ng/b222"][0] == 5100  # productId가 달라도 pageKey = pid면 같은 상품
@@ -5755,7 +5756,7 @@ cp50 = lambda img, url="https://link.coupang.com/a/x", **k: {"t": "2026-10-24 10
 assert S50.img_of(cp50("https://ads-partners.coupang.com/image1/t")) == "https://ads-partners.coupang.com/image1/t" and S50.img_of(cp50("https://thumbnail6.coupangcdn.com/a.jpg")).startswith("https://thumbnail6.")
 assert all(S50.img_of(cp50(u)) == "" for u in ("http://ads-partners.coupang.com/i", "javascript:alert(1)", "https://evil.example/coupang.com.jpg", "https://coupang.com.evil.example/x", "", None)) and S50.img_of(cp50("https://ads-partners.coupang.com/i", url="https://toss.shopping/_m/x")) == ""  # https + 쿠팡 주소만, 토스 = 사진 X
 th50 = S50.thumb(cp50('https://ads-partners.coupang.com/i"><script>'))
-assert '<img src="https://ads-partners.coupang.com/i&quot;&gt;&lt;script&gt;"' in th50 and 'onerror="this.remove()"' in th50 and '<div class="im" style="--c:#EAF6EE"><span aria-hidden="true">🥚</span>' in th50  # 이스케이프 · 못 불러오면 이모지
+assert '<img src="https://ads-partners.coupang.com/i&quot;&gt;&lt;script&gt;"' in th50 and 'onerror="this.remove()"' in th50 and '<div class="im" style="--c:#EAF6EE"><i class="ci ci-food" aria-hidden="true"></i><img' in th50  # 이스케이프 · 못 불러오면 품목 선 아이콘(사진 아래 깔림)
 ld50 = json.loads(S50.seo(5, cp50("https://ads-partners.coupang.com/i", st="out"))[2].split(">", 1)[1].split("</script>")[0])
 assert ld50["image"] == "https://ads-partners.coupang.com/i" and "availability" not in ld50["offers"] and ld50["offers"]["seller"] == {"@type": "Organization", "name": "쿠팡"} and "review" not in json.dumps(ld50) and "Rating" not in json.dumps(ld50)
 d50 = tempfile.mkdtemp(); S50.build([cp50("https://ads-partners.coupang.com/i")], d50); p50 = open(f"{d50}/p/0.html").read()
@@ -6199,9 +6200,14 @@ H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E
 #   · 썸네일 = 상품 이모지(ICONS) · 토스 카드 1줄 + 칸 머리 TOSS_LINE · 몰 쪽 1쪽(상태 탭·품목 칩) · 상태 쪽 /c/drop·today·top/ · changes.json(찜 배지·알림 탭·🔔 점) · 검색 '가격 내림'·'마감' = 상태 쪽
 sv59 = (time.time, S.EVENTS, dict(S.DROPS)); d59 = tempfile.mkdtemp(); cwd59 = os.getcwd(); os.chdir(d59); S.EVENTS = "events.json"; S.DROPS.clear()
 time.time = lambda: TK("2026-10-24 20:00"); td59 = "2026-10-24"
-ic59 = lambda name, **x: S.icon_of_p({"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {name} (1,000원)", "url": "https://link.coupang.com/a/i", **x})
-assert [ic59(n) for n in ("곰곰 특란 30구", "동원샘물 2L 12병", "라네즈 립 슬리핑 마스크 20g", "비비고 사골곰탕 500g 18개", "샤인머스캣 2kg", "세탁세제 코튼캔디 3L", "아이스크림 24개", "라네즈 워터뱅크 크림 50ml")] == ["🥚", "💧", "💄", "🍲", "🍇", "🧺", "🍧", "🧴"]  # 첫 맞음(비비고 ≠ 비비크림 · 샤인머스캣 ≠ 캣 · 코튼캔디 세제 ≠ 🍬 · 아이스크림 ≠ 크림)
-assert ic59("무지 노트 5권") == "🛍️" and ic59("무지 노트 5권", cat="food") == "🍚" and S.thumb({"t": "2026-10-24 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (1원)", "url": "https://x"}).startswith('<div class="im" style="--c:#EAF6EE"><span aria-hidden="true">🥚</span>')  # 안 맞으면 품목 이모지 · 바탕 = 품목 색
+ic59 = lambda name, **x: S.ci({"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {name} (1,000원)", "url": "https://link.coupang.com/a/i", **x})
+svg59 = lambda k: f'<i class="ci ci-{k or "x"}" aria-hidden="true"></i>'
+assert [ic59(n) for n in ("곰곰 특란 30구", "아벤느 오 떼르말 미스트 300ml", "세탁세제 코튼캔디 3L", "샤인머스캣 2kg", "아이스크림 24개")] == [svg59(k) for k in ("food", "beauty", "laundry", "season", "snack")]  # 품목 선 아이콘(미스트 = 뷰티 펌프 병 — 💄 X)
+assert [ic59(n) for n in ("오퓨리엠 테이블 미스트 가습기용 필터 1개", "타이탄 미니 보조배터리 5000mAh 블루베리밀크", "캣누리 고양이사료 닭+참치 5kg", "강아지덴탈껌 고구마 800g", "선쉐이드 햇빛가리개 전좌석")] == [svg59(k) for k in ("digital", "digital", "", "", "")]  # 품목이 틀리게 잡히는 이름 = ICON_FIX(가습기 필터 ≠ 뷰티 · 보조배터리 ≠ 식품 · 사료·차량용 = 쇼핑백)
+assert set(S.CAT_ICON) == set(S.CAT_META) | {""} and all("<path" in v or "<circle" in v or "<rect" in v for v in S.CAT_ICON.values()) and not re.search(r'class=|[\U0001F300-\U0001FAFF]', "".join(S.CAT_ICON.values())) and all(f'.ci-{k}{{--m:url("data:image/svg+xml,%3Csvg' in S.CSS for k in S.CAT_ICON if k) and '.ci,.ci-x{--m:url("data:image/svg+xml,%3Csvg' in S.CSS and S.CSS.index(".ci,.ci-x{") < S.CSS.index(".ci-food{") and ".ci{display:block;width:1em;height:1em;background:var(--ci,var(--sub));-webkit-mask:var(--m)" in S.CSS  # 품목마다 1개 + 품목 없음(쇼핑백) · 선 그림만(이모지 X) · s.css 마스크(쪽마다 SVG X)
+assert ic59("무지 노트 5권") == svg59("") and ic59("무지 노트 5권", cat="food") == svg59("food") and S.thumb({"t": "2026-10-24 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (1원)", "url": "https://x"}) == f'<div class="im" style="--c:#EAF6EE">{svg59("food")}</div>'  # 품목 없음 = 쇼핑백 · 바탕 = 품목 색
+assert not S.img_of({"t": "x", "text": "🔥 [네이버] 김 (1원)", "url": "https://naver.me/a", "img": "https://shopping-phinf.pstatic.net/main_1/a.jpg"}) \
+    and not S.img_of({"t": "x", "text": "🔥 [토스] 김 (1원)", "url": "https://toss.shopping/t/1", "img": "https://ads-partners.coupang.com/image1/a"}) and not S.img_of({"t": "x", "text": "🔥 [쿠팡] 김 (1원)", "url": "https://link.coupang.com/a/x", "img": "https://shopping-phinf.pstatic.net/a.jpg"})  # 사진 = 쿠팡 글·쿠팡 주소만(네이버 쇼핑 검색 API 종료 · 토스 X)
 assert "function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}" in S.SEARCH_JS and "if(g)return location.assign(g)" in S.SEARCH_JS and 'class="' not in S.SEARCH_JS  # 검색 '가격 내림'·'마감' = 상태 쪽(결과 위 버튼 · 엔터 = 바로) · 큰따옴표 class X
 assert "location.search.match(/[?&]s=([hsw])/)" in S.MALL_JS and "querySelectorAll('.mf [data-c]')" in S.MALL_JS and "n+=20" in S.MALL_JS and "data-t" in S.TAB_JS and "delete x.dataset.sh" in S.TAB_JS  # 몰 쪽 ?s=h(🔥 쪽 몰 칩) = 그 탭 · 20개씩 더 보기 · 🔥 탭(검색 숨김 표시 지움)
 # 🔥 실시간 핫딜: 가격 근거(fresh_day) = 진우 상품 chkt·chk('M/D H시')·rehot, 그 밖 = 올린 날 — 3일(10/22~) 안 🔥만 · 기획전(evi) X · 같은 브랜드 1개
@@ -6297,7 +6303,81 @@ assert ch59["at"] == td59 and ch59["n"] == {"drop": 3, "deadline": 1, "rehot": 1
 assert {k: v["k"] for k, v in ch59["items"].items()} == {"2": ["drop"], "1": ["drop"], "4": ["drop"], "11": ["deadline"], "6": ["rehot"], "7": ["ended"], "9": ["gone"]}  # 8 = 6일 전 끝남 · 10 = 옛 종료 · 3 = 확인 안 된 40% X
 assert ch59["items"]["1"] == {"m": "coupang", "n": "곰곰 특란 30구", "r": "10,000원", "c": "8,000원 와우가", "t": "10/24 9시", "k": ["drop"], "d": TK("2026-10-24 09:10"), "p": 20} and ch59["items"]["11"]["c"] == "" and ch59["items"]["11"]["m"] == "toss" and ch59["items"]["7"]["d"] == TK("2026-10-23 00:00")  # 토스 = 지금가 X
 al59 = rd59("alarm/index.html"); assert all(f'data-gc="changes/{k}"><span>{t}</span><b>{n}개 →</b>' in al59 for k, t, n in (("drop", "📉 가격 내려감", 3), ("deadline", "⏰ 오늘 마감", 1), ("rehot", "🔁 다시 특가", 1))) and S.CHG_JS in al59 and S.CHG_JS in rd59("saved/index.html")
-assert next(x for x in json.load(open(f"{w59}/search.json")) if x["i"] == 1)["m"] == "🥚" and S.DROPS == {2: (40, "10/20", "10/24"), 1: (20, "10/18", "10/24"), 4: (10, "10/20", "10/24")}  # 검색 카드도 상품 이모지
+assert next(x for x in json.load(open(f"{w59}/search.json")) if x["i"] == 1)["m"] == "food" and "<i class='ci ci-\"+esc(x.m||'x')+\"' aria-hidden='true'></i>" in S.SEARCH_JS and S.DROPS == {2: (40, "10/20", "10/24"), 1: (20, "10/18", "10/24"), 4: (10, "10/20", "10/24")}  # 검색 카드도 상품 이모지
 cj59 = open(f"{w59}/changes.json").read(); time.time = lambda: TK("2026-10-24 20:30"); S.build(P59, w59); assert open(f"{w59}/changes.json").read() == cj59  # 같은 글이면 그대로(at = 날짜 — 15분 실행마다 docs 커밋 X)
 time.time, S.EVENTS = sv59[:2]; S.DROPS.clear(); S.DROPS.update(sv59[2]); os.chdir(cwd59)
+# 9-60) (10/24 Cowork A·B·C — 진우 '제품 사진이 있으면 실제로') 사진 채움: cp_price = 사진 없는 것(홈 먼저)과 오래된 확인을 번갈아 · 검색어 cp_kws(그대로 → 수량·괄호 뺀 → 브랜드+끝 두 낱말) pid가 결과에 없으면 다음 검색어(실행 상한 안)·찾은 검색어 기억
+#   · own_end 로그 '사진 쿠팡 a/b · 네이버 c/d'(실행마다 — 네이버 쇼핑 검색 API는 2026-07-31 종료라 네이버 사진 X) · 사이트 = 같은 날이면 사진 먼저
+#   · B 🔥 줄 = 보이는 가격 날 3일 안(토스 = 올린 날 — '🔁 10/13 가격' X) · 목록 위 8개도 · C 📉 줄·/c/drop/ 카드 = 상태 표시 X(▼N%만, 대기면 '목표가 N원')
+import urllib.parse, contextlib; cwd60, sv60 = os.getcwd(), (time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, dict(H.E)); os.chdir(tempfile.mkdtemp())
+assert H.cp_kws("살림백서 구연산 주방세제 레몬 4L") == ["살림백서 구연산 주방세제 레몬 4L", "살림백서 구연산 주방세제 레몬", "살림백서 주방세제 레몬"] and H.cp_kws("롬앤 쥬시 래스팅 틴트 (05 피치미)") == ["롬앤 쥬시 래스팅 틴트 (05 피치미)", "롬앤 쥬시 래스팅 틴트", "롬앤 래스팅 틴트"]
+assert H.cp_kws("곰곰 특란 30구") == ["곰곰 특란 30구", "곰곰 특란"] and H.cp_kws("AMUSE 젤핏 틴트 05") == ["AMUSE 젤핏 틴트 05", "AMUSE 틴트 05"] and H.cp_kws("햇반") == ["햇반"]
+U60 = lambda k: f"https://link.coupang.com/a/p{k}"
+P60 = [{"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {n} (9,900원)", "url": U60(k), "own": 1} for k, n in (("A", "살림백서 구연산 주방세제 레몬 4L"), ("B", "곰곰 특란 30구"), ("C", "햇반 24개"))]
+json.dump(P60, open("posts.json", "w"), ensure_ascii=False); json.dump([{"at": "2026-10-20 10:00", "url": U60(k), "text": "x", "pid": f"7{n}"} for n, k in enumerate("ABC")], open("events.json", "w"))
+os.makedirs("docs"); open("docs/index.html", "w").write('<a href="https://hotdealpick.kr/p/1.html">')  # 홈 = B
+H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.json", True
+kw60, run60 = [], [0]
+def cp60(method, path, body=None):
+    if run60[0] >= 2:
+        raise H.CpLimit()
+    run60[0] += 1
+    kw = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]); kw60.append(kw)
+    hit = {"살림백서 구연산 주방세제 레몬": "70", "곰곰 특란 30구": "71", "햇반 24개": "72"}.get(kw)
+    return {"productData": [{"productId": 999, "productName": "다른 상품", "productPrice": 1, "productImage": "https://ads-partners.coupang.com/image1/x"}]
+            + ([{"productId": int(hit), "productName": kw + " 옵션", "productPrice": 8000, "productImage": f"https://ads-partners.coupang.com/image1/{hit}"}] if hit else [])}
+H.coupang = cp60
+s60 = {"cpq": {"m": {U60("C"): [9000, "2026-10-23 09:00", ""]}, "i": {U60("C"): "https://ads-partners.coupang.com/image1/72"}}}
+time.time = lambda: TK("2026-10-25 11:00"); o60 = io.StringIO()
+with contextlib.redirect_stdout(o60): H.cp_price(s60)
+assert kw60 == ["곰곰 특란 30구", "햇반 24개"] and s60["cpq"]["i"][U60("B")].endswith("/71") and s60["cpq"]["v"] == {U60("B"): 0}, (kw60, s60["cpq"])  # 사진 없는 홈 상품(B) 먼저 → 사진 있는 오래된 확인(C) 번갈아(검색 1번씩)
+run60[0] = 0; H.cp_price(s60)
+assert kw60[2:] == ["살림백서 구연산 주방세제 레몬 4L"] and U60("A") not in s60["cpq"]["i"] and s60["cpq"]["v"][U60("A")] == 1 and s60["cpq"]["pm"] == {U60("A"): ["2026-10-25", 1]}, (kw60, s60["cpq"])  # pid 없음 = 이번 실행은 그만(1번씩) · 다음 검색어 기억
+run60[0] = 0; H.cp_price(s60)
+assert kw60[3:] == ["살림백서 구연산 주방세제 레몬"] and s60["cpq"]["i"][U60("A")].endswith("/70") and s60["cpq"]["v"][U60("A")] == 1 and s60["cpq"]["pm"] == {}, (kw60, s60["cpq"])  # 오늘 안에 다음 검색어(수량 뺀 이름)로 다시 → pid 찾음
+assert s60["cpq"]["m"][U60("A")][0] == 0 and s60["cpq"]["m"][U60("B")][0] == 8000  # A = 결과 이름에 4L 없음(옵션 다름) = 가격 X · 사진은 같은 pid로
+run60[0] = 0; H.cp_price(s60); assert len(kw60) == 4  # 셋 다 오늘 확인함 = 더 안 부름
+time.time = lambda: TK("2026-10-26 11:00"); run60[0] = 0; kw60.clear(); H.cp_price(s60); assert kw60 == ["살림백서 구연산 주방세제 레몬 4L", "곰곰 특란 30구"], kw60  # 다음 날 = 사진 있음 → 이름 그대로(옵션 가격 맞추기 — 짧은 검색어에 안 머묾)
+s60p = {"cpq": {"m": {}, "i": {}}}; time.time = lambda: TK("2026-10-27 11:00"); kw60.clear()
+H.cp_kws, kws0 = (lambda n: ["없음1", "없음2"]), H.cp_kws
+for _ in range(4):
+    run60[0] = 0; H.cp_price(s60p)
+H.cp_kws = kws0; assert kw60.count("없음1") + kw60.count("없음2") <= 2 * 3 and all(s60p["cpq"]["pm"][U60(k)][1] == 2 for k in "ABC"), (kw60, s60p["cpq"].get("pm"))  # pid 못 찾는 글 = 검색어 수만큼만(하루) — 더 X
+json.dump([{"at": "2026-10-20 10:00", "url": U60("A"), "text": "x", "pid": "75", "item": "I2"}, {"at": "2026-10-20 10:00", "url": U60("B"), "text": "x", "pid": "75"}], open("events.json", "w"))
+H.coupang = lambda m, p, b=None: {"productData": [{"productId": 75, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=75&itemId=I1", "productImage": "https://ads-partners.coupang.com/image1/i1"}]}
+s60o = {"cpq": {"m": {}}}; H.cp_price(s60o); assert s60o["cpq"]["i"] == {U60("B"): "https://ads-partners.coupang.com/image1/i1"}, s60o["cpq"]  # 옵션(item I2)이 정해진 A = 다른 옵션(I1) 사진 X · B = 같은 pid면 사진
+json.dump([{"at": "2026-10-20 10:00", "url": U60(k), "text": "x", "pid": f"7{n}"} for n, k in enumerate("ABC")], open("events.json", "w")); H.coupang = cp60
+N60 = [{"t": "2026-10-24 10:00", "text": f"🛒 [네이버] 네이버 상품 {k} (9,500원)", "url": f"https://naver.me/n{k}", "own": 1} for k in (1, 2, 3)]
+json.dump(P60 + N60, open("posts.json", "w"), ensure_ascii=False)
+# own_end: 쿠팡 사진 = 글 img + 로그 '사진'(글 안 바뀐 실행에도)
+json.dump([{"at": "2026-10-20 10:00", "url": U60(k), "text": "x", "pid": f"7{n}"} for n, k in enumerate("ABC")] + [{"at": "2026-10-20 10:00", "url": p["url"], "text": "x"} for p in N60], open("events.json", "w"))
+o60 = io.StringIO()
+with contextlib.redirect_stdout(o60): H.own_end(s60)
+pj60 = json.load(open("posts.json")); assert "img" not in pj60[3] and pj60[1]["img"].endswith("/71")
+assert "사진 쿠팡 3/3 · 네이버 0/3 · 토스 X(규칙)\n" in o60.getvalue(), o60.getvalue()
+o60 = io.StringIO()
+with contextlib.redirect_stdout(o60): H.own_end(s60)
+assert "own end" not in o60.getvalue() and "사진 쿠팡 3/3 · 네이버 0/3 · 토스 X(규칙)\n" in o60.getvalue(), o60.getvalue()  # 바뀐 글 없어도 사진 줄은 실행마다(정기 점검)
+# 사이트: 같은 날·같은 단계면 사진 있는 것 먼저 · B 🔥 줄 = 보이는 가격 날(토스 = 올린 날) 3일 안 · 목록 위 8개 · C 📉
+time.time = lambda: TK("2026-10-24 21:00")
+Q60 = [{"t": "2026-10-24 07:00", "text": "🔥 [쿠팡] 아까 사진 휴지 (1,000원)", "url": "https://link.coupang.com/a/q3", "img": "https://ads-partners.coupang.com/image1/q3"},
+       {"t": "2026-10-24 08:10", "text": "🔥 [쿠팡] 사진있음 휴지 (1,000원)", "url": "https://link.coupang.com/a/q2", "img": "https://ads-partners.coupang.com/image1/q2"}, {"t": "2026-10-24 08:40", "text": "🔥 [쿠팡] 사진없음 휴지 (1,000원)", "url": "https://link.coupang.com/a/q1"}]
+dy60 = ["2026-10-24", "2026-10-23", "2026-10-22"]; assert [i for i, _, _ in S.items(Q60, dy60)] == [1, 2, 0]  # 같은 시간대(8시) = 사진 먼저(더 새 글보다도) · 시간대가 다르면 최신 먼저(사진 있어도 7시 글은 뒤)
+T60 = [{"t": "2026-10-13 10:00", "text": "🔥 [토스] 커밍글 미스트 (12,400원)", "url": "https://toss.shopping/t/1", "own": 1, "st": "hot", "rehot": "2026-10-24", "chk": "10/24 17시"},
+       {"t": "2026-10-24 10:00", "text": "🔥 [토스] 오늘 토스 미스트 (9,900원)", "url": "https://toss.shopping/t/2", "own": 1, "st": "hot"}]
+assert S.price_day(T60[0], "2026-10-24") == "2026-10-13" and S.fresh_day(T60[0], "2026-10-24") == "2026-10-24" and S.price_day(T60[1], "2026-10-24") == "2026-10-24"
+it60 = S.items(T60, dy60); h60, _ = S.hot_section(it60, set(), "2026-10-24")
+ft60 = lambda k: h60.split(f'data-p="{k}"')[1].split("</ol>")[0]
+assert "<small>2개</small>" in h60 and "p/0.html" not in ft60("all") + ft60("toss") and "p/1.html" in ft60("all")  # 🔥 = 2개(새로 확인됨) · 전체·토스 줄에는 10/13 가격 토스 X(🆕 = 올린 순 그대로)
+xs60 = [(i, {"t": f"2026-10-{24 - (i % 2) * 10:02d} 10:00", "text": "🔥 [토스] t (1원)", "url": f"https://toss.shopping/t/{i}"}, (0, None, "", [], False)) for i in range(12)]
+assert [i for i, _, _ in S.trust8(xs60, "2026-10-24")][:8] == [0, 2, 4, 6, 8, 10, 1, 3] and len(S.trust8(xs60, "2026-10-24")) == 12  # 위 8개 = 보이는 가격 3일 안 먼저(6개뿐이면 그다음 순서대로)
+xw60 = xs60[:1] + [(20 + i, {**p, "t": "2026-10-14 10:00"}, sh) for i, p, sh in xs60[1:4]] + [(30 + i, {"t": "2026-10-20 10:00", "text": "⏳ [토스] w (1원)", "url": f"https://toss.shopping/t/w{i}"}, (2, None, "", [], False)) for i in range(8)]
+assert [i for i, _, _ in S.trust8(xw60, "2026-10-24")][:8] == [0, 30, 31, 32, 33, 34, 35, 36]  # 🔥 새 가격이 모자라면 위 8자리는 다른 상품으로 — 옛 가격 🔥(10/14)는 8자리 밖
+D60 = {"t": "2026-10-20 10:00", "text": "🔥 [쿠팡] 봉지라면 5개 (5,000원)", "url": "https://link.coupang.com/a/r", "own": 1, "st": "wait", "now": "4,100원", "chk": "10/24 9시", "chkt": "2026-10-24 09:00", "tgt": "3,900원"}
+sh60 = S.shelf(D60, {}, "2026-10-24"); S.DROPS[0] = (18, "10/20", "10/24")
+r60 = S.row(0, D60, sh60, "2026-10-24", "drop/0", "<s>5,000원</s> → <b>4,100원</b><i>▼18%</i><small>10/20 기록 대비 · 10/24 확인</small>")
+assert "⏳" not in r60 and "👍" not in r60 and "▼18%" in r60 and "⏳ " in S.row(0, D60, sh60, "2026-10-24")  # 📉 줄 = 상태 표시 X(▼N%만) · 다른 칸 줄은 그대로
+c60 = S.card(0, D60, sh60, plain=True); assert "bdg" not in c60 and "▼ 18% 내림" in c60 and '<div class="u">10/24 9시 확인</div><div class="u">목표가 3,900원</div>' in c60 and "특가 기다리는 중" not in c60, c60  # /c/drop/ 카드 = 배지 X · 목표가 작게
+assert '<b class="bdg w">⏳ 대기</b>' in S.card(0, D60, sh60); S.DROPS.pop(0)
+time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS = sv60[:7]; H.E.clear(); H.E.update(sv60[7]); os.chdir(cwd60)
 print("OK: 모든 셀프체크 통과")

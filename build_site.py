@@ -26,6 +26,22 @@ GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 
 CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
+CAT_ICON = {  # 품목 선 아이콘(10/24 진우 — 사진 없을 때 이모지 대신, 아래 메뉴 선 아이콘과 같은 모양 · 틀린 그림 X: 뷰티 = 펌프 병·제철 = 잎·패션 = 옷걸이)
+    "life": '<circle cx="8" cy="9" r="5"/><circle cx="8" cy="9" r="1.25"/><path d="M8 4h8a5 5 0 0 1 5 5v11l-1.5-1-1.5 1-1.5-1-1.5 1v-6H8"/>',  # 휴지 롤
+    "food": '<path d="M3 12a9 9 0 0 0 18 0Z"/><path d="M5.5 12a6.5 5 0 0 1 13 0"/><path d="M9 21.5h6"/>',  # 밥그릇
+    "beauty": '<rect x="7" y="10" width="10" height="12" rx="2"/><path d="M10 10V7.5h4V10"/><path d="M12 7.5V4"/><path d="M9.5 4H15l1.5 1.5"/><path d="M10 15h4"/>',  # 펌프 병(립스틱 X)
+    "kitchen": '<path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"/>',  # Lucide cooking-pot
+    "laundry": '<path d="M3 8h18"/><path d="m4.5 8 1.4 11.3A2 2 0 0 0 7.9 21h8.2a2 2 0 0 0 2-1.7L19.5 8"/><path d="M6.2 12.5h11.6"/><path d="M6.7 16.5h10.6"/><path d="M8 8a4 3 0 0 1 8 0"/>',  # 빨래 바구니
+    "snack": '<path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>',  # Lucide cookie
+    "women": '<circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5"/><path d="M12 7.5V9"/><path d="M7.5 12H9"/><path d="M16.5 12H15"/><path d="M12 16.5V15"/><path d="m8 8 1.88 1.88"/><path d="M14.12 9.88 16 8"/><path d="m8 16 1.88-1.88"/><path d="M14.12 14.12 16 16"/>',  # Lucide flower
+    "heat": '<path d="M12 2 12 22M20.66 7 3.34 17M20.66 17 3.34 7"/><path d="M14.6 2.7 12 5.2 9.4 2.7M5.25 5.1 6.11 8.6 2.65 9.6M2.65 14.4 6.11 15.4 5.25 18.9M9.4 21.3 12 18.8 14.6 21.3M18.75 18.9 17.89 15.4 21.35 14.4M21.35 9.6 17.89 8.6 18.75 5.1"/>',  # 눈송이
+    "season": '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',  # Lucide leaf(고구마 X)
+    "home": '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 21v-6h4v6"/>',  # 집
+    "fashion": '<path d="M10 5.5a2 2 0 1 1 2 2V9"/><path d="M12 9 2.8 15.6a1 1 0 0 0 .6 1.8h17.2a1 1 0 0 0 .6-1.8Z"/>',  # 옷걸이(양말 X)
+    "digital": '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',  # Lucide plug
+    "": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',  # Lucide shopping-bag(품목 없음)
+}
+
 CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
 :root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--pkt:#B3202F;--accf:#E5303F;--cpb:linear-gradient(160deg,#FFE5E3,#FFF2EE);--cpt:#C2202C;--tsb:linear-gradient(160deg,#E3EEFF,#EEF5FF);--tst:#1B64DA;--nvb:linear-gradient(160deg,#E2F7EA,#F0FAF3);--nvt:#00703A;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#0F1013;--card:#1A1C21;--ink:#ECEEF2;--sub:#9AA0AC;--line:#262931;--acc:#FF5A66;--chip:#24272E;--btn:#ECEEF2;--btnt:#14161B;--pkbg:linear-gradient(160deg,#3A1E27,#33261F);--pkln:rgba(255,92,114,.18);--pkt:#FF9AA6;--cpb:linear-gradient(160deg,#3A1E22,#2E2224);--cpt:#FF8A8F;--tsb:linear-gradient(160deg,#1B2A44,#1E2633);--tst:#6AA5FF;--nvb:linear-gradient(160deg,#17332A,#1D2B26);--nvt:#3DDC84;color-scheme:dark}}
@@ -55,7 +71,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .pk .pr{font-size:18px;font-weight:800;letter-spacing:-.6px;line-height:1.3}.pk .go{display:flex;align-items:center;height:44px;padding:0 14px;border-radius:12px;background:var(--pk);color:#fff;font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap}
 .mc{display:inline-block;padding:1px 6px;border-radius:6px;background:var(--chip);color:var(--sub);font-size:11.5px;font-weight:600;letter-spacing:-.2px}
 .ex{color:var(--acc);font-size:12px;font-weight:700}.u{color:var(--sub);font-size:12px;line-height:1.45}
-.im{position:relative;display:grid;place-items:center;overflow:hidden;background:var(--c,var(--chip));text-decoration:none}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+.im{position:relative;display:grid;place-items:center;overflow:hidden;background:var(--c,var(--chip));text-decoration:none}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}.ci{display:block;width:1em;height:1em;background:var(--ci,var(--sub));-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}.deal .im .ci{width:.7em;height:.7em}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 0}
 .tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 2px 10px;border-radius:18px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-size:13px;font-weight:600;letter-spacing:-.4px;white-space:nowrap}
 .tile i{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--c);font-style:normal;font-size:22px}
@@ -109,7 +125,9 @@ footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}foot
 .chgb>.btn2{margin-top:14px}.chgb ul{list-style:none;margin:6px 0 0;padding:0}.chgb li a{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:6px 0 0;padding:0 14px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:700}.chgb li b{color:var(--acc)}
 @media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}.m{font-size:12.5px}}
 .deal .s{margin:2px 0 0;font-size:12.5px;color:var(--sub)}.deal h2 a{text-decoration:none}.hero .sv,.g .sv{color:var(--acc);font-size:14px;font-weight:700}
-@media(prefers-color-scheme:dark){.im,.tile i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
+@media(prefers-color-scheme:dark){.im,.tile i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
+MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
+CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
 FONT_HEAD = '<link rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin>'  # 10/24 개편 글꼴 = Pretendard 줄인 판 'HDP Sans'(docs/fonts, OFL.txt — 이름은 OFL 예약 이름 규칙대로 바꿈) 1개 파일(317KB, 굵기 400~800) — 바꾸면 v2로(서비스워커 글꼴 캐시는 이름이 안 바뀌면 그대로 씀)
 
@@ -184,7 +202,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function card(x){return "<article class='g'><button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button><div class='im' style='--c:"+esc(x.c)+"'><span aria-hidden='true'>"+esc(x.m)+"</span>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onerror='this.remove()'>":"")+(x.b||"")+"</div><span class='mc'>"+esc(x.s)+"</span><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
+function card(x){return "<article class='g'><button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button><div class='im' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onerror='this.remove()'>":"")+(x.b||"")+"</div><span class='mc'>"+esc(x.s)+"</span><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
 function hide(on){[].forEach.call(M.children,function(e){if(/^(HEADER|FOOTER|SCRIPT)$/.test(e.tagName)||e.id==='sr'||e.className==='dis')return;if(on){if(!e.hidden){e.hidden=true;e.dataset.sh=1}}else if(e.dataset.sh){e.hidden=false;delete e.dataset.sh}})}
 function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}
 function run(){var v=q.value.trim().toLowerCase();if(!v){if(sr){sr.remove();sr=null}hide(false);return}
@@ -737,6 +755,16 @@ UI = {  # Lucide(ISC) 선 아이콘 — 아래 메뉴·헤더
     "alarm": '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
     "search": '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'}
 svg = lambda k: f'<svg viewBox="0 0 24 24" aria-hidden="true">{UI[k]}</svg>'
+ICON_FIX = ((r"가습기|보조\s*배터리|충전기|이어폰|드라이기|선풍기|멀티탭|모니터", "digital"), (r"사료|강아지|고양이|애견|펫|차량용|자동차|워셔액|요소수|햇빛\s*가리개", ""))  # 품목이 틀리게 잡히는 이름(미스트 가습기 필터 = 뷰티 X · 고양이 사료 = 식품 X · 차량용 = 쇼핑백)
+
+
+def icon_key(p):
+    """썸네일 선 아이콘 키: ICON_FIX(이름) -> 품목(cat_of) -> '' (쇼핑백)."""
+    k = next((k for r, k in ICON_FIX if re.search(r, parse(title_of(p["text"]))[1])), cat_of(p))
+    return k if k in CAT_ICON else ""
+
+
+ci = lambda p: f'<i class="ci ci-{icon_key(p) or "x"}" aria-hidden="true"></i>'  # 품목 선 아이콘(CSS 마스크 .ci-품목 · 없으면 x = 쇼핑백)
 
 
 def chip_of(p):
@@ -746,133 +774,18 @@ def chip_of(p):
 
 
 def img_of(p):
-    """쿠팡 상품 사진 주소(글 img — 파트너스 API productImage, hotdeal.cp_price가 채움) — https + 쿠팡 주소만(HTML에 들어가는 값이라 허용 목록), 토스·그 밖 = ''(토스 = API 데이터 사이트 전시 X)."""
-    u = p.get("img") or ""
+    """상품 사진 주소(글 img): 쿠팡 = 파트너스 API productImage(hotdeal.cp_price) — https + 쿠팡 사진 주소만(HTML에 들어가는 값이라 허용 목록), 토스·네이버·그 밖 = ''(토스 = API 데이터 사이트 전시 X · 네이버 쇼핑 검색 API는 2026-07-31 종료)."""
+    u, s = p.get("img") or "", shop_of(p)
     host = urllib.parse.urlsplit(u).netloc
-    return u if shop_of(p) == "coupang" and u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com"))) else ""
-
-
-# 썸네일 이모지(10/24 Cowork '미스트·크림 → 💄, 샴푸·물티슈 → 🧻' 오매칭): 이름 낱말 -> 이모지(위에서부터 첫 맞음 — 순서가 중요: 기기·차·펫·운동 -> 세탁·주방 도구 -> 옷 -> 생필품 -> 뷰티 -> 먹거리), 안 맞으면 품목 이모지. Unicode 12 이하만
-ICONS = (
-    (r"송장|택배", "📦"),
-    (r"이어폰|에어팟|헤드셋|헤드폰", "🎧"),
-    (r"보조\s*배터리|건전지", "🔋"),
-    (r"충전기|케이블|멀티\s*탭", "🔌"),
-    (r"모니터|노트북|장패드", "🖥️"),
-    (r"선풍기", "🌀"),
-    (r"가습기|드라이기|드라이어", "💨"),
-    (r"오븐|에어\s*프라이어|밥솥|전기\s*포트|전자레인지", "🍳"),
-    (r"차량용|자동차|요소수|워셔액|와이퍼|엔진|불스원|카플레이|햇빛\s*가리개", "🚗"),
-    (r"고양이|(?<![A-Za-z])CAT|캣누리|두부모래|스크래쳐", "🐱"),
-    (r"강아지|DOG|(?<!핫)도그|배변|펫|사료", "🐶"),
-    (r"양말|삭스|덧신", "🧦"),
-    (r"보호대|아령|요가|짐볼|풀업|푸쉬업|스트레칭|운동|자이로볼", "🏋️"),
-    (r"마사지기|EMS|괄사", "💆"),
-    (r"(?<!제)모기|홈매트|홈키파|훈증", "🦟"),
-    (r"핫팩|손난로|발난로|보온대|온열|히터|난로", "♨️"),
-    (r"안대", "😴"),
-    (r"샤워기|샤워\s*헤드", "🚿"),
-    (r"이불|담요|베개|침대|방석", "🛏️"),
-    (r"디퓨저|탈취|방향제|페브리즈", "🌿"),
-    (r"변기|락스|곰팡이|청소포|물걸레|크리너|클리너", "🧹"),
-    (r"주방\s*세제|식기\s*세척|수세미|행주|스펀지", "🧽"),
-    (r"세제|유연제|빨래|세탁|건조기\s*시트|옷걸이|바지걸이|울샴푸", "🧺"),
-    (r"밀폐\s*용기|보관\s*용기|김치통|용기\s*\d", "🥡"),
-    (r"칼\s*세트|주방\s*칼|식칼|과도|가위|도마", "🔪"),
-    (r"프라이팬|후라이팬|냄비|곰솥|에그팬|무쇠팬", "🍳"),
-    (r"텀블러|보온병|쉐이커|종이컵", "🥤"),
-    (r"식기|그릇|접시", "🍽️"),
-    (r"장갑", "🧤"),
-    (r"생리|오버\s*나이트|라이너|탐폰", "🌸"),
-    (r"팬티|브라탑|속옷", "🩲"),
-    (r"티셔츠|조끼|셔츠|파자마|잠옷|앞치마", "👕"),
-    (r"바지|팬츠|몸빼", "👖"),
-    (r"자켓|재킷|패딩|코트|(?<!주방 )후드", "🧥"),
-    (r"스카프|머플러|목도리", "🧣"),
-    (r"가방|백팩|보스턴백|숄더백|파우치", "👜"),
-    (r"지갑", "👛"),
-    (r"귀걸이|목걸이|반지", "💍"),
-    (r"안경", "👓"),
-    (r"(?<![가-힣])펜|중성펜|마카펜|연필|복사용지|스티커|카드\s*슬리브", "✏️"),
-    (r"물티슈", "💧"),
-    (r"휴지|화장지|키친\s*타[월올]|티슈", "🧻"),
-    (r"면도기|면도날|쉐이빙|제모기|코털", "🪒"),
-    (r"칫솔|치약|치실|가글|가그린|구강", "🦷"),
-    (r"KF\s*\d|덴탈\s*마스크|일회용\s*마스크|새부리", "😷"),
-    (r"헤어(?!\s*밴드)|샴푸|린스|트리트먼트|바디\s*워시|핸드\s*워시|스킨\s*워시|새니타이저|컬크림", "🧴"),
-    (r"리무버|클렌징(?!패드)|클렌저|폼클렌|비누|뷰티\s*바|(?<!아이스)크림\s*바|세안", "🧼"),
-    (r"립\s*(?:밤|스틱|글로|큐어|슬리핑)|립밤|틴트|마스카라|팩트|쿠션|파운데이션|컨실러|비비\s*크림|(?<![A-Za-z])BB(?![A-Za-z])", "💄"),
-    (r"마스크|시트팩|패드|패치", "🧖"),
-    (r"(?<!아이스)(?<!콘)(?<!앤)크림(?!\s*(?:화이트|빠네|치즈|파이|빵|맛)|화이트)|로션|세럼|앰플|에센스|토너|미스트|(?<!배)스킨(?!온)|에멀젼|올인원|기초\s*세트|시카플라스트", "🧴"),
-    (r"퍼퓸|향수", "💐"),
-    (r"손톱|네일", "💅"),
-    (r"식물|모종|토양|화분", "🌱"),
-    (r"LED|무드등|터치등", "💡"),
-    (r"생수|샘물|삼다수|아이시스|에브리워터|트레비|탄산수|스파클\s*탄산", "💧"),
-    (r"고구마칩|칩|새우깡|과자|감자\s*튀김|구운감자", "🍟"),
-    (r"시리얼|콘푸로스트|그래놀라|크리스피롤", "🥣"),
-    (r"우유|두유|요거트|요구르트|오트(?!밀)|(?<![가-힣])윌(?![가-힣])", "🥛"),
-    (r"분유|앱솔루트", "🍼"),
-    (r"(?:(?<![가-힣])김\s*\d|곱창김|돌김|파래김|생김|김자반|도시락김|식탁김|전장김|광천김|맛김|성경김)(?!치)", "🍙"),
-    (r"땅콩|견과|아몬드|호두", "🥜"),
-    (r"캔디|사탕|젤리", "🍬"),
-    (r"초코|빼빼로|칸쵸|오레오|몽쉘|제티", "🍫"),
-    (r"라면|짬뽕|불닭|우동|칼국수|국수|파스타|스파게티|[가-힣]면\s+\d", "🍜"),
-    (r"계란|달걀|유정란|구운란|[대특중]란|메추리알", "🥚"),
-    (r"커피|아메리카노|카누|맥심|라떼|원두|할리스", "☕"),
-    (r"보리차|하늘보리|녹차|여주차|유자차|쌍화", "🍵"),
-    (r"(?<!쇼)콜라|사이다|맥콜|음료|주스(?!용)|에이드|청포도|과채|매실|스프라이트|워터(?!뱅크|\s*슬리핑)", "🥤"),
-    (r"레몬즙|자몽즙", "🍋"),
-    (r"비타민|영양제|유산균|루테인|마그네슘|\d\s*정(?:\s|$|\+)|\d\s*캡슐|아르기닌|프로틴|뉴케어|낙산균|레몬컷|배양근", "💊"),
-    (r"햅쌀|(?<![가-힣])쌀|쌀\s*\d|흑미|잡곡|현미|보리쌀|햇반|오뚜기밥|누룽지|볶음밥|주먹밥", "🍚"),
-    (r"고구마", "🍠"),
-    (r"김치|깍두기|겉절이|배추|열무|상추|쌈채소|샐러드|콩나물|애호박", "🥬"),
-    (r"햄|소세지|소시지|비엔나|후랑크|핫도그|스팸|천하장사", "🌭"),
-    (r"어묵|오뎅|고등어|갈치|과메기|생선|장어|명란|멸치|황태", "🐟"),
-    (r"새우|대하", "🦐"),
-    (r"꽃게|게장|홍게|대게", "🦀"),
-    (r"오징어|낙지|문어", "🦑"),
-    (r"닭|치킨|윙|가라아게|넓적다리|오리(?!온|지)", "🍗"),
-    (r"삼겹|목살|한돈|한우|소고기|갈비|불고기|제육|등심|국거리|대패|잡육|돼지|족발|살치|떡갈비|함박|(?<!쇠)고기", "🥩"),
-    (r"참치|카레", "🥫"),
-    (r"곰탕|도가니|탕|국밥|찌개|해장국", "🍲"),
-    (r"교자|만두|동그랑땡", "🥟"),
-    (r"떡볶이", "🍢"),
-    (r"떡|쫀드기|약과|강정", "🍡"),
-    (r"빵|베이글|크로와상|바게트|카스테라|포카치아|파운드|도나스|와플|빠네", "🍞"),
-    (r"치즈", "🧀"),
-    (r"꿀|벌집", "🍯"),
-    (r"올리브\s*(?:오일|유)|올리브유|식용유|카놀라|참기름|들기름", "🍶"),
-    (r"간장|고추장|된장|소스|다시|퓨레|가루|분말|설탕|소금", "🧂"),
-    (r"햇밤|생밤|대보밤|옥광밤|맛밤|공주밤", "🌰"),
-    (r"빙수|아이스크림", "🍧"),
-    (r"감귤|(?<![가-힣])귤|한라봉|레드향|천혜향|반시|홍시|대봉|단감", "🍊"),
-    (r"사과|시나노|홍로|부사", "🍎"),
-    (r"(?<![가-힣])배(?:\s|$)|나주배|가정용배", "🍐"),
-    (r"샤인\s*머스[캣켓]|포도|블루베리", "🍇"),
-    (r"딸기", "🍓"),
-    (r"바나나", "🍌"),
-    (r"망고", "🥭"),
-    (r"토마토", "🍅"),
-    (r"당근", "🥕"),
-    (r"양파", "🧅"),
-    (r"옥수수", "🌽"),
-    (r"버섯|표고|능이", "🍄"),
-)
-
-
-def icon_of_p(p):
-    """카드 썸네일 이모지: ICONS(이름) -> 품목(CAT_META) -> 🛍️."""
-    name = parse(title_of(p["text"]))[1]
-    return next((e for r, e in ICONS if re.search(r, name)), (CAT_META.get(cat_of(p)) or ("", "", "🛍️"))[2])
+    return u if u.startswith("https://") and (s == "coupang" and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))) else ""
 
 
 def thumb(p, inner=""):
-    """썸네일: 품목 파스텔 네모 + 이모지, 쿠팡 사진이 있으면 그 위에(못 불러오면 사진만 지워져 이모지가 보임)."""
+    """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(정사각 흰 배경 contain · 못 불러오면 사진만 지워져 선 아이콘이 보임)."""
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
-    return f'<div class="im"{bg}><span aria-hidden="true">{icon_of_p(p)}</span>{pic}{inner}</div>'
+    return f'<div class="im"{bg}>{ci(p)}{pic}{inner}</div>'
 
 
 def price_bits(p, sh):
@@ -901,15 +814,19 @@ def badge(p, sh):
     return {1: '<b class="bdg">👍 꾸준템</b>', 2: '<b class="bdg w">⏳ 대기</b>', 3: f'<b class="bdg w">{html.escape(out)}</b>'}.get(st, "")
 
 
-def card(i, p, sh, more=(), attrs=""):
+def card(i, p, sh, more=(), attrs="", plain=False):
     """상품 카드(10/24 진우 개편 A): 흰 r20 · 위 118px 썸네일(+ 배지·♡) · 몰 칩 · 이름 2줄 · 가격 800 17px · 빨강 줄 · 회색 줄. 카드 전체 = 딜 쪽(구매 버튼·왜 골랐나요).
-    .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태, more = 회색 줄 더(행사 쪽 단위가)."""
+    .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태, more = 회색 줄 더(행사 쪽 단위가).
+    plain = 📉 가격 내려간 쪽(10/24 Cowork C): 상태 배지 X(▼N%만) · 회색 = 'M/D H시 확인' + 대기면 '목표가 N원'."""
     name = parse(title_of(p["text"]))[1]
     shown, ex, grey = price_bits(p, sh)
     end = [f'<div class="ex" data-end="{end_at(p)}">⏰ 오늘 밤 12시 마감</div>'] if any(c == "b2" for c, _ in badges(p)) else []
     ex = ([f"▼ {DROPS[i][0]}% 내림 ({DROPS[i][1]} 기록 대비)"] if i in DROPS else []) + ex  # 📉 같은 구성 내림(10/24 Cowork '카드에서도 바로')
+    if plain:
+        tg = re.match(r"[\d,]+원", p.get("tgt") or "")
+        grey = [x for x in (p.get("chk") and f"{p['chk']} 확인", sh[0] in (1, 2) and tg and f"목표가 {tg[0]}") if x]
     return (f'<article class="g"{attrs}><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
-            + thumb(p, badge(p, sh)) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
+            + thumb(p, "" if plain else badge(p, sh)) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
             + f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
             + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
 
@@ -931,11 +848,12 @@ def pick_row(n, i, p, sh):
 
 
 def items(posts, days, home=None):
-    """사이트 진열 목록 [(i, p, 상태)] = home_pool 전부: 🔥 특가(🔁 다시 특가 먼저) → ⏳ 👍 꾸준템 → ⏳ 대기 → 일시 품절, 같은 단계는 진우 상품 먼저, 그다음 최신."""
+    """사이트 진열 목록 [(i, p, 상태)] = home_pool 전부: 🔥 특가(🔁 다시 특가 먼저) → ⏳ 👍 꾸준템 → ⏳ 대기 → 일시 품절, 같은 단계는 진우 상품 먼저, 그다음 최신(같은 시간대 = 사진 있는 것 먼저)."""
     home = home_pool(posts, days) if home is None else home
     ds = [(i, posts[i]) for i in sorted(home, reverse=True)]
     ds.sort(key=lambda x: (home[x[0]][0], not home[x[0]][4], not x[1].get("own")))
-    return [(i, p, home[i]) for i, p in ds]
+    g = itertools.groupby(((i, p, home[i]) for i, p in ds), key=lambda x: (x[2][0], x[2][4], bool(x[1].get("own")), x[1]["t"][:13]))
+    return [x for _, xs in g for x in sorted(xs, key=lambda x: not img_of(x[1]))]  # 같은 단계·같은 시간대(이웃) 안에서 사진 있는 상품 먼저(10/24 Cowork A④ — 날 단위면 새 글이 🔥 줄에서 밀림)
 
 
 def steady_of(x):
@@ -953,15 +871,15 @@ def wait_order(xs):
 
 def lists(posts, days, home=None):
     """목록 쪽 {주소 이름: (제목, 한 줄 설명, [(i, p, 상태)], 대가성 몰 문구 키)} — /c/이름/ 20개씩(PER). 빈 목록은 쪽 X(특가·카테고리 쪽은 늘)."""
-    it = items(posts, days, home)
-    out = {"hot": ("🔥 지금 특가", "핫딜픽이 고른 상품 중 지금 특가 가격대인 것 · 🔁 = 특가 가격으로 다시 돌아온 상품", [x for x in it if x[2][0] == 0], ""),
+    it, today = items(posts, days, home), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    out = {"hot": ("🔥 지금 특가", "핫딜픽이 고른 상품 중 지금 특가 가격대인 것 · 🔁 = 특가 가격으로 다시 돌아온 상품", trust8([x for x in it if x[2][0] == 0], today), ""),
            "steady": ("👍 꾸준히 팔리는 것", "최저가는 아니어도 꾸준히 많이 사는 것", [(i, p, (1,) + sh[1:]) for i, p, sh in it if steady_of((i, p, sh))], ""),  # 배지 = 👍 꾸준템(흰) — 🔥 칸과 구분
            "wait": ("⏳ 특가 기다리는 상품", "지금은 특가가 아닌 추천 상품 · 특가 때 가격으로 돌아오면 🔁 다시 특가로 올려요", wait_order([x for x in it if x[1].get("own") and x[2][0] in (1, 2)]), "")}
     for k in CAT_META:
         slug, name, emo, _ = CAT_META[k]
-        out[slug] = (f"{emo} {name} 특가 모음", f"{name} 특가·핫딜을 매일 골라 정리해요 · 🔥 특가 중인 것 먼저", [x for x in it if cat_of(x[1]) == k], "")
+        out[slug] = (f"{emo} {name} 특가 모음", f"{name} 특가·핫딜을 매일 골라 정리해요 · 🔥 특가 중인 것 먼저", trust8([x for x in it if cat_of(x[1]) == k], today), "")
     for k, name, emo in MALLS:
-        out[k] = (f"{emo} {name} 특가 모음", f"{name} 특가만 모았어요", [x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))], k)
+        out[k] = (f"{emo} {name} 특가 모음", f"{name} 특가만 모았어요", trust8([x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))], today), k)
     return out
 
 
@@ -971,7 +889,7 @@ def pick_score(x, recs):
     low = {r[2] for _, _, rows in recs.values() for r in rows[:3]}
     good = i in low or re.search(r"30일\s*(?:내\s*)?최저가", p["text"]) or saving(p["text"])
     fresh = sh[1] is not None or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
-    return (not sh[4], not fresh, not good, not p.get("own"), -i)
+    return (not sh[4], not fresh, not good, not p.get("own"), not img_of(p), -i)  # 같은 점수 = 사진 있는 것 먼저(10/24 Cowork A④)
 
 
 def choose_picks(it, recs, n=PICK_N, avoid=()):
@@ -1149,7 +1067,7 @@ def list_pages(slug, head, desc, xs, mall, recs):
         body = (f'<h1 class="h">{html.escape(head)}{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md} 업데이트</div>'
                 + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in part) else "") + (stat_chips(slug) if slug in dict(STAT_CHIPS) else chips_html(slug))
                 + ('<nav class="chips" aria-label="몰">' + "".join(f'<a href="{c_url(k)}?s=h" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN) + "</nav>" if slug == "hot" else "")
-                + (f'<div class="cards">{"".join(card(i, p, sh) for i, p, sh in part)}</div>' if part else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
+                + (f'<div class="cards">{"".join(card(i, p, sh, plain=slug == "drop") for i, p, sh in part)}</div>' if part else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
                 + nav + (rec_nav(recs) or "" if slug == "life" and k == 1 else "") + (f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>' if mall == "coupang" and k == 1 else ""))
         li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for i, p, _ in part if img_of(p)), 1)]
         ld = len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} ({md})", "itemListElement": li}  # 네이버 캐러셀: 항목마다 진짜 상품 사진 필수(기본 그림 X) — 사진 있는 것만, 3개 미만이면 안 넣음
@@ -1167,7 +1085,7 @@ def search_index(it):
         shown, ex, grey = price_bits(p, sh)
         c = CAT_META.get(cat_of(p))
         name = parse(title_of(p["text"]))[1]
-        out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_of_p(p), "c": c[3] if c else "",
+        out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_key(p), "c": c[3] if c else "",
                     "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name)) if x).lower()})
     return out
 
@@ -1283,6 +1201,18 @@ def fresh_day(p, today):
     return max(x for x in ((p.get("chkt") or "")[:10], d or "", p.get("rehot") or "", p["t"][:10]) if x)
 
 
+def price_day(p, today):
+    """보이는 가격의 날(10/24 Cowork B — '🔁 10/13 가격' 토스가 🔥 2번째): 토스 = 올린 날(사이트엔 올린 가격만), 그 밖 = fresh_day."""
+    return p["t"][:10] if shop_of(p) == "toss" else fresh_day(p, today)
+
+
+def trust8(xs, today, n=8):
+    """목록 위 n개에서 보이는 가격이 HOT_DAYS일 지난 🔥 빼기(홈 TOP 규칙을 목록에도 — 10/24 Cowork B '🔁 10/13 가격'): 위 n자리 = 그 밖 상품 순서대로, 옛 가격 🔥는 그 뒤(순서 그대로)."""
+    since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
+    ok = [x for x in xs if not (x[2][0] == 0 and price_day(x[1], today) < since)][:n]
+    return ok + [x for x in xs if x not in ok]
+
+
 def brand(p):
     """같은 브랜드 판단 = 상품명 첫 낱말."""
     return (parse(title_of(p["text"]))[1].split() or [""])[0]
@@ -1333,7 +1263,7 @@ def row(i, p, sh, today, gc="", extra=""):
     name = parse(title_of(p["text"]))[1]
     shown, ex, _ = price_bits(p, sh)
     k = shop_of(p)
-    flag = "🔁 " if sh[4] else "⏰ " if day_end(p, today) else {1: "👍 ", 2: "⏳ "}.get(sh[0], "") if p.get("own") else ""  # 🆕 탭 대기 상품 = 카드 badge()처럼
+    flag = "" if extra else "🔁 " if sh[4] else "⏰ " if day_end(p, today) else {1: "👍 ", 2: "⏳ "}.get(sh[0], "") if p.get("own") else ""  # 🆕 탭 대기 상품 = 카드 badge()처럼 · 📉 줄(extra) = 상태 표시 X(▼N%만 — 10/24 Cowork C)
     d = DROPS.get(i)
     return (f'<li class="r"><a href="{BASE}p/{i}.html"' + (f' data-gc="{gc}"' if gc else "") + f'>{thumb(p)}<span class="rt"><span class="l1"><b class="mk {k}">{html.escape(chip_of(p).split(" ")[0])}</b>{flag}{html.escape(name)}</span>'
             + f'<span class="l2">' + (extra or ((f"<b>{html.escape(shown)}</b>" if shown else "") + (f"<i>{html.escape(ex[0])}</i>" if ex else "") + (f'<i>▼{d[0]}%</i>' if d else "")
@@ -1351,7 +1281,8 @@ def hot_section(it, evi, today):
     -> (HTML, 전체 탭 글 번호들)."""
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
     xs = [x for x in it if x[2][0] == 0 and x[0] not in evi and fresh_day(x[1], today) >= since]
-    tabs = [("all", "전체", mix(xs, HOT_N))] + [(k, n, uniq([x for x in xs if shop_of(x[1]) == k], HOT_N)) for k, n, _ in MALL_BTN] \
+    ys = [x for x in xs if price_day(x[1], today) >= since]  # 줄 = 보이는 가격도 3일 안(토스 = 올린 날 — 10/24 Cowork B)
+    tabs = [("all", "전체", mix(ys, HOT_N))] + [(k, n, uniq([x for x in ys if shop_of(x[1]) == k], HOT_N)) for k, n, _ in MALL_BTN] \
         + [("new", "🆕 새로 올라온", uniq(sorted((x for x in it if x[2][0] != 3 and x[0] not in evi), key=lambda x: x[1]["t"], reverse=True), HOT_N))]
     tabs = [t for t in tabs if t[2]]
     if not tabs:
@@ -1407,7 +1338,7 @@ def top_section(head, small, xs):
 def deadline_list(it, evi, today):
     """⏰ 오늘 마감(10/24 Cowork): 진열 🔥 중 오늘 밤 12시 끝(day_end — 토스 하루특가·선착순·'밤 12시까지') · 기획전 X(마지막 날은 행사 카드 1장) -> 할인 큰 순."""
     dr = lambda p: max([int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", p["text"])] or [0])
-    return sorted((x for x in it if x[2][0] == 0 and x[0] not in evi and day_end(x[1], today)), key=lambda x: -dr(x[1]))
+    return sorted((x for x in it if x[2][0] == 0 and x[0] not in evi and day_end(x[1], today)), key=lambda x: (-dr(x[1]), not img_of(x[1])))
 
 
 def dl_card(i, p, sh, today):
@@ -1450,7 +1381,7 @@ def drops(posts, it, now_ts):
             continue
         rec = re.search(r"\((\d{1,2}/\d{1,2}) \d{1,2}시 (?:확인|가격)\)", f["text"])  # 첫 글 '(M/D H시 가격)' 줄 = 기록 날, 없으면 올린 날
         out.append((i, p, sh, base, nw, pct, rec[1] if rec else md_of(f["t"]), md_of(p["chkt"])))
-    return sorted(out, key=lambda d: -d[5])
+    return sorted(out, key=lambda d: (-d[5], not img_of(d[1])))
 
 
 def drop_section(ds, today):

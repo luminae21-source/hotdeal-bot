@@ -1438,19 +1438,33 @@ def cp_price(seen):
         return
     today, q = time.strftime("%Y-%m-%d", kst), seen.setdefault("cpq", {"m": {}})
     q["t"], ev = time.time(), ev_info()
-    names = {p["url"]: parse(title_of(p["text"]))[1] for p in load(POSTS, []) if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
+    posts = load(POSTS, [])
+    names = {p["url"]: parse(title_of(p["text"]))[1] for p in posts if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
     q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
+    q["v"] = {u: v for u, v in q.get("v", {}).items() if u in names}  # v = 사진 없는 글의 다음 검색어 번호(cp_kws — pid 찾으면 그대로)
+    q["pm"] = {u: v for u, v in q.get("pm", {}).items() if u in names and v[0] == today}  # pm = 사진 없는 글이 오늘 pid 못 찾은 수 — 다음 검색어로 오늘 다시(검색어 수까지)
     bypid = {}
     for u in names:
         if ev[u].get("pid"):
             bypid.setdefault(ev[u]["pid"], []).append(u)
-    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]) and u not in q["e"]),
+    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
+                                                                                                   or u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
+    try:  # 홈에 나오는 상품(지난 빌드 docs/index.html의 딜 쪽 링크) — 사진 채움 먼저(10/24 Cowork A①)
+        home = {posts[int(k)].get("url") for k in re.findall(r'/p/(\d+)\.html', open("docs/index.html", encoding="utf-8").read()) if int(k) < len(posts)}
+    except OSError:
+        home = set()
+    pho = sorted((t for t in todo if t[1] not in q.get("i", {})), key=lambda t: (t[1] not in home, t[0]))  # 사진 없는 것(홈 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
+    old = [t for t in todo if t[1] in q.get("i", {})]
+    todo = [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]]
     got = miss = err = 0
-    for _, u, pid, name, item in todo:
-        kw = name[:50]
+    qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
+    for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
+        kws = cp_kws(name)
+        v = q["v"].get(u, 0) % len(kws) if u not in q.get("i", {}) else 0  # 사진 있는 글 = 늘 이름 그대로(옵션 가격 맞추기) · 없는 글 = 오늘 못 찾은 만큼 다음 검색어
+        kw = kws[v]
         try:
             r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
         except CpLimit:
@@ -1462,17 +1476,22 @@ def cp_price(seen):
             q["e"][u], err = today, err + 1
             continue
         ds = [x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(x, dict)]
-        qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
+        if u not in q.get("i", {}):
+            if same:
+                q["v"][u] = v
+                q["pm"].pop(u, None)
+            else:  # pid 없음 = 다음엔 다음 검색어(오늘 안에 — 검색어 수까지)
+                q["v"][u], q["pm"][u] = (v + 1) % len(kws), [today, q["pm"].get(u, [today, 0])[1] + 1]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
         q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""]  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
-        y = x or (same[0] if same else None)  # 사진 = 같은 pid면 옵션이 달라도(가격 적중이 낮아도 사진은 채움 — 추가 호출 X)
+        y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만
         if y and str(y.get("productImage") or "").startswith("https://"):
             q.setdefault("i", {})[u] = y["productImage"]
         for z in ds:  # 같은 검색 결과에 다른 진우 글 상품(같은 pid)도 있으면 그 사진도(10/24 진우 1주 ① — 사진 212개 중 14개뿐이던 것, 추가 호출 X)
             for u2 in bypid.get(str(z.get("productId")), ()):
-                if u2 != u and u2 not in q.setdefault("i", {}) and str(z.get("productImage") or "").startswith("https://"):
+                if u2 != u and u2 not in q.setdefault("i", {}) and str(z.get("productImage") or "").startswith("https://") and (not ev[u2].get("item") or qs(z, "itemId") == ev[u2]["item"]):
                     q["i"][u2] = z["productImage"]
         got, miss = got + bool(x), miss + (not x)
         if not x:  # 원인 찾기(10/23 Cowork — 적중 0): 결과에 pid가 있는데 옵션이 다른지 / 아예 없는지 · 위 3개(키·주소 쿼리 X)
@@ -1481,6 +1500,14 @@ def cp_price(seen):
                 print(f"  {y.get('productId')} {str(y.get('productName') or '')[:30]}" + (f" ← 같은 pid · item {qs(y, 'itemId') or '-'}" if y in same else ""))
     if got or miss or err:
         print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - got - miss - err}")
+
+
+def cp_kws(name):
+    """쿠팡 검색어 1~3개(10/24 Cowork A① 사진 채움 — pid가 결과 10개 안에 없을 때 다음 것): 이름 그대로 · 수량·용량 뺀 이름 · 브랜드(첫 낱말) + 끝 두 낱말(핵심 낱말)."""
+    b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])", " ", name, flags=re.I).split())  # 괄호 안(옵션)·수량·용량 뺌
+    w = [x for x in b.split() if not re.fullmatch(r"대용량|묶음|세트|기획|기획세트|증정|단품|본품|정품|무료배송|택1|리필|팩|개|대|특대|국내산", x)]
+    c = " ".join([w[0]] + w[-2:]) if len(w) >= 4 else ""
+    return list(dict.fromkeys(k[:50] for k in (name, b, c) if len(k) >= 2)) or [name[:50]]
 
 
 def cp_same(name, api):
@@ -5299,6 +5326,8 @@ def own_end(seen):
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
     if n or HAS_TOSS and by:
         print("own end", f"진우 상품 {len(urls)}개(토스 {len(tossy)}) · 🔥 {c['hot']} · ⏳ {c['wait']} · 일시 품절 {c['out']} · 뺌 {c['gone']} · 글 바꿈 {n}" + (f" · 토스 이번 확인 {len(by)}개" if HAS_TOSS else ""))
+    ph = collections.Counter((shop_of(posts[ix[-1]]), any(posts[i].get("img") for i in ix)) for ix in urls.values() if posts[ix[-1]].get("st") != "gone")
+    print("사진", " · ".join(f"{n} {ph[(k, True)]}/{ph[(k, True)] + ph[(k, False)]}" for k, n in (("coupang", "쿠팡"), ("naver", "네이버"))) + " · 토스 X(규칙)")  # 몰별 사진 비율(10/24 Cowork A⑤ — 정기 점검 README 줄)
 
 
 DROP_PCT, DROP_AT = 30, "09:30"  # 옵션 바뀜 의심(10/24 Cowork): 첫 글 가격보다 30%↓인데 API 확인 X -> 하루 1번 관리자 DM(9:30~ KST)
