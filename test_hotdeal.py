@@ -5660,4 +5660,23 @@ S40.build(po47, "site"); tz47 = open("site/index.html").read().split('id="toss"'
 assert all(f"p/{i}.html" in tz47 for i in range(1, 5)) and "⭐" not in tz47  # 사이트 💙 토스 칸에 진열(리뷰 X)
 H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS, H.TOSS_SITE = sv47[5:7]; os.chdir(cwd47)
 assert H.TOSS_SITE is False  # 보류 중(10/24 10시 Cowork — API 신청 범위)
+# 9-48) 쿠팡 진열 링크 변환 실패(10/24 10시 Cowork — 약 110개 중 9개 rCode 400): 진열 실패는 상품마다 DM 말고 하루 1번 묶어서(9시~, 상품 번호만) ·
+#       서로 다른 날 2번 실패한 진열 상품은 다음부터 변환 시도 X(events는 그대로) · 채널 예약 실패는 지금처럼 바로 알림
+import calendar
+sv48 = (H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, dict(H.RUN)); d48 = tempfile.mkdtemp(); cwd48 = os.getcwd(); os.chdir(d48)
+H.EVENTS, H.HAS_CP, dm48, dl48 = "events.json", True, [], []
+G48, B48 = "https://www.coupang.com/vp/products/5001", "https://www.coupang.com/vp/products/77777"
+json.dump([{"at": "2026-10-24 09:00", "shelf": True, "url": u, "text": f"👍 <b>[쿠팡] {n} (1,000원)</b>"} for u, n in ((G48, "좋은 세제"), (B48, "제휴 안 되는 세제"))], open("events.json", "w"))
+def http48(url, body=None, headers=None, method=None):
+    us = body["coupangUrls"]; dl48.append(list(us))
+    return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if B48 in us else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/g" + u[-4:]} for u in us]})
+H.http, H.tg = http48, lambda m, **p: dm48.append(p.get("text", "")) or {"message_id": 1}
+at48 = lambda d: (lambda t: [H.RUN.pop(k, None) for k in ("cpu", "cpn")] and None or setattr(time, "time", lambda: t))(calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+s48 = {}; at48("2026-10-24 10:00"); H.cp_links(s48)
+assert json.load(open(H.CP_LINKS)) == {G48: "https://link.coupang.com/a/g5001"} and len(dm48) == 1 and "진열 링크 변환 안 됨 1개" in dm48[0] and "제휴 안 되는 세제 (pid 77777) — 내일 1번 더 시도" in dm48[0] and B48 not in dm48[0], dm48  # 묶음 오류 -> 나눠서 좋은 건 변환 · 알림 1번(주소 X)
+at48("2026-10-24 11:00"); H.cp_links(s48); assert len(dm48) == 1 and len(dl48) == 3  # 같은 날 = 다시 시도 X·알림 X
+at48("2026-10-25 09:30"); H.cp_links(s48); assert len(dm48) == 1 and len(dl48) == 3  # 24시간 안 = 아직
+at48("2026-10-25 10:30"); H.cp_links(s48); assert len(dm48) == 2 and "제휴 안 되는 세제 (pid 77777) — 2번째(다른 날) · 다음부터 진열 시도 X" in dm48[1] and dl48[-1] == [B48], dm48  # 다음 날 1번 더(실패) -> 알림 1번
+at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 4 and len(dm48) == 2  # 2번 실패한 진열 = 다시 안 부름
+H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv48[:5]; H.RUN.clear(); H.RUN.update(sv48[5]); os.chdir(cwd48)
 print("OK: 모든 셀프체크 통과")

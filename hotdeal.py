@@ -1366,8 +1366,10 @@ def cp_links(seen):
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
     st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
     evs = [e for e in ev_list(EVENTS) if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
-    chan = {e["url"] for e in evs if not e.get("shelf")}
-    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= 86400]  # 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    chan, kst = {e["url"] for e in evs if not e.get("shelf")}, time.gmtime(now + 9 * 3600)
+    today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
+    st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= 86400 and (u in chan or len(st["f"].get(u, [])) < 2)]  # 진열은 서로 다른 날 2번 실패하면 X(10/24 Cowork — events는 그대로) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     q, calls = [todo[k:k + CP_DL_BATCH] for k in range(0, len(todo), CP_DL_BATCH)], 0
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
         b = q.pop(0)
@@ -1391,7 +1393,16 @@ def cp_links(seen):
             continue
         for u in miss:
             st["x"][u] = now
-            alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약·진열은 안 올라감(하루 뒤 다시). 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
+            if u in chan:  # 채널 예약 = 바로 알림
+                alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — {u}\n그 예약은 안 올라감. 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
+            else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고')
+                st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
+                st.setdefault("q", {})[u] = names.get(u, "")
+    if st.get("q") and st.get("qd") != today and kst.tm_hour >= 9:  # 진열 변환 실패 묶음 알림(하루 1번, 9시~ · 상품 번호만 — 주소 쿼리 X)
+        if tg("sendMessage", chat_id=ADMIN, text=(f"⚠️ 쿠팡 진열 링크 변환 안 됨 {len(st['q'])}개(rCode 400 — 상품별 파트너스 제휴 불가로 보임)\n"
+                                                  + "\n".join(f"· {n or '?'} (pid {re.match(CP_PROD, u)[1]})" + (" — 2번째(다른 날) · 다음부터 진열 시도 X" if len(st["f"].get(u, [])) >= 2 else " — 내일 1번 더 시도")
+                                                              for u, n in st["q"].items()) + "\n다른 브랜드·옵션이나 진우 단축 링크로 events에 바꿔 넣어줘")[:4000]):
+            st.update(q={}, qd=today)
     if n:
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
         print("cp link", f"쿠팡 상품 주소 {n}개 -> 파트너스 링크")
