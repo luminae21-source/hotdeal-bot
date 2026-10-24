@@ -543,7 +543,7 @@ def hot_section(posts, days):
 
 
 CATS = (("life", "🧻 생필품", r"휴지|화장지|티슈|키친타[월올]|세제|유연제|퍼실|다우니|피죤|스너글|샴푸|린스|컨디셔너|트리트먼트|바디워시|핸드워시|손세정|비누|치약|칫솔|가글"
-                              r"|리스테린|생리대|라이너|기저귀|면도|마스크(?!팩)|KF\d|크린랩|위생[백랩장]|니트릴|지퍼백|쿠킹호일|종량제|쓰레기봉투|수세미|고무장갑|행주|탈취|방향제"
+                              r"|리스테린|생리대|(?<!아이)라이너|기저귀|면도|마스크(?!팩)|KF\d|크린랩|위생[백랩장]|니트릴|지퍼백|쿠킹호일|종량제|쓰레기봉투|수세미|고무장갑|행주|탈취|방향제"
                               r"|페브리즈|제습제|건전지|락스|세정제"),
         ("beauty", "💄 화장품", r"화장품|올리브영|스킨케어|토너|에센스(?!웨어)|세럼|앰플|로션|[수영]분크림|아이크림|선크림|핸드크림|바디크림|재생크림|선케어|선스틱|선쿠션|자외선"
                                r"|클렌징|클렌저|폼클렌|마스크팩|시트팩|토너패드|각질|화장솜|립스틱|립밤|립글로|틴트|쿠션팩트|에어쿠션|파운데이션|컨실러|미스트|향수|메이크업"
@@ -559,9 +559,18 @@ DIGI = (r"충전기|케이블|보조\s*배터리|이어폰|헤드폰|헤드셋|�
 FOOD7 = FOOD + (r"|잡곡|현미|귀리|오트|돼지|돈육|소고기|우삼겹|차돌|불고기|닭가슴살|볶음밥|주먹밥|도시락|동그랑땡|떡갈비|돈까스|돈가스|너겟|간식|젤리|사탕|쿠키|비스킷|빵|베이글|두유|녹차|홍차|티백|보리차|"
                 r"옥수수|참치|스팸|(?<!폴)햄(?!스터)|소시지|피자|떡볶이|어묵|곤약|요거트|요구르트|치즈|버터|꿀|잼|시리얼|그래놀라|두부|고구마|감자(?!탕)|토마토|딸기(?!향)|귤|포도|키위|블루베리|아몬드|호두|땅콩|"
                 r"김밥|라떼|아메리카노|원두|탄산수|콜라(?!겐)|사이다|식혜|국수|우동|냉면|파스타|소면|당면|밀키트|밀가루|설탕|식용유|참기름|간장|된장|고추장|케첩|마요|분유|이유식")
-SHELF_CATS = (("food", "🍚 식품·음료", FOOD7), ("life", "🧻 생필품", CATS[0][2]), ("beauty", "💄 화장품·뷰티", CATS[1][2]), ("home", "🏠 생활·주방", HOME_RX),
-              ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT))  # 10/23 진우 '사이트에도 제품 카테고리 구분' — 홈 '품목' 탭 한 칸 안에 7칸(겨울 난방 = 계절 칸, 없으면 안 보임)
-CAT_ORDER = ("heat", "beauty", "life", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 크림·클렌징 = 화장품, 세제·휴지 = 생필품)
+KITCHEN = (r"프라이팬|후라이팬|냄비|도마|칼\s*세트|식칼|주방|조리\s*도구|뒤집개|국자|수저|숟가락|젓가락|식기|그릇|접시|머그|컵\s*세트|밀폐\s*용기|보관\s*용기|유리\s*용기|내열\s*유리|곰솥|락앤락|글라스락|"
+           r"크린랩|위생[백랩장]|지퍼백|쿠킹\s*호일|종이\s*호일|키친타[월올]|수세미|고무장갑|행주|설거지|퐁퐁|자연퐁|트리오|텀블러|보온병|물병")
+LAUNDRY = (r"세탁(?!기)|세탁조|세제|유연제|퍼실|다우니|피죤|스너글|표백|과탄산|옥시크린|빨래|건조대|드라이\s*시트|건조기\s*시트|얼룩\s*제거|울샴푸|리큐|(?:테크|비트)\s*(?:액체|세제|파워)|옷걸이")
+WOMEN = r"생리|탐폰|(?<!아이)라이너|오버\s*나이트|위생\s*팬티|여성\s*(?:청결|세정|용품)|쏘피|좋은\s*느낌|위스퍼|순수한면|템포|시크릿\s*데이|입는\s*오버"
+SNACK = (r"과자|초코|쵸코|견과|간식|젤리|사탕|캔디|쿠키|비스킷|스낵(?!면)|칩(?!셋)|웨하스|크래커|양갱|(?<![가-힣])껌|마시멜로|프레첼|팝콘|아이스크림|빼빼로|오예스|"
+         r"새우깡|허니버터|에너지\s*바|단백질\s*바|약과|강정|육포|쥐포")
+SEASON = (r"감귤|(?<![가-힣])귤|한라봉|천혜향|레드향|고구마|단감|홍시|(?<![가-힣])반시|대봉|곶감|햇밤|군밤|(?<![가-힣])밤\s*\d|햅쌀|사과|부사|샤인\s*머스캣|생굴|석화|(?<![가-힣])굴(?!비|소스)|방어|꼬막|"
+          r"과메기|대게|홍게|전어|유자|호빵|김장|절임\s*배추|배추|(?<![가-힣])무\s*\d|동치미|딸기(?!향|맛)|붕어빵|호떡|팥죽")
+SHELF_CATS = (("life", "🧻 생필품", CATS[0][2]), ("kitchen", "🍳 주방", KITCHEN), ("laundry", "🧺 세탁", LAUNDRY), ("women", "🌸 여성용품", WOMEN), ("beauty", "💄 화장품·뷰티", CATS[1][2]),
+              ("food", "🍚 식품·음료", FOOD7), ("snack", "🍪 과자·간식", SNACK), ("season", "🍠 제철 먹거리", SEASON), ("home", "🏠 생활·살림", HOME_RX),
+              ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT))  # 10/23 진우 7칸 -> 10/24 '수백 개로 늘어나니 세분(주방·세탁·여성용품·과자·계절음식)' 12칸 — 이 순서로 보임(겨울 난방·제철 = 계절 칸, 없으면 안 보임)
+CAT_ORDER = ("heat", "women", "beauty", "kitchen", "laundry", "life", "snack", "season", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 생리대 = 여성용품, 크림·클렌징 = 화장품, 주방 세제·크린랩 = 주방, 세제 = 세탁, 휴지 = 생필품, 과자 > 제철 > 식품)
 
 
 HOME_FIRST = r"모기|홈매트|훈증|살충|킨칸|에프킬라"  # 모기향 '히터'(리퀴드 훈증기)는 겨울 난방 X -> 생활·주방(10/23 리뷰)
@@ -574,7 +583,7 @@ def cat_of(p):
 
 
 def cat_sections(posts, days, nav=""):
-    """홈 품목 칸 7개(SHELF_CATS — 10/9 생필품·화장품 2칸 -> 10/23 진우 '제품 카테고리 구분' 7칸): home_pool(커뮤니티 최근 3일 + 진우 상품 진열) 중 cat_of가 그 칸인 것,
+    """홈 품목 칸 12개(SHELF_CATS — 10/9 생필품·화장품 2칸 -> 10/23 진우 '제품 카테고리 구분' 7칸 -> 10/24 세분 12칸): home_pool(커뮤니티 최근 3일 + 진우 상품 진열) 중 cat_of가 그 칸인 것,
     shelf_grid 순서(🔥 → 👍 → 판매 중 → 일시 품절, 커뮤니티 딜 6개까지). 없는 칸은 빈 값. nav = 생필품 칸 아래 최저가 기록 링크. -> [(id, 이름, 칸 HTML 또는 빈 값)]"""
     out, home = [], home_pool(posts, days)
     for key, name, _ in SHELF_CATS:
@@ -606,7 +615,7 @@ def wait_section(posts, days):
 
 
 def cats_pane(secs):
-    """홈 '품목' 탭(바 1칸 — 7칸을 바에 다 넣으면 폰에서 3줄이 돼서): 맨 위 칸 바로가기 + 칸들(감싼 div — PANE_JS가 칸으로 스크롤)."""
+    """홈 '품목' 탭(바 1칸 — 12칸을 바에 다 넣으면 폰에서 3줄이 돼서): 맨 위 칸 바로가기 + 칸들(감싼 div — PANE_JS가 칸으로 스크롤)."""
     secs = [(k, n, h) for k, n, h in secs if h]
     return secs and (f'<section class="day" id="cats" aria-labelledby="catsh"><h2 id="catsh">🗂 품목별 딜</h2><div class="recs">'
                      + "".join(f'<a href="#{k}">{n} {h.count(chr(60) + "article")}</a>' for k, n, h in secs) + f'</div></section><div class="cats">{"".join(h for _, _, h in secs)}</div>')
@@ -753,15 +762,16 @@ if(g){g.innerHTML=L.map(function(x){return x.h}).join('');document.getElementByI
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.like');if(!b)return;var i=b.dataset.i;
 L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script>"""
 
-# 검색·필터(10/10 진우 'UI 편하게'): 맨 위 고정 검색창 + 칩. 홈은 '전체' 칸(최근 2일), all.html은 전체 딜에서 걸러 보여 줌. JS가 꺼져 있으면 그냥 안 걸러짐
+# 검색·필터(10/10 진우 'UI 편하게'): 맨 위 고정 검색창 + 칩. 홈은 모든 탭(10/24 진우 '품목 수백 개 — 검색': 🔥 칸 먼저, 같은 딜은 처음 1번만, 접힌 '더 보기'도 펼침), all.html은 전체 딜에서 걸러 보여 줌. JS가 꺼져 있으면 그냥 안 걸러짐
 CHIPS = (("1만원", "💸 1만원 이하"), ("최저가", "📉 30일 최저가"), ("증정", "🎁 1+1·증정"), ("무배", "🚚 무료배송"), ("식품", "🍚 식품"), ("마감", "⏰ 오늘 마감"))  # 10/15 몰·품목 칩은 탭과 겹쳐서 조건 칩으로
 find_box = lambda chips: ('<div class="find" role="search"><input id="q" type="search" placeholder="🔎 딜 검색 (예: 휴지, 설화수)" aria-label="딜 검색" autocomplete="off">'
                           '<div class="chips">' + "".join(f'<button type="button" data-c="{k}" aria-pressed="false">{n}</button>' for k, n in chips) + '</div><div id="qn" class="t" hidden></div></div>')
 FIND = find_box(CHIPS)
-FIND_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.getElementById('days')||document.body;
-function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0;if(on)[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.contains(host)});
-[].forEach.call(host.querySelectorAll('.g'),function(g){var ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0);g.hidden=!ok;if(ok&&on)n++});
-[].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
+FIND_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.body;
+function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0,seen={};
+[].forEach.call(host.querySelectorAll('.g'),function(g){var b=g.querySelector('.like'),i=b&&b.dataset.i,ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0)&&!(i&&seen[i]);if(ok&&i)seen[i]=1;g.hidden=!ok;if(ok&&on)n++});
+[].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});
+if(on){[].forEach.call(document.querySelectorAll('details.mo'),function(d){if(d.querySelector('.g:not([hidden])'))d.open=true});[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.querySelector('.g:not([hidden])')})}qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
 if(!on)dispatchEvent(new HashChangeEvent('hashchange'))}
 q.addEventListener('input',run);cs.forEach(function(b){b.addEventListener('click',function(){c=c===b.dataset.c?'':b.dataset.c;cs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.c===c?'true':'false')});run()})});
 addEventListener('hashchange',function(){if(q.value||c){q.value='';c='';cs.forEach(function(x){x.setAttribute('aria-pressed','false')});run()}});

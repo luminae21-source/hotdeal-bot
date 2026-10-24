@@ -1370,10 +1370,14 @@ def cp_links(seen):
     today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
     st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
     todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= 86400 and (u in chan or len(st["f"].get(u, [])) < 2)]  # 진열은 서로 다른 날 2번 실패하면 X(10/24 Cowork — events는 그대로) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
-    q, calls = [todo[k:k + CP_DL_BATCH] for k in range(0, len(todo), CP_DL_BATCH)], 0
+    pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
+    rest = [u for u in todo if not any(u in b for b in pq)]
+    q, calls = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0
+    q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)]  # 채널 예약 먼저
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
         b = q.pop(0)
         if calls >= CP_RUN - 2 and not chan & set(b):
+            q.insert(0, b)
             break
         try:
             got = cp_deeplinks(b)
@@ -1383,6 +1387,7 @@ def cp_links(seen):
                 print("cp link", b[0], repr(e))
         except Exception as e:  # 상한·접속·게이트웨이 = 다음 실행에
             print("cp link", repr(e))
+            q.insert(0, b)
             break
         calls += 1
         cl.update(got)
@@ -1398,6 +1403,7 @@ def cp_links(seen):
             else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고')
                 st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
                 st.setdefault("q", {})[u] = names.get(u, "")
+    st["pq"] = [b for b in q if len(b) < CP_DL_BATCH]  # 나눈 조각만 저장(통째 묶음은 다음 실행에 다시 만듦)
     if st.get("q") and st.get("qd") != today and kst.tm_hour >= 9:  # 진열 변환 실패 묶음 알림(하루 1번, 9시~ · 상품 번호만 — 주소 쿼리 X)
         if tg("sendMessage", chat_id=ADMIN, text=(f"⚠️ 쿠팡 진열 링크 변환 안 됨 {len(st['q'])}개(rCode 400 — 상품별 파트너스 제휴 불가로 보임)\n"
                                                   + "\n".join(f"· {n or '?'} (pid {re.match(CP_PROD, u)[1]})" + (" — 2번째(다른 날) · 다음부터 진열 시도 X" if len(st["f"].get(u, [])) >= 2 else " — 내일 1번 더 시도")
@@ -3969,7 +3975,7 @@ def threads(seen):
     th_bundle(seen, "card", text[:480], image=url)
 
 
-TH_TOPICS = {"food": "장보기", "life": "생필품", "beauty": "화장품", "home": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
+TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "women": "생필품", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
 TH_TOPIC_RUN = 3  # 같은 주제 연달아 3번까지 — 넘으면 '핫딜'(핫딜이면 '특가')
 
 
@@ -5049,8 +5055,8 @@ def own_end(seen):
 
 
 CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
-CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, life = 생필품(휴지·세제·위생·욕실 소모품), "
-              "beauty = 화장품·뷰티·헤어·바디, home = 생활·주방·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), etc = 그 밖.\n")
+CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, snack = 과자·간식, season = 제철 과일·해산물·겨울 먹거리, life = 생필품(휴지·위생·욕실 소모품), "
+              "kitchen = 주방 용품·소모품(조리 도구·그릇·랩·수세미), laundry = 세탁(세제·유연제·빨래 용품), women = 여성용품(생리대 등), beauty = 화장품·뷰티·헤어·바디, home = 생활·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), etc = 그 밖.\n")
 
 
 def cat_fill(seen):

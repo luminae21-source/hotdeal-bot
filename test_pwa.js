@@ -64,10 +64,15 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     await lk.click();
     assert.strictEqual(await pg.evaluate(() => JSON.parse(localStorage.getItem('likes')).length), 1, '찜 1개');
     assert.strictEqual(await lk.getAttribute('aria-pressed'), 'true');
-    await pg.fill('#q', '휴지');
+    await pg.fill('#q', '화장지');
     await pg.waitForTimeout(400);
-    assert.ok(await pg.evaluate(() => { const qn = document.getElementById('qn'), n = document.querySelectorAll('#days .g:not([hidden])').length;
-      return !qn.hidden && (n ? qn.textContent === n + '개 찾았어요' : /찾는 딜이 없어요/.test(qn.textContent)); }), '검색 결과 줄');
+    const fd = await pg.evaluate(() => { const qn = document.getElementById('qn'), g = [...document.querySelectorAll('.g:not([hidden])')], ids = g.map(x => (x.querySelector('.like') || {}).dataset.i);
+      return { line: !qn.hidden && qn.textContent === g.length + '개 찾았어요', n: g.length, uniq: new Set(ids).size === ids.length, seen: g.every(x => x.offsetParent !== null && x.textContent.includes('화장지')),
+               all: new Set([...document.querySelectorAll('.g')].filter(x => x.textContent.includes('화장지')).map(x => (x.querySelector('.like') || {}).dataset.i)).size === g.length, fire: !g.some(x => x.closest('#fire')) || !!g[0].closest('#fire') }; });
+    assert.deepStrictEqual([fd.line, fd.n > 0, fd.uniq, fd.seen, fd.all, fd.fire], [true, true, true, true, true, true], '홈 검색 = 모든 탭(품목 칸 진열 상품까지 — 홈에 있는 딜 전부) · 같은 딜 1번 · 다 보임(접힌 더 보기 펼침) · 🔥 칸 먼저 ' + JSON.stringify(fd));
+    await pg.fill('#q', '');
+    await pg.waitForTimeout(200);
+    assert.strictEqual(await pg.evaluate(() => [...document.querySelectorAll('.pane')].filter(p => !p.hidden).length), 1, '검색 지우면 탭 1개로');
     // 4) GoatCounter 웹앱 출처: ?src=app = 'app', 경로는 ?src 뺌
     const gc = await pg.evaluate(js => { eval(js); return [window.goatcounter.path('/?src=app'), window.goatcounter.path('/?src=app&x=1'), window.goatcounter.path('/p/1.html')]; }, require('child_process').execSync("python3 -c \"import build_site; print(build_site.GC_APP)\"").toString());
     assert.deepStrictEqual(gc, ['/', '/?x=1', '/p/1.html']);

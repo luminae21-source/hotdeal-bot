@@ -1600,12 +1600,12 @@ hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900�
       {"t": "2026-10-09 13:30", "text": "🔥 [옥션] KF94 마스크 100매 (7,700원)", "url": "https://a2", "s": 6},
       {"t": "2026-10-09 14:00", "text": "📋 오늘의 딜 모아보기 휴지", "url": None}]
 S.build(hp, "docs7"); i7, a7 = open("docs7/index.html").read(), open("docs7/all.html").read()
-hot7, life7, beauty7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("hot", "life", "beauty"))
+hot7, life7, beauty7, kit7, lau7 = (i7.split(f'id="{k}"')[1].split("</section>")[0] for k in ("hot", "life", "beauty", "kitchen", "laundry"))
 assert i7.index('id="hot"') < i7.index('id="toss"') < i7.index('id="life"') < i7.index('id="beauty"') < i7.index('id="d0"') < i7.index('<nav class="bar"')
-assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and 'class="b4"' not in hot7 and '<b class="b4">🏆 인기</b>' in life7  # 세제(3일 전)·휴지(4일 전) 제외, 🏆 배지는 인기 칸에선 빼고(제목이 이미 반응 좋은 딜) 다른 칸에선 보임
+assert hot7.count('class="g"') == 2 and hot7.index("폼클렌징") < hot7.index("위생백") and 'class="b4"' not in hot7 and '<b class="b4">🏆 인기</b>' in kit7  # 세제(3일 전)·휴지(4일 전) 제외, 🏆 배지는 인기 칸에선 빼고(제목이 이미 반응 좋은 딜) 다른 칸에선 보임
 assert '<div class="rx">👀 분당 25회 · 추천 3</div>' in hot7 and '<div class="rx">👀 반응 12.5</div>' in hot7 and 'class="rx"' not in i7.split('id="hot"')[1].split("</section>", 1)[1]  # 반응 수치는 인기 칸에만(10/9 진우 '반응 수치 확인')
-assert life7.count('class="g"') == 4 and life7.index("KF94") < life7.index("위생백") < life7.index("샴푸") < life7.index("세제") and "마스크팩" not in life7 and "휴지" not in life7
-assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품 4개</h2>" in life7 and "💄 화장품·뷰티 2개</h2>" in beauty7
+assert life7.count('class="g"') == 2 and life7.index("KF94") < life7.index("샴푸") and "마스크팩" not in life7 and "휴지" not in life7 and "위생백" in kit7 and "세제" in lau7  # 10/24 세분: 위생백 = 주방, 세제 = 세탁
+assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and "🧻 생필품 2개</h2>" in life7 and "💄 화장품·뷰티 2개</h2>" in beauty7
 assert re.findall(r'<a href="([^"]*)" class="k-\w+"><i><svg[^>]*>.*?</svg></i>([^<]+)</a>', i7.split('<nav class="bar"')[1].split("</nav>")[0]) == [("#hot", "인기"), ("#toss", "토스"), ("#coupang", "쿠팡"), ("#naver", "네이버"), ("#cats", "품목"), ("#days", "전체")]  # 10/23 품목 7칸 = 한 탭(맨 위 칸 바로가기)
 assert i7.count('<div class="pane">') == 6 and i7.index('<div class="pane"><section class="day" id="hot"') < i7.index('<div class="pane"><section class="day" id="toss"')  # 첫 칸(인기) = 처음 보이는 칸(10/9 진우 '한 칸씩만')
 assert all(i7.count(f'#{k}"') == 2 and i7.index(f'<div class="pane"><section class="day" id="{k}"') < i7.index('<nav class="bar"') for k in ("hot", "toss", "coupang", "naver", "cats"))  # 바 버튼마다 칸이 있음(아래 바 + 앱 안 브라우저 한 줄)
@@ -5075,18 +5075,23 @@ H.toss = lambda path, body=None: {"items": [{"tacaId": 1001, "tacaItemId": 10010
 g35 = json.load(open("posts35.json")); assert g35[0]["st"] == "hot" and not any(k in g35[0] for k in ("rehot", "stl")) and not s35s["rehot"]["q"], g35[0]
 os.remove("ev35.json"); S35.EVENTS = ev35
 H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time = sv35; os.remove("posts35.json")
-# 품목 7칸(10/23 진우 '사이트에도 제품 카테고리 구분'): 제목 정규식(겨울 난방 > 화장품 > 생필품 > 식품 > 생활·주방 > 패션 > 가전) -> 안 맞으면 cat_fill이 Claude 한 단어로 글 cat(한 번만, etc = 칸 없음)
+# 품목 12칸(10/23 진우 '사이트에도 제품 카테고리 구분' 7칸 -> 10/24 '주방·세탁·여성용품·과자·계절음식 세분'): 제목 정규식(CAT_ORDER: 겨울 난방 > 여성용품 > 화장품 > 주방 > 세탁 > 생필품 > 과자 > 제철 > 식품 > 생활 > 패션 > 가전) -> 안 맞으면 cat_fill이 Claude 한 단어로 글 cat(한 번만, etc = 칸 없음)
 ct35 = lambda t, **k: {"t": "2026-10-12 10:00", "text": f"🔥 [쿠팡] {t} (1,000원)", "url": "https://link.coupang.com/a/" + t, "own": 1, **k}
 assert [S35.cat_of(ct35(t)) for t in ("하루온 핫팩 30개", "메르헨트 폼클렌징 2개", "깨끗한나라 휴지 30롤", "햇반 24개", "홈키파 에어졸", "양말 10켤레", "보조배터리 10000", "애터미 비비크림")] == \
     ["heat", "beauty", "life", "food", "home", "fashion", "digital", ""]
 assert [S35.cat_of(ct35(t)) for t in ("킨칸 모기 패치", "옥시크린 워싱소다", "햄스터 베딩", "폴햄 맨투맨", "설향 딸기 1kg", "콜라겐 젤리", "에센스웨어 브라", "헤어 에센스 2개", "립 마스크")] == \
-    ["home", "", "", "fashion", "food", "food", "fashion", "beauty", "beauty"]  # 리뷰에서 잘못 들어가던 이름들(모기 = 생활 먼저, 워싱소다·햄스터 = 식품 X)
+    ["home", "laundry", "", "fashion", "season", "snack", "fashion", "beauty", "beauty"]  # 리뷰에서 잘못 들어가던 이름들(모기 = 생활 먼저, 워싱소다·햄스터 = 식품 X)
+assert [S35.cat_of(ct35(t)) for t in ("코멧 위생백 200매", "주방세제 퐁퐁 1L", "다우니 섬유유연제 2L", "LG 세탁기 21kg", "쏘피 생리대 중형 36개", "롬앤 아이라이너", "프라엘 멜라빔 디바이스", "가그린 구강청결제 1.2L",
+                                     "포카칩 66g 6개", "파이토메이드 두유 24개", "오뚜기 스낵면 10개", "제주 감귤 5kg", "생굴 1kg", "굴소스 500g", "크리스찬딘 어반시크 향수", "뽀로로 딸기맛 음료", "와이파이 공유기")] == \
+    ["kitchen", "kitchen", "laundry", "", "women", "", "", "", "snack", "food", "", "season", "season", "food", "beauty", "food", ""]  # 10/24 세분 칸 + 실제 진열 제목에서 잘못 들어가던 것(프라엘 = 라엘 X, 아이라이너·구강청결제 = 생필품·여성용품 X, 어반시크 = 반시 X, 딸기맛·두유·스낵면 = 과자·제철 X — 칸 없음은 cat_fill이 Claude로)
+assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
+assert all(f"{k} = " in H.CAT_PROMPT for k in S35.CAT_ORDER)  # Claude 품목 칸 설명도 12칸 다
 assert S35.cat_of(ct35("애터미 비비크림", cat="beauty")) == "beauty" and S35.cat_of(ct35("사다리", cat="etc")) == "" and S35.cat_of(ct35("햇반", cat="beauty")) == "food"  # 정규식 먼저
 sv35c, a35 = (H.ai_json, H.POSTS, H.E.get("ANTHROPIC_API_KEY")), []
-json.dump([ct35("애터미 비비크림"), ct35("국내산 햇밤 1kg"), ct35("햇반 24개"), ct35("사다리", cat="etc"), {**ct35("옛 커뮤니티 이름없음"), "own": None}], open("posts35.json", "w"), ensure_ascii=False)
+json.dump([ct35("애터미 비비크림"), ct35("국내산 표고버섯 1kg"), ct35("햇반 24개"), ct35("사다리", cat="etc"), {**ct35("옛 커뮤니티 이름없음"), "own": None}], open("posts35.json", "w"), ensure_ascii=False)
 H.POSTS, H.E["ANTHROPIC_API_KEY"] = "posts35.json", "k"
 H.ai_json = lambda prompt, props: a35.append(prompt) or {"cats": ["beauty"]}  # 개수 다름 = 안 씀(다음 실행에 다시)
-H.cat_fill({}); assert all("cat" not in p for p in json.load(open("posts35.json"))[:3]) and "1. 애터미 비비크림\n2. 국내산 햇밤 1kg" in a35[0] and "햇반" not in a35[0] and "사다리" not in a35[0] and "이름없음" not in a35[0]
+H.cat_fill({}); assert all("cat" not in p for p in json.load(open("posts35.json"))[:3]) and "1. 애터미 비비크림\n2. 국내산 표고버섯 1kg" in a35[0] and "햇반" not in a35[0] and "사다리" not in a35[0] and "이름없음" not in a35[0]
 H.ai_json = lambda prompt, props: {"cats": ["beauty", "food"]}; H.cat_fill({}); assert [p.get("cat") for p in json.load(open("posts35.json"))] == ["beauty", "food", None, "etc", None]
 a35.clear(); H.ai_json = lambda prompt, props: a35.append(prompt); H.cat_fill({}); assert not a35  # 다 채웠으면 안 부름
 H.ai_json, H.POSTS = sv35c[:2]; H.E.pop("ANTHROPIC_API_KEY") if sv35c[2] is None else H.E.update(ANTHROPIC_API_KEY=sv35c[2]); os.remove("posts35.json")
@@ -5679,4 +5684,19 @@ at48("2026-10-25 09:30"); H.cp_links(s48); assert len(dm48) == 1 and len(dl48) =
 at48("2026-10-25 10:30"); H.cp_links(s48); assert len(dm48) == 2 and "제휴 안 되는 세제 (pid 77777) — 2번째(다른 날) · 다음부터 진열 시도 X" in dm48[1] and dl48[-1] == [B48], dm48  # 다음 날 1번 더(실패) -> 알림 1번
 at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 4 and len(dm48) == 2  # 2번 실패한 진열 = 다시 안 부름
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv48[:5]; H.RUN.clear(); H.RUN.update(sv48[5]); os.chdir(cwd48)
+# 9-49) (10/24 리뷰 blocker) 묶음 오류를 반씩 나누다 실행 호출 상한에 걸리면 나눈 조각을 다음 실행으로 — 안 그러면 매 실행 같은 20개를 처음부터 나눠 나쁜 주소 1개에 진열 변환이 멈춤
+sv49 = (H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, dict(H.RUN)); d49 = tempfile.mkdtemp(); cwd49 = os.getcwd(); os.chdir(d49)
+H.EVENTS, H.HAS_CP, dl49 = "events.json", True, []
+U49 = [f"https://www.coupang.com/vp/products/{9000 + k}" for k in range(45)]; B49 = U49[0]  # 정렬 맨 앞 = 첫 묶음에 나쁜 주소
+json.dump([{"at": "2026-10-24 09:00", "shelf": True, "url": u, "text": f"👍 <b>[쿠팡] 상품{k} (1,000원)</b>"} for k, u in enumerate(U49)], open("events.json", "w"))
+def http49(url, body=None, headers=None, method=None):
+    us = body["coupangUrls"]; dl49.append(len(us))
+    return json.dumps({"rCode": "400", "rMessage": "url convert failed"} if B49 in us else {"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/g" + u[-4:]} for u in us]})
+H.http, H.tg, s49 = http49, lambda m, **p: {"message_id": 1}, {}
+for k49 in range(3):
+    at48(f"2026-10-24 1{k49}:00"); H.cp_links(s49)
+    assert len(dl49) <= 4 * (k49 + 1), dl49  # 진열만 = 실행마다 CP_RUN-2번까지
+cl49 = json.load(open(H.CP_LINKS))
+assert len(cl49) == 44 and B49 not in cl49 and s49["cpdl"]["f"][B49] == ["2026-10-24"] and not s49["cpdl"]["pq"] and dl49 == [20, 10, 5, 2, 1, 1, 3, 5, 10, 5, 20], (len(cl49), dl49, s49["cpdl"].get("pq"))  # 3번 실행에 좋은 44개 다 + 나쁜 1개 찾음(진열 실패 날짜 → 하루 1번 알림) · 남은 조각 X
+H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv49[:5]; H.RUN.clear(); H.RUN.update(sv49[5]); os.chdir(cwd49)
 print("OK: 모든 셀프체크 통과")

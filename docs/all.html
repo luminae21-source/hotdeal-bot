@@ -43,10 +43,11 @@ function sync(){[].forEach.call(document.querySelectorAll('.like'),function(b){b
 var c=document.getElementById('lc'),g=document.getElementById('savedg');if(c)c.textContent=L.length?' '+L.length:'';
 if(g){g.innerHTML=L.map(function(x){return x.h}).join('');document.getElementById('saved0').hidden=L.length>0;[].forEach.call(g.querySelectorAll('.like'),function(b){b.setAttribute('aria-pressed','true')})}}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.like');if(!b)return;var i=b.dataset.i;
-L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script><script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.getElementById('days')||document.body;
-function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0;if(on)[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.contains(host)});
-[].forEach.call(host.querySelectorAll('.g'),function(g){var ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0);g.hidden=!ok;if(ok&&on)n++});
-[].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
+L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML}].concat(L).slice(0,50);try{localStorage.setItem('likes',JSON.stringify(L))}catch(e){}sync()});sync()})()</script><script>(function(){var q=document.getElementById('q');if(!q)return;var cs=[].slice.call(document.querySelectorAll('.chips button')),c='',qn=document.getElementById('qn'),host=document.body;
+function run(){var v=q.value.trim().toLowerCase(),on=!!(v||c),n=0,seen={};
+[].forEach.call(host.querySelectorAll('.g'),function(g){var b=g.querySelector('.like'),i=b&&b.dataset.i,ok=!on||(!v||g.textContent.toLowerCase().indexOf(v)>=0)&&(!c||(' '+g.dataset.k+' ').indexOf(' '+c+' ')>=0)&&!(i&&seen[i]);if(ok&&i)seen[i]=1;g.hidden=!ok;if(ok&&on)n++});
+[].forEach.call(host.querySelectorAll('.day'),function(s){s.hidden=on&&!s.querySelector('.g:not([hidden])')});
+if(on){[].forEach.call(document.querySelectorAll('details.mo'),function(d){if(d.querySelector('.g:not([hidden])'))d.open=true});[].forEach.call(document.querySelectorAll('.pane'),function(p){p.hidden=!p.querySelector('.g:not([hidden])')})}qn.hidden=!on;qn.textContent=n?n+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요';
 if(!on)dispatchEvent(new HashChangeEvent('hashchange'))}
 q.addEventListener('input',run);cs.forEach(function(b){b.addEventListener('click',function(){c=c===b.dataset.c?'':b.dataset.c;cs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.c===c?'true':'false')});run()})});
 addEventListener('hashchange',function(){if(q.value||c){q.value='';c='';cs.forEach(function(x){x.setAttribute('aria-pressed','false')});run()}});
