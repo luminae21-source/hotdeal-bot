@@ -6,9 +6,11 @@ BASE = "https://hotdealpick.kr/"
 GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
 GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소+경로(10/24 E — 상품마다 셈, 쿼리 X)
          "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href);h=h.hostname+h.pathname}catch(x){return}"
-         "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true})});"
+         "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true});var L;try{L=sessionStorage.getItem('hp_lv')}catch(x){}if(L)goatcounter.count({path:'layout/'+L+'/buy',title:'화면 '+L+' 구매 클릭',event:true})});"  # 화면 꼬리표 = 이 탭 방문을 센 화면(중간에 바꿔도 — 방문·구매가 같은 쪽, 방문 안 셌으면 X) · buy/는 그대로(gc_top·cp_score가 읽음)
          "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('a[data-ev],[data-gc]');"  # 기획전 배너 = 이벤트 banner/행사 · 칸별(data-gc) = mall/몰·top/N·deadline/글·drop/글·changes/종류(10/24 Cowork — 어느 칸을 누르는지)
-         "if(b&&window.goatcounter&&goatcounter.count)goatcounter.count({path:b.getAttribute('data-gc')||'banner/'+b.getAttribute('data-ev'),title:(b.getAttribute('aria-label')||b.textContent||'').trim().slice(0,80),event:true})});")
+         "if(b&&window.goatcounter&&goatcounter.count)goatcounter.count({path:b.getAttribute('data-gc')||'banner/'+b.getAttribute('data-ev'),title:(b.getAttribute('aria-label')||b.textContent||'').trim().slice(0,80),event:true})});"
+         "function hpL(){return document.documentElement.classList.contains('lay-b')?'B':'A'}"  # 화면 고르기(10/24 Cowork·진우): layout/A·B = 방문(탭 세션 1번 · 저장소 막혀 무작위가 안 된 사람 = 실험 밖) · layout/A/buy·B/buy = 구매 클릭 · layout/switch = 바꾸기 버튼(data-gc)
+         "addEventListener('load',function(){var g=window.goatcounter;if(!g||!g.count)return;try{if(localStorage.getItem('hp_layout')!==hpL().toLowerCase()||sessionStorage.getItem('hp_lv'))return;sessionStorage.setItem('hp_lv',hpL())}catch(x){return}g.count({path:'layout/'+hpL(),title:'화면 '+hpL()+' 방문',event:true})});")
 
 
 GC_APP = ("window.goatcounter={referrer:function(r){return /[?&]src=app(&|$)/.test(location.search)||matchMedia('(display-mode: standalone)').matches&&!document.referrer?'app':r},"
@@ -103,7 +105,13 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}footer a{color:var(--sub)}
 #sr .t{margin:12px 2px 0}
 @media(max-width:359px){main{padding-left:12px;padding-right:12px}.hd{margin:0 -12px;padding-left:12px;padding-right:12px}.tile{font-size:12px}.tp h2{font-size:21px}.pk{grid-template-columns:14px 56px minmax(0,1fr) auto;gap:8px}.pk .im{width:56px;height:56px}.pk .go{padding:0 10px}}
-.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.mt{background:var(--tsb);color:var(--tst)}.naver.mt{background:var(--nvb);color:var(--nvt)}
+.mb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:10px 0 0}.m{display:flex;align-items:center;justify-content:center;height:36px;border-radius:12px;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+.coupang.m,.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.m,.toss.mt{background:var(--tsb);color:var(--tst)}.naver.m,.naver.mt{background:var(--nvb);color:var(--nvt)}.m.evt{background:var(--pkbg);color:var(--pkt)}
+.lb,html.lay-b .la{display:none}html.lay-b .lb{display:block}html.lay-b small.lb{display:inline}
+html:not(.lay-b) .hd{top:0}html:not(.lay-b) .hr{height:56px}html:not(.lay-b) .hr .lg{flex:none}html:not(.lay-b) .lg b,html:not(.lay-b) .lg h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+html:not(.lay-b) .hr .ib{margin-left:auto}html:not(.lay-b) .hr .ib+.ib{display:none}html:not(.lay-b) .sb{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:56px;right:62px;padding:0}html.inapp:not(.lay-b) .sb{right:16px}
+html:not(.lay-b) .sb svg{top:10px;color:var(--sub)}html:not(.lay-b) .sb input{height:40px;border:1px solid var(--line);text-overflow:ellipsis}
+.lsw{margin:18px 0 0;text-align:center}.lsw button{min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--sub);font:inherit;font-size:12.5px;font-weight:600;letter-spacing:-.3px}.lsw small{margin-left:6px;color:var(--ink);font-size:inherit}
 .mk{flex:none;margin-right:5px;font-weight:800;color:var(--sub)}.mk.coupang{color:var(--cpt)}.mk.toss{color:var(--tst)}.mk.naver{color:var(--nvt)}
 .tiles.t6{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
 .sec>h2>span{display:flex;align-items:baseline;gap:6px;min-width:0}.sec>h2 .more{flex:none;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
@@ -121,7 +129,7 @@ footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}foot
 .nav a{position:relative}.nav b{position:absolute;top:4px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accf);color:#fff;font-size:10px;line-height:16px;text-align:center}.nav b:empty{display:none}.nav .dot{position:absolute;top:7px;left:calc(50% + 7px);width:8px;height:8px;border-radius:4px;background:var(--accf)}
 .chgs{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:14px;font-weight:700}.g .chg{align-self:flex-start;margin:6px 2px 0;padding:2px 7px;border-radius:7px;background:var(--accf);color:#fff;font-size:11.5px;font-weight:800}
 .chgb>.btn2{margin-top:14px}.chgb ul{list-style:none;margin:6px 0 0;padding:0}.chgb li a{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:6px 0 0;padding:0 14px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:700}.chgb li b{color:var(--acc)}
-@media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}}
+@media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}.m{font-size:12.5px}html:not(.lay-b) .sb{left:52px;right:58px}html.inapp:not(.lay-b) .sb{right:12px}}
 .deal .s{margin:2px 0 0;font-size:12.5px;color:var(--sub)}.deal h2 a{text-decoration:none}.hero .sv,.g .sv{color:var(--acc);font-size:14px;font-weight:700}
 .evb{position:relative;display:block;margin:8px 0 0}.evs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:16px}.evs::-webkit-scrollbar{display:none}.evs .ev{flex:0 0 100%;height:84px;min-height:0;border-radius:16px}.evn{position:absolute;right:10px;bottom:8px;padding:0 7px;border-radius:9px;background:rgba(20,22,27,.65);color:#fff;font-size:11px;font-weight:700;line-height:18px}.evs .ev:focus-visible,.qr .q:focus-visible,.myr .mi:focus-visible{outline-offset:-3px}
 .qk{margin:10px -16px 0}.qr{display:flex;gap:4px;overflow-x:auto;padding:0 16px;scrollbar-width:none}.qr::-webkit-scrollbar{display:none}.qr+.qr{margin-top:6px}#fire{margin-top:12px}#fire .tabs{margin-top:8px}#fire .rows{margin-top:6px}
@@ -210,7 +218,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
-{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{gc_tag()}{head}</head><body><main>
+{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main>{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
@@ -260,12 +268,16 @@ INSTALL = ('<div class="inst" id="inst" hidden><span id="instt"></span><button t
            "<script>(function(){var b=document.getElementById('inst'),t=document.getElementById('instt'),ok=document.getElementById('instb'),ev=null,ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;"
            "if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;try{if(Date.now()-(+localStorage.getItem('instx')||0)<6048e5)return}catch(e){}"
            "var v=0;try{if(!sessionStorage.getItem('hv')){sessionStorage.setItem('hv','1');localStorage.setItem('hv',(+localStorage.getItem('hv')||0)+1)}v=+localStorage.getItem('hv')||0}catch(e){}if(v<2)return;"  # 10/24 Cowork: 첫 방문엔 X, 두 번째 방문부터 아래쪽 얇은 띠
-           "function show(m,btn){t.innerHTML=m;ok.hidden=!btn;b.hidden=false}"
+           "function show(m,btn){t.innerHTML=m;ok.hidden=!btn;if(!scrollY&&location.pathname=='/')return addEventListener('scroll',function(){show(m,btn)},{once:true});b.hidden=false}"  # 홈 첫 화면(🔥 2줄↑ — 390×660)은 안 가림 -> 처음 밀 때 띠(2차 리뷰)
            "document.getElementById('instx').onclick=function(){b.hidden=true;try{localStorage.setItem('instx',Date.now())}catch(e){}};"
            "if(document.documentElement.classList.contains('inapp')||/Telegram|; wv\\)/.test(ua)||ios&&!/Safari\\//.test(ua))return show('📲 크롬·사파리에서 열면 앱으로 설치할 수 있어요',0);"
            "if(ios)return show('📲 앱으로 설치: <b>공유</b>(⬆︎ · 안 보이면 <b>···</b> 안)<br>→ <b>홈 화면에 추가</b>',0);"
            "addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;show('홈 화면에서 바로 열기',1)});"
-           "ok.onclick=function(){if(!ev)return;ev.prompt();ev.userChoice.then(function(){ev=null;b.hidden=true})};addEventListener('appinstalled',function(){b.hidden=true})})()</script>")  # 홈 맨 위 작게: 안드로이드 크롬 = 바로 설치, 아이폰·아이패드 = 2줄 안내(공유 위치는 브라우저마다 달라 안 씀), 앱 안 브라우저(.inapp·텔레그램·안드로이드 WebView·사파리 아닌 iOS 앱) = 브라우저 안내만, 설치됨 = 숨김, 닫으면 7일 X
+           "ok.onclick=function(){if(!ev)return;ev.prompt();ev.userChoice.then(function(){ev=null;b.hidden=true})};addEventListener('appinstalled',function(){b.hidden=true;show=function(){}})})()</script>")  # 홈 맨 위 작게: 안드로이드 크롬 = 바로 설치, 아이폰·아이패드 = 2줄 안내(공유 위치는 브라우저마다 달라 안 씀), 앱 안 브라우저(.inapp·텔레그램·안드로이드 WebView·사파리 아닌 iOS 앱) = 브라우저 안내만, 설치됨 = 숨김, 닫으면 7일 X
+LAYOUT_JS = "<script>(function(){var l;try{l=localStorage.getItem('hp_layout');if(l!=='a'&&l!=='b'){l=Math.random()<.5?'a':'b';localStorage.setItem('hp_layout',l)}}catch(e){l='a'}document.documentElement.classList.add('lay-'+l)})();addEventListener('pageshow',function(e){if(e.persisted)try{var l=localStorage.getItem('hp_layout'),d=document.documentElement;if(l=='a'||l=='b'){d.classList.remove('lay-a','lay-b');d.classList.add('lay-'+l)}}catch(x){}})</script>"  # 홈 윗부분 A 목록형(1차)·B 아이콘형(2차) — 첫 방문 무작위 50:50, 저장소 막힘 = A(10/24 Cowork·진우 '고객이 선택')
+LSW = '<p class="lsw"><button type="button" data-gc="layout/switch">화면 바꾸기: 목록형 ↔ 아이콘형<small class="la">지금 목록형</small><small class="lb">지금 아이콘형</small></button></p>'
+LSW_JS = """<script>(function(){[].forEach.call(document.querySelectorAll('.lsw button'),function(b){b.addEventListener('click',function(){var d=document.documentElement,n=d.classList.contains('lay-b')?'a':'b';d.classList.remove('lay-a','lay-b');d.classList.add('lay-'+n);try{localStorage.setItem('hp_layout',n)}catch(e){}
+if(document.querySelector('main > .la'))scrollTo(0,0)})})})()</script>"""  # 고르면 기억(막히면 이 쪽에서만) · 홈 = 윗부분이 바뀌니 맨 위로
 INAPP_JS = "<script>if(/Barcelona|Instagram|FBAN|FBAV|KAKAOTALK|NAVER\\(inapp|Line\\/|DaumApps/i.test(navigator.userAgent))document.documentElement.classList.add('inapp')</script>"  # 10/13 진우: 앱 안 브라우저(Threads=Barcelona·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가려서 -> 검색창 아래 한 줄 메뉴 + 아래 여백
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
@@ -1315,6 +1327,12 @@ def quick_nav(evs, dl_n, dl_end, top_live):
     return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
 
+def mall_nav(evs):
+    """홈 몰 버튼 1줄(A 목록형 = 1차 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
+    return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN)
+            + (f'<a class="m evt" href="{BASE}e/{evs[0]["slug"]}.html" data-gc="mall/event">🎉 기획전</a>' if evs else "") + "</nav>")
+
+
 def hot_section(it, evi, today):
     """🔥 실시간 핫딜(10/24 Cowork 포털형 ⑤ + ② 신뢰): 🔥 상품 중 가격 근거(fresh_day)가 HOT_DAYS일 안 · 기획전 상품 X(배너로만) -> 탭 전체(몰 섞기)·몰별·🆕 새로 올라온(올린 순) 10줄씩, 같은 브랜드 1개.
     -> (HTML, 전체 탭 글 번호들)."""
@@ -1580,7 +1598,7 @@ def build(posts, out="docs"):
     mc = collections.Counter(shop_of(p) for _, p, _ in it)
     write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">쇼핑몰·상태·품목으로 골라 보세요</div><h2 class="ch">🛍 쇼핑몰로 찾기</h2><nav class="mt3" aria-label="쇼핑몰">'
                           + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{n}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
-                          + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (rec_nav(recs) or ""),
+                          + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (rec_nav(recs) or "") + LSW + LSW_JS,
                          "생필품·식품·뷰티·주방·세탁·간식·여성용품·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
     top = lambda xs: [x for x in xs if x[0] not in evi]
@@ -1624,12 +1642,12 @@ def build(posts, out="docs"):
             + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", psh, f"{BASE}today/{day}/" if day else "")
             + hs_section("steady", "👍 꾸준히 팔리는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
-            + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
+            + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS + LSW + LSW_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
-                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=ev_banner(evs) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆")) if posts else "", dis=HOME_DIS))
+                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=f'<div class="la">{mall_nav(evs)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner(evs) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆")) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))
