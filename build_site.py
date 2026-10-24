@@ -50,18 +50,17 @@ body{margin:0;font:15px/1.5 "HDP Sans",-apple-system,BlinkMacSystemFont,"Apple S
 a{color:inherit}main{max-width:560px;margin:0 auto;padding:0 calc(16px + env(safe-area-inset-right)) calc(88px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom))}html.inapp{scroll-padding:128px 0 16px}
-.hd{position:sticky;top:0;z-index:10;margin:0 -16px;padding:env(safe-area-inset-top) 16px 0;background:var(--bg);box-shadow:0 1px 0 var(--line)}
-.hr{display:flex;align-items:center;gap:8px;height:56px}.hr .lg{flex:none;display:flex;align-items:center;text-decoration:none}
+.hd{position:sticky;top:-48px;z-index:10;margin:0 -16px;padding:env(safe-area-inset-top) 16px 0;background:var(--bg);box-shadow:0 1px 0 var(--line)}
+.hr{display:flex;align-items:center;gap:8px;height:48px}.hr .lg{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
 .logo{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#FF6860,#DC2230);color:#fff;font-weight:900;font-size:15px;letter-spacing:-.8px}
-.lg b,.lg h1{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lg b,.lg h1{margin:0;font-size:19px;font-weight:900;letter-spacing:-.7px;line-height:1}
 .ib::before{content:"";position:absolute;inset:-3px}.ib{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 .ib svg,.nav svg,.sb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ib b{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accf);color:#fff;font-size:10.5px;line-height:17px;text-align:center}.ib b:empty{display:none}
-.sb{position:relative;display:block;flex:1;min-width:0}.sb svg{position:absolute;left:12px;top:10px;color:var(--sub)}.sb input{width:100%;height:40px;border:1px solid var(--line);border-radius:12px;padding:0 10px 0 38px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
+.sb{position:relative;display:block;padding:0 0 6px}.sb svg{position:absolute;left:12px;top:11px;color:var(--acc)}.sb input{width:100%;height:42px;border:2px solid var(--acc);border-radius:12px;padding:0 10px 0 38px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
 .dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}
 .t{color:var(--sub);font-size:12.5px}
 .tp{margin:16px 0 0;padding:20px 16px 6px;border-radius:24px;background:var(--pkbg)}
-.evb{display:flex;gap:8px;margin:14px 0 0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.evb::-webkit-scrollbar{display:none}
-.ev{flex:0 0 88%;min-width:0;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:18px;background:var(--pkbg);box-shadow:inset 0 0 0 1px var(--pkln);text-decoration:none;color:var(--ink)}.ev:only-child{flex-basis:100%}
+.ev{flex:0 0 88%;min-width:0;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:18px;background:var(--pkbg);box-shadow:inset 0 0 0 1px var(--pkln);text-decoration:none;color:var(--ink)}
 .ev .em{font-size:24px;line-height:1}.ev .tx{display:flex;flex-direction:column;flex:1;min-width:0}.ev b{font-size:15.5px;font-weight:800;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev small{color:var(--sub);font-size:12.5px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev .go{flex:none;color:var(--pkt);font-size:13.5px;font-weight:800}
 .evn{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:13.5px;font-weight:600;letter-spacing:-.3px}.dd{color:var(--acc);font-weight:800}
 .tp .pn{margin:0 0 6px;font-size:11px;line-height:1.5;color:var(--sub)}.tp .k{color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.2px}.tp h2{margin:6px 0 2px;font-size:23px;line-height:1.3;font-weight:800;letter-spacing:-.8px}.tp .d{color:var(--sub);font-size:13px;margin:0 0 6px}
@@ -91,7 +90,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;line-height:1.3}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:4px calc(4px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));background:var(--card);border-top:1px solid var(--line)}
 .nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;color:var(--sub);text-decoration:none;font-size:11.5px;font-weight:600}.nav a[aria-current=page]{color:var(--ink)}.nav a[aria-current=page] svg{stroke-width:2.4}
-.inapp .nav{position:static;margin:10px -16px 0;padding:0;background:none;border:0}.inapp main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
+.inapp .nav{position:static;margin:10px -16px 0;padding:0;background:none;border:0}.inapp .hr .ib{display:none}.inapp main{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
 .card,.deal{background:var(--card);border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 1px 0 var(--line)}.card h2{margin:0 0 8px;font-size:18px;letter-spacing:-.5px}
 .deal .im{height:220px;border-radius:16px;font-size:80px;margin:-4px -4px 12px}.deal .dn{margin:6px 0 10px;font-size:20px;line-height:1.4;letter-spacing:-.6px}.deal .dn a{text-decoration:none}.hero{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}.hero .pr{font-size:28px;font-weight:800;letter-spacing:-.8px}.ship{font-size:13px;color:var(--sub)}
 .deal .note{font-size:12px;color:var(--sub);text-align:center;margin:8px 0 0}.why{font-size:14px;color:var(--sub);font-weight:700;margin:18px 0 6px;padding-top:16px;border-top:1px solid var(--line)}.deal p{margin:0;font-size:15px;line-height:1.65}.deal p a{color:var(--acc)}
@@ -104,8 +103,7 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}footer a{color:var(--sub)}
 #sr .t{margin:12px 2px 0}
 @media(max-width:359px){main{padding-left:12px;padding-right:12px}.hd{margin:0 -12px;padding-left:12px;padding-right:12px}.tile{font-size:12px}.tp h2{font-size:21px}.pk{grid-template-columns:14px 56px minmax(0,1fr) auto;gap:8px}.pk .im{width:56px;height:56px}.pk .go{padding:0 10px}}
-.mb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:10px 0 0}.m{display:flex;align-items:center;justify-content:center;height:36px;border-radius:12px;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
-.coupang.m,.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.m,.toss.mt{background:var(--tsb);color:var(--tst)}.naver.m,.naver.mt{background:var(--nvb);color:var(--nvt)}.m.evt{background:var(--pkbg);color:var(--pkt)}
+.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.mt{background:var(--tsb);color:var(--tst)}.naver.mt{background:var(--nvb);color:var(--nvt)}
 .mk{flex:none;margin-right:5px;font-weight:800;color:var(--sub)}.mk.coupang{color:var(--cpt)}.mk.toss{color:var(--tst)}.mk.naver{color:var(--nvt)}
 .tiles.t6{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
 .sec>h2>span{display:flex;align-items:baseline;gap:6px;min-width:0}.sec>h2 .more{flex:none;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
@@ -123,9 +121,15 @@ footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 0 8px}foot
 .nav a{position:relative}.nav b{position:absolute;top:4px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accf);color:#fff;font-size:10px;line-height:16px;text-align:center}.nav b:empty{display:none}.nav .dot{position:absolute;top:7px;left:calc(50% + 7px);width:8px;height:8px;border-radius:4px;background:var(--accf)}
 .chgs{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:14px;font-weight:700}.g .chg{align-self:flex-start;margin:6px 2px 0;padding:2px 7px;border-radius:7px;background:var(--accf);color:#fff;font-size:11.5px;font-weight:800}
 .chgb>.btn2{margin-top:14px}.chgb ul{list-style:none;margin:6px 0 0;padding:0}.chgb li a{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:6px 0 0;padding:0 14px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:700}.chgb li b{color:var(--acc)}
-@media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}.m{font-size:12.5px}}
+@media(max-width:359px){.t6 .tile{font-size:10.5px}.t6 .tile i{width:34px;height:34px;font-size:19px}}
 .deal .s{margin:2px 0 0;font-size:12.5px;color:var(--sub)}.deal h2 a{text-decoration:none}.hero .sv,.g .sv{color:var(--acc);font-size:14px;font-weight:700}
-@media(prefers-color-scheme:dark){.im,.tile i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
+.evb{position:relative;display:block;margin:8px 0 0}.evs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:16px}.evs::-webkit-scrollbar{display:none}.evs .ev{flex:0 0 100%;height:84px;min-height:0;border-radius:16px}.evn{position:absolute;right:10px;bottom:8px;padding:0 7px;border-radius:9px;background:rgba(20,22,27,.65);color:#fff;font-size:11px;font-weight:700;line-height:18px}.evs .ev:focus-visible,.qr .q:focus-visible,.myr .mi:focus-visible{outline-offset:-3px}
+.qk{margin:10px -16px 0}.qr{display:flex;gap:4px;overflow-x:auto;padding:0 16px;scrollbar-width:none}.qr::-webkit-scrollbar{display:none}.qr+.qr{margin-top:6px}#fire{margin-top:12px}#fire .tabs{margin-top:8px}#fire .rows{margin-top:6px}
+.q{position:relative;flex:0 0 max(50px,calc((min(100vw,560px) - 40px)/6.5));display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding-top:4px;color:var(--ink);text-decoration:none;font-size:11.5px;font-weight:600;letter-spacing:-.5px;white-space:nowrap}
+.q i{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--c,var(--card));box-shadow:inset 0 0 0 1px var(--line);font-style:normal;font-size:22px;line-height:1}.q.coupang i{background:var(--cpb)}.q.toss i{background:var(--tsb)}.q.naver i{background:var(--nvb)}.q.evt i{background:var(--pkbg)}
+.qb{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}
+.myr{display:flex;gap:12px;margin:10px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}.myr::-webkit-scrollbar{display:none}.mi{position:relative;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-decoration:none}.mi .im{width:46px;height:46px;border-radius:50%;font-size:22px}.me .im{border:2px solid var(--acc);background:var(--card);color:var(--acc);font-size:13px;font-weight:800}.mi small{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;color:var(--sub)}.mi b{position:absolute;top:34px;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}.mi b.d{background:#15803D}
+@media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
 MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
 CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
@@ -185,8 +189,20 @@ def title_of(text):
     return split_title(text)[0]
 
 
+MY = '<section class="sec" id="my" aria-labelledby="myh" hidden><h2 id="myh"><span>♡ 내가 찜·본 딜</span></h2><div class="myr" id="myr"></div></section>'  # 홈 🔥 아래(포털형 2차 ④) — 비면 숨김, MY_JS가 채움
+MY_JS = """<script>(function(){var r=document.getElementById('myr'),A=[];try{A=(JSON.parse(localStorage.getItem('likes'))||[]).concat(JSON.parse(localStorage.getItem('seen'))||[])}catch(e){}if(!r||!A.length)return;
+function draw(j){var C=j&&j.items||{},a=j&&j.a||{},u={},o=[],t=document.createElement('template');A.forEach(function(x){var k=x&&(a[x.i]||x.i),c=k&&C[k],b=!c?'':c.k.indexOf('deadline')>=0?'⏰ 오늘':c.k.indexOf('drop')>=0?'▼'+c.p+'%':c.k.indexOf('rehot')>=0?'🔁':'',m,e,s;if(!k||u[k])return;
+t.innerHTML=x.h||x.im||'';m=t.content.querySelector('.im');if(!m)return;u[k]=1;[].forEach.call(m.querySelectorAll('.bdg'),function(z){z.remove()});
+e=document.createElement('a');e.className='mi';e.href='/p/'+k+'.html';e.setAttribute('data-gc','my/'+(b?'chg':'p'));e.appendChild(m);if(b){s=document.createElement('b');s.textContent=b;if(b[0]==='▼')s.className='d';e.appendChild(s)}
+s=document.createElement('small');s.textContent=x.n||(t.content.querySelector('h3')||{}).textContent||'';e.appendChild(s);o.push([b?0:1,o.length,e])});
+o.sort(function(p,q){return p[0]-q[0]||p[1]-q[1]});r.innerHTML='<a class="mi me" href="/saved/" data-gc="my/saved"><span class="im">MY</span><small>찜 전체</small></a>';o.slice(0,12).forEach(function(x){r.appendChild(x[2])});if(!r.parentNode.dataset.sh)r.parentNode.hidden=!o.length}
+draw();window.hdpMy=draw})()</script>"""  # ♡ 내가 찜·본 딜: likes(카드 HTML)·seen(딜 쪽 썸네일) — 바뀐 것(⏰ 오늘·▼N%·🔁, changes.json은 DOT_JS가 받아 hdpMy(j)) 먼저, 12개 · 저장소 막힘·비었음 = 숨김
+SEEN_JS = """<script>(function(){try{var d=document.querySelector('.deal'),i=(location.pathname.match(/(\\d+)(?:\\.html)?$/)||[])[1],S;if(!d||!i)return;S=JSON.parse(localStorage.getItem('seen'))||[];
+localStorage.setItem('seen',JSON.stringify([{i:i,n:d.querySelector('.dn').textContent,im:d.querySelector('.im').outerHTML}].concat(S.filter(function(x){return x&&x.i!==i})).slice(0,20)))}catch(e){}})()</script>"""  # 딜 쪽 본 기록(최근 20개 — 홈 ♡ 내가 찜·본 딜)
+
+
 def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website", lead="", dis=""):
-    """모든 쪽 틀(10/24 진우 개편 A → 포털형): 고정 헤더 1줄(딜 로고 32 · 검색칸 · 🔔 알림 — ♡ 찜은 아래 메뉴에 개수) + lead(홈 = 몰 버튼·품목 아이콘) + 대가성 문구(dis = 홈 짧은 문구) + 본문 + 아래 메뉴 5개(🔔 = 찜 변경 빨간 점)."""
+    """모든 쪽 틀(10/24 진우 개편 A → 포털형 2차 N+스토어): 헤더 = 로고 + 핫딜픽 + 🔔 + ♡(위로 밀리면 사라짐) / 검색칸(빨강 2px — 위에 붙어 있음) + lead(홈 = 기획전 넘김 배너·둥근 바로가기 2줄) + 대가성 문구(dis = 홈 짧은 문구) + 본문 + 아래 메뉴 5개(🔔 = 찜 변경 빨간 점 — 선 아이콘 그대로)."""
     t, d = html.escape(title), html.escape(desc[:150])
     nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-label="찜한 딜 보기"' if k == "saved" else "") + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}"
                                                        + ('<b id="lc"></b>' if k == "saved" else '<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i>' if k == "alarm" else "") + "</a>" for k, n, u in NAV) + "</nav>"
@@ -195,8 +211,8 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{gc_tag()}{head}</head><body><main>
-<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="무엇을 찾으세요? 휴지, 라면, 토너…" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form><a class="ib" href="{BASE}alarm/" aria-label="알림 받기">{svg("alarm")}</a></div>{nav}</header>
-{top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:8px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
+<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
+{top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main>{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
 
 
@@ -457,9 +473,9 @@ def badge_html(p, skip=()):
 
 END_JS = """<script>(function(){function f(){var n=Date.now()/1000;[].forEach.call(document.querySelectorAll('[data-end]'),function(b){var s=b.dataset.end-n,h=Math.floor(s/3600),m=Math.floor(s%3600/60),k=b.dataset.k,c=k&&b.closest('.hc');
 if(c&&s<=0){c.hidden=true;delete c.dataset.sh;var x=c.closest('section');if(x&&!x.querySelector('.hc:not([hidden])')){x.hidden=true;delete x.dataset.sh}return}
-b.textContent=k?'⏰ '+(s<60?'곧 마감':(h?h+'시간 ':'')+m+'분 남음')+' · '+k:s<=0?'⏰ 마감됐어요':s<60?'⏰ 곧 마감':'⏰ 마감까지 '+(h?h+'시간 ':'')+m+'분'})}f();setInterval(f,30000)})()</script>"""  # 오늘 마감 칸(data-k) = 남은 시간 · 종류, 자정 지나면 카드·빈 칸 숨김(10/24 Cowork — 빌드 시각 X, 브라우저 시계)
-DOT_JS = """<script>(function(){var L,s=0;try{L=JSON.parse(localStorage.getItem('likes'))||[];s=+localStorage.getItem('chgseen')||0}catch(e){return}if(!L.length||/^\\/alarm\\//.test(location.pathname))return;
-function on(j){if(L.some(function(x){var c=j.items[j.a[x.i]||x.i];return c&&c.d*1000>s&&c.k.some(function(k){return k!=='new'})})){var d=document.getElementById('adot');if(d)d.hidden=false}}
+b.textContent=k?'⏰ '+(s<60?'곧 마감':(h?h+'시간 ':'')+m+'분 남음')+' · '+k:s<=0?'⏰ 마감됐어요':s<60?'⏰ 곧 마감':'⏰ 마감까지 '+(h?h+'시간 ':'')+m+'분'});[].forEach.call(document.querySelectorAll('[data-qend]'),function(b){if(n>+b.dataset.qend)b.remove()})}f();setInterval(f,30000)})()</script>"""  # 오늘 마감 칸(data-k) = 남은 시간 · 종류, 자정 지나면 카드·빈 칸·⏰ 'N개 남음'(data-qend) 숨김(10/24 Cowork — 빌드 시각 X, 브라우저 시계)
+DOT_JS = """<script>(function(){var L,s=0;try{L=JSON.parse(localStorage.getItem('likes'))||[];s=+localStorage.getItem('chgseen')||0}catch(e){return}if(!L.length&&!window.hdpMy||/^\\/alarm\\//.test(location.pathname))return;
+function on(j){if(window.hdpMy)hdpMy(j);if(L.some(function(x){var c=j.items[j.a[x.i]||x.i];return c&&c.d*1000>s&&c.k.some(function(k){return k!=='new'})})){var d=document.getElementById('adot');if(d)d.hidden=false}}
 try{var c=JSON.parse(sessionStorage.getItem('chg'));if(c&&Date.now()-c.t<6e5)return on(c.j)}catch(e){}
 fetch('/changes.json').then(function(r){return r.json()}).then(function(j){try{sessionStorage.setItem('chg',JSON.stringify({t:Date.now(),j:j}))}catch(e){}on(j)}).catch(function(){})})()</script>"""  # 아래 메뉴 🔔 빨간 점 = 마지막으로 알림 탭 본 뒤 찜한 상품이 바뀜(changes.json, 10분 한 번 받음 · 찜 0개·저장소 막힘 = 아무것도 안 함)
 
@@ -723,7 +739,7 @@ get();if(g)document.addEventListener('click',function(e){if(e.target.closest&&e.
 def alarm_body(ch):
     """알림 탭(10/24 Cowork '변경 찾기'): 맨 위 '♡ 내 찜 변경 N'(CHG_JS) + '오늘 바뀐 것' 줄(📉 가격 내려감·⏰ 오늘 마감·🔁 다시 특가 → 그 쪽, GoatCounter changes/종류) + 아래 텔레그램·SNS(ALARM)."""
     n = ch.get("n") or {}
-    rows = [(c_url("drop"), "drop", "📉 가격 내려감"), (c_url("today"), "deadline", "⏰ 오늘 마감"), (c_url("hot"), "rehot", "🔁 다시 특가")]
+    rows = [(c_url("drop"), "drop", "📉 가격 내려감"), (c_url("today"), "deadline", "⏰ 오늘 마감"), (c_url("rehot"), "rehot", "🔁 다시 특가")]
     return ('<h1 class="h">🔔 알림</h1><section class="chgb" aria-label="바뀐 것">'
             f'<a class="btn2" href="{BASE}saved/" data-gc="changes/saved"><span>♡ 내 찜 변경 <b id="chgn">0</b>개 보기 →</span></a><h2 class="ch">오늘 바뀐 것</h2><ul>'
             + "".join(f'<li><a href="{u}" data-gc="changes/{k}"><span>{t}</span><b>{n.get(k, 0)}개 →</b></a></li>' for u, k, t in rows) + "</ul></section>" + ALARM)
@@ -879,7 +895,8 @@ def lists(posts, days, home=None):
         slug, name, emo, _ = CAT_META[k]
         out[slug] = (f"{emo} {name} 특가 모음", f"{name} 특가·핫딜을 매일 골라 정리해요 · 🔥 특가 중인 것 먼저", trust8([x for x in it if cat_of(x[1]) == k], today), "")
     for k, name, emo in MALLS:
-        out[k] = (f"{emo} {name} 특가 모음", f"{name} 특가만 모았어요", trust8([x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))], today), k)
+        xs = [x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))]
+        out[k] = (f"{emo} {name} 특가 모음", f"{name} 특가만 모았어요", trust8(xs, today, key=(lambda x: (x[2][0], cat_of(x[1]) != "digital")) if k == "naver" else None), k)  # 네이버 = 가전·디지털 먼저(같은 단계 안 — 10/24 진우 v3 ⑥)
     return out
 
 
@@ -1005,13 +1022,19 @@ def ev_name(g):
     return g["tag"] if not g["mall"] or g["tag"].startswith(g["mall"]) else f"{g['mall']} {g['tag']}"
 
 
+EV_JS = """<script>(function(){var b=document.querySelector('.evb'),s=b&&b.querySelector('.evs'),n=b&&b.querySelector('.evn span');if(!s||!n)return;var k=s.children.length,p=0,cur=function(){return Math.round(s.scrollLeft/(s.clientWidth||1))};
+s.addEventListener('scroll',function(){n.textContent=Math.min(k,cur()+1)},{passive:true});['pointerdown','touchstart','focusin','mouseenter'].forEach(function(e){b.addEventListener(e,function(){p=1},{passive:true})});
+if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))setInterval(function(){if(!p&&!document.hidden)s.scrollTo({left:(cur()+1)%k*s.clientWidth,behavior:'smooth'})},4000)})()</script>"""  # 기획전 넘김: 4초마다 다음(손대면·포커스·숨은 탭·움직임 줄이기 = 멈춤) · 밀면 '1/3' 따라감
+
+
 def ev_banner(evs):
-    """홈 기획전 배너(검색창 아래·오늘의 픽 위 · 64px 안팎 연분홍 · 2개↑ = 옆으로 밀기): '🎉 쿠팡 햇상품 기획전' / '핫딜픽이 고른 N개 · ~M/D' + '보기 →' -> 행사 쪽.
-    클릭 = GoatCounter 이벤트 'banner/slug'(GC_JS) — 팝업은 X(10/24 Cowork: 모바일 첫 화면 가리면 이탈↑·구글 '방해되는 전면 광고')."""
+    """홈 기획전 넘김 배너(포털형 2차 ② — 헤더 바로 아래 84px, 행사마다 1장 → e/slug.html · 2개↑ = 4초 넘김 + '1/3'): '🎉 쿠팡 햇상품 기획전' / '핫딜픽이 고른 N개 · ~M/D' + '보기 →'.
+    클릭 = GoatCounter 이벤트 'banner/slug'(GC_JS) — 팝업은 X(10/24 Cowork: 모바일 첫 화면 가리면 이탈↑·구글 '방해되는 전면 광고') · 아래쪽 띠 줄은 없음(진우 v3 ①)."""
     md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
-    return "" if not evs else ('<nav class="evb" aria-label="기획전">' + "".join(
+    return "" if not evs else ('<nav class="evb" aria-label="기획전"><div class="evs">' + "".join(
         f'<a class="ev" href="{BASE}e/{g["slug"]}.html" data-ev="{g["slug"]}"><span class="em" aria-hidden="true">🎉</span><span class="tx"><b>{html.escape(ev_name(g))}</b>'
-        f'<small>핫딜픽이 고른 {ev_n(g)}개 · ~{md(g["until"])}</small></span><span class="go">보기 →</span></a>' for g in evs) + "</nav>")
+        f'<small>핫딜픽이 고른 {ev_n(g)}개 · ~{md(g["until"])}</small></span><span class="go">보기 →</span></a>' for g in evs) + "</div>"
+        + (f'<b class="evn" aria-hidden="true"><span>1</span>/{len(evs)}</b></nav>{EV_JS}' if len(evs) > 1 else "</nav>"))
 
 
 def unit_line(p):
@@ -1163,7 +1186,7 @@ def steady_page(out):
 
 HASH_JS = """<script>(function(){var m={wait:'c/wait/',life:'c/life/',toss:'c/toss/',coupang:'c/coupang/',naver:'c/naver/',cats:'c/',beauty:'c/beauty/',food:'c/food/',kitchen:'c/kitchen/',laundry:'c/laundry/',women:'c/women/',snack:'c/snack/',season:'c/season/',home:'c/home/',fashion:'c/fashion/',digital:'c/digital/',heat:'c/winter/',brand:'c/hot/',days:'all.html',saved:'saved/',hot:'#fire'};
 function go(){var h=location.hash.slice(1),t=document.getElementById('today'),ig=/instagram|threads/i.test(document.referrer)||/[?&](fbclid|igsh|utm_source=(ig|threads)|ref=(ig|th))/.test(location.search)||/Instagram|Barcelona/.test(navigator.userAgent);try{h=decodeURIComponent(h)}catch(e){}
-if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);else location.replace('/'+m[h]);return}if(t&&(ig||h==='today')){t.hidden=false;if(h==='today')t.scrollIntoView()}}go();addEventListener('hashchange',go)})()</script>"""  # 10/24 개편 전 홈 #칸 주소(웹앱 바로가기·글 링크·프로필 #today) -> 새 쪽으로 · 인스타·Threads에서 오면 📸 카드 번호 칸을 맨 위에 보임(캡션 '맨 위 카드 딜에서 N번' 그대로)
+if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);else location.replace('/'+m[h]);return}if(t&&(ig||h==='today')){t.hidden=false;t.scrollIntoView()}}go();addEventListener('hashchange',go)})()</script>"""  # 10/24 개편 전 홈 #칸 주소(웹앱 바로가기·글 링크·프로필 #today) -> 새 쪽으로 · 인스타·Threads에서 오면 📸 카드 번호 칸을 맨 위에 보임(캡션 '맨 위 카드 딜에서 N번' 그대로)
 
 
 ld_tag = lambda ld: '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"  # 상품 이름에 '</script>'가 있어도 안 깨지게(seo()와 같게)
@@ -1206,11 +1229,12 @@ def price_day(p, today):
     return p["t"][:10] if shop_of(p) == "toss" else fresh_day(p, today)
 
 
-def trust8(xs, today, n=8):
+def trust8(xs, today, n=8, key=None):
     """목록 위 n개에서 보이는 가격이 HOT_DAYS일 지난 🔥 빼기(홈 TOP 규칙을 목록에도 — 10/24 Cowork B '🔁 10/13 가격'): 위 n자리 = 그 밖 상품 순서대로, 옛 가격 🔥는 그 뒤(순서 그대로)."""
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
     ok = [x for x in xs if not (x[2][0] == 0 and price_day(x[1], today) < since)][:n]
-    return ok + [x for x in xs if x not in ok]
+    rest = [x for x in xs if x not in ok]
+    return sorted(ok, key=key) + sorted(rest, key=key) if key else ok + rest  # key = 위 n자리·나머지 안에서만 다시 줄 세움(네이버 가전 먼저 — 옛 가격이 위로 X)
 
 
 def brand(p):
@@ -1233,6 +1257,12 @@ def mix(xs, n):
                 out.append(x)
                 seen.add(brand(x[1]))
     return out
+
+
+def cap2(xs, *shown):
+    """같은 상품 홈에 최대 2번(10/24 진우 v3 ② — 블루나 물티슈 4번): 앞 칸들(shown — 우선순위 오늘 마감 > 🔥 > 📉 > 픽 > 꾸준템)에 이미 2번 나온 상품은 뺌 · 같은 상품 = 같은 주소(없으면 글 번호) · TOP 10·찜/본 줄은 셈 X."""
+    n = collections.Counter(k for s in shown for k in {x[1].get("url") or x[0] for x in s})
+    return [x for x in xs if n[x[1].get("url") or x[0]] < 2]
 
 
 def uniq(xs, n):
@@ -1270,10 +1300,19 @@ def row(i, p, sh, today, gc="", extra=""):
                                                  + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span></span></a></li>")
 
 
-def mall_nav(evs):
-    """홈 몰 버튼 1줄(검색 아래 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
-    return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN)
-            + (f'<a class="m evt" href="{BASE}e/{evs[0]["slug"]}.html" data-gc="mall/event">🎉 기획전</a>' if evs else "") + "</nav>")
+Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "women", "heat", "season", "home", "fashion")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
+
+
+def quick_nav(evs, dl_n, dl_end, top_live):
+    """둥근 바로가기 2줄(포털형 2차 ③ — N+스토어 참고: 46px 동그라미 + 11.5px 이름, 6개 + 7번째 반쯤 보이게 옆으로 밀기):
+    1줄 ⏰ 오늘 마감('N개 남음' — 0개면 X, 자정 지나면 숨김) · 🏆 많이 본(GoatCounter 진짜 조회일 때만 — 아니면 'TOP 10') · 📉 가격 내림 · 🔁 다시 특가 · 🚀 쿠팡 · 💙 토스 · 💚 네이버 · 🎉 기획전(진행 중만)
+    2줄 품목 12칸(Q_CATS) + ▦ 전체보기 · GoatCounter q/·mall/·cat/."""
+    a = lambda href, e, n, gc, cls="", extra="", c="": f'<a class="q{cls}" href="{href}" data-gc="{gc}"><i aria-hidden="true"' + (f' style="--c:{c}"' if c else "") + f">{e}</i>{n}{extra}</a>"
+    r1 = [a(c_url("today"), "⏰", "오늘 마감", "q/today", extra=f'<b class="qb" data-qend="{dl_end}">{dl_n}개 남음</b>' if dl_n else ""), a(c_url("top"), "🏆", "많이 본" if top_live else "TOP 10", "q/top"),
+          a(c_url("drop"), "📉", "가격 내림", "q/drop"), a(c_url("rehot"), "🔁", "다시 특가", "q/rehot")] \
+        + [a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs else [])
+    r2 = [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]
+    return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
 
 def hot_section(it, evi, today):
@@ -1282,7 +1321,7 @@ def hot_section(it, evi, today):
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
     xs = [x for x in it if x[2][0] == 0 and x[0] not in evi and fresh_day(x[1], today) >= since]
     ys = [x for x in xs if price_day(x[1], today) >= since]  # 줄 = 보이는 가격도 3일 안(토스 = 올린 날 — 10/24 Cowork B)
-    tabs = [("all", "전체", mix(ys, HOT_N))] + [(k, n, uniq([x for x in ys if shop_of(x[1]) == k], HOT_N)) for k, n, _ in MALL_BTN] \
+    tabs = [("all", "전체", mix(ys, HOT_N))] + [(k, n, uniq(sorted((x for x in ys if shop_of(x[1]) == k), key=lambda x: k == "naver" and cat_of(x[1]) != "digital"), HOT_N)) for k, n, _ in MALL_BTN] \
         + [("new", "🆕 새로 올라온", uniq(sorted((x for x in it if x[2][0] != 3 and x[0] not in evi), key=lambda x: x[1]["t"], reverse=True), HOT_N))]
     tabs = [t for t in tabs if t[2]]
     if not tabs:
@@ -1384,10 +1423,10 @@ def drops(posts, it, now_ts):
     return sorted(out, key=lambda d: (-d[5], not img_of(d[1])))
 
 
-def drop_section(ds, today):
+def drop_section(ds, today, n=None):
     """📉 가격 내려간 상품 칸(머리 옆 '같은 구성 · 우리 기록 대비', 없으면 X): 줄 DROP_N개 — 취소선 기록가 → 지금가 + ▼N% + 'M/D 기록 대비 · M/D 확인'('N원 쌈' X) · GoatCounter drop/글."""
     lab = lambda p: (re.match(r"[\d,]+원\s*(\S.*)", p.get("now") or "") or ["", ""])[1]
-    return "" if not ds else (f'<section class="sec" id="drop" aria-labelledby="droph"><h2 id="droph"><span>📉 가격 내려간 상품<small>{len(ds)}개</small></span><small>같은 구성 · 우리 기록 대비</small></h2><ol class="rows">'
+    return "" if not ds else (f'<section class="sec" id="drop" aria-labelledby="droph"><h2 id="droph"><span>📉 가격 내려간 상품<small>{n or len(ds)}개</small></span><small>같은 구성 · 우리 기록 대비</small></h2><ol class="rows">'
                               + "".join(row(i, p, sh, today, f"drop/{i}", f"<s>{b:,}원</s> → <b>{n:,}원</b>" + (f"<i>{html.escape(lab(p))}</i>" if lab(p) else "") + f"<i>▼{d}%</i><small>{r} 기록 대비 · {c} 확인</small>")
                                         for i, p, sh, b, n, d, r, c in ds[:DROP_N]) + f'</ol><a class="more2" href="{c_url("drop")}">가격 내려간 상품 전체 →</a></section>')
 
@@ -1520,13 +1559,13 @@ def build(posts, out="docs"):
         rl = it_ and it_[0] in recs and f'<a class="btn2" href="{BASE}c/{it_[0]}.html">📈 {it_[1]} {it_[3]} 최저가 기록 보기</a>'  # 그 품목 기록 페이지로(내부 링크 — 검색 로봇이 찾게)
         c = CAT_META.get(cat_of(p))
         back = f'<a class="btn2" href="{c_url(c[0] if c else "hot")}">{c[2] + " " + c[1] if c else "🔥 지금 특가"} 더 보기 →</a>'
-        open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p) + (rl or "") + (more or "") + back, sd, url, note=note, head=ld or "", og=img_of(p)))
+        open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p) + (rl or "") + (more or "") + back + SEEN_JS, sd, url, note=note, head=ld or "", og=img_of(p)))
         if i not in gone:
             urls.append((url, p["t"][:10]))
     ls = lists(posts, days, home)
     tops = top_list(posts, it, evi)
     ls.update(drop=("📉 가격 내려간 상품", f"같은 구성(같은 링크) 처음 올린 가격보다 {DROP_MIN}%↑ 내린 쿠팡·네이버 상품 · 우리 기록 대비", [(i, p, sh) for i, p, sh, *_ in ds], ""),
-              today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
+              today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), rehot=("🔁 다시 특가", "특가 가격으로 다시 돌아온 상품", [x for x in it if x[2][0] == 0 and x[2][4]], ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
     for slug, (head, desc, xs, mall) in ls.items():
         for u, k, ti, sd, body, ld in (mall_page(slug, head, desc, xs, recs) if mall else list_pages(slug, head, desc, xs, mall, recs)):
             write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", head=ld and ld_tag(ld) or ""))
@@ -1577,9 +1616,12 @@ def build(posts, out="docs"):
     cp = card_picks(posts, out)
     cp = cp.replace('<div class="t">번호를 누르면', f'<p class="t">{" ".join(SHOP_NOTES.values())}</p><div class="t">번호를 누르면', 1)  # 카드 번호 칸도 몰로 바로 -> 3사 문구
     hot, hot_ids = hot_section(it, evi, today)
-    stx = mix([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
-    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(ds, today) + ev_banner(evs)
-            + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", ps, f"{BASE}today/{day}/" if day else "")
+    fx = [x for x in it if f'href="{BASE}p/{x[0]}.html"' in hot]  # 🔥 = 탭 전부 합쳐 1번
+    dsh = cap2(ds, dl[:12], fx)  # 같은 상품 홈 최대 2번: 오늘 마감 > 🔥 > 📉 > 픽 > 꾸준템(10/24 진우 v3 ② · TOP 10·찜/본·숨은 #today X)
+    psh = cap2(ps, dl[:12], fx, dsh[:DROP_N])  # 홈 픽만(날짜 쪽·RSS는 저장 목록 그대로)
+    stx = mix(cap2([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], dl[:12], fx, dsh[:DROP_N], psh), 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
+    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + MY + MY_JS + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(dsh, today, len(ds))
+            + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", psh, f"{BASE}today/{day}/" if day else "")
             + hs_section("steady", "👍 꾸준히 팔리는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
             + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
@@ -1587,7 +1629,7 @@ def build(posts, out="docs"):
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
-                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=mall_nav(evs) + tiles(tuple(CAT_META), True) if posts else "", dis=HOME_DIS))
+                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=ev_banner(evs) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆")) if posts else "", dis=HOME_DIS))
     json.dump(search_index(it), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))

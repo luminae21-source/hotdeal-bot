@@ -92,7 +92,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.ok(buy[1] && buy[1].some(v => v.event === true && v.path === 'buy/' + buy[0]) && buy[0].includes('/') && !buy[1].some(v => buy[2] && v.path.includes(buy[2])), JSON.stringify(buy));
     const bn = await pg.evaluate(() => { const a = document.createElement('a'); a.href = '#ev'; a.dataset.ev = 'e1a2b3c'; a.textContent = '배너'; document.querySelector('main').append(a); a.click(); a.remove(); return window.__gc; });
     assert.ok(bn.some(v => v.event === true && v.path === 'banner/e1a2b3c'), JSON.stringify(bn));  // 기획전 배너 클릭 = 이벤트 banner/행사(10/24 Cowork — 1주 보고 팝업 여부)
-    const gcm = await pg.evaluate(() => { window.__gc = []; const a = document.querySelector('.mb [data-gc]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [a.dataset.gc, window.__gc]; });
+    const gcm = await pg.evaluate(() => { window.__gc = []; const a = document.querySelector('.qk [data-gc="mall/coupang"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [a.dataset.gc, window.__gc]; });
     assert.ok(gcm[0] === 'mall/coupang' && gcm[1].some(v => v.event === true && v.path === 'mall/coupang'), JSON.stringify(gcm));  // 칸별 클릭 data-gc(mall/·top/·deadline/·drop/·changes/)
     // 3b) 포털형 홈·몰 쪽·변경 찾기(10/24 Cowork): 🔥 탭 · 몰 쪽 품목 칩·상태 탭·20개씩 더 보기 · 찜 변경 배지·요약 · 🔔 빨간 점 → 알림 탭 보면 꺼짐(changes.json = 가짜로)
     const c5 = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' }), p5 = await c5.newPage();
@@ -117,13 +117,19 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     await p5.goto(U + '/saved/', { waitUntil: 'load' }); await p5.waitForFunction(() => document.querySelector('#savedg .chg'));
     assert.ok(await p5.evaluate(() => document.querySelector('#savedg .chg').textContent === '▼ 20% 내림 · 10/24 확인' && !document.getElementById('chgsum').hidden && document.getElementById('chgsum').textContent.includes('가격 내려간 1개') && !document.getElementById('savn').hidden), '찜 변경 배지·요약(옛 글 번호 = a로 지금 글)');
     await p5.goto(U + '/', { waitUntil: 'load' }); await p5.waitForFunction(() => !document.getElementById('adot').hidden, null, { timeout: 5000 });
+    await p5.waitForFunction(() => !document.getElementById('my').hidden && document.querySelector('#myr .mi b'), null, { timeout: 5000 });
+    assert.ok(await p5.evaluate(() => { const a = [...document.querySelectorAll('#myr .mi')]; return a[0].classList.contains('me') && a[0].getAttribute('href') === '/saved/' && a[1].getAttribute('href') === '/p/99999.html' && a[1].querySelector('b.d').textContent === '▼20%' && a[1].querySelector('.im'); }), '♡ 내가 찜·본 딜 = MY(찜 전체) + 바뀐 찜 먼저(▼N% 초록 · 옛 글 번호 = 지금 글)');
+    const pd5 = await p5.evaluate(k => [...document.querySelectorAll('#fire .r a')].map(a => new URL(a.getAttribute('href')).pathname).find(p => p !== '/p/' + k + '.html'), li5[0]);  // 찜과 다른 딜(같은 상품 = 1번만)
+    await p5.goto(U + pd5, { waitUntil: 'load' }); assert.ok(await p5.evaluate(() => (JSON.parse(localStorage.getItem('seen')) || []).length === 1), '딜 쪽 = 본 기록(seen)');
+    await p5.goto(U + '/', { waitUntil: 'load' }); await p5.waitForTimeout(300);
+    assert.ok(await p5.evaluate(h => [...document.querySelectorAll('#myr .mi')].some(e => h.endsWith(e.getAttribute('href'))), pd5), '본 딜도 ♡ 줄에');
     await p5.goto(U + '/alarm/', { waitUntil: 'load' }); await p5.waitForFunction(() => document.getElementById('chgn').textContent === '1');
     assert.ok(await p5.evaluate(() => +localStorage.getItem('chgseen') > 0 && document.getElementById('adot').hidden), '알림 탭 = 내 찜 변경 1 · 본 시각');
     await p5.evaluate(() => sessionStorage.clear()); await p5.goto(U + '/', { waitUntil: 'load' }); await p5.waitForTimeout(500);
     assert.ok(await p5.evaluate(() => document.getElementById('adot').hidden), '본 뒤 = 빨간 점 X');
     await c5.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
     const p6 = await c5.newPage(); const err6 = []; p6.on('pageerror', e => err6.push(String(e)));
-    for (const u of ['/', '/saved/', '/alarm/', '/c/coupang/']) await p6.goto(U + u, { waitUntil: 'load' });
+    for (const u of ['/', '/saved/', '/alarm/', '/c/coupang/', '/p/' + p0]) await p6.goto(U + u, { waitUntil: 'load' });
     assert.deepStrictEqual(err6, [], '저장소 막힘에도 스크립트 오류 X');
     await c5.close();
     await ctx.close();
@@ -182,6 +188,18 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     // 6) 휴대폰 기준(10/23 진우 '모바일이 중요' · 10/24 개편 360·390·412): 갤럭시 S·아이폰·갤럭시 플러스 × 일반 브라우저·설치 앱(standalone) 첫 화면
     //    설치 띠 = 작은 띠(48~80px)·버튼 44px+·아래 고정 바·앱 안 탭 줄과 안 겹침·첫 딜이 첫 화면에 보임 · 노치·홈 바(safe-area) 여백 -> 한 장(docs/cards/pwa_preview.png)
     const AND = 'Mozilla/5.0 (Linux; Android 15; SM-S921N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36';
+    {  // 포털형 2차(진우 v3) 확인: 390×660 첫 화면 = 검색 + 기획전 배너(있으면) + 바로가기 2줄 + 🔥 줄 2개↑(배너 없으면 3개↑) · 위로 밀면 검색칸만 붙음
+      const c6 = await browser.newContext({ viewport: { width: 390, height: 660 }, userAgent: IOS, isMobile: true, hasTouch: true }), p6 = await c6.newPage();
+      await p6.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now() + 9e8)); } catch (e) {} });
+      await p6.goto(U + '/', { waitUntil: 'load' });
+      const F = await p6.evaluate(() => { const nav = document.querySelector('nav.nav').getBoundingClientRect().top, B = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect().bottom : null; };
+        return { nav, sb: B('.sb'), evb: B('.evb'), qk: B('.qk'), rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= nav).length, bub: !!document.querySelector('.qk .qb') }; });
+      assert.ok(F.sb && F.qk && F.qk < F.nav && F.rows >= (F.evb ? 2 : 3), '390×660 첫 화면 ' + JSON.stringify(F));
+      await p6.evaluate(() => scrollTo(0, 600)); await p6.waitForTimeout(100);
+      const st = await p6.evaluate(() => [document.querySelector('.sb').getBoundingClientRect().top, document.querySelector('.hr').getBoundingClientRect().bottom]);
+      assert.ok(st[0] >= -1 && st[0] <= 8 && st[1] <= 1, '밀면 로고 줄은 사라지고 검색칸만 위에 ' + JSON.stringify(st));
+      await c6.close();
+    }
     const PHONES = [[360, 780, AND, 'Galaxy S 360'], [390, 844, IOS, 'iPhone 390'], [412, 915, AND, 'Galaxy+ 412']];
     const shots = [], tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'pwa'));
     const layout = p => p.evaluate(() => {  // 아래 메뉴: 보통 = 아래 고정(fixed), 앱 안 브라우저 = 헤더 아래 한 줄(static)
@@ -189,7 +207,8 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       const navTop = fx ? nav.getBoundingClientRect().top : innerHeight;
       return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: fx ? R(nav) : null, top: fx ? null : R(nav), g: R(document.querySelector('#fire .rows:not([hidden]) .r')), vh: innerHeight,
                pb: parseFloat(getComputedStyle(nav).paddingBottom), pt: 0, rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= navTop).length,
-               mb: R(document.querySelector('.mb')), t6: R(document.querySelector('.tiles.t6')), tiles: document.querySelectorAll('.tiles.t6 .tile').length };
+               qk: R(document.querySelector('.qk')), q1: [...document.querySelectorAll('.qr:first-child .q')].filter(e => e.getBoundingClientRect().right <= innerWidth).length, q2: document.querySelectorAll('.qr:last-child .q').length,
+               evb: R(document.querySelector('.evb')), sb: R(document.querySelector('.sb')) };
     });
     const over = (a, b) => a && b && a.top < b.bottom && b.top < a.bottom;
     for (const [w, h, ua, name] of PHONES) for (const app of [false, true]) {
@@ -207,7 +226,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         assert.ok(!over(L.inst, L.bottom) && !over(L.inst, L.top), tag + ' 띠가 고정 바와 안 겹침');
       }
       assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 실시간 핫딜 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
-      assert.ok(L.mb && L.t6 && L.tiles === 12 && L.t6.bottom <= L.vh && L.rows >= (w >= 390 ? 4 : 3), tag + ' 첫 화면 = 몰 버튼·품목 12개·핫딜 줄 4개↑(10/24 Cowork 포털형) ' + JSON.stringify([L.rows, L.t6, L.vh]));
+      assert.ok(L.qk && L.sb && L.qk.bottom <= L.vh && L.q1 >= 6 && L.q2 === 13 && L.rows >= (w >= 390 ? 4 : 3), tag + ' 첫 화면 = 검색·바로가기 2줄(6개+)·핫딜 줄 4개↑(포털형 2차) ' + JSON.stringify([L.rows, L.qk, L.q1, L.vh]));
       assert.ok(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ' 옆으로 안 넘침');
       if (safe) assert.ok(L.pb >= 40, tag + ' 홈 바 여백 ' + L.pb);
       const f = path.join(tmp, `${w}${app ? 'a' : 'b'}.png`);
@@ -223,8 +242,8 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.ok(!over(L4.inst, L4.top) || L4.inst.bottom <= 0, '앱 안: 내려도 탭 줄이 띠를 안 덮음');
     await c3.close();
     const rd = [];
-    for (const [w, h, ua, url, dark, name] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 844, IOS, '/', true, '홈 390 다크'],
-                                                [390, 844, IOS, '/c/', false, '카테고리 390'], [390, 844, IOS, '/c/coupang/', false, '쿠팡 쪽 390'], [390, 844, IOS, '/alarm/', false, '알림 390'], [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390']]) {
+    for (const [w, h, ua, url, dark, name] of [[360, 780, AND, '/', false, '홈 360'], [390, 844, IOS, '/', false, '홈 390'], [412, 915, AND, '/', false, '홈 412'], [390, 660, IOS, '/', false, '홈 390×660'],
+                                                [360, 780, AND, '/', true, '홈 360 다크'], [390, 844, IOS, '/', true, '홈 390 다크'], [412, 915, AND, '/', true, '홈 412 다크'], [390, 844, IOS, '/c/', false, '카테고리 390'], [390, 844, IOS, '/c/coupang/', false, '쿠팡 쪽 390'], [390, 844, IOS, '/alarm/', false, '알림 390'], [390, 844, IOS, '/c/life/', false, '생필품 쪽 390'], [390, 844, IOS, '/p/' + p0, false, '딜 쪽 390']]) {
       const c4 = await browser.newContext({ viewport: { width: w, height: h }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' }), p4 = await c4.newPage();
       await p4.addInitScript(() => { try { localStorage.setItem('instx', String(Date.now())); } catch (e) {} });
       await p4.goto(U + url, { waitUntil: 'load' }); await p4.waitForTimeout(300);
