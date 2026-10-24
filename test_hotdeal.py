@@ -708,7 +708,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3259,7 +3259,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -4727,6 +4727,7 @@ assert [b[0]["text"][:4] for b in c32["reply_markup"]["inline_keyboard"]] == [f"
 assert "💰 <b>25,800원 (10/22 글 가격)</b> · 한 달 1,000명+ 구매" in x32 and "💰 <b>12,900원</b> · 리뷰 5,432" in x32 and "💰 <b>26,550원 (10/22 글 가격)</b>\n" in x32 and x32.endswith("\n\n⚠️ 10/23 19:52 게시 시점 가격"), x32  # 지난 글 가격 = 그 글 날짜
 assert not re.search("적게 팔린|네이버 꾸준템|오래된|토스 꾸준템|제휴 아님|토스78|품절 토스|토스 옛 글", x32) and tc32 == ["/products/detail?tacaItemIds=77,78,79,81"] and "steady 5 items" in o32.getvalue(), (x32, tc32)
 (tx32, tl32), = th32; assert tx32.startswith(f"{H.DISCLOSURE}\n{H.TOSS_NOTE}\n\n👍 꾸준히 팔리는 것 모음\n\n1️⃣ 꾸준 세제 3L 15,900원 · 한 달 1만명+ 구매\n👉 https://link.coupang.com/a/S3108\n") and len(tx32) <= 480 and tl32 == "https://link.coupang.com/a/S3108", tx32
+assert tx32.endswith("\n\n⚠️ 10/23 19:52 게시 시점 가격\n전체 보기 → https://hotdealpick.kr/c/steady/?ref=th") and tx32.count("👉") == 3 and len(re.findall(r"https?://", tx32)) == 4, tx32  # N2: 끝 = 사이트 그 품목 쪽 · Threads 링크 5개 한도(상품 4개까지 + 쪽 1 — 여기선 480자로 3개)
 tc32.clear(); H.steady_cands({**s32, "tossid": {"t": 1, "m": {"https://toss.shopping/_m/T80": [8000, 1, 1, "ok", [], 1000, False, 80]}}}, TK("2026-10-23 19:52"))
 assert tc32 == ["/products/detail?tacaItemIds=77,78,79,81,80"], tc32  # 10/23 Cowork 확인: 상세 id = 전부 옵션 id(tacaItemId) — 진우 쉐어링크는 tossid 8칸째(own_end가 tacaIds로 확인), 주소 /t/번호(그룹 id) X
 H.STEADY_N = 9; n32 = [x["n"] for x in H.steady_cands(s32, TK("2026-10-23 19:52"))]; H.STEADY_N = 5
@@ -5773,4 +5774,27 @@ assert f'<p class="pn">{S50.SHOP_NOTES["coupang"]}</p>' in i50b.split('id="pick"
 json.dump({"2026-01-01": [5], "2026-01-02": [0]}, open(f"{d50b}/{S50.PICKS}", "w")); S50.build(many[:5] + [cp50("", url="https://link.coupang.com/a/gone", st="gone")], d50b)
 assert '<li class="pk">' not in open(f"{d50b}/today/2026-01-01/index.html").read() and "이날 고른 상품은 지금 진열에서 빠졌어요" in open(f"{d50b}/today/2026-01-01/index.html").read()  # 지난 날짜 쪽 = 빠진(뺌) 상품 X
 assert open(f"{d50b}/today/2026-01-02/index.html").read().count('<li class="pk">') == 1
+# 9-51) N2(10/24 진우 'Threads 유입 중요'): 하루 1번 PICK_TH_AT~ Threads '🎯 오늘의 픽 3' — 사이트가 고정한 docs/today/picks.json(오늘) · 날짜 쪽 배포 뒤(HEAD)만 · 대가성 문구 맨 앞 ·
+#       이름·가격(쿠팡 = 확인가 + 확인 시각, 토스 = 글 가격 + 그 글 게시 시점 줄) · 링크 = 날짜 쪽 1개(?ref=th) · 묶음 글 간격 · 하루 1번
+sv51 = (H.http, H.th_post, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.PICKS_FILE)
+d51 = tempfile.mkdtemp(); H.POSTS, H.PICKS_FILE = f"{d51}/posts.json", f"{d51}/picks.json"; H.E["THREADS_TOKEN"] = "t"
+json.dump([{"t": "2026-10-24 09:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원/무료)", "url": "https://link.coupang.com/a/E", "own": 1, "now": "7,490원", "chk": "10/24 9시"},
+           {"t": "2026-10-23 10:00", "text": "🔥 [토스] 모나리자 미용티슈 (10,990원)", "url": "https://toss.shopping/_m/M", "own": 1},
+           {"t": "2026-10-24 08:00", "text": "🔥 [G마켓] 커뮤니티 (1원)", "url": "https://g"}], open(H.POSTS, "w"), ensure_ascii=False)
+json.dump({"2026-10-24": [0, 1]}, open(H.PICKS_FILE, "w"))
+h51, p51 = [], []
+H.http = lambda url, *a, **k: h51.append((url, k.get("method"))) or ""
+H.th_post = lambda tok, text, link=None, image=None, tag=None: p51.append((text, link)) or "id"
+time.time = lambda: TK("2026-10-24 10:20"); s51 = {}; H.pick_post(s51); assert not p51 and not h51  # 시각 전
+time.time = lambda: TK("2026-10-24 10:40"); H.pick_post(s51)
+assert h51 == [("https://hotdealpick.kr/today/2026-10-24/", "HEAD")] and len(p51) == 1 and p51[0][1] == "https://hotdealpick.kr/today/2026-10-24/?ref=th", (h51, p51)
+t51 = p51[0][0]
+assert t51.startswith(H.aff_note("https://link.coupang.com/a/E")) and H.aff_note("https://toss.shopping/_m/M") in t51.split("🎯")[0]  # 대가성 문구 맨 앞(상품마다 그 프로그램)
+assert "🎯 오늘의 픽 2 (10/24)" in t51 and "1️⃣ 곰곰 특란 30구 7,490원 (10/24 9시 확인)" in t51 and f"2️⃣ 모나리자 미용티슈 10,990원 · {H.toss_when('2026-10-23 10:00')}" in t51 and "커뮤니티" not in t51 and t51.count("http") == 1 + t51.split("🎯")[0].count("http")  # 링크 = 날짜 쪽 1개
+H.pick_post(s51); assert len(p51) == 1  # 하루 1번
+s51b = {}; H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("404")); H.pick_post(s51b); assert len(p51) == 1 and not any(k.startswith("thpick_") for k in s51b)  # 날짜 쪽 배포 전 = 다음 실행
+H.http = lambda url, *a, **k: ""; s51c = {"bundles": {"t": TK("2026-10-24 10:35"), "ts": [TK("2026-10-24 10:35")]}}; H.pick_post(s51c); assert len(p51) == 1  # 다른 묶음 글 10분 안 = 다음 실행
+json.dump({"2026-10-23": [0]}, open(H.PICKS_FILE, "w")); H.pick_post({}); assert len(p51) == 1  # 오늘 픽 없음(사이트가 아직 안 고름) = X
+H.http, H.th_post, time.time, H.POSTS = sv51[:4]; H.PICKS_FILE = sv51[5]; H.E.pop("THREADS_TOKEN") if sv51[4] is None else H.E.update(THREADS_TOKEN=sv51[4])
+assert "pick_post, " in open(H.__file__).read().split("for step in (", 1)[1].split("):\n", 1)[0] and "pick_post" in H.ALERT_STEPS  # 메인 실행 단계 · 실패 알림
 print("OK: 모든 셀프체크 통과")

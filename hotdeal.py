@@ -7,7 +7,7 @@ import base64, collections, hashlib, hmac, html, json, math, os, random, re, shu
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h  # 제휴 도메인은 사이트와 같이 씀
+from build_site import BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -164,6 +164,7 @@ def ad_on():
 PREVIEW_LINKS = f"\n\n🛍 지금 살 수 있는 딜 한눈에(앱 설치 없이) 👉 {SITE}?ref=th\n📲 텔레그램 쓰는 분은 올라오는 순간 알림 👉 t.me/hotdeal_pick"  # Threads 22시 미리보기 끝 블록(10/13 01:25 진우, 01:40 텔레그램 줄 = 선택사항으로)
 TH_REPLY = True  # 10/13 00:50 진우 '타래 + 브랜드 섞기': Threads 22시 미리보기 나머지는 댓글(타래)로 — 토큰이 댓글을 못 달면(th_reply_ok) 자동으로 댓글 없이. False = 댓글 안 씀
 PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
+PICK_TH_AT, PICK_TH_END, PICKS_FILE = "10:30", "14:00", "docs/today/picks.json"  # N2(10/24 진우 'Threads 유입 중요'): 사이트가 10시 뒤 첫 빌드에 고정·배포한 오늘의 픽 -> Threads 하루 1번
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
 TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4  # 10/12 진우 '6시부터 해도 괜찮아, 한도 관리': 재오픈 Threads 글은 개별 5개와 따로 — 밤(0~6시) 2개 + 아침(6시~) 2개, 하루 4개까지, 일반 딜이 먼저(main 순서)
 TH_REOPEN_GAP, TH_REOPEN_HOUR, TH_REOPEN_AM = 600, 3, (6, 11)  # (10/12: 아침 8시 -> 6시) 10/11 진우 '토스 품절 풀리면 다시 쓰레드에, 자정 + 아침 8시': 재게시끼리 10분(= 실행당 1개) · 1시간 최대 3개(7일 표: 0~3시 채널 시간당 1~4.5개, 8시 2개 -> 그 시간 평소 글 수 수준) · 아침 재알림은 8~11시(놓치면 낮에 몰아 안 올림)
@@ -1909,8 +1910,9 @@ def steady_list(seen):
     if not E.get("THREADS_TOKEN"):
         return
     render = lambda n: "\n".join(dict.fromkeys(aff_note(x["u"]) for x in items[:n])) + f"\n\n{plain_of(head)}\n\n" \
-        + "\n".join(f"{NUM[k]} {clip(x['n'], 30)} {x['p']}" + (f" · {x['st']}" if x["st"] else "") + f"\n👉 {x['tu']}" for k, x in enumerate(items[:n])) + f"\n\n{toss_when()}"
-    n = len(items)
+        + "\n".join(f"{NUM[k]} {clip(x['n'], 30)} {x['p']}" + (f" · {x['st']}" if x["st"] else "") + f"\n👉 {x['tu']}" for k, x in enumerate(items[:n])) + f"\n\n{toss_when()}" \
+        + f"\n전체 보기 → {SITE}c/{CAT_META[cat][0] if cat else 'steady'}/?ref=th"  # N2(10/24 진우): 묶음 글 끝 = 사이트 그 품목 쪽(20개씩) — Threads 글 링크 5개 한도라 상품 링크는 4개까지
+    n = min(len(items), 4)
     while n > 1 and len(render(n)) > 480:
         n -= 1
     th_bundle(seen, "steady", render(n), items[0]["tu"])
@@ -1992,6 +1994,39 @@ def bundled(seen):
     """묶음 글을 올린 시각 기록(최근 1시간만) -> busy()가 간격·시간당 수를 셈."""
     now = time.time()
     seen["bundles"] = {"t": now, "ts": [t for t in seen.get("bundles", {}).get("ts", []) if now - 3600 < t <= now] + [now]}
+
+
+def pick_post(seen):
+    """N2 하루 1번 PICK_TH_AT~PICK_TH_END(KST): Threads '🎯 오늘의 픽 3' — 대가성 문구 맨 앞(상품마다 그 프로그램) + 이름·가격 + 오늘의 픽 날짜 쪽 링크 1개
+    (사이트 링크가 들어가는 Threads 글은 이것만 — 딜 글은 지금처럼 직접 링크, 10/19 진우). 재료 = 사이트가 고정한 docs/today/picks.json(오늘), 날짜 쪽이 배포된 뒤(HEAD)만.
+    가격 = 쿠팡·네이버는 확인가(own_end now + 확인 시각) 또는 글 가격(날짜), 토스는 글 가격 + 게시 시점 줄(지금 가격 X). 실패 = th_retry(묶음 글 규칙)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today, key = time.strftime("%Y-%m-%d", kst), time.strftime("thpick_%Y%m%d", kst)
+    if not E.get("THREADS_TOKEN") or not PICK_TH_AT <= time.strftime("%H:%M", kst) < PICK_TH_END or key in seen or busy(seen, cap=False):  # 다른 묶음 글 10분 안이면 다음 실행
+        return
+    posts, ids = load(POSTS, []), load(PICKS_FILE, {}).get(today) or []
+    ps = [posts[i] for i in ids if isinstance(i, int) and i < len(posts)]
+    if not ps:
+        return
+    url = f"{SITE}today/{today}/"
+    try:
+        http(url, method="HEAD")  # 사이트 반영 전 = 다음 실행(링크가 404면 X)
+    except Exception:
+        return
+    seen[key] = time.time()
+
+    def price(p):
+        pr = parse(title_of(p["text"]))[2].split("/")[0].split(" · ")[0].strip()
+        if shop_of(p) == "toss":
+            m = re.search(r"(\d{1,2}/\d{1,2} \d{1,2}:\d{2}) 게시 시점", p["text"])  # 글에 적힌 토스 가격 시각 그대로(없으면 글 시각)
+            return pr and f"{pr} · " + (f"⚠️ {m[1]} 게시 시점 가격" if m else toss_when(p["t"]))
+        return f"{p['now']}" + (f" ({p['chk']} 확인)" if p.get("chk") else "") if p.get("now") else pr and f"{pr} ({int(p['t'][5:7])}/{int(p['t'][8:10])} 글 가격)"
+    rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 30)}" + (f" {price(p)}" if price(p) else "") for k, p in enumerate(ps)]
+    text = "\n".join(dict.fromkeys(aff_note(p.get("url") or "") for p in ps if aff_note(p.get("url") or ""))) \
+        + f"\n\n🎯 오늘의 픽 {len(ps)} ({kst.tm_mon}/{kst.tm_mday})\n고민은 줄이고, 오늘은 이 {len(ps)}개만\n\n" + "\n".join(rows) + f"\n\n👉 {url}?ref=th"
+    th_bundle(seen, "pick", text.strip()[:480], f"{url}?ref=th")
+    bundled(seen)
+    print("th pick", len(ps), "|", " / ".join(clip(parse(title_of(p["text"]))[1], 15) for p in ps))
 
 
 def toss_pool(seen):
@@ -4829,7 +4864,7 @@ def quiet():
 
 
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
-ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
+ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "pick_post": "Threads 오늘의 픽", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
                "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
                "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지", "poll_post": "Threads 가격 투표"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
@@ -5505,7 +5540,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, metrics, cp_price, own_end, toss_roster):
         try:
             step(seen)
         except Exception as e:
