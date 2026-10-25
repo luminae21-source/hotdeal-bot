@@ -5286,7 +5286,7 @@ H.random = type("R", (), {"choice": staticmethod(lambda xs: 1 if 1 in xs else xs
 o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50ml (19,900원)\n\n50ml 2개", "https://oy.run/x")
 assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
 H.ai_voice, H.random, H.TOSS_NO_CMP = sv36v
-assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and '"t": now, "card": stem}  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
+assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and 'else {"card": stem})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
 # 9-37) 인스타 하루 4번(10/23 진우 정정): 칸 = 오늘 앞 칸 ~ 그 시각(11 = 0~11, 15 = 11~15, 19 = 15~19), 다른 칸 카드에 든 딜 X, 19시 = 진우 쿠팡 🔥·👍 먼저,
 #       3개 밑 = 건너뜀(억지로 안 채움) · 첫날 10/23은 15시부터 · 그날 표지 제목 안 겹침(밤·퇴근 말은 18시부터)
 D37 = "2026-11-20"
@@ -7434,6 +7434,23 @@ assert S0.ev_info()[CPU69 + "e"]["img"] == CPI69
 time.time = lambda: calendar.timegm(time.strptime("2026-10-26 12:00", "%Y-%m-%d %H:%M")) - 9 * 3600
 with contextlib.redirect_stdout(io.StringIO()): H.own_end({"cpq": {"m": {}, "i": {CPU69 + "g": "https://ads-partners.coupang.com/image1/g"}}})
 assert [p.get("img") for p in json.load(open("posts69.json"))] == [CPI69, None, "https://ads-partners.coupang.com/image1/g"]  # pstatic = X · API 사진 먼저
+# 진열 events img -> 글 사진(10/25 Cowork — shelf_posts가 사진을 안 넘기던 것): 새 진열 글 + 이미 있는 글(같은 url · 파트너스로 바뀐 글 = 생 주소 · 같은 상품 번호 커뮤니티 글) · 있는 사진 그대로 · 쿠팡 사진 주소만
+RW69 = "https://www.coupang.com/vp/products/6901?itemId=1"
+SHI69 = lambda u, n, **k: {"at": "2026-10-26 09:00", "shelf": True, "url": u, "button": "🛒 구매하러 가기", "text": f"👍 <b>[쿠팡] {n} (12,900원/무료)</b>\n\n꾸준템", **k}
+json.dump([SHI69(RW69, "변환된 진열", pid="6901", img=CPI69[:-4] + "1.jpg"), SHI69("https://www.coupang.com/vp/products/6902", "새 진열", pid="6902", img=CPI69[:-4] + "2.jpg"),
+           SHI69("https://link.coupang.com/a/s3", "있는 사진", pid="6903", img=CPI69[:-4] + "3.jpg"), SHI69("https://link.coupang.com/a/s4", "네이버 사진", pid="6904", img="https://shop-phinf.pstatic.net/4.jpg"),
+           SHI69("https://link.coupang.com/a/s5", "같은 상품", pid="6905", img=CPI69[:-4] + "5.jpg")], open("ev69.json", "w"))
+json.dump({RW69: "https://link.coupang.com/a/cv1"}, open("cpl69.json", "w")); sv69c, H.CP_LINKS, S0.CP_LINKS = (H.CP_LINKS, S0.CP_LINKS), "cpl69.json", "cpl69.json"
+json.dump([{"t": "2026-10-26 09:00", "text": "👍 [쿠팡] 변환된 진열 (12,900원)", "url": "https://link.coupang.com/a/cv1", "own": 1, "shelf": 1},
+           {"t": "2026-10-26 09:00", "text": "👍 [쿠팡] 있는 사진 (12,900원)", "url": "https://link.coupang.com/a/s3", "own": 1, "shelf": 1, "img": "https://ads-partners.coupang.com/image1/api3"},
+           {"t": "2026-10-26 09:00", "text": "👍 [쿠팡] 네이버 사진 (12,900원)", "url": "https://link.coupang.com/a/s4", "own": 1, "shelf": 1},
+           {"t": "2026-10-26 09:00", "text": "🔥 [쿠팡] 같은 상품 커뮤니티 (9,900원)", "url": "https://www.coupang.com/vp/products/6905?itemId=9"},
+           {"t": "2026-10-26 09:00", "text": "🔥 [네이버] 남의 상품 (9,900원)", "url": "https://naver.me/x69"}], open("posts69.json", "w"), ensure_ascii=False)
+with contextlib.redirect_stdout(io.StringIO()) as o69: H.shelf_posts({})
+g69 = [(p["url"], p.get("img")) for p in json.load(open("posts69.json"))]
+assert [p.get("img") for p in json.load(open("posts69.json"))] == [CPI69[:-4] + "1.jpg", "https://ads-partners.coupang.com/image1/api3", None, CPI69[:-4] + "5.jpg", None, CPI69[:-4] + "2.jpg", CPI69[:-4] + "5.jpg"], g69  # 파트너스로 바뀐 글(cp_links) · API 사진 그대로 · 네이버 X · 같은 pid 커뮤니티 글 · 남의 몰 X · 새 진열 글 2개(커뮤니티 글은 진열을 안 막음)
+assert "사진 2개 채움" in o69.getvalue(), o69.getvalue()
+H.CP_LINKS, S0.CP_LINKS = sv69c
 # 큐레이션 인스타: 사진 2장↑ = 조각 -> 묶음(캡션 '프로필 링크 → 주제' + 출처) -> 발행(사이트 카드 기록 X) · 1장 = 사진 글 · 0장 = X · 실패 = 다시 X
 at69 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
 ig69, f69l, a69 = [], [], []

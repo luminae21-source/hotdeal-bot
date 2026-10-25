@@ -1787,16 +1787,26 @@ def shelf_posts(seen):
         p["url"] = new
         p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], new)
         fix += 1
-    if fix:
+    pim, ph = {}, 0  # 상품 번호 -> events 사진(ev = ev_list가 생 주소를 cp_links 파트너스 링크로 바꾸고 pid를 붙인 것)
+    pid_of = lambda u: ev.get(u, {}).get("pid") or (re.match(CP_PROD, u or "") or [0, ""])[1]
+    for u, i in ev.items():
+        if i.get("img") and pid_of(u):
+            pim[pid_of(u)] = i["img"]
+    eimg = lambda u: ev.get(u, {}).get("img") or pim.get(pid_of(u))
+    for p in posts:  # 10/25 Cowork: events img(진열 쿠팡 썸네일) -> 같은 url·같은 상품 번호 글 사진(이미 있는 글도 · 있는 사진은 그대로 · 사이트 img_of 허용 목록만 — 네이버 X)
+        if not p.get("img") and (im := img_of({**p, "img": eimg(p.get("url") or "")})):
+            p["img"], ph = im, ph + 1
+    if fix or ph:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        print("shelf", f"생 주소 진열 {fix}개 -> 파트너스 링크")
+        print("shelf", " · ".join(x for x in (fix and f"생 주소 진열 {fix}개 -> 파트너스 링크", ph and f"사진 {ph}개 채움") if x))
     have = {p.get("url") for p in posts if p.get("own")}
     pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")}, 0
     for e in ev_list(EVENTS):
         if not (isinstance(e, dict) and e.get("shelf") and isinstance(e.get("url"), str) and e.get("text") and str(e.get("at", "9")) <= now) or e["url"] in have or e.get("pid") and e["pid"] in pids:
             continue
         e = {**e, "deal": True}  # 진열 = 상품 글 틀(몰별 머리 줄·[광고] 첫 줄)
-        record(*html_ents(ev_head(e) + ev_view(e)[0]), e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag")})
+        t, ents = html_ents(ev_head(e) + ev_view(e)[0])
+        record(t, ents, e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag"), "img": img_of({"text": t, "url": e["url"], "img": eimg(e["url"])})})
         have.add(e["url"])
         pids.add(e.get("pid") or e["url"])
         n += 1
