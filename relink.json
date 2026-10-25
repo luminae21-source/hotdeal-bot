@@ -1,5 +1,5 @@
 {
- "left_now": 83,
+ "left_now": 81,
  "ok": {
   "auction": 7
  },
@@ -38,6 +38,20 @@
    "n": "쿤달 퓨어 앤 세이프 여성청결제 베르가못향 300ml 2개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-25 23:34"
+  },
+  {
+   "k": "진열",
+   "pid": "2919978",
+   "n": "바디피트 천연코튼 팬티라이너 무향 일반 40개입 6개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-25 23:48"
+  },
+  {
+   "k": "진열",
+   "pid": "315036289",
+   "n": "탐사 펑 배수구 세정제 2L 6개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-25 23:48"
   }
  ]
 }
