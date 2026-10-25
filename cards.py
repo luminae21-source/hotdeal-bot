@@ -556,19 +556,26 @@ def _fit(f, s, width):
     return s.rstrip() + "…"
 
 
+EMO = r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF]\uFE0F?"  # 컬러 이모지로 그릴 글자(✔·⚠️·🥶 — Pretendard엔 없음 = 네모)
+
+
 def _em_text(d, im, xy, s, f, fill):
-    """'🚀 쿠팡 로켓'처럼 맨 앞 이모지는 컬러 이모지 그림으로, 나머지는 글자로 -> 끝 x."""
+    """'🚀 쿠팡 로켓'·'꽁꽁 얼 때 🥶'처럼 이모지(맨 앞·중간·끝)는 컬러 이모지 그림으로, 나머지는 글자로 -> 끝 x."""
     x, y = xy
-    m = re.match(r"([^\w\s\[\]()·.,%+-]{1,2})\s*", s)
-    if m and not re.match(r"[가-힣A-Za-z0-9]", m[1]):
-        try:
-            e = emoji(m[1], int(f.size * 1.05))
-            im.alpha_composite(e, (int(x), int(y + f.size * 0.12)))
-            x, s = x + e.width + int(f.size * 0.3), s[m.end():]
-        except Exception:
-            pass
-    d.text((x, y), s, font=f, fill=fill)
-    return x + d.textlength(s, font=f)
+    em = False
+    for part in re.split(f"({EMO})", s):
+        if re.fullmatch(EMO, part):
+            try:
+                e = emoji(part, int(f.size * 1.05))
+                im.alpha_composite(e, (int(x), int(y + f.size * 0.12)))
+                x, em = x + e.width + int(f.size * 0.3), True
+                continue
+            except Exception:
+                pass
+        part = part.lstrip() if em else part  # 이모지 뒤 띄어쓰기 = 이모지 칸 여백으로
+        d.text((x, y), part, font=f, fill=fill)
+        x, em = x + d.textlength(part, font=f), False
+    return x
 
 
 def _pill_w(f, s, padx, emo=True):
@@ -943,6 +950,223 @@ def ig_photo_card(it, n, out):
     d.text((X, H - 84), _fit(fs, f"제휴 링크(수수료) · {when}", W - 2 * X), font=fs, fill=SUBA)
     return _save(im, out)
 
+
+TCREAM, TORANGE, TINK, TSUB, TDARK, TTILE = (255, 248, 238), (255, 90, 54), (34, 30, 28), (102, 92, 84), (33, 29, 38), (246, 242, 236)  # 10/26 H 테마 넘기기(진우 확정 시안: 크림 표지·주황 #ff5a36·흰 상품 장·진한 마지막 장)
+
+
+def _contain(im, src, box, bg):
+    """사진을 box(x0, y0, x1, y1) 안 둥근 칸(bg)에 비율 그대로(자르기 X — 판매 페이지 사진 그대로) · 투명 = 흰색."""
+    x0, y0, x1, y1 = box
+    ImageDraw.Draw(im).rounded_rectangle(box, radius=28, fill=bg)
+    ph = Image.open(src)
+    ph.load()
+    if ph.mode in ("RGBA", "LA", "P") or "transparency" in ph.info:
+        ph = ph.convert("RGBA"); w = Image.new("RGB", ph.size, "white"); w.paste(ph, mask=ph.split()[3]); ph = w
+    ph = ph.convert("RGB")
+    k = min((x1 - x0 - 40) / ph.width, (y1 - y0 - 40) / ph.height)
+    ph = ph.resize((max(1, round(ph.width * k)), max(1, round(ph.height * k))), Image.LANCZOS)
+    im.paste(ph, ((x0 + x1 - ph.width) // 2, (y0 + y1 - ph.height) // 2))
+
+
+def theme_cover(photos, title, line, head, k, out):
+    """테마 넘기기 표지(1080x1350): 크림 바탕 · 위 '핫딜픽 · 머리' + 동물 말풍선 · 사진 3장 격자(왼쪽 큰 1 + 오른쪽 2) · 공감형 제목 2줄(숫자 주황) · 품목 줄 · '넘겨 보기 →'. -> out"""
+    im = Image.new("RGBA", (W, H), TCREAM + (255,))
+    d, P = ImageDraw.Draw(im), 64
+    f = pf("ExtraBold", 40); d.text((P, 70), _fit(f, f"핫딜픽 · {head}", W - 2 * P - 300), font=f, fill=TORANGE)
+    _buddy(im, k, W - P - 84, 52, BUDDY_WORDS[k % len(BUDDY_WORDS)])
+    gy0, gy1, gx = 160, 820, 640
+    boxes = [(P, gy0, gx - 10, gy1), (gx + 10, gy0, W - P, (gy0 + gy1) // 2 - 10), (gx + 10, (gy0 + gy1) // 2 + 10, W - P, gy1)]
+    for b, ph in zip(boxes, photos[:3]):
+        _contain(im, ph, b, "white")
+    lines = title.split("\n")[:2]
+    z = _sized("\n".join(lines), "ExtraBold", (88, 80, 72, 64), W - 2 * P)
+    ft, y = pf("ExtraBold", z), 860
+    for ln in lines:
+        x = P
+        for tok in re.findall(r"\S+\s*", _fit(ft, ln, W - 2 * P)):
+            x = _em_text(d, im, (x, y), tok, ft, TORANGE if re.search(r"\d", tok) else TINK)
+        y += int(z * 1.22)
+    fs = pf("SemiBold", 40)
+    d.text((P, y + 14), _fit(fs, line, W - 2 * P), font=fs, fill=TSUB)
+    d.text((P, H - 96), "제휴 링크(수수료)", font=fs, fill=TSUB)
+    fb = pf("Bold", 42); d.text((W - P - fb.getlength("넘겨 보기 →"), H - 98), "넘겨 보기 →", font=fb, fill=TORANGE)
+    return _save(im, out)
+
+
+def theme_slide(it, n, out, facts=True):
+    """테마 넘기기 상품 장(1080x1350 흰 바탕): 큰 사진(장의 60%, 자르기 X) · 번호(주황 원) · 동물 말풍선 · 이름 · 가격(기록가 있으면 취소선 →) · 사실 1줄(리뷰·배송) ·
+    확인할 점 1줄 · 아래 '제휴 링크(수수료) · M/D H시 확인 가격'. n = None이면 번호 X(개별 아이템 1장) · facts False = 사실·확인 줄 X(사진 더 크게 X — 자리만 비움). -> out"""
+    im = Image.new("RGBA", (W, H), (255, 255, 255, 255))
+    d, P = ImageDraw.Draw(im), 48
+    _contain(im, it["photo"], (P, P, W - P, 810), TTILE)
+    if n:
+        d.ellipse((P + 24, P + 24, P + 120, P + 120), fill=TORANGE)
+        f = pf("ExtraBold", 56); s = str(n); d.text((P + 72 - f.getlength(s) / 2, P + 38), s, font=f, fill="white")
+    _buddy(im, (n or 1) - 1 + it.get("k", 0), W - P - 108, P + 24, BUDDY_WORDS[((n or 1) - 1 + it.get("k", 0)) % len(BUDDY_WORDS)])
+    X, y = 64, 846
+    if it.get("head"):  # 개별 상품 첫 장 = 수미상관 첫 문장(M-3)
+        fh = pf("ExtraBold", 50); _em_text(d, im, (X, y - 6), _fit(fh, it["head"], W - 2 * X), fh, TORANGE); y += 66
+    fn = pf("Bold", 46)
+    for ln in wrap(d, it.get("name") or "", fn, W - 2 * X, 1 if it.get("head") else 2):
+        d.text((X, y), ln, font=fn, fill=TINK); y += 58
+    price, x = it.get("price") or "", X
+    if it.get("was"):
+        fw, was = pf("SemiBold", 50), f"{it['was']:,}원"
+        x = X + int(fw.getlength(was + " → ")) + 8
+    fp = pf("ExtraBold", _sized(price, "ExtraBold", (84, 76, 68, 60, 52), W - X - x))
+    d.text((x, y + 4), price, font=fp, fill=TINK)
+    if it.get("was"):
+        base = y + 4 + fp.getmetrics()[0]
+        b = d.textbbox((X, base), was, font=fw, anchor="ls")
+        d.text((X, base), was + " →", font=fw, fill=TSUB, anchor="ls")
+        d.line([(b[0] - 4, (b[1] + b[3]) // 2), (b[2] + 4, (b[1] + b[3]) // 2)], fill=TSUB, width=5)
+    y = d.textbbox((x, y + 4), price or "0", font=fp)[3] + 18
+    fs = pf("SemiBold", 40)
+    if facts:
+        for s, c in ((it.get("fact"), TSUB), (it.get("check") and "확인할 점: " + it["check"], TORANGE)):
+            if s and y < H - 150:
+                d.text((X, y), _fit(fs, s, W - 2 * X), font=fs, fill=c); y += 56
+    when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
+    d.text((X, H - 84), _fit(fs, f"제휴 링크(수수료) · {when}", W - 2 * X), font=fs, fill=TSUB)
+    return _save(im, out)
+
+
+def theme_note(head, rows, foot, k, out):
+    """개별 아이템 2장(1080x1350 크림): 머리 · 줄들(제목, 본문) — '이런 점이 좋아요'·'확인할 점' · 아래 가격 확인 시각 · 동물 말풍선. -> out"""
+    im = Image.new("RGBA", (W, H), TCREAM + (255,))
+    d, P = ImageDraw.Draw(im), 72
+    _buddy(im, k, W - P - 84, 60, BUDDY_WORDS[k % len(BUDDY_WORDS)])
+    fh = pf("ExtraBold", 64); _em_text(d, im, (P, 190), _fit(fh, head, W - 2 * P), fh, TINK)
+    y, ft, fb = 330, pf("ExtraBold", 48), pf("SemiBold", 44)
+    for t, body in rows:
+        d.text((P, y), t, font=ft, fill=TORANGE); y += 74
+        for ln in body:
+            for w in wrap(d, ln, fb, W - 2 * P - 40, 2):
+                _em_text(d, im, (P + 40, y), w, fb, TINK); y += 60
+            y += 10
+        y += 50
+    fs = pf("SemiBold", 40); d.text((P, H - 96), _fit(fs, foot, W - 2 * P), font=fs, fill=TSUB)
+    return _save(im, out)
+
+
+def theme_end(cat, k, out, top="필요할 때 꺼내 보게\n저장해 두세요", mark=True):
+    """테마 넘기기 마지막 장(1080x1350 진한 바탕): '필요할 때 꺼내 보게 저장해 두세요 🔖'(저장·공유 = 노출) · '프로필 링크 → {cat}' 주황 · hotdealpick.kr · 동물. -> out"""
+    im = Image.new("RGBA", (W, H), TDARK + (255,))
+    d, P = ImageDraw.Draw(im), 80
+    _buddy(im, k, W - P - 84, 70, BUDDY_WORDS[k % len(BUDDY_WORDS)])
+    lines = top.split("\n")[:3]
+    ft = pf("ExtraBold", _sized("\n".join(lines), "ExtraBold", (88, 80, 72, 64), W - 2 * P - (120 if mark else 0)))
+    y = 360
+    for ln in lines:
+        _em_text(d, im, (P, y), _fit(ft, ln, W - 2 * P), ft, "white"); y += int(ft.size * 1.27)
+    if mark:  # 저장 🔖(수미상관 끝 문장 장은 X — 문장 그대로)
+        try:
+            e = emoji("🔖", 96); im.alpha_composite(e, (int(P + ft.getlength(lines[-1]) + 24), y - int(ft.size * 1.27) + 6))
+        except Exception:
+            pass
+    fb = pf("ExtraBold", 60); d.text((P, y + 90), _fit(fb, f"프로필 링크 → {cat}", W - 2 * P), font=fb, fill=TORANGE)
+    fs = pf("SemiBold", 44); d.text((P, y + 190), "hotdealpick.kr", font=fs, fill=(220, 214, 230))
+    d.text((P, H - 110), "제휴 링크(수수료) · 가격은 바뀔 수 있어요", font=pf("SemiBold", 40), fill=(190, 182, 200))
+    return _save(im, out)
+
+def q_card(photos, labels, title, lines, foot, k, out, head="핫딜픽", small=False):
+    """질문·이거 vs 저거·가격 맞히기·체크리스트·재미 질문 카드(1080x1350 크림, L·M): 위 머리 · 사진 1·2·4장(자르기 X, 알약 = labels — 'A'·'1') · 큰 제목(2줄, 숫자 주황) · 줄들 · 아래 줄 · 동물 말풍선.
+    small = 사진 1장을 작게(체크리스트·재미 질문 — 글이 주인공). -> out"""
+    im = Image.new("RGBA", (W, H), TCREAM + (255,))
+    d, P = ImageDraw.Draw(im), 64
+    f = pf("ExtraBold", 40); d.text((P, 70), _fit(f, head, W - 2 * P - 300), font=f, fill=TORANGE)
+    _buddy(im, k, W - P - 84, 52, BUDDY_WORDS[k % len(BUDDY_WORDS)])
+    n, y0 = len(photos), 160
+    y1 = 520 if small else 760 if n <= 2 else 700  # 4장 = 이름 4줄 들어가게
+    if n == 1:
+        boxes = [((W - (y1 - y0)) // 2, y0, (W + (y1 - y0)) // 2, y1)] if small else [(P, y0, W - P, y1)]
+    elif n == 2:
+        boxes = [(P, y0, W // 2 - 10, y1), (W // 2 + 10, y0, W - P, y1)]
+    else:
+        my, mx = (y0 + y1) // 2, W // 2
+        boxes = [(P, y0, mx - 10, my - 10), (mx + 10, y0, W - P, my - 10), (P, my + 10, mx - 10, y1), (mx + 10, my + 10, W - P, y1)]
+    fl = pf("ExtraBold", 44)
+    for b, ph, lb in zip(boxes, photos[:4], list(labels) + [""] * 4):
+        _contain(im, ph, b, "white")
+        if lb:
+            w = int(fl.getlength(lb)) + 48
+            d.rounded_rectangle((b[0] + 18, b[1] + 18, b[0] + 18 + w, b[1] + 92), radius=37, fill=TORANGE)
+            d.text((b[0] + 42, b[1] + 28), lb, font=fl, fill="white")
+    tl = title.split("\n")[:2]
+    z = _sized("\n".join(tl), "ExtraBold", (84, 76, 68, 60), W - 2 * P)
+    ft, y = pf("ExtraBold", z), y1 + 40
+    for ln in tl:
+        x = P
+        for tok in re.findall(r"\S+\s*", _fit(ft, ln, W - 2 * P)):
+            x = _em_text(d, im, (x, y), tok, ft, TORANGE if re.search(r"\d", tok) else TINK)
+        y += int(z * 1.22)
+    fs = pf("SemiBold", 42)
+    for ln in lines:
+        if y > H - 170:
+            break
+        for w_ in wrap(d, ln, fs, W - 2 * P, 2):
+            _em_text(d, im, (P, y + 10), w_, fs, TINK); y += 56
+        y += 6
+    fb = pf("SemiBold", 40); d.text((P, H - 96), _fit(fb, foot, W - 2 * P), font=fb, fill=TSUB)
+    return _save(im, out)
+
+def ig_story(src, out, top, bottom):
+    """인스타 스토리 1장(1080x1920 JPEG, 10/26 G-3 — 그날 카드 표지를 세로로): 뒤 = 표지를 꽉 채워 흐리게·어둡게, 가운데 = 표지 0.85배(둥근 모서리),
+    위·아래 글자 = 스토리 화면 위 이름 줄·아래 답장 칸(약 270px) 밖 안전 칸에. -> out"""
+    from PIL import ImageFilter
+    SH = 1920
+    cv = Image.open(src).convert("RGB")
+    k = max(W / cv.width, SH / cv.height)
+    bg = cv.resize((round(cv.width * k), round(cv.height * k)), Image.LANCZOS)
+    bg = bg.crop(((bg.width - W) // 2, (bg.height - SH) // 2, (bg.width - W) // 2 + W, (bg.height - SH) // 2 + SH)).filter(ImageFilter.GaussianBlur(40))
+    im = Image.blend(bg, Image.new("RGB", (W, SH), INKA), 0.45).convert("RGBA")
+    fg = cv.resize((round(W * 0.85), round(H * 0.85)), Image.LANCZOS)
+    m = Image.new("L", fg.size, 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, fg.width - 1, fg.height - 1), radius=40, fill=255)
+    y0 = (SH - fg.height) // 2
+    im.paste(fg, ((W - fg.width) // 2, y0), m)
+    d, f = ImageDraw.Draw(im), pf("ExtraBold", 48)
+    for y, s in ((y0 - 96, top), (y0 + fg.height + 40, bottom)):
+        s = _fit(f, s, W - 120)
+        d.text(((W - f.getlength(s)) / 2, y), s, font=f, fill="white")
+    return _save(im, out)
+
+def slideshow(images, out, music=None, sec=1.5):
+    """H-4 릴스(1080x1920 MP4): 넘기기 장들을 sec초씩(0.3초 전환) — 뒤 = 그 장을 꽉 채워 흐리게, 가운데 = 장 0.92배 · 배경음악(짧으면 반복·앞뒤 페이드). -> out"""
+    import subprocess
+    from PIL import ImageFilter
+    SH, fps, xf = 1920, 30, 9
+    def frame(src):
+        cv = Image.open(src).convert("RGB")
+        k = max(W / cv.width, SH / cv.height)
+        bg = cv.resize((round(cv.width * k), round(cv.height * k)), Image.LANCZOS)
+        bg = bg.crop(((bg.width - W) // 2, (bg.height - SH) // 2, (bg.width - W) // 2 + W, (bg.height - SH) // 2 + SH)).filter(ImageFilter.GaussianBlur(40))
+        im = Image.blend(bg, Image.new("RGB", (W, SH), TINK), 0.35)
+        fg = cv.resize((round(W * 0.92), round(cv.height * W * 0.92 / cv.width)), Image.LANCZOS)
+        im.paste(fg, ((W - fg.width) // 2, (SH - fg.height) // 2))
+        return im
+    fr = [frame(x) for x in images]
+    total = sec * len(fr)
+    cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{SH}", "-r", str(fps), "-i", "-"]
+    if music:
+        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-af", f"afade=t=in:d=0.5,afade=t=out:st={max(0, total - 1.5):.3f}:d=1.5"]
+    cmd += ["-t", f"{total:.3f}", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "veryfast", "-movflags", "+faststart", "-use_editlist", "0", out]
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    try:
+        n = round(sec * fps)
+        for k, im in enumerate(fr):
+            for i in range(n):
+                f = Image.blend(fr[k - 1], im, (i + 1) / (xf + 1)) if k and i < xf else im
+                proc.stdin.write(f.tobytes())
+        proc.stdin.close()
+        rc = proc.wait()
+    except BaseException:
+        proc.kill(); proc.wait()
+        raise
+    if rc:
+        raise RuntimeError("ffmpeg 실패")
+    return out
 
 LOGO_GRAD, PICK_RED = ((255, 104, 96), (220, 34, 48)), (222, 38, 52)  # 웹앱 아이콘 'A 레드'(10/23 진우): 왼쪽 위 -> 오른쪽 아래 그라데이션 · 알약 안 'pick' 색
 

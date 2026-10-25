@@ -14,6 +14,7 @@ cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E �
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
 ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
 tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Threads C·3장면·첫 30분 답글 알림(10/25)은 맨 아래 9-64에서만
+igh0, H.IG_H, rpb0, H.REEL_PUBLIC = H.IG_H, False, H.REEL_PUBLIC, False  # H·L·M(10/26 인스타 피드 형식·스토리)·릴스 공개(J-1)는 맨 아래 9-73에서만
 ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는 맨 아래 9-72에서만
 tph0, H.TOSS_PHOTO = H.TOSS_PHOTO, False  # 토스 사진 글(10/26 켬 — 텔레그램·Threads만)은 맨 아래 9-66·9-69에서만
 dpa0, H.DPOST_AT = H.DPOST_AT, (99, 0)  # 📉 가격 내려간 상품 글(20:40)은 맨 아래 9-71에서만
@@ -1996,7 +1997,7 @@ at9("11:34", H.ig_publish); assert not ig9 and "igc_IMG1" in seen  # 만든 실�
 cap = b["caption"]
 assert cap.startswith(H.NAVER_NOTE + "\n" + H.DISCLOSURE + "\n" + H.AFF_NOTE + "\n\n10월 12일 오전 11시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다, 네이버·올영 먼저), 번호 줄 = 카드 순서·가격 꼬리 뺌
 assert "🛒 프로필 링크 → '10월 12일 오전 11시 카드 딜' 번호 누르면 바로 구매" in cap and "맨 위" not in cap and (t9 := cap.rsplit("\n", 1)[1]).startswith("#핫딜 #핫딜픽 #생필품 #화장품 #") and len(t9.split()) == 5 and "#최저가" not in cap and len(cap) <= 2200
-assert H.ig_tags([], 4) == "#핫딜 #핫딜픽 #가성비템 #쟁여템 #장바구니" and len({H.ig_tags([], h // 2) for h in (*H.IG_SLOTS, H.IG_DAY_HOUR)}) == 6  # 10/23 진우 '해시태그 세트도 칸마다 조금씩 다르게' — 기본 2 + 카테고리 + 칸마다 돌린 채움
+assert H.ig_tags([], 4) == "#핫딜 #핫딜픽 #가성비템 #쟁여템 #장바구니" and len({H.ig_tags([], h // 2) for h in (11, 13, 15, 17, 19, H.IG_DAY_HOUR)}) == 6  # 10/23 진우 '해시태그 세트도 칸마다 조금씩 다르게' — 기본 2 + 카테고리 + 칸마다 돌린 채움
 at9("11:47"); assert not ig9  # 회차마다 1번
 sv9 = seen; seen = {}; at9("11:47"); assert not ig9; seen = sv9  # seen 캐시를 잃어도 기록(ig.json, 커밋됨)에 있으면 다시 안 올림
 seen9 = dict(seen); seen = {}; at9("12:01"); assert not ig9 and not seen; seen = seen9  # 2시간 지나면 그 회차는 안 함(낮에 몰아 X)
@@ -2132,7 +2133,7 @@ shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 H.IG_HUMAN = ig9h
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
 assert not [c for c in calls if H.IG in c[1]] and any("/threads_publish?" in u for _, u in calls) and "인스타·Threads 자동 게시 중" in sent[-1][1]["caption"]
-assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
+assert "threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage" in inspect.getsource(H.main) and 'ch = "ig" if name.startswith("ig_")' in inspect.getsource(H.step_alert)
 for f in os.listdir("docs/cards"):
     if f.startswith(D9) or f == "ig.json": os.remove(f"docs/cards/{f}")
 del H.E["IG_TOKEN"], H.E["IG_USER_ID"], H.E["THREADS_TOKEN"]; H.http, time.time = th_http, tt9
@@ -4855,7 +4856,7 @@ shutil.rmtree("steady32")
 # 9-33 (10/22 22시 진우 '인스타 자동게시 테스트 1건 — 시간 오차 15~20분·카드 수정·사람 멘트'): 인스타만(텔레그램·Threads X), IG_AUTO 정기 게시는 그대로 꺼짐,
 #       ig_test.txt 날짜 = 그날 하루 카드를 변주로 다시 그림 -> 15~20분 무작위 뒤 컨테이너(캡션 = 대가성 문구 + 사람 멘트 2~3줄) -> 발행 -> 관리봇 1번, 실패면 다시 X
 #       정기 게시 스위치 IG_HUMAN = IG_AUTO(10/23 진우 다시 켬)
-assert ig9h is True and iga0 is True and H.REEL_PUBLIC is False and H.IG_JITTER == (900, 1200) and "ig_publish, ig_stage, ig_test, toss_stock" in inspect.getsource(H.main)
+assert ig9h is True and iga0 is True and rpb0 is True and H.IG_JITTER == (900, 1200) and "ig_publish, ig_stage, ig_test, toss_stock" in inspect.getsource(H.main)
 s33 = {}
 for _ in range(300):  # 변주: 직전 회차와 1~2개(표지 문구·배치·색) 다름, 지난주 막힌 기본 모양 X
     pv33 = dict(s33.get("igvar") or {"pal": 0, "head": 0, "band": 0}); v33 = H.ig_variant(s33)
@@ -5050,7 +5051,7 @@ assert cap34.split("\n\n")[0].endswith("\n" + H.IG_PHOTO_NOTE) and cap34.count(H
 (H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, tk34, uid34) = sv34; H.urllib.request.urlopen = uo34; shutil.rmtree("ig_photos", ignore_errors=True)
 H.E.pop("IG_TOKEN", None) if tk34 is None else H.E.update(IG_TOKEN=tk34); H.E.pop("IG_USER_ID", None) if uid34 is None else H.E.update(IG_USER_ID=uid34)
 shutil.rmtree("docs/cards/igv"); os.remove("docs/cards/2026-11-07.jpg"); os.remove("posts34.json"); shutil.rmtree("ig34", ignore_errors=True)
-assert ig9h is True and iga0 is True and H.REEL_PUBLIC is False  # (기본값) 10/23 진우 '인스타 꾸준하게' — 릴스는 꺼 둠
+assert ig9h is True and iga0 is True and rpb0 is True  # (기본값) 10/26 진우 J-1 '배경음악도 넣어줘' = 릴스 공개
 import subprocess, sys
 for tok, host in (("IGAAx", "https://graph.instagram.com/v25.0"), ("EAAx", "https://graph.facebook.com/v25.0"), ("", "https://graph.instagram.com/v25.0")):
     r = subprocess.run([sys.executable, "-c", "import hotdeal; print(hotdeal.IG)"], env={**os.environ, "IG_TOKEN": tok}, cwd=os.path.dirname(os.path.abspath(H.__file__)), capture_output=True, text=True)
@@ -5289,7 +5290,7 @@ H.random = type("R", (), {"choice": staticmethod(lambda xs: 1 if 1 in xs else xs
 o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50ml (19,900원)\n\n50ml 2개", "https://oy.run/x")
 assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
 H.ai_voice, H.random, H.TOSS_NO_CMP = sv36v
-assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and 'else {"card": stem})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
+assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and 'else {"card": stem}), **{x: v[x] for x in ("cmt", "stem", "guess", "ask") if v.get(x)}, **({"cap80": v["cap"][:80]} if v.get("stem") and v.get("cap") else {})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
 # 9-37) 인스타 하루 4번(10/23 진우 정정): 칸 = 오늘 앞 칸 ~ 그 시각(11 = 0~11, 15 = 11~15, 19 = 15~19), 다른 칸 카드에 든 딜 X, 19시 = 진우 쿠팡 🔥·👍 먼저,
 #       3개 밑 = 건너뜀(억지로 안 채움) · 첫날 10/23은 15시부터 · 그날 표지 제목 안 겹침(밤·퇴근 말은 18시부터)
 D37 = "2026-11-20"
@@ -7592,7 +7593,7 @@ assert all(len(t.split()) <= 5 for t in tg70 + ct70) and tg70[0] != tg70[1] and 
 # metrics: 인스타 도달·저장 + 팔로워(하루 1번) + 7일 요약 igw(Cowork가 읽고 단계 판단) · metrics_save가 igf·igw 그대로
 m70 = {f"2026-10-{d}": {"at": "x", "miss": {}, "igf": 100 + d, "rows": [{"ch": "ig", "views": 10, "reach": 7, "saved": 1, "react": 2}, {"ch": "th", "views": 99}]} for d in range(18, 27)}
 w70 = H.ig_week(m70, "2026-10-26")
-assert w70 == {"from": "2026-10-20", "to": "2026-10-26", "posts": 7, "views": 70, "reach": 49, "saved": 7, "react": 14, "followers": [120, 126]}, w70
+assert w70 == {"from": "2026-10-20", "to": "2026-10-26", "posts": 7, "views": 70, "reach": 49, "saved": 7, "shares": 0, "react": 14, "followers": [120, 126], "themes": {}}, w70  # H: 공유·테마별 저장(테마 글 없으면 빈 칸)
 H.METRICS = "m70.json"; m70["2026-10-26"]["igw"] = w70; H.metrics_save(m70); r70 = json.load(open("m70.json"))
 assert r70["2026-10-26"]["igw"] == w70 and r70["2026-10-26"]["igf"] == 126 and r70["2026-10-26"]["rows"][0]["reach"] == 7
 assert 'insights?metric=views,reach,saved' in inspect.getsource(H.metrics_rows) and '?fields=followers_count' in inspect.getsource(H.metrics_rows)
@@ -7819,4 +7820,207 @@ assert o72.getvalue().count("ig peek") == 1 and "{'views': 31, 'reach': 22, 'sav
 H.E.pop("IG_TOKEN"); H.E.pop("IG_USER_ID")
 (H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.IG_STAGE_FILE, H.IG_LIVE) = sv72
 os.chdir(cwd72)
+# 9-73) 인스타 H·L·M·I(10/26 진우 — 테마 넘기기·형식 돌림·소통·구매 링크 댓글): 피드 11·14·17·20시 + 15~20분 무작위 · 형식 3일 돌림(같은 형식 연달아 X·링크 미는 글 하루 2개) ·
+#       theme·one(수미상관)·vs·ask·check·guess(3시간 뒤 정답 + 가까운 댓글 1번)·top(GoatCounter)·fun(질문 집계 실제만) · 스토리 9·12:30·15:30·18:30·22(📉 표지) · 댓글 알림 + 답글 초안 버튼
+d73 = tempfile.mkdtemp(); cwd73 = os.getcwd(); os.chdir(d73)
+sv73 = (H.http, H.tg, time.time, H.ig_photo, H.ai_json, H.POSTS, H.IG_H, H.IG_AUTO, H.IG_LIVE, H.METRICS, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"), H.tg_video, H.IG_GAP, H.GC_TOP, H.RUN.pop("igq", None))
+from PIL import Image as I73
+I73.new("RGB", (500, 400), (220, 120, 80)).save("ph73.jpg")
+H.IG_H, H.IG_AUTO, H.IG_LIVE, H.METRICS, H.IG_GAP, H.GC_TOP = True, True, "docs/cards/ig.json", "m73.json", IG_GAP0, "gc73.json"
+os.makedirs("docs/cards", exist_ok=True)
+q73 = lambda k, name, **x: {"t": "2026-10-28 10:00", "text": f"🔥 [쿠팡] {name} ({k},900원)\n\n💰 개당 {k}00원꼴\n✔ 무료배송 · 리뷰 1,2{k}3\n💡 책상 밑에 두기 좋아요\n⚠️ 확인할 점: 옵션 {k}개 구성 확인 (10/28 9시 가격)",
+                            "url": f"https://link.coupang.com/a/g{k}", "own": 1, "st": "hot", "img": f"https://thumbnail.coupangcdn.com/t/{k}.jpg", "chk": "10/29 9시", "chkt": "2026-10-29 09:10", "now": f"{k},900원", **x}
+P73 = [q73(1, "핫팩 30개"), q73(2, "붙이는 핫팩 10개"), q73(3, "손난로 핫팩 20개"), q73(4, "핫팩 대용량 40개"), q73(5, "발난로 핫팩 6개"), q73(6, "발 핫팩 10개"),
+       q73(7, "핫팩 50개", url="https://www.gmarket.co.kr/item/7"), q73(8, "핫팩 60개", img=None)]  # 7 비수수료 · 8 사진 X
+json.dump(P73, open("posts73.json", "w"), ensure_ascii=False); H.POSTS = "posts73.json"
+H.ig_photo = lambda p, d, seen=None: ("ph73.jpg", "coupang")
+def ai73(prompt, props):
+    if "답글 초안" in prompt: return {"reply": "저도 궁금했어요 🙂"}
+    r = {"title": "발 시린 사무실,\n1만원대 온기템 5가지", "seo": "사무실 발난로 추천 | 1만원대 온기템 5", "say": "요즘 손발이 차서 모아 봤어요", "q": "여러분은 겨울에 뭐 쓰세요?",
+         "open": "퇴근하고 발이 꽁꽁 얼 때 🥶", "close": "이제 발 꽁꽁은 그만, 책상 밑 핫팩 🐻", "tags": ["#겨울템", "#사무실템", "#핫팩"]}
+    return {k: r[k] for k in props}
+H.ai_json = ai73
+K73 = time.gmtime(TK("2026-10-29 10:40") + 9 * 3600)  # 목요일 = 겨울템
+time.time = lambda: TK("2026-10-29 10:40")
+mk73 = lambda kind, stem: H.igf_make({}, kind, stem, K73)
+with contextlib.redirect_stdout(io.StringIO()):
+    th = mk73("theme", "2026-10-29_11")
+assert th["kind"] == "theme" and len(th["files"]) == 7 and all(open(f, "rb").read(2) == b"\xff\xd8" for f in th["files"]) and json.load(open("docs/cards/2026-10-29_11.json")) == [5, 4, 3, 2, 1]  # 표지 + 5 + 저장 장 · 진열 순서(최신 먼저) · 비수수료·사진 X 빠짐
+c73 = th["cap"]
+assert c73.startswith("사무실 발난로 추천 | 1만원대 온기템 5\n" + H.DISCLOSURE + "\n\n요즘 손발이 차서 모아 봤어요\n\n1. 발 핫팩 10개 · 6,900원\n") and "저장해 두고 필요할 때 보세요 🔖\n여러분은 겨울에 뭐 쓰세요?\n\n🛒 프로필 링크 → 겨울템 1~5번" in c73 and c73.endswith("#겨울템 #사무실템 #핫팩")
+assert th["cmt"].endswith("프로필 링크 → 겨울템 1~5번\nhotdealpick.kr/c/winter\n(인스타 댓글 주소는 눌리지 않아서 프로필 링크로 열어주세요 🙏)") and json.load(open("docs/cards/names.json"))["2026-10-29_11"]["title"] == "발 시린 사무실, 1만원대 온기템 5가지"
+assert S.card_name("2026-10-29_11") == "10월 29일 발 시린 사무실, 1만원대 온기템 5가지"  # 사이트·캡션 카드 이름 = 테마 제목
+with contextlib.redirect_stdout(io.StringIO()):
+    one = mk73("one", "2026-10-29_17"); vs = mk73("vs", "2026-10-29_14"); ask = mk73("ask", "2026-10-29_14"); chk = mk73("check", "2026-10-29_14"); gs = mk73("guess", "2026-10-29_20")
+assert len(one["files"]) == 3 and one["cap"].startswith("퇴근하고 발이 꽁꽁 얼 때 🥶\n" + H.DISCLOSURE) and "\n\n이제 발 꽁꽁은 그만, 책상 밑 핫팩 🐻\n\n상품 사진" in one["cap"] and "프로필 링크 → 겨울템 1번" in one["cmt"]  # 수미상관(M-3)
+assert len(vs["files"]) == 1 and vs["cap"].startswith("A vs B, 여러분은? 🤔") and vs["cmt"] == "" and len(json.load(open("docs/cards/2026-10-29_14.json"))) in (2, 4, 3)  # 소통 형식 = 구매 링크 댓글 X
+assert len(ask["files"]) == 1 and len(ask["ask"]) == 4 and "1~4 댓글로" in ask["cap"] and ask["cmt"] == ""
+assert len(chk["files"]) == 1 and chk["cap"].count("✔ 옵션") >= 2 and chk["cmt"] == ""  # 사기 전 확인할 점 = 판매 페이지 정보 그대로
+assert len(gs["files"]) == 2 and gs["guess"]["won"] == 6900 and "6,900" not in gs["cap"] and "900원" not in gs["cap"] and "3시간 뒤 정답" in gs["cap"] and gs["cmt"] == ""  # 가격 맞히기 = 캡션·힌트에 가격 X
+H.ai_json = lambda prompt, props: {"say": "이거 6,900원이면 살 만해요", "q": "얼마일까요?", "tags": []}
+assert "원" not in H.ig_copy("guess", "겨울템", [{"name": "발 핫팩 10개", "price": "6,900원", "fact": "무료배송"}])["say"]; H.ai_json = ai73  # 가격 맞히기 문구에 가격 X(숫자가 상품 정보에 있어도)
+json.dump([dict(p, text=re.sub(r"옵션 \d개 구성 확인", "옵션 구성 확인", p["text"])) for p in P73], open("posts73.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    assert mk73("check", "2026-10-29_14")["kind"] == "one"  # 확인할 점이 다 같으면(2가지 안 됨) = 체크리스트 X
+json.dump(P73, open("posts73.json", "w"))
+json.dump({"at": "2026-10-29 10:00", "urls": ["https://link.coupang.com/a/g3", "https://link.coupang.com/a/g1", "https://link.coupang.com/a/g2", "https://link.coupang.com/a/g7"]}, open("gc73.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    tp = mk73("top", "2026-10-29_11")
+assert tp["kind"] == "top" and json.load(open("docs/cards/2026-10-29_11.json")) == [2, 0, 1] and len(tp["files"]) == 5  # GoatCounter 많이 본 순서 그대로(비수수료 X)
+os.remove("gc73.json")
+with contextlib.redirect_stdout(io.StringIO()):
+    tq = mk73("top", "2026-10-29_11")
+assert tq["kind"] == "one"  # 많이 본 데이터 없음 = 다른 형식(지어내지 않음)
+pool73 = H.igt_pool; H.igt_pool = lambda seen, posts, cats, day, one=False: [] if one else pool73(seen, posts, cats, day)
+with contextlib.redirect_stdout(io.StringIO()):
+    tt73 = mk73("top", "2026-10-29_17")
+H.igt_pool = pool73
+assert tt73["kind"] == "theme" and json.load(open("docs/cards/names.json"))["2026-10-29_17"]["theme"] == "겨울템" and "요즘 많이 본" not in tt73["cap"]  # top -> theme 대신 = 요일 테마 이름(많이 본 X)
+with contextlib.redirect_stdout(io.StringIO()):
+    nq = H.igf_make({"igu": {"t": 1, "m": {f"https://link.coupang.com/a/g{k}": "2026-10-28" for k in (1, 2, 3, 4)}}}, "ask", "2026-10-29_14", K73)
+assert nq["kind"] == "one"  # 7일 안 쓴 상품 X -> 4개 못 채움 = 개별 상품으로
+# 형식 돌림: 같은 형식 연달아 X(날 넘어서도) · 링크 미는 글 하루 2개↓ · 질문 카드 뒤 그날 재미 질문
+seq73 = [H.ig_fmt(o, hh) for o in range(738000, 738009) for hh in H.IG_FEED]
+assert all(a != b for a, b in zip(seq73, seq73[1:])) and all(sum(f in H.IG_LINKY for f in seq73[k:k + 4]) <= 2 for k in range(0, len(seq73), 4))
+assert all(seq73.index("fun", k) > seq73.index("ask", k) for k in range(0, len(seq73), 12) if "ask" in seq73[k:k + 12]) and set(seq73) == {"theme", "guess", "one", "vs", "top", "ask", "fun", "check"}
+assert list(H.IG_FEED) == ["11", "14", "17", "20"] and H.IG_STORY == {9: 0, 12: 30, 15: 30, 18: 30, 22: 0} and H.ig_day_max({}) == 4  # M-1 시간표 · 하루 피드 4
+assert H.ig_room({}, TK("2026-10-29 10:00")) == 0 and H.ig_room({"igf_2026-10-29_11": {"done": 1}, "igf_2026-10-29_14": {"done": 1}, "igpub_20261029": {"t": 1, "n": 1}}, TK("2026-10-29 15:00")) == 1  # 남은 피드 칸 = 큐레이션 자리 X(칸 다 쓴 날만)
+# ig_feed: 칸 20분 전 카드 -> 칸 시각 + 무작위 지연 뒤 사이트에 뜨면 조각/사진 글(형식 정보 그대로) -> 사이트 맨 위 카드
+c73h, a73 = [], []
+def http73(url, body=None, headers=None, method=None):
+    c73h.append((method, url, body))
+    if method == "HEAD": return ""
+    if url.endswith("/u73/media") and method == "POST": return json.dumps({"id": f"K{len(c73h)}"})
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    if "content_publishing_limit" in url: return json.dumps({"data": [{"quota_usage": 1, "config": {"quota_total": 25}}]})
+    if url.endswith("/media_publish"): return json.dumps({"id": "P73"})
+    if url.endswith("/comments") and method == "POST": return json.dumps({"id": "CM"})
+    if "/P9/comments?fields=id,text" in url: return json.dumps({"data": [{"id": "c1", "text": "만원?"}, {"id": "c2", "text": "1만2천원!"}, {"id": "c3", "text": "15000"}, {"id": "c4", "text": "정답은 11,990원이에요!"}]})
+    if url.endswith("/replies") and method == "POST": return json.dumps({"id": "R"})
+    raise AssertionError(url)
+H.http, H.tg = http73, (lambda m, **k: a73.append((m, k)) or {"message_id": 700 + len(a73)})
+H.E.update(IG_TOKEN="it73", IG_USER_ID="u73"); s73 = {}
+day73 = datetime(2026, 10, 29).toordinal() if "datetime" in dir() else __import__("datetime").datetime(2026, 10, 29).toordinal()
+f11 = H.ig_fmt(day73, "11")
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 10:35"); H.ig_feed(s73)
+assert "igf_2026-10-29_11" not in s73  # 20분 전 전 = X
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 10:42"); H.ig_feed(s73)
+st73 = s73["igf_2026-10-29_11"]; assert st73["files"] and not c73h and st73["kind"] in (f11, "one", "theme")  # 카드만(이 실행 커밋)
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 11:05"); H.ig_feed(s73)
+assert not c73h and s73["igd_2026-10-29_11"]["at"] >= TK("2026-10-29 11:15")  # 15~20분 무작위 전 = X
+s73["igd_2026-10-29_11"]["at"] = TK("2026-10-29 11:16")
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 11:17"); H.ig_feed(s73)
+heads73 = [u for m, u, b in c73h if m == "HEAD"]
+assert len(heads73) == len(st73["files"]) and st73["done"] == 1 and "2026-10-29_11" in json.load(open("docs/cards/ig.json"))
+kk73 = s73.get("igk_2026-10-29_11") or next(v for k, v in s73.items() if k.startswith("igc_"))
+assert kk73["stem"] == "2026-10-29_11" and kk73["cmt"] == st73["cmt"] and (len(st73["files"]) == 1 or len(kk73["kids"]) == len(st73["files"]))
+# 발행: 구매 링크 댓글(링크 형식) · 가격 맞히기 = 정답 예약 · 질문 = 집계 기록 · 게시물 id -> 카드(테마별 저장)
+c73h.clear(); s73p = {"igc_P1": {"t": TK("2026-10-29 13:00"), "kind": "theme", "cmt": "🛒 댓글", "stem": "2026-10-29_11", "guess": {"price": "11,990원", "won": 11990, "when": "10/29 14시 확인", "cat": "겨울템"}, "ask": ["a", "b", "c", "d"]}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 14:20"); H.ig_publish(s73p)
+assert [(m, u.rsplit("/", 1)[-1], b) for m, u, b in c73h if u.endswith("/comments")] == [("POST", "comments", {"message": "🛒 댓글"})] and s73p["igans_P73"]["won"] == 11990 and s73p["igask"]["pid"] == "P73"
+assert json.load(open("docs/cards/names.json"))["2026-10-29_11"]["pid"] == "P73" and H.ig_theme_of("P73")
+# 발행 오류 응답인데 실제로 올라감(10/22 #1804) = 캡션으로 게시물 id 찾아 구매 댓글·정답 예약 그대로
+def http73p(url, body=None, headers=None, method=None):
+    if url.endswith("/media_publish"): c73h.append((method, url, body)); raise OSError("(4/2207051) action is blocked")
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED" if not [1 for m, u, b in c73h if u.endswith("/media_publish")] else "PUBLISHED"})
+    if "fields=id,caption,timestamp" in url: return json.dumps({"data": [{"id": "P88", "caption": "사무실 발난로 추천 | 1만원대 온기템 5", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S+0000", time.gmtime(time.time()))}]})
+    return http73(url, body, headers, method)
+H.http, c73h[:] = http73p, []; s73l = {"igc_L1": {"t": TK("2026-10-29 13:00"), "kind": "theme", "cmt": "🛒 댓글", "stem": "2026-10-29_17", "cap80": "사무실 발난로 추천 | 1만원대 온기템 5", "guess": {"price": "1원", "won": 1, "when": "x", "cat": "겨울템"}}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 14:20"); H.ig_publish(s73l)
+assert [u.rsplit("/", 2)[-2] for m, u, b in c73h if u.endswith("/comments") and m == "POST"] == ["P88"] and "igans_P88" in s73l; H.http = http73
+c73h.clear(); s73r = {"igpub_20261029": {"t": TK("2026-10-29 20:00"), "n": 4}, "iglast": {"t": TK("2026-10-29 20:30")}, "igc_R1": {"t": TK("2026-10-29 20:00"), "kind": "reel"}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 21:00"); H.ig_publish(s73r)
+assert [u for m, u, b in c73h if u.endswith("/media_publish")] and s73r["igpub_20261029"]["n"] == 4  # 테마 릴스(피드 X) = 하루 피드 4개·2시간 간격에 안 걸리고 안 셈
+# 3시간 뒤 정답(댓글 0개여도) + 가장 가까운 댓글 1개에만 답글
+c73h.clear(); s73h = {"igans_P9": {"t": TK("2026-10-29 14:20"), "price": "11,990원", "won": 11990, "when": "10/29 14시 확인", "cat": "겨울템"}, "ig_hold": TK("2026-10-30 00:00")}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 17:30"); H.ig_guess(s73h)
+assert not c73h and not s73h["igans_P9"].get("done")  # 행동 제한 쉼 = 정답 댓글도 미룸(쉼 끝나고)
+c73h.clear(); s73g = {"igans_P9": {"t": TK("2026-10-29 14:20"), "stem": "2026-10-29_20", "price": "11,990원", "won": 11990, "when": "10/29 14시 확인", "cat": "겨울템"}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 16:00"); H.ig_guess(s73g)
+assert not c73h  # 3시간 전 = X
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 17:21"); H.ig_guess(s73g); H.ig_guess(s73g)
+assert [b for m, u, b in c73h if u.endswith("/P9/comments") and m == "POST"] == [{"message": "정답은 11,990원이에요! (10/29 14시 확인)\n구매는 프로필 링크 → 겨울템 1번 🙂"}]
+assert [u.split("/")[-2] for m, u, b in c73h if u.endswith("/replies")] == ["c2"] and json.load(open("docs/cards/names.json"))["2026-10-29_20"]["ans"] == 1  # 1만2천 = 가장 가까움 · 1번만 · 정답 뒤 = 사이트 c/칸 맨 위에
+# 재미 질문: 앞 질문 댓글 집계(실제만)
+def http73b(url, body=None, headers=None, method=None):
+    if "/Q1/comments" in url: return json.dumps({"data": [{"text": "2번이요"}, {"text": "저는 2"}, {"text": "1!"}, {"text": "고민되네요"}]})
+    return http73(url, body, headers, method)
+H.http = http73b
+s73f = {"igask": {"t": 1, "pid": "Q1", "names": ["핫팩 30개", "붙이는 핫팩 10개", "c", "d"], "day": "2026-10-28"}}
+with contextlib.redirect_stdout(io.StringIO()):
+    fu = H.igf_make(s73f, "fun", "2026-10-29_20", K73)
+assert fu["kind"] == "fun" and "어제는 2번(붙이는 핫팩 10개)이 제일 많았어요!" in fu["cap"] and fu["cmt"] == ""
+with contextlib.redirect_stdout(io.StringIO()):
+    fu0 = H.igf_make({}, "fun", "2026-10-29_20", K73)
+assert "제일 많았어요" not in fu0["cap"]  # 질문 기록 없음 = 결과 줄 X(지어내지 않음)
+# 댓글 알림 + 답글 초안(자동 답글 X) -> [보내기]·답장 = 답글
+H.http = http73
+def http73c(url, body=None, headers=None, method=None):
+    if url.endswith("?fields=username"): return json.dumps({"username": "hotdealpick.kr"})
+    if "/media?fields=id,caption" in url: return json.dumps({"data": [{"id": "P73", "caption": "사무실 발난로 추천 | 1만원대 온기템 5\n…"}]})
+    if "/P73/comments?fields=id,text,username" in url: return json.dumps({"data": [{"id": "x1", "text": "링크 어디서 봐요?", "username": "kim"}, {"id": "x2", "text": "귀여워요", "username": "lee"}, {"id": "x3", "text": "정답은…", "username": "hotdealpick.kr"}]})
+    return http73(url, body, headers, method)
+H.http = http73c; a73.clear(); s73c = {}; json.dump([5, 4, 3, 2, 1], open("docs/cards/2026-10-29_11.json", "w"))  # 위 top·one 시험이 덮어쓴 번호 -> 테마 5개로
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 18:00"); H.ig_comments(s73c); H.ig_comments(s73c)
+msg73 = [k["text"] for m, k in a73 if m == "sendMessage"]
+assert len(msg73) == 2 and "@kim\n링크 어디서 봐요?" in msg73[0] and "답글 초안: 프로필 링크 → 겨울템 1~5번이에요 🙂" in msg73[0] and "답글 초안: 저도 궁금했어요 🙂" in msg73[1]  # 30분에 1번 · 내 댓글 X
+assert a73[0][1]["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "igr:x1" and s73c["igrd_x1"]["draft"].startswith("프로필 링크")
+c73h.clear(); upd73 = [{"update_id": 9, "callback_query": {"from": {"id": int(H.ADMIN)}, "data": "igr:x1", "message": {"message_id": s73c["igrd_x1"]["mid"], "chat": {"id": 1}}}},
+                       {"update_id": 10, "message": {"message_id": 99, "from": {"id": int(H.ADMIN)}, "text": "고마워요! 오늘 재고 넉넉해요", "reply_to_message": {"message_id": s73c["igrd_x2"]["mid"]}}}]
+H.tg = lambda m, **k: (upd73 if m == "getUpdates" and "offset" not in k else a73.append((m, k)) or {"message_id": 1})
+with contextlib.redirect_stdout(io.StringIO()):
+    H.publish_approved(s73c)
+assert [(u.split("/")[-2], b["message"]) for m, u, b in c73h if u.endswith("/replies")] == [("x2", "고마워요! 오늘 재고 넉넉해요"), ("x1", "프로필 링크 → 겨울템 1~5번이에요 🙂")] and s73c["igrd_x1"]["done"]
+# 공개 릴스 컨테이너 실패 = 다시 X(F) · 토스 딜 든 카드 = 스토리 X(인스타 토스 X)
+f73 = []; fl73 = H.ig_fail; H.ig_fail = lambda seen, now, why: f73.append(why)
+def http73e(url, body=None, headers=None, method=None):
+    if method == "HEAD": return ""
+    raise OSError("(368) blocked")
+H.http, s73e = http73e, {"reel_2026-10-29": {"t": 1, "cap": "x", "feed": False}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 22:10"); H.ig_reel(s73e); H.ig_reel(s73e)
+assert s73e["igr_2026-10-29"]["fail"] == H.IG_TRIES and len(f73) == 1 and "릴스" in f73[0]; H.ig_fail, H.http = fl73, http73
+P73t = P73 + [{"t": "2026-10-29 11:00", "text": "💙 토스 특가\n[토스] 핫팩 (3,900원)", "url": "https://toss.shopping/_m/T73", "st": "hot"}]
+json.dump(P73t, open("posts73.json", "w")); json.dump([8, 0], open("docs/cards/2026-10-29_12.json", "w")); I73.new("RGB", (1080, 1350)).save("docs/cards/2026-10-29_12.jpg")
+c73h.clear(); s73t = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 12:35"); H.ig_cards(s73t)
+assert s73t["igs_2026-10-29_12"]["skip"] == "toss" and not [u for m, u, b in c73h if m == "POST"] and not os.path.exists(f"{H.STORY_DIR}/2026-10-29_12.jpg")
+json.dump(P73, open("posts73.json", "w"))
+# 22시 스토리 = 📉 표지(있으면) · 사이트 c/칸 맨 위 = 인스타 번호 그대로
+H.tg = lambda m, **k: a73.append((m, k)) or {"message_id": 1}; c73h.clear()
+os.makedirs(H.DPOST_DIR, exist_ok=True); I73.new("RGB", (1080, 1350), (240, 230, 220)).save(f"{H.DPOST_DIR}/2026-10-29_0.jpg")
+s73s = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-29 22:05"); H.ig_cards(s73s); time.time = lambda: TK("2026-10-29 22:20"); H.ig_cards(s73s)
+assert os.path.exists(f"{H.STORY_DIR}/2026-10-29.jpg") and [b for m, u, b in c73h if m == "POST"] == [{"image_url": "https://hotdealpick.kr/cards/story/2026-10-29.jpg", "media_type": "STORIES"}]
+S.IG_TOP.clear(); S.IG_TOP["winter"] = [("10월 29일 발 핫팩 10개", [(5, P73[5])]), ("10월 29일 발 시린 사무실", [(0, P73[0])])]
+lp73 = S.list_pages("winter", "❄️ 겨울템", "겨울템 모음", [(0, P73[0], (0, None, "", [], False))], "", {})[0][4]
+assert lp73.index('<section class="card" id="ig" aria-labelledby="igh"><h2 id="igh">📸 10월 29일 발 핫팩 10개</h2>') < lp73.index('<section class="card" id="ig1" aria-labelledby="igh1"><h2 id="igh1">📸 10월 29일 발 시린 사무실</h2>') and "<b>01</b>" in lp73; S.IG_TOP.clear()  # 같은 칸 게시물 여러 개 = 따로(최근 것 위 — 앞 글 댓글 번호도 그대로)
+# build: 구매 링크 형식만(theme·one·top) + 가격 맞히기는 정답 뒤 · 소통 형식(vs·ask·check·fun) X
+json.dump(["2026-10-29_11", "2026-10-29_14", "2026-10-29_17", "2026-10-29_20"], open("docs/cards/ig.json", "w"))
+json.dump({"2026-10-29_11": {"t": time.time(), "slug": "winter", "kind": "theme", "title": "발 시린 사무실"}, "2026-10-29_14": {"t": time.time(), "slug": "winter", "kind": "guess"},
+           "2026-10-29_17": {"t": time.time(), "slug": "winter", "kind": "one", "title": "발 핫팩"}, "2026-10-29_20": {"t": time.time(), "slug": "winter", "kind": "vs"}}, open("docs/cards/names.json", "w"))
+for st73b in ("2026-10-29_11", "2026-10-29_14", "2026-10-29_17", "2026-10-29_20"):
+    json.dump([0, 1], open(f"docs/cards/{st73b}.json", "w"))
+S.ig_top(P73, "docs", TK("2026-10-29 21:00"))
+assert [n for n, _ in S.IG_TOP["winter"]] == ["10월 29일 발 핫팩", "10월 29일 발 시린 사무실"]  # 정답 전 가격 맞히기·이거 vs 저거 X
+names73 = json.load(open("docs/cards/names.json")); names73["2026-10-29_14"]["ans"] = 1; json.dump(names73, open("docs/cards/names.json", "w"))
+S.ig_top(P73, "docs", TK("2026-10-29 21:00"))
+assert len(S.IG_TOP["winter"]) == 3 and [ps[0][0] for _, ps in S.IG_TOP["winter"]] == [0, 0, 0] and "ig_top(posts, out, now_ts)" in inspect.getsource(S.build); S.IG_TOP.clear()  # 정답 뒤 = 맞히기 상품도
+(H.http, H.tg, time.time, H.ig_photo, H.ai_json, H.POSTS, H.IG_H, H.IG_AUTO, H.IG_LIVE, H.METRICS, it73, uid73, H.tg_video, H.IG_GAP, H.GC_TOP, q73o) = sv73
+for k73, v73 in (("IG_TOKEN", it73), ("IG_USER_ID", uid73)): H.E.pop(k73, None) if v73 is None else H.E.__setitem__(k73, v73)
+H.RUN.pop("igq", None)
+os.chdir(cwd73)
 print("OK: 모든 셀프체크 통과")

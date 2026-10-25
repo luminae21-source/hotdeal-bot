@@ -437,7 +437,7 @@ def site_ok(p):
 
 CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
 STEM = re.compile(r"(\d{4}-\d{2}-\d{2})(?:_(\d{2}))?")  # 카드 이름: 하루 카드 = 날짜, 시간대 카드(10/11~ · 10/23 11·13·15·17·19시) = 날짜_시(두 자리)
-SLOT_NAMES = {"11": "오전 11시", "13": "낮 1시", "15": "오후 3시", "17": "오후 5시", "19": "저녁 7시", "12": "낮 12시", "18": "저녁 6시"}  # 시간대 카드 이름(hotdeal.IG_SLOTS와 같은 시각 + 10/23 전 칸 이름)
+SLOT_NAMES = {"09": "오전 9시", "11": "오전 11시", "13": "낮 1시", "15": "오후 3시", "17": "오후 5시", "19": "저녁 7시", "12": "낮 12시", "18": "저녁 6시"}  # 시간대 카드 이름(hotdeal.IG_SLOTS와 같은 시각 + 10/23 전 칸 이름)
 
 
 def day_deals(posts, day):
@@ -481,9 +481,33 @@ def find_url(title):
     return "https://search.shopping.naver.com/search/all?query=" + urllib.parse.quote(q[:60])
 
 
+CARD_NAMES = "docs/cards/names.json"  # 인스타 피드 카드 이름(hotdeal.card_names_put — 10/26 H·L: 테마·형식 제목 · c/칸 slug)
+
+
+def card_names():
+    try:
+        m = json.load(open(CARD_NAMES))
+        return m if isinstance(m, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
 def card_name(stem):
-    """사이트 맨 위 카드 칸 이름 '10월 12일 낮 12시 카드 딜' / 하루 카드 '10월 12일 카드 딜' — 인스타·Threads 캡션이 이 이름 그대로 가리킴."""
-    return f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (SLOT_NAMES.get(stem[11:], stem[11:] + "시") + " " if len(stem) > 10 else "") + "카드 딜"
+    """사이트 맨 위 카드 칸 이름 '10월 12일 낮 12시 카드 딜' / 하루 카드 '10월 12일 카드 딜' / 인스타 피드 카드(names.json) '10월 26일 {제목}' — 인스타·Threads 캡션이 이 이름 그대로 가리킴."""
+    t = (card_names().get(stem) or {}).get("title")
+    return f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (t if t else (SLOT_NAMES.get(stem[11:], stem[11:] + "시") + " " if len(stem) > 10 else "") + "카드 딜")
+
+
+def ig_top(posts, out, now_ts):
+    """I-2(10/26): IG_TOP 채움 — c/칸 맨 위 = 그 칸 최근 인스타 구매 링크 게시물(theme·one·top · 가격 맞히기는 정답 뒤) 1~N번(인스타 번호 = 사이트 번호) ·
+    인스타에 올린(ig.json) 어제·오늘 피드 카드, 칸마다 최근 3개 따로(최근 것 위 — 앞 글 댓글 번호도 그대로)."""
+    IG_TOP.clear()
+    live, since = (set(json.load(open(f"{out}/cards/ig.json"))) if os.path.exists(f"{out}/cards/ig.json") else set()), time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600 - 86400))
+    for x, v in sorted(card_names().items(), reverse=True):
+        if isinstance(v, dict) and v.get("slug") and (v.get("kind") in ("theme", "one", "top") or v.get("ans")) and x in live and x[:10] >= since and (ps := card_order(posts, x, out)[:CARD_N]):
+            xs = IG_TOP.setdefault(v["slug"], [])
+            if len(xs) < 3:
+                xs.append((card_name(x), ps))
 
 
 def card_picks(posts, out):
@@ -1351,6 +1375,9 @@ def ev_page(g, today):
             len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} (~{md})", "itemListElement": li})
 
 
+IG_TOP = {}  # build()가 채움: {c/칸 slug: [(카드 이름, [(i, p)]) — 최근 것 먼저, 3개까지]} — 인스타 피드 게시물 번호 그대로(I-2)
+
+
 def list_pages(slug, head, desc, xs, mall, recs):
     """목록 쪽들 [(주소, 쪽 번호, 제목, 설명, 본문, JSON-LD)]: 20개씩 + 다음·이전 쪽(검색 로봇이 따라감). 몰 쪽은 그 몰 대가성 문구 맨 위."""
     n = max(1, -(-len(xs) // PER))
@@ -1363,6 +1390,8 @@ def list_pages(slug, head, desc, xs, mall, recs):
         nav = ('<nav class="pg" aria-label="쪽">' + (f'<a class="btn2" href="{c_url(slug, k - 1)}" rel="prev">← 이전 20개</a>' if k > 1 else "")
                + (f'<a class="btn2" href="{c_url(slug, k + 1)}" rel="next">다음 20개 보기 →</a>' if k < n else "") + "</nav>") if n > 1 else ""
         body = (f'<h1 class="h">{html.escape(head)}{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md} 업데이트</div>'
+                + ("".join(f'<section class="card" id="ig{j or ""}" aria-labelledby="igh{j or ""}"><h2 id="igh{j or ""}">📸 {html.escape(nm)}</h2><div class="t">인스타 게시물 번호와 같아요 · 누르면 바로 구매 페이지</div>{pick_rows(ps)}</section>'
+                           for j, (nm, ps) in enumerate(IG_TOP.get(slug, []) if k == 1 else ())))
                 + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in part) else "") + (stat_chips(slug) if slug in dict(STAT_CHIPS) else chips_html(slug))
                 + ('<nav class="chips" aria-label="몰">' + "".join(f'<a href="{c_url(k)}?s=h" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN) + "</nav>" if slug == "hot" else "")
                 + (f'<div class="cards">{"".join(card(i, p, sh, plain=slug == "drop") for i, p, sh in part)}</div>' if part else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
@@ -2001,6 +2030,7 @@ def build(posts, out="docs"):
         if i not in gone:
             urls.append((url, p["t"][:10]))
     ls = lists(posts, days, home)
+    ig_top(posts, out, now_ts)
     tops = top_list(posts, it, evi)
     ls.update(drop=("📉 가격 내려간 상품", f"같은 구성(같은 링크) 처음 올린 가격보다 {DROP_MIN}%↑ 내린 쿠팡·네이버 상품 · 우리 기록 대비", [(i, p, sh) for i, p, sh, *_ in ds], ""),
               today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), rehot=("🔁 다시 특가", "특가 가격으로 다시 돌아온 상품", [x for x in it if x[2][0] == 0 and x[2][4]], ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
