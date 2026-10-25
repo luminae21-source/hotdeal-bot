@@ -17,6 +17,7 @@ tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Th
 igh0, H.IG_H, rpb0, H.REEL_PUBLIC = H.IG_H, False, H.REEL_PUBLIC, False  # H·L·M(10/26 인스타 피드 형식·스토리)·릴스 공개(J-1)는 맨 아래 9-73에서만
 ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는 맨 아래 9-72에서만
 tph0, H.TOSS_PHOTO = H.TOSS_PHOTO, False  # 토스 사진 글(10/26 켬 — 텔레그램·Threads만)은 맨 아래 9-66·9-69에서만
+thk0, H.TH_HOOK = H.TH_HOOK, False  # Threads 첫 줄 훅(U 10/26)은 맨 아래 9-74에서만
 dpa0, H.DPOST_AT = H.DPOST_AT, (99, 0)  # 📉 가격 내려간 상품 글(20:40)은 맨 아래 9-71에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
@@ -3186,7 +3187,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -4057,7 +4058,7 @@ def deal24(seen, src, url, ans, style, own=1):
     (t,) = c24
     return t
 seen24, KU24, GU24, TU24 = {"thvoice": {"t": TK("2026-10-21 20:00")}}, "https://link.coupang.com/a/h1NpZ1ygAT", "https://link.coupang.com/a/h1Nvu1bRx6", "https://toss.shopping/_m/5DR27WGo"
-k24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [{"line": "이 가격 실화? 장바구니각이다✨"}], 2)  # 말투 2 발랄한 반말
+k24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [{"line": "이 가격 실화? 장바구니각이다✨"}], 3)  # 말투 3 질문형(M-5 — 10/26부터 Threads 말투 5가지·반말)
 assert k24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 · 1개당 최저 🔥
@@ -4068,11 +4069,12 @@ assert k24 == f"""{H.DISCLOSURE}
 ✔ 무료반품 30일
 💡 150개짜리는 1개당 269원
 
+⏰ 10/21 19시 가격 · 결제 전 확인
+
 이 가격 실화? 장바구니각이다✨
 
-⏰ 10/21 19시 가격 · 결제 전 확인
-👉 {KU24}""", k24
-g24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{G23}", GU24, [{"line": "출퇴근용으로 쟁여 둘 만함"}], 4)  # 말투 4 짧고 깔끔한 음슴체(꾸밈말 '대용량' X)
+👉 {KU24}""", k24  # O(10/26): ⏰ 가격 시각 -> 말투 한 줄(+ 단점 하나 — 이 글은 데이터 없음 = X) -> 링크
+g24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{G23}", GU24, [{"line": "출퇴근용으로 쟁여 둘 만함"}], 4)  # 말투 4 짧은 감탄형(꾸밈말 '대용량' X)
 assert g24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 · 1개당 최저 🔥
@@ -4082,11 +4084,12 @@ assert g24 == f"""{H.DISCLOSURE}
 ✔ 리뷰 1만+ · 한 달 4,000명+ 구매
 ✔ 무료반품 30일
 
+⏰ 10/21 19시 가격 · 결제 전 확인
+
 출퇴근용으로 쟁여 둘 만함
 
-⏰ 10/21 19시 가격 · 결제 전 확인
 👉 {GU24}""", g24
-t24 = deal24(seen24, f"{H.TOSS_NOTE}\n\n{S24}", TU24, [{"line": "냉장고에 쟁여 두기 좋아요"}], 1, own=None)  # 토스(커뮤니티 토스 딜) 말투 1 단정한 해요체 — 💡 X · 게시 시점 줄 그대로 · '외 2' X
+t24 = deal24(seen24, f"{H.TOSS_NOTE}\n\n{S24}", TU24, [{"line": "냉장고에 쟁여 두기 좋겠다"}], 1, own=None)  # 토스(커뮤니티 토스 딜) 말투 1 계산형 — 💡 X · 게시 시점 줄 그대로 · '외 2' X
 assert t24 == f"""{H.TOSS_NOTE}
 
 💙 토스 특가 🔥
@@ -4095,63 +4098,65 @@ assert t24 == f"""{H.TOSS_NOTE}
 
 ✔ 무료배송
 
-냉장고에 쟁여 두기 좋아요
-
 ⚠️ 10/21 09:20 게시 시점 가격
-👉 {TU24}""", t24
+
+냉장고에 쟁여 두기 좋겠다
+단점 하나: 선착순 3,000개 한정
+
+👉 {TU24}""", t24  # 단점 = 글의 ⚠️ 확인할 점 그대로
 for t in (k24, g24, t24):
     assert all(H.th_w(l) <= H.TH_W for l in t.split("\n")[1:] if not l.startswith(("👉", "🚀", "💙"))) and len(t) <= 480 and "👋" not in t and "📲" not in t, t  # 줄마다 폭 22 안(대가성 문구·머리·링크 줄 빼고)
     assert len(re.findall(H.TH_NUM, "\n\n".join(t.split("\n\n")[1:3]))) <= H.TH_NUMS and t.count("⏰") + t.count("게시 시점") == 1 and "\n\n\n" not in t, t  # 숫자 5개까지 · 시점은 한 줄에 한 번
-assert "말투 = 발랄한 반말" in p24[0] and "말투 = 짧고 깔끔한 음슴체" in p24[1] and "말투 = 단정한 해요체" in p24[2] and all("이모지 0~1개" in p and "숫자 없이" in p for p in p24)
+assert "말투 = 질문형 반말" in p24[0] and "말투 = 짧은 감탄 반말" in p24[1] and "말투 = 계산형 반말" in p24[2] and all("이모지 0~1개" in p and "숫자 없이" in p and H.TH_FRIEND.strip() in p for p in p24)
 assert "상품명: 코멧 포켓형 손난로 핫팩 100g, 30개\n가격: 8,860원\n재료:\n" in p24[0] and "150개 40,310원이면 1개당 269원" in p24[0] and "토스 딜:" not in p24[0] and "토스 딜:" in p24[2], p24[0]  # 재료 = 줄이기 전 글
-assert "최근 줄: 이 가격 실화? 장바구니각이다✨" in p24[1] and "물음표 쓰지 않기" in p24[1] and "물음표" not in p24[0] and "👋" not in p24[0] and "link.coupang" not in p24[0]  # 물음표는 발랄한 반말만
-v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화? 장바구니각이다✨", "출퇴근용으로 쟁여 둘 만함", "냉장고에 쟁여 두기 좋아요"], v24
+assert "최근 줄: 이 가격 실화? 장바구니각이다✨" in p24[1] and "물음표 쓰지 않기" in p24[1] and "물음표 쓰지 않기" not in p24[0] and "👋" not in p24[0] and "link.coupang" not in p24[0]  # 물음표는 질문형만
+v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화? 장바구니각이다✨", "출퇴근용으로 쟁여 둘 만함", "냉장고에 쟁여 두기 좋겠다"], v24
 # Claude 실패 = 말투별 기본 한 줄(레이아웃은 그대로)
 f24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [RuntimeError("api")], 4)
-assert f24 == k24.replace("이 가격 실화? 장바구니각이다✨", H.TH_TONE_POOL[4][0]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL[4][0], f24
-m24 = seen24["thab"]["m"]; assert m24["p1"]["n"] == m24["p4"]["n"] == "[쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)" and [m24[p]["tone"] for p in ("p1", "p2", "p3", "p4")] == [2, 4, 1, 4], m24  # 지금 틀 제목 · 말투
+assert f24 == k24.replace("이 가격 실화? 장바구니각이다✨", H.TH_TONE_POOL5[4][0]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL5[4][0], f24
+m24 = seen24["thab"]["m"]; assert m24["p1"]["n"] == m24["p4"]["n"] == "[쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)" and [m24[p]["tone"] for p in ("p1", "p2", "p3", "p4")] == [3, 4, 1, 4], m24  # 지금 틀 제목 · 말투
 json.dump({}, open(H.METRICS, "w")); H.E["METRICS_DAY"] = "2026-10-21"  # metrics.json: 분류·가격대는 지금 틀 제목으로 + tone = 말투
 H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-21T10:43:00+0000"} for i, t in (("p1", k24), ("p2", g24), ("p4", f24))]}) if "/me/threads?" in url \
     else json.dumps({"data": [{"name": "views", "values": [{"value": 7}]}]}) if "/insights?" in url else http24(url)
 H.metrics(seen24); r24 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-21"]["rows"] if r["ch"] == "th"}
-assert r24["p1"]["price"] == r24["p4"]["price"] == "~1만" and r24["p2"]["price"] == "1~3만" and r24["p1"]["cat"] == r24["p4"]["cat"] and r24["p1"]["shop"] == "coupang" and [r24[p]["tone"] for p in ("p1", "p2", "p4")] == [2, 4, 4], r24
+assert r24["p1"]["price"] == r24["p4"]["price"] == "~1만" and r24["p2"]["price"] == "1~3만" and r24["p1"]["cat"] == r24["p4"]["cat"] and r24["p1"]["shop"] == "coupang" and [r24[p]["tone"] for p in ("p1", "p2", "p4")] == [3, 4, 4], r24
 del H.E["METRICS_DAY"]; H.http = http24
 # 바로 부르기(th_voice): 채널 글 그대로(👋·📲 줄 X)
 F24 = f"{H.DISCLOSURE}\n\n{K23}\n\n👉 {KU24}\n{H.th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"
-def tv24(ans, seen=None, link=KU24, text=F24, style=2):
+def tv24(ans, seen=None, link=KU24, text=F24, style=3):
     a24[:] = ans; p24.clear(); ST24[:] = [style]; s = seen if seen is not None else {}
     return H.th_voice(s, text, link), s
 assert tv24([{"line": "이 가격 실화? 장바구니각이다✨"}])[0] == k24
 for bad, style in (("30개 8,860원이면 쟁일 만함", 4), ("제가 써보니 따뜻함", 4), ("역대급 가격이라 무조건", 2), ("지금 바로 클릭", 2), ("링크는 댓글에 있음", 4), ("핫팩 쟁일 때 됐어요", 2), ("핫팩 쟁일 때죠", 4),
                    ("핫팩 몇 개 쟁여?", 4), ("바람 차가워져서 손난로 쟁여 두기 딱 좋은 날씨가 계속되는 중", 4), ("🔥 오늘 핫팩", 4), ("", 4)):
     o24 = tv24([{"line": bad}, {"line": bad}], style=style)[0]  # 숫자·써 본 척·과장·재촉·링크·~요(해요체 말투 아니면)·물음표(발랄한 반말만)·폭·라벨 줄·빈 답 -> 1번 다시 -> 기본 한 줄
-    assert (not bad or bad not in o24) and f"\n\n{H.TH_TONE_POOL[style][0]}\n\n" in o24 and len(p24) == 2 and "다시:" in p24[1], (bad, o24)
-o24 = tv24([{"line": "핫팩 쟁일 때 됐어요"}], style=1)[0]; assert "\n\n핫팩 쟁일 때 됐어요\n\n" in o24 and len(p24) == 1  # 해요체 말투(1·3) = ~요 OK
-o24 = tv24([{"line": "핫팩 몇 개 쟁여?"}], style=2)[0]; assert "\n\n핫팩 몇 개 쟁여?\n\n" in o24 and len(p24) == 1  # 물음표 = 발랄한 반말만
+    assert (not bad or bad not in o24) and f"\n\n{H.TH_TONE_POOL5[style][0]}\n\n" in o24 and len(p24) == 2 and "다시:" in p24[1], (bad, o24)
+o24 = tv24([{"line": "핫팩 쟁일 때 됐어요"}, {"line": "핫팩 쟁일 때 됐다"}], style=1)[0]; assert "\n\n핫팩 쟁일 때 됐다\n\n" in o24 and len(p24) == 2  # O(10/26): Threads = 반말만(해요체 = 1번 다시)
+o24 = tv24([{"line": "핫팩 몇 개 쟁여?"}], style=3)[0]; assert "\n\n핫팩 몇 개 쟁여?\n\n" in o24 and len(p24) == 1  # 물음표 = 질문형만
 o24 = tv24([{"line": "제가 써보니 따뜻함"}, {"line": "주머니에 하나씩 넣어 두기 좋음"}], style=4)[0]; assert "\n\n주머니에 하나씩 넣어 두기 좋음\n\n" in o24 and len(p24) == 2  # 1번 다시 쓰면 그 줄
 o24 = tv24([{"line": "핫팩 쟁이기 좋은 날 🧤✨"}], style=4)[0]; assert "\n\n핫팩 쟁이기 좋은 날\n\n" in o24, o24  # 이모지 2개↑ = 다 뺌
 assert "\n\n핫팩 쟁이기 좋은 날 ✨\n\n" in tv24([{"line": "핫팩 쟁이기 좋은 날 ✨"}], style=4)[0]  # 1개까지는 그대로
 o24, s24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋음"}] * 2, {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", "주머니에 하나씩 넣어 두기 좋음")]}}, style=4)
-assert f"\n\n{H.TH_TONE_POOL[4][0]}\n\n" in o24 and len(p24) == 2 and s24["thvoice"]["f"][-1] == re.sub(r"[\W_]+", "", H.TH_TONE_POOL[4][0]), o24  # 최근 10개와 같은 줄 = 다시 -> 기본 한 줄
-o24, s24 = tv24([RuntimeError("x")], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", H.TH_TONE_POOL[4][0])]}}, style=4); assert f"\n\n{H.TH_TONE_POOL[4][1]}\n\n" in o24  # 기본 한 줄도 최근 것 빼고
+assert f"\n\n{H.TH_TONE_POOL5[4][0]}\n\n" in o24 and len(p24) == 2 and s24["thvoice"]["f"][-1] == re.sub(r"[\W_]+", "", H.TH_TONE_POOL5[4][0]), o24  # 최근 10개와 같은 줄 = 다시 -> 기본 한 줄
+o24, s24 = tv24([RuntimeError("x")], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", H.TH_TONE_POOL5[4][0])]}}, style=4); assert f"\n\n{H.TH_TONE_POOL5[4][1]}\n\n" in o24  # 기본 한 줄도 최근 것 빼고
 o24 = tv24([{"line": "요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함"}], None, "https://link.coupang.com/a/YG", f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG", 4)[0]
 assert "\n\n요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함\n\n" in o24 and len(p24) == 1 and o24.split("\n\n")[1] == "📦 쿠팡 · 10% 할인 🔥\n요기요 상품권 2만원권\n💰 18,000원", o24  # 상품명 속 '요'는 해요체 아님 · 예전 틀 = mall_head(로켓 근거 없으면 📦 쿠팡)
 assert tv24([], None, KU24, "🔥 [쿠팡] 대가성 문구 없는 글")[0] == "🔥 [쿠팡] 대가성 문구 없는 글" and not p24  # 대가성 문구 없는 글 = 그대로(Claude 안 부름)
 X24 = f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 가격 없는 글\n\n싸다"; assert tv24([], None, KU24, X24)[0] == X24 and not p24  # 가격 못 읽음 = 지금 틀(Claude 안 부름)
 LONG24 = "https://link.coupang.com/a/" + "x" * 273  # 300자 링크(TH_LINK_MAX) -> 480자 넘으면 💡 -> ✔ -> 말투 줄 순서로 뺌(대가성 문구·머리·상품명·💰·시점·링크는 그대로)
 o24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋음"}], None, LONG24, F24.replace(KU24, LONG24), 4)[0]
-assert len(o24) <= 480 and "💡" not in o24 and "주머니에" in o24 and o24.startswith(H.DISCLOSURE) and o24.endswith(f"⏰ 10/21 19시 가격 · 결제 전 확인\n👉 {LONG24}"), o24
+assert len(o24) <= 480 and "💡" not in o24 and "주머니에" in o24 and o24.startswith(H.DISCLOSURE) and "\n\n⏰ 10/21 19시 가격 · 결제 전 확인\n\n주머니에" in o24 and o24.endswith(f"\n\n👉 {LONG24}"), o24
 x24 = F24.replace(KU24, LONG24 + "y" * 120); assert tv24([{"line": "쟁여 둘 만함"}], None, LONG24 + "y" * 120, x24, 4)[0] == x24  # 그래도 480자 넘음 = 지금 틀
 # 토스 API 개별 글(toss_th) -> 게시 시점 줄 그대로 · 다른 몰·비교 말 X(1번 다시) · 💡 X
 tt24 = H.toss_th("", "웅진식품 애사비 파인애플맛 500ml 24병", "13,070원 (20%↓)", ["🙋 음료 박스로 사는 집"], "https://toss.shopping/_m/T24")
 o24 = tv24([{"line": "다른 곳보다 쌈"}, {"line": "시원하게 쟁여 두기 좋음"}], None, "https://toss.shopping/_m/T24", tt24, 4)[0]
-assert o24 == f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n웅진식품 애사비 파인애플맛 500ml × 24병\n💰 13,070원 (20%↓)\n\n시원하게 쟁여 두기 좋음\n\n⚠️ 10/21 21:00 게시 시점 가격\n👉 https://toss.shopping/_m/T24", o24
+assert o24 == f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n웅진식품 애사비 파인애플맛 500ml × 24병\n💰 13,070원 (20%↓)\n\n⚠️ 10/21 21:00 게시 시점 가격\n\n시원하게 쟁여 두기 좋음\n\n👉 https://toss.shopping/_m/T24", o24
 assert "13,070원 (20%↓)" in p24[0] and "🙋 음료 박스로 사는 집" in p24[0] and "🛒" not in p24[0] and "다른 쇼핑몰 이름" in p24[0], p24[0]
 # 셀프체크(10/23 진우 캡처 글): 카밀 핸드크림 10/22 20:59 쿠팡 글 -> 고정 레이아웃
 CAMIL24 = (f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n카밀 핸드 앤 네일 크림 클래식 100ml 3개\n8,630원\n쿠팡 검색 상위 핸드크림 중 단위가격 최저 — 1개 2,877원, 10ml당 288원(10/22 17시 검색 · 참고: 카밀 화이트 머스크 75ml 2개 10ml당 411원)\n"
            "⭐ 리뷰 51,181 · 한 달 2,000명 이상 구매 · 🚀 로켓배송(내일 새벽 7시 전 도착) · 30일 무료반품\n💡 독일 제조 · 캐모마일 향 · 많이 쓰면 6개(15,860원)가 1개 2,643원으로 더 쌈\n"
            "⚠️ 확인할 점: 100원 쿠폰 적용가(쿠폰 없으면 8,730원) · 결제 전 최종가 확인 (10/22 19시 가격)\n\n👉 https://link.coupang.com/a/h3vwTUbaGi\n📲 실시간 알림 t.me/hotdeal_pick")
-o24 = tv24([{"line": "오늘 이 가격이면 쟁여 두기 좋아요"}], None, "https://link.coupang.com/a/h3vwTUbaGi", CAMIL24, 1)[0]
+o24 = tv24([{"line": "오늘 이 가격이면 쟁여 둘 만하다"}], None, "https://link.coupang.com/a/h3vwTUbaGi", CAMIL24, 1)[0]
 assert o24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 🔥
@@ -4162,13 +4167,15 @@ assert o24 == f"""{H.DISCLOSURE}
 ✔ 독일 제조 · 캐모마일 향
 💡 6개짜리는 1개 2,643원
 
-오늘 이 가격이면 쟁여 두기 좋아요
-
 ⏰ 10/22 19시 100원 쿠폰가 · 결제 전 확인
-👉 https://link.coupang.com/a/h3vwTUbaGi""", o24
+
+오늘 이 가격이면 쟁여 둘 만하다
+단점 하나: 쿠폰 받아야 이 가격
+
+👉 https://link.coupang.com/a/h3vwTUbaGi""", o24  # O: 쿠폰 조건가 = 단점 하나
 print("th voice 카밀 셀프체크\n" + o24)
 b24, r24 = H.th_ab(o24, "https://link.coupang.com/a/h3vwTUbaGi")  # 링크 B(첫 댓글): ⏰ 줄 바로 아래 👇(10/23 시안), 첫 댓글 = 대가성 문구 + 👉 링크 + 📲
-assert b24.endswith("⏰ 10/22 19시 100원 쿠폰가 · 결제 전 확인\n" + H.TH_AB_MARK) and "http" not in b24 and r24 == f"{H.DISCLOSURE}\n\n👉 https://link.coupang.com/a/h3vwTUbaGi\n📲 실시간 알림 t.me/hotdeal_pick", (b24, r24)
+assert b24.endswith("단점 하나: 쿠폰 받아야 이 가격\n\n" + H.TH_AB_MARK) and "http" not in b24 and r24 == f"{H.DISCLOSURE}\n\n👉 https://link.coupang.com/a/h3vwTUbaGi\n📲 실시간 알림 t.me/hotdeal_pick", (b24, r24)
 assert [H.th_round(n) for n in (51181, 10548, 2000, 1419, 357, 12)] == ["5만+", "1만+", "2,000+", "1,400+", "350+", "12"]  # 리뷰·구매 수 = 아래로(부풀리지 않게)
 assert [H.th_name(n) for n in ("스파클 생수 2LX30병 (10/21~)", "깨끗한나라 순수 시그니처 천연펄프 3겹 롤화장지 27m 30롤", "하루온 붙이는 핫팩 50g 10매 × 4개", "해태제과 홈런볼 옥수수콘크림맛 39g x 4개")] == \
     ["스파클 생수 2L × 30병", "깨끗한나라 3겹 롤화장지 27m × 30롤", "하루온 붙이는 핫팩 50g 10매 × 4개", "해태제과 홈런볼 옥수수콘크림맛 39g × 4개"]  # 폭 넘으면 브랜드 바로 뒤 꾸밈말부터
@@ -4493,17 +4500,17 @@ assert "💸" not in th28[0] and "[쿠팡]" not in th28[0]
 pv28, vv28 = [], [{"line": "주머니에 하나씩 넣어 두기 좋음"}]
 sv28b = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: pv28.append(prompt) or vv28.pop(0)), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 time.time = lambda: TK("2026-10-22 13:05"); o28 = H.th_voice({}, th28[0], "https://link.coupang.com/a/c28")
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g × 30개\n💰 8,860원 (1개 295원)\n\n✔ 무료반품 · 내일(금) 도착\n💡 참고: 충성 317원 · 해피데이 373원\n\n주머니에 하나씩 넣어 두기 좋음\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n👉 https://link.coupang.com/a/c28", o28
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g × 30개\n💰 8,860원 (1개 295원)\n\n✔ 무료반품 · 내일(금) 도착\n💡 참고: 충성 317원 · 해피데이 373원\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n주머니에 하나씩 넣어 두기 좋음\n\n👉 https://link.coupang.com/a/c28", o28
 assert "상품명: 코멧 손난로 100g 30개\n가격: 8,860원" in pv28[0] and "토스 딜:" not in pv28[0], pv28[0]
 TT28 = H.toss_th("생필품 베스트 3위", "더건강플러스 올리브오일 1L", "15,580원 (60%↓) · ⭐ 4.7 (11,683)", ["🙋 집밥 자주 하는 집"], "https://toss.shopping/_m/t28")
 assert TT28.startswith(H.th_note(H.TOSS_NOTE) + "💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n15,580원 (60%↓) · ⭐ 4.7 (11,683)\n🙋 집밥 자주 하는 집\n⚠️ ") and H.title_of(TT28) == "[토스] 더건강플러스 올리브오일 1L (15,580원)", TT28
 vv28[:] = [{"line": "집밥 자주 하는 집이면 쟁여 둘 만함"}]; pv28.clear()
 o28 = H.th_voice({}, TT28, "https://toss.shopping/_m/t28")
-assert re.fullmatch(rf"{re.escape(H.TOSS_NOTE)}\n\n💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n💰 15,580원 \(60%↓\)\n\n✔ 평점 4\.7 · 리뷰 1만\+\n\n집밥 자주 하는 집이면 쟁여 둘 만함\n\n⚠️ \d+/\d+ \d\d:\d\d 게시 시점 가격\n👉 https://toss\.shopping/_m/t28", o28) and "토스 딜:" in pv28[0], o28  # 토스 = 평점·리뷰(반올림) ✔ · 💡 X · 게시 시점 줄 그대로
+assert re.fullmatch(rf"{re.escape(H.TOSS_NOTE)}\n\n💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n💰 15,580원 \(60%↓\)\n\n✔ 평점 4\.7 · 리뷰 1만\+\n\n⚠️ \d+/\d+ \d\d:\d\d 게시 시점 가격\n\n집밥 자주 하는 집이면 쟁여 둘 만함\n\n👉 https://toss\.shopping/_m/t28", o28) and "토스 딜:" in pv28[0], o28  # 토스 = 평점·리뷰(반올림) ✔ · 💡 X · 게시 시점 줄 그대로
 ST28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장\n⚠️ 결제 전 최종가 (10/22 20시)\n\n👉 https://link.coupang.com/a/st28"
 vv28[:] = [{"line": "오늘 특가로 싸게 나옴"}, {"line": "선물용으로 하나쯤 두기 좋음"}]; pv28.clear()
 o28 = H.th_voice({}, ST28, "https://link.coupang.com/a/st28")  # 9-31 👍 꾸준템: 말투 줄에 특가·최저·할인 X(1번 다시)
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n💰 25,800원\n\n✔ 리뷰 1,900+ · 한 달 1,000명+ 구매\n\n선물용으로 하나쯤 두기 좋음\n\n⏰ 10/22 20시 가격 · 결제 전 확인\n👉 https://link.coupang.com/a/st28", o28
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n💰 25,800원\n\n✔ 리뷰 1,900+ · 한 달 1,000명+ 구매\n\n⏰ 10/22 20시 가격 · 결제 전 확인\n\n선물용으로 하나쯤 두기 좋음\n\n👉 https://link.coupang.com/a/st28", o28
 assert "'꾸준히 팔리는 상품'" in pv28[0] and len(pv28) == 2, pv28[0]
 H.ai_voice, H.random = sv28b
 # 토스 목록: 하루특가 TOP5·17시 생필품 등 머리 = 💙 · 품절 고칠 때 게시 시점 줄(꼬리)도 남김
@@ -4523,7 +4530,7 @@ HO28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 
 vv28[:] = [{"line": "출퇴근길 주머니에 넣어 두기 좋음"}]
 sv28d = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: pv28.append(prompt) or vv28.pop(0)), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 time.time = lambda: TK("2026-10-22 13:05"); o28 = H.th_voice({}, HO28, "https://link.coupang.com/a/h28"); H.ai_voice, H.random = sv28d
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 군인핫팩 160g × 30개\n💰 13,520원 (1개당 451원)\n\n출퇴근길 주머니에 넣어 두기 좋음\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n👉 https://link.coupang.com/a/h28", o28  # 날짜 붙은 참고 숫자(10/21 검색)는 💡로 안 씀 · 정가 기준 할인 X · 말투 줄엔 숫자 X
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 군인핫팩 160g × 30개\n💰 13,520원 (1개당 451원)\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n출퇴근길 주머니에 넣어 두기 좋음\n\n👉 https://link.coupang.com/a/h28", o28  # 날짜 붙은 참고 숫자(10/21 검색)는 💡로 안 씀 · 정가 기준 할인 X · 말투 줄엔 숫자 X
 # 리뷰 보강(10/22): 가격 줄 쿠폰가 조각도 제목으로(예전 제목 그대로) · 단위가격 특수문자 이스케이프 1번 · 토스 머리 줄에 다른 몰 순위 X(strip_cmp도 칸만 뺌)
 #   · 토스 Claude 한 줄은 비교 말 X · 진우가 봇에 보낸 토스 링크 글(admin_deal·초안) = 비교 빼고 게시 시점 줄
 assert H.title_of(H.plain_of(H.mall_view("🔥 <b>[토스] 쏘울너츠 2개 (1,950원 · 5천원 쿠폰가)</b>\n\n토스 90% 할인", "https://toss.shopping/_m/q"))) == "[토스] 쏘울너츠 2개 (1,950원 · 5천원 쿠폰가)"
@@ -5285,7 +5292,7 @@ assert tv36(C36.replace("100원 쿠폰 적용가(쿠폰 없으면 8,730원)", "�
 assert tv36(C36.replace("100원 쿠폰 적용가(쿠폰 없으면 8,730원)", "향 옵션 선택 · 100원 쿠폰 적용가"))[-1] == "⏰ 10/22 19시 100원 쿠폰가 · 결제 전 확인"  # 옵션 조각이 앞이어도 쿠폰
 assert tv36(C36.replace("쿠팡 검색 상위 핸드크림 중", "참고: 아트릭스 핸드크림 3개 리뷰 312 · 쿠팡 검색 상위 핸드크림 중"))[0] == "✔ 리뷰 5만+ · 한 달 2,000명+ 구매"  # 참고 상품 리뷰 X
 assert not re.search(H.TH_UNIT, "1개당 500원 추가 할인") and re.search(H.TH_UNIT, "1개당 500원")
-s36v = {}; q36[:] = ["나도 하나 샀음", "지금 바로 담아 둘 만함"]; assert H.th_voice(s36v, C36, "https://link.coupang.com/a/c").split("\n\n")[3] == H.TH_TONE_POOL[4][0] and s36v["tone_th"]["l"] == [4]  # 써 본 척·재촉 X -> 기본 한 줄(쓴 말투 기록)
+s36v = {}; q36[:] = ["나도 하나 샀음", "지금 바로 담아 둘 만함"]; assert H.th_voice(s36v, C36, "https://link.coupang.com/a/c").split("\n\n")[4].split("\n")[0] == H.TH_TONE_POOL5[4][0] and s36v["tone_th"]["l"] == [4]  # 써 본 척·재촉 X -> 기본 한 줄(쓴 말투 기록)
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 1 if 1 in xs else xs[0])}); s36v = {}; q36[:] = ["추천해요", "강추해요"]
 o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50ml (19,900원)\n\n50ml 2개", "https://oy.run/x")
 assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
@@ -5388,7 +5395,7 @@ assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen))' in s
 assert 'tag=th_topic(seen, base="일상")' in src39(H.daily_post) and "th_topic(seen, text, cat=cat)" in src39(H.th_deal) and "link, topic)" in src39(H.th_deal) and '"topic_tag": tag' in src39(H.th_text) and '"topic_tag": tag' in src39(H.th_poll)
 assert H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)", cat="digital") == "가전" and H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)") == "핫딜"  # 리뷰: 글 cat(Claude)도 = 사이트 품목 칸
 assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비비크림 40ml\n9,900원") == "화장품" and H.th_topic({}, "🔥 [쿠팡] 햇반 24개", cat="beauty") == "장보기"  # 칸 없음 -> 화장품 낱말 · 제목 칸이 먼저(사이트와 같게)
-assert 'posts[i].get("cat"))' in src39(H.threads_deals) and "cat_fill, threads, threads_deals" in src39(H.main)  # 같은 실행에 올린 글도 cat 채운 뒤 Threads
+assert 'posts[i].get("cat"), image=img_of(posts[i]) or None)' in src39(H.threads_deals) and "cat_fill, threads, threads_deals" in src39(H.main)  # 같은 실행에 올린 글도 cat 채운 뒤 Threads
 assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
 assert 'print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
 # 9-40) 웹앱(PWA, 10/23 진우 '웹앱으로 진행'): 모든 페이지 head(manifest·아이콘·theme-color·애플 웹앱·SW 등록) · manifest 필드 · sw.js(같은 출처 GET만, HTML 네트워크 먼저, 아이콘 캐시 먼저,
@@ -7646,11 +7653,12 @@ n66 = len(c66)
 with contextlib.redirect_stdout(io.StringIO()): H.toss_soldout(s66)
 e66 = {b["message_id"]: (m, b) for m, b in c66[n66:] if m.startswith("editMessage")}
 assert e66[777][0] == "editMessageCaption" and "⛔" in e66[777][1]["caption"] and e66[777][1]["caption"].endswith("\n\n사진: 토스쇼핑") and e66[778][0] == "editMessageText" and s66["sold_777"]["it"][0][4] == 1, e66
-# Threads: 사진 글(본문 + '사진: 토스쇼핑' · 링크 = 본문) · 실패 = 글만 · 사진 없으면 그대로
-H.TH_VOICE, t66 = False, []
+# Threads: 사진 글(본문 + '사진: 토스쇼핑' · 링크 = 첫 댓글 + 링크 카드 — K-1 10/26) · 실패 = 글만 · 사진 없으면 그대로
+H.TH_VOICE, t66, thr66, tro66, H.th_reply_ok = False, [], H.th_reply, H.th_reply_ok, (lambda seen: True)  # 사진 글 = 링크 첫 댓글(K-1) — 댓글 되는 토큰
+H.th_reply = lambda tok, to, text, link=None: t66.append(("reply", to, text, link)) or "R1"
 H.th_text = lambda tok, me, text, link, tag="핫딜": t66.append(("text", text, link)) or {"id": "T1"}
 H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) or {"id": "P1"}
-s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\nhttps://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=(77, 7)) == "P1" and t66 == [("img", "💙 토스 특가\n상품\nhttps://toss.im/_m/x\n\n사진: 토스쇼핑", X66["thumbnailUrl"])], t66
+s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\n👉 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=(77, 7)) == "P1" and t66 == [("img", f"💙 토스 특가\n상품\n\n{H.TH_AB_MARK}\n\n사진: 토스쇼핑", X66["thumbnailUrl"]), ("reply", "P1", "👉 구매 링크 https://toss.im/_m/x", "https://toss.im/_m/x")], t66
 assert [r["ids"] + [r.get("th")] for r in s66t["tphoto"]["m"]] == [["77", "7", "P1"]]  # 사진 글 = 상품 id별 기록(셀러 요청 내림)
 open(H.TOSS_NOIMG, "w").write("# 셀러 요청\n7  # 그룹 id\n"); t66.clear()
 assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=[77, 7]) == "T1" and [x[0] for x in t66] == ["text"]  # 줄에 선 사이 toss_noimg.txt = 글만
@@ -7658,7 +7666,8 @@ os.remove(H.TOSS_NOIMG)
 H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) and None; t66.clear()
 assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]) == "T1" and [x[0] for x in t66] == ["img", "text"] and t66[1][2] == "https://toss.im/_m/x"  # 사진 실패 = 글 + 링크 카드
 t66.clear(); H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x"); assert [x[0] for x in t66] == ["text"]
-t66.clear(); H.th_deal(s66t, "tk", "me", "가" * 495 + " https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]); assert [x[0] for x in t66] == ["text"]  # 500자 넘음 = 사진 X(글 그대로)
+t66.clear(); H.th_deal(s66t, "tk", "me", "가" * 495 + "\n👉 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]); assert [x[0] for x in t66] == ["text"]  # 500자 넘음 = 사진 X(글 그대로)
+H.th_reply, H.th_reply_ok = thr66, tro66
 H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("threads down")); assert sv66[8]("tk", "me", "t", X66["thumbnailUrl"]) is None  # 사진 글 오류 = None(부르는 쪽이 글만)
 assert all('**({"ph": 1} if ph else {})' in inspect.getsource(f) and "tph_log(seen, " in inspect.getsource(f) for f in (H.toss_solo, H.toss_picks)) and 'th_queue(seen, text, r["link"], bt, img, (r["id"], x.get("tacaId")))' in inspect.getsource(H.toss_picks)  # 품절 지켜보기 = 사진 글 표시 · 슬롯 줄도 사진
 src66 = inspect.getsource(H.toss_solo) + inspect.getsource(H.toss_picks)
@@ -8031,4 +8040,134 @@ assert len(S.IG_TOP["winter"]) == 3 and [ps[0][0] for _, ps in S.IG_TOP["winter"
 for k73, v73 in (("IG_TOKEN", it73), ("IG_USER_ID", uid73)): H.E.pop(k73, None) if v73 is None else H.E.__setitem__(k73, v73)
 H.RUN.pop("igq", None)
 os.chdir(cwd73)
+# 9-74) O·K-1·M-5(10/26 진우 — Threads 딜 글): 끝 = 친구한테 말하듯 한 줄 + '단점 하나:' 사실 한 줄(우리 데이터에서만 — 조건가·옵션·확인할 점·리뷰 적음, 없으면 X) ·
+#       ⏰ 가격 시각은 그 위 · 말투 5가지(계산·공감·질문·짧은 감탄·비교 — 비교형은 우리 기록 재료 있을 때만, 토스 X) · 사진 글 = 링크 첫 댓글(👉 구매 링크 + 링크 카드) · 1주 뒤 리포트 비교(관리봇만)
+sv74 = (H.ai_voice, H.random, H.th_text, H.th_img, H.th_reply, H.TH_VOICE, H.coupang, H.HAS_CP, H.tg, time.time, H.th_reply_ok)
+pv74, vv74, ch74 = [], [], []
+H.ai_voice = lambda prompt: pv74.append(prompt) or vv74.pop(0)
+H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or xs[0])})
+W74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g 30개\n8,860원 → 1개 295원\n🚚 내일(금) 도착 · 무료반품\n⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)\n\n👉 https://link.coupang.com/a/w74"
+vv74[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+time.time = lambda: TK("2026-10-26 13:05"); o74 = H.th_voice({}, W74, "https://link.coupang.com/a/w74")
+assert re.search(r"\n\n⏰ 10/26 10시 와우(?:회원)?가 · 결제 전 확인\n\n주머니마다 하나씩 넣어 두기 좋겠다\n단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음\n\n👉 https://link\.coupang\.com/a/w74$", o74), o74
+assert ch74[-1] == [1, 2, 3, 4] and H.TH_FRIEND.strip() in pv74[0] and "계산형" in pv74[0]  # 우리 기록 재료 없음 = 비교형 X · 친구 말투 지시
+R74 = W74.replace("⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)", "🔁 특가 때 8,860원 가격으로 다시 왔어요\n⚠️ 결제 전 최종가 (10/26 10시)").replace("8,860원 → 1개 295원", "8,860원 · ⭐ 4.5 (12)")
+vv74[:] = [{"line": "다들 이거 몇 개씩 쟁여 둬?"}]; ch74.clear()
+H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or 3)})
+o74 = H.th_voice({}, R74, "https://link.coupang.com/a/w74")
+assert ch74[-1] == [1, 2, 3, 4, 5] and "\n다들 이거 몇 개씩 쟁여 둬?\n단점 하나: 리뷰가 아직 적음\n\n👉 " in o74, o74  # 🔁 기록 = 비교형 후보 · 질문형 = 물음표 OK · 리뷰 30개 밑 = 단점
+P74 = W74.replace("⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)", "⚠️ 결제 전 최종가 (10/26 10시)")
+vv74[:] = [{"line": "이 구성 실화냐"}]
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)})
+o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
+assert "단점" not in o74 and o74.endswith("\n\n이 구성 실화냐\n\n👉 https://link.coupang.com/a/w74"), o74  # 아쉬운 점 데이터 없음 = 줄 X(지어내지 않음)
+T74 = H.toss_th("생필품 베스트 3위", "더건강플러스 올리브오일 1L", "15,580원 (60%↓) · ⭐ 4.7 (11,683)", ["🙋 집밥 자주 하는 집"], "https://toss.shopping/_m/t74")
+vv74[:] = [{"line": "집밥 자주 하면 하나쯤 있으면 든든하지"}]; ch74.clear()
+H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or xs[0])})
+nc74, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True
+o74 = H.th_voice({"tone_th": {"t": 1, "l": []}}, T74 + "\n🔁 특가 때 15,580원 가격으로 다시 왔어요", "https://toss.shopping/_m/t74"); H.TOSS_NO_CMP = nc74
+assert 5 not in ch74[-1] and "비쌈" not in o74 and "단점" not in o74  # 토스 = 비교형 X
+# U 첫 줄 훅(대가성 문구 바로 다음): 5가지 차례로 돌림(직전 2개 X) · ①② Claude(숫자 X·물음표 ①만) · ③ = 밤 12시 근거 있을 때만 · ⑤ = 단가(우리 데이터)만 · 규칙 X = ④ 기본 줄
+aj74, hk74 = H.ai_json, []
+H.TH_HOOK, H.ai_json = True, (lambda prompt, props: hk74.append(prompt) or {"hook": hka74.pop(0)})
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)})
+hka74, sh74 = ["겨울 되면 뭐부터 바꿔? 손난로!", "주머니 속이 차가워지는 계절 시작"], {}
+def hook74(text=P74, link="https://link.coupang.com/a/w74"):
+    vv74[:] = [{"line": "이 구성 실화냐"}]
+    o = H.th_voice(sh74, text, link)
+    if sh74["thvoice"].get("h"):  # 돌림 기록 = th_deal이 글 올라간 뒤(아래 K-1 셀프체크)
+        sh74["thhook"] = {"t": 1, "l": (sh74.get("thhook", {}).get("l", []) + [sh74["thvoice"]["h"]])[-2:]}
+    return o.split("\n\n")[1]
+P4_74 = H.TH_HOOK_POOL[sum(map(ord, "코멧 손난로 100g 30개")) % 3]  # ④ 줄 = 상품마다
+assert [hook74(), hook74()] == ["겨울 되면 뭐부터 바꿔? 손난로!", "주머니 속이 차가워지는 계절 시작"] and "질문 자답" in hk74[0] and "계절·상황" in hk74[1] and "상품명: 코멧 손난로 100g 30개" in hk74[0]
+assert hook74() == P4_74 and hook74() == "1개 295원꼴" and sh74["thhook"]["l"] == [4, 5] and sh74["thvoice"]["h"] == 5  # ③ 근거 없음 = 건너뜀 · ⑤ = 글의 단가
+sh74["thhook"]["l"] = [1, 2]; assert hook74(P74.replace("결제 전 최종가", "밤 12시까지 · 결제 전 최종가")) == P4_74  # 쿠팡 글 '밤 12시까지'·선착순 = ③ X(토스 하루특가만)
+nc74, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True
+TD74 = H.toss_th("하루특가", "코멧 손난로 100g 30개", "8,860원 (40%↓)", ["⏰ 밤 12시까지"], "https://toss.shopping/_m/d74")
+sh74["thhook"]["l"] = [1, 2]; assert hook74(TD74, "https://toss.shopping/_m/d74") == "이 가격 오늘 밤 12시까지"  # 토스 하루특가 + 게시 시점 오늘
+sh74["thhook"]["l"] = [1, 2]; assert hook74(TD74.replace(time.strftime("%-m/%-d ", time.gmtime(time.time() + 9 * 3600)), "10/25 "), "https://toss.shopping/_m/d74") != "이 가격 오늘 밤 12시까지"  # 어제 게시 시점(밤 12시 지나 올라감) = X
+H.TOSS_NO_CMP = nc74
+sh74["thhook"]["l"] = [1, 2]; assert hook74(P74.replace("⚠️ 결제 전 최종가 (10/26 10시)", "선착순 · 하루특가\n⚠️ 10/26 13:05 게시 시점 가격")) == P4_74  # 쿠팡 = 게시 시점 줄 있어도 ③ X
+sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["1개 295원 실화?", "주머니 속이 차가워지는 계절 시작"]; assert hook74() == "주머니 속이 차가워지는 계절 시작" and sh74["thvoice"]["h"] == 2  # ① 숫자 = 다음 차례 ②
+sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["손 시린 계절, 손난로 챙겨", "만 원도 안 되는 손난로"]; o74 = hook74()
+assert o74.startswith("🚀") and "h" not in sh74["thvoice"] and sh74["thhook"]["l"] == [5, 4]  # ① 물음표 X · ② 가격 말 = ③ 근거 X · ④⑤ 직전 2개 = 훅 없음(같은 종류 연속 X)
+sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["뭐부터 사? 지금 바로 손난로!", "겨울엔 손난로 챙겼어❓"]; assert hook74().startswith("🚀")  # 금지 말(재촉) · ② 물음표 이모지 = X
+sh74["thhook"]["l"] = [3, 4]; hka74[:] = ["겨울 되면 뭐부터 바꿔? 손난로!"]; assert hook74(P74.replace("8,860원 → 1개 295원", "8,860원")) == "겨울 되면 뭐부터 바꿔? 손난로!"  # 단가 없음 = ⑤ 건너뜀
+n74 = len(hk74); o74 = H.th_voice({}, P74.replace("https://link.coupang.com/a/w74", "https://oy.run/w74").replace(H.DISCLOSURE, H.OY_NOTE), "https://oy.run/w74")
+assert len(hk74) == n74 and not any(x in o74 for x in H.TH_HOOK_POOL)  # 올리브영 = 훅 X(큐레이터 정책)
+hk0_74 = H.th_hook; H.th_hook, sh74 = (lambda *a: ("가" * 400, 1)), {}
+vv74[:] = [{"line": "이 구성 실화냐"}]; o74 = H.th_voice(sh74, P74, "https://link.coupang.com/a/w74")
+H.th_hook = hk0_74; assert "가" * 400 not in o74 and "h" not in sh74["thvoice"], o74  # 480자 넘어 훅이 잘림 = 돌림·metrics 기록 X
+H.ai_json, H.TH_HOOK = aj74, False
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)}); vv74[:] = [{"line": "이거 괜찮지?"}, {"line": "이거 괜찮지?"}]
+o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 옵션별 가격 · 결제 전"), "https://link.coupang.com/a/w74")
+assert "괜찮지?" not in o74 and "\n이 구성 실화냐\n단점 하나: 옵션마다 가격이 달라서 고를 때 확인 필요\n" in o74, o74  # 질문형 아니면 물음표 X = 기본 줄 · 옵션별 가격 = 단점
+vv74[:] = [{"line": "이 구성 실화냐"}]
+o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 사이즈와 색상 구성이 제품마다 꽤 다르니 상세페이지 사진 꼭 확인 · 결제 전"), "https://link.coupang.com/a/w74")
+assert "단점" not in o74, o74  # 단점 줄이 폰 한 줄 넘음 = X
+fl74 = lambda w, link="https://link.coupang.com/a/w74", text=P74: (vv74.__setitem__(slice(None), [{"line": "이 구성 실화냐"}]), H.th_voice({}, text.replace("⚠️ 결제 전", f"⚠️ {w} · 결제 전"), link))[1]
+assert "단점" not in fl74("쿠폰 없이도 이 가격") and "단점 하나: 사이즈 옵션 확인 필요" in fl74("사이즈 옵션 확인") and "단점" not in fl74("카드 무이자")  # 부정·'옵션' 낱말만·무이자 = 지어내지 않음
+assert "단점 하나: 쿠폰 받아야 이 가격" in fl74("2,000원 쿠폰 적용가") and "단점 하나: 카드할인 조건가" in fl74("카드할인가")
+nc74, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True
+TW74 = T74.replace("\n\n🛒", "\n⚠️ 결제 전 확인\n\n🛒")
+assert "단점" not in fl74("다른 곳이 더 쌀 수도 있음", "https://toss.shopping/_m/t74", TW74) and "단점 하나: 사이즈 확인 필요" in fl74("사이즈 확인", "https://toss.shopping/_m/t74", TW74)  # 토스 = 다른 몰 비교 말 X
+H.TOSS_NO_CMP = nc74
+H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or 4)}); ch74.clear()
+for st74 in ("💡 처음 소개 때 8,860원", "👍 지금은 특가 아님 · 특가 때 7,900원"):
+    vv74[:] = [{"line": "어제보다 싸졌네"}, {"line": "지난번보다 내려왔네"}]
+    o74 = H.th_voice({}, P74.replace("🚚", st74 + "\n🚚"), "https://link.coupang.com/a/w74")
+    assert 5 not in ch74[-1] and "\n이 구성 실화냐\n" in o74, (ch74[-1], o74)  # '내려감' 기록 없음 = 비교형 X · '싸졌네·내려왔네' X
+vv74[:] = [{"line": "이건 그냥 사 둬"}, {"line": "얼른 질러"}]; o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
+assert "사 둬" not in o74 and "질러" not in o74 and "\n이 구성 실화냐\n" in o74  # 반말 재촉 X
+vv74[:] = [{"line": "다들 몇 개씩 쟁여❓"}, {"line": "만 원도 안 하네"}]; o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
+assert "❓" not in o74 and "만 원" not in o74  # 질문형 아니면 물음표 이모지 X · 가격 말 X
+vv74[:] = [ValueError("down")]; H.ai_voice = lambda prompt: (_ for _ in ()).throw(vv74.pop(0))
+o74 = H.th_voice({}, P74.replace("https://link.coupang.com/a/w74", "https://oy.run/w74").replace(H.DISCLOSURE, H.OY_NOTE), "https://oy.run/w74")
+assert not any(x in o74 for x in sum(H.TH_TONE_POOL5.values(), ())), o74  # 올리브영 = Claude 실패해도 기본 줄 X(큐레이터 정책)
+H.ai_voice = lambda prompt: pv74.append(prompt) or vv74.pop(0)
+# K-1: 사진 글 = 본문(주소 X + '👇 구매 링크는 첫 댓글에') + 사진 → 첫 댓글 '👉 구매 링크 …' + 링크 카드 · 토스 = 끝 '사진: 토스쇼핑' · 사진 실패 = 지금처럼 글 + 링크
+t74 = []; H.TH_VOICE, H.th_reply_ok = False, (lambda seen: True)
+H.th_text = lambda tok, me, text, link, tag="핫딜": t74.append(("text", text, link)) or {"id": "T1"}
+H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) or {"id": "P1"}
+H.th_reply = lambda tok, to, text, link=None: t74.append(("reply", to, text, link)) or "R1"
+B74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n핫팩 30개\n💰 8,860원\n\n⏰ 10/26 10시 가격 · 결제 전 확인\n\n이 구성 실화냐\n\n👉 https://link.coupang.com/a/k74"
+s74 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.th_deal(s74, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg") == "P1"
+assert t74 == [("img", B74.replace("\n\n👉 https://link.coupang.com/a/k74", "\n\n👇 구매 링크는 첫 댓글에"), "https://thumbnail.coupangcdn.com/k74.jpg"),
+               ("reply", "P1", f"{H.DISCLOSURE}\n\n👉 구매 링크 https://link.coupang.com/a/k74", "https://link.coupang.com/a/k74")] and s74["thab"]["m"]["P1"]["ph"] == 1, t74  # 댓글도 대가성 첫 줄
+t74.clear()
+with contextlib.redirect_stdout(io.StringIO()):
+    H.th_deal({}, "tk", "me", B74, "https://toss.shopping/_m/k74", image="https://static.toss.im/k74.jpg", tids=(74, 7))
+assert t74[0][0] == "img" and t74[0][1].endswith("👇 구매 링크는 첫 댓글에\n\n사진: 토스쇼핑") and t74[1][2].endswith("\n\n👉 구매 링크 https://toss.shopping/_m/k74")
+H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) and None; t74.clear()
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg") == "T1"
+assert [x[0] for x in t74] == ["img", "text"] and t74[1][1] == B74  # 사진 실패 = 지금처럼(본문 링크)
+s74t = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.th_deal(s74t, "tk", "me", B74, "https://toss.shopping/_m/k74", image="https://static.toss.im/k74.jpg", tids=(74, 7))
+assert "tphoto" not in s74t  # 토스 사진 실패 = 사진 글 기록 X(내림 요청 목록은 사진 나간 글만)
+H.th_reply_ok, t74[:] = (lambda seen: False), []
+with contextlib.redirect_stdout(io.StringIO()):
+    H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg")
+assert [x[0] for x in t74] == ["text"] and t74[0][1] == B74  # 댓글 못 다는 토큰·TH_REPLY 끔 = 사진 X, 지금처럼 글 + 링크(링크 없는 글 X)
+H.th_reply_ok = lambda seen: True
+assert "image=img_of(posts[i]) or None" in inspect.getsource(H.threads_deals) and '    if day == TH_END_FROM:\n        m[day]["chg"] = ["th_end", "th_tone5"]' in inspect.getsource(H.metrics_rows)
+s74h = {"thvoice": {"t": 1, "s": 4, "h": 3}}; H.TH_VOICE = True; vt74 = H.th_voice; H.th_voice = lambda seen, text, link, src=None: text + " "
+with contextlib.redirect_stdout(io.StringIO()):
+    H.th_deal(s74h, "tk", "me", B74, "https://link.coupang.com/a/k74")
+H.th_voice, H.TH_VOICE = vt74, False
+assert s74h["thab"]["m"]["T1"]["hook"] == 3 and s74h["thhook"]["l"] == [3] and '**({"hook": ab["hook"]} if ab.get("hook") else {})' in inspect.getsource(H.metrics_rows)  # metrics th 줄 hook(2주 뒤 훅별 조회 비교)
+# 1주 뒤 리포트: 쿠팡 클릭·주문 = 바꾼 뒤 7일 vs 그 전 7일 → 관리봇만(로그에 숫자 X) · 8~10일째 1번
+cr74, a74 = [], []
+H.coupang = lambda m, p, b=None: cr74.append(p) or ([{"click": 100}, {"click": 50}] if "/clicks" in p else [{"orderId": 1}] * (2 if "20261019" in p else 3))
+H.HAS_CP, H.tg = True, (lambda m, **k: a74.append(k.get("text")) or {"message_id": 1})
+s74e = {}
+with contextlib.redirect_stdout(io.StringIO()) as o74e:
+    time.time = lambda: TK("2026-11-03 09:00"); H.th_end_report(s74e); H.th_end_report(s74e)
+    time.time = lambda: TK("2026-11-02 23:00"); H.th_end_report({}); time.time = lambda: TK("2026-11-05 09:00"); H.th_end_report({})
+assert len(a74) == 1 and "클릭 150 → 150" in a74[0] and "주문 2 → 3" in a74[0] and "1.3% → 2.0%" in a74[0] and cr74[:2] == ["/reports/clicks?startDate=20261019&endDate=20261025", "/reports/orders?startDate=20261019&endDate=20261025&page=0"]
+assert "150" not in o74e.getvalue() and "주문" not in o74e.getvalue()  # 주문·클릭 숫자 = 공개 로그 X
+(H.ai_voice, H.random, H.th_text, H.th_img, H.th_reply, H.TH_VOICE, H.coupang, H.HAS_CP, H.tg, time.time, H.th_reply_ok) = sv74
 print("OK: 모든 셀프체크 통과")
