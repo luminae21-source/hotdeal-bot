@@ -126,7 +126,7 @@ html:not(.lay-b) .sb svg{top:10px;color:var(--sub)}html:not(.lay-b) .sb input{he
 .more2{display:block;margin:8px 2px 0;text-align:right;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
 .hs{display:flex;gap:10px;margin:10px -16px 0;padding:0 16px 4px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}.hs::-webkit-scrollbar{display:none}.hs>.g,.hs>.hc{flex:0 0 150px;min-width:0;scroll-snap-align:start}.hs .g .im{height:96px;font-size:40px}#pick .hs>.g{flex-basis:132px}#pick .hs .g .im{height:88px}
 .hc{display:flex;flex-direction:column;gap:6px}.hc .cd{color:var(--pkt);font-size:11.5px;font-weight:800;letter-spacing:-.3px}.hc>.g{flex:1}.evc{gap:4px;padding:12px;border-radius:20px;background:var(--pkbg);color:var(--ink);text-decoration:none}.evc .em{font-size:30px}.evc small{color:var(--sub);font-size:12px}
-.ch{margin:22px 2px 0;font-size:17px;font-weight:800;letter-spacing:-.5px}.mt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 0}.mt{display:flex;flex-direction:column;justify-content:center;gap:1px;height:96px;padding:0 12px;border-radius:18px;text-decoration:none}.mt b{font-size:16px;font-weight:800;letter-spacing:-.4px}.mt small{font-size:11.5px;font-weight:600}.mt i{font-style:normal;font-size:11.5px}
+.ch{margin:22px 2px 0;font-size:17px;font-weight:800;letter-spacing:-.5px}.mt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 0}.mt{display:flex;flex-direction:column;justify-content:center;gap:1px;height:96px;padding:0 12px;border-radius:18px;text-decoration:none}.mt b{font-size:16px;font-weight:800;letter-spacing:-.4px}.mt small{font-size:11.5px;font-weight:600}.mt>i{font-style:normal;font-size:11.5px}
 .nav a{position:relative}.nav b{position:absolute;top:4px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accf);color:#fff;font-size:10px;line-height:16px;text-align:center}.nav b:empty{display:none}.nav .dot{position:absolute;top:7px;left:calc(50% + 7px);width:8px;height:8px;border-radius:4px;background:var(--accf)}
 .chgs{margin:10px 0 0;padding:12px 14px;border-radius:14px;background:var(--pkbg);font-size:14px;font-weight:700}.g .chg{align-self:flex-start;margin:6px 2px 0;padding:2px 7px;border-radius:7px;background:var(--accf);color:#fff;font-size:11.5px;font-weight:800}
 .chgb>.btn2{margin-top:14px}.chgb ul{list-style:none;margin:6px 0 0;padding:0}.chgb li a{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:6px 0 0;padding:0 14px;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:700}.chgb li b{color:var(--acc)}
@@ -140,7 +140,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .qb{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}
 .myr{display:flex;gap:12px;margin:10px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}.myr::-webkit-scrollbar{display:none}.mi{position:relative;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-decoration:none}.mi .im{width:46px;height:46px;border-radius:50%;font-size:22px}.me .im{border:2px solid var(--acc);background:var(--card);color:var(--acc);font-size:13px;font-weight:800}.mi small{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;color:var(--sub)}.mi b{position:absolute;top:34px;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}.mi b.d{background:#15803D}
 @media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}
-.lw{display:inline-grid;place-items:center;flex:none;width:var(--s,20px);height:var(--s,20px);margin-right:5px;border-radius:50%;background:#fff!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);font-style:normal;vertical-align:-5px}.lw img,.lw svg{width:64%;height:64%;object-fit:contain}.q i.lw{width:46px;height:46px;margin:0}.h .lw{--s:30px;margin-right:7px;vertical-align:-6px}.mt b .lw{--s:24px;vertical-align:-6px}
+.lw{display:inline-grid;place-items:center;flex:none;width:var(--s,20px);height:var(--s,20px);margin-right:5px;border-radius:50%;background:#fff!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);font-style:normal;vertical-align:-5px}.lw{font-size:calc(var(--s,20px)*.56);line-height:1}.lw img{width:64%;height:64%;object-fit:contain}.lw svg{width:44%;height:44%}.q i.lw{width:46px;height:46px;margin:0}.h .lw{--s:30px;margin-right:7px;vertical-align:middle}.mt b .lw{--s:24px;vertical-align:-6px}.mt b,.tabs button{display:inline-flex;align-items:center}.tabs button .lw,.mt b .lw{vertical-align:0}
 .mlg{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:#fff;color:var(--m);font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:-.5px;overflow:hidden}.mlg img{width:12px;height:12px;object-fit:contain}
 .pvs{flex:none;padding:0 6px;border-radius:6px;font-size:10.5px;font-weight:800;line-height:17px;white-space:nowrap}.pvs.end{background:#E5303F;color:#fff}.pvs.on{background:#DDF5C9;color:#2F6B0F}.pvs.soon{background:#14161B;color:#fff}.pvs.past{background:var(--chip);color:var(--sub)}
 .pb{margin:10px 0 0}.pbt{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}.pbt h2{margin:0;font-size:16px;font-weight:800}.pbt a{font-size:12.5px;font-weight:700;color:var(--sub);text-decoration:none}
@@ -1091,19 +1091,18 @@ MICONS = set()  # V: out/icons/mall/에 있는 몰 로고(build가 채움 — �
 
 
 def mall_logo(k, cls="lw"):
-    """몰 로고(V 10/26 Cowork): 흰 동그라미 안 + 여백(그림 64% — 자르기·늘리기·색 바꾸기 X, object-fit contain) · alt = 몰 이름(늘 옆에 몰 글자가 있어 감싼 칸은 aria-hidden — 화면 읽기 두 번 X).
-    네이버 = si/naver.svg 모양 그대로 + 브랜드 색 #03C75A · 쿠팡·토스 = icons/mall/<몰>.png 있을 때만 -> 없으면 ''(지금 아이콘 그대로)."""
+    """몰 로고(V 10/26 Cowork): 흰 동그라미 안 + 여백(그림 64% · 네이버 N = 44%(W — 토스 그림과 눈으로 같은 크기) — 자르기·늘리기·색 바꾸기 X, object-fit contain) · alt = 몰 이름(늘 옆에 몰 글자가 있어 감싼 칸은 aria-hidden — 화면 읽기 두 번 X).
+    네이버 = si/naver.svg 모양 그대로 + 브랜드 색 #03C75A · 쿠팡·토스 = icons/mall/<몰>.png · 없으면 지금 이모지(🚀·💙)를 같은 흰 동그라미에(W — 쇼핑몰 흰 동그라미 묶음)."""
     nm = MALL_KO[k]
     if k == "naver":
         d = re.search(r'<path d="([^"]+)"', open(f"{SI_DIR}/naver.svg").read())[1]
         return f'<i class="{cls}" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="{nm}"><path fill="#03C75A" d="{d}"/></svg></i>'
-    return f'<i class="{cls}" aria-hidden="true"><img src="/icons/mall/{k}.png" alt="{nm}"></i>' if k in MICONS else ""
+    return f'<i class="{cls}" aria-hidden="true">' + (f'<img src="/icons/mall/{k}.png" alt="{nm}">' if k in MICONS else {e: x for e, _, x in MALLS}[k]) + "</i>"
 
 
 def mall_label(k, n):
-    """'🚀 쿠팡' -> 로고 + '쿠팡'(로고 있으면) / 그대로(없으면 — 글자 그대로)."""
-    lg = mall_logo(k)
-    return lg + n.split(" ", 1)[1] if lg else n
+    """'🚀 쿠팡' -> 흰 동그라미(로고·없으면 이모지) + '쿠팡'(글자 그대로)."""
+    return mall_logo(k) + n.split(" ", 1)[1]
 
 
 def ev_day(u, today):
@@ -1633,7 +1632,8 @@ def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
     a = lambda href, e, n, gc, cls="", extra="", c="": f'<a class="q{cls}" href="{href}" data-gc="{gc}"><i aria-hidden="true"' + (f' style="--c:{c}"' if c else "") + f">{e}</i>{n}{extra}</a>"
     r1 = [a(c_url("today"), "⏰", "오늘 마감", "q/today", extra=f'<b class="qb" data-qend="{dl_end}">{dl_n}개 남음</b>' if dl_n else ""), a(c_url("top"), "🏆", "많이 본" if top_live else "TOP 10", "q/top"),
           a(c_url("drop"), "📉", "가격 내림", "q/drop"), a(c_url("rehot"), "🔁", "다시 특가", "q/rehot")] \
-        + [f'<a class="q {k}" href="{c_url(k)}" data-gc="mall/{k}">{lg}{n.split()[1]}</a>' if (lg := mall_logo(k)) else a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(evh or f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # ▦ = C 혼합형만(2줄 품목 대신)
+        + [f'<a class="q {k}" href="{c_url(k)}" data-gc="mall/{k}">{mall_logo(k)}{n.split()[1]}</a>' for k, n, _ in MALL_BTN] \
+        + ([f'<a class="q evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event"><i class="lw" aria-hidden="true">🎉</i>기획전</a>'] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # W: 쇼핑몰·기획전 = 흰 동그라미 · ▦ = C 혼합형만(2줄 품목 대신)
     r2 = [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]
     return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
@@ -1641,7 +1641,7 @@ def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
 def mall_nav(evs, evh=""):
     """홈 몰 버튼 1줄(A 목록형 = 1차 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
     return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{mall_label(k, n)}</a>' for k, n, _ in MALL_BTN)
-            + (f'<a class="m evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event">🎉 기획전</a>' if evs or evh else "") + "</nav>")  # evh = /events/(기획전 모음 — 10/25)
+            + (f'<a class="m evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event"><i class="lw" aria-hidden="true">🎉</i>기획전</a>' if evs or evh else "") + "</nav>")  # evh = /events/(기획전 모음 — 10/25)
 
 
 def hot_section(it, evi, today):

@@ -7626,6 +7626,7 @@ LP_PROMO = ("gmarket.co.kr", "auction.co.kr", "lotteon.com", "ssg.com")  # 기�
 MALL_SITES = {"coupang": "https://www.coupang.com", "toss": "https://toss.im", "11st": "https://www.11st.co.kr", "ssg": "https://www.ssg.com", "gmarket": "https://www.gmarket.co.kr", "auction": "https://www.auction.co.kr",
               "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr", "emart": "https://emart.ssg.com"}  # 몰 로고 받을 첫 화면(mall_icons — 기획전 몰 + V 쿠팡·토스)
 MALL_ICONS = "docs/icons/mall"
+MALL_BLOCK_DAYS, MALL_SQUARE = 7, (0.8, 1.25)  # W(10/26 Cowork): 몰 사이트가 봇 요청을 막으면(401·403·429) 억지로 더 X — 로그만, 7일 뒤 1번 · 정사각(가로÷세로 0.8~1.25) 앱 아이콘만(가로로 긴 글자 로고 X = 이모지 그대로)
 
 
 def promo_urls():
@@ -7663,8 +7664,9 @@ def promo_links(seen):
 
 def mall_icons(seen):
     """몰 로고(10/25 Cowork 기획전 + V 10/26 쿠팡·토스 — 사이트가 바깥 주소를 실시간으로 안 부르게): 몰마다 docs/icons/mall/<몰>.png가 없으면 하루 1번
-    그 몰 첫 화면의 apple-touch-icon·icon · /favicon.ico · 구글 파비콘(같은 사이트 파비콘) 중 가장 큰 것 -> 128px PNG(비율 그대로 가운데 — 자르기·늘리기·색 바꾸기 X).
-    받으면 다시 안 부름 · 못 받으면 로그 1줄 + 사이트는 지금 아이콘(이모지·몰 글자) 그대로. 네이버 = si/naver.svg(받지 않음)."""
+    그 몰 첫 화면의 apple-touch-icon·icon · /favicon.ico · 구글 파비콘(같은 사이트 파비콘) 중 정사각(MALL_SQUARE)이고 가장 큰 것 -> 128px PNG(비율 그대로 가운데 — 자르기·늘리기·색 바꾸기 X).
+    받으면 다시 안 부름 · 못 받으면 로그 1줄 + 사이트는 지금 아이콘(이모지·몰 글자) 그대로 · 몰 사이트가 막으면(401·403·429) 거기서 멈춤(다른 주소·구글 X) + 로그, MALL_BLOCK_DAYS일 뒤 1번.
+    네이버 = si/naver.svg(받지 않음)."""
     from io import BytesIO
     from PIL import Image
     st, now = seen.setdefault("micon", {}), time.time()
@@ -7673,28 +7675,38 @@ def mall_icons(seen):
         f = f"{MALL_ICONS}/{m}.png"
         if os.path.exists(f) or now - st.get(m, 0) < 86400:
             continue
-        st[m] = now
+        st[m], home, block, wide = now, MALL_SITES[m], 0, 0
         try:
-            home = MALL_SITES[m]
             page_ = http(home)
             rels = re.findall(r'<link[^>]+rel=["\'](?:apple-touch-icon(?:-precomposed)?|(?:shortcut )?icon)["\'][^>]*>', page_, re.I)
             hrefs = [re.search(r'href=["\']([^"\']+)', l, re.I) for l in sorted(rels, key=lambda l: "apple" not in l.lower())]
             cands = [u for u in (urllib.parse.urljoin(home + "/", h[1]) for h in hrefs if h) if u.startswith(("https://", "http://"))] + [home + "/favicon.ico"]
         except Exception as e:
+            block = getattr(e, "code", 0) in (401, 403, 429) and e.code
             print("mall icon", m, type(e).__name__)
-            cands = [MALL_SITES[m] + "/favicon.ico"]
+            cands = [home + "/favicon.ico"]
         best = None
-        for u in cands + [f"https://www.google.com/s2/favicons?domain={urllib.parse.urlsplit(MALL_SITES[m]).netloc}&sz=128"]:
+        for u in [] if block else cands + [f"https://www.google.com/s2/favicons?domain={urllib.parse.urlsplit(home).netloc}&sz=128"]:
             try:
                 with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=20) as r:
                     im = Image.open(BytesIO(r.read(2_000_000)))
                     im.load()
-                if min(im.size) >= 16 and (not best or min(im.size) > min(best[0].size)):
-                    best = (im.convert("RGBA"), urllib.parse.urlsplit(u).netloc)
             except Exception as e:
                 print("mall icon", m, urllib.parse.urlsplit(u).path[-40:], type(e).__name__)
+                if getattr(e, "code", 0) in (401, 403, 429) and "google.com" not in u:  # 몰이 봇을 막음 = 다른 주소로 더 X
+                    block = e.code
+                    break
+                continue
+            if not MALL_SQUARE[0] <= im.width / im.height <= MALL_SQUARE[1]:  # 가로로 긴 글자 로고 = 동그라미에서 너무 작음 X
+                wide += 1
+            elif min(im.size) >= 16 and (not best or min(im.size) > min(best[0].size)):
+                best = (im.convert("RGBA"), urllib.parse.urlsplit(u).netloc)
+        if block and not best:  # 막히기 전에 받은 정사각 아이콘은 저장(더 묻지 않음 — W 리뷰)
+            st[m] = now + (MALL_BLOCK_DAYS - 1) * 86400
+            print("mall icon", m, f"막힘(HTTP {block}) — 더 시도 X, 사이트는 지금 아이콘 그대로({MALL_BLOCK_DAYS}일 뒤 1번)")
+            continue
         if not best:
-            print("mall icon", m, "못 받음 — 사이트는 지금 아이콘 그대로(내일 다시)")
+            print("mall icon", m, "못 받음" + (f"(정사각 아이콘 없음 — 가로로 긴 로고 {wide}개 X)" if wide else "") + " — 사이트는 지금 아이콘 그대로(내일 다시)")
             continue
         im, r = best[0], 128 / max(best[0].size)
         im = im.resize((max(1, round(im.width * r)), max(1, round(im.height * r))), Image.LANCZOS)  # 가로세로 같은 배율(늘림 X)
