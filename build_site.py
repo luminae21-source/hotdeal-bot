@@ -1547,129 +1547,154 @@ def changes_json(posts, it, ds, dl, now_ts, prev=None):
     return {"at": today, "n": {**collections.Counter(k for e in items.values() for k in e["k"]), "new": new}, "items": items, "a": alias}  # at = 날짜만(분까지 쓰면 빌드마다 파일이 바뀌어 15분 실행마다 docs 커밋)
 
 
-LINK_STYLE = "a"  # /link/ 프로필 링크 쪽 시안(10/25 진우 — 'a' 카톡·채널 동그라미 · 'b' 미니멀 목록): 이 글자 = /link/, 다른 시안 = /link/<글자>/(noindex 보관)
-KAKAO_OPENCHAT_URL = ""  # 카톡 특가방(오픈채팅) 주소 — 진우가 방 만들면 Cowork가 전달 · 비면 /link 카톡 버튼·줄 숨김
+LINK_STYLE = "ab"  # /link/ 프로필 링크 쪽(10/25 진우): 'ab' = 시안 A·B 반반(방문자마다 50:50 · 그 브라우저는 계속 같은 쪽 · 주소 v=a/v=b = 고정 보기) · 'a'|'b' = 그 시안만 — 다른 시안 미리보기 = /link/b/(LINK_STYLE 'b'면 /link/a/, noindex)
+LINK_AB = ("2026-10-26", "2026-11-08")  # A·B 비교 기간(홈 레이아웃 비교와 같은 날 마감) — 하루 집계 = hotdeal.link_ab -> link_ab.json · 자동으로 한쪽으로 몰지 않음(결과 판단 = Cowork·진우)
+KAKAO_OPENCHAT_URL = ""  # 카톡 특가방(오픈채팅) 주소 — 진우가 방 만들면 Cowork가 전달 · 비거나 https://open.kakao.com/ 아니면 /link 카톡 버튼·줄 숨김
 LINK_N = 12  # /link 지금 특가 칸 수(칩마다)
 LINK_TABS = (("all", "전체"), ("life", "생필품"), ("beauty", "뷰티"), ("food", "식품"), ("women", "여성용품"))  # 칩 = 화면 안에서만 거름(품목 = cat_of)
-LINK_CH = (("blog", "블로그", BLOG, "naver", "#03C75A", "네이버 블로그", "가격 비교 글"), ("threads", "Threads", THREADS, "threads", "#000", "Threads", "실시간 딜"),
-           ("instagram", "인스타", INSTA, "instagram", "radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)", "인스타그램", "카드 딜 · 번호로 찾기"),
-           ("telegram", "텔레그램", CHANNEL, "telegram", "#26A5E4", "텔레그램", "새 특가 바로 받기"))  # 주소 = 사이트 아래 채널 줄과 같은 것 · GoatCounter 이벤트 link/첫 칸
+LINK_CH = (("blog", "블로그", BLOG, "naver", "background:#03C75A", "네이버 블로그", "가격 비교 글"), ("threads", "Threads", THREADS, "threads", "background:#000", "Threads", "실시간 딜"),
+           ("instagram", "인스타", INSTA, "instagram", "background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)", "인스타그램", "카드 딜 · 번호로 찾기"),
+           ("telegram", "텔레그램", CHANNEL, "telegram", "background:#fff;color:#26A5E4", "텔레그램", "새 특가 바로 받기"))  # 주소 = 사이트 아래 채널 줄 · GoatCounter link/첫 칸 · 텔레그램 = 아이콘 자체가 파란 원(흰 비행기)이라 원 크기 그대로
 SI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "si")  # Simple Icons(CC0) SVG 원본 — si/README.md
 
 
-def si(k):
+def si(k, cls="si"):
     """브랜드 아이콘(si/k.svg, Simple Icons) -> 인라인 SVG: 모양(path)은 파일 그대로, 색은 CSS(currentColor) — 외부 CDN X."""
     d = re.search(r'<path d="([^"]+)"', open(f"{SI_DIR}/{k}.svg").read())[1]
-    return f'<svg class="si" viewBox="0 0 24 24" aria-hidden="true"><path d="{d}"/></svg>'
+    return f'<svg class="{cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="{d}"/></svg>'
 
 
 LINK_CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
-:root{--bg:#fff;--ink:#1C1C1E;--sub:#55555B;--mut:#9A9AA0;--line:#E6E6EA;--chip:#F4F4F6;--tile:#F6F6F8;--pk:#E8436B;--pke:#E8436B;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--ink:#ECEEF2;--sub:#B4B9C4;--mut:#9AA0AC;--line:#262931;--chip:#24272E;--tile:#ECECEF;--pk:#FF5C72;--pke:#FF9AA6;color-scheme:dark}}
+:root{--bg:#fff;--ink:#1C1C1E;--sub:#55555B;--mut:#6B7180;--line:#E6E6EA;--chip:#F4F4F6;--tile:#F6F6F8;--pk:#E8436B;--pke:#D6365E;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1013;--ink:#ECEEF2;--sub:#B4B9C4;--mut:#9AA0AC;--line:#262931;--chip:#24272E;--tile:#24272E;--pk:#FF5C72;--pke:#FF9AA6;color-scheme:dark}}
 @font-face{font-family:"HDP Sans";src:url(/fonts/hdpsans-v1.woff2) format("woff2");font-weight:400 800;font-display:swap}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "HDP Sans",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 main{max-width:480px;margin:0 auto;padding:22px calc(18px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}a{color:inherit;text-decoration:none}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--pk);outline-offset:2px}
-.si{display:block;fill:currentColor}.disc{font-size:11px;color:var(--mut);line-height:1.5;margin:6px 2px 0}
-.sec{display:flex;justify-content:space-between;align-items:baseline;margin:22px 2px 10px}.sec b{font-size:18px;font-weight:800}.sec b span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
-.cr{display:flex;gap:6px;overflow-x:auto;padding:0 2px 4px;scrollbar-width:none}.cr::-webkit-scrollbar{display:none}.cr a{flex:none;max-width:180px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 11px 7px 7px;border-radius:999px;background:var(--chip);white-space:nowrap}.cr span{min-width:0;overflow:hidden;text-overflow:ellipsis}.cr b{flex:none;font-size:11px;font-weight:800;background:var(--ink);color:var(--bg);border-radius:999px;padding:1px 6px}
-.cd .sec{display:block;margin-bottom:8px}.cd .sec b{font-size:16px}.cd .sec small{display:block;margin-top:1px}.cd details{margin-top:6px}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}
-.chips{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chips button{flex:none;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:0;border-radius:999px;background:var(--chip);color:var(--sub);cursor:pointer}.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.si{display:block;fill:currentColor}.disc{font-size:11.5px;color:var(--sub);line-height:1.5;margin:6px 2px 0}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:20px 2px 8px}.sec h2{margin:0;font-size:18px;font-weight:800;line-height:1.35}.sec h2 span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
+.cd .sec{margin:16px 2px 6px}.cd h2{font-size:15px}.cd h2 small{font-weight:600;margin-left:4px}
+.cr{display:flex;gap:6px;overflow-x:auto;padding:4px 3px 6px;margin:0 -3px;scrollbar-width:none}.cr::-webkit-scrollbar{display:none}.cr a{flex:none;max-width:180px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 11px 7px 7px;border-radius:999px;background:var(--chip);white-space:nowrap}.cr span{min-width:0;overflow:hidden;text-overflow:ellipsis}.cr b{flex:none;font-size:11px;font-weight:800;background:var(--ink);color:var(--bg);border-radius:999px;padding:1px 6px}
+.cd details{margin-top:2px}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
+.chips{display:flex;gap:6px;margin:0 -3px 8px;padding:4px 3px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chips button{flex:none;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:0;border-radius:999px;background:var(--chip);color:var(--sub);cursor:pointer}.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}.g a{min-width:0}.im{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--tile)}
-.im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:var(--tile)}
+.im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
+@media(prefers-color-scheme:dark){.im img{mix-blend-mode:normal}}
 .no{position:absolute;left:6px;top:6px;background:rgba(28,28,30,.82);color:#fff;font-size:11px;font-weight:700;border-radius:8px;padding:2px 7px}
-.nm{font-size:12px;line-height:1.38;height:33px;overflow:hidden;margin:7px 2px 2px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pr{font-size:14px;font-weight:800;margin:0 2px}.pr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--pke);margin-left:4px}
+.nm{font-size:12px;line-height:1.38;height:33px;overflow:hidden;margin:7px 2px 2px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pr{font-size:14px;font-weight:800;margin:0 2px}.pr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--pke);margin-left:4px}.ck{font-size:10.5px;color:var(--mut);margin:0 2px}
 .all{display:block;text-align:center;font-weight:700;font-size:15px;margin:22px 0 0;padding:13px;border-radius:14px;background:var(--chip)}.ft{font-size:11px;color:var(--mut);line-height:1.5;margin:10px 2px 0;text-align:center}
-.a{background:var(--bg)}.hd{display:flex;align-items:center;gap:8px}.lgi{width:32px;height:32px;border-radius:9px}.wm{font-size:17px;font-weight:800}
-.ad{margin-left:auto;font:inherit;font-size:12px;color:var(--mut);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer}.adw{font-size:11.5px;color:var(--sub);line-height:1.5;background:var(--chip);border-radius:12px;padding:10px 12px;margin:10px 0 0}
-.a h1{font-size:23px;line-height:1.38;font-weight:800;margin:20px 0 16px;letter-spacing:-.6px}.a h1 span{color:var(--pk)}
+.vb,.eb2{display:none}.lb .vb,.lb .eb2{display:block}.lb .va{display:none}
+.hd{display:flex;align-items:center;gap:8px}.lgi{width:32px;height:32px;border-radius:9px}.wm{font-size:17px;font-weight:800}
+.ad{margin-left:auto;font:inherit;font-size:12px;color:var(--sub);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer}.adw{font-size:11.5px;color:var(--sub);line-height:1.5;background:var(--chip);border-radius:12px;padding:10px 12px;margin:10px 0 0}
+.va h1{font-size:23px;line-height:1.38;font-weight:800;margin:18px 0 14px;letter-spacing:-.6px}.va h1 span{color:var(--pk)}
 .main{display:flex;justify-content:center;align-items:center;gap:6px;background:#FEE500;color:#191919;font-weight:700;font-size:15.5px;border-radius:14px;padding:14px}.main .si{width:20px;height:20px;margin-right:4px}
-.ch{display:flex;justify-content:space-between;margin:18px 2px 10px}.ch a{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--sub);width:62px}
-.ch i{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}.ch i .si{width:24px;height:24px}.ch .hm{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}.ch .hm img{width:30px;height:30px;border-radius:8px}
+.ch{display:flex;justify-content:space-between;margin:16px 2px 8px}.ch a{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--sub);width:62px}
+.ch i{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}.ch i .si{width:24px;height:24px}.ch i .fl{width:54px;height:54px}.ch .hm{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}.ch .hm img{width:30px;height:30px;border-radius:8px}
 @media(prefers-color-scheme:dark){.ch i,.bi{box-shadow:0 0 0 1px var(--line)}}
-.b{background:#FBFAF7}@media(prefers-color-scheme:dark){.b{background:var(--bg)}}.eb{font-size:11px;letter-spacing:3px;color:#8C8C8C;font-weight:600}
-.b h1{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;margin:4px 0 6px;letter-spacing:-.8px}.lgb{width:38px;height:38px;border-radius:10px}.tg{font-size:13.5px;color:var(--mut);margin:0}
-.list{margin:20px 0 10px;border-top:1px solid var(--ink)}.list a{display:flex;align-items:center;gap:10px;padding:15px 2px;border-bottom:1px solid #E4E2DC}@media(prefers-color-scheme:dark){.list a{border-color:var(--line)}}
+html.lb body{background:#FBFAF7}@media(prefers-color-scheme:dark){html.lb body{background:var(--bg)}}.eb{font-size:11px;letter-spacing:3px;color:#6E6E6E;font-weight:600}@media(prefers-color-scheme:dark){.eb{color:var(--mut)}}
+.vb h1{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;margin:4px 0 6px;letter-spacing:-.8px}.lgb{width:38px;height:38px;border-radius:10px}.tg{font-size:13.5px;color:var(--mut);margin:0}
+.list{margin:18px 0 8px;border-top:1px solid var(--ink)}.list a{display:flex;align-items:center;gap:10px;padding:13px 2px;border-bottom:1px solid #E4E2DC}@media(prefers-color-scheme:dark){.list a{border-color:var(--line)}}
 .bi{flex:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff}.bi .si{width:16px;height:16px}.list b{display:block;font-size:15.5px;font-weight:700;line-height:1.3}.list small{font-size:12.5px;color:var(--mut)}.list i{margin-left:auto;font-style:normal;color:var(--mut)}
-.b .sec b{font-size:19px}.eb2{display:block;font-size:10.5px;letter-spacing:2.5px;color:var(--pk);font-weight:600;margin-bottom:2px}.b .im{border-radius:4px;background:#fff}.b .im img{background:#fff}.b .no{left:0;top:0;border-radius:0;background:#1C1C1E;padding:3px 7px}.b .pr em{color:#C43B3B}
-@media(prefers-color-scheme:dark){.b .pr em{color:var(--pke)}}"""
-LINK_GC = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-gc],a[rel~=\"sponsored\"]');if(!a||!window.goatcounter||!goatcounter.count)return;"  # 채널 = 이벤트 link/채널 · 상품 = buy/몰 주소+경로(카드와 같게)
-           "var g=a.getAttribute('data-gc');if(!g){try{var h=new URL(a.href);g='buy/'+h.hostname+h.pathname}catch(x){return}}goatcounter.count({path:g,title:(a.textContent||'').trim().slice(0,80),event:true})})")
+.lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.eb2{font-size:10.5px;letter-spacing:2.5px;color:var(--pke);font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .no{left:0;top:0;border-radius:0;background:#1C1C1E;padding:3px 7px}.lb .pr em{color:#C43B3B}
+@media(prefers-color-scheme:dark){.lb .im{background:var(--tile)}.lb .pr em{color:var(--pke)}}"""
+LINK_V = ("(function(){var f=(location.search.match(/[?&]v=([ab])(?:&|$)/)||[])[1],v=f;if(!v){try{v=localStorage.getItem('hp_link')}catch(e){}"  # A·B 반반: 주소 v= 고정(저장·집계 X) > 이 브라우저에 정해진 쪽 > 50:50 무작위(저장 안 되면 이번만)
+          "if(v!=='a'&&v!=='b'){v=Math.random()<.5?'a':'b';try{localStorage.setItem('hp_link',v)}catch(e){}}}document.documentElement.className='l'+v;window.hpLV=v;window.hpLF=!!f;"
+          "var g=window.goatcounter||(window.goatcounter={});if(f)g.no_onload=true;else g.path=function(){return 'link-'+v}})()")  # 보기 = 가상 경로 link-a·link-b(들어온 ?ref 출처 그대로)
+LINK_GC = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-gc],a[rel~=\"sponsored\"]');if(!a||!window.goatcounter||!goatcounter.count||window.hpLF)return;"  # 채널 = link-a/채널(미리보기 쪽 = link/채널) · 상품 = buy/link-a/몰 주소+경로 · v= 고정 보기 = 집계 X
+           "var v=window.hpLV,g=a.getAttribute('data-gc');if(g){if(v)g=g.replace(/^link\\//,'link-'+v+'/')}else{try{var h=new URL(a.href);g='buy/'+(v?'link-'+v+'/':'')+h.hostname+h.pathname}catch(x){return}}"
+           "goatcounter.count({path:g,title:(a.textContent||'').trim().slice(0,80),event:true})})")
 LINK_JS = """<script>(function(){var G=document.getElementById('lg'),N=document.getElementById('dn'),B=document.querySelectorAll('.chips button');
 [].forEach.call(B,function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-k'),n=0;[].forEach.call(B,function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
 [].forEach.call(G.children,function(t){var on=(' '+t.getAttribute('data-k')+' ').indexOf(' '+k+' ')>=0;t.hidden=!on;if(on)t.querySelector('.no').textContent=++n});N.textContent=n})});
 var a=document.querySelector('.ad');if(a)a.addEventListener('click',function(){var p=document.getElementById('adw'),o=p.hidden;p.hidden=!o;a.setAttribute('aria-expanded',o?'true':'false')})})()</script>"""
 
 
-def link_pool(it):
-    """/link 지금 특가 후보: 수수료 링크(aff)만 · 일시 품절 X — 사진 있는 🔥 > 🔥 > 사진 있는 것 > 나머지(같은 칸 = 사이트 진열 순서 그대로)."""
-    xs = [x for x in it if aff(x[1].get("url")) and x[2][0] != 3]
-    return sorted(xs, key=lambda x: (x[2][0] != 0 or not img_of(x[1]), x[2][0] != 0, not img_of(x[1])))
+def link_name(p):
+    """칸·번호 줄 상품 이름: 이름 끝에 붙은 가격('… 22,900원 (무배)')은 뺌 — 시각 없는 가격 X(가격은 아래 줄에 기준 시각과 같이)."""
+    return re.sub(r"\s*\d[\d,]*\s*원(?:\s*\([^()]*\))?\s*$", "", parse(title_of(p["text"]))[1]) or parse(title_of(p["text"]))[1]
+
+
+def link_when(p, sh):
+    """칸 가격의 기준 시각(작은 회색 — 10/25 리뷰 '시각 없는 가격 X'): 다시 확인한 가격 = 'M/D H시 확인' · 토스·그 밖 = 'M/D 가격'(올린 날)."""
+    return f'{p["chk"]} 확인' if shop_of(p) != "toss" and sh[1] and p.get("chk") else f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격'
+
+
+def link_pool(it, today):
+    """/link 지금 특가 후보(10/25 리뷰): 🔥 특가 중만(⏳ 대기·👍·품절 X) · 보이는 가격이 HOT_DAYS일 안(홈 🔥 칸과 같은 규칙) · 쿠팡·토스·네이버 수수료 링크만(대가성 문구 = SHOP_NOTES 3사)
+    · 가격 있는 것만 — 사진 있는 것 먼저(같은 칸 = 사이트 진열 순서 그대로)."""
+    since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
+    xs = [x for x in it if x[2][0] == 0 and shop_of(x[1]) in SHOP_NOTES and aff(x[1].get("url")) and price_day(x[1], today) >= since and price_bits(x[1], x[2])[0]]
+    return sorted(xs, key=lambda x: not img_of(x[1]))
 
 
 def link_tabs(pool):
-    """칩마다 앞 LINK_N개 -> [(i, p, 상태, 들어가는 칩들)] — 칸은 한 번만 그리고(쪽 가볍게) data-k로 거름, 순서 = pool 순서."""
+    """칩마다 앞 LINK_N개 -> [(i, p, 상태, 들어가는 칩들)], {칩: 개수} — 칸은 한 번만 그리고(쪽 가볍게) data-k로 거름, 순서 = pool 순서(앞 = 전체 칩 1~12번)."""
     on = {k: {x[0] for x in (pool if k == "all" else [x for x in pool if cat_of(x[1]) == k])[:LINK_N]} for k, _ in LINK_TABS}
     return [(*x, [k for k, _ in LINK_TABS if x[0] in on[k]]) for x in pool if any(x[0] in s for s in on.values())], {k: len(s) for k, s in on.items()}
 
 
 def link_tile(n, i, p, sh, ks):
-    """상품 칸: 정사각 사진(없으면 품목 이모지) + 왼쪽 위 번호 + 이름 2줄 + 가격 800·작은 분홍(와우가·쿠폰가 / 토스 = 'M/D 가격' 게시 시점) — 누르면 바로 몰."""
-    name = parse(title_of(p["text"]))[1]
+    """상품 칸: 정사각 사진(없으면 품목 이모지) + 왼쪽 위 번호 + 이름 2줄 + 가격 800·작은 분홍(와우가·쿠폰가) + 기준 시각(link_when) — 누르면 바로 몰."""
     shown, ex, _ = price_bits(p, sh)
-    em = f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격' if shop_of(p) == "toss" else ex[0] if ex and len(ex[0]) <= 8 else ""
+    em = ex[0] if shop_of(p) != "toss" and ex and len(ex[0]) <= 8 else ""
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
     return (f'<a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank" data-k="{" ".join(ks)}"' + ("" if "all" in ks else " hidden")
-            + f'><div class="im"><i aria-hidden="true">{c[2] if c else "🛍️"}</i>{pic}<b class="no">{n}</b></div><div class="nm">{html.escape(name)}</div>'
-            + (f'<div class="pr">{html.escape(shown)}' + (f'<em>{html.escape(em)}</em>' if em else "") + "</div>" if shown else "") + "</a>")
+            + f'><div class="im"><i aria-hidden="true">{c[2] if c else "🛍️"}</i>{pic}<b class="no">{n}</b></div><div class="nm">{html.escape(link_name(p))}</div>'
+            + f'<div class="pr">{html.escape(shown)}' + (f'<em>{html.escape(em)}</em>' if em else "") + f'</div><div class="ck">{html.escape(link_when(p, sh))}</div></a>')
 
 
 def link_cards(posts, out):
-    """오늘 카드 딜 줄(가로): 홈 '📸 … 카드 딜'과 같은 카드·같은 번호(card_stems·card_order) — 인스타·Threads 캡션 '프로필 링크 → … 카드 딜 N번'. 24시간 안 앞 카드는 접어서."""
+    """오늘 카드 딜 번호 줄(가로): 홈 '📸 … 카드 딜'과 같은 카드·같은 번호(card_stems·card_order, CARD_N개) — 인스타·Threads 캡션 '프로필 링크 → … 카드 딜 N번'.
+    24시간 안 앞 카드는 접힌 한 줄로(첫 화면에 지금 특가 — 10/25 리뷰) · 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영)는 딜 쪽으로(그 쪽에 그 문구)."""
     blocks = [(x, ps) for x in reversed(card_stems(out)) if (ps := card_order(posts, x, out)[:CARD_N])]
-    row = lambda ps: '<div class="cr">' + "".join(f'<a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank"><b>{n:02d}</b><span>{html.escape(parse(title_of(p["text"]))[1])}</span></a>'
-                                                  for n, (i, p) in enumerate(ps, 1)) + "</div>"
-    return blocks and (f'<section class="cd" aria-labelledby="cdh"><div class="sec"><b id="cdh">📸 {html.escape(card_name(blocks[0][0]))}</b><small>인스타·Threads 카드 번호 그대로 · 누르면 바로 구매</small></div>{row(blocks[0][1])}'
-                       + "".join(f'<details><summary>{html.escape(card_name(x))}</summary>{row(ps)}</details>' for x, ps in blocks[1:]) + "</section>") or ""
+    go = lambda i, p: f"{BASE}p/{i}.html" if aff(p.get("url")) and shop_of(p) not in SHOP_NOTES else go_url(i, p)
+    row = lambda ps: '<div class="cr">' + "".join(f'<a href="{html.escape(go(i, p))}"' + (' rel="nofollow sponsored noopener" target="_blank"' if go(i, p).startswith("http") and not go(i, p).startswith(BASE) else "")
+                                                  + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, (i, p) in enumerate(ps, 1)) + "</div>"
+    return blocks and (f'<section class="cd" aria-labelledby="cdh"><div class="sec"><h2 id="cdh">📸 {html.escape(card_name(blocks[0][0]))}<small>번호 그대로</small></h2></div>{row(blocks[0][1])}'
+                       + (f'<details><summary>앞 카드 딜 {len(blocks) - 1}개</summary>' + "".join(f'<small class="cn">{html.escape(card_name(x))}</small>{row(ps)}' for x, ps in blocks[1:]) + "</details>" if blocks[1:] else "")
+                       + "</section>") or ""
 
 
-def link_page(style, posts, it, out, alt=False):
-    """/link 프로필 링크 한 장(10/25 진우 — 인스타는 글·댓글 링크가 안 눌려서 프로필 링크 하나에 채널 + 지금 특가, 외부 서비스 X): 인스타·Threads·카톡방 공지·블로그 끝에 이 주소.
-    a = 로고 머리 줄·2줄 문구·카톡 버튼(노랑)·채널 동그라미 5개 · b = 영문 작은 머리·목록 4줄(미니멀) — 아래는 같음: 대가성 3사 문구 → 오늘 카드 딜 번호 줄 → 지금 특가 12(칩) → 전체 특가 보기.
-    가볍게(사이트 CSS·검색·메뉴 X, 쪽 안 CSS·아이콘) · 측정 = GoatCounter(?ref= 출처 그대로, 채널 = 이벤트 link/채널, 상품 = buy/) · alt = 보관 시안(noindex)."""
-    rows, n = link_tabs(link_pool(it))
-    tiles = "".join(link_tile(k, *x) for k, x in enumerate(rows, 1))
-    kakao = html.escape(KAKAO_OPENCHAT_URL)
+def link_top(style, kakao):
+    """머리 블록: a = 로고 머리 줄·2줄 문구·카톡 버튼(노랑)·채널 동그라미 5개 · b = HOTDEALPICK·로고 38 + 핫딜픽 30px·목록 줄(카톡·블로그·Threads·인스타)."""
     logo = lambda c, w: f'<img class="{c}" src="/icons/icon-192.png{IV}" alt="" width="{w}" height="{w}">'
     if style == "b":
-        top = (f'<div class="eb">HOTDEALPICK</div><h1>{logo("lgb", 38)}{TITLE}</h1><p class="tg">매일 고른 생활 특가 · 가격은 매시간 확인</p><nav class="list" aria-label="{TITLE} 채널">'
-               + (f'<a href="{kakao}" data-gc="link/kakao"><span class="bi" style="background:#FEE500;color:#191919">{si("kakaotalk")}</span><span><b>카톡 특가방</b><small>하루 한 번 오늘의 픽</small></span><i aria-hidden="true">→</i></a>' if kakao else "")
-               + "".join(f'<a href="{u}" data-gc="link/{k}"><span class="bi" style="background:{bg}">{si(ic)}</span><span><b>{nm}</b><small>{d}</small></span><i aria-hidden="true">→</i></a>'
-                         for k, _, u, ic, bg, nm, d in LINK_CH if k != "telegram") + "</nav>")
-        head = f'<span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span>'
-    else:
-        top = (f'<header class="hd">{logo("lgi", 32)}<b class="wm">{TITLE}</b><button class="ad" type="button" aria-expanded="false" aria-controls="adw">제휴 안내</button></header>'
-               f'<p class="adw" id="adw" hidden>{DISCLOSURE}</p><h1>오늘 살 만한 생활템,<br><span>매일</span> 골라 드려요</h1>'
-               + (f'<a class="main" href="{kakao}" data-gc="link/kakao">{si("kakaotalk")}카톡 특가방 들어가기 →</a>' if kakao else "")
-               + f'<nav class="ch" aria-label="{TITLE} 채널">' + "".join(f'<a href="{u}" data-gc="link/{k}"><i style="background:{bg}">{si(ic)}</i>{s}</a>' for k, s, u, ic, bg, _, _ in LINK_CH)
-               + f'<a href="{BASE}?ref=link" data-gc="link/home"><i class="hm">{logo("", 30)}</i>전체 특가</a></nav>')
-        head = f'지금 특가 <span id="dn">{n["all"]}</span>'
-    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><b id="dh">{head}</b><small>매시간 바뀌어요</small></div><div class="chips" role="group" aria-label="품목 고르기">'
+        return (f'<div class="vb"><div class="eb">HOTDEALPICK</div><h1>{logo("lgb", 38)}{TITLE}</h1><p class="tg">매일 고른 생활 특가 · 목록은 매시간 갱신</p><nav class="list" aria-label="{TITLE} 채널">'
+                + (f'<a href="{kakao}" data-gc="link/kakao"><span class="bi" style="background:#FEE500;color:#191919">{si("kakaotalk")}</span><span><b>카톡 특가방</b><small>하루 한 번 오늘의 픽</small></span><i aria-hidden="true">→</i></a>' if kakao else "")
+                + "".join(f'<a href="{u}" data-gc="link/{k}"><span class="bi" style="{bg}">{si(ic)}</span><span><b>{nm}</b><small>{d}</small></span><i aria-hidden="true">→</i></a>'
+                          for k, _, u, ic, bg, nm, d in LINK_CH if k != "telegram") + "</nav></div>")
+    return (f'<div class="va"><header class="hd">{logo("lgi", 32)}<b class="wm">{TITLE}</b><button class="ad" type="button" aria-expanded="false" aria-controls="adw">제휴 안내</button></header>'
+            f'<p class="adw" id="adw" hidden>{DISCLOSURE}</p><h1>오늘 살 만한 생활템,<br><span>매일</span> 골라 드려요</h1>'
+            + (f'<a class="main" href="{kakao}" data-gc="link/kakao">{si("kakaotalk")}카톡 특가방 들어가기 →</a>' if kakao else "")
+            + f'<nav class="ch" aria-label="{TITLE} 채널">' + "".join(f'<a href="{u}" data-gc="link/{k}"><i style="{bg}">{si(ic, "si fl" if k == "telegram" else "si")}</i>{s}</a>' for k, s, u, ic, bg, _, _ in LINK_CH)
+            + f'<a href="{BASE}?ref=link" data-gc="link/home"><i class="hm">{logo("", 30)}</i>전체 특가</a></nav></div>')
+
+
+def link_page(style, posts, it, out, alt=False, today=None):
+    """/link 프로필 링크 한 장(10/25 진우 — 인스타는 글·댓글 링크가 안 눌려서 프로필 링크 하나에 채널 + 지금 특가, 외부 서비스 X): 인스타·Threads·카톡방 공지·블로그 끝에 이 주소.
+    style 'ab' = 머리 블록 A·B 둘 다 넣고 JS(LINK_V)가 하나만(html.la/.lb — JS 꺼짐 = A, 리다이렉트 X) · 'a'|'b' = 그 시안만. 아래는 공용(B는 클래스로 모양만): 3사 대가성 문구 → 오늘 카드 딜 번호 줄 → 지금 특가 12(칩) → 전체 특가 보기.
+    가볍게(사이트 CSS·검색·메뉴·서비스워커 X, 쪽 안 CSS·아이콘) · 측정 = GoatCounter(ab = 가상 경로 link-a·link-b + link-a/채널·buy/link-a/몰, 미리보기 = 그 쪽 경로) · alt = 미리보기(noindex)."""
+    today = today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    rows, n = link_tabs(link_pool(it, today))
+    kakao = html.escape(KAKAO_OPENCHAT_URL) if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else ""
+    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><small>매시간 바뀌어요</small></div><div class="chips" role="group" aria-label="품목 고르기">'
                       + "".join(f'<button type="button" data-k="{k}" aria-pressed="{"true" if k == "all" else "false"}">{nm}</button>' for k, nm in LINK_TABS if n[k])
-                      + f'</div><div class="g" id="lg">{tiles}</div></section>') or ""
+                      + '</div><div class="g" id="lg">' + "".join(link_tile(k, *x) for k, x in enumerate(rows, 1)) + "</div></section>") or ""
     url = f"{BASE}link/" + (f"{style}/" if alt else "")
     t, d = f"{TITLE} — 채널·지금 특가 한 번에", "카톡 특가방·블로그·Threads·인스타·텔레그램과 지금 특가 12개를 한 곳에. 쿠팡·토스·네이버 생활 특가를 매일 골라요."
-    kst = time.strftime("%m/%d %H:%M", time.gmtime(time.time() + 9 * 3600)).lstrip("0").replace("/0", "/")
-    gc = f'<script>{GC_APP}</script><script data-goatcounter="https://{GC_CODE}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script><script>{LINK_GC}</script>' if GC_CODE else ""
-    return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>{t}</title>'
-            f'<meta name="description" content="{d}">' + ('<meta name="robots" content="noindex,follow">' if alt else "")
+    kst = time.gmtime(time.time() + 9 * 3600)
+    gc = (f'<script>{GC_APP}' + (LINK_V if style == "ab" else "") + f'</script><script data-goatcounter="https://{GC_CODE}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script><script>{LINK_GC}</script>') if GC_CODE \
+        else (f"<script>{LINK_V}</script>" if style == "ab" else "")
+    return (f'<!doctype html><html lang="ko"' + (f' class="l{style}"' if style != "ab" else "") + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+            f'<title>{t}</title><meta name="description" content="{d}">' + ('<meta name="robots" content="noindex,follow">' if alt else "")
             + f'<link rel="canonical" href="{url}"><meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="website">'
             f'<meta property="og:url" content="{url}"><meta property="og:image" content="{BASE}og.png"><meta property="og:locale" content="ko_KR">'
             f'<link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
             f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">'
-            f'{FONT_HEAD}<style>{LINK_CSS}</style>{gc}</head><body class="{style}"><main>{top}<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out)}{deals}'
-            f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">표시 가격은 확인·게시 시점 기준이에요(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst} 기준</p>'
+            f'<style>{LINK_CSS}</style>{gc}</head><body><main>' + "".join(link_top(s, kakao) for s in ("a", "b") if s in style)
+            + f'<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out)}{deals}'
+            f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">칸마다 가격 아래 = 확인·게시 시각(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour:02d}:{kst.tm_min:02d} 갱신</p>'
             f'</main>{LINK_JS}</body></html>')
 
 
@@ -1816,11 +1841,12 @@ def build(posts, out="docs"):
                 shutil.rmtree(f"{out}/all/{d}")
     urls.append((f"{BASE}all.html", latest))
     urls += [u for u in [steady_page(out)] if u]
-    alt = "b" if LINK_STYLE == "a" else "a"  # /link/ = LINK_STYLE 시안 · 다른 시안 = /link/<글자>/(noindex 보관 — 사이트맵 X)
-    write(out, "link/", link_page(LINK_STYLE, posts, it, out))
-    write(out, f"link/{alt}/", link_page(alt, posts, it, out, alt=True))
-    if os.path.isdir(f"{out}/link/{LINK_STYLE}"):  # 시안을 바꾸면 옛 보관 쪽 지움
-        shutil.rmtree(f"{out}/link/{LINK_STYLE}")
+    alt = "a" if LINK_STYLE == "b" else "b"  # /link/ = LINK_STYLE('ab' = A·B 반반) · 다른 시안 미리보기 = /link/<글자>/(noindex — 사이트맵 X)
+    write(out, "link/", link_page(LINK_STYLE, posts, it, out, today=today))
+    write(out, f"link/{alt}/", link_page(alt, posts, it, out, alt=True, today=today))
+    for d in {"a", "b"} - {alt}:  # 시안을 바꾸면 옛 미리보기 쪽 지움
+        if os.path.isdir(f"{out}/link/{d}"):
+            shutil.rmtree(f"{out}/link/{d}")
     urls.append((f"{BASE}link/", latest))
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")

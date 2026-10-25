@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -6025,7 +6025,7 @@ def cp_score(seen):
                     r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
                     for h in r.get("hits") or []:
                         seen_ids.append(str(h.get("path_id")))
-                        path, n = str(h.get("path") or ""), int(h.get("count") or 0)
+                        path, n = re.sub(r"^buy/link-[ab]/", "buy/", str(h.get("path") or "")), int(h.get("count") or 0)  # /link A·B 상품 클릭(buy/link-a/몰 주소)도 같은 상품
                         if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
                             c["https://" + path[4:]] += n
                         elif (m := re.fullmatch(r"/p/(\d+)\.html", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
@@ -6060,7 +6060,7 @@ def gc_top(seen):
             r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
             for h in r.get("hits") or []:
                 seen_ids.append(str(h.get("path_id")))
-                path, n = str(h.get("path") or ""), int(h.get("count") or 0)
+                path, n = re.sub(r"^buy/link-[ab]/", "buy/", str(h.get("path") or "")), int(h.get("count") or 0)  # /link A·B 상품 클릭도 같은 상품
                 if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
                     if nb["https://" + path[4:]] == 1:  # 상품 1개로 정해지는 주소만(검색·클릭 주소 = 어느 상품인지 모름)
                         sc["https://" + path[4:]] += 3 * n
@@ -6078,6 +6078,51 @@ def gc_top(seen):
     json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(60)]}, open(GC_TOP, "w"), ensure_ascii=False)
     print("gc ok · 많이 본 순서 갱신")
     API_ST.setdefault("gc", "ok")
+
+
+LINK_AB_FILE, LINK_AB_PAGES = "link_ab.json", 10  # /link A·B 하루 집계(10/25 Cowork·진우 — 기간 = build_site.LINK_AB) · GoatCounter 경로 쪽 수(100개씩)
+
+
+def link_ab(seen):
+    """/link A·B 반반 비교(10/26~11/8 — 결과 판단은 Cowork·진우, 자동으로 한쪽으로 몰지 않음): 하루 1번(0:30 KST 뒤 첫 실행) 어제(KST) GoatCounter
+    보기 'link-a'·'link-b'(가상 경로) · 상품 클릭 'buy/link-a/…' · 채널 클릭 'link-a/…' -> link_ab.json {날짜: {a: {view, buy, ch}, b: …, line}} + 로그 줄(README 점검 표에 그대로).
+    상품 클릭률 = buy ÷ view · 채널 클릭률 = ch ÷ view. 토큰 없으면 X · 오류 = 그날 3번까지 다음 실행에 다시."""
+    tok, now = E.get("GOATCOUNTER_TOKEN"), time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
+    tries = seen.get("lab", {}).get("d", {}).get(day, 0)  # seen 칸 = {t, d: {날짜: 오류 횟수}}(seen 정리는 t로)
+    if not tok or not LINK_AB[0] <= day <= LINK_AB[1] or kst.tm_hour == 0 and kst.tm_min < 30 or day in load(LINK_AB_FILE, {}) or tries >= 3:
+        return
+    t0 = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() - 9 * 3600  # 어제 KST 0시(UTC)
+    hr = lambda t: time.strftime("%Y-%m-%dT%H:00:00Z", time.gmtime(t))
+    c, ids = {v: {"view": 0, "buy": 0, "ch": 0} for v in "ab"}, []
+    try:
+        for _ in range(LINK_AB_PAGES):
+            q = urllib.parse.urlencode({"start": hr(t0), "end": hr(t0 + 86400), "limit": 100, **({"exclude_paths": ",".join(ids)} if ids else {})})
+            r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
+            for h in r.get("hits") or []:
+                ids.append(str(h.get("path_id")))
+                path, n = str(h.get("path") or ""), int(h.get("count") or 0)
+                if m := re.fullmatch(r"/?link-([ab])", path):
+                    c[m[1]]["view"] += n
+                elif m := re.match(r"buy/link-([ab])/", path):
+                    c[m[1]]["buy"] += n
+                elif m := re.match(r"link-([ab])/", path):
+                    c[m[1]]["ch"] += n
+            if not r.get("more"):
+                break
+            time.sleep(0.3)  # 초당 4번 상한
+    except Exception as e:
+        lab = seen.setdefault("lab", {"d": {}})
+        lab.update(t=now, d={**lab.get("d", {}), day: tries + 1})
+        print("link ab", day, type(e).__name__, getattr(e, "code", ""))
+        return
+    pct = lambda a, b: f"{round(100 * a / b)}%" if b else "-"
+    line = f"link {int(day[5:7])}/{int(day[8:10])} " + " · ".join(f"{v} {x['view']} view {x['buy']} buy({pct(x['buy'], x['view'])}) {x['ch']} ch({pct(x['ch'], x['view'])})" for v, x in c.items())
+    d = load(LINK_AB_FILE, {})
+    d[day] = {**c, "line": line}
+    json.dump(dict(sorted(d.items())), open(LINK_AB_FILE, "w"), ensure_ascii=False, indent=1)
+    print(line)
 
 
 API_ST, API_AUTH = {}, (400, 401, 403)  # API_ST = 이번 실행 첫 호출 결과 {'tts'|'gc': 'ok' | 'fail <오류>'} — tts·gc_top이 채우고 api_check가 관리자 알림
@@ -6405,7 +6450,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

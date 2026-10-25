@@ -371,20 +371,45 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       }
     }
     const rl = [];
-    {  // 7d) /link 프로필 링크 한 장(10/25 진우 — A 기본·B /link/b/ 보관): 첫 화면 = 채널·대가성 문구 · 카톡 주소 없으면 버튼 X · 칩 = 화면 안 거름(번호 1..n·개수·12 이하) · 3열 · 제휴 안내 펼침
-      //     GoatCounter = 채널 link/채널 · 상품 buy/몰 주소 · 가로 넘침 X · 오류 X · 앱 안 브라우저(인스타)도 · 390 라이트·다크 캡처 -> docs/cards/link_preview.png
+    {  // 7d) /link(10/25 진우 — 시안 A·B 반반 같은 주소 · B 미리보기 /link/b/ noindex): 배정 = 50:50 무작위 → 이 브라우저에 저장(다시 와도 같은 쪽) · v=a/b 고정(저장·집계 X) · 저장 막힘 = 이번만 무작위 · JS 꺼짐 = A
+      //     GoatCounter 보기 = 가상 경로 link-a·link-b · 채널 = link-a/채널 · 상품 = buy/link-a/몰 주소(미리보기 = link/·buy/) · 첫 화면 = 채널·대가성 문구(A = 지금 특가 첫 줄까지) · 칩 · 번호 · 제휴 안내 · 가로 넘침 X · 390 캡처
       const GCL = r => r.fulfill({ contentType: 'text/javascript', body: 'window.__gcl=1;goatcounter.count=function(v){(window.__gc=window.__gc||[]).push(v)}' });
-      assert.ok(fs.statSync(path.join(ROOT, 'link/index.html')).size < 70000 && /name="robots" content="noindex/.test(fs.readFileSync(path.join(ROOT, 'link/b/index.html'), 'utf8')), '/link 가볍게 · /link/b/ noindex');
-      for (const [u, ua, st] of [['/link/', IOS, 'a'], ['/link/', IG, 'a'], ['/link/b/', IOS, 'b']]) for (const dark of [false, true]) {
+      const LK = fs.readFileSync(path.join(ROOT, 'link/index.html'), 'utf8'), K = /data-gc="link\/kakao"/.test(LK);
+      assert.ok(fs.statSync(path.join(ROOT, 'link/index.html')).size < 72000 && /name="robots" content="noindex/.test(fs.readFileSync(path.join(ROOT, 'link/b/index.html'), 'utf8')) && !/noindex/.test(LK), '/link 가볍게 · /link/b/ noindex');
+      const NEW = async (o = {}) => { const c = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: IOS, isMobile: true, hasTouch: true, ...o }, null); await c.route(/\/\/gc\.zgo\.at\/count\.js/, GCL); return c; };
+      const ST = p => p.evaluate(() => [document.documentElement.className, (() => { try { return localStorage.getItem('hp_link'); } catch (e) { return 'X'; } })(), window.goatcounter && goatcounter.path && goatcounter.path('/x'),
+                                         ...['.va', '.vb'].map(q => document.querySelector(q) ? getComputedStyle(document.querySelector(q)).display : ''), !!(window.goatcounter && goatcounter.no_onload)]);
+      const CLK = p => p.evaluate(() => { window.__gc = []; [document.querySelector('.' + (document.documentElement.className === 'lb' ? 'vb' : 'va') + ' nav a[data-gc]'), document.querySelector('#lg > a:not([hidden])'), document.querySelector('.cr a[rel~="sponsored"]')].filter(Boolean)
+        .forEach(a => { a.addEventListener('click', e => e.preventDefault()); a.click(); }); return window.__gc.map(v => v.event && v.path); });
+      for (const [r, v] of [[0.9, 'b'], [0.1, 'a']]) {
+        const c = await NEW(), p = await c.newPage(); await c.addInitScript(r => { if (!sessionStorage.getItem('r2')) Math.random = () => r; }, r);
+        await p.goto(U + '/link/?ref=ig', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);
+        assert.deepStrictEqual(await ST(p), ['l' + v, v, 'link-' + v, v === 'a' ? 'block' : 'none', v === 'a' ? 'none' : 'block', false], '무작위 배정 ' + v);
+        const g = await CLK(p); assert.ok(g[0] === 'link-' + v + '/blog' && g.slice(1).every(x => x.startsWith('buy/link-' + v + '/')) && g.length >= 2, 'GoatCounter 변형 표시 ' + JSON.stringify(g));
+        await p.evaluate(() => sessionStorage.setItem('r2', '1')); await c.addInitScript(r => { Math.random = () => 1 - r; }, r);  // 다시 와도(무작위가 반대여도) 같은 쪽
+        await p.goto(U + '/link/', { waitUntil: 'load' }); assert.deepStrictEqual((await ST(p)).slice(0, 3), ['l' + v, v, 'link-' + v], '다시 와도 같은 쪽 ' + v);
+        const f = v === 'a' ? 'b' : 'a'; await p.goto(U + '/link/?v=' + f, { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);  // v= 고정 = 그 쪽 보기 · 저장 그대로 · 보기·클릭 집계 X
+        assert.deepStrictEqual(await ST(p), ['l' + f, v, '/x', f === 'a' ? 'block' : 'none', f === 'a' ? 'none' : 'block', true], 'v= 고정 ' + f);
+        assert.deepStrictEqual(await CLK(p), [], 'v= 고정 = 집계 X'); await c.close();
+      }
+      { const c = await NEW(), p = await c.newPage(), err = []; p.on('pageerror', e => err.push(String(e)));  // 저장 막힘(사생활 보호 모드 등) = 이번만 무작위, 오류 X
+        await c.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); Math.random = () => 0.2; });
+        await p.goto(U + '/link/', { waitUntil: 'load' }); assert.deepStrictEqual((await ST(p)).slice(0, 3), ['la', 'X', 'link-a'], '저장 막힘 = 이번만'); assert.deepStrictEqual(err, [], '저장 막힘 오류 X'); await c.close(); }
+      { const c = await NEW({ javaScriptEnabled: false }), p = await c.newPage(); await p.goto(U + '/link/', { waitUntil: 'load' });  // JS 꺼짐 = A
+        assert.deepStrictEqual(await p.evaluate(() => [getComputedStyle(document.querySelector('.va')).display, getComputedStyle(document.querySelector('.vb')).display]), ['block', 'none'], 'JS 꺼짐 = A'); await c.close(); }
+      { const c = await NEW(), p = await c.newPage(); await p.goto(U + '/link/b/', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);  // 미리보기 = 배정·저장 X · 예전 경로
+        const s = await ST(p), g = await CLK(p); assert.ok(s[0] === 'lb' && s[1] === null && g[0] === 'link/blog' && g.length >= 2 && g.slice(1).every(x => x.startsWith('buy/') && !x.startsWith('buy/link-')), '미리보기 ' + JSON.stringify([s, g])); await c.close(); }
+      for (const [u, ua, st] of [['/link/?v=a', IOS, 'a'], ['/link/?v=a', IG, 'a'], ['/link/?v=b', IOS, 'b']]) for (const dark of [false, true]) {
         const c = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: ua, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' }, null), p = await c.newPage(), err = [];
         p.on('pageerror', e => err.push(String(e))); await c.route(/\/\/gc\.zgo\.at\/count\.js/, GCL);
-        await p.goto(U + u + '?ref=ig', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);
-        const s = await p.evaluate(() => { const R = e => e.getBoundingClientRect(), ch = [...document.querySelectorAll('nav a[data-gc]')];
-          return { sw: document.documentElement.scrollWidth, disc: R(document.querySelector('.disc')).bottom, ch: ch.map(a => a.getAttribute('data-gc')), chb: Math.max(...ch.map(a => R(a).bottom)),
-                   bg: getComputedStyle(document.body).backgroundColor, kakao: !!document.querySelector('[data-gc="link/kakao"]'), cls: document.body.className }; });
+        await p.goto(U + u + '&ref=ig', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);
+        const s = await p.evaluate(() => { const R = e => e.getBoundingClientRect(), top = document.querySelector(document.documentElement.className === 'lb' ? '.vb' : '.va'), ch = [...top.querySelectorAll('nav a[data-gc]')], t1 = document.querySelector('#lg > a');
+          return { sw: document.documentElement.scrollWidth, disc: R(document.querySelector('.disc')).bottom, ch: ch.map(a => a.getAttribute('data-gc')), chb: Math.max(...ch.map(a => R(a).bottom)), t1: t1 && R(t1).bottom,
+                   bg: getComputedStyle(document.body).backgroundColor, cls: document.documentElement.className, no: [...document.querySelectorAll('#lg > a:not([hidden]) .no')].map(b => +b.textContent) }; });
         const lum = s.bg.match(/[\d.]+/g).slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
-        assert.ok(s.sw <= 390 && s.disc <= 844 && s.chb <= 844 && !s.kakao && s.cls === st && (dark ? lum < 120 : lum > 700), '첫 화면 = 채널·대가성 문구 · 가로 넘침 X · 카톡 X · 배경 ' + u + dark + JSON.stringify(s));
-        assert.deepStrictEqual(s.ch, st === 'a' ? ['link/blog', 'link/threads', 'link/instagram', 'link/telegram', 'link/home'] : ['link/blog', 'link/threads', 'link/instagram'], '채널 ' + u);
+        assert.ok(s.sw <= 390 && s.disc <= 844 && s.chb <= 844 && s.cls === 'l' + st && (dark ? lum < 120 : lum > 700) && s.no.join() === s.no.map((_, i) => i + 1).join() && s.no.length <= 12, '첫 화면·번호 1..n ' + u + dark + JSON.stringify(s));
+        if (st === 'a') assert.ok(!s.t1 || s.t1 <= 844 - (K ? 0 : 64), 'A 첫 화면 = 지금 특가 첫 줄까지(카톡 버튼 자리 남김) ' + s.t1);
+        assert.deepStrictEqual(s.ch, [...(K ? ['link/kakao'] : []), ...(st === 'a' ? ['link/blog', 'link/threads', 'link/instagram', 'link/telegram', 'link/home'] : ['link/blog', 'link/threads', 'link/instagram'])], '채널 ' + u);
         if (st === 'a') {
           const tg = () => p.evaluate(() => [!document.getElementById('adw').hidden, document.querySelector('.ad').getAttribute('aria-expanded')]);
           await p.click('.ad'); assert.deepStrictEqual(await tg(), [true, 'true'], '제휴 안내 펼침'); await p.click('.ad'); assert.deepStrictEqual(await tg(), [false, 'false'], '제휴 안내 접기');
@@ -393,17 +418,12 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
           await p.click(`.chips button[data-k="${k}"]`);
           const v = await p.evaluate(k => { const T = [...document.querySelectorAll('#lg > a')].filter(t => !t.hidden), r = T.slice(0, 3).map(t => t.getBoundingClientRect());
             return { n: T.length, dn: +document.getElementById('dn').textContent, no: T.map(t => +t.querySelector('.no').textContent), k: T.every(t => (' ' + t.getAttribute('data-k') + ' ').includes(' ' + k + ' ')),
-                     on: [...document.querySelectorAll('.chips button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.getAttribute('data-k')),
+                     on: [...document.querySelectorAll('.chips button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.getAttribute('data-k')), ck: T.every(t => /\d+\/\d+ (\d+시 확인|가격)$/.test(t.querySelector('.ck').textContent)),
                      row: r.length < 3 || r[0].top === r[2].top && Math.abs(r[0].width - r[2].width) < 1, rel: T.every(t => /nofollow/.test(t.rel) && /sponsored/.test(t.rel) && t.target === '_blank'), sw: document.documentElement.scrollWidth }; }, k);
-          assert.ok(v.n > 0 && v.n <= 12 && v.dn === v.n && v.no.join() === v.no.map((_, i) => i + 1).join() && v.k && v.on.join() === k && v.row && v.rel && v.sw <= 390, '칩 ' + k + ' ' + JSON.stringify(v));
+          assert.ok(v.n > 0 && v.n <= 12 && v.dn === v.n && v.no.join() === v.no.map((_, i) => i + 1).join() && v.k && v.on.join() === k && v.ck && v.row && v.rel && v.sw <= 390, '칩 ' + k + ' ' + JSON.stringify(v));
         }
         await p.click('.chips button[data-k="all"]').catch(() => {});
-        if (!dark && ua === IOS) {  // GoatCounter: 채널 = link/블로그 · 상품 = buy/몰 주소+경로
-          const g = await p.evaluate(() => { window.__gc = []; const X = [document.querySelector('nav a[data-gc]'), document.querySelector('#lg > a:not([hidden])')].filter(Boolean);
-            X.forEach(a => { a.addEventListener('click', e => e.preventDefault()); a.click(); }); return window.__gc.map(v => v.event && v.path); });
-          assert.ok(g[0] === 'link/blog' && (g.length < 2 || /^buy\/[^/]+\//.test(g[1])), 'GoatCounter link/·buy/ ' + JSON.stringify(g));
-        }
-        if (ua === IOS) { await p.evaluate(() => scrollTo(0, 0)); const f = path.join(tmp, `lk${rl.length}.png`); await p.screenshot({ path: f }); rl.push([f, `/link ${st === 'a' ? 'A(기본)' : 'B(보관)'} 390${dark ? ' 다크' : ''}`]); }
+        if (ua === IOS) { await p.evaluate(() => scrollTo(0, 0)); const f = path.join(tmp, `lk${rl.length}.png`); await p.screenshot({ path: f }); rl.push([f, `/link?v=${st} ${st === 'a' ? 'A' : 'B'} 390${dark ? ' 다크' : ''}`]); }
         assert.deepStrictEqual(err, [], '/link 오류 X ' + u); await c.close();
       }
     }
