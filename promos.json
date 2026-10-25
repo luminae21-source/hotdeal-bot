@@ -1,0 +1,109 @@
+{
+ "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어.",
+ "updated": "2026-10-25 19:30",
+ "promos": [
+  {
+   "id": "cp-fresh-1025",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": "로켓프레시",
+   "name": "햇상품 기획전",
+   "start": null,
+   "end": "2026-10-25",
+   "pre": null,
+   "benefit": "햅쌀·햇과일·수산 600여 종 · 와우회원 최대 50%",
+   "tag": "햇상품 기획전",
+   "url": null,
+   "cta": {
+    "text": "핫딜픽이 고른 19개 보기",
+    "href": null
+   },
+   "src": "https://www.financialpost.co.kr/news/articleView.html?idxno=282191",
+   "chk": "2026-10-25 19:30",
+   "kw": null
+  },
+  {
+   "id": "cp-kugase-2610",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": "",
+   "name": "쿠가세 · 가전디지털 세일",
+   "start": "2026-10-12",
+   "end": null,
+   "pre": null,
+   "benefit": "300여 브랜드 · 매일 오후 2시 한정 특가",
+   "tag": null,
+   "url": null,
+   "cta": {
+    "text": "가열식 가습기 6종 비교",
+    "href": null
+   },
+   "src": "https://www.youthdaily.co.kr/news/article.html?no=228218",
+   "chk": "2026-10-25 19:30",
+   "kw": "가열식 가습기"
+  },
+  {
+   "id": "11st-grand11-2611",
+   "mall": "11st",
+   "mall_name": "11번가",
+   "sub": "",
+   "name": "그랜드 십일절",
+   "start": "2026-11-01",
+   "end": "2026-11-11",
+   "pre": {
+    "start": "2026-10-26",
+    "end": "2026-10-31"
+   },
+   "benefit": "예약구매 · 타임딜 · 멤버십 할인",
+   "tag": null,
+   "url": "https://www.11st.co.kr/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.11st.co.kr/"
+   },
+   "src": "https://www.fnnews.com/news/202610231616564882",
+   "chk": "2026-10-25 19:30",
+   "kw": null
+  },
+  {
+   "id": "ssg-ssgday-2610",
+   "mall": "ssg",
+   "mall_name": "SSG · 이마트",
+   "sub": "",
+   "name": "쓱데이",
+   "start": "2026-10-30",
+   "end": "2026-11-08",
+   "pre": null,
+   "benefit": "신세계 18개 계열사 · 반값 한우",
+   "tag": null,
+   "url": "https://www.ssg.com/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.ssg.com/"
+   },
+   "src": "https://www.mt.co.kr/living/2026/10/19/2026101916054412524",
+   "chk": "2026-10-25 19:30",
+   "kw": null
+  },
+  {
+   "id": "gm-bigsmile-2611",
+   "mall": "gmarket",
+   "mall_name": "G마켓 · 옥션",
+   "sub": "",
+   "name": "빅스마일데이",
+   "start": "2026-11-02",
+   "end": "2026-11-13",
+   "pre": null,
+   "benefit": "특가 3,000개 · 할인 쿠폰 G마켓 부담",
+   "tag": null,
+   "url": "https://www.gmarket.co.kr/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.gmarket.co.kr/"
+   },
+   "src": "https://www.fnnews.com/news/202610231616564882",
+   "chk": "2026-10-25 19:30",
+   "kw": null
+  }
+ ]
+}
