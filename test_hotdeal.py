@@ -725,7 +725,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3359,7 +3359,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -6295,10 +6295,11 @@ open("posts.json", "w").write(pj58)
 s58["cpq"]["m"].pop(U58("Y")); ev58("9,990원 와우가", chk="2026-10-25 09:00"); time.time = lambda: TK("2026-10-25 10:30"); H.own_end(s58)
 assert g58(1) == g58(2) == {"st": "wait", "now": "9,990원 와우가", "chk": "10/25 9시", "std": "2026-10-25", "stp": "hot"}, g58(2)  # 🔥 -> ⏳ = 그날·앞 상태 · 검색 가격 없어짐 = cpp 지움
 assert "std" not in g58(0) and "std" not in g58(3)  # 그대로 = X
-time.time = lambda: TK("2026-10-26 10:30"); H.own_end(s58); assert g58(2)["std"] == "2026-10-25" and g58(2)["stp"] == "hot"  # 그대로면 이어감
+st58 = lambda i: json.load(open("posts.json"))[i].get("stt"); assert st58(2) == st58(1) == "2026-10-25 10:30" and st58(0) is None  # X: 🔥 -> ⏳ 본 시각(가장 빨리 끝난 시간)
+time.time = lambda: TK("2026-10-26 10:30"); H.own_end(s58); assert g58(2)["std"] == "2026-10-25" and g58(2)["stp"] == "hot" and st58(2) == "2026-10-25 10:30"  # 그대로면 이어감
 json.dump(json.load(open("posts.json")) + [{"t": "2026-10-26 10:35", "text": "🛒 [쿠팡] 곰곰 특란 30구 (9,990원)", "url": U58("Y"), "own": 1}], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-26 10:40"); H.own_end(s58); assert (g58(4)["st"], g58(4)["std"], g58(4)["stp"]) == ("wait", "2026-10-25", "hot") == (g58(2)["st"], g58(2)["std"], g58(2)["stp"]), g58(4)  # 막 다시 올린 글(st 없음) = 앞 상태 기록 안 잃음
-ev58("9,990원 와우가", chk="2026-10-25 09:00", end="2026-10-26", why="gone"); H.own_end(s58); assert (g58(2)["st"], g58(2)["std"], g58(2)["stp"]) == ("gone", "2026-10-26", "wait"), g58(2)  # 판매 종료
+ev58("9,990원 와우가", chk="2026-10-25 09:00", end="2026-10-26", why="gone"); H.own_end(s58); assert (g58(2)["st"], g58(2)["std"], g58(2)["stp"], st58(2)) == ("gone", "2026-10-26", "wait", "2026-10-26 10:40"), g58(2)  # 판매 종료
 # gc_top: 두 쪽(exclude_paths) · 조회 + 클릭 × 3 순서 · 쿼리 뺀 주소 · 숫자 X · 1시간에 1번 · 토큰 없음 = 호출 X · 오류 = 옛 파일
 h58 = []
 def http58(url, body=None, headers=None, method=None):
@@ -8604,4 +8605,82 @@ with contextlib.redirect_stdout(io.StringIO()) as o79:
 assert os.path.exists("docs/icons/mall/toss.png") and "막힘" not in o79.getvalue() and u79[-1].endswith("/fav.png") and not any("favicon.ico" in u or "google" in u for u in u79), (u79, o79.getvalue())  # W 리뷰: 막히기 전에 받은 정사각 아이콘 = 저장(그 뒤 주소는 X)
 os.chdir(sv79[1]); shutil.rmtree(d79)
 time.time, H.http, H.urllib.request.urlopen = sv79[0], sv79[2], sv79[3]; S79.MICONS = set()
+# 9-80) X Threads '알림 받기' 유입 글(10/26 Cowork — 진우 공유 @powerful_deal 글): 일·수 21:30 1번 = 글(저장 훅 + 팁 5개) + 댓글(최근 7일 우리 기록 숫자 + 알림 → /link/?ref=thx)
+#       링크 카드 X · 댓글 권한 없으면 글 1개 · 수입 약속·리셀·단독·과장 낱말 = X · 숫자 = posts.json(changes.json ended·deadline 기준, 7일) · '가장 빨리' = 🔥 -> ⏳ 본 시각(stt)만 · metrics kind funnel(+ 댓글 조회 rv)
+import tempfile as tf80
+sv80 = (time.time, os.getcwd(), H.POSTS, H.th_bundle, H.th_reply, H.th_reply_ok, H.busy, H.E.get("THREADS_TOKEN"), H.KAKAO_OPENCHAT_URL, H.http, H.th_post, H.th_topic, H.alert, H.TH_REPLY)
+d80 = tf80.mkdtemp(); os.chdir(d80); H.POSTS = "posts.json"
+P80 = lambda t, text, url, **k: {"t": t, "text": text, "url": url, **k}
+EW80 = dict(own=1, st="wait", stp="hot")
+F80 = [P80("2026-10-27 22:20", "💙 [토스] 하루특가 휴지 (9,900원)", "https://toss.im/_m/A"), P80("2026-10-26 09:00", "🔥 [쿠팡] 세제 (5,000원) 밤 12시까지", "https://link.coupang.com/a/B"),
+           P80("2026-10-25 10:00", "🔥 [토스] 휴지 (9,900원)", "https://toss.im/_m/A", **EW80, std="2026-10-28", stt="2026-10-28 09:00"),  # 같은 상품 = 1번만 · 71시간 = 48시간 넘음 → 시간 X
+           P80("2026-10-21 10:00", "🔥 [쿠팡] 물티슈 (7,000원)", "https://link.coupang.com/a/C", **EW80, std="2026-10-22", stt="2026-10-22 11:20"),  # 25시간 20분 = 26시간 안(올림)
+           P80("2026-10-12 10:00", "🔥 [쿠팡] 옛것 (1원)", "https://link.coupang.com/a/D", **EW80, std="2026-10-21"),  # 8일 전 = X
+           P80("2026-10-20 10:00", "💙 [토스] 하루특가 옛것 (1원)", "https://toss.im/_m/E"), P80("2026-10-28 21:10", "💙 [토스] 하루특가 오늘 (1원)", "https://toss.im/_m/F"),  # 7일 밖·아직 안 끝남 = X
+           P80("2026-10-27 10:00", "📋 모음 밤 12시까지", "https://link.coupang.com/a/G"), P80("2026-10-27 10:00", "🔥 [쿠팡] 하루특가 컵 (1원)", "https://link.coupang.com/a/H"),  # 모음·토스 아닌 '하루특가' = X
+           P80("2026-10-27 10:00", "🔥 [쿠팡] 품절 (1원)", "https://link.coupang.com/a/I", own=1, st="wait", stp="out", std="2026-10-27"),  # ⏳ 앞이 🔥 아님 = X
+           P80("2026-10-27 10:00", "🔥 [쿠팡] 진열 (1원)", "https://link.coupang.com/a/S", **EW80, std="2026-10-27", stt="2026-10-27 11:00", shelf=1),  # 진열 글 = 올린 글 아님 → 개수·시간 X
+           P80("2026-10-26 20:00", "💙 [토스] 하루특가 컵라면 (1원)", "https://toss.im/_m/K", own=1, st="hot"),  # 밤 12시 뒤 확인에도 🔥 = 안 끝남(10/26 리뷰)
+           P80("2026-10-27 10:00", "🔥 [쿠팡] 일시 품절 (1원)", "https://link.coupang.com/a/J", own=1, st="out", stp="hot", std="2026-10-27"),  # ⏳ 아님 = X
+           P80("2026-10-27 08:00", "🔥 [쿠팡] 다시 올림 (1원)", "https://link.coupang.com/a/L", **EW80, std="2026-10-27", stt="2026-10-27 07:00"),  # 끝난 뒤 다시 올린 글 = 시간 X
+           P80("2026-10-27 08:00", "🛒 [네이버] 크림 (1원)", "https://naver.me/N1", **EW80, std="2026-10-27", stt="2026-10-27 08:10"),  # 🛒·👍 다시 올림(옛 🔥 글 뒤) = 시간 X(10/26 리뷰 — 10분 = '1시간 안' X)
+           P80("2026-10-27 08:00", "🔥 [쿠팡] 다시 특가 (1원)", "https://link.coupang.com/a/N2", **EW80, std="2026-10-27", stt="2026-10-27 09:00", rehot="2026-10-26")]  # 🔁 다시 특가 = 올린 때가 아님 → 시간 X
+json.dump(F80, open("posts.json", "w"), ensure_ascii=False)
+assert H.x_stats(TK("2026-10-28 21:35")) == (6, 26), H.x_stats(TK("2026-10-28 21:35"))  # 밤 12시 끝 2 + ⏳ 4(C·L·N1·N2 — A는 위와 같은 상품) · 가장 빨리 = C 25시간 20분 → 26(늦게 올린 하루특가 1시간 40분 X)
+json.dump([F80[2]], open("posts.json", "w"), ensure_ascii=False); assert H.x_stats(TK("2026-10-28 21:35")) == (1, None); json.dump(F80, open("posts.json", "w"), ensure_ascii=False)  # 48시간 넘게 걸린 것뿐 = '가장 빨리' 줄 X
+b80, r80, al80, s80 = [], [], [], {}
+H.th_bundle = lambda seen, kind, text, link=None, image=None: b80.append((kind, text, link)) or {"id": f"P{len(b80)}"}
+H.th_reply, H.th_reply_ok, H.busy, H.E["THREADS_TOKEN"], H.KAKAO_OPENCHAT_URL = (lambda tok, to, text, link=None: r80.append((to, text, link)) or "R1"), (lambda seen: True), (lambda seen, cap=True: True), "tk", ""
+H.alert, H.TH_REPLY = (lambda seen, key, text, *a, **k: al80.append((key, text))), True
+for at80 in ("2026-10-27 21:35", "2026-10-28 21:20", "2026-10-28 23:31", "2026-10-28 21:35"):  # 화요일 · 21:30 전 · 2시간 뒤 · 묶음 글 10분 안(busy) = 다음 실행
+    time.time = lambda: TK(at80); H.x_post(s80)
+assert not b80 and not r80 and not s80
+H.busy = lambda seen, cap=True: cap and (_ for _ in ()).throw(AssertionError("cap X")) or False  # 시간당 글 수 X(딜 글 수·간격 그대로 — 묶음 간격만)
+time.time = lambda: TK("2026-10-28 21:35"); H.x_post(s80); H.x_post(s80)
+assert len(b80) == 1 and b80[0][0] == "funnel" and b80[0][2] is None and "http" not in b80[0][1] and "hotdealpick" not in b80[0][1], b80  # 하루 1번 · 링크 카드 X · 글엔 주소 X
+o80 = b80[0][1].split("\n")
+assert o80[0] in H.X_HOOKS and o80[1] == "" and len(o80) == 7 and all(l[2:] in H.X_TIPS for l in o80[2:]) and len(set(o80[2:])) == 5, o80  # 저장 훅 1줄 + 팁 5개
+TW80 = "특가는 예고 없이 끝나기도 해요. 특가 뜨면 바로 알림 받아 보세요 🔔\n👉 알림 채널{}·지금 특가 한곳에 hotdealpick.kr/link/?ref=thx"
+assert r80 == [("P1", "📊 최근 7일 우리 기록: 특가 끝난 것 6개, 가장 빨리 끝난 건 올리고 26시간 안\n" + TW80.format(""), None)], r80  # /link = 앱 설치 띠·푸시 X, B 시안 텔레그램 X -> '알림 채널·지금 특가'
+assert H.X_LINK == f"{H.SITE}link/?ref=thx" and s80["xpost"] == {"t": TK("2026-10-28 21:35"), "m": {"P1": "R1"}} and "xpost_20261028" in s80 and s80["bundles"]["ts"] == [TK("2026-10-28 21:35")]  # seen 정리용 t · 묶음 간격 기록
+for j80 in range(6):  # 글마다 다른 훅·팁 · 한 글로 합쳐도 Threads 500자 안 · 금지 낱말 X
+    one80 = H.X_HOOKS[j80 % 3] + "\n\n" + "\n".join("· " + H.X_TIPS[(j80 * 5 + i) % 9] for i in range(5))
+    assert H.th_len(one80 + "\n\n" + r80[0][1].replace("6개", "999개").replace("26시간", "48시간").replace("알림 채널·", "알림 채널·카톡 특가방(하루 한 번)·")) <= 500 and not re.search(H.X_BAN, one80 + r80[0][1])
+assert all(re.search(H.X_BAN, w) for w in ("한 달 30만 원 벌기", "무조건 이득", "리셀하면", "되팔기", "단독 특가", "역대급", "부업", "100% 환급", "최저가 보장"))
+b80.clear(); r80.clear(); s80 = {}; H.th_reply_ok, H.KAKAO_OPENCHAT_URL = (lambda seen: False), "https://open.kakao.com/o/x80"
+time.time = lambda: TK("2026-10-25 21:31"); H.x_post(s80)  # 일요일(10/20 하루특가 1 + ⏳ 6) · 댓글 권한 없음 = 글 1개(댓글 내용까지) · 카톡방 주소 생기면 같이
+assert not r80 and len(b80) == 1 and b80[0][1].endswith("\n\n📊 최근 7일 우리 기록: 특가 끝난 것 7개, 가장 빨리 끝난 건 올리고 26시간 안\n" + TW80.format("·카톡 특가방(하루 한 번)")), b80
+sun80, wed80 = (b80[0][1].split("\n\n")[:2], o80)
+assert sun80[0] != wed80[0] and len(set(sun80[1].split("\n")) & set(wed80[2:])) == 1, (sun80, wed80)  # 이어진 일·수 글 = 다른 훅 · 팁 1개만 겹침(10/26 리뷰 — 같은 주 같은 훅 X)
+b80.clear(); s80 = {}; H.th_reply_ok, H.TH_REPLY, H.KAKAO_OPENCHAT_URL = (lambda seen: True), False, "https://example.com/open.kakao.com/"
+time.time = lambda: TK("2026-10-28 21:35"); H.x_post(s80); H.TH_REPLY = True  # TH_REPLY 끔 = 글 1개 · 카톡 주소가 아니면 카톡방 X
+assert not r80 and len(b80) == 1 and b80[0][1].endswith("\n" + TW80.format("")), b80
+b80.clear(); s80 = {}; sv80h, H.X_HOOKS = H.X_HOOKS, ("💸 한 달 30만 원 벌기, 저장해 두세요",) * 3
+time.time = lambda: TK("2026-10-28 21:35"); H.x_post(s80); H.X_HOOKS = sv80h; assert not b80 and "xpost_20261028" in s80  # 금지 낱말 = 그날 안 올림
+json.dump([], open("posts.json", "w")); b80.clear(); s80 = {}; H.KAKAO_OPENCHAT_URL = ""
+H.th_reply = lambda tok, to, text, link=None: (_ for _ in ()).throw(RuntimeError("댓글 실패"))
+time.time = lambda: TK("2026-11-01 21:40"); H.x_post(s80)  # 기록 0개 = 숫자 줄 X · 댓글 실패 = 관리자에게 붙여넣을 댓글 + 3일은 글 1개
+assert b80 and s80["xpost"]["m"] == {"P1": None} and s80["threply"]["ok"] == 0 and al80 == [("alert_xreply_20261101", "⚠️ Threads '알림 받기' 글 댓글 실패(RuntimeError('댓글 실패')) — 그 글에 댓글이 없으면 아래를 붙여넣어 주세요\n\n" + TW80.format(""))], al80
+json.dump([P80("2026-10-30 10:00", "🔥 [쿠팡] 휴지 (1원)", "https://link.coupang.com/a/M", **EW80, std="2026-11-03")], open("posts.json", "w"), ensure_ascii=False)  # 끝난 것만(본 시각 없음) = '가장 빨리' X
+H.th_topic, H.th_post, s80 = (lambda seen, *a, **k: "핫딜"), (lambda *a, **k: (_ for _ in ()).throw(RuntimeError("th 실패"))), {}
+H.th_bundle = sv80[3]; time.time = lambda: TK("2026-11-04 21:40")
+try:
+    H.x_post(s80); assert False
+except RuntimeError:
+    pass
+assert s80["thretry_20261104_funnel"]["text"].endswith("\n\n📊 최근 7일 우리 기록: 특가 끝난 것 1개\n" + TW80.format("")) and "xpost_20261104" in s80, s80  # 다음 실행 재시도 = 글 1개(댓글 내용까지)
+def h80(url, body=None, headers=None, method=None):  # metrics: X 글 = kind funnel + 댓글 조회 rv · seen에 없는 재시도 글도 첫 줄(X_HOOKS)로
+    if url.startswith(H.CHANNEL_WEB): return ""
+    if "/me/threads?" in url: return json.dumps({"data": [{"id": "P1", "text": "🧾 장보기 고정비 줄이는 법, 저장해 두세요\n\n· 단위가격", "timestamp": "2026-10-28T12:35:00+0000"},
+                                                          {"id": "P2", "text": H.X_HOOKS[1] + "\n\n· 팁\n\n📊 최근 7일", "timestamp": "2026-10-28T12:50:00+0000"}]})
+    if "/insights?" in url: return json.dumps({"data": [{"name": n, "values": [{"value": 7 if "/R1/" in url else 40}]} for n in ("views", "likes", "replies", "reposts", "quotes")]})
+    raise AssertionError(url)
+H.http, H.E["METRICS_DAY"] = h80, "2026-10-28"; sv80i = H.E.pop("IG_TOKEN", None)
+H.metrics_rows({"xpost": {"t": 1, "m": {"P1": "R1"}}}); H.E.pop("METRICS_DAY")
+k80 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-28"]["rows"]}
+assert (k80["P1"]["kind"], k80["P1"]["views"], k80["P1"]["rv"]) == ("funnel", 40, 7) and "url" not in k80["P1"] and k80["P2"]["kind"] == "funnel" and "rv" not in k80["P2"], k80
+sv80i is not None and H.E.__setitem__("IG_TOKEN", sv80i)
+(time.time, _, H.POSTS, H.th_bundle, H.th_reply, H.th_reply_ok, H.busy, tk80, H.KAKAO_OPENCHAT_URL, H.http, H.th_post, H.th_topic, H.alert, H.TH_REPLY) = sv80
+H.E.pop("THREADS_TOKEN", None) if tk80 is None else H.E.__setitem__("THREADS_TOKEN", tk80)
+os.chdir(sv80[1]); shutil.rmtree(d80)
 print("OK: 모든 셀프체크 통과")

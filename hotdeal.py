@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of, drops, c_url, md_of, won  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -5889,6 +5889,74 @@ def cal_post(seen):
     print("cal post: 쇼핑 달력", text.count("\n· "), "줄 · 글", r.get("id"))
 
 
+X_AT, X_DAYS, X_LINK = (21, 30), (6, 2), f"{SITE}link/?ref=thx"  # X(10/26 Cowork — 진우 공유 @powerful_deal 글 조회 3,927): Threads '알림 받기' 유입 글 일·수(tm_wday 6·2) 21:30(인사이트 활동 시간 일 21~24시) · ref=thx = /link 클릭 따로(GoatCounter)
+X_HOOKS = ("🧾 장보기 고정비 줄이는 법, 저장해 두세요", "📌 생필품 덜 쓰는 습관, 저장해 두고 꺼내 보세요", "🛒 장보기 전에 한 번 보면 좋은 것들, 저장해 두세요")  # 저장 유도 훅 1줄(글마다 돌림 — metrics가 첫 줄로 이 글을 알아봄)
+X_TIPS = ("단위가격(100g·1개당)으로 비교하기 — 큰 묶음이 늘 싼 건 아니에요", "토스 하루특가는 그날 밤 12시에 끝나요 — 봤으면 그날 안에",
+          "쿠팡 '와우가'는 와우 회원 가격이에요 — 가격 옆 조건(쿠폰·와우) 먼저 보기", "늘 쓰는 꾸준템은 특가 때 한 번에 쟁여두기",
+          "핫딜픽에서 ♡ 찜해 두면 가격 내린 날 '▼ 내림' 표시가 떠요(쿠팡·네이버)", "같은 상품도 용량·개수가 다르면 가격이 달라요 — 구성 먼저 맞춰 보기",
+          "선착순 특가는 수량이 다 나가면 밤 12시 전에도 끝나요", "'게시 시점 가격'은 그때 가격이에요 — 사기 전에 지금 가격 한 번 더",
+          "📉 가격 내려간 상품은 핫딜픽이 하루 한 번 모아 올려요")  # 우리 데이터·사이트 기능에서 나온 팁 9개 — 글마다 5개(이어진 두 글은 1개만 겹침)
+X_BAN = r"벌기|벌어|수익|부업|무조건|리셀|되팔|재판매|단독|역대급|최저가|100\s*%|보장"  # 수입 약속·리셀/되팔기 권유·단독·과장 = 안 올림(10/26 Cowork 금지)
+X_FAST = 48 * 3600  # '가장 빨리 끝난 건 올리고 M시간 안' = 이 안쪽만(넘으면 그 줄 X — 옛 글에서 잰 300시간대 X, 10/26 리뷰)
+
+
+def x_stats(now):
+    """X 댓글 숫자(우리 기록만): 최근 7일 끝난 특가 = changes.json ended·deadline과 같은 기준을 posts.json에서(changes.json은 3일만) —
+    deadline = 토스 하루특가·선착순·'밤 12시까지'(올린 날 밤 12시에 끝남 · 밤 12시 뒤 확인에도 진우 글이 🔥면 X) · ended = 진우 글 🔥 -> ⏳(std = 바뀐 날, 같은 상품 1번).
+    -> (개수, 가장 빨리 끝난 것 = 🔥 채널 글 올린 뒤 🔥 -> ⏳를 본 때(stt)까지 몇 시간 안(올림 — 확인 간격만큼 늦게 봄 = 더 빨랐다고 X · X_FAST 안만) | None).
+    밤 12시 끝은 시간에 X(10/26 리뷰 — 늦게 올린 하루특가가 '1시간 만에 끝남'처럼 보임) · 진열 글(shelf)은 개수·시간 둘 다 X(올린 글 아님)."""
+    day0, dl, ended, fast = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400)), set(), set(), []
+    for p in load(POSTS, []):
+        if not p.get("url") or p.get("shelf") or p["text"].startswith("📋"):  # 진열 글(shelf) = 올린 글 아님(10/24 토스 진열 일괄 85행이 94개 중 85개 — 10/26 리뷰)
+            continue
+        if ("밤 12시까지" in p["text"] or shop_of(p) == "toss" and re.search(DAY_ONLY, p["text"])) and now - 7 * 86400 <= end_at(p) <= now:
+            if p.get("st") != "hot":
+                dl.add((p["url"], p["t"]))
+        elif p.get("own") and p.get("st") == "wait" and p.get("stp") == "hot" and (p.get("std") or "") > day0:
+            ended.add(p["url"])
+            if p.get("stt") and icon_of(p["text"]) == "🔥" and not p.get("rehot") and 0 < kst_ts(p["stt"]) - kst_ts(p["t"]) <= X_FAST:  # 🔥 글만(🛒·👍 다시 올린 글 X) · 🔁 다시 특가 = 올린 때가 아니라 X
+                fast.append(kst_ts(p["stt"]) - kst_ts(p["t"]))
+    return len(dl) + len(ended - {u for u, _ in dl}), fast and max(1, math.ceil(min(fast) / 3600)) or None
+
+
+def x_post(seen):
+    """X(10/26 Cowork '저장 훅 → 아끼는 법 목록 → 초특가는 금방 끝남 → 알림방'): 일·수 X_AT Threads 1번 = 글(저장 훅 + 팁 5개 — 글마다 돌림) + 댓글(최근 7일 우리 기록 숫자 + 알림 → /link/?ref=thx).
+    링크 카드 X(본문 주소만 — 글엔 주소 X) · 댓글 권한 없으면 글 1개로 · X_BAN 낱말이면 안 올림 · 댓글 실패 = 관리자에게 붙여넣을 댓글 · metrics kind 'funnel'(seen xpost m = 글 id -> 댓글 id · 첫 줄 X_HOOKS) · 묶음 간격만 봄(달력 글처럼 — 딜 글 수·간격 그대로).
+    /link엔 앱 설치 띠·푸시가 없고 B 시안엔 텔레그램 줄이 없어 '알림 채널·지금 특가'로만(10/26 리뷰)."""
+    now, tok = time.time(), E.get("THREADS_TOKEN")
+    kst = time.gmtime(now + 9 * 3600)
+    key = kst.tm_wday in X_DAYS and due(X_AT, "xpost", seen)
+    if not key or not tok or busy(seen, cap=False):
+        return
+    seen[key] = now
+    k, (n, h) = int((now + 9 * 3600) // 86400), x_stats(now)
+    j = k // 7 * 2 + (k % 7 == 6)  # 몇 번째 글(일 = 짝수, 그 뒤 수 = 홀수 — 1970-01-01 목요일 기준 7일 묶음) -> 훅은 글마다 다르게
+    one = X_HOOKS[j % len(X_HOOKS)] + "\n\n" + "\n".join("· " + X_TIPS[(j * 5 + i) % len(X_TIPS)] for i in range(5))
+    two = (f"📊 최근 7일 우리 기록: 특가 끝난 것 {n}개" + (f", 가장 빨리 끝난 건 올리고 {h}시간 안" if h else "") + "\n" if n else "") \
+        + "특가는 예고 없이 끝나기도 해요. 특가 뜨면 바로 알림 받아 보세요 🔔\n👉 알림 채널" + ("·카톡 특가방(하루 한 번)" if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else "") + f"·지금 특가 한곳에 {X_LINK.split('://')[1]}"  # 카톡방 = 하루 한 번 오늘의 픽(/link) — '바로 알림' 앞에 X
+    if re.search(X_BAN, one + two):
+        print("x post: 금지 낱말 -> 안 올림", re.search(X_BAN, one + two)[0])
+        return
+    can = TH_REPLY and th_reply_ok(seen)
+    bundled(seen)
+    try:
+        r = th_bundle(seen, "funnel", one if can else f"{one}\n\n{two}")
+    except Exception:
+        if can:  # 다음 실행 재시도(th_retry)는 글 1개 -> 댓글 내용까지 한 글로
+            seen[time.strftime("thretry_%Y%m%d_funnel", kst)]["text"] = f"{one}\n\n{two}"
+        raise
+    xs = seen.setdefault("xpost", {"m": {}})
+    xs["t"], xs["m"] = now, {**dict(list(xs["m"].items())[-9:]), r["id"]: None}
+    if can:
+        try:
+            xs["m"][r["id"]] = th_reply(tok, r["id"], two)
+        except Exception as e:  # 글은 이미 나감(숫자·링크 없는 팁 글) -> 관리자에게 붙여넣을 댓글 · 다음부터 3일은 글 1개(th_reply_ok 다시 확인 전 — 22시 미리보기와 같음)
+            print("x post 댓글 실패", err_brief(e))
+            seen["threply"] = {"t": now, "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
+            alert(seen, "alert_xreply_" + time.strftime("%Y%m%d", kst), f"⚠️ Threads '알림 받기' 글 댓글 실패({err_brief(e)}) — 그 글에 댓글이 없으면 아래를 붙여넣어 주세요\n\n{two}")
+    print("x post: 알림 받기 글", r["id"], "· 댓글", xs["m"][r["id"]], f"· 끝난 특가 {n}개" + (f" · 가장 빨리 {h}시간 안" if h else ""))
+
+
 CUR_DIR, CUR_PREP, CUR_LATE, CUR_IMG_WAIT = "docs/cards/cur", 3 * 3600, 6 * 3600, 3600  # 큐레이션 사진(우리 서버 JPEG — 인스타·Threads는 공개 JPEG 주소가 필요) · 시각 3시간 전부터 준비 · 6시간 지나면 안 올림 · 사진이 사이트에 1시간 넘게 안 뜨면 글 + 링크 카드
 
 
@@ -7156,7 +7224,7 @@ def own_end(seen):
         if REHOT_OFF.get(u) == f["rehot"]:
             f["rehot"] = None
         pv = next((posts[i] for i in reversed(idxs) if posts[i].get("st")), {})  # 앞 상태 = st가 있는 최신 글(막 다시 올린 글엔 st 없음 — 기록 안 잃게)
-        f["std"], f["stp"] = (today, pv["st"]) if pv.get("st") and pv["st"] != f["st"] else (pv.get("std"), pv.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
+        f["std"], f["stp"], f["stt"] = (today, pv["st"], time.strftime("%Y-%m-%d %H:%M", kst)) if pv.get("st") and pv["st"] != f["st"] else (pv.get("std"), pv.get("stp"), pv.get("stt"))  # stt = 바뀐 걸 본 시각(X '가장 빨리 끝난 건 올리고 M시간 안' — 10/26) · 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
             rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
         if not tsy and (im := e.get("pid") and cpi.get(u) or img_of({**p, "img": e.get("img")})):
@@ -7165,8 +7233,8 @@ def own_end(seen):
         c[f["st"]] += 1
         for i in idxs:
             q = posts[i]
-            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "cpp", "cpt", "end", "tst", "ts", "img")}
-            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "cpp", "cpt", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
+            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "end", "tst", "ts", "img")}
+            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
                 q.pop(k, None)
             q.update(f)
             n += was != {k: q.get(k) for k in was}
@@ -7374,7 +7442,7 @@ def metrics_rows(seen):
     if not rows:
         miss.setdefault("tg", "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)")
 
-    tok, ths = E.get("THREADS_TOKEN"), []
+    tok, ths, fx = E.get("THREADS_TOKEN"), [], seen.get("xpost", {}).get("m", {})  # fx = X '알림 받기' 글 id -> 댓글 id(kind funnel · rv = 댓글 조회)
     if not tok:
         miss["th"] = "THREADS_TOKEN 없음"
     try:
@@ -7399,13 +7467,14 @@ def metrics_rows(seen):
                     miss.setdefault("th_part", "일부 글 insights 못 읽음: " + why)
         lk = re.search(r"https?://\S+", x.get("text") or "")  # Threads 글은 [몰] 없이 쓰는 일이 많아 글 속 구매 링크로 몰
         ab, rv = seen.get("thab", {}).get("m", {}).get(x["id"]) or {}, None  # 링크 위치 A/B 시험(10/18~): B = 링크 댓글 조회(rv)도, 본문에 주소 없으면 올린 링크(u)로 몰
-        if ab.get("r") and "th" not in miss:
+        rid, fun = ab.get("r") or fx.get(x["id"]), x["id"] in fx or (x.get("text") or "").split("\n")[0] in X_HOOKS  # 첫 줄 = 재시도 글·seen 정리 뒤 다시 모으기도
+        if rid and "th" not in miss:
             try:
-                rv = th_views(tok, ab["r"])
+                rv = th_views(tok, rid)
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=[ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if ab.get("r") else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": ab["hook"]} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": ab["hook"]} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
@@ -8087,7 +8156,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:
