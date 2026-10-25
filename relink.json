@@ -1,5 +1,5 @@
 {
- "left_now": 69,
+ "left_now": 68,
  "ok": {
   "auction": 7
  },
@@ -136,6 +136,13 @@
    "n": "탐사 KF94 새부리형 마스크 대형 100개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 01:36"
+  },
+  {
+   "k": "진열",
+   "pid": "6854336277",
+   "n": "이브네 유기농 유순 생리대 날개형 중형 16개입 4개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 01:56"
   }
  ]
 }
