@@ -5776,6 +5776,8 @@ json.dump([evb[1], SH45("https://link.coupang.com/a/jw3", "생 주소 샴푸", "
 H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == ["https://link.coupang.com/a/jw1", "https://link.coupang.com/a/jw3"]
 pk45 = lambda u: S45.pick_section("2026-10-24", [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))])
 assert S45.SHOP_NOTES["coupang"] not in pk45(X45) and S45.SHOP_NOTES["coupang"] in pk45("https://link.coupang.com/a/jw1") and 'rel="nofollow noopener"' in pk45(X45)  # 생 주소 픽 = 쿠팡 파트너스 문구 X · 보기 sponsored X
+eg45 = lambda u: S45.ev_page({"tag": "햇상품 기획전", "slug": "fresh", "until": "2026-10-30", "chk": "", "mall": "쿠팡", "urls": {u: ""}, "xs": [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제 1L\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))]}, "2026-10-24")[2]
+assert S45.SHOP_NOTES["coupang"] not in eg45(X45) and S45.SHOP_NOTES["coupang"] in eg45("https://link.coupang.com/a/jw1")  # 기획전 쪽도 같은 규칙
 time.time, H.EVENTS, H.POSTS, H.CP_LINKS = sv45b; os.chdir(cwd45)
 # 9-47) 토스 대량 사이트 진열(10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량' — TOSS_SITE True): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 -> 카테고리 베스트) 돌아가며
 #       사이트에 없는·판매 중 상품 -> 쉐어링크(있으면 재사용) -> 사이트 전용 글(own·shelf·tid, 채널·Threads X, 리뷰 X, 대가성 문구·게시 시점 가격) · 링크 오류 = 그 상품 하루 쉬고 실행 멈춤
