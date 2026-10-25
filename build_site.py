@@ -883,7 +883,7 @@ def pick_row(n, i, p, sh):
     return (f'<li class="pk"><b class="rk">{n}</b>{thumb(p)}<div><span class="mc">{html.escape(chip_of(p))}</span><h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>'
             + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "") + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:1])
             + "".join(f'<div class="u">{html.escape(x)}</div>' for x in grey[:1]) + "</div>"
-            + f'<a class="go" href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank" aria-label="{html.escape(name)} 보러 가기">보기</a></li>')
+            + f'<a class="go" href="{html.escape(go_url(i, p))}" rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank" aria-label="{html.escape(name)} 보러 가기">보기</a></li>')  # 쿠팡 생 주소(딥링크 전 진열 — 10/25) = 제휴 X
 
 
 def items(posts, days, home=None):
@@ -1156,7 +1156,7 @@ def deal_card(i, p):
     elif p["text"].startswith("📋") and (p.get("url") or "").startswith("https://t.me/"):  # 행사 목록 글(url = 채널 글) = 구매 버튼 X
         btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="noopener" target="_blank">📢 텔레그램에서 전체 목록 보기</a>'
     else:
-        btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow sponsored noopener" target="_blank">{buy_label(title)}</a>' if p.get("url") else ""
+        btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow {"sponsored " if aff(p["url"]) else ""}noopener" target="_blank">{buy_label(title)}</a>' if p.get("url") else ""
     main, _, ship = price.partition("/")
     ship = {"무료": "무료배송", "무배": "무료배송"}.get(ship.strip(), ship.strip())
     hero = ((f'<div class="hero"><span class="pr">{html.escape(main.strip())}</span>' + (f'<span class="ship">{html.escape(ship.strip())}</span>' if ship.strip() else "")

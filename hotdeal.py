@@ -36,6 +36,7 @@ IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startsw
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
 CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
+CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날 2번 변환 실패하면 그 뒤엔 7일마다 1번(10/25 진우 '다 올려' — 사이트엔 쿠팡 주소 그대로 진열, 나중에 되면 파트너스 링크로) · 아직 안 바뀐 쿠팡 상품 주소 표(pid·이름·실패 날짜·마지막 시도·이유 — Cowork 점검용, 가격·수수료 X)
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
 CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
@@ -1440,11 +1441,14 @@ def cp_links(seen):
     chan, kst = {e["url"] for e in evs if not e.get("shelf")}, time.gmtime(now + 9 * 3600)
     today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
     st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
-    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= 86400 and (u in chan or len(st["f"].get(u, [])) < 2)]  # 진열은 서로 다른 날 2번 실패하면 X(10/24 Cowork — events는 그대로) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    st["e"] = {u: v for u, v in st.get("e", {}).items() if u in names}  # 마지막 실패 이유('400' = 1개만 보낸 호출이 rCode 400 · '응답 없음' = 오류 없이 그 주소만 빠짐)
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400)]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
-    q, calls = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0
-    q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)]  # 채널 예약 먼저
+    one = [[u] for u in rest if u in st["f"]]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남)
+    rest = [u for u in rest if u not in st["f"]]
+    q, calls, why = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0, {}
+    q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)] + one  # 채널 예약 먼저
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
         b = q.pop(0)
         if calls >= CP_RUN - 2 and not chan & set(b):
@@ -1456,6 +1460,7 @@ def cp_links(seen):
             got = {}
             if len(b) == 1:
                 print("cp link", b[0], repr(e))
+                why[b[0]] = "400"
         except Exception as e:  # 상한·접속·게이트웨이 = 다음 실행에
             print("cp link", repr(e))
             q.insert(0, b)
@@ -1468,22 +1473,26 @@ def cp_links(seen):
             q[:0] = [miss] if len(miss) < len(b) else [b[:len(b) // 2], b[len(b) // 2:]]
             continue
         for u in miss:
-            st["x"][u] = now
+            st["x"][u], st["e"][u] = now, why.get(u, "응답 없음")
             if u in chan:  # 채널 예약 = 바로 알림
                 alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — "
                       + (f"{lst[u] or '?'} (pid {re.match(CP_PROD, u)[1]})\n행사 목록 글에서 그 상품만 빠짐(바뀐 상품 {LIST_MIN}개 밑이면 목록 글 안 올라감)" if u in lst else f"{u}\n그 예약은 안 올라감") + ". 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
-            else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고')
+            else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고') · 3번째(7일 뒤 다시)부터는 알림 X
                 st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
-                st.setdefault("q", {})[u] = names.get(u, "")
+                if len(st["f"][u]) <= 2:
+                    st.setdefault("q", {})[u] = names.get(u, "")
     st["pq"] = [b for b in q if len(b) < CP_DL_BATCH]  # 나눈 조각만 저장(통째 묶음은 다음 실행에 다시 만듦)
     if st.get("q") and st.get("qd") != today and kst.tm_hour >= 9:  # 진열 변환 실패 묶음 알림(하루 1번, 9시~ · 상품 번호만 — 주소 쿼리 X)
         if tg("sendMessage", chat_id=ADMIN, text=(f"⚠️ 쿠팡 진열 링크 변환 안 됨 {len(st['q'])}개(rCode 400 — 상품별 파트너스 제휴 불가로 보임)\n"
-                                                  + "\n".join(f"· {n or '?'} (pid {re.match(CP_PROD, u)[1]})" + (" — 2번째(다른 날) · 다음부터 진열 시도 X" if len(st["f"].get(u, [])) >= 2 else " — 내일 1번 더 시도")
-                                                              for u, n in st["q"].items()) + "\n다른 브랜드·옵션이나 진우 단축 링크로 events에 바꿔 넣어줘")[:4000]):
+                                                  + "\n".join(f"· {n or '?'} (pid {re.match(CP_PROD, u)[1]})" + (f" — 2번째(다른 날) · {CP_RETRY_DAYS}일 뒤 다시" if len(st["f"].get(u, [])) >= 2 else " — 내일 1번 더 시도")
+                                                              for u, n in st["q"].items()) + "\n사이트엔 쿠팡 상품 주소 그대로 진열 중(수수료 X · 바뀌면 파트너스 링크로). 다른 브랜드·옵션이나 진우 단축 링크로 events에 바꿔 넣어도 돼")[:4000]):
             st.update(q={}, qd=today)
     if n:
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
         print("cp link", f"쿠팡 상품 주소 {n}개 -> 파트너스 링크")
+    md = lambda ts: time.strftime("%m-%d %H:%M", time.gmtime(ts + 9 * 3600))
+    json.dump([{"pid": re.match(CP_PROD, u)[1], "n": names[u], "f": st["f"].get(u, []), "x": md(st["x"][u]) if u in st["x"] else "", "e": st["e"].get(u, "")}
+               for u in sorted(names, key=lambda u: (names[u], u)) if u not in cl], open(CP_FAIL, "w"), ensure_ascii=False, indent=1)  # 아직 안 바뀐 것(x 없음 = 아직 시도 전 — 상한·실행 몫 대기)
 
 
 def cp_price(seen):
@@ -1596,15 +1605,22 @@ def html_ents(h):
 def shelf_posts(seen):
     """사이트 진열 전용(10/24 진우 '생필품·화장품은 사이트에 먼저 빠르게'): events "shelf": true 항목 -> at이 지나면 posts.json에만 1번(own·shelf, 채널 글 번호 mid 없음)
     = 사이트 품목 칸·🔥/⏳(target·now — own_end)·상품 페이지·사이트맵 · 채널·Threads·인스타 X(load(EVENTS)가 shelf를 빼고, posts 쪽은 shelf 글을 건너뜀).
-    글 = 채널에 나갈 것과 같은 틀(대가성 문구·몰별 머리 줄·버튼 가격). 쿠팡 상품 주소는 딥링크로 바뀐 뒤(cp_links — 시각 상관없이). 같은 url·pid 진우 글이 이미 있으면 안 만듦(사이트 카드 하나 —
-    나중에 같은 url 채널 예약이 나가면 그 글이 진열 자리를 이어받음: build_site.home_pool = url마다 최신 진우 글)."""
-    now, posts, ev = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info()
+    글 = 채널에 나갈 것과 같은 틀(대가성 문구·몰별 머리 줄·버튼 가격). 같은 url·pid 진우 글이 이미 있으면 안 만듦(사이트 카드 하나 —
+    나중에 같은 url 채널 예약이 나가면 그 글이 진열 자리를 이어받음: build_site.home_pool = url마다 최신 진우 글).
+    쿠팡 상품 주소 = 딥링크 전이어도 at이 지나면 생 주소 그대로(10/25 진우 '품목들은 무조건 다 올려' — 대가성 문구·[광고] X: aff_note = 제휴 링크만) ->
+    나중에 cp_links가 바꾸면 그 글을 그 자리(posts 번호·사이트 쪽 주소·찜 그대로)에서 파트너스 링크 + 대가성 문구로 바꿈(채널·Threads·인스타는 지금처럼 바뀐 링크만)."""
+    now, posts, ev, cl = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info(), load(CP_LINKS, {})
+    fix = [p for p in posts if p.get("shelf") and isinstance(cl.get(p.get("url")), str)]
+    for p in fix:
+        p["url"] = cl[p["url"]]
+        p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], p["url"])
+    if fix:
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+        print("shelf", f"생 주소 진열 {len(fix)}개 -> 파트너스 링크")
     have = {p.get("url") for p in posts if p.get("own")}
     pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")}, 0
     for e in ev_list(EVENTS):
         if not (isinstance(e, dict) and e.get("shelf") and isinstance(e.get("url"), str) and e.get("text") and str(e.get("at", "9")) <= now) or e["url"] in have or e.get("pid") and e["pid"] in pids:
-            continue
-        if re.match(CP_PROD, e["url"]):  # 딥링크 전(상한·오류면 다음 실행 · 키 없으면 진열 X — 생 주소가 posts.json에 굳으면 수수료 X·나중 채널 글과 안 합쳐짐)
             continue
         e = {**e, "deal": True}  # 진열 = 상품 글 틀(몰별 머리 줄·[광고] 첫 줄)
         record(*html_ents(ev_head(e) + ev_view(e)[0]), e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag")})
