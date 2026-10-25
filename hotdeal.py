@@ -149,7 +149,7 @@ IG_LATE, IG_MIN = 2, 3  # 칸은 그 시각 2시간 안에만(늦게 몰아 안 
 IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
 OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 1500  # 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
-IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(릴스는 REEL_PUBLIC 꺼짐 — 카드는 10/23부터 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
+IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(IG_H 끈 때만 — H 공개 릴스·카드 = 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#특가", "#살림템", "#쇼핑정보", "#할인정보", "#가성비템", "#쟁여템", "#장바구니", "#오늘의딜"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만, 채움은 칸마다 돌림)
 TOP_HOURS = (12, 15, 18)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
@@ -4779,7 +4779,7 @@ def ig_cards(seen):
             continue
         jpg = f"docs/cards/{stem}.jpg"
         if IG_H and h == IG_DAY_HOUR and os.path.exists(dc := f"{DPOST_DIR}/{today}_0.jpg"):  # 22시 스토리 = 📉 가격 내려간 상품 표지(M-1)
-            ig_story_card(seen, tok, uid, stem, dc, now, "핫딜픽 · 📉 오늘 가격 내려간 상품")
+            ig_story_card(seen, tok, uid, stem, dc, now, "핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품")
             return
         if h != IG_DAY_HOUR and not os.path.exists(jpg):  # 시간대 카드 만들기(이번 실행) -> 다음 실행에 올림
             posts = load(POSTS, [])
@@ -4846,7 +4846,7 @@ def ig_cards(seen):
 STORY_DIR = "docs/cards/story"  # H-2 스토리(9:16) — SLIDE_KEEP일 뒤 지움(prune_slides)
 
 
-def ig_story_card(seen, tok, uid, stem, jpg, now, top=None):
+def ig_story_card(seen, tok, uid, stem, jpg, now, top=None, bottom="프로필 링크 → 번호 누르면 바로 구매"):
     """H-2 스토리 1장: 카드(사이트·텔레그램과 같은 번호) -> 9:16(docs/cards/story/{stem}.jpg — 이 실행 커밋) -> 다음 실행에 사이트에 뜨면 STORIES 컨테이너(kind story)
     -> ig_publish 발행(피드 상한·2시간 간격 X · 쉼·공식 한도·차단 = 같게) · 사이트 맨 위 카드(ig_live) · 하루 IG_STORY_MAX(넘으면 그 칸 = 사이트만) · 실패 = 다시 X(ig_fail)."""
     today, sp = stem[:10], f"{STORY_DIR}/{stem}.jpg"
@@ -4855,7 +4855,7 @@ def ig_story_card(seen, tok, uid, stem, jpg, now, top=None):
         return
     if not os.path.exists(sp):
         import cards
-        cards.ig_story(jpg, sp, top or f"핫딜픽 · {card_name(stem)}", "프로필 링크 → 번호 누르면 바로 구매")
+        cards.ig_story(jpg, sp, top or f"핫딜픽 · {card_name(stem)}", bottom)
         print("ig story 만듦", stem)
         return
     url = SITE + sp[len("docs/"):]
@@ -6055,7 +6055,7 @@ def ig_copy(kind, label, its):
     t = str(r.get("title", "")).replace("\\n", "\n").strip()
     if good(t, 40) and t.count("\n") == 1 and all(len(x) <= 18 for x in t.split("\n")):
         out["title"] = t
-    tags = [x for x in (r.get("tags") or []) if isinstance(x, str) and re.fullmatch(r"#[가-힣A-Za-z0-9_]{1,20}", x)][:3]
+    tags = [x for x in (r.get("tags") or []) if isinstance(x, str) and re.fullmatch(r"#[가-힣A-Za-z0-9_]{1,20}", x) and good(x, 21)][:3]  # 태그도 금지 말·숫자 검사
     out["tags"] = tags if len(tags) >= 2 else base["tags"]
     return out
 
@@ -6118,8 +6118,8 @@ def igf_make(seen, kind, stem, kst):
         else:
             its = take(igt_pool(seen, posts, cats, day), {"theme": IGT_N, "vs": 2, "ask": 4, "check": 3, "guess": 1}[kd])
         need = {"theme": IGT_MIN, "top": IGT_MIN, "vs": 2, "ask": 4, "check": 2}.get(kd, 1)
-        if kd == "check" and len({x["check"] for x in its if x["check"]}) < 2:
-            its = []
+        if kd == "check":  # 확인할 점이 다른 상품만(같은 줄 X) -> 'N가지' = 보이는 줄 수
+            its = [x for k, x in enumerate(its) if x["check"] and x["check"] not in [y["check"] for y in its[:k]]][:4]
         if len(its) < need:
             print("ig feed", stem, kd, f"상품 {len(its)}개 -> 다른 형식")
             continue
@@ -6151,7 +6151,7 @@ def igf_make(seen, kind, stem, kst):
             cap = f"{cp['title'].replace(chr(10), ' ')} 1~4 댓글로 🙋\n{notes}\n\n{cp['say']}\n\n{rows}"
             extra = {"ask": [x["name"] for x in its]}
         elif kd == "check":
-            chk = list(dict.fromkeys(x["check"] for x in its if x["check"]))[:4]
+            chk = [x["check"] for x in its]
             files = [cards.q_card([its[0]["photo"]], (), cp["title"], [f"✔ {c_}" for c_ in chk], "판매 페이지 정보 그대로 · 결제 전 최종가 확인", k0, f"{d}/01.jpg", head=f"핫딜픽 · 사기 전 체크리스트", small=True)]
             cap = f"{cp['title'].replace(chr(10), ' ')} ✅\n{notes}\n\n{cp['say']}\n\n" + "\n".join(f"✔ {c_}" for c_ in chk) + f"\n\n{cp['q']}"
         elif kd == "guess":

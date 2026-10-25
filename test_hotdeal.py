@@ -7858,10 +7858,16 @@ assert len(ask["files"]) == 1 and len(ask["ask"]) == 4 and "1~4 댓글로" in as
 assert len(chk["files"]) == 1 and chk["cap"].count("✔ 옵션") >= 2 and chk["cmt"] == ""  # 사기 전 확인할 점 = 판매 페이지 정보 그대로
 assert len(gs["files"]) == 2 and gs["guess"]["won"] == 6900 and "6,900" not in gs["cap"] and "900원" not in gs["cap"] and "3시간 뒤 정답" in gs["cap"] and gs["cmt"] == ""  # 가격 맞히기 = 캡션·힌트에 가격 X
 H.ai_json = lambda prompt, props: {"say": "이거 6,900원이면 살 만해요", "q": "얼마일까요?", "tags": []}
-assert "원" not in H.ig_copy("guess", "겨울템", [{"name": "발 핫팩 10개", "price": "6,900원", "fact": "무료배송"}])["say"]; H.ai_json = ai73  # 가격 맞히기 문구에 가격 X(숫자가 상품 정보에 있어도)
+H.ai_json = lambda prompt, props: {"say": "이거 6,900원이면 살 만해요", "q": "얼마일까요?", "tags": ["#최저가", "#핫팩", "#99개", "#겨울템"]}
+cg73 = H.ig_copy("guess", "겨울템", [{"name": "발 핫팩 10개", "price": "6,900원", "fact": "무료배송"}])
+assert "원" not in cg73["say"] and cg73["tags"] == ["#핫팩", "#겨울템"]; H.ai_json = ai73  # 가격 맞히기 문구에 가격 X(숫자가 상품 정보에 있어도) · 태그도 금지 말·없는 숫자 X
 json.dump([dict(p, text=re.sub(r"옵션 \d개 구성 확인", "옵션 구성 확인", p["text"])) for p in P73], open("posts73.json", "w"))
 with contextlib.redirect_stdout(io.StringIO()):
     assert mk73("check", "2026-10-29_14")["kind"] == "one"  # 확인할 점이 다 같으면(2가지 안 됨) = 체크리스트 X
+json.dump([dict(p, text=p["text"].replace("옵션 5개 구성 확인", "옵션 6개 구성 확인")) for p in P73], open("posts73.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    ck73 = mk73("check", "2026-10-29_14")
+assert ck73["cap"].startswith("겨울템 사기 전 확인할 2가지 ✅") and ck73["cap"].count("✔ 옵션") == 2 and json.load(open("docs/cards/2026-10-29_14.json")) == [5, 3]  # 'N가지' = 보이는 줄 수(같은 확인할 점 상품 X)
 json.dump(P73, open("posts73.json", "w"))
 json.dump({"at": "2026-10-29 10:00", "urls": ["https://link.coupang.com/a/g3", "https://link.coupang.com/a/g1", "https://link.coupang.com/a/g2", "https://link.coupang.com/a/g7"]}, open("gc73.json", "w"))
 with contextlib.redirect_stdout(io.StringIO()):
@@ -8002,8 +8008,10 @@ json.dump(P73, open("posts73.json", "w"))
 H.tg = lambda m, **k: a73.append((m, k)) or {"message_id": 1}; c73h.clear()
 os.makedirs(H.DPOST_DIR, exist_ok=True); I73.new("RGB", (1080, 1350), (240, 230, 220)).save(f"{H.DPOST_DIR}/2026-10-29_0.jpg")
 s73s = {}
+import cards as C73; sty73, igs73 = [], C73.ig_story; C73.ig_story = lambda src, out, top, bottom: sty73.append((top, bottom)) or igs73(src, out, top, bottom)
 with contextlib.redirect_stdout(io.StringIO()):
     time.time = lambda: TK("2026-10-29 22:05"); H.ig_cards(s73s); time.time = lambda: TK("2026-10-29 22:20"); H.ig_cards(s73s)
+C73.ig_story = igs73; assert sty73 == [("핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품")]  # 스토리 글자 = 이모지 X(네모로 나옴) · 📉 표지 = 가격 내려간 상품 칸
 assert os.path.exists(f"{H.STORY_DIR}/2026-10-29.jpg") and [b for m, u, b in c73h if m == "POST"] == [{"image_url": "https://hotdealpick.kr/cards/story/2026-10-29.jpg", "media_type": "STORIES"}]
 S.IG_TOP.clear(); S.IG_TOP["winter"] = [("10월 29일 발 핫팩 10개", [(5, P73[5])]), ("10월 29일 발 시린 사무실", [(0, P73[0])])]
 lp73 = S.list_pages("winter", "❄️ 겨울템", "겨울템 모음", [(0, P73[0], (0, None, "", [], False))], "", {})[0][4]
