@@ -1589,7 +1589,8 @@ assert [x[0] for x in S.link_pool(L3, "2026-10-25")] == [4, 1, 5] and [x[0] for 
 t4 = S.link_tile(1, *S.link_pool(L3, "2026-10-25")[0], ["all", "life"])
 assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow sponsored noopener" target="_blank" data-k="all life">') and '<div class="pr">8,900원<em>쿠폰가</em></div><div class="ck">10/25 9시 확인</div>' in t4 and 'loading="lazy"' in t4 and '<b class="no">1</b>' in t4
 assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(2, *S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(9, *S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
-assert [S.link_name({"text": f"🔥 {t}"}) for t in ("[토스] 해표 올리브유 500ml 4병 22,900원", "[토스] 마스크팩 10매 6,900원 (무배)", "[쿠팡] 1000원샵 키링 (1,000원)")] == ["해표 올리브유 500ml 4병", "마스크팩 10매", "1000원샵 키링"]  # 이름 끝 가격 = 시각 없는 가격 X
+assert [S.link_name({"text": f"🔥 {t}"}) for t in ("[토스] 해표 올리브유 500ml 4병 22,900원", "[토스] 마스크팩 10매 6,900원 (무배)", "[쿠팡] 1000원샵 키링 (1,000원)", "[G마켓] 물티슈 20매 12팩(8900/무배)", "[쿠팡] 육개장 사발면 24개/쿠폰가 16,830원, 첫구매 14,800원",
+                                                       "[11번가] 휴지 30롤 22,900원/무료", "[옥션] 카스 제로 2캔 [3,000원/네멤무료]", "[쿠팡] 100원 동전지갑")] == ["해표 올리브유 500ml 4병", "마스크팩 10매", "1000원샵 키링", "물티슈 20매 12팩", "육개장 사발면 24개", "휴지 30롤", "카스 제로 2캔", "100원 동전지갑"]  # 이름 끝 가격 = 시각 없는 가격 X
 BIG = [(i, lp(f"휴지{i}" if i % 3 else f"샴푸{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]
 rw3, n3 = S.link_tabs(S.link_pool(BIG, "2026-10-25"))
 assert n3["all"] == 12 and all(v <= 12 for v in n3.values()) and len({x[0] for x in rw3}) == len(rw3) and [x[0] for x in rw3 if "all" in x[3]] == list(range(12))
@@ -6266,7 +6267,7 @@ h59, gt59 = [], open("gc_top.json").read()
 def http59(url, body=None, headers=None, method=None):
     h59.append(url)
     return json.dumps({"hits": [{"path_id": 1, "path": "link-a", "count": 20}, {"path_id": 2, "path": "/link-b", "count": 10}, {"path_id": 3, "path": "buy/link-a/link.coupang.com/a/cY", "count": 3}, {"path_id": 4, "path": "link-a/kakao", "count": 2}], "more": True}
-                      if len(h59) == 1 else {"hits": [{"path_id": 5, "path": "buy/link-b/toss.shopping/_m/x", "count": 1}, {"path_id": 6, "path": "link-b/blog", "count": 4}, {"path_id": 7, "path": "/link/", "count": 99},
+                      if len(h59) == 1 else {"hits": [{"path_id": 5, "path": "buy/link-b/toss.shopping/_m/x", "count": 1}, {"path_id": 6, "path": "link-b/blog", "count": 4}, {"path_id": 7, "path": "/link/", "count": 99}, {"path_id": 10, "path": "link-a/home", "count": 6},
                                                       {"path_id": 8, "path": "buy/link.coupang.com/a/cY", "count": 7}, {"path_id": 9, "path": "link/blog", "count": 5}], "more": False})
 H.http, sl59 = http59, {}
 for t59, why in (("2026-10-26 09:00", "기간 전(어제 10/25)"), ("2026-11-10 09:00", "기간 뒤(어제 11/9)"), ("2026-10-27 00:20", "0:30 전")):
@@ -6274,9 +6275,9 @@ for t59, why in (("2026-10-26 09:00", "기간 전(어제 10/25)"), ("2026-11-10 
 H.E["GOATCOUNTER_TOKEN"] = ""; time.time = lambda: TK("2026-10-27 09:00"); H.link_ab(sl59); assert not h59  # 토큰 없음
 H.E["GOATCOUNTER_TOKEN"] = "gtok"; o59 = io.StringIO()
 with __import__("contextlib").redirect_stdout(o59): H.link_ab(sl59)
-assert len(h59) == 2 and "start=2026-10-25T15%3A00%3A00Z&end=2026-10-26T15%3A00%3A00Z&limit=100" in h59[0] and h59[1].endswith("exclude_paths=1%2C2%2C3%2C4"), h59  # 어제 KST 0~24시 · 다음 쪽 = 본 경로 빼고
+assert len(h59) == 2 and "start=2026-10-25T15%3A00%3A00Z&end=2026-10-26T14%3A00%3A00Z&limit=100" in h59[0] and h59[1].endswith("exclude_paths=1%2C2%2C3%2C4"), h59  # 어제 KST 0~23시 칸(GoatCounter end = 그 칸까지 포함 — 다음 날 0시 칸 두 번 X) · 다음 쪽 = 본 경로 빼고
 L59 = json.load(open("link_ab.json"))
-assert L59 == {"2026-10-26": {"a": {"view": 20, "buy": 3, "ch": 2}, "b": {"view": 10, "buy": 1, "ch": 4}, "line": "link 10/26 a 20 view 3 buy(15%) 2 ch(10%) · b 10 view 1 buy(10%) 4 ch(40%)"}}, L59  # 미리보기·사이트 클릭 X
+assert L59 == {"2026-10-26": {"a": {"view": 20, "buy": 3, "ch": 2, "home": 6}, "b": {"view": 10, "buy": 1, "ch": 4, "home": 0}, "line": "link 10/26 a 20 view 3 buy(15%) 2 ch(10%) 6 home · b 10 view 1 buy(10%) 4 ch(40%) 0 home"}}, L59  # 미리보기·사이트 클릭 X · 홈(전체 특가) = 채널과 따로
 assert o59.getvalue() == L59["2026-10-26"]["line"] + "\n" and "gtok" not in o59.getvalue()
 H.link_ab(sl59); assert len(h59) == 2  # 하루 1번
 H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("down")); time.time = lambda: TK("2026-10-28 09:00")

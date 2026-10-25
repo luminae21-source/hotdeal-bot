@@ -1572,7 +1572,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "HDP Sans",-ap
 main{max-width:480px;margin:0 auto;padding:22px calc(18px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}a{color:inherit;text-decoration:none}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--pk);outline-offset:2px}
 .si{display:block;fill:currentColor}.disc{font-size:11.5px;color:var(--sub);line-height:1.5;margin:6px 2px 0}
-.sec{display:flex;justify-content:space-between;align-items:baseline;margin:20px 2px 8px}.sec h2{margin:0;font-size:18px;font-weight:800;line-height:1.35}.sec h2 span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:20px 2px 8px}.sec h2{margin:0;font-size:19px;font-weight:800;line-height:1.35}.sec h2 span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
 .cd .sec{margin:16px 2px 6px}.cd h2{font-size:15px}.cd h2 small{font-weight:600;margin-left:4px}
 .cr{display:flex;gap:6px;overflow-x:auto;padding:4px 3px 6px;margin:0 -3px;scrollbar-width:none}.cr::-webkit-scrollbar{display:none}.cr a{flex:none;max-width:180px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 11px 7px 7px;border-radius:999px;background:var(--chip);white-space:nowrap}.cr span{min-width:0;overflow:hidden;text-overflow:ellipsis}.cr b{flex:none;font-size:11px;font-weight:800;background:var(--ink);color:var(--bg);border-radius:999px;padding:1px 6px}
 .cd details{margin-top:2px}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
@@ -1595,8 +1595,8 @@ html.lb body{background:#FBFAF7}@media(prefers-color-scheme:dark){html.lb body{b
 .vb h1{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;margin:4px 0 6px;letter-spacing:-.8px}.lgb{width:38px;height:38px;border-radius:10px}.tg{font-size:13.5px;color:var(--mut);margin:0}
 .list{margin:18px 0 8px;border-top:1px solid var(--ink)}.list a{display:flex;align-items:center;gap:10px;padding:13px 2px;border-bottom:1px solid #E4E2DC}@media(prefers-color-scheme:dark){.list a{border-color:var(--line)}}
 .bi{flex:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff}.bi .si{width:16px;height:16px}.list b{display:block;font-size:15.5px;font-weight:700;line-height:1.3}.list small{font-size:12.5px;color:var(--mut)}.list i{margin-left:auto;font-style:normal;color:var(--mut)}
-.lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.eb2{font-size:10.5px;letter-spacing:2.5px;color:var(--pke);font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .no{left:0;top:0;border-radius:0;background:#1C1C1E;padding:3px 7px}.lb .pr em{color:#C43B3B}
-@media(prefers-color-scheme:dark){.lb .im{background:var(--tile)}.lb .pr em{color:var(--pke)}}"""
+.lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.sec h2 .eb2{font-size:10.5px;letter-spacing:2.5px;color:#C43B3B;font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .no{left:0;top:0;border-radius:0;background:#1C1C1E;padding:3px 7px}.lb .pr em{color:#C43B3B}
+@media(prefers-color-scheme:dark){.lb .im{background:var(--tile)}.lb .pr em,.sec h2 .eb2{color:var(--pke)}}"""
 LINK_V = ("(function(){var f=(location.search.match(/[?&]v=([ab])(?:&|$)/)||[])[1],v=f;if(!v){try{v=localStorage.getItem('hp_link')}catch(e){}"  # A·B 반반: 주소 v= 고정(저장·집계 X) > 이 브라우저에 정해진 쪽 > 50:50 무작위(저장 안 되면 이번만)
           "if(v!=='a'&&v!=='b'){v=Math.random()<.5?'a':'b';try{localStorage.setItem('hp_link',v)}catch(e){}}}document.documentElement.className='l'+v;window.hpLV=v;window.hpLF=!!f;"
           "var g=window.goatcounter||(window.goatcounter={});if(f)g.no_onload=true;else g.path=function(){return 'link-'+v}})()")  # 보기 = 가상 경로 link-a·link-b(들어온 ?ref 출처 그대로)
@@ -1609,9 +1609,14 @@ LINK_JS = """<script>(function(){var G=document.getElementById('lg'),N=document.
 var a=document.querySelector('.ad');if(a)a.addEventListener('click',function(){var p=document.getElementById('adw'),o=p.hidden;p.hidden=!o;a.setAttribute('aria-expanded',o?'true':'false')})})()</script>"""
 
 
+LINK_PRICE = re.compile(r"\s*(?:[/,(\[]\s*)?(?:쿠폰가|와우가|할인가|정가|최저가|첫구매)?\s*\d[\d,]*\d\s*원(?![가-힣A-Za-z0-9])|\s*[(\[]\s*\d[\d,]{2,}\s*/[^)\]]*[)\]]")  # 이름 속 가격 조각('22,900원/무료'·'(8900/무배)'·'/쿠폰가 16,830원')
+
+
 def link_name(p):
-    """칸·번호 줄 상품 이름: 이름 끝에 붙은 가격('… 22,900원 (무배)')은 뺌 — 시각 없는 가격 X(가격은 아래 줄에 기준 시각과 같이)."""
-    return re.sub(r"\s*\d[\d,]*\s*원(?:\s*\([^()]*\))?\s*$", "", parse(title_of(p["text"]))[1]) or parse(title_of(p["text"]))[1]
+    """칸·번호 줄 상품 이름: 이름 속 첫 가격 조각부터 뒤는 뺌('… 22,900원 (무배)' · '…(8900/무배)' · '…/쿠폰가 16,830원, 첫구매 …') — 시각 없는 가격 X(가격은 칸 아래 줄에 기준 시각과 같이). '1000원샵'처럼 이름인 것은 그대로."""
+    n = parse(title_of(p["text"]))[1]
+    m = LINK_PRICE.search(n)
+    return n[:m.start()].rstrip(" ,/·([") if m and m.start() > 0 else n
 
 
 def link_when(p, sh):

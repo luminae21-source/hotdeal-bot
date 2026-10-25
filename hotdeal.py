@@ -6085,8 +6085,9 @@ LINK_AB_FILE, LINK_AB_PAGES = "link_ab.json", 10  # /link A·B 하루 집계(10/
 
 def link_ab(seen):
     """/link A·B 반반 비교(10/26~11/8 — 결과 판단은 Cowork·진우, 자동으로 한쪽으로 몰지 않음): 하루 1번(0:30 KST 뒤 첫 실행) 어제(KST) GoatCounter
-    보기 'link-a'·'link-b'(가상 경로) · 상품 클릭 'buy/link-a/…' · 채널 클릭 'link-a/…' -> link_ab.json {날짜: {a: {view, buy, ch}, b: …, line}} + 로그 줄(README 점검 표에 그대로).
-    상품 클릭률 = buy ÷ view · 채널 클릭률 = ch ÷ view. 토큰 없으면 X · 오류 = 그날 3번까지 다음 실행에 다시."""
+    보기 'link-a'·'link-b'(가상 경로) · 상품 클릭 'buy/link-a/…' · 채널 클릭 'link-a/…'(카톡·블로그·Threads·인스타·텔레그램) · 사이트 홈 'link-a/home'(따로)
+    -> link_ab.json {날짜: {a: {view, buy, ch, home}, b: …, line}} + 로그 줄(README 점검 표에 그대로). 상품 클릭률 = buy ÷ view · 채널 클릭률 = ch ÷ view.
+    마지막 날(11/8) 줄은 11/9 0:30 뒤에 생김. 토큰 없으면 X · 오류 = 그날 3번까지 다음 실행에 다시."""
     tok, now = E.get("GOATCOUNTER_TOKEN"), time.time()
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
@@ -6095,15 +6096,17 @@ def link_ab(seen):
         return
     t0 = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() - 9 * 3600  # 어제 KST 0시(UTC)
     hr = lambda t: time.strftime("%Y-%m-%dT%H:00:00Z", time.gmtime(t))
-    c, ids = {v: {"view": 0, "buy": 0, "ch": 0} for v in "ab"}, []
+    c, ids = {v: {"view": 0, "buy": 0, "ch": 0, "home": 0} for v in "ab"}, []
     try:
         for _ in range(LINK_AB_PAGES):
-            q = urllib.parse.urlencode({"start": hr(t0), "end": hr(t0 + 86400), "limit": 100, **({"exclude_paths": ",".join(ids)} if ids else {})})
+            q = urllib.parse.urlencode({"start": hr(t0), "end": hr(t0 + 86400 - 3600), "limit": 100, **({"exclude_paths": ",".join(ids)} if ids else {})})  # end = 마지막 시간 칸(23시 KST — GoatCounter end는 그 칸까지 포함)
             r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
             for h in r.get("hits") or []:
                 ids.append(str(h.get("path_id")))
                 path, n = str(h.get("path") or ""), int(h.get("count") or 0)
-                if m := re.fullmatch(r"/?link-([ab])", path):
+                if m := re.fullmatch(r"link-([ab])/home", path):  # 사이트 홈으로(전체 특가) = 채널 클릭과 따로
+                    c[m[1]]["home"] += n
+                elif m := re.fullmatch(r"/?link-([ab])", path):
                     c[m[1]]["view"] += n
                 elif m := re.match(r"buy/link-([ab])/", path):
                     c[m[1]]["buy"] += n
@@ -6118,7 +6121,7 @@ def link_ab(seen):
         print("link ab", day, type(e).__name__, getattr(e, "code", ""))
         return
     pct = lambda a, b: f"{round(100 * a / b)}%" if b else "-"
-    line = f"link {int(day[5:7])}/{int(day[8:10])} " + " · ".join(f"{v} {x['view']} view {x['buy']} buy({pct(x['buy'], x['view'])}) {x['ch']} ch({pct(x['ch'], x['view'])})" for v, x in c.items())
+    line = f"link {int(day[5:7])}/{int(day[8:10])} " + " · ".join(f"{v} {x['view']} view {x['buy']} buy({pct(x['buy'], x['view'])}) {x['ch']} ch({pct(x['ch'], x['view'])}) {x['home']} home" for v, x in c.items())
     d = load(LINK_AB_FILE, {})
     d[day] = {**c, "line": line}
     json.dump(dict(sorted(d.items())), open(LINK_AB_FILE, "w"), ensure_ascii=False, indent=1)
