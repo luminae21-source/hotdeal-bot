@@ -3048,7 +3048,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -8254,4 +8254,107 @@ g75 = fr75(1.0).crop((round((984 - 200) * 0.84), round(296 * 0.84), round(984 * 
 assert g75 < 170 and fr75(7.0).crop((round((984 - 200) * 0.84), round(296 * 0.84), round(984 * 0.84), round(360 * 0.84))).convert("L").getextrema()[0] > 200  # 첫 장 '광고·제휴'만
 for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "posts75.json"):
     os.remove(f)
+# 9-76) P #일상 링크 후보(10/26 진우): 링크 없는 '#일상 상품명' 사진 = 같은 상품 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 → 쿠팡 검색 API)
+#       → 관리봇 버튼 · 진우가 고른 것만 첫 댓글 링크(대가성 문구 + 👉 · 본문 첫 줄도 대가성 문구) · '없음' = 사진만 · 후보 0개 = 바로 사진만 · 고르기 전엔 안 올림 · 쿠팡 검색 상한 = 다음 실행에
+sv76 = (H.tg, H.toss, H.coupang, H.HAS_CP, H.HAS_TOSS, H.th_post, H.th_reply, H.th_reply_ok, H.toss_link, H.http, H.busy, H.bundled, time.time, H.E.get("THREADS_TOKEN"), H.TOSS_NO_CMP, H.urllib.request.urlopen)
+o76, th76, tc76, cs76 = [], [], [], []
+H.tg = lambda m, **p: o76.append((m, p)) or {"message_id": 900}
+H.HAS_CP = H.HAS_TOSS = H.TOSS_NO_CMP = True; H.E["THREADS_TOKEN"] = "tk"
+TI76 = [{"tacaItemId": 11, "displayName": "코멧 손난로 100g 30개", "displayPrice": 8860}, {"tacaItemId": 12, "displayName": "다른 상품", "displayPrice": 1000},
+        {"tacaItemId": 13, "displayName": "코멧 손난로 대용량 30개", "displayPrice": 9900, "isSoldOut": True}]
+H.toss = lambda path, body=None: tc76.append(path) or {"items": TI76 if "today" in path else TI76[:1]}
+CP76 = [{"productName": "코멧 손난로 핫팩 30개", "productPrice": 9500, "productUrl": "https://link.coupang.com/re/AFF1"}, {"productName": "코멧 핫팩 60개", "productPrice": 17000, "productUrl": "https://link.coupang.com/re/AFF2"},
+        {"productName": "다른 주소", "productPrice": 1, "productUrl": "https://www.coupang.com/vp/3"}]
+H.coupang = lambda m, p, b=None: cs76.append(p) or {"productData": CP76}
+s76 = {"dly_90": {"t": TK("2026-10-26 10:00"), "text": "#일상 코멧 손난로 🔥\n요즘 매일 들고 다님", "img": "https://hotdealpick.kr/daily/90.jpg", "ask": 1}}
+time.time = lambda: TK("2026-10-26 10:05"); H.daily_cands(s76); H.daily_cands(s76)
+assert s76["dly_90"]["c"] == [{"n": "코멧 손난로 100g 30개", "p": 8860, "toss": 11}, {"n": "코멧 손난로 핫팩 30개", "p": 9500, "u": "https://link.coupang.com/re/AFF1"},
+                              {"n": "코멧 핫팩 60개", "p": 17000, "u": "https://link.coupang.com/re/AFF2"}] and cs76 == ["/products/search?keyword=%EC%BD%94%EB%A9%A7%20%EC%86%90%EB%82%9C%EB%A1%9C&limit=5"]  # 토스(품절·낱말 빠짐 X·같은 상품 1번) 먼저 · 검색어 = 첫 줄
+(m76, p76), = o76
+kb76 = p76["reply_markup"]["inline_keyboard"]
+assert p76["reply_parameters"] == {"message_id": 90, "allow_sending_without_reply": True} and s76["dly_90"]["kb"] == 900 and "확실히 같을 때만" in p76["text"] and [r[0]["callback_data"] for r in kb76] == ["dl:90:0", "dl:90:1", "dl:90:2", "dl:90:x"]
+assert kb76[0][0]["text"] == "💙 토스 · 코멧 손난로 100g 30개 · 8,860원" and kb76[1][0]["text"].startswith("🚀 쿠팡 · 코멧 손난로 핫팩 30개 · 9,500원") and kb76[3][0]["text"] == "❌ 없음(사진만)"
+H.http, H.busy, H.bundled = (lambda url, body=None, headers=None, method=None: ""), (lambda seen, cap=True: False), (lambda seen: None)
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": th76.append(("post", text, link, image)) or {"id": "P76"}
+H.th_reply = lambda tok, to, text, link=None: th76.append(("reply", to, text, link)) or "R76"
+H.th_reply_ok, H.toss_link = (lambda seen: True), (lambda seen, iid, name="": f"https://toss.im/_m/T{iid}")
+o76.clear(); H.daily_post(s76); assert not th76 and not o76  # 고르기 전 = 안 올림
+UP76 = [{"update_id": 1, "callback_query": {"from": {"id": 42}, "data": "dl:90:0", "message": {"message_id": 900, "chat": {"id": 42}}}},
+        {"update_id": 2, "callback_query": {"from": {"id": 42}, "data": "dl:90:1", "message": {"message_id": 900, "chat": {"id": 42}}}},
+        {"update_id": 3, "callback_query": {"from": {"id": 7}, "data": "dl:91:x", "message": {"message_id": 901, "chat": {"id": 7}}}}]
+UP0_76 = [{"update_id": 0, "callback_query": {"from": {"id": 42}, "data": "dl:90:7", "message": {"message_id": 900, "chat": {"id": 42}}}}]
+H.tg = lambda m, **p: o76.append((m, p)) or (UP0_76 if m == "getUpdates" and "offset" not in p else {"message_id": 900}); H.publish_approved(s76)
+assert "pick" not in s76["dly_90"]  # 없는 후보 번호 = 안 받음
+H.tg = lambda m, **p: o76.append((m, p)) or (UP76 if m == "getUpdates" and "offset" not in p else {"message_id": 900}); o76.clear()
+H.publish_approved(s76)
+ed76 = [p for m, p in o76 if m == "editMessageReplyMarkup"]
+assert s76["dly_90"]["pick"] == "0" and len(ed76) == 1 and ed76[0]["reply_markup"]["inline_keyboard"][0][0]["text"] == "✅ 코멧 손난로 100g 30개 — 첫 댓글 링크"  # 첫 고름만 · 관리자 말고 X
+UP76[:] = [{"update_id": 4, "callback_query": {"from": {"id": 42}, "data": "dl:90:2", "message": {"message_id": 900, "chat": {"id": 42}}}},
+           {"update_id": 5, "callback_query": {"from": {"id": 42}, "data": "dl:90:1", "message": {"message_id": 899, "chat": {"id": 42}}}}]; o76.clear(); H.publish_approved(s76)
+assert s76["dly_90"]["pick"] == "0" and "지난 버튼" in [p for m, p in o76 if m == "editMessageReplyMarkup"][1]["reply_markup"]["inline_keyboard"][0][0]["text"]  # 다음 실행에 또 눌러도 처음 고른 것 · 다른(지난) 버튼 메시지 = X
+H.tg = lambda m, **p: o76.append((m, p)) or {"message_id": 900}; o76.clear()
+H.daily_post(s76)
+assert th76 == [("post", H.th_note(H.TOSS_NOTE) + "#일상 코멧 손난로 🔥\n요즘 매일 들고 다님\n\n" + H.toss_when(), None, "https://hotdealpick.kr/daily/90.jpg"),
+                ("reply", "P76", f"{H.TOSS_NOTE}\n\n👉 구매 링크 https://toss.im/_m/T11", "https://toss.im/_m/T11")], th76  # 토스 = 고른 뒤 쉐어링크 · 게시 시점 줄 · 링크 = 첫 댓글
+assert o76[-1][1]["text"] == "✅ Threads에 올렸어요 (링크 = 첫 댓글)" and s76["dly_90"]["done"]
+th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: False
+s76b = {"dly_92": {"t": TK("2026-10-26 10:00"), "text": "#일상 핫팩", "img": "https://hotdealpick.kr/daily/92.jpg", "ask": 1, "c": CP76[:0] + [{"n": "코멧 핫팩", "p": 1, "u": "https://link.coupang.com/re/AFF1"}], "pick": "0"}}
+H.daily_post(s76b)
+assert th76 == [("post", "#일상 핫팩", None, "https://hotdealpick.kr/daily/92.jpg")] and o76[-1][1]["text"].endswith("(링크 없이 사진만: 댓글 못 닮 · 필요하면 앱에서 직접 댓글 https://link.coupang.com/re/AFF1)")  # 링크 = 첫 댓글만(본문 X)
+th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: True
+s76c = {"dly_93": {"t": TK("2026-10-26 10:00"), "text": "#일상 산책길", "img": "https://hotdealpick.kr/daily/93.jpg", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/A"}], "pick": "x"},
+        "dly_94": {"t": TK("2026-10-26 10:00"), "text": "#일상 손난로", "img": "https://hotdealpick.kr/daily/94.jpg", "ask": 1, "c": [{"n": "토스 손난로", "p": 1, "toss": 14}], "pick": "0"}}
+H.daily_post(s76c); H.toss_link = lambda seen, iid, name="": (_ for _ in ()).throw(RuntimeError("toss down")); H.daily_post(s76c)
+assert th76 == [("post", "#일상 산책길", None, "https://hotdealpick.kr/daily/93.jpg"), ("post", "#일상 손난로", None, "https://hotdealpick.kr/daily/94.jpg")]  # '없음' = 사진만 · 토스 링크 실패 = 사진만(글은 올림)
+assert o76[0][1]["text"] == "✅ Threads에 올렸어요" and o76[-1][1]["text"].endswith("(링크 없이 사진만: 링크 못 만듦)")
+H.toss_link = lambda seen, iid, name="": f"https://toss.im/_m/T{iid}"; th76.clear(); o76.clear()
+H.th_reply = lambda tok, to, text, link=None: (_ for _ in ()).throw(OSError("reply 500"))
+s76d = {"dly_95": {"t": TK("2026-10-26 10:00"), "text": "#일상 핫팩", "img": "https://hotdealpick.kr/daily/95.jpg", "ask": 1, "c": [{"n": "코멧 핫팩", "p": 1, "u": "https://link.coupang.com/re/AFF1"}], "pick": "0"}}
+H.daily_post(s76d); assert "링크 댓글 실패" in o76[0][1]["text"] and o76[0][1]["text"].endswith("https://link.coupang.com/re/AFF1") and "(링크 = 첫 댓글)" in o76[1][1]["text"]  # 댓글 실패 = 진우가 직접(링크 알려 줌)
+o76.clear(); tc76.clear(); cs76.clear(); H.coupang = lambda m, p, b=None: cs76.append(p) or {"productData": []}
+s76e = {"dly_96": {"t": TK("2026-10-26 10:00"), "text": "#일상 쿠팡보다 싸게 산 손난로", "img": "x", "ask": 1}}
+H.daily_cands(s76e); assert s76e["dly_96"]["c"] == [] and s76e["dly_96"]["pick"] == "x" and "못 찾아서 사진만" in o76[0][1]["text"] and not tc76  # 다른 몰 비교 캡션 = 토스 X · 후보 0 = 사진만
+o76.clear(); cs76.clear(); H.coupang = lambda m, p, b=None: cs76.append(p) or {"productData": CP76}
+s76h = {"dly_101": {"t": TK("2026-10-26 10:00"), "text": "#일상 쿠팡보다 싼 핫팩", "img": "x", "ask": 1}, "dly_102": {"t": TK("2026-10-26 10:01"), "text": "#일상 손난로", "img": "x", "ask": 1}}
+H.daily_cands(s76h)
+assert [c["u"] for c in s76h["dly_101"]["c"]] == ["https://link.coupang.com/re/AFF1", "https://link.coupang.com/re/AFF2"] and "c" not in s76h["dly_102"] and len(o76) == 1  # 파트너스 주소만 · 실행마다 1건
+TI76[1:1] = [{"tacaItemId": 21, "displayName": "손난로 A", "displayPrice": 1}, {"tacaItemId": 22, "displayName": "손난로 B", "displayPrice": 2}]; cs76.clear()
+H.daily_cands(s76h); assert [c.get("toss") for c in s76h["dly_102"]["c"]] == [11, 21, 22] and not cs76  # 토스로 3개 = 쿠팡 검색 안 씀(시간당 상한 아낌)
+o76.clear(); H.coupang = lambda m, p, b=None: (_ for _ in ()).throw(H.CpLimit("cap"))
+s76f = {"dly_97": {"t": TK("2026-10-26 10:00"), "text": "#일상 핫팩", "img": "x", "ask": 1}}
+H.daily_cands(s76f); assert "c" not in s76f["dly_97"] and not o76  # 쿠팡 검색 상한 = 다음 실행에(토스만으로 먼저 X)
+assert s76f["dly_97"]["tc"] == [] and "cs" not in s76f["dly_97"]  # 토스 후보 = 받아 둠(상한 기다리는 동안 토스 목록 다시 안 받음)
+tn76 = len(tc76); H.coupang = lambda m, p, b=None: cs76.append(p) or {"productData": CP76}; o76.clear(); cs76.clear()
+H.tg = lambda m, **p: o76.append((m, p)) or None; H.daily_cands(s76f)
+assert len(tc76) == tn76 and len(cs76) == 1 and "c" not in s76f["dly_97"] and len(s76f["dly_97"]["cs"]) == 2  # 버튼 못 보냄 = 다음 실행에 다시
+H.tg = lambda m, **p: o76.append((m, p)) or {"message_id": 905}; H.daily_cands(s76f)
+assert len(cs76) == 1 and [c["u"][-4:] for c in s76f["dly_97"]["c"]] == ["AFF1", "AFF2"] and s76f["dly_97"]["kb"] == 905  # 다시 보낼 땐 검색 X
+H.toss = lambda path, body=None: (_ for _ in ()).throw(OSError("toss 503")); s76j = {"dly_104": {"t": TK("2026-10-26 10:00"), "text": "#일상 손난로", "img": "x", "ask": 1}}
+H.daily_cands(s76j); assert [c["u"][-4:] for c in s76j["dly_104"]["c"]] == ["AFF1", "AFF2"]  # 토스 API 실패 = 쿠팡 후보로
+H.toss, H.RUN["treuse"] = (lambda path, body=None: tc76.append(path) or {"items": TI76}), True; s76k = {"dly_105": {"t": TK("2026-10-26 10:00"), "text": "#일상 손난로", "img": "x", "ask": 1}, "tlink": {"m": {"21": ["https://toss.im/_m/k", 1]}}}
+H.daily_cands(s76k); H.RUN.pop("treuse"); assert [c.get("toss") or c["u"][-4:] for c in s76k["dly_105"]["c"]] == [21, "AFF1", "AFF2"]  # 토스 점검(재사용) = 보관 링크 있는 상품만
+th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: True
+s76i = {"dly_103": {"t": TK("2026-10-26 10:00"), "text": "#일상 " + "가" * 400, "img": "x", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/" + "A" * 80}], "pick": "0"}}
+s76i["dly_103"]["text"] = "#일상 " + "가" * 440; H.daily_post(s76i); assert th76 == [("post", "#일상 " + "가" * 440, None, "x")] and "(링크 없이 사진만: 대가성 문구까지 480자 넘음" in o76[-1][1]["text"]  # 대가성 문구 붙이면 480자 넘음 = 사진만(잘린 글 X)
+th76.clear(); o76.clear(); H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("404"))
+s76l = {"dly_106": {"t": TK("2026-10-26 07:00"), "text": "#일상 a", "img": "x", "ask": 1, "c": [], "pick": "x", "pt": TK("2026-10-26 09:50")},
+        "dly_107": {"t": TK("2026-10-25 09:00"), "text": "#일상 b", "img": "y", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/A"}], "kb": 1}}
+H.daily_post(s76l); assert not s76l["dly_106"].get("done") and not o76  # 사진 확인 1시간 = 고른 때부터
+H.http = lambda url, body=None, headers=None, method=None: ""; H.daily_post(s76l); H.daily_post(s76l)
+assert th76[-2:] == [("post", "#일상 a", None, "x"), ("post", "#일상 b", None, "y")] and s76l["dly_107"]["pick"] == "x" and o76[-1][1]["text"] == "✅ Threads에 올렸어요 (하루 동안 안 골라서 사진만)"  # 하루 지나도 안 고름 = 사진만
+class R76:
+    def __init__(s, d): s.d = d
+    def read(s): return s.d
+    def __enter__(s): return s
+    def __exit__(s, *a): pass
+UP76[:] = [{"update_id": 5, "message": {"message_id": 98, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p98"}], "caption": "#일상 코멧 손난로"}},
+           {"update_id": 6, "message": {"message_id": 99, "from": {"id": 42}, "chat": {"id": 42}, "photo": [{"file_id": "p99"}], "caption": "#일상 손난로 https://link.coupang.com/a/x"}}]
+H.urllib.request.urlopen = lambda url, timeout=None: R76(b"JPG")
+H.tg = lambda m, **p: o76.append((m, p)) or (UP76 if m == "getUpdates" and "offset" not in p else {"file_path": "photos/f.jpg"} if m == "getFile" else {"message_id": 1})
+s76g = {}; o76.clear(); H.publish_approved(s76g)
+rp76 = {p["reply_parameters"]["message_id"]: p["text"] for m, p in o76 if m == "sendMessage" and p.get("reply_parameters")}
+assert s76g["dly_98"]["ask"] == 1 and "링크 후보" in rp76[98] and "ask" not in s76g["dly_99"] and "15분쯤" in rp76[99]  # 링크 없는 글만 후보
+assert H.daily_kw("#일상 코멧 손난로 🔥 #겨울\n둘째 줄") == "코멧 손난로" and "daily_cands" in inspect.getsource(H.main)
+(H.tg, H.toss, H.coupang, H.HAS_CP, H.HAS_TOSS, H.th_post, H.th_reply, H.th_reply_ok, H.toss_link, H.http, H.busy, H.bundled, time.time, tk76, H.TOSS_NO_CMP, H.urllib.request.urlopen) = sv76
+H.E.pop("THREADS_TOKEN", None) if tk76 is None else H.E.update(THREADS_TOKEN=tk76)
 print("OK: 모든 셀프체크 통과")

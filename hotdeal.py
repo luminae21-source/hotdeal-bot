@@ -1385,6 +1385,17 @@ def publish_approved(seen=None):
     for u in ups:
         q = u.get("callback_query") or {}
         m = q.get("message")
+        if m and str(q["from"]["id"]) == ADMIN and str(q.get("data", "")).startswith("dl:") and m["message_id"] not in handled:  # P: #일상 링크 후보 고름
+            handled.add(m["message_id"])
+            _, dm, pick = (q["data"].split(":") + ["", ""])[:3]
+            v = (seen or {}).get(f"dly_{dm}") or {}
+            v = v if v.get("kb") == m["message_id"] else {}  # 지금 후보 목록을 보낸 그 메시지 버튼만
+            if v and "pick" not in v and (pick == "x" or pick.isdigit() and int(pick) < len(v.get("c", []))):
+                v.update(pick=pick, pt=time.time())
+            c = v.get("c", [])[int(v["pick"])] if str(v.get("pick")).isdigit() and int(v["pick"]) < len(v.get("c", [])) else None
+            tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+               reply_markup={"inline_keyboard": [[{"text": f"✅ {clip(c['n'], 30)} — 첫 댓글 링크" if c else "✅ 링크 없이 사진만" if v.get("pick") == "x" else "⚠️ 지난 버튼(기록 없음) — 새 버튼에서 골라줘", "callback_data": "-"}]]})
+            continue
         if m and str(q["from"]["id"]) == ADMIN and str(q.get("data", "")).startswith("igr:") and m["message_id"] not in handled:  # L: 인스타 답글 초안 [보내기]
             handled.add(m["message_id"])
             v = (seen or {}).get("igrd_" + q["data"][4:]) or {}
@@ -6654,11 +6665,57 @@ def daily_in(seen, m, cap):
             data = r.read()
         os.makedirs(DAILY_DIR, exist_ok=True)
         open(f"{DAILY_DIR}/{name}", "wb").write(data)
-        seen[k] = {"t": time.time(), "text": cap, "img": f"{SITE}daily/{name}"}
-        reply("📝 받았어요 — 사이트에 사진이 올라가면(15분쯤) Threads에 올릴게요")
+        ask = (HAS_CP or HAS_TOSS) and not re.search(r"https?://", cap) and bool(daily_kw(cap))  # P: 링크 없는 '#일상 상품명' = 같은 상품 링크 후보 먼저(daily_cands)
+        seen[k] = {"t": time.time(), "text": cap, "img": f"{SITE}daily/{name}", **({"ask": 1} if ask else {})}
+        reply("📝 받았어요 — " + ("같은 상품 링크 후보를 찾아서 버튼으로 보낼게요(고른 것 = 첫 댓글 링크 · '없음' = 사진만)" if ask else "사이트에 사진이 올라가면(15분쯤) Threads에 올릴게요"))
     except Exception as e:
         print("daily in", repr(e))
         reply(f"⚠️ #일상 사진을 못 받았어요: {err_brief(e)} — 다시 보내줘")
+
+
+def daily_kw(cap):
+    """'#일상 상품명 …' -> 검색어: 첫 줄에서 #태그·주소·이모지·기호 뺀 말(40자 안)."""
+    s = re.sub(r"#\S+|https?://\S+|[^\w\s+%.-]", " ", cap.split("\n")[0])
+    return " ".join(s.split())[:40].strip()
+
+
+def daily_cands(seen):
+    """P(10/26 진우): 링크 없는 #일상 = 같은 상품 링크 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 · 점검 땐 보관 링크 있는 것만
+    -> 쿠팡 검색 API) -> 관리봇 버튼(publish_approved 'dl:' — 이 버튼 메시지에서 누른 것만) · 진우가 고른 것만 첫 댓글 링크(daily_post) · '없음'·후보 0개 = 사진만.
+    main 맨 앞 단계(쿠팡 검색 상한을 사진 가격 확인보다 먼저) · 실행마다 1건 · 토스 후보는 1번만 받아 둠(tc) · 쿠팡 상한·오류 = 다음 실행에 · 버튼 못 보냄 = 다음 실행에 다시."""
+    for k in [k for k in seen if k.startswith("dly_") and seen[k].get("ask") and "c" not in seen[k] and not seen[k].get("done")]:
+        v = seen[k]
+        kw = daily_kw(v["text"])
+        if "cs" not in v:
+            if "tc" not in v:
+                try:
+                    ids = set()
+                    v["tc"] = [{"n": x["displayName"], "p": x["displayPrice"], "toss": x["tacaItemId"]} for x in toss("/products/today-deals?size=30")["items"] + toss("/products/best-selling?size=100")["items"]
+                               if not x.get("isSoldOut") and toss_ok(seen, x["tacaItemId"]) and all(w in x["displayName"] for w in kw.split()) and not (x["tacaItemId"] in ids or ids.add(x["tacaItemId"]))][:3] \
+                        if HAS_TOSS and strip_cmp(v["text"])[0] == v["text"] else []
+                except Exception as e:  # 토스 실패 = 쿠팡 후보만
+                    print("daily cands toss", clip(repr(e), 120))
+                    v["tc"] = []
+            cs = list(v["tc"])
+            try:
+                if HAS_CP and len(cs) < 3:
+                    r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=5")
+                    cs += [{"n": x["productName"], "p": int(x.get("productPrice") or 0), "u": x["productUrl"]} for x in (r if isinstance(r, dict) else {}).get("productData") or []
+                           if isinstance(x, dict) and urllib.parse.urlsplit(str(x.get("productUrl"))).netloc in CP_SHORT and x.get("productName")][:3 - len(cs)]
+            except Exception as e:  # 쿠팡 상한·오류 = 다음 실행에(후보 0개로 끝내지 않음 — 하루 지나면 daily_post가 사진만)
+                print("daily cands", "상한" if isinstance(e, CpLimit) else clip(repr(e), 120))
+                return
+            v["cs"] = cs
+        if not v["cs"]:
+            v.update(c=[], pick="x", pt=time.time())
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text=f"🔎 '{kw}' 같은 상품 후보를 못 찾아서 사진만 올릴게요")
+            continue
+        kb = [[{"text": f"{'💙 토스' if c.get('toss') else '🚀 쿠팡'} · {clip(c['n'], 30)} · {c['p']:,}원", "callback_data": f"dl:{k[4:]}:{i}"}] for i, c in enumerate(v["cs"])]
+        r = tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:]), "allow_sending_without_reply": True},
+               text=f"🔗 '{kw}' 같은 상품 링크 후보 — 사진 속 상품과 확실히 같을 때만 골라줘(고른 것 = 첫 댓글 링크)", reply_markup={"inline_keyboard": kb + [[{"text": "❌ 없음(사진만)", "callback_data": f"dl:{k[4:]}:x"}]]})
+        if r:  # 보낸 버튼 메시지 = 이 후보 목록(다른 버튼 메시지에서 누른 건 안 받음)
+            v.update(c=v.pop("cs"), kb=r["message_id"])
+        return
 
 
 def daily_post(seen):
@@ -6667,17 +6724,40 @@ def daily_post(seen):
     tok, now = E.get("THREADS_TOKEN"), time.time()
     for k in [k for k in seen if k.startswith("dly_") and not seen[k].get("done")] if tok and not busy(seen, cap=False) else []:
         v = seen[k]
+        if v.get("ask") and "pick" not in v:  # P: 진우가 링크 후보를 고를 때까지(고르기 전엔 안 올림) · 하루 지나도 안 고름 = 사진만
+            if now - v["t"] < 86400:
+                continue
+            v.update(pick="x", pt=now, late=1)
         try:
             http(v["img"], method="HEAD")
         except Exception:
-            if now - v["t"] > 3600:
+            if now - v.get("pt", v["t"]) > 3600:  # 고른 때부터 1시간(후보 고르느라 늦어진 글이 HEAD 한 번 실패로 버려지지 않게)
                 v["done"] = now
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="⚠️ 사이트에 사진이 안 떠서 Threads에 못 올렸어요 — 다시 보내줘")
             continue
         v["done"] = now  # 먼저 표시: 실패해도 두 번 안 올림(실패는 main 알림)
-        th_post(tok, daily_text(v["text"]), image=v["img"], tag=th_topic(seen, base="일상"))
+        c = v["c"][int(v["pick"])] if str(v.get("pick", "x")).isdigit() and int(v["pick"]) < len(v.get("c", [])) else None
+        try:
+            link = c and (toss_link(seen, c["toss"], c["n"]) if c.get("toss") else c["u"])  # 토스 = 고른 뒤에만 쉐어링크 만듦
+        except Exception as e:  # 링크 못 만듦 = 사진만(사진 글은 그대로 올림)
+            print("daily toss link", clip(repr(e), 80))
+            link = None
+        why = "" if not c else "링크 못 만듦" if not link else "" if TH_REPLY and th_reply_ok(seen) else "댓글 못 닮"  # 링크 = 첫 댓글만(본문 X)
+        body, note = daily_text(f"{v['text']}\n{link}").replace(f"\n{link}", "") if link and not why else daily_text(v["text"]), link and aff_note(link)
+        if link and not why and th_len(body) > 480:  # 대가성 문구·게시 시점 줄 붙이면 500자에서 잘림 = 사진만
+            why = "대가성 문구까지 480자 넘음"
+        if why:
+            body = daily_text(v["text"])
+        rep = link and not why
+        r = th_post(tok, body, image=v["img"], tag=th_topic(seen, base="일상"))
         bundled(seen)
-        tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요")
+        try:
+            if rep:
+                th_reply(tok, r["id"], f"{note}\n\n👉 구매 링크 {link}", link)
+        except Exception as e:
+            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text=f"⚠️ #일상 링크 댓글 실패({err_brief(e)}) — 앱에서 직접 달아줘\n{link}")
+        tail = " (링크 = 첫 댓글)" if rep else f" (링크 없이 사진만: {why}" + (f" · 필요하면 앱에서 직접 댓글 {link}" if link else "") + ")" if why else " (하루 동안 안 골라서 사진만)" if v.get("late") else ""
+        tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요" + tail)
         return  # 1번에 1개(묶음 간격)
 
 
@@ -7893,7 +7973,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:
