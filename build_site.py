@@ -4,7 +4,7 @@ import calendar, collections, hashlib, html, itertools, json, os, re, shutil, ti
 
 BASE = "https://hotdealpick.kr/"
 GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
-GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소+경로(10/24 E — 상품마다 셈, 쿼리 X)
+GC_JS = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"nofollow\"]:not([data-gc^=\"promo/\"])');"  # 구매 링크(바깥 몰) 클릭 = 이벤트 buy/몰 주소+경로(10/24 E — 상품마다 셈, 쿼리 X)
          "if(!a||!window.goatcounter||!goatcounter.count)return;var h;try{h=new URL(a.href);h=h.hostname+h.pathname}catch(x){return}"
          "goatcounter.count({path:'buy/'+h,title:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,80),event:true});var L,N;try{L=sessionStorage.getItem('hp_lv');N=sessionStorage.getItem('hp_l3')}catch(x){}if(L)goatcounter.count({path:'layout/'+L+'/buy',title:'화면 '+L+' 구매 클릭',event:true});if(L&&N)goatcounter.count({path:'layout3/'+L+'/buy',title:'화면 '+L+' 구매 클릭(3안 배정)',event:true})});"  # 화면 꼬리표 = 이 탭 방문을 센 화면(중간에 바꿔도 — 방문·구매가 같은 쪽, 방문 안 셌으면 X) · buy/는 그대로(gc_top·cp_score가 읽음)
          "document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('a[data-ev],[data-gc]');"  # 기획전 배너 = 이벤트 banner/행사 · 칸별(data-gc) = mall/몰·top/N·deadline/글·drop/글·changes/종류(10/24 Cowork — 어느 칸을 누르는지)
@@ -234,7 +234,7 @@ SEEN_JS = """<script>(function(){try{var d=document.querySelector('.deal'),i=(lo
 localStorage.setItem('seen',JSON.stringify([{i:i,n:d.querySelector('.dn').textContent,im:d.querySelector('.im').outerHTML}].concat(S.filter(function(x){return x&&x.i!==i})).slice(0,20)))}catch(e){}})()</script>"""  # 딜 쪽 본 기록(최근 20개 — 홈 ♡ 내가 찜·본 딜)
 
 
-def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website", lead="", dis=""):
+def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website", lead="", dis="", ogt=""):
     """모든 쪽 틀(10/24 진우 개편 A → 포털형 2차 N+스토어): 헤더 = 로고 + 핫딜픽 + 🔔 + ♡(위로 밀리면 사라짐) / 검색칸(빨강 2px — 위에 붙어 있음) + lead(홈 = 기획전 넘김 배너·둥근 바로가기 2줄) + 대가성 문구(dis = 홈 짧은 문구) + 본문 + 아래 메뉴 5개(🔔 = 찜 변경 빨간 점 — 선 아이콘 그대로)."""
     t, d = html.escape(title), html.escape(desc[:150])
     nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-label="찜한 딜 보기"' if k == "saved" else "") + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}"
@@ -242,7 +242,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
-<meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
@@ -408,6 +408,31 @@ def aff(url):
     """제휴(수수료) 링크인지: 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트·링크프라이스 등."""
     host = urllib.parse.urlsplit(url or "").netloc
     return host in CP_SHORT or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
+
+
+SITE_AFF_ONLY = True  # 10/25 20:3x Cowork 최종 규칙(진우 '수수료 안 주는 녀석들은 빼자' · '채널 유지, 사이트만 빼기') — False = 예전처럼 모든 딜(셀프체크 옛 가짜 주소용)
+SITE_KEEP_HOSTS = ("coupang.com", "auction.co.kr", "gmarket.co.kr", "lotteon.com", "emart.ssg.com",  # ② 수수료 길이 있는데 아직 수수료 링크가 아닌 것 = 당분간 사이트에 그대로(봇이 딥링크 다시 — 쿠팡 파트너스·링크프라이스)
+                   "ppomppu.co.kr", "shopping.naver.com", "brand.naver.com", "smartstore.naver.com")  # · 뽐뿌·네이버(검색·상품 직접 주소 — 10/25 21:3x link_swap) = 진우가 쇼핑커넥트 등으로 바꿀 예정(다 바꾸면 여기서 지움) — 하위 주소도(www.·m.·search.)
+SITE_PP_MALLS = ("네이버", "네이버페이", "옥션", "지마켓", "g마켓", "롯데온", "이마트몰", "토스", "쿠팡", "올리브영")  # 뽐뿌 원글 링크 = 제목 [몰]이 수수료 몰일 때만(10/25 21:3x 진우 '원래 몰이 수수료 없는 88개는 없애자' — 11번가·카카오·오늘의집·홈쇼핑·자사몰 등 X)
+
+
+def keep_host(url):
+    """SITE_KEEP_HOSTS 주소(하위 도메인 포함)인지."""
+    h = urllib.parse.urlsplit(url or "").netloc.lower()
+    return any(h == k or h.endswith("." + k) for k in SITE_KEEP_HOSTS)
+
+
+def site_ok(p):
+    """사이트(목록·칸·검색·RSS·사이트맵)에 보일 딜(10/25 20:3x Cowork 최종 — 싼지로 안 거름): ① 제휴(수수료) 링크 ② 수수료 길이 있는 몰 주소(SITE_KEEP_HOSTS — 당분간, 바뀌면 교체)
+    / ③ 그 밖(11번가·카카오 톡스토어·오늘의집·버거킹 등 = 수수료 길이 없음 · 뽐뿌 원글인데 제목 [몰]이 수수료 몰 아님) = 사이트 X — 텔레그램 채널은 그대로·데이터 그대로."""
+    u = p.get("url")
+    if p.get("nosite"):  # link_swap 'none' = 진우가 쇼핑커넥트 '참여 안 함' 확인(10/25 21:4x)
+        return False
+    if not SITE_AFF_ONLY or aff(u):
+        return True
+    h = urllib.parse.urlsplit(u or "").netloc.lower()
+    pp = h == "ppomppu.co.kr" or h.endswith(".ppomppu.co.kr")
+    return keep_host(u) and (not pp or (re.search(r"\[([^\]]+)\]", title_of(p.get("text") or "")) or [0, ""])[1].strip().lower() in SITE_PP_MALLS)
 
 
 CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
@@ -626,7 +651,7 @@ def shelf(p, ev, today):
 def shelf_gone(posts):
     """같은 url 진우 글이 뒤에 또 올라온 사이트 진열(shelf) 글 번호 — 사이트엔 글 하나로(10/24 진우 '합치기' — home_pool과 같은 기준: url마다 최신 진우 글)."""
     last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
-    return {i for i, p in enumerate(posts) if p.get("shelf") and last.get(p.get("url"), i) != i}
+    return {i for i, p in enumerate(posts) if p.get("shelf") and (last.get(p.get("url"), i) != i or not site_ok(p))}  # 수수료 없는 진열 글(쿠팡 생 주소 — 10/25 20시 진우 '빼자') = 같이 보기·목록·사이트맵 X
 
 
 def home_pool(posts, days):
@@ -638,8 +663,8 @@ def home_pool(posts, days):
     newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
     out = {}
     for i, p in enumerate(posts):
-        if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)):
-            continue
+        if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)) or not site_ok(p):
+            continue  # 사이트 = 제휴 링크 딜(+ 당분간 뽐뿌·네이버 검색) — 쿠팡 생 주소 진열은 바뀌면 그때(site_ok)
         if (s := shelf(p, ev, today)) is not None:
             out[i] = s
     return out
@@ -709,12 +734,12 @@ def price_item(p):
     return next((it for it in PRICE_ITEMS if re.search(it[2], title)), None)
 
 
-def price_records(posts, shelf=True):
+def price_records(posts, shelf=True, skip=()):
     """최저가 기록 {주소: (품목, 단위, [(단위가격, '1L당 248원', i, p), …] 싼 순)} — 품목 딜 중 💡 단위가격에 그 단위가 있는 것만, PRICE_MIN개↑ 품목만.
     같은 상품이 같은 단위가격으로 다시 올라오면 최근 1개(숫자는 글에 적힌 그대로 — 단위 바꿔 셈 X)."""
     rows = {}
     for i, p in enumerate(posts):
-        it = (shelf or not p.get("shelf")) and price_item(p)  # shelf=False = 채널 글만(Threads 투표)
+        it = (shelf or not p.get("shelf")) and i not in skip and price_item(p)  # shelf=False = 채널 글만(Threads 투표) · skip = 사이트에서 뺀 비제휴 딜
         lab = it and next(((float(v.replace(",", "")), f"{it[3]} {v}원") for lb, v in PAIR.findall(unit_of(p)) if re.sub(r"^1(?=\D)|\s", "", lb).lower() in it[4]), None)
         if lab:
             rows.setdefault(it[0], {})[(parse(title_of(p["text"]))[1], lab[0])] = (*lab, i, p)
@@ -1083,9 +1108,11 @@ def ev_banner(evs):
         + (f'<b class="evn" aria-hidden="true"><span>1</span>/{len(evs)}</b></nav>{EV_JS}' if len(evs) > 1 else "</nav>"))
 
 
+PROMO_LP_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 문구 그대로(hotdeal.AFF_NOTE — 셀프체크로 맞춤)
+PROMO_OY_NOTE = "이 포스팅은 올리브영 쇼핑 큐레이터 활동의 일환으로, 구매 시 일정 금액의 수수료를 제공받습니다."  # hotdeal.OY_NOTE 그대로
 PROMOS, PROMO_LINKS, PROMO_SOON, PROMO_PAST = "promos.json", "promo_links.json", 7, 3  # 쇼핑몰 기획전(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게' — Cowork 매일 17:30 기사 근거) · 봇이 만든 링크프라이스 딥링크(hotdeal.promo_links) · 홈 띠 '곧 시작' = 7일 안 · /events/ 지난 행사 3개
 MALL_C = {"coupang": ("#D9402A", "#fff", "#C2362A", "쿠"), "11st": ("#E8264A", "#fff", "#D11F40", "11"), "ssg": ("#FFC72C", "#14161B", "#8A6200", "S"), "gmarket": ("#13924A", "#fff", "#0F7A3D", "G"),
-          "auction": ("#E51E25", "#fff", "#C8191F", "A"), "lotteon": ("#E3262E", "#fff", "#C8202A", "L"), "oliveyoung": ("#7FB82E", "#14161B", "#4E7A12", "올")}  # 몰 색(바탕·바탕 위 글자·연한 바탕 위 글자·로고 없을 때 글자) — 10/25 Cowork 토큰 · 모르는 몰 = 회색
+          "auction": ("#E51E25", "#fff", "#C8191F", "A"), "lotteon": ("#E3262E", "#fff", "#C8202A", "L"), "oliveyoung": ("#7FB82E", "#14161B", "#4E7A12", "올"), "emart": ("#FFC72C", "#14161B", "#8A6200", "e")}  # 몰 색(바탕·바탕 위 글자·연한 바탕 위 글자·로고 없을 때 글자) — 10/25 Cowork 토큰 · 모르는 몰 = 회색
 PROMO_DATE = r"\d{4}-\d{2}-\d{2}"
 
 
@@ -1096,21 +1123,31 @@ def promo_list(today):
         d = json.load(open(PROMOS))
     except (OSError, ValueError):
         return []
-    day = lambda v: v is None or isinstance(v, str) and re.fullmatch(PROMO_DATE, v)
+    def day(v):  # 형식 + 진짜 날짜(11-31 = 뺌 — 빌드가 멈추면 그 실행 게시가 다음 실행에 또 나감)
+        try:
+            return v is None or isinstance(v, str) and re.fullmatch(PROMO_DATE, v) and time.strptime(v, "%Y-%m-%d")
+        except ValueError:
+            return False
     https = lambda v: v is None or isinstance(v, str) and v.startswith("https://") and not re.search(r"\s", v)
     out = []
     for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []):
         if not (isinstance(p, dict) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(p.get("id") or "")) and re.fullmatch(r"[a-z0-9]{1,20}", str(p.get("mall") or ""))
                 and isinstance(p.get("name"), str) and p["name"].strip() and day(p.get("start")) and day(p.get("end")) and https(p.get("url"))
                 and (p.get("pre") is None or isinstance(p["pre"], dict) and day(p["pre"].get("start")) and day(p["pre"].get("end")))
-                and (p.get("cta") is None or isinstance(p["cta"], dict) and https(p["cta"].get("href"))) and (p.get("color") is None or re.fullmatch(r"#[0-9A-Fa-f]{6}", str(p["color"])))):
+                and (p.get("cta") is None or isinstance(p["cta"], dict) and https(p["cta"].get("href"))) and (p.get("color") is None or re.fullmatch(r"#[0-9A-Fa-f]{6}", str(p["color"])))
+                and all(p.get(k) is None or isinstance(p[k], str) for k in ("tag", "kw", "mall_name", "sub", "benefit")) and (p.get("cta") is None or p["cta"].get("text") is None or isinstance(p["cta"]["text"], str))):
             continue
-        pre = p.get("pre") or {}
-        first = pre.get("start") or p.get("start")
+        first = (p.get("pre") or {}).get("start") if promo_pre(p, today) else p.get("start")
         st = "past" if p.get("end") and p["end"] < today else "end" if p.get("end") == today else "soon" if first and first > today else "on"
         out.append((p, st, first or ""))
     rank = {"end": 0, "on": 1, "soon": 2, "past": 3}
     return sorted(out, key=lambda x: (rank[x[1]], x[2] if x[1] == "soon" else "", (x[0].get("end") or "9999") if x[1] != "past" else "", x[0]["id"]))
+
+
+def promo_pre(p, today):
+    """사전 행사가 아직 남음(끝나지 않았고 본 행사 전) — 끝난 사전 행사 = 본 행사 첫날까지 '곧 시작'(10/25 리뷰)."""
+    pre = p.get("pre") or {}
+    return bool(pre.get("start")) and not (pre.get("end") and pre["end"] < today) and not (p.get("start") and p["start"] <= today)
 
 
 def promo_span(a, b, short=False):
@@ -1122,10 +1159,9 @@ def promo_span(a, b, short=False):
 def promo_chip(p, st, today):
     """상태 칩: 오늘 마감(빨강) · 진행 중/사전 행사 중(연두) · D-n(검정 — 첫날까지)."""
     if st == "soon":
-        return f'<b class="pvs soon">D-{promo_days(today, (p.get("pre") or {}).get("start") or p["start"])}</b>'
-    pre = p.get("pre") or {}
+        return f'<b class="pvs soon">D-{promo_days(today, (p.get("pre") or {}).get("start") if promo_pre(p, today) else p["start"])}</b>'
     return {"end": '<b class="pvs end">오늘 마감</b>', "past": '<b class="pvs past">끝남</b>'}.get(st) or \
-        f'<b class="pvs on">{"사전 행사 중" if pre.get("start") and p.get("start") and today < p["start"] else "진행 중"}</b>'
+        f'<b class="pvs on">{"사전 행사 중" if promo_pre(p, today) else "진행 중"}</b>'
 
 
 def promo_days(a, b):
@@ -1138,14 +1174,14 @@ def promo_mall(p, icons):
     c, fg, tx, ch = MALL_C.get(p["mall"], ("#4B5563", "#fff", "#4B5563", (p.get("mall_name") or p["mall"])[:1]))
     if p.get("color"):
         c, fg, tx = p["color"], "#fff", p["color"]
-    sty = f"--m:{c};--mf:{fg};--mt:{tx}" + (";--mb:#FFF8E3" if p["mall"] == "ssg" and not p.get("color") else "")
+    sty = f"--m:{c};--mf:{fg};--mt:{tx}" + (";--mb:#FFF8E3" if p["mall"] in ("ssg", "emart") and not p.get("color") else "")
     lg = f'<img src="/icons/mall/{p["mall"]}.png" width="14" height="14" alt="">' if p["mall"] in icons else html.escape(ch)
     name = " ".join(x for x in (str(p.get("mall_name") or p["mall"]).strip(), str(p.get("sub") or "").strip()) if x)
     return sty, f'<i class="mlg" aria-hidden="true">{lg}</i>', name
 
 
 def promo_goods(p, it, tagged):
-    """그 행사 상품(일시 품절 뺌): tag = events 그 tag 상품 · kw = 이름에 검색어 낱말이 다 든 진열 상품."""
+    """그 행사 상품(일시 품절 뺌 · it = 사이트 진열 = site_ok만): tag = events 그 tag 상품 · kw = 이름에 검색어 낱말이 다 든 진열 상품."""
     if p.get("tag"):
         us = tagged.get(str(p["tag"]), set())
         xs = [x for x in it if x[1].get("url") in us]
@@ -1157,13 +1193,20 @@ def promo_goods(p, it, tagged):
 
 
 def promo_go(p, xs, slugs, links):
-    """(주소, rel·target 붙일 바깥 링크?): tag 상품 = 행사 쪽(e/slug.html) · kw 상품 = 홈 검색(?q=) · 아니면 행사 주소(링크프라이스 딥링크로 바뀐 것 있으면 그것) · cta.href · 없음."""
+    """(주소, rel·target 붙일 바깥 링크?): tag 상품 = 행사 쪽(e/slug.html) · kw 상품 = 홈 검색(?q=) · 아니면 행사 주소(url·cta.href)를 봇이 링크프라이스 딥링크로 바꾼 것(promo_links.json),
+    아직·실패면 몰 홈 그대로(수수료 길이 있는 몰 = SITE_KEEP_HOSTS — 10/25 20:3x 최종 규칙 ②) · 그 밖(11번가 등) = ('', False)."""
     if xs and p.get("tag") in slugs:
         return f"{BASE}e/{slugs[p['tag']]}.html", False
     if xs and p.get("kw"):
         return f"{BASE}?q={urllib.parse.quote(p['kw'])}", False
-    u = p.get("url") or (p.get("cta") or {}).get("href")
-    return (links.get(u) if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) else u, True) if u else ("", False)
+    us = [u for u in (p.get("url"), (p.get("cta") or {}).get("href")) if u]
+    v = next((links[u] for u in us if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) and aff(links[u])), "") or next((u for u in us if aff(u) or keep_host(u)), "")
+    return (v, True) if v else ("", False)
+
+
+def promo_shown(ps, it, tagged, links):
+    """사이트에 보일 행사 = 진열 상품(tag·kw)이 있거나 행사 주소가 제휴 링크·수수료 길이 있는 몰(promo_go) — 수수료 길이 없는 몰만 있는 행사 = 숨김."""
+    return [x for x in ps if promo_goods(x[0], it, tagged) or promo_go(x[0], [], {}, links)[0]]
 
 
 def promo_a(href, ext, gc, inner, cls, extra=""):
@@ -1197,11 +1240,16 @@ PROMO_FILTER_JS = """<script>(function(){var b=document.querySelectorAll('.pf bu
 [].forEach.call(b,function(y){y.setAttribute('aria-pressed',y===x?'true':'false')});[].forEach.call(document.querySelectorAll('.pvl .pv'),function(c){var s=c.getAttribute('data-s');c.hidden=!(f==='all'||f===s||f==='on'&&s==='end')})})})})()</script>"""  # /events/ 칩 = 화면 안에서만 거름(JS 꺼짐 = 전부 보임)
 
 
+def promo_now(ps, today):
+    """홈 띠에 나오는 행사 [(항목, 상태)] = 오늘 마감·진행 중 + PROMO_SOON일 안에 시작."""
+    lim = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) + PROMO_SOON * 86400))
+    return [(p, st) for p, st, first in ps if st in ("end", "on") or st == "soon" and first <= lim]
+
+
 def promo_band(ps, it, tagged, slugs, links, icons, today):
     """홈 맨 위 띠 '🎉 지금 하는 기획전'(시안 B 작게 — 10/25 진우): 오늘 마감 → 진행 중 → 곧 시작(PROMO_SOON일 안) 칸 250×112 · 진한 몰 색(쓱 = 글자 검정) · 링 장식 ·
     로고·몰·상태 칩 / 큰 날짜 / 행사명 / 상품 사진 동그라미 3개 · 옆으로 밀기 + 점 · 오른쪽 '전체 N →'(/events/) · 칸 누르면 = 그 행사 CTA(없으면 /events/#id) · GoatCounter promo/<id>."""
-    lim = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) + PROMO_SOON * 86400))
-    show = [(p, st) for p, st, first in ps if st in ("end", "on") or st == "soon" and first <= lim]
+    show = promo_now(ps, today)
     if not show:
         return ""
     cells = []
@@ -1223,11 +1271,11 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     """/events/ '기획전 모음'(시안 A 작게 — 10/25 진우): 쇼핑 달력 줄(날짜·행사·D-day, 오늘 마감 = 검정 칸) → 칩(전체·진행 중·곧 시작) → 카드 → 지난 행사(접힘 PROMO_PAST개)
     + 맨 아래 대가성 문구(쿠팡 상품 칸이 있으면 쿠팡 파트너스 · 링크프라이스 링크가 있으면 그 문구 — 사실대로). -> (제목, 설명, 본문)."""
     live, past = [x for x in ps if x[1] != "past"], sorted((x for x in ps if x[1] == "past"), key=lambda x: x[0].get("end") or "", reverse=True)[:PROMO_PAST]
-    dd = lambda p, st: ("오늘 마감" if st == "end" else f"D-{promo_days(today, (p.get('pre') or {}).get('start') or p['start'])}" if st == "soon"
+    dd = lambda p, st, first: ("오늘 마감" if st == "end" else f"D-{promo_days(today, first)}" if st == "soon"
                         else f"마감 D-{promo_days(today, p['end'])}" if p.get("end") else "진행 중")
     cal = ('<nav class="pcal" aria-label="쇼핑 달력">' + "".join(
-        f'<a class="pcd{" k" if st == "end" else ""}" href="#{p["id"]}"><b>{promo_span(p.get("start") or (p.get("pre") or {}).get("start"), p.get("end"))}</b><span>{html.escape(p["name"].strip())}</span><i>{dd(p, st)}</i></a>'
-        for p, st, _ in sorted(live, key=lambda x: (x[2] or "0000", x[0]["id"]))) + "</nav>") if live else ""
+        f'<a class="pcd{" k" if st == "end" else ""}" href="#{p["id"]}"><b>{promo_span(p.get("start") or (p.get("pre") or {}).get("start"), p.get("end"))}</b><span>{html.escape(p["name"].strip())}</span><i>{dd(p, st, first)}</i></a>'
+        for p, st, first in sorted(live, key=lambda x: (x[2] or "0000", x[0]["id"]))) + "</nav>") if live else ""
     cards, gos = [], []
     for p, st, _ in live + past:
         xs = promo_goods(p, it, tagged)
@@ -1237,8 +1285,13 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     n_on, n_soon = sum(st in ("end", "on") for _, st, _ in live), sum(st == "soon" for _, st, _ in live)
     chips = (f'<nav class="pf" aria-label="기획전 거르기"><button type="button" data-f="all" aria-pressed="true">전체 {len(live)}</button>'
              f'<button type="button" data-f="on" aria-pressed="false">진행 중 {n_on}</button><button type="button" data-f="soon" aria-pressed="false">곧 시작 {n_soon}</button></nav>') if live else ""
-    notes = [n for n, ok in ((SHOP_NOTES["coupang"], any(not ext and xs and shop_of(xs[0][1]) == "coupang" for (h, ext), xs, _ in gos)),
-                             ("이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다.", any(ext and aff(h) for (h, ext), _, _ in gos))) if ok]  # 링크프라이스 머천트 문구 그대로(hotdeal.AFF_NOTE)
+    def note(h, ext, xs):  # 링크 프로그램마다 그 문구 그대로(hotdeal.aff_note와 같은 나눔) · 안쪽(e/·검색) = 그 칸 쿠팡 상품이 제휴 링크일 때만(생 주소 = 수수료 X)
+        host = urllib.parse.urlsplit(h or "").netloc
+        if not ext:
+            return SHOP_NOTES["coupang"] if any(shop_of(q) == "coupang" and aff(q.get("url")) for _, q, _ in xs) else ""
+        return (SHOP_NOTES["coupang"] if host in CP_SHORT else SHOP_NOTES["toss"] if toss_share(h) else SHOP_NOTES["naver"] if host in NAVER_HOSTS
+                else PROMO_OY_NOTE if host in OY_HOSTS else PROMO_LP_NOTE if aff(h) else "")
+    notes = [n for n in dict.fromkeys(note(h, ext, xs) for (h, ext), xs, _ in gos) if n]
     mm = int(today[5:7])
     body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쿠팡·11번가·G마켓·SSG 등 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
             + cal + chips + (f'<div class="pvl">{"".join(cards[:len(live)])}</div>' if live else '<p class="t">지금 정리된 기획전이 없어요. 매일 저녁 새로 찾아 올려요.</p>')
@@ -1897,7 +1950,8 @@ def build(posts, out="docs"):
     latest = posts[-1]["t"][:10] if posts else ""
     urls = [(BASE, latest)]
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    gone = shelf_gone(posts)  # 채널 글로 이어진 진열 글 = 같이 보기·목록·사이트맵 X(페이지는 그대로)
+    noaff = {i for i, p in enumerate(posts) if not p["text"].startswith("📋") and not site_ok(p)}  # 사이트에서 뺀 비제휴 딜(site_ok) = 새 p/ 쪽 X · 있는 쪽은 그대로(목록·사이트맵·RSS·같이 보기·지난 딜·최저가 기록 X)
+    gone = shelf_gone(posts) | noaff  # 채널 글로 이어진 진열 글 = 같이 보기·목록·사이트맵 X(페이지는 그대로)
     home = home_pool(posts, days)
     it = items(posts, days, home)
     now_ts = time.time()
@@ -1912,7 +1966,7 @@ def build(posts, out="docs"):
     st = lambda i, p: home.get(i) or (p.get("own") and p.get("url") in cur and home[cur[p["url"]]]) or (4, None, f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 게시' if p["t"][:10] not in days[:3] else "", [], False)  # 목록 밖 = 같은 상품 지금 상태, 없으면 배지 X(지난 딜을 🔥 특가라고 X) + 게시 날짜
     pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋") and j not in gone
             and aff(q.get("url")) and "특가로는 약한 제품" not in q["text"]]
-    recs = price_records(posts)
+    recs = price_records(posts, skip=noaff)
     os.makedirs(f"{out}/c", exist_ok=True)
     for f in os.listdir(f"{out}/c"):  # 품목에서 빠진 옛 기록 페이지(c/*.html)만 지움 — 목록 쪽 폴더(c/life/ 등)는 그대로
         if f.endswith(".html") and f[:-5] not in recs:
@@ -1922,6 +1976,8 @@ def build(posts, out="docs"):
         open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     for i, p in reversed(list(enumerate(posts))):
+        if i in noaff:  # 비제휴 딜 = 새 쪽 X(있는 쪽은 그대로 둠 — 목록·사이트맵에서만 빠짐)
+            continue
         url, rel = f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="sec" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="cards">{"".join(card(j, q, st(j, q)) for j, q in rel)}</div>' + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(q) == "toss" for _, q in rel) else "") + '</section>'
         note = p["text"].split("\n", 1)[0] if urllib.parse.urlsplit(p.get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and p["text"].startswith(NOTE_STARTS) else ""  # 네이버·올영: 그 프로그램 문구 그대로 맨 앞(변형·누락 시 패널티)
@@ -1984,22 +2040,23 @@ def build(posts, out="docs"):
                                        + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
                                        head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 og.png(인스타 카드는 다른 5개 딜이라 X)
         urls.append((f"{BASE}today/{d}/", d))
-    ps_ = promo_list(today)  # 기획전 모음(10/25 Cowork·진우 — promos.json): 홈 띠 + /events/
     try:
         plinks = json.load(open(PROMO_LINKS))
     except (OSError, ValueError):
         plinks = {}
+    plinks = plinks if isinstance(plinks, dict) else {}
     icons = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()
     tagged = {}
     for e in ev_list():
         if isinstance(e, dict) and isinstance(e.get("tag"), str) and isinstance(e.get("url"), str):
             tagged.setdefault(e["tag"], set()).add(e["url"])
     slugs = {g["tag"]: g["slug"] for g in evs}
-    band = promo_band(ps_, it, tagged, slugs, plinks if isinstance(plinks, dict) else {}, icons, today)
-    ptags = {p.get("tag") for p, st, _ in ps_ if st != "past"} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
+    ps_ = promo_shown(promo_list(today), it, tagged, plinks)  # 기획전 모음(10/25 Cowork·진우 — promos.json, 제휴 되는 것만): 홈 띠 + /events/
+    band = promo_band(ps_, it, tagged, slugs, plinks, icons, today)
+    ptags = {p.get("tag") for p, _ in promo_now(ps_, today)} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
     evh = f"{BASE}events/" if any(st != "past" for _, st, _ in ps_) else ""
-    ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks if isinstance(plinks, dict) else {}, icons, today)
-    write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh))
+    ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks, icons, today)
+    write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh, ogt=f"기획전 모음 · {TITLE}"))  # og 그림 = 기본 og.png(로고 카드 — Threads 정보 글 링크 카드)
     if evh:
         urls.append((f"{BASE}events/", today))
     cp = card_picks(posts, out)
@@ -2066,7 +2123,7 @@ def build(posts, out="docs"):
     md = f"{int(today[5:7])}/{int(today[8:10])}"
     rss += [(f"{CAT_META[k][1]} 특가 모음 ({md})", c_url(CAT_META[k][0]), f"{CAT_META[k][1]} 특가 {len(ls[CAT_META[k][0]][2])}개 — " + " · ".join(parse(title_of(p["text"]))[1] for _, p, _ in ls[CAT_META[k][0]][2][:3]),
              f"{today} 00:00", f"c-{CAT_META[k][0]}-{today}") for k in TILES if ls[CAT_META[k][0]][2]]  # 10/24 N1 '품목 쪽 사이트맵·RSS에': 타일 8칸 1쪽 = 날마다 새 글(guid에 날짜)
-    rss += [(title_of(p["text"]), f"{BASE}p/{i}.html", summary(p["text"]), p["t"][:16], "") for i, p in [(i, p) for i, p in enumerate(posts) if not p["text"].startswith("📋")][-(30 - len(rss)):][::-1]]  # 합쳐 30개  # 네이버 서치어드바이저 'RSS 제출'용 최근 딜 30개
+    rss += [(title_of(p["text"]), f"{BASE}p/{i}.html", summary(p["text"]), p["t"][:16], "") for i, p in [(i, p) for i, p in enumerate(posts) if not p["text"].startswith("📋") and i not in noaff][-(30 - len(rss)):][::-1]]  # 합쳐 30개  # 네이버 서치어드바이저 'RSS 제출'용 최근 딜 30개
     open(f"{out}/rss.xml", "w").write(
         f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{TITLE}</title><link>{BASE}</link><description>쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요</description><language>ko</language>'
         + "".join(f'<item><title>{html.escape(t)}</title><link>{u}</link>' + (f'<guid isPermaLink="false">{g}</guid>' if g else f"<guid>{u}</guid>") + f'<description>{html.escape(d)}</description>'

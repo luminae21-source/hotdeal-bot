@@ -91,7 +91,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     await pg.waitForFunction(() => window.__gcl === 1 && navigator.serviceWorker.controller);
     assert.strictEqual(await pg.getAttribute('script[data-goatcounter]', 'data-goatcounter'), 'https://hotdealpick.goatcounter.com/count');
     assert.strictEqual(await pg.evaluate(() => goatcounter.referrer('https://www.threads.net/')), 'https://www.threads.net/');
-    const buy = await pg.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); const u = new URL(a.href); return [u.hostname + u.pathname, window.__gc, u.search]; });
+    const buy = await pg.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); const u = new URL(a.href); return [u.hostname + u.pathname, window.__gc, u.search]; });
     assert.ok(buy[1] && buy[1].some(v => v.event === true && v.path === 'buy/' + buy[0]) && buy[0].includes('/') && !buy[1].some(v => buy[2] && v.path.includes(buy[2])), JSON.stringify(buy));
     const bn = await pg.evaluate(() => { const a = document.createElement('a'); a.href = '#ev'; a.dataset.ev = 'e1a2b3c'; a.textContent = '배너'; document.querySelector('main').append(a); a.click(); a.remove(); return window.__gc; });
     assert.ok(bn.some(v => v.event === true && v.path === 'banner/e1a2b3c'), JSON.stringify(bn));  // 기획전 배너 클릭 = 이벤트 banner/행사(10/24 Cowork — 1주 보고 팝업 여부)
@@ -199,8 +199,9 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       await p6.goto(U + '/', { waitUntil: 'load' });
       assert.ok(await p6.evaluate(() => document.getElementById('inst').hidden), '390×660 첫 화면 = 설치 띠 X');
       const F = await p6.evaluate(() => { const nav = document.querySelector('nav.nav').getBoundingClientRect().top, B = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect().bottom : null; };
-        return { nav, sb: B('.sb'), evb: B('.evb'), qk: B('.qk'), rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= nav).length, bub: !!document.querySelector('.qk .qb') }; });
-      assert.ok(F.sb && F.qk && F.qk < F.nav && F.rows >= (F.evb ? 2 : 3), '390×660 첫 화면 ' + JSON.stringify(F));
+        return { nav, sb: B('.sb'), evb: B('.evb'), pb: B('.pb'), qk: B('.qk'), rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= nav).length,
+                 ft: (document.querySelector('#fire .rows:not([hidden]) .r') || { getBoundingClientRect: () => ({ top: 1e9 }) }).getBoundingClientRect().top, bub: !!document.querySelector('.qk .qb') }; });
+      assert.ok(F.sb && F.qk && F.qk < F.nav && (F.pb ? F.pb < F.qk && F.ft < F.nav : F.rows >= (F.evb ? 2 : 3)), '390×660 첫 화면 ' + JSON.stringify(F));  // 기획전 띠(10/25 진우 시안 B — 검색 아래·핫딜 위, 칸 250×112)가 있으면 = 띠 + 바로가기 + 🔥 첫 줄이 첫 화면에서 시작(줄 수는 띠 높이만큼 줄어듦 — Cowork에 숫자 보고)
       await p6.evaluate(() => scrollTo(0, 600)); await p6.waitForTimeout(100);
       const st = await p6.evaluate(() => [document.querySelector('.sb').getBoundingClientRect().top, document.querySelector('.hr').getBoundingClientRect().bottom]);
       assert.ok(st[0] >= -1 && st[0] <= 8 && st[1] <= 1, '밀면 로고 줄은 사라지고 검색칸만 위에 ' + JSON.stringify(st));
@@ -215,7 +216,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       return { inst: R(i), btn: R(document.getElementById('instb')), x: R(document.getElementById('instx')), bottom: fx ? R(nav) : null, top: fx ? null : R(nav), g: R(document.querySelector('#fire .rows:not([hidden]) .r')), vh: innerHeight,
                pb: parseFloat(getComputedStyle(nav).paddingBottom), pt: 0, rows: [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].filter(e => e.getBoundingClientRect().bottom <= navTop).length,
                qk: R(document.querySelector('.qk')), q1: [...document.querySelectorAll('.qr:first-child .q')].filter(e => e.getBoundingClientRect().right <= innerWidth).length, q2: document.querySelectorAll('.qr:last-child .q').length,
-               evb: R(document.querySelector('.evb')), sb: R(document.querySelector('.sb')) };
+               evb: R(document.querySelector('.evb')), band: R(document.querySelector('.pb')), sb: R(document.querySelector('.sb')) };
     });
     const over = (a, b) => a && b && a.top < b.bottom && b.top < a.bottom;
     for (const [w, h, ua, name] of PHONES) for (const app of [false, true]) {
@@ -234,7 +235,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         assert.ok(!over(L.inst, L.bottom) && !over(L.inst, L.top), tag + ' 띠가 고정 바와 안 겹침');
       }
       assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 실시간 핫딜 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
-      assert.ok(L.qk && L.sb && L.qk.bottom <= L.vh && L.q1 >= 6 && L.q2 === 13 && L.rows >= (w >= 390 ? 4 : 3), tag + ' 첫 화면 = 검색·바로가기 2줄(6개+)·핫딜 줄 4개↑(포털형 2차) ' + JSON.stringify([L.rows, L.qk, L.q1, L.vh]));
+      assert.ok(L.qk && L.sb && L.qk.bottom <= L.vh && L.q1 >= 6 && L.q2 === 13 && L.rows >= (w >= 390 ? 4 : 3) - (L.band ? 2 : 0), tag + ' 첫 화면 = 검색·(기획전 띠 = 2줄 덜)·바로가기 2줄(6개+)·핫딜 줄 4개↑(포털형 2차) ' + JSON.stringify([L.rows, L.qk, L.q1, L.vh]));
       assert.ok(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ' 옆으로 안 넘침');
       if (safe) assert.ok(L.pb >= 40, tag + ' 홈 바 여백 ' + L.pb);
       const f = path.join(tmp, `${w}${app ? 'a' : 'b'}.png`);
@@ -259,14 +260,14 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
                  heart: V('.hr .ib+.ib'), over: document.documentElement.scrollWidth - innerWidth, fire: r('#fire .rows:not([hidden]) .r').top, vh: innerHeight, gc: (window.__gc || []).map(v => v.event && v.path) }; });
       assert.ok(/\blay-a\b/.test(LA.cls) && LA.mb && LA.m >= 3 && LA.t6 === 12 && !LA.qk && !LA.evb && LA.sb < LA.hr && LA.lg <= 1 && !LA.heart && LA.over <= 0 && LA.fire < LA.vh - 120, 'A 목록형 = 검색 헤더 1줄·몰 버튼·품목 6×2(바로가기·배너 X) ' + JSON.stringify(LA));
       assert.ok(LA.gc.includes('layout/A'), 'GoatCounter 방문 layout/A ' + LA.gc);
-      const bA = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
+      const bA = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
       assert.ok(bA.some(p => p.startsWith('buy/') && p.includes('/', 4)) && bA.includes('layout/A/buy'), '구매 클릭 = buy/ 그대로 + 화면 꼬리표 layout/A/buy ' + bA);
       await pa.reload({ waitUntil: 'load' }); await pa.waitForFunction(() => window.__gcl === 1); await pa.waitForTimeout(100);
       assert.ok(!(await pa.evaluate(() => (window.__gc || []).some(v => v.path === 'layout/A'))), '방문 = 탭 세션 1번');
       await pa.click('.lsw [data-l=b]');
       const sw = await pa.evaluate(() => [document.documentElement.className, localStorage.getItem('hp_layout'), scrollY, getComputedStyle(document.querySelector('main > .lb')).display, getComputedStyle(document.querySelector('main > .la')).display, (window.__gc || []).map(v => v.path), document.querySelector('.lsw [data-l=b]').getAttribute('aria-pressed') === 'true' && document.querySelector('.lsw [data-l=a]').getAttribute('aria-pressed') === 'false']);
       assert.ok(/\blay-b\b/.test(sw[0]) && !/\blay-a\b/.test(sw[0]) && sw[1] === 'b' && sw[2] === 0 && sw[3] !== 'none' && sw[4] === 'none' && sw[5].includes('layout/switch/B') && sw[6], '바꾸기(홈 맨 아래 — 화면: 목록형·아이콘형·혼합형) = 아이콘형 + 기억 + 맨 위로 + 눌림 표시 + layout/switch/B ' + JSON.stringify(sw));
-      const bS = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
+      const bS = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
       assert.ok(bS.includes('layout/A/buy') && !bS.includes('layout/B/buy'), '바꾼 탭의 구매 = 방문을 센 화면(A) 꼬리표 ' + bS);
       await pa.reload({ waitUntil: 'load' }); assert.ok(await pa.evaluate(() => document.documentElement.classList.contains('lay-b')), '다시 열어도 고른 화면');
       await pa.goto(U + '/c/', { waitUntil: 'load' }); await pa.click('.lsw [data-l=a]');
@@ -280,7 +281,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       const cB = await browser.newContext({ viewport: { width: 390, height: 844 } }, null); await cB.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
       await cB.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);
       const pB = await cB.newPage(), errB = []; pB.on('pageerror', e => errB.push(String(e))); await pB.goto(U + '/', { waitUntil: 'load' }); await pB.waitForFunction(() => window.__gcl === 1); await pB.waitForTimeout(100);
-      const gB = await pB.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return (window.__gc || []).map(v => v.path); });
+      const gB = await pB.evaluate(() => { const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return (window.__gc || []).map(v => v.path); });
       assert.ok(gB.some(p => p.startsWith('buy/')) && !gB.some(p => p.startsWith('layout/')), '저장소 막힘 = 무작위 X → 화면 실험 밖(layout/ 방문·구매 꼬리표 X, buy/는 그대로) ' + gB);
       const LB = await pB.evaluate(() => [document.documentElement.classList.contains('lay-a'), getComputedStyle(document.querySelector('main > .la')).display !== 'none', getComputedStyle(document.querySelector('main > .lb')).display === 'none', document.documentElement.scrollWidth <= innerWidth]);
       await pB.click('.lsw [data-l=b]'); const LB2 = await pB.evaluate(() => document.documentElement.classList.contains('lay-b') && getComputedStyle(document.querySelector('main > .lb')).display !== 'none');
@@ -301,14 +302,14 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       await pc.goto(U + '/', { waitUntil: 'load' }); await pc.waitForFunction(() => window.__gcl === 1 && (window.__gc || []).length);
       const LC = await pc.evaluate(() => { const V = e => !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 1, r = e => e.getBoundingClientRect(), Q = s => document.querySelector(s);
         const rows = [...document.querySelectorAll('#fire .rows:not([hidden]) .r')].slice(0, 4).map(e => r(e).bottom), ev = Q('.evb');
-        return { cls: document.documentElement.className, la: V(Q('main > .la')), lb: V(Q('main > .lb')), ev: !!ev, evb: V(ev), evh: ev && Math.round(r(ev.querySelector('.ev')).height), qr: [...document.querySelectorAll('.qr')].filter(V).length, qc: V(Q('.qr .qc')), qch: Q('.qr .qc').getAttribute('href'),
+        return { pb: V(Q('.pb')), cls: document.documentElement.className, la: V(Q('main > .la')), lb: V(Q('main > .lb')), ev: !!ev, evb: V(ev), evh: ev && Math.round(r(ev.querySelector('.ev')).height), qr: [...document.querySelectorAll('.qr')].filter(V).length, qc: V(Q('.qr .qc')), qch: Q('.qr .qc').getAttribute('href'),
                  t6: V(Q('.t6')), mb: V(Q('.mb')), sb: r(Q('.sb')).toJSON(), hr: r(Q('.hr')).bottom, ib: [...document.querySelectorAll('.hr .ib')].map(e => V(e) && r(e).left), red: getComputedStyle(Q('.sb input')).borderTopColor, rows, nav: r(Q('.nav')).top,
                  dis: r(Q('main > .dis')).top > r(Q('.qr')).bottom && r(Q('main > .dis')).bottom < r(Q('#fire')).top, over: document.documentElement.scrollWidth - innerWidth, gc: (window.__gc || []).map(v => v.event && v.path) }; });
       assert.ok(/\blay-c\b/.test(LC.cls) && !LC.la && LC.lb && LC.evb === LC.ev && (!LC.ev || LC.evh === 84) && LC.qr === 1 && LC.qc && LC.qch.endsWith('/c/') && !LC.t6 && !LC.mb && LC.dis && LC.over <= 0, 'C = 배너(84px) + 바로가기 1줄 + ▦ 품목 전체 → 대가성 → 🔥 · 품목 12칸·몰 버튼 X ' + JSON.stringify(LC));
       assert.ok(LC.sb.top < LC.hr && LC.ib.length === 2 && LC.ib.every(x => x !== false && x >= LC.sb.right) && LC.red === 'rgb(229, 48, 63)', 'C 헤더 1줄 = 로고 · 빨강 테두리 검색 · 🔔 · ♡(안 겹침) ' + JSON.stringify(LC));
-      assert.ok(LC.rows.length === 4 && LC.rows[3] <= LC.nav, '390×660 첫 화면 = (기획전 있으면 배너 +) 아이콘 1줄 + 🔥 4줄(아래 메뉴 위) ' + JSON.stringify([LC.ev, LC.rows, LC.nav]));  // 배너 없는 날도(행사 끝나면) 확인
+      assert.ok(LC.rows.length === 4 && LC.rows[LC.pb ? 2 : 3] <= LC.nav, '390×660 첫 화면 = (기획전 있으면 배너 +) 아이콘 1줄 + 🔥 4줄(기획전 띠 = 3줄 · 아래 메뉴 위) ' + JSON.stringify([LC.ev, LC.pb, LC.rows, LC.nav]));  // 배너 없는 날도(행사 끝나면) 확인
       assert.ok(LC.gc.includes('layout/C'), 'GoatCounter 방문 layout/C ' + LC.gc);
-      const bC = await pc.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
+      const bC = await pc.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
       assert.ok(bC.includes('layout/C/buy'), '구매 클릭 꼬리표 layout/C/buy ' + bC);
       assert.ok(await pc.evaluate(() => document.querySelector('.lsw [data-l=c]').getAttribute('aria-pressed') === 'true' && /화면:\s*목록형\s*아이콘형\s*혼합형/.test(document.querySelector('.lsw').textContent)), '고르기 = 화면: 목록형 · 아이콘형 · 혼합형(지금 = 혼합형)');
       await pc.evaluate(() => { window.__gc = []; }); await pc.click('.lsw [data-l=c]');
@@ -319,7 +320,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       assert.deepStrictEqual(errC, [], 'C 스크립트 오류 X'); await C.close();
       const N3 = await browser.newContext({ viewport: { width: 390, height: 844 } }, null), p3 = await N3.newPage(); await N3.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);  // C 연 뒤 새로 배정된 사람 = layout3/ 꼬리표(A·B·C 공정 비교 — 예전 A·B 사람은 다시 오는 사람)
       await p3.addInitScript(() => { Math.random = () => 0.9; }); await p3.goto(U + '/', { waitUntil: 'load' }); await p3.waitForFunction(() => window.__gcl === 1 && (window.__gc || []).length);
-      const g3 = await p3.evaluate(() => { const v = (window.__gc || []).map(x => x.path); window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [v, window.__gc.map(x => x.path), localStorage.getItem('hp_lc')]; });
+      const g3 = await p3.evaluate(() => { const v = (window.__gc || []).map(x => x.path); window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return [v, window.__gc.map(x => x.path), localStorage.getItem('hp_lc')]; });
       assert.ok(g3[0].includes('layout/C') && g3[0].includes('layout3/C') && g3[1].includes('layout/C/buy') && g3[1].includes('layout3/C/buy') && g3[2] === '3', '새 배정 = layout3/C 방문·구매 ' + JSON.stringify(g3)); await N3.close();
     }
     {  // 7c) TOP/END(10/25 진우 '맨 위로 올라가는 TOP 혹은 END 버튼 — 있으면 의외로 좋더라'): 모든 쪽 오른쪽 아래 ↑ 맨 위 / ↓ 맨 아래 — 100vh 넘게 내렸을 때만 · 맨 아래 근처 ↓ 숨김 · 44px · 아래 메뉴·설치 띠 안 가림 · 움직임 줄이기 = 바로 · nav/top·nav/end

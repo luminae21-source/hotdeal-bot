@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -653,6 +653,13 @@ def toss_stock(seen):
     print(f"toss stock: 새 링크 {n} · 남은 줄 {len(st['q'])} · 보관 {len(have)}개" + (f" · 발급 제한 {len(bad)}" if bad else ""))
 
 
+def lp_api(url):
+    """링크프라이스 딥링크 API 1번 -> (링크 — result S(승인 몰)일 때만, 아니면 None · 응답 result(+ 메시지)). 접속 오류 = 예외 그대로."""
+    r = json.loads(http(LP_API.format(LP_AID, urllib.parse.quote(url, safe=""))))
+    why = " ".join(str(r.get(k)) for k in ("result", "msg", "message") if r.get(k))
+    return (r["url"] if r.get("result") == "S" and r.get("url") else None), re.sub(r"\s*https?://\S+", "", why)[:80] or "?"
+
+
 def affiliate(url):
     """쇼핑몰 주소 -> (버튼 링크, 제휴여부). 쿠팡: API 키 있으면 파트너스 링크. 토스: 쉐어링크 API(상품 주소의 tacaId).
     그 외: 링크프라이스 딥링크 API (승인된 몰이면 상품 페이지 딥링크 — 새로 승인된 몰도 코드 수정 없이 바로 적용). API 장애 땐 LP_HOSTS로 직접."""
@@ -674,8 +681,8 @@ def affiliate(url):
     if not url:
         return url, False
     try:
-        r = json.loads(http(LP_API.format(LP_AID, urllib.parse.quote(url, safe=""))))
-        return (r["url"], True) if r.get("result") == "S" and r.get("url") else (url, False)
+        link = lp_api(url)[0]
+        return (link, True) if link else (url, False)
     except Exception as e:
         print("lp api", repr(e))
     m = next((v for k, v in LP_HOSTS.items() if host == k or host.endswith("." + k)), None)
@@ -1442,7 +1449,8 @@ def cp_links(seen):
     today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
     st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
     st["e"] = {u: v for u, v in st.get("e", {}).items() if u in names}  # 마지막 실패 이유('400' = 1개만 보낸 호출이 rCode 400 · '응답 없음' = 오류 없이 그 주소만 빠짐)
-    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400)]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    rush = set(seen.get("srl", {}).get("now", ()))  # 10/25 21시 '1번 바로' 중인 진열 = site_relink 몫(1개씩 주소 2가지 — 같은 상품 두 번 X)
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400)]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
     one = [[u] for u in rest if u in st["f"] and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
@@ -1602,13 +1610,158 @@ def html_ents(h):
     return text.strip(), ents
 
 
+SITE_RELINK_DAYS, RELINK = 7, "relink.json"  # 사이트 ② 생 주소(커뮤니티 쿠팡·옥션 등) 수수료 링크로 다시 = 안 되면 7일 뒤 · relink.json = 바뀐 수·끝까지 안 된 것(Cowork·진우 확인 — 가격 X)
+
+
+def site_relink(seen):
+    """사이트 ② 생 주소 -> 수수료 링크(10/25 20:3x Cowork 최종 규칙 '수수료 길이 있는 몰 = 당분간 보이고 수수료 링크로 교체'): posts.json 커뮤니티 글의
+    쿠팡 주소(상품·검색) = 파트너스 딥링크 · 링크프라이스 몰(LP_HOSTS — 옥션·G마켓·롯데온·이마트) 주소 = 딥링크 API result S만(LP_HOSTS 직접 링크 X — 승인 안 된 링크가 제휴로 보임).
+    되면 그 주소 글 전부 url = 수수료 링크 + 그 대가성 문구(사이트만 — 텔레그램 채널 글은 그대로) · 안 되면 SITE_RELINK_DAYS일 뒤 다시.
+    10/25 21시 진우 '쿠팡 88개 수수료 링크로 교체': 처음 1번(st now)은 7일 규칙 없이 지금 생 주소 전부 — 진열 글(shelf) 쿠팡 생 주소도(되면 cp_links.json -> 같은 실행 shelf_posts가 그 자리에서 바꿈 ·
+    그 뒤 진열 재시도는 cp_links 몫). 쿠팡 = 1개씩(묶음 하나가 400이면 묶음 전체 실패) 주소 2가지(① www.coupang.com/vp/products/PID ② 원래 주소 itemId 포함) ·
+    호출 = 이번 실행 CP_RUN-2번째까지(가격 확인·골드박스 몫) + 시간당 상한(CpLimit) = 실행마다 나눠서."""
+    posts, now, cl = load(POSTS, []), time.time(), load(CP_LINKS, {})
+    host = lambda u: urllib.parse.urlsplit(u).netloc.lower()
+    lpm = lambda u: next((v for k, v in LP_HOSTS.items() if host(u) == k or host(u).endswith("." + k)), None)
+    cands = {p["url"]: p for p in posts if isinstance(p.get("url"), str) and not p.get("shelf") and not p["text"].startswith("📋") and not aff(p["url"])
+             and (host(p["url"]).endswith("coupang.com") or lpm(p["url"]))}
+    shelf = {p["url"]: p for p in posts if p.get("shelf") and re.match(CP_PROD, p.get("url") or "") and p["url"] not in cl}
+    alls, kind = {**shelf, **cands}, lambda u: lpm(u) or ("진열" if u in shelf else "커뮤니티")
+    st = seen.setdefault("srl", {"x": {}})
+    if "now" not in st:  # 1번만(배포 뒤 첫 실행) = 지금 생 주소 전부 바로 · 진열 먼저
+        st["now"] = sorted(alls, key=lambda u: (u not in shelf, u))
+    st["t"], st["now"] = now, [u for u in st["now"] if u in alls]
+    st["x"], st["e"] = {u: t for u, t in st.get("x", {}).items() if u in alls}, {u: v for u, v in st.get("e", {}).items() if u in alls}  # e = 주소마다 응답(①·②)
+    forms = lambda u: list(dict.fromkeys([f"https://www.coupang.com/vp/products/{re.match(CP_PROD, u)[1]}", u])) if re.match(CP_PROD, u) else [u]
+    why = lambda x: "응답에 링크 없음" if str(x).startswith("deeplink") else re.sub(r"\s*https?://\S+", "", str(x).replace("coupang rCode ", "rCode "))[:80]
+    got, stop = {}, not HAS_CP
+    for u in st["now"] + sorted(u for u in cands if u not in st["now"] and now - st["x"].get(u, 0) >= SITE_RELINK_DAYS * 86400):
+        link = None
+        if lpm(u):
+            try:
+                link, w = lp_api(u)
+            except Exception as x:  # 접속 오류 = 다음 실행에
+                print("site relink 링크프라이스", type(x).__name__)
+                continue
+            st["e"][u] = [] if link else [w]
+        elif stop:
+            continue
+        else:
+            e = st["e"][u] = [] if len(st["e"].get(u, [])) >= len(forms(u)) else st["e"].get(u, [])  # 다 시도한 뒤(7일 뒤) = 처음부터
+            for f in forms(u)[len(e):]:
+                if RUN.get("cpn", [0])[0] >= CP_RUN - 2:
+                    stop = True
+                    break
+                try:
+                    link = cp_deeplink(f)
+                    break
+                except ValueError as x:  # 그 주소 안 됨 = 다음 모양
+                    e.append(why(x))
+                except Exception as x:  # 상한·접속·게이트웨이 = 다음 실행에 이어서(시도한 모양은 e에)
+                    print("site relink 쿠팡", type(x).__name__)
+                    stop = True
+                    break
+            if not link and len(e) < len(forms(u)):
+                continue
+        if link:
+            got[u] = link
+            st["e"].pop(u, None)
+            ok = st.setdefault("ok", {})  # 바뀐 수(진열·커뮤니티·옥션 …)
+            ok[kind(u)] = ok.get(kind(u), 0) + 1
+        else:
+            st["x"][u] = now
+            print("site relink 안 됨", (re.match(CP_PROD, u) or [0, host(u)])[1], " · ".join(st["e"][u]))
+        if u in st["now"]:
+            st["now"].remove(u)
+    md = lambda ts: time.strftime("%m-%d %H:%M", time.gmtime(ts + 9 * 3600))
+    json.dump({"left_now": len(st["now"]), "ok": st.get("ok", {}),
+               "fail": [{"k": kind(u), "pid": (re.match(CP_PROD, u) or [0, ""])[1], "n": parse(title_of(alls[u]["text"]))[1],
+                         "e": " · ".join(f"{'①②'[k] if len(v) > 1 else ''}{w}" for k, w in enumerate(v)), "x": md(st["x"][u]) if u in st["x"] else ""}
+                        for u, v in sorted(st["e"].items()) if len(v) >= len(forms(u))]}, open(RELINK, "w"), ensure_ascii=False, indent=1)  # 끝까지 안 된 것(응답 = ①·② 모양마다)
+    if not got:
+        return
+    n = 0
+    for p in posts:
+        if p.get("url") in got and not p.get("shelf"):  # 진열 글 = events 몫(아래 cp_links.json -> shelf_posts가 그 자리에서 바꿈)
+            p.setdefault("url0", p["url"])  # 처음 주소(link_swap이 이걸로 찾음)
+            p["url"] = got[p["url"]]
+            p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], p["url"])
+            n += 1
+    json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    if any(re.match(CP_PROD, u) and cl.get(u) != v for u, v in got.items()):  # 같은 쿠팡 상품 주소의 events 예약·진열도 이 링크로(봇·사이트가 같은 값)
+        cl.update({u: v for u, v in got.items() if re.match(CP_PROD, u)})
+        json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
+    print("site relink", f"생 주소 {len(got)}개(글 {n}개 · 진열 {len(set(got) & set(shelf))}) -> 수수료 링크 · 1번 바로 남은 {len(st['now'])}개")
+
+
+LINK_SWAP = "link_swap.txt"  # 뽐뿌 원문에서 뽑은 원래 상품 주소(Cowork — 진우 크롬 · 줄 = 글 시각|md5(옛 url)[:8]|종류|새 주소 · Cowork가 계속 덧붙임)
+
+
+def link_swap(seen):
+    """posts.json 글 주소 바꾸기(10/25 21:3x 진우 '네이버 검색 중 쇼핑커넥트 참여한 것으로 교체' — 사이트만, 채널 글 그대로 · 옛 주소 = url0): link_swap.txt 줄마다
+    시각·md5(처음 주소 = url0, 없으면 url)가 맞는 글 · 같은 글에 줄이 여러 개면 파일 마지막 줄(21:4x) · 글에 적용한 줄(sw)과 같으면 건너뜀(여러 번 돌아도 같은 결과).
+    종류: naver_direct = 네이버 상품 주소 그대로(수수료 0) · connect = 진우 쇼핑커넥트 naver.me 그대로(제휴) · none = 진우가 쇼핑커넥트 '참여 안 함' 확인 -> 사이트 X(nosite · 주소 그대로) ·
+    naver_other_link = 남의 naver.me·광고 링크 -> plain(리다이렉트·추적값 뺌)으로 스마트스토어·브랜드스토어 상품 주소만(못 풀면 X — 남의 제휴 링크 안 씀) ·
+    toss = affiliate(우리 쉐어링크 — 안 되면 X) · lp = 링크프라이스 API result S만(옥션 ego.aspx = 상품 주소 아님 X). 안 된 줄 = 하루 뒤 다시."""
+    try:
+        rows = [[x.strip() for x in l.split("|")] for l in open(LINK_SWAP, encoding="utf-8") if l.strip() and not l.startswith("#")]
+    except OSError:
+        return
+    posts, now = load(POSTS, []), time.time()
+    host = lambda u: urllib.parse.urlsplit(u).netloc.lower()
+    idx, last = {}, {}
+    for p in posts:
+        if isinstance(p.get("url"), str) and not p["text"].startswith("📋"):
+            idx.setdefault((p.get("t"), hashlib.md5((p.get("url0") or p["url"]).encode()).hexdigest()[:8]), []).append(p)
+    for r in rows:
+        if len(r) == 4:
+            last[(r[0], r[1])] = r  # 마지막 줄이 이김
+    st = seen.setdefault("lsw", {"x": {}})
+    cur = {"|".join(r) for r in last.values()}
+    st["t"], st["x"] = now, {k: v for k, v in st.get("x", {}).items() if k in cur}  # 안 된 줄(줄 전체 = 키 — 새 줄이 오면 바로 시도)
+    got = {}
+    for key, r in last.items():
+        kind, new, sig, link = r[2], r[3], f"{r[2]}|{r[3]}", None
+        ps = [p for p in idx.get(key, []) if p.get("sw") != sig]
+        if not ps or now - st["x"].get("|".join(r), 0) < 86400 or kind != "none" and (not new.startswith("https://") or re.search(r"\s", new)):
+            continue
+        try:
+            if kind == "naver_direct" and host(new).endswith("naver.com") or kind == "connect" and host(new) in NAVER_HOSTS:
+                link = new
+            elif kind == "naver_other_link":
+                link = (lambda u: u if u and host(u).endswith(("smartstore.naver.com", "brand.naver.com")) else None)(plain(new))
+            elif kind == "toss":
+                link = (lambda x: x[0] if x[1] else None)(affiliate(new))
+            elif kind == "lp" and "/ego.aspx" not in new.lower():
+                link = lp_api(new)[0]
+        except Exception as e:  # 접속 오류 = 하루 뒤
+            print("link swap", kind, type(e).__name__)
+        if not link and kind != "none":
+            st["x"]["|".join(r)] = now
+            print("link swap 안 됨", kind, r[0], host(new))
+            continue
+        for p in ps:
+            if kind == "none":
+                p["nosite"] = 1
+            else:
+                p.setdefault("url0", p["url"])
+                p["url"] = link
+                p.pop("nosite", None)
+                p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], link)
+            p["sw"] = sig
+        got[kind] = got.get(kind, 0) + len(ps)
+    if got:
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+        print("link swap", " · ".join(f"{k} {n}" for k, n in got.items()), "-> 글 주소 바꿈·사이트 X(none — 사이트만)")
+
+
 def shelf_posts(seen):
     """사이트 진열 전용(10/24 진우 '생필품·화장품은 사이트에 먼저 빠르게'): events "shelf": true 항목 -> at이 지나면 posts.json에만 1번(own·shelf, 채널 글 번호 mid 없음)
     = 사이트 품목 칸·🔥/⏳(target·now — own_end)·상품 페이지·사이트맵 · 채널·Threads·인스타 X(load(EVENTS)가 shelf를 빼고, posts 쪽은 shelf 글을 건너뜀).
     글 = 채널에 나갈 것과 같은 틀(대가성 문구·몰별 머리 줄·버튼 가격). 같은 url·pid 진우 글이 이미 있으면 안 만듦(사이트 카드 하나 —
     나중에 같은 url 채널 예약이 나가면 그 글이 진열 자리를 이어받음: build_site.home_pool = url마다 최신 진우 글).
-    쿠팡 상품 주소 = 딥링크 전이어도 at이 지나면 생 주소 그대로(10/25 진우 '품목들은 무조건 다 올려' — 대가성 문구·[광고] X: aff_note = 제휴 링크만) ->
-    나중에 cp_links가 바꾸면 그 글을 그 자리(posts 번호·사이트 쪽 주소·찜 그대로)에서 파트너스 링크 + 대가성 문구로 바꿈(채널·Threads·인스타는 지금처럼 바뀐 링크만)."""
+    쿠팡 상품 주소 = 딥링크 전이어도 at이 지나면 생 주소 그대로(10/25 진우 '품목들은 무조건 다 올려' — 대가성 문구·[광고] X: aff_note = 제휴 링크만 · 20:3x Cowork 최종 규칙 ②) ->
+    나중에 cp_links가 바꾸거나 같은 pid 파트너스 링크가 events에 오면 그 글을 그 자리(posts 번호·사이트 쪽 주소·찜 그대로)에서 파트너스 링크 + 대가성 문구로 바꿈(채널·Threads·인스타는 지금처럼 바뀐 링크만)."""
     now, posts, ev, cl = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info(), load(CP_LINKS, {})
     itm, same, cpq, fix = lambda u: ev.get(u, {}).get("item") or (re.search(r"[?&]itemId=(\d+)", u) or [0, ""])[1], {}, seen.get("cpq", {}), 0
     for u, i in ev.items():  # 같은 상품(pid)의 파트너스 링크(진우 단축 링크·딥링크) — events에서 생 주소를 바꿔 넣거나 같은 상품 채널 예약이 와도 카드 하나(10/25 리뷰 · 옵션 itemId가 둘 다 있고 다르면 X)
@@ -5019,7 +5172,7 @@ def threads_deals(seen):
         th_deal(seen, tok, me, text, url, full, posts[i].get("cat"))  # 주제 = 사이트 품목 칸(글 cat까지)
 
 
-CAL_HOUR, CAL_DAYS = (9, 40), 14  # 10/25 2주 비교 뒤 진우·Cowork '정보 글 하루 1~2개 — 딜 글 수·간격은 그대로, 그 위에 더하기만': 아침 날씨(7:30) 뒤 '🗓 쇼핑 달력'(promos.json 앞으로 2주 · 바뀐 날만 · Threads만)
+CAL_HOUR, CAL_DAYS, CAL_LINK = (9, 40), 14, f"{SITE}events/?ref=thi"  # ref=thi = 정보 글 유입 따로(GoatCounter) · 10/25 2주 비교 뒤 진우·Cowork '정보 글 하루 1~2개 — 딜 글 수·간격은 그대로, 그 위에 더하기만': 아침 날씨(7:30) 뒤 '🗓 쇼핑 달력'(promos.json 앞으로 2주 · 바뀐 날만 · Threads만)
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
 POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 반말 질문·보기 4개 — poll_ai) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
@@ -5197,28 +5350,32 @@ def cal_text(today):
     span = lambda a, b: f"{md(a)}~{md(b)}" if a and b else f"~{md(b)}" if b else f"{md(a)}~" if a else ""
     def line(p, st, first):
         pre = p.get("pre") or {}
-        early = pre.get("start") and p.get("start") and today < p["start"]  # 본 행사 전(사전 행사 전·중)
+        early = promo_pre(p, today)  # 사전 행사 전·중(끝난 사전 행사 X)
         dd = "오늘 마감" if st == "end" else f"D-{promo_days(today, first)}" if st == "soon" else "사전 행사 중" if early else "진행 중"
         return " ".join(x for x in ("·", span(p.get("start"), p.get("end")), str(p.get("mall_name") or p["mall"]).replace(" · ", "·"), p["name"].strip(),
                                      f"(사전 {span(pre.get('start'), pre.get('end'))})" if early else "", f"— {dd}") if x)
     sig = hashlib.md5(json.dumps([[p["id"], p["name"], p.get("start"), p.get("end"), p.get("pre")] for p, _, _ in rows], ensure_ascii=False).encode()).hexdigest()[:12]
-    return f"🗓 앞으로 2주 쇼핑 달력 — 저장해 두면 편해요\n\n" + "\n".join(line(*r) for r in rows) + f"\n\n기획전 모음 👉 {SITE}events/?ref=th", sig
+    return f"🗓 앞으로 2주 쇼핑 달력 — 저장해 두면 편해요\n\n" + "\n".join(line(*r) for r in rows) + f"\n\n👉 기획전·특가 한눈에 {CAL_LINK}", sig
 
 
 def cal_post(seen):
-    """CAL_HOUR '🗓 쇼핑 달력' 1번(Threads만 · 링크 = 사이트 /events/?ref=th — 사이트 안 구매 링크로 이어짐): promos.json(Cowork 매일 17:30)이 지난 글 뒤 바뀐 날만. 묶음 간격만 봄(일지처럼)."""
+    """CAL_HOUR '🗓 쇼핑 달력' 정보 글 1번(Threads만 · TEXT + 링크 카드 = 사이트 /events/?ref=thi — og.png 로고 카드라 로고·카드 터치 = 바로 사이트, 본문 끝 줄에도 같은 주소 ·
+    10/25 20시 진우 '정보글은 로고나 링크 터치하면 자동으로 유입되게' · 사진 글 X(링크 카드가 안 붙음)): promos.json(Cowork 매일 17:30)이 지난 글 뒤 바뀐 날만. 묶음 간격만 봄(일지처럼)."""
     key = due(CAL_HOUR, "calpost", seen)
     if not key or not E.get("THREADS_TOKEN") or busy(seen, cap=False):
         return
     text, sig = cal_text(time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
     seen[key] = time.time()
     if not text or seen.get("calsig", {}).get("s") == sig:
+        if seen.get("calsig"):  # seen 3일 정리에 안 지워지게(그대로인 날도 — 안 그러면 4일째 같은 글 다시)
+            seen["calsig"]["t"] = time.time()
         print("cal post: 행사 목록 그대로·없음 -> 안 올림")
         return
     bundled(seen)
-    th_bundle(seen, "cal", text, f"{SITE}events/?ref=th")
-    seen["calsig"] = {"t": time.time(), "s": sig}
-    print("cal post: 쇼핑 달력", text.count("\n· "), "줄")
+    seen["calsig"] = {"t": time.time(), "s": sig}  # 올리기 전에(실패 = th_retry가 올림 — 다음 날 같은 글 다시 X)
+    r = th_bundle(seen, "info", text, CAL_LINK) or {}
+    seen["calsig"]["id"] = r.get("id")
+    print("cal post: 쇼핑 달력", text.count("\n· "), "줄 · 글", r.get("id"))
 
 
 def snack_post(seen):
@@ -6147,7 +6304,7 @@ LINK_AB_FILE, LINK_AB_PAGES = "link_ab.json", 10  # /link A·B 하루 집계(10/
 
 LP_PROMO = ("gmarket.co.kr", "auction.co.kr", "lotteon.com", "ssg.com")  # 기획전 주소 -> 링크프라이스 딥링크(10/25 Cowork — G마켓·옥션·롯데온·이마트(SSG)) · 11번가 등 = 원래 주소(사이트에서 nofollow)
 MALL_SITES = {"coupang": "https://www.coupang.com", "11st": "https://www.11st.co.kr", "ssg": "https://www.ssg.com", "gmarket": "https://www.gmarket.co.kr", "auction": "https://www.auction.co.kr",
-              "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr"}  # 기획전 몰 로고 받을 첫 화면(mall_icons)
+              "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr", "emart": "https://emart.ssg.com"}  # 기획전 몰 로고 받을 첫 화면(mall_icons)
 MALL_ICONS = "docs/icons/mall"
 
 
@@ -6158,7 +6315,8 @@ def promo_urls():
 
 
 def promo_links(seen):
-    """기획전 주소 중 링크프라이스 몰(LP_PROMO)만 딥링크 API로 1번(실패 = 하루 뒤 다시) -> promo_links.json {원래 주소: 제휴 링크}(사이트 빌드가 바꿔 씀, promos.json에서 빠지면 지움)."""
+    """기획전 주소 중 링크프라이스 몰(LP_PROMO)만 딥링크 API(result S만 — LP_HOSTS 직접 링크 X: 승인 안 된 링크가 제휴로 보임, 10/25 21시 Cowork)로 1번(실패 = 하루 뒤 다시) -> promo_links.json {원래 주소: 제휴 링크}
+    (사이트 빌드가 씀 — 아직·실패면 몰 홈 그대로 = 20:3x Cowork 최종 규칙 ② · promos.json에서 빠지면 지움)."""
     urls = {u for p in promo_urls() for u in (p.get("url"), (p.get("cta") or {}).get("href") if isinstance(p.get("cta"), dict) else None)
             if isinstance(u, str) and u.startswith("https://") and (lambda h: any(h == x or h.endswith("." + x) for x in LP_PROMO))(urllib.parse.urlsplit(u).netloc.lower())}
     pl, now = load(PROMO_LINKS, {}), time.time()
@@ -6169,16 +6327,16 @@ def promo_links(seen):
         if now - st["x"].get(u, 0) < 86400:
             continue
         try:
-            r = json.loads(http(LP_API.format(LP_AID, urllib.parse.quote(u, safe=""))))
+            link, why = lp_api(u)
         except Exception as e:  # 접속 오류 = 다음 실행에
-            print("promo link", repr(e))
-            break
-        if r.get("result") == "S" and str(r.get("url") or "").startswith(("https://", "http://")):
-            keep[u] = r["url"]
+            print("promo link", urllib.parse.urlsplit(u).netloc, type(e).__name__)
+            continue
+        if link and str(link).startswith(("https://", "http://")):
+            keep[u] = link
             print("promo link", urllib.parse.urlsplit(u).netloc, "-> 링크프라이스")
         else:
             st["x"][u] = now
-            print("promo link 안 됨(승인 몰 아님?)", urllib.parse.urlsplit(u).netloc)
+            print("promo link 안 됨(승인 몰 아님?)", urllib.parse.urlsplit(u).netloc, why)
     if keep != pl:
         json.dump(keep, open(PROMO_LINKS, "w"), ensure_ascii=False, indent=1)
 
@@ -6590,7 +6748,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, site_relink, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

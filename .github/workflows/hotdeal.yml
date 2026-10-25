@@ -100,4 +100,5 @@ jobs:
           [ ! -f cp_links.json ] || git add cp_links.json   # 쿠팡 상품 주소 -> 파트너스 링크(쿠팡 키 있을 때만 생김 — 사이트 빌드도 씀)
           [ ! -f promo_links.json ] || git add promo_links.json   # 기획전 주소 -> 링크프라이스 딥링크(G마켓·옥션·롯데온·SSG — 공개 링크)
           [ ! -f cp_fail.json ] || git add cp_fail.json   # 아직 안 바뀐 쿠팡 상품 주소(pid·이름·실패 날짜·마지막 시도·이유 — 가격·수수료 X)
+          [ ! -f relink.json ] || git add relink.json   # 사이트 생 주소 -> 수수료 링크(바뀐 수·끝까지 안 된 상품 pid·이름·응답 — 가격·수수료 X)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도
