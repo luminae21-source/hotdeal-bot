@@ -1545,7 +1545,7 @@ assert "10월 8일 카드 딜" in top and "어제딜" not in top and "모아보�
 import html, urllib.parse
 find = "https://search.shopping.naver.com/search/all?query=" + urllib.parse.quote("김치라면 대컵1+1")
 assert top.count('class="alt"') == 1 and f'<a class="alt" href="{html.escape(find)}"' in top and "3번 원글이 안 열리면 같은 상품 찾기" in top
-assert "<b>03</b><span>[우리동네gs]김치라면 대컵1+1(1,850원/픽업)</span><em>원글 →</em>" in top and "원글에서 구매 링크 보기" in top and top.count("구매 →") == 2
+assert "<b>03</b><span>[우리동네gs] 김치라면 대컵1+1</span><em><i>1,850원</i>원글 →</em>" in top and "원글에서 구매 링크 보기" in top and top.count("구매 →") == 2
 deal = open("docs3/p/4.html").read()
 assert "📄 원글에서 구매 링크 보기" in deal and 'class="btn2"' in deal and "🛒 구매하러 가기" not in deal and "원글이 안 열리면" not in open("docs3/p/1.html").read()
 assert S.find_url("[쿠팡] 듀라셀 AA 20개입 1개/ 9,730원").endswith(urllib.parse.quote("듀라셀 AA 20개입 1개")) and not S.community("https://click.linkprice.com/x") and not S.community(None)
@@ -2932,8 +2932,9 @@ assert len(H.PV_HELLO) == 7 and len(set(H.PV_HELLO)) == 7 and H.PV_HELLO[0].star
 at7("22:21"); assert not sent7 and not th7  # 하루 1번
 # 짧은 이름(10/25 Cowork 390px): Claude 1번 -> 16자↓·원래 이름에 있는 숫자만·낱말이 원래 이름과 겹쳐야 · 아니면 그 줄만 13자 낱말 단위(…X)
 F7 = ["명대잡는날 국산 돌미나리 1kg", "덕산농원 돌미나리 발효식초 15년 500ml", "지도표 성경김 재래 전장김 30g 20봉", "아누아 PDRN 히알루론산 캡슐 세럼 30ml 2개"]
-ai7, H.ai_json = H.ai_json, lambda prompt, props: {"names": ["국산 돌미나리 1kg", "덕산농원 미나리식초 15년", "지도표 성경김 전장김 999봉", "아누아 PDRN 캡슐 세럼 아주 아주 긴 이름"]}
-assert H.pv_names(F7) == ["국산 돌미나리 1kg", "덕산농원 미나리식초 15년", "지도표 성경김 재래", "아누아 PDRN"]  # 없는 숫자(999)·16자 넘음 = 그 줄만 자르기
+ai7, H.ai_json = H.ai_json, lambda prompt, props: {"names": ["국산 돌미나리 1kg", "덕산농원 돌미나리 5년", "지도표 성경김 전장김 20봉", "아누아 PDRN 히알루론산 캡슐 세럼 30ml"]}
+assert H.pv_names(F7) == ["국산 돌미나리 1kg", "덕산농원 돌미나리", "지도표 성경김 전장김 20봉", "아누아 PDRN"]  # 원래 이름에 없는 숫자(5 — 15년·500ml뿐)·16자 넘음 = 그 줄만 자르기(낱말은 다 원래 이름에 있음)
+H.ai_json = lambda prompt, props: {"names": ["덕산농원 미나리식초 15년"]}; assert H.pv_names(F7[1:2]) == ["덕산농원 미나리식초 15년"]  # 낱말을 합쳐도(미나리+식초) 원래 이름과 겹치면 OK
 H.ai_json = lambda prompt, props: {"names": ["하늘 바다 1kg"]}; assert H.pv_names(F7[:2]) == ["명대잡는날 국산 돌미나리", "덕산농원 돌미나리"]  # 원래 이름에 없는 낱말 · 개수 모자람 = 자르기
 H.ai_json = lambda prompt, props: (_ for _ in ()).throw(OSError("credit")); o7 = io.StringIO()
 with contextlib.redirect_stdout(o7): assert H.pv_names(F7[:1]) == ["명대잡는날 국산 돌미나리"] and "짧은 이름 없이" in o7.getvalue()  # Claude 실패 = 자르기(멈춤 X)
@@ -7541,6 +7542,61 @@ assert len(ig69) == 2 and s69h["cur_2026-10-29_2000"]["ig"] == 2  # Threads 이�
 for k69, v69 in (("IG_TOKEN", tk69), ("IG_USER_ID", uid69), ("THREADS_TOKEN", th69)): H.E.pop(k69, None) if v69 is None else H.E.__setitem__(k69, v69)
 H.RUN["ok"].clear(); H.RUN["ok"].update(ok69)
 os.chdir(cwd69)
+# 9-70) 인스타 안전장치(10/25 23시 진우 '꾸준하게, 정지 안 되게'): 게시 사이 2시간 · 공식 게시 한도(content_publishing_limit) 절반 안 · 행동 제한·스팸·권한 오류 = 그날 인스타 전부 멈춤 + 알림
+#       · 해시태그 5개↓ 칸·날마다 다르게 · metrics 인스타 도달·저장·팔로워 + 7일 요약(igw)
+import contextlib, io, calendar
+d70 = tempfile.mkdtemp(); cwd70 = os.getcwd(); os.chdir(d70)
+sv70 = (H.http, H.tg, time.time, H.IG_AUTO, H.IG_LIVE, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"), H.RUN.pop("igq", None), H.METRICS)
+at70 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+c70, q70, a70 = [], {"u": 3}, []
+def http70(url, body=None, headers=None, method=None):
+    c70.append(url.split("?")[0].rsplit("/", 1)[-1])
+    if "content_publishing_limit" in url: return json.dumps({"data": [{"quota_usage": q70["u"], "config": {"quota_total": 25, "quota_duration": 86400}}]})
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    if url.endswith("/media_publish"): return json.dumps({"id": "P70"})
+    raise AssertionError(url)
+H.http, H.tg, H.IG_AUTO, H.IG_LIVE = http70, (lambda m, **k: a70.append(k.get("text")) or {"message_id": 1}), True, "ig70/ig.json"; H.E.update(IG_TOKEN="it", IG_USER_ID="u70")
+s70 = {"igc_A": {"t": 0, "card": "2026-10-26_11"}, "iglast": {"t": 0}}
+with contextlib.redirect_stdout(io.StringIO()):
+    at70("2026-10-26 11:30"); s70["igc_A"]["t"] = time.time() - 600; H.ig_publish(s70)
+assert "igc_A" not in s70 and s70["iglast"]["t"] == time.time() and c70.count("content_publishing_limit") == 1  # 한도 확인(실행마다 1번) 뒤 게시
+s70["igc_B"] = {"t": time.time(), "card": "2026-10-26_13"}; c70.clear(); H.RUN.pop("igq", None)
+with contextlib.redirect_stdout(io.StringIO()) as o70:
+    at70("2026-10-26 13:20"); H.ig_publish(s70)
+assert "igc_B" in s70 and not c70 and "직전 게시 2시간 안" in o70.getvalue()  # 1시간 50분 = 미룸(API도 안 부름)
+q70["u"] = 13; H.RUN.pop("igq", None)
+with contextlib.redirect_stdout(io.StringIO()) as o70:
+    at70("2026-10-26 13:40"); H.ig_publish(s70)
+assert "igc_B" in s70 and "공식 한도 13/25" in o70.getvalue() and "media_publish" not in c70  # 24시간 한도 절반(12.5) 넘음 = 미룸
+q70["u"] = 4; H.RUN.pop("igq", None)
+with contextlib.redirect_stdout(io.StringIO()): H.ig_publish(s70)
+assert "igc_B" not in s70  # 한도 안 = 게시
+# 행동 제한·스팸·권한 오류 = 오늘 멈춤(내일 0시까지) + 남은 대기 지움 + 알림 · 다른 진짜 실패 = 그 회차만(2번째에 24시간)
+sv70b = (H.IG_STAGE_FILE,); H.IG_STAGE_FILE = "igst70.json"
+s70 = {"igc_C": {"t": 1}, "igk_D": {"t": 1}}; a70.clear()
+with contextlib.redirect_stdout(io.StringIO()): H.ig_fail(s70, time.time(), "2026-10-26_15 컨테이너 Application request limit reached (4/2207051)")
+assert s70["ig_hold"] == calendar.timegm(time.strptime("2026-10-27 00:00", "%Y-%m-%d %H:%M")) - 9 * 3600 and not [k for k in s70 if k.startswith(("igc_", "igk_"))] and a70 and a70[0].startswith("⛔ 인스타 행동 제한")
+assert json.load(open("igst70.json"))["s"] == 0 and "진짜 실패" in json.load(open("igst70.json"))["log"][-1]  # 단계 1칸 내림(0이면 그대로)
+s70 = {"igc_C": {"t": 1}}; a70.clear()
+with contextlib.redirect_stdout(io.StringIO()): H.ig_fail(s70, time.time(), "2026-10-26_15 처리 ERROR")
+assert "ig_hold" not in s70 and "igc_C" in s70 and not a70  # 그 밖 진짜 실패 = 그 회차만
+assert not re.search(H.IG_BLOCK, "Bad Request (400)") and re.search(H.IG_BLOCK, "Fatal (10)") and re.search(H.IG_BLOCK, "x (190/460)", re.I)
+H.IG_STAGE_FILE, = sv70b
+# 해시태그: 5개↓ · 칸·날마다 다르게
+P70 = [{"text": "🔥 [쿠팡] 휴지 30롤 (9,900원)"}]
+tg70 = [H.ig_tags(P70, 11 // 2 + d) for d in (26, 27)]
+assert all(len(t.split()) <= 5 for t in tg70) and tg70[0] != tg70[1] and "int(stem[8:10])" in inspect.getsource(H.card_caption)
+# metrics: 인스타 도달·저장 + 팔로워(하루 1번) + 7일 요약 igw(Cowork가 읽고 단계 판단) · metrics_save가 igf·igw 그대로
+m70 = {f"2026-10-{d}": {"at": "x", "miss": {}, "igf": 100 + d, "rows": [{"ch": "ig", "views": 10, "reach": 7, "saved": 1, "react": 2}, {"ch": "th", "views": 99}]} for d in range(18, 27)}
+w70 = H.ig_week(m70, "2026-10-26")
+assert w70 == {"from": "2026-10-20", "to": "2026-10-26", "posts": 7, "views": 70, "reach": 49, "saved": 7, "react": 14, "followers": [120, 126]}, w70
+H.METRICS = "m70.json"; m70["2026-10-26"]["igw"] = w70; H.metrics_save(m70); r70 = json.load(open("m70.json"))
+assert r70["2026-10-26"]["igw"] == w70 and r70["2026-10-26"]["igf"] == 126 and r70["2026-10-26"]["rows"][0]["reach"] == 7
+assert 'insights?metric=views,reach,saved' in inspect.getsource(H.metrics_rows) and '?fields=followers_count' in inspect.getsource(H.metrics_rows)
+(H.http, H.tg, time.time, H.IG_AUTO, H.IG_LIVE, tk70, uid70, q70o, H.METRICS) = sv70
+H.RUN.pop("igq", None)
+for k70, v70 in (("IG_TOKEN", tk70), ("IG_USER_ID", uid70)): H.E.pop(k70, None) if v70 is None else H.E.__setitem__(k70, v70)
+os.chdir(cwd70)
 # 9-66) 토스 개별 글 사진(10/25 21:3x 진우 ④ — TOSS_PHOTO: 토스 운영 정책 진우 확인 뒤 켬): 썸네일 원본 그대로 · 텔레그램 sendPhoto(캡션 끝 '사진: 토스쇼핑' · 1,024자 넘거나 실패 = 글만, 사진 실패 알림 X) ·
 #       품절 표시 = editMessageCaption · Threads = 사진 글(실패 = 글만) · toss_noimg.txt 상품 = 사진 X · 꺼져 있으면 지금 그대로
 import contextlib, io, calendar, inspect

@@ -3981,7 +3981,7 @@ def make_reel(top, kst, out, k=0):
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
            + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → '{card_name(time.strftime('%Y-%m-%d', kst))}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
-           + "\n\n" + ig_tags(top))[:1024]
+           + "\n\n" + ig_tags(top, kst.tm_mday))[:1024]
     return path, cap, bool(voice)
 
 
@@ -4067,6 +4067,8 @@ def playlist(seen):
 IG_AUTO = True  # 10/23 진우 '인스타그램에도 꾸준하게 올라가게 하자'(10/31 판단 앞당김 — 지난주 '3일 연속 차단'은 3번 다 실제 게시된 오탐, README 9d926fc70 대조): 카드(ig_hours — 10/23 진우 '하루 4번' 11·15·19·22시, 3일씩 진짜 실패 0이면 5번·6번으로 — ig_stage)·넘기기. 릴스는 REEL_PUBLIC(꺼짐) 그대로
 #   (10/17~10/23 꺼 둠: code 4·2207051 — False = 다시 멈춤, 남은 컨테이너는 발행 없이 지움 · 21시 카드 이미지·사이트·Threads 카드·metrics 인스타 읽기는 그대로)
 IG_HUMAN = IG_AUTO  # 10/22 22시 진우 '사람처럼': 정기 카드 게시에도 15~20분 무작위 지연(IG_JITTER) + 새 디자인 한 벌(ig_set — 표지 A 남색·B 핑크·P 파스텔 칸마다 돌림, 제목은 그날 안 겹치게) + 사람 멘트 캡션(ig_human — 말투 4가지)
+IG_GAP, IG_QUOTA_SHARE = 2 * 3600, 0.5  # 10/25 23시 진우 '정지 안 되게': 게시 사이 최소 2시간 · 공식 24시간 게시 한도(content_publishing_limit 응답)의 절반 안
+IG_BLOCK = r"\((?:4|9|10|190|200|368)(?:/\d+)?\)|2207051|spam|block|restrict|permission|권한|제한"  # 행동 제한·스팸·권한·한도 오류(ig_err 'code/subcode') = 그날 인스타 전부 멈춤
 IG_FAIL_MAX = 2  # 10/23 진우: 진짜 실패(ig_landed 기준 안 올라감) = 그 회차만 건너뜀(다시 시도 X), 하루 IG_FAIL_MAX번이면 24시간 쉼 + 관리봇 알림
 IG_TEST, IG_TEST_DIR, IG_JITTER = "ig_test.txt", "igt", (15 * 60, 20 * 60)  # 인스타만 1번 테스트(ig_test): 날짜 한 줄 = 그날 하루 카드를 변주·지연·사람 멘트로 1건(실패해도 다시 X)
 IG_THEMES = {"pal": [((246, 244, 239), (255, 84, 28)), ((250, 250, 250), (37, 99, 235)), ((238, 246, 240), (22, 128, 74)), ((247, 242, 250), (124, 58, 237))],  # 0 = 지난주 막힌 카드(크림·주황)
@@ -4331,8 +4333,8 @@ def ig_publish(seen):
         if (card(v) or isinstance(v, dict) and v.get("kind") == "cur") and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
         n = seen.get(day, {}).get("n", 0)
-        if not failed and (n >= ig_day_max(seen) or seen.get("ig_hold", 0) > now):
-            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else ""))
+        if not failed and (n >= ig_day_max(seen) or seen.get("ig_hold", 0) > now or now - seen.get("iglast", {}).get("t", 0) < IG_GAP):
+            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else " · 직전 게시 2시간 안" if now - seen.get("iglast", {}).get("t", 0) < IG_GAP else ""))
             continue
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
         if st == "IN_PROGRESS" and not failed:
@@ -4342,6 +4344,9 @@ def ig_publish(seen):
             ig_fail(seen, now, (card(v) or "릴스") + (f" 발행 {failed}" if failed else f" 처리 {st}"))
             continue
         pid = None
+        if st != "PUBLISHED" and not failed and (q := ig_quota(tok, uid)) and q[0] >= q[1] * IG_QUOTA_SHARE:  # 공식 24시간 한도의 절반을 넘으면 미룸(실제 응답)
+            print("ig publish 미룸", k, f"공식 한도 {q[0]}/{q[1]} — 절반 넘음")
+            continue
         if st != "PUBLISHED":
             try:
                 pid = json.loads(http(f"{IG}/{uid}/media_publish", {"creation_id": k[4:]}, {"Authorization": "Bearer " + tok}, "POST")).get("id")
@@ -4357,12 +4362,24 @@ def ig_publish(seen):
         RUN["ok"].add("ig")
         print("ig publish", card(v) or ("큐레이션" if isinstance(v, dict) and v.get("kind") == "cur" else "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
-        seen[day] = {"t": now, "n": n + 1}
+        seen[day], seen["iglast"] = {"t": now, "n": n + 1}, {"t": now}  # iglast = 게시 사이 2시간(IG_GAP)
         if card(v):
             ig_live(card(v), now)
         label = card(v) or ""
         reel, cur = (isinstance(v, dict) and v.get("kind") == x for x in ("reel", "cur"))
         tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if reel else " — 큐레이션" if cur else "") + " (instagram.com/hotdealpick.kr)")
+
+
+def ig_quota(tok, uid):
+    """공식 게시 한도(GET content_publishing_limit — 최근 24시간 게시 수·한도) -> (쓴 수, 한도), 못 읽으면 None(하루 상한 ig_day_max만) · 실행마다 1번만 부름."""
+    if "igq" not in RUN:
+        try:
+            x = (json.loads(http(f"{IG}/{uid}/content_publishing_limit?fields=quota_usage,config", headers={"Authorization": "Bearer " + tok})).get("data") or [{}])[0]
+            RUN["igq"] = (int(x["quota_usage"]), int(x["config"]["quota_total"]))
+        except Exception as e:
+            print("ig 게시 한도 못 읽음", err_brief(e))
+            RUN["igq"] = None
+    return RUN["igq"]
 
 
 def ig_err(e):
@@ -4452,7 +4469,12 @@ def ig_fail(seen, now, why):
     r = seen.setdefault("igfail", {"f": []})
     r.update(t=now, f=[x for x in r["f"] if x[:10] == today] + [f"{today} {clip(why, 80)}"])
     print("ig 진짜 실패", why, f"(오늘 {len(r['f'])}번)")
-    if len(r["f"]) >= IG_FAIL_MAX:
+    if re.search(IG_BLOCK, why, re.I) and seen.get("ig_hold", 0) < (end := kst_ts(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 + 86400)) + " 00:00")):  # 행동 제한·스팸·권한 = 오늘 인스타 전부 멈춤(내일 0시까지) + 알림(단계는 위에서 1칸 내림)
+        seen["ig_hold"] = end
+        for k in [k for k in seen if k.startswith(("igc_", "igk_"))]:
+            seen.pop(k)
+        tg("sendMessage", chat_id=ADMIN, text=f"⛔ 인스타 행동 제한·스팸·권한 오류 — 오늘 인스타 전부 멈춤(내일 0시부터 다시 · 단계 1칸 내림 · 남은 게시 대기 지움)\n{clip(why, 200)}")
+    elif len(r["f"]) >= IG_FAIL_MAX:
         seen["ig_hold"] = now + 86400
         for k in [k for k in seen if k.startswith(("igc_", "igk_"))]:
             seen.pop(k)
@@ -4530,7 +4552,7 @@ def card_caption(stem):
     rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, toss_in)).strip(), 34)}" for n, p in enumerate(ps, 1)]
     slot = SLOT_NAMES.get(stem[11:]) if len(stem) > 10 else None
     return rows, (ig_notes(ps) + "\n\n" + f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} 핫딜" if slot else "오늘의 핫딜 모음") + "\n\n" + "\n".join(rows)
-                  + f"\n\n🛒 프로필 링크 → '{card_name(stem)}' 번호 누르면 바로 구매\n\n" + ig_tags(ps, int(stem[11:] or IG_DAY_HOUR) // 2))[:2200]
+                  + f"\n\n🛒 프로필 링크 → '{card_name(stem)}' 번호 누르면 바로 구매\n\n" + ig_tags(ps, int(stem[11:] or IG_DAY_HOUR) // 2 + int(stem[8:10])))[:2200]  # 칸·날마다 조금씩 다르게(10/25 진우 '정지 안 되게')
 
 
 def fill_reel(ps):
@@ -6075,7 +6097,8 @@ def tg_num(v):
 
 def metrics_save(m):
     js = lambda x: json.dumps(x, ensure_ascii=False)
-    open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, "rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
+    open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, ' + "".join(f'{js(k)}: {js(x)}, ' for k, x in v.items() if k not in ("at", "miss", "rows"))  # igf·igw(인스타 팔로워·7일 요약)
+                                                                 + '"rows": [\n' + ",\n".join(map(js, v["rows"])) + "]}"
                                                                  for d, v in sorted(m.items(), reverse=True)[:METRICS_KEEP]) + "}\n")  # 최신 날짜 맨 위 · 글 1개 = 1줄(보고가 읽기 쉽게)
 
 
@@ -6467,7 +6490,8 @@ def metrics_rows(seen):
         v = None
         if "ig" not in miss:
             try:
-                v = json.loads(http(f"{IG}/{x['id']}/insights?metric=views", None, h))["data"][0]["values"][0]["value"]
+                ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,reach,saved", None, h))["data"]}
+                v, x["reach"], x["saved"] = ins.get("views"), ins.get("reach"), ins.get("saved")  # 도달·저장(10/25 진우 '상황 잘 보고' — 주간 요약 igw)
             except Exception as e:
                 why = blame(e)
                 if denied(e):
@@ -6475,16 +6499,30 @@ def metrics_rows(seen):
                 else:
                     miss.setdefault("ig_part", "일부 글 조회수 못 읽음: " + why)
         lk, cm = x.get("like_count"), x.get("comments_count")
-        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm)
+        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, reach=x.get("reach"), saved=x.get("saved"))
 
     rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
     m = load(METRICS, {})
     m[day] = {"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "miss": miss, "rows": rows}
+    try:  # 인스타 팔로워(하루 1번)
+        m[day]["igf"] = itok and uid and json.loads(http(f"{IG}/{uid}?fields=followers_count", None, h)).get("followers_count")
+    except Exception as e:
+        print("ig 팔로워 못 읽음", err_brief(e))
+    m[day]["igw"] = ig_week(m, day)  # 그날까지 7일 인스타 요약(Cowork가 읽고 단계 올릴지 판단 — 매일 그날 줄에)
     metrics_save(m)
     if not E.get("METRICS_DAY") and (not any(soft) or time.gmtime(now + 9 * 3600).tm_hour >= 8):  # 수동 실행(오늘치 점검 등)은 기록 X -> 다음 날 5시에 그날 전체를 다시
         seen["mt_" + day] = now
     c = collections.Counter(r["ch"] for r in rows)
     print(f"metrics {day}: " + " · ".join(f"{ch} {c[ch]}개 빈 칸 {sum(r['views'] is None or r['react'] is None for r in rows if r['ch'] == ch)}" for ch in ("tg", "th", "ig")), miss or "")
+
+
+def ig_week(m, day):
+    """metrics.json 최근 7일(day까지) 인스타 요약: 게시 수·조회·도달·저장·좋아요+댓글 합 · 팔로워 처음 -> 끝(하루 1번 igf) — 숫자가 없는 칸은 빼고 더함."""
+    days = [time.strftime("%Y-%m-%d", time.gmtime(kst_ts(day + " 00:00") + 9 * 3600 - k * 86400)) for k in range(6, -1, -1)]
+    rs = [r for d in days for r in (m.get(d) or {}).get("rows", []) if r.get("ch") == "ig"]
+    fs = [m[d]["igf"] for d in days if isinstance((m.get(d) or {}).get("igf"), int)]
+    total = lambda k: sum(r[k] for r in rs if isinstance(r.get(k), int))
+    return {"from": days[0], "to": day, "posts": len(rs), "views": total("views"), "reach": total("reach"), "saved": total("saved"), "react": total("react"), "followers": [fs[0], fs[-1]] if fs else None}
 
 
 def cp_score(seen):
