@@ -5,6 +5,7 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
+IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70에서만 — 예전 인스타 셀프체크는 한 실행에 여러 개·시각을 앞뒤로 옮겨 가며 발행
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
@@ -13,6 +14,8 @@ cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E �
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
 ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
 tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Threads C·3장면·첫 30분 답글 알림(10/25)은 맨 아래 9-64에서만
+ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는 맨 아래 9-72에서만
+dpa0, H.DPOST_AT = H.DPOST_AT, (99, 0)  # 📉 가격 내려간 상품 글(20:40)은 맨 아래 9-71에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -718,7 +721,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -1971,7 +1974,7 @@ def ig9_http(url, body=None, headers=None, method=None):
     if url.startswith(H.IG):
         if "?fields=status_code" in url: return json.dumps({"status_code": st9["v"]})
         if url.endswith("/media_publish"):
-            if st9.get("spam"): e = urllib.error.HTTPError(url, 400, "x", {}, None); e.body = '{"error":{"error_subcode":2207051}}'; raise e
+            if st9.get("spam"): e = urllib.error.HTTPError(url, 400, "x", {}, None); e.body = '{"error":{"error_subcode":2207032}}'; raise e  # 차단·스팸(2207051)이 아닌 발행 오류 — 2207051 = 그날 멈춤(9-70)
             return json.dumps({"id": "P1"})
         st9["n"] = st9.get("n", 0) + 1; return json.dumps({"id": "IMG%d" % st9["n"]})
     raise AssertionError(url)
@@ -2015,7 +2018,7 @@ open(f"docs/cards/{D9}_19.jpg", "wb").write(b"j"); json.dump([5], open(f"docs/ca
 seen.update({"igc_A": {"t": 1, "card": f"{D9}_19"}}); st9["v"] = "PUBLISHED"; at9("21:48", H.ig_publish)
 assert not [1 for m, u, b in ig9 if u.endswith("media_publish")] and "igc_A" not in seen and f"{D9}_19" in json.load(open(H.IG_LIVE)) and sent[-1][1]["text"].startswith("📸 인스타 자동 게시 완료 — 저녁 7시 카드")  # 이미 발행됨 = 게시 완료(다시 발행 X)
 st9["v"] = "FINISHED"; seen.update({"igpub_20261012": {"t": 1, "n": 5}, "igc_B": {"t": 1}}); at9("22:00", H.ig_publish); assert "igc_B" in seen and not sent and H.ig_day_max(seen) == 5  # 하루 상한 = 단계 횟수 4 + 1(10/23 진우) -> 다음 날
-seen["igpub_20261012"]["n"], st9["spam"] = 0, True  # 10/23 진우: 발행 오류(2207051 포함) -> ig_landed 확인 -> 안 올라감 = 다음 실행에 상태만(다시 발행 X) · 예외·쉼 X
+seen["igpub_20261012"]["n"], st9["spam"] = 0, True  # 10/23 진우: 발행 오류 -> ig_landed 확인 -> 안 올라감 = 다음 실행에 상태만(다시 발행 X) · 예외·쉼 X
 at9("22:14", H.ig_publish); assert seen["igc_B"]["fail"] and "ig_hold" not in seen and len([1 for m, u, b in ig9 if u.endswith("media_publish")]) == 1 and not sent
 at9("22:28", H.ig_publish); assert not [1 for m, u, b in ig9 if u.endswith("media_publish")] and "igc_B" not in seen and "ig_hold" not in seen and len(seen["igfail"]["f"]) == 1 and not sent  # 그래도 FINISHED = 진짜 실패 1번 = 그 회차만 건너뜀
 seen["igc_B2"] = {"t": 1, "card": f"{D9}_19", "fail": "x"}; seen["igk_K"] = {"t": 1, "kids": ["k1"]}; at9("22:42", H.ig_publish)  # 진짜 실패 하루 2번 = 24시간 쉼 + 관리봇 알림, 남은 컨테이너·조각은 버림
@@ -3181,7 +3184,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -3352,7 +3355,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -4950,7 +4953,7 @@ assert "igc_K1" not in s33 and "ig_hold" not in s33 and s33["igpub_20261101"]["n
 g33["cap"], g33["st"] = None, "FINISHED"; s33 = {"igc_K1": {"t": TK("2026-11-01 21:00"), "card": "2026-11-01"}}; t33.clear()
 H.ig_publish(s33); assert "2207051" in s33["igc_K1"]["fail"] and "ig_hold" not in s33 and not t33, s33  # 10/23: 안 올라간 2207051 = 쉼·예외 X, 다음 실행에 상태만(다시 발행 X)
 c33.clear(); time.time = lambda: TK("2026-11-01 21:44"); H.ig_publish(s33)
-assert "igc_K1" not in s33 and "ig_hold" not in s33 and [m for _, m in c33].count("POST") == 0 and len(s33["igfail"]["f"]) == 1 and not t33, (s33, c33)  # 그래도 안 올라감 = 진짜 실패 1번(그 회차만 건너뜀)
+assert "igc_K1" not in s33 and s33["ig_hold"] == TK("2026-11-02 00:00") and [m for _, m in c33].count("POST") == 0 and len(s33["igfail"]["f"]) == 1 and t33[-1][1]["text"].startswith("⛔ 인스타 행동 제한"), (s33, c33)  # 그래도 안 올라감 = 진짜 실패 · 2207051(행동 제한) = 그날 멈춤 + 알림(10/25 F)
 H.IG_AUTO, H.IG_LIVE = sv33b; shutil.rmtree("igl33")
 # 인스타 그래프 API 호출 수(실행마다 로그 'ig api N calls'): 진짜 http()가 인스타 주소만 셈
 class R33:
@@ -5385,7 +5388,7 @@ assert H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)", cat="
 assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비비크림 40ml\n9,900원") == "화장품" and H.th_topic({}, "🔥 [쿠팡] 햇반 24개", cat="beauty") == "장보기"  # 칸 없음 -> 화장품 낱말 · 제목 칸이 먼저(사이트와 같게)
 assert 'posts[i].get("cat"))' in src39(H.threads_deals) and "cat_fill, threads, threads_deals" in src39(H.main)  # 같은 실행에 올린 글도 cat 채운 뒤 Threads
 assert "fields=id,text,timestamp,topic_tag" in src39(H.metrics_rows) and '{"topic": x["topic_tag"]}' in src39(H.metrics_rows)  # metrics th 줄 topic(주제별 조회 비교)
-assert 'print("ig publish", card(v) or ("큐레이션" if isinstance(v, dict) and v.get("kind") == "cur" else "릴스"), pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
+assert 'print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")' in inspect.getsource(H.ig_publish) and "pid = None" in inspect.getsource(H.ig_publish)  # 10/23 점검: 게시 id를 로그에(성공은 그전엔 줄 없음)
 # 9-40) 웹앱(PWA, 10/23 진우 '웹앱으로 진행'): 모든 페이지 head(manifest·아이콘·theme-color·애플 웹앱·SW 등록) · manifest 필드 · sw.js(같은 출처 GET만, HTML 네트워크 먼저, 아이콘 캐시 먼저,
 #       홈 내용마다 캐시 이름) · 홈 맨 위 설치 버튼(홈만) · GoatCounter 웹앱 출처 · 아이콘 크기·'A 레드' 그림(브라우저 확인은 node test_pwa.js — 설치 가능·SW·오프라인·설치 버튼·캡처)
 import build_site as S40, cards as C40
@@ -7546,6 +7549,7 @@ os.chdir(cwd69)
 #       · 해시태그 5개↓ 칸·날마다 다르게 · metrics 인스타 도달·저장·팔로워 + 7일 요약(igw)
 import contextlib, io, calendar
 d70 = tempfile.mkdtemp(); cwd70 = os.getcwd(); os.chdir(d70)
+H.IG_GAP = IG_GAP0
 sv70 = (H.http, H.tg, time.time, H.IG_AUTO, H.IG_LIVE, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"), H.RUN.pop("igq", None), H.METRICS)
 at70 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
 c70, q70, a70 = [], {"u": 3}, []
@@ -7662,4 +7666,141 @@ assert src66.count("tg_toss(") == 2 and "image=img" in inspect.getsource(H.toss_
 H.RUN["fail"].clear(); H.RUN["fail"].update(f66); H.RUN["tg_err"] = e66b; H.E.pop("TG_TOKEN", None) if tg66 is None else H.E.__setitem__("TG_TOKEN", tg66)
 assert H.TOSS_PHOTO is False  # 진우 확인 전 = 꺼 둠
 os.chdir(cwd66)
+# 9-71) 📉 가격 내려간 상품 하루 1번(10/25 23시 진우 D): 사이트 📉 기준(drops) · 수수료 링크·사진 있는 것만 5개 · 사진 3개↑ · 3일 안 다시 X · 20:10 카드 준비(우리 서버) -> 20:40 뒤 사이트에 뜨면
+#       Threads 캐러셀(상품 장) + 본문(대가성 맨 위·귀여운 말투·'이름 · 기록가 → 지금가 (▼N%)'·기준 줄·'👇 전체는 댓글에') + 댓글(c/drop/?ref=thd 링크 카드·텔레그램) · 인스타 = 표지 + 상품 장 넘기기(kind drop)
+import contextlib, io, calendar
+d71 = tempfile.mkdtemp(); cwd71 = os.getcwd(); os.chdir(d71)
+H.DPOST_AT = dpa0
+sv71 = (H.http, H.tg, time.time, H.time.sleep, H.drops, H.ig_photo, H.pv_names, H.POSTS, H.IG_AUTO, H.th_reply_ok, H.E.get("THREADS_TOKEN"), H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"))
+at71 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+from PIL import Image as I71
+I71.new("RGB", (400, 300), (200, 80, 80)).save("ph71.jpg")
+P71 = [{"t": "2026-10-25 10:00", "text": f"🔥 [쿠팡] 상품{k} 30롤 (10,000원)", "url": f"https://link.coupang.com/a/d{k}", "own": 1, "chk": "10/26 9시", "chkt": "2026-10-26 09:10", "now": "8,000원 와우가" if k == 1 else "9,000원"} for k in range(8)]
+P71[5]["url"] = "https://www.gmarket.co.kr/item/5"  # 수수료 링크 아님 = X
+json.dump(P71, open("posts71.json", "w"), ensure_ascii=False)
+H.drops = lambda posts, it, now: [(k, P71[k], (0,), 10000, 8000 if k == 1 else 9000, 20 if k == 1 else 10, "10/20", "10/26") for k in (1, 0, 2, 3, 4, 5, 6, 7)]
+H.ig_photo = lambda p, d, seen=None: (None, "") if p["url"].endswith("/d4") else ("ph71.jpg", "coupang")  # 4 = 사진 없음
+H.pv_names = lambda fulls: [f"짧은이름{n}" for n in range(len(fulls))]
+c71, a71, st71 = [], [], {"down": False}
+def http71(url, body=None, headers=None, method=None):
+    c71.append((method, url, body))
+    if method == "HEAD":
+        if st71["down"]: raise OSError("404")
+        return ""
+    if "/me?fields=id" in url: return json.dumps({"id": "me71"})
+    if "threads_publish" in url: return json.dumps({"id": "T71"})
+    if "/threads?" in url and method == "POST": return json.dumps({"id": f"tc{len(c71)}"})
+    if url.endswith("/u71/media") and method == "POST": return json.dumps({"id": f"k{len(c71)}"})
+    raise AssertionError(url)
+H.http, H.tg, H.time.sleep, H.POSTS, H.IG_AUTO = http71, (lambda m, **k: a71.append(k.get("text")) or {"message_id": 1}), (lambda x: None), "posts71.json", True
+H.th_reply_ok = lambda seen: True
+H.E.update(THREADS_TOKEN="tk71", IG_TOKEN="it71", IG_USER_ID="u71")
+s71 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 20:05"); H.drop_post(s71)
+assert not s71 and not c71  # 20:10 전 = 아무것도 X
+with contextlib.redirect_stdout(io.StringIO()) as o71:
+    at71("2026-10-26 20:12"); H.drop_post(s71)
+st = s71["droppost_20261026"]
+assert not c71 and st["n"] == 5 and [os.path.basename(f) for f in st["files"]] == [f"2026-10-26_{n}.jpg" for n in range(1, 6)] and st["cover"].endswith("2026-10-26_0.jpg")  # 준비만(HTTP X) · 수수료·사진 있는 5개(4 사진 X · 5 비수수료 X)
+assert set(s71["dropu"]["m"]) == {f"https://link.coupang.com/a/d{k}" for k in (1, 0, 2, 3, 6)} and all(open(f, "rb").read(2) == b"\xff\xd8" for f in st["files"] + [st["cover"]])  # 3일 안 다시 X(날짜) · 진짜 JPEG
+th71 = st["th"]
+assert th71.startswith(H.DISCLOSURE + "\n\n📉 오늘 가격 내려간 거 모아왔어요 🐻\n\n짧은이름0 · 10,000원 → 8,000원 와우가 (▼20%)\n짧은이름1 · 10,000원 → 9,000원 (▼10%)\n"), th71  # 대가성 맨 위 1번 · 쿠폰·와우 조건 그대로
+assert th71.endswith("\n\n같은 구성 · 10/20 기록 대비 · 10/26 확인 가격") and th71.count("\n짧은이름") == 5 and "원 쌈" not in th71 and "최저" not in th71
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 20:30"); H.drop_post(s71)
+assert not c71  # 20:40 전 = 게시 X
+st71["down"] = True
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 20:42"); H.drop_post(s71)
+assert [m for m, u, b in c71] == ["HEAD"] and "done" not in st  # 사이트에 아직 안 뜸 = 다음 실행에
+st71["down"] = False; c71.clear(); s71["bundles"] = {"t": time.time(), "ts": [time.time()]}
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 20:44"); H.drop_post(s71)
+ig71 = [b for m, u, b in c71 if u.endswith("/u71/media")]
+assert [m for m, u, b in c71 if m == "HEAD"] == ["HEAD"] * 6 and len(ig71) == 6 and ig71[0]["image_url"].endswith("/cards/drop/2026-10-26_0.jpg") and all(b["is_carousel_item"] for b in ig71)  # 인스타 = 표지 + 상품 5장 조각
+k71 = s71["igk_drop_2026-10-26"]; assert k71["kind"] == "drop" and len(k71["kids"]) == 6 and st["ig"] == 6
+cap71 = k71["cap"]
+assert cap71.startswith(H.DISCLOSURE + "\n\n📉 가격 내려간 상품 5개\n\n") and "🛒 프로필 링크 → 가격 내려간 상품" in cap71 and "상품 사진: 판매 페이지(쿠팡)" in cap71 and "쿠폰·와우 조건 그대로" in cap71 and len(cap71.rsplit("\n\n", 1)[1].split()) <= 5 and len(cap71) <= 2200
+assert not [u for m, u, b in c71 if "threads" in u] and "done" not in st  # 묶음 간격 안(busy) = Threads는 다음 실행에(인스타는 한 번만)
+c71.clear(); s71["bundles"] = {"t": 0, "ts": []}
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 20:58"); H.drop_post(s71)
+assert not [u for m, u, b in c71 if u.endswith("/u71/media")]  # 인스타 다시 X
+kids71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "/threads?" in u and "is_carousel_item" in u]
+car71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "media_type=CAROUSEL" in u]
+rep71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "reply_to_id" in u]
+assert len(kids71) == 5 and kids71[0]["image_url"] == ["https://hotdealpick.kr/cards/drop/2026-10-26_1.jpg"] and len(car71) == 1 and car71[0]["text"] == [th71 + "\n👇 전체는 댓글에 있어요"]  # Threads = 상품 장 5장(표지 X)
+assert H.th_len(car71[0]["text"][0]) <= 500 and rep71[0]["reply_to_id"] == ["T71"] and rep71[0]["text"] == [H.DPOST_REPLY] and rep71[0]["link_attachment"] == ["https://hotdealpick.kr/c/drop/?ref=thd"] and "hotdealpick.kr" not in H.DPOST_REPLY  # 댓글 = 링크 카드만 · 텔레그램 줄
+assert st["done"] == 1 and st["post"] == "T71" and s71["bundles"]["ts"]
+c71.clear()
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-26 21:20"); H.drop_post(s71)
+assert not c71  # 하루 1번
+# 다음 날: 3일 안 쓴 상품 X -> 남은 수수료·사진 상품 2개(7·6 중 6은 썼음 -> 7만) = 사진 3개 미만 = 그날 X
+with contextlib.redirect_stdout(io.StringIO()) as o71:
+    at71("2026-10-27 20:15"); H.drop_post(s71)
+assert s71["droppost_20261027"]["n"] == 1 and "files" not in s71["droppost_20261027"] and "사진 있는 상품 1개 -> 오늘 X" in o71.getvalue() and not os.path.exists("docs/cards/drop/2026-10-26_1.jpg")  # 지난 날 카드 지움
+# 댓글 못 다는 토큰 = 본문 끝에 사이트·텔레그램(링크 카드 대신 주소) · 캐러셀 실패 = 글만
+s71b = {"dropu": {}}; H.th_reply_ok = lambda seen: False; c71.clear(); H.pv_names = lambda fulls: [f"아주 긴 이름{n} " + "가" * 50 for n in range(len(fulls))]  # 500자 넘음 = 뒷줄 뺌
+with contextlib.redirect_stdout(io.StringIO()):
+    at71("2026-10-28 20:15"); H.drop_post(s71b); at71("2026-10-28 20:45"); H.E.pop("IG_TOKEN"); H.drop_post(s71b)
+car71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "media_type=CAROUSEL" in u]
+assert car71[0]["text"][0].endswith("\n\n🛍 전체 보기 https://hotdealpick.kr/c/drop/?ref=thd\n🔔 텔레그램 알림 t.me/hotdeal_pick") and not [u for m, u, b in c71 if "reply_to_id" in u] and H.th_len(car71[0]["text"][0]) <= 500 and 2 <= car71[0]["text"][0].count("아주 긴 이름") < 5
+assert "ig" not in s71b["droppost_20261028"]  # 인스타 토큰 없음 = 인스타 X
+# 인스타 게시 기록·알림 이름 = 가격 내려간 상품(ig_publish kind drop)
+assert H.IG_KIND["drop"] == "가격 내려간 상품" and 'kind in IG_KIND' in inspect.getsource(H.ig_publish) and "drop_post" in H.ALERT_STEPS
+(H.http, H.tg, time.time, H.time.sleep, H.drops, H.ig_photo, H.pv_names, H.POSTS, H.IG_AUTO, H.th_reply_ok, tk71, it71, uid71) = sv71
+for k71_, v71 in (("THREADS_TOKEN", tk71), ("IG_TOKEN", it71), ("IG_USER_ID", uid71)): H.E.pop(k71_, None) if v71 is None else H.E.__setitem__(k71_, v71)
+os.chdir(cwd71)
+# 9-72) 리뷰 고침(10/26 0시): ig_err 코드는 안 잘림(368·190 = IG_BLOCK) · 행동 제한이 그날 2번째 진짜 실패면 24시간 · 21시 뒤 칸 밖 인스타 X(남은 칸이 자정 뒤로) ·
+#       댓글 링크 카드 4279047 = 카드 없이 1번 더 · Claude 짧은 이름 수가 다르면 전부 자르기 · 실패한 묶음 글이 사실 올라갔으면 다시 X(th_landed)
+d72 = tempfile.mkdtemp(); cwd72 = os.getcwd(); os.chdir(d72)
+sv72 = (H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.IG_STAGE_FILE, H.IG_LIVE)
+H.IG_STAGE_FILE, H.IG_LIVE, H.time.sleep = "igst72.json", "ig72/ig.json", (lambda x: None)
+H.IG_GAP = IG_GAP0  # 2시간 간격(F) 켠 채로
+E72 = type("E", (Exception,), {"body": '{"error":{"message":"The action attempted has been deemed abusive or is otherwise disallowed by our community policies","code":368,"error_subcode":1390008}}'})()
+assert H.ig_err(E72).endswith(" (368/1390008)") and len(H.ig_err(E72)) <= 82 and re.search(H.IG_BLOCK, H.ig_err(E72)) and re.search(H.IG_BLOCK, "x (613)") and not re.search(H.IG_BLOCK, "Media download has failed (2207032)")
+a72 = []; H.tg = lambda m, **k: a72.append(k.get("text")) or {"message_id": 1}
+time.time = lambda: TK("2026-10-26 19:30")
+s72 = {"igfail": {"f": ["2026-10-26 13시 처리 ERROR"]}}
+with contextlib.redirect_stdout(io.StringIO()): H.ig_fail(s72, time.time(), "2026-10-26_19 발행 (4/2207051)")
+assert s72["ig_hold"] == time.time() + 86400 and "24시간 쉼" in a72[-1]  # 2번째 진짜 실패 = 24시간(자정까지로 짧아지지 X)
+s72 = {}
+with contextlib.redirect_stdout(io.StringIO()): H.ig_fail(s72, time.time(), "2026-10-26_19 발행 (4/2207051)")
+assert s72["ig_hold"] == TK("2026-10-27 00:00") and "내일 0시부터" in a72[-1]  # 첫 실패 = 오늘 멈춤
+time.time = lambda: TK("2026-10-26 20:50"); r72a = H.ig_room({}, time.time())
+time.time = lambda: TK("2026-10-26 21:10"); assert r72a > 0 and H.ig_room({}, time.time()) == 0  # 21시 뒤 = 남은 칸(22시 하루 카드) 먼저
+c72 = []
+def http72(url, body=None, headers=None, method=None):
+    c72.append(url)
+    if "/me?fields=id" in url: return json.dumps({"id": "me72"})
+    if "threads_publish" in url:
+        if any("link_attachment" in u for u in c72[-2:-1]):
+            e = H.urllib.error.HTTPError(url, 400, "x", {}, None); e.body = '{"error":{"message":"Invalid Link Attachment","code":1,"error_subcode":4279047}}'; raise e
+        return json.dumps({"id": "R72"})
+    if "/threads?fields=text,timestamp" in url:
+        return json.dumps({"data": [{"text": H.DISCLOSURE + "\n\n🌙 오늘 밤 딜 3개, 먼저 살짝 보여드려요\n\n22:10 a", "timestamp": "2026-10-26T13:05:00+0000"}]})
+    if "/threads?" in url: return json.dumps({"id": f"c{len(c72)}"})
+    raise AssertionError(url)
+H.http = http72
+assert H.th_reply("tk", "T1", "글", "https://hotdealpick.kr/?ref=th") == "R72" and sum("reply_to_id" in u for u in c72) == 2 and "link_attachment" not in c72[-2]  # 카드 없이 1번 더
+x72 = H.DISCLOSURE + "\n\n🌙 오늘 밤 딜 3개, 먼저 살짝 보여드려요\n\n22:10 b\n\n🛍 한눈에 보기"
+assert H.th_landed("tk", x72, TK("2026-10-26 22:00")) and not H.th_landed("tk", x72, TK("2026-10-26 22:10")) and not H.th_landed("tk", "다른 글", 0)  # 같은 첫 줄·그 뒤 시각 = 올라감
+tk72 = H.E.get("THREADS_TOKEN"); H.E["THREADS_TOKEN"] = "tk"; c72.clear(); time.time = lambda: TK("2026-10-26 22:20")
+s72r = {"thretry_20261026_preview": {"t": TK("2026-10-26 22:03"), "text": x72, "link": None}}; H.th_retry(s72r)
+assert s72r["thretry_20261026_preview"]["done"] and not [u for u in c72 if "threads_publish" in u]  # 시간 초과 뒤 사실 올라감 = 다시 X(두 번 X)
+H.E.pop("THREADS_TOKEN") if tk72 is None else H.E.__setitem__("THREADS_TOKEN", tk72)
+H.ai_json = lambda prompt, props: {"names": ["곰곰 숙주나물 300g"]}  # 콩나물을 빼먹고 1개만 = 첫 줄 이름이 밀림(낱말·숫자 검사는 통과하는 꼴)
+assert H.pv_names(["곰곰 국산 콩나물 300g", "곰곰 국산 숙주나물 300g"]) == [H.pv_name("곰곰 국산 콩나물 300g"), H.pv_name("곰곰 국산 숙주나물 300g")]  # 수 다름 = 줄 밀림 막기(전부 자르기)
+def http72p(url, body=None, headers=None, method=None):
+    if "/media?fields=" in url: return json.dumps({"data": [{"id": "g1", "timestamp": "2026-10-25T13:44:00+0000", "media_type": "CAROUSEL_ALBUM", "like_count": 2, "comments_count": 0}]})
+    if "/g1/insights?metric=views,reach,saved" in url: return json.dumps({"data": [{"name": "views", "values": [{"value": 31}]}, {"name": "reach", "values": [{"value": 22}]}, {"name": "saved", "values": [{"value": 1}]}]})
+    raise AssertionError(url)
+H.http, s72p = http72p, {}; H.E.update(IG_TOKEN="it72", IG_USER_ID="u72")
+with contextlib.redirect_stdout(io.StringIO()) as o72: ipk0(s72p); ipk0(s72p)
+assert o72.getvalue().count("ig peek") == 1 and "{'views': 31, 'reach': 22, 'saved': 1}" in o72.getvalue() and "igpeek" in s72p  # 3일에 1번
+H.E.pop("IG_TOKEN"); H.E.pop("IG_USER_ID")
+(H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.IG_STAGE_FILE, H.IG_LIVE) = sv72
+os.chdir(cwd72)
 print("OK: 모든 셀프체크 통과")

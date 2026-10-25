@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of, drops, c_url, md_of  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -1978,6 +1978,7 @@ def pv_names(fulls):
     아니거나 실패면 그 줄은 pv_name(PV_NAME자 낱말 단위)."""
     try:
         got = ai_json(PV_PROMPT + "\n\n" + "\n".join(f"{k}. {s}" for k, s in enumerate(fulls)), {"names": {"type": "array", "items": {"type": "string"}}}).get("names") or []
+        got = got if len(got) == len(fulls) else []  # 수가 다르면 줄이 밀려 다른 상품 가격 옆에 붙음(10/25 리뷰) -> 전부 pv_name
     except Exception as e:
         print("preview 짧은 이름 없이", clip(repr(e), 100))
         got = []
@@ -2047,8 +2048,9 @@ def preview(seen):
         return
     try:
         th_reply(tok, r["id"], PV_REPLY, link)
-    except Exception as e:  # 본문은 이미 나감('👇 댓글에' — Threads 글은 못 고침) -> 관리자에게 바로(댓글 붙여넣기용)
+    except Exception as e:  # 본문은 이미 나감('👇 댓글에' — Threads 글은 못 고침) -> 관리자에게 바로(댓글 붙여넣기용) · 다음 날부터 3일은 글 1개 + 링크 카드(th_reply_ok 다시 확인 전)
         print("preview 댓글 실패", err_brief(e))
+        seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
         tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 22시 미리보기 댓글 실패({err_brief(e)}) — 본문은 나갔고 '👇 댓글에 있어요'가 남아 있어. "
            f"아래 글을 Threads 앱에서 그 글 댓글로 붙여넣어 줘(링크 {link})\n\n{PV_REPLY}")
 
@@ -4068,7 +4070,7 @@ IG_AUTO = True  # 10/23 진우 '인스타그램에도 꾸준하게 올라가게 
 #   (10/17~10/23 꺼 둠: code 4·2207051 — False = 다시 멈춤, 남은 컨테이너는 발행 없이 지움 · 21시 카드 이미지·사이트·Threads 카드·metrics 인스타 읽기는 그대로)
 IG_HUMAN = IG_AUTO  # 10/22 22시 진우 '사람처럼': 정기 카드 게시에도 15~20분 무작위 지연(IG_JITTER) + 새 디자인 한 벌(ig_set — 표지 A 남색·B 핑크·P 파스텔 칸마다 돌림, 제목은 그날 안 겹치게) + 사람 멘트 캡션(ig_human — 말투 4가지)
 IG_GAP, IG_QUOTA_SHARE = 2 * 3600, 0.5  # 10/25 23시 진우 '정지 안 되게': 게시 사이 최소 2시간 · 공식 24시간 게시 한도(content_publishing_limit 응답)의 절반 안
-IG_BLOCK = r"\((?:4|9|10|190|200|368)(?:/\d+)?\)|2207051|spam|block|restrict|permission|권한|제한"  # 행동 제한·스팸·권한·한도 오류(ig_err 'code/subcode') = 그날 인스타 전부 멈춤
+IG_BLOCK = r"\((?:4|9|10|17|32|190|200|368|613|80002)(?:/\d+)?\)|2207051|spam|block|restrict|permission|limit reached|too many|권한|제한"  # 행동 제한·스팸·권한·한도 오류(ig_err 'code/subcode') = 그날 인스타 전부 멈춤
 IG_FAIL_MAX = 2  # 10/23 진우: 진짜 실패(ig_landed 기준 안 올라감) = 그 회차만 건너뜀(다시 시도 X), 하루 IG_FAIL_MAX번이면 24시간 쉼 + 관리봇 알림
 IG_TEST, IG_TEST_DIR, IG_JITTER = "ig_test.txt", "igt", (15 * 60, 20 * 60)  # 인스타만 1번 테스트(ig_test): 날짜 한 줄 = 그날 하루 카드를 변주·지연·사람 멘트로 1건(실패해도 다시 X)
 IG_THEMES = {"pal": [((246, 244, 239), (255, 84, 28)), ((250, 250, 250), (37, 99, 235)), ((238, 246, 240), (22, 128, 74)), ((247, 242, 250), (124, 58, 237))],  # 0 = 지난주 막힌 카드(크림·주황)
@@ -4125,6 +4127,7 @@ def ig_human(seen, ps):
 
 
 IG_PHOTO_NOTE = "상품 사진: 판매 페이지(쿠팡·토스쇼핑)"  # 사진 장이 있는 넘기기 캡션 — 대가성 문구 바로 아래(10/25 Cowork ②)
+IG_KIND = {"cur": "큐레이션", "drop": "가격 내려간 상품"}  # 카드 칸 밖 인스타 글(igc_·igk_ kind) — 게시 기록·알림 이름
 
 
 def ig_caption(seen, stem, human=False, ps=None, photo=False):
@@ -4330,7 +4333,8 @@ def ig_publish(seen):
             continue
         v = seen[k]
         failed = isinstance(v, dict) and v.get("fail")  # 지난 실행 발행 오류 + 그때 안 올라감 -> 이번 상태로만 판정(다시 발행 X)
-        if (card(v) or isinstance(v, dict) and v.get("kind") == "cur") and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
+        kind = isinstance(v, dict) and v.get("kind")
+        if (card(v) or kind in IG_KIND) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
         n = seen.get(day, {}).get("n", 0)
         if not failed and (n >= ig_day_max(seen) or seen.get("ig_hold", 0) > now or now - seen.get("iglast", {}).get("t", 0) < IG_GAP):
@@ -4341,7 +4345,7 @@ def ig_publish(seen):
             continue
         if st != "PUBLISHED" and (failed or st != "FINISHED"):  # 처리 실패(ERROR·EXPIRED) · 발행 오류 뒤에도 안 올라감 = 진짜 실패, 그 회차만 건너뜀
             seen.pop(k)
-            ig_fail(seen, now, (card(v) or "릴스") + (f" 발행 {failed}" if failed else f" 처리 {st}"))
+            ig_fail(seen, now, (card(v) or IG_KIND.get(kind, "릴스")) + (f" 발행 {failed}" if failed else f" 처리 {st}"))
             continue
         pid = None
         if st != "PUBLISHED" and not failed and (q := ig_quota(tok, uid)) and q[0] >= q[1] * IG_QUOTA_SHARE:  # 공식 24시간 한도의 절반을 넘으면 미룸(실제 응답)
@@ -4353,21 +4357,20 @@ def ig_publish(seen):
             except Exception as e:
                 pid = ig_landed(tok, uid, k[4:], since=now)
                 if not pid:  # 오류 응답이어도 실제로 올라감(10/22 #1804 code 4·2207051 오탐)이면 성공 · 아니면 다음 실행에 상태만 다시 봄
-                    seen[k] = {**(v if isinstance(v, dict) else {"t": v}), "fail": ig_err(e)}
+                    seen[k], seen["iglast"] = {**(v if isinstance(v, dict) else {"t": v}), "fail": ig_err(e)}, {"t": now}  # 발행 시도도 2시간 간격에 셈(차단 오류 바로 뒤 다른 컨테이너 X — 10/25 리뷰)
                     print("ig publish 오류 — 다음 실행에 게시 여부만 확인(다시 발행 X)", k, clip(repr(e), 80))
                     continue
                 print("ig publish 오류 응답이지만 게시됨", k, clip(repr(e), 80))
         elif failed:
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
         RUN["ok"].add("ig")
-        print("ig publish", card(v) or ("큐레이션" if isinstance(v, dict) and v.get("kind") == "cur" else "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
+        print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         seen[day], seen["iglast"] = {"t": now, "n": n + 1}, {"t": now}  # iglast = 게시 사이 2시간(IG_GAP)
         if card(v):
             ig_live(card(v), now)
         label = card(v) or ""
-        reel, cur = (isinstance(v, dict) and v.get("kind") == x for x in ("reel", "cur"))
-        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if reel else " — 큐레이션" if cur else "") + " (instagram.com/hotdealpick.kr)")
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if kind == "reel" else f" — {IG_KIND[kind]}" if kind in IG_KIND else "") + " (instagram.com/hotdealpick.kr)")
 
 
 def ig_quota(tok, uid):
@@ -4385,7 +4388,8 @@ def ig_quota(tok, uid):
 def ig_err(e):
     """인스타 오류 한 줄(진짜 실패 기록·README 점검용): 메시지 + code·subcode(예 'Application request limit reached (4/2207051)')."""
     c = re.findall(r'"(?:code|error_subcode)":\s*(\d+)', getattr(e, "body", "") or "")
-    return clip(err_brief(e) + (f" ({'/'.join(c)})" if c else ""), 80)
+    tail = f" ({'/'.join(c)})" if c else ""
+    return clip(err_brief(e), 80 - len(tail)) + tail  # 코드는 안 잘리게(IG_BLOCK이 368·190을 봄 — 10/25 리뷰)
 
 
 def ig_hours(seen):
@@ -4403,6 +4407,8 @@ def ig_room(seen, now):
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
     left = sum(1 for h in ig_hours(seen) if (stem := today if h == IG_DAY_HOUR else f"{today}_{h:02d}") not in led and "igs_" + stem not in seen and kst.tm_hour < h + IG_LATE)
+    if left and kst.tm_hour * 3600 + kst.tm_min * 60 > 86400 - IG_GAP - 3600:  # 21시 뒤 = 칸 밖 글 X(2시간 간격 때문에 남은 칸이 자정 뒤로 — 10/25 리뷰)
+        return 0
     return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k in seen if k.startswith(("igc_", "igk_"))) - left
 
 
@@ -4470,10 +4476,11 @@ def ig_fail(seen, now, why):
     r.update(t=now, f=[x for x in r["f"] if x[:10] == today] + [f"{today} {clip(why, 80)}"])
     print("ig 진짜 실패", why, f"(오늘 {len(r['f'])}번)")
     if re.search(IG_BLOCK, why, re.I) and seen.get("ig_hold", 0) < (end := kst_ts(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 + 86400)) + " 00:00")):  # 행동 제한·스팸·권한 = 오늘 인스타 전부 멈춤(내일 0시까지) + 알림(단계는 위에서 1칸 내림)
-        seen["ig_hold"] = end
+        day2 = len(r["f"]) >= IG_FAIL_MAX  # 오늘 2번째 진짜 실패면 24시간 쉼이 더 김(짧아지지 않게 — 10/25 리뷰)
+        seen["ig_hold"] = max(end, now + 86400 if day2 else 0)
         for k in [k for k in seen if k.startswith(("igc_", "igk_"))]:
             seen.pop(k)
-        tg("sendMessage", chat_id=ADMIN, text=f"⛔ 인스타 행동 제한·스팸·권한 오류 — 오늘 인스타 전부 멈춤(내일 0시부터 다시 · 단계 1칸 내림 · 남은 게시 대기 지움)\n{clip(why, 200)}")
+        tg("sendMessage", chat_id=ADMIN, text=f"⛔ 인스타 행동 제한·스팸·권한 오류 — " + ("오늘 진짜 실패 2번째라 24시간 쉼" if day2 else "오늘 인스타 전부 멈춤(내일 0시부터 다시") + f" · 단계 1칸 내림 · 남은 게시 대기 지움)\n{clip(why, 200)}")
     elif len(r["f"]) >= IG_FAIL_MAX:
         seen["ig_hold"] = now + 86400
         for k in [k for k in seen if k.startswith(("igc_", "igk_"))]:
@@ -4931,10 +4938,15 @@ def th_bundle(seen, kind, text, link=None, image=None):
 def th_reply(tok, to, text, link=None):
     """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(link = 링크 카드 — 22시 미리보기 댓글) -> 새 댓글 id."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, **({"link_attachment": link} if link else {}), "access_token": tok})
-    cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-    time.sleep(10)
-    return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")), top=False)["id"]
+    for att in ({"link_attachment": link}, {}) if link else ({},):  # 링크 카드를 못 만들면(4279047) 카드 없이 1번 더(th_text와 같음 — 글 속 주소는 그대로)
+        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, **att, "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(10)
+        try:
+            return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")), top=False)["id"]
+        except urllib.error.HTTPError as e:
+            if not att or "4279047" not in (getattr(e, "body", "") or ""):
+                raise
 
 
 def th_poll(tok, text, opts, tag="핫딜"):
@@ -5024,7 +5036,7 @@ def th_retry(seen):
     tok, today = E.get("THREADS_TOKEN"), time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600))
     for k in [k for k, v in seen.items() if k.startswith("thretry_") and isinstance(v, dict) and not v.get("done")]:
         seen[k]["done"] = 1
-        if tok and k.startswith(today):
+        if tok and k.startswith(today) and not th_landed(tok, seen[k]["text"], seen[k]["t"] - 300):
             th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"), th_topic(seen))
     for k in [k for k in seen if k.startswith("thabq_") and time.time() - seen[k].get("t", 0) >= 600]:  # B·C·S 글의 링크 댓글이 실패했던 것 -> 다음 실행에 1번만 더(같은 실행 X — 잠깐 끊긴 동안 2번 다 실패 X, 10/25 리뷰 · 안 되면 알림, 그 뒤엔 안 함)
         v = seen.pop(k)
@@ -5033,6 +5045,18 @@ def th_retry(seen):
             seen.get("thab", {}).get("m", {}).get(v["id"], {})["r"] = rid
         except Exception as e:
             alert(seen, f"alert_thab2_{v['id']}", f"⚠️ Threads 링크 댓글 2번째도 실패: {err_brief(e)}\n링크 없는 딜 글이 남았어요 — 직접 첫 댓글로 달거나 글을 지워 주세요\n{v['text']}")
+
+
+def th_landed(tok, text, since):
+    """실패로 끝난 글이 사실 올라갔는지(시간 초과 뒤 게시 — 10/25 리뷰: 다시 올리면 두 번): 내 최근 글 5개 중 since 뒤·첫 줄(대가성 문구 다음 첫 줄 40자)이 같은 글. 확인 실패 = False(다시 올림)."""
+    try:
+        me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+        xs = json.loads(http(f"{THREADS}/{me}/threads?fields=text,timestamp&limit=5&access_token={tok}")).get("data") or []
+        head = lambda t: next((l for l in (t or "").split("\n\n")[1:2] or [t or ""]), "")[:40]
+        return any(head(x.get("text")) == head(text) and datetime.strptime(x["timestamp"], "%Y-%m-%dT%H:%M:%S%z").timestamp() >= since for x in xs)
+    except Exception as e:
+        print("th landed 확인 실패", err_brief(e))
+        return False
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
@@ -5689,6 +5713,124 @@ def curation(seen):
         print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
 
 
+DPOST_AT, DPOST_PREP, DPOST_N, DPOST_MINPH, DPOST_DIR = (20, 40), 30 * 60, 5, 3, "docs/cards/drop"  # 10/25 23시 진우 D: 📉 하루 1번 20:40(진우 예약 20시대·22:03 미리보기와 따로 — 묶음 간격 busy) · 30분 전 카드 준비(커밋 -> 사이트) · 상품 5개 · 사진 3개↑일 때만
+DPOST_REPLY = "📉 가격 내려간 상품 전체는 여기서 볼 수 있어요 👇\n\n🔔 올라오자마자 알려드릴까요?\n텔레그램 👉 t.me/hotdeal_pick"  # 사이트 주소 = 링크 카드만(?ref=thd)
+
+
+def drop_post(seen):
+    """📉 가격 내려간 상품 하루 1번(10/25 23시 진우 D): 사이트 📉 칸과 같은 기준(build_site.drops — 같은 구성·첫 기록 대비·확인 24시간 안) 중 수수료 링크·3일 안 안 쓴 상품을
+    내림 큰 순으로 사진(쿠팡 img_of — ig_photo) 있는 것만 DPOST_N개 · DPOST_MINPH개 미만이면 그날 X. DPOST_AT 30분 전 카드(우리 서버 JPEG — 상품마다 기록가 취소선 → 지금가·▼N%·동물 + 표지)를
+    docs/cards/drop/에 만들고(이 실행 커밋 -> 사이트) DPOST_AT 뒤 사이트에 뜨면(HEAD) Threads = 캐러셀(상품 장) + 본문(대가성 문구 맨 위·귀여운 말투·'이름 · 기록가 → 지금가 (▼N%)'·기준 줄)
+    + 댓글(사이트 c/drop/ 링크 카드 ?ref=thd · 텔레그램) / 인스타 = 표지 + 상품 장 넘기기(캡션 '프로필 링크 → 가격 내려간 상품' — 하루 상한·2시간 간격·쉼은 ig_publish).
+    'N원 쌈'·'최저가' X · 쿠폰·와우 가격은 글자 그대로. 1시간 넘게 안 뜨면 그날 X. Threads 실패 = 다음 실행에 다시(3번째 = 알림·그만)."""
+    import cards
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, sec, at = time.strftime("%Y-%m-%d", kst), kst.tm_hour * 3600 + kst.tm_min * 60, DPOST_AT[0] * 3600 + DPOST_AT[1] * 60
+    key, link = "droppost_" + day.replace("-", ""), f"{c_url('drop')}?ref=thd"
+    ends = ("\n👇 전체는 댓글에 있어요", f"\n\n🛍 전체 보기 {link}\n🔔 텔레그램 알림 t.me/hotdeal_pick")  # 댓글 됨 / 댓글 못 다는 토큰 = 본문에 주소
+    st = seen.get(key)
+    if st is None:
+        if not at - DPOST_PREP <= sec < at + WX_LATE:
+            return
+        for f in os.listdir(DPOST_DIR) if os.path.isdir(DPOST_DIR) else []:  # 지난 날 카드 = 지움(인스타·Threads는 게시 때 가져감)
+            if f[:10] != day:
+                os.remove(f"{DPOST_DIR}/{f}")
+        posts = load(POSTS, [])
+        days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+        cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 3 * 86400))
+        mem = {u: d for u, d in seen.get("dropu", {}).get("m", {}).items() if d > cut}  # 3일 안 쓴 상품(날짜로 — seen 3일 지움과 따로)
+        picks = []
+        for i, p, sh, base, nw, pct, rec, chk in drops(posts, shelf_items(posts, days), now):
+            if len(picks) < DPOST_N and aff_note(p["url"]) and aff_note(p["url"]) != OY_NOTE and p["url"] not in mem:  # Threads = 수수료 딜만(10/19 진우)
+                f = ig_photo(p, "ig_photos", seen)[0]
+                if f:
+                    picks.append((p, base, nw, pct, rec, f))
+        seen[key] = st = {"t": now, "n": len(picks)}
+        if len(picks) < DPOST_MINPH:
+            print(f"drop post: 사진 있는 상품 {len(picks)}개 -> 오늘 X")
+            return
+        lab = lambda p: (re.match(r"[\d,]+원\s*(\S.*)", p.get("now") or "") or ["", ""])[1]  # 쿠폰·와우 조건 = 그대로(사이트 drop_section과 같음)
+        names = pv_names([title_of(p["text"]) for p, *_ in picks])
+        its = [{"name": parse(title_of(p["text"]))[1], "short": nm, "price": f"{nw:,}원" + (f" {lab(p)}" if lab(p) else ""), "photo": f, "src": "coupang", "was": base, "pct": pct,
+                "basis": f"같은 구성 · {rec} 기록 대비", "when": f"{p.get('chk') or md_of(p['chkt'])} 확인"} for (p, base, nw, pct, rec, f), nm in zip(picks, names)]
+        files = []
+        for n, it in enumerate(its, 1):
+            try:
+                files.append(cards.ig_photo_card(it, n, f"{DPOST_DIR}/{day}_{n}.jpg"))
+            except Exception as x:
+                print("drop card", n, type(x).__name__)
+        if len(files) < DPOST_MINPH:
+            print(f"drop post: 카드 {len(files)}장 -> 오늘 X")
+            return
+        recs, chks = ("·".join(dict.fromkeys(x)) for x in zip(*[(r[4], md_of(r[0]["chkt"])) for r in picks]))
+        k = datetime(int(day[:4]), int(day[5:7]), int(day[8:10]))
+        design = ig_design(day, 1)
+        cover = cards.ig_cover(design, [{**it, "price": it["price"].split(" ")[0]} for it in its], f"{k.month}월 {k.day}일 {'월화수목금토일'[k.weekday()]}요일" if design in "AP" else f"{k.month}.{k.day} {'월화수목금토일'[k.weekday()]}",
+                               f"📉 가격 내려간\n상품 {len(its)}개", f"{DPOST_DIR}/{day}_0.jpg", sub="같은 구성 · 우리 기록 대비", note=f"제휴 링크(수수료) · {chks} 확인 가격")
+        rows = [f"{it['short']} · {it['was']:,}원 → {it['price']} (▼{it['pct']}%)" for it in its]
+        notes = aff_notes(p["url"] for p, *_ in picks)
+        th = lambda k: f"{notes}\n\n📉 오늘 가격 내려간 거 모아왔어요 🐻\n\n" + "\n".join(rows[:k]) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격"
+        k = next((k for k in range(len(rows), 0, -1) if th_len(th(k) + ends[1]) <= 500), 1)  # Threads 500자(th_len) — 긴 끝 줄 몫까지
+        st.update(files=files, cover=cover, urls=[p["url"] for p, *_ in picks], tags=ig_tags([p for p, *_ in picks], kst.tm_mday + 2), th=th(k),
+                  igcap=f"{notes}\n\n📉 가격 내려간 상품 {len(its)}개\n\n" + "\n".join(rows) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격(쿠폰·와우 조건 그대로)\n\n🛒 프로필 링크 → 가격 내려간 상품\n\n상품 사진: 판매 페이지(쿠팡)")
+        seen["dropu"] = {"t": now, "m": {**mem, **{u: day for u in st["urls"]}}}
+        print("drop post 준비", len(files), "장 ·", " / ".join(clip(it["short"], 12) for it in its))
+        return
+    if not st.get("files") or st.get("done") or sec < at:
+        return
+    urls = [SITE + f[len("docs/"):] for f in [st["cover"]] + st["files"]]
+    try:
+        for u in urls:
+            http(u, method="HEAD")
+    except Exception:
+        if now - st["t"] > CUR_IMG_WAIT + DPOST_PREP:
+            st["done"] = "사이트에 안 뜸"
+            print("drop post: 카드가 사이트에 안 뜸 -> 오늘 X")
+        return
+    tok = E.get("THREADS_TOKEN")
+    if IG_AUTO and E.get("IG_TOKEN") and E.get("IG_USER_ID") and "ig" not in st and seen.get("ig_hold", 0) <= now:
+        st["ig"] = 0
+        if ig_room(seen, now) < 1:  # 하루 상한 = 딜 카드 칸 먼저
+            print("drop post 인스타: 오늘 상한(딜 카드 칸 먼저) -> 안 올림")
+        else:
+            auth = {"Authorization": "Bearer " + E["IG_TOKEN"]}
+            try:
+                seen["igk_drop_" + day] = {"t": now, "kind": "drop", "cap": clip(st["igcap"], 2200 - len(st["tags"]) - 3) + "\n\n" + st["tags"],
+                                           "kids": [json.loads(http(f"{IG}/{E['IG_USER_ID']}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in urls]}
+                st["ig"] = len(urls)
+            except Exception as x:
+                st["ig"] = None
+                ig_fail(seen, now, f"가격 내려간 상품 컨테이너 {ig_err(x)}")
+    if not tok:
+        st["done"] = 1
+        return
+    if busy(seen, cap=False):  # 묶음 간격 -> 다음 실행에
+        return
+    can = TH_REPLY and th_reply_ok(seen)
+    text = st["th"] + ends[0 if can else 1]
+    try:
+        me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+        r = th_carousel(tok, me, text, urls[1:], th_topic(seen)) or th_text(tok, me, text, None if can else link, th_topic(seen))
+    except Exception as x:
+        st["n_th"] = st.get("n_th", 0) + 1
+        print("drop post threads 실패", st["n_th"], err_brief(x))
+        if st["n_th"] >= 3:
+            st["done"] = "Threads 3번 실패"
+            alert(seen, "alert_" + key, f"⚠️ 📉 가격 내려간 상품 글 Threads 3번 실패: {err_brief(x)}")
+        return
+    st["post"], st["done"] = r["id"], 1
+    bundled(seen)
+    print("drop post: Threads", r["id"], len(urls) - 1, "장")
+    if can:
+        try:
+            th_reply(tok, r["id"], DPOST_REPLY, link)
+        except Exception as e:  # 본문은 이미 나감('👇 댓글에') -> 관리자에게 바로(붙여넣기용)
+            print("drop post 댓글 실패", err_brief(e))
+            seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
+            tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 📉 가격 내려간 상품 댓글 실패({err_brief(e)}) — 아래 글을 Threads 앱에서 그 글 댓글로 붙여넣어 줘(링크 {link})\n\n{DPOST_REPLY}")
+
+
 def snack_post(seen):
     """15:30 '🍪 출출할 때 간식 N' — 최근 3일 간식 딜(SNACK_WORDS + 오늘 날씨 간식) 최대 3개, 2개 미만이면 안 올림(빈 글 X)."""
     key = due(SNACK_HOUR, "snack", seen)
@@ -6003,7 +6145,7 @@ def quiet():
 
 
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
-ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "pick_post": "Threads 오늘의 픽", "pair_post": "Threads 둘 중 뭐 살래 묶음", "cp_repost": "쿠팡 자동 재게시", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
+ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "pick_post": "Threads 오늘의 픽", "pair_post": "Threads 둘 중 뭐 살래 묶음", "drop_post": "📉 가격 내려간 상품 글", "cp_repost": "쿠팡 자동 재게시", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
                "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
                "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지", "poll_post": "Threads 가격 투표"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
@@ -6491,7 +6633,9 @@ def metrics_rows(seen):
         if "ig" not in miss:
             try:
                 ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,reach,saved", None, h))["data"]}
-                v, x["reach"], x["saved"] = ins.get("views"), ins.get("reach"), ins.get("saved")  # 도달·저장(10/25 진우 '상황 잘 보고' — 주간 요약 igw)
+                if "views" not in ins:  # 빈 insights = 그 글만 빈 칸(일부 못 읽음)
+                    raise ValueError("빈 insights")
+                v, x["reach"], x["saved"] = ins["views"], ins.get("reach"), ins.get("saved")  # 도달·저장(10/25 진우 '상황 잘 보고' — 주간 요약 igw)
             except Exception as e:
                 why = blame(e)
                 if denied(e):
@@ -6499,7 +6643,7 @@ def metrics_rows(seen):
                 else:
                     miss.setdefault("ig_part", "일부 글 조회수 못 읽음: " + why)
         lk, cm = x.get("like_count"), x.get("comments_count")
-        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, reach=x.get("reach"), saved=x.get("saved"))
+        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, **{k: x[k] for k in ("reach", "saved") if x.get(k) is not None})  # 도달·저장 = 읽힌 것만(권한 없으면 칸 X)
 
     rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
     m = load(METRICS, {})
@@ -6515,6 +6659,19 @@ def metrics_rows(seen):
     c = collections.Counter(r["ch"] for r in rows)
     print(f"metrics {day}: " + " · ".join(f"{ch} {c[ch]}개 빈 칸 {sum(r['views'] is None or r['react'] is None for r in rows if r['ch'] == ch)}" for ch in ("tg", "th", "ig")), miss or "")
 
+
+def ig_peek(seen):
+    """10/26 Cowork G-4('글당 조회 1.0이 진짜인지'): 최근 인스타 게시물 5개의 지금 views·reach·saved + 좋아요·댓글을 로그에(3일에 1번 — seen igpeek) · 지표 이름 확인용(조회 숫자만, 수익 X)."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    if not (tok and uid) or seen.get("igpeek"):
+        return
+    seen["igpeek"], h = {"t": time.time()}, {"Authorization": f"Bearer {tok}"}
+    for x in json.loads(http(f"{IG}/{uid}/media?fields=id,timestamp,media_type,like_count,comments_count&limit=5", None, h)).get("data") or []:
+        try:
+            ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,reach,saved", None, h))["data"]}
+        except Exception as e:
+            ins = {"오류": err_brief(e)}
+        print("ig peek", x.get("timestamp", "")[:16], x.get("media_type"), ins, "좋아요", x.get("like_count"), "댓글", x.get("comments_count"))
 
 def ig_week(m, day):
     """metrics.json 최근 7일(day까지) 인스타 요약: 게시 수·조회·도달·저장·좋아요+댓글 합 · 팔로워 처음 -> 끝(하루 1번 igf) — 숫자가 없는 칸은 빼고 더함."""
@@ -7076,7 +7233,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

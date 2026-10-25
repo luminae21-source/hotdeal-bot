@@ -680,8 +680,7 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
         for line in lines:
             x = P
             for tok in re.findall(r"\S+\s*", _fit(ft, line, W - 2 * P)):
-                d.text((x, y), tok, font=ft, fill=BERRY if re.search(r"\d", tok) else INKA)
-                x += d.textlength(tok, font=ft)
+                x = _em_text(d, im, (x, y), tok, ft, BERRY if re.search(r"\d", tok) else INKA)  # 맨 앞 이모지(📉 가격 내려간 상품) = 컬러 그림
             y += int(z * 1.2)
         if sub:
             d.text((P, y + 16), _fit(pf("SemiBold", 40), sub, W - 2 * P), font=pf("SemiBold", 40), fill=SUBA)
@@ -729,8 +728,7 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
         for line in lines:
             x = P
             for tok in re.findall(r"\S+\s*", _fit(ft, line, W - 2 * P)):
-                d.text((x, y), tok, font=ft, fill=PINK if re.search(r"\d", tok) else "white")
-                x += d.textlength(tok, font=ft)
+                x = _em_text(d, im, (x, y), tok, ft, PINK if re.search(r"\d", tok) else "white")
             y += int(z * 1.2)
         if sub:
             d.text((P, y + 16), _fit(pf("SemiBold", 40), sub, W - 2 * P), font=pf("SemiBold", 40), fill=MIST)
@@ -768,7 +766,7 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
     ft, y = pf("ExtraBold", z), 132
     for k, line in enumerate(lines):
         line = _fit(ft, line, W - 2 * P)
-        (_marker(d, (P, y), line, ft, INKB, MARK) if k == 1 else d.text((P, y), line, font=ft, fill=INKB))
+        (_marker(d, (P, y), line, ft, INKB, MARK) if k == 1 else _em_text(d, im, (P, y), line, ft, INKB))
         y += int(z * 1.18)
     tw, th, gx, gy = 452, 372, 32, 34
     x0, y0 = (W - 2 * tw - gx) // 2, y + 26
@@ -905,10 +903,11 @@ def _buddy(im, k, x, y, word=""):
 
 def ig_photo_card(it, n, out):
     """인스타 상품 사진 장(1080x1350 JPEG, 10/25 Cowork ② — 넘기기 2장부터 카드 번호 순): 판매 페이지 사진은 줄이고·키우기만(자르기 X — 비율 그대로 흰 칸 가운데, 위에 글자 X),
-    글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'(토스 사진이면 같은 줄 오른쪽 '사진: 토스쇼핑')·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS). -> out"""
+    글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'(토스 사진이면 같은 줄 오른쪽 '사진: 토스쇼핑')·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS).
+    it['was'] = 📉 가격 내려간 상품 장(10/25 진우 D): 알약 '▼N%' · 기록가 취소선 → 지금가 · '프로필 링크' 줄 대신 기준 it['basis'](같은 구성 · M/D 기록 대비). -> out"""
     im = Image.new("RGBA", (W, H), LMIST + (255,))
     d, P = ImageDraw.Draw(im), 56
-    fb = pf("ExtraBold", 48); s = f"{n}번"; w = int(fb.getlength(s)) + 64
+    fb = pf("ExtraBold", 48); s = f"▼{it['pct']}%" if it.get("was") else f"{n}번"; w = int(fb.getlength(s)) + 64
     d.rounded_rectangle((P, 48, P + w, 136), radius=44, fill=PLUM)
     d.text((P + 32, 60), s, font=fb, fill="white")
     f = pf("ExtraBold", 40); d.text((P + w + 20, 70), "핫딜픽", font=f, fill=BERRY)
@@ -926,13 +925,21 @@ def ig_photo_card(it, n, out):
     X, y = 76, 994
     fn = pf("Bold", 44)
     d.text((X, y), _fit(fn, it.get("short") or it["name"], W - 2 * X), font=fn, fill=INKA)
-    price = it.get("price") or ""
-    fp = pf("ExtraBold", _sized(price, "ExtraBold", (88, 80, 72, 64, 56, 48), W - 2 * X))
-    d.text((X, y + 60), price, font=fp, fill=INKA)
-    yb = d.textbbox((X, y + 60), price or "0", font=fp)[3] + 20
+    price, x = it.get("price") or "", X
+    if it.get("was"):  # 기록가(취소선) → 지금가 — 'N원 쌈'·'최저가' X
+        fw, was = pf("SemiBold", 52), f"{it['was']:,}원"
+        x = X + int(fw.getlength(was + " → ")) + 8
+    fp = pf("ExtraBold", _sized(price, "ExtraBold", (88, 80, 72, 64, 56, 48), W - X - x))
+    d.text((x, y + 60), price, font=fp, fill=INKA)
+    if it.get("was"):  # 지금가와 같은 글자 밑선
+        base = y + 60 + fp.getmetrics()[0]
+        b = d.textbbox((X, base), was, font=fw, anchor="ls")
+        d.text((X, base), was + " →", font=fw, fill=SUBA, anchor="ls")
+        d.line([(b[0] - 4, (b[1] + b[3]) // 2), (b[2] + 4, (b[1] + b[3]) // 2)], fill=SUBA, width=5)
+    yb = d.textbbox((x, y + 60), price or "0", font=fp)[3] + 20
     fl, fs = pf("Bold", 44), pf("SemiBold", 40)
     credit = "사진: 토스쇼핑" if it.get("src") == "toss" else ""
-    d.text((X, yb), _fit(fl, f"프로필 링크 → {n}번", W - 2 * X - (fs.getlength(credit) + 24 if credit else 0)), font=fl, fill=BERRY)
+    d.text((X, yb), _fit(fl, it.get("basis") or f"프로필 링크 → {n}번", W - 2 * X - (fs.getlength(credit) + 24 if credit else 0)), font=fl, fill=BERRY)
     if credit:
         d.text((W - X - fs.getlength(credit), yb + 4), credit, font=fs, fill=SUBA)
     when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
