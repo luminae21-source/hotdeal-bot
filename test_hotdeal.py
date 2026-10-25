@@ -3343,8 +3343,10 @@ sv13 = (H.http, H.th_reply, H.th_reply_ok, H.busy, H.time.sleep, time.time, H.tg
 rp13, al13 = [], []
 H.http, H.time.sleep, H.busy, H.E["THREADS_TOKEN"], H.POLL_HOUR = http13, (lambda s: None), (lambda seen, cap=True: False), "tk", (12, 30)  # Claude 없음(API 키 X) = 지금 틀(poll_text)로
 H.th_reply, H.th_reply_ok, H.tg = (lambda tok, to, text: rp13.append((to, text)) or "r1"), (lambda seen: True), (lambda m, **p: al13.append(p.get("text")) or {"message_id": 1})
-try: H.th_poll("tk", "x", ["가" * 26, "b"]); raise AssertionError("26자 보기")
-except ValueError: assert not c13h  # 보기 25자 넘으면 안 올림(API 안 부름)
+for o13 in ("가" * 26, "가" * 9, "350원까진 참을 만해"):  # 25 = UTF-8 바이트(10/24 23:16 '350원까진 참을 만해' 11자·26바이트 = HTTP 400 Poll Option Has Invalid Length)
+    try: H.th_poll("tk", "x", [o13, "b"]); raise AssertionError(o13)
+    except ValueError: assert not c13h  # 보기 25바이트 넘으면 안 올림(API 안 부름)
+assert H.th_poll("tk", "x", ["가" * 8 + "a", "b"]) == "pol1"; c13h.clear()  # 딱 25바이트 = 올림(경계)
 try: H.th_poll("tk", "x", ["a"]); raise AssertionError("보기 1개")
 except ValueError: pass
 s13 = {}; time.time = lambda: TK("2026-10-17 12:20"); H.poll_post(s13); assert not c13h and not s13  # 12:30 전 X
@@ -4273,7 +4275,7 @@ H.http, H.th_strong = http26, ths26; H.E.pop("THREADS_TOKEN", None) if tk26 is N
 os.remove("ev26.json"); os.remove("posts26.json")
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.POSTS, H.TOSS_NO_CMP, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN) = sv26
 # 9-27 (10/22 진우 '투표 재미있게' + 저녁 9시대): Claude가 품목 투표 질문·보기 4개를 반말로(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만),
-#       검사(질문 60자·보기 4개 1~25자·~요 X·몰·브랜드·링크 X·없는 금액 X) 실패 -> 1번 다시 -> 그래도면 지금 틀 · 결과 답글 '어제 1등은 "…" N% ㅋㅋ'(0표 = '아무도 안 찍음') · 21:40
+#       검사(질문 60자·보기 4개 1~25바이트(10/25 — 한글 8자)·~요 X·몰·브랜드·링크 X·없는 금액 X) 실패 -> 1번 다시 -> 그래도면 지금 틀 · 결과 답글 '어제 1등은 "…" N% ㅋㅋ'(0표 = '아무도 안 찍음') · 21:40
 assert pl0 == (21, 40)
 P27 = P13b + [p13("2026-10-16 10:00", "[쿠팡] 삼다수 2L 12개 (12,000원)", "1L당 500원")]
 r27 = S13.price_records(P27); assert set(r27) == {"ramen", "toilet-paper", "water"}, list(r27)
@@ -4285,31 +4287,34 @@ H.ai_json, H.random = (lambda prompt, props: pr27.append((prompt, props)) or (la
 def poll27(k, kind, *ans):
     a27[:], ST27[:] = list(ans), [kind]; pr27.clear(); return H.poll_ai(r27[k])
 TAIL27 = "\n\n내일 이 시간에 답글로 핫딜픽 기록 최저가 알려줌"
-o1 = poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]})
-assert o1 == ("🗳️ 라면 쟁이는 스타일 골라봐" + TAIL27, ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]) and "생활형" in pr27[0][0] and "품목: 라면" in pr27[0][0], (o1, pr27)
+o1 = poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입이면 충분", "땡기면 편의점행", "라면 끊음(진짜)"]})
+assert o1 == ("🗳️ 라면 쟁이는 스타일 골라봐" + TAIL27, ["박스째 쌓아둠", "5개입이면 충분", "땡기면 편의점행", "라면 끊음(진짜)"]) and "생활형" in pr27[0][0] and "품목: 라면" in pr27[0][0], (o1, pr27)
 oa = H.poll_opts(r27["toilet-paper"][2][0][0]); n27 = [re.match(r"[\d,]+원", x)[0] for x in oa[:3]]
-o2 = poll27("toilet-paper", "price", {"q": "화장지 롤당, 얼마면 \"오 싸다\" 해?", "opts": [f"{n27[0]}이면 바로 삼", f"{n27[1]}까진 OK", f"{n27[2]} 넘으면 고민", "가격 안 보고 집음"]})
+o2 = poll27("toilet-paper", "price", {"q": "화장지 롤당, 얼마면 \"오 싸다\" 해?", "opts": [f"{n27[0]}이면 바로 삼", f"{n27[1]}까진 OK", f"{n27[2]}부턴 고민", "가격 안 보고 집음"]})
 assert o2[0] == "🗳️ 화장지 롤당, 얼마면 \"오 싸다\" 해?" + TAIL27 and o2[1][0] == f"{n27[0]}이면 바로 삼" and "가격형" in pr27[0][0] and ", ".join(oa[:3]) in pr27[0][0], (o2, pr27[0][0])
-assert f"예: 화장지 롤당, 얼마면 \"오 싸다\" 해? / {n27[0]}이면 바로 삼 · {n27[1]}까진 OK · {n27[2]} 넘으면 고민" in pr27[0][0] and "까지까진" not in pr27[0][0], pr27[0][0]  # 예시 = 숫자만(10/22 리뷰)
-o3 = poll27("water", "life", {"q": "물 떨어지면 어떻게 함?", "opts": ["2L 6개 바로 주문", "수돗물 끓여 먹음", "편의점 생수로 버팀", "콜라로 대체 (진짜임)"]})
+assert f"예: 화장지 롤당, 얼마면 \"오 싸다\" 해? / {n27[0]}이면 삼 · {n27[1]}까진 OK · {n27[2]}부턴 고민" in pr27[0][0] and "까지까진" not in pr27[0][0], pr27[0][0]  # 예시 = 숫자만(10/22 리뷰)
+o3 = poll27("water", "life", {"q": "물 떨어지면 어떻게 함?", "opts": ["2L 6개 바로 주문", "수돗물 끓여 먹음", "편의점 생수 버팀", "콜라로 대체(진짜)"]})
 assert o3[0] == "🗳️ 물 떨어지면 어떻게 함?" + TAIL27 and len(o3[1]) == 4
-for t, opts in (o1, o2, o3):  # 보기 4개·25자 이하·~요 0·대가성 문구·링크 X
-    assert len(opts) == 4 and all(1 <= len(o) <= 25 for o in opts) and not any(re.search(H.VOICE_YO, x) for x in opts + [t]) and "http" not in t and not t.startswith(H.NOTE_STARTS), (t, opts)
+for t, opts in (o1, o2, o3):  # 보기 4개·25바이트 이하·~요 0·대가성 문구·링크 X
+    assert len(opts) == 4 and all(1 <= len(o.encode()) <= 25 for o in opts) and not any(re.search(H.VOICE_YO, x) for x in opts + [t]) and "http" not in t and not t.startswith(H.NOTE_STARTS), (t, opts)
 assert pr27[0][1] == {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}}
-GOOD27 = {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입 하나면 충분", "땡길 때 편의점 직행", "라면 끊음 (진짜임)"]}
+GOOD27 = {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둠", "5개입이면 충분", "땡기면 편의점행", "라면 끊음(진짜)"]}
 o4 = poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐요", "opts": GOOD27["opts"]}, GOOD27)
 assert o4[1] == GOOD27["opts"] and len(pr27) == 2 and "다시: '라면 쟁이는 스타일 골라봐요' ~요로 끝남" in pr27[1][0], pr27  # ~요 -> 걸린 말 알려 주고 1번 다시
 poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["신라면 박스째", "b", "c", "d"]}, GOOD27); assert "'신라면' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
-FP27 = {"q": "라면 먹는 스타일 골라봐", "opts": ["국내산 김치랑 먹음", "계란 토스트랑 먹음", "참치마요 섞어 먹음", "요 정도면 이건 아니다"]}
+assert poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["땡길 때 편의점 직행", "b", "c", "d"]}, GOOD27)[1] == GOOD27["opts"] and "'땡길 때 편의점 직행' 너무 김(한글 8자까지)" in pr27[1][0], pr27  # 11자 = 27바이트 -> 1번 다시
+assert poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 8 + "a", "b", "c", "d"]})[1][0] == "가" * 8 + "a" and len(pr27) == 1  # 딱 25바이트 = 통과(경계)
+poll27("ramen", "life", {"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 9, "나" * 9, "다" * 9, "신라면 박스째 쌓아둠"]}, GOOD27); assert "'신라면' 쓰면 안 됨" in pr27[1][0], pr27[1][0]  # 4개 다 길어도 내용 문제 먼저(다시 = 앞 4개만)
+FP27 = {"q": "라면 먹는 스타일 골라봐", "opts": ["국내산 김치랑", "계란 토스트랑", "참치마요 섞음", "요 정도면 아니다"]}
 assert poll27("ramen", "life", FP27)[1] == FP27["opts"] and len(pr27) == 1  # 흔한 말(국내산·토스트·참치마요·요 정도·아니다)은 통과(10/22 리뷰)
 OLD27 = H.poll_text(r27["ramen"])
-for bad in ({"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 26, "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["a", "b", "c"]},  # 26자 · 보기 3개
+for bad in ({"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 9, "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["가" * 8 + "ab", "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["a", "b", "c"]},  # 한글 9자(27바이트) · 26바이트 · 보기 3개
             {"q": "라면 쟁이는 스타일 골라봐", "opts": ["신라면 박스째", "b", "c", "d"]}, {"q": "쿠팡에서 라면 사는 스타일", "opts": ["a", "b", "c", "d"]},  # 브랜드(기록 딜 상품명) · 몰
             {"q": "라면 쟁이는 스타일 골라봐", "opts": ["a", "b", "c", "hotdealpick.kr 봄"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["500원이면 삼", "b", "c", "d"]},  # 링크 · 생활형에 금액
             {"q": "라" * 61, "opts": ["a", "b", "c", "d"]}, {"q": "라면 쟁이는 스타일 골라봐", "opts": ["박스째 쌓아둬요", "b", "c", "d"]}):  # 질문 61자 · ~요
     assert poll27("ramen", "life", bad, bad) == OLD27 and len(pr27) == 2, bad  # 2번 다 = 지금 틀
 assert poll27("ramen", "price", {"q": "라면 개당 얼마면 오 싸다 해?", "opts": ["450원이면 삼", "b", "c", "d"]}, {"q": "x", "opts": ["450원", "b", "c", "d"]}) == OLD27  # 가격형 = 구간 값만(450원 X)
-assert poll27("ramen", "price", {"q": "라면 개당 얼마면 오 싸다 해?", "opts": ["500원 이하면 바로 삼", "600원까진 OK", "700원 넘으면 고민", "가격 안 봄"]})[1][0] == "500원 이하면 바로 삼"  # 구간 값 = OK
+assert poll27("ramen", "price", {"q": "라면 개당 얼마면 오 싸다 해?", "opts": ["500원 이하면 삼", "600원까진 OK", "700원 넘으면 고민", "가격 안 봄"]})[1][0] == "500원 이하면 삼"  # 구간 값 = OK
 assert poll27("ramen", "life", RuntimeError("api")) == OLD27  # Claude 실패 = 지금 틀
 assert H.wons("5천원대면 바로 삼 · 1만2천원 · 1,500원 · 30개") == {5000, 12000, 1500}
 H.random = sv27[1]; k27 = set()  # 진짜 무작위: 가·나 둘 다
@@ -5913,6 +5918,7 @@ assert H.th_missed(mi52 + [{**own52("E"), "t": "2026-10-24 18:05", "re": 1, "th"
 fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])] + [own52("B")]); n52 = len(sent52)
 time.time = lambda: TK("2026-10-25 12:05"); H.cp_repost({"cps": {"c": {U52["B"]: 1}}}); assert url52()[-1] == U52["B"]  # 반응 신호(B) 먼저
 fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])]); time.time = lambda: TK("2026-10-25 18:05"); H.cp_repost({}); assert url52()[-1] == U52["E"]  # 신호 없음 = 놓친 글(C = 채널 글 3일 안 X)
+fr52("2026-10-25", [x for x in mi52 if x["url"] == U52["C"]]); s52m = {}; n52 = len(sent52); H.cp_repost(s52m); assert len(sent52) == n52 and "cpre_20261025_18" in s52m, url52()[-1]  # C만 = 놓친 글이어도 채널 글 3일 안이면 X(위 줄은 E가 더 오래돼서 이김 — 10/25 리뷰)
 fr52("2026-10-28", [x for x in mi52 if x["url"] == U52["C"]]); time.time = lambda: TK("2026-10-28 12:05"); H.cp_repost({}); assert url52()[-1] == U52["C"]  # 3일 지나면 C도
 fr52("2026-11-02", [x for x in mi52 if x["url"] == U52["D"]]); time.time = lambda: TK("2026-11-02 12:05"); n52 = len(sent52); H.cp_repost({}); assert len(sent52) == n52  # 7일 지남 = X
 fr52("2026-10-25", [x for x in mi52 if x["url"] in (U52["C"], U52["E"])]); time.time = lambda: TK("2026-10-25 08:40"); tk52 = H.E.pop("THREADS_TOKEN", None); stm52 = {}; o52 = io.StringIO()

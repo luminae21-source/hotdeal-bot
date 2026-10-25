@@ -4619,9 +4619,10 @@ def th_reply(tok, to, text):
 
 
 def th_poll(tok, text, opts, tag="핫딜"):
-    """Threads 투표 글 1개(TEXT + poll_attachment, 공식 문서 create-posts/polls: 보기 2~4개·1~25자, 글만 있는 글에만) -> 글 id. 보기가 규칙 밖이면 안 올림(ValueError)."""
-    if not 2 <= len(opts) <= 4 or not all(1 <= len(o) <= 25 for o in opts):
-        raise ValueError(f"투표 보기는 2~4개·1~25자: {opts}")
+    """Threads 투표 글 1개(TEXT + poll_attachment, 공식 문서 create-posts/polls: 보기 2~4개·1~25, 글만 있는 글에만) -> 글 id. 보기가 규칙 밖이면 안 올림(ValueError).
+    25 = UTF-8 바이트(한글 1자 = 3 — 10/23·24 한글 12~14자 보기가 HTTP 400 'Poll Option Has Invalid Length')."""
+    if not 2 <= len(opts) <= 4 or not all(1 <= len(o.encode()) <= 25 for o in opts):
+        raise ValueError(f"투표 보기는 2~4개·1~25바이트: {opts}")
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "topic_tag": tag, "access_token": tok})
     form = urllib.parse.urlencode({"poll_attachment": json.dumps(dict(zip(POLL_KEYS, opts)), ensure_ascii=False)}).encode()  # 문서 예시처럼 본문(-d)으로
@@ -4994,7 +4995,7 @@ def threads_deals(seen):
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
 POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 반말 질문·보기 4개 — poll_ai) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
-POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25자 — 공식 문서 create-posts/polls)
+POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25 UTF-8 바이트 = 한글 8자 — 공식 문서 create-posts/polls·10/24 HTTP 400)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
     (lambda w: w["rain"] >= 60, "비 소식", ("우산", "우비", "제습제", "실내 건조"), ("라면", "부침가루", "어묵"), "우산 챙기셨어요?"),
@@ -5185,13 +5186,13 @@ def poll_text(rec):
 
 
 POLL_PROMPT = """Threads 가격 투표 글을 반말로 써 주세요. 품목: {name}(핫딜픽이 {unit} 가격 기록을 모으는 생활용품).
-- q = 질문 한 줄(40자 안팎), opts = 보기 정확히 4개(보기마다 25자 이하, 짧게).
+- q = 질문 한 줄(40자 안팎), opts = 보기 정확히 4개(짧게 — Threads가 보기를 25바이트까지만 받음: 한글 1자 3바이트·숫자·띄어쓰기·기호 1바이트, 한글만이면 8자).
 - 반말·공감형('~요'로 끝나는 말 X). 마지막 보기는 가볍게 웃긴 것.
 - 상품명·브랜드(신라면·삼다수·햇반 같은 것)·쇼핑몰·편의점 이름·링크·광고 문구 X, 과장(역대급·무조건·손해) X.
 - {kind}"""
 POLL_KIND = {  # 10/22 진우 시안 고름(반말·공감형 보기·마지막 보기는 가볍게 웃기게): 글마다 무작위 가 생활형 / 나 가격형
-    "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입 하나면 충분 · 땡길 때 편의점 직행 · 라면 끊음 (진짜임)",
-    "price": "유형: 가격형 — '{unit} 얼마면 오 싸다 해?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 해? / {a}이면 바로 삼 · {b}까진 OK · {c} 넘으면 고민 · 가격 안 보고 집음"}
+    "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입이면 충분 · 땡기면 편의점행 · 라면 끊음(진짜)",
+    "price": "유형: 가격형 — '{unit} 얼마면 오 싸다 해?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 해? / {a}이면 삼 · {b}까진 OK · {c}부턴 고민 · 가격 안 보고 집음"}
 POLL_BRANDS = (r"신라면|진라면|너구리|짜파게티|안성탕면|컵누들|사발면|농심|삼양|오뚜기|팔도|삼다수|아이시스|백산수|풀무원|크리넥스|깨끗한나라|모나리자|잘풀리는|"  # 기록 품목(PRICE_ITEMS) 브랜드
                r"퍼실|리큐|테크|피죤|맥심|모카\s*골드|화이트\s*골드|카누|베베숲|몽드드|햇반|엘라스틴|케라시스|GS25|세븐일레븐|이마트24|(?<![A-Za-z])CU(?![A-Za-z])")  # + 편의점(몰)
 POLL_YO = r"(?<![필중주수소])요[?!.~ㅋㅎ\s]*$|죠[?!.~ㅋㅎ\s]*$|(?<![다아])니다[?!.~ㅋㅎ\s]*$"  # 투표 보기 = 끝에서만(‘요 정도면’·‘참치마요’는 반말)
@@ -5205,7 +5206,7 @@ def wons(s):
 
 def poll_ai(rec):
     """10/22 진우 '재미있게': Claude가 반말 질문·보기 4개(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만) -> (본문, 보기).
-    검사(질문 60자·보기 4개 1~25자·끝이 ~요 X·몰·편의점·브랜드(POLL_BRANDS)·링크·광고·과장 X·없는 금액 X) 실패 -> 걸린 말을 알려 주고 1번 다시, 그래도면 지금 틀(poll_text).
+    검사(질문 60자·보기 4개 1~25바이트(th_poll)·끝이 ~요 X·몰·편의점·브랜드(POLL_BRANDS)·링크·광고·과장 X·없는 금액 X) 실패 -> 걸린 말을 알려 주고 1번 다시, 그래도면 지금 틀(poll_text).
     링크·상품명 없음 = 대가성 문구 X 그대로."""
     name, unit, rows = rec
     kind, opts0 = random.choice(("life", "price")), poll_opts(rows[0][0])
@@ -5222,8 +5223,8 @@ def poll_ai(rec):
         for _ in (0, 1):
             r = ai_json(prompt + again, {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}})
             q, opts = re.sub(r"\s+", " ", str(r.get("q") or "")).strip(), [re.sub(r"\s+", " ", str(o)).strip() for o in r.get("opts") or []]
-            bad = [x for x in [f"질문 {len(q)}자" if len(q) > 60 else "", f"보기 {len(opts)}개" if len(opts) != 4 else "", *(f"'{o}' {len(o)}자" for o in opts if len(o) > 25),
-                               why(q), *map(why, opts)] if x]
+            bad = [x for x in [f"질문 {len(q)}자" if len(q) > 60 else "", f"보기 {len(opts)}개" if len(opts) != 4 else "", why(q), *map(why, opts),  # 내용 먼저(다시 = 앞 4개만)
+                               *(f"'{o}' 너무 김(한글 8자까지)" for o in opts if len(o.encode()) > 25)] if x]
             if not bad:
                 print("poll ai", kind, q, "|", " / ".join(opts))
                 return f"🗳️ {q}\n\n내일 이 시간에 답글로 핫딜픽 기록 최저가 알려줌", opts
