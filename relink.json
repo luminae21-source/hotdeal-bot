@@ -1,5 +1,5 @@
 {
- "left_now": 55,
+ "left_now": 54,
  "ok": {
   "auction": 7
  },
@@ -234,6 +234,13 @@
    "n": "해피바스 내추럴 바디워시 프루티향 900g",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 05:00"
+  },
+  {
+   "k": "진열",
+   "pid": "8103489831",
+   "n": "리피트인 딥퍼퓸 모이스처 약산성 프로틴 샴푸 오드플로랄 1L 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 05:14"
   }
  ]
 }
