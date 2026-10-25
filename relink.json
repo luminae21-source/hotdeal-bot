@@ -1,5 +1,5 @@
 {
- "left_now": 68,
+ "left_now": 67,
  "ok": {
   "auction": 7
  },
@@ -143,6 +143,13 @@
    "n": "이브네 유기농 유순 생리대 날개형 중형 16개입 4개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 01:56"
+  },
+  {
+   "k": "진열",
+   "pid": "6925337098",
+   "n": "오닉 유기농 순면커버 생리대 날개형 중형 18개입 4개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 02:10"
   }
  ]
 }
