@@ -1,5 +1,5 @@
 {
- "left_now": 71,
+ "left_now": 70,
  "ok": {
   "auction": 7
  },
@@ -122,6 +122,13 @@
    "n": "좋은느낌 에어핏 쿠션 울트라 슬림 생리대 중형 36개입 2개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 01:13"
+  },
+  {
+   "k": "진열",
+   "pid": "6590520242",
+   "n": "켈로그 콘푸로스트 1.32kg",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 01:27"
   }
  ]
 }
