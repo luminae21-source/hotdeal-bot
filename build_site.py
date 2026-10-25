@@ -975,7 +975,7 @@ def pick_section(day, ps, page=False):
     return (f'<section class="tp" id="pick" aria-labelledby="tph"><div class="k">TODAY\'S PICK · {md}</div><h2 id="tph">고민은 줄이고, 오늘은 이 {len(ps)}개만 보세요</h2>'
             f'<p class="d">특가 중인 것 중 단위가격 좋은 것·다시 특가로 돌아온 것을 몰마다 골랐어요</p><ol style="list-style:none;margin:0;padding:0">'
             + "".join(pick_row(n, i, p, sh) for n, (i, p, sh) in enumerate(ps, 1)) + "</ol>" + (f'<p class="pn">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in ps) else "")
-            + f'<p class="pn">{" ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in ps if shop_of(p) in SHOP_NOTES))}</p>'  # '보기'가 몰로 바로 -> 바로 아래 그 몰 대가성 문구 그대로(옛 홈 = 몰 칸 맨 위) — 맨 위 회색 덩어리는 사이트 공통 1개 그대로
+            + (lambda n: f'<p class="pn">{n}</p>' if n else "")(" ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in ps if shop_of(p) in SHOP_NOTES and aff(p.get("url")))))  # '보기'가 몰로 바로 -> 바로 아래 그 몰 대가성 문구 그대로(옛 홈 = 몰 칸 맨 위) — 맨 위 회색 덩어리는 사이트 공통 1개 그대로
             + ("" if page else f'<a class="u" style="display:block;padding:4px 0 10px;text-align:right;text-decoration:none" href="{BASE}today/{day}/">{md} 오늘의 픽 쪽 →</a>') + "</section>")
 
 
@@ -1086,7 +1086,7 @@ def ev_page(g, today):
     key = lambda x: (lambda u: (x[2][0] == 3, u is None, u or ("", 0)))(per_unit(x[1]))  # 일시 품절 = 칸 맨 뒤
     n, md, name, chk = ev_n(g), f"{int(g['until'][5:7])}/{int(g['until'][8:10])}", ev_name(g), g["chk"] and f" ({md_h(g['chk'])})"
     left = (calendar.timegm(time.strptime(g["until"], "%Y-%m-%d")) - calendar.timegm(time.strptime(today, "%Y-%m-%d"))) // 86400
-    notes = " ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in g["xs"] if shop_of(p) in SHOP_NOTES))
+    notes = " ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in g["xs"] if shop_of(p) in SHOP_NOTES and aff(p.get("url"))))  # 제휴 링크 상품만(쿠팡 생 주소 = 수수료 X — 10/25)
     body = (f'<h1 class="h">🎉 {html.escape(name)}</h1><div class="t">핫딜픽이 고른 {n}개 · ~{md} 마감 · <b class="dd">{"오늘 마감" if left <= 0 else f"D-{int(left)}"}</b></div>'
             + f'<p class="evn">같은 종류 {g["mall"] + " " if g["mall"] else ""}검색에서 단위가 하위 20%만 골랐어요{chk}</p>'
             + (f'<p class="t">{notes}</p>' if notes else "")

@@ -1796,7 +1796,7 @@ sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/sch
 assert all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09" and locs[1] == "https://hotdealpick.kr/c/toilet-paper.html" and len(set(locs)) == len(locs)  # +1 = 화장지 최저가 기록(10/17)
 assert f"https://hotdealpick.kr/today/{td}/" in locs and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and sum("/p/" in u for u in locs) == 34  # 딜 쪽 33 + 모아보기 쪽(예전 그대로)
 td8 = open(f"docs8/today/{td}/index.html").read()
-assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and f'<p class="pn">{S.SHOP_NOTES["coupang"]}</p>' in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
+assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
 d8 = open("docs8/p/0.html").read()
 assert '<meta name="description" content="19,900원 · 롤당 663원 · 쿠팡 · 10/1 게시 · 핫딜픽">' in d8 and "<title>휴지0 30롤 19,900원 (쿠팡) | 핫딜픽</title>" in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8  # 10/14 '검색 유입': 상품명 가격 (몰), 가격·단위가격·몰·날짜
 ld0 = json.loads(d8.split('<script type="application/ld+json">')[1].split("</script>")[0])
@@ -5760,6 +5760,23 @@ assert len(st45) == 1 and "🧻 <b>생필품 스테디셀러 모음</b>" in st45
 S45.steady_page("docs"); assert "<h2 id=\"sth\">🧻 생필품 스테디셀러 모음</h2>" in open("docs/steady.html").read()
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, H.POSTS = sv45[:6]
 os.chdir(cwd45)
+# 9-45b) (10/25 리뷰) 생 주소 진열 글 = 같은 상품(pid)의 파트너스 링크가 events에 오면(생 주소를 진우 단축 링크로 바꿔 넣음·같이 넣음·같은 상품 채널 예약) 그 링크로 바뀜(카드 하나)
+#        · 옵션 itemId가 둘 다 있고 다르면 X · cp_price 기록(가격·사진)도 새 주소로 · 오늘의 픽·기획전 쪽 쿠팡 대가성 문구 = 제휴 링크 상품이 있을 때만
+sv45b = (time.time, H.EVENTS, H.POSTS, H.CP_LINKS); d45b = tempfile.mkdtemp(); os.chdir(d45b); H.EVENTS, H.POSTS = "events.json", "posts.json"; time.time = lambda: T45
+X45, Y45 = "https://www.coupang.com/vp/products/777?itemId=1", "https://www.coupang.com/vp/products/888?itemId=5"
+evb = [SH45(X45, "생 주소 세제", "2026-10-24 09:00", pid="777"), SH45(Y45, "생 주소 샴푸", "2026-10-24 09:00", pid="888")]
+json.dump(evb, open("events.json", "w")); json.dump([], open("posts.json", "w"))
+s45b = {"cpq": {"m": {X45: [12500, "2026-10-24 19:00", ""]}, "i": {X45: "https://thumbnail.coupangcdn.com/x.jpg"}}}
+H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == [X45, Y45]
+json.dump([SH45("https://link.coupang.com/a/jw1", "생 주소 세제", "2026-10-24 09:00", pid="777"), evb[1], SH45("https://link.coupang.com/a/jw2", "다른 옵션 샴푸", "2026-10-24 09:00", pid="888", item="6")], open("events.json", "w"))  # X = 진우 단축 링크로 바꿔 넣음 · Y = 같은 pid 다른 옵션(item 6)
+H.shelf_posts(s45b); pb = json.load(open("posts.json"))
+assert [p["url"] for p in pb] == ["https://link.coupang.com/a/jw1", Y45] and pb[0]["text"].startswith(H.DISCLOSURE) and not pb[1]["text"].startswith(H.NOTE_STARTS), pb  # 카드 하나(jw1 새 글 X) · 다른 옵션 = 그대로(생 주소)
+assert s45b["cpq"]["m"] == {"https://link.coupang.com/a/jw1": [12500, "2026-10-24 19:00", ""]} and list(s45b["cpq"]["i"]) == ["https://link.coupang.com/a/jw1"]  # 검색 가격·사진 이어받음
+json.dump([evb[1], SH45("https://link.coupang.com/a/jw3", "생 주소 샴푸", "2026-10-24 09:00", pid="888", item="5")], open("events.json", "w"))  # 같은 옵션 진우 단축 링크를 같이 넣음 -> 그 링크로
+H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == ["https://link.coupang.com/a/jw1", "https://link.coupang.com/a/jw3"]
+pk45 = lambda u: S45.pick_section("2026-10-24", [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))])
+assert S45.SHOP_NOTES["coupang"] not in pk45(X45) and S45.SHOP_NOTES["coupang"] in pk45("https://link.coupang.com/a/jw1") and 'rel="nofollow noopener"' in pk45(X45)  # 생 주소 픽 = 쿠팡 파트너스 문구 X · 보기 sponsored X
+time.time, H.EVENTS, H.POSTS, H.CP_LINKS = sv45b; os.chdir(cwd45)
 # 9-47) 토스 대량 사이트 진열(10/24 09:4x 진우 '웹사이트엔 최대한 많은 수량' — TOSS_SITE True): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 -> 카테고리 베스트) 돌아가며
 #       사이트에 없는·판매 중 상품 -> 쉐어링크(있으면 재사용) -> 사이트 전용 글(own·shelf·tid, 채널·Threads X, 리뷰 X, 대가성 문구·게시 시점 가격) · 링크 오류 = 그 상품 하루 쉬고 실행 멈춤
 sv47 = (H.toss, H.HAS_TOSS, H.tg, time.time, dict(H.RUN), H.POSTS, H.TOSS_SITE); d47 = tempfile.mkdtemp(); cwd47 = os.getcwd(); os.chdir(d47)
@@ -5820,6 +5837,10 @@ at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 5 and len(dm48) =
 at48("2026-11-01 10:29"); H.cp_links(s48); assert len(dl48) == 5
 at48("2026-11-01 10:31"); H.cp_links(s48); assert dl48[-1] == [B48] and len(dl48) == 6 and len(dm48) == 2 and s48["cpdl"]["f"][B48] == ["2026-10-24", "2026-10-25", "2026-11-01"]  # 7일 뒤 다시(나중에 되면 파트너스 링크로) · 3번째부터 알림 X
 assert json.load(open(H.CP_FAIL)) == [{"pid": "77777", "n": "제휴 안 되는 세제", "f": ["2026-10-24", "2026-10-25", "2026-11-01"], "x": "11-01 10:31", "e": "400"}]  # 아직 안 바뀐 것만(Cowork 점검 — 가격 X)
+C48 = [f"https://www.coupang.com/vp/products/6{k:03d}" for k in range(100)]  # (10/25 리뷰) 실패했던 상품이 채널 예약이 되면 = 1개씩 뒤로 X, 채널 먼저(첫 호출)
+json.dump([{"at": "2026-11-09 09:00", "shelf": True, "url": u, "text": f"👍 <b>[쿠팡] 새 진열 {u[-3:]} (1,000원)</b>"} for u in C48] + [{"at": "2026-11-09 12:00", "deal": True, "url": B48, "text": "🔥 <b>[쿠팡] 제휴 안 되는 세제 (1,000원)</b>"}], open("events.json", "w"))
+H.http = lambda url, body=None, headers=None, method=None: dl48.append(list(body["coupangUrls"])) or json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/g" + u[-4:]} for u in body["coupangUrls"]]})
+n48 = len(dl48); at48("2026-11-09 11:50"); H.cp_links(s48); assert B48 in dl48[n48] and len(dl48) - n48 == 4, dl48[n48:]  # 채널 묶음(B48) 먼저 · 진열까지 실행마다 CP_RUN-2번
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv48[:5]; H.RUN.clear(); H.RUN.update(sv48[5]); os.chdir(cwd48)
 # 9-49) (10/24 리뷰 blocker) 묶음 오류를 반씩 나누다 실행 호출 상한에 걸리면 나눈 조각을 다음 실행으로 — 안 그러면 매 실행 같은 20개를 처음부터 나눠 나쁜 주소 1개에 진열 변환이 멈춤
 sv49 = (H.http, H.tg, time.time, H.HAS_CP, H.EVENTS, dict(H.RUN)); d49 = tempfile.mkdtemp(); cwd49 = os.getcwd(); os.chdir(d49)

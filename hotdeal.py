@@ -1445,8 +1445,8 @@ def cp_links(seen):
     todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400)]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
-    one = [[u] for u in rest if u in st["f"]]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남)
-    rest = [u for u in rest if u not in st["f"]]
+    one = [[u] for u in rest if u in st["f"] and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
+    rest = [u for u in rest if [u] not in one]
     q, calls, why = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0, {}
     q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)] + one  # 채널 예약 먼저
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
@@ -1485,7 +1485,7 @@ def cp_links(seen):
     if st.get("q") and st.get("qd") != today and kst.tm_hour >= 9:  # 진열 변환 실패 묶음 알림(하루 1번, 9시~ · 상품 번호만 — 주소 쿼리 X)
         if tg("sendMessage", chat_id=ADMIN, text=(f"⚠️ 쿠팡 진열 링크 변환 안 됨 {len(st['q'])}개(rCode 400 — 상품별 파트너스 제휴 불가로 보임)\n"
                                                   + "\n".join(f"· {n or '?'} (pid {re.match(CP_PROD, u)[1]})" + (f" — 2번째(다른 날) · {CP_RETRY_DAYS}일 뒤 다시" if len(st["f"].get(u, [])) >= 2 else " — 내일 1번 더 시도")
-                                                              for u, n in st["q"].items()) + "\n사이트엔 쿠팡 상품 주소 그대로 진열 중(수수료 X · 바뀌면 파트너스 링크로). 다른 브랜드·옵션이나 진우 단축 링크로 events에 바꿔 넣어도 돼")[:4000]):
+                                                              for u, n in st["q"].items()) + "\n사이트엔 쿠팡 상품 주소 그대로 진열 중(수수료 X · 바뀌면 파트너스 링크로). 진우 단축 링크를 같은 pid로 events에 넣으면 사이트 카드도 그 링크로 바뀜(다른 상품으로 바꾸면 생 주소 카드는 그대로 남음)")[:4000]):
             st.update(q={}, qd=today)
     if n:
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
@@ -1610,13 +1610,24 @@ def shelf_posts(seen):
     쿠팡 상품 주소 = 딥링크 전이어도 at이 지나면 생 주소 그대로(10/25 진우 '품목들은 무조건 다 올려' — 대가성 문구·[광고] X: aff_note = 제휴 링크만) ->
     나중에 cp_links가 바꾸면 그 글을 그 자리(posts 번호·사이트 쪽 주소·찜 그대로)에서 파트너스 링크 + 대가성 문구로 바꿈(채널·Threads·인스타는 지금처럼 바뀐 링크만)."""
     now, posts, ev, cl = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info(), load(CP_LINKS, {})
-    fix = [p for p in posts if p.get("shelf") and isinstance(cl.get(p.get("url")), str)]
-    for p in fix:
-        p["url"] = cl[p["url"]]
-        p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], p["url"])
+    itm, same, cpq, fix = lambda u: ev.get(u, {}).get("item") or (re.search(r"[?&]itemId=(\d+)", u) or [0, ""])[1], {}, seen.get("cpq", {}), 0
+    for u, i in ev.items():  # 같은 상품(pid)의 파트너스 링크(진우 단축 링크·딥링크) — events에서 생 주소를 바꿔 넣거나 같은 상품 채널 예약이 와도 카드 하나(10/25 리뷰 · 옵션 itemId가 둘 다 있고 다르면 X)
+        if i.get("pid") and urllib.parse.urlsplit(u).netloc in CP_SHORT:
+            same.setdefault(i["pid"], []).append(u)
+    for p in posts:
+        m = p.get("shelf") and re.match(CP_PROD, p.get("url") or "")
+        new = m and (cl.get(p["url"]) or next((v for v in same.get(m[1], []) if not (itm(p["url"]) and ev[v].get("item") and ev[v]["item"] != itm(p["url"]))), None))
+        if not new:
+            continue
+        for k in ("m", "i", "r", "v", "pm"):  # cp_price 기록(검색 가격·사진·로켓)도 새 주소로 — 안 그러면 다음 검색 전까지 events 옛 가격으로 '특가 끝'·'다시 특가'가 잘못 뜸(10/25 리뷰)
+            if p["url"] in cpq.get(k, {}):
+                cpq[k].setdefault(new, cpq[k].pop(p["url"]))
+        p["url"] = new
+        p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], new)
+        fix += 1
     if fix:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        print("shelf", f"생 주소 진열 {len(fix)}개 -> 파트너스 링크")
+        print("shelf", f"생 주소 진열 {fix}개 -> 파트너스 링크")
     have = {p.get("url") for p in posts if p.get("own")}
     pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")}, 0
     for e in ev_list(EVENTS):
