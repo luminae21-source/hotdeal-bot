@@ -1,5 +1,5 @@
 {
- "left_now": 40,
+ "left_now": 39,
  "ok": {
   "auction": 7
  },
@@ -339,6 +339,13 @@
    "n": "좋은느낌 입는 오버나이트 대형 8개입 2개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 08:18"
+  },
+  {
+   "k": "진열",
+   "pid": "9091616574",
+   "n": "슈어홈 가열식 가습기 2L 화이트",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 08:32"
   }
  ]
 }
