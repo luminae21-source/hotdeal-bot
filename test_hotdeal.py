@@ -1563,7 +1563,7 @@ assert 'name="robots" content="noindex,follow"' in lb3 and "noindex" not in lk3 
 assert ".vb,.eb2{display:none}.lb .vb,.lb .eb2{display:block}.lb .va{display:none}" in S.LINK_CSS and "html.lb body{background:#FBFAF7}" in S.LINK_CSS  # JS 꺼짐(html 클래스 X) = A만
 sm3 = open("docs3/sitemap.xml").read(); assert f"<loc>{S.BASE}link/</loc>" in sm3 and "link/b/" not in sm3
 cd3 = lk3.split('<section class="cd"')[1].split("</section>")[0]
-assert "📸 10월 8일 카드 딜<small>번호 그대로</small>" in cd3 and cd3.index("<b>01</b><span>첫딜</span>") < cd3.index("<b>02</b><span>둘째 &lt;딜&gt;</span>") and "<details>" not in cd3 and "어제딜" not in cd3 and 'href="https://a1" rel="nofollow sponsored noopener"' in cd3
+assert "📸 10월 8일 카드 딜<small>번호 그대로</small>" in cd3 and cd3.index("<b>01</b><span>첫딜</span>") < cd3.index("<b>02</b><span>둘째 &lt;딜&gt;</span>") and "<details>" not in cd3 and "어제딜" not in cd3 and 'href="https://a1" rel="nofollow noopener"' in cd3
 assert f'<a href="{S.BASE}p/4.html"><b>03</b>' in cd3 and "ppomppu" not in cd3 and 'id="lg"' not in lk3  # 원글 딜 = 딜 쪽으로 · 수수료 링크 🔥 없으면 지금 특가 칸 X
 K3 = bool(re.match(r"https://open\.kakao\.com/", S.KAKAO_OPENCHAT_URL)); va3, vb3 = lk3.split('<div class="va">')[1].split('<div class="vb">')[0], lk3.split('<div class="vb">')[1].split('<p class="disc">')[0]
 assert re.findall(r'data-gc="(link/\w+)"', va3) == ["link/kakao"] * K3 + ["link/blog", "link/threads", "link/instagram", "link/telegram", "link/home"] and re.findall(r'data-gc="(link/\w+)"', vb3) == ["link/kakao"] * K3 + ["link/blog", "link/threads", "link/instagram"]
@@ -6933,7 +6933,7 @@ H.E.pop("THREADS_TOKEN"); hw64.clear(); H.th_watch(sw64); assert not hw64  # 토
 (H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.th_voice, H.POSTS, H.TH_LINK_AB, H.TH_VOICE, _c64) = sv64; H.TH_C = False; os.chdir(_c64)
 # 9-65) 기획전 모음(10/25 20시 Cowork·진우 — promos.json): /events/(시안 A 작게: 쇼핑 달력·칩·카드·지난 행사) + 홈 띠 '🎉 지금 하는 기획전'(시안 B 작게) + 몰 로고(봇이 1번 받아 둠) +
 #       링크프라이스 딥링크(G마켓·옥션·롯데온·SSG) + GoatCounter promo/<id> · Threads '🗓 쇼핑 달력' 정보 글(바뀐 날만 · 링크 = /events/?ref=th · 딜 글 수·간격 그대로)
-import build_site as S65, calendar as cal65
+import build_site as S65, calendar as cal65, inspect
 sv65 = (time.time, H.http, H.E.get("THREADS_TOKEN"), H.th_bundle, H.busy, H.urllib.request.urlopen); d65 = tempfile.mkdtemp(); cwd65 = os.getcwd(); os.chdir(d65)
 P65 = lambda **k: {**{"id": "p1", "mall": "11st", "mall_name": "11번가", "name": "그랜드 십일절", "start": "2026-11-01", "end": "2026-11-11", "pre": {"start": "2026-10-26", "end": "2026-10-31"}, "benefit": "타임딜",
                       "tag": None, "kw": None, "url": "https://www.11st.co.kr/", "cta": {"text": "행사 보러 가기", "href": "https://www.11st.co.kr/"}}, **k}
@@ -7044,9 +7044,10 @@ n65 = len(u65); H.mall_icons(s65); assert len(u65) == n65  # 있으면 다시 X
 CPR65, AU65, SH65, CS65 = "https://www.coupang.com/vp/products/42?itemId=1", "https://www.auction.co.kr/n/search?keyword=x", "https://www.coupang.com/vp/products/77?itemId=9", "https://www.coupang.com/np/search?q=a"
 json.dump([{"t": "2026-10-25 10:00", "text": "🔥 [쿠팡] 커뮤니티 쿠팡 (1,000원)", "url": CPR65, "mid": 1}, {"t": "2026-10-25 10:01", "text": "🔥 [옥션] 커뮤니티 옥션 (2,000원)", "url": AU65, "mid": 2},
            {"t": "2026-10-25 10:02", "text": "🔥 [11번가] 11번가 (3,000원)", "url": "https://search.11st.co.kr/x", "mid": 3}, {"t": "2026-10-25 10:03", "text": "📦 쿠팡 🔥\n진열 상품\n1원", "url": SH65, "own": 1, "shelf": 1},
-           {"t": "2026-10-25 10:04", "text": "🔥 [쿠팡] 쿠팡 검색 (4,000원)", "url": CS65, "mid": 4}, {"t": "2026-10-25 10:05", "text": "📦 쿠팡 🔥\n바뀐 진열\n1원", "url": "https://www.coupang.com/vp/products/88?itemId=3", "own": 1, "shelf": 1}], open("posts.json", "w"))
+           {"t": "2026-10-25 10:04", "text": "🔥 [쿠팡] 쿠팡 검색 2개 13,740원", "url": CS65, "mid": 4}, {"t": "2026-10-25 10:05", "text": "📦 쿠팡 🔥\n바뀐 진열\n1원", "url": "https://www.coupang.com/vp/products/88?itemId=3", "own": 1, "shelf": 1},
+           {"t": "2026-10-25 10:06", "text": "🔥 [쿠팡] 같은 상품 커뮤니티 (1,000원)", "url": "https://www.coupang.com/vp/products/88?itemId=3", "mid": 6}], open("posts.json", "w"))
 json.dump({"https://www.coupang.com/vp/products/88?itemId=3": "https://link.coupang.com/a/s88"}, open(H.CP_LINKS, "w"))
-D65 = {"https://www.coupang.com/vp/products/42": ValueError("deeplink https://www.coupang.com/vp/products/42"), CPR65: "https://link.coupang.com/a/c42",
+D65 = {"https://www.coupang.com/vp/products/42": ValueError("deeplink https://www.coupang.com/vp/products/42"), CPR65: "https://link.coupang.com/a/c42", SH65: ValueError("coupang rCode 400 url convert failed"),
        "https://www.coupang.com/vp/products/77": "https://link.coupang.com/a/s77", CS65: ValueError(f"coupang rCode 400 Invalid url {CS65}")}
 def dl65(f):
     H.RUN.setdefault("cpn", [0, 0])[0] += 1; r65.append(f)
@@ -7055,14 +7056,14 @@ def dl65(f):
 sv65r = (H.POSTS, H.HAS_CP, H.cp_deeplink, H.lp_api, H.RUN.get("cpn")); H.POSTS, H.HAS_CP, r65, l65, sr65 = "posts.json", True, [], [], {}
 H.cp_deeplink, H.lp_api = dl65, lambda u: l65.append(u) or (None, "F 승인거부")
 H.RUN["cpn"] = [1, 0]; time.time = lambda: 1_800_000_000; H.site_relink(sr65); po65, rl65 = json.load(open("posts.json")), json.load(open(H.RELINK))
-assert r65 == ["https://www.coupang.com/vp/products/77", CS65, "https://www.coupang.com/vp/products/42"] and l65 == [AU65], r65  # 진열 먼저 · 1개씩 ① 먼저 · 실행 몫(CP_RUN-2번째까지) 다 쓰면 ②는 다음 실행
-assert [p["url"] for p in po65][:5] == [CPR65, AU65, "https://search.11st.co.kr/x", SH65, CS65] and json.load(open(H.CP_LINKS))[SH65] == "https://link.coupang.com/a/s77"  # 진열 = cp_links.json(같은 실행 shelf_posts가 그 자리에서) · 옥션 F = 그대로
-assert sr65["srl"]["now"] == [CPR65] and sr65["srl"]["e"][CPR65] == ["응답에 링크 없음"], sr65  # ①만 해 본 주소 = 1번 바로 줄에 남음
-assert rl65 == {"left_now": 1, "ok": {"진열": 1}, "fail": [{"k": "auction", "pid": "", "n": "커뮤니티 옥션", "e": "F 승인거부", "x": "01-15 17:00"},
-                                                       {"k": "커뮤니티", "pid": "", "n": "쿠팡 검색", "e": "rCode 400 Invalid url", "x": "01-15 17:00"}]}, rl65  # 응답 그대로(주소 X)
+assert r65 == [SH65, "https://www.coupang.com/vp/products/77", CS65] and l65 == [AU65], r65  # 진열 먼저 · 1개씩 ① 원래 주소(옵션 그대로) 먼저 → ② 상품 번호만 · 실행 몫(CP_RUN-2번째까지) 다 쓰면 다음 실행
+assert [p["url"] for p in po65][:5] == [CPR65, AU65, "https://search.11st.co.kr/x", SH65, CS65] and json.load(open(H.CP_LINKS))[SH65] == "https://link.coupang.com/a/s77" and po65[6]["url"] == "https://link.coupang.com/a/s88" and po65[6]["url0"].endswith("88?itemId=3")  # cp_links.json에 있는 주소 = 그 링크(호출 X)  # 진열 = cp_links.json(같은 실행 shelf_posts가 그 자리에서) · 옥션 F = 그대로
+assert sr65["srl"]["now"] == [CPR65] and sr65["srl"]["e"][CPR65] == [] and json.load(open(H.CP_LINKS))["https://www.coupang.com/vp/products/88?itemId=3"] == "https://link.coupang.com/a/s88", sr65  # 못 해 본 주소 = 1번 바로 줄에 남음 · 있던 cp_links 안 바꿈
+assert rl65 == {"left_now": 1, "ok": {"진열 ②상품 번호만": 1, "커뮤니티": 1}, "fail": [{"k": "auction", "pid": "", "n": "커뮤니티 옥션", "e": "F 승인거부", "x": "01-15 17:00"},
+                                                       {"k": "커뮤니티", "pid": "", "n": "쿠팡 검색 2개", "e": "rCode 400 Invalid url", "x": "01-15 17:00"}]}, rl65  # 응답 그대로(주소 X) · 이름 속 가격 X · ② = 기본 옵션 링크로 셈
 H.RUN["cpn"] = [0, 0]; H.site_relink(sr65); po65 = json.load(open("posts.json"))
 assert r65[3:] == [CPR65] and po65[0]["url"] == "https://link.coupang.com/a/c42" and po65[0]["text"].startswith(H.DISCLOSURE) and po65[0]["mid"] == 1 and po65[0]["url0"] == CPR65 and l65 == [AU65]  # ② 원래 주소로 됨 · 대가성 문구 · 채널 글 번호 그대로
-assert json.load(open(H.CP_LINKS))[CPR65] == "https://link.coupang.com/a/c42" and sr65["srl"]["now"] == [] and json.load(open(H.RELINK))["ok"] == {"진열": 1, "커뮤니티": 1}
+assert json.load(open(H.CP_LINKS))[CPR65] == "https://link.coupang.com/a/c42" and sr65["srl"]["now"] == [] and json.load(open(H.RELINK))["ok"] == {"진열 ②상품 번호만": 1, "커뮤니티": 2}
 H.RUN["cpn"] = [0, 0]; H.site_relink(sr65); assert len(r65) == 4 and l65 == [AU65]  # 안 된 것 = 7일 동안 다시 X
 H.RUN["cpn"] = [0, 0]; time.time = lambda: 1_800_000_000 + 7 * 86400; H.site_relink(sr65); assert r65[4:] == [CS65] and l65 == [AU65, AU65]  # 7일 뒤 = 처음부터(검색 주소 = 모양 1가지)
 D65[CS65] = H.CpLimit("x"); H.RUN["cpn"] = [0, 0]; time.time = lambda: 1_800_000_000 + 14 * 86400; H.site_relink(sr65)
@@ -7070,6 +7071,12 @@ assert len(r65) == 6 and sr65["srl"]["e"][CS65] == [] and sr65["srl"]["x"][CS65]
 D65[CS65] = "https://link.coupang.com/a/cs"; H.RUN["cpn"] = [0, 0]; H.site_relink(sr65); assert len(r65) == 7 and json.load(open("posts.json"))[4]["url"] == "https://link.coupang.com/a/cs", (r65, sr65, H.RUN.get("cpn"), H.CP_RUN, json.load(open("posts.json"))[4])  # 다음 실행에 바로 다시
 H.HAS_CP, n65 = False, len(r65); time.time = lambda: 1_800_000_000 + 30 * 86400; H.site_relink(sr65); assert len(r65) == n65  # 키 없음 = 쿠팡 안 부름
 H.lp_api = lambda u: (LP65, "S"); time.time = lambda: 1_800_000_000 + 40 * 86400; H.site_relink(sr65); assert json.load(open("posts.json"))[1]["url"] == LP65 and json.load(open("posts.json"))[1]["text"].startswith(H.AFF_NOTE)  # S = 바꿈 + 링크프라이스 대가성 문구
+# 채널 글 상태 = url0(사이트만 바꾼 글): 답장 없이 링크만 보내면 그 채널 글(아직 생 주소)을 찾음 · 채널 글을 고치면 url0·nosite 지움
+po65c = json.load(open("posts.json")); po65c[0].update(t=time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), cp=77); json.dump(po65c, open("posts.json", "w"))
+assert (H.pending_copy("https://link.coupang.com/a/NEW") or {}).get("mid") == 1  # 사이트 url은 파트너스여도 채널 글은 생 주소(url0) = 아직 바꿀 글
+tg65r, H.tg = H.tg, lambda m, **k: {"message_id": 1}
+assert H.relink_channel({"text": "🔥 [쿠팡] 커뮤니티 쿠팡 (1,000원)", "entities": [], "chat": {"id": 5}, "message_id": 77}, 1, "https://link.coupang.com/a/NEW") and "url0" not in json.load(open("posts.json"))[0]
+H.tg = tg65r; assert "p.get(\"url0\") or p.get(\"url\")" in inspect.getsource(H.coupang_remind)
 H.POSTS, H.HAS_CP, H.cp_deeplink, H.lp_api, _cpn65 = sv65r; H.RUN.pop("cpn", None) if _cpn65 is None else H.RUN.__setitem__("cpn", _cpn65)
 # 봇: link_swap.txt(10/25 21:3x·21:4x Cowork — 뽐뿌 원문에서 뽑은 원래 상품 주소): 시각·md5(처음 주소 url0) 맞는 글 · 같은 글 줄 여러 개 = 마지막 줄 · 적용한 줄(sw) 그대로면 X ·
 #     종류별(네이버 직접·진우 커넥트 그대로 / none = 사이트 X / 남의 naver.me = 풀어서 상품 주소만 / 토스 = 우리 쉐어링크 / 링크프라이스 = S만, ego.aspx X) · 안 된 줄 = 하루 뒤 · 채널 글 그대로(posts만)
@@ -7098,6 +7105,9 @@ n65s = len(c65s); H.link_swap(s65w); assert len(c65s) == n65s and json.load(open
 open("link_swap.txt", "a", encoding="utf-8").write(f"{SW65[0][0]}|{md65(SW65[0][1])}|connect|https://naver.me/Jinwoo2\n{SW65[8][0]}|{md65(SW65[8][1])}|connect|https://naver.me/Jinwoo3\n")
 H.link_swap(s65w); ps65w = json.load(open("posts.json"))  # Cowork가 나중에 덧붙인 줄 = 바뀐 글도 처음 주소(url0)로 찾음
 assert ps65w[0]["url"] == "https://naver.me/Jinwoo2" and ps65w[0]["url0"] == SW65[0][1] and ps65w[0]["text"].startswith(H.NAVER_NOTE) and ps65w[8]["url"] == "https://naver.me/Jinwoo3" and "nosite" not in ps65w[8]
+open("link_swap.txt", "a", encoding="utf-8").write(f"{SW65[0][0]}|{md65(SW65[0][1])}|naver_direct|https://smartstore.naver.com/s/products/5\n{SW65[6][0]}|{md65(SW65[6][1])}|none\n")
+H.link_swap(s65w); ps65w = json.load(open("posts.json"))  # 제휴 -> 수수료 0 주소 = 네이버 문구 뗌 · none 줄 끝 '|' 없어도
+assert ps65w[0]["url"] == "https://smartstore.naver.com/s/products/5" and ps65w[0]["text"].startswith("🔥") and ps65w[6].get("nosite") == 1, (ps65w[0], ps65w[6])
 time.time = lambda: 1_800_000_000 + 86401; H.lp_api = lambda u: c65s.append(u) or (None, "F"); H.link_swap(s65w); assert c65s[n65s:] == ["https://naver.me/xBad"] and json.load(open("posts.json"))[2]["url"] == SW65[2][1]  # 하루 뒤 다시(ego.aspx = 부르지도 X)
 os.remove("link_swap.txt"); H.link_swap(s65w)  # 파일 없음 = 그대로
 H.POSTS, H.plain, H.affiliate, H.lp_api = sv65s
@@ -7108,6 +7118,14 @@ json.dump([{"at": "2026-10-25 09:00", "shelf": True, "url": "https://naver.me/Ab
 time.time = lambda: cal65.timegm(time.strptime("2026-10-25 20:40", "%Y-%m-%d %H:%M")) - 9 * 3600; H.shelf_posts({}); H.shelf_posts({}); pn65 = json.load(open("posts.json"))
 assert [(p["url"], p.get("own"), p.get("shelf")) for p in pn65] == [("https://naver.me/AbCd12", 1, 1)] and pn65[0]["text"].startswith(H.NAVER_NOTE) and S65.site_ok(pn65[0]) and [e["url"] for e in H.load(H.EVENTS, [])] == ["https://naver.me/Ch1"], pn65
 H.POSTS, H.EVENTS = sv65n
+# 카드 번호 칸(홈 #today·/link): 사이트에서 뺀 딜 = 번호·이름만(링크 X) · sponsored = 제휴 링크만
+PK65 = [(0, {"t": "x", "text": "🔥 [쿠팡] 제휴 (1원)", "url": "https://link.coupang.com/a/z"}), (1, {"t": "x", "text": "🔥 [11번가] 비제휴 (1원)", "url": "https://search.11st.co.kr/x"}),
+        (2, {"t": "x", "text": "🔥 [네이버] 네이버 직접 (1원)", "url": "https://smartstore.naver.com/a/products/1"}), (3, {"t": "x", "text": "🔥 [네이버] 참여 안 함 (1원)", "url": "https://smartstore.naver.com/a/products/2", "nosite": 1})]
+S65.SITE_AFF_ONLY = True; pr65h = S65.pick_rows(PK65)
+assert 'href="https://link.coupang.com/a/z" rel="nofollow sponsored noopener"' in pr65h and 'href="https://smartstore.naver.com/a/products/1" rel="nofollow noopener"' in pr65h and "11st" not in pr65h and "products/2" not in pr65h and pr65h.count('aria-disabled="true"') == 2 and "<b>04</b>" in pr65h, pr65h
+sv65k = (S65.card_stems, S65.card_order); S65.card_stems, S65.card_order = (lambda out: ["2026-10-25_15"]), (lambda posts, x, out="docs": PK65)
+lc65 = S65.link_cards([], "docs"); S65.card_stems, S65.card_order = sv65k; S65.SITE_AFF_ONLY = False
+assert 'rel="nofollow sponsored noopener"' in lc65 and "11st" not in lc65 and lc65.count('aria-disabled="true"') == 2 and "sponsored noopener\" target=\"_blank\"><b>03" not in lc65, lc65
 # Threads '🗓 쇼핑 달력': 09:40 뒤 1번 · promos 바뀐 날만 · 링크 = /events/?ref=th(우리 사이트 = 대가성 문구 X) · 앞으로 2주 · 사전 행사 표시
 json.dump({"promos": pr65}, open("promos.json", "w")); b65, s65 = [], {}
 H.th_bundle, H.busy, H.E["THREADS_TOKEN"] = (lambda seen, kind, text, link=None, image=None: b65.append((kind, text, link))), (lambda seen, cap=True: False), "tk"
@@ -7130,4 +7148,66 @@ assert s65["calsig"]["s"] == H.cal_text("2026-10-29")[1]  # 실패 = th_retry가
 (time.time, H.http, tk65, H.th_bundle, H.busy, H.urllib.request.urlopen) = sv65
 H.E.pop("THREADS_TOKEN", None) if tk65 is None else H.E.__setitem__("THREADS_TOKEN", tk65)
 os.chdir(cwd65)
+# 9-66) 토스 개별 글 사진(10/25 21:3x 진우 ④ — TOSS_PHOTO: 토스 운영 정책 진우 확인 뒤 켬): 썸네일 원본 그대로 · 텔레그램 sendPhoto(캡션 끝 '사진: 토스쇼핑' · 1,024자 넘거나 실패 = 글만, 사진 실패 알림 X) ·
+#       품절 표시 = editMessageCaption · Threads = 사진 글(실패 = 글만) · toss_noimg.txt 상품 = 사진 X · 꺼져 있으면 지금 그대로
+import contextlib, io, calendar, inspect
+d66 = tempfile.mkdtemp(); cwd66 = os.getcwd(); os.chdir(d66)
+sv66 = (H.TOSS_PHOTO, H.http, H.tg, time.time, H.HAS_TOSS, H.EVENTS, H.POSTS, H.th_text, H.th_img, H.TH_VOICE, H.E.get("TG_TOKEN"), dict(H.RUN["fail"]), H.RUN.get("tg_err"))
+X66 = {"tacaItemId": 42, "tacaId": 4200, "thumbnailUrl": "https://static.toss.im/p/42.jpg"}
+assert H.toss_photo(X66) is None  # 꺼짐 = 사진 X
+H.TOSS_PHOTO = True
+assert H.toss_photo(X66) == X66["thumbnailUrl"] and H.toss_photo({**X66, "thumbnailUrl": "http://a/b.jpg"}) is None and H.toss_photo({"tacaItemId": 1}) is None
+open(H.TOSS_NOIMG, "w").write("# 셀러 요청\n4200  # 10/26 셀러\n"); assert H.toss_photo(X66) is None; os.remove(H.TOSS_NOIMG)  # 상품 단위로 사진 끔(tacaId·tacaItemId)
+c66 = []; H.E["TG_TOKEN"] = "T"
+def http66(url, body=None, headers=None, method=None):
+    c66.append((url.rsplit("/", 1)[-1], body))
+    if url.endswith("/sendPhoto") and body.get("photo", "").endswith("bad.jpg"):
+        e = H.urllib.error.HTTPError(url, 400, "Bad Request", {}, None); e.body = '{"description":"Bad Request: wrong file identifier"}'; raise e
+    return json.dumps({"ok": True, "result": {"message_id": 900 + len(c66), "caption" if url.endswith("/sendPhoto") else "text": "x"}})
+def tg66(method, **p):  # 진짜 tg처럼: 채널 올리기 실패 = RUN fail·tg_err 기록 후 None
+    try:
+        return json.loads(http66(f"https://api.telegram.org/botT/{method}", p))["result"]
+    except H.urllib.error.HTTPError as e:
+        H.RUN["fail"][f"{method} {e.code}"] = H.RUN["tg_err"] = f"{method} {e.code}"
+H.http, H.tg = http66, tg66
+KB66 = {"inline_keyboard": [[{"text": "💙 토스에서 1,000원", "url": "https://toss.im/_m/x"}]]}
+m66, ph66 = H.tg_toss("<i>대가성</i>\n\n<b>상품</b>", KB66, X66["thumbnailUrl"])
+assert ph66 and c66[-1][0] == "sendPhoto" and c66[-1][1]["caption"].endswith("\n\n사진: 토스쇼핑") and c66[-1][1]["photo"] == X66["thumbnailUrl"] and "link_preview_options" not in c66[-1][1] and c66[-1][1]["reply_markup"] == KB66
+H.RUN["fail"].clear(); H.RUN["tg_err"] = ""; m66, ph66 = H.tg_toss("<b>상품</b>", KB66, "https://static.toss.im/p/bad.jpg")
+assert not ph66 and m66 and [x[0] for x in c66[-2:]] == ["sendPhoto", "sendMessage"] and not H.RUN["fail"] and not H.RUN["tg_err"] and "사진: 토스쇼핑" not in c66[-1][1]["text"]  # 사진 실패 = 글만(알림 X)
+n66 = len(c66); m66, ph66 = H.tg_toss("가" * 1020, KB66, X66["thumbnailUrl"]); assert not ph66 and [x[0] for x in c66[n66:]] == ["sendMessage"]  # 캡션 1,024자 넘음 = 글만(사진 시도 X)
+n66 = len(c66); m66, ph66 = H.tg_toss("<b>상품</b>", KB66, None); assert not ph66 and [x[0] for x in c66[n66:]] == ["sendMessage"]
+# 품절 지켜보기 = 사진 글은 캡션 고침(editMessageText는 사진 글에 400 -> 3번 실패면 그만 봄이 됨)
+H.HAS_TOSS, H.EVENTS, H.POSTS = True, "ev66.json", "posts66.json"; json.dump([], open("ev66.json", "w")); json.dump([], open("posts66.json", "w"))
+H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
+def http66b(url, body=None, headers=None, method=None):
+    if url == "https://oauth2.cert.toss.im/token":
+        return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if "/products/detail?tacaItemIds=" in url:
+        return json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": 42, "displayName": "상품", "displayPrice": 1000, "isSoldOut": True}], "notFoundIds": []}})
+    return http66(url, body, headers, method)
+H.http = http66b; time.time = lambda: calendar.timegm(time.strptime("2026-10-26 15:00", "%Y-%m-%d %H:%M")) - 9 * 3600
+s66 = {"sold_777": {"t": time.time() - 600, "d": "2026-10-26", "k": "ev", "pre": "<i>대가성</i>\n\n", "body": "<b>상품</b>", "btn": "💙 토스에서 1,000원", "url": "https://toss.im/_m/x", "n": "상품", "p": 1000, "it": [[42, "상품", 1000, 0, 0, 0]], "ph": 1},
+       "sold_778": {"t": time.time() - 600, "d": "2026-10-26", "k": "ev", "pre": "<i>대가성</i>\n\n", "body": "<b>상품</b>", "btn": "💙 토스에서 1,000원", "url": "https://toss.im/_m/x", "n": "상품", "p": 1000, "it": [[42, "상품", 1000, 0, 0, 0]]}}
+n66 = len(c66)
+with contextlib.redirect_stdout(io.StringIO()): H.toss_soldout(s66)
+e66 = {b["message_id"]: (m, b) for m, b in c66[n66:] if m.startswith("editMessage")}
+assert e66[777][0] == "editMessageCaption" and "⛔" in e66[777][1]["caption"] and e66[777][1]["caption"].endswith("\n\n사진: 토스쇼핑") and e66[778][0] == "editMessageText" and s66["sold_777"]["it"][0][4] == 1, e66
+# Threads: 사진 글(본문 + '사진: 토스쇼핑' · 링크 = 본문) · 실패 = 글만 · 사진 없으면 그대로
+H.TH_VOICE, t66 = False, []
+H.th_text = lambda tok, me, text, link, tag="핫딜": t66.append(("text", text, link)) or {"id": "T1"}
+H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) or {"id": "P1"}
+s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\nhttps://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]) == "P1" and t66 == [("img", "💙 토스 특가\n상품\nhttps://toss.im/_m/x\n\n사진: 토스쇼핑", X66["thumbnailUrl"])], t66
+H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) and None; t66.clear()
+assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]) == "T1" and [x[0] for x in t66] == ["img", "text"] and t66[1][2] == "https://toss.im/_m/x"  # 사진 실패 = 글 + 링크 카드
+t66.clear(); H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x"); assert [x[0] for x in t66] == ["text"]
+t66.clear(); H.th_deal(s66t, "tk", "me", "가" * 495 + " https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]); assert [x[0] for x in t66] == ["text"]  # 500자 넘음 = 사진 X(글 그대로)
+H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("threads down")); assert sv66[8]("tk", "me", "t", X66["thumbnailUrl"]) is None  # 사진 글 오류 = None(부르는 쪽이 글만)
+assert all('**({"ph": 1} if ph else {})' in inspect.getsource(f) for f in (H.toss_solo, H.toss_picks)) and 'th_queue(seen, text, r["link"], bt, img)' in inspect.getsource(H.toss_picks)  # 품절 지켜보기 = 사진 글 표시 · 슬롯 줄도 사진
+src66 = inspect.getsource(H.toss_solo) + inspect.getsource(H.toss_picks)
+assert src66.count("tg_toss(") == 2 and "image=img" in inspect.getsource(H.toss_picks) and '"img": img' in inspect.getsource(H.toss_solo) and 'image=i.get("img")' in inspect.getsource(H.threads_deals)  # 토스 API 개별 글 두 길 + Threads 줄
+(H.TOSS_PHOTO, H.http, H.tg, time.time, H.HAS_TOSS, H.EVENTS, H.POSTS, H.th_text, H.th_img, H.TH_VOICE, tg66, f66, e66b) = sv66
+H.RUN["fail"].clear(); H.RUN["fail"].update(f66); H.RUN["tg_err"] = e66b; H.E.pop("TG_TOKEN", None) if tg66 is None else H.E.__setitem__("TG_TOKEN", tg66)
+assert H.TOSS_PHOTO is False  # 진우 확인 전 = 꺼 둠
+os.chdir(cwd66)
 print("OK: 모든 셀프체크 통과")

@@ -501,12 +501,13 @@ def card_picks(posts, out):
 
 
 def pick_rows(picks):
-    """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도)."""
-    return "".join(f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow sponsored noopener" target="_blank" '
+    """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도) · 사이트에서 뺀 딜(site_ok X — 10/25 리뷰) = 번호·이름만(링크 X — 카드 번호는 그대로) · sponsored = 제휴 링크만."""
+    return "".join((f'<a class="pick" aria-disabled="true"><b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>채널에서</em></a>' if not site_ok(p) else
+                    f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank" '
                    f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}">'
                    f'<b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
                    + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>'
-                      if community(p.get("url")) else "")
+                      if community(p.get("url")) else ""))
                    for n, (i, p) in enumerate(picks, 1))
 
 
@@ -1893,8 +1894,8 @@ def link_cards(posts, out):
     24시간 안 앞 카드는 접힌 한 줄로(첫 화면에 지금 특가 — 10/25 리뷰) · 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영)는 딜 쪽으로(그 쪽에 그 문구)."""
     blocks = [(x, ps) for x in reversed(card_stems(out)) if (ps := card_order(posts, x, out)[:CARD_N])]
     go = lambda i, p: f"{BASE}p/{i}.html" if aff(p.get("url")) and shop_of(p) not in SHOP_NOTES else go_url(i, p)
-    row = lambda ps: '<div class="cr">' + "".join(f'<a href="{html.escape(go(i, p))}"' + (' rel="nofollow sponsored noopener" target="_blank"' if go(i, p).startswith("http") and not go(i, p).startswith(BASE) else "")
-                                                  + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, (i, p) in enumerate(ps, 1)) + "</div>"
+    row = lambda ps: '<div class="cr">' + "".join((f'<a aria-disabled="true"' if not site_ok(p) else f'<a href="{html.escape(go(i, p))}"' + (f' rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank"' if go(i, p).startswith("http") and not go(i, p).startswith(BASE) else ""))
+                                                  + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, (i, p) in enumerate(ps, 1)) + "</div>"  # 사이트에서 뺀 딜 = 번호·이름만(10/25 리뷰) · sponsored = 제휴 링크만
     return blocks and (f'<section class="cd" aria-labelledby="cdh"><div class="sec"><h2 id="cdh">📸 {html.escape(card_name(blocks[0][0]))}<small>번호 그대로</small></h2></div>{row(blocks[0][1])}'
                        + (f'<details><summary>앞 카드 딜 {len(blocks) - 1}개</summary>' + "".join(f'<small class="cn">{html.escape(card_name(x))}</small>{row(ps)}' for x, ps in blocks[1:]) + "</details>" if blocks[1:] else "")
                        + "</section>") or ""

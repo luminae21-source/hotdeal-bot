@@ -1135,7 +1135,7 @@ def pending_copy(link):
     shop = {DISCLOSURE: "쿠팡", TOSS_NOTE: "토스", NAVER_NOTE: "네이버", OY_NOTE: "올리브영"}.get(aff_note(link))
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 86400))
     return next((p for p in reversed(load(POSTS, [])) if shop and p.get("cp") and p.get("mid") and p["t"] >= since and not p["text"].startswith("📋")
-                 and not aff_note(p.get("url") or "") and store_info(title_of(p["text"]), p.get("url")).startswith("💰 " + shop)), None)
+                 and not aff_note(p.get("url0") or p.get("url") or "") and store_info(title_of(p["text"]), p.get("url0") or p.get("url")).startswith("💰 " + shop)), None)  # url0 = 채널 글 주소(사이트만 바꾼 글 — site_relink·link_swap)
 
 
 def aff_note(url):
@@ -1236,6 +1236,8 @@ def relink_channel(notice, mid, url):
     for p in posts:
         if p.get("mid") == mid:
             p.update(text=text, entities=ents, url=url)
+            p.pop("url0", None)  # 채널 글도 이 주소 = 사이트만 바꾼 표시 지움(link_swap 줄도 더는 안 맞음)
+            p.pop("nosite", None)
     json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
     return True
 
@@ -1615,10 +1617,10 @@ SITE_RELINK_DAYS, RELINK = 7, "relink.json"  # 사이트 ② 생 주소(커뮤�
 
 def site_relink(seen):
     """사이트 ② 생 주소 -> 수수료 링크(10/25 20:3x Cowork 최종 규칙 '수수료 길이 있는 몰 = 당분간 보이고 수수료 링크로 교체'): posts.json 커뮤니티 글의
-    쿠팡 주소(상품·검색) = 파트너스 딥링크 · 링크프라이스 몰(LP_HOSTS — 옥션·G마켓·롯데온·이마트) 주소 = 딥링크 API result S만(LP_HOSTS 직접 링크 X — 승인 안 된 링크가 제휴로 보임).
+    쿠팡 주소(상품·검색) = 파트너스 딥링크(cp_links.json에 이미 있으면 그것 — 호출 X) · 링크프라이스 몰(LP_HOSTS — 옥션·G마켓·롯데온·이마트) 주소 = 딥링크 API result S만(LP_HOSTS 직접 링크 X — 승인 안 된 링크가 제휴로 보임).
     되면 그 주소 글 전부 url = 수수료 링크 + 그 대가성 문구(사이트만 — 텔레그램 채널 글은 그대로) · 안 되면 SITE_RELINK_DAYS일 뒤 다시.
     10/25 21시 진우 '쿠팡 88개 수수료 링크로 교체': 처음 1번(st now)은 7일 규칙 없이 지금 생 주소 전부 — 진열 글(shelf) 쿠팡 생 주소도(되면 cp_links.json -> 같은 실행 shelf_posts가 그 자리에서 바꿈 ·
-    그 뒤 진열 재시도는 cp_links 몫). 쿠팡 = 1개씩(묶음 하나가 400이면 묶음 전체 실패) 주소 2가지(① www.coupang.com/vp/products/PID ② 원래 주소 itemId 포함) ·
+    그 뒤 진열 재시도는 cp_links 몫). 쿠팡 = 1개씩(묶음 하나가 400이면 묶음 전체 실패) 주소 2가지(① 원래 주소 itemId 포함 ② www.coupang.com/vp/products/PID — 기본 옵션으로 열림, 바뀐 수에 따로 셈) ·
     호출 = 이번 실행 CP_RUN-2번째까지(가격 확인·골드박스 몫) + 시간당 상한(CpLimit) = 실행마다 나눠서."""
     posts, now, cl = load(POSTS, []), time.time(), load(CP_LINKS, {})
     host = lambda u: urllib.parse.urlsplit(u).netloc.lower()
@@ -1632,11 +1634,11 @@ def site_relink(seen):
         st["now"] = sorted(alls, key=lambda u: (u not in shelf, u))
     st["t"], st["now"] = now, [u for u in st["now"] if u in alls]
     st["x"], st["e"] = {u: t for u, t in st.get("x", {}).items() if u in alls}, {u: v for u, v in st.get("e", {}).items() if u in alls}  # e = 주소마다 응답(①·②)
-    forms = lambda u: list(dict.fromkeys([f"https://www.coupang.com/vp/products/{re.match(CP_PROD, u)[1]}", u])) if re.match(CP_PROD, u) else [u]
+    forms = lambda u: list(dict.fromkeys([u, f"https://www.coupang.com/vp/products/{re.match(CP_PROD, u)[1]}"])) if re.match(CP_PROD, u) else [u]  # 원래 주소(옵션 그대로) 먼저 — 상품 번호만 = 기본 옵션으로 열림(10/25 리뷰)
     why = lambda x: "응답에 링크 없음" if str(x).startswith("deeplink") else re.sub(r"\s*https?://\S+", "", str(x).replace("coupang rCode ", "rCode "))[:80]
     got, stop = {}, not HAS_CP
     for u in st["now"] + sorted(u for u in cands if u not in st["now"] and now - st["x"].get(u, 0) >= SITE_RELINK_DAYS * 86400):
-        link = None
+        link, f0 = None, u  # f0 = 된 주소 모양(② 상품 번호만 = 기본 옵션)
         if lpm(u):
             try:
                 link, w = lp_api(u)
@@ -1644,6 +1646,8 @@ def site_relink(seen):
                 print("site relink 링크프라이스", type(x).__name__)
                 continue
             st["e"][u] = [] if link else [w]
+        elif cl.get(u):  # 같은 주소를 cp_links가 이미 바꿈 = 그 링크(진열·예약과 같은 값)
+            link = cl[u]
         elif stop:
             continue
         else:
@@ -1653,7 +1657,7 @@ def site_relink(seen):
                     stop = True
                     break
                 try:
-                    link = cp_deeplink(f)
+                    link, f0 = cp_deeplink(f), f
                     break
                 except ValueError as x:  # 그 주소 안 됨 = 다음 모양
                     e.append(why(x))
@@ -1666,8 +1670,8 @@ def site_relink(seen):
         if link:
             got[u] = link
             st["e"].pop(u, None)
-            ok = st.setdefault("ok", {})  # 바뀐 수(진열·커뮤니티·옥션 …)
-            ok[kind(u)] = ok.get(kind(u), 0) + 1
+            ok, kk = st.setdefault("ok", {}), kind(u) + (" ②상품 번호만" if f0 != u else "")  # 바뀐 수(진열·커뮤니티·옥션 … · ② = 기본 옵션 링크)
+            ok[kk] = ok.get(kk, 0) + 1
         else:
             st["x"][u] = now
             print("site relink 안 됨", (re.match(CP_PROD, u) or [0, host(u)])[1], " · ".join(st["e"][u]))
@@ -1675,7 +1679,7 @@ def site_relink(seen):
             st["now"].remove(u)
     md = lambda ts: time.strftime("%m-%d %H:%M", time.gmtime(ts + 9 * 3600))
     json.dump({"left_now": len(st["now"]), "ok": st.get("ok", {}),
-               "fail": [{"k": kind(u), "pid": (re.match(CP_PROD, u) or [0, ""])[1], "n": parse(title_of(alls[u]["text"]))[1],
+               "fail": [{"k": kind(u), "pid": (re.match(CP_PROD, u) or [0, ""])[1], "n": re.sub(r"\s*[\d,]+\s*원\S*", "", parse(title_of(alls[u]["text"]))[1]).strip(),  # 이름 속 가격 X(공개 파일)
                          "e": " · ".join(f"{'①②'[k] if len(v) > 1 else ''}{w}" for k, w in enumerate(v)), "x": md(st["x"][u]) if u in st["x"] else ""}
                         for u, v in sorted(st["e"].items()) if len(v) >= len(forms(u))]}, open(RELINK, "w"), ensure_ascii=False, indent=1)  # 끝까지 안 된 것(응답 = ①·② 모양마다)
     if not got:
@@ -1688,8 +1692,8 @@ def site_relink(seen):
             p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], p["url"])
             n += 1
     json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-    if any(re.match(CP_PROD, u) and cl.get(u) != v for u, v in got.items()):  # 같은 쿠팡 상품 주소의 events 예약·진열도 이 링크로(봇·사이트가 같은 값)
-        cl.update({u: v for u, v in got.items() if re.match(CP_PROD, u)})
+    if any(re.match(CP_PROD, u) and u not in cl for u in got):  # 같은 쿠팡 상품 주소의 events 예약·진열도 이 링크로(봇·사이트가 같은 값 · 이미 있는 것은 안 바꿈)
+        cl.update({u: v for u, v in got.items() if re.match(CP_PROD, u) and u not in cl})
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
     print("site relink", f"생 주소 {len(got)}개(글 {n}개 · 진열 {len(set(got) & set(shelf))}) -> 수수료 링크 · 1번 바로 남은 {len(st['now'])}개")
 
@@ -1714,6 +1718,7 @@ def link_swap(seen):
         if isinstance(p.get("url"), str) and not p["text"].startswith("📋"):
             idx.setdefault((p.get("t"), hashlib.md5((p.get("url0") or p["url"]).encode()).hexdigest()[:8]), []).append(p)
     for r in rows:
+        r = r + [""] if len(r) == 3 and r[2] == "none" else r  # none = 새 주소 칸 빈칸(끝 '|' 없어도)
         if len(r) == 4:
             last[(r[0], r[1])] = r  # 마지막 줄이 이김
     st = seen.setdefault("lsw", {"x": {}})
@@ -1747,6 +1752,10 @@ def link_swap(seen):
                 p.setdefault("url0", p["url"])
                 p["url"] = link
                 p.pop("nosite", None)
+                if not aff_note(link) and p["text"].startswith(NOTE_STARTS):  # 제휴 -> 수수료 0 주소 = 옛 대가성 문구 뗌
+                    head, sep, rest = p["text"].partition("\n\n")
+                    cut = len((head + sep).encode("utf-16-le")) // 2
+                    p["text"], p["entities"] = rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut]
                 p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], link)
             p["sw"] = sig
         got[kind] = got.get(kind, 0) + len(ps)
@@ -2777,8 +2786,8 @@ def toss_picks(seen):
         body = mall_body("toss", info, "🔥", r["n"], toss_price(x), list(map(esc, lines)) + ([toss_when()] if TOSS_NO_CMP else []))  # 10/22 진우 '토스·쿠팡 한눈에'
         btn = mall_btn("toss", f"{price:,}원")
         r["st"] = "done"  # 먼저 표시: 채널·Threads 실패해도 같은 글 반복 안 함
-        m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-               text=ad_head(TOSS_NOTE, plain_of(body)) + body, reply_markup={"inline_keyboard": [[{"text": btn, "url": r["link"]}]]})
+        img = toss_photo(x)
+        m, ph = tg_toss(ad_head(TOSS_NOTE, plain_of(body)) + body, {"inline_keyboard": [[{"text": btn, "url": r["link"]}]]}, img)
         if not m:
             r["st"] = None  # 채널 실패 -> 다음 실행에 다시
             continue
@@ -2787,16 +2796,51 @@ def toss_picks(seen):
         tone_keep(seen, "ch", p and tone)
         seen["ev_" + e["at"]] = now  # 실제 게시 시각(events()와 같은 키 — api 예약은 events()가 안 봄) -> toss_solo가 뒤 10분 쉼
         seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": ad_head(TOSS_NOTE, plain_of(body)), "body": body, "btn": btn, "url": r["link"],
-                                           "n": r["n"], "p": price, "it": [[r["id"], r["n"], price, night, 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
+                                           "n": r["n"], "p": price, "it": [[r["id"], r["n"], price, night, 0, 0]], **({"ph": 1} if ph else {})}  # 품절 지켜보기(진우 예약 글과 같은 모양)
         print("toss pick", e["at"], clip(r["n"], 30), f"{price:,}원 게시")
         bt = th_beauty(r["n"])
         text = toss_th(info, r["n"], toss_price(x), lines, r["link"])
         if tok and TH_SLOTS:  # 슬롯 방식: 줄에 → 슬롯에 1순위로 골리면 나감
-            th_queue(seen, text, r["link"], bt)
+            th_queue(seen, text, r["link"], bt, img)
         elif tok and th_solo(seen, plain_of(body), fill=True, beauty=bt, slot=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈, 진우 화장품 이름 예약은 화장품 자리 채움): 대가성 문구 맨 앞, 실패는 main()이 알림
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-            th_deal(seen, tok, me, text, r["link"])
+            th_deal(seen, tok, me, text, r["link"], image=img)
+
+
+TOSS_PHOTO, TOSS_NOIMG, PHOTO_CREDIT = False, "toss_noimg.txt", "사진: 토스쇼핑"  # 토스 개별 글 상품 사진(10/25 21:3x 진우 ④ — 텔레그램 sendPhoto·Threads 사진 글 · 사이트 X · 글 끝 '사진: 토스쇼핑'):
+# 토스 운영 정책(쉐어링크 가이드 운영 정책·상품 상세 조회) = 썸네일 원본 그대로(크롭·합성 X) · 셀러 요청 시 바로 내림 · 상세 페이지 '이미지 사용 금지' 상품 X(API로 못 알아봄) -> 진우 확인 뒤 True ·
+# toss_noimg.txt = 사진 안 쓸 상품(tacaItemId·tacaId 줄마다 — 셀러 요청·사용 금지 표시) · 이미 나간 Threads 사진 글은 봇이 못 지움(진우가 앱에서)
+
+
+def toss_photo(x):
+    """토스 상품 썸네일 주소(원본 그대로) / TOSS_PHOTO 꺼짐·https 아님·toss_noimg.txt에 있는 상품 = None."""
+    u = x.get("thumbnailUrl") if TOSS_PHOTO and isinstance(x, dict) else None
+    if not (isinstance(u, str) and u.startswith("https://") and not re.search(r"\s", u)):
+        return None
+    try:
+        no = {l.split("#")[0].strip() for l in open(TOSS_NOIMG, encoding="utf-8")}
+    except OSError:
+        no = set()
+    return None if {str(x.get("tacaItemId")), str(x.get("tacaId"))} & no else u
+
+
+def tg_toss(text, kb, photo):
+    """토스 개별 글 채널 게시 -> (메시지, 사진 글?): 사진 = sendPhoto(캡션 = 글 + '사진: 토스쇼핑' — 1,024자 넘거나 실패 = 지금처럼 글만, 그 실패는 알림 X)."""
+    cap = f"{text}\n\n{PHOTO_CREDIT}"
+    if photo and len(plain_of(cap).encode("utf-16-le")) // 2 <= 1024:
+        m = tg("sendPhoto", chat_id=CHANNEL, photo=photo, caption=cap, parse_mode="HTML", reply_markup=kb)
+        if m:
+            return m, True
+        fail = [k for k in RUN["fail"] if k.startswith("sendPhoto")]
+    else:
+        fail = []
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=text, reply_markup=kb)
+    if m and fail:  # 글만으로 올라감 = 사진 실패는 알림 X
+        for k in fail:
+            RUN["fail"].pop(k, None)
+        RUN["tg_err"] = "" if not RUN["fail"] else RUN["tg_err"]
+    return m, False
 
 
 TOSS_SOLO_HOURS = range(0, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(10/22 진우 '새벽에도' -> 0~8시도, 밤 발송은 무음). () = 끔
@@ -2969,7 +3013,8 @@ def toss_solo(seen):
     lines = [f"🔁 특가 때 {tgt} 가격으로 다시 왔어요" if (lambda w: w[0] and price <= w[0] + w[1])(won_of(tgt)) else f"🔁 특가 때({tgt}) 가격 근처로 다시 내려왔어요"] if src == "rehot" else toss_lines(p) + ([f"지금은 특가 아님 · 특가 때 {tgt}"] if src == "steady" and tgt else [])  # 🙋 누가·👍 언제(10/20 a7cee6f 그대로) · 정가 재게시는 정직하게(10/23 진우)
     body = mall_body("toss", info, icon, name, toss_price(x), list(map(esc, lines)) + [toss_when()])  # 10/22 진우 '토스·쿠팡 한눈에': 💙 토스 특가 · 출처 → 상품명 → 가격 (할인) · ⭐ → 🙋 → 게시 시점 가격
     head, btn = ad_head(TOSS_NOTE, plain_of(body)), mall_btn("toss", f"{price:,}원")
-    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=head + body, reply_markup={"inline_keyboard": [[{"text": btn, "url": link}]]})
+    img = toss_photo(x)
+    m, ph = tg_toss(head + body, {"inline_keyboard": [[{"text": btn, "url": link}]]}, img)
     if not m:
         return  # 다음 실행에 다시(실패는 바로 알림)
     seen[key] = now
@@ -2983,10 +3028,10 @@ def toss_solo(seen):
         toss_site(seen, x, link, html_ents(head + body)[0])
     bundled(seen)
     seen[f"sold_{m['message_id']}"] = {"t": now, "d": today, "k": "ev", "pre": head, "body": body, "btn": btn, "url": link, "n": name, "p": price,
-                                       "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]]}  # 품절 지켜보기(진우 예약 글과 같은 모양)
+                                       "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]], **({"ph": 1} if ph else {})}  # 품절 지켜보기(진우 예약 글과 같은 모양) · ph = 사진 글(캡션 고침)
     if E.get("THREADS_TOKEN"):  # Threads = 채움 후보(45분 간격·화장품 한도 그대로)
         seen["thtoss"] = {"t": now, "q": [q for q in seen.get("thtoss", {}).get("q", []) if now - q["t"] < 3 * 3600] + [
-            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link}]}
+            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link, **({"img": img} if img else {})}]}
     print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점{' · 잘 된 상품 +' + str(TOP_BONUS) if p.get('top') else ''})")
 
 
@@ -3142,7 +3187,8 @@ def toss_soldout(seen):
         edits += 1
         text, kb = sold_render({**w, "it": new})
         try:
-            ok = tg("editMessageText", chat_id=CHANNEL, message_id=int(k[5:]), text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb})
+            ok = (tg("editMessageCaption", chat_id=CHANNEL, message_id=int(k[5:]), caption=f"{text}\n\n{PHOTO_CREDIT}", parse_mode="HTML", reply_markup={"inline_keyboard": kb}) if w.get("ph")  # 사진 글 = 캡션
+                  else tg("editMessageText", chat_id=CHANNEL, message_id=int(k[5:]), text=text, parse_mode="HTML", link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": kb}))
         except Exception as e:  # 네트워크 오류도 이 글만 건너뜀(다른 글·다른 단계는 계속)
             print("toss soldout edit", k, repr(e))
             ok = None
@@ -3666,7 +3712,7 @@ def th_gap(last):
     return TH_SOLO_GAP + (random.Random(int(last)).randint(-TH_GAP_JITTER, TH_GAP_JITTER) if TH_GAP_JITTER else 0)
 
 
-def th_deal(seen, tok, me, text, link, src=None, cat=None):
+def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None):
     """Threads 개별 딜 글 1개(threads_deals·토스 픽 채움·슬롯 줄·뷰티 채움·토스 이름 예약·재오픈 — 묶음·날씨·간식·투표·#일상은 th_post 그대로).
     TH_LINK_AB면 직전 개별 딜 글이 A였으면 B: 본문 주소 없이(미리보기 X) 올리고 바로 첫 댓글 = 링크. 댓글 못 다는 토큰(th_reply_ok)이면 A.
     B 댓글이 실패하면 관리자 알림 + 다음 실행에 1번 더(th_retry — 링크 없는 딜 글이 남지 않게). 글마다 A/B·댓글 id -> seen(metrics.json 줄 ab·rv·48시간 v48·rv48)."""
@@ -3690,7 +3736,8 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None):
     else:
         kind = ab = "A" if ab == "C" else ab  # C를 못 만들면 A(링크 본문) · 3장면을 못 만들면 그 차례 그대로
         body, reply = th_ab(text, link) if ab == "B" else (text, None)
-    pid, rid = (th_text(tok, me, body, None if reply else link, topic) or {}).get("id"), None
+    ph = image and not reply and th_len(f"{body}\n\n{PHOTO_CREDIT}") <= 500 and th_img(tok, me, f"{body}\n\n{PHOTO_CREDIT}", image, topic)  # 토스 사진 글(TOSS_PHOTO · 링크 = 본문, 카드 X) · 실패 = 글만
+    pid, rid = (ph or th_text(tok, me, body, None if reply else link, topic) or {}).get("id"), None
     if pid and kind in ("C", "S"):
         print("th", kind, clip(tt, 30), "| 본문", th_len(body), "· 댓글", th_len(reply))
         if kind == "S":
@@ -3703,6 +3750,18 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None):
             alert(seen, f"alert_thab_{pid}", f"⚠️ Threads 개별 딜 글({kind}: 링크는 첫 댓글)의 링크 댓글 실패: {err_brief(e)}\n다음 실행에 1번 더 달아요 — 그래도 안 되면 다시 알려요\n링크: {reply.split('👉 ')[-1].split(chr(10))[0]}")
     seen["thab"] = {"t": now, "last": st.get("last") if kind == "S" else ab, "m": {**{k: v for k, v in st.get("m", {}).items() if now - v["ts"] < 4 * 86400}, **({pid: {"ab": kind, "ts": now, "u": link, "n": tt, **({"tone": seen["thvoice"]["s"]} if voiced and kind in ("A", "B") and "s" in seen.get("thvoice", {}) else {}), **({"r": rid} if rid else {})}} if pid else {})}}  # u = 링크(B 본문엔 주소가 없어 metrics가 몰을 못 읽음) · n = 제목 · v = 사람 느낌 글 말투(A 반말·B 음슴체)
     return pid
+
+
+def th_img(tok, me, text, image, tag="핫딜"):
+    """Threads 사진 글 1개(IMAGE — 원본 이미지 주소 그대로 · 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로)."""
+    try:
+        q = urllib.parse.urlencode({"media_type": "IMAGE", "image_url": image, "text": text, "topic_tag": tag, "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(30)  # 미디어 처리 대기(공식 권장)
+        return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
+    except Exception as e:
+        print("th photo 안 됨 -> 글만", err_brief(e))
+        return None
 
 
 def th_text(tok, me, text, link, tag="핫딜"):
@@ -4703,8 +4762,8 @@ def coupang_remind(seen):
         return
     seen[key] = time.time()
     posts, today = load(POSTS, []), time.strftime("%Y-%m-%d", kst)
-    todo = [p for p in posts if p["t"].startswith(today) and p.get("mid") and p.get("cp") and not aff_note(p.get("url") or "")
-            and store_info(title_of(p["text"]), p.get("url")).startswith("💰 쿠팡")][-5:]
+    todo = [p for p in posts if p["t"].startswith(today) and p.get("mid") and p.get("cp") and not aff_note(p.get("url0") or p.get("url") or "")
+            and store_info(title_of(p["text"]), p.get("url0") or p.get("url")).startswith("💰 쿠팡")][-5:]  # url0 = 채널 글 주소(사이트만 바꾼 글)
     if not todo:
         return
     tg("sendMessage", chat_id=ADMIN, text=f"🔗 쿠팡 링크 아직 안 만든 오늘 딜 {len(todo)}개 — 사본마다 '파트너스 링크 만들기' → 만든 링크를 그 사본에 답장하면 채널 글·사이트 버튼이 바뀌어")
@@ -5028,10 +5087,10 @@ def th_slot(r, now):
     return h if TH_SLOTS and h in TH_SLOTS and h not in r.get("slots", []) else None
 
 
-def th_queue(seen, text, link, bt):
+def th_queue(seen, text, link, bt, img=None):
     """슬롯 방식에서 토스 이름 예약·15·19시 뷰티 회차 개별 글은 바로 안 올리고 줄에 — threads_deals가 슬롯에 채널 딜과 같이 1순위를 고름(3시간 지나면 버림)."""
     now = time.time()
-    seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt}]}
+    seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt, **({"img": img} if img else {})}]}
 
 
 def th_fit(body, lim):
@@ -5136,7 +5195,7 @@ def threads_deals(seen):
                 seen["thfill"] = {"t": now, "k": turn}  # 직전 채움 종류(번갈아) — seen 정리가 t를 봄
             if turn == "toss" and i.get("id") and top_hit(top_toss(seen, now), i["id"], i.get("n")):
                 top_mark(seen, now, i["id"])
-            th_deal(seen, tok, me, i["text"], i["link"])
+            th_deal(seen, tok, me, i["text"], i["link"], image=i.get("img"))
             continue
         url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
         if url.startswith(SITE):
