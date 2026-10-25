@@ -1551,6 +1551,41 @@ assert top.index("<b>01</b><span>[G마켓] 첫딜") < top.index("<b>02</b><span>
 assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('<nav class="qk" aria-label="바로가기">') < idx.index('<p class="dis"') < idx.index('<section class="card" id="today" hidden') < idx.index('id="fire"') < idx.index('id="pick"')  # 포털형: 몰 버튼·품목 아이콘(lead) → 문구 → 카드 딜(숨김) → 🔥 → … → 오늘의 픽
 assert "fbclid" in S.HASH_JS and "Instagram|Barcelona" in S.HASH_JS and "h==='today'" in S.HASH_JS and "t.hidden=false" in S.HASH_JS and S.HASH_JS in idx  # 인스타·Threads에서 오면 카드 딜 칸이 맨 위에 보임
 S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임
+# 6-2b) /link 프로필 링크 한 장(10/25 진우 — 시안 A 기본·B /link/b/ noindex 보관): 채널 + 대가성 3사 문구 + 오늘 카드 딜 번호 줄(홈과 같은 카드·번호) + 지금 특가 12(수수료 링크만·사진 있는 🔥 먼저, 칩 = 화면 안 거름)
+#        카톡 버튼 = KAKAO_OPENCHAT_URL 있을 때만 · 아이콘 = si/*.svg 그대로 인라인(외부 CDN X) · GoatCounter 채널 = link/채널, 상품 = buy/ · 사이트맵 = /link/만 · LINK_STYLE로 시안 바꿈
+lk3, lb3 = open("docs3/link/index.html").read(), open("docs3/link/b/index.html").read()
+assert '<body class="a">' in lk3 and '<body class="b">' in lb3 and 'name="robots" content="noindex,follow"' in lb3 and "noindex" not in lk3 and f'<link rel="canonical" href="{S.BASE}link/">' in lk3 and f'<link rel="canonical" href="{S.BASE}link/b/">' in lb3
+sm3 = open("docs3/sitemap.xml").read(); assert f"<loc>{S.BASE}link/</loc>" in sm3 and "link/b/" not in sm3
+cd3 = lk3.split('<section class="cd"')[1].split("</section>")[0]
+assert "📸 10월 8일 카드 딜" in cd3 and cd3.index("<b>01</b><span>첫딜</span>") < cd3.index("<b>02</b><span>둘째 &lt;딜&gt;</span>") and "<details>" not in cd3 and "어제딜" not in cd3 and 'href="https://a1" rel="nofollow sponsored noopener"' in cd3  # 홈 카드 딜과 같은 번호 · 앞 카드 접기
+assert f'href="{S.BASE}p/4.html"' in cd3 and "ppomppu" not in cd3 and 'id="lg"' not in lk3  # 원글 딜 = 딜 쪽으로 · 수수료 링크 상품 없으면 지금 특가 칸 X
+assert "data-gc=\"link/kakao\"" not in lk3 + lb3 and [re.findall(r'data-gc="(link/\w+)"', x) for x in (lk3, lb3)] == [["link/blog", "link/threads", "link/instagram", "link/telegram", "link/home", "link/home"], ["link/blog", "link/threads", "link/instagram", "link/home"]]
+assert all(f'href="{u}" data-gc="link/{k}"' in lk3 for k, _, u, *_ in S.LINK_CH) and f'href="{S.BASE}?ref=link" data-gc="link/home"' in lk3 and all(n in lk3 and n in lb3 for n in S.SHOP_NOTES.values()) and f'<p class="adw" id="adw" hidden>{S.DISCLOSURE}</p>' in lk3
+assert lk3.index('<p class="disc">') < lk3.index('<section class="cd"') and lk3.index('class="ch"') < lk3.index('<p class="disc">') and '<span>매일</span> 골라 드려요' in lk3 and "가격은 매시간 확인" in lb3
+for k in ("kakaotalk", "naver", "threads", "instagram", "telegram"):  # 아이콘 모양 = Simple Icons 파일 그대로(변형 X)
+    d3 = re.search(r'<path d="([^"]+)"', open(os.path.join(RD, "si", k + ".svg")).read())[1]; assert f'<path d="{d3}"/>' in S.si(k) and S.si(k).startswith('<svg class="si" viewBox="0 0 24 24" aria-hidden="true">')
+assert re.findall(r'<script[^>]* src="([^"]+)"', lk3) == ["//gc.zgo.at/count.js"] and "<link rel=\"stylesheet\"" not in lk3 and "cdn" not in lk3 and "serviceWorker" not in lk3 and S.LINK_GC in lk3 and S.GC_APP in lk3  # 쪽 안 CSS·아이콘 · 웹앱 미리 받기 X
+sk3 = S.KAKAO_OPENCHAT_URL; S.KAKAO_OPENCHAT_URL = "https://open.kakao.com/o/gT<x>"
+ka3, kb3 = S.link_page("a", pp, [], "docs3"), S.link_page("b", pp, [], "docs3", alt=True); S.KAKAO_OPENCHAT_URL = sk3
+assert '<a class="main" href="https://open.kakao.com/o/gT&lt;x&gt;" data-gc="link/kakao"><svg class="si"' in ka3 and "카톡 특가방 들어가기 →" in ka3 and ka3.index('class="main"') < ka3.index('class="ch"')
+assert 'href="https://open.kakao.com/o/gT&lt;x&gt;" data-gc="link/kakao"><span class="bi" style="background:#FEE500;color:#191919">' in kb3 and "하루 한 번 오늘의 픽" in kb3 and kb3.index("link/kakao") < kb3.index("link/blog")
+# 지금 특가: 수수료 링크만 · 일시 품절 X · 사진 있는 🔥 > 🔥 > 사진 > 나머지(같은 칸 = 진열 순서) · 칩마다 12개 · 칸은 한 번만(data-k) · 토스 = 'M/D 가격'(게시 시점) · 와우가·쿠폰가 = 작은 분홍
+IMG = "https://ads-partners.coupang.com/image1/" + "x" * 600
+lp = lambda t, u, img="", **k: {"t": "2026-10-25 09:00", "text": f"🔥 [쿠팡] {t} (9,900원)", "url": u, "own": 1, **({"img": img} if img else {}), **k}
+L3 = [(0, lp("일반몰", "https://x.com/a", IMG), (0, None, "", [], False)), (1, lp("토스 휴지", "https://toss.shopping/_m/a"), (0, None, "", [], False)),
+      (2, lp("대기 사진 샴푸", "https://link.coupang.com/a/w", IMG), (2, "9,500원", "", [], False)), (3, lp("품절 화장지", "https://link.coupang.com/a/o", IMG), (3, None, "", [], False)),
+      (4, lp("특가 사진 물티슈", "https://link.coupang.com/a/h", IMG), (0, "8,900원 쿠폰가", "", [], False)), (5, lp("특가 휴지 사진X", "https://link.coupang.com/a/n"), (0, None, "", [], False))]
+assert [x[0] for x in S.link_pool(L3)] == [4, 1, 5, 2]  # 일반몰(수수료 X)·일시 품절 X
+t4 = S.link_tile(1, *S.link_pool(L3)[0], ["all", "life"])
+assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow sponsored noopener" target="_blank" data-k="all life">') and '<div class="pr">8,900원<em>쿠폰가</em></div>' in t4 and 'loading="lazy"' in t4 and '<b class="no">1</b>' in t4
+assert '<div class="pr">9,900원<em>10/25 가격</em></div>' in S.link_tile(2, *S.link_pool(L3)[1], ["all"]) and S.link_tile(9, *S.link_pool(L3)[3], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 게시 시점 · 전체 밖 = 처음엔 숨김
+BIG = [(i, lp(f"휴지{i}" if i % 3 else f"샴푸{i}", f"https://link.coupang.com/a/{i}", IMG), (0, None, "", [], False)) for i in range(40)]
+rw3, n3 = S.link_tabs(S.link_pool(BIG))
+assert n3["all"] == 12 and all(v <= 12 for v in n3.values()) and len({x[0] for x in rw3}) == len(rw3) and [x[0] for x in rw3 if "all" in x[3]] == list(range(12))
+big3 = S.link_page("a", pp, BIG, "docs3"); assert len(big3.encode()) < 70000 and big3.count('rel="nofollow sponsored noopener"') == len(rw3) + cd3.count("</a>") and f'지금 특가 <span id="dn">12</span>' in big3, len(big3.encode())  # 가볍게(긴 쿠팡 사진 주소여도)
+assert '<span class="eb2">TODAY</span>지금 특가 <span id="dn">12</span>' in S.link_page("b", pp, BIG, "docs3", alt=True) and '<button type="button" data-k="all" aria-pressed="true">전체</button>' in big3 and 'data-k="women"' not in big3.split('class="chips"')[1].split("</div>")[0]  # 상품 없는 칩 X
+S.LINK_STYLE = "b"; S.build(pp, "docs3"); S.LINK_STYLE = "a"
+assert '<body class="b">' in open("docs3/link/index.html").read() and "noindex" in open("docs3/link/a/index.html").read() and not os.path.exists("docs3/link/b")  # 시안 바꾸기 = /link/ 교체 + 다른 시안 보관
 # 6-3) 카드 순서(10/8 진우 '쿠팡·토스 잘 팔리게'): 점수 높은 순, 같은 점수면 제휴 링크(쿠팡·토스 등) 먼저, 그다음 게시 순, 모아보기·다른 날 제외
 #      카드·인스타 캡션·릴스·사이트 맨 위 카드 딜 번호가 모두 이 순서(day_deals 하나)
 dd = [{"t": "2026-10-09 09:00", "text": "🔥 A 7점 원글", "url": "https://www.ppomppu.co.kr/x", "s": 7},
@@ -1776,7 +1811,7 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     assert "제목: " in blog and "A딜" in blog and "https://a" in blog and "옛날딜" not in blog and "쿠팡 파트너스" not in blog  # 제휴 링크 없음 = 문구 X(F 10/24 — 링크마다 그 프로그램 문구 aff_notes · 21시 뒤에만 도는 줄)
     v = [x for m, x in sent if m == "video"]  # 릴스: 점수 높은 순, 오늘 글만, 모아보기 제외, 캡션에 대가성 문구·해시태그
     assert len(v) == 1 and os.path.getsize(v[0]["path"]) > 10000 and v[0]["caption"].split("\n\n")[1].startswith("B딜 개당 99원 · ") and "가성비 TOP2" in v[0]["caption"]
-    assert v[0]["caption"].split("\n\n")[0] == H.ig_notes([]) and "맨 위 '" + S.card_name(today) + "'에서 1~2번" in v[0]["caption"]  # 대가성 문구 맨 앞(릴스도), 사이트 칸 이름 그대로
+    assert v[0]["caption"].split("\n\n")[0] == H.ig_notes([]) and "프로필 링크(hotdealpick.kr) → '" + S.card_name(today) + "'에서 1~2번" in v[0]["caption"] and "맨 위" not in v[0]["caption"]  # 대가성 문구 맨 앞(릴스도), 사이트 칸 이름 그대로
     assert v[0]["caption"].index("1. [G마켓] B딜") < v[0]["caption"].index("2. A딜") and "옛날딜" not in v[0]["caption"]
     assert "제휴 링크" in v[0]["caption"] and "#핫딜" in v[0]["caption"] and len(v[0]["caption"]) <= 1024
     assert fills == [(H.REEL_PROMPT, ["A딜 | "])] and "B딜" not in str(fills)  # B딜은 이미 hook·pts 있음
@@ -1935,7 +1970,7 @@ assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_11"] and S9.card_stems("docs"
 at9("11:34", H.ig_publish); assert not ig9 and "igc_IMG1" in seen  # 만든 실행엔 발행 X(사이트 먼저) — 상태 조회도 그 뒤(10/23 그래프 API 호출 줄이기) -> 다음 실행에
 cap = b["caption"]
 assert cap.startswith(H.NAVER_NOTE + "\n" + H.DISCLOSURE + "\n" + H.AFF_NOTE + "\n\n10월 12일 오전 11시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다, 네이버·올영 먼저), 번호 줄 = 카드 순서·가격 꼬리 뺌
-assert "맨 위 '10월 12일 오전 11시 카드 딜' 번호 누르면 바로 구매" in cap and cap.endswith("#핫딜 #핫딜픽 #생필품 #화장품 #쟁여템") and "#최저가" not in cap and len(cap) <= 2200
+assert "🛒 프로필 링크 → '10월 12일 오전 11시 카드 딜' 번호 누르면 바로 구매" in cap and "맨 위" not in cap and cap.endswith("#핫딜 #핫딜픽 #생필품 #화장품 #쟁여템") and "#최저가" not in cap and len(cap) <= 2200
 assert H.ig_tags([], 4) == "#핫딜 #핫딜픽 #가성비템 #쟁여템 #장바구니" and len({H.ig_tags([], h // 2) for h in (*H.IG_SLOTS, H.IG_DAY_HOUR)}) == 6  # 10/23 진우 '해시태그 세트도 칸마다 조금씩 다르게' — 기본 2 + 카테고리 + 칸마다 돌린 채움
 at9("11:47"); assert not ig9  # 회차마다 1번
 sv9 = seen; seen = {}; at9("11:47"); assert not ig9; seen = sv9  # seen 캐시를 잃어도 기록(ig.json, 커밋됨)에 있으면 다시 안 올림
@@ -1945,7 +1980,7 @@ shutil.copy(f"docs/cards/{D9}_11.jpg", f"docs/cards/{D9}.jpg"); open(f"docs/card
 json.dump([4, 1, 0, 5, 2, 3], open(f"docs/cards/{D9}.json", "w"))  # 21시 하루 카드(모아보기가 만듦)
 at9("21:59"); assert not [x for x in ig9 if x[0] == "POST"]  # 인스타엔 22시에(10/23 진우)
 at9("22:20"); (m, u, b), = [x for x in ig9 if x[0] == "POST"]
-assert b["image_url"] == f"https://hotdealpick.kr/cards/{D9}.jpg" and "10월 12일 오늘의 핫딜 모음\n\n1. [옥션] 12시 딜\n" in b["caption"] and "맨 위 '10월 12일 카드 딜' 번호 누르면" in b["caption"]
+assert b["image_url"] == f"https://hotdealpick.kr/cards/{D9}.jpg" and "10월 12일 오늘의 핫딜 모음\n\n1. [옥션] 12시 딜\n" in b["caption"] and "→ '10월 12일 카드 딜' 번호 누르면" in b["caption"]
 assert b["caption"].count("\n") and b["caption"].split("\n\n")[2].count("\n") == 4  # 번호 줄은 카드에 든 5개만(CARD_N)
 # 발행: 사이트 맨 위 카드 = 인스타에 올라간 카드
 assert S9.card_stems("docs") == [f"{D9}_11", D9] and "📸 10월 12일 카드 딜" in S9.card_picks(json.load(open("posts.json")), "docs")  # 발행 전에도 사이트 먼저(컨테이너 만든 실행)
@@ -5252,7 +5287,7 @@ s37 = {}; time.time = lambda: TK(f"{D37} 15:05"); H.ig_cards(s37); assert s37 ==
 time.time = lambda: TK(f"{D37} 19:05"); H.ig_cards(s37); assert json.load(open(f"docs/cards/{D37}_19.json")) == [5, 4, 7, 6] and f"igs_{D37}_19" not in s37
 s37 = {}; time.time = lambda: TK("2026-10-23 11:30"); H.ig_cards(s37); assert not s37  # 첫날 10/23 = 15시부터(11시 칸 X)
 time.time = lambda: TK("2026-10-23 15:05"); H.ig_cards(s37); assert s37 == {"igs_2026-10-23_15": {"t": TK("2026-10-23 15:05"), "skip": 0}}
-assert "\n\n11월 20일 저녁 7시 핫딜\n\n1. " in H.ig_caption(s37, f"{D37}_19") and "맨 위 '11월 20일 저녁 7시 카드 딜'" in H.card_caption(f"{D37}_19")[1]
+assert "\n\n11월 20일 저녁 7시 핫딜\n\n1. " in H.ig_caption(s37, f"{D37}_19") and "→ '11월 20일 저녁 7시 카드 딜'" in H.card_caption(f"{D37}_19")[1]
 ti37, rc37 = [], (H.ig_items, C34.ig_cover, C34.ig_slide)
 H.ig_items, C34.ig_cover, C34.ig_slide = (lambda seen, ps, photos=True: [{}] * len(ps)), (lambda design, chips, date_text, title, out, sub="": ti37.append((design, title))), (lambda *a: None)
 s37 = {}

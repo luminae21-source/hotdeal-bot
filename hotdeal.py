@@ -3701,7 +3701,7 @@ def make_reel(top, kst, out, k=0):
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
-           + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → 맨 위 '{card_name(time.strftime('%Y-%m-%d', kst))}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
+           + f"\n\n🛒 구매: 프로필 링크(hotdealpick.kr) → '{card_name(time.strftime('%Y-%m-%d', kst))}'에서 1~{len(top)}번"  # 릴스 TOP = 하루 카드 앞 번호
            + "\n\n" + ig_tags(top))[:1024]
     return path, cap, bool(voice)
 
@@ -4233,7 +4233,7 @@ def card_caption(stem):
     rows = [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, toss_in)).strip(), 34)}" for n, p in enumerate(ps, 1)]
     slot = SLOT_NAMES.get(stem[11:]) if len(stem) > 10 else None
     return rows, (ig_notes(ps) + "\n\n" + f"{int(stem[5:7])}월 {int(stem[8:10])}일 " + (f"{slot} 핫딜" if slot else "오늘의 핫딜 모음") + "\n\n" + "\n".join(rows)
-                  + f"\n\n🛒 프로필 링크 → 맨 위 '{card_name(stem)}' 번호 누르면 바로 구매\n\n" + ig_tags(ps, int(stem[11:] or IG_DAY_HOUR) // 2))[:2200]
+                  + f"\n\n🛒 프로필 링크 → '{card_name(stem)}' 번호 누르면 바로 구매\n\n" + ig_tags(ps, int(stem[11:] or IG_DAY_HOUR) // 2))[:2200]
 
 
 def fill_reel(ps):
