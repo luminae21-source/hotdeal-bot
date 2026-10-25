@@ -1,6 +1,6 @@
 {
- "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어.",
- "updated": "2026-10-25 19:30",
+ "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
+ "updated": "2026-10-25 19:55",
  "promos": [
   {
    "id": "cp-fresh-1025",
@@ -43,43 +43,20 @@
    "kw": "가열식 가습기"
   },
   {
-   "id": "11st-grand11-2611",
-   "mall": "11st",
-   "mall_name": "11번가",
-   "sub": "",
-   "name": "그랜드 십일절",
-   "start": "2026-11-01",
-   "end": "2026-11-11",
-   "pre": {
-    "start": "2026-10-26",
-    "end": "2026-10-31"
-   },
-   "benefit": "예약구매 · 타임딜 · 멤버십 할인",
-   "tag": null,
-   "url": "https://www.11st.co.kr/",
-   "cta": {
-    "text": "행사 보러 가기",
-    "href": "https://www.11st.co.kr/"
-   },
-   "src": "https://www.fnnews.com/news/202610231616564882",
-   "chk": "2026-10-25 19:30",
-   "kw": null
-  },
-  {
    "id": "ssg-ssgday-2610",
-   "mall": "ssg",
-   "mall_name": "SSG · 이마트",
-   "sub": "",
+   "mall": "emart",
+   "mall_name": "이마트몰",
+   "sub": "쓱데이",
    "name": "쓱데이",
    "start": "2026-10-30",
    "end": "2026-11-08",
    "pre": null,
-   "benefit": "신세계 18개 계열사 · 반값 한우",
+   "benefit": "신세계 18개 계열사 행사 · 이마트 반값 한우",
    "tag": null,
-   "url": "https://www.ssg.com/",
+   "url": "https://emart.ssg.com/",
    "cta": {
     "text": "행사 보러 가기",
-    "href": "https://www.ssg.com/"
+    "href": "https://emart.ssg.com/"
    },
    "src": "https://www.mt.co.kr/living/2026/10/19/2026101916054412524",
    "chk": "2026-10-25 19:30",
