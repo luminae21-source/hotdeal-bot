@@ -1,5 +1,5 @@
 {
- "left_now": 79,
+ "left_now": 77,
  "ok": {
   "auction": 7
  },
@@ -66,6 +66,20 @@
    "n": "템포 오리지널 탐폰 슈퍼 20개입",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 00:02"
+  },
+  {
+   "k": "진열",
+   "pid": "5068965488",
+   "n": "디어스킨 에어엠보 생리대 날개형 중형 16개입 4개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 00:17"
+  },
+  {
+   "k": "진열",
+   "pid": "5381819004",
+   "n": "쏘피 한결 생리대 날개형 대형 10개입 6개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 00:17"
   }
  ]
 }
