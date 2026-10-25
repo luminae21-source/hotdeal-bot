@@ -3042,7 +3042,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (cp_links, site_relink, link_swap, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -7059,8 +7059,8 @@ def dl65(f):
     return D65[f]
 sv65r = (H.POSTS, H.HAS_CP, H.cp_deeplink, H.lp_api, H.RUN.get("cpn")); H.POSTS, H.HAS_CP, r65, l65, sr65 = "posts.json", True, [], [], {}
 H.cp_deeplink, H.lp_api = dl65, lambda u: l65.append(u) or (None, "F 승인거부")
-H.RUN["cpn"] = [1, 0]; time.time = lambda: 1_800_000_000; H.site_relink(sr65); po65, rl65 = json.load(open("posts.json")), json.load(open(H.RELINK))
-assert r65 == [SH65, "https://www.coupang.com/vp/products/77", CS65] and l65 == [AU65], r65  # 진열 먼저 · 1개씩 ① 원래 주소(옵션 그대로) 먼저 → ② 상품 번호만 · 실행 몫(CP_RUN-2번째까지) 다 쓰면 다음 실행
+cr65, H.CP_RUN = H.CP_RUN, 7; H.RUN["cpn"] = [0, 0]; time.time = lambda: 1_800_000_000; H.site_relink(sr65); po65, rl65 = json.load(open("posts.json")), json.load(open(H.RELINK)); H.CP_RUN = cr65
+assert r65 == [SH65, "https://www.coupang.com/vp/products/77", CS65] and l65 == [AU65], r65  # 진열 먼저 · 1개씩 ① 원래 주소(옵션 그대로) 먼저 → ② 상품 번호만 · 실행 몫(CP_RUN-4번째까지 — 여기선 CP_RUN 7 = 3번) 다 쓰면 다음 실행
 assert [p["url"] for p in po65][:5] == [CPR65, AU65, "https://search.11st.co.kr/x", SH65, CS65] and json.load(open(H.CP_LINKS))[SH65] == "https://link.coupang.com/a/s77" and po65[6]["url"] == "https://link.coupang.com/a/s88" and po65[6]["url0"].endswith("88?itemId=3")  # cp_links.json에 있는 주소 = 그 링크(호출 X)  # 진열 = cp_links.json(같은 실행 shelf_posts가 그 자리에서) · 옥션 F = 그대로
 assert sr65["srl"]["now"] == [CPR65] and sr65["srl"]["e"][CPR65] == [] and json.load(open(H.CP_LINKS))["https://www.coupang.com/vp/products/88?itemId=3"] == "https://link.coupang.com/a/s88", sr65  # 못 해 본 주소 = 1번 바로 줄에 남음 · 있던 cp_links 안 바꿈
 assert rl65 == {"left_now": 1, "ok": {"진열 ②상품 번호만": 1, "커뮤니티": 1}, "fail": [{"k": "auction", "pid": "", "n": "커뮤니티 옥션", "e": "F 승인거부", "x": "01-15 17:00"},
@@ -7075,6 +7075,11 @@ assert len(r65) == 6 and sr65["srl"]["e"][CS65] == [] and sr65["srl"]["x"][CS65]
 D65[CS65] = "https://link.coupang.com/a/cs"; H.RUN["cpn"] = [0, 0]; H.site_relink(sr65); assert len(r65) == 7 and json.load(open("posts.json"))[4]["url"] == "https://link.coupang.com/a/cs", (r65, sr65, H.RUN.get("cpn"), H.CP_RUN, json.load(open("posts.json"))[4])  # 다음 실행에 바로 다시
 H.HAS_CP, n65 = False, len(r65); time.time = lambda: 1_800_000_000 + 30 * 86400; H.site_relink(sr65); assert len(r65) == n65  # 키 없음 = 쿠팡 안 부름
 H.lp_api = lambda u: (LP65, "S"); time.time = lambda: 1_800_000_000 + 40 * 86400; H.site_relink(sr65); assert json.load(open("posts.json"))[1]["url"] == LP65 and json.load(open("posts.json"))[1]["text"].startswith(H.AFF_NOTE)  # S = 바꿈 + 링크프라이스 대가성 문구
+H.HAS_CP, sr65b = True, {}; json.dump([{**q, "url": f"https://www.coupang.com/vp/products/{900 + k}"} for k, q in enumerate(json.load(open("posts.json"))[:1] * 5)], open("posts.json", "w"), ensure_ascii=False)
+for k65 in range(5): D65[f"https://www.coupang.com/vp/products/{900 + k65}"] = ValueError("coupang rCode 400 url convert failed")
+n65 = len(r65); H.RUN["cpn"] = [0, 0]; H.site_relink(sr65b); assert len(r65) - n65 == 2 and H.RUN["cpn"][0] == 2, r65[n65:]  # 10/25 22:30 점검: site_relink = cp_links보다 먼저 · 실행마다 2번(CP_RUN-4) — 나머지 = 진열 묶음·가격 확인·골드박스
+n65 = len(r65); H.RUN["cpn"] = [3, 0]; H.site_relink(sr65b); assert len(r65) == n65  # 이미 2번↑ 썼으면 X
+assert "if RUN.get(\"cpn\", [0])[0] >= CP_RUN - 2 and not chan & set(b):" in inspect.getsource(H.cp_links)  # cp_links 진열 묶음 = 이 실행 전체 호출 수로(site_relink 몫 포함)
 # 채널 글 상태 = url0(사이트만 바꾼 글): 답장 없이 링크만 보내면 그 채널 글(아직 생 주소)을 찾음 · 채널 글을 고치면 url0·nosite 지움
 po65c = json.load(open("posts.json")); po65c[0].update(t=time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), cp=77); json.dump(po65c, open("posts.json", "w"))
 assert (H.pending_copy("https://link.coupang.com/a/NEW") or {}).get("mid") == 1  # 사이트 url은 파트너스여도 채널 글은 생 주소(url0) = 아직 바꿀 글
@@ -7390,6 +7395,8 @@ with contextlib.redirect_stdout(io.StringIO()):
     assert H.ig_photo(q69(TU69), "ph69", {}) == (None, "")  # id 모르면 X(쉐어링크 안 엶)
     H.urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(b"not an image")
     assert H.ig_photo(q69(CPU69, CPI69[:-4] + "x.jpg"), "ph69") == (None, "")  # 깨진 사진 = 건너뜀
+    H.urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(jpg69(300, 500)[:-200])
+    assert H.ig_photo(q69(CPU69, CPI69[:-4] + "y.jpg"), "ph69") == (None, "")  # 끝이 잘린 사진(verify는 통과) = 건너뜀(그릴 때 멈춤 X — 10/25 리뷰)
 H.urllib.request.urlopen = lambda req, timeout=None: u69.append(req.full_url) or io.BytesIO(jpg69(300, 500))
 # 사진 장: 1080x1350 · 사진 = 비율 그대로 흰 칸 가운데(자르기 X) · 위에 글자 X · 보조 글자 40px↑ · 토스 = '사진: 토스쇼핑'
 I69.new("RGB", (300, 800), (40, 90, 220)).save("tall69.jpg"); I69.new("RGBA", (900, 300), (0, 0, 0, 0)).save("wide69.png")
@@ -7411,13 +7418,22 @@ o69 = I69.open(C69.ig_photo_card({**it69, "photo": "wide69.png", "src": "coupang
 assert near(o69.getpixel((540, 564)), (255, 255, 255)) and "사진: 토스쇼핑" not in [t for _, t in dr69] and any(t.endswith("게시 시점 가격") for _, t in dr69)  # 투명 = 흰 바탕 · 쿠팡 = 출처 줄 X
 # ig_set: 사진 있는 상품만 사진 장(파일 = 카드 번호 — 프로필 링크 번호와 같음) · 표지 칸엔 토스 사진 X(꽉 차게 자름 = 토스 원본 그대로 규칙)
 svs69 = (H.ig_lines, C69.ig_cover); cov69 = []
-H.ig_lines = lambda seen, ps: [""] * len(ps); C69.ig_cover = lambda design, items, *a, **k: cov69.append([it["photo"] for it in items]) or svs69[1](design, items, *a, **k)
+H.ig_lines = lambda seen, ps: [""] * len(ps); C69.ig_cover = lambda design, items, *a, **k: cov69.append(([it["photo"] for it in items], k.get("swipe"), sorted(os.listdir(os.path.dirname(a[2]))) if os.path.isdir(os.path.dirname(a[2])) else [])) or svs69[1](design, items, *a, **k)
 P69 = [q69(CPU69 + "1", CPI69), q69("https://naver.me/n69", "https://shop-phinf.pstatic.net/a.jpg"), q69(TU69), q69(CPU69 + "4"), q69(CPU69 + "5", CPI69[:-4] + "5.jpg")]
 with contextlib.redirect_stdout(io.StringIO()): cv69, sl69, _ = H.ig_set(s69t, "2026-10-26", P69, "set69", design="A", h=11)
 assert sl69 == ["set69/01.jpg", "set69/03.jpg", "set69/05.jpg"] and sorted(os.listdir("set69")) == ["01.jpg", "03.jpg", "05.jpg", "cover.jpg"], sl69  # 2번(네이버)·4번(사진 없음) = 건너뜀
-assert len([p for p in cov69[0] if p]) == 2  # 표지 = 쿠팡 2장만(토스 사진 X)
+assert len([p for p in cov69[0][0] if p]) == 2 and cov69[0][1] is True and cov69[0][2] == ["01.jpg", "03.jpg", "05.jpg"]  # 표지 = 쿠팡 2장만(토스 사진 X) · 넘겨 보기 O · 사진 장 먼저 다 그린 뒤 표지(마지막)
 with contextlib.redirect_stdout(io.StringIO()): _, sl69, _ = H.ig_set(s69t, "2026-10-26", P69[1:2] + P69[3:4], "set69b", design="B", h=15)
-assert sl69 == [] and os.listdir("set69b") == ["cover.jpg"]  # 사진 0장 = 표지 한 장(지금처럼)
+assert sl69 == [] and os.listdir("set69b") == ["cover.jpg"] and cov69[1][1] is False  # 사진 0장 = 표지 한 장(지금처럼) · '넘겨 보기 →' X
+spc69 = C69.ig_photo_card; C69.ig_photo_card = lambda it, n, out: (_ for _ in ()).throw(OSError("broken")) if n == 3 else spc69(it, n, out)
+with contextlib.redirect_stdout(io.StringIO()): _, sl69, _ = H.ig_set(s69t, "2026-10-26", P69, "set69c", design="A", h=19)
+C69.ig_photo_card = spc69
+assert sl69 == ["set69c/01.jpg", "set69c/05.jpg"] and sorted(os.listdir("set69c")) == ["01.jpg", "05.jpg", "cover.jpg"]  # 그리다 깨진 장 = 그 장만 X(넘기기 중간에 멈춤 X)
+dr69.clear(); C69.ImageDraw.ImageDraw.text = lambda self, xy, text, *a, **k: dr69.append(text) or td69(self, xy, text, *a, **k)
+for d69c in "APB":
+    svs69[1](d69c, [{"name": f"상품 {k}", "short": f"상품 {k}", "price": "1,000원", "photo": None} for k in range(5)], "10월 26일", "제목\n5개", f"cv69{d69c}.jpg", swipe=False)
+C69.ImageDraw.ImageDraw.text = td69
+assert not [t for t in dr69 if "→" in str(t)] and "+1개 더" in dr69, dr69  # 넘길 장 없음 = '넘겨 보기 →'·'+N개 더 →' X
 H.ig_lines, C69.ig_cover = svs69
 # 캡션: 사진 장 있으면 대가성 문구 다음 줄에 출처 1줄 · 없으면 그대로
 H.POSTS = "posts69.json"; json.dump([{**q69(CPU69 + "1", CPI69), "mid": 1}], open("posts69.json", "w"), ensure_ascii=False)
@@ -7481,6 +7497,8 @@ ig69.clear(); at69("2026-10-26 20:20"); H.ig_carousel(s69, "it", "u69", time.tim
 car69 = next(b for u, b, m in ig69 if b and b.get("media_type") == "CAROUSEL"); cid69 = next(k for k in s69 if k.startswith("igc_"))
 assert car69["caption"] == kid69["cap"] and car69["children"] == ",".join(kid69["kids"]) and s69[cid69] == {"t": time.time(), "kind": "cur"} and "igk_cur_2026-10-26_2000" not in s69, s69[cid69]
 lv69 = []; svl69, H.ig_live = H.ig_live, (lambda stem, now: lv69.append(stem))
+with contextlib.redirect_stdout(io.StringIO()): H.ig_publish(s69)
+assert cid69 in s69 and not [1 for u, b, m in ig69 if u.endswith("/media_publish")]  # 묶은 실행엔 발행 X(그 실행 seen이 저장 안 되면 두 번 — 10/25 리뷰) -> 다음 실행
 with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-26 20:35"); H.ig_publish(s69)
 H.ig_live = svl69
 assert cid69 not in s69 and not lv69 and any("인스타 자동 게시 완료 — 큐레이션" in k.get("text", "") for m, k in a69), a69  # 사이트 맨 위 카드 기록 X
@@ -7492,6 +7510,11 @@ with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-28 20:05"); H.cura
 assert not ig69 and s69["cur_2026-10-28_2000"]["ig"] == 0  # 사진 없음 = 인스타 X
 with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-29 20:05"); H.curation(s69); at69("2026-10-29 20:20"); H.curation(s69)
 assert len(f69l) == 1 and "큐레이션 2026-10-29 20:00 컨테이너" in f69l[0] and s69["cur_2026-10-29_2000"]["ig"] is None  # 실패 = 진짜 실패 1번(다시 X)
+s69r = {time.strftime("igpub_%Y%m%d", time.gmtime(time.time() + 9 * 3600)): {"t": time.time(), "n": H.ig_day_max({})}}; json.dump([{**CU69, "at": "2026-10-29 20:00"}], open("ev69.json", "w")); ig69.clear()
+with contextlib.redirect_stdout(io.StringIO()) as o69r: H.curation(s69r)
+assert not ig69 and s69r["cur_2026-10-29_2000"]["ig"] == 0 and "오늘 상한" in o69r.getvalue()  # 하루 상한 = 딜 카드 칸 먼저(22시 카드가 자정 뒤로 밀리지 X — 10/25 리뷰)
+assert H.ig_room({}, time.time()) == H.ig_day_max({}) - 2 and H.ig_room({"igc_x": {"t": 1}}, time.time()) == H.ig_day_max({}) - 3  # 20:20 = 남은 칸 19시(21시까지)·22시 · 기다리는 컨테이너도 셈
+assert H.ig_room({"igs_2026-10-29_19": {"t": 1}}, time.time()) == H.ig_day_max({}) - 1  # 이미 한(또는 건너뛴) 칸 = 안 셈
 s69h = {"ig_hold": time.time() + 3600}; json.dump([{**CU69, "at": "2026-10-29 20:00"}], open("ev69.json", "w")); ig69.clear()
 with contextlib.redirect_stdout(io.StringIO()): H.curation(s69h)
 assert not ig69 and "ig" not in s69h["cur_2026-10-29_2000"]  # 인스타 쉼(ig_hold) = 안 올림(쉼 끝나고 6시간 안이면)

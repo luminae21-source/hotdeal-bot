@@ -659,7 +659,7 @@ def _sparkle(d, cx, cy, r, fill):
     d.polygon([(cx, cy - r), (cx + k, cy - k), (cx + r, cy), (cx + k, cy + k), (cx, cy + r), (cx - k, cy + k), (cx - r, cy), (cx - k, cy - k)], fill=fill)
 
 
-def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(수수료) · 게시 시점 가격"):
+def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(수수료) · 게시 시점 가격", swipe=True):
     """인스타 표지(1080x1350 JPEG) — 폰 피드에서 1초 안에 읽히게(10/22 진우): 제목 2줄(크게, 숫자 1개만 포인트색), 보조 글자 40px↑, 대비 4.5:1↑(IG_PAIRS).
     design 'A' = 매거진형(남색·흰 제목·핑크 숫자·상품 알약 칩·✦ 1개 — 상품 장은 파스텔), 'P' = 파스텔 매거진 표지(라벤더→핑크 대각선·자두 먹색 제목·흰 칩 — 상품 장은 A), 'B' = 일상 스티커형(크림·형광펜 제목·2x2 기울인 타일). title = 2줄(\n). date_text: A '10월 22일 목요일' / B '10.22 목'. -> out"""
     lines = title.split("\n")[:2]
@@ -714,7 +714,8 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
                 x += w + 16
         f = pf("SemiBold", 40)
         d.text((P, H - P - 48), _fit(f, note, W - 2 * P - 260), font=f, fill=SUBA)
-        d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=BERRY)
+        if swipe:  # 넘길 사진 장이 있을 때만(10/25 리뷰 — 표지 한 장 글에 '넘겨 보기' X)
+            d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=BERRY)
         return _save(im, out)
     if design == "A":
         im = Image.new("RGBA", (W, H), NAVY + (255,))
@@ -754,7 +755,8 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
             y += 100
         f = pf("SemiBold", 40)
         d.text((P, H - P - 48), _fit(f, note, W - 2 * P - 260), font=f, fill=MIST)
-        d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=PINK)
+        if swipe:
+            d.text((W - P - f.getlength("넘겨 보기 →"), H - P - 48), "넘겨 보기 →", font=f, fill=PINK)
         return _save(im, out)
     im = Image.new("RGBA", (W, H), PAPER + (255,))
     d, P = ImageDraw.Draw(im), 76
@@ -782,7 +784,7 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
     f = pf("Bold", 40)
     more = len(items) - 4
     if more > 0:
-        s = f"+{more}개 더 →"; w = int(f.getlength(s)) + 64
+        s = f"+{more}개 더" + (" →" if swipe else ""); w = int(f.getlength(s)) + 64  # 넘길 장 없음 = 화살표 X(나머지는 캡션 목록)
         d.rounded_rectangle((W - P - w, H - 112, W - P, H - 36), radius=38, fill=INKB)
         d.text((W - P - w + 32, H - 98), s, font=f, fill="white")
     d.text((P, H - 96), _fit(pf("SemiBold", 40), note, W - 2 * P - (300 if more > 0 else 0)), font=pf("SemiBold", 40), fill=BROWN)

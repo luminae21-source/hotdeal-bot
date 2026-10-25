@@ -1461,7 +1461,7 @@ def cp_links(seen):
     q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)] + one  # 채널 예약 먼저
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
         b = q.pop(0)
-        if calls >= CP_RUN - 2 and not chan & set(b):
+        if RUN.get("cpn", [0])[0] >= CP_RUN - 2 and not chan & set(b):  # 이 실행 전체 호출 수(site_relink가 먼저 쓴 몫 포함)
             q.insert(0, b)
             break
         try:
@@ -1653,7 +1653,7 @@ def site_relink(seen):
         else:
             e = st["e"][u] = [] if len(st["e"].get(u, [])) >= len(forms(u)) else st["e"].get(u, [])  # 다 시도한 뒤(7일 뒤) = 처음부터
             for f in forms(u)[len(e):]:
-                if RUN.get("cpn", [0])[0] >= CP_RUN - 2:
+                if RUN.get("cpn", [0])[0] >= CP_RUN - 4:  # 이 실행 2번까지(cp_links보다 먼저 돎 — 10/25 22:30 점검: cp_links가 몫을 다 써 '1번 바로'가 멈춰 있던 것) · 나머지 = 진열 묶음·가격 확인·골드박스
                     stop = True
                     break
                 try:
@@ -4199,7 +4199,8 @@ def ig_photo(p, d, seen=None):
         f = os.path.join(d, hashlib.md5(img.encode()).hexdigest()[:12] + ".img")
         data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
         open(f, "wb").write(data)
-        __import__("PIL.Image", fromlist=["Image"]).open(f).verify()
+        with __import__("PIL.Image", fromlist=["Image"]).open(f) as im:
+            im.load()  # 끝까지 풀리는 사진만(verify만 통과하고 그릴 때 깨지는 사진 = 넘기기 중간에 멈춤 — 10/25 리뷰)
         return f, src
     except Exception as e:
         print("ig photo 없음", clip(u, 50), clip(repr(e), 80))
@@ -4240,10 +4241,19 @@ def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
     its = ig_items(seen, ps[:CARD_N])
     k = datetime(int(day[:4]), int(day[5:7]), int(day[8:10]))
     date_text = f"{k.month}월 {k.day}일 {'월화수목금토일'[k.weekday()]}요일" if design in "AP" else f"{k.month}.{k.day} {'월화수목금토일'[k.weekday()]}"
+    slides = []
+    for n, it in enumerate(its, 1):  # 사진 있는 상품만(번호 = 카드 번호) — 0장이면 표지 한 장 글
+        if it.get("photo"):
+            try:
+                slides.append(cards.ig_photo_card(it, n, f"{d}/{n:02d}.jpg"))
+            except Exception as x:  # 그 장만 X(넘기기는 나머지로)
+                print("ig photo card", n, type(x).__name__)
+                if os.path.exists(f"{d}/{n:02d}.jpg"):
+                    os.remove(f"{d}/{n:02d}.jpg")
     chips = [{**it, "photo": None} if it.get("src") == "toss" else it for it in random.sample(its, len(its))]  # 표지 칸은 꽉 차게 자름 = 토스 사진 X(토스 = 원본 그대로·출처 표시 — 사진 장에만)
-    cover = cards.ig_cover(design, chips, date_text, title.format(n=len(its)), f"{d}/cover.jpg",
+    cover = cards.ig_cover(design, chips, date_text, title.format(n=len(its)), f"{d}/cover.jpg", swipe=bool(slides),  # 표지 = 마지막(있으면 한 벌 다 됨 — ig_cards)
                            sub="최저가 아니어도 꾸준히 팔리는 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
-    return cover, [cards.ig_photo_card(it, n, f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1) if it.get("photo")], design  # 사진 있는 상품만(번호 = 카드 번호) — 0장이면 표지 한 장 글
+    return cover, slides, design
 
 
 def ig_landed(tok, uid, cid, cap="", since=0):
@@ -4302,7 +4312,7 @@ def ig_publish(seen):
             continue
         v = seen[k]
         failed = isinstance(v, dict) and v.get("fail")  # 지난 실행 발행 오류 + 그때 안 올라감 -> 이번 상태로만 판정(다시 발행 X)
-        if card(v) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기)
+        if (card(v) or isinstance(v, dict) and v.get("kind") == "cur") and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
         n = seen.get(day, {}).get("n", 0)
         if not failed and (n >= ig_day_max(seen) or seen.get("ig_hold", 0) > now):
@@ -4329,7 +4339,7 @@ def ig_publish(seen):
         elif failed:
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
         RUN["ok"].add("ig")
-        print("ig publish", card(v) or "릴스", pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
+        print("ig publish", card(v) or ("큐레이션" if isinstance(v, dict) and v.get("kind") == "cur" else "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         seen[day] = {"t": now, "n": n + 1}
         if card(v):
@@ -4353,6 +4363,14 @@ def ig_hours(seen):
 def ig_day_max(seen):
     """하루 발행 상한 = 그 단계 횟수 + 1(10/23 진우 — 다시 올리기·늦게 올라간 것 여유)."""
     return len(ig_hours(seen)) + 1
+
+
+def ig_room(seen, now):
+    """오늘(KST) 인스타 발행 여유 = 하루 상한(ig_day_max) - (올린 수 + 기다리는 컨테이너·조각 + 아직 안 한 카드 칸) — 큐레이션이 딜 카드 칸을 밀어내지 않게(10/25 리뷰: 22시 카드가 자정 뒤로)."""
+    kst = time.gmtime(now + 9 * 3600)
+    today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
+    left = sum(1 for h in ig_hours(seen) if (stem := today if h == IG_DAY_HOUR else f"{today}_{h:02d}") not in led and "igs_" + stem not in seen and kst.tm_hour < h + IG_LATE)
+    return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k in seen if k.startswith(("igc_", "igk_"))) - left
 
 
 def ig_stage_get(today):
@@ -5542,6 +5560,9 @@ def cur_ig(seen, st, e, key, live, now):
     st["ig"] = 0
     if not live:
         print("curation 인스타: 사진 없음 -> 안 올림", e["at"])
+        return
+    if ig_room(seen, now) < 1:  # 하루 상한 = 딜 카드 칸 먼저(그날 남은 칸 몫을 남김)
+        print("curation 인스타: 오늘 상한(딜 카드 칸 먼저) -> 안 올림", e["at"])
         return
     tail = f"\n\n🛒 프로필 링크 → {str(e.get('topic') or '').strip() or '핫딜픽'}\n\n상품 사진: 판매 페이지(쿠팡)"
     cap, auth, uid = clip(e["text"].strip(), 2200 - len(tail) - 1) + tail, {"Authorization": "Bearer " + E["IG_TOKEN"]}, E["IG_USER_ID"]
@@ -7001,7 +7022,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, site_relink, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:
