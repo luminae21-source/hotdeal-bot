@@ -196,7 +196,7 @@ def tg_video(path, caption):
     if time.gmtime(time.time() + 9 * 3600).tm_hour < 8:  # 밤(KST 0~8시) = 무음(tg와 같게 — 관리자 안 깨움)
         fields["disable_notification"] = "true"
     body = ("".join(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields.items())
-            + f'--{b}\r\nContent-Disposition: form-data; name="video"; filename="reel.mp4"\r\nContent-Type: video/mp4\r\n\r\n').encode() \
+            + f'--{b}\r\nContent-Disposition: form-data; name="video"; filename="{os.path.basename(path)}"\r\nContent-Type: video/mp4\r\n\r\n').encode() \
         + open(path, "rb").read() + f"\r\n--{b}--\r\n".encode()
     req = urllib.request.Request(f"https://api.telegram.org/bot{E['TG_TOKEN']}/sendVideo", body,
                                  {"Content-Type": f"multipart/form-data; boundary={b}"})
@@ -3500,7 +3500,7 @@ TH_FLAWS = ((r"와우(?!\s*쿠폰)\s*(?:회원)?\s*(?:가|할인|전용)", "와�
             (r"카드\s*(?:할인|청구|즉시|결제\s*시|가)", "카드할인 조건가"), (r"페이(?!지)\s*(?:결제|할인|가)", "페이 결제 조건가"), (r"(?:멤버십|네멤)\s*(?:가|할인|전용|회원)", "멤버십 조건가"),
             (r"옵션\s*(?:별|마다)\s*(?:가격|상이|다름|다른)|옵션가", "옵션마다 가격이 달라서 고를 때 확인 필요"))  # O 단점 = ⚠️ 조각에 이 말이 그대로 있을 때만('카드 무이자'·'사이즈 옵션 확인' X)
 TH_PUSH = r"사\s*둬|사\s*놔|사\s*둘\s*것|질러|지르자|담아\s*둬|사야\s*(?:해|돼|됨|지)|사세요|구매하|서둘러|얼른|빨리\s*사|놓치지\s*마"  # 반말 재촉(O '사세요' X)
-TH_PRICE_WORD, TH_QM = r"[만천백십]\s*원|원\s*(?:도|대|짜리|꼴|이하|밖에)|(?:한\s*잔|밥|커피)\s*값", r"[?？❓❔]"  # 숫자 말로 쓴 가격('만 원도 안 해') · 물음표(이모지 포함)
+TH_PRICE_WORD, TH_QM = r"[만천백십]\s*원|원\s*(?:도|대|짜리|꼴|이하|밖에)|(?:한\s*잔|밥|커피)\s*값", r"[?？❓❔⁉⁇]"  # 숫자 말로 쓴 가격('만 원도 안 해') · 물음표(이모지 포함)
 TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꿔? 핸드크림!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절 시작)"}
 TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 반말·구어체, 폰 한 줄(20자 안팎), 이모지 0~2개.
 - {kind}
@@ -3716,7 +3716,7 @@ def th_hook(seen, name, dl, unit, ban, names):
         try:
             h = re.sub(r"\s+", " ", str(ai_json(TH_HOOK_PROMPT.format(kind=TH_HOOK_ASK[k], name=name), {"hook": {"type": "string"}}).get("hook") or "")).strip()
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
-            if h and not re.search(rf"\d|{TH_PRICE_WORD}", h) and th_w(h) <= TH_W + 2 and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) and not h.startswith(VOICE_LABEL):
+            if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_W + 2 and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) and not h.startswith(VOICE_LABEL):
                 return h, k
         except Exception as e:
             print("th hook 다음 종류로", clip(repr(e), 80))
@@ -3878,7 +3878,7 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None, tids=None
         body, reply = th_ab(text, link) if ab == "B" else (text, None)
     image = image if not (tids and set(map(str, tids)) & toss_noimg()) else None  # 줄에 선 사이 셀러 요청(toss_noimg.txt) = 글만
     ph, rlink = None, None
-    if image and not reply and th_reply_ok(seen):  # 댓글 못 다는 토큰·TH_REPLY 끔 = 지금처럼 글 + 링크 · K-1(10/26): 사진 글 = 본문(대가성 첫 줄 그대로·주소 X) + 사진(쿠팡 실사·토스 썸네일 주소 그대로 — 토스 = 끝 '사진: 토스쇼핑') -> 링크 = 첫 댓글 + 링크 카드
+    if image and not reply and TH_REPLY and th_reply_ok(seen):  # 댓글 못 다는 토큰·TH_REPLY 끔 = 지금처럼 글 + 링크 · K-1(10/26): 사진 글 = 본문(대가성 첫 줄 그대로·주소 X) + 사진(쿠팡 실사·토스 썸네일 주소 그대로 — 토스 = 끝 '사진: 토스쇼핑') -> 링크 = 첫 댓글 + 링크 카드
         pbody = th_ab(body, link)[0] + (f"\n\n{PHOTO_CREDIT}" if tids else "")
         ph = th_len(pbody) <= 500 and th_img(tok, me, pbody, image, topic)
         if ph:  # 사진 실패·500자 = 지금처럼 글 + 링크(본문)
@@ -4046,13 +4046,13 @@ def say_ko(s):
     return re.sub(r"\s+", " ", re.sub(r"(\s*,)+", ",", s)).strip(" ,")
 
 
-def reel_say(top, kst, unit=True, nmax=14):
+def reel_say(top, kst, unit=True, nmax=14, head=None):
     """릴스 나레이션 대본(10/24 Cowork·진우 — 사실만, 효능·과장·'써보니' X) -> [(자막, 읽을 말)] 표지·딜마다·끝.
     표지 = 우리 데이터 한 줄('오늘 밤 12시 마감 포함' — 사이트 '오늘 마감'과 같은 판단 + 오늘의 가성비 TOPn) · 딜 = 짧은 이름(nmax자), 가격, 단위가격(unit=False면 빼고) · 끝 = 핫딜픽에서 더 보기.
     딜 한 장 ~3초(10/24 첫 실행: 긴 이름이면 1.4배로도 20초 넘음) -> 이름 = 수량·용량 낱말 빼고 nmax자 안(일부 수량만 남으면 가격이 그 양인 것처럼 들림 — 단위가격이 따로)."""
     import cards
     day = time.strftime("%Y-%m-%d", kst)
-    head = ("오늘 밤 12시 마감 포함 · " if any(day_end(p, day) for p in top) else "") + f"오늘의 가성비 TOP{len(top)}"
+    head = ("오늘 밤 12시 마감 포함 · " if any(day_end(p, day) for p in top) else "") + (head or f"오늘의 가성비 TOP{len(top)}")
     rows = [(head, say_ko(head.replace(f"TOP{len(top)}", "탑 " + ("원", "투", "쓰리")[len(top) - 1])))]
     for p in top:
         it = cards._norm(card_item(p)[0])
@@ -4089,7 +4089,7 @@ def reel_voice(rows):
     return None
 
 
-def make_reel(top, kst, out, k=0):
+def make_reel(top, kst, out, k=0, safe=False, label=None):
     """릴스 1편(모아보기·샘플 같이): 재료 채움 -> 나레이션(GOOGLE_TTS_KEY 있으면) -> 영상(cards.reel) -> (경로, 캡션, 나레이션 됐는지).
     배경음악 = 라이선스 기록된 곡(MUSIC.md) 중 오늘 차례 + k. 캡션 = 대가성 문구 맨 앞(ig_notes) 그대로."""
     import cards
@@ -4097,12 +4097,12 @@ def make_reel(top, kst, out, k=0):
     music, song = bgm(kst, k), song_of(kst, k)
     voice = None
     for kw in ({}, {"nmax": 8}, {"unit": False}) if E.get("GOOGLE_TTS_KEY") else ():  # 20초 넘으면 이름 더 짧게 -> 그래도 넘으면 단위가격 빼고
-        voice = reel_voice(reel_say(top, kst, **kw))
+        voice = reel_voice(reel_say(top, kst, head=label and f"오늘의 {label}", **kw))
         if voice:
             break
     if E.get("GOOGLE_TTS_KEY"):
         print("reel", "나레이션 " + (("이름 8자" if kw.get("nmax") else "단위가격 뺌" if kw else "기본") if voice else "X — 글자 + 음악"))
-    path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice)  # 올리브영 딜은 딜 카드처럼 거른 재료
+    path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
@@ -4136,6 +4136,50 @@ def reel_samples(seen):
     except Exception as e:
         print("reel sample", n, repr(e))
         tg("sendMessage", chat_id=ADMIN, text=f"🎬 릴스 샘플 {n} 실패({type(e).__name__}) — 다음 편은 다음 실행에")
+
+
+CLIP_AT, CLIP_LINK = {"A": 9, "B": 13}, "hotdealpick.kr/link?ref=clip"  # Q(10/26 진우): 네이버 클립 하루 2편 -> 관리자 텔레그램만(진우가 클립에 직접 올림) · 프로필 링크(진우가 클립 프로필에)
+
+
+def clip_post(seen):
+    """Q 네이버 클립 영상(1080x1920·30fps·H.264 + AAC 44.1kHz·15~20초 · 첫 장 '광고·제휴' · 아래 25%·오른쪽 15% 글자 X — cards.reel safe) 하루 2편, 실행마다 1편:
+    A(CLIP_AT A시~) = 쿠팡 핫딜 3(3일 안 지금 특가 딜 점수 > 최근 순 · 지난 클립 상품 X — 릴스 틀, 3개일 때만) · 캡션 = 쿠팡 파트너스 문구 + '프로필 링크에서 보기' + 해시태그 5개
+    B(B시~) = 네이버 쇼핑커넥트(진우 naver.me 글) 1개 글자 카드(상품 사진 X — 릴스 틀은 이모지 타일) · 캡션 첫 줄 = 쇼핑 커넥트 문구 + 상품 태그 붙이는 법·naver.me 링크(열지 않음)
+    파일 = clip_MMDD_A/B.mp4 · 재료 없음·실패 = 그날 그 편 X(관리자에게 1줄) · seen clip = 이번 달 보낸 수(일요일 DM 줄)."""
+    kst, now = time.gmtime(time.time() + 9 * 3600), time.time()
+    day, st = time.strftime("%Y-%m-%d", kst), seen.get("clip") or {}
+    k = next((k for k, h in CLIP_AT.items() if kst.tm_hour >= h and st.get(k) != day), None)
+    if not k:
+        return
+    st = seen["clip"] = {**st, "t": now, k: day}  # 먼저 기록(실패해도 15분마다 다시 만들지 않게)
+    if st.get("m") != day[:7]:
+        st.update(m=day[:7], n=0)
+    posts = load(POSTS, [])
+    if k == "A":
+        days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - d * 86400)) for d in range(3)]
+        ds = sorted(sorted((p for d in days for _, p in day_deals(posts, d) if urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") in (None, "hot")
+                            and "원" in parse(title_of(p["text"]))[2] and p["url"] not in st.get("u", [])), key=lambda p: p["t"], reverse=True), key=lambda p: -p.get("s", 0))  # 3일 안 쿠팡 딜(지금 특가 · 가격 있는 한 상품 글 — 골드박스 모음 X) 점수 > 최근 순
+        top = [p for i, p in enumerate(ds) if p["url"] not in {x["url"] for x in ds[:i]}][:3]  # 같은 상품 두 번 X
+        top = top if len(top) == 3 else []  # '쿠팡 핫딜 3' = 3개일 때만
+        label, cap = None, f"{DISCLOSURE}\n\n오늘의 쿠팡 핫딜 3 — 프로필 링크에서 보기\n\n" + ig_tags(top, kst.tm_mday)
+    else:
+        top = [p for p in reversed(posts) if urllib.parse.urlsplit(p.get("url") or "").netloc == "naver.me" and now - kst_ts(p["t"]) < 7 * 86400 and p["url"] not in st.get("u", [])][:1]  # 최근 7일 진우 쇼핑커넥트 글 중 아직 안 만든 것
+        label, cap = "네이버 쇼핑 픽", f"{NAVER_NOTE}\n\n" + "\n\n".join(title_of(p["text"]) for p in top) + "\n\n" + ig_tags(top, kst.tm_mday)
+    if not top:  # 재료 없음 = 그날 그 편 X — 진우가 고장으로 안 보게 1줄
+        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k} — 오늘은 건너뜀(" + ("최근 3일 쿠팡 핫딜이 3개 안 됨" if k == "A" else "최근 7일 새 쇼핑커넥트(naver.me) 글 없음") + ")")
+        return
+    out = os.path.join(tempfile.gettempdir(), time.strftime(f"clip_%m%d_{k}.mp4", kst))
+    try:
+        said = make_reel(top, kst, out, ord(k) - 64, safe=True, label=label)[2]  # 곡 = 오늘 차례 + 1·2(A·B 다르게)
+        tg_video(out, cap)
+    except Exception as e:
+        print("clip", k, repr(e))
+        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k} 실패({type(e).__name__}) — 오늘 {k}편은 건너뜀")
+        return
+    st["n"] = st.get("n", 0) + 1
+    st["u"] = (st.get("u", []) + [p["url"] for p in top])[-40:]  # 만든 상품(A·B) = 다음 클립에 다시 X
+    tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True}, text=f"🎬 네이버 클립 {k} — {os.path.basename(out)} · 나레이션 {'O' if said else 'X'} · 위 영상 캡션 그대로\n"
+       + (f"상품 태그: {parse(title_of(top[0]['text']))[1]} — 클립 편집기 정보 태그 → 쇼핑 커넥트에서 붙이기\n{top[0]['url']}" if k == "B" else f"프로필 링크: {CLIP_LINK}"))
 
 
 def licensed():
@@ -6575,7 +6619,8 @@ def wx_dm(seen):
     if not WEATHER_DM or kst.tm_wday != WEATHER_DM[0] or kst.tm_hour < WEATHER_DM[1] or key in seen:
         return
     ws = weather(seen)
-    if ws and len(ws) > 1 and tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]), link_preview_options={"is_disabled": True}):
+    clip = (seen.get("clip") or {}).get("m") == time.strftime("%Y-%m", kst) and seen["clip"].get("n", 0)
+    if ws and len(ws) > 1 and tg("sendMessage", chat_id=ADMIN, text=wx_dm_text(ws[1:8]) + f"\n\n🎬 이번 달 클립 {clip or 0}개 보냄", link_preview_options={"is_disabled": True}):
         seen[key] = time.time()  # 보낸 뒤에만: 날씨·텔레그램 실패면 그날 밤 다음 실행에 다시
 
 
@@ -7848,7 +7893,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:

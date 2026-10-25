@@ -291,6 +291,7 @@ def deal_card(it, n, total, out, why="살 만한 이유"):
 
 LEAD, TAIL, XF, KB, DUCK = 0.3, 0.25, 9, 0.06, 0.251  # 나레이션 앞뒤 여백(초) · 장 사이 크로스페이드 9프레임(0.3초) · 켄번스 줌 6% · 나레이션 동안 음악 -12dB
 SUB_Y = RH - 430  # 자막 아래 끝(인스타 아래 UI ~420px 위 — 안전 영역)
+CLIP_SAFE = 0.84  # 네이버 클립: 오른쪽 끝 글자(984)·자막 아래(1490) x 0.84 = 827·1252 -> 오른쪽 15%(918)·아래 25%(1440) 밖
 
 
 def reel_plan(segs, n):
@@ -331,14 +332,15 @@ def _wav(b):
         return fr, w.getframerate(), w.getnchannels(), w.getnframes() / w.getframerate()
 
 
-def reel(items, date_label, out, music=None, say=None):
+def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
     """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 1080x1920 MP4(15~20초). -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
     music(음악 파일): 배경음악(짧으면 반복·앞뒤 페이드) · say(10/24 Cowork·진우 릴스 업그레이드): [(자막, WAV bytes)] 표지·딜·끝 장마다 나레이션
     -> 그 장은 나레이션 길이에 맞추고(합 15~20초) 아래 안전 영역에 자막, 나레이션 동안 음악 -12dB(덕킹). 없거나 20초 넘으면 글자 + 음악만(15초).
     디자인: 크림색 바탕 + 먹색 글자 + 포인트색은 숫자에만, 왼쪽 정렬 한 기준선, 프리텐다드, 흰 타일 위 이모지,
     장마다 켄번스(1.00→1.06 줌인·줌아웃 번갈아 — 소수점 확대라 글자 안 떨림) + 장 사이 0.3초 크로스페이드, 가격은 이름보다 0.2초 늦게 떠오름.
-    첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치."""
+    첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치.
+    safe(Q 네이버 클립): 다 그린 장면을 CLIP_SAFE배로 줄여 왼쪽 위에 — 아래 25%·오른쪽 15%엔 글자 X(바탕색만) · label = 첫 장 위 한 줄(기본 '오늘의 가성비 1위')."""
     import subprocess, tempfile, wave
     items = [_norm(it) for it in items[:3]]
     for it in items:
@@ -360,7 +362,7 @@ def reel(items, date_label, out, music=None, say=None):
     scenes = []  # (배경, 그리기(frame, t), 진행 막대 색)
 
     top = items[0] if items else {"hook": "오늘의 핫딜", "e": "🛒"}
-    i_lab = _text(f"{date_label}  ·  오늘의 가성비 1위", pf("SemiBold", 40), SUB)
+    i_lab = _text(f"{date_label}  ·  {label or '오늘의 가성비 1위'}", pf("SemiBold", 40), SUB)
     i_tile = _tile(top.get("e"), 260)
     hf = 132
     while hf > 70 and len(wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), top["hook"], pf("ExtraBold", hf), XW, 3)) > 2:
@@ -475,13 +477,15 @@ def reel(items, date_label, out, music=None, say=None):
         wins = [(starts[k] + LEAD, starts[k] + LEAD + w[3]) for k, (_, w) in enumerate(say)]
         if music:
             cmd += ["-stream_loop", "-1", "-i", music, "-i", nar, "-filter_complex",
-                    f"[1:a]atrim=0:{total:.3f},asetpts=PTS-STARTPTS,aresample=48000,volume=0.8,volume='{duck_expr(wins)}':eval=frame,{fade}[m];"
-                    f"[2:a]aresample=48000,volume=1.6[v];[m][v]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.89:level=0[a]", "-map", "0:v", "-map", "[a]"]
+                    f"[1:a]atrim=0:{total:.3f},asetpts=PTS-STARTPTS,aresample=44100,volume=0.8,volume='{duck_expr(wins)}':eval=frame,{fade}[m];"
+                    f"[2:a]aresample=44100,volume=1.6[v];[m][v]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.89:level=0[a]", "-map", "0:v", "-map", "[a]"]
         else:
-            cmd += ["-i", nar, "-map", "0:v", "-map", "1:a", "-af", "aresample=48000,volume=1.6,alimiter=limit=0.89:level=0"]
-        cmd += ["-c:a", "aac", "-b:a", "128k"]
+            cmd += ["-i", nar, "-map", "0:v", "-map", "1:a", "-af", "aresample=44100,volume=1.6,alimiter=limit=0.89:level=0"]
+        cmd += ["-c:a", "aac", "-b:a", "128k", "-ar", "44100"]
     elif music:
-        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-af", fade]
+        cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-af", fade]
+    else:  # 음악·나레이션 없음 = 무음 AAC 트랙(네이버 클립 규격 H.264 + AAC 44.1kHz — 소리 트랙 없는 영상 X)
+        cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k"]
     cmd += ["-t", f"{total:.3f}", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "veryfast", "-movflags", "+faststart", "-use_editlist", "0", out]  # 인스타 릴스 규격: edit list 없음·moov 앞
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -509,6 +513,10 @@ def reel(items, date_label, out, music=None, say=None):
                         if a < 1:
                             sb.putalpha(sb.getchannel("A").point(lambda v: int(v * a)))
                         frame.paste(sb, ((RW - sb.width) // 2, SUB_Y - sb.height), sb)
+                if safe:  # 바탕 = 오른쪽 아래 끝 색(크로스페이드 중에도 같은 색)
+                    sm = Image.new("RGB", (RW, RH), frame.getpixel((RW - 1, RH - 1)))
+                    sm.paste(frame.resize((round(RW * CLIP_SAFE), round(RH * CLIP_SAFE)), Image.LANCZOS), (0, 0))
+                    frame = sm
                 proc.stdin.write(frame.tobytes())
         proc.stdin.close()
         rc = proc.wait()
