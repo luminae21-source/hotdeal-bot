@@ -38,6 +38,7 @@ CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전�
 CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
 CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날 2번 변환 실패하면 그 뒤엔 7일마다 1번(10/25 진우 '다 올려' — 사이트엔 쿠팡 주소 그대로 진열, 나중에 되면 파트너스 링크로) · 아직 안 바뀐 쿠팡 상품 주소 표(pid·이름·실패 날짜·마지막 시도·이유 — Cowork 점검용, 가격·수수료 X)
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
+CP_GROUP_MIN = 3  # T(10/26 진우): 사진 없는 쿠팡 글 = 품목 낱말(사이트 품목 칸 낱말) 같은 것 3개↑면 그 낱말로 검색 1번 먼저(7일에 1번) — 결과에 같은 pid 다 사진
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
 CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
@@ -1559,26 +1560,57 @@ def cp_price(seen):
             return set()
     home = shown("docs/index.html")  # 홈에 나오는 상품 — 사진 채움 먼저(10/24 Cowork A①)
     cfirst = set().union(*[shown(f, 12) for f in sorted(glob.glob("docs/c/*/index.html"))])  # 그다음 /c/ 칸마다 첫 화면(10/25 Cowork ② — /c/season/ 사진 1/21)
-    pho = sorted((t for t in todo if t[1] not in q.get("i", {})), key=lambda t: (t[1] not in home, t[1] not in cfirst, t[0]))  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
+    rank = lambda u: (u not in home, u not in cfirst)
+    wk = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 7 * 86400))
+    q["gs"], grp = {w: d for w, d in q.get("gs", {}).items() if d > wk}, collections.defaultdict(list)  # gs = 품목 낱말 검색한 날
+    q["gm"] = {u: d for u, d in q.get("gm", {}).items() if d > wk and u in names}  # gm = 품목 낱말 검색에 들어간 글(7일 안 = 다른 낱말로도 다시 묶지 않음)
+    shownimg = {p["url"] for p in posts if p.get("img")}  # 사이트에 사진 있는 글(events img·cp_img.json 등) = 묶음 X
+    cw = {u: cp_words(n) - set(q["gs"]) for u, n in names.items() if ev[u].get("pid") and u not in q.get("i", {}) and u not in shownimg and u not in q["gm"]}
+    cnt = collections.Counter(w for ws in cw.values() for w in ws)
+    for u, ws in cw.items():  # 글마다 낱말 1개 = 사진 없는 글에 가장 많이 나오는 것('발난로 … 핫팩' -> 핫팩)
+        if ws:
+            grp[max(ws, key=lambda w: (cnt[w], w))].append(u)
+    gk = {w: min(map(rank, us)) for w, us in grp.items() if len(us) >= CP_GROUP_MIN}
+    pho = [x for _, x in sorted([((*gk[w], 0, ""), (0, None, None, w, None)) for w in gk] + [((*rank(t[1]), 1, t[0]), t) for t in todo if t[1] not in q.get("i", {})], key=lambda y: y[0])]  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지 — 같은 칸이면 T 품목 낱말 검색 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
     old = [t for t in todo if t[1] in q.get("i", {})]
     todo = [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]]
-    got = miss = err = 0
+    got = miss = err = gn = 0
     qs = cp_qs
+    ps = q.setdefault("ps", {"d": today, "n": 0, "m": 0})  # 사진 검색 수·채운 사진 수(하루 1줄 'img 쿠팡 검색 N번으로 M개' — 다음 날 첫 실행에)
+    if ps["d"] != today:
+        if ps["n"]:
+            print("img", f"쿠팡 검색 {ps['n']}번으로 {ps['m']}개 ({int(ps['d'][5:7])}/{int(ps['d'][8:])})")
+        ps.update(d=today, n=0, m=0)
     for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
-        kws = cp_kws(name)
-        v = q["v"].get(u, 0) % len(kws) if u not in q.get("i", {}) else 0  # 사진 있는 글 = 늘 이름 그대로(옵션 가격 맞추기) · 없는 글 = 오늘 못 찾은 만큼 다음 검색어
-        kw = kws[v]
+        kws = cp_kws(name) if u else [name]  # u 없음 = 품목 낱말 검색(T)
+        v = q["v"].get(u, 0) % len(kws) if u and u not in q.get("i", {}) else 0  # 사진 있는 글 = 늘 이름 그대로(옵션 가격 맞추기) · 없는 글 = 오늘 못 찾은 만큼 다음 검색어
+        kw, n0, photo = kws[v], len(q.setdefault("i", {})), not u or u not in q.get("i", {})
         try:
             r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
         except CpLimit:
-            if not (got or miss or err):  # 이번 실행에 하나도 못 함 = 최근 1시간 상한(실행 1개 다 쓴 건 말 안 함)
+            if not (got or miss or err or gn):  # 이번 실행에 하나도 못 함 = 최근 1시간 상한(실행 1개 다 쓴 건 말 안 함)
                 print("cp price 상한(실행 1·시간 6) — 다음 실행에")
             break
         except Exception as e:
-            print("cp price", pid, repr(e))
-            q["e"][u], err = today, err + 1
+            print("cp price", pid or kw, repr(e))
+            if u:
+                q["e"][u], err = today, err + 1
+            else:
+                q["gs"][kw], gn = today, gn + 1  # 오류 = 그 낱말 이번 주 X(줄 막지 않게)
+            ps["n"] += photo  # 실패한 검색도 1번(상한 셈 그대로)
             continue
         ds = [x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(x, dict)]
+        ps["n"] += photo
+        for z in ds:  # 같은 검색 결과에 다른 진우 글 상품(같은 pid)도 있으면 그 사진도(10/24 진우 1주 ① — 사진 212개 중 14개뿐이던 것, 추가 호출 X) · T 품목 낱말 검색 = 이것만
+            for u2 in bypid.get(str(z.get("productId")), ()):
+                if u2 != u and u2 not in q["i"] and str(z.get("productImage") or "").startswith("https://") and (not ev[u2].get("item") or qs(z, "itemId") == ev[u2]["item"]):
+                    q["i"][u2] = z["productImage"]
+        if not u:
+            q["gs"][kw], gn = today, gn + 1
+            q["gm"].update(dict.fromkeys(grp[kw], today))
+            ps["m"] += len(q["i"]) - n0
+            print(f"cp img 품목 '{kw}' 사진 없는 글 {len(grp[kw])}개 → 사진 {len(q['i']) - n0}개 · 결과 {len(ds)}개")
+            continue
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
         if u not in q.get("i", {}):
             if same:
@@ -1591,18 +1623,30 @@ def cp_price(seen):
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
         y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만
         if y and str(y.get("productImage") or "").startswith("https://"):
-            q.setdefault("i", {})[u] = y["productImage"]
-        for z in ds:  # 같은 검색 결과에 다른 진우 글 상품(같은 pid)도 있으면 그 사진도(10/24 진우 1주 ① — 사진 212개 중 14개뿐이던 것, 추가 호출 X)
-            for u2 in bypid.get(str(z.get("productId")), ()):
-                if u2 != u and u2 not in q.setdefault("i", {}) and str(z.get("productImage") or "").startswith("https://") and (not ev[u2].get("item") or qs(z, "itemId") == ev[u2]["item"]):
-                    q["i"][u2] = z["productImage"]
+            q["i"][u] = y["productImage"]
+        ps["m"] += (len(q["i"]) - n0) * photo
         got, miss = got + bool(x), miss + (not x)
         if not x:  # 원인 찾기(10/23 Cowork — 적중 0): 결과에 pid가 있는데 옵션이 다른지 / 아예 없는지 · 위 3개(키·주소 쿼리 X)
             print(f"cp price 못 찾음 pid {pid} · 검색어 '{kw}' · " + (f"pid 있음 {len(same)}개 = " + (f"item {item} 없음" if item else "옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로") if same else "pid 없음") + f" · 결과 {len(ds)}개")
             for y in ds[:3] + [y for y in same if y not in ds[:3]][:6]:
                 print(f"  {y.get('productId')} {str(y.get('productName') or '')[:30]}" + (f" ← 같은 pid · item {qs(y, 'itemId') or '-'}" if y in same else ""))
     if got or miss or err:
-        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - got - miss - err}")
+        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}")
+
+
+def cp_words(name):
+    """품목 낱말 후보(T — 사진 없는 쿠팡 글 묶기): 사이트 품목 칸 정규식에 맞는 글자를 앞뒤 한글까지 늘린 낱말 전부
+    ('발난로 핫팩' -> {'발난로', '핫팩'} · '홈매트'의 '매트' -> '홈매트' · '스카치브라이트'의 '브라' -> '스카치브라이트' — 리뷰 10/26)."""
+    out = set()
+    for _, _, r in SHELF_CATS:
+        for m in re.finditer(r, name):
+            s, e = m.span()
+            while s and "가" <= name[s - 1] <= "힣":
+                s -= 1
+            while e < len(name) and "가" <= name[e] <= "힣":
+                e += 1
+            out.add(name[s:e].strip())
+    return out - {""}
 
 
 def cp_kws(name):
@@ -1804,7 +1848,7 @@ def shelf_posts(seen):
         new = m and (cl.get(p["url"]) or next((v for v in same.get(m[1], []) if not (itm(p["url"]) and ev[v].get("item") and ev[v]["item"] != itm(p["url"]))), None))
         if not new:
             continue
-        for k in ("m", "i", "r", "v", "pm"):  # cp_price 기록(검색 가격·사진·로켓)도 새 주소로 — 안 그러면 다음 검색 전까지 events 옛 가격으로 '특가 끝'·'다시 특가'가 잘못 뜸(10/25 리뷰)
+        for k in ("m", "i", "r", "v", "pm", "gm"):  # cp_price 기록(검색 가격·사진·로켓·T 품목 낱말 검색에 든 글)도 새 주소로 — 안 그러면 다음 검색 전까지 events 옛 가격으로 '특가 끝'·'다시 특가'가 잘못 뜸(10/25 리뷰)
             if p["url"] in cpq.get(k, {}):
                 cpq[k].setdefault(new, cpq[k].pop(p["url"]))
         p["url"] = new

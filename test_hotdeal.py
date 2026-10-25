@@ -5785,12 +5785,12 @@ sv45b = (time.time, H.EVENTS, H.POSTS, H.CP_LINKS); d45b = tempfile.mkdtemp(); o
 X45, Y45 = "https://www.coupang.com/vp/products/777?itemId=1", "https://www.coupang.com/vp/products/888?itemId=5"
 evb = [SH45(X45, "생 주소 세제", "2026-10-24 09:00", pid="777"), SH45(Y45, "생 주소 샴푸", "2026-10-24 09:00", pid="888")]
 json.dump(evb, open("events.json", "w")); json.dump([], open("posts.json", "w"))
-s45b = {"cpq": {"m": {X45: [12500, "2026-10-24 19:00", ""]}, "i": {X45: "https://thumbnail.coupangcdn.com/x.jpg"}}}
+s45b = {"cpq": {"m": {X45: [12500, "2026-10-24 19:00", ""]}, "i": {X45: "https://thumbnail.coupangcdn.com/x.jpg"}, "gm": {X45: "2026-10-24"}}}
 H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == [X45, Y45]
 json.dump([SH45("https://link.coupang.com/a/jw1", "생 주소 세제", "2026-10-24 09:00", pid="777"), evb[1], SH45("https://link.coupang.com/a/jw2", "다른 옵션 샴푸", "2026-10-24 09:00", pid="888", item="6")], open("events.json", "w"))  # X = 진우 단축 링크로 바꿔 넣음 · Y = 같은 pid 다른 옵션(item 6)
 H.shelf_posts(s45b); pb = json.load(open("posts.json"))
 assert [p["url"] for p in pb] == ["https://link.coupang.com/a/jw1", Y45] and pb[0]["text"].startswith(H.DISCLOSURE) and not pb[1]["text"].startswith(H.NOTE_STARTS), pb  # 카드 하나(jw1 새 글 X) · 다른 옵션 = 그대로(생 주소)
-assert s45b["cpq"]["m"] == {"https://link.coupang.com/a/jw1": [12500, "2026-10-24 19:00", ""]} and list(s45b["cpq"]["i"]) == ["https://link.coupang.com/a/jw1"]  # 검색 가격·사진 이어받음
+assert s45b["cpq"]["m"] == {"https://link.coupang.com/a/jw1": [12500, "2026-10-24 19:00", ""]} and list(s45b["cpq"]["i"]) == ["https://link.coupang.com/a/jw1"] and s45b["cpq"]["gm"] == {"https://link.coupang.com/a/jw1": "2026-10-24"}  # 검색 가격·사진·T 품목 낱말 검색 기록 이어받음
 json.dump([evb[1], SH45("https://link.coupang.com/a/jw3", "생 주소 샴푸", "2026-10-24 09:00", pid="888", item="5")], open("events.json", "w"))  # 같은 옵션 진우 단축 링크를 같이 넣음 -> 그 링크로
 H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == ["https://link.coupang.com/a/jw1", "https://link.coupang.com/a/jw3"]
 pk45 = lambda u: S45.pick_section("2026-10-24", [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))])
@@ -8466,4 +8466,61 @@ os.remove("posts77.json")
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, tk77, H.TH_TOSS_KINDS, H.TH_LIST_HOURS, H.TH_TOSS_FILL, H.th_bundle, H.busy, H.toss_photo) = sv77
 H.E.pop("THREADS_TOKEN", None) if tk77 is None else H.E.update(THREADS_TOKEN=tk77)
 os.remove("ev77.json")
+# 9-78) T 쿠팡 사진(10/26 진우): 사진 없는 쿠팡 글 = 품목 낱말(사이트 품목 칸 낱말, 글에 가장 많이 나오는 것)로 묶어 3개↑면 그 낱말 검색 1번 먼저(7일에 1번)
+#       -> 결과 10개 중 같은 pid(events item 있으면 그 옵션) 다 사진 · 나머지 = 상품명 검색 그대로 · 순서 홈 → /c/ 첫 화면 → 나머지 · 하루 1줄 'img 쿠팡 검색 N번으로 M개'
+sv78 = (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, os.getcwd())
+d78 = tempfile.mkdtemp(); os.chdir(d78); os.makedirs("docs/c/heat")
+cs78 = []
+ev78 = [{"at": "2026-10-20 10:00", "deal": True, "url": f"https://link.coupang.com/a/t{k}", "pid": str(700 + k), **({"item": "7021"} if k == 2 else {}), "text": "x", "button": "x"} for k in range(1, 8)]
+nm78 = {1: "리빙 발난로 핫팩 30개", 2: "해피데이 핫팩 150g 20개", 3: "코멧 손난로 핫팩 10개", 4: "퍼실 세탁세제 3L", 5: "비트 세제 4L", 6: "피죤 섬유유연제 세탁세제 1L", 7: "곰곰 특란 30구"}
+po78 = [{"t": "2026-10-20 10:00", "text": f"🔥 [쿠팡] {nm78[k]} (9,900원)", "url": f"https://link.coupang.com/a/t{k}", "own": 1, "mid": k, **({"img": "https://ads-partners.coupang.com/image1/old7"} if k == 7 else {})} for k in range(1, 8)]
+po78.append({"t": "2026-10-20 11:00", "text": "🔥 [쿠팡] 피죤 세제 1L (5,900원)", "url": "https://link.coupang.com/a/t8", "own": 1, "mid": 8, "img": "https://ads-partners.coupang.com/image1/ev8"}); ev78.append({**ev78[0], "url": "https://link.coupang.com/a/t8", "pid": "708"})  # 사이트에 사진 있음(events img) = 묶음 X
+for k78, n78 in ((9, "다우니 섬유유연제 세제 2L"), (10, "샤프란 섬유유연제 세제 1L")):  # 섬유유연제 = 세제 묶음에 든 글 포함 3개(다른 낱말로 다시 묶기 X 확인)
+    po78.append({"t": "2026-10-20 12:00", "text": f"🔥 [쿠팡] {n78} (8,900원)", "url": f"https://link.coupang.com/a/t{k78}", "own": 1, "mid": k78}); ev78.append({**ev78[0], "url": f"https://link.coupang.com/a/t{k78}", "pid": str(700 + k78)})
+json.dump(ev78, open("events.json", "w")); json.dump(po78, open("posts.json", "w"))
+open("docs/index.html", "w").write('<body><a href="/p/4.html">세제</a>')  # 홈 = 세제 글(5번째) -> 세제 묶음 먼저
+pr78 = lambda pid, img, item=None: {"productId": pid, "productName": "x", "productPrice": 0, "productImage": img, "productUrl": f"https://link.coupang.com/re/X?pageKey={pid}" + (f"&itemId={item}" if item else "")}
+def http78(url, body=None, headers=None, method=None):
+    kw = parse_qs(urlsplit(url).query)["keyword"][0]; cs78.append(kw)
+    res = {"핫팩": [pr78(999, "https://ads-partners.coupang.com/image1/n999"), pr78(702, "https://ads-partners.coupang.com/image1/wrong", "9"), pr78(701, "https://ads-partners.coupang.com/image1/p701"),
+                   pr78(702, "https://ads-partners.coupang.com/image1/p702", "7021"), pr78(703, "http://insecure/p703")],
+           "세제": [pr78(705, "https://ads-partners.coupang.com/image1/p705"), pr78(707, "https://ads-partners.coupang.com/image1/new7")],
+           "코멧 손난로 핫팩 10개": [pr78(703, "https://ads-partners.coupang.com/image1/n703")]}.get(kw, [])
+    return json.dumps({"rCode": "0", "data": {"productData": res}})
+H.http, H.HAS_CP, H.EVENTS, H.POSTS = http78, True, "events.json", "posts.json"
+H.RUN.pop("cpu", None); H.RUN.pop("cpn", None); s78 = {"cpq": {"m": {}, "i": {"https://link.coupang.com/a/t7": "https://ads-partners.coupang.com/image1/old7"}}}; time.time = lambda: TK("2026-10-26 10:00")
+assert H.cp_words("리빙 발난로 핫팩 30개") >= {"발난로", "핫팩"} and H.CP_GROUP_MIN == 3 and "매트" not in H.cp_words("홈매트 리퀴드 훈증기") and "브라" not in H.cp_words("스카치브라이트 청소포") and "세탁세제" in H.cp_words("퍼실 세탁세제 3L") and "브라" not in H.cp_words("닥터지 브라이트닝 패드")  # 낱말 안 글자 X(앞뒤 한글까지)
+with contextlib.redirect_stdout(io.StringIO()) as o78:
+    H.cp_price(s78)
+i78 = s78["cpq"]["i"]
+assert cs78 == ["세제", "곰곰 특란 30구"], cs78  # 실행마다 검색 2번(CP_SEARCH_RUN): 품목 낱말 '세제'(홈에 있는 묶음 먼저) · 사진 있는 글 가격 확인 번갈아
+assert i78 == {"https://link.coupang.com/a/t5": "https://ads-partners.coupang.com/image1/p705", "https://link.coupang.com/a/t7": "https://ads-partners.coupang.com/image1/old7"} and s78["cpq"]["gs"] == {"세제": "2026-10-26"}, i78
+assert "cp img 품목 '세제' 사진 없는 글 3개 → 사진 1개 · 결과 2개" in o78.getvalue() and "오늘 남음 9" in o78.getvalue(), o78.getvalue()  # 남은 글 = 묶음 검색 빼고(글 9개)
+cs78.clear(); H.RUN.pop("cpn", None); time.time = lambda: TK("2026-10-26 10:20")
+with contextlib.redirect_stdout(io.StringIO()) as o78:
+    H.cp_price(s78)
+assert cs78[0] == "핫팩", cs78  # 다음 묶음(발난로·손난로 글도 '핫팩' = 가장 많이 나오는 낱말) · 세제는 이번 주 다시 X
+i78 = s78["cpq"]["i"]
+assert i78["https://link.coupang.com/a/t1"].endswith("p701") and i78["https://link.coupang.com/a/t2"].endswith("p702") and "https://link.coupang.com/a/t3" not in i78  # 옵션(item) 맞는 것 · https만
+assert cs78[1:] == ["비트 세제 4L"], cs78  # 묶음 다음 = 사진 생긴 홈 글 가격 확인(번갈아 그대로)
+cs78.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); time.time = lambda: TK("2026-10-27 10:00")
+with contextlib.redirect_stdout(io.StringIO()) as o78:
+    H.cp_price(s78)
+assert "img 쿠팡 검색 2번으로 3개 (10/26)" in o78.getvalue() and s78["cpq"]["ps"]["d"] == "2026-10-27", o78.getvalue()  # 어제 사진 검색(세제·핫팩 — 가격 확인 검색 X) · 채운 사진(705·701·702)
+assert not {"핫팩", "세제", "손난로", "섬유유연제"} & set(cs78) and s78["cpq"]["gm"]["https://link.coupang.com/a/t10"] == "2026-10-26", cs78  # 7일 안 = 품목 낱말 검색 다시 X(사진 없는 세제 글 남아도 · 같은 글을 '섬유유연제'로도 X) · 손난로 1개 = 묶음 X
+assert cs78[0] == "코멧 손난로 핫팩 10개" and s78["cpq"]["i"]["https://link.coupang.com/a/t3"].endswith("n703") and s78["cpq"]["ps"] == {"d": "2026-10-27", "n": 1, "m": 1}, (cs78, s78["cpq"]["ps"])  # 상품명 검색(사진 없는 글) = 셈 · 날마다 0부터
+s78["cpq"]["ps"] = {"d": "2026-10-26", "n": 0, "m": 0}
+s78["cpq"]["gs"]["핫팩"] = "2026-10-19"; s78["cpq"]["gm"]["https://link.coupang.com/a/t10"] = "2026-10-19"; cs78.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+with contextlib.redirect_stdout(io.StringIO()) as o78:
+    H.cp_price(s78)
+assert "img 쿠팡" not in o78.getvalue() and s78["cpq"]["ps"]["d"] == "2026-10-27"  # 검색 0번인 날 = 줄 X
+assert "https://link.coupang.com/a/t10" not in s78["cpq"]["gm"] and s78["cpq"]["gm"]["https://link.coupang.com/a/t9"] == "2026-10-26"  # 묶음 든 글 기록도 7일 지나면 지움
+assert cs78 and cs78[0] != "핫팩" and "핫팩" not in s78["cpq"]["gs"], cs78  # 7일 지남 = 지움 · 사진 없는 핫팩 글 1개(손난로)뿐 = 3개 안 됨 -> 묶음 X
+open("docs/index.html", "w").write('<body><a href="/p/6.html">특란</a>'); s78b = {"cpq": {"m": {}, "i": {}}}; cs78.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)  # 홈 = 묶음 없는 사진 없는 글(특란)
+h78 = http78; H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("down")) if "%ED%8A%B9%EB%9E%80" in url else h78(url, *a, **k)
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_price(s78b)
+assert cs78 == ["핫팩"] and s78b["cpq"]["ps"]["n"] == 2 and "https://link.coupang.com/a/t7" in s78b["cpq"]["e"], (cs78, s78b["cpq"]["ps"])  # 홈 글 상품명 검색(실패해도 1번 셈)이 나머지 칸 묶음보다 먼저 -> 그다음 묶음
+os.chdir(sv78[5]); shutil.rmtree(d78)
+(H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv78; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 print("OK: 모든 셀프체크 통과")
