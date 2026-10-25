@@ -783,7 +783,7 @@ pk = H.ai_pick; H.ai_pick = lambda prompt, lines: offered.extend(lines) or [{"i"
 offered.clear(); time.time = lambda: 1791248400 + 3 * 3600; H.toss_deals(seen)  # 13:00 회차: 9시에 올린 상품(tb_)·품절은 빼고 다시 고름
 assert [l.split(" |")[0] for l in offered] == ["토스상품0"] and not sent  # 남은 건 발급 실패 상품뿐 -> 글 없음
 offered.clear(); H.toss_deals(seen); assert not offered  # 같은 회차 1번
-offered.clear(); time.time = lambda: 1791248400 + 10 * 3600 + 1800; H.toss_deals(seen); assert not offered  # 20:30: 17시 회차 3시간 지남 -> 안 올림
+offered.clear(); time.time = lambda: 1791248400 + 13 * 3600 + 1800; H.toss_deals(seen); assert not offered  # 23:30: 20시(S 저녁) 회차 3시간 지남 -> 안 올림(17시 회차도 20시엔 끝)
 H.ai_pick, time.time = pk, lambda: 1791248400
 H.EVENTS, ev0 = "ev_toss.json", H.EVENTS; json.dump([{"at": "2026-10-06 21:00", "name": "토스상품1,"}, {"at": "2026-10-05 21:00", "name": "토스상품3"}], open(H.EVENTS, "w"))
 offered.clear(); H.ai_pick = lambda prompt, lines: offered.extend(lines) or []; H.toss_deals({})  # 10/11: 진우 링크로 오늘 예약한 상품(name, 기호 무시)은 하루특가 자동 글 후보에서 뺌, 어제 예약은 상관없음
@@ -1391,7 +1391,7 @@ def sp_pick(prompt, lines):
     if prompt.startswith("아래는 토스쇼핑 하위 카테고리"): return [{"i": i, "score": 8, "comment": "c"} for i, l in enumerate(lines) if ("> 패치" in l and "니들" in prompt) or ("선케어" in l and "선크림" in prompt)]
     if prompt.startswith("토스쇼핑 상품 1개야"): return [{"i": 0, "score": 8, "comment": "50g 3개 + 선크림 증정, 리뷰 812개"}]
     if prompt.startswith("토스쇼핑 특가 후보"):
-        sc = {"특가 비싼 상품 전기요": 7, "특가 싼 상품 휴지": 9, "특가 중간 상품 샴푸": 8, "할인 적은 상품": 9, "리뷰 적은 특가": 9, "에이지랩": 6, "특가 이미 올린 상품": 9}
+        sc = {"특가 비싼 상품 전기요": 7, "특가 싼 상품 휴지": 9, "특가 중간 상품 샴푸": 8, "할인 적은 상품": 9, "리뷰 적은 특가": 9, "에이지랩": 5, "특가 이미 올린 상품": 9}
         return sorted([{"i": i, "score": v, "comment": "c" + str(i)} for i, l in enumerate(lines) for k, v in sc.items() if l.startswith(k)], key=lambda p: -p["score"])
     raise AssertionError(prompt[:30])
 def sp_tg(method, **p):
@@ -1428,7 +1428,7 @@ sp_run("2026-10-11 23:20", H.events); assert [p["text"] for m, p in sp_sent] == 
 sv9 = json.loads(json.dumps(seen)); sp_run("2026-10-11 23:36", H.events); assert not sp_sent; seen = sv9  # 23:30 api 행이 시각이 돼도 events()는 안 올림(url·text 없음 -> toss_picks가)  # events()는 api 행을 안 올림(진우 예약만)
 log = sp_run("2026-10-11 23:33")  # ② 예약 시각: 상세로 지금 가격(1,000원 내림)·품절 재확인 -> 채널 + Threads
 (m, p), = [(m, p) for m, p in sp_sent if p["chat_id"] == H.CHANNEL]
-assert p["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n💙 토스 특가 🔥\n<b>에이지랩 달팽이 뮤신 올인원 크림, 50g, 3개 + 선크림 증정</b>\n18,900원 (62%↓) · ⭐ 4.7 (812)\n👉 50g 3개 + 선크림 증정, 리뷰 812개", p["text"]  # 10/22 토스 몰별 틀(출처 모름 = 칸 없이, 🙋·👍 없으면 Claude 한 줄)
+assert p["text"] == f"<i>{H.TOSS_NOTE}</i>\n\n💙 토스 특가 🔥\n<b>에이지랩 달팽이 뮤신 올인원 크림, 50g, 3개 + 선크림 증정</b>\n18,900원 (62%↓) · ⭐ 4.7 (812)\n💰 1개당 6,300원꼴\n👉 50g 3개 + 선크림 증정, 리뷰 812개", p["text"]  # 10/22 토스 몰별 틀(출처 모름 = 칸 없이, 🙋·👍 없으면 Claude 한 줄)
 assert p["reply_markup"]["inline_keyboard"] == [[{"text": "💙 토스에서 18,900원", "url": "https://toss.shopping/_m/P501"}]] and "쿠팡" not in p["text"]
 assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 🔥\n에이지랩") and "🛒 https://toss.shopping/_m/P501" in sp_th[0]["text"][0] and sp_th[0]["link_attachment"] == ["https://toss.shopping/_m/P501"]
 w = [v for k, v in seen.items() if k.startswith("sold_")][0]
@@ -3821,14 +3821,14 @@ for h20, f20 in zip((12, 16, 20), F20):  # 순위 출처 시각(12·16·20 % 4 =
     ch20.append(sent20[-1]["text"]); th20.append(s20["thtoss"]["q"][-1]["text"])
 for (x20, p20), c20, t20 in zip(F20, ch20, th20):
     assert c20.split("\n")[0].startswith("<i>" + H.TOSS_NOTE) or c20.split("\n")[1].startswith("<i>" + H.TOSS_NOTE)  # 대가성 문구 맨 앞([광고] 켜지면 그 다음 줄)
-    assert f"💙 토스 특가 · 많이 팔린 순위 1위 🔥\n{x20['displayName']}\n{x20['displayPrice']:,}원 ({x20['discountRate']}%↓) · ⭐ {x20['reviewScore']} ({x20['reviewCount']:,})\n🙋 {p20['who']}\n👍 {p20['use']}\n⚠️ 10/21 " in H.html.unescape(re.sub("</?b>", "", c20)) and "💡" not in c20 and "사실 한 줄" not in c20 and "💰" not in c20, c20  # 10/22 몰별 틀: 단위가격 줄 X(시안), 🙋·👍 그대로
+    assert f"💙 토스 특가 · 많이 팔린 순위 1위 🔥\n{x20['displayName']}\n{x20['displayPrice']:,}원 ({x20['discountRate']}%↓) · ⭐ {x20['reviewScore']} ({x20['reviewCount']:,})\n" + "".join(l + "\n" for l in H.toss_ul(x20)) + f"🙋 {p20['who']}\n👍 {p20['use']}\n⚠️ 10/21 " in H.html.unescape(re.sub("</?b>", "", c20)) and "💡" not in c20 and "사실 한 줄" not in c20 and c20.count("💰") == len(H.toss_ul(x20)), c20  # 10/22 몰별 틀(Claude 단위가격 X) + S(10/26): 묶음이면 우리 계산 💰 단가 줄만, 🙋·👍 그대로
     assert t20.startswith(H.th_note(H.TOSS_NOTE) + "💙 토스 특가 · 많이 팔린 순위 1위 🔥\n") and f"\n🙋 {p20['who']}\n👍 {p20['use']}\n⚠️ 10/21 " in t20 and "게시 시점 가격" in t20 and len(t20) <= 480 and t20.endswith("📲 실시간 알림 t.me/hotdeal_pick"), t20
 # 금지어·너무 긴 줄 = 그 줄만 뺌(글은 나감)
 assert H.wu({"who": "제가 써보니 좋아요", "use": "차갑게 해서 한 병"}) == ["👍 차갑게 해서 한 병"] and H.wu({"who": "🙋 설거지 많은 집", "use": "👍 덜어 쓰기"}) == ["🙋 설거지 많은 집", "👍 덜어 쓰기"]
 assert [H.wu({"who": w}) for w in ("다이어트 하는 분", "피부 미백 원하는 분", "쿠팡보다 싸게 사고 싶은 분", "역대급 가격 노리는 분", "클릭해서 확인할 분", "먹어보니 맛있어요", "면역 챙기는 분", "가" * 41)] == [[]] * 8
 assert H.wu({"use": "무조건 지금 사세요"}) == [] and H.wu({"use": "마지막 기회예요"}) == [] and H.wu({"use": "다" * 50}) == ["👍 " + "다" * 50] and H.wu({"use": "다" * 51}) == [] and H.wu(None) == []
 cur20[0] = (F20[0][0], {"unit": "병당 약 535원 (24병)", "who": "제가 먹어보니 좋아요", "use": "차갑게 해서 식후 한 병"}); s20 = {}; time.time = lambda: TK("2026-10-21 12:05"); H.toss_solo(s20)
-assert "(2,303)\n👍 차갑게 해서 식후 한 병\n⚠️" in sent20[-1]["text"] and "🙋" not in sent20[-1]["text"] and "🙋" not in s20["thtoss"]["q"][-1]["text"]  # 🙋만 빠지고 글은 나감
+assert "(2,303)\n" + "".join(l + "\n" for l in H.toss_ul(F20[0][0])) + "👍 차갑게 해서 식후 한 병\n⚠️" in sent20[-1]["text"] and "🙋" not in sent20[-1]["text"] and "🙋" not in s20["thtoss"]["q"][-1]["text"]  # 🙋만 빠지고 글은 나감
 # 리뷰 보강: 생활 문장은 안 걸림(세제가·펌프 눌러·곰팡이 예방·추위 대비·먹어 보세요), 써 본 척 모양(봤·본·마셔)·탈모 등·비교 말은 걸림 · 단위가격도 다른 몰·비교면 버림
 assert [H.wu({"who": w}) for w in ("주방세제가 금방 떨어지는 집", "펌프 한 번 눌러 덜어 쓰기", "장마철 곰팡이 예방", "겨울 추위 대비용", "한 번 먹어 보세요")] == [["🙋 " + w] for w in ("주방세제가 금방 떨어지는 집", "펌프 한 번 눌러 덜어 쓰기", "장마철 곰팡이 예방", "겨울 추위 대비용", "한 번 먹어 보세요")]
 assert [H.wu({"use": w}) for w in ("먹어봤는데 맛있음", "써 본 사람은 재구매", "마셔 보니 시원", "탈모 고민인 분", "마트보다 싸게 쟁이기", "코스트코 대용량 부담인 집", "눌러 보세요")] == [[]] * 7
@@ -5178,8 +5178,11 @@ assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "
 assert ("지금은 특가 아님 · 특가 때 8,000원" if u35.endswith("C") else "지금은 특가 아님 · 특가 때 5,000원") in p35["text"], p35["text"]
 assert f"tb_{id35[u35[-1]] * 10}" in s35 and H.th_steady(H.plain_of(p35["text"].split("\n\n", 1)[1]))  # 3일 간격 · 👍 꾸준템(Threads 순서 규칙)
 t35.clear(); H.toss_solo(s35); assert not t35  # 그 시각 1번
-s35["rehot"] = {"t": 1, "q": [{"id": 550, "g": 55, "u": "https://toss.shopping/_m/F", "tgt": "5,000원", "d": "2026-10-25", "n": "F"}]}; X35[55].update(displayName="F 상품", displayPrice=5100)
-s35["tsolo_20261025_16"], s35["ch_last"] = 1, {"t": TK("2026-10-25 15:00")}; time.time = lambda: TK("2026-10-25 16:40"); H.toss_solo(s35)  # 매시 글은 이미 = 빈틈 채움
+s35["rehot"] = {"t": 1, "q": [{"id": 550, "g": 55, "u": "https://toss.shopping/_m/F", "tgt": "5,000원", "d": "2026-10-25", "n": "F"}]}; X35[55].update(displayName="F 양말", displayPrice=5100)
+s35["tsolo_20261025_16"], s35["ch_last"] = 1, {"t": TK("2026-10-25 15:00")}; time.time = lambda: TK("2026-10-25 16:40")  # 매시 글은 이미 = 빈틈 채움
+with contextlib.redirect_stdout(io.StringIO()) as o35r:
+    H.toss_solo(s35)
+assert "자주 사는" not in o35r.getvalue(), o35r.getvalue()  # S 가산 = 🔁 다시 특가 X(고정 10점 — 점수·로그 그대로)
 (r35,) = t35; assert "💙 토스 특가 · 🔁 다시 특가 🔥" in r35["text"] and "🔁 특가 때(5,000원) 가격 근처로 다시 내려왔어요" in r35["text"] and r35["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://toss.shopping/_m/F", r35["text"]
 assert "tb_550" in s35 and s35["rehot"]["q"] == [] and r35["text"].startswith(f"<i>{H.TOSS_NOTE}")  # 대가성 첫 줄 · 줄에서 뺌
 H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS = sv35b; os.remove("ev35s.json")
@@ -8357,4 +8360,110 @@ assert s76g["dly_98"]["ask"] == 1 and "링크 후보" in rp76[98] and "ask" not 
 assert H.daily_kw("#일상 코멧 손난로 🔥 #겨울\n둘째 줄") == "코멧 손난로" and "daily_cands" in inspect.getsource(H.main)
 (H.tg, H.toss, H.coupang, H.HAS_CP, H.HAS_TOSS, H.th_post, H.th_reply, H.th_reply_ok, H.toss_link, H.http, H.busy, H.bundled, time.time, tk76, H.TOSS_NO_CMP, H.urllib.request.urlopen) = sv76
 H.E.pop("THREADS_TOKEN", None) if tk76 is None else H.E.update(THREADS_TOKEN=tk76)
+# 9-77) S 토스 '더 자주 사게'(10/26 진우): 여성 기본템(골지·민소매·기본티·양말·레깅스·내의)·식재료 소모품(들기름·참기름·양념·김)·묶음(💰 단가 줄) = Claude 점수 +1
+#       (토스 매시 개별·하루특가·베스트 회차 순위) · 묶음 단가 = 이름의 개수 × 가격만(택1·옵션 X) · 하루특가 TOP5 저녁 20시 회차(20~22시) 채널 + Threads 리스트 1번 더
+sv77 = (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.E.get("THREADS_TOKEN"), H.TH_TOSS_KINDS, H.TH_LIST_HOURS, H.TH_TOSS_FILL, H.th_bundle, H.busy, H.toss_photo)
+assert H.toss_unit("코멧 손난로 100g 30개", 8860) == "1개당 295원꼴" and H.toss_unit("한예지 화장지 30m 30롤 2팩", 20900) == "1롤당 348원꼴" and H.toss_unit("세럼 30ml 1+1", 33900) == "1개당 16,950원꼴"
+assert H.toss_unit("물티슈 100매 10팩", 9900) == "10매당 99원꼴" and H.toss_unit("3박스 10개입", 9000) == "1개당 300원꼴" and H.toss_unit("양말 10켤레", 9900) == "1켤레당 990원꼴"
+assert H.toss_unit("신라면 3박스", 30000) == "1박스당 10,000원꼴" and H.toss_unit("기저귀 2팩 x 3", 59900) == "1팩당 9,983원꼴"  # 겉 묶음만 = 그 단위
+assert all(H.toss_unit(n, 9900) == "" for n in ("레깅스 2종 택1", "레깅스 3개 택1", "과자 20개 골라담기", "5개월분 영양제", "들기름 1병", "티셔츠 3색 옵션", "비타민")) and H.toss_unit("양말 10켤레", 0) == ""  # 1개·못 읽음·고르는 상품 = 단가 X
+assert [H.toss_freq({"displayName": n, "displayPrice": 9900}) for n in ("여성 골지 민소매 나시", "무지 기본티 3장", "국산 참기름 300ml", "재래김 20봉", "김치 1kg", "블루투스 이어폰", "양념 소불고기", "보온 내의 상하", "건전지 AA 20개")] == [1, 1, 1, 1, 0, 0, 1, 1, 1]  # 묶음(단가 줄 나옴) = 낱말 없어도 +1
+U77 = [("코멧 물티슈 100매 10팩 (총 1000매)", 12900, "1매당 13원꼴"), ("초코파이 3박스(총 30개)", 12000, "1개당 400원꼴"), ("라면 5개입 x 4봉 (총 20개)", 15000, "1개당 750원꼴"), ("샴푸 2+1 총 3개", 25900, "1개당 8,633원꼴"),
+       ("크리넥스 2개입 x 5", 19900, "1개당 1,990원꼴"), ("크리넥스 2개입x5", 19900, "1개당 1,990원꼴"), ("크리넥스 30m 30롤 x 3", 29900, "1롤당 332원꼴"), ("제주삼다수 2L x 12", 9900, "1개당 825원꼴"),
+       ("려 샴푸 1+1+1", 29900, "1개당 9,967원꼴"), ("왕란 30구 2판", 12900, "1구당 215원꼴"), ("물 500mlx20개", 9900, "1개당 495원꼴"), ("에센스 1+1 (총 2개)", 19900, "1개당 9,950원꼴"),
+       ("국산 참기름 300ml 1병/2병/3병", 12900, ""), ("여성 골지 민소매 3장 5장 10장", 9900, ""), ("양말 5켤레~10켤레", 9900, ""), ("레깅스 10장 중 1장", 9900, ""), ("삼성 갤럭시 S24+ 256GB", 1099000, ""),
+       ("본품 1개 + 리필 2개", 19900, ""), ("칫솔 10개 + 치약 2개", 9900, ""), ("물티슈 70매 10팩 + 10매 휴대용 2팩 증정", 12900, ""), ("홈플래닛 멀티탭 4구 1.5m", 9900, ""), ("SK매직 3구 인덕션", 299000, ""),
+       ("모니터 1920x1080 27인치", 199000, ""), ("라면 5개입 x 4봉", 15000, ""), ("에이지랩 크림, 50g, 3개 + 선크림 증정", 18900, "1개당 6,300원꼴"),
+       ("레깅스 5장 중 1", 9900, ""), ("생수 2L 6/12병", 9900, ""), ("물티슈 10~20팩", 9900, ""), ("치약 5개 + 칫솔", 9900, ""), ("물티슈 10팩 2박스", 19900, ""),
+       ("생수 500ml x 20 x 2", 9900, ""), ("샴푸 1+1 2개", 19900, ""), ("크리넥스 30롤 x 2팩", 29900, "1롤당 498원꼴"), ("콜라 1+1.5L", 2900, ""), ("에어팟 M2+1 케이스", 19900, "")]
+assert [H.toss_unit(n, p) for n, p, _ in U77] == [w for _, _, w in U77], [(n, H.toss_unit(n, p)) for n, p, w in U77 if H.toss_unit(n, p) != w]  # 총 N·x N·N+M+K·계란 판 · 헷갈리면(옵션 나열·다른 상품 더하기·모델명 +·멀티탭 구·두 낱개 이름) X
+assert not any(H.toss_freq({"displayName": n, "displayPrice": 9900}) for n in ("에어프라이어 튀김기 5.5L", "김서림방지 스프레이", "딤채 김냉 스탠드", "김정문알로에 수딩젤", "새우튀김 500g", "스테인리스 양념통 6P", "실내의류건조대"))
+assert all(H.toss_freq({"displayName": n, "displayPrice": 9900}) for n in ("곱창김 10매", "김 30봉", "광천김 도시락김 16봉", "보온내의 상하"))
+assert H.toss_ul({"displayName": "양말 10켤레", "displayPrice": 9900}) == ["💰 1켤레당 990원꼴"] and H.toss_ul({"displayName": "이어폰", "displayPrice": 9900}) == []
+s77c, s77t, s77p, s77b = [], [], [], []
+LST77 = {"best-selling": [{"tacaItemId": 71, "displayName": "블루투스 이어폰", "displayPrice": 29900, "discountRate": 10, "isSoldOut": False},
+                          {"tacaItemId": 72, "displayName": "국산 들기름 350ml 2병", "displayPrice": 15800, "discountRate": 20, "isSoldOut": False}],
+         "today-deals": [{"tacaItemId": 81, "displayName": "보조배터리 10000mAh", "displayPrice": 19900, "discountRate": 20, "isSoldOut": False},
+                         {"tacaItemId": 82, "displayName": "여성 양말 10켤레", "displayPrice": 9900, "discountRate": 30, "isSoldOut": False}]}
+def http77(url, body=None, headers=None, method=None):
+    s77c.append(url)
+    if url == "https://oauth2.cert.toss.im/token": return json.dumps({"access_token": "TK", "expires_in": 31535999})
+    if url.endswith("/links"): return json.dumps({"resultType": "SUCCESS", "success": {"shortUrl": f"https://toss.im/_m/S{body['tacaItemId']}"}})
+    k = next((k for k in LST77 if f"/products/{k}?" in url), None)
+    if k: return json.dumps({"resultType": "SUCCESS", "success": {"items": LST77[k]}})
+    if "/products/" in url or url.endswith("/categories"): return json.dumps({"resultType": "SUCCESS", "success": {"items": [], "categories": CAT77}})
+    raise AssertionError(url)
+CAT77 = []
+H.http, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.EVENTS = http77, True, range(0, 24), 0, True, "ev77.json"
+json.dump([], open("ev77.json", "w")); json.dump([], open("posts.json", "w")); H.E["THREADS_TOKEN"] = "tk"
+for k77, v77 in (("TOSS_ACCESS_KEY", "ak"), ("TOSS_SECRET_KEY", "sk"), ("TOSS_PUBLISHER_ID", "pub-1")): H.E.setdefault(k77, v77)
+H.tg = lambda m, **p: s77t.append((m, p)) or {"message_id": 770 + len(s77t)}
+H.ai_pick = lambda prompt, lines: s77p.append(lines) or [{"i": 0, "score": 6, "comment": "가"}, {"i": 1, "score": 6, "comment": "나"}]
+H.th_bundle, H.busy, H.toss_photo = (lambda seen, kind, text, link=None, image=None: s77b.append((kind, text))), (lambda seen, cap=True: False), (lambda x: None)
+H.TH_TOSS_KINDS, H.TH_LIST_HOURS, H.TH_TOSS_FILL = ("best", "cat"), (12, 15, 18), ("day",)
+s77 = {}; time.time = lambda: TK("2026-10-26 12:05")
+with contextlib.redirect_stdout(io.StringIO()) as o77:
+    H.toss_solo(s77)
+(m77, p77), = s77t
+assert "<b>국산 들기름 350ml 2병</b>\n15,800원 (20%↓)\n💰 1병당 7,900원꼴\n👉 나" in p77["text"] and "tb_72" in s77 and "tb_71" not in s77, p77["text"]  # 6점 + 1 = 7점 → 올림(이어폰 6점 = X) · 💰 단가 줄
+assert "자주 사는 상품 +1" in o77.getvalue() and s77["thtoss"]["q"][-1]["s"] == 7 and "💰 1병당 7,900원꼴" in s77["thtoss"]["q"][-1]["text"]  # Threads 채움 후보도 단가 줄 · 점수 7
+s77t.clear(); s77p.clear(); s77d = {}
+H.ai_pick = lambda prompt, lines: s77p.append(lines) or [p for p in [{"i": 0, "score": 8, "comment": "가"}, {"i": 1, "score": 8, "comment": "나"}] if p["i"] < len(lines)]
+time.time = lambda: TK("2026-10-26 17:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_deals(s77d)
+t77 = s77t[-1][1]["text"]
+assert t77.index("여성 양말 10켤레") < t77.index("보조배터리") and "💰 <b>9,900원</b> (30%↓)\n💰 1켤레당 990원꼴\n👉 나" in t77 and not s77b  # 같은 점수면 자주 사는 상품 먼저 · 17시 = 채널만(Threads 리스트 X)
+assert "💰 1켤레당 990원꼴" in next(q["text"] for q in s77d["thtoss"]["q"] if q["id"] == 82)
+LST77["today-deals"] += [{"tacaItemId": 83, "displayName": "기본티 3장", "displayPrice": 15000, "discountRate": 10, "isSoldOut": False}]
+q77 = json.dumps(s77d["thtoss"]); s77t.clear()
+H.ai_pick = lambda prompt, lines: s77p.append(lines) or [{"i": i, "score": 8, "comment": "가나다"[i]} for i in range(len(lines))]
+time.time = lambda: TK("2026-10-26 20:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_deals(s77d); H.toss_deals(s77d)
+t77 = s77t[0][1]["text"]
+assert len([1 for m, p in s77t if m == "sendMessage"]) == 1 and "tossday_20261026_20" in s77d and "TOP3" in t77 and t77.index("여성 양말 10켤레") < t77.index("기본티 3장") < t77.index("보조배터리"), t77  # 20시 저녁 = 17시에 올린 것도 다시(판매 중 TOP5 1번 더) · 자주 사는 상품 먼저
+assert "💰 1장당 5,000원꼴" in t77 and json.dumps(s77d["thtoss"]) == q77  # 저녁 회차 = Threads 개별 채움 후보 X(리스트로만)
+assert len(s77b) == 1 and s77b[0][0] == "toss20" and s77b[0][1].startswith(H.TOSS_NOTE) and "오늘의 토스 하루특가 TOP3" in s77b[0][1] and "게시 시점" in s77b[0][1]  # 저녁 = Threads 리스트도 1번
+assert "1️⃣ 여성 양말 10켤레 — 9,900원 (1켤레당 990원꼴)" in s77b[0][1], s77b[0][1]  # 리스트 줄에도 단가
+s77t.clear(); s77b.clear(); time.time = lambda: TK("2026-10-26 23:10")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_deals({})
+assert not s77t and not s77b and H.TOSS_DAY_HOURS == (9, 13, 17, 20)  # 23시 = 20시 회차 3시간 지남
+# 15시 뷰티 회차 Threads 개별 1개(오늘 화장품 자리 빔)도 💰 단가 줄
+CAT77[:], LST77["best-categories/B77"] = [{"categoryId": "B77", "displayName": "뷰티"}], [{"tacaItemId": 91, "displayName": "에이지랩 크림 50g 3개", "displayPrice": 18900, "discountRate": 30, "isSoldOut": False}]
+sv77s, (H.TH_SLOTS, H.TH_BEAUTY_MIN) = (H.TH_SLOTS, H.TH_BEAUTY_MIN), ((15,), 1); s77s = {}; time.time = lambda: TK("2026-10-26 15:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_deals(s77s, "beauty")
+(H.TH_SLOTS, H.TH_BEAUTY_MIN) = sv77s
+assert "에이지랩 크림" in s77s["thq"]["q"][0]["text"] and "💰 1개당 6,300원꼴" in s77s["thq"]["q"][0]["text"], s77s.get("thq")
+# Threads 개별 글(th_voice): 💰 단가 줄(봉·캔·족·박스·세트)이 가격 줄 괄호로
+sv77v = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: {"line": "집에 두면 든든함"}), type("R", (), {"choice": staticmethod(lambda xs: 4)})
+for n77, p77u, w77 in (("재래김 20봉", 9900, "(1봉당 495원)"), ("코카콜라 24캔", 19900, "(1캔당 829원)"), ("양말 10족", 9900, "(1족당 990원)"), ("신라면 3박스", 30000, "(1박스당 10,000원)")):
+    x77 = {"displayName": n77, "displayPrice": p77u, "discountRate": 10}
+    o77v = H.th_voice({}, H.toss_th("하루특가 · 밤 12시까지", n77, H.toss_price(x77), H.toss_ul(x77), "https://toss.shopping/_m/v77"), "https://toss.shopping/_m/v77")
+    assert f"💰 {p77u:,}원 {w77}" in o77v, o77v
+H.ai_voice, H.random = sv77v
+# 하루특가 Threads 채움 후보('밤 12시까지') = 그날 23:30까지만(밤 12시 넘어 '밤 12시까지' 글 X) · 다른 토스 픽은 그대로
+p77t = []
+def http77t(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: p77t.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(p77t)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(p77t)})
+    raise AssertionError(url)
+sv77t = (H.POSTS, H.TH_LINK_AB, H.time.sleep, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL)
+H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL = http77t, "posts77.json", False, (lambda s: None), 45 * 60, 1, th_strong0, True
+json.dump([], open(H.POSTS, "w"))
+tq77 = lambda src: {"t": TK("2026-10-26 22:00"), "text": H.toss_th(src, "여성 양말 10켤레", "9,900원 (30%↓)", ["💰 1켤레당 990원꼴"], "https://toss.shopping/_m/T77"),
+                    "link": "https://toss.shopping/_m/T77", "bt": 0, "id": 7701, "r": 0, "k": "day", "s": 8}
+for at77, src77, n77 in (("23:20", "하루특가 · 밤 12시까지", 1), ("23:40", "하루특가 · 밤 12시까지", 0), ("23:40", "많이 팔린 순위 1위", 1)):
+    p77t.clear(); time.time = lambda: TK("2026-10-26 " + at77)
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.threads_deals({"thtoss": {"t": 1, "q": [tq77(src77)]}})
+    assert len(p77t) == n77 and all("여성 양말" in x for x in p77t), (at77, src77, p77t)
+(H.POSTS, H.TH_LINK_AB, H.time.sleep, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL) = sv77t
+os.remove("posts77.json")
+(H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, tk77, H.TH_TOSS_KINDS, H.TH_LIST_HOURS, H.TH_TOSS_FILL, H.th_bundle, H.busy, H.toss_photo) = sv77
+H.E.pop("THREADS_TOKEN", None) if tk77 is None else H.E.update(THREADS_TOKEN=tk77)
+os.remove("ev77.json")
 print("OK: 모든 셀프체크 통과")
