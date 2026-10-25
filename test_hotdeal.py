@@ -7585,7 +7585,10 @@ H.IG_STAGE_FILE, = sv70b
 # 해시태그: 5개↓ · 칸·날마다 다르게
 P70 = [{"text": "🔥 [쿠팡] 휴지 30롤 (9,900원)"}]
 tg70 = [H.ig_tags(P70, 11 // 2 + d) for d in (26, 27)]
-assert all(len(t.split()) <= 5 for t in tg70) and tg70[0] != tg70[1] and "int(stem[8:10])" in inspect.getsource(H.card_caption)
+sv70p = H.POSTS; H.POSTS = "posts70.json"; json.dump([{"t": "2026-10-26 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원)", "url": "https://link.coupang.com/a/t70", "mid": 1}], open("posts70.json", "w"), ensure_ascii=False)
+os.makedirs("docs/cards", exist_ok=True); [json.dump([0], open(f"docs/cards/2026-10-{d}_11.json", "w")) for d in (26, 27)]
+ct70 = [H.card_caption(f"2026-10-{d}_11")[1].rsplit("\n\n", 1)[1] for d in (26, 27)]; H.POSTS = sv70p
+assert all(len(t.split()) <= 5 for t in tg70 + ct70) and tg70[0] != tg70[1] and ct70[0] != ct70[1] and all(t.startswith("#") for t in ct70), ct70  # 같은 칸도 날마다 다른 해시태그(5개↓)
 # metrics: 인스타 도달·저장 + 팔로워(하루 1번) + 7일 요약 igw(Cowork가 읽고 단계 판단) · metrics_save가 igf·igw 그대로
 m70 = {f"2026-10-{d}": {"at": "x", "miss": {}, "igf": 100 + d, "rows": [{"ch": "ig", "views": 10, "reach": 7, "saved": 1, "react": 2}, {"ch": "th", "views": 99}]} for d in range(18, 27)}
 w70 = H.ig_week(m70, "2026-10-26")
