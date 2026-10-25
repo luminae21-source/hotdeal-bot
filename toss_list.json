@@ -1,15 +1,17 @@
 {
- "at": "2026-10-25 07:04",
+ "at": "2026-10-26 07:07",
  "n": {
-  "hot": 355,
-  "wait": 277,
-  "out": 4,
+  "hot": 301,
+  "wait": 326,
+  "out": 9,
   "gone": 3
  },
  "rehot": [
   "커밍글 원케어 퍼퓸 스캘프 탈모 샴푸 500ml",
   "커밍글 캔디팜므 노워시 트리트먼트 플로럴머스크 200ml",
-  "커밍글 캔디 퍼퓸 테라피 리페어 헤어 세럼 100ml"
+  "커밍글 캔디 퍼퓸 테라피 리페어 헤어 세럼 100ml",
+  "이진물산 26년산 볶은 땅콩 1kg",
+  "한입과득 청송 홍로 사과 가정용 5kg"
  ],
  "gone": [
   "소후 자동 소금후추 전동 그라인더 2종 세트 + 전용 거치대",
@@ -19,14 +21,15 @@
  "new": {
   "2026-10-22": 68,
   "2026-10-23": 70,
-  "2026-10-24": 521
+  "2026-10-24": 521,
+  "2026-10-25": 61
  },
  "items": [
   {
    "n": "메르헨트 약알칼리 미셀라 폼클렌징 230ml 4개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VhsDiUd7"
@@ -35,7 +38,7 @@
    "n": "레이데이 살몬퓨어 리페어 비비크림 50ml 3개",
    "st": "hot",
    "tgt": "10,000원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/NTnGthM9"
@@ -44,7 +47,7 @@
    "n": "파스쿠찌 쌖얼톤업 SUN 비비크림 50ml 1+1",
    "st": "hot",
    "tgt": "6,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/bUqQSiY"
@@ -53,16 +56,25 @@
    "n": "제주 극조생 감귤 대과 L-2L 5kg",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/5d1KSzEs"
   },
   {
+   "n": "이진물산 26년산 볶은 땅콩 1kg",
+   "st": "hot",
+   "tgt": "6,800원",
+   "chk": "10/26 6시",
+   "stdy": true,
+   "last": "2026-10-13",
+   "url": "https://toss.shopping/_m/NcKxrRos"
+  },
+  {
    "n": "깨끗한나라 더 클린 앤 소프트 3겹 30m 30롤",
    "st": "hot",
    "tgt": "14,780원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/xdchap22"
@@ -71,7 +83,7 @@
    "n": "센텔리안24 더 마데카 크림 50ml 6개 + 마스크 1매",
    "st": "hot",
    "tgt": "37,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/V436Q2Sz"
@@ -80,7 +92,7 @@
    "n": "센텔리안24 마데카 크림 타이트 리프팅 50ml 7개 + 15ml 3개",
    "st": "hot",
    "tgt": "59,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/LQXxhhrn"
@@ -89,16 +101,16 @@
    "n": "레이데이 마데카 재생크림 40ml 1+1+1",
    "st": "hot",
    "tgt": "4,890원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
-   "last": "2026-10-23",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/1Icnm9U6"
   },
   {
    "n": "AHC 프리미어 앰플 인 아이크림 코어리프팅 12ml 6개",
    "st": "hot",
    "tgt": "7,900원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-23",
    "url": "https://toss.shopping/_m/lewQ2sVa"
@@ -107,7 +119,7 @@
    "n": "메르헨트 인텐시브 콜라겐 아이크림 40ml 10개",
    "st": "hot",
    "tgt": "10,900원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/nBLy5Jt8"
@@ -116,16 +128,16 @@
    "n": "한예지 가든 플라워 3겹 천연펄프 화장지 30m 30롤 2팩",
    "st": "hot",
    "tgt": "20,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/bu4F4bnD"
   },
   {
    "n": "수뜰리에 고농축 주방세제 레몬버베너향 2.5L 4개",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/tyeGTrVy"
@@ -134,7 +146,7 @@
    "n": "쿠잉 베이직 물티슈 캡형 100매 20팩",
    "st": "hot",
    "tgt": "16,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TT7baNUq"
@@ -143,7 +155,7 @@
    "n": "괄사 마사지 3종 전신 1개 + 문어 1개 + 하트 1개 1세트",
    "st": "hot",
    "tgt": "5,450원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vBwQeBJz"
@@ -152,7 +164,7 @@
    "n": "수뜰리에 쉰내제거 딥클린 세탁세제 코튼캔디 2.5L 4개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3N1IrQRu"
@@ -161,7 +173,7 @@
    "n": "스페시핏 뿌리는 곰팡이 제거제 500ml 2개",
    "st": "hot",
    "tgt": "7,800원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JNufnyF9"
@@ -170,7 +182,7 @@
    "n": "베베앙 데일리 비데 물티슈 캡형 60매 10팩",
    "st": "hot",
    "tgt": "12,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7cB5FGXz"
@@ -179,7 +191,7 @@
    "n": "베라 무해력 4ZERO 뽑아쓰는 미용티슈 250매 12팩",
    "st": "hot",
    "tgt": "14,990원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BkhxaIoe"
@@ -188,25 +200,25 @@
    "n": "베라 무해력 4ZERO 뽑아쓰는 미용티슈 300매입 6팩",
    "st": "hot",
    "tgt": "8,990원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/ZOICgbI3"
   },
   {
-   "n": "숨 시그니처 물티슈 63gsm 70매 10팩",
+   "n": "핫앤핫 핫팩 레드 10입 3팩",
    "st": "hot",
-   "tgt": "6,990원",
-   "chk": "10/24 22시",
+   "tgt": "10,600원",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/jVmOwjp4"
+   "url": "https://toss.shopping/_m/PPqbB471"
   },
   {
    "n": "포천이동 양념LA갈비 500g 3팩",
    "st": "hot",
    "tgt": "26,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Dj6ttR6q"
@@ -215,7 +227,7 @@
    "n": "이선별 밀크카스테라 1kg 1박스",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zISlagKz"
@@ -224,7 +236,7 @@
    "n": "에브리워터 무라벨 500ml 20개",
    "st": "hot",
    "tgt": "4,445원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/R5ZQ9rMj"
@@ -233,7 +245,7 @@
    "n": "시골두부 부침 찌개 겸용 번들 300g 2개",
    "st": "hot",
    "tgt": "2,800원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9wO0qXN5"
@@ -242,7 +254,7 @@
    "n": "스파클 생수 무라벨 2L 30개",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rUZaLBEz"
@@ -251,7 +263,7 @@
    "n": "슬림떡볶이 로제맛 230g 4개",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XM8Hdtsj"
@@ -260,7 +272,7 @@
    "n": "일양약품 우리가족 멀티비타민 츄어블 60정 2개",
    "st": "hot",
    "tgt": "6,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JTH7vu06"
@@ -269,7 +281,7 @@
    "n": "오즈랜드 우리곡물 크리스피롤 23곡 660g 1박스",
    "st": "hot",
    "tgt": "10,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lR23v7Tu"
@@ -278,7 +290,7 @@
    "n": "원김치 쪽파김치 가정용 2kg 1개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RCmugL67"
@@ -287,7 +299,7 @@
    "n": "널담 고단백 배꼽 베이글 맛혼합 10개",
    "st": "hot",
    "tgt": "9,600원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/L0grmH02"
@@ -296,7 +308,7 @@
    "n": "푸드센터 소갈비살 200g 5팩",
    "st": "hot",
    "tgt": "29,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-25",
    "url": "https://toss.shopping/_m/jIUeaJd8"
@@ -305,7 +317,7 @@
    "n": "메르헨트 퍼퓸 샴푸 화이트머스크 1L 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xhIsHC8q"
@@ -314,7 +326,7 @@
    "n": "수뜰리에 클린 퍼퓸 포밍 핸드 워시 일랑일랑향 510ml 2개",
    "st": "hot",
    "tgt": "7,890원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TrSrxZ5l"
@@ -323,7 +335,7 @@
    "n": "메르헨트 퍼퓸 대용량 바디워시 피치블라썸 1L 2개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pjMK2rEz"
@@ -332,7 +344,7 @@
    "n": "케라시스 두피 비듬케어 딥클린 쿨링 단백질 샴푸 980ml 3개",
    "st": "hot",
    "tgt": "15,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/R9RN8pIs"
@@ -341,16 +353,16 @@
    "n": "메르헨트 딥 모이스춰 바세린 바디로션 1L 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/ZN6aKyFj"
   },
   {
    "n": "라오메뜨 전설의패치 레전드 준대형 40매 1개",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NRDtw5Go"
@@ -359,16 +371,25 @@
    "n": "크리스찬딘 포 옴므 오드퍼퓸 클린코튼 50ml 1개",
    "st": "hot",
    "tgt": "8,350원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XlrBxhrw"
   },
   {
+   "n": "누벨린 디펜턴 토탈 솔루션 앰플 세럼 30ml 1개",
+   "st": "hot",
+   "tgt": "8,900원",
+   "chk": "10/25 22시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/f8Qtk0b8"
+  },
+  {
    "n": "대용량 올인원 수면재생크림 잘때 꼭 바르는 크림 100g 1+1 구성 총 2개",
    "st": "hot",
    "tgt": "12,000원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BITSg0Uq"
@@ -377,7 +398,7 @@
    "n": "메르헨트 퍼퓸 대용량 바디워시 호텔 딥 우드 1L 2개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7jJ2tcLe"
@@ -386,7 +407,7 @@
    "n": "성분에디터 그린토마토 NMN 모공 앰플 40ml 1+1 구성 총 2개 + 빗거울 증정",
    "st": "hot",
    "tgt": "22,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XNW7urOo"
@@ -395,7 +416,7 @@
    "n": "케라시스 두피 쿨링 단백질 샴푸 지성 비듬 980ml 3개",
    "st": "hot",
    "tgt": "15,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rsRXujIo"
@@ -404,7 +425,7 @@
    "n": "메르헨트 퍼퓸 대용량 샴푸 호텔 딥 우드향 1L 2개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rZn0UVRa"
@@ -413,16 +434,16 @@
    "n": "크리스찬딘 포 옴므 오드퍼퓸 어반시크 50ml 1개",
    "st": "hot",
    "tgt": "8,350원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/lSPjcdR9"
   },
   {
    "n": "맥스 앤 맥스 전자레인지 라면 용기 아이보리 1L 1개 + 올리브그린 1L 1개 + 뚜껑 2개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZHIfeHVu"
@@ -431,16 +452,16 @@
    "n": "한예지 클린터치 위생백 중형 25x35cm 100매 3개",
    "st": "hot",
    "tgt": "6,100원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/xiR5Gx5g"
   },
   {
    "n": "노르디쿡 IH 무쇠팬 28cm 1개 + 뒤집개 1개 1세트",
    "st": "hot",
    "tgt": "17,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7bk4I4Ij"
@@ -449,25 +470,16 @@
    "n": "한예지 클린터치 위생장갑 고급형 200매 4팩",
    "st": "hot",
    "tgt": "12,600원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RfX6Fbq9"
   },
   {
-   "n": "스테인리스 주방칼 6종 블랙 1세트",
-   "st": "hot",
-   "tgt": "10,300원",
-   "chk": "10/24 22시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/HLl8CsOa"
-  },
-  {
    "n": "맥스앤맥스 퍼플톡톡 밀폐용기 20종세트 350mm 5개 450mm 5개 500ml 5개 600ml 5개 1세트",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/N2rTggai"
@@ -476,7 +488,7 @@
    "n": "베베앙 시그니처 물티슈 캡형 100매 20팩",
    "st": "hot",
    "tgt": "22,800원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/1JlVICjd"
@@ -485,7 +497,7 @@
    "n": "블루나 본 물티슈 오리지널 50gsm 100매 10팩",
    "st": "hot",
    "tgt": "9,990원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LBjmNV3h"
@@ -494,7 +506,7 @@
    "n": "순수공감 프라임 물티슈 캡형 70gsm 72매 10팩",
    "st": "hot",
    "tgt": "11,290원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TKujBXji"
@@ -503,7 +515,7 @@
    "n": "키린즈 키성장 영양제 40정 1개",
    "st": "hot",
    "tgt": "13,980원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rjapr7zo"
@@ -512,7 +524,7 @@
    "n": "베베쿡 사르르쿵 바나나 15g 3개 + 사르르쿵 딸기 15g 3개 + 꼬소미콘칩 구운옥수수맛 15g 3개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vJGz8JIu"
@@ -521,7 +533,7 @@
    "n": "맘앤블랑 해열쿨링시트 18매입 1개",
    "st": "hot",
    "tgt": "2,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZBIfriyD"
@@ -530,7 +542,7 @@
    "n": "퓨어스트 라이트 초순수 플레인 아기물티슈 캡형 100매 10팩",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jhMfaIze"
@@ -539,7 +551,7 @@
    "n": "블루나본 물티슈 프리미엄 엠보싱 75평량 70매 10팩",
    "st": "hot",
    "tgt": "12,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pQVOmBk8"
@@ -548,7 +560,7 @@
    "n": "순수공감 노블 물티슈 70매 20팩",
    "st": "hot",
    "tgt": "21,700원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XGpd4VJa"
@@ -557,124 +569,70 @@
    "n": "리벤스 시그니처 블랙라벨 물티슈 캡형 70매 10개",
    "st": "hot",
    "tgt": "13,700원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HEZvtWOk"
   },
   {
-   "n": "이롬 황성주박사의 과채습관 레드 140ml 24개",
+   "n": "14Brix 초고당도 제주 감귤 5kg 1박스",
    "st": "hot",
-   "tgt": "9,600원",
-   "chk": "10/25 0시",
+   "tgt": "9,900원",
+   "chk": "10/26 6시",
    "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/lIgqcUN5"
-  },
-  {
-   "n": "몸통만 자른 누드오징어 스틱 150g 4봉",
-   "st": "hot",
-   "tgt": "28,370원",
-   "chk": "10/25 0시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/nWJTepJd"
+   "last": "2026-10-26",
+   "url": "https://toss.shopping/_m/TNLhw821"
   },
   {
    "n": "풀무원 샘물 생수 무라벨 2L 12개",
    "st": "hot",
    "tgt": "6,380원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xzgYuOF5"
   },
   {
-   "n": "양계장사람들 난각번호2번 프리미엄 유정란 특대란 60구 1개",
-   "st": "hot",
-   "tgt": "19,900원",
-   "chk": "10/25 6시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/TV31SUrc"
-  },
-  {
    "n": "잘말려 단단한 최상급 무안 일반양파 소 5kg 1박스",
    "st": "hot",
    "tgt": "6,910원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/LwZyickc"
-  },
-  {
-   "n": "한우대학 한우잡육 1kg 1개",
-   "st": "hot",
-   "tgt": "19,120원",
-   "chk": "10/25 7시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/nJpQIQ2v"
   },
   {
    "n": "프로프룻 샤인머스켓 특품 2kg 1박스",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/9OG0zSVg"
   },
   {
    "n": "사운독스 노이즈 캔슬링 무선 이어폰 Y-07 화이트 1개",
    "st": "hot",
    "tgt": "16,900원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bpTdZCzy"
   },
   {
-   "n": "광천김 고소한 아몬드를 넣은 김자반 40g 10봉",
-   "st": "hot",
-   "tgt": "8,960원",
-   "chk": "10/25 7시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/JUFVHRlC"
-  },
-  {
-   "n": "신세계푸드 냉동 크로와상 생지 2.25kg 1개",
-   "st": "hot",
-   "tgt": "13,500원",
-   "chk": "10/25 7시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/r9kQwjKt"
-  },
-  {
    "n": "맛꾼 구운란 대란 30구 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/njTdAAK9"
   },
   {
-   "n": "여성 베어 니트 밴딩 삭스 골고루 10켤레",
-   "st": "hot",
-   "tgt": "8,900원",
-   "chk": "10/25 7시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/ncQUOf8h"
-  },
-  {
    "n": "씨없는 청도 반시 5kg 51-60과 1박스",
    "st": "hot",
    "tgt": "9,300원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7Irtes4l"
@@ -683,7 +641,7 @@
    "n": "HBAF 시즈닝 아몬드 허니버터 120g 1개 + 와사비 120g 1개 + 군옥수수 120g 1개 + 마늘빵 120g 1개 + 카라멜 120g 1개 1세트",
    "st": "hot",
    "tgt": "13,070원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/D6rxT5LD"
@@ -692,61 +650,34 @@
    "n": "프리미엄 C타입 오픈형 유선 이어폰 PR-ER100 화이트 1.2m 1개",
    "st": "hot",
    "tgt": "5,490원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lM0OpB5l"
   },
   {
-   "n": "텅스페이스 슈퍼포션 곤약쫀드기 25g 50봉",
-   "st": "hot",
-   "tgt": "11,140원",
-   "chk": "10/24 19시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/LBZCepH"
-  },
-  {
    "n": "가람상점 완숙 찰 토마토 못난이 주스용 랜덤과 5kg 1개",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5X2eU1C9"
   },
   {
-   "n": "센텔라시카 클렌징오일 200ml 1개",
-   "st": "hot",
-   "tgt": "10,990원",
-   "chk": "10/24 19시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/tZUISslc"
-  },
-  {
    "n": "마주 총각김치 2kg 1박스",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DvAyxrNe"
   },
   {
-   "n": "아삭하고 진한 감칠맛 알타리 김치 5kg 1박스",
-   "st": "hot",
-   "tgt": "25,160원",
-   "chk": "10/24 19시",
-   "stdy": true,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/nmNEyNbn"
-  },
-  {
    "n": "동원샘물 라벨 혼용 2L 12개",
    "st": "hot",
    "tgt": "6,960원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LD0ZD6Wq"
@@ -755,7 +686,7 @@
    "n": "동원샘물 생수 무라벨 2L 6병",
    "st": "hot",
    "tgt": "3,479원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XMFn0ic3"
@@ -764,7 +695,7 @@
    "n": "햇반 찰잡곡밥 210g 24개",
    "st": "hot",
    "tgt": "28,660원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vVDtq1eg"
@@ -773,7 +704,7 @@
    "n": "지티팜 무농약 샐러드 채소 모듬 랜덤 3종 1kg 1박스",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JwBQTyWl"
@@ -782,7 +713,7 @@
    "n": "에브리워터 무라벨 2L 6개",
    "st": "hot",
    "tgt": "3,449원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DoGh5CBo"
@@ -791,7 +722,7 @@
    "n": "아이앤어스 3스텝 캡슐 식기세척기 타블렛 세제 레몬향 50개입 500g 2개",
    "st": "hot",
    "tgt": "11,980원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZaicKhS5"
@@ -800,16 +731,16 @@
    "n": "가쯔 프리미엄 대용량 욕실청소 변기세정제 50g 40개 1박스",
    "st": "hot",
    "tgt": "6,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
-   "last": "2026-10-24",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/b45CMjxd"
   },
   {
    "n": "깨끗한나라 아껴쓰는 키친타월 140매 8롤 1팩",
    "st": "hot",
    "tgt": "7,140원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7IAWujC9"
@@ -818,7 +749,7 @@
    "n": "리퀴드 고농축 라벤더 세탁세제 2.5L 4개",
    "st": "hot",
    "tgt": "8,811원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HejclJhB"
@@ -827,16 +758,25 @@
    "n": "에브리워터 무라벨 2L 12개",
    "st": "hot",
    "tgt": "6,290원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VnmM3x7c"
   },
   {
+   "n": "유한메디카 고함량 마그네슘 엔 탑 400 맥스 90정 1개",
+   "st": "hot",
+   "tgt": "8,350원",
+   "chk": "10/25 20시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/zwkHcnN"
+  },
+  {
    "n": "에브리워터 무라벨 2L 18개",
    "st": "hot",
    "tgt": "8,990원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RmtpTs1g"
@@ -845,7 +785,7 @@
    "n": "하늘보리 500ml 20개",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/df6zGhBi"
@@ -854,7 +794,7 @@
    "n": "풀무원 생수 500ml 20개",
    "st": "hot",
    "tgt": "5,180원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jcOLMV6r"
@@ -863,7 +803,7 @@
    "n": "지도표성경김 재래 식탁김 4g 32봉",
    "st": "hot",
    "tgt": "11,990원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zlOvcOBt"
@@ -872,7 +812,7 @@
    "n": "비비고 깊은사골곰탕 500g 18봉",
    "st": "hot",
    "tgt": "20,660원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/j93A2UOu"
@@ -881,7 +821,7 @@
    "n": "리버티 입는오버나이트 4매 대형 5팩",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hOqEIjTp"
@@ -890,7 +830,7 @@
    "n": "켈로그 콘푸로스트 600g 1개 + 다크초코 550g 1개",
    "st": "hot",
    "tgt": "9,970원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hALiSZ0m"
@@ -899,7 +839,7 @@
    "n": "에그마을 난각번호 1번 유정란 20구 2판",
    "st": "hot",
    "tgt": "19,600원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/x5rhgZ3b"
@@ -908,7 +848,7 @@
    "n": "서울우유 멸균우유 1L 10개",
    "st": "hot",
    "tgt": "20,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Tb1EGFQo"
@@ -917,7 +857,7 @@
    "n": "소피아 하이웨스트 팬티 FREE 스킨 + 옐로우 + 핑크 + 그린 + 블루 + 오렌지 + 카키 + 라벤더 8개입 1세트",
    "st": "hot",
    "tgt": "14,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FIeGD6QD"
@@ -926,7 +866,7 @@
    "n": "여성 빠삐푸우 카바양말 골고루 FREE 10켤레",
    "st": "hot",
    "tgt": "10,602원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BF1HJe6v"
@@ -935,7 +875,7 @@
    "n": "팬톤 오픈형 블루투스 6.0 무선 이어폰 베이지 1개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TRwAKXR"
@@ -944,7 +884,7 @@
    "n": "휴스톰 이오닉 플라즈마 드라이기 BLDC-SB 베이지 1개",
    "st": "hot",
    "tgt": "29,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XWmyMYdi"
@@ -953,7 +893,7 @@
    "n": "서가 메탈 패브릭 고속 3in1 멀티충전 케이블 1.2m C타입 고속 8핀 5핀 블랙 2개",
    "st": "hot",
    "tgt": "5,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jdisUPBx"
@@ -962,7 +902,7 @@
    "n": "서가 메탈 고강도 60W PD CtoC타입 초고속 케이블 블랙 3m 2개",
    "st": "hot",
    "tgt": "7,500원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vjCtII92"
@@ -971,7 +911,7 @@
    "n": "팬택 파스텔 초고속 45W C to C 케이블 세트 3개입 색상 랜덤 2m 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ttMqpsdx"
@@ -980,7 +920,7 @@
    "n": "뷰카 센트 클래식 디퓨저 일랑일랑 510ml 2개",
    "st": "hot",
    "tgt": "16,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jMypgKD8"
@@ -989,7 +929,7 @@
    "n": "디포아 스포츠 헤어밴드 블랙 FREE 2개 + 그레이 FREE 2개 4개",
    "st": "hot",
    "tgt": "6,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dyAs6TEo"
@@ -998,7 +938,7 @@
    "n": "일감생활 인체공학 고탄력 슬개골 무릎보호대 FREE 2개",
    "st": "hot",
    "tgt": "12,582원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NbrcmNex"
@@ -1007,7 +947,7 @@
    "n": "이노셀러 오토워킹 프로싱글 만보기 레드 1개",
    "st": "hot",
    "tgt": "9,650원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Df5Jir8A"
@@ -1016,7 +956,7 @@
    "n": "글로파이 강아지 배변봉투 리필 생분해 케이스 300개입 1세트",
    "st": "hot",
    "tgt": "9,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bPQPwrAd"
@@ -1025,7 +965,7 @@
    "n": "유로블루플러스 차량용 요소수 국내산 AdBlue 호스 포함 10L 1개",
    "st": "hot",
    "tgt": "7,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rorlknJu"
@@ -1034,7 +974,7 @@
    "n": "유로플러스 요소수 디젤 경유 차량용 국내산 AdBlue 10L 1개",
    "st": "hot",
    "tgt": "7,600원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fLvFvphd"
@@ -1043,7 +983,7 @@
    "n": "유로플러스 요소수 10L 디젤 차량용 1개",
    "st": "hot",
    "tgt": "7,300원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XkuL4ySe"
@@ -1052,7 +992,7 @@
    "n": "메르헨트 어성초 히알루론산 폼클렌징 500ml 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/XvUN0ksC"
@@ -1061,25 +1001,16 @@
    "n": "아스파시아 콜라겐 립앤아이 리무버 100ml 5개",
    "st": "hot",
    "tgt": "8,000원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/xVpLsCZA"
   },
   {
-   "n": "에이지랩 달팽이 뮤신 올인원 크림 50g 2개",
-   "st": "hot",
-   "tgt": "17,900원",
-   "chk": "10/25 5시",
-   "stdy": false,
-   "last": "2026-10-11",
-   "url": "https://toss.shopping/_m/vukNaHN"
-  },
-  {
    "n": "한경희 2단 자동회전 나노 카본히터 Q2000",
    "st": "hot",
    "tgt": "39,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/ZWUTJwod"
@@ -1088,7 +1019,7 @@
    "n": "앙쥬 24K 골드 비비크림 50g 2개",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/LSBzPf3c"
@@ -1097,7 +1028,7 @@
    "n": "앙쥬 365 썬BB크림 50g 1+1",
    "st": "hot",
    "tgt": "9,890원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/jdJ90IlB"
@@ -1106,16 +1037,25 @@
    "n": "파스쿠치 쌩얼톤업 SUN 비비크림 50ml 1개",
    "st": "hot",
    "tgt": "4,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/HaRkzUu9"
   },
   {
+   "n": "커밍글 캔디팜므 노워시 트리트먼트 플로럴머스크 200ml",
+   "st": "hot",
+   "tgt": "9,900원",
+   "chk": "10/26 5시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/lmLcLKG"
+  },
+  {
    "n": "조선미녀 아쿠아 프레쉬 선크림 50ml + 증정 10ml 2개",
    "st": "hot",
    "tgt": "15,000원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/hZaelyZ6"
@@ -1124,16 +1064,25 @@
    "n": "에센허브 얼그레이 밀크 바디워시 500ml",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/3tf91Aj8"
   },
   {
+   "n": "한입과득 청송 홍로 사과 가정용 5kg",
+   "st": "hot",
+   "tgt": "15,900원",
+   "chk": "10/26 6시",
+   "stdy": false,
+   "last": "2026-10-13",
+   "url": "https://toss.shopping/_m/3N8mA8tj"
+  },
+  {
    "n": "글루타치온 핑크 톤업 쌩얼크림 50ml 1+1",
    "st": "hot",
    "tgt": "9,500원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/j0hK5Wo9"
@@ -1142,7 +1091,7 @@
    "n": "센텔리안24 마데카 크림 타이트 리프팅 50ml 2개",
    "st": "hot",
    "tgt": "16,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/t6Sgf3Bt"
@@ -1151,7 +1100,7 @@
    "n": "모노케어 3구개별 안전커버 멀티탭 화이트 3m 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/P5OgKrN5"
@@ -1160,7 +1109,7 @@
    "n": "화장품 멀티 정리대 화이트 25x16x11 2개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FI2HkrRA"
@@ -1169,7 +1118,7 @@
    "n": "코디 순수 3겹 데코 30m 30롤 3개",
    "st": "hot",
    "tgt": "32,850원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/t95ZXF2c"
@@ -1178,7 +1127,7 @@
    "n": "블루나 본 물티슈 퓨어 캡형 저자극 대용량 100매 10팩 1박스",
    "st": "hot",
    "tgt": "8,790원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-25",
    "url": "https://toss.shopping/_m/9LtUoqo7"
@@ -1187,7 +1136,7 @@
    "n": "베라 무해력 4ZERO 클래식 3겹 30롤 25m 1팩",
    "st": "hot",
    "tgt": "11,190원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/50oIwBYj"
@@ -1196,7 +1145,7 @@
    "n": "자동 변기세정제 맥스 320g 12개",
    "st": "hot",
    "tgt": "22,770원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xyxt3BTg"
@@ -1205,43 +1154,25 @@
    "n": "토브리빙 질레트 호환용 면도날 프로글라이드 5중 블랙 24개입 + 스윙면도기 1개",
    "st": "hot",
    "tgt": "16,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/j1fcSjci"
   },
   {
-   "n": "와이니즈 질레트 호환용 5중 면도날 면도기 세트 스윙면도기 1개 + 면도날 24개입 1세트",
-   "st": "hot",
-   "tgt": "15,900원",
-   "chk": "10/24 22시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/Lr4rkefm"
-  },
-  {
    "n": "리버티 입는오버나이트 4매 대형 6팩",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/poqMQDWl"
   },
   {
-   "n": "핫앤핫 핫팩 레드 10입 3팩",
-   "st": "hot",
-   "tgt": "10,600원",
-   "chk": "10/24 22시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/PPqbB471"
-  },
-  {
    "n": "깨끗한나라 아껴쓰는 키친타월 140매 8롤 2개",
    "st": "hot",
    "tgt": "12,830원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NRmD0x8s"
@@ -1250,7 +1181,7 @@
    "n": "이롬 황성주박사의 무가당 국내산 약콩 두유 190ml 16팩 4박스",
    "st": "hot",
    "tgt": "29,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JOboyH1w"
@@ -1259,7 +1190,7 @@
    "n": "맛꾼 메추리알 장조림 1kg 1개",
    "st": "hot",
    "tgt": "11,400원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/nUwYUkbC"
@@ -1268,7 +1199,7 @@
    "n": "신선하랑 냉동 삼겹살 1kg 1개",
    "st": "hot",
    "tgt": "12,300원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-25",
    "url": "https://toss.shopping/_m/3FywUdWA"
@@ -1277,25 +1208,16 @@
    "n": "제주 서귀포 감귤 12brix 초고당도 10kg 1박스",
    "st": "hot",
    "tgt": "24,500원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jyEMXvw4"
   },
   {
-   "n": "누벨린 디펜턴 토탈 솔루션 앰플 세럼 30ml 1개",
-   "st": "hot",
-   "tgt": "8,900원",
-   "chk": "10/24 22시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/f8Qtk0b8"
-  },
-  {
    "n": "아이리버 코털 제거기 IYN-100 블랙 1개",
    "st": "hot",
    "tgt": "8,600원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/D8pnVzxe"
@@ -1304,7 +1226,7 @@
    "n": "레이데이 판테놀 10,000ppm 마데카 재생 아이크림 40ml 4개",
    "st": "hot",
    "tgt": "12,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/v6yMuZDt"
@@ -1313,7 +1235,7 @@
    "n": "코드글로컬러 오일컷 팩트 1개",
    "st": "hot",
    "tgt": "4,200원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/d88FaVr8"
@@ -1322,7 +1244,7 @@
    "n": "메르헨트 퍼퓸 바디로션 베이비파우향 1000ml 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BK3O4de2"
@@ -1331,7 +1253,7 @@
    "n": "낫포유 남성용 발색립밤 압구정밤 코랄 4.8g 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HwtNevXt"
@@ -1340,16 +1262,16 @@
    "n": "메르헨트 퍼퓸 바디로션 호텔 딥 우드향 1000ml 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
-   "last": "2026-10-24",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/hIznHBd3"
   },
   {
    "n": "맥스앤맥스 이지밀 냉동밥&국 소분 밀폐용기 세트 아이보리 350ml 6개+ 올리브그린 700ml 4개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/PUBtA9vD"
@@ -1358,7 +1280,7 @@
    "n": "보들꽃 극세사 행주 24.5x24.5cm 20매 1개",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZHshWxF4"
@@ -1367,7 +1289,7 @@
    "n": "칼로라이트 전자레인지 소형 저당 밥솥 메탈 1개",
    "st": "hot",
    "tgt": "16,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pWYkWdte"
@@ -1376,7 +1298,7 @@
    "n": "맥스앤맥스 이지밀 혼합 식기세트 다이닝볼 4P+원형 핸들 플레이트 2P+사각 핸들 플레이트 2P 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TbjJQ9Ip"
@@ -1385,7 +1307,7 @@
    "n": "알뜰공식 프리미엄 니트릴 장갑 블랙 L 100매",
    "st": "hot",
    "tgt": "6,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fXZdYlEz"
@@ -1394,7 +1316,7 @@
    "n": "손목긴 니트릴장갑 중 블랙 100매 1개",
    "st": "hot",
    "tgt": "12,700원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FlL26wcC"
@@ -1403,7 +1325,7 @@
    "n": "레토 빨아쓰는 규조토 발매트 라이트그레이 60cm 1개",
    "st": "hot",
    "tgt": "6,200원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/D4R0yMDD"
@@ -1412,7 +1334,7 @@
    "n": "야무진살림 스텐304 양면도마 스텐+핑크 365x250x10mm 1개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fDwXmkq3"
@@ -1421,7 +1343,7 @@
    "n": "뽀로로 아연면역음료 딸기맛 100ml 10개",
    "st": "hot",
    "tgt": "4,400원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JP1fUZoy"
@@ -1430,7 +1352,7 @@
    "n": "한담컴퍼니 슬개골 무릎 보호대 블랙 2개",
    "st": "hot",
    "tgt": "8,320원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dBhJE757"
@@ -1439,7 +1361,7 @@
    "n": "블루나 본 물티슈 시그니처 캡형 엠보싱 도톰한 아기물티슈 70평량 70매 10팩 1박스",
    "st": "hot",
    "tgt": "11,070원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jl5xbMwt"
@@ -1448,7 +1370,7 @@
    "n": "베베쿡 양파콩콩+구운옥수수 5개+5개 1개",
    "st": "hot",
    "tgt": "6,990원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rSOyddFz"
@@ -1457,7 +1379,7 @@
    "n": "블루나 본 물티슈 캡형 50gsm 120매 10팩",
    "st": "hot",
    "tgt": "12,990원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xbtPyr52"
@@ -1466,7 +1388,7 @@
    "n": "리벤스 오리지널 플러스 대용량 엠보싱 캡형 물티슈 100매 20팩",
    "st": "hot",
    "tgt": "20,700원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LRa3DBqd"
@@ -1475,7 +1397,7 @@
    "n": "센토 주니어 세이프 구취케어 어린이 치약 사과향 120g 8개",
    "st": "hot",
    "tgt": "20,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hqshQcPf"
@@ -1484,7 +1406,7 @@
    "n": "굳드림 동결건조 딸기 100g 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xUttwwei"
@@ -1493,7 +1415,7 @@
    "n": "공중부양 무타공 물티슈 보관 케이스 투명 2개",
    "st": "hot",
    "tgt": "5,346원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DNNy28Jp"
@@ -1502,7 +1424,7 @@
    "n": "블루나 본 물티슈 오리지널 플러스 캡형 55gsm 100매 10팩",
    "st": "hot",
    "tgt": "12,990원",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/39a3dIas"
@@ -1511,7 +1433,7 @@
    "n": "바세린 인텐시브 케어 대용량 바디로션 1000ml 1+1 구성 총 2개",
    "st": "hot",
    "tgt": "11,580원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pj4Dh5vC"
@@ -1520,43 +1442,16 @@
    "n": "정성곳간 명인 강순의 국내산 도가니탕 800g 10개",
    "st": "hot",
    "tgt": "40,390원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BpRb77Hf"
   },
   {
-   "n": "세상편한 노와이어 시스루 브라탑 누드스킨 XL 1개 + 블랙 XL 1개 + 밀크브라운 XL 1개 3개",
-   "st": "hot",
-   "tgt": "24,335원",
-   "chk": "10/25 0시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/Vu8N0Zim"
-  },
-  {
-   "n": "응암동 착한 감자탕 5kg 1팩",
-   "st": "hot",
-   "tgt": "17,900원",
-   "chk": "10/25 0시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/lEaWZrJy"
-  },
-  {
-   "n": "14Brix 초고당도 제주 감귤 5kg 1박스",
-   "st": "hot",
-   "tgt": "9,900원",
-   "chk": "10/25 6시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/TNLhw821"
-  },
-  {
    "n": "대봉감 27과 내외 5kg 1박스",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3tFl4qG"
@@ -1565,25 +1460,16 @@
    "n": "동원 덴마크 후레쉬 리코타 치즈 150g 5개",
    "st": "hot",
    "tgt": "14,100원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fNJW4GEa"
   },
   {
-   "n": "광천김 3대째 달인 재래 전장김 두번구워바삭한 20g 10개",
-   "st": "hot",
-   "tgt": "10,480원",
-   "chk": "10/25 6시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/RJWdmz5c"
-  },
-  {
    "n": "오레오 대용량 300g 1개",
    "st": "hot",
    "tgt": "5,500원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JSwOck5h"
@@ -1592,34 +1478,16 @@
    "n": "제티 초코 17g 20개입 1개",
    "st": "hot",
    "tgt": "5,500원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VoziGaJt"
   },
   {
-   "n": "디벨라 토마토퓨레 루스티카 680g 4개",
-   "st": "hot",
-   "tgt": "11,930원",
-   "chk": "10/25 6시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/ZUPE53ew"
-  },
-  {
-   "n": "곰표 부침가루 2kg 1개 + 튀김가루 2kg 1개 + 밀가루 1kg 2개 1세트",
-   "st": "hot",
-   "tgt": "8,600원",
-   "chk": "10/25 6시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/PtglYHEz"
-  },
-  {
    "n": "14Brix 초고당도 제주 감귤 10kg 1박스",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TcuPIHk2"
@@ -1628,34 +1496,16 @@
    "n": "씨없는 청도반시 홍시 56-65과 5kg 1박스",
    "st": "hot",
    "tgt": "9,800원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JLGGkPUj"
   },
   {
-   "n": "대한민국농수산 뼈없는 한돈 양념갈비 300g 6팩",
-   "st": "hot",
-   "tgt": "27,500원",
-   "chk": "10/25 7시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/FfPYX9Ga"
-  },
-  {
-   "n": "꼬리빗 랜덤 1개",
-   "st": "hot",
-   "tgt": "800원",
-   "chk": "10/25 7시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/D96aTY3q"
-  },
-  {
    "n": "자이글 블룸 에그팬 2구 34.3x24.8cm 1개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bOdGlNYu"
@@ -1664,313 +1514,79 @@
    "n": "한가득 소고기 한판 세트 살치 200g + 갈비 200g + 등심 300g + 우삼겹 300g 1kg 1개",
    "st": "hot",
    "tgt": "29,900원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Zo8s4Kan"
   },
   {
-   "n": "팜보스 씨없는 청도 햇 반시 30과 이상 2.5kg 1박스",
-   "st": "hot",
-   "tgt": "7,400원",
-   "chk": "10/25 7시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/fppsleK"
-  },
-  {
-   "n": "원목 손가락 마사지기 오트그레이 2개",
-   "st": "hot",
-   "tgt": "6,870원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/1ysPcOG5"
-  },
-  {
-   "n": "오즈랜드 우도 땅콩로쉐 오리지널 210g 1개 + 초코 210g 1개",
-   "st": "hot",
-   "tgt": "13,280원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/1DSYIZVb"
-  },
-  {
-   "n": "프룻프룻 건조 능이버섯 100g 1개",
-   "st": "hot",
-   "tgt": "16,020원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/5oMH5yun"
-  },
-  {
-   "n": "두피 마사지 샤워기 헤드 본품 1개 + 추가 필터 5개",
-   "st": "hot",
-   "tgt": "6,500원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/z5D7YcVq"
-  },
-  {
    "n": "고궁 통들깨 들기름 100퍼센트 350ml 4개",
    "st": "hot",
    "tgt": "22,630원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/55ZCVAew"
   },
   {
-   "n": "덴마크 테이크얼라이브 머스캣청포도+스위티자몽 120ml 48개",
-   "st": "hot",
-   "tgt": "12,000원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/jrOeYvLy"
-  },
-  {
-   "n": "웰쉐프 바베큐통훈제삼겹 200g 6개",
-   "st": "hot",
-   "tgt": "23,400원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/twh77dJD"
-  },
-  {
    "n": "무색소 저염 백명란젓 파지 400g 2개",
    "st": "hot",
    "tgt": "17,140원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dLv7Egl2"
   },
   {
-   "n": "심리스 팬티 심플 무봉제 라인 XL 스킨 3개 + 블랙 3개 6개",
-   "st": "hot",
-   "tgt": "8,436원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/5tEnBo2b"
-  },
-  {
-   "n": "키친플라워 테티 전기포트 KEK-DJ124 아이보리 1.2L 1개",
-   "st": "hot",
-   "tgt": "19,900원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/9jPBxrGf"
-  },
-  {
-   "n": "스카이 보조배터리 SKY-PD30 30000mAh 잔량표시 블랙 1개",
-   "st": "hot",
-   "tgt": "20,290원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/J6h6oVAj"
-  },
-  {
-   "n": "맘스케이크 플랫파운드 혼합 50g 60개",
-   "st": "hot",
-   "tgt": "24,900원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/d08FiEzn"
-  },
-  {
-   "n": "남성 몸빼 긴 바지 FREE 1세트",
-   "st": "hot",
-   "tgt": "8,810원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/VrTNkSJt"
-  },
-  {
    "n": "예스플러스 맥시 여성팬티 혼합 105 5매입 2박스",
    "st": "hot",
    "tgt": "12,710원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/PppQx6Vv"
   },
   {
-   "n": "베네베딩 포그리 밴드형 베개커버 베이비블루 50x70cm 2장",
+   "n": "프리미엄 스퀘어 자석버클 쁘띠 스카프 A세트 FREE 4장 1세트",
    "st": "hot",
-   "tgt": "9,300원",
-   "chk": "10/24 19시",
+   "tgt": "11,183원",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/54PUT8zx"
-  },
-  {
-   "n": "도무스 에어 글라스 오븐 올인원 바스켓 2종 블랙 1세트",
-   "st": "hot",
-   "tgt": "60,640원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/tFktx71A"
-  },
-  {
-   "n": "아이엠듀 차량용 디퓨저 일랑일랑 200ml 2개",
-   "st": "hot",
-   "tgt": "9,600원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/ZGxX9N06"
-  },
-  {
-   "n": "아이워너 맨즈 육각 아령 10kg 2개입 1세트",
-   "st": "hot",
-   "tgt": "17,382원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/LLCdF2Q9"
-  },
-  {
-   "n": "서가 PD 초고속 충전 케이블 C to 라이트닝 8핀 화이트 1m 2개",
-   "st": "hot",
-   "tgt": "3,140원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/xjj9OEkh"
-  },
-  {
-   "n": "고깃집왕건 간장 제육 불고기 1kg 1개",
-   "st": "hot",
-   "tgt": "11,390원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/pjQcyokm"
-  },
-  {
-   "n": "알파CD 레몬컷 120정 6개",
-   "st": "hot",
-   "tgt": "33,320원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/1hopOhQp"
-  },
-  {
-   "n": "끄란느 14K GF 심플 별 모티브 원터치 귀걸이 C24EGF192 로즈골드 1개",
-   "st": "hot",
-   "tgt": "16,970원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/tBDxds5w"
-  },
-  {
-   "n": "파인밀 당일 수확 GAP인증 유러피안 샐러드 모듬쌈채소 1kg 1박스",
-   "st": "hot",
-   "tgt": "8,315원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/bzYdOBjB"
+   "url": "https://toss.shopping/_m/RS54skWb"
   },
   {
    "n": "지민푸드 국내산 앞다리 왕족발 전족 1.4kg 1개",
    "st": "hot",
    "tgt": "15,340원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Dbeged11"
   },
   {
-   "n": "포스파티딜세린 징코 PS 60캡슐 4박스",
-   "st": "hot",
-   "tgt": "55,300원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/TP0Hxb72"
-  },
-  {
-   "n": "디센느 무선 칫솔 살균기 DSTS002 내츄럴티타늄 1개",
-   "st": "hot",
-   "tgt": "22,800원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/95KQpxL4"
-  },
-  {
    "n": "키친플라워 그린애플 인덕션 후라이팬 냄비 5종 1세트",
    "st": "hot",
    "tgt": "61,630원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jLX0XkH5"
   },
   {
-   "n": "마농 워치 동시충전 맥세이프 보조배터리 WH-DOC 화이트 1개",
-   "st": "hot",
-   "tgt": "17,515원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/VOHBw3Ne"
-  },
-  {
-   "n": "유한메디카 온가족 멀티비타민 미네랄 엔 탑 원데이 케어 90정 4개",
-   "st": "hot",
-   "tgt": "31,300원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/7Rzphv2g"
-  },
-  {
    "n": "순 프리미엄 깍두기 3kg 1개",
    "st": "hot",
    "tgt": "12,420원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BvY05Dfm"
   },
   {
-   "n": "왕의떡 프리미엄 고급떡 진 선물세트 1.4kg 1세트",
-   "st": "hot",
-   "tgt": "18,580원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/TqMSd1An"
-  },
-  {
-   "n": "유한메디카 두뇌 엔 탑 PS 포스파티딜세린 인지력 케어 1000mg 60정 6개",
-   "st": "hot",
-   "tgt": "57,060원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/PparET4q"
-  },
-  {
    "n": "더마올로지 딥 모이스처 바디로션 1L 1+1+1 구성 총 3개",
    "st": "hot",
    "tgt": "19,590원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/voDUCJ1v"
@@ -1979,7 +1595,7 @@
    "n": "헬로바이오 루테인지아잔틴 미니 30캡슐 12박스",
    "st": "hot",
    "tgt": "38,600원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Tbj0szux"
@@ -1988,7 +1604,7 @@
    "n": "메르헨트 코코넛 오일 딥클렌징 샴푸 베이비파우더 1.5L 3개",
    "st": "hot",
    "tgt": "19,600원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DVixsu1A"
@@ -1997,7 +1613,7 @@
    "n": "세상편한 노와이어 시스루 브라탑 누드스킨 L 1개 + 블랙 L 1개 + 밀크 브라운 L 1개 3개",
    "st": "hot",
    "tgt": "24,823원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jzY2yNLD"
@@ -2006,115 +1622,34 @@
    "n": "바세린 인텐시브 케어 바디로션 1000ml 4개",
    "st": "hot",
    "tgt": "21,380원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3WlzKiw3"
   },
   {
-   "n": "뉴클 8.9 울트라슬림 맥세이프 반고체 보조배터리 4500mAh 미드나잇 메탈 1개",
-   "st": "hot",
-   "tgt": "17,630원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/f67Vdyl7"
-  },
-  {
-   "n": "백년본가 참기름 350ml 4개",
-   "st": "hot",
-   "tgt": "21,600원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/9fTMopc8"
-  },
-  {
-   "n": "콕스 CH7 초경량 가상7.1 LED 게이밍 헤드셋 블랙 1개",
-   "st": "hot",
-   "tgt": "15,160원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/PsUs29ih"
-  },
-  {
    "n": "가람상점 완숙 찰 토마토 못난이 주스용 랜덤과 2.5kg 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xmjdbQfm"
   },
   {
-   "n": "BENAF 그레이스 페이크 셔츠 조끼 그레이 FFF 1개",
-   "st": "hot",
-   "tgt": "18,580원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/zHaoBIKo"
-  },
-  {
-   "n": "하트 데이지 선풍기 커버 60x145cm 스카이 4개",
-   "st": "hot",
-   "tgt": "6,720원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/jBpD9Oqt"
-  },
-  {
-   "n": "홍찰옥수수 특대 30개",
-   "st": "hot",
-   "tgt": "21,485원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/Rot9Zz5B"
-  },
-  {
    "n": "코리아나 궁설연 고보습 스킨케어 세트 스킨 2개 + 로션 1개 1세트",
    "st": "hot",
    "tgt": "21,000원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hPxoDx61"
   },
   {
-   "n": "국내산 꽃상추 2kg 내외 1개",
-   "st": "hot",
-   "tgt": "6,400원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/rN3J7gs4"
-  },
-  {
-   "n": "불스원 불스원샷 7만키로 디젤/경유 3개",
-   "st": "hot",
-   "tgt": "35,790원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/v4pL8Jl7"
-  },
-  {
-   "n": "후르츠브레드 80g 32개",
-   "st": "hot",
-   "tgt": "24,080원",
-   "chk": "10/24 19시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/T8FEN3ci"
-  },
-  {
    "n": "국내산 고당도 시나노골드 사과 5kg 1박스",
    "st": "hot",
    "tgt": "13,600원",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Dv6S1nKy"
@@ -2123,7 +1658,7 @@
    "n": "가쯔 오래쓰는 자동 변기세정제 260g 4개",
    "st": "hot",
    "tgt": "7,600원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3mMQEQHo"
@@ -2132,7 +1667,7 @@
    "n": "국내산 제주 구좌 햇 흙당근 중 3kg 1개",
    "st": "hot",
    "tgt": "7,960원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xO8Pt1d3"
@@ -2141,7 +1676,7 @@
    "n": "현대농산 렌틸콩 귀리 혼합 20곡 잡곡밥 5kg 1개",
    "st": "hot",
    "tgt": "9,100원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TsJUxl3b"
@@ -2150,7 +1685,7 @@
    "n": "페페 슬픈 개구리 안대 수면 세안 밴드 1개",
    "st": "hot",
    "tgt": "5,490원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HV9KwNP"
@@ -2159,7 +1694,7 @@
    "n": "ONLK 자력 강화 맥세이프 카드지갑 블랙 1개",
    "st": "hot",
    "tgt": "5,900원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/PqKkgWls"
@@ -2168,7 +1703,7 @@
    "n": "현대농산 국내산 찰흑미 검정쌀 5kg 1개",
    "st": "hot",
    "tgt": "15,200원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/H128ryQz"
@@ -2177,7 +1712,7 @@
    "n": "이노이 단백질 쉐이커 블랙 600ml 1개",
    "st": "hot",
    "tgt": "6,336원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LBXzX241"
@@ -2186,7 +1721,7 @@
    "n": "에이팔란스 단락방지 패브릭 C to C 초고속 충전 데이터 케이블 다크그레이 1.5m 2개",
    "st": "hot",
    "tgt": "4,800원",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bUpUk4Cj"
@@ -2195,7 +1730,7 @@
    "n": "HACCP인증 국내산 맥반석 구운계란 중란 30개 1박스",
    "st": "hot",
    "tgt": "9,350원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/l7jDp0qy"
@@ -2204,25 +1739,16 @@
    "n": "전라도 알타리 총각김치 3kg 1개",
    "st": "hot",
    "tgt": "14,950원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ziDsHBvs"
   },
   {
-   "n": "유한메디카 고함량 마그네슘 엔 탑 400 맥스 90정 1개",
-   "st": "hot",
-   "tgt": "8,350원",
-   "chk": "10/24 20시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/zwkHcnN"
-  },
-  {
    "n": "아쿠아시스 생수 무라벨 2L 12개",
    "st": "hot",
    "tgt": "6,180원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HGqzqE6b"
@@ -2231,7 +1757,7 @@
    "n": "도톰 쿠션양말 중목 블랙 5개 + 화이트 5개 10개",
    "st": "hot",
    "tgt": "12,255원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LNtAlG7c"
@@ -2240,7 +1766,7 @@
    "n": "집밥앤 광천김 4g 64봉",
    "st": "hot",
    "tgt": "17,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/nJkghKRk"
@@ -2249,7 +1775,7 @@
    "n": "해남 꿀고구마 베니하루카고구마 왕 5kg 1개",
    "st": "hot",
    "tgt": "11,520원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FcP9jHEu"
@@ -2258,7 +1784,7 @@
    "n": "가쯔 검정 집게 바지걸이 블랙 20개",
    "st": "hot",
    "tgt": "6,500원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jezOmMM4"
@@ -2267,7 +1793,7 @@
    "n": "숨 베이직 키친타월 2겹 100매 6롤 2팩",
    "st": "hot",
    "tgt": "7,999원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TwJ1Ja87"
@@ -2276,7 +1802,7 @@
    "n": "심리스 팬티 코튼 면 팬티 5종 XL",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dO2TiLBd"
@@ -2285,7 +1811,7 @@
    "n": "모디스 45W GaN PD PPS 1포트 초고속충전기 CtoC 1.5m 케이블 포함 화이트 1개",
    "st": "hot",
    "tgt": "7,800원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3mnNQBse"
@@ -2294,25 +1820,16 @@
    "n": "오뚜기 맛있는 오뚜기밥 흰밥 210g 24개",
    "st": "hot",
    "tgt": "24,210원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/PgLsqE7h"
   },
   {
-   "n": "아이엠듀 차량용 디퓨저 블랙체리 200ml 2개",
-   "st": "hot",
-   "tgt": "9,900원",
-   "chk": "10/24 20시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/tXEVBMHk"
-  },
-  {
    "n": "발이 편한 카바 밴딩 중목 양말 남성용 화이트 20켤레",
    "st": "hot",
    "tgt": "9,700원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7ypInC7m"
@@ -2321,7 +1838,7 @@
    "n": "르까프 아우터 후드 방풍 자켓 여성 로즈 100 1개",
    "st": "hot",
    "tgt": "18,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lhb3cuCo"
@@ -2330,7 +1847,7 @@
    "n": "여성용 프리미엄 4계절 무지 중목 양말 색상혼합 10켤레",
    "st": "hot",
    "tgt": "8,610원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NfOyXN82"
@@ -2339,7 +1856,7 @@
    "n": "자동 가죽 벨트 삼선 FREE 1개",
    "st": "hot",
    "tgt": "5,374원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HYBBIx87"
@@ -2348,7 +1865,7 @@
    "n": "여성용 코듀로이 골지 밴딩 팬츠 블랙 FREE 1개",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Jgfr8qD9"
@@ -2357,7 +1874,7 @@
    "n": "하니모아 여성 소가죽 캐주얼 정장 슬림 벨트 블랙+브라운 100cm 1개",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Teurhxjh"
@@ -2366,7 +1883,7 @@
    "n": "남성 겨울 배색 라인 파일 중목 양말 골고루(색상랜덤) FREE 7켤레 1세트",
    "st": "hot",
    "tgt": "9,700원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vxPTDTCj"
@@ -2375,7 +1892,7 @@
    "n": "프리미엄 오토락 남성 가죽 벨트 기본블랙 1개 + 삼선블랙 1개 2개",
    "st": "hot",
    "tgt": "7,480원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/x1Sjvx1q"
@@ -2384,7 +1901,7 @@
    "n": "실리콘 안경 케이스 딥그린 17x8cm 1개",
    "st": "hot",
    "tgt": "5,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/j8oMILcs"
@@ -2393,7 +1910,7 @@
    "n": "제이킨 고급스카프 세트 아이보리H 1개 + 크림플라워 1개 + 홀스베이지 1개 + 블랙기하학 1개 4개",
    "st": "hot",
    "tgt": "9,400원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/tnY32WxC"
@@ -2402,7 +1919,7 @@
    "n": "허블리 브이넥 반버튼 니트조끼 블랙 FREE 1개",
    "st": "hot",
    "tgt": "12,125원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/v778XW71"
@@ -2411,7 +1928,7 @@
    "n": "허블리 베이직 기모 라운드 티셔츠 화이트 S/M 1장 + 블랙 S/M 1장 2장",
    "st": "hot",
    "tgt": "13,500원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fdC4Hek7"
@@ -2420,7 +1937,7 @@
    "n": "메리플라워 여성 중목 양말 5종 FREE 10켤레",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TKrACZd8"
@@ -2429,7 +1946,7 @@
    "n": "특허 이중잠금 심플 덧신 페이크삭스 양말 그레이 여성 10켤레",
    "st": "hot",
    "tgt": "10,700원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/f3P9Anxd"
@@ -2438,7 +1955,7 @@
    "n": "프리미엄 C타입 오픈형 유선 이어폰 PR-ER100 블랙 1.2m 1개",
    "st": "hot",
    "tgt": "5,490원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/R7d157My"
@@ -2447,7 +1964,7 @@
    "n": "휴플러스 무선 온열 눈마사지기 화이트 1개",
    "st": "hot",
    "tgt": "29,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bizGEYsd"
@@ -2456,16 +1973,16 @@
    "n": "팬톤 25W GaN 듀얼포트 PPS 초고속 PD 충전기 RCE-2521ACLKR 그레이 2개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/BgBJgrwC"
   },
   {
    "n": "서가 메탈 고속충전 케이블 C타입 블루 3m 2개",
    "st": "hot",
    "tgt": "5,500원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VCYo7Yih"
@@ -2474,7 +1991,7 @@
    "n": "서가 25W PD3.0 PPS 2포트 멀티 초고속 충전기 SG-PDC2500A 블랙 1개 + 60W PD CtoC 고급형 케이블 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9CGoS5D8"
@@ -2483,7 +2000,7 @@
    "n": "필립스 슬림 보조배터리 DLP1812PB 10000mAh PD 20W 블랙 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/tF2CKoO9"
@@ -2492,7 +2009,7 @@
    "n": "서가 커널형 유선 이어폰 C타입 SG-EA200 갤럭시 아이폰 호환 블랙 1개",
    "st": "hot",
    "tgt": "5,400원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5SYAiBDj"
@@ -2501,7 +2018,7 @@
    "n": "오퓨리엠 테이블 미스트 가습기용 필터 1개",
    "st": "hot",
    "tgt": "1,000원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TUcudkCn"
@@ -2510,7 +2027,7 @@
    "n": "스카이케어 초음파 미니 가습기 MH10 C타입 화이트 1개 + 블랙 1개 2개",
    "st": "hot",
    "tgt": "9,990원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RXdKNMSp"
@@ -2519,7 +2036,7 @@
    "n": "하마다 USB C타입 메탈 충전 케이블 5개입 1.5m 혼합 1세트",
    "st": "hot",
    "tgt": "6,180원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/teFnV09d"
@@ -2528,7 +2045,7 @@
    "n": "이어맥 팬톤 커널형 블루투스 이어폰 TWS PTBT-300 블랙 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Z0ug25MD"
@@ -2537,7 +2054,7 @@
    "n": "클라메딕 스킨온 뷰티디바이스 KOR-SKO2701W 화이트 1개",
    "st": "hot",
    "tgt": "22,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DB8GZ0T4"
@@ -2546,7 +2063,7 @@
    "n": "딸깍 1초 옷수선 미니 스티치건 ST01 바이올렛 화이트 2개",
    "st": "hot",
    "tgt": "14,100원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/V8XctJe8"
@@ -2555,7 +2072,7 @@
    "n": "눈누 계란 2단 찜기 DSSM-01Y 옐로우 1개",
    "st": "hot",
    "tgt": "8,300원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rys46g3b"
@@ -2564,7 +2081,7 @@
    "n": "펩시 울트라 터보 미니 휴대용 손선풍기 PEP-HF101T 화이트 DIY스티커+전용파우치 포함 1개",
    "st": "hot",
    "tgt": "23,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ztdfF6nm"
@@ -2573,7 +2090,7 @@
    "n": "타이탄 미니 보조배터리 5000mAh 8핀 블루베리밀크 1개",
    "st": "hot",
    "tgt": "5,700원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rku0UZSp"
@@ -2582,7 +2099,7 @@
    "n": "서가 갤럭시 아이폰 호환 유선 이어폰 C타입 오픈형 화이트",
    "st": "hot",
    "tgt": "4,935원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/X9K93POt"
@@ -2591,7 +2108,7 @@
    "n": "팬택 듀얼 C타입 2in1 도킹형 보조배터리 USR-BATS5000 5000mAh 화이트 1개",
    "st": "hot",
    "tgt": "14,200원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xiRXtHjw"
@@ -2600,7 +2117,7 @@
    "n": "눈썹 제모기 화이트 1개",
    "st": "hot",
    "tgt": "5,900원",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vFJYzvSz"
@@ -2609,7 +2126,7 @@
    "n": "디센느 LED 스탠드 무선 미니가습기 무드등 DSHU001 딥브라운 1개",
    "st": "hot",
    "tgt": "6,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Dg40lX7B"
@@ -2618,7 +2135,7 @@
    "n": "센토 인텐스 디퓨저 일랑일랑 550ml 2개",
    "st": "hot",
    "tgt": "19,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HeGO9NE4"
@@ -2627,7 +2144,7 @@
    "n": "올인원 쿠션 망토담요 블루 130x80cm 1개",
    "st": "hot",
    "tgt": "7,950원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Tl7l5Jwx"
@@ -2636,7 +2153,7 @@
    "n": "뭄칫 바이오톡스 디퓨저 블루밍부케 200ml 2개입 1개",
    "st": "hot",
    "tgt": "8,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HT3Puo8b"
@@ -2645,7 +2162,7 @@
    "n": "옆트임 요술바늘 12개입 5세트",
    "st": "hot",
    "tgt": "5,325원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/trRtJhEe"
@@ -2654,7 +2171,7 @@
    "n": "센토 인텐스 대용량 디퓨저 선물세트 호텔우드 550ml 3개 1세트",
    "st": "hot",
    "tgt": "25,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/J7S6krSj"
@@ -2663,7 +2180,7 @@
    "n": "마더스홈 매일 빨아쓰는 피그먼트 순면 베개커버 밴드형 차콜 50x70cm 2개",
    "st": "hot",
    "tgt": "13,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LLmJftTk"
@@ -2672,7 +2189,7 @@
    "n": "선풍기 커버 대형 블루 2개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Husdsoim"
@@ -2681,7 +2198,7 @@
    "n": "뉴포츠 쿨링 냉감 아이스 베개커버 핑크 45x70cm 2개",
    "st": "hot",
    "tgt": "7,300원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FZC4LE8r"
@@ -2690,7 +2207,7 @@
    "n": "베네베딩 알러지 케어 리버서블 차렵이불 다크그레이 SS 1개",
    "st": "hot",
    "tgt": "19,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pERqlwCs"
@@ -2699,7 +2216,7 @@
    "n": "베네베딩 극세사 발열 리버서블 차렵이불 다크그레이 SS 1개",
    "st": "hot",
    "tgt": "43,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bV25QwIz"
@@ -2708,7 +2225,7 @@
    "n": "km 극세사 담요 150x200cm 블루스타 1장",
    "st": "hot",
    "tgt": "10,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/j2W48uMD"
@@ -2717,7 +2234,7 @@
    "n": "LED 터치등 5개",
    "st": "hot",
    "tgt": "6,935원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/htXvP7a2"
@@ -2726,7 +2243,7 @@
    "n": "루엘디 대용량 디퓨저 플라워 가든 500ml 3개",
    "st": "hot",
    "tgt": "17,622원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DCPRHtO4"
@@ -2735,7 +2252,7 @@
    "n": "네모라인 모던 등받이 침대 헤드 쿠션 커버 모던 그레이 50x110cm 1개",
    "st": "hot",
    "tgt": "9,870원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/j5jKUHZ6"
@@ -2744,7 +2261,7 @@
    "n": "가쯔 로이드 이동식 트롤리 틈새 수납장 그레이쉬베이지 3단 1개",
    "st": "hot",
    "tgt": "11,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xFgmqTed"
@@ -2753,7 +2270,7 @@
    "n": "무손상 바지밑단 줄이기 클립 투명 10개입 1개",
    "st": "hot",
    "tgt": "5,640원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Fyfcqm8g"
@@ -2762,7 +2279,7 @@
    "n": "침대시트 고정 밴드 일자형 화이트 4개",
    "st": "hot",
    "tgt": "4,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3UXUO4An"
@@ -2771,7 +2288,7 @@
    "n": "친환경 무공해 분갈이 인공 토양 20L 1세트",
    "st": "hot",
    "tgt": "7,850원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/V3vCAOzs"
@@ -2780,7 +2297,7 @@
    "n": "오렌지쟈스민 실내공기정화식물 모종 소 1개",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5x1gCB8w"
@@ -2789,7 +2306,7 @@
    "n": "생활픽 프리미엄 다용도 발매트 2종세트 60x40cm 1세트",
    "st": "hot",
    "tgt": "9,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pbafbjzC"
@@ -2798,7 +2315,7 @@
    "n": "프로스펙스 액티브 슬개골 보호대 블랙 1개",
    "st": "hot",
    "tgt": "10,088원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rpNR7ujm"
@@ -2807,7 +2324,7 @@
    "n": "흉곽 호흡기 횡경막 폐활량 운동기구 흉곽호흡기",
    "st": "hot",
    "tgt": "7,731원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lxUKU8Qt"
@@ -2816,7 +2333,7 @@
    "n": "굽은등 목 허리 스트레칭 기구 랜덤색상 1개",
    "st": "hot",
    "tgt": "5,200원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XIoOp2lw"
@@ -2825,7 +2342,7 @@
    "n": "포근한 쑥 온기 한방 무릎보호대 XL 웜 그레이 1쌍",
    "st": "hot",
    "tgt": "9,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RkIbMFJz"
@@ -2834,7 +2351,7 @@
    "n": "레토 푸쉬업바 팔굽혀펴기 기구 LPB-H04블랙 2개입 1개",
    "st": "hot",
    "tgt": "6,300원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lBhnKLm2"
@@ -2843,7 +2360,7 @@
    "n": "라라애플 NBR 요가매트 옥스포드 블루 1830x610x10mm 1개",
    "st": "hot",
    "tgt": "9,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fCB2Q476"
@@ -2852,7 +2369,7 @@
    "n": "도톰 쿠션양말 중목 화이트 10개",
    "st": "hot",
    "tgt": "12,255원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VdY67Hv9"
@@ -2861,7 +2378,7 @@
    "n": "어깨스트레칭 라운드숄더 십자봉 그레이 1개",
    "st": "hot",
    "tgt": "6,890원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3aJOvRKf"
@@ -2870,7 +2387,7 @@
    "n": "아이워너 맨즈 육각 아령 7kg 2개입 1세트",
    "st": "hot",
    "tgt": "14,938원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HQdwHUpi"
@@ -2879,7 +2396,7 @@
    "n": "가정 실내용 풀업바 운동기구 단일상품",
    "st": "hot",
    "tgt": "10,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/X300CDom"
@@ -2888,7 +2405,7 @@
    "n": "아이워너 이중 슬개건 무릎 보호대 세트 블랙 2개입 1세트",
    "st": "hot",
    "tgt": "13,483원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Ng2dV26q"
@@ -2897,7 +2414,7 @@
    "n": "DEXTEX 의료용 무릎보호대 블랙 FREE 1개입 2개",
    "st": "hot",
    "tgt": "17,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VBfgMfTt"
@@ -2906,7 +2423,7 @@
    "n": "브메르 인체공학 에어핏 무릎보호대 블랙 L 2개",
    "st": "hot",
    "tgt": "18,600원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TxDsObjw"
@@ -2915,7 +2432,7 @@
    "n": "도톰 쿠션양말 단목 화이트 10개",
    "st": "hot",
    "tgt": "9,025원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TmlqhZkB"
@@ -2924,7 +2441,7 @@
    "n": "프로스펙스 파텔라 무릎 보호대 블랙 L/XL 2개",
    "st": "hot",
    "tgt": "24,056원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xAJKtu51"
@@ -2933,7 +2450,7 @@
    "n": "아리프 NBR 쿠션 요가 매트 러블리핑크 183x61cm 13mm 1개",
    "st": "hot",
    "tgt": "10,573원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dxT0SYm2"
@@ -2942,7 +2459,7 @@
    "n": "프로스펙스 멀티 짐볼 티타늄그레이 65cm 1개",
    "st": "hot",
    "tgt": "20,176원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/thNtWh76"
@@ -2951,7 +2468,7 @@
    "n": "미스터추추 데일리 배변패드 라벤더향 절약형 100매 1팩",
    "st": "hot",
    "tgt": "6,700원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VaOq8pEs"
@@ -2960,7 +2477,7 @@
    "n": "라피끄 강아지 유산균 품은 져키 연어 1kg 1개",
    "st": "hot",
    "tgt": "13,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zoSssOlw"
@@ -2969,7 +2486,7 @@
    "n": "하림펫푸드 밥이보약 활기찬 노후 도그(강아지용) 3.4kg 1개",
    "st": "hot",
    "tgt": "39,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Pqrsiwbc"
@@ -2978,7 +2495,7 @@
    "n": "누터스가든 브러싱츄 강아지덴탈껌 고구마 800g 100개입 1개",
    "st": "hot",
    "tgt": "26,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JoH65Iph"
@@ -2987,7 +2504,7 @@
    "n": "깎지 않는 무한연필 펜 6P 세트 색상랜덤 1개",
    "st": "hot",
    "tgt": "5,580원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZKB0FPUz"
@@ -2996,7 +2513,7 @@
    "n": "애니메이션 방수 스티커 치이카와 50장 1개",
    "st": "hot",
    "tgt": "7,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/33sqybzC"
@@ -3005,7 +2522,7 @@
    "n": "유니 쿠루토가 KS M5-KS 라이트그레이 1개",
    "st": "hot",
    "tgt": "17,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5D7Fq6G3"
@@ -3014,7 +2531,7 @@
    "n": "젤잉크 중성펜 0.5mm 블랙 20개입 1개",
    "st": "hot",
    "tgt": "8,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jjJmEZb7"
@@ -3023,7 +2540,7 @@
    "n": "택배 송장지우개 20ml 5개",
    "st": "hot",
    "tgt": "6,555원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7A8E5SG9"
@@ -3032,7 +2549,7 @@
    "n": "택배 송장 지우개 리무버 50ml 3개",
    "st": "hot",
    "tgt": "5,890원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HdBQ6xVp"
@@ -3041,7 +2558,7 @@
    "n": "주방정리 미니 네임 크라프트 라벨 스티커 크라프트 3x1.5cm 800매입 1롤",
    "st": "hot",
    "tgt": "6,400원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/T9nmPgVu"
@@ -3050,16 +2567,16 @@
    "n": "자동차 하이브리드 와이퍼 650mm + 400mm 1세트",
    "st": "hot",
    "tgt": "5,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
-   "last": "2026-10-24",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/RWi8WkB3"
   },
   {
    "n": "메르헨트 데오 프레쉬 차량용 대용량 실내 고체탈취제 프레쉬 린넨 250g 2개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/l007i7D8"
@@ -3068,7 +2585,7 @@
    "n": "아이엠듀 4in1 차량용 충전기 초고속 시거잭 120W 릴타입 C타입+8핀 블랙 1개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TRy27X5b"
@@ -3077,7 +2594,7 @@
    "n": "메르헨트 데오 프레쉬 차량용 고체탈취제 에어리 허브 250g 2개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/N11Y8SCd"
@@ -3086,7 +2603,7 @@
    "n": "차량용 사무용 등받이 메모리폼 허리 쿠션 그레이 40x30cm 1개",
    "st": "hot",
    "tgt": "9,800원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JcvJOmwj"
@@ -3095,7 +2612,7 @@
    "n": "오일 펌 브러쉬 자동차 유막 제거제 50ml 2개",
    "st": "hot",
    "tgt": "8,300원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/pbhL0qbm"
@@ -3104,7 +2621,7 @@
    "n": "선쉐이드 자외선 완벽차단 햇빛가리개 전좌석 올인원 블랙 4개입 1세트",
    "st": "hot",
    "tgt": "5,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/btOTfIUo"
@@ -3113,7 +2630,7 @@
    "n": "모락 진공 흡착 접이식 차량용 맥세이프 자석 거치대 블랙 1개",
    "st": "hot",
    "tgt": "10,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3HeAqzLp"
@@ -3122,7 +2639,7 @@
    "n": "아이엠듀 자동차 타이어 공기압 주입기 1개",
    "st": "hot",
    "tgt": "29,602원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xxH6ZZ6v"
@@ -3131,7 +2648,7 @@
    "n": "드라이비아 카플레이 안드로이드 오토 CARNAND 1개",
    "st": "hot",
    "tgt": "24,130원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/N2SPiNEx"
@@ -3140,7 +2657,7 @@
    "n": "아우페 에어리브 차량용 고체탈취제 허그데오코튼 250g 1개",
    "st": "hot",
    "tgt": "8,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5FiOflRy"
@@ -3149,7 +2666,7 @@
    "n": "브루마 차량용 헤드레스트 후크 블랙 2개",
    "st": "hot",
    "tgt": "5,500원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DHDGMYTD"
@@ -3158,7 +2675,7 @@
    "n": "카템 공구세트 CT442 차량용 가정용 복스 46종+카드툴세트 본품 1개",
    "st": "hot",
    "tgt": "9,702원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/941O9Gc2"
@@ -3167,7 +2684,7 @@
    "n": "불스원 불스파워 엔진코팅제 블랙 240ml 2개",
    "st": "hot",
    "tgt": "19,790원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/P81vqOM5"
@@ -3176,7 +2693,7 @@
    "n": "불스원 원터치 탈취캔 90g 2개",
    "st": "hot",
    "tgt": "15,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3Cmyilri"
@@ -3185,7 +2702,7 @@
    "n": "드리온 15W 고속 맥세이프 차량용 무선 충전기 1개",
    "st": "hot",
    "tgt": "7,150원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7sMAganm"
@@ -3194,7 +2711,7 @@
    "n": "자동차 콘솔쿠션 컵홀더 멀티 수납형 PU 팔걸이쿠션 그레이 1개",
    "st": "hot",
    "tgt": "9,990원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xSClaMLp"
@@ -3203,7 +2720,7 @@
    "n": "차싹 에탄올 발수코팅 워셔액 2L 3개",
    "st": "hot",
    "tgt": "11,682원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DSOTwngx"
@@ -3212,7 +2729,7 @@
    "n": "차량용 카본 선글라스 안경 클립 거치대 360도 회전 색상 랜덤 2개",
    "st": "hot",
    "tgt": "4,990원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VqMHlfLz"
@@ -3221,7 +2738,7 @@
    "n": "탑프룻 망고젤리 망고맛 320g 3개",
    "st": "wait",
    "tgt": "8,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/3NnboSsc"
@@ -3230,7 +2747,7 @@
    "n": "대용량 삼겹살 1kg 3팩",
    "st": "wait",
    "tgt": "24,700원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/BUV9s0IC"
@@ -3239,7 +2756,7 @@
    "n": "스파클 생수 무라벨 2L 12개",
    "st": "wait",
    "tgt": "4,800원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/f7P1hwVf"
@@ -3248,7 +2765,7 @@
    "n": "더 빅토리아 청포도 20병 + 파인애플 20병 500ml",
    "st": "wait",
    "tgt": "13,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/zrgY5VC"
@@ -3257,7 +2774,7 @@
    "n": "김삼두장인 두부야채어묵바 150g 5봉",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/PSaodmf7"
@@ -3266,7 +2783,7 @@
    "n": "쉬젤 아티 내열유리 용기 10종 세트",
    "st": "wait",
    "tgt": "18,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JLgF5PUk"
@@ -3275,7 +2792,7 @@
    "n": "발이 편한 카바 밴딩 중목 양말 화이트 10켤레",
    "st": "wait",
    "tgt": "4,200원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JydI2XYp"
@@ -3284,7 +2801,7 @@
    "n": "한예지 페르니 도톰 순수 3겹 화장지 30m 30롤입 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-23",
    "url": "https://toss.shopping/_m/7IDZa5mt"
@@ -3293,7 +2810,7 @@
    "n": "동구밭 샴푸 앤 트리트먼트바 100g 4개",
    "st": "wait",
    "tgt": "12,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-23",
    "url": "https://toss.shopping/_m/ZT9tWdVy"
@@ -3302,7 +2819,7 @@
    "n": "냉동 삶은 홍찰옥수수 특대 20개",
    "st": "wait",
    "tgt": "12,800원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/hzi1XNQA"
@@ -3311,7 +2828,7 @@
    "n": "사이드 테이블 수납 선반 크림화이트 3단",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/zoHixgW"
@@ -3320,7 +2837,7 @@
    "n": "G7 베트남 퓨어블랙 커피 2g 200개입",
    "st": "wait",
    "tgt": "28,400원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/zoo3UAun"
@@ -3329,7 +2846,7 @@
    "n": "신통방통 크림 120ml 4개",
    "st": "wait",
    "tgt": "29,723원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/FWOc2vFt"
@@ -3338,7 +2855,7 @@
    "n": "곰도리 케어 플러스 온열안대 40매입",
    "st": "wait",
    "tgt": "7,080원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/pcrJj3FD"
@@ -3347,7 +2864,7 @@
    "n": "CJ제일제당 쇠고기 진한다시 1kg",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/lGFCZsRq"
@@ -3356,7 +2873,7 @@
    "n": "리벤스 빨간맛 롱 와이드 스탠드형 테이프 크리너 10종 세트",
    "st": "wait",
    "tgt": "10,280원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/hIhMcVVD"
@@ -3365,7 +2882,7 @@
    "n": "사바나나 바나나칩 100g 5봉",
    "st": "wait",
    "tgt": "10,000원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/FCYKrPn4"
@@ -3374,7 +2891,7 @@
    "n": "페페브루노 엑스트라버진 올리브오일 250ml 4개",
    "st": "wait",
    "tgt": "15,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/fs4ntBn9"
@@ -3383,7 +2900,7 @@
    "n": "상온발효 그릭 요거트 스타터 2g 10포 6박스",
    "st": "wait",
    "tgt": "15,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/3gEUIfmy"
@@ -3392,7 +2909,7 @@
    "n": "당앤핏 여주차 500ml 20개입",
    "st": "wait",
    "tgt": "14,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/1wX5Ys8i"
@@ -3401,7 +2918,7 @@
    "n": "데이그린 여성 골지 민소매 티셔츠 3장(블랙·그레이·화이트)",
    "st": "wait",
    "tgt": "7,030원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/7QnqOrnt"
@@ -3410,7 +2927,7 @@
    "n": "푸드앳홈 마늘 바게트 40g 10개",
    "st": "wait",
    "tgt": "5,400원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/DdfOeYBz"
@@ -3419,7 +2936,7 @@
    "n": "산해직송 국내산 전라도 파김치 1kg",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/BPpoi2nD"
@@ -3428,7 +2945,7 @@
    "n": "로로보아 에어아르떼 헤어 드라이어 RXKS-HS438H",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/Lo4WWS83"
@@ -3437,7 +2954,7 @@
    "n": "신선맘 미국산 구운 땅콩 2kg",
    "st": "wait",
    "tgt": "12,690원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/LmOrl3M9"
@@ -3446,7 +2963,7 @@
    "n": "옥돌김치 333 프리미엄 총각김치 4kg",
    "st": "wait",
    "tgt": "19,000원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/9jFAZzTv"
@@ -3455,7 +2972,7 @@
    "n": "펩시콜라 엑스트라 피즈 355ml 24개",
    "st": "wait",
    "tgt": "11,800원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/FmVWZMWz"
@@ -3464,7 +2981,7 @@
    "n": "배스킨라빈스 샤베트 워터 6병 + 피치요거트 워터 6병",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/RFiSQyXz"
@@ -3473,7 +2990,7 @@
    "n": "서가 메탈 60W C to C 고속 케이블 1.5m 2개",
    "st": "wait",
    "tgt": "4,845원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/1XVGM4D5"
@@ -3482,7 +2999,7 @@
    "n": "수압상승 두피 마사지 샤워기 헤드 + 필터 6개",
    "st": "wait",
    "tgt": "6,110원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/Bk5goiyd"
@@ -3491,7 +3008,7 @@
    "n": "대구축산농협 팔공참한우 1++등급 국거리 300g",
    "st": "wait",
    "tgt": "8,500원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/LpqTyGmo"
@@ -3500,7 +3017,7 @@
    "n": "서가 25W PD 2포트 충전기 + 60W C to C 케이블",
    "st": "wait",
    "tgt": "6,365원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/ZLvugbir"
@@ -3509,7 +3026,7 @@
    "n": "애슐리 크리스피 모짜탱글 핫도그 80g 10개입",
    "st": "wait",
    "tgt": "9,990원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/R6CXdC6C"
@@ -3518,7 +3035,7 @@
    "n": "할리스 바닐라 딜라이트 19.5g 30개입 2개",
    "st": "wait",
    "tgt": "21,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/ld055qr4"
@@ -3527,7 +3044,7 @@
    "n": "해태 구운감자 27g 15개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/lBkYPlnj"
@@ -3536,7 +3053,7 @@
    "n": "애슐리 볶음밥 3종 6개(잡채·묵은지삼겹살·깍두기베이컨)",
    "st": "wait",
    "tgt": "10,500원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/bJVzcBSl"
@@ -3545,7 +3062,7 @@
    "n": "더마올로지 하이드로 베리어 휩 클렌징폼 230ml 4개",
    "st": "wait",
    "tgt": "10,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/tqMtRZX1"
@@ -3554,7 +3071,7 @@
    "n": "에이지랩 스네일 뮤신 브라이트닝 선크림 70ml 2개",
    "st": "wait",
    "tgt": "8,300원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/LS2BrRaA"
@@ -3563,7 +3080,7 @@
    "n": "베베앙 시그니처 물티슈 캡형 100매 10팩",
    "st": "wait",
    "tgt": "8,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-23",
    "url": "https://toss.shopping/_m/LMjKbG3q"
@@ -3572,7 +3089,7 @@
    "n": "스파클 생수 무라벨 1L 24개",
    "st": "wait",
    "tgt": "6,700원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rRnssRBj"
@@ -3581,7 +3098,7 @@
    "n": "에브리워터 무라벨 생수 2L 24개",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BNq4U5Za"
@@ -3590,7 +3107,7 @@
    "n": "푸드앵홈 냉동 생선까스 1kg",
    "st": "wait",
    "tgt": "6,640원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/TWQJLWY5"
@@ -3599,7 +3116,7 @@
    "n": "추추 추어탕 500g 4개",
    "st": "wait",
    "tgt": "8,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/HrxgsiVo"
@@ -3608,7 +3125,7 @@
    "n": "맘스럽 아토클래식 물티슈 100매 20팩",
    "st": "wait",
    "tgt": "8,253원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JMC925aw"
@@ -3617,7 +3134,7 @@
    "n": "예진원 국내산 ABC주스 80ml 35개",
    "st": "wait",
    "tgt": "5,990원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/1XGtIlp9"
@@ -3626,7 +3143,7 @@
    "n": "남다른 농수산 여수 돌산 갓김치 3kg",
    "st": "wait",
    "tgt": "10,750원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/ZJcJKCe2"
@@ -3635,7 +3152,7 @@
    "n": "맥콜 제로슈거 190ml 30개",
    "st": "wait",
    "tgt": "7,600원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/bjBQ66U6"
@@ -3644,16 +3161,16 @@
    "n": "모나리자 에코 미용티슈 300매 12입",
    "st": "wait",
    "tgt": "13,990원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
-   "last": "2026-10-13",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/hrMOMrL9"
   },
   {
    "n": "익스트림 듀얼 아르기닌 플러스 120정",
    "st": "wait",
    "tgt": "8,390원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/nd5I0T8n"
@@ -3662,7 +3179,7 @@
    "n": "맥스앤맥스 이지밀 냉동밥&국 소분 밀폐용기 350ml 12개 + 700ml 8개",
    "st": "wait",
    "tgt": "5,950원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/DtLYzDh2"
@@ -3671,7 +3188,7 @@
    "n": "고기중독 한입삼겹살 500g 4개",
    "st": "wait",
    "tgt": "18,990원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/BcO11Y9l"
@@ -3680,34 +3197,25 @@
    "n": "수뜰리에 퍼퓸 고체 탈취제 데이지향 310g 2개",
    "st": "wait",
    "tgt": "6,930원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": true,
-   "last": "2026-10-22",
+   "last": "2026-10-26",
    "url": "https://toss.shopping/_m/BcWFtJTq"
-  },
-  {
-   "n": "이진물산 26년산 볶은 땅콩 1kg",
-   "st": "wait",
-   "tgt": "6,800원",
-   "chk": "10/25 6시",
-   "stdy": true,
-   "last": "2026-10-13",
-   "url": "https://toss.shopping/_m/NcKxrRos"
   },
   {
    "n": "풀무원 샘물 생수 무라벨 2L 24개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
-   "last": "2026-10-13",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/dvUkiOEf"
   },
   {
    "n": "진주햄 천하장사 오리지널 15g 100개입",
    "st": "wait",
    "tgt": "14,800원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/xz4Y60jh"
@@ -3716,7 +3224,7 @@
    "n": "동국제약 마데카 크림 시즌6 50ml 3개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/LaecBzHe"
@@ -3725,7 +3233,7 @@
    "n": "안성마춤농협 고시히카리쌀 특등급 10kg",
    "st": "wait",
    "tgt": "35,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/rdOnBkab"
@@ -3734,7 +3242,7 @@
    "n": "노랑 곱빼기 왕 떡갈비 160g 5봉",
    "st": "wait",
    "tgt": "9,990원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/biIKGc8q"
@@ -3743,7 +3251,7 @@
    "n": "참도깨비 박경도 한끼어묵탕 220g 5봉",
    "st": "wait",
    "tgt": "9,240원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/XjkqkFb7"
@@ -3752,7 +3260,7 @@
    "n": "알제이 스틸 스키니 마스카라 블랙 2개",
    "st": "wait",
    "tgt": "9,120원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dBhRTNWl"
@@ -3761,16 +3269,16 @@
    "n": "크리스탈 생수 무라벨 500ml 40개",
    "st": "wait",
    "tgt": "6,820원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
-   "last": "2026-10-13",
+   "last": "2026-10-25",
    "url": "https://toss.shopping/_m/J18acsm7"
   },
   {
    "n": "이지앤프리 에어클립 밀폐용기 체험팩 5종 7P",
    "st": "wait",
    "tgt": "7,590원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/XzByhC6n"
@@ -3779,7 +3287,7 @@
    "n": "국내산 찰흑미 500g 2봉",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/J705nSyt"
@@ -3788,7 +3296,7 @@
    "n": "파이토메이드 고칼슘 앤 비타민D 두유 검은콩 190ml 24개",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/N3XTL4Gx"
@@ -3797,7 +3305,7 @@
    "n": "에센스웨어 25W GaN 충전기 + C to C 케이블 2세트",
    "st": "wait",
    "tgt": "6,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/BWS0engi"
@@ -3806,7 +3314,7 @@
    "n": "비로르 스텐 주방 가위 20.5cm 2개",
    "st": "wait",
    "tgt": "4,990원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/9a8cOcEi"
@@ -3815,7 +3323,7 @@
    "n": "셰프초이스 동그랑땡 2kg",
    "st": "wait",
    "tgt": "15,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/3AN1maYa"
@@ -3824,7 +3332,7 @@
    "n": "애슐리 주먹밥 체험팩 7가지맛 7개",
    "st": "wait",
    "tgt": "8,390원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/P9cdHH8v"
@@ -3833,7 +3341,7 @@
    "n": "바덴하임 몽실이 슬라이딩 지퍼백 소·중·대·특대 세트",
    "st": "wait",
    "tgt": "8,390원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/rWkfCT66"
@@ -3842,7 +3350,7 @@
    "n": "쏘울너츠 100% 땅콩버터 스무스 500g 2개",
    "st": "wait",
    "tgt": "1,950원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/7jBrHHMt"
@@ -3851,7 +3359,7 @@
    "n": "배스킨라빈스 메롱 멜론 우유 190ml 24개",
    "st": "wait",
    "tgt": "4,900원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XyTZGAjh"
@@ -3860,7 +3368,7 @@
    "n": "햇반 윤기가득 쌀밥 210g 24개",
    "st": "wait",
    "tgt": "13,900원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/La3jlvGt"
@@ -3869,7 +3377,7 @@
    "n": "아임닭 맛있는 닭가슴살 볶음밥 5종 200g 20개",
    "st": "wait",
    "tgt": "17,867원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/hv2q8Nws"
@@ -3878,7 +3386,7 @@
    "n": "로마나 달콤바삭 황금 고구마칩 320g 4개",
    "st": "wait",
    "tgt": "6,620원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/XfnLYyXA"
@@ -3887,7 +3395,7 @@
    "n": "믈레폴 와치아테 멸균우유 3.5% 1L 12개",
    "st": "wait",
    "tgt": "12,940원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/F4roL8m8"
@@ -3896,7 +3404,7 @@
    "n": "테팔 티타늄 인텐시브 블랙 프라이팬 5종 세트",
    "st": "wait",
    "tgt": "48,810원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TuDwPuir"
@@ -3905,7 +3413,7 @@
    "n": "대용량 우거지 감자탕 3kg",
    "st": "wait",
    "tgt": "8,080원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/bGn1naar"
@@ -3914,7 +3422,7 @@
    "n": "맘스럽 아토워시 프렌치 라벤더 캡슐세제 파우치형 8g 200개입 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zDPvBXIj"
@@ -3923,7 +3431,7 @@
    "n": "행운드림 땡큐 베이직 화장지 3겹 30롤 14m 1팩",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/njvWhJcB"
@@ -3932,7 +3440,7 @@
    "n": "바른세탁소 액체세제 라임향 2.5L 4개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/d6RyQuyy"
@@ -3941,16 +3449,25 @@
    "n": "파이토메이드 저자극 초극세 프리미엄 칫솔 10개입 3세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Bx5XnJcw"
   },
   {
+   "n": "숨 시그니처 물티슈 63gsm 70매 10팩",
+   "st": "wait",
+   "tgt": "6,990원",
+   "chk": "10/25 22시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/jVmOwjp4"
+  },
+  {
    "n": "제주 맑은콩나물 무농약 300g 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xSsePSGD"
@@ -3959,7 +3476,7 @@
    "n": "호정가 우리쌀약과 1kg 1세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FI7zG1sj"
@@ -3968,7 +3485,7 @@
    "n": "제주청정우유 900ml 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jwjeZvoo"
@@ -3977,7 +3494,7 @@
    "n": "오아시스 자연이란 유정란 10구 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZofVRRc8"
@@ -3986,7 +3503,7 @@
    "n": "호정가 군고구마도나스 960g 16개입 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rXhGILI"
@@ -3995,7 +3512,7 @@
    "n": "한우 사골 도가니탕 500g 5팩",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7tyTKnTp"
@@ -4004,7 +3521,7 @@
    "n": "초록매실 스파클링 제로 350ml 40개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/1EpB2qh3"
@@ -4013,7 +3530,7 @@
    "n": "국내산 인큐 애호박 300g 이상 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LtRiuiM5"
@@ -4022,7 +3539,7 @@
    "n": "이지앤프리 담은 김치통 블랙 3.2L 2통",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JbYhrsBn"
@@ -4031,7 +3548,7 @@
    "n": "나누담 물받이 밀폐용기 3L 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zjJn3jTa"
@@ -4040,7 +3557,7 @@
    "n": "다용도 주방가위 블랙 21cm 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FXWNXHjC"
@@ -4049,7 +3566,7 @@
    "n": "맘스럽 시그니처코튼 물티슈 100매입 10팩 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XNBeprVf"
@@ -4058,7 +3575,7 @@
    "n": "스파클 생수 무라벨 500ml 80개",
    "st": "wait",
    "tgt": "11,900원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZWozoNQA"
@@ -4067,16 +3584,34 @@
    "n": "국내산 횟감 활 흰다리새우 1kg 1팩",
    "st": "wait",
    "tgt": "16,600원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/llkVkuu2"
   },
   {
+   "n": "이롬 황성주박사의 과채습관 레드 140ml 24개",
+   "st": "wait",
+   "tgt": "9,600원",
+   "chk": "10/26 0시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/lIgqcUN5"
+  },
+  {
+   "n": "몸통만 자른 누드오징어 스틱 150g 4봉",
+   "st": "wait",
+   "tgt": "28,370원",
+   "chk": "10/26 0시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/nWJTepJd"
+  },
+  {
    "n": "배스킨라빈스 베리베리 스트로베리 우유 190ml 48개",
    "st": "wait",
    "tgt": "15,620원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jwe2uWb6"
@@ -4085,7 +3620,7 @@
    "n": "로에드 타일 줄눈 마카펜 세트 화이트 5P 1세트",
    "st": "wait",
    "tgt": "6,790원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RTlk7jVj"
@@ -4094,7 +3629,7 @@
    "n": "시원밥상 배추김치 5kg 1박스",
    "st": "wait",
    "tgt": "8,790원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TlP8AyU5"
@@ -4103,7 +3638,7 @@
    "n": "이씨네 전라도 겉절이 2kg 1개",
    "st": "wait",
    "tgt": "8,320원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bKIp4VTq"
@@ -4112,7 +3647,7 @@
    "n": "네이처바이 알로에 에센스 마스크팩 100개입 1세트",
    "st": "wait",
    "tgt": "13,200원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/T6KgUiDd"
@@ -4121,7 +3656,7 @@
    "n": "깔끔 화장품 정리대 화이트 25x16x11cm 1개",
    "st": "wait",
    "tgt": "4,990원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DiwgEC1B"
@@ -4130,7 +3665,7 @@
    "n": "지민푸드 통통왕족발 1kg 내외 1팩",
    "st": "wait",
    "tgt": "8,140원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FwlVIN7i"
@@ -4139,7 +3674,7 @@
    "n": "논앤밭위드 삼시쉐귀리 귀리쉐이크 검은콩 20g 30개",
    "st": "wait",
    "tgt": "8,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RZskucpi"
@@ -4148,7 +3683,7 @@
    "n": "리퀴드 프리지아 섬유유연제 프리지아 2.5L 4개입 1개",
    "st": "wait",
    "tgt": "6,890원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9ozKsxq4"
@@ -4157,7 +3692,7 @@
    "n": "검정콩 깨강정 240g 2개",
    "st": "wait",
    "tgt": "8,730원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xolFPrA9"
@@ -4166,16 +3701,70 @@
    "n": "비기온 맛밤 30g 30개",
    "st": "wait",
    "tgt": "18,480원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XqAPqgkn"
   },
   {
+   "n": "양계장사람들 난각번호2번 프리미엄 유정란 특대란 60구 1개",
+   "st": "wait",
+   "tgt": "19,900원",
+   "chk": "10/26 6시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/TV31SUrc"
+  },
+  {
+   "n": "곰표 부침가루 2kg 1개 + 튀김가루 2kg 1개 + 밀가루 1kg 2개 1세트",
+   "st": "wait",
+   "tgt": "8,600원",
+   "chk": "10/26 6시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/PtglYHEz"
+  },
+  {
+   "n": "한우대학 한우잡육 1kg 1개",
+   "st": "wait",
+   "tgt": "19,120원",
+   "chk": "10/26 7시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/nJpQIQ2v"
+  },
+  {
+   "n": "광천김 고소한 아몬드를 넣은 김자반 40g 10봉",
+   "st": "wait",
+   "tgt": "8,960원",
+   "chk": "10/26 7시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/JUFVHRlC"
+  },
+  {
+   "n": "신세계푸드 냉동 크로와상 생지 2.25kg 1개",
+   "st": "wait",
+   "tgt": "13,500원",
+   "chk": "10/26 7시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/r9kQwjKt"
+  },
+  {
+   "n": "여성 베어 니트 밴딩 삭스 골고루 10켤레",
+   "st": "wait",
+   "tgt": "8,900원",
+   "chk": "10/26 7시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/ncQUOf8h"
+  },
+  {
    "n": "코피코 커피맛 캔디 블리스터 팩 384g 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RhXtppkx"
@@ -4184,16 +3773,43 @@
    "n": "크라운제과 레트로 6종 과자 간식세트 6개 1세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3956ztQf"
   },
   {
+   "n": "텅스페이스 슈퍼포션 곤약쫀드기 25g 50봉",
+   "st": "wait",
+   "tgt": "11,140원",
+   "chk": "10/25 19시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/LBZCepH"
+  },
+  {
+   "n": "센텔라시카 클렌징오일 200ml 1개",
+   "st": "wait",
+   "tgt": "10,990원",
+   "chk": "10/25 19시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/tZUISslc"
+  },
+  {
+   "n": "아삭하고 진한 감칠맛 알타리 김치 5kg 1박스",
+   "st": "wait",
+   "tgt": "25,160원",
+   "chk": "10/25 19시",
+   "stdy": true,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/nmNEyNbn"
+  },
+  {
    "n": "제주 삼다수 무라벨 2L 6개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 19시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Zl2t4Zqt"
@@ -4202,7 +3818,7 @@
    "n": "찹쌀누룽지 무가당 300g 5개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Vq8SuEFj"
@@ -4211,7 +3827,7 @@
    "n": "맥심 모카골드 마일드 커피믹스 12g 100개입 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vS7bA4Wv"
@@ -4220,7 +3836,7 @@
    "n": "뉴케어 구수한맛 플러스 200ml 24개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/1nMDrjM4"
@@ -4229,7 +3845,7 @@
    "n": "삼양식품 삼양라면 120g 20개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/74E3wq5v"
@@ -4238,7 +3854,7 @@
    "n": "삼육두유 검은콩 호두와 아몬드 190ml 64개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/B8xpapxx"
@@ -4247,7 +3863,7 @@
    "n": "스파클 생수 무라벨 1L 36개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jM4YYu41"
@@ -4256,7 +3872,7 @@
    "n": "롯데칠성음료 펩시 제로슈거 라임 업소용 500ml 20개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/V6xRkU7c"
@@ -4265,7 +3881,7 @@
    "n": "헬리코박터 프로젝트 윌 180ml 10개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZiXFdwCj"
@@ -4274,7 +3890,7 @@
    "n": "하림펫푸드 밥이보약 DOG 튼튼한 관절 전연령 3.4kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9qKOQpt9"
@@ -4283,7 +3899,7 @@
    "n": "미스터추추 펫 고양이 쇼파 스크래쳐 타원형 우드 대형 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5h9kkgag"
@@ -4292,7 +3908,7 @@
    "n": "다먹어줄개 강아지 사료 소중형견전용 2kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": true,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Fw7lsdAi"
@@ -4301,7 +3917,7 @@
    "n": "애슐리 크림빠네 홈파티 세트 4종",
    "st": "wait",
    "tgt": "29,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/lH5f1ldq"
@@ -4310,7 +3926,7 @@
    "n": "사리원 소불고기 500g 10팩",
    "st": "wait",
    "tgt": "36,800원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/51fsqoG9"
@@ -4319,7 +3935,7 @@
    "n": "메르헨트 코코넛 대용량 트리트먼트 1500ml 1+1",
    "st": "wait",
    "tgt": "12,920원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/Z87BO8Sg"
@@ -4328,7 +3944,7 @@
    "n": "굿프렌드 복부 찜질 마사지기 GOOD-M11",
    "st": "wait",
    "tgt": "21,110원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/HBu2XxBp"
@@ -4337,7 +3953,7 @@
    "n": "리벤스 잘 닦이는 살균 행주 티슈 60매 10팩",
    "st": "wait",
    "tgt": "8,650원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/B6yMHKVy"
@@ -4346,7 +3962,7 @@
    "n": "어가찬 중하 건새우 1.5kg",
    "st": "wait",
    "tgt": "12,600원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/RQ6GeuW5"
@@ -4355,7 +3971,7 @@
    "n": "이노크아든 2단 진공흡착 핸디 스팀다리미 IA-VSD1000",
    "st": "wait",
    "tgt": "51,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/DEI4LBHd"
@@ -4364,7 +3980,7 @@
    "n": "한입과득 청송 홍로 사과 가정용 3kg",
    "st": "wait",
    "tgt": "8,730원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/zoJqP9Df"
@@ -4373,7 +3989,7 @@
    "n": "우화연 1++ 한우한판 선물세트 1kg",
    "st": "wait",
    "tgt": "59,800원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/TOdddXCk"
@@ -4382,7 +3998,7 @@
    "n": "리스앤리드 파이토 PDRN 글로우 세럼 30ml",
    "st": "wait",
    "tgt": "5,600원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/P0Wjoe8n"
@@ -4391,7 +4007,7 @@
    "n": "ACRO 스마트 디지털 체중계 ibody-100 화이트",
    "st": "wait",
    "tgt": "11,500원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/Pkd3l37x"
@@ -4400,7 +4016,7 @@
    "n": "마성의김치 전라도식 비법 양념 열무물김치 5kg",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/L3KOBUWf"
@@ -4409,7 +4025,7 @@
    "n": "리프레쉬 맥반석오징어 600g 25-50미 내외",
    "st": "wait",
    "tgt": "23,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/V7HVfSsh"
@@ -4418,7 +4034,7 @@
    "n": "냉동 블루베리 1kg 5개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/zGgCTArn"
@@ -4427,7 +4043,7 @@
    "n": "한미 프로틴 마스터 190ml 48팩",
    "st": "wait",
    "tgt": "24,500원",
-   "chk": "10/25 4시",
+   "chk": "10/26 4시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/hipbuaLt"
@@ -4436,7 +4052,7 @@
    "n": "칼로라이트 전자레인지 소형 저당 밥솥 크림",
    "st": "wait",
    "tgt": "10,390원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/3MDmGBSA"
@@ -4445,7 +4061,7 @@
    "n": "하루한콩 구운 병아리콩 군옥수수맛 15g 22개입 3개",
    "st": "wait",
    "tgt": "20,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/tMWa5he6"
@@ -4454,7 +4070,7 @@
    "n": "병아리콩 담은 고단백 7콩 혼합잡곡 2kg",
    "st": "wait",
    "tgt": "6,990원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/nDxdVO98"
@@ -4463,7 +4079,7 @@
    "n": "식물성 대마종자유 엔 탑 1000 맥스 60캡슐 3개",
    "st": "wait",
    "tgt": "15,220원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/b9F6M1pe"
@@ -4472,7 +4088,7 @@
    "n": "영진약품 상황 산삼배양근액 100ml 30개",
    "st": "wait",
    "tgt": "18,700원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/lL16CcTg"
@@ -4481,7 +4097,7 @@
    "n": "삭스팡 아동 포시즌 랜덤 스니 중목 삭스 양말 7켤레 6호",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/xrFOLu8C"
@@ -4490,7 +4106,7 @@
    "n": "오브제 에어 프레쉬 고체탈취제 포레스트 에어 350g 3개",
    "st": "wait",
    "tgt": "16,770원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/HznqEcxd"
@@ -4499,7 +4115,7 @@
    "n": "마른오징어 몸통 175~195g 5미",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/R4iA5Gth"
@@ -4508,7 +4124,7 @@
    "n": "고창 풍천장어 자포니카 손질 700g + 소스",
    "st": "wait",
    "tgt": "18,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/DFe30tws"
@@ -4517,7 +4133,7 @@
    "n": "국내산 2026년산 검정보리쌀 500g 4봉",
    "st": "wait",
    "tgt": "8,570원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/PcD0EwnD"
@@ -4526,7 +4142,7 @@
    "n": "매콤 넓적다리 1.25kg 10개입 2팩",
    "st": "wait",
    "tgt": "34,000원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/1Rs4ofq4"
@@ -4535,7 +4151,7 @@
    "n": "쉬블림로브 여성 체크 홈웨어 파자마 잠옷 세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/ZwDAYKEa"
@@ -4544,7 +4160,7 @@
    "n": "국내산 천연 생강분말 110g",
    "st": "wait",
    "tgt": "6,700원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/jVHvWu2g"
@@ -4553,7 +4169,7 @@
    "n": "벤하임 에어프라이어 겸용 전기오븐 15L 더블히팅",
    "st": "wait",
    "tgt": "43,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/hggUVs9i"
@@ -4562,7 +4178,7 @@
    "n": "에센스웨어 GaN 65W 2포트 릴케이블 멀티 충전기",
    "st": "wait",
    "tgt": "19,920원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/blpZAN1v"
@@ -4571,7 +4187,7 @@
    "n": "횡재미가 저당 파로 담은 7곡 혼합잡곡 2kg",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/9k20xoS1"
@@ -4580,7 +4196,7 @@
    "n": "퍼니트 유기농 엑스트라버진 올리브오일 선물세트 250ml 2병",
    "st": "wait",
    "tgt": "15,600원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/1zCxYXa8"
@@ -4589,7 +4205,7 @@
    "n": "65W 듀얼 초고속 PPS C타입 매립형 차량용 충전기 블랙",
    "st": "wait",
    "tgt": "10,951원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/jQfKV2Je"
@@ -4598,7 +4214,7 @@
    "n": "안국건강 아이원 루테인 지아잔틴 아스타잔틴 미니 60캡슐",
    "st": "wait",
    "tgt": "16,400원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/TMHqPgan"
@@ -4607,7 +4223,7 @@
    "n": "주방 후드 필터 10m 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/v6vJY2as"
@@ -4616,7 +4232,7 @@
    "n": "앙쥬 더 화이트 시그니처 8종 세트(쇼핑백 증정)",
    "st": "wait",
    "tgt": "35,070원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/X5m1sPai"
@@ -4625,7 +4241,7 @@
    "n": "널담 고단백 저당 포카치아 토마토 바질치즈 90g 8개",
    "st": "wait",
    "tgt": "9,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/dieSsi2A"
@@ -4634,7 +4250,7 @@
    "n": "외갓집 소갈비탕 650g 10개",
    "st": "wait",
    "tgt": "37,000원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/7854e4Wb"
@@ -4643,7 +4259,7 @@
    "n": "마흐트 프리미엄 실리콘 조리도구 6종 세트",
    "st": "wait",
    "tgt": "8,500원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/FPKxGMas"
@@ -4652,7 +4268,7 @@
    "n": "브리타 정수기 필터 막스트라 프로 퓨어 퍼포먼스 3입",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/1kLAIZpy"
@@ -4661,7 +4277,7 @@
    "n": "말리지오 커피땅콩 1kg 2개",
    "st": "wait",
    "tgt": "7,330원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/fLu7q2pD"
@@ -4670,7 +4286,7 @@
    "n": "하루하나 유기농 레자몽 레몬즙+자몽즙 280g 7박스",
    "st": "wait",
    "tgt": "14,700원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/rySnXI88"
@@ -4679,7 +4295,7 @@
    "n": "퍼실 액체세제 파워젤 일반 드럼 겸용 1.5L 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/d9E0VaWg"
@@ -4688,7 +4304,7 @@
    "n": "스포츠 쿠션 양말 화이트 중목 10개",
    "st": "wait",
    "tgt": "8,440원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/HQwY2bZp"
@@ -4697,7 +4313,7 @@
    "n": "테오푸드 오뎅도리탕 1.2kg 2개",
    "st": "wait",
    "tgt": "26,890원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/rqFgPlqy"
@@ -4706,7 +4322,7 @@
    "n": "마더스홈 피그먼트 순면 베개커버 밴드형 2개",
    "st": "wait",
    "tgt": "8,490원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/3dlCR0JD"
@@ -4715,7 +4331,7 @@
    "n": "국내산 찰흑미 500g 4봉",
    "st": "wait",
    "tgt": "9,900원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/Jtg0oek7"
@@ -4724,7 +4340,7 @@
    "n": "달콤허니 벌집꿀 목함 2kg",
    "st": "wait",
    "tgt": "29,500원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/lbtcDaKo"
@@ -4733,7 +4349,7 @@
    "n": "지리산 자연벌꿀 아카시아벌꿀 2.4kg 6개",
    "st": "wait",
    "tgt": "170,100원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/LeZd17rt"
@@ -4742,7 +4358,7 @@
    "n": "일리윤 프레쉬 모이스춰 립앤아이 리무버 300ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/5jqeeYZp"
@@ -4751,7 +4367,7 @@
    "n": "키스미 히로인메이크 스피디 마스카라 리무버 6.6ml 1+1",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/V7lBZKjd"
@@ -4760,16 +4376,25 @@
    "n": "케어존 닥터솔루션 저자극 립앤아이 리무버 300ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/LXEUUUvn"
   },
   {
+   "n": "에이지랩 달팽이 뮤신 올인원 크림 50g 2개",
+   "st": "wait",
+   "tgt": "17,900원",
+   "chk": "10/26 5시",
+   "stdy": false,
+   "last": "2026-10-11",
+   "url": "https://toss.shopping/_m/vukNaHN"
+  },
+  {
    "n": "한경희 자동좌우회전 프리미엄 2단 카본 전기히터 HAAN-Q3500 그레이",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/jxZYgfY"
@@ -4778,7 +4403,7 @@
    "n": "디오프러스 매직 비비크림 23호 60ml 1+1",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/lMLTvoDn"
@@ -4787,7 +4412,7 @@
    "n": "올레이디 마리에 워터리 썬비비크림 50ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/vRnFe31l"
@@ -4796,7 +4421,7 @@
    "n": "미샤 퍼펙트 커버 비비크림 21호 50ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/99Kq5HmC"
@@ -4805,7 +4430,7 @@
    "n": "애터미 비비크림 40ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/jScVeFxt"
@@ -4814,7 +4439,7 @@
    "n": "애터미 비비크림 SPF30 40ml 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-12",
    "url": "https://toss.shopping/_m/BIrxCT3w"
@@ -4823,7 +4448,7 @@
    "n": "커밍글 원케어 퍼퓸 스캘프 탈모 샴푸 500ml",
    "st": "wait",
    "tgt": "22,500원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rF7kqlTv"
@@ -4832,25 +4457,16 @@
    "n": "커밍글 퍼퓸 바디·헤어 미스트 캔디팜므 150ml",
    "st": "wait",
    "tgt": "12,400원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/Bv34czVt"
   },
   {
-   "n": "커밍글 캔디팜므 노워시 트리트먼트 플로럴머스크 200ml",
-   "st": "wait",
-   "tgt": "9,900원",
-   "chk": "10/25 5시",
-   "stdy": false,
-   "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/lmLcLKG"
-  },
-  {
    "n": "커밍글 캔디 퍼퓸 테라피 리페어 헤어 세럼 100ml",
    "st": "wait",
    "tgt": "12,400원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/BwTjDo9s"
@@ -4859,7 +4475,7 @@
    "n": "커밍글 퍼퓸 바디·헤어 미스트 머스크 150ml",
    "st": "wait",
    "tgt": "12,400원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/pvSCXXiC"
@@ -4868,7 +4484,7 @@
    "n": "커밍글 퍼퓸 바디·헤어 미스트 시트러스 150ml",
    "st": "wait",
    "tgt": "12,400원",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/3blfN0A9"
@@ -4877,7 +4493,7 @@
    "n": "커밍글 CANDY FEMME 노워시 트리트먼트 200ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/Hk6OmjOp"
@@ -4886,7 +4502,7 @@
    "n": "조선미녀 데일리 틴티드 선세럼 LN100 50ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/VImVfhnh"
@@ -4895,7 +4511,7 @@
    "n": "바티스트 드라이샴푸 오리지널 200ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/PADnfjxy"
@@ -4904,7 +4520,7 @@
    "n": "조선미녀 붉은 팥 모공정화 마스크 140ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/dlLPkuji"
@@ -4913,7 +4529,7 @@
    "n": "다슈 데일리 슈퍼 하드 컬크림 150ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/R9ck551w"
@@ -4922,7 +4538,7 @@
    "n": "텐제로 트라넥삼산 비타민C 실크 수딩 크림 100g",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/NTErrqks"
@@ -4931,7 +4547,7 @@
    "n": "SNP 골드 콜라겐 엑스퍼트 크림 50ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/lelMV0E3"
@@ -4940,7 +4556,7 @@
    "n": "싸이닉 엔조이 퍼펙트 데일리 썬크림 EX 50ml 1+1+1",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/v4NxSUu9"
@@ -4949,7 +4565,7 @@
    "n": "텐제로 트라넥삼산 비타민C 앰플 50ml",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/djriWRfn"
@@ -4958,25 +4574,16 @@
    "n": "조선미녀 맑은쌀 선크림 50ml + 증정 10ml 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 5시",
+   "chk": "10/26 5시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/bfIUq7V4"
   },
   {
-   "n": "한입과득 청송 홍로 사과 가정용 5kg",
-   "st": "wait",
-   "tgt": "15,900원",
-   "chk": "10/25 6시",
-   "stdy": false,
-   "last": "2026-10-13",
-   "url": "https://toss.shopping/_m/3N8mA8tj"
-  },
-  {
    "n": "센텔리안24 더마데카크림 45ml 4개",
    "st": "wait",
    "tgt": "21,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/XKsQ3NAt"
@@ -4985,16 +4592,16 @@
    "n": "팬톤 25W GaN 듀얼포트 PD 충전기",
    "st": "wait",
    "tgt": "3,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
-   "last": "2026-10-22",
+   "last": "2026-10-14",
    "url": "https://toss.shopping/_m/lo1GWjQ"
   },
   {
    "n": "5단 수압조절 온오프 샤워기헤드 블랙 2개",
    "st": "wait",
    "tgt": "6,901원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/1KP1p4Cx"
@@ -5003,7 +4610,7 @@
    "n": "뽀롱뽀롱 뽀로로 비타민C 1.2g 300정",
    "st": "wait",
    "tgt": "4,700원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/7yZuXqv8"
@@ -5012,7 +4619,7 @@
    "n": "도미나스 트라넥삼산 기미 아이크림 20g 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/nSyKRIui"
@@ -5021,7 +4628,7 @@
    "n": "광동 배도라지 쌍화스틱 10ml 100포 2개",
    "st": "wait",
    "tgt": "31,990원 · 5천원 쿠폰가",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/vNGPs502"
@@ -5030,7 +4637,7 @@
    "n": "HWC 잘자요 예쁜언니 60정 4박스",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/7pYxIXLe"
@@ -5039,7 +4646,7 @@
    "n": "잇츠웰 EMS 바디 마사지기 ITS-EMSM",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/dgyabyP9"
@@ -5048,7 +4655,7 @@
    "n": "셰프초이스 한돈 더 듬뿍 고기완자 2kg",
    "st": "wait",
    "tgt": "10,900원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/lolOhJOu"
@@ -5057,7 +4664,7 @@
    "n": "맥콜 제로슈거 190ml 60개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/P2F8jVZv"
@@ -5066,7 +4673,7 @@
    "n": "발 비닐 10g 100매입 1팩",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/juhrOwUf"
@@ -5075,7 +4682,7 @@
    "n": "파스타쿠커 전자레인지용 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 22시",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dymXuBM5"
@@ -5084,7 +4691,7 @@
    "n": "리스코 크린 롤백 4종세트 소형 200매 1팩 + 중형 200매 1팩 + 대형 200매 1팩 + 특대형 200매 1팩 1세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/faDKfuHz"
@@ -5093,7 +4700,7 @@
    "n": "알뜰공식 두꺼운 니트릴 장갑 화이트 중(M) 100매 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/H7diXeUk"
@@ -5102,7 +4709,7 @@
    "n": "이지앤프리 맛쿡 냉동밥 보관용기 색상랜덤 400ml 24개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/32Ai1idn"
@@ -5111,7 +4718,7 @@
    "n": "앱솔루트 시작부터 프리미엄 명작 1 800g 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 23시",
+   "chk": "10/25 23시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9fzbPpOu"
@@ -5120,7 +4727,7 @@
    "n": "제주 감귤 특품 중과 5kg 1박스",
    "st": "wait",
    "tgt": "9,950원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HN5zWTSu"
@@ -5129,7 +4736,7 @@
    "n": "마농 EMS 발마사지 패드 FOOT-26 화이트 1개",
    "st": "wait",
    "tgt": "13,823원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZYLgJEpw"
@@ -5138,7 +4745,7 @@
    "n": "제주 서귀포 감귤 특품 소과 10kg 1박스",
    "st": "wait",
    "tgt": "16,990원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/b8nQRUwy"
@@ -5147,7 +4754,7 @@
    "n": "한우 1++ 3mm 대패설깃 구이용 냉장 200g 1개",
    "st": "wait",
    "tgt": "14,900원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/L84PwQer"
@@ -5156,7 +4763,7 @@
    "n": "엔도르시 구름 키링 스웨이드 백팩 숄더백 커피 FREE 1개",
    "st": "wait",
    "tgt": "15,460원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HtHyVQYf"
@@ -5165,7 +4772,7 @@
    "n": "하루견과 The오리지널 20g 100봉",
    "st": "wait",
    "tgt": "41,920원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LtyaJA8r"
@@ -5174,7 +4781,7 @@
    "n": "낙지젓갈 1kg 1개",
    "st": "wait",
    "tgt": "14,900원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ZPleDlHi"
@@ -5183,16 +4790,34 @@
    "n": "디어스킨 입는 오버나이트 특대형 4매입 5팩",
    "st": "wait",
    "tgt": "11,990원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/fNhDZjsh"
   },
   {
+   "n": "세상편한 노와이어 시스루 브라탑 누드스킨 XL 1개 + 블랙 XL 1개 + 밀크브라운 XL 1개 3개",
+   "st": "wait",
+   "tgt": "24,335원",
+   "chk": "10/26 0시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/Vu8N0Zim"
+  },
+  {
+   "n": "응암동 착한 감자탕 5kg 1팩",
+   "st": "wait",
+   "tgt": "17,900원",
+   "chk": "10/26 0시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/lEaWZrJy"
+  },
+  {
    "n": "헤디안 아로마 데일리 모이스처 바디워시 호텔포레스트향 1L 4개",
    "st": "wait",
    "tgt": "15,900원",
-   "chk": "10/25 0시",
+   "chk": "10/26 0시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RI7hNCnh"
@@ -5201,7 +4826,7 @@
    "n": "외갓집 송탄 서정리 부대찌개 550 550g 3개 + 오뚜기 라면사리 110g 1개 1세트",
    "st": "wait",
    "tgt": "11,000원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/DXJ1IpHd"
@@ -5210,7 +4835,7 @@
    "n": "베라 4ZERO 팝업 뽑아쓰는 키친타올 3겹 100매 9팩",
    "st": "wait",
    "tgt": "6,543원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rWeopm7v"
@@ -5219,7 +4844,7 @@
    "n": "셰프초이스 제육불고기 2kg 1개",
    "st": "wait",
    "tgt": "15,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/Hog2AkWo"
@@ -5228,7 +4853,7 @@
    "n": "베네베딩 보드레잠 베개솜 화이트 40x60cm 2개",
    "st": "wait",
    "tgt": "7,550원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LXyQ8dVq"
@@ -5237,7 +4862,7 @@
    "n": "허글리 슬림핏 KF94 마스크 새부리형 대형 스킨베이지 100매",
    "st": "wait",
    "tgt": "6,810원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/f8lbcpIf"
@@ -5246,7 +4871,7 @@
    "n": "아이제나흐 스테넬 양면 도마 260x365mm 1개",
    "st": "wait",
    "tgt": "9,270원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JoZcCOpy"
@@ -5255,7 +4880,7 @@
    "n": "레오폴디 카이도 주방칼 과도 가위 3종세트,단일상품",
    "st": "wait",
    "tgt": "5,860원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zu5etTNu"
@@ -5264,7 +4889,7 @@
    "n": "산지도매센타 구룡포 과메기 + 야채 세트 완전손질 5미/10쪽 1세트",
    "st": "wait",
    "tgt": "12,630원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/dDly6lJ"
@@ -5273,7 +4898,7 @@
    "n": "세척 사과 한입과 14과 내외 2kg 1박스",
    "st": "wait",
    "tgt": "7,910원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TBwSwfRA"
@@ -5282,7 +4907,7 @@
    "n": "서가 메탈 고속충전 케이블 C타입 블랙 1.5m 2개",
    "st": "wait",
    "tgt": "3,140원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zvhJaOgd"
@@ -5291,7 +4916,7 @@
    "n": "파머스넷 호박고구마 한입 10kg 1박스",
    "st": "wait",
    "tgt": "",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/tjm34Fs2"
@@ -5300,7 +4925,7 @@
    "n": "라티아 논슬립 요가 필라테스 발레코어 X밴드 덧신 양말 FREE 골고루(색상랜덤) 5켤레",
    "st": "wait",
    "tgt": "5,850원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/VcNdmV11"
@@ -5309,7 +4934,7 @@
    "n": "데이지 선풍기 커버 혼합 4P 1개",
    "st": "wait",
    "tgt": "6,360원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TyNFk6b3"
@@ -5318,7 +4943,7 @@
    "n": "한미양행 낙산균을 채우다 500mg 30정 2개",
    "st": "wait",
    "tgt": "8,140원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/raIB8uu8"
@@ -5327,7 +4952,7 @@
    "n": "야망떡집 옥수수 잔기지떡 30g 40개",
    "st": "wait",
    "tgt": "10,000원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/5Fp0VJjc"
@@ -5336,7 +4961,7 @@
    "n": "명작 발바닥 패치 목초수액 시트 대용량 50개 1박스",
    "st": "wait",
    "tgt": "6,680원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/FuazAMpj"
@@ -5345,7 +4970,7 @@
    "n": "교동 황태해장국 500g 3팩",
    "st": "wait",
    "tgt": "8,890원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LZlbqP9s"
@@ -5354,7 +4979,7 @@
    "n": "국내산 깐멸치 특상품 중포장 300g 1개",
    "st": "wait",
    "tgt": "10,000원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NMnTPHEu"
@@ -5363,16 +4988,25 @@
    "n": "데코롤 뜯어쓰는 롤행주 키친데코 20매 2개",
    "st": "wait",
    "tgt": "7,690원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9B2Qb23A"
   },
   {
+   "n": "광천김 3대째 달인 재래 전장김 두번구워바삭한 20g 10개",
+   "st": "wait",
+   "tgt": "10,480원",
+   "chk": "10/26 6시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/RJWdmz5c"
+  },
+  {
    "n": "켈로그 크렌베리 아몬드 그래놀라 1200g 1개",
    "st": "wait",
    "tgt": "9,600원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rgLxP7Zk"
@@ -5381,16 +5015,34 @@
    "n": "루즈핏 양면 방수 포켓 조끼형 앞치마 블랙 1개",
    "st": "wait",
    "tgt": "7,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/F6zKodFp"
   },
   {
+   "n": "디벨라 토마토퓨레 루스티카 680g 4개",
+   "st": "wait",
+   "tgt": "11,930원",
+   "chk": "10/26 6시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/ZUPE53ew"
+  },
+  {
+   "n": "대한민국농수산 뼈없는 한돈 양념갈비 300g 6팩",
+   "st": "wait",
+   "tgt": "27,500원",
+   "chk": "10/26 7시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/FfPYX9Ga"
+  },
+  {
    "n": "스테인리스 사각 진공 밀폐용기 2200ml 2개",
    "st": "wait",
    "tgt": "9,700원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/ps8hCB1g"
@@ -5399,7 +5051,7 @@
    "n": "지리산 자연벌꿀 아카시아벌꿀 2.4kg 1개",
    "st": "wait",
    "tgt": "26,230원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vRRx8MP4"
@@ -5408,25 +5060,331 @@
    "n": "코욜하우키 핏플레인 장목 양말 화이트 12개",
    "st": "wait",
    "tgt": "7,810원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NgMUiJ5h"
   },
   {
+   "n": "팜보스 씨없는 청도 햇 반시 30과 이상 2.5kg 1박스",
+   "st": "wait",
+   "tgt": "7,400원",
+   "chk": "10/26 7시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/fppsleK"
+  },
+  {
    "n": "서가 3중 구조 일회용 덴탈 마스크 MB필터 화이트 50매 1개",
    "st": "wait",
    "tgt": "3,170원",
-   "chk": "10/25 7시",
+   "chk": "10/26 7시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JWIB9wOt"
   },
   {
+   "n": "원목 손가락 마사지기 오트그레이 2개",
+   "st": "wait",
+   "tgt": "6,870원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/1ysPcOG5"
+  },
+  {
+   "n": "오즈랜드 우도 땅콩로쉐 오리지널 210g 1개 + 초코 210g 1개",
+   "st": "wait",
+   "tgt": "13,280원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/1DSYIZVb"
+  },
+  {
+   "n": "프룻프룻 건조 능이버섯 100g 1개",
+   "st": "wait",
+   "tgt": "16,020원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/5oMH5yun"
+  },
+  {
+   "n": "두피 마사지 샤워기 헤드 본품 1개 + 추가 필터 5개",
+   "st": "wait",
+   "tgt": "6,500원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/z5D7YcVq"
+  },
+  {
+   "n": "덴마크 테이크얼라이브 머스캣청포도+스위티자몽 120ml 48개",
+   "st": "wait",
+   "tgt": "12,000원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/jrOeYvLy"
+  },
+  {
+   "n": "웰쉐프 바베큐통훈제삼겹 200g 6개",
+   "st": "wait",
+   "tgt": "23,400원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/twh77dJD"
+  },
+  {
+   "n": "키친플라워 테티 전기포트 KEK-DJ124 아이보리 1.2L 1개",
+   "st": "wait",
+   "tgt": "19,900원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/9jPBxrGf"
+  },
+  {
+   "n": "스카이 보조배터리 SKY-PD30 30000mAh 잔량표시 블랙 1개",
+   "st": "wait",
+   "tgt": "20,290원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/J6h6oVAj"
+  },
+  {
+   "n": "맘스케이크 플랫파운드 혼합 50g 60개",
+   "st": "wait",
+   "tgt": "24,900원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/d08FiEzn"
+  },
+  {
+   "n": "남성 몸빼 긴 바지 FREE 1세트",
+   "st": "wait",
+   "tgt": "8,810원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/VrTNkSJt"
+  },
+  {
+   "n": "베네베딩 포그리 밴드형 베개커버 베이비블루 50x70cm 2장",
+   "st": "wait",
+   "tgt": "9,300원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/54PUT8zx"
+  },
+  {
+   "n": "도무스 에어 글라스 오븐 올인원 바스켓 2종 블랙 1세트",
+   "st": "wait",
+   "tgt": "60,640원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/tFktx71A"
+  },
+  {
+   "n": "아이워너 맨즈 육각 아령 10kg 2개입 1세트",
+   "st": "wait",
+   "tgt": "17,382원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/LLCdF2Q9"
+  },
+  {
+   "n": "서가 PD 초고속 충전 케이블 C to 라이트닝 8핀 화이트 1m 2개",
+   "st": "wait",
+   "tgt": "3,140원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/xjj9OEkh"
+  },
+  {
+   "n": "고깃집왕건 간장 제육 불고기 1kg 1개",
+   "st": "wait",
+   "tgt": "11,390원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/pjQcyokm"
+  },
+  {
+   "n": "알파CD 레몬컷 120정 6개",
+   "st": "wait",
+   "tgt": "33,320원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/1hopOhQp"
+  },
+  {
+   "n": "끄란느 14K GF 심플 별 모티브 원터치 귀걸이 C24EGF192 로즈골드 1개",
+   "st": "wait",
+   "tgt": "16,970원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/tBDxds5w"
+  },
+  {
+   "n": "파인밀 당일 수확 GAP인증 유러피안 샐러드 모듬쌈채소 1kg 1박스",
+   "st": "wait",
+   "tgt": "8,315원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/bzYdOBjB"
+  },
+  {
+   "n": "포스파티딜세린 징코 PS 60캡슐 4박스",
+   "st": "wait",
+   "tgt": "55,300원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/TP0Hxb72"
+  },
+  {
+   "n": "디센느 무선 칫솔 살균기 DSTS002 내츄럴티타늄 1개",
+   "st": "wait",
+   "tgt": "22,800원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/95KQpxL4"
+  },
+  {
+   "n": "마농 워치 동시충전 맥세이프 보조배터리 WH-DOC 화이트 1개",
+   "st": "wait",
+   "tgt": "17,515원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/VOHBw3Ne"
+  },
+  {
+   "n": "유한메디카 온가족 멀티비타민 미네랄 엔 탑 원데이 케어 90정 4개",
+   "st": "wait",
+   "tgt": "31,300원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/7Rzphv2g"
+  },
+  {
+   "n": "왕의떡 프리미엄 고급떡 진 선물세트 1.4kg 1세트",
+   "st": "wait",
+   "tgt": "18,580원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/TqMSd1An"
+  },
+  {
+   "n": "유한메디카 두뇌 엔 탑 PS 포스파티딜세린 인지력 케어 1000mg 60정 6개",
+   "st": "wait",
+   "tgt": "57,060원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/PparET4q"
+  },
+  {
+   "n": "뉴클 8.9 울트라슬림 맥세이프 반고체 보조배터리 4500mAh 미드나잇 메탈 1개",
+   "st": "wait",
+   "tgt": "17,630원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/f67Vdyl7"
+  },
+  {
+   "n": "백년본가 참기름 350ml 4개",
+   "st": "wait",
+   "tgt": "21,600원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/9fTMopc8"
+  },
+  {
+   "n": "콕스 CH7 초경량 가상7.1 LED 게이밍 헤드셋 블랙 1개",
+   "st": "wait",
+   "tgt": "15,160원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/PsUs29ih"
+  },
+  {
+   "n": "BENAF 그레이스 페이크 셔츠 조끼 그레이 FFF 1개",
+   "st": "wait",
+   "tgt": "18,580원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/zHaoBIKo"
+  },
+  {
+   "n": "하트 데이지 선풍기 커버 60x145cm 스카이 4개",
+   "st": "wait",
+   "tgt": "6,720원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/jBpD9Oqt"
+  },
+  {
+   "n": "홍찰옥수수 특대 30개",
+   "st": "wait",
+   "tgt": "21,485원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/Rot9Zz5B"
+  },
+  {
+   "n": "국내산 꽃상추 2kg 내외 1개",
+   "st": "wait",
+   "tgt": "6,400원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/rN3J7gs4"
+  },
+  {
+   "n": "불스원 불스원샷 7만키로 디젤/경유 3개",
+   "st": "wait",
+   "tgt": "35,790원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/v4pL8Jl7"
+  },
+  {
+   "n": "후르츠브레드 80g 32개",
+   "st": "wait",
+   "tgt": "24,080원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/T8FEN3ci"
+  },
+  {
    "n": "루카스나인 시그니처 더블샷라떼 14.9g 30개 + 쁘띠 마일드 아메리카노 11.5g 10개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hz7VrffB"
@@ -5435,7 +5393,7 @@
    "n": "잘풀리는집 클래식 무형광 화이트 린넨향 3겹 화장지 25m 6롤 1팩",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/jrJCh4M9"
@@ -5444,7 +5402,7 @@
    "n": "믈레코비타 리솔라 멸균우유 1L 12개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 19시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/XmN5DQNe"
@@ -5453,7 +5411,7 @@
    "n": "스너글 섬유탈취제 허거블 코튼 470ml 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zhiLgjHp"
@@ -5462,7 +5420,7 @@
    "n": "사조해표 식용유 콩기름 1.8L 3개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rJuKSYPy"
@@ -5471,7 +5429,7 @@
    "n": "매콤한 양념게장 1kg 2통",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NaT5OfY1"
@@ -5480,7 +5438,7 @@
    "n": "광천맛김 광천 재래 식탁김 재래식탁김 56g 16봉 2개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/52HAtxlr"
@@ -5489,7 +5447,7 @@
    "n": "추억의쫀드기 12g 80개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/f7KJhpQt"
@@ -5498,7 +5456,7 @@
    "n": "개구리 수면 안대 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9qrXX71v"
@@ -5507,7 +5465,7 @@
    "n": "캐리어 결합 보스턴백 블랙 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hriOrFt4"
@@ -5516,7 +5474,7 @@
    "n": "휴플러스 바른목 EMS 마사지기 CORDZERO-ES4 베이지 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/xsYzF8xs"
@@ -5525,7 +5483,7 @@
    "n": "한일전자 헤어 드라이기 PD H4300 2300W 블랙 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/lZiPIpRv"
@@ -5534,7 +5492,7 @@
    "n": "모락 시뮬러 S2 메탈 접이식 노트북 거치대 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 20시",
+   "chk": "10/25 20시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NAvDNBPe"
@@ -5543,7 +5501,7 @@
    "n": "깨비다 액막이 명태 도어벨 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zT4dGfEj"
@@ -5552,7 +5510,7 @@
    "n": "스판 벽걸이 에어컨커버 집 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/TaAHRTRy"
@@ -5561,7 +5519,7 @@
    "n": "꼬리뼈 메모리폼 방석 그레이 38x34x7cm 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/z6njEhB3"
@@ -5570,7 +5528,7 @@
    "n": "악력 손목 강화 무소음 자이로볼 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rIv8kEQj"
@@ -5579,7 +5537,7 @@
    "n": "비비맥스 이중파일 등산양말 여성용,색상랜덤 10켤레",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7zSa4y3v"
@@ -5588,7 +5546,7 @@
    "n": "하림펫푸드 밥이보약 CAT 걱정없는 헤어볼 닭 3.4kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/78WV8Kpx"
@@ -5597,7 +5555,7 @@
    "n": "하림펫푸드 밥이보약 CAT 알맞은 체중 닭 3.4kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/NCtkzCUz"
@@ -5606,7 +5564,7 @@
    "n": "하림펫푸드 밥이보약 CAT No 스트레스 3.4kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/thBfiqM"
@@ -5615,7 +5573,7 @@
    "n": "고양이 사료 닭 20kg 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/3bf2ATEn"
@@ -5624,7 +5582,7 @@
    "n": "캐트로 두부모래 가는입자 오리지널 16.8kg 6팩",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vZWAigkr"
@@ -5633,7 +5591,7 @@
    "n": "하림펫푸드 더리얼 DOG 맥시칸 양념 멍치킨 100g 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/PWUtuuvt"
@@ -5642,7 +5600,7 @@
    "n": "AONE 크루즈 GP-702 게이밍 장패드 레드 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7294QBGe"
@@ -5651,7 +5609,7 @@
    "n": "카드 슬리브 투명 65x92mm 100매",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/L7LjKkFi"
@@ -5660,7 +5618,7 @@
    "n": "카피랜드 용돈병풍 LED 멜로디 10단 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/vR5C4Kmm"
@@ -5669,7 +5627,7 @@
    "n": "무림 엠카피 데일리 복사용지 A4 80g 2500매 1박스",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9pyMIUjB"
@@ -5678,7 +5636,7 @@
    "n": "글로파이 체스형 고리자석 12mm 실버 16개 1세트",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/tiq24ZW"
@@ -5687,7 +5645,7 @@
    "n": "모락 조나 Z3 차량용 무선 충전 중력거치대 MR-CC-ZNZ3 블랙 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/N91t9Fbh"
@@ -5696,7 +5654,7 @@
    "n": "엑티몬 2포트 PD 83W 초고속 차량용 충전기 MON-CC-PD65W+18W USB-C 1.2m 화이트 CtoC 케이블 포함 1개",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/bsgTdW0w"
@@ -5705,7 +5663,7 @@
    "n": "블랙 다이아몬드 사계절 에탄올 워셔액 1.8L 6개입 1박스",
    "st": "wait",
    "tgt": "",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9v027hpB"
@@ -5714,7 +5672,7 @@
    "n": "해피달링 온오프 필터 샤워기 헤드 + 필터 5개",
    "st": "out",
    "tgt": "7,620원",
-   "chk": "10/25 4시",
+   "chk": "10/26 5시",
    "stdy": true,
    "last": "2026-10-11",
    "url": "https://toss.shopping/_m/5S4O94Xy"
@@ -5723,25 +5681,70 @@
    "n": "크롱 립큐어 딸기향 2.5g 3개",
    "st": "out",
    "tgt": "3,600원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": true,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/rJhTQw5h"
   },
   {
-   "n": "프리미엄 스퀘어 자석버클 쁘띠 스카프 A세트 FREE 4장 1세트",
+   "n": "스테인리스 주방칼 6종 블랙 1세트",
    "st": "out",
-   "tgt": "11,183원",
-   "chk": "10/24 19시",
+   "tgt": "10,300원",
+   "chk": "10/25 22시",
+   "stdy": true,
+   "last": "2026-10-25",
+   "url": "https://toss.shopping/_m/HLl8CsOa"
+  },
+  {
+   "n": "와이니즈 질레트 호환용 5중 면도날 면도기 세트 스윙면도기 1개 + 면도날 24개입 1세트",
+   "st": "out",
+   "tgt": "15,900원",
+   "chk": "10/25 22시",
    "stdy": false,
    "last": "2026-10-24",
-   "url": "https://toss.shopping/_m/RS54skWb"
+   "url": "https://toss.shopping/_m/Lr4rkefm"
+  },
+  {
+   "n": "꼬리빗 랜덤 1개",
+   "st": "out",
+   "tgt": "800원",
+   "chk": "10/26 7시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/D96aTY3q"
+  },
+  {
+   "n": "심리스 팬티 심플 무봉제 라인 XL 스킨 3개 + 블랙 3개 6개",
+   "st": "out",
+   "tgt": "8,436원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/5tEnBo2b"
+  },
+  {
+   "n": "아이엠듀 차량용 디퓨저 일랑일랑 200ml 2개",
+   "st": "out",
+   "tgt": "9,600원",
+   "chk": "10/25 19시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/ZGxX9N06"
+  },
+  {
+   "n": "아이엠듀 차량용 디퓨저 블랙체리 200ml 2개",
+   "st": "out",
+   "tgt": "9,900원",
+   "chk": "10/25 20시",
+   "stdy": false,
+   "last": "2026-10-24",
+   "url": "https://toss.shopping/_m/tXEVBMHk"
   },
   {
    "n": "캣누리 데일리 대용량 고양이사료 닭+참치 5kg 1개",
    "st": "out",
    "tgt": "11,900원",
-   "chk": "10/24 21시",
+   "chk": "10/25 21시",
    "stdy": false,
    "last": "2026-10-24",
    "url": "https://toss.shopping/_m/1LUTncq7"
@@ -5750,7 +5753,7 @@
    "n": "소후 자동 소금후추 전동 그라인더 2종 세트 + 전용 거치대",
    "st": "gone",
    "tgt": "18,900원",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-13",
    "url": "https://toss.shopping/_m/xMnxVIa3"
@@ -5759,7 +5762,7 @@
    "n": "파이토메이드 고칼슘&비타민D 두유 21곡 미숫가루 190ml 24개",
    "st": "gone",
    "tgt": "2,800원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/JPYFHNV6"
@@ -5768,7 +5771,7 @@
    "n": "로로보아 푹 저압 곰솥 12L",
    "st": "gone",
    "tgt": "19,500원 · 5천원 쿠폰가",
-   "chk": "10/25 6시",
+   "chk": "10/26 6시",
    "stdy": false,
    "last": "2026-10-14",
    "url": "https://toss.shopping/_m/3Qd06rzo"
