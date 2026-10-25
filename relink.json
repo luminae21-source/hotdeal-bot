@@ -1,5 +1,5 @@
 {
- "left_now": 39,
+ "left_now": 38,
  "ok": {
   "auction": 7
  },
@@ -346,6 +346,13 @@
    "n": "슈어홈 가열식 가습기 2L 화이트",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 08:32"
+  },
+  {
+   "k": "진열",
+   "pid": "9156159238",
+   "n": "좋은느낌 센서티브스킨 생리대 날개형 대형 32개입 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 08:46"
   }
  ]
 }
