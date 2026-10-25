@@ -4240,10 +4240,10 @@ def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
     its = ig_items(seen, ps[:CARD_N])
     k = datetime(int(day[:4]), int(day[5:7]), int(day[8:10]))
     date_text = f"{k.month}월 {k.day}일 {'월화수목금토일'[k.weekday()]}요일" if design in "AP" else f"{k.month}.{k.day} {'월화수목금토일'[k.weekday()]}"
-    chips = [{**it, "photo": None} if it["src"] == "toss" else it for it in random.sample(its, len(its))]  # 표지 칸은 꽉 차게 자름 = 토스 사진 X(토스 = 원본 그대로·출처 표시 — 사진 장에만)
+    chips = [{**it, "photo": None} if it.get("src") == "toss" else it for it in random.sample(its, len(its))]  # 표지 칸은 꽉 차게 자름 = 토스 사진 X(토스 = 원본 그대로·출처 표시 — 사진 장에만)
     cover = cards.ig_cover(design, chips, date_text, title.format(n=len(its)), f"{d}/cover.jpg",
                            sub="최저가 아니어도 꾸준히 팔리는 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
-    return cover, [cards.ig_photo_card(it, n, f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1) if it["photo"]], design  # 사진 있는 상품만(번호 = 카드 번호) — 0장이면 표지 한 장 글
+    return cover, [cards.ig_photo_card(it, n, f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1) if it.get("photo")], design  # 사진 있는 상품만(번호 = 카드 번호) — 0장이면 표지 한 장 글
 
 
 def ig_landed(tok, uid, cid, cap="", since=0):
