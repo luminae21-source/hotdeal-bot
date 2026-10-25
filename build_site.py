@@ -935,7 +935,7 @@ def pick_score(x, recs):
 def choose_picks(it, recs, n=PICK_N, avoid=()):
     """🔥 상품에서 n개: 몰 섞기(쿠팡·토스·네이버 한 개씩 먼저 — 가격 새것만, 모자라면 순서대로). avoid = 전날 픽 주소(하루 1번 바뀜 — 다른 후보가 모자랄 때만 다시)."""
     key = lambda x: (x[1].get("url") in avoid, pick_score(x, recs))
-    cand = sorted((x for x in it if x[2][0] == 0 and x[1].get("own")), key=key) or sorted((x for x in it if x[2][0] == 0), key=key)
+    cand = sorted((x for x in it if x[2][0] == 0 and x[1].get("own") and aff(x[1].get("url"))), key=key) or sorted((x for x in it if x[2][0] == 0 and not x[1].get("own")), key=key)  # 진우 상품 = 제휴 링크만(쿠팡 생 주소 진열 X — 픽 = Threads '🎯 오늘의 픽'에도 나감, 10/25 리뷰)
     out, malls = [], set()
     for x in cand:
         if len(out) < n and shop_of(x[1]) not in malls and not pick_score(x, recs)[1]:  # 몰 섞기는 가격이 새것끼리만(옛 가격 몰 상품을 억지로 X)

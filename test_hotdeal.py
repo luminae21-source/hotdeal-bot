@@ -5776,6 +5776,8 @@ json.dump([evb[1], SH45("https://link.coupang.com/a/jw3", "생 주소 샴푸", "
 H.shelf_posts(s45b); assert [p["url"] for p in json.load(open("posts.json"))] == ["https://link.coupang.com/a/jw1", "https://link.coupang.com/a/jw3"]
 pk45 = lambda u: S45.pick_section("2026-10-24", [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))])
 assert S45.SHOP_NOTES["coupang"] not in pk45(X45) and S45.SHOP_NOTES["coupang"] in pk45("https://link.coupang.com/a/jw1") and 'rel="nofollow noopener"' in pk45(X45)  # 생 주소 픽 = 쿠팡 파트너스 문구 X · 보기 sponsored X
+cp45 = [(0, {"t": "2026-10-24 19:00", "text": "📦 쿠팡 🔥\n생 주소\n9,900원", "url": X45, "own": 1, "rehot": "2026-10-24"}, (0, "9,900원", "", [], True)), (1, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n제휴\n9,900원", "url": "https://link.coupang.com/a/jw1", "own": 1}, (0, "9,900원", "", [], False))]
+assert [i for i, _, _ in S45.choose_picks(cp45, {})] == [1] and S45.choose_picks(cp45[:1], {}) == []  # 오늘의 픽(= Threads 🎯) = 생 주소 X(🔁여도)
 eg45 = lambda u: S45.ev_page({"tag": "햇상품 기획전", "slug": "fresh", "until": "2026-10-30", "chk": "", "mall": "쿠팡", "urls": {u: ""}, "xs": [(0, {"t": "2026-10-24 10:00", "text": "📦 쿠팡 🔥\n세제 1L\n9,900원", "url": u, "own": 1}, (0, None, "", [], False))]}, "2026-10-24")[2]
 assert S45.SHOP_NOTES["coupang"] not in eg45(X45) and S45.SHOP_NOTES["coupang"] in eg45("https://link.coupang.com/a/jw1")  # 기획전 쪽도 같은 규칙
 time.time, H.EVENTS, H.POSTS, H.CP_LINKS = sv45b; os.chdir(cwd45)
