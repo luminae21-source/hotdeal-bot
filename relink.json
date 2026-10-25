@@ -1,5 +1,5 @@
 {
- "left_now": 73,
+ "left_now": 72,
  "ok": {
   "auction": 7
  },
@@ -108,6 +108,13 @@
    "n": "니켄 벨 주방가위",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 00:45"
+  },
+  {
+   "k": "진열",
+   "pid": "6429441553",
+   "n": "해태 홈런볼 초코 46g 10개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 00:59"
   }
  ]
 }
