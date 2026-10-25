@@ -1991,7 +1991,7 @@ assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_11"] and S9.card_stems("docs"
 at9("11:34", H.ig_publish); assert not ig9 and "igc_IMG1" in seen  # 만든 실행엔 발행 X(사이트 먼저) — 상태 조회도 그 뒤(10/23 그래프 API 호출 줄이기) -> 다음 실행에
 cap = b["caption"]
 assert cap.startswith(H.NAVER_NOTE + "\n" + H.DISCLOSURE + "\n" + H.AFF_NOTE + "\n\n10월 12일 오전 11시 핫딜\n\n1. [G마켓] 토리든 세럼 50ml\n2. [쿠팡] 휴지 30롤\n"), cap  # 대가성 문구 맨 앞(프로그램마다, 네이버·올영 먼저), 번호 줄 = 카드 순서·가격 꼬리 뺌
-assert "🛒 프로필 링크 → '10월 12일 오전 11시 카드 딜' 번호 누르면 바로 구매" in cap and "맨 위" not in cap and cap.endswith("#핫딜 #핫딜픽 #생필품 #화장품 #쟁여템") and "#최저가" not in cap and len(cap) <= 2200
+assert "🛒 프로필 링크 → '10월 12일 오전 11시 카드 딜' 번호 누르면 바로 구매" in cap and "맨 위" not in cap and (t9 := cap.rsplit("\n", 1)[1]).startswith("#핫딜 #핫딜픽 #생필품 #화장품 #") and len(t9.split()) == 5 and "#최저가" not in cap and len(cap) <= 2200
 assert H.ig_tags([], 4) == "#핫딜 #핫딜픽 #가성비템 #쟁여템 #장바구니" and len({H.ig_tags([], h // 2) for h in (*H.IG_SLOTS, H.IG_DAY_HOUR)}) == 6  # 10/23 진우 '해시태그 세트도 칸마다 조금씩 다르게' — 기본 2 + 카테고리 + 칸마다 돌린 채움
 at9("11:47"); assert not ig9  # 회차마다 1번
 sv9 = seen; seen = {}; at9("11:47"); assert not ig9; seen = sv9  # seen 캐시를 잃어도 기록(ig.json, 커밋됨)에 있으면 다시 안 올림
