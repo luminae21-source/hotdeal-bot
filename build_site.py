@@ -1132,7 +1132,7 @@ def promo_list(today):
     https = lambda v: v is None or isinstance(v, str) and v.startswith("https://") and not re.search(r"\s", v)
     out = []
     for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []):
-        if not (isinstance(p, dict) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(p.get("id") or "")) and re.fullmatch(r"[a-z0-9]{1,20}", str(p.get("mall") or ""))
+        if not (isinstance(p, dict) and isinstance(p.get("id"), str) and isinstance(p.get("mall"), str) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", p["id"]) and re.fullmatch(r"[a-z0-9]{1,20}", p["mall"])  # 숫자 id·mall = 뺌(정렬·글자 자르기에서 빌드가 멈춤 — 10/25 리뷰)
                 and isinstance(p.get("name"), str) and p["name"].strip() and day(p.get("start")) and day(p.get("end")) and https(p.get("url"))
                 and (p.get("pre") is None or isinstance(p["pre"], dict) and day(p["pre"].get("start")) and day(p["pre"].get("end")))
                 and (p.get("cta") is None or isinstance(p["cta"], dict) and https(p["cta"].get("href"))) and (p.get("color") is None or re.fullmatch(r"#[0-9A-Fa-f]{6}", str(p["color"])))
@@ -1294,7 +1294,7 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
                 else PROMO_OY_NOTE if host in OY_HOSTS else PROMO_LP_NOTE if aff(h) else "")
     notes = [n for n in dict.fromkeys(note(h, ext, xs) for (h, ext), xs, _ in gos) if n]
     mm = int(today[5:7])
-    body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쿠팡·11번가·G마켓·SSG 등 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
+    body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쇼핑몰 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
             + cal + chips + (f'<div class="pvl">{"".join(cards[:len(live)])}</div>' if live else '<p class="t">지금 정리된 기획전이 없어요. 매일 저녁 새로 찾아 올려요.</p>')
             + (f'<details class="pvx"><summary>지난 행사 {len(past)}</summary>{"".join(cards[len(live):])}</details>' if past else "")
             + (f'<p class="t pvnote">{" ".join(notes)}</p>' if notes else "") + PROMO_FILTER_JS)

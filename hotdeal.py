@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -3794,7 +3794,7 @@ def digest(seen, posts):
         return
     if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
         return
-    urls = [f"{SITE}p/{posts.index(p)}.html?ref=tg" if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
+    urls = [(post_url(p["mid"]) if not site_ok(p) and p.get("mid") else f"{SITE}p/{posts.index(p)}.html?ref=tg") if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 사이트에서 뺀 딜 = 쪽이 없음 -> 채널 글(10/25 리뷰)  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
     night = night if len(night) < PREVIEW_MIN else []
     toss_in = toss_list(todays) or (TOSS_NO_CMP and any(is_toss(d["url"]) for d in night))  # 합친 밤 줄도 같은 글
@@ -5402,7 +5402,11 @@ def weather_post(seen):
 def cal_text(today):
     """'🗓 쇼핑 달력' 글(사실만 — 날짜·몰·행사·D-day, 과장·추천 말 X · 링크 = 우리 사이트 기획전 모음뿐 = 대가성 문구 X) -> (글, 서명 = 행사 id·이름·날짜가 바뀌면 달라짐) / 앞으로 CAL_DAYS일 행사 없음 = (None, None)."""
     lim = time.strftime("%Y-%m-%d", time.gmtime(kst_ts(today + " 00:00") + 9 * 3600 + CAL_DAYS * 86400))
-    rows = [(p, st, first) for p, st, first in promo_list(today) if st != "past" and (first or today) <= lim][:5]
+    try:  # /events/에 보이는 행사만(promo_shown — 수수료 길이 없어 숨긴 행사를 글이 소개하지 않게 · 지난 빌드 쪽, 없으면 글 X)
+        shown = set(re.findall(r'<article class="pv" id="([a-z0-9-]+)"', open("docs/events/index.html", encoding="utf-8").read()))
+    except OSError:
+        shown = set()
+    rows = [(p, st, first) for p, st, first in promo_list(today) if st != "past" and (first or today) <= lim and p["id"] in shown][:5]
     if not rows:
         return None, None
     md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
@@ -5531,7 +5535,8 @@ def poll_post(seen):
     tok, key = E.get("THREADS_TOKEN"), due(POLL_HOUR, "poll", seen)
     if not tok or not key:
         return
-    now, recs = time.time(), price_records(load(POSTS, []), shelf=False)  # Threads 투표 = 채널 글 기록만
+    ps = load(POSTS, [])
+    now, recs = time.time(), price_records(ps, shelf=False, skip={i for i, p in enumerate(ps) if not p["text"].startswith("📋") and not site_ok(p)})  # Threads 투표 = 채널 글 기록만 · 사이트에서 뺀 딜 X(사이트 c/ 쪽과 같은 기록 — 없는 쪽 링크·안 보이는 최저가 X, 10/25 리뷰)
     op = seen.get("polls", {}).get("open")
     if op and now - op["t"] >= 20 * 3600:  # 24시간 투표가 닫힐 즈음(다음 날 같은 회차)
         seen["polls"] = {**seen["polls"], "t": now, "open": None}  # 먼저 지움: 실패해도 같은 답글 반복 X

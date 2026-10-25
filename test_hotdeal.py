@@ -6976,7 +6976,9 @@ assert "지금 정리된 기획전이 없어요" in S65.promo_page([], [], {}, {
 #     쿠팡 생 주소 상품뿐 = 쿠팡 문구 X · 띠에 없는 행사(7일 밖) = 옛 넘김 배너 그대로 · 기획전 링크 = 구매 클릭(buy/) X
 json.dump({"promos": [P65(id="d1", end="2026-11-31"), P65(id="d2", pre={"start": "2026-02-29", "end": None}), P65(id="t1", tag=["a"]), P65(id="t2", mall_name=3), P65(id="t3", cta={"text": ["x"], "href": "https://a.kr/"}), P65(id="ok")]}, open("promos.json", "w"))
 assert [p["id"] for p, _, _ in S65.promo_list("2026-10-25")] == ["ok"]
-PZ65 = P65(id="pz", start="2026-11-01", end="2026-11-08", pre={"start": "2026-10-20", "end": "2026-10-24"}); json.dump({"promos": [PZ65]}, open("promos.json", "w")); LZ65 = S65.promo_list("2026-10-25")
+json.dump({"promos": [P65(id=7), P65(id="b", mall=11, mall_name=None), P65(id="c")]}, open("promos.json", "w")); assert [p["id"] for p, _, _ in S65.promo_list("2026-10-25")] == ["c"]  # 숫자 id·mall = 뺌(빌드 멈춤 X)
+os.makedirs("docs/events", exist_ok=True); EV65 = lambda *ids: open("docs/events/index.html", "w", encoding="utf-8").write("".join(f'<article class="pv" id="{i}" data-s="on">' for i in ids))  # /events/에 보이는 행사(cal_text가 이것만)
+EV65("pz"); PZ65 = P65(id="pz", start="2026-11-01", end="2026-11-08", pre={"start": "2026-10-20", "end": "2026-10-24"}); json.dump({"promos": [PZ65]}, open("promos.json", "w")); LZ65 = S65.promo_list("2026-10-25")
 assert LZ65[0][1:] == ("soon", "2026-11-01") and S65.promo_chip(PZ65, "soon", "2026-10-25") == '<b class="pvs soon">D-7</b>' and S65.promo_chip(PZ65, "on", "2026-10-22") == '<b class="pvs on">사전 행사 중</b>' and S65.promo_list("2026-10-22")[0][1] == "on"
 assert "<i>D-7</i>" in S65.promo_page(LZ65, [], {}, {}, {}, set(), "2026-10-25")[2] and "— D-7" in H.cal_text("2026-10-25")[0] and "(사전" not in H.cal_text("2026-10-25")[0] and "사전 행사 중" in H.cal_text("2026-10-22")[0]
 CN65 = P65(id="cpn", mall="coupang", url="https://link.coupang.com/a/promo", cta=None, start="2026-10-20", pre=None)
@@ -7118,6 +7120,14 @@ json.dump([{"at": "2026-10-25 09:00", "shelf": True, "url": "https://naver.me/Ab
 time.time = lambda: cal65.timegm(time.strptime("2026-10-25 20:40", "%Y-%m-%d %H:%M")) - 9 * 3600; H.shelf_posts({}); H.shelf_posts({}); pn65 = json.load(open("posts.json"))
 assert [(p["url"], p.get("own"), p.get("shelf")) for p in pn65] == [("https://naver.me/AbCd12", 1, 1)] and pn65[0]["text"].startswith(H.NAVER_NOTE) and S65.site_ok(pn65[0]) and [e["url"] for e in H.load(H.EVENTS, [])] == ["https://naver.me/Ch1"], pn65
 H.POSTS, H.EVENTS = sv65n
+# (10/25 리뷰) 가격 투표 기록 = 사이트에서 뺀 딜 X(사이트 c/ 쪽과 같은 기록 — 지워진 쪽 링크·안 보이는 최저가 X) · 21시 모아보기 = 사이트에서 뺀 긴 주소 딜은 채널 글로(쪽이 없음)
+json.dump([{"t": "2026-10-25 10:00", "text": "🔥 [11번가] 숨김 (1,000원)", "url": "https://search.11st.co.kr/x", "mid": 1}, {"t": "2026-10-25 10:01", "text": "🔥 [쿠팡] 보임 (1,000원)", "url": "https://link.coupang.com/a/v", "mid": 2}], open("posts.json", "w"))
+sv65p, cap65 = (H.price_records, H.POSTS, H.E.get("THREADS_TOKEN"), time.time, S65.SITE_AFF_ONLY, H.POLL_HOUR), []
+H.price_records, H.POSTS, H.E["THREADS_TOKEN"], S65.SITE_AFF_ONLY, H.POLL_HOUR = (lambda ps, shelf=True, skip=(): cap65.append((shelf, set(skip))) or {}), "posts.json", "tk", True, (21, 40)
+time.time = lambda: cal65.timegm(time.strptime("2026-10-25 %02d:%02d" % H.POLL_HOUR, "%Y-%m-%d %H:%M")) - 9 * 3600 + 120
+H.poll_post({}); assert cap65 == [(False, {0})], cap65
+assert 'post_url(p["mid"]) if not site_ok(p) and p.get("mid")' in inspect.getsource(H.digest)
+(H.price_records, H.POSTS, tk65p, time.time, S65.SITE_AFF_ONLY, H.POLL_HOUR) = sv65p; H.E.pop("THREADS_TOKEN", None) if tk65p is None else H.E.__setitem__("THREADS_TOKEN", tk65p)
 # 카드 번호 칸(홈 #today·/link): 사이트에서 뺀 딜 = 번호·이름만(링크 X) · sponsored = 제휴 링크만
 PK65 = [(0, {"t": "x", "text": "🔥 [쿠팡] 제휴 (1원)", "url": "https://link.coupang.com/a/z"}), (1, {"t": "x", "text": "🔥 [11번가] 비제휴 (1원)", "url": "https://search.11st.co.kr/x"}),
         (2, {"t": "x", "text": "🔥 [네이버] 네이버 직접 (1원)", "url": "https://smartstore.naver.com/a/products/1"}), (3, {"t": "x", "text": "🔥 [네이버] 참여 안 함 (1원)", "url": "https://smartstore.naver.com/a/products/2", "nosite": 1})]
@@ -7126,8 +7136,10 @@ assert 'href="https://link.coupang.com/a/z" rel="nofollow sponsored noopener"' i
 sv65k = (S65.card_stems, S65.card_order); S65.card_stems, S65.card_order = (lambda out: ["2026-10-25_15"]), (lambda posts, x, out="docs": PK65)
 lc65 = S65.link_cards([], "docs"); S65.card_stems, S65.card_order = sv65k; S65.SITE_AFF_ONLY = False
 assert 'rel="nofollow sponsored noopener"' in lc65 and "11st" not in lc65 and lc65.count('aria-disabled="true"') == 2 and "sponsored noopener\" target=\"_blank\"><b>03" not in lc65, lc65
-# Threads '🗓 쇼핑 달력': 09:40 뒤 1번 · promos 바뀐 날만 · 링크 = /events/?ref=th(우리 사이트 = 대가성 문구 X) · 앞으로 2주 · 사전 행사 표시
+# Threads '🗓 쇼핑 달력': 09:40 뒤 1번 · promos 바뀐 날만 · 링크 = /events/?ref=th(우리 사이트 = 대가성 문구 X) · 앞으로 2주 · 사전 행사 표시 · /events/에 보이는 행사만(10/25 리뷰)
 json.dump({"promos": pr65}, open("promos.json", "w")); b65, s65 = [], {}
+EV65("p1", "gm", "kw", "new"); assert "쓱데이" not in (H.cal_text("2026-10-26")[0] or "") and "그랜드 십일절" in H.cal_text("2026-10-26")[0]  # /events/에서 숨긴 행사(ssg) = 글에도 X
+os.remove("docs/events/index.html"); assert H.cal_text("2026-10-26") == (None, None); EV65("p1", "gm", "kw", "new")  # 쪽이 없으면 글 X
 H.th_bundle, H.busy, H.E["THREADS_TOKEN"] = (lambda seen, kind, text, link=None, image=None: b65.append((kind, text, link))), (lambda seen, cap=True: False), "tk"
 at65 = lambda d: setattr(time, "time", lambda: cal65.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
 at65("2026-10-26 09:30"); H.cal_post(s65); assert not b65  # 9:40 전
