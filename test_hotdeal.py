@@ -5013,10 +5013,10 @@ shutil.rmtree("t34")
 # ig_items: 몰 배지(채널 머리 줄 규칙)·칩(단위가격 > 와우 할인 > N%↓)·배송·가격 시각, 사진 끄기
 sv34 = (H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"))
 H.ai_json = lambda prompt, props: {"lines": ["휴지 떨어진 집이면 지금 쟁여도 됨", "이거 진짜 좋아요", "커피 매일 마시면 개당 가격 보고 고르기"]}
-P34 = [{"t": "2026-11-07 10:00", "url": "https://link.coupang.com/a/A1", "mid": 3401, "unit": "1롤당 330원", "e": "🧻", "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n깨끗한나라 휴지 30롤\n9,900원\n로켓배송 · 내일(토) 도착"},
+P34 = [{"t": "2026-11-07 10:00", "url": "https://link.coupang.com/a/A1", "mid": 3401, "unit": "1롤당 330원", "e": "🧻", "img": "https://thumbnail.coupangcdn.com/a34.jpg", "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n깨끗한나라 휴지 30롤\n9,900원\n로켓배송 · 내일(토) 도착"},
        {"t": "2026-11-07 11:00", "url": "https://link.coupang.com/a/A2", "mid": 3402, "text": f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 와우 할인 🔥\n맥심 커피믹스 180개\n21,000원\n와우 쿠폰 10% 할인 · 로켓배송 아님"},
        {"t": "2026-11-07 12:00", "url": "https://toss.shopping/_m/A3", "mid": 3403, "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n물티슈 10팩\n8,900원 (47%↓)\n47% 할인"},
-       {"t": "2026-11-07 13:00", "url": "https://naver.me/A4", "mid": 3404, "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 생수 2L 12병 (5,720원/무료)\n\n좋음"}]
+       {"t": "2026-11-07 13:00", "url": "https://naver.me/A4", "mid": 3404, "img": "https://shop-phinf.pstatic.net/a.jpg", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 생수 2L 12병 (5,720원/무료)\n\n좋음"}]
 i34 = H.ig_items({"tone_ig": {"t": 1, "l": [1, 3]}}, P34, photos=False)  # 말투 = 반말·음슴체 차례(~요 줄 X)
 assert [(x["badge"], x["chip"], x["ship"]) for x in i34] == [("🚀 쿠팡 로켓", "1롤당 330원", "내일(토) 도착"), ("📦 쿠팡", "와우 할인", ""), ("💙 토스 특가", "47%↓", ""), ("네이버", "", "무료배송")], i34
 assert [x["line"] for x in i34] == ["휴지 떨어진 집이면 지금 쟁여도 됨", "", "커피 매일 마시면 개당 가격 보고 고르기", ""] and i34[0]["when"] == "11/7 10시" and i34[3]["kind"] == "생수" and i34[0]["photo"] is None
@@ -5029,20 +5029,22 @@ def http34(url, body=None, headers=None, method=None):
     if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
     raise AssertionError(url)
 json.dump(P34, open("posts34.json", "w"), ensure_ascii=False); os.makedirs("docs/cards", exist_ok=True); I34.new("RGB", (10, 10)).save("docs/cards/2026-11-07.jpg")
+uo34, ph34 = H.urllib.request.urlopen, io.BytesIO(); I34.new("RGB", (400, 400), (90, 160, 90)).save(ph34, "JPEG"); u34 = []
+H.urllib.request.urlopen = lambda req, timeout=None: u34.append(req.full_url) or io.BytesIO(ph34.getvalue())  # 쿠팡 사진 1장(네이버 사진 = 안 받음)
 H.http, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides = http34, "posts34.json", True, True, "ig34/ig.json", (lambda now: None)
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
 s34 = {}; time.time = lambda: TK("2026-11-07 22:05"); H.ig_cards(s34)
-assert sorted(os.listdir("docs/cards/igv/2026-11-07")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "cover.jpg"] and not c34  # 이번 실행 = 한 벌만(인스타 X)
+assert sorted(os.listdir("docs/cards/igv/2026-11-07")) == ["01.jpg", "cover.jpg"] and not c34 and u34 == ["https://thumbnail.coupangcdn.com/a34.jpg"], u34  # 이번 실행 = 한 벌만(인스타 X) · 사진 장 = 사진 있는 쿠팡 1번만(네이버·토스·사진 없는 것 X)
 cv34 = I34.open("docs/cards/igv/2026-11-07/cover.jpg").convert("RGB").getpixel((20, 20)); assert H.ig_design("2026-11-07", 3) == "B" and max(abs(a - b) for a, b in zip(cv34, C34.PAPER)) < 10  # 11/7 22시 칸 = 10/22에서 16일 + 4번째 칸(단계 0) = B
 time.time = lambda: TK("2026-11-07 22:12"); H.ig_cards(s34); assert not c34  # 22:00 + 15~20분 전(하루 카드 = 인스타 22시, 10/23 진우)
 time.time = lambda: TK("2026-11-07 22:25"); H.ig_cards(s34)
 imgs34 = [b["image_url"] for u, b, m in c34 if m == "POST" and b.get("is_carousel_item")]
-assert imgs34 == [f"{H.SITE}cards/igv/2026-11-07/{f}" for f in ("cover.jpg", "01.jpg", "02.jpg", "03.jpg", "04.jpg")], imgs34  # 사이트 하루 카드(cards/2026-11-07.jpg) X
+assert imgs34 == [f"{H.SITE}cards/igv/2026-11-07/{f}" for f in ("cover.jpg", "01.jpg")], imgs34  # 사이트 하루 카드(cards/2026-11-07.jpg) X · 1장 = 지금 표지, 2장부터 사진 장
 assert not [1 for u, b, m in c34 if b and b.get("media_type") == "CAROUSEL"] and s34["igday"]["d"] == "2026-11-07" and len(s34["igday"]["ti"]) == 1  # 묶음은 다음 실행에(조각 만든 실행엔 상태 X) · 표지 제목 = 그날 기록(안 겹치게)
 c34.clear(); time.time = lambda: TK("2026-11-07 22:39"); H.ig_cards(s34)
 cap34 = next(b["caption"] for u, b, m in c34 if m == "POST" and b.get("media_type") == "CAROUSEL")
-assert cap34.split("\n\n")[0].startswith(H.NAVER_NOTE) and cap34.split("\n\n")[1].split("\n")[0] in ("휴지 떨어진 집이면 지금 쟁여도 됨", "커피 매일 마시면 개당 가격 보고 고르기") or len(cap34.split("\n\n")[1].split("\n")) in (2, 3), cap34  # 대가성 문구 -> 사람 멘트
-(H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, tk34, uid34) = sv34
+assert cap34.split("\n\n")[0].endswith("\n" + H.IG_PHOTO_NOTE) and cap34.count(H.IG_PHOTO_NOTE) == 1 and cap34.split("\n\n")[0].startswith(H.NAVER_NOTE) and cap34.split("\n\n")[1].split("\n")[0] in ("휴지 떨어진 집이면 지금 쟁여도 됨", "커피 매일 마시면 개당 가격 보고 고르기") or len(cap34.split("\n\n")[1].split("\n")) in (2, 3), cap34  # 대가성 문구 -> 사람 멘트
+(H.ai_json, H.http, H.tg, H.POSTS, H.IG_AUTO, H.IG_HUMAN, H.IG_LIVE, H.prune_slides, time.time, tk34, uid34) = sv34; H.urllib.request.urlopen = uo34; shutil.rmtree("ig_photos", ignore_errors=True)
 H.E.pop("IG_TOKEN", None) if tk34 is None else H.E.update(IG_TOKEN=tk34); H.E.pop("IG_USER_ID", None) if uid34 is None else H.E.update(IG_USER_ID=uid34)
 shutil.rmtree("docs/cards/igv"); os.remove("docs/cards/2026-11-07.jpg"); os.remove("posts34.json"); shutil.rmtree("ig34", ignore_errors=True)
 assert ig9h is True and iga0 is True and H.REEL_PUBLIC is False  # (기본값) 10/23 진우 '인스타 꾸준하게' — 릴스는 꺼 둠
@@ -7359,6 +7361,130 @@ assert len(u68b) == 2  # 못 받은 사진 = 1시간 뒤 다시(실행마다 X)
 (H.EVENTS, H.tg, H.http, time.time, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, tk68, H.urllib.request.urlopen, H.alert) = sv68
 H.E.pop("THREADS_TOKEN", None) if tk68 is None else H.E.__setitem__("THREADS_TOKEN", tk68)
 os.chdir(cwd68)
+# 9-69) 인스타 상품 사진 장(10/25 21시 Cowork ② — 넘기기 1장 = 지금 표지, 2장부터 카드 번호 순 사진 장): 사진 = 판매 페이지만(쿠팡 = 글 img·events img 허용 목록, 토스 = 상세 API·TOSS_PHOTO,
+#       네이버·다른 몰·커뮤니티 X · 없으면 그 상품 건너뜀) · 줄이고·키우기만(자르기 X) · 글자 = 사진 밖 여백 · 캡션 '상품 사진: 판매 페이지(쿠팡·토스쇼핑)' · 큐레이션 = 같은 사진 넘기기 + '프로필 링크 → 주제'
+import contextlib, io, calendar, inspect, shutil
+import cards as C69
+from PIL import Image as I69
+d69 = tempfile.mkdtemp(); cwd69 = os.getcwd(); os.chdir(d69)
+ok69 = set(H.RUN["ok"]); sv69 = (H.urllib.request.urlopen, H.TOSS_PHOTO, H.HAS_TOSS, H.toss, H.http, H.tg, time.time, H.EVENTS, S0.EVENTS, H.POSTS, H.IG_AUTO, H.ig_fail, H.busy, H.bundled, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"), H.E.get("THREADS_TOKEN"))
+def jpg69(w, h, c=(200, 120, 40)):
+    b = io.BytesIO(); I69.new("RGB", (w, h), c).save(b, "JPEG"); return b.getvalue()
+u69 = []; H.urllib.request.urlopen = lambda req, timeout=None: u69.append(req.full_url) or io.BytesIO(jpg69(300, 500))
+CPU69, CPI69 = "https://link.coupang.com/a/P69", "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/p69.jpg"
+q69 = lambda url, img=None, **k: {"t": "2026-10-26 10:00", "url": url, "text": f"🔥 [{'쿠팡' if 'coupang' in url else '네이버'}] 상품 (9,900원)", **({"img": img} if img else {}), **k}
+# 사진 출처: 쿠팡 = 글 img(허용 목록) · 네이버·pstatic·뽐뿌·사진 없음 = X(받지도 않음) · 토스 = TOSS_PHOTO 꺼짐이면 API도 안 부름
+with contextlib.redirect_stdout(io.StringIO()):
+    f69, src69 = H.ig_photo(q69(CPU69, CPI69), "ph69")
+    assert src69 == "coupang" and I69.open(f69).size == (300, 500) and u69 == [CPI69], u69
+    assert H.ig_photo(q69("https://naver.me/x", "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "") and H.ig_photo(q69(CPU69, "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "")
+    assert H.ig_photo(q69("https://www.ppomppu.co.kr/zboard/view.php?no=1"), "ph69") == (None, "") and H.ig_photo(q69(CPU69), "ph69") == (None, "") and len(u69) == 1
+    t69 = []; H.toss = lambda path, body=None: t69.append(path) or {"items": [{"tacaItemId": 77, "tacaId": 7, "thumbnailUrl": "https://static.toss.im/p/77.jpg"}]}
+    TU69, s69t = "https://toss.shopping/_m/T69", {"tlink": {"r": {"https://toss.shopping/_m/T69": [77]}}, "tossid": {"m": {"https://toss.im/_m/J69": [7, 0, 0]}}}
+    H.HAS_TOSS, H.TOSS_PHOTO = True, False
+    assert H.ig_photo(q69(TU69), "ph69", s69t) == (None, "") and not t69  # 토스 사진 꺼짐(진우 확인 전) = API X
+    H.TOSS_PHOTO = True
+    ft69 = H.ig_photo(q69(TU69), "ph69", s69t); fj69 = H.ig_photo(q69("https://toss.im/_m/J69"), "ph69", s69t)
+    assert ft69[1] == fj69[1] == "toss" and t69 == ["/products/detail?tacaItemIds=77", "/products/detail?tacaIds=7"] and u69[-1] == "https://static.toss.im/p/77.jpg", t69  # 우리 링크 = 상품 id · 진우 링크 = 그룹 id(own_end)
+    open(H.TOSS_NOIMG, "w").write("77\n"); assert H.ig_photo(q69(TU69), "ph69", s69t) == (None, ""); os.remove(H.TOSS_NOIMG)  # 셀러 요청 상품 = 사진 X
+    assert H.ig_photo(q69(TU69), "ph69", {}) == (None, "")  # id 모르면 X(쉐어링크 안 엶)
+    H.urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(b"not an image")
+    assert H.ig_photo(q69(CPU69, CPI69[:-4] + "x.jpg"), "ph69") == (None, "")  # 깨진 사진 = 건너뜀
+H.urllib.request.urlopen = lambda req, timeout=None: u69.append(req.full_url) or io.BytesIO(jpg69(300, 500))
+# 사진 장: 1080x1350 · 사진 = 비율 그대로 흰 칸 가운데(자르기 X) · 위에 글자 X · 보조 글자 40px↑ · 토스 = '사진: 토스쇼핑'
+I69.new("RGB", (300, 800), (40, 90, 220)).save("tall69.jpg"); I69.new("RGBA", (900, 300), (0, 0, 0, 0)).save("wide69.png")
+sz69, pf69 = [], C69.pf; C69.pf = lambda w, z: sz69.append(z) or pf69(w, z)
+dr69 = []; td69 = C69.ImageDraw.ImageDraw.text
+C69.ImageDraw.ImageDraw.text = lambda self, xy, text, *a, **k: dr69.append((xy, text)) or td69(self, xy, text, *a, **k)
+it69 = {"name": "아주 긴 상품 이름 " * 8, "short": "보아 플리스 집업 점퍼 아주 긴 짧은 이름", "price": "19,800원 · 와우가 17,800원", "when": "10/26 10시", "photo": "tall69.jpg", "src": "toss"}
+o69 = I69.open(C69.ig_photo_card(it69, 3, "c69.jpg")).convert("RGB")
+C69.pf = pf69; C69.ImageDraw.ImageDraw.text = td69
+assert o69.size == (1080, 1350) and min(sz69) >= 40, sorted(set(sz69))
+near = lambda px, c, t=14: max(abs(a - b) for a, b in zip(px, c)) < t
+assert near(o69.getpixel((540, 564)), (40, 90, 220)) and near(o69.getpixel((540, 212)), (40, 90, 220)) and near(o69.getpixel((540, 916)), (40, 90, 220))  # 키 맞춤(위아래 끝까지) = 안 잘림
+assert near(o69.getpixel((120, 564)), (255, 255, 255)) and near(o69.getpixel((960, 564)), (255, 255, 255))  # 양옆 = 흰 칸(자르기 X)
+txt69 = [t for _, t in dr69]
+assert "3번" in txt69 and any(t.startswith("프로필 링크 → 3번") for t in txt69) and "사진: 토스쇼핑" in txt69 and any("19,800원" in t for t in txt69) and any(t.startswith("제휴 링크(수수료) · 10/26 10시 가격") for t in txt69), txt69
+assert all(xy[1] < 164 or xy[1] > 964 for xy, t in dr69), dr69  # 글자 = 사진 칸(164~964) 밖 여백에만
+dr69.clear(); C69.ImageDraw.ImageDraw.text = lambda self, xy, text, *a, **k: dr69.append((xy, text)) or td69(self, xy, text, *a, **k)
+o69 = I69.open(C69.ig_photo_card({**it69, "photo": "wide69.png", "src": "coupang", "when": ""}, 1, "w69.jpg")).convert("RGB"); C69.ImageDraw.ImageDraw.text = td69
+assert near(o69.getpixel((540, 564)), (255, 255, 255)) and "사진: 토스쇼핑" not in [t for _, t in dr69] and any(t.endswith("게시 시점 가격") for _, t in dr69)  # 투명 = 흰 바탕 · 쿠팡 = 출처 줄 X
+# ig_set: 사진 있는 상품만 사진 장(파일 = 카드 번호 — 프로필 링크 번호와 같음) · 표지 칸엔 토스 사진 X(꽉 차게 자름 = 토스 원본 그대로 규칙)
+svs69 = (H.ig_lines, C69.ig_cover); cov69 = []
+H.ig_lines = lambda seen, ps: [""] * len(ps); C69.ig_cover = lambda design, items, *a, **k: cov69.append([it["photo"] for it in items]) or svs69[1](design, items, *a, **k)
+P69 = [q69(CPU69 + "1", CPI69), q69("https://naver.me/n69", "https://shop-phinf.pstatic.net/a.jpg"), q69(TU69), q69(CPU69 + "4"), q69(CPU69 + "5", CPI69[:-4] + "5.jpg")]
+with contextlib.redirect_stdout(io.StringIO()): cv69, sl69, _ = H.ig_set(s69t, "2026-10-26", P69, "set69", design="A", h=11)
+assert sl69 == ["set69/01.jpg", "set69/03.jpg", "set69/05.jpg"] and sorted(os.listdir("set69")) == ["01.jpg", "03.jpg", "05.jpg", "cover.jpg"], sl69  # 2번(네이버)·4번(사진 없음) = 건너뜀
+assert len([p for p in cov69[0] if p]) == 2  # 표지 = 쿠팡 2장만(토스 사진 X)
+with contextlib.redirect_stdout(io.StringIO()): _, sl69, _ = H.ig_set(s69t, "2026-10-26", P69[1:2] + P69[3:4], "set69b", design="B", h=15)
+assert sl69 == [] and os.listdir("set69b") == ["cover.jpg"]  # 사진 0장 = 표지 한 장(지금처럼)
+H.ig_lines, C69.ig_cover = svs69
+# 캡션: 사진 장 있으면 대가성 문구 다음 줄에 출처 1줄 · 없으면 그대로
+H.POSTS = "posts69.json"; json.dump([{**q69(CPU69 + "1", CPI69), "mid": 1}], open("posts69.json", "w"), ensure_ascii=False)
+os.makedirs("docs/cards", exist_ok=True); json.dump([0], open("docs/cards/2026-10-26_11.json", "w"))
+c0, c1 = H.ig_caption({}, "2026-10-26_11"), H.ig_caption({}, "2026-10-26_11", photo=True)
+assert c0 == H.card_caption("2026-10-26_11")[1] and c1.split("\n\n")[0] == c0.split("\n\n")[0] + "\n" + H.IG_PHOTO_NOTE and c1.split("\n\n")[1:] == c0.split("\n\n")[1:]
+assert 'ig_caption(seen, stem, IG_HUMAN, photo=IG_HUMAN)' in inspect.getsource(H.ig_carousel) and 'ig_caption(seen, stem, IG_HUMAN)}' in inspect.getsource(H.ig_cards)  # 넘기기 = 사진 줄 · 한 장 글(사진 0장) = X
+# events img -> 글 img(쿠팡 사진 주소만 — 사이트 썸네일·인스타 사진 장): 파트너스 API 사진이 먼저
+H.EVENTS = S0.EVENTS = "ev69.json"
+json.dump([{**q69(CPU69 + "e", None), "own": 1}, {**q69(CPU69 + "f", None), "own": 1}, {**q69(CPU69 + "g", None), "own": 1}], open("posts69.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-10-26 10:00", "url": CPU69 + "e", "text": "x", "img": CPI69}, {"at": "2026-10-26 10:00", "url": CPU69 + "f", "text": "x", "img": "https://shop-phinf.pstatic.net/a.jpg"},
+           {"at": "2026-10-26 10:00", "url": CPU69 + "g", "text": "x", "pid": "9", "img": CPI69}], open("ev69.json", "w"))
+assert S0.ev_info()[CPU69 + "e"]["img"] == CPI69
+time.time = lambda: calendar.timegm(time.strptime("2026-10-26 12:00", "%Y-%m-%d %H:%M")) - 9 * 3600
+with contextlib.redirect_stdout(io.StringIO()): H.own_end({"cpq": {"m": {}, "i": {CPU69 + "g": "https://ads-partners.coupang.com/image1/g"}}})
+assert [p.get("img") for p in json.load(open("posts69.json"))] == [CPI69, None, "https://ads-partners.coupang.com/image1/g"]  # pstatic = X · API 사진 먼저
+# 큐레이션 인스타: 사진 2장↑ = 조각 -> 묶음(캡션 '프로필 링크 → 주제' + 출처) -> 발행(사이트 카드 기록 X) · 1장 = 사진 글 · 0장 = X · 실패 = 다시 X
+at69 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+ig69, f69l, a69 = [], [], []
+def http69(url, body=None, headers=None, method=None):
+    if method == "HEAD": return ""
+    ig69.append((url, body, method))
+    if url.endswith("/u69/media") and method == "POST":
+        if body.get("caption", "").startswith("실패"): raise OSError("ig down")
+        return json.dumps({"id": f"M{len(ig69)}"})
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    if url.endswith("/u69/media_publish"): return json.dumps({"id": "PUB1"})
+    raise AssertionError(url)
+H.http, H.tg = http69, (lambda m, **k: a69.append((m, k)) or {"message_id": 7})
+H.IG_AUTO, H.ig_fail = True, (lambda seen, now, why: f69l.append(why))
+H.busy, H.bundled = (lambda seen, cap=True: False), (lambda seen: None)
+H.E.update(IG_TOKEN="it", IG_USER_ID="u69"); H.E.pop("THREADS_TOKEN", None)
+CU69 = {"at": "2026-10-26 20:00", "curation": True, "text": "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요", "link": f"{H.SITE}c/winter/?ref=thc", "topic": "겨울템",
+        "img": ["https://thumbnail.coupangcdn.com/a69.jpg", "https://thumbnail.coupangcdn.com/b69.jpg"]}
+json.dump([CU69, {**CU69, "at": "2026-10-27 20:00", "img": CU69["img"][:1]}, {**CU69, "at": "2026-10-28 20:00", "img": []}, {**CU69, "at": "2026-10-29 20:00", "text": "실패 글", "img": CU69["img"][:1]}], open("ev69.json", "w"))
+s69 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    at69("2026-10-26 18:00"); H.curation(s69); assert not ig69  # 시각 전 = 사진 준비만
+    at69("2026-10-26 20:05"); H.curation(s69); H.curation(s69)
+kid69 = s69["igk_cur_2026-10-26_2000"]
+assert [b["image_url"] for u, b, m in ig69] == [H.SITE + f"cards/cur/{H.hashlib.md5(u.encode()).hexdigest()[:12]}.jpg" for u in CU69["img"]] and all(b["is_carousel_item"] for u, b, m in ig69), ig69
+assert kid69["kind"] == "cur" and kid69["cap"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 겨울템\n\n상품 사진: 판매 페이지(쿠팡)" and s69["cur_2026-10-26_2000"]["ig"] == 2 and len(ig69) == 2  # 한 번만
+ig69.clear(); at69("2026-10-26 20:20"); H.ig_carousel(s69, "it", "u69", time.time())
+car69 = next(b for u, b, m in ig69 if b and b.get("media_type") == "CAROUSEL"); cid69 = next(k for k in s69 if k.startswith("igc_"))
+assert car69["caption"] == kid69["cap"] and car69["children"] == ",".join(kid69["kids"]) and s69[cid69] == {"t": time.time(), "kind": "cur"} and "igk_cur_2026-10-26_2000" not in s69, s69[cid69]
+lv69 = []; svl69, H.ig_live = H.ig_live, (lambda stem, now: lv69.append(stem))
+with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-26 20:35"); H.ig_publish(s69)
+H.ig_live = svl69
+assert cid69 not in s69 and not lv69 and any("인스타 자동 게시 완료 — 큐레이션" in k.get("text", "") for m, k in a69), a69  # 사이트 맨 위 카드 기록 X
+ig69.clear()
+with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-27 20:05"); H.curation(s69)
+assert [(b.get("image_url", "")[-4:], "is_carousel_item" in b, b.get("caption", "")[:5]) for u, b, m in ig69] == [(".jpg", False, "🧣 출근길")] and any(s69[k].get("kind") == "cur" for k in s69 if k.startswith("igc_"))  # 1장 = 사진 글
+ig69.clear()
+with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-28 20:05"); H.curation(s69)
+assert not ig69 and s69["cur_2026-10-28_2000"]["ig"] == 0  # 사진 없음 = 인스타 X
+with contextlib.redirect_stdout(io.StringIO()): at69("2026-10-29 20:05"); H.curation(s69); at69("2026-10-29 20:20"); H.curation(s69)
+assert len(f69l) == 1 and "큐레이션 2026-10-29 20:00 컨테이너" in f69l[0] and s69["cur_2026-10-29_2000"]["ig"] is None  # 실패 = 진짜 실패 1번(다시 X)
+s69h = {"ig_hold": time.time() + 3600}; json.dump([{**CU69, "at": "2026-10-29 20:00"}], open("ev69.json", "w")); ig69.clear()
+with contextlib.redirect_stdout(io.StringIO()): H.curation(s69h)
+assert not ig69 and "ig" not in s69h["cur_2026-10-29_2000"]  # 인스타 쉼(ig_hold) = 안 올림(쉼 끝나고 6시간 안이면)
+s69h["ig_hold"], s69h["cur_2026-10-29_2000"]["th"] = 0, "T9"; at69("2026-10-29 21:00")
+with contextlib.redirect_stdout(io.StringIO()): H.curation(s69h)
+assert len(ig69) == 2 and s69h["cur_2026-10-29_2000"]["ig"] == 2  # Threads 이미 올림 + 쉼 끝 = 인스타만(사진은 그대로 준비)
+(H.urllib.request.urlopen, H.TOSS_PHOTO, H.HAS_TOSS, H.toss, H.http, H.tg, time.time, H.EVENTS, S0.EVENTS, H.POSTS, H.IG_AUTO, H.ig_fail, H.busy, H.bundled, tk69, uid69, th69) = sv69
+for k69, v69 in (("IG_TOKEN", tk69), ("IG_USER_ID", uid69), ("THREADS_TOKEN", th69)): H.E.pop(k69, None) if v69 is None else H.E.__setitem__(k69, v69)
+H.RUN["ok"].clear(); H.RUN["ok"].update(ok69)
+os.chdir(cwd69)
 # 9-66) 토스 개별 글 사진(10/25 21:3x 진우 ④ — TOSS_PHOTO: 토스 운영 정책 진우 확인 뒤 켬): 썸네일 원본 그대로 · 텔레그램 sendPhoto(캡션 끝 '사진: 토스쇼핑' · 1,024자 넘거나 실패 = 글만, 사진 실패 알림 X) ·
 #       품절 표시 = editMessageCaption · Threads = 사진 글(실패 = 글만) · toss_noimg.txt 상품 = 사진 X · 꺼져 있으면 지금 그대로
 import contextlib, io, calendar, inspect

@@ -878,6 +878,42 @@ def ig_slide(design, it, n, total, out):
     return _save(im, out)
 
 
+def ig_photo_card(it, n, out):
+    """인스타 상품 사진 장(1080x1350 JPEG, 10/25 Cowork ② — 넘기기 2장부터 카드 번호 순): 판매 페이지 사진은 줄이고·키우기만(자르기 X — 비율 그대로 흰 칸 가운데, 위에 글자 X),
+    글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'(토스 사진이면 같은 줄 오른쪽 '사진: 토스쇼핑')·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS). -> out"""
+    im = Image.new("RGBA", (W, H), LMIST + (255,))
+    d, P = ImageDraw.Draw(im), 56
+    fb = pf("ExtraBold", 48); s = f"{n}번"; w = int(fb.getlength(s)) + 64
+    d.rounded_rectangle((P, 48, P + w, 136), radius=44, fill=PLUM)
+    d.text((P + 32, 60), s, font=fb, fill="white")
+    f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), 70), "핫딜픽", font=f, fill=BERRY)
+    x0, y0, x1, y1 = P, 164, W - P, 964  # 사진 칸(흰 바탕) 968x800 — 안쪽 24px 여백
+    d.rounded_rectangle((x0, y0, x1, y1), radius=28, fill="white")
+    ph = Image.open(it["photo"])
+    ph.load()
+    if ph.mode in ("RGBA", "LA", "P") or "transparency" in ph.info:  # 투명 = 흰 바탕
+        ph = ph.convert("RGBA"); bg = Image.new("RGB", ph.size, "white"); bg.paste(ph, mask=ph.split()[3]); ph = bg
+    ph = ph.convert("RGB")
+    k = min((x1 - x0 - 48) / ph.width, (y1 - y0 - 48) / ph.height)
+    ph = ph.resize((max(1, round(ph.width * k)), max(1, round(ph.height * k))), Image.LANCZOS)
+    im.paste(ph, ((x0 + x1 - ph.width) // 2, (y0 + y1 - ph.height) // 2))
+    X, y = 76, 994
+    fn = pf("Bold", 44)
+    d.text((X, y), _fit(fn, it.get("short") or it["name"], W - 2 * X), font=fn, fill=INKA)
+    price = it.get("price") or ""
+    fp = pf("ExtraBold", _sized(price, "ExtraBold", (88, 80, 72, 64, 56, 48), W - 2 * X))
+    d.text((X, y + 60), price, font=fp, fill=INKA)
+    yb = d.textbbox((X, y + 60), price or "0", font=fp)[3] + 20
+    fl, fs = pf("Bold", 44), pf("SemiBold", 40)
+    credit = "사진: 토스쇼핑" if it.get("src") == "toss" else ""
+    d.text((X, yb), _fit(fl, f"프로필 링크 → {n}번", W - 2 * X - (fs.getlength(credit) + 24 if credit else 0)), font=fl, fill=BERRY)
+    if credit:
+        d.text((W - X - fs.getlength(credit), yb + 4), credit, font=fs, fill=SUBA)
+    when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
+    d.text((X, H - 84), _fit(fs, f"제휴 링크(수수료) · {when}", W - 2 * X), font=fs, fill=SUBA)
+    return _save(im, out)
+
+
 LOGO_GRAD, PICK_RED = ((255, 104, 96), (220, 34, 48)), (222, 38, 52)  # 웹앱 아이콘 'A 레드'(10/23 진우): 왼쪽 위 -> 오른쪽 아래 그라데이션 · 알약 안 'pick' 색
 
 

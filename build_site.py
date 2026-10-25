@@ -594,11 +594,11 @@ def ev_list(path=None):
 
 
 def ev_info():
-    """events.json 진우 항목 -> {url: {now, chk, end, why, target, pid, item}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
+    """events.json 진우 항목 -> {url: {now, chk, end, why, target, pid, item, img}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만 — img = 상품 사진 주소, 글에 넣는 건 hotdeal.own_end·쓰는 건 img_of 허용 목록만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
     evs, out = ev_list(), {}
     for e in evs if isinstance(evs, list) else []:
         if isinstance(e, dict) and isinstance(e.get("url"), str):
-            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item") if isinstance(e.get(k), str)})
+            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img") if isinstance(e.get(k), str)})
     return out
 
 

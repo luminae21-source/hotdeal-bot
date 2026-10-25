@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -4096,12 +4096,16 @@ def ig_human(seen, ps):
     return lines
 
 
-def ig_caption(seen, stem, human=False, ps=None):
-    """인스타 카드 캡션: card_caption 그대로, human이면 대가성 문구(첫 줄·공정위) 바로 아래에 사람 멘트 2~3줄(ig_human)."""
+IG_PHOTO_NOTE = "상품 사진: 판매 페이지(쿠팡·토스쇼핑)"  # 사진 장이 있는 넘기기 캡션 — 대가성 문구 바로 아래(10/25 Cowork ②)
+
+
+def ig_caption(seen, stem, human=False, ps=None, photo=False):
+    """인스타 카드 캡션: card_caption 그대로, human이면 대가성 문구(첫 줄·공정위) 바로 아래에 사람 멘트 2~3줄(ig_human) · photo = 상품 사진 장이 있으면 대가성 문구 다음 줄에 IG_PHOTO_NOTE."""
     cap = card_caption(stem)[1]
-    if not human:
-        return cap
     notes, _, rest = cap.partition("\n\n")
+    notes += "\n" + IG_PHOTO_NOTE if photo else ""
+    if not human:
+        return (notes + "\n\n" + rest)[:2200] if photo else cap
     ps = ps if ps is not None else [p for _, p in card_order(load(POSTS, []), stem)[:CARD_N]]
     return (notes + "\n\n" + "\n".join(ig_human(seen, ps)) + "\n\n" + rest)[:2200]
 
@@ -4168,32 +4172,28 @@ def ig_kind(name):
     return (ws[1:] or ws or [""])[-1]
 
 
-def ig_photo(p, d):
-    """몰이 주는 상품 이미지만(10/22 진우): 토스 = 상세 API의 이미지 칸, 그 밖 = 상품 페이지 og:image -> d/에 저장한 경로, 못 구하면 None(상품 종류 글자 칸).
-    shortcut: 쿠팡 상품 페이지는 서버 접근이 막혀 대개 None — 쿠팡 파트너스 API(이미지 포함) 승인 뒤 그걸로 바꾸기."""
+def ig_photo(p, d, seen=None):
+    """상품 사진(10/25 Cowork ② — 판매 페이지 사진만): 쿠팡 = 글 img(파트너스 API·events img — 사이트 img_of 허용 목록) · 토스 = 상세 API 썸네일(TOSS_PHOTO·toss_noimg.txt — toss_photo)
+    · 네이버·다른 몰·커뮤니티 글 사진 = X -> (d/에 저장한 경로, 'coupang'|'toss'), 없거나 못 받으면 (None, '')."""
     u = p.get("url") or ""
     try:
-        img = None
-        if urllib.parse.urlsplit(u).netloc in TOSS_HOSTS and HAS_TOSS and (iid := toss_ids({}).get(u) or p.get("tid")):
-            x = (toss(f"/products/detail?tacaItemIds={iid}")["items"] or [{}])[0]
-            img = next((v for k, v in x.items() if re.search(r"(?i)image|thumbnail", k) and isinstance(v, str) and v.startswith("http")), None)
-        elif u.startswith("http") and not urllib.parse.urlsplit(u).netloc.endswith(("ppomppu.co.kr", "search.shopping.naver.com")):
-            req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-            html_ = urllib.request.urlopen(req, timeout=6).read(400000).decode("utf-8", "ignore")
-            m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html_) or re.search(r'content=["\']([^"\']+)["\'][^>]+property=["\']og:image', html_)
-            img = m and html.unescape(m[1])
+        img, src = img_of(p), "coupang"
+        if not img and TOSS_PHOTO and HAS_TOSS and urllib.parse.urlsplit(u).netloc in TOSS_HOSTS:
+            iid, gid = toss_ids(seen or {}).get(u), ((seen or {}).get("tossid", {}).get("m", {}).get(u) or [0])[0]  # 우리 쉐어링크 = 상품 id · 진우 링크 = 상품 그룹 id(own_end)
+            if iid or gid:
+                x = (toss(f"/products/detail?{f'tacaItemIds={iid}' if iid else f'tacaIds={gid}'}")["items"] or [{}])[0]
+                img, src = toss_photo(x), "toss"
         if not img:
-            return None
-        img = "https:" + img if img.startswith("//") else img
+            return None, ""
         os.makedirs(d, exist_ok=True)
         f = os.path.join(d, hashlib.md5(img.encode()).hexdigest()[:12] + ".img")
         data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
         open(f, "wb").write(data)
         __import__("PIL.Image", fromlist=["Image"]).open(f).verify()
-        return f
+        return f, src
     except Exception as e:
         print("ig photo 없음", clip(u, 50), clip(repr(e), 80))
-        return None
+        return None, ""
 
 
 def ig_items(seen, ps, photos=True):
@@ -4211,8 +4211,8 @@ def ig_items(seen, ps, photos=True):
         out.append({"name": name, "short": re.sub(r",?\s*\d+\s*(?:개|팩|입|매|롤|병|캔|봉)\s*$", "", name).strip() or name, "price": main.strip(),
                     "chip": (p.get("unit") or "").split(" (")[0].strip() or ("와우 할인" if "와우" in cond else f"{dr}%↓" if dr and not cond else ""),
                     "badge": badge, "ship": arrive[0].replace("  ", " ") if arrive else "무료배송" if ship.strip() in ("무료", "무배", "무료배송") else "",
-                    "photo": ig_photo(p, "ig_photos") if photos else None, "e": p.get("e") or "🛒", "kind": ig_kind(name), "line": line,
-                    "when": f"{int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시"})
+                    "e": p.get("e") or "🛒", "kind": ig_kind(name), "line": line, "when": f"{int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시"})
+        out[-1]["photo"], out[-1]["src"] = ig_photo(p, "ig_photos", seen) if photos else (None, "")
     return out
 
 
@@ -4230,10 +4230,10 @@ def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
     its = ig_items(seen, ps[:CARD_N])
     k = datetime(int(day[:4]), int(day[5:7]), int(day[8:10]))
     date_text = f"{k.month}월 {k.day}일 {'월화수목금토일'[k.weekday()]}요일" if design in "AP" else f"{k.month}.{k.day} {'월화수목금토일'[k.weekday()]}"
-    chips = random.sample(its, len(its))
+    chips = [{**it, "photo": None} if it["src"] == "toss" else it for it in random.sample(its, len(its))]  # 표지 칸은 꽉 차게 자름 = 토스 사진 X(토스 = 원본 그대로·출처 표시 — 사진 장에만)
     cover = cards.ig_cover(design, chips, date_text, title.format(n=len(its)), f"{d}/cover.jpg",
                            sub="최저가 아니어도 꾸준히 팔리는 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
-    return cover, [cards.ig_slide(design, it, n, len(its), f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1)], design
+    return cover, [cards.ig_photo_card(it, n, f"{d}/{n:02d}.jpg") for n, it in enumerate(its, 1) if it["photo"]], design  # 사진 있는 상품만(번호 = 카드 번호) — 0장이면 표지 한 장 글
 
 
 def ig_landed(tok, uid, cid, cap="", since=0):
@@ -4325,8 +4325,8 @@ def ig_publish(seen):
         if card(v):
             ig_live(card(v), now)
         label = card(v) or ""
-        reel = isinstance(v, dict) and v.get("kind") == "reel"
-        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if reel else "") + " (instagram.com/hotdealpick.kr)")
+        reel, cur = (isinstance(v, dict) and v.get("kind") == x for x in ("reel", "cur"))
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if reel else " — 큐레이션" if cur else "") + " (instagram.com/hotdealpick.kr)")
 
 
 def ig_err(e):
@@ -4542,11 +4542,11 @@ def ig_carousel(seen, tok, uid, now):
         try:
             if st != "FINISHED":
                 raise RuntimeError(f"조각 처리 {st}")
-            c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": ig_caption(seen, stem, IG_HUMAN)}, h, "POST"))
+            c = json.loads(http(f"{IG}/{uid}/media", {"media_type": "CAROUSEL", "children": ",".join(v["kids"]), "caption": v.get("cap") or ig_caption(seen, stem, IG_HUMAN, photo=IG_HUMAN)}, h, "POST"))  # cap = 큐레이션(curation) · IG_HUMAN 넘기기 = 사진 장 있을 때만
         except Exception as e:
             ig_fail(seen, now, f"{stem} 넘기기 {ig_err(e)}")
             continue
-        seen["igc_" + c["id"]] = {"t": now, "card": stem}  # 발행은 다음 실행(묶은 실행 seen이 저장 안 되면 다음 실행이 같은 조각으로 또 묶어 두 번 올라가지 않게 — 10/23 리뷰)
+        seen["igc_" + c["id"]] = {"t": now, **({"kind": v["kind"]} if v.get("kind") else {"card": stem})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행(묶은 실행 seen이 저장 안 되면 다음 실행이 같은 조각으로 또 묶어 두 번 올라가지 않게 — 10/23 리뷰)
         print("ig carousel", stem, len(v["kids"]), "장")
 
 
@@ -5526,10 +5526,32 @@ def cur_prune(now):
             os.remove(f"{CUR_DIR}/{f}")
 
 
+def cur_ig(seen, st, e, key, live, now):
+    """큐레이션 인스타(10/25 Cowork ② — 사진 넘기기 + 캡션 '프로필 링크 → {topic}'): 사이트에 뜬 사진(자르기·크기만, 글자 X) 1장 = 사진 글 · 2장↑ = 조각 -> ig_carousel이 묶음(캡션)
+    -> ig_publish 발행(하루 상한 ig_day_max = 카드 칸 + 1 여유 안) · 사진 없음 = 안 올림(인스타는 사진 필요) · 만들기 실패 = 다시 X(10/23 진우 — ig_fail). st ig = 사진 수(0 = 안 올림, None = 실패)."""
+    st["ig"] = 0
+    if not live:
+        print("curation 인스타: 사진 없음 -> 안 올림", e["at"])
+        return
+    tail = f"\n\n🛒 프로필 링크 → {str(e.get('topic') or '').strip() or '핫딜픽'}\n\n상품 사진: 판매 페이지(쿠팡)"
+    cap, auth, uid = clip(e["text"].strip(), 2200 - len(tail) - 1) + tail, {"Authorization": "Bearer " + E["IG_TOKEN"]}, E["IG_USER_ID"]
+    try:
+        if len(live) == 1:
+            seen["igc_" + json.loads(http(f"{IG}/{uid}/media", {"image_url": live[0], "caption": cap}, auth, "POST"))["id"]] = {"t": now, "kind": "cur"}
+        else:
+            seen["igk_" + key] = {"t": now, "kind": "cur", "cap": cap, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in live]}
+        st["ig"] = len(live)
+        print("curation 인스타", e["at"], f"사진 {len(live)}장 컨테이너")
+    except Exception as x:
+        st["ig"] = None
+        ig_fail(seen, now, f"큐레이션 {e['at']} 컨테이너 {ig_err(x)}")
+
+
 def curation(seen):
     """큐레이션 글(events curation): 시각이 되면 텔레그램 채널 = 본문 + '🛍 더 보기' 버튼(같은 쪽, ref=tgc) · Threads = 사진(우리 서버 JPEG) 1장 IMAGE·2장↑ CAROUSEL, 본문 끝 링크(ref=thc), topic_tag = topic
     / 사진 없음 = TEXT + 링크 카드(정보 글처럼) · 6시간 지나면 X. 사진은 시각 3시간 전부터 준비(이 실행 커밋 -> 사이트에 뜨면(HEAD) 게시 · 준비 뒤 1시간 넘게 안 뜨면 뜬 사진만, 없으면 글 + 링크 카드 ·
-    못 받은 사진 = 1시간 뒤 다시). 우리 사이트 쪽 링크 = 대가성 문구 X(상품 링크 규칙은 그대로) · 묶음 간격만 봄(딜 글 수·간격 그대로) · Threads 실패 = 다음 실행에 다시(3번째 = 알림·그만). 인스타 = ig 사진 카드."""
+    못 받은 사진 = 1시간 뒤 다시). 우리 사이트 쪽 링크 = 대가성 문구 X(상품 링크 규칙은 그대로) · 묶음 간격만 봄(딜 글 수·간격 그대로) · Threads 실패 = 다음 실행에 다시(3번째 = 알림·그만).
+    인스타(IG_AUTO) = 같은 사진 넘기기 + 캡션 '프로필 링크 → topic'(cur_ig — 사진 없음 = 안 올림, 실패 = 다시 X)."""
     now, tok = time.time(), E.get("THREADS_TOKEN")
     cur_prune(now)
     for e in cur_events(seen):
@@ -5539,7 +5561,8 @@ def curation(seen):
         key = f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}"  # 시각 = 열쇠(글을 고쳐도 다시 X — 같은 시각 큐레이션은 1개)
         st = seen.setdefault(key, {"t": now})
         st["t"], files = now, []
-        if "th" not in st:
+        ig = IG_AUTO and E.get("IG_TOKEN") and E.get("IG_USER_ID") and "ig" not in st and seen.get("ig_hold", 0) <= now  # 인스타 = 큐레이션 사진 넘기기(cur_ig)
+        if "th" not in st or ig:
             bad = st.setdefault("bad", {})
             for u in e["img"]:
                 f = cur_img(u) if now - bad.get(u, 0) >= 3600 else None  # 못 받은 사진 = 1시간 뒤 다시(실행마다 X)
@@ -5557,7 +5580,8 @@ def curation(seen):
                    reply_markup={"inline_keyboard": [[{"text": "🛍 더 보기", "url": re.sub(r"([?&]ref=)thc\b", r"\g<1>tgc", e["link"])}]]})
             if m:
                 st["tg"] = m["message_id"]
-        if not tok or "th" in st or busy(seen, cap=False):
+        th = tok and "th" not in st and not busy(seen, cap=False)
+        if not (th or ig):
             continue
         urls, live = [SITE + f[len("docs/"):] for f in files], []
         for u in urls:
@@ -5568,6 +5592,10 @@ def curation(seen):
                 pass
         if len(live) < len(urls) and now < max(t0, st.get("pt", now)) + CUR_IMG_WAIT:
             continue  # 아직 사이트에 다 안 뜸 = 다음 실행에(준비 뒤 1시간까지)
+        if ig:
+            cur_ig(seen, st, e, key, live, now)
+        if not th:
+            continue
         topic = re.sub(r"[.&]", "", str(e.get("topic") or "")).strip()[:50] or th_topic(seen)  # Threads 주제 태그: 마침표·& X · 50자
         lim = n = 500 - th_len(e["link"]) - 2
         cut = th_fit(body, n)
@@ -6130,8 +6158,8 @@ def own_end(seen):
         f["std"], f["stp"] = (today, pv["st"]) if pv.get("st") and pv["st"] != f["st"] else (pv.get("std"), pv.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
             rq["q"] = [q for q in rq["q"] if q["id"] != v[7]] + [{"id": v[7], "g": v[0], "u": u, "tgt": tp, "d": today, "n": parse(title_of(p["text"]))[1]}]
-        if not tsy and e.get("pid") and cpi.get(u):
-            f["img"] = cpi[u]  # 쿠팡 상품 사진(cp_price) — 캐시가 비어도 글의 옛 사진은 그대로(아래 지우는 칸에 없음)
+        if not tsy and (im := e.get("pid") and cpi.get(u) or img_of({**p, "img": e.get("img")})):
+            f["img"] = im  # 쿠팡 상품 사진(cp_price) > events img(10/25 Cowork ② — 쿠팡 사진 주소만, img_of) — 캐시가 비어도 글의 옛 사진은 그대로(아래 지우는 칸에 없음)
         f = {k: x for k, x in f.items() if x}
         c[f["st"]] += 1
         for i in idxs:
