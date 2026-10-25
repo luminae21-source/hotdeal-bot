@@ -405,9 +405,10 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         await p.goto(U + u + '&ref=ig', { waitUntil: 'load' }); await p.waitForFunction(() => window.__gcl === 1);
         const s = await p.evaluate(() => { const R = e => e.getBoundingClientRect(), top = document.querySelector(document.documentElement.className === 'lb' ? '.vb' : '.va'), ch = [...top.querySelectorAll('nav a[data-gc]')], t1 = document.querySelector('#lg > a');
           return { sw: document.documentElement.scrollWidth, disc: R(document.querySelector('.disc')).bottom, ch: ch.map(a => a.getAttribute('data-gc')), chb: Math.max(...ch.map(a => R(a).bottom)), t1: t1 && R(t1).bottom,
-                   bg: getComputedStyle(document.body).backgroundColor, cls: document.documentElement.className, no: [...document.querySelectorAll('#lg > a:not([hidden]) .no')].map(b => +b.textContent) }; });
+                   bg: getComputedStyle(document.body).backgroundColor, cls: document.documentElement.className, no: document.querySelectorAll('#lg > a:not([hidden])').length, badge: document.querySelectorAll('#lg .no').length,
+                   font: getComputedStyle(document.body).fontFamily, fonts: performance.getEntriesByType('resource').filter(r => /\.woff2/.test(r.name)).length }; });
         const lum = s.bg.match(/[\d.]+/g).slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
-        assert.ok(s.sw <= 390 && s.disc <= 844 && s.chb <= 844 && s.cls === 'l' + st && (dark ? lum < 120 : lum > 700) && s.no.join() === s.no.map((_, i) => i + 1).join() && s.no.length <= 12, '첫 화면·번호 1..n ' + u + dark + JSON.stringify(s));
+        assert.ok(s.sw <= 390 && s.disc <= 844 && s.chb <= 844 && s.cls === 'l' + st && (dark ? lum < 120 : lum > 700) && s.no <= 12 && !s.badge && !/HDP Sans/.test(s.font) && !s.fonts, '첫 화면·번호 배지 X·시스템 글꼴(글꼴 파일 X) ' + u + dark + JSON.stringify(s));
         if (st === 'a') assert.ok(!s.t1 || s.t1 <= 844 - (K ? 0 : 64), 'A 첫 화면 = 지금 특가 첫 줄까지(카톡 버튼 자리 남김) ' + s.t1);
         assert.deepStrictEqual(s.ch, [...(K ? ['link/kakao'] : []), ...(st === 'a' ? ['link/blog', 'link/threads', 'link/instagram', 'link/telegram', 'link/home'] : ['link/blog', 'link/threads', 'link/instagram'])], '채널 ' + u);
         if (st === 'a') {
@@ -417,10 +418,10 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         if (await p.$('#lg')) for (const k of await p.$$eval('.chips button', b => b.map(x => x.getAttribute('data-k')))) {
           await p.click(`.chips button[data-k="${k}"]`);
           const v = await p.evaluate(k => { const T = [...document.querySelectorAll('#lg > a')].filter(t => !t.hidden), r = T.slice(0, 3).map(t => t.getBoundingClientRect());
-            return { n: T.length, dn: +document.getElementById('dn').textContent, no: T.map(t => +t.querySelector('.no').textContent), k: T.every(t => (' ' + t.getAttribute('data-k') + ' ').includes(' ' + k + ' ')),
+            return { n: T.length, dn: +document.getElementById('dn').textContent, k: T.every(t => (' ' + t.getAttribute('data-k') + ' ').includes(' ' + k + ' ')),
                      on: [...document.querySelectorAll('.chips button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.getAttribute('data-k')), ck: T.every(t => /\d+\/\d+ (\d+시 확인|가격)$/.test(t.querySelector('.ck').textContent)),
                      row: r.length < 3 || r[0].top === r[2].top && Math.abs(r[0].width - r[2].width) < 1, rel: T.every(t => /nofollow/.test(t.rel) && /sponsored/.test(t.rel) && t.target === '_blank'), sw: document.documentElement.scrollWidth }; }, k);
-          assert.ok(v.n > 0 && v.n <= 12 && v.dn === v.n && v.no.join() === v.no.map((_, i) => i + 1).join() && v.k && v.on.join() === k && v.ck && v.row && v.rel && v.sw <= 390, '칩 ' + k + ' ' + JSON.stringify(v));
+          assert.ok(v.n > 0 && v.n <= 12 && v.dn === v.n && v.k && v.on.join() === k && v.ck && v.row && v.rel && v.sw <= 390, '칩 ' + k + ' ' + JSON.stringify(v));
         }
         await p.click('.chips button[data-k="all"]').catch(() => {});
         if (ua === IOS) { await p.evaluate(() => scrollTo(0, 0)); const f = path.join(tmp, `lk${rl.length}.png`); await p.screenshot({ path: f }); rl.push([f, `/link?v=${st} ${st === 'a' ? 'A' : 'B'} 390${dark ? ' 다크' : ''}`]); }

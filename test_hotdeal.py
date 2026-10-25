@@ -1569,7 +1569,7 @@ assert all(f'href="{u}" data-gc="link/{k}"' in va3 for k, _, u, *_ in S.LINK_CH)
 assert lk3.index('<p class="disc">') < lk3.index('<section class="cd"') and '<span>매일</span> 골라 드려요' in va3 and "목록은 매시간 갱신" in vb3 and "가격은 매시간 확인" not in lk3 and '<i style="background:#fff;color:#26A5E4"><svg class="si fl"' in va3  # 텔레그램 = 아이콘 원 그대로
 for k in ("kakaotalk", "naver", "threads", "instagram", "telegram"):  # 아이콘 모양 = Simple Icons 파일 그대로(변형 X)
     d3 = re.search(r'<path d="([^"]+)"', open(os.path.join(RD, "si", k + ".svg")).read())[1]; assert f'<path d="{d3}"/>' in S.si(k) and S.si(k).startswith('<svg class="si" viewBox="0 0 24 24" aria-hidden="true">')
-assert re.findall(r'<script[^>]* src="([^"]+)"', lk3) == ["//gc.zgo.at/count.js"] and "<link rel=\"stylesheet\"" not in lk3 and 'rel="preload"' not in lk3 and "cdn" not in lk3 and "serviceWorker" not in lk3  # 쪽 안 CSS·아이콘 · 웹앱 미리 받기·글꼴 미리 받기 X
+assert "HDP Sans" not in S.LINK_CSS and "hdpsans" not in lk3 and re.findall(r'<script[^>]* src="([^"]+)"', lk3) == ["//gc.zgo.at/count.js"] and "<link rel=\"stylesheet\"" not in lk3 and 'rel="preload"' not in lk3 and "cdn" not in lk3 and "serviceWorker" not in lk3  # 쪽 안 CSS·아이콘 · 웹앱 미리 받기·글꼴 미리 받기 X
 assert "/^link\\//,'link-'+v+'/'" in S.LINK_GC and "'buy/'+(v?'link-'+v+'/':'')" in S.LINK_GC and "window.hpLF)return" in S.LINK_GC and "g.no_onload=true" in S.LINK_V and "return 'link-'+v" in S.LINK_V and "localStorage.setItem('hp_link',v)" in S.LINK_V
 sk3 = S.KAKAO_OPENCHAT_URL
 for bad in ("javascript:alert(1)", "https://open.kakao.com.evil.x/o/a", "http://open.kakao.com/o/a"):  # https://open.kakao.com/ 주소만(10/25 리뷰)
@@ -1586,9 +1586,9 @@ L3 = [(0, lp("일반몰", "https://x.com/a", IMG), H0), (1, lp("토스 휴지", 
       (5, lp("특가 휴지 사진X", "https://link.coupang.com/a/n"), H0), (6, lp("옛 특가 휴지", "https://link.coupang.com/a/v", IMG, at="2026-10-20 09:00"), H0),
       (7, lp("링크프라이스 화장지", "https://click.linkprice.com/x", mall="G마켓"), H0), (8, {"t": "2026-10-25 09:00", "text": "🔥 [쿠팡] 가격 없는 휴지", "url": "https://link.coupang.com/a/z", "own": 1}, H0)]
 assert [x[0] for x in S.link_pool(L3, "2026-10-25")] == [4, 1, 5] and [x[0] for x in S.link_pool(L3, "2026-10-22")] == [4, 6, 1, 5]  # 10/20 가격 = 10/25엔 3일 넘음
-t4 = S.link_tile(1, *S.link_pool(L3, "2026-10-25")[0], ["all", "life"])
-assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow sponsored noopener" target="_blank" data-k="all life">') and '<div class="pr">8,900원<em>쿠폰가</em></div><div class="ck">10/25 9시 확인</div>' in t4 and 'loading="lazy"' in t4 and '<b class="no">1</b>' in t4
-assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(2, *S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(9, *S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
+t4 = S.link_tile(*S.link_pool(L3, "2026-10-25")[0], ["all", "life"])
+assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow sponsored noopener" target="_blank" data-k="all life">') and '<div class="pr">8,900원<em>쿠폰가</em></div><div class="ck">10/25 9시 확인</div>' in t4 and 'loading="lazy"' in t4 and 'class="no"' not in t4  # 번호 배지 X(인스타 번호 = 카드 딜 줄 — 10/25 Cowork)
+assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(*S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(*S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
 assert [S.link_name({"text": f"🔥 {t}"}) for t in ("[토스] 해표 올리브유 500ml 4병 22,900원", "[토스] 마스크팩 10매 6,900원 (무배)", "[쿠팡] 1000원샵 키링 (1,000원)", "[G마켓] 물티슈 20매 12팩(8900/무배)", "[쿠팡] 육개장 사발면 24개/쿠폰가 16,830원, 첫구매 14,800원",
                                                        "[11번가] 휴지 30롤 22,900원/무료", "[옥션] 카스 제로 2캔 [3,000원/네멤무료]", "[쿠팡] 100원 동전지갑")] == ["해표 올리브유 500ml 4병", "마스크팩 10매", "1000원샵 키링", "물티슈 20매 12팩", "육개장 사발면 24개", "휴지 30롤", "카스 제로 2캔", "100원 동전지갑"]  # 이름 끝 가격 = 시각 없는 가격 X
 BIG = [(i, lp(f"휴지{i}" if i % 3 else f"샴푸{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]
@@ -1596,7 +1596,8 @@ rw3, n3 = S.link_tabs(S.link_pool(BIG, "2026-10-25"))
 assert n3["all"] == 12 and all(v <= 12 for v in n3.values()) and len({x[0] for x in rw3}) == len(rw3) and [x[0] for x in rw3 if "all" in x[3]] == list(range(12))
 big3 = S.link_page("ab", pp, BIG, "docs3", today="2026-10-25")
 assert len(big3.encode()) < 72000 and big3.count('rel="nofollow sponsored noopener"') == len(rw3) + cd3.count("nofollow sponsored") and '<h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">12</span></h2>' in big3, len(big3.encode())  # 가볍게(긴 쿠팡 사진 주소여도)
-assert re.findall(r'<b class="no">(\d+)</b>', big3)[:12] == [str(k) for k in range(1, 13)] and " hidden>" not in big3.split('id="lg">')[1].split('<b class="no">13</b>')[0]  # 처음 번호 = 전체 칩 1~12(숨김 칸은 그 뒤)
+lg3 = re.findall(r'<a href="[^"]+" rel="nofollow sponsored noopener" target="_blank" data-k="([^"]+)"( hidden)?>', big3.split('id="lg">')[1])
+assert ["all" in k.split() for k, _ in lg3[:12]] == [True] * 12 and not any(h for _, h in lg3[:12]) and all(h for _, h in lg3[12:]) and 'class="no"' not in big3  # 처음 = 전체 칩 12칸(숨김 칸은 그 뒤) · 번호 배지 X
 assert '<button type="button" data-k="all" aria-pressed="true">전체</button>' in big3 and 'data-k="women"' not in big3.split('class="chips"')[1].split("</div>")[0] and S.link_page("ab", pp, BIG, "docs3", today="2026-10-29").count('<b class="no">') == 0  # 상품 없는 칩 X · 가격 3일 넘으면 칸 X
 os.makedirs("docs6/cards", exist_ok=True); open("docs6/cards/2026-10-08.png", "wb").close()  # 카드 = 5개까지(인스타 카드와 같은 수) · 링크프라이스·올리브영 = 딜 쪽(그 문구)으로
 pp6 = [{"t": "2026-10-08 09:00", "text": f"🔥 [쿠팡] 딜{k} (1,000원)", "url": f"https://link.coupang.com/a/{k}"} for k in range(7)] + [{"t": "2026-10-08 10:00", "text": "🔥 [G마켓] 프라이스 (1,000원)", "url": "https://click.linkprice.com/y"}]

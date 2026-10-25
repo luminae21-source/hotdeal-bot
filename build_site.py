@@ -1567,8 +1567,7 @@ def si(k, cls="si"):
 LINK_CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
 :root{--bg:#fff;--ink:#1C1C1E;--sub:#55555B;--mut:#6B7180;--line:#E6E6EA;--chip:#F4F4F6;--tile:#F6F6F8;--pk:#E8436B;--pke:#D6365E;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#0F1013;--ink:#ECEEF2;--sub:#B4B9C4;--mut:#9AA0AC;--line:#262931;--chip:#24272E;--tile:#24272E;--pk:#FF5C72;--pke:#FF9AA6;color-scheme:dark}}
-@font-face{font-family:"HDP Sans";src:url(/fonts/hdpsans-v1.woff2) format("woff2");font-weight:400 800;font-display:swap}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "HDP Sans",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 main{max-width:480px;margin:0 auto;padding:22px calc(18px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}a{color:inherit;text-decoration:none}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--pk);outline-offset:2px}
 .si{display:block;fill:currentColor}.disc{font-size:11.5px;color:var(--sub);line-height:1.5;margin:6px 2px 0}
@@ -1580,7 +1579,6 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}.g a{min-width:0}.im{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--tile)}
 .im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
 @media(prefers-color-scheme:dark){.im img{mix-blend-mode:normal}}
-.no{position:absolute;left:6px;top:6px;background:rgba(28,28,30,.82);color:#fff;font-size:11px;font-weight:700;border-radius:8px;padding:2px 7px}
 .nm{font-size:12px;line-height:1.38;height:33px;overflow:hidden;margin:7px 2px 2px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pr{font-size:14px;font-weight:800;margin:0 2px}.pr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--pke);margin-left:4px}.ck{font-size:10.5px;color:var(--mut);margin:0 2px}
 .all{display:block;text-align:center;font-weight:700;font-size:15px;margin:22px 0 0;padding:13px;border-radius:14px;background:var(--chip)}.ft{font-size:11px;color:var(--mut);line-height:1.5;margin:10px 2px 0;text-align:center}
 .vb,.eb2{display:none}.lb .vb,.lb .eb2{display:block}.lb .va{display:none}
@@ -1595,7 +1593,7 @@ html.lb body{background:#FBFAF7}@media(prefers-color-scheme:dark){html.lb body{b
 .vb h1{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;margin:4px 0 6px;letter-spacing:-.8px}.lgb{width:38px;height:38px;border-radius:10px}.tg{font-size:13.5px;color:var(--mut);margin:0}
 .list{margin:18px 0 8px;border-top:1px solid var(--ink)}.list a{display:flex;align-items:center;gap:10px;padding:13px 2px;border-bottom:1px solid #E4E2DC}@media(prefers-color-scheme:dark){.list a{border-color:var(--line)}}
 .bi{flex:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff}.bi .si{width:16px;height:16px}.list b{display:block;font-size:15.5px;font-weight:700;line-height:1.3}.list small{font-size:12.5px;color:var(--mut)}.list i{margin-left:auto;font-style:normal;color:var(--mut)}
-.lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.sec h2 .eb2{font-size:10.5px;letter-spacing:2.5px;color:#C43B3B;font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .no{left:0;top:0;border-radius:0;background:#1C1C1E;padding:3px 7px}.lb .pr em{color:#C43B3B}
+.lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.sec h2 .eb2{font-size:10.5px;letter-spacing:2.5px;color:#C43B3B;font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .pr em{color:#C43B3B}
 @media(prefers-color-scheme:dark){.lb .im{background:var(--tile)}.lb .pr em,.sec h2 .eb2{color:var(--pke)}}"""
 LINK_V = ("(function(){var f=(location.search.match(/[?&]v=([ab])(?:&|$)/)||[])[1],v=f;if(!v){try{v=localStorage.getItem('hp_link')}catch(e){}"  # A·B 반반: 주소 v= 고정(저장·집계 X) > 이 브라우저에 정해진 쪽 > 50:50 무작위(저장 안 되면 이번만)
           "if(v!=='a'&&v!=='b'){v=Math.random()<.5?'a':'b';try{localStorage.setItem('hp_link',v)}catch(e){}}}document.documentElement.className='l'+v;window.hpLV=v;window.hpLF=!!f;"
@@ -1605,7 +1603,7 @@ LINK_GC = ("document.addEventListener('click',function(e){var a=e.target.closest
            "goatcounter.count({path:g,title:(a.textContent||'').trim().slice(0,80),event:true})})")
 LINK_JS = """<script>(function(){var G=document.getElementById('lg'),N=document.getElementById('dn'),B=document.querySelectorAll('.chips button');
 [].forEach.call(B,function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-k'),n=0;[].forEach.call(B,function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
-[].forEach.call(G.children,function(t){var on=(' '+t.getAttribute('data-k')+' ').indexOf(' '+k+' ')>=0;t.hidden=!on;if(on)t.querySelector('.no').textContent=++n});N.textContent=n})});
+[].forEach.call(G.children,function(t){var on=(' '+t.getAttribute('data-k')+' ').indexOf(' '+k+' ')>=0;t.hidden=!on;if(on)n++});N.textContent=n})});
 var a=document.querySelector('.ad');if(a)a.addEventListener('click',function(){var p=document.getElementById('adw'),o=p.hidden;p.hidden=!o;a.setAttribute('aria-expanded',o?'true':'false')})})()</script>"""
 
 
@@ -1638,14 +1636,14 @@ def link_tabs(pool):
     return [(*x, [k for k, _ in LINK_TABS if x[0] in on[k]]) for x in pool if any(x[0] in s for s in on.values())], {k: len(s) for k, s in on.items()}
 
 
-def link_tile(n, i, p, sh, ks):
-    """상품 칸: 정사각 사진(없으면 품목 이모지) + 왼쪽 위 번호 + 이름 2줄 + 가격 800·작은 분홍(와우가·쿠폰가) + 기준 시각(link_when) — 누르면 바로 몰."""
+def link_tile(i, p, sh, ks):
+    """상품 칸: 정사각 사진(없으면 품목 이모지 — 번호 배지 X: 인스타 번호는 카드 딜 줄 01·02…, 10/25 Cowork) + 이름 2줄 + 가격 800·작은 분홍(와우가·쿠폰가) + 기준 시각(link_when) — 누르면 바로 몰."""
     shown, ex, _ = price_bits(p, sh)
     em = ex[0] if shop_of(p) != "toss" and ex and len(ex[0]) <= 8 else ""
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
     return (f'<a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank" data-k="{" ".join(ks)}"' + ("" if "all" in ks else " hidden")
-            + f'><div class="im"><i aria-hidden="true">{c[2] if c else "🛍️"}</i>{pic}<b class="no">{n}</b></div><div class="nm">{html.escape(link_name(p))}</div>'
+            + f'><div class="im"><i aria-hidden="true">{c[2] if c else "🛍️"}</i>{pic}</div><div class="nm">{html.escape(link_name(p))}</div>'
             + f'<div class="pr">{html.escape(shown)}' + (f'<em>{html.escape(em)}</em>' if em else "") + f'</div><div class="ck">{html.escape(link_when(p, sh))}</div></a>')
 
 
@@ -1679,13 +1677,13 @@ def link_top(style, kakao):
 def link_page(style, posts, it, out, alt=False, today=None):
     """/link 프로필 링크 한 장(10/25 진우 — 인스타는 글·댓글 링크가 안 눌려서 프로필 링크 하나에 채널 + 지금 특가, 외부 서비스 X): 인스타·Threads·카톡방 공지·블로그 끝에 이 주소.
     style 'ab' = 머리 블록 A·B 둘 다 넣고 JS(LINK_V)가 하나만(html.la/.lb — JS 꺼짐 = A, 리다이렉트 X) · 'a'|'b' = 그 시안만. 아래는 공용(B는 클래스로 모양만): 3사 대가성 문구 → 오늘 카드 딜 번호 줄 → 지금 특가 12(칩) → 전체 특가 보기.
-    가볍게(사이트 CSS·검색·메뉴·서비스워커 X, 쪽 안 CSS·아이콘) · 측정 = GoatCounter(ab = 가상 경로 link-a·link-b + link-a/채널·buy/link-a/몰, 미리보기 = 그 쪽 경로) · alt = 미리보기(noindex)."""
+    가볍게(사이트 CSS·검색·메뉴·서비스워커·사이트 글꼴 X — 시스템 글꼴(10/25 Cowork, 인스타 앱 안 첫 방문 317KB X), 쪽 안 CSS·아이콘) · 측정 = GoatCounter(ab = 가상 경로 link-a·link-b + link-a/채널·buy/link-a/몰, 미리보기 = 그 쪽 경로) · alt = 미리보기(noindex)."""
     today = today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     rows, n = link_tabs(link_pool(it, today))
     kakao = html.escape(KAKAO_OPENCHAT_URL) if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else ""
     deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><small>매시간 바뀌어요</small></div><div class="chips" role="group" aria-label="품목 고르기">'
                       + "".join(f'<button type="button" data-k="{k}" aria-pressed="{"true" if k == "all" else "false"}">{nm}</button>' for k, nm in LINK_TABS if n[k])
-                      + '</div><div class="g" id="lg">' + "".join(link_tile(k, *x) for k, x in enumerate(rows, 1)) + "</div></section>") or ""
+                      + '</div><div class="g" id="lg">' + "".join(link_tile(*x) for x in rows) + "</div></section>") or ""
     url = f"{BASE}link/" + (f"{style}/" if alt else "")
     t, d = f"{TITLE} — 채널·지금 특가 한 번에", "카톡 특가방·블로그·Threads·인스타·텔레그램과 지금 특가 12개를 한 곳에. 쿠팡·토스·네이버 생활 특가를 매일 골라요."
     kst = time.gmtime(time.time() + 9 * 3600)
