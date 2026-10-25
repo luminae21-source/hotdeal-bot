@@ -1,5 +1,5 @@
 {
- "left_now": 41,
+ "left_now": 40,
  "ok": {
   "auction": 7
  },
@@ -332,6 +332,13 @@
    "n": "홈스타 욕실용 세정제 라임바질 900ml 2개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 08:04"
+  },
+  {
+   "k": "진열",
+   "pid": "9046897334",
+   "n": "좋은느낌 입는 오버나이트 대형 8개입 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 08:18"
   }
  ]
 }
