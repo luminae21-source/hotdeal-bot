@@ -3764,6 +3764,20 @@ def th_img(tok, me, text, image, tag="핫딜"):
         return None
 
 
+def th_carousel(tok, me, text, images, tag="핫딜"):
+    """Threads 캐러셀 글 1개(사진 2~10장 — 사진마다 IMAGE 항목(is_carousel_item) -> CAROUSEL, 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로)."""
+    try:
+        kids = [json.loads(http(f"{THREADS}/{me}/threads?" + urllib.parse.urlencode({"media_type": "IMAGE", "image_url": u, "is_carousel_item": "true", "access_token": tok}), method="POST"))["id"] for u in images[:10]]
+        time.sleep(30)  # 미디어 처리 대기(공식 권장)
+        q = urllib.parse.urlencode({"media_type": "CAROUSEL", "children": ",".join(kids), "text": text, "topic_tag": tag, "access_token": tok})
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+        time.sleep(10)
+        return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
+    except Exception as e:
+        print("th carousel 안 됨 -> 글만", err_brief(e))
+        return None
+
+
 def th_text(tok, me, text, link, tag="핫딜"):
     """Threads 글 1개(TEXT + 링크 미리보기). 미리보기를 못 만들면(4279047 'Invalid Link Attachment', 10/7 15:51) 첨부 없이 1번 더 — 본문 주소는 그대로."""
     for att in ({"link_attachment": link}, {}) if link else ({},):  # 링크 없음(A/B 시험 B 본문) = 미리보기 없이
@@ -5441,6 +5455,143 @@ def cal_post(seen):
     print("cal post: 쇼핑 달력", text.count("\n· "), "줄 · 글", r.get("id"))
 
 
+CUR_DIR, CUR_PREP, CUR_LATE, CUR_IMG_WAIT = "docs/cards/cur", 3 * 3600, 6 * 3600, 3600  # 큐레이션 사진(우리 서버 JPEG — 인스타·Threads는 공개 JPEG 주소가 필요) · 시각 3시간 전부터 준비 · 6시간 지나면 안 올림 · 사진이 사이트에 1시간 넘게 안 뜨면 글 + 링크 카드
+
+
+def cur_events(seen=None):
+    """events.json 큐레이션 항목(10/25 21시 진우 'Threads 등에서 계속 검색에 나오게 — 제품 한두 개로 더 많은 상품이 있다는 걸 여자들이 좋아할 만한 내용으로'):
+    {"at","curation":true,"text","link"(사이트 c/ 쪽만),"topic"(Threads 주제 태그),"img":[쿠팡 사진 주소 …]} — 모양 틀린 항목 = 뺌(로그)."""
+    out = []
+    for e in ev_list(EVENTS):
+        if not (isinstance(e, dict) and e.get("curation")):
+            continue
+        at, text, link, img = e.get("at"), e.get("text"), e.get("link"), e.get("img") or []
+        try:
+            ok = isinstance(at, str) and re.fullmatch(r"\d{4}-\d\d-\d\d \d\d:\d\d", at) and kst_ts(at)  # 없는 날짜·시각(13월·25시) = X
+        except ValueError:
+            ok = False
+        if not (ok and isinstance(text, str) and text.strip() and isinstance(link, str)
+                and link.startswith(SITE + "c/") and not re.search(r"\s", link) and isinstance(img, list) and all(isinstance(u, str) for u in img)):
+            print("curation 모양 틀림 -> 건너뜀", str(at)[:16])
+            k = "alert_curbad_" + hashlib.md5(json.dumps(e, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:8]
+            if seen is not None and k not in seen:  # Cowork에 알림 항목마다 1번(조용히 빠지지 않게 · 3시간마다 X)
+                alert(seen, k, f"⚠️ 큐레이션 항목 모양이 틀려서 안 올려요: {str(at)[:16]} — at = 'YYYY-MM-DD HH:MM' · text · link = {SITE}c/… · img = 주소 목록")
+            continue
+        out.append({**e, "img": img[:10]})
+    return out
+
+
+def cur_img(u):
+    """큐레이션 사진 1장 -> docs/cards/cur/<md5>.jpg — 자르기·크기 조정만(글자·합성 X): 비율이 인스타 범위(4:5~1.91:1) 밖이면 가운데만 잘라 그 범위로, 긴 변 1080 넘으면 줄이고
+    짧은 변 320 밑이면 키움 · 투명 배경 = 흰색 · 쿠팡 사진 주소만(사이트 img_of와 같은 허용 목록) · 못 받으면 None."""
+    try:
+        host = urllib.parse.urlsplit(u).netloc.lower()
+        if not (u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))):
+            return None
+        f = f"{CUR_DIR}/{hashlib.md5(u.encode()).hexdigest()[:12]}.jpg"
+        if os.path.exists(f):
+            return f
+        from io import BytesIO
+        from PIL import Image
+        im = Image.open(BytesIO(urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(8_000_000)))
+        im.load()
+        if im.mode in ("RGBA", "LA", "P") or "transparency" in im.info:  # 투명 = 흰 바탕(검게 X)
+            rgba = im.convert("RGBA")
+            bg = Image.new("RGB", rgba.size, "white")
+            bg.paste(rgba, mask=rgba.split()[3])
+            im = bg
+        im = im.convert("RGB")
+        r = im.width / im.height
+        if r > 1.91:  # 너무 넓음 = 가운데 1.91:1
+            w = int(im.height * 1.91)
+            im = im.crop(((im.width - w) // 2, 0, (im.width - w) // 2 + w, im.height))
+        elif r < 0.8:  # 너무 높음 = 가운데 4:5
+            h = int(im.width / 0.8)
+            im = im.crop((0, (im.height - h) // 2, im.width, (im.height - h) // 2 + h))
+        k = min(1080 / max(im.size), 1) if max(im.size) > 1080 else max(320 / min(im.size), 1)
+        im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS) if k != 1 else im
+        os.makedirs(CUR_DIR, exist_ok=True)
+        im.save(f, "JPEG", quality=88)
+        return f
+    except Exception as e:
+        print("curation 사진 못 받음", clip(u, 60), type(e).__name__)
+        return None
+
+
+def cur_prune(now):
+    """docs/cards/cur 사진 = 지금 events 큐레이션(3일 안) 사진만 남김(저장소 크기 — 인스타·Threads는 게시 때 이미 가져감)."""
+    keep = {hashlib.md5(u.encode()).hexdigest()[:12] + ".jpg" for e in cur_events() if kst_ts(e["at"]) > now - 3 * 86400 for u in e["img"]}
+    for f in os.listdir(CUR_DIR) if os.path.isdir(CUR_DIR) else []:
+        if f.endswith(".jpg") and f not in keep:
+            os.remove(f"{CUR_DIR}/{f}")
+
+
+def curation(seen):
+    """큐레이션 글(events curation): 시각이 되면 텔레그램 채널 = 본문 + '🛍 더 보기' 버튼(같은 쪽, ref=tgc) · Threads = 사진(우리 서버 JPEG) 1장 IMAGE·2장↑ CAROUSEL, 본문 끝 링크(ref=thc), topic_tag = topic
+    / 사진 없음 = TEXT + 링크 카드(정보 글처럼) · 6시간 지나면 X. 사진은 시각 3시간 전부터 준비(이 실행 커밋 -> 사이트에 뜨면(HEAD) 게시 · 준비 뒤 1시간 넘게 안 뜨면 뜬 사진만, 없으면 글 + 링크 카드 ·
+    못 받은 사진 = 1시간 뒤 다시). 우리 사이트 쪽 링크 = 대가성 문구 X(상품 링크 규칙은 그대로) · 묶음 간격만 봄(딜 글 수·간격 그대로) · Threads 실패 = 다음 실행에 다시(3번째 = 알림·그만). 인스타 = ig 사진 카드."""
+    now, tok = time.time(), E.get("THREADS_TOKEN")
+    cur_prune(now)
+    for e in cur_events(seen):
+        t0 = kst_ts(e["at"])
+        if not t0 - CUR_PREP <= now <= t0 + CUR_LATE:
+            continue
+        key = f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}"  # 시각 = 열쇠(글을 고쳐도 다시 X — 같은 시각 큐레이션은 1개)
+        st = seen.setdefault(key, {"t": now})
+        st["t"], files = now, []
+        if "th" not in st:
+            bad = st.setdefault("bad", {})
+            for u in e["img"]:
+                f = cur_img(u) if now - bad.get(u, 0) >= 3600 else None  # 못 받은 사진 = 1시간 뒤 다시(실행마다 X)
+                if f:
+                    files.append(f)
+                    bad.pop(u, None)
+                    st.setdefault("pt", now)  # 사진 처음 준비된 시각(사이트에 뜨기 기다림 기준)
+                elif u not in bad or now - bad[u] >= 3600:
+                    bad[u] = now
+        if now < t0:  # 사진만 미리(다음 실행 전에 사이트에 뜨게)
+            continue
+        body = e["text"].strip()
+        if "tg" not in st:
+            m = tg("sendMessage", chat_id=CHANNEL, text=esc(clip(body, 2000)), parse_mode="HTML", link_preview_options={"is_disabled": True},  # 4096자 한도(이모지 = 2자로 셈)
+                   reply_markup={"inline_keyboard": [[{"text": "🛍 더 보기", "url": re.sub(r"([?&]ref=)thc\b", r"\g<1>tgc", e["link"])}]]})
+            if m:
+                st["tg"] = m["message_id"]
+        if not tok or "th" in st or busy(seen, cap=False):
+            continue
+        urls, live = [SITE + f[len("docs/"):] for f in files], []
+        for u in urls:
+            try:
+                http(u, method="HEAD")
+                live.append(u)
+            except Exception:
+                pass
+        if len(live) < len(urls) and now < max(t0, st.get("pt", now)) + CUR_IMG_WAIT:
+            continue  # 아직 사이트에 다 안 뜸 = 다음 실행에(준비 뒤 1시간까지)
+        topic = re.sub(r"[.&]", "", str(e.get("topic") or "")).strip()[:50] or th_topic(seen)  # Threads 주제 태그: 마침표·& X · 50자
+        lim = 500 - th_len(e["link"]) - 2
+        cut = th_fit(body, lim)
+        while th_len(cut) > lim and lim > 40:  # Threads 글자 수 = 이모지 UTF-8 바이트(th_len) — th_fit은 글자 수라 넘치면 더 줄임
+            lim -= 10
+            cut = th_fit(body, lim)
+        post = f"{cut}\n\n{e['link']}"
+        try:
+            me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+            r = th_img(tok, me, post, live[0], topic) if len(live) == 1 else th_carousel(tok, me, post, live, topic) if live else None
+            ph = len(live) if r else 0
+            r = r or th_text(tok, me, post, e["link"], topic)
+        except Exception as x:
+            st["n"] = st.get("n", 0) + 1
+            print("curation threads 실패", st["n"], err_brief(x))
+            if st["n"] >= 3:
+                st["th"] = None
+                alert(seen, "alert_" + key, f"⚠️ 큐레이션 글 Threads 3번 실패: {err_brief(x)}\n{e['at']} {clip(body, 60)}")
+            continue
+        st["th"], st["ph"] = (r or {}).get("id"), ph
+        bundled(seen)
+        print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
+
+
 def snack_post(seen):
     """15:30 '🍪 출출할 때 간식 N' — 최근 3일 간식 딜(SNACK_WORDS + 오늘 날씨 간식) 최대 3개, 2개 미만이면 안 올림(빈 글 X)."""
     key = due(SNACK_HOUR, "snack", seen)
@@ -5734,7 +5885,7 @@ def report(seen):
 
 def load(path, default):
     if path == EVENTS:  # 쿠팡 상품 주소 -> 봇이 만든 파트너스 링크(cp_links.json, 키 있을 때만) — 사이트와 같은 값 · "shelf" 항목 = 사이트 진열 전용(shelf_posts·cp_links·ev_info만 봄 — 채널·Threads·미리보기·토스 쉼·알림 X)
-        return [e for e in ev_list(path) if not (isinstance(e, dict) and e.get("shelf"))]
+        return [e for e in ev_list(path) if not (isinstance(e, dict) and (e.get("shelf") or e.get("curation")))]  # curation = 큐레이션 글(curation()만 봄 — url 없는 항목이 events()를 멈추지 않게)
     try:
         return json.load(open(path))
     except (OSError, ValueError):
@@ -6812,7 +6963,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, site_relink, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, site_relink, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

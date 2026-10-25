@@ -718,7 +718,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3353,7 +3353,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -7284,6 +7284,81 @@ assert [S67.cat_of({"text": t}) for t in ("[쿠팡] 무선 휴대용 극세사 �
         "[토스] 퍼니트 유기농 엑스트라버진 올리브오일 선물세트 250ml 2병 (15,600원)", "[쿠팡] 온열 수면양말 (1원)", "[쿠팡] 순수한면 생리대 중형 (1원)", "[쿠팡] 여성 기모 타이즈 (1원)", "[쿠팡] PTC 욕실 온풍기 (1원)")] == \
        ["heat", "fashion", "life", "food", "heat", "women", "fashion", "heat"]
 assert S67.cat_of({"text": "[쿠팡] 퍼니트 원목 사이드 테이블 (1원)"}) != "fashion"  # '니트' 앞에 한글이 붙은 낱말 = 옷 X
+# 9-68) 큐레이션 글(10/25 21시 Cowork ③ — events {"at","curation":true,"text","link"(사이트 c/ 쪽),"topic","img":[쿠팡 사진]}): 텔레그램 = 본문 + '🛍 더 보기'(ref=tgc) ·
+#       Threads = 우리 서버 JPEG(시각 3시간 전 준비 → 사이트에 뜨면) 1장 IMAGE·2장 CAROUSEL · 본문 끝 링크(ref=thc) · topic_tag = topic / 사진 없음 = TEXT + 링크 카드 · events()·다른 단계는 안 봄
+import contextlib, io, calendar, inspect, glob
+d68 = tempfile.mkdtemp(); cwd68 = os.getcwd(); os.chdir(d68)
+sv68 = (H.EVENTS, H.tg, H.http, time.time, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, H.E.get("THREADS_TOKEN"), H.urllib.request.urlopen, H.alert)
+H.EVENTS = "ev68.json"; L68 = f"{H.SITE}c/winter/?ref=thc"; IMG68 = ["https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/a.jpg", "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/b.jpg"]
+CU68 = {"at": "2026-10-26 20:00", "curation": True, "text": "🧣 출근길 손 시릴 때 하나씩\n전기방석·발난로 모아 봤어요", "link": L68, "topic": "겨울템", "img": IMG68}
+json.dump([CU68, {**CU68, "at": "2026-10-26 21:00", "link": "https://evil.kr/x"}, {**CU68, "at": "10/26 20:00"}, {**CU68, "at": "2026-10-26 22:00", "img": "a.jpg"}, {**CU68, "at": "2026-13-45 25:99"},
+           {"at": "2026-10-26 20:00", "text": "🔥 <b>[쿠팡] 보통 예약 (1원)</b>", "url": "https://link.coupang.com/a/x", "deal": True}], open("ev68.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()): ce68 = H.cur_events()
+assert [e["at"] for e in ce68] == ["2026-10-26 20:00"] and [e.get("url") for e in H.load(H.EVENTS, [])] == ["https://link.coupang.com/a/x"]  # 사이트 c/ 쪽 아닌 링크·시각·사진 모양 틀림 = 뺌 · 다른 단계(load) = 큐레이션 안 봄
+from PIL import Image as Im68
+def png68(w, h):
+    b = io.BytesIO(); Im68.new("RGB", (w, h), (200, 120, 40)).save(b, "PNG"); return b.getvalue()
+class R68:
+    def __init__(s, b): s.b = b
+    def read(s, n=-1): return s.b
+def rgba68():
+    b = io.BytesIO(); Im68.new("RGBA", (600, 600), (0, 0, 0, 0)).save(b, "PNG"); return b.getvalue()
+u68 = []; H.urllib.request.urlopen = lambda req, timeout=None: u68.append(req.full_url) or R68(rgba68() if req.full_url.endswith("t.png") else png68(*({"a.jpg": (700, 500), "b.jpg": (2000, 1500), "c.jpg": (200, 200), "w.jpg": (2000, 600)}[req.full_url.rsplit("/", 1)[1]])))
+f68 = H.cur_img(IMG68[0]); assert f68 and Im68.open(f68).size == (700, 500) and Im68.open(H.cur_img(IMG68[1])).size == (1080, 810)  # 자르기·크기만: 비율 그대로(인스타 범위 안) · 긴 변 1080 넘으면 줄임
+assert Im68.open(H.cur_img(IMG68[0][:-5] + "c.jpg")).size == (320, 320) and Im68.open(H.cur_img(IMG68[0][:-5] + "w.jpg")).size == (1080, 565)  # 320 밑 = 키움 · 너무 넓음 = 가운데 1.91:1로 자름
+assert Im68.open(H.cur_img(IMG68[0][:-5] + "t.png")).getpixel((0, 0)) == (255, 255, 255)  # 투명 = 흰 바탕(검게 X)
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.cur_img("https://evil.kr/a.jpg") is None and H.cur_img("http://thumbnail.coupangcdn.com/a.jpg") is None and H.cur_img("https://thumbnail.coupangcdn.com]/x.jpg") is None  # 쿠팡 사진 주소만 · 깨진 주소 = None(멈춤 X)
+n68 = len(u68); H.cur_img(IMG68[0]); assert len(u68) == n68  # 있으면 다시 안 받음
+for f in glob.glob("docs/cards/cur/*"): os.remove(f)
+at68 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+t68, c68, hd68 = [], [], {"ok": False}
+H.tg = lambda m, **k: c68.append((m, k)) or {"message_id": 501}
+H.http = lambda url, body=None, headers=None, method=None: (url.endswith("/me?fields=id&access_token=tk") and '{"id": "me1"}') or (method == "HEAD" and (hd68["ok"] or (_ for _ in ()).throw(OSError("404"))) and "") or ""
+H.th_img = lambda tok, me, text, image, tag="핫딜": t68.append(("img", text, image, tag)) or {"id": "I1"}
+H.th_carousel = lambda tok, me, text, images, tag="핫딜": t68.append(("car", text, images, tag)) or {"id": "C1"}
+H.th_text = lambda tok, me, text, link, tag="핫딜": t68.append(("text", text, link, tag)) or {"id": "T1"}
+H.busy, H.bundled, H.E["THREADS_TOKEN"] = (lambda seen, cap=True: False), (lambda seen: None), "tk"
+s68, a68 = {}, []; H.alert = lambda seen, key, text, *a, **k: a68.append(text) or seen.__setitem__(key, {"t": time.time()})
+with contextlib.redirect_stdout(io.StringIO()): at68("2026-10-26 16:30"); H.curation(s68)
+assert not glob.glob("docs/cards/cur/*") and not c68 and len(a68) == 4 and all("모양이 틀려서" in a for a in a68)  # 3시간 전 전 = 아무것도 X · 모양 틀린 항목(없는 날짜 2026-13-45 25:99 포함) = 알림
+os.makedirs("docs/cards/cur", exist_ok=True); open("docs/cards/cur/0000stray.jpg", "w").close()
+with contextlib.redirect_stdout(io.StringIO()): at68("2026-10-26 17:30"); H.curation(s68)
+assert len(glob.glob("docs/cards/cur/*.jpg")) == 2 and not os.path.exists("docs/cards/cur/0000stray.jpg") and not c68 and not t68 and len(a68) == 4  # 사진만 미리(이 실행 커밋 → 사이트) · events에 없는 사진 = 지움 · 알림 항목마다 1번
+with contextlib.redirect_stdout(io.StringIO()): at68("2026-10-26 20:05"); H.curation(s68)
+assert [m for m, _ in c68] == ["sendMessage"] and c68[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🛍 더 보기", "url": f"{H.SITE}c/winter/?ref=tgc"} and "전기방석" in c68[0][1]["text"] and not t68  # 채널 = 바로 · Threads = 사진이 아직 안 뜸 → 기다림
+hd68["ok"] = True
+with contextlib.redirect_stdout(io.StringIO()): at68("2026-10-26 20:20"); H.curation(s68); H.curation(s68)
+assert s68[[k for k in s68 if k.startswith("cur_2026-10-26")][0]]["ph"] == 2 and len(c68) == 1 and len(t68) == 1 and t68[0][0] == "car" and t68[0][2] == [H.SITE + f[5:] for f in sorted(glob.glob("docs/cards/cur/*.jpg"), key=lambda f: [H.cur_img(u) for u in IMG68].index(f))] and t68[0][3] == "겨울템", t68  # 2장 = CAROUSEL · 주제 태그
+assert t68[0][1].endswith(f"\n\n{L68}") and t68[0][1].startswith("🧣 출근길") and not t68[0][1].startswith(H.NOTE_STARTS)  # 본문 끝 = 사이트 쪽 링크(ref=thc) · 대가성 문구 X
+# 사진 1장 = IMAGE · 사진 없음 = TEXT + 링크 카드 · 사진이 1시간 넘게 안 뜨면 글 + 링크 카드 · 6시간 지나면 X · Threads 3번 실패 = 알림·그만
+json.dump([{**CU68, "at": "2026-10-27 20:00", "img": IMG68[:1]}, {**CU68, "at": "2026-10-28 20:00", "img": []}], open("ev68.json", "w"))
+H.urllib.request.urlopen = lambda req, timeout=None: R68(png68(700, 700))
+t68.clear(); at68("2026-10-27 20:10"); H.curation(s68); assert [x[0] for x in t68] == ["img"] and len(glob.glob("docs/cards/cur/*.jpg")) == 1  # 지난 큐레이션 사진(b) = 지움
+n68 = len(c68); json.dump([{**CU68, "at": "2026-10-27 20:00", "text": "고친 글", "img": IMG68[:1]}, {**CU68, "at": "2026-10-28 20:00", "img": []}], open("ev68.json", "w"))
+at68("2026-10-27 20:40"); H.curation(s68); assert len(c68) == n68 and len(t68) == 1  # 올린 뒤 글을 고쳐도 다시 X(시각 = 열쇠)
+t68.clear(); at68("2026-10-28 20:10"); H.curation(s68); assert [x[:3] for x in t68] == [("text", f"{CU68['text']}\n\n{L68}", L68)]
+H.th_carousel = lambda *a, **k: t68.append(("car-fail",)) and None; json.dump([{**CU68, "at": "2026-10-28 22:00", "text": "🧣🔥✨" * 60 + "가" * 4000}], open("ev68.json", "w")); hd68["ok"] = True
+t68.clear(); at68("2026-10-28 22:10"); H.curation(s68); s68x = s68[[k for k in s68 if k.startswith("cur_2026-10-28_2200")][0]]
+assert [x[0] for x in t68] == ["car-fail", "text"] and s68x["ph"] == 0 and H.th_len(t68[1][1]) <= 500 and len(c68[-1][1]["text"].encode("utf-16-le")) <= 4096 * 2, (t68, H.th_len(t68[1][1]))  # 채널 = 4096자 한도 안  # 사진 글 실패 = 글만(ph 0) · 이모지 = UTF-8 바이트로 500 안
+json.dump([{**CU68, "at": "2026-10-29 20:00", "img": [IMG68[1][:-5] + "x9.jpg"]}], open("ev68.json", "w")); hd68["ok"] = False
+t68.clear(); at68("2026-10-29 20:10"); H.curation(s68); assert not t68
+at68("2026-10-29 21:15"); H.curation(s68); assert [x[0] for x in t68] == ["text"]  # 1시간 넘게 사진 안 뜸 = 글 + 링크 카드
+json.dump([{**CU68, "at": "2026-10-30 20:00", "img": []}], open("ev68.json", "w")); t68.clear(); a68 = []
+H.th_text = lambda *a, **k: (_ for _ in ()).throw(OSError("threads down")); H.alert = lambda seen, key, text, *a, **k: a68.append(text)
+with contextlib.redirect_stdout(io.StringIO()):
+    for m in ("20:10", "20:25", "20:40", "20:55"): at68("2026-10-30 " + m); H.curation(s68)
+assert len(a68) == 1 and "3번 실패" in a68[0]
+n68 = len(c68); at68("2026-10-31 03:00"); json.dump([{**CU68, "at": "2026-10-30 20:59", "text": "다른 글", "img": []}], open("ev68.json", "w")); H.curation(s68); assert len(c68) == n68  # 6시간 지나면 X(안 올린 시각이어도)
+assert "e.get(\"shelf\") or e.get(\"curation\")" in inspect.getsource(H.load)
+json.dump([{**CU68, "at": "2026-11-02 20:00", "img": ["https://thumbnail.coupangcdn.com/none.jpg"]}], open("ev68.json", "w")); u68b = []
+H.urllib.request.urlopen = lambda req, timeout=None: u68b.append(1) or (_ for _ in ()).throw(OSError("cdn down"))
+with contextlib.redirect_stdout(io.StringIO()):
+    for m in ("17:10", "17:25", "17:40", "18:15"): at68("2026-11-02 " + m); H.curation(s68)
+assert len(u68b) == 2  # 못 받은 사진 = 1시간 뒤 다시(실행마다 X)
+(H.EVENTS, H.tg, H.http, time.time, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, tk68, H.urllib.request.urlopen, H.alert) = sv68
+H.E.pop("THREADS_TOKEN", None) if tk68 is None else H.E.__setitem__("THREADS_TOKEN", tk68)
+os.chdir(cwd68)
 # 9-66) 토스 개별 글 사진(10/25 21:3x 진우 ④ — TOSS_PHOTO: 토스 운영 정책 진우 확인 뒤 켬): 썸네일 원본 그대로 · 텔레그램 sendPhoto(캡션 끝 '사진: 토스쇼핑' · 1,024자 넘거나 실패 = 글만, 사진 실패 알림 X) ·
 #       품절 표시 = editMessageCaption · Threads = 사진 글(실패 = 글만) · toss_noimg.txt 상품 = 사진 X · 꺼져 있으면 지금 그대로
 import contextlib, io, calendar, inspect
