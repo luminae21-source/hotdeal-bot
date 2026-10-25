@@ -5815,6 +5815,7 @@ at48("2026-10-24 11:00"); H.cp_links(s48); assert len(dm48) == 1 and len(dl48) =
 at48("2026-10-25 09:30"); H.cp_links(s48); assert len(dm48) == 1 and len(dl48) == 3  # 24시간 안 = 아직
 G48b = "https://www.coupang.com/vp/products/5002"; json.dump(json.load(open("events.json")) + [{"at": "2026-10-25 09:00", "shelf": True, "url": G48b, "text": "👍 <b>[쿠팡] 새 세제 (1,000원)</b>"}], open("events.json", "w"))
 at48("2026-10-25 10:30"); H.cp_links(s48); assert len(dm48) == 2 and "제휴 안 되는 세제 (pid 77777) — 2번째(다른 날) · 7일 뒤 다시" in dm48[1] and "사이트엔 쿠팡 상품 주소 그대로 진열 중" in dm48[1] and dl48[-2:] == [[G48b], [B48]], (dm48, dl48)  # 다음 날 1번 더(실패) -> 알림 1번 · 실패했던 상품 = 1개씩(새 상품과 안 묶음 — 묶음 오류로 나누는 호출 X)
+assert [r["pid"] for r in json.load(open(H.CP_FAIL))] == ["77777"]  # 이 실행에 바뀐 것(5002) = 표에서 바로 빠짐
 at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 5 and len(dm48) == 2  # 2번 실패한 진열 = 7일 동안 안 부름
 at48("2026-11-01 10:29"); H.cp_links(s48); assert len(dl48) == 5
 at48("2026-11-01 10:31"); H.cp_links(s48); assert dl48[-1] == [B48] and len(dl48) == 6 and len(dm48) == 2 and s48["cpdl"]["f"][B48] == ["2026-10-24", "2026-10-25", "2026-11-01"]  # 7일 뒤 다시(나중에 되면 파트너스 링크로) · 3번째부터 알림 X
