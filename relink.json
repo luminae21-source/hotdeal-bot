@@ -1,5 +1,5 @@
 {
- "left_now": 45,
+ "left_now": 44,
  "ok": {
   "auction": 7
  },
@@ -304,6 +304,13 @@
    "n": "이브네 무표백 코어 생리대 중형 16개입 4개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 07:07"
+  },
+  {
+   "k": "진열",
+   "pid": "8643673345",
+   "n": "이브네 코트니 생리대 날개형 중형 16개입 4개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 07:21"
   }
  ]
 }
