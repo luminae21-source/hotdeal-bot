@@ -7340,7 +7340,7 @@ at68("2026-10-27 20:40"); H.curation(s68); assert len(c68) == n68 and len(t68) =
 t68.clear(); at68("2026-10-28 20:10"); H.curation(s68); assert [x[:3] for x in t68] == [("text", f"{CU68['text']}\n\n{L68}", L68)]
 H.th_carousel = lambda *a, **k: t68.append(("car-fail",)) and None; json.dump([{**CU68, "at": "2026-10-28 22:00", "text": "🧣🔥✨" * 60 + "가" * 4000}], open("ev68.json", "w")); hd68["ok"] = True
 t68.clear(); at68("2026-10-28 22:10"); H.curation(s68); s68x = s68[[k for k in s68 if k.startswith("cur_2026-10-28_2200")][0]]
-assert [x[0] for x in t68] == ["car-fail", "text"] and s68x["ph"] == 0 and H.th_len(t68[1][1]) <= 500 and len(c68[-1][1]["text"].encode("utf-16-le")) <= 4096 * 2, (t68, H.th_len(t68[1][1]))  # 채널 = 4096자 한도 안  # 사진 글 실패 = 글만(ph 0) · 이모지 = UTF-8 바이트로 500 안
+assert [x[0] for x in t68] == ["car-fail", "text"] and s68x["ph"] == 0 and 440 < H.th_len(t68[1][1]) <= 500 and len(c68[-1][1]["text"].encode("utf-16-le")) <= 4096 * 2, (t68, H.th_len(t68[1][1]))  # 채널 = 4096자 한도 안 · 이모지 많아도 한도 가까이 남김(40자로 줄이지 X)  # 사진 글 실패 = 글만(ph 0) · 이모지 = UTF-8 바이트로 500 안
 json.dump([{**CU68, "at": "2026-10-29 20:00", "img": [IMG68[1][:-5] + "x9.jpg"]}], open("ev68.json", "w")); hd68["ok"] = False
 t68.clear(); at68("2026-10-29 20:10"); H.curation(s68); assert not t68
 at68("2026-10-29 21:15"); H.curation(s68); assert [x[0] for x in t68] == ["text"]  # 1시간 넘게 사진 안 뜸 = 글 + 링크 카드

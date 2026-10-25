@@ -5569,11 +5569,11 @@ def curation(seen):
         if len(live) < len(urls) and now < max(t0, st.get("pt", now)) + CUR_IMG_WAIT:
             continue  # 아직 사이트에 다 안 뜸 = 다음 실행에(준비 뒤 1시간까지)
         topic = re.sub(r"[.&]", "", str(e.get("topic") or "")).strip()[:50] or th_topic(seen)  # Threads 주제 태그: 마침표·& X · 50자
-        lim = 500 - th_len(e["link"]) - 2
-        cut = th_fit(body, lim)
-        while th_len(cut) > lim and lim > 40:  # Threads 글자 수 = 이모지 UTF-8 바이트(th_len) — th_fit은 글자 수라 넘치면 더 줄임
-            lim -= 10
-            cut = th_fit(body, lim)
+        lim = n = 500 - th_len(e["link"]) - 2
+        cut = th_fit(body, n)
+        while th_len(cut) > lim and n > 40:  # Threads 글자 수 = 이모지 UTF-8 바이트(th_len) — th_fit은 글자 수라 넘치면 자를 길이만 줄임(한도는 그대로)
+            n -= 10
+            cut = th_fit(body, n)
         post = f"{cut}\n\n{e['link']}"
         try:
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
