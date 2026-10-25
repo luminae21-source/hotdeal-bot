@@ -5045,6 +5045,10 @@ H.own_end({}); g35 = json.load(open("posts35.json")); assert f35(1) == {"st": "h
 h35 = S35.home_pool(g35, d35); co35 = ids35(S35.lists(g35, d35)["coupang"][2])
 assert h35[1][0] == 0 and h35[1][4] and ("b2", "🔁 다시 특가") in h35[1][3] and co35.index(1) < co35.index(8) and '<b class="bdg f">🔁 다시 특가</b>' in S35.card(1, g35[1], h35[1]), h35[1]  # 🔥 맨 위 + 🔁 배지(3일)
 H.own_end({}); assert json.load(open("posts35.json"))[1]["rehot"] == "2026-10-24"  # 그대로 🔥면 날짜 그대로
+pj35, ro35 = open("posts35.json").read(), H.REHOT_OFF; H.REHOT_OFF = {"https://link.coupang.com/a/OLD": "2026-10-24"}; H.own_end({}); g35 = json.load(open("posts35.json"))
+assert f35(1) == f35(0) == {"st": "hot", "tgt": "19,900원", "now": "20,500원", "chk": "10/24 8시"}, f35(1)  # 가짜 🔁(10/25 Cowork 페리오 — 잘못 짝지은 now) = 그날 rehot만 지움 · 🔥 그대로
+H.REHOT_OFF = {"https://link.coupang.com/a/OLD": "2026-10-23"}; open("posts35.json", "w").write(pj35); H.own_end({}); assert json.load(open("posts35.json"))[1]["rehot"] == "2026-10-24"  # 다른 날 = 그대로
+H.REHOT_OFF = ro35; open("posts35.json", "w").write(pj35)
 open("ev35.json", "w").write('[{"url": "https://link.coupang.com/a/END", "end": "2026-10-12"},'); assert 2 in S35.home_pool(P35, d35)  # 깨진 events.json = 표시 없음(빌드 안 멈춤)
 json.dump([{"url": "https://link.coupang.com/a/END", "end": True}], open("ev35.json", "w")); assert 2 in S35.home_pool(P35, d35)
 os.remove("ev35.json"); S35.EVENTS = ev35

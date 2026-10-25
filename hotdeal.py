@@ -5597,6 +5597,7 @@ def toss_steady(x):
 CPS_HOUR, CPS_DAYS, CPS_GC_PAGES = 5, 14, 5  # E(10/24 진우 '반응 좋은 품목 자동 재게시'): 반응 점수 하루 1번(5시~ KST) — 쿠팡 주문 리포트 1번 + GoatCounter 14일(쪽 100개씩 최대 5번)
 CPRE_HOURS, CPRE_SPAN, CPRE_DAYS, CPRE_FRESH = (12, 18), 2, 3, 24 * 3600  # 자동 재게시 = 12·18시 칸 1개씩(그 시각부터 2시간 안 — 12·18시는 TOP·토스 묶음 글이 몰려 10분 간격에 밀리기 쉬움) · 같은 상품(url·pid) 3일 · 가격 확인 24시간 안만
 OWN_HOT_PCT = 5  # 🔥 특가 중 = 지금 가격 ≤ 목표가 +5%(10/23 진우)
+REHOT_OFF = {"https://link.coupang.com/a/hRRpHJxXBA": "2026-10-25"}  # 가짜 🔁 다시 특가(url: 그날 rehot만 지움, 🔥 그대로) — 10/25 Cowork 페리오 치약: events now가 10개 묶음 가격을 잘못 짝지어 ⏳로 보였음(1개 가격은 소개 때 그대로)
 
 
 def won_of(s):
@@ -5689,6 +5690,8 @@ def own_end(seen):
         if not tsy and any(icon_of(posts[i]["text"]) == "👍" for i in idxs):
             f["stdy"] = 1
         f["rehot"] = today if p.get("st") == "wait" and not p.get("stl") and f["st"] == "hot" and (not tsy or u in valid) else p.get("rehot")  # 토스 = 앞 상태도 맞는 id로 확인한 것일 때만
+        if REHOT_OFF.get(u) == f["rehot"]:
+            f["rehot"] = None
         pv = next((posts[i] for i in reversed(idxs) if posts[i].get("st")), {})  # 앞 상태 = st가 있는 최신 글(막 다시 올린 글엔 st 없음 — 기록 안 잃게)
         f["std"], f["stp"] = (today, pv["st"]) if pv.get("st") and pv["st"] != f["st"] else (pv.get("std"), pv.get("stp"))  # 상태 바뀐 날·앞 상태(10/24 Cowork 사이트 '특가 끝(hot→wait)'·'판매 종료(→gone)' 최근 3일) — 첫 판단은 X
         if f["rehot"] == today and p.get("rehot") != today and tsy and not p.get("shelf") and len(v) > 7 and v[7]:  # 토스 ⏳ -> 🔥 = 채널·Threads '🔁 다시 특가' 줄(toss_solo — 같은 상품 3일 간격, id = 대표 옵션)
