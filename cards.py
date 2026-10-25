@@ -903,7 +903,7 @@ def _buddy(im, k, x, y, word=""):
 
 def ig_photo_card(it, n, out):
     """인스타 상품 사진 장(1080x1350 JPEG, 10/25 Cowork ② — 넘기기 2장부터 카드 번호 순): 판매 페이지 사진은 줄이고·키우기만(자르기 X — 비율 그대로 흰 칸 가운데, 위에 글자 X),
-    글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'(토스 사진이면 같은 줄 오른쪽 '사진: 토스쇼핑')·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS).
+    글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS).
     it['was'] = 📉 가격 내려간 상품 장(10/25 진우 D): 알약 '▼N%' · 기록가 취소선 → 지금가 · '프로필 링크' 줄 대신 기준 it['basis'](같은 구성 · M/D 기록 대비). -> out"""
     im = Image.new("RGBA", (W, H), LMIST + (255,))
     d, P = ImageDraw.Draw(im), 56
@@ -938,10 +938,7 @@ def ig_photo_card(it, n, out):
         d.line([(b[0] - 4, (b[1] + b[3]) // 2), (b[2] + 4, (b[1] + b[3]) // 2)], fill=SUBA, width=5)
     yb = d.textbbox((x, y + 60), price or "0", font=fp)[3] + 20
     fl, fs = pf("Bold", 44), pf("SemiBold", 40)
-    credit = "사진: 토스쇼핑" if it.get("src") == "toss" else ""
-    d.text((X, yb), _fit(fl, it.get("basis") or f"프로필 링크 → {n}번", W - 2 * X - (fs.getlength(credit) + 24 if credit else 0)), font=fl, fill=BERRY)
-    if credit:
-        d.text((W - X - fs.getlength(credit), yb + 4), credit, font=fs, fill=SUBA)
+    d.text((X, yb), _fit(fl, it.get("basis") or f"프로필 링크 → {n}번", W - 2 * X), font=fl, fill=BERRY)
     when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
     d.text((X, H - 84), _fit(fs, f"제휴 링크(수수료) · {when}", W - 2 * X), font=fs, fill=SUBA)
     return _save(im, out)

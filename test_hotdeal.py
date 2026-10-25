@@ -15,6 +15,7 @@ rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 �
 ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
 tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Threads C·3장면·첫 30분 답글 알림(10/25)은 맨 아래 9-64에서만
 ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는 맨 아래 9-72에서만
+tph0, H.TOSS_PHOTO = H.TOSS_PHOTO, False  # 토스 사진 글(10/26 켬 — 텔레그램·Threads만)은 맨 아래 9-66·9-69에서만
 dpa0, H.DPOST_AT = H.DPOST_AT, (99, 0)  # 📉 가격 내려간 상품 글(20:40)은 맨 아래 9-71에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
@@ -1035,7 +1036,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1163,7 +1164,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -1331,7 +1332,7 @@ del H.E["THREADS_TOKEN"]; seen = {"sold_105": {**H.sold_ev({"name": "n", "button
 ro_run("2026-10-13 00:05"); assert [m for m, p in ro_sent] == ["editMessageText", "sendMessage"] and "reopen" not in seen and not ro_th  # Threads 토큰 없으면 채널 답글만(줄 안 세움)
 H.E["THREADS_TOKEN"] = "tk"; H.HAS_TOSS = False; seen = {"reopen": {"t": T("2026-10-13 00:00"), "q": [{"id": 950, "n": "n", "url": "u", "p0": 1, "icon": "🔥", "cmp": "", "day": "2026-10-13", "st": 0}], "ts": []}}
 assert not ro_run("2026-10-13 00:10", ("toss_reopen",)) and not ro_calls; H.HAS_TOSS = True  # 토스 키 없으면 아무것도 안 함
-assert "toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
+assert "toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards" in inspect.getsource(H.main) and {"threads", "threads_deals", "toss_picks", "toss_reopen", "preview", "th_retry", "ig_cards", "ig_reel", "ig_publish"} <= set(H.ALERT_STEPS) and "step_alert(seen, step, e)" in inspect.getsource(H.main)  # Threads 실패 알림(하루 1번)에 포함
 assert (H.TH_REOPEN_GAP, H.TH_REOPEN_HOUR, H.TH_REOPEN_AM) == (600, 3, (6, 11)) and trn0 == (2, 2, 4)  # 10/12 진우: 아침 재알림 6시부터, 재오픈 한도 밤 2·아침 2·하루 4
 del H.E["THREADS_TOKEN"]; H.http, H.tg, H.time.sleep, H.HAS_TOSS = ph6, tg8, sl6, False
 if os.path.exists("toss.json"): os.remove("toss.json")
@@ -7388,19 +7389,14 @@ with contextlib.redirect_stdout(io.StringIO()):
     assert H.ig_photo(q69("https://www.ppomppu.co.kr/zboard/view.php?no=1"), "ph69") == (None, "") and H.ig_photo(q69(CPU69), "ph69") == (None, "") and len(u69) == 1
     t69 = []; H.toss = lambda path, body=None: t69.append(path) or {"items": [{"tacaItemId": 77, "tacaId": 7, "thumbnailUrl": "https://static.toss.im/p/77.jpg"}]}
     TU69, s69t = "https://toss.shopping/_m/T69", {"tlink": {"r": {"https://toss.shopping/_m/T69": [77]}}, "tossid": {"m": {"https://toss.im/_m/J69": [7, 0, 0]}}}
-    H.HAS_TOSS, H.TOSS_PHOTO = True, False
-    assert H.ig_photo(q69(TU69), "ph69", s69t) == (None, "") and not t69  # 토스 사진 꺼짐(진우 확인 전) = API X
-    H.TOSS_PHOTO = True
-    ft69 = H.ig_photo(q69(TU69), "ph69", s69t); fj69 = H.ig_photo(q69("https://toss.im/_m/J69"), "ph69", s69t)
-    assert ft69[1] == fj69[1] == "toss" and t69 == ["/products/detail?tacaItemIds=77", "/products/detail?tacaIds=7"] and u69[-1] == "https://static.toss.im/p/77.jpg", t69  # 우리 링크 = 상품 id · 진우 링크 = 그룹 id(own_end)
-    open(H.TOSS_NOIMG, "w").write("77\n"); assert H.ig_photo(q69(TU69), "ph69", s69t) == (None, ""); os.remove(H.TOSS_NOIMG)  # 셀러 요청 상품 = 사진 X
-    assert H.ig_photo(q69(TU69), "ph69", {}) == (None, "")  # id 모르면 X(쉐어링크 안 엶)
+    H.HAS_TOSS, H.TOSS_PHOTO = True, True
+    assert H.ig_photo(q69(TU69), "ph69", s69t) == H.ig_photo(q69("https://toss.im/_m/J69"), "ph69", s69t) == (None, "") and not t69 and len(u69) == 1  # 인스타 = 토스 사진 X(TOSS_PHOTO 켜져도 — 카드에 그리면 크롭·합성 + 범위 밖, 10/26 Cowork) · API·사진 받기 X
     H.urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(b"not an image")
     assert H.ig_photo(q69(CPU69, CPI69[:-4] + "x.jpg"), "ph69") == (None, "")  # 깨진 사진 = 건너뜀
     H.urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(jpg69(300, 500)[:-200])
     assert H.ig_photo(q69(CPU69, CPI69[:-4] + "y.jpg"), "ph69") == (None, "")  # 끝이 잘린 사진(verify는 통과) = 건너뜀(그릴 때 멈춤 X — 10/25 리뷰)
 H.urllib.request.urlopen = lambda req, timeout=None: u69.append(req.full_url) or io.BytesIO(jpg69(300, 500))
-# 사진 장: 1080x1350 · 사진 = 비율 그대로 흰 칸 가운데(자르기 X) · 위에 글자 X · 보조 글자 40px↑ · 토스 = '사진: 토스쇼핑'
+# 사진 장: 1080x1350 · 사진 = 비율 그대로 흰 칸 가운데(자르기 X) · 위에 글자 X · 보조 글자 40px↑ · 사진 위 출처 글자 X(10/26 Cowork — 출처는 본문·캡션에만)
 I69.new("RGB", (300, 800), (40, 90, 220)).save("tall69.jpg"); I69.new("RGBA", (900, 300), (0, 0, 0, 0)).save("wide69.png")
 sz69, pf69 = [], C69.pf; C69.pf = lambda w, z: sz69.append(z) or pf69(w, z)
 dr69, em69 = [], []; td69, emj69 = C69.ImageDraw.ImageDraw.text, C69.emoji; C69.emoji = lambda ch, size: em69.append(ch) or emj69(ch, size)
@@ -7414,7 +7410,7 @@ assert near(o69.getpixel((540, 564)), (40, 90, 220)) and near(o69.getpixel((540,
 assert near(o69.getpixel((120, 564)), (255, 255, 255)) and near(o69.getpixel((960, 564)), (255, 255, 255))  # 양옆 = 흰 칸(자르기 X)
 txt69 = [t for _, t in dr69]
 assert "가성비 굿" in txt69 and "핫딜픽" in txt69 and em69 == ["🐱"], em69  # 3번 = 🐱 + '가성비 굿'(카드 번호대로 돌림) · 위 띠(사진 칸 164 위)
-assert "3번" in txt69 and any(t.startswith("프로필 링크 → 3번") for t in txt69) and "사진: 토스쇼핑" in txt69 and any("19,800원" in t for t in txt69) and any(t.startswith("제휴 링크(수수료) · 10/26 10시 가격") for t in txt69), txt69
+assert "3번" in txt69 and any(t.startswith("프로필 링크 → 3번") for t in txt69) and "사진: 토스쇼핑" not in txt69 and any("19,800원" in t for t in txt69) and any(t.startswith("제휴 링크(수수료) · 10/26 10시 가격") for t in txt69), txt69
 assert all(xy[1] < 164 or xy[1] > 964 for xy, t in dr69), dr69  # 글자 = 사진 칸(164~964) 밖 여백에만
 dr69.clear(); C69.ImageDraw.ImageDraw.text = lambda self, xy, text, *a, **k: dr69.append((xy, text)) or td69(self, xy, text, *a, **k)
 o69 = I69.open(C69.ig_photo_card({**it69, "photo": "wide69.png", "src": "coupang", "when": ""}, 1, "w69.jpg")).convert("RGB"); C69.ImageDraw.ImageDraw.text = td69
@@ -7424,8 +7420,8 @@ svs69 = (H.ig_lines, C69.ig_cover); cov69 = []
 H.ig_lines = lambda seen, ps: [""] * len(ps); C69.ig_cover = lambda design, items, *a, **k: cov69.append(([it["photo"] for it in items], k.get("swipe"), sorted(os.listdir(os.path.dirname(a[2]))) if os.path.isdir(os.path.dirname(a[2])) else [])) or svs69[1](design, items, *a, **k)
 P69 = [q69(CPU69 + "1", CPI69), q69("https://naver.me/n69", "https://shop-phinf.pstatic.net/a.jpg"), q69(TU69), q69(CPU69 + "4"), q69(CPU69 + "5", CPI69[:-4] + "5.jpg")]
 with contextlib.redirect_stdout(io.StringIO()): cv69, sl69, _ = H.ig_set(s69t, "2026-10-26", P69, "set69", design="A", h=11)
-assert sl69 == ["set69/01.jpg", "set69/03.jpg", "set69/05.jpg"] and sorted(os.listdir("set69")) == ["01.jpg", "03.jpg", "05.jpg", "cover.jpg"], sl69  # 2번(네이버)·4번(사진 없음) = 건너뜀
-assert len([p for p in cov69[0][0] if p]) == 2 and cov69[0][1] is True and cov69[0][2] == ["01.jpg", "03.jpg", "05.jpg"]  # 표지 = 쿠팡 2장만(토스 사진 X) · 넘겨 보기 O · 사진 장 먼저 다 그린 뒤 표지(마지막)
+assert sl69 == ["set69/01.jpg", "set69/05.jpg"] and sorted(os.listdir("set69")) == ["01.jpg", "05.jpg", "cover.jpg"], sl69  # 2번(네이버)·3번(토스 — 인스타 X)·4번(사진 없음) = 건너뜀
+assert len([p for p in cov69[0][0] if p]) == 2 and cov69[0][1] is True and cov69[0][2] == ["01.jpg", "05.jpg"]  # 표지 = 쿠팡 2장만(토스 사진 X) · 넘겨 보기 O · 사진 장 먼저 다 그린 뒤 표지(마지막)
 with contextlib.redirect_stdout(io.StringIO()): _, sl69, _ = H.ig_set(s69t, "2026-10-26", P69[1:2] + P69[3:4], "set69b", design="B", h=15)
 assert sl69 == [] and os.listdir("set69b") == ["cover.jpg"] and cov69[1][1] is False  # 사진 0장 = 표지 한 장(지금처럼) · '넘겨 보기 →' X
 spc69 = C69.ig_photo_card; C69.ig_photo_card = lambda it, n, out: (_ for _ in ()).throw(OSError("broken")) if n == 3 else spc69(it, n, out)
@@ -7653,18 +7649,38 @@ assert e66[777][0] == "editMessageCaption" and "⛔" in e66[777][1]["caption"] a
 H.TH_VOICE, t66 = False, []
 H.th_text = lambda tok, me, text, link, tag="핫딜": t66.append(("text", text, link)) or {"id": "T1"}
 H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) or {"id": "P1"}
-s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\nhttps://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]) == "P1" and t66 == [("img", "💙 토스 특가\n상품\nhttps://toss.im/_m/x\n\n사진: 토스쇼핑", X66["thumbnailUrl"])], t66
+s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\nhttps://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=(77, 7)) == "P1" and t66 == [("img", "💙 토스 특가\n상품\nhttps://toss.im/_m/x\n\n사진: 토스쇼핑", X66["thumbnailUrl"])], t66
+assert [r["ids"] + [r.get("th")] for r in s66t["tphoto"]["m"]] == [["77", "7", "P1"]]  # 사진 글 = 상품 id별 기록(셀러 요청 내림)
+open(H.TOSS_NOIMG, "w").write("# 셀러 요청\n7  # 그룹 id\n"); t66.clear()
+assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=[77, 7]) == "T1" and [x[0] for x in t66] == ["text"]  # 줄에 선 사이 toss_noimg.txt = 글만
+os.remove(H.TOSS_NOIMG)
 H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) and None; t66.clear()
 assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]) == "T1" and [x[0] for x in t66] == ["img", "text"] and t66[1][2] == "https://toss.im/_m/x"  # 사진 실패 = 글 + 링크 카드
 t66.clear(); H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x"); assert [x[0] for x in t66] == ["text"]
 t66.clear(); H.th_deal(s66t, "tk", "me", "가" * 495 + " https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"]); assert [x[0] for x in t66] == ["text"]  # 500자 넘음 = 사진 X(글 그대로)
 H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("threads down")); assert sv66[8]("tk", "me", "t", X66["thumbnailUrl"]) is None  # 사진 글 오류 = None(부르는 쪽이 글만)
-assert all('**({"ph": 1} if ph else {})' in inspect.getsource(f) for f in (H.toss_solo, H.toss_picks)) and 'th_queue(seen, text, r["link"], bt, img)' in inspect.getsource(H.toss_picks)  # 품절 지켜보기 = 사진 글 표시 · 슬롯 줄도 사진
+assert all('**({"ph": 1} if ph else {})' in inspect.getsource(f) and "tph_log(seen, " in inspect.getsource(f) for f in (H.toss_solo, H.toss_picks)) and 'th_queue(seen, text, r["link"], bt, img, (r["id"], x.get("tacaId")))' in inspect.getsource(H.toss_picks)  # 품절 지켜보기 = 사진 글 표시 · 슬롯 줄도 사진
 src66 = inspect.getsource(H.toss_solo) + inspect.getsource(H.toss_picks)
-assert src66.count("tg_toss(") == 2 and "image=img" in inspect.getsource(H.toss_picks) and '"img": img' in inspect.getsource(H.toss_solo) and 'image=i.get("img")' in inspect.getsource(H.threads_deals)  # 토스 API 개별 글 두 길 + Threads 줄
+assert src66.count("tg_toss(") == 2 and "image=img, tids=" in inspect.getsource(H.toss_picks) and '"img": img, "tids":' in inspect.getsource(H.toss_solo) and 'image=i.get("img"), tids=i.get("tids")' in inspect.getsource(H.threads_deals)  # 토스 API 개별 글 두 길 + Threads 줄
 (H.TOSS_PHOTO, H.http, H.tg, time.time, H.HAS_TOSS, H.EVENTS, H.POSTS, H.th_text, H.th_img, H.TH_VOICE, tg66, f66, e66b) = sv66
 H.RUN["fail"].clear(); H.RUN["fail"].update(f66); H.RUN["tg_err"] = e66b; H.E.pop("TG_TOKEN", None) if tg66 is None else H.E.__setitem__("TG_TOKEN", tg66)
-assert H.TOSS_PHOTO is False  # 진우 확인 전 = 꺼 둠
+# 셀러 요청 내림(toss_takedown): toss_noimg.txt에 든 상품 사진 글 -> 텔레그램 지움(품절 지켜보기 그만) · 못 지움·Threads = 관리봇에 링크 · 상품당 1번 · 다른 상품 그대로
+k66, a66 = [], []
+H.tg = lambda m, **k: k66.append((m, k)) or (None if m == "deleteMessage" and k["message_id"] == 902 else {"message_id": 1})
+H.http = lambda url, *a, **k: json.dumps({"permalink": "https://www.threads.com/@hotdealpick.kr/post/AB"})
+s66k = {"sold_901": {"t": 1}, "sold_903": {"t": 1}, "sold_904": {"t": 1}}
+for r66 in ((77, 7, {"tg": 901}), (77, 7, {"tg": 902}), (77, None, {"th": "P1"}), (88, 8, {"tg": 903}), (55, 5, {"tg": 904})):
+    H.tph_log(s66k, r66[:2], **r66[2])
+open(H.TOSS_NOIMG, "w").write("77\n8  # 그룹 id\n")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_takedown(s66k); H.toss_takedown(s66k)
+os.remove(H.TOSS_NOIMG)
+d66 = [k["message_id"] for m, k in k66 if m == "deleteMessage"]; al66 = [k["text"] for m, k in k66 if m == "sendMessage"]
+assert d66 == [901, 902, 903] and "sold_901" not in s66k and "sold_903" not in s66k and "sold_904" in s66k and len(al66) == 1 and "t.me/" in al66[0] and "/902" in al66[0] and "threads.com/@hotdealpick.kr/post/AB" in al66[0] and "/901" not in al66[0]
+assert [r["ids"] for r in s66k["tphoto"]["m"]] == [["55", "5"]]  # 그 상품 기록만 지움(다시 안 함) · 상품 id·그룹 id 둘 다
+s66k["tphoto"]["m"][0]["t"] -= H.TPH_KEEP; H.tph_log(s66k, (99, 9), tg=904); assert [r["ids"] for r in s66k["tphoto"]["m"]] == [["99", "9"]]  # 30일 지난 기록 정리
+(H.tg, H.http) = (sv66[2], sv66[1])
+assert tph0 is True and "toss_photo" not in inspect.getsource(H.ig_photo) and "TOSS_HOSTS" not in inspect.getsource(H.ig_photo)  # 10/26 켬 — 텔레그램·Threads만(인스타 사진 장 = 토스 길 없음)
 os.chdir(cwd66)
 # 9-71) 📉 가격 내려간 상품 하루 1번(10/25 23시 진우 D): 사이트 📉 기준(drops) · 수수료 링크·사진 있는 것만 5개 · 사진 3개↑ · 3일 안 다시 X · 20:10 카드 준비(우리 서버) -> 20:40 뒤 사이트에 뜨면
 #       Threads 캐러셀(상품 장) + 본문(대가성 맨 위·귀여운 말투·'이름 · 기록가 → 지금가 (▼N%)'·기준 줄·'👇 전체는 댓글에') + 댓글(c/drop/?ref=thd 링크 카드·텔레그램) · 인스타 = 표지 + 상품 장 넘기기(kind drop)

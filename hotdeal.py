@@ -2819,6 +2819,8 @@ def toss_picks(seen):
         if not m:
             r["st"] = None  # 채널 실패 -> 다음 실행에 다시
             continue
+        if ph:
+            tph_log(seen, (r["id"], x.get("tacaId")), tg=m["message_id"])
         seen[f"tb_{r['id']}"] = {"t": now, "n": r["n"]}  # 3일 동안 토스 자동 회차에 다시 안 올림
         bundled(seen)  # 토스 자동 회차가 이 글과 10분 띄우고 1시간 글 수에도 셈
         tone_keep(seen, "ch", p and tone)
@@ -2829,28 +2831,70 @@ def toss_picks(seen):
         bt = th_beauty(r["n"])
         text = toss_th(info, r["n"], toss_price(x), lines, r["link"])
         if tok and TH_SLOTS:  # 슬롯 방식: 줄에 → 슬롯에 1순위로 골리면 나감
-            th_queue(seen, text, r["link"], bt, img)
+            th_queue(seen, text, r["link"], bt, img, (r["id"], x.get("tacaId")))
         elif tok and th_solo(seen, plain_of(body), fill=True, beauty=bt, slot=True):  # Threads 개별 글(하루 5개·45분 간격 같이 셈, 진우 화장품 이름 예약은 화장품 자리 채움): 대가성 문구 맨 앞, 실패는 main()이 알림
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-            th_deal(seen, tok, me, text, r["link"], image=img)
+            th_deal(seen, tok, me, text, r["link"], image=img, tids=(r["id"], x.get("tacaId")))
 
 
-TOSS_PHOTO, TOSS_NOIMG, PHOTO_CREDIT = False, "toss_noimg.txt", "사진: 토스쇼핑"  # 토스 개별 글 상품 사진(10/25 21:3x 진우 ④ — 텔레그램 sendPhoto·Threads 사진 글 · 사이트 X · 글 끝 '사진: 토스쇼핑'):
-# 토스 운영 정책(쉐어링크 가이드 운영 정책·상품 상세 조회) = 썸네일 원본 그대로(크롭·합성 X) · 셀러 요청 시 바로 내림 · 상세 페이지 '이미지 사용 금지' 상품 X(API로 못 알아봄) -> 진우 확인 뒤 True ·
-# toss_noimg.txt = 사진 안 쓸 상품(tacaItemId·tacaId 줄마다 — 셀러 요청·사용 금지 표시) · 이미 나간 Threads 사진 글은 봇이 못 지움(진우가 앱에서)
+TOSS_PHOTO, TOSS_NOIMG, PHOTO_CREDIT = True, "toss_noimg.txt", "사진: 토스쇼핑"  # 토스 개별 글 상품 사진(10/26 Cowork·진우 '바로 진행' — 승인 채널 = 텔레그램 sendPhoto·Threads 사진 글만 · 인스타·사이트 X · 글 끝 '사진: 토스쇼핑'):
+# 토스 이미지 기준 = 썸네일(thumbnailUrl) 원본 주소 그대로(자르기·여백·글자·합성·우리 서버에 다시 그리기 X) · '이미지 사용 금지' 상품 X(API 응답에 그 표시 없음 -> toss_noimg.txt 수동) · 셀러 요청 = 내림(toss_takedown)
+# toss_noimg.txt = 사진 안 쓸 상품(tacaItemId·tacaId 줄마다) — 넣으면 다음 글부터 사진 X + 이미 나간 그 상품 사진 글: 텔레그램 = 지움(못 지우면 링크) · Threads = 링크 목록(진우가 앱에서) -> 관리봇
+TPH_KEEP = 30 * 86400  # 토스 사진 글 기록(상품 id -> 텔레그램 message_id·Threads id) 보관 — 셀러 요청 내림용
+
+
+def toss_noimg():
+    """toss_noimg.txt 상품 id들(줄마다 · '#' 뒤 = 메모)."""
+    try:
+        return {l.split("#")[0].strip() for l in open(TOSS_NOIMG, encoding="utf-8")} - {""}
+    except OSError:
+        return set()
 
 
 def toss_photo(x):
-    """토스 상품 썸네일 주소(원본 그대로) / TOSS_PHOTO 꺼짐·https 아님·toss_noimg.txt에 있는 상품 = None."""
+    """토스 상품 썸네일 주소(원본 그대로) / TOSS_PHOTO 꺼짐·https 아님·toss_noimg.txt에 있는 상품 = None. 상세 응답 필드 이름은 실행마다 1번 로그(값 X — 이미지 사용 금지 표시가 생기는지 확인용)."""
+    if TOSS_PHOTO and isinstance(x, dict) and not RUN.get("tkeys"):
+        RUN["tkeys"] = 1
+        print("toss 상품 필드", ",".join(sorted(x)))
     u = x.get("thumbnailUrl") if TOSS_PHOTO and isinstance(x, dict) else None
     if not (isinstance(u, str) and u.startswith("https://") and not re.search(r"\s", u)):
         return None
-    try:
-        no = {l.split("#")[0].strip() for l in open(TOSS_NOIMG, encoding="utf-8")}
-    except OSError:
-        no = set()
-    return None if {str(x.get("tacaItemId")), str(x.get("tacaId"))} & no else u
+    return None if {str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg() else u
+
+
+def tph_log(seen, ids, **ref):
+    """토스 사진 글 기록: ids = (tacaItemId, tacaId) · ref = tg=message_id 또는 th=Threads 글 id -> seen tphoto(TPH_KEEP)."""
+    now = time.time()
+    st = seen.setdefault("tphoto", {"t": now, "m": []})
+    st["t"], st["m"] = now, [r for r in st["m"] if now - r["t"] < TPH_KEEP] + [{"t": now, "ids": [str(i) for i in ids if i], **ref}]
+
+
+def toss_takedown(seen):
+    """셀러 요청 내림(10/26 Cowork): toss_noimg.txt에 든 상품의 사진 글 -> 텔레그램 = deleteMessage(품절 지켜보기도 그만) · 못 지움(48시간 지남 등)·Threads = 링크를 관리봇으로(진우가 앱에서) · 상품당 1번."""
+    st, no = seen.get("tphoto"), toss_noimg()
+    if not st or not no:
+        return
+    st["t"] = time.time()  # 사진 글을 안 올리는 날에도 기록 유지(seen 3일 정리)
+    hit = [r for r in st["m"] if set(r["ids"]) & no]
+    if not hit:
+        return
+    st["m"] = [r for r in st["m"] if r not in hit]
+    left, tok = [], E.get("THREADS_TOKEN")
+    for r in hit:
+        if "tg" in r:
+            if tg("deleteMessage", chat_id=CHANNEL, message_id=r["tg"]):
+                seen.pop(f"sold_{r['tg']}", None)
+                continue
+            left.append(f"텔레그램 t.me/{CHANNEL.lstrip('@')}/{r['tg']}")
+        elif "th" in r:
+            try:
+                left.append("Threads " + json.loads(http(f"{THREADS}/{r['th']}?fields=permalink&access_token={tok}")).get("permalink", r["th"]))
+            except Exception:
+                left.append(f"Threads 글 id {r['th']}")
+    print("toss 사진 내림", len(hit), "개 · 남은 것", len(left))
+    if left:
+        tg("sendMessage", chat_id=ADMIN, text="🖼 토스 사진 내림(toss_noimg.txt) — 봇이 못 지운 글이에요. 앱에서 지워 주세요\n" + "\n".join(left), link_preview_options={"is_disabled": True})
 
 
 def tg_toss(text, kb, photo):
@@ -3045,6 +3089,8 @@ def toss_solo(seen):
     m, ph = tg_toss(head + body, {"inline_keyboard": [[{"text": btn, "url": link}]]}, img)
     if not m:
         return  # 다음 실행에 다시(실패는 바로 알림)
+    if ph:
+        tph_log(seen, (x["tacaItemId"], x.get("tacaId")), tg=m["message_id"])
     seen[key] = now
     tone_keep(seen, "ch", tone)
     seen[f"tb_{x['tacaItemId']}"] = {"t": now, "n": name}  # 3일 동안 묶음 회차·다음 개별 글에서 빠짐
@@ -3059,7 +3105,7 @@ def toss_solo(seen):
                                        "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]], **({"ph": 1} if ph else {})}  # 품절 지켜보기(진우 예약 글과 같은 모양) · ph = 사진 글(캡션 고침)
     if E.get("THREADS_TOKEN"):  # Threads = 채움 후보(45분 간격·화장품 한도 그대로)
         seen["thtoss"] = {"t": now, "q": [q for q in seen.get("thtoss", {}).get("q", []) if now - q["t"] < 3 * 3600] + [
-            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link, **({"img": img} if img else {})}]}
+            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link, **({"img": img, "tids": [x["tacaItemId"], x.get("tacaId")]} if img else {})}]}
     print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점{' · 잘 된 상품 +' + str(TOP_BONUS) if p.get('top') else ''})")
 
 
@@ -3740,7 +3786,7 @@ def th_gap(last):
     return TH_SOLO_GAP + (random.Random(int(last)).randint(-TH_GAP_JITTER, TH_GAP_JITTER) if TH_GAP_JITTER else 0)
 
 
-def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None):
+def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None, tids=None):
     """Threads 개별 딜 글 1개(threads_deals·토스 픽 채움·슬롯 줄·뷰티 채움·토스 이름 예약·재오픈 — 묶음·날씨·간식·투표·#일상은 th_post 그대로).
     TH_LINK_AB면 직전 개별 딜 글이 A였으면 B: 본문 주소 없이(미리보기 X) 올리고 바로 첫 댓글 = 링크. 댓글 못 다는 토큰(th_reply_ok)이면 A.
     B 댓글이 실패하면 관리자 알림 + 다음 실행에 1번 더(th_retry — 링크 없는 딜 글이 남지 않게). 글마다 A/B·댓글 id -> seen(metrics.json 줄 ab·rv·48시간 v48·rv48)."""
@@ -3764,8 +3810,11 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None):
     else:
         kind = ab = "A" if ab == "C" else ab  # C를 못 만들면 A(링크 본문) · 3장면을 못 만들면 그 차례 그대로
         body, reply = th_ab(text, link) if ab == "B" else (text, None)
-    ph = image and not reply and th_len(f"{body}\n\n{PHOTO_CREDIT}") <= 500 and th_img(tok, me, f"{body}\n\n{PHOTO_CREDIT}", image, topic)  # 토스 사진 글(TOSS_PHOTO · 링크 = 본문, 카드 X) · 실패 = 글만
+    image = image if not (tids and set(map(str, tids)) & toss_noimg()) else None  # 줄에 선 사이 셀러 요청(toss_noimg.txt) = 글만
+    ph = image and not reply and th_len(f"{body}\n\n{PHOTO_CREDIT}") <= 500 and th_img(tok, me, f"{body}\n\n{PHOTO_CREDIT}", image, topic)  # 토스 사진 글(TOSS_PHOTO · 썸네일 주소 그대로 · 링크 = 본문, 카드 X) · 실패 = 글만
     pid, rid = (ph or th_text(tok, me, body, None if reply else link, topic) or {}).get("id"), None
+    if ph and pid and tids:
+        tph_log(seen, tids, th=pid)
     if pid and kind in ("C", "S"):
         print("th", kind, clip(tt, 30), "| 본문", th_len(body), "· 댓글", th_len(reply))
         if kind == "S":
@@ -4126,7 +4175,7 @@ def ig_human(seen, ps):
     return lines
 
 
-IG_PHOTO_NOTE = "상품 사진: 판매 페이지(쿠팡·토스쇼핑)"  # 사진 장이 있는 넘기기 캡션 — 대가성 문구 바로 아래(10/25 Cowork ②)
+IG_PHOTO_NOTE = "상품 사진: 판매 페이지(쿠팡)"  # 사진 장이 있는 넘기기 캡션 — 대가성 문구 바로 아래(10/25 Cowork ②)
 IG_KIND = {"cur": "큐레이션", "drop": "가격 내려간 상품"}  # 카드 칸 밖 인스타 글(igc_·igk_ kind) — 게시 기록·알림 이름
 
 
@@ -4204,16 +4253,11 @@ def ig_kind(name):
 
 
 def ig_photo(p, d, seen=None):
-    """상품 사진(10/25 Cowork ② — 판매 페이지 사진만): 쿠팡 = 글 img(파트너스 API·events img — 사이트 img_of 허용 목록) · 토스 = 상세 API 썸네일(TOSS_PHOTO·toss_noimg.txt — toss_photo)
-    · 네이버·다른 몰·커뮤니티 글 사진 = X -> (d/에 저장한 경로, 'coupang'|'toss'), 없거나 못 받으면 (None, '')."""
+    """상품 사진(10/25 Cowork ② — 판매 페이지 사진만): 쿠팡 = 글 img(파트너스 API·events img — 사이트 img_of 허용 목록) · 토스 = X(카드에 그리면 크롭·합성 + 인스타 = 토스 승인 범위 밖, 10/26 Cowork)
+    · 네이버·다른 몰·커뮤니티 글 사진 = X -> (d/에 저장한 경로, 'coupang'), 없거나 못 받으면 (None, '')."""
     u = p.get("url") or ""
     try:
         img, src = img_of(p), "coupang"
-        if not img and TOSS_PHOTO and HAS_TOSS and urllib.parse.urlsplit(u).netloc in TOSS_HOSTS:
-            iid, gid = toss_ids(seen or {}).get(u), ((seen or {}).get("tossid", {}).get("m", {}).get(u) or [0])[0]  # 우리 쉐어링크 = 상품 id · 진우 링크 = 상품 그룹 id(own_end)
-            if iid or gid:
-                x = (toss(f"/products/detail?{f'tacaItemIds={iid}' if iid else f'tacaIds={gid}'}")["items"] or [{}])[0]
-                img, src = toss_photo(x), "toss"
         if not img:
             return None, ""
         os.makedirs(d, exist_ok=True)
@@ -5191,10 +5235,10 @@ def th_slot(r, now):
     return h if TH_SLOTS and h in TH_SLOTS and h not in r.get("slots", []) else None
 
 
-def th_queue(seen, text, link, bt, img=None):
+def th_queue(seen, text, link, bt, img=None, tids=None):
     """슬롯 방식에서 토스 이름 예약·15·19시 뷰티 회차 개별 글은 바로 안 올리고 줄에 — threads_deals가 슬롯에 채널 딜과 같이 1순위를 고름(3시간 지나면 버림)."""
     now = time.time()
-    seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt, **({"img": img} if img else {})}]}
+    seen["thq"] = {"t": now, "q": [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600] + [{"t": now, "text": text, "link": link, "bt": bt, **({"img": img, "tids": list(tids or [])} if img else {})}]}
 
 
 def th_fit(body, lim):
@@ -5299,7 +5343,7 @@ def threads_deals(seen):
                 seen["thfill"] = {"t": now, "k": turn}  # 직전 채움 종류(번갈아) — seen 정리가 t를 봄
             if turn == "toss" and i.get("id") and top_hit(top_toss(seen, now), i["id"], i.get("n")):
                 top_mark(seen, now, i["id"])
-            th_deal(seen, tok, me, i["text"], i["link"], image=i.get("img"))
+            th_deal(seen, tok, me, i["text"], i["link"], image=i.get("img"), tids=i.get("tids"))
             continue
         url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
         if url.startswith(SITE):
@@ -7233,7 +7277,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:
