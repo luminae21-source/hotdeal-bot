@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -3114,7 +3114,7 @@ def toss_reopen(seen):
     th_deal(seen, tok, me, text, e["url"])
 
 
-TH_LINK_AB, TH_AB_MARK = True, "👇 구매 링크는 첫 댓글에"  # 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 점검 때 비교해 이긴 쪽으로): False = 지금처럼 A만
+TH_LINK_AB, TH_AB_MARK = False, "👇 구매 링크는 첫 댓글에"  # 10/25 2주 비교 뒤 진우 결정 = A(본문 링크) 고정 — 48시간 조회 A 9.8(29개) > B 7.8(28개)+댓글 1.7, B 시험 끝(C·상황 3장면도 링크가 댓글이라 같이 쉼) · 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 점검 때 비교해 이긴 쪽으로): False = 지금처럼 A만
 TH_AB_URL = re.compile(r"https?://|t\.me/|\.kr(?![a-z])")  # B 본문에서 뺄 주소 든 줄(👉·🛒 링크, 📲 t.me)
 TH_LINK_MAX = 300  # 10/19 17시 진우 '경유 링크 말고 직접 링크로': Threads 딜 링크 = 텔레그램 버튼 링크. 이보다 긴 주소(링크프라이스 딥링크 ~450자)만 500자에 못 들어가서 사이트 딜 페이지
 
@@ -5019,6 +5019,7 @@ def threads_deals(seen):
         th_deal(seen, tok, me, text, url, full, posts[i].get("cat"))  # 주제 = 사이트 품목 칸(글 cat까지)
 
 
+CAL_HOUR, CAL_DAYS = (9, 40), 14  # 10/25 2주 비교 뒤 진우·Cowork '정보 글 하루 1~2개 — 딜 글 수·간격은 그대로, 그 위에 더하기만': 아침 날씨(7:30) 뒤 '🗓 쇼핑 달력'(promos.json 앞으로 2주 · 바뀐 날만 · Threads만)
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
 POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 반말 질문·보기 4개 — poll_ai) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
@@ -5184,6 +5185,40 @@ def weather_post(seen):
     rules = wx_rules(ws[0])
     wx_post(seen, key, f"☁️ {wx_line(ws[0])} — 이런 날 필요한 것", wx_deals(seen, [k for r in rules for k in r[2]]),
             f"☁️ {wx_line(ws[0])}\n{rules[0][4] if rules else '오늘은 뭐 챙기셨어요?'}", "wx")
+
+
+def cal_text(today):
+    """'🗓 쇼핑 달력' 글(사실만 — 날짜·몰·행사·D-day, 과장·추천 말 X · 링크 = 우리 사이트 기획전 모음뿐 = 대가성 문구 X) -> (글, 서명 = 행사 id·이름·날짜가 바뀌면 달라짐) / 앞으로 CAL_DAYS일 행사 없음 = (None, None)."""
+    lim = time.strftime("%Y-%m-%d", time.gmtime(kst_ts(today + " 00:00") + 9 * 3600 + CAL_DAYS * 86400))
+    rows = [(p, st, first) for p, st, first in promo_list(today) if st != "past" and (first or today) <= lim][:5]
+    if not rows:
+        return None, None
+    md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
+    span = lambda a, b: f"{md(a)}~{md(b)}" if a and b else f"~{md(b)}" if b else f"{md(a)}~" if a else ""
+    def line(p, st, first):
+        pre = p.get("pre") or {}
+        early = pre.get("start") and p.get("start") and today < p["start"]  # 본 행사 전(사전 행사 전·중)
+        dd = "오늘 마감" if st == "end" else f"D-{promo_days(today, first)}" if st == "soon" else "사전 행사 중" if early else "진행 중"
+        return " ".join(x for x in ("·", span(p.get("start"), p.get("end")), str(p.get("mall_name") or p["mall"]).replace(" · ", "·"), p["name"].strip(),
+                                     f"(사전 {span(pre.get('start'), pre.get('end'))})" if early else "", f"— {dd}") if x)
+    sig = hashlib.md5(json.dumps([[p["id"], p["name"], p.get("start"), p.get("end"), p.get("pre")] for p, _, _ in rows], ensure_ascii=False).encode()).hexdigest()[:12]
+    return f"🗓 앞으로 2주 쇼핑 달력 — 저장해 두면 편해요\n\n" + "\n".join(line(*r) for r in rows) + f"\n\n기획전 모음 👉 {SITE}events/?ref=th", sig
+
+
+def cal_post(seen):
+    """CAL_HOUR '🗓 쇼핑 달력' 1번(Threads만 · 링크 = 사이트 /events/?ref=th — 사이트 안 구매 링크로 이어짐): promos.json(Cowork 매일 17:30)이 지난 글 뒤 바뀐 날만. 묶음 간격만 봄(일지처럼)."""
+    key = due(CAL_HOUR, "calpost", seen)
+    if not key or not E.get("THREADS_TOKEN") or busy(seen, cap=False):
+        return
+    text, sig = cal_text(time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
+    seen[key] = time.time()
+    if not text or seen.get("calsig", {}).get("s") == sig:
+        print("cal post: 행사 목록 그대로·없음 -> 안 올림")
+        return
+    bundled(seen)
+    th_bundle(seen, "cal", text, f"{SITE}events/?ref=th")
+    seen["calsig"] = {"t": time.time(), "s": sig}
+    print("cal post: 쇼핑 달력", text.count("\n· "), "줄")
 
 
 def snack_post(seen):
@@ -5603,7 +5638,7 @@ def prod_cols(title, cat, links, ids, deal=None):
     deal = True(Threads 개별 딜 글 — th_deal 기록, B 글은 링크를 못 읽어도 이름으로) / False(개별 딜 아님) / None(모름 = 링크 수로). 사이트 첫 화면·블로그·골드박스·쿠팡 홈 링크는 상품 X."""
     junk = lambda u: re.search(NOT_PROD, u) or u.startswith((BLOG, GOLDBOX, CP_HOME, CP_FRESH)) or u.startswith(SITE) and "/p/" not in u
     ls = [u for u in dict.fromkeys(links) if u and not junk(u)]
-    kind = "deal" if deal else "etc" if cat in ("투표", "날씨") or not ls else "list" if cat == "묶음" or len(ls) > 1 else "etc" if deal is False else "deal"
+    kind = "deal" if deal else "etc" if cat in ("투표", "날씨", "달력") or not ls else "list" if cat == "묶음" or len(ls) > 1 else "etc" if deal is False else "deal"
     if kind == "etc":
         return {"kind": kind}
     if kind == "list":
@@ -5912,7 +5947,7 @@ def metrics_rows(seen):
     def row(ch, i, text, url, t, views, react, title=None, links=None, deal=None, **more):
         title = title or title_of(text)
         w = price_won(title)
-        cat = "투표" if text.startswith("🗳️") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. |핫딜픽이 고른 \d+개", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
+        cat = "투표" if text.startswith("🗳️") else "달력" if text.startswith("🗓 앞으로") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. |핫딜픽이 고른 \d+개", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
         rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": next((u for u in links or [] if u and not re.search(NOT_PROD, u)), url) if (url or "").startswith("https://t.me/") else url}) or "기타", "cat": cat,
                      "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more,
                      **(prod_cols(title, cat, links, ids, deal) if links is not None else {})})
@@ -6108,6 +6143,81 @@ def gc_top(seen):
 
 
 LINK_AB_FILE, LINK_AB_PAGES = "link_ab.json", 10  # /link A·B 하루 집계(10/25 Cowork·진우 — 기간 = build_site.LINK_AB) · GoatCounter 경로 쪽 수(100개씩)
+
+
+LP_PROMO = ("gmarket.co.kr", "auction.co.kr", "lotteon.com", "ssg.com")  # 기획전 주소 -> 링크프라이스 딥링크(10/25 Cowork — G마켓·옥션·롯데온·이마트(SSG)) · 11번가 등 = 원래 주소(사이트에서 nofollow)
+MALL_SITES = {"coupang": "https://www.coupang.com", "11st": "https://www.11st.co.kr", "ssg": "https://www.ssg.com", "gmarket": "https://www.gmarket.co.kr", "auction": "https://www.auction.co.kr",
+              "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr"}  # 기획전 몰 로고 받을 첫 화면(mall_icons)
+MALL_ICONS = "docs/icons/mall"
+
+
+def promo_urls():
+    """promos.json(Cowork 기획전 — 깨진 파일 = 없음) 항목들."""
+    d = load(PROMOS, {})
+    return [p for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []) if isinstance(p, dict)]
+
+
+def promo_links(seen):
+    """기획전 주소 중 링크프라이스 몰(LP_PROMO)만 딥링크 API로 1번(실패 = 하루 뒤 다시) -> promo_links.json {원래 주소: 제휴 링크}(사이트 빌드가 바꿔 씀, promos.json에서 빠지면 지움)."""
+    urls = {u for p in promo_urls() for u in (p.get("url"), (p.get("cta") or {}).get("href") if isinstance(p.get("cta"), dict) else None)
+            if isinstance(u, str) and u.startswith("https://") and (lambda h: any(h == x or h.endswith("." + x) for x in LP_PROMO))(urllib.parse.urlsplit(u).netloc.lower())}
+    pl, now = load(PROMO_LINKS, {}), time.time()
+    st = seen.setdefault("prl", {"x": {}})
+    st["t"], st["x"] = now, {u: t for u, t in st.get("x", {}).items() if u in urls}
+    keep = {u: v for u, v in (pl if isinstance(pl, dict) else {}).items() if u in urls}
+    for u in sorted(urls - set(keep)):
+        if now - st["x"].get(u, 0) < 86400:
+            continue
+        try:
+            r = json.loads(http(LP_API.format(LP_AID, urllib.parse.quote(u, safe=""))))
+        except Exception as e:  # 접속 오류 = 다음 실행에
+            print("promo link", repr(e))
+            break
+        if r.get("result") == "S" and str(r.get("url") or "").startswith(("https://", "http://")):
+            keep[u] = r["url"]
+            print("promo link", urllib.parse.urlsplit(u).netloc, "-> 링크프라이스")
+        else:
+            st["x"][u] = now
+            print("promo link 안 됨(승인 몰 아님?)", urllib.parse.urlsplit(u).netloc)
+    if keep != pl:
+        json.dump(keep, open(PROMO_LINKS, "w"), ensure_ascii=False, indent=1)
+
+
+def mall_icons(seen):
+    """기획전 몰 로고(10/25 Cowork — 사이트가 바깥 주소를 실시간으로 안 부르게): promos.json 몰마다 docs/icons/mall/<몰>.png가 없으면 하루 1번
+    그 몰 첫 화면의 apple-touch-icon(없으면 icon · /favicon.ico) -> 64px PNG(Pillow). 못 받으면 사이트는 흰 칸에 몰 글자."""
+    from io import BytesIO
+    from PIL import Image
+    st, now = seen.setdefault("micon", {}), time.time()
+    st["t"] = now
+    for m in sorted({p["mall"] for p in promo_urls() if p.get("mall") in MALL_SITES}):
+        f = f"{MALL_ICONS}/{m}.png"
+        if os.path.exists(f) or now - st.get(m, 0) < 86400:
+            continue
+        st[m] = now
+        try:
+            home = MALL_SITES[m]
+            page_ = http(home)
+            rels = re.findall(r'<link[^>]+rel=["\'](?:apple-touch-icon(?:-precomposed)?|(?:shortcut )?icon)["\'][^>]*>', page_, re.I)
+            hrefs = [re.search(r'href=["\']([^"\']+)', l, re.I) for l in sorted(rels, key=lambda l: "apple" not in l.lower())]
+            cands = [u for u in (urllib.parse.urljoin(home + "/", h[1]) for h in hrefs if h) if u.startswith(("https://", "http://"))] + [home + "/favicon.ico"]
+        except Exception as e:
+            print("mall icon", m, repr(e))
+            cands = [MALL_SITES[m] + "/favicon.ico"]
+        for u in cands:
+            try:
+                with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=20) as r:
+                    im = Image.open(BytesIO(r.read(2_000_000)))
+                    im.load()
+                im = im.convert("RGBA")
+                if min(im.size) < 16:
+                    continue
+                os.makedirs(MALL_ICONS, exist_ok=True)
+                im.resize((64, 64), Image.LANCZOS).save(f, "PNG", optimize=True)
+                print("mall icon", m, "저장")
+                break
+            except Exception as e:
+                print("mall icon", m, urllib.parse.urlsplit(u).path[-40:], repr(e)[:80])
 
 
 def link_ab(seen):
@@ -6480,7 +6590,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
+    for step in (cp_links, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_reel, reel_samples, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):
         try:
             step(seen)
         except Exception as e:

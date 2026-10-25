@@ -139,7 +139,30 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .q i{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--c,var(--card));box-shadow:inset 0 0 0 1px var(--line);font-style:normal;font-size:22px;line-height:1}.q.coupang i{background:var(--cpb)}.q.toss i{background:var(--tsb)}.q.naver i{background:var(--nvb)}.q.evt i{background:var(--pkbg)}
 .qb{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}
 .myr{display:flex;gap:12px;margin:10px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}.myr::-webkit-scrollbar{display:none}.mi{position:relative;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-decoration:none}.mi .im{width:46px;height:46px;border-radius:50%;font-size:22px}.me .im{border:2px solid var(--acc);background:var(--card);color:var(--acc);font-size:13px;font-weight:800}.mi small{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;color:var(--sub)}.mi b{position:absolute;top:34px;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}.mi b.d{background:#15803D}
-@media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}"""
+@media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}
+.mlg{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:5px;background:#fff;color:var(--m);font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:-.5px;overflow:hidden}.mlg img{width:14px;height:14px;object-fit:contain}
+.pvs{flex:none;padding:0 6px;border-radius:6px;font-size:10.5px;font-weight:800;line-height:17px;white-space:nowrap}.pvs.end{background:#E5303F;color:#fff}.pvs.on{background:#DDF5C9;color:#2F6B0F}.pvs.soon{background:#14161B;color:#fff}.pvs.past{background:var(--chip);color:var(--sub)}
+.pb{margin:10px 0 0}.pbt{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}.pbt h2{margin:0;font-size:16px;font-weight:800}.pbt a{font-size:12.5px;font-weight:700;color:var(--sub);text-decoration:none}
+.pbs{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding:0 16px}.pbs::-webkit-scrollbar{display:none}
+.pbi{position:relative;flex:0 0 250px;height:112px;box-sizing:border-box;display:flex;flex-direction:column;padding:11px 13px;border-radius:16px;background:var(--m);color:var(--mf);text-decoration:none;overflow:hidden;scroll-snap-align:start}
+.pbi::after{content:"";position:absolute;right:-30px;top:-34px;width:104px;height:104px;border-radius:50%;border:16px solid currentColor;opacity:.12;pointer-events:none}
+.pbh{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;min-width:0}.pbh b:first-of-type{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbw{margin-top:7px;font-size:25px;font-weight:900;line-height:1.05;letter-spacing:-.6px;white-space:nowrap}.pbn{margin-top:4px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
+.pbp{position:absolute;right:12px;bottom:11px;display:flex;flex-direction:row-reverse}.pbp img{width:38px;height:38px;margin-left:-10px;border-radius:50%;border:2px solid var(--m);background:#fff;object-fit:contain}
+.pbd{display:flex;justify-content:center;gap:5px;margin-top:8px}.pbd i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}.pbd i.on{width:14px;background:var(--ink)}
+.pcal{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}.pcal::-webkit-scrollbar{display:none}
+.pcd{flex:none;display:flex;flex-direction:column;gap:1px;min-width:78px;max-width:128px;padding:7px 10px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);text-decoration:none}
+.pcd b{font-size:12.5px;font-weight:800;white-space:nowrap}.pcd span{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pcd i{font-style:normal;font-size:10.5px;font-weight:800;color:var(--acc)}
+.pcd.k{background:#14161B;box-shadow:none;color:#fff}.pcd.k span{color:#C9CED8}.pcd.k i{color:#FF8A8F}
+.pf{display:flex;gap:6px;margin:12px 0 10px}.pf button{font:inherit;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:16px;border:0;box-shadow:inset 0 0 0 1px var(--line);background:var(--card);color:var(--ink);cursor:pointer}.pf button[aria-pressed=true]{background:var(--btn);color:var(--btnt);box-shadow:none}
+.pv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;min-height:110px;box-sizing:border-box;margin:0 0 8px;padding:11px 12px;border-radius:16px;background:var(--mb,color-mix(in srgb,var(--m) 7%,var(--card)))}
+.pvh{display:flex;align-items:center;gap:5px;min-width:0}.pvm{font-size:11.5px;font-weight:800;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pvn{margin:5px 0 0;font-size:15.5px;font-weight:800;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pvi{margin:2px 0 0;font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pvc{display:inline-block;margin-top:6px;font-size:11.5px;font-weight:800;color:var(--mt);text-decoration:none}.pvr{display:flex;gap:5px}
+.pvp{display:flex;flex-direction:column;align-items:center;gap:2px;width:48px}.pvp>span{display:grid;place-items:center;width:48px;height:48px;border-radius:10px;background:#fff;overflow:hidden}.pvp img{width:44px;height:44px;object-fit:contain}.pvp small{font-size:10px;font-weight:700;color:var(--ink);white-space:nowrap}
+.pvd{min-width:84px;padding:8px 10px;border-radius:12px;background:#fff;text-align:center}.pvd b{display:block;font-size:17px;font-weight:800;color:var(--mt);white-space:nowrap}.pvd small{display:block;margin-top:2px;font-size:10px;color:#6B7180;white-space:nowrap}
+.pvx summary{padding:8px 2px;font-size:13px;color:var(--sub);cursor:pointer}.pvx .pv{opacity:.72}.pvnote{margin-top:14px}
+@media(prefers-color-scheme:dark){.pv{background:color-mix(in srgb,var(--m) 14%,var(--card))}.pvm,.pvc,.pvd b{color:color-mix(in srgb,var(--m) 62%,#fff)}.pvd{background:var(--chip)}.pvd small{color:var(--sub)}.pcd.k{background:#ECEEF2;color:#14161B}.pcd.k span{color:#4B5260}.pcd.k i{color:#C2202C}}"""
 MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
 CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
@@ -1060,6 +1083,171 @@ def ev_banner(evs):
         + (f'<b class="evn" aria-hidden="true"><span>1</span>/{len(evs)}</b></nav>{EV_JS}' if len(evs) > 1 else "</nav>"))
 
 
+PROMOS, PROMO_LINKS, PROMO_SOON, PROMO_PAST = "promos.json", "promo_links.json", 7, 3  # 쇼핑몰 기획전(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게' — Cowork 매일 17:30 기사 근거) · 봇이 만든 링크프라이스 딥링크(hotdeal.promo_links) · 홈 띠 '곧 시작' = 7일 안 · /events/ 지난 행사 3개
+MALL_C = {"coupang": ("#D9402A", "#fff", "#C2362A", "쿠"), "11st": ("#E8264A", "#fff", "#D11F40", "11"), "ssg": ("#FFC72C", "#14161B", "#8A6200", "S"), "gmarket": ("#13924A", "#fff", "#0F7A3D", "G"),
+          "auction": ("#E51E25", "#fff", "#C8191F", "A"), "lotteon": ("#E3262E", "#fff", "#C8202A", "L"), "oliveyoung": ("#7FB82E", "#14161B", "#4E7A12", "올")}  # 몰 색(바탕·바탕 위 글자·연한 바탕 위 글자·로고 없을 때 글자) — 10/25 Cowork 토큰 · 모르는 몰 = 회색
+PROMO_DATE = r"\d{4}-\d{2}-\d{2}"
+
+
+def promo_list(today):
+    """promos.json -> [(항목, 상태, 첫날)] 상태 순(오늘 마감 'end' → 진행 중 'on'(사전 행사 중도) → 곧 시작 'soon' → 지난 'past'). 깨진 파일 = [](칸 숨김) · 모양이 틀린 항목 = 뺌
+    (HTML·주소·파일 이름에 들어가는 값: id·mall = 영문 소문자·숫자, 주소 = https, 색 = #hex, 날짜 = YYYY-MM-DD)."""
+    try:
+        d = json.load(open(PROMOS))
+    except (OSError, ValueError):
+        return []
+    day = lambda v: v is None or isinstance(v, str) and re.fullmatch(PROMO_DATE, v)
+    https = lambda v: v is None or isinstance(v, str) and v.startswith("https://") and not re.search(r"\s", v)
+    out = []
+    for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []):
+        if not (isinstance(p, dict) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(p.get("id") or "")) and re.fullmatch(r"[a-z0-9]{1,20}", str(p.get("mall") or ""))
+                and isinstance(p.get("name"), str) and p["name"].strip() and day(p.get("start")) and day(p.get("end")) and https(p.get("url"))
+                and (p.get("pre") is None or isinstance(p["pre"], dict) and day(p["pre"].get("start")) and day(p["pre"].get("end")))
+                and (p.get("cta") is None or isinstance(p["cta"], dict) and https(p["cta"].get("href"))) and (p.get("color") is None or re.fullmatch(r"#[0-9A-Fa-f]{6}", str(p["color"])))):
+            continue
+        pre = p.get("pre") or {}
+        first = pre.get("start") or p.get("start")
+        st = "past" if p.get("end") and p["end"] < today else "end" if p.get("end") == today else "soon" if first and first > today else "on"
+        out.append((p, st, first or ""))
+    rank = {"end": 0, "on": 1, "soon": 2, "past": 3}
+    return sorted(out, key=lambda x: (rank[x[1]], x[2] if x[1] == "soon" else "", (x[0].get("end") or "9999") if x[1] != "past" else "", x[0]["id"]))
+
+
+def promo_span(a, b, short=False):
+    """기간 글자: '11.1–11.11' · '10.12~'(끝 미발표) · '~10.25' · short = 같은 달이면 '10.26–31'(사전 행사)."""
+    md = lambda d: f"{int(d[5:7])}.{int(d[8:10])}"
+    return (f"{md(a)}–{int(b[8:10]) if short and a[:7] == b[:7] else md(b)}" if a and b else f"{md(a)}~" if a else f"~{md(b)}" if b else "")
+
+
+def promo_chip(p, st, today):
+    """상태 칩: 오늘 마감(빨강) · 진행 중/사전 행사 중(연두) · D-n(검정 — 첫날까지)."""
+    if st == "soon":
+        return f'<b class="pvs soon">D-{promo_days(today, (p.get("pre") or {}).get("start") or p["start"])}</b>'
+    pre = p.get("pre") or {}
+    return {"end": '<b class="pvs end">오늘 마감</b>', "past": '<b class="pvs past">끝남</b>'}.get(st) or \
+        f'<b class="pvs on">{"사전 행사 중" if pre.get("start") and p.get("start") and today < p["start"] else "진행 중"}</b>'
+
+
+def promo_days(a, b):
+    """a -> b 날 수(YYYY-MM-DD)."""
+    return (calendar.timegm(time.strptime(b, "%Y-%m-%d")) - calendar.timegm(time.strptime(a, "%Y-%m-%d"))) // 86400
+
+
+def promo_mall(p, icons):
+    """(style 변수, 로고 HTML, 몰 이름): 로고 = docs/icons/mall/<몰>.png(봇이 1번 받아 둠 — 바깥 주소 실시간 X), 없으면 흰 칸에 몰 글자."""
+    c, fg, tx, ch = MALL_C.get(p["mall"], ("#4B5563", "#fff", "#4B5563", (p.get("mall_name") or p["mall"])[:1]))
+    if p.get("color"):
+        c, fg, tx = p["color"], "#fff", p["color"]
+    sty = f"--m:{c};--mf:{fg};--mt:{tx}" + (";--mb:#FFF8E3" if p["mall"] == "ssg" and not p.get("color") else "")
+    lg = f'<img src="/icons/mall/{p["mall"]}.png" width="14" height="14" alt="">' if p["mall"] in icons else html.escape(ch)
+    name = " ".join(x for x in (str(p.get("mall_name") or p["mall"]).strip(), str(p.get("sub") or "").strip()) if x)
+    return sty, f'<i class="mlg" aria-hidden="true">{lg}</i>', name
+
+
+def promo_goods(p, it, tagged):
+    """그 행사 상품(일시 품절 뺌): tag = events 그 tag 상품 · kw = 이름에 검색어 낱말이 다 든 진열 상품."""
+    if p.get("tag"):
+        us = tagged.get(str(p["tag"]), set())
+        xs = [x for x in it if x[1].get("url") in us]
+    elif isinstance(p.get("kw"), str) and p["kw"].split():
+        xs = [x for x in it if all(k in parse(title_of(x[1]["text"]))[1] for k in p["kw"].split())]
+    else:
+        xs = []
+    return [x for x in xs if x[2][0] != 3]
+
+
+def promo_go(p, xs, slugs, links):
+    """(주소, rel·target 붙일 바깥 링크?): tag 상품 = 행사 쪽(e/slug.html) · kw 상품 = 홈 검색(?q=) · 아니면 행사 주소(링크프라이스 딥링크로 바뀐 것 있으면 그것) · cta.href · 없음."""
+    if xs and p.get("tag") in slugs:
+        return f"{BASE}e/{slugs[p['tag']]}.html", False
+    if xs and p.get("kw"):
+        return f"{BASE}?q={urllib.parse.quote(p['kw'])}", False
+    u = p.get("url") or (p.get("cta") or {}).get("href")
+    return (links.get(u) if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) else u, True) if u else ("", False)
+
+
+def promo_a(href, ext, gc, inner, cls, extra=""):
+    """링크: 바깥 = 새 창 + nofollow(제휴 링크면 sponsored) · GoatCounter 이벤트 promo/<id>(GC_JS data-gc)."""
+    rel = f' rel="nofollow {"sponsored " if aff(href) else ""}noopener" target="_blank"' if ext else ""
+    return f'<a class="{cls}" href="{html.escape(href)}"{rel} data-gc="{gc}"{extra}>{inner}</a>'
+
+
+def promo_won(x):
+    m = re.search(r"[\d,]+원", price_bits(x[1], x[2])[0] or "")
+    return m[0] if m else ""
+
+
+def promo_card(p, st, xs, go, icons, today):
+    """/events/ 카드(시안 A 작게 — 10/25 진우): 연한 몰 색 바탕 r16 · [글 | 오른쪽] — 로고·몰 이름·상태 칩 / 행사명 한 줄 / 기간 · 혜택 한 줄 / CTA,
+    오른쪽 = 행사 상품 중 사진 있는 🔥 3개(48px + 가격) · 없으면 흰 날짜 칸(본 기간 + '사전 …')."""
+    sty, lg, mall = promo_mall(p, icons)
+    pre, href, ext = p.get("pre") or {}, *go
+    pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
+    right = ("".join(f'<span class="pvp"><span><img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></span><small>{promo_won(x)}</small></span>' for x in pics) if pics
+             else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
+    info = " · ".join(x for x in (promo_span(p.get("start"), p.get("end")), str(p.get("benefit") or "").strip()) if x)
+    cta = promo_a(href, ext, f"promo/{p['id']}", f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
+    return (f'<article class="pv" id="{p["id"]}" data-s="{st}" style="{sty}"><div class="pvt"><div class="pvh">{lg}<b class="pvm">{html.escape(mall)}</b>{promo_chip(p, st, today)}</div>'
+            f'<h2 class="pvn">{html.escape(p["name"].strip())}</h2>' + (f'<p class="pvi">{html.escape(info)}</p>' if info else "") + f'{cta}</div><div class="pvr">{right}</div></article>')
+
+
+PROMO_DOTS_JS = """<script>(function(){var s=document.querySelector('.pbs'),d=document.querySelectorAll('.pbd i');if(!s||d.length<2)return;s.addEventListener('scroll',function(){var w=(s.firstElementChild.offsetWidth||250)+8,k=s.scrollLeft+s.clientWidth>=s.scrollWidth-4?d.length-1:Math.round(s.scrollLeft/w);
+[].forEach.call(d,function(x,j){x.className=j===k?'on':''})},{passive:true})})()</script>"""  # 홈 기획전 띠 아래 점 = 지금 보이는 칸
+PROMO_FILTER_JS = """<script>(function(){var b=document.querySelectorAll('.pf button');[].forEach.call(b,function(x){x.addEventListener('click',function(){var f=x.getAttribute('data-f');
+[].forEach.call(b,function(y){y.setAttribute('aria-pressed',y===x?'true':'false')});[].forEach.call(document.querySelectorAll('.pvl .pv'),function(c){var s=c.getAttribute('data-s');c.hidden=!(f==='all'||f===s||f==='on'&&s==='end')})})})})()</script>"""  # /events/ 칩 = 화면 안에서만 거름(JS 꺼짐 = 전부 보임)
+
+
+def promo_band(ps, it, tagged, slugs, links, icons, today):
+    """홈 맨 위 띠 '🎉 지금 하는 기획전'(시안 B 작게 — 10/25 진우): 오늘 마감 → 진행 중 → 곧 시작(PROMO_SOON일 안) 칸 250×112 · 진한 몰 색(쓱 = 글자 검정) · 링 장식 ·
+    로고·몰·상태 칩 / 큰 날짜 / 행사명 / 상품 사진 동그라미 3개 · 옆으로 밀기 + 점 · 오른쪽 '전체 N →'(/events/) · 칸 누르면 = 그 행사 CTA(없으면 /events/#id) · GoatCounter promo/<id>."""
+    lim = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) + PROMO_SOON * 86400))
+    show = [(p, st) for p, st, first in ps if st in ("end", "on") or st == "soon" and first <= lim]
+    if not show:
+        return ""
+    cells = []
+    for p, st in show:
+        xs = promo_goods(p, it, tagged)
+        sty, lg, mall = promo_mall(p, icons)
+        href, ext = promo_go(p, xs, slugs, links)
+        pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
+        when = promo_span(p.get("start"), p.get("end")) or promo_span((p.get("pre") or {}).get("start"), (p.get("pre") or {}).get("end")) or "진행 중"
+        inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pbw">{html.escape(when)}</b><b class="pbn">{html.escape(p["name"].strip())}</b>'
+                 + ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else ""))
+        cells.append(promo_a(href or f"{BASE}events/#{p['id']}", ext, f"promo/{p['id']}", inner, "pbi pbx" if pics else "pbi", f' style="{sty}" aria-label="{html.escape(mall + " " + p["name"].strip())}"'))  # pbx = 사진 동그라미 자리만큼 이름 줄임
+    n = sum(st != "past" for _, st, _ in ps)
+    return (f'<section class="pb" aria-labelledby="pbh"><div class="pbt"><h2 id="pbh">🎉 지금 하는 기획전</h2><a href="{BASE}events/" data-gc="promo/all">전체 {n} →</a></div><div class="pbs">{"".join(cells)}</div>'
+            + (f'<div class="pbd" aria-hidden="true">{"".join("<i" + (" class=on" if k == 0 else "") + "></i>" for k in range(len(cells)))}</div>{PROMO_DOTS_JS}' if len(cells) > 1 else "") + "</section>")
+
+
+def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
+    """/events/ '기획전 모음'(시안 A 작게 — 10/25 진우): 쇼핑 달력 줄(날짜·행사·D-day, 오늘 마감 = 검정 칸) → 칩(전체·진행 중·곧 시작) → 카드 → 지난 행사(접힘 PROMO_PAST개)
+    + 맨 아래 대가성 문구(쿠팡 상품 칸이 있으면 쿠팡 파트너스 · 링크프라이스 링크가 있으면 그 문구 — 사실대로). -> (제목, 설명, 본문)."""
+    live, past = [x for x in ps if x[1] != "past"], sorted((x for x in ps if x[1] == "past"), key=lambda x: x[0].get("end") or "", reverse=True)[:PROMO_PAST]
+    dd = lambda p, st: ("오늘 마감" if st == "end" else f"D-{promo_days(today, (p.get('pre') or {}).get('start') or p['start'])}" if st == "soon"
+                        else f"마감 D-{promo_days(today, p['end'])}" if p.get("end") else "진행 중")
+    cal = ('<nav class="pcal" aria-label="쇼핑 달력">' + "".join(
+        f'<a class="pcd{" k" if st == "end" else ""}" href="#{p["id"]}"><b>{promo_span(p.get("start") or (p.get("pre") or {}).get("start"), p.get("end"))}</b><span>{html.escape(p["name"].strip())}</span><i>{dd(p, st)}</i></a>'
+        for p, st, _ in sorted(live, key=lambda x: (x[2] or "0000", x[0]["id"]))) + "</nav>") if live else ""
+    cards, gos = [], []
+    for p, st, _ in live + past:
+        xs = promo_goods(p, it, tagged)
+        go = promo_go(p, xs, slugs, links)
+        gos.append((go, xs, p))
+        cards.append(promo_card(p, st, xs, go, icons, today))
+    n_on, n_soon = sum(st in ("end", "on") for _, st, _ in live), sum(st == "soon" for _, st, _ in live)
+    chips = (f'<nav class="pf" aria-label="기획전 거르기"><button type="button" data-f="all" aria-pressed="true">전체 {len(live)}</button>'
+             f'<button type="button" data-f="on" aria-pressed="false">진행 중 {n_on}</button><button type="button" data-f="soon" aria-pressed="false">곧 시작 {n_soon}</button></nav>') if live else ""
+    notes = [n for n, ok in ((SHOP_NOTES["coupang"], any(not ext and xs and shop_of(xs[0][1]) == "coupang" for (h, ext), xs, _ in gos)),
+                             ("이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다.", any(ext and aff(h) for (h, ext), _, _ in gos))) if ok]  # 링크프라이스 머천트 문구 그대로(hotdeal.AFF_NOTE)
+    mm = int(today[5:7])
+    body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쿠팡·11번가·G마켓·SSG 등 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
+            + cal + chips + (f'<div class="pvl">{"".join(cards[:len(live)])}</div>' if live else '<p class="t">지금 정리된 기획전이 없어요. 매일 저녁 새로 찾아 올려요.</p>')
+            + (f'<details class="pvx"><summary>지난 행사 {len(past)}</summary>{"".join(cards[len(live):])}</details>' if past else "")
+            + (f'<p class="t pvnote">{" ".join(notes)}</p>' if notes else "") + PROMO_FILTER_JS)
+    desc = f"{mm}월 쇼핑몰 기획전 기간·혜택 정리 — " + " · ".join(f"{(p.get('mall_name') or p['mall']).split(' · ')[0]} {p['name'].strip()}" for p, _, _ in live)
+    return f"쇼핑 기획전 모음 ({mm}월) | {TITLE}", desc[:150], body
+
+
 def unit_line(p):
     """글의 단위가 줄 조각('💰 100g당 339원꼴 · 와우 할인 중' -> '100g당 339원꼴', 없으면 unit_of)."""
     return re.sub(r"^단위\s*가격:?\s*", "", next((x for l in p["text"].split("\n") if l.startswith(("💰", "💡")) for x in l[1:].strip().split(" · ") if PAIR.search(x)), "") or unit_of(p))
@@ -1326,22 +1514,22 @@ def row(i, p, sh, today, gc="", extra=""):
 Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "women", "heat", "season", "home", "fashion")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
 
 
-def quick_nav(evs, dl_n, dl_end, top_live):
+def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
     """둥근 바로가기 2줄(포털형 2차 ③ — N+스토어 참고: 46px 동그라미 + 11.5px 이름, 6개 + 7번째 반쯤 보이게 옆으로 밀기):
     1줄 ⏰ 오늘 마감('N개 남음' — 0개면 X, 자정 지나면 숨김) · 🏆 많이 본(GoatCounter 진짜 조회일 때만 — 아니면 'TOP 10') · 📉 가격 내림 · 🔁 다시 특가 · 🚀 쿠팡 · 💙 토스 · 💚 네이버 · 🎉 기획전(진행 중만)
     2줄 품목 12칸(Q_CATS) + ▦ 전체보기 · GoatCounter q/·mall/·cat/. C 혼합형(10/25) = 1줄만 + 끝에 ▦ 품목 전체(/c/)."""
     a = lambda href, e, n, gc, cls="", extra="", c="": f'<a class="q{cls}" href="{href}" data-gc="{gc}"><i aria-hidden="true"' + (f' style="--c:{c}"' if c else "") + f">{e}</i>{n}{extra}</a>"
     r1 = [a(c_url("today"), "⏰", "오늘 마감", "q/today", extra=f'<b class="qb" data-qend="{dl_end}">{dl_n}개 남음</b>' if dl_n else ""), a(c_url("top"), "🏆", "많이 본" if top_live else "TOP 10", "q/top"),
           a(c_url("drop"), "📉", "가격 내림", "q/drop"), a(c_url("rehot"), "🔁", "다시 특가", "q/rehot")] \
-        + [a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # ▦ = C 혼합형만(2줄 품목 대신)
+        + [a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(evh or f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # ▦ = C 혼합형만(2줄 품목 대신)
     r2 = [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]
     return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
 
-def mall_nav(evs):
+def mall_nav(evs, evh=""):
     """홈 몰 버튼 1줄(A 목록형 = 1차 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
     return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN)
-            + (f'<a class="m evt" href="{BASE}e/{evs[0]["slug"]}.html" data-gc="mall/event">🎉 기획전</a>' if evs else "") + "</nav>")
+            + (f'<a class="m evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event">🎉 기획전</a>' if evs or evh else "") + "</nav>")  # evh = /events/(기획전 모음 — 10/25)
 
 
 def hot_section(it, evi, today):
@@ -1796,6 +1984,24 @@ def build(posts, out="docs"):
                                        + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
                                        head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 og.png(인스타 카드는 다른 5개 딜이라 X)
         urls.append((f"{BASE}today/{d}/", d))
+    ps_ = promo_list(today)  # 기획전 모음(10/25 Cowork·진우 — promos.json): 홈 띠 + /events/
+    try:
+        plinks = json.load(open(PROMO_LINKS))
+    except (OSError, ValueError):
+        plinks = {}
+    icons = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()
+    tagged = {}
+    for e in ev_list():
+        if isinstance(e, dict) and isinstance(e.get("tag"), str) and isinstance(e.get("url"), str):
+            tagged.setdefault(e["tag"], set()).add(e["url"])
+    slugs = {g["tag"]: g["slug"] for g in evs}
+    band = promo_band(ps_, it, tagged, slugs, plinks if isinstance(plinks, dict) else {}, icons, today)
+    ptags = {p.get("tag") for p, st, _ in ps_ if st != "past"} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
+    evh = f"{BASE}events/" if any(st != "past" for _, st, _ in ps_) else ""
+    ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks if isinstance(plinks, dict) else {}, icons, today)
+    write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh))
+    if evh:
+        urls.append((f"{BASE}events/", today))
     cp = card_picks(posts, out)
     cp = cp.replace('<div class="t">번호를 누르면', f'<p class="t">{" ".join(SHOP_NOTES.values())}</p><div class="t">번호를 누르면', 1)  # 카드 번호 칸도 몰로 바로 -> 3사 문구
     hot, hot_ids = hot_section(it, evi, today)
@@ -1812,7 +2018,7 @@ def build(posts, out="docs"):
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
-                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=f'<div class="la">{mall_nav(evs)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner(evs) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆")) + "</div>" if posts else "", dis=HOME_DIS))
+                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))

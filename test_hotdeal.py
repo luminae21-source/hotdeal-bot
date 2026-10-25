@@ -716,7 +716,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3180,7 +3180,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -3351,7 +3351,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -3573,7 +3573,7 @@ assert "cmp th 10-18 12:00 | " in o16.getvalue() and "[토스쇼핑] 토종순�
 del H.E["THREADS_TOKEN"]; (H.http, H.ai_pick, H.tg, time.time, H.HAS_TOSS, H.fetch_deals, H.EVENTS, H.TOSS_NO_CMP) = sv16; os.remove(H.TOSS_TOKEN); json.dump([], open("posts.json", "w"))
 # 9-17) 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 비교): 개별 딜 글(th_deal로 나가는 것 전부)이 A(본문 👉 링크 + 미리보기)·B(본문 주소 없이 + 첫 댓글 링크) 번갈아,
 #       대가성 문구는 A·B 모두 본문 첫 줄(공정위 — 댓글 X), 토스 B 글도 게시 시점 가격 줄, 댓글 권한 없으면 A, 댓글 실패 = 알림 + 다음 실행 1번 더, metrics.json 줄에 ab·rv·48시간 v48·rv48
-assert lab0 is True  # 기본 켜짐(예전 셀프체크만 A로 돌림)
+assert lab0 is False  # 10/25 2주 비교 뒤 진우 결정 = A(본문 링크) 고정 — B 시험 끝(C·상황 3장면도 링크가 댓글이라 같이 쉼 — 9-17은 켜고 돌림)
 sv17 = (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB); H.time.sleep = lambda s: None; H.TOSS_NO_CMP = H.TH_LINK_AB = True
 U = H.TH_AB_URL
 tA = H.th_note(H.TOSS_NOTE) + "🔥 [토스] 비비고 왕교자 (13,900원)\n\n맛있어요\n⚠️ 10/18 19:00 게시 시점 가격\n\n👉 " + H.SITE + "p/5.html?ref=th\n" + H.th_follow(True) + "\n📲 실시간 알림 t.me/hotdeal_pick"
@@ -6351,7 +6351,7 @@ json.dump([{**p, "now": "12,000원"} if p["url"] == U58("A") and p.get("now") el
 time.time = lambda: TK("2026-10-27 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sent58[1][1]["text"] == f"· {L58[:24]} 20,000→12,000원 ▼40% (pid 600)\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. 쿠팡 = events item(옵션 itemId) 확인해 줘", sent58[1][1]["text"]  # 지금가 바뀐 줄만
 json.dump([p for p in P58d if p["url"] not in (U58("A"), U58("J"), "https://naver.me/D")], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-28 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sd58["dropchk"]["d"] == "2026-10-28"  # 없음 = DM X(그날 끝)
-assert "th_verify, th_watch, metrics, gc_top, link_ab, api_check, cp_best, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
+assert "th_verify, th_watch, metrics, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
 assert "[ ! -f gc_top.json ] || git add gc_top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E.clear(); H.E.update(sv58[7]); os.chdir(cwd58)
 # 9-59) (10/24 Cowork 포털형 홈 + 변경 찾기) 홈 = 몰 버튼·품목 아이콘 12칸 → 🔥 실시간 핫딜(가격 근거 3일 안 🔥만 · 기획전 X · 같은 브랜드 1개 · 전체 = 몰 돌아가며 · 몰 탭 · 🆕 올린 순 · 빈 탭 X)
@@ -6927,4 +6927,86 @@ with contextlib.redirect_stdout(o64): H.th_watch(sw64); H.th_watch(sw64)
 assert len(al64) == 6 and "threads_read_replies" in al64[5] and o64.getvalue().count("th watch 답글 읽기 실패 403") == 2  # 권한 없음 = 알림 하루 1번
 H.E.pop("THREADS_TOKEN"); hw64.clear(); H.th_watch(sw64); assert not hw64  # 토큰 없음 = 안 부름
 (H.http, H.tg, time.time, H.time.sleep, H.ai_json, H.th_voice, H.POSTS, H.TH_LINK_AB, H.TH_VOICE, _c64) = sv64; H.TH_C = False; os.chdir(_c64)
+# 9-65) 기획전 모음(10/25 20시 Cowork·진우 — promos.json): /events/(시안 A 작게: 쇼핑 달력·칩·카드·지난 행사) + 홈 띠 '🎉 지금 하는 기획전'(시안 B 작게) + 몰 로고(봇이 1번 받아 둠) +
+#       링크프라이스 딥링크(G마켓·옥션·롯데온·SSG) + GoatCounter promo/<id> · Threads '🗓 쇼핑 달력' 정보 글(바뀐 날만 · 링크 = /events/?ref=th · 딜 글 수·간격 그대로)
+import build_site as S65, calendar as cal65
+sv65 = (time.time, H.http, H.E.get("THREADS_TOKEN"), H.th_bundle, H.busy, H.urllib.request.urlopen); d65 = tempfile.mkdtemp(); cwd65 = os.getcwd(); os.chdir(d65)
+P65 = lambda **k: {**{"id": "p1", "mall": "11st", "mall_name": "11번가", "name": "그랜드 십일절", "start": "2026-11-01", "end": "2026-11-11", "pre": {"start": "2026-10-26", "end": "2026-10-31"}, "benefit": "타임딜",
+                      "tag": None, "kw": None, "url": "https://www.11st.co.kr/", "cta": {"text": "행사 보러 가기", "href": "https://www.11st.co.kr/"}}, **k}
+GM65, LP65 = "https://www.gmarket.co.kr/", "https://click.linkprice.com/click.php?m=gmarket&a=A100708461&l=9999&tu=x"
+pr65 = [P65(), P65(id="cp-a", mall="coupang", mall_name="쿠팡", name="햇상품", start=None, end="2026-10-25", pre=None, url=None, cta=None, tag="햇상품"),
+        P65(id="ssg", mall="ssg", mall_name="SSG · 이마트", name="쓱데이", start="2026-10-30", end="2026-11-08", pre=None, url="https://www.ssg.com/", cta=None),
+        P65(id="gm", mall="gmarket", mall_name="G마켓 · 옥션", name="빅스마일데이", start="2026-11-02", end="2026-11-13", pre=None, url=GM65, cta=None),
+        P65(id="kw", mall="coupang", mall_name="쿠팡", name="쿠가세 <가전>", start="2026-10-12", end=None, pre=None, url=None, cta=None, kw="가습기"),
+        P65(id="old", start="2026-10-10", end="2026-10-20", pre=None),  # 지난 행사
+        P65(id="Bad Id"), P65(id="x2", mall="../etc"), P65(id="x3", url="javascript:alert(1)"), P65(id="x4", color="red"), P65(id="x5", end="10/30"), P65(id="x6", cta={"href": "http://a b"}), "문자열"]
+json.dump({"promos": pr65}, open("promos.json", "w"))
+L65 = S65.promo_list("2026-10-25")
+assert [(p["id"], st) for p, st, _ in L65] == [("cp-a", "end"), ("kw", "on"), ("p1", "soon"), ("ssg", "soon"), ("gm", "soon"), ("old", "past")], L65  # 오늘 마감 → 진행 중 → 곧 시작(첫날 순) → 지난 · 모양 틀린 항목 = 뺌
+open("promos.json", "w").write("{깨짐"); assert S65.promo_list("2026-10-25") == []; json.dump({"promos": pr65}, open("promos.json", "w"))  # 깨진 파일 = 칸 숨김
+assert S65.promo_chip(P65(), "on", "2026-10-27") == '<b class="pvs on">사전 행사 중</b>' and S65.promo_chip(P65(), "soon", "2026-10-25") == '<b class="pvs soon">D-1</b>' and S65.promo_span("2026-10-26", "2026-10-31", True) == "10.26–31"
+it65 = [(0, {"t": "2026-10-25 10:00", "text": "📦 쿠팡 🔥\n햅쌀 10kg\n29,900원", "url": "https://link.coupang.com/a/r1", "own": 1, "img": "https://thumbnail.coupangcdn.com/a.jpg"}, (0, "29,900원", "", [], False)),
+        (1, {"t": "2026-10-25 10:00", "text": "📦 쿠팡 🔥\n가열식 가습기 2L\n39,000원", "url": "https://link.coupang.com/a/k1", "own": 1}, (0, None, "", [], False)),
+        (2, {"t": "2026-10-25 10:00", "text": "📦 쿠팡 🛒\n가습기 필터\n9,000원", "url": "https://link.coupang.com/a/k2", "own": 1, "st": "out"}, (3, None, "", [], False))]  # 일시 품절 = 개수 X
+tg65, sl65, ln65 = {"햇상품": {"https://link.coupang.com/a/r1"}}, {"햇상품": "fresh"}, {GM65: LP65}
+B65 = S65.promo_band(L65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25")
+assert re.findall(r'data-gc="promo/([^"]+)"', B65) == ["all", "cp-a", "kw", "p1", "ssg"] and "전체 5 →" in B65 and len(re.findall(r"<i(?: class=on)?></i>", B65)) == 4, B65  # 곧 시작 = 7일 안(G마켓 11/2 X) · 지난 X · 점 4개
+assert f'href="{S65.BASE}e/fresh.html" data-gc="promo/cp-a"' in B65 and f'href="{S65.BASE}?q=%EA%B0%80%EC%8A%B5%EA%B8%B0" data-gc="promo/kw"' in B65 and "&lt;가전&gt;" in B65  # tag = 행사 쪽 · kw = 홈 검색 · 글자 escape
+assert 'href="https://www.11st.co.kr/" rel="nofollow noopener" target="_blank" data-gc="promo/p1"' in B65 and '<img src="/icons/mall/11st.png"' in B65 and "--m:#FFC72C;--mf:#14161B" in B65  # 제휴 없는 몰 = nofollow · 로고 있으면 그것 · 쓱 = 글자 검정
+assert B65.count('class="pbp"') == 1 and B65.count('class="pbi pbx"') == 1 and "thumbnail.coupangcdn.com/a.jpg" in B65  # 상품 사진 동그라미 = 사진 있는 🔥만
+assert S65.promo_band([x for x in L65 if x[1] == "past"], it65, tg65, sl65, ln65, set(), "2026-10-25") == "" and S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25") == ""  # 진행·곧 시작 없음 = 띠 X
+T65, D65, G65 = S65.promo_page(L65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25", "10/25 19:30")
+assert T65 == "쇼핑 기획전 모음 (10월) | 핫딜픽" and 'class="pcd k" href="#cp-a"' in G65 and "전체 5</button>" in G65 and "진행 중 2</button>" in G65 and "곧 시작 3</button>" in G65  # 오늘 마감 = 검정 칸 · 칩 개수
+assert f'href="{LP65}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/gm">행사 보러 가기 →' in G65.replace("&amp;", "&") and "핫딜픽이 고른 1개 →" in G65  # 링크프라이스 = sponsored · 상품 개수(품절 X)
+assert '<details class="pvx"><summary>지난 행사 1</summary>' in G65 and 'id="old"' in G65.split("<details")[1] and "<b>11.1–11.11</b><small>사전 10.26–31</small>" in G65  # 지난 행사 접힘 · 상품 없는 행사 = 날짜 칸
+assert S65.SHOP_NOTES["coupang"] in G65 and "제휴마케팅이 포함된 광고로 커미션을 지급 받습니다" in G65 and "10/25 19:30 확인" in G65  # 대가성 = 쿠팡 상품 칸·링크프라이스 링크가 있을 때만(사실대로)
+G65b = S65.promo_page(L65, it65, tg65, sl65, {}, set(), "2026-10-25")[2]; assert "제휴마케팅" not in G65b and '<i class="mlg" aria-hidden="true">G</i>' in G65b  # 링크프라이스 링크 X = 그 문구 X · 로고 없음 = 몰 글자
+assert "지금 정리된 기획전이 없어요" in S65.promo_page([], [], {}, {}, {}, set(), "2026-10-25")[2]
+# 빌드: 홈 띠(검색 아래) + /events/ + 사이트맵 + 🎉 기획전 버튼 = /events/ · 같은 tag 옛 넘김 배너 X
+time.time = lambda: cal65.timegm(time.strptime("2026-10-25 12:00", "%Y-%m-%d %H:%M")) - 9 * 3600
+json.dump([{"at": "2026-10-25 09:00", "shelf": True, "url": "https://link.coupang.com/a/r1", "tag": "햇상품", "until": "2026-10-25", "text": "🔥 <b>[쿠팡] 햅쌀 10kg (29,900원)</b>"}], open("events.json", "w"))
+po65 = [{"t": "2026-10-25 10:00", "text": "🔥 [쿠팡] 햅쌀 10kg (29,900원)", "url": "https://link.coupang.com/a/r1", "own": 1, "shelf": 1}]
+S65.build(po65, "site"); ix65, ev65, sm65 = (open(f"site/{f}").read() for f in ("index.html", "events/index.html", "sitemap.xml"))
+assert '<section class="pb"' in ix65 and 'class="evb"' not in ix65 and f'href="{S65.BASE}events/" data-gc="mall/event"' in ix65 and f"<loc>{S65.BASE}events/</loc>" in sm65 and "<title>쇼핑 기획전 모음 (10월) | 핫딜픽</title>" in ev65 and "noindex" not in ev65
+os.remove("promos.json"); S65.build(po65, "site"); ix65, ev65, sm65 = (open(f"site/{f}").read() for f in ("index.html", "events/index.html", "sitemap.xml"))
+assert '<section class="pb"' not in ix65 and 'class="evb"' in ix65 and f"{S65.BASE}events/" not in sm65 and "noindex" in ev65  # promos 없음 = 띠 X·옛 배너 그대로·/events/ 검색 X
+# 봇: 링크프라이스 딥링크(LP_PROMO 몰만 · 실패 = 하루 뒤) · 몰 로고 64px(1번, 하루 1번 다시 · 몰 이름 = 허용 목록)
+json.dump({"promos": pr65}, open("promos.json", "w")); c65, s65 = [], {}
+def http65(url, body=None, headers=None, method=None):
+    c65.append(url)
+    if url.startswith(H.LP_API.split("?")[0]):
+        return json.dumps({"result": "S", "url": LP65} if "gmarket" in url else {"result": "F"})
+    return '<html><link rel="icon" href="/fav.ico"><link rel="apple-touch-icon" href="/apple.png"></html>'
+H.http = http65; time.time = lambda: 1_800_000_000
+H.promo_links(s65); assert json.load(open(H.PROMO_LINKS)) == {GM65: LP65} and len(c65) == 2 and all("11st" not in u for u in c65) and list(s65["prl"]["x"]) == ["https://www.ssg.com/"]  # 11번가 = 안 부름
+H.promo_links(s65); assert len(c65) == 2  # 하루 안 = 다시 X
+time.time = lambda: 1_800_000_000 + 86400 + 1; H.promo_links(s65); assert len(c65) == 3  # 실패한 SSG = 하루 뒤 1번 더
+json.dump({"promos": [p for p in pr65 if not (isinstance(p, dict) and p["id"] == "gm")]}, open("promos.json", "w")); H.promo_links(s65); assert json.load(open(H.PROMO_LINKS)) == {}  # 빠진 행사 = 지움
+from PIL import Image as Im65
+import io as io65
+png65 = io65.BytesIO(); Im65.new("RGBA", (180, 180), (230, 38, 74, 255)).save(png65, "PNG")
+class R65:
+    def __init__(s, b): s.b = b
+    def __enter__(s): return s
+    def __exit__(s, *a): return False
+    def read(s, n=-1): return s.b
+u65 = []; H.urllib.request.urlopen = lambda req, timeout=None: u65.append(req.full_url) or R65(png65.getvalue())
+c65.clear(); H.mall_icons(s65)
+assert sorted(os.listdir("docs/icons/mall")) == ["11st.png", "coupang.png", "ssg.png"] and Im65.open("docs/icons/mall/11st.png").size == (64, 64) and u65[0] == "https://www.11st.co.kr/apple.png", (os.listdir("docs/icons/mall"), u65)  # apple-touch-icon 먼저 · gm은 위에서 뺌
+n65 = len(u65); H.mall_icons(s65); assert len(u65) == n65  # 있으면 다시 X
+# Threads '🗓 쇼핑 달력': 09:40 뒤 1번 · promos 바뀐 날만 · 링크 = /events/?ref=th(우리 사이트 = 대가성 문구 X) · 앞으로 2주 · 사전 행사 표시
+json.dump({"promos": pr65}, open("promos.json", "w")); b65, s65 = [], {}
+H.th_bundle, H.busy, H.E["THREADS_TOKEN"] = (lambda seen, kind, text, link=None, image=None: b65.append((kind, text, link))), (lambda seen, cap=True: False), "tk"
+at65 = lambda d: setattr(time, "time", lambda: cal65.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
+at65("2026-10-26 09:30"); H.cal_post(s65); assert not b65  # 9:40 전
+at65("2026-10-26 09:45"); H.cal_post(s65); H.cal_post(s65)
+assert len(b65) == 1 and b65[0][0] == "cal" and b65[0][2] == f"{H.SITE}events/?ref=th" and b65[0][1].startswith("🗓 앞으로 2주 쇼핑 달력") and not b65[0][1].startswith(H.NOTE_STARTS), b65  # 하루 1번
+assert "· 11/1~11/11 11번가 그랜드 십일절 (사전 10/26~10/31) — 사전 행사 중" in b65[0][1] and "· 11/2~11/13 G마켓·옥션 빅스마일데이 — D-7" in b65[0][1] and "햇상품" not in b65[0][1] and "그랜드 십일절 (사전" in b65[0][1], b65[0][1]  # 끝난 행사 X
+assert b65[0][1].count("\n· ") <= 5 and b65[0][1].endswith(f"기획전 모음 👉 {H.SITE}events/?ref=th")
+at65("2026-10-27 09:45"); H.cal_post(s65); assert len(b65) == 1  # 행사 그대로 = 안 올림
+json.dump({"promos": pr65 + [P65(id="new", mall="lotteon", mall_name="롯데온", name="롯데온세상", start="2026-11-03", end="2026-11-09", pre=None, url="https://www.lotteon.com/", cta=None)]}, open("promos.json", "w"))
+at65("2026-10-28 09:45"); H.cal_post(s65); assert len(b65) == 2 and "롯데온세상" in b65[1][1]  # 바뀐 날 = 다시
+(time.time, H.http, tk65, H.th_bundle, H.busy, H.urllib.request.urlopen) = sv65
+H.E.pop("THREADS_TOKEN", None) if tk65 is None else H.E.__setitem__("THREADS_TOKEN", tk65)
+os.chdir(cwd65)
 print("OK: 모든 셀프체크 통과")
