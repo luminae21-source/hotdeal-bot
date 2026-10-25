@@ -140,7 +140,8 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .qb{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}
 .myr{display:flex;gap:12px;margin:10px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}.myr::-webkit-scrollbar{display:none}.mi{position:relative;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-decoration:none}.mi .im{width:46px;height:46px;border-radius:50%;font-size:22px}.me .im{border:2px solid var(--acc);background:var(--card);color:var(--acc);font-size:13px;font-weight:800}.mi small{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;color:var(--sub)}.mi b{position:absolute;top:34px;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}.mi b.d{background:#15803D}
 @media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}
-.mlg{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:5px;background:#fff;color:var(--m);font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:-.5px;overflow:hidden}.mlg img{width:14px;height:14px;object-fit:contain}
+.lw{display:inline-grid;place-items:center;flex:none;width:var(--s,20px);height:var(--s,20px);margin-right:5px;border-radius:50%;background:#fff!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);font-style:normal;vertical-align:-5px}.lw img,.lw svg{width:64%;height:64%;object-fit:contain}.q i.lw{width:46px;height:46px;margin:0}.h .lw{--s:30px;margin-right:7px;vertical-align:-6px}.mt b .lw{--s:24px;vertical-align:-6px}
+.mlg{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:#fff;color:var(--m);font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:-.5px;overflow:hidden}.mlg img{width:12px;height:12px;object-fit:contain}
 .pvs{flex:none;padding:0 6px;border-radius:6px;font-size:10.5px;font-weight:800;line-height:17px;white-space:nowrap}.pvs.end{background:#E5303F;color:#fff}.pvs.on{background:#DDF5C9;color:#2F6B0F}.pvs.soon{background:#14161B;color:#fff}.pvs.past{background:var(--chip);color:var(--sub)}
 .pb{margin:10px 0 0}.pbt{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}.pbt h2{margin:0;font-size:16px;font-weight:800}.pbt a{font-size:12.5px;font-weight:700;color:var(--sub);text-decoration:none}
 .pbs{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding:0 16px}.pbs::-webkit-scrollbar{display:none}
@@ -1086,6 +1087,23 @@ EV_KINDS = (("쌀", r"쌀|현미|찹쌀|잡곡"), ("수산", r"새우|꽃게|홍
             ("과일", r"감귤|귤(?=[\s\d(]|$)|사과|배(?=[\s\d(]|$)|샤인머스[캣켓]|포도|단감|홍시|키위|딸기|한라봉|레드향|천혜향|곶감|자두|복숭아|참외|수박|멜론"))  # 행사 쪽 소제목(이 순서로 찾음 — 배추·꿀밤고구마가 과일로 안 가게)
 EV_ORDER = ("쌀", "과일", "고구마·땅콩", "수산", "김·김장")  # 쪽 순서(10/24 Cowork) — 못 찾은 것 = '그 밖'(맨 뒤), events "kind"가 있으면 그것
 MALL_KO = {"coupang": "쿠팡", "toss": "토스", "naver": "네이버"}
+MICONS = set()  # V: out/icons/mall/에 있는 몰 로고(build가 채움 — 봇 mall_icons가 공식 앱 아이콘·파비콘을 1번 받아 둠)
+
+
+def mall_logo(k, cls="lw"):
+    """몰 로고(V 10/26 Cowork): 흰 동그라미 안 + 여백(그림 64% — 자르기·늘리기·색 바꾸기 X, object-fit contain) · alt = 몰 이름(늘 옆에 몰 글자가 있어 감싼 칸은 aria-hidden — 화면 읽기 두 번 X).
+    네이버 = si/naver.svg 모양 그대로 + 브랜드 색 #03C75A · 쿠팡·토스 = icons/mall/<몰>.png 있을 때만 -> 없으면 ''(지금 아이콘 그대로)."""
+    nm = MALL_KO[k]
+    if k == "naver":
+        d = re.search(r'<path d="([^"]+)"', open(f"{SI_DIR}/naver.svg").read())[1]
+        return f'<i class="{cls}" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="{nm}"><path fill="#03C75A" d="{d}"/></svg></i>'
+    return f'<i class="{cls}" aria-hidden="true"><img src="/icons/mall/{k}.png" alt="{nm}"></i>' if k in MICONS else ""
+
+
+def mall_label(k, n):
+    """'🚀 쿠팡' -> 로고 + '쿠팡'(로고 있으면) / 그대로(없으면 — 글자 그대로)."""
+    lg = mall_logo(k)
+    return lg + n.split(" ", 1)[1] if lg else n
 
 
 def ev_day(u, today):
@@ -1210,9 +1228,10 @@ def promo_mall(p, icons):
     if p.get("color"):
         c, fg, tx = p["color"], "#fff", p["color"]
     sty = f"--m:{c};--mf:{fg};--mt:{tx}" + (";--mb:#FFF8E3" if p["mall"] in ("ssg", "emart") and not p.get("color") else "")
-    lg = f'<img src="/icons/mall/{p["mall"]}.png" width="14" height="14" alt="">' if p["mall"] in icons else html.escape(ch)
-    name = " ".join(x for x in (str(p.get("mall_name") or p["mall"]).strip(), str(p.get("sub") or "").strip()) if x)
-    return sty, f'<i class="mlg" aria-hidden="true">{lg}</i>', name
+    mn = str(p.get("mall_name") or p["mall"]).strip()
+    lg = f'<img src="/icons/mall/{p["mall"]}.png" width="12" height="12" alt="{html.escape(mn)}">' if p["mall"] in icons else html.escape(ch)  # V: 흰 동그라미 · alt = 몰 이름
+    name = " ".join(x for x in (mn, str(p.get("sub") or "").strip()) if x)
+    return sty, f'<i class="mlg" aria-hidden="true">{lg}</i>', name  # 옆에 몰 이름 글자 = 화면 읽기 1번
 
 
 def promo_goods(p, it, tagged):
@@ -1393,7 +1412,7 @@ def list_pages(slug, head, desc, xs, mall, recs):
                 + ("".join(f'<section class="card" id="ig{j or ""}" aria-labelledby="igh{j or ""}"><h2 id="igh{j or ""}">📸 {html.escape(nm)}</h2><div class="t">인스타 게시물 번호와 같아요 · 누르면 바로 구매 페이지</div>{pick_rows(ps)}</section>'
                            for j, (nm, ps) in enumerate(IG_TOP.get(slug, []) if k == 1 else ())))
                 + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in part) else "") + (stat_chips(slug) if slug in dict(STAT_CHIPS) else chips_html(slug))
-                + ('<nav class="chips" aria-label="몰">' + "".join(f'<a href="{c_url(k)}?s=h" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN) + "</nav>" if slug == "hot" else "")
+                + ('<nav class="chips" aria-label="몰">' + "".join(f'<a href="{c_url(k)}?s=h" data-gc="mall/{k}">{mall_label(k, n)}</a>' for k, n, _ in MALL_BTN) + "</nav>" if slug == "hot" else "")
                 + (f'<div class="cards">{"".join(card(i, p, sh, plain=slug == "drop") for i, p, sh in part)}</div>' if part else '<p class="t" style="margin:18px 2px">지금은 이 목록에 상품이 없어요. 다른 칸을 둘러보세요.</p>')
                 + nav + (rec_nav(recs) or "" if slug == "life" and k == 1 else "") + (f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>' if mall == "coupang" and k == 1 else ""))
         li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for i, p, _ in part if img_of(p)), 1)]
@@ -1614,14 +1633,14 @@ def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
     a = lambda href, e, n, gc, cls="", extra="", c="": f'<a class="q{cls}" href="{href}" data-gc="{gc}"><i aria-hidden="true"' + (f' style="--c:{c}"' if c else "") + f">{e}</i>{n}{extra}</a>"
     r1 = [a(c_url("today"), "⏰", "오늘 마감", "q/today", extra=f'<b class="qb" data-qend="{dl_end}">{dl_n}개 남음</b>' if dl_n else ""), a(c_url("top"), "🏆", "많이 본" if top_live else "TOP 10", "q/top"),
           a(c_url("drop"), "📉", "가격 내림", "q/drop"), a(c_url("rehot"), "🔁", "다시 특가", "q/rehot")] \
-        + [a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(evh or f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # ▦ = C 혼합형만(2줄 품목 대신)
+        + [f'<a class="q {k}" href="{c_url(k)}" data-gc="mall/{k}">{lg}{n.split()[1]}</a>' if (lg := mall_logo(k)) else a(c_url(k), n.split()[0], n.split()[1], f"mall/{k}", f" {k}") for k, n, _ in MALL_BTN] + ([a(evh or f'{BASE}e/{evs[0]["slug"]}.html', "🎉", "기획전", "mall/event", " evt")] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # ▦ = C 혼합형만(2줄 품목 대신)
     r2 = [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]
     return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
 
 def mall_nav(evs, evh=""):
     """홈 몰 버튼 1줄(A 목록형 = 1차 — 10/24 Cowork 포털형): 🚀 쿠팡 · 💙 토스 · 💚 네이버 (+ 🎉 기획전 = 진행 중일 때만) -> 몰 쪽 · GoatCounter mall/몰."""
-    return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{n}</a>' for k, n, _ in MALL_BTN)
+    return ('<nav class="mb" aria-label="쇼핑몰">' + "".join(f'<a class="m {k}" href="{c_url(k)}" data-gc="mall/{k}">{mall_label(k, n)}</a>' for k, n, _ in MALL_BTN)
             + (f'<a class="m evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event">🎉 기획전</a>' if evs or evh else "") + "</nav>")  # evh = /events/(기획전 모음 — 10/25)
 
 
@@ -1638,7 +1657,7 @@ def hot_section(it, evi, today):
         return "", []
     toss = any(shop_of(p) == "toss" for _, _, ys in tabs for _, p, _ in ys)
     return (f'<section class="sec" id="fire" aria-labelledby="fireh"><h2 id="fireh"><span>🔥 실시간 핫딜<small>{len(xs)}개</small></span><a class="more" href="{c_url("hot")}">전체 →</a></h2>'
-            + '<div class="tabs" role="tablist" aria-label="몰">' + "".join(f'<button type="button" role="tab" aria-selected="{"true" if not j else "false"}" aria-controls="fp-{k}" data-t="{k}">{n}</button>' for j, (k, n, _) in enumerate(tabs)) + "</div>"
+            + '<div class="tabs" role="tablist" aria-label="몰">' + "".join(f'<button type="button" role="tab" aria-selected="{"true" if not j else "false"}" aria-controls="fp-{k}" data-t="{k}">{mall_label(k, n) if k in MALL_KO else n}</button>' for j, (k, n, _) in enumerate(tabs)) + "</div>"
             + "".join(f'<ol class="rows" role="tabpanel" id="fp-{k}" data-p="{k}"' + (" hidden" if j else "") + ">" + "".join(row(i, p, sh, today) for i, p, sh in ys) + "</ol>" for j, (k, _, ys) in enumerate(tabs))
             + (f'<p class="t tl">{TOSS_LINE}</p>' if toss else "") + f'<a class="all" href="{c_url("hot")}">실시간 핫딜 더 보기 →</a></section>'), [x[0] for k, _, ys in tabs if k == "all" for x in ys]  # 👍 칸에서 뺄 = 전체 탭 줄만
 
@@ -1762,7 +1781,7 @@ def mall_page(slug, head, desc, xs, recs):
     cs = collections.Counter(cat_of(p) or "etc" for _, p, _ in xs)
     ss = collections.Counter(t for x in xs for t in st(x).split())
     name = head.split(" ", 1)[1]
-    body = (f'<h1 class="h">{html.escape(head)}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md_of(today)} 업데이트</div><p class="t">{SHOP_NOTES[slug]}</p>'
+    body = (f'<h1 class="h">{mall_label(slug, html.escape(head))}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md_of(today)} 업데이트</div><p class="t">{SHOP_NOTES[slug]}</p>'
             + (f'<p class="t">{TOSS_LINE}</p>' if slug == "toss" else "")
             + '<div class="tabs" role="tablist" aria-label="상태"><button type="button" role="tab" aria-selected="true" data-s="">전체</button>'
             + "".join(f'<button type="button" role="tab" aria-selected="false" data-s="{t}">{n} {ss[t]}</button>' for t, n in (("h", "🔥 특가"), ("s", "👍 꾸준템"), ("w", "⏳ 대기")) if ss[t]) + "</div>"
@@ -1983,7 +2002,9 @@ def link_page(style, posts, it, out, alt=False, today=None):
 
 
 def build(posts, out="docs"):
+    global MICONS
     os.makedirs(f"{out}/p", exist_ok=True)
+    MICONS = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()  # V 몰 로고(있는 것만)
     open(f"{out}/.nojekyll", "w").close()
     open(f"{out}/CNAME", "w").write(BASE.split("/")[2])  # GitHub Pages 커스텀 도메인 (재생성 때 안 날아가게)
     open(f"{out}/s.css", "w").write(CSS)
@@ -2047,7 +2068,7 @@ def build(posts, out="docs"):
             shutil.rmtree(f"{out}/c/{d}")
     mc = collections.Counter(shop_of(p) for _, p, _ in it)
     write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">쇼핑몰·상태·품목으로 골라 보세요</div><h2 class="ch">🛍 쇼핑몰로 찾기</h2><nav class="mt3" aria-label="쇼핑몰">'
-                          + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{n}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
+                          + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{mall_label(k, n)}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
                           + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (rec_nav(recs) or "") + LSW + LSW_JS,
                          "생필품·식품·뷰티·주방·세탁·간식·여성용품·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
@@ -2086,7 +2107,7 @@ def build(posts, out="docs"):
     except (OSError, ValueError):
         plinks = {}
     plinks = plinks if isinstance(plinks, dict) else {}
-    icons = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()
+    icons = MICONS
     tagged = {}
     for e in ev_list():
         if isinstance(e, dict) and isinstance(e.get("tag"), str) and isinstance(e.get("url"), str):

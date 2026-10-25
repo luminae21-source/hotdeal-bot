@@ -1651,8 +1651,8 @@ os.remove("docs5/cards/2026-10-09.json"); t5 = time.time; time.time = lambda: ca
 S.build(g, "docs5"); idx = open("docs5/index.html").read(); time.time = t5
 assert idx.index('</header>') < idx.index('<nav class="qk" aria-label="바로가기">') < idx.index('<p class="dis"') < idx.index('id="today"') < idx.index('id="fire"') < idx.index('id="pick"') < idx.index('href="#today">📸') < idx.index('href="https://hotdealpick.kr/all.html">지난 딜 전체 보기') < idx.index(S.TAB_JS)  # 순서(포털형: 몰 버튼·품목 아이콘 → 문구 → 🔥 → 오늘의 픽 …)
 qk0 = re.findall(r'<a class="q[^"]*" href="([^"]+)" data-gc="([^"]+)"><i aria-hidden="true"[^>]*>([^<]+)</i>([^<]+)', idx)
-assert qk0[:7] == [(f"{S.BASE}c/today/", "q/today", "⏰", "오늘 마감"), (f"{S.BASE}c/top/", "q/top", "🏆", "TOP 10"), (f"{S.BASE}c/drop/", "q/drop", "📉", "가격 내림"), (f"{S.BASE}c/rehot/", "q/rehot", "🔁", "다시 특가")] \
-    + [(f"{S.BASE}c/{k}/", f"mall/{k}", e, n) for k, e, n in (("coupang", "🚀", "쿠팡"), ("toss", "💙", "토스"), ("naver", "💚", "네이버"))] and "mall/event" not in idx and 'class="evb"' not in idx, qk0[:8]  # 둥근 바로가기 1줄(기획전 없으면 🎉 X · 🏆 = GoatCounter 조회 없으면 'TOP 10')
+assert qk0[:6] == [(f"{S.BASE}c/today/", "q/today", "⏰", "오늘 마감"), (f"{S.BASE}c/top/", "q/top", "🏆", "TOP 10"), (f"{S.BASE}c/drop/", "q/drop", "📉", "가격 내림"), (f"{S.BASE}c/rehot/", "q/rehot", "🔁", "다시 특가")] \
+    + [(f"{S.BASE}c/{k}/", f"mall/{k}", e, n) for k, e, n in (("coupang", "🚀", "쿠팡"), ("toss", "💙", "토스"))] and f'<a class="q naver" href="{S.BASE}c/naver/" data-gc="mall/naver">{S.mall_logo("naver")}네이버</a>' in idx and "mall/event" not in idx and 'class="evb"' not in idx, qk0[:8]  # 둥근 바로가기 1줄(기획전 없으면 🎉 X · 🏆 = GoatCounter 조회 없으면 'TOP 10')
 assert re.findall(r'<a class="q" href="([^"]+)" data-gc="cat/[^"]+"><i aria-hidden="true" style="--c:(#[0-9A-F]+)">([^<]+)</i>([^<]+)</a>', idx) == \
     [(f"{S.BASE}c/{u}/", c, e, n) for u, c, e, n in (("life", "#FFEFE6", "🧻", "생필품"), ("food", "#EAF6EE", "🍚", "식품"), ("beauty", "#FDEBF1", "💄", "뷰티"), ("digital", "#EEF2F7", "🔌", "가전"), ("kitchen", "#EEF1FB", "🍳", "주방"),
                                                      ("laundry", "#E9F5F8", "🧺", "세탁"), ("snack", "#FFF6DD", "🍪", "간식"), ("women", "#F3ECFB", "🌸", "여성용품"), ("winter", "#E8F1FF", "❄️", "겨울템"),
@@ -1718,7 +1718,7 @@ assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-l
 cats7 = open("docs7/c/index.html").read()
 assert cats7.count('<a class="tile"') == 12 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 12칸 전부(아이콘 6×2)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
-assert re.findall(r'<a class="mt (\w+)" href="([^"]+)" data-gc="mall/\w+"><b>[^<]+</b><small>[^<]+</small><i>(\d+)개</i></a>', cats7) == [("coupang", f"{S.BASE}c/coupang/", "1"), ("toss", f"{S.BASE}c/toss/", "0"), ("naver", f"{S.BASE}c/naver/", "1")] and 'aria-label="목록"' not in cats7  # 몰 타일 3개(개수) · 18칩 줄 X
+assert re.findall(r'<a class="mt (\w+)" href="([^"]+)" data-gc="mall/\w+"><b>(?:<i class="lw" aria-hidden="true">.*?</i>)?[^<]+</b><small>[^<]+</small><i>(\d+)개</i></a>', cats7) == [("coupang", f"{S.BASE}c/coupang/", "1"), ("toss", f"{S.BASE}c/toss/", "0"), ("naver", f"{S.BASE}c/naver/", "1")] and 'aria-label="목록"' not in cats7  # 몰 타일 3개(개수) · 18칩 줄 X
 assert [re.sub("<[^>]+>", "", a) for a in S.stat_chips("drop").split("</a>")[:-1]] == ["🔥 특가", "👍 꾸준템", "⏳ 대기", "📉 가격 내림", "⏰ 오늘 마감", "🏆 TOP 10"] and S.stat_chips("drop").count('aria-current="page"') == 1 and f'<a href="{S.BASE}c/drop/" aria-current="page">' in S.stat_chips("drop")
 # 6-6b) 3사 쪽: 쿠팡·네이버 = 제목 [몰] 또는 구매 링크 · 최근 3일 · 맨 위 그 몰 대가성 문구(hotdeal.py와 같은 글자) · 쿠팡 쪽 = 골드박스 버튼
 assert S.SHOP_NOTES == {"toss": H.TOSS_NOTE, "coupang": H.DISCLOSURE, "naver": H.NAVER_NOTE}
@@ -7056,7 +7056,7 @@ class R65:
     def read(s, n=-1): return s.b
 u65 = []; H.urllib.request.urlopen = lambda req, timeout=None: u65.append(req.full_url) or R65(png65.getvalue())
 c65.clear(); H.mall_icons(s65)
-assert sorted(os.listdir("docs/icons/mall")) == ["11st.png", "coupang.png", "ssg.png"] and Im65.open("docs/icons/mall/11st.png").size == (64, 64) and u65[0] == "https://www.11st.co.kr/apple.png", (os.listdir("docs/icons/mall"), u65)  # apple-touch-icon 먼저 · gm은 위에서 뺌
+assert sorted(os.listdir("docs/icons/mall")) == ["11st.png", "coupang.png", "ssg.png", "toss.png"] and Im65.open("docs/icons/mall/11st.png").size == (128, 128) and u65[0] == "https://www.11st.co.kr/apple.png", (os.listdir("docs/icons/mall"), u65)  # apple-touch-icon 먼저 · gm은 위에서 뺌 · V: 쿠팡·토스는 늘 · 128px
 n65 = len(u65); H.mall_icons(s65); assert len(u65) == n65  # 있으면 다시 X
 # 봇: 사이트 ② 생 주소 -> 수수료 링크(10/25 21시 진우 '쿠팡 88개 교체' — 처음 1번 = 7일 규칙 없이 지금 생 주소 전부(진열 포함) · 쿠팡 1개씩 주소 2가지 ① /vp/products/PID ② 원래 ·
 #     링크프라이스 = API result S만(직접 링크 X) · 안 되면 7일 뒤 · 채널 글은 그대로 = posts만 · relink.json = 바뀐 수·끝까지 안 된 것)
@@ -8523,4 +8523,63 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert cs78 == ["핫팩"] and s78b["cpq"]["ps"]["n"] == 2 and "https://link.coupang.com/a/t7" in s78b["cpq"]["e"], (cs78, s78b["cpq"]["ps"])  # 홈 글 상품명 검색(실패해도 1번 셈)이 나머지 칸 묶음보다 먼저 -> 그다음 묶음
 os.chdir(sv78[5]); shutil.rmtree(d78)
 (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv78; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
+# 9-79) V 사이트 몰 아이콘 = 실제 회사 로고(10/26 Cowork): 홈 동그라미·🔥 탭·/c/hot 몰 칩·/c/ 쇼핑몰 3칸·몰 쪽 머리·(A 몰 버튼) = 흰 동그라미 안 로고(여백 · alt = 몰 이름)
+#       네이버 = si/naver.svg 모양 + #03C75A · 쿠팡·토스 = icons/mall/<몰>.png 있을 때만(없으면 지금 이모지 그대로) · 기획전 배지 = 흰 동그라미 + alt · 봇 mall_icons = 1번만·비율 그대로·못 받으면 로그
+import build_site as S79
+from PIL import Image as PI79
+sv79 = (time.time, os.getcwd(), H.http, H.urllib.request.urlopen)
+nv79 = S79.mall_logo("naver")
+assert '<path fill="#03C75A" d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z"/>' in nv79 and 'role="img" aria-label="네이버"' in nv79 and nv79.startswith('<i class="lw" aria-hidden="true">')  # si 모양 그대로 + 브랜드 색
+S79.MICONS = set(); assert S79.mall_logo("coupang") == "" and S79.mall_label("coupang", "🚀 쿠팡") == "🚀 쿠팡" and S79.mall_label("naver", "💚 네이버") == nv79 + "네이버"  # 로고 없음 = 이모지 그대로
+d79 = tempfile.mkdtemp(); os.chdir(d79); os.makedirs("docs/icons/mall")
+for m79 in ("coupang", "toss"):
+    PI79.new("RGBA", (128, 128), (200, 30, 30, 255)).save(f"docs/icons/mall/{m79}.png")
+time.time = lambda: TK("2026-10-26 12:00")
+po79 = [{"t": "2026-10-26 10:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원)", "url": "https://link.coupang.com/a/v1", "s": 8}, {"t": "2026-10-26 10:05", "text": "🔥 [네이버] 세제 (9,900원)", "url": "https://smartstore.naver.com/a/products/1", "s": 8}]
+with contextlib.redirect_stdout(io.StringIO()):
+    S79.build(po79, "docs")
+ix79, hot79, cs79, cp79, nvp79 = (open(f"docs/{f}").read() for f in ("index.html", "c/hot/index.html", "c/index.html", "c/coupang/index.html", "c/naver/index.html"))
+cl79 = '<i class="lw" aria-hidden="true"><img src="/icons/mall/coupang.png" alt="쿠팡"></i>'
+assert f'<a class="q coupang" href="{S79.BASE}c/coupang/" data-gc="mall/coupang">{cl79}쿠팡</a>' in ix79 and '<i class="lw" aria-hidden="true"><img src="/icons/mall/toss.png" alt="토스"></i>토스</a>' in ix79 and f'data-gc="mall/naver">{nv79}네이버</a>' in ix79  # 홈 동그라미
+assert f'data-t="coupang">{cl79}쿠팡</button>' in ix79 and f'data-t="naver">{nv79}네이버</button>' in ix79 and 'data-t="all">전체</button>' in ix79  # 🔥 실시간 핫딜 탭(몰만)
+assert f'<a href="{S79.BASE}c/coupang/?s=h" data-gc="mall/coupang">{cl79}쿠팡</a>' in hot79 and f'<b>{cl79}쿠팡</b><small>' in cs79 and f'<b>{nv79}네이버</b>' in cs79  # /c/hot 칩 · /c/ 쇼핑몰 3칸
+assert f'<h1 class="h">{cl79}쿠팡 특가 모음</h1>' in cp79 and f'<h1 class="h">{nv79}네이버 특가 모음</h1>' in nvp79 and "<title>쿠팡 특가 모음 (10/26) | 핫딜픽</title>" in cp79  # 몰 쪽 머리(제목 글자 그대로)
+assert f'<a class="m coupang" href="{S79.BASE}c/coupang/" data-gc="mall/coupang">{cl79}쿠팡</a>' in ix79 and "공식" not in "".join((S79.mall_logo("naver"), cl79))  # A 몰 버튼 · '공식'·'제휴 파트너' 글자 X
+css79 = open("docs/s.css").read()
+assert ".lw img,.lw svg{width:64%;height:64%;object-fit:contain}" in css79 and "border-radius:50%;background:#fff!important" in css79  # 흰 동그라미 · 여백 · 비율 그대로(다크 모드도 흰 동그라미)
+os.remove("docs/icons/mall/toss.png")
+with contextlib.redirect_stdout(io.StringIO()):
+    S79.build(po79, "docs")
+assert '<a class="q toss" href="' + S79.BASE + 'c/toss/" data-gc="mall/toss"><i aria-hidden="true">💙</i>토스</a>' in open("docs/index.html").read()  # 토스 로고 못 받음 = 지금 아이콘 그대로
+sty79, lg79, nm79 = S79.promo_mall({"mall": "emart", "mall_name": "이마트몰"}, {"emart"})
+assert lg79 == '<i class="mlg" aria-hidden="true"><img src="/icons/mall/emart.png" width="12" height="12" alt="이마트몰"></i>' and S79.promo_mall({"mall": "emart", "mall_name": "이마트몰"}, set())[1] == '<i class="mlg" aria-hidden="true">e</i>'  # 기획전 배지(이마트몰 포함) · 없으면 글자
+# 봇 mall_icons: 쿠팡·토스(+ 기획전 몰) 없을 때만 하루 1번 · apple-touch-icon 등 가장 큰 것 · 비율 그대로 128px 가운데 · 받은 뒤 = 다시 안 부름 · 못 받으면 로그 1줄
+shutil.rmtree("docs/icons/mall"); u79 = []
+def png79(w, h, icc=None):
+    b = io.BytesIO(); PI79.new("RGBA", (w, h), (10, 90, 250, 255)).save(b, "PNG", **({"icc_profile": icc} if icc else {})); return b.getvalue()
+from PIL import ImageCms as IC79
+icc79 = IC79.ImageCmsProfile(IC79.createProfile("sRGB")).tobytes()
+class R79:
+    def __init__(s, b): s.b = b
+    def __enter__(s): return s
+    def __exit__(s, *a): return False
+    def read(s, n=-1): return s.b
+def open79(req, timeout=None):
+    u = req.full_url; u79.append(u)
+    if "coupang" in u: raise OSError("403")
+    return R79(png79(200, 100) if u.endswith("/apple.png") else png79(300, 150, icc79) if u.endswith("/fav.png") else png79(32, 32))
+H.http = lambda url, *a, **k: '<link rel="apple-touch-icon" href="/apple.png"><link rel="icon" href="/fav.png">' if "toss" in url else (_ for _ in ()).throw(OSError("blocked"))
+H.urllib.request.urlopen, s79 = open79, {}
+with contextlib.redirect_stdout(io.StringIO()) as o79:
+    H.mall_icons(s79)
+im79 = PI79.open("docs/icons/mall/toss.png")
+assert im79.size == (128, 128) and im79.getbbox() == (0, 32, 128, 96) and im79.info.get("icc_profile") == icc79 and not os.path.exists("docs/icons/mall/coupang.png"), (im79.getbbox(), o79.getvalue())  # 가장 큰 것(300x150) = 128x64 가운데(늘림·자름 X)
+assert "mall icon toss 저장 (toss.im 300x150)" in o79.getvalue() and "mall icon coupang 못 받음 — 사이트는 지금 아이콘 그대로(내일 다시)" in o79.getvalue() and "403" not in o79.getvalue()
+assert any("google.com/s2/favicons?domain=www.coupang.com" in u for u in u79)  # 마지막 = 같은 사이트 파비콘(구글)
+u79.clear()
+with contextlib.redirect_stdout(io.StringIO()):
+    H.mall_icons(s79)
+assert not u79  # 토스 = 파일 있음 · 쿠팡 = 오늘 이미 시도 -> 안 부름
+os.chdir(sv79[1]); shutil.rmtree(d79)
+time.time, H.http, H.urllib.request.urlopen = sv79[0], sv79[2], sv79[3]; S79.MICONS = set()
 print("OK: 모든 셀프체크 통과")

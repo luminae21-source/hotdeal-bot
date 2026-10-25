@@ -7623,8 +7623,8 @@ LINK_AB_FILE, LINK_AB_PAGES = "link_ab.json", 10  # /link A·B 하루 집계(10/
 
 
 LP_PROMO = ("gmarket.co.kr", "auction.co.kr", "lotteon.com", "ssg.com")  # 기획전 주소 -> 링크프라이스 딥링크(10/25 Cowork — G마켓·옥션·롯데온·이마트(SSG)) · 11번가 등 = 원래 주소(사이트에서 nofollow)
-MALL_SITES = {"coupang": "https://www.coupang.com", "11st": "https://www.11st.co.kr", "ssg": "https://www.ssg.com", "gmarket": "https://www.gmarket.co.kr", "auction": "https://www.auction.co.kr",
-              "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr", "emart": "https://emart.ssg.com"}  # 기획전 몰 로고 받을 첫 화면(mall_icons)
+MALL_SITES = {"coupang": "https://www.coupang.com", "toss": "https://toss.im", "11st": "https://www.11st.co.kr", "ssg": "https://www.ssg.com", "gmarket": "https://www.gmarket.co.kr", "auction": "https://www.auction.co.kr",
+              "lotteon": "https://www.lotteon.com", "oliveyoung": "https://www.oliveyoung.co.kr", "emart": "https://emart.ssg.com"}  # 몰 로고 받을 첫 화면(mall_icons — 기획전 몰 + V 쿠팡·토스)
 MALL_ICONS = "docs/icons/mall"
 
 
@@ -7662,13 +7662,14 @@ def promo_links(seen):
 
 
 def mall_icons(seen):
-    """기획전 몰 로고(10/25 Cowork — 사이트가 바깥 주소를 실시간으로 안 부르게): promos.json 몰마다 docs/icons/mall/<몰>.png가 없으면 하루 1번
-    그 몰 첫 화면의 apple-touch-icon(없으면 icon · /favicon.ico) -> 64px PNG(Pillow). 못 받으면 사이트는 흰 칸에 몰 글자."""
+    """몰 로고(10/25 Cowork 기획전 + V 10/26 쿠팡·토스 — 사이트가 바깥 주소를 실시간으로 안 부르게): 몰마다 docs/icons/mall/<몰>.png가 없으면 하루 1번
+    그 몰 첫 화면의 apple-touch-icon·icon · /favicon.ico · 구글 파비콘(같은 사이트 파비콘) 중 가장 큰 것 -> 128px PNG(비율 그대로 가운데 — 자르기·늘리기·색 바꾸기 X).
+    받으면 다시 안 부름 · 못 받으면 로그 1줄 + 사이트는 지금 아이콘(이모지·몰 글자) 그대로. 네이버 = si/naver.svg(받지 않음)."""
     from io import BytesIO
     from PIL import Image
     st, now = seen.setdefault("micon", {}), time.time()
     st["t"] = now
-    for m in sorted({p["mall"] for p in promo_urls() if p.get("mall") in MALL_SITES}):
+    for m in sorted({p["mall"] for p in promo_urls() if p.get("mall") in MALL_SITES} | {"coupang", "toss"}):
         f = f"{MALL_ICONS}/{m}.png"
         if os.path.exists(f) or now - st.get(m, 0) < 86400:
             continue
@@ -7680,22 +7681,28 @@ def mall_icons(seen):
             hrefs = [re.search(r'href=["\']([^"\']+)', l, re.I) for l in sorted(rels, key=lambda l: "apple" not in l.lower())]
             cands = [u for u in (urllib.parse.urljoin(home + "/", h[1]) for h in hrefs if h) if u.startswith(("https://", "http://"))] + [home + "/favicon.ico"]
         except Exception as e:
-            print("mall icon", m, repr(e))
+            print("mall icon", m, type(e).__name__)
             cands = [MALL_SITES[m] + "/favicon.ico"]
-        for u in cands:
+        best = None
+        for u in cands + [f"https://www.google.com/s2/favicons?domain={urllib.parse.urlsplit(MALL_SITES[m]).netloc}&sz=128"]:
             try:
                 with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=20) as r:
                     im = Image.open(BytesIO(r.read(2_000_000)))
                     im.load()
-                im = im.convert("RGBA")
-                if min(im.size) < 16:
-                    continue
-                os.makedirs(MALL_ICONS, exist_ok=True)
-                im.resize((64, 64), Image.LANCZOS).save(f, "PNG", optimize=True)
-                print("mall icon", m, "저장")
-                break
+                if min(im.size) >= 16 and (not best or min(im.size) > min(best[0].size)):
+                    best = (im.convert("RGBA"), urllib.parse.urlsplit(u).netloc)
             except Exception as e:
-                print("mall icon", m, urllib.parse.urlsplit(u).path[-40:], repr(e)[:80])
+                print("mall icon", m, urllib.parse.urlsplit(u).path[-40:], type(e).__name__)
+        if not best:
+            print("mall icon", m, "못 받음 — 사이트는 지금 아이콘 그대로(내일 다시)")
+            continue
+        im, r = best[0], 128 / max(best[0].size)
+        im = im.resize((max(1, round(im.width * r)), max(1, round(im.height * r))), Image.LANCZOS)  # 가로세로 같은 배율(늘림 X)
+        c = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+        c.paste(im, ((128 - im.width) // 2, (128 - im.height) // 2))
+        os.makedirs(MALL_ICONS, exist_ok=True)
+        c.save(f, "PNG", optimize=True, icc_profile=best[0].info.get("icc_profile"))  # 색 프로필 그대로(P3 등 = 색 바뀜 X)
+        print("mall icon", m, "저장", f"({best[1]} {best[0].width}x{best[0].height})")
 
 
 def link_ab(seen):
