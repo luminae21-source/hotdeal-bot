@@ -1,5 +1,5 @@
 {
- "left_now": 58,
+ "left_now": 57,
  "ok": {
   "auction": 7
  },
@@ -213,6 +213,13 @@
    "n": "이앤더블유 티키 입는 오버나이트 화이트 대형 8개입 4개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 04:17"
+  },
+  {
+   "k": "진열",
+   "pid": "7679609121",
+   "n": "순수한면 건강한 탐폰 레귤러 16개입 3개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 04:31"
   }
  ]
 }
