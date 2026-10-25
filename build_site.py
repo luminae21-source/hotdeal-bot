@@ -97,7 +97,7 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 .deal .im{height:220px;border-radius:16px;font-size:80px;margin:-4px -4px 12px}.deal .dn{margin:6px 0 10px;font-size:20px;line-height:1.4;letter-spacing:-.6px}.deal .dn a{text-decoration:none}.hero{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}.hero .pr{font-size:28px;font-weight:800;letter-spacing:-.8px}.ship{font-size:13px;color:var(--sub)}
 .deal .note{font-size:12px;color:var(--sub);text-align:center;margin:8px 0 0}.why{font-size:14px;color:var(--sub);font-weight:700;margin:18px 0 6px;padding-top:16px;border-top:1px solid var(--line)}.deal p{margin:0;font-size:15px;line-height:1.65}.deal p a{color:var(--acc)}
 .bd{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}.bd b{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;line-height:1.5;background:var(--chip);color:var(--sub)}.b1{color:#15803d!important}.b2{color:var(--acc)!important}.b4{color:#d9480f!important}
-.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:600}.pick b{color:var(--acc);font-size:19px;min-width:28px}.pick span{flex:1;line-height:1.35}.pick em{font-style:normal;color:var(--acc);font-size:14px;white-space:nowrap}.alt{display:block;margin:-4px 0 8px 54px;font-size:14px;padding:10px 0}#today details{margin-top:10px}#today summary,.mo summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:var(--sub)}
+.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:600}.pick b{color:var(--acc);font-size:19px;min-width:28px}.pick span{flex:1;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pick em i{display:block;font-style:normal;color:var(--ink);font-weight:800;text-align:right}.pick .pt{width:40px;height:40px;margin:-4px 0;flex:none;border-radius:8px;object-fit:contain;background:#fff}.pick em{font-style:normal;color:var(--acc);font-size:14px;white-space:nowrap}.alt{display:block;margin:-4px 0 8px 54px;font-size:14px;padding:10px 0}#today details{margin-top:10px}#today summary,.mo summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:var(--sub)}
 .recs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}.recs h3{width:100%;margin:4px 2px 2px;font-size:15px}.recs a{display:flex;align-items:center;min-height:38px;padding:0 12px;border-radius:19px;background:var(--card);border:1px solid var(--line);text-decoration:none;font-size:13.5px}
 .rec h3{font-size:16px;margin:18px 2px 2px}.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.stat div{background:var(--card);border-radius:14px;padding:12px;font-size:12px;color:var(--sub);box-shadow:0 1px 0 var(--line)}.stat b{display:block;font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.4px}
 .tw{overflow-x:auto;margin:14px 0 8px;background:var(--card);border-radius:14px;box-shadow:0 1px 0 var(--line)}.tw table{width:100%;border-collapse:collapse;font-size:13px}.tw th,.tw td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.tw th{color:var(--sub);font-weight:600;white-space:nowrap}.tw td:nth-child(-n+2),.tw td:nth-child(n+4){white-space:nowrap}.tw tr.min td{background:rgba(255,212,59,.18)}
@@ -500,12 +500,19 @@ def card_picks(posts, out):
     return f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {name(blocks[0][0])}</h2>{first}{more}</section>'
 
 
+def pick_name(p):
+    """카드 딜 줄 이름 '[몰] 상품명'(가격은 오른쪽 칸 — 이름은 2줄까지만, 사진이 들어가도 줄 높이 그대로 · 10/25 진우 '칸 더 안 잡아먹게')."""
+    st, nm, _ = parse(title_of(p["text"]))
+    return (f"[{st}] " if st else "") + nm if nm else title_of(p["text"])
+
+
 def pick_rows(picks):
     """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도) · 사이트에서 뺀 딜(site_ok X — 10/25 리뷰) = 번호·이름만(링크 X — 카드 번호는 그대로) · sponsored = 제휴 링크만."""
     return "".join((f'<a class="pick" aria-disabled="true"><b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>채널에서</em></a>' if not site_ok(p) else
                     f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank" '
                    f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}">'
-                   f'<b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
+                   f'<b>{n:02d}</b>' + (f'<img class="pt" src="{html.escape(u)}" alt="" width="40" height="40" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if (u := img_of(p)) else "")  # 10/25 진우 '사진도 작게, 칸 더 안 잡아먹게'(사진 없으면 번호만)
+                   + f'<span>{html.escape(pick_name(p))}</span><em>' + (f'<i>{html.escape(pr)}</i>' if (pr := parse(title_of(p["text"]))[2].split("/")[0].strip()) else "") + f'{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
                    + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>'
                       if community(p.get("url")) else ""))
                    for n, (i, p) in enumerate(picks, 1))

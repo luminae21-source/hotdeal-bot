@@ -162,9 +162,8 @@ AD_FIRST = ""  # 10/12 00:40 진우 결정 '첫 줄 변경 취소': 예전 형�
 
 def ad_on():
     return bool(AD_FIRST) and time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) >= AD_FIRST
-PREVIEW_LINKS = f"\n\n🛍 지금 살 수 있는 딜 한눈에(앱 설치 없이) 👉 {SITE}?ref=th\n📲 텔레그램 쓰는 분은 올라오는 순간 알림 👉 t.me/hotdeal_pick"  # Threads 22시 미리보기 끝 블록(10/13 01:25 진우, 01:40 텔레그램 줄 = 선택사항으로)
-TH_REPLY = True  # 10/13 00:50 진우 '타래 + 브랜드 섞기': Threads 22시 미리보기 나머지는 댓글(타래)로 — 토큰이 댓글을 못 달면(th_reply_ok) 자동으로 댓글 없이. False = 댓글 안 씀
-PREVIEW_HOUR, PREVIEW_MIN, PREVIEW_TH = 22, 3, 5  # 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
+TH_REPLY = True  # Threads 댓글(reply_to_id) 쓰기(투표 결과 답글·링크 B 첫 댓글 — th_reply_ok가 토큰 권한 확인) · False = 댓글 안 씀. 22시 미리보기는 10/25부터 댓글(타래) 안 씀(글 1개)
+PREVIEW_HOUR, PREVIEW_MIN, PV_NAME = 22, 3, 13  # PV_NAME = Threads 미리보기 짧은 이름이 안 될 때 자르는 길이(10/25 Cowork 390px — '시각 이름 · 가격'이 한 줄, 낱말 단위, '…' X) · 10/11 진우 '묶음 리스트도, 꾸준함이 중요': 매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(진우 예약 딜 중 지금~다음 날 8시) — 진우 예약은 17~24시에 몰림(10/10 20~22시 34개, 10/11 밤 19개)·토스 하루특가는 밤 12시에 바뀜 · 3개 미만이면 21시 모아보기에 합침 · Threads는 앞 5개(500자)
 PICK_TH_AT, PICK_TH_END, PICKS_FILE = "10:30", "14:00", "docs/today/picks.json"  # N2(10/24 진우 'Threads 유입 중요'): 사이트가 10시 뒤 첫 빌드에 고정·배포한 오늘의 픽 -> Threads 하루 1번
 BUNDLE_GAP, HOUR_CAP = 600, 8  # 10/11 진우 '너무 자주 올리면 역효과': 묶음 글(토스 회차·TOP5·모아보기)은 앞 묶음 글과 10분 이상 띄움 / 토스 회차는 최근 1시간 채널 글이 8개 이상이면 미룸(7일 표: 평소 시간당 최대 6개 -> 진우 예약이 몰린 시간에만 걸림)
 TH_REOPEN_NIGHT, TH_REOPEN_MORN, TH_REOPEN_DAY = 2, 2, 4  # 10/12 진우 '6시부터 해도 괜찮아, 한도 관리': 재오픈 Threads 글은 개별 5개와 따로 — 밤(0~6시) 2개 + 아침(6시~) 2개, 하루 4개까지, 일반 딜이 먼저(main 순서)
@@ -1612,6 +1611,7 @@ def html_ents(h):
     return text.strip(), ents
 
 
+CP_IMG = "cp_img.json"  # 10/25 Cowork {쿠팡 pid: 사진 주소} — shelf_posts가 같은 pid 글(사진 없는 것) 사진으로(img_of 허용 목록 · 파트너스 API 사진이 먼저)
 SITE_RELINK_DAYS, RELINK = 7, "relink.json"  # 사이트 ② 생 주소(커뮤니티 쿠팡·옥션 등) 수수료 링크로 다시 = 안 되면 7일 뒤 · relink.json = 바뀐 수·끝까지 안 된 것(Cowork·진우 확인 — 가격 X)
 
 
@@ -1787,14 +1787,15 @@ def shelf_posts(seen):
         p["url"] = new
         p["text"], p["entities"] = with_note(p["text"], p.get("entities") or [], new)
         fix += 1
-    pim, ph = {}, 0  # 상품 번호 -> events 사진(ev = ev_list가 생 주소를 cp_links 파트너스 링크로 바꾸고 pid를 붙인 것)
+    raw, ph, ci = {v: k for k, v in cl.items()}, 0, load(CP_IMG, {})  # 파트너스 링크 -> 생 주소(상품 번호 찾기)
     pid_of = lambda u: ev.get(u, {}).get("pid") or (re.match(CP_PROD, u or "") or [0, ""])[1]
-    for u, i in ev.items():
+    pim = {str(k): v for k, v in ci.items() if isinstance(v, str)} if isinstance(ci, dict) else {}  # 10/25 Cowork cp_img.json {pid: 사진 주소}(쿠팡 검색 화면 사진 — 계속 늘어남)
+    for u, i in ev.items():  # events img(진열 쿠팡 썸네일)가 cp_img.json보다 먼저
         if i.get("img") and pid_of(u):
             pim[pid_of(u)] = i["img"]
-    eimg = lambda u: ev.get(u, {}).get("img") or pim.get(pid_of(u))
-    for p in posts:  # 10/25 Cowork: events img(진열 쿠팡 썸네일) -> 같은 url·같은 상품 번호 글 사진(이미 있는 글도 · 있는 사진은 그대로 · 사이트 img_of 허용 목록만 — 네이버 X)
-        if not p.get("img") and (im := img_of({**p, "img": eimg(p.get("url") or "")})):
+    eimg = lambda p: ev.get(p.get("url") or "", {}).get("img") or next((pim[x] for u in (p.get("url"), p.get("url0"), raw.get(p.get("url"))) if u and (x := pid_of(u)) in pim), None)
+    for p in posts:  # 10/25 Cowork: events img·cp_img.json -> 같은 url·같은 상품 번호(url0 = 사이트만 바꾼 글의 처음 주소 · cp_links 생 주소) 글 사진 — 이미 있는 글도(진열·진우 글·커뮤니티 쿠팡 딜) · 있는 사진(파트너스 API) 그대로 · img_of 허용 목록만(네이버 X)
+        if not p.get("img") and (im := img_of({**p, "img": eimg(p)})):
             p["img"], ph = im, ph + 1
     if fix or ph:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
@@ -1806,7 +1807,7 @@ def shelf_posts(seen):
             continue
         e = {**e, "deal": True}  # 진열 = 상품 글 틀(몰별 머리 줄·[광고] 첫 줄)
         t, ents = html_ents(ev_head(e) + ev_view(e)[0])
-        record(t, ents, e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag"), "img": img_of({"text": t, "url": e["url"], "img": eimg(e["url"])})})
+        record(t, ents, e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag"), "img": img_of({"text": t, "url": e["url"], "img": eimg({"url": e["url"]})})})
         have.add(e["url"])
         pids.add(e.get("pid") or e["url"])
         n += 1
@@ -1944,7 +1945,7 @@ def night_deals(seen, since, until):
         weak = th_weak(plain) and (f"쿠팡과 {gap.group(1)} 차이" if gap else "특가로는 약함")  # 문구 또는 🛒 제목·몰별 머리 줄 끝 🛒(10/22)
         if TOSS_NO_CMP and is_toss(ev["url"]):  # 토스 딜 = 쿠팡 비교·차이 표시 X(10/12 토스 비즈니스 요청)
             sv, weak = None, weak and "특가로는 약함"
-        out.append({"at": ev["at"], "icon": "👍" if th_steady(plain) and not weak else "🛒" if weak else "🔥", "name": clip(name, 26), "price": price.split("/")[0].strip(),
+        out.append({"at": ev["at"], "icon": "👍" if th_steady(plain) and not weak else "🛒" if weak else "🔥", "name": clip(name, 26), "full": name, "price": price.split("/")[0].strip(),
                     "sv": sv and sv.groups(), "url": ev["url"], "weak": weak})
     return out
 
@@ -1962,9 +1963,42 @@ def night_line(d, link=True):
         + (f" · 🤔 {d['weak']}" if d.get("weak") else "")  # 약한 딜 솔직 메모(10/11 진우: 🛒는 리스트에만, 메모와 함께)
 
 
+PV_HELLO = ("월요일 버티느라 고생 많았어요 🍵", "오늘 하루도 고생 많았어요 🍵", "한 주의 반, 잘 넘겼어요 🙌", "내일만 버티면 금요일이에요 💪",
+            "드디어 금요일 밤이에요 🎉", "느긋한 토요일 밤 보내고 계세요? 🛋", "내일 출근 전, 장바구니 정리 어때요? 🧺")  # Threads 22시 미리보기 요일 인사(KST 월=0 — 10/25 23시 진우 '귀엽고 정겹게')
+PV_REPLY = (f"🛍 오늘 밤 딜, 여기서 한 번에 볼 수 있어요\n앱 설치 없이 바로 👉 {urllib.parse.urlsplit(SITE).netloc}\n\n"
+            "🔔 올라오자마자 알려드릴까요?\n텔레그램 👉 t.me/hotdeal_pick\n\n편안한 밤 보내세요 🌙")  # 미리보기 댓글(링크 카드 = 사이트 ?ref=th · 글자 주소는 ref 없이 · 대가성 문구·딜 줄 X)
+PV_PROMPT = """Threads 밤 미리보기 줄('22:10 이름 · 16,900원')에 쓸 짧은 상품 이름을 만들어 주세요(names[i] = i번 상품, 개수 그대로).
+- 휴대폰 한 줄에 들어가게 한글 13자 안팎(16자 넘지 않게).
+- 판매처·스토어 이름 앞머리(예: '명대잡는날')·겹치는 용량·수식어는 빼고 품목·브랜드·핵심 구분(5년/15년·20봉·1kg처럼 비슷한 상품끼리 구분되는 것 하나)만.
+- 원래 이름에 없는 말·숫자는 쓰지 않기, '…' 쓰지 않기."""
+
+
+def pv_names(fulls):
+    """Threads 미리보기 짧은 이름(10/25 Cowork — 휴대폰 390px에서 '시각 이름 · 가격' 한 줄): Claude 1번(한 번에) -> 16자↓ · 원래 이름에 있는 숫자만 · 낱말마다 원래 이름과 2글자↑ 겹침이
+    아니거나 실패면 그 줄은 pv_name(PV_NAME자 낱말 단위)."""
+    try:
+        got = ai_json(PV_PROMPT + "\n\n" + "\n".join(f"{k}. {s}" for k, s in enumerate(fulls)), {"names": {"type": "array", "items": {"type": "string"}}}).get("names") or []
+    except Exception as e:
+        print("preview 짧은 이름 없이", clip(repr(e), 100))
+        got = []
+    ok = lambda x, s: 0 < len(x) <= 16 and "…" not in x and set(re.findall(r"\d+", x)) <= set(re.findall(r"\d+", s)) and all(any(w[i:i + 2] in s for i in range(len(w) - 1)) for w in x.split() if len(w) >= 2)
+    return [x if k < len(got) and ok(x := re.sub(r"\s+", " ", str(got[k])).strip(), s) else pv_name(s) for k, s in enumerate(fulls)]
+
+
+def pv_name(s, n=PV_NAME):
+    """Threads 미리보기 이름: n+3자까지는 그대로, 넘으면 n자 안에서 낱말 단위로 자름('…' X · 낱말 하나가 n자보다 길면 n자에서)."""
+    s = re.sub(r"\s+", " ", s).strip()
+    if len(s) <= n + 3:
+        return s
+    cut = s[:n + 1].rsplit(" ", 1)[0].rstrip(" +,(·/-") if " " in s[:n + 1] else ""
+    return cut or s[:n]
+
+
 def preview(seen):
     """매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(10/11 진우 '리스트 필요, 꾸준함이 중요' — 팔로워가 이 시간엔 리스트가 뜬다고 알게): 진우 예약 딜 중
-    지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads 타래(10/13: 본문 = 🔥 먼저·브랜드 1개씩 PREVIEW_TH개, 나머지 = 댓글, 링크 미리보기 = 사이트).
+    지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads(10/25 23시 진우 '귀엽고 정겹게' ·
+    '홈페이지 링크도 · 링크는 첫 댓글에'): 본문 = 대가성 문구(맨 위 1번) · 요일 인사 · 수수료 딜 전부 시각 순 '시각 짧은 이름 · 가격'(아이콘·🤔·💡 X, pv_names) · 500자 넘으면 뒷줄 대신 '🧺 그리고 N개 더…'
+    · 링크 카드 X / 댓글 1개 = 사이트·텔레그램(PV_REPLY, 링크 카드 = 사이트 ?ref=th). 댓글 못 다는 토큰·본문 다시 올리기 = 끝 2줄을 사이트·텔레그램으로 바꾼 글 1개 + 링크 카드.
     개별 글은 예약대로 그대로 나감. 묶음 글이라 BUNDLE_GAP(토스 22시 회차보다 먼저 — main 순서), 23시 넘으면 안 올림(이미 나가기 시작), 적은 날은 21시 모아보기에(digest)."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -1991,50 +2025,32 @@ def preview(seen):
     if not ds:
         print("threads skip (수수료 링크 아님) preview 묶음 | 항목 0개")
         return
-    top, brands = [], set()  # 10/13 진우 '타래 + 브랜드 섞기': 본문 = 🔥 먼저(🛒 뒤로) · 같은 브랜드(이름 첫 단어)는 1개만 -> 시각 순 PREVIEW_TH개, 나머지는 댓글(타래)로
-    for d in sorted(ds, key=lambda d: "🔥👍🛒".index(d["icon"])):  # 🔥 -> 👍 꾸준템 -> 🛒
-        if len(top) < PREVIEW_TH and (d["name"].split() or [""])[0] not in brands:
-            top.append(d)
-            brands.add((d["name"].split() or [""])[0])
-    note = lambda xs: "\n".join(dict.fromkeys(aff_note(d["url"]) for d in xs if aff_note(d["url"])))
-    can = TH_REPLY and th_reply_ok(seen)  # 댓글(reply_to_id)이 되는 토큰일 때만 '댓글에 👇'(10/13 — 안 되면 댓글 없이 끝 문구만)
-    while True:  # Threads 500자: 대가성 문구·끝 문구는 그대로, 본문 줄을 줄임(뺀 줄은 댓글로)
-        top.sort(key=lambda d: d["at"])
-        rest = [d for d in ds if d not in top]
-        end = lambda reply: (f"\n\n나머지 {len(rest)}개는 댓글에 👇\n🔔 시간 되면 이 계정에 하나씩 올라와요" if rest and reply else f"\n\n나머지 {len(rest)}개도 시간 되면 여기 하나씩 올라와요" if rest
-                             else "\n\n🔔 시간 되면 이 계정에 하나씩 올라와요") + PREVIEW_LINKS  # 10/13 01:25 진우: 사이트·텔레그램 링크를 장점 설명과 함께 본문 글자로
-        head = (note(ds) + "\n\n" if note(ds) else "") + f"🌙 오늘 밤 특가 미리보기 ({len(ds)}개)\n\n" + "\n".join(night_line(d, False) for d in top)
-        if len(head + end(can)) <= 480 or len(top) <= 1:
-            break
-        top = top[:-1]
-    try:  # 링크 미리보기 = 사이트(텔레그램 카드 X), 전체 목록 줄·'… 외 N개' X
-        r = th_bundle(seen, "preview", head + end(can), f"{SITE}?ref=th")
-    except Exception:
-        if can and rest:  # 다음 실행 재시도(th_retry)는 본문만 -> 댓글 없는 끝 문구로
-            seen[time.strftime("thretry_%Y%m%d_preview", kst)]["text"] = head + end(False)
-        raise
-    if not (can and rest):
-        return
-    parts, cur = [], []  # 댓글 = 나머지 시각 순, 댓글마다 대가성 문구 맨 앞 · 480자 이하, 본문 -> 댓글1 -> 댓글2 순으로 이어 붙임
-    txt = lambda xs: (note(xs) + "\n\n" if note(xs) else "") + "\n".join(night_line(d, False) for d in xs)
-    for d in rest:
-        if cur and len(txt(cur + [d])) > 480:
-            parts.append(txt(cur))
-            cur = []
-        cur.append(d)
-    parts.append(txt(cur))
-    done = 0
+    note = "\n".join(dict.fromkeys(aff_note(d["url"]) for d in ds))  # 대가성 문구 = 본문 맨 위 1번(프로그램마다 · 댓글엔 X)
+    rows = [f"{d['at'][11:]} {nm}" + (f" · {d['price']}" if d["price"] else "") for d, nm in zip(ds, pv_names([d["full"] for d in ds]))]  # 시각 순(night_deals) · 브랜드 1개 규칙 X · 짧은 이름(pv_names)
+    link, can = f"{SITE}?ref=th", TH_REPLY and th_reply_ok(seen)  # 댓글(reply_to_id)이 되는 토큰일 때만 '👇 댓글에'
+
+    def body(reply):
+        end = "\n\n⏰ 시간 맞춰 하나씩 쏙쏙 올려드릴게요\n👇 한눈에 보기·알림은 댓글에 있어요" if reply else f"\n\n🛍 한눈에 보기 {urllib.parse.urlsplit(SITE).netloc}\n🔔 텔레그램 알림 t.me/hotdeal_pick"
+        for k in range(len(rows), 0, -1):  # Threads 500자(th_len — 이모지 = UTF-8 바이트): 넘치면 뒷줄을 빼고 '🧺 그리고 N개 더…' 1줄(댓글로 밀지 X)
+            text = f"{note}\n\n{PV_HELLO[kst.tm_wday]}\n🌙 오늘 밤 딜 {len(ds)}개, 먼저 살짝 보여드려요\n\n" + "\n".join(rows[:k]) \
+                + (f"\n🧺 그리고 {len(rows) - k}개 더 있어요, 시간 맞춰 올려드릴게요" if k < len(rows) else "") + end
+            if th_len(text) <= 500:
+                break
+        return text
     try:
-        to = r["id"]
-        for p in parts:
-            to = th_reply(tok, to, p)
-            done += 1
-        seen["threply"] = {**seen["threply"], "t": time.time()}  # 되면 3일마다 다시 확인 안 함(계속 씀)
-    except Exception as e:  # 본문은 이미 나감 -> 관리자에게 바로(못 올린 댓글 붙여넣기용), 다음 날부터 댓글 없는 끝 문구
-        seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
-        print("preview 댓글 실패", seen["threply"]["err"])
-        tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 22시 미리보기 댓글 실패 — 본문은 나갔고 댓글 {len(parts)}개 중 {len(parts) - done}개 못 올림({err_brief(e)}). "
-           "본문에 \"댓글에 👇\"가 남아 있어 — 아래 글을 Threads 앱에서 댓글로 붙여넣거나 본문 삭제\n\n" + "\n\n— — —\n\n".join(parts[done:]))
+        r = th_bundle(seen, "preview", body(can), None if can else link)  # 댓글이 있으면 본문엔 링크 카드 X
+    except Exception:
+        if can:  # 다음 실행 재시도(th_retry)는 글 1개 -> 끝 2줄 = 사이트·텔레그램 + 링크 카드('👇 댓글에' X)
+            seen[time.strftime("thretry_%Y%m%d_preview", kst)].update(text=body(False), link=link)
+        raise
+    if not can:
+        return
+    try:
+        th_reply(tok, r["id"], PV_REPLY, link)
+    except Exception as e:  # 본문은 이미 나감('👇 댓글에' — Threads 글은 못 고침) -> 관리자에게 바로(댓글 붙여넣기용)
+        print("preview 댓글 실패", err_brief(e))
+        tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 22시 미리보기 댓글 실패({err_brief(e)}) — 본문은 나갔고 '👇 댓글에 있어요'가 남아 있어. "
+           f"아래 글을 Threads 앱에서 그 글 댓글로 붙여넣어 줘(링크 {link})\n\n{PV_REPLY}")
 
 
 def cp_events(seen, deals=()):
@@ -4890,10 +4906,10 @@ def th_bundle(seen, kind, text, link=None, image=None):
         raise
 
 
-def th_reply(tok, to, text):
-    """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(링크 첨부 X) -> 새 댓글 id."""
+def th_reply(tok, to, text, link=None):
+    """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(link = 링크 카드 — 22시 미리보기 댓글) -> 새 댓글 id."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, "access_token": tok})
+    q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, **({"link_attachment": link} if link else {}), "access_token": tok})
     cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
     time.sleep(10)
     return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")), top=False)["id"]

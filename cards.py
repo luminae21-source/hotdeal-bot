@@ -673,7 +673,8 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
         im.paste(Image.composite(Image.new("RGBA", (W, H), BLUSH + (255,)), Image.new("RGBA", (W, H), LAV + (255,)), m), (0, 0), card)
         d, P = ImageDraw.Draw(im), 88
         f = pf("SemiBold", 40); d.text((P, P), date_text, font=f, fill=SUBA)
-        f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=BERRY)
+        f = pf("ExtraBold", 40); d.text((W - P - 100 - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=BERRY)
+        _buddy(im, sum(map(ord, date_text)), W - P - 84, P - 22)  # 귀여운 동물 1마리(10/25 진우 — 제목·칩과 안 겹치는 오른쪽 위)
         z = _sized("\n".join(lines), "ExtraBold", (128, 120, 112, 104, 96, 88), W - 2 * P)
         ft, y = pf("ExtraBold", z), 196
         for line in lines:
@@ -721,7 +722,8 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
         im = Image.new("RGBA", (W, H), NAVY + (255,))
         d, P = ImageDraw.Draw(im), 88
         f = pf("SemiBold", 40); d.text((P, P), date_text, font=f, fill=MIST)
-        f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=PINK)
+        f = pf("ExtraBold", 40); d.text((W - P - 100 - f.getlength("핫딜픽"), P), "핫딜픽", font=f, fill=PINK)
+        _buddy(im, sum(map(ord, date_text)), W - P - 84, P - 22)
         z = _sized("\n".join(lines), "ExtraBold", (128, 120, 112, 104, 96, 88), W - 2 * P)
         ft, y = pf("ExtraBold", z), 196
         for line in lines:
@@ -760,7 +762,8 @@ def ig_cover(design, items, date_text, title, out, sub="", note="제휴 링크(�
         return _save(im, out)
     im = Image.new("RGBA", (W, H), PAPER + (255,))
     d, P = ImageDraw.Draw(im), 76
-    d.text((P, 64), _fit(pf("Bold", 40), f"{date_text} · 핫딜픽 일상 장보기", W - 2 * P), font=pf("Bold", 40), fill=BROWN)
+    d.text((P, 64), _fit(pf("Bold", 40), f"{date_text} · 핫딜픽 일상 장보기", W - 2 * P - 100), font=pf("Bold", 40), fill=BROWN)
+    _buddy(im, sum(map(ord, date_text)), W - P - 84, 40)
     z = _sized("\n".join(lines), "ExtraBold", (96, 88, 80, 72), W - 2 * P)
     ft, y = pf("ExtraBold", z), 132
     for k, line in enumerate(lines):
@@ -880,6 +883,26 @@ def ig_slide(design, it, n, total, out):
     return _save(im, out)
 
 
+BUDDIES = ("🐻", "🐰", "🐱", "🐶", "🐹", "🐥", "🐼", "🦊")  # 인스타 카드 귀여운 동물(10/25 진우 — Noto 컬러 이모지, 음식 그림과 같은 글꼴 · 알려진 캐릭터 X) · 카드 번호대로 돌림
+BUDDY_WORDS = ("득템!", "찜 각", "가성비 굿", "장바구니 GO", "쟁여두기")  # 말풍선(효능·가격 단정 X)
+
+
+def _buddy(im, k, x, y, word=""):
+    """동물 이모지(84px) 1마리를 (x, y)에 + word가 있으면 그 왼쪽에 말풍선(흰 바탕·자두 테두리·꼬리 = 동물 쪽) — 못 그리면 건너뜀(카드는 그대로)."""
+    try:
+        e = emoji(BUDDIES[k % len(BUDDIES)], 84)
+    except Exception:
+        return
+    im.alpha_composite(e, (x + (84 - e.width) // 2, y + (84 - e.height) // 2))
+    if word:
+        d, f = ImageDraw.Draw(im), pf("Bold", 40)
+        w, bx = int(f.getlength(word)) + 44, x - 14
+        d.rounded_rectangle((bx - w, y + 10, bx, y + 74), radius=30, fill="white", outline=PLUM, width=3)
+        d.polygon([(bx - 2, y + 30), (bx + 12, y + 42), (bx - 2, y + 54)], fill="white")
+        d.line([(bx - 1, y + 30), (bx + 12, y + 42), (bx - 1, y + 54)], fill=PLUM, width=3)
+        d.text((bx - w + 22, y + 18), word, font=f, fill=INKA)
+
+
 def ig_photo_card(it, n, out):
     """인스타 상품 사진 장(1080x1350 JPEG, 10/25 Cowork ② — 넘기기 2장부터 카드 번호 순): 판매 페이지 사진은 줄이고·키우기만(자르기 X — 비율 그대로 흰 칸 가운데, 위에 글자 X),
     글자는 사진 밖 여백에 — 위 'N번' 알약·핫딜픽, 아래 짧은 이름·가격·'프로필 링크 → N번'(토스 사진이면 같은 줄 오른쪽 '사진: 토스쇼핑')·제휴 링크·가격 시각. 보조 글자 40px↑ · 대비 = A 상품 장 짝(IG_PAIRS). -> out"""
@@ -888,7 +911,8 @@ def ig_photo_card(it, n, out):
     fb = pf("ExtraBold", 48); s = f"{n}번"; w = int(fb.getlength(s)) + 64
     d.rounded_rectangle((P, 48, P + w, 136), radius=44, fill=PLUM)
     d.text((P + 32, 60), s, font=fb, fill="white")
-    f = pf("ExtraBold", 40); d.text((W - P - f.getlength("핫딜픽"), 70), "핫딜픽", font=f, fill=BERRY)
+    f = pf("ExtraBold", 40); d.text((P + w + 20, 70), "핫딜픽", font=f, fill=BERRY)
+    _buddy(im, n - 1, W - P - 84, 46, BUDDY_WORDS[(n - 1) % len(BUDDY_WORDS)])  # 동물 + 말풍선 = 사진 칸 위 오른쪽 모서리(사진·가격 안 가림)
     x0, y0, x1, y1 = P, 164, W - P, 964  # 사진 칸(흰 바탕) 968x800 — 안쪽 24px 여백
     d.rounded_rectangle((x0, y0, x1, y1), radius=28, fill="white")
     ph = Image.open(it["photo"])
