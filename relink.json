@@ -1,5 +1,5 @@
 {
- "left_now": 70,
+ "left_now": 69,
  "ok": {
   "auction": 7
  },
@@ -129,6 +129,13 @@
    "n": "켈로그 콘푸로스트 1.32kg",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 01:27"
+  },
+  {
+   "k": "진열",
+   "pid": "6715666812",
+   "n": "탐사 KF94 새부리형 마스크 대형 100개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 01:36"
   }
  ]
 }
