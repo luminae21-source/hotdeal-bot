@@ -669,7 +669,7 @@ def stj(name, won, rv, u, t="2026-10-24 04:38", unit="", **k):
             + "\n⚠️ 확인할 점: 결제 전 최종가 확인 (10/24 4시 가격)", "entities": [], "url": u, "own": 1, "shelf": 1, "st": "wait", **k}
 json.dump([stj("크리오 칫솔 10개입", "5,270원", "103,307", "https://link.coupang.com/a/j2", unit="1개당 527원꼴"),
            stj("탐사 물티슈 캡형 100매 40개", "29,030원", "328,913", "https://link.coupang.com/a/j3", unit="1매당 7원꼴", now="31,000원", chk="10/25 1시"),  # 가격 바뀜 = 확인 시각 · 단가 X
-           stj("코멧 위생백 대 200매", "4,990원", "37,674", "https://link.coupang.com/a/j4", unit="1매당 25원꼴"),
+           stj("코멧 위생백 대 200매", "4,990원", "3.7만", "https://link.coupang.com/a/j4", unit="1매당 25원꼴"),  # 리뷰 = 적힌 그대로(3.7만)
            stj("곰곰 햅쌀 10kg", "29,900원", "12,000", "https://link.coupang.com/a/j5"),  # 최근 3일 채널 글 = X
            stj("휴대용 선풍기", "12,900원", "50,000", "https://link.coupang.com/a/j6"),  # 계절 X
            stj("주방세제 1L", "3,900원", "800", "https://link.coupang.com/a/j7"),  # 리뷰 1,000 밑 X
@@ -685,7 +685,7 @@ with cl.redirect_stdout(og):
 m, p = sent[-1]; t = p["text"]; sent.clear()
 assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith("<i>" + H.DISCLOSURE + "</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 4개</b>") and "goldbox_20261027" in seen, t
 assert [re.search(r"\d\. <a href=\"[^\"]+\">([^<]+)", l)[1] for l in t.split("\n") if re.match(r"\d\. ", l)] == ["코멧 위생백 대 200매", "탐사 물티슈 캡형 100매 40개", "크리오 칫솔 10개입", "무선 이어폰 케이스"], t  # 생필품 먼저(최근 진열 순) -> 그 밖
-assert "— <b>31,000원 (10/25 1시 확인)</b>\n   리뷰 328,913" in t and "— <b>5,270원</b>\n   1개당 527원꼴 · 리뷰 103,307" in t and t.endswith(H.toss_when()) and p["reply_markup"]["inline_keyboard"][0][0]["url"].endswith("c/steady/")
+assert "— <b>31,000원 (10/25 1시 확인)</b>\n   리뷰 328,913" in t and "1매당 25원꼴 · 리뷰 3.7만" in t and "— <b>5,270원</b>\n   1개당 527원꼴 · 리뷰 103,307" in t and t.endswith(H.toss_when()) and p["reply_markup"]["inline_keyboard"][0][0]["url"].endswith("c/steady/")
 assert not re.search(r"🔥|할인|최저", t) and t.count("특가") == 1 and "goldbox 8 개 중 고른 것 0 → steady 4개 | 코멧 위생백" in og.getvalue(), og.getvalue()
 og = io.StringIO()
 with cl.redirect_stdout(og):
@@ -4922,7 +4922,7 @@ tc32.clear(); H.steady_cands({**s32, "tossid": {"t": 1, "m": {"https://toss.shop
 assert tc32 == ["/products/detail?tacaItemIds=77,78,79,81,80"], tc32  # 10/23 Cowork 확인: 상세 id = 전부 옵션 id(tacaItemId) — 진우 쉐어링크는 tossid 8칸째(own_end가 tacaIds로 확인), 주소 /t/번호(그룹 id) X
 H.STEADY_N = 9; n32 = [x["n"] for x in H.steady_cands(s32, TK("2026-10-23 19:52"))]; H.STEADY_N = 5
 assert n32 == ["꾸준 세제 3L", "록시땅 시어 버터 핸드크림 75ml", "베베앙 물티슈 10팩", "펩시 제로 라임 48캔", "토스 물티슈79", "캐시 상품", "만명 핫팩", "해피데이 핫팩 100g 30개"], n32  # 상한 없이: 🛒 = 한 달 3만 > 2,000 순(500명·수수료 아님·14일·토스 글·id 없는 토스 X)
-assert "steady_20261023" in s32 and s32["bundles"]["ts"]; ch32.clear(); th32.clear(); H.steady_list(s32); assert not ch32  # 하루 1번
+assert "steady_20261023" in s32 and s32["bundles"]["ts"] and len(s32["goldst"]["u"]) >= 2; ch32.clear(); th32.clear(); H.steady_list(s32); assert not ch32  # 하루 1번 · JJ 꾸준템 글이 3일 안 다시 안 쓰게(goldst)
 sj32 = json.load(open("steady32/steady.json")); assert sj32["at"] == "2026-10-23 19:52" and len(sj32["items"]) == 5 and sj32["notes"] == [H.DISCLOSURE, H.TOSS_NOTE]
 assert all(not x["p"] and not x["st"] for x in sj32["items"] if x["i"] is None and "toss.shopping" in x["u"]) and any(x["i"] is None and "toss.shopping" in x["u"] for x in sj32["items"])  # 토스 API 가격·리뷰 = 사이트 파일 X(10/23 Cowork 정정 — 채널·Threads 목록엔 그대로)
 su32 = S.steady_page("steady32"); hp32 = open("steady32/steady.html").read()
@@ -9384,7 +9384,8 @@ s87b = {"thnd": {"t": TK("2026-10-29 12:55"), "ts": [TK("2026-10-29 12:55")]}}; 
 assert "앞뒤 30분 안 비딜 글 12:55" in chat87("2026-10-29 13:12", s87b) and len(po87) == 2 and "chat_20261029" not in s87b
 chat87("2026-10-29 13:27", s87b); assert len(po87) == 3 and po87[-1][1] == "일상"  # 12:55 + 30분 뒤 첫 실행
 H.cur_events = lambda seen=None: [{"at": "2026-10-30 13:30"}]; s87c = {}
-assert "앞뒤 30분 안 비딜 글 13:30" in chat87("2026-10-30 13:12", s87c) and "앞뒤 30분 안 비딜 글" in chat87("2026-10-30 13:57", s87c); chat87("2026-10-30 14:02", s87c); assert len(po87) == 4  # 큐레이션 13:30 앞뒤
+assert "앞뒤 30분 안 비딜 글 13:30" in chat87("2026-10-30 13:12", s87c) and "앞뒤 30분 안 비딜 글" in chat87("2026-10-30 13:57", s87c)  # 큐레이션 13:30 앞뒤 · 아직 안 올라감
+s87c.update({"cur_2026-10-30_1330": {"t": 1, "th": "T"}, "thnd": {"t": 1, "ts": [TK("2026-10-30 13:32")]}}); chat87("2026-10-30 14:02", s87c); assert len(po87) == 4  # 13:32에 올라감 -> 30분 뒤
 H.cur_events = lambda seen=None: []; assert chat87("2026-10-31 16:11", {}) == "" and len(po87) == 4  # 13:10 + 3시간 넘음 = X
 sh87, H.SNACK_HOUR = H.SNACK_HOUR, (15, 30); assert "앞뒤 30분 안 비딜 글 15:30" in chat87("2026-10-31 15:20", {}); H.SNACK_HOUR = sh87  # 정해진 비딜 시각(15:30 간식)도 · None(끔) 시각은 건너뜀
 # 규칙 검사(chat_ok)
@@ -9467,6 +9468,9 @@ assert H.th_c_line("이것도 몰라?", [], False) == "" and 'f"{s}\\n{hook}"))'
     and "not rude(rules[0][4])" in inspect.getsource(H.log_text) and "TH_FUN" in inspect.getsource(H.th_c_gen)
 with contextlib.redirect_stdout(io.StringIO()):
     assert sv87[3]("cur", "큐레이션\n이것도 몰라?", ["이것도 몰라?", "겨울엔 귤 박스 국룰"], ai=False) == {"이것도 몰라?": ""}  # 큐레이션 재검토 = 무례 줄만 뺌(코드 검사 rv_bad)
+H.ai_json, H.cur_events = (lambda prompt, props, img=None: {"lines": L87[0]}), (lambda seen=None: [{"at": "2026-11-10 12:30"}]); n87 = len(po87)  # 큐레이션 시각 지났는데 아직 Threads에 안 올라감(사진 기다림·묶음 간격) = 지금 막 올라갈 글로 봄
+assert "앞뒤 30분 안 비딜 글 13:12" in chat87("2026-11-10 13:12", {}) and len(po87) == n87
+assert "chat post: " in chat87("2026-11-10 13:12", {"cur_2026-11-10_1230": {"t": 1, "th": "T1"}}) and len(po87) == n87 + 1; H.cur_events = lambda seen=None: []  # 올라간 큐레이션 = thnd(실제 시각)로
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk87, H.POSTS, H.METRICS, H.http) = sv87
 H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk87); os.chdir(cwd87)
 print("OK: 모든 셀프체크 통과")

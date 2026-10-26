@@ -1502,7 +1502,7 @@ def gold_steady(seen, n0):
         unit = re.search(r"💰\s*([^\n]*꼴)", p["text"])
         now_p = p.get("now") or price.split("/")[0].strip()
         cands.append((cat_of(p) not in GOLD_ST_FIRST, p["url"], name, now_p + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(f"{kst.tm_mon}/{kst.tm_mday} ") else ""),
-                      unit[1] if unit and now_p == price.split("/")[0].strip() else "", f"리뷰 {steady_n(rv[1]):,}" + (f" · ⭐ {rate[1]}" if rate else "")))  # 단가 = 진열 글 가격 그대로일 때만
+                      unit[1] if unit and now_p == price.split("/")[0].strip() else "", f"리뷰 {re.sub(r'\s', '', rv[1])}" + (f" · ⭐ {rate[1]}" if rate else "")))  # 리뷰 = 글에 적힌 그대로('2.9만' -> 29,000 X)  # 단가 = 진열 글 가격 그대로일 때만
     picks = sorted(cands, key=lambda x: x[0])[:GOLD_ST_N[1]]
     if len(picks) < GOLD_ST_N[0]:
         print("goldbox", n0, f"개 중 고른 것 0 → steady 후보 {len(picks)}개({GOLD_ST_N[0]}개 미만) — 오늘 안 올림")
@@ -2580,6 +2580,7 @@ def steady_list(seen):
               text="\n".join(f"<i>{n}</i>" for n in notes) + f"\n\n{text}\n\n{toss_when()}", reply_markup={"inline_keyboard": kb}):
         return
     bundled(seen)
+    seen["goldst"] = {"t": now, "u": {**seen.get("goldst", {}).get("u", {}), **{x["u"]: now for x in items}}}  # JJ 골드박스 0개 날 꾸준템 글 = 3일 안 이 리스트에 나간 상품 X(posts.json에 안 남는 글)
     print("steady", len(items), "items" + (f" ({cat} 모음)" if cat else ""), "|", " / ".join(clip(x["n"], 20) for x in items))
     os.makedirs(os.path.dirname(STEADY_FILE), exist_ok=True)
     api = lambda x: x["i"] is None and urllib.parse.urlsplit(x["u"]).netloc in TOSS_HOSTS  # 토스 상세 API로 가격·리뷰를 받은 상품 = 사이트엔 가격·리뷰 X(API 신청 범위 — 10/23 Cowork 정정)
@@ -6564,7 +6565,7 @@ def chat_post(seen):
     if key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False):
         return
     fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT]  # None = 끔(그 시각 X)
-    near = [t for t in seen.get("thnd", {}).get("ts", []) + [kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
+    near = [t for t in seen.get("thnd", {}).get("ts", []) + [now if kst_ts(e["at"]) <= now <= kst_ts(e["at"]) + CUR_LATE and "th" not in seen.get(f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}", {}) else kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
     if near:
         print("chat post: 앞뒤 30분 안 비딜 글", time.strftime("%H:%M", time.gmtime(max(near) + 9 * 3600)), "-> 다음 실행")
         return
