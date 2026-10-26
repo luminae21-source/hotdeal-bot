@@ -9646,7 +9646,7 @@ assert 2 <= raw91.count("️⃣ ") <= 3 and 2 <= rdy91.count("️⃣ ") <= 3 and
 u91 = [int(x.replace(",", "")) for x in re.findall(r"개당 ([\d,]+)원", raw91)]; v91 = [int(x.replace(",", "")) for x in re.findall(r"개당 ([\d,]+)원", rdy91)]
 assert u91 == sorted(u91) and v91 == sorted(v91) and "100ml" not in c91 and "찜기" not in c91 and "트레이" not in c91, (u91, v91)  # 같은 단위(개당) 싼 순 · 계란 찜기·트레이 X(NN_NOT)
 assert rdy91.count("구운란") <= 2 and "감동 반숙란" not in c91 and "🚀 <a href=\"https://link.coupang.com/a/S12\"><b>무항생제 대란 30구 2판</b></a>" in c91, rdy91  # 종류마다 2개까지 · 반숙란 = 배송 표기(🚀 isRocket) 있을 때만(개당 250원이어도 X) · 🚀 = API isRocket만
-assert "💙 <b>토스</b>\n1️⃣ <a href=\"https://toss.im/_m/E1\"><b>토스 유정란 30구</b></a>\n💰 <b>12,000원</b> · 개당 400원" in c91 and "물티슈" not in c91 and c91.endswith(H.toss_when())  # 토스 = 따로 칸 · 게시 시점 줄
+assert "💙 <b>토스</b>\n1️⃣ <a href=\"https://toss.im/_m/E1\"><b>토스 유정란 30구</b></a>\n💰 <b>12,000원</b> · 개당 400원" in c91 and "물티슈" not in c91 and c91.endswith(H.toss_when("2026-11-12 09:00"))  # 토스 = 따로 칸 · 게시 시점 줄 = 가격 읽은 시각(검색 09:00 맥반석이 제일 오래됨)
 assert tg91[-1]["reply_markup"]["inline_keyboard"] == [[{"text": "📊 계란 가격 기록", "url": "https://hotdealpick.kr/c/eggs.html?ref=tgb"}]] and "link.coupang.com/re/" not in c91 and c91.count("리뷰") == 2  # 검색 상품 = 짧은 딥링크 · 리뷰 X(API에 없음 — 진열 상품만)
 assert not re.search(r"맛있|최저가|효능|건강", c91) and "nn egg 생란" in o91.getvalue() and "검색 6/6" in o91.getvalue() and "원" not in o91.getvalue().split("nn egg")[1].split("\n")[0]  # 금지 말 X · 로그에 가격 X
 k91, th91, l91 = tb91[-1]
@@ -9668,10 +9668,12 @@ for k in range(4):
 s91["thlist"] = {"t": TK("2026-11-13 11:30"), "h": []}; o91 = io.StringIO(); time.time = lambda: TK("2026-11-13 11:40")
 with contextlib.redirect_stdout(o91): H.nn_bundle(s91)
 assert cs91 == ["바나나우유", "커피우유", "멸균우유"] and "nn 미룸" in o91.getvalue() and len(tg91) == n91 and s91["nnrot"]["i"] == 1  # 12시 리스트 10분 안 = 15분 뒤로
-time.time = lambda: TK("2026-11-13 11:50"); H.nn_bundle(s91); m91 = tg91[-1]["text"]
+time.time = lambda: TK("2026-11-13 11:50"); H.nn_bundle(s91); assert len(tg91) == n91  # 11:45~13:00 = 12시 리스트·12:30 쿠팡 모음 앞뒤 30분 -> 13시 뒤로
+s91["cpmix"] = {"t": TK("2026-11-13 12:55"), "h": []}; time.time = lambda: TK("2026-11-13 13:05"); H.nn_bundle(s91); assert len(tg91) == n91  # 쿠팡 모음 15분 안 = 미룸
+time.time = lambda: TK("2026-11-13 13:12"); H.nn_bundle(s91); m91 = tg91[-1]["text"]
 assert len(tg91) == n91 + 1 and m91.count("️⃣ ") == 3 and m91.count("멸균") == 2 and m91.count("서울우유") == 1 and len(re.findall(r"100ml당 [\d,]+원", m91)) == 3 and "<b>· " not in m91, m91  # 종류(멸균우유)마다 2개 · 같은 상품 1번 · 100ml당
 assert tg91[-1]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://hotdealpick.kr/c/food/?ref=tgb" and tb91[-1][1].endswith("\n식품 더 보기 → https://hotdealpick.kr/c/food/?ref=thb") and s91["nnrot"]["i"] == 2  # 기록 쪽 없으면 식품 칸
-SR91.update({"계란말이": [("81", "냉동 계란말이 500g", 6900, True)], "포기김치": [("82", "종가 포기김치 3kg", 21000, True)], "냉장 반찬": []}); o91 = io.StringIO()
+SR91.update({"계란말이": [("81", "냉동 계란말이 500g", 6900, True)], "포기김치": [("82", "종가 포기김치 3kg", 21000, True)], "냉장 반찬": [("83", "한끼 멸치볶음 200g", 5900, False)]})  # 반찬 = 다 냉장(멸치볶음도 배송 표기 있을 때만); o91 = io.StringIO()
 for k in range(4):
     time.time = lambda k=k: TK("2026-11-14 09:00") + k * 900; H.nn_bundle(s91)
 time.time = lambda: TK("2026-11-14 11:40")
@@ -9688,7 +9690,38 @@ time.time = lambda: TK("2026-11-16 11:40"); H.nn_bundle(s91); r91 = tg91[-1]["te
 assert r91.count("️⃣ ") == 5 and "짜파게티" not in r91 and re.findall(r"개당 ([\d,]+)원", r91) == ["800", "860", "920", "980", "1,040"], r91  # 종류 하나뿐인 칸(라면) = 5개까지 싼 순
 assert h91.count("️⃣ ") == 5 and len(re.findall(r"100g당 [\d,]+원", h91)) == 5 and tb91[-1][1].count("👉 ") == 4 and len(set(re.findall(r"https?://\S+", tb91[-1][1]))) <= 5, (h91, tb91[-1][1])  # 칸 하나 = 5개 · Threads 링크 4개 + 끝 줄
 assert [t[0] for t in H.NN_TOPICS] == ["egg", "milk", "side", "ham", "ramen", "water", "toilet-paper", "coffee-mix", "wet-wipes", "instant-rice", "rice"] and ", cp_mix, nn_bundle, " in inspect.getsource(H.main)
+# 리뷰 고침(10/26 리뷰 22건): 'x N(단위)' 1번만 · '(60구)'·'총 N개' = 그 수 · 겉 묶음만 = X · 다른 품목(볶음밥·만두·과자·오징어·햇반) X · 토스 칸 냉장·품절 X·싼 순 · 일시 검색 오류 1번 더 · 칸 묶음 · [2+1] 이름
+U91 = [("제주삼다수 2L x 12병", 12000, "1L", "1L당 500원"), ("매일 멸균우유 200ml x 24팩", 15900, "100ml", "100ml당 331원"), ("진라면 매운맛 120g x 20개", 14000, "개", "개당 700원"),
+       ("곰곰 특란 30구 x 2판", 17800, "개", "개당 297원"), ("모나리자 화장지 30m 30롤 x 3팩", 27000, "롤", "롤당 300원"), ("화장지 30롤 x 2개", 30000, "롤", "롤당 500원"),
+       ("물티슈 100매 x 10팩", 12900, "팩", "팩당 1,290원"), ("25매x10팩 물티슈", 9000, "팩", "팩당 900원"), ("왕란 2판 (60구)", 17000, "개", "개당 283원"), ("농심 신라면 멀티팩 4팩 (총 20개)", 16000, "개", "개당 800원"),
+       ("신라면 2박스 (80개)", 48000, "개", "개당 600원"), ("곰곰 특란 30구 2판(총 60구)", 17000, "개", "개당 283원"), ("스팸 클래식 200g x 10개", 30000, "100g", "100g당 1,500원"), ("반숙란 10구 x 2", 5000, "개", "개당 250원")]
+assert [H.nn_unit(n, w, b) and H.nn_unit(n, w, b)[1] for n, w, b, _ in U91] == [x[3] for x in U91], [(x[0], H.nn_unit(*x[:3])) for x in U91]
+assert all(H.nn_unit(n, 17000, "개") is None for n in ("무항생제 특란 2판", "특란 x 2판", "특란 60구(30구x2판)", "라면 3박스", "왕란 2판 (60구) x 2")) and H.nn_unit("유정란 30구 x 4개월", 9000, "개")[1] == "개당 300원"  # 판 1개에 몇 구인지 모름 = X · 'x 4개월' = 곱 X
+E91, R91, S91 = H.NN_TOPICS[0], H.NN_TOPICS[-1], H.NN_TOPICS[2]
+assert [H.nn_kind(E91, n) for n in ("맛있는 계란말이 500g", "계란과자 6봉", "맥반석 오징어 200g", "계란 디스펜서 30구", "훈제계란 30구", "삶은 계란 10구", "맥반석 구운란 30구", "반숙 맥반석란 10구", "반숙 카스테라 10개")] == \
+    [None, None, None, None, ("바로 먹는 계란", "훈제란"), ("바로 먹는 계란", "훈제란"), ("바로 먹는 계란", "맥반석"), ("바로 먹는 계란", "맥반석"), None]
+assert [H.nn_kind(R91, n) for n in ("햇반 백미밥 210g 24개", "더미식 당찬진미 백미밥 200g x 24개", "누룽지 햅쌀 1kg", "햅쌀 10kg")] == [None, None, None, ("쌀", "쌀")]  # 즉석밥·누룽지 = 쌀 X
+assert [H.nn_kind(S91, n) for n in ("비비고 김치왕교자 1.05kg 2개", "농심 김치사발면 6개", "종가 김치전 2팩", "종가 포기김치 3kg")] == [None, None, None, ("반찬", "김치")] \
+    and H.nn_kind(H.NN_TOPICS[3], "햇반 스팸 김치 볶음밥 2인분 (냉동), 440g, 1개") is None and H.nn_kind(H.NN_TOPICS[4], "양은 라면냄비 18cm 2개") is None
+SR91.clear(); SR91.update({"계란 30구": [("201", "[2+1] 곰곰 특란 10구", 8000, False), ("202", "무항생제 왕란 2판 (60구)", 17000, False), ("203", "무항생제 특란 2판", 7000, False), ("204", "곰곰 특란 30구 x 2판", 17800, False)],
+                           "유정란": [("205", "에그 유정란 30구", 9600, False)], "맥반석 계란": [("221", "맥반석 오징어 200g", 3000, False)], "구운란": [("222", "삶은 계란 10구", 3000, False)]}); cs91.clear(); f91 = {"유정란": RuntimeError("timeout"), "완숙란": ValueError("rCode 400")}  # 삶은 계란 = 냉장(🚀 없음 = X)
+def cpf91(method, path, body=None):
+    kw = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0])
+    if kw in f91:
+        cs91.append(kw); raise f91.pop(kw)
+    return cp91(method, path, body)
+H.coupang = cpf91; s91["nnrot"]["i"] = 11; s91["sold_1117"] = {"it": [["T4", "토스 왕란 30구", 0, 0, 1]]}
+s91["thtoss"] = {"t": 1, "q": [{"t": TK("2026-11-17 10:00"), "id": i, "n": n, "p": w, "link": f"https://toss.im/_m/{i}", "k": "best"}
+                              for i, n, w in (("T1", "토스 반숙란 20구", 4000), ("T2", "토스 유정란 30구", 15000), ("T3", "토스 특란 30구", 9000), ("T4", "토스 왕란 30구", 6000))]}
+for k in range(8):
+    time.time = lambda k=k: TK("2026-11-17 09:00") + k * 900; H.nn_bundle(s91)
+assert cs91 == ["맥반석 계란", "구운란", "반숙란", "완숙란", "유정란", "유정란", "계란 30구"] and s91["nnq"]["r"]["완숙란"] == [] and s91["nnq"]["e"] == {"완숙란": 1, "유정란": 1}, cs91  # 일시 오류 = 다음 실행에 1번 더 · rCode 400 = 끝
+time.time = lambda: TK("2026-11-17 11:35"); H.nn_bundle(s91); g91, gt91 = tg91[-1]["text"], tb91[-1][1]
+assert "💙 <b>토스</b>\n1️⃣ <a href=\"https://toss.im/_m/T3\"><b>토스 특란 30구</b></a>\n💰 <b>9,000원</b> · 개당 300원\n2️⃣ <a href=\"https://toss.im/_m/T2\">" in g91 and "T1" not in g91 and "T4" not in g91, g91  # 토스 = 싼 순 · 냉장(반숙란) X · 품절 X
+assert "<b>[2+1] 곰곰 특란 10구</b></a>\n💰 <b>8,000원</b> · 개당 267원" in g91 and "왕란 2판 (60구)</b></a>\n💰 <b>17,000원</b> · 개당 283원" in g91 and "무항생제 특란 2판" not in g91 and "오징어" not in g91 and "삶은" not in g91, g91
+assert g91.endswith(H.toss_when("2026-11-17 10:00")) and gt91.count("\n· 생란\n") == 1 and gt91.count("\n· 바로 먹는 계란\n") == 1 and gt91.index("에그 유정란") < gt91.index("· 바로 먹는 계란") and "\n" + H.toss_when("2026-11-17 10:15") + "\n" in gt91, gt91  # 생란 3·바로 1 = 칸 머리 1번씩
 it91 = {k: rx for k, _, rx, _, _ in S.PRICE_ITEMS}
+assert not any(re.search(it91["eggs"], n) for n in ("계란말이 500g", "계란과자 6봉", "맥반석 오징어 200g")) and re.search(it91["eggs"], "맥반석 달걀 10구")
 assert all(re.search(it91["eggs"], n) for n in ("반숙란 10구", "완숙란 20구", "맥반석 구운계란 30개", "유정란 30구")) and S.PRICE_ITEMS[[k for k, *_ in S.PRICE_ITEMS].index("milk")][3:] == ("100ml당", ("100ml",)) \
     and all(re.search(it91["milk"], n) for n in ("멸균우유 200ml", "바나나맛 우유 240ml", "커피우유 300ml", "흰우유 1L")) and not re.search(it91["milk"], "우유식빵") and S.PRICE_MIN == 3
 (H.coupang, H.cp_deeplinks, H.tg, H.th_bundle, H.season_adj, time.time, H.POSTS, tk91, H.HAS_CP) = sv91; H.E.pop("THREADS_TOKEN", None) if tk91 is None else H.E.update(THREADS_TOKEN=tk91); os.chdir(cwd91)
