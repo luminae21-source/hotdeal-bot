@@ -1076,7 +1076,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1204,7 +1204,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -1534,7 +1534,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -2796,7 +2796,7 @@ H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "x"}]; i_sent
 assert not i_sent and "tsolo_20261014_13" in s9k  # 7점↑ 없으면 그 시각은 끝(다시 안 물음)
 time.time = lambda: TK("2026-10-14 08:05"); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "개당 사실"}]; i_sent.clear(); H.toss_solo({})  # 8시 = 순위 · 하루특가는 9시 전 X
 assert "💙 토스 특가 · 많이 팔린 순위" in i_sent[0][1]["text"]
-assert "toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
 # 9-2j) 10/15 진우 '꾸준하게': 8~23시 채널 딜 글이 마지막 글 뒤 TOSS_GAP_MIN(30)분 넘게 없으면 그 실행에 토스 1개 더(같은 후보·틀·거르기) — 못 찾으면 30분 뒤 다시(API·Claude 아낌),
 #       진우 예약 앞뒤 10분은 쉼, 마지막 글 = tg() 채널 올리기 기록(재오픈 답장·📋 모아보기 X, 다른 채팅 X) · seen(지난 실행) · posts.json
 assert tgm0 == 30 and H.TOSS_EV_PAD == 600; H.TOSS_GAP_MIN, H.RUN["ch_last"] = tgm0, 0
