@@ -1691,7 +1691,7 @@ def cp_new(seen, cl=None):
     """VV: 한 번도 변환을 해 보지 않은 쿠팡 진열 주소(events 진열·posts 진열 글 — cp_links.json에 없고 cp_links·site_relink 실패 기록도 없음) = 거의 다 바로 됨 -> 재시도보다 먼저."""
     cl = load(CP_LINKS, {}) if cl is None else cl
     st, sr = seen.get("cpdl", {}), seen.get("srl", {})
-    tried = set().union(*(st.get(k, {}) for k in ("x", "f", "nf", "e")), sr.get("x", {}), sr.get("e", {}))
+    tried = set().union(*(st.get(k, {}) for k in ("x", "f", "nf", "e")), sr.get("x", {}), sr.get("e", {}), sr.get("now", ()))  # srl now = site_relink 몫(cp_links가 건너뜀 — 새 진열로 세면 둘 다 안 함)
     us = {e["url"] for e in ev_list(EVENTS) if e.get("shelf") and re.match(CP_PROD, e.get("url") or "")} \
         | {p["url"] for p in load(POSTS, []) if p.get("own") and p.get("shelf") and re.match(CP_PROD, p.get("url") or "")}
     return {u for u in us if u not in cl and u not in tried}

@@ -10331,5 +10331,11 @@ assert sorted(c99[:2]) == [N99[20:40], N99[40:]] and c99[2:] == [[R99[0]]] and "
 assert set(N99) <= set(json.load(open("cp_links.json"))) and not H.cp_new(s99) and [R99[0]] in s99["cpdl"]["pq"]  # 44개 다 · 재시도 다음 모양 = 다음 실행
 c99.clear(); o99 = run99("2026-10-27 02:50", s99, H.cp_links)
 assert len(c99) == 2 and "새 진열" not in o99, (c99, o99)  # 새 진열 없음 = 재시도만, 이 실행 몫(4)의 절반 = 2번(예전 4번 — 남은 몫 = 가격 확인·골드박스)
-(H.http, H.HAS_CP, time.time, H.POSTS, H.EVENTS, rn99) = sv99; H.RUN.clear(); H.RUN.update(rn99); os.chdir(cwd99)
+# 리뷰(VV): seen이 처음부터(cold start) = site_relink가 생 주소 진열을 전부 now에 넣음 -> cp_links는 now를 건너뜀 -> now = 새 진열 X(site_relink가 바로 — 새 진열로 세면 둘 다 안 해서 영영 안 바뀜)
+N99c, sv99t = [VP99(9100 + k, f"?itemId={k}") for k in range(3)], H.tg; H.tg = lambda *a, **k: {}
+json.dump([{"at": "2026-10-27 00:30", "shelf": True, "url": u, "text": tx99(f"콜드 {k}")} for k, u in enumerate(N99c)], open("events.json", "w"), ensure_ascii=False)
+json.dump([{"t": "2026-10-27 00:30", "own": True, "shelf": True, "url": u, "text": f"[쿠팡] 콜드 {k} (1,000원)"} for k, u in enumerate(N99c)], open("posts.json", "w"), ensure_ascii=False)  # = shelf_posts가 만든 진열 글
+s99c = {}; c99.clear(); o99 = "".join(run99(at, s99c, f) for at in ("2026-10-27 03:00", "2026-10-27 03:15") for f in (H.site_relink, H.cp_links))
+assert set(N99c) <= set(json.load(open("cp_links.json"))) and not H.cp_new(s99c) and "새 진열" not in o99 and len(c99) == 3, (c99, o99)  # site_relink = 예전처럼 실행마다 2개씩
+(H.http, H.HAS_CP, time.time, H.POSTS, H.EVENTS, rn99) = sv99; H.tg = sv99t; H.RUN.clear(); H.RUN.update(rn99); os.chdir(cwd99)
 print("OK: 모든 셀프체크 통과")
