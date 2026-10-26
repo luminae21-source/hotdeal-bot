@@ -6995,13 +6995,11 @@ def chat_post(seen):
     bundled(seen)
     try:
         r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")
-    except Exception as e:
+    except urllib.error.HTTPError as e:  # 서버가 사진 글을 거절(사진 못 받음 등) = 안 올라감 -> 글만 지금 1번 · 시간 초과(올라갔을 수도)는 예전처럼 다음 실행 th_retry(th_landed 확인)
         if not stk:
             raise
-        seen.pop(time.strftime("thretry_%Y%m%d_chat", time.gmtime(time.time() + 9 * 3600)), None)  # 사진 글로 다시 올림 X — 지금 글만 1번
-        print("chat post: 스티커 사진 글 실패 -> 글만", stk[0], err_brief(e))
-        if th_landed(tok, text, now - 300):
-            return print("chat post: 사진 글이 사실 올라감 -> 글만 X")
+        seen.pop(time.strftime("thretry_%Y%m%d_chat", time.gmtime(time.time() + 9 * 3600)), None)  # 사진 글로 다시 올림 X
+        print("chat post: 스티커 사진 글 거절 -> 글만", stk[0], err_brief(e))
         stk, r = None, th_bundle(seen, "chat", text, topic="일상")
     if stk:
         stk_used(seen, stk[0], now)
@@ -7831,8 +7829,8 @@ def poll_post(seen):
                     th_reply(tok, op["id"], txt, image=stk[1])
                     stk_used(seen, stk[0], now)
                     print("poll reply: 스티커", stk[0])
-                except Exception as e:  # 사진 실패 = 지금처럼 글만
-                    print("poll reply: 스티커 사진 실패 -> 글만", stk[0], err_brief(e))
+                except urllib.error.HTTPError as e:  # 서버가 사진 답글을 거절 = 안 달림 -> 지금처럼 글만 · 시간 초과(달렸을 수도)는 예전처럼 다시 X(답글 2개 X)
+                    print("poll reply: 스티커 사진 거절 -> 글만", stk[0], err_brief(e))
                     stk = None
             if not stk:
                 th_reply(tok, op["id"], txt)

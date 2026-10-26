@@ -3508,10 +3508,18 @@ H.th_reply = lambda tok, to, text, link=None, image=None: rp13i.append((to, text
 s13["polls"]["open"] = dict(op13); del s13["poll_20261018"]; H.poll_post(s13)
 assert len(rp13i) == 1 and rp13i[0][0] == "pol1" and rp13i[0][2] == "https://hotdealpick.kr/img/stk/ramen.png" and rp13i[0][1].startswith(H.th_note(H.DISCLOSURE) + '📊 어제 1등은 "600원까지" 50%!') and s13["stk"]["ramen"] == "2026-10-18", rp13i
 s13["polls"]["open"] = dict(op13); del s13["poll_20261018"]; H.poll_post(s13); assert len(rp13i) == 2 and rp13i[1][2] is None and rp13i[1][1] == rp13i[0][1]  # 3일 안 같은 스티커 = 글만
-del s13["stk"]; H.th_reply = lambda tok, to, text, link=None, image=None: (_ for _ in ()).throw(OSError("image 400")) if image else rp13i.append((to, text, image)) or "r1"
+del s13["stk"]; H.th_reply = lambda tok, to, text, link=None, image=None: (_ for _ in ()).throw(__import__("urllib.error").error.HTTPError("u", 400, "Bad Request", {}, None)) if image else rp13i.append((to, text, image)) or "r1"
 s13["polls"]["open"] = dict(op13); del s13["poll_20261018"]; o13 = io.StringIO()
 with __import__("contextlib").redirect_stdout(o13): H.poll_post(s13)
-assert len(rp13i) == 3 and rp13i[2][2] is None and "stk" not in s13 and "poll reply: 스티커 사진 실패 -> 글만 ramen" in o13.getvalue()  # 사진 실패 = 글만
+assert len(rp13i) == 3 and rp13i[2][2] is None and "stk" not in s13 and "poll reply: 스티커 사진 거절 -> 글만 ramen" in o13.getvalue()  # 서버가 사진 거절 = 글만
+H.th_reply = lambda tok, to, text, link=None, image=None: (_ for _ in ()).throw(TimeoutError("timed out")) if image else rp13i.append((to, text, image)) or "r1"
+s13["polls"]["open"] = dict(op13); del s13["poll_20261018"]
+try:
+    H.poll_post(s13); raise AssertionError("예외")
+except TimeoutError:
+    pass
+assert len(rp13i) == 3 and s13["polls"]["open"] is None and "stk" not in s13  # 시간 초과(사진 답글이 사실 달렸을 수도) = 글 답글 X·다시 X(답글 2개 X — 예전처럼 main 알림)
+s13["poll_20261018"] = 1
 os.remove("docs/img/stk/ramen.png"); H.th_reply = lambda tok, to, text: rp13.append((to, text)) or "r1"
 s13["polls"]["open"] = {"id": "pol1", "slug": "ramen", "t": TK("2026-10-17 12:34")}; del s13["poll_20261018"]; H.th_reply_ok = lambda seen: False; s13["threply"] = {"t": 1, "ok": 0, "err": "(#10) no permission"}
 H.poll_post(s13); assert not rp13 and len(al13) == 1 and "가격 투표 결과 답글 못 달았어요" in al13[0] and "(#10) no permission" in al13[0] and s13["polls"]["open"] is None  # 댓글 권한 X -> 건너뜀·알림
@@ -9901,10 +9909,16 @@ o94 = chat94("2026-10-29 13:12", h94("2026-10-28", "shop", "home", "season")); a
 H.promo_list = lambda today: [({"name": "블랙프라이데이", "start": "2026-11-05", "end": "2026-11-09"}, "soon", "2026-11-05")]; H.price_records = lambda *a, **k: {}
 o94 = chat94("2026-11-01 13:12", h94("2026-10-31", "shop", "home", "season")); assert "chat post: cal" in o94 and po94[-1][1] == U94("chat")[1]  # 달력 = chat
 H.promo_list = lambda today: []
-H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("image 400")) if image else po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}
-H.th_landed = lambda *a, **k: False; n94, sf94 = len(po94), {}; o94 = chat94("2026-11-10 13:12", sf94)
-assert len(po94) == n94 + 1 and po94[-1][1] is None and "스티커 사진 글 실패 -> 글만 chat" in o94 and f"chat post: shop C{n94 + 1} |" in o94 and "stk" not in sf94 and not [k for k in sf94 if k.startswith("thretry_")], o94  # 사진 실패 = 글만 1번
-H.th_landed = lambda *a, **k: True; sf94 = {}; o94 = chat94("2026-11-11 13:12", sf94); assert len(po94) == n94 + 1 and "사진 글이 사실 올라감" in o94 and "stk" not in sf94  # 실패로 끝났지만 올라간 사진 글 = 글만 X
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(__import__("urllib.error").error.HTTPError("u", 400, "Bad Request", {}, None)) if image else po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}
+n94, sf94 = len(po94), {}; o94 = chat94("2026-11-10 13:12", sf94)
+assert len(po94) == n94 + 1 and po94[-1][1] is None and "스티커 사진 글 거절 -> 글만 chat" in o94 and f"chat post: shop C{n94 + 1} |" in o94 and "stk" not in sf94 and not [k for k in sf94 if k.startswith("thretry_")], o94  # 서버가 사진 거절 = 글만 1번(사진 글 다시 X)
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(TimeoutError("timed out")) if image else po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}; sf94 = {}
+try:
+    chat94("2026-11-11 13:12", sf94); raise AssertionError("예외")
+except TimeoutError:
+    pass
+assert len(po94) == n94 + 1 and sf94["thretry_20261111_chat"]["img"] == U94("chat")[1] and "stk" not in sf94  # 시간 초과(사진 글이 사실 올라갔을 수도) = 글만 바로 X — 다음 실행 th_retry가 올라갔는지(th_landed) 보고 1번
+H.th_landed = lambda *a, **k: True; H.th_retry(sf94); assert len(po94) == n94 + 1  # 올라가 있었음 = 다시 X
 H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("500")); sf94 = {"stk": {"t": 1, "chat": "2026-11-12"}}
 try:
     chat94("2026-11-12 13:12", sf94); raise AssertionError("예외")
