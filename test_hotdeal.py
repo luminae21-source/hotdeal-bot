@@ -9318,4 +9318,70 @@ assert H.list_name(q86("[네이버] 메가커피 아메리카노외 다수세일
 assert H.list_name(q86("[G마켓] 우유 1L 12팩 (9,900원/무료) 지마켓 빅스마일"), True, True) == "우유 1L 12팩 (9,900원/무료)" and H.list_name(q86("[G마켓] 우유 1L 12팩 (9,900원/무료)"), False) == "[G마켓] 우유 1L 12팩 (9,900원/무료)"
 P86 = [q86("[네이버] 메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일", s=9), q86("[쿠팡] 초코파이 468g (2,520원/와우무료)", s=7), q86("[네이버] 치약 3개 (12,540원)", s=6), q86("📋 오늘의 딜 모아보기", s=9)]
 assert [i for i, _ in S.day_deals(P86, "2026-10-26")] == [1, 2]  # 가격 못 읽은 딜(메가커피)·모아보기 = 카드 X -> 다음 딜이 1번
+# 9-87) II Threads 수다 글(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종'): 하루 1개 13:10 · 딜·상품·가격·링크 X 반말 2~4줄 + 마지막 질문 1개 · 앞뒤 30분 비딜 글 = 30분 뒤 첫 빈 실행 ·
+#       주제 5가지 돌림(최근 덜 쓴 것) · 퀴즈 = 우리 기록 숫자만 · 달력 = promos 기간만 · 금지어 걸리면 X · 재검토 1번 · 주제 태그 '일상' · 대가성 문구 X · metrics kind chat + 48시간 조회·답글
+sv87 = (H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http)
+d87 = tempfile.mkdtemp(); cwd87 = os.getcwd(); os.chdir(d87); json.dump([], open("posts87.json", "w")); H.POSTS, H.METRICS = "posts87.json", "m87.json"
+po87, pr87, L87 = [], [], [["마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라", "오늘도 과자 코너 앞에서 무너졌어", "다들 장보기 목록 끝까지 지키는 편이야?"]]
+H.E["THREADS_TOKEN"] = "tk"; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po87.append((text, tag, link)) or {"id": f"C{len(po87)}"}
+H.ai_json = lambda prompt, props, img=None: pr87.append(prompt) or {"lines": L87[-1]}
+H.review = lambda *a, **k: {}; H.cur_events = lambda seen=None: []; H.promo_list = lambda today: []; H.price_records = lambda *a, **k: {}
+def chat87(at, s):
+    time.time = lambda: TK(at); o = io.StringIO()
+    with contextlib.redirect_stdout(o):
+        H.chat_post(s)
+    return o.getvalue()
+s87 = {}
+assert chat87("2026-10-27 13:05", s87) == "" and not po87 and not s87  # 13:10 전 = X
+o87 = chat87("2026-10-27 13:12", s87)
+assert po87 == [("마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라\n오늘도 과자 코너 앞에서 무너졌어\n다들 장보기 목록 끝까지 지키는 편이야?", "일상", None)], po87  # 대가성 문구 X · 링크 X · 주제 태그 일상
+assert "chat post: shop C1 | 마트 가면" in o87 and s87["chat"]["h"][-1][:2] == ["2026-10-27", "shop"] and "C1" in s87["chat"]["m"] and "chat_20261027" in s87 and s87["thnd"]["ts"]
+assert "장보기 습관 공감" in pr87[-1] and "- (없음)" in pr87[-1]; chat87("2026-10-27 13:30", s87); assert len(po87) == 1  # 하루 1번
+L87.append(["치약 끝까지 짜는 파랑 그냥 새로 뜯는 파가 있잖아", "나는 끝까지 짜다가 손목 나갈 뻔한 파야", "너는 어느 쪽이야?"])
+o87 = chat87("2026-10-28 13:12", s87); assert "chat post: home C2" in o87 and "살림 공감" in pr87[-1] and "- 마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라" in pr87[-1]  # 다음 날 = 안 쓴 주제(장보기 X) · 최근 글 겹치지 않게
+# 앞뒤 30분 비딜 글: 방금 올린 비딜 묶음 글(thnd)·큐레이션 시각 = 다음 실행(30분 뒤 첫 빈 실행) · 3시간 넘으면 그날 X
+s87b = {"thnd": {"t": TK("2026-10-29 12:55"), "ts": [TK("2026-10-29 12:55")]}}; L87.append(L87[0])
+assert "앞뒤 30분 안 비딜 글 12:55" in chat87("2026-10-29 13:12", s87b) and len(po87) == 2 and "chat_20261029" not in s87b
+chat87("2026-10-29 13:27", s87b); assert len(po87) == 3 and po87[-1][1] == "일상"  # 12:55 + 30분 뒤 첫 실행
+H.cur_events = lambda seen=None: [{"at": "2026-10-30 13:30"}]; s87c = {}
+assert "앞뒤 30분 안 비딜 글 13:30" in chat87("2026-10-30 13:12", s87c) and "앞뒤 30분 안 비딜 글" in chat87("2026-10-30 13:57", s87c); chat87("2026-10-30 14:02", s87c); assert len(po87) == 4  # 큐레이션 13:30 앞뒤
+H.cur_events = lambda seen=None: []; assert chat87("2026-10-31 16:11", {}) == "" and len(po87) == 4  # 13:10 + 3시간 넘음 = X
+sh87, H.SNACK_HOUR = H.SNACK_HOUR, (15, 30); assert "앞뒤 30분 안 비딜 글 15:30" in chat87("2026-10-31 15:20", {}); H.SNACK_HOUR = sh87  # 정해진 비딜 시각(15:30 간식)도 · None(끔) 시각은 건너뜀
+# 규칙 검사(chat_ok)
+for l87, why87 in ((["한 줄만?"], "줄 수"), (["a 줄", "b", "c", "d", "e?"], "줄 수"), (["마트 가면 뭐 사?", "너는 어때?"], "질문 1개"), (["마트 가면 하나씩 더 담아", "너는 어때"], "질문 1개"),
+                   (["요즘 다이소 가면 하나씩 꼭 사", "너는?"], "링크·권유"), (["댓글 달면 하나 골라 줄게", "뭐 살까?"], "링크·권유"), (["이거 써봤는데 진짜 좋아", "너는?"], "경험담"),
+                   (["요즘 피곤해서 장보기 힘들어", "너는?"], "몸·효능"), (["Dove 비누 좋아하는 사람", "손?"], "영문"), (["라면 하나에 900원이면 사", "너는?"], "기록 밖 금액"),
+                   (["50% 넘게 빠지면 손이 가", "너는?"], "기록 밖 금액"), (["요즘 뉴스 보면 물가 장난 아니야", "너는?"], "링크·권유"), (["무조건 쟁여야 해", "너는?"], "과장·수익")):
+    assert H.chat_ok(l87).startswith(why87), (l87, H.chat_ok(l87))
+assert H.chat_ok(["생수 2L 6병 기준으로 1L당 248원이면 어때", "이 정도면 장바구니 담아?"], {"248"}) == ""  # 단위(2L·1L당)·우리 기록 금액 = 통과
+L87.append(["오늘 치약 짜다가 생각났는데 써봤던 거 중에 최고야", "너는?"]); s87d = {}; o87 = chat87("2026-11-01 13:12", s87d)
+assert "규칙 걸림 -> 안 올림" in o87 and "경험담" in o87 and len(po87) == 4 and "chat_20261101" in s87d  # 걸리면 그 글 X(그날 다시 X)
+H.review = lambda where, text, lines, facts="", **k: {lines[-1]: "다들 어때"} if where == "chat" else {}; L87.append(L87[0]); o87 = chat87("2026-11-02 13:12", {})
+assert "재검토 뒤 규칙 걸림" in o87 and len(po87) == 4; H.review = lambda *a, **k: {}  # 재검토가 질문을 지우면 X
+# 주제 돌림: 퀴즈 = 우리 기록(가장 쌀 때·평균) 숫자만 · 기록 없으면 퀴즈 X · 달력 = promos 기간(몰 이름 뺌)
+H.price_records = lambda *a, **k: {"ramen": ("라면", "개당", [(480.0, "개당 480원", 0, {}), (520.0, "개당 520원", 1, {}), (620.0, "개당 620원", 2, {})])}
+H.promo_list = lambda today: [({"name": "쿠팡 블랙프라이데이", "start": "2026-11-05", "end": "2026-11-09"}, "soon", "2026-11-05")]
+s87e = {"chat": {"h": [["2026-11-01", "shop", "a", None], ["2026-11-02", "home", "b", None], ["2026-11-03", "season", "c", None]], "m": {}}}
+L87.append(["라면 개당 얼마면 바로 쟁여야 할까 늘 고민", "우리 기록에선 가장 쌀 때 개당 480원, 평균 540원이었어", "너는 몇 원부터 손이 가?"]); o87 = chat87("2026-11-04 13:12", s87e)
+assert "chat post: quiz" in o87 and "가장 쌀 때 개당 480원 · 평균 개당 540원" in pr87[-1] and s87e["chat"]["h"][-1][3] == "ramen"
+L87.append(["다음 주에 블랙프라이데이 11/5~11/9래", "벌써 장바구니 정리하는 사람?"]); o87 = chat87("2026-11-05 13:12", s87e)
+assert "chat post: cal" in o87 and "· 블랙프라이데이 11/5~11/9" in pr87[-1] and "쿠팡" not in pr87[-1].split("행사(")[1]
+L87.append(["라면 개당 600원이면 사?", "너는?"]); H.price_records = lambda *a, **k: {}; o87 = chat87("2026-11-06 13:12", {"chat": {"h": [["2026-11-05", "shop", "a", None], ["2026-11-05", "home", "b", None], ["2026-11-05", "season", "c", None]], "m": {}}})
+assert "chat post: cal" in o87 or "quiz" not in o87  # 기록 없으면 퀴즈 X
+# metrics kind chat + 48시간 조회·답글
+json.dump({"2026-10-27": {"at": 1, "miss": {}, "rows": [{"date": "2026-10-27", "ch": "th", "id": "C1", "kind": "chat"}]}}, open("m87.json", "w"))
+H.http = lambda url, *a, **k: json.dumps({"data": [{"name": "views", "values": [{"value": 321}]}, {"name": "replies", "values": [{"value": 7}]}]}) if "/C1/insights" in url else (_ for _ in ()).throw(OSError("x"))
+time.time = lambda: TK("2026-10-29 13:20"); s87["chat"]["m"]["C1"]["ts"] = TK("2026-10-27 13:12")
+with contextlib.redirect_stdout(io.StringIO()): H.chat_48(s87)
+assert s87["chat"]["m"]["C1"]["v48"] == 321 and s87["chat"]["m"]["C1"]["r48"] == 7 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["v48"] == 321 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["r48"] == 7
+assert '**({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {})' in inspect.getsource(H.metrics_rows) and "chat_48(seen)" in inspect.getsource(H.metrics) and "x_post, chat_post," in inspect.getsource(H.main) and H.TH_CHAT is True
+# 실패한 수다 글 = 다음 실행 1번 더(th_retry)도 주제 '일상'
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("x")); s87f = {}; time.time = lambda: TK("2026-11-07 13:12")
+try:
+    H.th_bundle(s87f, "chat", "a\nb?", topic="일상"); raise AssertionError("예외")
+except OSError:
+    pass
+assert s87f["thretry_20261107_chat"]["topic"] == "일상"
+(H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk87, H.POSTS, H.METRICS, H.http) = sv87
+H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk87); os.chdir(cwd87)
 print("OK: 모든 셀프체크 통과")
