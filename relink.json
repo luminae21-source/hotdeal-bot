@@ -1,5 +1,5 @@
 {
- "left_now": 35,
+ "left_now": 34,
  "ok": {
   "auction": 7
  },
@@ -374,6 +374,13 @@
    "n": "우농 볶음땅콩 3.75kg",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 09:15"
+  },
+  {
+   "k": "진열",
+   "pid": "9314172906",
+   "n": "화이트 코튼 팬티라이너 일반 90개입 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 09:29"
   }
  ]
 }
