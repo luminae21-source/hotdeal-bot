@@ -9101,7 +9101,7 @@ ok83, n83 = json.load(open(f"{d83}/animals/ok.json")), len(got83)
 assert ok83["fail"]["2785063"] == ok83["fail"]["4316938"] == H.ANIMAL_TRY and sum("4316938" in u for u in got83) == H.ANIMAL_TRY, ok83  # 받기 실패 = 사진마다 하루 3번까지
 assert ok83["5430987"] == {"ok": False, "cx": 0.0, "cy": 0.0, "why": "⑤ 얼굴 안 보임"} and "5430987" not in ok83["fail"] and ok83["3071334"] == {"ok": False, "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손"} and sum("3071334" in u for u in got83) == 1 and "표에 적힌 동물 = 강아지" in ai83[2][0] and "실제 카메라로 찍은 사진" in ai83[2][0]  # 처음 1번만 받음(Claude 실패해도) · 동물 이름·실사 조건
 assert sum(isinstance(ok83.get(r[0]), dict) for r in rows83) == len(rows83) - 2 and len(C83.ANIMALS) == len(rows83) - 4  # 나머지 다 확인 · Claude X(사람 손) = 안 씀
-assert (ok83["4732766"]["cx"], ok83["4732766"]["cy"]) == (0.5625, 0.49) and "x_post, animals, curation, drop_post" in __import__("inspect").getsource(H.main)  # 잘못된 좌표 = 다시 확인해서 맞는 답 · 카드 만드는 단계들 앞
+assert (ok83["4732766"]["cx"], ok83["4732766"]["cy"]) == (0.5625, 0.49) and "x_post, chat_post, animals, curation, drop_post" in __import__("inspect").getsource(H.main)  # 잘못된 좌표 = 다시 확인해서 맞는 답 · 카드 만드는 단계들 앞
 pv83 = I83.open(H.ANIMAL_PREVIEW)
 assert pv83.size == (390, 512 + 64 * -(-(len(rows83) - 4) // 6)) and s83["animal_prev"]["h"], pv83.size  # 390px 미리보기(끝 장 카드 + 쓰는 스티커 전부)
 os.utime(H.ANIMAL_PREVIEW, (1, 1))
