@@ -7743,12 +7743,12 @@ n66 = len(c66)
 with contextlib.redirect_stdout(io.StringIO()): H.toss_soldout(s66)
 e66 = {b["message_id"]: (m, b) for m, b in c66[n66:] if m.startswith("editMessage")}
 assert e66[777][0] == "editMessageCaption" and "⛔" in e66[777][1]["caption"] and e66[777][1]["caption"].endswith("\n\n사진: 토스쇼핑") and e66[778][0] == "editMessageText" and s66["sold_777"]["it"][0][4] == 1, e66
-# Threads: 사진 글(본문 + '사진: 토스쇼핑' · 링크 = 첫 댓글 + 링크 카드 — K-1 10/26) · 실패 = 글만 · 사진 없으면 그대로
+# Threads: 사진 글(글 1개 = 본문 + '👉 구매 링크' + '사진: 토스쇼핑' · 댓글 X — LL 10/26) · 실패 = 글만 · 사진 없으면 그대로
 H.TH_VOICE, t66, thr66, tro66, H.th_reply_ok = False, [], H.th_reply, H.th_reply_ok, (lambda seen: True)  # 사진 글 = 링크 첫 댓글(K-1) — 댓글 되는 토큰
 H.th_reply = lambda tok, to, text, link=None: t66.append(("reply", to, text, link)) or "R1"
 H.th_text = lambda tok, me, text, link, tag="핫딜": t66.append(("text", text, link)) or {"id": "T1"}
 H.th_img = lambda tok, me, text, image, tag="핫딜": t66.append(("img", text, image)) or {"id": "P1"}
-s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\n👉 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=(77, 7)) == "P1" and t66 == [("img", f"💙 토스 특가\n상품\n\n{H.TH_AB_MARK}\n\n사진: 토스쇼핑", X66["thumbnailUrl"]), ("reply", "P1", "👉 구매 링크 https://toss.im/_m/x", "https://toss.im/_m/x")], t66
+s66t = {}; assert H.th_deal(s66t, "tk", "me", "💙 토스 특가\n상품\n👉 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=(77, 7)) == "P1" and t66 == [("img", "💙 토스 특가\n상품\n\n👉 구매 링크 https://toss.im/_m/x\n\n사진: 토스쇼핑", X66["thumbnailUrl"])], t66
 assert [r["ids"] + [r.get("th")] for r in s66t["tphoto"]["m"]] == [["77", "7", "P1"]]  # 사진 글 = 상품 id별 기록(셀러 요청 내림)
 open(H.TOSS_NOIMG, "w").write("# 셀러 요청\n7  # 그룹 id\n"); t66.clear()
 assert H.th_deal(s66t, "tk", "me", "상품 https://toss.im/_m/x", "https://toss.im/_m/x", image=X66["thumbnailUrl"], tids=[77, 7]) == "T1" and [x[0] for x in t66] == ["text"]  # 줄에 선 사이 toss_noimg.txt = 글만
@@ -8247,7 +8247,7 @@ vv74[:] = [ValueError("down")]; H.ai_voice = lambda prompt: (_ for _ in ()).thro
 o74 = H.th_voice({}, P74.replace("https://link.coupang.com/a/w74", "https://oy.run/w74").replace(H.DISCLOSURE, H.OY_NOTE), "https://oy.run/w74")
 assert not any(x in o74 for x in sum(H.TH_TONE_POOL5.values(), ())), o74  # 올리브영 = Claude 실패해도 기본 줄 X(큐레이터 정책)
 H.ai_voice = lambda prompt: pv74.append(prompt) or vv74.pop(0)
-# K-1: 사진 글 = 본문(주소 X + '👇 구매 링크는 첫 댓글에') + 사진 → 첫 댓글 '👉 구매 링크 …' + 링크 카드 · 토스 = 끝 '사진: 토스쇼핑' · 사진 실패 = 지금처럼 글 + 링크
+# LL(10/26 진우 '글이 이상하게 올라간다' — K-1 글 1/2 + 댓글 2/2 대신): 사진 글 = 글 1개(IMAGE) — 대가성 첫 줄·내용 그대로 + '👉 구매 링크 주소'(본문) + 토스 = 끝 '사진: 토스쇼핑' · 댓글 X · 사진 실패·500자 = 지금처럼 글 + 링크 카드
 t74 = []; H.TH_VOICE, H.th_reply_ok = False, (lambda seen: True)
 H.th_text = lambda tok, me, text, link, tag="핫딜": t74.append(("text", text, link)) or {"id": "T1"}
 H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) or {"id": "P1"}
@@ -8256,12 +8256,12 @@ B74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n핫팩 30개\n💰 8,860원\n
 s74 = {}
 with contextlib.redirect_stdout(io.StringIO()):
     assert H.th_deal(s74, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg") == "P1"
-assert t74 == [("img", B74.replace("\n\n👉 https://link.coupang.com/a/k74", "\n\n👇 구매 링크는 첫 댓글에"), "https://thumbnail.coupangcdn.com/k74.jpg"),
-               ("reply", "P1", f"{H.DISCLOSURE}\n\n👉 구매 링크 https://link.coupang.com/a/k74", "https://link.coupang.com/a/k74")] and s74["thab"]["m"]["P1"]["ph"] == 1, t74  # 댓글도 대가성 첫 줄
+assert t74 == [("img", B74.replace("\n\n👉 https://link.coupang.com/a/k74", "\n\n👉 구매 링크 https://link.coupang.com/a/k74"), "https://thumbnail.coupangcdn.com/k74.jpg")] and s74["thab"]["m"]["P1"]["ph"] == 1, t74  # Threads 호출 1번(IMAGE)·댓글 0번 · metrics ph 그대로
+assert t74[0][1].count("https://link.coupang.com/a/k74") == 1 and t74[0][1].count(H.DISCLOSURE) == 1 and "첫 댓글" not in t74[0][1] and "👇" not in t74[0][1]  # 본문에 링크·대가성 문구 1번씩
 t74.clear()
 with contextlib.redirect_stdout(io.StringIO()):
     H.th_deal({}, "tk", "me", B74, "https://toss.shopping/_m/k74", image="https://static.toss.im/k74.jpg", tids=(74, 7))
-assert t74[0][0] == "img" and t74[0][1].endswith("👇 구매 링크는 첫 댓글에\n\n사진: 토스쇼핑") and t74[1][2].endswith("\n\n👉 구매 링크 https://toss.shopping/_m/k74")
+assert [x[0] for x in t74] == ["img"] and t74[0][1].endswith("\n\n👉 구매 링크 https://toss.shopping/_m/k74\n\n사진: 토스쇼핑") and t74[0][1].count(H.DISCLOSURE) == 1 and "첫 댓글" not in t74[0][1]  # 토스 = 끝 '사진: 토스쇼핑' 
 H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) and None; t74.clear()
 with contextlib.redirect_stdout(io.StringIO()):
     assert H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg") == "T1"
@@ -8270,11 +8270,16 @@ s74t = {}
 with contextlib.redirect_stdout(io.StringIO()):
     H.th_deal(s74t, "tk", "me", B74, "https://toss.shopping/_m/k74", image="https://static.toss.im/k74.jpg", tids=(74, 7))
 assert "tphoto" not in s74t  # 토스 사진 실패 = 사진 글 기록 X(내림 요청 목록은 사진 나간 글만)
-H.th_reply_ok, t74[:] = (lambda seen: False), []
+H.th_reply_ok, t74[:] = (lambda seen: False), []; H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) or {"id": "P1"}
 with contextlib.redirect_stdout(io.StringIO()):
     H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg")
-    H.th_reply_ok, H.TH_REPLY = (lambda seen: True), False; H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg"); H.TH_REPLY = True  # TH_REPLY 끔 = 권한 기록 있어도 사진 X
-assert [x[0] for x in t74] == ["text", "text"] and t74[0][1] == B74  # 댓글 못 다는 토큰·TH_REPLY 끔 = 사진 X, 지금처럼 글 + 링크(링크 없는 글 X)
+    H.th_reply_ok, H.TH_REPLY = (lambda seen: True), False; H.th_deal({}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg"); H.TH_REPLY = True
+assert [x[0] for x in t74] == ["img", "img"] and "👉 구매 링크 https://link.coupang.com/a/k74" in t74[0][1]  # LL: 댓글 안 씀 = 댓글 못 다는 토큰·TH_REPLY 끔이어도 사진 글(링크 = 본문)
+H.TH_LINK_AB, t74[:] = True, []
+with contextlib.redirect_stdout(io.StringIO()):
+    H.th_deal({"thab": {"t": 1, "last": "A", "m": {}}}, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg")
+H.TH_LINK_AB = False
+assert [x[0] for x in t74] == ["text", "reply"]  # B(링크 첫 댓글) 쪽은 그대로 — 사진 글 분기 X
 H.th_reply_ok = lambda seen: True
 assert "image=img_of(posts[i]) or None" in inspect.getsource(H.threads_deals) and '    if day == TH_END_FROM:\n        m[day]["chg"] = ["th_end", "th_tone5"]' in inspect.getsource(H.metrics_rows)
 s74h = {"thvoice": {"t": 1, "s": 4, "h": 3}}; H.TH_VOICE = True; vt74 = H.th_voice; H.th_voice = lambda seen, text, link, src=None: text + " "

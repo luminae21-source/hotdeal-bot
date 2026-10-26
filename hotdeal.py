@@ -4399,12 +4399,10 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None, tids=None
         kind = ab = "A" if ab == "C" else ab  # C를 못 만들면 A(링크 본문) · 3장면을 못 만들면 그 차례 그대로
         body, reply = th_ab(text, link) if ab == "B" else (text, None)
     image = image if not (tids and set(map(str, tids)) & toss_noimg()) else None  # 줄에 선 사이 셀러 요청(toss_noimg.txt) = 글만
-    ph, rlink = None, None
-    if image and not reply and TH_REPLY and th_reply_ok(seen):  # 댓글 못 다는 토큰·TH_REPLY 끔 = 지금처럼 글 + 링크 · K-1(10/26): 사진 글 = 본문(대가성 첫 줄 그대로·주소 X) + 사진(쿠팡 실사·토스 썸네일 주소 그대로 — 토스 = 끝 '사진: 토스쇼핑') -> 링크 = 첫 댓글 + 링크 카드
-        pbody = th_ab(body, link)[0] + (f"\n\n{PHOTO_CREDIT}" if tids else "")
-        ph = th_len(pbody) <= 500 and th_img(tok, me, pbody, image, topic)
-        if ph:  # 사진 실패·500자 = 지금처럼 글 + 링크(본문)
-            body, reply, rlink = pbody, (body.split("\n\n", 1)[0] + "\n\n" if body.startswith(NOTE_STARTS) else "") + f"👉 구매 링크 {link}", link  # 댓글도 대가성 문구 첫 줄(th_ab B와 같게)
+    ph = None
+    if image and not reply:  # LL(10/26 진우 '글이 이상하게 올라간다' — K-1 글 1/2·댓글 2/2에 문구·사진 2번): 사진 글 = 글 1개(댓글 X) — 대가성 첫 줄·내용 그대로 + '👉 구매 링크 주소'(본문 — 눌러서 열림) + 토스 = 끝 '사진: 토스쇼핑' + 사진(쿠팡 실사·토스 썸네일 주소 그대로)
+        pbody = th_ab(body, link)[0].replace(TH_AB_MARK, f"👉 구매 링크 {link}") + (f"\n\n{PHOTO_CREDIT}" if tids else "")
+        ph = th_len(pbody) <= 500 and th_img(tok, me, pbody, image, topic)  # 사진 실패·500자 = 지금처럼 글 + 링크 카드(사진 없이)
     pid, rid = (ph or th_text(tok, me, body, None if reply else link, topic) or {}).get("id"), None
     if ph and pid and tids:
         tph_log(seen, tids, th=pid)
@@ -4416,7 +4414,7 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None, tids=None
             seen["thscene"] = {"t": now, "d": sday}  # 올라간 뒤에만(실패 = 그날 다음 칸에 다시)
     if reply:
         try:
-            rid = th_reply(tok, pid, reply, rlink)
+            rid = th_reply(tok, pid, reply)
         except Exception as e:
             seen[f"thabq_{pid}"] = {"t": now, "id": pid, "text": reply}
             alert(seen, f"alert_thab_{pid}", f"⚠️ Threads 개별 딜 글({kind}: 링크는 첫 댓글)의 링크 댓글 실패: {err_brief(e)}\n다음 실행에 1번 더 달아요 — 그래도 안 되면 다시 알려요\n링크: {reply.split('👉 ')[-1].split(chr(10))[0]}")
