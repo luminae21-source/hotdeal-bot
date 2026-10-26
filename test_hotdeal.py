@@ -8939,6 +8939,10 @@ d83 = tempfile.mkdtemp()
 md0_83, H.ANIMALS_MD = H.ANIMALS_MD, f"{d83}/A.md"
 open(H.ANIMALS_MD, "w", encoding="utf-8").write("| 고양이 | a | https://pixabay.com/photos/cat-1/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-1_640.jpg |\n| 고양이 | b | https://pixabay.com/photos/cat-2/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-3_640.jpg |\n| 고양이 | c | https://pixabay.com/illustrations/cat-4/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-4_640.jpg |\n")
 assert [r[0] for r in H.animal_rows()] == ["1"]; H.ANIMALS_MD = md0_83  # 페이지와 다른 번호 파일·illustrations(그림) 줄 = 안 읽음
+A24_83 = [("강아지", p) for p in (2785063, 4316938, 3071334, 1381186, 6202621, 4732766, 7114378, 1284307, 5430987, 2785074)] + [("고양이", p) for p in (551554, 6706393, 7489398, 7686662, 4134225, 8142967, 8267220)] \
+    + [("토끼", p) for p in (4988412, 6871771, 2500929)] + [("햄스터", p) for p in (1772742, 5150235, 3528448)] + [("병아리", 349026)]  # 받기·확인 흐름 = 처음 24장 표(고정) — 진짜 표는 판정 따라 사진이 바뀜(위에서 모양만 봄)
+H.ANIMALS_MD = f"{d83}/A24.md"; open(H.ANIMALS_MD, "w", encoding="utf-8").write("".join(f"| {k} | a | https://pixabay.com/photos/x-{p}/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/x-{p}_640.jpg |\n" for k, p in A24_83))
+rows83 = H.animal_rows(); assert len(rows83) == 24
 sv83 = (H.ANIMAL_DIR, H.ANIMAL_PREVIEW, H.ANIMAL_RUN, H.urllib.request.urlopen, H.ai_json, H.http, H.E.get("ANTHROPIC_API_KEY"), time.time)
 H.ANIMAL_DIR, H.ANIMAL_PREVIEW, H.ANIMAL_RUN = f"{d83}/animals", f"{d83}/animal_preview.jpg", 4
 def jpg83(i, fmt="JPEG"):
