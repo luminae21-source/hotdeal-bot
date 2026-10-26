@@ -938,7 +938,7 @@ def price_bits(p, sh):
     sv = now is None and saving(p["text"])
     ex = (seg[1:] if now is None else [m[2]] if m else []) + ([f"{sv[0]}보다 {sv[1]}↓"] if sv else [])
     toss = shop_of(p) == "toss"
-    old = not note and (p.get("own") or toss) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격' + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
+    old = not note and (p.get("own") or toss or p.get("api")) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격' + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
     grey = [x for x in (note or old, unit_of(p) if now is None else "") if x]  # 날짜·상태 줄 먼저(픽 줄·검색은 첫 줄만 — 토스 = 게시 시점 표기 필수)
     return shown, ex, grey
 
@@ -1275,15 +1275,10 @@ def promo_mall(p, icons):
 
 
 def promo_goods(p, it, tagged):
-    """그 행사 상품(일시 품절 뺌 · it = 사이트 진열 = site_ok만): tag = events 그 tag 상품 · kw = 이름에 검색어 낱말이 다 든 진열 상품."""
-    if p.get("tag"):
-        us = tagged.get(str(p["tag"]), set())
-        xs = [x for x in it if x[1].get("url") in us]
-    elif isinstance(p.get("kw"), str) and p["kw"].split():
-        xs = [x for x in it if all(k in parse(title_of(x[1]["text"]))[1] for k in p["kw"].split())]
-    else:
-        xs = []
-    return [x for x in xs if x[2][0] != 3]
+    """그 행사 상품(일시 품절 뺌 · it = 사이트 진열 = site_ok만): tag = events·posts 그 tag 상품 + kw = 이름에 검색어 낱말이 다 든 진열 상품(둘 다 있으면 합침 — AA 쿠가세)."""
+    us = tagged.get(str(p["tag"]), set()) if p.get("tag") else set()
+    kw = p["kw"].split() if isinstance(p.get("kw"), str) else []
+    return [x for x in it if x[2][0] != 3 and (x[1].get("url") in us or kw and all(k in parse(title_of(x[1]["text"]))[1] for k in kw))]
 
 
 def promo_go(p, xs, slugs, links):
@@ -1291,8 +1286,8 @@ def promo_go(p, xs, slugs, links):
     아직·실패면 몰 홈 그대로(수수료 길이 있는 몰 = SITE_KEEP_HOSTS — 10/25 20:3x 최종 규칙 ②) · 그 밖(11번가 등) = ('', False)."""
     if xs and p.get("tag") in slugs:
         return f"{BASE}e/{slugs[p['tag']]}.html", False
-    if xs and p.get("kw"):
-        return f"{BASE}?q={urllib.parse.quote(p['kw'])}", False
+    if xs and (p.get("tag") or p.get("kw")):  # 행사 쪽 없는 tag = tag 낱말 홈 검색(search_index가 행사 상품에 tag 낱말을 붙임 — kw 상품까지)
+        return f"{BASE}?q={urllib.parse.quote(p.get('tag') or p['kw'])}", False
     us = [u for u in (p.get("url"), (p.get("cta") or {}).get("href")) if u]
     v = next((links[u] for u in us if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) and aff(links[u])), "") or next((u for u in us if aff(u) or keep_host(u)), "")
     return (v, True) if v else ("", False)
@@ -1464,15 +1459,15 @@ def list_pages(slug, head, desc, xs, mall, recs):
 st0 = lambda p: (4, None, "", [], False)  # 진열 목록 밖 딜(최저가 기록 쪽 '지금 올라온' 등) = 배지 X(글 아이콘은 그때 상태 — 지금 특가라고 안 함)
 
 
-def search_index(it):
-    """search.json: 진열 상품 [(i, p, 상태)] 목록 순서(🔥 먼저) 그대로 — 카드 그리기 값 + 찾기 낱말(이름·몰·품목·[몰])."""
+def search_index(it, tags={}):
+    """search.json: 진열 상품 [(i, p, 상태)] 목록 순서(🔥 먼저) 그대로 — 카드 그리기 값 + 찾기 낱말(이름·몰·품목·[몰] + tags = {주소: 행사 tag} — 기획전 '핫딜픽이 고른 N개' 검색)."""
     out = []
     for i, p, sh in it:
         shown, ex, grey = price_bits(p, sh)
         c = CAT_META.get(cat_of(p))
         name = parse(title_of(p["text"]))[1]
         out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_key(p), "c": c[3] if c else "",
-                    "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name)) if x).lower()})
+                    "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name), tags.get(p.get("url"))) if x).lower()})
     return out
 
 
@@ -2150,7 +2145,7 @@ def build(posts, out="docs"):
     plinks = plinks if isinstance(plinks, dict) else {}
     icons = MICONS
     tagged = {}
-    for e in ev_list():
+    for e in ev_list() + posts:  # posts tag = 봇이 진열한 글(AA 쿠가세 저녁 가전 — events에 없음)
         if isinstance(e, dict) and isinstance(e.get("tag"), str) and isinstance(e.get("url"), str):
             tagged.setdefault(e["tag"], set()).add(e["url"])
     slugs = {g["tag"]: g["slug"] for g in evs}
@@ -2179,7 +2174,7 @@ def build(posts, out="docs"):
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
-    json.dump(search_index(it), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
+    json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, _, _ in ps_ if p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))
         prev = prev if isinstance(prev, dict) else None

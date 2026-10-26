@@ -1469,6 +1469,67 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
+CP_EVE, CP_EVE_DAY, CP_EVE_TAG = (18, 21), 2, "쿠가세"  # AA(10/26 Cowork '쿠가세 · 가전디지털 세일 중 제철 가전을 Threads 칸에 하루 1~2개(저녁 피크), 사이트는 기획전 쪽에'): 18~20시 · 하루 2개 · 사이트 tag(promos.json 행사 tag와 같게)
+CP_EVE_PROMPT = """쿠팡 가전디지털 베스트 중 지금 계절에 쓰는 가전 목록이야(가격 = 판매가). 할인율·순위만 믿지 말고 구성·가격으로 판단해서,
+대중적이고 '지금 사도 괜찮다' 싶은 가전만 최대 3개 pick 도구로 반환해. 억지로 채우지 말고, 없으면 빈 목록.
+comment: 1줄, 사실 위주, 과장 금지.
+"""
+
+
+def cp_sale(today):
+    """쿠팡 가전 행사(promos.json — 이름에 '가전', 진행 중·오늘 마감)가 있는지 — 행사가 끝나면(Cowork가 end를 넣으면) 저녁 가전 칸도 끝(AA)."""
+    return any(p["mall"] == "coupang" and "가전" in p["name"] and st in ("on", "end") for p, st, _ in promo_list(today))
+
+
+def cp_eve(seen):
+    """AA 저녁 제철 가전(쿠팡 가전 행사 중 CP_EVE 시각, 시간마다 1번 — 줄에 기다리는 게 있거나 하루 CP_EVE_DAY개 올렸으면 X):
+    파트너스 API 가전디지털 베스트(1016 — 행사 상품만 따로 주는 API는 없음)에서 제철(season_adj > 0)·3만 원↑ 가전(cp_big) -> Claude 1개(점수 + 계절·금액 가산 TOSS_SOLO_MIN↑)
+    -> Threads 채움 줄(thtoss, 토스 픽보다 먼저 — 새 글·간격 X: 채움 칸이 토스 차례일 때만). 글 = 쿠팡 대가성 문구 · 🚀는 API isRocket일 때만 · 게시 시점 가격 줄.
+    가격·금액은 로그에 X(상품명·점수만). 같은 상품은 3일 안 다시 X(seen 정리)."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key, dk, q = time.strftime("cpeve_%Y%m%d_%H", kst), time.strftime("cpevd_%Y%m%d", kst), seen.get("thtoss", {}).get("q", [])
+    if not (HAS_CP and E.get("THREADS_TOKEN") and CP_EVE[0] <= kst.tm_hour < CP_EVE[1]) or key in seen or seen.get(dk, {}).get("n", 0) >= CP_EVE_DAY \
+            or any(x.get("k") == "cp" and now - x["t"] < 3 * 3600 for x in q) or not cp_sale(time.strftime("%Y-%m-%d", kst)):
+        return
+    try:
+        raw = coupang("GET", "/products/bestcategories/1016?limit=100")
+    except CpLimit:
+        return  # 다음 실행에
+    seen[key] = now
+    items = []
+    for r, x in enumerate(raw if isinstance(raw, list) else [], 1):
+        try:
+            name, won, url = str(x["productName"]), int(x["productPrice"]), str(x["productUrl"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if urllib.parse.urlsplit(url).netloc in CP_SHORT and f"cpev_{x.get('productId')}" not in seen and season_adj(name) > 0 and cp_big(name, won):
+            items.append((r, x, name, won, url))
+    items = items[:20]
+    picks = [p for p in (ai_pick(CP_EVE_PROMPT, [f"{n} | {w:,}원" for _, _, n, w, _ in items]) if items else []) if 0 <= p["i"] < len(items)]
+    for p in picks:
+        p["score"] += season_adj(items[p["i"]][2]) + cp_big(items[p["i"]][2], items[p["i"]][3])
+    p = max(picks, key=lambda p: p["score"], default=None)
+    if not p or p["score"] < TOSS_SOLO_MIN:
+        return print("cp eve 제철 가전", len(items), "개 · 고른 것 없음")
+    r, x, name, won, url = items[p["i"]]
+    seen[f"cpev_{x.get('productId')}"] = {"t": now}
+    body = mall_body("coupang", f"가전디지털 베스트 {r}위", "🔥", name, f"{won:,}원", [esc(toss_when())], x.get("isRocket") is True)
+    img = str(x.get("productImage") or "")
+    seen["thtoss"] = {"t": now, "q": [y for y in q if now - y["t"] < 3 * 3600] + [
+        {"t": now, "l": False, "id": f"cp{x.get('productId')}", "n": name, "k": "cp", "r": -2, "s": p["score"], "bt": th_beauty(name), "site": body,
+         "text": th_note(DISCLOSURE) + plain_of(body) + f"\n\n👉 {url}\n📲 실시간 알림 t.me/hotdeal_pick", "link": url, **({"img": img} if img.startswith("https://") else {})}]}  # r -2 = 토스 픽(0~)보다 먼저 · tids X(토스 사진 표기 X)
+    print("cp eve 제철 가전", len(items), "개 중", clip(name, 30), f"{p['score']}점 -> Threads 채움 줄")
+
+
+def cp_eve_done(seen, i, now):
+    """AA 저녁 가전 글이 Threads 칸에 나간 뒤: 하루 수 + 사이트 진열(posts.json shelf = 채널·인스타·카드 X · tag = 기획전 카드 · api = 카드에 'M/D 가격' 줄)."""
+    dk = time.strftime("cpevd_%Y%m%d", time.gmtime(now + 9 * 3600))
+    seen[dk] = {"t": now, "n": seen.get(dk, {}).get("n", 0) + 1}
+    t, ents = html_ents(ad_head(DISCLOSURE, plain_of(i["site"])) + i["site"])
+    record(t, ents, i["link"], extra={"shelf": 1, "tag": CP_EVE_TAG, "api": "cp", "img": img_of({"text": t, "url": i["link"], "img": i.get("img")})})
+
+
 def cp_links(seen):
     """① 딥링크(10/23 쿠팡 최종 승인): events의 쿠팡 상품 주소(coupang.com/vp/products/…) -> 파트너스 링크(상품마다 1번) -> cp_links.json(봇·사이트가 그 주소 대신 씀).
     진우 단축 링크(link.coupang.com)는 그대로. 안 되는 상품(ValueError)은 관리자 알림 + 하루 뒤 다시, 상한·접속 오류는 다음 실행에. 키 없으면 아무것도 안 함."""
@@ -1675,6 +1736,17 @@ def cp_same(name, api):
     need, got = qty(name), qty(api)
     extra = got - need
     return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|켤레|족|판|장|p|\d)$", t)})
+
+
+CP_BIG, CP_BIG_NOT = ((100000, 2), (30000, 1)), r"핫팩|발열|방한|장갑|조끼|내의|양말|필터|케이스|거치대|커버|필름"  # AA(10/26 Cowork '쿠팡 건당 금액 — 쿠팡은 수수료율이 낮아 판매 금액이 핵심'): 가전·디지털·겨울 가전 판매가 10만↑ +2·3만↑ +1 — shortcut: 난방·디지털 칸의 소모품·옷·액세서리는 낱말로 거름, 틀린 가산이 '점수' 로그에 보이면 더함
+
+
+def cp_big(name, price=None):
+    """AA 쿠팡 픽 가산: 품목 칸(cat_of) 가전·디지털·난방 + 철 지난 계절 아님 -> 판매가(없으면 제목 가격) 10만↑ 2 · 3만↑ 1, 아니면 0.
+    같은 구성 가격 확인(cp_same)·리뷰 수 기준·게시 수·간격은 안 건드림(Claude가 5점↑로 고른 딜끼리 순서만 — 비싼 것만 밀지 않게)."""
+    w = price or price_won(name) or 0
+    ok = cat_of({"text": name}) in ("digital", "heat") and not re.search(CP_BIG_NOT, name) and season_adj(name) >= 0
+    return next((b for lo, b in CP_BIG if w >= lo), 0) if ok else 0
 
 
 def html_ents(h):
@@ -3850,6 +3922,9 @@ def th_segs(line):
     return [x for x in (re.sub(r"^[^\w(]*(?:확인할 점:?|단위가격:?)?\s*", "", s).strip() for s in out + [cur]) if x]
 
 
+TH_OPT_ONLY = r"옵션\s*(?:별|선택|먼저)?\s*(?:구성\s*)?확인(?:\s*필요)?"  # ⏰ 줄이 '옵션마다 다름'이면 단점 줄에서 뺄 흔한 옵션 조각('향 옵션 확인'처럼 어떤 옵션인지 말하면 그대로 — Y 리뷰)
+
+
 def th_voice(seen, text, link, src=None):
     """Threads 개별 딜 글(th_deal로 가는 글 전부) = 고정 레이아웃 + Claude 말투 한 줄(10/23 진우 '가독성 — 보기 좋게, 깔끔하게'):
     대가성 문구 첫 줄 그대로 / 몰 머리 줄 그대로(예전 틀 글은 mall_head) · 짧은 상품명(th_name) · 💰 가격 (단가 — 토스는 없으면 할인%) · (🔁 다시 특가·'지금은 특가 아님' 줄 그대로)
@@ -3923,10 +3998,11 @@ def th_voice(seen, text, link, src=None):
         cands = ["+".join(x[0] for x in conds) + "가", "+".join(x[1] for x in conds) + "가", conds[0][1] + "가"] if conds else [other] if other else []
         tl = next((x for c in cands for x in [f"⏰ {mo}/{d} {h}시 확인 가격 · 옵션마다 다름" if c == "옵션" else f"⏰ {mo}/{d} {h}시 {c} · 결제 전 확인"] if th_w(x) <= TH_W + 1e-6),
                   f"⏰ {mo}/{d} {h}시 가격 · 결제 전 확인")  # 길면 짧은 이름으로 · Y-2 옵션 = '확인 가격 · 옵션마다 다름'('옵션별 가격' X)
-        tl = (when[0] if when else toss_when()) if toss else tl
+        tl = when[0] if when else toss_when() if toss else tl  # 게시 시점 줄이 있으면 몰 상관없이 그대로(AA 쿠팡 API 상품 — '게시 시점' 표기 유지)
         ws = [x for x in (re.sub(r"\([^()]*\)", "", y).strip() for y in warn) if x and not re.search(r"없이|없어도|불필요|필요\s*없|무관", x)]  # O(10/26 진우): 끝 = 친구 한 줄 + 아쉬운 점 사실 한 줄(우리 데이터에서만, 없으면 X) — '쿠폰 없이도' 같은 부정 조각 X
         flaw = next((t for rx, t in TH_FLAWS if any(re.search(rx, x) for x in ws) and not ("옵션" in t and "옵션마다 다름" in tl)), "") \
-            or next((y for x in ws[:-1] if not re.search(r"결제 전|최종가|게시 시점|정가|적립|배송|무료|무이자|원|%", x) for y in [re.sub(r"\s*확인$", " 확인 필요", x)] if re.search(FLAW_END, y)), "") \
+            or next((y for x in ws[:-1] if not re.search(r"결제 전|최종가|게시 시점|정가|적립|배송|무료|무이자|원|%", x) and not ("옵션마다 다름" in tl and re.fullmatch(TH_OPT_ONLY, x))
+                     for y in [re.sub(r"\s*확인$", " 확인 필요", x)] if re.search(FLAW_END, y)), "") \
             or ("리뷰가 아직 적음" if 0 < rv < TH_FEW_REV else "")  # ⚠️ 조각 = 서술로 끝날 때만('색상 옵션' 같은 끊긴 말 X — Y·Z 10/26 라이너)
         con = f"단점 하나: {flaw}" if flaw and not re.search(ban, flaw) and th_w(f"단점 하나: {flaw}") <= TH_W + 6 else ""  # 토스 = 다른 몰 비교 말 X(TOSS_BAN)
         st, norm = seen.get("thvoice", {}), lambda s: re.sub(r"[\W_]+", "", s)
@@ -5934,6 +6010,8 @@ def threads_deals(seen):
             if turn == "toss" and i.get("id") and top_hit(top_toss(seen, now), i["id"], i.get("n")):
                 top_mark(seen, now, i["id"])
             th_deal(seen, tok, me, i["text"], i["link"], image=i.get("img"), tids=i.get("tids"))
+            if i.get("k") == "cp":
+                cp_eve_done(seen, i, now)
             continue
         url = th_url(posts[i], i)  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크(아주 긴 주소만 사이트 딜 페이지 — 그땐 사이트에 올라온 뒤에)
         if url.startswith(SITE):
@@ -7933,6 +8011,39 @@ def th_end_report(seen):
         print("th end 리포트 보냄")
 
 
+WEEK_DM = (0, 9)  # 주간 보고(관리봇 DM) 월요일 9시~(KST) — AA 쿠팡 주문 줄(CC 많이 물어본 것·DD 팔로워 줄도 여기에)
+
+
+def week_report(seen):
+    """월요일 WEEK_DM 시각 뒤 1번 관리봇만: AA 쿠팡 파트너스 주문 리포트 지난주(월~일) vs 그 전 주 — 주문 수(orderId 중복 X)·합산 금액(gmv)·건당 평균.
+    숫자 = 관리봇 DM만(로그·파일 X — 공개 저장소). 쿠팡 상한 = 다음 실행에 다시(월요일 안), 다른 오류 = 오류 종류만 한 줄. 보낸 뒤에만 기록.
+    shortcut: 주마다 1쪽(1000줄)만·취소 안 뺌 — 주문이 1000줄을 넘거나 취소가 많아지면 page·/reports/cancels."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key = time.strftime("week_%Y%m%d", kst)
+    if kst.tm_wday != WEEK_DM[0] or kst.tm_hour < WEEK_DM[1] or key in seen or not HAS_CP or RUN.get("cpn", [0])[0] > CP_RUN - 3:  # 호출 2번 + cp_price 몫 1
+        return
+    mon = kst_ts(time.strftime("%Y-%m-%d 00:00", kst)) - 7 * 86400  # 지난주 월요일 0시(KST)
+    ymd = lambda t: time.strftime("%Y%m%d", time.gmtime(t + 9 * 3600))
+    try:
+        tot = []
+        for a in (mon - 7 * 86400, mon):
+            od = coupang("GET", f"/reports/orders?startDate={ymd(a)}&endDate={ymd(a + 6 * 86400)}&page=0")
+            od = [r for r in od if isinstance(r, dict)] if isinstance(od, list) else []
+            tot.append((len({r.get("orderId", k) for k, r in enumerate(od)}), sum(float(r.get("gmv") or 0) for r in od)))
+        (n0, g0), (n1, g1) = tot
+        avg = lambda g, n: f"{g / n:,.0f}원" if n else "-"
+        line = f"🛒 쿠팡 주문 {n1:,}건(지난주 {n0:,}) · 합산 {g1:,.0f}원({g0:,.0f}원) · 건당 {avg(g1, n1)}({avg(g0, n0)})"
+    except CpLimit:
+        return  # 다음 실행에(월요일 안)
+    except Exception as e:
+        line = f"🛒 쿠팡 주문 리포트 못 읽음({type(e).__name__})"
+    if tg("sendMessage", chat_id=ADMIN, text=f"📊 주간 보고 {time.strftime('%m/%d', time.gmtime(mon + 9 * 3600))}~{time.strftime('%m/%d', time.gmtime(mon + 6 * 86400 + 9 * 3600))} (괄호 = 그 전 주)\n{line}\n"
+                                          "(쿠팡 = 파트너스 주문 리포트 · 결제 기준·취소 안 뺌 · 링크에 채널 구분이 없어 쿠팡 전체)"):
+        seen[key] = now  # 보낸 뒤에만(텔레그램 실패 = 다음 실행에 다시)
+        print("week report 보냄")
+
+
 def cp_score(seen):
     """E 반응 점수(하루 1번 CPS_HOUR~ KST) -> seen cps {o 주문, c 구매 클릭, v 딜 쪽 조회: {url: 수}} — seen.json(Actions 캐시)에만, 커밋·로그에 숫자 X(공개 저장소).
     o = 쿠팡 파트너스 주문 리포트(D-CPS_DAYS~D-1, 1번 — 24시간 안 다른 상품 구매도 실적이라 events pid와 같은 상품만), 키 없으면 X.
@@ -8478,6 +8589,8 @@ def main():
                 seen[k] = time.time()
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
+        for p in picks:  # AA 쿠팡 가전·디지털 3만↑ +1·10만↑ +2(위 로그 = Claude 점수 그대로) — 컷·순서·보관·posts s(Threads 채움 순서)에 같이, 게시 수·간격 그대로
+            p["score"] += cp_big(new[p["i"]]["title"]) if "쿠팡" in store_tag(new[p["i"]]["title"]) else 0
         ok = lambda p: focus(new[p["i"]]["title"]) or p["score"] >= OTHER_MIN  # 3사가 아니면 대박(8점↑)만
         good = [p for p in picks if ok(p) and p["score"] >= MIN_SCORE - earns(new[p["i"]]["title"])]  # 수수료 되는 몰은 1점 낮춰도(10/10 올리브영 -> 같은 날 진우 '수수료 딜 꼭 챙겨': 5점 링크프라이스 딜 3개가 빠지던 것)
         if not good and not held and picks and quiet():
@@ -8504,7 +8617,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:
