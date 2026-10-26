@@ -2816,12 +2816,12 @@ H.http, vids, tt2 = ig_http, [], time.time
 H.tg_video, H.draft, time.time = lambda path, cap: vids.append((path, cap)), lambda text, **k: {"message_id": 9}, lambda: 1791291600  # 10/6 22:00 KST
 json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가", "page": "https://pixabay.com/music/s/"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst, k=0: "docs/bgm_t.m4a"
 P3 = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}]
-igp3 = H.ig_photo; H.ig_photo = lambda p, d, seen=None: (None, "")  # FF(10/26): 실사진 없는 상품 = 그날 릴스 X(글자 카드 영상 X) · 모아보기 글은 그대로
+igp3 = H.ig_photo; H.ig_photo = lambda p, d, seen=None: ("ph3.jpg", "coupang") if p["url"] == "https://a" else (None, "")  # FF(10/26): 실사진 없는 상품 = 그날 릴스 X(글자 카드 영상 X) · 모아보기 글은 그대로
 seen, o3 = {}, io.StringIO(); H.REEL_PUBLIC = False; sent.clear()
-with contextlib.redirect_stdout(o3): H.digest(seen, P3)
-assert not vids and "reel skip 사진 부족 0/1" in o3.getvalue() and any(m == "sendMessage" and p.get("chat_id") == H.CHANNEL for m, p in sent)
-Image.new("RGB", (600, 800), (200, 120, 40)).save("ph3.jpg"); H.ig_photo = lambda p, d, seen=None: ("ph3.jpg", "coupang")
-seen = {}; sent.clear(); H.digest(seen, P3)  # 기본(꺼짐): 공개 X, 봇 채팅 영상만(예전 그대로)
+with contextlib.redirect_stdout(o3): H.digest(seen, P3 + [{"t": "2026-10-06 11:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n싸요", "url": "https://link.coupang.com/a/b3", "s": 6, "e": "🧻", "hook": "휴지 롤당 330원", "pts": ["싸요"]}])
+assert not vids and "reel skip 사진 부족 1/2" in o3.getvalue() and any(m == "sendMessage" and p.get("chat_id") == H.CHANNEL for m, p in sent)  # 카드 번호 = 캡션 번호라 뒤 후보로 안 채움 -> 그날 릴스 X
+Image.new("RGB", (600, 800), (200, 120, 40)).save("ph3.jpg"); cr3, rl3 = cards.reel, []; cards.reel = lambda items, *a, **k: rl3.append([i.get("photo") for i in items]) or cr3(items, *a, **k)
+seen = {}; sent.clear(); H.digest(seen, P3); cards.reel = cr3; assert rl3 == [["ph3.jpg"]]  # 기본(꺼짐): 공개 X, 봇 채팅 영상만(예전 그대로) · 영상 재료 = 실사진
 assert len(vids) == 1 and not vids[0][0].startswith("docs/") and not os.path.exists("docs/reels") and "reel_2026-10-06" not in seen and not ic
 assert vids[0][1].split("\n\n")[1].startswith("우유 개당 100원") and vids[0][1].split("\n\n")[0] == H.ig_notes([]) and "🎵 테스트곡 — 작가 (Pixabay)" in vids[0][1]  # 문구 맨 앞·곡명
 H.REEL_PUBLIC, seen, vids[:] = True, {}, []; H.digest(seen, P3)
@@ -7435,6 +7435,7 @@ q69 = lambda url, img=None, **k: {"t": "2026-10-26 10:00", "url": url, "text": f
 with contextlib.redirect_stdout(io.StringIO()):
     f69, src69 = H.ig_photo(q69(CPU69, CPI69), "ph69")
     assert src69 == "coupang" and I69.open(f69).size == (300, 500) and u69 == [CPI69], u69
+    assert H.ig_photo(q69(CPU69, CPI69), "ph69") == (f69, "coupang") and u69 == [CPI69]  # FF: 같은 실행에 같은 사진 = 다시 안 받음(영상 고르기 reel_top -> 만들기 make_reel)
     assert H.ig_photo(q69("https://naver.me/x", "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "") and H.ig_photo(q69(CPU69, "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "")
     assert H.ig_photo(q69("https://www.ppomppu.co.kr/zboard/view.php?no=1"), "ph69") == (None, "") and H.ig_photo(q69(CPU69), "ph69") == (None, "") and len(u69) == 1
     t69 = []; H.toss = lambda path, body=None: t69.append(path) or {"items": [{"tacaItemId": 77, "tacaId": 7, "thumbnailUrl": "https://static.toss.im/p/77.jpg"}]}
@@ -7769,7 +7770,7 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert not s71 and not c71  # 20:10 전 = 아무것도 X
 with contextlib.redirect_stdout(io.StringIO()) as o71:
     at71("2026-10-26 20:12"); H.drop_post(s71)
-st = s71["droppost_20261026"]
+st = s71["droppost_20261026"]; assert re.fullmatch(r"▼\d+% · [\d,]+원", st["hook"]), st["hook"]  # FF: 22시 📉 스토리 훅 띠
 assert not c71 and st["n"] == 5 and [os.path.basename(f) for f in st["files"]] == [f"2026-10-26_{n}.jpg" for n in range(1, 6)] and st["cover"].endswith("2026-10-26_0.jpg")  # 준비만(HTTP X) · 수수료·사진 있는 5개(4 사진 X · 5 비수수료 X)
 assert set(s71["dropu"]["m"]) == {f"https://link.coupang.com/a/d{k}" for k in (1, 0, 2, 3, 6)} and all(open(f, "rb").read(2) == b"\xff\xd8" for f in st["files"] + [st["cover"]])  # 3일 안 다시 X(날짜) · 진짜 JPEG
 th71 = st["th"]
@@ -8075,6 +8076,13 @@ with contextlib.redirect_stdout(io.StringIO()):
 C73.ig_story = igs73; assert sty73 == [("핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품", "▼20% · 3,900원", "ph73.jpg")]  # 스토리 글자 = 이모지 X(네모로 나옴) · 📉 = 가격 내려간 상품 실사진 + 훅 띠(drop_post hook)
 assert I73.open(f"{H.STORY_DIR}/2026-10-29.jpg").size == (1080, 1920)
 H.ig_photo = lambda p, d, seen=None: ("ph73.jpg", "coupang")
+sd73 = lambda photo: [p["url"][-2:] for _, p in H.slot_deals([P73[7], P73[0]], "2026-10-28", 11, (11,), photo)]
+assert sd73(False) == ["g8", "g1"] and sd73(True) == ["g1"], (sd73(False), sd73(True))  # FF: 스토리 칸 딜 = 사진 있는 딜만(img_of — 쿠팡 사진 주소만)
+json.dump([3, 1, 0], open("docs/cards/2026-10-29_15.json", "w")); sty73 = []; C73.ig_story = lambda src, out, top, bottom, hook=None: sty73.append((top, hook)) or igs73(src, out, top, bottom, hook)
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_story_card({}, "t", "1", "2026-10-29_15", TK("2026-10-29 15:30"))
+C73.ig_story = igs73; assert sty73 == [(f"핫딜픽 · {S.card_name('2026-10-29_15')}", "1번 · 4,900원")], sty73  # 시간대 스토리 = 카드 1번 상품 실사진 + '1번 · 가격'
+st73 = I73.open(f"{H.STORY_DIR}/2026-10-29_15.jpg"); assert st73.size == (1080, 1920) and max(abs(a - b) for a, b in zip(st73.getpixel((10, 800)), (220, 120, 80))) < 45  # 사진 = 폭 꽉(비율 그대로)
 assert os.path.exists(f"{H.STORY_DIR}/2026-10-29.jpg") and [b for m, u, b in c73h if m == "POST"] == [{"image_url": "https://hotdealpick.kr/cards/story/2026-10-29.jpg", "media_type": "STORIES"}]
 S.IG_TOP.clear(); S.IG_TOP["winter"] = [("10월 29일 발 핫팩 10개", [(5, P73[5])]), ("10월 29일 발 시린 사무실", [(0, P73[0])])]
 lp73 = S.list_pages("winter", "❄️ 겨울템", "겨울템 모음", [(0, P73[0], (0, None, "", [], False))], "", {})[0][4]
@@ -8322,6 +8330,7 @@ for t75, top75, bot75 in ((0.0, (454, 420), (454, 720)), (7.5, (454, 400), (454,
     assert off.crop((918, 0, 1080, 1920)).getextrema()[1] <= 16 and off.crop((0, 1440, 1080, 1920)).getextrema()[1] <= 16, t75
 cv75 = C75.photo_cover("ph75v.jpg", "핫팩 1매당 334원", top="10월 26일  ·  오늘의 가성비 1위", ad="광고·제휴")
 assert cv75.size == (1080, 1920) and near75(cv75.getpixel((540, 500)), (200, 120, 40)) and near75(cv75.getpixel((540, 1000)), (40, 90, 200)) and max(cv75.getpixel((995, 1236))) < 60  # 사진 + 아래 어두운 숫자 띠
+assert cv75.getpixel((60, 600))[2] > 80  # 사진 = 폭 안에 다 들어감(잘라서 꽉 채우기 X) — 양옆 = 흐린 바탕
 assert all(abs(a - b) < 40 for a, b in zip(cv75.getpixel((540, 1700)), cv75.getpixel((60, 1700))))  # 띠 아래(h-600 밑) = 흐린 바탕만(자막·UI 칸)
 for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75p.mp4", "posts75.json"):
     os.remove(f)
