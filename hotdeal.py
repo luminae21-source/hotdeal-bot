@@ -932,6 +932,15 @@ def toss_list(ps):
     return TOSS_NO_CMP and any(is_toss(p.get("url"), p["text"]) for p in ps)
 
 
+TH_LIST_MIN, TH_LIST_MAX, TH_FILL_HOURS, TH_FILL_REV, TH_LIST_REPEAT = 3, 5, 6, 300, 2  # KK(10/26 Cowork): Threads 12·15·18시 리스트 3~5개 · ② 최근 6시간 수수료 딜 · ③ 🔥 쿠팡 진열 리뷰 300↑ · 24시간 안 리스트 2번 나온 상품 X
+
+
+def kind_key(name):
+    """같은 종류 키(리스트 안 2개 X — KK '성경김 2개 X'): 상품명 첫 낱말(꾸밈말 TH_MOD·국산·햇 같은 말·숫자로 시작하는 낱말 빼고) — 없으면 ''."""
+    ws = [w for w in re.findall(r"[가-힣A-Za-z0-9]{2,}", name) if not re.fullmatch(rf"{TH_MOD}|국산|국내산|햇|유기농|신선|\d.*", w)]
+    return ws[0].lower() if ws else ""
+
+
 def short_name(t):
     """카드·리스트 이름(10/26 16시 Cowork HH — 15시 TOP5·카드 '메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일'): 제목에서 '(가격/배송비)' 꼴 괄호부터 뒤(몰·행사 이름 꼬리)는 빼고 상품명만."""
     body = re.sub(r"^\s*\[[^\]]*\]", "", t)
@@ -1478,6 +1487,28 @@ GOLD_ST_N, GOLD_ST_REV, GOLD_ST_RATE, GOLD_ST_DAYS = (3, 5), 1000, 4.5, 3  # JJ(
 GOLD_ST_FIRST = ("food", "snack", "season", "life", "laundry", "women", "kitchen")  # 식품·생필품 먼저
 
 
+def cp_shelf(posts, kst, steady):
+    """사이트 쿠팡 진열 후보(파트너스 딥링크·품절·뺌 X·계절 맞음 season_adj ≥ 0) -> [(posts 번호, 이름, 가격 글자, 단가, 리뷰 글자)] 최근 진열 먼저(같은 주소 여러 번 = 그대로 — 부르는 곳이 거름).
+    steady = 👍 꾸준템(리뷰 GOLD_ST_REV↑·⭐ 있으면 GOLD_ST_RATE↑·이름에 🔥/특가/할인/최저 X — JJ) / 아니면 🔥 진열(st hot·리뷰 TH_FILL_REV↑ — KK).
+    가격 = 진열 확인 가격(와우가·쿠폰가 글자 그대로), 오늘 확인 아니면 '(M/D H시 확인)' · 단가 = 그 가격이 글 가격 그대로일 때만 · 리뷰 = 적힌 그대로('2.9만')."""
+    out = []
+    for i in range(len(posts) - 1, -1, -1):
+        p = posts[i]
+        if not (p.get("own") and p.get("shelf") and urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") not in ("gone", "out")
+                and (th_steady(p["text"]) if steady else p.get("st") == "hot")):
+            continue
+        rv, rate = re.search(STEADY_REV, p["text"]), re.search(r"⭐\s*(\d\.\d)", p["text"])
+        _, name, price = parse(title_of(p["text"]))
+        if not rv or steady_n(rv[1]) < (GOLD_ST_REV if steady else TH_FILL_REV) or steady and (rate and float(rate[1]) < GOLD_ST_RATE or re.search(r"🔥|특가|할인|최저", name)) \
+                or season_adj(name) < 0:
+            continue
+        unit, pr = re.search(r"💰\s*([^\n]*꼴)", p["text"]), price.split("/")[0].strip()
+        now_p = p.get("now") or pr
+        out.append((i, name, now_p + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(f"{kst.tm_mon}/{kst.tm_mday} ") else ""),
+                    unit[1] if unit and now_p == pr else "", "리뷰 " + re.sub(r"\s", "", rv[1]) + (f" · ⭐ {rate[1]}" if rate else "")))
+    return out
+
+
 def gold_steady(seen, n0):
     """JJ 골드박스 0개(2번째) -> '👍 꾸준히 팔리는 쿠팡 상품' 채널 글(골드박스 TOP 자리) -> 보냄·안 올림 = True, 텔레그램 실패 = False(다음 실행에).
     후보 = 사이트 👍 꾸준템 쿠팡 진열(파트너스 딥링크·품절·뺌 X·리뷰 GOLD_ST_REV↑·⭐ 있으면 GOLD_ST_RATE↑·계절 맞음(season_adj ≥ 0)·이름에 🔥/특가/할인/최저 X)
@@ -1485,24 +1516,17 @@ def gold_steady(seen, n0):
     shortcut: 골드박스 API엔 평점·리뷰 수가 없어 골드박스 후보는 못 거름(= 진열 꾸준템만) · 평점도 진열 글에 있을 때만 봄."""
     posts, now = load(POSTS, []), time.time()
     kst = time.gmtime(now + 9 * 3600)
-    since, today = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - GOLD_ST_DAYS * 86400)), time.strftime("%m/%d", kst)
+    since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - GOLD_ST_DAYS * 86400))
     norm = lambda x: re.sub(r"\W", "", x.lower())
     st = {u: t for u, t in seen.get("goldst", {}).get("u", {}).items() if now - t < GOLD_ST_DAYS * 86400}
     recent = [p for p in posts if not p.get("shelf") and p["t"] >= since]
     ru, rt = {p.get("url") for p in recent} | set(st), norm(" ".join(p["text"] for p in recent))
     cands, us = [], set()
-    for p in reversed(posts):
-        rv, rate = re.search(STEADY_REV, p["text"]), re.search(r"⭐\s*(\d\.\d)", p["text"])
-        _, name, price = parse(title_of(p["text"]))
-        if not (p.get("own") and p.get("shelf") and th_steady(p["text"]) and urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") not in ("gone", "out")) \
-                or p["url"] in us or p["url"] in ru or norm(name) in rt or not rv or steady_n(rv[1]) < GOLD_ST_REV or rate and float(rate[1]) < GOLD_ST_RATE \
-                or season_adj(name) < 0 or re.search(r"🔥|특가|할인|최저", name):
+    for i, name, pr, un, rv in cp_shelf(posts, kst, True):
+        if posts[i]["url"] in us or posts[i]["url"] in ru or norm(name) in rt:
             continue
-        us.add(p["url"])
-        unit = re.search(r"💰\s*([^\n]*꼴)", p["text"])
-        now_p = p.get("now") or price.split("/")[0].strip()
-        cands.append((cat_of(p) not in GOLD_ST_FIRST, p["url"], name, now_p + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(f"{kst.tm_mon}/{kst.tm_mday} ") else ""),
-                      unit[1] if unit and now_p == price.split("/")[0].strip() else "", f"리뷰 {re.sub(r'\s', '', rv[1])}" + (f" · ⭐ {rate[1]}" if rate else "")))  # 리뷰 = 글에 적힌 그대로('2.9만' -> 29,000 X)  # 단가 = 진열 글 가격 그대로일 때만
+        us.add(posts[i]["url"])
+        cands.append((cat_of(posts[i]) not in GOLD_ST_FIRST, posts[i]["url"], name, pr, un, rv))
     picks = sorted(cands, key=lambda x: x[0])[:GOLD_ST_N[1]]
     if len(picks) < GOLD_ST_N[0]:
         print("goldbox", n0, f"개 중 고른 것 0 → steady 후보 {len(picks)}개({GOLD_ST_N[0]}개 미만) — 오늘 안 올림")
@@ -2612,52 +2636,65 @@ def top_deals(seen):
     top = sorted((p for p in load(POSTS, []) if p.get("mid") and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
                                                               or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th") and aff_note(p["url"] or "")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
                  key=lambda p: (not th_tier(p["text"]), bool(p.get("th")) or not aff_note(p["url"] or ""), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 수수료 링크 아닌 딜 = Threads에 나간 딜처럼 셈(10/19 밤 'Threads는 수수료 딜만' 전엔 대부분 개별 글로 나가 th 1 -> 채널 순서 그대로)  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
-    if len(top) < 3:
-        return
-    toss_in = TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top)  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검) + 게시 시점 줄(10/19 12:30 점검)
-    tail = f"\n\n{toss_when()}" if toss_in else ""
-    items = []
-    for p in top:
-        price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
-        why = strip_cmp("👉 " + why)[0][2:] if toss_in and why else why  # 👉 줄의 다른 몰 이름 조각(예: '네이버 지금배달 …')은 뺌, 다 빠지면 줄째
-        items.append((short_name(title_of(p["text"])), p["url"], [
-            ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
-            "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
-    notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
-    text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n{TOP_SUB_TOSS if toss_in else TOP_SUB}, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
-    if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-              text=(notes + "\n\n" if notes else "") + text + tail, reply_markup={"inline_keyboard": kb}):
-        return
-    bundled(seen)
+    if len(top) >= 3:  # 텔레그램 리스트 = 3개↑일 때만(그대로) · Threads 리스트는 아래에서 채워 따로(KK)
+        toss_in = TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in top)  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검) + 게시 시점 줄(10/19 12:30 점검)
+        tail = f"\n\n{toss_when()}" if toss_in else ""
+        items = []
+        for p in top:
+            price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
+            why = strip_cmp("👉 " + why)[0][2:] if toss_in and why else why  # 👉 줄의 다른 몰 이름 조각(예: '네이버 지금배달 …')은 뺌, 다 빠지면 줄째
+            items.append((short_name(title_of(p["text"])), p["url"], [
+                ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
+                "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
+        notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
+        text, kb = top_post(f"🏆 <b>지금 살 만한 딜 TOP{len(items)}</b> ({hrs[-1]}시)\n{TOP_SUB_TOSS if toss_in else TOP_SUB}, 그다음 뽐뿌·클리앙 조회수·추천 순", items)
+        if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+                  text=(notes + "\n\n" if notes else "") + text + tail, reply_markup={"inline_keyboard": kb}):
+            return
+        bundled(seen)
     tok = E.get("THREADS_TOKEN")
     if not tok or hrs[-1] not in TH_LIST_HOURS:
         return
-    posts = load(POSTS, [])  # Threads 12·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 사이트 딜 페이지(구매 버튼), 500자
-    top = [p for p in top if aff_note(p["url"] or "") and season_adj(title_of(p["text"])) >= 0]  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 상품 X
-    if not top:
-        print(f"threads skip (수수료 링크 아님) top{hrs[-1]} 리스트 | 항목 0개")
-        return
-    lines = [f"{NUM[n]} {clip(short_name(title_of(p['text'])), 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {th_url(p, posts.index(p))}" for n, p in enumerate(top)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
+    posts, now = load(POSTS, []), time.time()  # Threads 12·15·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 링크, 500자
+    hist = [h for h in seen.get("thlist", {}).get("h", []) if now - h[0] < 86400]
+    many = {u for u, c in collections.Counter(u for h in hist for u in h[1]).items() if c >= TH_LIST_REPEAT}  # 최근 24시간 리스트에 이미 2번 = X
+    six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
+    price = lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
+    cands = [(p, price(p), "", 1) for p in top if ok(p)] \
+        + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
+        + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍)
+    pick, us, kinds = [], set(many), set()
+    for p, pr, mk, src in cands:
+        kd = kind_key(short_name(title_of(p["text"])))
+        if pr and p["url"] not in us and not (kd and kd in kinds):  # 같은 상품·같은 종류(첫 낱말 — '성경김' 2개) X
+            pick.append((p, pr, mk, src))
+            us.add(p["url"])
+            kinds.add(kd)
+        if len(pick) == TH_LIST_MAX:
+            break
+    lines = [f"{NUM[n]} {mk}{clip(short_name(title_of(p['text'])), 30)} {pr}\n👉 {th_url(p, posts.index(p))}" for n, (p, pr, mk, _) in enumerate(pick)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
 
     def render(n, bs):  # 리스트 n줄 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
-        used = top[:n] + [p for p, _ in bs]
+        used = [p for p, *_ in pick[:n]] + [p for p, _ in bs]
         head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in used))
         tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in used) else ""
         return f"{head}\n\n🏆 지금 살 만한 딜 TOP{n} ({hrs[-1]}시)\n\n" + "\n".join(lines[:n]) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
     n = len(lines)
-    while n > 1 and len(render(n, [])) > 480:  # 직접 링크는 사이트 주소보다 길 수 있어 1개까지 줄임
+    while n >= TH_LIST_MIN and len(render(n, [])) > 480:  # 직접 링크는 사이트 주소보다 길 수 있어 줄임(3개까지)
         n -= 1
-    if n < 2:  # HH(10/26 16시 Cowork — 12:05 배 1개 + 💄·15:09 초코파이 1개 'TOP1'): 리스트 항목(💄 빼고) 2개 밑 = 리스트 글 X(그 딜은 개별 칸 후보 그대로 — th 표시 X)
+    if n < TH_LIST_MIN:  # KK(10/26 Cowork — 진우 '싼 제품 달랑 하나 올라가니 황당, 최소 3~5개'): ①~④로도 3개 밑 = 그 회차 Threads 리스트만 X
         print(f"threads skip top{hrs[-1]} {n}개")
         return
-    links, beauty = n, []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
-    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
+    links, beauty, inl = n, [], [p for p, *_ in pick[:n]]  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(셈에 안 넣음 · 링크는 합쳐 5개까지 — 넘으면 이름·가격만)
+    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in inl and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
         line = f"· {clip(short_name(title_of(p['text'])), 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
         if len(render(n, beauty + [(p, line)])) > 480:
             break
         links += "👉" in line
         beauty.append((p, line))
-    th_bundle(seen, f"top{hrs[-1]}", render(n, beauty), th_url(top[0], posts.index(top[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    th_bundle(seen, f"top{hrs[-1]}", render(n, beauty), th_url(inl[0], posts.index(inl[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl]]]}
+    print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick[:n]).items())))
 
 
 def busy(seen, cap=True):

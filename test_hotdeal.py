@@ -2396,14 +2396,14 @@ assert len(tl9) == 1 and tl9[0].endswith("\n\n⚠️ 10/11 12:05 게시 시점 �
 SR9 = "https://search.shopping.naver.com/search/all?query=" + "%EC%82%BC%EB%8B%A4%EC%88%98" * 4  # 아직 검색 링크인 딜(~160자) = 검색 링크 그대로, 길어서 480자 안에 들어가는 만큼만
 json.dump([{**p, "url": SR9 + str(k)} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
 with contextlib.redirect_stdout(out9): H.top_deals({})
-assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and SR9 + "4" in sent[-1][1]["text"] and "threads skip (수수료 링크 아님) top12 리스트 | 항목 0개\n" in out9.getvalue()  # 10/19 밤 진우 'Threads는 수수료 딜만': 검색 링크뿐이면 Threads 리스트 X, 텔레그램은 그대로
+assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and SR9 + "4" in sent[-1][1]["text"] and "threads skip top12 0개\n" in out9.getvalue()  # 10/19 밤 진우 'Threads는 수수료 딜만': 검색 링크뿐이면 Threads 리스트 X, 텔레그램은 그대로
 json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and "TOP3 (12시)" in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
 assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🏆") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
 json.dump([{**p, "url": SR9 + str(k) if k else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
 with contextlib.redirect_stdout(out9): H.top_deals({})
-assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and "threads skip top12 1개\n" in out9.getvalue()  # HH(10/26 16시): 수수료 딜 1개뿐 = 'TOP1' 리스트 X(텔레그램 TOP5 그대로 · 그 딜 th 표시 X = 개별 칸 후보)
+assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and "threads skip top12 1개\n" in out9.getvalue()  # HH·KK: 수수료 딜 1개뿐·채울 것도 없음 = 'TOP1' 리스트 X(텔레그램 TOP5 그대로 · 그 딜 th 표시 X = 개별 칸 후보)
 assert not any(p.get("th") for p in json.load(open("posts.json")))
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
@@ -9473,4 +9473,40 @@ assert "앞뒤 30분 안 비딜 글 13:12" in chat87("2026-11-10 13:12", {}) and
 assert "chat post: " in chat87("2026-11-10 13:12", {"cur_2026-11-10_1230": {"t": 1, "th": "T1"}}) and len(po87) == n87 + 1; H.cur_events = lambda seen=None: []  # 올라간 큐레이션 = thnd(실제 시각)로
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk87, H.POSTS, H.METRICS, H.http) = sv87
 H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk87); os.chdir(cwd87)
+# 9-88) KK(10/26 Cowork — 진우 '싼 제품 달랑 하나 올라가니 황당, 최소 3~5개'): Threads 12·15·18시 리스트 = 항상 3~5개(💄 셈 X) · 채우기 ① 회차 TOP 수수료 딜 ② 최근 6시간 수수료 딜
+#       ③ 🔥 쿠팡 진열(딥링크·리뷰 300↑·계절) ④ 👍 꾸준템(JJ 기준 · 줄 앞 👍) · 같은 상품·같은 종류(첫 낱말) X · 24시간 안 리스트 2번 나온 상품 X · 3개 밑 = Threads만 X
+sv88 = (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS); d88, cwd88 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d88)
+tb88, tg88 = [], []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb88.append((kind, text, link)) or {"id": "T"}
+H.tg = lambda method, **p: tg88.append(p) or {"message_id": 1}; H.season_adj = lambda n, ctx=None: -2 if "선풍기" in n else 0
+H.POSTS, H.E["THREADS_TOKEN"], H.TH_LIST_HOURS = "posts88.json", "tk", (12, 15, 18)
+SR88 = "https://search.shopping.naver.com/search/all?query=x"
+def ch88(t, name, url, pop=0, fire=True):
+    return {"t": t, "text": f"{H.DISCLOSURE}\n\n{'🔥 ' if fire else ''}[쿠팡] {name} (9,900원/무료)\n\n좋음", "url": url, "mid": 1, "pop": pop}
+def sh88(name, url, rv, st="hot", steady=False, t="2026-11-10 04:00"):
+    return {"t": t, "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 " + ("· 꾸준히 팔리는 상품 👍" if steady else "🔥") + f"\n{name}\n5,900원 · 리뷰 {rv}\n💰 1개당 590원꼴\n✔ 무료배송 · 리뷰 {rv}", "entities": [], "url": url, "own": 1, "shelf": 1, "st": st, "now": "5,900원", "chk": "11/12 9시"}
+P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,000"),  # ③ 계절 X
+       sh88("주방세제 리필 1L", "https://link.coupang.com/a/S1", "200"),  # ③ 리뷰 300 밑 X
+       sh88("탐사 물티슈 캡형 100매", "https://link.coupang.com/a/S2", "5,000"),  # ③
+       sh88("코멧 위생백 200매", "https://link.coupang.com/a/S3", "2.9만", st="wait", steady=True),  # ④ 👍
+       ch88("2026-11-12 08:00", "성경김 지도표 재래김 16봉", "https://link.coupang.com/a/C0", pop=9),  # ① 회차 TOP 수수료 딜
+       ch88("2026-11-12 08:10", "삼다수 2L 12병", SR88 + "1", pop=8), ch88("2026-11-12 08:20", "신라면 멀티팩", SR88 + "2", pop=7),  # TOP이지만 수수료 X
+       ch88("2026-11-12 09:00", "성경김 파래김 20봉", "https://link.coupang.com/a/C1", fire=False),  # ② 후보지만 같은 종류(성경김) X
+       ch88("2026-11-12 10:00", "곰곰 국산 햅쌀 10kg", "https://link.coupang.com/a/C2", fire=False)]  # ② 최근 6시간 수수료 딜(개별 글 나갔어도 OK)
+json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
+with contextlib.redirect_stdout(o88): H.top_deals(s88)
+th88 = tb88[-1][1]
+assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "🏆 지금 살 만한 딜 TOP4 (12시)" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 채워서 4개
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매", "👍 코멧 위생백 200매"], th88  # ①→②→③→④(👍 = 특가 아님) · 성경김 2개 X
+assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
+assert "threads top12 4개 | 채움 ①1 ②1 ③1 ④1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 and s88["thlist"]["t"], o88.getvalue()
+# 24시간 안 리스트에 2번 나온 상품 X -> 다음 후보 · ①~④ 다 해도 3개 밑 = Threads만 X(로그)
+s88 = {"thlist": {"t": 1, "h": [[TK("2026-11-11 15:05"), ["https://link.coupang.com/a/S2"]], [TK("2026-11-11 18:05"), ["https://link.coupang.com/a/S2"]]]}}
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88)
+assert "탐사" not in tb88[-1][1] and "TOP3 (12시)" in tb88[-1][1] and len(s88["thlist"]["h"]) == 3
+json.dump([p for p in P88 if not p.get("shelf")], open("posts88.json", "w"), ensure_ascii=False); n88, o88 = len(tb88), io.StringIO()
+with contextlib.redirect_stdout(o88): H.top_deals({})
+assert len(tb88) == n88 and "threads skip top12 2개" in o88.getvalue() and "TOP3" in tg88[-1]["text"]  # 텔레그램 리스트는 그대로
+assert H.kind_key("성경김 지도표 재래김") == H.kind_key("성경김 파래김") == "성경김" and H.kind_key("국산 햅쌀 10kg") == "햅쌀" and H.kind_key("대용량 물티슈") == "물티슈"
+(H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
 print("OK: 모든 셀프체크 통과")
