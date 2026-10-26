@@ -660,7 +660,46 @@ H.ai_pick = lambda prompt, lines: gp.append(prompt) or []
 seen.clear(); og = io.StringIO()
 with __import__("contextlib").redirect_stdout(og): H.goldbox(seen); assert "goldbox_20261006" not in seen and len(gp) == 1; H.goldbox(seen); H.goldbox(seen)
 assert not sent and len(gp) == 2 and "억지로 5개 채우지 말고" in gp[0] and "goldbox_20261006" in seen, gp  # 0개 = 다음 실행에 1번 더(10/25 07:03 0개로 그날 조용히 X), 2번째도 0개 = 그날 끝
-assert "고른 것 0 — 다음 실행에 1번 더" in og.getvalue() and "고른 것 0(2번째) — 오늘 안 올림" in og.getvalue(), og.getvalue()  # 로그로 보임
+assert "고른 것 0 — 다음 실행에 1번 더" in og.getvalue() and "고른 것 0 → steady 후보 0개(3개 미만) — 오늘 안 올림" in og.getvalue(), og.getvalue()  # 로그로 보임(꾸준템 후보도 없음 = 그날 끝)
+# 5-1) JJ(10/26 진우 '살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자'): 2번째도 0개 = 같은 시각·채널 '👍 꾸준히 팔리는 쿠팡 상품' 3~5개
+#      (사이트 👍 꾸준템 쿠팡 진열 · 딥링크 · 품절 X · 리뷰 1,000↑ · ⭐ 있으면 4.5↑ · 계절 맞음 · 최근 3일 채널 X · 식품·생필품 먼저 · 🔥/특가/할인/최저 이름 X)
+pjj, tgj, cl = open("posts.json").read(), H.tg, __import__("contextlib"); sajj = H.season_adj; gbj = lambda s: (H.RUN.pop("cpn", None), H.RUN.pop("cpu", None), H.goldbox(s)); tkj = lambda s: __import__("calendar").timegm(time.strptime(s, "%Y-%m-%d %H:%M")) - 9 * 3600; H.season_adj = lambda n, ctx=None: -2 if "선풍기" in n else 0
+def stj(name, won, rv, u, t="2026-10-24 04:38", unit="", **k):
+    return {"t": t, "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 · 꾸준히 팔리는 상품 👍\n{name}\n{won} · 리뷰 {rv}" + (f"\n💰 {unit}" if unit else "") + f"\n✔ 무료배송 · 리뷰 {rv}" + (f" · ⭐ {k.pop('rate')}" if "rate" in k else "")
+            + "\n⚠️ 확인할 점: 결제 전 최종가 확인 (10/24 4시 가격)", "entities": [], "url": u, "own": 1, "shelf": 1, "st": "wait", **k}
+json.dump([stj("크리오 칫솔 10개입", "5,270원", "103,307", "https://link.coupang.com/a/j2", unit="1개당 527원꼴"),
+           stj("탐사 물티슈 캡형 100매 40개", "29,030원", "328,913", "https://link.coupang.com/a/j3", unit="1매당 7원꼴", now="31,000원", chk="10/25 1시"),  # 가격 바뀜 = 확인 시각 · 단가 X
+           stj("코멧 위생백 대 200매", "4,990원", "37,674", "https://link.coupang.com/a/j4", unit="1매당 25원꼴"),
+           stj("곰곰 햅쌀 10kg", "29,900원", "12,000", "https://link.coupang.com/a/j5"),  # 최근 3일 채널 글 = X
+           stj("휴대용 선풍기", "12,900원", "50,000", "https://link.coupang.com/a/j6"),  # 계절 X
+           stj("주방세제 1L", "3,900원", "800", "https://link.coupang.com/a/j7"),  # 리뷰 1,000 밑 X
+           stj("두루마리 휴지 30롤", "15,900원", "90,000", "https://link.coupang.com/a/j8", st="gone"),  # 품절·뺌 X
+           stj("섬유유연제 2.5L", "8,900원", "20,000", "https://www.coupang.com/vp/products/1"),  # 딥링크 아님 X
+           stj("키친타월 6롤", "7,900원", "40,000", "https://link.coupang.com/a/j9", rate="4.3"),  # 평점 4.5 밑 X
+           stj("특가 고무장갑", "2,900원", "30,000", "https://link.coupang.com/a/j10"),  # 이름에 특가 X
+           stj("무선 이어폰 케이스", "9,900원", "5,000", "https://link.coupang.com/a/j1"),  # 가전 = 가장 최근 진열이어도 식품·생필품 뒤
+           {"t": "2026-10-26 10:00", "text": "<b>곰곰 햅쌀 10kg</b> (27,900원)", "entities": [], "url": "https://link.coupang.com/a/jx"}], open("posts.json", "w"), ensure_ascii=False)
+seen, og = {}, io.StringIO(); time.time = lambda: tkj("2026-10-27 07:05")
+with cl.redirect_stdout(og):
+    gbj(seen); assert not sent; gbj(seen)
+m, p = sent[-1]; t = p["text"]; sent.clear()
+assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith("<i>" + H.DISCLOSURE + "</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 4개</b>") and "goldbox_20261027" in seen, t
+assert [re.search(r"\d\. <a href=\"[^\"]+\">([^<]+)", l)[1] for l in t.split("\n") if re.match(r"\d\. ", l)] == ["코멧 위생백 대 200매", "탐사 물티슈 캡형 100매 40개", "크리오 칫솔 10개입", "무선 이어폰 케이스"], t  # 생필품 먼저(최근 진열 순) -> 그 밖
+assert "— <b>31,000원 (10/25 1시 확인)</b>\n   리뷰 328,913" in t and "— <b>5,270원</b>\n   1개당 527원꼴 · 리뷰 103,307" in t and t.endswith(H.toss_when()) and p["reply_markup"]["inline_keyboard"][0][0]["url"].endswith("c/steady/")
+assert not re.search(r"🔥|할인|최저", t) and t.count("특가") == 1 and "goldbox 8 개 중 고른 것 0 → steady 4개 | 코멧 위생백" in og.getvalue(), og.getvalue()
+og = io.StringIO()
+with cl.redirect_stdout(og):
+    assert H.gold_steady({"goldst": {"u": {"https://link.coupang.com/a/j2": tkj("2026-10-27 07:00"), "https://link.coupang.com/a/j3": tkj("2026-10-27 07:00")}}}, 8) and not sent
+assert "steady 후보 2개(3개 미만) — 오늘 안 올림" in og.getvalue()  # 3개 못 채우면 X
+seen.pop("goldbox_20261027"); seen.pop("gold0"); og = io.StringIO(); time.time = lambda: tkj("2026-10-28 07:05")
+with cl.redirect_stdout(og):
+    gbj(seen); gbj(seen)
+assert not sent and "steady 후보 0개(3개 미만) — 오늘 안 올림" in og.getvalue() and "goldbox_20261028" in seen  # 3일 안 이 글에 나간 상품 X
+H.tg = lambda method, **p: None; seen = {"goldst": {}}; time.time = lambda: tkj("2026-11-02 07:05")
+with cl.redirect_stdout(io.StringIO()):
+    gbj(seen); gbj(seen)
+assert "goldbox_20261102" not in seen and not seen["goldst"]; H.tg = tgj  # 못 보냄 = 다음 실행에
+open("posts.json", "w").write(pjj); H.season_adj = sajj
 time.time = tt
 # 5-5) 예약 게시(행사 알림): 시각 됐고 6시간 안이면 채널에 1번, 쿠팡 파트너스 링크면 대가성 문구 맨 앞 + 버튼, 지난 지 오래됐거나 아직이면 안 올림
 json.dump([{"at": "2026-10-06 01:00", "text": "옛날", "button": "b", "url": "https://link.coupang.com/a/old"},
@@ -734,7 +773,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3398,7 +3437,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -5433,7 +5472,7 @@ s39 = {}; assert [tp39("휴지 30롤") for _ in range(5)] == ["생필품"] * 3 +
 s39 = {}; assert [H.th_topic(s39) for _ in range(5)] == ["핫딜"] * 3 + ["특가", "핫딜"] and len(s39["thtopic"]["l"]) == 5
 s39 = {"thtopic": {"t": 1, "l": ["가전"] * 12}}; tp39("휴지"); assert len(s39["thtopic"]["l"]) == 10  # 최근 10개만
 src39 = inspect.getsource
-assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen))' in src39(H.th_bundle) and "th_topic(seen))" in src39(H.th_retry) and "th_topic(seen))" in src39(H.poll_post)
+assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic))' in src39(H.th_bundle) and 'th_topic(seen, base=seen[k].get("topic")))' in src39(H.th_retry) and "th_topic(seen))" in src39(H.poll_post)
 assert 'tag=th_topic(seen, base="일상")' in src39(H.daily_post) and "th_topic(seen, text, cat=cat)" in src39(H.th_deal) and "link, topic)" in src39(H.th_deal) and '"topic_tag": tag' in src39(H.th_text) and '"topic_tag": tag' in src39(H.th_poll)
 assert H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)", cat="digital") == "가전" and H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)") == "핫딜"  # 리뷰: 글 cat(Claude)도 = 사이트 품목 칸
 assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비비크림 40ml\n9,900원") == "화장품" and H.th_topic({}, "🔥 [쿠팡] 햇반 24개", cat="beauty") == "장보기"  # 칸 없음 -> 화장품 낱말 · 제목 칸이 먼저(사이트와 같게)
@@ -9320,7 +9359,7 @@ P86 = [q86("[네이버] 메가커피 아메리카노외 다수세일(1560/0)네�
 assert [i for i, _ in S.day_deals(P86, "2026-10-26")] == [1, 2]  # 가격 못 읽은 딜(메가커피)·모아보기 = 카드 X -> 다음 딜이 1번
 # 9-87) II Threads 수다 글(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종'): 하루 1개 13:10 · 딜·상품·가격·링크 X 반말 2~4줄 + 마지막 질문 1개 · 앞뒤 30분 비딜 글 = 30분 뒤 첫 빈 실행 ·
 #       주제 5가지 돌림(최근 덜 쓴 것) · 퀴즈 = 우리 기록 숫자만 · 달력 = promos 기간만 · 금지어 걸리면 X · 재검토 1번 · 주제 태그 '일상' · 대가성 문구 X · metrics kind chat + 48시간 조회·답글
-sv87 = (H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http)
+sv87 = (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http)
 d87 = tempfile.mkdtemp(); cwd87 = os.getcwd(); os.chdir(d87); json.dump([], open("posts87.json", "w")); H.POSTS, H.METRICS = "posts87.json", "m87.json"
 po87, pr87, L87 = [], [], [["마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라", "오늘도 과자 코너 앞에서 무너졌어", "다들 장보기 목록 끝까지 지키는 편이야?"]]
 H.E["THREADS_TOKEN"] = "tk"; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po87.append((text, tag, link)) or {"id": f"C{len(po87)}"}
@@ -9336,7 +9375,8 @@ assert chat87("2026-10-27 13:05", s87) == "" and not po87 and not s87  # 13:10 �
 o87 = chat87("2026-10-27 13:12", s87)
 assert po87 == [("마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라\n오늘도 과자 코너 앞에서 무너졌어\n다들 장보기 목록 끝까지 지키는 편이야?", "일상", None)], po87  # 대가성 문구 X · 링크 X · 주제 태그 일상
 assert "chat post: shop C1 | 마트 가면" in o87 and s87["chat"]["h"][-1][:2] == ["2026-10-27", "shop"] and "C1" in s87["chat"]["m"] and "chat_20261027" in s87 and s87["thnd"]["ts"]
-assert "장보기 습관 공감" in pr87[-1] and "- (없음)" in pr87[-1]; chat87("2026-10-27 13:30", s87); assert len(po87) == 1  # 하루 1번
+assert "장보기 습관 공감" in pr87[-1] and "- (없음)" in pr87[-1]; chat87("2026-10-27 14:00", s87); assert len(po87) == 1  # 하루 1번
+assert chat87("2026-10-28 13:12", {"bundles": {"ts": [TK("2026-10-28 13:08")]}}) == "" and len(po87) == 1  # 방금 묶음 글(busy) = 다음 실행
 L87.append(["치약 끝까지 짜는 파랑 그냥 새로 뜯는 파가 있잖아", "나는 끝까지 짜다가 손목 나갈 뻔한 파야", "너는 어느 쪽이야?"])
 o87 = chat87("2026-10-28 13:12", s87); assert "chat post: home C2" in o87 and "살림 공감" in pr87[-1] and "- 마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라" in pr87[-1]  # 다음 날 = 안 쓴 주제(장보기 X) · 최근 글 겹치지 않게
 # 앞뒤 30분 비딜 글: 방금 올린 비딜 묶음 글(thnd)·큐레이션 시각 = 다음 실행(30분 뒤 첫 빈 실행) · 3시간 넘으면 그날 X
@@ -9348,14 +9388,26 @@ assert "앞뒤 30분 안 비딜 글 13:30" in chat87("2026-10-30 13:12", s87c) a
 H.cur_events = lambda seen=None: []; assert chat87("2026-10-31 16:11", {}) == "" and len(po87) == 4  # 13:10 + 3시간 넘음 = X
 sh87, H.SNACK_HOUR = H.SNACK_HOUR, (15, 30); assert "앞뒤 30분 안 비딜 글 15:30" in chat87("2026-10-31 15:20", {}); H.SNACK_HOUR = sh87  # 정해진 비딜 시각(15:30 간식)도 · None(끔) 시각은 건너뜀
 # 규칙 검사(chat_ok)
-for l87, why87 in ((["한 줄만?"], "줄 수"), (["a 줄", "b", "c", "d", "e?"], "줄 수"), (["마트 가면 뭐 사?", "너는 어때?"], "질문 1개"), (["마트 가면 하나씩 더 담아", "너는 어때"], "질문 1개"),
+for l87, why87 in ((["한 줄만?"], "줄 수"), (["a 줄", "b", "c", "d", "e?"], "줄 수"), (["마트 가면 뭐 사?", "너는 어때?"], "질문 1개"), (["마트 가면 하나씩 더 담아", "너는 어때"], "질문 1개"), (["너는 어때?", "마트 가면 하나씩 더 담아"], "질문 1개"),
                    (["요즘 다이소 가면 하나씩 꼭 사", "너는?"], "링크·권유"), (["댓글 달면 하나 골라 줄게", "뭐 살까?"], "링크·권유"), (["이거 써봤는데 진짜 좋아", "너는?"], "경험담"),
                    (["요즘 피곤해서 장보기 힘들어", "너는?"], "몸·효능"), (["Dove 비누 좋아하는 사람", "손?"], "영문"), (["라면 하나에 900원이면 사", "너는?"], "기록 밖 금액"),
                    (["50% 넘게 빠지면 손이 가", "너는?"], "기록 밖 금액"), (["요즘 뉴스 보면 물가 장난 아니야", "너는?"], "링크·권유"), (["무조건 쟁여야 해", "너는?"], "과장·수익")):
     assert H.chat_ok(l87).startswith(why87), (l87, H.chat_ok(l87))
-assert H.chat_ok(["생수 2L 6병 기준으로 1L당 248원이면 어때", "이 정도면 장바구니 담아?"], {"248"}) == ""  # 단위(2L·1L당)·우리 기록 금액 = 통과
+assert H.chat_ok(["생수 2L 6병 기준으로 1L당 248원이면 어때", "이 정도면 괜찮은 편이야?"], {"248"}) == ""  # 단위(2L·1L당)·우리 기록 금액 = 통과
+# 리뷰 고침: 한글 브랜드·줄임 몰 이름 · 말로 쓴 금액·프로 · 반말 재촉 · 답글 보상 · 재료 밖 기온·날짜 = 걸림 / 소수 기록·ㅋㅋ 붙은 물음표·흔한 말(사고·기사님·가려고·옷 주름·토스트) = 통과
+for l87, why87 in ((["햇반 하나 평균 얼마일까", "맞혀 볼래?"], "브랜드"), (["올영 세일 다음 주부터래", "다들 뭐 볼 거야?"], "링크·권유"), (["알리에서 시킨 거 아직도 안 옴", "다들 며칠 걸려?"], "링크·권유"),
+                   (["마트 가면 만 원 넘게 쓰는 거 순식간이야", "다들 장보기 예산 정해?"], "기록 밖 금액"), (["3만원 들고 갔는데 다 씀", "너는?"], "기록 밖 금액"), (["50프로면 일단 눈길 가", "너는?"], "기록 밖 금액"),
+                   (["이번 주말엔 그냥 질러", "다들 뭐 노려?"], "권유"), (["답글 남기면 커피 쏜다", "다들 아침 뭐 먹어?"], "링크·권유"), (["오늘 낮에 20도까지 오른대", "다들 반팔 꺼냈어?"], "재료 밖 기온")):
+    assert H.chat_ok(l87, facts="오늘 10/27(화) · 가을 · 서울 최저 9도/최고 18도").startswith(why87), (l87, H.chat_ok(l87))
+for l87 in (["계획에 없던 거 꼭 사고 나와", "나만 그래?"], ["택배 기사님 발소리만 들려도 설레", "나만 그래? ㅋㅋ"], ["마트 가려고 하면 꼭 비 오더라", "다들 그래?"], ["빨래 주름 펴는 게 제일 귀찮아", "너는 다림질 해?"],
+            ["식빵 사 오면 토스트 몇 번 하고 끝나", "다들 남은 식빵 어떻게 해?"], ["오늘 최고 18도래", "다들 겉옷 챙겼어?"]):
+    assert H.chat_ok(l87, facts="오늘 10/27(화) · 가을 · 서울 최저 9도/최고 18도") == "", (l87, H.chat_ok(l87))
+assert H.chat_ok(["라면 기록 보니 가장 쌀 때 개당 492.5원", "다들 몇 원부터 손이 가?"], {"492.5", "540"}) == ""  # 소수 기록 최저 = 그대로 통과
+assert "오늘 계절:" in H.chat_facts("season", [], "2026-10-27", set())[0] and "th_nd(seen)" in inspect.getsource(H.curation)  # 계절 주제 = season_ctx 줄 그대로 · 큐레이션 실제 올린 시각
+ca87, H.CHAT_AT = H.CHAT_AT, None; assert chat87("2026-11-03 13:12", {}) == ""; H.CHAT_AT = ca87  # None = 끔(오류 X)
 L87.append(["오늘 치약 짜다가 생각났는데 써봤던 거 중에 최고야", "너는?"]); s87d = {}; o87 = chat87("2026-11-01 13:12", s87d)
-assert "규칙 걸림 -> 안 올림" in o87 and "경험담" in o87 and len(po87) == 4 and "chat_20261101" in s87d  # 걸리면 그 글 X(그날 다시 X)
+assert "규칙 걸림 -> 안 올림" in o87 and "재검토 뒤" not in o87 and "경험담" in o87 and len(po87) == 4 and "chat_20261101" in s87d  # 걸리면 그 글 X(그날 다시 X)
+assert s87d["chat"]["t"] and s87d["chat"]["h"][-1][1:3] == ["shop", ""]  # 리뷰: t 없으면 seen 저장이 KeyError(실행 기록 다 날아감) · 못 올린 주제도 돌림(매일 같은 주제에 막히지 않게)
 H.review = lambda where, text, lines, facts="", **k: {lines[-1]: "다들 어때"} if where == "chat" else {}; L87.append(L87[0]); o87 = chat87("2026-11-02 13:12", {})
 assert "재검토 뒤 규칙 걸림" in o87 and len(po87) == 4; H.review = lambda *a, **k: {}  # 재검토가 질문을 지우면 X
 # 주제 돌림: 퀴즈 = 우리 기록(가장 쌀 때·평균) 숫자만 · 기록 없으면 퀴즈 X · 달력 = promos 기간(몰 이름 뺌)
@@ -9368,13 +9420,17 @@ L87.append(["다음 주에 블랙프라이데이 11/5~11/9래", "벌써 장바�
 assert "chat post: cal" in o87 and "· 블랙프라이데이 11/5~11/9" in pr87[-1] and "쿠팡" not in pr87[-1].split("행사(")[1]
 L87.append(["라면 개당 600원이면 사?", "너는?"]); H.price_records = lambda *a, **k: {}; o87 = chat87("2026-11-06 13:12", {"chat": {"h": [["2026-11-05", "shop", "a", None], ["2026-11-05", "home", "b", None], ["2026-11-05", "season", "c", None]], "m": {}}})
 assert "chat post: cal" in o87 or "quiz" not in o87  # 기록 없으면 퀴즈 X
+H.price_records = lambda *a, **k: {"ramen": ("라면", "개당", [(480.0, "개당 480원", 0, {})] * 3), "water": ("생수", "1L당", [(250.0, "1L당 250원", 0, {})] * 2)}
+assert H.chat_facts("quiz", [], "2026-11-06", {"ramen"})[2] == "water" and H.chat_facts("quiz", [], "2026-11-06", {"ramen", "water"}) is None  # 최근 7일 쓴 품목 X
 # metrics kind chat + 48시간 조회·답글
 json.dump({"2026-10-27": {"at": 1, "miss": {}, "rows": [{"date": "2026-10-27", "ch": "th", "id": "C1", "kind": "chat"}]}}, open("m87.json", "w"))
 H.http = lambda url, *a, **k: json.dumps({"data": [{"name": "views", "values": [{"value": 321}]}, {"name": "replies", "values": [{"value": 7}]}]}) if "/C1/insights" in url else (_ for _ in ()).throw(OSError("x"))
-time.time = lambda: TK("2026-10-29 13:20"); s87["chat"]["m"]["C1"]["ts"] = TK("2026-10-27 13:12")
+s87["chat"]["m"]["C1"]["ts"] = TK("2026-10-27 13:12"); time.time = lambda: TK("2026-10-29 13:00")
+with contextlib.redirect_stdout(io.StringIO()): H.chat_48(s87)
+assert "v48" not in s87["chat"]["m"]["C1"]; time.time = lambda: TK("2026-10-29 13:20")  # 48시간 전 = X
 with contextlib.redirect_stdout(io.StringIO()): H.chat_48(s87)
 assert s87["chat"]["m"]["C1"]["v48"] == 321 and s87["chat"]["m"]["C1"]["r48"] == 7 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["v48"] == 321 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["r48"] == 7
-assert '**({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {})' in inspect.getsource(H.metrics_rows) and "chat_48(seen)" in inspect.getsource(H.metrics) and "x_post, chat_post," in inspect.getsource(H.main) and H.TH_CHAT is True
+assert '**({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {})' in inspect.getsource(H.metrics_rows) and 'links=None if fun or x["id"] in cx else' in inspect.getsource(H.metrics_rows) and "chat_48(seen)" in inspect.getsource(H.metrics) and "x_post, chat_post," in inspect.getsource(H.main) and H.TH_CHAT is True
 # 실패한 수다 글 = 다음 실행 1번 더(th_retry)도 주제 '일상'
 H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("x")); s87f = {}; time.time = lambda: TK("2026-11-07 13:12")
 try:
@@ -9382,6 +9438,30 @@ try:
 except OSError:
     pass
 assert s87f["thretry_20261107_chat"]["topic"] == "일상"
-(H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk87, H.POSTS, H.METRICS, H.http) = sv87
+tg87, H.th_landed = [], lambda *a, **k: False; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": tg87.append(tag) or {"id": "R1"}
+H.th_retry(s87f); assert tg87 == ["일상"] and "R1" in s87f["chat"]["m"] and s87f["thnd"]["ts"], tg87  # 다시 올린 수다 글도 metrics chat·48시간 · 비딜 시각
+# II+(10/26 진우 '무례하지 않게, 그렇지만 재미있게'): TH_RUDE — 비꼬기·훈계·비하어·ㅋㅋ 2번 = 걸림 · '국룰'·'나만 그래?'·ㅋㅋ 1번·핫딜픽 자기 농담 = 통과
+for s88 in ("이것도 몰라?", "아직도 정가 주고 사?", "틀딱들은 이런 거 몰라", "맘충 소리 듣기 싫어", "ㅋㅋ 이거 ㅋㅋ 웃기다", "다른 계정은 진짜 별로더라", "요즘 것들은 다 이래", "선거 끝나면 장 보러 가야지"):
+    assert H.rude(s88), s88
+for s88 in ("국룰 아님?", "나만 그래?", "마트 가면 하나 더 담는 거 ㅋㅋ", "오늘 김 글만 세 번 올린 핫딜픽…", "사고 싶은 거 있어?", "허리띠 졸라매는 중", "라떼는 따뜻하게", "정당한 가격", "택배 기사님 고생", "충동구매 국룰", "씹을수록 고소", "수분 보충", "시발점"):
+    assert not H.rude(s88), (s88, H.rude(s88))
+assert H.chat_ok(["마트 가면 충동구매 하나는 국룰 ㅋㅋ", "나만 그래?"]) == "" and H.chat_ok(["오늘 김 글만 세 번 올린 핫딜픽…", "사고 싶은 거 생기면 바로 담는 편이야?"]) == ""  # 재미 O(사고 싶다·충동구매 = 금지어 X)
+assert H.chat_ok(["아직도 정가 주고 사는 사람 있음", "너는 어때?"]).startswith("무례") and H.chat_ok(["ㅋㅋ 마트 가면 ㅋㅋ", "너는?"]) == "무례(ㅋㅋ 2번)"
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po87.append((text, tag, link)) or {"id": f"C{len(po87)}"}
+q88 = [["장보기 목록 안 쓰는 사람 진짜 한심하더라", "너는 목록 쓰는 편이야?"], ["장보기 목록은 늘 쓰는데 늘 하나 더 담게 됨", "다들 목록 지키는 편이야?"]]; n87 = len(po87)
+H.ai_json = lambda prompt, props, img=None: pr87.append(prompt) or {"lines": q88.pop(0)}; o87 = chat87("2026-11-08 13:12", {})
+assert len(po87) == n87 + 1 and po87[-1][0].startswith("장보기 목록은 늘") and "다시: '한심' 무례" in pr87[-1] and "무례 X: 사람·집단 놀림" in pr87[-2]  # 무례 = 1번 다시
+q88 = [["장보기 목록 안 쓰는 사람 진짜 한심하더라", "너는?"], ["목록 없이 가는 사람 바보 같아", "너는?"]]; o87 = chat87("2026-11-09 13:12", {})
+assert len(po87) == n87 + 1 and "규칙 걸림 -> 안 올림" in o87 and "무례(바보)" in o87 and not q88  # 또 걸리면 그날 X
+# 첫 줄 훅: 무례 = 같은 종류 1번 더 -> 또 걸리면 다음 종류 · 말투 줄·투표·운영 일지·C·S·재검토 코드 검사에도
+q88 = [{"hook": "이것도 몰라?"}, {"hook": "다들 이거 몇 개씩 사 둬?"}]; H.ai_json = lambda prompt, props, img=None: pr87.append(prompt) or q88.pop(0)
+assert H.th_hook({"thhook": {"l": [5]}}, "생수 2L", False, "", "^$", []) == ("다들 이거 몇 개씩 사 둬?", 1) and "다시: 무례 X" in pr87[-1] and "무례 X: 사람·집단 놀림" in pr87[-2]
+q88 = [{"hook": "이것도 몰라?"}, {"hook": "아직도 정가 주고 사?"}, {"hook": "장 볼 때마다 생각나는 그거"}]
+assert H.th_hook({"thhook": {"l": [5]}}, "생수 2L", False, "", "^$", []) == ("장 볼 때마다 생각나는 그거", 2) and not q88
+assert H.th_c_line("이것도 몰라?", [], False) == "" and 'not rude(f"{s}\\n{hook}")' in inspect.getsource(H.th_voice) and "TH_FUN" in inspect.getsource(H.th_voice) and "rude(s)" in inspect.getsource(H.poll_ai) and "fun=TH_FUN" in inspect.getsource(H.poll_ai) \
+    and "not rude(rules[0][4])" in inspect.getsource(H.log_text) and "TH_FUN" in inspect.getsource(H.th_c_gen)
+with contextlib.redirect_stdout(io.StringIO()):
+    assert sv87[3]("cur", "큐레이션\n이것도 몰라?", ["이것도 몰라?", "겨울엔 귤 박스 국룰"], ai=False) == {"이것도 몰라?": ""}  # 큐레이션 재검토 = 무례 줄만 뺌(코드 검사 rv_bad)
+(H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk87, H.POSTS, H.METRICS, H.http) = sv87
 H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk87); os.chdir(cwd87)
 print("OK: 모든 셀프체크 통과")

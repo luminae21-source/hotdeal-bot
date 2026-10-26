@@ -1470,10 +1470,52 @@ def goldbox(seen):
         seen["gold0"] = {"t": time.time(), "d": key}
         print("goldbox", len(items), "개 중 고른 것 0 — 다음 실행에 1번 더")
         return
-    if not rows:
-        print("goldbox", len(items), "개 중 고른 것 0(2번째) — 오늘 안 올림")
-    if m or not rows:  # 살 만한 게 없으면 오늘은 안 올림(15분마다 다시 고르지 않게)
+    if m or not rows and gold_steady(seen, len(items)):  # 0개(2번째) = 꾸준템 글(JJ) · 보낸 뒤(못 보냄 = 다음 실행에)
         seen[key] = time.time()
+
+
+GOLD_ST_N, GOLD_ST_REV, GOLD_ST_RATE, GOLD_ST_DAYS = (3, 5), 1000, 4.5, 3  # JJ(10/26 진우 '살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자'): 골드박스 고른 것 0인 날 = 같은 시각·채널 꾸준템 3~5개
+GOLD_ST_FIRST = ("food", "snack", "season", "life", "laundry", "women", "kitchen")  # 식품·생필품 먼저
+
+
+def gold_steady(seen, n0):
+    """JJ 골드박스 0개(2번째) -> '👍 꾸준히 팔리는 쿠팡 상품' 채널 글(골드박스 TOP 자리) -> 보냄·안 올림 = True, 텔레그램 실패 = False(다음 실행에).
+    후보 = 사이트 👍 꾸준템 쿠팡 진열(파트너스 딥링크·품절·뺌 X·리뷰 GOLD_ST_REV↑·⭐ 있으면 GOLD_ST_RATE↑·계절 맞음(season_adj ≥ 0)·이름에 🔥/특가/할인/최저 X)
+    중 최근 GOLD_ST_DAYS일 채널 글·이 글에 나간 상품 X, 식품·생필품 먼저(그다음 최근 진열 순). 3개 못 채우면 안 올림.
+    shortcut: 골드박스 API엔 평점·리뷰 수가 없어 골드박스 후보는 못 거름(= 진열 꾸준템만) · 평점도 진열 글에 있을 때만 봄."""
+    posts, now = load(POSTS, []), time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    since, today = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - GOLD_ST_DAYS * 86400)), time.strftime("%m/%d", kst)
+    norm = lambda x: re.sub(r"\W", "", x.lower())
+    st = {u: t for u, t in seen.get("goldst", {}).get("u", {}).items() if now - t < GOLD_ST_DAYS * 86400}
+    recent = [p for p in posts if not p.get("shelf") and p["t"] >= since]
+    ru, rt = {p.get("url") for p in recent} | set(st), norm(" ".join(p["text"] for p in recent))
+    cands, us = [], set()
+    for p in reversed(posts):
+        rv, rate = re.search(STEADY_REV, p["text"]), re.search(r"⭐\s*(\d\.\d)", p["text"])
+        _, name, price = parse(title_of(p["text"]))
+        if not (p.get("own") and p.get("shelf") and th_steady(p["text"]) and urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") not in ("gone", "out")) \
+                or p["url"] in us or p["url"] in ru or norm(name) in rt or not rv or steady_n(rv[1]) < GOLD_ST_REV or rate and float(rate[1]) < GOLD_ST_RATE \
+                or season_adj(name) < 0 or re.search(r"🔥|특가|할인|최저", name):
+            continue
+        us.add(p["url"])
+        unit = re.search(r"💰\s*([^\n]*꼴)", p["text"])
+        now_p = p.get("now") or price.split("/")[0].strip()
+        cands.append((cat_of(p) not in GOLD_ST_FIRST, p["url"], name, now_p + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(f"{kst.tm_mon}/{kst.tm_mday} ") else ""),
+                      unit[1] if unit and now_p == price.split("/")[0].strip() else "", f"리뷰 {steady_n(rv[1]):,}" + (f" · ⭐ {rate[1]}" if rate else "")))  # 단가 = 진열 글 가격 그대로일 때만
+    picks = sorted(cands, key=lambda x: x[0])[:GOLD_ST_N[1]]
+    if len(picks) < GOLD_ST_N[0]:
+        print("goldbox", n0, f"개 중 고른 것 0 → steady 후보 {len(picks)}개({GOLD_ST_N[0]}개 미만) — 오늘 안 올림")
+        return True
+    rows = [f"{k}. <a href=\"{esc(u)}\">{esc(n)}</a> — <b>{esc(pr)}</b>\n   " + " · ".join(esc(x) for x in (un, rv) if x) for k, (_, u, n, pr, un, rv) in enumerate(picks, 1)]
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
+           text=f"<i>{DISCLOSURE}</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 {len(picks)}개</b>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",
+           reply_markup={"inline_keyboard": [[{"text": "👍 꾸준템 더 보기", "url": f"{SITE}c/steady/"}]]})
+    if not m:
+        return False
+    seen["goldst"] = {"t": now, "u": {**st, **{x[1]: now for x in picks}}}
+    print("goldbox", n0, f"개 중 고른 것 0 → steady {len(picks)}개", "|", " / ".join(clip(x[2], 20) for x in picks))
+    return True
 
 
 CP_EVE, CP_EVE_DAY, CP_EVE_TAG = (18, 21), 2, "쿠가세"  # AA(10/26 Cowork '쿠가세 · 가전디지털 세일 중 제철 가전을 Threads 칸에 하루 1~2개(저녁 피크), 사이트는 기획전 쪽에'): 18~20시 · 하루 2개 · 사이트 tag(promos.json 행사 tag와 같게)
@@ -3724,6 +3766,7 @@ TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종
 TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 반말·구어체, 폰 한 줄(20자 안팎), 이모지 0~2개.
 - {kind}
 - 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데), 효능·건강, 과장·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
+- {fun}
 
 상품명: {name}"""
 TH_END_FROM, TH_FEW_REV = "2026-10-26", 30  # O 실험 시작일(metrics chg · 1주 뒤 리포트 비교 th_end_report) · 리뷰 이만큼 안 되면 '리뷰 아직 적음'
@@ -3745,6 +3788,25 @@ def ai_voice(prompt):
 
 
 REVIEW, RV_MAX = True, 3  # Z-4(10/26 진우 '재검토 기능 넣어서 멘트 수정하자'): 게시 직전 멘트 줄 재검토(Claude 1번 더) · 한 실행 Claude 재검토 상한 = 글 종류(where)마다(넘으면 코드 검사만 — 밀린 예약 글도 6분 안, 앞 단계가 Threads 딜 글 몫을 다 쓰지 않게)
+TH_FUN = ("재미 O: 누구나 겪는 장면 · 가벼운 과장('국룰', '나만 그래?') · 'ㅋㅋ'는 글에 1번까지 · 웃음 대상은 상황이나 핫딜픽 자신만(예: '오늘 김 글만 세 번 올린 핫딜픽…').\n"
+          "무례 X: 사람·집단 놀림·비하(나이·성별·지역·외모·직업·소득·육아·결혼) · 읽는 사람 비꼬기·훈계('이것도 몰라?', '아직도 정가 주고 사?') · 욕설·비속어·혐오 표현·비하 밈 낱말 · "
+          "특정 브랜드·몰·다른 계정 깎아내리기 · 정치·종교·사건사고·연예인.")  # II+(10/26 진우 '무례하지 않게, 그렇지만 재미있게') — Threads에서 Claude가 쓰는 줄 프롬프트 전부
+TH_RUDE = (r"(?:이것|이거|그것|그거|이런\s*거|그런\s*거)도\s*(?:몰|모르)|아직도\s*[^\n?]{0,8}(?:정가|제값|비싸게|돈\s*주고|주고\s*사)|(?:정가|제값)\s*(?:다\s*)?주고\s*사는\s*(?:사람|분)|"  # 읽는 사람 비꼬기·훈계
+           r"요즘\s*누가|(?:모르면|안\s*사면)\s*(?:손해|바보|호구)|정신\s*차려|철\s*(?:좀\s*)?들어|한심|쯧|ㅉㅉ|멍청|바보|"
+           r"(?:여자|남자|아줌마|아저씨|할머니|할아버지|노인|경상도|전라도|충청도|강원도|지방|시골)\s*(?:사람)?들(?:은|이란)\s*(?:꼭|다|원래|역시|맨날|항상|하여튼)|요즘\s*것들|"  # 집단 싸잡기
+           r"틀딱|급식충|맘충|설명충|진지충|한남(?![동대])|한녀|김치녀|된장녀|개저씨|꼰대|라떼는\s*말이야|흙수저|찐따|호구|호갱|흑우|노처녀|노총각|뚱땡이|짱깨|쪽바리|흑형|정신병자|"  # 비하 밈·혐오
+           r"병신|ㅂㅅ|시발(?!점)|씨발|ㅅㅂ|ㅆㅂ|존나|ㅈㄴ|졸라(?!\s*매|맨)|개새|새끼야|새꺄|지랄|닥쳐|등신(?!대)|미친\s*(?:놈|년|새)|느금|"  # 욕설·비속어
+           r"(?:거기|딴\s*데|다른\s*(?:데|곳|몰|계정|브랜드))[^\n]{0,10}(?:별로|구려|구림|후져|후짐|최악)|사기꾼|"  # 브랜드·몰·다른 계정 깎아내리기
+           r"대통령|국회|여당|야당|정당(?![한하])|선거|정치|종교|교회|목사|스님|기독교|천주교|불교|이슬람|참사|사건\s*사고|연예인|아이돌")  # 정치·종교·사건사고·연예인
+
+
+def rude(s):
+    """II+ 무례 거르기 -> 걸린 말(빈 문자열 = 통과): TH_RUDE · 'ㅋㅋ' 2번↑."""
+    if m := re.search(TH_RUDE, s or ""):
+        return m[0]
+    return "ㅋㅋ 2번" if len(re.findall(r"ㅋ{2,}", s or "")) > 1 else ""
+
+
 RV_PROMPT = """게시 직전 쇼핑 글 재검토예요. 아래 '멘트 줄'(사람처럼 쓴 줄)만 체크리스트로 보고, 문제 있는 줄만 고쳐 주세요.
 ① 계절·기온이 오늘과 맞음(아래 '오늘' 줄 — 예: 10월 말에 '날 더워지면' X)
 ② 숫자·날짜·수량이 원본 사실과 같음(오래된 가격 X — 토스는 오늘 게시 시점 가격만)
@@ -3752,6 +3814,7 @@ RV_PROMPT = """게시 직전 쇼핑 글 재검토예요. 아래 '멘트 줄'(사
 ④ 모든 줄이 완성된 문장(단점 줄도 — '단점 하나: 색상 옵션' X, '단점 하나: 색상은 옵션에서 따로 골라야 함' O)
 ⑤ 뜻이 통함(바로 이해되는 구체적인 말 — '한 박스로 넉넉히 두면 계산이 편하겠다' X, '아침마다 하나씩 집어 가기 좋겠다' O)
 ⑥ 금지: 써 본 척·효능·과장·재촉, 토스 글은 다른 쇼핑몰 비교
+⑦ 무례 X: 사람·집단 놀림·비하, 읽는 사람 비꼬기·훈계('이것도 몰라?'), 욕설·비속어·비하 밈, 브랜드·몰·다른 계정 깎아내리기, 정치·종교·사건사고·연예인 — 재미(누구나 겪는 장면·'국룰'·'나만 그래?' 같은 가벼운 과장)는 살리기
 - 다 괜찮으면 ok=true, fix=[].
 - 고칠 줄만 fix에 {line: 멘트 줄 그대로, new: 고친 한 줄(같은 말투·비슷한 길이, 원본에 없는 숫자 X) 또는 ''(빼는 게 나으면)}.
 - 멘트 줄이 아닌 줄(상품명·가격·링크·대가성 문구)은 고치지 않기."""
@@ -3785,6 +3848,8 @@ def rv_bad(l, text, hook, ctx, dup=False, names=()):
         return "끊긴 문장"
     if old_toss(l):
         return "오늘 아닌 가격"
+    if w := rude(l):
+        return f"무례({w})"
     won = lambda x: {re.sub(r"\s", "", n) for n in re.findall(r"(?<![\d,])\d[\d,]*\s*원", x)}  # 금액째(1,500원 안의 500원 X)
     if dup and (n := next(iter(won(l) & won("\n".join(o for o in text.split("\n") if o.strip() and o.strip() != l))), None)):
         return f"같은 숫자({n})"
@@ -4032,8 +4097,8 @@ def th_voice(seen, text, link, src=None):
         ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and not re.search(rf"\d|{TH_PRICE_WORD}", s) and th_w(s) <= TH_W + 2 \
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
             and (yo_ok or not re.search(VOICE_YO, re.sub("|".join(map(re.escape, names)) or "^$", "", s))) and norm(s) not in st.get("f", []) \
-            and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names)  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X
-        prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
+            and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(f"{s}\n{hook}")  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
+        prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
             + ("\n- 이 글 = '꾸준히 팔리는 상품': 특가·최저가·할인이라고 하지 않기." if steady else "") \
             + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "") \
@@ -4049,7 +4114,7 @@ def th_voice(seen, text, link, src=None):
             if ok(x):
                 line = x
                 break
-            again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉 X · 최근 줄·첫 줄과 다르게 · 지금 계절에 맞게)."
+            again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉·무례 X · 최근 줄·첫 줄과 다르게 · 지금 계절에 맞게)."
         pool = [] if oy else list(TH_TONE_POOL5[tone])  # 올리브영 = 기본 줄 X(큐레이터 정책: 가격·용량·구성·조건만)
         line = line or ([x for x in pool if norm(x) not in st.get("f", [])] or pool or [""])[0]  # 올리브영이라 맞는 기본 줄이 없으면 말투 줄 없이
         soc = ([f"평점 {rate[1]}"] if rate else []) + ([f"리뷰 {th_round(rv)}"] if rv else []) + ([f"한 달 {th_round(buy).rstrip('+')}명{'+' * th_round(buy).endswith('+')} 구매"] if buy else [])
@@ -4102,10 +4167,13 @@ def th_hook(seen, name, dl, unit, ban, names):
         if k in fixed:
             return fixed[k], k
         try:
-            h = re.sub(r"\s+", " ", str(ai_json(TH_HOOK_PROMPT.format(kind=TH_HOOK_ASK[k], name=name), {"hook": {"type": "string"}}).get("hook") or "")).strip()
+            for again in ("", "\n다시: 무례 X(놀림·비하·비꼬기·훈계·비속어)."):  # II+ 무례 = 같은 종류 1번 더
+                h = re.sub(r"\s+", " ", str(ai_json(TH_HOOK_PROMPT.format(kind=TH_HOOK_ASK[k], name=name, fun=TH_FUN.replace("\n", "\n- ")) + again, {"hook": {"type": "string"}}).get("hook") or "")).strip()
+                if not rude(h):
+                    break
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
             if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_W + 2 and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
-                    and not h.startswith(VOICE_LABEL) and not season_bad(plain):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
+                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(h):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
                 return h, k
         except Exception as e:
             print("th hook 다음 종류로", clip(repr(e), 80))
@@ -4117,7 +4185,7 @@ TH_C, TH_C_FROM, TH_SCENE_H = True, "2026-10-25 20:00", (19, 22)  # 10/25 Cowork
 TH_C_BAN = r"추천|인생\s*템|강추|무조건|최저|역대|(?:가장|제일|젤)\s*(?:싸|저렴)|품절\s*임박|서두르|지금\s*바로|사세요|사야\s*해|구매하|링크|광고|수수료|https?:|\.kr|\.com"  # C·S 글(대가성 문구·링크는 코드가 붙임)
 TH_C_FAKE = r"쟁여\s*(?:둔다|둠|둬|뒀|놨|놔|놓음|놓았|두는\s*중|두고\s*있)|쟁였|(?:쓰|써\s*보|마시|먹|입|신|뿌리|바르|발라\s*보|사용하|들고\s*다니)는\s*중(?!에)|쓰고\s*(?:부터|나서|나니)|쓰니까|써\s*보니|먹고\s*(?:부터|나서)|바꿨|바꿈|바꾸고\s*나|갈아타|갈아탔|갈아탐|정착|들인\s*뒤|들이고\s*나|(?:사다|사|주문해|시켜|챙겨|걸어)\s*(?:둠|둬|둔다|뒀|놨|놔|놓음)|(?:이거|이걸로)\s*(?:만\s*)?(?:씀|써|먹어|먹음|마셔|마심)(?![가-힣])|챙겨\s*먹|챙김|바름|샀더니|써\s*봄|먹어\s*봄|이거만\s*(?:씀|써|먹)|매일\s*(?:마심|먹음|씀|바름)|요즘\s*(?:이거|이걸로)|정기\s*배송|해결\s*(?:함|했|됨)|편해\s*(?:짐|졌)|좋아\s*(?:짐|졌)|달라\s*(?:짐|졌)"  # 내가 샀다·쓴다는 말(써 본 척 — 10/25 리뷰 2번: '쟁여 두기·두면' 같은 권유 꼴은 OK)
 TH_C_SKIP = r"영양제|유산균|프로바이오|락토|비타민|멀티\s*비타|종합\s*비타|오메가|콜라겐|홍삼|루테인|밀크\s*[씨시]슬|쏘팔|아르기닌|코엔자임|코큐텐|프로폴리스|크릴|보스웰리아|양배추즙|도라지|프로틴|다이어트|건강|효소|흑마늘|녹용|글루타치온|마그네슘|철분|칼슘|엽산|의약|파스|마스크팩|탈모|두피|\d+\s*(?:정|캡슐)(?![가-힣])"  # 몸·피부 고민 → 상품 = 효능 주장이 되는 품목은 C·S X(A/B만 — 전체 제목으로 봄, + WU_HEALTH)
-TH_C_BODY = r"아프|아파|뻐근|결림|저리|가려|간지러|빠진\s*머리|머리카락이\s*빠|더부룩|소화가|붓기|부었|피곤|칼칼|기침|콧물|여드름|트러블|잡티|기미|주름|각질|두통|생리통|변비|불면|잠이\s*안"  # 몸·피부 증상 장면 X(상황 → 상품 = 효능 주장 — 생활 불편만)
+TH_C_BODY = r"아프|아파|뻐근|결림|저리|가려(?:워|움|운|웠)|간지러|빠진\s*머리|머리카락이\s*빠|더부룩|소화가|붓기|부었|피곤|칼칼|기침|콧물|여드름|트러블|잡티|기미|(?:얼굴|눈가|이마|목|피부)\s*주름|주름살|각질|두통|생리통|변비|불면|잠이\s*안"  # 몸·피부 증상 장면 X(상황 → 상품 = 효능 주장 — 생활 불편만)
 TH_C_PROMPT = """너는 Threads에 생활 속 불편을 반말로 짧게 쓰는 사람이야. 아래 상품이 해결하는 '실제로 자주 겪는 불편한 상황'을 써.
 - 상품명·브랜드·'추천'이라는 말 X. 가격·숫자·용량·스펙·링크 X. 써 본 척(나도·내가·샀는데·써 보니)·효과·효능 약속·과장(인생템·강추·무조건·최저) X. 다른 쇼핑몰 이야기 X. 재촉('지금 바로'·'사세요') X.
 - 말하는 사람이 그 물건을 샀다·쓴다·먹는다·바꿨다·쟁여 뒀다는 말 X(요즘 이거 써·먹는 중·바꿨더니·들인 뒤로·쟁여 둠·챙김 X) — 불편한 장면만, 해결은 '방법·물건 소개'로.
@@ -4136,7 +4204,7 @@ def th_c_line(x, names, toss, name_ok=False):
     """C·S 글 한 줄 검사: 폭·금지어(TH_C_BAN·써 본 척·효능·과장·비교 — 토스 = 다른 몰 말 X)·숫자 X·상품명 낱말 X(name_ok면 허용) -> 다듬은 줄 또는 ''."""
     x = re.sub(r"\s+", " ", str(x or "")).strip()
     bad = not x or th_w(x) > TH_W + 6 or re.search(rf"{TH_C_BAN}|{TH_C_FAKE}|{TH_C_BODY}|{VOICE_BAN}|{WU_BAN}" + (f"|{TOSS_BAN}" if toss else ""), x) or re.search(r"\d", x) \
-        or not name_ok and any(n in x for n in names) or season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", x))  # Z 계절·기온(C·S는 지금 꺼짐 — 켜면 재검토도 붙일 것)
+        or not name_ok and any(n in x for n in names) or season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", x)) or rude(x)  # Z 계절·기온(C·S는 지금 꺼짐 — 켜면 재검토도 붙일 것)
     return "" if bad else x
 
 
@@ -4145,7 +4213,7 @@ def th_c_gen(kind, name, cat, toss):
     names = [w for i, w in enumerate(re.findall(r"[가-힣A-Za-z]{2,}", name)) if not i or re.search(r"[A-Za-z]", w)]  # 상품명 X = 브랜드(첫 낱말)·영문 낱말(모델명) — '화장지'·'생수' 같은 종류 말은 상황 말로 OK
     props = {"hook": {"type": "string"}, "lines": {"type": "array", "items": {"type": "string"}}, "tease": {"type": "string"}, "answer": {"type": "string"}} if kind == "C" else \
         {"hook": {"type": "string"}, "scenes": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}, "close": {"type": "string"}}
-    prompt, again = TH_C_PROMPT + "\n" + TH_C_RULE[kind] + ("\n- 토스 상품: 다른 쇼핑몰 이름·가격 비교 없이." if toss else "") + f"\n\n상품: {name}\n품목: {cat or '생활용품'}", ""
+    prompt, again = TH_C_PROMPT + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n" + TH_C_RULE[kind] + ("\n- 토스 상품: 다른 쇼핑몰 이름·가격 비교 없이." if toss else "") + f"\n\n상품: {name}\n품목: {cat or '생활용품'}", ""
     for _ in (0, 1):
         try:
             x = ai_json(prompt + again, props)
@@ -4163,7 +4231,7 @@ def th_c_gen(kind, name, cat, toss):
             out = {"hook": th_c_line(x.get("hook"), names, toss), "scenes": sc, "close": th_c_line(x.get("close"), names, toss)}
             if out["hook"] and out["close"] and len(sc) == 3 and all(3 <= len(z) <= 5 and all(z) for z in sc) and emo <= 1:
                 return out
-        again = "\n\n다시: 앞 답이 규칙에 안 맞음(줄 수·숫자 X·상품명 X·금지어 X·한 줄 폭)."
+        again = "\n\n다시: 앞 답이 규칙에 안 맞음(줄 수·숫자 X·상품명 X·금지어·무례 X·한 줄 폭)."
     print("th c 규칙 안 맞음", kind, clip(name, 30))
     return None
 
@@ -5684,9 +5752,14 @@ def th_bundle(seen, kind, text, link=None, image=None, topic=None):
         seen.setdefault(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, {"t": time.time(), "text": text, "link": link, "img": image, "topic": topic})
         raise
     if kind in TH_NONDEAL:
-        now = time.time()
-        seen["thnd"] = {"t": now, "ts": [t for t in seen.get("thnd", {}).get("ts", []) if now - t < 86400] + [now]}
+        th_nd(seen)
     return r
+
+
+def th_nd(seen):
+    """비딜 Threads 글 올린 시각(최근 24시간) -> seen thnd(수다 글 앞뒤 30분 칸) — 묶음 글·다시 올림·큐레이션."""
+    now = time.time()
+    seen["thnd"] = {"t": now, "ts": [t for t in seen.get("thnd", {}).get("ts", []) if now - t < 86400] + [now]}
 
 
 def th_reply(tok, to, text, link=None):
@@ -5791,7 +5864,11 @@ def th_retry(seen):
     for k in [k for k, v in seen.items() if k.startswith("thretry_") and isinstance(v, dict) and not v.get("done")]:
         seen[k]["done"] = 1
         if tok and k.startswith(today) and not th_landed(tok, seen[k]["text"], seen[k]["t"] - 300):
-            th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"), th_topic(seen, base=seen[k].get("topic")))
+            r = th_post(tok, seen[k]["text"], seen[k].get("link"), seen[k].get("img"), th_topic(seen, base=seen[k].get("topic")))
+            if k.split("_", 2)[2] in TH_NONDEAL:
+                th_nd(seen)
+            if k.endswith("_chat") and (r or {}).get("id"):  # 수다 글 = metrics kind chat·48시간(chat_post가 못 적은 id)
+                seen.setdefault("chat", {"t": time.time(), "h": [], "m": {}})["m"][r["id"]] = {"ts": time.time()}
     for k in [k for k in seen if k.startswith("thabq_") and time.time() - seen[k].get("t", 0) >= 600]:  # B·C·S 글의 링크 댓글이 실패했던 것 -> 다음 실행에 1번만 더(같은 실행 X — 잠깐 끊긴 동안 2번 다 실패 X, 10/25 리뷰 · 안 되면 알림, 그 뒤엔 안 함)
         v = seen.pop(k)
         try:
@@ -6416,34 +6493,40 @@ CHAT_TOPICS = (("shop", "장보기 습관 공감(예: 마트 가면 계획에 �
                ("season", "오늘 계절·기온 이야기(아래 '오늘 계절' 줄에 있는 것만 — 없는 날씨·기온 X)"), ("quiz", "가격 감각 퀴즈 — 숫자는 아래 '우리 기록' 숫자 그대로만(품목은 일반 이름 — 상품·브랜드 X)"),
                ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"))
 TH_NONDEAL = ("info", "wx", "snack", "log", "funnel", "chat")  # 비딜 Threads 묶음 글 kind(큐레이션 = events 시각·정해진 시각 글은 시각으로) — 수다 글 앞뒤 30분 칸
-CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|사세요|사\s*둬|사\s*두세요|구매|주문하|담으세요|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|핫딜픽|"  # 링크·권유·우리 이름
-            r"댓글[^\n]{0,12}(?:달면|남기면|주시면|주면|달아\s*주면)|추첨|경품|선물\s*(?:드|줄|준)|보내\s*(?:드|줄|준)|"  # 댓글 보상 유도
-            r"대통령|국회|정부|정당|선거|정치|연예인|아이돌|배우|가수|드라마|뉴스|기사|사건|사고|논란|"  # 정치·연예·뉴스
-            rf"{SAVE_STORES}|{OTHER_STORES}|다이소|코스트코|트레이더스|홈플러스|롯데마트")  # 몰·마트 이름(상품·브랜드 X)
+CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|사세요|사\s*둬|사\s*두세요|구매\s*(?:하세요|해|하자|각|추천)|주문하세요|담으세요|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|"  # 링크·권유
+            r"(?:댓글|답글)[^\n]{0,15}(?:달면|단\s*사람|남기면|남긴\s*사람|주시면|주면|달아\s*주면|쓰면)|추첨|경품|기프티콘|쏜다|쏠게|나눔|드려요|보내\s*드|"  # 댓글 보상 유도
+            r"정부|가수|드라마|예능|뉴스|기사(?!님)|사건|논란|"  # 뉴스·연예 이슈(정치·종교·사건사고·연예인 = TH_RUDE)
+            rf"{SAVE_STORES.replace('토스', '토스(?!트)')}|{OTHER_STORES}|다이소|코스트코|트레이더스|홈플러스|홈플|롯데마트|이마트|올영|알리(?:에서|익스)|테무|무신사|스타벅스|스벅|이케아|배민|컬리")  # 몰·마트 이름(+ 브랜드 = chat_ok POLL_BRANDS)
 CHAT_PROMPT = """Threads에 올릴 짧은 '수다 글'을 반말로 써 줘. 쇼핑·살림 이야기를 친구한테 하듯 가볍고 재미있게.
 주제: {topic}
 {facts}규칙:
 - 2~4줄(lines 한 칸 = 한 줄). 마지막 줄 = 가벼운 질문 1개(글 전체 물음표는 그 1개만). 앞 줄은 공감되는 이야기.
 - 상품 이름·브랜드·몰·가게 이름 X. 가격 숫자 X(가격 퀴즈만 위 우리 기록 숫자 그대로). 링크·해시태그 X, 이모지 0~1개.
 - 써 본 척·지어낸 경험담('써봤', '우리 집' 등) X, 몸·피부 증상·효능 X, 사라·담아라 같은 구매 권유 X, '댓글 달면 …' 같은 보상 유도 X, 정치·연예·뉴스 X.
+- {fun}
 최근 수다 글(겹치지 않게):
 {recent}"""
 
 
-def chat_ok(lines, money=()):
-    """수다 글 줄 검사 -> 걸린 이유(빈 문자열 = 통과): 2~4줄 · 물음표 1개(마지막 줄) · 금지어(써 본 척·몸·효능·X_BAN·CHAT_BAN·계절) · 영문(상품·브랜드) · 원 금액 = 우리 기록(money)만."""
+def chat_ok(lines, money=(), facts=""):
+    """수다 글 줄 검사 -> 걸린 이유(빈 문자열 = 통과): 2~4줄 · 물음표 1개(마지막 줄 — 뒤 ㅋㅋ OK) · 금지어(써 본 척·몸·효능·X_BAN·CHAT_BAN·반말 재촉·브랜드·계절·무례) · 영문(상품·브랜드) ·
+    금액(숫자·말 — '3만원'·'천 원'·%·프로) = 우리 기록(money)만 · 기온·날짜(N도·M/D) = 재료(facts — 오늘 계절 줄·행사 기간)에 있는 숫자만."""
     t = "\n".join(lines)
     if not 2 <= len(lines) <= 4 or any(not l.strip() for l in lines) or len(t) > 240:
         return "줄 수·길이"
-    if t.count("?") + t.count("？") != 1 or not re.search(r"[?？][^\w]{0,3}$", lines[-1].strip()):
+    if t.count("?") + t.count("？") != 1 or not re.search(r"[?？](?:[^\w]|[ㄱ-ㅎㅏ-ㅣ]){0,4}$", lines[-1].strip()):
         return "질문 1개(마지막 줄)"
-    for rx, why in ((TH_C_FAKE, "써 본 척"), (TH_C_BODY, "몸·효능"), (X_BAN, "과장·수익"), (CHAT_BAN, "링크·권유·보상·이슈·몰"), ("|".join(map(re.escape, LOG_DENY)), "경험담")):
+    for rx, why in ((TH_C_FAKE, "써 본 척"), (TH_C_BODY, "몸·효능"), (X_BAN, "과장·수익"), (CHAT_BAN, "링크·권유·보상·이슈·몰"), (TH_PUSH, "권유"), (POLL_BRANDS, "브랜드"), ("|".join(map(re.escape, LOG_DENY)), "경험담")):
         if m := re.search(rx, t):
             return f"{why}({m[0]})"
+    if w := rude(t):
+        return f"무례({w})"
     if re.search(r"[A-Za-z]", re.sub(r"\d\s*(?:kg|g|ml|mL|L|l|cm|mm|m)(?![A-Za-z])", "", t)):  # 단위(2L·500ml·1L당) 말고 영문 = 상품·브랜드
         return "영문(상품·브랜드)"
-    if "%" in t or any(re.sub(r"\D", "", a) not in money for a in re.findall(r"\d[\d,]*\s*원", t)):
+    if re.search(r"%|퍼센트|\d\s*프로|[만천백]\s*원(?![래하인])|(?:한\s*잔|밥|커피)\s*값", t) or any(re.sub(r"[^\d.]", "", a) not in money for a in re.findall(r"\d[\d,.]*\s*원", t)):
         return "기록 밖 금액"
+    if set(n for g in re.findall(r"(\d+)\s*(?:도|℃|°)|(\d+)/(\d+)", t) for n in g if n) - set(re.findall(r"\d+", facts)):
+        return "재료 밖 기온·날짜"
     return "" if not season_bad(t) else "계절"
 
 
@@ -6457,33 +6540,35 @@ def chat_facts(name, ps, today, used):
             return None
         n, u, rows = recs[k]
         low, avg = rows[0], round(sum(r[0] for r in rows) / len(rows))
-        return f"우리 기록: {n} {u} 가격 — 기록 {len(rows)}개 중 가장 쌀 때 {low[1]} · 평균 {u} {avg:,}원\n", {re.sub(r"\D", "", low[1].split()[-1]), str(avg)}, k
+        return f"우리 기록: {n} {u} 가격 — 기록 {len(rows)}개 중 가장 쌀 때 {low[1]} · 평균 {u} {avg:,}원\n", {re.sub(r"[^\d.]", "", low[1].split()[-1]), str(avg)}, k
     if name == "cal":
         lim = time.strftime("%Y-%m-%d", time.gmtime(kst_ts(today + " 00:00") + 9 * 3600 + CAL_DAYS * 86400))
         rows = [f"· {re.sub(rf'{SAVE_STORES}|{OTHER_STORES}', '', p['name']).strip()} {int(p['start'][5:7])}/{int(p['start'][8:10])}~{int(p['end'][5:7])}/{int(p['end'][8:10])}"
                 for p, st, first in promo_list(today) if st != "past" and (first or today) <= lim and p.get("start") and p.get("end")][:3]
         return (f"행사(이름·기간만 — 몰 이름 X):\n" + "\n".join(rows) + "\n", set(), None) if rows else None
-    return "", set(), None
+    return (f"오늘 계절: {(RUN.get('season') or season_ctx({}))['line']}\n" if name == "season" else ""), set(), None
 
 
 def chat_post(seen):
     """II Threads 수다 글(10/26 Cowork): 딜·상품명·가격·링크 없는 짧은 반말 잡담 2~4줄 + 마지막 줄 질문 1개 — Threads만 하루 1번 CHAT_AT(점심) · 앞뒤 CHAT_GAP 안 다른 비딜 글
     (올린 비딜 묶음 글 seen thnd · 큐레이션 시각 · 날씨·달력·간식·일지·투표·알림 받기 시각)이면 다음 실행에(= 그 30분 뒤 첫 빈 실행) · CHAT_LATE 넘으면 그날 X ·
-    주제 5가지(CHAT_TOPICS — 최근 CHAT_DAYS일 덜 쓴 것 먼저, 재료 없는 퀴즈·달력 X) · Claude 1번 -> 규칙 검사(chat_ok) -> 재검토(review) 1번 -> 다시 검사, 걸리면 그 글 X(로그) ·
+    주제 5가지(CHAT_TOPICS — 최근 CHAT_DAYS일 덜 쓴 것 먼저, 재료 없는 퀴즈·달력 X) · Claude 1번(II+ 무례면 1번만 다시) -> 규칙 검사(chat_ok) -> 재검토(review) 1번 -> 다시 검사, 걸리면 그 글 X(로그) ·
     대가성 문구 X(제휴 링크 없음) · 주제 태그 '일상' · 답글 알림 = TH_WATCH 그대로 · metrics kind chat + 48시간 조회·답글(chat_48)."""
     now, tok = time.time(), E.get("THREADS_TOKEN")
+    if not (TH_CHAT and CHAT_AT and tok):
+        return
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", kst)
     key, at = "chat_" + day.replace("-", ""), kst_ts(f"{day} {CHAT_AT[0]:02d}:{CHAT_AT[1]:02d}")
-    if not TH_CHAT or not tok or key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False):
+    if key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False):
         return
-    fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR] + ([X_AT] if kst.tm_wday in X_DAYS else [])
+    fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT]  # None = 끔(그 시각 X)
     near = [t for t in seen.get("thnd", {}).get("ts", []) + [kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
     if near:
         print("chat post: 앞뒤 30분 안 비딜 글", time.strftime("%H:%M", time.gmtime(max(near) + 9 * 3600)), "-> 다음 실행")
         return
     seen[key] = now  # 먼저 표시(실패해도 오늘 다시 X)
-    st = seen.setdefault("chat", {"h": [], "m": {}})
+    st = seen.setdefault("chat", {"t": now, "h": [], "m": {}})  # t = seen 저장(3일 정리)이 봄
     st["h"] = [h for h in st.get("h", []) if h[0] > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 14 * 86400))]
     last = {h[1]: h[0] for h in st["h"]}  # 주제 -> 마지막으로 쓴 날
     ps, used = load(POSTS, []), {h[3] for h in st["h"] if len(h) > 3 and h[3] and h[0] > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - CHAT_DAYS * 86400))}
@@ -6494,21 +6579,28 @@ def chat_post(seen):
     else:
         return print("chat post: 쓸 주제 없음")
     facts, money, item = fx
-    recent = "\n".join(f"- {h[2]}" for h in st["h"][-CHAT_DAYS:]) or "- (없음)"
-    try:
-        lines = [l.strip() for l in ai_json(CHAT_PROMPT.format(topic=desc, facts=facts, recent=recent), {"lines": {"type": "array", "items": {"type": "string"}}})["lines"] if l.strip()]
-    except Exception as e:
-        return print("chat post: Claude 실패 -> 오늘 X", err_brief(e))
-    if why := chat_ok(lines, money):
+    recent = "\n".join(f"- {h[2]}" for h in st["h"][-CHAT_DAYS:] if h[2]) or "- (없음)"
+    st["h"].append([day, name, "", item])  # 고른 주제 = 못 올려도 돌림(같은 주제가 매일 걸려 멈추지 않게) · 올리면 첫 줄 채움
+    again = ""
+    for _ in (0, 1):  # II+ 무례 = 1번만 다시
+        try:
+            lines = [l.strip() for l in ai_json(CHAT_PROMPT.format(topic=desc, facts=facts, recent=recent, fun=TH_FUN.replace("\n", "\n- ")) + again, {"lines": {"type": "array", "items": {"type": "string"}}})["lines"] if l.strip()]
+        except Exception as e:
+            return print("chat post: Claude 실패 -> 오늘 X", err_brief(e))
+        if not (why := chat_ok(lines, money, facts)).startswith("무례"):
+            break
+        again = f"\n\n다시: '{why[3:-1]}' 무례 — 놀림·비하·비꼬기·훈계·비속어 없이."
+    if why:
         return print("chat post: 규칙 걸림 -> 안 올림", name, why)
     ch = review("chat", "\n".join(lines), lines, facts)
     lines = [ch.get(re.sub(r"\s+", " ", l).strip(), l) for l in lines]
     lines = [l for l in lines if l]
-    if why := chat_ok(lines, money):
+    if why := chat_ok(lines, money, facts):
         return print("chat post: 재검토 뒤 규칙 걸림 -> 안 올림", name, why)
     bundled(seen)
     r = th_bundle(seen, "chat", "\n".join(lines), topic="일상")
-    st.update(t=now, h=st["h"] + [[day, name, lines[0][:40], item]], m={**dict(list(st.get("m", {}).items())[-9:]), r["id"]: {"ts": now}})
+    st["h"][-1][2] = lines[0][:40]
+    st.update(t=now, m={**dict(list(st.get("m", {}).items())[-9:]), r["id"]: {"ts": now}})
     print("chat post:", name, r["id"], "|", " / ".join(lines))
 
 
@@ -6702,6 +6794,7 @@ def curation(seen):
             continue
         st["th"], st["ph"] = (r or {}).get("id"), ph
         bundled(seen)
+        th_nd(seen)  # 실제 올린 시각(수다 글 앞뒤 30분)
         print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
 
 
@@ -7236,6 +7329,7 @@ POLL_PROMPT = """Threads 가격 투표 글을 반말로 써 주세요. 품목: {
 - q = 질문 한 줄(40자 안팎), opts = 보기 정확히 4개(짧게 — Threads가 보기를 25바이트까지만 받음: 한글 1자 3바이트·숫자·띄어쓰기·기호 1바이트, 한글만이면 8자).
 - 반말·공감형('~요'로 끝나는 말 X). 마지막 보기는 가볍게 웃긴 것.
 - 상품명·브랜드(신라면·삼다수·햇반 같은 것)·쇼핑몰·편의점 이름·링크·광고 문구 X, 과장(역대급·무조건·손해) X.
+- {fun}
 - {kind}"""
 POLL_KIND = {  # 10/22 진우 시안 고름(반말·공감형 보기·마지막 보기는 가볍게 웃기게): 글마다 무작위 가 생활형 / 나 가격형
     "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입이면 충분 · 땡기면 편의점행 · 라면 끊음(진짜)",
@@ -7262,9 +7356,9 @@ def poll_ai(rec):
     def why(s):  # 걸린 이유('' = 통과)
         m = re.search(ban, s, re.I)
         return ("빈 칸" if not s else f"'{s}' ~요로 끝남" if any(re.search(POLL_YO, x) for x in re.split(r"[,·/()]", s))
-                else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else "")
+                else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else f"'{r}' 무례" if (r := rude(s)) else "")
     a, b, c = (re.match(r"[\d,]+원", x)[0] for x in opts0[:3])
-    prompt = POLL_PROMPT.format(name=name, unit=unit, kind=POLL_KIND[kind].format(unit=unit, name=name, nums=", ".join(opts0[:3]), a=a, b=b, c=c))
+    prompt = POLL_PROMPT.format(name=name, unit=unit, fun=TH_FUN.replace("\n", "\n- "), kind=POLL_KIND[kind].format(unit=unit, name=name, nums=", ".join(opts0[:3]), a=a, b=b, c=c))
     try:
         again = ""
         for _ in (0, 1):
@@ -7344,7 +7438,7 @@ def log_text(seen):
     rules = wx_rules(ws[0]) if ws else []
     text = (f"📝 핫딜픽 운영 일지 · {kst.tm_mon}/{kst.tm_mday}\n" + (f"오늘 핫딜픽이 본 커뮤니티 딜 {judged}개 중 {len(picked)}개만 골랐어요." if judged >= len(picked) else f"오늘 커뮤니티 딜 {len(picked)}개를 골랐어요.")
             + (f"\n커뮤니티 반응이 제일 빨랐던 딜: {clip(parse(title_of(top['text']))[1], 30)}" if top.get("vpm") or top.get("pop") else "")
-            + f"\n\n{rules[0][4] if rules else '오늘 하루 어땠어요?'}")
+            + f"\n\n{rules[0][4] if rules and not rude(rules[0][4]) else '오늘 하루 어땠어요?'}")
     return None if any(w in text for w in LOG_DENY) else text
 
 
