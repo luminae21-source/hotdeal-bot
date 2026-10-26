@@ -943,10 +943,20 @@ def toss_list(ps):
 TH_LIST_MIN, TH_FILL_HOURS, TH_FILL_REV, TH_LIST_REPEAT = 3, 6, 300, 2  # KK(10/26 Cowork): Threads 12·15·18시 리스트 3~5개(① 회차 TOP = 5개까지 · 3개 밑이면 ②~④로 3개까지) · ② 최근 6시간 수수료 딜 · ③ 🔥 쿠팡 진열 리뷰 300↑ · 24시간 안 리스트 2번 나온 상품 X
 
 
-def kind_key(name):
-    """같은 종류 키(리스트 안 2개 X — KK '성경김 2개 X'): 상품명 첫 낱말(꾸밈말 TH_MOD·국산·햇 같은 말·숫자로 시작하는 낱말 빼고) — 없으면 ''."""
-    ws = [w for w in re.findall(r"[가-힣A-Za-z0-9]{2,}", name) if not re.fullmatch(rf"{TH_MOD}|국산|국내산|햇|유기농|신선|\d.*", w)]
-    return ws[0].lower() if ws else ""
+KIND_ONE = "김쌀귤떡빵"  # 한 글자 품목(전장김·파래김·도시락김 = 김)
+KIND_NOT = r"미니|소형|중형|대형|특대형|데일리|여성|남성|여성용|남성용|아동용|유아용|개입|인용|전기|겨울|휴대용|스마트|라운드|고농축|워셔블|기모|스탠드|벽걸이|캠핑용|발열|무소음|저소음|무선|가정용|업소용|일회용|순한|저자극|약산성|고급형|일반형|신형|개선형"  # 종류가 아닌 꾸밈 낱말(같은 종류 셈 X — 10/26 실제 진열 300개 짝 비교)
+
+
+def kind_words(name):
+    """같은 종류 셈 낱말: 쿠팡 '상품, 모델명, 색'은 쉼표 앞만 · 괄호·꾸밈말(TH_MOD·IG_KIND_SKIP·KIND_NOT)·브랜드(첫 낱말) 빼고 두 글자↑ 한글 낱말."""
+    ws = [w for w in re.findall(r"[가-힣]{2,}", re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", re.sub(TH_MOD, " ", name.split(",")[0]))) if not re.fullmatch(IG_KIND_SKIP, w)]
+    return [w for w in ws[1:] or ws if not re.fullmatch(KIND_NOT, w)]
+
+
+def same_kind(a, b):
+    """같은 종류(KK — 리스트 안 2개 X, '성경김 2개'): 두 이름의 종류 낱말 중 하나라도 같거나 한쪽이 다른 쪽으로 끝남(히터·전기히터 — 긴 쿠팡 이름 '컨벡터 히터 스탠드 3단조절'도)
+    또는 끝 글자가 같은 한 글자 품목(KIND_ONE — 재래김·파래김). 브랜드만 같으면 다른 종류(코멧 화장지·코멧 핫팩)."""
+    return any(u.endswith(v) or v.endswith(u) or u[-1] == v[-1] and u[-1] in KIND_ONE for u in kind_words(a) for v in kind_words(b))
 
 
 def short_name(t):
@@ -2669,41 +2679,39 @@ def top_deals(seen):
     many = {u for u, c in collections.Counter(u for h in hist for u in h[1]).items() if c >= TH_LIST_REPEAT}  # 최근 24시간 리스트에 이미 2번 = X
     six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
     price = lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
-    cands = [(p, price(p), "", 1) for p in top if ok(p)] \
-        + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
-        + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍)
-    pick, us, kinds = [], set(many), set()
-    for p, pr, mk, src in cands:
-        if src > 1 and len(pick) >= TH_LIST_MIN:  # ②~④ = ①(회차 TOP 수수료 딜 — 5개까지)이 3개 밑일 때 3개까지만 채움
-            break
-        kd = kind_key(short_name(title_of(p["text"])))
-        if pr and p["url"] not in us and not (kd and kd in kinds):  # 같은 상품·같은 종류(첫 낱말 — '성경김' 2개) X
-            pick.append((p, pr, mk, src))
-            us.add(p["url"])
-            kinds.add(kd)
-    lines = [f"{NUM[n]} {mk}{clip(short_name(title_of(p['text'])), 30)} {pr}\n👉 {th_url(p, posts.index(p))}" for n, (p, pr, mk, _) in enumerate(pick)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
-
-    def render(n, bs):  # 리스트 n줄 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
-        used = [p for p, *_ in pick[:n]] + [p for p, _ in bs]
+    cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p)] \
+        + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
+        + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
+    def render(ps, bs):  # 리스트 줄들 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
+        used = [p for p, *_ in ps] + [p for p, _ in bs]
         head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in used))
         tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in used) else ""
-        return f"{head}\n\n🏆 지금 살 만한 딜 TOP{n} ({hrs[-1]}시)\n\n" + "\n".join(lines[:n]) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
-    n = len(lines)
-    while n >= TH_LIST_MIN and len(render(n, [])) > 480:  # 직접 링크는 사이트 주소보다 길 수 있어 줄임(3개까지)
-        n -= 1
+        lines = [f"{NUM[k]} {mk}{clip(short_name(title_of(p['text'])), 30)} {pr}\n👉 {th_url(p, posts.index(p))}" for k, (p, pr, mk, _) in enumerate(ps)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
+        return f"{head}\n\n🏆 지금 살 만한 딜 TOP{len(ps)} ({hrs[-1]}시)\n\n" + "\n".join(lines) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
+    pick, us = [], set(many)
+    for p, pr, mk, src in cands:
+        if src > 1 and len(pick) >= TH_LIST_MIN or len(pick) == 5:  # ②~④ = ①(회차 TOP 수수료 딜 — 5개까지)이 3개 밑일 때 3개까지만 채움
+            break
+        nm = short_name(title_of(p["text"]))
+        if not pr or p["url"] in us or any(same_kind(nm, short_name(title_of(q["text"]))) for q, *_ in pick) or src > 1 and th_beauty(nm) \
+                or len(render(pick + [(p, pr, mk, src)], [])) + max(0, TH_LIST_MIN - len(pick) - 1) * 80 > 480:  # 같은 상품·같은 종류 X · 💄 = 채움 셈 X(💄 칸 따로) · 3개 칸까지 남은 줄마다 80자 남겨 둠 — 긴 링크(링크프라이스 ~260자) 하나가 3개를 못 채우게 막으면 그 딜 X, 다음 후보
+            continue
+        pick.append((p, pr, mk, src))
+        us.add(p["url"])
+    n = len(pick)
     if n < TH_LIST_MIN:  # KK(10/26 Cowork — 진우 '싼 제품 달랑 하나 올라가니 황당, 최소 3~5개'): ①~④로도 3개 밑 = 그 회차 Threads 리스트만 X
         print(f"threads skip top{hrs[-1]} {n}개")
         return
-    links, beauty, inl = n, [], [p for p, *_ in pick[:n]]  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(셈에 안 넣음 · 링크는 합쳐 5개까지 — 넘으면 이름·가격만)
+    links, beauty, inl = n, [], [p for p, *_ in pick]  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(셈에 안 넣음 · 링크는 합쳐 5개까지 — 넘으면 이름·가격만)
     for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in inl and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
         line = f"· {clip(short_name(title_of(p['text'])), 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
-        if len(render(n, beauty + [(p, line)])) > 480:
+        if len(render(pick, beauty + [(p, line)])) > 480:
             break
         links += "👉" in line
         beauty.append((p, line))
-    th_bundle(seen, f"top{hrs[-1]}", render(n, beauty), th_url(inl[0], posts.index(inl[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
-    seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl]]]}
-    print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick[:n]).items())))
+    seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl]]]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
+    th_bundle(seen, f"top{hrs[-1]}", render(pick, beauty), th_url(inl[0], posts.index(inl[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick).items())))
 
 
 def busy(seen, cap=True):
@@ -3840,7 +3848,7 @@ TH_FUN = ("재미 O: 누구나 겪는 장면 · 가벼운 과장('국룰', '나�
           "특정 브랜드·몰·다른 계정 깎아내리기 · 정치·종교·사건사고·연예인.")  # II+(10/26 진우 '무례하지 않게, 그렇지만 재미있게') — Threads에서 Claude가 쓰는 줄 프롬프트 전부
 TH_RUDE = (r"(?:이것|이거|그것|그거|이런\s*(?:거|것)|그런\s*(?:거|것)|이걸|그걸)\s*(?:도|아직도?|여태)\s*(?:몰|모르|모름)|아직도?\s*[^\n?]{0,8}(?:몰라|모름|모르는\s*사람)\s*[?？]|"  # 읽는 사람 비꼬기·훈계
            r"아직도?\s*[^\n?]{0,8}(?:정가|제값|비싸게|돈\s*주고)[^\n?]{0,6}(?:사|삼|산다|구매)|(?:정가|제값)\s*(?:다\s*)?(?:주고|로)\s*사는\s*(?:사람|분)|"
-           r"요즘\s*누가|(?:모르면|안\s*사면)\s*(?:손해|바보|호구)|정신\s*(?:좀\s*차려|차려라)|(?<![가-힣])철\s*(?:좀\s*)?들어|한심|쯧|ㅉㅉ|멍청|바보|"
+           r"요즘\s*누가|(?:모르면|안\s*사면)\s*(?:손해|바보|호구)|정신\s*(?:좀\s*차려|차려라)|철\s*좀\s*들어|(?<![가-힣])철\s*들어라|철들어(?:라|야)|한심|쯧|ㅉㅉ|멍청|바보|"
            r"(?:여자|남자|아줌마|아저씨|할머니|할아버지|노인|경상도|전라도|충청도|강원도|지방|시골)\s*(?:사람)?들(?:은|이란)\s*(?:꼭|다|원래|역시|맨날|항상|하여튼)|요즘\s*것들|"  # 집단 싸잡기
            r"틀딱|급식충|맘충|설명충|진지충|한남(?![동대])|한녀|김치녀|된장녀|개저씨|꼰대|라떼는\s*말이야|흙수저|찐따|(?<!보)호구|호갱|노처녀|노총각|뚱땡이|짱깨|쪽바리|흑형|정신병자|"  # 비하 밈·혐오
            r"병신|ㅂㅅ|시발(?!점)|씨발|ㅅㅂ|ㅆㅂ|존나|ㅈㄴ|개새|새끼야|새꺄|지랄|닥쳐|등신(?!대)|미친\s*(?:놈|년|새)|느금|"  # 욕설·비속어
