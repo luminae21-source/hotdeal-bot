@@ -6994,6 +6994,12 @@ def dkey(title):
     return "k:" + k if len(k) >= 4 else None
 
 
+def pkey(title):
+    """같은 딜 둘째 키: 같은 [쇼핑몰]·같은 가격·상품명 앞 8자 — 커뮤니티마다 제목 꼬리가 달라 dkey가 갈려도(10/26 컬쳐랜드상품권 5만원권 46,500원: 루리웹 '5만원권'·뽐뿌 '5만/도서문화 5만 7%') 같은 딜. 가격·이름 못 읽으면 None."""
+    n, p = re.sub(r"[^0-9a-z가-힣]", "", parse(title)[1].lower())[:8], price_won(title)
+    return f"p:{store_tag(title)}:{p}:{n}" if p and len(n) >= 4 else None
+
+
 def quiet():
     """마지막 채널 딜 글이 GAP_FILL분(0~8시는 2배 — 10/22 진우 '새벽에도')보다 오래됐으면 True -> 6점 딜로 빈틈 메움."""
     now = time.time() + 9 * 3600
@@ -8095,11 +8101,11 @@ def main():
     fresh = [d for d in deals if d["id"] not in seen
              and min(MIN_AGE_RULIWEB if d["id"].startswith("ruliweb_") else MIN_AGE, cover[d["board"]] - RUN_GAP) <= d["age"] <= MAX_AGE]
     for d in sorted(fresh, key=lambda d: d["id"].split("_")[0] in FEEDS):  # 같은 딜이면 상품 주소를 얻을 수 있는 루리웹·클리앙 쪽을 남김
-        k = dkey(d["title"])
-        if k and (seen.get(k, 0) > time.time() - 86400 or k in keys):  # 24시간 안에 다른 커뮤니티에 올라온(또는 이미 판단한) 같은 딜
+        ks = {dkey(d["title"]), pkey(d["title"])} - {None}
+        if any(seen.get(k, 0) > time.time() - 86400 or k in keys for k in ks):  # 24시간 안에 다른 커뮤니티에 올라온(또는 이미 판단한) 같은 딜
             seen[d["id"]] = time.time()
             continue
-        keys.add(k)
+        keys |= ks
         new.append(d)
     held = []  # 지난 실행에서 넘친 좋은 딜(Claude 판단 그대로). 다시 물으면 점수가 흔들려 7점이 사라짐(10/8 17:21 갈비·MSI 7점 → 15분 뒤 5점 미만)
     for k in [k for k in seen if k.startswith("hold_")]:
@@ -8126,8 +8132,8 @@ def main():
             new = picks = []
         for d in new:  # AI 판단 성공한 뒤에만 '본 글'로 기록 -> 실패 시 다음 실행에서 재시도
             seen[d["id"]] = time.time()
-            if dkey(d["title"]):
-                seen[dkey(d["title"])] = time.time()
+            for k in {dkey(d["title"]), pkey(d["title"])} - {None}:
+                seen[k] = time.time()
         if new:
             print("점수", [(p["score"], new[p["i"]]["title"][:30]) for p in picks] or "5점 이상 없음")  # 컷 조절용 근거
         ok = lambda p: focus(new[p["i"]]["title"]) or p["score"] >= OTHER_MIN  # 3사가 아니면 대박(8점↑)만
