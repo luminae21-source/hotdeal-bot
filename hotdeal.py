@@ -810,10 +810,18 @@ def is_toss(url, text=""):
 
 STEADY_BUY, STEADY_REV = r"한\s*달(?:\s*동안|간)?\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)\s*명\s*\+?\s*(?:이상\s*)?(?:구매|샀)", r"리뷰\s*([\d,]*\d(?:\.\d+)?(?:\s*[천만])?)(?![\d,.]*\s*[천만]?\s*(?:원|%))(?:\s*개)?"  # 👍 꾸준템 가격 줄 숫자('한 달 1,000명+ 구매'·'한 달 1만명+'·'리뷰 1,969(개)'·'리뷰 1.6만' — 쿠팡은 만 단위가 많음, 10/22 리뷰 '리뷰 1.6만'이 '리뷰 1'로) · 만원·% 숫자 X
 steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만" in x else 1000 if "천" in x else 1))  # '1.6만' -> 16000
+STEADY_ORDER, STEADY_ORDER_MIN = ("꾸준히 주문 들어오는", "꾸준히 팔리는"), 1000  # KK②(10/26 진우 '잘 팔리는 제품은 꾸준하게 주문 들어온다고 올리자'): 근거 있음 / 없음(👍 기준은 그대로)
+
+
+def steady_word(*texts):
+    """👍 문구: 글(texts)마다 근거(리뷰 N·한 달 N명+ 구매 STEADY_ORDER_MIN↑ 또는 토스 '많이 팔린 순위 N위')가 있으면 '꾸준히 주문 들어오는', 하나라도 없으면 '꾸준히 팔리는'.
+    상품별 우리(핫딜픽 링크) 주문 수는 없음 = 쇼핑몰 쪽 숫자가 근거(그 줄이 글에 같이 나감)."""
+    ok = lambda t: re.search(r"많이 팔린 순위\s*\d+위", t or "") or max([steady_n(m[1]) for rx in (STEADY_REV, STEADY_BUY) for m in [re.search(rx, t or "")] if m] or [0]) >= STEADY_ORDER_MIN
+    return STEADY_ORDER[0] if texts and all(ok(t) for t in texts) else STEADY_ORDER[1]
 CP_ROCKET = r"(?<!비)로켓(?!\s*(?:배송)?\s*[은는이가도]?\s*(?:아님|아니|아닌|안\s*[돼됨되]|불가|미적용|X|x|없)|\s*와우)|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님·이 아닌·미적용'·'비로켓'·'로켓와우'(멤버십) X — 10/22·10/23 리뷰)
 CP_OLD = r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)"  # 10/23 전 로켓 근거 없는 쿠팡 머리 줄('🚀 쿠팡 · … 🔥') — 새로 내보낼 땐 📦(예약·Threads), 이미 올라간 글은 그대로
 CP_PLAIN = ("📦 쿠팡", "📦 쿠팡에서")  # 10/23 진우: 로켓 근거 없는 쿠팡 글 = 📦(🚀는 로켓으로 오해) — 머리 줄·구매 버튼(Threads·인스타 배지도). 로켓 = '🚀 쿠팡 로켓' 그대로
-NV_STEADY_HEAD = "💚 네이버 · 꾸준히 팔리는 상품 👍"  # Y-2 Threads 네이버 👍 글 머리 줄(채널 '👍 [네이버] 상품명' 틀 -> Threads는 몰별 머리 줄처럼)
+NV_STEADY_HEAD = "💚 네이버 · {} 상품 👍"  # {} = steady_word(글)  # Y-2 Threads 네이버 👍 글 머리 줄(채널 '👍 [네이버] 상품명' 틀 -> Threads는 몰별 머리 줄처럼)
 TOSS_STEADY_HEAD = "💙 토스"  # 10/24 17:5x 진우: 토스 꾸준템(👍 = 특가 아님) 머리 줄 = '💙 토스 · 꾸준히 팔리는 상품 👍'(특가 글은 '💙 토스 특가 · …' 그대로) — 채널·Threads·사이트·인스타 카드 같은 규칙
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
@@ -918,7 +926,7 @@ def mall_view(body, url):
         i = rest.find("\n\n출처: ")
         i = len(rest) if i < 0 else i
         rest = rest[:i] + f"\n⚠️ 결제 전 최종가 ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시)" + rest[i:]
-    return mall_body(mall, "" if m[1] == "🛒" else "꾸준히 팔리는 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(CP_ROCKET, plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만('로켓배송 아님' X — 10/22 리뷰)
+    return mall_body(mall, "" if m[1] == "🛒" else f"{steady_word(plain)} 상품" if m[1] == "👍" else mall_src(mall, plain, title), m[1], name, line, [], bool(re.search(CP_ROCKET, plain))) + rest  # 쿠팡 '로켓' = 글에 로켓·새벽 도착 근거 있을 때만('로켓배송 아님' X — 10/22 리뷰)
 
 
 def toss_when(t=None):
@@ -1510,7 +1518,7 @@ def cp_shelf(posts, kst, steady):
 
 
 def gold_steady(seen, n0):
-    """JJ 골드박스 0개(2번째) -> '👍 꾸준히 팔리는 쿠팡 상품' 채널 글(골드박스 TOP 자리) -> 보냄·안 올림 = True, 텔레그램 실패 = False(다음 실행에).
+    """JJ 골드박스 0개(2번째) -> '👍 꾸준히 주문 들어오는 쿠팡 상품' 채널 글(골드박스 TOP 자리 — 리뷰 1,000↑만이라 늘 이 문구) -> 보냄·안 올림 = True, 텔레그램 실패 = False(다음 실행에).
     후보 = 사이트 👍 꾸준템 쿠팡 진열(파트너스 딥링크·품절·뺌 X·리뷰 GOLD_ST_REV↑·⭐ 있으면 GOLD_ST_RATE↑·계절 맞음(season_adj ≥ 0)·이름에 🔥/특가/할인/최저 X)
     중 최근 GOLD_ST_DAYS일 채널 글·이 글에 나간 상품 X, 식품·생필품 먼저(그다음 최근 진열 순). 3개 못 채우면 안 올림.
     shortcut: 골드박스 API엔 평점·리뷰 수가 없어 골드박스 후보는 못 거름(= 진열 꾸준템만) · 평점도 진열 글에 있을 때만 봄."""
@@ -1533,7 +1541,7 @@ def gold_steady(seen, n0):
         return True
     rows = [f"{k}. <a href=\"{esc(u)}\">{esc(n)}</a> — <b>{esc(pr)}</b>\n   " + " · ".join(esc(x) for x in (un, rv) if x) for k, (_, u, n, pr, un, rv) in enumerate(picks, 1)]
     m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-           text=f"<i>{DISCLOSURE}</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 {len(picks)}개</b>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",
+           text=f"<i>{DISCLOSURE}</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 {steady_word(*(x[5] for x in picks))} 상품 {len(picks)}개</b>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",
            reply_markup={"inline_keyboard": [[{"text": "👍 꾸준템 더 보기", "url": f"{SITE}c/steady/"}]]})
     if not m:
         return False
@@ -2579,7 +2587,7 @@ def steady_cands(seen, now, n=None):
 
 
 def steady_list(seen):
-    """하루 1번 STEADY_AT~STEADY_END(KST): 채널·Threads 목록 글 '👍 꾸준히 팔리는 것 모음'(steady_cands, 상품마다 가격 · 한 달 N명+ 또는 리뷰 N · 링크) —
+    """하루 1번 STEADY_AT~STEADY_END(KST): 채널·Threads 목록 글 '👍 꾸준히 주문 들어오는(근거 없는 상품이 있으면 팔리는) 것 모음'(steady_cands, 상품마다 가격 · 한 달 N명+ 또는 리뷰 N · 링크) —
     대가성 문구 맨 앞(링크마다 그 프로그램) · 게시 시점 줄 · 다른 묶음 글 10분 안이면 다음 실행 · 후보 0개면 그 회차 생략. 사이트 꾸준템 페이지 재료(STEADY_FILE)도 씀."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -2597,9 +2605,10 @@ def steady_list(seen):
     if not items:
         print("steady 후보 0개 — 이번 회차 생략")
         return
-    head = "{} <b>{} 스테디셀러 모음</b>".format(*names[cat].split(" ", 1)) if cat else "👍 <b>꾸준히 팔리는 것 모음</b>"
+    w = steady_word(*[x["st"] for x in items])  # KK② 모두 근거 1,000↑ = '꾸준히 주문 들어오는'
+    head = "{} <b>{} 스테디셀러 모음</b>".format(*names[cat].split(" ", 1)) if cat else f"👍 <b>{w} 것 모음</b>"
     notes = list(dict.fromkeys(aff_note(x["u"]) for x in items))
-    text, kb = top_post(head + "\n최저가는 아니어도 꾸준히 많이 사는 것", [(x["n"], x["u"], [f"💰 <b>{esc(x['p'])}</b>" + (f" · {esc(x['st'])}" if x["st"] else "")]) for x in items])
+    text, kb = top_post(head + ("\n최저가는 아니어도 주문이 꾸준한 것" if w == STEADY_ORDER[0] else "\n최저가는 아니어도 꾸준히 많이 사는 것"), [(x["n"], x["u"], [f"💰 <b>{esc(x['p'])}</b>" + (f" · {esc(x['st'])}" if x["st"] else "")]) for x in items])
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
               text="\n".join(f"<i>{n}</i>" for n in notes) + f"\n\n{text}\n\n{toss_when()}", reply_markup={"inline_keyboard": kb}):
         return
@@ -3347,7 +3356,7 @@ def toss_solo(seen):
             raw = [x for x in toss("/products/detail?tacaItemIds=" + ",".join(map(str, ids)))["items"] if (toss_steady(x) and not near(x) if src == "steady" else near(x))] if ids else []  # 다시 특가 가격이면 꾸준템 글 X(own_end가 🔁로 — 10/23 리뷰)
             if not raw:
                 continue
-            label = "꾸준히 팔리는 상품" if src == "steady" else "🔁 다시 특가"
+            label = None if src == "steady" else "🔁 다시 특가"  # 👍 문구 = 아래 info(steady_word — 리뷰 1,000↑면 '꾸준히 주문 들어오는')
         elif src in ("beauty", "life"):
             tree = tree or toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
             cs = [c for c in tree if (re.search("뷰티|화장품", c["displayName"]) if src == "beauty" else c["displayName"] in TOSS_CATS)]
@@ -3384,7 +3393,7 @@ def toss_solo(seen):
     if not link:  # 토스 점검인데 보관 링크 없음(위에서 걸러서 거의 없음) -> 이 시각은 끝
         seen[key] = now
         return
-    info = "하루특가 · 밤 12시까지" if src == "day" else f"많이 팔린 순위 {rank}위" if src == "best" else label if src in ("steady", "rehot") else f"{label} {rank}위" if label else ""  # 머리 줄 출처(10/22 진우 시안 '생필품 베스트 3위')
+    info = "하루특가 · 밤 12시까지" if src == "day" else f"많이 팔린 순위 {rank}위" if src == "best" else f"{steady_word('리뷰 ' + str(x.get('reviewCount') or 0))} 상품" if src == "steady" else label if src == "rehot" else f"{label} {rank}위" if label else ""  # 머리 줄 출처(10/22 진우 시안 '생필품 베스트 3위')
     icon = "👍" if src == "steady" else "🔥"  # 👍 꾸준템(Threads 순서·리스트 규칙 = th_steady)
     tgt = jw[x["tacaItemId"]][1] if src in ("steady", "rehot") else ""
     rv_fields("toss", [p], [f"{name} {price:,}원"])  # Z 재검토
@@ -3839,6 +3848,9 @@ TH_RUDE = (r"(?:이것|이거|그것|그거|이런\s*(?:거|것)|그런\s*(?:거
            r"대통령(?!상|\s*표창)|국회|여당|야당|(?<![\d가-힣])(?<!\d\s)정당(?![한하])|선거|정치|종교|교회|목사|스님|기독교|천주교|불교|이슬람|참사|사건\s*사고|연예인|아이돌(?!봄)")  # 정치·종교·사건사고·연예인 · '1정당 95원'(알약 단가)·대통령상·보호구·아이돌봄 X
 
 
+ORDER_BAN = r"핫딜픽\s*(?:에서|으로|링크로|통해서?)\s*(?:주문|구매|사|샀|산)|(?:하루|매일|일주일|한\s*주)\s*(?:에\s*)?\d[\d,]*\s*(?:개|건|명)\s*(?:씩\s*)?(?:주문|팔|나가|구매)"  # KK②(10/26): 상품별 우리 주문 수는 없음 — '핫딜픽에서 주문'·'하루 N개 주문' X
+
+
 def rude(s):
     """II+ 무례 거르기 -> 걸린 말(빈 문자열 = 통과): TH_RUDE · 'ㅋㅋ' 2번↑."""
     if m := re.search(TH_RUDE, s or ""):
@@ -3887,6 +3899,8 @@ def rv_bad(l, text, hook, ctx, dup=False, names=()):
         return "끊긴 문장"
     if old_toss(l):
         return "오늘 아닌 가격"
+    if m := re.search(ORDER_BAN, l):  # KK② 우리 링크 주문·지어낸 주문 수 X
+        return f"우리 주문 말({m[0]})"
     if w := rude(re.sub("|".join(map(re.escape, names)) or "^$", "", l)):  # 상품명 낱말은 빼고(제주흑우·보호구 같은 이름)
         return f"무례({w})"
     won = lambda x: {re.sub(r"\s", "", n) for n in re.findall(r"(?<![\d,])\d[\d,]*\s*원", x)}  # 금액째(1,500원 안의 500원 X)
@@ -4065,7 +4079,7 @@ def th_voice(seen, text, link, src=None):
             ti = next(i for i, l in enumerate(ls) if l.startswith(("🔥", "🛒", "👍")))
             icon, title = ls[ti][0], re.sub(r"^[🔥🛒👍]\s*", "", ls[ti])
             mall, tag = mall_of(link, title), parse(title)[0]
-            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or cp_rocket(full)) if mall else NV_STEADY_HEAD if icon == "👍" and tag == "네이버" \
+            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or cp_rocket(full)) if mall else NV_STEADY_HEAD.format(steady_word(full)) if icon == "👍" and tag == "네이버" \
                 else f"{icon} [{tag}]" if tag else icon  # Y-2(10/26 라이너): 네이버 👍 = 토스·쿠팡처럼 '💚 네이버 · 꾸준히 팔리는 상품 👍'
             pline, body = "", ls[:ti] + ls[ti + 1:]
         _, name, price = parse(title)
@@ -4139,7 +4153,7 @@ def th_voice(seen, text, link, src=None):
             and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", f"{s}\n{hook}"))  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
         prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
-            + ("\n- 이 글 = '꾸준히 팔리는 상품': 특가·최저가·할인이라고 하지 않기." if steady else "") \
+            + (f"\n- 이 글 = 👍 '{steady_word(full)} 상품'(특가 아님): 특가·최저가·할인이라고 하지 않기 · '핫딜픽에서 주문'처럼 우리 링크 주문으로 읽히는 말 X · '하루 N개 주문' 같은 숫자 X(글에 있는 리뷰·구매 수만)." if steady else "") \
             + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "") \
             + (f"\n\n첫 줄(훅): {hook}" if hook else "")  # Y-5 '첫 줄과 같은 낱말이면 다시' = 훅을 보여 줘야 스스로 확인
         line, again = "", ""
@@ -5044,7 +5058,7 @@ def ig_set(seen, day, ps, d, design=None, h=IG_DAY_HOUR):
                     os.remove(f"{d}/{n:02d}.jpg")
     chips = [{**it, "photo": None} if it.get("src") == "toss" else it for it in random.sample(its, len(its))]  # 표지 칸은 꽉 차게 자름 = 토스 사진 X(토스 = 원본 그대로·출처 표시 — 사진 장에만)
     cover = cards.ig_cover(design, chips, date_text, title.format(n=len(its)), f"{d}/cover.jpg", swipe=bool(slides),  # 표지 = 마지막(있으면 한 벌 다 됨 — ig_cards)
-                           sub="최저가 아니어도 꾸준히 팔리는 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
+                           sub=f"최저가 아니어도 {steady_word(*[p['text'] for p in ps[:CARD_N] if th_steady(p['text'])])} 것까지" if any(th_steady(p["text"]) for p in ps[:CARD_N]) else "")
     return cover, slides, design
 
 

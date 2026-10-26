@@ -998,7 +998,7 @@ def items(posts, days, home=None):
 
 
 def steady_of(x):
-    """👍 꾸준히 팔리는 것: 진우 상품 중 👍 글(꾸준템 머리)·stdy(own_end — 토스 리뷰·쿠팡 👍), 일시 품절 X."""
+    """👍 꾸준히 주문 들어오는 것(KK② 10/26 — 예전 '꾸준히 팔리는 것'): 진우 상품 중 👍 글(꾸준템 머리)·stdy(own_end — 토스 리뷰·쿠팡 👍), 일시 품절 X."""
     i, p, sh = x
     return p.get("own") and sh[0] != 3 and (p.get("stdy") or icon_of(p["text"]) == "👍")
 
@@ -1014,7 +1014,7 @@ def lists(posts, days, home=None):
     """목록 쪽 {주소 이름: (제목, 한 줄 설명, [(i, p, 상태)], 대가성 몰 문구 키)} — /c/이름/ 20개씩(PER). 빈 목록은 쪽 X(특가·카테고리 쪽은 늘)."""
     it, today = items(posts, days, home), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     out = {"hot": ("🔥 지금 특가", "핫딜픽이 고른 상품 중 지금 특가 가격대인 것 · 🔁 = 특가 가격으로 다시 돌아온 상품", trust8([x for x in it if x[2][0] == 0], today), ""),
-           "steady": ("👍 꾸준히 팔리는 것", "최저가는 아니어도 꾸준히 많이 사는 것", [(i, p, (1,) + sh[1:]) for i, p, sh in it if steady_of((i, p, sh))], ""),  # 배지 = 👍 꾸준템(흰) — 🔥 칸과 구분
+           "steady": ("👍 꾸준히 주문 들어오는 것", "최저가는 아니어도 주문이 꾸준한 것", [(i, p, (1,) + sh[1:]) for i, p, sh in it if steady_of((i, p, sh))], ""),  # 배지 = 👍 꾸준템(흰) — 🔥 칸과 구분
            "wait": ("⏳ 특가 기다리는 상품", "지금은 특가가 아닌 추천 상품 · 특가 때 가격으로 돌아오면 🔁 다시 특가로 올려요", wait_order([x for x in it if x[1].get("own") and x[2][0] in (1, 2)]), "")}
     for k in CAT_META:
         slug, name, emo, _ = CAT_META[k]
@@ -1536,10 +1536,10 @@ def steady_page(out):
     link = lambda x: f"{BASE}p/{x['i']}.html" if x.get("i") is not None and urllib.parse.urlsplit(x["u"]).netloc in OY_HOSTS else x["u"]  # 올영 = 딜 페이지 거쳐(사이트 규칙 그대로)
     rows = "".join(f'<li><b>{html.escape(x["n"])}</b><br>💰 {html.escape(x["p"] or "가격은 링크에서 확인")}{" · " + html.escape(x["st"]) if x.get("st") else ""}<br>'
                    f'<a class="btn2" href="{html.escape(link(x))}" rel="nofollow sponsored noopener" target="_blank">구매하러 가기 →</a></li>' for x in d["items"])
-    head = d.get("head") or "👍 꾸준히 팔리는 것 모음"  # 품목 모음 날 = '💄 화장품 스테디셀러 모음'(10/24)
-    body = (f'<section class="day" aria-labelledby="sth"><h2 id="sth">{html.escape(head)}</h2><div class="t">최저가는 아니어도 꾸준히 많이 사는 것 · '
+    head = d.get("head") or "👍 꾸준히 주문 들어오는 것 모음"  # 품목 모음 날 = '💄 화장품 스테디셀러 모음'(10/24)
+    body = (f'<section class="day" aria-labelledby="sth"><h2 id="sth">{html.escape(head)}</h2><div class="t">최저가는 아니어도 주문이 꾸준한 것 · '
             f'{int(d["at"][5:7])}/{int(d["at"][8:10])} {d["at"][11:16]} 게시 시점 가격 · 가격·재고는 바뀔 수 있어요</div><ol>{rows}</ol></section>')
-    open(f"{out}/steady.html", "w").write(page(f"{head.split(' ', 1)[-1]} | {TITLE}", body, "최저가는 아니어도 꾸준히 많이 사는 생필품·화장품 모음(매일 저녁 갱신)",
+    open(f"{out}/steady.html", "w").write(page(f"{head.split(' ', 1)[-1]} | {TITLE}", body, "최저가는 아니어도 주문이 꾸준한 생필품·화장품 모음(매일 저녁 갱신)",
                                                f"{BASE}steady.html", cur="fire", note="\n".join(d.get("notes") or [])))
     return f"{BASE}steady.html", d["at"][:10]
 
@@ -2167,13 +2167,13 @@ def build(posts, out="docs"):
     stx = mix(cap2([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], dl[:12], fx, dsh[:DROP_N], psh), 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
     body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + MY + MY_JS + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(dsh, today, len(ds))
             + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", psh, f"{BASE}today/{day}/" if day else "")
-            + hs_section("steady", "👍 꾸준히 팔리는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
+            + hs_section("steady", "👍 꾸준히 주문 들어오는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
             + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS + LSW + LSW_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
                                                                   {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
-                                              "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
+                                              "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 주문 들어오는 것까지.", BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:

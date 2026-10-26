@@ -1351,7 +1351,7 @@ def og_image(path="docs/og.png"):
     d.text((360, 128), "핫딜픽", font=pf("ExtraBold", 112), fill=(20, 22, 27))
     d.text((364, 272), "쿠팡·토스·네이버 특가를 매일 골라드려요", font=pf("SemiBold", 40), fill=(107, 113, 128))
     x, f = 96, pf("Bold", 36)
-    for t in ("오늘의 픽 3", "지금 특가", "꾸준히 팔리는 것"):
+    for t in ("오늘의 픽 3", "지금 특가", "꾸준히 주문 들어오는 것"):
         w = d.textlength(t, font=f) + 64
         d.rounded_rectangle((x, 420, x + w, 500), radius=40, fill=(255, 227, 232))
         d.text((x + 32, 460), t, font=f, fill=(232, 67, 90), anchor="lm")

@@ -683,7 +683,7 @@ seen, og = {}, io.StringIO(); time.time = lambda: tkj("2026-10-27 07:05")
 with cl.redirect_stdout(og):
     gbj(seen); assert not sent; gbj(seen)
 m, p = sent[-1]; t = p["text"]; sent.clear()
-assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith("<i>" + H.DISCLOSURE + "</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 4개</b>") and "goldbox_20261027" in seen, t
+assert m == "sendMessage" and p["chat_id"] == "@ch" and t.startswith("<i>" + H.DISCLOSURE + "</i>\n\n👍 <b>오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 주문 들어오는 상품 4개</b>") and "goldbox_20261027" in seen, t
 assert [re.search(r"\d\. <a href=\"[^\"]+\">([^<]+)", l)[1] for l in t.split("\n") if re.match(r"\d\. ", l)] == ["코멧 위생백 대 200매", "탐사 물티슈 캡형 100매 40개", "크리오 칫솔 10개입", "무선 이어폰 케이스"], t  # 생필품 먼저(최근 진열 순) -> 그 밖
 assert "— <b>31,000원 (10/25 1시 확인)</b>\n   리뷰 328,913" in t and "1매당 25원꼴 · 리뷰 3.7만" in t and "— <b>5,270원</b>\n   1개당 527원꼴 · 리뷰 103,307" in t and t.endswith(H.toss_when()) and p["reply_markup"]["inline_keyboard"][0][0]["url"].endswith("c/steady/")
 assert not re.search(r"🔥|할인|최저", t) and t.count("특가") == 1 and "goldbox 8 개 중 고른 것 0 → steady 4개 | 코멧 위생백" in og.getvalue(), og.getvalue()
@@ -4539,12 +4539,13 @@ assert H.ev_view({"deal": True, "url": "https://link.coupang.com/a/w", "button":
 ST31 = {"deal": True, "url": "https://link.coupang.com/a/ROX", "button": "🛒 25,800원 구매하기", "at": "2026-10-22 10:30",
         "text": "👍 <b>[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)</b>\n\n📊 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착"}
 b31, k31 = H.ev_view(ST31)
-assert b31.startswith("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n<b>록시땅 시어 버터 핸드크림 75ml</b>\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착") and k31 == "📦 쿠팡에서 25,800원", b31
+assert b31.startswith("📦 쿠팡 · 꾸준히 주문 들어오는 상품 👍\n<b>록시땅 시어 버터 핸드크림 75ml</b>\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장·쇼핑백\n참고: 내가 쓸 거면 150ml가 10ml당 더 쌈\n⚠️ 롯데택배 10/24(토) 도착") and k31 == "📦 쿠팡에서 25,800원", b31
 p31 = H.plain_of(b31)
 assert H.title_of(p31) == "[쿠팡] 록시땅 시어 버터 핸드크림 75ml (25,800원)" and H.th_steady(p31) and H.th_steady(H.plain_of(ST31["text"])) and not H.th_weak(p31) and "특가로는 약한" not in p31  # 제목엔 구매·리뷰 숫자 X
 assert H.ad_line(H.plain_of(ST31["text"])) == "[광고] 👍 록시땅 시어 버터 핸드크림 75ml 25,800원" and H.th_beauty("👍 [쿠팡] 록시땅 시어 버터 핸드크림 75ml") > 0
-assert H.ev_view({**ST31, "text": ST31["text"].replace("롯데택배", "로켓배송")})[0].startswith("🚀 쿠팡 로켓 · 꾸준히 팔리는 상품 👍\n")
+assert H.ev_view({**ST31, "text": ST31["text"].replace("롯데택배", "로켓배송")})[0].startswith("🚀 쿠팡 로켓 · 꾸준히 주문 들어오는 상품 👍\n")
 assert H.ev_view({**ST31, "text": ST31["text"].replace("📊 한 달 1,000명+ 구매 · 리뷰 1,969\n", "")})[0].split("\n")[2] == "25,800원"  # 숫자 없으면 가격만
+assert H.ev_view({**ST31, "text": ST31["text"].replace("📊 한 달 1,000명+ 구매 · 리뷰 1,969\n", "")})[0].startswith("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n") and H.ev_view({**ST31, "text": ST31["text"].replace("한 달 1,000명+ 구매 · 리뷰 1,969", "리뷰 800")})[0].startswith("📦 쿠팡 · 꾸준히 팔리는 상품 👍\n")  # KK② 근거 없음·1,000 밑 = 예전 문구
 assert H.ev_view({**ST31, "url": "https://toss.shopping/_m/X", "text": ST31["text"].replace("[쿠팡]", "[토스]")})[0].startswith("👍 <b>[토스]")  # 토스 👍 = 범위 밖(그대로)
 assert not H.th_steady("💙 토스 특가 🔥\n휴지\n9,900원\n👍 리뷰 4.8점 많이 삼")
 for a31, b31x in (("📊 한 달 1만명+ 구매 · 리뷰 1.6만", "25,800원 · 한 달 1만명+ 구매 · 리뷰 1.6만"), ("📊 한 달 1,000명+ 구매 · 리뷰 1,969개", "25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969"),
@@ -4589,7 +4590,7 @@ ST28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록�
 vv28[:] = [{"line": "오늘 특가로 싸게 나옴"}, {"line": "선물용으로 하나쯤 두기 좋음"}]; pv28.clear()
 o28 = H.th_voice({}, ST28, "https://link.coupang.com/a/st28")  # 9-31 👍 꾸준템: 말투 줄에 특가·최저·할인 X(1번 다시)
 assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n💰 25,800원\n\n✔ 리뷰 1,900+ · 한 달 1,000명+ 구매\n\n⏰ 10/22 20시 가격 · 결제 전 확인\n\n선물용으로 하나쯤 두기 좋음\n\n👉 https://link.coupang.com/a/st28", o28
-assert "'꾸준히 팔리는 상품'" in pv28[0] and len(pv28) == 2, pv28[0]
+assert "'꾸준히 주문 들어오는 상품'(특가 아님)" in pv28[0] and "핫딜픽에서 주문" in pv28[0] and len(pv28) == 2, pv28[0]  # KK② 프롬프트도 같은 문구 + 우리 주문·지어낸 숫자 X
 H.ai_voice, H.random = sv28b
 # 토스 목록: 하루특가 TOP5·17시 생필품 등 머리 = 💙 · 품절 고칠 때 게시 시점 줄(꼬리)도 남김
 assert '"💙 <b>오늘의 토스 하루특가 TOP{}</b>' in inspect.getsource(H.toss_deals) and 'head = "💙 <b>토스 "' in inspect.getsource(H.toss_deals) and "⏰ <b>오늘의 토스" not in inspect.getsource(H.toss_deals)
@@ -9515,4 +9516,14 @@ with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
 assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][1]  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서
 assert H.kind_key("성경김 지도표 재래김") == H.kind_key("성경김 파래김") == "성경김" and H.kind_key("국산 햅쌀 10kg") == "햅쌀" and H.kind_key("대용량 물티슈") == "물티슈"
 (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
+# 9-89) KK②(10/26 Cowork — 진우 '잘 팔리는 제품은 꾸준하게 주문 들어온다고 올리자'): 👍 문구 = 근거(리뷰·한 달 구매 1,000↑ · 토스 '많이 팔린 순위 N위')가 글에 있으면
+#       '꾸준히 주문 들어오는', 없거나 1,000 밑이면 '꾸준히 팔리는'(👍 기준 그대로) · '핫딜픽에서 주문'·'하루 N개 주문' X(상품별 우리 주문 수는 없음)
+assert H.steady_word("5,270원 · 리뷰 103,307") == "꾸준히 주문 들어오는" and H.steady_word("리뷰 800") == H.steady_word("") == H.steady_word() == "꾸준히 팔리는"
+assert H.steady_word("많이 팔린 순위 3위") == H.steady_word("한 달 1,000명+ 구매") == H.steady_word("리뷰 2.9만") == "꾸준히 주문 들어오는" and H.steady_word("리뷰 2.9만", "리뷰 500") == "꾸준히 팔리는"  # 목록 = 다 근거 있어야
+ctx89 = H.season_ctx({})
+assert H.rv_bad("핫딜픽에서 주문 많이 들어오는 거", "", "", ctx89).startswith("우리 주문 말") and H.rv_bad("하루 300개씩 주문 들어오는 템", "", "", ctx89).startswith("우리 주문 말")
+assert H.rv_bad("한 달 1,000명+ 구매", "", "", ctx89) == "" and H.rv_bad("꾸준히 주문 들어오는 상품", "", "", ctx89) == ""
+assert H.NV_STEADY_HEAD.format(H.steady_word("리뷰 5,000")) == "💚 네이버 · 꾸준히 주문 들어오는 상품 👍" and H.NV_STEADY_HEAD.format(H.steady_word("")) == "💚 네이버 · 꾸준히 팔리는 상품 👍"
+src89 = open(__import__("build_site").__file__).read()
+assert '"👍 꾸준히 주문 들어오는 것", "최저가는 아니어도 주문이 꾸준한 것"' in src89 and "꾸준히 팔리는 것\"" not in src89 and 'steady_word(\'리뷰 \' + str(x.get(\'reviewCount\') or 0))' in inspect.getsource(H.toss_solo)
 print("OK: 모든 셀프체크 통과")
