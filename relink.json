@@ -1,5 +1,5 @@
 {
- "left_now": 32,
+ "left_now": 31,
  "ok": {
   "auction": 7
  },
@@ -395,6 +395,13 @@
    "n": "화이트 수퍼흡수 맥시 슬림 생리대 중형 32개입 2개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 09:57"
+  },
+  {
+   "k": "진열",
+   "pid": "9459446417",
+   "n": "화이트 제로필 탐폰 삽입형 생리대 슈퍼 16개입 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 10:11"
   }
  ]
 }
