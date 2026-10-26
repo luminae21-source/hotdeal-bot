@@ -168,7 +168,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 @media(prefers-color-scheme:dark){.pv{background:color-mix(in srgb,var(--m) 14%,var(--card))}.pvm,.pvc,.pvd b{color:color-mix(in srgb,var(--m) 62%,#fff)}.pvd{background:var(--chip)}.pvd small{color:var(--sub)}.pcd.k{background:#ECEEF2;color:#14161B}.pcd.k span{color:#4B5260}.pcd.k i{color:#C2202C}}"""
 MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
 CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
-CSS += ".cin{margin:10px 2px 4px;font-size:14px;line-height:1.65}.cin p{margin:0 0 6px}.deal ul.tips{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}.lk li a{gap:10px}.lk li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.lk li b{flex:none;font-size:13px;font-weight:700}"  # TT-2 칸 소개·고르는 기준·같은 칸 다른 딜
+CSS += ".cin{margin:10px 2px 4px;font-size:14px;line-height:1.65}.cin p{margin:0 0 6px}.deal ul.tips{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}.lk li a{gap:10px}.lk li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.lk li b{flex:none;font-size:13px;font-weight:700}.tw.tt td:nth-child(2){white-space:normal;min-width:118px}.tw.tt td:nth-child(3){white-space:nowrap}.tw.tt small{display:block;margin-top:2px;color:var(--sub);font-size:11.5px}"  # TT-2 칸 소개·고르는 기준·같은 칸 다른 딜
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
 FONT_HEAD = '<link rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin>'  # 10/24 개편 글꼴 = Pretendard 줄인 판 'HDP Sans'(docs/fonts, OFL.txt — 이름은 OFL 예약 이름 규칙대로 바꿈) 1개 파일(317KB, 굵기 400~800) — 바꾸면 v2로(서비스워커 글꼴 캐시는 이름이 안 바뀌면 그대로 씀)
 
@@ -1477,8 +1477,8 @@ def related(i, p, pool, n=4):
     return [(j, q) for j, q, _ in sorted(c, key=lambda x: -len(k & x[2]))[:n]]
 
 
-SPEC_RX = re.compile(r"(?<![\d.,+])\d+(?:\.\d+)?\s*(?:ml|mL|ML|L|리터|kg|KG|Kg|g|mg|매|롤|개입|개|입|봉지|봉|팩|병|캔|포|종|구|알|켤레|족|장|정|캡슐|스틱|티백|박스|세트|인분|cm|mm|m)(?![A-Za-z가-힣])"
-                     r"|(?<=[\s\d)a-zA-Z가-힣])[x×X*]\s*\d+(?![\d.])|(?<![\d,.])\d\s*\+\s*\d(?![\d,.])")  # 용량·개수·묶음(×2)·1+1
+SPEC_RX = re.compile(r"(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:ml|mL|ML|L|리터|kg|KG|Kg|g|mg|매|롤|개입|개|입|봉지|봉|팩|병|캔|포|종|구|알|켤레|족|장|정|캡슐|스틱|티백|박스|세트|인분|cm|mm|m)(?![A-WYZa-wyz가-힣])"
+                     r"|(?<=[\s\d)gGlL개입봉팩병캔포종구알매롤])[x×X*]\s*\d+(?![\d.])|(?<![\d,.])\d\s*\+\s*\d(?![\d,.])")  # 용량·개수(1,015g)·묶음(×2 — 단위·숫자 뒤만: WX242·PX4 X)·1+1
 
 
 def spec_of(name):
@@ -1706,13 +1706,13 @@ def topic_page(g, tps, today, now_k):
     n, md = len(g["xs"]), md_of(today)
     third = (f"핫딜픽이 진열 중인 {g['name']} {n}개를 {lab[0]}당 가격 싼 순으로 줄 세웠어요" if lab else f"핫딜픽이 진열 중인 {g['name']} {n}개를 모았어요") + " · 가격은 표의 확인 시각 기준이라 결제 전 최종가를 확인하세요."
     when = lambda p: p.get("chk") or f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 게시'
-    tr = "".join(f'<tr><td>{m}</td><td><a href="{BASE}p/{x[0]}.html">{html.escape(parse(title_of(x[1]["text"]))[1])}</a></td><td>{html.escape(price_bits(x[1], x[2])[0] or "-")}</td>'
-                 f'<td>{html.escape(u[0] if u else "-")}</td><td>{html.escape(when(x[1]))}</td></tr>' for m, (x, u) in enumerate(ups, 1))
+    tr = "".join(f'<tr><td>{m}</td><td><a href="{BASE}p/{x[0]}.html">{html.escape(parse(title_of(x[1]["text"]))[1])}</a><small>{html.escape(when(x[1]))} 확인</small></td>'
+                 f'<td>{html.escape(price_bits(x[1], x[2])[0] or "-")}</td><td>{html.escape(re.sub(r"원꼴$", "원", u[0]) if u else "-")}</td></tr>' for m, (x, u) in enumerate(ups, 1))  # 폰 폭: 4칸(확인 시각 = 이름 아래)
     c = CAT_META.get(g["cat"])
     others = [o for o in tps if o["slug"] != g["slug"]]
     body = (f'<h1 class="h">📌 {html.escape(g["name"])} 단위가 비교</h1><div class="t">{n}개 · {md} 업데이트</div>'
             + '<div class="cin">' + "".join(f"<p>{html.escape(x)}</p>" for x in intro[:2] + [third]) + "</div>"
-            + f'<div class="tw"><table><thead><tr><th>#</th><th>상품</th><th>가격</th><th>단위가</th><th>확인</th></tr></thead><tbody>{tr}</tbody></table></div>'
+            + f'<div class="tw tt"><table><thead><tr><th>#</th><th>상품</th><th>가격</th><th>단위가</th></tr></thead><tbody>{tr}</tbody></table></div>'
             + f'<div class="cards">{"".join(card(i, p, sh) for i, p, sh in g["xs"])}</div>'
             + (f'<a class="btn2" href="{c_url(c[0])}">{c[2]} {c[1]} 특가 모음 더 보기 →</a>' if c else f'<a class="btn2" href="{c_url("hot")}">🔥 지금 특가 더 보기 →</a>')
             + (f'<nav class="recs" aria-label="다른 주제"><h3>📌 다른 주제 단위가 비교</h3>' + "".join(f'<a href="{BASE}c/t/{o["slug"]}.html">{html.escape(o["name"])}</a>' for o in others[:12]) + "</nav>" if others else ""))

@@ -5884,7 +5884,7 @@ H.own_end(seen45); po45 = json.load(open("posts.json")); i45 = next(i for i, p i
 assert po45[i45]["now"] == "12,500원" and po45[i45]["st"] == "wait" and po45[i45]["chk"] == "10/24 9시", po45[i45]  # 진열 글 = events now·chk 그대로(글 시각보다 옛 확인이어도)
 S45.build(po45, "site"); ix45, sm45 = open("site/index.html").read(), open("site/sitemap.xml").read()
 lf45 = open("site/c/life/index.html").read()  # 10/24 개편: 품목 칸 = /c/life/ 쪽
-assert f"p/{i45}.html" in lf45 and "지금 가격 (10/24 9시 확인)" in lf45 and f"/p/{i45}.html" in sm45 and os.path.exists(f"site/p/{i45}.html")
+assert f"p/{i45}.html" in lf45 and "지금 가격 (10/24 9시 확인)" in lf45 and f"/p/{i45}.html" not in sm45 and 'content="noindex' not in open(f"site/p/{i45}.html").read()  # TT-2: ⏳ 대기 = 사이트맵 X(진행 중 🔥만) · 색인 O
 pg45 = open(f"site/p/{i45}.html").read(); assert "제휴 마케팅 활동의 일환으로" in pg45 and f'href="{DL45}"' in pg45  # 상품 페이지 = 채널 글 페이지와 같은 대가성 문구·구매 버튼(딥링크)
 # 같은 url 채널 예약이 나중에 오면: 채널엔 평소대로 · 사이트 카드는 채널 글 하나(진열 글은 칸·날짜 목록·사이트맵에서 빠짐, 페이지는 그대로)
 time.time = lambda: T45 + 3600
@@ -10107,9 +10107,11 @@ sv97 = (time.time, H.EVENTS, S.SITE_AFF_ONLY); d97, cwd97 = tempfile.mkdtemp(), 
 time.time = lambda: TK("2026-10-27 12:00")
 assert S.spec_of("미떼 핫초코 오리지날 30g 10개입 2개") == "30g · 10개입 · 2개" and S.spec_of("꽃샘 꿀대추차 1kg×2") == "1kg · ×2" and S.spec_of("CGV관람권 2D") == "" and S.spec_of("선크림 1+1 50ml") == "1+1 · 50ml"
 assert S.spec_of("2026 햅쌀 10kg") == "10kg" and S.spec_of("삼다수 2L 12개") == "2L · 12개" and S.spec_of("더후 공진향 인양 2종 스페셜 기초세트") == "2종"  # 연도·모델명 X(단위 붙은 숫자만)
+assert S.spec_of("생수 무라벨 2L X 24개") == "2L · ×24" and S.spec_of("액츠 액체세제 3.1Lx2개+1개") == "3.1L · ×2 · 1개" and S.spec_of("핸드워시 490ml 1개+450ml 리필 3개") == "490ml · 1개 · 450ml · 3개"
+assert S.spec_of("웍스 WX242 2세대 드라이버") == S.spec_of("한경희 컨벡션 히터 PX4") == "" and S.spec_of("더미식 교자 1,015g + 김치교자 1.4kg") == "1,015g · 1.4kg" and S.spec_of("크린랩 크린호일 25cm×30m") == "25cm · 30m"  # 모델명 X · 1,000 단위 쉼표
 u97 = lambda t: {"t": "2026-10-27 09:00", "text": t, "url": "https://link.coupang.com/a/u"}
 assert S.unit_pair(u97("📦 쿠팡 🔥\n동서 옥수수차 1.5g 50개입\n2,900원\n💰 1개 58원꼴 · 쿠폰 할인 중")) == ("1개 58원꼴", "개", 58.0)  # 진열 💰 줄('당' 없음)도
-assert S.unit_pair(u97("x\n💰 100g당 1,526원꼴 · 쿠폰 할인 중"))[:2] == ("100g당 1,526원꼴", "g") and S.unit_pair(u97("x\n💰 세트로 한 번에 · 할인 중")) is None
+assert S.unit_pair(u97("x\n💰 100g당 1,526원꼴 · 쿠폰 할인 중"))[:2] == ("100g당 1,526원꼴", "g") and S.unit_pair(u97("x\n💰 세트로 한 번에 · 할인 중")) is None and S.unit_pair(u97("x\n💰 0개 5원꼴")) is None
 assert S.per_unit(u97("x\n💡 단위가격 0g당 5원")) is None and S.unit_pair(u97("x\n💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원)보다 7,210원 쌈"))[0] == "10매당 31원"  # 0 = 비교 X · 다른 몰 비교 꼬리 X
 w97 = lambda i, v: (float(v), f"1L당 {v}원", i, {"t": "2026-10-2%d 09:00" % (i % 7), "text": "🔥 [쿠팡] 생수 2L 12개 (9,900원)", "url": "https://link.coupang.com/a/w"})
 r97 = {"water": ("생수", "1L당", [w97(5, 248), w97(7, 300), w97(8, 300)])}
@@ -10152,7 +10154,7 @@ po97 = [{"t": "2026-10-20 09:00", "text": "🔥 [쿠팡] 옛날 딜 (1,000원)\n
         {"t": "2026-10-27 08:00", "text": "🔥 [쿠팡] 깨끗한나라 화장지 30롤 (19,900원)\n\n싸요\n💡 단위가격 롤당 663원", "url": "https://link.coupang.com/a/tp"},  # 1 = 진행 중 커뮤니티 🔥
         yu97(1, "곰곰 율무차 18g 50개입", "1봉 200원꼴"), yu97(2, "고향 호두아몬드 율무차 18g 110개입", "1봉 135원꼴"), yu97(3, "오뚜기 율무차 분말 1kg", "100g당 600원꼴"),
         yu97(4, "담터 율무차 18g 50개입", "1봉 246원꼴", st="wait"), yu97(5, "자연생각 율무차 50개입", "1봉 149원꼴", st="out"), yu97(6, "제티 핫초코 20봉", "1봉 300원꼴"), yu97(7, "미떼 코코아 10봉", "1봉 400원꼴")]
-ev97 = [{"at": "2026-10-26 21:10", "curation": True, "topic": "율무차", "text": "고소한 거 한 잔 생각나는 밤엔 율무차 🌰\n호두·아몬드 스틱부터 대용량까지 골라봤어요.\n\n🌰 고향 110봉 — 1봉 135원",
+ev97 = [{"at": "2026-10-26 21:10", "curation": True, "topic": "율무차", "text": "고소한 거 한 잔 생각나는 밤엔 율무차 🌰\n🌰 고향 110봉 — 1봉 135원\n호두·아몬드 스틱부터 대용량까지",
          "link": "https://hotdealpick.kr/c/food/?ref=thc", "img": [img97(1), img97(2), img97(5)]},
         {"at": "2026-10-27 21:10", "curation": True, "topic": "율무차", "text": "내일 나갈 글 머리\n둘째 줄\n\n🌰 고향 — 1봉 135원", "link": "https://hotdealpick.kr/c/food/?ref=thc", "img": [img97(2)]},
         {"at": "2026-10-26 21:30", "curation": True, "topic": "핫초코", "text": "핫초코 머리", "link": "https://hotdealpick.kr/c/snack/?ref=thc", "img": [img97(6), img97(7)]},
@@ -10165,10 +10167,10 @@ json.dump(ev97, open("events.json", "w"), ensure_ascii=False)
 S.build(po97, "docs")
 tp97 = open("docs/c/t/yulmu-tea.html").read(); sm97 = re.findall(r"<loc>([^<]*)</loc>", open("docs/sitemap.xml").read())
 assert not os.path.exists("docs/c/t/hot-chocolate.html") and "<title>율무차 단위가 비교 4개 (10/27) | 핫딜픽</title>" in tp97 and '<h1 class="h">📌 율무차 단위가 비교</h1>' in tp97  # 핫초코 = 상품 2개(3개 밑) = 쪽 X
-assert "<p>고소한 거 한 잔 생각나는 밤엔 율무차 🌰</p><p>호두·아몬드 스틱부터 대용량까지 골라봤어요.</p><p>핫딜픽이 진열 중인 율무차 4개를 1봉당 가격 싼 순으로 줄 세웠어요" in tp97 and "내일 나갈 글" not in tp97 and "1봉 135원</p>" not in tp97  # 머리 = 지금까지 나간 큐레이션 · 큐레이션 가격 줄 X
+assert "<p>고소한 거 한 잔 생각나는 밤엔 율무차 🌰</p><p>핫딜픽이 진열 중인 율무차 4개를 1봉당 가격 싼 순으로 줄 세웠어요" in tp97 and "호두·아몬드 스틱" not in tp97 and "내일 나갈 글" not in tp97 and "1봉 135원</p>" not in tp97  # 머리 = 지금까지 나간 큐레이션 · 상품 줄부터 = 머리 끝(큐레이션 가격 줄·그 뒤 X)
 tb97 = tp97.split("<tbody>")[1].split("</tbody>")[0]
 assert re.findall(r'p/(\d+)\.html">([^<]+)<', tb97) == [("3", "고향 호두아몬드 율무차 18g 110개입"), ("2", "곰곰 율무차 18g 50개입"), ("5", "담터 율무차 18g 50개입"), ("4", "오뚜기 율무차 분말 1kg")] \
-    and "<td>1봉 135원꼴</td><td>10/26 23시</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
+    and "<small>10/26 23시 확인</small></td><td>9,900원</td><td>1봉 135원</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
 assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/food/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
 assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (1, 2, 3, 4, 7, 8, 9)} and not any(x in u for u in sm97 for x in (f"{S.BASE}today/", "all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
 ni97 = {i for i in range(len(po97)) if 'content="noindex' in open(f"docs/p/{i}.html").read()}
