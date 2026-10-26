@@ -1738,7 +1738,7 @@ def cp_same(name, api):
     return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|켤레|족|판|장|p|\d)$", t)})
 
 
-CP_BIG, CP_BIG_NOT = ((100000, 2), (30000, 1)), r"핫팩|발열|방한|장갑|조끼|내의|양말|필터|케이스|거치대|커버|필름"  # AA(10/26 Cowork '쿠팡 건당 금액 — 쿠팡은 수수료율이 낮아 판매 금액이 핵심'): 가전·디지털·겨울 가전 판매가 10만↑ +2·3만↑ +1 — shortcut: 난방·디지털 칸의 소모품·옷·액세서리는 낱말로 거름, 틀린 가산이 '점수' 로그에 보이면 더함
+CP_BIG, CP_BIG_NOT = ((100000, 2), (30000, 1)), r"핫팩|방한|장갑|조끼|내의|양말|필터|케이스|거치대|커버|필름"  # AA(10/26 Cowork '쿠팡 건당 금액 — 쿠팡은 수수료율이 낮아 판매 금액이 핵심'): 가전·디지털·겨울 가전 판매가 10만↑ +2·3만↑ +1 — shortcut: 난방·디지털 칸의 소모품·옷·액세서리는 낱말로 거름, 틀린 가산이 '점수' 로그에 보이면 더함
 
 
 def cp_big(name, price=None):
@@ -8033,7 +8033,7 @@ def week_report(seen):
             tot.append((len({r.get("orderId", k) for k, r in enumerate(od)}), sum(float(r.get("gmv") or 0) for r in od)))
         (n0, g0), (n1, g1) = tot
         avg = lambda g, n: f"{g / n:,.0f}원" if n else "-"
-        line = f"🛒 쿠팡 주문 {n1:,}건(지난주 {n0:,}) · 합산 {g1:,.0f}원({g0:,.0f}원) · 건당 {avg(g1, n1)}({avg(g0, n0)})"
+        line = f"🛒 쿠팡 주문 {n1:,}건({n0:,}) · 합산 {g1:,.0f}원({g0:,.0f}원) · 건당 {avg(g1, n1)}({avg(g0, n0)})"
     except CpLimit:
         return  # 다음 실행에(월요일 안)
     except Exception as e:

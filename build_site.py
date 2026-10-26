@@ -745,8 +745,9 @@ SEASON_NOT = r"오븐|프라이어|캠핑|안대"  # 겨울템 아님(HEAT의 �
 
 
 def season_item(name):
-    """상품 이름 -> 'summer'·'winter'·'between'·None(계절 상품 아님)."""
-    return next((k for k, rx in SEASON_ITEMS if re.search(rx, name or "") and not (k == "winter" and re.search(SEASON_NOT, name))), None)
+    """상품 이름 -> 'summer'·'winter'·'between'·None(계절 상품 아님). '써큘레이터형 온풍기'·'서큘레이터 히터' = 겨울(AA 리뷰 — 모기향 히터는 여름 그대로)."""
+    heat = re.search(r"온풍|히터|난로", name or "") and not re.search(HOME_FIRST, name or "")
+    return next((k for k, rx in SEASON_ITEMS if re.search(rx, name or "") and not (k == "winter" and re.search(SEASON_NOT, name)) and not (k == "summer" and heat)), None)
 
 
 def season_off(kind, m, tmin=None, tmax=None):
@@ -1281,13 +1282,14 @@ def promo_goods(p, it, tagged):
     return [x for x in it if x[2][0] != 3 and (x[1].get("url") in us or kw and all(k in parse(title_of(x[1]["text"]))[1] for k in kw))]
 
 
-def promo_go(p, xs, slugs, links):
+def promo_go(p, xs, slugs, links, past=False):
     """(주소, rel·target 붙일 바깥 링크?): tag 상품 = 행사 쪽(e/slug.html) · kw 상품 = 홈 검색(?q=) · 아니면 행사 주소(url·cta.href)를 봇이 링크프라이스 딥링크로 바꾼 것(promo_links.json),
     아직·실패면 몰 홈 그대로(수수료 길이 있는 몰 = SITE_KEEP_HOSTS — 10/25 20:3x 최종 규칙 ②) · 그 밖(11번가 등) = ('', False)."""
     if xs and p.get("tag") in slugs:
         return f"{BASE}e/{slugs[p['tag']]}.html", False
-    if xs and (p.get("tag") or p.get("kw")):  # 행사 쪽 없는 tag = tag 낱말 홈 검색(search_index가 행사 상품에 tag 낱말을 붙임 — kw 상품까지)
-        return f"{BASE}?q={urllib.parse.quote(p.get('tag') or p['kw'])}", False
+    q = p.get("kw") if past else p.get("tag") or p.get("kw")  # 행사 쪽 없는 tag = tag 낱말 홈 검색(search_index가 행사 상품에 tag 낱말 — kw 상품까지) · 지난 행사 = kw만(tag 낱말은 검색에 X)
+    if xs and q:
+        return f"{BASE}?q={urllib.parse.quote(q)}", False
     us = [u for u in (p.get("url"), (p.get("cta") or {}).get("href")) if u]
     v = next((links[u] for u in us if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) and aff(links[u])), "") or next((u for u in us if aff(u) or keep_host(u)), "")
     return (v, True) if v else ("", False)
@@ -1368,7 +1370,7 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     cards, gos = [], []
     for p, st, _ in live + past:
         xs = promo_goods(p, it, tagged)
-        go = promo_go(p, xs, slugs, links)
+        go = promo_go(p, xs, slugs, links, st == "past")
         gos.append((go, xs, p))
         cards.append(promo_card(p, st, xs, go, icons, today))
     n_on, n_soon = sum(st in ("end", "on") for _, st, _ in live), sum(st == "soon" for _, st, _ in live)
@@ -2144,11 +2146,10 @@ def build(posts, out="docs"):
         plinks = {}
     plinks = plinks if isinstance(plinks, dict) else {}
     icons = MICONS
-    tagged = {}
-    for e in ev_list() + posts:  # posts tag = 봇이 진열한 글(AA 쿠가세 저녁 가전 — events에 없음)
+    tagged, slugs = {}, {g["tag"]: g["slug"] for g in evs}
+    for e in ev_list() + [p for p in posts if p.get("tag") not in slugs]:  # posts tag = 봇이 진열한 글(AA 쿠가세 저녁 가전 — events에 없음) · 행사 쪽(e/) 있는 tag = events 상품만(카드 개수 = 행사 쪽 상품)
         if isinstance(e, dict) and isinstance(e.get("tag"), str) and isinstance(e.get("url"), str):
             tagged.setdefault(e["tag"], set()).add(e["url"])
-    slugs = {g["tag"]: g["slug"] for g in evs}
     ps_ = promo_shown(promo_list(today), it, tagged, plinks)  # 기획전 모음(10/25 Cowork·진우 — promos.json, 제휴 되는 것만): 홈 띠 + /events/
     band = promo_band(ps_, it, tagged, slugs, plinks, icons, today)
     ptags = {p.get("tag") for p, _ in promo_now(ps_, today)} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
@@ -2174,7 +2175,7 @@ def build(posts, out="docs"):
     open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 팔리는 것까지.", BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
-    json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, _, _ in ps_ if p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
+    json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))
         prev = prev if isinstance(prev, dict) else None

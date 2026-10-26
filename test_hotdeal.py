@@ -9105,16 +9105,19 @@ H.cp_eve, H.week_report = cpe0, wr0
 sv85 = (time.time, H.coupang, H.ai_pick, H.promo_list, H.HAS_CP, H.E.get("THREADS_TOKEN"), H.tg, H.RUN.get("season"), H.RUN.get("cpn"))
 time.time = lambda: TK("2026-10-26 13:00"); H.RUN["season"] = H.season_ctx({}, TK("2026-10-26 13:00"))
 B85 = ["[쿠팡] 신일 PTC 히터 (39,900원/무료)", "[쿠팡] 로보락 로봇청소기 (299,000원)", "[쿠팡] 미로 가습기 (29,900원)", "[쿠팡] 핫팩 100개 (35,000원)", "[쿠팡] 메모리폼 베개 (39,000원)",
-       "[쿠팡] 신일 선풍기 (49,000원)", "[쿠팡] 전기 히터 필터 (31,000원)", "[쿠팡] 일월 온수매트 (129,000원)", "[쿠팡] 발열 조끼 (39,000원)"]
-assert [H.cp_big(t) for t in B85] == [1, 2, 0, 0, 0, 0, 0, 2, 0], [H.cp_big(t) for t in B85]  # 3만 안·소모품·옷·액세서리·가전 아님·철 지난 여름템 = 0
+       "[쿠팡] 신일 선풍기 (49,000원)", "[쿠팡] 전기 히터 필터 (31,000원)", "[쿠팡] 일월 온수매트 (129,000원)", "[쿠팡] 발열 조끼 (39,000원)",
+       "[쿠팡] 쿠쿠 2단 발열 다이얼식 카본히터, CHT-AEC1000NWG (70,630원)", "[쿠팡] 델루체 PTC 써큘레이터형 헤드 온풍기 팬히터, IN-H1000 (39,400원)"]
+assert [H.cp_big(t) for t in B85] == [1, 2, 0, 0, 0, 0, 0, 2, 0, 1, 1], [H.cp_big(t) for t in B85]  # 3만 안·소모품·옷·액세서리·가전 아님·철 지난 여름템 = 0 · (리뷰) '2단 발열' 카본히터·'써큘레이터형 온풍기' = 난방 가전
+assert [S0.season_item(n) for n in ("델루체 PTC 써큘레이터형 헤드 온풍기", "보국 에어젯 서큘레이터 히터", "신일 서큘레이터", "홈매트 리퀴드 훈증 히터")] == ["winter", "winter", "summer", "summer"]  # 모기향 히터 = 여름 그대로
 assert [H.cp_big("에어프라이어 5.5L", w) for w in (100000, 99999, 30000, 29999)] == [2, 1, 1, 0]
 src85 = inspect.getsource(H.main)  # 커뮤니티 쿠팡 딜 = 로그(Claude 점수) 뒤·컷 앞에 가산 -> 컷·순서·보관·posts s(Threads 채움)
+assert src85.index("playlist, cp_eve, goldbox") < src85.index("threads_deals") and src85.index("report, week_report, rv_report") < src85.index("cp_price")  # 단계 순서(저녁 가전 줄 = 그 실행 Threads 칸 전 · 주간 보고 = cp_price 몫 전)
 assert src85.index('print("점수"') < src85.index('p["score"] += cp_big(new[p["i"]]["title"]) if "쿠팡" in store_tag(new[p["i"]]["title"]) else 0') < src85.index("ok = lambda p: focus(")
 # ② 저녁 제철 가전
 cw85, ap85 = [], []
 CP85 = [{"productId": 1, "productName": "신일 선풍기 SIF-14", "productPrice": 49000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=1", "isRocket": True},
         {"productId": 2, "productName": "한경희 가열식 가습기 3L", "productPrice": 89000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=2", "isRocket": True, "productImage": "https://thumbnail.coupangcdn.com/2.jpg"},
-        {"productId": 3, "productName": "한일 전기요 싱글", "productPrice": 45000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=3", "isRocket": False},
+        {"productId": 3, "productName": "한일 전기요 싱글", "productPrice": 45000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=3"},  # isRocket 없음 = 로켓 근거 X(📦)
         {"productId": 4, "productName": "따뜻 핫팩 100개", "productPrice": 35000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=4"},
         {"productId": 5, "productName": "가습기 필터 6개", "productPrice": 33000, "productUrl": "https://link.coupang.com/re/AFFSDP?p=5"},
         {"productId": 6, "productName": "가격 없는 히터"}, {"productId": 7, "productName": "생 주소 히터", "productPrice": 59000, "productUrl": "https://www.coupang.com/vp/products/7"},
@@ -9152,6 +9155,9 @@ s85["thtoss"]["q"].append({"t": TK("2026-10-26 18:20"), "text": H.toss_th("많�
 with contextlib.redirect_stdout(io.StringIO()):
     time.time = lambda: TK("2026-10-26 18:40"); H.threads_deals(s85)
 assert len(p85) == 1 and "한경희 가열식 가습기 3L" in p85[0] and "게시 시점 가격" in p85[0] and [x["id"] for x in s85["thtoss"]["q"]] == [8501] and s85["cpevd_20261026"]["n"] == 1, (p85, s85["thtoss"])
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-26 19:40"); H.threads_deals(s85)  # 다음 칸 = 토스 픽 -> 가전 하루 수·사이트 진열 X
+assert len(p85) == 2 and "토스 물티슈" in p85[1] and s85["cpevd_20261026"]["n"] == 1 and len(json.load(open(H.POSTS))) == 1, (p85, s85.get("cpevd_20261026"))
 po85 = json.load(open(H.POSTS))
 assert len(po85) == 1 and (po85[0]["shelf"], po85[0]["tag"], po85[0]["api"], po85[0]["url"], po85[0]["img"]) == (1, "쿠가세", "cp", "https://link.coupang.com/re/AFFSDP?p=2", "https://thumbnail.coupangcdn.com/2.jpg") and "mid" not in po85[0], po85
 assert S0.parse(S0.title_of(po85[0]["text"]))[1:] == ("한경희 가열식 가습기 3L", "89,000원") and H.DISCLOSURE in po85[0]["text"] and "게시 시점 가격" in po85[0]["text"], po85[0]["text"]
@@ -9184,11 +9190,16 @@ it85 = [(0, {"t": "2026-10-26 18:40", "text": "🚀 쿠팡 로켓 🔥\n한경�
 KG85, tg85 = {"id": "cp-kugase-2610", "mall": "coupang", "name": "쿠가세 · 가전디지털 세일", "tag": "쿠가세", "kw": "가열식 가습기"}, {"쿠가세": {"https://link.coupang.com/re/AFFSDP?p=2"}}
 assert [[x[0] for x in S0.promo_goods(p, it85, tg85)] for p in (KG85, {**KG85, "kw": None}, {**KG85, "tag": None})] == [[0, 1], [0], [1]]
 assert S0.promo_go(KG85, it85[:2], {}, {}) == (f"{S0.BASE}?q=%EC%BF%A0%EA%B0%80%EC%84%B8", False) and S0.promo_go(KG85, it85[:2], {"쿠가세": "kg"}, {})[0] == f"{S0.BASE}e/kg.html" and S0.promo_go({**KG85, "tag": None}, it85[1:2], {}, {})[0].endswith("?q=%EA%B0%80%EC%97%B4%EC%8B%9D%20%EA%B0%80%EC%8A%B5%EA%B8%B0") and S0.promo_go({**KG85, "kw": None}, it85[:1], {}, {})[0].endswith("?q=%EC%BF%A0%EA%B0%80%EC%84%B8")
+assert S0.promo_go({**KG85, "kw": None}, it85[:1], {}, {}, True) == ("", False) and S0.promo_go(KG85, it85[:2], {}, {}, True)[0].endswith("?q=%EA%B0%80%EC%97%B4%EC%8B%9D%20%EA%B0%80%EC%8A%B5%EA%B8%B0")  # (리뷰) 지난 행사 = tag 검색 버튼 X(kw는 예전 그대로)
 assert "쿠가세" in S0.search_index(it85[1:2], {"https://link.coupang.com/a/k9": "쿠가세"})[0]["k"] and "쿠가세" not in S0.search_index(it85[1:2])[0]["k"]
 json.dump({"promos": [{"id": "cp-kugase-2610", "mall": "coupang", "mall_name": "쿠팡", "name": "쿠가세 · 가전디지털 세일", "start": "2026-10-12", "end": None, "tag": "쿠가세", "kw": "에어워셔"}]}, open("promos.json", "w"))  # kw에 안 걸리는 상품 = tag(봇 진열 글)로만
 json.dump([], open("events.json", "w")); time.time = lambda: TK("2026-10-26 19:00")
 S0.build(po85, "site"); ev85, sj85 = open("site/events/index.html").read(), json.load(open("site/search.json"))
 assert "핫딜픽이 고른 1개 →" in ev85 and f'href="{S0.BASE}?q=%EC%BF%A0%EA%B0%80%EC%84%B8"' in ev85 and [x["n"] for x in sj85 if "쿠가세" in x["k"]] == ["한경희 가열식 가습기 3L"], ev85[-800:]  # 봇 진열 글 tag = 기획전 카드·검색
+json.dump([{"at": "2026-10-26 09:00", "shelf": True, "url": "https://link.coupang.com/a/kg1", "tag": "쿠가세", "until": "2026-10-31", "text": "🔥 <b>[쿠팡] 신일 가열식 가습기 (59,000원)</b>"}], open("events.json", "w"))
+S0.build(po85 + [{"t": "2026-10-26 09:00", "text": "🔥 [쿠팡] 신일 가열식 가습기 (59,000원)", "url": "https://link.coupang.com/a/kg1", "own": 1, "shelf": 1, "tag": "쿠가세"}], "site")
+ev85b = open("site/events/index.html").read(); slug85 = re.search(r'href="https://hotdealpick\.kr/e/([^"]+)\.html"[^>]*data-gc="promo/cp-kugase-2610"', ev85b)
+assert slug85 and "핫딜픽이 고른 1개 →" in ev85b and "신일 가열식 가습기" in open(f"site/e/{slug85[1]}.html").read(), ev85b[-900:]  # (리뷰) 행사 쪽(e/) 있는 tag = 카드 개수 = 행사 쪽 상품(봇 진열 글 tag는 그때 안 셈)
 os.chdir(cwd85)
 # ③ 주간 보고
 cw85.clear(); aw85 = []
@@ -9201,7 +9212,7 @@ with contextlib.redirect_stdout(io.StringIO()) as o85w:
     H.RUN["cpn"] = [0, 0]; H.week_report(s85w); H.week_report(s85w)  # 1번
     time.time = lambda: TK("2026-11-03 09:10"); H.week_report(s85w)  # 화요일 X
 assert len(aw85) == 1 and cw85 == ["/reports/orders?startDate=20261019&endDate=20261025&page=0", "/reports/orders?startDate=20261026&endDate=20261101&page=0"], cw85
-assert aw85[0].startswith("📊 주간 보고 10/26~11/01") and "🛒 쿠팡 주문 2건(지난주 1) · 합산 120,000원(50,000원) · 건당 60,000원(50,000원)" in aw85[0] and "week_20261102" in s85w, aw85  # 주문 = orderId 1번씩 · 합산 = gmv
+assert aw85[0].startswith("📊 주간 보고 10/26~11/01") and "🛒 쿠팡 주문 2건(1) · 합산 120,000원(50,000원) · 건당 60,000원(50,000원)" in aw85[0] and "week_20261102" in s85w, aw85  # 주문 = orderId 1번씩 · 합산 = gmv
 assert "week report 보냄" in o85w.getvalue() and not re.search(r"\d", o85w.getvalue()), o85w.getvalue()  # 숫자 = 공개 로그 X
 s85x = {}; H.tg = lambda m, **k: None; time.time = lambda: TK("2026-11-02 09:30"); H.week_report(s85x); assert not s85x  # 텔레그램 실패 = 다음 실행에 다시
 H.tg = lambda m, **k: aw85.append(k.get("text")) or {"message_id": 1}
