@@ -8985,7 +8985,7 @@ H.tg = lambda method, **k: sent82.append(k) or {"message_id": 82, "text": k.get(
 json.dump([{"at": "2026-10-26 13:00", "url": "https://link.coupang.com/a/e82", "text": "🔥 <b>[쿠팡] 크리스탈 생수 2L 12병 (6,900원)</b>\n\n💰 1병 575원꼴\n날 더워지면 물 떨어질 때 제일 곤란한 계절\n⚠️ 확인할 점: 결제 전 최종가 확인 (10/26 9시 가격)", "button": "🛒 6,900원 구매하기"}], open(H.EVENTS, "w"), ensure_ascii=False)
 H.events({}); assert len(sent82) == 1 and "더워지면" not in sent82[0]["text"] and "💰 1병 575원꼴\n⚠️ 확인할 점" in sent82[0]["text"], sent82
 # 묶음 글(th_bundle) = 코드 검사 뒤 올림(다시 시도 글도 검사한 글)
-thp82 = []; H.th_post, H.th_topic = (lambda tok, text, link=None, image=None, tag=None: thp82.append(text) or "id"), (lambda s: "핫딜")
+thp82 = []; H.th_post, H.th_topic = (lambda tok, text, link=None, image=None, tag=None: thp82.append(text) or "id"), (lambda s, **k: "핫딜")
 H.th_bundle({"thtopic": {}}, "pick", PK82); assert thp82 == [PK82.replace("\n2️⃣ 불스원 워셔액 2L 6개 9,900원 · ⚠️ 10/24 18:08 게시 시점 가격", "")]
 # ③ 철 지난 계절 상품 = Threads 개별 글 X · 픽 X(+ 오늘 아닌 토스) · 제철 먼저
 assert not H.th_solo({}, "🔥 [쿠팡] 신일 선풍기 SIF-14 (29,900원)", top=True) and H.th_solo({}, "🔥 [쿠팡] 한일 온수매트 더블 (89,000원)", top=True)
@@ -9397,7 +9397,7 @@ assert H.chat_ok(["생수 2L 6병 기준으로 1L당 248원이면 어때", "이 
 # 리뷰 고침: 한글 브랜드·줄임 몰 이름 · 말로 쓴 금액·프로 · 반말 재촉 · 답글 보상 · 재료 밖 기온·날짜 = 걸림 / 소수 기록·ㅋㅋ 붙은 물음표·흔한 말(사고·기사님·가려고·옷 주름·토스트) = 통과
 for l87, why87 in ((["햇반 하나 평균 얼마일까", "맞혀 볼래?"], "브랜드"), (["올영 세일 다음 주부터래", "다들 뭐 볼 거야?"], "링크·권유"), (["알리에서 시킨 거 아직도 안 옴", "다들 며칠 걸려?"], "링크·권유"),
                    (["마트 가면 만 원 넘게 쓰는 거 순식간이야", "다들 장보기 예산 정해?"], "기록 밖 금액"), (["3만원 들고 갔는데 다 씀", "너는?"], "기록 밖 금액"), (["50프로면 일단 눈길 가", "너는?"], "기록 밖 금액"),
-                   (["이번 주말엔 그냥 질러", "다들 뭐 노려?"], "권유"), (["답글 남기면 커피 쏜다", "다들 아침 뭐 먹어?"], "링크·권유"), (["오늘 낮에 20도까지 오른대", "다들 반팔 꺼냈어?"], "재료 밖 기온")):
+                   (["이번 주말엔 그냥 질러", "다들 뭐 노려?"], "권유"), (["답글 남기면 커피 쏜다", "다들 아침 뭐 먹어?"], "링크·권유"), (["오늘 기분 좋아서 기프티콘 나눔", "다들 뭐 마실래?"], "링크·권유"), (["오늘 낮에 20도까지 오른대", "다들 반팔 꺼냈어?"], "재료 밖 기온")):
     assert H.chat_ok(l87, facts="오늘 10/27(화) · 가을 · 서울 최저 9도/최고 18도").startswith(why87), (l87, H.chat_ok(l87))
 for l87 in (["계획에 없던 거 꼭 사고 나와", "나만 그래?"], ["택배 기사님 발소리만 들려도 설레", "나만 그래? ㅋㅋ"], ["마트 가려고 하면 꼭 비 오더라", "다들 그래?"], ["빨래 주름 펴는 게 제일 귀찮아", "너는 다림질 해?"],
             ["식빵 사 오면 토스트 몇 번 하고 끝나", "다들 남은 식빵 어떻게 해?"], ["오늘 최고 18도래", "다들 겉옷 챙겼어?"]):
@@ -9407,7 +9407,8 @@ assert "오늘 계절:" in H.chat_facts("season", [], "2026-10-27", set())[0] an
 ca87, H.CHAT_AT = H.CHAT_AT, None; assert chat87("2026-11-03 13:12", {}) == ""; H.CHAT_AT = ca87  # None = 끔(오류 X)
 L87.append(["오늘 치약 짜다가 생각났는데 써봤던 거 중에 최고야", "너는?"]); s87d = {}; o87 = chat87("2026-11-01 13:12", s87d)
 assert "규칙 걸림 -> 안 올림" in o87 and "재검토 뒤" not in o87 and "경험담" in o87 and len(po87) == 4 and "chat_20261101" in s87d  # 걸리면 그 글 X(그날 다시 X)
-assert s87d["chat"]["t"] and s87d["chat"]["h"][-1][1:3] == ["shop", ""]  # 리뷰: t 없으면 seen 저장이 KeyError(실행 기록 다 날아감) · 못 올린 주제도 돌림(매일 같은 주제에 막히지 않게)
+chat87("2026-11-03 13:12", s87d); assert "최근 수다 글(겹치지 않게):\n- (없음)" in pr87[-1] and len(po87) == 4  # 못 올린 날 = 최근 글 목록 X
+assert s87d["chat"]["t"] and s87d["chat"]["h"][-1][1:3] == ["home", ""]  # 리뷰: t 없으면 seen 저장이 KeyError(실행 기록 다 날아감) · 못 올린 주제도 돌림(매일 같은 주제에 막히지 않게)
 H.review = lambda where, text, lines, facts="", **k: {lines[-1]: "다들 어때"} if where == "chat" else {}; L87.append(L87[0]); o87 = chat87("2026-11-02 13:12", {})
 assert "재검토 뒤 규칙 걸림" in o87 and len(po87) == 4; H.review = lambda *a, **k: {}  # 재검토가 질문을 지우면 X
 # 주제 돌림: 퀴즈 = 우리 기록(가장 쌀 때·평균) 숫자만 · 기록 없으면 퀴즈 X · 달력 = promos 기간(몰 이름 뺌)
