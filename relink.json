@@ -1,7 +1,8 @@
 {
- "left_now": 28,
+ "left_now": 26,
  "ok": {
-  "auction": 7
+  "auction": 7,
+  "커뮤니티": 1
  },
  "fail": [
   {
@@ -423,6 +424,13 @@
    "n": "오르숨 올스텐 가열식 주전자 가습기 2L ORS-SUM1",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 10:54"
+  },
+  {
+   "k": "진열",
+   "pid": "9767835903",
+   "n": "바디피트 볼록맞춤 생리대 날개형 오버나이트 12개입 5개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 11:08"
   }
  ]
 }
