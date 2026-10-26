@@ -10151,10 +10151,12 @@ assert bt97("이름 모르는 물건") == ["옵션(용량·개수)마다 가격�
 assert not [n for n, k, w in (("라로슈포제 시카플라스트 밤 B5+ 40ml", {"cat": "beauty"}, "특·상·중"), ("코멧 메쉬 사각 세탁망 대+중", {}, "드럼"), ("선쉐이드 자외선 완벽차단 햇빛가리개 4개입", {"cat": "car"}, "SPF"),
         ("프로에잇 리퀴드 디파인 라이너 2.5ml", {}, "오버나이트"), ("사이드 테이블 수납 선반 크림화이트 3단", {"cat": "home"}, "ml"), ("바티스트 드라이샴푸 오리지널 200ml", {}, "부위"),
         ("더치엔커피 브라질 더치커피 1L", {}, "사이즈 표"), ("오리온 초코파이 말차쇼콜라 12개", {}, "ml"), ("라네즈 립 슬리핑 마스크 20g", {}, "KF94"), ("디센느 무선 칫솔 살균기 1개", {}, "미세모"),
-        ("다우니 건조기 시트 120매", {}, "1L당"), ("펩시 미니 휴대용 손선풍기 전용파우치 포함", {}, "가로·세로"), ("초코무초 피넛버터맛 10p", {}, "냉장"), ("베베쿡 사르르쿵 딸기 15g 3개", {"cat": "snack"}, "산지"))
+        ("다우니 건조기 시트 120매", {}, "1L당"), ("펩시 미니 휴대용 손선풍기 전용파우치 포함", {}, "가로·세로"), ("초코무초 피넛버터맛 10p", {}, "냉장"), ("베베쿡 사르르쿵 딸기 15g 3개", {"cat": "snack"}, "산지"),
+        ("루아덴 휴대용 usb 충전식 손난로", {}, "평수"), ("로지텍 무선 마우스 전용파우치 포함", {}, "가로·세로"), ("크린랩 위생랩 100m", {}, "매수를"),
+        ("불닭소스 200g", {}, "부위"), ("브라질 국기 반팔 티셔츠", {"cat": "fashion"}, "장당"), ("켈로그 그래놀라 오리지널 350g", {"cat": "food"}, "부위"), ("선풍기 커버 대형 2개", {}, "바람"), ("스너글 섬유탈취제 470ml", {}, "고농축"))
         if w in bt97(n, **k)[0]]  # 낱말이 겹치는 다른 물건(화장품 밤·세탁망·햇빛가리개·아이라이너·색 이름·오리지널·브라질·쇼콜라·립 마스크·살균기·건조기 시트·포함 파우치·…맛·과자 15g) = 그 기준 X
 assert not [n for n, w in (("불닭볶음면 소컵 70g 6개", "봉지·컵"), ("하림펫푸드 밥이보약 CAT 닭 3.4kg", "급여 대상"), ("공중부양 무타공 물티슈 보관 케이스 2개", "크기(가로·세로)"), ("아이깨끗해 핸드워시 1.8L 리필 2개 + 공용기", "용량(ml·g)"),
-        ("유니레버 썬 식기세척기용 타블렛 세제 50개입", "개수와 1회"), ("응암동 착한 감자탕 5kg", "1팩(1인분)"), ("맥스 앤 맥스 전자레인지 라면 용기 1L", "구성(개수·용량)과 전자레인지"), ("눈누 계란 2단 찜기", "구성(개수·용량)과 전자레인지"))
+        ("유니레버 썬 식기세척기용 타블렛 세제 50개입", "개수와 1회"), ("응암동 착한 감자탕 5kg", "1팩(1인분)"), ("맥스 앤 맥스 전자레인지 라면 용기 1L", "구성(개수·용량)과 전자레인지"), ("눈누 계란 2단 찜기", "구성(개수·용량)과 전자레인지"), ("파스타쿠커 전자레인지용 1개", "구성(개수·용량)과 전자레인지"))
         if not bt97(n)[0].startswith(w)]  # 소품·그릇 = 담는 물건 기준 X · 불닭볶음면 = 라면 · 펫푸드 = 급여 대상 · 공용기·리필 = 내용물 · 식세기 세제 ≠ 세탁 세제 · 감자탕 = 1인분
 mk97 = lambda i, name, shop="쿠팡", url=None, sh=(0, None, "", [], False): (i, {"t": "2026-10-27 09:00", "text": f"🔥 [{shop}] {name} (1,000원)", "url": url or f"https://link.coupang.com/a/c{i}"}, sh)
 bc97 = {"life": [mk97(n, w) for n, w in ((1, "화장지 30롤"), (2, "물티슈 100매"), (3, "치약 3개"), (4, "샴푸 1L"), (5, "칫솔 10개"), (6, "세안 비누"), (7, "면도기"), (8, "화장지 30롤"), (9, "린스 1L"))],
@@ -10277,9 +10279,9 @@ H.IDX_DAY, H.IDX_RUN, H.IDX_NEW = 200, 50, 50; s98, req98[:] = {"idx_key": {"t":
 with __import__("contextlib").redirect_stdout(io.StringIO()) as o98:
     H.indexnow(s98)
 assert "indexnow naver 3 err 503 · bing 3 ok" in o98.getvalue() and s98["idx_naver"]["h"] == {} and len(s98["idx_bing"]["h"]) == 3  # 5xx = 기록 X(다음 실행에 다시)
-ok98["searchadvisor.naver.com"] = 403; req98.clear(); H.indexnow(s98); H.indexnow(s98)
-assert [r[0].split("/")[2] for r in req98] == ["searchadvisor.naver.com"] and s98["idx_naver"]["stop"] == "2026-10-30" and len([p for p in sent98 if "IndexNow naver 403" in p.get("text", "")]) == 1  # 4xx = 그날 그만 · 알림 1번
-open("docs/sitemap.xml", "w").write("<urlset></urlset>"); H.indexnow(s98); assert len(s98["idx_bing"]["h"]) == 3  # 오늘 보낸 기록 = 오늘은 그대로
+ok98["searchadvisor.naver.com"] = 403; req98.clear(); site98(3); H.indexnow(s98); H.indexnow(s98)
+assert [r[0].split("/")[2] for r in req98] == ["searchadvisor.naver.com", "api.indexnow.org"] and req98[1][1]["urlList"] == [f"{S.BASE}p/2.html"] and s98["idx_naver"]["stop"] == "2026-10-30" and len([p for p in sent98 if "IndexNow naver 403" in p.get("text", "")]) == 1  # 4xx = 그곳만 그날 그만(빙은 새 쪽 그대로) · 알림 1번
+open("docs/sitemap.xml", "w").write("<urlset></urlset>"); H.indexnow(s98); assert len(s98["idx_bing"]["h"]) == 4  # 오늘 보낸 기록 = 오늘은 그대로
 time.time = lambda: TK("2026-10-31 09:00"); H.indexnow(s98); assert s98["idx_bing"]["h"] == {}  # 사이트맵에서 빠진 쪽 = 다음 날 기록 지움
 # 이번 실행 단계가 막 끝낸 딜(지금 posts.json에서 🔥 아님 — 품절·내림 · 다음 빌드부터 noindex) = 지난 빌드 사이트맵에 있어도 X
 P98[13] = {"t": "2026-10-27 08:00", "text": "📦 쿠팡 🔥\n딜 13\n1,000원", "url": "https://link.coupang.com/a/d13", "own": 1, "shelf": 1, "st": "out"}; json.dump(P98, open("posts.json", "w"), ensure_ascii=False); ok98.clear(); req98.clear()
