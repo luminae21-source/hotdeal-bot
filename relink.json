@@ -1,5 +1,5 @@
 {
- "left_now": 37,
+ "left_now": 36,
  "ok": {
   "auction": 7
  },
@@ -360,6 +360,13 @@
    "n": "코멧 포켓형 손난로 핫팩 150g 90개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 09:00"
+  },
+  {
+   "k": "진열",
+   "pid": "9216997749",
+   "n": "에코수산 홍게 3kg (8~13미, 일반형)",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 09:14"
   }
  ]
 }
