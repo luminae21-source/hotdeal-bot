@@ -5607,7 +5607,7 @@ H.cp_links(seen41); H.cp_price(seen41)
 assert seen41 == {} and not os.path.exists("cp_links.json") and not c41 and H.load(H.EVENTS, []) == raw41 and "cpu" not in H.RUN
 assert H.affiliate("https://www.coupang.com/vp/products/222") == ("https://www.coupang.com/vp/products/222", False) and not any("coupang.com/v2" in u for u, _ in c41)
 H.events(seen41); ch41 = [p for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"]
-assert [p["reply_markup"]["inline_keyboard"][0][0]["url"] for p in ch41] == [P222, P333] and not any(H.DISCLOSURE in p["text"] for p in ch41)
+assert not ch41 and seen41["ssn"]["d"] == {"2026-10-06": {"쿠팡": 2}} and {"ev_2026-10-06 09:50", "ev_2026-10-06 09:55"} <= set(seen41)  # SS(10/26): 키 없음 = 쿠팡 생 주소 예약(수수료 X) 안 올림(예전엔 그 주소로) · 하루 셈
 H.own_end(seen41); e41 = next(p for p in json.load(open("posts.json")) if p["url"] == EG41)
 assert (e41["now"], e41["chk"]) == ("8,990원", "10/6 9시") and not any(k.startswith("cp") for k in seen41)
 assert 'if HAS_CP:  # 쿠팡 API 최근 1시간 호출 시각' in inspect.getsource(H.main) and 'RUN["cpu"] = seen.setdefault("cpuse", {"t": 0})' in inspect.getsource(H.main)
