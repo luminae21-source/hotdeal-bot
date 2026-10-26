@@ -12,6 +12,8 @@
 | Upbeat & Fun for Shorts | FernsCreativeCorner | https://pixabay.com/music/upbeat-upbeat-amp-fun-for-shorts-under-one-minute-122192/ |
 | Happy Lofi | AtlasAudio | https://pixabay.com/music/beats-happy-lofi-593048/ |
 | Motivation Upbeat (Fun Day) | BombinSound | https://pixabay.com/music/beats-motivation-upbeat-fun-day-594803/ |
+| Summer Splash Lofi | Epicsongs | https://pixabay.com/music/folk-lofi-7-summer-splash-background-music-391679/ |
+| Travel I (Acoustic Lofi Folk) | JerzyGórecki | https://pixabay.com/music/acoustic-group-travel-i-background-film-music-acoustic-calm-music-guitar-lofi-folk-422787/ |
 
 **라이선스: Pixabay Content License** (https://pixabay.com/service/license-summary/)
 - 상업 이용 가능 · 출처 표기 의무 없음(캡션에 🎵 곡명 (Pixabay)는 예의로 적음) · 영상에 넣어 쓰는 건 허용
