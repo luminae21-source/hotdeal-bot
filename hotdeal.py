@@ -1687,11 +1687,25 @@ def cp_links(seen):
     today, names = time.strftime("%Y-%m-%d", kst), {e["url"]: parse(title_of(plain_of(e.get("text") or "")))[1] for e in evs}
     st["f"] = {u: d for u, d in st.get("f", {}).items() if u in names}  # 진열 실패 날짜들(events에서 빠지면 지움)
     st["e"] = {u: v for u, v in st.get("e", {}).items() if u in names}  # 마지막 실패 이유('400' = 1개만 보낸 호출이 rCode 400 · '응답 없음' = 오류 없이 그 주소만 빠짐)
+    for k in ("nf", "fi", "m"):  # RR: nf = 실패로 끝난 때 해 본 주소 모양 수 · fi = 지금 해 볼 모양 번호 · m = 모양마다 API 응답 메시지
+        st[k] = {u: v for u, v in st.get(k, {}).items() if u in names and u not in cl}
+    vi = seen.get("cpq", {}).get("vi", {})
+    def forms(u):  # RR(10/26 Cowork — 400이 다음 날 다시 해도 0개 바뀜): ① 원래 주소(옵션 itemId) ② 상품 번호만 ③ 검색 결과 옵션(itemId·vendorItemId — cp_price가 같은 상품·옵션을 찾았을 때)
+        pid, v = re.match(CP_PROD, u)[1], vi.get(u) or ["", "", ""]
+        return list(dict.fromkeys([u, f"https://www.coupang.com/vp/products/{pid}"] + ([f"https://www.coupang.com/vp/products/{pid}?itemId={v[0]}&vendorItemId={v[1]}"] if v[0] and v[1] else [])))
+    if "rr" not in st:  # RR 1번(배포 뒤 첫 실행): 지금 400 상품 = 안 해 본 모양만 바로(② — site_relink가 ①② 다 해 본 건 ③ 검색 옵션이 생길 때) · 살아난 수 = rr ok(로그·cp_fail.json)
+        us = sorted(u for u, e in st["e"].items() if e == "400")
+        st["nf"].update({u: 2 if len(seen.get("srl", {}).get("e", {}).get(u, [])) >= 2 else 1 for u in us})
+        own = {p.get("url") for p in load(POSTS, []) if p.get("own")}  # 검색(cp_price) = 올라간 진우 글·진열만
+        st["rr"] = {"t": now, "u": us, "ok": [], "w": [u for u in us if u not in vi and u in own]}
+    fresh = {u for u in names if u in st["nf"] and len(forms(u)) > st["nf"][u]}  # 실패 뒤 새 주소 모양(③)이 생김 = 7일 기다리지 않고 그 모양만
+    for u in fresh:
+        st["fi"].setdefault(u, st["nf"][u])
     rush = set(seen.get("srl", {}).get("now", ()))  # 10/25 21시 '1번 바로' 중인 진열 = site_relink 몫(1개씩 주소 2가지 — 같은 상품 두 번 X)
-    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400)]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and (u in fresh or now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400))]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
-    one = [[u] for u in rest if u in st["f"] and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
+    one = [[u] for u in rest if (u in st["f"] or u in st["fi"]) and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
     rest = [u for u in rest if [u] not in one]
     q, calls, why = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0, {}
     q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)] + one  # 채널 예약 먼저
@@ -1700,13 +1714,18 @@ def cp_links(seen):
         if RUN.get("cpn", [0])[0] >= CP_RUN - 2 and not chan & set(b):  # 이 실행 전체 호출 수(site_relink가 먼저 쓴 몫 포함)
             q.insert(0, b)
             break
+        k1 = st["fi"].get(b[0], 0) if len(b) == 1 else 0  # 1개짜리 = 지금 해 볼 주소 모양(RR)
+        send = [forms(b[0])[min(k1, len(forms(b[0])) - 1)]] if len(b) == 1 else b
         try:
-            got = cp_deeplinks(b)
-        except ValueError as e:  # 묶음 오류 = 반씩 나눠 다시 · 1개짜리 오류 = 그 상품만 안 됨
+            got = cp_deeplinks(send)
+            got = {b[0]: got[send[0]]} if len(b) == 1 and send[0] in got else got
+        except ValueError as e:  # 묶음 오류 = 반씩 나눠 다시 · 1개짜리 오류 = 그 모양만 안 됨(다음 모양)
             got = {}
             if len(b) == 1:
-                print("cp link", b[0], repr(e))
+                msg = re.sub(r"^coupang rCode \S+\s*", "", str(e)).strip() or str(e)[:60]  # API 응답 메시지 그대로(주소·쿼리 X)
+                print("cp link 400", re.match(CP_PROD, b[0])[1], "①②③"[k1], msg)
                 why[b[0]] = "400"
+                st["m"].setdefault(b[0], {})[str(k1)] = msg
         except Exception as e:  # 상한·접속·게이트웨이 = 다음 실행에
             print("cp link", repr(e))
             q.insert(0, b)
@@ -1714,11 +1733,29 @@ def cp_links(seen):
         calls += 1
         cl.update(got)
         n += len(got)
+        for u in got:  # RR 살아난 것(②·③ 모양)
+            if u in st["rr"]["u"] and len(b) == 1:
+                st["rr"]["ok"].append([re.match(CP_PROD, u)[1], "①②③"[k1]])
+            for k in ("nf", "fi", "m"):
+                st[k].pop(u, None)
         miss = [u for u in b if u not in got]
         if miss and len(b) > 1:  # 응답에 빠진 주소 = 따로 다시(어느 것이 안 되는지 — 전부 빠졌으면 반씩)
             q[:0] = [miss] if len(miss) < len(b) else [b[:len(b) // 2], b[len(b) // 2:]]
             continue
         for u in miss:
+            if u not in why:
+                st["m"].setdefault(u, {})[str(k1)] = "응답 없음"
+            if k1 + 1 < len(forms(u)):  # RR: 다음 주소 모양(이 실행 남은 몫 · 아니면 다음 실행)
+                st["fi"][u] = k1 + 1
+                q.append([u])
+                continue
+            st["fi"].pop(u, None)
+            st["nf"][u] = len(forms(u))
+            if (vi.get(u) or ["", "", ""])[2]:  # 모양 다 400 = 검색 API가 준 파트너스 긴 주소(같은 상품·옵션 — NN처럼)
+                cl[u], n = vi[u][2], n + 1
+                st["rr"]["ok"] += [[re.match(CP_PROD, u)[1], "검색 링크"]] if u in st["rr"]["u"] else []
+                print("cp link", re.match(CP_PROD, u)[1], "모양 다 400 -> 검색 API 파트너스 링크")
+                continue
             st["x"][u], st["e"][u] = now, why.get(u, "응답 없음")
             if u in chan:  # 채널 예약 = 바로 알림
                 alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — "
@@ -1737,8 +1774,15 @@ def cp_links(seen):
         json.dump(cl, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
         print("cp link", f"쿠팡 상품 주소 {n}개 -> 파트너스 링크")
     md = lambda ts: time.strftime("%m-%d %H:%M", time.gmtime(ts + 9 * 3600))
-    json.dump([{"pid": re.match(CP_PROD, u)[1], "n": names[u], "f": st["f"].get(u, []), "x": md(st["x"][u]) if u in st["x"] else "", "e": st["e"].get(u, "")}
-               for u in sorted(names, key=lambda u: (names[u], u)) if u not in cl], open(CP_FAIL, "w"), ensure_ascii=False, indent=1)  # 아직 안 바뀐 것(x 없음 = 아직 시도 전 — 상한·실행 몫 대기)
+    json.dump([{"pid": re.match(CP_PROD, u)[1], "n": names[u], "f": st["f"].get(u, []), "x": md(st["x"][u]) if u in st["x"] else "", "e": st["e"].get(u, ""),
+                "m": " · ".join([f"{'①②③'[int(k)]}{v}" for k, v in sorted(st["m"].get(u, {}).items())] + ["③ 검색 대기(옵션 번호)"] * (u in st["rr"]["w"]))}
+               for u in sorted(names, key=lambda u: (names[u], u)) if u not in cl], open(CP_FAIL, "w"), ensure_ascii=False, indent=1)  # 아직 안 바뀐 것(x 없음 = 아직 시도 전 — 상한·실행 몫 대기) · m = 주소 모양마다 API 응답(RR)
+    rr = st["rr"]
+    rr["w"] = [u for u in rr["w"] if u not in cl]
+    if rr["u"] and (n or rr.get("d") != today):  # RR 진행 1줄(바뀐 실행 · 아니면 하루 1번)
+        rr["d"], ok = today, collections.Counter(o[1] for o in rr["ok"])
+        print("cp link RR", f"400 {len(rr['u'])}개 중 살아남 {len(rr['ok'])}" + (f" ({' · '.join(f'{w} {c}' for w, c in ok.items())})" if ok else "")
+              + f" · 검색 대기 {len(rr['w'])} · 아직 {sum(u not in cl for u in rr['u'])}")
 
 
 def cp_price(seen):
@@ -1759,6 +1803,9 @@ def cp_price(seen):
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
     q["v"] = {u: v for u, v in q.get("v", {}).items() if u in names}  # v = 사진 없는 글의 다음 검색어 번호(cp_kws — pid 찾으면 그대로)
     q["pm"] = {u: v for u, v in q.get("pm", {}).items() if u in names and v[0] == today}  # pm = 사진 없는 글이 오늘 pid 못 찾은 수 — 다음 검색어로 오늘 다시(검색어 수까지)
+    q["vi"] = {u: v for u, v in q.get("vi", {}).items() if u in names}  # vi = 같은 상품·옵션 검색 결과 [itemId, vendorItemId, 파트너스 긴 주소] — 딥링크 400 상품 다시(RR — cp_links)
+    rr = seen.get("cpdl", {}).get("rr") or {}
+    rw = set(rr.get("w", []))  # RR(10/26 Cowork): 딥링크 400 상품 중 아직 검색 안 한 것 = 먼저(옵션 번호 vendorItemId를 얻으려고 — 추가 호출 X, 순서만)
     bypid = {}
     for u in names:
         if ev[u].get("pid"):
@@ -1774,7 +1821,7 @@ def cp_price(seen):
     home = shown("docs/index.html")  # 홈에 나오는 상품 — 사진 채움 먼저(10/24 Cowork A①)
     cfirst = set().union(*[shown(f, 12) for f in sorted(glob.glob("docs/c/*/index.html"))])  # 그다음 /c/ 칸마다 첫 화면(10/25 Cowork ② — /c/season/ 사진 1/21)
     vid = {p["url"] for p in clip_pool(posts, time.time())}  # FF-4(10/26 Cowork): 영상·인스타 후보(3일 안 🔥 쿠팡) 사진 먼저
-    rank = lambda u: (u not in vid, u not in home, u not in cfirst)
+    rank = lambda u: (u not in rw, u not in vid, u not in home, u not in cfirst)
     wk = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 7 * 86400))
     q["gs"], grp = {w: d for w, d in q.get("gs", {}).items() if d > wk}, collections.defaultdict(list)  # gs = 품목 낱말 검색한 날
     q["gm"] = {u: d for u, d in q.get("gm", {}).items() if d > wk and u in names}  # gm = 품목 낱말 검색에 들어간 글(7일 안 = 다른 낱말로도 다시 묶지 않음)
@@ -1786,7 +1833,7 @@ def cp_price(seen):
             grp[max(ws, key=lambda w: (cnt[w], w))].append(u)
     gk = {w: min(map(rank, us)) for w, us in grp.items() if len(us) >= CP_GROUP_MIN}
     pho = [x for _, x in sorted([((*gk[w], 0, ""), (0, None, None, w, None)) for w in gk] + [((*rank(t[1]), 1, t[0]), t) for t in todo if t[1] not in q.get("i", {})], key=lambda y: y[0])]  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지 — 같은 칸이면 T 품목 낱말 검색 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
-    old = [t for t in todo if t[1] in q.get("i", {})]
+    old = sorted((t for t in todo if t[1] in q.get("i", {})), key=lambda t: t[1] not in rw)
     todo = [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]]
     got = miss = err = gn = 0
     qs = cp_qs
@@ -1833,6 +1880,9 @@ def cp_price(seen):
             else:  # pid 없음 = 다음엔 다음 검색어(오늘 안에 — 검색어 수까지)
                 q["v"][u], q["pm"][u] = (v + 1) % len(kws), [today, q["pm"].get(u, [today, 0])[1] + 1]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
+        rw.discard(u)
+        if x and urllib.parse.urlsplit(str(x.get("productUrl") or "")).netloc in CP_SHORT:
+            q["vi"][u] = [qs(x, "itemId"), qs(x, "vendorItemId"), x["productUrl"]]
         q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""]  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
         y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만
@@ -1844,6 +1894,8 @@ def cp_price(seen):
             print(f"cp price 못 찾음 pid {pid} · 검색어 '{kw}' · " + (f"pid 있음 {len(same)}개 = " + (f"item {item} 없음" if item else "옵션 다름(cp_same) — events에 item(옵션 itemId)을 넣으면 그 옵션으로") if same else "pid 없음") + f" · 결과 {len(ds)}개")
             for y in ds[:3] + [y for y in same if y not in ds[:3]][:6]:
                 print(f"  {y.get('productId')} {str(y.get('productName') or '')[:30]}" + (f" ← 같은 pid · item {qs(y, 'itemId') or '-'}" if y in same else ""))
+    if rr:
+        rr["w"] = [u for u in rr.get("w", []) if u in rw]
     if got or miss or err:
         print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}")
 

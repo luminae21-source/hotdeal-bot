@@ -9960,4 +9960,56 @@ assert not vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되더라고요",
 H.review = lambda *a, **k: {}
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk94, H.POSTS, H.METRICS, H.http, H.time.sleep) = sv94
 H.E.pop("THREADS_TOKEN", None) if tk94 is None else H.E.update(THREADS_TOKEN=tk94); os.chdir(cwd94)
+# 9-95) RR(10/26 Cowork — 쿠팡 딥링크 400: cp_fail 79개 중 다음 날 다시 해서 바뀐 것 0): 1개짜리 400 = 주소 모양 바꿔 다시(① 원래 itemId ② 상품 번호만 ③ 검색 결과 옵션 itemId·vendorItemId — cp_price가 같은 상품·옵션을 찾았을 때) ·
+#       모양 다 400 = 검색 API가 준 파트너스 긴 주소(NN처럼) · 모양마다 API 응답 메시지 = 로그(pid·모양만 — 주소 쿼리 X)·cp_fail.json m · 배포 뒤 1번: 지금 400 상품 = 안 해 본 모양만(살아난 수 로그) ·
+#       cp_price = 400 상품 먼저 검색(호출 수 그대로) · 진열 생 주소 글 = 사이트만(채널·Threads X — 21:03 요소수·21:35 창틈막이 = posts shelf·mid 없음)
+sv95 = (H.http, H.HAS_CP, H.tg, time.time, H.POSTS, H.EVENTS, H.CP_CHK_HOUR, dict(H.RUN))
+d95 = tempfile.mkdtemp(); cwd95 = os.getcwd(); os.chdir(d95); H.POSTS, H.EVENTS = "posts.json", "events.json"
+VP95 = lambda pid, q="": f"https://www.coupang.com/vp/products/{pid}" + q
+A95, B95, C95, D95, E95 = VP95(501, "?itemId=51"), VP95(503, "?itemId=5031"), VP95(502, "?itemId=52"), VP95(504, "?itemId=54"), VP95(505, "?itemId=55")
+L95 = lambda pid: f"https://link.coupang.com/re/AFFSDP?lptag=AF0&pageKey={pid}&itemId={pid}1&vendorItemId={pid}2&traceid=Z"
+OK95, c95, s95x = {VP95(501), VP95(504)}, [], []  # 상품 번호만 = 되는 상품
+def http95(url, body=None, headers=None, method=None):
+    if url.endswith("/deeplink"):
+        us = body["coupangUrls"]; c95.append(us)
+        return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/x" + re.search(r"/products/(\d+)", u)[1]} for u in us]} if all(u in OK95 for u in us) else {"rCode": "400", "rMessage": "url convert failed"})
+    if "/products/search?" in url:
+        s95x.append(url)
+        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 503, "productName": "비누 상품 3개", "productPrice": 3000, "productUrl": L95(503), "productImage": "https://ads-partners.coupang.com/image1/b"}] if quote("비누") in url else []}})
+    raise AssertionError(url)
+tx95 = lambda n: f"📦 <b>[쿠팡] {n} (1,000원)</b>"
+json.dump([{"at": "2026-10-26 20:00", "shelf": True, "url": A95, "pid": "501", "text": tx95("에이 상품")}, {"at": "2026-10-26 20:00", "shelf": True, "url": B95, "pid": "503", "item": "5031", "text": tx95("비누 상품 3개")},
+           {"at": "2026-10-27 09:00", "deal": True, "url": C95, "text": tx95("씨 상품"), "button": "x"}, {"at": "2026-10-26 20:00", "shelf": True, "url": D95, "pid": "504", "text": tx95("디 상품")},
+           {"at": "2026-10-26 20:00", "shelf": True, "url": E95, "pid": "505", "text": tx95("이 상품")}], open("events.json", "w"), ensure_ascii=False)
+json.dump([{"t": "2026-10-26 20:00", "text": f"[쿠팡] {n} (1,000원)", "url": u, "own": 1, "shelf": 1} for n, u in (("에이 상품", A95), ("비누 상품 3개", B95), ("디 상품", D95), ("이 상품", E95))], open("posts.json", "w"), ensure_ascii=False)
+sent95 = []; H.http, H.HAS_CP, H.tg, H.CP_CHK_HOUR = http95, True, (lambda m, **p: sent95.append((m, p)) or {"message_id": 1}), 0
+def run95(at, s, f):
+    time.time = lambda: TK(at); H.RUN.pop("cpu", None); H.RUN.pop("cpn", None); o = io.StringIO()
+    with contextlib.redirect_stdout(o):
+        f(s)
+    return o.getvalue()
+s95 = {"cpdl": {"x": {B95: TK("2026-10-26 09:57"), D95: TK("2026-10-26 09:57"), E95: TK("2026-10-26 09:57")}, "f": {B95: ["2026-10-25", "2026-10-26"], D95: ["2026-10-26"], E95: ["2026-10-25", "2026-10-26"]},
+                "e": {B95: "400", D95: "400", E95: "400"}}, "srl": {"e": {B95: ["rCode 400 url convert failed"] * 2, E95: ["rCode 400 url convert failed"] * 2}}}
+o95 = run95("2026-10-27 00:10", s95, H.cp_links); st95 = s95["cpdl"]
+assert st95["rr"]["u"] == sorted([B95, D95, E95]) and st95["rr"]["w"] == sorted([B95, E95]) and st95["nf"] == {B95: 2, E95: 2, C95: 2} and B95 not in sum(c95, []), (st95, c95)  # ①② 다 해 본 것(site_relink) = ③ 검색 옵션 생길 때까지 X
+assert c95[:5] == [[C95, A95], [C95], [A95], [VP95(504)], [VP95(502)]], c95  # 묶음 400 -> 1개씩 -> 원래 400 = 상품 번호만 · 채널 예약 먼저 · 이 실행 몫(진열 = 4번째 호출까지)
+assert json.load(open("cp_links.json")) == {D95: "https://link.coupang.com/a/x504"} and st95["rr"]["ok"] == [["504", "②"]] and st95["fi"] == {A95: 1} and st95["pq"] == [[A95]]  # 진열 A = 다음 실행에 ②
+assert "cp link 400 502 ① url convert failed" in o95 and "cp link 400 502 ② url convert failed" in o95 and "itemId" not in o95 and "cp link RR 400 3개 중 살아남 1 (② 1) · 검색 대기 2 · 아직 2" in o95, o95  # API 응답 그대로 · 주소 쿼리 X
+f95 = {x["pid"]: x for x in json.load(open("cp_fail.json"))}
+assert f95["502"]["e"] == "400" and f95["502"]["m"] == "①url convert failed · ②url convert failed" and f95["503"]["m"] == "③ 검색 대기(옵션 번호)" and "504" not in f95, f95
+al95 = [p["text"] for m, p in sent95 if p.get("chat_id") == "42"]; assert len(al95) == 1 and "502" in al95[0], al95  # 채널 예약 = 모양 다 실패한 뒤 알림 1번
+o95 = run95("2026-10-27 00:25", s95, H.cp_links); assert c95[5:] == [[VP95(501)]] and json.load(open("cp_links.json"))[A95] == "https://link.coupang.com/a/x501" and st95["rr"]["ok"] == [["504", "②"]], c95  # 지난 실행 나머지 = ②로(RR 밖 = 살아남 수 X)
+assert len(c95) == 6 and not st95["fi"]  # 실패로 끝난 것(C ①② · B·E ①②) = 같은 모양 다시 X
+# cp_price: 400 상품(rr w) 먼저 검색 -> 같은 상품·옵션 = 옵션 번호·긴 주소(vi) -> cp_links ③(vendorItemId) -> 그래도 400 = 검색 API 파트너스 긴 주소
+o95 = run95("2026-10-27 00:40", s95, H.cp_price)
+assert quote("비누") in s95x[0] and s95["cpq"]["vi"][B95] == ["5031", "5032", L95(503)] and st95["rr"]["w"] == [] and E95 not in s95["cpq"]["vi"], (s95x, s95["cpq"].get("vi"))  # E = 검색에 없음(파트너스 검색 X) -> 그대로
+o95 = run95("2026-10-27 00:55", s95, H.cp_links)
+assert c95[6:] == [[VP95(503, "?itemId=5031&vendorItemId=5032")]] and json.load(open("cp_links.json"))[B95] == L95(503) and st95["rr"]["ok"] == [["504", "②"], ["503", "검색 링크"]], c95
+assert "cp link RR 400 3개 중 살아남 2 (② 1 · 검색 링크 1) · 검색 대기 0 · 아직 1" in o95 and "503 모양 다 400 -> 검색 API 파트너스 링크" in o95 and "503" not in {x["pid"] for x in json.load(open("cp_fail.json"))}, o95
+n95 = len(c95); run95("2026-10-27 01:10", s95, H.cp_links); assert len(c95) == n95  # 더 해 볼 모양 없음 = 7일 규칙 그대로
+# 진열 생 주소 글(사이트 진열) = 채널·Threads X — shelf_posts는 posts.json에만(mid 없음), 채널 함수는 shelf를 건너뜀
+json.dump(json.load(open("events.json")) + [{"at": "2026-10-27 00:00", "shelf": True, "url": VP95(506, "?itemId=56"), "pid": "506", "text": tx95("요소수 10L")}], open("events.json", "w"), ensure_ascii=False)
+sent95.clear(); run95("2026-10-27 01:20", s95, H.shelf_posts); p95 = [p for p in json.load(open("posts.json")) if p["url"] == VP95(506, "?itemId=56")]
+assert not sent95 and len(p95) == 1 and p95[0]["shelf"] == 1 and "mid" not in p95[0] and not p95[0]["text"].startswith(H.NOTE_STARTS) and VP95(506, "?itemId=56") not in [e.get("url") for e in H.load(H.EVENTS, [])]  # 진열 = 채널 예약 목록에도 X
+(H.http, H.HAS_CP, H.tg, time.time, H.POSTS, H.EVENTS, H.CP_CHK_HOUR, rn95) = sv95; H.RUN.clear(); H.RUN.update(rn95); os.chdir(cwd95)
 print("OK: 모든 셀프체크 통과")
