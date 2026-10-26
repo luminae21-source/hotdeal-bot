@@ -813,6 +813,7 @@ steady_n = lambda x: round(float(re.sub(r"[,\s천만]", "", x)) * (10000 if "만
 CP_ROCKET = r"(?<!비)로켓(?!\s*(?:배송)?\s*[은는이가도]?\s*(?:아님|아니|아닌|안\s*[돼됨되]|불가|미적용|X|x|없)|\s*와우)|새벽\s*도착"  # 쿠팡 로켓 근거 = 글에 로켓·새벽 도착('로켓배송 아님·이 아닌·미적용'·'비로켓'·'로켓와우'(멤버십) X — 10/22·10/23 리뷰)
 CP_OLD = r"^🚀 쿠팡(?= · [^\n]* [🔥🛒👍]$| [🔥🛒👍]$)"  # 10/23 전 로켓 근거 없는 쿠팡 머리 줄('🚀 쿠팡 · … 🔥') — 새로 내보낼 땐 📦(예약·Threads), 이미 올라간 글은 그대로
 CP_PLAIN = ("📦 쿠팡", "📦 쿠팡에서")  # 10/23 진우: 로켓 근거 없는 쿠팡 글 = 📦(🚀는 로켓으로 오해) — 머리 줄·구매 버튼(Threads·인스타 배지도). 로켓 = '🚀 쿠팡 로켓' 그대로
+NV_STEADY_HEAD = "💚 네이버 · 꾸준히 팔리는 상품 👍"  # Y-2 Threads 네이버 👍 글 머리 줄(채널 '👍 [네이버] 상품명' 틀 -> Threads는 몰별 머리 줄처럼)
 TOSS_STEADY_HEAD = "💙 토스"  # 10/24 17:5x 진우: 토스 꾸준템(👍 = 특가 아님) 머리 줄 = '💙 토스 · 꾸준히 팔리는 상품 👍'(특가 글은 '💙 토스 특가 · …' 그대로) — 채널·Threads·사이트·인스타 카드 같은 규칙
 MALLS = {"toss": ("💙 토스 특가", "💙 토스에서"), "coupang": ("🚀 쿠팡 로켓", "🚀 쿠팡에서")}  # 10/22 진우 '토스 글과 쿠팡 글을 한눈에'(색·내용 둘 다): 개별 글 머리 줄 · 구매 버튼
 
@@ -2264,7 +2265,8 @@ def toss_deals(seen, best=False):
     if rows and tok and kind in TH_TOSS_FILL and not eve:  # 10/12 22:45·22:50 진우 '토스 인기 생필품·많이 팔리는 제품 꾸준하게': 이 회차 픽을 Threads 개별 글 채움 후보로(45분 칸이 비었을 때 토스 픽 먼저, 3시간 안)
         seen["thtoss"] = {"t": time.time(), "q": [x for x in seen.get("thtoss", {}).get("q", []) if time.time() - x["t"] < 3 * 3600] + [  # 사이트·posts.json X, 쉐어링크 그대로
             {"t": time.time(), "l": lst, "id": x["tacaItemId"], "n": x["displayName"], "k": kind, "r": n, "s": next((p.get("score", 0) for p in picks if items[p["i"]] is x), 0), "bt": th_beauty(x["displayName"]),
-             "text": toss_th("하루특가 · 밤 12시까지" if x["tacaItemId"] in night else x.get("_src", ""), name, toss_price(x), toss_ul(x) + toss_lines(gp[n]), link), "link": link} for n, (x, (name, link, lines)) in enumerate(zip(got, rows))]}
+             "text": toss_th("하루특가 · 밤 12시까지" if x["tacaItemId"] in night else x.get("_src", ""), name, toss_price(x), toss_ul(x) + toss_lines(gp[n]), link), "link": link,
+             **({"img": im, "tids": [x["tacaItemId"], x.get("tacaId")]} if (im := toss_photo(x)) else {})} for n, (x, (name, link, lines)) in enumerate(zip(got, rows))]}  # Y-6 토스 회차 채움 글도 사진(10/26 총각김치·두유 = 사진 없이 링크 카드)
     if rows and tok and lst and not plain:
         print("toss list Threads X — 철 지난 계절 상품뿐")
     elif rows and tok and lst:
@@ -2276,12 +2278,13 @@ def toss_deals(seen, best=False):
         k = next((n for n, x in enumerate(got) if th_beauty(x["displayName"]) == 2), 0)  # 이 회차 1개를 Threads 개별 글로(소모품 먼저, 없으면 Claude 1순위) — 10/11 23:50 진우
         bt, (name, link, lines) = max(1, th_beauty(got[k]["displayName"])), rows[k]
         text = toss_th(got[k].get("_src", ""), name, toss_price(got[k]), toss_ul(got[k]) + toss_lines(gp[k]), link)
+        im, tids = toss_photo(got[k]), (got[k]["tacaItemId"], got[k].get("tacaId"))  # Y-6 사진
         if TH_SLOTS:  # 슬롯 방식: 줄에(15시 슬롯·20시 슬롯에 1순위로 골리면 나감)
-            th_queue(seen, text, link, bt)
+            th_queue(seen, text, link, bt, im, tids)
         elif th_solo(seen, plain_of(text), beauty=bt, slot=True):
             th_mark(seen, bt)
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-            th_deal(seen, tok, me, text, link)
+            th_deal(seen, tok, me, text, link, image=im, tids=tids)
 
 
 TOSS_FREQ, TOSS_FREQ_BONUS, TOSS_DAY_EVE = (r"골지|민소매|기본\s*티|양말|레깅스|(?<!실)내의(?!류)|들기름|참기름|양념(?!통|병|용기|함|그릇)"  # S(10/26 진우 '토스 더 자주 사게'): 여성 기본템·식재료 소모품 이름 + 묶음(단가 줄) = Claude 점수 +1
@@ -2559,7 +2562,7 @@ def pick_price(p, seen=None):
         v = ((seen or {}).get("tossid", {}).get("m", {}).get(p.get("url")) or [])
         ok = len(v) > 5 and v[5] and v[3] != "out" and time.strftime("%m%d", time.gmtime((v[2] or 0) + 9 * 3600)) == time.strftime("%m%d", k)
         return f"{v[5]:,}원 · " + toss_when(time.strftime("%Y-%m-%d %H:%M", time.gmtime(v[2] + 9 * 3600))) if ok else None
-    return f"{p['now']}" + (f" ({p['chk']} 확인)" if p.get("chk") else "") if p.get("now") else pr and f"{pr} ({int(p['t'][5:7])}/{int(p['t'][8:10])} 글 가격)"
+    return f"{p['now']}" + (f" ({p['chk']} 가격)" if p.get("chk") else "") if p.get("now") else pr and f"{pr} ({int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시 가격)"  # Y-3 시각 표기 = '(M/D H시 가격)' 하나로(토스 = 게시 시점 줄 그대로)
 
 
 def pick_post(seen):
@@ -3524,7 +3527,8 @@ def toss_reopen(seen):
     r["ts"].append(now)
     print("toss reopen", "아침" if am else "밤", clip(e["n"], 30), f"{price:,}원", "하루특가" if hot else "목록 없음", f"| 남은 {len(r['q'])}")
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-    th_deal(seen, tok, me, text, e["url"])
+    im = toss_photo(data.get(e["id"]))  # Y-6 다시 열린 글도 사진(방금 받은 상세 응답의 썸네일)
+    th_deal(seen, tok, me, text, e["url"], image=im, tids=(e["id"], data[e["id"]].get("tacaId")) if im else None)
 
 
 TH_LINK_AB, TH_AB_MARK = False, "👇 구매 링크는 첫 댓글에"  # 10/25 2주 비교 뒤 진우 결정 = A(본문 링크) 고정 — 48시간 조회 A 9.8(29개) > B 7.8(28개)+댓글 1.7, B 시험 끝(C·상황 3장면도 링크가 댓글이라 같이 쉼) · 10/18 18:30 진우 'Threads 개별 딜 글 링크 위치 A/B — 절반만 시험'(10/25 점검 때 비교해 이긴 쪽으로): False = 지금처럼 A만
@@ -3612,7 +3616,9 @@ def ai_json(prompt, props, img=None):
 TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주세요(10/23 진우 '고정 레이아웃 + 말투 한 줄'). 상품명·가격·리뷰 수 같은 숫자는 위 줄에 따로 있으니 이 한 줄엔 숫자 없이, 아래 재료에 맞는 느낌만.
 - 한 문장, 폰 한 줄(20자 안팎). 이모지는 0~1개.
 - 써 본 척(제가·나도·써보니·먹어보니·샀는데·질렀음), 효능·건강·의학 말, 과장·조급(역대급·무조건·손해·마지막 기회), 재촉·클릭 유도(클릭·눌러·지금 바로 구매), 링크·댓글·광고 말 쓰지 않기.
-- '최근 줄'과 다른 문장으로."""
+- '최근 줄'과 다른 문장으로.
+- 뜻이 바로 통하는 한 문장(형식은 아래 말투 지시가 먼저 — 장면이면 이 상품을 쓰는 구체적인 장면 하나). 좋은 예: '아침마다 하나씩 집어 가기 좋겠다' · '현관에 하나 두면 신발장 냄새 덜하겠다'. 나쁜 예: '한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함) · '이건 그냥 밥도둑이다'(첫 줄과 같은 말).
+- 다 쓰고 한 번 소리 내 읽어 보기: 뜻이 바로 안 통하거나 첫 줄과 같은 낱말이면 다시 쓰기."""
 TH_TONE_POOL = {1: ("필요할 때 쟁여 두기 좋아요", "장바구니에 담아 두기 좋아요"), 2: ("장바구니에 담아 둘 만하다", "이 구성 꽤 괜찮다"),
                 3: ("하나쯤 있으면 든든해요", "필요한 분께 잘 맞아요"), 4: ("쟁여 둘 만함", "구성 괜찮음")}  # Claude 실패·조건 안 맞음 = 말투별 기본 한 줄(숫자·경험담 X)
 TH_TONES = {  # M-5(10/26 진우 'Threads 쿠팡 글 재미나게 소통하는 느낌') + O(친구한테 말하듯 — '사세요' X): Threads 개별 딜 글 말투 5가지 돌림 · 다 반말 · (이름, 지시, 해요체 OK?)
@@ -3631,7 +3637,7 @@ TH_FLAWS = ((r"와우(?!\s*쿠폰)\s*(?:회원)?\s*(?:가|할인|전용)", "와�
             (r"옵션\s*(?:별|마다)\s*(?:가격|상이|다름|다른)|옵션가", "옵션마다 가격이 달라서 고를 때 확인 필요"))  # O 단점 = ⚠️ 조각에 이 말이 그대로 있을 때만('카드 무이자'·'사이즈 옵션 확인' X)
 TH_PUSH = r"사\s*둬|사\s*놔|사\s*둘\s*것|질러|지르자|담아\s*둬|사야\s*(?:해|돼|됨|지)|사세요|구매하|서둘러|얼른|빨리\s*사|놓치지\s*마"  # 반말 재촉(O '사세요' X)
 TH_PRICE_WORD, TH_QM = r"[만천백십]\s*원|원\s*(?:도|대|짜리|꼴|이하|밖에)|(?:한\s*잔|밥|커피)\s*값", r"[?？❓❔⁉⁇]"  # 숫자 말로 쓴 가격('만 원도 안 해') · 물음표(이모지 포함)
-TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꿔? 핸드크림!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절 시작)"}
+TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꿔? 핸드크림!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절 시작) — 맨 아래 '오늘' 줄의 날짜·기온에 맞는 계절·날씨만(Y-1 10/26 생수 '날 더워지면')"}
 TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 반말·구어체, 폰 한 줄(20자 안팎), 이모지 0~2개.
 - {kind}
 - 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데), 효능·건강, 과장·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
@@ -3723,19 +3729,25 @@ def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", 
             fix = {norm(x["line"]).removeprefix("- "): norm(x["new"]) for x in a.get("fix") or [] if isinstance(x, dict) and isinstance(x.get("line"), str) and isinstance(x.get("new"), str)}
         except Exception as e:  # 실패 = 코드 검사만
             print("review 코드 검사만", where, clip(repr(e), 80))
-    nums, ch = lambda x: set(re.findall(r"\d[\d,.]*", x)), {}
+    nums, ch, why = lambda x: set(re.findall(r"\d[\d,.]*", x)), {}, collections.Counter()  # why = 뺀 이유 종류(로그 — 줄 글자 X)
     for l in lines:
         n = fix.get(l, l)
-        if n != l and n and (nums(n) - nums(l + facts + text) or th_w(n) > max(th_w(l) * 1.5 + 4, TH_W + 6) or valid and not valid(l, n) or rv_bad(n, text.replace(l, n), "" if l == hook else ch.get(hook, hook), ctx, dup, names)):
-            n = ""  # 고친 줄도 걸림 = 뺌
+        if n != l and n:
+            r = "새 숫자" if nums(n) - nums(l + facts + text) else "폭" if th_w(n) > max(th_w(l) * 1.5 + 4, TH_W + 6) else "규칙" if valid and not valid(l, n) \
+                else "다시 검사" if rv_bad(n, text.replace(l, n), "" if l == hook else ch.get(hook, hook), ctx, dup, names) else ""
+            if r:
+                n, why[r] = "", why[r] + 1  # 고친 줄도 걸림 = 뺌
         elif n == l and l in bad:
-            n = ""
+            n, why["코드"] = "", why["코드"] + 1
+        elif not n:
+            why["Claude"] += 1
         if n != l:
             ch[l] = n
     st = RUN.get("rvst") if isinstance(RUN.get("rvst"), dict) else {}
     m, k = sum(1 for v in ch.values() if v), sum(1 for v in ch.values() if not v)
     st.update(t=time.time(), n=st.get("n", 0) + 1, m=st.get("m", 0) + m, k=st.get("k", 0) + k, ex=(st.get("ex", []) + [[a, b] for a, b in ch.items()])[:2])
-    print("review", where, f"멘트 {len(lines)}줄 · 고침 {m} · 뺌 {k}" + (" · 코드 " + ",".join(sorted({r.split("(")[0] for r in bad.values()})) if bad else ""))
+    print("review", where, f"멘트 {len(lines)}줄 · 고침 {m} · 뺌 {k}" + (" · 코드 " + ",".join(sorted({r.split("(")[0] for r in bad.values()})) if bad else "")
+          + (" · 뺀 이유 " + ",".join(f"{x} {c}" for x, c in why.items()) if why else ""))  # 10/26 Threads 말투 줄 빠짐 2번 — Claude가 뺐는지·고친 줄이 걸렸는지
     return ch
 
 
@@ -3859,7 +3871,8 @@ def th_voice(seen, text, link, src=None):
             ti = next(i for i, l in enumerate(ls) if l.startswith(("🔥", "🛒", "👍")))
             icon, title = ls[ti][0], re.sub(r"^[🔥🛒👍]\s*", "", ls[ti])
             mall, tag = mall_of(link, title), parse(title)[0]
-            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or cp_rocket(full)) if mall else f"{icon} [{tag}]" if tag else icon
+            mhead = mall_head(mall, mall_src(mall, full, title), icon, mall != "coupang" or cp_rocket(full)) if mall else NV_STEADY_HEAD if icon == "👍" and tag == "네이버" \
+                else f"{icon} [{tag}]" if tag else icon  # Y-2(10/26 라이너): 네이버 👍 = 토스·쿠팡처럼 '💚 네이버 · 꾸준히 팔리는 상품 👍'
             pline, body = "", ls[:ti] + ls[ti + 1:]
         _, name, price = parse(title)
         won = re.search(r"\d[\d,]*(?=\s*원)", price) or re.search(r"^\d[\d,]{3,}", price)
@@ -3906,12 +3919,13 @@ def th_voice(seen, text, link, src=None):
                                (r"와우(?!\s*쿠폰)", "와우회원", "와우"), (r"멤버|네멤", "멤버십", "멤버십")):
                 if re.search(rx, s) and (lg, sh) not in conds:
                     conds.append((lg, sh))
-            other = other or ("옵션별 가격" if "옵션" in s else (lambda m: f"{m[1]}부터" if m else "")(re.search(r"(\d{1,2}/\d{1,2})\s*부터", s)))
+            other = other or ("옵션" if "옵션" in s else (lambda m: f"{m[1]}부터" if m else "")(re.search(r"(\d{1,2}/\d{1,2})\s*부터", s)))
         cands = ["+".join(x[0] for x in conds) + "가", "+".join(x[1] for x in conds) + "가", conds[0][1] + "가"] if conds else [other] if other else []
-        tl = next((x for c in cands for x in [f"⏰ {mo}/{d} {h}시 {c} · 결제 전 확인"] if th_w(x) <= TH_W + 1e-6), f"⏰ {mo}/{d} {h}시 가격 · 결제 전 확인")  # 길면 짧은 이름으로
+        tl = next((x for c in cands for x in [f"⏰ {mo}/{d} {h}시 확인 가격 · 옵션마다 다름" if c == "옵션" else f"⏰ {mo}/{d} {h}시 {c} · 결제 전 확인"] if th_w(x) <= TH_W + 1e-6),
+                  f"⏰ {mo}/{d} {h}시 가격 · 결제 전 확인")  # 길면 짧은 이름으로 · Y-2 옵션 = '확인 가격 · 옵션마다 다름'('옵션별 가격' X)
         tl = (when[0] if when else toss_when()) if toss else tl
         ws = [x for x in (re.sub(r"\([^()]*\)", "", y).strip() for y in warn) if x and not re.search(r"없이|없어도|불필요|필요\s*없|무관", x)]  # O(10/26 진우): 끝 = 친구 한 줄 + 아쉬운 점 사실 한 줄(우리 데이터에서만, 없으면 X) — '쿠폰 없이도' 같은 부정 조각 X
-        flaw = next((t for rx, t in TH_FLAWS if any(re.search(rx, x) for x in ws)), "") \
+        flaw = next((t for rx, t in TH_FLAWS if any(re.search(rx, x) for x in ws) and not ("옵션" in t and "옵션마다 다름" in tl)), "") \
             or next((y for x in ws[:-1] if not re.search(r"결제 전|최종가|게시 시점|정가|적립|배송|무료|무이자|원|%", x) for y in [re.sub(r"\s*확인$", " 확인 필요", x)] if re.search(FLAW_END, y)), "") \
             or ("리뷰가 아직 적음" if 0 < rv < TH_FEW_REV else "")  # ⚠️ 조각 = 서술로 끝날 때만('색상 옵션' 같은 끊긴 말 X — Y·Z 10/26 라이너)
         con = f"단점 하나: {flaw}" if flaw and not re.search(ban, flaw) and th_w(f"단점 하나: {flaw}") <= TH_W + 6 else ""  # 토스 = 다른 몰 비교 말 X(TOSS_BAN)
@@ -3931,7 +3945,8 @@ def th_voice(seen, text, link, src=None):
         prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
             + ("\n- 이 글 = '꾸준히 팔리는 상품': 특가·최저가·할인이라고 하지 않기." if steady else "") \
-            + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "")
+            + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "") \
+            + (f"\n\n첫 줄(훅): {hook}" if hook else "")  # Y-5 '첫 줄과 같은 낱말이면 다시' = 훅을 보여 줘야 스스로 확인
         line, again = "", ""
         for _ in (0, 1):
             try:
@@ -3943,7 +3958,7 @@ def th_voice(seen, text, link, src=None):
             if ok(x):
                 line = x
                 break
-            again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉 X · 최근 줄과 다르게)."
+            again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉 X · 최근 줄·첫 줄과 다르게 · 지금 계절에 맞게)."
         pool = [] if oy else list(TH_TONE_POOL5[tone])  # 올리브영 = 기본 줄 X(큐레이터 정책: 가격·용량·구성·조건만)
         line = line or ([x for x in pool if norm(x) not in st.get("f", [])] or pool or [""])[0]  # 올리브영이라 맞는 기본 줄이 없으면 말투 줄 없이
         soc = ([f"평점 {rate[1]}"] if rate else []) + ([f"리뷰 {th_round(rv)}"] if rv else []) + ([f"한 달 {th_round(buy).rstrip('+')}명{'+' * th_round(buy).endswith('+')} 구매"] if buy else [])
@@ -4733,13 +4748,13 @@ def animals(seen):
             continue
         try:
             v = ai_json(ANIMAL_PROMPT.format(kind=kind), ANIMAL_PROPS, img=f)
-            if not (0 <= v["cx"] <= 1 and 0 <= v["cy"] <= 1):  # 픽셀·%로 답함 = 잘못된 답(얼굴이 잘려 나감) -> 다시 확인
+            if v["ok"] is True and not (0 <= v["cx"] <= 1 and 0 <= v["cy"] <= 1):  # 쓸 사진인데 픽셀·%로 답함 = 잘못된 답(얼굴이 잘려 나감) -> 다시 확인 · 안 쓸 사진 = 좌표 상관없이 X로 기록
                 raise ValueError(f"얼굴 위치 {v['cx']},{v['cy']}")
         except Exception as e:
             fail[pid] = fail.get(pid, 0) + 1
             print("animal 확인 X", pid, clip(repr(e), 60))
             break
-        ok[pid] = {"ok": v["ok"] is True, "cx": float(v["cx"]), "cy": float(v["cy"]), "why": clip(v["why"], 40)}
+        ok[pid] = {"ok": v["ok"] is True, "cx": min(max(float(v["cx"]), 0.0), 1.0), "cy": min(max(float(v["cy"]), 0.0), 1.0), "why": clip(v["why"], 40)}
         print("animal", pid, kind, "OK" if ok[pid]["ok"] else "X " + ok[pid]["why"])
     if n:
         os.makedirs(ANIMAL_DIR, exist_ok=True)

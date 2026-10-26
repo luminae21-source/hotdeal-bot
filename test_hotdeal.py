@@ -2480,7 +2480,11 @@ assert H.TH_REOPEN_AM == (6, 11) and "threads, threads_deals, daily_post, daily_
 H.toss = lambda path, body=None: {"items": [{"tacaItemId": i, "displayPrice": p, "isSoldOut": False} for i, p in ((71, 12900), (72, 7620))]} if path.startswith("/products/detail") else {"items": [], "hasNext": False}
 rq9 = {"reopen": {"t": TK(f"{D9c} 00:00"), "ts": [], "q": [{"id": 71, "n": "약한 크림", "url": "https://toss.shopping/_m/q1", "p0": 12900, "icon": "🛒", "cmp": "🤔 솔직히 특가로는 약한 제품", "k": "ev", "day": D9c, "st": 0, "title": "약한 크림", "warn": ""},
                                                                    {"id": 72, "n": "해피달링 샤워기", "url": "https://toss.shopping/_m/q2", "p0": 7620, "icon": "🔥", "cmp": "💡 쿠팡 같은 상품(14,900원)보다 7,280원 쌈", "k": "ev", "day": D9c, "st": 0, "title": "해피달링 샤워기", "warn": ""}]}}
+td9, thd9, tph9 = [], H.th_deal, H.toss_photo
+H.th_deal, H.toss_photo = (lambda *a, image=None, tids=None, **k: td9.append((image, tids)) or thd9(*a, **k)), (lambda x: x and f"https://static.toss.im/i/{x['tacaItemId']}.jpg")
 calls.clear(); time.time = lambda: TK(f"{D9c} 00:20"); H.toss_reopen(rq9)
+H.th_deal, H.toss_photo = thd9, tph9
+assert td9 == [("https://static.toss.im/i/72.jpg", (72, None))], td9  # Y-6 밤 재오픈 글도 사진(방금 받은 상세 응답 썸네일)
 r9 = [parse_qs(urlsplit(u).query)["text"][0] for m, u in calls if "/777/threads?" in u]
 assert len(r9) == 1 and "해피달링 샤워기\n7,620원\n" in r9[0] and [e["st"] for e in rq9["reopen"]["q"]] == [0, 1] and rq9["thsolo_20261012"]["rn"] == 1
 H.toss, H.ai_pick, H.tg, H.HAS_TOSS, H.EVENTS = sv9c2[:5]; H.E["TOSS_PUBLISHER_ID"] = sv9c2[5]
@@ -2616,6 +2620,10 @@ assert [v.get("tail") for k, v in s9g.items() if k.startswith("sold_")] == ["\n\
 q9g = s9g["thtoss"]["q"]; assert [(x["r"], x["k"], x["s"], x["link"]) for x in q9g] == [(0, "cat", 9, "https://toss.im/_m/21"), (1, "cat", 8, "https://toss.im/_m/1")]
 assert q9g[0]["text"].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 · 생필품 베스트 ") and "위 🔥\n카테21\n7,900원" in q9g[0]["text"] and "👉 1순위" in q9g[0]["text"] and "⚠️ 10/13 17:10 게시 시점 가격" in q9g[0]["text"] and q9g[0]["text"].endswith("🛒 https://toss.im/_m/21\n📲 실시간 알림 t.me/hotdeal_pick")
 assert json.load(open("posts.json")) == []  # API 상품은 posts.json(사이트) X
+tph9g, gc9g, gs9g, H.toss_photo = H.toss_photo, list(g_calls), list(g_sent), (lambda x: f"https://static.toss.im/i/{x['tacaItemId']}.jpg")
+s9gp = {}; H.toss_deals(s9gp, "cat")
+assert [(x["img"], x["tids"][0]) for x in s9gp["thtoss"]["q"]] == [("https://static.toss.im/i/21.jpg", 21), ("https://static.toss.im/i/1.jpg", 1)] and all("img" not in x for x in q9g)  # Y-6(10/26 총각김치·두유 = 링크 카드): 토스 회차 채움 글도 사진 · 사진 없으면 그대로
+g_calls[:], g_sent[:], H.toss_photo = gc9g, gs9g, tph9g
 # 채움: 45분 칸 + ①·화장품·② 없음 -> 토스 픽 먼저(채널 일반 딜보다), 1회 1개, 줄에서 빠짐, 다음은 45분 뒤
 json.dump([{"t": "2026-10-13 17:00", "text": "🔥 [쿠팡] 일반9점 (3,000원)\n\n좋음", "url": "https://link.coupang.com/a/9", "s": 9, "mid": 1}], open("posts.json", "w"), ensure_ascii=False)
 g_calls.clear(); time.time = lambda: TK("2026-10-13 17:20"); H.threads_deals(s9g); f9g = gt(); assert len(f9g) == 1 and "일반9점" in f9g[0]  # Threads 리스트로 막 나간 상품은 45분 뒤부터(같은 상품 연달아 X)
@@ -2632,7 +2640,14 @@ s9g["thsolo_20261013"]["last"] = 0; g_calls.clear(); time.time = lambda: TK("202
 g_calls.clear(); time.time = lambda: TK("2026-10-13 20:20"); H.threads_deals(s9g); assert gt() == []  # 3시간 지난 토스 픽은 안 올림(식은 글)
 H.TH_TOSS_FILL = (); s9g = {"tb_1": 1}; g_calls.clear(); time.time = lambda: TK("2026-10-13 17:10"); H.toss_deals(s9g, "cat"); assert "thtoss" not in s9g and len(gt()) == 1  # 끄면 줄 X(리스트는 그대로)
 H.TH_TOSS_FILL = ttf0; s9g = {}; g_calls.clear(); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "가"}]
+td9g, thd9g = [], H.th_deal
+H.th_deal, H.toss_photo = (lambda *a, image=None, tids=None, **k: td9g.append((image, tids)) or thd9g(*a, **k)), (lambda x: f"https://static.toss.im/i/{x['tacaItemId']}.jpg")
 time.time = lambda: TK("2026-10-13 15:10"); H.toss_deals(s9g, "beauty"); assert "thtoss" not in s9g  # 뷰티 회차는 예전 그대로(화장품 자리 채움)
+H.http = lambda url, body=None, headers=None, method=None: json.dumps({"resultType": "SUCCESS", "success": {"items": [{"tacaItemId": 41, "displayName": "뷰티41 핸드크림 50ml", "displayPrice": 7900, "discountRate": 0, "isSoldOut": False}]}}) \
+    if "/best-categories/400" in url else g_http(url, body, headers, method)  # 뷰티 상품 1개 있는 회차
+s9gb = {}; H.toss_deals(s9gb, "beauty"); H.http = g_http
+assert td9g == [("https://static.toss.im/i/41.jpg", (41, None))], td9g  # Y-6 화장품 자리 채움 글도 사진
+H.th_deal, H.toss_photo = thd9g, tph9g
 # 재업로드(10/12 23:05 진우, events "re": true): 같은 진우 링크로 전에 나간 상품도 Threads 개별 글로 — 다음 45분 칸 맨 먼저, 화장품 하루 한도에서 뺌(세지도 않음)
 json.dump([{"at": "2026-10-13 09:00", "url": "https://toss.shopping/_m/NT", "deal": True, "re": True, "button": "b", "text": "x"}], open("ev9g.json", "w"))
 json.dump([{"t": "2026-10-13 09:00", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 비비크림 (10,000원)\n\n토스 할인가 · 86% 할인 · BB크림 1위", "url": "https://toss.shopping/_m/NT", "own": 1, "mid": 5},
@@ -3645,7 +3660,7 @@ H.E["METRICS_DAY"] = "2026-10-20"; H.http = lambda url, *a, **k: json.dumps({"da
 H.metrics(s17t); r17 = [r for r in json.load(open(H.METRICS))["2026-10-20"]["rows"] if r["ch"] == "th"]; del H.E["METRICS_DAY"]
 assert r17[0]["ab"] == "B" and r17[0]["shop"] == "toss", r17  # B 본문엔 주소가 없어도 올린 링크로 몰(10/19 점검: B 줄 몰이 '기타'로 찍히던 것)
 assert all(src.count("th_deal(seen, tok, me,") == 1 for src in map(inspect.getsource, (H.toss_picks, H.toss_reopen))) and inspect.getsource(H.threads_deals).count("th_deal(seen, tok, me,") == 2 \
-    and "th_deal(seen, tok, me, text, link)" in inspect.getsource(H.toss_deals) and "th_text(" not in inspect.getsource(H.threads_deals)  # 개별 딜 글 5곳 전부 A/B, 묶음(th_post)은 그대로
+    and "th_deal(seen, tok, me, text, link, image=im, tids=tids)" in inspect.getsource(H.toss_deals) and "th_text(" not in inspect.getsource(H.threads_deals)  # 개별 딜 글 5곳 전부 A/B, 묶음(th_post)은 그대로
 del H.E["THREADS_TOKEN"]; (H.http, H.tg, time.time, H.time.sleep, H.TOSS_NO_CMP, H.TH_LINK_AB) = sv17
 # 9-18) 10/19 17시 진우 '경유 링크 말고 직접 링크로': ① Threads 딜 링크 = 텔레그램 버튼과 같은 링크(개별 A·B 첫 댓글·리스트·간식/날씨 — 아직 검색 링크인 딜은 검색 링크 그대로,
 #       500자에 못 들어가는 TH_LINK_MAX 넘는 링크만 사이트 딜 페이지), 500자 안(링크가 길면 코멘트를 줄임), metrics.json Threads 줄 = 링크 종류(lk: direct·search·site)
@@ -5962,7 +5977,7 @@ time.time = lambda: TK("2026-10-24 10:40"); H.pick_post(s51)
 assert h51 == [("https://hotdealpick.kr/today/2026-10-24/", "HEAD")] and len(p51) == 1 and p51[0][1] == "https://hotdealpick.kr/today/2026-10-24/?ref=th", (h51, p51)
 t51 = p51[0][0]
 assert t51.startswith(H.aff_note("https://link.coupang.com/a/E")) and H.aff_note("https://toss.shopping/_m/M") in t51.split("🎯")[0]  # 대가성 문구 맨 앞(상품마다 그 프로그램)
-assert "🎯 오늘의 픽 2 (10/24)" in t51 and "1️⃣ 곰곰 특란 30구 7,490원 (10/24 9시 확인)" in t51 and f"2️⃣ 모나리자 미용티슈 10,990원 · {H.toss_when('2026-10-24 09:30')}" in t51 and "커뮤니티" not in t51 and "어제 토스" not in t51 and t51.count("http") == 1 + t51.split("🎯")[0].count("http")  # 링크 = 날짜 쪽 1개
+assert "🎯 오늘의 픽 2 (10/24)" in t51 and "1️⃣ 곰곰 특란 30구 7,490원 (10/24 9시 가격)" in t51 and f"2️⃣ 모나리자 미용티슈 10,990원 · {H.toss_when('2026-10-24 09:30')}" in t51 and "커뮤니티" not in t51 and "어제 토스" not in t51 and t51.count("http") == 1 + t51.split("🎯")[0].count("http")  # 링크 = 날짜 쪽 1개
 H.pick_post(s51); assert len(p51) == 1  # 하루 1번
 s51b = {}; H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("404")); H.pick_post(s51b); assert len(p51) == 1 and not any(k.startswith("thpick_") for k in s51b)  # 날짜 쪽 배포 전 = 다음 실행
 H.http = lambda url, *a, **k: ""; s51c = {"bundles": {"t": TK("2026-10-24 10:35"), "ts": [TK("2026-10-24 10:35")]}}; H.pick_post(s51c); assert len(p51) == 1  # 다른 묶음 글 10분 안 = 다음 실행
@@ -6097,7 +6112,7 @@ H.th_post = lambda tok, text, link=None, image=None, tag=None: p53.append((text,
 time.time = lambda: TK("2026-10-24 16:05"); s53 = {}; H.pair_post(s53); assert not p53  # 시각 전
 time.time = lambda: TK("2026-10-24 16:15"); H.pair_post(s53)
 t53, l53 = p53[0]
-assert t53.startswith(H.DISCLOSURE + "\n\n🤔 세탁세제 이 중 뭐 살래?\n지금 특가 중인 것끼리 모아 봄\n\n1️⃣ 📦 퍼실 파워젤 2.5L\n💰 13,850원 (10/24 9시 확인) · 100ml당 554원\n👉 https://link.coupang.com/a/A\n"), t53  # 같은 단위·조건 없음 = 단가
+assert t53.startswith(H.DISCLOSURE + "\n\n🤔 세탁세제 이 중 뭐 살래?\n지금 특가 중인 것끼리 모아 봄\n\n1️⃣ 📦 퍼실 파워젤 2.5L\n💰 13,850원 (10/24 9시 가격) · 100ml당 554원\n👉 https://link.coupang.com/a/A\n"), t53  # 같은 단위·조건 없음 = 단가
 assert "🚀 리큐" in t53 and "📦 줌" in t53 and not re.search("다우니|토스|toss|vp/products|어제 하루특가|올영|oy.run", t53), t53  # 로켓 근거만 🚀 · 확인 옛것·토스·수수료 X·어제 커뮤니티·올리브영 X
 assert t53.endswith(f"\n\n전체 보기 → {H.SITE}c/laundry/?ref=th") and len(t53) <= 480 and len(set(re.findall(r"https?://\S+", t53))) <= 5 and l53 == "https://link.coupang.com/a/A"
 H.pair_post(s53); assert len(p53) == 1  # 하루 1번
@@ -6107,7 +6122,7 @@ time.time = lambda: TK("2026-10-27 16:15"); H.pair_post(s53); assert len(p53) ==
 time.time = lambda: TK("2026-10-24 16:15"); s53b = {"bundles": {"t": TK("2026-10-24 16:10"), "ts": [TK("2026-10-24 16:10")]}}; json.dump(P53, open(H.POSTS, "w"), ensure_ascii=False); H.pair_post(s53b); assert len(p53) == 2  # 다른 묶음 글 10분 안
 # 조건 가격(와우가) = 💰에 그대로 + 단가 X · 오늘 API isRocket = 🚀 · 와우가 옆 일반가 단가 비교 X
 json.dump(P53[:2] + [{**P53[2], "now": "13,850원 와우가"}], open(H.POSTS, "w"), ensure_ascii=False); H.pair_post({"cpq": {"r": {"https://link.coupang.com/a/A": True, "https://link.coupang.com/a/C": False}}})
-assert "1️⃣ 🚀 퍼실 파워젤 2.5L\n💰 13,850원 와우가 (10/24 9시 확인)\n👉" in p53[-1][0] and "100ml당" not in p53[-1][0] and "📦 리큐" in p53[-1][0], p53[-1][0]  # 오늘 API 답 = 글 근거보다 먼저
+assert "1️⃣ 🚀 퍼실 파워젤 2.5L\n💰 13,850원 와우가 (10/24 9시 가격)\n👉" in p53[-1][0] and "100ml당" not in p53[-1][0] and "📦 리큐" in p53[-1][0], p53[-1][0]  # 오늘 API 답 = 글 근거보다 먼저
 # 긴 링크 = 사이트 딜 쪽 · 브랜드 하나뿐 = X · 토스끼리 = 토스 모음 쪽 · 커뮤니티 오늘 글 OK
 gm53 = lambda n, t="2026-10-24 10:00": {"t": t, "text": f"{H.AFF_NOTE}\n\n🔥 [G마켓] {n} 샴푸 1L (9,000원)", "url": LP53 + n}
 json.dump([gm53("려"), gm53("엘라스틴")], open(H.POSTS, "w"), ensure_ascii=False); H.pair_post({})
@@ -6121,7 +6136,7 @@ assert p53[-1][0].startswith(H.TOSS_NOTE + "\n\n🤔 생수 둘 중") and "💰 
 pk53 = lambda t: H.pair_key({"t": "", "text": t})
 assert pk53("🔥 [쿠팡] 코스알엑스 스네일 에센스 (1원)")[1] != pk53("🔥 [쿠팡] 카밀 핸드 앤 네일 크림 (1원)")[1] and not pk53("🔥 [쿠팡] 락앤락 키친툴 6종 (1원)") and not pk53("🔥 [쿠팡] 무타공 물티슈 보관 케이스 (1원)")
 assert pk53("🔥 [쿠팡] 샤프란 섬유유연제, 2.1L (1원)")[1] == pk53("🔥 [쿠팡] 다우니 초고농축 섬유유연제 (1원)")[1] == "섬유유연제" and not pk53("🔥 [쿠팡] 아로마티카 샴푸 브러쉬 (1원)") and (pk53("🔥 [롯데온] 청도 햇반시 2.5kg (1원)") or (0, ""))[1] != "즉석밥"
-assert H.pick_price({"t": "2026-10-23 20:00", "text": "🔥 [쿠팡] 라네즈 (19,020원 · 와우회원 쿠폰가)", "url": "u"}) == "19,020원 · 와우회원 쿠폰가 (10/23 글 가격)"  # 조건 그대로
+assert H.pick_price({"t": "2026-10-23 20:00", "text": "🔥 [쿠팡] 라네즈 (19,020원 · 와우회원 쿠폰가)", "url": "u"}) == "19,020원 · 와우회원 쿠폰가 (10/23 20시 가격)"  # 조건 그대로 · Y-3 시각 표기 하나로
 H.th_post, time.time, H.POSTS = sv53[:3]; H.E.pop("THREADS_TOKEN") if sv53[3] is None else H.E.update(THREADS_TOKEN=sv53[3])
 assert "pair_post, " in open(H.__file__).read().split("for step in (", 1)[1].split("):\n", 1)[0] and "pair_post" in H.ALERT_STEPS  # 메인 실행 단계 · 실패 알림
 # 9-54) (10/24 진우 1주 ③) 간식·날씨 묶음 글 = 오늘 채널에 나간 딜 X(15:43 간식 글에 14:32 그래놀라·11:43 콘푸로스트가 또 나간 것) — 커뮤니티·진우 글(posts.json)·토스 개별 글(sold_) 둘 다
@@ -8116,7 +8131,7 @@ H.th_hook = hk0_74; assert "가" * 400 not in o74 and "h" not in sh74["thvoice"]
 H.ai_json, H.TH_HOOK = aj74, False
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)}); vv74[:] = [{"line": "이거 괜찮지?"}, {"line": "이거 괜찮지?"}]
 o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 옵션별 가격 · 결제 전"), "https://link.coupang.com/a/w74")
-assert "괜찮지?" not in o74 and "\n이 구성 실화냐\n단점 하나: 옵션마다 가격이 달라서 고를 때 확인 필요\n" in o74, o74  # 질문형 아니면 물음표 X = 기본 줄 · 옵션별 가격 = 단점
+assert "괜찮지?" not in o74 and "\n이 구성 실화냐\n" in o74 and "단점 하나: 옵션" not in o74 and "⏰ 10/26 10시 확인 가격 · 옵션마다 다름" in o74, o74  # 질문형 아니면 물음표 X = 기본 줄 · 옵션별 가격 = ⏰ 줄이 말함(Y 10/26 — 단점 줄에 같은 말 X)
 vv74[:] = [{"line": "이 구성 실화냐"}]
 o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 사이즈와 색상 구성이 제품마다 꽤 다르니 상세페이지 사진 꼭 확인 · 결제 전"), "https://link.coupang.com/a/w74")
 assert "단점" not in o74, o74  # 단점 줄이 폰 한 줄 넘음 = X
@@ -8940,6 +8955,8 @@ def aj83(prompt, props, img=None):
     if img.endswith("4732766.jpg") and not odd83:
         odd83.append(1)
         return {"ok": True, "cx": 213, "cy": 180, "why": ""}  # 픽셀로 답함(0~1 밖) = 잘못된 답 -> 다시 확인
+    if img.endswith("5430987.jpg"):
+        return {"ok": False, "cx": -1, "cy": -1, "why": "⑤ 얼굴 안 보임"}  # 안 쓸 사진 = 좌표가 이상해도 바로 X 기록(다시 확인 X)
     return {"ok": not img.endswith("3071334.jpg"), "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손" if img.endswith("3071334.jpg") else ""}
 H.urllib.request.urlopen, H.ai_json, s83 = uo83, aj83, {}
 sec83, H.ANIMAL_SEC = H.ANIMAL_SEC, -1; H.animals(s83)
@@ -8960,11 +8977,11 @@ for _ in range(10):
     H.animals(s83)
 ok83, n83 = json.load(open(f"{d83}/animals/ok.json")), len(got83)
 assert ok83["fail"]["2785063"] == ok83["fail"]["4316938"] == H.ANIMAL_TRY and sum("4316938" in u for u in got83) == H.ANIMAL_TRY, ok83  # 받기 실패 = 사진마다 하루 3번까지
-assert ok83["3071334"] == {"ok": False, "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손"} and sum("3071334" in u for u in got83) == 1 and "표에 적힌 동물 = 강아지" in ai83[2][0] and "실제 카메라로 찍은 사진" in ai83[2][0]  # 처음 1번만 받음(Claude 실패해도) · 동물 이름·실사 조건
-assert sum(isinstance(ok83.get(r[0]), dict) for r in rows83) == len(rows83) - 2 and len(C83.ANIMALS) == len(rows83) - 3  # 나머지 다 확인 · Claude X(사람 손) = 안 씀
+assert ok83["5430987"] == {"ok": False, "cx": 0.0, "cy": 0.0, "why": "⑤ 얼굴 안 보임"} and "5430987" not in ok83["fail"] and ok83["3071334"] == {"ok": False, "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손"} and sum("3071334" in u for u in got83) == 1 and "표에 적힌 동물 = 강아지" in ai83[2][0] and "실제 카메라로 찍은 사진" in ai83[2][0]  # 처음 1번만 받음(Claude 실패해도) · 동물 이름·실사 조건
+assert sum(isinstance(ok83.get(r[0]), dict) for r in rows83) == len(rows83) - 2 and len(C83.ANIMALS) == len(rows83) - 4  # 나머지 다 확인 · Claude X(사람 손) = 안 씀
 assert (ok83["4732766"]["cx"], ok83["4732766"]["cy"]) == (0.5625, 0.49) and "x_post, animals, curation, drop_post" in __import__("inspect").getsource(H.main)  # 잘못된 좌표 = 다시 확인해서 맞는 답 · 카드 만드는 단계들 앞
 pv83 = I83.open(H.ANIMAL_PREVIEW)
-assert pv83.size == (390, 512 + 64 * -(-(len(rows83) - 3) // 6)) and s83["animal_prev"]["h"], pv83.size  # 390px 미리보기(끝 장 카드 + 쓰는 스티커 전부)
+assert pv83.size == (390, 512 + 64 * -(-(len(rows83) - 4) // 6)) and s83["animal_prev"]["h"], pv83.size  # 390px 미리보기(끝 장 카드 + 쓰는 스티커 전부)
 os.utime(H.ANIMAL_PREVIEW, (1, 1))
 H.animals(s83)
 assert len(got83) == n83 and os.path.getmtime(H.ANIMAL_PREVIEW) == 1  # 오늘 다 끝남 = 네트워크 X · 목록 그대로 = 미리보기 다시 X
@@ -8973,7 +8990,7 @@ open(f"{d83}/animals/999.jpg", "wb").write(jpg83(9)); ok83["999"] = {"ok": True,
 H.animals(s83)
 assert {p for p, *_ in C83.ANIMALS} <= mdf83 and os.path.getmtime(H.ANIMAL_PREVIEW) == 1  # 표에 없는 사진(999) = 캐시에 OK로 있어도 안 씀
 os.rename(f"{d83}/animals/1381186.jpg", f"{d83}/x.jpg"); H.animals(s83)
-assert len(C83.ANIMALS) == len(rows83) - 4 and len(got83) == n83; os.rename(f"{d83}/x.jpg", f"{d83}/animals/1381186.jpg")  # 캐시에 파일 없는 사진 = 안 씀(네트워크 X)
+assert len(C83.ANIMALS) == len(rows83) - 5 and len(got83) == n83; os.rename(f"{d83}/x.jpg", f"{d83}/animals/1381186.jpg")  # 캐시에 파일 없는 사진 = 안 씀(네트워크 X)
 time.time = lambda: TK("2026-10-27 10:00")
 H.animals(s83)
 assert sum("4316938" in u for u in got83) == H.ANIMAL_TRY + 1 and sum("2785063" in u for u in got83) == H.ANIMAL_TRY + 1 and json.load(open(f"{d83}/animals/ok.json"))["fail"]["d"] == "20261027"  # 다음 날 = 실패 사진 다시(잠깐 막힌 CDN)
@@ -9038,4 +9055,36 @@ assert pz83[0]["unit"] == "" and pz83[0]["comment"] == "광동 밀크티 베이�
 H.ai_review, ak83z, rw83z = sv83z
 H.E.pop("ANTHROPIC_API_KEY", None) if ak83z is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak83z)
 H.RUN.pop("rvw", None) if rw83z is None else H.RUN.__setitem__("rvw", rw83z)
+# 9-84) Y Threads 멘트 점검(10/26 Cowork — 진우 '쓰레드 멘트 오류 확인해줘', 06~10시 글 10개): ①계절 훅·④같은 말 반복 = Z(9-82) · ② 네이버 👍 머리 줄·⏰ 옵션 줄 ·
+#       ③ 픽 시각 표기 하나('(M/D H시 가격)' — 토스 = 게시 시점 줄 그대로)·24시간 지난 이벤트·체험가 X · ⑤ 끝 줄 좋은 예·나쁜 예 + 소리 내 읽기 · ⑥ 토스 사진(9-2g 회차 채움·화장품 자리·밤 재오픈) · ⑦ 달력 이름 = promos.json
+sv84 = (H.REVIEW, H.TH_HOOK, H.ai_voice, time.time)
+H.REVIEW, H.TH_HOOK, H.ai_voice = False, False, (lambda prompt: {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠다"})
+Y84 = (f"{H.NAVER_NOTE}\n\n👍 [네이버] 오휘 얼티밋 커버 데니어 쿠션 본품+리필 (58,500원)\n\n오휘 · 10% 할인(정가 65,000원 기준) · ⭐ 4.76 (리뷰 2,340)\n💰 본품 13g + 리필 13g · SPF50+\n"
+       "💡 리필 포함 기획 세트\n⚠️ 확인할 점: 호수(색상) 옵션 · 배송비 · 결제 전 최종가 확인 (10/25 20시 가격)\n\n🛒 구매하러 가기 https://naver.me/G8fRE2T1")
+o84 = H.th_voice({}, Y84, "https://naver.me/G8fRE2T1")
+assert o84.startswith(H.NAVER_NOTE + "\n\n💚 네이버 · 꾸준히 팔리는 상품 👍\n오휘 얼티밋") and "👍 [네이버]" not in o84, o84  # ② 네이버 👍 = 토스·쿠팡처럼 몰 머리 줄
+assert "\n⏰ 10/25 20시 확인 가격 · 옵션마다 다름\n" in o84 and "옵션별 가격" not in o84, o84  # ② 옵션 = '확인 가격 · 옵션마다 다름'
+o84 = H.th_voice({}, Y84.replace("👍 [네이버]", "🔥 [네이버]").replace("호수(색상) 옵션 · ", ""), "https://naver.me/G8fRE2T1")
+assert "\n\n🔥 [네이버]\n오휘" in o84 and "💚" not in o84 and "\n⏰ 10/25 20시 가격 · 결제 전 확인\n" in o84, o84  # 🔥 네이버 = 예전 그대로 · 옵션 없으면 예전 ⏰ 줄
+o84 = H.th_voice({}, Y84.replace("👍 [네이버]", "👍 [11번가]"), "https://naver.me/G8fRE2T1"); assert "\n\n👍 [11번가]\n" in o84, o84  # 네이버만
+o84 = H.th_voice({}, Y84.replace("호수(색상) 옵션 · ", "옵션별 가격 상이 · "), "https://naver.me/G8fRE2T1")
+assert "옵션마다 다름" in o84 and "단점 하나: 옵션" not in o84, o84  # ⏰ 줄이 옵션을 말하면 단점 줄에서 같은 말 X(④ 같은 말 반복)
+pv84, hk84, svj84 = [], ["겨울 반찬 고민 끝"], (H.ai_json, H.TH_HOOK)
+H.ai_voice, H.ai_json, H.TH_HOOK = (lambda prompt: pv84.append(prompt) or {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠다"}), (lambda prompt, props: {"hook": hk84[0]}), True
+o84 = H.th_voice({"thhook": {"t": 1, "l": [5, 1]}}, Y84, "https://naver.me/G8fRE2T1")
+assert pv84 and all("\n첫 줄(훅): " in p for p in pv84) and "\n겨울 반찬 고민 끝\n" in o84, (pv84, o84)  # ⑤ 끝 줄 프롬프트에 훅 = '첫 줄과 같은 낱말 X'를 Claude가 스스로 확인
+H.ai_json, H.TH_HOOK = svj84
+assert "말투 지시가 먼저" in H.TH_TONE_PROMPT and "아침마다 하나씩 집어 가기 좋겠다" in H.TH_TONE_PROMPT and "'한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함)" in H.TH_TONE_PROMPT and "소리 내 읽어" in H.TH_TONE_PROMPT  # ⑤ 좋은 예·나쁜 예 + 스스로 읽기
+assert "'오늘' 줄의 날짜·기온" in H.TH_HOOK_ASK[2]  # ① 훅 ② 계절·상황 = 오늘 날짜·기온 줄(Z season_note)에 맞게
+assert H.pick_price({"t": "2026-10-24 09:30", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원)", "url": "u", "now": "7,490원", "chk": "10/24 9시"}) == "7,490원 (10/24 9시 가격)"  # ③ '확인' -> '가격'
+assert H.pick_price({"t": "2026-10-23 20:05", "text": "🔥 [쿠팡] 라네즈 (19,020원)", "url": "u"}) == "19,020원 (10/23 20시 가격)"  # ③ '글 가격' -> '(M/D H시 가격)'
+time.time = lambda: TK("2026-10-26 10:00")
+ev84 = lambda t, title, chk="": (0, {"t": t, "text": f"🔥 {title}\n\n좋음", "url": "https://smartstore.naver.com/x", **({"chk": chk} if chk else {})}, (0,))
+assert S0.pick_off(ev84("2026-10-25 21:13", "[네이버] 유순 센텔라 크림 10g×3 체험 이벤트 (100원)")) and S0.pick_off(ev84("2026-10-25 09:00", "[네이버] 유순 센텔라 크림 (100원)"))  # ③ 실제 10/26 픽(10/25 21:13 글) · 어제 이전 이벤트가 = 픽 X
+assert not S0.pick_off(ev84("2026-10-26 00:30", "[네이버] 유순 센텔라 크림 (100원)"))  # 오늘 글 = 그대로(하루 안에 픽에서 갑자기 빠지지 않음 — 사이트·Threads 같게)
+assert S0.pick_off(ev84("2026-10-24 20:00", "[쿠팡] 비타민 체험단 키트 (3,900원)")) and S0.pick_off(ev84("2026-10-24 20:00", "[쿠팡] 리뷰 이벤트 물티슈 (2,900원)"))  # 이름에 체험·이벤트
+assert not S0.pick_off(ev84("2026-10-25 09:00", "[네이버] 유순 센텔라 크림 (100원)", "10/26 9시")) and not S0.pick_off(ev84("2026-10-23 09:00", "[쿠팡] 곰곰 특란 30구 (7,490원)"))  # 오늘 확인됨 · 이벤트 아님 = 날짜 상관 X
+assert not S0.pick_off(ev84("2026-10-24 20:00", "[쿠팡] 쿠쿠 미니 김치냉장고 (337,500원)"))  # 1,000원 넘는 보통 상품
+assert not S0.pick_off(ev84("2026-10-25 08:18", "[쿠팡] 체험팩 함소아 쿵푸팬더 프로틴 (3,000원)")) and not S0.pick_off(ev84("2026-10-24 20:00", "[네이버] 경량 플리스 집업 (31.170원/무료)"))  # 체험팩(크기) = 이벤트 X · 점으로 쓴 가격 = 31,170원
+(H.REVIEW, H.TH_HOOK, H.ai_voice, time.time) = sv84
 print("OK: 모든 셀프체크 통과")

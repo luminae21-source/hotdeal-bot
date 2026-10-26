@@ -1039,7 +1039,21 @@ def pick_off(x):
     """픽에서 뺄 상품(Z 10/26): 철 지난 계절 상품(달 기준 — 사이트 진열은 그대로) · 오늘 확인 안 된 토스(게시 시점 가격·1일 원칙 — 10/26 픽의 10/24 토스 가격: 오늘 글도 오늘 API 확인(own_end chk)도 아님)."""
     k = time.gmtime(time.time() + 9 * 3600)
     return season_off(season_item(title_of(x[1]["text"])), k.tm_mon) or shop_of(x[1]) == "toss" and x[1]["t"][:10] != time.strftime("%Y-%m-%d", k) \
-        and not (x[1].get("chk") or "").startswith(f"{k.tm_mon}/{k.tm_mday} ")
+        and not (x[1].get("chk") or "").startswith(f"{k.tm_mon}/{k.tm_mday} ") \
+        or ev_old(x[1], k)
+
+
+PICK_EVENT = r"체험(?!팩)|이벤트|응모|추첨"  # Y-3(10/26 픽 '유순 센텔라 크림 100원(10/25 21시 글)'): 이벤트·체험가 = 그날 지나면(오늘 확인 없으면) 픽 X
+
+
+def ev_old(p, k):
+    """이벤트·체험가 글(이름에 체험·이벤트·응모·추첨 또는 1,000원 안 가격)이 어제 이전 글(KST 날짜 — 24시간 넘은 것 + 어제 밤 글도: 픽은 아침에 고정)이고 오늘 확인(chk)도 없음 -> True (k = 지금 KST struct_time)."""
+    t = p.get("t") or ""
+    if t[:10] >= time.strftime("%Y-%m-%d", k) or (p.get("chk") or "").startswith(f"{k.tm_mon}/{k.tm_mday} "):
+        return False
+    _, name, price = parse(title_of(p["text"]))
+    w = re.search(r"(\d[\d,.]*)\s*원", price or "")  # '31.170원' = 31,170원(점으로 쓴 글)
+    return bool(re.search(PICK_EVENT, name or "") or w and int(re.sub(r"[,.]", "", w[1])) < 1000)
 
 
 def choose_picks(it, recs, n=PICK_N, avoid=()):

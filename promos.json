@@ -45,7 +45,7 @@
   {
    "id": "ssg-ssgday-2610",
    "mall": "emart",
-   "mall_name": "이마트몰",
+   "mall_name": "SSG",
    "sub": "쓱데이",
    "name": "쓱데이",
    "start": "2026-10-30",
@@ -65,7 +65,7 @@
   {
    "id": "gm-bigsmile-2611",
    "mall": "gmarket",
-   "mall_name": "G마켓 · 옥션",
+   "mall_name": "G마켓",
    "sub": "",
    "name": "빅스마일데이",
    "start": "2026-11-02",
