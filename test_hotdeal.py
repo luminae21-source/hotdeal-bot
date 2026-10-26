@@ -2510,7 +2510,7 @@ for f9 in (lambda: H.th_bundle(sb9, "top12", "리스트", "https://x"), lambda: 
         pass
 H.th_retry(sb9); assert len(tries9) == 2 and sb9["thretry_20261012_top12"]["done"] == 1  # 1번만 더(세 번째 X)
 H.th_post = lambda tok, text, link=None, image=None, tag=None: tries9.append(("ok", text)); H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 9}; sent.clear()
-json.dump([{"t": "2026-10-12 13:00", "text": "🔥 [G마켓] 인기1 (1,000원)", "url": "https://g1", "mid": 1, "pop": 50}, {"t": "2026-10-12 13:10", "text": "🔥 [G마켓] 인기2 (2,000원)", "url": "https://g2", "mid": 2, "pop": 40},
+json.dump([{"t": "2026-10-12 13:00", "text": "🔥 [G마켓] 인기1 (1,000원)", "url": "https://link.coupang.com/a/g1", "mid": 1, "pop": 50},  # HH: Threads 리스트 = 수수료 딜 2개↑일 때만 -> 수수료 딜 2개(좋은딜·인기1) {"t": "2026-10-12 13:10", "text": "🔥 [G마켓] 인기2 (2,000원)", "url": "https://g2", "mid": 2, "pop": 40},
            {"t": "2026-10-12 14:00", "text": "🔥 [토스] 좋은딜 (3,000원)\n\n💡 쿠팡 같은 상품(9,000원)보다 6,000원 쌈", "url": "https://toss.shopping/_m/a", "mid": 3, "own": 1},
            {"t": "2026-10-12 14:10", "text": "🛒 [토스] 약한딜 (3,000원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/b", "mid": 4, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
 H.TH_LIST_HOURS = tlh0; time.time = lambda: TK("2026-10-12 15:05"); H.top_deals({})
