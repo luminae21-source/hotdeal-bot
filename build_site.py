@@ -1829,6 +1829,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
 
 
 NAVER_VERIFY = ("31caccebc9de97ffa6547f7d55966278daf9c469", "58af553d8879edfe3bc3a5189d9744ddc33bfcb9")  # 네이버 서치어드바이저 소유확인 — 값마다 meta 1줄(10/15 진우 'woori pd' 계정 = 두 번째, 첫 번째는 다른 계정일 수 있어 그대로)
+INDEXNOW_KEY = "006bc1c3841997c43e929323233bc573"  # UU IndexNow(네이버 서치어드바이저·api.indexnow.org) 키 — 공개 파일 docs/<키>.txt(내용 = 키)라 비밀 아님 · 바꾸면 옛 키 파일은 빌드가 안 지움
 GOOGLE_VERIFY = ""  # 구글 서치콘솔 'HTML 태그' content 값(10/14 진우 '검색 유입' — 진우 코드 오면 Cowork가 전달). 비면 출력 X
 
 
@@ -2611,6 +2612,7 @@ def build(posts, out="docs"):
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9) — '*' = 네이버 Yeti도 허용
+    open(f"{out}/{INDEXNOW_KEY}.txt", "w").write(INDEXNOW_KEY)  # UU: IndexNow 키 파일(사이트 루트 — 보낼 때 keyLocation)
     rss = [(f"오늘의 픽 {int(day[5:7])}월 {int(day[8:10])}일 — " + " · ".join(parse(title_of(p["text"]))[1] for _, p, _ in ps), f"{BASE}today/{day}/",
             "핫딜픽이 고른 오늘의 특가 " + " / ".join(f"{n}. [{chip_of(p)}] {parse(title_of(p['text']))[1]} {'' if shop_of(p) == 'toss' else price_bits(p, sh)[0]}".strip() for n, (_, p, sh) in enumerate(ps, 1)),
             f"{day} {PICK_HOUR:02d}:00", "")] if ps and day else []  # 10/24 N1: 오늘의 픽 날짜 쪽 = RSS 첫 글(매일 새 글, 설명 = 3개 전부)

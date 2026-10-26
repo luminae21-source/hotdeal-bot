@@ -3267,7 +3267,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -10223,4 +10223,57 @@ assert cl97["고소한 "] == f"{S.BASE}c/t/yulmu-tea.html?ref=thc" and cl97["핫
 S.build(po97[:2], "docs")  # 상품이 빠짐 = 옛 주제 쪽 = 안내 쪽(noindex — 옛 큐레이션 링크는 열림) · 큐레이션 링크 = 칸 쪽 그대로
 assert 'content="noindex' in open("docs/c/t/yulmu-tea.html").read() and "c/t/" not in open("docs/sitemap.xml").read() and H.cur_events()[0]["link"] == "https://hotdealpick.kr/c/food/?ref=thc"
 (time.time, H.EVENTS, S.SITE_AFF_ONLY) = sv97; os.chdir(cwd97)
+# 9-98) UU IndexNow(10/27 Cowork — 진우 '네이버 검색과 구글 검색에 많이 연결되고 상단 노출'): 지난 빌드가 배포한 사이트맵 쪽 중 새로 생기거나 바뀐 것 -> 네이버 서치어드바이저·api.indexnow.org
+#       키 = 공개 파일 docs/<키>.txt(빌드가 씀) · 곳마다 하루 200·같은 URL 하루 1번·실행 50·새 쪽 먼저 · noindex X · 키 파일 배포 전 X · 4xx = 그날 그만 + 알림 · 실패해도 봇 그대로
+sv98 = (H.http, time.time, H.tg, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW); d98, cwd98 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d98)
+assert re.fullmatch(r"[0-9a-f]{32}", S.INDEXNOW_KEY) and H.INDEXNOW_KEY == S.INDEXNOW_KEY
+S.build([{"t": "2026-10-27 08:00", "text": "🔥 [쿠팡] 깨끗한나라 화장지 30롤 (19,900원)\n\n싸요", "url": "https://link.coupang.com/a/tp"}], "docs")
+assert open(f"docs/{S.INDEXNOW_KEY}.txt").read() == S.INDEXNOW_KEY  # 키 파일 = 내용 = 키(사이트 루트)
+req98, ok98, sent98 = [], {}, []
+def http98(url, body=None, headers=None, method=None):
+    req98.append((url, json.loads(body), headers, method))
+    c = ok98.get(url.split("/")[2], 200)
+    if c != 200:
+        raise urllib.error.HTTPError(url, c, "x", {}, None)
+    return ""
+H.http, H.tg, time.time = http98, (lambda m, **p: sent98.append(p) or {"message_id": 1}), (lambda: TK("2026-10-27 12:00"))
+def site98(n, extra=""):
+    os.makedirs("docs/p", exist_ok=True)
+    for i in range(n):
+        open(f"docs/p/{i}.html", "w").write(f"<html>딜 {i}{extra}</html>")
+    open("docs/p/n.html", "w").write('<meta name="robots" content="noindex,follow">')
+    open("docs/sitemap.xml", "w").write("<urlset>" + "".join(f"<url><loc>{S.BASE}{u}</loc></url>" for u in [""] + [f"p/{i}.html" for i in range(n)] + ["p/n.html", "p/없음.html", "https://other.example/x"]) + "</urlset>")
+site98(3); s98 = {}; os.rename(f"docs/{S.INDEXNOW_KEY}.txt", "k.txt"); H.indexnow(s98); assert not req98  # 키 파일이 아직 배포 전 = 안 보냄(보내면 403)
+os.rename("k.txt", f"docs/{S.INDEXNOW_KEY}.txt"); out98 = io.StringIO()
+with __import__("contextlib").redirect_stdout(out98):
+    H.indexnow(s98)
+assert [r[0] for r in req98] == ["https://searchadvisor.naver.com/indexnow", "https://api.indexnow.org/indexnow"] and all(r[3] == "POST" and r[2]["Content-Type"].startswith("application/json") for r in req98)
+assert req98[0][1] == {"host": "hotdealpick.kr", "key": S.INDEXNOW_KEY, "keyLocation": f"{S.BASE}{S.INDEXNOW_KEY}.txt", "urlList": [S.BASE] + [f"{S.BASE}p/{i}.html" for i in range(3)]}  # noindex·없는 파일·다른 주소 X
+assert out98.getvalue().strip() == "indexnow naver 4 ok · bing 4 ok" and S.INDEXNOW_KEY not in out98.getvalue() and "hotdealpick.kr/" not in out98.getvalue()  # 로그 = 곳·개수·결과만
+req98.clear(); H.indexnow(s98); assert not req98  # 안 바뀜 = 안 보냄
+site98(4, " 바뀜"); H.indexnow(s98); assert req98[0][1]["urlList"] == [f"{S.BASE}p/3.html"], req98  # 새 쪽만(바뀐 0~2 = 오늘 이미 보냄 -> 내일)
+req98.clear(); time.time = lambda: TK("2026-10-28 09:00"); H.indexnow(s98); assert req98[0][1]["urlList"] == [f"{S.BASE}p/{i}.html" for i in range(3)]  # 다음 날 = 바뀐 쪽
+# 실행마다 IDX_RUN · 하루 IDX_DAY · 바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지(새 쪽 몫 남김)
+H.IDX_DAY, H.IDX_RUN, H.IDX_NEW = 10, 4, 2; s98, req98[:] = {}, []; site98(8)
+for _ in range(4):
+    H.indexnow(s98)
+nv98 = lambda: [[u[len(S.BASE):] for u in r[1]["urlList"]] for r in req98 if "naver" in r[0]]
+assert nv98() == [["", "p/0.html", "p/1.html", "p/2.html"], ["p/3.html", "p/4.html", "p/5.html", "p/6.html"], ["p/7.html"]] and s98["idx_naver"]["n"] == ["2026-10-28", 9]
+req98.clear(); time.time = lambda: TK("2026-10-29 09:00"); site98(8, " 또"); open("docs/p/9.html", "w").write("새"); open("docs/sitemap.xml", "a").write(f"<url><loc>{S.BASE}p/9.html</loc></url>")
+for _ in range(3):
+    H.indexnow(s98)
+open("docs/p/10.html", "w").write("새2"); open("docs/sitemap.xml", "a").write(f"<url><loc>{S.BASE}p/10.html</loc></url>"); H.indexnow(s98)
+assert nv98() == [["p/9.html", "p/0.html", "p/1.html", "p/2.html"], ["p/3.html", "p/4.html", "p/5.html", "p/6.html"], ["p/10.html"]], nv98()  # 새 쪽 먼저 · 바뀐 쪽은 8개(10 - 2)까지 -> p/7 = 내일 · 늦게 생긴 새 쪽 = 남겨 둔 몫으로
+for k in (11, 12):
+    open(f"docs/p/{k}.html", "w").write(f"새{k}"); open("docs/sitemap.xml", "a").write(f"<url><loc>{S.BASE}p/{k}.html</loc></url>")
+H.indexnow(s98); assert nv98()[-1] == ["p/11.html"] and s98["idx_naver"]["n"] == ["2026-10-29", 10]  # 하루 합계 10 = 새 쪽도 거기까지(p/12 = 내일)
+# 실패: 5xx·접속 = 기록 X(다음 실행에 다시) · 4xx = 그곳만 그날 그만 + 알림 1번 · 다른 곳은 그대로
+H.IDX_DAY, H.IDX_RUN, H.IDX_NEW = 200, 50, 50; s98, req98[:] = {}, []; site98(2); ok98["searchadvisor.naver.com"] = 503
+with __import__("contextlib").redirect_stdout(io.StringIO()) as o98:
+    H.indexnow(s98)
+assert "indexnow naver 3 err 503 · bing 3 ok" in o98.getvalue() and s98["idx_naver"]["h"] == {} and len(s98["idx_bing"]["h"]) == 3  # 5xx = 기록 X(다음 실행에 다시)
+ok98["searchadvisor.naver.com"] = 403; req98.clear(); H.indexnow(s98); H.indexnow(s98)
+assert [r[0].split("/")[2] for r in req98] == ["searchadvisor.naver.com"] and s98["idx_naver"]["stop"] == "2026-10-29" and len([p for p in sent98 if "IndexNow naver 403" in p.get("text", "")]) == 1  # 4xx = 그날 그만 · 알림 1번
+open("docs/sitemap.xml", "w").write("<urlset></urlset>"); H.indexnow(s98); assert s98["idx_bing"]["h"] == {}  # 사이트맵에서 빠진 쪽 = 기록 지움
+(H.http, time.time, H.tg, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv98; os.chdir(cwd98)
 print("OK: 모든 셀프체크 통과")

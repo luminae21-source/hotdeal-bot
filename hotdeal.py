@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -9385,6 +9385,64 @@ def watch(seen):
         seen[f"quietev_{at}"] = {"t": now}
 
 
+INDEXNOW = (("naver", "https://searchadvisor.naver.com/indexnow"), ("bing", "https://api.indexnow.org/indexnow"))  # UU: 네이버 서치어드바이저 · IndexNow 공용(빙 등)
+IDX_DAY, IDX_RUN, IDX_NEW = 200, 50, 50  # 곳마다 하루(KST) 합계 · 실행마다 · 새 쪽 몫(바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지)
+
+
+def indexnow(seen, docs="docs"):
+    """UU(10/27 Cowork — 진우 '네이버 검색과 구글 검색에 많이 연결되고 상단 노출 되는게 핵심'): 지난 빌드가 배포한 사이트맵(색인할 쪽만 — 끝난 딜 noindex·날짜 쪽 X)에서
+    새로 생기거나 바뀐 쪽(HTML md5가 지난번 보낸 값과 다름)을 IndexNow로 알림 — 곳(네이버·빙)마다 따로 기록: 하루 IDX_DAY개 · 같은 URL 하루 1번 · 실행마다 IDX_RUN개
+    · 새 쪽 먼저(바뀐 쪽은 하루 IDX_DAY - IDX_NEW개까지 — 늦게 생긴 새 딜 몫) · 키 파일(docs/키.txt)이 배포된 뒤부터 · noindex 쪽 X
+    · 실패 = 기록 X(다음 실행에 다시) · 4xx = 그곳은 그날 그만(관리봇 알림 1번) · 실패해도 봇 그대로. 로그 'indexnow naver N ok · bing N err 403'(주소·키 X)."""
+    try:
+        locs = re.findall(r"<loc>([^<]+)</loc>", open(f"{docs}/sitemap.xml").read())
+    except OSError:
+        return
+    if not os.path.exists(f"{docs}/{INDEXNOW_KEY}.txt"):  # 키 파일이 사이트에 뜨기 전 = 보내면 403(그날 그만) -> 다음 빌드 배포 뒤
+        return
+    now = time.time()
+    today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    pages = []
+    for u in dict.fromkeys(locs):
+        try:
+            b = open(f"{docs}/{u[len(SITE):]}" + ("index.html" if u.endswith("/") else ""), "rb").read() if u.startswith(SITE) else b""
+        except OSError:
+            continue
+        if b and b'name="robots" content="noindex' not in b:
+            pages.append((u, u[len(SITE):], hashlib.md5(b).hexdigest()[:10]))  # 기록 = 사이트 안 경로(seen 작게)
+    live, out = {r for _, r, _ in pages}, []
+    for name, ep in INDEXNOW:
+        st = seen.setdefault("idx_" + name, {})
+        st["t"], h = now, st.setdefault("h", {})
+        for u in [u for u in h if u not in live]:  # 사이트맵에서 빠진 쪽(끝난 딜) = 기록 지움 — 다시 진행 중이 되면 새 쪽으로
+            h.pop(u)
+        n = st["n"][1] if st.get("n", [""])[0] == today else 0
+        if st.get("stop") == today:
+            continue
+        new = [x for x in pages if x[1] not in h]
+        chg = [x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today]
+        pick = new[:max(0, min(IDX_RUN, IDX_DAY - n))]
+        pick += chg[:max(0, min(IDX_RUN - len(pick), IDX_DAY - IDX_NEW - n - len(pick)))]
+        if not pick:
+            continue
+        try:
+            http(ep, json.dumps({"host": urllib.parse.urlsplit(SITE).netloc, "key": INDEXNOW_KEY, "keyLocation": f"{SITE}{INDEXNOW_KEY}.txt", "urlList": [u for u, _, _ in pick]}).encode(),
+                 {"Content-Type": "application/json; charset=utf-8"}, "POST")
+            res = "ok"
+            h.update({r: [k, today] for _, r, k in pick})
+            st["n"] = [today, n + len(pick)]
+        except urllib.error.HTTPError as e:
+            res = f"err {e.code}"
+            if 400 <= e.code < 500:
+                st["stop"] = today
+                alert(seen, f"alert_idx_{name}_{today}", f"⚠️ IndexNow {name} {e.code} — 오늘은 그만 보내요(내일 다시). 403이면 키 파일·서치어드바이저 사이트 확인")
+        except Exception as e:
+            res = f"err {type(e).__name__}"
+        out.append(f"{name} {len(pick)} {res}")
+    if out:
+        print("indexnow " + " · ".join(out))
+
+
 def main():
     try:
         seen = json.load(open(SEEN))
@@ -9492,7 +9550,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow):
         try:
             step(seen)
         except Exception as e:
