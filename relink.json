@@ -1,8 +1,8 @@
 {
- "left_now": 6,
+ "left_now": 4,
  "ok": {
   "auction": 7,
-  "커뮤니티": 20
+  "커뮤니티": 21
  },
  "fail": [
   {
@@ -312,6 +312,13 @@
    "n": "이브네 무표백 코어 생리대 중형 16개입 4개",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 07:07"
+  },
+  {
+   "k": "커뮤니티",
+   "pid": "8565859583",
+   "n": "프링글스 스윗 어니언 100g 12개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 13:58"
   },
   {
    "k": "진열",
