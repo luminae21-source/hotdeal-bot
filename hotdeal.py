@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
+from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -780,10 +780,9 @@ def facts_of(x, toss=False):
     return "".join(f"\n{esc(l)}" for l in ([f"💡 단위가격 {x['unit']}"] if x.get("unit") else []) + (wu(x) if toss else []) + ([f"⚠️ 확인할 점 {x['warn']}"] if x.get("warn") else []))
 
 
-def deal_post(d, comment, q=None, extra=None):
-    """-> (본문, 버튼 링크, 버튼 이름). 상품 주소가 있으면 쿠팡 API·링크프라이스 상품 딥링크 > 링크프라이스 검색 링크
-    > 상품 페이지(제휴 없음, 관리자 사본으로 수동) > 그 몰 검색 결과(MALL_SEARCH, 10/10~) > 원글. 제휴 링크면 대가성 문구를 맨 앞에.
-    extra의 unit(단위가격)·warn(확인할 점)이 있으면 코멘트 아래 한 줄씩 (다른 핫딜 채널과의 차이: 비교 근거 + 단점까지)."""
+def deal_link(d, q=None):
+    """-> (버튼 링크, 버튼 이름). 상품 주소가 있으면 쿠팡 API·링크프라이스 상품 딥링크 > 링크프라이스 검색 링크
+    > 상품 페이지(제휴 없음) > 그 몰 검색 결과(MALL_SEARCH, 10/10~) > 원글(None — deal_post가 d url)."""
     link, aff = (d["toss"], True) if d.get("toss") else affiliate(store_link(d["url"]))  # toss = toss_wait가 찾은(또는 진우가 보낸) 쉐어링크
     label = buy_btn(d["title"], link or d["url"])  # 토스·쿠팡 = '💙 토스에서 N원'·'🚀 쿠팡에서 N원'(10/22), 그 밖 = '🛒 N원 구매하기'
     if not aff:
@@ -793,6 +792,13 @@ def deal_post(d, comment, q=None, extra=None):
             lp = base and base + urllib.parse.quote(q or keyword(d["title"]))
         if lp:
             link, label = lp, f"🔎 {name}에서 찾기"
+    return link, label
+
+
+def deal_post(d, comment, q=None, extra=None, lk=None):
+    """-> (본문, 버튼 링크, 버튼 이름) — 링크 = lk(post_or_draft가 먼저 만든 것) 또는 deal_link. 제휴 링크면 대가성 문구를 맨 앞에.
+    extra의 unit(단위가격)·warn(확인할 점)이 있으면 코멘트 아래 한 줄씩 (다른 핫딜 채널과의 차이: 비교 근거 + 단점까지)."""
+    link, label = lk or deal_link(d, q)
     note = aff_note(link or "")
     x = extra or {}
     facts = facts_of(x, note == TOSS_NOTE)
@@ -1156,36 +1162,36 @@ def post_url(mid):
     return f"https://t.me/{CHANNEL[1:]}/{mid}" if CHANNEL.startswith("@") else f"https://t.me/c/{CHANNEL.removeprefix('-100')}/{mid}"
 
 
-def post_or_draft(d, comment, score, q=None, extra=None):
+def post_or_draft(d, comment, score, q=None, extra=None, seen=None):
     """✅ 없이 채널에 바로 게시. 링크프라이스 몰은 검색 제휴 링크가 자동으로 붙음.
-    쿠팡처럼 링크를 손으로 만들어야 하는 몰은 관리자에게 채널 글 사본을 보냄 -> 원하면 제휴 링크를 답장(또는 그냥 전송) -> 채널 글 교체(선택).
+    SS(10/26 진우 '수익 안 주는 제품은 과감하게 빼고'): 수수료 링크(쿠팡 파트너스·토스 쉐어링크·링크프라이스 — aff)를 못 만든 딜 = 안 올림('noaff' · 초안도 X · 몰별 셈 ss_skip — 하루 로그).
     채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음. Z: 게시 직전 Claude 칸(한 줄·단가·확인할 점·누가·언제·훅) 재검토(rv_fields — 3시간 보관했다 올리는 딜도)."""
+    lk = deal_link(d, q)
+    if not aff(lk[0] or ""):
+        print("deal skip (수수료 링크 없음)", clip(d["title"], 40), "|", link_kind(lk[0] or d["url"]))
+        ss_skip(seen, d["title"])
+        return "noaff"
     x = {**(extra or {}), "comment": comment}
     rv_fields("ch", [x], [d["title"]])
     comment, extra = x.pop("comment"), x
-    text, url, label = deal_post(d, comment, q, extra)
+    text, url, label = deal_post(d, comment, q, extra, lk)
     info = store_info(d["title"], url)
     m = tg("sendMessage", chat_id=CHANNEL, text=text, parse_mode="HTML", link_preview_options={"is_disabled": True},
            reply_markup={"inline_keyboard": [[{"text": label, "url": url}]]})
     if not m:
         return draft(text, url, score=score, info=info, label=label)
-    cp = None
-    if info.startswith("💰") and not aff_note(url):
-        kb = [[{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}],
-              [{"text": info.split(" · ")[0] + " · 링크 보내면 채널 글 교체(선택)", "callback_data": "-"}]]
-        if info.startswith("💰 쿠팡"):  # 앱 공유·주소 복사 없이: 파트너스 검색 결과 -> 상품 -> 링크 생성 -> URL 복사 -> 봇에 붙여넣기
-            kb.insert(1, [{"text": "🔗 파트너스 링크 만들기", "url": CP_SEARCH + urllib.parse.quote(q or keyword(d["title"]))}])
-        elif info.startswith("💰 네이버"):  # 상품명 복사 -> 쇼핑커넥트 상품 찾기 검색창에 붙여넣기 -> [링크 발급] -> 링크만 봇에 보내기
-            kb.insert(1, [{"text": "📋 상품명 복사", "copy_text": {"text": (q or keyword(d["title"]) or d["title"])[:256]}},
-                          {"text": "🔗 쇼핑커넥트 열기", "url": NAVER_SC}])
-        elif info.startswith("💰 올리브영"):  # 앱 큐레이터에서 상품 검색 -> 링크 만들기 -> oy.run 링크 답장
-            kb.insert(1, [{"text": "📋 상품명 복사", "copy_text": {"text": (q or keyword(d["title"]) or d["title"])[:256]}}]
-                      + ([{"text": "🛒 올영 상품 열기", "url": url}] if url != d["url"] else []))
-        elif url != d["url"]:  # 상품 주소를 알면: 눌러서 쇼핑앱 열기 -> 공유 -> 제휴 링크 복사 -> 답장 (뽐뿌 글 거칠 필요 없음)
-            kb.insert(1, [{"text": "🛒 상품 열기 (앱에서 공유 → 제휴 링크)", "url": url}])
-        cp = (tg("copyMessage", chat_id=ADMIN, from_chat_id=CHANNEL, message_id=m["message_id"],
-                 reply_markup={"inline_keyboard": kb}) or {}).get("message_id")
-    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "cp": cp, "hot": d.get("hot"), "pop": d.get("pop"), "vpm": d.get("vpm"), "rec": d.get("rec")})  # cp: 관리자 사본 번호(답장 없이 링크만 보낼 때 찾기용)
+    record(m.get("text", ""), m.get("entities", []), url, m.get("message_id"), score, {**(extra or {}), "hot": d.get("hot"), "pop": d.get("pop"), "vpm": d.get("vpm"), "rec": d.get("rec")})  # 관리자 사본(제휴 링크 답장 -> 교체) = 수수료 링크 없는 딜용이라 SS 뒤 X
+
+
+def ss_skip(seen, title):
+    """SS ⑤ 하루 숫자: 수수료 링크가 없어 안 올린 딜 1개 -> seen ssn d {날짜: {몰: 수}}(3일 · ss_report가 다음 날 아침 관리봇 1줄)."""
+    if seen is None:
+        return
+    now, mall = time.time(), store_tag(title) or "?"
+    day, old = (time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - x)) for x in (0, 3 * 86400))
+    d = {k: v for k, v in seen.get("ssn", {}).get("d", {}).items() if k > old}
+    d.setdefault(day, {})[mall] = d.get(day, {}).get(mall, 0) + 1
+    seen["ssn"] = {"t": now, "d": d}
 
 
 def pending_copy(link):
@@ -2183,6 +2189,11 @@ def events(seen):
             continue
         if HAS_CP and re.match(CP_PROD, ev.get("url") or ""):  # 쿠팡 상품 주소 = 파트너스 링크로 바뀐 뒤에(cp_links — 상한·오류면 다음 실행, 6시간 안)
             continue
+        if ev.get("deal") and not aff(ev.get("url") or ""):  # SS(10/26 진우 '수익 안 주는 제품은 과감하게 빼고'): 수수료 링크 아닌 상품 예약 = 안 올림(하루 셈)
+            seen[key] = time.time()
+            print("events 안 올림(수수료 링크 아님)", ev["at"], link_kind(ev.get("url")))
+            ss_skip(seen, title_of(plain_of(ev.get("text") or "")))
+            continue
         if ev.get("re") and (bot := next((p for p in reversed(load(POSTS, [])) if p.get("re") and p.get("url") == ev.get("url")), None)) \
                 and kst_ts(bot["t"]) > time.time() - CPRE_DAYS * 86400:  # E: 봇이 3일 안에 자동 재게시한 상품의 Cowork 재게시 = 두 번 X(관리자에게 알림)
             seen[key] = time.time()
@@ -2221,7 +2232,7 @@ def list_post(seen, ev, key):
     if any(tossy(i["url"]) for i in its) and not all(tossy(i["url"]) for i in its):
         print("events list 토스 상품 뺌(다른 몰과 섞임)", ev["at"], sum(tossy(i["url"]) for i in its))
         its = [i for i in its if not tossy(i["url"])]
-    ok = [i for i in its if not re.match(CP_PROD, i["url"])]
+    ok = [i for i in its if aff(i["url"])]  # 수수료 링크만(SS — 쿠팡 생 주소는 바뀐 뒤 · 네이버 직접 등 = X)
     wait = [i for i in its if re.match(CP_PROD, i["url"]) and HAS_CP and i["url"] not in x]  # 실패한 것(x) = 하루 뒤 다시 · 키 없음 = 못 바꿈
     if len(ok) < LIST_MIN or wait and ev["at"] > at(LIST_WAIT):
         if wait and ev["at"] > at(5 * 3600):
@@ -3336,7 +3347,7 @@ def toss_ask(title, src, mid=None, quiet=False):
 def toss_post(w, link, seen=None):
     """기다리던 토스 딜(main이 보관한 Claude 판단 그대로)을 쉐어링크로 채널에 — 대가성 문구 맨 앞·게시 시점 가격 줄은 deal_post가."""
     p = w["p"]
-    if not post_or_draft({**w["d"], "toss": link}, p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}) and seen is not None:
+    if not post_or_draft({**w["d"], "toss": link}, p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen) and seen is not None:
         tone_keep(seen, "ch", p.get("tone"))
 
 
@@ -3684,6 +3695,42 @@ def ev_near(seen, now, evs=None):
     """진우 예약(events.json) 시각 앞뒤 TOSS_EV_PAD 안인지 — 진우 것 먼저(예약은 실행 간격만큼 늦게 나가서 실제 게시 시각으로도). 자동 글(toss_solo·cp_repost)은 이때 쉼."""
     ats = [e["at"] for e in (load(EVENTS, []) if evs is None else evs) if re.match(AT_RX, e.get("at", "")) and not e.get("shelf")]  # 손으로 넣은 시각 모양이 틀려도 멈추지 않게 · 사이트 진열(shelf) = 채널 글 아님(10/26 18~20시 진열 35개가 재게시 칸을 다 막음)
     return any(abs(kst_ts(a) - now) <= TOSS_EV_PAD or now - seen.get("ev_" + a, 0) <= TOSS_EV_PAD for a in ats)
+
+
+def cp_fill(seen):
+    """SS ③(10/26 진우 '쿠팡 토스 등은 꼭 주력으로'): 채널 빈틈 = 토스(toss_solo)와 번갈아 쿠팡 🔥 진열 1개 — 딜 글이 TOSS_GAP_MIN분(0~8시 TOSS_GAP_NIGHT) 넘게 없고
+    지난 빈틈을 토스가 채웠을 때(tgap가 cpfill보다 나중 · 토스 키 없으면 늘) · 후보 없으면 이번 빈틈은 토스(같은 실행 toss_solo).
+    후보 = cp_shelf 🔥 진열(파트너스 링크·품절 X·리뷰 TH_FILL_REV↑·계절) 중 같은 상품(url·pid)이 채널에 나간 적 없음 · 앞뒤 CPRE_DAYS일 예약 없음 · 확인 가격 CPRE_FRESH 안, 최근 진열 먼저.
+    글 = cp_repost 틀(쿠팡 대가성 문구 첫 줄 · 가격 '(M/D H시 확인)' · 🚀 = 검색 API isRocket만) · posts own(사이트 진열 자리를 이어받음 · Threads 채움 후보). 진우 예약 앞뒤·묶음 간격·시간당 상한 = 다음 실행에."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    last, tg_t = seen.get("cpfill", {}).get("t", 0), seen.get("tgap", {}).get("t", 0)
+    if not TOSS_GAP_MIN or kst.tm_hour not in TOSS_SOLO_HOURS or HAS_TOSS and last > tg_t \
+            or (now - max(ch_last(seen), tg_t, last)) // 60 <= (TOSS_GAP_NIGHT if kst.tm_hour < 8 else TOSS_GAP_MIN):
+        return
+    evs = load(EVENTS, [])
+    if ev_near(seen, now, evs) or busy(seen):
+        return
+    seen["cpfill"] = {"t": now}  # 시도 = 쿠팡 차례 끝(못 찾아도 — 다음 빈틈은 토스)
+    posts, ev = load(POSTS, []), ev_info()
+    chan = {p.get("url") for p in posts if p.get("mid")}
+    cpid = {ev.get(u, {}).get("pid") for u in chan} - {None}
+    block = {e.get("url") for e in evs if re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400}
+    fresh_at = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - CPRE_FRESH))
+    i, name, _, unit, rv = next((x for x in cp_shelf(posts, kst, False) if (u := posts[x[0]]["url"]) not in chan and u not in block and ev.get(u, {}).get("pid") not in cpid
+                                 and posts[x[0]].get("now") and posts[x[0]].get("chkt", "") >= fresh_at), (None,) * 5)
+    if i is None:
+        print("cp fill: 후보 없음 -> 토스")
+        return
+    p, rocket = posts[i], seen.get("cpq", {}).get("r", {}).get(posts[i]["url"]) is True
+    body = mall_body("coupang", mall_src("coupang", plain_of(p["text"])), "🔥", name, f"{p['now']} ({p['chk']} 확인)", [esc(unit), esc(rv), "⚠️ 결제 전 최종가 확인"], rocket)
+    m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=ad_head(DISCLOSURE, plain_of(body)) + body,
+           reply_markup={"inline_keyboard": [[{"text": mall_btn("coupang", p["now"], rocket), "url": p["url"]}]]})
+    if not m:
+        return
+    bundled(seen)
+    record(m.get("text", ""), m.get("entities", []), p["url"], m["message_id"], extra={"own": 1, **{k: p.get(k) for k in ("cat", "tag", "st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "img")}})
+    print("cp fill:", clip(name, 30))
 
 
 def toss_solo(seen):
@@ -4184,21 +4231,22 @@ TH_ASK, TH_TONE_POOL5 = 3, {1: ("구성 보고 계산해 볼 만함", "단가 �
                             4: ("이 구성 실화냐", "오 이건 괜찮다"), 5: ("기록 보니 다시 내려온 가격", "전에 본 가격이랑 같이 보면 좋음")}  # 질문형만 물음표 · Claude 실패 = 기본 한 줄(숫자·경험담·상품 사실 단정 X — 비교형은 기록 재료 있을 때만 뽑힘)
 TH_FRIEND = "\n- 친구한테 말하듯 반말 한 줄. '나라면 쟁여 둠' 같은 의견은 OK, 써 본 척(써 보니·먹어 보니·샀는데)·'사세요·구매하세요' 같은 권유는 X."
 TH_HOOK, TH_HOOKS = True, {1: "질문 자답", 2: "계절·상황", 3: "오늘 마감", 4: "공유형", 5: "숫자 앵커"}  # U(10/26 진우 @love__pastel 글): 개별 딜 글 첫 줄(대가성 문구 다음) 훅 5가지 돌림(직전 2개와 다르게) · metrics hook = 2주 뒤 비교
-TH_HOOK_POOL = ("이건 알아 두면 좋을 것 같아서", "이건 같이 보려고 가져옴", "보자마자 공유각이라 올림")  # ④ 공유형(특가 아닌 👍 꾸준템 글에도 맞게 — '이 가격 놓치기 아까워' 같은 특가 말 X)
+TH_HOOK_POOL = ("이건 알아 두시면 좋을 것 같아서요", "같이 보시라고 가져왔어요", "보자마자 공유하고 싶어서 올려요")  # ④ 공유형(SS 10/26 존댓말)(특가 아닌 👍 꾸준템 글에도 맞게 — '이 가격 놓치기 아까워' 같은 특가 말 X)
 TH_FLAWS = ((r"와우(?!\s*쿠폰)\s*(?:회원)?\s*(?:가|할인|전용)", "와우회원가라 일반 회원은 가격이 다를 수 있음"), (r"쿠폰\s*(?:가|적용|받|할인|사용|다운)|(?:\d\s*(?:원|%)|와우)\s*쿠폰", "쿠폰 받아야 이 가격"),
             (r"카드\s*(?:할인|청구|즉시|결제\s*시|가)", "카드할인 조건가"), (r"페이(?!지)\s*(?:결제|할인|가)", "페이 결제 조건가"), (r"(?:멤버십|네멤)\s*(?:가|할인|전용|회원)", "멤버십 조건가"),
             (r"옵션\s*(?:별|마다)\s*(?:가격|상이|다름|다른)|옵션가", "옵션마다 가격이 달라서 고를 때 확인 필요"))  # O 단점 = ⚠️ 조각에 이 말이 그대로 있을 때만('카드 무이자'·'사이즈 옵션 확인' X)
 TH_PUSH = r"사\s*둬|사\s*놔|사\s*둘\s*것|질러|지르자|담아\s*둬|사야\s*(?:해|돼|됨|지)|사세요|구매하|서둘러|얼른|빨리\s*사|놓치지\s*마"  # 반말 재촉(O '사세요' X)
 TH_PRICE_WORD, TH_QM = r"[만천백십]\s*원|원\s*(?:도|대|짜리|꼴|이하|밖에)|(?:한\s*잔|밥|커피)\s*값", r"[?？❓❔⁉⁇]"  # 숫자 말로 쓴 가격('만 원도 안 해') · 물음표(이모지 포함)
-TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꿔? 핸드크림!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절 시작) — 맨 아래 '오늘' 줄의 날짜·기온에 맞는 계절·날씨만(Y-1 10/26 생수 '날 더워지면')"}
-TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 반말·구어체, 폰 한 줄(20자 안팎), 이모지 0~2개.
+TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꾸세요? 핸드크림이죠!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절이 왔어요) — 맨 아래 '오늘' 줄의 날짜·기온에 맞는 계절·날씨만(Y-1 10/26 생수 '날 더워지면')"}
+TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 친근한 존댓말(~요·~죠로 끝 — 시키는 말 X) + 생활 공감 위트, 폰 한 줄(25자 안팎), 이모지 0~2개.
 - {kind}
+- 말투 예: '집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻' · '라면 물 올려놓고 생각났다면… 지금이 쟁일 때예요 🍜' (아래 재미 예시 말도 존댓말로)
 - 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데), 효능·건강, 과장·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
 - {fun}
 
 상품명: {name}"""
 TH_END_FROM, TH_FEW_REV = "2026-10-26", 30  # O 실험 시작일(metrics chg · 1주 뒤 리포트 비교 th_end_report) · 리뷰 이만큼 안 되면 '리뷰 아직 적음'
-TH_W, TH_NUMS = 22, 5  # 10/23 진우 'Threads 딜 글 가독성': 한 줄 = 폰 한 줄(th_w 폭 22 안팎) · 숫자(가격·단가·리뷰·구매 수·%)는 5개까지
+TH_W, TH_NUMS, TH_HOOK_W = 22, 5, 28  # TH_HOOK_W = 첫 줄 훅 폭(SS 존댓말·위트 — Cowork 예 '집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻' 26) ·  10/23 진우 'Threads 딜 글 가독성': 한 줄 = 폰 한 줄(th_w 폭 22 안팎) · 숫자(가격·단가·리뷰·구매 수·%)는 5개까지
 TH_MOD = r"남녀공용|로얄특품|최고|표기|백화점|선물|포장|대용량|프리미엄|정품|신상|기획|단독|한정|무료배송|무배|특가|리미티드|에디션|본품|순수|시그니처|천연펄프|도톰한|부드러운|촉촉한|고급|명품|인기|베스트|초특가|국민|공식|본사|직영|당일발송|빠른배송"  # 짧은 상품명에서 빼는 꾸밈말(낱말째)
 TH_SZ = r"\d[\d.,]*\s*(?:ml|mL|ML|l|L|g|kg|KG|Kg|mg|m|cm|mm|겹|개입)"  # 용량·크기(뒤 개수와 사이에 ×)
 TH_CNT = r"\d+\s*(?:개입|개|매|롤|켤레|병|팩|입|캔|봉|포|구|알|장|세트|박스|인분|족|통|p|P|EA|ea)"
@@ -4385,6 +4433,23 @@ def rv_text(kind, text):
     return "\n".join(out)
 
 
+def ss_report(seen):
+    """SS ⑤ 하루 1번(9시 뒤) 관리봇 1줄: 사이트에서 숨긴 상품(수수료 링크 없음 — 지금 · 몰별, 사이트 칸 기준 home_pool) · 어제 안 올린 딜(몰별 — ss_skip)."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key, y = time.strftime("ssrep_%Y%m%d", kst), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
+    if kst.tm_hour < 9 or key in seen:
+        return
+    posts = load(POSTS, [])
+    days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+    hid = set(home_pool(posts, days, lambda p: not p.get("nosite"))) - set(home_pool(posts, days))
+    mall = lambda p: {"coupang": "쿠팡", "naver": "네이버", "toss": "토스"}.get(shop_of(p)) or store_tag(title_of(p["text"])) or "기타"
+    sk, ls = seen.get("ssn", {}).get("d", {}).get(y, {}), lambda c: f"({' · '.join(f'{k} {n}' for k, n in c.most_common())})" if c else ""
+    if tg("sendMessage", chat_id=ADMIN, text=f"🧹 수수료 링크 없음: 사이트 숨김 {len(hid)}개{ls(collections.Counter(mall(posts[i]) for i in hid))} · "
+                                            f"어제({int(y[5:7])}/{int(y[8:])}) 안 올린 딜 {sum(sk.values())}개{ls(collections.Counter(sk))}"):
+        seen[key] = now
+
+
 def rv_report(seen):
     """Z-6 하루 1번(22시 뒤) 관리봇: '재검토 N건 중 고침 M줄·줄 뺀 K' + 고친 예 2개(전 → 후)."""
     kst = time.gmtime(time.time() + 9 * 3600)
@@ -4564,7 +4629,7 @@ def th_voice(seen, text, link, src=None):
         ms = [x for x in (hook, line, con) if x]  # Z-4 재검토 = 멘트 줄(훅·말투 줄·단점 줄) — 대부분 걸리면 멘트 줄 없이 깔끔한 틀
         ch = review("th", render(soc, unit, tip, facts, line, con)[0], ms, f"상품명: {name}\n가격: {won}" + (f"\n단가: {unit}" if unit else "") + f"\n가격 시각: {tl}", dup=True, names=names, hook=hook,
                     valid=lambda o, n: ok(n) if o == line else n.startswith("단점 하나:") and not re.search(ban, n) and th_w(n) <= TH_W + 6 if o == con
-                    else not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", n)) and th_w(n) <= TH_W + 2 and not n.startswith(VOICE_LABEL))  # 고친 줄도 그 줄 규칙대로
+                    else not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", n)) and th_w(n) <= TH_HOOK_W and chat_polite(n) and not n.startswith(VOICE_LABEL))  # 고친 줄도 그 줄 규칙대로(훅 = 존댓말 — SS)
         ch = {x: "" for x in ms} if sum(ch.get(x) == "" for x in ms) * 2 > len(ms) else ch
         hook, line, con = (ch.get(x, x) for x in (hook, line, con))
         steps = [{}, {"tip": ""}, {"tip": "", "soc": soc[:2] if buy else soc}, {"tip": "", "soc": soc[:2] if buy else soc, "unit": ""}]  # 숫자 넘침 -> 💡 -> 구매 수 -> 단가
@@ -4596,7 +4661,7 @@ def th_hook(seen, name, dl, unit, ban, names):
     """U 첫 줄 훅 -> (줄, 종류 1~5) 또는 ("", 0): 이 글에 쓸 수 있는 종류(③ = dl(토스 하루특가 오늘) · ⑤ = 단가 있을 때만) 중 직전 2개 X, 지난번 다음 번호부터 차례로.
     ①② = Claude(숫자·가격 말 X · 금지 말 · 폭 · 물음표는 ①만) — 실패·규칙 X = 다음 차례 종류로(직전 2개는 끝까지 X). 숫자는 우리 데이터(단가)만."""
     last = seen.get("thhook", {}).get("l", [])
-    fixed = {3: "이 가격 오늘 밤 12시까지" if dl else "", 4: TH_HOOK_POOL[sum(map(ord, name)) % len(TH_HOOK_POOL)], 5: f"{unit}꼴" if unit else ""}  # ④ = 상품마다 다른 줄
+    fixed = {3: "이 가격, 오늘 밤 12시까지예요" if dl else "", 4: TH_HOOK_POOL[sum(map(ord, name)) % len(TH_HOOK_POOL)], 5: f"{unit}꼴이에요" if unit else ""}  # ④ = 상품마다 다른 줄
     for k in sorted((x for x in TH_HOOKS if fixed.get(x, True) and x not in last), key=lambda x: (x - (last[-1] if last else 0) - 1) % len(TH_HOOKS)):
         if k in fixed:
             return fixed[k], k
@@ -4606,7 +4671,7 @@ def th_hook(seen, name, dl, unit, ban, names):
                 if not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", h)):
                     break
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
-            if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_W + 2 and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
+            if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_HOOK_W and chat_polite(h) and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
                     and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(plain):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
                 return h, k
         except Exception as e:
@@ -9391,11 +9456,11 @@ def main():
         if HAS_TOSS and store_info(h["d"]["title"], h["d"].get("url")).startswith("💰 토스"):  # 10/18 진우 '뽐뿌 말고 바로 연결': 토스 딜은 쉐어링크를 찾은 뒤에 게시(아래 toss_wait 단계가 이번 실행부터)
             seen["tw_" + h["d"]["id"]] = {**h, "t": time.time()}
             continue
-        if not post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}):  # 채널 게시(초안 X)일 때만 말투 기록
+        if not post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen):  # 채널 게시(초안·수수료 X로 안 올림 X)일 때만 말투 기록
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:

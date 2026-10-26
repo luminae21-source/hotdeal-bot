@@ -412,10 +412,9 @@ def aff(url):
     return host in CP_SHORT or toss_share(url) or host in NAVER_HOSTS + AFF_HOSTS + OY_HOSTS
 
 
-SITE_AFF_ONLY = True  # 10/25 20:3x Cowork 최종 규칙(진우 '수수료 안 주는 녀석들은 빼자' · '채널 유지, 사이트만 빼기') — False = 예전처럼 모든 딜(셀프체크 옛 가짜 주소용)
-SITE_KEEP_HOSTS = ("coupang.com", "auction.co.kr", "gmarket.co.kr", "lotteon.com", "emart.ssg.com",  # ② 수수료 길이 있는데 아직 수수료 링크가 아닌 것 = 당분간 사이트에 그대로(봇이 딥링크 다시 — 쿠팡 파트너스·링크프라이스)
-                   "ppomppu.co.kr", "shopping.naver.com", "brand.naver.com", "smartstore.naver.com")  # · 뽐뿌·네이버(검색·상품 직접 주소 — 10/25 21:3x link_swap) = 진우가 쇼핑커넥트 등으로 바꿀 예정(다 바꾸면 여기서 지움) — 하위 주소도(www.·m.·search.)
-SITE_PP_MALLS = ("네이버", "네이버페이", "옥션", "지마켓", "g마켓", "롯데온", "이마트몰", "토스", "쿠팡", "올리브영")  # 뽐뿌 원글 링크 = 제목 [몰]이 수수료 몰일 때만(10/25 21:3x 진우 '원래 몰이 수수료 없는 88개는 없애자' — 11번가·카카오·오늘의집·홈쇼핑·자사몰 등 X)
+SITE_AFF_ONLY = True  # 10/26 SS 진우 '수익 안 주는 제품은 과감하게 빼고'(10/25 '품목은 무조건 다 올려'보다 먼저) = 수수료 링크만 — False = 예전처럼 모든 딜(셀프체크 옛 가짜 주소용)
+SITE_KEEP_HOSTS = ("coupang.com", "auction.co.kr", "gmarket.co.kr", "lotteon.com", "emart.ssg.com",  # 기획전 몰 바로 가기(promo_link) = 수수료 길이 있는 몰 주소 — 딜 카드는 site_ok(수수료 링크만)
+                   "ppomppu.co.kr", "shopping.naver.com", "brand.naver.com", "smartstore.naver.com")
 
 
 def keep_host(url):
@@ -425,16 +424,9 @@ def keep_host(url):
 
 
 def site_ok(p):
-    """사이트(목록·칸·검색·RSS·사이트맵)에 보일 딜(10/25 20:3x Cowork 최종 — 싼지로 안 거름): ① 제휴(수수료) 링크 ② 수수료 길이 있는 몰 주소(SITE_KEEP_HOSTS — 당분간, 바뀌면 교체)
-    / ③ 그 밖(11번가·카카오 톡스토어·오늘의집·버거킹 등 = 수수료 길이 없음 · 뽐뿌 원글인데 제목 [몰]이 수수료 몰 아님) = 사이트 X — 텔레그램 채널은 그대로·데이터 그대로."""
-    u = p.get("url")
-    if p.get("nosite"):  # link_swap 'none' = 진우가 쇼핑커넥트 '참여 안 함' 확인(10/25 21:4x)
-        return False
-    if not SITE_AFF_ONLY or aff(u):
-        return True
-    h = urllib.parse.urlsplit(u or "").netloc.lower()
-    pp = h == "ppomppu.co.kr" or h.endswith(".ppomppu.co.kr")
-    return keep_host(u) and (not pp or (re.search(r"\[([^\]]+)\]", title_of(p.get("text") or "")) or [0, ""])[1].strip().lower() in SITE_PP_MALLS)
+    """사이트(목록·칸·검색·RSS·사이트맵)에 보일 딜 = 수수료 링크만(aff — 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트 naver.me·올리브영 oy.run·링크프라이스, 10/26 SS)
+    / 그 밖(쿠팡 변환 전·400 생 주소·네이버 직접·뽐뿌 원글·11번가 등) = 사이트 X — 데이터 그대로(빌드에서만 숨김: 나중에 수수료 링크로 바뀌면 다시 보임) · 채널 옛 글 그대로."""
+    return not p.get("nosite") and (not SITE_AFF_ONLY or aff(p.get("url")))  # nosite = link_swap 'none'(진우가 쇼핑커넥트 '참여 안 함' 확인, 10/25 21:4x)
 
 
 CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
@@ -688,7 +680,7 @@ def shelf_gone(posts):
     return {i for i, p in enumerate(posts) if p.get("shelf") and (last.get(p.get("url"), i) != i or not site_ok(p))}  # 수수료 없는 진열 글(쿠팡 생 주소 — 10/25 20시 진우 '빼자') = 같이 보기·목록·사이트맵 X
 
 
-def home_pool(posts, days):
+def home_pool(posts, days, ok=None):
     """홈 몰·품목·브랜드 칸에 둘 딜 -> {posts 번호: shelf 상태}(10/23 진우 '우리가 업로드한 제품들을 리스트에서 그냥 빼지 않기' · '진열 = 기본 유지'):
     커뮤니티 딜 = 최근 3일 그대로(판매 확인 방법 없음), 진우 상품(own) = 날짜 상관없이 같은 url 최신 글 1개(같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만) — 빼는 건 shelf가 None인 것뿐."""
     today, ev = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), ev_info()
@@ -697,7 +689,7 @@ def home_pool(posts, days):
     newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
     out = {}
     for i, p in enumerate(posts):
-        if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)) or not site_ok(p):
+        if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)) or not (ok or site_ok)(p):  # ok = 사이트 규칙 대신(SS 하루 로그 — 숨긴 수)
             continue  # 사이트 = 제휴 링크 딜(+ 당분간 뽐뿌·네이버 검색) — 쿠팡 생 주소 진열은 바뀌면 그때(site_ok)
         if (s := shelf(p, ev, today)) is not None:
             out[i] = s
