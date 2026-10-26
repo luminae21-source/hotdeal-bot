@@ -2781,7 +2781,14 @@ def nn_unit(name, price, base):
     xw, rest = re.findall(xr, rest), re.sub(xr, " ", rest)
     if any(w and not re.fullmatch(rf"{NN_IN['개']}|{NN_OUT}|롤", w) for _, w in xw):
         return None
-    tot = re.search(rf"총\s*(\d+)\s*(?:{unit})(?![가-힣a-zA-Z])", rest) or re.search(rf"\(\s*(\d+)\s*(?!개입|입)(?:{unit})\s*\)", rest)  # '4팩 (총 20개)'·'2판 (60구)' = 20·60
+    cnt = [(m.start(), m.end(), int(m[1]), bool(re.fullmatch(NN_OUT, m[2]))) for m in re.finditer(rf"(\d+)\s*({unit}|{NN_OUT})(?![가-힣a-zA-Z])", rest)]
+    tot = re.search(rf"총\s*(\d+)\s*(?:{unit})(?![가-힣a-zA-Z])", rest)  # '4팩 (총 20개)' = 20
+    if not tot and (pm := re.search(rf"\(\s*(\d+)\s*(?!개입|입)(?:{unit})\s*\)", rest)):  # '2판 (60구)' = 60 — 다른 개수가 다 앞에 있고 맞을 때만('(30구) 2판'·'(5개입)' X)
+        oth, v = [c for c in cnt if not pm.start() <= c[0] < pm.end()], int(pm[1])
+        ins, ous = [c[2] for c in oth if not c[3] and c[2] != 1], [c[2] for c in oth if c[3]]
+        if v >= 2 and not (all(c[1] <= pm.start() for c in oth) and (v == math.prod(ins + ous) if ins else v % math.prod(ous) == 0)):
+            return None  # 괄호 개수가 앞 개수와 안 맞음('30구 2판(50구)'·'2판 (61구)'·'(30구) 2판') = 몇 개인지 모름
+        tot = pm
     tot = tot if tot and int(tot[1]) >= 2 else None
     if tot and (xw or plus):
         return None
@@ -2791,7 +2798,7 @@ def nn_unit(name, price, base):
     inn = big or inn[:1]  # '60구 1개'·'30구 1박스'의 1개 = 포장 1개
     out = [x for x in re.findall(rf"(\d+)\s*({NN_OUT})(?![가-힣])", rest) if not (base == "팩" and x[1] == "팩")] + [x for x in xw if pk(x[1])]
     xs = [x for x in xw if not pk(x[1])]
-    if not tot and (len(inn) > 1 and not vol or len(out) > 1 or len(xs) > 1 or out and any(not w for _, w in xs) or not vol and out and not big):  # 맨 'x 2' + '2판' = 같은 수 두 번인지 모름 · '특란 2판 (1개)' = 판당 구 모름
+    if not tot and (len(inn) > 1 or len(out) > 1 or len(xs) > 1 or out and any(not w for _, w in xs) or not vol and out and not big):  # 맨 'x 2' + '2판' = 같은 수 두 번인지 모름 · '특란 2판 (1개)' = 판당 구 모름
         return None
     n = int(tot[1]) if tot else math.prod([int(k) for k, _ in inn + out + xs]) * (sum(map(int, re.findall(r"\d+", plus[0]))) if plus else 1)
     if not vol:  # 낱개 무게·용량('햇반 210g 24개')은 셈 X
@@ -2835,7 +2842,7 @@ def nn_bundle(seen):
     q = q if q.get("d") == today and q.get("k") == tp[0] else {"t": now, "d": today, "k": tp[0], "r": {}}
     kws = list(dict.fromkeys(kw for _, _, kw, _ in reversed(tp[5])))  # 넓은 검색어(계란 30구) 먼저
     if NN_PREP <= hm < NN_AT:  # 미리 검색(실행마다 1번)
-        kw = HAS_CP and next((k for k in kws if k not in q["r"]), None)
+        kw = HAS_CP and next((k for k in kws if k not in q["r"] and k not in q.get("e", {})), None) or next((k for k in kws if k not in q["r"]), None)  # 안 해 본 검색어 먼저, 실패한 건 그다음
         if kw:
             try:
                 r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=20")
