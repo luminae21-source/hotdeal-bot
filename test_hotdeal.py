@@ -9500,7 +9500,7 @@ th88 = tb88[-1][1]
 assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "🏆 지금 살 만한 딜 TOP3 (12시)" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"], th88  # ①→②→③ · 성경김 2개 X
 assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
-assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 == tb88[-1][3] and s88["thlist"]["t"], o88.getvalue()  # (리뷰) 24시간 기록 = 올리기 전(실패 -> 다시 시도로 나가도 셈)
+assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 == tb88[-1][3] and s88["thlist"]["t"] and len(s88["bundles"]["ts"]) == 1, o88.getvalue()  # (리뷰) 24시간 기록 = 올리기 전(실패 -> 다시 시도로 나가도 셈)
 # 24시간 안 리스트에 2번 나온 상품 X -> 다음 후보 · ①~④ 다 해도 3개 밑 = Threads만 X(로그)
 s88 = {"thlist": {"t": 1, "h": [[TK("2026-11-11 15:05"), ["https://link.coupang.com/a/S2"]], [TK("2026-11-11 18:05"), ["https://link.coupang.com/a/S2"]]]}}
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88)
@@ -9512,10 +9512,12 @@ json.dump(P88 + [sh88(f"진열{k}", f"https://link.coupang.com/a/X{k}", "9,000")
 with contextlib.redirect_stdout(o88): H.top_deals({})
 assert "TOP3 (12시)" in tb88[-1][1] and "threads top12 3개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 채움 = 3개까지(6시간 넘은 딜 X)
 json.dump([p for p in P88 if p["url"] != SR88 + "2"], open("posts88.json", "w"), ensure_ascii=False); n88, m88 = len(tb88), len(tg88)
-with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
-assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][1]  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서
+s88b = {}
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88b)
+assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][1] and len(s88b["bundles"]["ts"]) == 1  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서 · (리뷰) Threads만 나가도 묶음 글 간격에 셈
 assert H.same_kind("성경김 지도표 재래김", "성경김 파래김") and H.same_kind("양반 전장김", "광천 도시락김") and H.same_kind("홈플래닛 2단 석영관 히터", "모리츠 5방향 전기히터") and H.same_kind("홈플래닛 2단 석영관 히터, NDF2216, 화이트", "신일 4단 석영관 히터, SEH-NL20BK, 블랙") and H.same_kind("한일전기 컨벡터 히터 스탠드 2kw 3단조절", "신일 프리미엄 컨벡터 히터 스탠드 벽걸이 겸용") \
     and not H.same_kind("니코 미니 오일 라디에이터, WH-M05", "청우식품 미니 참깨스틱, 370g, 2개") and not H.same_kind("티키 입는 오버나이트 대형 8개입", "충성 포켓용 핫팩 대형 160g, 30개") and not H.same_kind("홈플래닛 히터, NDFKB2401, 화이트", "코멧 키친타월, 6롤, 화이트") \
+    and H.same_kind("오뚜기 진라면 멀티팩", "농심 신라면 5개") and not H.same_kind("크린랩 니트릴장갑 100개입", "웰킵스 마스크 1개입") and not H.same_kind("코튼 화장솜 500매입", "숨37 패드 90매입") and not H.same_kind("신일 히터 화이트", "코멧 키친타월 화이트") \
     and not H.same_kind("코멧 화장지 30롤", "코멧 핫팩 100g 30개") and not H.same_kind("곰곰 국산 햅쌀 10kg", "곰곰 우유 1L") and not H.same_kind("동원 참치", "")  # 브랜드 같아도 품목 다르면 OK
 # (리뷰) 긴 링크(링크프라이스 ~260자) 딜이 앞에 있어도 3개 채움(그 딜은 빠짐) · 💄 = ②~④ 채움 셈 X(💄 칸으로)
 LP88 = "https://click.linkprice.com/click.php?m=gmarket&a=A100&l=9999&u_id=x&tu=" + "a" * 190
@@ -9523,6 +9525,9 @@ json.dump(P88 + [ch88("2026-11-12 10:30", "지마켓 수세미 10개", LP88, fir
 with contextlib.redirect_stdout(o88): H.top_deals({})
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", tb88[-1][1]) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"] and "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue(), (tb88[-1][1], o88.getvalue())
 assert "수세미" not in tb88[-1][1] and tb88[-1][1].index("💄 화장품") < tb88[-1][1].index("선크림") and len(tb88[-1][1]) <= 480, tb88[-1][1]
+json.dump(P88 + [dict(ch88("2026-11-12 10:40", "숨37 시크릿 멀티 패드 70매", "https://link.coupang.com/a/B2", fire=False), cat="beauty")], open("posts88.json", "w"), ensure_ascii=False)
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
+assert "TOP3 (12시)" in tb88[-1][1] and not re.search(r"[1-5]️⃣ 숨37", tb88[-1][1]) and H.th_beauty("숨37 시크릿 멀티 패드 70매") == 0, tb88[-1][1]  # (리뷰) 화장품 낱말에 없어도 사이트 품목 칸 💄(cat_of) = 채움 X
 json.dump(P88 + [ch88("2026-11-12 10:40", "라운드랩 독도 선크림 50ml", LP88 + "b", fire=False)], open("posts88.json", "w"), ensure_ascii=False)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
 assert "TOP3 (12시)" in tb88[-1][1] and "선크림" not in tb88[-1][1] and len(tb88[-1][1]) <= 480, tb88[-1][1]  # 💄 줄까지 넣으면 500자 넘음 = 💄 X(리스트는 그대로)

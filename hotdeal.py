@@ -944,19 +944,21 @@ TH_LIST_MIN, TH_FILL_HOURS, TH_FILL_REV, TH_LIST_REPEAT = 3, 6, 300, 2  # KK(10/
 
 
 KIND_ONE = "김쌀귤떡빵"  # 한 글자 품목(전장김·파래김·도시락김 = 김)
-KIND_NOT = r"미니|소형|중형|대형|특대형|데일리|여성|남성|여성용|남성용|아동용|유아용|개입|인용|전기|겨울|휴대용|스마트|라운드|고농축|워셔블|기모|스탠드|벽걸이|캠핑용|발열|무소음|저소음|무선|가정용|업소용|일회용|순한|저자극|약산성|고급형|일반형|신형|개선형"  # 종류가 아닌 꾸밈 낱말(같은 종류 셈 X — 10/26 실제 진열 300개 짝 비교)
+KIND_NOT = (r"미니|소형|중형|대형|특대형|데일리|여성|남성|여성용|남성용|아동용|유아용|전기|겨울|휴대용|스마트|라운드|고농축|워셔블|기모|스탠드|벽걸이|캠핑용|발열|무소음|저소음|무선|가정용|업소용|일회용|순한|저자극|약산성|고급형|일반형|신형|개선형|"
+            r"화이트|블랙|그레이|베이지|아이보리|네이비|핑크|블루|레드|그린|브라운|실버|골드|라이트")  # 종류가 아닌 꾸밈·색 낱말(같은 종류 셈 X — 10/26 실제 진열·딜 400개 짝 비교)
 
 
 def kind_words(name):
-    """같은 종류 셈 낱말: 쿠팡 '상품, 모델명, 색'은 쉼표 앞만 · 괄호·꾸밈말(TH_MOD·IG_KIND_SKIP·KIND_NOT)·브랜드(첫 낱말) 빼고 두 글자↑ 한글 낱말."""
-    ws = [w for w in re.findall(r"[가-힣]{2,}", re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", re.sub(TH_MOD, " ", name.split(",")[0]))) if not re.fullmatch(IG_KIND_SKIP, w)]
+    """같은 종류 셈 낱말: 쿠팡 '상품, 모델명, 색'은 쉼표 앞만 · 괄호·꾸밈말(TH_MOD·IG_KIND_SKIP·KIND_NOT)·숫자 붙은 단위·브랜드(첫 낱말) 빼고 두 글자↑ 한글 낱말."""
+    ws = [w for w in re.findall(r"(?<![0-9가-힣])[가-힣]{2,}", re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", re.sub(TH_MOD, " ", name.split(",")[0]))) if not re.fullmatch(IG_KIND_SKIP, w)]  # 숫자 붙은 단위(100개입·3단조절) X
     return [w for w in ws[1:] or ws if not re.fullmatch(KIND_NOT, w)]
 
 
 def same_kind(a, b):
-    """같은 종류(KK — 리스트 안 2개 X, '성경김 2개'): 두 이름의 종류 낱말 중 하나라도 같거나 한쪽이 다른 쪽으로 끝남(히터·전기히터 — 긴 쿠팡 이름 '컨벡터 히터 스탠드 3단조절'도)
-    또는 끝 글자가 같은 한 글자 품목(KIND_ONE — 재래김·파래김). 브랜드만 같으면 다른 종류(코멧 화장지·코멧 핫팩)."""
-    return any(u.endswith(v) or v.endswith(u) or u[-1] == v[-1] and u[-1] in KIND_ONE for u in kind_words(a) for v in kind_words(b))
+    """같은 종류(KK — 리스트 안 2개 X, '성경김 2개'): 두 이름의 종류 낱말 중 하나라도 끝 두 글자가 같음(히터·전기히터·카본히터, 진라면·신라면, 세탁세제·주방세제 — 긴 쿠팡 이름
+    '컨벡터 히터 스탠드 3단조절'도) 또는 끝 글자가 같은 한 글자 품목(KIND_ONE — 재래김·파래김). 브랜드만 같으면 다른 종류(코멧 화장지·코멧 핫팩).
+    shortcut: 끝 두 글자라 선풍기·온풍기도 같은 종류로 봄 — 리스트에서 다음 후보로 넘어갈 뿐이라 둠."""
+    return any(u[-2:] == v[-2:] or u[-1] == v[-1] and u[-1] in KIND_ONE for u in kind_words(a) for v in kind_words(b))
 
 
 def short_name(t):
@@ -2693,7 +2695,7 @@ def top_deals(seen):
         if src > 1 and len(pick) >= TH_LIST_MIN or len(pick) == 5:  # ②~④ = ①(회차 TOP 수수료 딜 — 5개까지)이 3개 밑일 때 3개까지만 채움
             break
         nm = short_name(title_of(p["text"]))
-        if not pr or p["url"] in us or any(same_kind(nm, short_name(title_of(q["text"]))) for q, *_ in pick) or src > 1 and th_beauty(nm) \
+        if not pr or p["url"] in us or any(same_kind(nm, short_name(title_of(q["text"]))) for q, *_ in pick) or src > 1 and (th_beauty(nm) or cat_of(p) == "beauty") \
                 or len(render(pick + [(p, pr, mk, src)], [])) + max(0, TH_LIST_MIN - len(pick) - 1) * 80 > 480:  # 같은 상품·같은 종류 X · 💄 = 채움 셈 X(💄 칸 따로) · 3개 칸까지 남은 줄마다 80자 남겨 둠 — 긴 링크(링크프라이스 ~260자) 하나가 3개를 못 채우게 막으면 그 딜 X, 다음 후보
             continue
         pick.append((p, pr, mk, src))
@@ -2711,6 +2713,8 @@ def top_deals(seen):
         beauty.append((p, line))
     seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl]]]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
     th_bundle(seen, f"top{hrs[-1]}", render(pick, beauty), th_url(inl[0], posts.index(inl[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
+    if len(top) < 3:  # 텔레그램 리스트 없이 Threads만 = 묶음 글 10분 간격·1시간 글 수에 셈(수다·달력 글처럼 · 텔레그램도 나갔으면 위에서 1번만)
+        bundled(seen)
     print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick).items())))
 
 
