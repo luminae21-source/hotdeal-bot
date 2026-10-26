@@ -4442,7 +4442,7 @@ assert f"예: 화장지 롤당, 얼마면 \"오 싸다\" 싶으세요? / {n27[0]
 o3 = poll27("water", "life", {"q": "물 떨어지면 어떻게 하세요?", "opts": ["2L 6개 바로 주문", "수돗물 끓여 먹음", "편의점 생수 버팀", "가족이 사겠지"]})
 assert o3[0] == "🗳️ 물 떨어지면 어떻게 하세요?" + TAIL27 and len(o3[1]) == 4
 for t, opts in (o1, o2, o3):  # 보기 4개·25바이트 이하·보기 ~요 0 · 질문 = 존댓말 · '최저가'·'알려줌' X · 대가성 문구·링크 X(PP)
-    assert len(opts) == 4 and all(1 <= len(o.encode()) <= 25 for o in opts) and not any(re.search(H.VOICE_YO, x) for x in opts) and re.search(r"(?:요|죠|[은는])\W*$", t.split("\n")[0]) \
+    assert len(opts) == 4 and all(1 <= len(o.encode()) <= 25 for o in opts) and not any(re.search(H.VOICE_YO, x) for x in opts) and re.search(r"(?<![필중주수소])(?:요|죠|[은는])[^가-힣]*$", t.split("\n")[0]) \
         and "최저가" not in t and "알려줌" not in t and "http" not in t and not t.startswith(H.NOTE_STARTS), (t, opts)
 assert pr27[0][1] == {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}}
 GOOD27 = {"q": Q27, "opts": ["박스째 쟁임", "5개입이면 충분", "땡길 때 삼", "가족이 사겠지"]}
@@ -4455,6 +4455,12 @@ assert poll27("ramen", "life", {"q": "라면은 몇 개쯤 있어야 편하세�
 svrv27 = H.review; H.review = lambda where, text, lines, facts="", valid=None, **k: {lines[0]: RV27 if valid(lines[0], RV27) else ""}
 RV27 = "라면 쟁이는 스타일 골라봐요"; assert poll27("ramen", "life", GOOD27) == H.poll_text(r27["ramen"])  # 재검토가 고친 질문도 존댓말·시키는 말 검사 -> 걸리면 지금 틀
 RV27 = "라면은 몇 개 쟁여 두세요?"; assert poll27("ramen", "life", GOOD27)[0] == "🗳️ 라면은 몇 개 쟁여 두세요?" + TAIL27; H.review = svrv27
+for q27, w27 in (("라면 쟁이는 스타일, 하나만 골라 주실래요?", "'골라 주실래요' 시키는 말"), ("라면 쟁이는 스타일, 하나 선택해 주세요", "'선택해 주세요' 시키는 말"), ("쌀쌀해지니 커피믹스 하나 고르세요!", "'고르세요' 시키는 말"),  # PP 리뷰: 존댓말 시키는 말
+                 ("라면 쟁이는 스타일은? 투표 부탁드려요", "'부탁드려요' 시키는 말"), ("커피믹스 몇 개 쟁이세요? 이제 쌀쌀하니까요", "계절 말이 끝에 붙음"), ("커피믹스 몇 개 쟁이세요, 쌀쌀한 가을이니까요 ☕", "계절 말이 끝에 붙음"),  # '?' 뒤·이모지 뒤 계절 꼬리
+                 ("커피믹스 몇 개 필요?", "존댓말로 묻기"), ("라면 개당 최저 가격, 얼마쯤일 것 같으세요?", "'최저 가' 쓰면 안 됨"), ("라면 개당 역대 최저, 얼마였을 것 같으세요?", "'역대 최저' 쓰면 안 됨")):
+    poll27("ramen", "life", {"q": q27, "opts": GOOD27["opts"]}, GOOD27); assert w27 in pr27[1][0], (q27, pr27[1][0][-80:])
+for q27 in ("화장지 마지막 한 롤 남았을 때 나는? ㅋㅋ", "화장지 떨어진 거, 누가 말해줘야 아세요?", "커피믹스, 쌀쌀한 요즘 몇 봉 쟁이세요?", "추운 날엔 라면 몇 개 쟁이세요?", "다들 라면 뭐 고르세요?"):  # 끝 ㅋㅋ · '말해줘야' · 앞·가운데 계절 말 · 묻는 '고르세요?' = 통과
+    assert poll27("ramen", "life", {"q": q27, "opts": GOOD27["opts"]})[0].startswith("🗳️ " + q27 + "\n") and len(pr27) == 1, (q27, pr27[-1][0][-80:])
 poll27("ramen", "life", {"q": "라면 최저가 언제 사세요?", "opts": GOOD27["opts"]}, GOOD27); assert "'최저가' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
 poll27("ramen", "life", {"q": Q27, "opts": ["신라면 박스째", "b", "c", "d"]}, GOOD27); assert "'신라면' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
 assert poll27("ramen", "life", {"q": Q27, "opts": ["땡길 때 편의점 직행", "b", "c", "d"]}, GOOD27)[1] == GOOD27["opts"] and "'땡길 때 편의점 직행' 너무 김(한글 8자까지)" in pr27[1][0], pr27  # 11자 = 27바이트 -> 1번 다시
@@ -4479,7 +4485,7 @@ assert k27 == {"life", "price"}, k27
 # PP(10/26 진우 '무례하지 않지만 위트있게'): 예시(커피믹스·라면·화장지·가격형) 보기 = 25바이트 안·~요 X · 질문 = 존댓말·시키는 말 X·계절 말 끝 X · 끝 줄 '최저가'·'알려줌' X · 오늘 21:40 글 = 걸림
 ex27 = [(m[1], m[2].split(" · ")) for m in re.finditer(r"예: ([^/|]+?) / ([^|\"]+?)(?= \||$)", H.POLL_KIND["life"])]
 ex27 += [('라면 개당, 얼마면 "오 싸다" 싶으세요?', ["500원이면 삼", "600원까진 OK", "700원부턴 고민", "가격 안 보고 집음"])]
-okq = lambda q: re.search(r"(?:요|죠|[은는])\W*$", q) and not re.search(H.POLL_ORDER, q) and not re.search(H.POLL_SEASON_TAIL, q)
+okq = lambda q: re.search(r"(?<![필중주수소])(?:요|죠|[은는])[^가-힣]*$", q) and not re.search(H.POLL_ORDER, q) and not re.search(H.POLL_SEASON_TAIL, q)
 assert len(ex27) == 4 and all(okq(q) and len(os) == 4 and all(len(o.encode()) <= 25 and not re.search(H.POLL_YO, o) for o in os) for q, os in ex27), ex27
 assert ex27[0][1][-1] == "회사 탕비실 거" and "예: 화장지 마지막 한 롤 남았을 때 나는? / 이미 주문함 · 키친타올로 버팀 · 마트 갈 때 삼 · 가족이 사겠지" in H.POLL_KIND["life"]
 assert H.POLL_TAIL == "내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌" and "최저가" not in H.POLL_TAIL + H.poll_text(r27["ramen"])[0] and "'최저가' X" in H.POLL_PROMPT and "생활 공감 위트" in H.POLL_PROMPT

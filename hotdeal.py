@@ -6544,7 +6544,7 @@ def threads_deals(seen):
 CAL_HOUR, CAL_DAYS, CAL_LINK = (9, 40), 14, f"{SITE}events/?ref=thi"  # ref=thi = 정보 글 유입 따로(GoatCounter) · 10/25 2주 비교 뒤 진우·Cowork '정보 글 하루 1~2개 — 딜 글 수·간격은 그대로, 그 위에 더하기만': 아침 날씨(7:30) 뒤 '🗓 쇼핑 달력'(promos.json 앞으로 2주 · 바뀐 날만 · Threads만)
 WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 30), (6, 20)  # 10/15 23:40 진우 '계절·날씨 맞춰 추천·간식·일상': 아침 날씨 글 · 간식 3 · 운영 일지(Threads) · 일요일(요일 6) 20시 시즌 키워드 DM. None = 끔
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
-POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 반말 질문·보기 4개 — poll_ai) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
+POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 질문·보기 4개 — poll_ai · PP 10/26~ 존댓말 질문) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
 POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25 UTF-8 바이트 = 한글 8자 — 공식 문서 create-posts/polls·10/24 HTTP 400)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
@@ -7682,7 +7682,7 @@ def snack_post(seen):
 
 
 def poll_opts(low):
-    """기록 최저 단위가격 근처 구간 보기 4개 — 간격 = 최저의 1/3 이하 1·2·5×10ⁿ원: 120 -> 120원 이하 / 140원까지 / 160원까지 / 더 줘도 사요."""
+    """기록 최저 단위가격 근처 구간 보기 4개 — 간격 = 최저의 1/3 이하 1·2·5×10ⁿ원: 120 -> 120원 이하 / 140원까지 / 160원까지 / 가격 안 보고 집음."""
     s = max((x for x in (10, 20, 50, 100, 200, 500, 1000, 2000, 5000) if x <= low / 3), default=10)
     a = max(s, round(low / s) * s)
     return [f"{a:,}원 이하", f"{a + s:,}원까지", f"{a + 2 * s:,}원까지", "가격 안 보고 집음"]  # 보기 = 짧은 칩(~요 X — PP)
@@ -7703,8 +7703,9 @@ POLL_PROMPT = """Threads 가격 투표 글을 써 주세요. 품목: {name}(핫�
 - {fun}
 - {kind}"""  # PP(10/26 진우 '무례하지 않지만 위트있게' — 21:40 '골라봐'·끝에 붙은 계절 말·'알려줌'·뜻 없는 말장난)
 POLL_TAIL = "내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌"  # 투표 글 끝 줄(Claude 글·지금 틀 같이 — '최저가'·'알려줌' X)
-POLL_ORDER = r"(?:골라|찍어|맞혀|맞춰|말해|알려|눌러|투표해)\s*(?:봐|줘|주세요|보세요)"  # 시키는 말(질문은 묻기만 — '골라 먹는'·'찍어 먹는'은 그대로)
-POLL_SEASON_TAIL = r"[,·]\s*[^,·]{0,14}(?:가을|겨울|여름|봄|날씨|쌀쌀|추운|추워|더운|더워|장마|환절기)[가-힣]*\s*[?!.~]*\s*$"  # 계절 말이 질문 끝에 덧붙음('…골라봐, 쌀쌀한 가을엔')
+POLL_ORDER = (r"(?:골라|찍어|맞혀|맞춰|말해|알려|눌러|선택해|투표해)\s*(?:봐|줘|주세요|보세요|주실래요|보실래요|주시겠어요)(?![야서])|"  # 시키는 말(질문은 묻기만 — '골라 먹는'·'찍어 먹는'·'누가 말해줘야'는 그대로)
+              r"(?:고르|선택하|누르|투표하)세요(?!\s*[?？])|부탁(?:드려요|드립니다|해요)")  # PP 리뷰: 존댓말 시키는 말('골라 주실래요?'·'선택해 주세요'·'하나 고르세요!')
+POLL_SEASON_TAIL = r"[,·?？][^,·?？]{0,14}(?:가을|겨울|여름|봄|날씨|쌀쌀|추운|추워|더운|더워|장마|환절기)[가-힣]*(?:\s+[가-힣]+)?[^가-힣]*$"  # 계절 말이 질문 끝에 덧붙음('…골라봐, 쌀쌀한 가을엔'·'…쟁이세요? 이제 쌀쌀하니까요 ☕')
 POLL_KIND = {  # 10/22 진우 시안 고름(공감형 보기·마지막 보기는 가볍게 웃기게) · PP(10/26) 질문 = 존댓말·마지막 보기 = 생활 공감 위트: 글마다 무작위 가 생활형 / 나 가격형
     "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. "
             "예: 쌀쌀해지니 커피믹스 손이 자주 가죠, 쟁이는 스타일은? / 박스째 쟁임 · 서랍 속 비상용 · 쌀 때만 출동 · 회사 탕비실 거 "
@@ -7729,12 +7730,12 @@ def poll_ai(rec):
     name, unit, rows = rec
     kind, opts0 = random.choice(("life", "price")), poll_opts(rows[0][0])
     nums = wons(" ".join(opts0)) if kind == "price" else set()
-    ban = "|".join((OTHER_STORES, SAVE_STORES.replace("토스", "토스(?!트)"), POLL_BRANDS, r"https?://|www\.|\.com|\.kr|t\.me|링크|광고|수수료|최저가", WU_HYPE))
+    ban = "|".join((OTHER_STORES, SAVE_STORES.replace("토스", "토스(?!트)"), POLL_BRANDS, r"https?://|www\.|\.com|\.kr|t\.me|링크|광고|수수료|최저\s*가|역대\s*최저", WU_HYPE))
     def why(s, q=False):  # 걸린 이유('' = 통과) · q = 질문 줄(존댓말로 묻기 · 보기 = ~요 X)
         m, o = re.search(ban, s, re.I), q and re.search(POLL_ORDER, s)
         return ("빈 칸" if not s else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else f"'{r}' 무례" if (r := rude(s))
                 else (f"'{o[0]}' 시키는 말(묻기만)" if o else f"'{s}' 계절 말이 끝에 붙음(앞으로)" if re.search(POLL_SEASON_TAIL, s)
-                      else f"'{s}' 존댓말로 묻기(~요·~죠·~은?)" if not re.search(r"(?:요|죠|[은는])\W*$", s) else "") if q
+                      else f"'{s}' 존댓말로 묻기(~요·~죠·~은?)" if not re.search(r"(?<![필중주수소])(?:요|죠|[은는])[^가-힣]*$", s) else "") if q
                 else f"'{s}' ~요로 끝남" if any(re.search(POLL_YO, x) for x in re.split(r"[,·/()]", s)) else "")
     a, b, c = (re.match(r"[\d,]+원", x)[0] for x in opts0[:3])
     prompt = POLL_PROMPT.format(name=name, unit=unit, fun=TH_FUN.replace("\n", "\n- "), kind=POLL_KIND[kind].format(unit=unit, name=name, nums=", ".join(opts0[:3]), a=a, b=b, c=c))
@@ -7771,7 +7772,7 @@ def poll_reply_text(k, rec, pa):
 
 
 def poll_post(seen):
-    """POLL_HOUR(21:40) Threads 가격 투표(10/17 진우 '유입 늘리기 ①', 10/22 '재미있게' — Claude 반말 질문·보기, poll_ai): 어제 투표가 있으면 먼저 결과 답글(댓글 권한 없으면 건너뜀·알림, 실패해도 다시 X),
+    """POLL_HOUR(21:40) Threads 가격 투표(10/17 진우 '유입 늘리기 ①', 10/22 '재미있게' — Claude 질문·보기, poll_ai · PP 10/26 존댓말 질문): 어제 투표가 있으면 먼저 결과 답글(댓글 권한 없으면 건너뜀·알림, 실패해도 다시 X),
     그다음 오늘 투표 1개 — 기록 PRICE_MIN개↑ 품목 중 최근 POLL_REUSE일 안 쓴 것, 기록 많은 순. 묶음 간격·시간당 상한(busy)·Threads 45분 간격 안에서(막히면 다음 실행에, 2시간 안)."""
     tok, key = E.get("THREADS_TOKEN"), due(POLL_HOUR, "poll", seen)
     if not tok or not key:
