@@ -7685,24 +7685,32 @@ def poll_opts(low):
     """기록 최저 단위가격 근처 구간 보기 4개 — 간격 = 최저의 1/3 이하 1·2·5×10ⁿ원: 120 -> 120원 이하 / 140원까지 / 160원까지 / 더 줘도 사요."""
     s = max((x for x in (10, 20, 50, 100, 200, 500, 1000, 2000, 5000) if x <= low / 3), default=10)
     a = max(s, round(low / s) * s)
-    return [f"{a:,}원 이하", f"{a + s:,}원까지", f"{a + 2 * s:,}원까지", "더 줘도 사요"]
+    return [f"{a:,}원 이하", f"{a + s:,}원까지", f"{a + 2 * s:,}원까지", "가격 안 보고 집음"]  # 보기 = 짧은 칩(~요 X — PP)
 
 
 def poll_text(rec):
     """투표 글 (본문, 보기) — 링크·상품명·몰 이름 없음 = 대가성 문구 X."""
     name, unit, rows = rec
-    return f"🗳️ {name} {unit} 얼마면 '싸다' 싶어요?\n\n내일 이 글 답글로 핫딜픽 기록 최저가 알려드릴게요", poll_opts(rows[0][0])
+    return f"🗳️ {name} {unit}, 얼마면 \"오 싸다\" 싶으세요?\n\n{POLL_TAIL}", poll_opts(rows[0][0])
 
 
-POLL_PROMPT = """Threads 가격 투표 글을 반말로 써 주세요. 품목: {name}(핫딜픽이 {unit} 가격 기록을 모으는 생활용품).
-- q = 질문 한 줄(40자 안팎), opts = 보기 정확히 4개(짧게 — Threads가 보기를 25바이트까지만 받음: 한글 1자 3바이트·숫자·띄어쓰기·기호 1바이트, 한글만이면 8자).
-- 반말·공감형('~요'로 끝나는 말 X). 마지막 보기는 가볍게 웃긴 것.
-- 상품명·브랜드(신라면·삼다수·햇반 같은 것)·쇼핑몰·편의점 이름·링크·광고 문구 X, 과장(역대급·무조건·손해) X.
+POLL_PROMPT = """Threads 가격 투표 글을 써 주세요. 품목: {name}(핫딜픽이 {unit} 가격 기록을 모으는 생활용품).
+- q = 질문 한 줄(40자 안팎) — 친근한 존댓말로 묻기(~요·~죠·'~은?'·'~는?'로 끝남). '골라봐·찍어·맞혀봐'처럼 시키는 말 X.
+- 계절·날씨 말은 넣을 거면 질문 앞에 자연스럽게('쌀쌀해지니 …') — 질문 끝에 덧붙이기 X.
+- opts = 보기 정확히 4개, 짧은 칩('~요'로 끝 X — '쟁임'·'삼'·'충분'처럼). Threads가 보기를 25바이트까지만 받음: 한글 1자 3바이트·숫자·띄어쓰기·기호 1바이트, 한글만이면 8자.
+- 마지막 보기 = 누구나 '아 ㅋㅋ' 하는 생활 공감 위트(탕비실·비상용·가족이 사겠지 같은) — 뜻이 안 통하는 말장난 X.
+- 상품명·브랜드(신라면·삼다수·햇반 같은 것)·쇼핑몰·편의점 이름·링크·광고 문구 X, 과장(역대급·무조건·손해) X, '최저가' X.
 - {fun}
-- {kind}"""
-POLL_KIND = {  # 10/22 진우 시안 고름(반말·공감형 보기·마지막 보기는 가볍게 웃기게): 글마다 무작위 가 생활형 / 나 가격형
-    "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입이면 충분 · 땡기면 편의점행 · 라면 끊음(진짜)",
-    "price": "유형: 가격형 — '{unit} 얼마면 오 싸다 해?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 해? / {a}이면 삼 · {b}까진 OK · {c}부턴 고민 · 가격 안 보고 집음"}
+- {kind}"""  # PP(10/26 진우 '무례하지 않지만 위트있게' — 21:40 '골라봐'·끝에 붙은 계절 말·'알려줌'·뜻 없는 말장난)
+POLL_TAIL = "내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌"  # 투표 글 끝 줄(Claude 글·지금 틀 같이 — '최저가'·'알려줌' X)
+POLL_ORDER = r"(?:골라|찍어|맞혀|맞춰|말해|알려|눌러|투표해)\s*(?:봐|줘|주세요|보세요)"  # 시키는 말(질문은 묻기만 — '골라 먹는'·'찍어 먹는'은 그대로)
+POLL_SEASON_TAIL = r"[,·]\s*[^,·]{0,14}(?:가을|겨울|여름|봄|날씨|쌀쌀|추운|추워|더운|더워|장마|환절기)[가-힣]*\s*[?!.~]*\s*$"  # 계절 말이 질문 끝에 덧붙음('…골라봐, 쌀쌀한 가을엔')
+POLL_KIND = {  # 10/22 진우 시안 고름(공감형 보기·마지막 보기는 가볍게 웃기게) · PP(10/26) 질문 = 존댓말·마지막 보기 = 생활 공감 위트: 글마다 무작위 가 생활형 / 나 가격형
+    "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. "
+            "예: 쌀쌀해지니 커피믹스 손이 자주 가죠, 쟁이는 스타일은? / 박스째 쟁임 · 서랍 속 비상용 · 쌀 때만 출동 · 회사 탕비실 거 "
+            "| 예: 라면은 몇 개쯤 있어야 마음이 편하세요? / 한 박스는 기본 · 5개면 충분 · 땡길 때 삼 · 오늘 밤도 참는 중 "
+            "| 예: 화장지 마지막 한 롤 남았을 때 나는? / 이미 주문함 · 키친타올로 버팀 · 마트 갈 때 삼 · 가족이 사겠지",
+    "price": "유형: 가격형 — '{unit} 얼마면 \"오 싸다\" 싶으세요?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 싶으세요? / {a}이면 삼 · {b}까진 OK · {c}부턴 고민 · 가격 안 보고 집음"}
 POLL_BRANDS = (r"신라면|진라면|너구리|짜파게티|안성탕면|컵누들|사발면|농심|삼양|오뚜기|팔도|삼다수|아이시스|백산수|풀무원|크리넥스|깨끗한나라|모나리자|잘풀리는|"  # 기록 품목(PRICE_ITEMS) 브랜드
                r"퍼실|리큐|(?<![짠앱재])테크|피죤|맥심|모카\s*골드|화이트\s*골드|카누|베베숲|몽드드|햇반|엘라스틴|케라시스|GS25|세븐일레븐|이마트24|(?<![A-Za-z])CU(?![A-Za-z])")  # + 편의점(몰)
 POLL_YO = r"(?<![필중주수소])요[?!.~ㅋㅎ\s]*$|죠[?!.~ㅋㅎ\s]*$|(?<![다아])니다[?!.~ㅋㅎ\s]*$"  # 투표 보기 = 끝에서만(‘요 정도면’·‘참치마요’는 반말)
@@ -7715,17 +7723,19 @@ def wons(s):
 
 
 def poll_ai(rec):
-    """10/22 진우 '재미있게': Claude가 반말 질문·보기 4개(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만) -> (본문, 보기).
-    검사(질문 60자·보기 4개 1~25바이트(th_poll)·끝이 ~요 X·몰·편의점·브랜드(POLL_BRANDS)·링크·광고·과장 X·없는 금액 X) 실패 -> 걸린 말을 알려 주고 1번 다시, 그래도면 지금 틀(poll_text).
+    """10/22 진우 '재미있게' · PP(10/26 '무례하지 않지만 위트있게'): Claude가 존댓말 질문·짧은 칩 보기 4개(글마다 무작위 가 생활형 / 나 가격형 — 가격 숫자는 poll_opts 구간 값만) -> (본문, 보기).
+    검사(질문 60자·존댓말로 끝·시키는 말(골라봐·찍어) X·계절 말이 끝에 X · 보기 4개 1~25바이트(th_poll)·끝이 ~요 X · 몰·편의점·브랜드(POLL_BRANDS)·링크·광고·과장·'최저가' X·없는 금액 X) 실패 -> 걸린 말을 알려 주고 1번 다시, 그래도면 지금 틀(poll_text).
     링크·상품명 없음 = 대가성 문구 X 그대로."""
     name, unit, rows = rec
     kind, opts0 = random.choice(("life", "price")), poll_opts(rows[0][0])
     nums = wons(" ".join(opts0)) if kind == "price" else set()
-    ban = "|".join((OTHER_STORES, SAVE_STORES.replace("토스", "토스(?!트)"), POLL_BRANDS, r"https?://|www\.|\.com|\.kr|t\.me|링크|광고|수수료", WU_HYPE))
-    def why(s):  # 걸린 이유('' = 통과)
-        m = re.search(ban, s, re.I)
-        return ("빈 칸" if not s else f"'{s}' ~요로 끝남" if any(re.search(POLL_YO, x) for x in re.split(r"[,·/()]", s))
-                else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else f"'{r}' 무례" if (r := rude(s)) else "")
+    ban = "|".join((OTHER_STORES, SAVE_STORES.replace("토스", "토스(?!트)"), POLL_BRANDS, r"https?://|www\.|\.com|\.kr|t\.me|링크|광고|수수료|최저가", WU_HYPE))
+    def why(s, q=False):  # 걸린 이유('' = 통과) · q = 질문 줄(존댓말로 묻기 · 보기 = ~요 X)
+        m, o = re.search(ban, s, re.I), q and re.search(POLL_ORDER, s)
+        return ("빈 칸" if not s else f"'{m[0]}' 쓰면 안 됨" if m else f"'{s}' 재료에 없는 금액" if wons(s) - nums else f"'{r}' 무례" if (r := rude(s))
+                else (f"'{o[0]}' 시키는 말(묻기만)" if o else f"'{s}' 계절 말이 끝에 붙음(앞으로)" if re.search(POLL_SEASON_TAIL, s)
+                      else f"'{s}' 존댓말로 묻기(~요·~죠·~은?)" if not re.search(r"(?:요|죠|[은는])\W*$", s) else "") if q
+                else f"'{s}' ~요로 끝남" if any(re.search(POLL_YO, x) for x in re.split(r"[,·/()]", s)) else "")
     a, b, c = (re.match(r"[\d,]+원", x)[0] for x in opts0[:3])
     prompt = POLL_PROMPT.format(name=name, unit=unit, fun=TH_FUN.replace("\n", "\n- "), kind=POLL_KIND[kind].format(unit=unit, name=name, nums=", ".join(opts0[:3]), a=a, b=b, c=c))
     try:
@@ -7733,14 +7743,14 @@ def poll_ai(rec):
         for _ in (0, 1):
             r = ai_json(prompt + again, {"q": {"type": "string"}, "opts": {"type": "array", "items": {"type": "string"}}})
             q, opts = re.sub(r"\s+", " ", str(r.get("q") or "")).strip(), [re.sub(r"\s+", " ", str(o)).strip() for o in r.get("opts") or []]
-            bad = [x for x in [f"질문 {len(q)}자" if len(q) > 60 else "", f"보기 {len(opts)}개" if len(opts) != 4 else "", why(q), *map(why, opts),  # 내용 먼저(다시 = 앞 4개만)
+            bad = [x for x in [f"질문 {len(q)}자" if len(q) > 60 else "", f"보기 {len(opts)}개" if len(opts) != 4 else "", why(q, True), *map(why, opts),  # 내용 먼저(다시 = 앞 4개만)
                                *(f"'{o}' 너무 김(한글 8자까지)" for o in opts if len(o.encode()) > 25)] if x]
             if not bad and (any(season_bad(o) for o in opts) or (q := review("poll", "\n".join([q] + [f"(보기) {o}" for o in opts]), [q], f"상품: {name}\n단가: {unit}\n보기 가격: {', '.join(opts0[:3])}",
-                                                                                      valid=lambda o, n: len(n) <= 60 and not why(n)).get(q, q)) == ""):  # Z 재검토 = 질문 줄(보기는 짧은 칩 — 계절 낱말만) · 뺌·보기 걸림 = 지금 틀
+                                                                                      valid=lambda o, n: len(n) <= 60 and not why(n, True)).get(q, q)) == ""):  # Z 재검토 = 질문 줄(보기는 짧은 칩 — 계절 낱말만) · 뺌·보기 걸림 = 지금 틀
                 raise ValueError("재검토에 걸림")
             if not bad:
                 print("poll ai", kind, q, "|", " / ".join(opts))
-                return f"🗳️ {q}\n\n내일 이 시간에 답글로 핫딜픽 기록 최저가 알려줌", opts
+                return f"🗳️ {q}\n\n{POLL_TAIL}", opts
             again = "\n\n다시: " + " · ".join(bad[:4])
         raise ValueError(f"검사 실패: {bad}")
     except Exception as e:  # Claude 실패·검사 실패 = 지금 틀
@@ -7749,14 +7759,14 @@ def poll_ai(rec):
 
 
 def poll_reply_text(k, rec, pa):
-    """어제 투표 결과 답글: '📊 어제 1등은 "보기" N% ㅋㅋ'(0명 = '아무도 안 찍음 ㅋㅋ') + '쟁일 거면 … → 기록 최저(게시 날짜)' + 기록 페이지 — 사이트 링크 글 규칙 그대로(맨 앞 대가성 문구 = 기록 딜들의 프로그램, 👉 링크·팔로우·텔레그램 줄)."""
+    """어제 투표 결과 답글: '📊 어제 1등은 "보기" N%!'(0명 = '조용했지만 약속대로 알려드릴게요') + '핫딜픽 기록 중 제일 쌌던 가격: …(게시 날짜)' + 기록 페이지 — 사이트 링크 글 규칙 그대로(맨 앞 대가성 문구 = 기록 딜들의 프로그램, 👉 링크·팔로우·텔레그램 줄)."""
     name, unit, rows = rec
     low, n, ks = rows[0], (pa or {}).get("total_votes") or 0, [x for x in POLL_KEYS if x in (pa or {})]
     pct = {x: pa.get(x + "_votes_percentage") or 0 for x in ks}
     top = n and ks and max(ks, key=pct.get)
     scale = 100 if sum(pct.values()) <= 1.01 else 1  # 문서 예시 = 0.10(비율) — 0~100으로 와도 그대로
-    t = th_note(ig_notes([r[3] for r in rows])) + (f'📊 어제 1등은 "{pa[top]}" {round(pct[top] * scale)}% ㅋㅋ' if top else "📊 어제는 아무도 안 찍음 ㅋㅋ 그래도 알려줌") \
-        + f"\n쟁일 거면 이 가격은 알아두자 → 핫딜픽 기록 최저 {name} {low[1]} ({int(low[3]['t'][5:7])}/{int(low[3]['t'][8:10])})\n\n👉 {SITE}c/{k}.html?ref=th\n{th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"  # 10/22 진우 '재미있게'(반말)
+    t = th_note(ig_notes([r[3] for r in rows])) + (f'📊 어제 1등은 "{pa[top]}" {round(pct[top] * scale)}%!' if top else "📊 어제는 조용했지만 약속대로 알려드릴게요") \
+        + f"\n핫딜픽 기록 중 제일 쌌던 가격: {name} {low[1]} ({int(low[3]['t'][5:7])}/{int(low[3]['t'][8:10])}) — 쟁일 때 참고하세요\n\n👉 {SITE}c/{k}.html?ref=th\n{th_follow(False)}\n📲 실시간 알림 t.me/hotdeal_pick"  # PP(10/26) 'ㅋㅋ'·'그래도 알려줌' X
     return t if len(t) <= 480 else t.rsplit("\n", 2)[0]  # 넘치면 팔로우·텔레그램 줄을 뺌(링크는 남김)
 
 
