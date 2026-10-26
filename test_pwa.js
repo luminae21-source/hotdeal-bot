@@ -235,7 +235,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
         assert.ok(!over(L.inst, L.bottom) && !over(L.inst, L.top), tag + ' 띠가 고정 바와 안 겹침');
       }
       assert.ok(L.g && L.g.top < L.vh - (L.bottom ? L.bottom.height : 0) - 40, tag + ' 실시간 핫딜 1번이 첫 화면에 ' + JSON.stringify([L.g, L.vh]));
-      assert.ok(L.qk && L.sb && L.qk.bottom <= L.vh && L.q1 >= 6 && L.q2 === 13 && L.rows >= (w >= 390 ? 4 : 3) - (L.band ? 2 : 0), tag + ' 첫 화면 = 검색·(기획전 띠 = 2줄 덜)·바로가기 2줄(6개+)·핫딜 줄 4개↑(포털형 2차) ' + JSON.stringify([L.rows, L.qk, L.q1, L.vh]));
+      assert.ok(L.qk && L.sb && L.qk.bottom <= L.vh && L.q1 >= 6 && L.q2 === 14 && L.rows >= (w >= 390 ? 4 : 3) - (L.band ? 2 : 0), tag + ' 첫 화면 = 검색·(기획전 띠 = 2줄 덜)·바로가기 2줄(6개+)·핫딜 줄 4개↑(포털형 2차) ' + JSON.stringify([L.rows, L.qk, L.q1, L.vh]));
       assert.ok(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ' 옆으로 안 넘침');
       if (safe) assert.ok(L.pb >= 40, tag + ' 홈 바 여백 ' + L.pb);
       const f = path.join(tmp, `${w}${app ? 'a' : 'b'}.png`);
@@ -256,9 +256,9 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
       await A.route(/\/\/gc\.zgo\.at\/count\.js/, GCS);
       await pa.goto(U + '/', { waitUntil: 'load' }); await pa.waitForFunction(() => window.__gcl === 1 && (window.__gc || []).length);
       const LA = await pa.evaluate(() => { const V = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 1; }, r = s => document.querySelector(s).getBoundingClientRect();
-        return { cls: document.documentElement.className, mb: V('main > .la .mb'), m: document.querySelectorAll('.mb .m').length, t6: document.querySelectorAll('main > .la .t6 .tile').length, qk: V('.qk'), evb: V('.evb'), sb: r('.sb').top, hr: r('.hr').bottom, lg: r('.lg h1, .lg b').width,
+        return { cls: document.documentElement.className, mb: V('main > .la .mb'), m: document.querySelectorAll('.mb .m').length, t6: document.querySelectorAll('main > .la .t6 .tile').length, t6r: new Set([...document.querySelectorAll('main > .la .t6 .tile')].map(e => Math.round(e.getBoundingClientRect().top))).size, qk: V('.qk'), evb: V('.evb'), sb: r('.sb').top, hr: r('.hr').bottom, lg: r('.lg h1, .lg b').width,
                  heart: V('.hr .ib+.ib'), over: document.documentElement.scrollWidth - innerWidth, fire: r('#fire .rows:not([hidden]) .r').top, vh: innerHeight, gc: (window.__gc || []).map(v => v.event && v.path) }; });
-      assert.ok(/\blay-a\b/.test(LA.cls) && LA.mb && LA.m >= 3 && LA.t6 === 12 && !LA.qk && !LA.evb && LA.sb < LA.hr && LA.lg <= 1 && !LA.heart && LA.over <= 0 && LA.fire < LA.vh - 120, 'A 목록형 = 검색 헤더 1줄·몰 버튼·품목 6×2(바로가기·배너 X) ' + JSON.stringify(LA));
+      assert.ok(/\blay-a\b/.test(LA.cls) && LA.mb && LA.m >= 3 && LA.t6 === 13 && LA.t6r === 2 && !LA.qk && !LA.evb && LA.sb < LA.hr && LA.lg <= 1 && !LA.heart && LA.over <= 0 && LA.fire < LA.vh - 120, 'A 목록형 = 검색 헤더 1줄·몰 버튼·품목 2줄(13칸 = 7칸씩 — 10/26 자동차 칸)(바로가기·배너 X) ' + JSON.stringify(LA));
       assert.ok(LA.gc.includes('layout/A'), 'GoatCounter 방문 layout/A ' + LA.gc);
       const bA = await pa.evaluate(() => { window.__gc = []; const a = document.querySelector('a[rel~="nofollow"][href^="http"]:not([data-gc^="promo/"])'); a.addEventListener('click', e => e.preventDefault()); a.click(); return window.__gc.map(v => v.path); });
       assert.ok(bA.some(p => p.startsWith('buy/') && p.includes('/', 4)) && bA.includes('layout/A/buy'), '구매 클릭 = buy/ 그대로 + 화면 꼬리표 layout/A/buy ' + bA);

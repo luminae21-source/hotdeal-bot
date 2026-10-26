@@ -115,7 +115,7 @@ html:not(.lay-b) .sb svg{top:10px;color:var(--sub)}html:not(.lay-b) .sb input{he
 .lsw{display:flex;align-items:center;justify-content:center;gap:6px;margin:18px 0 0;color:var(--sub);font-size:12.5px;font-weight:600}.lsw button{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--sub);font:inherit;letter-spacing:-.3px;cursor:pointer}html:not(.lay-b):not(.lay-c) .lsw [data-l=a],html.lay-b .lsw [data-l=b],html.lay-c .lsw [data-l=c]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
 .tb{position:fixed;z-index:8;right:calc(10px + env(safe-area-inset-right));bottom:calc(80px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}main:has(>#inst:not([hidden]))+.tb{bottom:calc(128px + env(safe-area-inset-bottom))}.inapp .tb{bottom:calc(96px + env(safe-area-inset-bottom))}@media(min-width:680px){.tb{right:calc(50% - 336px)}}.tb button{display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:22px;background:color-mix(in srgb,var(--card) 86%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(20,22,27,.16);color:var(--ink);font:inherit;font-size:8.5px;font-weight:800;letter-spacing:.2px;line-height:1;cursor:pointer}.tb svg{width:16px;height:16px}
 .mk{flex:none;margin-right:5px;font-weight:800;color:var(--sub)}.mk.coupang{color:var(--cpt)}.mk.toss{color:var(--tst)}.mk.naver{color:var(--nvt)}
-.tiles.t6{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
+.tiles.t6{grid-template-columns:repeat(var(--n,6),minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
 .sec>h2>span{display:flex;align-items:baseline;gap:6px;min-width:0}.sec>h2 .more{flex:none;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
 .tabs{display:flex;gap:6px;margin:10px -16px 0;padding:0 16px 2px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
 .tabs button,.mf button{flex:none;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}.tabs button[aria-selected=true],.mf button[aria-pressed=true]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
@@ -1107,8 +1107,8 @@ def pick_section(day, ps, page=False):
 
 
 def tiles(keys=TILES, six=False):
-    """카테고리 타일(4×2, 옆으로 밀기 X): 흰 r18 + 40px 파스텔 네모 이모지 -> /c/slug/."""
-    return (f'<nav class="tiles{" t6" if six else ""}" aria-label="카테고리">' + "".join(f'<a class="tile" href="{c_url(CAT_META[k][0])}"><i style="--c:{CAT_META[k][3]}" aria-hidden="true">{CAT_META[k][2]}</i>{CAT_META[k][1].split("·")[0].split()[0]}</a>'
+    """카테고리 타일(4×2, 옆으로 밀기 X): 흰 r18 + 40px 파스텔 네모 이모지 -> /c/slug/ · six = 2줄(칸 13개 = 7칸씩 — 10/26 자동차 칸 뒤 3줄째 1개 X)."""
+    return (f'<nav class="tiles{" t6" if six else ""}"' + (f' style="--n:{-(-len(keys) // 2)}"' if six else "") + ' aria-label="카테고리">' + "".join(f'<a class="tile" href="{c_url(CAT_META[k][0])}"><i style="--c:{CAT_META[k][3]}" aria-hidden="true">{CAT_META[k][2]}</i>{CAT_META[k][1].split("·")[0].split()[0]}</a>'
                                                               for k in keys) + "</nav>")
 
 
@@ -1919,7 +1919,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
 @media(prefers-color-scheme:dark){.im img{mix-blend-mode:normal}}
 .nm{font-size:12px;line-height:1.38;height:33px;overflow:hidden;margin:7px 2px 2px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pr{font-size:14px;font-weight:800;margin:0 2px}.pr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--pke);margin-left:4px}.ck{font-size:10.5px;color:var(--mut);margin:0 2px}
-.mb{display:flex;gap:8px;margin:0 0 8px}.mb a{flex:1;text-align:center;font-weight:700;font-size:13.5px;padding:10px 8px;border-radius:12px;background:var(--chip)}
+.mb{display:flex;gap:6px;flex:none}.mb a{font-weight:700;font-size:12.5px;padding:5px 10px;border-radius:999px;background:var(--chip);white-space:nowrap}.sec:has(.mb){flex-wrap:wrap;gap:6px;align-items:center}
 .all{display:block;text-align:center;font-weight:700;font-size:15px;margin:22px 0 0;padding:13px;border-radius:14px;background:var(--chip)}.ft{font-size:11px;color:var(--mut);line-height:1.5;margin:10px 2px 0;text-align:center}
 .vb,.eb2{display:none}.lb .vb,.lb .eb2{display:block}.lb .va{display:none}
 .hd{display:flex;align-items:center;gap:8px}.lgi{width:32px;height:32px;border-radius:9px}.wm{font-size:17px;font-weight:800}
@@ -2048,7 +2048,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
     today = today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     rows, n = link_tabs(link_pool(it, today))
     kakao = html.escape(KAKAO_OPENCHAT_URL) if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else ""
-    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><small>매시간 바뀌어요</small></div><nav class="mb" aria-label="몰별 모음"><a href="{BASE}c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="{BASE}c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav><div class="chips" role="group" aria-label="품목 고르기">'
+    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><nav class="mb" aria-label="몰별 모음"><a href="{BASE}c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="{BASE}c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav></div><div class="chips" role="group" aria-label="품목 고르기">'
                       + "".join(f'<button type="button" data-k="{k}" aria-pressed="{"true" if k == "all" else "false"}">{nm}</button>' for k, nm in LINK_TABS if n[k])
                       + '</div><div class="g" id="lg">' + "".join(link_tile(*x) for x in rows) + "</div></section>") or ""
     url = f"{BASE}link/" + (f"{style}/" if alt else "")
