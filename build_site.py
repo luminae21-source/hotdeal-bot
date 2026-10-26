@@ -1823,7 +1823,7 @@ GOOGLE_VERIFY = ""  # 구글 서치콘솔 'HTML 태그' content 값(10/14 진우
 
 def ld_desc(text):
     """JSON-LD Product 설명(TT-2 리뷰): 코멘트 줄(summary)에서 이모지·기호·'⚠️ 확인할 점'·'오늘…' 문장(며칠 뒤에도 남는 쪽) 빼고 150자 안 낱말 끝에서 자름 · 없으면 ''."""
-    s = re.sub(r"⚠️.*?(?=💰|✔|💡|$)", " ", summary(text))
+    s = re.sub(r"⚠️.*?(?=💰|✔|💡|$)", " ", summary(text, None))  # 안 자른 줄(150자 = 아래서 낱말 끝으로)
     s = re.sub(r"[^.!?]*오늘[^.!?]*[.!?]?", " ", re.sub(r"[^\w\s.,%·+\-()/~!?]", " ", s))
     s = re.sub(r"\s+", " ", s).strip(" ·")
     return s if len(s) <= 150 else s[:150].rsplit(" ", 1)[0]
@@ -1845,9 +1845,9 @@ def seo(i, p, cur=None):
             ld and f'<script type="application/ld+json">{ld}</script>')
 
 
-def summary(text):
+def summary(text, n=150):
     """검색 결과·RSS에 보일 설명: 제목 아래 코멘트 줄들(출처·🏆 배지 줄 빼고 한 줄로). 대가성 문구·제목 반복은 안 넣음(10/9 '구글·네이버 조회가 잘 안 돼')."""
-    return " ".join([steady_st(text)] * bool(steady_st(text)) + [l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기"))])[:150]
+    return " ".join([steady_st(text)] * bool(steady_st(text)) + [l.strip() for l in split_title(text)[1].split("\n") if l.strip() and not l.startswith(("출처:", "🏆 인기"))])[:n]
 
 
 def steady_page(out):

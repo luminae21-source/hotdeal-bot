@@ -3459,12 +3459,13 @@ assert list(r13) == ["ramen"] and [x[1] for x in r13["ramen"][2]] == ["개당 48
 assert S13.price_records(P13[6:9] + [p13("2026-10-14 10:00", "[네이버] 삼다수 2L 12개 (12,000원)", "1L당 500원")])["water"][2][0][1] == "1L당 248원"  # 한 줄에 두 단위 -> 품목 단위(1L당)만
 assert S13.price_records(P13 + [p13("2026-10-16 10:00", "[쿠팡] 신라면 5개 (2,400원)", "개당 480원")])["ramen"][2][0][2] == len(P13)  # 같은 상품·같은 단위가격 다시 = 최근 1개
 d13 = tempfile.mkdtemp(); os.makedirs(f"{d13}/c"); open(f"{d13}/c/old.html", "w").write("x"); S13.build(P13, d13)
-assert sorted(f for f in os.listdir(f"{d13}/c") if f.endswith(".html")) == ["index.html", "ramen.html"] and os.path.isdir(f"{d13}/c/life")  # 기록 3개↑ 품목만 · 옛 페이지 지움(목록 쪽 폴더·카테고리 쪽은 그대로)
+l13 = {f: "noindex" in open(f"{d13}/c/{f}").read() for f in os.listdir(f"{d13}/c") if f.endswith(".html")}
+assert sorted(f for f, x in l13.items() if not x) == ["index.html", "ramen.html", "water.html"] and {f for f, x in l13.items() if x} == {f"{k}.html" for k in S13.REC_KEEP} - {"ramen.html", "water.html"} and os.path.isdir(f"{d13}/c/life")  # 기록 3개↑ 품목 + 있던 기록 쪽(REC_KEEP — TT-2: 생수 2개도 쪽 그대로 · 0개 = 안내 쪽 noindex) · 옛 페이지 지움(목록 쪽 폴더·카테고리 쪽은 그대로)
 c13, sm13, ix13 = (open(f"{d13}/{f}").read() for f in ("c/ramen.html", "sitemap.xml", "index.html"))
 assert "<title>라면 최저가 기록 — 개당 가격 | 핫딜픽</title>" in c13 and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
 assert "진라면" not in c13 and "toss.shopping" not in c13 and "컵누들" not in c13 and "냄비" not in c13 and 'href="https://hotdealpick.kr/c/toss/">토스 특가 모음 보기' in c13  # 토스 행 X(링크 한 줄만)
 assert c13.count("<tr") == 4 and "<td>10/12</td><td>쿠팡</td>" in c13 and 'href="https://hotdealpick.kr/p/1.html">신라면 5개</a></td><td>2,400원</td><td>480원</td>' in c13 and "평균 · 기록 3개" in c13 and "<b>579원</b>" in c13
-assert len(re.findall(r"<loc>[^<]*/c/[^<]*\.html</loc>", sm13)) == 1 and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
+assert re.findall(r"<loc>[^<]*/c/([^<]*\.html)</loc>", sm13) == ["ramen.html", "water.html"] and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
 assert all('href="https://hotdealpick.kr/c/ramen.html">라면 개당</a>' in x for x in (ix13, open(f"{d13}/c/life/index.html").read(), open(f"{d13}/c/index.html").read()))  # 홈·생필품 쪽·카테고리 쪽 링크(검색 로봇이 찾게)
 assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 최저가 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
 assert "c/ramen.html" not in open(f"{d13}/p/4.html").read() and "c/ramen.html" not in open(f"{d13}/p/6.html").read()  # 토스 딜·다른 품목 페이지엔 X
@@ -10143,7 +10144,9 @@ assert "토스 가격은 게시 시점 기준이에요 — 지금 가격은 링�
 assert "오늘만 가격이라 내일은 달라질 수 있어요" in bt97("몽쉘 12개", "오늘 밤 12시까지 하루특가") and not any("오늘만" in t for t in bt97("몽쉘 12개", "오늘 밤 12시까지", t="2026-10-24 09:00")) \
     and not any("오늘만" in t for t in bt97("몽쉘 12개", "오늘 밤 12시까지", sh=(2, None, "", [], False)))  # '오늘만' = 오늘 올린 🔥만(며칠 지난 글·대기 X)
 assert ds97(o97, (0, "13,130원 와우가", "지금 가격 (10/26 23시 확인)", [], False)) == "🕒 10/26 23:10 게시 · 지금 가격 13,130원 와우가 (10/26 23시 확인)"  # 와우가·쿠폰가 = 조건 그대로
-assert S.ld_desc("🔥 [토스] 젤리 (9,900원)\n\n오늘 밤 12시까지 토스 하루특가예요. 쫀득한 젤리 대용량이라 좋아요!\n⚠️ 확인할 점 품절 빠름") == "쫀득한 젤리 대용량이라 좋아요!" and len(S.ld_desc("🔥 [쿠팡] x (1원)\n\n" + "가나다라 " * 60)) <= 150  # 이모지·⚠️·'오늘…' X · 낱말 끝
+assert ds97(o97, (2, "53,600원", "지금 가격 (10/26 23시 확인) · 10/26 가격 · 특가 기다리는 중", [], False)) == "🕒 10/26 23:10 게시 · 지금 가격 53,600원 (10/26 23시 확인) · 특가 기다리는 중"  # 지금 가격 있으면 올린 날 가격 X(값 2개)
+assert bt97("빙그레 투게더 아이스크림 900ml")[0].endswith("유통기한도 보세요") and bt97("덴탈 마스크 50매")[0] == bt97("KF94 마스크 30매")[0] == "매수와 등급(KF94 등)·사이즈(대형·소형)를 확인하세요 — 매당 가격으로 비교하세요" and bt97("메디힐 마스크팩 10매")[0] == "매수와 1매 가격을 확인하세요"
+assert S.ld_desc("🔥 [토스] 젤리 (9,900원)\n\n오늘 밤 12시까지 토스 하루특가예요. 쫀득한 젤리 대용량이라 좋아요!\n⚠️ 확인할 점 품절 빠름") == "쫀득한 젤리 대용량이라 좋아요!" and S.ld_desc("🔥 [쿠팡] x (1원)\n\n" + "가나다라마바 " * 40) == ("가나다라마바 " * 21).strip()  # 이모지·⚠️·'오늘…' X · 낱말 끝
 assert bt97("이름 모르는 물건") == ["옵션(용량·개수)마다 가격이 달라요 — 고른 옵션의 최종가를 확인하세요", "배송비·도착 예정일도 결제 전에 같이 확인하세요"] and len(bt97("동서 옥수수차 50개입", "와우 쿠폰", sh=(3, None, "", [], False))) == 3  # 늘 2~3줄
 mk97 = lambda i, name, shop="쿠팡", url=None, sh=(0, None, "", [], False): (i, {"t": "2026-10-27 09:00", "text": f"🔥 [{shop}] {name} (1,000원)", "url": url or f"https://link.coupang.com/a/c{i}"}, sh)
 bc97 = {"life": [mk97(n, w) for n, w in ((1, "화장지 30롤"), (2, "물티슈 100매"), (3, "치약 3개"), (4, "샴푸 1L"), (5, "칫솔 10개"), (6, "세안 비누"), (7, "면도기"), (8, "화장지 30롤"), (9, "린스 1L"))],
@@ -10171,20 +10174,21 @@ ev97 = [{"at": "2026-10-26 21:10", "curation": True, "topic": "율무차", "text
          "link": "https://hotdealpick.kr/c/food/?ref=thc", "img": [img97(1), img97(2), img97(5)]},
         {"at": "2026-10-27 21:10", "curation": True, "topic": "율무차", "text": "내일 나갈 글 머리\n둘째 줄\n\n🌰 고향 — 1봉 135원", "link": "https://hotdealpick.kr/c/food/?ref=thc", "img": [img97(2)]},
         {"at": "2026-10-26 21:30", "curation": True, "topic": "핫초코", "text": "핫초코 머리", "link": "https://hotdealpick.kr/c/snack/?ref=thc", "img": [img97(6), img97(7)]},
-        {"at": "2026-10-26 12:40", "curation": True, "topic": "머플러", "text": "목이 시린 계절이에요\n\n🧣 머플러 — 9,900원", "link": "https://hotdealpick.kr/c/fashion/?ref=thc", "img": [img97(12), img97(13), img97(14)]},
+        {"at": "2026-10-26 12:40", "curation": True, "topic": "머플러", "text": "목이 시린 계절이에요\n2만 원대로 골랐어요\n\n🧣 머플러 — 9,900원", "link": "https://hotdealpick.kr/c/fashion/?ref=thc", "img": [img97(12), img97(13), img97(14)]},
         {"at": "2026-10-27 13:00", "curation": True, "topic": "율무차", "text": "기록 쪽 링크", "link": "https://hotdealpick.kr/c/water.html?ref=thc", "img": []}] \
        + [{"at": "2026-10-20 09:00", "shelf": True, "url": f"https://link.coupang.com/a/y{k}", "tag": "율무차", "text": "x"} for k in (1, 2, 3, 4, 5)] \
        + [{"at": "2026-10-20 09:00", "shelf": True, "url": "https://toss.im/_m/yt", "tag": "율무차", "text": "x"}]
 po97[2]["now"] = "8,800원"  # 곰곰 = 지금 가격(확인가)이 올린 가격과 다름 -> h1·큰 가격·JSON-LD = 지금 가격 · 단위가 = 올린 날 기준
 po97 += [{"t": "2026-10-26 22:00", "text": "🔥 [토스] 율무차 30개 (5,000원)", "url": "https://toss.im/_m/yt", "own": 1, "shelf": 1},  # 9 = 같은 tag 토스(주제 표 X — 다른 몰과 한 표 X)
          {"t": "2026-10-25 09:00", "text": "🛒 [쿠팡] 채움 딜 (1,000원)", "url": "https://link.coupang.com/a/f1"}, {"t": "2026-10-24 09:00", "text": "🔥 [쿠팡] 지난 딜 (1,000원)", "url": "https://link.coupang.com/a/f2"}]  # 10 = 진열 중 커뮤니티 ⏳ · 11 = 3일 지난 커뮤니티 딜
-po97 += [{**yu97(k, f"겨울 머플러 {k}", "따뜻한 겨울템"), "cat": "fashion"} for k in (12, 13, 14)]  # 12~14 = 주제 '머플러'(단위가 없음 = '모음')
+po97 += [{**yu97(k, f"겨울 머플러 {k}", "1개 9,900원꼴" if k == 12 else "따뜻한 겨울템"), "cat": "fashion"} for k in (12, 13, 14)]  # 12~14 = 주제 '머플러'(단위가 없음 = '모음')
 json.dump(ev97, open("events.json", "w"), ensure_ascii=False)
 S.build(po97, "docs")
 tp97 = open("docs/c/t/yulmu-tea.html").read(); sm97 = re.findall(r"<loc>([^<]*)</loc>", open("docs/sitemap.xml").read())
 assert not os.path.exists("docs/c/t/hot-chocolate.html") and "<title>율무차 단위가 비교 4개 (10/27) | 핫딜픽</title>" in tp97 and '<h1 class="h">📌 율무차 단위가 비교</h1>' in tp97  # 핫초코 = 상품 2개(3개 밑) = 쪽 X
 assert "<p>고소한 거 한 잔 생각나는 밤엔 율무차 🌰</p><p>핫딜픽이 진열 중인 율무차 4개를 1봉당 가격 싼 순으로 줄 세웠어요" in tp97 and "호두·아몬드 스틱" not in tp97 and "내일 나갈 글" not in tp97 and "1봉 135원</p>" not in tp97  # 머리 = 지금까지 나간 큐레이션 · 상품 줄부터 = 머리 끝(큐레이션 가격 줄·그 뒤 X)
 tb97 = tp97.split("<tbody>")[1].split("</tbody>")[0]
+assert "줄 세웠어요(단위가 다르거나 없는 상품은 뒤에) · 가격은" in tp97 and "<td>8,800원</td><td>1봉 200원 (10/26 기준)</td>" in tb97 and "<td>9,900원</td><td>1봉 135원</td>" in tb97  # 100g 상품 = 뒤 · 지금 가격 ≠ 올린 가격 = 단위가 날짜
 assert re.findall(r'p/(\d+)\.html">([^<]+)<', tb97) == [("3", "고향 호두아몬드 율무차 18g 110개입"), ("2", "곰곰 율무차 18g 50개입"), ("5", "담터 율무차 18g 50개입"), ("4", "오뚜기 율무차 분말 1kg")] \
     and "<small>10/26 23시 확인</small></td><td>9,900원</td><td>1봉 135원</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
 assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/food/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
@@ -10201,7 +10205,7 @@ assert "지금은 진열에서 빠진 딜이에요" in re.sub(r"<[^>]+>", "", op
 p2_97 = open("docs/p/2.html").read(); ld2_97 = json.loads(p2_97.split('<script type="application/ld+json">')[1].split("</script>")[0])
 assert ">곰곰 율무차 18g 50개입 8,800원</a></h1>" in p2_97 and '<span class="pr">8,800원</span>' in p2_97 and ld2_97["offers"]["price"] == "8800" and "<title>곰곰 율무차 18g 50개입 8,800원 (쿠팡) | 핫딜픽</title>" in p2_97 \
     and "단위가 1봉 200원꼴 (10/26 가격 기준)" in p2_97 and "지금 가격 8,800원 (10/26 23시 확인)" in re.sub(r"<[^>]+>", "", p2_97)  # 같은 쪽에 '지금 가격'과 다른 올린 가격 X
-mf97 = open("docs/c/t/muffler.html").read(); assert "<title>겨울 머플러 모음 3개 (10/27) | 핫딜픽</title>" in mf97 and "단위가 비교" not in mf97.split("<main")[1].split('aria-label="다른 주제"')[0]  # 단위가 없으면 '모음'(단위가 비교 X)
+mf97 = open("docs/c/t/muffler.html").read(); assert "<title>겨울 머플러 모음 3개 (10/27) | 핫딜픽</title>" in mf97 and "<p>목이 시린 계절이에요</p><p>핫딜픽이 진열 중인" in mf97 and "2만 원대" not in mf97 and "단위가 비교" not in mf97.split("<main")[1].split('aria-label="다른 주제"')[0]  # 단위가 없으면 '모음'(단위가 비교 X)
 # 있던 기록 쪽(REC_KEEP — SS 뒤 수수료 링크 기록이 3개 밑으로 줄어 지워지던 c/water·coffee-mix 등, 구글 색인) = 1개↑면 기록 쪽 그대로 · 0개 = 안내 쪽(noindex — 404 X) · 새 품목은 그대로 3개↑만
 assert f"{S.BASE}c/toilet-paper.html" in sm97 and "롤당 663원" in open("docs/c/toilet-paper.html").read() and 'content="noindex' not in open("docs/c/toilet-paper.html").read()  # 화장지 기록 1개 = 쪽 그대로
 assert 'content="noindex' in open("docs/c/water.html").read() and f"{S.BASE}c/water.html" not in sm97 and not os.path.exists("docs/c/shampoo.html")  # 생수 0개 = 안내 쪽 · 샴푸(있던 쪽 아님) = X
