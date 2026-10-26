@@ -689,6 +689,7 @@ def affiliate(url):
             return cp_deeplink(url), True
         except Exception as e:
             print("deeplink", repr(e))
+            RUN["cptmp"] = not isinstance(e, ValueError)  # 상한·접속·게이트웨이 = 잠깐 실패(SS: 수수료 링크 없다고 버리지 않고 다음 실행에 — post_or_draft 'hold') · 400 = 그 상품 안 됨
     if not url:
         return url, False
     try:
@@ -1166,8 +1167,12 @@ def post_or_draft(d, comment, score, q=None, extra=None, seen=None):
     """✅ 없이 채널에 바로 게시. 링크프라이스 몰은 검색 제휴 링크가 자동으로 붙음.
     SS(10/26 진우 '수익 안 주는 제품은 과감하게 빼고'): 수수료 링크(쿠팡 파트너스·토스 쉐어링크·링크프라이스 — aff)를 못 만든 딜 = 안 올림('noaff' · 초안도 X · 몰별 셈 ss_skip — 하루 로그).
     채널 게시가 실패하면 초안으로 보내서 딜을 놓치지 않음. Z: 게시 직전 Claude 칸(한 줄·단가·확인할 점·누가·언제·훅) 재검토(rv_fields — 3시간 보관했다 올리는 딜도)."""
+    RUN.pop("cptmp", None)
     lk = deal_link(d, q)
     if not aff(lk[0] or ""):
+        if RUN.pop("cptmp", None):  # 쿠팡 딥링크 잠깐 실패(시간당 상한 등) = 보관해 다음 실행에(SS 리뷰 — 버리면 다시 안 봄)
+            print("deal hold (쿠팡 링크 잠깐 안 됨 — 다음 실행에)", clip(d["title"], 40))
+            return "hold"
         print("deal skip (수수료 링크 없음)", clip(d["title"], 40), "|", link_kind(lk[0] or d["url"]))
         ss_skip(seen, d["title"])
         return "noaff"
@@ -3720,10 +3725,10 @@ def cp_fill(seen):
     seen["cpfill"] = {"t": now}  # 시도 = 쿠팡 차례 끝(못 찾아도 — 다음 빈틈은 토스)
     posts, ev = load(POSTS, []), ev_info()
     chan = {p.get("url") for p in posts if p.get("mid")}
-    cpid = {ev.get(u, {}).get("pid") for u in chan} - {None}
     block = {x["url"] for e in evs if re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400
              for x in [e] + (e["items"] if e.get("list") and isinstance(e.get("items"), list) else []) if isinstance(x, dict) and x.get("url")}  # 앞뒤 3일 예약(행사 목록 글 상품도 — cp_repost처럼)
     block |= {u for h in seen.get("cpmix", {}).get("h", []) for u in h[1]} | set(seen.get("goldst", {}).get("u", {}))  # 묶음 글(🚀 쿠팡 상품 모음 24시간·꾸준템 글 3일)에 나간 상품 = posts.json엔 안 남음(리뷰)
+    cpid = {ev.get(u, {}).get("pid") for u in chan | block} - {None}  # 같은 상품 다른 파트너스 링크(채널 글·예약·묶음 글)도
     fresh_at = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - CPRE_FRESH))
     i, name, _, unit, rv = next((x for x in cp_shelf(posts, kst, False) if (u := posts[x[0]]["url"]) not in chan and u not in block and ev.get(u, {}).get("pid") not in cpid
                                  and posts[x[0]].get("now") and posts[x[0]].get("chkt", "") >= fresh_at), (None,) * 5)
@@ -9458,15 +9463,22 @@ def main():
             else:
                 left -= 1
     held, good = [h for h in held if h["d"]["id"] not in drop], [h for h in good if h["d"]["id"] not in drop]
-    for h in (held + good)[:MAX_DRAFTS]:  # 보관해 둔 딜이 먼저
+    q, k, n = held + good, 0, 0
+    while k < len(q) and n < MAX_DRAFTS:  # 보관해 둔 딜이 먼저 · 수수료 링크 못 만든 딜('noaff')·쿠팡 링크 잠깐 실패('hold' = 다시 보관)는 자리 안 씀 — 다음 딜이 같은 실행에(SS 리뷰)
+        h, k = q[k], k + 1
         seen.pop("hold_" + h["d"]["id"], None)
         p = h["p"]
         if HAS_TOSS and store_info(h["d"]["title"], h["d"].get("url")).startswith("💰 토스"):  # 10/18 진우 '뽐뿌 말고 바로 연결': 토스 딜은 쉐어링크를 찾은 뒤에 게시(아래 toss_wait 단계가 이번 실행부터)
             seen["tw_" + h["d"]["id"]] = {**h, "t": time.time()}
+            n += 1
             continue
-        if not post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen):  # 채널 게시(초안·수수료 X로 안 올림 X)일 때만 말투 기록
+        r = post_or_draft(h["d"], p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen)
+        if r == "hold":
+            seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}  # 보관 시각 그대로(3시간 규칙)
+        n += r not in ("noaff", "hold")
+        if not r:  # 채널 게시(초안·안 올림 X)일 때만 말투 기록
             tone_keep(seen, "ch", p.get("tone"))
-    for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
+    for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
     for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:

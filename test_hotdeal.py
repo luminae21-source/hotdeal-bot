@@ -432,6 +432,11 @@ for t35 in ("[sk스토아] 블루베리 (18,700원/무료)", "[쿠팡] 휴지 30
     ss35.append(H.post_or_draft(D(t35), "싸요", 8, None, None, s35))
 assert ss35 == ["noaff"] * 4 and not sent and len(json.load(open("posts.json"))) == n0 and list(s35["ssn"]["d"].values()) == [{"sk스토아": 2, "쿠팡": 1, "카카오": 1}], (sent, s35)
 H.post_or_draft(D("[쿠팡] 휴지 30롤"), "싸요", 8); assert not sent  # seen 없음(옛 부름) = 셈만 X
+sl35, hc35 = H.store_link, H.HAS_CP; H.store_link, H.HAS_CP, H.RUN["cpn"] = (lambda u: "https://www.coupang.com/vp/products/35"), True, [99, 0]
+assert H.post_or_draft(D("[쿠팡] 상한 걸린 상품 (1,000원)"), "싸요", 8, None, None, s35) == "hold" and not sent and sum(list(s35["ssn"]["d"].values())[0].values()) == 4  # 쿠팡 API 상한(잠깐) = 버리지 않고 보관(다음 실행에 — SS 리뷰) · 안 올린 셈 X
+cd35 = H.cp_deeplink; H.cp_deeplink = lambda u: (_ for _ in ()).throw(ValueError("coupang rCode 400"))
+assert H.post_or_draft(D("[쿠팡] 안 되는 상품 (1,000원)"), "싸요", 8, None, None, s35) == "noaff" and not sent  # 400 = 그 상품 안 됨(보관 X)
+H.cp_deeplink, H.store_link, H.HAS_CP = cd35, sl35, hc35; H.RUN.pop("cpn", None)
 sent.clear(); H.post_or_draft(D("[롯데온] 제주 삼다수 2L 24병 (23,330원/무료)"), "싸요", 8, "제주 삼다수 2L", {"e": "🫐", "hook": "1kg 6,233원", "pts": ["kg당 6,233원"], "unit": "kg당 6,233원", "warn": "", "x": None})  # 링크프라이스: 자동 제휴
 b = sent[0][1]["reply_markup"]["inline_keyboard"][0][0]
 qs = parse_qs(urlsplit(b["url"]).query)
@@ -570,6 +575,12 @@ sj = json.load(open("seen.json")); sj["hold_ruliweb_91"] = {"t": time.time() - 6
 json.dump(sj, open("seen.json", "w")); RU3 = RU3.replace("</channel>", it("[G마켓] 새상품 특가 묶음 / 3,000원", "https://bbs.ruliweb.com/market/board/1020/read/93", 20) + "</channel>")
 H.main(); sj = json.load(open("seen.json"))  # 보관 딜이 있으면 그게 먼저, 새로 고른 좋은 딜은 보관
 assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 2 and "hold_ruliweb_93" in sj and "hold_ruliweb_91" not in sj
+# SS: 수수료 링크 못 만든 딜('noaff') = 실행 자리 안 씀(다음 딜이 같은 실행에) · 쿠팡 링크 잠깐 실패('hold') = 다시 보관(다음 실행에)
+RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
+rs3 = {"ruliweb_92": "noaff", "ruliweb_90": "hold"}; H.post_or_draft = lambda d, c, sc, *a, **k: posted.append(d["id"]) or rs3.get(d["id"])
+json.dump({}, open("seen.json", "w")); posted.clear(); H.main(); sj = json.load(open("seen.json"))
+assert posted == ["ruliweb_92", "ruliweb_90", "ruliweb_91"] and {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_90"}, (posted, sj)
+rs3.clear(); posted.clear(); H.main(); assert posted == ["ruliweb_90"] and not [k for k in json.load(open("seen.json")) if k.startswith("hold_")]
 # 4-5) 꾸준히(MIN_SCORE를 7로 올렸을 때): 마지막 딜 글이 45분(0~8시는 90분 — 10/22 진우 '새벽에도') 넘으면 7점이 없어도 6점 최고 1개 / 그 안이거나 최고가 5점이면 안 올림
 assert H.MIN_SCORE == 6 and H.FILL_SCORE == 6  # 10/8 진우: 기본은 6점도 바로
 H.MIN_SCORE = 7
@@ -3857,13 +3868,14 @@ json.dump([dict(jv19, url="https://link.coupang.com/a/J19")], open(H.EVENTS, "w"
 # 22시 미리보기: 수수료 링크 예약만 Threads(채널은 그대로), 0개면 Threads X
 E19 = [("22:20", "[토스] 토스 예약 (9,900원)", "https://toss.shopping/_m/P1"), ("22:30", "[네이버] 쇼핑커넥트 예약 (8,900원)", "https://naver.me/P2"), ("22:40", "[쿠팡] 일반 상품 예약 (7,900원)", "https://www.coupang.com/vp/products/3")]
 json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>{t}</b>", "url": u, "button": "b", "deal": True} for a, t, u in E19], open(H.EVENTS, "w"), ensure_ascii=False); json.dump([], open(H.POSTS, "w"))
+pm19, H.PREVIEW_MIN = H.PREVIEW_MIN, 2  # 수수료 링크 예약 2개(쿠팡 생 주소 1개 빠짐 — SS)로 미리보기
 c19.clear(); time.time = lambda: TK(f"{D19} 22:05"); H.preview({"threply": {"t": TK(f"{D19} 21:00"), "ok": 0}})
 assert "(10/20 · 2개)" in tg19[-1][1]["text"] and "일반 상품 예약" not in tg19[-1][1]["text"] and len(c19) == 1  # 채널도 수수료 링크 예약만(SS 10/26 — 쿠팡 생 주소 예약 X)
 assert c19[0]["text"].startswith(H.TOSS_NOTE + "\n" + H.NAVER_NOTE + "\n\n") and "\n🌙 오늘 밤 딜 2개, 먼저 살짝 보여드려요\n\n22:20 " in c19[0]["text"] and "\n22:30 " in c19[0]["text"] and "일반 상품 예약" not in c19[0]["text"] and "이 포스팅은 쿠팡" not in c19[0]["text"]
 json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>[쿠팡] 일반 {k} (7,900원)</b>", "url": f"https://www.coupang.com/vp/products/{k}", "button": "b", "deal": True} for k, (a, _, _) in enumerate(E19)], open(H.EVENTS, "w"), ensure_ascii=False)
 c19.clear(); tg19.clear(); o19 = io.StringIO()
 with contextlib.redirect_stdout(o19): H.preview({"threply": {"t": 1, "ok": 0}})
-assert not tg19 and c19 == []  # 수수료 링크 예약 0개 = 미리보기 X(SS — 채널도)
+assert not tg19 and c19 == []  # 수수료 링크 예약 0개 = 미리보기 X(SS — 채널도); H.PREVIEW_MIN = pm19
 json.dump([{"at": f"{D19} 22:20", "text": "👍 <b>[쿠팡] 꾸준 핸드크림 (25,800원)</b>\n\n한 달 1,000명+ 구매", "url": "https://link.coupang.com/a/PV1", "button": "b", "deal": True},
            {"at": f"{D19} 22:25", "text": "🛒 <b>[쿠팡] 약한 샴푸 (7,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://link.coupang.com/a/PV2", "button": "b", "deal": True},
            {"at": f"{D19} 22:30", "text": "🔥 <b>[쿠팡] 센 휴지 (9,900원)</b>\n\n30일 최저가", "url": "https://link.coupang.com/a/PV3", "button": "b", "deal": True}], open(H.EVENTS, "w"), ensure_ascii=False)
@@ -10058,9 +10070,10 @@ def sh96(k, name, chkt="2026-10-27 09:00", t="2026-10-26 10:00"):
             "st": "hot", "now": "9,500원", "chk": "10/27 9시", "chkt": chkt}
 json.dump([{"t": "2026-10-20 10:00", "text": "🔥 [쿠팡] 디 다른 링크 (1,000원)", "url": L96("fd2"), "own": 1, "mid": 5}, sh96("fb", "비 물티슈 100매"), {"t": "2026-10-27 09:20", "text": "🔥 [쿠팡] 비 물티슈 100매 (9,900원)", "url": L96("fb"), "own": 1, "mid": 6},
            sh96("fc", "씨 키친타월 6롤", "2026-10-25 09:00"), sh96("fa", "에이 고무장갑 3켤레"), sh96("fe", "이 지퍼백 100매"), sh96("fd", "디 종량제 봉투"),
-           sh96("fh", "에이치 물티슈 캡형"), sh96("fi", "아이 섬유유연제"), sh96("fj", "제이 주방세제")], open("posts.json", "w"), ensure_ascii=False)  # h = 🚀 쿠팡 상품 모음에 나감 · i = 꾸준템 글에 나감 · j = 행사 목록 글 상품(리뷰)
+           sh96("fh", "에이치 물티슈 캡형"), sh96("fi", "아이 섬유유연제"), sh96("fj", "제이 주방세제"), sh96("fk", "케이 고무장갑 5켤레")], open("posts.json", "w"), ensure_ascii=False)  # k = 같은 pid가 다른 링크로 내일 예약(리뷰)  # h = 🚀 쿠팡 상품 모음에 나감 · i = 꾸준템 글에 나감 · j = 행사 목록 글 상품(리뷰)
 json.dump([{"at": "2026-10-20 09:00", "shelf": True, "url": L96("fd"), "pid": "77", "text": tx96("쿠팡", "디")}, {"at": "2026-10-20 10:00", "deal": True, "url": L96("fd2"), "pid": "77", "text": tx96("쿠팡", "디2")},
-           {"at": "2026-10-28 15:00", "deal": True, "url": L96("fe"), "text": tx96("쿠팡", "이")}, {"at": "2026-10-28 12:00", "list": True, "title": "생활 행사", "items": [{"url": L96("fj"), "name": "제이 주방세제"}]}], open("events.json", "w"), ensure_ascii=False)
+           {"at": "2026-10-28 15:00", "deal": True, "url": L96("fe"), "text": tx96("쿠팡", "이")}, {"at": "2026-10-28 12:00", "list": True, "title": "생활 행사", "items": [{"url": L96("fj"), "name": "제이 주방세제"}]},
+           {"at": "2026-10-20 09:00", "shelf": True, "url": L96("fk"), "pid": "88", "text": tx96("쿠팡", "케이")}, {"at": "2026-10-28 10:00", "deal": True, "url": L96("fk2"), "pid": "88", "text": tx96("쿠팡", "케이2")}], open("events.json", "w"), ensure_ascii=False)
 sf96, H.HAS_TOSS, H.TOSS_SOLO_HOURS = {"tgap": {"t": TK("2026-10-27 09:00")}, **{k: 1 for k in s96 if k.startswith("ev_")}, "tsolo_20261027_10": 1, "tsolo_20261027_11": 1,
                                        "cpmix": {"t": 1, "h": [[TK("2026-10-27 09:30"), [L96("fh")]]]}, "goldst": {"t": 1, "u": {L96("fi"): TK("2026-10-26 10:00")}}}, True, range(24)
 sent96.clear(); H.cp_fill(sf96); m96 = [p for m, p in sent96 if p.get("chat_id") == H.CHANNEL]
