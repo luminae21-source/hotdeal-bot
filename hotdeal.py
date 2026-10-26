@@ -100,10 +100,12 @@ ADMIN_PROMPT = DEAL_PROMPT.replace("5점 미만은 반환하지 마.", "점수�
     "이번 딜은 운영자가 쇼핑몰에서 직접 고른 상품이라 커뮤니티 반응 정보가 없어: 가격 매력·대중성만으로 점수를 매기고, 운영자가 적은 가격·조건만 사실로 써(모르는 건 지어내지 마).\n"
 REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n" \
     + "건강식품·화장품 효능(미백·주름·탄력 개선 등) 금지. [올리브영] 딜은 가격·용량·구성·조건만(후기·추천·권유·효능·'최고' 같은 절대 표현 금지 — 올리브영 쇼핑 큐레이터 정책).\n"
-GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
-대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
-comment: 1줄, 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
-"""
+GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가 · 가격 = 와우 회원가) 목록이야. 줄 = 이름 | 가격 | 로켓배송·무료배송·카테고리(쿠팡 API 값) | 단위가(이름의 용량·개수로 우리가 계산).
+'기록 평균'은 핫딜픽에 올린 같은 품목 딜의 같은 단위 평균·최저야 — '기록 평균보다 쌈'이면 먼저 골라.
+할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 상품을 3~5개 목표로 pick 도구로 반환해(비대중적이거나 비싸 보이는 건 빼고, 정말 없으면 빈 목록 — 10/7 진우: 살 만한 제품만).
+'단위가 모름'(이름에 용량·개수 없음)이어도 대중 생필품·식품이면 빼지 말고 골라도 돼 — 그땐 comment 끝에 '용량은 상품 페이지 확인'.
+comment: 1줄, 사실 위주(줄에 있는 값만 — 없는 개수·용량 지어내기 X), 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
+"""  # OO(10/26 Cowork — 진우 '얘도 행사하는데?'): 이름·가격만 넘겨 '구성·단위가격' 판단 불가 -> 10/25·10/26 0개
 BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
 믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 5개 pick 도구로 반환해. 없으면 빈 목록.
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
@@ -1477,6 +1479,34 @@ def publish_approved(seen=None):
         tg("getUpdates", offset=ups[-1]["update_id"] + 1)  # 처리한 입력 확인(삭제)
 
 
+GOLD_N, GOLD_WOW = (3, 5), "와우 회원가 · 다음 날 아침 7시까지"  # OO: 목표 3~5개(3개 밑 = 고른 것 0처럼 — 다음 실행 1번 더, 그다음 JJ 꾸준템 글) · 골드박스 가격 = 와우할인
+
+
+def gold_lines(items):
+    """OO 골드박스 Claude 후보 줄 + (보여 줄 이름, 단위가 글자) — 이름 | 가격 | 🚀 로켓배송·무료배송·카테고리(API 값) | 단위가:
+    PRICE_ITEMS 품목 = 그 단위(nn_unit) + 핫딜픽 기록 평균·최저(price_records — 평균보다 싸면 '기록 평균보다 쌈') / 그 밖 = 묶음 단가(toss_unit) / 이름에 용량·개수 없으면 events(진열·예약) 같은 productId 이름(같은 옵션만), 그래도 없으면 '단위가 모름'.
+    shortcut: events에 옵션(item)이 없으면 진열 가격의 0.4~1.5배일 때만 같은 옵션으로 봄(가격만 맞춤) — 옵션 다른 이름이 보이면 events에 item을 적음."""
+    recs, names = price_records(load(POSTS, [])), {}
+    for e in ev_list():  # 진우·Cowork 예약·진열(아직 안 올라간 것도) — 같은 pid면 뒤 항목
+        if isinstance(e, dict) and e.get("pid") and isinstance(e.get("text"), str) and (t := title_of(plain_of(e["text"]))):
+            names[str(e["pid"])] = (parse(t)[1], e.get("item"), won(e.get("now")) or price_won(t))
+    out = []
+    for x in items:
+        nm, pr, w = str(x["productName"]), int(x["productPrice"]), None
+        if not re.search(CP_QTY, nm, re.I) and (n2 := names.get(str(x.get("productId")))) \
+                and (cp_qs(x, "itemId") == str(n2[1]) if n2[1] else n2[2] and 0.4 <= pr / n2[2] <= 1.5):
+            nm, w = n2[0], "진열 이름"
+        it = next((it for it in PRICE_ITEMS if re.search(it[2], nm)), None)
+        u = it and not re.search(PRICE_NOT, nm) and nn_unit(nm, pr, it[3][:-1])
+        rec = u and recs.get(it[0])
+        avg = rec and sum(r[0] for r in rec[2]) / len(rec[2])
+        unit = (u[1] + (f" (기록 평균 {it[3]} {round(avg):,}원 · 최저 {round(rec[2][0][0]):,}원" + (" → 기록 평균보다 쌈" if u[0] < avg else "") + ")" if rec else "") if u
+                else toss_unit(nm, pr) or ("" if re.search(CP_QTY, nm, re.I) else "단위가 모름(이름에 용량·개수 없음)"))
+        tags = [nm, f"{pr:,}원", "🚀 로켓배송" if x.get("isRocket") is True else "", "무료배송" if x.get("isFreeShipping") is True else "", str(x.get("categoryName") or ""), unit, w or ""]
+        out.append((" | ".join(t for t in tags if t), nm, u[1] if u else re.sub(r"꼴$", "", toss_unit(nm, pr)), unit))
+    return out
+
+
 def goldbox(seen):
     kst = time.gmtime(time.time() + 9 * 3600)
     key = time.strftime("goldbox_%Y%m%d", kst)
@@ -1493,12 +1523,19 @@ def goldbox(seen):
     if n:
         print("goldbox 사진", n)
     items = allg[:40]
-    picks = ai_pick(GOLD_PROMPT, [f"{x['productName']} | {int(x['productPrice']):,}원" for x in items])[:5]
-    rv_fields("gold", picks, [f"{items[p['i']]['productName']} {int(items[p['i']]['productPrice']):,}원" for p in picks])  # Z 재검토
-    rows = [f"{n}. {'🚀 ' if x.get('isRocket') is True else ''}<a href=\"{esc(x['productUrl'])}\">{esc(x['productName'])}</a> — <b>{int(x['productPrice']):,}원</b>\n"
-            f"   {esc(p['comment'])}" for n, p in enumerate(picks, 1) for x in [items[p["i"]]]]
+    gl = gold_lines(items)
+    picks = [p for p in ai_pick(GOLD_PROMPT, [g[0] for g in gl]) if 0 <= p["i"] < len(items)][:GOLD_N[1]]
+    print(f"goldbox {len(items)}개 · 단가 {sum(bool(g[2]) for g in gl)} · 기록 비교 {sum('기록 평균' in g[3] for g in gl)}(평균보다 쌈 {sum('보다 쌈' in g[3] for g in gl)})"
+          f" · 이름 보강 {sum(g[0].endswith('진열 이름') for g in gl)} · 단가 모름 {sum(g[3].startswith('단위가 모름') for g in gl)} → 고른 것 {len(picks)}")  # 가격 X(개수만)
+    picks = picks if len(picks) >= GOLD_N[0] else []  # OO: 3개 밑 = 고른 것 0처럼(다음 실행 1번 더 → JJ)
+    rv_fields("gold", picks, [f"{gl[p['i']][1]} {int(items[p['i']]['productPrice']):,}원" for p in picks], "\n".join(gl[p["i"]][0] for p in picks))  # Z 재검토(사실 = 후보 줄 전체 — 단위가·기록)
+    for p in picks:  # 단위가 모름 = '용량은 상품 페이지 확인'(Claude가 빠뜨려도)
+        if gl[p["i"]][3].startswith("단위가 모름") and "상품 페이지" not in p["comment"]:
+            p["comment"] = p["comment"].rstrip(" .") + " · 용량은 상품 페이지 확인"
+    rows = [f"{n}. {'🚀 ' if x.get('isRocket') is True else ''}<a href=\"{esc(x['productUrl'])}\">{esc(gl[p['i']][1])}</a> — <b>{int(x['productPrice']):,}원</b>"
+            + (f" · {esc(gl[p['i']][2])}" if gl[p["i"]][2] else "") + f"\n   {esc(p['comment'])}" for n, p in enumerate(picks, 1) for x in [items[p["i"]]]]
     m = rows and tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
-                    text=f"<i>{DISCLOSURE}</i>\n\n⏰ <b>오늘의 쿠팡 골드박스 TOP{len(rows)}</b>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",  # 🚀 = API isRocket인 것만 · 게시 시점 가격(10/23)
+                    text=f"<i>{DISCLOSURE}</i>\n\n⏰ <b>오늘의 쿠팡 골드박스 TOP{len(rows)}</b>\n<i>{GOLD_WOW}</i>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",  # 🚀 = API isRocket인 것만 · 게시 시점 가격(10/23) · 와우 회원가(OO)
                     reply_markup={"inline_keyboard": [[{"text": "⏰ 골드박스 전체 보기", "url": GOLDBOX}]]})
     if m:
         record(m.get("text", ""), m.get("entities", []), GOLDBOX, m.get("message_id"))

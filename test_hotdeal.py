@@ -646,20 +646,20 @@ H.http = fake_http
 # 5) 골드박스(최종 승인 후 API): 7시 이후 하루 1번 TOP5를 ✅ 없이 채널에 바로, 대가성 문구 맨 앞, 고른 순서대로
 GB = [{"productName": f"상품{i}", "productPrice": 1000.0 * (i + 1), "productUrl": f"https://link.coupang.com/{i}"} for i in range(8)]
 H.http = lambda url, *a, **k: json.dumps({"data": GB})
-H.ai_pick = lambda prompt, lines: [{"i": 3, "score": 9, "comment": "a"}, {"i": 0, "score": 8, "comment": "b"}]
+H.ai_pick = lambda prompt, lines: [{"i": 3, "score": 9, "comment": "a"}, {"i": 0, "score": 8, "comment": "b"}, {"i": 5, "score": 7, "comment": "c"}]
 seen, sent[:], tt = {}, [], time.time
 time.time = lambda: 1791235800; H.goldbox(seen); assert not sent  # 10/6 06:30 KST: 아직
 time.time = lambda: 1791241200; H.goldbox(seen)  # 10/6 08:00 KST
 m, p = sent[-1]; t = p["text"]
 assert m == "sendMessage" and p["chat_id"] == "@ch" and p["reply_markup"]["inline_keyboard"][0][0]["url"] == H.GOLDBOX  # 초안(관리자) 아님
-assert t.startswith("<i>" + H.DISCLOSURE) and "TOP2" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t
+assert t.startswith("<i>" + H.DISCLOSURE) and "TOP3</b>\n<i>와우 회원가 · 다음 날 아침 7시까지</i>\n\n" in t and t.index("상품3") < t.index("상품0") and "4,000원" in t, t  # OO 와우 회원가
 assert json.load(open("posts.json"))[-1]["url"] == H.GOLDBOX  # 사이트·모아보기에도 기록
 sent.clear(); H.goldbox(seen); assert not sent  # 같은 날 재실행 시 안 보냄
 gp = []  # 살 만한 것만(10/7 진우): Claude가 하나도 안 고르면 안 올리고, 그날은 다시 안 고름(15분마다 Claude 호출 안 함)
 H.ai_pick = lambda prompt, lines: gp.append(prompt) or []
 seen.clear(); og = io.StringIO()
 with __import__("contextlib").redirect_stdout(og): H.goldbox(seen); assert "goldbox_20261006" not in seen and len(gp) == 1; H.goldbox(seen); H.goldbox(seen)
-assert not sent and len(gp) == 2 and "억지로 5개 채우지 말고" in gp[0] and "goldbox_20261006" in seen, gp  # 0개 = 다음 실행에 1번 더(10/25 07:03 0개로 그날 조용히 X), 2번째도 0개 = 그날 끝
+assert not sent and len(gp) == 2 and "3~5개 목표로" in gp[0] and "goldbox_20261006" in seen, gp  # 0개 = 다음 실행에 1번 더(10/25 07:03 0개로 그날 조용히 X), 2번째도 0개 = 그날 끝
 assert "고른 것 0 — 다음 실행에 1번 더" in og.getvalue() and "고른 것 0 → steady 후보 0개(3개 미만) — 오늘 안 올림" in og.getvalue(), og.getvalue()  # 로그로 보임(꾸준템 후보도 없음 = 그날 끝)
 # 5-1) JJ(10/26 진우 '살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자'): 2번째도 0개 = 같은 시각·채널 '👍 꾸준히 팔리는 쿠팡 상품' 3~5개
 #      (사이트 👍 꾸준템 쿠팡 진열 · 딥링크 · 품절 X · 리뷰 1,000↑ · ⭐ 있으면 4.5↑ · 계절 맞음 · 최근 3일 채널 X · 식품·생필품 먼저 · 🔥/특가/할인/최저 이름 X)
@@ -5669,9 +5669,10 @@ assert H.cp_same("칠성사이다 190ml 30캔", "칠성사이다, 190ml, 30개")
 assert not H.cp_same("리스테린 쿨민트 1L 2+1", "리스테린 쿨민트, 1L, 1개") and not H.cp_same("비비고 왕교자 1.05kg x2", "비비고 왕교자, 1.05kg, 1개") and not H.cp_same("수면양말 6켤레", "수면양말, 12켤레")
 assert H.cp_same("맥스웰하우스 커피믹스 오리지날 180개입 × 2개", "맥스웰하우스 커피믹스 오리지날, 180개입, 2개") and H.cp_same("IPX500A 청소기", "IPX500A 무선 청소기")
 # ③ 골드박스(API): 🚀 = isRocket true인 것만, 끝에 게시 시점 가격
-reset41(True); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 1, "score": 8, "comment": "b"}]
+reset41(True); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 1, "score": 8, "comment": "b"}, {"i": 2, "score": 7, "comment": "c"}]
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "로켓상품", "productPrice": 1000.0, "productUrl": "https://link.coupang.com/re/1", "isRocket": True},
-                                                                    {"productName": "일반상품", "productPrice": 2000.0, "productUrl": "https://link.coupang.com/re/2", "isRocket": False}]})
+                                                                    {"productName": "일반상품", "productPrice": 2000.0, "productUrl": "https://link.coupang.com/re/2", "isRocket": False},
+                                                                    {"productName": "셋째상품", "productPrice": 3000.0, "productUrl": "https://link.coupang.com/re/3"}]})
 H.goldbox({}); t41 = sent[-1][1]["text"]
 assert t41.startswith("<i>" + H.DISCLOSURE) and "1. 🚀 <a" in t41 and "2. <a" in t41 and t41.endswith("⚠️ 10/6 10:00 게시 시점 가격"), t41
 os.path.exists("cp_links.json") and os.remove("cp_links.json"); H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
@@ -9725,4 +9726,52 @@ assert not any(re.search(it91["eggs"], n) for n in ("계란말이 500g", "계란
 assert all(re.search(it91["eggs"], n) for n in ("반숙란 10구", "완숙란 20구", "맥반석 구운계란 30개", "유정란 30구")) and S.PRICE_ITEMS[[k for k, *_ in S.PRICE_ITEMS].index("milk")][3:] == ("100ml당", ("100ml",)) \
     and all(re.search(it91["milk"], n) for n in ("멸균우유 200ml", "바나나맛 우유 240ml", "커피우유 300ml", "흰우유 1L")) and not re.search(it91["milk"], "우유식빵") and S.PRICE_MIN == 3
 (H.coupang, H.cp_deeplinks, H.tg, H.th_bundle, H.season_adj, time.time, H.POSTS, tk91, H.HAS_CP) = sv91; H.E.pop("THREADS_TOKEN", None) if tk91 is None else H.E.update(THREADS_TOKEN=tk91); os.chdir(cwd91)
+# 9-92) OO(10/26 Cowork — 진우 '얘도 행사하는데?' · 골드박스 10/25·10/26 고른 것 0): Claude 후보 줄 = 이름 | 가격 | 🚀·무료배송·카테고리(API 값) | 단위가
+#       (기록 품목 = 같은 단위 + 핫딜픽 기록 평균·최저 · 평균보다 쌈) · 이름에 용량·개수 없으면 진열·events 같은 pid 이름(같은 옵션만) · 그래도 없으면 '단위가 모름' · 3~5개(3개 밑 = 0처럼) · 와우 회원가
+sv92 = (H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos); d92, cwd92 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d92)
+wp92 = lambda k, nm, w, u: {"t": f"2026-10-2{k} 10:00", "text": f"🔥 [쿠팡] {nm} ({w}원/무료)\n\n💡 단위가격: 1L당 {u}원 — 싸요", "entities": [], "url": f"https://link.coupang.com/a/w{k}", "s": 7}
+own92 = lambda nm, u: {"t": "2026-10-24 10:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n{nm}\n5,000원 · 리뷰 1만", "entities": [], "url": u, "own": 1, "shelf": 1, "st": "hot"}
+json.dump([wp92(1, "삼다수 2L 6병", "3,600", 300), wp92(2, "백산수 2L 6병", "4,800", 400), wp92(3, "아이시스 2L 6병", "6,000", 500),
+           own92("완전두유 190ml 16팩", "https://link.coupang.com/a/d77"), own92("곰곰 즉석밥 210g 24개", "https://link.coupang.com/a/d88")], open("posts92.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/d77", "text": "🔥 <b>[쿠팡] 완전두유 190ml 16팩 (5,000원)</b>\n\n💰 1팩 313원꼴", "pid": "77", "now": "5,000원"},
+           {"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/d88", "text": "📦 <b>[쿠팡] 곰곰 즉석밥 210g 24개 (20,000원)</b>", "pid": "88", "item": "555"},  # now 없으면 제목 가격
+           {"at": "2026-10-28 21:00", "url": "https://link.coupang.com/a/d99", "text": "🔥 <b>[쿠팡] 물하나 생수 500ml 60개 (9,560원)</b>", "pid": "99", "item": "991", "now": "9,560원 와우가"}], open("events92.json", "w"), ensure_ascii=False)  # 아직 안 올라간 예약도
+H.POSTS, H.EVENTS, S.EVENTS = "posts92.json", "events92.json", "events92.json"
+G92 = [{"productId": 1, "productName": "물하나 생수 1L x 12개", "productPrice": 3830.0, "isRocket": True, "isFreeShipping": True, "categoryName": "식품", "productUrl": "https://link.coupang.com/re/1?itemId=11"},
+       {"productId": 77, "productName": "완전두유", "productPrice": 4800.0, "categoryName": "식품", "productUrl": "https://link.coupang.com/re/2?itemId=7"},  # 이름에 개수 X -> 진열 이름(가격 0.96배)
+       {"productId": 3, "productName": "오뚜기 발아흑미밥", "productPrice": 15000.0, "productUrl": "https://link.coupang.com/re/3"},  # 단위가 모름
+       {"productId": 4, "productName": "박상병 핫팩 150g 30개", "productPrice": 15900.0, "isFreeShipping": True, "productUrl": "https://link.coupang.com/re/4"},
+       {"productId": 77, "productName": "완전두유", "productPrice": 1000.0, "productUrl": "https://link.coupang.com/re/5"},  # 가격 0.2배 = 다른 옵션일 수 있음 -> 진열 이름 X
+       {"productId": 88, "productName": "곰곰 즉석밥", "productPrice": 19000.0, "productUrl": "https://link.coupang.com/re/6?itemId=556"},  # events 옵션(555)과 다름 -> X
+       {"productId": 88, "productName": "곰곰 즉석밥", "productPrice": 19000.0, "productUrl": "https://link.coupang.com/re/7?itemId=555"}]  # 같은 옵션 -> 진열 이름 · 즉석밥 개당
+gl92 = H.gold_lines(G92)
+assert gl92[0] == ("물하나 생수 1L x 12개 | 3,830원 | 🚀 로켓배송 | 무료배송 | 식품 | 1L당 319원 (기록 평균 1L당 400원 · 최저 300원 → 기록 평균보다 쌈)", "물하나 생수 1L x 12개", "1L당 319원",
+                   "1L당 319원 (기록 평균 1L당 400원 · 최저 300원 → 기록 평균보다 쌈)"), gl92[0]
+assert gl92[1][0] == "완전두유 190ml 16팩 | 4,800원 | 식품 | 1팩당 300원꼴 | 진열 이름" and gl92[1][1:3] == ("완전두유 190ml 16팩", "1팩당 300원"), gl92[1]
+assert gl92[2] == ("오뚜기 발아흑미밥 | 15,000원 | 단위가 모름(이름에 용량·개수 없음)", "오뚜기 발아흑미밥", "", "단위가 모름(이름에 용량·개수 없음)") and gl92[3][0] == "박상병 핫팩 150g 30개 | 15,900원 | 무료배송 | 1개당 530원꼴", (gl92[2], gl92[3])
+assert gl92[4][1] == "완전두유" and gl92[4][3].startswith("단위가 모름") and gl92[5][1] == "곰곰 즉석밥" and gl92[6][1] == "곰곰 즉석밥 210g 24개" and gl92[6][2] == "개당 792원", (gl92[4], gl92[5], gl92[6])
+assert gl92[6][0].endswith("| 개당 792원 | 진열 이름") and "기록" not in gl92[6][0]  # 기록 3개 밑 품목 = 기록 비교 X
+assert H.gold_lines([{"productId": 99, "productName": "물하나 생수", "productPrice": 9560.0, "productUrl": "https://link.coupang.com/re/9?itemId=991"}])[0][0] \
+    == "물하나 생수 500ml 60개 | 9,560원 | 1L당 319원 (기록 평균 1L당 400원 · 최저 300원 → 기록 평균보다 쌈) | 진열 이름"  # 아직 안 올라간 예약(events)도 같은 pid·옵션 이름
+assert H.gold_lines([{"productId": 5, "productName": "양은 라면냄비 18cm 2개", "productPrice": 9000.0}])[0][0] == "양은 라면냄비 18cm 2개 | 9,000원 | 1개당 4,500원꼴"  # 품목 낱말이어도 냄비 = 기록 품목 X
+sent92, ap92 = [], []
+H.coupang = lambda method, path, body=None: G92; H.HAS_CP, H.cp_photos = True, lambda seen, items: 0
+H.tg = lambda m, **p: sent92.append(p) or {"message_id": 5, "text": p.get("text", ""), "entities": []}
+H.ai_pick = lambda prompt, lines: ap92.append((prompt, lines)) or [{"i": 0, "score": 9, "comment": "1L 12병 구성"}, {"i": 2, "score": 8, "comment": "발아흑미밥 구성"}, {"i": 3, "score": 7, "comment": "30개 구성"}, {"i": 1, "score": 6, "comment": "두유"}]
+s92, o92 = {}, io.StringIO(); time.time = lambda: TK("2026-10-27 07:05")
+with contextlib.redirect_stdout(o92): H.goldbox(s92)
+g92 = sent92[-1]["text"]
+assert "goldbox_20261027" in s92 and ap92[0][1] == [g[0] for g in gl92] and "기록 평균보다 쌈" in ap92[0][0] and "용량은 상품 페이지 확인" in ap92[0][0] and "와우 회원가" in ap92[0][0]
+assert g92.startswith(f"<i>{H.DISCLOSURE}</i>\n\n⏰ <b>오늘의 쿠팡 골드박스 TOP4</b>\n<i>와우 회원가 · 다음 날 아침 7시까지</i>\n\n1. 🚀 <a href=\"https://link.coupang.com/re/1?itemId=11\">물하나 생수 1L x 12개</a> — <b>3,830원</b> · 1L당 319원\n   1L 12병 구성"), g92
+assert "오뚜기 발아흑미밥</a> — <b>15,000원</b>\n   발아흑미밥 구성 · 용량은 상품 페이지 확인" in g92 and "박상병 핫팩 150g 30개</a> — <b>15,900원</b> · 1개당 530원\n" in g92 and "\">완전두유 190ml 16팩</a> — <b>4,800원</b> · 1팩당 300원\n" in g92 and g92.endswith(H.toss_when()), g92  # 단위가 모름 = 페이지 확인
+assert "goldbox 7개 · 단가 4 · 기록 비교 1(평균보다 쌈 1) · 이름 보강 2 · 단가 모름 3 → 고른 것 4" in o92.getvalue() and "3,830" not in o92.getvalue(), o92.getvalue()  # 로그 = 개수만(가격 X)
+H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 3, "score": 7, "comment": "b"}, {"i": 99, "score": 7, "comment": "c"}]; s92, o92, n92 = {}, io.StringIO(), len(sent92)
+with contextlib.redirect_stdout(o92): H.goldbox(s92)
+assert len(sent92) == n92 and "goldbox_20261027" not in s92 and s92["gold0"]["d"] == "goldbox_20261027" and "고른 것 2" in o92.getvalue() and "고른 것 0 — 다음 실행에 1번 더" in o92.getvalue(), o92.getvalue()  # 3개 밑(없는 번호 X) = 0처럼 → 다음 실행
+with contextlib.redirect_stdout(o92): H.goldbox(s92)
+assert "goldbox_20261027" in s92 and "고른 것 0 → steady 후보" in o92.getvalue()  # 2번째도 3개 밑 = JJ 꾸준템 글 차례(후보 없으면 그날 끝)
+H.ai_pick = lambda prompt, lines: [{"i": k, "score": 9 - k, "comment": "c"} for k in range(7)]; s92 = {}
+with contextlib.redirect_stdout(io.StringIO()): H.goldbox(s92)
+assert "골드박스 TOP5</b>" in sent92[-1]["text"] and "6. " not in sent92[-1]["text"]  # 5개까지
+(H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos) = sv92; S.EVENTS = "events.json"; os.chdir(cwd92)
 print("OK: 모든 셀프체크 통과")
