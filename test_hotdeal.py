@@ -1744,7 +1744,8 @@ assert f'href="{S.BASE}c/life/2/" rel="next">다음 20개 보기 →' in l1 and 
 assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네이버 캐러셀: 항목마다 진짜 상품 사진)
 sm6 = open("docs6p/sitemap.xml").read()
 assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
-assert sorted(os.listdir("docs6p/c")) == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
+assert {d[:-5] for d in os.listdir("docs6p/c") if d.endswith(".html") and d != "index.html"} <= set(S.REC_KEEP)  # 기록 쪽 = 있던 품목(REC_KEEP)만(TT-2 — 0개 = 안내 쪽)
+assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
 # 6-6) 품목 12칸 쪽(10/24 세분): 제목 정규식(cat_of) — 위생백 = 주방, 세제 = 세탁, KF94·샴푸 = 생필품, 마스크팩·폼클렌징 = 뷰티(아이스크림 X) · 최근 3일 커뮤니티 딜 + 진우 상품
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
