@@ -7220,7 +7220,7 @@ def dl65(f):
     H.RUN.setdefault("cpn", [0, 0])[0] += 1; r65.append(f)
     if isinstance(D65[f], Exception): raise D65[f]
     return D65[f]
-sv65r = (H.POSTS, H.HAS_CP, H.cp_deeplink, H.lp_api, H.RUN.get("cpn")); H.POSTS, H.HAS_CP, r65, l65, sr65 = "posts.json", True, [], [], {"cpdl": {"x": {SH65: 1}}}  # 진열 SH65 = cp_links가 이미 해 본 것(VV — 한 번도 안 해 본 진열이 있으면 site_relink 쿠팡은 쉼: 9-99)
+sv65r = (H.POSTS, H.HAS_CP, H.cp_deeplink, H.lp_api, H.RUN.get("cpn")); H.POSTS, H.HAS_CP, r65, l65, sr65 = "posts.json", True, [], [], {}  # 처음(now 없음) = 진열 SH65도 site_relink now 몫(VV cp_new에서 빠짐 — 리뷰: 안 그러면 둘 다 안 함)
 H.cp_deeplink, H.lp_api = dl65, lambda u: l65.append(u) or (None, "F 승인거부")
 cr65, H.CP_RUN = H.CP_RUN, 7; H.RUN["cpn"] = [0, 0]; time.time = lambda: 1_800_000_000; H.site_relink(sr65); po65, rl65 = json.load(open("posts.json")), json.load(open(H.RELINK)); H.CP_RUN = cr65
 assert r65 == [SH65, "https://www.coupang.com/vp/products/77", CS65] and l65 == [AU65], r65  # 진열 먼저 · 1개씩 ① 원래 주소(옵션 그대로) 먼저 → ② 상품 번호만 · 실행 몫(CP_RUN-4번째까지 — 여기선 CP_RUN 7 = 3번) 다 쓰면 다음 실행
