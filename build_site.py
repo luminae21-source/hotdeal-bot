@@ -41,6 +41,7 @@ CAT_ICON = {  # 품목 선 아이콘(10/24 진우 — 사진 없을 때 이모�
     "home": '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 21v-6h4v6"/>',  # 집
     "fashion": '<path d="M10 5.5a2 2 0 1 1 2 2V9"/><path d="M12 9 2.8 15.6a1 1 0 0 0 .6 1.8h17.2a1 1 0 0 0 .6-1.8Z"/>',  # 옷걸이(양말 X)
     "digital": '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',  # Lucide plug
+    "car": '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',  # Lucide car(10/26 Cowork 자동차 칸)
     "": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',  # Lucide shopping-bag(품목 없음)
 }
 
@@ -730,10 +731,11 @@ SNACK = (r"과자|초코|쵸코|견과|간식|젤리|사탕|캔디|쿠키|비스
          r"새우깡|허니버터|에너지\s*바|단백질\s*바|약과|강정|육포|쥐포")
 SEASON = (r"감귤|(?<![가-힣])귤|한라봉|천혜향|레드향|고구마|단감|홍시|(?<![가-힣])반시|대봉|곶감|햇밤|군밤|(?<![가-힣])밤\s*\d|햅쌀|사과|부사|샤인\s*머스캣|생굴|석화|(?<![가-힣])굴(?!비|소스)|방어|꼬막|"
           r"과메기|대게|홍게|전어|유자|호빵|김장|절임\s*배추|배추|(?<![가-힣])무\s*\d|동치미|딸기(?!향|맛)|붕어빵|호떡|팥죽")
+CAR = r"요소수|워셔액|엔진|차량용|자동차|타이어|와이퍼|콘솔\s*(?:쿠션|박스|트레이)|헤드레스트|블랙박스|불스원|유막|햇빛\s*가리개|[선썬]\s*쉐이드"  # 10/26 Cowork 자동차 칸 — 콘솔 = 차 콘솔만(게임기 X) · 방향제 단독 X(집 방향제 = 생필품, 차 방향제는 '차량용'으로)
 SHELF_CATS = (("life", "🧻 생필품", CATS[0][2]), ("kitchen", "🍳 주방", KITCHEN), ("laundry", "🧺 세탁", LAUNDRY), ("women", "🌸 여성용품", WOMEN), ("beauty", "💄 화장품·뷰티", CATS[1][2]),
               ("food", "🍚 식품·음료", FOOD7), ("snack", "🍪 과자·간식", SNACK), ("season", "🍠 제철 먹거리", SEASON), ("home", "🏠 생활·살림", HOME_RX),
-              ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT))  # 10/23 진우 7칸 -> 10/24 '수백 개로 늘어나니 세분(주방·세탁·여성용품·과자·계절음식)' 12칸 — 이 순서로 보임(겨울 난방·제철 = 계절 칸, 없으면 안 보임)
-CAT_ORDER = ("heat", "women", "beauty", "kitchen", "laundry", "life", "snack", "season", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 생리대 = 여성용품, 크림·클렌징 = 화장품, 주방 세제·크린랩 = 주방, 세제 = 세탁, 휴지 = 생필품, 과자 > 제철 > 식품)
+              ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT), ("car", "🚗 자동차", CAR))  # 10/23 진우 7칸 -> 10/24 '수백 개로 늘어나니 세분(주방·세탁·여성용품·과자·계절음식)' 12칸 — 이 순서로 보임(겨울 난방·제철 = 계절 칸, 없으면 안 보임)
+CAT_ORDER = ("heat", "car", "women", "beauty", "kitchen", "laundry", "life", "snack", "season", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 생리대 = 여성용품, 크림·클렌징 = 화장품, 주방 세제·크린랩 = 주방, 세제 = 세탁, 휴지 = 생필품, 과자 > 제철 > 식품)
 
 
 HOME_FIRST = r"모기|홈매트|훈증|살충|킨칸|에프킬라"  # 모기향 '히터'(리퀴드 훈증기)는 겨울 난방 X -> 생활·주방(10/23 리뷰)
@@ -862,7 +864,8 @@ L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML
 CAT_META = {  # 10/24 진우 개편: 품목 칸 -> (쪽 주소 /c/slug/, 이름, 이모지, 파스텔 바탕) — 홈 타일 8칸 = TILES(4×2), 나머지 4칸은 /c/ 카테고리 쪽에 · 주소는 영문(Threads 글에서 한글 주소가 링크로 안 이어질 수 있어서)
     "life": ("life", "생필품", "🧻", "#FFEFE6"), "food": ("food", "식품", "🍚", "#EAF6EE"), "beauty": ("beauty", "뷰티", "💄", "#FDEBF1"), "kitchen": ("kitchen", "주방", "🍳", "#EEF1FB"),
     "laundry": ("laundry", "세탁", "🧺", "#E9F5F8"), "snack": ("snack", "간식", "🍪", "#FFF6DD"), "women": ("women", "여성용품", "🌸", "#F3ECFB"), "heat": ("winter", "겨울템", "❄️", "#E8F1FF"),
-    "season": ("season", "제철 먹거리", "🍠", "#FFF1E6"), "home": ("home", "생활·살림", "🏠", "#F1F3F6"), "fashion": ("fashion", "패션·잡화", "🧦", "#F5EFEA"), "digital": ("digital", "가전·디지털", "🔌", "#EEF2F7")}
+    "season": ("season", "제철 먹거리", "🍠", "#FFF1E6"), "home": ("home", "생활·살림", "🏠", "#F1F3F6"), "fashion": ("fashion", "패션·잡화", "🧦", "#F5EFEA"), "digital": ("digital", "가전·디지털", "🔌", "#EEF2F7"),
+    "car": ("car", "자동차", "🚗", "#EEF1F4")}  # 자동차 = 맨 끝(10/26 Cowork — /c/ 칸·홈 품목 줄)
 TILES = ("life", "food", "beauty", "kitchen", "laundry", "snack", "women", "heat")
 MALLS = (("coupang", "쿠팡", "🚀"), ("toss", "토스", "💙"), ("naver", "네이버", "💚"))
 PER = 20  # 목록 쪽 한 쪽 상품 수(10/24 진우 '카테고리·전체 페이지는 20개씩') — 다음 쪽 = /c/이름/2/
@@ -878,12 +881,13 @@ UI = {  # Lucide(ISC) 선 아이콘 — 아래 메뉴·헤더
     "alarm": '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
     "search": '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'}
 svg = lambda k: f'<svg viewBox="0 0 24 24" aria-hidden="true">{UI[k]}</svg>'
-ICON_FIX = ((r"가습기|보조\s*배터리|충전기|이어폰|드라이기|선풍기|멀티탭|모니터", "digital"), (r"사료|강아지|고양이|애견|펫|차량용|자동차|워셔액|요소수|햇빛\s*가리개", ""))  # 품목이 틀리게 잡히는 이름(미스트 가습기 필터 = 뷰티 X · 고양이 사료 = 식품 X · 차량용 = 쇼핑백)
+ICON_FIX = ((r"가습기|보조\s*배터리|충전기|이어폰|드라이기|선풍기|멀티탭|모니터", "digital"), (r"사료|강아지|고양이|애견|펫", ""))  # 10/26: 차량용·자동차·워셔액·요소수·햇빛 가리개 = 자동차 칸(CAR)으로  # 품목이 틀리게 잡히는 이름(미스트 가습기 필터 = 뷰티 X · 고양이 사료 = 식품 X · 차량용 = 쇼핑백)
 
 
 def icon_key(p):
-    """썸네일 선 아이콘 키: ICON_FIX(이름) -> 품목(cat_of) -> '' (쇼핑백)."""
-    k = next((k for r, k in ICON_FIX if re.search(r, parse(title_of(p["text"]))[1])), cat_of(p))
+    """썸네일 선 아이콘 키(search.json m): ICON_FIX(이름) -> 품목(cat_of) -> '' (쇼핑백)."""
+    c = cat_of(p)
+    k = next((k for r, k in ICON_FIX if re.search(r, parse(title_of(p["text"]))[1]) and not (k == "" and c in ("heat", "fashion"))), c)  # 펫 낱말이어도 난방·패션 칸이면 그 칸(10/26 온수매트 강아지·고양이 털 슬리퍼)
     return k if k in CAT_ICON else ""
 
 
@@ -1622,7 +1626,7 @@ def row(i, p, sh, today, gc="", extra=""):
                                                  + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span></span></a></li>")
 
 
-Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "women", "heat", "season", "home", "fashion")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
+Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "women", "heat", "season", "home", "fashion", "car")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
 
 
 def quick_nav(evs, dl_n, dl_end, top_live, evh=""):

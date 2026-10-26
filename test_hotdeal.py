@@ -1663,7 +1663,7 @@ assert qk0[:4] == [(f"{S.BASE}c/today/", "q/today", "⏰", "오늘 마감"), (f"
 assert re.findall(r'<a class="q" href="([^"]+)" data-gc="cat/[^"]+"><i aria-hidden="true" style="--c:(#[0-9A-F]+)">([^<]+)</i>([^<]+)</a>', idx) == \
     [(f"{S.BASE}c/{u}/", c, e, n) for u, c, e, n in (("life", "#FFEFE6", "🧻", "생필품"), ("food", "#EAF6EE", "🍚", "식품"), ("beauty", "#FDEBF1", "💄", "뷰티"), ("digital", "#EEF2F7", "🔌", "가전"), ("kitchen", "#EEF1FB", "🍳", "주방"),
                                                      ("laundry", "#E9F5F8", "🧺", "세탁"), ("snack", "#FFF6DD", "🍪", "간식"), ("women", "#F3ECFB", "🌸", "여성용품"), ("winter", "#E8F1FF", "❄️", "겨울템"),
-                                                     ("season", "#FFF1E6", "🍠", "제철"), ("home", "#F1F3F6", "🏠", "생활"), ("fashion", "#F5EFEA", "🧦", "패션"))] and f'<a class="q" href="{S.BASE}c/" data-gc="cat/all"><i aria-hidden="true">▦</i>전체보기</a>' in idx  # 2줄 = 품목 12칸(가전 4번째 — 진우 v3) + ▦ 전체보기 · 품목 색
+                                                     ("season", "#FFF1E6", "🍠", "제철"), ("home", "#F1F3F6", "🏠", "생활"), ("fashion", "#F5EFEA", "🧦", "패션"), ("car", "#EEF1F4", "🚗", "자동차"))] and f'<a class="q" href="{S.BASE}c/" data-gc="cat/all"><i aria-hidden="true">▦</i>전체보기</a>' in idx  # 2줄 = 품목 13칸(가전 4번째 — 진우 v3 · 10/26 자동차 맨 끝) + ▦ 전체보기 · 품목 색
 fi5 = idx.split('id="fire"')[1].split("</section>")[0]
 assert all(n in idx.split('id="today"')[1].split("</section>")[0] for n in S.SHOP_NOTES.values())  # 카드 번호 칸('보기' = 몰로 바로) = 3사 문구
 rw5 = lambda t: re.findall(r'<li class="r"><a href="https://hotdealpick.kr/p/(\d+)\.html"', fi5.split(f'data-p="{t}"')[1].split("</ol>")[0])
@@ -1703,7 +1703,7 @@ assert f'href="{S.BASE}c/life/2/" rel="next">다음 20개 보기 →' in l1 and 
 assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네이버 캐러셀: 항목마다 진짜 상품 사진)
 sm6 = open("docs6p/sitemap.xml").read()
 assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
-assert sorted(os.listdir("docs6p/c")) == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
+assert sorted(os.listdir("docs6p/c")) == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
 # 6-6) 품목 12칸 쪽(10/24 세분): 제목 정규식(cat_of) — 위생백 = 주방, 세제 = 세탁, KF94·샴푸 = 생필품, 마스크팩·폼클렌징 = 뷰티(아이스크림 X) · 최근 3일 커뮤니티 딜 + 진우 상품
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
@@ -1721,9 +1721,9 @@ life7, beauty7, kit7, lau7 = (open(f"docs7/c/{k}/index.html").read() for k in ("
 assert life7.count('class="g"') == 2 and life7.index("KF94") < life7.index("샴푸") and "마스크팩" not in life7 and "휴지" not in life7.split('<nav class="chips"')[1] and "위생백" in kit7 and "세제" in lau7  # 10/24 세분: 위생백 = 주방, 세제 = 세탁
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and '<h1 class="h">🧻 생필품 특가 모음</h1>' in life7 and '<h1 class="h">💄 뷰티 특가 모음</h1>' in beauty7
 assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-label="목록">')[1].split("</nav>")[0].split("</a>")[:-1]] == \
-    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
+    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
 cats7 = open("docs7/c/index.html").read()
-assert cats7.count('<a class="tile"') == 12 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 12칸 전부(아이콘 6×2)
+assert cats7.count('<a class="tile"') == 13 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
 assert re.findall(r'<a class="mt (\w+)" href="([^"]+)" data-gc="mall/\w+"><b>(?:<i class="lw" aria-hidden="true">.*?</i>)?[^<]+</b><small>[^<]+</small><i>(\d+)개</i></a>', cats7) == [("coupang", f"{S.BASE}c/coupang/", "1"), ("toss", f"{S.BASE}c/toss/", "0"), ("naver", f"{S.BASE}c/naver/", "1")] and 'aria-label="목록"' not in cats7  # 몰 타일 3개(개수) · 18칩 줄 X
 assert [re.sub("<[^>]+>", "", a) for a in S.stat_chips("drop").split("</a>")[:-1]] == ["🔥 특가", "👍 꾸준템", "⏳ 대기", "📉 가격 내림", "⏰ 오늘 마감", "🏆 TOP 10"] and S.stat_chips("drop").count('aria-current="page"') == 1 and f'<a href="{S.BASE}c/drop/" aria-current="page">' in S.stat_chips("drop")
@@ -5234,7 +5234,7 @@ assert [S35.cat_of(ct35(t)) for t in ("킨칸 모기 패치", "옥시크린 워�
 assert [S35.cat_of(ct35(t)) for t in ("코멧 위생백 200매", "주방세제 퐁퐁 1L", "다우니 섬유유연제 2L", "LG 세탁기 21kg", "쏘피 생리대 중형 36개", "롬앤 아이라이너", "프라엘 멜라빔 디바이스", "가그린 구강청결제 1.2L",
                                      "포카칩 66g 6개", "파이토메이드 두유 24개", "오뚜기 스낵면 10개", "제주 감귤 5kg", "생굴 1kg", "굴소스 500g", "크리스찬딘 어반시크 향수", "뽀로로 딸기맛 음료", "와이파이 공유기")] == \
     ["kitchen", "kitchen", "laundry", "", "women", "", "", "", "snack", "food", "", "season", "season", "food", "beauty", "food", ""]  # 10/24 세분 칸 + 실제 진열 제목에서 잘못 들어가던 것(프라엘 = 라엘 X, 아이라이너·구강청결제 = 생필품·여성용품 X, 어반시크 = 반시 X, 딸기맛·두유·스낵면 = 과자·제철 X — 칸 없음은 cat_fill이 Claude로)
-assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
+assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat", "car"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
 assert all(f"{k} = " in H.CAT_PROMPT for k in S35.CAT_ORDER)  # Claude 품목 칸 설명도 12칸 다
 assert S35.cat_of(ct35("애터미 비비크림", cat="beauty")) == "beauty" and S35.cat_of(ct35("사다리", cat="etc")) == "" and S35.cat_of(ct35("햇반", cat="beauty")) == "food"  # 정규식 먼저
 sv35c, a35 = (H.ai_json, H.POSTS, H.E.get("ANTHROPIC_API_KEY")), []
@@ -5245,8 +5245,8 @@ H.cat_fill({}); assert all("cat" not in p for p in json.load(open("posts35.json"
 H.ai_json = lambda prompt, props: {"cats": ["beauty", "food"]}; H.cat_fill({}); assert [p.get("cat") for p in json.load(open("posts35.json"))] == ["beauty", "food", None, "etc", None]
 a35.clear(); H.ai_json = lambda prompt, props: a35.append(prompt); H.cat_fill({}); assert not a35  # 다 채웠으면 안 부름
 H.ai_json, H.POSTS = sv35c[:2]; H.E.pop("ANTHROPIC_API_KEY") if sv35c[2] is None else H.E.update(ANTHROPIC_API_KEY=sv35c[2]); os.remove("posts35.json")
-assert set(S35.CAT_META) == set(S35.CAT_ORDER) and len({m[0] for m in S35.CAT_META.values()}) == 12 and set(S35.TILES) <= set(S35.CAT_META) and len(S35.TILES) == 8  # 10/24 개편: 품목 12칸 = 쪽 12개(영문 주소), 홈 타일 = 그중 8칸
-assert S35.tiles().count('<a class="tile"') == 8 and S35.tiles(tuple(S35.CAT_META)).count('<a class="tile"') == 12 and S35.chips_html("life").count('aria-current="page"') == 1 and "aria-current" not in S35.chips_html("") and S35.tiles(tuple(S35.CAT_META), True).startswith('<nav class="tiles t6"')
+assert set(S35.CAT_META) == set(S35.CAT_ORDER) and len({m[0] for m in S35.CAT_META.values()}) == 13 and set(S35.TILES) <= set(S35.CAT_META) and len(S35.TILES) == 8  # 10/24 개편: 품목 12칸 = 쪽 12개(영문 주소), 홈 타일 = 그중 8칸
+assert S35.tiles().count('<a class="tile"') == 8 and S35.tiles(tuple(S35.CAT_META)).count('<a class="tile"') == 13 and S35.chips_html("life").count('aria-current="page"') == 1 and "aria-current" not in S35.chips_html("") and S35.tiles(tuple(S35.CAT_META), True).startswith('<nav class="tiles t6"')
 # 9-36 (10/23 리뷰 고침 + 진우 '인스타 다시 켬'): own_end 확인 전 하루특가 날 지남 = ⏳ + stl(첫 확인에 🔥여도 🔁 X) · stale = 글 날짜 밤 12시 기준(매일 밤 다시 ⏳·강제 재확인 X)
 sv36 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.tg, H.ai_json)
 json.dump([{"t": "2026-10-20 10:00", "text": "🔥 [토스] D (8,000원)\n\n토스 하루특가", "url": "https://toss.shopping/_m/D36", "own": 1}], open("posts36.json", "w"), ensure_ascii=False)
@@ -8690,4 +8690,27 @@ sv80i is not None and H.E.__setitem__("IG_TOKEN", sv80i)
 (time.time, _, H.POSTS, H.th_bundle, H.th_reply, H.th_reply_ok, H.busy, tk80, H.KAKAO_OPENCHAT_URL, H.http, H.th_post, H.th_topic, H.alert, H.TH_REPLY) = sv80
 H.E.pop("THREADS_TOKEN", None) if tk80 is None else H.E.__setitem__("THREADS_TOKEN", tk80)
 os.chdir(sv80[1]); shutil.rmtree(d80)
+# 9-81) 자동차 칸(10/26 Cowork 10시 사이트 점검 — search.json 품목(m) 없는 70개 중 자동차 23): CAR = 요소수·워셔액·엔진·차량용·자동차·타이어·와이퍼·차 콘솔·헤드레스트·블랙박스·불스원·유막·햇빛 가리개
+#       칸 순서 = 맨 끝(홈 품목 줄 Q_CATS·/c/ 칸 CAT_META) · 🚗 선 아이콘 · 이름에 강아지·고양이가 있어도 난방·패션이면 그 칸(온수매트 강아지·고양이 털 슬리퍼)
+import build_site as S81
+c81 = lambda n: S81.cat_of({"text": f"🔥 [토스] {n} (9,900원)"})
+assert all(c81(n) == "car" for n in ("유로플러스 요소수 10L 디젤 차량용 1개", "차싹 에탄올 발수코팅 워셔액 2L 3개", "불스원 불스파워 엔진코팅제 블랙 240ml 2개", "아이엠듀 자동차 타이어 공기압 주입기 1개",
+                                     "자동차 하이브리드 와이퍼 650mm + 400mm 1세트", "자동차 콘솔쿠션 컵홀더 멀티 수납형 PU 팔걸이쿠션 그레이 1개", "브루마 차량용 헤드레스트 후크 블랙 2개", "선쉐이드 자외선 완벽차단 햇빛가리개 전좌석 올인원 블랙 4개입 1세트",
+                                     "메르헨트 데오 프레쉬 차량용 고체탈취제 에어리 허브 250g 2개", "블랙 다이아몬드 사계절 에탄올 워셔액 1.8L 6개입 1박스"))  # 탈취(생필품)·자외선(뷰티)·워셔액(식품 X)보다 먼저
+assert c81("글레이드 방향제 3개") == "life" and c81("PS5 디지털 에디션 콘솔") != "car" and c81("핫팩 30개 차량용") == "heat"  # 집 방향제 = 생필품 · 게임 콘솔 X · 난방이 먼저
+ik81 = lambda n: S81.icon_key({"text": f"🔥 [쿠팡] {n} (9,900원)"})
+assert (ik81("한일의료기 프리미엄 워셔블 온수매트 강아지, 더블(140 x 200 cm)"), ik81("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼 WT330"), ik81("하림펫푸드 밥이보약 CAT 3.4kg"), ik81("유로플러스 요소수 10L")) == ("heat", "fashion", "", "car")  # 펫 낱말 = 쇼핑백 아이콘 그대로(사료 = 밥그릇 X)
+assert list(S81.CAT_META)[-1] == S81.Q_CATS[-1] == S81.SHELF_CATS[-1][0] == "car" and S81.CAT_META["car"][:3] == ("car", "자동차", "🚗") and "car" in S81.CAT_ICON and ".ci-car{" in S81.CSS and S81.CAT_ORDER[:2] == ("heat", "car")
+assert "car = 자동차 용품" in H.CAT_PROMPT  # 정규식에 안 맞는 차 용품 = Claude 한 단어(cat_fill)도 car
+pk81 = lambda n: H.pair_key({"text": f"🔥 [토스] {n} (9,900원)", "url": "https://toss.im/_m/x81"})
+assert pk81("드리온 15W 고속 맥세이프 차량용 무선 충전기 1개") is None and pk81("유로플러스 요소수 10L 디젤 차량용 1개")[:2] == ("car", "요소수") and H.TH_TOPICS["car"] == "자동차"  # '둘 중 뭐 살래' = 차량용·자동차 꾸밈말로 안 묶음(충전기·공구·요소수 X) · Threads 주제
+sv81 = os.getcwd(); d81 = tempfile.mkdtemp(); os.chdir(d81)
+po81 = [{"t": "2026-10-26 10:00", "text": "🔥 [쿠팡] 차량용 방향제 3개 (9,900원)", "url": "https://link.coupang.com/a/c81", "s": 8}, {"t": "2026-10-26 10:05", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원)", "url": "https://link.coupang.com/a/c82", "s": 8}]
+with contextlib.redirect_stdout(io.StringIO()):
+    S81.build(po81, "docs")
+ix81, cs81 = open("docs/index.html").read(), open("docs/c/index.html").read()
+assert os.path.exists("docs/c/car/index.html") and "차량용 방향제" in open("docs/c/car/index.html").read() and 'data-gc="cat/car"' in ix81  # /c/car/ 쪽 · 홈 품목 줄
+assert ix81.index('data-gc="cat/fashion"') < ix81.index('data-gc="cat/car"') and cs81.rindex(f'href="{S81.BASE}c/car/"') > cs81.rindex(f'href="{S81.BASE}c/digital/"')  # 맨 끝
+assert [x["m"] for x in json.load(open("docs/search.json")) if x["n"].startswith("차량용")] == ["car"]  # search.json 품목(m)
+os.chdir(sv81); shutil.rmtree(d81)
 print("OK: 모든 셀프체크 통과")
