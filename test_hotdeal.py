@@ -10288,4 +10288,47 @@ P98[13] = {"t": "2026-10-27 08:00", "text": "📦 쿠팡 🔥\n딜 13\n1,000원"
 open("docs/p/13.html", "w").write("끝"); open("docs/sitemap.xml", "w").write(f"<urlset><url><loc>{S.BASE}p/13.html</loc></url><url><loc>{S.BASE}p/0.html</loc></url></urlset>")
 s98 = {"idx_key": {"t": 0}}; H.indexnow(s98); assert nv98() == [["p/0.html"]], nv98()
 (H.http, time.time, H.tg, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv98; os.chdir(cwd98)
+# 9-99) VV(10/27 Cowork — 새 진열 44개가 2시간째 수익 링크 0 · cp_fail 44개 f·x·e 빈 칸 = 한 번도 시도 X): 앞 실행들의 가격 확인·사진·재시도가 시간당 상한(25)을 다 써서 cp_links 차례엔 CpLimit ·
+#       진열은 재시도(나누다 만 묶음·1개짜리) 뒤 순서 -> ① 한 번도 안 해 본 진열 = 채널 예약 다음·재시도 앞 · 이 실행 몫(CP_RUN)까지 ② 재시도 = 남은 몫의 절반 · site_relink 쿠팡 = 새 진열 끝날 때까지 쉼
+#       ③ 새 진열이 남으면 다른 쿠팡 호출은 시간당 CP_NEW_RES를 남김(다음 실행 cp_links 차례) ④ 로그 'cp link 새 진열 N개 중 M개 바뀜 · 남은 대기 K'
+sv99 = (H.http, H.HAS_CP, time.time, H.POSTS, H.EVENTS, dict(H.RUN)); d99, cwd99 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d99); H.POSTS, H.EVENTS = "posts.json", "events.json"
+VP99 = lambda pid, q="": f"https://www.coupang.com/vp/products/{pid}" + q
+N99, R99 = [VP99(9000 + k, f"?itemId={k}") for k in range(44)], [VP99(8000 + k, f"?itemId={k}") for k in range(5)]  # N = 새 진열 44(LG 뷰티·차류) · R = 400 재시도(7일 지남)
+c99 = []
+def http99(url, body=None, headers=None, method=None):
+    if url.endswith("/deeplink"):
+        us = body["coupangUrls"]; c99.append(us)
+        if any("/products/80" in u for u in us):
+            return json.dumps({"rCode": "400", "rMessage": "url convert failed"})
+        return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/n" + re.search(r"/products/(\d+)", u)[1]} for u in us]})
+    return json.dumps({"rCode": "0", "data": []})
+tx99 = lambda n: f"📦 <b>[쿠팡] {n} (1,000원)</b>"
+json.dump([{"at": "2026-10-27 00:30", "shelf": True, "url": u, "text": tx99(f"새 진열 {k}")} for k, u in enumerate(N99)] + [{"at": "2026-10-19 00:30", "shelf": True, "url": u, "text": tx99(f"재시도 {k}")} for k, u in enumerate(R99)],
+          open("events.json", "w"), ensure_ascii=False)
+json.dump([{"t": "2026-10-26 20:00", "text": "🔥 [쿠팡] 커뮤니티 생 주소 (1,000원)", "url": VP99(7001)}], open("posts.json", "w"), ensure_ascii=False)
+H.http, H.HAS_CP = http99, True
+def run99(at, s, f, a=0):
+    time.time = lambda: TK(at); H.RUN["cpu"], H.RUN["cpn"] = {"a": [TK(at) - 60] * a, "s": []}, [0, 0]; H.RUN.pop("cpnew", None); o = io.StringIO()
+    with contextlib.redirect_stdout(o):
+        f(s)
+    return o.getvalue()
+s99 = {"cpdl": {"x": {u: TK("2026-10-19 09:00") for u in R99}, "f": {u: ["2026-10-18", "2026-10-19"] for u in R99}, "e": {u: "400" for u in R99}, "nf": {u: 2 for u in R99}, "rr": {"t": 0, "u": [], "ok": [], "w": []},
+               "pq": [[u] for u in R99]}, "srl": {"x": {}, "now": []}}  # 지난 실행에 줄 선 재시도 1개짜리 5개(예전 순서 = 새 진열보다 먼저)
+assert H.cp_new(s99) == set(N99)  # 한 번도 안 해 본 것 = 실패·시도 기록 없는 진열만
+o99 = run99("2026-10-27 02:20", s99, H.cp_links, a=24)  # 앞 실행들이 시간당 24번 씀 = 이번엔 1번만
+assert c99 == [N99[:20]] and "cp link 새 진열 44개 중 20개 바뀜 · 남은 대기 24" in o99 and H.RUN["cpnew"] == 24, (c99, o99)  # 재시도(pq) 앞 · 묶음 20
+H.RUN["cpu"], H.RUN["cpn"] = {"a": [TK("2026-10-27 02:20") - 60] * (H.CP_HOUR - H.CP_NEW_RES), "s": []}, [0, 0]
+try:
+    H.coupang("GET", "/products/goldbox"); raise AssertionError("남겨 둔 몫")
+except H.CpLimit:
+    pass  # 새 진열이 남으면 다른 호출 = 시간당 CP_HOUR - CP_NEW_RES까지(다음 실행 cp_links 몫)
+H.RUN["cpnew"] = 0; H.coupang("GET", "/products/goldbox")  # 새 진열 다 됨 = 예전 그대로
+c99.clear(); o99 = run99("2026-10-27 02:35", s99, H.site_relink)
+assert not c99 and "site relink 쿠팡 = 새 진열 24 개 먼저" in o99, o99  # site_relink 쿠팡 재시도 = 쉼(새 진열 먼저)
+o99 = run99("2026-10-27 02:35", s99, H.cp_links)
+assert sorted(c99[:2]) == [N99[20:40], N99[40:]] and c99[2:] == [[R99[0]]] and "새 진열 24개 중 24개 바뀜 · 남은 대기 0" in o99 and H.RUN["cpnew"] == 0, (c99, o99)  # 새 진열 2번 -> 재시도 = 남은 몫(4 - 2)의 절반 = 1번
+assert set(N99) <= set(json.load(open("cp_links.json"))) and not H.cp_new(s99) and [R99[0]] in s99["cpdl"]["pq"]  # 44개 다 · 재시도 다음 모양 = 다음 실행
+c99.clear(); o99 = run99("2026-10-27 02:50", s99, H.cp_links)
+assert len(c99) == 2 and "새 진열" not in o99, (c99, o99)  # 새 진열 없음 = 재시도만, 이 실행 몫(4)의 절반 = 2번(예전 4번 — 남은 몫 = 가격 확인·골드박스)
+(H.http, H.HAS_CP, time.time, H.POSTS, H.EVENTS, rn99) = sv99; H.RUN.clear(); H.RUN.update(rn99); os.chdir(cwd99)
 print("OK: 모든 셀프체크 통과")
