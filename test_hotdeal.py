@@ -1764,7 +1764,7 @@ assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beaut
 assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-label="목록">')[1].split("</nav>")[0].split("</a>")[:-1]] == \
     ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
 cats7 = open("docs7/c/index.html").read()
-assert cats7.count('<a class="tile"') == 13 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
+assert cats7.count('<a class="tile"') == 13 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" style="--n:7" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
 assert re.findall(r'<a class="mt (\w+)" href="([^"]+)" data-gc="mall/\w+"><b>(?:<i class="lw" aria-hidden="true">.*?</i>)?[^<]+</b><small>[^<]+</small><i>(\d+)개</i></a>', cats7) == [("coupang", f"{S.BASE}c/coupang/", "1"), ("toss", f"{S.BASE}c/toss/", "0"), ("naver", f"{S.BASE}c/naver/", "1")] and 'aria-label="목록"' not in cats7  # 몰 타일 3개(개수) · 18칩 줄 X
 assert [re.sub("<[^>]+>", "", a) for a in S.stat_chips("drop").split("</a>")[:-1]] == ["🔥 특가", "👍 꾸준템", "⏳ 대기", "📉 가격 내림", "⏰ 오늘 마감", "🏆 TOP 10"] and S.stat_chips("drop").count('aria-current="page"') == 1 and f'<a href="{S.BASE}c/drop/" aria-current="page">' in S.stat_chips("drop")
@@ -9610,7 +9610,7 @@ cnt90 = collections.Counter(S.cat_of(p) for _, p, _, _ in fr90)
 assert max(cnt90.values()) <= 2 and cnt90["heat"] == 2 and [S.shop_of(p) for _, p, _, _ in fr90][:2] == ["coupang", "toss"], [(S.shop_of(p), S.cat_of(p)) for _, p, _, _ in fr90]  # 한 종류 2개까지(히터·온풍기 = ❄️ 1칸) · 쿠팡 → 토스 돌림
 assert [x[0] for x in fr90][-1] == 14 and len(fr90) == 9  # 그저께 가격 = 어제·오늘 가격 뒤 · 칸 다 못 채우면 그만큼만(같은 칸 3개째 X)
 pg90 = S.link_page("ab", [], LK90, "docs3", today="2026-10-26")
-assert '<nav class="mb" aria-label="몰별 모음"><a href="https://hotdealpick.kr/c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="https://hotdealpick.kr/c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav>' in pg90 \
+assert '</h2><nav class="mb" aria-label="몰별 모음"><a href="https://hotdealpick.kr/c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="https://hotdealpick.kr/c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav></div>' in pg90 \
     and pg90.index('class="mb"') < pg90.index('id="lg"') and ".mb{display:flex" in pg90
 # 9-91) NN(10/26 Cowork — 진우 '꾸준하게 주문하는 계란·맥반석계란 등 비슷한 제품 묶어서'·'바나나우유·커피우유·멸균우유도'·'반숙란·완숙란 등 기성품'): 품목 묶음 글 하루 1번 11:30 채널 + Threads
 #       돌림 = 계란 → 우유 → 반찬 → 캔햄 → 라면·생수·화장지·커피믹스·물티슈·즉석밥·쌀 · 09:00~ 종류 검색어마다 쿠팡 검색 1번(실행마다 1번) · 같은 단위 단가 · 종류마다 2개 · 계란 = 생란/바로 먹는 계란 칸 · 토스 따로 칸
@@ -9728,12 +9728,15 @@ assert all(re.search(it91["eggs"], n) for n in ("반숙란 10구", "완숙란 20
 (H.coupang, H.cp_deeplinks, H.tg, H.th_bundle, H.season_adj, time.time, H.POSTS, tk91, H.HAS_CP) = sv91; H.E.pop("THREADS_TOKEN", None) if tk91 is None else H.E.update(THREADS_TOKEN=tk91); os.chdir(cwd91)
 # 9-92) OO(10/26 Cowork — 진우 '얘도 행사하는데?' · 골드박스 10/25·10/26 고른 것 0): Claude 후보 줄 = 이름 | 가격 | 🚀·무료배송·카테고리(API 값) | 단위가
 #       (기록 품목 = 같은 단위 + 핫딜픽 기록 평균·최저 · 평균보다 쌈) · 이름에 용량·개수 없으면 진열·events 같은 pid 이름(같은 옵션만) · 그래도 없으면 '단위가 모름' · 3~5개(3개 밑 = 0처럼) · 와우 회원가
-sv92 = (H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos); d92, cwd92 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d92)
+sv92 = (H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos, S.SITE_AFF_ONLY); d92, cwd92 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d92); S.SITE_AFF_ONLY = True  # 사이트 링크 규칙 켬(기록 = 사이트와 같은 줄)
 wp92 = lambda k, nm, w, u: {"t": f"2026-10-2{k} 10:00", "text": f"🔥 [쿠팡] {nm} ({w}원/무료)\n\n💡 단위가격: 1L당 {u}원 — 싸요", "entities": [], "url": f"https://link.coupang.com/a/w{k}", "s": 7}
 own92 = lambda nm, u: {"t": "2026-10-24 10:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n{nm}\n5,000원 · 리뷰 1만", "entities": [], "url": u, "own": 1, "shelf": 1, "st": "hot"}
 json.dump([wp92(1, "삼다수 2L 6병", "3,600", 300), wp92(2, "백산수 2L 6병", "4,800", 400), wp92(3, "아이시스 2L 6병", "6,000", 500),
+           {**wp92(4, "[sk스토아] 삼다수 2L 6병", "1,200", 100), "text": "🔥 [sk스토아] 삼다수 2L 6병 (1,200원/무료)\n\n💡 단위가격: 1L당 100원 — 싸요", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=9"},  # 사이트에 안 보이는 딜(site_ok X) = 기록 X(사이트 기록 쪽과 같게)
            own92("완전두유 190ml 16팩", "https://link.coupang.com/a/d77"), own92("곰곰 즉석밥 210g 24개", "https://link.coupang.com/a/d88")], open("posts92.json", "w"), ensure_ascii=False)
-json.dump([{"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/d77", "text": "🔥 <b>[쿠팡] 완전두유 190ml 16팩 (5,000원)</b>\n\n💰 1팩 313원꼴", "pid": "77", "now": "5,000원"},
+json.dump([{"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/d77", "text": "🔥 <b>[쿠팡] 완전두유 190ml 16팩 (5,000원)</b>\n\n💰 1팩 313원꼴", "pid": "77", "item": "7", "now": "5,000원"},
+           {"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/dm", "text": "🔥 <b>[쿠팡] 맥스웰하우스 커피믹스 오리지날 180개입 × 2개 (36,900원)</b>", "pid": "4663", "item": "A1"},
+           {"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/ds", "text": "🔥 <b>[쿠팡] 제주삼다수 그린 2L 12병 (12,000원)</b>", "pid": "555001", "item": "777"},
            {"at": "2026-10-24 10:00", "url": "https://link.coupang.com/a/d88", "text": "📦 <b>[쿠팡] 곰곰 즉석밥 210g 24개 (20,000원)</b>", "pid": "88", "item": "555"},  # now 없으면 제목 가격
            {"at": "2026-10-28 21:00", "url": "https://link.coupang.com/a/d99", "text": "🔥 <b>[쿠팡] 물하나 생수 500ml 60개 (9,560원)</b>", "pid": "99", "item": "991", "now": "9,560원 와우가"}], open("events92.json", "w"), ensure_ascii=False)  # 아직 안 올라간 예약도
 H.POSTS, H.EVENTS, S.EVENTS = "posts92.json", "events92.json", "events92.json"
@@ -9754,6 +9757,11 @@ assert gl92[6][0].endswith("| 개당 792원 | 진열 이름") and "기록" not i
 assert H.gold_lines([{"productId": 99, "productName": "물하나 생수", "productPrice": 9560.0, "productUrl": "https://link.coupang.com/re/9?itemId=991"}])[0][0] \
     == "물하나 생수 500ml 60개 | 9,560원 | 1L당 319원 (기록 평균 1L당 400원 · 최저 300원 → 기록 평균보다 쌈) | 진열 이름"  # 아직 안 올라간 예약(events)도 같은 pid·옵션 이름
 assert H.gold_lines([{"productId": 5, "productName": "양은 라면냄비 18cm 2개", "productPrice": 9000.0}])[0][0] == "양은 라면냄비 18cm 2개 | 9,000원 | 1개당 4,500원꼴"  # 품목 낱말이어도 냄비 = 기록 품목 X
+assert H.gold_lines([{"productId": 4663, "productName": "맥스웰하우스 커피믹스 오리지날", "productPrice": 18900.0, "productUrl": "https://link.coupang.com/re/m?itemId=B2"}])[0][0] \
+    == "맥스웰하우스 커피믹스 오리지날 | 18,900원 | 단위가 모름(이름에 용량·개수 없음)"  # 같은 상품 다른 옵션(1박스 — 진열 가격의 0.51배) = 진열 이름 X
+assert H.gold_lines([{"productId": 555001, "productName": "제주삼다수 그린 2L", "productPrice": 12000.0, "productUrl": "https://link.coupang.com/re/s?itemId=777"}])[0][0] \
+    == "제주삼다수 그린 2L 12병 | 12,000원 | 1L당 500원 (기록 평균 1L당 400원 · 최저 300원) | 진열 이름"  # 용량만 있고 개수 없는 이름도 같은 옵션이면 진열 이름 · 평균보다 비싸면 '쌈' X
+assert "와우" not in H.DAY_PROMPT and "기록 평균" not in H.DAY_PROMPT and "억지로 5개 채우지 말고" in H.DAY_PROMPT and 'DAY_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가")' in inspect.getsource(H.toss_deals)  # 토스 하루특가 = OO 전 문구
 sent92, ap92 = [], []
 H.coupang = lambda method, path, body=None: G92; H.HAS_CP, H.cp_photos = True, lambda seen, items: 0
 H.tg = lambda m, **p: sent92.append(p) or {"message_id": 5, "text": p.get("text", ""), "entities": []}
@@ -9773,5 +9781,5 @@ assert "goldbox_20261027" in s92 and "고른 것 0 → steady 후보" in o92.get
 H.ai_pick = lambda prompt, lines: [{"i": k, "score": 9 - k, "comment": "c"} for k in range(7)]; s92 = {}
 with contextlib.redirect_stdout(io.StringIO()): H.goldbox(s92)
 assert "골드박스 TOP5</b>" in sent92[-1]["text"] and "6. " not in sent92[-1]["text"]  # 5개까지
-(H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos) = sv92; S.EVENTS = "events.json"; os.chdir(cwd92)
+(H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos, S.SITE_AFF_ONLY) = sv92; S.EVENTS = "events.json"; os.chdir(cwd92)
 print("OK: 모든 셀프체크 통과")

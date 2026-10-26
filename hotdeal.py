@@ -100,6 +100,10 @@ ADMIN_PROMPT = DEAL_PROMPT.replace("5점 미만은 반환하지 마.", "점수�
     "이번 딜은 운영자가 쇼핑몰에서 직접 고른 상품이라 커뮤니티 반응 정보가 없어: 가격 매력·대중성만으로 점수를 매기고, 운영자가 적은 가격·조건만 사실로 써(모르는 건 지어내지 마).\n"
 REEL_PROMPT = "아래 딜 각각(모든 i)에 대해 인스타 릴스용 정보를 pick 도구로 반환해. score는 0, comment는 빈 문자열.\n" + REEL_RULES + "\n" \
     + "건강식품·화장품 효능(미백·주름·탄력 개선 등) 금지. [올리브영] 딜은 가격·용량·구성·조건만(후기·추천·권유·효능·'최고' 같은 절대 표현 금지 — 올리브영 쇼핑 큐레이터 정책).\n"
+DAY_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서,
+대중적이고 '지금 사도 싸다' 싶은 상품만 최대 5개 pick 도구로 반환해. 억지로 5개 채우지 말고, 없으면 빈 목록 (10/7 진우: 살 만한 제품만).
+comment: 1줄, 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
+"""  # 토스 하루특가 회차(toss_deals) = '쿠팡 골드박스' -> '토스쇼핑 하루특가'로 바꿔 씀(OO 골드박스 문구 — 와우·쿠팡 API 값·기록 평균·3~5개 — 는 토스엔 X)
 GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가 · 가격 = 와우 회원가) 목록이야. 줄 = 이름 | 가격 | 로켓배송·무료배송·카테고리(쿠팡 API 값) | 단위가(이름의 용량·개수로 우리가 계산).
 '기록 평균'은 핫딜픽에 올린 같은 품목 딜의 같은 단위 평균·최저야 — '기록 평균보다 쌈'이면 먼저 골라.
 할인율은 정가를 부풀린 경우가 많으니 믿지 말고 구성·단위가격으로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 상품을 3~5개 목표로 pick 도구로 반환해(비대중적이거나 비싸 보이는 건 빼고, 정말 없으면 빈 목록 — 10/7 진우: 살 만한 제품만).
@@ -1484,18 +1488,18 @@ GOLD_N, GOLD_WOW = (3, 5), "와우 회원가 · 다음 날 아침 7시까지"  #
 
 def gold_lines(items):
     """OO 골드박스 Claude 후보 줄 + (보여 줄 이름, 단위가 글자) — 이름 | 가격 | 🚀 로켓배송·무료배송·카테고리(API 값) | 단위가:
-    PRICE_ITEMS 품목 = 그 단위(nn_unit) + 핫딜픽 기록 평균·최저(price_records — 평균보다 싸면 '기록 평균보다 쌈') / 그 밖 = 묶음 단가(toss_unit) / 이름에 용량·개수 없으면 events(진열·예약) 같은 productId 이름(같은 옵션만), 그래도 없으면 '단위가 모름'.
-    shortcut: events에 옵션(item)이 없으면 진열 가격의 0.4~1.5배일 때만 같은 옵션으로 봄(가격만 맞춤) — 옵션 다른 이름이 보이면 events에 item을 적음."""
-    recs, names = price_records(load(POSTS, [])), {}
-    for e in ev_list():  # 진우·Cowork 예약·진열(아직 안 올라간 것도) — 같은 pid면 뒤 항목
-        if isinstance(e, dict) and e.get("pid") and isinstance(e.get("text"), str) and (t := title_of(plain_of(e["text"]))):
-            names[str(e["pid"])] = (parse(t)[1], e.get("item"), won(e.get("now")) or price_won(t))
+    PRICE_ITEMS 품목 = 그 단위(nn_unit) + 핫딜픽 기록 평균·최저(price_records — 사이트 /c/ 기록 쪽과 같은 줄 · 평균보다 싸면 '기록 평균보다 쌈') / 그 밖 = 묶음 단가(toss_unit)
+    / events(진열·예약 — 아직 안 올라간 것도)에 같은 상품·같은 옵션(pid + itemId)이 있으면 그 이름(용량·개수 — 1개/2개 옵션은 가격만으론 못 가림) / 이름에 용량·개수가 없으면 '단위가 모름'."""
+    ps = load(POSTS, [])
+    recs, names = price_records(ps, skip={i for i, p in enumerate(ps) if not p["text"].startswith("📋") and not site_ok(p)}), {}  # 사이트 기록 쪽과 같은 줄(build_site noaff)
+    for e in ev_list():
+        if isinstance(e, dict) and e.get("pid") and e.get("item") and isinstance(e.get("text"), str) and (t := title_of(plain_of(e["text"]))) and re.search(CP_QTY, parse(t)[1], re.I):
+            names[(str(e["pid"]), str(e["item"]))] = parse(t)[1]
     out = []
     for x in items:
         nm, pr, w = str(x["productName"]), int(x["productPrice"]), None
-        if not re.search(CP_QTY, nm, re.I) and (n2 := names.get(str(x.get("productId")))) \
-                and (cp_qs(x, "itemId") == str(n2[1]) if n2[1] else n2[2] and 0.4 <= pr / n2[2] <= 1.5):
-            nm, w = n2[0], "진열 이름"
+        if (n2 := names.get((str(x.get("productId")), cp_qs(x, "itemId")))) and n2 != nm:
+            nm, w = n2, "진열 이름"
         it = next((it for it in PRICE_ITEMS if re.search(it[2], nm)), None)
         u = it and not re.search(PRICE_NOT, nm) and nn_unit(nm, pr, it[3][:-1])
         rec = u and recs.get(it[0])
@@ -2430,7 +2434,7 @@ def toss_deals(seen, best=False):
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and (eve or f"tb_{x['tacaItemId']}" not in seen) and toss_ok(seen, x["tacaItemId"])
                   and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
     tone, tsuf = tone_ask(seen, "ch") if items else (0, "")
-    picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE + TOSS_WU) + tsuf,
+    picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best else DAY_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE + TOSS_WU) + tsuf,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])
     picks = picks and sorted(({**p, "score": p["score"] + toss_freq(items[p["i"]]) + season_adj(items[p["i"]]["displayName"])} for p in picks), key=lambda p: -p["score"])[:3 if cat else 5]  # S: 자주 사는 상품 +1 · Z 계절 상품 +1/-2 뒤 순위 · MM(10/26) 토스 상품 모음(베스트) 3 -> 5개
