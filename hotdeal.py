@@ -3791,13 +3791,14 @@ REVIEW, RV_MAX = True, 3  # Z-4(10/26 진우 '재검토 기능 넣어서 멘트 
 TH_FUN = ("재미 O: 누구나 겪는 장면 · 가벼운 과장('국룰', '나만 그래?') · 'ㅋㅋ'는 글에 1번까지 · 웃음 대상은 상황이나 핫딜픽 자신만(예: '오늘 김 글만 세 번 올린 핫딜픽…').\n"
           "무례 X: 사람·집단 놀림·비하(나이·성별·지역·외모·직업·소득·육아·결혼) · 읽는 사람 비꼬기·훈계('이것도 몰라?', '아직도 정가 주고 사?') · 욕설·비속어·혐오 표현·비하 밈 낱말 · "
           "특정 브랜드·몰·다른 계정 깎아내리기 · 정치·종교·사건사고·연예인.")  # II+(10/26 진우 '무례하지 않게, 그렇지만 재미있게') — Threads에서 Claude가 쓰는 줄 프롬프트 전부
-TH_RUDE = (r"(?:이것|이거|그것|그거|이런\s*거|그런\s*거)도\s*(?:몰|모르)|아직도\s*[^\n?]{0,8}(?:정가|제값|비싸게|돈\s*주고|주고\s*사)|(?:정가|제값)\s*(?:다\s*)?주고\s*사는\s*(?:사람|분)|"  # 읽는 사람 비꼬기·훈계
-           r"요즘\s*누가|(?:모르면|안\s*사면)\s*(?:손해|바보|호구)|정신\s*차려|철\s*(?:좀\s*)?들어|한심|쯧|ㅉㅉ|멍청|바보|"
+TH_RUDE = (r"(?:이것|이거|그것|그거|이런\s*(?:거|것)|그런\s*(?:거|것)|이걸|그걸)\s*(?:도|아직도?|여태)\s*(?:몰|모르|모름)|아직도?\s*[^\n?]{0,8}(?:몰라|모름|모르는\s*사람)\s*[?？]|"  # 읽는 사람 비꼬기·훈계
+           r"아직도?\s*[^\n?]{0,8}(?:정가|제값|비싸게|돈\s*주고)[^\n?]{0,6}(?:사|삼|산다|구매)|(?:정가|제값)\s*(?:다\s*)?(?:주고|로)\s*사는\s*(?:사람|분)|"
+           r"요즘\s*누가|(?:모르면|안\s*사면)\s*(?:손해|바보|호구)|정신\s*(?:좀\s*차려|차려라)|철\s*좀\s*들어|한심|쯧|ㅉㅉ|멍청|바보|"
            r"(?:여자|남자|아줌마|아저씨|할머니|할아버지|노인|경상도|전라도|충청도|강원도|지방|시골)\s*(?:사람)?들(?:은|이란)\s*(?:꼭|다|원래|역시|맨날|항상|하여튼)|요즘\s*것들|"  # 집단 싸잡기
-           r"틀딱|급식충|맘충|설명충|진지충|한남(?![동대])|한녀|김치녀|된장녀|개저씨|꼰대|라떼는\s*말이야|흙수저|찐따|호구|호갱|흑우|노처녀|노총각|뚱땡이|짱깨|쪽바리|흑형|정신병자|"  # 비하 밈·혐오
-           r"병신|ㅂㅅ|시발(?!점)|씨발|ㅅㅂ|ㅆㅂ|존나|ㅈㄴ|졸라(?!\s*매|맨)|개새|새끼야|새꺄|지랄|닥쳐|등신(?!대)|미친\s*(?:놈|년|새)|느금|"  # 욕설·비속어
-           r"(?:거기|딴\s*데|다른\s*(?:데|곳|몰|계정|브랜드))[^\n]{0,10}(?:별로|구려|구림|후져|후짐|최악)|사기꾼|"  # 브랜드·몰·다른 계정 깎아내리기
-           r"대통령|국회|여당|야당|정당(?![한하])|선거|정치|종교|교회|목사|스님|기독교|천주교|불교|이슬람|참사|사건\s*사고|연예인|아이돌")  # 정치·종교·사건사고·연예인
+           r"틀딱|급식충|맘충|설명충|진지충|한남(?![동대])|한녀|김치녀|된장녀|개저씨|꼰대|라떼는\s*말이야|흙수저|찐따|(?<!보)호구|호갱|노처녀|노총각|뚱땡이|짱깨|쪽바리|흑형|정신병자|"  # 비하 밈·혐오
+           r"병신|ㅂㅅ|시발(?!점)|씨발|ㅅㅂ|ㅆㅂ|존나|ㅈㄴ|개새|새끼야|새꺄|지랄|닥쳐|등신(?!대)|미친\s*(?:놈|년|새)|느금|"  # 욕설·비속어
+           r"(?:딴\s*데|다른\s*(?:데|곳|몰|계정|브랜드))[^\n]{0,10}(?:별로(?:야|임|더라|였어|던데)|구려|구림|후져|후짐|최악)|사기꾼|"  # 브랜드·몰·다른 계정 깎아내리기('별로 안 비싸요' X)
+           r"대통령(?!상|\s*표창)|국회|여당|야당|(?<![\d가-힣])정당(?![한하])|선거|정치|종교|교회|목사|스님|기독교|천주교|불교|이슬람|참사|사건\s*사고|연예인|아이돌(?!봄)")  # 정치·종교·사건사고·연예인 · '1정당 95원'(알약 단가)·대통령상·보호구·아이돌봄 X
 
 
 def rude(s):
@@ -3848,7 +3849,7 @@ def rv_bad(l, text, hook, ctx, dup=False, names=()):
         return "끊긴 문장"
     if old_toss(l):
         return "오늘 아닌 가격"
-    if w := rude(l):
+    if w := rude(re.sub("|".join(map(re.escape, names)) or "^$", "", l)):  # 상품명 낱말은 빼고(제주흑우·보호구 같은 이름)
         return f"무례({w})"
     won = lambda x: {re.sub(r"\s", "", n) for n in re.findall(r"(?<![\d,])\d[\d,]*\s*원", x)}  # 금액째(1,500원 안의 500원 X)
     if dup and (n := next(iter(won(l) & won("\n".join(o for o in text.split("\n") if o.strip() and o.strip() != l))), None)):
@@ -4097,7 +4098,7 @@ def th_voice(seen, text, link, src=None):
         ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and not re.search(rf"\d|{TH_PRICE_WORD}", s) and th_w(s) <= TH_W + 2 \
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
             and (yo_ok or not re.search(VOICE_YO, re.sub("|".join(map(re.escape, names)) or "^$", "", s))) and norm(s) not in st.get("f", []) \
-            and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(f"{s}\n{hook}")  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
+            and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", f"{s}\n{hook}"))  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
         prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
             + ("\n- 이 글 = '꾸준히 팔리는 상품': 특가·최저가·할인이라고 하지 않기." if steady else "") \
@@ -4169,11 +4170,11 @@ def th_hook(seen, name, dl, unit, ban, names):
         try:
             for again in ("", "\n다시: 무례 X(놀림·비하·비꼬기·훈계·비속어)."):  # II+ 무례 = 같은 종류 1번 더
                 h = re.sub(r"\s+", " ", str(ai_json(TH_HOOK_PROMPT.format(kind=TH_HOOK_ASK[k], name=name, fun=TH_FUN.replace("\n", "\n- ")) + again, {"hook": {"type": "string"}}).get("hook") or "")).strip()
-                if not rude(h):
+                if not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", h)):
                     break
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
             if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_W + 2 and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
-                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(h):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
+                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(plain):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
                 return h, k
         except Exception as e:
             print("th hook 다음 종류로", clip(repr(e), 80))
@@ -6493,7 +6494,7 @@ CHAT_TOPICS = (("shop", "장보기 습관 공감(예: 마트 가면 계획에 �
                ("season", "오늘 계절·기온 이야기(아래 '오늘 계절' 줄에 있는 것만 — 없는 날씨·기온 X)"), ("quiz", "가격 감각 퀴즈 — 숫자는 아래 '우리 기록' 숫자 그대로만(품목은 일반 이름 — 상품·브랜드 X)"),
                ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"))
 TH_NONDEAL = ("info", "wx", "snack", "log", "funnel", "chat")  # 비딜 Threads 묶음 글 kind(큐레이션 = events 시각·정해진 시각 글은 시각으로) — 수다 글 앞뒤 30분 칸
-CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|사세요|사\s*둬|사\s*두세요|구매\s*(?:하세요|해|하자|각|추천)|주문하세요|담으세요|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|"  # 링크·권유
+CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|사세요|사\s*둬|사\s*두세요|구매\s*(?:하세요|해|하자|각|추천)|주문하세요|담으세요|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|질러라|지르자|질러(?=\s*$|\s*[!~.\n])|(?:지금|당장|얼른|빨리)\s*(?:사|질러|담아)(?![가-힣])|사야\s*(?:해|돼|됨|지)(?![?？가-힣])|"  # 링크·권유(반말 재촉 — '질러 버림'·'빨리 사라짐' X)
             r"(?:댓글|답글)[^\n]{0,15}(?:달면|단\s*사람|남기면|남긴\s*사람|주시면|주면|달아\s*주면|쓰면)|추첨|경품|기프티콘|쏜다|쏠게|나눔|드려요|보내\s*드|"  # 댓글 보상 유도
             r"정부|가수|드라마|예능|뉴스|기사(?!님)|사건|논란|"  # 뉴스·연예 이슈(정치·종교·사건사고·연예인 = TH_RUDE)
             rf"{SAVE_STORES.replace('토스', '토스(?!트)')}|{OTHER_STORES}|다이소|코스트코|트레이더스|홈플러스|홈플|롯데마트|이마트|올영|알리(?:에서|익스)|테무|무신사|스타벅스|스벅|이케아|배민|컬리")  # 몰·마트 이름(+ 브랜드 = chat_ok POLL_BRANDS)
@@ -6516,7 +6517,7 @@ def chat_ok(lines, money=(), facts=""):
         return "줄 수·길이"
     if t.count("?") + t.count("？") != 1 or not re.search(r"[?？](?:[^\w]|[ㄱ-ㅎㅏ-ㅣ]){0,4}$", lines[-1].strip()):
         return "질문 1개(마지막 줄)"
-    for rx, why in ((TH_C_FAKE, "써 본 척"), (TH_C_BODY, "몸·효능"), (X_BAN, "과장·수익"), (CHAT_BAN, "링크·권유·보상·이슈·몰"), (TH_PUSH, "권유"), (POLL_BRANDS, "브랜드"), ("|".join(map(re.escape, LOG_DENY)), "경험담")):
+    for rx, why in ((TH_C_FAKE, "써 본 척"), (TH_C_BODY, "몸·효능"), (X_BAN, "과장·수익"), (CHAT_BAN, "링크·권유·보상·이슈·몰"), (POLL_BRANDS, "브랜드"), ("|".join(map(re.escape, LOG_DENY)), "경험담")):
         if m := re.search(rx, t):
             return f"{why}({m[0]})"
     if w := rude(t):
@@ -6525,7 +6526,7 @@ def chat_ok(lines, money=(), facts=""):
         return "영문(상품·브랜드)"
     if re.search(r"%|퍼센트|\d\s*프로|[만천백]\s*원(?![래하인])|(?:한\s*잔|밥|커피)\s*값", t) or any(re.sub(r"[^\d.]", "", a) not in money for a in re.findall(r"\d[\d,.]*\s*원", t)):
         return "기록 밖 금액"
-    if set(n for g in re.findall(r"(\d+)\s*(?:도|℃|°)|(\d+)/(\d+)", t) for n in g if n) - set(re.findall(r"\d+", facts)):
+    if set(n for g in re.findall(r"(\d+)\s*(?:℃|°|도(?=\s*(?:까지|야|래|넘|이상|이하|밑|아래|정도|쯤|라|$)|[,.!~\n]))|(\d+)/(\d+)", t) for n in g if n) - set(re.findall(r"\d+", facts)):  # '1도 없던'·'1+1도' = 기온 X
         return "재료 밖 기온·날짜"
     return "" if not season_bad(t) else "계절"
 
@@ -6581,6 +6582,7 @@ def chat_post(seen):
     facts, money, item = fx
     recent = "\n".join(f"- {h[2]}" for h in st["h"][-CHAT_DAYS:] if h[2]) or "- (없음)"
     st["h"].append([day, name, "", item])  # 고른 주제 = 못 올려도 돌림(같은 주제가 매일 걸려 멈추지 않게) · 올리면 첫 줄 채움
+    st["t"] = now  # 못 올린 날도(3일 정리에 주제 기록이 안 지워지게)
     again = ""
     for _ in (0, 1):  # II+ 무례 = 1번만 다시
         try:
@@ -7335,7 +7337,7 @@ POLL_KIND = {  # 10/22 진우 시안 고름(반말·공감형 보기·마지막 
     "life": "유형: 생활형 — 이 품목을 쟁이는 스타일·떨어졌을 때 어떻게 하는지 같은 생활 질문, 가격(원) 숫자 X. 예: 라면 쟁이는 스타일 골라봐 / 박스째 쌓아둠 · 5개입이면 충분 · 땡기면 편의점행 · 라면 끊음(진짜)",
     "price": "유형: 가격형 — '{unit} 얼마면 오 싸다 해?' 같은 질문, 가격 숫자는 {nums}만(다른 숫자 X). 예: {name} {unit}, 얼마면 \"오 싸다\" 해? / {a}이면 삼 · {b}까진 OK · {c}부턴 고민 · 가격 안 보고 집음"}
 POLL_BRANDS = (r"신라면|진라면|너구리|짜파게티|안성탕면|컵누들|사발면|농심|삼양|오뚜기|팔도|삼다수|아이시스|백산수|풀무원|크리넥스|깨끗한나라|모나리자|잘풀리는|"  # 기록 품목(PRICE_ITEMS) 브랜드
-               r"퍼실|리큐|테크|피죤|맥심|모카\s*골드|화이트\s*골드|카누|베베숲|몽드드|햇반|엘라스틴|케라시스|GS25|세븐일레븐|이마트24|(?<![A-Za-z])CU(?![A-Za-z])")  # + 편의점(몰)
+               r"퍼실|리큐|(?<![짠앱재])테크|피죤|맥심|모카\s*골드|화이트\s*골드|카누|베베숲|몽드드|햇반|엘라스틴|케라시스|GS25|세븐일레븐|이마트24|(?<![A-Za-z])CU(?![A-Za-z])")  # + 편의점(몰)
 POLL_YO = r"(?<![필중주수소])요[?!.~ㅋㅎ\s]*$|죠[?!.~ㅋㅎ\s]*$|(?<![다아])니다[?!.~ㅋㅎ\s]*$"  # 투표 보기 = 끝에서만(‘요 정도면’·‘참치마요’는 반말)
 
 
