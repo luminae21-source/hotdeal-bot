@@ -1,0 +1,43 @@
+name: rvcheck                       # Z 멘트 재검토 실제 모델 셀프체크(10/26 실제 오류 6개 — 코드 검사·Claude 각각 잡는지): Actions → rvcheck → Run workflow → 로그(가격·글 본문 X, 걸림 여부만)
+on: workflow_dispatch
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python - <<'PY'
+          import calendar, time
+          import hotdeal as H
+          now = calendar.timegm(time.strptime("2026-10-26 13:05", "%Y-%m-%d %H:%M")) - 9 * 3600
+          wx = lambda d, a, b: {"date": d, "tmin": a, "tmax": b, "rain": 0, "hum": 50, "pm": None}
+          H.RUN.update(season=H.season_ctx({"wx_20261026": {"t": 1, "w": [wx("2026-10-26", 14, 21)] + [wx(f"2026-10-{27 + i}", 8, 15) for i in range(5)]}}, now), rvw={}, rvst={})
+          H.RV_MAX = 99
+          th = lambda hook, name, money, line, con="": (f"{H.DISCLOSURE}\n\n{hook}\n\n🚀 쿠팡 로켓배송\n{name}\n{money}\n\n✔ 무료배송 · 무료반품\n\n⏰ 10/26 7시 가격 · 결제 전 확인\n\n{line}"
+                                                         + (f"\n{con}" if con else "") + "\n\n👉 https://link.coupang.com/a/z82")
+          pk = "2️⃣ 불스원 워셔액 2L 6개 · ⚠️ 10/24 18:08 게시 시점 가격"
+          cases = [  # (이름, 글, 멘트 줄, 걸려야 할 줄, 상품명 낱말)
+              ("생수 계절", th("날 더워지면 물 떨어질 때 제일 곤란한 계절", "크리스탈 생수 2L 12병", "💰 6,900원 (1병 575원)", "주말 장보기 전에 담아 두기 좋겠다"), 0, 0, ["크리스탈", "생수"]),
+              ("바나나 뜻", th("보자마자 공유각이라 올림", "제스프리 바나나 1.5kg", "💰 5,900원", "한 박스로 넉넉히 두면 계산이 편하겠다"), 0, 1, ["제스프리", "바나나"]),
+              ("라이너 단점 줄", th("보자마자 공유각이라 올림", "프로에잇 팬티라이너 40매 4팩", "💰 12,900원 (1매 81원)", "가방에 몇 개씩 넣어 다니기 좋겠다", "단점 하나: 색상 옵션"), 0, 2, ["프로에잇", "팬티라이너"]),
+              ("김치 밥도둑 2번", th("밥도둑 하나 들이면 반찬 걱정 끝", "총각김치 2kg", "💰 9,900원", "이건 그냥 밥도둑이다"), 0, 1, ["총각김치"]),
+              ("탈취제 단가 2번", th("1개당 7,400원꼴", "수뜬리에 탈취제 2개", "💰 14,800원 (1개당 7,400원)", "현관에 하나씩 두기 좋겠다"), 0, 0, ["수뜬리에", "탈취제"]),
+              ("픽 10/24 토스 가격", f"{H.DISCLOSURE}\n\n🎯 오늘의 픽 2 (10/26)\n고민은 줄이고, 오늘은 이 2개만\n\n1️⃣ 곰곰 특란 30구 (10/26 9시 확인)\n{pk}\n\n👉 https://hotdealpick.kr/today/2026-10-26/?ref=th", [pk], 0, []),
+          ]
+          code, ok, cm = H.rv_bad, 0, 0
+          for name, text, lines, bad, names in cases:
+              ls = lines or [text.split("\n\n")[1]] + text.split("\n\n")[5].split("\n")
+              b = ls[bad]
+              H.rv_bad = lambda *a, **k: ""  # Claude만
+              m = H.review("check", text, ls, "", dup=True, names=names, hook=ls[0] if not lines else "")
+              H.rv_bad = code
+              c = H.review("check", text, ls, "", dup=True, names=names, ai=False, hook=ls[0] if not lines else "")  # 코드만
+              cl = "고침" if m.get(b) else "뺌" if b in m else "통과(못 잡음)"
+              ok, cm = ok + (b in m or b in c), cm + (b in m)
+              print(f"{name}: Claude = {cl} · 코드 = {'뺌' if b in c else '-'}" + (f" · 고친 줄: {m[b]}" if m.get(b) and "토스" not in name else ""))
+          print(f"== 걸림 {ok}/{len(cases)} (코드 또는 Claude) · Claude 혼자 {cm}/{len(cases)}")
+          assert ok == len(cases)
+          PY

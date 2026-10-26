@@ -1030,10 +1030,11 @@ def theme_slide(it, n, out, facts=True):
         d.line([(b[0] - 4, (b[1] + b[3]) // 2), (b[2] + 4, (b[1] + b[3]) // 2)], fill=TSUB, width=5)
     y = d.textbbox((x, y + 4), price or "0", font=fp)[3] + 18
     fs = pf("SemiBold", 40)
-    if facts:
-        for s, c in ((it.get("fact"), TSUB), (it.get("check") and "확인할 점: " + it["check"], TORANGE)):
-            if s and y < H - 150:
-                d.text((X, y), _fit(fs, s, W - 2 * X), font=fs, fill=c); y += 56
+    if facts:  # 확인할 점 = 2줄까지 줄바꿈(10/26 11시 카드 '…도…'로 잘림), 사실 줄 = 한 줄
+        rows = ([(_fit(fs, it["fact"], W - 2 * X), TSUB)] if it.get("fact") else []) + ([(s, TORANGE) for s in wrap(d, "확인할 점: " + it["check"], fs, W - 2 * X, 2)] if it.get("check") else [])
+        for s, c in rows:
+            if y < H - 150:
+                d.text((X, y), s, font=fs, fill=c); y += 56
     when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
     d.text((X, H - 84), _fit(fs, f"제휴 링크(수수료) · {when}", W - 2 * X), font=fs, fill=TSUB)
     return _save(im, out)

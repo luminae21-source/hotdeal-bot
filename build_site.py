@@ -739,6 +739,19 @@ CAT_ORDER = ("heat", "car", "women", "beauty", "kitchen", "laundry", "life", "sn
 
 
 HOME_FIRST = r"모기|홈매트|훈증|살충|킨칸|에프킬라"  # 모기향 '히터'(리퀴드 훈증기)는 겨울 난방 X -> 생활·주방(10/23 리뷰)
+SEASON_ITEMS = (("summer", r"선풍기|서큘레이터|서큐레이터|써큘레이터|쿨\s*매트|아이스\s*(?:박스|팩|쿨|매트|조끼|넥|머플러|토시)|모기|홈매트|선크림.*대용량|대용량.*선크림"),
+                ("winter", HEAT + r"|가습기|기모(?![듬둠])|패딩"), ("between", r"가디건|카디건|제습제"))  # Z(10/26 진우 '우리나라는 4계절'): 여름템(모기향 '히터'도 — 먼저 봄)·겨울템·환절기템
+SEASON_NOT = r"오븐|프라이어|캠핑|안대"  # 겨울템 아님(HEAT의 컨벡션 오븐·캠핑 스토브·온열 안대 = 사철)
+
+
+def season_item(name):
+    """상품 이름 -> 'summer'·'winter'·'between'·None(계절 상품 아님)."""
+    return next((k for k, rx in SEASON_ITEMS if re.search(rx, name or "") and not (k == "winter" and re.search(SEASON_NOT, name))), None)
+
+
+def season_off(kind, m, tmin=None, tmax=None):
+    """Z 계절 상품이 지금 철 지났는지 — 금지어와 같은 기준: 여름템 = 10~3월 또는 최고 22도 아래 · 겨울템 = 5~8월 또는 최저 15도 위(기온 없으면 달만)."""
+    return kind == "summer" and (m in (10, 11, 12, 1, 2, 3) or tmax is not None and tmax < 22) or kind == "winter" and (m in (5, 6, 7, 8) or tmin is not None and tmin > 15)
 
 
 def cat_of(p):
@@ -1017,12 +1030,22 @@ def pick_score(x, recs):
     low = {r[2] for _, _, rows in recs.values() for r in rows[:3]}
     good = i in low or re.search(r"30일\s*(?:내\s*)?최저가", p["text"]) or saving(p["text"])
     fresh = sh[1] is not None or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
-    return (not sh[4], not fresh, not good, not p.get("own"), not img_of(p), -i)  # 같은 점수 = 사진 있는 것 먼저(10/24 Cowork A④)
+    m, k = time.gmtime(time.time() + 9 * 3600).tm_mon, season_item(title_of(p["text"]))
+    insea = k and not season_off(k, m) and (k != "between" or m in (3, 4, 9, 10, 11))  # 제철(Z +1 — hotdeal season_adj와 같은 달 기준, 철 지난 건 pick_off)
+    return (not sh[4], not fresh, not good, not insea, not p.get("own"), not img_of(p), -i)  # 같은 점수 = 제철 -> 사진 있는 것 먼저(10/24 Cowork A④)
+
+
+def pick_off(x):
+    """픽에서 뺄 상품(Z 10/26): 철 지난 계절 상품(달 기준 — 사이트 진열은 그대로) · 오늘 확인 안 된 토스(게시 시점 가격·1일 원칙 — 10/26 픽의 10/24 토스 가격: 오늘 글도 오늘 API 확인(own_end chk)도 아님)."""
+    k = time.gmtime(time.time() + 9 * 3600)
+    return season_off(season_item(title_of(x[1]["text"])), k.tm_mon) or shop_of(x[1]) == "toss" and x[1]["t"][:10] != time.strftime("%Y-%m-%d", k) \
+        and not (x[1].get("chk") or "").startswith(f"{k.tm_mon}/{k.tm_mday} ")
 
 
 def choose_picks(it, recs, n=PICK_N, avoid=()):
     """🔥 상품에서 n개: 몰 섞기(쿠팡·토스·네이버 한 개씩 먼저 — 가격 새것만, 모자라면 순서대로). avoid = 전날 픽 주소(하루 1번 바뀜 — 다른 후보가 모자랄 때만 다시)."""
     key = lambda x: (x[1].get("url") in avoid, pick_score(x, recs))
+    it = [x for x in it if not pick_off(x)]
     cand = sorted((x for x in it if x[2][0] == 0 and x[1].get("own") and aff(x[1].get("url"))), key=key) or sorted((x for x in it if x[2][0] == 0 and not x[1].get("own")), key=key)  # 진우 상품 = 제휴 링크만(쿠팡 생 주소 진열 X — 픽 = Threads '🎯 오늘의 픽'에도 나감, 10/25 리뷰)
     out, malls = [], set()
     for x in cand:
@@ -1051,7 +1074,7 @@ def today_picks(posts, it, recs, out):
     day = max((d for d in saved if d <= today), default=None)
     if not day:
         return None, []
-    keep = [by[i] for i in saved[day] if i in by and by[i][2][0] != 3]
+    keep = [by[i] for i in saved[day] if i in by and by[i][2][0] != 3 and not pick_off(by[i])]
     return day, (keep + [x for x in choose_picks(it, recs, PICK_N + len(keep), avoid) if x not in keep])[:PICK_N]  # 10시 전(전날 픽)도 빠진 자리 채움 — 날짜 쪽은 저장 목록대로(build)
 
 
