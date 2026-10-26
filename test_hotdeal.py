@@ -2817,10 +2817,10 @@ H.tg_video, H.draft, time.time = lambda path, cap: vids.append((path, cap)), lam
 json.dump([{"url": "https://cdn.pixabay.com/s.mp3", "name": "테스트곡 — 작가", "page": "https://pixabay.com/music/s/"}], open("music.json", "w")); bg = H.bgm; H.bgm = lambda kst, k=0: "docs/bgm_t.m4a"
 P3 = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)\n\n싸요", "url": "https://a", "s": 7, "e": "🥛", "hook": "우유 개당 100원", "pts": ["싸요"]}]
 igp3 = H.ig_photo; H.ig_photo = lambda p, d, seen=None: ("ph3.jpg", "coupang") if p["url"] == "https://a" else (None, "")  # FF(10/26): 실사진 없는 상품 = 그날 릴스 X(글자 카드 영상 X) · 모아보기 글은 그대로
-seen, o3 = {}, io.StringIO(); H.REEL_PUBLIC = False; sent.clear()
+seen, o3 = {}, io.StringIO(); H.REEL_PUBLIC = False; sent.clear(); Image.new("RGB", (600, 800), (200, 120, 40)).save("ph3.jpg")
 with contextlib.redirect_stdout(o3): H.digest(seen, P3 + [{"t": "2026-10-06 11:00", "text": "🔥 [쿠팡] 휴지 30롤 (9,900원/무료)\n\n싸요", "url": "https://link.coupang.com/a/b3", "s": 6, "e": "🧻", "hook": "휴지 롤당 330원", "pts": ["싸요"]}])
 assert not vids and "reel skip 사진 부족 1/2" in o3.getvalue() and any(m == "sendMessage" and p.get("chat_id") == H.CHANNEL for m, p in sent)  # 카드 번호 = 캡션 번호라 뒤 후보로 안 채움 -> 그날 릴스 X
-Image.new("RGB", (600, 800), (200, 120, 40)).save("ph3.jpg"); cr3, rl3 = cards.reel, []; cards.reel = lambda items, *a, **k: rl3.append([i.get("photo") for i in items]) or cr3(items, *a, **k)
+cr3, rl3 = cards.reel, []; cards.reel = lambda items, *a, **k: rl3.append([i.get("photo") for i in items]) or cr3(items, *a, **k)
 seen = {}; sent.clear(); H.digest(seen, P3); cards.reel = cr3; assert rl3 == [["ph3.jpg"]]  # 기본(꺼짐): 공개 X, 봇 채팅 영상만(예전 그대로) · 영상 재료 = 실사진
 assert len(vids) == 1 and not vids[0][0].startswith("docs/") and not os.path.exists("docs/reels") and "reel_2026-10-06" not in seen and not ic
 assert vids[0][1].split("\n\n")[1].startswith("우유 개당 100원") and vids[0][1].split("\n\n")[0] == H.ig_notes([]) and "🎵 테스트곡 — 작가 (Pixabay)" in vids[0][1]  # 문구 맨 앞·곡명
@@ -8078,6 +8078,11 @@ assert I73.open(f"{H.STORY_DIR}/2026-10-29.jpg").size == (1080, 1920)
 H.ig_photo = lambda p, d, seen=None: ("ph73.jpg", "coupang")
 sd73 = lambda photo: [p["url"][-2:] for _, p in H.slot_deals([P73[7], P73[0]], "2026-10-28", 11, (11,), photo)]
 assert sd73(False) == ["g8", "g1"] and sd73(True) == ["g1"], (sd73(False), sd73(True))  # FF: 스토리 칸 딜 = 사진 있는 딜만(img_of — 쿠팡 사진 주소만)
+json.dump([P73[7], P73[0], P73[1], P73[2]], open("posts73s.json", "w"), ensure_ascii=False); H.POSTS = "posts73s.json"
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-28 12:35"); H.ig_cards({})
+H.POSTS = "posts73.json"; o73s = json.load(open("docs/cards/2026-10-28_12.json")); assert sorted(o73s) == [1, 2, 3], o73s  # 12:30 스토리 칸 카드 = 사진 X 딜(0번) 뺌
+for f in ("docs/cards/2026-10-28_12.json", "docs/cards/2026-10-28_12.jpg"): os.remove(f)
 json.dump([3, 1, 0], open("docs/cards/2026-10-29_15.json", "w")); sty73 = []; C73.ig_story = lambda src, out, top, bottom, hook=None: sty73.append((top, hook)) or igs73(src, out, top, bottom, hook)
 with contextlib.redirect_stdout(io.StringIO()):
     H.ig_story_card({}, "t", "1", "2026-10-29_15", TK("2026-10-29 15:30"))
