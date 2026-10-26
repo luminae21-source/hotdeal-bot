@@ -1,6 +1,6 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-10-25 19:55",
+ "updated": "2026-10-26 17:45",
  "promos": [
   {
    "id": "cp-fresh-1025",
@@ -19,7 +19,7 @@
     "href": null
    },
    "src": "https://www.financialpost.co.kr/news/articleView.html?idxno=282191",
-   "chk": "2026-10-25 19:30",
+   "chk": "2026-10-26 17:45",
    "kw": null
   },
   {
@@ -29,7 +29,7 @@
    "sub": "",
    "name": "쿠가세 · 가전디지털 세일",
    "start": "2026-10-12",
-   "end": null,
+   "end": "2026-10-25",
    "pre": null,
    "benefit": "300여 브랜드 · 매일 오후 2시 한정 특가",
    "tag": "쿠가세",
@@ -38,8 +38,8 @@
     "text": "가열식 가습기 6종 비교",
     "href": null
    },
-   "src": "https://www.youthdaily.co.kr/news/article.html?no=228218",
-   "chk": "2026-10-25 19:30",
+   "src": "https://www.segye.com/newsView/20261024502955",
+   "chk": "2026-10-26 17:45",
    "kw": "가열식 가습기"
   },
   {
@@ -59,7 +59,7 @@
     "href": "https://emart.ssg.com/"
    },
    "src": "https://www.mt.co.kr/living/2026/10/19/2026101916054412524",
-   "chk": "2026-10-25 19:30",
+   "chk": "2026-10-26 17:45",
    "kw": null
   },
   {
@@ -79,8 +79,48 @@
     "href": "https://www.gmarket.co.kr/"
    },
    "src": "https://www.fnnews.com/news/202610231616564882",
-   "chk": "2026-10-25 19:30",
+   "chk": "2026-10-26 17:45",
    "kw": null
+  },
+  {
+   "id": "lo-brandfantasy-2610",
+   "mall": "lotteon",
+   "mall_name": "롯데온",
+   "sub": "",
+   "name": "브랜드판타지",
+   "start": null,
+   "end": "2026-10-31",
+   "pre": null,
+   "benefit": "여성 패션 브랜드 날짜별 릴레이 할인 · 가을·겨울 옷 최대 55%",
+   "tag": null,
+   "url": "https://www.lotteon.com/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.lotteon.com/"
+   },
+   "src": "https://www.segye.com/newsView/20261024502603",
+   "chk": "2026-10-26 17:45",
+   "kw": null
+  },
+  {
+   "id": "nv-nefda-2610",
+   "mall": "naver",
+   "mall_name": "네이버",
+   "sub": "플러스 스토어",
+   "name": "넾다세일",
+   "start": "2026-10-26",
+   "end": "2026-11-08",
+   "pre": null,
+   "benefit": "매일 5·7·10% 쿠폰(최대 7만원) · 선착순 쿠폰 0·10·18시",
+   "tag": null,
+   "url": "https://shopping.naver.com/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://shopping.naver.com/"
+   },
+   "src": "https://www.navercorp.com/media/pressReleasesDetail?seq=10034785",
+   "chk": "2026-10-26 17:45",
+   "kw": "넾다세일"
   }
  ]
 }
