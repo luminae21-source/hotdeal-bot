@@ -577,10 +577,10 @@ H.main(); sj = json.load(open("seen.json"))  # 보관 딜이 있으면 그게 �
 assert posted == [("ruliweb_91", 7, "c1")] and len(asked) == 2 and "hold_ruliweb_93" in sj and "hold_ruliweb_91" not in sj
 # SS: 수수료 링크 못 만든 딜('noaff') = 실행 자리 안 씀(다음 딜이 같은 실행에) · 쿠팡 링크 잠깐 실패('hold') = 다시 보관(다음 실행에)
 RU3 = '<rss><channel>' + "".join(it(f"[G마켓] 상품{n}번 특가 묶음 / {n},000원", f"https://bbs.ruliweb.com/market/board/1020/read/9{n}", 20) for n in range(3)) + '</channel></rss>'
-rs3 = {"ruliweb_92": "noaff", "ruliweb_90": "hold"}; H.post_or_draft = lambda d, c, sc, *a, **k: posted.append(d["id"]) or rs3.get(d["id"])
+rs3, pm3 = {"ruliweb_92": "noaff", "ruliweb_90": "hold"}, H.post_or_draft; H.post_or_draft = lambda d, c, sc, *a, **k: posted.append(d["id"]) or rs3.get(d["id"])
 json.dump({}, open("seen.json", "w")); posted.clear(); H.main(); sj = json.load(open("seen.json"))
 assert posted == ["ruliweb_92", "ruliweb_90", "ruliweb_91"] and {k for k in sj if k.startswith("hold_")} == {"hold_ruliweb_90"}, (posted, sj)
-rs3.clear(); posted.clear(); H.main(); assert posted == ["ruliweb_90"] and not [k for k in json.load(open("seen.json")) if k.startswith("hold_")]
+rs3.clear(); posted.clear(); H.main(); assert posted == ["ruliweb_90"] and not [k for k in json.load(open("seen.json")) if k.startswith("hold_")]; H.post_or_draft = pm3; posted.clear()
 # 4-5) 꾸준히(MIN_SCORE를 7로 올렸을 때): 마지막 딜 글이 45분(0~8시는 90분 — 10/22 진우 '새벽에도') 넘으면 7점이 없어도 6점 최고 1개 / 그 안이거나 최고가 5점이면 안 올림
 assert H.MIN_SCORE == 6 and H.FILL_SCORE == 6  # 10/8 진우: 기본은 6점도 바로
 H.MIN_SCORE = 7
