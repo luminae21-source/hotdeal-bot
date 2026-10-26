@@ -2739,12 +2739,13 @@ def cp_mix(seen):
 
 NN_AT, NN_PREP, NN_LATE, NN_CAP, NN_TOSS, NN_HOLD = "11:30", "09:00", 3, (3, 5), 2, ("11:45", "13:00")  # NN(10/26 Cowork — 진우 '꾸준하게 주문하는 계란·맥반석계란 등 비슷한 제품 묶어서'): 하루 1번 11:30(밀리면 11:45~13:00 건너 13시 뒤 — 12:30 쿠팡 모음·12시 리스트와 30분) · 칸 둘(계란) = 칸마다 3개 · 칸 하나 = 5개(번호 1️⃣~5️⃣)까지 · 토스 칸 2개
 NN_NOT = r"찜기|트레이|보관|틀(?![가-힣])|커버|스푼|모형|장난감|키링|스티커|부화|사료|간식(?!용)|강아지|고양이|볶음밥|덮밥|김밥|무스비|만두|교자|" + PRICE_NOT  # 품목 낱말이 들어도 그 품목 아님(계란 찜기·라면 냄비·스팸 김치볶음밥 등 — 사이트 PRICE_NOT 같이)
+NN_EGG = r"(?=.*(?:란|달걀))"  # 뒤 어디든 계란 낱말('반숙 왕란'·'맥반석 구운 대란' — 맥반석 오징어·반숙 카스테라 X)
 NN_COLD = r"반숙|완숙|삶은|계란\s*말이|반찬|김치|장조림|냉장|냉동"  # 냉장·냉동 = 배송 표기(🚀 API isRocket·글에 로켓프레시·새벽) 있을 때만
 NN_TOPICS = (  # (키, 머리, 단가 단위, 가격 기록 쪽(c/주소.html — 없으면 ''), 칸 순서, [(칸, 종류, 검색어, 이름 정규식)] — 먼저 맞는 종류(좁은 것 먼저))
-    ("egg", "🥚 계란", "개", "eggs", ("생란", "바로 먹는 계란"), (("바로 먹는 계란", "맥반석", "맥반석 계란", r"맥반석\s*(?:구운\s*)?(?:계란|란|달걀)"), ("바로 먹는 계란", "구운란", "구운란", r"구운\s*(?:계란|란|달걀)"),
-                                                              ("바로 먹는 계란", "훈제란", "구운란", r"(?:훈제|삶은)\s*(?:계란|란|달걀)"),  # 검색어 = 구운란(같은 검색 1번 — 검색 수 그대로)
-                                                              ("바로 먹는 계란", "반숙란", "반숙란", r"반숙\s*(?:계란|란|달걀)"), ("바로 먹는 계란", "완숙란", "완숙란", r"완숙\s*(?:계란|란|달걀)"),
-                                                              ("생란", "유정란", "유정란", r"유정란"), ("생란", "생란", "계란 30구", r"(?:계란|달걀)(?!\s*(?:말이|과자|빵|스낵|찜))|특란|대란|왕란|중란"))),
+    ("egg", "🥚 계란", "개", "eggs", ("생란", "바로 먹는 계란"), (("바로 먹는 계란", "맥반석", "맥반석 계란", rf"맥반석{NN_EGG}"), ("바로 먹는 계란", "구운란", "구운란", rf"구운{NN_EGG}"),
+                                                              ("바로 먹는 계란", "훈제란", "구운란", rf"(?:훈제|삶은){NN_EGG}"),  # 검색어 = 구운란(같은 검색 1번 — 검색 수 그대로)
+                                                              ("바로 먹는 계란", "반숙란", "반숙란", rf"반숙{NN_EGG}"), ("바로 먹는 계란", "완숙란", "완숙란", rf"완숙{NN_EGG}"),
+                                                              ("생란", "유정란", "유정란", r"유정란"), ("생란", "생란", "계란 30구", r"(?:계란|달걀)(?!\s*(?:말이|과자|빵|스낵|찜|장조림))|특란|대란|왕란|중란"))),
     ("milk", "🥛 우유", "100ml", "milk", ("우유",), (("우유", "바나나우유", "바나나우유", r"바나나\s*(?:맛\s*)?우유"), ("우유", "커피우유", "커피우유", r"커피\s*(?:맛\s*)?우유"),
                                                 ("우유", "멸균우유", "멸균우유", r"멸균\s*(?:흰\s*)?우유|우유\s*\d"))),
     ("side", "🍱 반찬", "100g", "", ("반찬",), (("반찬", "계란말이", "계란말이", r"계란\s*말이"), ("반찬", "김치", "포기김치", r"김치(?!\s*(?:냉장고|통|찌개|볶음밥|라면|사발|칼국수|우동|면|전(?![가-힣])))"),
@@ -2756,14 +2757,15 @@ NN_TOPICS = (  # (키, 머리, 단가 단위, 가격 기록 쪽(c/주소.html �
     ("coffee-mix", "☕ 커피믹스", "개", "coffee-mix", ("커피믹스",), (("커피믹스", "커피믹스", "커피믹스", r"커피\s*믹스|모카\s*골드|화이트\s*골드"),)),
     ("wet-wipes", "🧽 물티슈", "팩", "wet-wipes", ("물티슈",), (("물티슈", "물티슈", "물티슈 캡형", r"물티슈"),)),
     ("instant-rice", "🍚 즉석밥", "개", "instant-rice", ("즉석밥",), (("즉석밥", "즉석밥", "햇반", r"햇반|즉석밥|오뚜기\s*(?:밥|흑미밥|잡곡밥)"),)),
-    ("rice", "🌾 쌀", "1kg", "rice", ("쌀",), (("쌀", "쌀", "햅쌀 10kg", r"^(?!.*(?:햇반|즉석|누룽지|떡|백미\s*밥)).*(?:햅쌀|백미|쌀\s*\d+\s*kg|\d+\s*kg\s*쌀)"),)))
+    ("rice", "🌾 쌀", "1kg", "rice", ("쌀",), (("쌀", "쌀", "햅쌀 10kg", r"^(?!.*(?:햇반|즉석밥|누룽지(?!향)|떡|쌀밥|백미\s*밥(?!맛)))(?=.*\d\s*kg).*(?:햅쌀|백미|쌀(?![가-힣]))"),)))
 NN_IN = {"개": r"구|알|개입|입|개|봉|캔|병|컵|스틱|EA|ea|T|t", "롤": r"롤", "팩": r"팩|개"}  # 단가 셈 낱개 이름(단위별)
 NN_OUT = r"팩|판|박스|세트|묶음"  # 겉 묶음(곱함)
 
 
 def nn_unit(name, price, base):
     """NN 같은 단위 단가(우리 계산 = 이름의 개수·용량 × 가격만, 헷갈리면 X): base '개'·'롤'·'팩' = 낱개 수 × 겉 묶음 수(× N) / '100ml'·'1L'·'100g'·'1kg' = 용량 1개(ml·L·g·kg) × 개수
-    'x N(단위)'는 1번만 셈(낱개 단위면 곱 · 겉 묶음 단위(판·박스)면 겉 묶음) · '총 N개'·'(N구)' = 그 수 그대로(곱 X) · 낱개 수 없이 겉 묶음만('특란 2판') = None.
+    'x N(단위)'는 1번만 셈(낱개 단위면 곱 · 겉 묶음 단위(판·박스)면 겉 묶음 · 모르는 낱말('x 12PET'·'x 4개월') = None) · '총 N개'·'(N구)' = 그 수 그대로(곱 X — '(5개입)'은 1묶음 몫이라 총 X · 1 = 포장)
+    · 총 + 'x N'/'1+1'·맨 'x N' + 겉 묶음·낱개 수 없이 겉 묶음만('특란 2판') = 몇 개인지 모름 = None.
     -> (단가 숫자, '개당 397원') — 옵션(택1·옵션·골라·'/'·'~')·다른 상품 더하기('A + B' — '1+1'은 합)·용량 2개↑·낱개 이름 2개↑(포장 '1개' 빼고)·못 읽음·2개 밑 = None."""
     nm = re.sub(r"\+\s*[^+\d]*증정", "", name)
     if not price or re.search(r"택\s*1|택일|옵션|골라|중\s*\d|[/~]", nm):
@@ -2775,18 +2777,25 @@ def nn_unit(name, price, base):
     sz = r"(\d+(?:\.\d+)?)\s*(ml|l|g|kg)(?![a-z])"
     size, rest = re.findall(sz, rest, re.I), re.sub(sz, " ", rest, flags=re.I)
     vol, unit = base not in NN_IN, NN_IN.get(base, NN_IN["개"])
-    tot = not vol and re.search(rf"(?:총\s*(\d+)\s*(?:{unit})|\(\s*(?:총\s*)?(\d+)\s*(?:{unit})\s*\))(?![가-힣a-zA-Z])", rest)  # '4팩 (총 20개)'·'2판 (60구)' = 20·60
-    xr = rf"(?<![\dA-Za-z])[x×X]\s*(\d+)\s*({NN_IN['개']}|{NN_OUT}|롤)?(?![\d.]|[가-힣a-zA-Z])"  # 'x 12병'·'x 2판' = 숫자 1번만(뒤 낱말과 같이 뺌)
-    xs, rest = re.findall(xr, rest), re.sub(xr, " ", rest)
-    inn = re.findall(rf"(\d+)\s*({unit})(?![가-힣a-zA-Z])", rest)
-    inn = [x for x in inn if x[0] != "1"] or inn[:1]  # '60구 1개'·'30구 1박스'의 1개 = 포장 1개
-    out = [x for x in re.findall(rf"(\d+)\s*({NN_OUT})(?![가-힣])", rest) + [x for x in xs if re.fullmatch(NN_OUT, x[1])] if not (base == "팩" and x[1] == "팩")]
-    xs = [x for x in xs if not re.fullmatch(NN_OUT, x[1]) or base == "팩" and x[1] == "팩"]
-    if tot and xs or not tot and (len(inn) > 1 and not vol or len(out) > 1 or len(xs) > 1):  # '(60구) x 2' = 총이 1세트 몫인지 모름
+    xr = r"(?<![\dA-Za-z])[x×X]\s*(\d+)\s*([가-힣A-Za-z]*)"  # 'x 12병'·'x 2판' = 숫자 1번만(뒤 낱말과 같이 뺌)
+    xw, rest = re.findall(xr, rest), re.sub(xr, " ", rest)
+    if any(w and not re.fullmatch(rf"{NN_IN['개']}|{NN_OUT}|롤", w) for _, w in xw):
         return None
-    n = int(tot[1] or tot[2]) if tot else math.prod([int(k) for k, _ in inn + out + xs]) * (sum(map(int, re.findall(r"\d+", plus[0]))) if plus else 1)
+    tot = re.search(rf"총\s*(\d+)\s*(?:{unit})(?![가-힣a-zA-Z])", rest) or re.search(rf"\(\s*(\d+)\s*(?!개입|입)(?:{unit})\s*\)", rest)  # '4팩 (총 20개)'·'2판 (60구)' = 20·60
+    tot = tot if tot and int(tot[1]) >= 2 else None
+    if tot and (xw or plus):
+        return None
+    pk = lambda u: re.fullmatch(NN_OUT, u) and not (base == "팩" and u == "팩")  # 겉 묶음(물티슈 팩당 = 팩은 낱개)
+    inn = re.findall(rf"(\d+)\s*({unit})(?![가-힣a-zA-Z])", rest)
+    big = [x for x in inn if x[0] != "1"]
+    inn = big or inn[:1]  # '60구 1개'·'30구 1박스'의 1개 = 포장 1개
+    out = [x for x in re.findall(rf"(\d+)\s*({NN_OUT})(?![가-힣])", rest) if not (base == "팩" and x[1] == "팩")] + [x for x in xw if pk(x[1])]
+    xs = [x for x in xw if not pk(x[1])]
+    if not tot and (len(inn) > 1 and not vol or len(out) > 1 or len(xs) > 1 or out and any(not w for _, w in xs) or not vol and out and not big):  # 맨 'x 2' + '2판' = 같은 수 두 번인지 모름 · '특란 2판 (1개)' = 판당 구 모름
+        return None
+    n = int(tot[1]) if tot else math.prod([int(k) for k, _ in inn + out + xs]) * (sum(map(int, re.findall(r"\d+", plus[0]))) if plus else 1)
     if not vol:  # 낱개 무게·용량('햇반 210g 24개')은 셈 X
-        if n < 2 or not tot and out and not inn:  # '특란 2판' = 판 1개에 몇 구인지 모름
+        if n < 2:
             return None
         v = price / n
         return v, f"{base}당 {round(v):,}원"
@@ -2808,7 +2817,7 @@ def nn_topic(seen, now):
 
 def nn_kind(tp, name):
     """품목 묶음 칸·종류: 먼저 맞는 종류(좁은 것 먼저) -> (칸, 종류) / 그 품목 아님(NN_NOT)·철 지난 계절 = None."""
-    if re.search(NN_NOT, name) or season_adj(name) < 0 or tp[3] and next((it[0] for it in PRICE_ITEMS if re.search(it[2], name)), tp[3]) != tp[3]:  # 앞 기록 품목 = 다른 품목(햇반 백미밥 = 즉석밥)
+    if re.search(NN_NOT, name) or season_adj(name) < 0 or next((it[0] for it in PRICE_ITEMS if re.search(it[2], name)), tp[3]) != tp[3]:  # 앞 기록 품목 = 다른 품목(햇반 백미밥 = 즉석밥 · 김치큰사발면 = 라면)
         return None
     return next(((c, k) for c, k, _, rx in tp[5] if re.search(rx, name)), None)
 
@@ -2824,7 +2833,7 @@ def nn_bundle(seen):
     hm, today, tp = time.strftime("%H:%M", kst), time.strftime("%Y-%m-%d", kst), nn_topic(seen, now)
     q = seen.get("nnq", {})
     q = q if q.get("d") == today and q.get("k") == tp[0] else {"t": now, "d": today, "k": tp[0], "r": {}}
-    kws = list(dict.fromkeys(kw for _, _, kw, _ in tp[5]))
+    kws = list(dict.fromkeys(kw for _, _, kw, _ in reversed(tp[5])))  # 넓은 검색어(계란 30구) 먼저
     if NN_PREP <= hm < NN_AT:  # 미리 검색(실행마다 1번)
         kw = HAS_CP and next((k for k in kws if k not in q["r"]), None)
         if kw:
@@ -2850,8 +2859,7 @@ def nn_bundle(seen):
     if busy(seen, cap=False) or now - max(th_day(seen, now)["last"], seen.get("thlist", {}).get("t", 0), seen.get("cpmix", {}).get("t", 0)) < CP_MIX_GAP:  # 개별 글·리스트·묶음 글 15분 안 = 15분 뒤로
         print("nn 미룸(개별 글·리스트·묶음 글 15분 안)")
         return
-    seen[key] = now
-    seen["nnrot"] = {"t": now, "i": seen.get("nnrot", {}).get("i", 0) + 1}  # 올리든 건너뛰든 내일은 다음 차례
+    done = lambda: seen.update({key: now, "nnrot": {"t": now, "i": seen.get("nnrot", {}).get("i", 0) + 1}})  # 올리든 건너뛰든 내일은 다음 차례(텔레그램 실패 = 다음 실행에 다시)
     posts, base, cands = load(POSTS, []), tp[2], []
     cold = lambda nm: tp[0] == "side" or re.search(NN_COLD, nm)  # 반찬은 다 냉장(멸치볶음·진미채 포함)
     nnm = lambda nm: (f"[{m[1]}] " if (m := re.match(r"\s*\[\s*(\d+\s*\+\s*\d+)\s*\]", nm)) else "") + short_name(nm)  # '[2+1]'은 단가에 셈 -> 이름에도  # cands = (칸, 종류, 단가, 단가 글자, 이름, 가격 글자, 링크, 앞 표시, 뒤 덧붙임, 쿠팡 검색 상품?)
@@ -2882,7 +2890,7 @@ def nn_bundle(seen):
     n = sum(map(len, picks.values()))
     if n < 3:
         print(f"nn {tp[0]} 후보 {n}개 — 이번 회차 X(검색 {sum(k in q['r'] for k in kws)}/{len(kws)})")
-        return
+        return done()
     long = [x[6] for xs in picks.values() for x in xs if x[9]]
     try:  # 쿠팡 검색 링크(파트너스 긴 주소) -> 짧은 딥링크(1번 — 못 하면 긴 주소 그대로, Threads는 480자 안 만큼)
         qs = {u: urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for u in long}
@@ -2899,14 +2907,15 @@ def nn_bundle(seen):
     more = (f"{item[1]} 가격 기록", f"{SITE}c/{tp[3]}.html") if rec else ("🍱 식품 더 보기", f"{SITE}c/food/")
     unitw = f"{base}당"
     sec = lambda c: f"<b>· {esc(c)}</b>\n" if len(rows) > 1 else ""
-    when = lambda xs: toss_when(time.strftime("%Y-%m-%d %H:%M", time.gmtime(min([x[1]["t"] if isinstance(x[1], dict) else x[1][10] for x in xs], default=now) + 9 * 3600)))  # 게시 시점 = 가격 읽은 시각(검색·토스 중 제일 오래된 것)
+    when = lambda ts: toss_when(time.strftime("%Y-%m-%d %H:%M", time.gmtime(min(ts, default=now) + 9 * 3600)))  # 게시 시점 = 가격 읽은 시각(제일 오래된 것 — 쿠팡 검색·토스 따로)
     text = f"<i>{DISCLOSURE}</i>" + (f"\n<i>{TOSS_NOTE}</i>" if toss else "") + f"\n\n{tp[1]} <b>묶음</b> — {unitw} 가격 순\n\n" + "\n\n".join(
         sec(c) + "\n".join(f"{NUM[k]} {mk}<a href=\"{esc(u)}\"><b>{esc(nm)}</b></a>\n💰 <b>{esc(pr)}</b> · {esc(ul)}{esc(ex)}" for k, (_, _, _, ul, nm, pr, u, mk, ex, *_) in enumerate(xs))
         for c, xs in rows.items()) + ("\n\n💙 <b>토스</b>\n" + "\n".join(f"{NUM[k]} <a href=\"{esc(x['link'])}\"><b>{esc(nnm(x['n']))}</b></a>\n💰 <b>{x['p']:,}원</b> · {nn_unit(x['n'], x['p'], base)[1]}"
-                                                                                        for k, x in enumerate(toss)) if toss else "") + f"\n\n{when([(c, x) for c, xs in rows.items() for x in xs] + [('💙 토스', x) for x in toss])}"
+                                                                                        for k, x in enumerate(toss)) + f"\n{when([x['t'] for x in toss])}" if toss else "") + f"\n\n{when([x[10] for xs in rows.values() for x in xs])}"
     if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=text,
               reply_markup={"inline_keyboard": [[{"text": f"📊 {more[0]}", "url": f"{more[1]}?ref=tgb"}]]}):
         return
+    done()
     bundled(seen)
     print(f"nn {tp[0]} " + " · ".join(f"{c} {len(xs)}" for c, xs in rows.items()) + (f" · 토스 {len(toss)}" if toss else "") + f" | 검색 {sum(k in q['r'] for k in kws)}/{len(kws)}")
     if not E.get("THREADS_TOKEN"):
@@ -2922,7 +2931,8 @@ def nn_bundle(seen):
             out.append(f"{x['n'] and clip(nnm(x['n']), 26)} {x['p']:,}원 · {nn_unit(x['n'], x['p'], base)[1]}\n👉 {x['link']}" if isinstance(x, dict)
                        else f"{x[7]}{clip(x[4], 26)} {x[5]} · {x[3]}{x[8]}\n👉 {x[6]}")
         notes = DISCLOSURE + (f"\n{TOSS_NOTE}" if any(c == "💙 토스" for c, _ in flat[:m]) else "")
-        return f"{notes}\n\n{tp[1]} 묶음 — {unitw} 가격 순\n" + "\n".join(out) + f"\n\n{when(flat[:m])}\n{more[0].lstrip('🍱 ')} → {more[1]}?ref=thb"
+        tw = [x["t"] for c, x in flat[:m] if c == "💙 토스"]
+        return f"{notes}\n\n{tp[1]} 묶음 — {unitw} 가격 순\n" + "\n".join(out) + (f"\n{when(tw)}" if tw else "") + f"\n\n{when([x[10] for c, x in flat[:m] if c != '💙 토스'])}\n{more[0].lstrip('🍱 ')} → {more[1]}?ref=thb"
     m = min(len(flat), 4)
     while m > 1 and len(render(m)) > 480:
         m -= 1
@@ -3720,7 +3730,7 @@ def toss_solo(seen):
                                        "it": [[x["tacaItemId"], name, price, int(src == "day"), 0, 0]], **({"ph": 1} if ph else {})}  # 품절 지켜보기(진우 예약 글과 같은 모양) · ph = 사진 글(캡션 고침)
     if E.get("THREADS_TOKEN"):  # Threads = 채움 후보(45분 간격·화장품 한도 그대로)
         seen["thtoss"] = {"t": now, "q": [q for q in seen.get("thtoss", {}).get("q", []) if now - q["t"] < 3 * 3600] + [
-            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link, **({"img": img, "tids": [x["tacaItemId"], x.get("tacaId")]} if img else {})}]}
+            {"t": now, "l": False, "id": x["tacaItemId"], "n": name, "p": x["displayPrice"], "k": "solo", "r": 0, "s": p["score"] - TOP_BONUS * bool(p.get("top")), "bt": th_beauty(name), "text": toss_th(info, name, toss_price(x), lines, link, icon), "link": link, **({"img": img, "tids": [x["tacaItemId"], x.get("tacaId")]} if img else {})}]}
     print(f"toss solo {h:02d}{f' 빈틈 {gap}분' if gap else ''}: {clip(name, 30)} ({src} {rank}위 · {p['score']}점{' · 잘 된 상품 +' + str(TOP_BONUS) if p.get('top') else ''}{' · 자주 사는 상품 +' + str(TOSS_FREQ_BONUS) if p.get('fq') else ''})")
 
 
