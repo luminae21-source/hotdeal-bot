@@ -5991,7 +5991,7 @@ assert [r["pid"] for r in json.load(open(H.CP_FAIL))] == ["77777"]  # 이 실행
 at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 5 and len(dm48) == 2  # 2번 실패한 진열 = 7일 동안 안 부름
 at48("2026-11-01 10:29"); H.cp_links(s48); assert len(dl48) == 5
 at48("2026-11-01 10:31"); H.cp_links(s48); assert dl48[-1] == [B48] and len(dl48) == 6 and len(dm48) == 2 and s48["cpdl"]["f"][B48] == ["2026-10-24", "2026-10-25", "2026-11-01"]  # 7일 뒤 다시(나중에 되면 파트너스 링크로) · 3번째부터 알림 X
-assert json.load(open(H.CP_FAIL)) == [{"pid": "77777", "n": "제휴 안 되는 세제", "f": ["2026-10-24", "2026-10-25", "2026-11-01"], "x": "11-01 10:31", "e": "400"}]  # 아직 안 바뀐 것만(Cowork 점검 — 가격 X)
+assert json.load(open(H.CP_FAIL)) == [{"pid": "77777", "n": "제휴 안 되는 세제", "f": ["2026-10-24", "2026-10-25", "2026-11-01"], "x": "11-01 10:31", "e": "400", "m": "①url convert failed"}]  # 아직 안 바뀐 것만(Cowork 점검 — 가격 X)
 C48 = [f"https://www.coupang.com/vp/products/6{k:03d}" for k in range(100)]  # (10/25 리뷰) 실패했던 상품이 채널 예약이 되면 = 1개씩 뒤로 X, 채널 먼저(첫 호출)
 json.dump([{"at": "2026-11-09 09:00", "shelf": True, "url": u, "text": f"👍 <b>[쿠팡] 새 진열 {u[-3:]} (1,000원)</b>"} for u in C48] + [{"at": "2026-11-09 12:00", "deal": True, "url": B48, "text": "🔥 <b>[쿠팡] 제휴 안 되는 세제 (1,000원)</b>"}], open("events.json", "w"))
 H.http = lambda url, body=None, headers=None, method=None: dl48.append(list(body["coupangUrls"])) or json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/g" + u[-4:]} for u in body["coupangUrls"]]})
