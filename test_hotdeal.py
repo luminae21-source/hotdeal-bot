@@ -1839,6 +1839,7 @@ P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a", "s": 7}, {
 H._tv_real, H.tg_video = H.tg_video, lambda path, cap: sent.append(("video", {"path": path, "caption": cap}))
 fills = []  # 릴스 재료(e·hook·pts) 없는 TOP 글만 Claude에게 채워달라고 함
 H.ai_pick = lambda prompt, lines: fills.append((prompt, lines)) or [{"i": 0, "score": 0, "comment": "", "e": "🍎", "hook": "A딜 훅", "pts": ["이유"]}]
+from PIL import Image as _I8; _I8.new("RGB", (500, 600), (90, 160, 220)).save("ph8.jpg"); igp8, H.ig_photo = H.ig_photo, lambda p, d, seen=None: ("ph8.jpg", "coupang")  # FF: 릴스 = 실사진 상품만(사진 받기 규칙은 9-69)
 seen, sent[:] = {}, []
 H.digest(seen, P)
 if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
@@ -1855,6 +1856,7 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     sent.clear(); H.digest(seen, P); assert not sent
     seen.pop("blog_" + next(k for k in seen if k.startswith("digest_"))[7:]); sent.clear(); H.digest(seen, P)  # 블로그용 글만 실패했던 날: 초안·릴스 없이 블로그용 글만 다시
     assert [m for m, x in sent] == ["sendMessage"] and "제목: " in sent[0][1]["text"] and any(k.startswith("blog_") for k in seen)
+H.ig_photo = igp8
 assert all(f'<meta name="naver-site-verification" content="{v}">' in idx for v in ("31caccebc9de97ffa6547f7d55966278daf9c469", "58af553d8879edfe3bc3a5189d9744ddc33bfcb9"))  # 10/15 네이버 소유확인 2개
 assert "og:title" in idx and "naver-site-verification" in idx and "blog.naver.com/hotdeal_pick" in idx and "instagram.com/hotdealpick.kr" in idx and "threads.com/@hotdealpick.kr" in idx
 
@@ -2136,10 +2138,11 @@ assert not os.path.exists("docs/cards/2026-10-09_11") and os.path.isdir("docs/ca
 C9.deal_card, ds9 = real_dc9, []
 rl9, tv9, sd9 = C9.reel, H.tg_video, H.deal_slides
 C9.reel, H.tg_video, H.deal_slides = (lambda items, d, out, music=None, say=None: ds9.append(("reel", [i.get("e") for i in items])) or out), (lambda path, cap: None), (lambda stem, ps: ds9.append((stem, len(ps))) or sd9(stem, ps))
+igp9, H.ig_photo = H.ig_photo, lambda p, d, seen=None: ("ph9.jpg", "coupang")  # FF: 릴스 = 실사진 상품만
 seen, sent[:] = {}, []; time.time = lambda: TK(f"{D9} 21:05"); H.digest(seen, json.load(open("posts.json")))
 assert ds9[0] == (D9, 5) and sorted(os.listdir(f"docs/cards/{D9}")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg"] and ds9[1][0] == "reel" and ds9[1][1][0] == "🧴"  # 딜 카드 때 채운 재료를 릴스도
 H.E.pop("IG_TOKEN"); shutil.rmtree(f"docs/cards/{D9}"); seen, ds9[:] = {}, []; H.digest(seen, json.load(open("posts.json"))); assert ds9[0][0] == "reel" and ds9[0][1][0] == "🧴" and not os.path.exists(f"docs/cards/{D9}")  # 인스타 없으면 딜 카드 X, 릴스 재료는 그대로 채움
-H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick = rl9, tv9, sd9, ap9
+H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick, H.ig_photo = rl9, tv9, sd9, ap9, igp9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 H.IG_HUMAN = ig9h
 open("posts.json", "w").write(pj9); H.E["THREADS_TOKEN"] = "tk"; seen, sent[:] = {}, []; time.time = tt9; H.http = th_http; live = True; calls.clear(); H.threads(seen)  # Threads 카드는 그대로, 인스타는 threads()에서 안 올림(ig_cards)
