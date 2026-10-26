@@ -9492,7 +9492,7 @@ P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,00
        ch88("2026-11-12 08:00", "성경김 지도표 재래김 16봉", "https://link.coupang.com/a/C0", pop=9),  # ① 회차 TOP 수수료 딜
        ch88("2026-11-12 08:10", "삼다수 2L 12병", SR88 + "1", pop=8), ch88("2026-11-12 08:20", "신라면 멀티팩", SR88 + "2", pop=7),  # TOP이지만 수수료 X
        ch88("2026-11-12 09:00", "성경김 파래김 20봉", "https://link.coupang.com/a/C1", fire=False),  # ② 후보지만 같은 종류(성경김) X
-       ch88("2026-11-12 10:00", "곰곰 국산 햅쌀 10kg", "https://link.coupang.com/a/C2", fire=False)]  # ② 최근 6시간 수수료 딜(개별 글 나갔어도 OK)
+       ch88("2026-11-12 10:00", "곰곰 국산 햅쌀 10kg", "https://link.coupang.com/a/C2", fire=False), ch88("2026-11-12 05:00", "오래된 수세미 10개", "https://link.coupang.com/a/C3", fire=False)]  # ② 6시간 넘음 X  # ② 최근 6시간 수수료 딜(개별 글 나갔어도 OK)
 json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals(s88)
 th88 = tb88[-1][1]
@@ -9507,6 +9507,12 @@ assert "탐사" not in tb88[-1][1] and "TOP3 (12시)" in tb88[-1][1] and len(s88
 json.dump([p for p in P88 if not p.get("shelf")], open("posts88.json", "w"), ensure_ascii=False); n88, o88 = len(tb88), io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals({})
 assert len(tb88) == n88 and "threads skip top12 2개" in o88.getvalue() and "TOP3" in tg88[-1]["text"]  # 텔레그램 리스트는 그대로
+json.dump(P88 + [sh88(f"진열{k}", f"https://link.coupang.com/a/X{k}", "9,000") for k in range(3)], open("posts88.json", "w"), ensure_ascii=False); o88 = io.StringIO()
+with contextlib.redirect_stdout(o88): H.top_deals({})
+assert "TOP5 (12시)" in tb88[-1][1] and "threads top12 5개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 많아도 5개까지
+json.dump([p for p in P88 if p["url"] != SR88 + "2"], open("posts88.json", "w"), ensure_ascii=False); n88, m88 = len(tb88), len(tg88)
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
+assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP4 (12시)" in tb88[-1][1]  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서
 assert H.kind_key("성경김 지도표 재래김") == H.kind_key("성경김 파래김") == "성경김" and H.kind_key("국산 햅쌀 10kg") == "햅쌀" and H.kind_key("대용량 물티슈") == "물티슈"
 (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
 print("OK: 모든 셀프체크 통과")
