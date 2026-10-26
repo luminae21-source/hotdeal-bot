@@ -3519,6 +3519,13 @@ try:
 except TimeoutError:
     pass
 assert len(rp13i) == 3 and s13["polls"]["open"] is None and "stk" not in s13  # 시간 초과(사진 답글이 사실 달렸을 수도) = 글 답글 X·다시 X(답글 2개 X — 예전처럼 main 알림)
+H.th_reply = lambda tok, to, text, link=None, image=None: (_ for _ in ()).throw(__import__("urllib.error").error.HTTPError("u", 502, "Bad Gateway", {}, None)) if image else rp13i.append((to, text, image)) or "r1"
+s13["polls"]["open"] = dict(op13); s13["poll_20261018"] = 1; del s13["poll_20261018"]
+try:
+    H.poll_post(s13); raise AssertionError("예외")
+except __import__("urllib.error").error.HTTPError:
+    pass
+assert len(rp13i) == 3  # 5xx(달렸을 수도) = 글 답글 X
 s13["poll_20261018"] = 1
 os.remove("docs/img/stk/ramen.png"); H.th_reply = lambda tok, to, text: rp13.append((to, text)) or "r1"
 s13["polls"]["open"] = {"id": "pol1", "slug": "ramen", "t": TK("2026-10-17 12:34")}; del s13["poll_20261018"]; H.th_reply_ok = lambda seen: False; s13["threply"] = {"t": 1, "ok": 0, "err": "(#10) no permission"}
@@ -9881,10 +9888,16 @@ assert H.chat_ok([m94[1], m94[2]]) == "" and m94[2] == "다들 뭐 담으세요?
 assert H.chat_ok(["장 보러 가면 꼭 하나씩 더 담게 되는 거 있죠? 다들 뭐 담으세요?", "저만 그런가요?"]).startswith("질문 1개")  # 물음표 1개 규칙 그대로(예는 두 줄로 나눔)
 for l94, w94 in ((["마트 가면 꼭 하나 더 담게 됨", "다들 그러세요?"], "존댓말"), (["마트 가면 꼭 하나 더 담게 돼요", "너는 어때?"], "존댓말"), (["휴지는 늘 넉넉해야 마음이 편해요", "다들 몇 롤 필요?"], "존댓말"),
                  (["오늘도 과자 하나 더 담았어요", "제일 많이 담는 거 하나만 골라 주실래요?"], "시키는 말"), (["장보기 목록은 늘 길어요", "다들 뭐 사는지 댓글로 알려주세요?"], "시키는 말"),
-                 (["이 가격이면 지금 담으세요", "다들 어떠세요?"], "링크·권유"), (["떨어지기 전에 미리 쟁여 두세요", "다들 몇 개씩 두세요?"], "링크·권유"), (["오늘 김 글만 세 번 올렸어요 ㅋㅋ ㅋㅋ", "저만 그런가요?"], "무례")):
+                 (["이 가격이면 지금 담으세요", "다들 어떠세요?"], "링크·권유"), (["떨어지기 전에 미리 쟁여 두세요", "다들 몇 개씩 두세요?"], "링크·권유"), (["오늘 김 글만 세 번 올렸어요 ㅋㅋ ㅋㅋ", "저만 그런가요?"], "무례"),
+                 (["커피믹스는 박스로 사야 해요 ㅋㅋ", "다들 하루 몇 잔 드세요?"], "링크·권유"), (["커피믹스는 박스로 구입하세요.", "다들 몇 잔 드세요?"], "링크·권유"), (["화장지는 미리 주문해 두세요.", "다들 몇 롤 남으면 사세요?"], "링크·권유"),  # QQ 리뷰: 존댓말 권유
+                 (["장 보러 가면 꼭 하나 더 담게 되죠.", "다들 최애 라면 하나씩 남겨 주실래요?"], "시키는 말"), (["장 보러 가면 꼭 하나 더 담게 되죠.", "댓글로 공유해 주실래요?"], "시키는 말"),
+                 (["요즘 아침엔 쌀쌀해지니까", "다들 따뜻한 거 찾으세요?"], "존댓말"), (["마트 가면 늘 이래요", "너는?"], "존댓말"), (["장 보러 가면 꼭 하나 더 담게 되니까", "다들 그러니까?"], "존댓말"),  # '~니까'(반말 이유)·'너는?' X
+                 (["Dove 비누 좋아하는 분 계세요", "다들 어떠세요?"], "영문(Dove")):
     assert H.chat_ok(l94).startswith(w94), (l94, H.chat_ok(l94))
 for l94 in (["마트 가면 늘 사는 게 정해져 있어요", "다들 뭐 사세요?"], ["오늘 김 글만 세 번 올린 핫딜픽이에요 ㅋㅋ", "다들 장 보러 가면 몇 개씩 담으세요?"], ["화장지 마지막 한 롤 남았을 때 제일 급해지죠", "그럴 때 나는?"],
-            ["택배 상자 뜯는 순간이 제일 설레요 📦", "다들 그런가요?"], ["장 보는 날은 계획이 늘 무너집니다", "다들 계획대로 사시나요? ㅋㅋ"]):
+            ["택배 상자 뜯는 순간이 제일 설레요 📦", "다들 그런가요?"], ["장 보는 날은 계획이 늘 무너집니다", "다들 계획대로 사시나요? ㅋㅋ"],
+            ["따뜻한 커피믹스 한 잔이 출근길을 버티게 해 주죠 ☕", "다들 하루 몇 잔 드세요?"], ["치약 끝까지 짜는 파 vs 새로 뜯는 파, 은근 갈리죠.", "어느 쪽이세요, 여러분?"],  # QQ 리뷰: '~주죠'·'vs'·'…, 여러분?'
+            ["장 보러 가면 꼭 하나씩 더 담게 되죠.", "다들 뭐 담으세요, 요즘?"], ["장 볼 때마다 고민이 많아요", "다들 이번 주엔 뭐 사셨습니까?"], ["저만 그런가요", "장 보러 가면 꼭 하나 더 담게 돼요? 🤷‍♀️"]):
     assert H.chat_ok(l94) == "", (l94, H.chat_ok(l94))
 # 수다 글 사진: 주제별 스티커 · 3일 안 같은 스티커 = 글만 · 사진 실패 = 글만 1번(사진 글 다시 올림 X)
 po94, pr94, L94 = [], [], [["장 보러 가면 꼭 하나씩 더 담게 되더라고요", "다들 뭐 담으세요?"]]
@@ -9918,7 +9931,19 @@ try:
 except TimeoutError:
     pass
 assert len(po94) == n94 + 1 and sf94["thretry_20261111_chat"]["img"] == U94("chat")[1] and "stk" not in sf94  # 시간 초과(사진 글이 사실 올라갔을 수도) = 글만 바로 X — 다음 실행 th_retry가 올라갔는지(th_landed) 보고 1번
-H.th_landed = lambda *a, **k: True; H.th_retry(sf94); assert len(po94) == n94 + 1  # 올라가 있었음 = 다시 X
+H.th_landed = lambda *a, **k: True; H.th_retry(sf94); assert len(po94) == n94 + 1 and sf94["stk"]["chat"] == "2026-11-11"  # 올라가 있었음 = 다시 X · 스티커 날짜는 적음(3일 규칙)
+HE94 = lambda c: __import__("urllib.error").error.HTTPError("u", c, "x", {}, None)
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(HE94(500)) if image else po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}; sf94 = {}
+try:
+    chat94("2026-11-15 13:12", sf94); raise AssertionError("예외")
+except __import__("urllib.error").error.HTTPError:
+    pass
+assert len(po94) == n94 + 1 and sf94["thretry_20261115_chat"]["img"] == U94("chat")[1]  # 5xx(올라갔을 수도) = 글만 바로 X — th_retry 몫
+H.th_landed = lambda *a, **k: False; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(HE94(400)) if image else po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}
+H.th_retry(sf94); assert len(po94) == n94 + 2 and po94[-1][1] is None and "stk" not in sf94 and f"C{n94 + 2}" in sf94["chat"]["m"]  # 다시 올릴 때 사진 4xx = 글만
+sf94 = {"thretry_20261115_chat": {"t": TK("2026-11-15 13:12"), "text": "a\nb?", "link": None, "img": U94("chat")[1], "topic": "일상"}}
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}; H.th_retry(sf94)
+assert po94[-1][1] == U94("chat")[1] and sf94["stk"]["chat"] == "2026-11-15"  # 다시 올린 사진 글 = 스티커 날짜
 H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("500")); sf94 = {"stk": {"t": 1, "chat": "2026-11-12"}}
 try:
     chat94("2026-11-12 13:12", sf94); raise AssertionError("예외")
@@ -9929,6 +9954,10 @@ H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po94.append((
 L94[:] = [["마트 가면 꼭 하나 더 담게 됨", "다들 그래?"], ["마트 가면 꼭 하나 더 담게 돼요", "다들 그러세요?"]]; o94 = chat94("2026-11-13 13:12", {"stk": {"t": 1, "chat": "2026-11-12"}})
 assert po94[-1][:2] == ("마트 가면 꼭 하나 더 담게 돼요\n다들 그러세요?", None) and "다시: 존댓말(" in pr94[-1] and "친근한 존댓말" in pr94[-2] and "다시:" not in pr94[-2], o94  # 반말 = 걸린 이유 알려 주고 1번 다시
 L94[:] = [["마트 가면 꼭 하나 더 담게 됨", "너는?"], ["마트 가면 꼭 하나 더 담게 됨", "너는?"]]; o94 = chat94("2026-11-14 13:12", {}); assert "규칙 걸림 -> 안 올림 shop 존댓말" in o94  # 또 걸리면 그날 X
+vl94 = []; H.review = lambda where, text, lines, facts="", valid=None, **k: vl94.append(valid) or {}; L94[:] = [["장 보러 가면 꼭 하나씩 더 담게 되더라고요", "다들 뭐 담으세요?"]]; chat94("2026-11-16 13:12", {})
+assert not vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되더라고요", "장 보러 가면 꼭 하나 더 담게 됨") and vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되더라고요", "장 보러 가면 꼭 하나 더 담게 돼요") \
+    and vl94[0]("다들 뭐 담으세요?", "그럴 때 나는?") and not vl94[0]("x", "그럴 때 나는?")  # 재검토가 고친 줄도 존댓말(질문 줄만 '~는?')
+H.review = lambda *a, **k: {}
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk94, H.POSTS, H.METRICS, H.http, H.time.sleep) = sv94
 H.E.pop("THREADS_TOKEN", None) if tk94 is None else H.E.update(THREADS_TOKEN=tk94); os.chdir(cwd94)
 print("OK: 모든 셀프체크 통과")
