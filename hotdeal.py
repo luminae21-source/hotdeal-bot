@@ -1767,8 +1767,9 @@ def cp_links(seen):
                 alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — "
                       + (f"{lst[u] or '?'} (pid {re.match(CP_PROD, u)[1]})\n행사 목록 글에서 그 상품만 빠짐(바뀐 상품 {LIST_MIN}개 밑이면 목록 글 안 올라감)" if u in lst else f"{u}\n그 예약은 안 올라감") + ". 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
             else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고') · 3번째(7일 뒤 다시)부터는 알림 X
+                new = today not in st["f"].get(u, [])
                 st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
-                if len(st["f"][u]) <= 2:
+                if new and len(st["f"][u]) <= 2:  # 같은 날 또 실패(RR 다음 모양 · RR 첫 실행이 채운 날짜) = 알림 다시 X('2번째(다른 날)' 잘못 X — 리뷰)
                     st.setdefault("q", {})[u] = names.get(u, "")
     st["pq"] = [b for b in q if len(b) < CP_DL_BATCH]  # 나눈 조각만 저장(통째 묶음은 다음 실행에 다시 만듦)
     if st.get("q") and st.get("qd") != today and kst.tm_hour >= 9:  # 진열 변환 실패 묶음 알림(하루 1번, 9시~ · 상품 번호만 — 주소 쿼리 X)

@@ -10016,5 +10016,10 @@ run95("2026-10-27 01:15", s95, H.cp_price); assert quote("에프") in s95x[2] an
 json.dump(json.load(open("events.json")) + [{"at": "2026-10-27 00:00", "shelf": True, "url": VP95(506, "?itemId=56"), "pid": "506", "text": tx95("요소수 10L")}], open("events.json", "w"), ensure_ascii=False)
 sent95.clear(); run95("2026-10-27 01:20", s95, H.shelf_posts); p95 = [p for p in json.load(open("posts.json")) if p["url"] == VP95(506, "?itemId=56")]
 assert not sent95 and len(p95) == 1 and p95[0]["shelf"] == 1 and "mid" not in p95[0] and not p95[0]["text"].startswith(H.NOTE_STARTS) and VP95(506, "?itemId=56") not in [e.get("url") for e in H.load(H.EVENTS, [])]  # 진열 = 채널 예약 목록에도 X
+d95h = tempfile.mkdtemp(); os.chdir(d95h); json.dump([], open("events.json", "w")); H95 = VP95(510, "?itemId=60")  # events에서 빠진 진열(실패 기록 지워짐 — 지난 이틀 알림 이미 감) 1개만
+json.dump([{"t": "2026-10-26 20:00", "text": "[쿠팡] 에이치 상품 (1,000원)", "url": H95, "own": 1, "shelf": 1}], open("posts.json", "w"), ensure_ascii=False)
+sh95 = {}; sent95.clear(); c95.clear(); run95("2026-10-27 10:00", sh95, H.cp_links)
+assert c95 == [[VP95(510)]] and not [p for m, p in sent95 if p.get("chat_id") == "42"] and not sh95["cpdl"].get("q"), (c95, sent95)  # RR 첫 실행이 날짜(어제·오늘)를 채움 -> 같은 날 ② 실패 = 관리자 알림 다시 X(리뷰)
+os.chdir(d95)
 (H.http, H.HAS_CP, H.tg, time.time, H.POSTS, H.EVENTS, H.CP_CHK_HOUR, rn95) = sv95; H.RUN.clear(); H.RUN.update(rn95); os.chdir(cwd95)
 print("OK: 모든 셀프체크 통과")
