@@ -1625,10 +1625,10 @@ S.LINK_STYLE = "b"; S.build(pp, "docs3"); assert '<html lang="ko" class="lb">' i
 S.LINK_STYLE = "a"; S.build(pp, "docs3"); assert '<html lang="ko" class="la">' in open("docs3/link/index.html").read() and os.path.exists("docs3/link/b") and not os.path.exists("docs3/link/a"); S.LINK_STYLE = "ab"
 # 6-3) 카드 순서(10/8 진우 '쿠팡·토스 잘 팔리게'): 점수 높은 순, 같은 점수면 제휴 링크(쿠팡·토스 등) 먼저, 그다음 게시 순, 모아보기·다른 날 제외
 #      카드·인스타 캡션·릴스·사이트 맨 위 카드 딜 번호가 모두 이 순서(day_deals 하나)
-dd = [{"t": "2026-10-09 09:00", "text": "🔥 A 7점 원글", "url": "https://www.ppomppu.co.kr/x", "s": 7},
-      {"t": "2026-10-09 10:00", "text": "🔥 B 8점", "url": "https://x.com", "s": 8},
-      {"t": "2026-10-09 11:00", "text": "🔥 C 7점 쿠팡", "url": "https://link.coupang.com/a/x", "s": 7},
-      {"t": "2026-10-09 12:00", "text": "🔥 D 7점 토스", "url": "https://toss.im/_m/x", "s": 7},
+dd = [{"t": "2026-10-09 09:00", "text": "🔥 A 7점 원글 (1,000원)", "url": "https://www.ppomppu.co.kr/x", "s": 7},
+      {"t": "2026-10-09 10:00", "text": "🔥 B 8점 (1,000원)", "url": "https://x.com", "s": 8},
+      {"t": "2026-10-09 11:00", "text": "🔥 C 7점 쿠팡 (1,000원)", "url": "https://link.coupang.com/a/x", "s": 7},
+      {"t": "2026-10-09 12:00", "text": "🔥 D 7점 토스 (1,000원)", "url": "https://toss.im/_m/x", "s": 7},
       {"t": "2026-10-09 13:00", "text": "📋 모아보기", "url": "https://x", "s": 9},
       {"t": "2026-10-08 13:00", "text": "🔥 어제", "s": 9}]
 assert [i for i, _ in S.day_deals(dd, "2026-10-09")] == [1, 2, 3, 0] and S.aff("https://link.coupang.com/a/x") and S.aff("https://toss.im/_m/x") and not S.aff("https://www.ppomppu.co.kr/x") and not S.aff(None)
@@ -1832,7 +1832,7 @@ idx = open("docs/index.html").read()
 # 7) 일일 모아보기: 21시 이후 1회, 오늘 글만, 모아보기 자신은 제외
 H.draft = lambda text, **k: sent.append(("draft", text)) or {"message_id": 9}
 today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-P = [{"t": f"{today} 10:00", "text": "🔥 A딜", "url": "https://a", "s": 7}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o", "s": 10},
+P = [{"t": f"{today} 10:00", "text": "🔥 A딜 (1,000원)", "url": "https://a", "s": 7}, {"t": "2000-01-01 10:00", "text": "🔥 옛날딜", "url": "https://o", "s": 10},
      {"t": f"{today} 11:00", "text": "📋 오늘의 딜 모아보기", "url": None},
      {"t": f"{today} 12:00", "text": "🔥 [G마켓] B딜 (9,900원/무료)\n\n맛있어요\n\n출처: 뽐뿌", "url": "https://b", "s": 9,
       "e": "🥛", "hook": "B딜 개당 99원", "pts": ["개당 99원", "쿠폰 10%"]}]
@@ -1852,7 +1852,7 @@ if time.gmtime(time.time() + 9 * 3600).tm_hour >= 21:
     assert v[0]["caption"].split("\n\n")[0] == H.ig_notes([]) and "프로필 링크(hotdealpick.kr) → '" + S.card_name(today) + "'에서 1~2번" in v[0]["caption"] and "맨 위" not in v[0]["caption"]  # 대가성 문구 맨 앞(릴스도), 사이트 칸 이름 그대로
     assert v[0]["caption"].index("1. [G마켓] B딜") < v[0]["caption"].index("2. A딜") and "옛날딜" not in v[0]["caption"]
     assert "제휴 링크" in v[0]["caption"] and "#핫딜" in v[0]["caption"] and len(v[0]["caption"]) <= 1024
-    assert fills == [(H.REEL_PROMPT, ["A딜 | "])] and "B딜" not in str(fills)  # B딜은 이미 hook·pts 있음
+    assert fills == [(H.REEL_PROMPT, ["A딜 (1,000원) | "])] and "B딜" not in str(fills)  # B딜은 이미 hook·pts 있음
     sent.clear(); H.digest(seen, P); assert not sent
     seen.pop("blog_" + next(k for k in seen if k.startswith("digest_"))[7:]); sent.clear(); H.digest(seen, P)  # 블로그용 글만 실패했던 날: 초안·릴스 없이 블로그용 글만 다시
     assert [m for m, x in sent] == ["sendMessage"] and "제목: " in sent[0][1]["text"] and any(k.startswith("blog_") for k in seen)
@@ -2362,6 +2362,10 @@ json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumera
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and "TOP3 (12시)" in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
 assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🏆") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
+json.dump([{**p, "url": SR9 + str(k) if k else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
+with contextlib.redirect_stdout(out9): H.top_deals({})
+assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and "threads skip top12 1개\n" in out9.getvalue()  # HH(10/26 16시): 수수료 딜 1개뿐 = 'TOP1' 리스트 X(텔레그램 TOP5 그대로 · 그 딜 th 표시 X = 개별 칸 후보)
+assert not any(p.get("th") for p in json.load(open("posts.json")))
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
 # 9-2c) 화장품 매일 1~2개(10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰'): Threads 개별 글 3~5개 중 화장품 1~2개 —
@@ -8091,6 +8095,13 @@ with contextlib.redirect_stdout(io.StringIO()):
     H.ig_story_card({}, "t", "1", "2026-10-29_15", TK("2026-10-29 15:30"))
 C73.ig_story = igs73; assert sty73 == [(f"핫딜픽 · {S.card_name('2026-10-29_15')}", "1번 · 4,900원")], sty73  # 시간대 스토리 = 카드 1번 상품 실사진 + '1번 · 가격'
 st73 = I73.open(f"{H.STORY_DIR}/2026-10-29_15.jpg"); assert st73.size == (1080, 1920) and max(abs(a - b) for a, b in zip(st73.getpixel((10, 800)), (220, 120, 80))) < 45  # 사진 = 폭 꽉(비율 그대로)
+# 리뷰: 📉 훅(1번 상품 '▼n% · 가격') = 1번 사진일 때만 — 1번 사진을 못 받으면 보이는 상품 자기 번호·가격 · 투명 PNG 상품 사진 = 흰 바탕
+sty73, H.ig_photo = [], lambda p, d, seen=None: (None, "") if p["url"] == P73[2]["url"] else ("ph73.jpg", "coupang"); C73.ig_story = lambda src, out, top, bottom, hook=None: sty73.append(hook) or igs73(src, out, top, bottom, hook)
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_story_card({}, "t", "1", "2026-10-30", TK("2026-10-30 22:05"), "핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품", [P73[2], P73[0], P73[1], P73[4]], "▼20% · 3,900원")
+C73.ig_story, H.ig_photo = igs73, (lambda p, d, seen=None: ("ph73.jpg", "coupang")); assert sty73 == ["2번 · 1,900원"], sty73
+tp73 = I73.new("RGBA", (400, 400), (0, 0, 0, 0)); ImageDraw.Draw(tp73).rectangle((150, 150, 250, 250), fill=(200, 30, 30, 255)); tp73.save("tp73.png")
+C73.ig_story("tp73.png", "tp73.jpg", "위", "아래", hook="1번 · 1,000원"); assert min(I73.open("tp73.jpg").getpixel((20, 700))) > 230  # 투명 = 흰색(검게 X)
 assert os.path.exists(f"{H.STORY_DIR}/2026-10-29.jpg") and [b for m, u, b in c73h if m == "POST"] == [{"image_url": "https://hotdealpick.kr/cards/story/2026-10-29.jpg", "media_type": "STORIES"}]
 S.IG_TOP.clear(); S.IG_TOP["winter"] = [("10월 29일 발 핫팩 10개", [(5, P73[5])]), ("10월 29일 발 시린 사무실", [(0, P73[0])])]
 lp73 = S.list_pages("winter", "❄️ 겨울템", "겨울템 모음", [(0, P73[0], (0, None, "", [], False))], "", {})[0][4]
@@ -8332,15 +8343,23 @@ from PIL import ImageDraw as _ID75
 ph75 = _I75.new("RGB", (600, 800), (200, 120, 40)); _ID75.Draw(ph75).rectangle((0, 400, 599, 799), fill=(40, 90, 200)); ph75.save("ph75v.jpg")
 v75 = C75.reel([{**it75[0], "photo": "ph75v.jpg"}], "10월 26일", "docs/clip75p.mp4", None, None, safe=True, label="쿠팡 핫딜 픽")
 near75 = lambda c, w: max(abs(a - b) for a, b in zip(c, w)) < 45
-for t75, top75, bot75 in ((0.0, (454, 420), (454, 720)), (7.5, (454, 400), (454, 600)), (12.5, (200, 205), (200, 340))):
+for t75, top75, bot75 in ((0.0, (454, 420), (454, 720)), (7.5, (454, 360), (454, 500)), (12.5, (200, 205), (200, 340))):
     f = fr75(t75); assert near75(f.getpixel(top75), (200, 120, 40)) and near75(f.getpixel(bot75), (40, 90, 200)), (t75, f.getpixel(top75), f.getpixel(bot75))
     off = _IC75.difference(f, _I75.new("RGB", (1080, 1920), f.getpixel((1079, 1919)))).convert("L")
     assert off.crop((918, 0, 1080, 1920)).getextrema()[1] <= 16 and off.crop((0, 1440, 1080, 1920)).getextrema()[1] <= 16, t75
+# 리뷰: 딜 장면 사진 칸 = 이모지 타일 높이 그대로 — 나레이션(자막) 있어도 이름 아래 '확인할 점'(가격 조건) 줄이 안 밀려남(이모지 판과 이름 아래가 같음)
+it75w = [{"title": "[쿠팡] 서울우유 1등급 흰우유 1L x 12팩 멸균 대용량 (17,900원)", "comment": "", "e": "🥛", "hook": "우유 팩당 1,492원", "unit": "팩당 1,492원", "warn": "와우회원 쿠폰 적용가", "pts": ["멸균 12팩", "1등급 원유"]}]
+sy75 = [(s, wav75(2)) for s in ("오늘의 가성비", "서울우유 1리터 열두 팩", "핫딜픽에서 더 보세요")]
+vw75 = [C75.reel(its, "10월 26일", f"docs/clip75w{k}.mp4", None, sy75) for k, its in enumerate((it75w, [{**it75w[0], "photo": "ph75v.jpg"}]))]
+fw75 = [_I75.frombytes("RGB", (1080, 1920), _sp75.run([C75.ffmpeg(), "-v", "error", "-ss", "7.5", "-i", v, "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout) for v in vw75]
+assert _IC75.difference(fw75[0].crop((0, 700, 1080, 1400)), fw75[1].crop((0, 700, 1080, 1400))).convert("L").getextrema()[1] <= 40  # 이름·가격·단가·확인할 점 자리 = 이모지 판과 같음
+assert _IC75.difference(fw75[0].crop((96, 362, 984, 690)), fw75[1].crop((96, 362, 984, 690))).convert("L").getextrema()[1] > 100  # 위 칸만 사진으로
 cv75 = C75.photo_cover("ph75v.jpg", "핫팩 1매당 334원", top="10월 26일  ·  오늘의 가성비 1위", ad="광고·제휴")
 assert cv75.size == (1080, 1920) and near75(cv75.getpixel((540, 500)), (200, 120, 40)) and near75(cv75.getpixel((540, 1000)), (40, 90, 200)) and max(cv75.getpixel((995, 1236))) < 60  # 사진 + 아래 어두운 숫자 띠
 assert cv75.getpixel((60, 600))[2] > 80  # 사진 = 폭 안에 다 들어감(잘라서 꽉 채우기 X) — 양옆 = 흐린 바탕
+assert min(cv75.getpixel((84, 334))) > 240 and max(cv75.getpixel((995, 1300))) > 60  # 리뷰: 맨 위 날짜 줄 = 300px 줄(켄번스 줌에도 진행 막대 밑) · 훅 띠 아래 끝 = h-630 위(줌해도 자막 칸 밖)
 assert all(abs(a - b) < 40 for a, b in zip(cv75.getpixel((540, 1700)), cv75.getpixel((60, 1700))))  # 띠 아래(h-600 밑) = 흐린 바탕만(자막·UI 칸)
-for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75p.mp4", "posts75.json"):
+for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75p.mp4", "docs/clip75w0.mp4", "docs/clip75w1.mp4", "posts75.json"):
     os.remove(f)
 # 9-76) P #일상 링크 후보(10/26 진우): 링크 없는 '#일상 상품명' 사진 = 같은 상품 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 → 쿠팡 검색 API)
 #       → 관리봇 버튼 · 진우가 고른 것만 첫 댓글 링크(대가성 문구 + 👉 · 본문 첫 줄도 대가성 문구) · '없음' = 사진만 · 후보 0개 = 바로 사진만 · 고르기 전엔 안 올림 · 쿠팡 검색 상한 = 다음 실행에
@@ -9289,4 +9308,14 @@ H.HAS_CP, s85y = False, {}; H.week_report(s85y); assert not s85y and len(aw85) =
 H.E.pop("THREADS_TOKEN", None) if tk85 is None else H.E.update(THREADS_TOKEN=tk85)
 H.RUN.pop("season", None) if se85 is None else H.RUN.update(season=se85)
 H.RUN.pop("cpn", None) if cpn85 is None else H.RUN.update(cpn=cpn85)
+# 9-86) HH(10/26 16시 Cowork '상품 제대로 올라가는지'): 카드·리스트 이름 = '(가격/배송비)' 괄호·몰·행사 꼬리 뺀 상품명 · 카드 = 가격 읽히는 딜만(다음 딜로)
+for t86, n86 in (("[네이버] 메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일", "메가커피 아메리카노외 다수세일"), ("[네이버] 천연사이다 제로 250ml, 60개 (네멤 22,310원/무료)", "천연사이다 제로 250ml, 60개"),
+                 ("[네이버] 켈로그 그래놀라 350g 1+1팩(+마사지볼) (9,920원) (무료)", "켈로그 그래놀라 350g 1+1팩(+마사지볼)"), ("[GS샵] 아디다스 갤럭시 7 (JQ2623) (30,000원)", "아디다스 갤럭시 7 (JQ2623)"),
+                 ("[네이버] 이지앤프리 국내산 밀폐용기 (8,900원~/무료배송)", "이지앤프리 국내산 밀폐용기"), ("[쿠팡] 농심 생생우동 253g 4개/ 5,120원", "농심 생생우동 253g 4개"), ("[토스] 매일두유 190ml 24팩 (12,900원)", "매일두유 190ml 24팩"), ("오늘의 딜", "오늘의 딜")):
+    assert H.short_name(t86) == n86, (t86, H.short_name(t86))
+q86 = lambda t, **k: {"t": "2026-10-26 13:00", "text": f"🔥 {t}\n\n좋음", "url": "https://x", **k}
+assert H.list_name(q86("[네이버] 메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일"), False) == "[네이버] 메가커피 아메리카노외 다수세일" and H.list_name(q86("[네이버] 켈로그 그래놀라 350g 1+1팩(+마사지볼) (9,920원) (무료)"), False) == "[네이버] 켈로그 그래놀라 350g 1+1팩(+마사지볼) (9,920원)"
+assert H.list_name(q86("[G마켓] 우유 1L 12팩 (9,900원/무료) 지마켓 빅스마일"), True, True) == "우유 1L 12팩 (9,900원/무료)" and H.list_name(q86("[G마켓] 우유 1L 12팩 (9,900원/무료)"), False) == "[G마켓] 우유 1L 12팩 (9,900원/무료)"
+P86 = [q86("[네이버] 메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일", s=9), q86("[쿠팡] 초코파이 468g (2,520원/와우무료)", s=7), q86("[네이버] 치약 3개 (12,540원)", s=6), q86("📋 오늘의 딜 모아보기", s=9)]
+assert [i for i, _ in S.day_deals(P86, "2026-10-26")] == [1, 2]  # 가격 못 읽은 딜(메가커피)·모아보기 = 카드 X -> 다음 딜이 1번
 print("OK: 모든 셀프체크 통과")

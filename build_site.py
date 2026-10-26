@@ -445,7 +445,7 @@ SLOT_NAMES = {"09": "오전 9시", "11": "오전 11시", "13": "낮 1시", "15":
 def day_deals(posts, day):
     """그날 딜의 카드 순서 [(posts 번호, 글)]: 점수 높은 순, 같은 점수면 제휴 링크 딜 먼저(10/8 진우 '쿠팡·토스 잘 팔리게'), 그다음 게시 순.
     카드·인스타 캡션·사이트 맨 위 카드 딜(앞 CARD_N개)·릴스(앞 3개) 번호가 모두 이 순서."""
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and not p.get("shelf")]  # 사이트 진열(shelf) = 카드·인스타·릴스·Threads X
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and not p.get("shelf") and parse(title_of(p["text"]))[2]]  # 사이트 진열(shelf) = 카드·인스타·릴스·Threads X · HH: 가격 못 읽은 딜 = 카드 X(다음 딜로)
     return sorted(ds, key=lambda x: (-x[1].get("s", 0), not aff(x[1].get("url")), x[1]["t"]))
 
 

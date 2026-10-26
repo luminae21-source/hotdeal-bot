@@ -932,14 +932,21 @@ def toss_list(ps):
     return TOSS_NO_CMP and any(is_toss(p.get("url"), p["text"]) for p in ps)
 
 
+def short_name(t):
+    """카드·리스트 이름(10/26 16시 Cowork HH — 15시 TOP5·카드 '메가커피 아메리카노외 다수세일(1560/0)네이버 넾다세일'): 제목에서 '(가격/배송비)' 꼴 괄호부터 뒤(몰·행사 이름 꼬리)는 빼고 상품명만."""
+    body = re.sub(r"^\s*\[[^\]]*\]", "", t)
+    m = re.search(r"\([^()]*\d\s*(?:원|/)[^()]*\)", body)  # '(9,900원/무료)'·'(네멤 22,310원/무료)'·'(1560/0)' — '(JQ2623)'·'(+마사지볼)'·'(500g)' = 상품명
+    return re.sub(r"\s+", " ", body[:m.start()]).strip() if m and body[:m.start()].strip() else parse(t)[1]
+
+
 def list_name(p, toss_in, ship=False):
     """리스트 줄 제목: 토스 딜이 든 리스트면 [몰] 태그 없이 '상품명 (가격)'(10/21 22:30 점검: 21시 모아보기·카드·블로그에 [토스]와 [네이버]·[쿠팡]이 같이 나가던 것).
-    ship = 가격 뒤 배송 조각('/무배')도 그대로(카드 이미지의 배송 칸)."""
+    ship = 가격 뒤 배송 조각('/무배')도 그대로(카드 이미지의 배송 칸). 상품명 = short_name(HH — 가격 괄호 뒤 몰·행사 꼬리 X)."""
     t = title_of(p["text"])
+    store, _, price = parse(t)
     if not toss_in:
-        return t
-    _, name, price = parse(t)
-    return f"{name} ({price if ship else price.split('/')[0].strip()})" if price else name
+        return (f"[{store}] " if store else "") + short_name(t) + (f" ({price})" if price else "")
+    return f"{short_name(t)} ({price if ship else price.split('/')[0].strip()})" if price else short_name(t)
 
 
 def toss_body(body, url):
@@ -2570,7 +2577,7 @@ def top_deals(seen):
     for p in top:
         price, why = parse(title_of(p["text"]))[2].split("/")[0].strip(), comment_of(p["text"]).split("\n")[0]  # 첫 줄만(💡 단위가격 줄은 💰 줄에 이미)
         why = strip_cmp("👉 " + why)[0][2:] if toss_in and why else why  # 👉 줄의 다른 몰 이름 조각(예: '네이버 지금배달 …')은 뺌, 다 빠지면 줄째
-        items.append((parse(title_of(p["text"]))[1], p["url"], [
+        items.append((short_name(title_of(p["text"])), p["url"], [
             ("💰 <b>" + esc(price) + "</b>" if price else "") + (" · " + esc(p["unit"]) if p.get("unit") else ""),
             "👀 " + esc(p.get("hot") or react(p)), "👉 " + esc(clip(why, 60)) if why else ""]))
     notes = "\n".join(f"<i>{n}</i>" for n in dict.fromkeys(aff_note(p["url"]) for p in top) if n)
@@ -2587,7 +2594,7 @@ def top_deals(seen):
     if not top:
         print(f"threads skip (수수료 링크 아님) top{hrs[-1]} 리스트 | 항목 0개")
         return
-    lines = [f"{NUM[n]} {clip(parse(title_of(p['text']))[1], 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {th_url(p, posts.index(p))}" for n, p in enumerate(top)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
+    lines = [f"{NUM[n]} {clip(short_name(title_of(p['text'])), 30)} {parse(title_of(p['text']))[2].split('/')[0].strip()}\n👉 {th_url(p, posts.index(p))}" for n, p in enumerate(top)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
 
     def render(n, bs):  # 리스트 n줄 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
         used = top[:n] + [p for p, _ in bs]
@@ -2597,9 +2604,12 @@ def top_deals(seen):
     n = len(lines)
     while n > 1 and len(render(n, [])) > 480:  # 직접 링크는 사이트 주소보다 길 수 있어 1개까지 줄임
         n -= 1
+    if n < 2:  # HH(10/26 16시 Cowork — 12:05 배 1개 + 💄·15:09 초코파이 1개 'TOP1'): 리스트 항목(💄 빼고) 2개 밑 = 리스트 글 X(그 딜은 개별 칸 후보 그대로 — th 표시 X)
+        print(f"threads skip top{hrs[-1]} {n}개")
+        return
     links, beauty = n, []  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(기존 딜·링크 그대로, 링크는 합쳐 5개까지 — 넘으면 이름·가격만, 🛒 X)
     for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in top and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
-        line = f"· {clip(parse(title_of(p['text']))[1], 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
+        line = f"· {clip(short_name(title_of(p['text'])), 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
         if len(render(n, beauty + [(p, line)])) > 480:
             break
         links += "👉" in line
@@ -5459,6 +5469,7 @@ def ig_story_card(seen, tok, uid, stem, now, top=None, bottom="프로필 링크 
             print(f"ig story skip 사진 부족 {len(ph)}/{IG_MIN}", stem)
             return
         n, p, f = ph[0]
+        hook = hook if n == 1 else None  # 넘겨받은 훅(📉 = 1번 상품 '▼n% · 가격') = 1번 사진일 때만 — 1번 사진을 못 받으면 보이는 상품 자기 번호·가격(다른 상품 가격 X)
         cards.ig_story(f, sp, top or f"핫딜픽 · {card_name(stem)}", bottom, hook=hook or f"{n}번 · " + ((p.get("unit") or "").split(" (")[0] or parse(title_of(p["text"]))[2].split("/")[0].strip()))
         print("ig story 만듦", stem)
         return
