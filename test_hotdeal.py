@@ -5252,7 +5252,7 @@ H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS = (lambda m, **p: t35.append(p) or 
 json.dump([], open("ev35s.json", "w")); X35[44]["displayName"], X35[66]["displayName"] = "C 상품", "G 상품"
 assert H.TOSS_STEADY_HOURS == (10, 15, 20); time.time = lambda: TK("2026-10-25 15:05"); H.toss_solo(s35)
 (p35,) = t35; u35 = p35["reply_markup"]["inline_keyboard"][0][0]["url"]
-assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "💙 토스 · 꾸준히 팔리는 상품 👍" in p35["text"] and "토스 특가" not in p35["text"] and p35["text"].startswith(f"<i>{H.TOSS_NOTE}") and "쿠팡" not in p35["text"], p35
+assert u35 in ("https://toss.shopping/_m/C", "https://toss.shopping/_m/G") and "💙 토스 · 꾸준히 주문 들어오는 상품 👍" in p35["text"] and "(2,000)" in p35["text"] and "토스 특가" not in p35["text"] and p35["text"].startswith(f"<i>{H.TOSS_NOTE}") and "쿠팡" not in p35["text"], p35
 assert ("지금은 특가 아님 · 특가 때 8,000원" if u35.endswith("C") else "지금은 특가 아님 · 특가 때 5,000원") in p35["text"], p35["text"]
 assert f"tb_{id35[u35[-1]] * 10}" in s35 and H.th_steady(H.plain_of(p35["text"].split("\n\n", 1)[1]))  # 3일 간격 · 👍 꾸준템(Threads 순서 규칙)
 t35.clear(); H.toss_solo(s35); assert not t35  # 그 시각 1번
