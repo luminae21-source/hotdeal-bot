@@ -1753,7 +1753,7 @@ def cp_links(seen):
                 st["m"].setdefault(u, {})[str(k1)] = "응답 없음"
             if k1 + 1 < len(forms(u)):  # RR: 다음 주소 모양(이 실행 남은 몫 · 아니면 다음 실행)
                 st["fi"][u] = k1 + 1
-                q.append([u])
+                q.insert(0, [u]) if u in chan else q.append([u])  # 채널 예약 = 바로(진열 1개짜리들 뒤에 줄 서면 몫 끝나 events 6시간 지남)
                 continue
             st["fi"].pop(u, None)
             st["nf"][u] = len(forms(u))
@@ -1890,8 +1890,10 @@ def cp_price(seen):
                 q["v"][u], q["pm"][u] = (v + 1) % len(kws), [today, q["pm"].get(u, [today, 0])[1] + 1]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
         rw.discard(u)
-        if x and urllib.parse.urlsplit(str(x.get("productUrl") or "")).netloc in CP_SHORT:
-            q["vi"][u] = [qs(x, "itemId"), qs(x, "vendorItemId"), x["productUrl"]]
+        ui = item or (re.search(r"[?&]itemId=(\d+)", u) or ["", ""])[1]  # RR 옵션 번호 = 주소 itemId도(shelf_posts처럼 — 이름 cp_same은 중형·대형, 21N1·23N1을 못 가림)
+        vx = next((z for z in same if qs(z, "itemId") == ui), None) if ui else x
+        if vx and urllib.parse.urlsplit(str(vx.get("productUrl") or "")).netloc in CP_SHORT:
+            q["vi"][u] = [qs(vx, "itemId"), qs(vx, "vendorItemId"), vx["productUrl"]]
         q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""]  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
         y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만

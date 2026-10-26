@@ -9975,7 +9975,8 @@ def http95(url, body=None, headers=None, method=None):
         return json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/x" + re.search(r"/products/(\d+)", u)[1]} for u in us]} if all(u in OK95 for u in us) else {"rCode": "400", "rMessage": "url convert failed"})
     if "/products/search?" in url:
         s95x.append(url)
-        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 503, "productName": "비누 상품 3개", "productPrice": 3000, "productUrl": L95(503), "productImage": "https://ads-partners.coupang.com/image1/b"}] if quote("비누") in url else []}})
+        return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 503, "productName": "비누 상품 3개", "productPrice": 3000, "productUrl": L95(503), "productImage": "https://ads-partners.coupang.com/image1/b"}] if quote("비누") in url else
+                           [{"productId": 505, "productName": "이 상품", "productPrice": 1000, "productUrl": L95(505)}] if quote("이 상품") in url else []}})  # E = 같은 pid 다른 옵션(5051 ≠ 주소 itemId 55)
     raise AssertionError(url)
 tx95 = lambda n: f"📦 <b>[쿠팡] {n} (1,000원)</b>"
 json.dump([{"at": "2026-10-26 20:00", "shelf": True, "url": A95, "pid": "501", "text": tx95("에이 상품")}, {"at": "2026-10-26 20:00", "shelf": True, "url": B95, "pid": "503", "item": "5031", "text": tx95("비누 상품 3개")},
@@ -9991,10 +9992,10 @@ def run95(at, s, f):
     return o.getvalue()
 s95 = {"cpdl": {"x": {B95: TK("2026-10-26 09:57"), D95: TK("2026-10-26 09:57"), E95: TK("2026-10-26 09:57")}, "f": {B95: ["2026-10-25", "2026-10-26"], D95: ["2026-10-26"], E95: ["2026-10-25", "2026-10-26"]},
                 "e": {B95: "400", D95: "400", E95: "400"}}, "srl": {"e": {B95: ["rCode 400 url convert failed"] * 2, E95: ["rCode 400 url convert failed"] * 2, F95: ["rCode 400 url convert failed"] * 2}}}
-o95 = run95("2026-10-27 00:10", s95, H.cp_links); st95 = s95["cpdl"]
+cr95 = H.CP_RUN; H.CP_RUN += 1; o95 = run95("2026-10-27 00:10", s95, H.cp_links); st95 = s95["cpdl"]; H.CP_RUN = cr95  # 몫 +1 = 채널 ② 1번 더(진열 몫 그대로)
 assert st95["rr"]["u"] == sorted([B95, D95, E95, F95]) and st95["rr"]["w"] == sorted([B95, E95, F95]) and st95["nf"] == {B95: 2, E95: 2, F95: 2, C95: 2} and B95 not in sum(c95, []) and F95 not in sum(c95, []), (st95, c95)
 assert len(st95["f"][F95]) == 2 and st95["x"][F95] == TK("2026-10-27 00:10")  # events에서 빠진 진열(실패 기록 지워짐) = 7일 규칙(원래 주소 다시 X · ③ 생기면 그것만)  # ①② 다 해 본 것(site_relink) = ③ 검색 옵션 생길 때까지 X
-assert c95[:5] == [[C95, A95], [C95], [A95], [VP95(504)], [VP95(502)]], c95  # 묶음 400 -> 1개씩 -> 원래 400 = 상품 번호만 · 채널 예약 먼저 · 이 실행 몫(진열 = 4번째 호출까지)
+assert c95[:5] == [[C95, A95], [C95], [VP95(502)], [A95], [VP95(504)]], c95  # 묶음 400 -> 1개씩 -> 원래 400 = 상품 번호만 · 채널 예약 먼저(다음 모양도 바로 — 진열 1개짜리 뒤에 줄 서면 몫 끝나 events 6시간 지남) · 이 실행 몫(진열 = CP_RUN-2번째 호출까지)
 assert json.load(open("cp_links.json")) == {D95: "https://link.coupang.com/a/x504"} and st95["rr"]["ok"] == [["504", "②"]] and st95["fi"] == {A95: 1} and st95["pq"] == [[A95]]  # 진열 A = 다음 실행에 ②
 assert "cp link 400 502 ① url convert failed" in o95 and "cp link 400 502 ② url convert failed" in o95 and "itemId" not in o95 and "cp link RR 400 4개 중 살아남 1 (② 1) · 검색 대기 3 · 아직 3" in o95, o95  # API 응답 그대로 · 주소 쿼리 X
 f95 = {x["pid"]: x for x in json.load(open("cp_fail.json"))}
@@ -10004,7 +10005,7 @@ o95 = run95("2026-10-27 00:25", s95, H.cp_links); assert c95[5:] == [[VP95(501)]
 assert len(c95) == 6 and not st95["fi"]  # 실패로 끝난 것(C ①② · B·E ①②) = 같은 모양 다시 X
 # cp_price: 400 상품(rr w) 먼저 검색(실행마다 검색 2번 그대로 — 진열 '지 상품'은 다음에) -> 같은 상품·옵션 = 옵션 번호·긴 주소(vi) -> cp_links ③(vendorItemId) -> 그래도 400 = 검색 API 파트너스 긴 주소
 o95 = run95("2026-10-27 00:40", s95, H.cp_price)
-assert len(s95x) == 2 and quote("비누") in "".join(s95x) and quote("지 상품") not in "".join(s95x) and s95["cpq"]["vi"][B95] == ["5031", "5032", L95(503)] and st95["rr"]["w"] == [F95] and E95 not in s95["cpq"]["vi"], (s95x, s95["cpq"].get("vi"))  # E = 검색에 없음(파트너스 검색 X) -> 그대로
+assert len(s95x) == 2 and quote("비누") in "".join(s95x) and quote("지 상품") not in "".join(s95x) and s95["cpq"]["vi"][B95] == ["5031", "5032", L95(503)] and st95["rr"]["w"] == [F95] and E95 not in s95["cpq"]["vi"], (s95x, s95["cpq"].get("vi"))  # E = 같은 pid 다른 옵션만(이름 cp_same은 같다고 봄 — 주소 itemId 55 ≠ 5051) -> 옵션 번호·검색 링크 X
 o95 = run95("2026-10-27 00:55", s95, H.cp_links)
 assert c95[6:] == [[VP95(503, "?itemId=5031&vendorItemId=5032")]] and json.load(open("cp_links.json"))[B95] == L95(503) and st95["rr"]["ok"] == [["504", "②"], ["503", "검색 링크"]], c95
 assert "cp link RR 400 4개 중 살아남 2 (② 1 · 검색 링크 1) · 검색 대기 1 · 아직 2" in o95 and "503 모양 다 400 -> 검색 API 파트너스 링크" in o95 and "503" not in {x["pid"] for x in json.load(open("cp_fail.json"))}, o95
