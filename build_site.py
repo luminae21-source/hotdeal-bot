@@ -2096,7 +2096,9 @@ def build(posts, out="docs"):
         open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     for i, p in reversed(list(enumerate(posts))):
-        if i in noaff:  # 비제휴 딜 = 새 쪽 X(있는 쪽은 그대로 둠 — 목록·사이트맵에서만 빠짐)
+        if i in noaff:  # 수수료 링크 없는 딜 = 새 쪽 X · 있던 쪽 = 구매 버튼 없는 안내 쪽(noindex — 옛 채널·Threads 링크는 열림 · SS 10/26: 수수료 링크로 바뀌면 다시 상품 쪽)
+            if os.path.exists(f"{out}/p/{i}.html"):
+                open(f"{out}/p/{i}.html", "w").write(page(f"{title_of(p['text'])} | {TITLE}", f'<p class="t">이 상품은 지금 핫딜픽에서 내렸어요.</p><a class="btn2" href="{BASE}">🔥 지금 특가 보기 →</a>', "", f"{BASE}p/{i}.html", noindex=True))
             continue
         url, rel = f"{BASE}p/{i}.html", related(i, p, pool)
         more = rel and f'<section class="sec" aria-labelledby="relh"><h2 id="relh">같이 보면 좋은 딜</h2><div class="cards">{"".join(card(j, q, st(j, q)) for j, q in rel)}</div>' + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(q) == "toss" for _, q in rel) else "") + '</section>'

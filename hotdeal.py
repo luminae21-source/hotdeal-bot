@@ -1412,7 +1412,10 @@ def publish_approved(seen=None):
         if m.get("reply_to_message"):
             rm = m["reply_to_message"]
             tw = next((k for k, v in (seen or {}).items() if k.startswith("tw_") and isinstance(v, dict) and v.get("ask") == rm["message_id"]), None)
-            if tw:  # 토스 링크 요청(toss_wait)에 답장 -> 이제 채널에 게시
+            if tw:  # 토스 링크 요청(toss_wait)에 답장 -> 이제 채널에 게시 · 쉐어링크가 아니면(발급 실패) 요청 그대로 두고 다시 보내 달라고(SS — 수수료 링크만)
+                if not toss_share(link):
+                    tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="⚠️ 토스 쉐어링크로 못 바꿨어(수수료 링크 아니면 안 올림) — 토스 앱 공유 링크(toss.im/_m/…)로 다시 답장해 줘")
+                    continue
                 toss_post(seen.pop(tw), link, seen)
                 tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text="✅ 이 링크로 채널에 올렸어")
                 continue
@@ -1772,6 +1775,8 @@ def cp_links(seen):
             if u in chan:  # 채널 예약 = 바로 알림
                 alert(seen, "alert_cplink_" + re.match(CP_PROD, u)[1], f"⚠️ 쿠팡 링크 변환 안 됨(파트너스 불가 상품일 수 있음) — "
                       + (f"{lst[u] or '?'} (pid {re.match(CP_PROD, u)[1]})\n행사 목록 글에서 그 상품만 빠짐(바뀐 상품 {LIST_MIN}개 밑이면 목록 글 안 올라감)" if u in lst else f"{u}\n그 예약은 안 올라감") + ". 진우 단축 링크(link.coupang.com/a/…)로 events에 넣어줘")
+                if u not in lst:
+                    ss_skip(seen, "[쿠팡] " + names.get(u, ""))  # 그 예약 = 안 올라감(SS ⑤ 하루 셈)
             else:  # 진열 = 하루 1번 묶어서(10/24 Cowork '상품마다 DM 말고') · 3번째(7일 뒤 다시)부터는 알림 X
                 new = today not in st["f"].get(u, [])
                 st["f"][u] = sorted(set(st["f"].get(u, [])) | {today})
@@ -2304,8 +2309,8 @@ def night_deals(seen, since, until):
     아직 안 나간 것 -> [{"at", "icon", "name", "price", "sv", "url"}] 시각 순. sv = 같은 상품 쿠팡 비교('…보다 N원 쌈' 문장)일 때만 ('쿠팡', 'N원')."""
     out = []
     for ev in sorted(load(EVENTS, []), key=lambda e: e["at"]):
-        if not (ev.get("url") and ev.get("deal") and not ev.get("api")) or "ev_" + ev["at"] in seen or not since <= ev["at"] < until:
-            continue
+        if not (ev.get("url") and ev.get("deal") and not ev.get("api") and aff(ev["url"])) or "ev_" + ev["at"] in seen or not since <= ev["at"] < until:
+            continue  # SS: 수수료 링크 아닌 예약(네이버 직접·아직 안 바뀐 쿠팡 생 주소) = 미리보기·모아보기 X(events도 안 올림)
         plain = html.unescape(re.sub(r"<[^>]+>", "", ev["text"]))
         store, name, price = parse(title_of(plain))  # 몰별 틀(10/22)도 '[몰] 상품명 (가격)'으로
         sv = re.search(rf"({SAVE_STORES})\s*같은 상품[^\n—]*?보다\s*([\d,]+원)\s*쌈", plain)  # '같은 상품'이라고 쓴 비교만(다른 상품·단위가격 참고는 X)
@@ -3347,7 +3352,8 @@ def toss_ask(title, src, mid=None, quiet=False):
 def toss_post(w, link, seen=None):
     """기다리던 토스 딜(main이 보관한 Claude 판단 그대로)을 쉐어링크로 채널에 — 대가성 문구 맨 앞·게시 시점 가격 줄은 deal_post가."""
     p = w["p"]
-    if not post_or_draft({**w["d"], "toss": link}, p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen) and seen is not None:
+    r = post_or_draft({**w["d"], "toss": link}, p["comment"], p["score"], p.get("q"), {k: p.get(k) for k in ("e", "hook", "pts", "unit", "warn", "who", "use", "tone")}, seen)  # 쉐어링크 아님 = 'noaff'(SS)
+    if not r and seen is not None:
         tone_keep(seen, "ch", p.get("tone"))
 
 
@@ -3705,7 +3711,7 @@ def cp_fill(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     last, tg_t = seen.get("cpfill", {}).get("t", 0), seen.get("tgap", {}).get("t", 0)
-    if not TOSS_GAP_MIN or kst.tm_hour not in TOSS_SOLO_HOURS or HAS_TOSS and last > tg_t \
+    if not TOSS_GAP_MIN or kst.tm_hour not in TOSS_SOLO_HOURS or HAS_TOSS and (last > tg_t or time.strftime("tsolo_%Y%m%d_%H", kst) not in seen) \
             or (now - max(ch_last(seen), tg_t, last)) // 60 <= (TOSS_GAP_NIGHT if kst.tm_hour < 8 else TOSS_GAP_MIN):
         return
     evs = load(EVENTS, [])
@@ -3715,7 +3721,9 @@ def cp_fill(seen):
     posts, ev = load(POSTS, []), ev_info()
     chan = {p.get("url") for p in posts if p.get("mid")}
     cpid = {ev.get(u, {}).get("pid") for u in chan} - {None}
-    block = {e.get("url") for e in evs if re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400}
+    block = {x["url"] for e in evs if re.match(AT_RX, e.get("at", "")) and abs(kst_ts(e["at"]) - now) < CPRE_DAYS * 86400
+             for x in [e] + (e["items"] if e.get("list") and isinstance(e.get("items"), list) else []) if isinstance(x, dict) and x.get("url")}  # 앞뒤 3일 예약(행사 목록 글 상품도 — cp_repost처럼)
+    block |= {u for h in seen.get("cpmix", {}).get("h", []) for u in h[1]} | set(seen.get("goldst", {}).get("u", {}))  # 묶음 글(🚀 쿠팡 상품 모음 24시간·꾸준템 글 3일)에 나간 상품 = posts.json엔 안 남음(리뷰)
     fresh_at = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - CPRE_FRESH))
     i, name, _, unit, rv = next((x for x in cp_shelf(posts, kst, False) if (u := posts[x[0]]["url"]) not in chan and u not in block and ev.get(u, {}).get("pid") not in cpid
                                  and posts[x[0]].get("now") and posts[x[0]].get("chkt", "") >= fresh_at), (None,) * 5)
@@ -6804,12 +6812,12 @@ def wx_deals(seen, words, n=3, deny=None):
     today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))  # 오늘 채널에 나간 딜은 X(10/24 진우 1주 ③ — 15:43 간식 글에 14:32 그래놀라·11:43 콘푸로스트가 또)
     ok = lambda name: wx_hit(name, words) and not (deny and re.search(deny, name))
     for i, p in enumerate(posts):
-        if p["t"] < since or p["t"][:10] == today or p["text"].startswith("📋") or p.get("shelf") or is_toss(p.get("url"), p["text"]):  # 사이트 진열 X · 토스는 아래에서(지금 가격)
+        if p["t"] < since or p["t"][:10] == today or p["text"].startswith("📋") or p.get("shelf") or is_toss(p.get("url"), p["text"]) or not aff(p.get("url")):  # 사이트 진열 X · 토스는 아래에서(지금 가격) · 수수료 링크 아닌 딜 X(SS)
             continue
         title = title_of(p["text"])
         name, won = re.sub(r"\s*\((?=[^()]*(?:\d|무료|무배))[^()]*(?:원|/|무료|무배|배송)[^()]*\)\s*$", "", parse(title)[1]), price_won(title)  # '(21,920/무료)'·'(무료)' 같은 가격·배송 괄호만 이름에서 빼고 가격으로('(30개)'·'(1+1)'은 그대로)
         if ok(name):
-            out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"] if aff(p.get("url")) else None, "i": i,
+            out.append({"n": name, "p": f"{won:,}원" if won else "", "u": p["url"], "i": i,
                         "hot": not th_weak(p["text"]) and not th_steady(p["text"]), "steady": th_steady(p["text"]) and not th_weak(p["text"]), "top3": bool(shop_of(p)), "t": kst_ts(p["t"])})
     cand = {}
     for k, v in seen.items():
