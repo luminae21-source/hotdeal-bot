@@ -932,7 +932,7 @@ def toss_list(ps):
     return TOSS_NO_CMP and any(is_toss(p.get("url"), p["text"]) for p in ps)
 
 
-TH_LIST_MIN, TH_LIST_MAX, TH_FILL_HOURS, TH_FILL_REV, TH_LIST_REPEAT = 3, 5, 6, 300, 2  # KK(10/26 Cowork): Threads 12·15·18시 리스트 3~5개 · ② 최근 6시간 수수료 딜 · ③ 🔥 쿠팡 진열 리뷰 300↑ · 24시간 안 리스트 2번 나온 상품 X
+TH_LIST_MIN, TH_FILL_HOURS, TH_FILL_REV, TH_LIST_REPEAT = 3, 6, 300, 2  # KK(10/26 Cowork): Threads 12·15·18시 리스트 3~5개(① 회차 TOP = 5개까지 · 3개 밑이면 ②~④로 3개까지) · ② 최근 6시간 수수료 딜 · ③ 🔥 쿠팡 진열 리뷰 300↑ · 24시간 안 리스트 2번 나온 상품 X
 
 
 def kind_key(name):
@@ -2665,13 +2665,13 @@ def top_deals(seen):
         + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍)
     pick, us, kinds = [], set(many), set()
     for p, pr, mk, src in cands:
+        if src > 1 and len(pick) >= TH_LIST_MIN:  # ②~④ = ①(회차 TOP 수수료 딜 — 5개까지)이 3개 밑일 때 3개까지만 채움
+            break
         kd = kind_key(short_name(title_of(p["text"])))
         if pr and p["url"] not in us and not (kd and kd in kinds):  # 같은 상품·같은 종류(첫 낱말 — '성경김' 2개) X
             pick.append((p, pr, mk, src))
             us.add(p["url"])
             kinds.add(kd)
-        if len(pick) == TH_LIST_MAX:
-            break
     lines = [f"{NUM[n]} {mk}{clip(short_name(title_of(p['text'])), 30)} {pr}\n👉 {th_url(p, posts.index(p))}" for n, (p, pr, mk, _) in enumerate(pick)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
 
     def render(n, bs):  # 리스트 n줄 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)

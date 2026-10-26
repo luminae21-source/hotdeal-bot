@@ -9496,23 +9496,23 @@ P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,00
 json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals(s88)
 th88 = tb88[-1][1]
-assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "🏆 지금 살 만한 딜 TOP4 (12시)" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 채워서 4개
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매", "👍 코멧 위생백 200매"], th88  # ①→②→③→④(👍 = 특가 아님) · 성경김 2개 X
+assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "🏆 지금 살 만한 딜 TOP3 (12시)" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"], th88  # ①→②→③ · 성경김 2개 X
 assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
-assert "threads top12 4개 | 채움 ①1 ②1 ③1 ④1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 and s88["thlist"]["t"], o88.getvalue()
+assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 and s88["thlist"]["t"], o88.getvalue()
 # 24시간 안 리스트에 2번 나온 상품 X -> 다음 후보 · ①~④ 다 해도 3개 밑 = Threads만 X(로그)
 s88 = {"thlist": {"t": 1, "h": [[TK("2026-11-11 15:05"), ["https://link.coupang.com/a/S2"]], [TK("2026-11-11 18:05"), ["https://link.coupang.com/a/S2"]]]}}
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88)
-assert "탐사" not in tb88[-1][1] and "TOP3 (12시)" in tb88[-1][1] and len(s88["thlist"]["h"]) == 3
+assert "탐사" not in tb88[-1][1] and "TOP3 (12시)" in tb88[-1][1] and "3️⃣ 👍 코멧 위생백 200매 5,900원" in tb88[-1][1] and len(s88["thlist"]["h"]) == 3  # ③ 없으면 ④(👍 = 특가 아님)
 json.dump([p for p in P88 if not p.get("shelf")], open("posts88.json", "w"), ensure_ascii=False); n88, o88 = len(tb88), io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals({})
 assert len(tb88) == n88 and "threads skip top12 2개" in o88.getvalue() and "TOP3" in tg88[-1]["text"]  # 텔레그램 리스트는 그대로
 json.dump(P88 + [sh88(f"진열{k}", f"https://link.coupang.com/a/X{k}", "9,000") for k in range(3)], open("posts88.json", "w"), ensure_ascii=False); o88 = io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals({})
-assert "TOP5 (12시)" in tb88[-1][1] and "threads top12 5개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 많아도 5개까지
+assert "TOP3 (12시)" in tb88[-1][1] and "threads top12 3개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 채움 = 3개까지(6시간 넘은 딜 X)
 json.dump([p for p in P88 if p["url"] != SR88 + "2"], open("posts88.json", "w"), ensure_ascii=False); n88, m88 = len(tb88), len(tg88)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
-assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP4 (12시)" in tb88[-1][1]  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서
+assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][1]  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서
 assert H.kind_key("성경김 지도표 재래김") == H.kind_key("성경김 파래김") == "성경김" and H.kind_key("국산 햅쌀 10kg") == "햅쌀" and H.kind_key("대용량 물티슈") == "물티슈"
 (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
 print("OK: 모든 셀프체크 통과")
