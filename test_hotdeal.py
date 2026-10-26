@@ -10315,6 +10315,7 @@ def run99(at, s, f, a=0):
 s99 = {"cpdl": {"x": {u: TK("2026-10-19 09:00") for u in R99}, "f": {u: ["2026-10-18", "2026-10-19"] for u in R99}, "e": {u: "400" for u in R99}, "nf": {u: 2 for u in R99}, "rr": {"t": 0, "u": [], "ok": [], "w": []},
                "pq": [[u] for u in R99]}, "srl": {"x": {}, "now": []}}  # 지난 실행에 줄 선 재시도 1개짜리 5개(예전 순서 = 새 진열보다 먼저)
 assert H.cp_new(s99) == set(N99)  # 한 번도 안 해 본 것 = 실패·시도 기록 없는 진열만
+assert H.cp_new({"srl": {"e": {N99[0]: ["rCode 400"]}}, "cpdl": {"x": {N99[1]: 1}}}) == set(N99[2:] + R99)  # site_relink·cp_links가 해 본 것 = 새 진열 X
 o99 = run99("2026-10-27 02:20", s99, H.cp_links, a=24)  # 앞 실행들이 시간당 24번 씀 = 이번엔 1번만
 assert c99 == [N99[:20]] and "cp link 새 진열 44개 중 20개 바뀜 · 남은 대기 24" in o99 and H.RUN["cpnew"] == 24, (c99, o99)  # 재시도(pq) 앞 · 묶음 20
 H.RUN["cpu"], H.RUN["cpn"] = {"a": [TK("2026-10-27 02:20") - 60] * (H.CP_HOUR - H.CP_NEW_RES), "s": []}, [0, 0]
