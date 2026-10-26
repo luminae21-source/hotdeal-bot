@@ -1705,7 +1705,7 @@ def cp_links(seen):
     todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and (u in fresh or now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400))]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
-    one = [[u] for u in rest if (u in st["f"] or u in st["fi"]) and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
+    one = [[u] for u in rest if u in st["f"] and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
     rest = [u for u in rest if [u] not in one]
     q, calls, why = [rest[k:k + CP_DL_BATCH] for k in range(0, len(rest), CP_DL_BATCH)], 0, {}
     q = [b for b in q if chan & set(b)] + pq + [b for b in q if not chan & set(b)] + one  # 채널 예약 먼저
