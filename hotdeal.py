@@ -9386,13 +9386,13 @@ def watch(seen):
 
 
 INDEXNOW = (("naver", "https://searchadvisor.naver.com/indexnow"), ("bing", "https://api.indexnow.org/indexnow"))  # UU: 네이버 서치어드바이저 · IndexNow 공용(빙 등)
-IDX_DAY, IDX_RUN, IDX_NEW = 200, 50, 50  # 곳마다 하루(KST) 합계 · 실행마다 · 새 쪽 몫(바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지)
+IDX_DAY, IDX_RUN, IDX_NEW, IDX_WAIT = 200, 50, 50, 900  # 곳마다 하루(KST) 합계 · 실행마다 · 새 쪽 몫(바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지) · 키 파일 처음 본 뒤 기다림(초)
 
 
 def indexnow(seen, docs="docs"):
     """UU(10/27 Cowork — 진우 '네이버 검색과 구글 검색에 많이 연결되고 상단 노출 되는게 핵심'): 지난 빌드가 배포한 사이트맵(색인할 쪽만 — 끝난 딜 noindex·날짜 쪽 X)에서
     새로 생기거나 바뀐 쪽(HTML md5가 지난번 보낸 값과 다름)을 IndexNow로 알림 — 곳(네이버·빙)마다 따로 기록: 하루 IDX_DAY개 · 같은 URL 하루 1번 · 실행마다 IDX_RUN개
-    · 새 쪽 먼저(바뀐 쪽은 하루 IDX_DAY - IDX_NEW개까지 — 늦게 생긴 새 딜 몫) · 키 파일(docs/키.txt)이 배포된 뒤부터 · noindex 쪽 X
+    · 새 쪽 먼저(바뀐 쪽은 하루 IDX_DAY - IDX_NEW개까지 — 늦게 생긴 새 딜 몫 · 오래전에 보낸 것부터) · 키 파일(docs/키.txt)을 처음 본 지 IDX_WAIT 뒤부터 · noindex 쪽·이번 실행에 끝난 딜 X
     · 실패 = 기록 X(다음 실행에 다시) · 4xx = 그곳은 그날 그만(관리봇 알림 1번) · 실패해도 봇 그대로. 로그 'indexnow naver N ok · bing N err 403'(주소·키 X)."""
     try:
         locs = re.findall(r"<loc>([^<]+)</loc>", open(f"{docs}/sitemap.xml").read())
@@ -9401,6 +9401,15 @@ def indexnow(seen, docs="docs"):
     if not os.path.exists(f"{docs}/{INDEXNOW_KEY}.txt"):  # 키 파일이 사이트에 뜨기 전 = 보내면 403(그날 그만) -> 다음 빌드 배포 뒤
         return
     now = time.time()
+    if now - seen.setdefault("idx_key", {"t": now})["t"] < IDX_WAIT:  # 키 파일을 처음 본 실행 = 방금 push(Pages 배포 몇 분) -> IDX_WAIT 뒤부터(리뷰 — 배포 전 403 = 첫날 통째로 X)
+        return
+    try:  # 이번 실행 단계가 막 끝낸 딜(품절·내림 — 다음 빌드부터 noindex) = 지금 posts.json으로 한 번 더 거름(사이트맵 p/ = 진행 중 🔥 · 수수료 링크만)
+        posts = load(POSTS, [])
+        days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+        hot = {i for i, sh in home_pool(posts, days).items() if sh[0] == 0 and site_ok(posts[i])}
+    except Exception as e:
+        print("indexnow posts", repr(e))
+        hot = None
     today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
     pages = []
     for u in dict.fromkeys(locs):
@@ -9408,19 +9417,20 @@ def indexnow(seen, docs="docs"):
             b = open(f"{docs}/{u[len(SITE):]}" + ("index.html" if u.endswith("/") else ""), "rb").read() if u.startswith(SITE) else b""
         except OSError:
             continue
-        if b and b'name="robots" content="noindex' not in b:
+        m = re.fullmatch(r"p/(\d+)\.html", u[len(SITE):])
+        if b and b'name="robots" content="noindex' not in b and (hot is None or not m or int(m[1]) in hot):
             pages.append((u, u[len(SITE):], hashlib.md5(b).hexdigest()[:10]))  # 기록 = 사이트 안 경로(seen 작게)
     live, out = {r for _, r, _ in pages}, []
     for name, ep in INDEXNOW:
         st = seen.setdefault("idx_" + name, {})
         st["t"], h = now, st.setdefault("h", {})
-        for u in [u for u in h if u not in live]:  # 사이트맵에서 빠진 쪽(끝난 딜) = 기록 지움 — 다시 진행 중이 되면 새 쪽으로
+        for u in [u for u in h if u not in live and h[u][1] != today]:  # 사이트맵에서 빠진 쪽(끝난 딜) = 기록 지움 — 다시 진행 중이 되면 새 쪽으로(오늘 보낸 것 = 내일 지움 · 같은 날 다시 X)
             h.pop(u)
         n = st["n"][1] if st.get("n", [""])[0] == today else 0
         if st.get("stop") == today:
             continue
         new = [x for x in pages if x[1] not in h]
-        chg = [x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today]
+        chg = sorted((x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today), key=lambda x: h[x[1]][1])  # 오래전에 보낸 것부터(쪽 대부분이 매일 조금씩 바뀜 — 앞쪽만 돌지 않게)
         pick = new[:max(0, min(IDX_RUN, IDX_DAY - n))]
         pick += chg[:max(0, min(IDX_RUN - len(pick), IDX_DAY - IDX_NEW - n - len(pick)))]
         if not pick:
