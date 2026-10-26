@@ -1741,8 +1741,8 @@ def cp_links(seen):
     rest = [u for u in rest if [u] not in one]
     new0 = cp_new(seen, cl) & set(names)  # VV: 한 번도 안 해 본 진열 = 채널 예약 다음, 재시도(나누다 만 묶음·1개짜리·하루 지난 것)보다 먼저 · 이 실행 몫(CP_RUN) 끝까지
     nb, cn = (lambda us: [us[k:k + CP_DL_BATCH] for k in range(0, len(us), CP_DL_BATCH)]), [u for u in rest if u in chan or u in new0]  # 채널 예약 + 새 진열 = 같이 묶음(채널 든 묶음 먼저)
-    q, calls, why = [b for b in nb(cn) if chan & set(b)] + [b for b in pq if set(b) <= new0] + [b for b in nb(cn) if not chan & set(b)] \
-        + [b for b in pq if not set(b) <= new0] + nb([u for u in rest if u not in cn]) + one, 0, {}  # 채널 예약 먼저
+    q, calls, why = [b for b in nb(cn) if chan & set(b)] + [b for b in pq if chan & set(b)] + [b for b in pq if set(b) <= new0] + [b for b in nb(cn) if not chan & set(b)] \
+        + [b for b in pq if not chan & set(b) and not set(b) <= new0] + nb([u for u in rest if u not in cn]) + one, 0, {}  # 채널 예약 먼저(지난 실행 조각 포함 — 리뷰: 새 진열 뒤면 예약 시각 지남)
     r0, again = None, set()  # r0 = 재시도가 시작된 때 이 실행 호출 수(재시도 = 남은 몫의 절반까지 — VV) · again = 이 실행에 1개짜리로 실패한 새 진열(다음 모양 = 재시도)
     while q:  # 10/24 진우 '수량 제한 X': 묶어서 변환, 호출 수 상한만(진열만 남으면 이 실행 CP_RUN-2번째 호출까지 — 남은 몫 = 가격 확인·골드박스·커뮤니티 딥링크)
         b = q.pop(0)
