@@ -10004,6 +10004,7 @@ al95 = [p["text"] for m, p in sent95 if p.get("chat_id") == "42"]; assert len(al
 o95 = run95("2026-10-27 00:25", s95, H.cp_links); assert c95[5:] == [[VP95(501)]] and json.load(open("cp_links.json"))[A95] == "https://link.coupang.com/a/x501" and st95["rr"]["ok"] == [["504", "②"]], c95  # 지난 실행 나머지 = ②로(RR 밖 = 살아남 수 X)
 assert len(c95) == 6 and not st95["fi"]  # 실패로 끝난 것(C ①② · B·E ①②) = 같은 모양 다시 X
 # cp_price: 400 상품(rr w) 먼저 검색(실행마다 검색 2번 그대로 — 진열 '지 상품'은 다음에) -> 같은 상품·옵션 = 옵션 번호·긴 주소(vi) -> cp_links ③(vendorItemId) -> 그래도 400 = 검색 API 파트너스 긴 주소
+s95.setdefault("cpq", {"m": {}}).setdefault("i", {})["https://link.coupang.com/a/g507"] = "https://ads-partners.coupang.com/image1/g"  # 지 = 사진 있는 줄(old) · 400 B·E = 사진 없는 줄 -> 그래도 검색 2번 다 400 먼저(리뷰: 줄마다 1번씩 X)
 o95 = run95("2026-10-27 00:40", s95, H.cp_price)
 assert len(s95x) == 2 and quote("비누") in "".join(s95x) and quote("지 상품") not in "".join(s95x) and s95["cpq"]["vi"][B95] == ["5031", "5032", L95(503)] and st95["rr"]["w"] == [F95] and E95 not in s95["cpq"]["vi"], (s95x, s95["cpq"].get("vi"))  # E = 같은 pid 다른 옵션만(이름 cp_same은 같다고 봄 — 주소 itemId 55 ≠ 5051) -> 옵션 번호·검색 링크 X
 o95 = run95("2026-10-27 00:55", s95, H.cp_links)

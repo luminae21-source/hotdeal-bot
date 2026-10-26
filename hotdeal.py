@@ -1830,7 +1830,7 @@ def cp_price(seen):
     home = shown("docs/index.html")  # 홈에 나오는 상품 — 사진 채움 먼저(10/24 Cowork A①)
     cfirst = set().union(*[shown(f, 12) for f in sorted(glob.glob("docs/c/*/index.html"))])  # 그다음 /c/ 칸마다 첫 화면(10/25 Cowork ② — /c/season/ 사진 1/21)
     vid = {p["url"] for p in clip_pool(posts, time.time())}  # FF-4(10/26 Cowork): 영상·인스타 후보(3일 안 🔥 쿠팡) 사진 먼저
-    rank = lambda u: (u not in rw, u not in vid, u not in home, u not in cfirst)
+    rank = lambda u: (u not in vid, u not in home, u not in cfirst)
     wk = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 7 * 86400))
     q["gs"], grp = {w: d for w, d in q.get("gs", {}).items() if d > wk}, collections.defaultdict(list)  # gs = 품목 낱말 검색한 날
     q["gm"] = {u: d for u, d in q.get("gm", {}).items() if d > wk and u in names}  # gm = 품목 낱말 검색에 들어간 글(7일 안 = 다른 낱말로도 다시 묶지 않음)
@@ -1842,8 +1842,8 @@ def cp_price(seen):
             grp[max(ws, key=lambda w: (cnt[w], w))].append(u)
     gk = {w: min(map(rank, us)) for w, us in grp.items() if len(us) >= CP_GROUP_MIN}
     pho = [x for _, x in sorted([((*gk[w], 0, ""), (0, None, None, w, None)) for w in gk] + [((*rank(t[1]), 1, t[0]), t) for t in todo if t[1] not in q.get("i", {})], key=lambda y: y[0])]  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지 — 같은 칸이면 T 품목 낱말 검색 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
-    old = sorted((t for t in todo if t[1] in q.get("i", {})), key=lambda t: t[1] not in rw)
-    todo = [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]]
+    old = [t for t in todo if t[1] in q.get("i", {})]
+    todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: t[1] not in rw)  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰)
     got = miss = err = gn = 0
     qs = cp_qs
     ps = q.setdefault("ps", {"d": today, "n": 0, "m": 0})  # 사진 검색 수·채운 사진 수(하루 1줄 'img 쿠팡 검색 N번으로 M개' — 다음 날 첫 실행에)
