@@ -10287,6 +10287,12 @@ time.time = lambda: TK("2026-10-31 09:00"); H.indexnow(s98); assert s98["idx_bin
 P98[13] = {"t": "2026-10-27 08:00", "text": "📦 쿠팡 🔥\n딜 13\n1,000원", "url": "https://link.coupang.com/a/d13", "own": 1, "shelf": 1, "st": "out"}; json.dump(P98, open("posts.json", "w"), ensure_ascii=False); ok98.clear(); req98.clear()
 open("docs/p/13.html", "w").write("끝"); open("docs/sitemap.xml", "w").write(f"<urlset><url><loc>{S.BASE}p/13.html</loc></url><url><loc>{S.BASE}p/0.html</loc></url></urlset>")
 s98 = {"idx_key": {"t": 0}}; H.indexnow(s98); assert nv98() == [["p/0.html"]], nv98()
+# 새 쪽 = 허브(칸 첫 쪽 등) 먼저 -> 딜 쪽·칸 뒤쪽(사이트맵 순서 = 딜 650개 뒤라 첫 배포 때 칸 쪽이 4~5일째였음)
+for d in ("c/beauty", "c/beauty/2"):
+    os.makedirs(f"docs/{d}", exist_ok=True); open(f"docs/{d}/index.html", "w").write(d)
+open("docs/sitemap.xml", "w").write("<urlset>" + "".join(f"<url><loc>{S.BASE}{u}</loc></url>" for u in ["", "p/1.html", "p/0.html", "c/beauty/", "c/beauty/2/", "c/"]) + "</urlset>"); open("docs/c/index.html", "w").write("c")
+H.IDX_RUN, s98, req98[:] = 4, {"idx_key": {"t": 0}}, []; H.indexnow(s98); H.indexnow(s98)
+assert nv98() == [["", "c/beauty/", "c/", "p/1.html"], ["p/0.html", "c/beauty/2/"]], nv98()
 (H.http, time.time, H.tg, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv98; os.chdir(cwd98)
 # 9-99) VV(10/27 Cowork — 새 진열 44개가 2시간째 수익 링크 0 · cp_fail 44개 f·x·e 빈 칸 = 한 번도 시도 X): 앞 실행들의 가격 확인·사진·재시도가 시간당 상한(25)을 다 써서 cp_links 차례엔 CpLimit ·
 #       진열은 재시도(나누다 만 묶음·1개짜리) 뒤 순서 -> ① 한 번도 안 해 본 진열 = 채널 예약 다음·재시도 앞 · 이 실행 몫(CP_RUN)까지 ② 재시도 = 남은 몫의 절반 · site_relink 쿠팡 = 새 진열 끝날 때까지 쉼

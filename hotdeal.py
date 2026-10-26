@@ -9454,7 +9454,7 @@ def indexnow(seen, docs="docs"):
         n = st["n"][1] if st.get("n", [""])[0] == today else 0
         if st.get("stop") == today:
             continue
-        new = [x for x in pages if x[1] not in h]
+        new = sorted((x for x in pages if x[1] not in h), key=lambda x: x[1].startswith("p/") or bool(re.search(r"/\d+/$", x[1])))  # 새 쪽 = 허브(홈·주제·기록·칸 첫 쪽·c/·events/) 먼저 -> 딜 쪽·칸 뒤쪽(리뷰: 사이트맵 순서면 칸 쪽이 4~5일째)
         chg = sorted((x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today), key=lambda x: h[x[1]][1])  # 오래전에 보낸 것부터(쪽 대부분이 매일 조금씩 바뀜 — 앞쪽만 돌지 않게)
         pick = new[:max(0, min(IDX_RUN, IDX_DAY - n))]
         pick += chg[:max(0, min(IDX_RUN - len(pick), IDX_DAY - IDX_NEW - n - len(pick)))]
