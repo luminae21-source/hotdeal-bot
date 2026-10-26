@@ -9193,7 +9193,7 @@ H.REVIEW, H.TH_HOOK, H.ai_voice = False, False, (lambda prompt: {"line": "도시
 Y84 = (f"{H.NAVER_NOTE}\n\n👍 [네이버] 오휘 얼티밋 커버 데니어 쿠션 본품+리필 (58,500원)\n\n오휘 · 10% 할인(정가 65,000원 기준) · ⭐ 4.76 (리뷰 2,340)\n💰 본품 13g + 리필 13g · SPF50+\n"
        "💡 리필 포함 기획 세트\n⚠️ 확인할 점: 호수(색상) 옵션 · 배송비 · 결제 전 최종가 확인 (10/25 20시 가격)\n\n🛒 구매하러 가기 https://naver.me/G8fRE2T1")
 o84 = H.th_voice({}, Y84, "https://naver.me/G8fRE2T1")
-assert o84.startswith(H.NAVER_NOTE + "\n\n💚 네이버 · 꾸준히 팔리는 상품 👍\n오휘 얼티밋") and "👍 [네이버]" not in o84, o84  # ② 네이버 👍 = 토스·쿠팡처럼 몰 머리 줄
+assert o84.startswith(H.NAVER_NOTE + "\n\n💚 네이버 · 꾸준히 주문 들어오는 상품 👍\n오휘 얼티밋") and "✔ 리뷰 2,300+" in o84 and "👍 [네이버]" not in o84, o84  # ② 네이버 👍 = 토스·쿠팡처럼 몰 머리 줄
 assert "\n⏰ 10/25 20시 확인 가격 · 옵션마다 다름\n" in o84 and "옵션별 가격" not in o84, o84  # ② 옵션 = '확인 가격 · 옵션마다 다름'
 o84 = H.th_voice({}, Y84.replace("👍 [네이버]", "🔥 [네이버]").replace("호수(색상) 옵션 · ", ""), "https://naver.me/G8fRE2T1")
 assert "\n\n🔥 [네이버]\n오휘" in o84 and "💚" not in o84 and "\n⏰ 10/25 20시 가격 · 결제 전 확인\n" in o84, o84  # 🔥 네이버 = 예전 그대로 · 옵션 없으면 예전 ⏰ 줄
