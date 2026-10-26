@@ -1,8 +1,8 @@
 {
- "left_now": 9,
+ "left_now": 7,
  "ok": {
   "auction": 7,
-  "커뮤니티": 18
+  "커뮤니티": 19
  },
  "fail": [
   {
@@ -235,6 +235,13 @@
    "n": "해피바스 내추럴 바디워시 프루티향 900g",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 05:00"
+  },
+  {
+   "k": "커뮤니티",
+   "pid": "7958974",
+   "n": "신라면 5개 (무료)",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 13:30"
   },
   {
    "k": "진열",
