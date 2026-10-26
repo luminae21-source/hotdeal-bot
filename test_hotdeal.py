@@ -2240,10 +2240,8 @@ assert H.store_info("[네이버][올리브영기프트카드] 5만원권") == H.
 assert "[올리브영] 딜 comment·hook·pts·warn은" in H.DEAL_PROMPT and "[올리브영] 딜은 가격·용량·구성·조건만" in H.REEL_PROMPT and "'추천'" in H.DEAL_PROMPT and "MIN_SCORE - earns(" in inspect.getsource(H.main) and H.earns("[올리브영] 세럼")  # 사실만·1점 낮춤(10/10~ 수수료 몰 전체, 4-6)
 oyh = [{"board": "뽐뿌", "hits": "댓글0·조회3000·추천5·비추0", "age": 60, "title": t} for t in ("[올리브영] 세럼", "[G마켓] 우유")]
 H.mark_hot(oyh); assert not any(k in oyh[0] for k in ("hot", "pop", "vpm", "rec")) and oyh[1]["hot"] and oyh[1]["pop"]  # 올영은 추천·반응 표시 X
-sent.clear(); H.post_or_draft({"title": "[올리브영]다슈 립밤 4g (8,820원)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}, "8,820원, 2만 원 이상 무료배송", 6, "다슈 립밤")
-cm = [p for m, p in sent if m == "copyMessage"][0]["reply_markup"]["inline_keyboard"]
-assert cm[1] == [{"text": "📋 상품명 복사", "copy_text": {"text": "다슈 립밤"}}] and cm[2][0]["text"].startswith("💰 올리브영 쇼핑 큐레이터")
-pjo = json.load(open("posts.json")); pjo[-1]["text"] = "🔥 [올리브영]다슈 립밤 4g (8,820원)"; json.dump(pjo, open("posts.json", "w"), ensure_ascii=False)  # 가짜 tg는 글 내용을 안 돌려줌
+sent.clear(); assert H.post_or_draft({"title": "[올리브영]다슈 립밤 4g (8,820원)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", "board": "뽐뿌"}, "8,820원, 2만 원 이상 무료배송", 6, "다슈 립밤") == "noaff" and not sent  # SS: oy.run 없는 올영 커뮤니티 딜 = 안 올림(사본 X)
+H.record("🔥 [올리브영]다슈 립밤 4g (8,820원)", [], "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1", 31, 6, {"cp": 1}); pjo = json.load(open("posts.json"))  # SS 전 사본 있는 올영 글
 assert H.pending_copy("https://oy.run/abc") == pjo[-1] and H.pending_copy("https://naver.me/x") is None  # 답장 없이 링크만 보내도 그 올영 사본으로(다른 프로그램 링크는 X)
 seen, sent[:] = {}, []
 for dt, want in ((14 * 86400, 0), (15 * 86400 - 4 * 3600, 0), (15 * 86400, 1), (15 * 86400 + 3600, 1)):  # 10/20 13시·10/21 9시·13시·14시(같은 달 1번)
@@ -3780,10 +3778,8 @@ tg18 = []
 H.tg = lambda m, **p: tg18.append((m, p)) or ({"message_id": 1297, "text": "🔥 [네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)\n\n딸기우유 24팩", "entities": []} if m == "sendMessage" else {"message_id": 77})
 json.dump([], open(H.POSTS, "w"))
 with contextlib.redirect_stdout(io.StringIO()):
-    H.post_or_draft(D18, "딸기우유 24팩", 7, "서울우유 딸기 200ml 24팩")
-ch18 = [p for m, p in tg18 if m == "sendMessage"][0]; cp18 = [p for m, p in tg18 if m == "copyMessage"]
-assert ch18["reply_markup"]["inline_keyboard"] == [[{"text": "🔎 네이버쇼핑에서 찾기", "url": SR18n}]] and json.load(open(H.POSTS))[0]["url"] == SR18n
-assert len(cp18) == 1 and "쇼핑커넥트" in json.dumps(cp18[0]["reply_markup"], ensure_ascii=False) and H.pending_copy("https://naver.me/Jw18")["cp"] == 77  # 관리자 사본 그대로 -> 진우 naver.me 답장이 교체
+    r18 = H.post_or_draft(D18, "딸기우유 24팩", 7, "서울우유 딸기 200ml 24팩")
+assert r18 == "noaff" and not tg18 and json.load(open(H.POSTS)) == []  # SS(10/26): 네이버 검색 링크 = 수수료 X(쇼핑커넥트 못 만듦) -> 안 올림(사본도 X)
 (H.http, H.tg, time.time, H.time.sleep, H.TH_LINK_AB, H.ai_pick, H.POSTS, H.th_solo, e18) = sv18
 for k, v in e18.items():
     H.E.pop(k, None) if v is None else H.E.update({k: v})
@@ -9003,22 +8999,22 @@ vv82, hk82 = [], []
 H.ai_voice, H.ai_json, H.TH_HOOK = (lambda prompt: vv82.pop(0)), (lambda prompt, props: {"hook": hk82.pop(0)}), True
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 2 if 2 in xs else xs[0])})
 fx82[:] = [{"ok": True, "fix": []}] * 4; H.RUN["rvw"] = {}
-hk82[:], vv82[:] = ["날 더워지면 손 시릴 일 없지"], [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+hk82[:], vv82[:] = ["날 더워지면 손 시릴 일 없죠"], [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [5, 1]}}, Z82, "https://link.coupang.com/a/z82")  # ② 계절·상황 차례 -> 계절 틀림 = ③(근거 없음) 건너뛰고 ④ 기본 줄
 assert o82.split("\n\n")[1] == H.TH_HOOK_POOL[sum(map(ord, "코멧 손난로 100g 30개")) % 3] and "더워지" not in o82, o82
-hk82[:], vv82[:] = ["반찬 고민될 때 뭐 꺼내? 손난로!"], [{"line": "손난로 꺼내기 딱 좋은 날씨"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+hk82[:], vv82[:] = ["반찬 고민될 때 뭐 꺼내세요? 손난로죠!"], [{"line": "손난로 꺼내기 딱 좋은 날씨"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [4, 5]}}, Z82, "https://link.coupang.com/a/z82")  # 끝 줄이 훅 낱말 반복(상품명 낱말 '손난로'는 빼고 봄 — '꺼내') = 1번 다시
 assert "\n주머니마다 하나씩 넣어 두기 좋겠다\n" in o82 and not vv82, o82
 vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [3, 4]}}, Z82, "https://link.coupang.com/a/z82")
-assert o82.split("\n\n")[1] == "1개 295원꼴" and "\n💰 8,860원\n" in o82 and o82.count("295원") == 1, o82  # 탈취제 '1개당 7,400원' 2번 = 💰 줄 단가 X
+assert o82.split("\n\n")[1] == "1개 295원꼴이에요" and "\n💰 8,860원\n" in o82 and o82.count("295원") == 1, o82  # 탈취제 '1개당 7,400원' 2번 = 💰 줄 단가 X
 vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; H.TH_HOOK, H.REVIEW = False, False  # 재검토 없이도(뿌리에서) 안 만듦
 o82 = H.th_voice({}, Z82.replace("⚠️ 와우회원가 · ", "⚠️ 색상 옵션 · "), "https://link.coupang.com/a/z82"); H.REVIEW = True
 assert "단점 하나" not in o82 and o82.endswith("\n\n주머니마다 하나씩 넣어 두기 좋겠다\n\n👉 https://link.coupang.com/a/z82"), o82  # 라이너 '단점 하나: 색상 옵션' = 안 만듦
 H.RUN["rvw"] = {}; vv82[:] = [{"line": "더위 탈 때 꺼내 쓰기 좋겠다"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; fx82[:] = [{"ok": True, "fix": []}]
 o82 = H.th_voice({}, Z82, "https://link.coupang.com/a/z82"); assert "\n주머니마다 하나씩 넣어 두기 좋겠다\n" in o82 and not vv82, o82  # 끝 줄 계절 틀림 = 1번 다시
-H.RUN["rvw"], H.TH_HOOK = {}, True; hk82[:] = ["반찬 고민될 때 뭐 꺼내? 김!"]; vv82[:] = [{"line": "가방에 몇 개씩 넣어 다니기 좋겠다"}]
-fx82[:] = [{"ok": False, "fix": [{"line": "반찬 고민될 때 뭐 꺼내? 김!", "new": ""}, {"line": "가방에 몇 개씩 넣어 다니기 좋겠다", "new": ""}]}]
+H.RUN["rvw"], H.TH_HOOK = {}, True; hk82[:] = ["반찬 고민될 때 뭐 꺼내세요? 김이죠!"]; vv82[:] = [{"line": "가방에 몇 개씩 넣어 다니기 좋겠다"}]
+fx82[:] = [{"ok": False, "fix": [{"line": "반찬 고민될 때 뭐 꺼내세요? 김이죠!", "new": ""}, {"line": "가방에 몇 개씩 넣어 다니기 좋겠다", "new": ""}]}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [4, 5]}}, Z82, "https://link.coupang.com/a/z82"); H.TH_HOOK = False
 assert "반찬" not in o82 and "가방" not in o82 and "단점" not in o82 and o82.split("\n\n")[1].startswith("🚀"), o82  # 3줄 중 2줄 걸림 = 남은 단점 줄도 빼고 멘트 없는 틀
 H.RUN["rvw"] = {}; vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; fx82[:] = [{"ok": False, "fix": [{"line": "단점 하나: 사이즈 교환 불가", "new": ""}]}]
@@ -9031,10 +9027,11 @@ H.E.pop("ANTHROPIC_API_KEY")
 p82 = {"comment": "더운 여름엔 쟁여 두기", "unit": "1L당 269원", "warn": "", "who": "물 자주 마시는 집", "use": "장마철 대비", "pts": ["여름 내내 시원하게 즐기기", "무료배송"]}
 H.rv_fields("ch", [p82, None], ["[쿠팡] 삼다수 2L 12개 (9,900원)"]); assert p82 == {"comment": "", "unit": "1L당 269원", "warn": "", "who": "물 자주 마시는 집", "use": "", "pts": ["무료배송"]}, p82
 cap82 = []
-H.deal_post, H.tg, H.draft = (lambda d, c, q=None, x=None: cap82.append((c, x)) or ("t", "https://x", "🛒")), (lambda *a, **k: None), (lambda *a, **k: None)
+dl82 = H.deal_link; H.deal_link = lambda d, q=None: ("https://link.coupang.com/a/x82", "🛒")  # 수수료 링크(SS — 아니면 안 올림)
+H.deal_post, H.tg, H.draft = (lambda d, c, q=None, x=None, lk=None: cap82.append((c, x)) or ("t", "https://x", "🛒")), (lambda *a, **k: None), (lambda *a, **k: None)
 H.post_or_draft({"title": "[쿠팡] 삼다수 2L 12개 (9,900원)", "url": "https://x"}, "물은 떨어지기 전에 쟁여 두기", 8, None, {"unit": "1L당 269원"})
 assert cap82 == [("물은 떨어지기 전에 쟁여 두기", {"unit": "1L당 269원"})]
-H.post_or_draft({"title": "[쿠팡] 삼다수 2L 12개 (9,900원)", "url": "https://x"}, "무더위엔 이거", 8, None, None); assert cap82[-1] == ("", {})
+H.post_or_draft({"title": "[쿠팡] 삼다수 2L 12개 (9,900원)", "url": "https://x"}, "무더위엔 이거", 8, None, None); assert cap82[-1] == ("", {}); H.deal_link = dl82
 # ⑤ 예약 글(Cowork events) = 게시 직전 재검토 · 고친 본문 = 채널 글·품절 지켜보기 같게
 d82 = tempfile.mkdtemp(); H.EVENTS = f"{d82}/ev.json"; sent82 = []
 H.tg = lambda method, **k: sent82.append(k) or {"message_id": 82, "text": k.get("text", "")}
