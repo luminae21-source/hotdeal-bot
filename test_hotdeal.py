@@ -1255,7 +1255,7 @@ json.dump([{"t": "2026-10-12 11:%02d" % (10 + k), "text": f"🔥 [G마켓] 딜{k
 seen, c_sent[:] = {"bundles": {"t": T("2026-10-12 12:01"), "ts": [T("2026-10-12 12:01")]}}, []; time.time = lambda: T("2026-10-12 12:05"); H.top_deals(seen); assert not c_sent and "top_20261012_12" not in seen  # TOP5도 10분 안 묶음 글이면 다음 실행에
 seen, c_sent[:] = {}, []; time.time = lambda: T("2026-10-12 12:05"); H.top_deals(seen); H.toss_deals(seen, True)  # 12시: TOP5가 먼저 나가면 같은 실행의 베스트는 다음 실행으로(10/10·10/11 12시 두 글이 18초 간격이던 것)
 assert len(c_sent) == 1 and "살 만한 딜 TOP3" in c_sent[0][1]["text"] and "tossbest_20261012_12" not in seen
-time.time = lambda: T("2026-10-12 12:19"); H.toss_deals(seen, True); assert len(c_sent) == 2 and "tossbest_20261012_12" in seen and "많이 팔리는" in c_sent[1][1]["text"]
+time.time = lambda: T("2026-10-12 12:19"); H.toss_deals(seen, True); assert len(c_sent) == 2 and "tossbest_20261012_12" in seen and "토스 상품 모음" in c_sent[1][1]["text"]
 seen, c_sent[:] = {}, []; time.time = lambda: T("2026-10-12 19:10"); H.toss_deals(seen, "beauty")  # 19시 뷰티 저녁 회차
 assert "tossbeauty_20261012_19" in seen and "💙 <b>토스 뷰티 베스트 중 살 만한 1개</b>" in c_sent[0][1]["text"]
 seen = {"bundles": {"t": T("2026-10-12 21:01"), "ts": [T("2026-10-12 21:01")]}}; c_sent.clear(); time.time = lambda: T("2026-10-12 21:05")  # 모아보기도 10분 안 묶음 글이면 다음 실행에
