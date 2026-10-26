@@ -9704,9 +9704,9 @@ E91, R91, S91 = H.NN_TOPICS[0], H.NN_TOPICS[-1], H.NN_TOPICS[2]
 assert [H.nn_kind(E91, n) for n in ("맛있는 계란말이 500g", "계란과자 6봉", "맥반석 오징어 200g", "계란 디스펜서 30구", "훈제계란 30구", "삶은 계란 10구", "맥반석 구운란 30구", "반숙 맥반석란 10구", "반숙 카스테라 10개")] == \
     [None, None, None, None, ("바로 먹는 계란", "훈제란"), ("바로 먹는 계란", "훈제란"), ("바로 먹는 계란", "맥반석"), ("바로 먹는 계란", "맥반석"), None]
 assert [H.nn_kind(E91, n) and H.nn_kind(E91, n)[1] for n in ("반숙 왕란 20구", "완숙 특란 30구", "맥반석 구운 대란 30구", "반숙 감동란 10구", "구운 대란 30구", "삶은 대란 10구", "계란장조림 500g")] \
-    == ["반숙란", "완숙란", "맥반석", "반숙란", "구운란", "훈제란", None] and re.search(it91e := dict((k, rx) for k, _, rx, _, _ in S.PRICE_ITEMS)["eggs"], "맥반석 구운 대란 30구") and not re.search(it91e, "계란 장조림")
-assert [H.nn_kind(R91, n) for n in ("햇반 백미밥 210g 24개", "더미식 당찬진미 백미밥 200g x 24개", "누룽지 햅쌀 1kg", "햅쌀 10kg", "오뚜기 밥 백미 210g 12개", "골든퀸3호 누룽지향 쌀 10kg", "즉석도정 햅쌀 4kg", "양반 백미 쌀밥 130g 24개", "쌀국수 1kg")] \
-    == [None, None, None, ("쌀", "쌀"), None, ("쌀", "쌀"), ("쌀", "쌀"), None, None]  # 쌀 = kg 있는 생쌀(누룽지향·즉석도정 = 쌀 · 쌀밥·쌀국수 X)  # 즉석밥·누룽지 = 쌀 X
+    == ["반숙란", "완숙란", "맥반석", "반숙란", "구운란", "훈제란", None] and re.search(it91e := dict((k, rx) for k, _, rx, _, _ in S.PRICE_ITEMS)["eggs"], "맥반석 구운 대란 30구") and not re.search(it91e, "계란 장조림") and re.search(it91e, "무항생제 대란 30구")
+assert [H.nn_kind(R91, n) for n in ("햇반 백미밥 210g 24개", "더미식 당찬진미 백미밥 200g x 24개", "누룽지 햅쌀 1kg", "햅쌀 10kg", "오뚜기 밥 백미 210g 12개", "골든퀸3호 누룽지향 쌀 10kg", "즉석도정 햅쌀 4kg", "양반 백미 쌀밥 130g 24개", "쌀국수 1kg", "동원 양반 100밥 현미,백미 130g 12개")] \
+    == [None, None, None, ("쌀", "쌀"), None, ("쌀", "쌀"), ("쌀", "쌀"), None, None, None]  # 쌀 = kg 있는 생쌀(누룽지향·즉석도정 = 쌀 · 쌀밥·쌀국수 X)  # 즉석밥·누룽지 = 쌀 X
 assert [H.nn_kind(S91, n) for n in ("비비고 김치왕교자 1.05kg 2개", "농심 김치사발면 6개", "종가 김치전 2팩", "종가 포기김치 3kg")] == [None, None, None, ("반찬", "김치")] \
     and H.nn_kind(H.NN_TOPICS[3], "햇반 스팸 김치 볶음밥 2인분 (냉동), 440g, 1개") is None and H.nn_kind(S91, "농심 김치큰사발면 6개") is None and H.nn_kind(S91, "컵누들 김치 6개") is None and H.nn_kind(H.NN_TOPICS[4], "양은 라면냄비 18cm 2개") is None
 SR91.clear(); SR91.update({"계란 30구": [("201", "[2+1] 곰곰 특란 10구", 8000, False), ("202", "무항생제 왕란 2판 (60구)", 17000, False), ("203", "무항생제 특란 2판", 7000, False), ("204", "곰곰 특란 30구 x 2판", 17800, False)],
