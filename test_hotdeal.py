@@ -10344,7 +10344,10 @@ json.dump([], open("posts.json", "w")); os.remove("cp_links.json")
 s99p = {"cpdl": {"x": {}, "fi": {C99: 1}, "m": {C99: {"0": "url convert failed"}}, "rr": {"t": 0, "u": [], "ok": [], "w": []}, "pq": [[N99[0]], [C99]]}, "srl": {"x": {}, "now": []}}
 c99.clear(); run99("2026-10-27 02:20", s99p, H.cp_links, a=24)
 assert c99 == [[VP99(5555)]] and C99 in json.load(open("cp_links.json")), c99  # 채널 조각(② 상품 번호만) 먼저 -> 새 진열 = 다음 실행
-os.remove("cp_links.json"); s99p["cpdl"].update(pq=[[N99[0]], [C99]], fi={C99: 1}); c99.clear(); run99("2026-10-27 02:20", s99p, H.cp_links)
-assert sum("/products/5555" in u for c in c99 for u in c) == 1 and c99[1:] == [[N99[0]], N99[1:3]], c99  # 몫 넉넉 = 채널 조각 -> 새 진열 조각 -> 새 진열 묶음(같은 조각 두 번 X)
+ev99p = json.load(open("events.json"))
+for dup in (False, True):  # dup = 같은 주소가 채널 예약이자 진열(배포 데이터 채널 생 주소 16개 중 9개)
+    json.dump(ev99p + [{"at": "2026-10-27 00:30", "shelf": True, "url": C99, "text": tx99("채널 예약")}] * dup, open("events.json", "w"), ensure_ascii=False)
+    os.remove("cp_links.json"); s99p["cpdl"].update(pq=[[N99[0]], [C99]], fi={C99: 1}); c99.clear(); run99("2026-10-27 02:20", s99p, H.cp_links)
+    assert sum("/products/5555" in u for c in c99 for u in c) == 1 and c99[1:] == [[N99[0]], N99[1:3]], (dup, c99)  # 몫 넉넉 = 채널 조각 -> 새 진열 조각 -> 새 진열 묶음(같은 조각 두 번 X)
 (H.http, H.HAS_CP, time.time, H.POSTS, H.EVENTS, rn99) = sv99; H.tg = sv99t; H.RUN.clear(); H.RUN.update(rn99); os.chdir(cwd99)
 print("OK: 모든 셀프체크 통과")
