@@ -3825,11 +3825,15 @@ def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", 
 
 
 RV_KEYS = ("comment", "unit", "warn", "who", "use", "hook")  # 채널·토스 글 Claude 칸(+ pts) = 멘트 줄
+UNIT_OK = re.compile(r"(?:[\d.]*[가-힣A-Za-z]+당|1[가-힣]+)\s*(?:약\s*)?[\d,]+원")  # 💡 단위가격 칸 = '…당 N원'·'1개 N원'이 든 줄만(10/26 16시 점검: '100g당 가격으로 따지면 3,215원이에요'·'…100g당 값이 낮은 편이에요' = 칸 뺌)
 
 
 def rv_fields(where, ps, heads, facts=""):
     """Z 재검토(채널·토스·딜 카드 재료): ps(Claude 픽 dict들)의 RV_KEYS·pts 칸을 한 번에 review -> 고친 값으로(뺀 줄 = '') · heads = 상품마다 제목(이름·가격 — 글 전체 재료)."""
     ps = [p for p in ps if isinstance(p, dict)]
+    for p in ps:
+        if isinstance(p.get("unit"), str) and not UNIT_OK.search(p["unit"]):
+            p["unit"] = ""  # Claude 첫 답도(재검토 전) — 숫자 없는 문장·풀어 쓴 계산 = 단위가격 칸 X
     lines = [v for p in ps for v in [*(p.get(k) for k in RV_KEYS), *(p.get("pts") or [])] if isinstance(v, str) and v.strip()]
     if not REVIEW or not lines:
         return
@@ -3837,7 +3841,7 @@ def rv_fields(where, ps, heads, facts=""):
     sq = lambda v: re.sub(r"\s+", " ", v).strip() if isinstance(v, str) else v
     units = {sq(p["unit"]) for p in ps if isinstance(p.get("unit"), str)}
     ch = review(where, text, lines, facts or "\n".join(heads), valid=lambda o, n: not re.search(WU_BAN + (f"|{TOSS_BAN}" if where == "toss" else ""), n)  # 고친 줄도 써 본 척·효능·과장 X(토스 = 다른 몰 비교 X)
-                and (o not in units or bool(re.search(r"\d", n) and re.search(r"당|꼴", n))))  # 💡 단위가격 칸 = 고쳐도 '…당 N원' 꼴만(10/26 12:47 밀크티 — 문장으로 바뀐 줄 = 뺌)
+                and (o not in units or bool(UNIT_OK.search(n))))  # 💡 단위가격 칸 = 고쳐도 '…당 N원' 꼴만(10/26 12:47 밀크티 — 문장으로 바뀐 줄 = 뺌)
     for p in ps:
         for k in RV_KEYS:
             if sq(p.get(k)) in ch:

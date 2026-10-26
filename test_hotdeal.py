@@ -9116,6 +9116,14 @@ H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "1L당 1,500원", "n
 pz83 = [{"comment": "광동 밀크티 베이스 1L가 1,500원이야", "unit": "1L당 1,500원"}, {"comment": "보리차 2개 9,800원", "unit": "500ml 2개 9,800원 → 1개당 4,900원"}]
 H.rv_fields("ch", pz83, ["[네이버] 광동 밀크티용 베이스 1L 1개 (1,500원/네멤무배)", "[쿠팡] 보리차 500ml 2개 (9,800원)"])
 assert pz83[0]["unit"] == "" and pz83[0]["comment"] == "광동 밀크티 베이스 1L가 1,500원이야" and pz83[1]["unit"] == "500ml 1개당 4,900원꼴", pz83  # 문장 = 칸 뺌 · 단위가격 꼴 = 고침
+# 16시 점검(10/26 13:58 치약·15:09 목우촌 '💡 단위가격' 칸 문장): Claude 첫 답 단위가격도 '…당 N원' 꼴만 — 재검토 꺼져 있어도
+ub83 = ["100g당 가격으로 따지면 3,215원이에요.", "500g 한 팩 기준으로 계산하면 100g당 값이 낮은 편이에요", "개당 약 315원", "병당 약 535원 (24병)", "1개 1,280원"]
+for rv83 in (True, False):
+    rr83, H.REVIEW, H.ai_review = H.REVIEW, rv83, (lambda prompt: {"ok": True, "fix": []})
+    pu83 = [{"comment": "c", "unit": u} for u in ub83]; H.rv_fields("ch", pu83, ["[네이버] 상품 (9,900원)"] * len(ub83)); H.REVIEW = rr83
+    assert [p["unit"] for p in pu83] == ["", ""] + ub83[2:], pu83
+H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "개당 약 315원", "new": "개당으로 따지면 315원 정도예요"}]}
+pu83 = [{"comment": "c", "unit": "개당 약 315원"}]; H.rv_fields("ch", pu83, ["[네이버] 생수 (12,590원)"]); assert pu83[0]["unit"] == "", pu83  # 재검토가 단위가격을 풀어 쓴 문장으로 = 칸 뺌(숫자·'당'만 있는 문장 X)
 H.ai_review, ak83z, rw83z = sv83z
 H.E.pop("ANTHROPIC_API_KEY", None) if ak83z is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak83z)
 H.RUN.pop("rvw", None) if rw83z is None else H.RUN.__setitem__("rvw", rw83z)
