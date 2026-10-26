@@ -3341,9 +3341,9 @@ s12f = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.snack_post(s12f
 t12s = out12[0][1]["text"]
 assert all(re.search(H.SNACK_NOT, t) for t in ("한돈 갈빗살 떡갈비 20개", "투명 젤리 케이스", "칼리타 커피 필터", "메가커피 금액권 10% 할인", "홈블리 과탄산소다 5kg")) and not re.search(H.SNACK_NOT, "슬림떡볶이 로제맛 4개 64%할인")  # 간식 아님
 assert "<b>🍪 출출할 때 간식 2</b>" in t12s and "진라면 매운맛 20개" in t12s and "초코파이" in t12s and "커피머신" not in t12s and "하리보" not in t12s and t12s.startswith(f"<i>{H.DISCLOSURE}</i>")
-json.dump(P12 + [{"t": "2026-10-15 18:00", "text": "🔥 [G마켓] 마이핫 보온대 핫팩 150g (30개) (12,900원/무료)\n\n좋아요", "url": "u", "mid": 10},
-                 {"t": "2026-10-15 18:30", "text": "🔥 [쿠팡] 3단 자동 우산 (1+1) (21,920/무료)\n\n좋아요", "url": "u", "mid": 11},
-                 {"t": "2026-10-15 18:40", "text": "🔥 [쿠팡] 신라면 5개 (2,400원) (무료)\n\n좋아요", "url": "u", "mid": 12}], open("posts.json", "w"), ensure_ascii=False)
+json.dump(P12 + [{"t": "2026-10-15 18:00", "text": "🔥 [G마켓] 마이핫 보온대 핫팩 150g (30개) (12,900원/무료)\n\n좋아요", "url": "https://click.linkprice.com/click.php?m=gmarket&a=x", "mid": 10},
+                 {"t": "2026-10-15 18:30", "text": "🔥 [쿠팡] 3단 자동 우산 (1+1) (21,920/무료)\n\n좋아요", "url": "https://link.coupang.com/a/u11", "mid": 11},
+                 {"t": "2026-10-15 18:40", "text": "🔥 [쿠팡] 신라면 5개 (2,400원) (무료)\n\n좋아요", "url": "https://link.coupang.com/a/u12", "mid": 12}], open("posts.json", "w"), ensure_ascii=False)  # 수수료 링크(SS — 아니면 묶음 X)
 assert [(c["n"], c["p"]) for c in H.wx_deals(s12f, ["핫팩", "자동 우산", "신라면"])] == [("신라면 5개", "2,400원"), ("3단 자동 우산 (1+1)", "21,920원"), ("마이핫 보온대 핫팩 150g (30개)", "12,900원")]  # 가격 괄호만 빼고 수량·1+1은 그대로
 out12.clear()
 J12 = {"t": TK("2026-10-16 01:00")}
@@ -3858,12 +3858,12 @@ json.dump([dict(jv19, url="https://link.coupang.com/a/J19")], open(H.EVENTS, "w"
 E19 = [("22:20", "[토스] 토스 예약 (9,900원)", "https://toss.shopping/_m/P1"), ("22:30", "[네이버] 쇼핑커넥트 예약 (8,900원)", "https://naver.me/P2"), ("22:40", "[쿠팡] 일반 상품 예약 (7,900원)", "https://www.coupang.com/vp/products/3")]
 json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>{t}</b>", "url": u, "button": "b", "deal": True} for a, t, u in E19], open(H.EVENTS, "w"), ensure_ascii=False); json.dump([], open(H.POSTS, "w"))
 c19.clear(); time.time = lambda: TK(f"{D19} 22:05"); H.preview({"threply": {"t": TK(f"{D19} 21:00"), "ok": 0}})
-assert "(10/20 · 3개)" in tg19[-1][1]["text"] and "일반 상품 예약" in tg19[-1][1]["text"] and len(c19) == 1  # 채널 = 3개 그대로
+assert "(10/20 · 2개)" in tg19[-1][1]["text"] and "일반 상품 예약" not in tg19[-1][1]["text"] and len(c19) == 1  # 채널도 수수료 링크 예약만(SS 10/26 — 쿠팡 생 주소 예약 X)
 assert c19[0]["text"].startswith(H.TOSS_NOTE + "\n" + H.NAVER_NOTE + "\n\n") and "\n🌙 오늘 밤 딜 2개, 먼저 살짝 보여드려요\n\n22:20 " in c19[0]["text"] and "\n22:30 " in c19[0]["text"] and "일반 상품 예약" not in c19[0]["text"] and "이 포스팅은 쿠팡" not in c19[0]["text"]
 json.dump([{"at": f"{D19} {a}", "text": f"🔥 <b>[쿠팡] 일반 {k} (7,900원)</b>", "url": f"https://www.coupang.com/vp/products/{k}", "button": "b", "deal": True} for k, (a, _, _) in enumerate(E19)], open(H.EVENTS, "w"), ensure_ascii=False)
 c19.clear(); tg19.clear(); o19 = io.StringIO()
 with contextlib.redirect_stdout(o19): H.preview({"threply": {"t": 1, "ok": 0}})
-assert len(tg19) == 1 and c19 == [] and "threads skip (수수료 링크 아님) preview 묶음 | 항목 0개\n" in o19.getvalue()  # 수수료 0개 = Threads 미리보기 X, 채널은 그대로
+assert not tg19 and c19 == []  # 수수료 링크 예약 0개 = 미리보기 X(SS — 채널도)
 json.dump([{"at": f"{D19} 22:20", "text": "👍 <b>[쿠팡] 꾸준 핸드크림 (25,800원)</b>\n\n한 달 1,000명+ 구매", "url": "https://link.coupang.com/a/PV1", "button": "b", "deal": True},
            {"at": f"{D19} 22:25", "text": "🛒 <b>[쿠팡] 약한 샴푸 (7,900원)</b>\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://link.coupang.com/a/PV2", "button": "b", "deal": True},
            {"at": f"{D19} 22:30", "text": "🔥 <b>[쿠팡] 센 휴지 (9,900원)</b>\n\n30일 최저가", "url": "https://link.coupang.com/a/PV3", "button": "b", "deal": True}], open(H.EVENTS, "w"), ensure_ascii=False)
