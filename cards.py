@@ -898,18 +898,53 @@ def ig_slide(design, it, n, total, out):
 
 BUDDIES = ("🐻", "🐰", "🐱", "🐶", "🐹", "🐥", "🐼", "🦊")  # 인스타 카드 귀여운 동물(10/25 진우 — Noto 컬러 이모지, 음식 그림과 같은 글꼴 · 알려진 캐릭터 X) · 카드 번호대로 돌림
 BUDDY_WORDS = ("득템!", "찜 각", "가성비 굿", "장바구니 GO", "쟁여두기")  # 말풍선(효능·가격 단정 X)
+ANIMALS, ANIMAL_USED = [], []  # BB(10/26 진우 '동물들은 실사를 활용해도 좋아'): 동물 사진 스티커 차례 [(경로, 얼굴 cx, cy)] — hotdeal animals 단계가 채움(animal_deck) · 카드에 쓴 경로(셀프체크)
+
+
+def animal_deck(photos, k=0):
+    """동물 사진 차례 = photos를 k만큼 돌려서(시간마다 다른 동물부터) — 10장↑일 때만(한 넘기기 = 최대 10장 -> 같은 사진 두 번 X), 아니면 빈 목록 = 이모지."""
+    k = k % len(photos) if photos else 0
+    ANIMALS[:] = photos[k:] + photos[:k] if len(photos) >= 10 else []
+
+
+def _sticker(path, cx=0.5, cy=0.5, d=84, b=6):
+    """동물 사진 -> 동그란 스티커 RGBA(지름 d + 흰 테두리 b + 아래 옅은 그림자 — 가운데 = (x + d/2, y + d/2) 맞춤용 여백 m): 얼굴(cx, cy) 둘레 정사각형으로만 자름(늘이기·색 X) · 4배로 그려 줄임(테두리 매끈)."""
+    from PIL import ImageFilter
+    ph = Image.open(path).convert("RGB")
+    s = min(ph.size)
+    l, t = (min(max(int(c * n - s / 2), 0), n - s) for c, n in ((cx, ph.width), (cy, ph.height)))
+    S, D, m = 4, d + 2 * b, 2 * b + 2
+    out = Image.new("RGBA", ((D + 2 * m) * S,) * 2, (0, 0, 0, 0))
+    sh = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).ellipse((m * S, (m + 3) * S, (m + D) * S, (m + D + 3) * S), fill=(0, 0, 0, 70))
+    out.alpha_composite(sh.filter(ImageFilter.GaussianBlur(4 * S)))
+    ImageDraw.Draw(out).ellipse((m * S, m * S, (m + D) * S, (m + D) * S), fill="white")
+    mask = Image.new("L", (d * S,) * 2, 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, d * S - 1, d * S - 1), fill=255)
+    out.paste(ph.crop((l, t, l + s, t + s)).resize((d * S,) * 2, Image.LANCZOS), ((m + b) * S,) * 2, mask)
+    return out.resize((D + 2 * m,) * 2, Image.LANCZOS)
 
 
 def _buddy(im, k, x, y, word=""):
-    """동물 이모지(84px) 1마리를 (x, y)에 + word가 있으면 그 왼쪽에 말풍선(흰 바탕·자두 테두리·꼬리 = 동물 쪽) — 못 그리면 건너뜀(카드는 그대로)."""
+    """동물 1마리(84px)를 (x, y)에 — 사진 차례(ANIMALS)가 있으면 실사 사진 스티커(흰 테두리 6px·그림자), 없거나 못 그리면 이모지(BUDDIES) ·
+    word가 있으면 그 왼쪽에 말풍선(흰 바탕·자두 테두리·꼬리 = 동물 쪽) — 둘 다 못 그리면 건너뜀(카드는 그대로)."""
+    e = None
+    if ANIMALS:
+        p, cx, cy = ANIMALS[0]
+        ANIMALS.append(ANIMALS.pop(0))
+        try:
+            e = _sticker(p, cx, cy)
+            ANIMAL_USED.append(p)
+        except Exception as ex:
+            print("animal 스티커 X", os.path.basename(p), repr(ex)[:60])
     try:
-        e = emoji(BUDDIES[k % len(BUDDIES)], 84)
+        e = e or emoji(BUDDIES[k % len(BUDDIES)], 84)
     except Exception:
         return
     im.alpha_composite(e, (x + (84 - e.width) // 2, y + (84 - e.height) // 2))
     if word:
         d, f = ImageDraw.Draw(im), pf("Bold", 40)
-        w, bx = int(f.getlength(word)) + 44, x - 14
+        w, bx = int(f.getlength(word)) + 44, x - 14 - (6 if e.width > 84 else 0)  # 사진 스티커 = 흰 테두리만큼 왼쪽
         d.rounded_rectangle((bx - w, y + 10, bx, y + 74), radius=30, fill="white", outline=PLUM, width=3)
         d.polygon([(bx - 2, y + 30), (bx + 12, y + 42), (bx - 2, y + 54)], fill="white")
         d.line([(bx - 1, y + 30), (bx + 12, y + 42), (bx - 1, y + 54)], fill=PLUM, width=3)
@@ -1006,7 +1041,8 @@ def theme_slide(it, n, out, facts=True):
     확인할 점 1줄 · 아래 '제휴 링크(수수료) · M/D H시 확인 가격'. n = None이면 번호 X(개별 아이템 1장) · facts False = 사실·확인 줄 X(사진 더 크게 X — 자리만 비움). -> out"""
     im = Image.new("RGBA", (W, H), (255, 255, 255, 255))
     d, P = ImageDraw.Draw(im), 48
-    _contain(im, it["photo"], (P, P, W - P, 810), TTILE)
+    d.rounded_rectangle((P, P, W - P, 810), radius=28, fill=TTILE)
+    _contain(im, it["photo"], (P, P + 104, W - P, 810), TTILE)  # 위 띠 = 번호·동물·말풍선 자리(사진 안 가림 — BB 10/26 Cowork)
     if n:
         d.ellipse((P + 24, P + 24, P + 120, P + 120), fill=TORANGE)
         f = pf("ExtraBold", 56); s = str(n); d.text((P + 72 - f.getlength(s) / 2, P + 38), s, font=f, fill="white")

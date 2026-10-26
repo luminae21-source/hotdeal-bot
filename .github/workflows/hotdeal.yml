@@ -34,6 +34,11 @@ jobs:
             music
           key: seen-${{ github.run_id }}
           restore-keys: seen-
+      - uses: actions/cache@v5     # BB 인스타 카드 동물 사진(docs/cards/ANIMALS.md 표의 Pixabay 원본 — 1번만 받음 · 공개 저장소 X · Claude 확인 ok.json) — 위 캐시와 따로(위 경로 목록 = 캐시 버전이라 안 건드림)
+        with:
+          path: animals
+          key: animals-${{ github.run_id }}
+          restore-keys: animals-
       - if: ${{ inputs.restore_seen }}   # 캐시 복구(10/23 16:21 빈 seen 저장 뒤 3일 기록 되살리기): 지금 seen·토큰을 옆에 두고 예전 캐시를 받은 다음 합침
         run: mkdir -p .seen_now && cp seen.json .seen_now/ && { [ ! -f toss.json ] || cp toss.json .seen_now/; }
       - if: ${{ inputs.restore_seen }}

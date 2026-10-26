@@ -3594,13 +3594,15 @@ VOICE_STYLE = {  # (10/21 A 반말·B 음슴체 -> 10/23 TONES 4가지로, 인�
     "B": "말투 = 음슴체(핫딜 커뮤니티 글처럼 ~함·~음·~임 또는 명사로 끝냄). 말투 예시일 뿐 내용·숫자는 재료에서: 로켓 핫팩 100g 개당 가격 비교함 / 코멧 30개 8,860원 → 개당 295원으로 젤 쌈 / 150개짜리는 개당 269원 / 리뷰 1,400개 넘음"}
 
 
-def ai_json(prompt, props):
+def ai_json(prompt, props, img=None):
     """Claude 답을 JSON으로(구조화 출력 — props = 칸 이름: JSON 스키마, 전부 필수). 10/22 08:00 강제 tool_choice가 이 모델에서 400 -> 이 방식.
-    effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(부른 곳이 지금 틀로)."""
+    effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(부른 곳이 지금 틀로). img = JPEG 경로(사진 보고 답 — BB 동물 사진 확인, 계절 줄 X)."""
+    content = prompt + season_note("\n\n") if not img else [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(open(img, "rb").read()).decode()}}, {"type": "text", "text": prompt}]
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 4000, "output_config": {"effort": "low", "format": {"type": "json_schema", "schema": {
             "type": "object", "required": list(props), "additionalProperties": False, "properties": props}}},
-        "messages": [{"role": "user", "content": prompt + season_note("\n\n")}],
+        "messages": [{"role": "user", "content": content}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
     if r.get("stop_reason") != "end_turn":
         raise RuntimeError(f"Claude 답 안 끝남({r.get('stop_reason')})")
@@ -3747,8 +3749,10 @@ def rv_fields(where, ps, heads, facts=""):
     if not REVIEW or not lines:
         return
     text = "\n\n".join(h + "".join(f"\n{p[k]}" for k in RV_KEYS if isinstance(p.get(k), str) and p[k].strip()) + "".join(f"\n· {x}" for x in p.get("pts") or []) for p, h in zip(ps, heads))
-    ch = review(where, text, lines, facts or "\n".join(heads), valid=lambda o, n: not re.search(WU_BAN + (f"|{TOSS_BAN}" if where == "toss" else ""), n))  # 고친 줄도 써 본 척·효능·과장 X(토스 = 다른 몰 비교 X)
     sq = lambda v: re.sub(r"\s+", " ", v).strip() if isinstance(v, str) else v
+    units = {sq(p["unit"]) for p in ps if isinstance(p.get("unit"), str)}
+    ch = review(where, text, lines, facts or "\n".join(heads), valid=lambda o, n: not re.search(WU_BAN + (f"|{TOSS_BAN}" if where == "toss" else ""), n)  # 고친 줄도 써 본 척·효능·과장 X(토스 = 다른 몰 비교 X)
+                and (o not in units or bool(re.search(r"\d", n) and re.search(r"당|꼴", n))))  # 💡 단위가격 칸 = 고쳐도 '…당 N원' 꼴만(10/26 12:47 밀크티 — 문장으로 바뀐 줄 = 뺌)
     for p in ps:
         for k in RV_KEYS:
             if sq(p.get(k)) in ch:
@@ -4672,6 +4676,94 @@ def ig_photo(p, d, seen=None):
     except Exception as e:
         print("ig photo 없음", clip(u, 50), clip(repr(e), 80))
         return None, ""
+
+
+ANIMALS_MD, ANIMAL_DIR, ANIMAL_PREVIEW, ANIMAL_RUN, ANIMAL_TRY, ANIMAL_SEC = "docs/cards/ANIMALS.md", "animals", "docs/cards/animal_preview.jpg", 4, 3, 30  # BB: 사진 표 · Actions 캐시 폴더(원본 = 공개 저장소 X) · 390px 미리보기 · 한 실행에 새로 받아 볼 사진 수 · 사진마다 하루 실패(받기·확인) 몇 번이면 그날은 그만 · 이 단계에 쓸 초(작업 6분 제한)
+ANIMAL_PROMPT = """이 사진을 인스타 카드 구석의 동그란 동물 스티커(지름 84px)로 쓸지 확인해 주세요. 표에 적힌 동물 = {kind}.
+아래가 전부 맞을 때만 ok = true:
+① 실제 카메라로 찍은 사진(그림·3D·AI 생성처럼 보이면 X)
+② {kind}가 주인공
+③ 사람·손·사람 얼굴·상표·로고·글자·워터마크가 안 보임
+④ 배경이 밝고 단순함
+⑤ 동물 얼굴이 크게 보이고, 사진에서 가장 큰 정사각형으로 잘라도 얼굴이 다 들어감
+cx·cy = 동물 얼굴 가운데 위치(사진 폭·높이 대비 0~1). why = 안 맞으면 걸린 번호와 이유 짧게(맞으면 빈 문자열)."""
+ANIMAL_PROPS = {"ok": {"type": "boolean"}, "cx": {"type": "number"}, "cy": {"type": "number"}, "why": {"type": "string"}}
+
+
+def animal_rows():
+    """docs/cards/ANIMALS.md 표 -> [(사진 번호, 동물, 작가, 사진 페이지, 파일 주소)] — pixabay.com/photos 페이지와 같은 번호의 cdn 640px 파일인 줄만."""
+    md = open(ANIMALS_MD, encoding="utf-8").read() if os.path.exists(ANIMALS_MD) else ""
+    return [(n, a, w, p, u) for a, w, p, n, u in re.findall(
+        r"^\| (\S+) \| (\S+) \| (https://pixabay\.com/photos/[a-z0-9-]+-(\d+)/) \| (https://cdn\.pixabay\.com/photo/[\d/]+/[a-z0-9-]+-\4_640\.jpg) \|$", md, re.M)]
+
+
+def animals(seen):
+    """BB(10/26 진우 '동물들은 실사를 활용해도 좋아, 무료 이미지 활용'): 카드 동물 = ANIMALS.md 표의 Pixabay 실사 사진 스티커(cards.animal_deck — 시간마다 돌림).
+    처음 1번만 받아 Actions 캐시 animals/에(원본 재배포 X — 공개되는 건 카드에 합친 결과물만) + Claude가 1번 봄(실사·사람/글자/로고 X·얼굴 가운데 -> animals/ok.json).
+    한 실행에 ANIMAL_RUN장까지 · 받기·확인 실패는 사진마다 하루 ANIMAL_TRY번까지(실패 적은 사진부터 — 한 장이 계속 실패해도 뒤 사진은 확인, 잠깐 막혀도 다음 날 다시) · Claude 실패 = 이번 실행 그만 ·
+    OK 10장 안 되면 이모지 그대로 · 차례 = 날마다 섞고 시간마다 돌림 · OK 목록이 바뀌면 390px 미리보기."""
+    import cards
+    from PIL import Image
+    rows, okf = animal_rows(), os.path.join(ANIMAL_DIR, "ok.json")
+    ok, n, t0 = load(okf, {}), 0, time.time()
+    day = time.strftime("%Y%m%d", time.gmtime(t0 + 9 * 3600))
+    if (ok.get("fail") or {}).get("d") != day:
+        ok["fail"] = {"d": day}  # 사진마다 오늘 실패 수(받기·확인)
+    fail = ok["fail"]
+    for pid, kind, _, _, url in sorted(rows, key=lambda r: fail.get(r[0], 0)):
+        if isinstance(ok.get(pid), dict) or fail.get(pid, 0) >= ANIMAL_TRY or n >= ANIMAL_RUN or time.time() - t0 > ANIMAL_SEC:
+            continue
+        n, f = n + 1, os.path.join(ANIMAL_DIR, pid + ".jpg")
+        try:
+            if not os.path.exists(f):
+                with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=10) as r:
+                    data = r.read(5_000_000)
+                os.makedirs(ANIMAL_DIR, exist_ok=True)
+                open(f + ".part", "wb").write(data)
+                with Image.open(f + ".part") as im:
+                    im.load()  # 끝까지 풀리는 JPEG만
+                    if im.format != "JPEG":
+                        raise ValueError(im.format)
+                os.replace(f + ".part", f)
+        except Exception as e:
+            fail[pid] = fail.get(pid, 0) + 1
+            if os.path.exists(f + ".part"):
+                os.remove(f + ".part")
+            print("animal 받기 X", pid, clip(repr(e), 60))
+            continue
+        try:
+            v = ai_json(ANIMAL_PROMPT.format(kind=kind), ANIMAL_PROPS, img=f)
+            if not (0 <= v["cx"] <= 1 and 0 <= v["cy"] <= 1):  # 픽셀·%로 답함 = 잘못된 답(얼굴이 잘려 나감) -> 다시 확인
+                raise ValueError(f"얼굴 위치 {v['cx']},{v['cy']}")
+        except Exception as e:
+            fail[pid] = fail.get(pid, 0) + 1
+            print("animal 확인 X", pid, clip(repr(e), 60))
+            break
+        ok[pid] = {"ok": v["ok"] is True, "cx": float(v["cx"]), "cy": float(v["cy"]), "why": clip(v["why"], 40)}
+        print("animal", pid, kind, "OK" if ok[pid]["ok"] else "X " + ok[pid]["why"])
+    if n:
+        os.makedirs(ANIMAL_DIR, exist_ok=True)
+        json.dump(ok, open(okf, "w"), ensure_ascii=False)
+    good = [(os.path.join(ANIMAL_DIR, pid + ".jpg"), ok[pid]["cx"], ok[pid]["cy"]) for pid, *_ in rows
+            if isinstance(ok.get(pid), dict) and ok[pid]["ok"] and os.path.exists(os.path.join(ANIMAL_DIR, pid + ".jpg"))]
+    k, deck = int(time.time() // 3600), good[:]
+    random.Random(day).shuffle(deck)  # 날마다 다른 순서(같은 시각 칸도 날마다 다른 동물 · 강아지만 몰리지 않게) -> 시간마다 돌림
+    cards.animal_deck(deck, k)
+    h = hashlib.md5(" ".join(p for p, *_ in good).encode()).hexdigest()[:10] if cards.ANIMALS else ""
+    if h and (seen.get("animal_prev") or {}).get("h") != h:  # 미리보기 = 위 끝 장 카드(폰 폭) + 아래 지금 쓰는 사진 스티커 전부
+        card = Image.open(cards.theme_end("오늘의 픽", 0, os.path.join(ANIMAL_DIR, "prev.jpg"))).convert("RGB").resize((390, 488), Image.LANCZOS)
+        pv = Image.new("RGB", (390, 512 + 64 * -(-len(good) // 6)), "white")
+        pv.paste(card)
+        for i, (p, cx, cy) in enumerate(good):
+            st = cards._sticker(p, cx, cy, 48, 4)
+            pv.paste(st, (33 + i % 6 * 64 - st.width // 2, 536 + i // 6 * 64 - st.height // 2), st)
+        pv.save(ANIMAL_PREVIEW, quality=88)
+        cards.animal_deck(deck, k)  # 미리보기 카드가 쓴 차례 되돌림
+        print("animal 미리보기", len(good), "장")
+    if h:
+        seen["animal_prev"] = {"t": time.time(), "h": h}
+    if n:
+        print("animal 사진", len(good), "/", len(rows), "· 카드", "사진" if h else "이모지")
 
 
 def ig_items(seen, ps, photos=True):
@@ -8397,7 +8489,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:

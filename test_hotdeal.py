@@ -20,6 +20,7 @@ ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는
 tph0, H.TOSS_PHOTO = H.TOSS_PHOTO, False  # 토스 사진 글(10/26 켬 — 텔레그램·Threads만)은 맨 아래 9-66·9-69에서만
 thk0, H.TH_HOOK = H.TH_HOOK, False  # Threads 첫 줄 훅(U 10/26)은 맨 아래 9-74에서만
 dpa0, H.DPOST_AT = H.DPOST_AT, (99, 0)  # 📉 가격 내려간 상품 글(20:40)은 맨 아래 9-71에서만
+anr0, H.ANIMAL_RUN = H.ANIMAL_RUN, 0  # BB 동물 사진 받기·Claude 확인(10/26)은 맨 아래 9-83에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -732,7 +733,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3366,7 +3367,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -8901,4 +8902,140 @@ assert cp82["title"] == "생활·살림 고민될 때,\n지금 살 만한 1가�
 (time.time, H.ai_review, H.ai_voice, H.ai_json, H.http, H.REVIEW, ak82, H.random, H.TH_HOOK, rn82, H.tg, H.th_post, H.EVENTS, H.deal_post, H.draft, H.th_topic) = sv82
 H.RUN.clear(); H.RUN.update(rn82); H.E.pop("ANTHROPIC_API_KEY", None) if ak82 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak82)
 shutil.rmtree(d82)
+# 9-83) BB 인스타 카드 동물 = Pixabay 실사 사진 스티커(10/26 진우 '동물들은 실사를 활용해도 좋아, 무료 이미지 활용'): docs/cards/ANIMALS.md 표(사진 페이지·작가·동물)의 사진만 ·
+#       원본 = Actions 캐시 animals/(공개 저장소 X) · Claude 1번 확인(ok.json) · 이모지 자리에 흰 테두리 6px·그림자 동그라미 · 한 넘기기 같은 사진 X · 시간마다 돌림 · 못 받으면 이모지 · 390px 미리보기
+import cards as C83
+from PIL import Image as I83, ImageDraw as D83
+RD83, mdr83 = os.path.dirname(os.path.abspath(H.__file__)), H.ANIMALS_MD  # 셀프체크는 임시 폴더에서 돎 -> 저장소 파일은 절대 경로로
+H.ANIMALS_MD = os.path.join(RD83, mdr83)
+rows83, md83 = H.animal_rows(), open(H.ANIMALS_MD, encoding="utf-8").read()
+assert 16 <= len(rows83) <= 24 and len(rows83) == len(re.findall(r"^\| (?!동물 \|)", md83, re.M)), len(rows83)  # 표 줄이 하나도 안 빠지고 다 읽힘(16~24장 — 페이지·같은 번호 cdn 파일)
+assert len({r[0] for r in rows83}) == len(rows83) and all(r[2] and "/illustrations/" not in r[3] for r in rows83)  # 사진 번호 겹침 X · 작가 있음 · 그림(illustrations) X
+k83 = H.collections.Counter(r[1] for r in rows83)
+assert set(k83) <= {"강아지", "고양이", "토끼", "햄스터", "병아리"} and k83["강아지"] + k83["고양이"] >= len(rows83) * 0.6 and all(k83[a] for a in ("토끼", "햄스터", "병아리")), k83  # 강아지·고양이 위주 + 토끼·햄스터·병아리 조금
+assert "Pixabay Content License" in md83 and mdr83 == "docs/cards/ANIMALS.md" and not H.ANIMAL_DIR.startswith("docs") and H.ANIMAL_PREVIEW == "docs/cards/animal_preview.jpg"  # 원본 = 캐시만(공개 docs/ X) · 미리보기 = 사이트
+yml83 = open(os.path.join(RD83, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert "path: |\n            seen.json\n            fonts\n            toss.json\n            music\n          key: seen-" in yml83 and "path: animals\n          key: animals-${{ github.run_id }}\n          restore-keys: animals-" in yml83  # 기존 캐시 경로 목록 그대로(= 캐시 버전) + 따로 캐시
+d83 = tempfile.mkdtemp()
+md0_83, H.ANIMALS_MD = H.ANIMALS_MD, f"{d83}/A.md"
+open(H.ANIMALS_MD, "w", encoding="utf-8").write("| 고양이 | a | https://pixabay.com/photos/cat-1/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-1_640.jpg |\n| 고양이 | b | https://pixabay.com/photos/cat-2/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-3_640.jpg |\n| 고양이 | c | https://pixabay.com/illustrations/cat-4/ | https://cdn.pixabay.com/photo/2020/01/01/00/00/cat-4_640.jpg |\n")
+assert [r[0] for r in H.animal_rows()] == ["1"]; H.ANIMALS_MD = md0_83  # 페이지와 다른 번호 파일·illustrations(그림) 줄 = 안 읽음
+sv83 = (H.ANIMAL_DIR, H.ANIMAL_PREVIEW, H.ANIMAL_RUN, H.urllib.request.urlopen, H.ai_json, H.http, H.E.get("ANTHROPIC_API_KEY"), time.time)
+H.ANIMAL_DIR, H.ANIMAL_PREVIEW, H.ANIMAL_RUN = f"{d83}/animals", f"{d83}/animal_preview.jpg", 4
+def jpg83(i, fmt="JPEG"):
+    b, im = io.BytesIO(), I83.new("RGB", (640, 427), (225, 225, 225))
+    D83.Draw(im).ellipse((280, 130, 440, 290), fill=(120 + i, 90, 40))  # 얼굴 = 가운데 (360, 210) -> cx 0.5625 · cy 0.49
+    im.save(b, fmt)
+    return b.getvalue()
+odd83, got83, ai83, bad83, mode83 = [], [], [], {"2785063": "PNG", "4316938": "down"}, ["fail"]  # 첫 사진 = PNG(JPEG만), 둘째 = 못 받음(403)
+def uo83(req, timeout=None):
+    got83.append(req.full_url); pid = re.search(r"-(\d+)_640\.jpg$", req.full_url)[1]
+    if bad83.get(pid) == "down":
+        raise OSError("403")
+    return io.BytesIO(jpg83(int(pid) % 50, bad83.get(pid, "JPEG")))
+def aj83(prompt, props, img=None):
+    ai83.append((prompt, img)); assert img and os.path.exists(img) and set(props) == {"ok", "cx", "cy", "why"}, (img, props)
+    if mode83:
+        raise RuntimeError("크레딧 바닥")
+    if img.endswith("4732766.jpg") and not odd83:
+        odd83.append(1)
+        return {"ok": True, "cx": 213, "cy": 180, "why": ""}  # 픽셀로 답함(0~1 밖) = 잘못된 답 -> 다시 확인
+    return {"ok": not img.endswith("3071334.jpg"), "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손" if img.endswith("3071334.jpg") else ""}
+H.urllib.request.urlopen, H.ai_json, s83 = uo83, aj83, {}
+sec83, H.ANIMAL_SEC = H.ANIMAL_SEC, -1; H.animals(s83)
+assert got83 == [] and ai83 == []; H.ANIMAL_SEC = sec83  # 이 단계 시간(30초) 넘으면 새 사진 X(작업 6분 제한)
+time.time = lambda: TK("2026-10-26 10:00")
+H.animals(s83)  # 1번째 실행: 받기 실패 2장(PNG·403) = 오늘 1번씩 · Claude 실패 -> 오늘 1번 + 이번 실행 그만
+ok83 = json.load(open(f"{d83}/animals/ok.json"))
+assert ok83 == {"fail": {"d": "20261026", "2785063": 1, "4316938": 1, "3071334": 1}} and len(got83) == 3 and len(ai83) == 1 and os.path.exists(f"{d83}/animals/3071334.jpg"), (ok83, got83)
+assert not os.path.exists(f"{d83}/animals/2785063.jpg") and not os.path.exists(f"{d83}/animals/2785063.jpg.part") and C83.ANIMALS == [] and s83 == {}  # PNG = 안 씀(조각도 지움) · 10장 안 됨 = 이모지
+mode83.clear()
+H.animals(s83)  # 2번째: 실패 없는 사진부터(1381186·6202621 OK) · 4732766 = 픽셀 좌표 답 -> 실패 1번 + 그만
+ok83 = json.load(open(f"{d83}/animals/ok.json"))
+assert ok83["1381186"]["ok"] is True and ok83["6202621"]["ok"] is True and "4732766" not in ok83 and ok83["fail"]["4732766"] == 1 and "3071334" not in ok83, ok83
+assert "animal_prev" not in s83 and not os.path.exists(H.ANIMAL_PREVIEW) and len(C83.ANIMALS) == 0  # OK 2장 = 미리보기·사진 X(10장↑부터)
+n0_83 = len(ai83); H.animals(s83)
+assert len(ai83) == n0_83 + H.ANIMAL_RUN  # 실패 없으면 한 실행에 딱 ANIMAL_RUN장(4)
+for _ in range(10):
+    H.animals(s83)
+ok83, n83 = json.load(open(f"{d83}/animals/ok.json")), len(got83)
+assert ok83["fail"]["2785063"] == ok83["fail"]["4316938"] == H.ANIMAL_TRY and sum("4316938" in u for u in got83) == H.ANIMAL_TRY, ok83  # 받기 실패 = 사진마다 하루 3번까지
+assert ok83["3071334"] == {"ok": False, "cx": 0.5625, "cy": 0.49, "why": "③ 사람 손"} and sum("3071334" in u for u in got83) == 1 and "표에 적힌 동물 = 강아지" in ai83[2][0] and "실제 카메라로 찍은 사진" in ai83[2][0]  # 처음 1번만 받음(Claude 실패해도) · 동물 이름·실사 조건
+assert sum(isinstance(ok83.get(r[0]), dict) for r in rows83) == len(rows83) - 2 and len(C83.ANIMALS) == len(rows83) - 3  # 나머지 다 확인 · Claude X(사람 손) = 안 씀
+assert (ok83["4732766"]["cx"], ok83["4732766"]["cy"]) == (0.5625, 0.49) and "x_post, animals, curation, drop_post" in __import__("inspect").getsource(H.main)  # 잘못된 좌표 = 다시 확인해서 맞는 답 · 카드 만드는 단계들 앞
+pv83 = I83.open(H.ANIMAL_PREVIEW)
+assert pv83.size == (390, 512 + 64 * -(-(len(rows83) - 3) // 6)) and s83["animal_prev"]["h"], pv83.size  # 390px 미리보기(끝 장 카드 + 쓰는 스티커 전부)
+os.utime(H.ANIMAL_PREVIEW, (1, 1))
+H.animals(s83)
+assert len(got83) == n83 and os.path.getmtime(H.ANIMAL_PREVIEW) == 1  # 오늘 다 끝남 = 네트워크 X · 목록 그대로 = 미리보기 다시 X
+mdf83 = {os.path.join(H.ANIMAL_DIR, r[0] + ".jpg") for r in rows83}
+open(f"{d83}/animals/999.jpg", "wb").write(jpg83(9)); ok83["999"] = {"ok": True, "cx": 0.5, "cy": 0.5, "why": ""}; json.dump(ok83, open(f"{d83}/animals/ok.json", "w"))
+H.animals(s83)
+assert {p for p, *_ in C83.ANIMALS} <= mdf83 and os.path.getmtime(H.ANIMAL_PREVIEW) == 1  # 표에 없는 사진(999) = 캐시에 OK로 있어도 안 씀
+os.rename(f"{d83}/animals/1381186.jpg", f"{d83}/x.jpg"); H.animals(s83)
+assert len(C83.ANIMALS) == len(rows83) - 4 and len(got83) == n83; os.rename(f"{d83}/x.jpg", f"{d83}/animals/1381186.jpg")  # 캐시에 파일 없는 사진 = 안 씀(네트워크 X)
+time.time = lambda: TK("2026-10-27 10:00")
+H.animals(s83)
+assert sum("4316938" in u for u in got83) == H.ANIMAL_TRY + 1 and sum("2785063" in u for u in got83) == H.ANIMAL_TRY + 1 and json.load(open(f"{d83}/animals/ok.json"))["fail"]["d"] == "20261027"  # 다음 날 = 실패 사진 다시(잠깐 막힌 CDN)
+kind83 = {os.path.join(H.ANIMAL_DIR, r[0] + ".jpg"): r[1] for r in rows83}
+time.time = lambda: TK("2026-10-26 13:05")
+s83.pop("animal_prev"); H.animals(s83); d13 = [p for p, *_ in C83.ANIMALS]  # 미리보기 다시 만든 실행도 차례 그대로
+time.time = lambda: TK("2026-10-26 14:05")
+H.animals(s83)
+assert C83.ANIMALS[0][0] == d13[1] and C83.ANIMALS[-1][0] == d13[0] and sorted(C83.ANIMALS) == sorted(set(C83.ANIMALS))  # 같은 날 = 시간마다 다음 동물부터
+time.time = lambda: TK("2026-10-27 13:05")
+H.animals(s83)
+d27 = [p for p, *_ in C83.ANIMALS]
+assert " ".join(d27) not in " ".join(d13 + d13) and d27[0] != d13[0] and len({kind83[p] for p in d13[:7]}) > 1  # 다음 날 같은 시각 = 다른 순서·다른 첫 동물 · 7장 넘기기가 강아지만 X(날마다 섞음)
+time.time = sv83[7]
+pr83 = f"{d83}/prod.jpg"; I83.new("RGB", (900, 500), (40, 160, 90)).save(pr83)
+it83 = {"name": "곰곰 특란 30구", "short": "특란 30구", "price": "6,990원", "photo": pr83, "src": "coupang", "when": "10/26 9시", "check": ""}
+C83.ANIMAL_USED.clear()
+for n in range(1, 10):
+    C83.ig_photo_card(it83, n, f"{d83}/c/{n:02d}.jpg")
+C83.ig_cover("A", [it83] * 3, "10월 26일 월요일", "오늘의 핫딜\n9가지", f"{d83}/c/cover.jpg")
+assert len(C83.ANIMAL_USED) == 10 == len(set(C83.ANIMAL_USED)) and set(C83.ANIMAL_USED) <= mdf83, C83.ANIMAL_USED  # 셀프체크: 한 넘기기(10장) 같은 사진 X · 표에 없는 파일을 카드가 쓰면 실패
+px83 = I83.open(f"{d83}/c/01.jpg").convert("RGB")
+c83, r83 = px83.getpixel((982, 88)), px83.getpixel((982, 88 - 45))
+assert abs(c83[1] - 90) < 30 and abs(c83[2] - 40) < 30 and c83[0] > 100 and min(r83) > 225, (c83, r83)  # 스티커 가운데 = 동물 얼굴(얼굴 둘레로 자름) · 반지름 45 = 흰 테두리(84/2 + 6 안)
+st83 = C83._sticker(C83.ANIMALS[0][0], 0.5625, 0.49)
+lf83 = I83.new("RGB", (900, 300), (225, 225, 225)); D83.Draw(lf83).ellipse((90, 90, 210, 210), fill=(200, 30, 30)); lf83.save(f"{d83}/lf.jpg")
+assert C83._sticker(f"{d83}/lf.jpg", 1 / 6, 0.5).getpixel((62, 62))[1] < 100  # 얼굴이 왼쪽 끝이어도 얼굴 둘레 정사각형(눌러 펴기 X)
+assert st83.size == (124, 124) and st83.getpixel((0, 0))[3] == 0 and st83.getpixel((62, 62))[:3][1] < 120  # 84 + 테두리 6 x2 + 그림자 여백 · 바깥 = 투명
+I83.new("RGB", (500, 500), (40, 160, 90)).save(f"{d83}/sq.jpg")
+sl83 = I83.open(C83.theme_slide({**it83, "photo": f"{d83}/sq.jpg"}, 1, f"{d83}/c/slide.jpg")).convert("RGB")
+ys83 = [y for y in range(48, 820) if sl83.getpixel((540, y)) == (40, 160, 90) or max(abs(a - b) for a, b in zip(sl83.getpixel((540, y)), (40, 160, 90))) < 12]
+assert ys83 and ys83[0] >= 48 + 24 + 84 + 6, ys83[:1]  # 테마 상품 장: 사진은 번호·동물·말풍선 띠 아래(상품 사진 안 가림)
+C83.ANIMALS[:] = [(f"{d83}/없는.jpg", 0.5, 0.5)] * 10; C83.ANIMAL_USED.clear()
+C83.ig_photo_card(it83, 1, f"{d83}/c/x.jpg")
+C83.animal_deck([], 3); C83.ig_photo_card(it83, 2, f"{d83}/c/y.jpg")
+assert C83.ANIMAL_USED == [] and os.path.exists(f"{d83}/c/x.jpg") and os.path.exists(f"{d83}/c/y.jpg") and C83.ANIMALS == []  # 사진 못 그림·사진 없음 = 이모지(카드는 그대로)
+C83.animal_deck([(f"p{i}", 0.5, 0.5) for i in range(12)], 17)
+assert [p for p, *_ in C83.ANIMALS][:2] == ["p5", "p6"] and len(C83.ANIMALS) == 12  # k(시간)만큼 돌림
+C83.animal_deck([(f"p{i}", 0.5, 0.5) for i in range(9)], 3)
+assert C83.ANIMALS == []  # 9장 = 한 넘기기(최대 10장)에 겹칠 수 있음 -> 이모지
+assert H.ig_photo({"url": "https://toss.shopping/_m/A", "img": "https://static.toss.im/a.jpg", "text": "💙 토스"}, f"{d83}/ig") == (None, "")  # 토스 사진 = 카드에 못 들어옴(동물 사진과 한 장에 안 섞임)
+bd83 = []
+rs83 = H.RUN.get("season"); H.RUN["season"] = {"line": "오늘 10/26(월) · 가을"}
+H.http, H.E["ANTHROPIC_API_KEY"] = (lambda url, body=None, headers=None, method=None: bd83.append(body) or json.dumps({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"ok": true, "cx": 0.5, "cy": 0.4, "why": ""}'}]})), "k"
+im83 = f"{d83}/animals/1381186.jpg"
+v83 = globals().get("AI_JSON", sv83[4])(H.ANIMAL_PROMPT.format(kind="고양이"), H.ANIMAL_PROPS, img=im83)
+c83 = bd83[0]["messages"][0]["content"]
+assert v83["ok"] is True and c83[0]["type"] == "image" and c83[0]["source"]["media_type"] == "image/jpeg" and base64.b64decode(c83[0]["source"]["data"]) == open(im83, "rb").read()
+assert c83[1] == {"type": "text", "text": H.ANIMAL_PROMPT.format(kind="고양이")} and bd83[0]["output_config"]["format"]["schema"]["required"] == ["ok", "cx", "cy", "why"]  # Claude가 사진을 보고 답(계절 줄 X)
+(H.ANIMAL_DIR, H.ANIMAL_PREVIEW, H.ANIMAL_RUN, H.urllib.request.urlopen, H.ai_json, H.http, ak83, time.time) = sv83
+H.RUN.pop("season", None) if rs83 is None else H.RUN.__setitem__("season", rs83)
+H.E.pop("ANTHROPIC_API_KEY", None) if ak83 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak83)
+C83.ANIMALS.clear(); C83.ANIMAL_USED.clear(); H.ANIMALS_MD = mdr83
+shutil.rmtree(d83)
+# Z 고침(10/26 12:47 채널 밀크티 글 '💡 단위가격 쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠다'): 재검토가 단위가격 칸을 문장으로 고치면 그 칸 뺌(…당 N원 꼴만 고침 OK)
+sv83z = (H.ai_review, H.E.get("ANTHROPIC_API_KEY"), H.RUN.get("rvw"))
+H.E["ANTHROPIC_API_KEY"], H.RUN["rvw"] = "k", {}
+H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "1L당 1,500원", "new": "쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠다"}, {"line": "500ml 2개 9,800원 → 1개당 4,900원", "new": "500ml 1개당 4,900원꼴"}]}
+pz83 = [{"comment": "광동 밀크티 베이스 1L가 1,500원이야", "unit": "1L당 1,500원"}, {"comment": "보리차 2개 9,800원", "unit": "500ml 2개 9,800원 → 1개당 4,900원"}]
+H.rv_fields("ch", pz83, ["[네이버] 광동 밀크티용 베이스 1L 1개 (1,500원/네멤무배)", "[쿠팡] 보리차 500ml 2개 (9,800원)"])
+assert pz83[0]["unit"] == "" and pz83[0]["comment"] == "광동 밀크티 베이스 1L가 1,500원이야" and pz83[1]["unit"] == "500ml 1개당 4,900원꼴", pz83  # 문장 = 칸 뺌 · 단위가격 꼴 = 고침
+H.ai_review, ak83z, rw83z = sv83z
+H.E.pop("ANTHROPIC_API_KEY", None) if ak83z is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak83z)
+H.RUN.pop("rvw", None) if rw83z is None else H.RUN.__setitem__("rvw", rw83z)
 print("OK: 모든 셀프체크 통과")
