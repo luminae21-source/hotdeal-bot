@@ -5998,10 +5998,10 @@ at48("2026-10-27 10:00"); H.cp_links(s48); assert len(dl48) == 5 and len(dm48) =
 at48("2026-11-01 10:29"); H.cp_links(s48); assert len(dl48) == 5
 at48("2026-11-01 10:31"); H.cp_links(s48); assert dl48[-1] == [B48] and len(dl48) == 6 and len(dm48) == 2 and s48["cpdl"]["f"][B48] == ["2026-10-24", "2026-10-25", "2026-11-01"]  # 7일 뒤 다시(나중에 되면 파트너스 링크로) · 3번째부터 알림 X
 assert json.load(open(H.CP_FAIL)) == [{"pid": "77777", "n": "제휴 안 되는 세제", "f": ["2026-10-24", "2026-10-25", "2026-11-01"], "x": "11-01 10:31", "e": "400", "m": "①url convert failed"}]  # 아직 안 바뀐 것만(Cowork 점검 — 가격 X)
-C48 = [f"https://www.coupang.com/vp/products/6{k:03d}" for k in range(100)]  # (10/25 리뷰) 실패했던 상품이 채널 예약이 되면 = 1개씩 뒤로 X, 채널 먼저(첫 호출)
+C48 = [f"https://www.coupang.com/vp/products/6{k:03d}" for k in range(200)]  # (10/25 리뷰) 실패했던 상품이 채널 예약이 되면 = 1개씩 뒤로 X, 채널 먼저(첫 호출)
 json.dump([{"at": "2026-11-09 09:00", "shelf": True, "url": u, "text": f"👍 <b>[쿠팡] 새 진열 {u[-3:]} (1,000원)</b>"} for u in C48] + [{"at": "2026-11-09 12:00", "deal": True, "url": B48, "text": "🔥 <b>[쿠팡] 제휴 안 되는 세제 (1,000원)</b>"}], open("events.json", "w"))
 H.http = lambda url, body=None, headers=None, method=None: dl48.append(list(body["coupangUrls"])) or json.dumps({"rCode": "0", "data": [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/g" + u[-4:]} for u in body["coupangUrls"]]})
-n48 = len(dl48); at48("2026-11-09 11:50"); H.cp_links(s48); assert B48 in dl48[n48] and len(dl48) - n48 == 4, dl48[n48:]  # 채널 묶음(B48) 먼저 · 진열까지 실행마다 CP_RUN-2번
+n48 = len(dl48); at48("2026-11-09 11:50"); H.cp_links(s48); assert B48 in dl48[n48] and len(dl48) - n48 == H.CP_RUN, dl48[n48:]  # 채널 묶음(B48) 먼저 · 한 번도 안 해 본 진열 = 이 실행 몫(CP_RUN)까지(VV — 예전 CP_RUN-2)
 s48["srl"] = {"t": 0, "now": C48}; n48 = len(dl48); at48("2026-11-09 12:50"); H.RUN.pop("cpn", None); H.cp_links(s48); assert len(dl48) == n48  # (10/25 21시) 1번 바로 변환 중인 진열 = site_relink 몫(같은 상품 두 번 X)
 s48.pop("srl"); H.RUN.pop("cpn", None); H.cp_links(s48); assert len(dl48) > n48
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv48[:5]; H.RUN.clear(); H.RUN.update(sv48[5]); os.chdir(cwd48)
@@ -6016,7 +6016,7 @@ def http49(url, body=None, headers=None, method=None):
 H.http, H.tg, s49 = http49, lambda m, **p: {"message_id": 1}, {}
 for k49 in range(3):
     at48(f"2026-10-24 1{k49}:00"); H.cp_links(s49)
-    assert len(dl49) <= 4 * (k49 + 1), dl49  # 진열만 = 실행마다 CP_RUN-2번까지
+    assert len(dl49) <= H.CP_RUN * (k49 + 1), dl49  # 한 번도 안 해 본 진열 = 실행마다 이 실행 몫(CP_RUN)까지(VV — 예전 CP_RUN-2)
 cl49 = json.load(open(H.CP_LINKS))
 assert len(cl49) == 44 and B49 not in cl49 and s49["cpdl"]["f"][B49] == ["2026-10-24"] and not s49["cpdl"]["pq"] and dl49 == [20, 10, 5, 2, 1, 1, 3, 5, 10, 5, 20], (len(cl49), dl49, s49["cpdl"].get("pq"))  # 3번 실행에 좋은 44개 다 + 나쁜 1개 찾음(진열 실패 날짜 → 하루 1번 알림) · 남은 조각 X
 H.http, H.tg, time.time, H.HAS_CP, H.EVENTS = sv49[:5]; H.RUN.clear(); H.RUN.update(sv49[5]); os.chdir(cwd49)
@@ -7242,7 +7242,7 @@ H.HAS_CP, sr65b = True, {}; json.dump([{**q, "url": f"https://www.coupang.com/vp
 for k65 in range(5): D65[f"https://www.coupang.com/vp/products/{900 + k65}"] = ValueError("coupang rCode 400 url convert failed")
 n65 = len(r65); H.RUN["cpn"] = [0, 0]; H.site_relink(sr65b); assert len(r65) - n65 == 2 and H.RUN["cpn"][0] == 2, r65[n65:]  # 10/25 22:30 점검: site_relink = cp_links보다 먼저 · 실행마다 2번(CP_RUN-4) — 나머지 = 진열 묶음·가격 확인·골드박스
 n65 = len(r65); H.RUN["cpn"] = [3, 0]; H.site_relink(sr65b); assert len(r65) == n65  # 이미 2번↑ 썼으면 X
-assert "if RUN.get(\"cpn\", [0])[0] >= CP_RUN - 2 and not chan & set(b):" in inspect.getsource(H.cp_links)  # cp_links 진열 묶음 = 이 실행 전체 호출 수로(site_relink 몫 포함)
+assert "if c0 >= min(CP_RUN - 2, r0 + (max(0, CP_RUN - 2 - r0) + 1) // 2):" in inspect.getsource(H.cp_links) and "c0 = set(b) <= new0 - again, RUN.get(\"cpn\", [0])[0]" in inspect.getsource(H.cp_links)  # cp_links 재시도 = 이 실행 전체 호출 수로(site_relink 몫 포함) · 새 진열 = 이 실행 몫까지(VV)
 # 채널 글 상태 = url0(사이트만 바꾼 글): 답장 없이 링크만 보내면 그 채널 글(아직 생 주소)을 찾음 · 채널 글을 고치면 url0·nosite 지움
 po65c = json.load(open("posts.json")); po65c[0].update(t=time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), cp=77); json.dump(po65c, open("posts.json", "w"))
 assert (H.pending_copy("https://link.coupang.com/a/NEW") or {}).get("mid") == 1  # 사이트 url은 파트너스여도 채널 글은 생 주소(url0) = 아직 바꿀 글
