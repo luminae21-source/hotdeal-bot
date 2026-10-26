@@ -948,17 +948,22 @@ KIND_NOT = (r"미니|소형|중형|대형|특대형|데일리|여성|남성|여�
             r"화이트|블랙|그레이|베이지|아이보리|네이비|핑크|블루|레드|그린|브라운|실버|골드|라이트")  # 종류가 아닌 꾸밈·색 낱말(같은 종류 셈 X — 10/26 실제 진열·딜 400개 짝 비교)
 
 
+KIND_ALIAS = {"온풍기": "히터", "라디에이터": "히터", "난로": "히터", "파워젤": "세제"}  # 이름이 달라도 같은 종류(KK 재검토 — 10/24·10/27 실제 리스트: 히터·온풍기, 액상세제·파워젤)
+
+
 def kind_words(name):
     """같은 종류 셈 낱말: 쿠팡 '상품, 모델명, 색'은 쉼표 앞만 · 괄호·꾸밈말(TH_MOD·IG_KIND_SKIP·KIND_NOT)·숫자 붙은 단위·브랜드(첫 낱말) 빼고 두 글자↑ 한글 낱말."""
     ws = [w for w in re.findall(r"(?<![0-9가-힣])[가-힣]{2,}", re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", re.sub(TH_MOD, " ", name.split(",")[0]))) if not re.fullmatch(IG_KIND_SKIP, w)]  # 숫자 붙은 단위(100개입·3단조절) X
-    return [w for w in ws[1:] or ws if not re.fullmatch(KIND_NOT, w)]
+    return [next((v for k, v in KIND_ALIAS.items() if w.endswith(k)), w) for w in ws[1:] or ws if not re.fullmatch(KIND_NOT, w)]
 
 
 def same_kind(a, b):
     """같은 종류(KK — 리스트 안 2개 X, '성경김 2개'): 두 이름의 종류 낱말 중 하나라도 끝 두 글자가 같음(히터·전기히터·카본히터, 진라면·신라면, 세탁세제·주방세제 — 긴 쿠팡 이름
     '컨벡터 히터 스탠드 3단조절'도) 또는 끝 글자가 같은 한 글자 품목(KIND_ONE — 재래김·파래김). 브랜드만 같으면 다른 종류(코멧 화장지·코멧 핫팩).
     shortcut: 끝 두 글자라 선풍기·온풍기도 같은 종류로 봄 — 리스트에서 다음 후보로 넘어갈 뿐이라 둠."""
-    return any(u[-2:] == v[-2:] or u[-1] == v[-1] and u[-1] in KIND_ONE for u in kind_words(a) for v in kind_words(b))
+    first = lambda n: (re.findall(r"(?<![0-9가-힣])[가-힣]{2,}", n.split(",")[0]) or [""])[0]  # 품목이 맨 앞인 이름('계란 한판 30구' — 첫 낱말을 브랜드로 빼서 놓치던 것)
+    ka, kb = kind_words(a), kind_words(b)
+    return first(a) in kb or first(b) in ka or any(u[-2:] == v[-2:] or u[-1] == v[-1] and u[-1] in KIND_ONE for u in ka for v in kb)
 
 
 def short_name(t):

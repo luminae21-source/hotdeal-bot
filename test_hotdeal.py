@@ -1648,7 +1648,7 @@ assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow spons
 assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(*S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(*S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
 assert [S.link_name({"text": f"🔥 {t}"}) for t in ("[토스] 해표 올리브유 500ml 4병 22,900원", "[토스] 마스크팩 10매 6,900원 (무배)", "[쿠팡] 1000원샵 키링 (1,000원)", "[G마켓] 물티슈 20매 12팩(8900/무배)", "[쿠팡] 육개장 사발면 24개/쿠폰가 16,830원, 첫구매 14,800원",
                                                        "[11번가] 휴지 30롤 22,900원/무료", "[옥션] 카스 제로 2캔 [3,000원/네멤무료]", "[쿠팡] 100원 동전지갑")] == ["해표 올리브유 500ml 4병", "마스크팩 10매", "1000원샵 키링", "물티슈 20매 12팩", "육개장 사발면 24개", "휴지 30롤", "카스 제로 2캔", "100원 동전지갑"]  # 이름 끝 가격 = 시각 없는 가격 X
-BIG = [(i, lp(f"{["휴지", "라면", "세탁세제", "고무장갑", "과자", "생리대", "핫팩", "양말"][i % 8]}{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]  # MM: 앞 12칸 = 품목 칸 2개까지 -> 8품목
+BIG = [(i, lp(f"{["휴지", "라면", "세탁세제", "고무장갑", "과자", "에어프라이어", "핫팩", "양말"][i % 8]}{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]  # MM: 앞 12칸 = 품목 칸 2개까지 -> 8품목
 rw3, n3 = S.link_tabs(S.link_pool(BIG, "2026-10-25"))
 assert n3["all"] == 12 and all(v <= 12 for v in n3.values()) and len({x[0] for x in rw3}) == len(rw3) and [x[0] for x in rw3 if "all" in x[3]] == list(range(12))
 big3 = S.link_page("ab", pp, BIG, "docs3", today="2026-10-25")
@@ -9523,6 +9523,8 @@ assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][
 assert H.same_kind("성경김 지도표 재래김", "성경김 파래김") and H.same_kind("양반 전장김", "광천 도시락김") and H.same_kind("홈플래닛 2단 석영관 히터", "모리츠 5방향 전기히터") and H.same_kind("홈플래닛 2단 석영관 히터, NDF2216, 화이트", "신일 4단 석영관 히터, SEH-NL20BK, 블랙") and H.same_kind("한일전기 컨벡터 히터 스탠드 2kw 3단조절", "신일 프리미엄 컨벡터 히터 스탠드 벽걸이 겸용") \
     and not H.same_kind("니코 미니 오일 라디에이터, WH-M05", "청우식품 미니 참깨스틱, 370g, 2개") and not H.same_kind("티키 입는 오버나이트 대형 8개입", "충성 포켓용 핫팩 대형 160g, 30개") and not H.same_kind("홈플래닛 히터, NDFKB2401, 화이트", "코멧 키친타월, 6롤, 화이트") \
     and H.same_kind("오뚜기 진라면 멀티팩", "농심 신라면 5개") and not H.same_kind("크린랩 니트릴장갑 100개입", "웰킵스 마스크 1개입") and not H.same_kind("코튼 화장솜 500매입", "숨37 패드 90매입") and not H.same_kind("신일 히터 화이트", "코멧 키친타월 화이트") \
+    and H.same_kind("홈플래닛 2단 석영관 히터", "위닉스 PTC 세라믹 온풍기, FFC300") and H.same_kind("보스코 전기 라디에이터 15핀", "신일 세라믹 히터") and H.same_kind("액츠 실내건조 액상세제 3.2L", "퍼실 딥클린 파워젤 2.5L") \
+    and H.same_kind("계란 한판 30구", "맛꾼 계란 대란 30구") and H.same_kind("맛꾼 계란 대란 30구", "계란 한판 30구") \
     and not H.same_kind("코멧 화장지 30롤", "코멧 핫팩 100g 30개") and not H.same_kind("곰곰 국산 햅쌀 10kg", "곰곰 우유 1L") and not H.same_kind("동원 참치", "")  # 브랜드 같아도 품목 다르면 OK
 # (리뷰) 긴 링크(링크프라이스 ~260자) 딜이 앞에 있어도 3개 채움(그 딜은 빠짐) · 💄 = ②~④ 채움 셈 X(💄 칸으로)
 LP88 = "https://click.linkprice.com/click.php?m=gmarket&a=A100&l=9999&u_id=x&tu=" + "a" * 190
