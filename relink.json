@@ -1,5 +1,5 @@
 {
- "left_now": 33,
+ "left_now": 32,
  "ok": {
   "auction": 7
  },
@@ -388,6 +388,13 @@
    "n": "이니스프리 화산송이 바하 모공 클렌징폼 플러스 200g",
    "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
    "x": "10-26 09:43"
+  },
+  {
+   "k": "진열",
+   "pid": "9444814364",
+   "n": "화이트 수퍼흡수 맥시 슬림 생리대 중형 32개입 2개",
+   "e": "①rCode 400 url convert failed · ②rCode 400 url convert failed",
+   "x": "10-26 09:57"
   }
  ]
 }
