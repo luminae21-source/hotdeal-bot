@@ -27,6 +27,7 @@ THREADS = "https://www.threads.com/@hotdealpick.kr"
 GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 링크: 골드박스 페이지(coupang.com/np/goldbox), 10/6 생성. 클릭 후 24시간 안 쿠팡 구매가 실적
 CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
+ALT_NAMES = ["핫딜 픽", "hotdealpick", "hotdealpick.kr"]  # TT 10/27: JSON-LD alternateName(띄어쓰기·영문·주소로 찾아도 같은 사이트)
 DISCLOSURE = "이 사이트는 쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터 등 제휴 마케팅 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받을 수 있습니다."
 CAT_ICON = {  # 품목 선 아이콘(10/24 진우 — 사진 없을 때 이모지 대신, 아래 메뉴 선 아이콘과 같은 모양 · 틀린 그림 X: 뷰티 = 펌프 병·제철 = 잎·패션 = 옷걸이)
     "life": '<circle cx="8" cy="9" r="5"/><circle cx="8" cy="9" r="1.25"/><path d="M8 4h8a5 5 0 0 1 5 5v11l-1.5-1-1.5 1-1.5-1-1.5 1v-6H8"/>',  # 휴지 롤
@@ -2193,10 +2194,11 @@ def build(posts, out="docs"):
             + hs_section("steady", "👍 꾸준히 주문 들어오는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
             + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS + LSW + LSW_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
-    ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "url": BASE, "inLanguage": "ko"},
-                                                                  {"@type": "Organization", "name": TITLE, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE} - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
-                                              "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 주문 들어오는 것까지.", BASE, top=INSTALL,
+    hd = "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 주문 들어오는 것까지."
+    ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "inLanguage": "ko", "description": hd},  # TT 10/27: 검색 '핫딜픽' 같은 이름 다른 곳보다 위로 — 다른 표기도 같은 사이트
+                                                                  {"@type": "Organization", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
+    open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
+                                              hd, BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:

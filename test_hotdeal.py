@@ -1864,7 +1864,8 @@ gv0, S.GOOGLE_VERIFY = S.GOOGLE_VERIFY, "ab\"c"; assert '<meta name="google-site
 assert S.seo(3, {"t": "2026-10-05 09:00", "text": "🔥 [롯데온] 생수 2L 24개 (10,000/무료)\n\n싸요"})[:2] == ("생수 2L 24개 10,000원 (롯데온) | 핫딜픽", "10,000원 · 롯데온 · 10/5 게시 · 핫딜픽")  # '원' 없는 가격
 assert S.seo(3, {"t": "2026-10-05 09:00", "text": f"{S.NOTE_STARTS[1]} x\n\n🔥 [토스] 젤리 (</script>)"}) == ("젤리 (</script>) (토스) | 핫딜픽", "토스 · 10/5 게시 · 핫딜픽", "")  # 고지문 X, 가격 못 읽으면 JSON-LD X
 i8 = open("docs8/index.html").read(); ld8 = json.loads(i8.split('<script type="application/ld+json">')[1].split("</script>")[0])
-assert ld8["@graph"][1]["sameAs"] == [S.INSTA, S.THREADS, S.BLOG, S.CHANNEL] and "<title>핫딜픽 - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)</title>" in i8 and "뽐뿌" not in i8.split('<meta name="description" content="')[1].split('"')[0]  # 10/24 N1: 홈 설명 = 쿠팡·토스·네이버 특가(뽐뿌·클리앙 문구 X)
+assert ld8["@graph"][1]["sameAs"] == [S.INSTA, S.THREADS, S.BLOG, S.CHANNEL] and "<title>핫딜픽(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)</title>" in i8 and '<meta property="og:title" content="핫딜픽(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)">' in i8 and "뽐뿌" not in i8.split('<meta name="description" content="')[1].split('"')[0]  # 10/24 N1: 홈 설명 = 쿠팡·토스·네이버 특가(뽐뿌·클리앙 문구 X)
+assert [g.get("alternateName") for g in ld8["@graph"]] == [["핫딜 픽", "hotdealpick", "hotdealpick.kr"]] * 2 and ld8["@graph"][0]["description"] == i8.split('<meta name="description" content="')[1].split('"')[0] and "<h1>핫딜픽</h1>" in i8 and i8.count("<h1") == 1  # TT 10/27: 다른 표기·설명 한 줄 · 홈 h1 = 진짜 글자 '핫딜픽' 1개
 assert S.summary("🔥 [G마켓] 우유 (1원)") == "" and '<meta name="description" content="1원 · G마켓 · 10/9 게시 · 핫딜픽">' in (S.build([{"t": "2026-10-09 10:00", "text": "🔥 [G마켓] 우유 (1원)", "url": "https://g"}], "docs8") and open("docs8/p/0.html").read())  # 코멘트 없으면 제목
 idx = open("docs/index.html").read()
 
