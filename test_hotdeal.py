@@ -9782,4 +9782,8 @@ H.ai_pick = lambda prompt, lines: [{"i": k, "score": 9 - k, "comment": "c"} for 
 with contextlib.redirect_stdout(io.StringIO()): H.goldbox(s92)
 assert "골드박스 TOP5</b>" in sent92[-1]["text"] and "6. " not in sent92[-1]["text"]  # 5개까지
 (H.coupang, H.tg, H.ai_pick, H.POSTS, H.EVENTS, H.HAS_CP, time.time, H.cp_photos, S.SITE_AFF_ONLY) = sv92; S.EVENTS = "events.json"; os.chdir(cwd92)
+# 9-93) 진우 예약 앞뒤 쉼(ev_near — toss_solo·cp_repost) = 채널에 나가는 예약만 · 사이트 진열(shelf) X(10/26 18~20시 진열 35개 = 재게시 칸 2시간 내내 '미룸')
+n93 = TK("2026-10-26 19:12")
+assert not H.ev_near({}, n93, [{"at": "2026-10-26 19:10", "shelf": 1, "url": "u"}, {"at": "2026-10-26 18:50", "shelf": 1}]) and H.ev_near({}, n93, [{"at": "2026-10-26 19:10", "url": "u"}]) \
+    and H.ev_near({"ev_2026-10-26 18:40": n93 - 300}, n93, [{"at": "2026-10-26 18:40"}]) and not H.ev_near({}, n93, [{"at": "2026-10-26 18:40"}])
 print("OK: 모든 셀프체크 통과")

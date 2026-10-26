@@ -3601,7 +3601,7 @@ AT_RX = r"\d{4}-\d\d-\d\d ([01]\d|2[0-3]):[0-5]\d$"  # events at 모양(이 모�
 
 def ev_near(seen, now, evs=None):
     """진우 예약(events.json) 시각 앞뒤 TOSS_EV_PAD 안인지 — 진우 것 먼저(예약은 실행 간격만큼 늦게 나가서 실제 게시 시각으로도). 자동 글(toss_solo·cp_repost)은 이때 쉼."""
-    ats = [e["at"] for e in (load(EVENTS, []) if evs is None else evs) if re.match(AT_RX, e.get("at", ""))]  # 손으로 넣은 시각 모양이 틀려도 멈추지 않게
+    ats = [e["at"] for e in (load(EVENTS, []) if evs is None else evs) if re.match(AT_RX, e.get("at", "")) and not e.get("shelf")]  # 손으로 넣은 시각 모양이 틀려도 멈추지 않게 · 사이트 진열(shelf) = 채널 글 아님(10/26 18~20시 진열 35개가 재게시 칸을 다 막음)
     return any(abs(kst_ts(a) - now) <= TOSS_EV_PAD or now - seen.get("ev_" + a, 0) <= TOSS_EV_PAD for a in ats)
 
 
