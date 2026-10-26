@@ -201,6 +201,45 @@ def _pill(s):
     return im
 
 
+def _ph(src):
+    """상품 사진 파일 -> RGB(투명 = 흰색)."""
+    ph = Image.open(src)
+    ph.load()
+    if ph.mode in ("RGBA", "LA", "P") or "transparency" in ph.info:
+        ph = ph.convert("RGBA"); w = Image.new("RGB", ph.size, "white"); w.paste(ph, mask=ph.split()[3]); ph = w
+    return ph.convert("RGB")
+
+
+def photo_cover(src, hook, w=RW, h=RH, top="", ad=""):
+    """FF(10/26 진우 '릴스는 늘 실제 사진으로, 가짜 사진으로 하면 사람들이 안 봐'): 첫 화면 = 1위 상품 실사진을 화면 꽉 —
+    뒤 = 그 사진을 채워 흐리게, 가운데 = 폭 꽉·비율 그대로(판매 페이지 사진 자르기 X) + 사진 아래쪽 숫자 훅 띠(어두운 띠·흰 글자) + 맨 위 작은 줄(top) + 사진 위 '광고·제휴' 라벨(ad).
+    띠 아래 끝 = h - 600 위(릴스 자막·인스타 아래 UI 칸 밖). -> RGB Image(w x h)"""
+    from PIL import ImageFilter
+    ph = _ph(src)
+    k = max(w / ph.width, h / ph.height)
+    bg = ph.resize((round(ph.width * k), round(ph.height * k)), Image.LANCZOS)
+    bg = bg.crop(((bg.width - w) // 2, (bg.height - h) // 2, (bg.width - w) // 2 + w, (bg.height - h) // 2 + h)).filter(ImageFilter.GaussianBlur(36))
+    im = Image.blend(bg, Image.new("RGB", (w, h), "white"), 0.25).convert("RGBA")
+    k = min(w / ph.width, h * 0.58 / ph.height)
+    fg = ph.resize((round(ph.width * k), round(ph.height * k)), Image.LANCZOS)
+    y0 = max(240, (h - fg.height) // 2 - 180)
+    im.paste(fg, ((w - fg.width) // 2, y0))
+    d, tw = ImageDraw.Draw(im), w - 2 * X0 - 64
+    hf = next((z for z in (104, 92, 80, 68) if len(wrap(d, hook, pf("ExtraBold", z), tw, 3)) <= 2), 60)
+    hk = _rich(hook, pf("ExtraBold", hf), tw, 2, fill="white", lh=1.12)
+    band = Image.new("RGBA", (w - 2 * X0 + 40, hk.height + 52), (0, 0, 0, 0))
+    ImageDraw.Draw(band).rounded_rectangle((0, 0, band.width - 1, band.height - 1), radius=36, fill=INK2 + (236,))
+    band.alpha_composite(hk, (32, 28))
+    im.alpha_composite(band, (X0 - 20, min(y0 + fg.height - band.height // 2, h - 600 - band.height)))
+    for s, (x, y), f in ((top, (X0 - 20, 176), pf("SemiBold", 38)), (ad, (w - X0 + 20, y0 + 28), pf("SemiBold", 34))):
+        if s:  # 사진·흐린 바탕 위에서도 읽히게 = 흰 둥근 칸 + 먹색 글자
+            bw = f.getlength(s) + 48
+            x = x - bw if x > w / 2 else x
+            d.rounded_rectangle((x, y, x + bw, y + f.size + 30), radius=(f.size + 30) // 2, fill="white")
+            d.text((x + 24, y + 13), s, font=f, fill=INK2)
+    return im.convert("RGB")
+
+
 def _ease(x):
     x = max(0.0, min(1.0, x))
     return 1 - (1 - x) ** 3
@@ -377,7 +416,13 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
         y = 720 + i_hook.height + 50
         _rule(fr, y, t, 0.45)
         _in(fr, i_next, X0, y + 44, t, 0.6)
-    scenes.append((cream, intro, INK2))
+    ibg = cream
+    if top.get("photo"):  # FF: 첫 화면 = 1위 상품 실사진 꽉 + 숫자 훅 띠(처음 프레임부터 = 썸네일) — 글자만 있는 표지 X
+        ibg = photo_cover(top["photo"], top["hook"], top=f"{date_label}  ·  {label or '오늘의 가성비 1위'}")
+
+        def intro(fr, t):
+            return
+    scenes.append((ibg, intro, INK2))
 
     for n, it in enumerate(items, 1):
         lab = Image.new("RGBA", (XW, 70), (0, 0, 0, 0))
@@ -386,6 +431,9 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
         if it["store"]:
             d.text((96, 6), it["store"], font=pf("SemiBold", 40), fill=SUB)
         tile = _tile(it.get("e"), 250)
+        if it.get("photo"):  # FF: 딜 장면 = 실사진(흰 칸 · 비율 그대로) — 이모지 타일 X
+            tile = Image.new("RGBA", (XW + 40, 440), (0, 0, 0, 0))
+            _contain(tile, it["photo"], (40, 0, XW + 39, 439), "white")
         name = _rich(it["name"], pf("Bold", 66), XW, 2, fill=INK2, lh=1.25, accent=False)
         name = Image.new("RGBA", name.size, (0, 0, 0, 0)) if not it["name"] else name
         price = _text(it["main"], pf("ExtraBold", 140 if pf("ExtraBold", 140).getlength(it["main"]) < XW - 260 else 108), INK2) if it["main"] else None
@@ -402,7 +450,7 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
         def deal(fr, t, lab=lab, tile=tile, name=name, price=price, pill=pill, why=why, checks=checks, unit=unit, warn=warn):
             _in(fr, lab, X0, 300, t, 0.05)
             _in(fr, tile, X0 - 40, 362, t, 0.1)
-            y = 700
+            y = 362 + tile.height + 8 if tile.height > 300 else 700
             _in(fr, name, X0, y, t, 0.18)
             y += name.height + 8
             if price:
@@ -438,6 +486,10 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
          (_text("텔레그램 실시간 알림  @hotdeal_pick", pf("Regular", 40), light), 1135, 0.48),
          (_text("일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요.", pf("Regular", 30), dim), 1210 if say else 1380, 0.55)]
 
+    if len(items) == 1 and top.get("photo"):  # FF-3 단일 상품 편 = 표지·딜·끝 세 장 다 그 상품 실사진
+        night = night.copy()
+        _contain(night, top["photo"], (X0, 180, X0 + 300, 480), "white")
+
     def outro(fr, t):
         for im, y, dl in o:
             _in(fr, im, X0, y, t, dl)
@@ -445,6 +497,11 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
     scenes.append((night, outro, "white"))
 
     ad = _pill("광고·제휴")  # 첫 장 위 작게(대가성 — 캡션 맨 앞 문구와 같이)
+    if top.get("photo"):  # 사진 위에서도 읽히게 = 흰 둥근 바탕
+        ab = Image.new("RGBA", ad.size, (0, 0, 0, 0))
+        ImageDraw.Draw(ab).rounded_rectangle((0, 0, ad.width - 1, ad.height - 1), radius=32, fill="white")
+        ab.alpha_composite(ad)
+        ad = ab
     subs = [_sub(s) for s, _ in say] if say else []
     starts = [sum(durs[:k]) for k in range(n_sc)]
     total, seg = sum(durs), (XW - 12 * (n_sc - 1)) / n_sc
@@ -1155,7 +1212,7 @@ def q_card(photos, labels, title, lines, foot, k, out, head="핫딜픽", small=F
     fb = pf("SemiBold", 40); d.text((P, H - 96), _fit(fb, foot, W - 2 * P), font=fb, fill=TSUB)
     return _save(im, out)
 
-def ig_story(src, out, top, bottom):
+def ig_story(src, out, top, bottom, hook=None):
     """인스타 스토리 1장(1080x1920 JPEG, 10/26 G-3 — 그날 카드 표지를 세로로): 뒤 = 표지를 꽉 채워 흐리게·어둡게, 가운데 = 표지 0.85배(둥근 모서리),
     위·아래 글자 = 스토리 화면 위 이름 줄·아래 답장 칸(약 270px) 밖 안전 칸에. -> out"""
     from PIL import ImageFilter
@@ -1165,12 +1222,20 @@ def ig_story(src, out, top, bottom):
     bg = cv.resize((round(cv.width * k), round(cv.height * k)), Image.LANCZOS)
     bg = bg.crop(((bg.width - W) // 2, (bg.height - SH) // 2, (bg.width - W) // 2 + W, (bg.height - SH) // 2 + SH)).filter(ImageFilter.GaussianBlur(40))
     im = Image.blend(bg, Image.new("RGB", (W, SH), INKA), 0.45).convert("RGBA")
-    fg = cv.resize((round(W * 0.85), round(H * 0.85)), Image.LANCZOS)
+    k = min(W / cv.width, H * 0.85 / cv.height) if hook else 0  # FF: hook = 상품 실사진(폭 꽉 차게·비율 그대로·자르기 X)
+    fg = cv.resize((round(cv.width * k), round(cv.height * k)) if hook else (round(W * 0.85), round(H * 0.85)), Image.LANCZOS)
     m = Image.new("L", fg.size, 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, fg.width - 1, fg.height - 1), radius=40, fill=255)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, fg.width - 1, fg.height - 1), radius=0 if hook else 40, fill=255)
     y0 = (SH - fg.height) // 2
     im.paste(fg, ((W - fg.width) // 2, y0), m)
     d, f = ImageDraw.Draw(im), pf("ExtraBold", 48)
+    if hook:  # 사진 아래쪽 숫자 훅 띠 + 왼쪽 위 작은 '광고 · 제휴' 라벨(사진 위)
+        fh = pf("ExtraBold", _sized(hook, "ExtraBold", (88, 76, 64, 52), W - 96))
+        d.rectangle((0, y0 + fg.height - fh.size - 64, W, y0 + fg.height), fill=INKA)
+        d.text(((W - fh.getlength(hook)) / 2, y0 + fg.height - fh.size - 40), hook, font=fh, fill="white")
+        fl, lab = pf("SemiBold", 40), "광고 · 제휴 링크(수수료)"
+        d.rounded_rectangle((32, y0 + 24, 32 + fl.getlength(lab) + 48, y0 + 92), radius=34, fill=INKA)
+        d.text((56, y0 + 34), lab, font=fl, fill="white")
     for y, s in ((y0 - 96, top), (y0 + fg.height + 40, bottom)):
         s = _fit(f, s, W - 120)
         d.text(((W - f.getlength(s)) / 2, y), s, font=f, fill="white")
@@ -1183,6 +1248,8 @@ def slideshow(images, out, music=None, sec=1.5):
     SH, fps, xf = 1920, 30, 9
     def frame(src):
         cv = Image.open(src).convert("RGB")
+        if cv.size == (W, SH):  # FF 표지(photo_cover — 이미 세로 꽉) = 그대로
+            return cv
         k = max(W / cv.width, SH / cv.height)
         bg = cv.resize((round(cv.width * k), round(cv.height * k)), Image.LANCZOS)
         bg = bg.crop(((bg.width - W) // 2, (bg.height - SH) // 2, (bg.width - W) // 2 + W, (bg.height - SH) // 2 + SH)).filter(ImageFilter.GaussianBlur(40))

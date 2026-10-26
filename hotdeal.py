@@ -149,7 +149,7 @@ IG_START = "2026-10-23 15"  # shortcut: 첫날(10/23)은 15시 칸부터(진우 
 IG_LATE, IG_MIN = 2, 3  # 칸은 그 시각 2시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀(억지로 안 채움) · 하루 발행 최대 = 그 단계 횟수 + 1(ig_day_max — 오류로 몰려 올라가지 않게, API 상한 50)
 IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
 OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
-REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 1500  # 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
+REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 700  # FF(10/26): 표지 = 첫 장(1위 실사진 꽉 + 숫자 훅 띠) 가운데 0.7초 · 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(IG_H 끈 때만 — H 공개 릴스·카드 = 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#특가", "#살림템", "#쇼핑정보", "#할인정보", "#가성비템", "#쟁여템", "#장바구니", "#오늘의딜"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만, 채움은 칸마다 돌림)
 TOP_HOURS = (12, 15, 18)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
@@ -1632,7 +1632,8 @@ def cp_price(seen):
             return set()
     home = shown("docs/index.html")  # 홈에 나오는 상품 — 사진 채움 먼저(10/24 Cowork A①)
     cfirst = set().union(*[shown(f, 12) for f in sorted(glob.glob("docs/c/*/index.html"))])  # 그다음 /c/ 칸마다 첫 화면(10/25 Cowork ② — /c/season/ 사진 1/21)
-    rank = lambda u: (u not in home, u not in cfirst)
+    vid = {p["url"] for p in clip_pool(posts, time.time())}  # FF-4(10/26 Cowork): 영상·인스타 후보(3일 안 🔥 쿠팡) 사진 먼저
+    rank = lambda u: (u not in vid, u not in home, u not in cfirst)
     wk = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 7 * 86400))
     q["gs"], grp = {w: d for w, d in q.get("gs", {}).items() if d > wk}, collections.defaultdict(list)  # gs = 품목 낱말 검색한 날
     q["gm"] = {u: d for u, d in q.get("gm", {}).items() if d > wk and u in names}  # gm = 품목 낱말 검색에 들어간 글(7일 안 = 다른 낱말로도 다시 묶지 않음)
@@ -4368,7 +4369,10 @@ def digest(seen, posts):
         try:  # 인스타 릴스용 15~20초 영상 -> 관리자에게 바로 전송 + REEL_PUBLIC이면 docs/reels/에 공개 -> 22시 ig_reel이 인스타에. 점수 높은 순 TOP3 · H = 점심 테마 넘기기 릴스(ig_theme_reel)
             if IG_H:
                 raise StopIteration("H — 테마 넘기기 릴스")
-            top = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
+            t3 = [p for _, p in card_order(posts, today)][:3]  # 카드와 같은 순서(점수, 같으면 제휴 딜 먼저)
+            top = reel_top(t3, len(t3), "reel")  # FF: 영상 = 실사진 상품만 — 캡션 번호 = 카드 번호라 뒤 후보로 안 채움(모자라면 그날 릴스 X)
+            if not top or len(top) < len(t3):
+                raise StopIteration("사진 부족")
             auto = REEL_PUBLIC and E.get("IG_TOKEN") and E.get("IG_USER_ID")
             path, cap, _ = make_reel(top, kst, f"docs/reels/{today}.mp4" if auto else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4"))
             if auto:
@@ -4463,6 +4467,18 @@ def reel_voice(rows):
     return None
 
 
+def reel_top(ps, n=3, tag="clip"):
+    """FF(10/26 진우 '릴스는 늘 실제 사진으로'): 영상 상품 = 사진 받아진 쿠팡 글만(ig_photo — 파트너스 API·cp_img·events img · 토스·네이버 = X),
+    순서대로·같은 상품 1번 -> 최대 n개. 모자라면 로그 '{tag} skip 사진 부족 m/n'(부르는 쪽이 그 회차 건너뜀)."""
+    out = []
+    for p in ps:
+        if len(out) < n and p.get("url") not in {x.get("url") for x in out} and ig_photo(p, "ig_photos")[0]:
+            out.append(p)
+    if len(out) < n:
+        print(f"{tag} skip 사진 부족 {len(out)}/{n}")
+    return out
+
+
 def make_reel(top, kst, out, k=0, safe=False, label=None):
     """릴스 1편(모아보기·샘플 같이): 재료 채움 -> 나레이션(GOOGLE_TTS_KEY 있으면) -> 영상(cards.reel) -> (경로, 캡션, 나레이션 됐는지).
     배경음악 = 라이선스 기록된 곡(MUSIC.md) 중 오늘 차례 + k. 캡션 = 대가성 문구 맨 앞(ig_notes) 그대로."""
@@ -4476,7 +4492,7 @@ def make_reel(top, kst, out, k=0, safe=False, label=None):
             break
     if E.get("GOOGLE_TTS_KEY"):
         print("reel", "나레이션 " + (("이름 8자" if kw.get("nmax") else "단위가격 뺌" if kw else "기본") if voice else "X — 글자 + 음악"))
-    path = cards.reel([card_item(p)[0] for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
+    path = cards.reel([{**card_item(p)[0], "photo": ig_photo(p, "ig_photos")[0]} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
@@ -4497,7 +4513,7 @@ def reel_samples(seen):
         v = seen["reel_v3"] = {"t": now, "t0": now, "key": key, "tts": False, "n": 0, "r": v.get("r", 0) + 1 if v and v.get("key") else 0}
     posts, n = load(POSTS, []), v["n"] + 1
     days = [time.gmtime(v["t0"] + 9 * 3600 - d * 86400) for d in range(4)]
-    sets = [x for x in ((k, [p for _, p in card_order(posts, time.strftime("%Y-%m-%d", k))][:3]) for k in days) if x[1]][:3]
+    sets = [x for x in ((k, reel_top([p for _, p in card_order(posts, time.strftime("%Y-%m-%d", k))], 3, "reel sample")) for k in days) if x[1]][:3]  # FF: 실사진 상품만
     v["n"] = n if n < len(sets) else 3  # 먼저 기록(보내다 실패해도 15분마다 같은 편을 또 만들지 않게)
     if n > len(sets):
         return
@@ -4515,11 +4531,19 @@ def reel_samples(seen):
 CLIP_AT, CLIP_LINK = {"A": 9, "B": 13}, "hotdealpick.kr/link?ref=clip"  # Q(10/26 진우): 네이버 클립 하루 2편 -> 관리자 텔레그램만(진우가 클립에 직접 올림) · 프로필 링크(진우가 클립 프로필에)
 
 
+def clip_pool(posts, now):
+    """영상 후보(클립 A·B) = 3일 안 쿠팡 딜(지금 특가 · 가격 있는 한 상품 글 — 골드박스 모음 X) 점수 > 최근 순 — 사진 여부 상관없이(FF-4 사진 채우기 순서도 이 순서 먼저)."""
+    days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - d * 86400)) for d in range(3)]
+    return sorted(sorted((p for d in days for _, p in day_deals(posts, d) if urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") in (None, "hot")
+                          and "원" in parse(title_of(p["text"]))[2]), key=lambda p: p["t"], reverse=True), key=lambda p: -p.get("s", 0))
+
+
 def clip_post(seen):
     """Q 네이버 클립 영상(1080x1920·30fps·H.264 + AAC 44.1kHz·15~20초 · 첫 장 '광고·제휴' · 아래 25%·오른쪽 15% 글자 X — cards.reel safe) 하루 2편, 실행마다 1편:
-    A(CLIP_AT A시~) = 쿠팡 핫딜 3(3일 안 지금 특가 딜 점수 > 최근 순 · 지난 클립 상품 X — 릴스 틀, 3개일 때만) · 캡션 = 쿠팡 파트너스 문구 + '프로필 링크에서 보기' + 해시태그 5개
-    B(B시~) = 네이버 쇼핑커넥트(진우 naver.me 글) 1개 글자 카드(상품 사진 X — 릴스 틀은 이모지 타일) · 캡션 첫 줄 = 쇼핑 커넥트 문구 + 상품 태그 붙이는 법·naver.me 링크(열지 않음)
-    파일 = clip_MMDD_A/B.mp4 · 재료 없음·실패 = 그날 그 편 X(관리자에게 1줄) · seen clip = 이번 달 보낸 수(일요일 DM 줄)."""
+    A(CLIP_AT A시~) = 쿠팡 핫딜 3(3일 안 지금 특가 딜 점수 > 최근 순 · 지난 클립 상품 X) · B(B시~) = 쿠팡 핫딜 1개(같은 후보 다음 것 — 장면 3장 = 표지·딜·끝 다 그 상품 실사진)
+    FF(10/26 진우 '릴스는 늘 실제 사진으로'): 상품 = 실사진 있는 것만(reel_top — 쿠팡 파트너스 API·cp_img 사진, 토스·네이버 X) · 없으면 다음 후보 · 못 채우면 그 편 건너뜀('clip skip 사진 부족 n/3')
+    · 첫 화면 = 1위 실사진 꽉 + 숫자 훅 띠. 네이버 쇼핑커넥트 B 편 = 네이버 사진을 못 써서 멈춤(사진 권한 확인 뒤 다시 — 그때까지 'B 대신 쿠팡 단일 상품').
+    캡션 = 쿠팡 파트너스 문구 + '프로필 링크에서 보기' + 해시태그 5개 · 파일 = clip_MMDD_A/B.mp4 · 재료 없음·실패 = 그날 그 편 X(관리자에게 1줄) · seen clip = 이번 달 보낸 수(일요일 DM 줄)."""
     kst, now = time.gmtime(time.time() + 9 * 3600), time.time()
     day, st = time.strftime("%Y-%m-%d", kst), seen.get("clip") or {}
     k = next((k for k, h in CLIP_AT.items() if kst.tm_hour >= h and st.get(k) != day), None)
@@ -4528,19 +4552,15 @@ def clip_post(seen):
     st = seen["clip"] = {**st, "t": now, k: day}  # 먼저 기록(실패해도 15분마다 다시 만들지 않게)
     if st.get("m") != day[:7]:
         st.update(m=day[:7], n=0)
-    posts = load(POSTS, [])
-    if k == "A":
-        days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - d * 86400)) for d in range(3)]
-        ds = sorted(sorted((p for d in days for _, p in day_deals(posts, d) if urllib.parse.urlsplit(p.get("url") or "").netloc in CP_SHORT and p.get("st") in (None, "hot")
-                            and "원" in parse(title_of(p["text"]))[2] and p["url"] not in st.get("u", [])), key=lambda p: p["t"], reverse=True), key=lambda p: -p.get("s", 0))  # 3일 안 쿠팡 딜(지금 특가 · 가격 있는 한 상품 글 — 골드박스 모음 X) 점수 > 최근 순
-        top = [p for i, p in enumerate(ds) if p["url"] not in {x["url"] for x in ds[:i]}][:3]  # 같은 상품 두 번 X
-        top = top if len(top) == 3 else []  # '쿠팡 핫딜 3' = 3개일 때만
-        label, cap = None, f"{DISCLOSURE}\n\n오늘의 쿠팡 핫딜 3 — 프로필 링크에서 보기\n\n" + ig_tags(top, kst.tm_mday)
-    else:
-        top = [p for p in reversed(posts) if urllib.parse.urlsplit(p.get("url") or "").netloc == "naver.me" and now - kst_ts(p["t"]) < 7 * 86400 and p["url"] not in st.get("u", [])][:1]  # 최근 7일 진우 쇼핑커넥트 글 중 아직 안 만든 것
-        label, cap = "네이버 쇼핑 픽", f"{NAVER_NOTE}\n\n" + "\n\n".join(title_of(p["text"]) for p in top) + "\n\n" + ig_tags(top, kst.tm_mday)
-    if not top:  # 재료 없음 = 그날 그 편 X — 진우가 고장으로 안 보게 1줄
-        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k} — 오늘은 건너뜀(" + ("최근 3일 쿠팡 핫딜이 3개 안 됨" if k == "A" else "최근 7일 새 쇼핑커넥트(naver.me) 글 없음") + ")")
+    posts, need = load(POSTS, []), 3 if k == "A" else 1
+    ds = [p for p in clip_pool(posts, now) if p["url"] not in st.get("u", [])]
+    top = reel_top(ds, need)  # FF: 실사진 있는 것만 · 같은 상품 두 번 X · 모자라면 'clip skip 사진 부족 n/3'
+    label = None if k == "A" else "쿠팡 핫딜 픽"
+    cap = f"{DISCLOSURE}\n\n" + ("오늘의 쿠팡 핫딜 3" if k == "A" else "오늘의 쿠팡 핫딜") + " — 프로필 링크에서 보기\n\n" + ig_tags(top, kst.tm_mday)
+    if len(top) < need:  # 재료 없음 = 그날 그 편 X — 진우가 고장으로 안 보게 1줄
+        few = len({p["url"] for p in ds}) < need
+        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k}" + (" (B 대신 쿠팡 단일 상품)" if k == "B" else "") + " — 오늘은 건너뜀("
+           + (f"최근 3일 쿠팡 핫딜이 {need}개 안 됨" if few else f"실사진 있는 상품 {len(top)}/{need}") + ")")
         return
     out = os.path.join(tempfile.gettempdir(), time.strftime(f"clip_%m%d_{k}.mp4", kst))
     try:
@@ -4552,8 +4572,8 @@ def clip_post(seen):
         return
     st["n"] = st.get("n", 0) + 1
     st["u"] = (st.get("u", []) + [p["url"] for p in top])[-40:]  # 만든 상품(A·B) = 다음 클립에 다시 X
-    tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True}, text=f"🎬 네이버 클립 {k} — {os.path.basename(out)} · 나레이션 {'O' if said else 'X'} · 위 영상 캡션 그대로\n"
-       + (f"상품 태그: {parse(title_of(top[0]['text']))[1]} — 클립 편집기 정보 태그 → 쇼핑 커넥트에서 붙이기\n{top[0]['url']}" if k == "B" else f"프로필 링크: {CLIP_LINK}"))
+    tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True}, text=f"🎬 네이버 클립 {k}" + (" — B 대신 쿠팡 단일 상품(네이버 사진 권한 확인 전)" if k == "B" else "")
+       + f" — {os.path.basename(out)} · 실사진 {len(top)}개 · 나레이션 {'O' if said else 'X'} · 위 영상 캡션 그대로\n프로필 링크: {CLIP_LINK}")
 
 
 def licensed():
@@ -4759,8 +4779,9 @@ def ig_photo(p, d, seen=None):
             return None, ""
         os.makedirs(d, exist_ok=True)
         f = os.path.join(d, hashlib.md5(img.encode()).hexdigest()[:12] + ".img")
-        data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
-        open(f, "wb").write(data)
+        if not os.path.exists(f):  # 같은 실행에 다시 부르면(영상 고르기 reel_top -> make_reel) 다시 안 받음
+            data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
+            open(f, "wb").write(data)
         with __import__("PIL.Image", fromlist=["Image"]).open(f) as im:
             im.load()  # 끝까지 풀리는 사진만(verify만 통과하고 그릴 때 깨지는 사진 = 넘기기 중간에 멈춤 — 10/25 리뷰)
         return f, src
@@ -5185,11 +5206,11 @@ def ig_used(day):
     return {i for f in (os.listdir(d) if os.path.isdir(d) else []) if re.fullmatch(re.escape(day) + r"_\d\d\.json", f) for i in json.load(open(f"{d}/{f}"))}
 
 
-def slot_deals(posts, day, h, hours=IG_STAGES[0]):
+def slot_deals(posts, day, h, hours=IG_STAGES[0], photo=False):
     """시간대 카드 딜 = 오늘 앞 칸 시각(첫 칸은 0시) ~ h시에 올린 딜(10/23 진우 '11시 = 0~11시, 15시 = 11~15시, 19시 = 15~19시') 중 오늘 다른 칸 카드에 안 든 것,
     하루 카드와 같은 순서(점수·제휴 먼저 — 19시 칸은 진우 쿠팡 🔥·👍 먼저) 앞 CARD_N개. hours = 오늘 칸(ig_hours)."""
     since, used = f"{day} {max([0] + [x for x in hours if x < h]):02d}:00", ig_used(day)
-    ds = [x for x in day_deals(posts, day) if since <= x[1]["t"] < f"{day} {h:02d}:00" and x[0] not in used and season_adj(title_of(x[1]["text"])) >= 0]  # Z 철 지난 계절 상품 X
+    ds = [x for x in day_deals(posts, day) if since <= x[1]["t"] < f"{day} {h:02d}:00" and x[0] not in used and season_adj(title_of(x[1]["text"])) >= 0 and (not photo or img_of(x[1]))]  # Z 철 지난 계절 상품 X
     if h == IG_OWN_HOUR:
         ds.sort(key=lambda x: not (x[1].get("own") and mall_of(x[1].get("url"), title_of(x[1]["text"])) == "coupang"
                                    and any(m[2] in ("🔥", "👍") for m in map(MALL_HEAD.fullmatch, x[1]["text"].split("\n")) if m)))
@@ -5350,14 +5371,15 @@ def ig_cards(seen):
             continue
         jpg = f"docs/cards/{stem}.jpg"
         if IG_H and h == IG_DAY_HOUR and os.path.exists(dc := f"{DPOST_DIR}/{today}_0.jpg"):  # 22시 스토리 = 📉 가격 내려간 상품 표지(M-1)
-            ig_story_card(seen, tok, uid, stem, dc, now, "핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품")
+            dp, by = seen.get("droppost_" + today.replace("-", ""), {}), {p["url"]: p for p in load(POSTS, [])}
+            ig_story_card(seen, tok, uid, stem, now, "핫딜픽 · 오늘 가격 내려간 상품", "프로필 링크 → 가격 내려간 상품", [by[u] for u in dp.get("urls", []) if u in by], dp.get("hook"))
             return
         if h != IG_DAY_HOUR and not os.path.exists(jpg):  # 시간대 카드 만들기(이번 실행) -> 다음 실행에 올림
             posts = load(POSTS, [])
-            order = slot_deals(posts, today, h, hours)
+            order = slot_deals(posts, today, h, hours, IG_H)  # FF: 스토리 = 쿠팡 실사진 딜만(토스·네이버 = img_of X)
             if len(order) < IG_MIN:
                 seen["igs_" + stem] = {"t": now, "skip": len(order)}
-                print("ig card", stem, f"딜 {len(order)}개 -> 건너뜀")
+                print(f"ig story skip 사진 부족 {len(order)}/{IG_MIN}" if IG_H else "ig card", stem, f"딜 {len(order)}개 -> 건너뜀")
                 continue
             import cards
             os.makedirs("docs/cards", exist_ok=True)
@@ -5380,7 +5402,7 @@ def ig_cards(seen):
                 seen["igs_" + stem] = {"t": now, "skip": "toss"}
                 print("ig story", stem, "토스 딜 든 카드 -> 건너뜀")
                 continue
-            ig_story_card(seen, tok, uid, stem, jpg, now)
+            ig_story_card(seen, tok, uid, stem, now)
             return
         url, d = f"{SITE}cards/{stem}.jpg", f"docs/cards/{stem}"
         if IG_HUMAN:  # 인스타엔 새 디자인 한 벌(A·B 날마다 번갈아, docs/cards/igv/ — 사이트·텔레그램 카드는 그대로) -> 만든 실행 다음에 올림
@@ -5417,7 +5439,7 @@ def ig_cards(seen):
 STORY_DIR = "docs/cards/story"  # H-2 스토리(9:16) — SLIDE_KEEP일 뒤 지움(prune_slides)
 
 
-def ig_story_card(seen, tok, uid, stem, jpg, now, top=None, bottom="프로필 링크 → 번호 누르면 바로 구매"):
+def ig_story_card(seen, tok, uid, stem, now, top=None, bottom="프로필 링크 → 번호 누르면 바로 구매", ps=None, hook=None):
     """H-2 스토리 1장: 카드(사이트·텔레그램과 같은 번호) -> 9:16(docs/cards/story/{stem}.jpg — 이 실행 커밋) -> 다음 실행에 사이트에 뜨면 STORIES 컨테이너(kind story)
     -> ig_publish 발행(피드 상한·2시간 간격 X · 쉼·공식 한도·차단 = 같게) · 사이트 맨 위 카드(ig_live) · 하루 IG_STORY_MAX(넘으면 그 칸 = 사이트만) · 실패 = 다시 X(ig_fail)."""
     today, sp = stem[:10], f"{STORY_DIR}/{stem}.jpg"
@@ -5426,7 +5448,14 @@ def ig_story_card(seen, tok, uid, stem, jpg, now, top=None, bottom="프로필 �
         return
     if not os.path.exists(sp):
         import cards
-        cards.ig_story(jpg, sp, top or f"핫딜픽 · {card_name(stem)}", bottom)
+        ps = [p for _, p in card_order(load(POSTS, []), stem)] if ps is None else ps
+        ph = [(n, p, f) for n, p in enumerate(ps[:CARD_N], 1) if (f := ig_photo(p, "ig_photos", seen)[0])]  # FF(10/26 진우 '릴스는 늘 실제 사진'): 쿠팡 실사진만 · 번호 = 카드 번호
+        if len(ph) < IG_MIN:
+            seen["igs_" + stem] = {"t": now, "skip": f"사진 {len(ph)}"}
+            print(f"ig story skip 사진 부족 {len(ph)}/{IG_MIN}", stem)
+            return
+        n, p, f = ph[0]
+        cards.ig_story(f, sp, top or f"핫딜픽 · {card_name(stem)}", bottom, hook=hook or f"{n}번 · " + ((p.get("unit") or "").split(" (")[0] or parse(title_of(p["text"]))[2].split("/")[0].strip()))
         print("ig story 만듦", stem)
         return
     url = SITE + sp[len("docs/"):]
@@ -6594,7 +6623,7 @@ def drop_post(seen):
         notes = aff_notes(p["url"] for p, *_ in picks)
         th = lambda k: f"{notes}\n\n📉 오늘 가격 내려간 거 모아왔어요 🐻\n\n" + "\n".join(rows[:k]) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격"
         k = next((k for k in range(len(rows), 0, -1) if th_len(th(k) + ends[1]) <= 500), 1)  # Threads 500자(th_len) — 긴 끝 줄 몫까지
-        st.update(files=files, cover=cover, urls=[p["url"] for p, *_ in picks], tags=ig_tags([p for p, *_ in picks], kst.tm_mday + 2), th=th(k),
+        st.update(files=files, cover=cover, urls=[p["url"] for p, *_ in picks], hook=f"▼{its[0]['pct']}% · {its[0]['price'].split(' ')[0]}", tags=ig_tags([p for p, *_ in picks], kst.tm_mday + 2), th=th(k),
                   igcap=f"{notes}\n\n📉 가격 내려간 상품 {len(its)}개\n\n" + "\n".join(rows) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격(쿠폰·와우 조건 그대로)\n\n🛒 프로필 링크 → 가격 내려간 상품\n\n상품 사진: 판매 페이지(쿠팡)")
         seen["dropu"] = {"t": now, "m": {**mem, **{u: day for u in st["urls"]}}}
         print("drop post 준비", len(files), "장 ·", " / ".join(clip(it["short"], 12) for it in its))
@@ -6828,6 +6857,8 @@ def igf_make(seen, kind, stem, kst):
         if kd in ("theme", "top"):
             files = [cards.theme_cover([x["photo"] for x in its], cp["title"], " · ".join(clip(x["name"], 10) for x in its), f"{'월화수목금토일'[kst.tm_wday]}요일 {lb}", k0, f"{d}/00.jpg")]
             files += [cards.theme_slide(x, n, f"{d}/{n:02d}.jpg") for n, x in enumerate(its, 1)] + [cards.theme_end(cat, k0 + 3, f"{d}/09.jpg")]
+            cards.photo_cover(its[0]["photo"], f"1번 · {(its[0]['unit'] or '').lstrip('💰 ').split(' (')[0] or its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
+            extra = {"rc": f"{d}/rc.jpg"}  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
             cap = f"{cp['seo']}\n{notes}\n\n{cp['say']}\n\n{rows}\n\n저장해 두고 필요할 때 보세요 🔖\n{cp['q']}\n\n{link}"
         elif kd == "one":
             it = its[0]
@@ -7025,7 +7056,7 @@ def ig_theme_reel(seen, stem, st, kst):
     try:
         music, song = bgm(kst), song_of(kst)
         out = f"docs/reels/{today}.mp4" if REEL_PUBLIC else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4")
-        path = cards.slideshow(st["files"], out, music)
+        path = cards.slideshow(([st["rc"]] if st.get("rc") and os.path.exists(st["rc"]) else []) + st["files"], out, music)  # FF: 첫 장 = 1위 실사진 표지
         if REEL_PUBLIC:
             seen["reel_" + today] = {"t": time.time(), "cap": st["cap"][:1024], "feed": False}
         tg_video(path, f"🎬 오늘 릴스(테마 넘기기 {len(st['files'])}장 · 1.5초씩)" + (f" · 🎵 {song['name']}" if music and song else " · 음악 X") + (f" — {REEL_HOUR}시 자동 게시" if REEL_PUBLIC else ""))
