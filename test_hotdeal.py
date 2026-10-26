@@ -9525,6 +9525,8 @@ assert H.same_kind("성경김 지도표 재래김", "성경김 파래김") and H
     and H.same_kind("오뚜기 진라면 멀티팩", "농심 신라면 5개") and not H.same_kind("크린랩 니트릴장갑 100개입", "웰킵스 마스크 1개입") and not H.same_kind("코튼 화장솜 500매입", "숨37 패드 90매입") and not H.same_kind("신일 히터 화이트", "코멧 키친타월 화이트") \
     and H.same_kind("홈플래닛 2단 석영관 히터", "위닉스 PTC 세라믹 온풍기, FFC300") and H.same_kind("보스코 전기 라디에이터 15핀", "신일 세라믹 히터") and H.same_kind("액츠 실내건조 액상세제 3.2L", "퍼실 딥클린 파워젤 2.5L") \
     and H.same_kind("계란 한판 30구", "맛꾼 계란 대란 30구") and H.same_kind("맛꾼 계란 대란 30구", "계란 한판 30구") \
+    and H.same_kind("제주삼다수 2L 12입", "스파클 생수, 무라벨, 500ml, 80개") and H.same_kind("맥반석 구운란 대란 30구", "곰곰 무항생제 신선한 특란 30구") and H.same_kind("농심 너구리 5개", "농심 짜파게티 5개") \
+    and not H.same_kind("제주삼다수 2L 12입", "농심 너구리 5개") and H.same_kind("고무장갑 대형 10켤레", "크린랩 고무장갑 중형") \
     and not H.same_kind("코멧 화장지 30롤", "코멧 핫팩 100g 30개") and not H.same_kind("곰곰 국산 햅쌀 10kg", "곰곰 우유 1L") and not H.same_kind("동원 참치", "")  # 브랜드 같아도 품목 다르면 OK
 # (리뷰) 긴 링크(링크프라이스 ~260자) 딜이 앞에 있어도 3개 채움(그 딜은 빠짐) · 💄 = ②~④ 채움 셈 X(💄 칸으로)
 LP88 = "https://click.linkprice.com/click.php?m=gmarket&a=A100&l=9999&u_id=x&tu=" + "a" * 190
