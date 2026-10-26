@@ -7,7 +7,7 @@ import base64, collections, glob, hashlib, hmac, html, json, math, os, random, r
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -7212,8 +7212,20 @@ def cur_events(seen=None):
             if seen is not None and k not in seen:  # Cowork에 알림 항목마다 1번(조용히 빠지지 않게 · 3시간마다 X)
                 alert(seen, k, f"⚠️ 큐레이션 항목 모양이 틀려서 안 올려요: {str(at)[:16]} — at = 'YYYY-MM-DD HH:MM' · text · link = {SITE}c/… · img = 주소 목록")
             continue
-        out.append({**e, "img": img[:10]})
+        out.append({**e, "img": img[:10], "link": cur_link(e, link)})
     return out
+
+
+def cur_link(e, link):
+    """큐레이션 링크 -> 주제 쪽(TT-2 10/27 ⑥ '큐레이션 link도 거기로'): 칸 쪽 링크(SITE/c/칸/?ref=…)이고 그 topic 주제 쪽(docs/c/t/주소.html — build_site.topics)이
+    있으면 SITE/c/t/주소.html?ref=… (ref 그대로) · 주제 쪽 없음·상품 빠진 안내 쪽(noindex)·다른 링크(기록 쪽 등 Cowork가 고른 것) = 그대로."""
+    s, m = topic_slug(e), re.fullmatch(re.escape(SITE) + r"c/[a-z0-9-]+/(\?[^#\s]*)?", link)
+    f = f"docs/c/t/{s}.html"
+    try:
+        ok = bool(s and m and os.path.exists(f) and 'name="robots"' not in open(f).read())
+    except OSError:
+        ok = False
+    return f"{SITE}c/t/{s}.html{m[1] or ''}" if ok else link
 
 
 def cur_img(u):
