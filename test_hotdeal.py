@@ -1642,7 +1642,7 @@ L3 = [(0, lp("일반몰", "https://x.com/a", IMG), H0), (1, lp("토스 휴지", 
       (3, lp("품절 화장지", "https://link.coupang.com/a/o", IMG), (3, None, "", [], False)), (4, lp("특가 사진 물티슈", "https://link.coupang.com/a/h", IMG, chk="10/25 9시"), (0, "8,900원 쿠폰가", "", [], False)),
       (5, lp("특가 휴지 사진X", "https://link.coupang.com/a/n"), H0), (6, lp("옛 특가 휴지", "https://link.coupang.com/a/v", IMG, at="2026-10-20 09:00"), H0),
       (7, lp("링크프라이스 화장지", "https://click.linkprice.com/x", mall="G마켓"), H0), (8, {"t": "2026-10-25 09:00", "text": "🔥 [쿠팡] 가격 없는 휴지", "url": "https://link.coupang.com/a/z", "own": 1}, H0)]
-assert [x[0] for x in S.link_pool(L3, "2026-10-25")] == [4, 1, 5] and [x[0] for x in S.link_pool(L3, "2026-10-22")] == [4, 6, 1, 5]  # 10/20 가격 = 10/25엔 3일 넘음
+assert [x[0] for x in S.link_pool(L3, "2026-10-25")] == [4, 1, 5] and [x[0] for x in S.link_pool(L3, "2026-10-22")] == [4, 1, 6, 5]  # 10/20 가격 = 10/25엔 3일 넘음 · MM: 앞 = 쿠팡·토스 돌림(생필품 칸 2개) 뒤 나머지
 t4 = S.link_tile(*S.link_pool(L3, "2026-10-25")[0], ["all", "life"])
 assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow sponsored noopener" target="_blank" data-k="all life">') and '<div class="pr">8,900원<em>쿠폰가</em></div><div class="ck">10/25 9시 확인</div>' in t4 and 'loading="lazy"' in t4 and 'class="no"' not in t4  # 번호 배지 X(인스타 번호 = 카드 딜 줄 — 10/25 Cowork)
 assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(*S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(*S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
