@@ -105,7 +105,7 @@ GOLD_PROMPT = """쿠팡 골드박스(오늘 하루 특가) 목록이야. 할인�
 comment: 1줄, 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
 """
 BEST_PROMPT = """토스쇼핑에서 지금 많이 팔리는 상품 목록이야(가격 = 배송비 포함 결제가). 많이 팔린다고 싼 건 아니고 할인율은 정가를 부풀린 경우가 많으니
-믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 3개 pick 도구로 반환해. 없으면 빈 목록.
+믿지 말고 구성·단위가격·리뷰로 판단해서, 대중적이고 '지금 사도 싸다' 싶은 것만 최대 5개 pick 도구로 반환해. 없으면 빈 목록.
 comment: 1줄, 단위가격 등 사실 위주, 과장 금지, 건강식품·화장품 효능(미백·주름·탄력 개선 등) 언급 금지.
 """
 # 10/10 진우 '기준만 완화': 진우가 보낸 토스 베스트·하루특가 22개를 쿠팡 같은 상품과 비교하니 전부 토스가 쌌는데 봇은 일부만 골랐음
@@ -2345,7 +2345,7 @@ def threads_hint(e):
 
 def toss_deals(seen, best=False):
     """토스 하루특가(API): 9시 이후 하루 1번, Claude가 고른 5개를 쉐어링크로 채널 + Threads에 바로. 편성 0건인 날은 다음 실행에 다시.
-    best=True: 토스 베스트(지금 많이 팔리는 상품) 중 Claude가 '진짜 싼' 것만 최대 3개, TOSS_BEST_HOURS마다 1번. 3일 안에 올린 상품은 빼고, 없으면 안 올림.
+    best=True: 토스 베스트(지금 많이 팔리는 상품) 중 Claude가 '진짜 싼' 것만 최대 5개('💙 토스 상품 모음' — MM 10/26), TOSS_BEST_HOURS마다 1번. 3일 안에 올린 상품은 빼고, 없으면 안 올림.
     best="cat": 같은 방식으로 카테고리 베스트(TOSS_CATS 최상위 카테고리들 + 날마다 돌아가는 다른 최상위 카테고리 1개) 중 최대 3개, TOSS_CAT_HOUR에 1번.
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
@@ -2359,7 +2359,7 @@ def toss_deals(seen, best=False):
     if busy(seen, cap=not (best is True and "best" in TH_TOSS_KINDS and hrs[-1] in TH_LIST_HOURS)):  # 12·18시 Threads 베스트 리스트는 시간당 글 수에 안 막힘(10/12 진우 '묶음 글은 반드시') · 10분 안에 다른 묶음 글이 나갔거나 최근 1시간 글이 많음 -> 다음 실행(14분 뒤)에 다시(API도 안 부름)
         print("toss_special" if special else "toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", "미룸(묶음 글 간격·1시간 글 수)")
         return
-    head = "💙 <b>토스 특가 중 살 만한 {}개</b>" if special else "💙 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
+    head = "💙 <b>토스 특가 중 살 만한 {}개</b>" if special else "💙 <b>토스 상품 모음 {}개</b>" if best is True else "💙 <b>토스에서 지금 많이 팔리는 것 중 살 만한 {}개</b>" if best else \
         "💙 <b>오늘의 토스 하루특가 TOP{}</b>\n<i>밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요</i>"  # 10/10 진우 화면: 선착순특가 유의사항 · 10/22 진우 '토스 = 💙'(⏰·🏆·🔥 -> 💙)
     if cat:  # 카테고리 ID는 트리에서 이름으로 찾음(트리 조회는 일 상한 차감 없음)
         tree = toss("/categories")["categories"]
@@ -2389,7 +2389,7 @@ def toss_deals(seen, best=False):
     picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best else GOLD_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가") + TOSS_EASE + TOSS_WU) + tsuf,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
                                + (f" | 리뷰 {x.get('reviewScore')}점 {x['reviewCount']:,}개" if x.get("reviewCount") else "") for x in items])
-    picks = picks and sorted(({**p, "score": p["score"] + toss_freq(items[p["i"]]) + season_adj(items[p["i"]]["displayName"])} for p in picks), key=lambda p: -p["score"])[:5 if special or not best else 3]  # S: 자주 사는 상품 +1 · Z 계절 상품 +1/-2 뒤 순위
+    picks = picks and sorted(({**p, "score": p["score"] + toss_freq(items[p["i"]]) + season_adj(items[p["i"]]["displayName"])} for p in picks), key=lambda p: -p["score"])[:3 if cat else 5]  # S: 자주 사는 상품 +1 · Z 계절 상품 +1/-2 뒤 순위 · MM(10/26) 토스 상품 모음(베스트) 3 -> 5개
     today = time.strftime("%Y-%m-%d", kst)
     night = {v[0] for v in (toss_daymap(seen, time.time(), today, seen.get("soldmap", {}).get("d") != today) or {}).get("m", {}).values()} if special and picks else set()  # 특가 중 오늘 하루특가 = 품절 땐 '밤 12시 재오픈'(오늘 목록이 없으면 1번 받음)
     if special and picks:  # 진우 '개당 수익 × Claude 점수': 개당 수익 = 가격 × 수수료(10/1~ 일괄 8%, TOSS_FEE_DAY~ 기본 5%·오늘 하루특가 = 선착순특가 3%) -> 7점↑ 중 점수 × 개당 수익 높은 순 3개
@@ -2639,6 +2639,54 @@ def steady_list(seen):
     while n > 1 and len(render(n)) > 480:
         n -= 1
     th_bundle(seen, "steady", render(n), items[0]["tu"])
+
+
+CP_MIX_AT, CP_MIX_N, CP_MIX_LATE, CP_MIX_GAP = ("12:30", "19:30"), 5, 3, 15 * 60  # MM(10/26 Cowork — 진우 '링크만 보면 살 만한 상품이 너무 적다'·'쿠팡 제품도 꾸준하게'): 하루 2번 · 5개 · 회차 3시간 안에만 · 개별 글·TOP 리스트 15분 안 = 다음 실행(15분 뒤)
+
+
+def cp_mix(seen):
+    """MM '🚀 쿠팡 상품 모음' 하루 2번(CP_MIX_AT KST) 채널 + Threads: 사이트 🔥 쿠팡 진열(cp_shelf — 딥링크·품절 X·리뷰 300↑·계절 맞음, 가격 = 와우가·쿠폰가 글자 그대로) 먼저,
+    모자라면 👍 꾸준템(JJ 기준 · 줄 앞 👍 · 채널은 근거 줄) — 같은 품목 칸(cat_of)·같은 종류(same_kind) 1개 · 24시간 안 모음·TOP 리스트(thlist)에 나온 상품 X · 3개 밑 = 그 회차 X(로그).
+    줄 = 번호·짧은 이름·가격·단가 + 링크 · 대가성 문구 첫 줄 · 게시 시점 줄 · 끝 '쿠팡 모음 더 보기 → /c/coupang/'(Threads ?ref=thm · 채널 버튼 ?ref=tgm).
+    Threads 글 하나에 링크 5개 한도(4279111) = 상품 4개까지 + 더 보기(480자 넘으면 뒤에서 줄임)."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    hm = time.strftime("%H:%M", kst)
+    at = [a for a in CP_MIX_AT if a <= hm < f"{int(a[:2]) + CP_MIX_LATE:02d}{a[2:]}"]
+    key = time.strftime("cpmix_%Y%m%d_", kst) + (at[-1].replace(":", "") if at else "")
+    if not at or key in seen:
+        return
+    if busy(seen, cap=False) or now - max(th_day(seen, now)["last"], seen.get("thlist", {}).get("t", 0)) < CP_MIX_GAP:  # 45분 개별 글·12·15·18시 TOP 리스트와 같은 때 = 15분 뒤로
+        print("cp_mix 미룸(개별 글·리스트·묶음 글 15분 안)")
+        return
+    seen[key] = now
+    posts = load(POSTS, [])
+    hist = [h for h in seen.get("cpmix", {}).get("h", []) if now - h[0] < 86400]
+    old = {u for h in hist + seen.get("thlist", {}).get("h", []) if now - h[0] < 86400 for u in h[1]}
+    pick = []
+    for (i, _, pr, un, rv), mk in [(x, "") for x in cp_shelf(posts, kst, False)] + [(x, "👍 ") for x in cp_shelf(posts, kst, True)]:
+        p, nm, c = posts[i], short_name(title_of(posts[i]["text"])), cat_of(posts[i])
+        if p["url"] not in old and not any(p["url"] == q["url"] or c and c == cat_of(q) or same_kind(nm, n) for q, n, *_ in pick):
+            pick.append((p, nm, pr, un, rv, mk))
+    pick = pick[:CP_MIX_N]
+    if len(pick) < 3:
+        print(f"cp_mix {at[-1]} 후보 {len(pick)}개 — 이번 회차 X")
+        return
+    text, kb = top_post("🚀 <b>쿠팡 상품 모음</b>", [(mk + nm, p["url"], [f"💰 <b>{esc(pr)}</b>" + (f" · {esc(un)}" if un else ""), f"👍 {steady_word(rv)} · {esc(rv)}" if mk else ""]) for p, nm, pr, un, rv, mk in pick])
+    if not tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=f"<i>{DISCLOSURE}</i>\n\n{text}\n\n{toss_when()}",
+              reply_markup={"inline_keyboard": kb + [[{"text": "🚀 쿠팡 모음 더 보기", "url": f"{SITE}c/coupang/?ref=tgm"}]]}):
+        return
+    bundled(seen)
+    seen["cpmix"] = {"t": now, "h": hist + [[now, [p["url"] for p, *_ in pick]]]}
+    print(f"cp_mix {at[-1]} {len(pick)}개 | 🔥{sum(not x[5] for x in pick)} 👍{sum(bool(x[5]) for x in pick)} | " + " / ".join(clip(x[1], 16) for x in pick))
+    if not E.get("THREADS_TOKEN"):
+        return
+    render = lambda n: f"{DISCLOSURE}\n\n🚀 쿠팡 상품 모음\n\n" + "\n".join(f"{NUM[k]} {mk}{clip(nm, 30)} {pr}" + (f" · {un}" if un else "") + f"\n👉 {th_url(p, posts.index(p))}"
+                                                                   for k, (p, nm, pr, un, rv, mk) in enumerate(pick[:n])) + f"\n\n{toss_when()}\n쿠팡 모음 더 보기 → {SITE}c/coupang/?ref=thm"
+    n = min(len(pick), 4)
+    while n > 1 and len(render(n)) > 480:
+        n -= 1
+    th_bundle(seen, "cpmix", render(n), th_url(pick[0][0], posts.index(pick[0][0])))
 
 
 def top_deals(seen):
@@ -7757,7 +7805,7 @@ def quiet():
 
 
 ALERT_GAP, QUIET_TH, QUIET_EV = 3 * 3600, 2 * 3600, 20 * 60  # 10/13 01:50 진우 '업로드 안 되면 바로 알람': 같은 단계·오류 알림 간격 · Threads 글 없음(8~24시) · 예약 글 늦음
-ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "pick_post": "Threads 오늘의 픽", "pair_post": "Threads 둘 중 뭐 살래 묶음", "drop_post": "📉 가격 내려간 상품 글", "cp_repost": "쿠팡 자동 재게시", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
+ALERT_STEPS = {"events": "텔레그램 예약 글", "preview": "22시 미리보기", "top_deals": "지금 살 만한 딜 리스트", "steady_list": "👍 꾸준템 리스트", "cp_mix": "🚀 쿠팡 상품 모음", "pick_post": "Threads 오늘의 픽", "pair_post": "Threads 둘 중 뭐 살래 묶음", "drop_post": "📉 가격 내려간 상품 글", "cp_repost": "쿠팡 자동 재게시", "toss_deals": "토스 회차 글", "toss_picks": "토스 이름 예약 글", "toss_solo": "토스 자동 개별 글", "toss_wait": "토스 커뮤니티 딜(링크 찾은 뒤 게시)",
                "digest": "21시 모아보기", "threads": "21시 Threads 카드", "threads_deals": "Threads 개별 글", "toss_reopen": "재오픈 글", "th_retry": "Threads 묶음 글 재시도",
                "ig_cards": "인스타 카드", "ig_reel": "인스타 릴스", "ig_publish": "인스타 게시",
                "weather_post": "아침 날씨 글", "snack_post": "간식 글", "daily_post": "#일상 Threads 글", "daily_log": "운영 일지", "poll_post": "Threads 가격 투표"}  # 업로드하는 단계(이 단계가 예외로 멈추면 알림)
@@ -8948,7 +8996,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in good[max(0, MAX_DRAFTS - len(held)):]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report):
         try:
             step(seen)
         except Exception as e:

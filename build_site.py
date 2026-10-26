@@ -1888,7 +1888,7 @@ def changes_json(posts, it, ds, dl, now_ts, prev=None):
 LINK_STYLE = "ab"  # /link/ 프로필 링크 쪽(10/25 진우): 'ab' = 시안 A·B 반반(방문자마다 50:50 · 그 브라우저는 계속 같은 쪽 · 주소 v=a/v=b = 고정 보기) · 'a'|'b' = 그 시안만 — 다른 시안 미리보기 = /link/b/(LINK_STYLE 'b'면 /link/a/, noindex)
 LINK_AB = ("2026-10-26", "2026-11-08")  # A·B 비교 기간(홈 레이아웃 비교와 같은 날 마감) — 하루 집계 = hotdeal.link_ab -> link_ab.json · 자동으로 한쪽으로 몰지 않음(결과 판단 = Cowork·진우)
 KAKAO_OPENCHAT_URL = ""  # 카톡 특가방(오픈채팅) 주소 — 진우가 방 만들면 Cowork가 전달 · 비거나 https://open.kakao.com/ 아니면 /link 카톡 버튼·줄 숨김
-LINK_N = 12  # /link 지금 특가 칸 수(칩마다)
+LINK_N, LINK_PER_CAT, LINK_MALLS = 12, 2, ("coupang", "toss", "naver")  # /link 지금 특가 칸 수(칩마다) · MM(10/26 — 12칸 중 10칸 히터 ❄️) 앞 12칸 = 품목 칸마다 2개까지·몰 돌림
 LINK_TABS = (("all", "전체"), ("life", "생필품"), ("beauty", "뷰티"), ("food", "식품"), ("women", "여성용품"))  # 칩 = 화면 안에서만 거름(품목 = cat_of)
 LINK_CH = (("blog", "블로그", BLOG, "naver", "background:#03C75A", "네이버 블로그", "가격 비교 글"), ("threads", "Threads", THREADS, "threads", "background:#000", "Threads", "실시간 딜"),
            ("instagram", "인스타", INSTA, "instagram", "background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)", "인스타그램", "카드 딜 · 번호로 찾기"),
@@ -1918,6 +1918,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
 @media(prefers-color-scheme:dark){.im img{mix-blend-mode:normal}}
 .nm{font-size:12px;line-height:1.38;height:33px;overflow:hidden;margin:7px 2px 2px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.pr{font-size:14px;font-weight:800;margin:0 2px}.pr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--pke);margin-left:4px}.ck{font-size:10.5px;color:var(--mut);margin:0 2px}
+.mb{display:flex;gap:8px;margin:0 0 8px}.mb a{flex:1;text-align:center;font-weight:700;font-size:13.5px;padding:10px 8px;border-radius:12px;background:var(--chip)}
 .all{display:block;text-align:center;font-weight:700;font-size:15px;margin:22px 0 0;padding:13px;border-radius:14px;background:var(--chip)}.ft{font-size:11px;color:var(--mut);line-height:1.5;margin:10px 2px 0;text-align:center}
 .vb,.eb2{display:none}.lb .vb,.lb .eb2{display:block}.lb .va{display:none}
 .hd{display:flex;align-items:center;gap:8px}.lgi{width:32px;height:32px;border-radius:9px}.wm{font-size:17px;font-weight:800}
@@ -1965,12 +1966,39 @@ def link_pool(it, today):
     · 가격 있는 것만 — 사진 있는 것 먼저(같은 칸 = 사이트 진열 순서 그대로)."""
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
     xs = [x for x in it if x[2][0] == 0 and shop_of(x[1]) in SHOP_NOTES and aff(x[1].get("url")) and price_day(x[1], today) >= since and price_bits(x[1], x[2])[0]]
-    return sorted(xs, key=lambda x: not img_of(x[1]))
+    return link_mix(sorted(xs, key=lambda x: not img_of(x[1])), today)
+
+
+def link_mix(xs, today):
+    """/link 앞 LINK_N칸(MM 10/26 Cowork — 진우 '링크만 보면 살 만한 상품이 너무 적다', 12칸 중 10칸이 히터): 품목 칸(cat_of — 히터·온풍기 = ❄️ 한 칸)마다 LINK_PER_CAT개까지 ·
+    몰 돌림(쿠팡 → 토스 → 네이버, 그 몰에 넣을 게 없으면 다음 몰) · 확인 2일 넘은 가격(price_day가 그저께)은 뒤로(HOT_DAYS 그대로 — 순서만). 나머지 = 그 뒤에 원래 순서(품목 칩 칸)."""
+    old = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - 86400))
+    front, n = [], {}
+    for q in ([x for x in xs if price_day(x[1], today) >= old], [x for x in xs if price_day(x[1], today) < old]):  # 어제·오늘 가격 먼저 돌리고, 12칸이 안 차면 그저께 가격
+        while len(front) < LINK_N:
+            got = [x for m in LINK_MALLS for x in [next((x for x in q if shop_of(x[1]) == m and x not in front and n.get(cat_of(x[1]), 0) < LINK_PER_CAT), None)] if x]
+            if not got:
+                break
+            for x in got[:LINK_N - len(front)]:
+                if n.get(cat_of(x[1]), 0) < LINK_PER_CAT:  # 같은 돌림 안에서 몰이 달라도 같은 칸 2개까지
+                    front.append(x)
+                    n[cat_of(x[1])] = n.get(cat_of(x[1]), 0) + 1
+    return front + [x for x in xs if x not in front]
+
+
+def link_front(pool):
+    """전체 칩 칸 = pool 순서로 품목 칸(cat_of)마다 LINK_PER_CAT개까지 LINK_N개(link_mix가 앞에 둔 것 그대로 — 그 뒤는 칸이 찬 품목뿐이라 12칸이 안 차면 그만큼만)."""
+    n, out = {}, []
+    for x in pool:
+        if len(out) < LINK_N and n.get(cat_of(x[1]), 0) < LINK_PER_CAT:
+            out.append(x)
+            n[cat_of(x[1])] = n.get(cat_of(x[1]), 0) + 1
+    return out
 
 
 def link_tabs(pool):
     """칩마다 앞 LINK_N개 -> [(i, p, 상태, 들어가는 칩들)], {칩: 개수} — 칸은 한 번만 그리고(쪽 가볍게) data-k로 거름, 순서 = pool 순서(앞 = 전체 칩 1~12번)."""
-    on = {k: {x[0] for x in (pool if k == "all" else [x for x in pool if cat_of(x[1]) == k])[:LINK_N]} for k, _ in LINK_TABS}
+    on = {k: {x[0] for x in (link_front(pool) if k == "all" else [x for x in pool if cat_of(x[1]) == k][:LINK_N])} for k, _ in LINK_TABS}
     return [(*x, [k for k, _ in LINK_TABS if x[0] in on[k]]) for x in pool if any(x[0] in s for s in on.values())], {k: len(s) for k, s in on.items()}
 
 
@@ -2019,7 +2047,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
     today = today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     rows, n = link_tabs(link_pool(it, today))
     kakao = html.escape(KAKAO_OPENCHAT_URL) if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else ""
-    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><small>매시간 바뀌어요</small></div><div class="chips" role="group" aria-label="품목 고르기">'
+    deals = rows and (f'<section aria-labelledby="dh"><div class="sec"><h2 id="dh"><span class="eb2">TODAY</span>지금 특가 <span id="dn">{n["all"]}</span></h2><small>매시간 바뀌어요</small></div><nav class="mb" aria-label="몰별 모음"><a href="{BASE}c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="{BASE}c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav><div class="chips" role="group" aria-label="품목 고르기">'
                       + "".join(f'<button type="button" data-k="{k}" aria-pressed="{"true" if k == "all" else "false"}">{nm}</button>' for k, nm in LINK_TABS if n[k])
                       + '</div><div class="g" id="lg">' + "".join(link_tile(*x) for x in rows) + "</div></section>") or ""
     url = f"{BASE}link/" + (f"{style}/" if alt else "")

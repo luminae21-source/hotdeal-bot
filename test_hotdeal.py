@@ -871,7 +871,7 @@ H.ai_pick = lambda prompt, lines: offered.extend(lines) or ([{"i": 0, "score": 8
 seen.clear(); sent.clear(); time.time = lambda: 1791248340; H.toss_deals(seen, True); assert not sent and not offered  # 09:59 KST: 10시 전
 time.time = lambda: 1791257400; H.toss_deals(seen, True)  # 12:30
 t = sent[-1][1]["text"]
-assert t.startswith(f"<i>{H.TOSS_NOTE}</i>") and "살 만한 2개" in t and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
+assert t.startswith(f"<i>{H.TOSS_NOTE}</i>\n\n💙 <b>토스 상품 모음 2개</b>") and 'href="https://toss.im/_m/1"' in t and "개당 99원" in t and "하루특가" not in t
 assert "<b>베스트1</b></a>\n💰 <b>6,930원</b> (88%↓) · ⭐ 4.8 (리뷰 1,523)\n👉 개당 99원" in t and len(sent[-1][1]["reply_markup"]["inline_keyboard"]) == 2
 assert len(offered) == 3 and "베스트4" not in str(offered) and "리뷰 4.8점 1,523개" in offered[0] and "tb_1" in seen and "tb_3" in seen
 assert seen["tb_1"]["n"] == "베스트1" and seen["tb_1"]["t"] == 1791257400  # 이름도 남김 -> 커뮤니티 딜 판단 때 '이미 올린 딜'(10/10 케라시스 중복)
@@ -1648,7 +1648,7 @@ assert t4.startswith('<a href="https://link.coupang.com/a/h" rel="nofollow spons
 assert '<div class="pr">9,900원</div><div class="ck">10/25 가격</div>' in S.link_tile(*S.link_pool(L3, "2026-10-25")[1], ["all"]) and S.link_tile(*S.link_pool(L3, "2026-10-25")[2], ["beauty"]).split(">")[0].endswith(" hidden")  # 토스 = 올린 날 · 전체 밖 = 처음엔 숨김
 assert [S.link_name({"text": f"🔥 {t}"}) for t in ("[토스] 해표 올리브유 500ml 4병 22,900원", "[토스] 마스크팩 10매 6,900원 (무배)", "[쿠팡] 1000원샵 키링 (1,000원)", "[G마켓] 물티슈 20매 12팩(8900/무배)", "[쿠팡] 육개장 사발면 24개/쿠폰가 16,830원, 첫구매 14,800원",
                                                        "[11번가] 휴지 30롤 22,900원/무료", "[옥션] 카스 제로 2캔 [3,000원/네멤무료]", "[쿠팡] 100원 동전지갑")] == ["해표 올리브유 500ml 4병", "마스크팩 10매", "1000원샵 키링", "물티슈 20매 12팩", "육개장 사발면 24개", "휴지 30롤", "카스 제로 2캔", "100원 동전지갑"]  # 이름 끝 가격 = 시각 없는 가격 X
-BIG = [(i, lp(f"휴지{i}" if i % 3 else f"샴푸{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]
+BIG = [(i, lp(f"{["휴지", "라면", "세탁세제", "고무장갑", "과자", "생리대", "핫팩", "양말"][i % 8]}{i}", f"https://link.coupang.com/a/{i}", IMG), H0) for i in range(40)]  # MM: 앞 12칸 = 품목 칸 2개까지 -> 8품목
 rw3, n3 = S.link_tabs(S.link_pool(BIG, "2026-10-25"))
 assert n3["all"] == 12 and all(v <= 12 for v in n3.values()) and len({x[0] for x in rw3}) == len(rw3) and [x[0] for x in rw3 if "all" in x[3]] == list(range(12))
 big3 = S.link_page("ab", pp, BIG, "docs3", today="2026-10-25")
@@ -9551,4 +9551,60 @@ assert H.rv_bad("한 달 1,000명+ 구매", "", "", ctx89) == "" and H.rv_bad("�
 assert H.NV_STEADY_HEAD.format(H.steady_word("리뷰 5,000")) == "💚 네이버 · 꾸준히 주문 들어오는 상품 👍" and H.NV_STEADY_HEAD.format(H.steady_word("")) == "💚 네이버 · 꾸준히 팔리는 상품 👍"
 src89 = open(__import__("build_site").__file__).read()
 assert '"👍 꾸준히 주문 들어오는 것", "최저가는 아니어도 주문이 꾸준한 것"' in src89 and "꾸준히 팔리는 것\"" not in src89 and 'steady_word(\'리뷰 \' + str(x.get(\'reviewCount\') or 0))' in inspect.getsource(H.toss_solo)
+# 9-90) MM(10/26 Cowork — 진우 '링크만 보면 살 만한 상품이 너무 적다'·'쿠팡 제품도 꾸준하게'): ① '🚀 쿠팡 상품 모음' 하루 2번(12:30·19:30) 채널 + Threads 5개 = 🔥 쿠팡 진열 먼저·👍 꾸준템 채움 ·
+#       같은 품목 칸 1개 · 24시간 안 모음·TOP 리스트 상품 X · 끝 '쿠팡 모음 더 보기' · 개별 글·리스트 15분 안 = 15분 뒤로 ② 토스 베스트 = '💙 토스 상품 모음' 5개 ③ /link 앞 12칸 = 품목 칸 2개까지·몰 돌림·옛 가격 뒤로 + 모음 버튼
+import collections; sv90 = (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN")); d90, cwd90 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d90)
+tb90, tg90 = [], []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb90.append((kind, text, link)) or {"id": "T"}
+H.tg = lambda method, **p: tg90.append(p) or {"message_id": 1}; H.season_adj = lambda n, ctx=None: 0
+H.POSTS, H.E["THREADS_TOKEN"] = "posts90.json", "tk"
+def sh90(name, k, rv="5,000", steady=False):
+    return {"t": "2026-11-10 04:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 " + ("· 꾸준히 팔리는 상품 👍" if steady else "🔥") + f"\n{name}\n5,900원 · 리뷰 {rv}\n💰 1개당 590원꼴\n✔ 무료배송 · 리뷰 {rv}",
+            "entities": [], "url": f"https://link.coupang.com/a/M{k}", "own": 1, "shelf": 1, "st": "wait" if steady else "hot", "now": "5,900원 와우가" if k == 1 else "5,900원", "chk": "11/12 9시"}
+P90 = [sh90("코멧 화장지 30롤", 0), sh90("탐사 물티슈 100매", 1), sh90("농심 신라면 멀티팩", 2), sh90("리큐 세탁세제 3L", 3), sh90("코멧 고무장갑 3켤레", 4), sh90("오리온 과자 선물세트", 5),
+       sh90("코멧 핫팩 30개", 6), sh90("좋은느낌 생리대 36P", 7, "2.9만", True), sh90("탐사 양말 10켤레", 8, "1.2만", True)][::-1]  # cp_shelf = 최근 진열 먼저 -> 목록 끝이 최근
+json.dump(P90, open("posts90.json", "w"), ensure_ascii=False)
+cats90 = lambda urls: [H.cat_of(next(p for p in P90 if p["url"] == u)) for u in urls]
+time.time = lambda: TK("2026-11-12 11:00"); s90 = {}; H.cp_mix(s90); assert not tg90 and not s90  # 12:30 전
+time.time = lambda: TK("2026-11-12 12:35"); s90 = {"thlist": {"t": TK("2026-11-12 12:25"), "h": [[TK("2026-11-12 12:05"), ["https://link.coupang.com/a/M2", "https://link.coupang.com/a/M5"]]]}}
+o90 = io.StringIO()
+with contextlib.redirect_stdout(o90): H.cp_mix(s90)
+assert not tg90 and "cp_mix 미룸" in o90.getvalue() and not [k for k in s90 if k.startswith("cpmix_")]  # 12시 TOP 리스트 10분 뒤 = 다음 실행(15분 뒤)
+time.time = lambda: TK("2026-11-12 12:41"); o90 = io.StringIO()
+with contextlib.redirect_stdout(o90): H.cp_mix(s90)
+c90 = tg90[-1]["text"]; u90 = s90["cpmix"]["h"][-1][1]
+assert c90.startswith(f"<i>{H.DISCLOSURE}</i>\n\n🚀 <b>쿠팡 상품 모음</b>\n\n1️⃣ ") and c90.count("️⃣ <a href=") == 5 and len(u90) == 5 and "cpmix_20261112_1230" in s90, c90  # 쿠팡 모음 5개 · 대가성 문구 첫 줄
+assert len(set(cats90(u90))) == 5 and all(cats90(u90)) and "https://link.coupang.com/a/M1" not in u90  # 품목 칸 겹침 X(화장지·물티슈 = 생필품 1개)
+assert not {"https://link.coupang.com/a/M2", "https://link.coupang.com/a/M5"} & set(u90) and "물티슈" not in c90 and "화장지" in c90  # 24시간 안 TOP 리스트 상품 X · 같은 생필품 칸 = 먼저 진열된 화장지
+assert "👍 " in c90 and "👍 꾸준히 주문 들어오는 · 리뷰 2.9만" in c90 and c90.index("핫팩") < c90.index("👍 좋은느낌") and "💰 <b>5,900원</b> · 1개당 590원꼴" in c90  # 🔥 모자라면 👍(근거 줄) · 가격·단가
+assert c90.endswith(H.toss_when()) and tg90[-1]["reply_markup"]["inline_keyboard"][-1] == [{"text": "🚀 쿠팡 모음 더 보기", "url": "https://hotdealpick.kr/c/coupang/?ref=tgm"}] and "cp_mix 12:30 5개 | 🔥4 👍1" in o90.getvalue()
+k90, th90, l90 = tb90[-1]
+assert k90 == "cpmix" and th90.startswith(H.DISCLOSURE + "\n\n🚀 쿠팡 상품 모음\n\n1️⃣ ") and th90.endswith("\n쿠팡 모음 더 보기 → https://hotdealpick.kr/c/coupang/?ref=thm") and len(th90) <= 480, th90
+assert len(set(re.findall(r"https?://\S+", th90))) <= 5 and th90.count("👉 ") == 4 and l90 == u90[0]  # Threads 링크 5개 한도 = 상품 4개 + 더 보기
+n90 = len(tg90); H.cp_mix(s90); assert len(tg90) == n90  # 같은 회차 1번
+time.time = lambda: TK("2026-11-12 19:35"); o90 = io.StringIO()
+with contextlib.redirect_stdout(o90): H.cp_mix(s90)
+assert len(tg90) == n90 and "cp_mix 19:30 후보 2개 — 이번 회차 X" in o90.getvalue() and "cpmix_20261112_1930" in s90  # 24시간 안 모음 상품 X -> 3개 밑 = 그 회차 X
+s90b = {"thsolo_20261113": {"t": 1, "n": 1, "last": TK("2026-11-13 12:30")}}; time.time = lambda: TK("2026-11-13 12:40"); o90 = io.StringIO()
+with contextlib.redirect_stdout(o90): H.cp_mix(s90b)
+assert len(tg90) == n90 and "cp_mix 미룸" in o90.getvalue()  # 45분 개별 글 10분 뒤 = 15분 뒤로
+s90c = {"bundles": {"t": 1, "ts": [TK("2026-11-13 12:52")]}}; time.time = lambda: TK("2026-11-13 12:55"); H.cp_mix(s90c); assert len(tg90) == n90 and not [k for k in s90c if k.startswith("cpmix_")]  # 다른 묶음 글 10분 안 = 다음 실행
+time.time = lambda: TK("2026-11-13 15:31"); H.cp_mix(s90b); assert len(tg90) == n90 and "cpmix_20261113_1230" not in s90b  # 회차 3시간 넘음 = X(밤에 몰아 X)
+time.time = lambda: TK("2026-11-13 12:59"); H.cp_mix(s90b); assert len(tg90) == n90 + 1 and len(tb90) == 2  # 15분 지나면 올림(다음 날 = 24시간 지나 같은 상품도 OK)
+assert ", cp_mix, " in inspect.getsource(H.main) and H.ALERT_STEPS["cp_mix"] == "🚀 쿠팡 상품 모음"
+(H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk90) = sv90; H.E.pop("THREADS_TOKEN", None) if tk90 is None else H.E.update(THREADS_TOKEN=tk90); os.chdir(cwd90)
+# ② 토스 베스트 = '💙 토스 상품 모음' 5개(카테고리·뷰티 베스트는 3개 그대로)
+src90 = inspect.getsource(H.toss_deals)
+assert '"💙 <b>토스 상품 모음 {}개</b>" if best is True' in src90 and 'key=lambda p: -p["score"])[:3 if cat else 5]' in src90 and "최대 5개 pick" in H.BEST_PROMPT
+# ③ /link 앞 12칸: 품목 칸 2개까지 · 몰 돌림 · 어제·오늘 가격 먼저 · 모음 버튼
+lk90 = lambda k, nm, mall="쿠팡", at="2026-10-26 09:00", u=None: (k, {"t": at, "text": f"🔥 [{mall}] {nm} (9,900원)", "url": u or (f"https://toss.shopping/_m/L{k}" if mall == "토스" else f"https://link.coupang.com/a/L{k}"), "own": 1}, (0, None, "", [], False))
+LK90 = [lk90(k, f"코멧 전기히터 {k}") for k in range(8)] + [lk90(10, "농심 신라면"), lk90(11, "리큐 세탁세제"), lk90(12, "토스 온풍기", "토스"), lk90(13, "토스 생리대", "토스"),
+        lk90(14, "옛 화장지", at="2026-10-24 09:00"), lk90(15, "코멧 고무장갑"), lk90(16, "오리온 과자"), lk90(17, "탐사 양말")]
+fr90 = [x for x in S.link_tabs(S.link_pool(LK90, "2026-10-26"))[0] if "all" in x[3]]
+cnt90 = collections.Counter(S.cat_of(p) for _, p, _, _ in fr90)
+assert max(cnt90.values()) <= 2 and cnt90["heat"] == 2 and [S.shop_of(p) for _, p, _, _ in fr90][:2] == ["coupang", "toss"], [(S.shop_of(p), S.cat_of(p)) for _, p, _, _ in fr90]  # 한 종류 2개까지(히터·온풍기 = ❄️ 1칸) · 쿠팡 → 토스 돌림
+assert [x[0] for x in fr90][-1] == 14 and len(fr90) == 9  # 그저께 가격 = 어제·오늘 가격 뒤 · 칸 다 못 채우면 그만큼만(같은 칸 3개째 X)
+pg90 = S.link_page("ab", [], LK90, "docs3", today="2026-10-26")
+assert '<nav class="mb" aria-label="몰별 모음"><a href="https://hotdealpick.kr/c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="https://hotdealpick.kr/c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav>' in pg90 \
+    and pg90.index('class="mb"') < pg90.index('id="lg"') and ".mb{display:flex" in pg90
 print("OK: 모든 셀프체크 통과")
