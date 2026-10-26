@@ -6130,13 +6130,13 @@ def th_nd(seen):
     seen["thnd"] = {"t": now, "ts": [t for t in seen.get("thnd", {}).get("ts", []) if now - t < 86400] + [now]}
 
 
-def th_reply(tok, to, text, link=None):
-    """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(link = 링크 카드 — 22시 미리보기 댓글) -> 새 댓글 id."""
+def th_reply(tok, to, text, link=None, image=None):
+    """Threads 댓글(타래) 1개: 글·댓글 to에 reply_to_id로 이어 붙임(link = 링크 카드 — 22시 미리보기 댓글 · image = 사진 댓글 — QQ 투표 결과 스티커, 30초 처리 대기) -> 새 댓글 id."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
     for att in ({"link_attachment": link}, {}) if link else ({},):  # 링크 카드를 못 만들면(4279047) 카드 없이 1번 더(th_text와 같음 — 글 속 주소는 그대로)
-        q = urllib.parse.urlencode({"media_type": "TEXT", "text": text[:500], "reply_to_id": to, **att, "access_token": tok})
+        q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "reply_to_id": to, **att, "access_token": tok})
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-        time.sleep(10)
+        time.sleep(30 if image else 10)
         try:
             return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")), top=False)["id"]
         except urllib.error.HTTPError as e:
@@ -6861,14 +6861,16 @@ CHAT_TOPICS = (("shop", "장보기 습관 공감(예: 마트 가면 계획에 �
                ("season", "오늘 계절·기온 이야기(아래 '오늘 계절' 줄에 있는 것만 — 없는 날씨·기온 X)"), ("quiz", "가격 감각 퀴즈 — 숫자는 아래 '우리 기록' 숫자 그대로만(품목은 일반 이름 — 상품·브랜드 X)"),
                ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"))
 TH_NONDEAL = ("info", "wx", "snack", "log", "funnel", "chat")  # 비딜 Threads 묶음 글 kind(큐레이션 = events 시각·정해진 시각 글은 시각으로) — 수다 글 앞뒤 30분 칸
-CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|사세요|사\s*둬|사\s*두세요|구매\s*(?:하세요|해|하자|각|추천)|주문하세요|담으세요|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|질러라|지르자|질러(?=\s*$|\s*[!~.\n])|(?:지금|당장|얼른|빨리)\s*(?:사|질러|담아)(?![가-힣])|사야\s*(?:해|돼|됨|지)(?![?？가-힣])|"  # 링크·권유(반말 재촉 — '질러 버림'·'빨리 사라짐' X)
+CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|(?:사세요|주문하세요|담으세요|챙기세요|쟁이세요|(?:사|담아|쟁여|챙겨)\s*(?:두세요|놓으세요))(?!\s*[?？])|사\s*둬|구매\s*(?:하세요|해|하자|각|추천)|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|질러라|지르자|질러(?=\s*$|\s*[!~.\n])|(?:지금|당장|얼른|빨리)\s*(?:사|질러|담아)(?![가-힣])|사야\s*(?:해|돼|됨|지)(?![?？가-힣])|"  # 링크·권유(반말 재촉 — '질러 버림'·'빨리 사라짐' X)
             r"(?:댓글|답글)[^\n]{0,15}(?:달면|단\s*사람|남기면|남긴\s*사람|주시면|주면|달아\s*주면|쓰면)|추첨|경품|기프티콘|쏜다|쏠게|나눔|드려요|보내\s*드|"  # 댓글 보상 유도
             r"정부|가수|드라마|예능|뉴스|기사(?!님)|사건|논란|"  # 뉴스·연예 이슈(정치·종교·사건사고·연예인 = TH_RUDE)
             rf"{SAVE_STORES.replace('토스', '토스(?!트)')}|{OTHER_STORES}|다이소|코스트코|트레이더스|홈플러스|홈플|롯데마트|이마트|올영|알리(?:에서|익스)|테무|무신사|스타벅스|스벅|이케아|배민|컬리")  # 몰·마트 이름(+ 브랜드 = chat_ok POLL_BRANDS)
-CHAT_PROMPT = """Threads에 올릴 짧은 '수다 글'을 반말로 써 줘. 쇼핑·살림 이야기를 친구한테 하듯 가볍고 재미있게.
+CHAT_PROMPT = """Threads에 올릴 짧은 '수다 글'을 친근한 존댓말로 써 주세요. 쇼핑·살림 이야기를 이웃과 나누듯 가볍고 재미있게.
 주제: {topic}
 {facts}규칙:
-- 2~4줄(lines 한 칸 = 한 줄). 마지막 줄 = 가벼운 질문 1개(글 전체 물음표는 그 1개만). 앞 줄은 공감되는 이야기.
+- 2~4줄(lines 한 칸 = 한 줄). 줄마다 존댓말로 끝(~요·~죠 — 반말·'~함'·'~임' X). 마지막 줄 = 가볍게 묻는 질문 1개(~요?·~죠?·'~은?'·'~는?' — 글 전체 물음표는 그 1개만). 앞 줄은 공감되는 이야기.
+- 묻기만: '골라 봐·찍어 봐·댓글로 알려주세요' 같은 시키는 말 X. 'ㅋㅋ'는 글에 1번까지 · 웃음 대상은 상황이나 핫딜픽 자신만 · 아래 예시('나만 그래?' 등)도 존댓말로('나만 그런가요?').
+- 예: 장 보러 가면 꼭 하나씩 더 담게 되는 거 있죠. / 다들 뭐 담으세요?
 - 상품 이름·브랜드·몰·가게 이름 X. 가격 숫자 X(가격 퀴즈만 위 우리 기록 숫자 그대로). 링크·해시태그 X, 이모지 0~1개.
 - 써 본 척·지어낸 경험담('써봤', '우리 집' 등) X, 몸·피부 증상·효능 X, 사라·담아라 같은 구매 권유 X, '댓글 달면 …' 같은 보상 유도 X, 정치·연예·뉴스 X.
 - {fun}
@@ -6877,7 +6879,7 @@ CHAT_PROMPT = """Threads에 올릴 짧은 '수다 글'을 반말로 써 줘. 쇼
 
 
 def chat_ok(lines, money=(), facts=""):
-    """수다 글 줄 검사 -> 걸린 이유(빈 문자열 = 통과): 2~4줄 · 물음표 1개(마지막 줄 — 뒤 ㅋㅋ OK) · 금지어(써 본 척·몸·효능·X_BAN·CHAT_BAN·반말 재촉·브랜드·계절·무례) · 영문(상품·브랜드) ·
+    """수다 글 줄 검사 -> 걸린 이유(빈 문자열 = 통과): 2~4줄 · 물음표 1개(마지막 줄 — 뒤 ㅋㅋ OK) · 금지어(써 본 척·몸·효능·X_BAN·CHAT_BAN·재촉·브랜드·계절·무례) · 영문(상품·브랜드) · QQ 존댓말(줄 끝 ~요·~죠)·시키는 말 X ·
     금액(숫자·말 — '3만원'·'천 원'·%·프로) = 우리 기록(money)만 · 기온·날짜(N도·M/D) = 재료(facts — 오늘 계절 줄·행사 기간)에 있는 숫자만."""
     t = "\n".join(lines)
     if not 2 <= len(lines) <= 4 or any(not l.strip() for l in lines) or len(t) > 240:
@@ -6895,7 +6897,30 @@ def chat_ok(lines, money=(), facts=""):
         return "기록 밖 금액"
     if set(n for g in re.findall(r"(\d+)\s*(?:℃|°|도(?=\s*(?:까지|야|래|넘|이상|이하|밑|아래|정도|쯤|라|$)|[,.!~\n]))|(\d+)/(\d+)", t) for n in g if n) - set(re.findall(r"\d+", facts)):  # '1도 없던'·'1+1도' = 기온 X
         return "재료 밖 기온·날짜"
+    if m := re.search(POLL_ORDER, t):
+        return f"시키는 말({m[0]})"
+    for i, l in enumerate(lines):  # QQ 존댓말: 줄 끝(뒤 기호·이모지·ㅋㅋ 뺌) = ~요·~죠·~니다 · 질문 줄은 '~은?'·'~는?'도
+        if (c := re.sub(r"[^가-힣]+$", "", l)) and not re.search(r"(?<![필중주수소])(?:요|죠|니다|니까)$" if i < len(lines) - 1 else r"(?<![필중주수소])(?:요|죠|니까|[은는])$", c):
+            return f"존댓말({c[-6:]})"
     return "" if not season_bad(t) else "계절"
+
+
+STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X
+STK_MONTHS = {"coffee-mix": (10, 11, 12, 1, 2), "rice": (9, 10, 11)}  # 말풍선이 철 타는 것('쌀쌀해지면'·'햅쌀 철이다멍') = 그 달만
+STK_SEASON = {10: ("coffee-mix", "rice"), 11: ("coffee-mix", "rice")}  # 수다 글 계절 주제 = 지금 계절 품목(없는 달 = chat)
+
+
+def stk_pick(seen, keys, now=None):
+    """QQ 스티커 고르기: keys 중 파일 있고(STK_DIR) 이달에 맞고(STK_MONTHS) 최근 STK_DAYS일 안 안 쓴(seen stk 마지막 날짜) 첫 키 -> (키, 사이트 공개 주소) · 없으면 None(글만)."""
+    now = now or time.time()
+    mon, cut = time.gmtime(now + 9 * 3600).tm_mon, time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - STK_DAYS * 86400))
+    return next(((k, f"{SITE}img/stk/{k}.png") for k in keys if k and os.path.exists(f"{STK_DIR}/{k}.png") and mon in STK_MONTHS.get(k, (mon,)) and seen.get("stk", {}).get(k, "") <= cut), None)
+
+
+def stk_used(seen, key, now=None):
+    """올린 스티커 = 그날 날짜(seen stk · t = seen 3일 정리 기준 — 3일 안 쓴 게 없으면 통째로 지워져도 됨)."""
+    now = now or time.time()
+    seen["stk"] = {**seen.get("stk", {}), "t": now, key: time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))}
 
 
 def chat_facts(name, ps, today, used):
@@ -6951,14 +6976,14 @@ def chat_post(seen):
     st["h"].append([day, name, "", item])  # 고른 주제 = 못 올려도 돌림(같은 주제가 매일 걸려 멈추지 않게) · 올리면 첫 줄 채움
     st["t"] = now  # 못 올린 날도(3일 정리에 주제 기록이 안 지워지게)
     again = ""
-    for _ in (0, 1):  # II+ 무례 = 1번만 다시
+    for _ in (0, 1):  # 규칙 걸림 = 걸린 이유 알려 주고 1번만 다시(II+ 무례 · QQ 존댓말·시키는 말 등)
         try:
             lines = [l.strip() for l in ai_json(CHAT_PROMPT.format(topic=desc, facts=facts, recent=recent, fun=TH_FUN.replace("\n", "\n- ")) + again, {"lines": {"type": "array", "items": {"type": "string"}}})["lines"] if l.strip()]
         except Exception as e:
             return print("chat post: Claude 실패 -> 오늘 X", err_brief(e))
-        if not (why := chat_ok(lines, money, facts)).startswith("무례"):
+        if not (why := chat_ok(lines, money, facts)):
             break
-        again = f"\n\n다시: '{why[3:-1]}' 무례 — 놀림·비하·비꼬기·훈계·비속어 없이."
+        again = f"\n\n다시: '{why[3:-1]}' 무례 — 놀림·비하·비꼬기·훈계·비속어 없이." if why.startswith("무례") else f"\n\n다시: {why} 걸림 — 규칙대로."
     if why:
         return print("chat post: 규칙 걸림 -> 안 올림", name, why)
     ch = review("chat", "\n".join(lines), lines, facts)
@@ -6966,11 +6991,23 @@ def chat_post(seen):
     lines = [l for l in lines if l]
     if why := chat_ok(lines, money, facts):
         return print("chat post: 재검토 뒤 규칙 걸림 -> 안 올림", name, why)
+    stk, text = stk_pick(seen, (item,) if name == "quiz" else STK_SEASON.get(kst.tm_mon, ("chat",)) if name == "season" else ("chat",), now), "\n".join(lines)  # QQ 주제 -> 스티커(장보기·살림·달력 = chat)
     bundled(seen)
-    r = th_bundle(seen, "chat", "\n".join(lines), topic="일상")
+    try:
+        r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")
+    except Exception as e:
+        if not stk:
+            raise
+        seen.pop(time.strftime("thretry_%Y%m%d_chat", time.gmtime(time.time() + 9 * 3600)), None)  # 사진 글로 다시 올림 X — 지금 글만 1번
+        print("chat post: 스티커 사진 글 실패 -> 글만", stk[0], err_brief(e))
+        if th_landed(tok, text, now - 300):
+            return print("chat post: 사진 글이 사실 올라감 -> 글만 X")
+        stk, r = None, th_bundle(seen, "chat", text, topic="일상")
+    if stk:
+        stk_used(seen, stk[0], now)
     st["h"][-1][2] = lines[0][:40]
     st.update(t=now, m={**dict(list(st.get("m", {}).items())[-9:]), r["id"]: {"ts": now}})
-    print("chat post:", name, r["id"], "|", " / ".join(lines))
+    print("chat post:", name, r["id"], *(["· 스티커", stk[0]] if stk else []), "|", " / ".join(lines))
 
 
 def chat_48(seen):
@@ -7788,7 +7825,17 @@ def poll_post(seen):
             alert(seen, "alert_poll_reply", "⚠️ 가격 투표 결과 답글 못 달았어요 — Threads 댓글 권한 확인: " + clip((seen.get("threply") or {}).get("err") or "권한 확인 실패(네트워크)", 160))
         else:
             pa = json.loads(http(f"{THREADS}/{op['id']}?fields=poll_attachment{{{','.join(POLL_KEYS + tuple(x + '_votes_percentage' for x in POLL_KEYS))},total_votes}}&access_token={tok}")).get("poll_attachment")
-            th_reply(tok, op["id"], poll_reply_text(op["slug"], recs[op["slug"]], pa))
+            txt, stk = poll_reply_text(op["slug"], recs[op["slug"]], pa), stk_pick(seen, (op["slug"],), now)  # QQ 그 품목 스티커 = 사진 답글
+            if stk:
+                try:
+                    th_reply(tok, op["id"], txt, image=stk[1])
+                    stk_used(seen, stk[0], now)
+                    print("poll reply: 스티커", stk[0])
+                except Exception as e:  # 사진 실패 = 지금처럼 글만
+                    print("poll reply: 스티커 사진 실패 -> 글만", stk[0], err_brief(e))
+                    stk = None
+            if not stk:
+                th_reply(tok, op["id"], txt)
     card = os.path.exists(time.strftime("docs/cards/%Y-%m-%d.png", time.gmtime(now + 9 * 3600))) and now - seen.get(time.strftime("threads_%Y%m%d", time.gmtime(now + 9 * 3600)), now) < BUNDLE_GAP
     if busy(seen, cap=False) or card or now - th_day(seen, now)["last"] < TH_SOLO_GAP:  # 21:40 = 시간당 상한(채널 글 수)은 안 봄 · 21시 카드 Threads 글과 10분 띄움(10/22 리뷰)
         return
