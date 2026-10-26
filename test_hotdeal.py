@@ -4452,6 +4452,9 @@ poll27("ramen", "life", {"q": "커피믹스 쟁이는 스타일은, 쌀쌀한 �
 poll27("ramen", "life", {"q": "라면 쟁이는 스타일 뭐야?", "opts": GOOD27["opts"]}, GOOD27); assert "존댓말로 묻기" in pr27[1][0], pr27[1][0]
 poll27("ramen", "life", {"q": "라면 쟁이는 스타일, 댓글로 알려주세요", "opts": GOOD27["opts"]}, GOOD27); assert "'알려주세요' 시키는 말" in pr27[1][0], pr27[1][0]  # 존댓말이어도 시키는 말 = X
 assert poll27("ramen", "life", {"q": "라면은 몇 개쯤 있어야 편하세요? 🤔", "opts": GOOD27["opts"]})[0].startswith("🗳️ 라면은 몇 개쯤 있어야 편하세요? 🤔\n") and len(pr27) == 1  # 끝 이모지 = 그대로 통과
+svrv27 = H.review; H.review = lambda where, text, lines, facts="", valid=None, **k: {lines[0]: RV27 if valid(lines[0], RV27) else ""}
+RV27 = "라면 쟁이는 스타일 골라봐요"; assert poll27("ramen", "life", GOOD27) == H.poll_text(r27["ramen"])  # 재검토가 고친 질문도 존댓말·시키는 말 검사 -> 걸리면 지금 틀
+RV27 = "라면은 몇 개 쟁여 두세요?"; assert poll27("ramen", "life", GOOD27)[0] == "🗳️ 라면은 몇 개 쟁여 두세요?" + TAIL27; H.review = svrv27
 poll27("ramen", "life", {"q": "라면 최저가 언제 사세요?", "opts": GOOD27["opts"]}, GOOD27); assert "'최저가' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
 poll27("ramen", "life", {"q": Q27, "opts": ["신라면 박스째", "b", "c", "d"]}, GOOD27); assert "'신라면' 쓰면 안 됨" in pr27[1][0], pr27[1][0]
 assert poll27("ramen", "life", {"q": Q27, "opts": ["땡길 때 편의점 직행", "b", "c", "d"]}, GOOD27)[1] == GOOD27["opts"] and "'땡길 때 편의점 직행' 너무 김(한글 8자까지)" in pr27[1][0], pr27  # 11자 = 27바이트 -> 1번 다시
@@ -4480,6 +4483,7 @@ okq = lambda q: re.search(r"(?:요|죠|[은는])\W*$", q) and not re.search(H.PO
 assert len(ex27) == 4 and all(okq(q) and len(os) == 4 and all(len(o.encode()) <= 25 and not re.search(H.POLL_YO, o) for o in os) for q, os in ex27), ex27
 assert ex27[0][1][-1] == "회사 탕비실 거" and "예: 화장지 마지막 한 롤 남았을 때 나는? / 이미 주문함 · 키친타올로 버팀 · 마트 갈 때 삼 · 가족이 사겠지" in H.POLL_KIND["life"]
 assert H.POLL_TAIL == "내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌" and "최저가" not in H.POLL_TAIL + H.poll_text(r27["ramen"])[0] and "'최저가' X" in H.POLL_PROMPT and "생활 공감 위트" in H.POLL_PROMPT
+assert "'골라봐·찍어·맞혀봐'처럼 시키는 말 X" in H.POLL_PROMPT and "질문 끝에 덧붙이기 X" in H.POLL_PROMPT and "뜻이 안 통하는 말장난 X" in H.POLL_PROMPT and not re.search("반말|가볍게 웃긴", H.POLL_PROMPT)  # 옛 '반말·마지막 보기는 가볍게 웃긴 것' X
 assert not okq("커피믹스 쟁이는 스타일 골라봐, 쌀쌀한 가을엔") and not okq("라면 개당 얼마면 오 싸다 해?") and okq("라면 국물에 찍어 먹는 거 좋아하세요?")  # 오늘 글 = 걸림 · '찍어 먹는'은 그대로
 assert poll27("ramen", "life", {"q": "커피믹스 쟁이는 스타일 골라봐, 쌀쌀한 가을엔", "opts": ["박스째 쌓아둠", "서랍에 늘 대기", "뚝 떨어져야 구매", "물만 마셔도 커피"]}, GOOD27)[0].startswith("🗳️ " + Q27) and len(pr27) == 2  # 오늘 21:40 글 = 다시
 # 결과 답글: 1표 / 0표
