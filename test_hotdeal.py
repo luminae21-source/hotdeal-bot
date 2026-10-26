@@ -773,7 +773,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -3437,7 +3437,7 @@ H.WEATHER_BONUS = 5; bs12 = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]
 assert H.wx_bonus(bs12)("3단 자동 장우산") == 5 and H.wx_bonus(bs12)("휴지") == 0 and H.wx_bonus(bs12)("진라면 20개") == 5  # 아이템·간식 키워드
 H.WEATHER_BONUS = 0; assert H.wx_bonus(bs12)("우산") == 0; H.WEATHER_BONUS = wx0[4]
 assert "-(p.get(\"pop\") or 0), -wb(title_of(p[\"text\"]))" in inspect.getsource(H.top_deals) and "th_tier(c[1]) or 3, -wb(title_of(c[1])), c[3]" in inspect.getsource(H.threads_deals)  # 가점 = 반응 점수·같은 등급 안에서만
-assert "top_deals, pick_post, steady_list, cp_mix, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
+assert "top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main) and "threads_deals, daily_post, daily_log, wx_dm, toss_reopen" in inspect.getsource(H.main) and "publish_approved(seen)" in inspect.getsource(H.main)
 H.http, H.tg, H.th_post, H.toss, H.HAS_TOSS, time.time, H.busy = sv12; del H.E["THREADS_TOKEN"]; H.TOSS_NO_CMP = tnc12
 H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS = None, None, None, None, 0; json.dump([], open("posts.json", "w"))
 # 9-13) 10/17 진우 '유입 늘리기': ① Threads 가격 투표(12:30, 다음 날 결과 답글) ② 최저가 기록 페이지(/c/) — 같은 단위만·토스 X·3개 미만 X·7일 안 쓴 품목만
@@ -9611,4 +9611,85 @@ assert [x[0] for x in fr90][-1] == 14 and len(fr90) == 9  # 그저께 가격 = �
 pg90 = S.link_page("ab", [], LK90, "docs3", today="2026-10-26")
 assert '<nav class="mb" aria-label="몰별 모음"><a href="https://hotdealpick.kr/c/coupang/?ref=link" data-gc="link/coupang">🚀 쿠팡 모음</a><a href="https://hotdealpick.kr/c/toss/?ref=link" data-gc="link/toss">💙 토스 모음</a></nav>' in pg90 \
     and pg90.index('class="mb"') < pg90.index('id="lg"') and ".mb{display:flex" in pg90
+# 9-91) NN(10/26 Cowork — 진우 '꾸준하게 주문하는 계란·맥반석계란 등 비슷한 제품 묶어서'·'바나나우유·커피우유·멸균우유도'·'반숙란·완숙란 등 기성품'): 품목 묶음 글 하루 1번 11:30 채널 + Threads
+#       돌림 = 계란 → 우유 → 반찬 → 캔햄 → 라면·생수·화장지·커피믹스·물티슈·즉석밥·쌀 · 09:00~ 종류 검색어마다 쿠팡 검색 1번(실행마다 1번) · 같은 단위 단가 · 종류마다 2개 · 계란 = 생란/바로 먹는 계란 칸 · 토스 따로 칸
+sv91 = (H.coupang, H.cp_deeplinks, H.tg, H.th_bundle, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.HAS_CP); d91, cwd91 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d91)
+os.makedirs("docs/c", exist_ok=True); open("docs/c/eggs.html", "w").write("x")
+sh91 = lambda nm, u, pr, extra="": {"t": "2026-11-10 04:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n{nm}\n{pr} · 리뷰 1.2만{extra}\n✔ 무료배송 · 리뷰 1.2만", "entities": [], "url": u, "own": 1, "shelf": 1, "st": "hot", "now": pr, "chk": "11/12 9시"}
+json.dump([sh91("곰곰 무항생제 특란 30구", "https://link.coupang.com/a/E0", "8,700원"), sh91("곰곰 반숙란 10구 x 2", "https://link.coupang.com/a/E1", "5,000원"),
+           sh91("곰곰 완숙란 20구", "https://link.coupang.com/a/E2", "6,000원", "\n🚚 로켓프레시")], open("posts91.json", "w"), ensure_ascii=False)  # 사이트 🔥 진열(리뷰 있음) · 냉장 반숙란 = 배송 표기 있을 때만
+cs91, tg91, tb91 = [], [], []
+LP91 = lambda pid: f"https://link.coupang.com/re/AFFSDP?lptag=AF0&pageKey={pid}&itemId={pid}1&vendorItemId={pid}2&traceid=Z"
+SR91 = {"계란 30구": [("11", "곰곰 신선한 특란 30구", 9900, False), ("12", "무항생제 대란 30구 2판", 17800, True), ("13", "계란 2단 찜기", 8300, True), ("14", "왕란 30구", 12900, False), ("15", "계란 보관 트레이 30구", 3000, True)],
+        "유정란": [("21", "에그마을 유정란 20구 2판", 19600, False)],
+        "구운란": [("31", "맛꾼 구운란 대란 30구 1개", 11900, False), ("32", "곰곰 구운란 20구", 7800, False), ("33", "국산 구운란 30구 x 2", 21000, False)],
+        "맥반석 계란": [("41", "HACCP 맥반석 구운계란 30개 1박스", 9350, False)],
+        "반숙란": [("51", "감동 반숙란 10구 x 2", 5000, False), ("52", "로켓 반숙란 20구", 13000, True)], "완숙란": []}
+def cp91(method, path, body=None):
+    kw = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]); cs91.append(kw)
+    return {"productData": [{"productId": p, "productName": n, "productPrice": w, "productUrl": LP91(p), "isRocket": r} for p, n, w, r in SR91.get(kw, [])]}
+H.coupang, H.HAS_CP = cp91, True
+H.cp_deeplinks = lambda urls: {u: f"https://link.coupang.com/a/S{re.search(r'products/(\d+)', u)[1]}" for u in urls}
+H.tg = lambda m, **p: tg91.append(p) or {"message_id": 1}; H.th_bundle = lambda seen, kind, text, link=None, **k: tb91.append((kind, text, link)) or {"id": "T"}
+H.season_adj = lambda n, ctx=None: 0; H.POSTS, H.E["THREADS_TOKEN"] = "posts91.json", "tk"
+s91 = {"thtoss": {"t": 1, "q": [{"t": TK("2026-11-12 10:00"), "n": "토스 유정란 30구", "p": 12000, "link": "https://toss.im/_m/E1", "k": "best"}, {"t": TK("2026-11-12 10:00"), "n": "토스 물티슈 100매 10팩", "p": 9000, "link": "https://toss.im/_m/S1", "k": "best"}]}}
+time.time = lambda: TK("2026-11-12 08:50"); H.nn_bundle(s91); assert not cs91  # 09시 전 = 검색 X
+for k in range(8):  # 09:00~ 실행마다 1번
+    time.time = lambda k=k: TK("2026-11-12 09:00") + k * 900; H.nn_bundle(s91)
+assert cs91 == ["맥반석 계란", "구운란", "반숙란", "완숙란", "유정란", "계란 30구"] and s91["nnq"]["k"] == "egg" and not tg91, cs91  # 종류 검색어마다 1번(좁은 것 먼저) · 다 하면 더 X
+time.time = lambda: TK("2026-11-12 11:35"); o91 = io.StringIO()
+with contextlib.redirect_stdout(o91): H.nn_bundle(s91)
+c91 = tg91[-1]["text"]
+assert c91.startswith(f"<i>{H.DISCLOSURE}</i>\n<i>{H.TOSS_NOTE}</i>\n\n🥚 계란 <b>묶음</b> — 개당 가격 순\n\n<b>· 생란</b>\n1️⃣ ") and "\n\n<b>· 바로 먹는 계란</b>\n1️⃣ " in c91, c91  # 대가성 문구 첫 줄 · 칸 나눔
+raw91, rdy91 = c91.split("<b>· 바로 먹는 계란</b>")[0].split("<b>· 생란</b>")[1], c91.split("<b>· 바로 먹는 계란</b>")[1].split("💙 <b>토스</b>")[0]
+assert 2 <= raw91.count("️⃣ ") <= 3 and 2 <= rdy91.count("️⃣ ") <= 3 and "구운란" not in raw91 and "맥반석" not in raw91 and "특란" not in rdy91, (raw91, rdy91)  # 칸마다 2~3개 · 생란/바로 먹는 계란 섞임 X
+u91 = [int(x.replace(",", "")) for x in re.findall(r"개당 ([\d,]+)원", raw91)]; v91 = [int(x.replace(",", "")) for x in re.findall(r"개당 ([\d,]+)원", rdy91)]
+assert u91 == sorted(u91) and v91 == sorted(v91) and "100ml" not in c91 and "찜기" not in c91 and "트레이" not in c91, (u91, v91)  # 같은 단위(개당) 싼 순 · 계란 찜기·트레이 X(NN_NOT)
+assert rdy91.count("구운란") <= 2 and "감동 반숙란" not in c91 and "🚀 <a href=\"https://link.coupang.com/a/S12\"><b>무항생제 대란 30구 2판</b></a>" in c91, rdy91  # 종류마다 2개까지 · 반숙란 = 배송 표기(🚀 isRocket) 있을 때만(개당 250원이어도 X) · 🚀 = API isRocket만
+assert "💙 <b>토스</b>\n1️⃣ <a href=\"https://toss.im/_m/E1\"><b>토스 유정란 30구</b></a>\n💰 <b>12,000원</b> · 개당 400원" in c91 and "물티슈" not in c91 and c91.endswith(H.toss_when())  # 토스 = 따로 칸 · 게시 시점 줄
+assert tg91[-1]["reply_markup"]["inline_keyboard"] == [[{"text": "📊 계란 가격 기록", "url": "https://hotdealpick.kr/c/eggs.html?ref=tgb"}]] and "link.coupang.com/re/" not in c91 and c91.count("리뷰") == 2  # 검색 상품 = 짧은 딥링크 · 리뷰 X(API에 없음 — 진열 상품만)
+assert not re.search(r"맛있|최저가|효능|건강", c91) and "nn egg 생란" in o91.getvalue() and "검색 6/6" in o91.getvalue() and "원" not in o91.getvalue().split("nn egg")[1].split("\n")[0]  # 금지 말 X · 로그에 가격 X
+k91, th91, l91 = tb91[-1]
+assert "곰곰 반숙란" not in c91 and "🔥 <a href=\"https://link.coupang.com/a/E2\"><b>곰곰 완숙란 20구</b></a>" in c91  # 진열 냉장품 = 로켓프레시·새벽 표기 있을 때만
+assert "🔥 <a href=\"https://link.coupang.com/a/E0\"><b>곰곰 무항생제 특란 30구</b></a>\n💰 <b>8,700원</b> · 개당 290원 · 리뷰 1.2만" in c91 and raw91.index("특란 30구") < raw91.index("유정란")  # 진열 상품 = 🔥·리뷰 · 싼 순
+assert k91 == "nn" and th91.count("👉 ") == 4 and th91.index("· 생란") < th91.index("· 바로 먹는 계란") and th91.split("· 바로 먹는 계란")[1].count("👉 ") == 2 and "🔥 곰곰 무항생제 특란 30구 8,700원 · 개당 290원 · 리뷰 1.2만" in th91, th91  # Threads = 칸마다 2개
+assert k91 == "nn" and th91.startswith(H.DISCLOSURE) and len(th91) <= 480 and len(set(re.findall(r"https?://\S+", th91))) <= 5 and th91.endswith("\n계란 가격 기록 → https://hotdealpick.kr/c/eggs.html?ref=thb") and "\n· 생란\n" in th91, th91
+assert s91["nnrot"]["i"] == 1 and "nn_20261112" in s91; n91 = len(tg91); H.nn_bundle(s91); assert len(tg91) == n91  # 하루 1번 · 다음 날 = 우유
+# 우유(100ml당) · 칸 하나 = 5개까지 · 3개 밑 = 그 회차 X · 기록 쪽 없으면 식품 칸
+assert H.nn_unit("서울우유 멸균 흰우유 200ml 24개", 15300, "100ml") == (318.75, "100ml당 319원") and H.nn_unit("믈레코비타 멸균우유 1L 12개", 20900, "100ml")[1] == "100ml당 174원"
+assert H.nn_unit("스팸 클래식 200g 9개", 26200, "100g")[1] == "100g당 1,456원" and H.nn_unit("양계장 유정란 60구 1개", 19900, "개")[1] == "개당 332원" and H.nn_unit("햇반 210g 24개", 22000, "개")[1] == "개당 917원"
+assert H.nn_unit("서울우유 200ml 24개 + 클릭유 140ml 6개", 13000, "100ml") is None and H.nn_unit("우유 1L / 2L 택1", 3000, "100ml") is None and H.nn_unit("계란 2단 찜기", 8300, "개") is None  # 헷갈리면 X
+assert H.nn_unit("제주삼다수 2L 12병", 12000, "1L") == (500.0, "1L당 500원") and H.nn_unit("햅쌀 10kg", 30000, "1kg") == (3000.0, "1kg당 3,000원") and H.nn_unit("탐사 물티슈 100매 10팩", 12900, "팩")[1] == "팩당 1,290원"
+sa91 = H.season_adj; H.season_adj = lambda n, ctx=None: -2; assert H.nn_kind(H.NN_TOPICS[0], "곰곰 특란 30구") is None; H.season_adj = sa91  # 철 지난 계절 = X
+SR91.update({"바나나우유": [("61", "빙그레 바나나맛 우유 240ml 8개", 9900, False)], "커피우유": [("71", "서울우유 멸균 흰우유 200ml 24개", 15300, True)],
+             "멸균우유": [("71", "서울우유 멸균 흰우유 200ml 24개", 15300, True), ("72", "매일 멸균우유 200ml 24팩", 15900, True), ("73", "남양 멸균우유 1L 10개", 39900, True)]}); cs91.clear()
+for k in range(4):
+    time.time = lambda k=k: TK("2026-11-13 09:00") + k * 900; H.nn_bundle(s91)
+s91["thlist"] = {"t": TK("2026-11-13 11:30"), "h": []}; o91 = io.StringIO(); time.time = lambda: TK("2026-11-13 11:40")
+with contextlib.redirect_stdout(o91): H.nn_bundle(s91)
+assert cs91 == ["바나나우유", "커피우유", "멸균우유"] and "nn 미룸" in o91.getvalue() and len(tg91) == n91 and s91["nnrot"]["i"] == 1  # 12시 리스트 10분 안 = 15분 뒤로
+time.time = lambda: TK("2026-11-13 11:50"); H.nn_bundle(s91); m91 = tg91[-1]["text"]
+assert len(tg91) == n91 + 1 and m91.count("️⃣ ") == 3 and m91.count("멸균") == 2 and m91.count("서울우유") == 1 and len(re.findall(r"100ml당 [\d,]+원", m91)) == 3 and "<b>· " not in m91, m91  # 종류(멸균우유)마다 2개 · 같은 상품 1번 · 100ml당
+assert tg91[-1]["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://hotdealpick.kr/c/food/?ref=tgb" and tb91[-1][1].endswith("\n식품 더 보기 → https://hotdealpick.kr/c/food/?ref=thb") and s91["nnrot"]["i"] == 2  # 기록 쪽 없으면 식품 칸
+SR91.update({"계란말이": [("81", "냉동 계란말이 500g", 6900, True)], "포기김치": [("82", "종가 포기김치 3kg", 21000, True)], "냉장 반찬": []}); o91 = io.StringIO()
+for k in range(4):
+    time.time = lambda k=k: TK("2026-11-14 09:00") + k * 900; H.nn_bundle(s91)
+time.time = lambda: TK("2026-11-14 11:40")
+with contextlib.redirect_stdout(o91): H.nn_bundle(s91)
+assert "nn side 후보 2개 — 이번 회차 X(검색 3/3)" in o91.getvalue() and len(tg91) == n91 + 1 and s91["nnrot"]["i"] == 3  # 3개 밑 = 그 회차 X · 다음 날 = 캔햄
+SR91.update({"스팸": [("91", "스팸 200g 9개", 26200, False), ("92", "스팸 340g 6개", 30000, False)], "리챔": [("93", "리챔 200g 10캔", 18910, False), ("94", "리챔 120g 12캔", 17000, False)], "런천미트": [("95", "런천미트 340g 4캔", 9900, False)]})
+for k in range(4):
+    time.time = lambda k=k: TK("2026-11-15 09:00") + k * 900; H.nn_bundle(s91)
+time.time = lambda: TK("2026-11-15 11:40"); H.nn_bundle(s91); h91 = tg91[-1]["text"]
+s91["nnrot"]["i"] = 4; SR91["라면"] = [(str(100 + k), f"{b} 5개입", 4000 + k * 300, False) for k, b in enumerate(("신라면", "진라면", "너구리", "안성탕면", "삼양라면", "짜파게티"))]
+for k in range(2):
+    time.time = lambda k=k: TK("2026-11-16 09:00") + k * 900; H.nn_bundle(s91)
+time.time = lambda: TK("2026-11-16 11:40"); H.nn_bundle(s91); r91 = tg91[-1]["text"]
+assert r91.count("️⃣ ") == 5 and "짜파게티" not in r91 and re.findall(r"개당 ([\d,]+)원", r91) == ["800", "860", "920", "980", "1,040"], r91  # 종류 하나뿐인 칸(라면) = 5개까지 싼 순
+assert h91.count("️⃣ ") == 5 and len(re.findall(r"100g당 [\d,]+원", h91)) == 5 and tb91[-1][1].count("👉 ") == 4 and len(set(re.findall(r"https?://\S+", tb91[-1][1]))) <= 5, (h91, tb91[-1][1])  # 칸 하나 = 5개 · Threads 링크 4개 + 끝 줄
+assert [t[0] for t in H.NN_TOPICS] == ["egg", "milk", "side", "ham", "ramen", "water", "toilet-paper", "coffee-mix", "wet-wipes", "instant-rice", "rice"] and ", cp_mix, nn_bundle, " in inspect.getsource(H.main)
+it91 = {k: rx for k, _, rx, _, _ in S.PRICE_ITEMS}
+assert all(re.search(it91["eggs"], n) for n in ("반숙란 10구", "완숙란 20구", "맥반석 구운계란 30개", "유정란 30구")) and S.PRICE_ITEMS[[k for k, *_ in S.PRICE_ITEMS].index("milk")][3:] == ("100ml당", ("100ml",)) \
+    and all(re.search(it91["milk"], n) for n in ("멸균우유 200ml", "바나나맛 우유 240ml", "커피우유 300ml", "흰우유 1L")) and not re.search(it91["milk"], "우유식빵") and S.PRICE_MIN == 3
+(H.coupang, H.cp_deeplinks, H.tg, H.th_bundle, H.season_adj, time.time, H.POSTS, tk91, H.HAS_CP) = sv91; H.E.pop("THREADS_TOKEN", None) if tk91 is None else H.E.update(THREADS_TOKEN=tk91); os.chdir(cwd91)
 print("OK: 모든 셀프체크 통과")
