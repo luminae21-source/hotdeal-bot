@@ -1576,7 +1576,7 @@ assert open("docs/s.css").read() == S.CSS and S.CV == "?v=" + __import__("hashli
 assert all(t in S.CSS for t in ("--bg:#F6F7F9", "--card:#fff", "--ink:#14161B", "--sub:#6B7180", "--line:#ECEEF2", "--acc:#E5303F", "--chip:#F1F3F6", "--btn:#14161B", "--pk:#E8435A", "linear-gradient(160deg,#FFE3E8,#FFF1E6)"))  # 진우 확정 토큰(A) + 핑크(오늘의 픽)
 assert all(t in S.CSS for t in ('font-family:"HDP Sans";src:url(/fonts/hdpsans-v1.woff2) format("woff2");font-weight:400 800;font-display:swap', ".tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))",
                                 ".cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))", ".nav{position:fixed", "grid-template-columns:repeat(5,minmax(0,1fr))", ".inapp .nav{position:static", "prefers-color-scheme:dark",
-                                ".tiles.t6{grid-template-columns:repeat(6,minmax(0,1fr))"))  # 타일 4×2(홈·/c/ = 6×2 t6)·카드 2열·메뉴 5칸 · 앱 안 브라우저 = 메뉴가 헤더 아래(아래 고정 바는 앱 툴바에 가려서, 10/13)
+                                ".tiles.t6{grid-template-columns:repeat(var(--n,6),minmax(0,1fr))"))  # 타일 4×2(홈·/c/ = 6×2 t6)·카드 2열·메뉴 5칸 · 앱 안 브라우저 = 메뉴가 헤더 아래(아래 고정 바는 앱 툴바에 가려서, 10/13)
 RD = os.path.dirname(os.path.abspath(S.__file__))  # 커밋된 파일(글꼴·대표 그림)은 저장소 docs/에
 assert os.path.getsize(f"{RD}/docs/fonts/hdpsans-v1.woff2") > 200000 and "Reserved Font Name Pretendard" in open(f"{RD}/docs/fonts/OFL.txt").read() and "HDP Sans" in open(f"{RD}/docs/fonts/OFL.txt").read() and 'rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin' in S.FONT_HEAD  # 글꼴 = 커밋된 파일(OFL — 줄인 판은 이름 바꿈)
 assert os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr" and os.path.exists("docs/all.html")
