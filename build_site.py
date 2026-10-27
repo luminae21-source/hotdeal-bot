@@ -99,7 +99,7 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 .deal .im{height:220px;border-radius:16px;font-size:80px;margin:-4px -4px 12px}.deal .dn{margin:6px 0 10px;font-size:20px;line-height:1.4;letter-spacing:-.6px}.deal .dn a{text-decoration:none}.hero{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}.hero .pr{font-size:28px;font-weight:800;letter-spacing:-.8px}.ship{font-size:13px;color:var(--sub)}
 .deal .note{font-size:12px;color:var(--sub);text-align:center;margin:8px 0 0}.why{font-size:14px;color:var(--sub);font-weight:700;margin:18px 0 6px;padding-top:16px;border-top:1px solid var(--line)}.deal p{margin:0;font-size:15px;line-height:1.65}.deal p a{color:var(--acc)}
 .bd{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}.bd b{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;line-height:1.5;background:var(--chip);color:var(--sub)}.b1{color:#15803d!important}.b2{color:var(--acc)!important}.b4{color:#d9480f!important}
-.pick{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 14px;margin:8px 0;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:600}.pick b{color:var(--acc);font-size:19px;min-width:28px}.pick span{flex:1;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pick em i{display:block;font-style:normal;color:var(--ink);font-weight:800;text-align:right}.pick .pt{width:40px;height:40px;margin:-4px 0;flex:none;border-radius:8px;object-fit:contain;background:#fff}.pick em{font-style:normal;color:var(--acc);font-size:14px;white-space:nowrap}.alt{display:block;margin:-4px 0 8px 54px;font-size:14px;padding:10px 0}#today details{margin-top:10px}#today summary,.mo summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:var(--sub)}
+.pick{display:flex;align-items:center;gap:8px;min-height:56px;padding:8px 10px;margin:8px 0;border-radius:14px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-weight:600}.pick b{color:var(--acc);font-size:16px;min-width:20px}.pick .pn{flex:1;min-width:0;line-height:1.3;font-size:14.5px}.pick .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pick .pu{display:inline-block;margin-top:2px;padding:0 6px;border-radius:999px;background:var(--chip);color:var(--sub);font-size:11px;line-height:1.5}.pick .pt{position:relative;display:grid;place-items:center;width:48px;height:48px;margin:-6px 0;flex:none;border-radius:10px;overflow:hidden;background:var(--chip);font-style:normal;font-size:30px}.pick .pt img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}.pick .pt .lw{--s:30px;margin:0}.pick .pd{position:absolute;left:0;bottom:0;padding:0 4px;border-radius:0 6px 0 0;background:var(--acc);color:#fff;font-size:10.5px;font-weight:800;line-height:1.45;text-decoration:none}.pick em{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-style:normal;white-space:nowrap}.pick em i{font-style:normal;color:var(--ink);font-weight:800;font-size:16px;line-height:1.2}.pick em u{padding:2px 10px;border-radius:999px;background:var(--acc);color:#fff;font-size:12px;font-weight:700;line-height:1.5;text-decoration:none}.pick.ch em{color:var(--sub);font-size:13px}.alt{display:block;margin:-4px 0 8px 94px;font-size:14px;padding:10px 0}#today .d1{margin:2px 0 6px;font-size:12px;color:var(--sub)}#today .dn{margin:12px 0 0;font-size:11px;line-height:1.55;color:var(--sub)}#today details{margin-top:10px}#today summary,.mo summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:700;color:var(--sub)}
 .recs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}.recs h3{width:100%;margin:4px 2px 2px;font-size:15px}.recs a{display:flex;align-items:center;min-height:38px;padding:0 12px;border-radius:19px;background:var(--card);border:1px solid var(--line);text-decoration:none;font-size:13.5px}
 .rec h3{font-size:16px;margin:18px 2px 2px}.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.stat div{background:var(--card);border-radius:14px;padding:12px;font-size:12px;color:var(--sub);box-shadow:0 1px 0 var(--line)}.stat b{display:block;font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.4px}
 .tw{overflow-x:auto;margin:14px 0 8px;background:var(--card);border-radius:14px;box-shadow:0 1px 0 var(--line)}.tw table{width:100%;border-collapse:collapse;font-size:13px}.tw th,.tw td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.tw th{color:var(--sub);font-weight:600;white-space:nowrap}.tw td:nth-child(-n+2),.tw td:nth-child(n+4){white-space:nowrap}.tw tr.min td{background:rgba(255,212,59,.18)}
@@ -431,6 +431,7 @@ def site_ok(p):
     return not p.get("nosite") and (not SITE_AFF_ONLY or aff(p.get("url")))  # nosite = link_swap 'none'(진우가 쇼핑커넥트 '참여 안 함' 확인, 10/25 21:4x)
 
 
+CARD_DIS = "제휴 링크로 수수료를 받을 수 있어요(토스·쿠팡·네이버)"  # WW ④ 카드 딜 칸 맨 위 한 줄(3사 문구 전체는 목록 아래 — SHOP_NOTES)
 CARD_N = 5  # 카드 한 장에 들어가는 딜 수 = 인스타 캡션·사이트 맨 위 번호 수(10/11 — 카드 5·캡션 6·사이트 6으로 어긋나던 것)
 STEM = re.compile(r"(\d{4}-\d{2}-\d{2})(?:_(\d{2}))?")  # 카드 이름: 하루 카드 = 날짜, 시간대 카드(10/11~ · 10/23 11·13·15·17·19시) = 날짜_시(두 자리)
 SLOT_NAMES = {"09": "오전 9시", "11": "오전 11시", "13": "낮 1시", "15": "오후 3시", "17": "오후 5시", "19": "저녁 7시", "12": "낮 12시", "18": "저녁 6시"}  # 시간대 카드 이름(hotdeal.IG_SLOTS와 같은 시각 + 10/23 전 칸 이름)
@@ -514,10 +515,13 @@ def card_picks(posts, out):
     blocks = [(x, ps) for x, ps in blocks if ps]
     if not blocks:
         return ""
-    name = card_name
-    first = f'<div class="t">번호를 누르면 바로 구매 페이지로 가요 · 인스타·Threads 카드 번호와 같아요</div>{pick_rows(blocks[0][1])}'
+    x0, name = blocks[0][0], card_name
+    rest = name(x0).split(" ", 2)[2]  # '10월 27일 ' 뒤 = 시간대·테마 이름(인스타 캡션이 가리키는 이름 — 부제에 그대로)
+    head = f"🔥 {'오늘의' if x0[:10] == time.strftime('%Y-%m-%d', time.gmtime(time.time() + 9 * 3600)) else '최근'} 카드 딜 · {int(x0[5:7])}/{int(x0[8:10])}"  # WW: 어제 카드(0~11시) = '오늘의' X
+    first = f'<div class="t">{html.escape("인스타·Threads 카드 번호 그대로" + ("" if rest == "카드 딜" else " · " + rest))}</div><p class="d1">{CARD_DIS}</p>{pick_rows(blocks[0][1])}'
     more = "".join(f'<details><summary>{html.escape(name(x))}</summary>{pick_rows(ps)}</details>' for x, ps in blocks[1:])
-    return f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">📸 {name(blocks[0][0])}</h2>{first}{more}</section>'
+    return (f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">{head}</h2>{first}{more}'
+            f'<p class="dn">가격은 게시 시점 기준이라 바뀔 수 있어요. {" ".join(SHOP_NOTES.values())}</p></section>')  # WW ④: 맨 위 한 줄 + 3사 문구 전체는 목록 아래(지우지 X)
 
 
 def pick_name(p):
@@ -526,16 +530,30 @@ def pick_name(p):
     return (f"[{st}] " if st else "") + nm if nm else title_of(p["text"])
 
 
+def pick_thumb(p):
+    """WW 카드 딜 줄 왼쪽 48px 칸: 몰 로고(아래 — 사진 없거나 못 불러오면 보임 · 3사 밖 = 품목 아이콘) + 실제 사진(img_of — 쿠팡만, 토스·네이버 X 규칙) + 할인 % 빨간 배지(글의 'N% 할인')."""
+    s, u, m = shop_of(p), img_of(p), re.search(r"(\d{1,2})% 할인", p["text"])
+    return (f'<i class="pt" aria-hidden="true">{mall_logo(s) if s in MALL_KO else ci(p)}'
+            + (f'<img src="{html.escape(u)}" alt="" width="48" height="48" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else "")
+            + (f'<s class="pd">{m[1]}%</s>' if m else "") + "</i>")
+
+
 def pick_rows(picks):
-    """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도) · 사이트에서 뺀 딜(site_ok X — 10/25 리뷰) = 번호·이름만(링크 X — 카드 번호는 그대로) · sponsored = 제휴 링크만."""
-    return "".join((f'<a class="pick" aria-disabled="true"><b>{n:02d}</b><span>{html.escape(title_of(p["text"]))}</span><em>채널에서</em></a>' if not site_ok(p) else
-                    f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank" '
-                   f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}">'
-                   f'<b>{n:02d}</b>' + (f'<img class="pt" src="{html.escape(u)}" alt="" width="40" height="40" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if (u := img_of(p)) else "")  # 10/25 진우 '사진도 작게, 칸 더 안 잡아먹게'(사진 없으면 번호만)
-                   + f'<span>{html.escape(pick_name(p))}</span><em>' + (f'<i>{html.escape(pr)}</i>' if (pr := parse(title_of(p["text"]))[2].split("/")[0].strip()) else "") + f'{"원글 →" if community(p.get("url")) else "구매 →"}</em></a>'
-                   + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>'
-                      if community(p.get("url")) else ""))
-                   for n, (i, p) in enumerate(picks, 1))
+    """카드 딜 번호 버튼들(누르면 구매 주소 바로, 원글 딜은 같은 상품 찾기도) · sponsored = 제휴 링크만 · WW(10/27 진우 '좀 더 눈에 들어오게'): 48px 사진/몰 로고 · 가격 크게 + 단위가 칩 · 빨간 '구매 →' 알약
+    · 사이트에서 뺀 딜(site_ok X) = 번호·이름만(링크 X — 카드 번호 그대로) 맨 아래 접기 '📲 나머지 N개는 텔레그램에서'."""
+    rows, ch = [], []
+    for n, (i, p) in enumerate(picks, 1):
+        if not site_ok(p):
+            ch.append(f'<a class="pick ch" aria-disabled="true"><b>{n:02d}</b><span class="pn"><span class="nm">{html.escape(title_of(p["text"]))}</span></span><em>채널에서</em></a>')
+            continue
+        pr, un = parse(title_of(p["text"]))[2].split("/")[0].strip(), (unit_pair(p) or [""])[0]
+        rows.append(f'<a class="pick" href="{html.escape(f"{BASE}p/{i}.html" if urllib.parse.urlsplit(p.get("url") or "").netloc in OY_HOSTS else p.get("url") or f"{BASE}p/{i}.html")}" rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank" '
+                    f'aria-label="{n}번 {html.escape(title_of(p["text"]))} {"원글에서 구매 링크 보기" if community(p.get("url")) else "구매하러 가기"}"><b>{n:02d}</b>{pick_thumb(p)}'
+                    f'<span class="pn"><span class="nm">{html.escape(pick_name(p))}</span>' + (f'<small class="pu">{html.escape(un)}</small>' if un else "")
+                    + "</span><em>" + (f"<i>{html.escape(pr)}</i>" if pr else "") + f'<u>{"원글 →" if community(p.get("url")) else "구매 →"}</u></em></a>'
+                    + (f'<a class="alt" href="{html.escape(find_url(title_of(p["text"])))}" rel="nofollow noopener" target="_blank">🔎 {n}번 원글이 안 열리면 같은 상품 찾기</a>' if community(p.get("url")) else ""))
+    return "".join(rows) + (f'<details class="pch"><summary>📲 나머지 {len(ch)}개는 텔레그램에서</summary>{"".join(ch)}'
+                            f'<a class="u" href="{CHANNEL}" rel="noopener" target="_blank">텔레그램 채널에서 보기 →</a></details>' if ch else "")
 
 
 def react(p):
@@ -1884,8 +1902,8 @@ def steady_page(out):
 
 
 HASH_JS = """<script>(function(){var m={wait:'c/wait/',life:'c/life/',toss:'c/toss/',coupang:'c/coupang/',naver:'c/naver/',cats:'c/',beauty:'c/beauty/',food:'c/food/',kitchen:'c/kitchen/',laundry:'c/laundry/',women:'c/women/',snack:'c/snack/',season:'c/season/',home:'c/home/',fashion:'c/fashion/',digital:'c/digital/',heat:'c/winter/',brand:'c/hot/',days:'all.html',saved:'saved/',hot:'#fire'};
-function go(){var h=location.hash.slice(1),t=document.getElementById('today'),ig=/instagram|threads/i.test(document.referrer)||/[?&](fbclid|igsh|utm_source=(ig|threads)|ref=(ig|th))/.test(location.search)||/Instagram|Barcelona/.test(navigator.userAgent);try{h=decodeURIComponent(h)}catch(e){}
-if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);else location.replace('/'+m[h]);return}if(t&&(ig||h==='today')){t.hidden=false;t.scrollIntoView()}}go();addEventListener('hashchange',go)})()</script>"""  # 10/24 개편 전 홈 #칸 주소(웹앱 바로가기·글 링크·프로필 #today) -> 새 쪽으로 · 인스타·Threads에서 오면 📸 카드 번호 칸을 맨 위에 보임(캡션 '맨 위 카드 딜에서 N번' 그대로)
+function go(){var h=location.hash.slice(1),t=document.getElementById('today'),ig=/instagram|threads/i.test(document.referrer)||/[?&](fbclid|igsh|utm_source=(ig|threads)|ref=(ig|th|link))/.test(location.search)||/Instagram|Barcelona/.test(navigator.userAgent);try{h=decodeURIComponent(h)}catch(e){}
+if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);else location.replace('/'+m[h]);return}if(t&&(ig||h==='today')){t.hidden=false;if(h==='today')t.scrollIntoView();else{var b=document.querySelector('main>.pb'),l=document.querySelector('main>.la');if(b)b.insertAdjacentElement('afterend',t);else if(l)l.insertAdjacentElement('beforebegin',t)}}}go();addEventListener('hashchange',go)})()</script>"""  # 10/24 개편 전 홈 #칸 주소(웹앱 바로가기·글 링크·프로필 #today) -> 새 쪽으로 · 인스타·Threads·/link(?ref=link)에서 오면 카드 번호 칸을 기획전 띠 바로 아래로(WW — 첫 화면, 띠 없으면 바로가기 위) · /#today = 그 칸으로 스크롤
 
 
 ld_tag = lambda ld: '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"  # 상품 이름에 '</script>'가 있어도 안 깨지게(seo()와 같게)
@@ -2560,7 +2578,6 @@ def build(posts, out="docs"):
     if evh:
         urls.append((f"{BASE}events/", today))
     cp = card_picks(posts, out)
-    cp = cp.replace('<div class="t">번호를 누르면', f'<p class="t">{" ".join(SHOP_NOTES.values())}</p><div class="t">번호를 누르면', 1)  # 카드 번호 칸도 몰로 바로 -> 3사 문구
     hot, hot_ids = hot_section(it, evi, today)
     fx = [x for x in it if f'href="{BASE}p/{x[0]}.html"' in hot]  # 🔥 = 탭 전부 합쳐 1번
     dsh = cap2(ds, dl[:12], fx)  # 같은 상품 홈 최대 2번: 오늘 마감 > 🔥 > 📉 > 픽 > 꾸준템(10/24 진우 v3 ② · TOP 10·찜/본·숨은 #today X)
