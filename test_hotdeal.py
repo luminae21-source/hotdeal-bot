@@ -10398,4 +10398,20 @@ css100 = S.CSS.split(".pick{")[1].split("#today .dn{")[0]
 assert all(x in css100 for x in ("padding:6px 10px", ".pick b{color:var(--acc);font-size:19px", ".pick .pt>img{", "background:var(--accf);color:#fff;font-size:10.5px", ".pick em u{padding:2px 10px;border-radius:999px;background:var(--accf)", "color:var(--ink);font-size:10.5px", ".pick .pu{display:block;width:max-content;max-width:100%", "white-space:nowrap;overflow:hidden;text-overflow:ellipsis", ".pch .u{display:inline-block;padding:12px 0}")) and ".pick .pt img{" not in css100 and "background:var(--acc);" not in css100
 assert "SHOP_NOTES.values())}</p><div class=\"t\">번호를 누르면" not in inspect.getsource(S.build) and "번호를 누르면" not in inspect.getsource(S.card_picks)  # 3사 문구 3문장 = 칸 맨 위 X(목록 아래)
 (S.SITE_AFF_ONLY, time.time, mc100) = sv100; S.MICONS.clear(); S.MICONS.update(mc100)
+# 9-101) XX(10/27 Cowork 9:10 점검 — 진우 쿠팡 상품 '지금 가격 (10/23 9시 확인)'이 3일 넘게 그대로): 쿠팡 진우 상품 가격 확인(chkt — 없으면 올린 날)이 CHK_OLD(3)일 넘게 없으면
+#        '지금 가격' X -> 올린 가격 + 'M/D 가격 · 가격 확인 안 됨'(🔥·⏳ 그대로 · 목표가 있으면 가격 숨김 그대로) · 토스·네이버·일시 품절 = 그대로 · 3일째까진 '지금 가격'
+CU101, TD101 = "https://link.coupang.com/a/xx1", "2026-10-27"
+x101 = lambda **k: {"t": "2026-10-15 23:00", "text": "🔥 [쿠팡] 갈배사이다 355ml 24캔 (12,900원/무료)", "url": CU101, "own": 1, **k}
+sh101 = lambda **k: S.shelf(x101(**k), {}, TD101)
+assert sh101(st="hot", now="17,430원", chk="10/23 9시", chkt="2026-10-23 09:30")[:3] == (0, None, "10/15 가격 · 가격 확인 안 됨")  # 4일 전 확인 = 옛 확인가 X
+assert sh101(st="hot", now="17,430원", chk="10/24 9시", chkt="2026-10-24 09:30")[:3] == (0, "17,430원", "지금 가격 (10/24 9시 확인)")  # 3일째 = 그대로
+assert sh101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00")[1:3] == (None, "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨")
+assert sh101(st="wait", tgt="15,900원", now="17,430원", chk="10/23 9시", chkt="2026-10-23 09:30")[1:3] == ("", "특가 때 15,900원 · 특가 기다리는 중 · 가격 확인 안 됨")  # 목표가 = 가격 숨김 그대로
+assert sh101(st="wait")[1:3] == (None, "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨") and sh101(st="hot", t="2026-10-22 10:22")[1:3] == (None, "10/22 가격 · 가격 확인 안 됨")  # events pid 없음(확인 X) = 올린 날 기준
+assert sh101(st="wait", t="2026-10-25 10:00")[2] == "10/25 가격 · 특가 기다리는 중 · 지금 가격은 링크에서 확인" and sh101(st="hot", t="2026-10-25 10:00")[2] == ""  # 새 글 = 그대로
+assert sh101(st="out", chk="10/20", t="2026-10-15 23:00")[0] == 3 and S.NOCHK not in sh101(st="out", chk="10/20")[2]  # 일시 품절 = 그대로
+assert all(S.NOCHK not in S.shelf({**x101(st="wait", now="9,900원", chk="10/20 9시", chkt="2026-10-20 09:00"), "url": u, "text": f"🔥 [{m}] 갈배사이다 355ml 24캔 (12,900원/무료)"}, {}, TD101)[2] for u, m in (("https://toss.shopping/_m/xx", "토스쇼핑"), ("https://smartstore.naver.com/a/products/1", "네이버")))  # 토스·네이버 = 그대로
+assert all(S.shop_of({**x101(), "url": u, "text": f"🔥 [{m}] 갈배사이다"}) == k for u, m, k in (("https://toss.shopping/_m/xx", "토스쇼핑", "toss"), ("https://smartstore.naver.com/a/products/1", "네이버", "naver")))
+pb101 = S.price_bits(x101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"), sh101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"))
+assert pb101[0] == "12,900원" and pb101[2][0] == "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨"  # 큰 가격 = 올린 가격(날짜 붙은 줄)
 print("OK: 모든 셀프체크 통과")

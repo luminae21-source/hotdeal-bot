@@ -666,6 +666,7 @@ def icon_of(text):
 
 
 REHOT_DAYS = 3  # 🔁 다시 특가 배지 기간(⏳ -> 🔥 된 날부터)
+CHK_OLD, NOCHK = 3, "가격 확인 안 됨"  # XX(10/27 Cowork): 진우 쿠팡 상품 가격 확인(chkt — 없으면 올린 날)이 3일 넘게 없으면 '지금 가격' X -> 올린 가격 + 'M/D 가격 · 가격 확인 안 됨'
 
 
 def shelf(p, ev, today):
@@ -690,10 +691,12 @@ def shelf(p, ev, today):
     md = f"{int(p['t'][5:7])}/{int(p['t'][8:10])}"
     if st == "out":
         return 3, None, f"{md} 가격 · 다시 들어오면 링크에서 확인", bd + [("b3", f"일시 품절 ({chk.split()[0] if chk else md} 확인)")], False
+    if nochk := shop_of(p) == "coupang" and (p.get("chkt") or p["t"])[:10] < time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - CHK_OLD * 86400)):
+        now = chk = ""  # cp_price가 못 찾음(옵션·검색 결과)·events pid 없음 = 옛 확인가를 '지금'처럼 X
     if st == "hot":
-        return 0, now or None, (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else "", bd, rehot
+        return 0, now or None, (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else f"{md} 가격 · {NOCHK}" if nochk else "", bd, rehot
     wait = f"특가 때 {tgt} · 특가 기다리는 중" if tgt else f"{md} 가격 · 특가 기다리는 중"  # 목표가 없으면 올린 가격을 날짜와 같이(지금 가격처럼 안 보이게)
-    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · 지금 가격은 링크에서 확인"), bd + [("b3", "⏳ 특가 대기")], False
+    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · {NOCHK if nochk else '지금 가격은 링크에서 확인'}"), bd + [("b3", "⏳ 특가 대기")], False
 
 
 def shelf_gone(posts):
