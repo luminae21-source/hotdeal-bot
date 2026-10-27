@@ -1969,7 +1969,7 @@ def cp_words(name):
 
 def cp_kws(name):
     """쿠팡 검색어 1~3개(10/24 Cowork A① 사진 채움 — pid가 결과 10개 안에 없을 때 다음 것): 이름 그대로 · 수량·용량 뺀 이름 · 브랜드(첫 낱말) + 끝 두 낱말(핵심 낱말)."""
-    b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])|(?<![가-힣])각(?![가-힣])", " ", name, flags=re.I).split())  # '각 5개' 남은 '각' X(XX)  # 괄호 안(옵션)·수량·용량 뺌
+    b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])|(?<![가-힣0-9a-z])각(?![가-힣])", " ", name, flags=re.I).split())  # '각 5개' 남은 '각' X(XX)  # 괄호 안(옵션)·수량·용량 뺌
     w = [x for x in b.split() if not re.fullmatch(r"대용량|묶음|세트|기획|기획세트|증정|단품|본품|정품|무료배송|택1|리필|팩|개|대|특대|국내산", x)]
     c = " ".join([w[0]] + w[-2:]) if len(w) >= 4 else ""
     return list(dict.fromkeys(k[:50] for k in (name, b, c) if len(k) >= 2)) or [name[:50]]
@@ -6248,7 +6248,7 @@ def threads(seen):
     th_bundle(seen, "card", text[:480], image=url)
 
 
-TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "women": "생필품", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비", "car": "자동차"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
+TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "women": "생필품", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비", "car": "자동차", "pet": "반려동물", "sport": "운동"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
 TH_TOPIC_RUN = 3  # 같은 주제 연달아 3번까지 — 넘으면 '핫딜'(핫딜이면 '특가')
 
 
@@ -8621,7 +8621,7 @@ def drop_check(seen):
 
 CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
 CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, snack = 과자·간식, season = 제철 과일·해산물·겨울 먹거리, life = 생필품(휴지·위생·욕실 소모품), "
-              "kitchen = 주방 용품·소모품(조리 도구·그릇·랩·수세미), laundry = 세탁(세제·유연제·빨래 용품), women = 여성용품(생리대 등), beauty = 화장품·뷰티·헤어·바디, home = 생활·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), car = 자동차 용품(요소수·워셔액·차량용 거치대·방향제 등), etc = 그 밖.\n")
+              "kitchen = 주방 용품·소모품(조리 도구·그릇·랩·수세미), laundry = 세탁(세제·유연제·빨래 용품), women = 여성용품(생리대 등), beauty = 화장품·뷰티·헤어·바디, home = 생활·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), car = 자동차 용품(요소수·워셔액·차량용 거치대·방향제 등), pet = 반려동물(사료·간식·배변용품·장난감), sport = 운동·홈트(보호대·짐볼·아령·풀업바·스트레칭 기구), etc = 그 밖(문구·소품은 home).\n")
 
 
 def cat_fill(seen):

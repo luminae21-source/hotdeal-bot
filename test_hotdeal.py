@@ -1704,7 +1704,7 @@ assert qk0[:4] == [(f"{S.BASE}c/today/", "q/today", "⏰", "오늘 마감"), (f"
 assert re.findall(r'<a class="q" href="([^"]+)" data-gc="cat/[^"]+"><i aria-hidden="true" style="--c:(#[0-9A-F]+)">([^<]+)</i>([^<]+)</a>', idx) == \
     [(f"{S.BASE}c/{u}/", c, e, n) for u, c, e, n in (("life", "#FFEFE6", "🧻", "생필품"), ("food", "#EAF6EE", "🍚", "식품"), ("beauty", "#FDEBF1", "💄", "뷰티"), ("digital", "#EEF2F7", "🔌", "가전"), ("kitchen", "#EEF1FB", "🍳", "주방"),
                                                      ("laundry", "#E9F5F8", "🧺", "세탁"), ("snack", "#FFF6DD", "🍪", "간식"), ("women", "#F3ECFB", "🌸", "여성용품"), ("winter", "#E8F1FF", "❄️", "겨울템"),
-                                                     ("season", "#FFF1E6", "🍠", "제철"), ("home", "#F1F3F6", "🏠", "생활"), ("fashion", "#F5EFEA", "🧦", "패션"), ("car", "#EEF1F4", "🚗", "자동차"))] and f'<a class="q" href="{S.BASE}c/" data-gc="cat/all"><i aria-hidden="true">▦</i>전체보기</a>' in idx  # 2줄 = 품목 13칸(가전 4번째 — 진우 v3 · 10/26 자동차 맨 끝) + ▦ 전체보기 · 품목 색
+                                                     ("season", "#FFF1E6", "🍠", "제철"), ("home", "#F1F3F6", "🏠", "생활"), ("fashion", "#F5EFEA", "🧦", "패션"), ("car", "#EEF1F4", "🚗", "자동차"), ("pet", "#FBEFE4", "🐶", "반려동물"), ("sport", "#E8F6F1", "🏋️", "운동"))] and f'<a class="q" href="{S.BASE}c/" data-gc="cat/all"><i aria-hidden="true">▦</i>전체보기</a>' in idx  # 2줄 = 품목 13칸(가전 4번째 — 진우 v3 · 10/26 자동차 맨 끝) + ▦ 전체보기 · 품목 색
 fi5 = idx.split('id="fire"')[1].split("</section>")[0]
 assert all(n in idx.split('id="today"')[1].split("</section>")[0] for n in S.SHOP_NOTES.values())  # 카드 번호 칸('보기' = 몰로 바로) = 3사 문구
 rw5 = lambda t: re.findall(r'<li class="r"><a href="https://hotdealpick.kr/p/(\d+)\.html"', fi5.split(f'data-p="{t}"')[1].split("</ol>")[0])
@@ -1745,7 +1745,7 @@ assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네�
 sm6 = open("docs6p/sitemap.xml").read()
 assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
 assert {d[:-5] for d in os.listdir("docs6p/c") if d.endswith(".html") and d != "index.html"} <= set(S.REC_KEEP)  # 기록 쪽 = 있던 품목(REC_KEEP)만(TT-2 — 0개 = 안내 쪽)
-assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
+assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
 # 6-6) 품목 12칸 쪽(10/24 세분): 제목 정규식(cat_of) — 위생백 = 주방, 세제 = 세탁, KF94·샴푸 = 생필품, 마스크팩·폼클렌징 = 뷰티(아이스크림 X) · 최근 3일 커뮤니티 딜 + 진우 상품
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
@@ -1763,9 +1763,9 @@ life7, beauty7, kit7, lau7 = (open(f"docs7/c/{k}/index.html").read() for k in ("
 lc7 = life7.split('<div class="cards">')[1]; assert life7.count('class="g"') == 2 and lc7.index("KF94") < lc7.index("샴푸") and "마스크팩" not in life7 and "휴지" not in life7.split('<nav class="chips"')[1] and "위생백" in kit7 and "세제" in lau7  # 10/24 세분: 위생백 = 주방, 세제 = 세탁
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and '<h1 class="h">🧻 생필품 특가 모음</h1>' in life7 and '<h1 class="h">💄 뷰티 특가 모음</h1>' in beauty7
 assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-label="목록">')[1].split("</nav>")[0].split("</a>")[:-1]] == \
-    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
+    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🐶 반려동물", "🏋️ 운동", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
 cats7 = open("docs7/c/index.html").read()
-assert cats7.count('<a class="tile"') == 13 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" style="--n:7" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
+assert cats7.count('<a class="tile"') == 15 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" style="--n:8" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
 assert re.findall(r'<a class="mt (\w+)" href="([^"]+)" data-gc="mall/\w+"><b>(?:<i class="lw" aria-hidden="true">.*?</i>)?[^<]+</b><small>[^<]+</small><i>(\d+)개</i></a>', cats7) == [("coupang", f"{S.BASE}c/coupang/", "1"), ("toss", f"{S.BASE}c/toss/", "0"), ("naver", f"{S.BASE}c/naver/", "1")] and 'aria-label="목록"' not in cats7  # 몰 타일 3개(개수) · 18칩 줄 X
 assert [re.sub("<[^>]+>", "", a) for a in S.stat_chips("drop").split("</a>")[:-1]] == ["🔥 특가", "👍 꾸준템", "⏳ 대기", "📉 가격 내림", "⏰ 오늘 마감", "🏆 TOP 10"] and S.stat_chips("drop").count('aria-current="page"') == 1 and f'<a href="{S.BASE}c/drop/" aria-current="page">' in S.stat_chips("drop")
@@ -5364,7 +5364,7 @@ assert [S35.cat_of(ct35(t)) for t in ("킨칸 모기 패치", "옥시크린 워�
 assert [S35.cat_of(ct35(t)) for t in ("코멧 위생백 200매", "주방세제 퐁퐁 1L", "다우니 섬유유연제 2L", "LG 세탁기 21kg", "쏘피 생리대 중형 36개", "롬앤 아이라이너", "프라엘 멜라빔 디바이스", "가그린 구강청결제 1.2L",
                                      "포카칩 66g 6개", "파이토메이드 두유 24개", "오뚜기 스낵면 10개", "제주 감귤 5kg", "생굴 1kg", "굴소스 500g", "크리스찬딘 어반시크 향수", "뽀로로 딸기맛 음료", "와이파이 공유기")] == \
     ["kitchen", "kitchen", "laundry", "", "women", "", "", "", "snack", "food", "", "season", "season", "food", "beauty", "food", ""]  # 10/24 세분 칸 + 실제 진열 제목에서 잘못 들어가던 것(프라엘 = 라엘 X, 아이라이너·구강청결제 = 생필품·여성용품 X, 어반시크 = 반시 X, 딸기맛·두유·스낵면 = 과자·제철 X — 칸 없음은 cat_fill이 Claude로)
-assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat", "car"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
+assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat", "car", "pet", "sport"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
 assert all(f"{k} = " in H.CAT_PROMPT for k in S35.CAT_ORDER)  # Claude 품목 칸 설명도 12칸 다
 assert S35.cat_of(ct35("애터미 비비크림", cat="beauty")) == "beauty" and S35.cat_of(ct35("사다리", cat="etc")) == "" and S35.cat_of(ct35("햇반", cat="beauty")) == "food"  # 정규식 먼저
 sv35c, a35 = (H.ai_json, H.POSTS, H.E.get("ANTHROPIC_API_KEY")), []
@@ -5375,7 +5375,7 @@ H.cat_fill({}); assert all("cat" not in p for p in json.load(open("posts35.json"
 H.ai_json = lambda prompt, props: {"cats": ["beauty", "food"]}; H.cat_fill({}); assert [p.get("cat") for p in json.load(open("posts35.json"))] == ["beauty", "food", None, "etc", None]
 a35.clear(); H.ai_json = lambda prompt, props: a35.append(prompt); H.cat_fill({}); assert not a35  # 다 채웠으면 안 부름
 H.ai_json, H.POSTS = sv35c[:2]; H.E.pop("ANTHROPIC_API_KEY") if sv35c[2] is None else H.E.update(ANTHROPIC_API_KEY=sv35c[2]); os.remove("posts35.json")
-assert set(S35.CAT_META) == set(S35.CAT_ORDER) and len({m[0] for m in S35.CAT_META.values()}) == 13 and set(S35.TILES) <= set(S35.CAT_META) and len(S35.TILES) == 8  # 10/24 개편: 품목 12칸 = 쪽 12개(영문 주소), 홈 타일 = 그중 8칸
+assert set(S35.CAT_META) == set(S35.CAT_ORDER) and len({m[0] for m in S35.CAT_META.values()}) == 15 and set(S35.TILES) <= set(S35.CAT_META) and len(S35.TILES) == 8  # 10/24 개편: 품목 12칸 = 쪽 12개(영문 주소), 홈 타일 = 그중 8칸
 assert S35.tiles().count('<a class="tile"') == 8 and S35.tiles(tuple(S35.CAT_META)).count('<a class="tile"') == 13 and S35.chips_html("life").count('aria-current="page"') == 1 and "aria-current" not in S35.chips_html("") and S35.tiles(tuple(S35.CAT_META), True).startswith('<nav class="tiles t6"')
 # 9-36 (10/23 리뷰 고침 + 진우 '인스타 다시 켬'): own_end 확인 전 하루특가 날 지남 = ⏳ + stl(첫 확인에 🔥여도 🔁 X) · stale = 글 날짜 밤 12시 기준(매일 밤 다시 ⏳·강제 재확인 X)
 sv36 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.tg, H.ai_json)
@@ -6524,7 +6524,7 @@ time.time = lambda: TK("2026-10-24 20:00"); td59 = "2026-10-24"
 ic59 = lambda name, **x: S.ci({"t": "2026-10-24 10:00", "text": f"🔥 [쿠팡] {name} (1,000원)", "url": "https://link.coupang.com/a/i", **x})
 svg59 = lambda k: f'<i class="ci ci-{k or "x"}" aria-hidden="true"></i>'
 assert [ic59(n) for n in ("곰곰 특란 30구", "아벤느 오 떼르말 미스트 300ml", "세탁세제 코튼캔디 3L", "샤인머스캣 2kg", "아이스크림 24개")] == [svg59(k) for k in ("food", "beauty", "laundry", "season", "snack")]  # 품목 선 아이콘(미스트 = 뷰티 펌프 병 — 💄 X)
-assert [ic59(n) for n in ("오퓨리엠 테이블 미스트 가습기용 필터 1개", "타이탄 미니 보조배터리 5000mAh 블루베리밀크", "캣누리 고양이사료 닭+참치 5kg", "강아지덴탈껌 고구마 800g", "선쉐이드 햇빛가리개 전좌석")] == [svg59(k) for k in ("digital", "digital", "", "", "car")]  # 품목이 틀리게 잡히는 이름 = ICON_FIX(가습기 필터 ≠ 뷰티 · 보조배터리 ≠ 식품 · 사료 = 쇼핑백) · 차 용품 = 🚗 자동차 칸(10/26)
+assert [ic59(n) for n in ("오퓨리엠 테이블 미스트 가습기용 필터 1개", "타이탄 미니 보조배터리 5000mAh 블루베리밀크", "캣누리 고양이사료 닭+참치 5kg", "강아지덴탈껌 고구마 800g", "선쉐이드 햇빛가리개 전좌석")] == [svg59(k) for k in ("digital", "digital", "pet", "pet", "car")]  # 품목이 틀리게 잡히는 이름 = ICON_FIX(가습기 필터 ≠ 뷰티 · 보조배터리 ≠ 식품 · 사료 = 쇼핑백) · 차 용품 = 🚗 자동차 칸(10/26)
 assert set(S.CAT_ICON) == set(S.CAT_META) | {""} and all("<path" in v or "<circle" in v or "<rect" in v for v in S.CAT_ICON.values()) and not re.search(r'class=|[\U0001F300-\U0001FAFF]', "".join(S.CAT_ICON.values())) and all(f'.ci-{k}{{--m:url("data:image/svg+xml,%3Csvg' in S.CSS for k in S.CAT_ICON if k) and '.ci,.ci-x{--m:url("data:image/svg+xml,%3Csvg' in S.CSS and S.CSS.index(".ci,.ci-x{") < S.CSS.index(".ci-food{") and ".ci{display:block;width:1em;height:1em;background:var(--ci,var(--sub));-webkit-mask:var(--m)" in S.CSS  # 품목마다 1개 + 품목 없음(쇼핑백) · 선 그림만(이모지 X) · s.css 마스크(쪽마다 SVG X)
 assert ic59("무지 노트 5권") == svg59("") and ic59("무지 노트 5권", cat="food") == svg59("food") and S.thumb({"t": "2026-10-24 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (1원)", "url": "https://x"}) == f'<div class="im" style="--c:#EAF6EE">{svg59("food")}</div>'  # 품목 없음 = 쇼핑백 · 바탕 = 품목 색
 assert not S.img_of({"t": "x", "text": "🔥 [네이버] 김 (1원)", "url": "https://naver.me/a", "img": "https://shopping-phinf.pstatic.net/main_1/a.jpg"}) \
@@ -6606,7 +6606,7 @@ w59 = tempfile.mkdtemp(); S.build(P59, w59); rd59 = lambda f: open(f"{w59}/{f}",
 ix59 = rd59("index.html"); sec59 = lambda sid: ix59.split(f'id="{sid}"')[1].split("</section>")[0]
 assert ix59.index('<nav class="evb"') < ix59.index('<nav class="qk"') < ix59.index(f'<p class="dis" style="font-size:10.5px;margin-top:6px">{S.HOME_DIS}</p>') < ix59.index('id="fire"') < ix59.index('id="my"') < ix59.index('id="t10"') < ix59.index('id="dl"') < ix59.index('id="drop"') \
     < ix59.index('id="pick"') < ix59.index('id="steady"') < ix59.index("지난 딜 전체 보기") < ix59.index(S.TAB_JS) and ix59.count('<nav class="evb"') == 1  # 포털형 2차 순서(진우 v3): 배너 → 바로가기 2줄 → 🔥 → ♡ 찜·본 → TOP → 마감 → 📉 → 픽 → 꾸준템
-assert ix59.count('data-gc="cat/') == 15 and f'<a class="q qc" href="{S.BASE}c/" data-gc="cat/all">' in ix59 and '<a class="q evt" href="https://hotdealpick.kr/e/' in ix59 and S.MY + S.MY_JS in ix59 and S.DISCLOSURE not in ix59 and "top4" not in ix59 and '<li class="pk">' not in ix59 and not re.search(r' id="(wait|life|toss|coupang|naver|cats|beauty|food|hot|saved|days|brand)"', ix59)  # 옛 #칸 주소(HASH_JS)는 그대로 넘어감
+assert ix59.count('data-gc="cat/') == 17 and f'<a class="q qc" href="{S.BASE}c/" data-gc="cat/all">' in ix59 and '<a class="q evt" href="https://hotdealpick.kr/e/' in ix59 and S.MY + S.MY_JS in ix59 and S.DISCLOSURE not in ix59 and "top4" not in ix59 and '<li class="pk">' not in ix59 and not re.search(r' id="(wait|life|toss|coupang|naver|cats|beauty|food|hot|saved|days|brand)"', ix59)  # 옛 #칸 주소(HASH_JS)는 그대로 넘어감
 assert not any("p/15.html" in sec59(k) for k in ("fire", "t10", "dl", "drop", "pick", "steady")) and "햅쌀" in rd59("c/hot/index.html")  # 기획전 상품 = 배너로만(목록 쪽 그대로)
 # 포털형 2차(진우 v3): 같은 상품 홈 최대 2번(오늘 마감 > 🔥 > 📉 > 픽 > 꾸준템 · TOP 10·찜/본 X) · ⏰ 'N개 남음'(오늘 마감 칸 수와 같음 · 자정 지나면 숨김) · 🏆 '많이 본' = GoatCounter 조회일 때만 · 딜 쪽 = 본 기록(SEEN_JS)
 cnt59 = __import__("collections").Counter(i for k in ("fire", "dl", "drop", "pick", "steady") for i in set(re.findall(r'p/(\d+)\.html', sec59(k))))
@@ -8909,8 +8909,8 @@ assert all(c81(n) == "car" for n in ("유로플러스 요소수 10L 디젤 차�
                                      "메르헨트 데오 프레쉬 차량용 고체탈취제 에어리 허브 250g 2개", "블랙 다이아몬드 사계절 에탄올 워셔액 1.8L 6개입 1박스"))  # 탈취(생필품)·자외선(뷰티)·워셔액(식품 X)보다 먼저
 assert c81("글레이드 방향제 3개") == "life" and c81("PS5 디지털 에디션 콘솔") != "car" and c81("핫팩 30개 차량용") == "heat"  # 집 방향제 = 생필품 · 게임 콘솔 X · 난방이 먼저
 ik81 = lambda n: S81.icon_key({"text": f"🔥 [쿠팡] {n} (9,900원)"})
-assert (ik81("한일의료기 프리미엄 워셔블 온수매트 강아지, 더블(140 x 200 cm)"), ik81("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼 WT330"), ik81("하림펫푸드 밥이보약 CAT 3.4kg"), ik81("유로플러스 요소수 10L")) == ("heat", "fashion", "", "car")  # 펫 낱말 = 쇼핑백 아이콘 그대로(사료 = 밥그릇 X)
-assert list(S81.CAT_META)[-1] == S81.Q_CATS[-1] == S81.SHELF_CATS[-1][0] == "car" and S81.CAT_META["car"][:3] == ("car", "자동차", "🚗") and "car" in S81.CAT_ICON and ".ci-car{" in S81.CSS and S81.CAT_ORDER[:2] == ("heat", "car")
+assert (ik81("한일의료기 프리미엄 워셔블 온수매트 강아지, 더블(140 x 200 cm)"), ik81("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼 WT330"), ik81("하림펫푸드 밥이보약 CAT 3.4kg"), ik81("유로플러스 요소수 10L")) == ("heat", "fashion", "pet", "car")  # 펫 낱말 = 쇼핑백 아이콘 그대로(사료 = 밥그릇 X)
+assert list(S81.CAT_META)[-3:] == list(S81.Q_CATS[-3:]) == [k for k, _, _ in S81.SHELF_CATS][-3:] == ["car", "pet", "sport"] and S81.CAT_META["car"][:3] == ("car", "자동차", "🚗") and "car" in S81.CAT_ICON and ".ci-car{" in S81.CSS and S81.CAT_ORDER[:2] == ("heat", "car")
 assert "car = 자동차 용품" in H.CAT_PROMPT  # 정규식에 안 맞는 차 용품 = Claude 한 단어(cat_fill)도 car
 pk81 = lambda n: H.pair_key({"text": f"🔥 [토스] {n} (9,900원)", "url": "https://toss.im/_m/x81"})
 assert pk81("드리온 15W 고속 맥세이프 차량용 무선 충전기 1개") is None and pk81("유로플러스 요소수 10L 디젤 차량용 1개")[:2] == ("car", "요소수") and H.TH_TOPICS["car"] == "자동차"  # '둘 중 뭐 살래' = 차량용·자동차 꾸밈말로 안 묶음(충전기·공구·요소수 X) · Threads 주제
@@ -10432,7 +10432,7 @@ assert "cpx" not in g101 and g101["now"] == "17,900원" and g101["chkt"] == "202
 os.chdir(sv101b[3]); shutil.rmtree(d101b); (H.POSTS, H.HAS_TOSS, time.time, _) = sv101b
 # XX 원인 쪽(로그 10/23~27): 신라면 묶음 = 이름 그대로 검색에 pid 없음 · 갈배 = 10/23 한 번 찾은 뒤 차례가 안 옴(확인 안 한 새 진열이 계속 앞 — 오늘 남음 74 → 802)
 #   -> 검색 순서의 '마지막 확인' = 봇 검색·Cowork events chk 중 새것(막 확인해 넣은 진열이 옛 확인 상품 앞을 막지 않게) · 두 번째 검색어에 남던 '각' X
-assert H.cp_kws("농심 신라면·안성탕면·너구리·짜파게티 각 5개 (20개)")[1:] == ["농심 신라면 안성탕면 너구리 짜파게티", "농심 너구리 짜파게티"] and H.cp_kws("각티슈 100매 6개") == ["각티슈 100매 6개", "각티슈"]
+assert H.cp_kws("농심 신라면·안성탕면·너구리·짜파게티 각 5개 (20개)")[1:] == ["농심 신라면 안성탕면 너구리 짜파게티", "농심 너구리 짜파게티"] and H.cp_kws("각티슈 100매 6개") == ["각티슈 100매 6개", "각티슈"] and H.cp_kws("BYC 남성 3각 팬티 5매")[1] == "BYC 남성 3각 팬티" and H.cp_kws("L각 브라켓 4개")[1] == "L각 브라켓"  # 숫자·영문 붙은 각 = 이름 일부
 sv101 = (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, os.getcwd())
 d101 = tempfile.mkdtemp(); os.chdir(d101); cs101 = []
 po101 = [{"t": "2026-10-15 10:00", "text": f"🔥 [쿠팡] {n} (9,900원)", "url": f"https://link.coupang.com/a/x10{k}", "own": 1, "mid": k} for k, n in ((1, "새 진열 세제 3L"), (2, "갈배사이다 355ml 24캔"))]
@@ -10448,4 +10448,21 @@ for m101, want in (({}, ["갈배사이다 355ml 24캔", "새 진열 세제 3L"])
     assert cs101 == want, (cs101, want)  # Cowork 10/23 확인(갈배)이 10/26 확인(새 진열)보다 먼저 · 봇이 10/26 23시에 찾았으면 뒤로
 os.chdir(sv101[5]); shutil.rmtree(d101)
 (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv101; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
+# 9-102) YY(10/27 10시 Cowork 사이트 점검 — 품목 없음 42개: 반려동물 14·운동 13·문구 7): '반려동물'(pet 🐶)·'운동'(sport 🏋️) 칸 = 자동차 뒤 · 문구·소품 = 생활·살림(home)
+#        CAT_ORDER 난방·자동차 다음(간식·식품·생활보다 먼저 — 강아지 간식·고양이 모래·요가매트) · 털 슬리퍼 = 패션(WEAR_FIRST) · 20펫(병)·카펫·CAT6·모서리 보호대·헬스케어·샤프란 X
+cat102 = lambda n, m="토스": S.cat_of({"text": f"🔥 [{m}] {n} (9,900원)"})
+assert all(cat102(n) == "pet" for n in ("하림펫푸드 밥이보약 활기찬 노후 도그(강아지용) 3.4kg 1개", "라피끄 강아지 유산균 품은 져키 연어 1kg 1개", "다먹어줄개 강아지 사료 소중형견전용 2kg 1개",
+                                        "미스터추추 펫 고양이 쇼파 스크래쳐 타원형 우드 대형 1개", "하림펫푸드 밥이보약 CAT No 스트레스 3.4kg 1개", "하림펫푸드 더리얼 DOG 맥시칸 양념 멍치킨 100g 1개",
+                                        "마이티펫 고양이 두부모래 초극세입자 7L 5개", "누터스가든 브러싱츄 강아지덴탈껌 고구마 800g", "미스터추추 데일리 배변패드 라벤더향 100매"))
+assert all(cat102(n) == "sport" for n in ("프로스펙스 멀티 짐볼 65cm 1개", "프로스펙스 파텔라 무릎 보호대 블랙 L/XL 2개", "브메르 인체공학 에어핏 무릎보호대 블랙 L 2개", "프로스펙스 액티브 슬개골 보호대 블랙 1개",
+                                          "가정 실내용 풀업바 운동기구 단일상품", "어깨스트레칭 라운드숄더 십자봉 그레이 1개", "레토 푸쉬업바 팔굽혀펴기 기구 2개입", "굽은등 목 허리 스트레칭 기구",
+                                          "흉곽 호흡기 횡경막 폐활량 운동기구", "아이워너 맨즈 육각 아령 7kg 2개입 1세트", "악력 손목 강화 무소음 자이로볼 1개", "라라애플 NBR 요가매트 1830x610x10mm 1개",
+                                          "포근한 쑥 온기 한방 무릎보호대 XL"))
+assert all(cat102(n) == "home" for n in ("택배 송장 지우개 리무버 50ml 3개", "젤잉크 중성펜 0.5mm 블랙 20개입", "유니 쿠루토가 KS M5-KS 1개", "애니메이션 방수 스티커 치이카와 50장", "깎지 않는 무한연필 펜 6P 세트",
+                                         "글로파이 체스형 고리자석 12mm 16개", "무림 엠카피 데일리 복사용지 A4 80g 2500매 1박스", "카드 슬리브 투명 65x92mm 100매", "깨비다 액막이 명태 도어벨 1개", "도레이씨 안경닦이"))
+assert (cat102("빙그레 심플리 디카페인 400ml 20펫"), cat102("카펫 러그"), cat102("CAT6 랜선 케이블"), cat102("모서리 보호대 10개"), cat102("필립스 헬스케어 체온계"), cat102("샤프란 섬유유연제"),
+        cat102("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼"), cat102("한일의료기 온수매트 강아지 털 슬리퍼"), cat102("나이키 운동화")) == ("", "home", "digital", "", "", "laundry", "fashion", "heat", "fashion")
+assert [k for k, _, _ in S.SHELF_CATS][-3:] == ["car", "pet", "sport"] and S.CAT_ORDER[:4] == ("heat", "car", "pet", "sport") and list(S.CAT_META)[-2:] == ["pet", "sport"] and S.Q_CATS[-2:] == ("pet", "sport")
+assert S.CAT_META["pet"][:3] == ("pet", "반려동물", "🐶") and S.CAT_META["sport"][:3] == ("sport", "운동", "🏋️") and all(k in S.CAT_ICON and f".ci-{k}{{" in S.CSS and k in S.CAT_TIPS and k in S.CAT_INTRO for k in ("pet", "sport"))
+assert H.TH_TOPICS["pet"] == "반려동물" and H.TH_TOPICS["sport"] == "운동" and "pet = " in H.CAT_PROMPT and "sport = " in H.CAT_PROMPT and "문구·소품은 home" in H.CAT_PROMPT and S.icon_key({"text": "🔥 [토스] 하림펫푸드 밥이보약 CAT 3.4kg (9,900원)"}) == "pet"
 print("OK: 모든 셀프체크 통과")
