@@ -36,7 +36,7 @@ CAT_ICON = {  # 품목 선 아이콘(10/24 진우 — 사진 없을 때 이모�
     "kitchen": '<path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"/>',  # Lucide cooking-pot
     "laundry": '<path d="M3 8h18"/><path d="m4.5 8 1.4 11.3A2 2 0 0 0 7.9 21h8.2a2 2 0 0 0 2-1.7L19.5 8"/><path d="M6.2 12.5h11.6"/><path d="M6.7 16.5h10.6"/><path d="M8 8a4 3 0 0 1 8 0"/>',  # 빨래 바구니
     "snack": '<path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>',  # Lucide cookie
-    "women": '<circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5"/><path d="M12 7.5V9"/><path d="M7.5 12H9"/><path d="M16.5 12H15"/><path d="M12 16.5V15"/><path d="m8 8 1.88 1.88"/><path d="M14.12 9.88 16 8"/><path d="m8 16 1.88-1.88"/><path d="M14.12 14.12 16 16"/>',  # Lucide flower
+    "coffee": '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',  # Lucide coffee(AAA 커피·차)
     "heat": '<path d="M12 2 12 22M20.66 7 3.34 17M20.66 17 3.34 7"/><path d="M14.6 2.7 12 5.2 9.4 2.7M5.25 5.1 6.11 8.6 2.65 9.6M2.65 14.4 6.11 15.4 5.25 18.9M9.4 21.3 12 18.8 14.6 21.3M18.75 18.9 17.89 15.4 21.35 14.4M21.35 9.6 17.89 8.6 18.75 5.1"/>',  # 눈송이
     "season": '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',  # Lucide leaf(고구마 X)
     "home": '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 21v-6h4v6"/>',  # 집
@@ -47,6 +47,12 @@ CAT_ICON = {  # 품목 선 아이콘(10/24 진우 — 사진 없을 때 이모�
     "sport": '<path d="M14.4 14.4 9.6 9.6"/><path d="M18.66 21.5a2 2 0 1 1-2.83-2.83l-1.77 1.77a2 2 0 1 1-2.83-2.83l6.36-6.36a2 2 0 1 1 2.83 2.83l-1.77 1.77a2 2 0 1 1 2.83 2.83Z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.4 12.77a2 2 0 1 1-2.83-2.83l1.77-1.77a2 2 0 1 1-2.83-2.83l2.83-2.83a2 2 0 1 1 2.83 2.83l1.77-1.77a2 2 0 1 1 2.83 2.83Z"/>',  # Lucide dumbbell(YY 운동)
     "": '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',  # Lucide shopping-bag(품목 없음)
 }
+
+def theme_css(css):
+    """@media(prefers-color-scheme:dark){규칙} -> 🌙 고름(data-theme=dark) + 📱 폰 설정 다크(☀ 고름이면 X) — AAA 테마 고르기(10/27 진우). :where = 선택자 우선순위 그대로 · html에 붙는 클래스는 'html.x …'로(.lb .im X)."""
+    on = lambda r, c: re.sub(r"(^|})([^{}]+)\{", lambda m: m[1] + ",".join(re.sub(r"^(:root|html[\w.-]*)", rf"\1:where({c})", x) if re.match(r":root|html", x) else f":where(:root{c}) {x}" for x in m[2].split(",")) + "{", r)
+    return re.sub(r"@media\(prefers-color-scheme:dark\)\{((?:[^{}]*\{[^{}]*\})*)\}", lambda m: on(m[1], "[data-theme=dark]") + "@media(prefers-color-scheme:dark){" + on(m[1], ":not([data-theme=light])") + "}", css)
+
 
 CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
 :root{--bg:#F6F7F9;--card:#fff;--ink:#14161B;--sub:#6B7180;--line:#ECEEF2;--acc:#E5303F;--chip:#F1F3F6;--btn:#14161B;--btnt:#fff;--pk:#E8435A;--pkbg:linear-gradient(160deg,#FFE3E8,#FFF1E6);--pkln:rgba(232,67,90,.14);--pkt:#B3202F;--accf:#E5303F;--cpb:linear-gradient(160deg,#FFE5E3,#FFF2EE);--cpt:#C2202C;--tsb:linear-gradient(160deg,#E3EEFF,#EEF5FF);--tst:#1B64DA;--nvb:linear-gradient(160deg,#E2F7EA,#F0FAF3);--nvt:#00703A;color-scheme:light}
@@ -115,8 +121,9 @@ footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 44px 8px}f
 html:not(.lay-b) .hd{top:0}html:not(.lay-b) .hr{height:56px}html:not(.lay-b) .hr .lg{flex:none}html:not(.lay-b) .lg b,html:not(.lay-b) .lg h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 html:not(.lay-b) .hr .ib{margin-left:auto}html:not(.lay-b) .hr .ib+.ib{display:none}html:not(.lay-b) .sb{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:56px;right:62px;padding:0}html.inapp:not(.lay-b) .sb{right:16px}
 html:not(.lay-b) .sb svg{top:10px;color:var(--sub)}html:not(.lay-b) .sb input{height:40px;border:1px solid var(--line);text-overflow:ellipsis}
-.lsw{display:flex;align-items:center;justify-content:center;gap:6px;margin:18px 0 0;color:var(--sub);font-size:12.5px;font-weight:600}.lsw button{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--sub);font:inherit;letter-spacing:-.3px;cursor:pointer}html:not(.lay-b):not(.lay-c) .lsw [data-l=a],html.lay-b .lsw [data-l=b],html.lay-c .lsw [data-l=c]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
+.lsw,.thm{display:flex;align-items:center;justify-content:center;gap:6px;margin:18px 0 0;color:var(--sub);font-size:12.5px;font-weight:600}.lsw button,.thm button{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--sub);font:inherit;letter-spacing:-.3px;cursor:pointer}html:not(.lay-b):not(.lay-c) .lsw [data-l=a],html.lay-b .lsw [data-l=b],html.lay-c .lsw [data-l=c],.thm [aria-pressed=true]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
 .tb{position:fixed;z-index:8;right:calc(10px + env(safe-area-inset-right));bottom:calc(80px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}main:has(>#inst:not([hidden]))+.tb{bottom:calc(128px + env(safe-area-inset-bottom))}.inapp .tb{bottom:calc(96px + env(safe-area-inset-bottom))}@media(min-width:680px){.tb{right:calc(50% - 336px)}}.tb button{display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:22px;background:color-mix(in srgb,var(--card) 86%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(20,22,27,.16);color:var(--ink);font:inherit;font-size:8.5px;font-weight:800;letter-spacing:.2px;line-height:1;cursor:pointer}.tb svg{width:16px;height:16px}
+.thm{flex-wrap:wrap;gap:4px;margin:12px 0 0}.thm button{padding:0 9px}
 .mk{flex:none;margin-right:5px;font-weight:800;color:var(--sub)}.mk.coupang{color:var(--cpt)}.mk.toss{color:var(--tst)}.mk.naver{color:var(--nvt)}
 .tiles.t6{grid-template-columns:repeat(var(--n,6),minmax(0,1fr));gap:8px 2px;margin:12px 0 0}.t6 .tile{gap:4px;padding:0;background:none;box-shadow:none;border-radius:0;font-size:11px;letter-spacing:-.5px}.t6 .tile i{width:38px;height:38px;font-size:21px}
 .sec>h2>span{display:flex;align-items:baseline;gap:6px;min-width:0}.sec>h2 .more{flex:none;color:var(--sub);font-size:13px;font-weight:700;text-decoration:none}
@@ -171,6 +178,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
 CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
 CSS += ".cin{margin:10px 2px 4px;font-size:14px;line-height:1.65}.cin p{margin:0 0 6px}.deal ul.tips{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}.lk li a{gap:10px}.lk li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.lk li b{flex:none;font-size:13px;font-weight:700}.tw.tt td:nth-child(2){white-space:normal;min-width:118px}.tw.tt td:nth-child(3){white-space:nowrap}.tw.tt small{display:block;margin-top:2px;color:var(--sub);font-size:11.5px}"  # TT-2 칸 소개·고르는 기준·같은 칸 다른 딜
+CSS = theme_css(CSS)
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
 FONT_HEAD = '<link rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin>'  # 10/24 개편 글꼴 = Pretendard 줄인 판 'HDP Sans'(docs/fonts, OFL.txt — 이름은 OFL 예약 이름 규칙대로 바꿈) 1개 파일(317KB, 굵기 400~800) — 바꾸면 v2로(서비스워커 글꼴 캐시는 이름이 안 바뀌면 그대로 씀)
 
@@ -249,10 +257,10 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
-{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
+{f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
-<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a></footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
+<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
 
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
@@ -318,6 +326,12 @@ TB = ('<div class="tb" hidden><button type="button" data-gc="nav/top" aria-label
       "if(!b.hidden&&i&&!i.hidden&&(t=i.getBoundingClientRect().top)<b.getBoundingClientRect().bottom+8)b.style.bottom=(h-t+8)+'px'}"  # 설치 띠가 글자 크기 등으로 높아도 그 위로(10/25 리뷰)
       "addEventListener('scroll',f,{passive:true});addEventListener('resize',f);f();"
       "function go(t){scrollTo({top:t,behavior:R.matches?'auto':'smooth'})}u.onclick=function(){go(0);var l=document.querySelector('.lg');if(l)l.focus({preventScroll:true})};d.onclick=function(){go(E.scrollHeight);u.focus({preventScroll:true})}})()</script>")  # TOP/END(10/25 진우 '맨 위로 올라가는 버튼 — 있으면 의외로 좋더라'): 모든 쪽 오른쪽 아래(아래 메뉴·설치 띠 위 · 앱 안 브라우저 = 앱 툴바 위) · 100vh 넘게 내렸을 때만 · 맨 아래 근처 = ↓ 숨김(자리는 그대로 — 두 번 눌러 ↑로 X) · 누른 뒤 초점 = ↑·로고 · 움직임 줄이기 = 바로 · GoatCounter nav/top·nav/end
+THEME_JS = ("<script>(function(){var d=document.documentElement,M=document.querySelectorAll('meta[name=theme-color]'),C=[].map.call(M,function(m){return m.content});"  # head(theme-color 뒤·첫 그림 전) — 깜빡임 X
+            "window.hpTheme=function(t){t=t==='light'||t==='dark'?t:'';t?d.setAttribute('data-theme',t):d.removeAttribute('data-theme');[].forEach.call(M,function(m,i){m.content=t?C[t==='dark'?1:0]:C[i]})};"  # 고름 = 상단 줄 색 둘 다 그 색 · 폰 설정 = 원래(light·dark)
+            "function f(){var t;try{t=localStorage.getItem('hp_theme')}catch(e){}hpTheme(t)}f();addEventListener('pageshow',function(e){if(e.persisted)f()})})()</script>")  # AAA 테마 고르기(10/27 진우): hp_theme = light·dark(없음 = 폰 설정) · 저장 막힘 = 폰 설정 · 뒤로 가기(bfcache)도 다시
+THM = ('<div class="thm" role="group" aria-label="화면 테마">' + "".join(f'<button type="button" data-th="{k}" data-gc="theme/{k or "auto"}" aria-pressed="false">{n}</button>' for k, n in (("light", "☀️ 밝게"), ("dark", "🌙 어둡게"), ("", "📱 폰 설정대로"))) + "</div>"
+       "<script>(function(){var B=document.querySelectorAll('.thm button');function sync(){var t=document.documentElement.getAttribute('data-theme')||'';[].forEach.call(B,function(b){b.setAttribute('aria-pressed',b.dataset.th===t)})}sync();addEventListener('pageshow',sync);"
+       "[].forEach.call(B,function(b){b.addEventListener('click',function(){var t=b.dataset.th;hpTheme(t);try{t?localStorage.setItem('hp_theme',t):localStorage.removeItem('hp_theme')}catch(e){}sync()})})})()</script>")  # 꼬리말 ☀ 밝게 · 🌙 어둡게 · 📱 폰 설정대로(지금 = 눌림) — 상단 🔔·♡ 옆 X(모바일 좁음) · GoatCounter theme/light·dark·auto(GC_JS data-gc)
 INAPP_JS = "<script>if(/Barcelona|Instagram|FBAN|FBAV|KAKAOTALK|NAVER\\(inapp|Line\\/|DaumApps/i.test(navigator.userAgent))document.documentElement.classList.add('inapp')</script>"  # 10/13 진우: 앱 안 브라우저(Threads=Barcelona·인스타·페북·카톡·네이버 등)는 아래 고정 바가 앱 툴바에 가려서 -> 검색창 아래 한 줄 메뉴 + 아래 여백
 TOSS_HOSTS = ("toss.im", "toss.shopping")  # 쉐어링크 단축(toss.shopping/_m/.. — API·앱 발급 모두 이 모양, toss.im/_m/..)·원본(toss.shopping/t/..?k=)
 NAVER_HOSTS = ("naver.me",)  # 쇼핑커넥트 '링크 발급' 주소 (naver.me 단축)
@@ -747,7 +761,7 @@ FOOD7 = FOOD + (r"|잡곡|현미|귀리|오트|돼지|돈육|소고기|우삼겹
                 r"김밥|라떼|아메리카노|원두|탄산수|콜라(?!겐)|사이다|식혜|국수|우동|냉면|파스타|소면|당면|밀키트|밀가루|설탕|식용유|참기름|간장|된장|고추장|케첩|마요|분유|이유식")
 KITCHEN = (r"프라이팬|후라이팬|냄비|도마|칼\s*세트|식칼|주방|조리\s*도구|뒤집개|국자|수저|숟가락|젓가락|식기|그릇|접시|머그|컵\s*세트|밀폐\s*용기|보관\s*용기|유리\s*용기|내열\s*유리|곰솥|락앤락|글라스락|"
            r"크린랩|위생[백랩장]|지퍼백|쿠킹\s*호일|종이\s*호일|키친타[월올]|수세미|고무장갑|행주|설거지|퐁퐁|자연퐁|트리오|텀블러|보온병|물병")
-LAUNDRY = (r"세탁(?!기)|세탁조|세제|유연제|퍼실|다우니|피죤|스너글|표백|과탄산|옥시크린|빨래|건조대|드라이\s*시트|건조기\s*시트|얼룩\s*제거|울샴푸|리큐|(?:테크|비트)\s*(?:액체|세제|파워)|옷걸이")
+LAUNDRY = (r"세탁(?!기)|세탁조|세제|유연제|퍼실|다우니|피죤|스너글|(?<!무)표백|과탄산|옥시크린|빨래|건조대|드라이\s*시트|건조기\s*시트|얼룩\s*제거|울샴푸|리큐|(?:테크|비트)\s*(?:액체|세제|파워)|옷걸이")
 WOMEN = r"생리|탐폰|" + LINER + r"|오버\s*나이트|위생\s*팬티|여성\s*(?:청결|세정|용품)|쏘피|좋은\s*느낌|위스퍼|순수한면|템포|시크릿\s*데이|입는\s*오버"
 SNACK = (r"과자|초코|쵸코|견과|간식|젤리|사탕|캔디|쿠키|비스킷|스낵(?!면)|칩(?!셋)|웨하스|크래커|양갱|(?<![가-힣])껌|마시멜로|프레첼|팝콘|아이스크림|빼빼로|오예스|"
          r"새우깡|허니버터|에너지\s*바|단백질\s*바|약과|강정|육포|쥐포")
@@ -758,10 +772,13 @@ PET = (r"강아지|고양이|애견|애묘|반려(?:견|묘|동물)|(?<![가-힣
 SPORT = (r"(?:무릎|손목|팔꿈치|발목|허리|슬개골|슬개건|어깨)[가-힣\s]{0,6}보호대|짐볼|요가\s*(?:매트|링|블록|볼)|필라테스|폼\s*롤러|풀업\s*바|턱걸이|푸[쉬시]업(?!\s*브라)|팔굽혀펴기|아령|덤벨|케틀벨|바벨|"
          r"악력|자이로\s*볼|줄넘기|훌라\s*후프|스텝퍼|헬스(?!케어)|홈트|운동\s*(?:기구|용품|밴드|매트)|저항\s*밴드|스트레칭(?!\s*(?:크림|오일|마스크|팩))|십자봉|폐활량")  # YY 운동 칸 — 모서리 보호대 X(부위 보호대만)
 CAR = r"요소수|워셔액|엔진|차량용|자동차|타이어|와이퍼|콘솔\s*(?:쿠션|박스|트레이)|헤드레스트|블랙박스|불스원|유막|햇빛\s*가리개|[선썬]\s*쉐이드"  # 10/26 Cowork 자동차 칸 — 콘솔 = 차 콘솔만(게임기 X) · 방향제 단독 X(집 방향제 = 생필품, 차 방향제는 '차량용'으로)
-SHELF_CATS = (("life", "🧻 생필품", CATS[0][2]), ("kitchen", "🍳 주방", KITCHEN), ("laundry", "🧺 세탁", LAUNDRY), ("women", "🌸 여성용품", WOMEN), ("beauty", "💄 화장품·뷰티", CATS[1][2]),
-              ("food", "🍚 식품·음료", FOOD7), ("snack", "🍪 과자·간식", SNACK), ("season", "🍠 제철 먹거리", SEASON), ("home", "🏠 생활·살림", HOME_RX),
+COFFEE = (r"커피|카누|네스프레소|돌체\s*구스토|원두|콜드\s*브루|아메리카노|에스프레소|라떼|모카\s*골드|(?:보리|옥수수(?:\s*수염)?|둥굴레|헛개|우엉|여주|호박팥|결명자|율무|유자|생강|대추|도라지|모과|오미자|전통)\s*차(?![가-힣])"
+          r"|유자청|생강청|쌍화|녹차(?![가-힣])|홍차|티백|(?:밀크|아이스|허브|캐모마일|루이보스|히비스커스|얼그레이|페퍼민트)\s*티(?!셔)|보이차|핫\s*초코|코코아|(?<![가-힣])제티|(?<![가-힣])미떼")  # AAA(10/27 진우) 커피·차·핫초코
+COFFEE_NOT = r"머신(?!\s*호환)|메이커|그라인더|드리퍼|여과지|필터|(?:전기|티|드립|커피)\s*포트|텀블러|보온병|머그\s*컵|커피\s*(?:잔|맛|향|땅콩|증정)|캔디|사탕|쿠키|아이스크림|초코\s*파이|백팩|가방|치약|비누|샴푸|워시|세제|탈취|방향|테이블|스크럽"  # 커피·차 칸 X(도구·커피맛 과자·커피색 가방·녹차 치약 같은 생필품 — 그다음 맞는 칸으로)
+SHELF_CATS = (("life", "🧻 생필품", CATS[0][2] + "|" + WOMEN), ("kitchen", "🍳 주방", KITCHEN), ("laundry", "🧺 세탁", LAUNDRY), ("beauty", "💄 화장품·뷰티", CATS[1][2]),
+              ("food", "🍚 식품·음료", FOOD7), ("coffee", "☕ 커피·차", COFFEE), ("snack", "🍪 과자·간식", SNACK), ("season", "🍠 제철 먹거리", SEASON), ("home", "🏠 생활·살림", HOME_RX),
               ("fashion", "🧦 패션·잡화", FASHION), ("digital", "🔌 가전·디지털", DIGI), ("heat", "🔥 겨울 난방", HEAT), ("car", "🚗 자동차", CAR), ("pet", "🐶 반려동물", PET), ("sport", "🏋️ 운동", SPORT))  # 10/23 진우 7칸 -> 10/24 '수백 개로 늘어나니 세분(주방·세탁·여성용품·과자·계절음식)' 12칸 — 이 순서로 보임(겨울 난방·제철 = 계절 칸, 없으면 안 보임)
-CAT_ORDER = ("heat", "car", "pet", "sport", "women", "beauty", "kitchen", "laundry", "life", "snack", "season", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 생리대 = 여성용품, 크림·클렌징 = 화장품, 주방 세제·크린랩 = 주방, 세제 = 세탁, 휴지 = 생필품, 과자 > 제철 > 식품)
+CAT_ORDER = ("heat", "car", "pet", "sport", "beauty", "coffee", "kitchen", "laundry", "life", "snack", "season", "food", "home", "fashion", "digital")  # 제목이 여러 칸에 맞으면 이 순서(핫팩 = 난방, 크림·클렌징 = 화장품, 커피·차 = 주방 앞(카누 + 머그 증정) — 도구·커피맛 과자 = COFFEE_NOT, 생리대 = 생필품(AAA 여성용품 칸 합침), 주방 세제·크린랩 = 주방, 세제 = 세탁, 휴지 = 생필품, 과자 > 제철 > 식품)
 
 
 HOME_FIRST = r"모기|홈매트|훈증|살충|킨칸|에프킬라"  # 모기향 '히터'(리퀴드 훈증기)는 겨울 난방 X -> 생활·주방(10/23 리뷰)
@@ -785,7 +802,7 @@ def cat_of(p):
     """품목 칸 1개: 제목 정규식(HOME_FIRST -> CAT_ORDER 순) -> 안 맞으면 글 cat(hotdeal.cat_fill이 Claude 한 단어로 채움 — etc = 칸 없음) -> ''."""
     t, rx = title_of(p["text"]), {k: r for k, _, r in SHELF_CATS}
     return ("home" if re.search(HOME_FIRST, t) else "fashion" if re.search(WEAR_FIRST, t) and not re.search(HEAT, t)
-            else next((k for k in CAT_ORDER if re.search(rx[k], t)), p.get("cat") if p.get("cat") in rx else ""))
+            else next((k for k in CAT_ORDER if re.search(rx[k], t) and not (k == "coffee" and re.search(COFFEE_NOT, t))), p.get("cat") if p.get("cat") in rx else ""))
 
 
 PRICE_ITEMS = (  # 10/17 진우 '유입 늘리기 ② 최저가 기록 페이지'(/c/주소.html): (주소, 품목, 제목 낱말, 비교 단위, 그 단위로 보는 '…당' 낱말 — 1L당 = 'l') — 같은 단위끼리만
@@ -911,10 +928,10 @@ L=has(i)?L.filter(function(x){return x.i!==i}):[{i:i,h:b.closest('.g').outerHTML
 
 CAT_META = {  # 10/24 진우 개편: 품목 칸 -> (쪽 주소 /c/slug/, 이름, 이모지, 파스텔 바탕) — 홈 타일 8칸 = TILES(4×2), 나머지 4칸은 /c/ 카테고리 쪽에 · 주소는 영문(Threads 글에서 한글 주소가 링크로 안 이어질 수 있어서)
     "life": ("life", "생필품", "🧻", "#FFEFE6"), "food": ("food", "식품", "🍚", "#EAF6EE"), "beauty": ("beauty", "뷰티", "💄", "#FDEBF1"), "kitchen": ("kitchen", "주방", "🍳", "#EEF1FB"),
-    "laundry": ("laundry", "세탁", "🧺", "#E9F5F8"), "snack": ("snack", "간식", "🍪", "#FFF6DD"), "women": ("women", "여성용품", "🌸", "#F3ECFB"), "heat": ("winter", "겨울템", "❄️", "#E8F1FF"),
+    "laundry": ("laundry", "세탁", "🧺", "#E9F5F8"), "snack": ("snack", "간식", "🍪", "#FFF6DD"), "coffee": ("coffee", "커피·차", "☕", "#F3ECE4"), "heat": ("winter", "겨울템", "❄️", "#E8F1FF"),
     "season": ("season", "제철 먹거리", "🍠", "#FFF1E6"), "home": ("home", "생활·살림", "🏠", "#F1F3F6"), "fashion": ("fashion", "패션·잡화", "🧦", "#F5EFEA"), "digital": ("digital", "가전·디지털", "🔌", "#EEF2F7"),
     "car": ("car", "자동차", "🚗", "#EEF1F4"), "pet": ("pet", "반려동물", "🐶", "#FBEFE4"), "sport": ("sport", "운동", "🏋️", "#E8F6F1")}  # YY(10/27 Cowork): 반려동물·운동 = 자동차 뒤  # 자동차 = 맨 끝(10/26 Cowork — /c/ 칸·홈 품목 줄)
-TILES = ("life", "food", "beauty", "kitchen", "laundry", "snack", "women", "heat")
+TILES = ("life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "heat")
 MALLS = (("coupang", "쿠팡", "🚀"), ("toss", "토스", "💙"), ("naver", "네이버", "💚"))
 PER = 20  # 목록 쪽 한 쪽 상품 수(10/24 진우 '카테고리·전체 페이지는 20개씩') — 다음 쪽 = /c/이름/2/
 PICK_N, PICK_HOUR = 3, 10  # 오늘의 픽 3개 · 하루 1번(KST 10시 뒤 첫 빌드 — Cowork 9:10 가격 확인 반영 뒤) 고정, 그 전엔 전날 픽
@@ -1591,7 +1608,7 @@ def deal_state(p, sh, newer=None):
     return f'<div class="u">🕒 {when}' + (f" · {html.escape(line)}" if line else "") + "</div>"
 
 
-FRESH, SKIN, EAT = ("food", "season"), ("beauty", "life", "women"), ("food", "season", "snack")  # 낱말이 겹치는 칸(밤 = 화장품 밤 · 크림화이트 = 색 · 자외선 차단 햇빛가리개 · 캔디팜므 = 향) — 이 칸 상품에만
+FRESH, SKIN, EAT = ("food", "season"), ("beauty", "life"), ("food", "season", "snack", "coffee")  # 낱말이 겹치는 칸(밤 = 화장품 밤 · 크림화이트 = 색 · 자외선 차단 햇빛가리개 · 캔디팜므 = 향) — 이 칸 상품에만
 ITEM_TIPS = (  # '고르는 기준' 첫 줄(TT-2 ⑤ — 칸 고정 문구 X: 상품 이름 낱말로) — 사실 주장 X, 비교·확인할 것만 · 위에서부터 첫 맞는 것(넓은 낱말 = 맨 뒤) · 셋째 = 맞는 칸(없으면 모든 칸)
     (r"관람권|상품권|기프티콘|e쿠폰|모바일\s*쿠폰|이용권", "사용 기한과 사용처(지점·상영관 등) 조건을 확인하세요"),
     (r"충전기|케이블|보조\s*배터리|멀티탭", "출력(W)·단자(C타입 등)·안전 인증을 확인하세요"),
@@ -1646,7 +1663,7 @@ ITEM_TIPS = (  # '고르는 기준' 첫 줄(TT-2 ⑤ — 칸 고정 문구 X: �
     (r"치약", "용량(g)과 개수를 보세요 — g당 가격으로 비교하세요"),
     (r"칫솔(?!\s*(?:살균기|걸이|꽂이|홀더))", "모 굵기(미세모·일반모)와 개수를 확인하세요"),
     (r"손톱|발톱|족집게|면도기|면도날|눈썹", "날 소재·크기와 구성품(케이스 등)을 확인하세요"),
-    (r"생리대|" + LINER + r"|오버\s*나이트|탐폰", "사이즈(소·중·대·오버나이트)와 매수를 확인하세요 — 매당 가격으로 비교하세요", ("women", "life")),
+    (r"생리대|" + LINER + r"|오버\s*나이트|탐폰", "사이즈(소·중·대·오버나이트)와 매수를 확인하세요 — 매당 가격으로 비교하세요", ("life",)),
     (r"기저귀", "단계(사이즈)와 팬티형·밴드형을 확인하세요 — 매당 가격으로 비교하세요"),
     (r"선크림|선스틱|선쿠션|자외선", "SPF·PA 지수와 용량을 확인하세요 · 1+1이면 개당 가격으로 따져 보세요", SKIN),
     (r"(?<!\+)클렌징(?!\s*패드)|클렌저|폼클렌", "용량(ml)과 피부 타입(약산성 등)을 확인하세요", SKIN),
@@ -1675,7 +1692,7 @@ ITEM_TIPS = (  # '고르는 기준' 첫 줄(TT-2 ⑤ — 칸 고정 문구 X: �
     (r"우산|양산", "크기(살 길이)와 자동 여부를 확인하세요"),
     (r"^(?!.*(?:포함|증정)).*(?:가방|백팩|지갑|파우치)", "크기(가로·세로)와 소재를 확인하세요"),
     (r"양말|스타킹|타이즈", "켤레 수와 사이즈를 확인하세요 — 켤레당 가격으로 비교하세요"),
-    (r"브라(?!운|이트|질)|팬티|속옷|내의|레깅스|잠옷|파자마", "사이즈 표와 소재를 확인하세요 · 묶음이면 장당 가격으로 비교하세요", ("fashion", "women", "life", "home")),
+    (r"브라(?!운|이트|질)|팬티|속옷|내의|레깅스|잠옷|파자마", "사이즈 표와 소재를 확인하세요 · 묶음이면 장당 가격으로 비교하세요", ("fashion", "life", "home")),
     (r"장갑|머플러|목도리|비니", "소재(울·아크릴 등)와 사이즈를 확인하세요"),
     (r"슬리퍼|실내화|신발|운동화", "사이즈(mm) 범위와 교환 조건을 확인하세요"),
     (r"패딩|자켓|재킷|코트|후리스|플리스|(?<![가-힣])니트(?!릴)|가디건", "실측 사이즈와 소재를 확인하세요 · 옵션마다 가격이 다를 수 있어요"),
@@ -1687,7 +1704,7 @@ ITEM_TIPS = (  # '고르는 기준' 첫 줄(TT-2 ⑤ — 칸 고정 문구 X: �
     (r"선물\s*세트|기획\s*세트|기초\s*세트|\d+종\s*세트", "구성품과 개수를 확인하세요 — 선물용이면 포장·쇼핑백 포함 여부도", ("beauty", "food", "season", "snack")))
 CAT_TIPS = {"life": "개수·용량을 보고 소모품이면 단위가(롤당·매당·개당)로 비교하세요", "food": "중량·개수가 상품마다 달라요 — 100g당·개당 가격으로 비교하세요",
             "beauty": "구성(본품·리필·증정)과 용량·개수를 확인하세요", "kitchen": "규격(cm·용량)과 개수를 확인하세요", "laundry": "구성(개수·용량)과 크기를 확인하세요",
-            "snack": "개별 포장 수와 총중량을 확인하세요", "women": "사이즈와 매수를 확인하세요 — 매당 가격으로 비교하세요", "heat": "크기와 사용 시간·안전 인증을 확인하세요",
+            "snack": "개별 포장 수와 총중량을 확인하세요", "coffee": "1개(1봉·1티백) 용량과 개수를 보세요 — 개당·100ml당 가격으로 비교하세요", "heat": "크기와 사용 시간·안전 인증을 확인하세요",
             "season": "중량·크기와 받는 날을 확인하세요", "home": "크기·무게 같은 규격을 확인하세요", "fashion": "사이즈와 소재를 확인하세요",
             "digital": "모델명·호환 규격·보증 조건을 확인하세요", "car": "차종·규격을 확인하세요", "pet": "아이 나이·크기에 맞는지(사료·간식은 원료) 확인하세요", "sport": "사이즈·무게·사용 공간을 확인하세요"}
 COND_TIPS = ((r"와우", "와우 회원가면 일반 회원은 결제가가 달라요"), (r"쿠폰", "쿠폰 적용가예요 — 쿠폰이 끝나면 가격이 올라갈 수 있어요"),
@@ -1818,13 +1835,13 @@ def topic_page(g, tps, today, now_k):
 
 
 CAT_INTRO = {  # c/ 칸 쪽 첫 문단(TT-2 ③ 10/27 — 검색어 '쿠팡 OO 특가'가 자연스럽게, 사실만: 모은 것 · 보이는 순서(🔥 먼저 — items) · 고를 때 볼 것) · 1쪽만 · 토스 = 다른 몰과 비교하는 말 X
-    "life": "화장지·물티슈·세제·치약·샴푸처럼 매일 쓰는 생필품 특가를 모았어요. 쿠팡 생필품 특가를 비롯해 핫딜픽이 고른 상품 중 🔥 특가 중인 것부터 보여 드려요. 화장지는 롤당, 물티슈는 매당처럼 같은 단위로 비교해 보세요.",
+    "life": "화장지·물티슈·세제·치약·샴푸·생리대처럼 매일 쓰는 생필품 특가를 모았어요. 쿠팡 생필품 특가를 비롯해 핫딜픽이 고른 상품 중 🔥 특가 중인 것부터 보여 드려요. 화장지는 롤당, 물티슈는 매당처럼 같은 단위로 비교해 보세요.",
     "food": "생수·라면·즉석밥·쌀·계란·우유 같은 식품·음료 특가를 골라 정리해요. 쿠팡 식품 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 묶음 상품은 개당·100g당 가격으로, 냉장·냉동 상품은 배송 조건까지 확인하세요.",
     "beauty": "선크림·클렌징·토너·마스크팩·핸드크림 같은 화장품·뷰티 특가 모음이에요. 쿠팡 화장품 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 용량·구성(1+1·기획 세트)이 상품마다 달라서 옵션을 꼭 확인하세요.",
     "kitchen": "프라이팬·밀폐용기·크린랩·지퍼백·고무장갑·수세미 같은 주방용품 특가를 모았어요. 쿠팡 주방용품 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 사이즈·구성은 옵션마다 다르니 결제 전에 확인하세요.",
     "laundry": "세탁세제·섬유유연제·표백제·빨래 건조대 같은 세탁용품 특가 모음이에요. 쿠팡 세제 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 대용량·리필 묶음은 1L당 가격으로, 드럼·일반 겸용 여부도 같이 확인하세요.",
     "snack": "과자·초콜릿·젤리·견과·핫초코 같은 간식 특가를 모았어요. 쿠팡 과자 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 박스·묶음 상품은 개당 가격으로 비교하고, 유통기한도 확인하세요.",
-    "women": "생리대·팬티라이너·오버나이트·여성청결제 같은 여성용품 특가 모음이에요. 쿠팡 생리대 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 사이즈(소·중·대·오버나이트)와 매수를 확인하고 매당 가격으로 비교하세요.",
+    "coffee": "커피믹스·아메리카노 스틱·원두·캡슐·콜드브루와 보리차·율무차·유자차·전통차·핫초코 같은 커피·차 특가를 모았어요. 쿠팡 커피 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 스틱·티백은 개당, 액상·병은 100ml(100g)당 가격으로 비교하세요.",
     "winter": "핫팩·손난로·전기요·온수매트·히터 같은 겨울 난방용품 특가를 모았어요. 쿠팡 핫팩 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 전기제품은 소비전력과 안전 인증을 상세 페이지에서 확인하세요.",
     "season": "귤·고구마·사과·햅쌀·굴처럼 지금 철 먹거리 특가 모음이에요. 쿠팡 제철 과일 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 신선식품은 중량·크기(과 수)·받는 날을 꼭 확인하세요.",
     "home": "모기·방충용품·수납함·청소포·매트·조명·문구 같은 생활·살림용품 특가를 모았어요. 쿠팡 생활용품 특가를 비롯해 🔥 특가 중인 상품부터 보여 드려요. 크기·호환 모델 같은 규격을 결제 전에 확인하세요.",
@@ -1917,7 +1934,7 @@ def steady_page(out):
     return f"{BASE}steady.html", d["at"][:10]
 
 
-HASH_JS = """<script>(function(){var m={wait:'c/wait/',life:'c/life/',toss:'c/toss/',coupang:'c/coupang/',naver:'c/naver/',cats:'c/',beauty:'c/beauty/',food:'c/food/',kitchen:'c/kitchen/',laundry:'c/laundry/',women:'c/women/',snack:'c/snack/',season:'c/season/',home:'c/home/',fashion:'c/fashion/',digital:'c/digital/',heat:'c/winter/',brand:'c/hot/',days:'all.html',saved:'saved/',hot:'#fire'};
+HASH_JS = """<script>(function(){var m={wait:'c/wait/',life:'c/life/',toss:'c/toss/',coupang:'c/coupang/',naver:'c/naver/',cats:'c/',beauty:'c/beauty/',food:'c/food/',kitchen:'c/kitchen/',laundry:'c/laundry/',women:'c/life/',snack:'c/snack/',season:'c/season/',home:'c/home/',fashion:'c/fashion/',digital:'c/digital/',heat:'c/winter/',brand:'c/hot/',days:'all.html',saved:'saved/',hot:'#fire'};
 function go(){var h=location.hash.slice(1),t=document.getElementById('today'),ig=/instagram|threads/i.test(document.referrer)||/[?&](fbclid|igsh|utm_source=(ig|threads)|ref=(ig\\w*|th\\w*|link)(?=&|#|$))/.test(location.search)||/Instagram|Barcelona/.test(navigator.userAgent);try{h=decodeURIComponent(h)}catch(e){}
 if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);else location.replace('/'+m[h]);return}if(t&&(ig||h==='today')){t.hidden=false;if(h==='today')t.scrollIntoView();else{var b=document.querySelector('main>.pb'),l=document.querySelector('main>.la');if(b)b.insertAdjacentElement('afterend',t);else if(l)l.insertAdjacentElement('beforebegin',t)}}}go();addEventListener('hashchange',go)})()</script>"""  # 10/24 개편 전 홈 #칸 주소(웹앱 바로가기·글 링크·프로필 #today) -> 새 쪽으로 · 인스타·Threads·/link(?ref=link)에서 오면 카드 번호 칸을 기획전 띠 바로 아래로(WW — 첫 화면, 띠 없으면 바로가기 위) · /#today = 그 칸으로 스크롤
 
@@ -2033,7 +2050,7 @@ def row(i, p, sh, today, gc="", extra=""):
                                                  + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span></span></a></li>")
 
 
-Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "women", "heat", "season", "home", "fashion", "car", "pet", "sport")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
+Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "coffee", "heat", "season", "home", "fashion", "car", "pet", "sport")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
 
 
 def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
@@ -2262,7 +2279,7 @@ LINK_STYLE = "ab"  # /link/ 프로필 링크 쪽(10/25 진우): 'ab' = 시안 A�
 LINK_AB = ("2026-10-26", "2026-11-08")  # A·B 비교 기간(홈 레이아웃 비교와 같은 날 마감) — 하루 집계 = hotdeal.link_ab -> link_ab.json · 자동으로 한쪽으로 몰지 않음(결과 판단 = Cowork·진우)
 KAKAO_OPENCHAT_URL = ""  # 카톡 특가방(오픈채팅) 주소 — 진우가 방 만들면 Cowork가 전달 · 비거나 https://open.kakao.com/ 아니면 /link 카톡 버튼·줄 숨김
 LINK_N, LINK_PER_CAT, LINK_MALLS = 12, 2, ("coupang", "toss", "naver")  # /link 지금 특가 칸 수(칩마다) · MM(10/26 — 12칸 중 10칸 히터 ❄️) 앞 12칸 = 품목 칸마다 2개까지·몰 돌림
-LINK_TABS = (("all", "전체"), ("life", "생필품"), ("beauty", "뷰티"), ("food", "식품"), ("women", "여성용품"))  # 칩 = 화면 안에서만 거름(품목 = cat_of)
+LINK_TABS = (("all", "전체"), ("life", "생필품"), ("beauty", "뷰티"), ("food", "식품"))  # 칩 = 화면 안에서만 거름(품목 = cat_of)
 LINK_CH = (("blog", "블로그", BLOG, "naver", "background:#03C75A", "네이버 블로그", "가격 비교 글"), ("threads", "Threads", THREADS, "threads", "background:#000", "Threads", "실시간 딜"),
            ("instagram", "인스타", INSTA, "instagram", "background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)", "인스타그램", "카드 딜 · 번호로 찾기"),
            ("telegram", "텔레그램", CHANNEL, "telegram", "background:#fff;color:#26A5E4", "텔레그램", "새 특가 바로 받기"))  # 주소 = 사이트 아래 채널 줄 · GoatCounter link/첫 칸 · 텔레그램 = 아이콘 자체가 파란 원(흰 비행기)이라 원 크기 그대로
@@ -2275,7 +2292,7 @@ def si(k, cls="si"):
     return f'<svg class="{cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="{d}"/></svg>'
 
 
-LINK_CSS = """*{box-sizing:border-box}[hidden]{display:none!important}
+LINK_CSS = theme_css("""*{box-sizing:border-box}[hidden]{display:none!important}
 :root{--bg:#fff;--ink:#1C1C1E;--sub:#55555B;--mut:#6B7180;--line:#E6E6EA;--chip:#F4F4F6;--tile:#F6F6F8;--pk:#E8436B;--pke:#D6365E;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#0F1013;--ink:#ECEEF2;--sub:#B4B9C4;--mut:#9AA0AC;--line:#262931;--chip:#24272E;--tile:#24272E;--pk:#FF5C72;--pke:#FF9AA6;color-scheme:dark}}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
@@ -2306,7 +2323,7 @@ html.lb body{background:#FBFAF7}@media(prefers-color-scheme:dark){html.lb body{b
 .list{margin:18px 0 8px;border-top:1px solid var(--ink)}.list a{display:flex;align-items:center;gap:10px;padding:13px 2px;border-bottom:1px solid #E4E2DC}@media(prefers-color-scheme:dark){.list a{border-color:var(--line)}}
 .bi{flex:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff}.bi .si{width:16px;height:16px}.list b{display:block;font-size:15.5px;font-weight:700;line-height:1.3}.list small{font-size:12.5px;color:var(--mut)}.list i{margin-left:auto;font-style:normal;color:var(--mut)}
 .lb .sec{align-items:flex-end}.lb .sec h2{font-size:19px}.lb .cd h2{font-size:15px}.sec h2 .eb2{font-size:10.5px;letter-spacing:2.5px;color:#C43B3B;font-weight:600;margin-bottom:2px}.lb .im{border-radius:4px;background:#fff}.lb .pr em{color:#C43B3B}
-@media(prefers-color-scheme:dark){.lb .im{background:var(--tile)}.lb .pr em,.sec h2 .eb2{color:var(--pke)}}"""
+@media(prefers-color-scheme:dark){html.lb .im{background:var(--tile)}html.lb .pr em,.sec h2 .eb2{color:var(--pke)}}""")
 LINK_V = ("(function(){var f=(location.search.match(/[?&]v=([ab])(?:&|$)/)||[])[1],v=f;if(!v){try{v=localStorage.getItem('hp_link')}catch(e){}"  # A·B 반반: 주소 v= 고정(저장·집계 X) > 이 브라우저에 정해진 쪽 > 50:50 무작위(저장 안 되면 이번만)
           "if(v!=='a'&&v!=='b'){v=Math.random()<.5?'a':'b';try{localStorage.setItem('hp_link',v)}catch(e){}}}document.documentElement.className='l'+v;window.hpLV=v;window.hpLF=!!f;"
           "var g=window.goatcounter||(window.goatcounter={});if(f)g.no_onload=true;else g.path=function(){return 'link-'+v}})()")  # 보기 = 가상 경로 link-a·link-b(들어온 ?ref 출처 그대로)
@@ -2433,7 +2450,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
             + f'<link rel="canonical" href="{url}"><meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="website">'
             f'<meta property="og:url" content="{url}"><meta property="og:image" content="{BASE}og.png"><meta property="og:locale" content="ko_KR">'
             f'<link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
-            f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">'
+            f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">{THEME_JS}'
             f'<style>{LINK_CSS}</style>{gc}</head><body><main>' + "".join(link_top(s, kakao) for s in ("a", "b") if s in style)
             + f'<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out)}{deals}'
             f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">칸마다 가격 아래 = 확인·게시 시각(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour:02d}:{kst.tm_min:02d} 갱신</p>'
@@ -2539,11 +2556,12 @@ def build(posts, out="docs"):
     for d in os.listdir(f"{out}/c"):  # 없어진 목록 이름 폴더도
         if os.path.isdir(f"{out}/c/{d}") and d not in ls and d != "t":  # t = 주제 쪽(TT-2)
             shutil.rmtree(f"{out}/c/{d}")
+    write(out, "c/women/", page(f"여성용품 → 생필품 | {TITLE}", f'<p class="t">여성용품은 생필품 칸으로 합쳤어요.</p><a class="btn2" href="{c_url("life")}">🧻 생필품 특가 보기 →</a>', "", f"{BASE}c/women/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("life")}">'))  # AAA: 옛 여성용품 칸 주소 = 생필품으로(noindex · 사이트맵 X)
     mc = collections.Counter(shop_of(p) for _, p, _ in it)
     write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">쇼핑몰·상태·품목으로 골라 보세요</div><h2 class="ch">🛍 쇼핑몰로 찾기</h2><nav class="mt3" aria-label="쇼핑몰">'
                           + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{mall_label(k, n)}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
                           + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (TOPIC_NAV.get("*") or "") + (rec_nav(recs) or "") + LSW + LSW_JS,
-                         "생필품·식품·뷰티·주방·세탁·간식·여성용품·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
+                         "생필품·식품·뷰티·주방·세탁·간식·커피·차·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
     top = lambda xs: [x for x in xs if x[0] not in evi]
     day, ps = today_picks(posts, top(it), recs, out)

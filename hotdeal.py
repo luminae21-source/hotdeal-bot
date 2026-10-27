@@ -1568,7 +1568,7 @@ def goldbox(seen):
 
 
 GOLD_ST_N, GOLD_ST_REV, GOLD_ST_RATE, GOLD_ST_DAYS = (3, 5), 1000, 4.5, 3  # JJ(10/26 진우 '살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자'): 골드박스 고른 것 0인 날 = 같은 시각·채널 꾸준템 3~5개
-GOLD_ST_FIRST = ("food", "snack", "season", "life", "laundry", "women", "kitchen")  # 식품·생필품 먼저
+GOLD_ST_FIRST = ("food", "coffee", "snack", "season", "life", "laundry", "kitchen")  # 식품·생필품 먼저
 
 
 def cp_shelf(posts, kst, steady):
@@ -6273,7 +6273,7 @@ def threads(seen):
     th_bundle(seen, "card", text[:480], image=url)
 
 
-TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "women": "생필품", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비", "car": "자동차", "pet": "반려동물", "sport": "운동"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
+TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "coffee": "커피", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비", "car": "자동차", "pet": "반려동물", "sport": "운동"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제
 TH_TOPIC_RUN = 3  # 같은 주제 연달아 3번까지 — 넘으면 '핫딜'(핫딜이면 '특가')
 
 
@@ -7589,7 +7589,7 @@ IG_LINKY = ("theme", "one", "top")  # 구매 링크 미는 형식(댓글 = 구�
 IG_STORY, IG_STORY_MAX = {9: 0, 12: 30, 15: 30, 18: 30, 22: 0}, 5  # M-1 스토리(시: 분) — 그 시간대 딜 카드(9 = 0~9시 …) · 22시 = 📉 표지(없으면 하루 카드) · 피드 수 X
 IG_FEED_MAX, IGT_N, IGT_MIN, IG_REPEAT, IGF_PREP, IG_GUESS_AFTER = 4, 5, 3, 7, 20 * 60, 3 * 3600  # 하루 피드 4 · 테마 상품 5(3개↓ = 다른 형식) · 같은 상품 7일 X · 20분 전 카드(커밋 -> 사이트) · 가격 맞히기 정답 3시간 뒤
 IGT_DIR, CARD_NAMES = "docs/cards/igt", "docs/cards/names.json"  # 피드 카드 · 카드 이름(사이트 '📸 {이름}'·c/칸 맨 위 번호·pid -> 테마 = 주간 저장 순위)
-IGT_DAYS = (("자취·살림", ("home", "life")), ("뷰티", ("beauty", "women")), ("주방·세탁", ("kitchen", "laundry")), ("겨울템", ("heat",)), ("간식", ("snack",)), ("패션", ("fashion",)), ("생필품", ("life",)))  # 요일 테마(월~일, 시리즈처럼)
+IGT_DAYS = (("자취·살림", ("home", "life")), ("뷰티", ("beauty",)), ("주방·세탁", ("kitchen", "laundry")), ("겨울템", ("heat",)), ("간식", ("snack", "coffee")), ("패션", ("fashion",)), ("생필품", ("life",)))  # 요일 테마(월~일, 시리즈처럼)
 IGT_SEASON = (("겨울템", ("heat",)), ("제철 먹거리", ("season",)))  # 많이 본 5개(GoatCounter)가 없을 때 테마(10~2월 = 겨울템)
 IGT_TAGS = {"자취·살림": "#자취템 #살림템 #생활꿀템", "뷰티": "#뷰티템 #스킨케어 #데일리뷰티", "주방·세탁": "#주방템 #살림꿀템 #세탁템", "겨울템": "#겨울템 #방한용품 #겨울필수템",
             "간식": "#간식추천 #탕비실간식 #간식템", "패션": "#데일리룩 #가성비패션 #겨울옷", "생필품": "#생필품 #쟁여템 #장보기", "제철 먹거리": "#제철음식 #집밥 #장보기"}
@@ -8684,8 +8684,8 @@ def drop_check(seen):
 
 
 CAT_FILL_N = 60  # 한 실행에 Claude로 품목 칸 채우는 글 수(진우 상품 처음 채울 때 ~100개 = 2번)
-CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, snack = 과자·간식, season = 제철 과일·해산물·겨울 먹거리, life = 생필품(휴지·위생·욕실 소모품), "
-              "kitchen = 주방 용품·소모품(조리 도구·그릇·랩·수세미), laundry = 세탁(세제·유연제·빨래 용품), women = 여성용품(생리대 등), beauty = 화장품·뷰티·헤어·바디, home = 생활·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), car = 자동차 용품(요소수·워셔액·차량용 거치대·방향제 등), pet = 반려동물(사료·간식·배변용품·장난감), sport = 운동·홈트(보호대·짐볼·아령·풀업바·스트레칭 기구), etc = 그 밖(문구·소품은 home).\n")
+CAT_PROMPT = ("아래 상품마다 쇼핑 사이트 품목 칸 하나를 골라 cats 배열로 답해(순서 그대로, 상품 수만큼). food = 식품·음료·건강식품·영양제, coffee = 커피·차(믹스·원두·캡슐·티백·율무차·유자차·핫초코 — 커피머신·텀블러 X), snack = 과자·간식, season = 제철 과일·해산물·겨울 먹거리, life = 생필품(휴지·위생·욕실 소모품·생리대), "
+              "kitchen = 주방 용품·소모품(조리 도구·그릇·랩·수세미), laundry = 세탁(세제·유연제·빨래 용품), beauty = 화장품·뷰티·헤어·바디, home = 생활·청소·욕실 용품·가구·공구, fashion = 패션·잡화·신발·가방, digital = 가전·디지털, heat = 겨울 난방·방한(핫팩·전기요 등), car = 자동차 용품(요소수·워셔액·차량용 거치대·방향제 등), pet = 반려동물(사료·간식·배변용품·장난감), sport = 운동·홈트(보호대·짐볼·아령·풀업바·스트레칭 기구), etc = 그 밖(문구·소품은 home).\n")
 
 
 def cat_fill(seen):

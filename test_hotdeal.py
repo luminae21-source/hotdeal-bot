@@ -1703,7 +1703,7 @@ assert qk0[:4] == [(f"{S.BASE}c/today/", "q/today", "⏰", "오늘 마감"), (f"
     and all(f'<a class="q {k}" href="{S.BASE}c/{k}/" data-gc="mall/{k}">{S.mall_logo(k)}{n}</a>' in idx for k, n in (("coupang", "쿠팡"), ("toss", "토스"), ("naver", "네이버"))) and "mall/event" not in idx and 'class="evb"' not in idx, qk0[:8]  # 둥근 바로가기 1줄(기획전 없으면 🎉 X · 🏆 = GoatCounter 조회 없으면 'TOP 10')
 assert re.findall(r'<a class="q" href="([^"]+)" data-gc="cat/[^"]+"><i aria-hidden="true" style="--c:(#[0-9A-F]+)">([^<]+)</i>([^<]+)</a>', idx) == \
     [(f"{S.BASE}c/{u}/", c, e, n) for u, c, e, n in (("life", "#FFEFE6", "🧻", "생필품"), ("food", "#EAF6EE", "🍚", "식품"), ("beauty", "#FDEBF1", "💄", "뷰티"), ("digital", "#EEF2F7", "🔌", "가전"), ("kitchen", "#EEF1FB", "🍳", "주방"),
-                                                     ("laundry", "#E9F5F8", "🧺", "세탁"), ("snack", "#FFF6DD", "🍪", "간식"), ("women", "#F3ECFB", "🌸", "여성용품"), ("winter", "#E8F1FF", "❄️", "겨울템"),
+                                                     ("laundry", "#E9F5F8", "🧺", "세탁"), ("snack", "#FFF6DD", "🍪", "간식"), ("coffee", "#F3ECE4", "☕", "커피"), ("winter", "#E8F1FF", "❄️", "겨울템"),
                                                      ("season", "#FFF1E6", "🍠", "제철"), ("home", "#F1F3F6", "🏠", "생활"), ("fashion", "#F5EFEA", "🧦", "패션"), ("car", "#EEF1F4", "🚗", "자동차"), ("pet", "#FBEFE4", "🐶", "반려동물"), ("sport", "#E8F6F1", "🏋️", "운동"))] and f'<a class="q" href="{S.BASE}c/" data-gc="cat/all"><i aria-hidden="true">▦</i>전체보기</a>' in idx  # 2줄 = 품목 13칸(가전 4번째 — 진우 v3 · 10/26 자동차 맨 끝) + ▦ 전체보기 · 품목 색
 fi5 = idx.split('id="fire"')[1].split("</section>")[0]
 assert all(n in idx.split('id="today"')[1].split("</section>")[0] for n in S.SHOP_NOTES.values())  # 카드 번호 칸('보기' = 몰로 바로) = 3사 문구
@@ -1743,9 +1743,9 @@ assert l1.count('class="g"') == 20 and l2.count('class="g"') == 5 and not os.pat
 assert f'href="{S.BASE}c/life/2/" rel="next">다음 20개 보기 →' in l1 and f'href="{S.BASE}c/life/" rel="prev">← 이전 20개' in l2 and f'<link rel="canonical" href="{S.BASE}c/life/2/">' in l2 and "<title>생필품 특가 모음 2쪽 (" in l2  # 쪽마다 제 주소 canonical·다른 제목
 assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네이버 캐러셀: 항목마다 진짜 상품 사진)
 sm6 = open("docs6p/sitemap.xml").read()
-assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
+assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and "c/women/" not in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
 assert {d[:-5] for d in os.listdir("docs6p/c") if d.endswith(".html") and d != "index.html"} <= set(S.REC_KEEP)  # 기록 쪽 = 있던 품목(REC_KEEP)만(TT-2 — 0개 = 안내 쪽)
-assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
+assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
 # 6-6) 품목 12칸 쪽(10/24 세분): 제목 정규식(cat_of) — 위생백 = 주방, 세제 = 세탁, KF94·샴푸 = 생필품, 마스크팩·폼클렌징 = 뷰티(아이스크림 X) · 최근 3일 커뮤니티 딜 + 진우 상품
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
@@ -1763,7 +1763,7 @@ life7, beauty7, kit7, lau7 = (open(f"docs7/c/{k}/index.html").read() for k in ("
 lc7 = life7.split('<div class="cards">')[1]; assert life7.count('class="g"') == 2 and lc7.index("KF94") < lc7.index("샴푸") and "마스크팩" not in life7 and "휴지" not in life7.split('<nav class="chips"')[1] and "위생백" in kit7 and "세제" in lau7  # 10/24 세분: 위생백 = 주방, 세제 = 세탁
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and '<h1 class="h">🧻 생필품 특가 모음</h1>' in life7 and '<h1 class="h">💄 뷰티 특가 모음</h1>' in beauty7
 assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-label="목록">')[1].split("</nav>")[0].split("</a>")[:-1]] == \
-    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "🌸 여성용품", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🐶 반려동물", "🏋️ 운동", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
+    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "☕ 커피·차", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🐶 반려동물", "🏋️ 운동", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
 cats7 = open("docs7/c/index.html").read()
 assert cats7.count('<a class="tile"') == 15 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" style="--n:8" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
@@ -5369,8 +5369,8 @@ assert [S35.cat_of(ct35(t)) for t in ("킨칸 모기 패치", "옥시크린 워�
     ["home", "laundry", "", "fashion", "season", "snack", "fashion", "beauty", "beauty"]  # 리뷰에서 잘못 들어가던 이름들(모기 = 생활 먼저, 워싱소다·햄스터 = 식품 X)
 assert [S35.cat_of(ct35(t)) for t in ("코멧 위생백 200매", "주방세제 퐁퐁 1L", "다우니 섬유유연제 2L", "LG 세탁기 21kg", "쏘피 생리대 중형 36개", "롬앤 아이라이너", "프라엘 멜라빔 디바이스", "가그린 구강청결제 1.2L",
                                      "포카칩 66g 6개", "파이토메이드 두유 24개", "오뚜기 스낵면 10개", "제주 감귤 5kg", "생굴 1kg", "굴소스 500g", "크리스찬딘 어반시크 향수", "뽀로로 딸기맛 음료", "와이파이 공유기")] == \
-    ["kitchen", "kitchen", "laundry", "", "women", "", "", "", "snack", "food", "", "season", "season", "food", "beauty", "food", ""]  # 10/24 세분 칸 + 실제 진열 제목에서 잘못 들어가던 것(프라엘 = 라엘 X, 아이라이너·구강청결제 = 생필품·여성용품 X, 어반시크 = 반시 X, 딸기맛·두유·스낵면 = 과자·제철 X — 칸 없음은 cat_fill이 Claude로)
-assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "women", "beauty", "food", "snack", "season", "home", "fashion", "digital", "heat", "car", "pet", "sport"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
+    ["kitchen", "kitchen", "laundry", "", "life", "", "", "", "snack", "food", "", "season", "season", "food", "beauty", "food", ""]  # 10/24 세분 칸 + 실제 진열 제목에서 잘못 들어가던 것(프라엘 = 라엘 X, 아이라이너·구강청결제 = 생필품·여성용품 X, 어반시크 = 반시 X, 딸기맛·두유·스낵면 = 과자·제철 X — 칸 없음은 cat_fill이 Claude로)
+assert [k for k, _, _ in S35.SHELF_CATS] == ["life", "kitchen", "laundry", "beauty", "food", "coffee", "snack", "season", "home", "fashion", "digital", "heat", "car", "pet", "sport"] and set(S35.CAT_ORDER) == {k for k, _, _ in S35.SHELF_CATS} and set(H.TH_TOPICS) == set(S35.CAT_ORDER)  # 칸 = 정렬 순서 = Threads 주제 빠짐없이
 assert all(f"{k} = " in H.CAT_PROMPT for k in S35.CAT_ORDER)  # Claude 품목 칸 설명도 12칸 다
 assert S35.cat_of(ct35("애터미 비비크림", cat="beauty")) == "beauty" and S35.cat_of(ct35("사다리", cat="etc")) == "" and S35.cat_of(ct35("햇반", cat="beauty")) == "food"  # 정규식 먼저
 sv35c, a35 = (H.ai_json, H.POSTS, H.E.get("ANTHROPIC_API_KEY")), []
@@ -6622,6 +6622,17 @@ assert S.LAYOUT_JS in ix59 and ix59.index(S.LAYOUT_JS) < ix59.index("</head>") a
 assert ix59.count('<div class="la">') == 1 and ix59.index('<div class="la">') < ix59.index('<nav class="mb"') < ix59.index('class="tiles t6"') < ix59.index('<div class="lb">') < ix59.index('<nav class="qk"') < ix59.index('id="fire"') and ix59.count('id="fire"') == 1  # 윗부분만 두 벌(A 몰 버튼·품목 6×2 / B 배너·바로가기) · 🔥부터는 한 벌
 assert S.LSW in ix59 and S.LSW_JS in ix59 and S.LSW in rd59("c/index.html") and S.LSW not in rd59("p/1.html") and all(f'data-l="{x.lower()}" data-gc="layout/switch/{x}"' in S.LSW for x in "ABC") and "c.contains('lay-c')?'C'" in S.GC_JS and "path:'layout/'+L+'/buy'" in S.GC_JS and "sessionStorage.setItem('hp_lv',hpL())" in S.GC_JS and "catch(x){return}g.count(" in S.GC_JS and "if(L)goatcounter.count(" in S.GC_JS and "e.persisted" in S.LAYOUT_JS and "path:'buy/'+h" in S.GC_JS  # 바꾸기 버튼(홈 맨 아래·/c/) · GoatCounter layout/A·B 방문·구매 꼬리표(buy/ 그대로)
 assert all(S.TB in rd59(k) and rd59(k).index("</main>" + S.TB) > 0 for k in ("index.html", "p/1.html", "c/index.html", "saved/index.html", "alarm/index.html")) and 'data-gc="nav/top" aria-label="맨 위로"' in S.TB and 'data-gc="nav/end" aria-label="맨 아래로"' in S.TB  # TOP/END = 모든 쪽(10/25 진우) — 동작은 test_pwa 7c
+# AAA 테마 고르기(10/27 진우): 꼬리말 ☀ 밝게 · 🌙 어둡게 · 📱 폰 설정대로 · hp_theme 기억 · head에서 먼저(깜빡임 X) · theme-color 맞춤 · /link = 저장된 것만 적용(버튼 X)
+assert S.theme_css("@media(prefers-color-scheme:dark){:root{--a:1}.x,.y i{c:linear-gradient(1deg,#fff,#000)}html.lb .z{d:2}}") == (":root:where([data-theme=dark]){--a:1}:where(:root[data-theme=dark]) .x,:where(:root[data-theme=dark]) .y i{c:linear-gradient(1deg,#fff,#000)}html.lb:where([data-theme=dark]) .z{d:2}"
+    "@media(prefers-color-scheme:dark){:root:where(:not([data-theme=light])){--a:1}:where(:root:not([data-theme=light])) .x,:where(:root:not([data-theme=light])) .y i{c:linear-gradient(1deg,#fff,#000)}html.lb:where(:not([data-theme=light])) .z{d:2}}")
+for c in (S.CSS, S.LINK_CSS):
+    for m in re.finditer(r"@media\(prefers-color-scheme:dark\)\{((?:[^{}]*\{[^{}]*\})*)\}", c):
+        assert all(re.match(r":root:where\(:not|:where\(:root:not|html[\w.-]*:where\(:not", x) for sel in re.findall(r"(?:^|})([^{}]+)\{", m[1]) for x in sel.split(",")), m[1][:80]  # 다크 규칙은 전부 ☀ 고름이면 꺼짐
+assert "html.lb:where([data-theme=dark]) .im{background:var(--tile)}" in S.LINK_CSS and ".lb .im{background:var(--tile)}" not in S.LINK_CSS
+for f in ("index.html", "p/1.html", "c/index.html"):
+    h, b = rd59(f).split("</head>"); assert h.index('name="theme-color" content="#0F1013"') < h.index(S.THEME_JS) < h.index('rel="stylesheet"') and b.split("<footer>")[1].split("</footer>")[0].endswith(S.THM), f
+assert re.findall(r'data-th="(\w*)" data-gc="(theme/\w+)" aria-pressed="false">([^<]+)<', S.THM) == [("light", "theme/light", "☀️ 밝게"), ("dark", "theme/dark", "🌙 어둡게"), ("", "theme/auto", "📱 폰 설정대로")] and 'role="group" aria-label="화면 테마"' in S.THM
+assert "localStorage.getItem('hp_theme')}catch(e){}" in S.THEME_JS and "e.persisted" in S.THEME_JS and "localStorage.removeItem('hp_theme')}catch(e){}" in S.THM and ".thm [aria-pressed=true]{background:var(--btn)" in S.CSS and 'class="lsw"' not in S.THM and "{THEME_JS}" in inspect.getsource(S.link_page)
 assert re.findall(r'p/(\d+)\.html', rd59("c/rehot/index.html").split("<main")[1])[:1] == ["6"] and f'href="{S.BASE}c/rehot/" data-gc="changes/rehot"' in rd59("alarm/index.html")  # 🔁 바로가기·알림 줄 = 다시 특가만 모은 쪽
 assert ('<i aria-hidden="true">🏆</i>많이 본' in ix59) == ("🏆 많이 본 딜 TOP 10" in ix59) and S.SEEN_JS in rd59("p/1.html") and S.SEEN_JS not in ix59 and S.EV_JS not in ix59  # 기획전 1개 = 넘김 X
 assert r59(sec59("fire"), "all") == ["6", "12", "4", "3", "11", "14", "2", "1"] and "<small>8개</small>" in sec59("fire") and "<i>▼40%</i>" in sec59("fire") and '<b class="mk toss">토스</b>⏰ 매일두유 24팩' in sec59("fire") and '<b class="mk coupang">쿠팡</b>🔁 스팸' in sec59("fire")  # 5 = 4일 전 X · 15 = 기획전 X
@@ -7458,7 +7469,7 @@ b67 = [n for n in C67.split("\n") if S67.cat_of({"text": f"[쿠팡] {n} (9,900�
 assert len(C67.split("\n")) == 115 and not b67, b67
 assert [S67.cat_of({"text": t}) for t in ("[쿠팡] 무선 휴대용 극세사 전기담요 1인용 USB (20,900원)", "[쿠팡] 파스텔 과일 플라워 수면 양말 5종 (9,900원)", "[쿠팡] 니트릴 장갑 100매 (9,900원)",
         "[토스] 퍼니트 유기농 엑스트라버진 올리브오일 선물세트 250ml 2병 (15,600원)", "[쿠팡] 온열 수면양말 (1원)", "[쿠팡] 순수한면 생리대 중형 (1원)", "[쿠팡] 여성 기모 타이즈 (1원)", "[쿠팡] PTC 욕실 온풍기 (1원)")] == \
-       ["heat", "fashion", "life", "food", "heat", "women", "fashion", "heat"]
+       ["heat", "fashion", "life", "food", "heat", "life", "fashion", "heat"]
 assert S67.cat_of({"text": "[쿠팡] 퍼니트 원목 사이드 테이블 (1원)"}) != "fashion"  # '니트' 앞에 한글이 붙은 낱말 = 옷 X
 # 9-68) 큐레이션 글(10/25 21시 Cowork ③ — events {"at","curation":true,"text","link"(사이트 c/ 쪽),"topic","img":[쿠팡 사진]}): 텔레그램 = 본문 + '🛍 더 보기'(ref=tgc) ·
 #       Threads = 우리 서버 JPEG(시각 3시간 전 준비 → 사이트에 뜨면) 1장 IMAGE·2장 CAROUSEL · 본문 끝 링크(ref=thc) · topic_tag = topic / 사진 없음 = TEXT + 링크 카드 · events()·다른 단계는 안 봄
@@ -9643,7 +9654,7 @@ def sh90(name, k, rv="5,000", steady=False):
     return {"t": "2026-11-10 04:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 " + ("· 꾸준히 팔리는 상품 👍" if steady else "🔥") + f"\n{name}\n5,900원 · 리뷰 {rv}\n💰 1개당 590원꼴\n✔ 무료배송 · 리뷰 {rv}",
             "entities": [], "url": f"https://link.coupang.com/a/M{k}", "own": 1, "shelf": 1, "st": "wait" if steady else "hot", "now": "5,900원 와우가" if k == 1 else "5,900원", "chk": "11/12 9시"}
 P90 = [sh90("코멧 화장지 30롤", 0), sh90("탐사 물티슈 100매", 1), sh90("농심 신라면 멀티팩", 2), sh90("리큐 세탁세제 3L", 3), sh90("코멧 고무장갑 3켤레", 4), sh90("오리온 과자 선물세트", 5),
-       sh90("코멧 핫팩 30개", 6), sh90("좋은느낌 생리대 36P", 7, "2.9만", True), sh90("탐사 양말 10켤레", 8, "1.2만", True)][::-1]  # cp_shelf = 최근 진열 먼저 -> 목록 끝이 최근
+       sh90("코멧 핫팩 30개", 6), sh90("맥심 모카골드 커피믹스 100T", 7, "2.9만", True), sh90("탐사 양말 10켤레", 8, "1.2만", True)][::-1]  # cp_shelf = 최근 진열 먼저 -> 목록 끝이 최근
 json.dump(P90, open("posts90.json", "w"), ensure_ascii=False)
 cats90 = lambda urls: [H.cat_of(next(p for p in P90 if p["url"] == u)) for u in urls]
 time.time = lambda: TK("2026-11-12 11:00"); s90 = {}; H.cp_mix(s90); assert not tg90 and not s90  # 12:30 전
@@ -9657,7 +9668,7 @@ c90 = tg90[-1]["text"]; u90 = s90["cpmix"]["h"][-1][1]
 assert c90.startswith(f"<i>{H.DISCLOSURE}</i>\n\n🚀 <b>쿠팡 상품 모음</b>\n\n1️⃣ ") and c90.count("️⃣ <a href=") == 5 and len(u90) == 5 and "cpmix_20261112_1230" in s90, c90  # 쿠팡 모음 5개 · 대가성 문구 첫 줄
 assert len(set(cats90(u90))) == 5 and all(cats90(u90)) and "https://link.coupang.com/a/M1" not in u90  # 품목 칸 겹침 X(화장지·물티슈 = 생필품 1개)
 assert not {"https://link.coupang.com/a/M2", "https://link.coupang.com/a/M5"} & set(u90) and "물티슈" not in c90 and "화장지" in c90  # 24시간 안 TOP 리스트 상품 X · 같은 생필품 칸 = 먼저 진열된 화장지
-assert "👍 " in c90 and "👍 꾸준히 주문 들어오는 · 리뷰 2.9만" in c90 and c90.index("핫팩") < c90.index("👍 좋은느낌") and "💰 <b>5,900원</b> · 1개당 590원꼴" in c90  # 🔥 모자라면 👍(근거 줄) · 가격·단가
+assert "👍 " in c90 and "👍 꾸준히 주문 들어오는 · 리뷰 2.9만" in c90 and c90.index("핫팩") < c90.index("👍 맥심") and "💰 <b>5,900원</b> · 1개당 590원꼴" in c90  # 🔥 모자라면 👍(근거 줄) · 가격·단가
 assert c90.endswith(H.toss_when()) and tg90[-1]["reply_markup"]["inline_keyboard"][-1] == [{"text": "🚀 쿠팡 모음 더 보기", "url": "https://hotdealpick.kr/c/coupang/?ref=tgm"}] and "cp_mix 12:30 5개 | 🔥4 👍1" in o90.getvalue()
 k90, th90, l90 = tb90[-1]
 assert k90 == "cpmix" and th90.startswith(H.DISCLOSURE + "\n\n🚀 쿠팡 상품 모음\n\n1️⃣ ") and th90.endswith("\n쿠팡 모음 더 보기 → https://hotdealpick.kr/c/coupang/?ref=thm") and len(th90) <= 480, th90
@@ -10208,7 +10219,7 @@ tb97 = tp97.split("<tbody>")[1].split("</tbody>")[0]
 assert "줄 세웠어요(단위가 다르거나 없는 상품은 뒤에) · 가격은" in tp97 and "<td>8,800원</td><td>1봉 200원 (10/26 기준)</td>" in tb97 and "<td>9,900원</td><td>1봉 135원</td>" in tb97  # 100g 상품 = 뒤 · 지금 가격 ≠ 올린 가격 = 단위가 날짜
 assert re.findall(r'p/(\d+)\.html">([^<]+)<', tb97) == [("3", "고향 호두아몬드 율무차 18g 110개입"), ("2", "곰곰 율무차 18g 50개입"), ("5", "담터 율무차 18g 50개입"), ("4", "오뚜기 율무차 분말 1kg")] \
     and "<small>10/26 23시 확인</small></td><td>9,900원</td><td>1봉 135원</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
-assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/food/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
+assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/coffee/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
 assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (1, 2, 3, 4, 7, 8, 9, 12, 13, 14)} and not any(x in u for u in sm97 for x in (f"{S.BASE}today/", "all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
 ni97 = {i for i in range(len(po97)) if 'content="noindex' in open(f"docs/p/{i}.html").read()}
 assert ni97 == {0, 6, 11}, ni97  # 끝난 딜·일시 품절 = noindex(⏳ 대기 = 색인 O)
@@ -10217,7 +10228,7 @@ assert '<h1 class="dn"><a href="https://hotdealpick.kr/p/3.html">고향 호두�
     and "🕒 10/26 23:00 게시 · 지금 가격 9,900원 (10/26 23시 확인)" in pt97 and "고르는 기준" in pt97 and "1봉(1포·티백)·1병 용량과 개수" in pt97 and f'href="{S.BASE}c/t/yulmu-tea.html">📌 율무차 모아 보기 →</a>' in p97
 assert p97.index("고르는 기준") < p97.index('id="samh"') < p97.index("더 보기 →</a>") and 'content="noindex' not in p97  # 고르는 기준 -> 같은 칸 다른 딜 -> 칸 더 보기
 ld97 = json.loads(p97.split('<script type="application/ld+json">')[1].split("</script>")[0])
-assert ld97["category"] == "식품" and ld97["description"] == "1봉 135원꼴 · 할인 중 리뷰 1,234" and "availability" not in ld97["offers"]  # Offer = 가격·통화·판매처만(진우)
+assert ld97["category"] == "커피·차" and ld97["description"] == "1봉 135원꼴 · 할인 중 리뷰 1,234" and "availability" not in ld97["offers"]  # Offer = 가격·통화·판매처만(진우)
 assert "지금은 진열에서 빠진 딜이에요" in re.sub(r"<[^>]+>", "", open("docs/p/0.html").read())
 p2_97 = open("docs/p/2.html").read(); ld2_97 = json.loads(p2_97.split('<script type="application/ld+json">')[1].split("</script>")[0])
 assert ">곰곰 율무차 18g 50개입 8,800원</a></h1>" in p2_97 and '<span class="pr">8,800원</span>' in p2_97 and ld2_97["offers"]["price"] == "8800" and "<title>곰곰 율무차 18g 50개입 8,800원 (쿠팡) | 핫딜픽</title>" in p2_97 \
@@ -10538,4 +10549,17 @@ sv103r = (H.tg, time.time); s103 = {"rvst_20261027": {"t": 1, "n": 3, "m": 1, "k
 with contextlib.redirect_stdout(io.StringIO()) as o103r:
     H.rv_report(s103)
 assert "rv report 10/27 보냄 3건 · 고침 1 · 뺌 0" in o103r.getvalue() and "rvrep_20261027" in s103; (H.tg, time.time) = sv103r  # ZZ 관리봇 재검토 = 보낸 것도 로그
+# 9-104) AAA(10/27 진우 OK): ☕ 커피·차 칸(coffee — 식품·간식·제철에서 커피·차·핫초코 분리, 머신·텀블러·커피맛 과자 X) · 여성용품 칸 → 생필품(옛 /c/women/ = noindex 안내 쪽 → /c/life/)
+cat104 = lambda n: S.cat_of({"text": f"🔥 [쿠팡] {n} (9,900원)"})
+assert cat104("원목 커피 테이블 2인용") != "coffee" and cat104("커피 바디 스크럽 200g") != "coffee"  # 가구·바디용 = 커피·차 X
+assert all(cat104(n) == "coffee" for n in ("맥심 모카골드 커피믹스 400개입", "카누 미니 마일드 120개입", "핸디엄 일상기준 콜드브루 1L", "동서 한잔용 보리차 100개입", "담터 호두 아몬드 율무차 18g 50개입", "담터 꿀유자차 1kg",
+                                           "해맑음 겨울향기 유자청 1kg", "미떼 핫초코 오리지날 30g 10개입 2개", "제티 쵸코렛맛 코코아 17g 50개입", "일리 네스프레소머신 호환 4가지맛 200캡슐", "맥심 카누라떼 50T 골라담기 2개+ 머그"))
+assert [cat104(n) for n in ("필립스 1200시리즈 전자동 커피머신 EP1220/19", "코피코 커피맛 캔디 384g", "말리지오 커피땅콩 1kg 2개", "녹차맛 아이스크림 6개", "에센허브 얼그레이 밀크 바디워시 500ml", "칠성사이다 제로 유자 355ml 24캔",
+                                "아이스 티셔츠 3장", "이브네 무표백 코어 생리대 중형 16개입 4개", "리버티 입는오버나이트 4매 대형 5팩")] == ["food", "snack", "food", "snack", "life", "season", "fashion", "life", "life"]
+assert "women" not in S.CAT_META and "women" not in S.CAT_ORDER and S.CAT_META["coffee"][:3] == ("coffee", "커피·차", "☕") and len(S.CAT_META) == 15 and all("coffee" in x for x in (S.CAT_ICON, S.CAT_TIPS, S.CAT_INTRO, S.Q_CATS, H.TH_TOPICS)) \
+    and "coffee = " in H.CAT_PROMPT and "women" not in H.CAT_PROMPT and "쿠팡 커피 특가" in S.CAT_INTRO["coffee"] and ".ci-coffee{" in S.CSS
+d104 = tempfile.mkdtemp(); os.makedirs(f"{d104}/c/women/2"); open(f"{d104}/c/women/2/index.html", "w").write("old")
+S.build([{"t": "2026-10-27 08:00", "text": "🔥 [쿠팡] 맥심 모카골드 커피믹스 400개입 (49,900원)\n\n싸요", "url": "https://link.coupang.com/a/cf"}], d104)
+w104, sm104 = open(f"{d104}/c/women/index.html").read(), open(f"{d104}/sitemap.xml").read()
+assert 'content="noindex' in w104 and f"url={S.BASE}c/life/" in w104 and not os.path.exists(f"{d104}/c/women/2") and "c/women/" not in sm104 and f"{S.BASE}c/coffee/" in sm104 and "맥심 모카골드" in open(f"{d104}/c/coffee/index.html").read()  # 옛 주소 = 안내 쪽(사이트맵·IndexNow X)
 print("OK: 모든 셀프체크 통과")
