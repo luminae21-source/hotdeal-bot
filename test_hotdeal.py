@@ -10437,6 +10437,8 @@ assert g101["now"] == "17,400원" and g101["chkt"] == "2026-10-26 10:00" and g10
 json.dump([{"at": "2026-10-15 23:00", "deal": True, "url": CU101, "pid": "7412691872", "item": "111", "now": "17,430원", "chk": "2026-10-23 09:30", "text": "x", "button": "x"}], open("events.json", "w"))
 H.own_end({"cpq": {"m": {CU101: [0, "2026-10-27 11:00", ""]}}}); g101 = json.load(open("posts.json"))[0]
 assert "cpx" not in g101, g101  # 옛 옵션(events item 넣기 전)으로 못 찾은 것 = 못 찾음 X(새 옵션으로 다시 검색 차례)
+H.own_end({"cpq": {"m": {CU101: [0, "2026-10-27 11:00", "111"]}}}); g101 = json.load(open("posts.json"))[0]
+assert g101.get("cpx") == "2026-10-27 11:00", g101  # 지금 events 옵션(item)으로 못 찾음 = 못 찾음(리뷰: 옵션 있는 쿠팡 508개가 늘 빠지던 것)
 os.chdir(sv101b[3]); shutil.rmtree(d101b); (H.POSTS, H.HAS_TOSS, time.time, _) = sv101b
 # XX 원인 쪽(로그 10/23~27): 신라면 묶음 = 이름 그대로 검색에 pid 없음 · 갈배 = 10/23 한 번 찾은 뒤 차례가 안 옴(확인 안 한 새 진열이 계속 앞 — 오늘 남음 74 → 802)
 #   -> 검색 순서의 '마지막 확인' = 봇 검색·Cowork events chk 중 새것(막 확인해 넣은 진열이 옛 확인 상품 앞을 막지 않게) · 두 번째 검색어에 남던 '각' X
@@ -10457,21 +10459,21 @@ for m101, want in (({}, ["갈배사이다 355ml 24캔", "새 진열 세제 3L"])
 # XX 리뷰 2: 못 찾음이 마지막 맞춘 가격을 지우면(옛 [0, 시각]) own_end가 옛 Cowork 가격·날짜로 돌아가 하루 만에 '가격 확인 안 됨' -> [3:6]에 남김 · 사진 있는 글도 가격 맞춘 검색어 기억(못 찾으면 다음 날 다음 검색어)
 U101b = po101[1]["url"]; q101 = {"cpq": {"m": {U101b: [17400, "2026-10-26 10:00", ""]}, "i": {U101b: "https://ads-partners.coupang.com/image1/x"}}}
 H.http = lambda url, *a, **k: cs101.append(kw := parse_qs(urlsplit(url).query)["keyword"][0]) or json.dumps({"rCode": "0", "data": {"productData": [{"productId": 802, "productName": "해태 갈배사이다 355ml 24캔", "productPrice": 17900, "productImage": "https://ads-partners.coupang.com/image1/y"}] if kw == "갈배사이다" else []}})
-for d101c, want, m0 in (("2026-10-27", "갈배사이다 355ml 24캔", 0), ("2026-10-28", "갈배사이다", 17900), ("2026-10-29", "갈배사이다", 17900)):
+for d101c, want, m0 in (("2026-10-27", "갈배사이다 355ml 24캔", 0), ("2026-10-28", "갈배사이다 355ml 24캔", 0), ("2026-10-29", "갈배사이다", 17900), ("2026-10-30", "갈배사이다", 17900)):
     cs101.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); time.time = lambda: TK(d101c + " 10:00")
     with contextlib.redirect_stdout(io.StringIO()):
         H.cp_price(q101)
-    assert cs101[-1:] == [want] and q101["cpq"]["m"][U101b][0] == m0, (d101c, cs101, q101["cpq"]["m"][U101b])  # 사진 있는 글: 이름 그대로 못 찾음 -> 다음 날 2번째 검색어 -> 찾으면 그 검색어 그대로
-    if not m0:
+    assert cs101[-1:] == [want] and q101["cpq"]["m"][U101b][0] == m0, (d101c, cs101, q101["cpq"]["m"][U101b])  # 사진 있는 글: 이름 그대로 2번 연속 못 찾음 -> 다음 날 2번째 검색어 -> 찾으면 그 검색어 그대로(하루 빠진 것 하나론 안 바꿈 — 리뷰)
+    if d101c == "2026-10-27":
         assert q101["cpq"]["m"][U101b] == [0, "2026-10-27 10:00", "", 17400, "2026-10-26 10:00", ""], q101["cpq"]["m"][U101b]  # 못 찾음 = 마지막 맞춘 가격·시각 남김
-H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": []}}); time.time = lambda: TK("2026-10-30 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+H.http = lambda url, *a, **k: cs101.append(parse_qs(urlsplit(url).query)["keyword"][0]) or json.dumps({"rCode": "0", "data": {"productData": []}}); cs101.clear(); time.time = lambda: TK("2026-10-31 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
 with contextlib.redirect_stdout(io.StringIO()):
     H.cp_price(q101)
-assert q101["cpq"]["m"][U101b] == [0, "2026-10-30 10:00", "", 17900, "2026-10-29 10:00", ""], q101["cpq"]["m"][U101b]
-time.time = lambda: TK("2026-10-31 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+assert q101["cpq"]["m"][U101b] == [0, "2026-10-31 10:00", "", 17900, "2026-10-30 10:00", ""] and "갈배사이다" in cs101 and "갈배사이다 355ml 24캔" not in cs101 and q101["cpq"]["vp"][U101b] == [1, 1], (q101["cpq"]["m"][U101b], q101["cpq"]["vp"])
+cs101.clear(); time.time = lambda: TK("2026-11-01 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
 with contextlib.redirect_stdout(io.StringIO()):
     H.cp_price(q101)
-assert q101["cpq"]["m"][U101b] == [0, "2026-10-31 10:00", "", 17900, "2026-10-29 10:00", ""], q101["cpq"]["m"][U101b]  # 또 못 찾음 = 그 전 맞춘 것 그대로(못 찾음이 겹쳐도)
+assert q101["cpq"]["m"][U101b] == [0, "2026-11-01 10:00", "", 17900, "2026-10-30 10:00", ""] and "갈배사이다" in cs101 and "갈배사이다 355ml 24캔" not in cs101 and q101["cpq"]["vp"][U101b] == [2 % len(H.cp_kws("갈배사이다 355ml 24캔")), 0], (q101["cpq"]["m"][U101b], cs101, q101["cpq"]["vp"])  # 또 못 찾음 = 그 전 맞춘 것 그대로(못 찾음이 겹쳐도) · 2번째 = 다음 검색어
 os.chdir(sv101[5]); shutil.rmtree(d101)
 (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv101; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 # 9-102) YY(10/27 10시 Cowork 사이트 점검 — 품목 없음 42개: 반려동물 14·운동 13·문구 7): '반려동물'(pet 🐶)·'운동'(sport 🏋️) 칸 = 자동차 뒤 · 문구·소품 = 생활·살림(home)
@@ -10487,7 +10489,7 @@ assert all(cat102(n) == "sport" for n in ("프로스펙스 멀티 짐볼 65cm 1�
 assert all(cat102(n) == "home" for n in ("택배 송장 지우개 리무버 50ml 3개", "젤잉크 중성펜 0.5mm 블랙 20개입", "유니 쿠루토가 KS M5-KS 1개", "애니메이션 방수 스티커 치이카와 50장", "깎지 않는 무한연필 펜 6P 세트",
                                          "글로파이 체스형 고리자석 12mm 16개", "무림 엠카피 데일리 복사용지 A4 80g 2500매 1박스", "카드 슬리브 투명 65x92mm 100매", "깨비다 액막이 명태 도어벨 1개", "도레이씨 안경닦이"))
 assert (cat102("빙그레 심플리 디카페인 400ml 20펫"), cat102("카펫 러그"), cat102("CAT6 랜선 케이블"), cat102("모서리 보호대 10개"), cat102("필립스 헬스케어 체온계"), cat102("샤프란 섬유유연제"),
-        cat102("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼"), cat102("한일의료기 온수매트 강아지 털 슬리퍼"), cat102("나이키 운동화")) == ("", "home", "digital", "", "", "laundry", "fashion", "heat", "fashion")
+        cat102("슈퍼카미트 여성용 고양이 겨울 털 슬리퍼"), cat102("한일의료기 온수매트 강아지 털 슬리퍼"), cat102("나이키 운동화"), cat102("비비안 푸쉬업 브라 2종", "쿠팡") == "sport", cat102("잭링크 비프 져키 오리지널 25g 10개", "쿠팡") == "pet") == ("", "home", "digital", "", "", "laundry", "fashion", "heat", "fashion", False, False)  # 리뷰: 푸쉬업 브라·사람 육포(져키) = 운동·반려동물 X
 assert [k for k, _, _ in S.SHELF_CATS][-3:] == ["car", "pet", "sport"] and S.CAT_ORDER[:4] == ("heat", "car", "pet", "sport") and list(S.CAT_META)[-2:] == ["pet", "sport"] and S.Q_CATS[-2:] == ("pet", "sport")
 assert S.CAT_META["pet"][:3] == ("pet", "반려동물", "🐶") and S.CAT_META["sport"][:3] == ("sport", "운동", "🏋️") and all(k in S.CAT_ICON and f".ci-{k}{{" in S.CSS and k in S.CAT_TIPS and k in S.CAT_INTRO for k in ("pet", "sport"))
 assert H.TH_TOPICS["pet"] == "반려동물" and H.TH_TOPICS["sport"] == "운동" and "pet = " in H.CAT_PROMPT and "sport = " in H.CAT_PROMPT and "문구·소품은 home" in H.CAT_PROMPT and S.icon_key({"text": "🔥 [토스] 하림펫푸드 밥이보약 CAT 3.4kg (9,900원)"}) == "pet"

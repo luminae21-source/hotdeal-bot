@@ -1852,7 +1852,7 @@ def cp_price(seen):
     q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
     q["v"] = {u: v for u, v in q.get("v", {}).items() if u in names}  # v = 사진 없는 글의 다음 검색어 번호(cp_kws — pid 찾으면 그대로)
-    q["vp"] = {u: v for u, v in q.get("vp", {}).items() if u in names}  # vp = 사진 있는 글의 검색어 번호(가격까지 맞추면 그대로 · 못 찾으면 다음 — XX 리뷰)
+    q["vp"] = {u: v for u, v in q.get("vp", {}).items() if u in names}  # vp = 사진 있는 글 [검색어 번호, 연속 못 찾음](가격까지 맞추면 그대로 · 2번 연속 못 찾으면 다음 — XX 리뷰)
     q["pm"] = {u: v for u, v in q.get("pm", {}).items() if u in names and v[0] == today}  # pm = 사진 없는 글이 오늘 pid 못 찾은 수 — 다음 검색어로 오늘 다시(검색어 수까지)
     q["vi"] = {u: v for u, v in q.get("vi", {}).items() if u in names or u in rr.get("u", ())}  # vi = 같은 상품·옵션 검색 결과 [itemId, vendorItemId, 파트너스 긴 주소] — 딥링크 400 상품 다시(RR — cp_links)
     rw = set(rr.get("w", []))  # RR(10/26 Cowork): 딥링크 400 상품 중 아직 검색 안 한 것 = 먼저(옵션 번호 vendorItemId를 얻으려고 — 추가 호출 X, 순서만)
@@ -1896,7 +1896,7 @@ def cp_price(seen):
     for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
         kws = cp_kws(name) if u else [name]  # u 없음 = 품목 낱말 검색(T)
         photo = not u or u not in q.get("i", {})
-        v = (q["v"] if photo else q["vp"]).get(u, 0) % len(kws) if u else 0  # 사진 없는 글 = 오늘 못 찾은 만큼 다음 검색어 · 있는 글 = 가격(옵션)까지 맞춘 검색어 vp(처음 = 이름 그대로 — XX 리뷰: 2번째 검색어로만 찾는 글이 매번 이름 그대로 못 찾아 '가격 확인 안 됨'이 되지 않게)
+        v = (q["v"].get(u, 0) if photo else q["vp"].get(u, [0, 0])[0]) % len(kws) if u else 0  # 사진 없는 글 = 오늘 못 찾은 만큼 다음 검색어 · 있는 글 = 가격(옵션)까지 맞춘 검색어 vp(처음 = 이름 그대로 — XX 리뷰: 2번째 검색어로만 찾는 글이 매번 이름 그대로 못 찾아 '가격 확인 안 됨'이 되지 않게)
         kw, n0 = kws[v], len(q.setdefault("i", {}))
         try:
             r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
@@ -1926,8 +1926,9 @@ def cp_price(seen):
             continue
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
-        if not photo:  # 사진 있는 글 = 가격까지 맞춘 검색어 그대로 · 못 찾으면 다음 차례에 다음 검색어
-            q["vp"][u] = v if x else (v + 1) % len(kws)
+        if not photo:  # 사진 있는 글 = 가격까지 맞춘 검색어 그대로 · 같은 검색어로 2번 연속 못 찾아야 다음 차례에 다음 검색어(하루 빠진 것 하나로 약한 검색어에 며칠 X — 리뷰)
+            m = q["vp"].get(u, [v, 0])[1] + 1
+            q["vp"][u] = [v, 0] if x else [v, m] if m < 2 else [(v + 1) % len(kws), 0]
         elif same:
             q["v"][u] = v
             q["pm"].pop(u, None)
@@ -8515,7 +8516,7 @@ def own_end(seen):
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
         cq = cpq.get(u) or []
-        cx = not tsy and e.get("pid") and cq[:1] == [0] and cq[1:2] and cq[2:3] in ([e["item"]] if e.get("item") else ([], [""])) and cq[1]  # XX: 봇 검색이 못 찾은 시각(사이트 '가격 확인 안 됨' — 그 뒤 확인이 없을 때만 · 지금 events 옵션으로 찾은 것만)
+        cx = not tsy and e.get("pid") and cq[:1] == [0] and cq[1:2] and (cq[2:3] == [e["item"]] if e.get("item") else cq[2:3] in ([], [""])) and cq[1]  # XX: 봇 검색이 못 찾은 시각(사이트 '가격 확인 안 됨' — 그 뒤 확인이 없을 때만 · 지금 events 옵션으로 찾은 것만)
         cq = cq[3:6] if cq[:1] == [0] else cq  # 못 찾음 = 그 전 마지막 맞춘 가격(없으면 [] — Cowork events 그대로)
         cq = not tsy and e.get("pid") and (cq[2:3] == [e["item"]] if e.get("item") else cq[2:3] in ([], [""]) and re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cq  # item = 그 itemId로 맞춘 가격만(약한 이름 매칭 캐시 X — 10/24 리뷰)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
