@@ -3299,7 +3299,11 @@ def http12(url, body=None, headers=None, method=None):
 H.http, s12 = http12, {}; time.time = lambda: TK("2026-10-16 06:10")
 w12 = H.weather(s12); H.weather(s12)
 assert len(c12) == 2 and w12[0] == {"date": "2026-10-16", "tmin": 15, "tmax": 24, "rain": 78, "hum": 52, "pm": 37} and w12[1]["pm"] is None  # 하루 1번(캐시) · 초미세먼지 하루 평균
-assert H.wx_line(w12[0]) == "오늘 서울 15~24도, 일교차 9도 · 비 올 확률 78% · 초미세먼지 37㎍"
+assert H.wx_line(w12[0]) == "오늘 서울 아침 15도·낮 24도 · 비 올 확률 78% · 초미세먼지 37㎍" and H.wx_line(w12[0], w12[1]) == "오늘 서울 아침 15도·낮 24도, 밤부터 추워져요 · 비 올 확률 78% · 초미세먼지 37㎍"  # ZZ ⑤ 아침·낮 + 내일 아침 5도↓ = 밤부터 추워져요
+assert H.wx_line(W12(13, 25)) == "오늘 서울 아침 13도·낮 25도, 일교차 12도" and H.wx_line(W12(13, 20), W12(9, 18)) == "오늘 서울 아침 13도·낮 20도"  # 일교차 = 10도↑만 · 4도 내림 = X
+FCh12 = {**FC12, "hourly": {"time": [f"2026-10-16T{h:02d}:00" for h in range(24)], "temperature_2m": [12.0] * 5 + [10.6, 10.2, 10.4, 11.0, 12.5] + [16.0] * 9 + [9.0, 8.0, 7.0, 6.0, 5.0]}}
+hh12 = H.http; H.http = lambda url, *a, **k: json.dumps(FCh12) if "api.open-meteo.com/v1/forecast" in url and "hourly=temperature_2m" in url else json.dumps(AQ12)
+assert H.weather({})[0]["tmin"] == 10 and H.weather({})[1]["tmin"] == 2; H.http = hh12  # ZZ ⑤(10/27 '5~16도' — 기상청 아침 10도): 아침 = 5~9시 최저(밤 23시 5도 X) · 시간별 없는 날 = 일 최저
 H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("down")); s12b = {}
 assert H.weather(s12b) is None and H.wx_words(s12b) == [] and H.wx_bonus(s12b)("우산") == 0  # 예보 못 받음 -> 날씨 X(가점도 X)
 s12r = {}; H.weather(s12r); c12.clear(); H.http = http12; assert H.weather(s12r) is None and not c12  # 1시간 안엔 다시 안 받음
@@ -3328,7 +3332,7 @@ time.time = lambda: TK("2026-10-16 07:35"); H.weather_post(s12)
 assert m12 == "sendMessage" and p12["chat_id"] == "@ch" and p12["parse_mode"] == "HTML" and "wxpost_20261016" in s12
 t12 = p12["text"]
 assert t12.index(H.DISCLOSURE) < t12.index("☁️") and H.NAVER_NOTE in t12 and H.TOSS_NOTE in t12  # 링크 있는 몰의 대가성 문구 맨 앞
-assert "<b>☁️ 오늘 서울 15~24도, 일교차 9도 · 비 올 확률 78% · 초미세먼지 37㎍ — 이런 날 필요한 것</b>" in t12
+assert "<b>☁️ 오늘 서울 아침 15도·낮 24도, 밤부터 추워져요 · 비 올 확률 78% · 초미세먼지 37㎍ — 이런 날 필요한 것</b>" in t12
 rows12 = [l for l in t12.split("\n") if l.startswith(("🔥", "🛒"))]
 assert rows12 == ['🔥 <a href="https://toss.im/_m/T1">토스 자동 우산 1개</a> 8,500원', '🔥 <a href="https://naver.me/abc">제습제 18개</a> 9,900원',
                   '🔥 <a href="https://link.coupang.com/a/u1">3단 자동 장우산</a> 12,900원'], rows12  # 3사 먼저 · 🔥 먼저 · 최근 먼저, 3개까지 · 토스 = 지금 가격 · 품절(73)·품절 표시(72)·3일 지난 딜 X
@@ -3344,7 +3348,7 @@ L12b = [{"n": "롯데 빼빼로 오리지널 12갑", "p": "9,900원", "u": "http
 H.wx_post({}, "k", "☁️ 오늘", L12b, "", "wx"); th12c = out12[-1][1]
 assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5.html?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 500자에 못 들어가는 긴 링크(TH_LINK_MAX 넘음)만 사이트 딜 페이지
 s12c = {"wx_20261016": {"t": 1, "w": [W12(16, 24)]}}; H.weather_post(s12c)
-assert [p["text"] for m, p in out12 if m == "sendMessage"] == ["☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?"] and out12[1][1]["text"] == "☁️ 오늘 서울 16~24도, 일교차 8도\n오늘은 뭐 챙기셨어요?" and out12[1][1]["link"] is None  # 맞는 딜 0개 = 날씨 + 질문(링크 X)
+assert [p["text"] for m, p in out12 if m == "sendMessage"] == ["☁️ 오늘 서울 아침 16도·낮 24도\n오늘은 뭐 챙기셨어요?"] and out12[1][1]["text"] == "☁️ 오늘 서울 아침 16도·낮 24도\n오늘은 뭐 챙기셨어요?" and out12[1][1]["link"] is None  # 맞는 딜 0개 = 날씨 + 질문(링크 X)
 out12.clear(); s12d = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.busy = lambda seen, cap=True: True; H.weather_post(s12d); assert not out12 and "wxpost_20261016" not in s12d  # 묶음 간격·시간당 상한 -> 다음 실행에
 time.time = lambda: TK("2026-10-16 09:31"); H.busy = lambda seen, cap=True: False; H.weather_post(s12d); assert not out12  # 2시간 지나면 안 올림
 H.HAS_TOSS = False; time.time = lambda: TK("2026-10-16 15:35"); s12e = {"wx_20261016": {"t": 1, "w": [W12(15, 20)]}}; H.snack_post(s12e)
@@ -4169,7 +4173,7 @@ def deal24(seen, src, url, ans, style, own=1):
     (t,) = c24
     return t
 seen24, KU24, GU24, TU24 = {"thvoice": {"t": TK("2026-10-21 20:00")}}, "https://link.coupang.com/a/h1NpZ1ygAT", "https://link.coupang.com/a/h1Nvu1bRx6", "https://toss.shopping/_m/5DR27WGo"
-k24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [{"line": "이 가격 실화? 장바구니각이다✨"}], 3)  # 말투 3 질문형(M-5 — 10/26부터 Threads 말투 5가지·반말)
+k24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [{"line": "이 가격 실화예요? 장바구니각이에요✨"}], 3)  # 말투 3 질문형(M-5 — 10/26부터 Threads 말투 5가지·반말)
 assert k24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 · 1개당 최저 🔥
@@ -4182,10 +4186,10 @@ assert k24 == f"""{H.DISCLOSURE}
 
 ⏰ 10/21 19시 가격 · 결제 전 확인
 
-이 가격 실화? 장바구니각이다✨
+이 가격 실화예요? 장바구니각이에요✨
 
 👉 {KU24}""", k24  # O(10/26): ⏰ 가격 시각 -> 말투 한 줄(+ 단점 하나 — 이 글은 데이터 없음 = X) -> 링크
-g24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{G23}", GU24, [{"line": "출퇴근용으로 쟁여 둘 만함"}], 4)  # 말투 4 짧은 감탄형(꾸밈말 '대용량' X)
+g24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{G23}", GU24, [{"line": "출퇴근용으로 쟁여 둘 만해요"}], 4)  # 말투 4 짧은 감탄형(꾸밈말 '대용량' X)
 assert g24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 · 1개당 최저 🔥
@@ -4197,10 +4201,10 @@ assert g24 == f"""{H.DISCLOSURE}
 
 ⏰ 10/21 19시 가격 · 결제 전 확인
 
-출퇴근용으로 쟁여 둘 만함
+출퇴근용으로 쟁여 둘 만해요
 
 👉 {GU24}""", g24
-t24 = deal24(seen24, f"{H.TOSS_NOTE}\n\n{S24}", TU24, [{"line": "냉장고에 쟁여 두기 좋겠다"}], 1, own=None)  # 토스(커뮤니티 토스 딜) 말투 1 계산형 — 💡 X · 게시 시점 줄 그대로 · '외 2' X
+t24 = deal24(seen24, f"{H.TOSS_NOTE}\n\n{S24}", TU24, [{"line": "냉장고에 쟁여 두기 좋겠어요"}], 1, own=None)  # 토스(커뮤니티 토스 딜) 말투 1 계산형 — 💡 X · 게시 시점 줄 그대로 · '외 2' X
 assert t24 == f"""{H.TOSS_NOTE}
 
 💙 토스 특가 🔥
@@ -4211,19 +4215,19 @@ assert t24 == f"""{H.TOSS_NOTE}
 
 ⚠️ 10/21 09:20 게시 시점 가격
 
-냉장고에 쟁여 두기 좋겠다
+냉장고에 쟁여 두기 좋겠어요
 
 👉 {TU24}""", t24  # 글의 ⚠️ 조각 '선착순 3,000개 한정' = 서술로 끝나는 문장이 아님 -> 단점 줄 X(Y·Z 10/26 '단점 줄은 완성된 한 문장만')
 for t in (k24, g24, t24):
     assert all(H.th_w(l) <= H.TH_W for l in t.split("\n")[1:] if not l.startswith(("👉", "🚀", "💙"))) and len(t) <= 480 and "👋" not in t and "📲" not in t, t  # 줄마다 폭 22 안(대가성 문구·머리·링크 줄 빼고)
     assert len(re.findall(H.TH_NUM, "\n\n".join(t.split("\n\n")[1:3]))) <= H.TH_NUMS and t.count("⏰") + t.count("게시 시점") == 1 and "\n\n\n" not in t, t  # 숫자 5개까지 · 시점은 한 줄에 한 번
-assert "말투 = 질문형 반말" in p24[0] and "말투 = 짧은 감탄 반말" in p24[1] and "말투 = 계산형 반말" in p24[2] and all("이모지 0~1개" in p and "숫자 없이" in p and H.TH_FRIEND.strip() in p for p in p24)
+assert "말투 = 질문형 존댓말" in p24[0] and "말투 = 짧은 감탄 존댓말" in p24[1] and "말투 = 계산형 존댓말" in p24[2] and not any("해요체 X" in p for p in p24) and all("이모지 0~1개" in p and "숫자 없이" in p and H.TH_FRIEND.strip() in p for p in p24)
 assert "상품명: 코멧 포켓형 손난로 핫팩 100g, 30개\n가격: 8,860원\n재료:\n" in p24[0] and "150개 40,310원이면 1개당 269원" in p24[0] and "토스 딜:" not in p24[0] and "토스 딜:" in p24[2], p24[0]  # 재료 = 줄이기 전 글
-assert "최근 줄: 이 가격 실화? 장바구니각이다✨" in p24[1] and "물음표 쓰지 않기" in p24[1] and "물음표 쓰지 않기" not in p24[0] and "👋" not in p24[0] and "link.coupang" not in p24[0]  # 물음표는 질문형만
-v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화? 장바구니각이다✨", "출퇴근용으로 쟁여 둘 만함", "냉장고에 쟁여 두기 좋겠다"], v24
+assert "최근 줄: 이 가격 실화예요? 장바구니각이에요✨" in p24[1] and "물음표 쓰지 않기" in p24[1] and "물음표 쓰지 않기" not in p24[0] and "👋" not in p24[0] and "link.coupang" not in p24[0]  # 물음표는 질문형만
+v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화예요? 장바구니각이에요✨", "출퇴근용으로 쟁여 둘 만해요", "냉장고에 쟁여 두기 좋겠어요"], v24
 # Claude 실패 = 말투별 기본 한 줄(레이아웃은 그대로)
 f24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [RuntimeError("api")], 4)
-assert f24 == k24.replace("이 가격 실화? 장바구니각이다✨", H.TH_TONE_POOL5[4][0]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL5[4][0], f24
+assert f24 == k24.replace("이 가격 실화예요? 장바구니각이에요✨", H.TH_TONE_POOL5[4][0]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL5[4][0], f24
 m24 = seen24["thab"]["m"]; assert m24["p1"]["n"] == m24["p4"]["n"] == "[쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)" and [m24[p]["tone"] for p in ("p1", "p2", "p3", "p4")] == [3, 4, 1, 4], m24  # 지금 틀 제목 · 말투
 json.dump({}, open(H.METRICS, "w")); H.E["METRICS_DAY"] = "2026-10-21"  # metrics.json: 분류·가격대는 지금 틀 제목으로 + tone = 말투
 H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-21T10:43:00+0000"} for i, t in (("p1", k24), ("p2", g24), ("p4", f24))]}) if "/me/threads?" in url \
@@ -4236,37 +4240,39 @@ F24 = f"{H.DISCLOSURE}\n\n{K23}\n\n👉 {KU24}\n{H.th_follow(False)}\n📲 실�
 def tv24(ans, seen=None, link=KU24, text=F24, style=3):
     a24[:] = ans; p24.clear(); ST24[:] = [style]; s = seen if seen is not None else {}
     return H.th_voice(s, text, link), s
-assert tv24([{"line": "이 가격 실화? 장바구니각이다✨"}])[0] == k24
-for bad, style in (("30개 8,860원이면 쟁일 만함", 4), ("제가 써보니 따뜻함", 4), ("역대급 가격이라 무조건", 2), ("지금 바로 클릭", 2), ("링크는 댓글에 있음", 4), ("핫팩 쟁일 때 됐어요", 2), ("핫팩 쟁일 때죠", 4),
+assert tv24([{"line": "이 가격 실화예요? 장바구니각이에요✨"}])[0] == k24
+for bad, style in (("30개 8,860원이면 쟁일 만함", 4), ("제가 써보니 따뜻함", 4), ("역대급 가격이라 무조건", 2), ("지금 바로 클릭", 2), ("링크는 댓글에 있음", 4), ("핫팩 쟁일 때 됐다", 2), ("핫팩 쟁일 때다", 4), ("큰 머그컵이 생각나더라고요", 2),
                    ("핫팩 몇 개 쟁여?", 4), ("바람 차가워져서 손난로 쟁여 두기 딱 좋은 날씨가 계속되는 중", 4), ("🔥 오늘 핫팩", 4), ("", 4)):
-    o24 = tv24([{"line": bad}, {"line": bad}], style=style)[0]  # 숫자·써 본 척·과장·재촉·링크·~요(해요체 말투 아니면)·물음표(발랄한 반말만)·폭·라벨 줄·빈 답 -> 1번 다시 -> 기본 한 줄
+    o24 = tv24([{"line": bad}, {"line": bad}], style=style)[0]  # 숫자·써 본 척·과장·재촉·링크·반말(ZZ 존댓말만)·회상('~더라')·물음표(질문형만)·폭·라벨 줄·빈 답 -> 1번 다시 -> 기본 한 줄
     assert (not bad or bad not in o24) and f"\n\n{H.TH_TONE_POOL5[style][0]}\n\n" in o24 and len(p24) == 2 and "다시:" in p24[1], (bad, o24)
-o24 = tv24([{"line": "핫팩 쟁일 때 됐어요"}, {"line": "핫팩 쟁일 때 됐다"}], style=1)[0]; assert "\n\n핫팩 쟁일 때 됐다\n\n" in o24 and len(p24) == 2  # O(10/26): Threads = 반말만(해요체 = 1번 다시)
-o24 = tv24([{"line": "핫팩 몇 개 쟁여?"}], style=3)[0]; assert "\n\n핫팩 몇 개 쟁여?\n\n" in o24 and len(p24) == 1  # 물음표 = 질문형만
-o24 = tv24([{"line": "제가 써보니 따뜻함"}, {"line": "주머니에 하나씩 넣어 두기 좋음"}], style=4)[0]; assert "\n\n주머니에 하나씩 넣어 두기 좋음\n\n" in o24 and len(p24) == 2  # 1번 다시 쓰면 그 줄
-o24 = tv24([{"line": "핫팩 쟁이기 좋은 날 🧤✨"}], style=4)[0]; assert "\n\n핫팩 쟁이기 좋은 날\n\n" in o24, o24  # 이모지 2개↑ = 다 뺌
-assert "\n\n핫팩 쟁이기 좋은 날 ✨\n\n" in tv24([{"line": "핫팩 쟁이기 좋은 날 ✨"}], style=4)[0]  # 1개까지는 그대로
-o24, s24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋음"}] * 2, {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", "주머니에 하나씩 넣어 두기 좋음")]}}, style=4)
+o24 = tv24([{"line": "핫팩 쟁일 때 됐다"}, {"line": "핫팩 쟁일 때 됐어요"}], style=1)[0]; assert "\n\n핫팩 쟁일 때 됐어요\n\n" in o24 and len(p24) == 2  # ZZ(10/27 Cowork 반말 6건): Threads 끝 줄 = 친근한 존댓말만(반말 = 1번 다시)
+o24 = tv24([{"line": "핫팩 몇 개 쟁이세요?"}], style=3)[0]; assert "\n\n핫팩 몇 개 쟁이세요?\n\n" in o24 and len(p24) == 1  # 물음표 = 질문형만
+o24 = tv24([{"line": "제가 써보니 따뜻함"}, {"line": "주머니에 하나씩 넣어 두기 좋아요"}], style=4)[0]; assert "\n\n주머니에 하나씩 넣어 두기 좋아요\n\n" in o24 and len(p24) == 2  # 1번 다시 쓰면 그 줄
+o24 = tv24([{"line": "핫팩 쟁이기 좋은 날이에요 🧤✨"}], style=4)[0]; assert "\n\n핫팩 쟁이기 좋은 날이에요\n\n" in o24, o24  # 이모지 2개↑ = 다 뺌
+assert "\n\n핫팩 쟁이기 좋은 날이에요 ✨\n\n" in tv24([{"line": "핫팩 쟁이기 좋은 날이에요 ✨"}], style=4)[0]  # 1개까지는 그대로
+o24, s24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋아요"}] * 2, {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", "주머니에 하나씩 넣어 두기 좋아요")]}}, style=4)
 assert f"\n\n{H.TH_TONE_POOL5[4][0]}\n\n" in o24 and len(p24) == 2 and s24["thvoice"]["f"][-1] == re.sub(r"[\W_]+", "", H.TH_TONE_POOL5[4][0]), o24  # 최근 10개와 같은 줄 = 다시 -> 기본 한 줄
 o24, s24 = tv24([RuntimeError("x")], {"thvoice": {"t": 1, "f": [re.sub(r"[\W_]+", "", H.TH_TONE_POOL5[4][0])]}}, style=4); assert f"\n\n{H.TH_TONE_POOL5[4][1]}\n\n" in o24  # 기본 한 줄도 최근 것 빼고
-o24 = tv24([{"line": "요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함"}], None, "https://link.coupang.com/a/YG", f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG", 4)[0]
-assert "\n\n요기요 쿠폰 쓸 데 있으면 쟁여 둘 만함\n\n" in o24 and len(p24) == 1 and o24.split("\n\n")[1] == "📦 쿠팡 · 10% 할인 🔥\n요기요 상품권 2만원권\n💰 18,000원", o24  # 상품명 속 '요'는 해요체 아님 · 예전 틀 = mall_head(로켓 근거 없으면 📦 쿠팡)
+YG24 = f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 요기요 상품권 2만원권 (18,000원)\n\n10% 할인\n\n👉 https://link.coupang.com/a/YG"
+o24 = tv24([{"line": "쿠폰 쓸 데 많으면 역시 요기요"}] * 2, None, "https://link.coupang.com/a/YG", YG24, 4)[0]; assert f"\n\n{H.TH_TONE_POOL5[4][0]}\n\n" in o24 and len(p24) == 2, o24  # 상품명 '요기요'로 끝나는 반말 = 존댓말 X(이름 빼고 봄)
+o24 = tv24([{"line": "요기요 쿠폰 쓸 데 있으면 쟁여 둘 만해요"}], None, "https://link.coupang.com/a/YG", YG24, 4)[0]
+assert "\n\n요기요 쿠폰 쓸 데 있으면 쟁여 둘 만해요\n\n" in o24 and len(p24) == 1 and o24.split("\n\n")[1] == "📦 쿠팡 · 10% 할인 🔥\n요기요 상품권 2만원권\n💰 18,000원", o24  # 상품명 속 '요'는 해요체 아님 · 예전 틀 = mall_head(로켓 근거 없으면 📦 쿠팡)
 assert tv24([], None, KU24, "🔥 [쿠팡] 대가성 문구 없는 글")[0] == "🔥 [쿠팡] 대가성 문구 없는 글" and not p24  # 대가성 문구 없는 글 = 그대로(Claude 안 부름)
 X24 = f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 가격 없는 글\n\n싸다"; assert tv24([], None, KU24, X24)[0] == X24 and not p24  # 가격 못 읽음 = 지금 틀(Claude 안 부름)
 LONG24 = "https://link.coupang.com/a/" + "x" * 273  # 300자 링크(TH_LINK_MAX) -> 480자 넘으면 💡 -> ✔ -> 말투 줄 순서로 뺌(대가성 문구·머리·상품명·💰·시점·링크는 그대로)
-o24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋음"}], None, LONG24, F24.replace(KU24, LONG24), 4)[0]
+o24 = tv24([{"line": "주머니에 하나씩 넣어 두기 좋아요"}], None, LONG24, F24.replace(KU24, LONG24), 4)[0]
 assert len(o24) <= 480 and "💡" not in o24 and "주머니에" in o24 and o24.startswith(H.DISCLOSURE) and "\n\n⏰ 10/21 19시 가격 · 결제 전 확인\n\n주머니에" in o24 and o24.endswith(f"\n\n👉 {LONG24}"), o24
-x24 = F24.replace(KU24, LONG24 + "y" * 120); assert tv24([{"line": "쟁여 둘 만함"}], None, LONG24 + "y" * 120, x24, 4)[0] == x24  # 그래도 480자 넘음 = 지금 틀
+x24 = F24.replace(KU24, LONG24 + "y" * 120); assert tv24([{"line": "쟁여 둘 만해요"}], None, LONG24 + "y" * 120, x24, 4)[0] == x24  # 그래도 480자 넘음 = 지금 틀
 # 토스 API 개별 글(toss_th) -> 게시 시점 줄 그대로 · 다른 몰·비교 말 X(1번 다시) · 💡 X
 tt24 = H.toss_th("", "웅진식품 애사비 파인애플맛 500ml 24병", "13,070원 (20%↓)", ["🙋 음료 박스로 사는 집"], "https://toss.shopping/_m/T24")
-o24 = tv24([{"line": "다른 곳보다 쌈"}, {"line": "시원하게 쟁여 두기 좋음"}], None, "https://toss.shopping/_m/T24", tt24, 4)[0]
-assert o24 == f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n웅진식품 애사비 파인애플맛 500ml × 24병\n💰 13,070원 (20%↓)\n\n⚠️ 10/21 21:00 게시 시점 가격\n\n시원하게 쟁여 두기 좋음\n\n👉 https://toss.shopping/_m/T24", o24
+o24 = tv24([{"line": "다른 곳보다 쌈"}, {"line": "시원하게 쟁여 두기 좋아요"}], None, "https://toss.shopping/_m/T24", tt24, 4)[0]
+assert o24 == f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n웅진식품 애사비 파인애플맛 500ml × 24병\n💰 13,070원 (20%↓)\n\n⚠️ 10/21 21:00 게시 시점 가격\n\n시원하게 쟁여 두기 좋아요\n\n👉 https://toss.shopping/_m/T24", o24
 assert "13,070원 (20%↓)" in p24[0] and "🙋 음료 박스로 사는 집" in p24[0] and "🛒" not in p24[0] and "다른 쇼핑몰 이름" in p24[0], p24[0]
 # 셀프체크(10/23 진우 캡처 글): 카밀 핸드크림 10/22 20:59 쿠팡 글 -> 고정 레이아웃
 CAMIL24 = (f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n카밀 핸드 앤 네일 크림 클래식 100ml 3개\n8,630원\n쿠팡 검색 상위 핸드크림 중 단위가격 최저 — 1개 2,877원, 10ml당 288원(10/22 17시 검색 · 참고: 카밀 화이트 머스크 75ml 2개 10ml당 411원)\n"
            "⭐ 리뷰 51,181 · 한 달 2,000명 이상 구매 · 🚀 로켓배송(내일 새벽 7시 전 도착) · 30일 무료반품\n💡 독일 제조 · 캐모마일 향 · 많이 쓰면 6개(15,860원)가 1개 2,643원으로 더 쌈\n"
            "⚠️ 확인할 점: 100원 쿠폰 적용가(쿠폰 없으면 8,730원) · 결제 전 최종가 확인 (10/22 19시 가격)\n\n👉 https://link.coupang.com/a/h3vwTUbaGi\n📲 실시간 알림 t.me/hotdeal_pick")
-o24 = tv24([{"line": "오늘 이 가격이면 쟁여 둘 만하다"}], None, "https://link.coupang.com/a/h3vwTUbaGi", CAMIL24, 1)[0]
+o24 = tv24([{"line": "오늘 이 가격이면 쟁여 둘 만해요"}], None, "https://link.coupang.com/a/h3vwTUbaGi", CAMIL24, 1)[0]
 assert o24 == f"""{H.DISCLOSURE}
 
 🚀 쿠팡 로켓 🔥
@@ -4279,7 +4285,7 @@ assert o24 == f"""{H.DISCLOSURE}
 
 ⏰ 10/22 19시 100원 쿠폰가 · 결제 전 확인
 
-오늘 이 가격이면 쟁여 둘 만하다
+오늘 이 가격이면 쟁여 둘 만해요
 단점 하나: 쿠폰 받아야 이 가격
 
 👉 https://link.coupang.com/a/h3vwTUbaGi""", o24  # O: 쿠폰 조건가 = 단점 하나
@@ -4299,7 +4305,7 @@ except RuntimeError as e: assert "refusal" in str(e)
 H.http = http24; H.E.pop("ANTHROPIC_API_KEY")
 H.random = sv24[10]; sty24 = []  # 진짜 무작위: 말투 4가지 다 나옴
 for n in range(40):
-    s = {}; a24[:] = [{"line": "핫팩 쟁이기 좋은 날"}]; H.th_voice(s, F24, KU24); sty24.append(s["thvoice"]["s"])
+    s = {}; a24[:] = [{"line": "핫팩 쟁이기 좋은 날이에요"}]; H.th_voice(s, F24, KU24); sty24.append(s["thvoice"]["s"])
 assert set(sty24) == {1, 2, 3, 4}, sty24
 # 개별 글 간격 35~55분: 앞 글 시각으로 정함(같은 글 뒤엔 실행마다 같은 값), 글마다 다름
 H.th_solo, H.TH_SOLO_GAP, H.TH_GAP_JITTER = sv24[2], 45 * 60, 10 * 60
@@ -4635,20 +4641,20 @@ assert len(th28) == 1 and th28[0].startswith(f"{H.DISCLOSURE}\n\n🚀 쿠팡 로
 assert "💸" not in th28[0] and "[쿠팡]" not in th28[0]
 # th_voice: 머리 줄 = 고정 줄(대가성 문구 바로 다음, 이모지 셈 X) · 상품명·가격 = 머리 아래 두 줄 · 몰별 결(쿠팡 = 비교, 토스 = 오늘 특가 소식)
 # th_voice(10/23 고정 레이아웃): 몰별 틀 = 머리 줄 그대로 · 상품명·가격 = 머리 아래 두 줄 · 🚚 도착·반품 = ✔ · 📊 참고 = 💡 · ⏰ 시각 = 글의 '(10/22 10시)'(지금 13시 아님)
-pv28, vv28 = [], [{"line": "주머니에 하나씩 넣어 두기 좋음"}]
+pv28, vv28 = [], [{"line": "주머니에 하나씩 넣어 두기 좋아요"}]
 sv28b = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: pv28.append(prompt) or vv28.pop(0)), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 time.time = lambda: TK("2026-10-22 13:05"); o28 = H.th_voice({}, th28[0], "https://link.coupang.com/a/c28")
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g × 30개\n💰 8,860원 (1개 295원)\n\n✔ 무료반품 · 내일(금) 도착\n💡 참고: 충성 317원 · 해피데이 373원\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n주머니에 하나씩 넣어 두기 좋음\n\n👉 https://link.coupang.com/a/c28", o28
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g × 30개\n💰 8,860원 (1개 295원)\n\n✔ 무료반품 · 내일(금) 도착\n💡 참고: 충성 317원 · 해피데이 373원\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n주머니에 하나씩 넣어 두기 좋아요\n\n👉 https://link.coupang.com/a/c28", o28
 assert "상품명: 코멧 손난로 100g 30개\n가격: 8,860원" in pv28[0] and "토스 딜:" not in pv28[0], pv28[0]
 TT28 = H.toss_th("생필품 베스트 3위", "더건강플러스 올리브오일 1L", "15,580원 (60%↓) · ⭐ 4.7 (11,683)", ["🙋 집밥 자주 하는 집"], "https://toss.shopping/_m/t28")
 assert TT28.startswith(H.th_note(H.TOSS_NOTE) + "💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n15,580원 (60%↓) · ⭐ 4.7 (11,683)\n🙋 집밥 자주 하는 집\n⚠️ ") and H.title_of(TT28) == "[토스] 더건강플러스 올리브오일 1L (15,580원)", TT28
-vv28[:] = [{"line": "집밥 자주 하는 집이면 쟁여 둘 만함"}]; pv28.clear()
+vv28[:] = [{"line": "집밥 자주 하는 집이면 쟁여 둘 만해요"}]; pv28.clear()
 o28 = H.th_voice({}, TT28, "https://toss.shopping/_m/t28")
-assert re.fullmatch(rf"{re.escape(H.TOSS_NOTE)}\n\n💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n💰 15,580원 \(60%↓\)\n\n✔ 평점 4\.7 · 리뷰 1만\+\n\n⚠️ \d+/\d+ \d\d:\d\d 게시 시점 가격\n\n집밥 자주 하는 집이면 쟁여 둘 만함\n\n👉 https://toss\.shopping/_m/t28", o28) and "토스 딜:" in pv28[0], o28  # 토스 = 평점·리뷰(반올림) ✔ · 💡 X · 게시 시점 줄 그대로
+assert re.fullmatch(rf"{re.escape(H.TOSS_NOTE)}\n\n💙 토스 특가 · 생필품 베스트 3위 🔥\n더건강플러스 올리브오일 1L\n💰 15,580원 \(60%↓\)\n\n✔ 평점 4\.7 · 리뷰 1만\+\n\n⚠️ \d+/\d+ \d\d:\d\d 게시 시점 가격\n\n집밥 자주 하는 집이면 쟁여 둘 만해요\n\n👉 https://toss\.shopping/_m/t28", o28) and "토스 딜:" in pv28[0], o28  # 토스 = 평점·리뷰(반올림) ✔ · 💡 X · 게시 시점 줄 그대로
 ST28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n25,800원 · 한 달 1,000명+ 구매 · 리뷰 1,969\n🎁 백화점 선물 포장\n⚠️ 결제 전 최종가 (10/22 20시)\n\n👉 https://link.coupang.com/a/st28"
-vv28[:] = [{"line": "오늘 특가로 싸게 나옴"}, {"line": "선물용으로 하나쯤 두기 좋음"}]; pv28.clear()
+vv28[:] = [{"line": "오늘 특가로 싸게 나왔어요"}, {"line": "선물용으로 하나쯤 두기 좋아요"}]; pv28.clear()
 o28 = H.th_voice({}, ST28, "https://link.coupang.com/a/st28")  # 9-31 👍 꾸준템: 말투 줄에 특가·최저·할인 X(1번 다시)
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n💰 25,800원\n\n✔ 리뷰 1,900+ · 한 달 1,000명+ 구매\n\n⏰ 10/22 20시 가격 · 결제 전 확인\n\n선물용으로 하나쯤 두기 좋음\n\n👉 https://link.coupang.com/a/st28", o28
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 · 꾸준히 팔리는 상품 👍\n록시땅 시어 버터 핸드크림 75ml\n💰 25,800원\n\n✔ 리뷰 1,900+ · 한 달 1,000명+ 구매\n\n⏰ 10/22 20시 가격 · 결제 전 확인\n\n선물용으로 하나쯤 두기 좋아요\n\n👉 https://link.coupang.com/a/st28", o28
 assert "'꾸준히 주문 들어오는 상품'(특가 아님)" in pv28[0] and "핫딜픽에서 주문" in pv28[0] and len(pv28) == 2, pv28[0]  # KK② 프롬프트도 같은 문구 + 우리 주문·지어낸 숫자 X
 H.ai_voice, H.random = sv28b
 # 토스 목록: 하루특가 TOP5·17시 생필품 등 머리 = 💙 · 품절 고칠 때 게시 시점 줄(꼬리)도 남김
@@ -4665,10 +4671,10 @@ assert H.mall_view("🔥 <b>[토스] 수뜰리에 탈취제 310g 2개 (6,930원)
     "💙 토스 특가 · 61% 할인 🔥\n<b>수뜰리에 탈취제 310g 2개</b>\n6,930원 (61%↓) · ⭐ 4.7 (3,327)\n10/13 밤 토스 많이 팔린 순위 3위 · 61% 할인 · ⭐ 4.7 (리뷰 3,327)"  # 지난 날 순위는 머리 줄 X(정보 줄엔 날짜와 같이 남음)
 # th_voice: 재료에 날짜가 붙은 숫자(10/21 쿠팡 검색 기준 …)는 그 날짜와 같이만(10/22 Cowork — 하루온 글이 어제 비교 숫자를 '오늘 10시 기준'처럼) · 기준 시각 = 글의 가격 시각(지금 아님)
 HO28 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 군인핫팩 160g, 30개\n13,520원\n로켓배송 160g 대형 핫팩 중 1개당 가장 싸요 — 10/21 쿠팡 검색 상위 기준 1개당 451원(참고: 충성 160g 60개 469원·마이핫 160g 750원)\n⚠️ 확인할 점: '22% 할인'은 정가 기준이라 참고만 · 결제 전 최종가 확인 (10/22 10시 가격)\n\n👉 https://link.coupang.com/a/h28"
-vv28[:] = [{"line": "출퇴근길 주머니에 넣어 두기 좋음"}]
+vv28[:] = [{"line": "출퇴근길 주머니에 넣어 두기 좋아요"}]
 sv28d = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: pv28.append(prompt) or vv28.pop(0)), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 time.time = lambda: TK("2026-10-22 13:05"); o28 = H.th_voice({}, HO28, "https://link.coupang.com/a/h28"); H.ai_voice, H.random = sv28d
-assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 군인핫팩 160g × 30개\n💰 13,520원 (1개당 451원)\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n출퇴근길 주머니에 넣어 두기 좋음\n\n👉 https://link.coupang.com/a/h28", o28  # 날짜 붙은 참고 숫자(10/21 검색)는 💡로 안 씀 · 정가 기준 할인 X · 말투 줄엔 숫자 X
+assert o28 == f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n하루온 군인핫팩 160g × 30개\n💰 13,520원 (1개당 451원)\n\n⏰ 10/22 10시 가격 · 결제 전 확인\n\n출퇴근길 주머니에 넣어 두기 좋아요\n\n👉 https://link.coupang.com/a/h28", o28  # 날짜 붙은 참고 숫자(10/21 검색)는 💡로 안 씀 · 정가 기준 할인 X · 말투 줄엔 숫자 X
 # 리뷰 보강(10/22): 가격 줄 쿠폰가 조각도 제목으로(예전 제목 그대로) · 단위가격 특수문자 이스케이프 1번 · 토스 머리 줄에 다른 몰 순위 X(strip_cmp도 칸만 뺌)
 #   · 토스 Claude 한 줄은 비교 말 X · 진우가 봇에 보낸 토스 링크 글(admin_deal·초안) = 비교 빼고 게시 시점 줄
 assert H.title_of(H.plain_of(H.mall_view("🔥 <b>[토스] 쏘울너츠 2개 (1,950원 · 5천원 쿠폰가)</b>\n\n토스 90% 할인", "https://toss.shopping/_m/q"))) == "[토스] 쏘울너츠 2개 (1,950원 · 5천원 쿠폰가)"
@@ -4724,10 +4730,10 @@ assert H.mall_view("🔥 <b>[쿠팡] 우유 (7,890, 무배)</b>\n\n싸다", "htt
 TQ28 = H.mall_view("🔥 <b>[토스] 오일 (1,000원)</b>\n\n쿠폰 적용 61% 할인", "https://toss.shopping/_m/q").split("\n")
 assert TQ28[0] == "💙 토스 특가 · 쿠폰 적용 61% 할인 🔥" and TQ28[2] == "1,000원", TQ28  # 토스는 '로켓' 상관없이 💙 · 조건 붙은 %는 가격 줄 (N%↓) X
 assert H.mall_view("🔥 <b>[토스] 수뜰리에 2.5L 4개 (4,620원)</b>\n\n토스 하루특가\n⚠️ 88% 할인율보다 쿠팡 가격 비교가 정확", "https://toss.shopping/_m/x").split("\n")[:3] == ["💙 토스 특가 · 하루특가 🔥", "<b>수뜰리에 2.5L 4개</b>", "4,620원"]
-vv28[:] = [{"line": "💙 토스 특가 오늘만"}, {"line": "집밥용으로 쟁여 둘 만함"}]
+vv28[:] = [{"line": "💙 토스 특가 오늘만"}, {"line": "집밥용으로 쟁여 둘 만해요"}]
 sv28c = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: vv28.pop(0)), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 o28 = H.th_voice({}, TT28, "https://toss.shopping/_m/t28"); H.ai_voice, H.random = sv28c
-assert "토스 특가 오늘만" not in o28 and o28.count("💙") == 1 and "\n\n집밥용으로 쟁여 둘 만함\n\n" in o28, o28  # 라벨 줄(💙) = 문장 아님 -> 1번 다시
+assert "토스 특가 오늘만" not in o28 and o28.count("💙") == 1 and "\n\n집밥용으로 쟁여 둘 만해요\n\n" in o28, o28  # 라벨 줄(💙) = 문장 아님 -> 1번 다시
 (H.tg, H.EVENTS, time.time, H.TOSS_NO_CMP, H.toss, H.ai_pick, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN) = sv28[:9]; H.E.pop("THREADS_TOKEN", None); H.http = fake_http; json.dump([], open("posts.json", "w"))
 # 9-29 (10/22 15:3x Cowork·진우 '점검 기간에도 토스 글 채널·Threads 둘 다 계속(수익 0이어도)'): 토스 쉐어링크 점검 10/30 00:00~11/4 23:59(KST) = 새 링크 X·만들어 둔 링크(tlink) 재사용,
 #      점검 때문인 실패는 바로 안 알리고 하루 1번 요약, 11/5 첫 실행에 링크 1개 만들어 보고 되면 보통 모드 + 알림 1번, 10/28~29 미리 만들기(toss_stock)
@@ -8231,22 +8237,22 @@ pv74, vv74, ch74 = [], [], []
 H.ai_voice = lambda prompt: pv74.append(prompt) or vv74.pop(0)
 H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or xs[0])})
 W74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 · 1개당 최저 🔥\n코멧 손난로 100g 30개\n8,860원 → 1개 295원\n🚚 내일(금) 도착 · 무료반품\n⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)\n\n👉 https://link.coupang.com/a/w74"
-vv74[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+vv74[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]
 time.time = lambda: TK("2026-10-26 13:05"); o74 = H.th_voice({}, W74, "https://link.coupang.com/a/w74")
-assert re.search(r"\n\n⏰ 10/26 10시 와우(?:회원)?가 · 결제 전 확인\n\n주머니마다 하나씩 넣어 두기 좋겠다\n단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음\n\n👉 https://link\.coupang\.com/a/w74$", o74), o74
+assert re.search(r"\n\n⏰ 10/26 10시 와우(?:회원)?가 · 결제 전 확인\n\n주머니마다 하나씩 넣어 두기 좋겠어요\n단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음\n\n👉 https://link\.coupang\.com/a/w74$", o74), o74
 assert ch74[-1] == [1, 2, 3, 4] and H.TH_FRIEND.strip() in pv74[0] and "계산형" in pv74[0]  # 우리 기록 재료 없음 = 비교형 X · 친구 말투 지시
 R74 = W74.replace("⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)", "🔁 특가 때 8,860원 가격으로 다시 왔어요\n⚠️ 결제 전 최종가 (10/26 10시)").replace("8,860원 → 1개 295원", "8,860원 · ⭐ 4.5 (12)")
-vv74[:] = [{"line": "다들 이거 몇 개씩 쟁여 둬?"}]; ch74.clear()
+vv74[:] = [{"line": "다들 이거 몇 개씩 쟁여 두세요?"}]; ch74.clear()
 H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or 3)})
 o74 = H.th_voice({}, R74, "https://link.coupang.com/a/w74")
-assert ch74[-1] == [1, 2, 3, 4, 5] and "\n다들 이거 몇 개씩 쟁여 둬?\n단점 하나: 리뷰가 아직 적음\n\n👉 " in o74, o74  # 🔁 기록 = 비교형 후보 · 질문형 = 물음표 OK · 리뷰 30개 밑 = 단점
+assert ch74[-1] == [1, 2, 3, 4, 5] and "\n다들 이거 몇 개씩 쟁여 두세요?\n단점 하나: 리뷰가 아직 적음\n\n👉 " in o74, o74  # 🔁 기록 = 비교형 후보 · 질문형 = 물음표 OK · 리뷰 30개 밑 = 단점
 P74 = W74.replace("⚠️ 와우회원가 · 결제 전 최종가 (10/26 10시)", "⚠️ 결제 전 최종가 (10/26 10시)")
-vv74[:] = [{"line": "이 구성 실화냐"}]
+vv74[:] = [{"line": "이 구성 괜찮네요"}]
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)})
 o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
-assert "단점" not in o74 and o74.endswith("\n\n이 구성 실화냐\n\n👉 https://link.coupang.com/a/w74"), o74  # 아쉬운 점 데이터 없음 = 줄 X(지어내지 않음)
+assert "단점" not in o74 and o74.endswith("\n\n이 구성 괜찮네요\n\n👉 https://link.coupang.com/a/w74"), o74  # 아쉬운 점 데이터 없음 = 줄 X(지어내지 않음)
 T74 = H.toss_th("생필품 베스트 3위", "더건강플러스 올리브오일 1L", "15,580원 (60%↓) · ⭐ 4.7 (11,683)", ["🙋 집밥 자주 하는 집"], "https://toss.shopping/_m/t74")
-vv74[:] = [{"line": "집밥 자주 하면 하나쯤 있으면 든든하지"}]; ch74.clear()
+vv74[:] = [{"line": "집밥 자주 하면 하나쯤 있으면 든든하죠"}]; ch74.clear()
 H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)) or xs[0])})
 nc74, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True
 o74 = H.th_voice({"tone_th": {"t": 1, "l": []}}, T74 + "\n🔁 특가 때 15,580원 가격으로 다시 왔어요", "https://toss.shopping/_m/t74"); H.TOSS_NO_CMP = nc74
@@ -8257,7 +8263,7 @@ H.TH_HOOK, H.ai_json = True, (lambda prompt, props: hk74.append(prompt) or {"hoo
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)})
 hka74, sh74 = ["겨울 되면 뭐부터 바꾸세요? 손난로죠!", "주머니 속이 차가워지는 계절이 왔어요"], {}
 def hook74(text=P74, link="https://link.coupang.com/a/w74"):
-    vv74[:] = [{"line": "이 구성 실화냐"}]
+    vv74[:] = [{"line": "이 구성 괜찮네요"}]
     o = H.th_voice(sh74, text, link)
     if sh74["thvoice"].get("h"):  # 돌림 기록 = th_deal이 글 올라간 뒤(아래 K-1 셀프체크)
         sh74["thhook"] = {"t": 1, "l": (sh74.get("thhook", {}).get("l", []) + [sh74["thvoice"]["h"]])[-2:]}
@@ -8272,7 +8278,8 @@ sh74["thhook"]["l"] = [1, 2]; assert hook74(TD74, "https://toss.shopping/_m/d74"
 sh74["thhook"]["l"] = [1, 2]; assert hook74(TD74.replace(time.strftime("%-m/%-d ", time.gmtime(time.time() + 9 * 3600)), "10/25 "), "https://toss.shopping/_m/d74") != "이 가격, 오늘 밤 12시까지예요"  # 어제 게시 시점(밤 12시 지나 올라감) = X
 H.TOSS_NO_CMP = nc74
 sh74["thhook"]["l"] = [1, 2]; assert hook74(P74.replace("⚠️ 결제 전 최종가 (10/26 10시)", "선착순 · 하루특가\n⚠️ 10/26 13:05 게시 시점 가격")) == P4_74  # 쿠팡 = 게시 시점 줄 있어도 ③ X
-sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["1개 295원 실화?", "주머니 속이 차가워지는 계절이 왔어요"]; assert hook74() == "주머니 속이 차가워지는 계절이 왔어요" and sh74["thvoice"]["h"] == 2  # ① 숫자 = 다음 차례 ②
+sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["1개 295원 실화?", "장갑 없이 나가기 망설여지는 계절이에요"]; assert hook74() == "장갑 없이 나가기 망설여지는 계절이에요" and sh74["thvoice"]["h"] == 2  # ① 숫자 = 다음 차례 ②
+sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["1개 295원 실화?", "주머니 속이 차가워지는 계절이 왔어요"]; assert hook74().startswith("🚀") and sh74["thvoice"]["ht"][-2:] == ["주머니 속이 차가워지는 계절이 왔어요", "장갑 없이 나가기 망설여지는 계절이에요"]  # ZZ ⑥ 전에 올린 Claude 훅과 같은 말(6글자↑) = X
 sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["손 시린 계절, 손난로 챙겨요", "만 원도 안 되는 손난로예요"]; o74 = hook74()
 assert o74.startswith("🚀") and "h" not in sh74["thvoice"] and sh74["thhook"]["l"] == [5, 4]  # ① 물음표 X · ② 가격 말 = ③ 근거 X · ④⑤ 직전 2개 = 훅 없음(같은 종류 연속 X)
 sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["뭐부터 사세요? 지금 바로 손난로죠!", "겨울엔 손난로 챙기셨어요❓"]; assert hook74().startswith("🚀")  # 금지 말(재촉) · ② 물음표 이모지 = X
@@ -8280,23 +8287,23 @@ sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["절반 가격이죠? 손난로요!", 
 sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["겨울 되면 뭐부터 바꿔? 손난로!", "손 시린 계절 시작 🧤"]; assert hook74().startswith("🚀")  # SS: 반말 훅 = X(친근한 존댓말만)
 sh74["thhook"]["l"] = [5, 4]; hka74[:] = ["집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻"]; assert hook74() == "집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻"  # Cowork 예(폭 26 — TH_HOOK_W)
 ak74, ar74, rw74 = H.E.get("ANTHROPIC_API_KEY"), H.ai_review, H.RUN.get("rvw"); H.E["ANTHROPIC_API_KEY"], H.RUN["rvw"] = "k", {}
-H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "주머니 속이 차가워지는 계절이 왔어요", "new": "주머니 속 차가워지는 계절 시작"}]}
-sh74["thhook"]["l"] = [4, 1]; hka74[:] = ["주머니 속이 차가워지는 계절이 왔어요"]; assert hook74().startswith("🚀")  # 재검토가 반말로 고침 = 그 줄 뺌(SS 훅 존댓말)
+H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "손난로 꺼낼 계절이 성큼 왔어요", "new": "손난로 꺼낼 계절 시작"}]}
+sh74["thhook"]["l"] = [4, 1]; hka74[:] = ["손난로 꺼낼 계절이 성큼 왔어요"]; assert hook74().startswith("🚀")  # 재검토가 반말로 고침 = 그 줄 뺌(SS 훅 존댓말)
 H.ai_review = ar74; H.RUN.pop("rvw") if rw74 is None else H.RUN.__setitem__("rvw", rw74); H.E.pop("ANTHROPIC_API_KEY") if ak74 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak74)
-sh74["thhook"]["l"] = [3, 4]; hka74[:] = ["겨울 되면 뭐부터 바꾸세요? 손난로죠!"]; assert hook74(P74.replace("8,860원 → 1개 295원", "8,860원")) == "겨울 되면 뭐부터 바꾸세요? 손난로죠!"  # 단가 없음 = ⑤ 건너뜀
+sh74["thhook"]["l"] = [3, 4]; hka74[:] = ["출근길 주머니엔 뭐 넣으세요? 핫팩이죠!"]; assert hook74(P74.replace("8,860원 → 1개 295원", "8,860원")) == "출근길 주머니엔 뭐 넣으세요? 핫팩이죠!"  # 단가 없음 = ⑤ 건너뜀
 n74 = len(hk74); o74 = H.th_voice({}, P74.replace("https://link.coupang.com/a/w74", "https://oy.run/w74").replace(H.DISCLOSURE, H.OY_NOTE), "https://oy.run/w74")
 assert len(hk74) == n74 and not any(x in o74 for x in H.TH_HOOK_POOL)  # 올리브영 = 훅 X(큐레이터 정책)
 hk0_74 = H.th_hook; H.th_hook, sh74 = (lambda *a: ("가" * 400, 1)), {}
-vv74[:] = [{"line": "이 구성 실화냐"}]; o74 = H.th_voice(sh74, P74, "https://link.coupang.com/a/w74")
+vv74[:] = [{"line": "이 구성 괜찮네요"}]; o74 = H.th_voice(sh74, P74, "https://link.coupang.com/a/w74")
 H.th_hook = hk0_74; assert "가" * 400 not in o74 and "h" not in sh74["thvoice"], o74  # 480자 넘어 훅이 잘림 = 돌림·metrics 기록 X
 H.ai_json, H.TH_HOOK = aj74, False
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 4)}); vv74[:] = [{"line": "이거 괜찮지?"}, {"line": "이거 괜찮지?"}]
 o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 옵션별 가격 · 결제 전"), "https://link.coupang.com/a/w74")
-assert "괜찮지?" not in o74 and "\n이 구성 실화냐\n" in o74 and "단점 하나: 옵션" not in o74 and "⏰ 10/26 10시 확인 가격 · 옵션마다 다름" in o74, o74  # 질문형 아니면 물음표 X = 기본 줄 · 옵션별 가격 = ⏰ 줄이 말함(Y 10/26 — 단점 줄에 같은 말 X)
-vv74[:] = [{"line": "이 구성 실화냐"}]
+assert "괜찮지?" not in o74 and "\n이 구성 괜찮네요\n" in o74 and "단점 하나: 옵션" not in o74 and "⏰ 10/26 10시 확인 가격 · 옵션마다 다름" in o74, o74  # 질문형 아니면 물음표 X = 기본 줄 · 옵션별 가격 = ⏰ 줄이 말함(Y 10/26 — 단점 줄에 같은 말 X)
+vv74[:] = [{"line": "이 구성 괜찮네요"}]
 o74 = H.th_voice({}, P74.replace("⚠️ 결제 전", "⚠️ 사이즈와 색상 구성이 제품마다 꽤 다르니 상세페이지 사진 꼭 확인 · 결제 전"), "https://link.coupang.com/a/w74")
 assert "단점" not in o74, o74  # 단점 줄이 폰 한 줄 넘음 = X
-fl74 = lambda w, link="https://link.coupang.com/a/w74", text=P74: (vv74.__setitem__(slice(None), [{"line": "이 구성 실화냐"}]), H.th_voice({}, text.replace("⚠️ 결제 전", f"⚠️ {w} · 결제 전"), link))[1]
+fl74 = lambda w, link="https://link.coupang.com/a/w74", text=P74: (vv74.__setitem__(slice(None), [{"line": "이 구성 괜찮네요"}]), H.th_voice({}, text.replace("⚠️ 결제 전", f"⚠️ {w} · 결제 전"), link))[1]
 assert "단점" not in fl74("쿠폰 없이도 이 가격") and "단점 하나: 사이즈 옵션 확인 필요" in fl74("사이즈 옵션 확인") and "단점" not in fl74("카드 무이자")  # 부정·'옵션' 낱말만·무이자 = 지어내지 않음
 assert "단점 하나: 쿠폰 받아야 이 가격" in fl74("2,000원 쿠폰 적용가") and "단점 하나: 카드할인 조건가" in fl74("카드할인가")
 nc74, H.TOSS_NO_CMP = H.TOSS_NO_CMP, True
@@ -8307,9 +8314,9 @@ H.random = type("R", (), {"choice": staticmethod(lambda xs: ch74.append(list(xs)
 for st74 in ("💡 처음 소개 때 8,860원", "👍 지금은 특가 아님 · 특가 때 7,900원"):
     vv74[:] = [{"line": "어제보다 싸졌네"}, {"line": "지난번보다 내려왔네"}]
     o74 = H.th_voice({}, P74.replace("🚚", st74 + "\n🚚"), "https://link.coupang.com/a/w74")
-    assert 5 not in ch74[-1] and "\n이 구성 실화냐\n" in o74, (ch74[-1], o74)  # '내려감' 기록 없음 = 비교형 X · '싸졌네·내려왔네' X
+    assert 5 not in ch74[-1] and "\n이 구성 괜찮네요\n" in o74, (ch74[-1], o74)  # '내려감' 기록 없음 = 비교형 X · '싸졌네·내려왔네' X
 vv74[:] = [{"line": "이건 그냥 사 둬"}, {"line": "얼른 질러"}]; o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
-assert "사 둬" not in o74 and "질러" not in o74 and "\n이 구성 실화냐\n" in o74  # 반말 재촉 X
+assert "사 둬" not in o74 and "질러" not in o74 and "\n이 구성 괜찮네요\n" in o74  # 반말 재촉 X
 vv74[:] = [{"line": "다들 몇 개씩 쟁여❓"}, {"line": "만 원도 안 하네"}]; o74 = H.th_voice({}, P74, "https://link.coupang.com/a/w74")
 assert "❓" not in o74 and "만 원" not in o74  # 질문형 아니면 물음표 이모지 X · 가격 말 X
 vv74[:] = [ValueError("down")]; H.ai_voice = lambda prompt: (_ for _ in ()).throw(vv74.pop(0))
@@ -8321,7 +8328,7 @@ t74 = []; H.TH_VOICE, H.th_reply_ok = False, (lambda seen: True)
 H.th_text = lambda tok, me, text, link, tag="핫딜": t74.append(("text", text, link)) or {"id": "T1"}
 H.th_img = lambda tok, me, text, image, tag="핫딜": t74.append(("img", text, image)) or {"id": "P1"}
 H.th_reply = lambda tok, to, text, link=None: t74.append(("reply", to, text, link)) or "R1"
-B74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n핫팩 30개\n💰 8,860원\n\n⏰ 10/26 10시 가격 · 결제 전 확인\n\n이 구성 실화냐\n\n👉 https://link.coupang.com/a/k74"
+B74 = f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n핫팩 30개\n💰 8,860원\n\n⏰ 10/26 10시 가격 · 결제 전 확인\n\n이 구성 괜찮네요\n\n👉 https://link.coupang.com/a/k74"
 s74 = {}
 with contextlib.redirect_stdout(io.StringIO()):
     assert H.th_deal(s74, "tk", "me", B74, "https://link.coupang.com/a/k74", image="https://thumbnail.coupangcdn.com/k74.jpg") == "P1"
@@ -8656,7 +8663,7 @@ with contextlib.redirect_stdout(io.StringIO()):
 (H.TH_SLOTS, H.TH_BEAUTY_MIN) = sv77s
 assert "에이지랩 크림" in s77s["thq"]["q"][0]["text"] and "💰 1개당 6,300원꼴" in s77s["thq"]["q"][0]["text"], s77s.get("thq")
 # Threads 개별 글(th_voice): 💰 단가 줄(봉·캔·족·박스·세트)이 가격 줄 괄호로
-sv77v = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: {"line": "집에 두면 든든함"}), type("R", (), {"choice": staticmethod(lambda xs: 4)})
+sv77v = (H.ai_voice, H.random); H.ai_voice, H.random = (lambda prompt: {"line": "집에 두면 든든해요"}), type("R", (), {"choice": staticmethod(lambda xs: 4)})
 for n77, p77u, w77 in (("재래김 20봉", 9900, "(1봉당 495원)"), ("코카콜라 24캔", 19900, "(1캔당 829원)"), ("양말 10족", 9900, "(1족당 990원)"), ("신라면 3박스", 30000, "(1박스당 10,000원)")):
     x77 = {"displayName": n77, "displayPrice": p77u, "discountRate": 10}
     o77v = H.th_voice({}, H.toss_th("하루특가 · 밤 12시까지", n77, H.toss_price(x77), H.toss_ul(x77), "https://toss.shopping/_m/v77"), "https://toss.shopping/_m/v77")
@@ -8966,9 +8973,9 @@ def th82(hook, name, money, line, con=""):
 rv82 = lambda t, ls, nm=(): H.RUN.update(rvw={}) or H.review("th", t, ls, "", dup=True, names=nm, hook=ls[0])  # ls[0] = 훅
 W1 = ("날 더워지면 물 떨어질 때 제일 곤란한 계절", "크리스탈 생수 2L 12병", "💰 6,900원 (1병 575원)", "주말 장보기 전에 담아 두기 좋겠다")
 W2 = ("보자마자 공유각이라 올림", "제스프리 바나나 1.5kg", "💰 5,900원", "한 박스로 넉넉히 두면 계산이 편하겠다")
-W3 = ("보자마자 공유각이라 올림", "프로에잇 팬티라이너 40매 4팩", "💰 12,900원 (1매 81원)", "가방에 몇 개씩 넣어 다니기 좋겠다", "단점 하나: 색상 옵션")
+W3 = ("보자마자 공유각이라 올림", "프로에잇 팬티라이너 40매 4팩", "💰 12,900원 (1매 81원)", "가방에 몇 개씩 넣어 다니기 좋겠어요", "단점 하나: 색상 옵션")
 W4 = ("밥도둑 하나 들이면 반찬 걱정 끝", "총각김치 2kg", "💰 9,900원", "이건 그냥 밥도둑이다")
-W5 = ("1개당 7,400원꼴", "수뜬리에 탈취제 2개", "💰 14,800원 (1개당 7,400원)", "현관에 하나씩 두기 좋겠다")
+W5 = ("1개당 7,400원꼴", "수뜬리에 탈취제 2개", "💰 14,800원 (1개당 7,400원)", "현관에 하나씩 두기 좋겠어요")
 assert rv82(th82(*W1), [W1[0], W1[3]], ["크리스탈", "생수"]) == {W1[0]: ""}
 assert rv82(th82(*W2), [W2[0], W2[3]]) == {}  # 뜻 안 통함 = 코드로는 X(Claude 몫)
 assert rv82(th82(*W3), [W3[0], W3[3], W3[4]]) == {W3[4]: ""} and rv82(th82(*W3[:4], "단점 하나: 색상은 옵션에서 따로 골라야 함"), ["단점 하나: 색상은 옵션에서 따로 골라야 함"]) == {}
@@ -8995,8 +9002,8 @@ assert H.pick_price(tp82, tv82("2026-10-26 09:00")) == "8,900원 · ⚠️ 10/26
 # ④ Claude 재검토(가짜 답): 고친 줄 = 코드 검사 다시(계절·없던 숫자·너무 김 = 뺌) · ok인데 코드에 걸린 줄 = 뺌 · 실패 = 코드 검사만 · 실행마다 RV_MAX번
 H.E["ANTHROPIC_API_KEY"], pr82, fx82 = "k", [], []
 H.ai_review = lambda prompt: pr82.append(prompt) or (lambda a: (_ for _ in ()).throw(a) if isinstance(a, Exception) else a)(fx82.pop(0))
-fx82[:] = [{"ok": False, "fix": [{"line": W2[3], "new": "아침마다 하나씩 집어 가기 좋겠다"}]}]
-assert rv82(th82(*W2), [W2[0], W2[3]]) == {W2[3]: "아침마다 하나씩 집어 가기 좋겠다"}  # 바나나 = Claude가 잡아 고침
+fx82[:] = [{"ok": False, "fix": [{"line": W2[3], "new": "아침마다 하나씩 집어 가기 좋겠어요"}]}]
+assert rv82(th82(*W2), [W2[0], W2[3]]) == {W2[3]: "아침마다 하나씩 집어 가기 좋겠어요"}  # 바나나 = Claude가 잡아 고침
 assert c82["line"] in pr82[0] and "⑤ 뜻이 통함" in pr82[0] and "글 전체:\n" + th82(*W2) in pr82[0] and f"멘트 줄:\n- {W2[0]}\n- {W2[3]}" in pr82[0] and "코드 검사에 걸린 줄" not in pr82[0]
 fx82[:] = [{"ok": False, "fix": [{"line": W1[0], "new": "물은 미리 쟁여 놓는 게 편함"}]}]
 assert rv82(th82(*W1), [W1[0], W1[3]], ["크리스탈", "생수"]) == {W1[0]: "물은 미리 쟁여 놓는 게 편함"} and f"코드 검사에 걸린 줄(꼭 고치거나 빼기):\n- {W1[0]} — 계절·기온(더워지)" in pr82[-1]
@@ -9022,27 +9029,27 @@ vv82, hk82 = [], []
 H.ai_voice, H.ai_json, H.TH_HOOK = (lambda prompt: vv82.pop(0)), (lambda prompt, props: {"hook": hk82.pop(0)}), True
 H.random = type("R", (), {"choice": staticmethod(lambda xs: 2 if 2 in xs else xs[0])})
 fx82[:] = [{"ok": True, "fix": []}] * 4; H.RUN["rvw"] = {}
-hk82[:], vv82[:] = ["날 더워지면 손 시릴 일 없죠"], [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+hk82[:], vv82[:] = ["날 더워지면 손 시릴 일 없죠"], [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [5, 1]}}, Z82, "https://link.coupang.com/a/z82")  # ② 계절·상황 차례 -> 계절 틀림 = ③(근거 없음) 건너뛰고 ④ 기본 줄
 assert o82.split("\n\n")[1] == H.TH_HOOK_POOL[sum(map(ord, "코멧 손난로 100g 30개")) % 3] and "더워지" not in o82, o82
-hk82[:], vv82[:] = ["반찬 고민될 때 뭐 꺼내세요? 손난로죠!"], [{"line": "손난로 꺼내기 딱 좋은 날씨"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+hk82[:], vv82[:] = ["반찬 고민될 때 뭐 꺼내세요? 손난로죠!"], [{"line": "손난로 꺼내기 딱 좋은 날씨예요"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [4, 5]}}, Z82, "https://link.coupang.com/a/z82")  # 끝 줄이 훅 낱말 반복(상품명 낱말 '손난로'는 빼고 봄 — '꺼내') = 1번 다시
-assert "\n주머니마다 하나씩 넣어 두기 좋겠다\n" in o82 and not vv82, o82
-vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]
+assert "\n주머니마다 하나씩 넣어 두기 좋겠어요\n" in o82 and not vv82, o82
+vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [3, 4]}}, Z82, "https://link.coupang.com/a/z82")
 assert o82.split("\n\n")[1] == "1개 295원꼴이에요" and "\n💰 8,860원\n" in o82 and o82.count("295원") == 1, o82  # 탈취제 '1개당 7,400원' 2번 = 💰 줄 단가 X
-vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; H.TH_HOOK, H.REVIEW = False, False  # 재검토 없이도(뿌리에서) 안 만듦
+vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]; H.TH_HOOK, H.REVIEW = False, False  # 재검토 없이도(뿌리에서) 안 만듦
 o82 = H.th_voice({}, Z82.replace("⚠️ 와우회원가 · ", "⚠️ 색상 옵션 · "), "https://link.coupang.com/a/z82"); H.REVIEW = True
-assert "단점 하나" not in o82 and o82.endswith("\n\n주머니마다 하나씩 넣어 두기 좋겠다\n\n👉 https://link.coupang.com/a/z82"), o82  # 라이너 '단점 하나: 색상 옵션' = 안 만듦
-H.RUN["rvw"] = {}; vv82[:] = [{"line": "더위 탈 때 꺼내 쓰기 좋겠다"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; fx82[:] = [{"ok": True, "fix": []}]
-o82 = H.th_voice({}, Z82, "https://link.coupang.com/a/z82"); assert "\n주머니마다 하나씩 넣어 두기 좋겠다\n" in o82 and not vv82, o82  # 끝 줄 계절 틀림 = 1번 다시
-H.RUN["rvw"], H.TH_HOOK = {}, True; hk82[:] = ["반찬 고민될 때 뭐 꺼내세요? 김이죠!"]; vv82[:] = [{"line": "가방에 몇 개씩 넣어 다니기 좋겠다"}]
-fx82[:] = [{"ok": False, "fix": [{"line": "반찬 고민될 때 뭐 꺼내세요? 김이죠!", "new": ""}, {"line": "가방에 몇 개씩 넣어 다니기 좋겠다", "new": ""}]}]
+assert "단점 하나" not in o82 and o82.endswith("\n\n주머니마다 하나씩 넣어 두기 좋겠어요\n\n👉 https://link.coupang.com/a/z82"), o82  # 라이너 '단점 하나: 색상 옵션' = 안 만듦
+H.RUN["rvw"] = {}; vv82[:] = [{"line": "더위 탈 때 꺼내 쓰기 좋겠어요"}, {"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]; fx82[:] = [{"ok": True, "fix": []}]
+o82 = H.th_voice({}, Z82, "https://link.coupang.com/a/z82"); assert "\n주머니마다 하나씩 넣어 두기 좋겠어요\n" in o82 and not vv82, o82  # 끝 줄 계절 틀림 = 1번 다시
+H.RUN["rvw"], H.TH_HOOK = {}, True; hk82[:] = ["반찬 고민될 때 뭐 꺼내세요? 김이죠!"]; vv82[:] = [{"line": "가방에 몇 개씩 넣어 다니기 좋겠어요"}]
+fx82[:] = [{"ok": False, "fix": [{"line": "반찬 고민될 때 뭐 꺼내세요? 김이죠!", "new": ""}, {"line": "가방에 몇 개씩 넣어 다니기 좋겠어요", "new": ""}]}]
 o82 = H.th_voice({"thhook": {"t": 1, "l": [4, 5]}}, Z82, "https://link.coupang.com/a/z82"); H.TH_HOOK = False
 assert "반찬" not in o82 and "가방" not in o82 and "단점" not in o82 and o82.split("\n\n")[1].startswith("🚀"), o82  # 3줄 중 2줄 걸림 = 남은 단점 줄도 빼고 멘트 없는 틀
-H.RUN["rvw"] = {}; vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; fx82[:] = [{"ok": False, "fix": [{"line": "단점 하나: 사이즈 교환 불가", "new": ""}]}]
+H.RUN["rvw"] = {}; vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]; fx82[:] = [{"ok": False, "fix": [{"line": "단점 하나: 사이즈 교환 불가", "new": ""}]}]
 o82 = H.th_voice({}, Z82.replace("⚠️ 와우회원가 · ", "⚠️ 사이즈 (정사이즈 아님) 교환 불가 · "), "https://link.coupang.com/a/z82"); assert "단점" not in o82 and "\n주머니마다" in o82, o82  # 빈칸 둘인 조각도 재검토 답과 같게 맞춤
-H.RUN["rvw"] = {}; vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠다"}]; fx82[:] = [{"ok": False, "fix": [{"line": "주머니마다 하나씩 넣어 두기 좋겠다", "new": ""}, {"line": "단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음", "new": ""}]}]
+H.RUN["rvw"] = {}; vv82[:] = [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요"}]; fx82[:] = [{"ok": False, "fix": [{"line": "주머니마다 하나씩 넣어 두기 좋겠어요", "new": ""}, {"line": "단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음", "new": ""}]}]
 o82 = H.th_voice({}, Z82, "https://link.coupang.com/a/z82")
 assert "주머니" not in o82 and "단점" not in o82 and re.search(r"\n\n⏰ 10/26 10시 [^\n]*결제 전 확인\n\n👉 https://link\.coupang\.com/a/z82$", o82) and not fx82, o82  # 멘트 줄 대부분 걸림 = 멘트 줄 없는 깔끔한 틀
 # 채널·토스 글 Claude 칸(rv_fields): 걸린 칸만 빈칸 · pts 줄 뺌 · post_or_draft = 고친 한 줄로 글 만듦
@@ -9243,10 +9250,10 @@ H.RUN.pop("season", None) if rs83 is None else H.RUN.__setitem__("season", rs83)
 H.E.pop("ANTHROPIC_API_KEY", None) if ak83 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak83)
 C83.ANIMALS.clear(); C83.ANIMAL_USED.clear(); H.ANIMALS_MD = mdr83
 shutil.rmtree(d83)
-# Z 고침(10/26 12:47 채널 밀크티 글 '💡 단위가격 쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠다'): 재검토가 단위가격 칸을 문장으로 고치면 그 칸 뺌(…당 N원 꼴만 고침 OK)
+# Z 고침(10/26 12:47 채널 밀크티 글 '💡 단위가격 쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠어요'): 재검토가 단위가격 칸을 문장으로 고치면 그 칸 뺌(…당 N원 꼴만 고침 OK)
 sv83z = (H.ai_review, H.E.get("ANTHROPIC_API_KEY"), H.RUN.get("rvw"))
 H.E["ANTHROPIC_API_KEY"], H.RUN["rvw"] = "k", {}
-H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "1L당 1,500원", "new": "쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠다"}, {"line": "500ml 2개 9,800원 → 1개당 4,900원", "new": "500ml 1개당 4,900원꼴"}]}
+H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": "1L당 1,500원", "new": "쌀쌀해지는 요즘 따뜻한 밀크티 만들기 좋겠어요"}, {"line": "500ml 2개 9,800원 → 1개당 4,900원", "new": "500ml 1개당 4,900원꼴"}]}
 pz83 = [{"comment": "광동 밀크티 베이스 1L가 1,500원이야", "unit": "1L당 1,500원"}, {"comment": "보리차 2개 9,800원", "unit": "500ml 2개 9,800원 → 1개당 4,900원"}]
 H.rv_fields("ch", pz83, ["[네이버] 광동 밀크티용 베이스 1L 1개 (1,500원/네멤무배)", "[쿠팡] 보리차 500ml 2개 (9,800원)"])
 assert pz83[0]["unit"] == "" and pz83[0]["comment"] == "광동 밀크티 베이스 1L가 1,500원이야" and pz83[1]["unit"] == "500ml 1개당 4,900원꼴", pz83  # 문장 = 칸 뺌 · 단위가격 꼴 = 고침
@@ -9264,7 +9271,7 @@ H.RUN.pop("rvw", None) if rw83z is None else H.RUN.__setitem__("rvw", rw83z)
 # 9-84) Y Threads 멘트 점검(10/26 Cowork — 진우 '쓰레드 멘트 오류 확인해줘', 06~10시 글 10개): ①계절 훅·④같은 말 반복 = Z(9-82) · ② 네이버 👍 머리 줄·⏰ 옵션 줄 ·
 #       ③ 픽 시각 표기 하나('(M/D H시 가격)' — 토스 = 게시 시점 줄 그대로)·24시간 지난 이벤트·체험가 X · ⑤ 끝 줄 좋은 예·나쁜 예 + 소리 내 읽기 · ⑥ 토스 사진(9-2g 회차 채움·화장품 자리·밤 재오픈) · ⑦ 달력 이름 = promos.json
 sv84 = (H.REVIEW, H.TH_HOOK, H.ai_voice, time.time)
-H.REVIEW, H.TH_HOOK, H.ai_voice = False, False, (lambda prompt: {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠다"})
+H.REVIEW, H.TH_HOOK, H.ai_voice = False, False, (lambda prompt: {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠어요"})
 Y84 = (f"{H.NAVER_NOTE}\n\n👍 [네이버] 오휘 얼티밋 커버 데니어 쿠션 본품+리필 (58,500원)\n\n오휘 · 10% 할인(정가 65,000원 기준) · ⭐ 4.76 (리뷰 2,340)\n💰 본품 13g + 리필 13g · SPF50+\n"
        "💡 리필 포함 기획 세트\n⚠️ 확인할 점: 호수(색상) 옵션 · 배송비 · 결제 전 최종가 확인 (10/25 20시 가격)\n\n🛒 구매하러 가기 https://naver.me/G8fRE2T1")
 o84 = H.th_voice({}, Y84, "https://naver.me/G8fRE2T1")
@@ -9275,12 +9282,12 @@ assert "\n\n🔥 [네이버]\n오휘" in o84 and "💚" not in o84 and "\n⏰ 10
 o84 = H.th_voice({}, Y84.replace("👍 [네이버]", "👍 [11번가]"), "https://naver.me/G8fRE2T1"); assert "\n\n👍 [11번가]\n" in o84, o84  # 네이버만
 o84 = H.th_voice({}, Y84.replace("호수(색상) 옵션 · ", "옵션별 가격 상이 · "), "https://naver.me/G8fRE2T1")
 assert "옵션마다 다름" in o84 and "단점 하나: 옵션" not in o84, o84  # ⏰ 줄이 옵션을 말하면 단점 줄에서 같은 말 X(④ 같은 말 반복)
-pv84, hk84, svj84 = [], ["겨울 반찬 고민은 끝이에요"], (H.ai_json, H.TH_HOOK)
-H.ai_voice, H.ai_json, H.TH_HOOK = (lambda prompt: pv84.append(prompt) or {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠다"}), (lambda prompt, props: {"hook": hk84[0]}), True
-o84 = H.th_voice({"thhook": {"t": 1, "l": [5, 1]}}, Y84, "https://naver.me/G8fRE2T1")
-assert pv84 and all("\n첫 줄(훅): " in p for p in pv84) and "\n겨울 반찬 고민은 끝이에요\n" in o84, (pv84, o84)  # ⑤ 끝 줄 프롬프트에 훅 = '첫 줄과 같은 낱말 X'를 Claude가 스스로 확인
+pv84, hk84, svj84 = [], ["반찬 고민될 때 뭐부터 찾으세요? 김이죠!"], (H.ai_json, H.TH_HOOK)
+H.ai_voice, H.ai_json, H.TH_HOOK = (lambda prompt: pv84.append(prompt) or {"line": "도시락 쌀 때 하나씩 꺼내 쓰기 좋겠어요"}), (lambda prompt, props: {"hook": hk84[0]}), True
+o84 = H.th_voice({"thhook": {"t": 1, "l": [4, 5]}}, Y84, "https://naver.me/G8fRE2T1")  # ① 차례(② 계절 = 상품 쓰임과 이어질 때만 — ZZ)
+assert pv84 and all("\n첫 줄(훅): " in p for p in pv84) and "\n반찬 고민될 때 뭐부터 찾으세요? 김이죠!\n" in o84, (pv84, o84)  # ⑤ 끝 줄 프롬프트에 훅 = '첫 줄과 같은 낱말 X'를 Claude가 스스로 확인
 H.ai_json, H.TH_HOOK = svj84
-assert "말투 지시가 먼저" in H.TH_TONE_PROMPT and "아침마다 하나씩 집어 가기 좋겠다" in H.TH_TONE_PROMPT and "'한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함)" in H.TH_TONE_PROMPT and "소리 내 읽어" in H.TH_TONE_PROMPT  # ⑤ 좋은 예·나쁜 예 + 스스로 읽기
+assert "말투 지시가 먼저" in H.TH_TONE_PROMPT and "아침마다 하나씩 집어 가기 좋겠어요" in H.TH_TONE_PROMPT and "'한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함)" in H.TH_TONE_PROMPT and "소리 내 읽어" in H.TH_TONE_PROMPT  # ⑤ 좋은 예·나쁜 예 + 스스로 읽기
 assert "'오늘' 줄의 날짜·기온" in H.TH_HOOK_ASK[2]  # ① 훅 ② 계절·상황 = 오늘 날짜·기온 줄(Z season_note)에 맞게
 assert H.pick_price({"t": "2026-10-24 09:30", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원)", "url": "u", "now": "7,490원", "chk": "10/24 9시"}) == "7,490원 (10/24 9시 가격)"  # ③ '확인' -> '가격'
 assert H.pick_price({"t": "2026-10-23 20:05", "text": "🔥 [쿠팡] 라네즈 (19,020원)", "url": "u"}) == "19,020원 (10/23 20시 가격)"  # ③ '글 가격' -> '(M/D H시 가격)'
@@ -9335,7 +9342,7 @@ assert len(q85) == 1 and (q85[0]["k"], q85[0]["r"], q85[0]["id"], q85[0]["s"], q
 assert T85.startswith(H.th_note(H.DISCLOSURE)) and "🚀 쿠팡 로켓 · 가전디지털 베스트 2위 🔥\n한경희 가열식 가습기 3L\n89,000원\n⚠️ 10/26 18:10 게시 시점 가격\n\n👉 https://link.coupang.com/re/AFFSDP?p=2" in T85 and "사진:" not in T85, T85
 assert "cpev_2" in s85 and "cpeve_20261026_18" in s85 and "8점" in o85.getvalue() and not re.search(r"\d{4}|\d,\d{3}|원", o85.getvalue()), o85.getvalue()  # 로그 = 이름·점수만(가격 X)
 time.time = lambda: TK("2026-10-26 19:10"); H.cp_eve(s85); assert len(cw85) == 1  # 줄에 기다리는 가전이 있으면 X
-sv85v = (H.REVIEW, H.ai_voice, H.TH_HOOK); H.REVIEW, H.ai_voice, H.TH_HOOK = False, (lambda prompt: {"line": "자기 전에 틀어 두기 좋겠다"}), False
+sv85v = (H.REVIEW, H.ai_voice, H.TH_HOOK); H.REVIEW, H.ai_voice, H.TH_HOOK = False, (lambda prompt: {"line": "자기 전에 틀어 두기 좋겠어요"}), False
 v85 = H.th_voice({}, T85, "https://link.coupang.com/re/AFFSDP?p=2")
 assert v85 != T85 and "⚠️ 10/26 18:10 게시 시점 가격" in v85 and "⏰" not in v85 and "🚀 쿠팡 로켓 · 가전디지털 베스트 2위 🔥" in v85, v85  # 쿠팡 API 상품도 게시 시점 줄 그대로(⏰ M/D H시 X)
 (H.REVIEW, H.ai_voice, H.TH_HOOK) = sv85v
@@ -9437,7 +9444,7 @@ assert [i for i, _ in S.day_deals(P86, "2026-10-26")] == [1, 2]  # 가격 못 �
 #       주제 5가지 돌림(최근 덜 쓴 것) · 퀴즈 = 우리 기록 숫자만 · 달력 = promos 기간만 · 금지어 걸리면 X · 재검토 1번 · 주제 태그 '일상' · 대가성 문구 X · metrics kind chat + 48시간 조회·답글
 sv87 = (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http)
 d87 = tempfile.mkdtemp(); cwd87 = os.getcwd(); os.chdir(d87); json.dump([], open("posts87.json", "w")); H.POSTS, H.METRICS = "posts87.json", "m87.json"
-po87, pr87, L87 = [], [], [["마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라고요", "오늘도 과자 코너 앞에서 무너졌어요", "다들 장보기 목록 끝까지 지키는 편이세요?"]]
+po87, pr87, L87 = [], [], [["마트 가면 계획에 없던 거 꼭 하나씩 담게 되죠", "과자 코너 앞은 늘 고비예요", "다들 장보기 목록 끝까지 지키는 편이세요?"]]
 H.E["THREADS_TOKEN"] = "tk"; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po87.append((text, tag, link)) or {"id": f"C{len(po87)}"}
 H.ai_json = lambda prompt, props, img=None: pr87.append(prompt) or {"lines": L87[-1]}
 H.review = lambda *a, **k: {}; H.cur_events = lambda seen=None: []; H.promo_list = lambda today: []; H.price_records = lambda *a, **k: {}
@@ -9449,12 +9456,12 @@ def chat87(at, s):
 s87 = {}
 assert chat87("2026-10-27 13:05", s87) == "" and not po87 and not s87  # 13:10 전 = X
 o87 = chat87("2026-10-27 13:12", s87)
-assert po87 == [("마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라고요\n오늘도 과자 코너 앞에서 무너졌어요\n다들 장보기 목록 끝까지 지키는 편이세요?", "일상", None)], po87  # 대가성 문구 X · 링크 X · 주제 태그 일상
+assert po87 == [("마트 가면 계획에 없던 거 꼭 하나씩 담게 되죠\n과자 코너 앞은 늘 고비예요\n다들 장보기 목록 끝까지 지키는 편이세요?", "일상", None)], po87  # 대가성 문구 X · 링크 X · 주제 태그 일상
 assert "chat post: shop C1 | 마트 가면" in o87 and s87["chat"]["h"][-1][:2] == ["2026-10-27", "shop"] and "C1" in s87["chat"]["m"] and "chat_20261027" in s87 and s87["thnd"]["ts"]
 assert "장보기 습관 공감" in pr87[-1] and "- (없음)" in pr87[-1]; chat87("2026-10-27 14:00", s87); assert len(po87) == 1  # 하루 1번
 assert chat87("2026-10-28 13:12", {"bundles": {"ts": [TK("2026-10-28 13:08")]}}) == "" and len(po87) == 1  # 방금 묶음 글(busy) = 다음 실행
-L87.append(["치약 끝까지 짜는 파랑 그냥 새로 뜯는 파가 있잖아요", "저는 끝까지 짜다가 손목 나갈 뻔한 파예요", "다들 어느 쪽이세요?"])
-o87 = chat87("2026-10-28 13:12", s87); assert "chat post: home C2" in o87 and "살림 공감" in pr87[-1] and "- 마트 가면 계획에 없던 거 꼭 하나씩 담게 되더라" in pr87[-1]  # 다음 날 = 안 쓴 주제(장보기 X) · 최근 글 겹치지 않게
+L87.append(["치약 끝까지 짜는 파랑 그냥 새로 뜯는 파가 있잖아요", "끝까지 짜다가 손목 나갈 뻔한 분도 계시죠", "다들 어느 쪽이세요?"])
+o87 = chat87("2026-10-28 13:12", s87); assert "chat post: home C2" in o87 and "살림 공감" in pr87[-1] and "- 마트 가면 계획에 없던 거 꼭 하나씩 담게 되죠" in pr87[-1]  # 다음 날 = 안 쓴 주제(장보기 X) · 최근 글 겹치지 않게
 # 앞뒤 30분 비딜 글: 방금 올린 비딜 묶음 글(thnd)·큐레이션 시각 = 다음 실행(30분 뒤 첫 빈 실행) · 3시간 넘으면 그날 X
 s87b = {"thnd": {"t": TK("2026-10-29 12:55"), "ts": [TK("2026-10-29 12:55")]}}; L87.append(L87[0])
 assert "앞뒤 30분 안 비딜 글 12:55" in chat87("2026-10-29 13:12", s87b) and len(po87) == 2 and "chat_20261029" not in s87b
@@ -9539,7 +9546,7 @@ assert len(po87) == n87 + 1 and "규칙 걸림 -> 안 올림" in o87 and "무례
 q88 = [{"hook": "이것도 몰라?"}, {"hook": "다들 이거 몇 개씩 사 두세요?"}]; H.ai_json = lambda prompt, props, img=None: pr87.append(prompt) or q88.pop(0)
 assert H.th_hook({"thhook": {"l": [5]}}, "생수 2L", False, "", "^$", []) == ("다들 이거 몇 개씩 사 두세요?", 1) and "다시: 무례 X" in pr87[-1] and "무례 X: 사람·집단 놀림" in pr87[-2]
 q88 = [{"hook": "이것도 몰라?"}, {"hook": "아직도 정가 주고 사?"}, {"hook": "장 볼 때마다 생각나는 그거 있죠"}]
-assert H.th_hook({"thhook": {"l": [5]}}, "생수 2L", False, "", "^$", []) == ("장 볼 때마다 생각나는 그거 있죠", 2) and not q88
+assert H.th_hook({"thhook": {"l": [5]}}, "동서 보리차 티백 100개", False, "", "^$", []) == ("장 볼 때마다 생각나는 그거 있죠", 2) and not q88  # ② 계절 = 상품 쓰임과 이어질 때만(ZZ — 보리차 O · 생수 X)
 assert H.th_c_line("이것도 몰라?", [], False) == "" and 'f"{s}\\n{hook}"))' in inspect.getsource(H.th_voice) and "TH_FUN" in inspect.getsource(H.th_voice) and "rude(s)" in inspect.getsource(H.poll_ai) and "fun=TH_FUN" in inspect.getsource(H.poll_ai) \
     and "not rude(rules[0][4])" in inspect.getsource(H.log_text) and "TH_FUN" in inspect.getsource(H.th_c_gen)
 with contextlib.redirect_stdout(io.StringIO()):
@@ -9910,13 +9917,13 @@ for l94, w94 in ((["마트 가면 꼭 하나 더 담게 됨", "다들 그러세�
                  (["요즘 아침엔 쌀쌀해지니까", "다들 따뜻한 거 찾으세요?"], "존댓말"), (["마트 가면 늘 이래요", "너는?"], "존댓말"), (["장 보러 가면 꼭 하나 더 담게 되니까", "다들 그러니까?"], "존댓말"), (["장 보러 가면 꼭 하나 더 담게 돼요", "다들 그러니까?"], "존댓말"),  # '~니까'(반말 이유)·'너는?' X
                  (["Dove 비누 좋아하는 분 계세요", "다들 어떠세요?"], "영문(Dove")):
     assert H.chat_ok(l94).startswith(w94), (l94, H.chat_ok(l94))
-for l94 in (["마트 가면 늘 사는 게 정해져 있어요", "다들 뭐 사세요?"], ["오늘 김 글만 세 번 올린 핫딜픽이에요 ㅋㅋ", "다들 장 보러 가면 몇 개씩 담으세요?"], ["화장지 마지막 한 롤 남았을 때 제일 급해지죠", "그럴 때 나는?"],
+for l94 in (["마트 가면 늘 사는 게 정해져 있어요", "다들 뭐 사세요?"], ["오늘 김 글만 세 번 올린 핫딜픽이에요 ㅋㅋ", "다들 장 보러 가면 몇 개씩 담으세요?"], ["화장지 마지막 한 롤 남았을 때 제일 급해지죠", "그럴 때 여러분은?"],
             ["택배 상자 뜯는 순간이 제일 설레요 📦", "다들 그런가요?"], ["장 보는 날은 계획이 늘 무너집니다", "다들 계획대로 사시나요? ㅋㅋ"],
             ["따뜻한 커피믹스 한 잔이 출근길을 버티게 해 주죠 ☕", "다들 하루 몇 잔 드세요?"], ["치약 끝까지 짜는 파 vs 새로 뜯는 파, 은근 갈리죠.", "어느 쪽이세요, 여러분?"],  # QQ 리뷰: '~주죠'·'vs'·'…, 여러분?'
             ["장 보러 가면 꼭 하나씩 더 담게 되죠.", "다들 뭐 담으세요, 요즘?"], ["장 볼 때마다 고민이 많아요", "다들 이번 주엔 뭐 사셨습니까?"], ["저만 그런가요", "장 보러 가면 꼭 하나 더 담게 돼요? 🤷‍♀️"]):
     assert H.chat_ok(l94) == "", (l94, H.chat_ok(l94))
 # 수다 글 사진: 주제별 스티커 · 3일 안 같은 스티커 = 글만 · 사진 실패 = 글만 1번(사진 글 다시 올림 X)
-po94, pr94, L94 = [], [], [["장 보러 가면 꼭 하나씩 더 담게 되더라고요", "다들 뭐 담으세요?"]]
+po94, pr94, L94 = [], [], [["장 보러 가면 꼭 하나씩 더 담게 되죠", "다들 뭐 담으세요?"]]
 H.E["THREADS_TOKEN"] = "tk"; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po94.append((text, image, tag)) or {"id": f"C{len(po94)}"}
 H.ai_json = lambda prompt, props, img=None: pr94.append(prompt) or {"lines": L94.pop(0) if len(L94) > 1 else L94[0]}
 H.review = lambda *a, **k: {}; H.cur_events = lambda seen=None: []; H.promo_list = lambda today: []; H.price_records = lambda *a, **k: {"ramen": ("라면", "개당", [(480.0, "개당 480원", 0, {})] * 3)}
@@ -9927,7 +9934,7 @@ def chat94(at, s):
     return o.getvalue()
 h94 = lambda d, *ns: {"chat": {"h": [[d, n, "x", None] for n in ns], "m": {}}}
 s94 = {}; o94 = chat94("2026-10-27 13:12", s94)
-assert po94[-1] == ("장 보러 가면 꼭 하나씩 더 담게 되더라고요\n다들 뭐 담으세요?", U94("chat")[1], "일상") and "chat post: shop C1 · 스티커 chat |" in o94 and s94["stk"]["chat"] == "2026-10-27", o94  # 장보기 = chat
+assert po94[-1] == ("장 보러 가면 꼭 하나씩 더 담게 되죠\n다들 뭐 담으세요?", U94("chat")[1], "일상") and "chat post: shop C1 · 스티커 chat |" in o94 and s94["stk"]["chat"] == "2026-10-27", o94  # 장보기 = chat
 o94 = chat94("2026-10-28 13:12", s94); assert "chat post: home C2 |" in o94 and po94[-1][1] is None and s94["stk"]["chat"] == "2026-10-27"  # 살림 = chat — 어제 씀(3일 안) = 글만
 o94 = chat94("2026-10-29 13:12", h94("2026-10-28", "shop", "home")); assert "chat post: season" in o94 and po94[-1][1] == U94("coffee-mix")[1]  # 계절(10~11월) = coffee-mix
 o94 = chat94("2026-10-30 13:12", {**h94("2026-10-29", "shop", "home"), "stk": {"t": TK("2026-10-29 13:12"), "coffee-mix": "2026-10-29"}}); assert po94[-1][1] == U94("rice")[1]  # coffee-mix 3일 안 = rice
@@ -9970,9 +9977,9 @@ H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po94.append((
 L94[:] = [["마트 가면 꼭 하나 더 담게 됨", "다들 그래?"], ["마트 가면 꼭 하나 더 담게 돼요", "다들 그러세요?"]]; o94 = chat94("2026-11-13 13:12", {"stk": {"t": 1, "chat": "2026-11-12"}})
 assert po94[-1][:2] == ("마트 가면 꼭 하나 더 담게 돼요\n다들 그러세요?", None) and "다시: 존댓말(" in pr94[-1] and "친근한 존댓말" in pr94[-2] and "다시:" not in pr94[-2], o94  # 반말 = 걸린 이유 알려 주고 1번 다시
 L94[:] = [["마트 가면 꼭 하나 더 담게 됨", "너는?"], ["마트 가면 꼭 하나 더 담게 됨", "너는?"]]; o94 = chat94("2026-11-14 13:12", {}); assert "규칙 걸림 -> 안 올림 shop 존댓말" in o94  # 또 걸리면 그날 X
-vl94 = []; H.review = lambda where, text, lines, facts="", valid=None, **k: vl94.append(valid) or {}; L94[:] = [["장 보러 가면 꼭 하나씩 더 담게 되더라고요", "다들 뭐 담으세요?"]]; chat94("2026-11-16 13:12", {})
-assert not vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되더라고요", "장 보러 가면 꼭 하나 더 담게 됨") and vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되더라고요", "장 보러 가면 꼭 하나 더 담게 돼요") \
-    and vl94[0]("다들 뭐 담으세요?", "그럴 때 나는?") and not vl94[0]("x", "그럴 때 나는?")  # 재검토가 고친 줄도 존댓말(질문 줄만 '~는?')
+vl94 = []; H.review = lambda where, text, lines, facts="", valid=None, **k: vl94.append(valid) or {}; L94[:] = [["장 보러 가면 꼭 하나씩 더 담게 되죠", "다들 뭐 담으세요?"]]; chat94("2026-11-16 13:12", {})
+assert not vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되죠", "장 보러 가면 꼭 하나 더 담게 됨") and vl94[0]("장 보러 가면 꼭 하나씩 더 담게 되죠", "장 보러 가면 꼭 하나 더 담게 돼요") \
+    and vl94[0]("다들 뭐 담으세요?", "그럴 때 여러분은?") and not vl94[0]("x", "그럴 때 여러분은?") and not vl94[0]("다들 뭐 담으세요?", "그럴 때 나는?")  # 재검토가 고친 줄도 존댓말(질문 줄만 '~는?') · ZZ 1인칭('나는') X
 H.review = lambda *a, **k: {}
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk94, H.POSTS, H.METRICS, H.http, H.time.sleep) = sv94
 H.E.pop("THREADS_TOKEN", None) if tk94 is None else H.E.update(THREADS_TOKEN=tk94); os.chdir(cwd94)
@@ -10493,4 +10500,37 @@ assert (cat102("빙그레 심플리 디카페인 400ml 20펫"), cat102("카펫 �
 assert [k for k, _, _ in S.SHELF_CATS][-3:] == ["car", "pet", "sport"] and S.CAT_ORDER[:4] == ("heat", "car", "pet", "sport") and list(S.CAT_META)[-2:] == ["pet", "sport"] and S.Q_CATS[-2:] == ("pet", "sport")
 assert S.CAT_META["pet"][:3] == ("pet", "반려동물", "🐶") and S.CAT_META["sport"][:3] == ("sport", "운동", "🏋️") and all(k in S.CAT_ICON and f".ci-{k}{{" in S.CSS and k in S.CAT_TIPS and k in S.CAT_INTRO for k in ("pet", "sport"))
 assert H.TH_TOPICS["pet"] == "반려동물" and H.TH_TOPICS["sport"] == "운동" and "pet = " in H.CAT_PROMPT and "sport = " in H.CAT_PROMPT and "문구·소품은 home" in H.CAT_PROMPT and S.icon_key({"text": "🔥 [토스] 하림펫푸드 밥이보약 CAT 3.4kg (9,900원)"}) == "pet"
+# 9-103) ZZ(10/27 10:20 Cowork Threads 멘트 재점검 6건): ① 끝 줄·훅·수다 글 = 친근한 존댓말 + 경험담 X(1인칭 · 딜 줄은 회상 '~더라'도) ② 계절 훅 = 상품 쓰임과 이어질 때만(season_fit)
+#        ③ 쓰는 곳·몸 부위 = 상품명에 있는 것만(use_bad) ④ 리뷰 10개 밑 = 평점 X(가격 줄 '리뷰 N개' · '리뷰가 아직 적음'은 그대로) ⑤ 날씨 = 아침·낮(9-12) ⑥ 최근 끝 줄·Claude 훅과 같은 말 X · 관리봇 재검토 보냄 로그
+assert all(H.th_say(x) for x in ("식탁 옆에 물티슈 하나쯤 늘 있지 않아?", "이 구성 깔끔하다", "가볍게 얹기 좋겠다", "값어치 하겠다", "큰 머그컵이 생각나더라", "부쩍 추워졌어 나는 아직 기다란 가을 코트 입고 있지만은", "좋은 하루 보내~"))  # Cowork 예 6건
+assert not any(H.th_say(x) for x in ("다들 전기요 꺼냈어요?", "쌀쌀한 날 물 대신 뭐 끓이세요?", "비싸더라도 오래 쓰니까요", *H.TH_HOOK_POOL, *[x for v in H.TH_TONE_POOL5.values() for x in v])) and not any("반말" in t[1] for t in H.TH_TONES.values()) and "반말 X" in H.TH_FRIEND
+assert H.th_say("큰 머그컵이 생각나더라고요").startswith("경험담") and H.th_say("마트 가려고 하면 꼭 비가 오더라고요", recall=False) == "" and H.th_say("저는 아직 코트 입어요", recall=False).startswith("경험담")  # 수다 글 = 1인칭만(공감 '~더라고요' OK)
+assert not H.season_fit("베베앙 데일리 비데 물티슈 캡형 60매 10팩") and H.season_fit("동서 보리차 티백 100개") and H.season_fit("코멧 손난로 핫팩 100g 30개") and not H.season_fit("크리스탈 생수 2L 12병")
+assert H.use_bad("세안하고 뭐 바를지 고민될 때 좋아요", "누벨린 디펜턴 토탈 솔루션 앰플 세럼 30ml 1개") == "세안" and H.use_bad("발 각질 신경 쓰일 때 좋아요", "풋 발 각질 크림") is None and H.use_bad("자꾸 손이 가요", "만두") is None and H.use_bad("발랄하게 시작해요", "x") is None
+assert H.th_rep("떨어지기 전에 채워 두면 마음이 편해요", ["떨어지기 전에 쟁여 두면 마음이 편해"]) and H.th_rep("쌀쌀한 날 생각나요", ["쌀쌀한 아침이에요"]) == "쌀쌀" and H.th_rep("이 구성 괜찮네요", ["핫팩 쟁일 때죠"]) == ""
+assert H.toss_price({"displayPrice": 12900, "discountRate": 40, "reviewScore": 5.0, "reviewCount": 1}) == "12,900원 (40%↓) · 리뷰 1개" and H.toss_price({"displayPrice": 12900, "reviewScore": 4.7, "reviewCount": 11683}) == "12,900원 · ⭐ 4.7 (11,683)"
+sv103 = (H.ai_voice, H.ai_json, H.TH_HOOK, H.REVIEW, H.random)
+H.TH_HOOK, H.REVIEW, H.random = False, False, type("R", (), {"choice": staticmethod(lambda xs: 2)})
+v103 = []; H.ai_voice = lambda prompt: v103.append(prompt) or {"line": "떨어지기 전에 채워 두면 마음이 편해요"}
+T103 = H.toss_th("베스트", "케라시스 엘라스틴 샴푸 1L", H.toss_price({"displayPrice": 12900, "discountRate": 40, "reviewScore": 5.0, "reviewCount": 1}), [], "https://toss.shopping/_m/k103")
+o103 = H.th_voice({}, T103, "https://toss.shopping/_m/k103")
+assert "평점" not in o103 and "⭐" not in o103 and "단점 하나: 리뷰가 아직 적음" in o103 and "\n떨어지기 전에 채워 두면 마음이 편해요\n" in o103, o103  # ④ 리뷰 1개 = 평점 X · 사실 줄은 그대로
+v103.clear(); o103 = H.th_voice({"thvoice": {"t": 1, "b": ["떨어지기 전에 쟁여 두면 마음이 편해요"]}}, T103, "https://toss.shopping/_m/k103")
+assert "채워 두면" not in o103 and len(v103) == 2 and any(f"\n{x}\n" in o103 for x in H.TH_TONE_POOL5[2]), o103  # ⑥ 최근 끝 줄과 같은 말 = 1번 다시 -> 기본 한 줄
+v103.clear(); H.ai_voice = lambda prompt: v103.append(prompt) or {"line": "이 구성 깔끔하다"}; o103 = H.th_voice({}, T103, "https://toss.shopping/_m/k103")
+assert "깔끔하다" not in o103 and len(v103) == 2 and any(f"\n{x}\n" in o103 for x in H.TH_TONE_POOL5[2]), o103  # ① 반말 끝 줄 = 1번 다시 -> 기본 한 줄
+T103b = H.toss_th("베스트", "케라시스 엘라스틴 샴푸 1L", "12,900원 (40%↓) · ⭐ 5.0 (1)", [], "https://toss.shopping/_m/k103"); H.ai_voice = lambda prompt: {"line": "욕실 선반에 하나 두기 좋아요"}
+o103 = H.th_voice({}, T103b, "https://toss.shopping/_m/k103"); assert "평점" not in o103 and "단점 하나: 리뷰가 아직 적음" in o103, o103  # ④ 이미 줄 선 옛 글(⭐ 5.0 (1))도 Threads 평점 X
+A103 = H.toss_th("베스트", "누벨린 디펜턴 토탈 솔루션 앰플 세럼 30ml 1개", "19,900원 (30%↓) · ⭐ 4.8 (2,031)", [], "https://toss.shopping/_m/a103")
+v103.clear(); H.ai_voice = lambda prompt: v103.append(prompt) or {"line": "세안하고 뭐 바를지 고민될 때 좋아요"}; o103 = H.th_voice({}, A103, "https://toss.shopping/_m/a103")
+assert "세안" not in o103 and len(v103) == 2, o103  # ③ 상품명에 없는 쓰임새(세안) = 1번 다시 -> 기본 한 줄
+H.TH_HOOK = True; H.ai_json = lambda prompt, props, img=None: {"hook": "세안 후 뭐부터 바르세요? 앰플이죠!"}
+assert H.th_hook({"thhook": {"l": [4, 5]}}, "누벨린 디펜턴 토탈 솔루션 앰플 세럼 30ml 1개", False, "", "^$", [])[1] != 1  # ③ 훅도 쓰임새 지어내면 X(다음 차례)
+H.ai_json = lambda prompt, props, img=None: {"hook": "화장실 갈 때 바닥이 차가워요 🍂"}
+assert H.th_hook({"thhook": {"l": [5, 1]}}, "베베앙 데일리 비데 물티슈 캡형 60매 10팩", False, "", "^$", [])[1] != 2  # ② 비데 물티슈 = 계절 훅 X(다음 차례)
+(H.ai_voice, H.ai_json, H.TH_HOOK, H.REVIEW, H.random) = sv103
+sv103r = (H.tg, time.time); s103 = {"rvst_20261027": {"t": 1, "n": 3, "m": 1, "k": 0}}; H.tg = lambda *a, **k: {"message_id": 1}; time.time = lambda: TK("2026-10-27 22:05")
+with contextlib.redirect_stdout(io.StringIO()) as o103r:
+    H.rv_report(s103)
+assert "rv report 10/27 보냄 3건 · 고침 1 · 뺌 0" in o103r.getvalue() and "rvrep_20261027" in s103; (H.tg, time.time) = sv103r  # ZZ 관리봇 재검토 = 보낸 것도 로그
 print("OK: 모든 셀프체크 통과")

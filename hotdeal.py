@@ -926,7 +926,7 @@ def mall_view(body, url):
     line = line.strip()
     if mall == "toss":
         (cond, dr), star = mall_dr(plain), re.search(r"⭐\s*([\d.]+)\s*\(리뷰\s*([\d,]+)\)", plain)
-        line += (f" ({dr}%↓)" if dr and not cond else "") + (f" · ⭐ {star[1]} ({star[2]})" if star else "")  # 조건 붙은 %는 가격 줄에 X(누구나 받는 할인처럼 보임)
+        line += (f" ({dr}%↓)" if dr and not cond else "") + (f" · ⭐ {star[1]} ({star[2]})" if star and int(star[2].replace(",", "")) >= REV_MIN else "")  # 조건 붙은 %는 가격 줄에 X(누구나 받는 할인처럼 보임)
     elif u := re.search(r"\n💡 (?:단위가격:?[^\S\n]*)?((?:[\d.]*[가-힣A-Za-z]+당|1[가-힣]+)[^\S\n]*(?:약[^\S\n]*)?[\d,]+원꼴?(?:[^\S\n]?\([^)\n]*\))?)([^\n]*)", rest):  # 💡 줄 맨 앞 단위가격('1개당 373원'·'100ml당 24원'·'단위가격 개당 534원')만 가격 줄로, 나머지 조각은 💡 줄에 남김
         more = re.sub(r"^\s*(?:·|—)\s*", "", u[2]).strip()  # (HTML에서 꺼낸 글자 -> mall_body가 다시 이스케이프)
         rest, line = rest[:u.start()] + (f"\n💡 {more}" if more else "") + rest[u.end():], f"{line} → {re.sub(r'^1?개당 ', '1개 ', html.unescape(u[1]))}"
@@ -2575,7 +2575,7 @@ def toss_deals(seen, best=False):
         gp.append(p)
         plain += [] if season_adj(x["displayName"]) < 0 else [f"{NUM[len(plain)]} {clip(x['displayName'], 24)} — {x['displayPrice']:,}원" + (f" ({u})" if (u := toss_unit(x["displayName"], x["displayPrice"])) else "") + (" (하루특가·밤 12시까지)" if x["tacaItemId"] in night else "") + f"\n{link}"]  # Z: 철 지난 계절 상품은 Threads 리스트에서 뺌(채널은 그대로)
         rows.append((x["displayName"], link, (["⏰ 토스 하루특가 · 밤 12시까지"] if x["tacaItemId"] in night else []) + [f"💰 <b>{x['displayPrice']:,}원</b>" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "")
-                                             + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if x.get("reviewCount") else "")] + toss_ul(x) + ["👉 " + esc(p["comment"])] * bool(p["comment"])))
+                                             + (f" · ⭐ {x['reviewScore']} (리뷰 {x['reviewCount']:,})" if (x.get("reviewCount") or 0) >= REV_MIN else "")] + toss_ul(x) + ["👉 " + esc(p["comment"])] * bool(p["comment"])))
     print("toss_special" if special else "toss_beauty" if beauty else "toss_cat" if cat else "toss_best" if best else "toss_deals", len(items), "items", len(picks or []), "picks", len(rows), "links")  # 0건이어도 로그로 확인
     if raw or special:  # 목록을 받았으면(Claude까지 돌렸으면, 특가는 후보 0개여도) 이번 회차는 끝(발급이 다 막혀도 15분마다 다시 고르지 않게). Threads가 실패해도 채널에 두 번 안 올라가게 먼저 표시
         seen[key] = time.time()
@@ -2677,7 +2677,7 @@ def toss_th(src, name, price, lines, link, icon="🔥"):
 
 def toss_price(x):
     """토스 API 상품 가격 줄(몰별 틀 셋째 줄): '15,580원 (60%↓) · ⭐ 4.7 (11,683)'."""
-    return f"{x['displayPrice']:,}원" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + (f" · ⭐ {x['reviewScore']} ({x['reviewCount']:,})" if x.get("reviewCount") else "")
+    return f"{x['displayPrice']:,}원" + (f" ({x['discountRate']}%↓)" if x.get("discountRate") else "") + (f" · ⭐ {x['reviewScore']} ({x['reviewCount']:,})" if (x.get("reviewCount") or 0) >= REV_MIN else f" · 리뷰 {x['reviewCount']}개" if x.get("reviewCount") else "")
 
 
 def toss_lines(p):
@@ -2748,7 +2748,7 @@ def steady_cands(seen, now, n=None):
         if tossy(x["url"]):
             d = det.get(tid(x))
             if d and not d.get("isSoldOut"):
-                out.append({"n": x.get("name") or d["displayName"], "p": f"{d['displayPrice']:,}원", "st": f"리뷰 {d['reviewCount']:,}" if d.get("reviewCount") else "", "u": x["url"], "tu": x["url"], "i": None})
+                out.append({"n": x.get("name") or d["displayName"], "p": f"{d['displayPrice']:,}원", "st": f"리뷰 {d['reviewCount']:,}" if (d.get("reviewCount") or 0) >= REV_MIN else "", "u": x["url"], "tu": x["url"], "i": None})
         elif (i := next((i for i in range(len(posts) - 1, -1, -1) if posts[i].get("url") == x["url"]), None)) is not None:
             out.append(item(i))
     buys = lambda i: next((steady_n(b[1]) for b in [re.search(STEADY_BUY, posts[i]["text"])] if b), 0)
@@ -4261,19 +4261,19 @@ TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주�
 - 한 문장, 폰 한 줄(20자 안팎). 이모지는 0~1개.
 - 써 본 척(제가·나도·써보니·먹어보니·샀는데·질렀음), 효능·건강·의학 말, 과장·조급(역대급·무조건·손해·마지막 기회), 재촉·클릭 유도(클릭·눌러·지금 바로 구매), 링크·댓글·광고 말 쓰지 않기.
 - '최근 줄'과 다른 문장으로.
-- 뜻이 바로 통하는 한 문장(형식은 아래 말투 지시가 먼저 — 장면이면 이 상품을 쓰는 구체적인 장면 하나). 좋은 예: '아침마다 하나씩 집어 가기 좋겠다' · '현관에 하나 두면 신발장 냄새 덜하겠다'. 나쁜 예: '한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함) · '이건 그냥 밥도둑이다'(첫 줄과 같은 말).
+- 뜻이 바로 통하는 한 문장(형식은 아래 말투 지시가 먼저 — 장면이면 이 상품을 쓰는 구체적인 장면 하나 · 쓰는 곳·몸 부위(얼굴·세안·피부·발·손 등)는 상품명에 그 말이 있을 때만, 없으면 보관·떨어짐·구성 장면). 좋은 예: '아침마다 하나씩 집어 가기 좋겠어요' · '현관에 하나 두면 신발장 냄새가 덜하겠어요'. 나쁜 예: '한 박스로 넉넉히 두면 계산이 편하겠다'(뜻이 안 통함) · '이건 그냥 밥도둑이다'(첫 줄과 같은 말).
 - 다 쓰고 한 번 소리 내 읽어 보기: 뜻이 바로 안 통하거나 첫 줄과 같은 낱말이면 다시 쓰기."""
-TH_TONE_POOL = {1: ("필요할 때 쟁여 두기 좋아요", "장바구니에 담아 두기 좋아요"), 2: ("장바구니에 담아 둘 만하다", "이 구성 꽤 괜찮다"),
+TH_TONE_POOL = {1: ("필요할 때 쟁여 두기 좋아요", "장바구니에 담아 두기 좋아요"), 2: ("장바구니에 담아 둘 만해요", "이 구성 꽤 괜찮아요"),
                 3: ("하나쯤 있으면 든든해요", "필요한 분께 잘 맞아요"), 4: ("쟁여 둘 만함", "구성 괜찮음")}  # Claude 실패·조건 안 맞음 = 말투별 기본 한 줄(숫자·경험담 X)
-TH_TONES = {  # M-5(10/26 진우 'Threads 쿠팡 글 재미나게 소통하는 느낌') + O(친구한테 말하듯 — '사세요' X): Threads 개별 딜 글 말투 5가지 돌림 · 다 반말 · (이름, 지시, 해요체 OK?)
-    1: ("계산형", "말투 = 계산형 반말(구성·단가가 왜 괜찮은지 계산하듯 짚기 — 숫자는 쓰지 말고). 결 예시: 낱개로 사는 것보다 이 묶음이 낫겠다", False),
-    2: ("공감형", "말투 = 공감형 반말(이런 날 꼭 있지 하는 생활 장면). 결 예시: 꼭 다 떨어졌을 때 생각나더라", False),
-    3: ("질문형", "말투 = 질문형 반말(가볍게 묻고 끝내기 — 물음표 1개). 결 예시: 다들 이런 거 몇 개씩 쟁여 둬?", False),
-    4: ("짧은 감탄형", "말투 = 짧은 감탄 반말(10자 안팎). 결 예시: 이 구성 실화냐", False),
-    5: ("비교형", "말투 = 비교형 반말 — 재료의 🔁·'보다 내려' 줄(우리 기록)에 쓰인 사실만 · 다른 쇼핑몰 X · 숫자 X. 결 예시: 기록 보니 다시 내려온 가격", False)}
-TH_ASK, TH_TONE_POOL5 = 3, {1: ("구성 보고 계산해 볼 만함", "단가 따져 보면 괜찮은 편"), 2: ("이런 건 떨어질 때 꼭 생각나더라", "있으면 은근 자주 쓰는 거"), 3: ("다들 이런 거 쟁여 둬?", "이거 어디에 쓸 것 같아?"),
-                            4: ("이 구성 실화냐", "오 이건 괜찮다"), 5: ("기록 보니 다시 내려온 가격", "전에 본 가격이랑 같이 보면 좋음")}  # 질문형만 물음표 · Claude 실패 = 기본 한 줄(숫자·경험담·상품 사실 단정 X — 비교형은 기록 재료 있을 때만 뽑힘)
-TH_FRIEND = "\n- 친구한테 말하듯 반말 한 줄. '나라면 쟁여 둠' 같은 의견은 OK, 써 본 척(써 보니·먹어 보니·샀는데)·'사세요·구매하세요' 같은 권유는 X."
+TH_TONES = {  # M-5(10/26 진우 'Threads 쿠팡 글 재미나게 소통하는 느낌') + O(친구한테 말하듯 — '사세요' X): Threads 개별 딜 글 말투 5가지 돌림 · ZZ(10/27 Cowork — 반말 6건) 다 친근한 존댓말 · (이름, 지시)
+    1: ("계산형", "말투 = 계산형 존댓말(구성·단가가 왜 괜찮은지 계산하듯 짚기 — 숫자는 쓰지 말고). 결 예시: 낱개로 사는 것보다 이 묶음이 낫겠어요"),
+    2: ("공감형", "말투 = 공감형 존댓말(이런 날 꼭 있죠 하는 생활 장면 — 내 경험·회상 X). 결 예시: 꼭 다 떨어졌을 때 찾게 되죠"),
+    3: ("질문형", "말투 = 질문형 존댓말(가볍게 묻고 끝내기 — 물음표 1개). 결 예시: 다들 이런 거 몇 개씩 쟁여 두세요?"),
+    4: ("짧은 감탄형", "말투 = 짧은 감탄 존댓말(10자 안팎). 결 예시: 이 구성 괜찮네요"),
+    5: ("비교형", "말투 = 비교형 존댓말 — 재료의 🔁·'보다 내려' 줄(우리 기록)에 쓰인 사실만 · 다른 쇼핑몰 X · 숫자 X. 결 예시: 기록 보니 다시 내려온 가격이에요")}
+TH_ASK, TH_TONE_POOL5 = 3, {1: ("구성 보고 계산해 볼 만해요", "단가 따져 보면 괜찮은 편이에요"), 2: ("이런 건 떨어질 때 꼭 찾게 되죠", "있으면 은근 자주 쓰게 되죠"), 3: ("다들 이런 거 쟁여 두세요?", "이거 어디에 쓰실 것 같아요?"),
+                            4: ("이 구성 괜찮네요", "오 이건 괜찮네요"), 5: ("기록 보니 다시 내려온 가격이에요", "전에 본 가격이랑 같이 보면 좋아요")}  # 질문형만 물음표 · Claude 실패 = 기본 한 줄(숫자·경험담·상품 사실 단정 X — 비교형은 기록 재료 있을 때만 뽑힘)
+TH_FRIEND = "\n- 이웃한테 말하듯 친근한 존댓말 한 줄(~요·~죠로 끝 — 반말 X). '쟁여 둘 만해요' 같은 의견은 OK, 써 본 척(써 보니·먹어 보니·샀는데)·내 경험·회상(나는·저는·~더라·~던데)·'사세요·구매하세요' 같은 권유는 X."
 TH_HOOK, TH_HOOKS = True, {1: "질문 자답", 2: "계절·상황", 3: "오늘 마감", 4: "공유형", 5: "숫자 앵커"}  # U(10/26 진우 @love__pastel 글): 개별 딜 글 첫 줄(대가성 문구 다음) 훅 5가지 돌림(직전 2개와 다르게) · metrics hook = 2주 뒤 비교
 TH_HOOK_POOL = ("이건 알아 두시면 좋을 것 같아서요", "같이 보시라고 가져왔어요", "보자마자 공유하고 싶어서 올려요")  # ④ 공유형(SS 10/26 존댓말)(특가 아닌 👍 꾸준템 글에도 맞게 — '이 가격 놓치기 아까워' 같은 특가 말 X)
 TH_FLAWS = ((r"와우(?!\s*쿠폰)\s*(?:회원)?\s*(?:가|할인|전용)", "와우회원가라 일반 회원은 가격이 다를 수 있음"), (r"쿠폰\s*(?:가|적용|받|할인|사용|다운)|(?:\d\s*(?:원|%)|와우)\s*쿠폰", "쿠폰 받아야 이 가격"),
@@ -4281,7 +4281,7 @@ TH_FLAWS = ((r"와우(?!\s*쿠폰)\s*(?:회원)?\s*(?:가|할인|전용)", "와�
             (r"옵션\s*(?:별|마다)\s*(?:가격|상이|다름|다른)|옵션가", "옵션마다 가격이 달라서 고를 때 확인 필요"))  # O 단점 = ⚠️ 조각에 이 말이 그대로 있을 때만('카드 무이자'·'사이즈 옵션 확인' X)
 TH_PUSH = r"사\s*둬|사\s*놔|사\s*둘\s*것|질러|지르자|담아\s*둬|사야\s*(?:해|돼|됨|지)|사세요|구매하|서둘러|얼른|빨리\s*사|놓치지\s*마"  # 반말 재촉(O '사세요' X)
 TH_PRICE_WORD, TH_QM = r"[만천백십]\s*원|원\s*(?:도|대|짜리|꼴|이하|밖에)|(?:한\s*잔|밥|커피)\s*값", r"[?？❓❔⁉⁇]"  # 숫자 말로 쓴 가격('만 원도 안 해') · 물음표(이모지 포함)
-TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꾸세요? 핸드크림이죠!) — 물음표 1개", 2: "형식 = 계절·상황: 지금 계절·생활 상황 한 줄(사실·계절만, 경험담 X — 예: 샤워하고 나오면 욕실 추운 계절이 왔어요) — 맨 아래 '오늘' 줄의 날짜·기온에 맞는 계절·날씨만(Y-1 10/26 생수 '날 더워지면')"}
+TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종류(예: 겨울 되면 뭐부터 바꾸세요? 핸드크림이죠!) — 물음표 1개", 2: "형식 = 계절·상황: 이 상품을 쓰는 장면과 이어지는 지금 계절 한 줄(사실·계절만, 경험담 X — 예: 전기요 → 다들 전기요 꺼냈어요? · 상품 쓰임과 안 이어지는 날씨 말 X) — 맨 아래 '오늘' 줄의 날짜·기온에 맞는 계절·날씨만(Y-1 10/26 생수 '날 더워지면')"}
 TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 친근한 존댓말(~요·~죠로 끝 — 시키는 말 X) + 생활 공감 위트, 폰 한 줄(25자 안팎), 이모지 0~2개.
 - {kind}
 - 말투 예: '집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻' · '라면 물 올려놓고 생각났다면… 지금이 쟁일 때예요 🍜' (아래 재미 예시 말도 존댓말로)
@@ -4307,6 +4307,7 @@ def ai_voice(prompt):
     return ai_json(prompt, {"line": {"type": "string"}})
 
 
+REV_MIN = 10  # ZZ(10/27 Cowork '평점 5.0 · 리뷰 1'): 리뷰 10개 밑 = 평점·리뷰 수 안 보임(토스 가격 줄·목록·Threads ✔ 줄·👍 목록)
 REVIEW, RV_MAX = True, 3  # Z-4(10/26 진우 '재검토 기능 넣어서 멘트 수정하자'): 게시 직전 멘트 줄 재검토(Claude 1번 더) · 한 실행 Claude 재검토 상한 = 글 종류(where)마다(넘으면 코드 검사만 — 밀린 예약 글도 6분 안, 앞 단계가 Threads 딜 글 몫을 다 쓰지 않게)
 TH_FUN = ("재미 O: 누구나 겪는 장면 · 가벼운 과장('국룰', '나만 그래?') · 'ㅋㅋ'는 글에 1번까지 · 웃음 대상은 상황이나 핫딜픽 자신만(예: '오늘 김 글만 세 번 올린 핫딜픽…').\n"
           "무례 X: 사람·집단 놀림·비하(나이·성별·지역·외모·직업·소득·육아·결혼) · 읽는 사람 비꼬기·훈계('이것도 몰라?', '아직도 정가 주고 사?') · 욕설·비속어·혐오 표현·비하 밈 낱말 · "
@@ -4362,6 +4363,18 @@ def old_toss(l):
     """토스 '⚠️ M/D HH:MM 게시 시점' 날짜가 오늘(지금 KST — 실행 시작 날짜 X, 밤 12시 넘는 실행)이 아니면 True."""
     m, k = re.search(r"(\d{1,2})/(\d{1,2}) \d{1,2}:\d{2} 게시 시점", l), time.gmtime(time.time() + 9 * 3600)
     return bool(m) and (int(m[1]), int(m[2])) != (k.tm_mon, k.tm_mday)
+
+
+TH_SEASON_W = r"쌀쌀|추워지|추운|찬\s*바람|으슬|뜨끈|따끈|따뜻"  # ZZ ⑥ 계절 말(최근 Threads 끝 줄·훅에 있으면 또 X — 10/27 '쌀쌀' 3번)
+
+
+def th_rep(l, rec):
+    """ZZ ⑥(10/27 '쟁여/채워 두면 마음이 편해' 2시간 안 2번): 최근 Threads 끝 줄·Claude 훅(rec)과 6글자↑ 같은 말(빈칸·기호 빼고) 또는 같은 계절 말 -> 걸린 말 · 없으면 ''."""
+    g = lambda x: {s[i:i + 6] for s in [re.sub(r"[^가-힣A-Za-z]", "", x)] for i in range(len(s) - 5)}
+    if hit := g(l) & set().union(set(), *map(g, rec)):
+        return min(hit)
+    w = re.search(TH_SEASON_W, l)
+    return w[0] if w and any(re.search(re.escape(w[0]), r) for r in rec) else ""
 
 
 def rv_bad(l, text, hook, ctx, dup=False, names=()):
@@ -4501,7 +4514,9 @@ def rv_report(seen):
     if kst.tm_hour < 22 or key in seen or not st.get("n"):
         return
     ex = "".join(f"\n예) {a} → {b or '(줄 뺌)'}" for a, b in st.get("ex", [])[:2])
-    if tg("sendMessage", chat_id=ADMIN, text=f"🔎 멘트 재검토 {kst.tm_mon}/{kst.tm_mday}: {st['n']}건 중 고침 {st.get('m', 0)}줄 · 줄 뺀 {st.get('k', 0)}{ex}"):
+    ok = tg("sendMessage", chat_id=ADMIN, text=f"🔎 멘트 재검토 {kst.tm_mon}/{kst.tm_mday}: {st['n']}건 중 고침 {st.get('m', 0)}줄 · 줄 뺀 {st.get('k', 0)}{ex}")
+    print("rv report", f"{kst.tm_mon}/{kst.tm_mday}", "보냄" if ok else "실패", f"{st['n']}건 · 고침 {st.get('m', 0)} · 뺌 {st.get('k', 0)}")  # ZZ(10/27 Cowork '로그 왔는지'): 보낸 것도 로그로 확인(줄 글자 X)
+    if ok:
         seen[key] = time.time()
 
 
@@ -4632,16 +4647,16 @@ def th_voice(seen, text, link, src=None):
         drop = bool(re.search(r"다시 왔|보다 내려|내려왔|내려갔", " ".join(status + [tip])))  # 우리 기록에 '내려감'이 쓰여 있을 때만(처음 소개 때 가격·특가 아님 = 방향 모름)
         cmp_ok = not toss and drop  # 비교형 = 그때만(토스 X)
         tone = pick_tone(seen, "th", keep=False, tones=[k for k in TH_TONES if k != 5 or cmp_ok])  # M-5 말투 5가지 돌림 — 한 줄에, 기록은 실제로 쓴 뒤
-        yo_ok, oy = TH_TONES[tone][2], aff_note(link) == OY_NOTE
+        oy = aff_note(link) == OY_NOTE
         lban = f"{ban}|{VOICE_BAN}" + (r"|특가|최저(?!가?는?\s*아[니닌님냐])|할인" if steady else "") + (f"|{OY_DENY}" if oy else "") + r"|링크|댓글|팔로우|광고|수수료|결제 전|게시 시점|지금\s*바로|" + TH_PUSH + ("" if drop else r"|내려왔|내려갔|싸졌|떨어졌")  # 써 본 척·재촉(반말 '사 둬'·'질러' 포함) · 올리브영 큐레이터 정책 · 기록 없이 '내려왔다' X
         names = [w for i, w in enumerate(re.findall(r"[가-힣A-Za-z]{2,}", name)) if not i or not re.search(lban, w)]  # 금지어 검사에서 빼는 상품명 낱말 = 브랜드 + 금지어 아닌 것만
         dl = toss and re.search(r"밤\s*12시까지|하루\s*특가", full) and (m := re.search(r"(\d{1,2})/(\d{1,2}) \d{1,2}:\d{2} 게시 시점", " ".join(when))) and (int(m[1]), int(m[2])) == (k.tm_mon, k.tm_mday)
         hook, hk = th_hook(seen, name, dl, unit, lban, names) if TH_HOOK and not oy else ("", 0)  # ③ 근거 = 토스 하루특가 + 게시 시점이 오늘(밤 12시 지나 올라가는 줄 선 글 X) · 올리브영 = 훅 X(큐레이터 정책)
         ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and not re.search(rf"\d|{TH_PRICE_WORD}", s) and th_w(s) <= TH_W + 2 \
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
-            and (yo_ok or not re.search(VOICE_YO, re.sub("|".join(map(re.escape, names)) or "^$", "", s))) and norm(s) not in st.get("f", []) \
+            and not th_say(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not use_bad(s, name) and norm(s) not in st.get("f", []) and not th_rep(re.sub("|".join(map(re.escape, names)) or "^$", "", s), st.get("b", []) + st.get("ht", [])) \
             and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", f"{s}\n{hook}"))  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
-        prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") + ("" if yo_ok else "\n- 해요체 X: '~요'로 끝나는 말(~해요·~해 주세요·~대요·~거든요 등) 쓰지 않기.") \
+        prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- " + TH_FUN.replace("\n", "\n- ") + "\n- " + TH_TONES[tone][1] + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") \
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
             + (f"\n- 이 글 = 👍 '{steady_word(full)} 상품'(특가 아님): 특가·최저가·할인이라고 하지 않기 · '핫딜픽에서 주문'처럼 우리 링크 주문으로 읽히는 말 X · '하루 N개 주문' 같은 숫자 X(글에 있는 리뷰·구매 수만)." if steady else "") \
             + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "") \
@@ -4660,7 +4675,7 @@ def th_voice(seen, text, link, src=None):
             again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉·무례 X · 최근 줄·첫 줄과 다르게 · 지금 계절에 맞게)."
         pool = [] if oy else list(TH_TONE_POOL5[tone])  # 올리브영 = 기본 줄 X(큐레이터 정책: 가격·용량·구성·조건만)
         line = line or ([x for x in pool if norm(x) not in st.get("f", [])] or pool or [""])[0]  # 올리브영이라 맞는 기본 줄이 없으면 말투 줄 없이
-        soc = ([f"평점 {rate[1]}"] if rate else []) + ([f"리뷰 {th_round(rv)}"] if rv else []) + ([f"한 달 {th_round(buy).rstrip('+')}명{'+' * th_round(buy).endswith('+')} 구매"] if buy else [])
+        soc = ([f"평점 {rate[1]}"] if rate and rv >= REV_MIN else []) + ([f"리뷰 {th_round(rv)}"] if rv >= REV_MIN else []) + ([f"한 달 {th_round(buy).rstrip('+')}명{'+' * th_round(buy).endswith('+')} 구매"] if buy else [])
         def render(soc, unit, tip, facts, line, con, hook=hook):
             money = f"💰 {won}" + (f" ({unit})" if unit and unit not in hook else f" ({dr[1]}%↓)" if dr else "")  # Y-4 훅 ⑤(단가)를 쓰면 💰 줄엔 같은 숫자 X
             chk = [f"✔ {' · '.join(soc)}"] * bool(soc)
@@ -4673,7 +4688,7 @@ def th_voice(seen, text, link, src=None):
         ms = [x for x in (hook, line, con) if x]  # Z-4 재검토 = 멘트 줄(훅·말투 줄·단점 줄) — 대부분 걸리면 멘트 줄 없이 깔끔한 틀
         ch = review("th", render(soc, unit, tip, facts, line, con)[0], ms, f"상품명: {name}\n가격: {won}" + (f"\n단가: {unit}" if unit else "") + f"\n가격 시각: {tl}", dup=True, names=names, hook=hook,
                     valid=lambda o, n: ok(n) if o == line else n.startswith("단점 하나:") and not re.search(ban, n) and th_w(n) <= TH_W + 6 if o == con
-                    else not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", n)) and th_w(n) <= TH_HOOK_W and chat_polite(n) and not n.startswith(VOICE_LABEL))  # 고친 줄도 그 줄 규칙대로(훅 = 존댓말 — SS)
+                    else not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", n)) and th_w(n) <= TH_HOOK_W and not th_say(n) and not use_bad(n, name) and not n.startswith(VOICE_LABEL))  # 고친 줄도 그 줄 규칙대로(훅 = 존댓말 — SS)
         ch = {x: "" for x in ms} if sum(ch.get(x) == "" for x in ms) * 2 > len(ms) else ch
         hook, line, con = (ch.get(x, x) for x in (hook, line, con))
         steps = [{}, {"tip": ""}, {"tip": "", "soc": soc[:2] if buy else soc}, {"tip": "", "soc": soc[:2] if buy else soc, "unit": ""}]  # 숫자 넘침 -> 💡 -> 구매 수 -> 단가
@@ -4687,9 +4702,11 @@ def th_voice(seen, text, link, src=None):
             raise ValueError(f"480자({len(out)})")
         if line and line in out.split("\n"):
             tone_keep(seen, "th", tone)
-            seen["thvoice"] = {"t": time.time(), "s": tone, "f": (st.get("f", []) + [norm(line)])[-10:], "b": (st.get("b", []) + [line])[-5:]}
+            seen["thvoice"] = {"t": time.time(), "s": tone, "f": (st.get("f", []) + [norm(line)])[-10:], "b": (st.get("b", []) + [line])[-5:], "ht": st.get("ht", [])}
         else:  # 말투 줄이 빠짐(480자·올리브영) = 말투 기록 X
             seen.setdefault("thvoice", {"t": time.time()}).pop("s", None)
+        if hook and hk in (1, 2) and hook in out.split("\n"):  # ZZ ⑥ Claude 훅도 최근 말 기록(다음 글 끝 줄·훅이 같은 말 X — 고정 훅 ③④⑤는 X)
+            seen["thvoice"]["ht"] = (st.get("ht", []) + [hook])[-5:]
         if hook and hook in out.split("\n"):  # U: 글에 든 훅 = th_deal이 올라간 뒤 돌림 기록 · metrics hook
             seen["thvoice"]["h"] = hk
         else:
@@ -4706,7 +4723,7 @@ def th_hook(seen, name, dl, unit, ban, names):
     ①② = Claude(숫자·가격 말 X · 금지 말 · 폭 · 물음표는 ①만) — 실패·규칙 X = 다음 차례 종류로(직전 2개는 끝까지 X). 숫자는 우리 데이터(단가)만."""
     last = seen.get("thhook", {}).get("l", [])
     fixed = {3: "이 가격, 오늘 밤 12시까지예요" if dl else "", 4: TH_HOOK_POOL[sum(map(ord, name)) % len(TH_HOOK_POOL)], 5: f"{unit}꼴이에요" if unit else ""}  # ④ = 상품마다 다른 줄
-    for k in sorted((x for x in TH_HOOKS if fixed.get(x, True) and x not in last), key=lambda x: (x - (last[-1] if last else 0) - 1) % len(TH_HOOKS)):
+    for k in sorted((x for x in TH_HOOKS if fixed.get(x, True) and x not in last and (x != 2 or season_fit(name))), key=lambda x: (x - (last[-1] if last else 0) - 1) % len(TH_HOOKS)):
         if k in fixed:
             return fixed[k], k
         try:
@@ -4715,8 +4732,8 @@ def th_hook(seen, name, dl, unit, ban, names):
                 if not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", h)):
                     break
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
-            if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_HOOK_W and chat_polite(h) and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
-                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(plain):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
+            if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_HOOK_W and not th_say(h) and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(ban, plain) and (k == 1) == bool(re.search(TH_QM, h)) \
+                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and not rude(plain) and not use_bad(h, name) and not th_rep(plain, seen.get("thvoice", {}).get("b", []) + seen.get("thvoice", {}).get("ht", [])):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
                 return h, k
         except Exception as e:
             print("th hook 다음 종류로", clip(repr(e), 80))
@@ -6756,8 +6773,12 @@ def weather(seen):
     if key not in seen or not seen[key]["w"] and time.time() - seen[key]["t"] >= 3600:  # 못 받았으면 1시간 뒤 다시(0시 첫 실패 하나로 하루 종일 X)
         q, pm = f"latitude={WEATHER_LAT}&longitude={WEATHER_LON}&timezone=Asia%2FSeoul", {}
         try:
-            d = json.loads(http(f"https://api.open-meteo.com/v1/forecast?{q}&forecast_days=8&daily=temperature_2m_min,temperature_2m_max,"
-                                "precipitation_probability_max,relative_humidity_2m_min"))["daily"]
+            j = json.loads(http(f"https://api.open-meteo.com/v1/forecast?{q}&forecast_days=8&daily=temperature_2m_min,temperature_2m_max,"
+                                "precipitation_probability_max,relative_humidity_2m_min&hourly=temperature_2m"))
+            d, am = j["daily"], {}
+            for t, v in zip(j.get("hourly", {}).get("time", []), j.get("hourly", {}).get("temperature_2m", [])):
+                if v is not None and "05" <= t[11:13] <= "09":  # ZZ ⑤ 아침 = 5~9시(일 최저는 그날 밤까지 넣음 — 10/27 '5~16도', 기상청 아침 10도)
+                    am.setdefault(t[:10], []).append(v)
             try:
                 a = json.loads(http(f"https://air-quality-api.open-meteo.com/v1/air-quality?{q}&forecast_days=7&hourly=pm2_5"))["hourly"]
                 for t, v in zip(a["time"], a["pm2_5"]):
@@ -6765,7 +6786,7 @@ def weather(seen):
                         pm.setdefault(t[:10], []).append(v)
             except Exception as e:
                 print("weather pm", repr(e))
-            seen[key] = {"t": time.time(), "w": [{"date": dt, "tmin": round(lo), "tmax": round(hi), "rain": pr or 0, "hum": 100 if hu is None else hu,
+            seen[key] = {"t": time.time(), "w": [{"date": dt, "tmin": round(min(am.get(dt) or [lo])), "tmax": round(hi), "rain": pr or 0, "hum": 100 if hu is None else hu,
                                                   "pm": round(sum(pm[dt]) / len(pm[dt])) if pm.get(dt) else None}
                                                  for dt, lo, hi, pr, hu in zip(d["time"], d["temperature_2m_min"], d["temperature_2m_max"],
                                                                                d["precipitation_probability_max"], d["relative_humidity_2m_min"]) if lo is not None and hi is not None]}
@@ -6795,9 +6816,13 @@ def wx_bonus(seen):
     return lambda title: (WEATHER_BONUS * wx_hit(title, kw) if kw else 0) + season_adj(title)  # + Z 계절 상품 +1(제철)/-2
 
 
-def wx_line(w):
-    """'오늘 서울 13~22도, 일교차 9도' + 비·건조·초미세먼지 해당되면 덧붙임."""
-    return (f"오늘 서울 {w['tmin']}~{w['tmax']}도, 일교차 {w['tmax'] - w['tmin']}도" + (f" · 비 올 확률 {w['rain']}%" if w["rain"] >= 60 else "")
+WX_DROP = 5  # ZZ ⑤ 내일 아침이 오늘 아침보다 5도↓ = '밤부터 추워져요'
+
+
+def wx_line(w, nxt=None):
+    """'오늘 서울 아침 10도·낮 16도'(+ 일교차 10도↑ · 내일 아침 WX_DROP도↓ = '밤부터 추워져요') + 비·건조·초미세먼지 해당되면 덧붙임."""
+    return (f"오늘 서울 아침 {w['tmin']}도·낮 {w['tmax']}도" + (f", 일교차 {w['tmax'] - w['tmin']}도" if w["tmax"] - w["tmin"] >= 10 else "")
+            + (", 밤부터 추워져요" if nxt and w["tmin"] - nxt["tmin"] >= WX_DROP else "") + (f" · 비 올 확률 {w['rain']}%" if w["rain"] >= 60 else "")
             + (f" · 습도 {w['hum']}%" if w["hum"] <= 35 else "") + (f" · 초미세먼지 {w['pm']}㎍" if (w["pm"] or 0) >= 36 else ""))
 
 
@@ -6926,8 +6951,8 @@ def weather_post(seen):
             print("weather post: 날씨 못 받음 -> 오늘 건너뜀")
         return
     rules = wx_rules(ws[0])
-    wx_post(seen, key, f"☁️ {wx_line(ws[0])} — 이런 날 필요한 것", wx_deals(seen, [k for r in rules for k in r[2]]),
-            f"☁️ {wx_line(ws[0])}\n{rules[0][4] if rules else '오늘은 뭐 챙기셨어요?'}", "wx")
+    wx_post(seen, key, f"☁️ {wx_line(ws[0], ws[1] if len(ws) > 1 else None)} — 이런 날 필요한 것", wx_deals(seen, [k for r in rules for k in r[2]]),
+            f"☁️ {wx_line(ws[0], ws[1] if len(ws) > 1 else None)}\n{rules[0][4] if rules else '오늘은 뭐 챙기셨어요?'}", "wx")
 
 
 def cal_text(today):
@@ -7084,8 +7109,8 @@ def chat_ok(lines, money=(), facts=""):
     if m := re.search(POLL_ORDER, t):
         return f"시키는 말({m[0]})"
     for i, l in enumerate(lines):
-        if not chat_polite(l, i == len(lines) - 1):
-            return f"존댓말({re.sub(r'[^가-힣]+$', '', l)[-6:]})"
+        if w := th_say(l, i == len(lines) - 1, recall=False):
+            return w if "(" in w else f"{w}({re.sub(r'[^가-힣]+$', '', l)[-6:]})"
     return "" if not season_bad(t) else "계절"
 
 
@@ -7096,6 +7121,30 @@ def chat_polite(l, last=False):
         m = re.search(r"([가-힣])니까$", c)
         return not c or bool(re.search(r"(?:(?<![필중주수소])요|죠|니다)$", c) or last and (re.search(r"[은는]$", c) and not re.search(r"(?<![가-힣])너[는]$", c) or m and (ord(m[1]) - 0xAC00) % 28 == 17))
     return ok(l) or last and "," in l and ok(re.sub(r",[^,]{0,8}$", "", l))
+
+
+TH_ME, TH_RECALL = r"(?<![가-힣])(?:나는|난|나도|내가|저는|저도|제가)(?![가-힣])", r"[가-힣](?:더라|던데)(?![도면])"  # ZZ(10/27 Cowork): 1인칭('나는 아직 코트') · 회상('생각나더라' = 딜 줄에선 써 본 척)
+
+
+def th_say(l, last=False, recall=True):
+    """ZZ Threads 사람 말 줄 공통(딜 끝 줄·첫 줄 훅·수다 글): 경험담 X(1인칭 · recall = 회상 '~더라'도 — 수다 글은 '비가 오더라고요' 같은 공감 OK) + 존댓말 -> 걸린 이유('' = 통과)."""
+    if m := re.search(TH_ME + (f"|{TH_RECALL}" if recall else ""), l or ""):
+        return f"경험담({m[0]})"
+    return "" if chat_polite(l, last) else "존댓말"
+
+
+TH_SEASON_USE = r"(?:보리|옥수수|둥굴레|유자|생강|쌍화|대추|도라지)\s*차|티백|핫초코|코코아|호빵|어묵|담요|이불|극세사|수면\s*양말|핸드\s*크림|립\s*밤|바디\s*로션|보습"  # shortcut: 손으로 쓴 목록 — Cowork가 빠진 걸 짚으면 더하기
+TH_USE = r"세안|얼굴|피부|두피|머릿결|모발|발톱|손톱|뒤꿈치|입술|눈가|겨드랑이|(?<![가-힣])발(?=\s|에|을|이|$|부터|까지|마다)"  # 쓰는 곳·몸 부위(맨 '손'·'몸' X — '손이 가요' 같은 말)
+
+
+def season_fit(name):
+    """ZZ ② 계절 훅 = 상품 쓰임이 계절과 이어질 때만(제철 +1 상품 · 따뜻한 차·보습·이불류) — 비데 물티슈 '화장실 바닥이 차가워요' X."""
+    return season_adj(name) > 0 or bool(re.search(TH_SEASON_USE, name or ""))
+
+
+def use_bad(line, name):
+    """ZZ ③ 쓰는 곳·몸 부위가 상품명에 없으면 지어낸 쓰임새(디펜턴 앰플 '세안') -> 그 낱말 · 없으면 None."""
+    return next((w for w in re.findall(TH_USE, line or "") if w not in (name or "")), None)
 
 
 STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X
@@ -7179,7 +7228,7 @@ def chat_post(seen):
         again = f"\n\n다시: '{why[3:-1]}' 무례 — 놀림·비하·비꼬기·훈계·비속어 없이." if why.startswith("무례") else f"\n\n다시: {why} 걸림 — 규칙대로."
     if why:
         return print("chat post: 규칙 걸림 -> 안 올림", name, why)
-    ch = review("chat", "\n".join(lines), lines, facts, valid=lambda o, n: chat_polite(n, o == lines[-1]))  # QQ 재검토가 반말로 고치면 X
+    ch = review("chat", "\n".join(lines), lines, facts, valid=lambda o, n: not th_say(n, o == lines[-1], recall=False))  # QQ 재검토가 반말로 고치면 X
     lines = [ch.get(re.sub(r"\s+", " ", l).strip(), l) for l in lines]
     lines = [l for l in lines if l]
     if why := chat_ok(lines, money, facts):
