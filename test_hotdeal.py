@@ -3303,7 +3303,7 @@ assert H.wx_line(w12[0]) == "오늘 서울 아침 15도·낮 24도 · 비 올 �
 assert H.wx_line(W12(13, 25)) == "오늘 서울 아침 13도·낮 25도, 일교차 12도" and H.wx_line(W12(13, 20), W12(9, 18)) == "오늘 서울 아침 13도·낮 20도"  # 일교차 = 10도↑만 · 4도 내림 = X
 FCh12 = {**FC12, "hourly": {"time": [f"2026-10-16T{h:02d}:00" for h in range(24)], "temperature_2m": [12.0] * 5 + [10.6, 10.2, 10.4, 11.0, 12.5] + [16.0] * 9 + [9.0, 8.0, 7.0, 6.0, 5.0]}}
 hh12 = H.http; H.http = lambda url, *a, **k: json.dumps(FCh12) if "api.open-meteo.com/v1/forecast" in url and "hourly=temperature_2m" in url else json.dumps(AQ12)
-assert H.weather({})[0]["tmin"] == 10 and H.weather({})[1]["tmin"] == 2; H.http = hh12  # ZZ ⑤(10/27 '5~16도' — 기상청 아침 10도): 아침 = 5~9시 최저(밤 23시 5도 X) · 시간별 없는 날 = 일 최저
+wh12 = H.weather({}); assert wh12[0]["am"] == 10 and wh12[0]["tmin"] == 15 and "am" not in wh12[1] and wh12[1]["tmin"] == 2 and H.wx_line(wh12[0], wh12[1]).startswith("오늘 서울 아침 10도·낮 24도, 일교차 14도, 밤부터 추워져요"); H.http = hh12  # 계절·날씨 규칙 = 일 최저 그대로(리뷰)  # ZZ ⑤(10/27 '5~16도' — 기상청 아침 10도): 아침 = 5~9시 최저(밤 23시 5도 X) · 시간별 없는 날 = 일 최저
 H.http = lambda *a, **k: (_ for _ in ()).throw(OSError("down")); s12b = {}
 assert H.weather(s12b) is None and H.wx_words(s12b) == [] and H.wx_bonus(s12b)("우산") == 0  # 예보 못 받음 -> 날씨 X(가점도 X)
 s12r = {}; H.weather(s12r); c12.clear(); H.http = http12; assert H.weather(s12r) is None and not c12  # 1시간 안엔 다시 안 받음
@@ -10529,6 +10529,11 @@ assert H.th_hook({"thhook": {"l": [4, 5]}}, "누벨린 디펜턴 토탈 솔루�
 H.ai_json = lambda prompt, props, img=None: {"hook": "화장실 갈 때 바닥이 차가워요 🍂"}
 assert H.th_hook({"thhook": {"l": [5, 1]}}, "베베앙 데일리 비데 물티슈 캡형 60매 10팩", False, "", "^$", [])[1] != 2  # ② 비데 물티슈 = 계절 훅 X(다음 차례)
 (H.ai_voice, H.ai_json, H.TH_HOOK, H.REVIEW, H.random) = sv103
+assert H.use_bad("찬 바람에 입술 트는 계절이에요", "이니스프리 유채꿀 립밤 초보습 3.5g 2개") is None and H.use_bad("발 시린 계절이 왔어요", "웨이즈온 무압박 수면양말 6개") is None and H.use_bad("샤워 후 피부 당기는 계절이에요", "바세린 바디로션 1L") is None and H.use_bad("세안 후 얼굴에 발라요", "디펜턴 앰플 30ml")  # 리뷰: 종류로 뻔한 곳 OK · 앰플 X
+assert H.th_rep("요즘 많이 추워졌죠", ["날이 추워졌어요"]) == "추워" and H.season_fit("제주 감귤 5kg") and H.season_fit("해남 꿀고구마 3kg")
+H.ai_json = lambda prompt, props, img=None: {"hook": "다들 어디에 두세요? 현관이죠!" if "질문 자답" in prompt else "창문 닫고 자는 계절이에요"}; H.TH_HOOK = True
+assert H.th_hook({"thhook": {"l": [1, 4]}}, "크리넥스 3겹 데코 앤 소프트 30롤", False, "", "^$", []) == ("다들 어디에 두세요? 현관이죠!", 1) and H.th_hook({"thhook": {"l": [4, 1]}}, "크리넥스 3겹 데코 앤 소프트 30롤", False, "", "^$", [])[1] == 4  # 리뷰: 쓸 종류가 직전 2개뿐 = 직전 1개만 피함(훅 없는 글 X)
+(H.ai_json, H.TH_HOOK) = (sv103[1], sv103[2])
 sv103r = (H.tg, time.time); s103 = {"rvst_20261027": {"t": 1, "n": 3, "m": 1, "k": 0}}; H.tg = lambda *a, **k: {"message_id": 1}; time.time = lambda: TK("2026-10-27 22:05")
 with contextlib.redirect_stdout(io.StringIO()) as o103r:
     H.rv_report(s103)

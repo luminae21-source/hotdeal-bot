@@ -4285,7 +4285,8 @@ TH_HOOK_ASK = {1: "형식 = 질문 자답: 짧은 질문 + 답이 이 상품 종
 TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 친근한 존댓말(~요·~죠로 끝 — 시키는 말 X) + 생활 공감 위트, 폰 한 줄(25자 안팎), 이모지 0~2개.
 - {kind}
 - 말투 예: '집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻' · '라면 물 올려놓고 생각났다면… 지금이 쟁일 때예요 🍜' (아래 재미 예시 말도 존댓말로)
-- 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데), 효능·건강, 과장·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
+- 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데)·나는/저는, 효능·건강, 과장·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
+- 쓰는 곳·몸 부위(얼굴·세안·피부·발 등)는 상품명에서 바로 알 수 있을 때만(모르면 보관·떨어짐·구성 장면).
 - {fun}
 
 상품명: {name}"""
@@ -4365,7 +4366,7 @@ def old_toss(l):
     return bool(m) and (int(m[1]), int(m[2])) != (k.tm_mon, k.tm_mday)
 
 
-TH_SEASON_W = r"쌀쌀|추워지|추운|찬\s*바람|으슬|뜨끈|따끈|따뜻"  # ZZ ⑥ 계절 말(최근 Threads 끝 줄·훅에 있으면 또 X — 10/27 '쌀쌀' 3번)
+TH_SEASON_W = r"쌀쌀|추워|추운|추위|찬\s*바람|으슬|뜨끈|따끈|따뜻"  # ZZ ⑥ 계절 말(최근 Threads 끝 줄·훅에 있으면 또 X — 10/27 '쌀쌀' 3번)
 
 
 def th_rep(l, rec):
@@ -4723,7 +4724,9 @@ def th_hook(seen, name, dl, unit, ban, names):
     ①② = Claude(숫자·가격 말 X · 금지 말 · 폭 · 물음표는 ①만) — 실패·규칙 X = 다음 차례 종류로(직전 2개는 끝까지 X). 숫자는 우리 데이터(단가)만."""
     last = seen.get("thhook", {}).get("l", [])
     fixed = {3: "이 가격, 오늘 밤 12시까지예요" if dl else "", 4: TH_HOOK_POOL[sum(map(ord, name)) % len(TH_HOOK_POOL)], 5: f"{unit}꼴이에요" if unit else ""}  # ④ = 상품마다 다른 줄
-    for k in sorted((x for x in TH_HOOKS if fixed.get(x, True) and x not in last and (x != 2 or season_fit(name))), key=lambda x: (x - (last[-1] if last else 0) - 1) % len(TH_HOOKS)):
+    ks = [x for x in TH_HOOKS if fixed.get(x, True) and (x != 2 or season_fit(name))]
+    ks = [x for x in ks if x not in last] or [x for x in ks if x not in last[-1:]]  # 쓸 수 있는 종류가 직전 2개뿐(계절 훅 X·단가 X·하루특가 X 글) = 직전 1개만 피함(ZZ 리뷰 — 훅 없는 글 연속 X)
+    for k in sorted(ks, key=lambda x: (x - (last[-1] if last else 0) - 1) % len(TH_HOOKS)):
         if k in fixed:
             return fixed[k], k
         try:
@@ -6777,7 +6780,7 @@ def weather(seen):
                                 "precipitation_probability_max,relative_humidity_2m_min&hourly=temperature_2m"))
             d, am = j["daily"], {}
             for t, v in zip(j.get("hourly", {}).get("time", []), j.get("hourly", {}).get("temperature_2m", [])):
-                if v is not None and "05" <= t[11:13] <= "09":  # ZZ ⑤ 아침 = 5~9시(일 최저는 그날 밤까지 넣음 — 10/27 '5~16도', 기상청 아침 10도)
+                if v is not None and "05" <= t[11:13] <= "09":  # ZZ ⑤ 아침 = 5~9시(일 최저는 그날 밤까지 넣음 — 10/27 '5~16도', 기상청 아침 10도) · 날씨 글 줄만(계절·날씨 규칙 = 일 최저 그대로 — 리뷰)
                     am.setdefault(t[:10], []).append(v)
             try:
                 a = json.loads(http(f"https://air-quality-api.open-meteo.com/v1/air-quality?{q}&forecast_days=7&hourly=pm2_5"))["hourly"]
@@ -6786,7 +6789,7 @@ def weather(seen):
                         pm.setdefault(t[:10], []).append(v)
             except Exception as e:
                 print("weather pm", repr(e))
-            seen[key] = {"t": time.time(), "w": [{"date": dt, "tmin": round(min(am.get(dt) or [lo])), "tmax": round(hi), "rain": pr or 0, "hum": 100 if hu is None else hu,
+            seen[key] = {"t": time.time(), "w": [{"date": dt, "tmin": round(lo), "tmax": round(hi), **({"am": round(min(am[dt]))} if am.get(dt) else {}), "rain": pr or 0, "hum": 100 if hu is None else hu,
                                                   "pm": round(sum(pm[dt]) / len(pm[dt])) if pm.get(dt) else None}
                                                  for dt, lo, hi, pr, hu in zip(d["time"], d["temperature_2m_min"], d["temperature_2m_max"],
                                                                                d["precipitation_probability_max"], d["relative_humidity_2m_min"]) if lo is not None and hi is not None]}
@@ -6820,9 +6823,10 @@ WX_DROP = 5  # ZZ ⑤ 내일 아침이 오늘 아침보다 5도↓ = '밤부터 
 
 
 def wx_line(w, nxt=None):
-    """'오늘 서울 아침 10도·낮 16도'(+ 일교차 10도↑ · 내일 아침 WX_DROP도↓ = '밤부터 추워져요') + 비·건조·초미세먼지 해당되면 덧붙임."""
-    return (f"오늘 서울 아침 {w['tmin']}도·낮 {w['tmax']}도" + (f", 일교차 {w['tmax'] - w['tmin']}도" if w["tmax"] - w["tmin"] >= 10 else "")
-            + (", 밤부터 추워져요" if nxt and w["tmin"] - nxt["tmin"] >= WX_DROP else "") + (f" · 비 올 확률 {w['rain']}%" if w["rain"] >= 60 else "")
+    """'오늘 서울 아침 10도·낮 16도'(아침 = am 5~9시 최저 · 없으면 일 최저 — 계절·날씨 규칙은 일 최저 그대로 · + 일교차 10도↑ · 내일 아침 WX_DROP도↓ = '밤부터 추워져요') + 비·건조·초미세먼지 해당되면 덧붙임."""
+    a, b = w.get("am", w["tmin"]), nxt and nxt.get("am", nxt["tmin"])
+    return (f"오늘 서울 아침 {a}도·낮 {w['tmax']}도" + (f", 일교차 {w['tmax'] - a}도" if w["tmax"] - a >= 10 else "")
+            + (", 밤부터 추워져요" if nxt and a - b >= WX_DROP else "") + (f" · 비 올 확률 {w['rain']}%" if w["rain"] >= 60 else "")
             + (f" · 습도 {w['hum']}%" if w["hum"] <= 35 else "") + (f" · 초미세먼지 {w['pm']}㎍" if (w["pm"] or 0) >= 36 else ""))
 
 
@@ -7133,7 +7137,7 @@ def th_say(l, last=False, recall=True):
     return "" if chat_polite(l, last) else "존댓말"
 
 
-TH_SEASON_USE = r"(?:보리|옥수수|둥굴레|유자|생강|쌍화|대추|도라지)\s*차|티백|핫초코|코코아|호빵|어묵|담요|이불|극세사|수면\s*양말|핸드\s*크림|립\s*밤|바디\s*로션|보습"  # shortcut: 손으로 쓴 목록 — Cowork가 빠진 걸 짚으면 더하기
+TH_SEASON_USE = r"(?:보리|옥수수|둥굴레|유자|생강|쌍화|대추|도라지)\s*차|율무|티백|핫초코|코코아|커피\s*믹스|맥심|호빵|어묵|감귤|(?<![가-힣])귤|고구마|햅쌀|담요|이불|극세사|수면\s*양말|핸드\s*크림|립\s*밤|바디\s*로션|보습"  # shortcut: 손으로 쓴 목록 — Cowork가 빠진 걸 짚으면 더하기
 TH_USE = r"세안|얼굴|피부|두피|머릿결|모발|발톱|손톱|뒤꿈치|입술|눈가|겨드랑이|(?<![가-힣])발(?=\s|에|을|이|$|부터|까지|마다)"  # 쓰는 곳·몸 부위(맨 '손'·'몸' X — '손이 가요' 같은 말)
 
 
@@ -7142,9 +7146,14 @@ def season_fit(name):
     return season_adj(name) > 0 or bool(re.search(TH_SEASON_USE, name or ""))
 
 
+USE_OK = ((r"립", "입술"), (r"바디|로션|보습|크림|미스트", "피부"), (r"양말|슬리퍼|덧신|풋", "발 뒤꿈치 발톱"), (r"아이\s*크림", "눈가"), (r"샴푸|린스|트리트먼트|헤어", "두피 머릿결 모발"),
+          (r"클렌|폼|토너|세안|비누", "세안 얼굴 피부"))  # 상품 종류로 뻔한 쓰는 곳(립밤 → 입술 · 바디로션 → 피부 — ZZ 리뷰) · 앰플·세럼은 X(발·얼굴 다 있음 — 디펜턴)
+
+
 def use_bad(line, name):
-    """ZZ ③ 쓰는 곳·몸 부위가 상품명에 없으면 지어낸 쓰임새(디펜턴 앰플 '세안') -> 그 낱말 · 없으면 None."""
-    return next((w for w in re.findall(TH_USE, line or "") if w not in (name or "")), None)
+    """ZZ ③ 쓰는 곳·몸 부위가 상품명(+ 종류로 뻔한 곳 USE_OK)에 없으면 지어낸 쓰임새(디펜턴 앰플 '세안') -> 그 낱말 · 없으면 None."""
+    ok = (name or "") + " " + " ".join(w for rx, w in USE_OK if re.search(rx, name or ""))
+    return next((w for w in re.findall(TH_USE, line or "") if w not in ok), None)
 
 
 STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X
