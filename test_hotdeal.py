@@ -5376,7 +5376,7 @@ H.ai_json = lambda prompt, props: {"cats": ["beauty", "food"]}; H.cat_fill({}); 
 a35.clear(); H.ai_json = lambda prompt, props: a35.append(prompt); H.cat_fill({}); assert not a35  # 다 채웠으면 안 부름
 H.ai_json, H.POSTS = sv35c[:2]; H.E.pop("ANTHROPIC_API_KEY") if sv35c[2] is None else H.E.update(ANTHROPIC_API_KEY=sv35c[2]); os.remove("posts35.json")
 assert set(S35.CAT_META) == set(S35.CAT_ORDER) and len({m[0] for m in S35.CAT_META.values()}) == 15 and set(S35.TILES) <= set(S35.CAT_META) and len(S35.TILES) == 8  # 10/24 개편: 품목 12칸 = 쪽 12개(영문 주소), 홈 타일 = 그중 8칸
-assert S35.tiles().count('<a class="tile"') == 8 and S35.tiles(tuple(S35.CAT_META)).count('<a class="tile"') == 13 and S35.chips_html("life").count('aria-current="page"') == 1 and "aria-current" not in S35.chips_html("") and S35.tiles(tuple(S35.CAT_META), True).startswith('<nav class="tiles t6"')
+assert S35.tiles().count('<a class="tile"') == 8 and S35.tiles(tuple(S35.CAT_META)).count('<a class="tile"') == 15 and S35.chips_html("life").count('aria-current="page"') == 1 and "aria-current" not in S35.chips_html("") and S35.tiles(tuple(S35.CAT_META), True).startswith('<nav class="tiles t6"')
 # 9-36 (10/23 리뷰 고침 + 진우 '인스타 다시 켬'): own_end 확인 전 하루특가 날 지남 = ⏳ + stl(첫 확인에 🔥여도 🔁 X) · stale = 글 날짜 밤 12시 기준(매일 밤 다시 ⏳·강제 재확인 X)
 sv36 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.tg, H.ai_json)
 json.dump([{"t": "2026-10-20 10:00", "text": "🔥 [토스] D (8,000원)\n\n토스 하루특가", "url": "https://toss.shopping/_m/D36", "own": 1}], open("posts36.json", "w"), ensure_ascii=False)
