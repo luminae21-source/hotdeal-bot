@@ -1859,7 +1859,8 @@ def cp_price(seen):
     for u in names:
         if ev[u].get("pid"):
             bypid.setdefault(ev[u]["pid"], []).append(u)
-    todo = sorted(((q["m"].get(u, [0, ""])[1], u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
+    last = lambda u: max(q["m"].get(u, [0, ""])[1], c if re.fullmatch(r"\d{4}-\d\d-\d\d \d\d:\d\d", c := str(ev[u].get("chk") or "")) else "")  # XX(10/27): 마지막 확인 = 봇 검색·Cowork events chk 중 새것 — 막 들어온(Cowork가 확인한) 진열이 옛 확인 상품 앞을 막지 않게
+    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: t[0])  # 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     def shown(f, k=None):  # 지난 빌드 쪽에 보이는 딜(쪽 링크 순서 — k = 첫 화면 몇 개)
@@ -1968,7 +1969,7 @@ def cp_words(name):
 
 def cp_kws(name):
     """쿠팡 검색어 1~3개(10/24 Cowork A① 사진 채움 — pid가 결과 10개 안에 없을 때 다음 것): 이름 그대로 · 수량·용량 뺀 이름 · 브랜드(첫 낱말) + 끝 두 낱말(핵심 낱말)."""
-    b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])", " ", name, flags=re.I).split())  # 괄호 안(옵션)·수량·용량 뺌
+    b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])|(?<![가-힣])각(?![가-힣])", " ", name, flags=re.I).split())  # '각 5개' 남은 '각' X(XX)  # 괄호 안(옵션)·수량·용량 뺌
     w = [x for x in b.split() if not re.fullmatch(r"대용량|묶음|세트|기획|기획세트|증정|단품|본품|정품|무료배송|택1|리필|팩|개|대|특대|국내산", x)]
     c = " ".join([w[0]] + w[-2:]) if len(w) >= 4 else ""
     return list(dict.fromkeys(k[:50] for k in (name, b, c) if len(k) >= 2)) or [name[:50]]

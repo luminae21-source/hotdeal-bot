@@ -10414,4 +10414,22 @@ assert all(S.NOCHK not in S.shelf({**x101(st="wait", now="9,900원", chk="10/20 
 assert all(S.shop_of({**x101(), "url": u, "text": f"🔥 [{m}] 갈배사이다"}) == k for u, m, k in (("https://toss.shopping/_m/xx", "토스쇼핑", "toss"), ("https://smartstore.naver.com/a/products/1", "네이버", "naver")))
 pb101 = S.price_bits(x101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"), sh101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"))
 assert pb101[0] == "12,900원" and pb101[2][0] == "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨"  # 큰 가격 = 올린 가격(날짜 붙은 줄)
+# XX 원인 쪽(로그 10/23~27): 신라면 묶음 = 이름 그대로 검색에 pid 없음 · 갈배 = 10/23 한 번 찾은 뒤 차례가 안 옴(확인 안 한 새 진열이 계속 앞 — 오늘 남음 74 → 802)
+#   -> 검색 순서의 '마지막 확인' = 봇 검색·Cowork events chk 중 새것(막 확인해 넣은 진열이 옛 확인 상품 앞을 막지 않게) · 두 번째 검색어에 남던 '각' X
+assert H.cp_kws("농심 신라면·안성탕면·너구리·짜파게티 각 5개 (20개)")[1:] == ["농심 신라면 안성탕면 너구리 짜파게티", "농심 너구리 짜파게티"] and H.cp_kws("각티슈 100매 6개") == ["각티슈 100매 6개", "각티슈"]
+sv101 = (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, os.getcwd())
+d101 = tempfile.mkdtemp(); os.chdir(d101); cs101 = []
+po101 = [{"t": "2026-10-15 10:00", "text": f"🔥 [쿠팡] {n} (9,900원)", "url": f"https://link.coupang.com/a/x10{k}", "own": 1, "mid": k} for k, n in ((1, "새 진열 세제 3L"), (2, "갈배사이다 355ml 24캔"))]
+json.dump([{"at": "2026-10-15 10:00", "deal": True, "url": p["url"], "pid": f"80{k}", "chk": c, "now": "9,900원", "text": "x", "button": "x"} for k, (p, c) in enumerate(zip(po101, ("2026-10-26 20:40", "2026-10-23 09:30")), 1)], open("events.json", "w"))
+json.dump(po101, open("posts.json", "w"))
+H.http = lambda url, *a, **k: cs101.append(parse_qs(urlsplit(url).query)["keyword"][0]) or json.dumps({"rCode": "0", "data": {"productData": []}})
+H.HAS_CP, H.EVENTS, H.POSTS = True, "events.json", "posts.json"; time.time = lambda: TK("2026-10-27 10:00")
+im101 = {p["url"]: "https://ads-partners.coupang.com/image1/x" for p in po101}  # 둘 다 사진 있음 = 가격 확인 줄(확인 오래된 것 먼저)
+for m101, want in (({}, ["갈배사이다 355ml 24캔", "새 진열 세제 3L"]), ({po101[1]["url"]: [9900, "2026-10-26 23:00", ""]}, ["새 진열 세제 3L", "갈배사이다 355ml 24캔"])):
+    cs101.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.cp_price({"cpq": {"m": dict(m101), "i": dict(im101)}})
+    assert cs101 == want, (cs101, want)  # Cowork 10/23 확인(갈배)이 10/26 확인(새 진열)보다 먼저 · 봇이 10/26 23시에 찾았으면 뒤로
+os.chdir(sv101[5]); shutil.rmtree(d101)
+(H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv101; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 print("OK: 모든 셀프체크 통과")
