@@ -6065,7 +6065,7 @@ for x in it50:
     P50[x[0]] = x[1]
 pc50b = tempfile.mkdtemp(); os.makedirs(f"{pc50b}/today"); json.dump({"2026-01-01": [2]}, open(f"{pc50b}/{S50.PICKS}", "w")); S50.PICK_HOUR = 0
 assert [x[0] for x in S50.today_picks(P50, it50, {}, pc50b)[1]] == [6, 3, 1]; S50.PICK_HOUR = h0
-assert S50.badge(cp50(""), S50.st0(cp50(""))) == "" and S50.ALIAS("크리넥스 3겹 화장지 30롤") == "휴지" and "ref=(ig|th|link)" in S50.HASH_JS and "try{h=decodeURIComponent(h)}catch(e){}" in S50.HASH_JS
+assert S50.badge(cp50(""), S50.st0(cp50(""))) == "" and S50.ALIAS("크리넥스 3겹 화장지 30롤") == "휴지" and "ref=(ig\\w*|th\\w*|link)(?=&|#|$)" in S50.HASH_JS and "try{h=decodeURIComponent(h)}catch(e){}" in S50.HASH_JS
 d50b = tempfile.mkdtemp(); many = [cp50("", url=f"https://link.coupang.com/a/m{k}") for k in range(25)]
 S50.build(many, d50b); os.makedirs(f"{d50b}/c/oldname/2"); assert os.path.exists(f"{d50b}/c/hot/2/index.html")
 S50.build(many[:5] + [cp50("", url="https://link.coupang.com/a/gone", st="gone")], d50b); assert not os.path.exists(f"{d50b}/c/hot/2") and not os.path.exists(f"{d50b}/c/oldname") and os.path.exists(f"{d50b}/c/hot/index.html")
@@ -7643,7 +7643,7 @@ H.CP_IMG, (H.CP_LINKS, S0.CP_LINKS) = sv69i, sv69c
 pr69 = S0.pick_rows([(1, {"t": "2026-10-26 09:00", "text": "🔥 [쿠팡] 크리넥스 3겹 데코앤소프트 화장지 30m 30롤 (19,900원/무료)", "url": "https://link.coupang.com/a/k1", "img": CPI69}),
                      (2, {"t": "2026-10-26 09:00", "text": "🔥 [네이버] 김 (9,900원)", "url": "https://naver.me/k2", "img": "https://shop-phinf.pstatic.net/a.jpg"})])
 assert f'<img src="{CPI69}" alt="" width="48" height="48" loading="lazy"' in pr69 and '<b>02</b><i class="pt" aria-hidden="true"><i class="lw" aria-hidden="true"><svg' in pr69 and pr69.count("<img") == 1  # 쿠팡 사진만(네이버 = 몰 로고 칩 — WW)
-assert '<span class="nm">[쿠팡] 크리넥스 3겹 데코앤소프트 화장지 30m 30롤</span></span><em><i>19,900원</i><u>구매 →</u></em>' in pr69 and ".pick .pt{position:relative;display:grid;place-items:center;width:48px;height:48px;margin:-6px 0" in S0.CSS and "-webkit-line-clamp:2" in S0.CSS.split(".pick .nm{")[1].split("}")[0]  # WW: 48px · 위아래 -6px = 줄 높이 그대로
+assert '<span class="nm">[쿠팡] 크리넥스 3겹 데코앤소프트 화장지 30m 30롤</span></span><em><i>19,900원</i><u>구매 →</u></em>' in pr69 and ".pick .pt{position:relative;display:grid;place-items:center;width:48px;height:48px;margin:-4px 0" in S0.CSS and "-webkit-line-clamp:2" in S0.CSS.split(".pick .nm{")[1].split("}")[0]  # WW: 48px · 위아래 -4px(줄 위아래 6px 안)
 # 큐레이션 인스타: 사진 2장↑ = 조각 -> 묶음(캡션 '프로필 링크 → 주제' + 출처) -> 발행(사이트 카드 기록 X) · 1장 = 사진 글 · 0장 = X · 실패 = 다시 X
 at69 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
 ig69, f69l, a69 = [], [], []
@@ -10376,7 +10376,7 @@ assert f'<a class="u" href="{S.CHANNEL}" rel="noopener" target="_blank">텔레�
 assert f'<img src="{IMG100}" alt="" width="48" height="48"' in rw100[2] and '<s class="pd">29%</s>' in rw100[2] and "<em><i>11,990원</i><u>구매 →</u></em>" in rw100[2] and '<i class="lw" aria-hidden="true">🚀</i>' in rw100[2]  # 사진 + 아래 쿠팡 칩(못 불러오면 보임) · 할인 배지
 assert '<small class="pu">개당 1,683원</small>' in rw100[3] and "<img" not in rw100[3] and '<s class="pd">' not in rw100[3] and "<i>6,730원</i>" in rw100[3]  # 사진 없음 = 몰 로고 칩 · 단위가 칩
 assert IMG100 not in rw100[4] and '<img src="/icons/mall/toss.png" alt="토스">' in rw100[4] and "<img" not in rw100[5] and "pstatic" not in r100 and "<svg" in rw100[5] and 'class="ci ci-' in rw100[6] and '<i class="lw"' not in rw100[6]  # 토스·네이버 = 사진 X(규칙) · 3사 밖 = 품목 아이콘
-assert S.pick_rows([(0, P100[0])]) == '<details class="pch"><summary>📲 나머지 1개는 텔레그램에서</summary><a class="pick ch" aria-disabled="true"><b>01</b><span class="pn"><span class="nm">[네이버] 네이버 직접 (1,000원)</span></span><em>채널에서</em></a>' + f'<a class="u" href="{S.CHANNEL}" rel="noopener" target="_blank">텔레그램 채널에서 보기 →</a></details>' and S.pick_rows(list(enumerate(P100[1:3]))).count("pch") == 0
+assert S.pick_rows([(0, P100[0])]) == '<details class="pch"><summary>📲 이 카드 1개는 텔레그램에서</summary><a class="pick ch" aria-disabled="true"><b>01</b><span class="pn"><span class="nm">[네이버] 네이버 직접 (1,000원)</span></span><em>채널에서</em></a>' + f'<a class="u" href="{S.CHANNEL}" rel="noopener" target="_blank">텔레그램 채널에서 보기 →</a></details>' and S.pick_rows(list(enumerate(P100[1:3]))).count("pch") == 0
 d100, cwd100 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d100); os.makedirs("o/cards")
 json.dump({"2026-10-27_11": 1}, open("o/cards/ig.json", "w")); json.dump([0, 1, 2], open("o/cards/2026-10-27_11.json", "w"))
 time.time = lambda: calendar.timegm(time.strptime("2026-10-27 12:00", "%Y-%m-%d %H:%M")) - 9 * 3600
@@ -10388,7 +10388,14 @@ assert '<h2 id="today-h">🔥 최근 카드 딜 · 10/27</h2>' in S.card_picks(P
 os.remove("o/cards/ig.json"); open("o/cards/2026-10-27.png", "wb").write(b"x"); time.time = lambda: calendar.timegm(time.strptime("2026-10-27 22:00", "%Y-%m-%d %H:%M")) - 9 * 3600
 assert '<h2 id="today-h">🔥 오늘의 카드 딜 · 10/27</h2><div class="t">인스타·Threads 카드 번호 그대로</div>' in S.card_picks(P100, "o")  # 하루 카드 = 부제에 이름 X(제목 날짜 = 그 카드)
 os.chdir(cwd100)
-assert "ref=(ig|th|link))/" in S.HASH_JS and "if(h==='today')t.scrollIntoView();else{var b=document.querySelector('main>.pb'),l=document.querySelector('main>.la');if(b)b.insertAdjacentElement('afterend',t);else if(l)l.insertAdjacentElement('beforebegin',t)}" in S.HASH_JS  # ⑥ 첫 화면(기획전 띠 아래) · /#today = 스크롤
+assert "ref=(ig\\w*|th\\w*|link)(?=&|#|$))/" in S.HASH_JS and "if(h==='today')t.scrollIntoView();else{var b=document.querySelector('main>.pb'),l=document.querySelector('main>.la');if(b)b.insertAdjacentElement('afterend',t);else if(l)l.insertAdjacentElement('beforebegin',t)}" in S.HASH_JS  # ⑥ 첫 화면(기획전 띠 아래) · /#today = 스크롤
+# WW 리뷰: 할인 배지 = 봇이 쓴 ' · ' 칸 'N% 할인'만(⚠️ 줄·문장 속·정가 기준·쿠폰/카드 조건·'100%'·'5.5%' X) · 칸이 다 접히면 '이 카드 N개' · 대비(--accf·19px 번호·칩 ink) · 줄 높이(위아래 6px·칩 1줄) · 토스 로고 = 사진 규칙 X(.pt>img) · ref 정확히
+pd100 = lambda t: S.pick_thumb({**P100[2], "text": t})
+assert all('class="pd"' not in pd100(t) for t in ("⚠️ 확인할 점: '80% 할인' 정가는 참고만", "글쓴이 말로는 토스 3% 할인이 추가된다고", "삼성·롯데·현대카드 7% 할인 적용가", "잇퓨 공식 · 48% 할인(정가 105,000원 기준)", "💰 와우 쿠폰 44% 할인", "📦 쿠팡 · 100% 할인", "📦 쿠팡 · 5.5% 할인", "📦 쿠팡 · 0% 할인", "15% 할인에 5% 적립"))
+assert all(f'<s class="pd">{n}%</s>' in pd100(t) for t, n in (("📦 쿠팡 · 38% 할인 🔥", 38), ("토스 특가 · 60% 할인 · 30일 내 최저가", 60), ("💰 10m당 117원꼴 · 토스 44% 할인", 44), ("💰 토스 72% 할인", 72), ("로켓배송 · 7% 할인 · 리뷰 3만 개", 7)))
+assert S.pick_rows([(0, P100[0])]).startswith('<details class="pch"><summary>📲 이 카드 1개는 텔레그램에서</summary>') and "나머지 1개" in S.pick_rows([(0, P100[0]), (1, P100[2])])  # 위에 보이는 줄 없음 = '나머지' X
+css100 = S.CSS.split(".pick{")[1].split("#today .dn{")[0]
+assert all(x in css100 for x in ("padding:6px 10px", ".pick b{color:var(--acc);font-size:19px", ".pick .pt>img{", "background:var(--accf);color:#fff;font-size:10.5px", ".pick em u{padding:2px 10px;border-radius:999px;background:var(--accf)", "color:var(--ink);font-size:10.5px", ".pick .pu{display:block;width:max-content;max-width:100%", "white-space:nowrap;overflow:hidden;text-overflow:ellipsis", ".pch .u{display:inline-block;padding:12px 0}")) and ".pick .pt img{" not in css100 and "background:var(--acc);" not in css100
 assert "SHOP_NOTES.values())}</p><div class=\"t\">번호를 누르면" not in inspect.getsource(S.build) and "번호를 누르면" not in inspect.getsource(S.card_picks)  # 3사 문구 3문장 = 칸 맨 위 X(목록 아래)
 (S.SITE_AFF_ONLY, time.time, mc100) = sv100; S.MICONS.clear(); S.MICONS.update(mc100)
 print("OK: 모든 셀프체크 통과")
