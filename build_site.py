@@ -1057,7 +1057,7 @@ def pick_score(x, recs):
     i, p, sh = x
     low = {r[2] for _, _, rows in recs.values() for r in rows[:3]}
     good = i in low or re.search(r"30일\s*(?:내\s*)?최저가", p["text"]) or saving(p["text"])
-    fresh = sh[1] is not None and NOCHK not in sh[2] or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
+    fresh = sh[1] is not None and NOCHK not in (sh[2] or "") or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
     m, k = time.gmtime(time.time() + 9 * 3600).tm_mon, season_item(title_of(p["text"]))
     insea = k and not season_off(k, m) and (k != "between" or m in (3, 4, 9, 10, 11))  # 제철(Z +1 — hotdeal season_adj와 같은 달 기준, 철 지난 건 pick_off)
     return (not sh[4], not fresh, not good, not insea, not p.get("own"), not img_of(p), -i)  # 같은 점수 = 제철 -> 사진 있는 것 먼저(10/24 Cowork A④)
