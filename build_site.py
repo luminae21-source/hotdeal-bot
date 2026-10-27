@@ -699,7 +699,7 @@ def shelf(p, ev, today):
     if st == "hot":
         return 0, now or None, " · ".join(x for x in (seen_at, NOCHK) if x) if nochk else (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else "", bd, rehot
     wait = f"특가 때 {tgt} · 특가 기다리는 중" if tgt else f"{md} 가격 · 특가 기다리는 중"  # 목표가 없으면 올린 가격을 날짜와 같이(지금 가격처럼 안 보이게)
-    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (" · ".join(x for x in (seen_at, NOCHK, wait) if x) if now and nochk else f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · {NOCHK if nochk else '지금 가격은 링크에서 확인'}"), bd + [("b3", "⏳ 특가 대기")], False
+    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (" · ".join(x for x in (seen_at, NOCHK, wait if tgt else "특가 기다리는 중") if x) if now and nochk else f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · {NOCHK if nochk else '지금 가격은 링크에서 확인'}"), bd + [("b3", "⏳ 특가 대기")], False
 
 
 def shelf_gone(posts):
@@ -1725,7 +1725,7 @@ def same_cat(i, p, bycat, skip=(), n=6):
         return ""
     m = CAT_META.get(c)
     head = f"{m[2]} {m[1]} 칸 다른 딜" if m and all(cat_of(x[1]) == c for x in xs) else "🔥 다른 딜 더 보기"
-    row = lambda q, sh: (price_bits(q, sh)[0] + (f" · {int(q['t'][5:7])}/{int(q['t'][8:10])} 가격" if sh[1] is None and (q.get("own") or shop_of(q) == "toss") and price_bits(q, sh)[0] else "")) or "⏳ 특가 대기"
+    row = lambda q, sh: (price_bits(q, sh)[0] + (f" · {sh[2].split(NOCHK)[0]}{NOCHK}" if sh[1] and NOCHK in sh[2] else f" · {int(q['t'][5:7])}/{int(q['t'][8:10])} 가격" + f" · {NOCHK}" * (NOCHK in sh[2]) if sh[1] is None and (q.get("own") or shop_of(q) == "toss") else "") * bool(price_bits(q, sh)[0])) or "⏳ 특가 대기"  # XX 리뷰: 못 찾은 상품 = 날짜 + '가격 확인 안 됨'(카드와 같게)
     return (f'<section class="sec chgb lk" aria-labelledby="samh"><h2 id="samh">{head}</h2><ul>'
             + "".join(f'<li><a href="{BASE}p/{j}.html"><span>{html.escape(parse(title_of(q["text"]))[1])}</span><b>{html.escape(row(q, sh))}</b></a></li>' for j, q, sh in xs) + "</ul></section>")
 

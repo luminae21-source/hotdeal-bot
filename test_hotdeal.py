@@ -10414,7 +10414,10 @@ assert sh101(st="wait", t="2026-10-25 10:00")[2] == "10/25 가격 · 특가 기�
 assert sh101(st="out", chk="10/20", t="2026-10-15 23:00")[0] == 3 and S.NOCHK not in sh101(st="out", chk="10/20")[2]  # 일시 품절 = 그대로
 assert all(S.NOCHK not in S.shelf({**x101(st="wait", now="9,900원", chk="10/20 9시", chkt="2026-10-20 09:00"), "url": u, "text": f"🔥 [{m}] 갈배사이다 355ml 24캔 (12,900원/무료)"}, {}, TD101)[2] for u, m in (("https://toss.shopping/_m/xx", "토스쇼핑"), ("https://smartstore.naver.com/a/products/1", "네이버")))  # 토스·네이버 = 그대로
 assert all(S.shop_of({**x101(), "url": u, "text": f"🔥 [{m}] 갈배사이다"}) == k for u, m, k in (("https://toss.shopping/_m/xx", "토스쇼핑", "toss"), ("https://smartstore.naver.com/a/products/1", "네이버", "naver")))
+assert sh101(st="wait", **old101)[2] == "10/23 9시 가격 · 가격 확인 안 됨 · 특가 기다리는 중"  # 목표가 없음 = 올린 날 '10/15 가격' 조각 X(날짜 2개로 안 보이게 — XX 리뷰)
 p101 = x101(st="wait", **old101); s101 = S.shelf(p101, {}, TD101)
+sc101 = S.same_cat(0, {"t": "2026-10-15 23:00", "text": "🔥 [쿠팡] 다른 음료 (9,900원)", "url": "u0", "own": 1}, {"": [(5, p101, s101), (6, x101(st="hot", t="2026-10-26 10:00"), sh101(st="hot", t="2026-10-26 10:00")), (7, x101(st="wait"), sh101(st="wait"))]})
+assert "<b>17,430원 · 10/23 9시 가격 · 가격 확인 안 됨</b>" in sc101 and "<b>12,900원 · 10/26 가격</b>" in sc101 and "<b>12,900원 · 10/15 가격 · 가격 확인 안 됨</b>" in sc101, sc101  # 칸 다른 딜 줄 = 카드처럼 날짜 + 못 찾음(XX 리뷰 — 맨 가격만 X)
 assert S.price_bits(p101, s101)[0] == "17,430원" and S.price_bits(p101, s101)[2][0] == s101[2]  # 큰 가격 = 마지막 확인가(딜 쪽 제목·h1·JSON-LD도 같은 값 — 올린 가격으로 안 내려감)
 assert "· 10/23 9시 가격 17,430원 · 가격 확인 안 됨" in S.deal_state(p101, s101) and "지금 가격" not in S.deal_state(p101, s101), S.deal_state(p101, s101)  # p/N 줄 = 날짜 붙은 가격(지금 X)
 tt101, time.time = time.time, lambda: TK("2026-10-27 12:00")
@@ -10429,6 +10432,11 @@ H.own_end({"cpq": {"m": {CU101: [0, "2026-10-22 00:10", ""]}}}); g101 = json.loa
 assert g101.get("cpx") == "2026-10-22 00:10" and S.shelf(g101, S.ev_info(), TD101)[2].startswith("지금 가격 (10/23 9시 확인)"), g101  # Cowork 확인 전 실패 = 그대로
 H.own_end({"cpq": {"m": {CU101: [17900, "2026-10-27 09:40", ""]}}}); g101 = json.load(open("posts.json"))[0]
 assert "cpx" not in g101 and g101["now"] == "17,900원" and g101["chkt"] == "2026-10-27 09:40" and S.shelf(g101, S.ev_info(), TD101)[2] == "지금 가격 (10/27 9시 확인) · 특가 때 12,900원 · 특가 기다리는 중", g101  # 찾음 = cpx 지움(목표가 = 처음 🔥 글 가격)
+H.own_end({"cpq": {"m": {CU101: [0, "2026-10-27 11:00", "", 17400, "2026-10-26 10:00", ""]}}}); g101 = json.load(open("posts.json"))[0]
+assert g101["now"] == "17,400원" and g101["chkt"] == "2026-10-26 10:00" and g101["cpp"] == 17400 and g101["cpx"] == "2026-10-27 11:00" and S.shelf(g101, S.ev_info(), TD101)[2].startswith("지금 가격 (10/26 10시 확인)") and S.shelf(g101, S.ev_info(), "2026-10-30")[2].startswith("10/26 10시 가격 · 가격 확인 안 됨"), g101  # 못 찾음 + 그 전 봇 확인 = 그 가격·날짜 그대로(Cowork 10/23 13,170원으로 X) · 3일 뒤에만 '가격 확인 안 됨'
+json.dump([{"at": "2026-10-15 23:00", "deal": True, "url": CU101, "pid": "7412691872", "item": "111", "now": "17,430원", "chk": "2026-10-23 09:30", "text": "x", "button": "x"}], open("events.json", "w"))
+H.own_end({"cpq": {"m": {CU101: [0, "2026-10-27 11:00", ""]}}}); g101 = json.load(open("posts.json"))[0]
+assert "cpx" not in g101, g101  # 옛 옵션(events item 넣기 전)으로 못 찾은 것 = 못 찾음 X(새 옵션으로 다시 검색 차례)
 os.chdir(sv101b[3]); shutil.rmtree(d101b); (H.POSTS, H.HAS_TOSS, time.time, _) = sv101b
 # XX 원인 쪽(로그 10/23~27): 신라면 묶음 = 이름 그대로 검색에 pid 없음 · 갈배 = 10/23 한 번 찾은 뒤 차례가 안 옴(확인 안 한 새 진열이 계속 앞 — 오늘 남음 74 → 802)
 #   -> 검색 순서의 '마지막 확인' = 봇 검색·Cowork events chk 중 새것(막 확인해 넣은 진열이 옛 확인 상품 앞을 막지 않게) · 두 번째 검색어에 남던 '각' X
@@ -10446,6 +10454,24 @@ for m101, want in (({}, ["갈배사이다 355ml 24캔", "새 진열 세제 3L"])
     with contextlib.redirect_stdout(io.StringIO()):
         H.cp_price({"cpq": {"m": dict(m101), "i": dict(im101)}})
     assert cs101 == want, (cs101, want)  # Cowork 10/23 확인(갈배)이 10/26 확인(새 진열)보다 먼저 · 봇이 10/26 23시에 찾았으면 뒤로
+# XX 리뷰 2: 못 찾음이 마지막 맞춘 가격을 지우면(옛 [0, 시각]) own_end가 옛 Cowork 가격·날짜로 돌아가 하루 만에 '가격 확인 안 됨' -> [3:6]에 남김 · 사진 있는 글도 가격 맞춘 검색어 기억(못 찾으면 다음 날 다음 검색어)
+U101b = po101[1]["url"]; q101 = {"cpq": {"m": {U101b: [17400, "2026-10-26 10:00", ""]}, "i": {U101b: "https://ads-partners.coupang.com/image1/x"}}}
+H.http = lambda url, *a, **k: cs101.append(kw := parse_qs(urlsplit(url).query)["keyword"][0]) or json.dumps({"rCode": "0", "data": {"productData": [{"productId": 802, "productName": "해태 갈배사이다 355ml 24캔", "productPrice": 17900, "productImage": "https://ads-partners.coupang.com/image1/y"}] if kw == "갈배사이다" else []}})
+for d101c, want, m0 in (("2026-10-27", "갈배사이다 355ml 24캔", 0), ("2026-10-28", "갈배사이다", 17900), ("2026-10-29", "갈배사이다", 17900)):
+    cs101.clear(); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); time.time = lambda: TK(d101c + " 10:00")
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.cp_price(q101)
+    assert cs101[-1:] == [want] and q101["cpq"]["m"][U101b][0] == m0, (d101c, cs101, q101["cpq"]["m"][U101b])  # 사진 있는 글: 이름 그대로 못 찾음 -> 다음 날 2번째 검색어 -> 찾으면 그 검색어 그대로
+    if not m0:
+        assert q101["cpq"]["m"][U101b] == [0, "2026-10-27 10:00", "", 17400, "2026-10-26 10:00", ""], q101["cpq"]["m"][U101b]  # 못 찾음 = 마지막 맞춘 가격·시각 남김
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": {"productData": []}}); time.time = lambda: TK("2026-10-30 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_price(q101)
+assert q101["cpq"]["m"][U101b] == [0, "2026-10-30 10:00", "", 17900, "2026-10-29 10:00", ""], q101["cpq"]["m"][U101b]
+time.time = lambda: TK("2026-10-31 10:00"); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_price(q101)
+assert q101["cpq"]["m"][U101b] == [0, "2026-10-31 10:00", "", 17900, "2026-10-29 10:00", ""], q101["cpq"]["m"][U101b]  # 또 못 찾음 = 그 전 맞춘 것 그대로(못 찾음이 겹쳐도)
 os.chdir(sv101[5]); shutil.rmtree(d101)
 (H.http, time.time, H.HAS_CP, H.EVENTS, H.POSTS, _) = sv101; H.RUN.pop("cpu", None); H.RUN.pop("cpn", None)
 # 9-102) YY(10/27 10시 Cowork 사이트 점검 — 품목 없음 42개: 반려동물 14·운동 13·문구 7): '반려동물'(pet 🐶)·'운동'(sport 🏋️) 칸 = 자동차 뒤 · 문구·소품 = 생활·살림(home)

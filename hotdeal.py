@@ -1894,7 +1894,7 @@ def cp_price(seen):
         ps.update(d=today, n=0, m=0)
     for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
         kws = cp_kws(name) if u else [name]  # u 없음 = 품목 낱말 검색(T)
-        v = q["v"].get(u, 0) % len(kws) if u and u not in q.get("i", {}) else 0  # 사진 있는 글 = 늘 이름 그대로(옵션 가격 맞추기) · 없는 글 = 오늘 못 찾은 만큼 다음 검색어
+        v = q["v"].get(u, 0) % len(kws) if u else 0  # 사진 없는 글 = 오늘 못 찾은 만큼 다음 검색어 · 있는 글 = 가격(옵션)까지 맞춘 검색어(처음 = 이름 그대로 — XX 리뷰: 2번째 검색어로만 찾는 글이 매번 이름 그대로 못 찾아 '가격 확인 안 됨'이 되지 않게)
         kw, n0, photo = kws[v], len(q.setdefault("i", {})), not u or u not in q.get("i", {})
         try:
             r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
@@ -1923,19 +1923,21 @@ def cp_price(seen):
             print(f"cp img 품목 '{kw}' 사진 없는 글 {len(grp[kw])}개 → 사진 {len(q['i']) - n0}개 · 결과 {len(ds)}개")
             continue
         same = [x for x in ds if pid in (str(x.get("productId")), qs(x, "pageKey"))]
-        if u not in q.get("i", {}):
-            if same:
-                q["v"][u] = v
-                q["pm"].pop(u, None)
-            else:  # pid 없음 = 다음엔 다음 검색어(오늘 안에 — 검색어 수까지)
-                q["v"][u], q["pm"][u] = (v + 1) % len(kws), [today, q["pm"].get(u, [today, 0])[1] + 1]
         x = next((x for x in same if x.get("productPrice") and (qs(x, "itemId") == item if item else cp_same(name, x.get("productName")))), None)  # 쿠팡 이름엔 옵션이 안 붙기도(10/23 고려은단 180정 = 같은 pid 4개 이름 같음)
+        if same if photo else x:  # 사진 없는 글 = pid 찾은 검색어 · 있는 글 = 가격까지 맞춘 검색어 그대로
+            q["v"][u] = v
+            q["pm"].pop(u, None)
+        else:  # 못 찾음 = 다음엔 다음 검색어(사진 없는 글 = 오늘 안에 — 검색어 수까지 · 있는 글 = 다음 차례에)
+            q["v"][u] = (v + 1) % len(kws)
+            if photo:
+                q["pm"][u] = [today, q["pm"].get(u, [today, 0])[1] + 1]
         rw.discard(u)
         ui = item or (re.search(r"[?&]itemId=(\d+)", u) or ["", ""])[1]  # RR 옵션 번호 = 주소 itemId도(shelf_posts처럼 — 이름 cp_same은 중형·대형, 21N1·23N1을 못 가림)
         vx = next((z for z in same if qs(z, "itemId") == ui), None) if ui else x
         if vx and urllib.parse.urlsplit(str(vx.get("productUrl") or "")).netloc in CP_SHORT:
             q["vi"][u] = [qs(vx, "itemId"), qs(vx, "vendorItemId"), vx["productUrl"]]
-        q["m"][u] = [int(x["productPrice"]) if x else 0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""]  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음
+        was = q["m"].get(u) or []
+        q["m"][u] = [int(x["productPrice"]), time.strftime("%Y-%m-%d %H:%M", kst), item or ""] if x else [0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""] + (was[:3] if was[:1] not in ([], [0]) else was[3:6])  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음 · 못 찾음 = [3:6]에 마지막 맞춘 가격·시각·옵션(XX 리뷰 — 한 번 못 찾았다고 옛 Cowork 가격·날짜로 돌아가지 않게)
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
         y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만
         if y and str(y.get("productImage") or "").startswith("https://"):
@@ -8511,7 +8513,8 @@ def own_end(seen):
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
         cq = cpq.get(u) or []
-        cx = not tsy and e.get("pid") and cq[:1] == [0] and cq[1:2] and cq[1]  # XX: 봇 검색이 못 찾은 시각(사이트 '가격 확인 안 됨' — 그 뒤 확인이 없을 때만)
+        cx = not tsy and e.get("pid") and cq[:1] == [0] and cq[1:2] and cq[2:3] in ([e["item"]] if e.get("item") else ([], [""])) and cq[1]  # XX: 봇 검색이 못 찾은 시각(사이트 '가격 확인 안 됨' — 그 뒤 확인이 없을 때만 · 지금 events 옵션으로 찾은 것만)
+        cq = cq[3:6] if cq[:1] == [0] else cq  # 못 찾음 = 그 전 마지막 맞춘 가격(없으면 [] — Cowork events 그대로)
         cq = not tsy and e.get("pid") and (cq[2:3] == [e["item"]] if e.get("item") else cq[2:3] in ([], [""]) and re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cq  # item = 그 itemId로 맞춘 가격만(약한 이름 매칭 캐시 X — 10/24 리뷰)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
