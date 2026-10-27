@@ -7185,7 +7185,7 @@ def chat_facts(name, ps, today, used):
 
 
 def chat_post(seen):
-    """II Threads 수다 글(10/26 Cowork): 딜·상품명·가격·링크 없는 짧은 반말 잡담 2~4줄 + 마지막 줄 질문 1개 — Threads만 하루 1번 CHAT_AT(점심) · 앞뒤 CHAT_GAP 안 다른 비딜 글
+    """II Threads 수다 글(10/26 Cowork): 딜·상품명·가격·링크 없는 짧은 존댓말 잡담 2~4줄(QQ·ZZ) + 마지막 줄 질문 1개 — Threads만 하루 1번 CHAT_AT(점심) · 앞뒤 CHAT_GAP 안 다른 비딜 글
     (올린 비딜 묶음 글 seen thnd · 큐레이션 시각 · 날씨·달력·간식·일지·투표·알림 받기 시각)이면 다음 실행에(= 그 30분 뒤 첫 빈 실행) · CHAT_LATE 넘으면 그날 X ·
     주제 5가지(CHAT_TOPICS — 최근 CHAT_DAYS일 덜 쓴 것 먼저, 재료 없는 퀴즈·달력 X) · Claude 1번(II+ 무례면 1번만 다시) -> 규칙 검사(chat_ok) -> 재검토(review) 1번 -> 다시 검사, 걸리면 그 글 X(로그) ·
     대가성 문구 X(제휴 링크 없음) · 주제 태그 '일상' · 답글 알림 = TH_WATCH 그대로 · metrics kind chat + 48시간 조회·답글(chat_48)."""
