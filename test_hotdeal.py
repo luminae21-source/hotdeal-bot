@@ -6065,7 +6065,7 @@ for x in it50:
     P50[x[0]] = x[1]
 pc50b = tempfile.mkdtemp(); os.makedirs(f"{pc50b}/today"); json.dump({"2026-01-01": [2]}, open(f"{pc50b}/{S50.PICKS}", "w")); S50.PICK_HOUR = 0
 assert [x[0] for x in S50.today_picks(P50, it50, {}, pc50b)[1]] == [6, 3, 1]; S50.PICK_HOUR = h0
-assert S50.badge(cp50(""), S50.st0(cp50(""))) == "" and S50.ALIAS("크리넥스 3겹 화장지 30롤") == "휴지" and "ref=(ig|th)" in S50.HASH_JS and "try{h=decodeURIComponent(h)}catch(e){}" in S50.HASH_JS
+assert S50.badge(cp50(""), S50.st0(cp50(""))) == "" and S50.ALIAS("크리넥스 3겹 화장지 30롤") == "휴지" and "ref=(ig|th|link)" in S50.HASH_JS and "try{h=decodeURIComponent(h)}catch(e){}" in S50.HASH_JS
 d50b = tempfile.mkdtemp(); many = [cp50("", url=f"https://link.coupang.com/a/m{k}") for k in range(25)]
 S50.build(many, d50b); os.makedirs(f"{d50b}/c/oldname/2"); assert os.path.exists(f"{d50b}/c/hot/2/index.html")
 S50.build(many[:5] + [cp50("", url="https://link.coupang.com/a/gone", st="gone")], d50b); assert not os.path.exists(f"{d50b}/c/hot/2") and not os.path.exists(f"{d50b}/c/oldname") and os.path.exists(f"{d50b}/c/hot/index.html")
