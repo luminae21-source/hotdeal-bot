@@ -8511,10 +8511,13 @@ def own_end(seen):
         tw, cp = won_of(tp)
         e, v = ev.get(u, {}), ti.get(u, [])
         cq = cpq.get(u) or []
+        cx = not tsy and e.get("pid") and cq[:1] == [0] and cq[1:2] and cq[1]  # XX: 봇 검색이 못 찾은 시각(사이트 '가격 확인 안 됨' — 그 뒤 확인이 없을 때만)
         cq = not tsy and e.get("pid") and (cq[2:3] == [e["item"]] if e.get("item") else cq[2:3] in ([], [""]) and re.search(CP_QTY, parse(title_of(p["text"]))[1], re.I)) and cq  # item = 그 itemId로 맞춘 가격만(약한 이름 매칭 캐시 X — 10/24 리뷰)  # 옵션을 맞춘 검색 가격만(10/24 Cowork: 이름에 수량·용량 글자가 없으면 cp_same이 약함 — 'AMUSE 젤핏 틴트 05' 179,300원·'롬앤 쥬시 틴트 04' 10,630원이 지금 가격으로)
         if cq and cq[0] and cq[1] > e.get("chk", "") and not re.search(r"쿠폰|와우", e.get("now", "")):  # ② 봇 검색 API 가격(cp_price)이 Cowork 확인보다 새것이면 그것(검색 가격엔 쿠폰·와우가 없음 -> Cowork 쿠폰·와우 가격은 그대로)
             e = {**e, "now": f"{cq[0]:,}원", "chk": cq[1]}
         f = {"tgt": tp} if tw else {}
+        if cx:
+            f["cpx"] = cx
         if cq and cq[0]:
             f.update(cpp=int(cq[0]), cpt=cq[1])  # 검증된 쿠팡 API 가격·시각(10/24 Cowork — 사이트 📉·drop_check 근거, 지금 가격을 덮었든 아니든)
         if e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):
@@ -8551,8 +8554,8 @@ def own_end(seen):
         c[f["st"]] += 1
         for i in idxs:
             q = posts[i]
-            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "end", "tst", "ts", "img")}
-            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
+            was = {k: q.get(k) for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "cpx", "end", "tst", "ts", "img")}
+            for k in ("st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "stl", "std", "stp", "stt", "cpp", "cpt", "cpx", "end", "tst", "ts"):  # end·tst·ts = 예전 규칙(10/23 새벽) 칸 — 지움
                 q.pop(k, None)
             q.update(f)
             n += was != {k: q.get(k) for k in was}

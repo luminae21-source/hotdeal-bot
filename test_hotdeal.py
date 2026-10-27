@@ -10400,20 +10400,36 @@ assert "SHOP_NOTES.values())}</p><div class=\"t\">번호를 누르면" not in in
 (S.SITE_AFF_ONLY, time.time, mc100) = sv100; S.MICONS.clear(); S.MICONS.update(mc100)
 # 9-101) XX(10/27 Cowork 9:10 점검 — 진우 쿠팡 상품 '지금 가격 (10/23 9시 확인)'이 3일 넘게 그대로): 쿠팡 진우 상품 가격 확인(chkt — 없으면 올린 날)이 CHK_OLD(3)일 넘게 없으면
 #        '지금 가격' X -> 올린 가격 + 'M/D 가격 · 가격 확인 안 됨'(🔥·⏳ 그대로 · 목표가 있으면 가격 숨김 그대로) · 토스·네이버·일시 품절 = 그대로 · 3일째까진 '지금 가격'
-CU101, TD101 = "https://link.coupang.com/a/xx1", "2026-10-27"
+CU101, TD101, EV101 = "https://link.coupang.com/a/xx1", "2026-10-27", {"https://link.coupang.com/a/xx1": {"pid": "7412691872"}}
 x101 = lambda **k: {"t": "2026-10-15 23:00", "text": "🔥 [쿠팡] 갈배사이다 355ml 24캔 (12,900원/무료)", "url": CU101, "own": 1, **k}
-sh101 = lambda **k: S.shelf(x101(**k), {}, TD101)
-assert sh101(st="hot", now="17,430원", chk="10/23 9시", chkt="2026-10-23 09:30")[:3] == (0, None, "10/15 가격 · 가격 확인 안 됨")  # 4일 전 확인 = 옛 확인가 X
+sh101 = lambda ev=None, **k: S.shelf(x101(**k), ev or {}, TD101)
+old101 = dict(now="17,430원", chk="10/23 9시", chkt="2026-10-23 09:30")
+assert sh101(st="hot", **old101)[:3] == (0, "17,430원", "10/23 9시 가격 · 가격 확인 안 됨")  # pid 없음(진우 단축 링크 — 봇 확인 X) + 4일 전 확인 = 마지막 확인가 + 그 날짜(올린 가격으로 X · '지금' X)
 assert sh101(st="hot", now="17,430원", chk="10/24 9시", chkt="2026-10-24 09:30")[:3] == (0, "17,430원", "지금 가격 (10/24 9시 확인)")  # 3일째 = 그대로
-assert sh101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00")[1:3] == (None, "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨")
-assert sh101(st="wait", tgt="15,900원", now="17,430원", chk="10/23 9시", chkt="2026-10-23 09:30")[1:3] == ("", "특가 때 15,900원 · 특가 기다리는 중 · 가격 확인 안 됨")  # 목표가 = 가격 숨김 그대로
-assert sh101(st="wait")[1:3] == (None, "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨") and sh101(st="hot", t="2026-10-22 10:22")[1:3] == (None, "10/22 가격 · 가격 확인 안 됨")  # events pid 없음(확인 X) = 올린 날 기준
+assert sh101(st="wait", tgt="15,900원", **old101)[1:3] == ("17,430원", "10/23 9시 가격 · 가격 확인 안 됨 · 특가 때 15,900원 · 특가 기다리는 중")
+assert sh101(st="wait")[1:3] == (None, "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨") and sh101(st="hot", t="2026-10-22 10:22")[1:3] == (None, "10/22 가격 · 가격 확인 안 됨")  # 확인 기록 없음 = 올린 날 기준
+assert sh101(EV101, st="hot", **old101)[2] == "지금 가격 (10/23 9시 확인)" and sh101(EV101, st="wait")[2] == "10/15 가격 · 특가 기다리는 중 · 지금 가격은 링크에서 확인"  # pid 있음 + 검색 실패 없음 = 차례만 못 옴 -> 그대로(검색 순서가 오래된 확인 먼저)
+assert sh101(EV101, st="hot", cpx="2026-10-24 00:10", **old101)[2] == "10/23 9시 가격 · 가격 확인 안 됨" and sh101(EV101, st="hot", cpx="2026-10-22 10:00", **old101)[2] == "지금 가격 (10/23 9시 확인)"  # 확인 뒤 검색 실패 = 못 찾음 · 확인 전 실패 = 그대로
 assert sh101(st="wait", t="2026-10-25 10:00")[2] == "10/25 가격 · 특가 기다리는 중 · 지금 가격은 링크에서 확인" and sh101(st="hot", t="2026-10-25 10:00")[2] == ""  # 새 글 = 그대로
 assert sh101(st="out", chk="10/20", t="2026-10-15 23:00")[0] == 3 and S.NOCHK not in sh101(st="out", chk="10/20")[2]  # 일시 품절 = 그대로
 assert all(S.NOCHK not in S.shelf({**x101(st="wait", now="9,900원", chk="10/20 9시", chkt="2026-10-20 09:00"), "url": u, "text": f"🔥 [{m}] 갈배사이다 355ml 24캔 (12,900원/무료)"}, {}, TD101)[2] for u, m in (("https://toss.shopping/_m/xx", "토스쇼핑"), ("https://smartstore.naver.com/a/products/1", "네이버")))  # 토스·네이버 = 그대로
 assert all(S.shop_of({**x101(), "url": u, "text": f"🔥 [{m}] 갈배사이다"}) == k for u, m, k in (("https://toss.shopping/_m/xx", "토스쇼핑", "toss"), ("https://smartstore.naver.com/a/products/1", "네이버", "naver")))
-pb101 = S.price_bits(x101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"), sh101(st="wait", now="17,400원", chk="10/23 21시", chkt="2026-10-23 21:00"))
-assert pb101[0] == "12,900원" and pb101[2][0] == "10/15 가격 · 특가 기다리는 중 · 가격 확인 안 됨"  # 큰 가격 = 올린 가격(날짜 붙은 줄)
+p101 = x101(st="wait", **old101); s101 = S.shelf(p101, {}, TD101)
+assert S.price_bits(p101, s101)[0] == "17,430원" and S.price_bits(p101, s101)[2][0] == s101[2]  # 큰 가격 = 마지막 확인가(딜 쪽 제목·h1·JSON-LD도 같은 값 — 올린 가격으로 안 내려감)
+assert "· 10/23 9시 가격 17,430원 · 가격 확인 안 됨" in S.deal_state(p101, s101) and "지금 가격" not in S.deal_state(p101, s101), S.deal_state(p101, s101)  # p/N 줄 = 날짜 붙은 가격(지금 X)
+tt101, time.time = time.time, lambda: TK("2026-10-27 12:00")
+assert S.pick_score((0, p101, s101), {})[1] is True and S.pick_score((0, p101, S.shelf(p101, EV101, TD101)), {})[1] is False; time.time = tt101  # 못 찾은 상품 = 오늘의 픽 '가격 새것' X
+sv101b = (H.POSTS, H.HAS_TOSS, time.time, os.getcwd())  # own_end: 봇 검색이 마지막 확인 뒤 못 찾음 = 글 cpx(시각) -> 사이트 '가격 확인 안 됨' · 찾으면 cpx 지움
+d101b = tempfile.mkdtemp(); os.chdir(d101b)
+json.dump([{"at": "2026-10-15 23:00", "deal": True, "url": CU101, "pid": "7412691872", "now": "17,430원", "chk": "2026-10-23 09:30", "text": "x", "button": "x"}], open("events.json", "w"))
+json.dump([x101()], open("posts.json", "w"), ensure_ascii=False); H.POSTS, H.HAS_TOSS, time.time = "posts.json", False, lambda: TK("2026-10-27 10:00")
+H.own_end({"cpq": {"m": {CU101: [0, "2026-10-24 00:10", ""]}}}); g101 = json.load(open("posts.json"))[0]
+assert g101.get("cpx") == "2026-10-24 00:10" and g101["chkt"] == "2026-10-23 09:30" and S.shelf(g101, S.ev_info(), TD101)[2].startswith("10/23 9시 가격 · 가격 확인 안 됨"), g101
+H.own_end({"cpq": {"m": {CU101: [0, "2026-10-22 00:10", ""]}}}); g101 = json.load(open("posts.json"))[0]
+assert g101.get("cpx") == "2026-10-22 00:10" and S.shelf(g101, S.ev_info(), TD101)[2].startswith("지금 가격 (10/23 9시 확인)"), g101  # Cowork 확인 전 실패 = 그대로
+H.own_end({"cpq": {"m": {CU101: [17900, "2026-10-27 09:40", ""]}}}); g101 = json.load(open("posts.json"))[0]
+assert "cpx" not in g101 and g101["now"] == "17,900원" and g101["chkt"] == "2026-10-27 09:40" and S.shelf(g101, S.ev_info(), TD101)[2] == "지금 가격 (10/27 9시 확인) · 특가 때 12,900원 · 특가 기다리는 중", g101  # 찾음 = cpx 지움(목표가 = 처음 🔥 글 가격)
+os.chdir(sv101b[3]); shutil.rmtree(d101b); (H.POSTS, H.HAS_TOSS, time.time, _) = sv101b
 # XX 원인 쪽(로그 10/23~27): 신라면 묶음 = 이름 그대로 검색에 pid 없음 · 갈배 = 10/23 한 번 찾은 뒤 차례가 안 옴(확인 안 한 새 진열이 계속 앞 — 오늘 남음 74 → 802)
 #   -> 검색 순서의 '마지막 확인' = 봇 검색·Cowork events chk 중 새것(막 확인해 넣은 진열이 옛 확인 상품 앞을 막지 않게) · 두 번째 검색어에 남던 '각' X
 assert H.cp_kws("농심 신라면·안성탕면·너구리·짜파게티 각 5개 (20개)")[1:] == ["농심 신라면 안성탕면 너구리 짜파게티", "농심 너구리 짜파게티"] and H.cp_kws("각티슈 100매 6개") == ["각티슈 100매 6개", "각티슈"]

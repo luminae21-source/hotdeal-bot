@@ -666,7 +666,7 @@ def icon_of(text):
 
 
 REHOT_DAYS = 3  # 🔁 다시 특가 배지 기간(⏳ -> 🔥 된 날부터)
-CHK_OLD, NOCHK = 3, "가격 확인 안 됨"  # XX(10/27 Cowork): 진우 쿠팡 상품 가격 확인(chkt — 없으면 올린 날)이 3일 넘게 없으면 '지금 가격' X -> 올린 가격 + 'M/D 가격 · 가격 확인 안 됨'
+CHK_OLD, NOCHK = 3, "가격 확인 안 됨"  # XX(10/27 Cowork '못 찾으면 가격 확인 안 됨'): 진우 쿠팡 상품 마지막 확인(chkt — 없으면 올린 날)이 3일 넘고 + 봇이 못 찾음(events pid 없음 · 그 뒤 검색 실패 cpx) -> '지금 가격' X, 마지막 확인가 + 'M/D H시 가격 · 가격 확인 안 됨'(차례만 못 온 상품 = 그대로)
 
 
 def shelf(p, ev, today):
@@ -691,12 +691,13 @@ def shelf(p, ev, today):
     md = f"{int(p['t'][5:7])}/{int(p['t'][8:10])}"
     if st == "out":
         return 3, None, f"{md} 가격 · 다시 들어오면 링크에서 확인", bd + [("b3", f"일시 품절 ({chk.split()[0] if chk else md} 확인)")], False
-    if nochk := shop_of(p) == "coupang" and (p.get("chkt") or p["t"])[:10] < time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - CHK_OLD * 86400)):
-        now = chk = ""  # cp_price가 못 찾음(옵션·검색 결과)·events pid 없음 = 옛 확인가를 '지금'처럼 X
+    nochk = (shop_of(p) == "coupang" and (p.get("chkt") or p["t"])[:10] < time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - CHK_OLD * 86400))
+             and (not e.get("pid") or (p.get("cpx") or "") > (p.get("chkt") or "")))
+    seen_at = (f"{chk} 가격" if chk else "") if now else f"{md} 가격"  # 못 찾은 상품 = 보이는 가격(마지막 확인가 · 없으면 올린 가격)의 날짜 그대로
     if st == "hot":
-        return 0, now or None, (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else f"{md} 가격 · {NOCHK}" if nochk else "", bd, rehot
+        return 0, now or None, " · ".join(x for x in (seen_at, NOCHK) if x) if nochk else (f"지금 가격 ({chk} 확인)" if chk else "지금 가격") if now else "", bd, rehot
     wait = f"특가 때 {tgt} · 특가 기다리는 중" if tgt else f"{md} 가격 · 특가 기다리는 중"  # 목표가 없으면 올린 가격을 날짜와 같이(지금 가격처럼 안 보이게)
-    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · {NOCHK if nochk else '지금 가격은 링크에서 확인'}"), bd + [("b3", "⏳ 특가 대기")], False
+    return (1 if p.get("stdy") else 2), (now or ("" if tgt else None)), (" · ".join(x for x in (seen_at, NOCHK, wait) if x) if now and nochk else f"지금 가격{f' ({chk} 확인)' if chk else ''} · {wait}" if now else wait if toss else f"{wait} · {NOCHK if nochk else '지금 가격은 링크에서 확인'}"), bd + [("b3", "⏳ 특가 대기")], False
 
 
 def shelf_gone(posts):
@@ -1056,7 +1057,7 @@ def pick_score(x, recs):
     i, p, sh = x
     low = {r[2] for _, _, rows in recs.values() for r in rows[:3]}
     good = i in low or re.search(r"30일\s*(?:내\s*)?최저가", p["text"]) or saving(p["text"])
-    fresh = sh[1] is not None or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
+    fresh = sh[1] is not None and NOCHK not in sh[2] or p["t"][:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))  # 지금 가격 확인됨 또는 사흘 안 글(옛 가격만 있는 픽 X)
     m, k = time.gmtime(time.time() + 9 * 3600).tm_mon, season_item(title_of(p["text"]))
     insea = k and not season_off(k, m) and (k != "between" or m in (3, 4, 9, 10, 11))  # 제철(Z +1 — hotdeal season_adj와 같은 달 기준, 철 지난 건 pick_off)
     return (not sh[4], not fresh, not good, not insea, not p.get("own"), not img_of(p), -i)  # 같은 점수 = 제철 -> 사진 있는 것 먼저(10/24 Cowork A④)
@@ -1575,7 +1576,8 @@ def deal_state(p, sh, newer=None):
     if sh[0] == 3:
         line = " · ".join(x for x in (next((t for _, t in sh[3] if t.startswith("일시 품절")), "일시 품절"), sh[2]) if x)
     elif sh[1]:
-        line = sh[2].replace("지금 가격", f"지금 가격 {shown}", 1) if sh[2].startswith("지금 가격") else " · ".join(x for x in (f"지금 가격 {shown}", sh[2]) if x)
+        line = (sh[2].replace(f" · {NOCHK}", f" {shown} · {NOCHK}", 1) if NOCHK in sh[2] else sh[2].replace("지금 가격", f"지금 가격 {shown}", 1) if sh[2].startswith("지금 가격")
+                else " · ".join(x for x in (f"지금 가격 {shown}", sh[2]) if x))  # XX 못 찾은 상품 = '10/23 21시 가격 17,400원 · 가격 확인 안 됨'(지금 X)
         line = re.sub(r" · \d+/\d+ 가격(?= ·|$)", "", line)  # 지금 가격이 있으면 올린 날 가격 조각 X(값 2개로 안 보이게)
     else:
         line = next((x for x in grey if x != unit_of(p)), "") or ("" if p.get("own") else "게시 시점 가격")
