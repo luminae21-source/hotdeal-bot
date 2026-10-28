@@ -1,4 +1,4 @@
-var V='hdp-05c465d5d8',F='hdp-font-1',PRE=['/','/s.css?v=46ce4b2e','/icons/icon-192.png?v=2','/icons/icon-512.png?v=2','/icons/apple-touch-icon.png?v=2','/favicon.ico?v=2'];
+var V='hdp-cd7f562ab1',F='hdp-font-1',PRE=['/','/s.css?v=46ce4b2e','/icons/icon-192.png?v=2','/icons/icon-512.png?v=2','/icons/apple-touch-icon.png?v=2','/favicon.ico?v=2'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(PRE)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==V&&k!==F}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request,u=new URL(r.url);
