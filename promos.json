@@ -1,47 +1,7 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-10-26 17:45",
+ "updated": "2026-10-29 17:45",
  "promos": [
-  {
-   "id": "cp-fresh-1025",
-   "mall": "coupang",
-   "mall_name": "쿠팡",
-   "sub": "로켓프레시",
-   "name": "햇상품 기획전",
-   "start": null,
-   "end": "2026-10-25",
-   "pre": null,
-   "benefit": "햅쌀·햇과일·수산 600여 종 · 와우회원 최대 50%",
-   "tag": "햇상품 기획전",
-   "url": null,
-   "cta": {
-    "text": "핫딜픽이 고른 19개 보기",
-    "href": null
-   },
-   "src": "https://www.financialpost.co.kr/news/articleView.html?idxno=282191",
-   "chk": "2026-10-26 17:45",
-   "kw": null
-  },
-  {
-   "id": "cp-kugase-2610",
-   "mall": "coupang",
-   "mall_name": "쿠팡",
-   "sub": "",
-   "name": "쿠가세 · 가전디지털 세일",
-   "start": "2026-10-12",
-   "end": "2026-10-25",
-   "pre": null,
-   "benefit": "300여 브랜드 · 매일 오후 2시 한정 특가",
-   "tag": "쿠가세",
-   "url": null,
-   "cta": {
-    "text": "가열식 가습기 6종 비교",
-    "href": null
-   },
-   "src": "https://www.segye.com/newsView/20261024502955",
-   "chk": "2026-10-26 17:45",
-   "kw": "가열식 가습기"
-  },
   {
    "id": "ssg-ssgday-2610",
    "mall": "emart",
@@ -59,7 +19,7 @@
     "href": "https://emart.ssg.com/"
    },
    "src": "https://www.mt.co.kr/living/2026/10/19/2026101916054412524",
-   "chk": "2026-10-26 17:45",
+   "chk": "2026-10-29 17:45",
    "kw": null
   },
   {
@@ -79,7 +39,7 @@
     "href": "https://www.gmarket.co.kr/"
    },
    "src": "https://www.fnnews.com/news/202610231616564882",
-   "chk": "2026-10-26 17:45",
+   "chk": "2026-10-29 17:45",
    "kw": null
   },
   {
@@ -99,7 +59,7 @@
     "href": "https://www.lotteon.com/"
    },
    "src": "https://www.segye.com/newsView/20261024502603",
-   "chk": "2026-10-26 17:45",
+   "chk": "2026-10-29 17:45",
    "kw": null
   },
   {
@@ -119,8 +79,42 @@
     "href": "https://shopping.naver.com/"
    },
    "src": "https://www.navercorp.com/media/pressReleasesDetail?seq=10034785",
-   "chk": "2026-10-26 17:45",
+   "chk": "2026-10-29 17:45",
    "kw": "넾다세일"
+  },
+  {
+   "id": "cp-goodshop-kgf-2611",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": "착한상점",
+   "name": "코리아 그랜드 페스티벌",
+   "start": null,
+   "end": "2026-11-15",
+   "pre": null,
+   "benefit": "중소상공인 상품 1만여 개 10% 할인(즉시할인·쿠폰) · 할인 비용 쿠팡 부담",
+   "tag": "착한상점",
+   "url": null,
+   "cta": null,
+   "src": "https://www.newspim.com/news/view/20261029000802",
+   "chk": "2026-10-29 17:45",
+   "kw": null
+  },
+  {
+   "id": "cp-wowday-2611",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": "와우회원",
+   "name": "와우 멤버스데이",
+   "start": "2026-11-02",
+   "end": "2026-11-08",
+   "pre": null,
+   "benefit": "37만여 개 최대 70% · 1만·3만원 쿠폰 매일 10시·17시 선착순",
+   "tag": "와우 멤버스데이",
+   "url": null,
+   "cta": null,
+   "src": "https://www.youthdaily.co.kr/news/article.html?no=228991",
+   "chk": "2026-10-29 17:45",
+   "kw": null
   }
  ]
 }
