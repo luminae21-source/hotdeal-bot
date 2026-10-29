@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -1663,6 +1663,7 @@ def goldbox(seen):
     n = cp_photos(seen, allg)  # 진열 상품 사진 채움(10/25 — 추가 호출 X)
     if n:
         print("goldbox 사진", n)
+    gold_prices(seen, allg)
     items = allg[:40]
     gl = gold_lines(items)
     picks = [p for p in ai_pick(GOLD_PROMPT, [g[0] for g in gl]) if 0 <= p["i"] < len(items)][:GOLD_N[1]]
@@ -1686,6 +1687,49 @@ def goldbox(seen):
         return
     if m or not rows and gold_steady(seen, len(items)):  # 0개(2번째) = 꾸준템 글(JJ) · 보낸 뒤(못 보냄 = 다음 실행에)
         seen[key] = time.time()
+
+
+def gold_prices(seen, items):
+    """가격 추적(10/30): 골드박스 API 가격 중 진우·진열 쿠팡 글(events pid)과 같은 상품·옵션(events item = itemId, 없으면 이름 수량·용량 cp_same — cp_price와 같은 기준)
+    -> seen cpq g {주소: [가격, 'YYYY-MM-DD HH:MM']} — price_track이 price_hist.json에 'gold'(추가 호출 X) -> 맞춘 수."""
+    q, ev, at = seen.setdefault("cpq", {"m": {}}), ev_info(), time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600))
+    names = {p["url"]: parse(title_of(p["text"]))[1] for p in load(POSTS, []) if p.get("own") and ev.get(p.get("url"), {}).get("pid") and not p["text"].startswith("📋")}
+    by, q["g"] = collections.defaultdict(list), {}
+    for u in names:
+        by[str(ev[u]["pid"])].append(u)
+    for z in items or []:
+        for u in by.get(str(z.get("productId")), ()) if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit() else ():
+            if cp_qs(z, "itemId") == ev[u]["item"] if ev[u].get("item") else cp_same(names[u], z.get("productName")):
+                q["g"][u] = [int(z["productPrice"]), at]
+    return len(q["g"])
+
+
+def price_track(seen):
+    """쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 볼 수 있게'): 이번 실행까지 본 쿠팡 가격 -> price_hist.json(build_site.ph_add — 같은 값 다시 = 그대로 · 바뀐 것만 저장)
+    봇 검색(cpq m — cp_price·같은 검색 결과, 지금 events 옵션으로 맞춘 것만) api · 골드박스(cpq g) gold · Cowork events now·chk cw · 진우 글 처음 올린 가격 post · 상품당 최근 180일. 쿠팡만(토스 X)."""
+    h, ev, q = ph_load(), ev_info(), seen.get("cpq", {})
+    n = ph_events(h, ev) + ph_posts(h, load(POSTS, []), ev)
+    for src, d in (("api", q.get("m", {})), ("gold", q.get("g", {}))):
+        for u, v in d.items():
+            e = ev.get(u, {})
+            if isinstance(v, list) and len(v) > 1 and v[0] and (src == "gold" or (v[2:3] or [""]) == [e.get("item") or ""]):  # 못 찾음([0, …]) = 그 전 값은 이미 들어감
+                n += ph_add(h, ph_key(e, u), ph_t(v[1]), int(v[0]), "", src)
+    n += ph_trim(h, time.time())
+    if n:
+        json.dump(h, open(PRICE_HIST, "w"), separators=(",", ":"))
+        print("price track", f"기록 {n}줄 바뀜 · 상품 {len(h)}개")
+
+
+def ph_prio(seen, posts, names):
+    """추적 우선(10/30 Cowork ②): 👍 꾸준템 · 최근 7일 많이 본 상품(gc_top.json 앞 PH_TOP개에 든 날 — seen pht) · 생필품 칸 -> 진우 쿠팡 글 주소(names 안)."""
+    today, wk = (time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - d * 86400)) for d in (0, 7))
+    pt = seen.setdefault("pht", {"u": {}})
+    pt["t"], pt["u"] = time.time(), {u: d for u, d in pt["u"].items() if d > wk}
+    pt["u"].update(dict.fromkeys(load(GC_TOP, {}).get("urls", [])[:PH_TOP], today))
+    return {p["url"] for p in posts if p.get("url") in names and (icon_of(p["text"]) == "👍" or p.get("stdy") or p["url"] in pt["u"] or cat_of(p) == "life")}
+
+
+PH_TOP = 20  # 추적 우선 '많이 본' = gc_top.json(24시간 조회·구매 클릭 순) 앞 20개에 7일 안 든 상품
 
 
 GOLD_ST_N, GOLD_ST_REV, GOLD_ST_RATE, GOLD_ST_DAYS = (3, 5), 1000, 4.5, 3  # JJ(10/26 진우 '살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자'): 골드박스 고른 것 0인 날 = 같은 시각·채널 꾸준템 3~5개
@@ -2010,7 +2054,9 @@ def cp_price(seen):
     old = [t for t in todo if t[1] in q.get("i", {})]
     if rush:  # CCC 몰아서 = 사진 채움(품목 낱말 검색·사진 없는 글 먼저) 쉼 — 검색 몫 전부 가격 확인(순서 그대로 · 사진은 같은 검색에서 덤으로)
         gk, pho, old = {}, [], list(todo)
-    todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: t[1] not in rw)  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰)
+    prio, d3 = ph_prio(seen, posts, names), time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - PH_DUE * 86400))
+    due = {u for u in prio if last(u) < d3}  # 가격 추적(10/30 Cowork ②): 추적 우선 상품 = 3일에 1번은 확인(순서만 — 호출 상한 그대로)
+    todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: (t[1] not in rw, t[1] not in due, t[0] if t[1] in due else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
     got = miss = err = gn = 0
     xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
     qs = cp_qs
@@ -2087,6 +2133,8 @@ def cp_price(seen):
     if got or miss or err or xs:
         print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {len(xs)}개 더" if xs else "")
               + (f" · 몰아서 남은 {sum(last(u) < CP_RUSH[0] for u in names if ev[u].get('pid'))}개({CP_RUSH[0][5:7].lstrip('0')}/{CP_RUSH[0][8:10].lstrip('0')} {int(CP_RUSH[0][11:13])}시 뒤 확인 안 된 것)" if rush else ""))
+    tr = [u for u in names if ev[u].get("pid")]
+    print("price track", f"추적 {len(tr)}개 · 3일 안 확인 {sum(last(u) >= d3 for u in tr)}개 · 우선 {len(prio)}개 중 3일 안 {sum(last(u) >= d3 for u in prio)}개")  # 22:30 점검 줄
 
 
 def cp_words(name):
@@ -10156,7 +10204,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
