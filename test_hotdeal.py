@@ -9721,6 +9721,7 @@ SR91 = {"계란 30구": [("11", "곰곰 신선한 특란 30구", 9900, False), (
         "맥반석 계란": [("41", "HACCP 맥반석 구운계란 30개 1박스", 9350, False)],
         "반숙란": [("51", "감동 반숙란 10구 x 2", 5000, False), ("52", "로켓 반숙란 20구", 13000, True)], "완숙란": []}
 def cp91(method, path, body=None):
+    assert int(path.split("limit=")[1].split("&")[0]) <= 10, path  # 쿠팡 검색 limit 최대 10(10/29 실제 400)
     kw = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]); cs91.append(kw)
     return {"productData": [{"productId": p, "productName": n, "productPrice": w, "productUrl": LP91(p), "isRocket": r} for p, n, w, r in SR91.get(kw, [])]}
 H.coupang, H.HAS_CP = cp91, True

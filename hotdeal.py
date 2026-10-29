@@ -2995,7 +2995,7 @@ def nn_bundle(seen):
         kw = HAS_CP and next((k for k in kws if k not in q["r"] and k not in q.get("e", {})), None) or next((k for k in kws if k not in q["r"]), None)  # 안 해 본 검색어 먼저, 실패한 건 그다음
         if kw:
             try:
-                r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=20")
+                r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")  # 검색 limit 최대 10(20 = 400 limit is out of range — 10/27~29 NN 검색 다 실패)
                 q["r"][kw] = [[str(x.get("productId")), str(x["productName"]), int(x["productPrice"]), str(x["productUrl"]), x.get("isRocket") is True]
                               for x in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(x, dict) and x.get("productName") and x.get("productPrice") and x.get("productUrl")]
             except CpLimit:
