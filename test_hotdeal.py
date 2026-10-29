@@ -10653,5 +10653,7 @@ p106 = {"cpq": {"m": {U("A"): [1, "2026-10-29 13:00", ""], U("B"): [1, "2026-10-
 o106 = io.StringIO()
 with contextlib.redirect_stdout(o106): H.cp_price(p106)
 assert kw106 == ["나 상품 2kg", "라 상품 4kg"] and "몰아서 남은 1개(10/29 12시 뒤 확인 안 된 것)" in o106.getvalue(), (kw106, o106.getvalue())  # 🔥 B(10/22) 먼저 · 그다음 오래된 D(사진 없어도 같은 줄 — 품목 낱말 사진 검색 X) · A = 몰아서 확인됨 · 남은 = C(못 찾음도 해 본 것)
+kw106.clear(); time.time = lambda: TK("2026-10-30 14:00")  # 다음 날: 어제 몰아서 확인한 🔥(A·B 10/29) < 아직 몰아서 확인 안 된 것(C 10/21) 먼저
+p106["cpq"]["m"][U("A")] = [1, "2026-10-29 15:00", ""]; p106["cpq"]["m"][U("D")][1] = "2026-10-29 14:00"; H.cp_price(p106); assert kw106[0] == "다 상품 3kg", kw106
 time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, rn106 = sv106; H.RUN.clear(); H.RUN.update(rn106); os.chdir(cwd106)
 print("OK: 모든 셀프체크 통과")
