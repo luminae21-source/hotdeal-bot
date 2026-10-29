@@ -10112,6 +10112,25 @@ def auto_pick5(seen):
     if len(es) < len(AUTO_P5_TIMES):
         tg("sendMessage", chat_id=ADMIN, text=f"🛒 쿠팡 5개 자동: {len(es)}개만 골랐어요(후보 {len(cand)}개) — 나머지는 Cowork 확인")
 
+
+STATUS_AT = "10:00"  # D 사이트 점검 DM(빌드가 쓴 docs/status.json 이상만)
+
+
+def status_dm(seen):
+    """D(10/30 Cowork 10:00 사이트 점검 이관): 하루 1번 STATUS_AT 뒤 — 지난 빌드가 쓴 docs/status.json(build_site.site_status)의 warn(이상)만 관리봇 1번 · 이상 없음 = 로그 1줄만. Cowork는 이 파일만 읽음."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    if not AUTO_ON["status"] or time.strftime("%H:%M", kst) < STATUS_AT or seen.get("statusdm", {}).get("d") == today:
+        return
+    st = load("docs/status.json", {})
+    if not isinstance(st, dict) or not st.get("at"):
+        return
+    seen["statusdm"] = {"t": time.time(), "d": today}
+    w = [str(x) for x in st.get("warn") or []]
+    print("status", f"진열 {st.get('site')} · 사이트맵 {st.get('sitemap')} · 빠진 진우 {st.get('missing')} · 변환 실패 {st.get('cp_fail')} · 이상 {len(w)}건")
+    if w:
+        tg("sendMessage", chat_id=ADMIN, text=f"🩺 사이트 점검 {kst.tm_mon}/{kst.tm_mday} ({st['at'][11:]} 빌드) — 이상 {len(w)}건\n" + "\n".join("• " + x for x in w))
+
 TH_MISS_DAYS = 7  # Threads 놓친 진우 🔥 = 채널 글 뒤 이 날 수 안만 재게시 후보(cp_repost — 3일 간격 규칙은 그대로)
 
 
@@ -10439,7 +10458,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

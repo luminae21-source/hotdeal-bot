@@ -2609,6 +2609,43 @@ def price_page(it, h, now_ts):
     return body, len(out)
 
 
+STATUS_DROP, STATUS_MISS, STATUS_FAIL = 20, 5, 30  # D 이상 = 진열·사이트맵 어제보다 20%↑ 줄어듦 · 빠진 진우 쿠팡 상품 5개↑ · 쿠팡 변환 실패 30개↑ · 어제 10개↑이던 몰이 0
+
+
+def site_status(out, posts, it, urls, now_ts):
+    """D(10/30 Cowork 10:00 사이트 점검 이관 — git 읽어 계산하던 것): docs/status.json = 전체 글 · 진열 수 · 몰·칸별 수 · 날짜별 진열·사이트맵 수(8일 — 어제 대비)
+    · 빠진 진우 상품(events 진우 쿠팡 상품 글이 있는데 진열에 없음 — 판매 종료·변환 실패 빼고) · cp_fail 수 · 사이트맵 수 · warn(이상만 — hotdeal.status_dm이 10시 뒤 관리봇 1번). 숫자·이름만(가격·수수료 X)."""
+    try:
+        old = json.load(open(f"{out}/status.json"))
+    except (OSError, ValueError):
+        old = {}
+    today = time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600))
+    yday = time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600 - 86400))
+    try:
+        fail = json.load(open("cp_fail.json"))
+    except (OSError, ValueError):
+        fail = []
+    fp = {str(x.get("pid")) for x in fail if isinstance(x, dict)} if isinstance(fail, list) else set()
+    shown, have = {p.get("url") for _, p, _ in it}, {p.get("url"): p for p in posts if p.get("own")}
+    miss = [parse(title_of(have[u]["text"]))[1] for u, e in ev_info().items() if e.get("pid") and u in have and u not in shown and e["pid"] not in fp
+            and not (e.get("end", "9") <= today and e.get("why", "gone") in ("gone", "issue")) and shop_of(have[u]) == "coupang"]
+    mall, cat = collections.Counter(shop_of(p) for _, p, _ in it), collections.Counter(cat_of(p) or "etc" for _, p, _ in it)
+    days = {d: v for d, v in (old.get("days") or {}).items() if d >= time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600 - 8 * 86400))}
+    days[today] = {"site": len(it), "sitemap": len(urls), "mall": dict(mall)}
+    y, warn = days.get(yday), []
+    for k, lab in (("site", "진열"), ("sitemap", "사이트맵")):
+        if y and y.get(k) and days[today][k] * 100 < y[k] * (100 - STATUS_DROP):
+            warn.append(f"{lab} {y[k]} → {days[today][k]}개(어제보다 {round((y[k] - days[today][k]) * 100 / y[k])}% 줄어듦)")
+    warn += [f"{m} 진열 0개(어제 {n}개)" for m, n in ((y or {}).get("mall") or {}).items() if n >= 10 and not mall.get(m)]
+    if len(miss) >= STATUS_MISS:
+        warn.append(f"빠진 진우 쿠팡 상품 {len(miss)}개(예: {' · '.join(miss[:3])})")
+    if len(fp) >= STATUS_FAIL:
+        warn.append(f"쿠팡 변환 실패 {len(fp)}개(cp_fail.json)")
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now_ts + 9 * 3600)), "posts": len(posts), "site": len(it), "mall": dict(mall), "cat": dict(cat),
+               "missing": len(miss), "missing_names": miss[:20], "cp_fail": len(fp), "sitemap": len(urls), "days": days, "warn": warn}, open(f"{out}/status.json", "w"), ensure_ascii=False, indent=0)
+    return warn
+
+
 def hs_section(sid, head, small, xs, more="", cls="hs"):
     """가로 카드 줄(오늘의 픽 118px·꾸준템): 카드(♡ 찜 그대로) 옆으로 밀기 + '전체 →'."""
     return "" if not xs else (f'<section class="sec" id="{sid}" aria-labelledby="{sid}h"><h2 id="{sid}h"><span>{head}' + (f"<small>{small}</small>" if small else "") + "</span>"
@@ -3094,6 +3131,7 @@ def build(posts, out="docs"):
     write(out, "price/", page(f"쿠팡 가격 추적 · 기록 최저·7일 변화 | {TITLE}", pb, f"핫딜픽이 확인한 쿠팡 상품 {pn}개의 가격 기록 — 기록 최저·평균·7일 변화를 같은 옵션끼리 비교해요", f"{BASE}price/", cur="price"))
     urls.append((f"{BASE}price/", today))
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
+    site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9) — '*' = 네이버 Yeti도 허용

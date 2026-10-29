@@ -3270,7 +3270,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -6532,7 +6532,7 @@ json.dump([{**p, "now": "12,000원"} if p["url"] == U58("A") and p.get("now") el
 time.time = lambda: TK("2026-10-27 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sent58[1][1]["text"] == f"· {L58[:24]} 20,000→12,000원 ▼40% (pid 600)\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. 쿠팡 = events item(옵션 itemId) 확인해 줘", sent58[1][1]["text"]  # 지금가 바뀐 줄만
 json.dump([p for p in P58d if p["url"] not in (U58("A"), U58("J"), "https://naver.me/D")], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-28 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sd58["dropchk"]["d"] == "2026-10-28"  # 없음 = DM X(그날 끝)
-assert "th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
+assert "th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
 assert "[ ! -f gc_top.json ] || git add gc_top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E.clear(); H.E.update(sv58[7]); os.chdir(cwd58)
 # 9-59) (10/24 Cowork 포털형 홈 + 변경 찾기) 홈 = 몰 버튼·품목 아이콘 12칸 → 🔥 실시간 핫딜(가격 근거 3일 안 🔥만 · 기획전 X · 같은 브랜드 1개 · 전체 = 몰 돌아가며 · 몰 탭 · 🆕 올린 순 · 빈 탭 X)
@@ -11223,6 +11223,34 @@ assert e116["L2"]["text"] == "🔥 <b>[쿠팡] 테스트 샴푸 1L (7,000원)</b
 assert all(e["deal"] and e["auto"] == "pick5" and not e.get("shelf") and e["chk"] == "2026-11-01 09:00" for e in a116) and s116["autop5"]["k"] == sorted(["화장지", "샴푸", "린스", "계란", "라면"]) and not tg116
 H.auto_pick5(s116); assert len(json.load(open("auto_events.json"))) == 5  # 하루 1번
 assert [e["at"] for e in H.load(H.EVENTS, []) if e.get("auto")] == [e["at"] for e in a116]  # events 단계(load(EVENTS))가 같이 읽어 그 시각에 올림
-assert "cp_best, auto_shelf, auto_pick5, cp_price" in inspect.getsource(H.main)
+assert "cp_best, auto_shelf, auto_pick5, status_dm, cp_price" in inspect.getsource(H.main)
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv116[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv116[5]); os.chdir(cwd116)
+# 9-117) KKK-D(Cowork 10:00 사이트 점검 → 빌드 docs/status.json + 이상만 관리봇): 전체·진열·몰·칸별 수 · 날짜별(어제 대비) · 빠진 진우 쿠팡 상품(변환 실패·판매 종료 빼고) · cp_fail 수 · 사이트맵 수 · warn · 끔 스위치
+cwd117, sv117 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"
+U117 = lambda k: f"https://link.coupang.com/a/st{k}"
+json.dump([{"at": "2026-10-20 10:00", "url": U117(k), "pid": f"7{k}", "text": "x", **({"end": "2026-10-25", "why": "gone"} if k == "7" else {})} for k in "1234567"], open("events.json", "w"))
+p117 = [{"t": "2026-10-20 10:00", "text": f"🔥 [쿠팡] 상품{k} (1,000원)", "url": U117(k), "own": 1} for k in "1234567"] + [{"t": "2026-10-20 10:00", "text": "🔥 [네이버] 남의 딜 (1,000원)", "url": "https://smartstore.naver.com/x/products/1"}]
+json.dump([{"pid": "76", "n": "실패"}], open("cp_fail.json", "w"))
+json.dump({"days": {"2026-10-31": {"site": 10, "sitemap": 100, "mall": {"coupang": 10, "naver": 12}}, "2026-10-10": {"site": 1}}}, open("docs/status.json", "w"))
+it117 = [(0, p117[0], (0,)), (1, p117[1], (0,))]
+w117 = S.site_status("docs", p117, it117, [("u", "")] * 50, TK("2026-11-01 09:50"))
+st117 = json.load(open("docs/status.json"))
+assert st117["site"] == 2 and st117["posts"] == 8 and st117["mall"] == {"coupang": 2} and st117["missing"] == 3 and st117["missing_names"] == ["상품3", "상품4", "상품5"] and st117["cp_fail"] == 1 and st117["sitemap"] == 50  # 6 = 변환 실패 · 7 = 판매 종료
+assert w117 == st117["warn"] == ["진열 10 → 2개(어제보다 80% 줄어듦)", "사이트맵 100 → 50개(어제보다 50% 줄어듦)", "naver 진열 0개(어제 12개)"], w117
+assert set(st117["days"]) == {"2026-10-31", "2026-11-01"} and st117["at"] == "2026-11-01 09:50"  # 8일 지난 날 정리
+tg117 = []; H.tg = lambda m, **p: tg117.append(p) or {"message_id": 1}; s117 = {}
+H.AUTO_ON["status"] = False; time.time = lambda: TK("2026-11-01 10:05"); H.status_dm(s117); assert not tg117 and not s117  # 끔 스위치
+H.AUTO_ON["status"] = True; time.time = lambda: TK("2026-11-01 09:55"); H.status_dm(s117); assert not tg117  # 10시 전 X
+time.time = lambda: TK("2026-11-01 10:05")
+with contextlib.redirect_stdout(io.StringIO()) as o117:
+    H.status_dm(s117); H.status_dm(s117)
+assert len(tg117) == 1 and tg117[0]["chat_id"] == H.ADMIN and tg117[0]["text"] == "🩺 사이트 점검 11/1 (09:50 빌드) — 이상 3건\n• 진열 10 → 2개(어제보다 80% 줄어듦)\n• 사이트맵 100 → 50개(어제보다 50% 줄어듦)\n• naver 진열 0개(어제 12개)", tg117
+assert "status 진열 2 · 사이트맵 50 · 빠진 진우 3 · 변환 실패 1 · 이상 3건" in o117.getvalue()
+json.dump({**st117, "warn": []}, open("docs/status.json", "w")); s117 = {}; time.time = lambda: TK("2026-11-02 10:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.status_dm(s117)
+assert len(tg117) == 1  # 이상 없음 = DM X(로그만)
+assert "site_status(out, posts, it, urls, now_ts)" in inspect.getsource(S.build) and "auto_pick5, status_dm, cp_price" in inspect.getsource(H.main)
+(time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv117[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv117[5]); os.chdir(cwd117)
 print("OK: 모든 셀프체크 통과")
