@@ -9912,7 +9912,7 @@ assert tuple(re.findall(r'^    \("([a-z-]+)", "(?:dog|cat)"', src94, re.M)) == K
 assert sorted(os.listdir(os.path.join(RD94, H.STK_DIR))) == sorted(k + ".png" for k in K94) and H.STK_DAYS == 3 and H.STK_SEASON[10] == H.STK_SEASON[11] == ("coffee-mix", "rice")
 for k94 in K94:
     with I94.open(os.path.join(RD94, H.STK_DIR, k94 + ".png")) as im94:
-        assert im94.size == (1080, 1080) and im94.format == "PNG", (k94, im94.size)  # 9장 · 1080×1080
+        assert im94.format == "PNG" and (im94.size == (1080, 1080) or k94 == "coffee-mix" and 320 <= im94.width <= 1440 and os.path.getsize(im94.filename) <= 8_000_000), (k94, im94.size)  # 9장 · 1080×1080(coffee-mix = 진우 새 그림 10/29 1092×1440 — Threads 사진 폭 320~1440·8MB 안)
 sv94 = (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http, H.time.sleep)
 d94 = tempfile.mkdtemp(); cwd94 = os.getcwd(); os.chdir(d94); os.makedirs(H.STK_DIR); json.dump([], open("posts94.json", "w")); H.POSTS, H.METRICS = "posts94.json", "m94.json"
 for k94 in K94:
