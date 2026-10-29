@@ -5388,15 +5388,25 @@ def clip_topics(seen, posts, kst):
     return out
 
 
+def clip_at(top):
+    """클립 가격 시각(끝 장·유튜브 설명 같은 값) = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것 -> (월, 일, 시)."""
+    return min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)
+
+
 def clip_text(n, key, label, word, top, kst):
-    """클립 1편 기록: 제목(검색어 맨 앞·30자 안) · 설명(대가성 2줄 고정 + 상품 줄 + 해시태그 5개) · 태그 검색어(네이버 쇼핑커넥트에서 찾을 말) · 올릴 시각 — 효능·써 본 척·최저가 말 X(이름·가격만)."""
+    """클립 1편 기록: 제목(검색어 맨 앞·30자 안) · 설명(대가성 2줄 고정 + 상품 줄 + 해시태그 5개) · 태그 검색어(네이버 쇼핑커넥트에서 찾을 말) · 올릴 시각 — 효능·써 본 척·최저가 말 X(이름·가격만).
+    yt = 유튜브 쇼츠(10/30 진우 '응' — 같은 영상, 진우가 폰으로 올림 · YPP 뒤 쇼핑 태그): 제목 + ' #쇼츠' · 설명 = 쿠팡 문구 그대로 + 가격 시각(끝 장과 같음) + 상품 줄 + 프로필 링크 + 해시태그 3개
+    (쇼핑커넥트 아님 = NAVER_NOTE·'태그 상품은 판매처가 달라' 줄 X) · shop = 쇼핑 태그 걸 때 찾을 이름 · at = 네이버 + 30분(같은 시각 몰림 X)."""
     name = lambda p: parse(title_of(p["text"]))[1]
     tag = lambda p: " ".join([w for w in re.sub(r"\([^)]*\)|\[[^\]]*\]|,", " ", name(p)).split() if not re.search(r"\d", w)][:4])  # 수량·용량 낱말 빼고 앞 4낱말
     word = word or "·".join(list(dict.fromkeys(tag(p).split()[-1] for p in top if tag(p)))[:2])  # 검색어 = 키워드 표·큐레이션 주제, 없으면 상품 품목 낱말(이름 끝 낱말) 2개
     title = clip(f"{word} {label} TOP{len(top)}" if word not in label else f"{label} TOP{len(top)}", 30)
     rows = "\n".join(f"{i}. {clip(name(p), 40)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" for i, p in enumerate(top, 1))
     desc = f"{CLIP_NOTE}\n\n{rows}\n\n{ig_tags(top, n)}"
-    return {"n": n, "topic": key, "title": re.sub(r"최저가?", "", title).strip(), "desc": re.sub(r"최저가", "특가", desc), "tags": [tag(p) for p in top], "at": CLIP_HOURS[(n - 1) % len(CLIP_HOURS)] + ":00", "file": f"{n:02d}.mp4"}
+    title, hh, at = re.sub(r"최저가?", "", title).strip(), CLIP_HOURS[(n - 1) % len(CLIP_HOURS)], clip_at(top)
+    ytd = f"{DISCLOSURE}\n영상 가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인\n\n{rows}\n\n전체 목록은 프로필 링크 hotdealpick.kr\n#핫딜픽 #생활꿀템 #{re.sub(r'[^가-힣A-Za-z0-9]', '', word.split('·')[0])}"
+    return {"n": n, "topic": key, "title": title, "desc": re.sub(r"최저가", "특가", desc), "tags": [tag(p) for p in top], "at": hh + ":00", "file": f"{n:02d}.mp4",
+            "yt": {"title": clip(f"{title} #쇼츠", 100), "desc": re.sub(r"최저가", "특가", ytd), "shop": [tag(p) for p in top], "at": hh + ":30"}}
 
 
 def clip_post(seen):
@@ -5422,8 +5432,8 @@ def clip_post(seen):
     made, todo, labels = js.setdefault(day, []), [t for t in topics if t[0] not in st["done"]], {t[0]: t[1] for t in topics}
     used, k = {u for c in made for u in c.get("u", [])}, 0
 
-    def render(top, n, label):  # 끝 장 가격 시각 = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것 · 곡 = 오늘 차례 + n(편마다 다름)
-        at = min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)
+    def render(top, n, label):  # 끝 장 가격 시각 = clip_at · 곡 = 오늘 차례 + n(편마다 다름)
+        at = clip_at(top)
         os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
         return make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인")[2]
     byu = {p.get("url"): p for p in posts}

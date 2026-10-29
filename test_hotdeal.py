@@ -8453,6 +8453,13 @@ d75 = cj75[0]["desc"].split("\n")
 assert d75[:3] == [H.DISCLOSURE, H.NAVER_NOTE, "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[4] == "1. 곰표 전기요 슈퍼싱글 9,900원"
 assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].split()) and not any("최저" in c["desc"] + c["title"] for c in cj75)  # 해시태그 5개 · 최저가 X
 assert cj75[2]["tags"] == ["페리오 칫솔", "센소다인 치약", "크리넥스 휴지"] and cj75[0]["u"][0].endswith("k1")  # 태그 검색어 = 수량 낱말 빼고
+# 유튜브 쇼츠(10/30 진우 '응' — 같은 영상, 진우가 올림): 제목 + #쇼츠 · 설명 첫 줄 = 쿠팡 문구 그대로 · 가격 시각 = 끝 장과 같음 · 네이버 쇼핑커넥트 줄 X · 해시태그 3개 · 쇼핑 태그 찾을 이름 · 네이버 + 30분
+y75 = cj75[0]["yt"]; yd75 = y75["desc"].split("\n")
+assert y75["title"] == "전기요 가성비 TOP3 #쇼츠" and y75["at"] == "08:30" and y75["shop"] == cj75[0]["tags"] and cj75[2]["yt"]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3 #쇼츠"
+assert yd75[:4] == [H.DISCLOSURE, "영상 가격은 쿠팡 10/28 18시 기준 · 결제 전 최종가 확인", "", "1. 곰표 전기요 슈퍼싱글 9,900원"] and mk75[0][5] == "가격은 " + yd75[1].split("영상 가격은 ")[1]  # 끝 장과 같은 시각
+assert yd75[-2:] == ["전체 목록은 프로필 링크 hotdealpick.kr", "#핫딜픽 #생활꿀템 #전기요"] and cj75[2]["yt"]["desc"].endswith("#핫딜픽 #생활꿀템 #칫솔")
+assert all(c["yt"]["desc"].startswith(H.DISCLOSURE + "\n") and H.NAVER_NOTE not in c["yt"]["desc"] and "판매처가 달라" not in c["yt"]["desc"] and len(c["yt"]["title"]) <= 100
+           and not re.search("최저가", c["yt"]["title"] + c["yt"]["desc"]) for c in cj75)  # 셀프체크 3)
 clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 스틱·시트 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
 clip75("2026-10-29 07:22"); assert len(a75) == 1 and len(mk75) == 4 and s75["clip"]["n"] == 4 and s75["clip"]["m"] == "2026-10"  # 하루 1번 · 다 한 주제 다시 X
 j75 = json.load(open("docs/clips/clips.json")); del j75["2026-10-29"][0]["lay"]; json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)  # 옛 틀로 만든 클립(lay 없음)
@@ -8466,6 +8473,10 @@ S75 = __import__("build_site"); cp75h = S75.clips_page("docs")
 assert '<meta name="robots" content="noindex,follow">' in cp75h and '<h1>네이버 클립 10/29 · 4편</h1>' in cp75h and '<video src="/clips/2026-10-29/01.mp4" controls playsinline preload="metadata">' in cp75h
 assert 'download="hotdealpick_2026-10-29_01.mp4">영상 저장</a>' in cp75h and 'data-copy="t2026-10-29-1">제목 복사' in cp75h and 'data-copy="d2026-10-29-1">설명 복사' in cp75h and "navigator.clipboard" in cp75h
 assert '>전기요 가성비 TOP3</textarea>' in cp75h and "올릴 시각 08:00 · 태그 검색어: 곰표 전기요 슈퍼싱글 / 한일 카본 전기요 퀸 / 보국 전기요 싱글" in cp75h and "<details>" not in cp75h
+assert '<span class="cl">네이버용</span><button class="cb" type="button" data-copy="t2026-10-29-1">제목 복사' in cp75h and '<span class="cl">유튜브용</span><button class="cb" type="button" data-copy="yt2026-10-29-1">제목 복사' in cp75h
+assert 'data-copy="yd2026-10-29-1">설명 복사' in cp75h and '>전기요 가성비 TOP3 #쇼츠</textarea>' in cp75h and "유튜브 쇼츠 08:30 · 쇼핑 태그 찾을 이름: 곰표 전기요 슈퍼싱글" in cp75h and ".cbs{display:flex;gap:8px;flex-wrap:wrap" in cp75h  # 한 줄씩 · 넘치면 접힘(가로 스크롤 X)
+j75 = json.load(open("docs/clips/clips.json")); j75["2026-10-29"][0].pop("yt"); json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)
+assert 'data-copy="yt2026-10-29-1"' not in S75.clips_page("docs") and 'data-copy="yt2026-10-29-2"' in S75.clips_page("docs")  # 옛 클립(yt 없음) = 네이버 줄만
 j75 = json.load(open("docs/clips/clips.json")); j75["2026-10-30"] = j75.pop("2026-10-30", []) + [dict(cj75[0])]; json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)
 cp75h = S75.clips_page("docs"); assert '<h1>네이버 클립 10/30 · 1편</h1>' in cp75h and "<details><summary>10/29 클립 4편</summary>" in cp75h  # 어제 것 = 접어서
 H.ig_photo = igp75; shutil.rmtree("docs/clips"); os.remove("docs/changes.json")

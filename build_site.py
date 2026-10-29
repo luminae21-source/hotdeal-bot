@@ -1988,7 +1988,7 @@ ld_tag = lambda ld: '<script type="application/ld+json">' + json.dumps(ld, ensur
 
 def clips_page(out):
     """진우용 네이버 클립 쪽 /clips/(10/29 진우 '하루 5~7개' — noindex·사이트맵 X·메뉴 X): docs/clips/clips.json(hotdeal.clip_post) 가장 최근 날 = 펼침, 그 전 날 = 접힘.
-    카드마다 영상 미리보기 + 영상 저장(download) + 제목·설명 복사 + 태그 검색어(쇼핑커넥트에서 찾을 말) + 올릴 시각."""
+    카드마다 영상 미리보기 + 영상 저장(download) + 네이버용·유튜브용(yt 있을 때 — 10/30 쇼츠) 제목·설명 복사 줄 + 태그 검색어(쇼핑커넥트·유튜브 쇼핑에서 찾을 말) + 올릴 시각."""
     try:
         js = json.load(open(f"{out}/clips/clips.json"))
     except (OSError, ValueError):
@@ -1997,16 +1997,21 @@ def clips_page(out):
     def card(d, c):
         k, f = f"{d}-{c['n']}", f"/clips/{d}/{e(c['file'])}"
         return (f'<li class="clp"><video src="{f}" controls playsinline preload="metadata"></video><b>{c["n"]}. {e(c["title"])}</b>'
-                f'<small>올릴 시각 {e(c["at"])} · 태그 검색어: {e(" / ".join(c.get("tags") or []))}</small><div class="cbs">'
-                f'<a class="cb" href="{f}" download="hotdealpick_{d}_{e(c["file"])}">영상 저장</a><button class="cb" type="button" data-copy="t{k}">제목 복사</button>'
+                f'<small>올릴 시각 {e(c["at"])} · 태그 검색어: {e(" / ".join(c.get("tags") or []))}</small>'
+                + (f'<small>유튜브 쇼츠 {e(yt["at"])} · 쇼핑 태그 찾을 이름: {e(" / ".join(yt.get("shop") or []))}</small>' if (yt := c.get("yt")) else "")
+                + f'<div class="cbs"><a class="cb" href="{f}" download="hotdealpick_{d}_{e(c["file"])}">영상 저장</a></div>'
+                f'<div class="cbs"><span class="cl">네이버용</span><button class="cb" type="button" data-copy="t{k}">제목 복사</button>'
                 f'<button class="cb" type="button" data-copy="d{k}">설명 복사</button></div><textarea class="cp" id="t{k}" readonly>{e(c["title"])}</textarea>'
-                f'<textarea class="cp" id="d{k}" readonly>{e(c["desc"])}</textarea></li>')
+                f'<textarea class="cp" id="d{k}" readonly>{e(c["desc"])}</textarea>'
+                + (f'<div class="cbs"><span class="cl">유튜브용</span><button class="cb" type="button" data-copy="yt{k}">제목 복사</button>'
+                   f'<button class="cb" type="button" data-copy="yd{k}">설명 복사</button></div><textarea class="cp" id="yt{k}" readonly>{e(yt["title"])}</textarea>'
+                   f'<textarea class="cp" id="yd{k}" readonly>{e(yt["desc"])}</textarea>' if yt else "") + '</li>')
     day = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
     body = (f'<h1>네이버 클립 {day(days[0])} · {len(js[days[0]])}편</h1><ul class="clps">' + "".join(card(days[0], c) for c in js[days[0]]) + "</ul>" if days
             else "<h1>네이버 클립</h1><p>아직 오늘 클립이 없어요 — 매일 아침 6~7시에 만들어져요.</p>")
     body += "".join(f'<details><summary>{day(d)} 클립 {len(js[d])}편</summary><ul class="clps">' + "".join(card(d, c) for c in js[d]) + "</ul></details>" for d in days[1:])
     css = ("<style>.clps{list-style:none;padding:0;margin:0}.clp{margin:0 0 22px;display:grid;gap:6px}.clp video{width:100%;max-width:360px;border-radius:12px;background:#000}"
-           ".clp small{color:var(--sub)}.cbs{display:flex;gap:8px;flex-wrap:wrap}.cb{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-weight:700;text-decoration:none}"
+           ".clp small{color:var(--sub)}.cbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.cl{min-width:4.6em;font-weight:700;font-size:.9em}.cb{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-weight:700;text-decoration:none}"
            ".cp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}</style>")
     js_copy = ("<script>document.addEventListener('click',function(ev){var b=ev.target.closest('[data-copy]');if(!b)return;var a=document.getElementById(b.getAttribute('data-copy'));"
                "function ok(){b.textContent='복사됨 ✓'}function old(){a.select();document.execCommand('copy');ok()}"
