@@ -41,6 +41,8 @@ CP_NEW_RES = 8  # VV(10/27 Cowork — 새 진열 44개가 2시간째 0개: 앞 �
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
 CP_GROUP_MIN = 3  # T(10/26 진우): 사진 없는 쿠팡 글 = 품목 낱말(사이트 품목 칸 낱말) 같은 것 3개↑면 그 낱말로 검색 1번 먼저(7일에 1번) — 결과에 같은 pid 다 사진
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
+CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59")  # CCC(10/29 진우 — 토스 점검 동안 쿠팡 쪽으로, KST): ① 변환 안 된 쿠팡 진열(cp_fail) = 이 시각 전 실패분 ①부터 1번 더(7일 규칙 X)·재시도 몫 = 실행 몫 전부 ② 가격 확인 = 사진 채움 쉬고 전부 가격(이 동안 아직 확인 안 된 것 먼저: 최근 게시 → 🔥 진열 → 오래된 확인) — 시간당 상한(CP_HOUR·CP_SEARCH_HOUR)은 그대로. shortcut: 끝나면 저절로 예전대로(코드는 11/5 뒤 정리)
+cp_rush = lambda: CP_RUSH[0] <= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)) <= CP_RUSH[1]
 CP_HOT_H = 48  # BBB(10/29 Cowork — 확인 10/25 전 435개): 최근 이 시간 안에 올린 진우 글(진열·큐레이션 상품 포함)은 오래된 확인보다 먼저(검색 상한은 그대로)
 CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
@@ -452,7 +454,7 @@ def cp_photos(seen, items):
 def cp_best(seen):
     """사진 채움(10/25 Cowork ①): 카테고리 베스트(/products/bestcategories — 검색 아닌 API, limit 100)를 카테고리마다 하루 1번(실행마다 CP_BEST_RUN개) -> cp_photos.
     사진 없는 진우·진열 쿠팡 상품이 없으면 안 부름. 상한 = 다음 실행에, 그 밖 오류 = 그 카테고리 오늘은 건너뜀."""
-    if not HAS_CP:
+    if not HAS_CP or cp_rush():  # CCC 몰아서 = 호출 몫을 변환·가격 확인에
         return
     q, ev, today = seen.get("cpq", {}), ev_info(), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     if not any(p.get("own") and ev.get(p.get("url"), {}).get("pid") and p["url"] not in q.get("i", {}) and not p["text"].startswith("📋") for p in load(POSTS, [])):
@@ -550,6 +552,8 @@ def toss(path, body=None):
 def toss_link(seen, iid, name=""):
     """tacaItemId -> 우리 쉐어링크. 만든 링크는 seen['tlink'](id -> [링크, 만든 시각])에 보관. 재사용 모드(토스 점검 — RUN['treuse'])면 새로 안 만들고
     보관 링크를 꺼냄(없으면 None = 그 상품만 빠짐) — 꺼낸 것·없던 것은 점검 하루 요약에."""
+    if RUN.get("tstop"):  # 토스 점검 중 = 만들지도 꺼내지도 않음(점검 중엔 보관 링크도 안 열림)
+        return None
     st = seen.setdefault("tlink", {"m": {}})
     st["t"] = time.time()
     if RUN.get("treuse"):
@@ -564,7 +568,13 @@ def toss_link(seen, iid, name=""):
 
 def toss_ok(seen, iid):
     """토스 후보 거르기: 재사용 모드면 보관 링크 있는 상품만(Claude가 링크 없는 걸 골라 글이 비지 않게), 보통 땐 전부. 진우 링크(ev:)는 늘 OK."""
-    return not RUN.get("treuse") or str(iid).startswith("ev:") or str(iid) in seen.get("tlink", {}).get("m", {})
+    return not RUN.get("tstop") and (not RUN.get("treuse") or str(iid).startswith("ev:") or str(iid) in seen.get("tlink", {}).get("m", {}))
+
+
+def tdead(url):
+    """CCC(10/29 토스 공지 — 점검 10/30~11/4엔 새 링크·만든 링크·이미 공유한 링크 모두 토스쇼핑에 못 들어감): 토스 점검(RUN tstop) 중 토스 주소 = 채널·Threads·묶음 글에 안 넣음.
+    사이트 토스 진열은 그대로(진우 10/29 11:2x '토스 진열은 그대로') — build_site는 안 씀."""
+    return bool(RUN.get("tstop")) and urllib.parse.urlsplit(url or "").netloc in TOSS_HOSTS
 
 
 def tnote(seen, kind, text):
@@ -580,7 +590,8 @@ def toss_mode(seen, now=None):
     now = now or time.time()
     k = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600))
     tp = seen.get("tpause") if isinstance(seen.get("tpause"), dict) else None
-    RUN["treuse"] = HAS_TOSS and (TOSS_PAUSE[0] <= k <= TOSS_PAUSE[1] or k > TOSS_PAUSE[1] and bool(tp) and not tp.get("back"))  # 먼저 정함(아래 알림·확인이 실패해도 이번 실행은 이 모드)
+    RUN["tstop"] = HAS_TOSS and TOSS_PAUSE[0] <= k <= TOSS_PAUSE[1]  # CCC: 점검 중 = 토스 글 쉼(재사용 X — 보관 링크도 안 열림) · 먼저 정함(아래 알림이 실패해도 이번 실행은 이 모드)
+    RUN["treuse"] = HAS_TOSS and k > TOSS_PAUSE[1] and bool(tp) and not tp.get("back")  # 점검 끝났는데 새 링크가 아직 안 되면 = 보관 링크 재사용(그때까지)
     if not HAS_TOSS:
         return
     st = seen.setdefault("tlink", {"t": now, "m": {}})
@@ -595,17 +606,20 @@ def toss_mode(seen, now=None):
         + (f" · 토스 단계 오류 {len(x['err'])}번({', '.join(list(dict.fromkeys(x['err']))[:3])})" if x.get("err") else "")
     md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"  # '2026-10-30 ..' -> '10/30'
     left = lambda: f"보관 링크 {len(st['m'])}개(3일 안 올린 것 빼면 {sum(f'tb_{i}' not in seen for i in st['m'])}개)"
-    if not RUN["treuse"]:
+    if not (RUN["treuse"] or RUN["tstop"]):
         return
     if not tp:
         seen["tpause"] = tp = {"d": k[:10], "t": now}  # t 먼저(seen 정리가 t를 봄)
-        say(f"🔧 토스 쉐어링크 점검 모드 시작({md(TOSS_PAUSE[0])}~{md(TOSS_PAUSE[1])}) — 새 링크 안 만들고 {left()}를 재사용해 토스 글(채널·Threads) 계속 올려요(수익 0 기간). "
-            "링크 없어 빠진 상품·토스 단계 오류는 바로 안 알리고 하루 1번(날 바뀌면) 요약")
+        say(f"🔧 토스 쉐어링크 점검 시작({md(TOSS_PAUSE[0])}~{md(TOSS_PAUSE[1])}) — 점검 중엔 새 링크·만든 링크·공유한 링크 모두 토스쇼핑에 안 들어가져서 토스 글(채널·Threads·묶음·예약) 쉼 · "
+            f"비는 회차는 쿠팡 🔥 진열로 · 사이트 토스 진열은 그대로 · {left()}는 지우지 않고 둠(11/5 뒤 확인용). {md(TOSS_PAUSE[1])} 지나면 1시간마다 새 링크 만들어 보고 되면 바로 다시 시작")
     tp["t"] = now
-    if tp["d"] != k[:10]:  # 어제 요약
+    if tp["d"] != k[:10]:  # 어제 요약(재사용 모드에 한 게 있을 때만 — CCC 점검 중 쉬는 날은 X)
         old = dict(tp)
         tp.update(d=k[:10], ok=[], miss=[], err=[])
-        say(f"🔧 토스 점검 모드 {md(old['d'])} 요약 — {brief(old)} · 남은 {left()}")
+        if any(old.get(x) for x in ("ok", "miss", "err")) and not RUN["tstop"]:
+            say(f"🔧 토스 점검 모드 {md(old['d'])} 요약 — {brief(old)} · 남은 {left()}")
+    if RUN["tstop"]:
+        return
     if k <= TOSS_PAUSE[1] or now - tp.get("probe", 0) < 3600:
         return
     tp["probe"] = now
@@ -1031,7 +1045,7 @@ def toss_clean_posts():
         print("toss 비교 뺌", n)
 
 
-RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": "", "ch_last": 0, "treuse": False}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유 · 채널 마지막 딜 글(빈틈 채움) · 토스 점검 재사용 모드(toss_mode)
+RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": "", "ch_last": 0, "treuse": False, "tstop": False}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유 · 채널 마지막 딜 글(빈틈 채움) · 토스 점검 재사용 모드(toss_mode)
 TG_SEND = ("sendMessage", "sendPhoto", "sendVideo", "copyMessage", "sendMediaGroup")  # 채널 '올리기' 호출(수정·답장 수정은 X)
 TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59")  # 10/22 Cowork·진우: 토스 쉐어링크 점검(새 링크 X·공유 수익 0)에도 토스 글은 채널·Threads 둘 다 계속 -> 이 동안(KST, 끝 분 포함) 새로 안 만들고 만들어 둔 링크(tlink) 재사용(toss_mode)
 TOSS_FEE_DAY = "2026-11-05"  # 토스 공지: 이날 0시 뒤 구매확정분부터 수수료 일괄 8% -> 기본 5%·선착순특가(= 하루특가) 3% (toss_deals 특가 회차 개당 수익)
@@ -1704,7 +1718,7 @@ def cp_links(seen):
     if not HAS_CP:
         return
     cl, st, now = load(CP_LINKS, {}), seen.setdefault("cpdl", {"x": {}}), time.time()
-    st["t"], n, since = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600))  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
+    st["t"], n, since, burst = now, 0, time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 3 * 3600)), cp_rush()  # events()가 아직 올릴 수 있는 것만(6시간 지난 예약은 안 올라감 -> 안 바꿈·알림 X)
     raw = ev_list(EVENTS)
     evs = [e for e in raw if re.match(CP_PROD, e.get("url") or "") and (e.get("at", "") >= since or e.get("shelf"))]  # 사이트 진열(shelf)은 시각 상관없이
     lst = {i["url"]: str(i.get("name") or "") for e in raw if e.get("list") and isinstance(e.get("items"), list) and e.get("at", "") >= since
@@ -1735,7 +1749,7 @@ def cp_links(seen):
     for u in fresh:
         st["fi"].setdefault(u, st["nf"][u])
     rush = set(seen.get("srl", {}).get("now", ()))  # 10/25 21시 '1번 바로' 중인 진열 = site_relink 몫(1개씩 주소 2가지 — 같은 상품 두 번 X)
-    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and (u in fresh or now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400))]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
+    todo = [u for u in sorted({e["url"] for e in evs}, key=lambda u: (u not in chan, u)) if (u in chan or u not in rush) and (u in fresh or burst and st["x"].get(u, now) < kst_ts(CP_RUSH[0]) or now - st["x"].get(u, 0) >= (86400 if u in chan or len(st["f"].get(u, [])) < 2 else CP_RETRY_DAYS * 86400))]  # 진열은 서로 다른 날 2번 실패하면 그 뒤 CP_RETRY_DAYS일마다(10/24 Cowork 'X' -> 10/25 진우 '다 올려' — 생 주소로 진열 중, 되면 바뀜) · 채널 예약 먼저 · 남은 상품 주소 = 아직 못 바꾼 것(바꾼 건 load가 이미 링크로)
     pq = [b for b in ([u for u in b if u in todo] for b in st.get("pq", [])) if b]  # 지난 실행에 나누다 만 묶음(10/24 리뷰: 안 그러면 매 실행 같은 20개를 처음부터 나눠 — 진열만 4번 호출로는 나쁜 주소 1개를 못 찾아 진열 변환이 멈춤)
     rest = [u for u in todo if not any(u in b for b in pq)]
     one = [[u] for u in rest if u in st["f"] and u not in chan]  # 진열 실패했던 상품 = 1개씩(좋은 주소와 묶으면 묶음 오류 -> 반씩 나누느라 호출이 늘어남) · 채널·목록 예약이 된 것은 채널 먼저 그대로(10/25 리뷰)
@@ -1750,7 +1764,7 @@ def cp_links(seen):
         pri, c0 = set(b) <= new0 - again, RUN.get("cpn", [0])[0]
         if not pri and not chan & set(b):  # 재시도 = 이 실행 남은 몫(CP_RUN-2까지 — site_relink가 먼저 쓴 몫 포함)의 절반까지(VV — 앞 실행 재시도가 새 진열 차례를 막지 않게)
             r0 = c0 if r0 is None else r0
-            if c0 >= min(CP_RUN - 2, r0 + (max(0, CP_RUN - 2 - r0) + 1) // 2):
+            if c0 >= (CP_RUN - 2 if burst else min(CP_RUN - 2, r0 + (max(0, CP_RUN - 2 - r0) + 1) // 2)):  # CCC 몰아서 = 재시도에 실행 몫 전부
                 q.insert(0, b)
                 break
         k1 = st["fi"].get(b[0], 0) if len(b) == 1 else 0  # 1개짜리 = 지금 해 볼 주소 모양(RR)
@@ -1841,7 +1855,7 @@ def cp_price(seen):
     kst = time.gmtime(time.time() + 9 * 3600)
     if not HAS_CP or kst.tm_hour < CP_CHK_HOUR:
         return
-    today, q = time.strftime("%Y-%m-%d", kst), seen.setdefault("cpq", {"m": {}})
+    today, q, rush = time.strftime("%Y-%m-%d", kst), seen.setdefault("cpq", {"m": {}}), cp_rush()
     q["t"], ev = time.time(), ev_info()
     rr = seen.get("cpdl", {}).get("rr") or {}
     for u in rr.get("w", []):  # RR: events에서 빠진 400 진열(posts 진열 글만 남음)도 검색 1번(옵션 번호 — 살아나면 Cowork가 다시 넣음)
@@ -1850,6 +1864,7 @@ def cp_price(seen):
     posts = load(POSTS, [])
     names = {p["url"]: parse(title_of(p["text"]))[1] for p in posts if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
     hot = {p["url"] for p in posts if p.get("own") and p.get("t", "") >= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - CP_HOT_H * 3600))}
+    fire = {p["url"] for p in posts if p.get("own") and p.get("st") == "hot"}  # 🔥 진열(CCC 몰아서 순서)
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
     q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
@@ -1864,8 +1879,8 @@ def cp_price(seen):
             bypid.setdefault(ev[u]["pid"], []).append(u)
     last = lambda u: max(q["m"].get(u, [0, ""])[1], c if re.fullmatch(r"\d{4}-\d\d-\d\d \d\d:\d\d", c := str(ev[u].get("chk") or "")) else "")  # XX(10/27): 마지막 확인 = 봇 검색·Cowork events chk 중 새것 — 막 들어온(Cowork가 확인한) 진열이 옛 확인 상품 앞을 막지 않게
     todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
-                                                                                                   or u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
-                  key=lambda t: (t[1] not in hot, t[0]))  # 최근 올린 글(CP_HOT_H) 먼저, 그다음 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
+                                                                                                   or not rush and u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
+                  key=lambda t: (rush and t[0] >= CP_RUSH[0], t[1] not in hot, rush and t[1] not in fire, t[0]))  # 최근 올린 글(CP_HOT_H) 먼저, 그다음 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     def shown(f, k=None):  # 지난 빌드 쪽에 보이는 딜(쪽 링크 순서 — k = 첫 화면 몇 개)
         try:
             return {posts[int(x)].get("url") for x in re.findall(r'/p/(\d+)\.html', open(f, encoding="utf-8").read().split("<body", 1)[-1])[:k] if int(x) < len(posts)}  # 본문만(머리 JSON-LD = 사진 있는 상품 목록 X — 10/25 리뷰)
@@ -1887,6 +1902,8 @@ def cp_price(seen):
     gk = {w: min(map(rank, us)) for w, us in grp.items() if len(us) >= CP_GROUP_MIN}
     pho = [x for _, x in sorted([((*gk[w], 0, ""), (0, None, None, w, None)) for w in gk] + [((*rank(t[1]), 1, t[0]), t) for t in todo if t[1] not in q.get("i", {})], key=lambda y: y[0])]  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지 — 같은 칸이면 T 품목 낱말 검색 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
     old = [t for t in todo if t[1] in q.get("i", {})]
+    if rush:  # CCC 몰아서 = 사진 채움(품목 낱말 검색·사진 없는 글 먼저) 쉼 — 검색 몫 전부 가격 확인(순서 그대로 · 사진은 같은 검색에서 덤으로)
+        gk, pho, old = {}, [], list(todo)
     todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: t[1] not in rw)  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰)
     got = miss = err = gn = 0
     xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
@@ -1962,7 +1979,8 @@ def cp_price(seen):
     if rr:
         rr["w"] = [u for u in rr.get("w", []) if u in rw]
     if got or miss or err or xs:
-        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {len(xs)}개 더" if xs else ""))
+        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {len(xs)}개 더" if xs else "")
+              + (f" · 몰아서 남은 {sum(last(u) < CP_RUSH[0] for u in names if ev[u].get('pid'))}개({CP_RUSH[0][5:7].lstrip('0')}/{CP_RUSH[0][8:10].lstrip('0')} {int(CP_RUSH[0][11:13])}시 뒤 확인 안 된 것)" if rush else ""))
 
 
 def cp_words(name):
@@ -2236,6 +2254,10 @@ def events(seen):
         if ev.get("list"):
             list_post(seen, ev, key)
             continue
+        if tdead(ev.get("url")):  # CCC 토스 점검 중 토스 예약 = 안 올림(공유한 링크도 안 열림 — 진우 10/29 '건너뛰기')
+            seen[key] = time.time()
+            print("events 안 올림(토스 점검 중)", ev["at"])
+            continue
         if HAS_CP and re.match(CP_PROD, ev.get("url") or ""):  # 쿠팡 상품 주소 = 파트너스 링크로 바뀐 뒤에(cp_links — 상한·오류면 다음 실행, 6시간 안)
             continue
         if ev.get("deal") and not aff(ev.get("url") or ""):  # SS(10/26 진우 '수익 안 주는 제품은 과감하게 빼고'): 수수료 링크 아닌 상품 예약 = 안 올림(하루 셈)
@@ -2353,7 +2375,8 @@ def night_deals(seen, since, until):
     아직 안 나간 것 -> [{"at", "icon", "name", "price", "sv", "url"}] 시각 순. sv = 같은 상품 쿠팡 비교('…보다 N원 쌈' 문장)일 때만 ('쿠팡', 'N원')."""
     out = []
     for ev in sorted(load(EVENTS, []), key=lambda e: e["at"]):
-        if not (ev.get("url") and ev.get("deal") and not ev.get("api") and aff(ev["url"])) or "ev_" + ev["at"] in seen or not since <= ev["at"] < until:
+        if not (ev.get("url") and ev.get("deal") and not ev.get("api") and aff(ev["url"])) or "ev_" + ev["at"] in seen or not since <= ev["at"] < until \
+                or HAS_TOSS and TOSS_PAUSE[0] <= ev["at"] <= TOSS_PAUSE[1] and urllib.parse.urlsplit(ev["url"]).netloc in TOSS_HOSTS:  # CCC: 점검 중에 나갈 토스 예약 = 안 나감(미리보기 X)
             continue  # SS: 수수료 링크 아닌 예약(네이버 직접·아직 안 바뀐 쿠팡 생 주소) = 미리보기·모아보기 X(events도 안 올림)
         plain = html.unescape(re.sub(r"<[^>]+>", "", ev["text"]))
         store, name, price = parse(title_of(plain))  # 몰별 틀(10/22)도 '[몰] 상품명 (가격)'으로
@@ -2521,6 +2544,8 @@ def toss_deals(seen, best=False):
     best="cat": 같은 방식으로 카테고리 베스트(TOSS_CATS 최상위 카테고리들 + 날마다 돌아가는 다른 최상위 카테고리 1개) 중 최대 3개, TOSS_CAT_HOUR에 1번.
     API 상품·가격은 채널·Threads 글로만 쓰고 posts.json(사이트·모아보기·블로그)엔 안 남김 — 승인 신청 내용(서비스 = 텔레그램 채널 + 스레드 자동 게시,
     커머스형 전시·가격 비교 안 함) 그대로."""
+    if RUN.get("tstop"):  # CCC 토스 점검 = 회차 쉼(main에서 lambda로도 불림)
+        return
     kst, cat, beauty, special = time.gmtime(time.time() + 9 * 3600), best in ("cat", "beauty"), best == "beauty", best == "special"  # beauty = 뷰티 카테고리만 따로 1회차, special = 토스 특가(10/11)
     day = [h for h in TOSS_DAY_HOURS if h <= kst.tm_hour < h + 3]  # 하루특가는 회차 3시간 안에만(놓친 회차를 밤에 몰아 올리지 않게)
     hrs = [h for h in (TOSS_BEAUTY_HOURS if beauty else (TOSS_CAT_HOUR,) if cat else [h for h in TOSS_SPECIAL_HOURS if kst.tm_hour < h + 3] if special else TOSS_BEST_HOURS if best else day) if h <= kst.tm_hour]
@@ -2779,7 +2804,7 @@ def steady_list(seen):
     if not STEADY_AT <= time.strftime("%H:%M", kst) < STEADY_END or key in seen or busy(seen, cap=False):
         return
     seen[key] = now
-    items, posts, names = steady_cands(seen, now, 99), load(POSTS, []), {k: n.split("·")[0] for k, n, _ in SHELF_CATS}
+    items, posts, names = [x for x in steady_cands(seen, now, 99) if not tdead(x["u"])], load(POSTS, []), {k: n.split("·")[0] for k, n, _ in SHELF_CATS}  # CCC 점검 중 토스 X
     cats = {}
     for x in items:
         if x["i"] is not None and (c := cat_of(posts[x["i"]])):
@@ -2801,7 +2826,8 @@ def steady_list(seen):
     print("steady", len(items), "items" + (f" ({cat} 모음)" if cat else ""), "|", " / ".join(clip(x["n"], 20) for x in items))
     os.makedirs(os.path.dirname(STEADY_FILE), exist_ok=True)
     api = lambda x: x["i"] is None and urllib.parse.urlsplit(x["u"]).netloc in TOSS_HOSTS  # 토스 상세 API로 가격·리뷰를 받은 상품 = 사이트엔 가격·리뷰 X(API 신청 범위 — 10/23 Cowork 정정)
-    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", kst), "head": plain_of(head), "notes": notes, "items": [{**x, "p": "", "st": ""} if api(x) else x for x in items]}, open(STEADY_FILE, "w"), ensure_ascii=False)
+    if not RUN.get("tstop"):  # CCC: 점검 중엔 사이트 꾸준템 쪽을 토스 뺀 목록으로 안 덮음(사이트 토스 진열 그대로 — 진우 10/29 11:2x)
+        json.dump({"at": time.strftime("%Y-%m-%d %H:%M", kst), "head": plain_of(head), "notes": notes, "items": [{**x, "p": "", "st": ""} if api(x) else x for x in items]}, open(STEADY_FILE, "w"), ensure_ascii=False)
     if not E.get("THREADS_TOKEN"):
         return
     render = lambda n: "\n".join(dict.fromkeys(aff_note(x["u"]) for x in items[:n])) + f"\n\n{plain_of(head)}\n\n" \
@@ -3016,7 +3042,7 @@ def nn_bundle(seen):
         rr = [x for k in range(kcap) for x in sorted((v[k] for v in kinds.values() if len(v) > k), key=lambda x: x[2])]  # 종류마다 1개씩 먼저(싼 순), 그다음 2번째
         picks[c] = sorted(rr[:NN_CAP[len(tp[4]) == 1]], key=lambda x: x[2])  # 같은 단위로 줄 세움
     gone = {x[0] for k, v in seen.items() if k.startswith("sold_") and isinstance(v, dict) for x in v.get("it", []) if x[4]}  # 품절·특가 끝 토스 상품(threads_deals와 같은 기록)
-    toss = sorted((x for x in seen.get("thtoss", {}).get("q", []) if now - x["t"] < 3 * 3600 and x.get("p") and x.get("id") not in gone and not cold(x["n"])
+    toss = sorted((x for x in seen.get("thtoss", {}).get("q", []) if now - x["t"] < 3 * 3600 and x.get("p") and x.get("id") not in gone and not tdead(x.get("link")) and not cold(x["n"])
                    and nn_kind(tp, x["n"]) and nn_unit(x["n"], x["p"], base)), key=lambda x: nn_unit(x["n"], x["p"], base)[0])[:NN_TOSS]
     n = sum(map(len, picks.values()))
     if n < 3:
@@ -3083,7 +3109,7 @@ def top_deals(seen):
     day = time.strftime("%Y-%m-%d ", kst)  # 회차가 늦게 돌아도(실행 누락) 그 시간대 글만 -> 다음 회차와 안 겹침
     since, until = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00", day + f"{hrs[-1]:02d}:00"
     prev = time.strftime("%Y-%m-%d ", time.gmtime(time.time() + 9 * 3600 - 86400)) + f"{TOP_HOURS[-1]:02d}:00" if hrs[-1] == TOP_HOURS[0] else since  # 첫 리스트(12시)는 어젯밤(전날 마지막 리스트 뒤) 좋은 딜도
-    top = sorted((p for p in load(POSTS, []) if p.get("mid") and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
+    top = sorted((p for p in load(POSTS, []) if p.get("mid") and not tdead(p.get("url")) and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
                                                               or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th") and aff_note(p["url"] or "")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
                  key=lambda p: (not th_tier(p["text"]), bool(p.get("th")) or not aff_note(p["url"] or ""), -(p.get("pop") or 0), -wb(title_of(p["text"]))))[:5]  # 수수료 링크 아닌 딜 = Threads에 나간 딜처럼 셈(10/19 밤 'Threads는 수수료 딜만' 전엔 대부분 개별 글로 나가 th 1 -> 채널 순서 그대로)  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     if len(top) >= 3:  # 텔레그램 리스트 = 3개↑일 때만(그대로) · Threads 리스트는 아래에서 채워 따로(KK)
@@ -3108,7 +3134,7 @@ def top_deals(seen):
     posts, now = load(POSTS, []), time.time()  # Threads 12·15·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 링크, 500자
     hist = [h for h in seen.get("thlist", {}).get("h", []) if now - h[0] < 86400]
     many = {u for u, c in collections.Counter(u for h in hist for u in h[1]).items() if c >= TH_LIST_REPEAT}  # 최근 24시간 리스트에 이미 2번 = X
-    six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
+    six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and not tdead(p.get("url")) and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
     price = lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
     cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p)] \
         + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
@@ -3187,7 +3213,7 @@ def pick_post(seen):
     if not E.get("THREADS_TOKEN") or not PICK_TH_AT <= time.strftime("%H:%M", kst) < PICK_TH_END or key in seen or busy(seen, cap=False):  # 다른 묶음 글 10분 안이면 다음 실행
         return
     posts, ids = load(POSTS, []), load(PICKS_FILE, {}).get(today) or []
-    ps = [posts[i] for i in ids if isinstance(i, int) and i < len(posts) and (shop_of(posts[i]) != "toss" or pick_price(posts[i], seen) is not None) and season_adj(title_of(posts[i]["text"])) >= 0]  # 오늘 확인 안 된 토스·철 지난 계절 상품(기온까지 — 사이트 픽은 달만) = 뺌(Z)
+    ps = [posts[i] for i in ids if isinstance(i, int) and i < len(posts) and not tdead(posts[i].get("url")) and (shop_of(posts[i]) != "toss" or pick_price(posts[i], seen) is not None) and season_adj(title_of(posts[i]["text"])) >= 0]  # 오늘 확인 안 된 토스·철 지난 계절 상품(기온까지 — 사이트 픽은 달만) = 뺌(Z)
     if not ps:
         return
     url = f"{SITE}today/{today}/"
@@ -3241,7 +3267,7 @@ def pair_post(seen):
     posts, rk = load(POSTS, []), seen.get("cpq", {}).get("r", {})
     days, gs = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True), {}
     for i, p, sh in shelf_items(posts, days):  # 진열 순서(🔁 다시 특가 → 진우 상품 → 최신) = 첫 상품이 그 묶음의 핫딜
-        if sh[0] == 0 and aff(p.get("url")) and aff_note(p["url"]) != OY_NOTE and p["url"] not in mem and ok(p) and pick_price(p, seen) is not None and season_adj(title_of(p["text"])) >= 0 and (k := pair_key(p)) \
+        if sh[0] == 0 and aff(p.get("url")) and not tdead(p.get("url")) and aff_note(p["url"]) != OY_NOTE and p["url"] not in mem and ok(p) and pick_price(p, seen) is not None and season_adj(title_of(p["text"])) >= 0 and (k := pair_key(p)) \
                 and parse(title_of(p["text"]))[1] not in [parse(title_of(q["text"]))[1] for _, q in gs.get(k, [])]:
             gs.setdefault(k, []).append((i, p))
     brand, lab = lambda p: parse(title_of(p["text"]))[1].split()[0], lambda p: (PAIR_UNIT.search(p["text"]) or [""])[0].split("당")[0]
@@ -3755,7 +3781,7 @@ def cp_fill(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     last, tg_t = seen.get("cpfill", {}).get("t", 0), seen.get("tgap", {}).get("t", 0)
-    if not TOSS_GAP_MIN or kst.tm_hour not in TOSS_SOLO_HOURS or HAS_TOSS and (last > tg_t or time.strftime("tsolo_%Y%m%d_%H", kst) not in seen) \
+    if not TOSS_GAP_MIN or kst.tm_hour not in TOSS_SOLO_HOURS or HAS_TOSS and not RUN.get("tstop") and (last > tg_t or time.strftime("tsolo_%Y%m%d_%H", kst) not in seen) \
             or (now - max(ch_last(seen), tg_t, last)) // 60 <= (TOSS_GAP_NIGHT if kst.tm_hour < 8 else TOSS_GAP_MIN):
         return
     evs = load(EVENTS, [])
@@ -6643,7 +6669,7 @@ def threads_deals(seen):
     링크 = 사이트 딜 페이지(구매 버튼·대가성 문구 있음). 사이트 반영 전(404)이면 다음 실행에. posts.json에 th 표시 -> 두 번 안 올림. 3시간 지난 딜은 안 올림(식은 딜), 1회 1개."""
     tok, posts = E.get("THREADS_TOKEN"), load(POSTS, [])
     since = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - 3 * 3600))
-    fresh = [i for i, p in enumerate(posts) if not p.get("th") and not p.get("shelf") and p["t"] >= since and not p["text"].startswith("📋")]  # shelf = Threads X
+    fresh = [i for i, p in enumerate(posts) if not p.get("th") and not p.get("shelf") and p["t"] >= since and not p["text"].startswith("📋") and not tdead(p.get("url"))]  # shelf = Threads X · CCC 점검 중 토스 X
     skip = [i for i in fresh if not aff_note(posts[i].get("url") or "")]  # 10/19 밤 진우 'Threads는 수수료 딜만': 대가성 문구가 붙는 링크만 — 나머지는 텔레그램·사이트에만(나중에 진우 링크로 바뀌면 그때 후보)
     new = [i for i in skip if "th" not in posts[i]] if tok else []  # 로그는 딜마다 1번(th = 0: 거짓값이라 리스트 셈은 그대로)
     for i in new:
@@ -6655,7 +6681,7 @@ def threads_deals(seen):
     rei = {i for i in fresh if posts[i].get("own") and (posts[i].get("re") or posts[i].get("url") in {e["url"] for e in load(EVENTS, []) if e.get("re") and e.get("url")})}  # + E 자동 재게시(posts re)  # 10/12 23:05 진우 재업로드(events "re": true, 같은 진우 링크로 전에 나간 강점 품목)
     bt = {i: 0 if i in rei and not posts[i].get("re") else th_beauty(title_of(posts[i]["text"])) for i in fresh}  # 재업로드는 화장품 하루 한도에서 뺌(밤 화장품 글이 한도를 채워도 막히지 않게)
     now = time.time()
-    q = [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600]  # 슬롯 기다리는 토스 이름 예약·뷰티 회차 글
+    q = [x for x in seen.get("thq", {}).get("q", []) if now - x["t"] < 3 * 3600 and not tdead(x.get("link"))]  # 슬롯 기다리는 토스 이름 예약·뷰티 회차 글(CCC 점검 중 X)
     cand = [(i, posts[i]["text"], bt[i], posts[i]["t"]) for i in fresh if not th_steady(posts[i]["text"]) and th_solo(seen, posts[i]["text"], beauty=bt[i], slot=bool(posts[i].get("own")), top=i in rei)] \
         + [(x, x["text"], x["bt"], time.strftime("%Y-%m-%d %H:%M", time.gmtime(x["t"] + 9 * 3600))) for x in q if th_solo(seen, x["text"], beauty=x["bt"], slot=True)]  # 진우 화장품 링크·이름 예약은 화장품 자리 채움
     grp = lambda c: -1 if isinstance(c[0], int) and c[0] in rei else 0 if th_tier(c[1]) == 1 else 1 if c[2] and TH_BEAUTY_MIN else 2  # 10/12 01:10 진우: ① 쿠팡 같은 상품 차이 > 화장품(하루 1~2) > ② 30일 최저가·순위 (재업로드는 맨 먼저, 23:05)
@@ -6676,7 +6702,7 @@ def threads_deals(seen):
         rd = th_day(seen, now)  # 밤(0~6시) 재오픈이 기다리면 토스 픽 칸은 비워 둠(같은 실행 뒤 toss_reopen 차례 — 10/22 새벽 토스 글이 자정 재오픈 칸을 가져가던 것)
         rw = HAS_TOSS and time.gmtime(now + 9 * 3600).tm_hour < TH_REOPEN_AM[0] and rd.get("rn", 0) < TH_REOPEN_NIGHT and rd.get("rn", 0) + rd.get("ra", 0) < TH_REOPEN_DAY \
             and any(not e.get("st") for e in seen.get("reopen", {}).get("q", []))
-        tq = [] if rw else [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone
+        tq = [] if rw else [x for x in seen.get("thtoss", {}).get("q", []) if (TH_SOLO_GAP if x.get("l") else 0) <= now - x["t"] < 3 * 3600 and x["id"] not in gone and not tdead(x.get("link"))
                                      and not ("밤 12시까지" in x["text"] and now >= kst_ts(time.strftime("%Y-%m-%d", time.gmtime(x["t"] + 9 * 3600)) + " 23:30")) and th_solo(seen, x["text"], beauty=x["bt"], top=True)]  # 하루특가 = 그날 23:30까지만(밤 12시 넘어 '밤 12시까지' 글 X)
         due = late and tq and seen.get("thfill", {}).get("k") != "toss"  # 10/22 진우 '끝나가는 🔥 먼저': 차례와 상관없이 이번 칸(창이 먼저 끝나는 것 = 먼저 올라온 것부터), 다음 칸은 토스
         if own and (due or not tq or seen.get("thfill", {}).get("k") == "toss"):  # 10/21 진우 '번갈아': 직전 채움이 토스 픽이면 이번 칸 = 진우 딜(토스 대기 줄이 비어도 진우 딜)
@@ -9569,7 +9595,7 @@ def main():
                 print("alert", repr(e))
             raise SystemExit(1)
         seen = {}
-    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, thids=[], season=season_ctx(seen), rvw={},
+    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, tstop=False, thids=[], season=season_ctx(seen), rvw={},
                rvst=seen.setdefault(time.strftime("rvst_%Y%m%d", time.gmtime(time.time() + 9 * 3600)), {"t": 0}))  # Z: 오늘 계절 맥락(프롬프트마다 1줄·금지어·계절 상품) · 재검토 Claude 수 · 하루 기록(rv_report)
     RUN.pop("cpu", None)
     RUN.pop("cpn", None)
@@ -9663,6 +9689,8 @@ def main():
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
     for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow):
+        if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
+            continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
             step(seen)
         except Exception as e:
