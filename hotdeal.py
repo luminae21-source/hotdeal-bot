@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, AUTO_EVENTS, PLAN  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -9990,18 +9990,70 @@ def cp_repost(seen):
         print(f"cp repost {slot:02d}: 후보 없음")
         return
     u = min(cand, key=lambda u: (sig(u), last[u]["t"]))  # 같으면 오래전에 나간 것
-    p = last[u]
-    name, rocket = parse(title_of(p["text"]))[1], rk.get(u) is True
-    tgt = first[u] and parse(title_of(first[u]["text"]))[2].split("/")[0].split(" · ")[0].strip() if u in first else ""
+    repost_send(seen, key, u, last[u], first.get(u), rk.get(u) is True, f"cp repost {slot:02d}")
+
+
+def repost_send(seen, key, u, p, first, rocket, label):
+    """'🔁 다시 소개' 새 글(cp_repost·auto_repost 같은 틀 — 옛 글 안 고침): 쿠팡 대가성 문구 첫 줄 · 가격 = 확인 가격 '(M/D H시 확인)' · '처음 소개 때' = 진짜 첫 🔥 글이 있을 때만 · 🚀 = isRocket만
+    · posts re:1 -> Threads 맨 앞. 못 보냄 = seen[key] 지움(다음 실행에 다시) -> 보냈으면 True."""
+    name = parse(title_of(p["text"]))[1]
+    tgt = first and parse(title_of(first["text"]))[2].split("/")[0].split(" · ")[0].strip()
     body = mall_body("coupang", "🔁 다시 소개", "🔥", name, f"{p['now']} ({p['chk']} 확인)", [esc(f"💡 처음 소개 때 {tgt}") if tgt else "", "⚠️ 결제 전 최종가 확인"], rocket)
     m = tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True}, text=ad_head(DISCLOSURE, plain_of(body)) + body,
            reply_markup={"inline_keyboard": [[{"text": mall_btn("coupang", p["now"], rocket), "url": u}]]})
     if not m:
-        del seen[key]
-        return  # 다음 실행에 다시(실패는 바로 알림)
+        seen.pop(key, None)
+        return False  # 다음 실행에 다시(실패는 바로 알림)
     bundled(seen)
     record(m.get("text", ""), m.get("entities", []), u, m["message_id"], extra={"own": 1, "re": 1, **{k: p.get(k) for k in ("cat", "tag", "st", "tgt", "now", "chk", "chkt", "stdy", "rehot", "img")}})
-    print(f"cp repost {slot:02d}: {clip(name, 30)}")
+    print(f"{label}: {clip(name, 30)}")
+    return True
+
+
+AUTO_RE_AT, AUTO_RE_WIN, AUTO_RE_DAYS, AUTO_RE_PCT = ("20:35", "20:45", "20:55"), 20, 3, 5  # B 재게시 자동(Cowork 9:10 크롬 이관): 칸 시각부터 20분 안 첫 실행 · 마지막 게시 3일↑ · 지금가 ≤ 처음 소개가 +5%
+
+
+def auto_repost(seen):
+    """B(10/30 Cowork 9:10 크롬 상품 페이지 확인 이관): AUTO_RE_AT 칸마다 1개 — 사이트 진열 🔥(같은 링크 마지막 진우 글 st hot · 쿠팡 대가성 링크) 중
+    같은 상품 마지막 채널 게시(없으면 진열) AUTO_RE_DAYS일↑ · 지금가(price_hist 마지막 확인) ≤ 처음 소개가 +AUTO_RE_PCT% · 24시간 안 확인 · 앞뒤 3일 예약 X
+    → 처음 소개가 대비 싼 순 '🔁 다시 소개'(repost_send — cp_repost와 같은 틀). 진우 예약 앞뒤·묶음 간격·시간당 상한이면 칸 안에서 다음 실행."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    hm, today = time.strftime("%H:%M", kst), time.strftime("%Y%m%d", kst)
+    slot = next((t for t in AUTO_RE_AT if t <= hm < (lambda h, m: f"{h + (m + AUTO_RE_WIN) // 60:02d}:{(m + AUTO_RE_WIN) % 60:02d}")(*map(int, t.split(":")))), None)
+    key = f"autore_{today}_{slot.replace(':', '')}" if slot else ""
+    if not AUTO_ON["repost"] or not slot or key in seen:
+        return
+    evs, now = load(EVENTS, []), time.time()
+    if ev_near(seen, now, evs) or busy(seen):
+        print(f"auto repost {slot}: 미룸(진우 예약 앞뒤·묶음 간격·시간당 상한)")
+        return
+    posts, ev, h, rk = load(POSTS, []), ev_info(), ph_load(), seen.get("cpq", {}).get("r", {})
+    since, d1 = (time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - x)) for x in (AUTO_RE_DAYS * 86400, 86400))
+    block = {e["url"] for e in evs if re.match(AT_RX, e.get("at", "")) and e.get("url") and abs(kst_ts(e["at"]) - now) < AUTO_RE_DAYS * 86400}
+    last, first, recent = {}, {}, set()
+    for p in posts:
+        u = p.get("url") or ""
+        if not p.get("own") or aff_note(u) != DISCLOSURE or p["text"].startswith("📋"):
+            continue
+        last[u] = p
+        first.setdefault(u, p)
+        if p["t"] >= since and (p.get("mid") or not p.get("shelf")):
+            recent.add(u)
+    done = {seen[k].get("u") for k in seen if k.startswith(f"autore_{today}_") and isinstance(seen[k], dict)}
+    cand = []
+    for u, p in last.items():
+        st = ph_stat(h.get(ph_key(ev.get(u, {}), u)), now)
+        fp = won(parse(title_of(first[u]["text"]))[2])
+        if p.get("st") == "hot" and u not in recent and u not in block and u not in done and st and fp and st["last"] >= ph_now(now - 86400) and p.get("now") \
+                and st["now"] * 100 <= fp * (100 + AUTO_RE_PCT) and p.get("chkt", "") >= d1:
+            cand.append((st["now"] / fp, p["t"], u))
+    seen[key] = {"t": now}
+    if not cand:
+        print(f"auto repost {slot}: 후보 없음")
+        return
+    _, _, u = min(cand)
+    if repost_send(seen, key, u, last[u], first[u] if icon_of(first[u]["text"]) == "🔥" else None, rk.get(u) is True, f"auto repost {slot}"):
+        seen[key] = {"t": now, "u": u}
 
 
 TH_MISS_DAYS = 7  # Threads 놓친 진우 🔥 = 채널 글 뒤 이 날 수 안만 재게시 후보(cp_repost — 3일 간격 규칙은 그대로)
@@ -10331,7 +10383,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

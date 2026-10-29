@@ -1089,7 +1089,7 @@ assert mprompts[-1][1] == ["고창 풍천장어 자포니카 민물장어+소스
 H.EVENTS = ev0
 H.HAS_TOSS = False; mcalls.clear(); json.dump(mp + [{"t": kt(-1), "text": "🔥 [토스] 새 딜 (1원)", "url": pp + "11", "mid": 24}], open("posts.json", "w"), ensure_ascii=False)
 H.toss_relink({}); assert not mcalls; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main)
 open("posts.json", "w").write(pj0); H.tg = tg5
 os.remove("toss.json"); time.time, H.HAS_TOSS, H.http, H.ai_pick = tt, False, ph, pa
 
@@ -1217,7 +1217,7 @@ so_fail["edit"] = 3; so_out.discard(1100); so_price[1100] = 100; seen["sold_900"
 for at in ("2026-10-11 00:05", "2026-10-11 00:19", "2026-10-11 00:33"): so_run(at)
 assert seen["sold_900"].get("off") and seen["sold_900"]["it"][0][4] == 1 and not so_run("2026-10-11 00:47") and "sold_900" not in seen
 H.HAS_TOSS = False; so_run("2026-10-11 15:38"); assert not so_calls and not so_sent; H.HAS_TOSS = True  # 토스 API 키 없으면 아무것도 안 함
-assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest" in inspect.getsource(H.main) and H.SOLD[1][1] == ("⛔ <b>품절</b> — 밤 12시부터 다시 살 수 있어요", "품절 · 밤 12시 재오픈")
 open("posts.json", "w").write(pj3); H.EVENTS, H.http, H.tg, H.ai_pick, H.HAS_TOSS = ev3, ph3, tg6, pa3, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -11163,4 +11163,33 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(json.load(open("auto_events.json"))) == 4 and tg114 and "맞는 상품 0개" in tg114[-1]["text"]  # 키친타올 = 맞는 것 4개 밑 = 안 올림 + 관리봇
 assert "cp_best, auto_shelf, cp_price" in inspect.getsource(H.main) and "CP_BEST_KEEP" in inspect.getsource(cb0) and (H.CP_HOUR, H.CP_SEARCH_HOUR) == (25, 6)  # 추가 호출 X(베스트 응답 그대로) · 상한 그대로
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv114[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv114[5]); os.chdir(cwd114)
+# 9-115) KKK-B(Cowork 9:10 크롬 재게시 → 봇 20:35·20:45·20:55): 사이트 진열 🔥 중 마지막 채널 게시 3일↑ · 지금가(price_hist 마지막 확인) ≤ 처음 소개가 +5% · 24시간 안 확인 → 싼 순 '🔁 다시 소개' 칸마다 1개 · 끔 스위치
+cwd115, sv115 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp())
+H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"
+U115 = lambda k: f"https://link.coupang.com/a/r{k}"
+json.dump([{"at": "2026-10-10 10:00", "url": U115(k), "pid": f"5{k}", "text": "x"} for k in "12345"], open("events.json", "w"))
+P115 = []
+for k, n, now_, st_, chkt in (("1", "상품하나", "9,800원", "hot", "2026-11-01 19:00"), ("2", "상품둘", "10,600원", "hot", "2026-11-01 19:00"), ("3", "상품셋", "9,000원", "hot", "2026-11-01 19:00"),
+                              ("4", "상품넷", "9,000원", "hot", "2026-11-01 19:00"), ("5", "상품다섯", "9,000원", "hot", "2026-11-01 19:00")):
+    P115.append({"t": "2026-10-20 10:00", "text": f"🔥 [쿠팡] {n} (10,000원)\n\n싸요", "url": U115(k), "own": 1, "mid": 10 + int(k)})
+    P115.append({"t": "2026-10-25 10:00", "text": f"🔥 [쿠팡] {n} (10,000원)\n\n진열", "url": U115(k), "own": 1, "shelf": 1, "st": st_, "now": now_, "chk": "11/1 19시", "chkt": chkt})
+P115.append({"t": "2026-10-31 10:00", "text": "🔥 [쿠팡] 상품셋 (9,000원)\n\n채널", "url": U115("3"), "own": 1, "mid": 99, "st": "hot", "now": "9,000원", "chk": "11/1 19시", "chkt": "2026-11-01 19:00"})
+json.dump(P115, open("posts.json", "w"), ensure_ascii=False)
+json.dump({U115("1"): [["26110119", 9800, "", "api"]], U115("2"): [["26110119", 10600, "", "api"]], U115("3"): [["26110119", 9000, "", "api"]], U115("4"): [["26103019", 9000, "", "api"]],
+           U115("5"): [["26110119", 9000, "", "api"]]}, open("price_hist.json", "w"))  # 옵션 없는 pid = 추적 키 = 링크
+tg115 = []; H.tg = lambda m, **p: tg115.append(p) or {"message_id": 500 + len(tg115), "text": re.sub(r"<[^>]+>", "", p.get("text", "")), "entities": []}
+s115 = {}
+H.AUTO_ON["repost"] = False; time.time = lambda: TK("2026-11-01 20:36"); H.auto_repost(s115); assert not tg115 and not s115  # 끔 스위치
+H.AUTO_ON["repost"] = True; time.time = lambda: TK("2026-11-01 20:30"); H.auto_repost(s115); assert not tg115  # 칸 전 X
+for hm in ("20:36", "20:40", "20:47", "20:58", "21:20"):
+    time.time = lambda hm=hm: TK("2026-11-01 " + hm)
+    with contextlib.redirect_stdout(io.StringIO()) as o115:
+        H.auto_repost(s115)
+names115 = [re.search(r"상품\w+", x["text"])[0] for x in tg115]
+assert names115 == ["상품다섯", "상품하나"], (names115, o115.getvalue())  # 다섯(0.90) → 하나(0.98) · 둘 = +6% X · 셋 = 3일 안 채널 글 X · 넷 = 확인 2일 전 X · 칸마다 1개(20:40 = 같은 칸 다시 X)
+assert "🔁 다시 소개" in tg115[0]["text"] and "💡 처음 소개 때 10,000원" in tg115[0]["text"] and tg115[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == U115("5")
+assert len(tg115) == 2 and "autore_20261101_2035" in s115 and s115["autore_20261101_2045"]["u"] == U115("1")  # 20:55 = 남은 후보 없음(또는 묶음 간격으로 미룸) · 21:20 = 칸 지남
+p115 = json.load(open("posts.json")); assert p115[-1]["re"] == 1 and p115[-1]["url"] == U115("1") and p115[-1]["own"] == 1  # 재게시 = posts re:1(Threads 맨 앞 · 🔁 배지)
+assert "repost_send(seen, key, u, last[u]" in inspect.getsource(H.cp_repost) and "cp_repost, auto_repost," in inspect.getsource(H.main)
+(time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv115[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv115[5]); os.chdir(cwd115)
 print("OK: 모든 셀프체크 통과")
