@@ -1876,6 +1876,27 @@ CAT_INTRO = {  # c/ 칸 쪽 첫 문단(TT-2 ③ 10/27 — 검색어 '쿠팡 OO �
     "hot": "핫딜픽이 고른 상품 중 지금 특가 가격대인 것만 모았어요. 쿠팡·네이버·토스 특가를 한곳에서 보고, 🔁 표시는 특가 가격으로 다시 돌아온 상품이에요. 가격은 확인·게시 시점 기준이라 결제 전 최종가를 확인하세요."}
 
 
+def rev_pids(out):
+    """HHH① 구매후기 요약(hotdeal.review_post가 올린 뒤 docs/reviews.json{상품 번호: {at, text}}) -> (후기, {링크: 상품 번호}) — 링크 = cp_links.json 값·events 상품 번호."""
+    try:
+        revs = json.load(open(f"{out}/reviews.json")) if os.path.exists(f"{out}/reviews.json") else {}
+        cl = json.load(open(CP_LINKS)) if revs and os.path.exists(CP_LINKS) else {}
+    except ValueError:
+        return {}, {}
+    pids = {v: m[1] for k, v in cl.items() if isinstance(v, str) and (m := re.match(CP_PROD, k))} if revs else {}
+    return revs, {**pids, **({u: v["pid"] for u, v in ev_info().items() if v.get("pid")} if revs else {})}
+
+
+def rev_box(p, revs, pids):
+    """p/ 쪽 '구매후기 요약 (M/D 기준)' 칸 — 같은 쿠팡 상품 번호 후기가 있을 때만, Cowork 본문 그대로(줄바꿈만) · 검색 로봇용 고유 내용."""
+    m = re.match(CP_PROD, p.get("url") or "")
+    r = revs.get(pids.get(p.get("url")) or (m and m[1]) or "")
+    if not (isinstance(r, dict) and isinstance(r.get("text"), str) and re.match(r"\d{4}-(\d\d)-(\d\d)", str(r.get("at")))):
+        return ""
+    return (f'<section class="sec" aria-labelledby="rvh"><h2 id="rvh">구매후기 요약 ({int(r["at"][5:7])}/{int(r["at"][8:10])} 기준)</h2>'
+            f'<p class="t">{"<br>".join(html.escape(l) for l in r["text"].split(chr(10)))}</p></section>')
+
+
 def deal_card(i, p, extra="", tips=(), cur=None):
     """딜 쪽 본문(10/11 진우 '더 사고 싶게' · 10/24 개편): 썸네일 → 몰·시각 → 배지 → 이름 + 가격(h1 — TT-2 10/27) → 가격·얼마나 싼지·단위가 → extra(구성·기록 비교·확인 시각) → 큰 구매 버튼
     → 왜 골랐나요(코멘트·확인할 점) → 고르는 기준(tips — buy_tips)."""
@@ -2568,6 +2589,7 @@ def build(posts, out="docs"):
         body, desc, note = record_page(k, rec, recs)
         open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
+    revs, rpids = rev_pids(out)  # HHH① 구매후기 요약 칸
     for i, p in reversed(list(enumerate(posts))):
         if i in noaff:  # 수수료 링크 없는 딜 = 새 쪽 X · 있던 쪽 = 구매 버튼 없는 안내 쪽(noindex — 옛 채널·Threads 링크는 열림 · SS 10/26: 수수료 링크로 바뀌면 다시 상품 쪽)
             if os.path.exists(f"{out}/p/{i}.html"):
@@ -2587,7 +2609,7 @@ def build(posts, out="docs"):
         extra = "" if p["text"].startswith("📋") else (f'<div class="u">📦 구성 {html.escape(sp)}</div>' if sp else "") + rec_line(i, p, recs) + deal_state(p, sh, newer)  # TT-2 ⑤ 고유 내용
         tp = TOPIC_OF.get(i)
         tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
-        open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + (rl or "") + tb + (more or "")
+        open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids) + (rl or "") + tb + (more or "")
                                                   + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=ld or "", og=img_of(p),
                                                   noindex=sh is None or sh[0] == 3))  # TT-2 ①⑦: 끝난 딜(진열 밖)·일시 품절 = noindex(사람은 그대로 봄)
         if sh and sh[0] == 0:  # 사이트맵 딜 = 진행 중 🔥 특가만(⏳·👍 = 색인 O, 칸 쪽 링크로)
