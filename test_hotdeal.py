@@ -10692,10 +10692,11 @@ with contextlib.redirect_stdout(o107): H.trend(s107)
 nv107 = [c for c in calls107 if c[0] == H.NV_HUB]; t107 = json.load(open("trend.json"))
 assert all(len(c[1]["keyword"]) <= 5 and c[1]["timeUnit"] == "date" and c[1]["startDate"] == "2026-10-15" and c[1]["endDate"] == "2026-10-28" for c in nv107) and len(nv107) <= H.TREND_MAX
 kw107 = {k["name"]: (c[1]["category"], k["param"]) for c in nv107 for k in c[1]["keyword"]}
-assert kw107["캡슐커피"][0] == "50000006" and kw107["치약·칫솔"] == ("50000008", ["치약", "칫솔"]) and "옛날 품목" not in kw107 and set(H.TREND_KW) <= set(kw107), kw107  # 진열 tag(14일 안) = '·' 낱말 묶음
+assert kw107["캡슐커피"][0] == "50000006" and kw107["치약"] == ("50000008", ["치약"]) and kw107["칫솔"] == ("50000008", ["칫솔"]) and "옛날 품목" not in kw107 and set(H.TREND_KW) <= set(kw107), kw107  # 진열 tag(14일 안) = '·' 낱말 하나하나(이 API = 키워드마다 param 1개 — 10/29 첫 실행 400)
+assert all(len(k["param"]) == 1 for c in nv107 for k in c[1]["keyword"])
 it107 = t107["naver"]["items"]
 assert [x["kw"] for x in it107[:2]] == ["수세미", "캡슐커피"] and it107[0]["up"] is None and it107[1]["up"] == 2.0 and it107[-1]["kw"] == "사과" and it107[-1]["up"] == 0.5, it107  # 새로 뜸(이전 0) → 오르는 순
-assert t107["naver"]["line"].startswith("오르는 품목: 수세미 새로 · 캡슐커피 ×2.0") and t107["naver"]["range"] == ["2026-10-15", "2026-10-28"] and len(t107["google"]["items"]) == 20
+assert t107["naver"]["line"] == "오르는 품목: 수세미 새로 · 캡슐커피 ×2.0" and t107["naver"]["range"] == ["2026-10-15", "2026-10-28"] and len(t107["google"]["items"]) == 20
 assert "trend naver" in o107.getvalue() and "sec1" not in o107.getvalue() and "id1" not in o107.getvalue()  # 키는 로그에 X
 calls107.clear(); time.time = lambda: TK("2026-10-29 08:30"); H.trend(s107); assert not any(c[0] == H.NV_HUB for c in calls107)  # 하루 1번
 def h107e(url, body=None, headers=None, method=None):
@@ -10711,7 +10712,7 @@ n107 = s107["ntrm"]["n"]; assert s107["ntrm"]["m"] == "2026-10" and n107 >= 2  #
 s107["ntrm"]["n"] = H.NV_HUB_MONTH; H.http, time.time = h107, lambda: TK("2026-10-31 07:00"); calls107.clear(); tg107.clear(); o107 = io.StringIO()
 with contextlib.redirect_stdout(o107): H.trend(s107)
 assert not any(c[0] == H.NV_HUB for c in calls107) and len(tg107) == 1 and "이번 달 호출 3,000회" in tg107[0] and "이번 달 3,000회 다 씀" in o107.getvalue(), (tg107, o107.getvalue())  # 월 한도 = 그달 멈춤 + 알림 1번
-s107.pop("ntr_20261031"); time.time = lambda: TK("2026-10-31 11:30"); H.trend(s107); assert len(tg107) == 1  # 그달 다시 돌아도 알림은 1번
+s107.pop("ntr2_20261031"); time.time = lambda: TK("2026-10-31 11:30"); H.trend(s107); assert len(tg107) == 1  # 그달 다시 돌아도 알림은 1번
 time.time = lambda: TK("2026-11-01 07:00"); H.trend(s107); assert s107["ntrm"]["m"] == "2026-11" and any(c[0] == H.NV_HUB for c in calls107) and len(tg107) == 1  # 다음 달 = 다시 셈
 wf107 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "NAVER_HUB_ID: ${{ secrets.NAVER_HUB_ID }}" in wf107 and "NAVER_HUB_SECRET: ${{ secrets.NAVER_HUB_SECRET }}" in wf107 and "[ ! -f trend.json ] || git add trend.json" in wf107

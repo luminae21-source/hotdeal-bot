@@ -8506,7 +8506,7 @@ GTREND = "https://trends.google.com/trending/rss?geo=KR"  # 구글 한국 실시
 
 def trend(seen):
     """DDD trend.json(Cowork가 진열·큐레이션 소재 고를 때 읽음 — 글·사이트엔 아직 X):
-    ① naver(하루 1번 TREND_AT 뒤, 키 없으면 건너뜀): TREND_KW + 최근 TREND_DAYS일 진열 tag('·'로 나눈 낱말 = 한 묶음 param)마다 쇼핑인사이트 키워드 클릭 추이(일별 ratio)
+    ① naver(하루 1번 TREND_AT 뒤, 키 없으면 건너뜀): TREND_KW + 최근 TREND_DAYS일 진열 tag('·'로 나눈 낱말 하나하나 — 이 API는 키워드마다 param 1개만)마다 쇼핑인사이트 키워드 클릭 추이(일별 ratio)
        -> 최근 7일 평균 ÷ 이전 7일 평균(up) 큰 순(이전 0 = new) · 같은 1분류(NV_HUB_CAT — cat_of)끼리 5개씩 1호출(ratio는 호출 안 상대값이라 up만 비교) · 오류 = 그날은 거기까지
     ② google(1시간 1번): 실검 RSS 상위 20(제목·검색량 표시·관련 기사 제목 1개). 키·주소 쿼리는 로그에 X."""
     now = time.time()
@@ -8526,21 +8526,18 @@ def trend(seen):
             print("trend google", f"실검 {len(d['google']['items'])}개" + (f" · 1위 {d['google']['items'][0]['t']}" if d["google"]["items"] else ""))
         except Exception as e:
             print("trend google", err_brief(e))
-    nk = "ntr_" + today.replace("-", "")
+    nk = "ntr2_" + today.replace("-", "")  # ntr2 = param 1개로 고친 뒤(10/29 첫 실행 400 — 그날 다시)
     if E.get("NAVER_HUB_ID") and E.get("NAVER_HUB_SECRET") and time.strftime("%H:%M", kst) >= TREND_AT and nk not in seen:
         seen[nk] = {"t": now}  # 하루 1번(실패해도 — 다음 날)
         since = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - TREND_DAYS * 86400))
-        kws = {k: [k] for k in TREND_KW}
-        for p in load(POSTS, []):
-            if p.get("own") and p.get("shelf") and p.get("tag") and p.get("t", "") >= since and p["tag"] not in kws:
-                kws[p["tag"]] = [w.strip() for w in p["tag"].split("·") if w.strip()][:5]
+        kws = list(dict.fromkeys(list(TREND_KW) + [w.strip()[:30] for p in load(POSTS, []) if p.get("own") and p.get("shelf") and p.get("tag") and p.get("t", "") >= since
+                                                   for w in p["tag"].split("·") if w.strip()]))
         groups = collections.defaultdict(list)
-        for k, ps in kws.items():
-            if ps:
-                groups[NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append((k[:30], ps))
+        for k in kws:
+            groups[NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append(k)
         end = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))  # 어제까지(오늘은 덜 쌓임)
         days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - k * 86400)) for k in range(TREND_DAYS, 0, -1)]
-        out, calls, mon = [], 0, today[:7]
+        out, calls, made, mon = [], 0, 0, today[:7]
         mc = seen["ntrm"] = seen["ntrm"] if seen.get("ntrm", {}).get("m") == mon else {"m": mon, "n": 0}  # 이번 달 호출 수(우리 셈 — 진우 월 한도)
         mc["t"] = now
         for cat, ks in groups.items():
@@ -8554,9 +8551,9 @@ def trend(seen):
                         alert(seen, "alert_trend_month", f"⚠️ 네이버 쇼핑인사이트 이번 달 호출 {NV_HUB_MONTH:,}회(앱에 건 월 한도)를 다 써서 다음 달까지 멈춰요 — trend.json 네이버 칸은 마지막 날 것 그대로")
                     calls = TREND_MAX
                     break
-                mc["n"] += 1
+                mc["n"], made = mc["n"] + 1, made + 1
                 try:
-                    r = json.loads(http(NV_HUB, {"startDate": days[0], "endDate": end, "timeUnit": "date", "category": cat, "keyword": [{"name": n, "param": ps} for n, ps in ks[k:k + 5]]},
+                    r = json.loads(http(NV_HUB, {"startDate": days[0], "endDate": end, "timeUnit": "date", "category": cat, "keyword": [{"name": n, "param": [n]} for n in ks[k:k + 5]]},
                                         {"X-NCP-APIGW-API-KEY-ID": E["NAVER_HUB_ID"], "X-NCP-APIGW-API-KEY": E["NAVER_HUB_SECRET"]}, "POST"))
                 except Exception as e:
                     print("trend naver", err_brief(e))
@@ -8572,9 +8569,10 @@ def trend(seen):
         out.sort(key=lambda x: (float("inf") if x["up"] is None else x["up"], x["r7"]), reverse=True)  # 오르는 순(이전 7일 0 = 새로 뜸 = 맨 앞)
         out = [x for x in out if x["r7"] or x["p7"]] + [x for x in out if not (x["r7"] or x["p7"])]  # 클릭 기록 없는 것 = 맨 끝
         if out:
-            line = "오르는 품목: " + " · ".join(f"{x['kw']} ×{x['up']}" if x["up"] else f"{x['kw']} 새로" for x in out[:5] if x["r7"])
+            up = [x for x in out if x["r7"] and (x["up"] is None or x["up"] > 1)][:5]
+            line = ("오르는 품목: " + " · ".join(f"{x['kw']} ×{x['up']}" if x["up"] else f"{x['kw']} 새로" for x in up)) if up else "오르는 품목 없음(최근 7일이 이전 7일보다 다 낮거나 같음)"
             d["naver"] = {"d": today, "at": stamp, "range": [days[0], end], "line": line, "items": out}
-            print("trend naver", f"{len(out)}개 · 호출 {calls}번 · {line}")
+            print("trend naver", f"{len(out)}개 · 호출 {made}번 · {line}")
     if json.dumps(d, sort_keys=True) != d0:
         json.dump(d, open(TREND_FILE, "w"), ensure_ascii=False, indent=1)
 
