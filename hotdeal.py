@@ -8496,7 +8496,7 @@ def th_verify(seen):
                                      f"Meta가 지웠거나 계정 제한일 수 있음. Threads 앱 → 설정 → 계정 → 계정 상태 확인")
 
 
-TREND_FILE, TREND_AT, TREND_DAYS, TREND_MAX = "trend.json", "06:00", 14, 20  # DDD(10/29 진우 '미리 준비만' — 사이트·글엔 아직 X): 네이버 쇼핑인사이트 하루 1번 TREND_AT(KST) 뒤 · 클릭 추이 TREND_DAYS일 · 하루 호출 TREND_MAX번 안(월 5만 한도)
+TREND_FILE, TREND_AT, TREND_DAYS, TREND_MAX, NV_HUB_MONTH = "trend.json", "06:00", 14, 20, 3000  # DDD(10/29 진우 — 사이트·글엔 아직 X): 네이버 쇼핑인사이트 하루 1번 TREND_AT(KST) 뒤 · 클릭 추이 TREND_DAYS일 · 하루 호출 TREND_MAX번 안(진우 '하루 100회 안') · 이번 달 NV_HUB_MONTH번(진우가 앱에 건 월 한도) 다 쓰면 그달 멈춤 + 알림 1번
 NV_HUB = "https://naverapihub.apigw.ntruss.com/shopping/v1/category/keywords"  # 네이버 API HUB(Data Lab 쇼핑인사이트) — Secrets NAVER_HUB_ID(Client ID)·NAVER_HUB_SECRET, 없으면 건너뜀
 NV_HUB_CAT = {"food": "50000006", "coffee": "50000006", "snack": "50000006", "season": "50000006", "beauty": "50000002", "digital": "50000003", "heat": "50000003",
               "home": "50000004", "fashion": "50000001", "sport": "50000007"}  # 사이트 칸 -> 네이버쇼핑 1분류 cat_id · 나머지(생필품·주방·세탁·자동차·반려동물) = 생활/건강 50000008
@@ -8540,16 +8540,27 @@ def trend(seen):
                 groups[NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append((k[:30], ps))
         end = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))  # 어제까지(오늘은 덜 쌓임)
         days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - k * 86400)) for k in range(TREND_DAYS, 0, -1)]
-        out, calls = [], 0
+        out, calls, mon = [], 0, today[:7]
+        mc = seen["ntrm"] = seen["ntrm"] if seen.get("ntrm", {}).get("m") == mon else {"m": mon, "n": 0}  # 이번 달 호출 수(우리 셈 — 진우 월 한도)
+        mc["t"] = now
         for cat, ks in groups.items():
             for k in range(0, len(ks), 5):
                 if calls >= TREND_MAX:
                     break
+                if mc["n"] >= NV_HUB_MONTH:
+                    print("trend naver", f"이번 달 {NV_HUB_MONTH:,}회 다 씀 — 그만")
+                    if not mc.get("warn"):
+                        mc["warn"] = 1
+                        alert(seen, "alert_trend_month", f"⚠️ 네이버 쇼핑인사이트 이번 달 호출 {NV_HUB_MONTH:,}회(앱에 건 월 한도)를 다 써서 다음 달까지 멈춰요 — trend.json 네이버 칸은 마지막 날 것 그대로")
+                    calls = TREND_MAX
+                    break
+                mc["n"] += 1
                 try:
                     r = json.loads(http(NV_HUB, {"startDate": days[0], "endDate": end, "timeUnit": "date", "category": cat, "keyword": [{"name": n, "param": ps} for n, ps in ks[k:k + 5]]},
                                         {"X-NCP-APIGW-API-KEY-ID": E["NAVER_HUB_ID"], "X-NCP-APIGW-API-KEY": E["NAVER_HUB_SECRET"]}, "POST"))
                 except Exception as e:
                     print("trend naver", err_brief(e))
+                    alert(seen, "alert_trend_" + today.replace("-", ""), f"⚠️ 네이버 쇼핑인사이트 오류 — {err_brief(e)} · 오늘은 그만(내일 다시)")  # 키 값·주소 쿼리 X
                     calls = TREND_MAX  # 오류 = 오늘은 그만
                     break
                 calls += 1

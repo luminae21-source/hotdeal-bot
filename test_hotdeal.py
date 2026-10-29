@@ -7264,7 +7264,7 @@ H.HAS_CP, sr65b = True, {}; json.dump([{**q, "url": f"https://www.coupang.com/vp
 for k65 in range(5): D65[f"https://www.coupang.com/vp/products/{900 + k65}"] = ValueError("coupang rCode 400 url convert failed")
 n65 = len(r65); H.RUN["cpn"] = [0, 0]; H.site_relink(sr65b); assert len(r65) - n65 == 2 and H.RUN["cpn"][0] == 2, r65[n65:]  # 10/25 22:30 점검: site_relink = cp_links보다 먼저 · 실행마다 2번(CP_RUN-4) — 나머지 = 진열 묶음·가격 확인·골드박스
 n65 = len(r65); H.RUN["cpn"] = [3, 0]; H.site_relink(sr65b); assert len(r65) == n65  # 이미 2번↑ 썼으면 X
-assert "if c0 >= min(CP_RUN - 2, r0 + (max(0, CP_RUN - 2 - r0) + 1) // 2):" in inspect.getsource(H.cp_links) and "c0 = set(b) <= new0 - again, RUN.get(\"cpn\", [0])[0]" in inspect.getsource(H.cp_links)  # cp_links 재시도 = 이 실행 전체 호출 수로(site_relink 몫 포함) · 새 진열 = 이 실행 몫까지(VV)
+assert "if c0 >= (CP_RUN - 2 if burst else min(CP_RUN - 2, r0 + (max(0, CP_RUN - 2 - r0) + 1) // 2)):" in inspect.getsource(H.cp_links) and "c0 = set(b) <= new0 - again, RUN.get(\"cpn\", [0])[0]" in inspect.getsource(H.cp_links)  # cp_links 재시도 = 이 실행 전체 호출 수로(site_relink 몫 포함) · 새 진열 = 이 실행 몫까지(VV)
 # 채널 글 상태 = url0(사이트만 바꾼 글): 답장 없이 링크만 보내면 그 채널 글(아직 생 주소)을 찾음 · 채널 글을 고치면 url0·nosite 지움
 po65c = json.load(open("posts.json")); po65c[0].update(t=time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), cp=77); json.dump(po65c, open("posts.json", "w"))
 assert (H.pending_copy("https://link.coupang.com/a/NEW") or {}).get("mid") == 1  # 사이트 url은 파트너스여도 채널 글은 생 주소(url0) = 아직 바꿀 글
@@ -10659,7 +10659,8 @@ p106["cpq"]["m"][U("A")] = [1, "2026-10-29 15:00", ""]; p106["cpq"]["m"][U("D")]
 time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, rn106 = sv106; H.CP_RUSH = ("2000-01-01 00:00",) * 2; H.RUN.clear(); H.RUN.update(rn106); os.chdir(cwd106)
 # 9-107) DDD(10/29 진우 '미리 준비만'): trend.json = Cowork가 읽는 품목 흐름(글·사이트엔 X) — ① 네이버 쇼핑인사이트(API HUB, Secrets NAVER_HUB_ID·NAVER_HUB_SECRET — 없으면 조용히 건너뜀)
 #   하루 1번 TREND_AT 뒤: TREND_KW + 최근 14일 진열 tag 클릭 추이 → 최근 7일 ÷ 이전 7일 오르는 순 · 같은 1분류끼리 5개씩 1호출 · 하루 TREND_MAX번 안 · 오류 = 그날 그만 ② 구글 한국 실검 RSS 1시간 1번 상위 20
-cwd107, sv107 = os.getcwd(), (time.time, H.http, H.POSTS, dict(H.E)); os.chdir(tempfile.mkdtemp())
+cwd107, sv107 = os.getcwd(), (time.time, H.http, H.POSTS, dict(H.E), H.tg); os.chdir(tempfile.mkdtemp())
+tg107 = []; H.tg = lambda m, **p: tg107.append(p.get("text", "")) or {"message_id": 1}
 H.POSTS = "posts.json"; json.dump([{"t": "2026-10-28 14:30", "own": 1, "shelf": True, "tag": "치약·칫솔", "text": "🔥 [쿠팡] 치약 (1원)", "url": "https://link.coupang.com/a/t1"},
                                    {"t": "2026-10-01 14:30", "own": 1, "shelf": True, "tag": "옛날 품목", "text": "x", "url": "https://link.coupang.com/a/t2"}], open("posts.json", "w"), ensure_ascii=False)
 rss107 = '<rss xmlns:ht="https://trends.google.com/trending/rss" version="2.0"><channel><title>Daily</title>' + "".join(
@@ -10703,7 +10704,14 @@ def h107e(url, body=None, headers=None, method=None):
 H.http, time.time = h107e, lambda: TK("2026-10-30 07:00"); calls107.clear(); o107 = io.StringIO()
 with contextlib.redirect_stdout(o107): H.trend(s107)
 assert sum(c[0] == H.NV_HUB for c in calls107) == 1 and "trend naver" in o107.getvalue() and "trend google" in o107.getvalue() and json.load(open("trend.json"))["naver"]["d"] == "2026-10-29"  # 오류 = 그날 그만 · 어제 것 그대로
+assert len(tg107) == 1 and tg107[0].startswith("⚠️ 네이버 쇼핑인사이트 오류 — ") and "401" in tg107[0] and "오늘은 그만" in tg107[0] and "sec1" not in tg107[0], tg107  # 관리봇 알림 1번(키 X)
+n107 = s107["ntrm"]["n"]; assert s107["ntrm"]["m"] == "2026-10" and n107 >= 2  # 이번 달 호출 수(오류 난 호출도 셈)
+s107["ntrm"]["n"] = H.NV_HUB_MONTH; H.http, time.time = h107, lambda: TK("2026-10-31 07:00"); calls107.clear(); tg107.clear(); o107 = io.StringIO()
+with contextlib.redirect_stdout(o107): H.trend(s107)
+assert not any(c[0] == H.NV_HUB for c in calls107) and len(tg107) == 1 and "이번 달 호출 3,000회" in tg107[0] and "이번 달 3,000회 다 씀" in o107.getvalue(), (tg107, o107.getvalue())  # 월 한도 = 그달 멈춤 + 알림 1번
+s107.pop("ntr_20261031"); time.time = lambda: TK("2026-10-31 11:30"); H.trend(s107); assert len(tg107) == 1  # 그달 다시 돌아도 알림은 1번
+time.time = lambda: TK("2026-11-01 07:00"); H.trend(s107); assert s107["ntrm"]["m"] == "2026-11" and any(c[0] == H.NV_HUB for c in calls107) and len(tg107) == 1  # 다음 달 = 다시 셈
 wf107 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "NAVER_HUB_ID: ${{ secrets.NAVER_HUB_ID }}" in wf107 and "NAVER_HUB_SECRET: ${{ secrets.NAVER_HUB_SECRET }}" in wf107 and "[ ! -f trend.json ] || git add trend.json" in wf107
-time.time, H.http, H.POSTS, e107 = sv107; H.E.clear(); H.E.update(e107); os.chdir(cwd107)
+time.time, H.http, H.POSTS, e107, H.tg = sv107; H.E.clear(); H.E.update(e107); os.chdir(cwd107)
 print("OK: 모든 셀프체크 통과")
