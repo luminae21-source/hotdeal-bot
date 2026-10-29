@@ -3270,7 +3270,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cp_sub_site):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -9764,6 +9764,7 @@ assert "💙 <b>토스</b>\n1️⃣ <a href=\"https://toss.im/_m/E1\"><b>토스 
 assert tg91[-1]["reply_markup"]["inline_keyboard"] == [[{"text": "📊 계란 가격 기록", "url": "https://hotdealpick.kr/c/eggs.html?ref=tgb"}]] and "link.coupang.com/re/" not in c91 and c91.count("리뷰") == 2  # 검색 상품 = 짧은 딥링크 · 리뷰 X(API에 없음 — 진열 상품만)
 assert not re.search(r"맛있|최저가|효능|건강", c91) and "nn egg 생란" in o91.getvalue() and "검색 6/6" in o91.getvalue() and "원" not in o91.getvalue().split("nn egg")[1].split("\n")[0]  # 금지 말 X · 로그에 가격 X
 k91, th91, l91 = tb91[-1]
+assert "https://link.coupang.com/a/S12" in json.load(open(H.CP_LINKS)).values()  # GGG 짧게 만든 링크 = cp_links.json에 기록(채널 링크 subId가 같은 상품으로 찾게)
 assert "곰곰 반숙란" not in c91 and "🔥 <a href=\"https://link.coupang.com/a/E2\"><b>곰곰 완숙란 20구</b></a>" in c91  # 진열 냉장품 = 로켓프레시·새벽 표기 있을 때만
 assert "🔥 <a href=\"https://link.coupang.com/a/E0\"><b>곰곰 무항생제 특란 30구</b></a>\n💰 <b>8,700원</b> · 개당 290원 · 리뷰 1.2만" in c91 and raw91.index("특란 30구") < raw91.index("유정란")  # 진열 상품 = 🔥·리뷰 · 싼 순
 assert k91 == "nn" and th91.count("👉 ") == 4 and th91.index("· 생란") < th91.index("· 바로 먹는 계란") and th91.split("· 바로 먹는 계란")[1].count("👉 ") == 2 and "🔥 곰곰 무항생제 특란 30구 8,700원 · 개당 290원 · 리뷰 1.2만" in th91, th91  # Threads = 칸마다 2개
@@ -10745,4 +10746,91 @@ time.time = lambda: TK("2026-11-01 07:00"); H.trend(s107); assert s107["ntrm"]["
 wf107 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "NAVER_HUB_ID: ${{ secrets.NAVER_HUB_ID }}" in wf107 and "NAVER_HUB_SECRET: ${{ secrets.NAVER_HUB_SECRET }}" in wf107 and "[ ! -f trend.json ] || git add trend.json" in wf107
 time.time, H.http, H.POSTS, e107, H.tg = sv107; H.E.clear(); H.E.update(e107); os.chdir(cwd107)
+# 9-108) GGG(10/29 진우 '응 달라고 하자' — 쿠팡 보고서 '채널 ID' 탭): 딥링크 요청 body subId · 링크 = 상품 + 채널(cp_sub.json — 있는 건 호출 X) · 진우 손 링크 X ·
+#        상한·오류 = 기존 링크 그대로(글은 나감) + 로그 1줄 · http() 직전에 바꿈(텔레그램 채널·Threads·인스타 — 관리자 X · 채널 글 수정 = 있는 것만) · 사이트 = build가 cp_sub.json으로
+cwd108, sv108 = os.getcwd(), (H.HAS_CP, H.coupang, H.CHANNEL, time.time, H.POSTS, S.SITE_SUB); os.chdir(tempfile.mkdtemp())
+for k in ("cpsub", "cpsublog", "cpu"):
+    H.RUN.pop(k, None)
+H.HAS_CP, H.CHANNEL, H.POSTS, now108 = True, "-100108", "posts.json", TK("2026-10-29 21:00"); time.time = lambda: now108
+R1, R2 = "https://www.coupang.com/vp/products/111?itemId=1&vendorItemId=2", "https://www.coupang.com/vp/products/222"
+B1, B2, JW = "https://link.coupang.com/a/base111", "https://link.coupang.com/a/base222", "https://link.coupang.com/a/jinwoo9"  # JW = 진우가 손으로 만든 링크(cp_links.json에 없음)
+LONG = "https://link.coupang.com/re/AFFSDP?lptag=AF1&pageKey=333&itemId=4&vendorItemId=5&traceid=x"
+json.dump({R1: B1, R2: B2}, open("cp_links.json", "w"))
+cc108 = []
+def cpm108(method, path, body=None):
+    cc108.append((method, path, body))
+    return [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/" + body.get("subId", "x") + re.sub(r"\D", "", u)[:9]} for u in body["coupangUrls"]]
+H.coupang = cpm108
+assert H.cp_deeplinks([R1], "telegram") == {R1: "https://link.coupang.com/a/telegram11112"} and cc108[-1] == ("POST", "/deeplink", {"coupangUrls": [R1], "subId": "telegram"})  # 요청 body = subId
+H.cp_deeplinks([R1]); assert cc108[-1][2] == {"coupangUrls": [R1]}; cc108.clear()  # 채널 없는 변환(cp_links 등) = 그대로
+inv108 = {B1: R1, B2: R2}
+assert H.cp_raw(B1, inv108) == R1 and H.cp_raw(JW, inv108) is None and H.cp_raw(LONG, inv108) == "https://www.coupang.com/vp/products/333?itemId=4&vendorItemId=5"  # API 긴 링크 = 상품·옵션 번호로
+assert H.CP_SUBS == ("threads", "telegram", "site", "clip", "insta", "blog") and all(re.fullmatch(r"[a-z]+", c) for c in H.CP_SUBS)  # 영문 소문자만
+o108 = io.StringIO()
+with contextlib.redirect_stdout(o108):
+    m108 = H.cp_ch([B1, B2, JW, B1], "threads")
+assert m108 == {B1: "https://link.coupang.com/a/threads11112", B2: "https://link.coupang.com/a/threads222"} and len(cc108) == 1 and cc108[0][2] == {"coupangUrls": [R1, R2], "subId": "threads"}  # 묶어서 1번 · 진우 링크 X
+sub108 = json.load(open("cp_sub.json")); assert sub108 == {R1: {"b": B1, "threads": "https://link.coupang.com/a/threads11112"}, R2: {"b": B2, "threads": "https://link.coupang.com/a/threads222"}}
+assert H.cp_ch([B1, B2], "threads") == m108 and len(cc108) == 1  # 있는 링크 = 호출 X
+assert H.cp_ch([B1], "telegram") == {B1: "https://link.coupang.com/a/telegram11112"} and len(cc108) == 2 and json.load(open("cp_sub.json"))[R1]["telegram"].endswith("telegram11112")  # 같은 상품도 채널마다 다른 링크
+assert H.cp_unsub()["https://link.coupang.com/a/threads222"] == B2 and H.cp_unsub()["https://link.coupang.com/a/telegram11112"] == B1  # metrics = 처음 링크로 묶음
+H.RUN["cpsub"] = [0]; H.coupang = lambda *a, **k: (_ for _ in ()).throw(H.CpLimit("coupang 시간당 상한"))
+with contextlib.redirect_stdout(o108):
+    assert H.cp_ch([B2], "telegram") == {} and H.cp_ch([B2, B1], "telegram") == {B1: "https://link.coupang.com/a/telegram11112"}  # 상한 = 기존 링크(빠짐) · 있는 건 그대로
+assert o108.getvalue().count("cp sub telegram 기존 링크") == 1 and "— 쿠팡 호출 상한" in o108.getvalue() and "https://" not in o108.getvalue(), o108.getvalue()  # 로그 1줄(주소 X)
+H.RUN["cpsub"] = [H.CP_SUB_RUN]; H.coupang = cpm108; n108 = len(cc108)
+with contextlib.redirect_stdout(o108):
+    assert H.cp_ch([B2], "site") == {} and len(cc108) == n108 and "cp sub site 기존 링크 1개 — 실행마다 2번" in o108.getvalue()  # 실행 몫 다 씀 = 호출 X
+H.RUN["cpsub"] = [0]; H.RUN["cpu"] = {"a": [now108] * (H.CP_HOUR // 2)}
+with contextlib.redirect_stdout(o108):
+    assert H.cp_ch([B2], "blog") == {} and len(cc108) == n108 and "cp sub blog 기존 링크 1개 — 최근 1시간 호출 많음(뒤 채널)" in o108.getvalue()  # clip·insta·blog = 앞 3채널 먼저
+H.RUN["cpu"], H.RUN["cpsub"] = {"a": []}, [0]
+H.coupang = lambda *a, **k: (_ for _ in ()).throw(ValueError("coupang rCode 400 invalid https://www.coupang.com/vp/products/222?x=1"))
+with contextlib.redirect_stdout(o108):
+    assert H.cp_ch([B2], "site") == {} and json.load(open("cp_sub.json"))[R2]["x"] == now108 and "rCode 400 invalid" in o108.getvalue() and "products/222" not in o108.getvalue()  # 400 = 그 상품 x
+H.coupang = cpm108; H.RUN["cpsub"] = [0]; n108 = len(cc108)
+assert H.cp_ch([B2], "site") == {} and len(cc108) == n108  # 하루 안 = 다시 X
+time.time = lambda: now108 + 86401
+assert H.cp_ch([B2], "site") == {B2: "https://link.coupang.com/a/site222"} and "x" not in json.load(open("cp_sub.json"))[R2]; time.time = lambda: now108  # 하루 뒤 1개씩 다시
+assert H.cp_ch([B1], "nope") == {} and H.cp_ch([], "threads") == {}
+# http() 직전 바꿈(cp_sub_req): 텔레그램 채널(새 글) · 관리자 X · 채널 글 수정 = 있는 링크만 · Threads 글(쿼리) · 인스타 · HTML 속 긴 링크(&amp;)
+hs108 = re.search(r"\ndef http\(.*?\n\n\n", open(H.__file__, encoding="utf-8").read(), re.S)[0];  # H.http = 테스트 가짜 -> 파일에서 assert "url, body = cp_sub_req(url, body, method)" in hs108 and hs108.index("cp_sub_req") < hs108.index("urlopen")
+H.RUN["cpsub"] = [0]; TGU = "https://api.telegram.org/botT/"
+txt108 = f'🔥 [쿠팡] 상품\n<a href="{LONG.replace("&", "&amp;")}">골드박스</a>\n{JW}'
+u108, b108 = H.cp_sub_req(TGU + "sendMessage", {"chat_id": H.CHANNEL, "text": txt108, "parse_mode": "HTML", "reply_markup": {"inline_keyboard": [[{"text": "🚀 쿠팡 바로가기", "url": B1}]]}}, None)
+assert u108 == TGU + "sendMessage" and b108["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": "https://link.coupang.com/a/telegram11112"} and b108["parse_mode"] == "HTML"
+assert '<a href="https://link.coupang.com/a/telegram33345">골드박스</a>' in b108["text"] and JW in b108["text"], b108  # 골드박스 API 긴 링크도 · 진우 링크 그대로
+assert H.cp_sub_req(TGU + "sendMessage", {"chat_id": "999", "text": B2}, None)[1] == {"chat_id": "999", "text": B2}  # 관리자 = 그대로
+n108 = len(cc108); b108 = H.cp_sub_req(TGU + "editMessageText", {"chat_id": H.CHANNEL, "message_id": 5, "text": f"{B1}\n{B2}"}, None)[1]
+assert b108["text"] == f"https://link.coupang.com/a/telegram11112\n{B2}" and len(cc108) == n108  # 수정 = 있는 채널 링크만(호출 X)
+H.RUN["cpsub"] = [0]; b108 = H.cp_sub_req(TGU + "copyMessage", {"chat_id": H.CHANNEL, "from_chat_id": "999", "message_id": 3, "reply_markup": {"inline_keyboard": [[{"text": "사러 가기", "url": B2}]]}}, None)[1]
+assert b108["reply_markup"]["inline_keyboard"][0][0]["url"] == "https://link.coupang.com/a/telegram222" and len(cc108) == n108 + 1  # 초안 승인(관리자 -> 채널 복사) = 새 글
+q108 = urllib.parse.urlencode({"media_type": "TEXT", "text": f"[광고] 상품\n👉 {B2}\n끝", "link_attachment": B2, "topic_tag": "핫딜", "access_token": "TOK"})
+u108, b108 = H.cp_sub_req(f"{H.THREADS}/1/threads?{q108}", None, "POST"); qs108 = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(u108).query))
+assert qs108["text"] == "[광고] 상품\n👉 https://link.coupang.com/a/threads222\n끝" and qs108["link_attachment"] == "https://link.coupang.com/a/threads222" and qs108["access_token"] == "TOK" and qs108["topic_tag"] == "핫딜"
+assert H.cp_sub_req(f"{H.THREADS}/1/threads?fields=id&access_token=TOK", None, None)[0].endswith("fields=id&access_token=TOK")  # 읽기 = 그대로
+H.RUN["cpsub"] = [0]; assert H.cp_sub_req(f"{H.IG}/9/comments", {"message": f"링크 {B2}"}, "POST")[1] == {"message": "링크 https://link.coupang.com/a/insta222"}  # 인스타 캡션·댓글
+cpc108, H.cp_ch = H.cp_ch, lambda *a, **k: 1 / 0
+with contextlib.redirect_stdout(o108):
+    assert H.cp_sub_req(TGU + "sendMessage", {"chat_id": H.CHANNEL, "text": B2}, None)[1] == {"chat_id": H.CHANNEL, "text": B2} and "cp sub 요청 그대로 ZeroDivisionError" in o108.getvalue()
+H.cp_ch = cpc108  # 오류 = 그대로 나감
+# 사이트: 실행 끝 cp_sub_site(최근 글 먼저 · 20개씩) -> build가 site 링크로
+json.dump([{"t": "2026-10-28 10:00", "text": "a", "url": B2}, {"t": "2026-10-29 10:00", "text": "b", "url": B1}, {"t": "2026-10-29 11:00", "text": "c", "url": JW}], open("posts.json", "w"))
+H.RUN["cpsub"] = [0]; cc108.clear(); H.cp_sub_site({})
+assert cc108 == [("POST", "/deeplink", {"coupangUrls": [R1], "subId": "site"})]  # B2 = site 이미 있음 · 진우 링크 X
+H.cp_sub_site({}); assert len(cc108) == 1  # 다 됨 = 호출 X
+assert "trend, cp_sub_site)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
+S.SITE_SUB = S.site_subs(); assert S.SITE_SUB == {B1: "https://link.coupang.com/a/site11112", B2: "https://link.coupang.com/a/site222"}
+pg108 = S.page("t", f'<a class="buy" href="{B1}">사러 가기</a><a href="{JW}">진우</a><a href="{B2}">2</a>')
+assert 'href="https://link.coupang.com/a/site11112"' in pg108 and f'href="{JW}"' in pg108 and B1 not in pg108 and "site222" in pg108
+S.write(".", "w108/", f'<a href="{B2}">x</a>'); assert open("w108/index.html").read() == '<a href="https://link.coupang.com/a/site222">x</a>'  # page() 아닌 쪽(link_page 등)도
+assert "SITE_SUB = site_subs()" in inspect.getsource(S.build) and S.cp_swap(f"{B1} {B2}", {}) == f"{B1} {B2}"
+os.remove("cp_sub.json"); assert S.site_subs() == {}  # 파일 없음 = 그대로
+src108 = open(H.__file__, encoding="utf-8").read()
+assert "[back.get(u, u) for u in links]" in src108 and 'cp_ch(CP_LINK_RE.findall(bt), "blog")' in src108  # metrics 상품 칸 = 처음 링크 · 블로그 초안 = blog 링크
+assert "[ ! -f cp_sub.json ] || git add cp_sub.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+(H.HAS_CP, H.coupang, H.CHANNEL, time.time, H.POSTS, S.SITE_SUB) = sv108
+for k in ("cpsub", "cpsublog", "cpu"):
+    H.RUN.pop(k, None)
+os.chdir(cwd108)
 print("OK: 모든 셀프체크 통과")

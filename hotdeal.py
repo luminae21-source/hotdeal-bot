@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -36,6 +36,7 @@ IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startsw
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
 CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
+CP_SUBS, CP_SUB_RUN = ("threads", "telegram", "site", "clip", "insta", "blog"), 2  # GGG 쿠팡 채널 ID(subId — 영문 소문자만): 앞 3개 먼저 · 채널 링크 만들기 = 실행마다 딥링크 2번까지(뒤 3개 = 최근 1시간 호출이 상한 절반 밑일 때만)
 CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날 2번 변환 실패하면 그 뒤엔 7일마다 1번(10/25 진우 '다 올려' — 사이트엔 쿠팡 주소 그대로 진열, 나중에 되면 파트너스 링크로) · 아직 안 바뀐 쿠팡 상품 주소 표(pid·이름·실패 날짜·마지막 시도·이유 — Cowork 점검용, 가격·수수료 X)
 CP_NEW_RES = 8  # VV(10/27 Cowork — 새 진열 44개가 2시간째 0개: 앞 실행들의 가격 확인·사진·재시도가 시간당 상한을 다 써 cp_links 차례엔 CpLimit) — 한 번도 안 해 본 진열이 남아 있으면 다른 호출은 시간당 이만큼 남겨 둠(새 진열 변환 몫)
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
@@ -186,6 +187,8 @@ TOSS_CAT_HOUR, TOSS_CATS = 17, ("식품", "생활용품")  # 카테고리 베스
 
 
 def http(url, body=None, headers=None, method=None):
+    if HAS_CP:  # GGG 채널 글의 봇 쿠팡 링크 = 그 채널 subId 링크
+        url, body = cp_sub_req(url, body, method)
     if url.startswith(IG):  # 인스타 그래프 API 호출 수(10/22 'Application request limit reached' — 실행마다 로그 'ig api N calls')
         RUN["igc"] = RUN.get("igc", 0) + 1
     h = {"User-Agent": UA, **(headers or {})}
@@ -508,10 +511,10 @@ def coupang(method, path, body=None):
     return r["data"]
 
 
-def cp_deeplinks(urls):
-    """쿠팡 주소 여러 개 -> {원래 주소: 파트너스 링크}(딥링크 API 1번 — coupangUrls 배열). 응답 originalUrl로 짝짓고(못 읽으면 같은 개수일 때 순서대로),
+def cp_deeplinks(urls, sub=None):
+    """쿠팡 주소 여러 개 -> {원래 주소: 파트너스 링크}(딥링크 API 1번 — coupangUrls 배열 · sub = 채널 ID subId). 응답 originalUrl로 짝짓고(못 읽으면 같은 개수일 때 순서대로),
     파트너스 도메인 아닌 링크·응답에 없는 주소는 빠짐(대가성 문구가 빠지지 않게). 묶음 전체 오류(rCode 400) = ValueError."""
-    r = coupang("POST", "/deeplink", {"coupangUrls": list(urls)})
+    r = coupang("POST", "/deeplink", {"coupangUrls": list(urls), **({"subId": sub} if sub else {})})
     ds, out = r if isinstance(r, list) else [], {}
     for k, d in enumerate(ds):
         d = d if isinstance(d, dict) else {}
@@ -527,6 +530,109 @@ def cp_deeplink(url):
     if not s:
         raise ValueError(f"deeplink {url}")
     return s
+
+
+def cp_raw(link, inv):
+    """봇이 만든 쿠팡 링크 -> 상품 주소(딥링크에 넣을 주소): cp_links.json 값(inv = 거꾸로)이면 그 키 · API 긴 링크(link.coupang.com/re/…?pageKey=)면 상품·옵션 번호로 ·
+    아니면 None(진우가 손으로 만든 링크 등 — 손대지 않음)."""
+    if link in inv:
+        return inv[link]
+    p = urllib.parse.urlsplit(link)
+    q = {k: v[0] for k, v in urllib.parse.parse_qs(p.query).items()}
+    if p.netloc == "link.coupang.com" and p.path.startswith("/re/") and q.get("pageKey", "").isdigit():
+        keep = {k: q[k] for k in ("itemId", "vendorItemId") if q.get(k)}
+        return f"https://www.coupang.com/vp/products/{q['pageKey']}" + (f"?{urllib.parse.urlencode(keep)}" if keep else "")
+    return None
+
+
+def cp_ch(links, ch, make=True):
+    """GGG(10/29 진우 '응 달라고 하자' — 쿠팡 보고서 '채널 ID' 탭으로 채널별 클릭·구매·수익): 봇 쿠팡 링크(cp_raw) -> 같은 상품의 ch 채널 링크 {링크: 채널 링크}.
+    cp_sub.json{상품 주소: {"b": 처음 링크, 채널: 링크}}에 있으면 그것(호출 X) · 없으면(make) 딥링크 subId 1번(20개까지 · 실행마다 CP_SUB_RUN번 · CP_SUBS 뒤 3개 =
+    최근 1시간 호출이 상한 절반 밑일 때만). 진우 손 링크 = 빠짐 · 상한·오류 = 빠짐(기존 링크 그대로 — 글은 멈추지 않음) + 로그 1줄(실행마다 채널·이유마다 1번) ·
+    묶음 rCode 400 = 그 상품들 x(하루 뒤 1개씩 다시)."""
+    links = list(dict.fromkeys(links))
+    if not (HAS_CP and links and ch in CP_SUBS):
+        return {}
+    inv, sub, now, out, need = {v: k for k, v in load(CP_LINKS, {}).items()}, load(CP_SUB, {}), time.time(), {}, {}
+    for l in links:
+        if (r := cp_raw(l, inv)) and sub.get(r, {}).get(ch):
+            out[l] = sub[r][ch]
+        elif r:
+            need.setdefault(r, []).append(l)
+    if not need:
+        return out
+    k = RUN.setdefault("cpsub", [0])
+    send = [r for r in need if "x" not in sub.get(r, {})][:20] or [r for r in need if now - sub[r]["x"] > 86400][:1]
+    why = ("만들기 X(수정)" if not make else "하루 안에 실패한 상품" if not send else f"실행마다 {CP_SUB_RUN}번" if k[0] >= CP_SUB_RUN
+           else "최근 1시간 호출 많음(뒤 채널)" if CP_SUBS.index(ch) >= 3 and len(RUN.get("cpu", {}).get("a", [])) >= CP_HOUR // 2 else "")
+    if not why:
+        k[0] += 1
+        try:
+            got = cp_deeplinks(send, ch)
+        except CpLimit:
+            got, why = None, "쿠팡 호출 상한"
+        except Exception as e:
+            got, why = {}, re.sub(r"\s*https?://\S+", "", str(e))[:80] or type(e).__name__  # 주소(쿼리) X
+            if not isinstance(e, ValueError):
+                got = None  # 접속·게이트웨이 오류 = 상품 탓 X(x 안 함)
+        for r in send if got is not None else ():
+            e = sub.setdefault(r, {"b": need[r][0]})
+            if got.get(r):
+                e[ch] = got[r]
+                e.pop("x", None)
+                out.update(dict.fromkeys(need.pop(r), got[r]))
+            else:
+                e["x"] = now
+        if got is not None:
+            json.dump(sub, open(CP_SUB, "w"), ensure_ascii=False, indent=1)
+    if need and (ch, why) not in RUN.setdefault("cpsublog", set()):
+        RUN["cpsublog"].add((ch, why))
+        print(f"cp sub {ch} 기존 링크 {sum(map(len, need.values()))}개" + (f" — {why}" if why else " — 응답에 링크 없음"))
+    return out
+
+
+CP_SUB_KEYS = ("text", "caption", "reply_markup", "link_attachment", "message")  # 링크가 들어가는 칸(텔레그램 글·사진 설명·버튼 · Threads 글·링크 카드 · 인스타 캡션·댓글)
+
+
+def cp_sub_req(url, body, method):
+    """GGG: 채널로 나가는 요청의 봇 쿠팡 링크 -> 그 채널 링크(cp_ch) — http()가 보내기 직전에. 텔레그램 채널(chat_id = CHANNEL — 새 글만 만들고 수정은 있는 것만) ·
+    Threads 글 만들기(text·link_attachment) · 인스타 캡션·댓글. 관리자 메시지·다른 요청·오류 = 그대로(글은 멈추지 않음)."""
+    try:
+        if isinstance(body, dict) and url.startswith("https://api.telegram.org/bot") and CHANNEL and body.get("chat_id") == CHANNEL:
+            ch = "telegram"
+        elif isinstance(body, dict) and url.startswith(IG + "/") and method == "POST":
+            ch = "insta"
+        elif url.startswith(THREADS + "/") and "/threads?" in url and method == "POST":
+            ch = "threads"
+        else:
+            return url, body
+        if ch == "threads":
+            base, _, q = url.partition("?")
+            kv = urllib.parse.parse_qsl(q, keep_blank_values=True)
+            m = cp_ch([html.unescape(l) for k, v in kv if k in CP_SUB_KEYS for l in CP_LINK_RE.findall(v)], ch)
+            return (f"{base}?{urllib.parse.urlencode([(k, cp_swap(v, m) if k in CP_SUB_KEYS else v) for k, v in kv])}" if m else url), body
+        js = {k: v if isinstance(v, str) else json.dumps(v) for k, v in body.items() if k in CP_SUB_KEYS and isinstance(v, (str, dict, list))}
+        m = cp_ch([html.unescape(l) for v in js.values() for l in CP_LINK_RE.findall(v)], ch, ch != "telegram" or not url.rsplit("/", 1)[-1].startswith("edit"))
+        return url, ({**body, **{k: cp_swap(v, m) if isinstance(body[k], str) else json.loads(cp_swap(v, m)) for k, v in js.items()}} if m else body)
+    except Exception as e:
+        print("cp sub 요청 그대로", type(e).__name__)
+        return url, body
+
+
+def cp_unsub():
+    """채널 링크 -> 처음 링크(cp_sub.json) — metrics가 채널마다 다른 링크를 같은 상품으로 묶게."""
+    return {l: e["b"] for e in load(CP_SUB, {}).values() if isinstance(e, dict) and e.get("b") for c, l in e.items() if c in CP_SUBS}
+
+
+def cp_sub_site(seen):
+    """GGG: 사이트 쿠팡 링크 -> site 채널 링크(build_site가 cp_sub.json으로 바꿔 씀) — 실행 끝 남은 몫으로 조금씩(최근 글 먼저 · 20개씩 딥링크 1번 · 한꺼번에 X)."""
+    if not HAS_CP:
+        return
+    inv, sub, now = {v: k for k, v in load(CP_LINKS, {}).items()}, load(CP_SUB, {}), time.time()
+    todo = [l for l in dict.fromkeys([p.get("url") for p in reversed(load(POSTS, []))] + list(inv)[::-1])
+            if l and (r := cp_raw(l, inv)) and "site" not in sub.get(r, {}) and now - sub.get(r, {}).get("x", 0) > 86400]  # x = 하루 뒤(cp_ch가 1개씩)
+    if todo:
+        cp_ch(todo[:20], "site")
 
 
 def lp_link(merchant, target):
@@ -3054,6 +3160,8 @@ def nn_bundle(seen):
         full = {u: f"https://www.coupang.com/vp/products/{v['pageKey'][0]}" + (f"?itemId={v['itemId'][0]}" + (f"&vendorItemId={v['vendorItemId'][0]}" if v.get("vendorItemId") else "") if v.get("itemId") else "")
                 for u, v in qs.items() if v.get("pageKey")}
         short = cp_deeplinks(list(full.values())) if full else {}
+        if short:  # GGG: 봇이 만든 링크로 기록(cp_links.json — 있는 것 그대로) -> 채널 글 보낼 때 같은 상품의 채널 링크로
+            json.dump({**short, **load(CP_LINKS, {})}, open(CP_LINKS, "w"), ensure_ascii=False, indent=1)
         link = {u: short.get(f, u) for u, f in full.items()}
     except Exception as e:
         print("nn deeplink", repr(e))
@@ -5001,8 +5109,9 @@ def digest(seen, posts):
     if kst.tm_hour < 21 or not todays:
         return
 
-    def blog():  # 실패하면(10/6: 4096자 초과) 다음 실행에 다시 — 모아보기 초안은 한 번만
-        if tg("sendMessage", chat_id=ADMIN, text=blog_text(todays, kst), link_preview_options={"is_disabled": True}):
+    def blog():  # 실패하면(10/6: 4096자 초과) 다음 실행에 다시 — 모아보기 초안은 한 번만 · 쿠팡 링크 = blog 채널 링크(GGG)
+        bt = blog_text(todays, kst)
+        if tg("sendMessage", chat_id=ADMIN, text=cp_swap(bt, cp_ch(CP_LINK_RE.findall(bt), "blog")), link_preview_options={"is_disabled": True}):
             seen["blog_" + key[7:]] = time.time()
     if key in seen:
         if "blog_" + key[7:] not in seen:
@@ -8996,6 +9105,7 @@ def metrics_rows(seen):
     denied = lambda e: re.search(r'"code":\s*(10|190|200)\b', getattr(e, "body", "") or "")  # 권한 없음·토큰 = 나머지 글도 같음 -> 그만 물음, 그 밖(지운 글·빈 응답)은 그 글만 빈 칸
 
     ids = toss_ids(seen)  # 우리 토스 쉐어링크 -> 상품 id
+    back = cp_unsub()  # GGG 채널 쿠팡 링크 -> 처음 링크(같은 상품 = 같은 url 칸)
 
     def row(ch, i, text, url, t, views, react, title=None, links=None, deal=None, **more):
         title = title or title_of(text)
@@ -9003,7 +9113,7 @@ def metrics_rows(seen):
         cat = "투표" if text.startswith("🗳️") else "달력" if text.startswith("🗓 앞으로") else "날씨" if re.search(r"^☁️", text, re.M) else "묶음" if re.search(r"2️⃣|^2\. |핫딜픽이 고른 \d+개", text, re.M) else next((n.split()[-1] for _, n, rx in CATS if re.search(rx, title)), "식품" if re.search(FOOD, title) else "기타")
         rows.append({"date": day, "ch": ch, "id": i, "shop": shop_of({"text": text, "url": next((u for u in links or [] if u and not re.search(NOT_PROD, u)), url) if (url or "").startswith("https://t.me/") else url}) or "기타", "cat": cat,
                      "price": "" if w is None else next((n for b, n in PRICE_BANDS if w <= b), "10만~"), "at": time.strftime("%H:%M", time.gmtime(t + 9 * 3600)), "views": views, "react": react, **more,
-                     **(prod_cols(title, cat, links, ids, deal) if links is not None else {})})
+                     **(prod_cols(title, cat, [back.get(u, u) for u in links], ids, deal) if links is not None else {})})
 
     pm, url, n = {p["mid"]: p for p in load(POSTS, []) if p.get("mid")}, CHANNEL_WEB, 0
     try:
@@ -9852,7 +9962,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cp_sub_site):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

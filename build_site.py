@@ -254,14 +254,14 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
     wh = (m := re.search(r"/thumbnails/remote/(\d+)x(\d+)", og)) and m.groups() if og else (1200, 630)  # og 크기: 기본 그림 1200×630 · 상품 사진 = 쿠팡 썸네일 주소에 적힌 크기(657x657 등 — 정사각) · 크기 안 적힌 사진(파트너스 image1 등) = 안 넣음(카톡·페북이 그림을 받아 읽음)
     nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-label="찜한 딜 보기"' if k == "saved" else "") + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}"
                                                        + ('<b id="lc"></b>' if k == "saved" else '<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i>' if k == "alarm" else "") + "</a>" for k, n, u in NAV) + "</nav>"
-    return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    return cp_swap(f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or OG_IMG)}">{f'<meta property="og:image:width" content="{wh[0]}"><meta property="og:image:height" content="{wh[1]}">' if wh else ''}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true">{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
-<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
+<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>""", SITE_SUB)  # GGG 사이트 쿠팡 링크 = site 채널 링크
 
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
@@ -637,6 +637,27 @@ EVENTS = "events.json"
 CP_LINKS = "cp_links.json"  # {쿠팡 상품 주소: 파트너스 링크} — 봇이 딥링크 API로 만듦(쿠팡 키 있을 때만 생김, 10/23 hotdeal.cp_links). events 그 주소 대신 씀
 CP_PROD = r"https://(?:www\.|m\.)?coupang\.com/vp/products/(\d+)"  # 쿠팡 상품 주소(번호 = pid). 진우 단축 링크(link.coupang.com)는 그대로
 CP_SHORT = ("link.coupang.com", "coupa.ng")  # 쿠팡 파트너스 링크 도메인(딥링크 API 단축 주소 = coupa.ng일 수도 — 공식 샘플)
+CP_SUB = "cp_sub.json"  # GGG(10/29 진우 '응 달라고 하자' — 쿠팡 보고서 '채널 ID' 탭): {쿠팡 상품 주소: {"b": 처음 링크, 채널(subId): 링크}} — 봇이 딥링크 subId로 만듦(hotdeal.cp_ch)
+CP_LINK_RE = re.compile(r"https://(?:link\.coupang\.com/(?:a/[A-Za-z0-9]+|re/[^\s\"'<>]+)|coupa\.ng/[A-Za-z0-9]+)")  # 쿠팡 파트너스 링크(단축 /a/ · API 긴 링크 /re/)
+SITE_SUB = {}  # GGG {봇 쿠팡 링크: site 채널 링크} — build()가 cp_sub.json에서 채움 · page()·write()가 바꿔 씀
+
+
+def cp_swap(s, m):
+    """s(글·HTML·버튼 JSON) 속 쿠팡 링크 -> m[링크](m에 없으면 그대로 · HTML 속 &amp; 그대로)."""
+    def one(x):
+        u = m.get(html.unescape(x[0]))
+        return x[0] if not u else html.escape(u) if "&amp;" in x[0] else u
+    return CP_LINK_RE.sub(one, s) if m else s
+
+
+def site_subs():
+    """GGG: {봇 쿠팡 링크(처음 링크·cp_links.json 값): site 채널 링크} — cp_sub.json(없거나 깨지면 {})."""
+    try:
+        sub = json.load(open(CP_SUB)) if os.path.exists(CP_SUB) else {}
+        cl = json.load(open(CP_LINKS)) if os.path.exists(CP_LINKS) else {}
+    except ValueError:
+        return {}
+    return {b: e["site"] for r, e in sub.items() if isinstance(e, dict) and e.get("site") for b in {e.get("b"), cl.get(r)} if isinstance(b, str)}
 
 
 def ev_list(path=None):
@@ -1973,10 +1994,10 @@ def clips_page(out):
 
 
 def write(out, rel, text):
-    """docs/rel(…/ 로 끝나면 index.html) 쓰기 — 폴더 만들기."""
+    """docs/rel(…/ 로 끝나면 index.html) 쓰기 — 폴더 만들기 · 쿠팡 링크 = site 채널 링크(GGG — page() 아닌 쪽도)."""
     f = f"{out}/{urllib.parse.unquote(rel)}" + ("index.html" if rel.endswith("/") or not rel else "")
     os.makedirs(os.path.dirname(f) or ".", exist_ok=True)
-    open(f, "w").write(text)
+    open(f, "w").write(cp_swap(text, SITE_SUB))
 
 
 MALL_BTN = (("coupang", "🚀 쿠팡", "로켓·와우 특가"), ("toss", "💙 토스", "하루특가·베스트"), ("naver", "💚 네이버", "쇼핑 특가"))  # 몰 버튼·쇼핑몰 칸(10/24 Cowork 포털형)
@@ -2488,7 +2509,8 @@ def link_page(style, posts, it, out, alt=False, today=None):
 
 
 def build(posts, out="docs"):
-    global MICONS
+    global MICONS, SITE_SUB
+    SITE_SUB = site_subs()
     os.makedirs(f"{out}/p", exist_ok=True)
     MICONS = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()  # V 몰 로고(있는 것만)
     open(f"{out}/.nojekyll", "w").close()

@@ -105,6 +105,7 @@ jobs:
           [ ! -f toss_list.json ] || git add toss_list.json   # 진우 토스 상품 목록(매일 아침 8시 전 — Cowork 8:30 보고, 토스 API 가격 X)
           [ ! -f ig_stage.json ] || git add ig_stage.json   # 인스타 단계 기록(하루 4번 -> 5 -> 6, 매일 0시 판정 줄)
           [ ! -f cp_links.json ] || git add cp_links.json   # 쿠팡 상품 주소 -> 파트너스 링크(쿠팡 키 있을 때만 생김 — 사이트 빌드도 씀)
+          [ ! -f cp_sub.json ] || git add cp_sub.json   # GGG 쿠팡 상품 주소 -> 채널별 파트너스 링크(subId — 쿠팡 보고서 '채널 ID' · 사이트 빌드도 씀)
           [ ! -f promo_links.json ] || git add promo_links.json   # 기획전 주소 -> 링크프라이스 딥링크(G마켓·옥션·롯데온·SSG — 공개 링크)
           [ ! -f cp_fail.json ] || git add cp_fail.json   # 아직 안 바뀐 쿠팡 상품 주소(pid·이름·실패 날짜·마지막 시도·이유 — 가격·수수료 X)
           [ ! -f relink.json ] || git add relink.json   # 사이트 생 주소 -> 수수료 링크(바뀐 수·끝까지 안 된 상품 pid·이름·응답 — 가격·수수료 X)
