@@ -10962,4 +10962,37 @@ with contextlib.redirect_stdout(io.StringIO()):
     time.time = lambda: TK("2026-11-02 20:40"); H.chat_48(s110)
 assert json.load(open("metrics.json"))["2026-10-31"]["rows"][0]["v48"] == 41 and s110["power"]["m"]["PW1"]["r48"] == 3  # 힘 준 글 48시간 조회·답글
 (time.time, H.tg, H.http, H.th_img, H.th_carousel, H.th_text, H.th_post, H.cur_img, H.EVENTS, e110, H.ADMIN, H.CHANNEL, H.METRICS) = sv110; H.E.clear(); H.E.update(e110); os.chdir(cwd110)
+# 9-111) III(10/30 Cowork — 영어 페이지 /en + 개인정보처리방침): /privacy/(한)·/en/privacy/(영) — 회원가입 X · GoatCounter · 제휴 링크(쿠팡·토스·네이버·올리브영 + 나중 Rakuten·FlexOffers) · 문의 텔레그램 · 시행일 2026-11-01 · 모든 쪽 맨 아래 링크
+#   /en/ = 소개(items.json 비면 소개만) · hreflang ko↔en · 사이트맵 · /en/<slug>/ = 1ml당 값 싼 순 · 'Check final price at checkout (M/D, KST)' · 제휴 승인(EN_AFF) 전 = 링크·제휴 문구 X · 뒤 = 지역(America/*) 버튼
+S111, d111 = __import__("build_site"), tempfile.mkdtemp()
+S111.build([{"t": "2026-10-30 08:00", "text": "🔥 [쿠팡] 맥심 모카골드 커피믹스 400개입 (49,900원)\n\n싸요", "url": "https://link.coupang.com/a/cf"}], d111)
+rd111 = lambda p: open(f"{d111}/{p}index.html").read()
+pk111, pe111, h111, en111, sm111 = rd111("privacy/"), rd111("en/privacy/"), rd111(""), rd111("en/"), open(f"{d111}/sitemap.xml").read()
+assert all(w in pk111 for w in ("<h1", "개인정보처리방침", "시행일 2026-11-01", "회원가입", "GoatCounter", "쿠팡 파트너스", "토스쇼핑", "네이버", "올리브영", "Rakuten", "FlexOffers", "t.me/hotdeal_pick", 'hreflang="en" href="https://hotdealpick.kr/en/privacy/"')) and "이메일" not in pk111.split("문의")[-1]
+assert all(w in pe111 for w in ('<html lang="en">', "Privacy policy", "Effective 2026-11-01", "sign-up", "GoatCounter", "Coupang Partners", "Olive Young", "Rakuten Advertising", "FlexOffers", "@hotdeal_pick", 'hreflang="ko" href="https://hotdealpick.kr/privacy/"'))
+assert all(f'<a href="{S111.BASE}privacy/">개인정보처리방침</a>' in x for x in (h111, rd111("c/coffee/"), pk111)) and f'<a href="{S111.BASE}en/privacy/">Privacy policy</a>' in en111  # 맨 아래 링크
+assert '<link rel="alternate" hreflang="en" href="https://hotdealpick.kr/en/">' in h111 and '<link rel="alternate" hreflang="ko" href="https://hotdealpick.kr/">' in en111 and '<html lang="en">' in en111  # hreflang ko↔en
+assert all(f"<loc>{S111.BASE}{p}</loc><lastmod>" in sm111 for p in ("privacy/", "en/privacy/", "en/")) and "noindex" not in en111 + pe111  # /en 인덱스 O
+assert S111.EN_INTRO in en111 and "<ul>" not in en111 and "affiliate" not in en111 and S111.EN_AFF is False  # items.json 없음 = 소개만
+json.dump({"slug": "toner-per-ml", "title": "Toners by price per ml", "intro": "Cheapest toners per ml", "items": [
+    {"name": "Toner A", "size": "500ml", "price_usd": 25, "per_ml": 0.05, "img": "https://img.example/a.jpg", "us_url": "https://us.example/a", "global_url": "https://gl.example/a", "checked": "2026-10-30T10:00"},
+    {"name": "Toner B <x>", "size": "150ml", "price_usd": "18.00", "per_ml": "0.12", "img": "http://img.example/b.jpg", "global_url": "https://gl.example/b", "checked": "2026-10-29"},
+    {"name": "Toner C", "size": "200ml"}, {"size": "no name"}]}, open(f"{d111}/en/items.json", "w"))
+u111 = S111.en_pages(d111, "2026-10-31")
+sl111, en111 = rd111("en/toner-per-ml/"), rd111("en/")
+assert sl111.index("Toner A") < sl111.index("Toner B &lt;x&gt;") < sl111.index("Toner C") and "no name" not in sl111  # 1ml당 값 싼 순(없는 것 끝)
+assert "$0.05/ml" in sl111 and "$0.12/ml" in sl111 and "500ml · $25.00" in sl111 and "Check final price at checkout (10/30, KST)" in sl111 and "(10/29, KST)" in sl111
+assert '<img src="https://img.example/a.jpg"' in sl111 and "http://img.example" not in sl111 and "us.example" not in sl111 and "gl.example" not in sl111 and "affiliate" not in sl111  # 제휴 승인 전 = 링크 X
+assert f'<a href="{S111.BASE}en/toner-per-ml/">Toners by price per ml</a>' in en111 and (f"{S111.BASE}en/toner-per-ml/", "2026-10-30") in u111 and (f"{S111.BASE}en/", "2026-10-30") in u111
+S111.EN_AFF = True
+S111.en_pages(d111, "2026-10-31")
+sl111, en111 = rd111("en/toner-per-ml/"), rd111("en/")
+assert sl111.count("This page contains affiliate links.") == 1 and "This page contains affiliate links." in en111 and "America\\/" in sl111  # 제휴 뒤 = 맨 위 문구 + 지역 버튼
+assert 'href="https://gl.example/a" data-us="https://us.example/a" data-gl="https://gl.example/a" rel="sponsored nofollow">View price</a>' in sl111 and 'data-us="https://gl.example/b" data-gl="https://gl.example/b"' in sl111 and sl111.count('class="go"') == 2
+S111.EN_AFF = False
+for b111 in ("[]", "{", '{"slug": "Bad Slug", "title": "x", "items": []}'):
+    open(f"{d111}/en/items.json", "w").write(b111)
+    assert S111.en_items(d111) == [], b111  # 깨진 파일·나쁜 slug = 뺌
+assert "urls += en_pages(out, today)" in inspect.getsource(S111.build) and (f"{S111.BASE}privacy/", "2026-10-31") in u111 and "olive" not in "".join(n.lower() for n in dir(S111))  # 코드 이름에 판매처 X
+shutil.rmtree(d111)
 print("OK: 모든 셀프체크 통과")

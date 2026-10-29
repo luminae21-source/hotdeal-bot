@@ -261,7 +261,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true">{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
-<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>""", SITE_SUB)  # GGG 사이트 쿠팡 링크 = site 채널 링크
+<footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a> · <a href="{BASE}privacy/">개인정보처리방침</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>""", SITE_SUB)  # GGG 사이트 쿠팡 링크 = site 채널 링크
 
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
@@ -2019,6 +2019,90 @@ def clips_page(out):
     return page(f"네이버 클립 · {TITLE}", body + js_copy, "진우용 네이버 클립 영상·문구", noindex=True, head=css)
 
 
+EN_AFF, PRIVACY_DATE, PRIVACY_EMAIL = False, "2026-11-01", ""  # /en 제휴 승인 뒤 True = 구매 버튼(지역별)·'This page contains affiliate links.' · 개인정보처리방침 시행일(바뀌면 고침) · 문의 이메일(진우 확인 뒤)
+HREF_KO_EN = f'<link rel="alternate" hreflang="ko" href="{BASE}"><link rel="alternate" hreflang="en" href="{BASE}en/"><link rel="alternate" hreflang="x-default" href="{BASE}">'
+EN_INTRO = "K-beauty by the numbers — price per ml, set value, sale calendar"
+
+
+def en_page(title, body, desc, url, alts):
+    """영어 쪽 틀(10/30 진우 — 해외 판매 축): 한국어 사이트와 같은 s.css·로고·흰 바탕·핑크(아래 메뉴·검색 X) · hreflang(alts = {언어: 주소}) · 맨 아래 Privacy."""
+    e = html.escape
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{e(title)}</title><meta name="description" content="{e(desc[:150])}"><link rel="canonical" href="{url}">{"".join(f'<link rel="alternate" hreflang="{k}" href="{v}">' for k, v in alts.items())}
+<meta property="og:site_name" content="HotdealPick"><meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(desc[:150])}"><meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:url" content="{url}"><meta property="og:image" content="{OG_IMG}">
+{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{gc_tag()}<style>.en li{{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}}.en li img{{width:72px;height:72px;object-fit:contain;border-radius:12px;background:#fff;flex:none}}.en li b{{display:block}}.en .pm{{color:var(--pk);font-weight:800}}.en ul{{list-style:none;margin:0;padding:0}}.en a.go{{display:inline-block;margin-top:6px;padding:7px 12px;border-radius:10px;background:var(--btn);color:var(--btnt);text-decoration:none;font-weight:700;font-size:13px}}</style></head><body><main class="en">
+<header class="hd"><div class="hr"><a class="lg" href="{BASE}en/"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true"><b>HotdealPick</b></a><a href="{BASE}" hreflang="ko" lang="ko" style="font-size:13px">한국어</a></div></header>
+{body}
+<footer><a href="{BASE}en/privacy/">Privacy policy</a> · <a href="{BASE}" hreflang="ko" lang="ko">한국어 사이트</a></footer></main></body></html>"""
+
+
+PRIVACY = {"ko": ("개인정보처리방침", f"시행일 {PRIVACY_DATE} · 바뀌면 이 날짜를 고쳐요", (
+    ("모으는 정보", "핫딜픽은 회원가입·로그인·입력 폼이 없어서 이름·연락처·이메일 같은 개인정보를 받지 않아요."),
+    ("방문 통계", 'GoatCounter로 방문 수·페이지·유입 경로·구매 링크 클릭 수를 셉니다. GoatCounter는 쿠키를 쓰지 않는 집계 도구예요(<a href="https://www.goatcounter.com/help/privacy">GoatCounter 방침</a>).'),
+    ("이 기기에만 저장하는 것", "찜한 딜·화면 테마·화면 모양 같은 설정은 이 브라우저(localStorage)에만 저장되고 서버로 보내지 않아요."),
+    ("제휴 링크", "쿠팡 파트너스·토스쇼핑 쉐어링크·네이버 쇼핑 커넥트·올리브영 쇼핑 큐레이터·링크프라이스 제휴 링크가 있어요. 링크를 누르면 판매처나 제휴 네트워크가 자기 쿠키로 구매를 추적할 수 있고, 그 처리는 각 판매처·네트워크의 개인정보처리방침을 따라요. 해외 제휴 네트워크(Rakuten Advertising·FlexOffers 등)를 쓰게 되면 여기에 먼저 적어요."),
+    ("상품 사진", "상품 사진은 판매처(쿠팡 등) 서버에서 바로 불러와요. 사진을 불러올 때 그 서버가 일반적인 접속 정보를 받을 수 있어요."),
+    ("문의", '텔레그램 <a href="https://t.me/hotdeal_pick">@hotdeal_pick</a>' + (f" · 이메일 {html.escape(PRIVACY_EMAIL)}" if PRIVACY_EMAIL else "")))),
+    "en": ("Privacy policy", f"Effective {PRIVACY_DATE} · we update this date when the policy changes", (
+    ("What we collect", "HotdealPick has no sign-up, log-in or input forms, so we do not collect personal information such as names, phone numbers or email addresses."),
+    ("Visit statistics", 'We count visits, pages, referrers and clicks on purchase links with GoatCounter, an analytics tool that does not use cookies (<a href="https://www.goatcounter.com/help/privacy">GoatCounter privacy</a>).'),
+    ("Stored only on your device", "Settings such as saved deals, theme and layout are kept in your browser (localStorage) and are not sent to our server."),
+    ("Affiliate links", "Some links are affiliate links (Coupang Partners, Toss Shopping share links, Naver Shopping Connect, Olive Young Shopping Curator, LinkPrice). When you click one, the store or affiliate network may use its own cookies to track the purchase, under that store's or network's privacy policy. If we add overseas affiliate networks (such as Rakuten Advertising or FlexOffers), we will list them here first."),
+    ("Product images", "Product images load directly from the store's servers (such as Coupang), which may receive standard connection information when an image loads."),
+    ("Contact", 'Telegram <a href="https://t.me/hotdeal_pick">@hotdeal_pick</a>' + (f" · email {html.escape(PRIVACY_EMAIL)}" if PRIVACY_EMAIL else ""))))}
+
+
+def privacy_body(lang):
+    h, sub, secs = PRIVACY[lang]
+    return f'<h1 class="h">{h}</h1><p class="t">{sub}</p>' + "".join(f'<section class="sec"><h2>{t}</h2><p>{x}</p></section>' for t, x in secs)
+
+
+def en_items(out):
+    """docs/en/items.json(Cowork가 채움) -> 쪽 목록 [{slug, title, intro, items:[{name, size, price_usd, per_ml, img, us_url, global_url, checked}]}] — 한 쪽(객체)·여러 쪽(목록) 다 받음, 깨진 것 = 뺌."""
+    try:
+        d = json.load(open(f"{out}/en/items.json"))
+    except (OSError, ValueError):
+        return []
+    return [g for g in (d if isinstance(d, list) else [d]) if isinstance(g, dict) and re.fullmatch(r"[a-z0-9-]+", str(g.get("slug") or "")) and g.get("title") and isinstance(g.get("items"), list)]
+
+
+def en_pages(out, today):
+    """/privacy/(한)·/en/privacy/(영) + /en/(소개 · items.json 쪽 목록) + /en/<slug>/(1ml당 값 싼 순 · 사진 · 'Check final price at checkout (M/D, KST)') -> 사이트맵 [(주소, 날짜)].
+    구매 버튼 = EN_AFF(제휴 승인 뒤)만 — 브라우저 시간대 America/* = us_url, 아니면 global_url(하나만 있으면 그것) + 맨 위 'This page contains affiliate links.'."""
+    e, pv = html.escape, {"ko": f"{BASE}privacy/", "en": f"{BASE}en/privacy/"}
+    write(out, "privacy/", page(f"개인정보처리방침 | {TITLE}", privacy_body("ko"), "핫딜픽 개인정보처리방침 — 개인정보를 받지 않아요", pv["ko"],
+                                head="".join(f'<link rel="alternate" hreflang="{k}" href="{v}">' for k, v in pv.items())))
+    write(out, "en/privacy/", en_page("Privacy policy | HotdealPick", privacy_body("en"), "HotdealPick privacy policy — we do not collect personal information", pv["en"], pv))
+    gs, pd = en_items(out), min(PRIVACY_DATE, today)  # 사이트맵 날짜 = 미래 X
+    urls = [(pv["ko"], pd), (pv["en"], pd)]
+    num = lambda v: float(v) if isinstance(v, (int, float)) or re.fullmatch(r"\d+(?:\.\d+)?", str(v or "")) else None
+    md = lambda c: (m := re.match(r"\d{4}-(\d\d)-(\d\d)", str(c or ""))) and f"{int(m[1])}/{int(m[2])}"
+    aff = EN_AFF and any(x.get("us_url") or x.get("global_url") for g in gs for x in g["items"] if isinstance(x, dict))
+    note = '<p class="dis">This page contains affiliate links.</p>' if aff else ""
+    go_js = ("<script>(function(){var us=/^America\\//.test((Intl.DateTimeFormat().resolvedOptions()||{}).timeZone||'');"
+             "[].forEach.call(document.querySelectorAll('a.go'),function(a){var u=us?a.dataset.us:a.dataset.gl;if(u)a.href=u})})()</script>") if aff else ""
+    alts = {"en": f"{BASE}en/", "ko": BASE, "x-default": BASE}
+    for g in gs:
+        xs = sorted((x for x in g["items"] if isinstance(x, dict) and x.get("name")), key=lambda x: (num(x.get("per_ml")) is None, num(x.get("per_ml")) or 0))
+        rows = ""
+        for x in xs:
+            pu, pm, us, gl, img = num(x.get("price_usd")), num(x.get("per_ml")), x.get("us_url") or x.get("global_url"), x.get("global_url") or x.get("us_url"), str(x.get("img") or "")
+            rows += ("<li>" + (f'<img src="{e(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">' if img.startswith("https://") else "")
+                     + f'<div><b>{e(str(x["name"]))}</b><span class="t">{e(str(x.get("size") or ""))}{f" · ${pu:,.2f}" if pu is not None else ""}</span><br>'
+                     + (f'<span class="pm">${pm:.2f}/ml</span>' if pm is not None else "")
+                     + (f'<br><span class="t">Check final price at checkout ({md(x.get("checked"))}, KST)</span>' if md(x.get("checked")) else "")
+                     + (f'<br><a class="go" href="{e(gl)}" data-us="{e(us)}" data-gl="{e(gl)}" rel="sponsored nofollow">View price</a>' if aff and gl else "") + "</div></li>")
+        url = f"{BASE}en/{g['slug']}/"
+        write(out, f"en/{g['slug']}/", en_page(f"{g['title']} | HotdealPick", note + f'<h1 class="h">{e(str(g["title"]))}</h1><p>{e(str(g.get("intro") or ""))}</p><p class="t">Sorted by price per ml.</p><ul>{rows}</ul>' + go_js,
+                                               str(g.get("intro") or g["title"]), url, {"en": url}))
+        urls.append((url, max([str(x.get("checked"))[:10] for x in xs if md(x.get("checked"))] or [pd])))
+    lst = "".join(f'<li><div><b><a href="{BASE}en/{g["slug"]}/">{e(str(g["title"]))}</a></b><span class="t">{e(str(g.get("intro") or ""))[:120]}</span></div></li>' for g in gs)
+    write(out, "en/", en_page(f"{EN_INTRO} | HotdealPick", note + f'<h1 class="h">{EN_INTRO}</h1><p>We compare Korean beauty products by price per ml, set value and sale dates — numbers first.</p>'
+                              + (f'<ul>{lst}</ul>' if lst else ""), EN_INTRO, alts["en"], alts))
+    urls.append((alts["en"], max([u[1] for u in urls[2:]] or [pd])))
+    return urls
+
+
 def write(out, rel, text):
     """docs/rel(…/ 로 끝나면 index.html) 쓰기 — 폴더 만들기 · 쿠팡 링크 = site 채널 링크(GGG — page() 아닌 쪽도)."""
     f = f"{out}/{urllib.parse.unquote(rel)}" + ("index.html" if rel.endswith("/") or not rel else "")
@@ -2707,7 +2791,7 @@ def build(posts, out="docs"):
                                                                   {"@type": "Organization", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
                                               hd, BASE, top=INSTALL,
-                                              head=f'<script type="application/ld+json">{ld}</script>', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
+                                              head=f'<script type="application/ld+json">{ld}</script>{HREF_KO_EN}', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
     try:
         prev = json.load(open(f"{out}/changes.json"))
@@ -2744,6 +2828,7 @@ def build(posts, out="docs"):
     for d in {"a", "b"} - {alt}:  # 시안을 바꾸면 옛 미리보기 쪽 지움
         if os.path.isdir(f"{out}/link/{d}"):
             shutil.rmtree(f"{out}/link/{d}")
+    urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9) — '*' = 네이버 Yeti도 허용
