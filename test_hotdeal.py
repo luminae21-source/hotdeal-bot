@@ -5619,7 +5619,7 @@ def http41(url, body=None, headers=None, method=None):
     if "/products/search?" in url:
         return json.dumps({"rCode": "0", "data": {"productData": [{"productId": 999, "productName": "곰곰 특란, 30구, 1개", "productPrice": 1}, {"productId": 111, "productName": "곰곰 특란, 30구, 2개", "productPrice": 14000},
                                                                  {"productId": 111, "productName": "곰곰 무항생제 신선한 특란, 30구, 1개", "productPrice": 7490, "productImage": "https://ads-partners.coupang.com/image1/t111", "isRocket": True},
-                                                                 {"productId": 222, "productName": "새 상품 다른 옵션", "productPrice": 1, "productImage": "https://ads-partners.coupang.com/image1/t222"}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
+                                                                 {"productId": 222, "productName": "새 상품 다른 옵션, 2개", "productPrice": 1, "productImage": "https://ads-partners.coupang.com/image1/t222"}] if quote("곰곰 특란 30구") in url else []}})  # 같은 pid 2개 묶음 옵션은 X
     if "linkprice" in url:
         return json.dumps({"result": "F", "url": ""})
     raise AssertionError(url)
@@ -10571,7 +10571,7 @@ json.dump([{"at": "2026-10-20 10:00", "url": U105(k), "text": "x", "pid": p, **(
 H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.json", True
 kw105 = []
 def cp105(method, path, body=None):
-    if kw105:
+    if len(kw105) >= 2:
         raise H.CpLimit()
     kw105.append(urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]))
     return {"productData": [{"productId": 76, "productName": "곰곰 특란 30구", "productPrice": 7900}, {"productId": 77, "productName": "곰곰 대란 30구", "productPrice": 7000, "isRocket": True},
@@ -10582,11 +10582,11 @@ s105 = {"cpq": {"m": {U105("A"): [9000, "2026-10-22 09:00", ""], U105("B"): [750
 o105 = io.StringIO()
 with contextlib.redirect_stdout(o105): H.cp_price(s105)
 m105 = s105["cpq"]["m"]
-assert kw105 == ["곰곰 특란 30구"] and m105[U105("B")][:2] == [7900, "2026-10-29 10:00"], (kw105, m105)  # 오늘 올린 B = 확인이 더 최근이어도 먼저
-assert m105[U105("C")] == [7000, "2026-10-29 10:00", ""] and s105["cpq"]["r"][U105("C")] is True and m105[U105("D")][:2] == [8100, "2026-10-21 09:00"] and m105[U105("A")][1] == "2026-10-22 09:00", m105  # C = 같은 결과로 가격 · D = events 옵션(I9)과 다름 = 그대로
+assert kw105 == ["곰곰 특란 30구", "곰곰 왕란 30구"] and m105[U105("B")][:2] == [7900, "2026-10-29 10:00"], (kw105, m105)  # 오늘 올린 B = 확인이 더 최근이어도 먼저 · 같은 결과로 확인된 C = 이번 실행엔 검색 X(다음 D)
+assert m105[U105("C")] == [7000, "2026-10-29 10:00", ""] and s105["cpq"]["r"][U105("C")] is True and m105[U105("D")][3:5] == [8100, "2026-10-21 09:00"] and m105[U105("A")][1] == "2026-10-22 09:00", m105  # C = 같은 결과로 가격 · D = events 옵션(I9)과 다름 = 같은 결과로 X(제 검색도 못 찾음 — 옛 가격 그대로 뒤에)
 assert "같은 검색 결과로 1개 더" in o105.getvalue(), o105.getvalue()
 kw105.clear(); o105 = io.StringIO()
 with contextlib.redirect_stdout(o105): H.cp_price(s105)
-assert kw105 == ["곰곰 왕란 30구"] and "같은 검색 결과로" not in o105.getvalue(), (kw105, o105.getvalue())  # 다음 실행 = 오늘 확인된 B·C 건너뛰고 오래된 확인(D 10/21 → A 10/22) · 오늘 확인한 B·C는 다시 안 셈
+assert kw105 == ["살림백서 주방세제 4L"] and "같은 검색 결과로" not in o105.getvalue(), (kw105, o105.getvalue())  # 다음 실행 = 오늘 확인된 B·C·D 건너뛰고 A · 오늘 확인한 B·C는 다시 안 셈
 time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS = sv105; os.chdir(cwd105)
 print("OK: 모든 셀프체크 통과")

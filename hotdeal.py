@@ -1888,14 +1888,15 @@ def cp_price(seen):
     pho = [x for _, x in sorted([((*gk[w], 0, ""), (0, None, None, w, None)) for w in gk] + [((*rank(t[1]), 1, t[0]), t) for t in todo if t[1] not in q.get("i", {})], key=lambda y: y[0])]  # 사진 없는 것(홈 → 칸 첫 화면 → 나머지 — 같은 칸이면 T 품목 낱말 검색 먼저)과 오래전 확인을 번갈아 — 사진 채우면서 가격 확인도 안 굶게
     old = [t for t in todo if t[1] in q.get("i", {})]
     todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: t[1] not in rw)  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰)
-    got = miss = err = gn = xn = 0
+    got = miss = err = gn = 0
+    xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
     qs = cp_qs
     ps = q.setdefault("ps", {"d": today, "n": 0, "m": 0})  # 사진 검색 수·채운 사진 수(하루 1줄 'img 쿠팡 검색 N번으로 M개' — 다음 날 첫 실행에)
     if ps["d"] != today:
         if ps["n"]:
             print("img", f"쿠팡 검색 {ps['n']}번으로 {ps['m']}개 ({int(ps['d'][5:7])}/{int(ps['d'][8:])})")
         ps.update(d=today, n=0, m=0)
-    for _, u, pid, name, item in todo:  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
+    for _, u, pid, name, item in (t for t in todo if t[1] not in xs):  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
         kws = cp_kws(name) if u else [name]  # u 없음 = 품목 낱말 검색(T)
         photo = not u or u not in q.get("i", {})
         v = (q["v"].get(u, 0) if photo else q["vp"].get(u, [0, 0])[0]) % len(kws) if u else 0  # 사진 없는 글 = 오늘 못 찾은 만큼 다음 검색어 · 있는 글 = 가격(옵션)까지 맞춘 검색어 vp(처음 = 이름 그대로 — XX 리뷰: 2번째 검색어로만 찾는 글이 매번 이름 그대로 못 찾아 '가격 확인 안 됨'이 되지 않게)
@@ -1922,7 +1923,8 @@ def cp_price(seen):
                     q["i"][u2] = z["productImage"]
                 if u2 != u and z.get("productPrice") and not q["m"].get(u2, [0, ""])[1].startswith(today) \
                         and (qs(z, "itemId") == ev[u2]["item"] if ev[u2].get("item") else cp_same(names[u2], z.get("productName"))):  # BBB: 같은 옵션이면 가격도(본 검색과 같은 기준 · 추가 호출 X)
-                    q["m"][u2], xn = [int(z["productPrice"]), time.strftime("%Y-%m-%d %H:%M", kst), ev[u2].get("item") or ""], xn + 1
+                    q["m"][u2] = [int(z["productPrice"]), time.strftime("%Y-%m-%d %H:%M", kst), ev[u2].get("item") or ""]
+                    xs.add(u2)
                     q.setdefault("r", {})[u2] = z.get("isRocket") is True
         if not u:
             q["gs"][kw], gn = today, gn + 1
@@ -1959,8 +1961,8 @@ def cp_price(seen):
                 print(f"  {y.get('productId')} {str(y.get('productName') or '')[:30]}" + (f" ← 같은 pid · item {qs(y, 'itemId') or '-'}" if y in same else ""))
     if rr:
         rr["w"] = [u for u in rr.get("w", []) if u in rw]
-    if got or miss or err or xn:
-        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {xn}개 더" if xn else ""))
+    if got or miss or err or xs:
+        print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {len(xs)}개 더" if xs else ""))
 
 
 def cp_words(name):
