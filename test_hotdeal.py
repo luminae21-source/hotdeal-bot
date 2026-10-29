@@ -10657,4 +10657,53 @@ assert kw106 == ["나 상품 2kg", "라 상품 4kg"] and "몰아서 남은 1개(
 kw106.clear(); time.time = lambda: TK("2026-10-30 14:00")  # 다음 날: 어제 몰아서 확인한 🔥(A·B 10/29) < 아직 몰아서 확인 안 된 것(C 10/21) 먼저
 p106["cpq"]["m"][U("A")] = [1, "2026-10-29 15:00", ""]; p106["cpq"]["m"][U("D")][1] = "2026-10-29 14:00"; H.cp_price(p106); assert kw106[0] == "다 상품 3kg", kw106
 time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, rn106 = sv106; H.CP_RUSH = ("2000-01-01 00:00",) * 2; H.RUN.clear(); H.RUN.update(rn106); os.chdir(cwd106)
+# 9-107) DDD(10/29 진우 '미리 준비만'): trend.json = Cowork가 읽는 품목 흐름(글·사이트엔 X) — ① 네이버 쇼핑인사이트(API HUB, Secrets NAVER_HUB_ID·NAVER_HUB_SECRET — 없으면 조용히 건너뜀)
+#   하루 1번 TREND_AT 뒤: TREND_KW + 최근 14일 진열 tag 클릭 추이 → 최근 7일 ÷ 이전 7일 오르는 순 · 같은 1분류끼리 5개씩 1호출 · 하루 TREND_MAX번 안 · 오류 = 그날 그만 ② 구글 한국 실검 RSS 1시간 1번 상위 20
+cwd107, sv107 = os.getcwd(), (time.time, H.http, H.POSTS, dict(H.E)); os.chdir(tempfile.mkdtemp())
+H.POSTS = "posts.json"; json.dump([{"t": "2026-10-28 14:30", "own": 1, "shelf": True, "tag": "치약·칫솔", "text": "🔥 [쿠팡] 치약 (1원)", "url": "https://link.coupang.com/a/t1"},
+                                   {"t": "2026-10-01 14:30", "own": 1, "shelf": True, "tag": "옛날 품목", "text": "x", "url": "https://link.coupang.com/a/t2"}], open("posts.json", "w"), ensure_ascii=False)
+rss107 = '<rss xmlns:ht="https://trends.google.com/trending/rss" version="2.0"><channel><title>Daily</title>' + "".join(
+    f"<item><title>실검{k}</title><ht:approx_traffic>{k}000+</ht:approx_traffic><ht:news_item><ht:news_item_title>기사 {k} &amp;amp; 소식</ht:news_item_title></ht:news_item></item>" for k in range(25)) + "</channel></rss>"
+calls107 = []
+def h107(url, body=None, headers=None, method=None):
+    calls107.append((url, body, headers))
+    if url == H.GTREND:
+        return rss107
+    assert url == H.NV_HUB and method == "POST" and headers == {"X-NCP-APIGW-API-KEY-ID": "id1", "X-NCP-APIGW-API-KEY": "sec1"}, (url, headers)
+    days = [time.strftime("%Y-%m-%d", time.gmtime(TK("2026-10-29 07:00") + 9 * 3600 - k * 86400)) for k in range(14, 0, -1)]
+    val = {"캡슐커피": (10, 20), "사과": (10, 5), "수세미": (0, 3)}
+    return json.dumps({"results": [{"title": k["name"], "keyword": k["param"], "data": [{"period": d, "ratio": val.get(k["name"], (4, 4))[i >= 7]} for i, d in enumerate(days) if val.get(k["name"], (4, 4))[i >= 7]]}
+                                   for k in body["keyword"]]})
+H.http, time.time = h107, lambda: TK("2026-10-29 07:00")
+for k in ("NAVER_HUB_ID", "NAVER_HUB_SECRET"):
+    H.E.pop(k, None)
+s107 = {}; o107 = io.StringIO()
+with contextlib.redirect_stdout(o107): H.trend(s107)
+t107 = json.load(open("trend.json"))
+assert list(t107) == ["google"] and len(t107["google"]["items"]) == 20 and t107["google"]["items"][0] == {"t": "실검0", "n": "0000+", "news": "기사 0 & 소식"} and t107["google"]["at"] == "2026-10-29 07:00"
+assert [c[0] for c in calls107] == [H.GTREND] and "trend google 실검 20개 · 1위 실검0" in o107.getvalue()  # 키 없으면 네이버 X(조용히)
+calls107.clear(); H.trend(s107); assert not calls107  # 같은 시간 = 구글 다시 X
+H.E.update(NAVER_HUB_ID="id1", NAVER_HUB_SECRET="sec1"); time.time = lambda: TK("2026-10-29 05:59"); H.trend(s107); assert not any(c[0] == H.NV_HUB for c in calls107)  # TREND_AT 전
+time.time = lambda: TK("2026-10-29 07:00"); calls107.clear(); o107 = io.StringIO()
+with contextlib.redirect_stdout(o107): H.trend(s107)
+nv107 = [c for c in calls107 if c[0] == H.NV_HUB]; t107 = json.load(open("trend.json"))
+assert all(len(c[1]["keyword"]) <= 5 and c[1]["timeUnit"] == "date" and c[1]["startDate"] == "2026-10-15" and c[1]["endDate"] == "2026-10-28" for c in nv107) and len(nv107) <= H.TREND_MAX
+kw107 = {k["name"]: (c[1]["category"], k["param"]) for c in nv107 for k in c[1]["keyword"]}
+assert kw107["캡슐커피"][0] == "50000006" and kw107["치약·칫솔"] == ("50000008", ["치약", "칫솔"]) and "옛날 품목" not in kw107 and set(H.TREND_KW) <= set(kw107), kw107  # 진열 tag(14일 안) = '·' 낱말 묶음
+it107 = t107["naver"]["items"]
+assert [x["kw"] for x in it107[:2]] == ["수세미", "캡슐커피"] and it107[0]["up"] is None and it107[1]["up"] == 2.0 and it107[-1]["kw"] == "사과" and it107[-1]["up"] == 0.5, it107  # 새로 뜸(이전 0) → 오르는 순
+assert t107["naver"]["line"].startswith("오르는 품목: 수세미 새로 · 캡슐커피 ×2.0") and t107["naver"]["range"] == ["2026-10-15", "2026-10-28"] and len(t107["google"]["items"]) == 20
+assert "trend naver" in o107.getvalue() and "sec1" not in o107.getvalue() and "id1" not in o107.getvalue()  # 키는 로그에 X
+calls107.clear(); time.time = lambda: TK("2026-10-29 08:30"); H.trend(s107); assert not any(c[0] == H.NV_HUB for c in calls107)  # 하루 1번
+def h107e(url, body=None, headers=None, method=None):
+    calls107.append((url, body, headers))
+    if url == H.GTREND:
+        raise TimeoutError("rss")
+    raise urllib.error.HTTPError(url, 401, "Unauthorized", {}, None)
+H.http, time.time = h107e, lambda: TK("2026-10-30 07:00"); calls107.clear(); o107 = io.StringIO()
+with contextlib.redirect_stdout(o107): H.trend(s107)
+assert sum(c[0] == H.NV_HUB for c in calls107) == 1 and "trend naver" in o107.getvalue() and "trend google" in o107.getvalue() and json.load(open("trend.json"))["naver"]["d"] == "2026-10-29"  # 오류 = 그날 그만 · 어제 것 그대로
+wf107 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert "NAVER_HUB_ID: ${{ secrets.NAVER_HUB_ID }}" in wf107 and "NAVER_HUB_SECRET: ${{ secrets.NAVER_HUB_SECRET }}" in wf107 and "[ ! -f trend.json ] || git add trend.json" in wf107
+time.time, H.http, H.POSTS, e107 = sv107; H.E.clear(); H.E.update(e107); os.chdir(cwd107)
 print("OK: 모든 셀프체크 통과")

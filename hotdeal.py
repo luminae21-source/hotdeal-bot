@@ -8496,6 +8496,78 @@ def th_verify(seen):
                                      f"Meta가 지웠거나 계정 제한일 수 있음. Threads 앱 → 설정 → 계정 → 계정 상태 확인")
 
 
+TREND_FILE, TREND_AT, TREND_DAYS, TREND_MAX = "trend.json", "06:00", 14, 20  # DDD(10/29 진우 '미리 준비만' — 사이트·글엔 아직 X): 네이버 쇼핑인사이트 하루 1번 TREND_AT(KST) 뒤 · 클릭 추이 TREND_DAYS일 · 하루 호출 TREND_MAX번 안(월 5만 한도)
+NV_HUB = "https://naverapihub.apigw.ntruss.com/shopping/v1/category/keywords"  # 네이버 API HUB(Data Lab 쇼핑인사이트) — Secrets NAVER_HUB_ID(Client ID)·NAVER_HUB_SECRET, 없으면 건너뜀
+NV_HUB_CAT = {"food": "50000006", "coffee": "50000006", "snack": "50000006", "season": "50000006", "beauty": "50000002", "digital": "50000003", "heat": "50000003",
+              "home": "50000004", "fashion": "50000001", "sport": "50000007"}  # 사이트 칸 -> 네이버쇼핑 1분류 cat_id · 나머지(생필품·주방·세탁·자동차·반려동물) = 생활/건강 50000008
+TREND_KW = ("주방세제", "수세미", "밀크티", "라떼", "캡슐커피", "원두", "쌍화차", "대추차", "감귤", "사과", "꿀스틱")  # Cowork 14:13 진열 후보 품목(10/29 돌림 순서 — 바뀌면 여기) + 최근 진열 tag
+GTREND = "https://trends.google.com/trending/rss?geo=KR"  # 구글 한국 실시간 인기 검색어 RSS(10분 갱신) — 1시간 1번 상위 20
+
+
+def trend(seen):
+    """DDD trend.json(Cowork가 진열·큐레이션 소재 고를 때 읽음 — 글·사이트엔 아직 X):
+    ① naver(하루 1번 TREND_AT 뒤, 키 없으면 건너뜀): TREND_KW + 최근 TREND_DAYS일 진열 tag('·'로 나눈 낱말 = 한 묶음 param)마다 쇼핑인사이트 키워드 클릭 추이(일별 ratio)
+       -> 최근 7일 평균 ÷ 이전 7일 평균(up) 큰 순(이전 0 = new) · 같은 1분류(NV_HUB_CAT — cat_of)끼리 5개씩 1호출(ratio는 호출 안 상대값이라 up만 비교) · 오류 = 그날은 거기까지
+    ② google(1시간 1번): 실검 RSS 상위 20(제목·검색량 표시·관련 기사 제목 1개). 키·주소 쿼리는 로그에 X."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today, stamp, d = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d %H:%M", kst), load(TREND_FILE, {})
+    d0 = json.dumps(d, sort_keys=True)
+    gk = time.strftime("gtr_%Y%m%d%H", kst)
+    if gk not in seen:
+        seen[gk] = {"t": now}
+        try:
+            items = []
+            for it in ET.fromstring(http(GTREND)).iter("item"):
+                f = {c.tag.split("}")[-1]: c for c in it}  # ht: 이름공간은 바뀔 수 있어 끝 이름만
+                news = next((x.text for x in it.iter() if x.tag.endswith("news_item_title") and x.text), "")
+                items.append({"t": (f["title"].text or "").strip(), "n": (getattr(f.get("approx_traffic"), "text", "") or "").strip(), "news": clip(html.unescape(news), 60)})
+            d["google"] = {"at": stamp, "items": [x for x in items if x["t"]][:20]}
+            print("trend google", f"실검 {len(d['google']['items'])}개" + (f" · 1위 {d['google']['items'][0]['t']}" if d["google"]["items"] else ""))
+        except Exception as e:
+            print("trend google", err_brief(e))
+    nk = "ntr_" + today.replace("-", "")
+    if E.get("NAVER_HUB_ID") and E.get("NAVER_HUB_SECRET") and time.strftime("%H:%M", kst) >= TREND_AT and nk not in seen:
+        seen[nk] = {"t": now}  # 하루 1번(실패해도 — 다음 날)
+        since = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - TREND_DAYS * 86400))
+        kws = {k: [k] for k in TREND_KW}
+        for p in load(POSTS, []):
+            if p.get("own") and p.get("shelf") and p.get("tag") and p.get("t", "") >= since and p["tag"] not in kws:
+                kws[p["tag"]] = [w.strip() for w in p["tag"].split("·") if w.strip()][:5]
+        groups = collections.defaultdict(list)
+        for k, ps in kws.items():
+            if ps:
+                groups[NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append((k[:30], ps))
+        end = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))  # 어제까지(오늘은 덜 쌓임)
+        days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - k * 86400)) for k in range(TREND_DAYS, 0, -1)]
+        out, calls = [], 0
+        for cat, ks in groups.items():
+            for k in range(0, len(ks), 5):
+                if calls >= TREND_MAX:
+                    break
+                try:
+                    r = json.loads(http(NV_HUB, {"startDate": days[0], "endDate": end, "timeUnit": "date", "category": cat, "keyword": [{"name": n, "param": ps} for n, ps in ks[k:k + 5]]},
+                                        {"X-NCP-APIGW-API-KEY-ID": E["NAVER_HUB_ID"], "X-NCP-APIGW-API-KEY": E["NAVER_HUB_SECRET"]}, "POST"))
+                except Exception as e:
+                    print("trend naver", err_brief(e))
+                    calls = TREND_MAX  # 오류 = 오늘은 그만
+                    break
+                calls += 1
+                for res in r.get("results") or []:
+                    by = {x.get("period"): float(x.get("ratio") or 0) for x in res.get("data") or []}  # 클릭 없는 날은 빠져 옴 = 0
+                    v = [by.get(x, 0.0) for x in days]
+                    r7, p7 = sum(v[-7:]) / 7, sum(v[:-7]) / max(1, len(v) - 7)
+                    out.append({"kw": res.get("title", ""), "cat": cat, "r7": round(r7, 1), "p7": round(p7, 1), "up": round(r7 / p7, 2) if p7 else None})
+        out.sort(key=lambda x: (float("inf") if x["up"] is None else x["up"], x["r7"]), reverse=True)  # 오르는 순(이전 7일 0 = 새로 뜸 = 맨 앞)
+        out = [x for x in out if x["r7"] or x["p7"]] + [x for x in out if not (x["r7"] or x["p7"])]  # 클릭 기록 없는 것 = 맨 끝
+        if out:
+            line = "오르는 품목: " + " · ".join(f"{x['kw']} ×{x['up']}" if x["up"] else f"{x['kw']} 새로" for x in out[:5] if x["r7"])
+            d["naver"] = {"d": today, "at": stamp, "range": [days[0], end], "line": line, "items": out}
+            print("trend naver", f"{len(out)}개 · 호출 {calls}번 · {line}")
+    if json.dumps(d, sort_keys=True) != d0:
+        json.dump(d, open(TREND_FILE, "w"), ensure_ascii=False, indent=1)
+
+
 METRICS, METRICS_HOUR, METRICS_KEEP = "metrics.json", 5, 14  # 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 조회·반응 -> metrics.json(최근 14일, 그 전은 git 기록) — 아침 08:30 보고가 Chrome 없이 읽음
 PRICE_BANDS = ((10000, "~1만"), (30000, "1~3만"), (50000, "3~5만"), (100000, "5~10만"))  # 가격대(넘으면 '10만~', 못 읽으면 '')
 TOP, TOP_DAYS, TOP_SHARE, TOP_FILL, TOP_BONUS, TOP_BONUS_DAY = "top.json", 14, 0.2, 40, 1, 2  # 10/22 진우 '잘 되는 제품은 꾸준하게': 잘 된 상품 표(top_build) — 지난 14일 Threads 개별 글 상위 20% · 예전 줄 채우기 한 실행 40개 · 토스 후보 가산 +1점 하루 2번까지
@@ -9688,7 +9760,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
