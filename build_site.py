@@ -251,12 +251,13 @@ localStorage.setItem('seen',JSON.stringify([{i:i,n:d.querySelector('.dn').textCo
 def page(title, body, desc="", canonical="", note="", top="", head="", cur="", og="", noindex=False, kind="website", lead="", dis="", ogt=""):
     """모든 쪽 틀(10/24 진우 개편 A → 포털형 2차 N+스토어): 헤더 = 로고 + 핫딜픽 + 🔔 + ♡(위로 밀리면 사라짐) / 검색칸(빨강 2px — 위에 붙어 있음) + lead(홈 = 기획전 넘김 배너·둥근 바로가기 2줄) + 대가성 문구(dis = 홈 짧은 문구) + 본문 + 아래 메뉴 5개(🔔 = 찜 변경 빨간 점 — 선 아이콘 그대로)."""
     t, d = html.escape(title), html.escape(desc[:150])
+    wh = (m := re.search(r"/thumbnails/remote/(\d+)x(\d+)", og)) and m.groups() if og else (1200, 630)  # og 크기: 기본 그림 1200×630 · 상품 사진 = 쿠팡 썸네일 주소에 적힌 크기(657x657 등 — 정사각) · 크기 안 적힌 사진(파트너스 image1 등) = 안 넣음(카톡·페북이 그림을 받아 읽음)
     nav = '<nav class="nav" aria-label="메뉴">' + "".join(f'<a href="{u}"' + (' aria-label="찜한 딜 보기"' if k == "saved" else "") + (' aria-current="page"' if k == cur else "") + f">{svg(k)}{n}"
                                                        + ('<b id="lc"></b>' if k == "saved" else '<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i>' if k == "alarm" else "") + "</a>" for k, n, u in NAV) + "</nav>"
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{t}</title><meta name="description" content="{d}">{'<meta name="robots" content="noindex,follow">' if noindex else ''}
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
-<meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or OG_IMG)}">{f'<meta property="og:image:width" content="{wh[0]}"><meta property="og:image:height" content="{wh[1]}">' if wh else ''}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true">{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
@@ -281,6 +282,7 @@ ALIAS = lambda name: " ".join(w for r, w in ((r"화장지|두루마리|키친타
 
 
 PWA_BG, PWA_DARK = "#F6F7F9", "#0F1013"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
+OG_IMG = BASE + "og-v4.png"  # 사이트 기본 공유 그림(10/29 진우 'A로 해 보자' — 고양이+리트리버, 1200×630) · 새 이름 = 카톡이 옛 og.png를 캐시해서(그림 바꾸면 이름도 바꿈) · cards.og_image는 og.png만 만듦(이 파일 안 건드림)
 IV, SV = "?v=3", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜')
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
@@ -2448,7 +2450,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
     return (f'<!doctype html><html lang="ko"' + (f' class="l{style}"' if style != "ab" else "") + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<title>{t}</title><meta name="description" content="{d}">' + ('<meta name="robots" content="noindex,follow">' if alt else "")
             + f'<link rel="canonical" href="{url}"><meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="website">'
-            f'<meta property="og:url" content="{url}"><meta property="og:image" content="{BASE}og.png"><meta property="og:locale" content="ko_KR">'
+            f'<meta property="og:url" content="{url}"><meta property="og:image" content="{OG_IMG}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:locale" content="ko_KR">'
             f'<link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
             f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">{THEME_JS}'
             f'<style>{LINK_CSS}</style>{gc}</head><body><main>' + "".join(link_top(s, kakao) for s in ("a", "b") if s in style)
@@ -2591,7 +2593,7 @@ def build(posts, out="docs"):
         nav = "" if nav.endswith('"날짜"></nav>') else nav  # 앞뒤 날짜 없음(첫날) = 빈 칸 X(16:00 점검)
         write(out, f"today/{d}/", page(f"오늘의 픽 — {mdk} {malls} 특가 | {TITLE}", f'<h1 class="h">오늘의 픽 · {mdk}</h1>' + (pick_section(d, dps, True) or '<p class="t">이날 고른 상품은 지금 진열에서 빠졌어요.</p>') + nav
                                        + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
-                                       head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 og.png(인스타 카드는 다른 5개 딜이라 X)
+                                       head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 그림 OG_IMG(인스타 카드는 다른 5개 딜이라 X)
         # 날짜 쪽 = 사이트맵 X(TT-2 ① — 사이트맵 = 홈·주제·칸·기록·진행 중 딜)
     try:
         plinks = json.load(open(PROMO_LINKS))
@@ -2608,7 +2610,7 @@ def build(posts, out="docs"):
     ptags = {p.get("tag") for p, _ in promo_now(ps_, today)} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
     evh = f"{BASE}events/" if any(st != "past" for _, st, _ in ps_) else ""
     ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks, icons, today)
-    write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh, ogt=f"기획전 모음 · {TITLE}"))  # og 그림 = 기본 og.png(로고 카드 — Threads 정보 글 링크 카드)
+    write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh, ogt=f"기획전 모음 · {TITLE}"))  # og 그림 = 기본 그림 OG_IMG(Threads 정보 글 링크 카드)
     if evh:
         urls.append((f"{BASE}events/", today))
     cp = card_picks(posts, out)

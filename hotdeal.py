@@ -7016,7 +7016,7 @@ def cal_text(today):
 
 
 def cal_post(seen):
-    """CAL_HOUR '🗓 쇼핑 달력' 정보 글 1번(Threads만 · TEXT + 링크 카드 = 사이트 /events/?ref=thi — og.png 로고 카드라 로고·카드 터치 = 바로 사이트, 본문 끝 줄에도 같은 주소 ·
+    """CAL_HOUR '🗓 쇼핑 달력' 정보 글 1번(Threads만 · TEXT + 링크 카드 = 사이트 /events/?ref=thi — 기본 공유 그림(build_site.OG_IMG) 카드라 로고·카드 터치 = 바로 사이트, 본문 끝 줄에도 같은 주소 ·
     10/25 20시 진우 '정보글은 로고나 링크 터치하면 자동으로 유입되게' · 사진 글 X(링크 카드가 안 붙음)): promos.json(Cowork 매일 17:30)이 지난 글 뒤 바뀐 날만. 묶음 간격만 봄(일지처럼)."""
     key = due(CAL_HOUR, "calpost", seen)
     if not key or not E.get("THREADS_TOKEN") or busy(seen, cap=False):

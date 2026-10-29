@@ -1614,6 +1614,7 @@ S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()
 #        ab = 머리 블록 둘 다 + LINK_V(JS가 하나만 — JS 꺼짐 = A · 주소 v= 고정 · localStorage) · GoatCounter 보기 = 가상 경로 link-a·link-b(LINK_V가 count.js보다 먼저) · 카톡 = https://open.kakao.com/ 주소일 때만
 #        지금 특가 = 🔥 특가 중 · 가격 3일 안 · 쿠팡·토스·네이버 수수료 링크만 · 가격 있는 것만(사진 먼저) · 칸마다 기준 시각(확인·올린 날) · 이름 끝 가격 X · 아이콘 = si/*.svg 그대로 · 사이트맵 = /link/만
 lk3, lb3 = open("docs3/link/index.html").read(), open("docs3/link/b/index.html").read()
+assert all(f'<meta property="og:image" content="{S.BASE}og-v4.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' in x for x in (lk3, lb3))  # /link 공유 그림 = 새 기본 그림(카톡 캐시 피해 새 이름)
 assert S.LINK_STYLE == "ab" and '<html lang="ko"><head>' in lk3 and '<html lang="ko" class="lb"><head>' in lb3 and lk3.count('<div class="va">') == lk3.count('<div class="vb">') == 1 and '<div class="va">' not in lb3 and '<div class="vb">' in lb3
 assert S.LINK_V in lk3 and "LINK" not in lb3 and "hp_link" not in lb3 and lk3.index(S.GC_APP) < lk3.index(S.LINK_V) < lk3.index('src="//gc.zgo.at/count.js"') < lk3.index(S.LINK_GC)  # 변형 정한 뒤 GoatCounter
 assert 'name="robots" content="noindex,follow"' in lb3 and "noindex" not in lk3 and f'<link rel="canonical" href="{S.BASE}link/">' in lk3 and f'<link rel="canonical" href="{S.BASE}link/b/">' in lb3
@@ -1857,13 +1858,13 @@ assert all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "last
 hot8 = {f"{S.BASE}p/{i}.html" for i, h in S.home_pool(sp, sorted({p["t"][:10] for p in sp if not p["text"].startswith("📋")}, reverse=True)).items() if h[0] == 0}
 assert f"https://hotdealpick.kr/today/{td}/" not in locs and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and {u for u in locs if "/p/" in u} == hot8 and 0 < len(hot8) < 34  # TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
 td8 = open(f"docs8/today/{td}/index.html").read()
-assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
+assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og-v4.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
 d8 = open("docs8/p/0.html").read()
 assert '<meta name="description" content="19,900원 · 롤당 663원 · 쿠팡 · 10/1 게시 · 핫딜픽">' in d8 and "<title>휴지0 30롤 19,900원 (쿠팡) | 핫딜픽</title>" in d8 and 'href="https://hotdealpick.kr/rss.xml"' in d8  # 10/14 '검색 유입': 상품명 가격 (몰), 가격·단위가격·몰·날짜
 ld0 = json.loads(d8.split('<script type="application/ld+json">')[1].split("</script>")[0])
 assert ld0 == {"@context": "https://schema.org", "@type": "Product", "name": "휴지0 30롤", "description": S.ld_desc(sp[0]["text"]), "category": "생필품", "offers": {"@type": "Offer", "price": "19900", "priceCurrency": "KRW", "url": "https://hotdealpick.kr/p/0.html",
                                                                                                     "seller": {"@type": "Organization", "name": "쿠팡"}}} and "google-site-verification" not in d8  # 리뷰·별점 X(지어내기 X), 재고(availability) X — 진우 '가격·통화·판매처만'
-assert '<meta property="og:image" content="https://hotdealpick.kr/og.png"><meta property="og:image:width" content="1200">' in d8 and __import__("PIL.Image").Image.open(f"{RD}/docs/og.png").size == (1200, 630)  # 사진 없으면 사이트 대표 그림(cards.og_image, 커밋)
+assert '<meta property="og:image" content="https://hotdealpick.kr/og-v4.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' in d8 and __import__("PIL.Image").Image.open(f"{RD}/docs/og-v4.png").size == (1200, 630) and "og.png" not in d8  # 사진 없으면 사이트 대표 그림(cards.og_image, 커밋)
 gv0, S.GOOGLE_VERIFY = S.GOOGLE_VERIFY, "ab\"c"; assert '<meta name="google-site-verification" content="ab&quot;c">' in S.page("t", ""); S.GOOGLE_VERIFY = gv0
 assert S.seo(3, {"t": "2026-10-05 09:00", "text": "🔥 [롯데온] 생수 2L 24개 (10,000/무료)\n\n싸요"})[:2] == ("생수 2L 24개 10,000원 (롯데온) | 핫딜픽", "10,000원 · 롯데온 · 10/5 게시 · 핫딜픽")  # '원' 없는 가격
 assert S.seo(3, {"t": "2026-10-05 09:00", "text": f"{S.NOTE_STARTS[1]} x\n\n🔥 [토스] 젤리 (</script>)"}) == ("젤리 (</script>) (토스) | 핫딜픽", "토스 · 10/5 게시 · 핫딜픽", "")  # 고지문 X, 가격 못 읽으면 JSON-LD X
@@ -6045,6 +6046,7 @@ ld50 = json.loads(S50.seo(5, cp50("https://ads-partners.coupang.com/i", st="out"
 assert ld50["image"] == "https://ads-partners.coupang.com/i" and "availability" not in ld50["offers"] and ld50["offers"]["seller"] == {"@type": "Organization", "name": "쿠팡"} and "review" not in json.dumps(ld50) and "Rating" not in json.dumps(ld50)
 d50 = tempfile.mkdtemp(); S50.build([cp50("https://ads-partners.coupang.com/i")], d50); p50 = open(f"{d50}/p/0.html").read()
 assert '<meta property="og:image" content="https://ads-partners.coupang.com/i">' in p50 and "og:image:width" not in p50  # 딜 쪽 og:image = 상품 사진
+assert '<meta property="og:image" content="https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/a.jpg"><meta property="og:image:width" content="657"><meta property="og:image:height" content="657">' in S50.page("t", "x", og="https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/a.jpg")  # 쿠팡 썸네일 = 주소에 적힌 크기(정사각) · 1200×630 X
 # 오늘의 픽: 진우 🔥 중 🔁 > 가격 새것(지금 확인가 또는 사흘 안 글) > 단위가 좋음 > 최신 · 몰 섞기(가격 새것끼리) · 하루 1번 저장(PICK_HOUR 뒤), 그 전엔 전날 것
 kst50 = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
 pk50 = lambda i, mall, url, hot=True, fresh=True, rehot=False, now=None: (i, {"t": (kst50 if fresh else "2026-01-01") + " 09:00", "text": f"🔥 [{mall}] 상품{i} (1,000원)", "url": url, "own": 1}, (0 if hot else 2, now, "", [], rehot))
@@ -7182,7 +7184,7 @@ json.dump([{"at": "2026-10-25 09:00", "shelf": True, "url": "https://link.coupan
 po65 = [{"t": "2026-10-25 10:00", "text": "🔥 [쿠팡] 햅쌀 10kg (29,900원)", "url": "https://link.coupang.com/a/r1", "own": 1, "shelf": 1}]
 S65.build(po65, "site"); ix65, ev65, sm65 = (open(f"site/{f}").read() for f in ("index.html", "events/index.html", "sitemap.xml"))
 assert '<section class="pb"' in ix65 and 'class="evb"' not in ix65 and f'href="{S65.BASE}events/" data-gc="mall/event"' in ix65 and f"<loc>{S65.BASE}events/</loc>" in sm65 and "<title>쇼핑 기획전 모음 (10월) | 핫딜픽</title>" in ev65 and "noindex" not in ev65
-assert '<meta property="og:title" content="기획전 모음 · 핫딜픽">' in ev65 and f'<meta property="og:url" content="{S65.BASE}events/">' in ev65 and f'content="{S65.BASE}og.png"' in ev65  # Threads 정보 글 링크 카드 = 로고 카드
+assert '<meta property="og:title" content="기획전 모음 · 핫딜픽">' in ev65 and f'<meta property="og:url" content="{S65.BASE}events/">' in ev65 and f'content="{S65.BASE}og-v4.png"' in ev65  # Threads 정보 글 링크 카드 = 로고 카드
 json.dump({"promos": [P65(id="cp-a", mall="coupang", mall_name="쿠팡", name="햇상품", start="2026-11-20", end="2026-11-30", pre=None, url=None, cta=None, tag="햇상품"), P65(id="kw2", mall="coupang", mall_name="쿠팡", name="쌀 기획", start="2026-10-20", end=None, pre=None, url=None, cta=None, kw="햅쌀")]}, open("promos.json", "w"))
 S65.build(po65, "site"); ix65b = open("site/index.html").read(); assert '<section class="pb"' in ix65b and 'class="evb"' in ix65b; json.dump({"promos": pr65}, open("promos.json", "w"))  # 띠에 없는 행사(7일 밖) = 옛 배너 그대로
 # 사이트 링크 규칙(10/25 20:3x Cowork 최종): ① 수수료 링크 ② 수수료 길이 있는 몰 주소(SITE_KEEP_HOSTS — 쿠팡·옥션 생 주소·뽐뿌·네이버 검색) = 당분간 보임 / ③ 그 밖 = 사이트 모든 목록·검색·RSS·사이트맵 X(새 쪽 X · 채널·데이터 그대로)
