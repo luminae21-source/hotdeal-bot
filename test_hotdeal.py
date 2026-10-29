@@ -3270,7 +3270,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -6532,7 +6532,7 @@ json.dump([{**p, "now": "12,000원"} if p["url"] == U58("A") and p.get("now") el
 time.time = lambda: TK("2026-10-27 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sent58[1][1]["text"] == f"· {L58[:24]} 20,000→12,000원 ▼40% (pid 600)\n옵션 바뀜 의심 — 사이트 📉 칸엔 안 올림. 쿠팡 = events item(옵션 itemId) 확인해 줘", sent58[1][1]["text"]  # 지금가 바뀐 줄만
 json.dump([p for p in P58d if p["url"] not in (U58("A"), U58("J"), "https://naver.me/D")], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK("2026-10-28 09:40"); H.drop_check(sd58); assert len(sent58) == 2 and sd58["dropchk"]["d"] == "2026-10-28"  # 없음 = DM X(그날 끝)
-assert "th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
+assert "th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster" in inspect.getsource(H.main) and "gc_top" not in H.ALERT_STEPS and "drop_check" not in H.ALERT_STEPS  # 올리는 단계 아님 = 업로드 알림 X
 assert "[ ! -f gc_top.json ] || git add gc_top.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.HAS_TOSS, S.EVENTS = sv58[:7]; H.E.clear(); H.E.update(sv58[7]); os.chdir(cwd58)
 # 9-59) (10/24 Cowork 포털형 홈 + 변경 찾기) 홈 = 몰 버튼·품목 아이콘 12칸 → 🔥 실시간 핫딜(가격 근거 3일 안 🔥만 · 기획전 X · 같은 브랜드 1개 · 전체 = 몰 돌아가며 · 몰 탭 · 🆕 올린 순 · 빈 탭 X)
@@ -11253,4 +11253,41 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(tg117) == 1  # 이상 없음 = DM X(로그만)
 assert "site_status(out, posts, it, urls, now_ts)" in inspect.getsource(S.build) and "auto_pick5, status_dm, cp_price" in inspect.getsource(H.main)
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv117[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv117[5]); os.chdir(cwd117)
+# 9-118) KKK-E(와우 멤버스데이 11/2·5·8 · 빼빼로데이 11/6 — Cowork 크롬 쿠팡 확인 → 검색 API): plan.json events 오늘 행사 검색어 그날 1번씩(상한 안 — 남으면 다음 실행) → docs/plan_check.json(검색 순위 그대로) + 추적 상품 가격 · 끔 스위치 · 1단계 상한 그대로
+cwd118, sv118 = os.getcwd(), (time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.json", True
+U118 = "https://link.coupang.com/a/ev1"
+json.dump([{"t": "2026-10-20 10:00", "text": "🔥 [쿠팡] 깨끗한나라 화장지 30롤 (19,900원)", "url": U118, "own": 1}], open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-10-20 10:00", "url": U118, "pid": "81", "item": "I81", "text": "x"}], open("events.json", "w"))
+json.dump({"events": [{"name": "와우 멤버스데이", "days": ["2026-11-02", "2026-11-05", "2026-11-08"], "kws": ["화장지", "세제", "샴푸"]}, {"name": "빼빼로데이", "days": ["2026-11-06"], "kws": ["빼빼로"]}]}, open("docs/plan.json", "w"), ensure_ascii=False)
+kw118, run118 = [], [0]
+def cp118(method, path, body=None):
+    if run118[0] >= 2:
+        raise H.CpLimit()
+    run118[0] += 1; kw = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]); kw118.append(kw)
+    return {"productData": [{"productId": 81, "productName": "깨끗한나라 화장지 30롤", "productPrice": 17900, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=81&itemId=I81", "isRocket": True,
+                             "productImage": "https://thumbnail.coupangcdn.com/a.jpg"}, {"productId": 82, "productName": f"{kw} 다른 상품", "productPrice": 5000}] if kw == "화장지" else [{"productId": 90, "productName": kw, "productPrice": 3000}]}
+H.coupang, s118 = cp118, {}
+H.AUTO_ON["event"] = False; time.time = lambda: TK("2026-11-02 10:00"); H.ev_check(s118); assert not kw118  # 끔 스위치
+H.AUTO_ON["event"] = True; time.time = lambda: TK("2026-11-03 10:00"); H.ev_check(s118); assert not kw118  # 행사 날 아님
+time.time = lambda: TK("2026-11-02 10:00")
+with contextlib.redirect_stdout(io.StringIO()) as o118:
+    H.ev_check(s118)
+assert kw118 == ["화장지", "세제"] and "남음 1개(다음 실행)" in o118.getvalue(), (kw118, o118.getvalue())  # 실행 몫(상한) 안에서만
+pc118 = json.load(open("docs/plan_check.json"))["2026-11-02"]["와우 멤버스데이"]
+assert pc118["화장지"][0] == {"rank": 1, "pid": "81", "item": "I81", "name": "깨끗한나라 화장지 30롤", "price": 17900, "rocket": True, "img": "https://thumbnail.coupangcdn.com/a.jpg", "url": "https://link.coupang.com/re/AFFSDP?pageKey=81&itemId=I81"} and pc118["화장지"][1]["rank"] == 2
+assert s118["cpq"]["m"][U118] == [17900, "2026-11-02 10:00", "I81"] and s118["cpq"]["ms"][U118] == "api"  # 추적 상품 = 같은 옵션 가격 관측
+run118[0] = 0
+with contextlib.redirect_stdout(io.StringIO()) as o118:
+    H.ev_check(s118); run118[0] = 0; H.ev_check(s118)
+assert kw118 == ["화장지", "세제", "샴푸"] and "오늘 끝" in o118.getvalue() and set(json.load(open("docs/plan_check.json"))["2026-11-02"]["와우 멤버스데이"]) == {"화장지", "세제", "샴푸"}  # 그날 1번씩
+run118[0] = 0; time.time = lambda: TK("2026-11-06 10:00")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ev_check(s118)
+assert kw118[-1] == "빼빼로" and set(json.load(open("docs/plan_check.json"))) == {"2026-11-06"}  # 3일 보관
+assert set(H.AUTO_ON) == {"shelf", "repost", "pick5", "status", "event"} and (H.CP_HOUR, H.CP_SEARCH_HOUR, H.CP_RUN, H.CP_SEARCH_RUN) == (25, 6, 6, 2)  # 1단계 끔 스위치 5개 · 상한 그대로
+assert "status_dm, ev_check, cp_price" in inspect.getsource(H.main)
+(time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS) = sv118[:6]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv118[6]); os.chdir(cwd118)
+for k in ("cpn", "cpu", "cpo"):
+    H.RUN.pop(k, None)
 print("OK: 모든 셀프체크 통과")
