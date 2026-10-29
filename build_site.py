@@ -1944,6 +1944,34 @@ if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);el
 ld_tag = lambda ld: '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"  # 상품 이름에 '</script>'가 있어도 안 깨지게(seo()와 같게)
 
 
+def clips_page(out):
+    """진우용 네이버 클립 쪽 /clips/(10/29 진우 '하루 5~7개' — noindex·사이트맵 X·메뉴 X): docs/clips/clips.json(hotdeal.clip_post) 가장 최근 날 = 펼침, 그 전 날 = 접힘.
+    카드마다 영상 미리보기 + 영상 저장(download) + 제목·설명 복사 + 태그 검색어(쇼핑커넥트에서 찾을 말) + 올릴 시각."""
+    try:
+        js = json.load(open(f"{out}/clips/clips.json"))
+    except (OSError, ValueError):
+        js = {}
+    e, days = html.escape, sorted((d for d in js if re.fullmatch(r"\d{4}-\d\d-\d\d", d) and isinstance(js[d], list)), reverse=True)
+    def card(d, c):
+        k, f = f"{d}-{c['n']}", f"/clips/{d}/{e(c['file'])}"
+        return (f'<li class="clp"><video src="{f}" controls playsinline preload="metadata"></video><b>{c["n"]}. {e(c["title"])}</b>'
+                f'<small>올릴 시각 {e(c["at"])} · 태그 검색어: {e(" / ".join(c.get("tags") or []))}</small><div class="cbs">'
+                f'<a class="cb" href="{f}" download="hotdealpick_{d}_{e(c["file"])}">영상 저장</a><button class="cb" type="button" data-copy="t{k}">제목 복사</button>'
+                f'<button class="cb" type="button" data-copy="d{k}">설명 복사</button></div><textarea class="cp" id="t{k}" readonly>{e(c["title"])}</textarea>'
+                f'<textarea class="cp" id="d{k}" readonly>{e(c["desc"])}</textarea></li>')
+    day = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
+    body = (f'<h1>네이버 클립 {day(days[0])} · {len(js[days[0]])}편</h1><ul class="clps">' + "".join(card(days[0], c) for c in js[days[0]]) + "</ul>" if days
+            else "<h1>네이버 클립</h1><p>아직 오늘 클립이 없어요 — 매일 아침 6~7시에 만들어져요.</p>")
+    body += "".join(f'<details><summary>{day(d)} 클립 {len(js[d])}편</summary><ul class="clps">' + "".join(card(d, c) for c in js[d]) + "</ul></details>" for d in days[1:])
+    css = ("<style>.clps{list-style:none;padding:0;margin:0}.clp{margin:0 0 22px;display:grid;gap:6px}.clp video{width:100%;max-width:360px;border-radius:12px;background:#000}"
+           ".clp small{color:var(--sub)}.cbs{display:flex;gap:8px;flex-wrap:wrap}.cb{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-weight:700;text-decoration:none}"
+           ".cp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}</style>")
+    js_copy = ("<script>document.addEventListener('click',function(ev){var b=ev.target.closest('[data-copy]');if(!b)return;var a=document.getElementById(b.getAttribute('data-copy'));"
+               "function ok(){b.textContent='복사됨 ✓'}function old(){a.select();document.execCommand('copy');ok()}"
+               "if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(a.value).then(ok,old)}else{old()}})</script>")
+    return page(f"네이버 클립 · {TITLE}", body + js_copy, "진우용 네이버 클립 영상·문구", noindex=True, head=css)
+
+
 def write(out, rel, text):
     """docs/rel(…/ 로 끝나면 index.html) 쓰기 — 폴더 만들기."""
     f = f"{out}/{urllib.parse.unquote(rel)}" + ("index.html" if rel.endswith("/") or not rel else "")
@@ -2611,6 +2639,7 @@ def build(posts, out="docs"):
     evh = f"{BASE}events/" if any(st != "past" for _, st, _ in ps_) else ""
     ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks, icons, today)
     write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh, ogt=f"기획전 모음 · {TITLE}"))  # og 그림 = 기본 그림 OG_IMG(Threads 정보 글 링크 카드)
+    write(out, "clips/", clips_page(out))  # 진우용 네이버 클립(noindex·사이트맵 X·메뉴 X)
     if evh:
         urls.append((f"{BASE}events/", today))
     cp = card_picks(posts, out)

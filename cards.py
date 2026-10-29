@@ -371,7 +371,7 @@ def _wav(b):
         return fr, w.getframerate(), w.getnchannels(), w.getnframes() / w.getframerate()
 
 
-def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
+def reel(items, date_label, out, music=None, say=None, safe=False, label=None, note=None):
     """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 1080x1920 MP4(15~20초). -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
     music(음악 파일): 배경음악(짧으면 반복·앞뒤 페이드) · say(10/24 Cowork·진우 릴스 업그레이드): [(자막, WAV bytes)] 표지·딜·끝 장마다 나레이션
@@ -379,7 +379,8 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
     디자인: 크림색 바탕 + 먹색 글자 + 포인트색은 숫자에만, 왼쪽 정렬 한 기준선, 프리텐다드, 흰 타일 위 이모지,
     장마다 켄번스(1.00→1.06 줌인·줌아웃 번갈아 — 소수점 확대라 글자 안 떨림) + 장 사이 0.3초 크로스페이드, 가격은 이름보다 0.2초 늦게 떠오름.
     첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치.
-    safe(Q 네이버 클립): 다 그린 장면을 CLIP_SAFE배로 줄여 왼쪽 위에 — 아래 25%·오른쪽 15%엔 글자 X(바탕색만) · label = 첫 장 위 한 줄(기본 '오늘의 가성비 1위')."""
+    safe(Q 네이버 클립): 다 그린 장면을 CLIP_SAFE배로 줄여 왼쪽 위에 — 아래 25%·오른쪽 15%엔 글자 X(바탕색만) · label = 첫 장 위 한 줄(기본 '오늘의 가성비 1위').
+    note(10/29 네이버 클립) = 끝 장 맨 아래 한 줄('가격은 쿠팡 M/D H시 기준 · 결제 전 최종가 확인')."""
     import subprocess, tempfile, wave
     items = [_norm(it) for it in items[:3]]
     for it in items:
@@ -485,6 +486,8 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None):
          (_text("프로필 링크에서 전체 딜 · 구매 링크", pf("Regular", 40), light), 1075, 0.42),
          (_text("텔레그램 실시간 알림  @hotdeal_pick", pf("Regular", 40), light), 1135, 0.48),
          (_text("일부 링크는 제휴 링크로, 구매 시 수수료를 받을 수 있어요.", pf("Regular", 30), dim), 1210 if say else 1380, 0.55)]
+    if note:
+        o.append((_text(note, pf("Regular", 30), light), 1262 if say else 1430, 0.6))  # 자막 띠(SUB_Y 위 ~150px) 위
 
     if len(items) == 1 and top.get("photo"):  # FF-3 단일 상품 편 = 표지·딜·끝 세 장 다 그 상품 실사진
         night = night.copy()

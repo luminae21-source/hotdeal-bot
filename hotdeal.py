@@ -3,7 +3,7 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -5156,7 +5156,7 @@ def reel_top(ps, n=3, tag="clip"):
     return out
 
 
-def make_reel(top, kst, out, k=0, safe=False, label=None):
+def make_reel(top, kst, out, k=0, safe=False, label=None, note=None):
     """릴스 1편(모아보기·샘플 같이): 재료 채움 -> 나레이션(GOOGLE_TTS_KEY 있으면) -> 영상(cards.reel) -> (경로, 캡션, 나레이션 됐는지).
     배경음악 = 라이선스 기록된 곡(MUSIC.md) 중 오늘 차례 + k. 캡션 = 대가성 문구 맨 앞(ig_notes) 그대로."""
     import cards
@@ -5169,7 +5169,7 @@ def make_reel(top, kst, out, k=0, safe=False, label=None):
             break
     if E.get("GOOGLE_TTS_KEY"):
         print("reel", "나레이션 " + (("이름 8자" if kw.get("nmax") else "단위가격 뺌" if kw else "기본") if voice else "X — 글자 + 음악"))
-    path = cards.reel([{**card_item(p)[0], "photo": ig_photo(p, "ig_photos")[0]} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
+    path = cards.reel([{**card_item(p)[0], "photo": ig_photo(p, "ig_photos")[0]} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label, "note": note} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
@@ -5205,7 +5205,9 @@ def reel_samples(seen):
         tg("sendMessage", chat_id=ADMIN, text=f"🎬 릴스 샘플 {n} 실패({type(e).__name__}) — 다음 편은 다음 실행에")
 
 
-CLIP_AT, CLIP_LINK = {"A": 9, "B": 13}, "hotdealpick.kr/link?ref=clip"  # Q(10/26 진우): 네이버 클립 하루 2편 -> 관리자 텔레그램만(진우가 클립에 직접 올림) · 프로필 링크(진우가 클립 프로필에)
+CLIP_FROM, CLIP_MSG, CLIP_LAST, CLIP_RUN, CLIP_KEEP, CLIP_DIR = "06:00", "07:00", "09:00", 2, 3, "docs/clips"  # 10/29 진우 '1일 1개는 적어. 5-7개는 올리자': 06시부터 실행마다 2편(작업 6분 제한) -> 07시 관리자 1줄 · 3일 지난 폴더 지움
+CLIP_HOURS = ("08", "11", "13", "17", "19", "21")  # 올릴 시각 추천(편마다 돌림)
+CLIP_NOTE = "[광고] 네이버 쇼핑 커넥트·쿠팡 파트너스 활동으로 수수료를 받을 수 있어요\n영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"  # 설명 첫 두 줄(고정)
 
 
 def clip_pool(posts, now):
@@ -5215,42 +5217,88 @@ def clip_pool(posts, now):
                           and "원" in parse(title_of(p["text"]))[2]), key=lambda p: p["t"], reverse=True), key=lambda p: -p.get("s", 0))
 
 
+def clip_topics(seen, posts, kst):
+    """오늘 클립 주제 7개(순서 = 편 번호) -> [(키, 화면 한 줄, 검색어, 후보 글)] — 후보는 reel_top이 실사진(쿠팡) 3개를 고름(토스·네이버·올리브영 = 사진 X라 자동으로 빠짐).
+    ① 어제 블로그 키워드 표(events tag '… 2026') ②③ 오늘 큐레이션 2개(img = 그 상품 사진, 단가 싼 순) ④ 어제 17시 뒤 쿠팡 딜 ⑤ 👍 꾸준템(cp_shelf) ⑥ 가격 내림(changes.json drop, ▼% 큰 순) ⑦ 화장품(3일 안 쿠팡 뷰티)."""
+    day, yday = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(kst) - 86400))
+    num = lambda p: won(re.sub(r"^[^당]*당", "", unit_of(p))) or float("inf")  # '100g당 1,234원' -> 1234(단가 없음 = 맨 뒤)
+    tags = [p for p in posts if str(p.get("tag") or "").endswith(" 2026") and p["t"].startswith(yday)]
+    kw = tags[0]["tag"][:-5].strip() if tags else ""
+    out = [("kw", f"{kw} 가성비", kw, [p for p in tags if p["tag"] == tags[0]["tag"]])]
+    curs = [e for e in cur_events(seen) if e["at"].startswith(day) and e["img"]][:2]
+    for k, e in enumerate(curs + [None] * (2 - len(curs)), 1):
+        ps = sorted((p for p in posts if e and p.get("img") in e["img"]), key=num) if e else []
+        word = str(e.get("topic") or "").strip() if e else ""
+        out.append((f"cur{k}", f"{word} 모아보기", word, ps))
+    eve = sorted((p for _, p in day_deals(posts, yday) if p["t"][11:13] >= "17" and shop_of(p) == "coupang"), key=lambda p: p["t"])
+    out.append(("eve", "어제 저녁 쿠팡 특가", "", eve))
+    out.append(("steady", "꾸준템", "", [posts[i] for i, *_ in cp_shelf(posts, kst, True)]))
+    ch = load("docs/changes.json", {}).get("items") or {}
+    drop = [posts[int(k)] for k, v in sorted(ch.items(), key=lambda kv: -(kv[1].get("p") or 0)) if "drop" in (v.get("k") or []) and k.isdigit() and int(k) < len(posts)]
+    out.append(("drop", "가격 내려간 상품", "", drop))
+    days = [time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(kst) - d * 86400)) for d in range(3)]
+    out.append(("beauty", "화장품 특가", "", [p for d in days for _, p in day_deals(posts, d) if cat_of(p) == "beauty"]))
+    return out
+
+
+def clip_text(n, key, label, word, top, kst):
+    """클립 1편 기록: 제목(검색어 맨 앞·30자 안) · 설명(대가성 2줄 고정 + 상품 줄 + 해시태그 5개) · 태그 검색어(네이버 쇼핑커넥트에서 찾을 말) · 올릴 시각 — 효능·써 본 척·최저가 말 X(이름·가격만)."""
+    name = lambda p: parse(title_of(p["text"]))[1]
+    tag = lambda p: " ".join([w for w in re.sub(r"\([^)]*\)|\[[^\]]*\]|,", " ", name(p)).split() if not re.search(r"\d", w)][:4])  # 수량·용량 낱말 빼고 앞 4낱말
+    word = word or "·".join(list(dict.fromkeys(tag(p).split()[-1] for p in top if tag(p)))[:2])  # 검색어 = 키워드 표·큐레이션 주제, 없으면 상품 품목 낱말(이름 끝 낱말) 2개
+    title = clip(f"{word} {label} TOP{len(top)}" if word not in label else f"{label} TOP{len(top)}", 30)
+    rows = "\n".join(f"{i}. {clip(name(p), 40)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" for i, p in enumerate(top, 1))
+    desc = f"{CLIP_NOTE}\n\n{rows}\n\n{ig_tags(top, n)}"
+    return {"n": n, "topic": key, "title": re.sub(r"최저가?", "", title).strip(), "desc": re.sub(r"최저가", "특가", desc), "tags": [tag(p) for p in top], "at": CLIP_HOURS[(n - 1) % len(CLIP_HOURS)] + ":00", "file": f"{n:02d}.mp4"}
+
+
 def clip_post(seen):
-    """Q 네이버 클립 영상(1080x1920·30fps·H.264 + AAC 44.1kHz·15~20초 · 첫 장 '광고·제휴' · 아래 25%·오른쪽 15% 글자 X — cards.reel safe) 하루 2편, 실행마다 1편:
-    A(CLIP_AT A시~) = 쿠팡 핫딜 3(3일 안 지금 특가 딜 점수 > 최근 순 · 지난 클립 상품 X) · B(B시~) = 쿠팡 핫딜 1개(같은 후보 다음 것 — 장면 3장 = 표지·딜·끝 다 그 상품 실사진)
-    FF(10/26 진우 '릴스는 늘 실제 사진으로'): 상품 = 실사진 있는 것만(reel_top — 쿠팡 파트너스 API·cp_img 사진, 토스·네이버 X) · 없으면 다음 후보 · 못 채우면 그 편 건너뜀('clip skip 사진 부족 n/3')
-    · 첫 화면 = 1위 실사진 꽉 + 숫자 훅 띠. 네이버 쇼핑커넥트 B 편 = 네이버 사진을 못 써서 멈춤(사진 권한 확인 뒤 다시 — 그때까지 'B 대신 쿠팡 단일 상품').
-    캡션 = 쿠팡 파트너스 문구 + '프로필 링크에서 보기' + 해시태그 5개 · 파일 = clip_MMDD_A/B.mp4 · 재료 없음·실패 = 그날 그 편 X(관리자에게 1줄) · seen clip = 이번 달 보낸 수(일요일 DM 줄)."""
+    """네이버 클립(10/29 진우 '하루 5~7개' — 진우가 폰으로 직접 올림, 쇼핑커넥트 태그는 진우가 고름): CLIP_FROM부터 실행마다 CLIP_RUN편 — clip_topics 차례대로 실사진 3개(reel_top)면
+    make_reel(1080×1920·15~20초·자막·나레이션·곡 = 편마다 다름 · 끝 장 '가격은 쿠팡 M/D H시 기준 · 결제 전 최종가 확인') -> docs/clips/날짜/NN.mp4 + docs/clips/clips.json{날짜: [clip_text]}
+    · 3개 밑 = 그 편 건너뜀(로그) · 실패 = 그 편 X(다시 X) · CLIP_MSG 뒤 다 됐으면(늦어도 CLIP_LAST) 관리자 1줄 '🎬 오늘 클립 N편 → /clips/' · CLIP_KEEP일 지난 폴더 지움 · seen clip m·n = 이번 달 수(일요일 DM)."""
     kst, now = time.gmtime(time.time() + 9 * 3600), time.time()
-    day, st = time.strftime("%Y-%m-%d", kst), seen.get("clip") or {}
-    k = next((k for k, h in CLIP_AT.items() if kst.tm_hour >= h and st.get(k) != day), None)
-    if not k:
+    day, hm, st = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst), seen.get("clip") or {}
+    if hm < CLIP_FROM:
         return
-    st = seen["clip"] = {**st, "t": now, k: day}  # 먼저 기록(실패해도 15분마다 다시 만들지 않게)
+    if st.get("d") != day:
+        st = {**{k: v for k, v in st.items() if k in ("m", "n")}, "d": day, "done": []}
+    st = seen["clip"] = {**st, "t": now}
     if st.get("m") != day[:7]:
         st.update(m=day[:7], n=0)
-    posts, need = load(POSTS, []), 3 if k == "A" else 1
-    ds = [p for p in clip_pool(posts, now) if p["url"] not in st.get("u", [])]
-    top = reel_top(ds, need)  # FF: 실사진 있는 것만 · 같은 상품 두 번 X · 모자라면 'clip skip 사진 부족 n/3'
-    label = None if k == "A" else "쿠팡 핫딜 픽"
-    cap = f"{DISCLOSURE}\n\n" + ("오늘의 쿠팡 핫딜 3" if k == "A" else "오늘의 쿠팡 핫딜") + " — 프로필 링크에서 보기\n\n" + ig_tags(top, kst.tm_mday)
-    if len(top) < need:  # 재료 없음 = 그날 그 편 X — 진우가 고장으로 안 보게 1줄
-        few = len({p["url"] for p in ds}) < need
-        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k}" + (" (B 대신 쿠팡 단일 상품)" if k == "B" else "") + " — 오늘은 건너뜀("
-           + (f"최근 3일 쿠팡 핫딜이 {need}개 안 됨" if few else f"실사진 있는 상품 {len(top)}/{need}") + ")")
-        return
-    out = os.path.join(tempfile.gettempdir(), time.strftime(f"clip_%m%d_{k}.mp4", kst))
-    try:
-        said = make_reel(top, kst, out, ord(k) - 64, safe=True, label=label)[2]  # 곡 = 오늘 차례 + 1·2(A·B 다르게)
-        tg_video(out, cap)
-    except Exception as e:
-        print("clip", k, repr(e))
-        tg("sendMessage", chat_id=ADMIN, text=f"🎬 네이버 클립 {k} 실패({type(e).__name__}) — 오늘 {k}편은 건너뜀")
-        return
-    st["n"] = st.get("n", 0) + 1
-    st["u"] = (st.get("u", []) + [p["url"] for p in top])[-40:]  # 만든 상품(A·B) = 다음 클립에 다시 X
-    tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True}, text=f"🎬 네이버 클립 {k}" + (" — B 대신 쿠팡 단일 상품(네이버 사진 권한 확인 전)" if k == "B" else "")
-       + f" — {os.path.basename(out)} · 실사진 {len(top)}개 · 나레이션 {'O' if said else 'X'} · 위 영상 캡션 그대로\n프로필 링크: {CLIP_LINK}")
+    jf = f"{CLIP_DIR}/clips.json"
+    js = {k: v for k, v in load(jf, {}).items() if re.fullmatch(r"\d{4}-\d\d-\d\d", k) and k > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - CLIP_KEEP * 86400))}
+    for d in os.listdir(CLIP_DIR) if os.path.isdir(CLIP_DIR) else []:
+        if re.fullmatch(r"\d{4}-\d\d-\d\d", d) and d not in js and d != day:
+            shutil.rmtree(f"{CLIP_DIR}/{d}")  # 3일 지난 영상 폴더(저장소 크기)
+    made, todo = js.setdefault(day, []), [t for t in clip_topics(seen, load(POSTS, []), kst) if t[0] not in st["done"]]
+    used, k = {u for c in made for u in c.get("u", [])}, 0
+    for key, label, word, ps in todo:
+        if k >= CLIP_RUN:
+            break
+        st["done"].append(key)  # 먼저 기록(실패해도 15분마다 다시 만들지 않게)
+        top = reel_top([p for p in ps if p.get("url") not in used], 3, f"clip {key}")
+        if len(top) < 3:
+            continue
+        n, k = len(made) + 1, k + 1
+        at = min(p.get("chk") or p["t"] for p in top)
+        note = f"가격은 쿠팡 {int(at[5:7])}/{int(at[8:10])} {int(at[11:13])}시 기준 · 결제 전 최종가 확인"
+        os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
+        try:
+            said = make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=note)[2]  # 곡 = 오늘 차례 + n(편마다 다름)
+        except Exception as e:
+            print("clip", key, repr(e))
+            continue
+        made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said})
+        used |= {p["url"] for p in top}
+        st["n"] = st.get("n", 0) + 1
+        print(f"clip {n:02d} {key} · {made[-1]['title']} · 나레이션 {'O' if said else 'X'}")
+    os.makedirs(CLIP_DIR, exist_ok=True)
+    json.dump({d: v for d, v in js.items() if v}, open(jf, "w"), ensure_ascii=False, indent=1)
+    left = len(st["done"]) < 7
+    if hm >= CLIP_MSG and st.get("sent") != day and (not left or hm >= CLIP_LAST):
+        st["sent"] = day
+        tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True},
+           text=f"🎬 오늘 클립 {len(made)}편 → {SITE}clips/" + "".join(f"\n{c['n']}. {c['title']} — {SITE}clips/{day}/{c['file']}" for c in made))
 
 
 def licensed():

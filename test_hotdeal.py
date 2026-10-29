@@ -8401,67 +8401,69 @@ with contextlib.redirect_stdout(io.StringIO()) as o74e:
 assert len(a74) == 1 and "클릭 150 → 150" in a74[0] and "주문 2 → 3" in a74[0] and "1.3% → 2.0%" in a74[0] and cr74[:2] == ["/reports/clicks?startDate=20261019&endDate=20261025", "/reports/orders?startDate=20261019&endDate=20261025&page=0"]
 assert "150" not in o74e.getvalue() and "주문" not in o74e.getvalue()  # 주문·클릭 숫자 = 공개 로그 X
 (H.ai_voice, H.random, H.th_text, H.th_img, H.th_reply, H.TH_VOICE, H.coupang, H.HAS_CP, H.tg, time.time, H.th_reply_ok) = sv74
-# 9-75) Q 네이버 클립(10/26 진우): 하루 2편 → 관리자 텔레그램만 · A(9시~) 쿠팡 핫딜 3(3일 안 지금 특가·가격 있는 한 상품 글 · 점수 > 최근 순 · 같은 상품 1번 · 3개일 때만) · B(13시~) = FF-3 쿠팡 단일 상품(쇼핑커넥트 편 = 네이버 사진 권한 전 멈춤) ·
-#       FF 상품 = 실사진 있는 것만(없으면 다음 후보 · 못 채우면 그 편 X 'clip skip 사진 부족 n/3') · 캡션 = 쿠팡 파트너스 문구 + '프로필 링크에서 보기' + 해시태그 5개 · clip_MMDD_A/B.mp4 · 실패 = 그날 X · 이번 달 N개(일요일 DM)
+# 9-75) 네이버 클립(10/29 진우 '1일 1개는 적어. 5-7개는 올리자' — 진우가 폰으로 직접 올림): 06시부터 실행마다 2편 · 주제 7개(① 어제 블로그 키워드 표 ②③ 오늘 큐레이션 ④ 어제 17시 뒤 쿠팡 ⑤ 👍 꾸준템 ⑥ 가격 내림 ⑦ 화장품) · 실사진 3개 밑 = 그 편 X
+#       docs/clips/날짜/NN.mp4 + clips.json(제목 = 검색어 맨 앞 30자 안 · 설명 = 대가성 2줄 고정 + 상품 줄 + 해시태그 5개 · 태그 검색어 · 올릴 시각 돌림) · 끝 장 '가격은 쿠팡 M/D H시 기준' · 07시 관리자 1줄 · 3일 지난 폴더 지움 · /clips/ 쪽(noindex)
 #       영상 = 1080x1920·30fps·H.264 + AAC 44.1kHz·15~30초 · 첫 장 '광고·제휴' · 아래 25%·오른쪽 15% = 바탕색만(글자 X)
-sv75 = (H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM)
-mk75, tv75, a75 = [], [], []
-H.make_reel = lambda top, kst, out, k=0, safe=False, label=None: mk75.append((top, out, k, safe, label)) or (out, "IGCAP", True)
-H.tg_video = lambda path, cap: tv75.append((path, cap)) or {"message_id": 1}
-H.tg = lambda m, **k: a75.append(k.get("text")) or {"message_id": 1}
+sv75 = (H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM, H.cur_events, H.cp_shelf, H.load)
+mk75, a75 = [], []
+def mkr75(top, kst, out, k=0, safe=False, label=None, note=None):
+    mk75.append((top, out, k, safe, label, note)); open(out, "wb").write(b"mp4"); return out, "IGCAP", True
+H.make_reel, H.tg = mkr75, (lambda m, **k: a75.append(k.get("text")) or {"message_id": 1})
 H.POSTS = "posts75.json"
-P75 = [{"t": "2026-10-18 09:00", "text": f"{H.NAVER_NOTE}\n\n👍 [네이버] 열흘 전 쇼핑커넥트 글 (9,900원)", "url": "https://naver.me/old75", "s": 5},
-       {"t": "2026-10-25 10:00", "text": "🔥 [쿠팡] 코멧 손난로 30개 (8,860원/무료)", "url": "https://link.coupang.com/a/c1", "s": 5},
-       {"t": "2026-10-25 11:00", "text": "🔥 [쿠팡] 코멧 손난로 30개 (8,860원/무료)", "url": "https://link.coupang.com/a/c1", "s": 5},
-       {"t": "2026-10-26 08:00", "text": "🔥 [쿠팡] 크리넥스 휴지 30롤 (19,900원/무료)", "url": "https://link.coupang.com/a/c2", "s": 7},
-       {"t": "2026-10-26 08:30", "text": "🔥 [G마켓] 우유 (1,000원/무료)", "url": "https://link.gmarket.co.kr/x", "s": 9},
-       {"t": "2026-10-23 08:30", "text": "🔥 [쿠팡] 사흘 전 딜 (1,000원/무료)", "url": "https://link.coupang.com/a/c0", "s": 9},
-       {"t": "2026-10-26 06:00", "text": "🔥 [쿠팡] 지금은 특가 아님 (1,000원/무료)", "url": "https://link.coupang.com/a/cw", "s": 9, "st": "wait"},
-       {"t": "2026-10-25 07:00", "text": f"{H.DISCLOSURE}\n\n⏰ 오늘의 쿠팡 골드박스 TOP2\n1. 가 — 1,000원\n2. 나 — 2,000원", "url": "https://link.coupang.com/a/gb", "s": 9},
-       {"t": "2026-10-26 07:00", "text": "🔥 [쿠팡] 생수 2L 12병 (6,900원/무료)", "url": "https://link.coupang.com/a/c3", "s": 3},
-       {"t": "2026-10-26 07:10", "text": "🔥 [쿠팡] 세제 (6,900원/무료)", "url": "https://link.coupang.com/a/c4", "s": 1},
-       {"t": "2026-10-26 07:20", "text": "🔥 [쿠팡] 물티슈 10팩 (9,900원/무료)", "url": "https://link.coupang.com/a/c5", "s": 5},
-       {"t": "2026-10-26 08:40", "text": "🔥 [쿠팡] 키친타월 6롤 (5,900원/무료)", "url": "https://link.coupang.com/a/c6", "s": 2},
-       {"t": "2026-10-26 08:45", "text": "🔥 [쿠팡] 수세미 10개 (2,900원/무료)", "url": "https://link.coupang.com/a/c7", "s": 0},
-       {"t": "2026-10-25 22:37", "text": f"{H.NAVER_NOTE}\n\n👍 [네이버] 지도표 성경김 재래 전장김 30g 20봉 (38,900원)", "url": "https://naver.me/FNtZNH4t", "s": 5},
-       {"t": "2026-10-26 00:02", "text": f"{H.NAVER_NOTE}\n\n👍 [네이버] 오딧세이 로맨틱 더 클래식 2종 세트 (37,350원)", "url": "https://naver.me/5t7Tlpkh", "s": 5}]
+cp75 = lambda n, t, nm, **k: {"t": t, "text": f"🔥 [쿠팡] {nm} (9,900원/무료)", "url": f"https://link.coupang.com/a/{n}", "s": 5, "img": f"https://thumbnail.coupangcdn.com/{n}.jpg", **k}
+P75 = [cp75("k1", "2026-10-28 19:00", "곰표 전기요 슈퍼싱글", tag="전기요 2026", shelf=1), cp75("k2", "2026-10-28 19:05", "한일 카본 전기요 퀸", tag="전기요 2026", shelf=1),
+       cp75("k3", "2026-10-28 19:10", "보국 전기요 싱글 2개", tag="전기요 2026", shelf=1, chk="2026-10-29 05:10"),
+       cp75("e1", "2026-10-28 17:10", "페리오 칫솔 10개"), cp75("e2", "2026-10-28 18:00", "센소다인 치약 3개"), cp75("e3", "2026-10-28 21:00", "크리넥스 휴지 30롤"),
+       cp75("e0", "2026-10-28 16:00", "오후 네 시 딜 손난로"), {"t": "2026-10-28 20:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)", "url": "https://link.gmarket.co.kr/x", "s": 9},
+       cp75("c1", "2026-10-27 10:00", "그릭요거트 400g 2개", unit="100g당 910원"), cp75("c2", "2026-10-27 10:00", "그릭요거트 90g 8개", unit="100g당 831원"), cp75("c3", "2026-10-27 10:00", "그릭요거트 100g 3개", unit="100g당 2,563원"),
+       cp75("s1", "2026-10-20 10:00", "남양 라떼 스틱 100개"), cp75("s2", "2026-10-20 10:00", "밀크티 라떼 스틱 50개"), cp75("s3", "2026-10-20 10:00", "세탁 세제 시트 120매"), cp75("s4", "2026-10-20 10:00", "주방 세제 리필 2L"),
+       cp75("d1", "2026-10-27 09:00", "코카콜라 제로 30캔"), cp75("d2", "2026-10-27 09:00", "문풍지 6m 2개"),
+       cp75("b1", "2026-10-29 01:00", "메디힐 토너 패드 100매"), cp75("b2", "2026-10-28 02:00", "선크림 50ml 2개")]
 json.dump(P75, open("posts75.json", "w"), ensure_ascii=False)
+H.cur_events = lambda seen=None: [{"at": "2026-10-29 18:40", "topic": "그릭요거트", "img": [P75[k]["img"] for k in (10, 8, 9)], "text": "", "link": ""},
+                                  {"at": "2026-10-28 18:40", "topic": "어제 큐레이션", "img": [P75[11]["img"]], "text": "", "link": ""}]
+H.cp_shelf = lambda posts, kst, steady: [(next(i for i, p in enumerate(posts) if p["url"].endswith(n)), "", "", "", "") for n in ("e3", "s1", "s2", "s3", "s4")] if steady else []
+os.makedirs("docs", exist_ok=True); json.dump({"items": {str(n): {"k": ["drop"], "p": p} for n, p in ((15, 5), (16, 12))}}, open("docs/changes.json", "w"))
+igp75, H.ig_photo = H.ig_photo, lambda p, d, seen=None: (None, "") if "/a/" not in (p.get("url") or "") or p["url"].endswith("b2") else ("ph75.jpg", "coupang")  # b2 = 사진 X(화장품 2개 = 그 편 X)
+os.makedirs("docs/clips/2026-10-25", exist_ok=True); open("docs/clips/2026-10-25/01.mp4", "wb").write(b"old"); json.dump({"2026-10-25": [{"n": 1}]}, open("docs/clips/clips.json", "w"))
 s75, o75 = {}, []
-igp75, H.ig_photo = H.ig_photo, lambda p, d, seen=None: (None, "") if p["url"].endswith(("c5", "c7")) else ("ph75.jpg", "coupang")  # FF: c5·c7 = 사진 X(그 영상에서 빼고 다음 후보)
 def clip75(at):
     time.time = lambda: TK(at); o = io.StringIO()
     with contextlib.redirect_stdout(o):
         clp0(s75)
     o75.append(o.getvalue())
-clip75("2026-10-26 08:50"); assert not mk75 and "clip" not in s75  # 9시 전 = X
-clip75("2026-10-26 09:05"); clip75("2026-10-26 09:20")
-assert len(mk75) == 1 and [p["url"] for p in mk75[0][0]] == ["https://link.coupang.com/a/c2", "https://link.coupang.com/a/c1", "https://link.coupang.com/a/c3"] and mk75[0][2:] == (1, True, None), mk75  # c5(사진 X) 건너뛰고 다음 후보
-assert mk75[0][1].endswith("clip_1026_A.mp4") and tv75[0][0] == mk75[0][1] and tv75[0][1].startswith(f"{H.DISCLOSURE}\n\n오늘의 쿠팡 핫딜 3 — 프로필 링크에서 보기\n\n")
-tg75 = tv75[0][1].split("\n\n")[-1].split(); assert len(tg75) == 5 and all(x.startswith("#") for x in tg75)  # 해시태그 5개
-assert "clip_1026_A.mp4 · 실사진 3개" in a75[-1] and "hotdealpick.kr/link?ref=clip" in a75[-1] and s75["clip"]["n"] == 1 and s75["clip"]["m"] == "2026-10"
-clip75("2026-10-26 13:05"); clip75("2026-10-26 13:20")  # FF-3: B = 네이버 쇼핑커넥트 멈춤(네이버 사진 X) -> 쿠팡 실사진 단일 상품(같은 후보 다음 것)
-assert len(mk75) == 2 and [p["url"] for p in mk75[1][0]] == ["https://link.coupang.com/a/c6"] and mk75[1][1].endswith("clip_1026_B.mp4") and mk75[1][2:] == (2, True, "쿠팡 핫딜 픽")
-assert tv75[1][1].startswith(f"{H.DISCLOSURE}\n\n오늘의 쿠팡 핫딜 — 프로필 링크에서 보기\n\n") and H.NAVER_NOTE not in tv75[1][1] and len(tv75[1][1].split("\n\n")[-1].split()) == 5
-assert a75[-1].startswith("🎬 네이버 클립 B — B 대신 쿠팡 단일 상품(네이버 사진 권한 확인 전) — clip_1026_B.mp4 · 실사진 1개") and "naver.me" not in a75[-1] and s75["clip"]["n"] == 2
-clip75("2026-10-27 13:05"); clip75("2026-10-27 13:20")  # 9시를 넘겨 실행 = A 먼저, 다음 실행에 B
-assert a75[-2] == "🎬 네이버 클립 A — 오늘은 건너뜀(실사진 있는 상품 1/3)" and "clip skip 사진 부족 1/3" in o75[-2]  # 남은 후보 c5·c7(사진 X)·c4 = 못 채움 -> 그 편 X
-assert [x[1][-6:] for x in mk75[2:]] == ["_B.mp4"] and [p["url"][-2:] for p in mk75[2][0]] == ["c4"] and s75["clip"]["u"][-1] == "https://link.coupang.com/a/c4"  # 어제 클립 상품 = 다시 X
-json.dump(P75 + [{"t": "2026-10-29 08:00", "text": f"🔥 [쿠팡] 핫팩{n} (5,000원/무료)", "url": f"https://link.coupang.com/a/c8{n}", "s": 5} for n in range(2)], open("posts75.json", "w"), ensure_ascii=False)
-n75 = len(a75); clip75("2026-10-29 13:05"); clip75("2026-10-29 13:20")
-assert len(mk75) == 4 and len(a75) == n75 + 2 and a75[-2] == "🎬 네이버 클립 A — 오늘은 건너뜀(최근 3일 쿠팡 핫딜이 3개 안 됨)" and [p["url"][-3:] for p in mk75[3][0]] == ["c80"]  # 재료 없음 = 건너뜀 1줄 · B는 1개면 됨
-json.dump(P75 + [{"t": "2026-10-30 08:00", "text": f"🔥 [쿠팡] 핫팩{n} (5,000원/무료)", "url": f"https://link.coupang.com/a/c9{n}", "s": 5} for n in range(3)], open("posts75.json", "w"), ensure_ascii=False)
+clip75("2026-10-29 05:52"); assert not mk75 and "clip" not in s75 and os.path.exists("docs/clips/2026-10-25")  # 06시 전 = X
+clip75("2026-10-29 06:07"); assert len(mk75) == 2 and not os.path.exists("docs/clips/2026-10-25") and "2026-10-25" not in json.load(open("docs/clips/clips.json"))  # 실행마다 2편 · 3일 지난 폴더·기록 지움
+assert [x[1] for x in mk75] == ["docs/clips/2026-10-29/01.mp4", "docs/clips/2026-10-29/02.mp4"] and [x[2:5] for x in mk75] == [(1, True, "전기요 가성비"), (2, True, "그릭요거트 모아보기")]
+assert [p["url"][-2:] for p in mk75[0][0]] == ["k1", "k2", "k3"] and [p["url"][-2:] for p in mk75[1][0]] == ["c2", "c1", "c3"]  # ① 어제 키워드 표 ② 오늘 큐레이션 = 100g당 싼 순(어제 큐레이션 X)
+assert mk75[0][5] == "가격은 쿠팡 10/28 19시 기준 · 결제 전 최종가 확인" and mk75[1][5] == "가격은 쿠팡 10/27 10시 기준 · 결제 전 최종가 확인"  # 끝 장 = 가장 이른 가격 시각(chk 있으면 chk)
+clip75("2026-10-29 06:22"); clip75("2026-10-29 06:37")
+assert [x[4] for x in mk75] == ["전기요 가성비", "그릭요거트 모아보기", "어제 저녁 쿠팡 특가", "꾸준템"] and [p["url"][-2:] for p in mk75[2][0]] == ["e1", "e2", "e3"]  # ③ 큐레이션 1개뿐 = 건너뜀 · ④ 어제 17시 뒤 쿠팡만(16시·G마켓 X)
+assert [p["url"][-2:] for p in mk75[3][0]] == ["s1", "s2", "s3"] and "clip cur2 skip 사진 부족 0/3" in o75[-2]  # 꾸준템 = 앞 클립 상품(e3) 빼고 · 큐레이션 2 없음
+assert "clip drop skip 사진 부족 2/3" in o75[-1] and "clip beauty skip 사진 부족 1/3" in o75[-1] and len(mk75) == 4 and not a75  # ⑥ 가격 내림 2개 · ⑦ 화장품 사진 1개 = 그 편 X · 07시 전 = 알림 X
+cj75 = json.load(open("docs/clips/clips.json"))["2026-10-29"]
+assert [(c["n"], c["topic"], c["file"], c["at"]) for c in cj75] == [(1, "kw", "01.mp4", "08:00"), (2, "cur1", "02.mp4", "11:00"), (3, "eve", "03.mp4", "13:00"), (4, "steady", "04.mp4", "17:00")]
+assert cj75[0]["title"] == "전기요 가성비 TOP3" and cj75[1]["title"] == "그릭요거트 모아보기 TOP3" and cj75[2]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3" and cj75[3]["title"] == "스틱·시트 꾸준템 TOP3" and all(len(c["title"]) <= 30 for c in cj75)  # 검색어 맨 앞 · 30자 안
+d75 = cj75[0]["desc"].split("\n")
+assert d75[:2] == ["[광고] 네이버 쇼핑 커넥트·쿠팡 파트너스 활동으로 수수료를 받을 수 있어요", "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[3] == "1. 곰표 전기요 슈퍼싱글 9,900원"
+assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].split()) and not any("최저" in c["desc"] + c["title"] for c in cj75)  # 해시태그 5개 · 최저가 X
+assert cj75[2]["tags"] == ["페리오 칫솔", "센소다인 치약", "크리넥스 휴지"] and cj75[0]["u"][0].endswith("k1")  # 태그 검색어 = 수량 낱말 빼고
+clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 스틱·시트 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
+clip75("2026-10-29 07:22"); assert len(a75) == 1 and len(mk75) == 4 and s75["clip"]["n"] == 4 and s75["clip"]["m"] == "2026-10"  # 하루 1번 · 다 한 주제 다시 X
 H.make_reel = lambda *a, **k: (_ for _ in ()).throw(OSError("ffmpeg"))
-clip75("2026-10-30 09:05"); clip75("2026-10-30 09:20")
-assert "네이버 클립 A 실패(OSError)" in a75[-1] and len(a75) == n75 + 3 and s75["clip"]["n"] == 4  # 실패 = 알림 1번 · 다시 X · 수 그대로
-H.make_reel = lambda top, kst, out, k=0, safe=False, label=None: mk75.append((top, out, k, safe, label)) or (out, "IGCAP", False)
-json.dump([{"t": "2026-11-01 08:00", "text": f"🔥 [쿠팡] 핫팩{n} (5,000원/무료)", "url": f"https://link.coupang.com/a/c9{n}", "s": 5} for n in range(3)], open("posts75.json", "w"), ensure_ascii=False)
-clip75("2026-11-01 09:05"); assert s75["clip"]["m"] == "2026-11" and s75["clip"]["n"] == 1 and "나레이션 X" in a75[-1]  # 달 바뀜 = 다시 셈
-clip75("2026-11-01 13:05"); assert a75[-1] == "🎬 네이버 클립 B (B 대신 쿠팡 단일 상품) — 오늘은 건너뜀(최근 3일 쿠팡 핫딜이 1개 안 됨)" and s75["clip"]["n"] == 1  # A가 다 씀 = B 재료 없음
-H.ig_photo = igp75
+clip75("2026-10-30 06:07"); assert "clip steady OSError('ffmpeg')" in o75[-1] and len(s75["clip"]["done"]) == 7 and s75["clip"]["done"][:2] == ["kw", "cur1"] and s75["clip"]["n"] == 4  # 실패 = 그 편 X(다시 X) · 날 바뀜 = 처음부터
+H.make_reel = mkr75
+S75 = __import__("build_site"); cp75h = S75.clips_page("docs")
+assert '<meta name="robots" content="noindex,follow">' in cp75h and '<h1>네이버 클립 10/29 · 4편</h1>' in cp75h and '<video src="/clips/2026-10-29/01.mp4" controls playsinline preload="metadata">' in cp75h
+assert 'download="hotdealpick_2026-10-29_01.mp4">영상 저장</a>' in cp75h and 'data-copy="t2026-10-29-1">제목 복사' in cp75h and 'data-copy="d2026-10-29-1">설명 복사' in cp75h and "navigator.clipboard" in cp75h
+assert '>전기요 가성비 TOP3</textarea>' in cp75h and "올릴 시각 08:00 · 태그 검색어: 곰표 전기요 슈퍼싱글 / 한일 카본 전기요 퀸 / 보국 전기요 싱글" in cp75h and "<details>" not in cp75h
+j75 = json.load(open("docs/clips/clips.json")); j75["2026-10-30"] = j75.pop("2026-10-30", []) + [dict(cj75[0])]; json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)
+cp75h = S75.clips_page("docs"); assert '<h1>네이버 클립 10/30 · 1편</h1>' in cp75h and "<details><summary>10/29 클립 4편</summary>" in cp75h  # 어제 것 = 접어서
+H.ig_photo = igp75; shutil.rmtree("docs/clips"); os.remove("docs/changes.json")
 H.weather, H.wx_dm_text, H.WEATHER_DM = (lambda seen: [{}, {}]), (lambda ws: "🌤 시즌 키워드"), (6, 20)
-time.time = lambda: TK("2026-11-01 20:05"); H.wx_dm(s75); assert a75[-1] == "🌤 시즌 키워드\n\n🎬 이번 달 클립 1개 보냄", a75[-1]  # 일요일 DM 줄
-(H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM) = sv75
-assert "clip_post" in inspect.getsource(H.main) and clp0.__name__ == "clip_post"  # 파일 이름 그대로 올리기 = 8-3(filename="reel_t.mp4")
+time.time = lambda: TK("2026-11-01 20:05"); s75["clip"]["m"] = "2026-11"; H.wx_dm(s75); assert a75[-1] == "🌤 시즌 키워드\n\n🎬 이번 달 클립 4개 보냄", a75[-1]  # 일요일 DM 줄
+(H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM, H.cur_events, H.cp_shelf, H.load) = sv75
+assert "clip_post" in inspect.getsource(H.main) and clp0.__name__ == "clip_post" and "clips_page(out)" in inspect.getsource(__import__("build_site").build)
 # 실제 영상(safe): 규격 + 안전 영역
 import wave as _wv75, subprocess as _sp75, cards as C75
 dur75 = lambda s: sum(float(x) * m for x, m in zip(re.search(r"Duration: (\d+):(\d+):([\d.]+)", s).groups(), (3600, 60, 1)))
