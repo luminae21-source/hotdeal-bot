@@ -3269,7 +3269,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
