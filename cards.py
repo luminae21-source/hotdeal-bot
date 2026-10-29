@@ -1280,36 +1280,37 @@ def slideshow(images, out, music=None, sec=1.5):
         raise RuntimeError("ffmpeg 실패")
     return out
 
-LOGO_GRAD, PICK_RED = ((255, 104, 96), (220, 34, 48)), (222, 38, 52)  # 웹앱 아이콘 'A 레드'(10/23 진우): 왼쪽 위 -> 오른쪽 아래 그라데이션 · 알약 안 'pick' 색
+LOGO_GRAD, LOGO_RED = ((255, 104, 96), (220, 34, 48)), (250, 3, 19)  # 파비콘 '딜' 미니 그라데이션(10/23 'A 레드') · 앱 아이콘 바탕 = 새 로고 왼쪽 테두리 빨강(가운데 줄 중앙값)
+LOGO_PNG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand", "logo.png")  # 새 로고 원본(10/29 진우 — 삼색 고양이 '딜', 1167×1140, 모서리 투명)
 
 
-def app_logo(n, mini=False):
-    """웹앱 아이콘 1장(n×n) 'A 레드'(10/23 진우 — 원 아이콘은 런처가 확대해 '딜'이 잘림): 꽉 찬 정사각 대각선 그라데이션(any·maskable·애플 같은 그림, 모양은 런처가 깎음)
-    + 흰 '딜'(Black, 0.40n, 가운데 y 0.42n) + 흰 알약(0.38n×0.14n, 가운데 y 0.695n) 안 빨간 'pick'(Bold, 0.095n, 자간 0.006n, 가운데 y 0.69n) — 다 가운데 60% 안(maskable 안전 영역 안 — 원·둥근 네모로 깎아도 안 잘림).
-    shortcut: 크롬 '바로가기'(배지) = 픽셀 런처 배지(아이콘 0.444)가 알약 오른쪽 끝·k를 가림 — 앱 설치(WebAPK)는 배지 X, 바로가기도 피하려면 진우 결정.
-    mini = 파비콘(16·32·48): '딜'만, 같은 그라데이션 둥근 네모(모서리 투명). 4배로 그려 줄여서 가장자리를 매끈하게."""
-    k = 4
-    N = n * k
+def logo_sq(n):
+    """새 로고 -> n×n 정사각(세로 모자란 만큼 위아래 투명 · 비율 그대로 · 모서리 투명 그대로). 줄일 때 투명 가장자리 회색 번짐 X(RGBa)."""
+    lg = Image.open(LOGO_PNG).convert("RGBA")
+    s = max(lg.size)
+    sq = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    sq.paste(lg, ((s - lg.width) // 2, (s - lg.height) // 2))
+    return sq.convert("RGBa").resize((n, n), Image.LANCZOS).convert("RGBA")
+
+
+def app_logo(n, mini=False, k=1.0):
+    """웹앱 아이콘 1장(n×n, 10/29 진우 새 로고): 로고 테두리 빨강(LOGO_RED) 꽉 찬 정사각 위에 새 로고(가운데, 한 변 k×n) — 투명 X(모서리도 빨강 · 모양은 런처·iOS가 깎음).
+    k = 0.8 -> maskable(로고가 가운데 안전 영역 안). mini = 파비콘(16·32·48): 옛 '딜'만(16px에선 고양이가 뭉개짐), 그라데이션 둥근 네모(모서리 투명) — 4배로 그려 줄임."""
+    if not mini:
+        im, m = Image.new("RGBA", (n, n), LOGO_RED + (255,)), round(n * k)
+        im.alpha_composite(logo_sq(m), ((n - m) // 2, (n - m) // 2))
+        return im
+    N = n * 4
     g = Image.linear_gradient("L").resize((N, N), Image.BILINEAR)
     im = Image.composite(Image.new("RGBA", (N, N), LOGO_GRAD[1] + (255,)), Image.new("RGBA", (N, N), LOGO_GRAD[0] + (255,)),
                          Image.blend(g, g.transpose(Image.TRANSPOSE), 0.5))  # (x + y) / 2 = 대각선
-    if mini:
-        m = Image.new("L", (N, N), 0)
-        ImageDraw.Draw(m).rounded_rectangle((0, 0, N - 1, N - 1), radius=N * 0.22, fill=255)
-        im.putalpha(m)
+    m = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, N - 1, N - 1), radius=N * 0.22, fill=255)
+    im.putalpha(m)
     d = ImageDraw.Draw(im)
-    f = pf("Black", int(N * (0.7 if mini else 0.40)))
+    f = pf("Black", int(N * 0.7))
     b = d.textbbox((0, 0), "딜", font=f)
-    d.text((N / 2 - (b[0] + b[2]) / 2, N * (0.5 if mini else 0.42) - (b[1] + b[3]) / 2), "딜", font=f, fill="white")
-    if not mini:
-        w, h, cy = N * 0.38, N * 0.14, N * 0.695
-        d.rounded_rectangle((N / 2 - w / 2, cy - h / 2, N / 2 + w / 2, cy + h / 2), radius=h / 2, fill="white")
-        f, sp = pf("Bold", int(N * 0.095)), N * 0.006
-        xs = [sum(f.getlength(c) + sp for c in "pick"[:i]) for i in range(4)]
-        x0, x1 = xs[0] + f.getbbox("p")[0], xs[3] + f.getbbox("k")[2]  # 글자 잉크 기준 가운데
-        b = d.textbbox((0, 0), "pick", font=f)
-        for x, c in zip(xs, "pick"):
-            d.text((N / 2 - (x0 + x1) / 2 + x, N * 0.69 - (b[1] + b[3]) / 2), c, font=f, fill=PICK_RED)
+    d.text((N / 2 - (b[0] + b[2]) / 2, N * 0.5 - (b[1] + b[3]) / 2), "딜", font=f, fill="white")
     return im.resize((n, n), Image.LANCZOS)
 
 
@@ -1326,12 +1327,12 @@ def sc_icon(ch, top, bottom, n):
 
 
 def app_icons(d="docs/icons", root="docs"):
-    """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로', 'A 레드') -> d/: icon-192·512(any)·icon-512-maskable·apple-touch-icon(180) = 같은 꽉 찬 그림(투명 X — 런처·iOS가 모양을 깎음),
-    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48) + 바로가기 sc-fire·wait·life(192·96). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
+    """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로' · 10/29 새 로고) -> d/: icon-192·512(any)·apple-touch-icon(180) = 빨강 꽉 찬 정사각 + 로고(투명 X — 런처·iOS가 모양을 깎음) · icon-512-maskable = 로고 80%,
+    favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48) + 바로가기 sc-fire·wait·life(192·96) + 헤더 로고 logo-64(32px 2배, 모서리 투명). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
     os.makedirs(d, exist_ok=True)
     big = app_logo(512).convert("RGB")
-    out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": big,
-           f"{d}/apple-touch-icon.png": app_logo(180).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True)}
+    out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": app_logo(512, k=0.8).convert("RGB"),
+           f"{d}/apple-touch-icon.png": app_logo(180).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True), f"{d}/logo-64.png": logo_sq(64)}
     for k, (ch, a, b) in SC_ICONS.items():  # 바로가기 sc-{k}.png(192) · sc-{k}-96.png
         out[f"{d}/sc-{k}.png"], out[f"{d}/sc-{k}-96.png"] = sc_icon(ch, a, b, 192), sc_icon(ch, a, b, 96)
     for p, im in out.items():
@@ -1344,10 +1345,8 @@ def og_image(path="docs/og.png"):
     W, H = 1200, 630
     im = Image.new("RGB", (W, H), (246, 247, 249))
     d = ImageDraw.Draw(im)
-    logo = app_logo(220).convert("RGB")
-    m = Image.new("L", (220, 220), 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, 219, 219), radius=58, fill=255)
-    im.paste(logo, (96, 118), m)
+    logo = logo_sq(220)  # 새 로고(모서리 투명 그대로)
+    im.paste(logo, (96, 118), logo)
     d.text((360, 128), "핫딜픽", font=pf("ExtraBold", 112), fill=(20, 22, 27))
     d.text((364, 272), "쿠팡·토스·네이버 특가를 매일 골라드려요", font=pf("SemiBold", 40), fill=(107, 113, 128))
     x, f = 96, pf("Bold", 36)

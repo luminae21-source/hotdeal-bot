@@ -64,7 +64,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe-area-inset-bottom))}html.inapp{scroll-padding:128px 0 16px}
 .hd{position:sticky;top:-48px;z-index:10;margin:0 -16px;padding:env(safe-area-inset-top) 16px 0;background:var(--bg);box-shadow:0 1px 0 var(--line)}
 .hr{display:flex;align-items:center;gap:8px;height:48px}.hr .lg{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
-.logo{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#FF6860,#DC2230);color:#fff;font-weight:900;font-size:15px;letter-spacing:-.8px}
+.logo{display:block;width:32px;height:32px}
 .lg b,.lg h1{margin:0;font-size:19px;font-weight:900;letter-spacing:-.7px;line-height:1}
 .ib::before{content:"";position:absolute;inset:-3px}.ib{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 .ib svg,.nav svg,.sb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ib b{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accf);color:#fff;font-size:10.5px;line-height:17px;text-align:center}.ib b:empty{display:none}
@@ -258,7 +258,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 {"".join(f'<meta name="naver-site-verification" content="{v}">' for v in NAVER_VERIFY)}{f'<meta name="google-site-verification" content="{html.escape(GOOGLE_VERIFY)}">' if GOOGLE_VERIFY else ""}
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or BASE + 'og.png')}">{'' if og else '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
-<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><span class="logo" aria-hidden="true">딜</span>{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
+<header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true">{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}</a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
 {top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>"""
 
@@ -281,7 +281,7 @@ ALIAS = lambda name: " ".join(w for r, w in ((r"화장지|두루마리|키친타
 
 
 PWA_BG, PWA_DARK = "#F6F7F9", "#0F1013"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
-IV, SV = "?v=2", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드'
+IV, SV = "?v=3", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜')
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
             "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},
