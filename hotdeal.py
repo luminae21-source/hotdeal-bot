@@ -5260,8 +5260,8 @@ def clip_post(seen):
     day, hm, st = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst), seen.get("clip") or {}
     if hm < CLIP_FROM:
         return
-    if st.get("d") != day:
-        st = {**{k: v for k, v in st.items() if k in ("m", "n")}, "d": day, "done": []}
+    if st.get("d") != day or "v" not in st:  # v = 10/29 첫 배포 chk 'M/D H시' 오류로 멈춘 날 기록을 1번 새로
+        st = {**{k: v for k, v in st.items() if k in ("m", "n")}, "d": day, "done": [], "v": 1}
     st = seen["clip"] = {**st, "t": now}
     if st.get("m") != day[:7]:
         st.update(m=day[:7], n=0)
@@ -5280,10 +5280,10 @@ def clip_post(seen):
         if len(top) < 3:
             continue
         n, k = len(made) + 1, k + 1
-        at = min(p.get("chk") or p["t"] for p in top)
-        note = f"가격은 쿠팡 {int(at[5:7])}/{int(at[8:10])} {int(at[11:13])}시 기준 · 결제 전 최종가 확인"
         os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
         try:
+            at = min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)  # 가격 시각 = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것
+            note = f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인"
             said = make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=note)[2]  # 곡 = 오늘 차례 + n(편마다 다름)
         except Exception as e:
             print("clip", key, repr(e))

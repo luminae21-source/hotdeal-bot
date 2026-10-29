@@ -8412,10 +8412,10 @@ H.make_reel, H.tg = mkr75, (lambda m, **k: a75.append(k.get("text")) or {"messag
 H.POSTS = "posts75.json"
 cp75 = lambda n, t, nm, **k: {"t": t, "text": f"🔥 [쿠팡] {nm} (9,900원/무료)", "url": f"https://link.coupang.com/a/{n}", "s": 5, "img": f"https://thumbnail.coupangcdn.com/{n}.jpg", **k}
 P75 = [cp75("k1", "2026-10-28 19:00", "곰표 전기요 슈퍼싱글", tag="전기요 2026", shelf=1), cp75("k2", "2026-10-28 19:05", "한일 카본 전기요 퀸", tag="전기요 2026", shelf=1),
-       cp75("k3", "2026-10-28 19:10", "보국 전기요 싱글 2개", tag="전기요 2026", shelf=1, chk="2026-10-29 05:10"),
+       cp75("k3", "2026-10-28 19:10", "보국 전기요 싱글 2개", tag="전기요 2026", shelf=1, chk="10/28 18시"),
        cp75("e1", "2026-10-28 17:10", "페리오 칫솔 10개"), cp75("e2", "2026-10-28 18:00", "센소다인 치약 3개"), cp75("e3", "2026-10-28 21:00", "크리넥스 휴지 30롤"),
        cp75("e0", "2026-10-28 16:00", "오후 네 시 딜 손난로"), {"t": "2026-10-28 20:00", "text": "🔥 [G마켓] 우유 (1,000원/무료)", "url": "https://link.gmarket.co.kr/x", "s": 9},
-       cp75("c1", "2026-10-27 10:00", "그릭요거트 400g 2개", unit="100g당 910원"), cp75("c2", "2026-10-27 10:00", "그릭요거트 90g 8개", unit="100g당 831원"), cp75("c3", "2026-10-27 10:00", "그릭요거트 100g 3개", unit="100g당 2,563원"),
+       cp75("c1", "2026-10-27 10:00", "그릭요거트 400g 2개", unit="100g당 910원", chk="2026-10-27 08:30"), cp75("c2", "2026-10-27 10:00", "그릭요거트 90g 8개", unit="100g당 831원"), cp75("c3", "2026-10-27 10:00", "그릭요거트 100g 3개", unit="100g당 2,563원"),
        cp75("s1", "2026-10-20 10:00", "남양 라떼 스틱 100개"), cp75("s2", "2026-10-20 10:00", "밀크티 라떼 스틱 50개"), cp75("s3", "2026-10-20 10:00", "세탁 세제 시트 120매"), cp75("s4", "2026-10-20 10:00", "주방 세제 리필 2L"),
        cp75("d1", "2026-10-27 09:00", "코카콜라 제로 30캔"), cp75("d2", "2026-10-27 09:00", "문풍지 6m 2개"),
        cp75("b1", "2026-10-29 01:00", "메디힐 토너 패드 100매"), cp75("b2", "2026-10-28 02:00", "선크림 50ml 2개")]
@@ -8426,17 +8426,18 @@ H.cp_shelf = lambda posts, kst, steady: [(next(i for i, p in enumerate(posts) if
 os.makedirs("docs", exist_ok=True); json.dump({"items": {str(n): {"k": ["drop"], "p": p} for n, p in ((15, 5), (16, 12))}}, open("docs/changes.json", "w"))
 igp75, H.ig_photo = H.ig_photo, lambda p, d, seen=None: (None, "") if "/a/" not in (p.get("url") or "") or p["url"].endswith("b2") else ("ph75.jpg", "coupang")  # b2 = 사진 X(화장품 2개 = 그 편 X)
 os.makedirs("docs/clips/2026-10-25", exist_ok=True); open("docs/clips/2026-10-25/01.mp4", "wb").write(b"old"); json.dump({"2026-10-25": [{"n": 1}]}, open("docs/clips/clips.json", "w"))
-s75, o75 = {}, []
+o75 = []
 def clip75(at):
     time.time = lambda: TK(at); o = io.StringIO()
     with contextlib.redirect_stdout(o):
         clp0(s75)
     o75.append(o.getvalue())
-clip75("2026-10-29 05:52"); assert not mk75 and "clip" not in s75 and os.path.exists("docs/clips/2026-10-25")  # 06시 전 = X
+s75 = {"clip": {"d": "2026-10-29", "done": ["kw", "cur1", "cur2", "eve", "steady", "drop", "beauty"], "m": "2026-10", "n": 0}}  # 10/29 첫 배포에서 멈춘 날 기록(v 없음) = 1번 새로
+clip75("2026-10-29 05:52"); assert not mk75 and s75["clip"]["done"] and os.path.exists("docs/clips/2026-10-25") and os.path.exists("docs/clips/2026-10-25")  # 06시 전 = X
 clip75("2026-10-29 06:07"); assert len(mk75) == 2 and not os.path.exists("docs/clips/2026-10-25") and "2026-10-25" not in json.load(open("docs/clips/clips.json"))  # 실행마다 2편 · 3일 지난 폴더·기록 지움
 assert [x[1] for x in mk75] == ["docs/clips/2026-10-29/01.mp4", "docs/clips/2026-10-29/02.mp4"] and [x[2:5] for x in mk75] == [(1, True, "전기요 가성비"), (2, True, "그릭요거트 모아보기")]
 assert [p["url"][-2:] for p in mk75[0][0]] == ["k1", "k2", "k3"] and [p["url"][-2:] for p in mk75[1][0]] == ["c2", "c1", "c3"]  # ① 어제 키워드 표 ② 오늘 큐레이션 = 100g당 싼 순(어제 큐레이션 X)
-assert mk75[0][5] == "가격은 쿠팡 10/28 19시 기준 · 결제 전 최종가 확인" and mk75[1][5] == "가격은 쿠팡 10/27 10시 기준 · 결제 전 최종가 확인"  # 끝 장 = 가장 이른 가격 시각(chk 있으면 chk)
+assert mk75[0][5] == "가격은 쿠팡 10/28 18시 기준 · 결제 전 최종가 확인" and mk75[1][5] == "가격은 쿠팡 10/27 8시 기준 · 결제 전 최종가 확인"  # 끝 장 = 가장 이른 가격 시각(chk = 'M/D H시'·'YYYY-MM-DD HH:MM' 둘 다 · 없으면 글 시각)
 clip75("2026-10-29 06:22"); clip75("2026-10-29 06:37")
 assert [x[4] for x in mk75] == ["전기요 가성비", "그릭요거트 모아보기", "어제 저녁 쿠팡 특가", "꾸준템"] and [p["url"][-2:] for p in mk75[2][0]] == ["e1", "e2", "e3"]  # ③ 큐레이션 1개뿐 = 건너뜀 · ④ 어제 17시 뒤 쿠팡만(16시·G마켓 X)
 assert [p["url"][-2:] for p in mk75[3][0]] == ["s1", "s2", "s3"] and "clip cur2 skip 사진 부족 0/3" in o75[-2]  # 꾸준템 = 앞 클립 상품(e3) 빼고 · 큐레이션 2 없음
