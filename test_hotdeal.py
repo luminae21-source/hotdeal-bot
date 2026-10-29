@@ -10677,7 +10677,9 @@ time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H
 cwd107, sv107 = os.getcwd(), (time.time, H.http, H.POSTS, dict(H.E), H.tg); os.chdir(tempfile.mkdtemp())
 tg107 = []; H.tg = lambda m, **p: tg107.append(p.get("text", "")) or {"message_id": 1}
 H.POSTS = "posts.json"; json.dump([{"t": "2026-10-28 14:30", "own": 1, "shelf": True, "tag": "치약·칫솔", "text": "🔥 [쿠팡] 치약 (1원)", "url": "https://link.coupang.com/a/t1"},
-                                   {"t": "2026-10-01 14:30", "own": 1, "shelf": True, "tag": "옛날 품목", "text": "x", "url": "https://link.coupang.com/a/t2"}], open("posts.json", "w"), ensure_ascii=False)
+                                   {"t": "2026-10-01 14:30", "own": 1, "shelf": True, "tag": "옛날 품목", "text": "x", "url": "https://link.coupang.com/a/t2"},
+                                   {"t": "2026-10-28 15:00", "own": 1, "shelf": True, "tag": "닭가슴살 3종·외풍 막기·햇상품 기획전·LG 뷰티 할인전·자동차 소모품", "text": "x", "url": "https://link.coupang.com/a/t3"},
+                                   {"t": "2026-10-28 15:10", "own": 1, "shelf": True, "tag": "닭가슴살 모음·메디힐 시리즈·간편식 묶음·절임배추 2026·바디워시·그릭요거트 3종", "text": "x", "url": "https://link.coupang.com/a/t4"}], open("posts.json", "w"), ensure_ascii=False)
 rss107 = '<rss xmlns:ht="https://trends.google.com/trending/rss" version="2.0"><channel><title>Daily</title>' + "".join(
     f"<item><title>실검{k}</title><ht:approx_traffic>{k}000+</ht:approx_traffic><ht:news_item><ht:news_item_title>기사 {k} &amp;amp; 소식</ht:news_item_title></ht:news_item></item>" for k in range(25)) + "</channel></rss>"
 calls107 = []
@@ -10687,7 +10689,7 @@ def h107(url, body=None, headers=None, method=None):
         return rss107
     assert url == H.NV_HUB and method == "POST" and headers == {"X-NCP-APIGW-API-KEY-ID": "id1", "X-NCP-APIGW-API-KEY": "sec1"}, (url, headers)
     days = [time.strftime("%Y-%m-%d", time.gmtime(TK("2026-10-29 07:00") + 9 * 3600 - k * 86400)) for k in range(14, 0, -1)]
-    val = {"캡슐커피": (10, 20), "사과": (10, 5), "수세미": (0, 3)}
+    val = {"캡슐커피": (10, 20), "사과": (10, 5), "수세미": (0, 3), "간편식": (0, 0)}
     return json.dumps({"results": [{"title": k["name"], "keyword": k["param"], "data": [{"period": d, "ratio": val.get(k["name"], (4, 4))[i >= 7]} for i, d in enumerate(days) if val.get(k["name"], (4, 4))[i >= 7]]}
                                    for k in body["keyword"]]})
 H.http, time.time = h107, lambda: TK("2026-10-29 07:00")
@@ -10707,8 +10709,15 @@ assert all(len(c[1]["keyword"]) <= 5 and c[1]["timeUnit"] == "date" and c[1]["st
 kw107 = {k["name"]: (c[1]["category"], k["param"]) for c in nv107 for k in c[1]["keyword"]}
 assert kw107["캡슐커피"][0] == "50000006" and kw107["치약"] == ("50000008", ["치약"]) and kw107["칫솔"] == ("50000008", ["칫솔"]) and "옛날 품목" not in kw107 and set(H.TREND_KW) <= set(kw107), kw107  # 진열 tag(14일 안) = '·' 낱말 하나하나(이 API = 키워드마다 param 1개 — 10/29 첫 실행 400)
 assert all(len(k["param"]) == 1 for c in nv107 for k in c[1]["keyword"])
+assert [H.trend_kw(w) for w in ("닭가슴살 3종", "절임배추 2026", "그릭요거트 3종", "하루견과 3종", "메디힐 시리즈", "간편식 묶음", "닭가슴살 모음", "햇상품 기획전", "LG 뷰티 할인전", "외풍 막기", "자동차 소모품", " 마데카크림 ")] == [
+    "닭가슴살", "절임배추", "그릭요거트", "하루견과", "메디힐", "간편식", "닭가슴살", "", "", "문풍지", "", "마데카크림"]  # 10/29 Cowork: 끝 N종·모음·묶음·시리즈·연도 떼기 · 기획전·할인전 = 뺌 · 바꿈 표
+nm107 = [k["name"] for c in nv107 for k in c[1]["keyword"]]
+assert nm107.count("닭가슴살") == 1 and {"문풍지", "절임배추", "그릭요거트", "메디힐", "간편식", "바디워시"} <= set(nm107) and not any(re.search(r"\d+종|모음|묶음|시리즈|2026|기획전|할인전|외풍|자동차", n) for n in nm107), nm107  # 정리 뒤 같은 낱말 1번
+assert {k: kw107[k][0] for k in ("마데카크림", "메디힐", "바디워시", "간편식", "핸드크림", "립밤", "바디로션", "닭가슴살")} == {"마데카크림": "50000002", "메디힐": "50000002", "바디워시": "50000002", "간편식": "50000006",
+                                                                                           "핸드크림": "50000002", "립밤": "50000002", "바디로션": "50000002", "닭가슴살": "50000006"}  # TREND_CAT(cat_of보다 먼저) · TREND_KW 화장품 4개
 it107 = t107["naver"]["items"]
-assert [x["kw"] for x in it107[:2]] == ["수세미", "캡슐커피"] and it107[0]["up"] is None and it107[1]["up"] == 2.0 and it107[-1]["kw"] == "사과" and it107[-1]["up"] == 0.5, it107  # 새로 뜸(이전 0) → 오르는 순
+assert [x["kw"] for x in it107[:2]] == ["수세미", "캡슐커피"] and it107[0]["up"] is None and it107[1]["up"] == 2.0 and it107[-2]["kw"] == "사과" and it107[-2]["up"] == 0.5, it107
+assert it107[-1] == {"kw": "간편식", "cat": "50000006", "r7": 0.0, "p7": 0.0, "up": None} and "간편식" not in t107["naver"]["line"]  # 이전·최근 둘 다 0 = 줄·위 X, items 끝  # 새로 뜸(이전 0) → 오르는 순
 assert t107["naver"]["line"] == "오르는 품목: 수세미 새로 · 캡슐커피 ×2.0" and t107["naver"]["range"] == ["2026-10-15", "2026-10-28"] and len(t107["google"]["items"]) == 20
 assert "trend naver" in o107.getvalue() and "sec1" not in o107.getvalue() and "id1" not in o107.getvalue()  # 키는 로그에 X
 calls107.clear(); time.time = lambda: TK("2026-10-29 08:30"); H.trend(s107); assert not any(c[0] == H.NV_HUB for c in calls107)  # 하루 1번

@@ -8550,7 +8550,16 @@ TREND_FILE, TREND_AT, TREND_DAYS, TREND_MAX, NV_HUB_MONTH = "trend.json", "06:00
 NV_HUB = "https://naverapihub.apigw.ntruss.com/shopping/v1/category/keywords"  # 네이버 API HUB(Data Lab 쇼핑인사이트) — Secrets NAVER_HUB_ID(Client ID)·NAVER_HUB_SECRET, 없으면 건너뜀
 NV_HUB_CAT = {"food": "50000006", "coffee": "50000006", "snack": "50000006", "season": "50000006", "beauty": "50000002", "digital": "50000003", "heat": "50000003",
               "home": "50000004", "fashion": "50000001", "sport": "50000007"}  # 사이트 칸 -> 네이버쇼핑 1분류 cat_id · 나머지(생필품·주방·세탁·자동차·반려동물) = 생활/건강 50000008
-TREND_KW = ("주방세제", "수세미", "밀크티", "라떼", "캡슐커피", "원두", "쌍화차", "대추차", "감귤", "사과", "꿀스틱")  # Cowork 14:13 진열 후보 품목(10/29 돌림 순서 — 바뀌면 여기) + 최근 진열 tag
+TREND_KW = ("주방세제", "수세미", "밀크티", "라떼", "캡슐커피", "원두", "쌍화차", "대추차", "감귤", "사과", "꿀스틱", "핸드크림", "립밤", "바디로션", "마데카크림")  # Cowork 14:13 진열 후보 품목(10/29 돌림 순서 — 바뀌면 여기) + 최근 진열 tag
+TREND_SWAP = {"외풍 막기": "문풍지", "자동차 소모품": ""}  # 10/29 Cowork: 진열 tag -> 쇼핑인사이트 검색어(빈칸 = 뺌) — 새 모양은 Cowork가 추가 요청
+TREND_CAT = ((r"마데카|메디힐|바디워시", "50000002"), (r"간편식", "50000006"))  # 10/29 Cowork: cat_of가 빈칸·생활이라 50000008로 가던 것(네이버 = 바디케어도 화장품/미용) — cat_of보다 먼저
+
+
+def trend_kw(w):
+    """진열 tag·TREND_KW 낱말 -> 쇼핑인사이트 검색어: 끝 'N종'·'모음'·'묶음'·'시리즈'·연도 떼기 -> TREND_SWAP -> '기획전'·'할인전'(행사 이름) = '' (뺌)."""
+    w = re.sub(r"(?:\s+(?:\d+\s*종|모음|묶음|시리즈|(?:19|20)\d\d))+$", "", w.strip()).strip()
+    w = TREND_SWAP.get(w, w)
+    return "" if re.search(r"기획전|할인전", w) else w[:30]
 GTREND = "https://trends.google.com/trending/rss?geo=KR"  # 구글 한국 실시간 인기 검색어 RSS(10분 갱신) — 1시간 1번 상위 20
 
 
@@ -8580,11 +8589,11 @@ def trend(seen):
     if E.get("NAVER_HUB_ID") and E.get("NAVER_HUB_SECRET") and time.strftime("%H:%M", kst) >= TREND_AT and nk not in seen:
         seen[nk] = {"t": now}  # 하루 1번(실패해도 — 다음 날)
         since = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - TREND_DAYS * 86400))
-        kws = list(dict.fromkeys(list(TREND_KW) + [w.strip()[:30] for p in load(POSTS, []) if p.get("own") and p.get("shelf") and p.get("tag") and p.get("t", "") >= since
-                                                   for w in p["tag"].split("·") if w.strip()]))
+        kws = [k for k in dict.fromkeys(trend_kw(w) for w in list(TREND_KW) + [w for p in load(POSTS, []) if p.get("own") and p.get("shelf") and p.get("tag") and p.get("t", "") >= since
+                                                                          for w in p["tag"].split("·")]) if k]  # 정리한 뒤 같은 낱말 1번
         groups = collections.defaultdict(list)
         for k in kws:
-            groups[NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append(k)
+            groups[next((c for rx, c in TREND_CAT if re.search(rx, k)), None) or NV_HUB_CAT.get(cat_of({"text": f"🔥 [쿠팡] {k} (1원)"}), "50000008")].append(k)
         end = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))  # 어제까지(오늘은 덜 쌓임)
         days = [time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - k * 86400)) for k in range(TREND_DAYS, 0, -1)]
         out, calls, made, mon = [], 0, 0, today[:7]
