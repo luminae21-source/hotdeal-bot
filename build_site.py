@@ -711,7 +711,7 @@ def ev_info(evs=None):
     evs, out = ev_list() if evs is None else evs, {}  # evs = 옛 커밋 events(가격 추적 백필)
     for e in evs if isinstance(evs, list) else []:
         if isinstance(e, dict) and isinstance(e.get("url"), str):
-            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img") if isinstance(e.get(k), str)})
+            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img", "tag") if isinstance(e.get(k), str)})
     return out
 
 

@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -433,7 +433,8 @@ def plain(url, hops=4):
 
 
 cp_qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
-CP_BEST, CP_BEST_RUN = (1012, 1014, 1013, 1010, 1024, 1011, 1029, 1016, 1015, 1001, 1018, 1021), 2  # 카테고리 베스트(사진 채움 10/25): 식품·생활용품·주방·뷰티·건강식품·출산유아·반려·가전·홈인테리어·여성패션·자동차·문구 — 하루 1번씩, 실행마다 2개(시간당 상한 CP_HOUR 안)
+CP_BEST, CP_BEST_RUN = (1012, 1014, 1013, 1010, 1024, 1011, 1029, 1016, 1015, 1001, 1018, 1021), 2  # 카테고리 베스트(사진 채움 10/25 · 가격 관측 10/30): 식품·생활용품·주방·뷰티·건강식품·출산유아·반려·가전·홈인테리어·여성패션·자동차·문구 — 실행마다 2개(시간당 상한 CP_HOUR 안)
+CP_BEST_BIG = (1012, 1014, 1013, 1010, 1011, 1029)  # 진열 많은 6칸(식품·생활·주방·뷰티·출산유아·반려) = 6시간마다 · 나머지 = 하루 1번 (하루 30번 — 검색 몫 0)
 
 
 def cp_photos(seen, items):
@@ -455,28 +456,28 @@ def cp_photos(seen, items):
 
 
 def cp_best(seen):
-    """사진 채움(10/25 Cowork ①): 카테고리 베스트(/products/bestcategories — 검색 아닌 API, limit 100)를 카테고리마다 하루 1번(실행마다 CP_BEST_RUN개) -> cp_photos.
-    사진 없는 진우·진열 쿠팡 상품이 없으면 안 부름. 상한 = 다음 실행에, 그 밖 오류 = 그 카테고리 오늘은 건너뜀."""
-    if not HAS_CP or cp_rush():  # CCC 몰아서 = 호출 몫을 변환·가격 확인에
+    """카테고리 베스트(/products/bestcategories — 검색 아닌 API, limit 100): 사진 채움(cp_photos) + 가격 관측(cp_api_prices 'best' — 10/30 진우 'api는 효과적으로': 늘 돌림)
+    진열 많은 칸(CP_BEST_BIG) = 6시간마다(하루 4번) · 나머지 = 하루 1번 · 실행마다 CP_BEST_RUN개(시간당 상한 CP_HOUR 안). 상한 = 다음 실행에, 그 밖 오류 = 그 칸 이번 차례 건너뜀."""
+    if not HAS_CP:
         return
-    q, ev, today = seen.get("cpq", {}), ev_info(), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-    if not any(p.get("own") and ev.get(p.get("url"), {}).get("pid") and p["url"] not in q.get("i", {}) and not p["text"].startswith("📋") for p in load(POSTS, [])):
-        return
-    b = seen.setdefault("cpbest", {})
-    if b.get("day") != today:
-        b.update(day=today, d={})
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    slot, b = f"{today} {kst.tm_hour // 6}", seen.setdefault("cpbest", {})
+    d = b["d"] = {c: v for c, v in b.get("d", {}).items() if isinstance(v, str)}  # {칸: 마지막 차례 'YYYY-MM-DD N'} (예전 하루 표 = 버림)
     b["t"], got = time.time(), []
-    for c in [c for c in CP_BEST if str(c) not in b["d"]][:CP_BEST_RUN]:
+    due = [c for c in CP_BEST_BIG if d.get(str(c)) != slot] + [c for c in CP_BEST if c not in CP_BEST_BIG and not d.get(str(c), "").startswith(today)]
+    for c in due[:CP_BEST_RUN]:
         try:
-            got.append((c, cp_photos(seen, coupang("GET", f"/products/bestcategories/{c}?limit=100"))))
+            r = coupang("GET", f"/products/bestcategories/{c}?limit=100")
+            got.append((c, cp_photos(seen, r), cp_api_prices(seen, r, "best")))
         except CpLimit:
             break
         except Exception as e:
             print("cp best", c, type(e).__name__)
-            got.append((c, 0))
-        b["d"][str(c)] = got[-1][1]
+            got.append((c, 0, 0))
+        d[str(c)] = slot
     if got:
-        print("cp best 사진", " · ".join(f"{c} +{k}" for c, k in got), f"(오늘 {len(b['d'])}/{len(CP_BEST)} 카테고리)")
+        print("cp best", " · ".join(f"{c} 사진 +{a} 가격 {k}" for c, a, k in got), f"(남은 차례 {len(due) - len(got)}칸)")
 
 
 class CpLimit(RuntimeError):
@@ -495,6 +496,8 @@ def coupang(method, path, body=None):
     u["t"] = now
     u["a"].append(now)
     n[0] += 1
+    if path.startswith(("/products/search", "/products/bestcategories", "/products/goldbox")):  # 가격 받는 호출 수(10/30 효율 줄 — cp_price가 하루 합에)
+        RUN.setdefault("cpo", collections.Counter()).update(c=1, s=srch)
     if srch:
         u["s"].append(now)
         n[1] += 1
@@ -1663,7 +1666,7 @@ def goldbox(seen):
     n = cp_photos(seen, allg)  # 진열 상품 사진 채움(10/25 — 추가 호출 X)
     if n:
         print("goldbox 사진", n)
-    gold_prices(seen, allg)
+    cp_api_prices(seen, allg, "gold")
     items = allg[:40]
     gl = gold_lines(items)
     picks = [p for p in ai_pick(GOLD_PROMPT, [g[0] for g in gl]) if 0 <= p["i"] < len(items)][:GOLD_N[1]]
@@ -1689,31 +1692,48 @@ def goldbox(seen):
         seen[key] = time.time()
 
 
-def gold_prices(seen, items):
-    """가격 추적(10/30): 골드박스 API 가격 중 진우·진열 쿠팡 글(events pid)과 같은 상품·옵션(events item = itemId, 없으면 이름 수량·용량 cp_same — cp_price와 같은 기준)
-    -> seen cpq g {주소: [가격, 'YYYY-MM-DD HH:MM']} — price_track이 price_hist.json에 'gold'(추가 호출 X) -> 맞춘 수."""
+def cp_match(z, u, ev, names):
+    """API 상품 z가 진우 글 u와 같은 상품 옵션인지(검색·골드박스·카테고리 베스트 같은 기준): events item 있으면 그 itemId만, 없으면 이름 수량·용량(cp_same)."""
+    return cp_qs(z, "itemId") == ev[u]["item"] if ev[u].get("item") else cp_same(names[u], z.get("productName"))
+
+
+def cp_api_prices(seen, items, src):
+    """가격 관측(10/30 진우 'api는 효과적으로'): 검색 아닌 API 응답(src = 'gold' 골드박스·'best' 카테고리 베스트) 상품 중 진우·진열 쿠팡 글(events pid)과 같은 상품·옵션(cp_match)
+    -> best = cpq m[주소] = [가격, 시각, 옵션](검색 확인과 같은 칸 — 사이트 지금가·검색 간격) + ms[주소] = 'best' + r 로켓 근거
+    -> gold = cpq g[주소] = [가격, 시각](가격 기록만 — 하루 특가라 사이트 지금가·검색 간격 X) -> 맞춘 수(추가 호출 X) · price_track이 price_hist에."""
     q, ev, at = seen.setdefault("cpq", {"m": {}}), ev_info(), time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600))
+    q.setdefault("m", {})
     names = {p["url"]: parse(title_of(p["text"]))[1] for p in load(POSTS, []) if p.get("own") and ev.get(p.get("url"), {}).get("pid") and not p["text"].startswith("📋")}
-    by, q["g"] = collections.defaultdict(list), {}
+    by, n = collections.defaultdict(list), 0
     for u in names:
         by[str(ev[u]["pid"])].append(u)
+    if src == "gold":
+        q["g"] = {}  # 하루 1번 — 오늘 것만(price_track이 넣은 뒤엔 같은 값 다시 = 그대로)
     for z in items or []:
         for u in by.get(str(z.get("productId")), ()) if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit() else ():
-            if cp_qs(z, "itemId") == ev[u]["item"] if ev[u].get("item") else cp_same(names[u], z.get("productName")):
-                q["g"][u] = [int(z["productPrice"]), at]
-    return len(q["g"])
+            if not cp_match(z, u, ev, names):
+                continue
+            n += 1
+            if src == "gold":
+                q.setdefault("g", {})[u] = [int(z["productPrice"]), at]
+            elif q["m"].get(u, [0, ""])[1] <= at:
+                q["m"][u], q.setdefault("ms", {})[u] = [int(z["productPrice"]), at, ev[u].get("item") or ""], src
+                q.setdefault("r", {})[u] = z.get("isRocket") is True
+    RUN.setdefault("cpo", collections.Counter())["n"] += n
+    return n
 
 
 def price_track(seen):
     """쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 볼 수 있게'): 이번 실행까지 본 쿠팡 가격 -> price_hist.json(build_site.ph_add — 같은 값 다시 = 그대로 · 바뀐 것만 저장)
-    봇 검색(cpq m — cp_price·같은 검색 결과, 지금 events 옵션으로 맞춘 것만) api · 골드박스(cpq g) gold · Cowork events now·chk cw · 진우 글 처음 올린 가격 post · 상품당 최근 180일. 쿠팡만(토스 X)."""
+    봇 검색·골드박스·카테고리 베스트(cpq m — 출처 ms, 지금 events 옵션으로 맞춘 것만) api·gold·best · Cowork events now·chk cw · 진우 글 처음 올린 가격 post · 상품당 최근 180일. 쿠팡만(토스 X)."""
     h, ev, q = ph_load(), ev_info(), seen.get("cpq", {})
     n = ph_events(h, ev) + ph_posts(h, load(POSTS, []), ev)
-    for src, d in (("api", q.get("m", {})), ("gold", q.get("g", {}))):
-        for u, v in d.items():
-            e = ev.get(u, {})
-            if isinstance(v, list) and len(v) > 1 and v[0] and (src == "gold" or (v[2:3] or [""]) == [e.get("item") or ""]):  # 못 찾음([0, …]) = 그 전 값은 이미 들어감
-                n += ph_add(h, ph_key(e, u), ph_t(v[1]), int(v[0]), "", src)
+    for u, v in q.get("m", {}).items():
+        e = ev.get(u, {})
+        if isinstance(v, list) and len(v) > 1 and v[0] and (v[2:3] or [""]) == [e.get("item") or ""]:  # 못 찾음([0, …]) = 그 전 값은 이미 들어감 · 다른 옵션으로 맞춘 값 X
+            n += ph_add(h, ph_key(e, u), ph_t(v[1]), int(v[0]), "", q.get("ms", {}).get(u, "api"))
+    for u, v in q.get("g", {}).items():  # 골드박스(cp_api_prices — 옵션 맞춘 것만)
+        n += ph_add(h, ph_key(ev.get(u, {}), u), ph_t(v[1]), int(v[0]), "", "gold")
     n += ph_trim(h, time.time())
     if n:
         json.dump(h, open(PRICE_HIST, "w"), separators=(",", ":"))
@@ -1729,6 +1749,14 @@ def ph_prio(seen, posts, names):
     return {p["url"] for p in posts if p.get("url") in names and (icon_of(p["text"]) == "👍" or p.get("stdy") or p["url"] in pt["u"] or cat_of(p) == "life")}
 
 
+def ph_gap(rows, pr=False):
+    """다음 검색까지 날 수(10/30 진우 'api는 효과적으로'): 최근 7일 안 일반가 바뀜 = 2 · 최근 3번 같은 가격 = 7 · 그 밖 = PH_DUE(3, 72시간) · 추적 우선(pr) = 3일 안 보장."""
+    s = [r for r in rows or [] if r[2] == ""]
+    g = 2 if len(s) > 1 and s[-1][0] >= ph_now(time.time() - 7 * 86400) else 7 if s and ph_n(s[-1]) >= 3 else PH_DUE
+    return min(g, PH_DUE) if pr else g
+
+
+PH_TAG_MIN = 3  # 진열 tag(예 '비비고 국·탕')에 검색할 추적 상품이 3개↑ = tag 낱말로 1번 검색
 PH_TOP = 20  # 추적 우선 '많이 본' = gc_top.json(24시간 조회·구매 클릭 순) 앞 20개에 7일 안 든 상품
 
 
@@ -2001,7 +2029,9 @@ def cp_price(seen):
     -> 결과(최대 10개) 중 events pid와 같은 상품(productId 또는 파트너스 링크 pageKey)이고 같은 옵션인 것만(events item = 옵션 itemId가 있으면 그것, 없으면 이름 수량·용량 cp_same)
     -> seen cpq m[url] = [가격(못 찾으면 0), 'YYYY-MM-DD HH:MM'(KST)]
     -> own_end가 events now·chk보다 새것이면 그 값(사이트 ⏳/🔥 같은 값). 못 찾으면 로그에 pid·보낸 검색어·결과 위 3개(pid 있음 = 옵션 다름 / pid 없음 구분).
-    상한 = 다음 실행에, 그 밖 오류 = 오늘은 그 글 건너뜀(어제 가격 그대로 · 한 글이 줄을 막지 않게). 키 없으면 아무것도 안 함."""
+    상한 = 다음 실행에, 그 밖 오류 = 오늘은 그 글 건너뜀(어제 가격 그대로 · 한 글이 줄을 막지 않게). 키 없으면 아무것도 안 함.
+    10/30 진우 'api는 효과적으로'(상한 그대로): 어느 출처로든(봇 검색·골드박스·베스트·Cowork·price_hist) 가격을 본 지 ph_gap일 안 = 검색 X(사진 없는 글 사진 검색은 하루 1번 그대로)
+    · 진열 tag에 검색할 상품 PH_TAG_MIN개↑ = tag 낱말로 1번 검색(같은 결과로 맞춤 — 2개 밑이면 7일 동안 상품 이름 검색) · 하루 효율 줄 '가격 관측 N(호출 M · 호출당 K개 · 검색 S/144)'."""
     kst = time.gmtime(time.time() + 9 * 3600)
     if not HAS_CP or kst.tm_hour < CP_CHK_HOUR:
         return
@@ -2017,6 +2047,7 @@ def cp_price(seen):
     fire = {p["url"] for p in posts if p.get("own") and p.get("st") == "hot"}  # 🔥 진열(CCC 몰아서 순서)
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
     q["i"] = {u: v for u, v in q.get("i", {}).items() if u in names}  # i = 상품 사진(productImage — 사이트 썸네일, 10/24 개편)
+    q["ms"] = {u: v for u, v in q.get("ms", {}).items() if u in names}  # ms = 그 가격 출처(골드박스·베스트 — 없으면 검색)
     q["r"] = {u: v for u, v in q.get("r", {}).items() if u in names}  # r = 로켓 근거(검색 API isRocket — E 자동 재게시 🚀/📦)
     q["v"] = {u: v for u, v in q.get("v", {}).items() if u in names}  # v = 사진 없는 글의 다음 검색어 번호(cp_kws — pid 찾으면 그대로)
     q["vp"] = {u: v for u, v in q.get("vp", {}).items() if u in names}  # vp = 사진 있는 글 [검색어 번호, 연속 못 찾음](가격까지 맞추면 그대로 · 2번 연속 못 찾으면 다음 — XX 리뷰)
@@ -2028,7 +2059,14 @@ def cp_price(seen):
         if ev[u].get("pid"):
             bypid.setdefault(ev[u]["pid"], []).append(u)
     last = lambda u: max(q["m"].get(u, [0, ""])[1], c if re.fullmatch(r"\d{4}-\d\d-\d\d \d\d:\d\d", c := str(ev[u].get("chk") or "")) else "")  # XX(10/27): 마지막 확인 = 봇 검색·Cowork events chk 중 새것 — 막 들어온(Cowork가 확인한) 진열이 옛 확인 상품 앞을 막지 않게
-    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (not q["m"].get(u, [0, ""])[1].startswith(today) or ev[u].get("item") and q["m"][u][2:3] != [ev[u]["item"]]
+    hh, prio = ph_load(), ph_prio(seen, posts, names)
+    ago = lambda d: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - d * 86400))
+    def seen_at(u):  # 어느 출처로든 마지막으로 가격을 본 시각(봇 검색·골드박스·베스트·Cowork chk·price_hist)
+        t = max((ph_last(r) for r in hh.get(ph_key(ev[u], u)) or [] if r[3] != "gold"), default="")  # 골드박스 = 하루 특가라 셈 X
+        return max(last(u), f"20{t[:2]}-{t[2:4]}-{t[4:6]} {t[6:8]}:00" if t else "")
+    due = lambda u: seen_at(u) < ago(ph_gap(hh.get(ph_key(ev[u], u)), u in prio))
+    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
+                                                                                                   or ev[u].get("item") and u in q["m"] and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or not rush and u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: (rush and t[0] >= CP_RUSH[0], t[1] not in hot, rush and t[1] not in fire, t[0]))  # 최근 올린 글(CP_HOT_H) 먼저, 그다음 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
     def shown(f, k=None):  # 지난 빌드 쪽에 보이는 딜(쪽 링크 순서 — k = 첫 화면 몇 개)
@@ -2054,9 +2092,15 @@ def cp_price(seen):
     old = [t for t in todo if t[1] in q.get("i", {})]
     if rush:  # CCC 몰아서 = 사진 채움(품목 낱말 검색·사진 없는 글 먼저) 쉼 — 검색 몫 전부 가격 확인(순서 그대로 · 사진은 같은 검색에서 덤으로)
         gk, pho, old = {}, [], list(todo)
-    prio, d3 = ph_prio(seen, posts, names), time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - PH_DUE * 86400))
-    due = {u for u in prio if last(u) < d3}  # 가격 추적(10/30 Cowork ②): 추적 우선 상품 = 3일에 1번은 확인(순서만 — 호출 상한 그대로)
-    todo = sorted((t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]), key=lambda t: (t[1] not in rw, t[1] not in due, t[0] if t[1] in due else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
+    d3 = ago(PH_DUE)
+    pd = {u for u in prio if seen_at(u) < d3}  # 가격 추적(10/30 Cowork ②): 추적 우선 상품 = 3일에 1번은 확인(순서 — 호출 상한 그대로)
+    q["tg"] = tg = {t: v for t, v in q.get("tg", {}).items() if v[0] > ago(7)[:10]}  # 진열 tag 검색 {tag: [날, 맞은 수]}
+    bytag = collections.defaultdict(list)
+    for t in todo:
+        if ev[t[1]].get("tag") and t[1] not in rw:
+            bytag[ev[t[1]]["tag"]].append(t[1])
+    tags = [(t, None, "tag", t, None) for t, us in bytag.items() if len(us) >= PH_TAG_MIN and not (t in tg and tg[t][1] < 2)]  # 2개 밑으로 맞은 tag = 7일 동안 상품 이름 검색
+    todo = sorted(tags + [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]], key=lambda t: (t[1] not in rw, t[2] != "tag", t[1] not in pd, t[0] if t[1] in pd else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
     got = miss = err = gn = 0
     xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
     qs = cp_qs
@@ -2066,8 +2110,8 @@ def cp_price(seen):
             print("img", f"쿠팡 검색 {ps['n']}번으로 {ps['m']}개 ({int(ps['d'][5:7])}/{int(ps['d'][8:])})")
         ps.update(d=today, n=0, m=0)
     for _, u, pid, name, item in (t for t in todo if t[1] not in xs):  # 검색 1번씩(사진 없는 글·오래된 확인 번갈아 — 한 글이 실행 상한을 다 쓰지 않게)
-        kws = cp_kws(name) if u else [name]  # u 없음 = 품목 낱말 검색(T)
-        photo = not u or u not in q.get("i", {})
+        kws = cp_kws(name) if u else [name.replace("·", " ")]  # u 없음 = 품목 낱말 검색(T)·진열 tag 검색(pid 'tag')
+        photo = pid != "tag" and (not u or u not in q.get("i", {}))
         v = (q["v"].get(u, 0) if photo else q["vp"].get(u, [0, 0])[0]) % len(kws) if u else 0  # 사진 없는 글 = 오늘 못 찾은 만큼 다음 검색어 · 있는 글 = 가격(옵션)까지 맞춘 검색어 vp(처음 = 이름 그대로 — XX 리뷰: 2번째 검색어로만 찾는 글이 매번 이름 그대로 못 찾아 '가격 확인 안 됨'이 되지 않게)
         kw, n0 = kws[v], len(q.setdefault("i", {}))
         try:
@@ -2080,6 +2124,8 @@ def cp_price(seen):
             print("cp price", pid or kw, repr(e))
             if u:
                 q["e"][u], err = today, err + 1
+            elif pid == "tag":
+                tg[name] = [today, 0]
             else:
                 q["gs"][kw], gn = today, gn + 1  # 오류 = 그 낱말 이번 주 X(줄 막지 않게)
             ps["n"] += photo  # 실패한 검색도 1번(상한 셈 그대로)
@@ -2093,8 +2139,14 @@ def cp_price(seen):
                 if u2 != u and z.get("productPrice") and not q["m"].get(u2, [0, ""])[1].startswith(today) \
                         and (qs(z, "itemId") == ev[u2]["item"] if ev[u2].get("item") else cp_same(names[u2], z.get("productName"))):  # BBB: 같은 옵션이면 가격도(본 검색과 같은 기준 · 추가 호출 X)
                     q["m"][u2] = [int(z["productPrice"]), time.strftime("%Y-%m-%d %H:%M", kst), ev[u2].get("item") or ""]
+                    q["ms"].pop(u2, None)
+                    RUN.setdefault("cpo", collections.Counter())["n"] += 1
                     xs.add(u2)
                     q.setdefault("r", {})[u2] = z.get("isRocket") is True
+        if pid == "tag":
+            tg[name] = [today, sum(u2 in xs for u2 in bytag[name])]
+            print(f"cp price tag '{name}' 검색할 상품 {len(bytag[name])}개 중 {tg[name][1]}개 맞춤 · 결과 {len(ds)}개")
+            continue
         if not u:
             q["gs"][kw], gn = today, gn + 1
             q["gm"].update(dict.fromkeys(grp[kw], today))
@@ -2119,6 +2171,8 @@ def cp_price(seen):
         was = q["m"].get(u) or []
         q["m"][u] = [int(x["productPrice"]), time.strftime("%Y-%m-%d %H:%M", kst), item or ""] if x else [0, time.strftime("%Y-%m-%d %H:%M", kst), item or ""] + (was[:3] if was[:1] not in ([], [0]) else was[3:6])  # [2] = 맞춘 옵션 itemId("" = 이름 cp_same) — events item이 나중에 바뀌면 own_end가 안 믿음 · 못 찾음 = [3:6]에 마지막 맞춘 가격·시각·옵션(XX 리뷰 — 한 번 못 찾았다고 옛 Cowork 가격·날짜로 돌아가지 않게)
         q.setdefault("r", {})[u] = bool(x) and x.get("isRocket") is True  # 못 찾음 = 로켓 근거 없음(옛 True 그대로 X)
+        q["ms"].pop(u, None)
+        RUN.setdefault("cpo", collections.Counter())["n"] += bool(x)
         y = x or next((z for z in same if not item or qs(z, "itemId") == item), None)  # 사진 = 같은 pid면 옵션이 달라도(추가 호출 X) — events item이 있으면 그 옵션 사진만
         if y and str(y.get("productImage") or "").startswith("https://"):
             q["i"][u] = y["productImage"]
@@ -2133,8 +2187,13 @@ def cp_price(seen):
     if got or miss or err or xs:
         print("cp price", f"진우 쿠팡 상품 {got}개 가격 확인 · 못 찾음 {miss} · 오류 {err} · 오늘 남음 {len(todo) - len(gk) - got - miss - err}" + (f" · 같은 검색 결과로 {len(xs)}개 더" if xs else "")
               + (f" · 몰아서 남은 {sum(last(u) < CP_RUSH[0] for u in names if ev[u].get('pid'))}개({CP_RUSH[0][5:7].lstrip('0')}/{CP_RUSH[0][8:10].lstrip('0')} {int(CP_RUSH[0][11:13])}시 뒤 확인 안 된 것)" if rush else ""))
-    tr = [u for u in names if ev[u].get("pid")]
-    print("price track", f"추적 {len(tr)}개 · 3일 안 확인 {sum(last(u) >= d3 for u in tr)}개 · 우선 {len(prio)}개 중 3일 안 {sum(last(u) >= d3 for u in prio)}개")  # 22:30 점검 줄
+    tr, ef, ro = [u for u in names if ev[u].get("pid")], q.setdefault("ef", {}), RUN.pop("cpo", {})
+    if ef.get("d") != today:
+        ef.update(d=today, n=0, c=0, s=0)
+    for k in "ncs":
+        ef[k] += ro.get(k, 0)
+    print("price track", f"추적 {len(tr)}개 · 3일 안 확인 {sum(seen_at(u) >= d3 for u in tr)}개 · 우선 {len(prio)}개 중 3일 안 {sum(seen_at(u) >= d3 for u in prio)}개"
+          f" · 가격 관측 {ef['n']}(호출 {ef['c']} · 호출당 {ef['n'] / max(ef['c'], 1):.1f}개 · 검색 {ef['s']}/{CP_SEARCH_HOUR * 24})")  # 22:30 점검 줄(오늘 합)
 
 
 def cp_words(name):
