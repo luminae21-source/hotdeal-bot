@@ -5266,8 +5266,9 @@ def reel_say(top, kst, unit=True, nmax=14, head=None):
     return rows + [("핫딜픽에서 더 보기", "핫딜픽에서 더 보세요")]
 
 
-def reel_voice(rows):
-    """대본 -> [(자막, WAV)] 또는 None(키 없음·실패 — 글자 + 음악). 장 길이 합이 20초 넘으면 더 빠르게 한 번 더 읽힘(최대 1.4배), 그래도 넘으면 None."""
+def reel_voice(rows, hook=False, cap=20):
+    """대본 -> [(자막, WAV)] 또는 None(키 없음·실패 — 글자 + 음악). 장 길이 합이 cap초(릴스 20 · 클립 30) 넘으면 더 빠르게 한 번 더 읽힘(최대 1.4배), 그래도 넘으면 None.
+    hook = 첫 줄 = 클립 상황 훅 장(cards.reel_plan hook)."""
     import cards
     rate = TTS_RATE
     try:
@@ -5278,16 +5279,16 @@ def reel_voice(rows):
                 if not wavs[-1]:
                     return None
             segs = [cards._wav(w)[3] for w in wavs]
-            total = sum(cards.reel_plan(segs, len(rows) - 2))
-            if total <= 20:
+            total = sum(cards.reel_plan(segs, len(rows) - 2 - hook, hook))
+            if total <= cap:
                 print("reel narration", f"{total:.1f}초 · {rate:.2f}배")  # 정기 점검용(몇 초·몇 배로 됐는지)
                 return [(sub, w) for (sub, _), w in zip(rows, wavs)]
             sp = sum(x for x in segs if cards.LEAD + x + cards.TAIL > 3)  # 줄일 수 있는 건 3초 넘는 장의 말뿐(여백·3초 기본은 그대로)
-            rate = min(1.4, rate * sp / max(0.1, sp - (total - 19.5)))
+            rate = min(1.4, rate * sp / max(0.1, sp - (total - cap + 0.5)))
     except Exception as e:  # 깨진 음성(WAV 아님 등) = 글자 + 음악
         print("reel voice", type(e).__name__)
         return None
-    print("reel narration 20초 넘음", f"({rows[1][0][:20]}…)" if len(rows) > 2 else "")
+    print(f"reel narration {cap}초 넘음", f"({rows[1][0][:20]}…)" if len(rows) > 2 else "")
     return None
 
 
@@ -5303,7 +5304,7 @@ def reel_top(ps, n=3, tag="clip"):
     return out
 
 
-def make_reel(top, kst, out, k=0, safe=False, label=None, note=None):
+def make_reel(top, kst, out, k=0, safe=False, label=None, note=None, hook=None):
     """릴스 1편(모아보기·샘플 같이): 재료 채움 -> 나레이션(GOOGLE_TTS_KEY 있으면) -> 영상(cards.reel) -> (경로, 캡션, 나레이션 됐는지).
     배경음악 = 라이선스 기록된 곡(MUSIC.md) 중 오늘 차례 + k. 캡션 = 대가성 문구 맨 앞(ig_notes) 그대로."""
     import cards
@@ -5311,12 +5312,12 @@ def make_reel(top, kst, out, k=0, safe=False, label=None, note=None):
     music, song = bgm(kst, k), song_of(kst, k)
     voice = None
     for kw in ({}, {"nmax": 8}, {"unit": False}) if E.get("GOOGLE_TTS_KEY") else ():  # 20초 넘으면 이름 더 짧게 -> 그래도 넘으면 단위가격 빼고
-        voice = reel_voice(reel_say(top, kst, head=label and f"오늘의 {label}", **kw))
+        voice = reel_voice([(hook, hook)] * bool(hook) + reel_say(top, kst, head=label and f"오늘의 {label}", **kw), bool(hook), 30 if safe else 20)  # 클립 훅 = 나레이션 첫 문장
         if voice:
             break
     if E.get("GOOGLE_TTS_KEY"):
         print("reel", "나레이션 " + (("이름 8자" if kw.get("nmax") else "단위가격 뺌" if kw else "기본") if voice else "X — 글자 + 음악"))
-    path = cards.reel([{**card_item(p)[0], "photo": ig_photo(p, "ig_photos")[0]} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label, "note": note} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
+    path = cards.reel([{**card_item(p)[0], "photo": ig_photo(p, "ig_photos")[0]} for p in top], f"{kst.tm_mon}월 {kst.tm_mday}일", out, music, say=voice, **({"safe": True, "label": label, "note": note, "hook": hook} if safe else {}))  # 올리브영 딜은 딜 카드처럼 거른 재료
     cap = (ig_notes(top) + "\n\n" + (top[0].get("hook") + " · " if top[0].get("hook") else "") + f"{kst.tm_mon}월 {kst.tm_mday}일 가성비 TOP{len(top)}\n\n"
            + "\n".join(f"{n}. {title_of(p['text'])}" for n, p in enumerate(top, 1))
            + (f"\n\n🎵 {song['name']}" + (" (Pixabay)" if "pixabay.com" in song.get("page", "") else "") if music and song else "")
@@ -5388,6 +5389,17 @@ def clip_topics(seen, posts, kst):
     return out
 
 
+CLIP_HOOKS = {"steady": "다 떨어지기 전에 장바구니", "drop": "어제보다 내려간 것만", "eve": "어제 저녁 놓친 특가", "beauty": "화장대 채울 때 1개 값부터"}  # 주제별 기본 훅(kw·큐레이션 = '{검색어} 고를 때 1개 값부터')
+
+
+def clip_hook(key, word, top, used=()):
+    """클립 첫 장 상황 훅(10/30 진우 — 1.5~2초 큰 글씨 · 나레이션 첫 문장): 상품 💡 줄 '—' 뒤(첫 상품부터) -> 없으면 주제별 기본 훅(CLIP_HOOKS) ·
+    이모지 뺌 · 25자 안 · 써 본 척·효능·비교·과장·'최저가'·필수템·강추 X · 같은 날 같은 문장 X(used) -> 문장 또는 ''."""
+    cands = [re.sub(VOICE_EMOJI, "", m[1]).strip() for p in top for m in [re.search(r"^💡.*?—\s*(.+)$", p.get("text") or "", re.M)] if m]
+    cands.append(CLIP_HOOKS.get(key) or f"{(word or '').split('·')[0].strip()} 고를 때 1개 값부터".strip())
+    return next((h for h in cands if h and len(h) <= 25 and h not in used and not re.search(f"{WU_BAN}|{TH_HOOK_BAN}", h)), "")
+
+
 def clip_at(top):
     """클립 가격 시각(끝 장·유튜브 설명 같은 값) = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것 -> (월, 일, 시)."""
     return min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)
@@ -5432,10 +5444,10 @@ def clip_post(seen):
     made, todo, labels = js.setdefault(day, []), [t for t in topics if t[0] not in st["done"]], {t[0]: t[1] for t in topics}
     used, k = {u for c in made for u in c.get("u", [])}, 0
 
-    def render(top, n, label):  # 끝 장 가격 시각 = clip_at · 곡 = 오늘 차례 + n(편마다 다름)
+    def render(top, n, label, hook=None):  # 끝 장 가격 시각 = clip_at · 곡 = 오늘 차례 + n(편마다 다름) · hook = 첫 장 상황 훅
         at = clip_at(top)
         os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
-        return make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인")[2]
+        return make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인", hook=hook)[2]
     byu = {p.get("url"): p for p in posts}
     for c in made:  # 틀(CLIP_LAY)이 바뀌면 그날 이미 만든 클립 = 같은 상품·같은 번호로 1번 다시(10/29 Cowork 시안 틀)
         if k >= CLIP_RUN or c.get("lay") == CLIP_LAY:
@@ -5455,13 +5467,13 @@ def clip_post(seen):
         top = reel_top([p for p in ps if p.get("url") not in used], 3, f"clip {key}")
         if len(top) < 3:
             continue
-        n, k = len(made) + 1, k + 1
+        n, k, hook = len(made) + 1, k + 1, clip_hook(key, word, top, {c.get("hook") for c in made})
         try:
-            said = render(top, n, label)
+            said = render(top, n, label, hook)
         except Exception as e:
             print("clip", key, repr(e))
             continue
-        made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said, "lay": CLIP_LAY})
+        made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said, "lay": CLIP_LAY, "hook": hook})
         used |= {p["url"] for p in top}
         st["n"] = st.get("n", 0) + 1
         print(f"clip {n:02d} {key} · {made[-1]['title']} · 나레이션 {'O' if said else 'X'}")
@@ -9398,9 +9410,14 @@ def th_end_report(seen):
 WEEK_DM = (0, 9)  # 주간 보고(관리봇 DM) 월요일 9시~(KST) — AA 쿠팡 주문 줄(CC 많이 물어본 것·DD 팔로워 줄도 여기에)
 
 
+WEEK_SUB_FROM = "2026-10-29 00:00"  # GGG 쿠팡 채널 ID(subId) 켠 날 — 그 전 링크 = 표 '없음' 줄
+
+
 def week_report(seen):
-    """월요일 WEEK_DM 시각 뒤 1번 관리봇만: AA 쿠팡 파트너스 주문 리포트 지난주(월~일) vs 그 전 주 — 주문 수(orderId 중복 X)·합산 금액(gmv)·건당 평균.
-    숫자 = 관리봇 DM만(로그·파일 X — 공개 저장소). 쿠팡 상한 = 다음 실행에 다시(월요일 안), 다른 오류 = 오류 종류만 한 줄. 보낸 뒤에만 기록.
+    """월요일 WEEK_DM 시각 뒤 1번 관리봇만: AA 쿠팡 파트너스 주문 리포트 지난주(월~일) vs 그 전 주 — 주문 수(orderId 중복 X)·합산 금액(gmv)·건당 평균
+    + 채널 ID(subId)별 표(10/30 진우 — CP_SUBS + 없음: 클릭·주문·클릭당 주문·합산 · /reports/clicks·orders 줄의 subId 칸으로 나눔, 칸이 없으면 subId 파라미터로 채널마다 따로
+    — 없음 = 전체 - 채널 합). 받은 리포트 = seen weekcp(그 주만 — 상한이면 다음 실행에 이어서). 숫자 = 관리봇 DM만(로그·파일 X — 공개 저장소).
+    쿠팡 상한 = 다음 실행에 다시(월요일 안), 다른 오류 = 오류 종류만 한 줄. 보낸 뒤에만 기록.
     shortcut: 주마다 1쪽(1000줄)만·취소 안 뺌 — 주문이 1000줄을 넘거나 취소가 많아지면 page·/reports/cancels."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -9409,22 +9426,50 @@ def week_report(seen):
         return
     mon = kst_ts(time.strftime("%Y-%m-%d 00:00", kst)) - 7 * 86400  # 지난주 월요일 0시(KST)
     ymd = lambda t: time.strftime("%Y%m%d", time.gmtime(t + 9 * 3600))
+    st = seen["weekcp"] = {**(seen.get("weekcp") if seen.get("weekcp", {}).get("d") == key else {"d": key, "v": {}}), "t": now}
+    v, zero = st["v"], lambda kind: [0] if kind == "clicks" else [0, 0.0]
+
+    def get(kind, w, ch=""):  # w 0 = 그 전 주 · 1 = 지난주 -> {subId: [클릭] | [주문 수, 합산]}
+        k = f"{kind}{w}{ch}"
+        if k not in v:
+            a = mon - (1 - w) * 7 * 86400
+            rows = coupang("GET", f"/reports/{kind}?startDate={ymd(a)}&endDate={ymd(a + 6 * 86400)}&page=0" + (f"&subId={ch}" if ch else ""))
+            rows = [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
+            g = {}
+            for n, r in enumerate(rows):
+                g.setdefault(ch or str(r.get("subId") or ""), []).append((n, r))
+            v[k] = {sub: [sum(int(r.get("click") or 0) for _, r in rs)] if kind == "clicks" else [len({r.get("orderId", n) for n, r in rs}), sum(float(r.get("gmv") or 0) for _, r in rs)]
+                    for sub, rs in g.items()}
+            v[k + "?"] = any("subId" in r for r in rows)
+        return v[k]
     try:
-        tot = []
-        for a in (mon - 7 * 86400, mon):
-            od = coupang("GET", f"/reports/orders?startDate={ymd(a)}&endDate={ymd(a + 6 * 86400)}&page=0")
-            od = [r for r in od if isinstance(r, dict)] if isinstance(od, list) else []
-            tot.append((len({r.get("orderId", k) for k, r in enumerate(od)}), sum(float(r.get("gmv") or 0) for r in od)))
-        (n0, g0), (n1, g1) = tot
+        tab = {}
+        for kind in ("orders", "clicks"):
+            for w in (0, 1):
+                g = get(kind, w)
+                if not v[f"{kind}{w}?"]:  # 리포트 줄에 subId 칸 없음 = 채널마다 따로 부름
+                    tot = [sum(x) for x in zip(*g.values())] if g else zero(kind)
+                    g = {ch: get(kind, w, ch).get(ch, zero(kind)) for ch in CP_SUBS}
+                    g[""] = [a - sum(x[i] for x in g.values()) for i, a in enumerate(tot)]
+                tab[kind, w] = g
+        (n0, g0), (n1, g1) = ([sum(x) for x in zip(*tab["orders", w].values())] or [0, 0] for w in (0, 1))
         avg = lambda g, n: f"{g / n:,.0f}원" if n else "-"
+        pct = lambda o, c: f"{o / c * 100:.1f}%" if c else "-"
         line = f"🛒 쿠팡 주문 {n1:,}건({n0:,}) · 합산 {g1:,.0f}원({g0:,.0f}원) · 건당 {avg(g1, n1)}({avg(g0, n0)})"
+        rows = []
+        for ch in CP_SUBS + ("",):
+            (c0,), (c1,) = (tab["clicks", w].get(ch, [0]) for w in (0, 1))
+            (o0, s0), (o1, s1) = (tab["orders", w].get(ch, [0, 0]) for w in (0, 1))
+            rows.append(f"{ch or '없음'} 클릭 {c1:,}({c0:,}) · 주문 {o1:,}({o0:,}) · 클릭당 {pct(o1, c1)}({pct(o0, c0)}) · {s1:,.0f}원({s0:,.0f}원)")
+        line += "\n\n📎 쿠팡 채널 ID별(괄호 = 그 전 주)" + ("\n10/29부터 채널 ID — 그 전 링크는 '없음' 줄" if mon <= kst_ts(WEEK_SUB_FROM) else "") + "\n" + "\n".join(rows)
     except CpLimit:
-        return  # 다음 실행에(월요일 안)
+        return  # 다음 실행에(월요일 안 — 받은 리포트는 seen weekcp에 그대로)
     except Exception as e:
         line = f"🛒 쿠팡 주문 리포트 못 읽음({type(e).__name__})"
     if tg("sendMessage", chat_id=ADMIN, text=f"📊 주간 보고 {time.strftime('%m/%d', time.gmtime(mon + 9 * 3600))}~{time.strftime('%m/%d', time.gmtime(mon + 6 * 86400 + 9 * 3600))} (괄호 = 그 전 주)\n{line}\n"
-                                          "(쿠팡 = 파트너스 주문 리포트 · 결제 기준·취소 안 뺌 · 링크에 채널 구분이 없어 쿠팡 전체)"):
+                                          "(쿠팡 = 파트너스 주문·클릭 리포트 · 결제 기준·취소 안 뺌 · 채널 = 링크의 채널 ID — 쿠팡 보고서 '채널 ID' 탭과 같은 값)"):
         seen[key] = now  # 보낸 뒤에만(텔레그램 실패 = 다음 실행에 다시)
+        seen.pop("weekcp", None)
         print("week report 보냄")
 
 

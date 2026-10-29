@@ -328,15 +328,19 @@ def deal_card(it, n, total, out, why="살 만한 이유"):
     return out
 
 
+CLIP_HOOK_T, REEL_MAX, CLIP_MAX = 1.8, 20, 30  # 클립 첫 장 상황 훅(10/30 진우 — 1.5~2초) · 영상 상한(릴스 15~20초 · 네이버 클립 15~30초)
 LEAD, TAIL, XF, KB, DUCK = 0.3, 0.25, 9, 0.06, 0.251  # 나레이션 앞뒤 여백(초) · 장 사이 크로스페이드 9프레임(0.3초) · 켄번스 줌 6% · 나레이션 동안 음악 -12dB
 SUB_Y = RH - 430  # 자막 아래 끝(인스타 아래 UI ~420px 위 — 안전 영역)
 
 
-def reel_plan(segs, n):
+def reel_plan(segs, n, hook=False):
     """장면 길이(초) = 표지·딜 n개·끝 3초씩(10/24 Cowork 대본 틀 0~3·3~12·12~15초 — 딜이 적어도 15초), 나레이션 있으면 그 장 = 앞 여백 + 나레이션 + 뒤 여백.
-    segs = 장마다 나레이션 초(없으면 None). -> [초…] (합이 20초 넘으면 부르는 쪽이 더 빠르게 다시 읽힘·안 되면 나레이션 X)"""
+    hook = 맨 앞 클립 상황 훅 장(segs 첫 칸 — CLIP_HOOK_T초, 나레이션이 길면 그만큼 · 15초 맞춤에서 뺌).
+    segs = 장마다 나레이션 초(없으면 None). -> [초…] (합이 상한(REEL_MAX·CLIP_MAX) 넘으면 부르는 쪽이 더 빠르게 다시 읽힘·안 되면 나레이션 X)"""
+    hd = [max(CLIP_HOOK_T, LEAD + segs[0] + 0.2) if segs and segs[0] else CLIP_HOOK_T] if hook else []
+    segs = segs[1:] if hook and segs else segs
     durs = [max(3.0, LEAD + s + TAIL) if s else 3.0 for s in (segs or [None] * (n + 2))]
-    return [d * 15 / sum(durs) for d in durs] if sum(durs) < 15 else durs
+    return hd + ([d * 15 / sum(durs) for d in durs] if sum(durs) < 15 else durs)
 
 
 def duck_expr(wins, r=0.15):
@@ -417,6 +421,24 @@ def _card(w, h, r, photo=None, e=None, pad=56, num=None):
 
 def _fit_font(weight, sizes, s, width):
     return next((pf(weight, z) for z in sizes if pf(weight, z).getlength(s) <= width), pf(weight, sizes[-1]))
+
+
+def _clip_hook(text, date_label):
+    """클립 첫 장 상황 훅(10/30 진우 — 1.5~2초 큰 글씨 · 이모지 X): 날짜·'광고·제휴' 칩(y 250 — 표지와 같은 자리) + 훅 Black 120~72(2줄 먼저 · 3줄 안 · 가운데 높이)
+    · 처음 프레임부터 다 보임 · 글자 자리 = CLIP_BOXES('hook')."""
+    f = pf("SemiBold", 34)
+    dc = _chip(date_label, f, INK2, "white", 64, outline=LINE)
+    tf = next((z for n in (2, 3) for z in (120, 108, 96, 84) if len(wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), text, pf("Black", z), CLIP_W, 3)) <= n), 72)  # 2줄로 되는 크기 먼저
+    im = _rich(text, pf("Black", tf), CLIP_W, 3, fill=INK2, lh=1.15, accent=False)
+    els = [(dc, CLIP_X, 250), (_chip("광고·제휴", f, INK2, "white", 64, outline=LINE), CLIP_X + dc.width + 14, 250), (im, CLIP_X, (RH - im.height) // 2 - 100)]
+    for el, x, y in els:
+        bb = el.getchannel("A").getbbox() or (0, 0, 0, 0)
+        CLIP_BOXES.append(("hook", x + bb[0], y + bb[1], x + bb[2], y + bb[3]))
+
+    def draw(fr, t):
+        for el, x, y in els:
+            _in(fr, el, x, y, t, -1, rise=0)
+    return (Image.new("RGB", (RW, RH), CREAM), draw, INK2, LINE)
 
 
 def _clip_scenes(items, date_label, label, note):
@@ -523,7 +545,7 @@ def _clip_scenes(items, date_label, label, note):
     return scenes
 
 
-def reel(items, date_label, out, music=None, say=None, safe=False, label=None, note=None):
+def reel(items, date_label, out, music=None, say=None, safe=False, label=None, note=None, hook=None):
     """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 1080x1920 MP4(15~20초). -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
     music(음악 파일): 배경음악(짧으면 반복·앞뒤 페이드) · say(10/24 Cowork·진우 릴스 업그레이드): [(자막, WAV bytes)] 표지·딜·끝 장마다 나레이션
@@ -532,12 +554,14 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
     장마다 켄번스(1.00→1.06 줌인·줌아웃 번갈아 — 소수점 확대라 글자 안 떨림) + 장 사이 0.3초 크로스페이드, 가격은 이름보다 0.2초 늦게 떠오름.
     첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치.
     safe(네이버 클립 — 10/29 Cowork 시안) = _clip_scenes 틀(1080×1920 그대로 · 글자 = CLIP_NOGO 밖 · 자막 띠 X · 켄번스 CLIP_KB) · label = 표지 '오늘의 {label}'.
-    note(10/29 네이버 클립) = 끝 장 맨 아래 한 줄('가격은 쿠팡 M/D H시 기준 · 결제 전 최종가 확인')."""
+    note(10/29 네이버 클립) = 끝 장 맨 아래 한 줄('가격은 쿠팡 M/D H시 기준 · 결제 전 최종가 확인').
+    hook(10/30 클립 — safe만) = 맨 앞 상황 훅 장(_clip_hook · say 첫 칸 = 그 장 나레이션)."""
     import subprocess, tempfile, wave
     items = [_norm(it) for it in items[:3]]
     for it in items:
         it["hook"] = it.get("hook") or f"{it['name'][:12]} {it['main']}".strip()
-    n_sc = len(items) + 2
+    hook = (hook or "").strip() if safe else ""
+    n_sc, cap = len(items) + 2 + bool(hook), CLIP_MAX if safe else REEL_MAX
     try:
         say = [(s, _wav(b)) for s, b in say] if say and len(say) == n_sc and all(b for _, b in say) else None
         if say and len({(w[1], w[2]) for _, w in say}) > 1:
@@ -545,10 +569,10 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
     except Exception as e:  # 깨진 음성 = 글자 + 음악만
         print("reel narration", repr(e))
         say = None
-    durs = reel_plan([w[3] for _, w in say] if say else None, len(items))
-    if say and sum(durs) > 20.05:
-        print("reel narration 20초 넘음", round(sum(durs), 1))
-        say, durs = None, reel_plan(None, len(items))
+    durs = reel_plan([w[3] for _, w in say] if say else None, len(items), bool(hook))
+    if say and sum(durs) > cap + 0.05:
+        print(f"reel narration {cap}초 넘음", round(sum(durs), 1))
+        say, durs = None, reel_plan(None, len(items), bool(hook))
     low = SUB_Y - 58 * 2 - 34 - 26 if say else RH - 450  # 장 내용 아래 끝(자막 띠 위)
     cream, night = Image.new("RGB", (RW, RH), CREAM), Image.new("RGB", (RW, RH), NIGHT)
     scenes = []  # (배경, 그리기(frame, t), 진행 막대 색)
@@ -652,6 +676,8 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
     scenes.append((night, outro, "white"))
     if safe:  # 10/29 Cowork 클립 틀: 줄이지 않고 처음부터 안전 영역에 맞춰 그림(자막 띠 X — 화면 글자와 같은 말)
         scenes = _clip_scenes(items, date_label, label, note)
+        if hook:
+            scenes.insert(0, _clip_hook(hook, date_label))
 
     ad = _pill("광고·제휴")  # 첫 장 위 작게(대가성 — 캡션 맨 앞 문구와 같이)
     if top.get("photo"):  # 사진 위에서도 읽히게 = 흰 둥근 바탕

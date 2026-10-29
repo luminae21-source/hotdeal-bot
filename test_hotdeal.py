@@ -8410,8 +8410,8 @@ assert "150" not in o74e.getvalue() and "주문" not in o74e.getvalue()  # 주�
 #       영상 = 1080x1920·30fps·H.264 + AAC 44.1kHz·15~30초 · 첫 장 '광고·제휴' · 아래 25%·오른쪽 15% = 바탕색만(글자 X)
 sv75 = (H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM, H.cur_events, H.cp_shelf, H.load)
 mk75, a75 = [], []
-def mkr75(top, kst, out, k=0, safe=False, label=None, note=None):
-    mk75.append((top, out, k, safe, label, note)); open(out, "wb").write(b"mp4"); return out, "IGCAP", True
+def mkr75(top, kst, out, k=0, safe=False, label=None, note=None, hook=None):
+    mk75.append((top, out, k, safe, label, note, hook)); open(out, "wb").write(b"mp4"); return out, "IGCAP", True
 H.make_reel, H.tg = mkr75, (lambda m, **k: a75.append(k.get("text")) or {"message_id": 1})
 H.POSTS = "posts75.json"
 cp75 = lambda n, t, nm, **k: {"t": t, "text": f"🔥 [쿠팡] {nm} (9,900원/무료)", "url": f"https://link.coupang.com/a/{n}", "s": 5, "img": f"https://thumbnail.coupangcdn.com/{n}.jpg", **k}
@@ -8453,6 +8453,13 @@ d75 = cj75[0]["desc"].split("\n")
 assert d75[:3] == [H.DISCLOSURE, H.NAVER_NOTE, "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[4] == "1. 곰표 전기요 슈퍼싱글 9,900원"
 assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].split()) and not any("최저" in c["desc"] + c["title"] for c in cj75)  # 해시태그 5개 · 최저가 X
 assert cj75[2]["tags"] == ["페리오 칫솔", "센소다인 치약", "크리넥스 휴지"] and cj75[0]["u"][0].endswith("k1")  # 태그 검색어 = 수량 낱말 빼고
+# 첫 장 상황 훅(10/30 진우): 상품 💡 줄 '—' 뒤 -> 없으면 주제별 기본 훅 · 나레이션 첫 문장 · 같은 날 같은 문장 X · 셀프체크(훅 있음·금지어 X·25자 안)
+assert [x[6] for x in mk75] == ["전기요 고를 때 1개 값부터", "그릭요거트 고를 때 1개 값부터", "어제 저녁 놓친 특가", "다 떨어지기 전에 장바구니"] and [c["hook"] for c in cj75] == [x[6] for x in mk75]
+assert all(c["hook"] and len(c["hook"]) <= 25 and not re.search(f"{H.WU_BAN}|{H.TH_HOOK_BAN}", c["hook"]) for c in cj75)
+P109h = [{"text": "🔥 [쿠팡] 물티슈 (9,900원)\n💡 물티슈 모음: 1장 값으로 줄 세웠어요 — 매일 쓰는 거라 넉넉하게 쟁여 두기 🧻"}, {"text": "🔥 [쿠팡] 휴지 (9,900원)\n💡 휴지 모음: 1롤 값 — 무거운 건 문 앞까지 📦"}]
+assert H.clip_hook("steady", "", P109h) == "매일 쓰는 거라 넉넉하게 쟁여 두기" and H.clip_hook("steady", "", P109h, {"매일 쓰는 거라 넉넉하게 쟁여 두기"}) == "무거운 건 문 앞까지"  # 첫 상품 · 같은 날 같은 문장 X = 다음
+assert H.clip_hook("drop", "", [{"text": "💡 모음 — 역대 최저가라 지금 쟁여 두기"}]) == "어제보다 내려간 것만" and H.clip_hook("beauty", "", [{"text": "💡 모음 — " + "가" * 26}]) == "화장대 채울 때 1개 값부터"  # 금지어·25자 넘음 = 기본 훅
+assert H.clip_hook("kw", "전기요", []) == "전기요 고를 때 1개 값부터" and H.clip_hook("eve", "", [], {"어제 저녁 놓친 특가"}) == ""  # 다 썼으면 훅 없음
 # 유튜브 쇼츠(10/30 진우 '응' — 같은 영상, 진우가 올림): 제목 + #쇼츠 · 설명 첫 줄 = 쿠팡 문구 그대로 · 가격 시각 = 끝 장과 같음 · 네이버 쇼핑커넥트 줄 X · 해시태그 3개 · 쇼핑 태그 찾을 이름 · 네이버 + 30분
 y75 = cj75[0]["yt"]; yd75 = y75["desc"].split("\n")
 assert y75["title"] == "전기요 가성비 TOP3 #쇼츠" and y75["at"] == "08:30" and y75["shop"] == cj75[0]["tags"] and cj75[2]["yt"]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3 #쇼츠"
@@ -8513,6 +8520,13 @@ for t75 in [x / 2 for x in range(0, int(dur75(pr75) * 2))]:
 f0 = fr75(0.0); assert near75(f0.getpixel((224, 850)), (200, 120, 40)) and near75(f0.getpixel((224, 975)), (40, 90, 200)) and near75(f0.getpixel((10, 1900)), C75.CREAM)  # 표지 = 처음 프레임부터 상품 타일 사진(썸네일) · 바탕 화면 전체
 fd = fr75(5.0); assert near75(fd.getpixel((540, 520)), (200, 120, 40)) and near75(fd.getpixel((540, 830)), (40, 90, 200)) and near75(fd.getpixel((990, 600)), (255, 255, 255)), fd.getpixel((990, 600))  # 상품 장 = 사진 카드(80~1000) 안 contain
 assert max(fr75(dur75(pr75) - 0.2).getpixel((540, 1700))) < 60  # 끝 장 = 어두운 바탕
+hv75 = C75.reel(it75, "10월 29일", "docs/clip75h.mp4", None, [(s, wav75(1.0 if k == 0 else 2.6)) for k, s in enumerate(("매일 쓰는 거라 넉넉하게 쟁여 두기", "오늘의 꾸준템", "라떼 스틱", "밀크티", "핫딜픽에서 더 보세요"))],
+                safe=True, label="꾸준템", note="가격은 쿠팡 10/29 11시 기준 · 결제 전 최종가 확인", hook="매일 쓰는 거라 넉넉하게 쟁여 두기")  # 첫 장 상황 훅(10/30) + 나레이션 첫 문장
+ph75h = _sp75.run([C75.ffmpeg(), "-i", hv75], capture_output=True, text=True).stderr; hd75 = C75.reel_plan([1.0, 2.6, 2.6, 2.6, 2.6], 2, True)[0]
+assert 1.5 <= hd75 <= 2.0 and 10 <= dur75(ph75h) <= C75.CLIP_MAX and C75.reel_plan(None, 2, True)[0] == C75.CLIP_HOOK_T, (hd75, ph75h)  # 첫 장 1.5~2초
+hb75 = [b for b in C75.CLIP_BOXES if b[0] == "hook"]
+assert len(hb75) == 3 and not [(b, nz) for b in hb75 for nz in C75.CLIP_NOGO if hit75(b[1:], nz) or hit75(zb75(b), nz)] and min(b[1] for b in hb75) >= 76, hb75  # 날짜·'광고·제휴' 칩 + 훅 = 금지 구역 밖
+assert not near75(fr75(0.0, hv75).getpixel((224, 850)), (200, 120, 40)) and near75(fr75(hd75 + 0.6, hv75).getpixel((224, 850)), (200, 120, 40))  # 처음 = 훅 장(타일 X) -> 다음 장 = 표지 타일 사진
 # 리뷰: 딜 장면 사진 칸 = 이모지 타일 높이 그대로 — 나레이션(자막) 있어도 이름 아래 '확인할 점'(가격 조건) 줄이 안 밀려남(이모지 판과 이름 아래가 같음)
 it75w = [{"title": "[쿠팡] 서울우유 1등급 흰우유 1L x 12팩 멸균 대용량 (17,900원)", "comment": "", "e": "🥛", "hook": "우유 팩당 1,492원", "unit": "팩당 1,492원", "warn": "와우회원 쿠폰 적용가", "pts": ["멸균 12팩", "1등급 원유"]}]
 sy75 = [(s, wav75(2)) for s in ("오늘의 가성비", "서울우유 1리터 열두 팩", "핫딜픽에서 더 보세요")]
@@ -8525,7 +8539,7 @@ assert cv75.size == (1080, 1920) and near75(cv75.getpixel((540, 500)), (200, 120
 assert cv75.getpixel((60, 600))[2] > 80  # 사진 = 폭 안에 다 들어감(잘라서 꽉 채우기 X) — 양옆 = 흐린 바탕
 assert min(cv75.getpixel((84, 334))) > 240 and max(cv75.getpixel((995, 1300))) > 60  # 리뷰: 맨 위 날짜 줄 = 300px 줄(켄번스 줌에도 진행 막대 밑) · 훅 띠 아래 끝 = h-630 위(줌해도 자막 칸 밖)
 assert all(abs(a - b) < 40 for a, b in zip(cv75.getpixel((540, 1700)), cv75.getpixel((60, 1700))))  # 띠 아래(h-600 밑) = 흐린 바탕만(자막·UI 칸)
-for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75w0.mp4", "docs/clip75w1.mp4", "posts75.json"):
+for f in ("docs/clip75.mp4", "docs/clip75h.mp4", "docs/clip75n.mp4", "docs/clip75w0.mp4", "docs/clip75w1.mp4", "posts75.json"):
     os.remove(f)
 # 9-76) P #일상 링크 후보(10/26 진우): 링크 없는 '#일상 상품명' 사진 = 같은 상품 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 → 쿠팡 검색 API)
 #       → 관리봇 버튼 · 진우가 고른 것만 첫 댓글 링크(대가성 문구 + 👉 · 본문 첫 줄도 대가성 문구) · '없음' = 사진만 · 후보 0개 = 바로 사진만 · 고르기 전엔 안 올림 · 쿠팡 검색 상한 = 다음 실행에
@@ -9451,9 +9465,11 @@ S0.build(po85 + [{"t": "2026-10-26 09:00", "text": "🔥 [쿠팡] 신일 가열�
 ev85b = open("site/events/index.html").read(); slug85 = re.search(r'href="https://hotdealpick\.kr/e/([^"]+)\.html"[^>]*data-gc="promo/cp-kugase-2610"', ev85b)
 assert slug85 and "핫딜픽이 고른 1개 →" in ev85b and "신일 가열식 가습기" in open(f"site/e/{slug85[1]}.html").read(), ev85b[-900:]  # (리뷰) 행사 쪽(e/) 있는 tag = 카드 개수 = 행사 쪽 상품(봇 진열 글 tag는 그때 안 셈)
 os.chdir(cwd85)
-# ③ 주간 보고
+# ③ 주간 보고(+ 10/30 쿠팡 채널 ID별 표 — 리포트 줄 subId 칸으로 나눔 · 숫자 = DM만)
 cw85.clear(); aw85 = []
-H.coupang = lambda m, p, b=None: cw85.append(p) or ([{"orderId": 1, "gmv": 30000}, {"orderId": 1, "gmv": 20000}] if "20261019" in p else [{"orderId": 2, "gmv": 100000}, {"orderId": 3, "gmv": "20000"}])
+OD85 = {"20261019": [{"orderId": 1, "gmv": 30000, "subId": "threads"}, {"orderId": 1, "gmv": 20000, "subId": "threads"}], "20261026": [{"orderId": 2, "gmv": 100000, "subId": "threads"}, {"orderId": 3, "gmv": "20000", "subId": ""}]}
+CK85 = {"20261019": [{"date": "20261020", "click": 10, "subId": "threads"}], "20261026": [{"click": 40, "subId": "threads"}, {"click": 5, "subId": "telegram"}, {"click": "7", "subId": ""}]}
+H.coupang = lambda m, p, b=None: cw85.append(p) or (OD85 if "/orders" in p else CK85)[re.search(r"startDate=(\d+)", p)[1]]
 H.tg, H.RUN["cpn"], s85w = (lambda m, **k: aw85.append(k.get("text")) or {"message_id": 1}), [0, 0], {}
 with contextlib.redirect_stdout(io.StringIO()) as o85w:
     time.time = lambda: TK("2026-11-01 23:50"); H.week_report(s85w)  # 일요일 X
@@ -9461,14 +9477,35 @@ with contextlib.redirect_stdout(io.StringIO()) as o85w:
     H.RUN["cpn"] = [H.CP_RUN - 2, 0]; time.time = lambda: TK("2026-11-02 09:10"); H.week_report(s85w); assert not cw85  # 이번 실행 쿠팡 호출 몫 없음 = 다음 실행
     H.RUN["cpn"] = [0, 0]; H.week_report(s85w); H.week_report(s85w)  # 1번
     time.time = lambda: TK("2026-11-03 09:10"); H.week_report(s85w)  # 화요일 X
-assert len(aw85) == 1 and cw85 == ["/reports/orders?startDate=20261019&endDate=20261025&page=0", "/reports/orders?startDate=20261026&endDate=20261101&page=0"], cw85
-assert aw85[0].startswith("📊 주간 보고 10/26~11/01") and "🛒 쿠팡 주문 2건(1) · 합산 120,000원(50,000원) · 건당 60,000원(50,000원)" in aw85[0] and "week_20261102" in s85w, aw85  # 주문 = orderId 1번씩 · 합산 = gmv
+assert len(aw85) == 1 and cw85 == [f"/reports/{k}?startDate={a}&endDate={b}&page=0" for k in ("orders", "clicks") for a, b in (("20261019", "20261025"), ("20261026", "20261101"))], cw85
+assert aw85[0].startswith("📊 주간 보고 10/26~11/01") and "🛒 쿠팡 주문 2건(1) · 합산 120,000원(50,000원) · 건당 60,000원(50,000원)" in aw85[0] and "week_20261102" in s85w and "weekcp" not in s85w, aw85  # 주문 = orderId 1번씩 · 합산 = gmv
+tb85 = aw85[0].split("📎 쿠팡 채널 ID별(괄호 = 그 전 주)\n")[1].split("\n")
+assert tb85[0] == "10/29부터 채널 ID — 그 전 링크는 '없음' 줄" and [l.split(" ")[0] for l in tb85[1:1 + len(H.CP_SUBS) + 1]] == [*H.CP_SUBS, "없음"]  # 셀프체크: 표 줄 수 = 채널 수 + 없음 · 첫 주 안내
+assert tb85[1] == "threads 클릭 40(10) · 주문 1(1) · 클릭당 2.5%(10.0%) · 100,000원(50,000원)" and tb85[2] == "telegram 클릭 5(0) · 주문 0(0) · 클릭당 0.0%(-) · 0원(0원)"
+assert tb85[3] == "site 클릭 0(0) · 주문 0(0) · 클릭당 -(-) · 0원(0원)" and tb85[7] == "없음 클릭 7(0) · 주문 1(0) · 클릭당 14.3%(-) · 20,000원(0원)", tb85
 assert "week report 보냄" in o85w.getvalue() and not re.search(r"\d", o85w.getvalue()), o85w.getvalue()  # 숫자 = 공개 로그 X
-s85x = {}; H.tg = lambda m, **k: None; time.time = lambda: TK("2026-11-02 09:30"); H.week_report(s85x); assert not s85x  # 텔레그램 실패 = 다음 실행에 다시
+# 리포트 줄에 subId 칸 없음 = subId 파라미터로 채널마다(없음 = 전체 - 채널 합) · 상한 = 받은 것 seen weekcp에 두고 다음 실행에 이어서
+cw85.clear(); aw85.clear(); n85 = [0]
+def nos85(m, p, b=None):
+    n85[0] += 1
+    if n85[0] == 5:
+        raise H.CpLimit("coupang 시간당 상한")
+    cw85.append(p); sub = re.search(r"&subId=(\w+)", p)
+    if "/clicks" in p:
+        return [{"click": {"threads": 6, "site": 3}.get(sub[1], 0)}] if sub else [{"click": 20}]
+    return [{"orderId": 9, "gmv": 5000}] if sub and sub[1] == "threads" else [] if sub else [{"orderId": 9, "gmv": 5000}, {"orderId": 8, "gmv": 7000}]
+H.coupang, s85n = nos85, {}; time.time = lambda: TK("2026-11-02 09:40")
+H.week_report(s85n); assert not aw85 and len(cw85) == 4 and s85n["weekcp"]["d"] == "week_20261102"  # 5번째 호출 = 상한 -> 다음 실행
+H.week_report(s85n); assert len(aw85) == 1 and len(cw85) == 4 + 4 * len(H.CP_SUBS) and len(set(cw85)) == len(cw85), cw85  # 이어서(같은 호출 다시 X)
+assert sum("&subId=" not in c for c in cw85) == 4 and {c.split("&subId=")[1] for c in cw85 if "&subId=" in c} == set(H.CP_SUBS)  # 전체 4번 + 채널마다
+tb85 = aw85[0].split("\n")
+assert "threads 클릭 6(6) · 주문 1(1) · 클릭당 16.7%(16.7%) · 5,000원(5,000원)" in tb85 and "site 클릭 3(3) · 주문 0(0) · 클릭당 0.0%(0.0%) · 0원(0원)" in tb85 and "없음 클릭 11(11) · 주문 1(1) · 클릭당 9.1%(9.1%) · 7,000원(7,000원)" in tb85, tb85
+s85x = {}; H.coupang = lambda m, p, b=None: (OD85 if "/orders" in p else CK85)[re.search(r"startDate=(\d+)", p)[1]]
+H.tg = lambda m, **k: None; time.time = lambda: TK("2026-11-02 09:30"); H.week_report(s85x); assert "week_20261102" not in s85x  # 텔레그램 실패 = 다음 실행에 다시
 H.tg = lambda m, **k: aw85.append(k.get("text")) or {"message_id": 1}
-H.coupang = lim85; H.week_report(s85x); assert not s85x and len(aw85) == 1  # 쿠팡 상한 = 다음 실행에
+s85l = {}; H.coupang = lim85; H.week_report(s85l); assert "week_20261102" not in s85l and len(aw85) == 1  # 쿠팡 상한 = 다음 실행에
 def bad85(m, p, b=None): raise ValueError("rCode 400")
-H.coupang = bad85; H.week_report(s85x); assert "week_20261102" in s85x and aw85[-1].split("\n")[1] == "🛒 쿠팡 주문 리포트 못 읽음(ValueError)", aw85  # 다른 오류 = 오류 종류만
+s85x = {}; H.coupang = bad85; H.week_report(s85x); assert "week_20261102" in s85x and aw85[-1].split("\n")[1] == "🛒 쿠팡 주문 리포트 못 읽음(ValueError)", aw85  # 다른 오류 = 오류 종류만
 H.HAS_CP, s85y = False, {}; H.week_report(s85y); assert not s85y and len(aw85) == 2
 (H.http, H.POSTS, H.TH_LINK_AB, H.time.sleep, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.TH_REPLY) = sv85t; os.remove("posts85.json")
 (time.time, H.coupang, H.ai_pick, H.promo_list, H.HAS_CP, tk85, H.tg, se85, cpn85) = sv85
