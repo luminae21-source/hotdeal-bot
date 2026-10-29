@@ -5,7 +5,8 @@ from email.utils import formatdate
 
 os.environ.update(TG_TOKEN="t", TG_ADMIN_ID="42", TG_CHANNEL="@ch", COUPANG_ACCESS_KEY="ak", COUPANG_SECRET_KEY="sk")
 import hotdeal as H
-RUSH0, H.CP_RUSH = H.CP_RUSH, ("2000-01-01 00:00", "2000-01-01 00:00")  # 셀프체크 기본 = 쿠팡 몰아서(CCC) 끔 — 날짜 고정 테스트가 그 기간과 겹쳐도 예전 규칙 그대로(9-106만 켬)
+RUSH0, H.CP_RUSH = H.CP_RUSH, ("2000-01-01 00:00", "2000-01-01 00:00")  # (토스 점검 TOSS_PAUSE도 아래에서 같은 식 — 9-29·9-106만 켬)
+PAUSE0, H.TOSS_PAUSE = H.TOSS_PAUSE, ("2000-01-01 00:00", "2000-01-01 00:00")  # 셀프체크를 점검 기간(10/30~11/4)에 돌려도 실제 시각 쓰는 main 셀프체크가 토스 쉼에 걸리지 않게 · 셀프체크 기본 = 쿠팡 몰아서(CCC) 끔 — 날짜 고정 테스트가 그 기간과 겹쳐도 예전 규칙 그대로(9-106만 켬)
 IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70에서만 — 예전 인스타 셀프체크는 한 실행에 여러 개·시각을 앞뒤로 옮겨 가며 발행
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
@@ -4757,7 +4758,7 @@ def h29(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, H.HAS_TOSS, H.tg = h29, True, lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
-assert H.TOSS_PAUSE == ("2026-10-30 00:00", "2026-11-04 23:59") and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_stage, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
+H.TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59"); assert 'TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59")' in open(H.__file__, encoding="utf-8").read() and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_stage, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
 # ① 경계: 10/29 23:59 보통 · 10/30 00:00 재사용(시작 알림 1번) · 11/4 23:59 재사용(날 바뀌면 전날 요약 1번) · 11/5 00:00 링크 1개 만들어 봄 -> 되면 보통 + '끝' 1번
 s29 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")], "2": ["https://toss.im/_m/K2", TK("2026-10-29 10:00")]}}, "tb_7": {"t": TK("2026-10-29 12:00")}}
 H.toss_mode(s29, TK("2026-10-29 23:59")); assert H.RUN["treuse"] is False and not s29m and "tpause" not in s29 and not lk29
@@ -4845,6 +4846,7 @@ LF29.clear(); BAD29.update({1}); s29l = {}; lk29.clear(); H.toss_stock(s29l); as
 BAD29.update({2, 4}); s29l = {}; lk29.clear(); H.toss_stock(s29l); assert lk29 == [1, 2, 4] and s29l["tstock"]["q"][:1] == [6]  # 3번 연달아 막힘 = 이번 실행 멈춤(남은 줄은 다음 실행)
 c29.clear(); BAD29.clear(); lk29.clear(); H.toss_stock(s29l); assert len(lk29) == 5 and not any("best-selling" in u for u in c29 if isinstance(u, str))  # 이어서(목록 다시 안 읽음 — 조회 상한)
 H.RUN["treuse"] = False; L29["best-selling"][-2:] = []
+H.TOSS_PAUSE = ("2000-01-01 00:00",) * 2  # 셀프체크 기본(점검 끔)으로
 (H.http, H.tg, H.ai_pick, H.EVENTS, time.time, H.HAS_TOSS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP) = sv29; H.E.pop("THREADS_TOKEN", None); json.dump([], open("posts.json", "w"))
 # 9-30 (10/22 15:5x Cowork·진우 '잘 되는 제품은 꾸준하게'): ① metrics 줄 상품 칸(kind deal·list·etc, 상품명·제휴 링크·토스 상품 id, 목록 = urls)
 #      ② 잘 된 상품 표 top.json(지난 14일 Threads 개별 글 조회 v48(없으면 views) 상위 20% ∪ 답글 상위 20%(1개↑), 상품별, 하루 1번 — 예전 줄은 Threads 글을 다시 읽어 채움)
@@ -10598,7 +10600,7 @@ time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS = sv105; os.chdir(cw
 #   토스 단계·toss_deals 회차 X · toss_link None · toss_ok X · 예약(events) 토스 X · 미리보기는 예약 시각 기준 · Threads 대기 줄·묶음 글 토스 X · cp_fill = 빈틈마다 쿠팡) · 사이트 토스 진열 그대로(build_site 안 바뀜)
 #   + 쿠팡 몰아서(CP_RUSH 10/29 12시~11/4): 변환 안 된 진열 = 이 시각 전 실패분 ①부터 1번 더(7일 규칙 X) · 가격 확인 = 사진 채움 쉬고 아직 몰아서 확인 안 된 것 먼저(최근 게시 → 🔥 진열 → 오래된 확인) · 시간당 상한 그대로
 cwd106, sv106 = os.getcwd(), (time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, dict(H.RUN)); os.chdir(tempfile.mkdtemp())
-H.CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59"); assert 'CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59")' in open(H.__file__, encoding="utf-8").read() and H.CP_HOUR == 25 and H.CP_SEARCH_HOUR == 6 and H.CP_SEARCH_RUN == 2  # 시간당 상한은 그대로(진우 '이건 올리지 말 것')
+H.CP_RUSH, H.TOSS_PAUSE = ("2026-10-29 12:00", "2026-11-04 23:59"), ("2026-10-30 00:00", "2026-11-04 23:59"); assert 'CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59")' in open(H.__file__, encoding="utf-8").read() and H.CP_HOUR == 25 and H.CP_SEARCH_HOUR == 6 and H.CP_SEARCH_RUN == 2  # 시간당 상한은 그대로(진우 '이건 올리지 말 것')
 H.RUN["tstop"] = True
 assert H.tdead("https://toss.im/_m/A") and H.tdead("https://toss.shopping/t/1?k=x") and not H.tdead("https://link.coupang.com/a/x") and not H.tdead(None)
 s106 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", 1e12]}}}
@@ -10656,7 +10658,7 @@ with contextlib.redirect_stdout(o106): H.cp_price(p106)
 assert kw106 == ["나 상품 2kg", "라 상품 4kg"] and "몰아서 남은 1개(10/29 12시 뒤 확인 안 된 것)" in o106.getvalue(), (kw106, o106.getvalue())  # 🔥 B(10/22) 먼저 · 그다음 오래된 D(사진 없어도 같은 줄 — 품목 낱말 사진 검색 X) · A = 몰아서 확인됨 · 남은 = C(못 찾음도 해 본 것)
 kw106.clear(); time.time = lambda: TK("2026-10-30 14:00")  # 다음 날: 어제 몰아서 확인한 🔥(A·B 10/29) < 아직 몰아서 확인 안 된 것(C 10/21) 먼저
 p106["cpq"]["m"][U("A")] = [1, "2026-10-29 15:00", ""]; p106["cpq"]["m"][U("D")][1] = "2026-10-29 14:00"; H.cp_price(p106); assert kw106[0] == "다 상품 3kg", kw106
-time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, rn106 = sv106; H.CP_RUSH = ("2000-01-01 00:00",) * 2; H.RUN.clear(); H.RUN.update(rn106); os.chdir(cwd106)
+time.time, H.coupang, H.HAS_CP, H.HAS_TOSS, H.POSTS, H.EVENTS, S.EVENTS, H.tg, H.cp_deeplinks, rn106 = sv106; H.CP_RUSH = H.TOSS_PAUSE = ("2000-01-01 00:00",) * 2; H.RUN.clear(); H.RUN.update(rn106); os.chdir(cwd106)
 # 9-107) DDD(10/29 진우 '미리 준비만'): trend.json = Cowork가 읽는 품목 흐름(글·사이트엔 X) — ① 네이버 쇼핑인사이트(API HUB, Secrets NAVER_HUB_ID·NAVER_HUB_SECRET — 없으면 조용히 건너뜀)
 #   하루 1번 TREND_AT 뒤: TREND_KW + 최근 14일 진열 tag 클릭 추이 → 최근 7일 ÷ 이전 7일 오르는 순 · 같은 1분류끼리 5개씩 1호출 · 하루 TREND_MAX번 안 · 오류 = 그날 그만 ② 구글 한국 실검 RSS 1시간 1번 상위 20
 cwd107, sv107 = os.getcwd(), (time.time, H.http, H.POSTS, dict(H.E), H.tg); os.chdir(tempfile.mkdtemp())
