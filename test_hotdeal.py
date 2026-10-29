@@ -10562,4 +10562,31 @@ d104 = tempfile.mkdtemp(); os.makedirs(f"{d104}/c/women/2"); open(f"{d104}/c/wom
 S.build([{"t": "2026-10-27 08:00", "text": "🔥 [쿠팡] 맥심 모카골드 커피믹스 400개입 (49,900원)\n\n싸요", "url": "https://link.coupang.com/a/cf"}], d104)
 w104, sm104 = open(f"{d104}/c/women/index.html").read(), open(f"{d104}/sitemap.xml").read()
 assert 'content="noindex' in w104 and f"url={S.BASE}c/life/" in w104 and not os.path.exists(f"{d104}/c/women/2") and "c/women/" not in sm104 and f"{S.BASE}c/coffee/" in sm104 and "맥심 모카골드" in open(f"{d104}/c/coffee/index.html").read()  # 옛 주소 = 안내 쪽(사이트맵·IndexNow X)
+# 9-105) BBB(10/29 Cowork — 진우 쿠팡 상품 가격 확인이 10/25 전 그대로 435개): cp_price = 최근 CP_HOT_H(48)시간 안에 올린 글(진열·큐레이션 상품 포함) 먼저, 그다음 오래된 확인 순 · 같은 검색 결과에 다른 진우 글 상품이 같은 옵션으로 있으면 그 가격도(추가 호출 X — events item 있으면 그 옵션만)
+cwd105, sv105 = os.getcwd(), (time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS); os.chdir(tempfile.mkdtemp())
+U105 = lambda k: f"https://link.coupang.com/a/q{k}"
+json.dump([{"t": t, "text": f"🔥 [쿠팡] {n} (9,900원)", "url": U105(k), "own": 1} for k, n, t in (("A", "살림백서 주방세제 4L", "2026-10-20 10:00"), ("B", "곰곰 특란 30구", "2026-10-29 08:00"),
+                                                                                         ("C", "곰곰 대란 30구", "2026-10-20 10:00"), ("D", "곰곰 왕란 30구", "2026-10-20 10:00"))], open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-10-20 10:00", "url": U105(k), "text": "x", "pid": p, **({"item": "I9"} if k == "D" else {})} for k, p in (("A", "70"), ("B", "76"), ("C", "77"), ("D", "78"))], open("events.json", "w"))
+H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.json", True
+kw105 = []
+def cp105(method, path, body=None):
+    if kw105:
+        raise H.CpLimit()
+    kw105.append(urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]))
+    return {"productData": [{"productId": 76, "productName": "곰곰 특란 30구", "productPrice": 7900}, {"productId": 77, "productName": "곰곰 대란 30구", "productPrice": 7000, "isRocket": True},
+                            {"productId": 78, "productName": "곰곰 왕란 30구", "productPrice": 8000, "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=78&itemId=I8"}]}
+H.coupang, time.time = cp105, lambda: TK("2026-10-29 10:00")
+s105 = {"cpq": {"m": {U105("A"): [9000, "2026-10-22 09:00", ""], U105("B"): [7500, "2026-10-28 09:00", ""], U105("C"): [6900, "2026-10-21 09:00", ""], U105("D"): [8100, "2026-10-21 09:00", ""]},
+                "i": {U105(k): "https://ads-partners.coupang.com/image1/" + k for k in "ABCD"}}}
+o105 = io.StringIO()
+with contextlib.redirect_stdout(o105): H.cp_price(s105)
+m105 = s105["cpq"]["m"]
+assert kw105 == ["곰곰 특란 30구"] and m105[U105("B")][:2] == [7900, "2026-10-29 10:00"], (kw105, m105)  # 오늘 올린 B = 확인이 더 최근이어도 먼저
+assert m105[U105("C")] == [7000, "2026-10-29 10:00", ""] and s105["cpq"]["r"][U105("C")] is True and m105[U105("D")][:2] == [8100, "2026-10-21 09:00"] and m105[U105("A")][1] == "2026-10-22 09:00", m105  # C = 같은 결과로 가격 · D = events 옵션(I9)과 다름 = 그대로
+assert "같은 검색 결과로 1개 더" in o105.getvalue(), o105.getvalue()
+kw105.clear(); o105 = io.StringIO()
+with contextlib.redirect_stdout(o105): H.cp_price(s105)
+assert kw105 == ["곰곰 왕란 30구"] and "같은 검색 결과로" not in o105.getvalue(), (kw105, o105.getvalue())  # 다음 실행 = 오늘 확인된 B·C 건너뛰고 오래된 확인(D 10/21 → A 10/22) · 오늘 확인한 B·C는 다시 안 셈
+time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS = sv105; os.chdir(cwd105)
 print("OK: 모든 셀프체크 통과")
