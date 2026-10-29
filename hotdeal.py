@@ -10056,6 +10056,62 @@ def auto_repost(seen):
         seen[key] = {"t": now, "u": u}
 
 
+
+AUTO_P5_AT, AUTO_P5_TIMES, AUTO_P5_MIX = "17:00", ("19:50", "20:00", "20:10", "20:20", "20:30"), ((("life",), 3), (("food", "beauty", "snack", "coffee"), 2))  # C 쿠팡 5개: 생필품 3 + 식품·화장품·간식 2
+AUTO_HYGIENE = r"휴지|화장지|물티슈|키친타[월올]|치약|칫솔|생리대|팬티라이너|마스크|핸드워시|핸드솝|손세정|비누|면도|기저귀|가글"  # 위생 1개↑
+
+
+def auto_pick5(seen):
+    """C(10/30 Cowork 17:00 크롬 쿠팡 5개 확인 이관): 하루 1번 AUTO_P5_AT 뒤 — 사이트 진열 🔥(같은 링크 마지막 진우 글 st hot · 쿠팡 대가성 링크) 중 24시간 안 가격 확인(own_end chkt)
+    · 최근 3일 채널 X · 앞뒤 3일 예약 X · 어제 고른 것과 같은 종류(events tag, 없으면 품목 칸) X · 서로 다른 종류 → 생필품 3 + 식품·화장품·간식 2(위생 1개↑ 먼저) · 칸 안 = 처음 소개가 대비 싼 순
+    → auto_events.json 채널 예약 AUTO_P5_TIMES(events 단계가 올림): 글 = 그 상품 events 본문(Cowork 틀) 그대로, 제목 가격·'(M/D H시 가격)'만 지금 확인 값(가격이 바뀌면 💰 단위가 줄 X)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today, hm, yday = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst), time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 86400))
+    st5 = seen.get("autop5", {})
+    if not AUTO_ON["pick5"] or hm < AUTO_P5_AT or st5.get("d") == today:
+        return
+    now, posts, evs = time.time(), load(POSTS, []), ev_list(EVENTS)
+    since, d1 = (time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - x)) for x in (3 * 86400, 86400))
+    raw = {e["url"]: e for e in evs if isinstance(e, dict) and isinstance(e.get("url"), str) and e.get("text") and not e.get("list")}  # 뒤 항목이 덮음
+    block = {e["url"] for e in evs if isinstance(e, dict) and re.match(AT_RX, str(e.get("at", ""))) and e.get("url") and not e.get("shelf") and abs(kst_ts(e["at"]) - now) < 3 * 86400}
+    last, first, recent = {}, {}, set()
+    for p in posts:
+        u = p.get("url") or ""
+        if p.get("own") and aff_note(u) == DISCLOSURE and not p["text"].startswith("📋"):
+            last[u] = p
+            first.setdefault(u, p)
+            if p.get("mid") and p["t"] >= since:
+                recent.add(u)
+    kind = lambda u, p: raw.get(u, {}).get("tag") or cat_of(p)
+    old = set(st5.get("k", [])) if st5.get("d") == yday else set()
+    cand = sorted((won(p.get("now") or "") / max(won(parse(title_of(first[u]["text"]))[2]), 1), u) for u, p in last.items()
+                  if p.get("st") == "hot" and p.get("chkt", "") >= d1 and won(p.get("now") or "") and u not in recent and u not in block and u in raw and kind(u, p) not in old)
+    picks, kinds = [], set()
+    take = lambda u: picks.append(u) or kinds.add(kind(u, last[u]))
+    hy = next((u for _, u in cand if re.search(AUTO_HYGIENE, parse(title_of(last[u]["text"]))[1]) and cat_of(last[u]) in sum((c for c, _ in AUTO_P5_MIX), ())), None)
+    if hy:
+        take(hy)
+    for cats, n in AUTO_P5_MIX:
+        for _, u in cand:
+            if sum(cat_of(last[x]) in cats for x in picks) >= n:
+                break
+            if u not in picks and cat_of(last[u]) in cats and kind(u, last[u]) not in kinds:
+                take(u)
+    seen["autop5"] = {"t": now, "d": today, "k": sorted(kinds)}
+    es = []
+    for t, u in zip(AUTO_P5_TIMES, picks):
+        p, e = last[u], raw[u]
+        nw = f"{won(p['now']):,}원"
+        txt = re.sub(r"\([\d,]+원[^)]*\)</b>", f"({nw})</b>", e["text"], count=1)
+        if nw not in parse(title_of(e["text"].replace("<b>", "").replace("</b>", "")))[2]:
+            txt = "\n".join(l for l in txt.split("\n") if not l.startswith("💰"))
+        txt = re.sub(r"\(\d{1,2}/\d{1,2} \d{1,2}시 (?:가격|확인)\)", f"({p['chk']} 가격)", txt)
+        es.append({"at": f"{today} {t}", "url": u, "button": e.get("button") or "🛒 구매하러 가기", "deal": True, "text": txt, "now": p["now"], "chk": p["chkt"],
+                   **{k: e[k] for k in ("pid", "item", "tag") if e.get(k)}})
+    print(f"auto pick5: {auto_add(es, 'pick5')}개 예약({' · '.join(AUTO_P5_TIMES[:len(es)])}) · 후보 {len(cand)}개" + (" · 위생 X" if not hy else ""))
+    if len(es) < len(AUTO_P5_TIMES):
+        tg("sendMessage", chat_id=ADMIN, text=f"🛒 쿠팡 5개 자동: {len(es)}개만 골랐어요(후보 {len(cand)}개) — 나머지는 Cowork 확인")
+
 TH_MISS_DAYS = 7  # Threads 놓친 진우 🔥 = 채널 글 뒤 이 날 수 안만 재게시 후보(cp_repost — 3일 간격 규칙은 그대로)
 
 
@@ -10383,7 +10439,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
