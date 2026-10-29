@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now  # 제휴 도메인은 사이트와 같이 씀
+from build_site import topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, AUTO_EVENTS, PLAN  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -470,6 +470,8 @@ def cp_best(seen):
         try:
             r = coupang("GET", f"/products/bestcategories/{c}?limit=100")
             got.append((c, cp_photos(seen, r), cp_api_prices(seen, r, "best")))
+            b.setdefault("r", {})[str(c)] = [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], int(z["productPrice"]), z.get("productImage") or "", z.get("rank"), z.get("isRocket") is True]
+                                             for z in (r if isinstance(r, list) else [])[:CP_BEST_KEEP] if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit()]  # A 진열 자동(auto_shelf) — 칸마다 마지막 응답
         except CpLimit:
             break
         except Exception as e:
@@ -478,6 +480,72 @@ def cp_best(seen):
         d[str(c)] = slot
     if got:
         print("cp best", " · ".join(f"{c} 사진 +{a} 가격 {k}" for c, a, k in got), f"(남은 차례 {len(due) - len(got)}칸)")
+
+
+AUTO_ON = {"shelf": True, "repost": True, "pick5": True, "status": True, "event": True}  # 10/30 Cowork 크롬 루틴 이관(진우 '깃허브에서 작업 가능한 것은 이관하자') — 끔 스위치: False = 그 기능 X(Cowork 크롬 그대로) · 쿠팡 API 상한 그대로
+AUTO_SHELF_AT, AUTO_SHELF_N, AUTO_KEEP, CP_BEST_KEEP = "14:30", (4, 6), 45, 60  # A 진열 자동: 하루 1번 이 시각 뒤 · 4~6개(4개 밑 = 안 올림) · auto_events 진열 45일 보관 · 베스트 응답 칸마다 위 60개만 보관
+AUTO_CLAIM = r"효능|효과|개선|치료|예방|완화|다이어트|체지방|면역|미백|주름|탄력|재생|해독|디톡스"  # 이름에 효능 낱말 = 자동 진열 X(효능 표현은 사람이 판단)
+CP_BEST_NAME = {1001: "여성패션", 1010: "뷰티", 1011: "출산/유아동", 1012: "식품", 1013: "주방용품", 1014: "생활용품", 1015: "홈인테리어", 1016: "가전디지털", 1018: "자동차용품", 1021: "문구/오피스", 1024: "헬스/건강식품", 1029: "반려동물용품"}  # 쿠팡 파트너스 카테고리 번호 -> 이름('쿠팡 <카테고리> 베스트 N위')
+
+
+def plan_today(now=None):
+    """docs/plan.json(Cowork — 품목 돌림·💡 한 줄·행사·검색어) -> 오늘 진열 품목 {kw, words, tip}: date가 오늘인 것 먼저, 없으면 날짜 없는 것을 10/30부터 하루씩 돌림 · 없음·깨짐 = None."""
+    today = time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
+    xs = [x for x in (load(PLAN, {}).get("shelf") if isinstance(load(PLAN, {}), dict) else None) or [] if isinstance(x, dict) and x.get("kw")]
+    rot = [x for x in xs if not x.get("date")]
+    x = next((x for x in xs if x.get("date") == today), None) or (rot[(calendar.timegm(time.strptime(today, "%Y-%m-%d")) // 86400 - 20756) % len(rot)] if rot else None)  # 20756 = 2026-10-30(돌림 첫날)
+    return x and {"kw": str(x["kw"]), "words": [str(w) for w in x.get("words") or [x["kw"]] if str(w).strip()], "tip": str(x.get("tip") or "")}
+
+
+def auto_add(es, kind):
+    """auto_events.json에 봇 진열·예약 더함(같은 url·at = 그대로) · 지난 것 정리(진열 AUTO_KEEP일 · 예약 3일) -> 더한 수."""
+    old, kst = load(AUTO_EVENTS, []), time.gmtime(time.time() + 9 * 3600)
+    old = old if isinstance(old, list) else []
+    cut = {k: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - d * 86400)) for k, d in (("shelf", AUTO_KEEP), ("", 3))}
+    old = [e for e in old if isinstance(e, dict) and str(e.get("at", "")) >= cut["shelf" if e.get("shelf") else ""]]
+    have = {(e.get("url"), e.get("at")) for e in old}
+    add = [dict(e, auto=kind) for e in es if (e.get("url"), e.get("at")) not in have]
+    if add or len(old) != len(load(AUTO_EVENTS, []) or []):
+        json.dump(old + add, open(AUTO_EVENTS, "w"), ensure_ascii=False, indent=0)
+    return len(add)
+
+
+def auto_shelf(seen):
+    """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목 낱말과 맞는 상품
+    -> events·auto_events·cp_fail에 없는 pid · 이름 효능 낱말 X · 사진 있음 · 순위 순 AUTO_SHELF_N(4~6개, 4개 밑 = 안 올림 + 관리봇 1줄) -> auto_events.json 진열(Cowork 진열 틀 그대로)
+    · 근거 = '쿠팡 <카테고리> 베스트 N위'(응답 rank 그대로 — API엔 리뷰 수·할인 표시 X) · 🔥 = price_hist 기록 최저보다 내려갔을 때만, 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = plan 그 품목 한 줄."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
+    if not AUTO_ON["shelf"] or hm < AUTO_SHELF_AT or seen.get("autoshelf", {}).get("d") == today or not seen.get("cpbest", {}).get("r"):
+        return
+    seen["autoshelf"] = {"t": time.time(), "d": today}
+    pl = plan_today()
+    if not pl:
+        print("auto shelf: plan.json 오늘 품목 없음")
+        return
+    pids = {e.get("pid") for e in ev_info().values()} | {str(x.get("pid")) for x in load(CP_FAIL, []) if isinstance(x, dict)}
+    best = {}
+    for c, xs in seen["cpbest"]["r"].items():
+        for pid, item, name, price, img, rank, rocket in xs:
+            if pid not in pids and price and str(img).startswith("https://") and isinstance(rank, int) and rank > 0 and not re.search(AUTO_CLAIM, name) and any(w in name for w in pl["words"]):
+                best.setdefault(pid, (rank, int(c), pid, item, name, price, img, rocket))
+    picks = sorted(best.values())[:AUTO_SHELF_N[1]]
+    if len(picks) < AUTO_SHELF_N[0]:
+        print(f"auto shelf '{pl['kw']}': 맞는 베스트 상품 {len(picks)}개({AUTO_SHELF_N[0]}개 밑) — 안 올림")
+        tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
+        return
+    h, at, nf = ph_load(), time.strftime("%Y-%m-%d %H:%M", kst), 0
+    es = []
+    for rank, c, pid, item, name, price, img, rocket in picks:
+        u = f"https://www.coupang.com/vp/products/{pid}" + (f"?itemId={item}" if item else "")
+        lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == ""), default=0)
+        fire = bool(lo) and price < lo
+        nf += fire
+        es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": at, "img": img,
+                   "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ 쿠팡 {CP_BEST_NAME.get(c, '카테고리')} 베스트 {rank}위" + (" · 로켓배송" if rocket else "")
+                           + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")
+                           + f"\n⚠️ 확인할 점: 결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"})
+    print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · 후보 {len(best)}개")
 
 
 class CpLimit(RuntimeError):
@@ -10263,7 +10331,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

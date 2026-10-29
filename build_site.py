@@ -661,6 +661,7 @@ def price_won(title):
 DAY_ONLY = r"하루\s*특가|선착순|밤 12시까지"  # 토스 하루특가·선착순특가 = 올린 날 밤 12시 마감
 TOSS_LINE = "토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인"  # 토스 카드 1줄('M/D 가격') 안내 — 칸 머리에 한 번(10/24 Cowork)
 EVENTS = "events.json"
+AUTO_EVENTS, PLAN = "auto_events.json", "docs/plan.json"  # 봇이 만든 진열·예약(10/30 Cowork 크롬 이관) · Cowork 계획(품목 돌림·💡 한 줄·행사·검색어 — 봇은 이것만 읽음)
 CP_LINKS = "cp_links.json"  # {쿠팡 상품 주소: 파트너스 링크} — 봇이 딥링크 API로 만듦(쿠팡 키 있을 때만 생김, 10/23 hotdeal.cp_links). events 그 주소 대신 씀
 CP_PROD = r"https://(?:www\.|m\.)?coupang\.com/vp/products/(\d+)"  # 쿠팡 상품 주소(번호 = pid). 진우 단축 링크(link.coupang.com)는 그대로
 CP_SHORT = ("link.coupang.com", "coupa.ng")  # 쿠팡 파트너스 링크 도메인(딥링크 API 단축 주소 = coupa.ng일 수도 — 공식 샘플)
@@ -688,12 +689,15 @@ def site_subs():
 
 
 def ev_list(path=None):
-    """events.json(Cowork 예약) 그대로 — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호 · 행사 목록 글 items도). 깨진 파일 = []."""
+    """events.json(Cowork 예약) 그대로 + auto_events.json(봇이 만든 진열·예약 — 10/30 크롬 이관, events.json은 Cowork 것 그대로) — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호 · 행사 목록 글 items도). 깨진 파일 = []."""
     path = path or EVENTS
-    try:
-        evs = json.load(open(path)) if os.path.exists(path) else []
-    except ValueError:
-        evs = []
+    evs = []
+    for f in (path, AUTO_EVENTS) if path == EVENTS else (path,):
+        try:
+            x = json.load(open(f)) if os.path.exists(f) else []
+        except ValueError:
+            x = []
+        evs += x if isinstance(x, list) else []
     try:
         cl = json.load(open(CP_LINKS)) if os.path.exists(CP_LINKS) else {}
     except ValueError:
