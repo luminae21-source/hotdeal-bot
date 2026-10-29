@@ -2550,7 +2550,7 @@ def preview(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     key = time.strftime("preview_%Y%m%d", kst)
-    if kst.tm_hour != PREVIEW_HOUR or key in seen or busy(seen, cap=False):  # 시간당 상한(HOUR_CAP)은 안 봄: 하루 1번이고 진우 예약(시간당 6개)이 몰린 밤엔 늘 걸려서 첫 글 뒤로 밀림
+    if kst.tm_hour != PREVIEW_HOUR or key in seen or busy(seen, cap=False) or th_hold(seen):  # 시간당 상한(HOUR_CAP)은 안 봄: 하루 1번이고 진우 예약(시간당 6개)이 몰린 밤엔 늘 걸려서 첫 글 뒤로 밀림
         return
     ds = night_deals(seen, *night_window(now))
     if len(ds) < PREVIEW_MIN:
@@ -5047,6 +5047,14 @@ def th_c_post(kind, vt, link, cat, toss, title=""):
 
 
 
+TH_POWER_HOLD = 20 * 60  # 힘 준 글(10/30 진우 — '7은 편하게 3은 힘을 주자 · 첫 20분은 댓글로 소통': events 큐레이션 "power") 올린 뒤 다른 Threads 글 쉬는 시간
+
+
+def th_hold(seen):
+    """힘 준 글 뒤 TH_POWER_HOLD 안 = 다른 Threads 글은 기다림(개별 th_solo · 묶음 th_bundle = 줄에 두고 th_retry가 뒤에 · 투표·일상·📉·큐레이션·후기·미리보기·알림 받기·수다 — 텔레그램 채널은 그대로)."""
+    return time.time() - seen.get("thpower", {}).get("t", 0) < TH_POWER_HOLD
+
+
 def th_gap(last):
     """개별 글 간격 = TH_SOLO_GAP ± TH_GAP_JITTER(10/21 밤 진우 '35~55분 무작위') — 앞 개별 글 시각으로 정함(실행마다 다시 뽑으면 짧은 쪽으로 쏠림)."""
     return TH_SOLO_GAP + (random.Random(int(last)).randint(-TH_GAP_JITTER, TH_GAP_JITTER) if TH_GAP_JITTER else 0)
@@ -6582,6 +6590,10 @@ def th_bundle(seen, kind, text, link=None, image=None, topic=None):
     """묶음 글 Threads(12·18시 리스트·토스 베스트 리스트·21시 카드·22시 미리보기 — 10/12 진우 '묶음 글은 반드시'): 실패하면 다음 실행에 1번 더(th_retry — 코드 검사한 글), 예외는 그대로(main 알림).
     topic = 정해 둔 주제 태그(수다 글 '일상') · 비딜 글(TH_NONDEAL) 올린 시각 = seen thnd(수다 글 앞뒤 30분 칸)."""
     text = rv_text(kind, text)  # Z 계절·기온·오늘 아닌 토스 가격 줄 뺌
+    if th_hold(seen):  # 힘 준 글 20분 = 실패 때처럼 줄에 두고(th_retry가 20분 뒤 같은 날 1번) 넘어감 — 채널 글은 그대로
+        seen.setdefault(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, {"t": time.time(), "text": text, "link": link, "img": image, "topic": topic})
+        print("th", kind, "힘 준 글 20분 — 뒤로")
+        return None
     try:
         r = th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic))
     except Exception:
@@ -6697,6 +6709,8 @@ def th_watch(seen):
 def th_retry(seen):
     """실패한 묶음 글 Threads를 같은 날 다음 실행에 1번만 더."""
     tok, today = E.get("THREADS_TOKEN"), time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600))
+    if th_hold(seen):  # 힘 준 글 20분 = 뒤로 미룬 묶음 글·링크 댓글도 그 뒤에
+        return
     for k in [k for k, v in seen.items() if k.startswith("thretry_") and isinstance(v, dict) and not v.get("done")]:
         seen[k]["done"] = 1
         img, stk = seen[k].get("img"), k.endswith("_chat") and (seen[k].get("img") or "").startswith(f"{SITE}img/stk/")  # QQ 수다 글 스티커
@@ -6836,6 +6850,8 @@ def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=Fal
     now = time.time()
     r = th_day(seen, now)
     b = r["b"]
+    if th_hold(seen):  # 힘 준 글 20분
+        return False
     if reopen:
         if not gate and season_adj(title_of(plain)) < 0:  # Z 철 지난 계절 상품 = 재오픈 글도 X
             return False
@@ -7313,7 +7329,7 @@ def x_post(seen):
     now, tok = time.time(), E.get("THREADS_TOKEN")
     kst = time.gmtime(now + 9 * 3600)
     key = kst.tm_wday in X_DAYS and due(X_AT, "xpost", seen)
-    if not key or not tok or busy(seen, cap=False):
+    if not key or not tok or busy(seen, cap=False) or th_hold(seen):
         return
     seen[key] = now
     k, (n, h) = int((now + 9 * 3600) // 86400), x_stats(now)
@@ -7479,7 +7495,7 @@ def chat_post(seen):
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", kst)
     key, at = "chat_" + day.replace("-", ""), kst_ts(f"{day} {CHAT_AT[0]:02d}:{CHAT_AT[1]:02d}")
-    if key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False):
+    if key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False) or th_hold(seen):
         return
     fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT]  # None = 끔(그 시각 X)
     near = [t for t in seen.get("thnd", {}).get("ts", []) + [now if kst_ts(e["at"]) <= now <= kst_ts(e["at"]) + CUR_LATE and "th" not in seen.get(f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}", {}) else kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
@@ -7535,8 +7551,8 @@ def chat_post(seen):
 
 
 def chat_48(seen):
-    """수다 글 올린 지 48시간 지나면 1번: 조회·답글(insights) -> metrics.json 그 글 줄 v48·r48(2주 뒤 딜 글과 비교)."""
-    tok, mm, now = E.get("THREADS_TOKEN"), seen.get("chat", {}).get("m", {}), time.time()
+    """수다 글·힘 준 글(power) 올린 지 48시간 지나면 1번: 조회·답글(insights) -> metrics.json 그 글 줄 v48·r48(2주 뒤 딜 글과 비교)."""
+    tok, mm, now = E.get("THREADS_TOKEN"), {**seen.get("chat", {}).get("m", {}), **seen.get("power", {}).get("m", {})}, time.time()
     due = [(k, v) for k, v in mm.items() if "v48" not in v and now - v["ts"] >= 48 * 3600]
     if not tok or not due:
         return
@@ -7704,7 +7720,7 @@ def review_post(seen):
         if not st.get("tg") and (m := tg("sendMessage", chat_id=CHANNEL, link_preview_options={"is_disabled": True}, text=body,
                                          reply_markup={"inline_keyboard": [[{"text": f"{CP_PLAIN[1]} 보기", "url": e["url"]}]]})):  # 버튼 = 📦(로켓 근거 없음)
             st["tg"] = m["message_id"]
-        if tok and not st.get("th") and not busy(seen, cap=False):  # 묶음 글 10분 안 = 다음 실행(딜 글 수·간격 그대로)
+        if tok and not st.get("th") and not busy(seen, cap=False) and not th_hold(seen):  # 묶음 글 10분 안·힘 준 글 20분 = 다음 실행(딜 글 수·간격 그대로)
             try:
                 me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
                 tb = f"{body}\n\n{TH_AB_MARK}"
@@ -7726,6 +7742,21 @@ def review_post(seen):
                 os.makedirs(os.path.dirname(REV_FILE), exist_ok=True)
                 json.dump(rs, open(REV_FILE, "w"), ensure_ascii=False, indent=1)
             print("review", e["at"], clip(e["name"], 30), "| 채널", "O" if st.get("tg") else "X", "· Threads", "O" if st.get("th") else "X")
+
+
+def cur_power(seen, tok, pid):
+    """힘 준 글이 올라감: 20분 다른 Threads 글 쉼(th_hold) · 관리봇 DM 1줄(글 주소) · metrics kind power(48시간 조회·답글 = chat_48)."""
+    now = time.time()
+    seen["thpower"] = {"t": now, "id": pid}
+    pw = seen.setdefault("power", {"m": {}})
+    pw.update(t=now, m={**{k: v for k, v in pw.get("m", {}).items() if now - v.get("ts", 0) < 4 * 86400}, pid: {"ts": now}})
+    try:
+        link = json.loads(http(f"{THREADS}/{pid}?fields=permalink&access_token={tok}")).get("permalink") or pid
+    except Exception as x:
+        link = pid
+        print("power 글 주소 못 읽음", err_brief(x))
+    tg("sendMessage", chat_id=ADMIN, text=f"💬 힘 준 글 올라감 — 지금 20분 댓글 타임\n{link}", link_preview_options={"is_disabled": True})
+    print("power 글 올라감 · 20분 다른 Threads 글 쉼")
 
 
 def curation(seen):
@@ -7766,7 +7797,8 @@ def curation(seen):
                    reply_markup={"inline_keyboard": [[{"text": "🛍 더 보기", "url": re.sub(r"([?&]ref=)thc\b", r"\g<1>tgc", e["link"])}]]})
             if m:
                 st["tg"] = m["message_id"]
-        th = tok and "th" not in st and not busy(seen, cap=False)
+        power = bool(e.get("power"))  # 힘 준 글(07:30·20:30 칸) = 묶음 간격 안 보고 시각에 · 다른 큐레이션 = 힘 준 글 20분 뒤
+        th = tok and "th" not in st and (power or not busy(seen, cap=False) and not th_hold(seen))
         if not (th or ig):
             continue
         urls, live = [SITE + f[len("docs/"):] for f in files], []
@@ -7804,6 +7836,8 @@ def curation(seen):
         st["th"], st["ph"] = (r or {}).get("id"), ph
         bundled(seen)
         th_nd(seen)  # 실제 올린 시각(수다 글 앞뒤 30분)
+        if power and st["th"]:
+            cur_power(seen, tok, st["th"])
         print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
 
 
@@ -7899,7 +7933,7 @@ def drop_post(seen):
     if not tok:
         st["done"] = 1
         return
-    if busy(seen, cap=False):  # 묶음 간격 -> 다음 실행에
+    if busy(seen, cap=False) or th_hold(seen):  # 묶음 간격·힘 준 글 20분 -> 다음 실행에
         return
     can = TH_REPLY and th_reply_ok(seen)
     text = st["th"] + ends[0 if can else 1]
@@ -8442,7 +8476,7 @@ def poll_post(seen):
             if not stk:
                 th_reply(tok, op["id"], txt)
     card = os.path.exists(time.strftime("docs/cards/%Y-%m-%d.png", time.gmtime(now + 9 * 3600))) and now - seen.get(time.strftime("threads_%Y%m%d", time.gmtime(now + 9 * 3600)), now) < BUNDLE_GAP
-    if busy(seen, cap=False) or card or now - th_day(seen, now)["last"] < TH_SOLO_GAP:  # 21:40 = 시간당 상한(채널 글 수)은 안 봄 · 21시 카드 Threads 글과 10분 띄움(10/22 리뷰)
+    if busy(seen, cap=False) or th_hold(seen) or card or now - th_day(seen, now)["last"] < TH_SOLO_GAP:  # 21:40 = 시간당 상한(채널 글 수)은 안 봄 · 21시 카드 Threads 글과 10분 띄움(10/22 리뷰)
         return
     used = {k: t for k, t in seen.get("polls", {}).get("used", {}).items() if now - t < POLL_REUSE * 86400}
     k = next((k for k, v in sorted(recs.items(), key=lambda x: -len(x[1][2])) if k not in used), None)
@@ -8602,7 +8636,7 @@ def daily_post(seen):
     """#일상(daily_in)이 사이트에 올라가면(사진 주소 HEAD) Threads에 1번 — daily_text(사진 + 캡션 그대로, 대가성 문구·게시 시점 줄) + 진우에게 '올렸어요'.
     묶음 글 간격(busy, 시간당 상한 X) 같이 셈. 1시간 넘게 사이트에 안 뜨면 진우에게 알리고 그만."""
     tok, now = E.get("THREADS_TOKEN"), time.time()
-    for k in [k for k in seen if k.startswith("dly_") and not seen[k].get("done")] if tok and not busy(seen, cap=False) else []:
+    for k in [k for k in seen if k.startswith("dly_") and not seen[k].get("done")] if tok and not busy(seen, cap=False) and not th_hold(seen) else []:
         v = seen[k]
         if v.get("ask") and "pick" not in v:  # P: 진우가 링크 후보를 고를 때까지(고르기 전엔 안 올림) · 하루 지나도 안 고름 = 사진만
             if now - v["t"] < 86400:
@@ -9261,7 +9295,7 @@ def metrics_rows(seen):
     if not rows:
         miss.setdefault("tg", "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)")
 
-    tok, ths, fx, cx = E.get("THREADS_TOKEN"), [], seen.get("xpost", {}).get("m", {}), seen.get("chat", {}).get("m", {})  # cx = 수다 글 id(kind chat) · fx = X '알림 받기' 글 id -> 댓글 id(kind funnel · rv = 댓글 조회)
+    tok, ths, fx, cx, px = E.get("THREADS_TOKEN"), [], seen.get("xpost", {}).get("m", {}), seen.get("chat", {}).get("m", {}), seen.get("power", {}).get("m", {})  # cx = 수다 글 id(kind chat) · fx = X '알림 받기' 글 id -> 댓글 id(kind funnel · rv = 댓글 조회)
     if not tok:
         miss["th"] = "THREADS_TOKEN 없음"
     try:
@@ -9293,7 +9327,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}

@@ -9598,7 +9598,7 @@ with contextlib.redirect_stdout(io.StringIO()): H.chat_48(s87)
 assert "v48" not in s87["chat"]["m"]["C1"]; time.time = lambda: TK("2026-10-29 13:20")  # 48시간 전 = X
 with contextlib.redirect_stdout(io.StringIO()): H.chat_48(s87)
 assert s87["chat"]["m"]["C1"]["v48"] == 321 and s87["chat"]["m"]["C1"]["r48"] == 7 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["v48"] == 321 and json.load(open("m87.json"))["2026-10-27"]["rows"][0]["r48"] == 7
-assert '**({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {})' in inspect.getsource(H.metrics_rows) and 'links=None if fun or x["id"] in cx else' in inspect.getsource(H.metrics_rows) and "chat_48(seen)" in inspect.getsource(H.metrics) and "x_post, chat_post," in inspect.getsource(H.main) and H.TH_CHAT is True
+assert '**({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {})' in inspect.getsource(H.metrics_rows) and 'links=None if fun or x["id"] in cx else' in inspect.getsource(H.metrics_rows) and "chat_48(seen)" in inspect.getsource(H.metrics) and "x_post, chat_post," in inspect.getsource(H.main) and H.TH_CHAT is True
 # 실패한 수다 글 = 다음 실행 1번 더(th_retry)도 주제 '일상'
 H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": (_ for _ in ()).throw(OSError("x")); s87f = {}; time.time = lambda: TK("2026-11-07 13:12")
 try:
@@ -10921,4 +10921,45 @@ rb109 = S109.rev_box({"url": L109}, r109, p109)
 assert '<h2 id="rvh">구매후기 요약 (10/30 기준)</h2>' in rb109 and "별점 5점이 82%예요<br>&#x27;두께&#x27; 설문은" in rb109 and S109.rev_box({"url": "https://link.coupang.com/a/x"}, r109, p109) == ""
 assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, review_post, cp_sub_site)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
 (time.time, H.tg, H.http, H.th_img, H.th_post, H.th_reply, H.EVENTS, e109, H.CHANNEL, H.ADMIN, H.th_topic) = sv109; H.E.clear(); H.E.update(e109); os.chdir(cwd109)
+# 9-110) 힘 준 글(10/30 진우 — '7은 편하게 3은 힘을 주자 · 첫 20분 댓글'): events 큐레이션 "power" = 시각에 Threads(사진 + 본문) · 관리봇 DM 1번(글 주소) · 20분 동안 다른 Threads 글 0
+#        (개별 th_solo X · 묶음 = 줄에 두고 th_retry가 20분 뒤 · 다른 큐레이션 Threads = 뒤로 — 텔레그램 채널은 그대로) · metrics kind power + 48시간 조회·답글(chat_48)
+cwd110, sv110 = os.getcwd(), (time.time, H.tg, H.http, H.th_img, H.th_carousel, H.th_text, H.th_post, H.cur_img, H.EVENTS, dict(H.E), H.ADMIN, H.CHANNEL, H.METRICS); os.chdir(tempfile.mkdtemp())
+H.EVENTS, H.E["THREADS_TOKEN"], H.ADMIN, H.CHANNEL, H.METRICS = "events.json", "tk", "999", "-100110", "metrics.json"
+os.makedirs("docs/cards/cur", exist_ok=True); Image.new("RGB", (600, 600), (200, 100, 50)).save("docs/cards/cur/p110.jpg")
+CUR110 = lambda at, **k: {"at": at, "curation": True, "text": f"{at[11:]} 큐레이션 본문\n둘째 줄", "link": H.SITE + "c/food/", "topic": "간식", "img": ["https://thumbnail.coupangcdn.com/p110.jpg"], **k}
+json.dump([CUR110("2026-10-31 20:30", power=True), CUR110("2026-10-31 20:35")], open("events.json", "w"), ensure_ascii=False)
+tg110, th110 = [], []
+H.tg = lambda m, **k: tg110.append(k) or {"message_id": 110}
+H.http = lambda url, body=None, headers=None, method=None: ('{"id": "me1"}' if "/me?fields=id" in url else '{"permalink": "https://www.threads.com/@hotdealpick.kr/post/PW1"}' if "fields=permalink" in url else "")
+H.cur_img = lambda u: "docs/cards/cur/p110.jpg"
+H.th_img = lambda tok, me, text, image, tag="핫딜": th110.append(("img", text)) or {"id": "PW1" if "20:30" in text else "N1"}
+H.th_carousel = lambda tok, me, text, images, tag="핫딜": th110.append(("car", text)) or {"id": "C1"}
+H.th_text = lambda tok, me, text, link, tag="핫딜": th110.append(("text", text)) or {"id": "T1"}
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": th110.append(("post", text)) or {"id": "B1"}
+s110 = {"bundles": {"t": 1, "ts": [TK("2026-10-31 20:28")]}}  # 2분 전 묶음 글이 있어도 힘 준 글 = 시각에
+with contextlib.redirect_stdout(io.StringIO()) as o110:
+    time.time = lambda: TK("2026-10-31 20:31"); H.curation(s110)
+assert [x[0] for x in th110] == ["img"] and "20:30 큐레이션 본문" in th110[0][1] and H.th_hold(s110) and s110["thpower"]["id"] == "PW1", (th110, o110.getvalue())
+dm110 = [k["text"] for k in tg110 if k.get("chat_id") == "999"]
+assert dm110 == ["💬 힘 준 글 올라감 — 지금 20분 댓글 타임\nhttps://www.threads.com/@hotdealpick.kr/post/PW1"] and s110["power"]["m"]["PW1"]["ts"] == TK("2026-10-31 20:31")  # DM 1번 · kind power 기록
+with contextlib.redirect_stdout(io.StringIO()) as o110:
+    time.time = lambda: TK("2026-10-31 20:36"); H.curation(s110)  # 다른 큐레이션 = 채널 그대로 · Threads = 20분 뒤
+    assert H.th_solo(s110, "🔥 [쿠팡] 휴지 30롤 (9,900원) · 쿠팡 같은 상품보다 3,000원 쌈") is False  # 개별 글 X
+    assert H.th_bundle(s110, "cpmix", "🚀 쿠팡 상품 모음 본문", "https://link.coupang.com/a/x") is None and "thretry_20261031_cpmix" in s110  # 묶음 = 줄에
+    H.th_retry(s110); H.curation(s110)
+assert len(th110) == 1 and [k for k in tg110 if k.get("chat_id") == "-100110" and "20:35 큐레이션" in k.get("text", "")] and len([k for k in tg110 if k.get("chat_id") == "999"]) == 1, (th110, tg110)  # 20분 안 Threads 글 0 · DM 1번
+assert "cpmix 힘 준 글 20분 — 뒤로" in o110.getvalue()
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-10-31 20:52"); H.th_retry(s110); H.curation(s110)
+assert [x[0] for x in th110] == ["img", "post", "img"] and th110[1][1] == "🚀 쿠팡 상품 모음 본문" and "20:35 큐레이션 본문" in th110[2][1] and not H.th_hold(s110)  # 20분 뒤 = 미룬 묶음·큐레이션
+assert len([k for k in tg110 if k.get("chat_id") == "999"]) == 1  # 일반 큐레이션 = DM X
+for f, needle in ((H.preview, "or th_hold(seen)"), (H.x_post, "or th_hold(seen)"), (H.chat_post, "or th_hold(seen)"), (H.poll_post, "or th_hold(seen)"), (H.daily_post, "not th_hold(seen)"), (H.drop_post, "or th_hold(seen)"), (H.review_post, "not th_hold(seen)")):
+    assert needle in inspect.getsource(f), f.__name__  # Threads만 올리는 글도 20분 기다림
+assert '{"kind": "power"} if x["id"] in px' in inspect.getsource(H.metrics_rows)
+json.dump({"2026-10-31": {"at": "2026-11-01 05:00", "miss": {}, "rows": [{"ch": "th", "id": "PW1", "views": 0}]}}, open("metrics.json", "w"))
+H.http = lambda url, *a, **k: json.dumps({"data": [{"name": "views", "values": [{"value": 41}]}, {"name": "replies", "values": [{"value": 3}]}]}) if "/insights" in url else ""
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-11-02 20:40"); H.chat_48(s110)
+assert json.load(open("metrics.json"))["2026-10-31"]["rows"][0]["v48"] == 41 and s110["power"]["m"]["PW1"]["r48"] == 3  # 힘 준 글 48시간 조회·답글
+(time.time, H.tg, H.http, H.th_img, H.th_carousel, H.th_text, H.th_post, H.cur_img, H.EVENTS, e110, H.ADMIN, H.CHANNEL, H.METRICS) = sv110; H.E.clear(); H.E.update(e110); os.chdir(cwd110)
 print("OK: 모든 셀프체크 통과")
