@@ -1547,7 +1547,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -2811,7 +2811,7 @@ H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 5, "comment": "x"}]; i_sent
 assert not i_sent and "tsolo_20261014_13" in s9k  # 7점↑ 없으면 그 시각은 끝(다시 안 물음)
 time.time = lambda: TK("2026-10-14 08:05"); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "개당 사실"}]; i_sent.clear(); H.toss_solo({})  # 8시 = 순위 · 하루특가는 9시 전 X
 assert "💙 토스 특가 · 많이 팔린 순위" in i_sent[0][1]["text"]
-assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
+assert "toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout" in inspect.getsource(H.main) and H.ALERT_STEPS["toss_solo"] == "토스 자동 개별 글"
 # 9-2j) 10/15 진우 '꾸준하게': 8~23시 채널 딜 글이 마지막 글 뒤 TOSS_GAP_MIN(30)분 넘게 없으면 그 실행에 토스 1개 더(같은 후보·틀·거르기) — 못 찾으면 30분 뒤 다시(API·Claude 아낌),
 #       진우 예약 앞뒤 10분은 쉼, 마지막 글 = tg() 채널 올리기 기록(재오픈 답장·📋 모아보기 X, 다른 채팅 X) · seen(지난 실행) · posts.json
 assert tgm0 == 30 and H.TOSS_EV_PAD == 600; H.TOSS_GAP_MIN, H.RUN["ch_last"] = tgm0, 0
@@ -6224,7 +6224,7 @@ time.time = lambda: TK("2026-10-28 05:10"); H.cp_score(s52s); assert not c52 and
 H.RUN["cpn"] = [0, 0]; H.cp_score(s52s); assert len(c52) == 1 and s52s["cps"]["do"] == "2026-10-28"; H.RUN.pop("cpn") if cpn52 is None else H.RUN.update(cpn=cpn52)
 import inspect as insp52
 assert 'p.get("re")' in insp52.getsource(H.own_end) and 'posts[i].get("re")' in insp52.getsource(H.threads_deals) and "cp_score(seen)" in insp52.getsource(H.metrics)  # 재게시 글 = 확인 가격 그대로 · Threads 맨 앞 · 점수는 metrics 끝
-assert "h.hostname+h.pathname" in S.GC_JS and "path:'buy/'+h" in S.GC_JS and "cp_repost" in H.ALERT_STEPS and "toss_solo, cp_repost, toss_soldout" in insp52.getsource(H.main)  # 구매 클릭 = 링크 경로까지(쿼리 X)
+assert "h.hostname+h.pathname" in S.GC_JS and "path:'buy/'+h" in S.GC_JS and "cp_repost" in H.ALERT_STEPS and "toss_solo, cp_repost, auto_repost, toss_soldout" in insp52.getsource(H.main)  # 구매 클릭 = 링크 경로까지(쿼리 X)
 H.http, H.tg, time.time, H.POSTS, H.EVENTS, H.TOP, H.HAS_CP, H.coupang = sv52[:8]; H.E.clear(); H.E.update(sv52[8]); H.CPRE_HOURS, H.CPS_HOUR = cpre0, cps0; os.chdir(cwd52)
 # 9-53) F(10/24 진우 '쓰레드엔 핫딜 + 비슷한 상품 묶음' · '둘 중 뭐 살래'): 하루 1번 PAIR_AT~ Threads 묶음 — 사이트 🔥 진열 중 같은 품목(pair_key) · '지금 특가 중' 근거(진우 = 24시간 안 확인, 토스 = 오늘 확인, 커뮤니티 = 오늘 글)
 #       · 수수료 링크만(올리브영 X) · 브랜드 2개↑ · 토스는 토스끼리(전체 보기 = 토스 모음) · 대가성 문구 맨 앞 · 🚀 = 오늘 isRocket 또는 글 로켓 근거 · 💰 조건(와우·쿠폰) 그대로 · 단가 = 같은 단위·조건 없음·확인가 = 글 가격일 때만
@@ -11161,7 +11161,7 @@ s114["cpbest"]["r"]["1012"] = R114; time.time = lambda: TK("2026-11-02 14:40")
 with contextlib.redirect_stdout(io.StringIO()):
     H.auto_shelf(s114)
 assert len(json.load(open("auto_events.json"))) == 4 and tg114 and "맞는 상품 0개" in tg114[-1]["text"]  # 키친타올 = 맞는 것 4개 밑 = 안 올림 + 관리봇
-assert "cp_best, auto_shelf, cp_price" in inspect.getsource(H.main) and "CP_BEST_KEEP" in inspect.getsource(cb0) and (H.CP_HOUR, H.CP_SEARCH_HOUR) == (25, 6)  # 추가 호출 X(베스트 응답 그대로) · 상한 그대로
+assert "cp_best, auto_shelf," in inspect.getsource(H.main) and "CP_BEST_KEEP" in inspect.getsource(cb0) and (H.CP_HOUR, H.CP_SEARCH_HOUR) == (25, 6)  # 추가 호출 X(베스트 응답 그대로) · 상한 그대로
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv114[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv114[5]); os.chdir(cwd114)
 # 9-115) KKK-B(Cowork 9:10 크롬 재게시 → 봇 20:35·20:45·20:55): 사이트 진열 🔥 중 마지막 채널 게시 3일↑ · 지금가(price_hist 마지막 확인) ≤ 처음 소개가 +5% · 24시간 안 확인 → 싼 순 '🔁 다시 소개' 칸마다 1개 · 끔 스위치
 cwd115, sv115 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp())
@@ -11222,8 +11222,13 @@ e116 = {e["url"][-2:]: e for e in a116}
 assert e116["L2"]["text"] == "🔥 <b>[쿠팡] 테스트 샴푸 1L (7,000원)</b>\n\n✔ 리뷰 1만\n💡 샴푸 한 줄\n⚠️ 확인할 점: 결제 전 최종가 확인 (11/1 9시 가격)", e116["L2"]["text"]  # 가격 바뀜 = 💰 줄 X · 확인 시각 = 지금
 assert all(e["deal"] and e["auto"] == "pick5" and not e.get("shelf") and e["chk"] == "2026-11-01 09:00" for e in a116) and s116["autop5"]["k"] == sorted(["화장지", "샴푸", "린스", "계란", "라면"]) and not tg116
 H.auto_pick5(s116); assert len(json.load(open("auto_events.json"))) == 5  # 하루 1번
-assert [e["at"] for e in H.load(H.EVENTS, []) if e.get("auto")] == [e["at"] for e in a116]  # events 단계(load(EVENTS))가 같이 읽어 그 시각에 올림
-assert "cp_best, auto_shelf, auto_pick5, status_dm, cp_price" in inspect.getsource(H.main)
+ev116 = json.load(open("events.json")); json.dump(ev116 + [{"at": "2026-11-01 19:50", "url": "https://link.coupang.com/a/other", "text": "x", "deal": True}], open("events.json", "w")); os.remove("auto_events.json")
+s116 = {"autop5": {"t": 1, "d": "2026-10-31", "k": ["바디워시"]}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.auto_pick5(s116)
+assert [e["at"][11:] for e in json.load(open("auto_events.json"))][:2] == ["19:51", "20:00"]  # 같은 분 예약 = 1분 뒤
+assert [e["at"] for e in H.load(H.EVENTS, []) if e.get("auto")] == [e["at"] for e in json.load(open("auto_events.json"))]  # events 단계(load(EVENTS))가 같이 읽어 그 시각에 올림
+assert "cp_best, auto_shelf, auto_pick5," in inspect.getsource(H.main)
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv116[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv116[5]); os.chdir(cwd116)
 # 9-117) KKK-D(Cowork 10:00 사이트 점검 → 빌드 docs/status.json + 이상만 관리봇): 전체·진열·몰·칸별 수 · 날짜별(어제 대비) · 빠진 진우 쿠팡 상품(변환 실패·판매 종료 빼고) · cp_fail 수 · 사이트맵 수 · warn · 끔 스위치
 cwd117, sv117 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
@@ -11251,7 +11256,7 @@ json.dump({**st117, "warn": []}, open("docs/status.json", "w")); s117 = {}; time
 with contextlib.redirect_stdout(io.StringIO()):
     H.status_dm(s117)
 assert len(tg117) == 1  # 이상 없음 = DM X(로그만)
-assert "site_status(out, posts, it, urls, now_ts)" in inspect.getsource(S.build) and "auto_pick5, status_dm, cp_price" in inspect.getsource(H.main)
+assert "site_status(out, posts, it, urls, now_ts)" in inspect.getsource(S.build) and " status_dm," in inspect.getsource(H.main)
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv117[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv117[5]); os.chdir(cwd117)
 # 9-118) KKK-E(와우 멤버스데이 11/2·5·8 · 빼빼로데이 11/6 — Cowork 크롬 쿠팡 확인 → 검색 API): plan.json events 오늘 행사 검색어 그날 1번씩(상한 안 — 남으면 다음 실행) → docs/plan_check.json(검색 순위 그대로) + 추적 상품 가격 · 끔 스위치 · 1단계 상한 그대로
 cwd118, sv118 = os.getcwd(), (time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")

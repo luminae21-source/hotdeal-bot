@@ -10098,9 +10098,12 @@ def auto_pick5(seen):
             if u not in picks and cat_of(last[u]) in cats and kind(u, last[u]) not in kinds:
                 take(u)
     seen["autop5"] = {"t": now, "d": today, "k": sorted(kinds)}
-    es = []
+    es, taken = [], {str(e.get("at")) for e in evs if isinstance(e, dict)}
     for t, u in zip(AUTO_P5_TIMES, picks):
         p, e = last[u], raw[u]
+        while f"{today} {t}" in taken:  # 같은 분 예약이 있으면 1분 뒤(events 단계 = 분마다 1개)
+            t = time.strftime("%H:%M", time.gmtime(calendar.timegm(time.strptime(t, "%H:%M")) + 60))
+        taken.add(f"{today} {t}")
         nw = f"{won(p['now']):,}원"
         txt = re.sub(r"\([\d,]+원[^)]*\)</b>", f"({nw})</b>", e["text"], count=1)
         if nw not in parse(title_of(e["text"].replace("<b>", "").replace("</b>", "")))[2]:
