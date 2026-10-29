@@ -8452,7 +8452,7 @@ cj75 = json.load(open("docs/clips/clips.json"))["2026-10-29"]
 assert [(c["n"], c["topic"], c["file"], c["at"]) for c in cj75] == [(1, "kw", "01.mp4", "08:00"), (2, "cur1", "02.mp4", "11:00"), (3, "eve", "03.mp4", "13:00"), (4, "steady", "04.mp4", "17:00")]
 assert cj75[0]["title"] == "전기요 가성비 TOP3" and cj75[1]["title"] == "그릭요거트 모아보기 TOP3" and cj75[2]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3" and cj75[3]["title"] == "스틱·시트 꾸준템 TOP3" and all(len(c["title"]) <= 30 for c in cj75)  # 검색어 맨 앞 · 30자 안
 d75 = cj75[0]["desc"].split("\n")
-assert d75[:2] == ["[광고] 네이버 쇼핑 커넥트·쿠팡 파트너스 활동으로 수수료를 받을 수 있어요", "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[3] == "1. 곰표 전기요 슈퍼싱글 9,900원"
+assert d75[:3] == [H.DISCLOSURE, H.NAVER_NOTE, "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[4] == "1. 곰표 전기요 슈퍼싱글 9,900원"
 assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].split()) and not any("최저" in c["desc"] + c["title"] for c in cj75)  # 해시태그 5개 · 최저가 X
 assert cj75[2]["tags"] == ["페리오 칫솔", "센소다인 치약", "크리넥스 휴지"] and cj75[0]["u"][0].endswith("k1")  # 태그 검색어 = 수량 낱말 빼고
 clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 스틱·시트 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
