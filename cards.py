@@ -330,7 +330,6 @@ def deal_card(it, n, total, out, why="살 만한 이유"):
 
 LEAD, TAIL, XF, KB, DUCK = 0.3, 0.25, 9, 0.06, 0.251  # 나레이션 앞뒤 여백(초) · 장 사이 크로스페이드 9프레임(0.3초) · 켄번스 줌 6% · 나레이션 동안 음악 -12dB
 SUB_Y = RH - 430  # 자막 아래 끝(인스타 아래 UI ~420px 위 — 안전 영역)
-CLIP_SAFE = 0.84  # 네이버 클립: 오른쪽 끝 글자(984)·자막 아래(1490) x 0.84 = 827·1252 -> 오른쪽 15%(918)·아래 25%(1440) 밖
 
 
 def reel_plan(segs, n):
@@ -371,6 +370,159 @@ def _wav(b):
         return fr, w.getframerate(), w.getnchannels(), w.getnframes() / w.getframerate()
 
 
+CLIP_RED, CLIP_YEL, CLIP_X, CLIP_W, CLIP_KB = (229, 48, 63), (255, 214, 92), 80, 820, 0.025  # 10/29 Cowork 클립 틀: 글자 기준선 x 80·폭 820 · 켄번스 2.5%(줌해도 금지 구역 밖)
+CLIP_NOGO = ((0, 0, RW, 220), (0, 1500, RW, RH), (960, 900, RW, 1500))  # 글자 X 구역(위 0~220 · 아래 1500~ · 오른쪽 x 960~ y 900~1500) — 배경·사진은 화면 전체
+CLIP_BOXES = []  # 마지막 클립의 글자 자리 [(장, x0, y0, x1, y1)] — 셀프체크가 CLIP_NOGO와 안 겹치는지 봄
+
+
+def _chip(s, f, fg, bg, h, padx=24, outline=None):
+    """둥근 칩(글자 세로 가운데)."""
+    w = int(f.getlength(s)) + padx * 2
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=h // 2, fill=bg, outline=outline, width=2 if outline else 0)
+    bb = d.textbbox((0, 0), s, font=f)
+    d.text((padx - bb[0], (h - (bb[3] - bb[1])) // 2 - bb[1]), s, font=f, fill=fg)
+    return im
+
+
+def _num(n, dia, size):
+    """빨간 번호 원."""
+    im = Image.new("RGBA", (dia, dia), (0, 0, 0, 0))
+    d, f = ImageDraw.Draw(im), pf("Bold", size)
+    d.ellipse((0, 0, dia - 1, dia - 1), fill=CLIP_RED)
+    bb = d.textbbox((0, 0), str(n), font=f)
+    d.text(((dia - (bb[2] - bb[0])) // 2 - bb[0], (dia - (bb[3] - bb[1])) // 2 - bb[1]), str(n), font=f, fill="white")
+    return im
+
+
+def _card(w, h, r, photo=None, e=None, pad=56, num=None):
+    """흰 카드(모서리 r) + 부드러운 그림자(여백 40 — 붙일 때 x·y에서 40 빼기) + 사진 contain(pad) 또는 이모지 · num = 왼쪽 위 번호 원."""
+    from PIL import ImageFilter
+    sp = 40
+    im = Image.new("RGBA", (w + 2 * sp, h + 2 * sp), (0, 0, 0, 0))
+    sh = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle((sp, sp + 14, sp + w, sp + h + 14), radius=r, fill=(60, 40, 20, 40))
+    im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(22)))
+    ImageDraw.Draw(im).rounded_rectangle((sp, sp, sp + w, sp + h), radius=r, fill="white")
+    if photo:
+        _contain(im, photo, (sp + pad - 20, sp + pad - 20, sp + w - pad + 20, sp + h - pad + 20), "white")  # _contain 안쪽 여백 20 = 사진 여백 pad
+    elif e:
+        em = emoji(e, int(min(w, h) * 0.45))
+        im.alpha_composite(em, (sp + (w - em.width) // 2, sp + (h - em.height) // 2))
+    if num:
+        im.alpha_composite(_num(num, 56, 30), (sp + 14, sp + 14))
+    return im
+
+
+def _fit_font(weight, sizes, s, width):
+    return next((pf(weight, z) for z in sizes if pf(weight, z).getlength(s) <= width), pf(weight, sizes[-1]))
+
+
+def _clip_scenes(items, date_label, label, note):
+    """네이버 클립 장면(10/29 Cowork 시안 — 1080×1920 그대로, 줄이지 않음): 표지·상품 장·끝 장 -> [(배경, 그리기, 진행 막대 색, 막대 바탕색)] · CLIP_BOXES = 글자 자리.
+    표지 = 날짜·'광고·제휴' 칩 · '오늘의 {label}' · 제목 2줄 · 상품 타일 3개 · '하나 N원부터' · 비교 기준 줄(처음 프레임부터 다 보임 = 썸네일)
+    상품 장 = 번호 원 + 몰 칩 · 사진 카드 · 이름 2줄 · 가격 + 단가 칩 · 'M/D H시 쿠팡 가격 · 결제 전 최종가 확인' / 끝 장 = 저장 권유 · 3줄 요약 · 구매 링크 안내 · 앱 아이콘 · note."""
+    CLIP_BOXES.clear()
+    cream, night = Image.new("RGB", (RW, RH), CREAM), Image.new("RGB", (RW, RH), NIGHT)
+    X, W, scenes = CLIP_X, CLIP_W, []
+    when = lambda it: (re.search(r"\d{1,2}/\d{1,2} \d{1,2}시", (it.get("warn") or "") + " " + (note or "")) or [""])[0]
+    short = lambda s, n: (" ".join(w for w in re.sub(r"\([^)]*\)|\[[^\]]*\]|,", " ", s).split() if not re.search(r"\d", w)) or s)[:n].strip()
+    unit = lambda u: (m := re.match(r"\s*(.+?당)\s*([\d,]+)\s*원", u or "")) and (m[1], int(m[2].replace(",", "")))
+
+    def put(sc, im, x, y, delay):  # 글자 놓기 + 자리 기록(떠오름 몫까지 — 아래 줄(y 1400~)은 떠오름 X: 줌과 겹쳐 아래 1500 넘지 않게)
+        bb, rise = im.getchannel("A").getbbox() or (0, 0, 0, 0), 0 if y >= 1400 else 26
+        CLIP_BOXES.append((sc, x + bb[0], y + bb[1], x + bb[2], y + bb[3] + rise))
+        return (im, x, y, delay, rise)
+
+    # 표지
+    top = items[0] if items else {"hook": label or "오늘의 핫딜"}
+    f = pf("SemiBold", 34)
+    dc = _chip(date_label, f, INK2, "white", 64, outline=LINE)
+    els = [put(0, dc, X, 250, -1), put(0, _chip("광고·제휴", f, INK2, "white", 64, outline=LINE), X + dc.width + 14, 250, -1),
+           put(0, _text(f"오늘의 {label}" if label else "오늘의 가성비", pf("Bold", 48), CLIP_RED), X, 380, -1)]
+    tf = next((z for z in (116, 104, 92, 80) if len(wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), top["hook"], pf("Black", z), W, 3)) <= 2), 72)
+    els.append(put(0, _rich(top["hook"], pf("Black", tf), W, 2, fill=INK2, lh=1.12, accent=False), X, 450, -1))
+    tiles = [(_card(288, 300, 36, it.get("photo"), it.get("e"), 24, n), X + (n - 1) * 316 - 40, 760 - 40) for n, it in enumerate(items[:3], 1)]
+    us = [u for u in (unit(it.get("unit")) for it in items) if u]
+    us = [u for u in us if u[0] == us[0][0]] if us else []
+    low = None
+    if us:
+        lab, v = min(us, key=lambda u: u[1])
+        lab = "하나" if lab in ("개당", "1개당") else lab
+        fa, fb = pf("Bold", 56), _fit_font("Black", (104, 92, 80), f"{v:,}", W - 300)
+        parts = ((lab + " ", fa, INK2), (f"{v:,}", fb, CLIP_RED), ("원부터", fa, INK2))  # 숫자만 빨강 크게 · 같은 기준선
+        low, x = Image.new("RGBA", (int(sum(f.getlength(t) for t, f, _ in parts)) + 8, int(fb.size * 1.3)), (0, 0, 0, 0)), 0
+        for t, f, c in parts:
+            ImageDraw.Draw(low).text((x, int(fb.size * 1.02)), t, font=f, fill=c, anchor="ls")
+            x += f.getlength(t)
+        els.append(put(0, low, X, 1086, -1))
+    cmp_ = _text("쿠팡에서 같은 양끼리 1개 값으로 비교했어요" if us else "쿠팡 가격 · 결제 전 최종가 확인", _fit_font("SemiBold", (36, 32), "쿠팡에서 같은 양끼리 1개 값으로 비교했어요", W), SUB)
+    ry = 1086 + (low.height + 30 if low else 0)
+    els.append(put(0, cmp_, X, ry + 30, -1))
+
+    def intro(fr, t, els=els, tiles=tiles, ry=ry):
+        for im, x, y in tiles:
+            fr.paste(im, (x, y), im)
+        ImageDraw.Draw(fr).rectangle((X, ry, X + W, ry + 2), fill=LINE)
+        for im, x, y, dl, r in els:
+            _in(fr, im, x, y, t, dl, rise=r)
+    scenes.append((cream, intro, INK2, LINE))
+
+    for n, it in enumerate(items, 1):
+        sc = len(scenes)
+        num, store = _num(n, 72, 40), _chip(it.get("store") or "쿠팡", pf("SemiBold", 32), INK2, "white", 56, outline=LINE)
+        card = _card(920, 660, 44, it.get("photo"), it.get("e"), 56)
+        name = _rich(it["name"], pf("Bold", 52), W, 2, fill=INK2, lh=1.25, accent=False) if it["name"] else None
+        chip = _chip(it["unit"], pf("Bold", 42), "white", CLIP_RED, 76) if it.get("unit") else None
+        side = chip.width + 20 if chip else 0
+        pf_ = next((z for z in (132, 120, 108, 96) if pf("Black", z).getlength(it["main"]) + 8 + side <= W + 60), None) if it["main"] else None  # 가격 + 칩 = x 80~960 안
+        price = _text(it["main"], pf("Black", pf_ or 96), INK2) if it["main"] else None
+        below = bool(chip and price and pf_ is None)  # 칩이 옆에 안 들어가면 가격 아래
+        el = [put(sc, num, X, 236, 0.0), put(sc, store, X + 72 + 16, 236 + 8, 0.05)]
+        y = 1052
+        if name:
+            el.append(put(sc, name, X, y, 0.18)); y += name.height + 4
+        if price:
+            el.append(put(sc, price, X, y, 0.38))
+            if chip:
+                el.append(put(sc, chip, X if below else X + price.width + 12, y + price.height + 6 if below else y + price.height - chip.height - int(price.height * 0.16), 0.48))
+        elif chip:
+            el.append(put(sc, chip, X, y, 0.48))
+        el.append(put(sc, _text(f"{when(it) + ' ' if when(it) else ''}{it.get('store') or '쿠팡'} 가격 · 결제 전 최종가 확인", pf("SemiBold", 32), SUB), X, 1428, 0.56))
+
+        def deal(fr, t, card=card, el=el):
+            _in(fr, card, X - 40, 344 - 40, t, 0.1, rise=0)
+            for im, x, y, dl, r in el:
+                _in(fr, im, x, y, t, dl, rise=r)
+        scenes.append((cream, deal, INK2, LINE))
+
+    sc, light = len(scenes), (172, 176, 184)
+    hf = _fit_font("Black", (92, 84, 76), "필요할 때 꺼내 보게", W)
+    el = [put(sc, _text("필요할 때 꺼내 보게", hf, "white"), X, 260, 0.0), put(sc, _text("저장해 두세요", hf, "white"), X, 260 + int(hf.size * 1.2), 0.06)]
+    for k, it in enumerate(items[:3]):
+        y = 560 + 84 * k
+        el.append(put(sc, _num(k + 1, 52, 30), X, y, 0.16 + 0.08 * k))
+        el.append(put(sc, _text(short(it["name"], 13), pf("SemiBold", 44), "white"), X + 72, y - 2, 0.16 + 0.08 * k))
+        v = _text(it.get("unit") or it["main"], pf("Bold", 40), CLIP_YEL)
+        el.append(put(sc, v, X + 800 - v.width, y + 2, 0.2 + 0.08 * k))  # 오른쪽 끝 x 880
+    el += [put(sc, _text("구매 링크는 설명란·프로필에", pf("Bold", 48), "white"), X, 880, 0.45),
+           put(sc, _text("핫딜픽", pf("Bold", 52), "white"), X + 144, 1246, 0.55), put(sc, _text("hotdealpick.kr", pf("SemiBold", 40), light), X + 144, 1316, 0.6)]
+    if note:
+        el.append(put(sc, _text(note, _fit_font("SemiBold", (30, 28, 26), note, W), light), X, 1430, 0.7))
+    icon = logo_sq(120)
+
+    def outro(fr, t, el=el, icon=icon):
+        k = _ease((t - 0.36) / 0.5)
+        if k > 0:
+            ImageDraw.Draw(fr).rectangle((X, 820, X + W * k, 822), fill=(58, 61, 68))
+        _in(fr, icon, X, 1240, t, 0.5)
+        for im, x, y, dl, r in el:
+            _in(fr, im, x, y, t, dl, rise=r)
+    scenes.append((night, outro, "white", (58, 61, 68)))
+    return scenes
+
+
 def reel(items, date_label, out, music=None, say=None, safe=False, label=None, note=None):
     """깔끔·세련되게, 그러면서 '사고 싶고 합리적인 소비'로 느껴지게: 1080x1920 MP4(15~20초). -> out
     items: [{"title", "comment", "e": 이모지, "hook": 첫 화면 한 줄, "pts": 합리적인 이유 2~3개}] 최대 3개 (e·hook·pts 없으면 제목·코멘트로 대신)
@@ -379,7 +531,7 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
     디자인: 크림색 바탕 + 먹색 글자 + 포인트색은 숫자에만, 왼쪽 정렬 한 기준선, 프리텐다드, 흰 타일 위 이모지,
     장마다 켄번스(1.00→1.06 줌인·줌아웃 번갈아 — 소수점 확대라 글자 안 떨림) + 장 사이 0.3초 크로스페이드, 가격은 이름보다 0.2초 늦게 떠오름.
     첫 장 위 작게 '광고·제휴'. 마지막은 어두운 바탕에 저장·공유 유도. 글자는 인스타 UI가 덮는 위(~250px)·아래(~420px)를 피해서 배치.
-    safe(Q 네이버 클립): 다 그린 장면을 CLIP_SAFE배로 줄여 왼쪽 위에 — 아래 25%·오른쪽 15%엔 글자 X(바탕색만) · label = 첫 장 위 한 줄(기본 '오늘의 가성비 1위').
+    safe(네이버 클립 — 10/29 Cowork 시안) = _clip_scenes 틀(1080×1920 그대로 · 글자 = CLIP_NOGO 밖 · 자막 띠 X · 켄번스 CLIP_KB) · label = 표지 '오늘의 {label}'.
     note(10/29 네이버 클립) = 끝 장 맨 아래 한 줄('가격은 쿠팡 M/D H시 기준 · 결제 전 최종가 확인')."""
     import subprocess, tempfile, wave
     items = [_norm(it) for it in items[:3]]
@@ -498,6 +650,8 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
             _in(fr, im, X0, y, t, dl)
         _rule(fr, 860, t, 0.24, (58, 61, 68))
     scenes.append((night, outro, "white"))
+    if safe:  # 10/29 Cowork 클립 틀: 줄이지 않고 처음부터 안전 영역에 맞춰 그림(자막 띠 X — 화면 글자와 같은 말)
+        scenes = _clip_scenes(items, date_label, label, note)
 
     ad = _pill("광고·제휴")  # 첫 장 위 작게(대가성 — 캡션 맨 앞 문구와 같이)
     if top.get("photo"):  # 사진 위에서도 읽히게 = 흰 둥근 바탕
@@ -505,18 +659,18 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
         ImageDraw.Draw(ab).rounded_rectangle((0, 0, ad.width - 1, ad.height - 1), radius=32, fill="white")
         ab.alpha_composite(ad)
         ad = ab
-    subs = [_sub(s) for s, _ in say] if say else []
+    subs = [_sub(s) for s, _ in say] if say and not safe else []
     starts = [sum(durs[:k]) for k in range(n_sc)]
     total, seg = sum(durs), (XW - 12 * (n_sc - 1)) / n_sc
     AX, AY = RW / 2, 820  # 켄번스 기준점(글자 덩어리 가운데 — 가장자리 글자가 덜 움직이게)
 
     def shot(si, t):
         """장면 si의 t초 그림(켄번스까지) — 크로스페이드 때 앞 장면은 t가 길이를 넘어도 그대로 이어 그림."""
-        bg, draw, _ = scenes[si]
+        bg, draw = scenes[si][:2]
         fr = bg.copy()
         draw(fr, t)
         k = min(1.0, max(0.0, t / durs[si]))
-        z = 1 + KB * (k if si % 2 == 0 else 1 - k)  # 줌인·줌아웃 번갈아
+        z = 1 + (CLIP_KB if safe else KB) * (k if si % 2 == 0 else 1 - k)  # 줌인·줌아웃 번갈아
         if z > 1.0005:
             fr = fr.resize((RW, RH), Image.BILINEAR, box=(AX - AX / z, AY - AY / z, AX - AX / z + RW / z, AY - AY / z + RH / z))
         return fr
@@ -558,25 +712,28 @@ def reel(items, date_label, out, music=None, say=None, safe=False, label=None, n
                 if si and i < XF:  # 장 사이 0.3초 크로스페이드(앞 장면은 계속 움직임)
                     frame = Image.blend(shot(si - 1, durs[si - 1] + t), frame, (i + 1) / (XF + 1))
                 d = ImageDraw.Draw(frame)  # 위쪽 장면별 진행 막대 (스토리처럼)
-                for k in range(n_sc):
+                for k in range(n_sc if safe else 0):  # 클립 = x 80~900 · y 150 높이 8
+                    cs = (CLIP_W - 12 * (n_sc - 1)) / n_sc
+                    x = CLIP_X + k * (cs + 12)
+                    d.rounded_rectangle((x, 150, x + cs, 158), radius=4, fill=scenes[si][3])
+                    fill = 1.0 if k < si else (i + 1) / frames if k == si else 0
+                    if fill:
+                        d.rounded_rectangle((x, 150, x + cs * fill, 158), radius=4, fill=scenes[si][2])
+                for k in range(0 if safe else n_sc):
                     x = X0 + k * (seg + 12)
                     d.rounded_rectangle((x, 150, x + seg, 155), radius=3, fill=LINE if scenes[si][0] is cream else (58, 61, 68))
                     fill = 1.0 if k < si else (i + 1) / frames if k == si else 0
                     if fill:
                         d.rounded_rectangle((x, 150, x + seg * fill, 155), radius=3, fill=scenes[si][2])
-                if si == 0:
+                if si == 0 and not safe:
                     frame.paste(ad, (RW - X0 - ad.width, 296), ad)
-                if say:  # 자막 = 나레이션 하는 동안(앞뒤 0.15초 페이드)
+                if subs:  # 자막 = 나레이션 하는 동안(앞뒤 0.15초 페이드)
                     a = min(1.0, (t - LEAD + 0.15) / 0.15, (LEAD + say[si][1][3] + 0.2 - t) / 0.15)
                     if a > 0:
                         sb = subs[si] if a >= 1 else subs[si].copy()
                         if a < 1:
                             sb.putalpha(sb.getchannel("A").point(lambda v: int(v * a)))
                         frame.paste(sb, ((RW - sb.width) // 2, SUB_Y - sb.height), sb)
-                if safe:  # 바탕 = 오른쪽 아래 끝 색(크로스페이드 중에도 같은 색)
-                    sm = Image.new("RGB", (RW, RH), frame.getpixel((RW - 1, RH - 1)))
-                    sm.paste(frame.resize((round(RW * CLIP_SAFE), round(RH * CLIP_SAFE)), Image.LANCZOS), (0, 0))
-                    frame = sm
                 proc.stdin.write(frame.tobytes())
         proc.stdin.close()
         rc = proc.wait()

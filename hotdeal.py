@@ -5206,7 +5206,7 @@ def reel_samples(seen):
 
 
 CLIP_FROM, CLIP_MSG, CLIP_LAST, CLIP_RUN, CLIP_KEEP, CLIP_DIR = "06:00", "07:00", "09:00", 2, 3, "docs/clips"  # 10/29 진우 '1일 1개는 적어. 5-7개는 올리자': 06시부터 실행마다 2편(작업 6분 제한) -> 07시 관리자 1줄 · 3일 지난 폴더 지움
-CLIP_HOURS = ("08", "11", "13", "17", "19", "21")  # 올릴 시각 추천(편마다 돌림)
+CLIP_HOURS, CLIP_LAY = ("08", "11", "13", "17", "19", "21"), 2  # 올릴 시각 추천(편마다 돌림) · 영상 틀 판(2 = 10/29 Cowork 시안 틀 — 바뀌면 그날 만든 클립 1번 다시)
 CLIP_NOTE = "[광고] 네이버 쇼핑 커넥트·쿠팡 파트너스 활동으로 수수료를 받을 수 있어요\n영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"  # 설명 첫 두 줄(고정)
 
 
@@ -5270,8 +5270,27 @@ def clip_post(seen):
     for d in os.listdir(CLIP_DIR) if os.path.isdir(CLIP_DIR) else []:
         if re.fullmatch(r"\d{4}-\d\d-\d\d", d) and d not in js and d != day:
             shutil.rmtree(f"{CLIP_DIR}/{d}")  # 3일 지난 영상 폴더(저장소 크기)
-    made, todo = js.setdefault(day, []), [t for t in clip_topics(seen, load(POSTS, []), kst) if t[0] not in st["done"]]
+    posts = load(POSTS, [])
+    topics = clip_topics(seen, posts, kst)
+    made, todo, labels = js.setdefault(day, []), [t for t in topics if t[0] not in st["done"]], {t[0]: t[1] for t in topics}
     used, k = {u for c in made for u in c.get("u", [])}, 0
+
+    def render(top, n, label):  # 끝 장 가격 시각 = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것 · 곡 = 오늘 차례 + n(편마다 다름)
+        at = min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)
+        os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
+        return make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인")[2]
+    byu = {p.get("url"): p for p in posts}
+    for c in made:  # 틀(CLIP_LAY)이 바뀌면 그날 이미 만든 클립 = 같은 상품·같은 번호로 1번 다시(10/29 Cowork 시안 틀)
+        if k >= CLIP_RUN or c.get("lay") == CLIP_LAY:
+            continue
+        c["lay"], k = CLIP_LAY, k + 1  # 먼저 기록(실패해도 다시 X — 옛 영상 그대로)
+        top = reel_top([byu[u] for u in c.get("u", []) if u in byu], len(c.get("u", [])), f"clip {c['n']:02d} 다시")
+        try:
+            if top and len(top) == len(c.get("u", [])):
+                c["voice"] = render(top, c["n"], labels.get(c.get("topic"), ""))
+                print(f"clip {c['n']:02d} 새 틀로 다시 · 나레이션 {'O' if c['voice'] else 'X'}")
+        except Exception as e:
+            print("clip 다시", c["n"], repr(e))
     for key, label, word, ps in todo:
         if k >= CLIP_RUN:
             break
@@ -5280,15 +5299,12 @@ def clip_post(seen):
         if len(top) < 3:
             continue
         n, k = len(made) + 1, k + 1
-        os.makedirs(f"{CLIP_DIR}/{day}", exist_ok=True)
         try:
-            at = min(tuple(map(int, (re.search(r"(?:\d{4}-)?(\d{1,2})[-/](\d{1,2})\s+(\d{1,2})", str(p.get("chk") or "")) or re.search(r"-(\d\d)-(\d\d) (\d\d)", p["t"])).groups())) for p in top)  # 가격 시각 = chk('YYYY-MM-DD HH:MM'·'M/D H시') 없으면 글 시각 — 가장 이른 것
-            note = f"가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인"
-            said = make_reel(top, kst, f"{CLIP_DIR}/{day}/{n:02d}.mp4", n, safe=True, label=label, note=note)[2]  # 곡 = 오늘 차례 + n(편마다 다름)
+            said = render(top, n, label)
         except Exception as e:
             print("clip", key, repr(e))
             continue
-        made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said})
+        made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said, "lay": CLIP_LAY})
         used |= {p["url"] for p in top}
         st["n"] = st.get("n", 0) + 1
         print(f"clip {n:02d} {key} · {made[-1]['title']} · 나레이션 {'O' if said else 'X'}")
@@ -5505,7 +5521,15 @@ def ig_photo(p, d, seen=None):
         os.makedirs(d, exist_ok=True)
         f = os.path.join(d, hashlib.md5(img.encode()).hexdigest()[:12] + ".img")
         if not os.path.exists(f):  # 같은 실행에 다시 부르면(영상 고르기 reel_top -> make_reel) 다시 안 받음
-            data = urllib.request.urlopen(urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
+            get = lambda x: urllib.request.urlopen(urllib.request.Request(x, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(5_000_000)
+            big = img.replace("/thumbnails/remote/657x657", "/thumbnails/remote/1000x1000")  # 10/29 Cowork: 같은 사진 큰 판(938×1000 등) — 못 받으면 657 그대로
+            try:
+                data = get(big) if big != img else get(img)
+                __import__("PIL.Image", fromlist=["Image"]).open(__import__("io").BytesIO(data)).load()
+            except Exception:
+                if big == img:
+                    raise
+                data = get(img)
             open(f, "wb").write(data)
         with __import__("PIL.Image", fromlist=["Image"]).open(f) as im:
             im.load()  # 끝까지 풀리는 사진만(verify만 통과하고 그릴 때 깨지는 사진 = 넘기기 중간에 멈춤 — 10/25 리뷰)

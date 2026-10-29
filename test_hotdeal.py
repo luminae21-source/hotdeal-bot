@@ -7578,6 +7578,11 @@ with contextlib.redirect_stdout(io.StringIO()):
     f69, src69 = H.ig_photo(q69(CPU69, CPI69), "ph69")
     assert src69 == "coupang" and I69.open(f69).size == (300, 500) and u69 == [CPI69], u69
     assert H.ig_photo(q69(CPU69, CPI69), "ph69") == (f69, "coupang") and u69 == [CPI69]  # FF: 같은 실행에 같은 사진 = 다시 안 받음(영상 고르기 reel_top -> 만들기 make_reel)
+    BIG69 = "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/b69.jpg"; n69 = n69s = len(u69)
+    assert H.ig_photo(q69(CPU69 + "b", BIG69), "ph69")[1] == "coupang" and u69[n69:] == [BIG69.replace("657x657", "1000x1000")]  # 10/29 Cowork: 같은 사진 큰 판(1000x1000) 먼저
+    uo69 = H.urllib.request.urlopen; H.urllib.request.urlopen = lambda req, timeout=None: u69.append(req.full_url) or ((_ for _ in ()).throw(OSError("404")) if "1000x1000" in req.full_url else io.BytesIO(jpg69(300, 500)))
+    BIG69c = BIG69.replace("b69", "c69"); n69 = len(u69)
+    assert H.ig_photo(q69(CPU69 + "c", BIG69c), "ph69")[0] and u69[n69:] == [BIG69c.replace("657x657", "1000x1000"), BIG69c]; H.urllib.request.urlopen = uo69; del u69[n69s:]  # 큰 판 실패 = 657 그대로
     assert H.ig_photo(q69("https://naver.me/x", "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "") and H.ig_photo(q69(CPU69, "https://shop-phinf.pstatic.net/a.jpg"), "ph69") == (None, "")
     assert H.ig_photo(q69("https://www.ppomppu.co.kr/zboard/view.php?no=1"), "ph69") == (None, "") and H.ig_photo(q69(CPU69), "ph69") == (None, "") and len(u69) == 1
     t69 = []; H.toss = lambda path, body=None: t69.append(path) or {"items": [{"tacaItemId": 77, "tacaId": 7, "thumbnailUrl": "https://static.toss.im/p/77.jpg"}]}
@@ -8452,6 +8457,10 @@ assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].spli
 assert cj75[2]["tags"] == ["페리오 칫솔", "센소다인 치약", "크리넥스 휴지"] and cj75[0]["u"][0].endswith("k1")  # 태그 검색어 = 수량 낱말 빼고
 clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 스틱·시트 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
 clip75("2026-10-29 07:22"); assert len(a75) == 1 and len(mk75) == 4 and s75["clip"]["n"] == 4 and s75["clip"]["m"] == "2026-10"  # 하루 1번 · 다 한 주제 다시 X
+j75 = json.load(open("docs/clips/clips.json")); del j75["2026-10-29"][0]["lay"]; json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)  # 옛 틀로 만든 클립(lay 없음)
+clip75("2026-10-29 07:37"); clip75("2026-10-29 07:52")
+assert len(mk75) == 5 and mk75[4][1] == "docs/clips/2026-10-29/01.mp4" and [p["url"][-2:] for p in mk75[4][0]] == ["k1", "k2", "k3"] and mk75[4][4] == "전기요 가성비" and "clip 01 새 틀로 다시" in o75[-2]  # 같은 상품·같은 번호로 1번만 다시
+assert json.load(open("docs/clips/clips.json"))["2026-10-29"][0]["lay"] == H.CLIP_LAY and len(a75) == 1 and s75["clip"]["n"] == 4; del mk75[4:]
 H.make_reel = lambda *a, **k: (_ for _ in ()).throw(OSError("ffmpeg"))
 clip75("2026-10-30 06:07"); assert "clip steady OSError('ffmpeg')" in o75[-1] and len(s75["clip"]["done"]) == 7 and s75["clip"]["done"][:2] == ["kw", "cur1"] and s75["clip"]["n"] == 4  # 실패 = 그 편 X(다시 X) · 날 바뀜 = 처음부터
 H.make_reel = mkr75
@@ -8466,39 +8475,35 @@ H.weather, H.wx_dm_text, H.WEATHER_DM = (lambda seen: [{}, {}]), (lambda ws: "�
 time.time = lambda: TK("2026-11-01 20:05"); s75["clip"]["m"] = "2026-11"; H.wx_dm(s75); assert a75[-1] == "🌤 시즌 키워드\n\n🎬 이번 달 클립 4개 보냄", a75[-1]  # 일요일 DM 줄
 (H.make_reel, H.tg_video, H.tg, time.time, H.POSTS, H.weather, H.wx_dm_text, H.WEATHER_DM, H.cur_events, H.cp_shelf, H.load) = sv75
 assert "clip_post" in inspect.getsource(H.main) and clp0.__name__ == "clip_post" and "clips_page(out)" in inspect.getsource(__import__("build_site").build)
-# 실제 영상(safe): 규격 + 안전 영역
+# 실제 영상(safe = 네이버 클립 — 10/29 Cowork 시안 틀): 규격 + 1080×1920 그대로(줄이지 않음) + 글자 = 금지 구역(위 0~220·아래 1500~·오른쪽 x 960~ y 900~1500) 밖 + 자막 띠 X
 import wave as _wv75, subprocess as _sp75, cards as C75
 dur75 = lambda s: sum(float(x) * m for x, m in zip(re.search(r"Duration: (\d+):(\d+):([\d.]+)", s).groups(), (3600, 60, 1)))
-from PIL import Image as _I75, ImageChops as _IC75
+from PIL import Image as _I75, ImageChops as _IC75, ImageDraw as _ID75
 def wav75(sec):
     b = io.BytesIO(); w = _wv75.open(b, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(b"\x00\x10" * int(24000 * sec)); w.close(); return b.getvalue()
-it75 = [{"title": "[네이버] 지도표 성경김 재래 전장김 30g 20봉 (38,900원)", "comment": "꾸준히 팔리는 상품이에요", "e": "🍙", "hook": "전장김 20봉 38,900원",
-         "pts": ["리뷰 2.9만 개 꾸준템", "30g 20봉 넉넉한 구성", "선물로도 무난한 상자"], "unit": "1봉 1,945원", "warn": "카드할인 적용가"}]
-v75 = C75.reel(it75, "10월 26일", "docs/clip75.mp4", None, [("오늘의 네이버 쇼핑 픽 아주 긴 자막 줄을 두 줄로 넘겨 봄", wav75(2)), ("지도표 성경김, 38,900원, 1봉 1,945원 자막 두 줄 확인", wav75(3)), ("핫딜픽에서 더 보세요", wav75(1))],
-                 safe=True, label="네이버 쇼핑 픽")
-pr75 = _sp75.run([C75.ffmpeg(), "-i", v75], capture_output=True, text=True).stderr
-assert all(x in pr75 for x in ("Video: h264", "1080x1920", "30 fps", "Audio: aac", "44100 Hz")) and 15 <= dur75(pr75) <= 30, pr75
-nv75 = C75.reel(it75, "10월 26일", "docs/clip75n.mp4", None, None, safe=True)  # 음악·나레이션 없음 = 무음 AAC 트랙
-assert "Audio: aac" in _sp75.run([C75.ffmpeg(), "-i", nv75], capture_output=True, text=True).stderr
-def fr75(t):
-    raw = _sp75.run([C75.ffmpeg(), "-v", "error", "-ss", str(t), "-i", v75, "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout
-    return _I75.frombytes("RGB", (1080, 1920), raw)
-for t75 in (0.3, 1.0, 2.0, 2.4, 4.0, 5.5, 7.0, 8.0, 9.5, 11.0, 13.0, 14.8):
-    f = fr75(t75); bg = _I75.new("RGB", (1080, 1920), f.getpixel((1079, 1919)))
-    off = _IC75.difference(f, bg).convert("L")
-    assert off.crop((918, 0, 1080, 1920)).getextrema()[1] <= 16 and off.crop((0, 1440, 1080, 1920)).getextrema()[1] <= 16, (t75, off.crop((918, 0, 1080, 1920)).getbbox(), off.crop((0, 1440, 1080, 1920)).getbbox())
-    assert off.crop((0, 0, 918, 1440)).getextrema()[1] > 100  # 글자는 안전 영역 안에
-g75 = fr75(1.0).crop((round((984 - 200) * 0.84), round(296 * 0.84), round(984 * 0.84), round(360 * 0.84))).convert("L").getextrema()[0]
-assert g75 < 170 and fr75(7.0).crop((round((984 - 200) * 0.84), round(296 * 0.84), round(984 * 0.84), round(360 * 0.84))).convert("L").getextrema()[0] > 200  # 첫 장 '광고·제휴'만
-# FF(10/26 진우 '릴스는 늘 실제 사진으로'): 사진 있는 상품 = 첫 화면(처음 프레임부터) 실사진 꽉 + 딜 장면·끝 장면도 그 사진(위 주황·아래 파랑 = 잘리지 않음) · 안전 영역 그대로
-from PIL import ImageDraw as _ID75
 ph75 = _I75.new("RGB", (600, 800), (200, 120, 40)); _ID75.Draw(ph75).rectangle((0, 400, 599, 799), fill=(40, 90, 200)); ph75.save("ph75v.jpg")
-v75 = C75.reel([{**it75[0], "photo": "ph75v.jpg"}], "10월 26일", "docs/clip75p.mp4", None, None, safe=True, label="쿠팡 핫딜 픽")
+it75 = [{"title": "[쿠팡] 남양34 우유맛 라떼 스틱 17.2g 30개입 아주 긴 이름이 두 줄로 넘어가는지 (5,900원)", "comment": "", "e": "☕", "hook": "라떼 스틱 개당 197원", "unit": "개당 197원", "warn": "10/29 11시 가격 기준", "photo": "ph75v.jpg"},
+        {"title": "[쿠팡] 루카스나인 밀크티라떼 스틱 30개입 (19,900,000원)", "comment": "", "e": "🧋", "unit": "100ml당 1,330원", "warn": "10/29 11시 가격 기준"}]
+v75 = C75.reel(it75, "10월 29일", "docs/clip75.mp4", None, [(s, wav75(2.6)) for s in ("오늘의 꾸준템", "라떼 스틱", "밀크티", "핫딜픽에서 더 보세요")], safe=True, label="꾸준템", note="가격은 쿠팡 10/29 11시 기준 · 결제 전 최종가 확인")
+pr75 = _sp75.run([C75.ffmpeg(), "-i", v75], capture_output=True, text=True).stderr
+assert all(x in pr75 for x in ("Video: h264", "1080x1920", "30 fps", "Audio: aac", "44100 Hz")) and 10 <= dur75(pr75) <= 30, pr75
+bx75, z75 = list(C75.CLIP_BOXES), 1 + C75.CLIP_KB
+zb75 = lambda b: (540 + (b[1] - 540) * z75, 820 + (b[2] - 820) * z75, 540 + (b[3] - 540) * z75, 820 + (b[4] - 820) * z75)  # 켄번스 가장 크게 줌했을 때(기준점 540·820)
+hit75 = lambda a, b: a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+assert len(bx75) >= 15 and {b[0] for b in bx75} == {0, 1, 2, 3} and not [(b, nz) for b in bx75 for nz in C75.CLIP_NOGO if hit75(b[1:], nz) or hit75(zb75(b), nz)], bx75  # 글자 자리 = 금지 구역 밖(줌·떠오름 몫까지)
+assert min(b[1] for b in bx75) >= 76 and sum(1 for b in bx75 if b[0] == 0 and 250 <= b[2] < 262) == 2  # 기준선 x 80 · 표지 날짜·'광고·제휴' 칩 y 250
+nv75 = C75.reel(it75, "10월 29일", "docs/clip75n.mp4", None, None, safe=True)  # 음악·나레이션 없음 = 무음 AAC 트랙
+assert "Audio: aac" in _sp75.run([C75.ffmpeg(), "-i", nv75], capture_output=True, text=True).stderr
+def fr75(t, v=None):
+    raw = _sp75.run([C75.ffmpeg(), "-v", "error", "-ss", str(t), "-i", v or v75, "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout
+    return _I75.frombytes("RGB", (1080, 1920), raw)
 near75 = lambda c, w: max(abs(a - b) for a, b in zip(c, w)) < 45
-for t75, top75, bot75 in ((0.0, (454, 420), (454, 720)), (7.5, (454, 360), (454, 500)), (12.5, (200, 205), (200, 340))):
-    f = fr75(t75); assert near75(f.getpixel(top75), (200, 120, 40)) and near75(f.getpixel(bot75), (40, 90, 200)), (t75, f.getpixel(top75), f.getpixel(bot75))
-    off = _IC75.difference(f, _I75.new("RGB", (1080, 1920), f.getpixel((1079, 1919)))).convert("L")
-    assert off.crop((918, 0, 1080, 1920)).getextrema()[1] <= 16 and off.crop((0, 1440, 1080, 1920)).getextrema()[1] <= 16, t75
+for t75 in [x / 2 for x in range(0, int(dur75(pr75) * 2))]:
+    f = fr75(t75); off = _IC75.difference(f, _I75.new("RGB", (1080, 1920), f.getpixel((1079, 1919)))).convert("L")
+    assert all(off.crop(z).getextrema()[1] <= 16 for z in ((0, 1500, 1080, 1920), (0, 0, 1080, 140), (0, 166, 1080, 220), (960, 1120, 1080, 1500))), (t75, [off.crop(z).getbbox() for z in ((0, 1500, 1080, 1920), (0, 0, 1080, 140), (0, 166, 1080, 220), (960, 1120, 1080, 1500))])  # 아래·위·오른쪽 = 바탕만(자막 띠 X)
+f0 = fr75(0.0); assert near75(f0.getpixel((224, 850)), (200, 120, 40)) and near75(f0.getpixel((224, 975)), (40, 90, 200)) and near75(f0.getpixel((10, 1900)), C75.CREAM)  # 표지 = 처음 프레임부터 상품 타일 사진(썸네일) · 바탕 화면 전체
+fd = fr75(5.0); assert near75(fd.getpixel((540, 520)), (200, 120, 40)) and near75(fd.getpixel((540, 830)), (40, 90, 200)) and near75(fd.getpixel((990, 600)), (255, 255, 255)), fd.getpixel((990, 600))  # 상품 장 = 사진 카드(80~1000) 안 contain
+assert max(fr75(dur75(pr75) - 0.2).getpixel((540, 1700))) < 60  # 끝 장 = 어두운 바탕
 # 리뷰: 딜 장면 사진 칸 = 이모지 타일 높이 그대로 — 나레이션(자막) 있어도 이름 아래 '확인할 점'(가격 조건) 줄이 안 밀려남(이모지 판과 이름 아래가 같음)
 it75w = [{"title": "[쿠팡] 서울우유 1등급 흰우유 1L x 12팩 멸균 대용량 (17,900원)", "comment": "", "e": "🥛", "hook": "우유 팩당 1,492원", "unit": "팩당 1,492원", "warn": "와우회원 쿠폰 적용가", "pts": ["멸균 12팩", "1등급 원유"]}]
 sy75 = [(s, wav75(2)) for s in ("오늘의 가성비", "서울우유 1리터 열두 팩", "핫딜픽에서 더 보세요")]
@@ -8511,7 +8516,7 @@ assert cv75.size == (1080, 1920) and near75(cv75.getpixel((540, 500)), (200, 120
 assert cv75.getpixel((60, 600))[2] > 80  # 사진 = 폭 안에 다 들어감(잘라서 꽉 채우기 X) — 양옆 = 흐린 바탕
 assert min(cv75.getpixel((84, 334))) > 240 and max(cv75.getpixel((995, 1300))) > 60  # 리뷰: 맨 위 날짜 줄 = 300px 줄(켄번스 줌에도 진행 막대 밑) · 훅 띠 아래 끝 = h-630 위(줌해도 자막 칸 밖)
 assert all(abs(a - b) < 40 for a, b in zip(cv75.getpixel((540, 1700)), cv75.getpixel((60, 1700))))  # 띠 아래(h-600 밑) = 흐린 바탕만(자막·UI 칸)
-for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75p.mp4", "docs/clip75w0.mp4", "docs/clip75w1.mp4", "posts75.json"):
+for f in ("docs/clip75.mp4", "docs/clip75n.mp4", "docs/clip75w0.mp4", "docs/clip75w1.mp4", "posts75.json"):
     os.remove(f)
 # 9-76) P #일상 링크 후보(10/26 진우): 링크 없는 '#일상 상품명' 사진 = 같은 상품 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 → 쿠팡 검색 API)
 #       → 관리봇 버튼 · 진우가 고른 것만 첫 댓글 링크(대가성 문구 + 👉 · 본문 첫 줄도 대가성 문구) · '없음' = 사진만 · 후보 0개 = 바로 사진만 · 고르기 전엔 안 올림 · 쿠팡 검색 상한 = 다음 실행에
