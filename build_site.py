@@ -2378,7 +2378,7 @@ def drop_section(ds, today, n=None):
 
 
 PRICE_HIST, PH_DAYS, PH_NEAR, PH_DUE, PH_SPARK = "price_hist.json", 180, 3, 3, 30  # 쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 · 전문적인 걸 보는 느낌'): 저장소 루트(공개 가격만) · 상품당 최근 180일 · 기록 최저 +3% 안 = 근접 · 추적 우선 3일에 1번 확인(hotdeal.cp_price) · 줄 스파크라인 30일
-PH_MK, PH_JUMP = {"w": "와우가", "c": "쿠폰가"}, 2.5  # 같은 표시로 이어 본 가격이 2.5배↑ 차이 = 옵션·단위가 바뀐 것(Cowork 10/24 1,250 → 9,390 와우가 같은) — 쪽·차트는 그 뒤만
+PH_MK, PH_JUMP, PH_XSRC = {"w": "와우가", "c": "쿠폰가"}, 2.5, 1.25  # 출처가 다른 가격(Cowork·게시 = 화면가 ↔ 봇 API 가격 — 즉시할인·옵션 기준이 달라 10/30 실데이터 +50% 거짓 오름 다수)이 25%↑ 차이 = 이어 비교 X ·  같은 표시로 이어 본 가격이 2.5배↑ 차이 = 옵션·단위가 바뀐 것(Cowork 10/24 1,250 → 9,390 와우가 같은) — 쪽·차트는 그 뒤만
 ph_t = lambda s: s[2:4] + s[5:7] + s[8:10] + s[11:13]  # 'YYYY-MM-DD HH:MM'(KST) -> 'YYMMDDHH'
 ph_now = lambda ts: time.strftime("%y%m%d%H", time.gmtime(ts + 9 * 3600))  # 초 -> 'YYMMDDHH'(KST)
 ph_ts = lambda t: calendar.timegm(time.strptime("20" + t, "%Y%m%d%H"))  # 'YYMMDDHH' -> 초(KST 시각 그대로 — 서로 빼기·ph_ts(ph_now(x))만)
@@ -2464,51 +2464,55 @@ def ph_trim(h, now_ts):
     return n
 
 
-def ph_rows(rows):
-    """쪽·차트에 쓸 줄(파일은 그대로): 같은 표시 이어 본 가격이 PH_JUMP배↑ 차이 = 그 뒤만 · 와우·쿠폰가가 일반가(가운데 값)와 PH_JUMP배↑ 차이 = 뺌."""
-    if not rows:
-        return rows
-    far = lambda a, b: max(a, b) >= PH_JUMP * min(a, b)
-    cut = max((b[0] for mk in {r[2] for r in rows} for s in [[r for r in rows if r[2] == mk]] for a, b in zip(s, s[1:]) if far(a[1], b[1])), default="")
-    rows = [r for r in rows if r[0] >= cut]
-    mk = "" if any(r[2] == "" for r in rows) else rows[-1][2]
-    base = sorted(r[1] for r in rows if r[2] == mk)
-    return [r for r in rows if r[2] == mk or not far(r[1], base[len(base) // 2])]
+def ph_pts(rows):
+    """쪽·차트에 쓸 확인 점 [(YYMMDDHH, 가격, 표시, 출처)] 시간순(파일은 그대로): 줄 처음·마지막 확인 둘 다(늦게 든 옛 값으로 줄이 겹쳐도 실제 본 순서대로)
+    · 같은 표시로 이어 본 가격이 PH_JUMP배↑(출처가 다르면 — Cowork·게시 ↔ 봇 API — PH_XSRC배↑) 차이 = 옵션·단위가 바뀐 것으로 보고 그 뒤만 · 와우·쿠폰가가 일반가(가운데 값)와 PH_JUMP배↑ 차이 = 뺌."""
+    P = sorted([(r[0], r[1], r[2], r[3]) for r in rows or []] + [(r[4], r[1], r[2], r[3]) for r in rows or [] if len(r) > 4 and r[4] != r[0]], key=lambda p: p[0])
+    if not P:
+        return P
+    api = lambda p: p[3] in ("api", "best", "gold")
+    far = lambda a, b, k=PH_JUMP: max(a[1], b[1]) >= k * min(a[1], b[1])
+    cut = max((b[0] for mk in {p[2] for p in P} for s in [[p for p in P if p[2] == mk]] for a, b in zip(s, s[1:]) if far(a, b, PH_JUMP if api(a) == api(b) else PH_XSRC)), default="")
+    P = [p for p in P if p[0] >= cut]
+    mk = "" if any(p[2] == "" for p in P) else P[-1][2]
+    base = sorted(p[1] for p in P if p[2] == mk)
+    return [p for p in P if p[2] == mk or not far(p, (0, base[len(base) // 2]))]
 
 
 def ph_stat(rows, now_ts):
-    """추적 줄 -> 숫자(없으면 None): 기준 줄 s = 일반가(와우·쿠폰가는 조건이 있어 따로 — 섞으면 오르내림이 거짓), 일반가가 없으면 마지막 줄 표시
-    now 지금가 · low 기록 최저(확인한 시점 중)·lt 그 날 · avg 평균(확인 수 가중) · n 확인 수(전부) · last 마지막 확인 · d7 7일 전 대비 % · dn 오늘 내려감 · near 기록 최저 +PH_NEAR% 안(확인 2회↑)."""
-    rows = ph_rows(rows)
-    if not rows:
+    """추적 줄 -> 숫자(없으면 None): 기준 s = 일반가 확인 점(와우·쿠폰가는 조건이 있어 따로 — 섞으면 오르내림이 거짓), 일반가가 없으면 마지막 점 표시
+    now 지금가(마지막 확인) · low 기록 최저(확인한 시점 중)·lt 그 날 · avg 평균(확인 점) · n 확인 수(전부) · last 마지막 확인 · d7 7일 전 대비 % · dn 오늘 내려감 · near 기록 최저 +PH_NEAR% 안(확인 2회↑ · 한 번도 안 바뀜 X)."""
+    P = ph_pts(rows)
+    if not P:
         return None
-    mk = "" if any(r[2] == "" for r in rows) else rows[-1][2]
-    s = [r for r in rows if r[2] == mk]
+    mk = "" if any(p[2] == "" for p in P) else P[-1][2]
+    s = [p for p in P if p[2] == mk]
     now, t7 = s[-1][1], ph_now(now_ts - 7 * 86400)
-    then = next((r[1] for r in reversed(s) if r[0] <= t7), s[0][1])
-    lo = min(s, key=lambda r: (r[1], r[0]))
-    n = sum(map(ph_n, rows))
-    return {"mk": mk, "s": s, "now": now, "low": lo[1], "lt": lo[0], "avg": round(sum(r[1] * ph_n(r) for r in s) / sum(map(ph_n, s))), "n": n,
-            "last": max(map(ph_last, rows)), "d7": round((now - then) * 100 / then), "dn": len(s) > 1 and s[-1][0][:6] == ph_now(now_ts)[:6] and now < s[-2][1],
-            "near": n >= 2 and max(r[1] for r in s) > lo[1] and now * 100 <= lo[1] * (100 + PH_NEAR)}  # 가격이 한 번도 안 바뀐 상품 = 근접 X(변동 없음)
+    then = next((p[1] for p in reversed(s) if p[0] <= t7), s[0][1])
+    lo, k, n = min(s, key=lambda p: (p[1], p[0])), len(s) - 1, sum(map(ph_n, rows))
+    while k and s[k - 1][1] == now:  # 지금 가격이 처음 보인 점
+        k -= 1
+    return {"mk": mk, "s": s, "now": now, "low": lo[1], "lt": lo[0], "avg": round(sum(p[1] for p in s) / len(s)), "n": n, "last": P[-1][0],
+            "d7": round((now - then) * 100 / then), "dn": k > 0 and s[k][0][:6] == ph_now(now_ts)[:6] and now < s[k - 1][1],
+            "near": n >= 2 and max(p[1] for p in s) > lo[1] and now * 100 <= lo[1] * (100 + PH_NEAR)}
 
 
 def ph_path(s, t0, t1, x, y):
-    """기준 줄 -> SVG 계단선 d(확인 사이 = 같은 가격): t0(초)부터 마지막 확인까지 · x·y = 좌표 함수."""
+    """확인 점 -> SVG 계단선 d(확인 사이 = 같은 가격): t0(초)부터 마지막 확인까지(그 뒤는 모름) · x·y = 좌표 함수."""
     t0 = max(t0, ph_ts(s[0][0]))
-    p = next((r[1] for r in reversed(s) if ph_ts(r[0]) <= t0), s[0][1])
+    p = next((q[1] for q in reversed(s) if ph_ts(q[0]) <= t0), s[0][1])
     d = f"M{x(t0):.1f} {y(p):.1f}"
-    for r in s:
-        if t0 < ph_ts(r[0]) <= t1:
-            d += f"H{x(ph_ts(r[0])):.1f}V{y(r[1]):.1f}"
-    return d + f"H{x(max(t0, min(t1, max(ph_ts(ph_last(r)) for r in s)))):.1f}"  # 마지막 확인까지(그 뒤는 모름)
+    for q in s:
+        if t0 < ph_ts(q[0]) <= t1:
+            d += f"H{x(ph_ts(q[0])):.1f}V{y(q[1]):.1f}"
+    return d + f"H{x(max(t0, min(t1, ph_ts(s[-1][0])))):.1f}"
 
 
 def ph_spark(st, now_ts):
     """줄 스파크라인 72×22(최근 PH_SPARK일 · 색 = 7일 변화 방향)."""
     s, t1 = st["s"], ph_ts(ph_now(now_ts))
     t0 = max(t1 - PH_SPARK * 86400, ph_ts(s[0][0]))
-    vs = [r[1] for r in s if ph_ts(ph_last(r)) >= t0] or [s[-1][1]]
+    vs = [q[1] for q in s if ph_ts(q[0]) >= t0] + [next((q[1] for q in reversed(s) if ph_ts(q[0]) <= t0), s[0][1])]
     lo, hi, span = min(vs), max(vs), max(t1 - t0, 3600)
     d = ph_path(s, t0, t1, lambda t: 1 + (t - t0) * 70 / span, lambda p: 11 if hi == lo else 2 + (hi - p) * 18 / (hi - lo))
     return f'<svg viewBox="0 0 72 22" aria-hidden="true" class="{"ph-dn" if st["d7"] < 0 else "ph-up" if st["d7"] > 0 else "ph-eq"}"><path d="{d}"/></svg>'
@@ -2526,17 +2530,16 @@ c.setAttribute('cx',k[0]);c.setAttribute('cy',k[1]);l.setAttribute('x1',k[0]);l.
 
 def ph_chart(rows, now_ts):
     """상품 쪽 '가격 변화'(확인 2회↑만): 계단선(기준 줄) + 확인 점(와우·쿠폰가 = 빈 점) + 기록 최저·평균 점선 · 30일·90일·전체(라디오 — 스크립트 X) · 점 누르면 그때 가격(PH_JS) · 아래 3칸."""
-    rows = ph_rows(rows)
-    st = ph_stat(rows, now_ts)
+    st, P = ph_stat(rows, now_ts), ph_pts(rows)
     if not st or st["n"] < 2:
         return ""
     W, H, L, R, T, B = 320, 150, 4, 84, 12, 22  # 오른쪽 = '기록 최저 12,900' 글자 칸
-    t1, first = ph_ts(ph_now(now_ts)), ph_ts(rows[0][0])
+    t1, first = ph_ts(ph_now(now_ts)), ph_ts(P[0][0])
     panels = []
     for cls, days in (("ph-c30", 30), ("ph-c90", 90), ("ph-ca", 0)):
         t0 = max(t1 - days * 86400, first) if days else first
         span = max(t1 - t0, 86400)
-        pts = [(ph_ts(r[0]), r) for r in rows if ph_ts(r[0]) >= t0] + [(ph_ts(ph_last(r)), r) for r in rows if len(r) > 4 and ph_ts(ph_last(r)) >= t0]
+        pts = [(ph_ts(p[0]), p) for p in P if ph_ts(p[0]) >= t0]
         vs = [r[1] for _, r in pts] + [st["low"], st["avg"], next((r[1] for r in reversed(st["s"]) if ph_ts(r[0]) <= t0), st["s"][0][1])]
         lo, hi = min(vs), max(vs)
         lo, hi = (lo * 0.95, hi * 1.05) if hi == lo else (lo - (hi - lo) * 0.12, hi + (hi - lo) * 0.12)
@@ -2553,7 +2556,7 @@ def ph_chart(rows, now_ts):
                       + "".join(f'<circle class="{"ph-dt" if m == st["mk"] else "ph-d2"}" cx="{a}" cy="{b}" r="2.6"/>' for a, b, m, _ in dots)
                       + f'<text x="{L}" y="{H - 6}">{ph_md(ph_now(t0 - 9 * 3600))}</text><text x="{W - R}" y="{H - 6}" text-anchor="end">{ph_md(ph_now(now_ts))}</text>'
                       + f'<line class="ph-cl" x1="0" x2="0" y1="{T}" y2="{H - B}" visibility="hidden"/><circle class="ph-cx" r="4.5" cx="0" cy="0" visibility="hidden"/></svg>')
-    two = any(r[2] != st["mk"] for r in rows)
+    two = any(p[2] != st["mk"] for p in P)
     gap = round((st["now"] - st["low"]) * 100 / st["low"])
     return (f'<section class="ph-box" aria-labelledby="ph-h2"><input type="radio" name="pr" id="ph-r30" aria-label="30일"><input type="radio" name="pr" id="ph-r90" aria-label="90일"><input type="radio" name="pr" id="ph-ra" aria-label="전체" checked>'
             f'<div class="ph-hd"><h2 id="ph-h2">가격 변화</h2><div class="ph-rg"><label for="ph-r30">30일</label><label for="ph-r90">90일</label><label for="ph-ra">전체</label></div></div>'
