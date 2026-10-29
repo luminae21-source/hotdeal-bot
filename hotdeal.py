@@ -7353,17 +7353,18 @@ def cur_link(e, link):
 
 def cur_img(u):
     """큐레이션 사진 1장 -> docs/cards/cur/<md5>.jpg — 자르기·크기 조정만(글자·합성 X): 비율이 인스타 범위(4:5~1.91:1) 밖이면 가운데만 잘라 그 범위로, 긴 변 1080 넘으면 줄이고
-    짧은 변 320 밑이면 키움 · 투명 배경 = 흰색 · 쿠팡 사진 주소만(사이트 img_of와 같은 허용 목록) · 못 받으면 None."""
+    짧은 변 320 밑이면 키움 · 투명 배경 = 흰색 · 쿠팡 사진 주소(사이트 img_of와 같은 허용 목록)·우리 사이트 그림(docs/ 파일)만 · 못 받으면 None."""
     try:
         host = urllib.parse.urlsplit(u).netloc.lower()
-        if not (u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))):
+        own = u.startswith(SITE) and (src := os.path.normpath("docs/" + urllib.parse.urlsplit(u).path.lstrip("/"))).startswith("docs/") and os.path.isfile(src)  # 우리 사이트 그림(og-v4.png 등 — 10/29 멤버스데이) = 저장소 파일 그대로(받지 않음)
+        if not (own or u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))):
             return None
         f = f"{CUR_DIR}/{hashlib.md5(u.encode()).hexdigest()[:12]}.jpg"
         if os.path.exists(f):
             return f
         from io import BytesIO
         from PIL import Image
-        im = Image.open(BytesIO(urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(8_000_000)))
+        im = Image.open(src if own else BytesIO(urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(8_000_000)))
         im.load()
         if im.mode in ("RGBA", "LA", "P") or "transparency" in im.info:  # 투명 = 흰 바탕(검게 X)
             rgba = im.convert("RGBA")
@@ -7406,7 +7407,8 @@ def cur_ig(seen, st, e, key, live, now):
     if ig_room(seen, now) < 1:  # 하루 상한 = 딜 카드 칸 먼저(그날 남은 칸 몫을 남김)
         print("curation 인스타: 오늘 상한(딜 카드 칸 먼저) -> 안 올림", e["at"])
         return
-    tail = f"\n\n🛒 프로필 링크 → {str(e.get('topic') or '').strip() or '핫딜픽'}\n\n상품 사진: 판매 페이지(쿠팡)"
+    cp = any(urllib.parse.urlsplit(u).netloc.lower() == "coupang.com" or urllib.parse.urlsplit(u).netloc.lower().endswith((".coupang.com", ".coupangcdn.com")) for u in e.get("img") or [])  # 쿠팡 사진일 때만 출처 줄(우리 그림 og-v4 등 = X — 10/29 Cowork)
+    tail = f"\n\n🛒 프로필 링크 → {str(e.get('topic') or '').strip() or '핫딜픽'}" + (f"\n\n{IG_PHOTO_NOTE}" if cp else "")
     cap, auth, uid = clip(e["text"].strip(), 2200 - len(tail) - 1) + tail, {"Authorization": "Bearer " + E["IG_TOKEN"]}, E["IG_USER_ID"]
     try:
         if len(live) == 1:

@@ -7507,6 +7507,10 @@ assert Im68.open(H.cur_img(IMG68[0][:-5] + "t.png")).getpixel((0, 0)) == (255, 2
 with contextlib.redirect_stdout(io.StringIO()):
     assert H.cur_img("https://evil.kr/a.jpg") is None and H.cur_img("http://thumbnail.coupangcdn.com/a.jpg") is None and H.cur_img("https://thumbnail.coupangcdn.com]/x.jpg") is None  # 쿠팡 사진 주소만 · 깨진 주소 = None(멈춤 X)
 n68 = len(u68); H.cur_img(IMG68[0]); assert len(u68) == n68  # 있으면 다시 안 받음
+os.makedirs("docs", exist_ok=True); Im68.new("RGB", (1200, 630), (9, 9, 9)).save("docs/own68.png")
+assert Im68.open(H.cur_img(H.SITE + "own68.png")).size == (1080, 567) and len(u68) == n68  # 우리 사이트 그림(og-v4.png 등 — 10/29 멤버스데이) = 저장소 파일 읽음(받지 않음)
+assert H.cur_img(H.SITE + "nope68.png") is None and H.cur_img(H.SITE + "../hotdeal.py") is None and H.cur_img(H.SITE + "%2e%2e/x.png") is None and len(u68) == n68  # 없는 파일·docs 밖 = None
+os.remove("docs/own68.png")
 for f in glob.glob("docs/cards/cur/*"): os.remove(f)
 at68 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
 t68, c68, hd68 = [], [], {"ok": False}
@@ -7697,6 +7701,8 @@ with contextlib.redirect_stdout(io.StringIO()):
 kid69 = s69["igk_cur_2026-10-26_2000"]
 assert [b["image_url"] for u, b, m in ig69] == [H.SITE + f"cards/cur/{H.hashlib.md5(u.encode()).hexdigest()[:12]}.jpg" for u in CU69["img"]] and all(b["is_carousel_item"] for u, b, m in ig69), ig69
 assert kid69["kind"] == "cur" and kid69["cap"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 겨울템\n\n상품 사진: 판매 페이지(쿠팡)" and s69["cur_2026-10-26_2000"]["ig"] == 2 and len(ig69) == 2  # 한 번만
+ig69.clear(); H.cur_ig({}, {}, {**CU69, "img": [H.SITE + "og-v4.png"]}, "cur_own69", [H.SITE + "cards/cur/own.jpg"], time.time())
+assert ig69[0][1]["caption"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 겨울템"  # 우리 그림(쿠팡 사진 X) = '상품 사진: 판매 페이지(쿠팡)' 줄 X(10/29 Cowork)
 ig69.clear(); at69("2026-10-26 20:20"); H.ig_carousel(s69, "it", "u69", time.time())
 car69 = next(b for u, b, m in ig69 if b and b.get("media_type") == "CAROUSEL"); cid69 = next(k for k in s69 if k.startswith("igc_"))
 assert car69["caption"] == kid69["cap"] and car69["children"] == ",".join(kid69["kids"]) and s69[cid69] == {"t": time.time(), "kind": "cur"} and "igk_cur_2026-10-26_2000" not in s69, s69[cid69]
