@@ -1,9 +1,9 @@
 {
-"at": "2026-10-30 12:31",
+"at": "2026-10-30 12:46",
 "posts": 2734,
-"site": 1563,
+"site": 1564,
 "mall": {
-"toss": 640,
+"toss": 641,
 "coupang": 869,
 "naver": 54
 },
@@ -12,7 +12,7 @@
 "beauty": 233,
 "life": 184,
 "home": 76,
-"food": 355,
+"food": 356,
 "pet": 26,
 "kitchen": 103,
 "heat": 117,
@@ -31,10 +31,10 @@
 "sitemap": 997,
 "days": {
 "2026-10-30": {
-"site": 1563,
+"site": 1564,
 "sitemap": 997,
 "mall": {
-"toss": 640,
+"toss": 641,
 "coupang": 869,
 "naver": 54
 }
