@@ -7152,7 +7152,7 @@ it65 = [(0, {"t": "2026-10-25 10:00", "text": "📦 쿠팡 🔥\n햅쌀 10kg\n29
 tg65, sl65, ln65 = {"햇상품": {"https://link.coupang.com/a/r1"}}, {"햇상품": "fresh"}, {GM65: LP65}
 SH65 = S65.promo_shown(L65, it65, tg65, ln65)
 assert [p["id"] for p, _, _ in SH65] == ["cp-a", "kw", "gm"] == [p["id"] for p, _, _ in S65.promo_shown(L65, it65, tg65, {})], SH65  # 10/25 20:3x 최종: 쿠팡 = tag·kw 상품 · 수수료 길이 있는 몰(G마켓) = 보임 · 11번가·www.ssg.com(수수료 길 X) = 숨김
-assert S65.PROMO_STYLE == "nv"; S65.PROMO_STYLE = "card"  # 아래 띠 셀프체크 = 카드형(10/30 '둘 다 남겨두고' — 'card'로 바꾸면 지금 모양 그대로)
+assert S65.PROMO_STYLE == "card"  # 아래 띠 셀프체크 = 카드형(기본 — 10/30 진우 '지금이 네이버형보다 나아 보인다') · 자동 넘김 X
 B65 = S65.promo_band(SH65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25")
 assert re.findall(r'data-gc="promo/([^"]+)"', B65) == ["all", "goldbox", "cp-a", "kw"] and "전체 4 →" in B65 and len(re.findall(r"<i(?: class=on)?></i>", B65)) == 3, B65  # 곧 시작 = 7일 안(G마켓 11/2 X) · 점
 assert f'href="{S65.BASE}e/fresh.html" data-gc="promo/cp-a"' in B65 and f'href="{S65.BASE}?q=%EA%B0%80%EC%8A%B5%EA%B8%B0" data-gc="promo/kw"' in B65 and "&lt;가전&gt;" in B65  # tag = 행사 쪽 · kw = 홈 검색 · 글자 escape
@@ -7164,13 +7164,14 @@ assert B65.count('class="pbp"') == 1 and B65.count('class="pbi pbx"') == 1 and "
 GB65 = f'<a class="pbi" href="{S65.GOLDBOX}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/goldbox" style="--m:#D9402A;--mf:#fff;--mt:#C2362A" aria-label="쿠팡 골드박스 — 매일 바뀌는 쿠팡 특가"><span class="pbh"><i class="mlg" aria-hidden="true">쿠</i><b>쿠팡</b></span><b class="pbw">매일</b><b class="pbn">⏰ 골드박스</b><small class="pbg">매일 바뀌는 쿠팡 특가</small></a>'
 assert re.findall(r'<a class="pbi[^"]*" href="([^"]+)"', B65)[0] == S65.GOLDBOX and GB65 in B65 and "오전" not in GB65 and "시 오픈" not in GB65  # 10/30 진우 '골드박스 어디 갔는지' — 맨 앞 고정 카드 · 날짜 대신 '매일' · 시간 약속 X
 assert [re.findall(r'data-gc="promo/([^"]+)"', S65.promo_band(x, it65, tg65, sl65, ln65, set(), "2026-10-25")) for x in ([x for x in L65 if x[1] == "past"], [])] == [["all", "goldbox"]] * 2 and "전체 1 →" in S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25") and 'class="pbd"' not in S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25")  # 행사 없음 = 골드박스 1장(옛 = 띠 X) 진행·곧 시작 없음 = 띠 X
-S65.PROMO_STYLE = "nv"  # 네이버형(기본): 화면 폭 한 장씩 · 점 X · 알약 '❚❚ 1 / N'(누르면 멈춤 ↔ 재생) · 4초 자동 넘김 · 움직임 줄이기 = 자동 X
+S65.PROMO_STYLE = "nv"  # 네이버형(만들어 둠 · 기본 꺼짐): 화면 폭 한 장씩 · 점 X · 알약 '❚❚ 1 / N'(누르면 멈춤 ↔ 재생) · 4초 자동 넘김 · 움직임 줄이기 = 자동 X
 BV65 = S65.promo_band(SH65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25")
 assert '<section class="pb" data-st="nv"' in BV65 and re.findall(r'data-gc="promo/([^"]+)"', BV65) == re.findall(r'data-gc="promo/([^"]+)"', B65) and 'class="pbd"' not in BV65 and "전체 4 →" in BV65, BV65
 assert '<button class="pbq" type="button" aria-pressed="false" aria-label="자동 넘김 멈춤"><i aria-hidden="true">❚❚</i> <b>1</b> / 3</button>' in BV65 and S65.PROMO_AUTO_JS in BV65 and BV65.count('class="pbp"') == 1  # 칸 3장(골드박스 + 2)
 assert '<b class="pnm">⏰ 골드박스</b><span class="pdt">매일</span><span class="pbe">매일 바뀌는 쿠팡 특가</span>' in BV65 and "&lt;가전&gt;" in BV65.split('class="pnm"')[2] and 'class="pbw"' not in BV65
 assert all(w in S65.PROMO_AUTO_JS for w in ("prefers-reduced-motion: reduce", "4000", "8000", "document.hidden", "IntersectionObserver", "i>=n?0:i", "aria-pressed", "'▶':'❚❚'"))  # 끝 → 처음 · 손대면 8초 · 탭 숨김·화면 밖 = 멈춤
 assert "pbq" not in S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25") and ".pb[data-st=nv] .pbi{flex:0 0 100%;height:190px;border-radius:0" in S65.CSS and ".pnm{margin-top:12px;font-size:34px;font-weight:900" in S65.CSS  # 1장 = 알약 X
+S65.PROMO_STYLE = "card"  # 기본으로 되돌림
 T65, D65, G65 = S65.promo_page(SH65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25", "10/25 19:30")
 assert T65 == "쇼핑 기획전 모음 (10월) | 핫딜픽" and 'class="pcd k" href="#cp-a"' in G65 and "전체 4</button>" in G65 and "진행 중 3</button>" in G65 and "곧 시작 1</button>" in G65 and G65.index('<article class="pv" id="goldbox" data-s="on"') < G65.index('<article class="pv" id="cp-a"') and f'href="{S65.GOLDBOX}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/goldbox">' in G65 and '<span class="pvd"><b>매일</b></span>' in G65  # 오늘 마감 = 검정 칸 · 칩 개수
 assert f'href="{LP65}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/gm">행사 보러 가기 →' in G65.replace("&amp;", "&") and G65.count("핫딜픽이 고른 1개 →") == 2 and "<b>11.2–11.13</b></span>" in G65  # 링크프라이스 = sponsored · 상품 개수(품절 X) · 상품 없는 행사 = 날짜 칸
@@ -11459,7 +11460,9 @@ SH121 = S.promo_shown(L121, it121, tg121, ln121)
 assert [p["id"] for p, _, _ in SH121] == ["cpg", "cpw", "nv", "nvh", "lo", "ssg", "gm"], [p["id"] for p, _, _ in SH121]  # 쿠팡(진행 중 → 곧 시작) → 네이버 → 롯데온·쓱데이 → 수익 길 X G마켓 맨 뒤 · 토스(toss.im 수수료 길 X) = 숨김 그대로
 B121 = S.promo_band(SH121, it121, tg121, {}, ln121, set(), "2026-10-30")
 assert re.findall(r'data-gc="promo/([^"]+)"', B121) == ["all", "goldbox", "cpg", "cpw", "nv", "nvh", "lo", "ssg", "gm"] and "전체 8 →" in B121 and re.findall(r'<a class="pbi[^"]*" href="([^"]+)"', B121)[0] == S.GOLDBOX, B121
-assert S.PROMO_STYLE == "nv" and "<b>1</b> / 8</button>" in B121 and f'href="{S.BASE}c/naver/?ref=promo" data-gc="promo/nvh"' in B121 and '<span class="pbe">최대 70% 할인 · 핫딜픽 네이버 특가 보기 →</span>' in B121  # 네이버 = 핫딜픽 네이버 특가(?ref=promo · 안쪽 링크)
+assert S.PROMO_STYLE == "card" and len(re.findall(r"<i(?: class=on)?></i>", B121)) == 8 and "pbq" not in B121 and S.PROMO_AUTO_JS not in B121 and f'href="{S.BASE}c/naver/?ref=promo" data-gc="promo/nvh"' in B121  # 카드형(기본) = 점 8 · 자동 넘김 X · 네이버 = 핫딜픽 네이버 특가
+S.PROMO_STYLE = "nv"; B121 = S.promo_band(SH121, it121, tg121, {}, ln121, set(), "2026-10-30"); S.PROMO_STYLE = "card"
+assert "<b>1</b> / 8</button>" in B121 and f'href="{S.BASE}c/naver/?ref=promo" data-gc="promo/nvh"' in B121 and '<span class="pbe">최대 70% 할인 · 핫딜픽 네이버 특가 보기 →</span>' in B121  # 네이버 = 핫딜픽 네이버 특가(?ref=promo · 안쪽 링크)
 G121 = S.promo_page(SH121, it121, tg121, {}, ln121, set(), "2026-10-30")[2]
 assert re.findall(r'<article class="pv" id="([^"]+)"', G121) == ["goldbox", "cpg", "cpw", "nv", "nvh", "lo", "ssg", "gm"] and "전체 8</button>" in G121 and "진행 중 6</button>" in G121 and "곧 시작 2</button>" in G121, G121  # 기획전 모음 = 같은 순서
 assert f'href="{S.BASE}c/naver/?ref=promo" data-gc="promo/nvh">핫딜픽 네이버 특가 보기 →</a>' in G121
