@@ -164,6 +164,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .pnm{margin-top:12px;font-size:34px;font-weight:900;line-height:1.12;letter-spacing:-.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pdt{margin-top:6px;font-size:15px;font-weight:700;opacity:.92;white-space:nowrap}
 .pbe{margin-top:5px;font-size:13px;font-weight:700;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb[data-st=nv] .pbp{right:18px;bottom:48px}.pb[data-st=nv] .pbx .pdt,.pb[data-st=nv] .pbx .pbe{max-width:calc(100% - 108px)}
 .pbq{position:absolute;right:12px;bottom:12px;z-index:2;border:0;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font:inherit;font-size:12px;font-weight:700;line-height:1;padding:6px 11px;cursor:pointer}.pbq i{font-style:normal;margin-right:2px}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
+.pgb::after{border-color:#fff;opacity:.45}.pgb .mlg{background:#16130A;font-size:10px}.pgb .pbn{margin-top:8px;font-size:28px;font-weight:900;line-height:1.05;letter-spacing:-1.2px}.pgb .pbg{margin-top:5px;font-size:13px;font-weight:800;color:#5A4A00;opacity:1}.pnv::after{opacity:.18}.pnv .mlg{border-radius:5px}.mlg svg{width:11px;height:11px}.pbi.pnv .pvs{background:rgba(255,255,255,.22);color:#fff}
 .pbp{position:absolute;right:12px;bottom:11px;display:flex;flex-direction:row-reverse}.pbp img{width:38px;height:38px;margin-left:-10px;border-radius:50%;border:2px solid var(--m);background:#fff;object-fit:contain}
 .pbd{display:flex;justify-content:center;gap:5px;margin-top:8px}.pbd i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}.pbd i.on{width:14px;background:var(--ink)}
 .pcal{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}.pcal::-webkit-scrollbar{display:none}
@@ -1292,7 +1293,7 @@ MALL_C = {"coupang": ("#D9402A", "#fff", "#C2362A", "쿠"), "11st": ("#E8264A", 
 PROMO_DATE = r"\d{4}-\d{2}-\d{2}"
 
 
-GB_PROMO = {"id": "goldbox", "mall": "coupang", "mall_name": "쿠팡", "name": "⏰ 골드박스", "benefit": "매일 바뀌는 쿠팡 특가", "when": "매일"}  # 10/30 진우 '골드박스 어디 갔는지 안 보인다' → 기획전 맨 앞 고정 카드(코드 고정 — promos.json·끝남·D-n 규칙 밖 · 링크 = GOLDBOX · 시간 약속 문구 X)
+GB_PROMO = {"id": "goldbox", "mall": "coupang", "mall_name": "쿠팡", "name": "⏰ 골드박스", "benefit": "매일 바뀌는 쿠팡 특가", "when": "매일", "line": "매일 오전 7시 · 단 하루 특가"}  # 10/30 진우 '골드박스 어디 갔는지 안 보인다' → 기획전 맨 앞 고정 카드(코드 고정 — promos.json·끝남·D-n 규칙 밖 · 링크 = GOLDBOX · 시간 약속 문구 X)
 
 
 PROMO_STYLE = "card"  # 홈 '지금 하는 기획전' 모양(10/30 진우 '지금대로 버전과 네이버 시안 둘 다 남겨두고 우리가 선택 가능하게' → '지금이 네이버형보다 나아 보인다' = 기본 card): 'nv' = 네이버형(화면 폭 한 장씩 · 4초 자동 넘김 · 알약 '❚❚ 1 / N') | 'card' = 카드형(250px 칸 옆으로 밀기 + 점)
@@ -1448,11 +1449,16 @@ def promo_band(ps, it, tagged, slugs, links, icons, today):
     show, nv = promo_now(ps, today), PROMO_STYLE == "nv"
     sty, lg, mall = promo_mall(GB_PROMO, icons)
     gb = (f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pnm">{GB_PROMO["name"]}</b><span class="pdt">{GB_PROMO["when"]}</span><span class="pbe">{GB_PROMO["benefit"]}</span>' if nv
-          else f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pbw">{GB_PROMO["when"]}</b><b class="pbn">{GB_PROMO["name"]}</b><small class="pbg">{GB_PROMO["benefit"]}</small>')
-    cells = [promo_a(GOLDBOX, True, "promo/goldbox", gb, "pbi", f' style="{sty}" aria-label="{mall} 골드박스 — {GB_PROMO["benefit"]}"')]  # 맨 앞 고정 = 골드박스(행사가 없어도 띠 1장)
+          else f'<span class="pbh"><i class="mlg" aria-hidden="true">🚀</i><b>{mall}</b></span><b class="pbn">골드박스</b><small class="pbg">{GB_PROMO["line"]}</small>')
+    if not nv:  # 카드형 골드박스 = 노랑(10/30 진우 시안 '노란색도 좋다' · 라이트·다크 같은 색) · '매일 오전 7시' = 쿠팡 골드박스 화면 문구(진우 캡처 10/30) · 쿠팡 로고 글자·로켓 배지 그림 X(🚀 + '쿠팡'만)
+        sty = "--m:#FFE33A;--mf:#16130A;--mt:#16130A"
+    cells = [promo_a(GOLDBOX, True, "promo/goldbox", gb, "pbi" if nv else "pbi pgb", f' style="{sty}" aria-label="{mall} 골드박스 — {GB_PROMO["benefit" if nv else "line"]}"')]  # 맨 앞 고정 = 골드박스(행사가 없어도 띠 1장)
     for p, st in show:
         xs = promo_goods(p, it, tagged)
         sty, lg, mall = promo_mall(p, icons)
+        nvc = p["mall"] == "naver" and not nv and not p.get("color")  # 카드형 네이버 = 초록 #03C75A·흰 글자·흰 둥근 네모 안 N(si/naver.svg — 10/30 진우 '네이버는 좋아')
+        if nvc:
+            sty, lg = "--m:#03C75A;--mf:#fff;--mt:#03C75A", mall_logo("naver", "mlg")
         href, ext = promo_go(p, xs, slugs, links)
         pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
         when = promo_span(p.get("start"), p.get("end")) or promo_span((p.get("pre") or {}).get("start"), (p.get("pre") or {}).get("end")) or "진행 중"
@@ -1461,7 +1467,7 @@ def promo_band(ps, it, tagged, slugs, links, icons, today):
         inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pnm">{html.escape(p["name"].strip())}</b><span class="pdt">{html.escape(when)}</span>'
                  + (f'<span class="pbe">{html.escape(ben)}</span>' if ben else "") if nv else
                  f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pbw">{html.escape(when)}</b><b class="pbn">{html.escape(p["name"].strip())}</b>') + pic
-        cells.append(promo_a(href or f"{BASE}events/#{p['id']}", ext, f"promo/{p['id']}", inner, "pbi pbx" if pics else "pbi", f' style="{sty}" aria-label="{html.escape(mall + " " + p["name"].strip())}"'))  # pbx = 사진 동그라미 자리만큼 이름 줄임
+        cells.append(promo_a(href or f"{BASE}events/#{p['id']}", ext, f"promo/{p['id']}", inner, "pbi" + " pbx" * bool(pics) + " pnv" * nvc, f' style="{sty}" aria-label="{html.escape(mall + " " + p["name"].strip())}"'))  # pbx = 사진 동그라미 자리만큼 이름 줄임
     n = 1 + sum(st != "past" for _, st, _ in ps)  # 골드박스 포함
     if nv:  # 네이버형: 화면 폭 한 장씩 · 점 X · 오른쪽 아래 알약(누르면 멈춤 ↔ 재생) · 4초 자동 넘김(PROMO_AUTO_JS)
         return (f'<section class="pb" data-st="nv" aria-labelledby="pbh" aria-roledescription="carousel"><div class="pbt"><h2 id="pbh">🎉 지금 하는 기획전</h2><a href="{BASE}events/" data-gc="promo/all">전체 {n} →</a></div>'
