@@ -1,5 +1,5 @@
 {
-"at": "2026-10-30 19:08",
+"at": "2026-10-30 19:22",
 "posts": 2757,
 "site": 1581,
 "mall": {
@@ -28,11 +28,11 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 154,
-"sitemap": 1001,
+"sitemap": 1000,
 "days": {
 "2026-10-30": {
 "site": 1581,
-"sitemap": 1001,
+"sitemap": 1000,
 "mall": {
 "toss": 641,
 "coupang": 886,
