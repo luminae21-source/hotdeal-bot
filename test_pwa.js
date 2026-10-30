@@ -59,7 +59,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     OFF = false;
     // 3) 지금 사이트 동작(10/24 개편): 아래 메뉴 5개 · 찜(localStorage -> /saved/) · 검색(search.json = 진열 상품 전부, 🔥 먼저) · 옛 홈 #칸 주소(웹앱 바로가기 #wait·#life) -> 새 쪽
     await pg.goto(U + '/', { waitUntil: 'load' });
-    assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '찜', '알림']);
+    assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '가격', '찜']);
     const lk = await pg.$('#pick .like, #steady .like');  // 10/24 포털형: 🔥 실시간 핫딜 = 목록형 줄(♡ X) — 가로 카드(오늘의 픽·꾸준템)에 ♡
     await lk.click();
     assert.strictEqual(await pg.evaluate(() => JSON.parse(localStorage.getItem('likes')).length), 1, '찜 1개');
