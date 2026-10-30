@@ -5072,6 +5072,9 @@ assert len(re.findall(r"#", cp33)) <= 5 and not any(re.search(H.VOICE_YO, x) for
 assert json.load(open("docs/cards/igt33/2026-10-29.json"))["st"] == "done" and s33["igt_2026-10-29"]["id"] == "m33"
 c33.clear(); t33.clear(); H.ig_test(s33); H.ig_test({}); assert not c33 and not t33  # 1건만(seen을 잃어도 커밋된 기록으로)
 # 실패(code 4·2207051) = 관리봇 1번, 다시 시도 X · 지난 날짜 X
+for fn33 in ("docs/cards/2026-10-30.json", "docs/cards/2026-10-30.png"):  # 앞 셀프체크가 진짜 시계(10/30 21시 뒤)로 만든 하루 카드 순서 파일 = 이 셀프체크 날짜와 겹침 → 지움(카드 순서 = 이 posts로)
+    if os.path.exists(fn33) and not os.path.exists(".git"):  # 셀프체크 임시 폴더만(저장소 폴더 = 그대로)
+        os.remove(fn33)
 open("igt33.txt", "w").write("2026-10-30\n"); json.dump([dict(p, t=p["t"].replace("10-29", "10-30")) for p in ps33], open("posts33.json", "w"), ensure_ascii=False)
 f33["post"] = '{"error":{"message":"spam","code":4,"error_subcode":2207051}}'
 s33 = {}; time.time = lambda: TK("2026-10-30 21:10"); H.ig_test(s33); time.time = lambda: TK("2026-10-30 21:40"); H.ig_test(s33)
