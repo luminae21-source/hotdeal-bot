@@ -3474,7 +3474,7 @@ assert "진라면" not in c13 and "toss.shopping" not in c13 and "컵누들" not
 assert c13.count("<tr") == 4 and "<td>10/12</td><td>쿠팡</td>" in c13 and 'href="https://hotdealpick.kr/p/1.html">신라면 5개</a></td><td>2,400원</td><td>480원</td>' in c13 and "평균 · 기록 3개" in c13 and "<b>579원</b>" in c13
 assert re.findall(r"<loc>[^<]*/c/([^<]*\.html)</loc>", sm13) == ["ramen.html", "water.html"] and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
 assert all('href="https://hotdealpick.kr/c/ramen.html">라면 개당</a>' in x for x in (ix13, open(f"{d13}/c/life/index.html").read(), open(f"{d13}/c/index.html").read()))  # 홈·생필품 쪽·카테고리 쪽 링크(검색 로봇이 찾게)
-assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 최저가 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
+assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 가격 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
 assert "c/ramen.html" not in open(f"{d13}/p/4.html").read() and "c/ramen.html" not in open(f"{d13}/p/6.html").read()  # 토스 딜·다른 품목 페이지엔 X
 assert H.poll_opts(480) == ["500원 이하", "600원까지", "700원까지", "가격 안 보고 집음"] and H.poll_opts(120)[:2] == ["120원 이하", "140원까지"] and H.poll_opts(2590)[0] == "2,500원 이하" and H.poll_opts(4.7)[0] == "10원 이하"
 assert H.poll_text(r13["ramen"]) == ("🗳️ 라면 개당, 얼마면 \"오 싸다\" 싶으세요?\n\n내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌", H.poll_opts(480))  # PP 끝 줄
@@ -11023,6 +11023,9 @@ assert S.ph_pts(X112) == [("26102509", 13090, "", "cw")] and S.ph_stat(X112, TK(
 assert [p[1] for p in S.ph_pts([["26102009", 10000, "", "cw"], ["26102109", 15000, "", "cw"], ["26102209", 9000, "", "cw"]])] == [10000, 15000, 9000]  # 같은 출처 1.5배 = 진짜 오르내림(그대로)
 assert [p[1] for p in S.ph_pts([["26102501", 3440, "", "cw"], ["26102814", 5400, "", "api"]])] == [5400] and [p[1] for p in S.ph_pts([["26102501", 3440, "", "cw"], ["26102814", 4000, "", "api"]])] == [3440, 4000]  # 출처 다름 = 25%↑ 차이면 그 뒤만
 assert S.ph_chart([["26102509", 9900, "", "api"]], TK("2026-10-30 12:00")) == ""  # 확인 1회 = 차트 X
+fl112 = S.ph_chart([["26102503", 14000, "", "cw", "26102509", 2]], TK("2026-10-30 12:00"))  # 10/30 Cowork 검수(/p/1866): 다 같은 가격 = 한 줄 · 마지막 확인 24시간↑ = '마지막 확인 대비'
+assert "확인한 2번 모두 14,000원 (10/25)" in fl112 and 'class="ph-c ' not in fl112 and "ph-r30" not in fl112 and "마지막 확인 대비" in fl112 and "<small>10/25 14,000원</small>" in fl112 and "지금 대비" not in fl112, fl112
+assert "지금 대비" in S.ph_chart([["26102503", 14000, "", "cw"], ["26103009", 13000, "", "api"]], TK("2026-10-30 12:00"))  # 24시간 안 = '지금'
 ch112 = S.ph_chart(S112 + [["26102810", 9800, "w", "cw"]], TK("2026-10-30 12:00"))
 assert all(w in ch112 for w in ('class="ph-box"', "ph-c30", "ph-c90", "ph-ca", ">가격 변화<", "기록 최저 10,000", "평균 10,733", "확인 4회", "10/30 9시 · 10,200원", "10/28 10시 · 9,800원 · 와우가", "● 일반가 ○ 와우·쿠폰가", "결제 전 최종가 확인")) and "최저가" not in ch112, ch112
 assert ch112.count('class="ph-dt"') == 9 and ch112.count('class="ph-d2"') == 3 and "+2%" in ch112  # 패널 3개 × 일반가 점 3 · 와우가 빈 점 · 지금 대비 기록 최저 +2%

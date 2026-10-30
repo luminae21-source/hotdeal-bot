@@ -2562,12 +2562,14 @@ def ph_chart(rows, now_ts):
                       + f'<line class="ph-cl" x1="0" x2="0" y1="{T}" y2="{H - B}" visibility="hidden"/><circle class="ph-cx" r="4.5" cx="0" cy="0" visibility="hidden"/></svg>')
     two = any(p[2] != st["mk"] for p in P)
     gap = round((st["now"] - st["low"]) * 100 / st["low"])
-    return (f'<section class="ph-box" aria-labelledby="ph-h2"><input type="radio" name="pr" id="ph-r30" aria-label="30일"><input type="radio" name="pr" id="ph-r90" aria-label="90일"><input type="radio" name="pr" id="ph-ra" aria-label="전체" checked>'
-            f'<div class="ph-hd"><h2 id="ph-h2">가격 변화</h2><div class="ph-rg"><label for="ph-r30">30일</label><label for="ph-r90">90일</label><label for="ph-ra">전체</label></div></div>'
-            f'<p class="ph-lb">쿠팡 · 확인 {st["n"]}회 · 마지막 {ph_md(st["last"], True)}' + ('<small class="ph-lg">● 일반가 ○ 와우·쿠폰가(조건 있음)</small>' if two else "") + "</p>"
-            + '<div class="ph-cs">' + "".join(panels) + '</div><p class="ph-tip" aria-live="polite">그래프를 누르면 그때 가격이 보여요</p>'
+    old = st["last"] < ph_now(now_ts - 86400)  # 마지막 확인 24시간 넘음 = '지금' X(10/30 Cowork 검수)
+    flat = len({p[1] for p in P}) == 1  # 확인한 가격이 모두 같음 = 빈 차트 대신 한 줄
+    return (f'<section class="ph-box" aria-labelledby="ph-h2">' + ("" if flat else '<input type="radio" name="pr" id="ph-r30" aria-label="30일"><input type="radio" name="pr" id="ph-r90" aria-label="90일"><input type="radio" name="pr" id="ph-ra" aria-label="전체" checked>')
+            + '<div class="ph-hd"><h2 id="ph-h2">가격 변화</h2>' + ("" if flat else '<div class="ph-rg"><label for="ph-r30">30일</label><label for="ph-r90">90일</label><label for="ph-ra">전체</label></div>') + '</div>'
+            + f'<p class="ph-lb">쿠팡 · 확인 {st["n"]}회 · 마지막 {ph_md(st["last"], True)}' + ('<small class="ph-lg">● 일반가 ○ 와우·쿠폰가(조건 있음)</small>' if two and not flat else "") + "</p>"
+            + (f'<p class="ph-tip">확인한 {st["n"]}번 모두 {st["now"]:,}원 ({ph_md(st["last"])})</p>' if flat else '<div class="ph-cs">' + "".join(panels) + '</div><p class="ph-tip" aria-live="polite">그래프를 누르면 그때 가격이 보여요</p>')
             + f'<div class="ph-st"><div><span class="ph-lb">기록 최저</span><b>{st["low"]:,}원</b><small>{ph_md(st["lt"])}</small></div><div><span class="ph-lb">평균</span><b>{st["avg"]:,}원</b><small>확인 {st["n"]}회</small></div>'
-            + f'<div><span class="ph-lb">지금 대비</span><b>{"기록 최저" if gap <= 0 else f"+{gap}%"}</b><small>지금 {st["now"]:,}원</small></div></div>'
+            + f'<div><span class="ph-lb">{"마지막 확인 대비" if old else "지금 대비"}</span><b>{"기록 최저" if gap <= 0 else f"+{gap}%"}</b><small>{ph_md(st["last"]) if old else "지금"} {st["now"]:,}원</small></div></div>'
             + f'<p class="ph-note">기록 최저 = 핫딜픽이 확인한 시점 중 가장 낮은 가격 · {PH_NOTE}</p></section>' + PH_JS)
 
 
@@ -2988,7 +2990,7 @@ def build(posts, out="docs"):
         curp = price_bits(p, sh)[0] if sh and sh[1] is not None else None  # 진열 상태 가격(확인가 · 토스 대기 = '' 숨김) — 없으면 글의 가격(cur = 주소 -> 글 번호, 덮어쓰기 X)
         ti, sd, ld = seo(i, p, curp)
         it_ = price_item(p)
-        rl = it_ and it_[0] in recs and f'<a class="btn2" href="{BASE}c/{it_[0]}.html">📈 {it_[1]} {it_[3]} 최저가 기록 보기</a>'  # 그 품목 기록 페이지로(내부 링크 — 검색 로봇이 찾게)
+        rl = it_ and it_[0] in recs and f'<a class="btn2" href="{BASE}c/{it_[0]}.html">📈 {it_[1]} {it_[3]} 가격 기록 보기</a>'  # 그 품목 기록 페이지로(내부 링크 — 검색 로봇이 찾게)
         c = CAT_META.get(cat_of(p))
         back = f'<a class="btn2" href="{c_url(c[0] if c else "hot")}">{c[2] + " " + c[1] if c else "🔥 지금 특가"} 더 보기 →</a>'
         newer = cur.get(p.get("url")) if sh is None and p.get("own") and cur.get(p.get("url"), i) != i else None  # 같은 상품 새 글(진열 이어받음)
