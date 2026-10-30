@@ -1,16 +1,16 @@
 {
-"at": "2026-10-31 00:35",
+"at": "2026-10-31 00:48",
 "posts": 2767,
-"site": 1577,
+"site": 1576,
 "mall": {
-"toss": 639,
+"toss": 638,
 "coupang": 884,
 "naver": 54
 },
 "cat": {
 "sport": 20,
 "home": 76,
-"food": 360,
+"food": 359,
 "beauty": 239,
 "life": 183,
 "coffee": 73,
@@ -40,10 +40,10 @@
 }
 },
 "2026-10-31": {
-"site": 1577,
+"site": 1576,
 "sitemap": 997,
 "mall": {
-"toss": 639,
+"toss": 638,
 "coupang": 884,
 "naver": 54
 }
