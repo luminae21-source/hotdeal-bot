@@ -260,7 +260,7 @@ def fetch_deals():
             deals += feed()
         except Exception as e:
             print("feed", feed.__name__, repr(e))
-    return deals
+    return [d for d in deals if not name_block(d["title"], "커뮤니티")]
 
 
 def ppomppu_feed(board, name):
@@ -536,7 +536,8 @@ def auto_shelf(seen):
         best = {}
         for c, xs in seen["cpbest"]["r"].items():
             for pid, item, name, price, img, rank, rocket in xs:
-                if pid not in pids and price and str(img).startswith("https://") and isinstance(rank, int) and rank > 0 and not re.search(AUTO_CLAIM, name) and any(w in name for w in pl["words"]):
+                if pid not in pids and price and str(img).startswith("https://") and isinstance(rank, int) and rank > 0 and not re.search(AUTO_CLAIM, name) and any(w in name for w in pl["words"]) \
+                        and not name_block(name, "진열 자동", SHELF_BLOCK):
                     best.setdefault(pid, (rank, int(c), pid, item, name, price, img, rocket))
         picks = sorted(best.values())[:AUTO_SHELF_N[1]]
         if len(picks) < AUTO_SHELF_N[0]:
@@ -555,6 +556,20 @@ def auto_shelf(seen):
                                + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")
                                + f"\n⚠️ 확인할 점: 결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"})
         print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · 후보 {len(best)}개")
+
+
+NAME_BLOCK = r"분유|조제유"  # 10/30 진우 규칙: 분유 광고 X(조제분유·성장기용 조제유 = 광고 금지) — 봇이 스스로 고르는 길(쿠팡·토스 API 목록·커뮤니티 딜·진열 자동·재게시·5개·사이트 쿠팡 진열 후보)이 다 이것을 봄 · 이미 events에 있는 건 그대로
+SHELF_BLOCK = NAME_BLOCK + r"|성인"  # 진열 자동(이관 A)만 더: 기저귀는 아기용만(진우 '성인용은 원하면')
+
+
+def name_block(name, where, pat=NAME_BLOCK):
+    """이름 막기 -> True = 안 올림(로그 1줄 — 실행마다 같은 이름 1번)."""
+    if not re.search(pat, str(name or "")):
+        return False
+    if (where, name) not in (b := RUN.setdefault("nblk", set())):
+        b.add((where, name))
+        print("이름 막기", where, str(name)[:40])
+    return True
 
 
 class CpLimit(RuntimeError):
@@ -588,7 +603,10 @@ def coupang(method, path, body=None):
         raise RuntimeError(f"coupang 응답 {e!r}")
     if str(r.get("rCode", "0")) != "0":
         raise (ValueError if str(r.get("rCode")) == "400" else RuntimeError)(f"coupang rCode {r.get('rCode')} {r.get('rMessage')}")
-    return r["data"]
+    d, ok = r["data"], lambda x: not (isinstance(x, dict) and name_block(x.get("productName"), "쿠팡 API"))  # 검색·베스트·골드박스 상품 목록 = 이름 막기
+    if isinstance(d, dict) and isinstance(d.get("productData"), list):
+        d["productData"] = list(filter(ok, d["productData"]))
+    return list(filter(ok, d)) if isinstance(d, list) else d
 
 
 def cp_deeplinks(urls, sub=None):
@@ -732,7 +750,10 @@ def toss(path, body=None):
     r = json.loads(http(TOSS_API + path, body, {"Authorization": "Bearer " + t["token"]}))
     if r.get("resultType") != "SUCCESS":  # HTTP 200이어도 FAIL일 수 있음(IP 미등록·발급 제한 상품 등)
         raise RuntimeError(r.get("error"))
-    return r["success"]
+    s = r["success"]
+    if isinstance(s, dict) and isinstance(s.get("items"), list):  # 하루특가·베스트 목록 = 이름 막기
+        s["items"] = [x for x in s["items"] if not (isinstance(x, dict) and name_block(x.get("displayName"), "토스 API"))]
+    return s
 
 
 def toss_link(seen, iid, name=""):
@@ -1853,7 +1874,7 @@ def cp_shelf(posts, kst, steady):
             continue
         rv, rate = re.search(STEADY_REV, p["text"]), re.search(r"⭐\s*(\d\.\d)", p["text"])
         _, name, price = parse(title_of(p["text"]))
-        if not rv or steady_n(rv[1]) < (GOLD_ST_REV if steady else TH_FILL_REV) or steady and (rate and float(rate[1]) < GOLD_ST_RATE or re.search(r"🔥|특가|할인|최저", name)) \
+        if name_block(name, "쿠팡 진열") or not rv or steady_n(rv[1]) < (GOLD_ST_REV if steady else TH_FILL_REV) or steady and (rate and float(rate[1]) < GOLD_ST_RATE or re.search(r"🔥|특가|할인|최저", name)) \
                 or season_adj(name) < 0:
             continue
         unit, pr = re.search(r"💰\s*([^\n]*꼴)", p["text"]), price.split("/")[0].strip()
@@ -10074,6 +10095,7 @@ def cp_repost(seen):
     sig = lambda u: tuple(-sc.get(k, {}).get(bare(u), 0) for k in "ocv") + (top.get(u, len(top)),)
     miss = th_missed(posts, now)  # Threads 개별 글 칸에 밀려 3시간 창이 끝난 진우 🔥(10/25 Cowork '밀렸으면 재게시 루틴 대상으로') = 반응 신호 다음 차례
     cand = [u for u in chan if u not in block and ev.get(u, {}).get("pid") not in bpid and last[u].get("st") == "hot" and last[u].get("now") and last[u].get("chkt", "") >= fresh_at
+            and not name_block(parse(title_of(last[u]["text"]))[1], "재게시")
             and (any(sig(u)[:3]) or u in top or u in miss)]
     seen[key] = now
     if not cand:
@@ -10135,7 +10157,7 @@ def auto_repost(seen):
         st = ph_stat(h.get(ph_key(ev.get(u, {}), u)), now)
         fp = won(parse(title_of(first[u]["text"]))[2])
         if p.get("st") == "hot" and u not in recent and u not in block and u not in done and st and fp and st["last"] >= ph_now(now - 86400) and p.get("now") \
-                and st["now"] * 100 <= fp * (100 + AUTO_RE_PCT) and p.get("chkt", "") >= d1:
+                and st["now"] * 100 <= fp * (100 + AUTO_RE_PCT) and p.get("chkt", "") >= d1 and not name_block(parse(title_of(p["text"]))[1], "재게시"):
             cand.append((st["now"] / fp, p["t"], u))
     seen[key] = {"t": now}
     if not cand:
@@ -10175,7 +10197,8 @@ def auto_pick5(seen):
     kind = lambda u, p: raw.get(u, {}).get("tag") or cat_of(p)
     old = set(st5.get("k", [])) if st5.get("d") == yday else set()
     cand = sorted((won(p.get("now") or "") / max(won(parse(title_of(first[u]["text"]))[2]), 1), u) for u, p in last.items()
-                  if p.get("st") == "hot" and p.get("chkt", "") >= d1 and won(p.get("now") or "") and u not in recent and u not in block and u in raw and kind(u, p) not in old)
+                  if p.get("st") == "hot" and p.get("chkt", "") >= d1 and won(p.get("now") or "") and u not in recent and u not in block and u in raw and kind(u, p) not in old
+                  and not name_block(parse(title_of(p["text"]))[1], "5개"))
     picks, kinds = [], set()
     take = lambda u: picks.append(u) or kinds.add(kind(u, last[u]))
     hy = next((u for _, u in cand if re.search(AUTO_HYGIENE, parse(title_of(last[u]["text"]))[1]) and cat_of(last[u]) in sum((c for c, _ in AUTO_P5_MIX), ())), None)

@@ -11343,4 +11343,37 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert not os.path.exists(f119) and s119["thpic"]["m"] == {}  # 14일 지난 그림 지움
 assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, th_pics):" in inspect.getsource(H.main)  # 캐러셀 그대로
 (time.time, H.http, H.th_get, H.POSTS) = sv119; os.chdir(cwd119)
+# 9-120) 이름 막기(10/30 진우 규칙 — 분유 광고 X(조제분유·성장기용 조제유) · 기저귀는 아기용만): NAME_BLOCK 한 곳 — 쿠팡·토스 API 목록·커뮤니티 딜·쿠팡 진열 후보·재게시·5개가 같이 봄
+#   · 진열 자동(이관 A)만 SHELF_BLOCK(+성인) · 막으면 로그 1줄(실행마다 같은 이름 1번) · 이미 events에 있는 건 그대로
+cwd120, sv120 = os.getcwd(), (time.time, H.http, H.tg, H.FEEDS, H.ppomppu_feed, H.ruliweb_feed, H.clien_feed, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON), dict(H.E)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.RUN.pop("nblk", None)
+with contextlib.redirect_stdout(io.StringIO()) as o120:
+    assert all(H.name_block(n, "t") and H.name_block(n, "t", H.SHELF_BLOCK) for n in ("앱솔루트 분유 800g", "성장기용 조제유", "앱솔루트 분유 800g"))
+    assert H.name_block("디펜드 성인용 기저귀", "t", H.SHELF_BLOCK) and not H.name_block("디펜드 성인용 기저귀", "t") and not H.name_block("하기스 팬티형 기저귀", "t", H.SHELF_BLOCK) and not H.name_block("하기스 팬티형 기저귀", "t")
+assert o120.getvalue().count("이름 막기 t 앱솔루트 분유 800g\n") == 1 and "이름 막기 t 성장기용 조제유" in o120.getvalue(), o120.getvalue()  # 같은 실행 같은 이름 = 1줄
+r120 = {"/products/search": {"rCode": "0", "data": {"productData": [{"productName": "앱솔루트 분유 800g"}, {"productName": "하기스 팬티형 기저귀"}]}},
+        "/products/goldbox": {"rCode": "0", "data": [{"productName": "성장기용 조제유"}, {"productName": "디펜드 성인용 기저귀"}]}, "/deeplink": {"rCode": "0", "data": [{"originalUrl": "u", "shortenUrl": "s"}]},
+        "/products/today-deals": {"resultType": "SUCCESS", "success": {"items": [{"displayName": "앱솔루트 분유 800g"}, {"displayName": "하기스 팬티형 기저귀"}]}}}
+H.http = lambda url, *a, **k: json.dumps(next(v for k_, v in r120.items() if k_ in url))
+H.E.update(COUPANG_ACCESS_KEY="a", COUPANG_SECRET_KEY="b"); H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); json.dump({"token": "t", "exp": 9e9}, open("toss.json", "w"))
+H.FEEDS, H.ruliweb_feed, H.clien_feed = {"x": "뽐뿌"}, (lambda: []), (lambda: [{"title": "[네이버] 하기스 팬티형 기저귀 4팩 (39,900원)"}])
+H.ppomppu_feed = lambda b, n: [{"title": "[쿠팡] 앱솔루트 분유 800g 3캔 (59,000원)"}, {"title": "[쿠팡] 성장기용 조제유 2단계 (30,000원)"}]
+with contextlib.redirect_stdout(io.StringIO()) as o120:
+    assert [x["productName"] for x in H.coupang("GET", "/products/search?keyword=x&limit=10")["productData"]] == ["하기스 팬티형 기저귀"]
+    assert [x["productName"] for x in H.coupang("GET", "/products/goldbox?subId=x")] == ["디펜드 성인용 기저귀"]  # 성인 = 진열 자동만
+    assert H.coupang("POST", "/deeplink", {"coupangUrls": ["u"]}) == [{"originalUrl": "u", "shortenUrl": "s"}]  # 이름 없는 응답 = 그대로
+    assert [x["displayName"] for x in H.toss("/products/today-deals?size=30")["items"]] == ["하기스 팬티형 기저귀"]
+    assert [d["title"] for d in H.fetch_deals()] == ["[네이버] 하기스 팬티형 기저귀 4팩 (39,900원)"]
+assert all(w in o120.getvalue() for w in ("이름 막기 쿠팡 API 앱솔루트 분유 800g", "이름 막기 쿠팡 API 성장기용 조제유", "이름 막기 토스 API 앱솔루트", "이름 막기 커뮤니티 [쿠팡] 앱솔루트", "이름 막기 커뮤니티 [쿠팡] 성장기용")), o120.getvalue()
+H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"; json.dump([], open("posts.json", "w")); json.dump([], open("events.json", "w"))
+json.dump({"shelf": [{"kw": "기저귀", "date": "2026-10-31", "words": ["기저귀"]}]}, open("docs/plan.json", "w"), ensure_ascii=False)
+IMG120 = "https://thumbnail.coupangcdn.com/x.jpg"
+s120 = {"cpbest": {"r": {"1011": [["31", "", "디펜드 성인용 기저귀 20매", 19900, IMG120, 1, True]] + [[str(40 + k), "", f"하기스 팬티형 기저귀 {k}단계", 30000 + k, IMG120, 2 + k, True] for k in range(4)]
+                         + [["50", "", "앱솔루트 분유 800g 기저귀 증정", 59000, IMG120, 9, True]]}}}  # 응답에 이미 받아 둔 옛 목록(10/30 배포 전 것)도 막음
+H.tg = lambda m, **p: {"message_id": 1}; H.AUTO_ON["shelf"] = True; time.time = lambda: TK("2026-10-31 14:40")
+with contextlib.redirect_stdout(io.StringIO()) as o120:
+    H.auto_shelf(s120)
+assert [e["pid"] for e in json.load(open("auto_events.json"))] == ["40", "41", "42", "43"] and "이름 막기 진열 자동 디펜드 성인용" in o120.getvalue() and "이름 막기 진열 자동 앱솔루트" in o120.getvalue(), o120.getvalue()
+assert all("name_block(" in inspect.getsource(f) for f in (H.cp_shelf, H.cp_repost, H.auto_repost, H.auto_pick5)) and 'name_block(name, "진열 자동", SHELF_BLOCK)' in inspect.getsource(H.auto_shelf)
+(time.time, H.http, H.tg, H.FEEDS, H.ppomppu_feed, H.ruliweb_feed, H.clien_feed, H.POSTS, H.EVENTS, S.EVENTS) = sv120[:10]; H.AUTO_ON.update(sv120[10]); H.E.clear(); H.E.update(sv120[11]); H.RUN.pop("nblk", None); H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); os.chdir(cwd120)
 print("OK: 모든 셀프체크 통과")
