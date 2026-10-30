@@ -11136,7 +11136,7 @@ json.dump([], open("posts.json", "w")); json.dump([{"at": "2026-10-20 10:00", "u
 json.dump([{"pid": "12", "n": "실패 상품"}], open("cp_fail.json", "w")); json.dump({"20:I20": [["26102510", 9000, "", "cw"]]}, open("price_hist.json", "w"))
 json.dump({"shelf": [{"kw": "핸드워시 리필", "words": ["핸드워시", "핸드솝"], "tip": "리필로 바꾸면 통은 그대로 🫧"}, {"kw": "생수 2L", "words": ["생수"], "tip": "물은 무거우니 문 앞까지"},
                      {"kw": "키친타올", "date": "2026-11-01", "tip": "x"}]}, open("docs/plan.json", "w"), ensure_ascii=False)
-assert H.plan_today(TK("2026-10-31 14:40"))["kw"] == "생수 2L" and H.plan_today(TK("2026-10-30 14:40"))["kw"] == "핸드워시 리필" and H.plan_today(TK("2026-11-01 14:40"))["words"] == ["키친타올"]  # 날짜 지정 먼저 · 없으면 10/30부터 하루씩 돌림
+assert [x["kw"] for x in H.plan_today(TK("2026-10-31 14:40"))] == ["생수 2L"] and [x["kw"] for x in H.plan_today(TK("2026-10-30 14:40"))] == ["핸드워시 리필"] and H.plan_today(TK("2026-11-01 14:40"))[0]["words"] == ["키친타올"]  # 날짜 지정 먼저 · 없으면 10/30부터 하루씩 돌림
 IMG = "https://thumbnail.coupangcdn.com/x.jpg"
 R114 = [["11", "", "삼다수 생수 2L 12개", 9000, IMG, 1, True], ["12", "", "아이시스 생수 2L 12개", 8000, IMG, 2, True], ["13", "", "백산수 생수 2L 6개 다이어트", 7000, IMG, 3, False],
         ["14", "", "평창수 생수 2L 12개", 7500, "", 4, False], ["15", "", "곰곰 생수 2L 12개", 6900, IMG, 5, True], ["16", "I16", "탐사 생수 2L 6개", 4900, IMG, 6, False], ["17", "", "볼빅 생수 1.5L", 9900, IMG, 7, False],
@@ -11162,6 +11162,19 @@ with contextlib.redirect_stdout(io.StringIO()):
     H.auto_shelf(s114)
 assert len(json.load(open("auto_events.json"))) == 4 and tg114 and "맞는 상품 0개" in tg114[-1]["text"]  # 키친타올 = 맞는 것 4개 밑 = 안 올림 + 관리봇
 assert "cp_best, auto_shelf," in inspect.getsource(H.main) and "CP_BEST_KEEP" in inspect.getsource(cb0) and (H.CP_HOUR, H.CP_SEARCH_HOUR) == (25, 6)  # 추가 호출 X(베스트 응답 그대로) · 상한 그대로
+# 10/30 진우 '3품목으로 하자': plan shelf group(food·hygiene·life)마다 하루 1품목 → 품목마다 4~6개(4개 밑 = 그 품목만 X) · 같은 pid = 앞 품목만 · at = 14:30·14:31·14:32
+json.dump({"shelf": [{"kw": "생수 2L", "group": "food", "words": ["생수"], "tip": "물"}, {"kw": "라면", "group": "food", "words": ["라면"]},
+                     {"kw": "물티슈", "group": "hygiene", "words": ["물티슈", "생수"]}, {"kw": "치약", "group": "hygiene", "words": ["치약"], "date": "2026-11-03"},
+                     {"kw": "휴지", "group": "life", "words": ["휴지"]}]}, open("docs/plan.json", "w"), ensure_ascii=False)
+assert [[x["kw"] for x in H.plan_today(TK(f"2026-11-0{d} 14:40"))] for d in (1, 2, 3)] == [["생수 2L", "물티슈", "휴지"], ["라면", "물티슈", "휴지"], ["생수 2L", "치약", "휴지"]]  # group마다 하루씩 돌림 · date 먼저
+s114 = {"cpbest": {"r": {"1012": R114 + [["20", "I20", "제주 생수 2L 12개", 8500, IMG, 9, True]] + [[str(40 + i), "", f"베베 물티슈 {i}팩", 5000 + i, IMG, 20 + i, False] for i in range(4)]}}}
+os.remove("auto_events.json"); tg114.clear(); time.time = lambda: TK("2026-11-01 14:40")
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+a114 = json.load(open("auto_events.json"))
+assert [(e["tag"], e["at"][11:]) for e in a114].count(("생수 2L", "14:30")) == 4 and [(e["tag"], e["at"][11:]) for e in a114].count(("물티슈", "14:31")) == 4, a114  # 물티슈 = 생수 상품(앞 품목) X · 베베 4개
+assert not any(e["tag"] == "휴지" for e in a114) and len(tg114) == 1 and "'휴지'" in tg114[0]["text"] and "auto shelf '휴지': 맞는 베스트 상품 1개" in o114.getvalue()  # 4개 밑 = 그 품목만 X
+assert len({e["pid"] for e in a114}) == len(a114) == 8  # 같은 pid 두 품목 X
 (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv114[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv114[5]); os.chdir(cwd114)
 # 9-115) KKK-B(Cowork 9:10 크롬 재게시 → 봇 20:35·20:45·20:55): 사이트 진열 🔥 중 마지막 채널 게시 3일↑ · 지금가(price_hist 마지막 확인) ≤ 처음 소개가 +5% · 24시간 안 확인 → 싼 순 '🔁 다시 소개' 칸마다 1개 · 끔 스위치
 cwd115, sv115 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp())

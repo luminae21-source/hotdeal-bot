@@ -489,12 +489,19 @@ CP_BEST_NAME = {1001: "여성패션", 1010: "뷰티", 1011: "출산/유아동", 
 
 
 def plan_today(now=None):
-    """docs/plan.json(Cowork — 품목 돌림·💡 한 줄·행사·검색어) -> 오늘 진열 품목 {kw, words, tip}: date가 오늘인 것 먼저, 없으면 날짜 없는 것을 10/30부터 하루씩 돌림 · 없음·깨짐 = None."""
+    """docs/plan.json(Cowork — 품목 돌림·💡 한 줄·행사·검색어) -> 오늘 진열 품목 [{kw, words, tip}] group마다 1개(10/30 진우 '3품목으로 하자' — food·hygiene·life, plan에 나온 순서):
+    그 group에 date가 오늘인 항목이 있으면 그것, 없으면 날짜 없는 것을 10/30부터 하루씩 돌림 · group 없는 항목 = 'default' 한 묶음(예전 1품목) · 없음·깨짐 = []."""
     today = time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
-    xs = [x for x in (load(PLAN, {}).get("shelf") if isinstance(load(PLAN, {}), dict) else None) or [] if isinstance(x, dict) and x.get("kw")]
-    rot = [x for x in xs if not x.get("date")]
-    x = next((x for x in xs if x.get("date") == today), None) or (rot[(calendar.timegm(time.strptime(today, "%Y-%m-%d")) // 86400 - 20756) % len(rot)] if rot else None)  # 20756 = 2026-10-30(돌림 첫날)
-    return x and {"kw": str(x["kw"]), "words": [str(w) for w in x.get("words") or [x["kw"]] if str(w).strip()], "tip": str(x.get("tip") or "")}
+    pl = load(PLAN, {})
+    xs = [x for x in (pl.get("shelf") if isinstance(pl, dict) else None) or [] if isinstance(x, dict) and x.get("kw")]
+    out = []
+    for g in dict.fromkeys(str(x.get("group") or "default") for x in xs):
+        gx = [x for x in xs if str(x.get("group") or "default") == g]
+        rot = [x for x in gx if not x.get("date")]
+        x = next((x for x in gx if x.get("date") == today), None) or (rot[(calendar.timegm(time.strptime(today, "%Y-%m-%d")) // 86400 - 20756) % len(rot)] if rot else None)  # 20756 = 2026-10-30(돌림 첫날)
+        if x:
+            out.append({"kw": str(x["kw"]), "words": [str(w) for w in x.get("words") or [x["kw"]] if str(w).strip()], "tip": str(x.get("tip") or "")})
+    return out
 
 
 def auto_add(es, kind):
@@ -511,41 +518,43 @@ def auto_add(es, kind):
 
 
 def auto_shelf(seen):
-    """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목 낱말과 맞는 상품
-    -> events·auto_events·cp_fail에 없는 pid · 이름 효능 낱말 X · 사진 있음 · 순위 순 AUTO_SHELF_N(4~6개, 4개 밑 = 안 올림 + 관리봇 1줄) -> auto_events.json 진열(Cowork 진열 틀 그대로)
+    """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목(group마다 1개 — 3품목이면 최대 18개) 낱말과 맞는 상품
+    -> events·auto_events·cp_fail에 없는 pid · 이름 효능 낱말 X · 사진 있음 · 순위 순 AUTO_SHELF_N(품목마다 4~6개, 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄) -> auto_events.json 진열(Cowork 진열 틀 그대로)
     · 근거 = '쿠팡 <카테고리> 베스트 N위'(응답 rank 그대로 — API엔 리뷰 수·할인 표시 X) · 🔥 = price_hist 기록 최저보다 내려갔을 때만, 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = plan 그 품목 한 줄."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
     if not AUTO_ON["shelf"] or hm < AUTO_SHELF_AT or seen.get("autoshelf", {}).get("d") == today or not seen.get("cpbest", {}).get("r"):
         return
     seen["autoshelf"] = {"t": time.time(), "d": today}
-    pl = plan_today()
-    if not pl:
+    pls = plan_today()
+    if not pls:
         print("auto shelf: plan.json 오늘 품목 없음")
         return
     pids = {e.get("pid") for e in ev_info().values()} | {str(x.get("pid")) for x in load(CP_FAIL, []) if isinstance(x, dict)}
-    best = {}
-    for c, xs in seen["cpbest"]["r"].items():
-        for pid, item, name, price, img, rank, rocket in xs:
-            if pid not in pids and price and str(img).startswith("https://") and isinstance(rank, int) and rank > 0 and not re.search(AUTO_CLAIM, name) and any(w in name for w in pl["words"]):
-                best.setdefault(pid, (rank, int(c), pid, item, name, price, img, rocket))
-    picks = sorted(best.values())[:AUTO_SHELF_N[1]]
-    if len(picks) < AUTO_SHELF_N[0]:
-        print(f"auto shelf '{pl['kw']}': 맞는 베스트 상품 {len(picks)}개({AUTO_SHELF_N[0]}개 밑) — 안 올림")
-        tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
-        return
-    h, at, nf = ph_load(), time.strftime("%Y-%m-%d %H:%M", kst), 0
-    es = []
-    for rank, c, pid, item, name, price, img, rocket in picks:
-        u = f"https://www.coupang.com/vp/products/{pid}" + (f"?itemId={item}" if item else "")
-        lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == ""), default=0)
-        fire = bool(lo) and price < lo
-        nf += fire
-        es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": at, "img": img,
-                   "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ 쿠팡 {CP_BEST_NAME.get(c, '카테고리')} 베스트 {rank}위" + (" · 로켓배송" if rocket else "")
-                           + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")
-                           + f"\n⚠️ 확인할 점: 결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"})
-    print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · 후보 {len(best)}개")
+    h, chk = ph_load(), time.strftime("%Y-%m-%d %H:%M", kst)
+    for k, pl in enumerate(pls):  # 품목마다 4~6개 · 같은 pid = 앞 품목만 · at = 14:30·14:31·14:32(events '분마다 1개'와 안 겹치게)
+        best = {}
+        for c, xs in seen["cpbest"]["r"].items():
+            for pid, item, name, price, img, rank, rocket in xs:
+                if pid not in pids and price and str(img).startswith("https://") and isinstance(rank, int) and rank > 0 and not re.search(AUTO_CLAIM, name) and any(w in name for w in pl["words"]):
+                    best.setdefault(pid, (rank, int(c), pid, item, name, price, img, rocket))
+        picks = sorted(best.values())[:AUTO_SHELF_N[1]]
+        if len(picks) < AUTO_SHELF_N[0]:
+            print(f"auto shelf '{pl['kw']}': 맞는 베스트 상품 {len(picks)}개({AUTO_SHELF_N[0]}개 밑) — 안 올림")
+            tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
+            continue
+        at, nf, es = time.strftime("%Y-%m-%d %H:%M", time.gmtime(calendar.timegm(time.strptime(f"{today} {AUTO_SHELF_AT}", "%Y-%m-%d %H:%M")) + 60 * k)), 0, []
+        for rank, c, pid, item, name, price, img, rocket in picks:
+            pids.add(pid)
+            u = f"https://www.coupang.com/vp/products/{pid}" + (f"?itemId={item}" if item else "")
+            lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == ""), default=0)
+            fire = bool(lo) and price < lo
+            nf += fire
+            es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": chk, "img": img,
+                       "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ 쿠팡 {CP_BEST_NAME.get(c, '카테고리')} 베스트 {rank}위" + (" · 로켓배송" if rocket else "")
+                               + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")
+                               + f"\n⚠️ 확인할 점: 결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"})
+        print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · 후보 {len(best)}개")
 
 
 class CpLimit(RuntimeError):
