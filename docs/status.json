@@ -1,10 +1,10 @@
 {
-"at": "2026-10-31 07:12",
+"at": "2026-10-31 07:25",
 "posts": 2773,
-"site": 1576,
+"site": 1574,
 "mall": {
 "coupang": 885,
-"toss": 637,
+"toss": 635,
 "naver": 54
 },
 "cat": {
@@ -19,10 +19,10 @@
 "kitchen": 103,
 "laundry": 68,
 "car": 31,
-"snack": 56,
+"snack": 55,
 "fashion": 78,
 "digital": 61,
-"season": 82,
+"season": 81,
 "etc": 3
 },
 "missing": 0,
@@ -40,11 +40,11 @@
 }
 },
 "2026-10-31": {
-"site": 1576,
+"site": 1574,
 "sitemap": 997,
 "mall": {
 "coupang": 885,
-"toss": 637,
+"toss": 635,
 "naver": 54
 }
 }
