@@ -1571,8 +1571,8 @@ hr0 = pg0.split('<div class="hr">')[1].split("</div>")[0]  # 10/24 진우 v3 포
 assert hr0.index('class="lg"') < hr0.index(f'<a class="ib" href="{S.BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">') < hr0.index(f'<a class="ib" href="{S.BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">') and hr0.count('class="ib"') == 2 and "<form" not in hr0
 assert pg0.index('<div class="hr">') < pg0.index('<form class="sb" role="search"') < pg0.index('<nav class="nav"') < pg0.index("</header>") and ".sb input{width:100%;height:42px;border:2px solid var(--acc)" in S.CSS and ".hd{position:sticky;top:-48px;" in S.CSS  # 검색칸 = 헤더 안(검색 중 hide() X) · 위로 밀면 로고 줄만 사라짐
 assert f'<a href="{S.BASE}saved/" aria-label="찜한 딜 보기">' in pg0 and '찜<b id="lc"></b></a>' in pg0 and 'aria-label="알림 받기" data-gc="hd/alarm">' + S.svg("alarm") + '<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i></a>' in pg0 and pg0.count('id="adot"') == 1 and pg0.index('id="adot"') < pg0.index('<nav class="nav"') and pg0.count('id="lc"') == 1 and pg0.index('id="lc"') > pg0.index('<nav class="nav"')
-assert [re.sub("<[^>]+>", "", a) for a in pg0.split('<nav class="nav" aria-label="메뉴">')[1].split("</nav>")[0].split("</a>")[:-1]] == ["홈", "특가", "카테고리", "가격", "찜"]  # 아래 메뉴 5칸(10/30 진우 '가격·카테고리 위치 바꾸자 · 찜은 살려두고' — 알림 = 머리글 🔔 · 빨간 점도 거기) 한 줄(예전 2줄 9개)
-assert re.findall(r'<a href="([^"]+)"', pg0.split('<nav class="nav"')[1].split("</nav>")[0]) == [S.BASE, f"{S.BASE}c/hot/", f"{S.BASE}c/", f"{S.BASE}price/", f"{S.BASE}saved/"] and S.GOLDBOX.startswith("https://link.coupang.com/a/")
+assert [re.sub("<[^>]+>", "", a) for a in pg0.split('<nav class="nav" aria-label="메뉴">')[1].split("</nav>")[0].split("</a>")[:-1]] == ["홈", "특가", "카테고리", "검색", "찜"]  # 아래 메뉴 5칸(10/30 진우 '가격은 빼고 하단 메뉴는 5칸으로' — 가격 → 검색 · 알림 = 머리글 🔔 · 빨간 점도 거기) 한 줄(예전 2줄 9개)
+assert re.findall(r'<a href="([^"]+)"', pg0.split('<nav class="nav"')[1].split("</nav>")[0]) == [S.BASE, f"{S.BASE}c/hot/", f"{S.BASE}c/", f"{S.BASE}#q", f"{S.BASE}saved/"] and "nv.addEventListener('click',function(e){e.preventDefault();q.focus()})" in S.SEARCH_JS and S.GOLDBOX.startswith("https://link.coupang.com/a/")
 assert 'aria-current="page"' not in pg0 and S.page("t", "", cur="cats").count('aria-current="page"') == 1 and pg0.index('<header class="hd">') < pg0.index('<p class="dis">') < pg0.index("<footer>")
 assert open("docs/s.css").read() == S.CSS and S.CV == "?v=" + __import__("hashlib").md5(S.CSS.encode()).hexdigest()[:8] and "[hidden]{display:none!important}" in S.CSS  # CSS = 파일 1개(쪽마다 X), 바뀌면 주소도
 assert all(t in S.CSS for t in ("--bg:#F6F7F9", "--card:#fff", "--ink:#14161B", "--sub:#6B7180", "--line:#ECEEF2", "--acc:#E5303F", "--chip:#F1F3F6", "--btn:#14161B", "--pk:#E8435A", "linear-gradient(160deg,#FFE3E8,#FFF1E6)"))  # 진우 확정 토큰(A) + 핑크(오늘의 픽)
@@ -11000,7 +11000,7 @@ for b111 in ("[]", "{", '{"slug": "Bad Slug", "title": "x", "items": []}'):
 assert "urls += en_pages(out, today)" in inspect.getsource(S111.build) and (f"{S111.BASE}privacy/", "2026-10-31") in u111 and "olive" not in "".join(n.lower() for n in dir(S111))  # 코드 이름에 판매처 X
 shutil.rmtree(d111)
 # 9-112) JJJ(10/30 진우 '쿠팡 제품의 가격 변화를 꾸준하게 · 깔끔하고 전문적인 느낌'): price_hist.json {키(pid:옵션 item, 옵션 없음 = 링크): [[YYMMDDHH, 가격, 표시 w·c·'', 출처 api·cw·post·gold(, 마지막 확인, 확인 수)]]}
-#   같은 표시로 이어 본 같은 가격 = 줄 1개(마지막 확인·수만) · 다시 넣기 = 그대로 · 백필 = 옛 events 커밋마다 그때 옵션으로(섞임 X) · /price/(숫자 3칸·보기·칸·정렬 select) · 상품 쪽 차트(확인 2회↑) · '최저가' X('기록 최저')
+#   같은 표시로 이어 본 같은 가격 = 줄 1개(마지막 확인·수만) · 다시 넣기 = 그대로 · 백필 = 옛 events 커밋마다 그때 옵션으로(섞임 X) · /price/·상품 쪽 차트 = 10/30 진우 '가격은 빼고'로 뺌(옛 /price/ = /c/drop/ · 기록·🔥·재게시·점검 줄은 그대로)
 cwd112, sv112 = os.getcwd(), (time.time, H.POSTS, H.EVENTS, S.EVENTS); os.chdir(tempfile.mkdtemp())
 H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"
 assert S.ph_price("104,000원~") == (0, "") and S.ph_price("12,900원 와우가") == (12900, "w") and S.ph_price("11,900원 쿠폰가") == (11900, "c") and S.ph_price("9,900원") == (9900, "") and S.ph_t("2026-10-30 09:41") == "26103009"
@@ -11022,13 +11022,6 @@ X112 = [["26101619", 13090, "", "cw", "26102509", 2], ["26102405", 31900, "", "a
 assert S.ph_pts(X112) == [("26102509", 13090, "", "cw")] and S.ph_stat(X112, TK("2026-10-30 12:00"))["now"] == 13090 and S.ph_stat(X112, TK("2026-10-30 12:00"))["d7"] == 0  # 지금가 = 마지막 확인 · 출처 다른 1.6배↑ = 그 뒤만
 assert [p[1] for p in S.ph_pts([["26102009", 10000, "", "cw"], ["26102109", 15000, "", "cw"], ["26102209", 9000, "", "cw"]])] == [10000, 15000, 9000]  # 같은 출처 1.5배 = 진짜 오르내림(그대로)
 assert [p[1] for p in S.ph_pts([["26102501", 3440, "", "cw"], ["26102814", 5400, "", "api"]])] == [5400] and [p[1] for p in S.ph_pts([["26102501", 3440, "", "cw"], ["26102814", 4000, "", "api"]])] == [3440, 4000]  # 출처 다름 = 25%↑ 차이면 그 뒤만
-assert S.ph_chart([["26102509", 9900, "", "api"]], TK("2026-10-30 12:00")) == ""  # 확인 1회 = 차트 X
-fl112 = S.ph_chart([["26102503", 14000, "", "cw", "26102509", 2]], TK("2026-10-30 12:00"))  # 10/30 Cowork 검수(/p/1866): 다 같은 가격 = 한 줄 · 마지막 확인 24시간↑ = '마지막 확인 대비'
-assert "확인한 2번 모두 14,000원 (10/25)" in fl112 and 'class="ph-c ' not in fl112 and "ph-r30" not in fl112 and "마지막 확인 대비" in fl112 and "<small>10/25 14,000원</small>" in fl112 and "지금 대비" not in fl112, fl112
-assert "지금 대비" in S.ph_chart([["26102503", 14000, "", "cw"], ["26103009", 13000, "", "api"]], TK("2026-10-30 12:00"))  # 24시간 안 = '지금'
-ch112 = S.ph_chart(S112 + [["26102810", 9800, "w", "cw"]], TK("2026-10-30 12:00"))
-assert all(w in ch112 for w in ('class="ph-box"', "ph-c30", "ph-c90", "ph-ca", ">가격 변화<", "기록 최저 10,000", "평균 10,733", "확인 4회", "10/30 9시 · 10,200원", "10/28 10시 · 9,800원 · 와우가", "● 일반가 ○ 와우·쿠폰가", "결제 전 최종가 확인")) and "최저가" not in ch112, ch112
-assert ch112.count('class="ph-dt"') == 9 and ch112.count('class="ph-d2"') == 3 and "+2%" in ch112  # 패널 3개 × 일반가 점 3 · 와우가 빈 점 · 지금 대비 기록 최저 +2%
 U112 = lambda k: f"https://link.coupang.com/a/j{k}"
 snap1 = [{"url": U112("A"), "pid": "77", "now": "10,000원", "chk": "2026-10-20 09:00"}, {"url": U112("B"), "pid": "77", "item": "I2", "now": "30,000원", "chk": "2026-10-20 09:00"}]
 snap2 = [{"url": U112("A"), "pid": "77", "item": "I1", "now": "12,000원", "chk": "2026-10-25 09:00"}, {"url": U112("B"), "pid": "77", "item": "I2", "now": "29,000원 와우가", "chk": "2026-10-25 09:00"},
@@ -11064,15 +11057,12 @@ json.dump({"77:I1": [["26102009", 10000, "", "post"], ["26102509", 12000, "", "c
            "80:I5": [["26102310", 9000, "", "cw"], ["26102909", 8000, "", "cw"]]}, open("price_hist.json", "w"))
 time.time = lambda: TK("2026-10-30 12:00")
 S.build(json.load(open("posts.json")), d112)
-pr112, sm112 = open(f"{d112}/price/index.html").read(), open(f"{d112}/sitemap.xml").read()
-assert "<h1 class=\"h\">📈 쿠팡 가격 추적</h1>" in pr112 and pr112.count("<li data-c=") == 2 and "곰곰 특란 30구" in pr112 and "깨끗한나라" not in pr112 and "토스 상품" not in pr112  # 확인 1회(B)·토스 = 목록 X
-assert '<span class="ph-lb">추적 상품</span><b>2</b>' in pr112 and '<span class="ph-lb">오늘 내려감</span><b>1</b>' in pr112 and '<span class="ph-lb">기록 최저 근접</span><b>2</b>' in pr112 and "마지막 확인 10/30 9시" in pr112
-assert pr112.index("테스트 샴푸") < pr112.index("곰곰 특란") and '<i class="ph-bd ph-dn">▼11%</i>' in pr112 and '<i class="ph-bd ph-up">▲2%</i>' in pr112 and 'data-v="ph-dn' not in pr112  # 변동 큰 순 · ▼ 파랑 ▲ 빨강
-assert all(w in pr112 for w in ('<select id="ph-cat"', '<select id="ph-sort"', 'data-v="near"', '>최저 근접</button>', '<svg viewBox="0 0 72 22"', "결제 전 최종가 확인", "매일 모든 상품을 확인하진 않아요")) and "최저가" not in pr112
-assert f"<loc>{S.BASE}price/</loc>" in sm112 and f'<a href="{S.BASE}price/" aria-current="page">' in pr112 and '>가격</a>' in open(f"{d112}/index.html").read()  # 사이트맵 · 아래 메뉴 한 칸
-pg112 = {p_["url"]: i for i, p_ in enumerate(json.load(open("posts.json")))}
-assert 'class="ph-box"' in open(f"{d112}/p/1.html").read() and 'class="ph-box"' not in open(f"{d112}/p/2.html").read() and "최저가" not in open(f"{d112}/p/1.html").read().split('class="ph-box"')[1].split("</section>")[0]  # 확인 2회↑만 차트
-assert "전체 가격 추적 보기" in inspect.getsource(S.drop_section) and ".nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:grid;grid-template-columns:repeat(5," in S.CSS and S.CSS.count(".ph-pg,.ph-box{--pl:#E5E7EB;--pi:#111;--ps:#6B7280;--pdn:#1F6FEB;--pup:#D1242F;font-variant-numeric:tabular-nums}") == 1
+pr112, sm112, ix112 = open(f"{d112}/price/index.html").read(), open(f"{d112}/sitemap.xml").read(), open(f"{d112}/index.html").read()  # 10/30 진우 '가격 그래프는 머리만 아파서 · 가격은 빼고'
+assert f'<meta http-equiv="refresh" content="0;url={S.c_url("drop")}">' in pr112 and 'name="robots" content="noindex' in pr112 and "price/" not in sm112 and "ph-" not in S.CSS  # 옛 /price/ = /c/drop/으로 · 사이트맵 X
+hs112 = [os.path.join(r, f) for r, _, fs in os.walk(d112) for f in fs if f.endswith(".html")]
+nv112 = [[re.sub("<[^>]+>", "", a) for a in h.split('<nav class="nav" aria-label="메뉴">')[1].split("</nav>")[0].split("</a>")[:-1]] for h in map(lambda f: open(f).read(), hs112) if '<nav class="nav"' in h]
+assert len(nv112) > 10 and all(n == ["홈", "특가", "카테고리", "검색", "찜"] for n in nv112) and not any(f"{S.BASE}price/" in open(f).read() for f in hs112 if not f.endswith("price/index.html"))  # 모든 쪽 아래 메뉴 5칸 · /price/ 링크 0
+assert "가격 변화" not in open(f"{d112}/p/1.html").read() and "ph-box" not in open(f"{d112}/p/1.html").read() and "가격 내려간 상품 전체 →" in inspect.getsource(S.drop_section) and "가격 추적 보기" not in inspect.getsource(S.drop_section)  # 상품 쪽 차트 X
 shutil.rmtree(d112)
 (time.time, H.POSTS, H.EVENTS, S.EVENTS) = sv112; os.chdir(cwd112)
 # 9-113) JJJ+(10/30 진우 'api는 효과적으로 사용하자' — 상한 그대로, 같은 호출로 더 많은 가격): ① 베스트(진열 많은 6칸 6시간마다·나머지 하루 1번)·골드박스·검색 응답 = 추적 상품과 맞추면 가격 기록(옵션 섞임 X)

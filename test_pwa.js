@@ -59,7 +59,7 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     OFF = false;
     // 3) 지금 사이트 동작(10/24 개편): 아래 메뉴 5개 · 찜(localStorage -> /saved/) · 검색(search.json = 진열 상품 전부, 🔥 먼저) · 옛 홈 #칸 주소(웹앱 바로가기 #wait·#life) -> 새 쪽
     await pg.goto(U + '/', { waitUntil: 'load' });
-    assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '가격', '찜']);
+    assert.deepStrictEqual(await pg.evaluate(() => [...document.querySelectorAll('nav.nav a')].map(a => a.textContent.trim())), ['홈', '특가', '카테고리', '검색', '찜']);
     const lk = await pg.$('#pick .like, #steady .like');  // 10/24 포털형: 🔥 실시간 핫딜 = 목록형 줄(♡ X) — 가로 카드(오늘의 픽·꾸준템)에 ♡
     await lk.click();
     assert.strictEqual(await pg.evaluate(() => JSON.parse(localStorage.getItem('likes')).length), 1, '찜 1개');
@@ -67,6 +67,8 @@ const STANDALONE = () => { const m = window.matchMedia.bind(window); window.matc
     assert.strictEqual(await pg.textContent('#lc'), ' 1', '아래 메뉴 찜 숫자(헤더 ♡ X — 포털형 헤더 1줄)');
     await pg.goto(U + '/saved/', { waitUntil: 'load' });
     assert.ok(await pg.evaluate(() => document.querySelectorAll('#savedg .g').length === 1 && document.getElementById('saved0').hidden), '찜 쪽');
+    await pg.click('nav.nav a[href$="#q"]');  // 10/30 진우 '가격은 빼고' — 아래 메뉴 검색 = 새 쪽 X, 머리글 검색칸 초점
+    assert.ok(await pg.evaluate(() => location.pathname === '/saved/' && document.activeElement.id === 'q'), '아래 메뉴 검색 = 그 쪽 그대로 · 검색칸 초점');
     await pg.goto(U + '/', { waitUntil: 'load' });
     await pg.fill('#q', '화장지');
     await pg.waitForFunction(() => document.getElementById('qn'));

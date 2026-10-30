@@ -178,34 +178,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 MASK = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'>%s</svg>"
 CSS += "".join('.ci%s{--m:url("data:image/svg+xml,%s")}' % ("-" + k if k else ",.ci-x", urllib.parse.quote(MASK % v.replace('"', "'"), safe="")) for k, v in sorted(CAT_ICON.items(), key=lambda kv: kv[0] != ""))  # 모르는 .ci-키(옛 검색 색인 이모지 등) = 쇼핑백(회색 네모 X)  # 품목 선 아이콘 = s.css 마스크 1번(쪽마다 SVG X — 홈 크기)
 CSS += ".cin{margin:10px 2px 4px;font-size:14px;line-height:1.65}.cin p{margin:0 0 6px}.deal ul.tips{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}.lk li a{gap:10px}.lk li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.lk li b{flex:none;font-size:13px;font-weight:700}.tw.tt td:nth-child(2){white-space:normal;min-width:118px}.tw.tt td:nth-child(3){white-space:nowrap}.tw.tt small{display:block;margin-top:2px;color:var(--sub);font-size:11.5px}"  # TT-2 칸 소개·고르는 기준·같은 칸 다른 딜
-PH_CSS = """.ph-pg,.ph-box{--pl:#E5E7EB;--pi:#111;--ps:#6B7280;--pdn:#1F6FEB;--pup:#D1242F;font-variant-numeric:tabular-nums}
-@media(prefers-color-scheme:dark){.ph-pg,.ph-box{--pl:#2B2F37;--pi:#ECEEF2;--ps:#9AA0AC;--pdn:#58A6FF;--pup:#FF7B72}}
-.ph-pg .h{margin:14px 0 2px;font-size:20px}.ph-lb{display:block;font-size:12px;letter-spacing:.02em;color:var(--ps);font-weight:600;margin:0}.ph-ls{text-align:right;margin-top:4px}
-.ph-st{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 0}.ph-st>div{background:var(--card);border:1px solid var(--pl);border-radius:10px;padding:9px 10px;min-width:0}
-.ph-st b{display:block;font-size:20px;line-height:1.25;color:var(--pi);font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-st small{display:block;font-size:11.5px;color:var(--ps)}
-.ph-sg{display:flex;border:1px solid var(--pl);border-radius:9px;overflow:hidden;margin:12px 0 8px;background:var(--card)}
-.ph-sg button{flex:1 1 0;min-width:0;border:0;background:none;padding:8px 2px;font:inherit;font-size:13px;font-weight:600;color:var(--ps);white-space:nowrap;cursor:pointer}
-.ph-sg button+button{border-left:1px solid var(--pl)}.ph-sg button[aria-pressed=true]{background:var(--pi);color:var(--card)}
-.ph-sl{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ph-sl select{width:100%;min-width:0;font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--pl);border-radius:9px;background:var(--card);color:var(--pi)}
-.ph-list{list-style:none;margin:10px 0 0;padding:0;background:var(--card);border:1px solid var(--pl);border-radius:12px}.ph-list li+li{border-top:1px solid var(--pl)}
-.ph-list a{display:flex;gap:10px;align-items:center;padding:10px 12px;text-decoration:none;color:var(--pi)}.ph-list .im{width:44px;height:44px;flex:none;border-radius:8px}
-.ph-n{flex:1;min-width:0}.ph-n b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13.5px;font-weight:600;line-height:1.35}
-.ph-n small{display:block;font-size:12px;color:var(--ps);margin-top:2px}.ph-nr{display:inline-block;white-space:nowrap;margin-left:6px;font-style:normal;font-size:11px;font-weight:700;color:var(--pk);border:1px solid var(--pk);border-radius:5px;padding:0 4px}
-.ph-v{flex:none;display:grid;justify-items:end;gap:3px;text-align:right}.ph-v b{font-size:15px;font-weight:700}.ph-v small{font-size:11px;color:var(--ps);line-height:1}
-.ph-bd{font-style:normal;font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;line-height:1.4}.ph-bd.ph-dn{color:var(--pdn);background:rgba(31,111,235,.1)}.ph-bd.ph-up{color:var(--pup);background:rgba(209,36,47,.1)}.ph-bd.ph-eq{color:var(--ps);background:var(--chip)}
-.ph-v svg{width:72px;height:22px;display:block}.ph-v svg path{fill:none;stroke-width:1.5;stroke:var(--ps)}.ph-v svg.ph-dn path{stroke:var(--pdn)}.ph-v svg.ph-up path{stroke:var(--pup)}
-.ph-note{font-size:12px;color:var(--ps);margin:12px 2px;line-height:1.55}
-.ph-box{position:relative;background:var(--card);border:1px solid var(--pl);border-radius:12px;padding:12px 12px 4px;margin:14px 0}.ph-box input{position:absolute;opacity:0;pointer-events:none}
-.ph-hd{display:flex;align-items:center;justify-content:space-between;gap:8px}.ph-hd h2{font-size:16px;margin:0;color:var(--pi)}
-.ph-rg{display:inline-flex;border:1px solid var(--pl);border-radius:8px;overflow:hidden}.ph-rg label{padding:4px 10px;font-size:12px;font-weight:600;color:var(--ps);cursor:pointer}.ph-rg label+label{border-left:1px solid var(--pl)}
-#ph-r30:checked~.ph-hd label[for=ph-r30],#ph-r90:checked~.ph-hd label[for=ph-r90],#ph-ra:checked~.ph-hd label[for=ph-ra]{background:var(--pi);color:var(--card)}
-#ph-r30:focus-visible~.ph-hd label[for=ph-r30],#ph-r90:focus-visible~.ph-hd label[for=ph-r90],#ph-ra:focus-visible~.ph-hd label[for=ph-ra]{outline:2px solid var(--acc)}
-.ph-c{display:none;width:100%;height:auto;margin-top:6px;cursor:crosshair}#ph-r30:checked~.ph-cs .ph-c30,#ph-r90:checked~.ph-cs .ph-c90,#ph-ra:checked~.ph-cs .ph-ca{display:block}
-.ph-c .ph-gd{stroke:var(--pl)}.ph-c .ph-ln{fill:none;stroke:var(--pi);stroke-width:1.75;stroke-linejoin:round}.ph-c .ph-lo{stroke:var(--pdn);stroke-dasharray:3 3}.ph-c .ph-av{stroke:var(--ps);stroke-dasharray:2 3}
-.ph-c text{font-size:10px;fill:var(--ps)}.ph-c .ph-dt{fill:var(--pi);stroke:var(--card);stroke-width:1}.ph-c .ph-d2{fill:var(--card);stroke:var(--ps);stroke-width:1.2;stroke-dasharray:1.5 1.5}.ph-c .ph-cl{stroke:var(--ps);stroke-dasharray:2 2}.ph-c .ph-cx{fill:var(--pi)}
-.ph-box .ph-st b{font-size:16px}.ph-lg{display:block;font-size:11.5px;color:var(--ps);margin-top:1px}.ph-tip{font-size:12.5px;color:var(--pi);margin:2px 0 0;min-height:1.5em;font-weight:600}
-"""  # 가격 추적 쪽·상품 쪽 차트(10/30 Cowork ⑤ '전문 도구'): 흰 바탕·회색 선·숫자 tabular-nums·작은 라벨·그림자 X·얇은 테두리 · 핑크 = '최저 근접' 배지만 · ▼ 파랑 ▲ 빨강(국내 금융 표기)
-CSS = theme_css(CSS + PH_CSS)
+CSS = theme_css(CSS)
 CV = "?v=" + hashlib.md5(CSS.encode()).hexdigest()[:8]  # /s.css 주소에 내용 해시 — CSS 바뀐 배포만 새로 받음(서비스워커 = .css 캐시 먼저)
 FONT_HEAD = '<link rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin>'  # 10/24 개편 글꼴 = Pretendard 줄인 판 'HDP Sans'(docs/fonts, OFL.txt — 이름은 OFL 예약 이름 규칙대로 바꿈) 1개 파일(317KB, 굵기 400~800) — 바꾸면 v2로(서비스워커 글꼴 캐시는 이름이 안 바뀌면 그대로 씀)
 
@@ -302,7 +275,7 @@ var w=v.split(/\\s+/),r=D.filter(function(x){return w.every(function(k){return x
 if(!sr){sr=document.createElement('section');sr.id='sr';sr.className='sec';M.querySelector('.dis').insertAdjacentElement('afterend',sr);scrollTo(0,0)}hide(true);
 var g=go(v);sr.innerHTML="<h2>검색 결과</h2>"+(g?"<a class='btn2' href='"+g+"'>"+(g==='/c/drop/'?'📉 가격 내려간 상품 보기 →':'⏰ 오늘 마감 보기 →')+"</a>":'')+"<p id='qn' class='t' role='status'>"+(r.length?r.length+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요')+"</p>"+(r.slice(0,60).some(function(x){return x.s==='토스'})?"<p class='t'>토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인</p>":'')+(r.length?"<div class='cards'>"+r.slice(0,60).map(card).join('')+"</div>":'');if(window.hdpLike)hdpLike()}
 q.addEventListener('input',function(){clearTimeout(tm);tm=setTimeout(run,120)});q.form.addEventListener('submit',function(e){e.preventDefault();q.blur();var g=go(q.value.trim().toLowerCase());if(g)return location.assign(g);run()});
-var u=new URLSearchParams(location.search).get('q');if(u){q.value=u;run()}})()</script>"""  # 10/24 개편: 홈이 TOP 4만 담아서 검색은 사이트 색인(search.json, 진열 상품 전부 — 처음 입력 때 1번 받음) — 🔥 먼저(목록 순서 그대로)·같은 상품 1번, 결과는 그 쪽 본문 자리에(지우면 그대로)
+var nv=document.querySelector('.nav a[href$="#q"]');if(nv)nv.addEventListener('click',function(e){e.preventDefault();q.focus()});var u=new URLSearchParams(location.search).get('q');if(u){q.value=u;run()}})()</script>"""  # 10/24 개편: 홈이 TOP 4만 담아서 검색은 사이트 색인(search.json, 진열 상품 전부 — 처음 입력 때 1번 받음) — 🔥 먼저(목록 순서 그대로)·같은 상품 1번, 결과는 그 쪽 본문 자리에(지우면 그대로) · 아래 메뉴 '검색' = 새 쪽 X, 머리글 검색칸 초점(10/30)
 
 
 ALIAS = lambda name: " ".join(w for r, w in ((r"화장지|두루마리|키친타[월올]|각티슈|미용티슈", "휴지"), (r"세제|섬유유연제", "빨래"), (r"햇반|즉석밥", "밥")) if re.search(r, name))  # 검색 다른 말(검색칸 예시 '휴지' = 상품 이름은 화장지)
@@ -991,14 +964,13 @@ PER = 20  # 목록 쪽 한 쪽 상품 수(10/24 진우 '카테고리·전체 페
 PICK_N, PICK_HOUR = 3, 10  # 오늘의 픽 3개 · 하루 1번(KST 10시 뒤 첫 빌드 — Cowork 9:10 가격 확인 반영 뒤) 고정, 그 전엔 전날 픽
 PICKS = "today/picks.json"  # docs/ 아래 {날짜: [글 번호]} — 하루 동안 픽이 안 바뀌게(빌드는 15분마다)
 c_url = lambda slug, n=1: f"{BASE}c/{slug}/" + (f"{n}/" if n > 1 else "")
-NAV = (("home", "홈", BASE), ("fire", "특가", f"{BASE}c/hot/"), ("cats", "카테고리", f"{BASE}c/"), ("price", "가격", f"{BASE}price/"), ("saved", "찜", f"{BASE}saved/"))  # 10/30 진우 5칸(알림 = 머리글 🔔 · 빨간 점도 거기로)
+NAV = (("home", "홈", BASE), ("fire", "특가", f"{BASE}c/hot/"), ("cats", "카테고리", f"{BASE}c/"), ("search", "검색", f"{BASE}#q"), ("saved", "찜", f"{BASE}saved/"))  # 10/30 진우 5칸(알림 = 머리글 🔔 · 빨간 점도 거기로 · 가격 칸 → 검색 — 누르면 머리글 검색칸 초점, JS 없으면 홈 #q)
 UI = {  # Lucide(ISC) 선 아이콘 — 아래 메뉴·헤더
     "home": '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     "fire": '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
     "cats": '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
     "saved": '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
     "alarm": '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
-    "price": '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',  # 가격 추적(10/30)
     "search": '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'}
 svg = lambda k: f'<svg viewBox="0 0 24 24" aria-hidden="true">{UI[k]}</svg>'
 ICON_FIX = ((r"가습기|보조\s*배터리|충전기|이어폰|드라이기|선풍기|멀티탭|모니터", "digital"),)  # 10/26: 차량용·자동차·워셔액·요소수·햇빛 가리개 = 자동차 칸(CAR)으로  # 품목이 틀리게 잡히는 이름(미스트 가습기 필터 = 뷰티 X · 고양이 사료 = 식품 X · 차량용 = 쇼핑백)
@@ -2378,17 +2350,15 @@ def drop_section(ds, today, n=None):
     lab = lambda p: (re.match(r"[\d,]+원\s*(\S.*)", p.get("now") or "") or ["", ""])[1]
     return "" if not ds else (f'<section class="sec" id="drop" aria-labelledby="droph"><h2 id="droph"><span>📉 가격 내려간 상품<small>{n or len(ds)}개</small></span><small>같은 구성 · 우리 기록 대비</small></h2><ol class="rows">'
                               + "".join(row(i, p, sh, today, f"drop/{i}", f"<s>{b:,}원</s> → <b>{n:,}원</b>" + (f"<i>{html.escape(lab(p))}</i>" if lab(p) else "") + f"<i>▼{d}%</i><small>{r} 기록 대비 · {c} 확인</small>")
-                                        for i, p, sh, b, n, d, r, c in ds[:DROP_N]) + f'</ol><a class="more2" href="{c_url("drop")}">가격 내려간 상품 전체 →</a><a class="more2" href="{BASE}price/" data-gc="drop/price">전체 가격 추적 보기 →</a></section>')
+                                        for i, p, sh, b, n, d, r, c in ds[:DROP_N]) + f'</ol><a class="more2" href="{c_url("drop")}">가격 내려간 상품 전체 →</a></section>')
 
 
-PRICE_HIST, PH_DAYS, PH_NEAR, PH_DUE, PH_SPARK = "price_hist.json", 180, 3, 3, 30  # 쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 · 전문적인 걸 보는 느낌'): 저장소 루트(공개 가격만) · 상품당 최근 180일 · 기록 최저 +3% 안 = 근접 · 추적 우선 3일에 1번 확인(hotdeal.cp_price) · 줄 스파크라인 30일
-PH_MK, PH_JUMP, PH_XSRC = {"w": "와우가", "c": "쿠폰가"}, 2.5, 1.25  # 출처가 다른 가격(Cowork·게시 = 화면가 ↔ 봇 API 가격 — 즉시할인·옵션 기준이 달라 10/30 실데이터 +50% 거짓 오름 다수)이 25%↑ 차이 = 이어 비교 X ·  같은 표시로 이어 본 가격이 2.5배↑ 차이 = 옵션·단위가 바뀐 것(Cowork 10/24 1,250 → 9,390 와우가 같은) — 쪽·차트는 그 뒤만
+PRICE_HIST, PH_DAYS, PH_NEAR, PH_DUE = "price_hist.json", 180, 3, 3  # 쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 · 전문적인 걸 보는 느낌'): 저장소 루트(공개 가격만) · 상품당 최근 180일 · 기록 최저 +3% 안 = 근접 · 추적 우선 3일에 1번 확인(hotdeal.cp_price)
+PH_JUMP, PH_XSRC = 2.5, 1.25  # 출처가 다른 가격(Cowork·게시 = 화면가 ↔ 봇 API 가격 — 즉시할인·옵션 기준이 달라 10/30 실데이터 +50% 거짓 오름 다수)이 25%↑ 차이 = 이어 비교 X ·  같은 표시로 이어 본 가격이 2.5배↑ 차이 = 옵션·단위가 바뀐 것(Cowork 10/24 1,250 → 9,390 와우가 같은) — 쪽·차트는 그 뒤만
 ph_t = lambda s: s[2:4] + s[5:7] + s[8:10] + s[11:13]  # 'YYYY-MM-DD HH:MM'(KST) -> 'YYMMDDHH'
 ph_now = lambda ts: time.strftime("%y%m%d%H", time.gmtime(ts + 9 * 3600))  # 초 -> 'YYMMDDHH'(KST)
-ph_ts = lambda t: calendar.timegm(time.strptime("20" + t, "%Y%m%d%H"))  # 'YYMMDDHH' -> 초(KST 시각 그대로 — 서로 빼기·ph_ts(ph_now(x))만)
 ph_last = lambda r: r[4] if len(r) > 4 else r[0]  # 줄 [처음, 가격, 표시, 출처(, 마지막 확인, 확인 수)]
 ph_n = lambda r: r[5] if len(r) > 5 else 1
-ph_md = lambda t, h=False: f"{int(t[2:4])}/{int(t[4:6])}" + (f" {int(t[6:8])}시" if h else "")
 
 
 def ph_load():
@@ -2499,116 +2469,6 @@ def ph_stat(rows, now_ts):
     return {"mk": mk, "s": s, "now": now, "low": lo[1], "lt": lo[0], "avg": round(sum(p[1] for p in s) / len(s)), "n": n, "last": P[-1][0],
             "d7": round((now - then) * 100 / then), "dn": k > 0 and s[k][0][:6] == ph_now(now_ts)[:6] and now < s[k - 1][1],
             "near": n >= 2 and max(p[1] for p in s) > lo[1] and now * 100 <= lo[1] * (100 + PH_NEAR)}
-
-
-def ph_path(s, t0, t1, x, y):
-    """확인 점 -> SVG 계단선 d(확인 사이 = 같은 가격): t0(초)부터 마지막 확인까지(그 뒤는 모름) · x·y = 좌표 함수."""
-    t0 = max(t0, ph_ts(s[0][0]))
-    p = next((q[1] for q in reversed(s) if ph_ts(q[0]) <= t0), s[0][1])
-    d = f"M{x(t0):.1f} {y(p):.1f}"
-    for q in s:
-        if t0 < ph_ts(q[0]) <= t1:
-            d += f"H{x(ph_ts(q[0])):.1f}V{y(q[1]):.1f}"
-    return d + f"H{x(max(t0, min(t1, ph_ts(s[-1][0])))):.1f}"
-
-
-def ph_spark(st, now_ts):
-    """줄 스파크라인 72×22(최근 PH_SPARK일 · 색 = 7일 변화 방향)."""
-    s, t1 = st["s"], ph_ts(ph_now(now_ts))
-    t0 = max(t1 - PH_SPARK * 86400, ph_ts(s[0][0]))
-    vs = [q[1] for q in s if ph_ts(q[0]) >= t0] + [next((q[1] for q in reversed(s) if ph_ts(q[0]) <= t0), s[0][1])]
-    lo, hi, span = min(vs), max(vs), max(t1 - t0, 3600)
-    d = ph_path(s, t0, t1, lambda t: 1 + (t - t0) * 70 / span, lambda p: 11 if hi == lo else 2 + (hi - p) * 18 / (hi - lo))
-    return f'<svg viewBox="0 0 72 22" aria-hidden="true" class="{"ph-dn" if st["d7"] < 0 else "ph-up" if st["d7"] > 0 else "ph-eq"}"><path d="{d}"/></svg>'
-
-
-def ph_badge(d):
-    return f'<i class="ph-bd ph-dn">▼{-d}%</i>' if d < 0 else f'<i class="ph-bd ph-up">▲{d}%</i>' if d > 0 else '<i class="ph-bd ph-eq">0%</i>'
-
-
-PH_NOTE = "확인 시점 가격이에요(매일 모든 상품을 확인하진 않아요) · 와우·쿠폰가는 조건 있음 · 결제 전 최종가 확인"
-PH_JS = """<script>(function(){[].forEach.call(document.querySelectorAll('svg.ph-c'),function(s){var P=JSON.parse(s.getAttribute('data-p')||'[]'),c=s.querySelector('.ph-cx'),l=s.querySelector('.ph-cl'),b=s.closest('.ph-box'),t=b&&b.querySelector('.ph-tip');
-s.addEventListener('click',function(e){var r=s.getBoundingClientRect(),x=(e.clientX-r.left)*320/r.width,k=null;P.forEach(function(p){if(!k||Math.abs(p[0]-x)<Math.abs(k[0]-x))k=p});if(!k)return;
-c.setAttribute('cx',k[0]);c.setAttribute('cy',k[1]);l.setAttribute('x1',k[0]);l.setAttribute('x2',k[0]);c.removeAttribute('visibility');l.removeAttribute('visibility');if(t)t.textContent=k[2]})})})()</script>"""  # 차트 누름 = 가장 가까운 확인 점 + 아래 줄 'M/D H시 · 가격 · 와우/쿠폰'
-
-
-def ph_chart(rows, now_ts):
-    """상품 쪽 '가격 변화'(확인 2회↑만): 계단선(기준 줄) + 확인 점(와우·쿠폰가 = 빈 점) + 기록 최저·평균 점선 · 30일·90일·전체(라디오 — 스크립트 X) · 점 누르면 그때 가격(PH_JS) · 아래 3칸."""
-    st, P = ph_stat(rows, now_ts), ph_pts(rows)
-    if not st or st["n"] < 2:
-        return ""
-    W, H, L, R, T, B = 320, 150, 4, 84, 12, 22  # 오른쪽 = '기록 최저 12,900' 글자 칸
-    t1, first = ph_ts(ph_now(now_ts)), ph_ts(P[0][0])
-    panels = []
-    for cls, days in (("ph-c30", 30), ("ph-c90", 90), ("ph-ca", 0)):
-        t0 = max(t1 - days * 86400, first) if days else first
-        span = max(t1 - t0, 86400)
-        pts = [(ph_ts(p[0]), p) for p in P if ph_ts(p[0]) >= t0]
-        vs = [r[1] for _, r in pts] + [st["low"], st["avg"], next((r[1] for r in reversed(st["s"]) if ph_ts(r[0]) <= t0), st["s"][0][1])]
-        lo, hi = min(vs), max(vs)
-        lo, hi = (lo * 0.95, hi * 1.05) if hi == lo else (lo - (hi - lo) * 0.12, hi + (hi - lo) * 0.12)
-        x = lambda t, t0=t0, span=span: L + (t - t0) * (W - L - R) / span
-        y = lambda p, lo=lo, hi=hi: T + (hi - p) * (H - T - B) / (hi - lo)
-        dots = sorted({(round(x(t), 1), round(y(r[1]), 1), r[2], f"{ph_md(ph_now(t - 9 * 3600), True)} · {r[1]:,}원" + (f" · {PH_MK[r[2]]}" if r[2] in PH_MK else "")) for t, r in pts})
-        hl = lambda p, c, lab: f'<line class="{c}" x1="{L}" x2="{W - R + 2}" y1="{y(p):.1f}" y2="{y(p):.1f}"/><text x="{W - R + 6}" y="{y(p) + 3.5:.1f}">{lab} {p:,}</text>'
-        lab_lo, lab_av = hl(st["low"], "ph-lo", "기록 최저"), hl(st["avg"], "ph-av", "평균")
-        if abs(y(st["low"]) - y(st["avg"])) < 11:  # 두 글자가 겹치면 평균 글자 X(선만)
-            lab_av = re.sub(r"<text.*</text>", "", lab_av)
-        panels.append(f'<svg class="ph-c {cls}" viewBox="0 0 {W} {H}" role="img" aria-label="가격 변화 그래프" data-p="{html.escape(json.dumps([[a, b, l] for a, b, _, l in dots], ensure_ascii=False))}">'
-                      + "".join(f'<line class="ph-gd" x1="{L}" x2="{W - R + 2}" y1="{v}" y2="{v}"/>' for v in (T, (T + H - B) / 2, H - B))
-                      + lab_av + lab_lo + f'<path class="ph-ln" d="{ph_path(st["s"], t0, t1, x, y)}"/>'
-                      + "".join(f'<circle class="{"ph-dt" if m == st["mk"] else "ph-d2"}" cx="{a}" cy="{b}" r="2.6"/>' for a, b, m, _ in dots)
-                      + f'<text x="{L}" y="{H - 6}">{ph_md(ph_now(t0 - 9 * 3600))}</text><text x="{W - R}" y="{H - 6}" text-anchor="end">{ph_md(ph_now(now_ts))}</text>'
-                      + f'<line class="ph-cl" x1="0" x2="0" y1="{T}" y2="{H - B}" visibility="hidden"/><circle class="ph-cx" r="4.5" cx="0" cy="0" visibility="hidden"/></svg>')
-    two = any(p[2] != st["mk"] for p in P)
-    gap = round((st["now"] - st["low"]) * 100 / st["low"])
-    old = st["last"] < ph_now(now_ts - 86400)  # 마지막 확인 24시간 넘음 = '지금' X(10/30 Cowork 검수)
-    flat = len({p[1] for p in P}) == 1  # 확인한 가격이 모두 같음 = 빈 차트 대신 한 줄
-    return (f'<section class="ph-box" aria-labelledby="ph-h2">' + ("" if flat else '<input type="radio" name="pr" id="ph-r30" aria-label="30일"><input type="radio" name="pr" id="ph-r90" aria-label="90일"><input type="radio" name="pr" id="ph-ra" aria-label="전체" checked>')
-            + '<div class="ph-hd"><h2 id="ph-h2">가격 변화</h2>' + ("" if flat else '<div class="ph-rg"><label for="ph-r30">30일</label><label for="ph-r90">90일</label><label for="ph-ra">전체</label></div>') + '</div>'
-            + f'<p class="ph-lb">쿠팡 · 확인 {st["n"]}회 · 마지막 {ph_md(st["last"], True)}' + ('<small class="ph-lg">● 일반가 ○ 와우·쿠폰가(조건 있음)</small>' if two and not flat else "") + "</p>"
-            + (f'<p class="ph-tip">확인한 {st["n"]}번 모두 {st["now"]:,}원 ({ph_md(st["last"])})</p>' if flat else '<div class="ph-cs">' + "".join(panels) + '</div><p class="ph-tip" aria-live="polite">그래프를 누르면 그때 가격이 보여요</p>')
-            + f'<div class="ph-st"><div><span class="ph-lb">기록 최저</span><b>{st["low"]:,}원</b><small>{ph_md(st["lt"])}</small></div><div><span class="ph-lb">평균</span><b>{st["avg"]:,}원</b><small>확인 {st["n"]}회</small></div>'
-            + f'<div><span class="ph-lb">{"마지막 확인 대비" if old else "지금 대비"}</span><b>{"기록 최저" if gap <= 0 else f"+{gap}%"}</b><small>{ph_md(st["last"]) if old else "지금"} {st["now"]:,}원</small></div></div>'
-            + f'<p class="ph-note">기록 최저 = 핫딜픽이 확인한 시점 중 가장 낮은 가격 · {PH_NOTE}</p></section>' + PH_JS)
-
-
-PT_JS = """<script>(function(){var L=document.getElementById('ph-rl');if(!L)return;var v='all',c='',s='chg',B=document.querySelectorAll('.ph-sg button'),E=document.getElementById('ph-em');
-function go(){var xs=[].slice.call(L.children),n=0;xs.forEach(function(e){var d=e.dataset,ok=(!c||d.c===c)&&(v==='all'||(' '+d.v+' ').indexOf(' '+v+' ')>=0);e.hidden=!ok;n+=ok});
-xs.sort(function(a,b){var p=a.dataset,q=b.dataset;return s==='near'?p.r-q.r:s==='new'?(q.t>p.t?1:q.t<p.t?-1:0):Math.abs(q.d)-Math.abs(p.d)}).forEach(function(e){L.appendChild(e)});E.hidden=n>0}
-[].forEach.call(B,function(b){b.onclick=function(){v=b.getAttribute('data-v');[].forEach.call(B,function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});go()}});
-document.getElementById('ph-cat').onchange=function(){c=this.value;go()};document.getElementById('ph-sort').onchange=function(){s=this.value;go()}})()</script>"""  # 보기 4개(한 줄 버튼)·칸 select·정렬 select — 숨김만(쪽 이동 X)
-
-
-def price_page(it, h, now_ts):
-    """/price/ '쿠팡 가격 추적'(10/30 진우): 지금 진열 중 진우 쿠팡 상품 중 추적 줄 있는 것 — 맨 위 숫자 3칸(추적·오늘 내려감·기록 최저 근접) + 마지막 확인
-    보기(전체·내려감·최저 근접·올라감 — 한 줄) + 칸·정렬 select(옆으로 미는 칩 X) · 줄 = 썸네일 44 | 이름 2줄 + '확인 N회 · 마지막 M/D' | 지금가·7일 변화 배지·스파크라인 -> (본문, 상품 수)."""
-    ev, out, us = ev_info(), [], set()
-    for i, p, sh in it:
-        u = p.get("url")
-        st = p.get("own") and shop_of(p) == "coupang" and u not in us and ph_stat(h.get(ph_key(ev.get(u, {}), u)), now_ts)
-        if st and st["n"] >= 2:  # 확인 1번뿐 = 변화 없음 — 다음 확인 뒤부터(cp_price 추적 우선)
-            us.add(u)
-            out.append((i, p, st))
-    out.sort(key=lambda x: -abs(x[2]["d7"]))
-    cats = collections.Counter(cat_of(p) for _, p, _ in out)
-    vs = lambda st: " ".join(k for k, ok in (("dn", st["d7"] < 0), ("up", st["d7"] > 0), ("near", st["near"])) if ok)
-    cnt = {k: sum(k in vs(st).split() for *_, st in out) for k in ("dn", "up", "near")}
-    rows = "".join(f'<li data-c="{cat_of(p)}" data-d="{st["d7"]}" data-r="{st["now"] / st["low"]:.4f}" data-t="{st["last"]}" data-v="{vs(st)}"><a href="{BASE}p/{i}.html" data-gc="price/{i}">{thumb(p)}'
-                   f'<span class="ph-n"><b>{html.escape(parse(title_of(p["text"]))[1])}</b><small>확인 {st["n"]}회 · 마지막 {ph_md(st["last"])}' + ('<em class="ph-nr">최저 근접</em>' if st["near"] else "") + "</small></span>"
-                   f'<span class="ph-v"><b>{st["now"]:,}원</b>' + (f'<small>{PH_MK[st["mk"]]}</small>' if st["mk"] else "") + f'{ph_badge(st["d7"])}{ph_spark(st, now_ts)}</span></a></li>' for i, p, st in out)
-    last = max((st["last"] for *_, st in out), default="")
-    body = (f'<div class="ph-pg"><h1 class="h">📈 쿠팡 가격 추적</h1><p class="ph-lb">핫딜픽이 확인한 쿠팡 가격 기록 · 같은 옵션끼리 · 7일 변화</p>'
-            f'<div class="ph-st"><div><span class="ph-lb">추적 상품</span><b>{len(out)}</b></div><div><span class="ph-lb">오늘 내려감</span><b>{sum(st["dn"] for *_, st in out)}</b></div>'
-            f'<div><span class="ph-lb">기록 최저 근접</span><b>{cnt["near"]}</b></div></div>' + (f'<p class="ph-lb ph-ls">마지막 확인 {ph_md(last, True)}</p>' if last else "")
-            + '<div class="ph-sg" role="group" aria-label="보기">' + "".join(f'<button type="button" data-v="{k}" aria-pressed="{"true" if k == "all" else "false"}">{n}</button>'
-                                                                          for k, n in (("all", "전체"), ("dn", "내려감"), ("near", "최저 근접"), ("up", "올라감"))) + "</div>"
-            + '<div class="ph-sl"><select id="ph-cat" aria-label="칸 고르기"><option value="">전체 칸</option>'
-            + "".join(f'<option value="{k}">{CAT_META[k][1]} {n}</option>' for k, n in sorted(cats.items(), key=lambda x: -x[1]) if k in CAT_META) + "</select>"
-            + '<select id="ph-sort" aria-label="정렬"><option value="chg">변동 큰 순</option><option value="near">최저 근접 순</option><option value="new">최근 확인 순</option></select></div>'
-            + f'<ol class="ph-list" id="ph-rl">{rows}</ol><p class="ph-note" id="ph-em" hidden>조건에 맞는 상품이 없어요</p>'
-            + f'<p class="ph-note">2번 이상 확인한 상품만 · 기록 최저 = 핫딜픽이 확인한 시점 중 가장 낮은 가격 · 7일 변화 = 7일 전 확인 가격 대비 · 쿠팡만<br>{PH_NOTE}</p></div>' + PT_JS)
-    return body, len(out)
 
 
 STATUS_DROP, STATUS_MISS, STATUS_FAIL = 20, 5, 30  # D 이상 = 진열·사이트맵 어제보다 20%↑ 줄어듦 · 빠진 진우 쿠팡 상품 5개↑ · 쿠팡 변환 실패 30개↑ · 어제 10개↑이던 몰이 0
@@ -2978,7 +2838,6 @@ def build(posts, out="docs"):
         open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     revs, rpids = rev_pids(out)  # HHH① 구매후기 요약 칸
-    ph, phev = ph_load(), ev_info()  # 쿠팡 가격 추적(10/30) — 상품 쪽 차트·/price/
     for i, p in reversed(list(enumerate(posts))):
         if i in noaff:  # 수수료 링크 없는 딜 = 새 쪽 X · 있던 쪽 = 구매 버튼 없는 안내 쪽(noindex — 옛 채널·Threads 링크는 열림 · SS 10/26: 수수료 링크로 바뀌면 다시 상품 쪽)
             if os.path.exists(f"{out}/p/{i}.html"):
@@ -2999,7 +2858,7 @@ def build(posts, out="docs"):
         tp = TOPIC_OF.get(i)
         tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
         open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids)
-                                                  + (ph_chart(ph.get(ph_key(phev.get(p["url"], {}), p["url"])), now_ts) if p.get("own") and shop_of(p) == "coupang" else "") + (rl or "") + tb + (more or "")
+                                                  + (rl or "") + tb + (more or "")
                                                   + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=ld or "", og=img_of(p),
                                                   noindex=sh is None or sh[0] == 3))  # TT-2 ①⑦: 끝난 딜(진열 밖)·일시 품절 = noindex(사람은 그대로 봄)
         if sh and sh[0] == 0:  # 사이트맵 딜 = 진행 중 🔥 특가만(⏳·👍 = 색인 O, 칸 쪽 링크로)
@@ -3129,9 +2988,7 @@ def build(posts, out="docs"):
     for d in {"a", "b"} - {alt}:  # 시안을 바꾸면 옛 미리보기 쪽 지움
         if os.path.isdir(f"{out}/link/{d}"):
             shutil.rmtree(f"{out}/link/{d}")
-    pb, pn = price_page(it, ph, now_ts)
-    write(out, "price/", page(f"쿠팡 가격 추적 · 기록 최저·7일 변화 | {TITLE}", pb, f"핫딜픽이 확인한 쿠팡 상품 {pn}개의 가격 기록 — 기록 최저·평균·7일 변화를 같은 옵션끼리 비교해요", f"{BASE}price/", cur="price"))
-    urls.append((f"{BASE}price/", today))
+    write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
