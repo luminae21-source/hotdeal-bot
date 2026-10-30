@@ -11123,7 +11123,7 @@ for k in ("cpn", "cpu", "cpo"):
     H.RUN.pop(k, None)
 # 9-114) KKK-A(10/30 진우 '깃허브에서 작업 가능한 것은 이관하자' — Cowork 14:13 크롬 진열 → 봇 14:30): 베스트 응답(cp_best가 가격 추적에 받은 것) + docs/plan.json 오늘 품목 낱말
 #   -> events·cp_fail에 없는 pid · 효능 낱말 X · 사진 · 순위 순 4~6개 -> auto_events.json 진열(Cowork 틀 · 👍 근거 = 쿠팡 <칸> 베스트 N위 = 응답 rank 그대로 · 🔥 = 기록 최저보다 내려감만) · 끔 스위치 · 추가 호출 X
-cwd114, sv114 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+cwd114, sv114 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON), H.http, H.HAS_CP, dict(H.E)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
 H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"
 json.dump([], open("posts.json", "w")); json.dump([{"at": "2026-10-20 10:00", "url": "https://www.coupang.com/vp/products/11", "pid": "11", "text": "x", "shelf": True}], open("events.json", "w"))
 json.dump([{"pid": "12", "n": "실패 상품"}], open("cp_fail.json", "w")); json.dump({"20:I20": [["26102510", 9000, "", "cw"]]}, open("price_hist.json", "w"))
@@ -11142,18 +11142,19 @@ time.time = lambda: TK("2026-10-31 14:40")
 with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
 a114 = json.load(open("auto_events.json"))
-assert [e["pid"] for e in a114] == ["15", "16", "17", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 효능 낱말 · 14 = 사진 X · 18 = 낱말 X · 19 = 순위 없음 · 순위 순
+assert [e["pid"] for e in a114] == ["15", "16", "17", "19", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 효능 낱말 · 14 = 사진 X · 18 = 낱말 X · 19 = rank 없음 → 응답 순서(9번째 — 10/30 첫날 0개 원인) · 순위 순
 e114 = {e["pid"]: e for e in a114}
 assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n💡 물은 무거우니 문 앞까지\n⚠️ 확인할 점: 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]
 assert e114["20"]["text"].startswith("🔥 <b>[쿠팡] 제주 생수 2L 12개 (8,500원)</b>") and "✔ 핫딜픽 기록 최저 9,000원보다 낮음" in e114["20"]["text"] and e114["16"]["url"] == "https://www.coupang.com/vp/products/16?itemId=I16"  # 🔥 = 기록 최저보다 내려감만
-assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 4개(🔥 1)" in o114.getvalue()
+assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 5개(🔥 1) · 후보 9(1012 9) · 빠짐 이미 진열 1 · cp_fail 1 · 가격 0 · 사진 1 · 효능 1 · 이름 막기 0 · rank 없음 1(응답 순서로)\n" in o114.getvalue(), o114.getvalue()
+assert "✔ 쿠팡 식품 베스트 9위 · 로켓배송" in e114["19"]["text"]  # 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
 assert "https://www.coupang.com/vp/products/15" in S.ev_info() and any(e.get("auto") for e in S.ev_list())  # 사이트·게시 쪽(ev_list)이 같이 읽음 — events.json은 그대로
 assert json.load(open("events.json")) == [{"at": "2026-10-20 10:00", "url": "https://www.coupang.com/vp/products/11", "pid": "11", "text": "x", "shelf": True}]
-H.auto_shelf(s114); assert len(json.load(open("auto_events.json"))) == 4  # 하루 1번
+H.auto_shelf(s114); assert len(json.load(open("auto_events.json"))) == 5  # 하루 1번
 s114["cpbest"]["r"]["1012"] = R114; time.time = lambda: TK("2026-11-02 14:40")
 with contextlib.redirect_stdout(io.StringIO()):
     H.auto_shelf(s114)
-assert len(json.load(open("auto_events.json"))) == 4 and tg114 and "맞는 상품 0개" in tg114[-1]["text"]  # 키친타올 = 맞는 것 4개 밑 = 안 올림 + 관리봇
+assert len(json.load(open("auto_events.json"))) == 5 and tg114 and "맞는 상품 0개" in tg114[-1]["text"]  # 키친타올 = 맞는 것 4개 밑 = 안 올림 + 관리봇
 assert "cp_best, auto_shelf," in inspect.getsource(H.main) and "CP_BEST_KEEP" in inspect.getsource(cb0) and (H.CP_HOUR, H.CP_SEARCH_HOUR) == (25, 6)  # 추가 호출 X(베스트 응답 그대로) · 상한 그대로
 # 10/30 진우 '3품목으로 하자': plan shelf group(food·hygiene·life)마다 하루 1품목 → 품목마다 4~6개(4개 밑 = 그 품목만 X) · 같은 pid = 앞 품목만 · at = 14:30·14:31·14:32
 json.dump({"shelf": [{"kw": "생수 2L", "group": "food", "words": ["생수"], "tip": "물"}, {"kw": "라면", "group": "food", "words": ["라면"]},
@@ -11165,10 +11166,37 @@ os.remove("auto_events.json"); tg114.clear(); time.time = lambda: TK("2026-11-01
 with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
 a114 = json.load(open("auto_events.json"))
-assert [(e["tag"], e["at"][11:]) for e in a114].count(("생수 2L", "14:30")) == 4 and [(e["tag"], e["at"][11:]) for e in a114].count(("물티슈", "14:31")) == 4, a114  # 물티슈 = 생수 상품(앞 품목) X · 베베 4개
-assert not any(e["tag"] == "휴지" for e in a114) and len(tg114) == 1 and "'휴지'" in tg114[0]["text"] and "auto shelf '휴지': 맞는 베스트 상품 1개" in o114.getvalue()  # 4개 밑 = 그 품목만 X
-assert len({e["pid"] for e in a114}) == len(a114) == 8  # 같은 pid 두 품목 X
-(time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv114[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv114[5]); os.chdir(cwd114)
+assert [(e["tag"], e["at"][11:]) for e in a114].count(("생수 2L", "14:30")) == 5 and [(e["tag"], e["at"][11:]) for e in a114].count(("물티슈", "14:31")) == 4, a114  # 물티슈 = 생수 상품(앞 품목) X · 베베 4개
+assert not any(e["tag"] == "휴지" for e in a114) and len(tg114) == 1 and "'휴지'" in tg114[0]["text"] and "auto shelf '휴지': 맞는 상품 1개(4개 밑) — 안 올림 · 후보 1(1012 1)" in o114.getvalue()  # 4개 밑 = 그 품목만 X
+assert len({e["pid"] for e in a114}) == len(a114) == 9  # 같은 pid 두 품목 X
+# 10/30 첫날 0개(Cowork 14:38 — 라면·화장솜·면봉·세탁세제 다 0): 베스트 응답에 rank 없음 → 다 빠졌음 → 응답 순서로 · 4개 밑 = 그 품목만 검색 1번(상한 그대로 — 넘으면 다음 실행) · V 바꿈 = 그날 1번 더
+json.dump({"shelf": [{"group": "food", "kw": "라면", "words": ["라면", "짜파게티"]}, {"group": "hygiene", "kw": "화장솜·면봉", "words": ["화장솜", "면봉"]}, {"group": "life", "kw": "세탁세제", "words": ["세탁세제", "세제"]}]}, open("docs/plan.json", "w"), ensure_ascii=False)
+os.remove("auto_events.json"); tg114.clear(); time.time = lambda: TK("2026-10-30 16:10")
+z114 = lambda p, n, k=None: [str(p), "", n, 3000 + p, IMG, k, p % 2 == 0]  # 오늘 받아 둔 모양 그대로(rank 칸 = None)
+s114 = {"autoshelf": {"t": 1, "d": "2026-10-30"}, "cpbest": {"r": {"1012": [z114(100 + i, f"농심 신라면 {i}입") for i in range(5)] + [z114(110, "오뚜기 진라면 순한맛 40개")],
+                                                                 "1010": [z114(200 + i, f"순면 화장솜 {i}매") for i in range(3)], "1014": [z114(300 + i, f"피죤 세탁세제 {i}L") for i in range(4)]}}}
+sp114 = {"productData": [{"productId": 210 + i, "productName": f"코튼 면봉 {i}00개", "productPrice": 2000 + i, "productImage": IMG, "productUrl": f"https://link.coupang.com/re/AFFSDP?pageKey={210 + i}&itemId=J{i}", "isRocket": i == 0} for i in range(3)]}
+cp114 = []; H.http = lambda url, *a, **k: cp114.append(url) or json.dumps({"rCode": "0", "data": sp114})
+H.HAS_CP = True; H.E.update(COUPANG_ACCESS_KEY="a", COUPANG_SECRET_KEY="b"); H.RUN["cpu"] = {}; H.RUN["cpn"] = [0, H.CP_SEARCH_RUN]  # 이번 실행 검색 다 씀
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+a114 = json.load(open("auto_events.json"))
+assert sorted({e["tag"]: sum(x["tag"] == e["tag"] for x in a114) for e in a114}.items()) == [("라면", 6), ("세탁세제", 4)] and not cp114, o114.getvalue()  # 옛 표시(V 없음) = 오늘 1번 더 · rank 없음 = 순서
+assert "auto shelf '화장솜·면봉': 베스트 3개 — 검색 상한, 다음 실행에" in o114.getvalue() and s114["autoshelf"]["done"] == ["라면", "세탁세제"] and not s114["autoshelf"]["end"] and not tg114
+assert {e["at"][11:] for e in a114 if e["tag"] == "라면"} == {"14:30"} and {e["at"][11:] for e in a114 if e["tag"] == "세탁세제"} == {"14:32"}  # 14:30 칸 그대로
+H.RUN["cpn"] = [0, 0]; time.time = lambda: TK("2026-10-30 16:25")
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+a114 = [e for e in json.load(open("auto_events.json")) if e["tag"] == "화장솜·면봉"]
+assert len(cp114) == 1 and "keyword=%ED%99%94%EC%9E%A5%EC%86%9C%20%EB%A9%B4%EB%B4%89&limit=10" in cp114[0] and len(a114) == 6 and s114["autoshelf"]["end"], (cp114, o114.getvalue())  # 검색 1번(품목 kw)
+assert [e["pid"] for e in a114] == ["200", "201", "202", "210", "211", "212"] and "✔ 쿠팡 '화장솜·면봉' 검색 1위 · 로켓배송" in a114[3]["text"] and a114[3]["url"].endswith("/210?itemId=J0") and a114[3]["at"][11:] == "14:31"  # 베스트 먼저 · 검색 근거
+assert "auto shelf '화장솜·면봉': 진열 6개(🔥 0) · 후보 6(1010 3 · 검색 3) ·" in o114.getvalue() and "rank 없음 3(응답 순서로) · 검색 +3" in o114.getvalue(), o114.getvalue()
+H.auto_shelf(s114); assert len(cp114) == 1  # 끝난 날 = 다시 X
+assert (H.CP_HOUR, H.CP_SEARCH_HOUR, H.CP_RUN, H.CP_SEARCH_RUN) == (25, 6, 6, 2)  # 상한 그대로
+H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "A"}, {"productName": "앱솔루트 분유"}, {"productName": "C", "rank": 7}, {"productName": "D"}]}); H.RUN["cpu"] = {}; H.RUN["cpn"] = [0, 0]
+with contextlib.redirect_stdout(io.StringIO()):
+    assert [(x["productName"], x["rank"]) for x in H.coupang("GET", "/products/bestcategories/1011?limit=100")] == [("A", 1), ("C", 7), ("D", 4)]  # rank 없음 = 응답 순서(막기 전 — 'N위' 안 밀림)
+(time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS) = sv114[:5]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv114[5]); H.http, H.HAS_CP = sv114[6:8]; H.E.clear(); H.E.update(sv114[8]); H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); os.chdir(cwd114)
 # 9-115) KKK-B(Cowork 9:10 크롬 재게시 → 봇 20:35·20:45·20:55): 사이트 진열 🔥 중 마지막 채널 게시 3일↑ · 지금가(price_hist 마지막 확인) ≤ 처음 소개가 +5% · 24시간 안 확인 → 싼 순 '🔁 다시 소개' 칸마다 1개 · 끔 스위치
 cwd115, sv115 = os.getcwd(), (time.time, H.tg, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON)); os.chdir(tempfile.mkdtemp())
 H.POSTS, H.EVENTS, S.EVENTS = "posts.json", "events.json", "events.json"
