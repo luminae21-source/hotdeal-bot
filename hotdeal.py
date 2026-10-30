@@ -432,6 +432,7 @@ def plain(url, hops=4):
     return url
 
 
+cp_won = lambda z: int(float(z["productPrice"])) if isinstance(z, dict) and re.fullmatch(r"\d+(?:\.\d+)?", str(z.get("productPrice") or "")) else 0  # 베스트·골드박스 응답 가격은 15900.0 꼴(검색은 15900) — 10/30 isdigit만 봐서 베스트 줄·가격 관측이 늘 0
 cp_qs = lambda y, k: (urllib.parse.parse_qs(urllib.parse.urlsplit(str(y.get("productUrl") or "")).query).get(k) or [""])[0]  # 파트너스 링크의 상품 번호(pageKey)·옵션 번호(itemId)
 CP_BEST, CP_BEST_RUN = (1012, 1014, 1013, 1010, 1024, 1011, 1029, 1016, 1015, 1001, 1018, 1021), 2  # 카테고리 베스트(사진 채움 10/25 · 가격 관측 10/30): 식품·생활용품·주방·뷰티·건강식품·출산유아·반려·가전·홈인테리어·여성패션·자동차·문구 — 실행마다 2개(시간당 상한 CP_HOUR 안)
 CP_BEST_BIG = (1012, 1014, 1013, 1010, 1011, 1029)  # 진열 많은 6칸(식품·생활·주방·뷰티·출산유아·반려) = 6시간마다 · 나머지 = 하루 1번 (하루 30번 — 검색 몫 0)
@@ -470,8 +471,8 @@ def cp_best(seen):
         try:
             r = coupang("GET", f"/products/bestcategories/{c}?limit=100")
             got.append((c, cp_photos(seen, r), cp_api_prices(seen, r, "best")))
-            b.setdefault("r", {})[str(c)] = [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], int(z["productPrice"]), z.get("productImage") or "", z.get("rank"), z.get("isRocket") is True]
-                                             for z in (r if isinstance(r, list) else [])[:CP_BEST_KEEP] if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit()]  # A 진열 자동(auto_shelf) — 칸마다 마지막 응답
+            b.setdefault("r", {})[str(c)] = [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], cp_won(z), z.get("productImage") or "", z.get("rank"), z.get("isRocket") is True]
+                                             for z in (r if isinstance(r, list) else [])[:CP_BEST_KEEP] if cp_won(z)]  # A 진열 자동(auto_shelf) — 칸마다 마지막 응답
         except CpLimit:
             break
         except Exception as e:
@@ -479,7 +480,7 @@ def cp_best(seen):
             got.append((c, 0, 0))
         d[str(c)] = slot
     if got:
-        print("cp best", " · ".join(f"{c} 사진 +{a} 가격 {k}" for c, a, k in got), f"(남은 차례 {len(due) - len(got)}칸)")
+        print("cp best", " · ".join(f"{c} 사진 +{a} 가격 {k} 줄 {len(b.get('r', {}).get(str(c), []))}" for c, a, k in got), f"(남은 차례 {len(due) - len(got)}칸)")
 
 
 AUTO_ON = {"shelf": True, "repost": True, "pick5": True, "status": True, "event": True}  # 10/30 Cowork 크롬 루틴 이관(진우 '깃허브에서 작업 가능한 것은 이관하자') — 끔 스위치: False = 그 기능 X(Cowork 크롬 그대로) · 쿠팡 API 상한 그대로
@@ -568,8 +569,8 @@ def auto_shelf(seen):
                 print(f"auto shelf '{pl['kw']}' 검색", type(e).__name__)
                 r = {}
             n0 = len(best)
-            take("검색", [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], int(z["productPrice"]), z.get("productImage") or "", i, z.get("isRocket") is True]
-                          for i, z in enumerate((r if isinstance(r, dict) else {}).get("productData") or [], 1) if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit()])
+            take("검색", [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], cp_won(z), z.get("productImage") or "", i, z.get("isRocket") is True]
+                          for i, z in enumerate((r if isinstance(r, dict) else {}).get("productData") or [], 1) if cp_won(z)])
             picks, srch = sorted(best.values())[:AUTO_SHELF_N[1]], f" · 검색 +{len(best) - n0}"
         st["done"].append(pl["kw"])
         diag = (f"후보 {sum(v for c, v in why.items() if not c.startswith('-'))}(" + (" · ".join(f"{c} {v}" for c, v in why.items() if not c.startswith("-")) or "0") + ") · 빠짐 "
@@ -1847,14 +1848,14 @@ def cp_api_prices(seen, items, src):
     if src == "gold":
         q["g"] = {}  # 하루 1번 — 오늘 것만(price_track이 넣은 뒤엔 같은 값 다시 = 그대로)
     for z in items or []:
-        for u in by.get(str(z.get("productId")), ()) if isinstance(z, dict) and str(z.get("productPrice") or "").isdigit() else ():
+        for u in by.get(str(z.get("productId")), ()) if cp_won(z) else ():
             if not cp_match(z, u, ev, names):
                 continue
             n += 1
             if src == "gold":
-                q.setdefault("g", {})[u] = [int(z["productPrice"]), at]
+                q.setdefault("g", {})[u] = [cp_won(z), at]
             elif q["m"].get(u, [0, ""])[1] <= at:
-                q["m"][u], q.setdefault("ms", {})[u] = [int(z["productPrice"]), at, ev[u].get("item") or ""], src
+                q["m"][u], q.setdefault("ms", {})[u] = [cp_won(z), at, ev[u].get("item") or ""], src
                 q.setdefault("r", {})[u] = z.get("isRocket") is True
     RUN.setdefault("cpo", collections.Counter())["n"] += n
     return n

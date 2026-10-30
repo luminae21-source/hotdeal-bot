@@ -11085,8 +11085,8 @@ H.POSTS, H.EVENTS, S.EVENTS, H.HAS_CP = "posts.json", "events.json", "events.jso
 kw113 = []
 def http113(url, *a, **k):
     if "/bestcategories/" in url:
-        return json.dumps({"rCode": "0", "data": [{"productId": 94, "productPrice": 2900, "productName": "테스트 샴푸 1L", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=94&itemId=I4", "isRocket": True},
-                                                  {"productId": 90, "productPrice": 1, "productName": "비비고 육개장 500g", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=90&itemId=I9"}] if "/1012?" in url else []})
+        return json.dumps({"rCode": "0", "data": [{"productId": 94, "productPrice": 2900.0, "productName": "테스트 샴푸 1L", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=94&itemId=I4", "isRocket": True},
+                                                  {"productId": 90, "productPrice": 1.0, "productName": "비비고 육개장 500g", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=90&itemId=I9"}] if "/1012?" in url else []})
     kw = parse_qs(urlsplit(url).query)["keyword"][0]; kw113.append(kw)
     pd = [{"productId": 90, "productPrice": 4900, "productName": "비비고 육개장 500g", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=90&itemId=I1"},
           {"productId": 91, "productPrice": 5900, "productName": "비비고 사골곰탕 500g", "productUrl": "https://link.coupang.com/re/AFFSDP?pageKey=91&itemId=I2"},
@@ -11100,6 +11100,8 @@ for k in ("cpn", "cpu", "cpo"):
 with contextlib.redirect_stdout(io.StringIO()) as o113:
     cb0(s113)  # H.cp_best = 맨 위에서 막아 둠(진짜 = cb0)
 assert s113["cpq"]["m"][U113("E")] == [2900, "2026-11-03 10:00", "I4"] and s113["cpq"]["ms"][U113("E")] == "best" and U113("A") not in s113["cpq"]["m"] and s113["cpq"]["r"][U113("E")] is True, s113["cpq"]  # 베스트 = 같은 옵션(I4)만 · A(I1)에 I9 가격 X
+assert [r[:6] for r in s113["cpbest"]["r"]["1012"]] == [["94", "I4", "테스트 샴푸 1L", 2900, "", 1], ["90", "I9", "비비고 육개장 500g", 1, "", 2]] and "1012 사진 +0 가격 1 줄 2" in o113.getvalue(), (s113["cpbest"], o113.getvalue())  # 베스트 가격 = 2900.0 꼴(10/30 isdigit만 봐서 줄·관측 0 — 진열 자동 첫날 0개 원인) · rank 없음 = 응답 순서
+assert [H.cp_won({"productPrice": v}) for v in (15900, 15900.0, "15900", "1,000", None, "", -1)] == [15900, 15900, 15900, 0, 0, 0, 0] and H.cp_won("x") == 0
 with contextlib.redirect_stdout(io.StringIO()) as o113:
     H.cp_price(s113)
 assert kw113 == ["비비고 국 탕", "스타벅스 텀블러 473ml"], (kw113, o113.getvalue())  # tag 1번(A·B·C 같이) → 바뀐 지 2일 넘은 G · D(Cowork 1일 전)·E(베스트 방금 — 생필품 = 추적 우선이어도)·F(같은 가격 3번 = 7일) 검색 X
