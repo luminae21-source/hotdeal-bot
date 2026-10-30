@@ -15,7 +15,7 @@ pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13�
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
 clp0, H.clip_post = H.clip_post, (lambda s: None)  # 네이버 클립(영상 만들기·관리자 업로드)은 맨 아래 9-75에서만
-ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None)  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
+ac0, cb0, H.api_check, H.cp_best = H.api_check, H.cp_best, (lambda s: None), (lambda s: None); tp0, H.th_pics = H.th_pics, (lambda s: None)  # Threads 가로 그림(쿠팡 사진 받기)은 9-119에서만  # 키 확인 알림·카테고리 베스트 사진은 맨 아래 9-63에서만
 tc0, tw0, H.TH_C, H.th_watch = H.TH_C, H.th_watch, False, (lambda s: None)  # Threads C·3장면·첫 30분 답글 알림(10/25)은 맨 아래 9-64에서만
 igh0, H.IG_H, rpb0, H.REEL_PUBLIC = H.IG_H, False, H.REEL_PUBLIC, False  # H·L·M(10/26 인스타 피드 형식·스토리)·릴스 공개(J-1)는 맨 아래 9-73에서만
 ipk0, H.ig_peek = H.ig_peek, (lambda s: None)  # 인스타 숫자 로그(G-4)는 맨 아래 9-72에서만
@@ -3270,7 +3270,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -10869,7 +10869,7 @@ json.dump([{"t": "2026-10-28 10:00", "text": "a", "url": B2}, {"t": "2026-10-29 
 H.RUN["cpsub"] = [0]; cc108.clear(); H.cp_sub_site({})
 assert cc108 == [("POST", "/deeplink", {"coupangUrls": [R1], "subId": "site"})]  # B2 = site 이미 있음 · 진우 링크 X
 H.cp_sub_site({}); assert len(cc108) == 1  # 다 됨 = 호출 X
-assert "trend, review_post, cp_sub_site, price_track)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
+assert "trend, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
 S.SITE_SUB = S.site_subs(); assert S.SITE_SUB == {B1: "https://link.coupang.com/a/site11112", B2: "https://link.coupang.com/a/site222"}
 pg108 = S.page("t", f'<a class="buy" href="{B1}">사러 가기</a><a href="{JW}">진우</a><a href="{B2}">2</a>')
 assert 'href="https://link.coupang.com/a/site11112"' in pg108 and f'href="{JW}"' in pg108 and B1 not in pg108 and "site222" in pg108
@@ -10923,7 +10923,7 @@ r109, p109 = S109.rev_pids("docs")
 assert r109["777"]["text"] == TX109 and p109[L109] == "777"
 rb109 = S109.rev_box({"url": L109}, r109, p109)
 assert '<h2 id="rvh">구매후기 요약 (10/30 기준)</h2>' in rb109 and "별점 5점이 82%예요<br>&#x27;두께&#x27; 설문은" in rb109 and S109.rev_box({"url": "https://link.coupang.com/a/x"}, r109, p109) == ""
-assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, review_post, cp_sub_site, price_track)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
+assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
 (time.time, H.tg, H.http, H.th_img, H.th_post, H.th_reply, H.EVENTS, e109, H.CHANNEL, H.ADMIN, H.th_topic) = sv109; H.E.clear(); H.E.update(e109); os.chdir(cwd109)
 # 9-110) 힘 준 글(10/30 진우 — '7은 편하게 3은 힘을 주자 · 첫 20분 댓글'): events 큐레이션 "power" = 시각에 Threads(사진 + 본문) · 관리봇 DM 1번(글 주소) · 20분 동안 다른 Threads 글 0
 #        (개별 th_solo X · 묶음 = 줄에 두고 th_retry가 20분 뒤 · 다른 큐레이션 Threads = 뒤로 — 텔레그램 채널은 그대로) · metrics kind power + 48시간 조회·답글(chat_48)
@@ -11055,7 +11055,7 @@ assert o112.getvalue() == "" and json.load(open("price_hist.json")) == ph112  # 
 json.dump({"at": "2026-10-30 05:00", "urls": [U112("E")]}, open("gc_top.json", "w"))
 nm112 = {U112(k): "x" for k in "ABE"}
 assert H.ph_prio({}, json.load(open("posts.json")), nm112) == {U112("B"), U112("E")}  # 👍 꾸준템(B) + 최근 7일 많이 본(E) · A = 식품 칸(추적 우선 X)
-assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track):" in inspect.getsource(H.main)
+assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
 d112 = tempfile.mkdtemp()
 json.dump({"77:I1": [["26102009", 10000, "", "post"], ["26102509", 12000, "", "cw"], ["26103009", 10200, "", "api"]], "77:I2": [["26102509", 19900, "", "cw"]],
            "80:I5": [["26102310", 9000, "", "cw"], ["26102909", 8000, "", "cw"]]}, open("price_hist.json", "w"))
@@ -11308,4 +11308,46 @@ assert "status_dm, ev_check, cp_price" in inspect.getsource(H.main)
 (time.time, H.coupang, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS) = sv118[:6]; H.AUTO_ON.clear(); H.AUTO_ON.update(sv118[6]); os.chdir(cwd118)
 for k in ("cpn", "cpu", "cpo"):
     H.RUN.pop(k, None)
+# 9-119) LLL(10/30 진우 '사진이 너무 커..' — 세로로 긴 쿠팡 사진이 폰 한 화면): Threads 사진 1장 글 = 미리 만든 가로 1200×630 그림(바탕 #FAF8F5 · 흰 여백 잘라냄 · 높이 86% 가운데 · 글자 X)
+#   사이트에 떠 있으면(HEAD 200) 그 주소, 아니면 원래 쿠팡 사진 · 같은 사진 = 재사용 · 14일 지난 그림 지움 · 캐러셀·인스타·채널 그대로
+from PIL import Image as Im119
+cwd119, sv119 = os.getcwd(), (time.time, H.http, H.th_get, H.POSTS); os.chdir(tempfile.mkdtemp()); H.POSTS = "posts.json"
+src119 = Im119.new("RGB", (400, 1000), "white"); src119.paste(Im119.new("RGB", (200, 800), (30, 60, 200)), (100, 100))  # 세로로 긴 상품 + 흰 여백
+b119 = io.BytesIO(); src119.save(b119, "JPEG"); b119 = b119.getvalue()
+get119 = []; H.th_get = lambda u: get119.append(u) or b119
+IMG119, IMG119b = "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/a.jpg", "https://thumbnail.coupangcdn.com/b.jpg"
+assert H.th_pic_file("https://toss.im/x.jpg") == "" and H.th_pic_make("https://toss.im/x.jpg") is None and H.th_pic("https://toss.im/x.jpg") == "https://toss.im/x.jpg"  # 쿠팡 사진만
+json.dump([{"t": "2026-10-30 09:00", "text": "🔥 [쿠팡] 핸드워시 1.8L (9,900원)", "url": "https://link.coupang.com/a/h1", "own": 1, "img": IMG119},
+           {"t": "2026-10-30 09:10", "text": "🔥 [쿠팡] 다른 상품 (9,900원)", "url": "https://link.coupang.com/a/h2", "own": 1, "img": IMG119b, "th": "T1"},
+           {"t": "2026-10-28 09:00", "text": "🔥 [쿠팡] 옛 상품 (9,900원)", "url": "https://link.coupang.com/a/h3", "own": 1, "img": "https://thumbnail.coupangcdn.com/c.jpg"}], open("posts.json", "w"), ensure_ascii=False)
+s119 = {}; time.time = lambda: TK("2026-10-30 10:00")
+with contextlib.redirect_stdout(io.StringIO()) as o119:
+    tp0(s119)
+f119 = H.th_pic_file(IMG119)
+assert get119 == [IMG119] and os.path.exists(f119) and "th pic 가로 그림 1장" in o119.getvalue()  # Threads에 나간 글(h2)·24시간 지난 글(h3) X
+out119 = Im119.open(f119); px = out119.convert("RGB")
+assert out119.size == (1200, 630) and all(abs(x - y) <= 3 for x, y in zip(px.getpixel((5, 5)), (250, 248, 245)))  # 1200×630 · 바탕 #FAF8F5(JPEG 오차)
+bb = Im119.eval(px, lambda v: 0 if v > 225 else 255).convert("L").getbbox()  # 상품(파랑) 자리
+assert bb and abs((bb[3] - bb[1]) - round(630 * 0.86)) <= 6 and abs((bb[0] + bb[2]) / 2 - 600) <= 4 and abs((bb[1] + bb[3]) / 2 - 315) <= 4, bb  # 흰 여백 잘라냄 · 높이 86% · 가운데 · 안 잘림(위·아래 다 보임)
+with contextlib.redirect_stdout(io.StringIO()):
+    tp0(s119)
+assert get119 == [IMG119]  # 한 번 만든 그림 = 다시 안 받음(재사용)
+H.http = lambda url, *a, **k: "" if url == H.SITE + f119[len("docs/"):] else (_ for _ in ()).throw(OSError("404"))
+assert H.th_pic(IMG119) == H.SITE + "cards/th/" + os.path.basename(f119) and H.th_pic(IMG119b) == IMG119b  # 사이트에 뜸 = 가로 그림 · 안 만든 사진 = 원래 사진
+H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("404")); assert H.th_pic(IMG119) == IMG119  # 아직 안 뜸 = 원래 사진(글이 안 나가는 일 X)
+H.th_get = lambda u: (_ for _ in ()).throw(OSError("x"))
+with contextlib.redirect_stdout(io.StringIO()) as o119:
+    assert H.th_pic_make(IMG119b) is None and not os.path.exists(H.th_pic_file(IMG119b))  # 못 받음 = None(원래 사진 그대로)
+q119 = []; H.http = lambda url, *a, **k: q119.append(url) or ("" if "HEAD" in str(k) or url.startswith(H.SITE) else json.dumps({"id": "C1"}))
+time.sleep, sl119 = (lambda s: None), time.sleep
+H.th_img("tok", "me", "글", IMG119)
+assert "image_url=" + urllib.parse.quote(H.SITE + "cards/th/" + os.path.basename(f119), safe="") in q119[1], q119  # th_img = 가로 그림 주소로
+time.sleep = sl119
+s119["thpic"]["m"][os.path.basename(f119)] = TK("2026-10-15 09:00"); time.time = lambda: TK("2026-10-30 10:00")
+json.dump([], open("posts.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    tp0(s119)
+assert not os.path.exists(f119) and s119["thpic"]["m"] == {}  # 14일 지난 그림 지움
+assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, th_pics):" in inspect.getsource(H.main)  # 캐러셀 그대로
+(time.time, H.http, H.th_get, H.POSTS) = sv119; os.chdir(cwd119)
 print("OK: 모든 셀프체크 통과")

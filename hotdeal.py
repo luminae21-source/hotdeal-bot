@@ -5292,9 +5292,90 @@ def th_deal(seen, tok, me, text, link, src=None, cat=None, image=None, tids=None
     return pid
 
 
-def th_img(tok, me, text, image, tag="핫딜"):
-    """Threads 사진 글 1개(IMAGE — 원본 이미지 주소 그대로 · 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로)."""
+TH_PIC_DIR, TH_PIC_KEEP, TH_PIC_RUN, TH_PIC_BG = "docs/cards/th", 14 * 86400, 8, "#FAF8F5"  # Threads 사진 1장 글 = 가로 1200×630 그림(10/30 진우 '사진이 너무 커') · 14일 보관 · 실행마다 새로 8장
+th_get = lambda u: urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=8).read(8_000_000)  # 셀프체크가 바꿔 끼움
+
+
+def th_pic_file(u):
+    """쿠팡 사진 주소 -> 가로 그림 파일 경로(같은 사진 = 같은 파일) · 쿠팡 사진 아님 = ''."""
+    host = urllib.parse.urlsplit(u or "").netloc.lower()
+    return f"{TH_PIC_DIR}/{hashlib.md5(u.encode()).hexdigest()[:12]}.jpg" if u.startswith("https://") and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com"))) else ""
+
+
+def th_pic_make(u):
+    """쿠팡 사진 -> 1200×630 바탕 TH_PIC_BG · 흰 여백 잘라냄(trim) · 높이 86%(넓은 사진은 폭 92%까지) 가운데 · 글자·로고 X -> 파일 / 못 만듦 = None(원래 사진 그대로)."""
+    f = th_pic_file(u)
+    if not f:
+        return None
+    if os.path.exists(f):
+        return f
     try:
+        from io import BytesIO
+        from PIL import Image, ImageChops
+        im = Image.open(BytesIO(th_get(u)))
+        im.load()
+        if im.mode in ("RGBA", "LA", "P") or "transparency" in im.info:  # 투명 = 흰 바탕
+            rgba = im.convert("RGBA")
+            bg = Image.new("RGB", rgba.size, "white")
+            bg.paste(rgba, mask=rgba.split()[3])
+            im = bg
+        im = im.convert("RGB")
+        box = ImageChops.difference(im, Image.new("RGB", im.size, "white")).convert("L").point(lambda v: 255 if v > 12 else 0).getbbox()  # 거의 흰 여백 = 잘라냄
+        im = im.crop(box) if box else im
+        k = min(630 * 0.86 / im.height, 1200 * 0.92 / im.width)
+        im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
+        out = Image.new("RGB", (1200, 630), TH_PIC_BG)
+        out.paste(im, ((1200 - im.width) // 2, (630 - im.height) // 2))
+        os.makedirs(TH_PIC_DIR, exist_ok=True)
+        out.save(f, "JPEG", quality=88)
+        return f
+    except Exception as e:
+        print("th pic 못 만듦", type(e).__name__)
+        return None
+
+
+def th_pic(u):
+    """Threads 사진 1장 글에 쓸 주소: 미리 만든 가로 그림(th_pics)이 사이트에 떠 있으면(HEAD 200) 그 주소, 아니면 원래 사진 그대로(글이 안 나가는 일 X)."""
+    f = th_pic_file(u)
+    if not (f and os.path.exists(f)):
+        return u
+    site = SITE + f[len("docs/"):]
+    try:
+        http(site, method="HEAD")
+        return site
+    except Exception:
+        return u
+
+
+def th_pics(seen):
+    """가로 그림 미리 만들기(10/30): 최근 24시간 진우·진열 쿠팡 글 중 사진 있고 Threads에 아직 안 나간 것(+ 큐레이션 X) -> 실행마다 TH_PIC_RUN장(실행 끝 커밋 = 다음 실행에 사이트에 뜸)
+    · 만든 그림 = seen thpic m{파일: 만든 때} · TH_PIC_KEEP(14일) 지난 그림 지움."""
+    now, posts = time.time(), load(POSTS, [])
+    st = seen.setdefault("thpic", {"m": {}})
+    st["t"], m = now, st.setdefault("m", {})
+    for f in os.listdir(TH_PIC_DIR) if os.path.isdir(TH_PIC_DIR) else []:
+        if f.endswith(".jpg"):
+            m.setdefault(f, now)  # seen이 비어도 있는 그림은 지금부터 14일
+    for f, t in list(m.items()):
+        if t < now - TH_PIC_KEEP or not os.path.exists(f"{TH_PIC_DIR}/{f}"):
+            m.pop(f)
+            if os.path.exists(f"{TH_PIC_DIR}/{f}"):
+                os.remove(f"{TH_PIC_DIR}/{f}")
+    since, n = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - 86400)), 0
+    for p in posts[-400:][::-1]:  # 최근 글(posts = 대체로 시간순 — 진열 글이 섞여도 400개 안)
+        if n >= TH_PIC_RUN:
+            break
+        f = p["t"] >= since and not p.get("th") and th_pic_file(img_of(p))
+        if f and not os.path.exists(f) and th_pic_make(img_of(p)):
+            m[os.path.basename(f)], n = now, n + 1
+    if n:
+        print("th pic", f"가로 그림 {n}장 · 보관 {len(m)}장")
+
+
+def th_img(tok, me, text, image, tag="핫딜"):
+    """Threads 사진 글 1개(IMAGE — 쿠팡 사진은 미리 만든 가로 1200×630 그림(th_pic — 없거나 안 뜨면 원래 사진) · 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로)."""
+    try:
+        image = th_pic(image)
         q = urllib.parse.urlencode({"media_type": "IMAGE", "image_url": image, "text": text, "topic_tag": tag, "access_token": tok})
         cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
         time.sleep(30)  # 미디어 처리 대기(공식 권장)
@@ -10510,7 +10591,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track, th_pics):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
