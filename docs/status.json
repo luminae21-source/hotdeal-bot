@@ -1,10 +1,10 @@
 {
-"at": "2026-10-30 16:18",
-"posts": 2743,
-"site": 1571,
+"at": "2026-10-30 16:23",
+"posts": 2747,
+"site": 1575,
 "mall": {
 "toss": 641,
-"coupang": 876,
+"coupang": 880,
 "naver": 54
 },
 "cat": {
@@ -17,7 +17,7 @@
 "kitchen": 103,
 "heat": 117,
 "coffee": 73,
-"laundry": 64,
+"laundry": 68,
 "car": 31,
 "snack": 56,
 "fashion": 78,
@@ -31,11 +31,11 @@
 "sitemap": 1001,
 "days": {
 "2026-10-30": {
-"site": 1571,
+"site": 1575,
 "sitemap": 1001,
 "mall": {
 "toss": 641,
-"coupang": 876,
+"coupang": 880,
 "naver": 54
 }
 }
