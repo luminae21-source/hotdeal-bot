@@ -7150,22 +7150,24 @@ tg65, sl65, ln65 = {"햇상품": {"https://link.coupang.com/a/r1"}}, {"햇상품
 SH65 = S65.promo_shown(L65, it65, tg65, ln65)
 assert [p["id"] for p, _, _ in SH65] == ["cp-a", "kw", "gm"] == [p["id"] for p, _, _ in S65.promo_shown(L65, it65, tg65, {})], SH65  # 10/25 20:3x 최종: 쿠팡 = tag·kw 상품 · 수수료 길이 있는 몰(G마켓) = 보임 · 11번가·www.ssg.com(수수료 길 X) = 숨김
 B65 = S65.promo_band(SH65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25")
-assert re.findall(r'data-gc="promo/([^"]+)"', B65) == ["all", "cp-a", "kw"] and "전체 3 →" in B65 and len(re.findall(r"<i(?: class=on)?></i>", B65)) == 2, B65  # 곧 시작 = 7일 안(G마켓 11/2 X) · 점
+assert re.findall(r'data-gc="promo/([^"]+)"', B65) == ["all", "goldbox", "cp-a", "kw"] and "전체 4 →" in B65 and len(re.findall(r"<i(?: class=on)?></i>", B65)) == 3, B65  # 곧 시작 = 7일 안(G마켓 11/2 X) · 점
 assert f'href="{S65.BASE}e/fresh.html" data-gc="promo/cp-a"' in B65 and f'href="{S65.BASE}?q=%EA%B0%80%EC%8A%B5%EA%B8%B0" data-gc="promo/kw"' in B65 and "&lt;가전&gt;" in B65  # tag = 행사 쪽 · kw = 홈 검색 · 글자 escape
 assert f'href="{LP65}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/gm"' in S65.promo_band(SH65, it65, tg65, sl65, ln65, set(), "2026-10-27").replace("&amp;", "&")  # 몰 홈 = 링크프라이스 딥링크(sponsored)
 assert f'href="{GM65}" rel="nofollow noopener" target="_blank" data-gc="promo/gm"' in S65.promo_band(SH65, it65, tg65, sl65, {}, set(), "2026-10-27")  # 아직·실패 = 몰 홈 그대로(nofollow — 수수료 X라 sponsored X)
 assert '<img src="/icons/mall/11st.png"' in S65.promo_mall(P65(), {"11st"})[1] and S65.promo_mall(P65(mall="emart"), set())[0] == "--m:#FFC72C;--mf:#14161B;--mt:#8A6200;--mb:#FFF8E3"  # 로고 있으면 그것 · 이마트 = 노랑·글자 검정
 assert S65.promo_go(P65(), [], {}, {"https://www.11st.co.kr/": LP65})[0] == LP65 and S65.promo_go(P65(), [], {}, {}) == ("", False)  # 11번가 = 제휴 링크 생기면만
 assert B65.count('class="pbp"') == 1 and B65.count('class="pbi pbx"') == 1 and "thumbnail.coupangcdn.com/a.jpg" in B65  # 상품 사진 동그라미 = 사진 있는 🔥만
-assert S65.promo_band([x for x in L65 if x[1] == "past"], it65, tg65, sl65, ln65, set(), "2026-10-25") == "" and S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25") == ""  # 진행·곧 시작 없음 = 띠 X
+GB65 = f'<a class="pbi" href="{S65.GOLDBOX}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/goldbox" style="--m:#D9402A;--mf:#fff;--mt:#C2362A" aria-label="쿠팡 골드박스 — 매일 바뀌는 쿠팡 특가"><span class="pbh"><i class="mlg" aria-hidden="true">쿠</i><b>쿠팡</b></span><b class="pbw">매일</b><b class="pbn">⏰ 골드박스</b><small class="pbg">매일 바뀌는 쿠팡 특가</small></a>'
+assert re.findall(r'<a class="pbi[^"]*" href="([^"]+)"', B65)[0] == S65.GOLDBOX and GB65 in B65 and "오전" not in GB65 and "시 오픈" not in GB65  # 10/30 진우 '골드박스 어디 갔는지' — 맨 앞 고정 카드 · 날짜 대신 '매일' · 시간 약속 X
+assert [re.findall(r'data-gc="promo/([^"]+)"', S65.promo_band(x, it65, tg65, sl65, ln65, set(), "2026-10-25")) for x in ([x for x in L65 if x[1] == "past"], [])] == [["all", "goldbox"]] * 2 and "전체 1 →" in S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25") and 'class="pbd"' not in S65.promo_band([], it65, {}, {}, {}, set(), "2026-10-25")  # 행사 없음 = 골드박스 1장(옛 = 띠 X) 진행·곧 시작 없음 = 띠 X
 T65, D65, G65 = S65.promo_page(SH65, it65, tg65, sl65, ln65, {"11st"}, "2026-10-25", "10/25 19:30")
-assert T65 == "쇼핑 기획전 모음 (10월) | 핫딜픽" and 'class="pcd k" href="#cp-a"' in G65 and "전체 3</button>" in G65 and "진행 중 2</button>" in G65 and "곧 시작 1</button>" in G65  # 오늘 마감 = 검정 칸 · 칩 개수
+assert T65 == "쇼핑 기획전 모음 (10월) | 핫딜픽" and 'class="pcd k" href="#cp-a"' in G65 and "전체 4</button>" in G65 and "진행 중 3</button>" in G65 and "곧 시작 1</button>" in G65 and G65.index('<article class="pv" id="goldbox" data-s="on"') < G65.index('<article class="pv" id="cp-a"') and f'href="{S65.GOLDBOX}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/goldbox">' in G65 and '<span class="pvd"><b>매일</b></span>' in G65  # 오늘 마감 = 검정 칸 · 칩 개수
 assert f'href="{LP65}" rel="nofollow sponsored noopener" target="_blank" data-gc="promo/gm">행사 보러 가기 →' in G65.replace("&amp;", "&") and G65.count("핫딜픽이 고른 1개 →") == 2 and "<b>11.2–11.13</b></span>" in G65  # 링크프라이스 = sponsored · 상품 개수(품절 X) · 상품 없는 행사 = 날짜 칸
 assert S65.SHOP_NOTES["coupang"] in G65 and "제휴마케팅이 포함된 광고로 커미션을 지급 받습니다" in G65 and "10/25 19:30 확인" in G65 and "11st.co.kr" not in G65  # 대가성 = 쿠팡 상품 칸·링크프라이스 링크가 있을 때만(사실대로)
 G65b = S65.promo_page(SH65, it65, tg65, sl65, {}, set(), "2026-10-25")[2]; assert "제휴마케팅" not in G65b and '<i class="mlg" aria-hidden="true">G</i>' in G65b and f'href="{GM65}" rel="nofollow noopener"' in G65b  # 링크프라이스 아직 = 몰 홈·그 문구 X · 로고 없음 = 몰 글자
 G65c = S65.promo_page([x for x in L65 if x[0]["id"] in ("p1", "old")], it65, tg65, sl65, {}, set(), "2026-10-25")[2]
-assert '<details class="pvx"><summary>지난 행사 1</summary>' in G65c and "<b>11.1–11.11</b><small>사전 10.26–31</small>" in G65c and 'class="pvc"' not in G65c  # 지난 행사 접힘 · 날짜 칸 · 수수료 길 없는 주소 = CTA X
-assert "지금 정리된 기획전이 없어요" in S65.promo_page([], [], {}, {}, {}, set(), "2026-10-25")[2]
+assert '<details class="pvx"><summary>지난 행사 1</summary>' in G65c and "<b>11.1–11.11</b><small>사전 10.26–31</small>" in G65c and G65c.count('class="pvc"') == 1  # 지난 행사 접힘 · 날짜 칸 · 수수료 길 없는 주소 = CTA X
+assert 'id="goldbox"' in S65.promo_page([], [], {}, {}, {}, set(), "2026-10-25")[2] and "전체 1</button>" in S65.promo_page([], [], {}, {}, {}, set(), "2026-10-25")[2] and S65.SHOP_NOTES["coupang"] in S65.promo_page([], [], {}, {}, {}, set(), "2026-10-25")[2]  # 행사 없음 = 골드박스 카드 1장 + 쿠팡 대가성 문구
 # (10/25 리뷰) 없는 날짜·모양 틀린 글자 칸 = 뺌(빌드 멈춤 X — 멈추면 그 실행 게시가 다음 실행에 또) · 끝난 사전 행사 = 본 행사까지 '곧 시작' · 대가성 = 링크 프로그램마다 ·
 #     쿠팡 생 주소 상품뿐 = 쿠팡 문구 X · 띠에 없는 행사(7일 밖) = 옛 넘김 배너 그대로 · 기획전 링크 = 구매 클릭(buy/) X
 json.dump({"promos": [P65(id="d1", end="2026-11-31"), P65(id="d2", pre={"start": "2026-02-29", "end": None}), P65(id="t1", tag=["a"]), P65(id="t2", mall_name=3), P65(id="t3", cta={"text": ["x"], "href": "https://a.kr/"}), P65(id="ok")]}, open("promos.json", "w"))
@@ -7179,7 +7181,7 @@ CN65 = P65(id="cpn", mall="coupang", url="https://link.coupang.com/a/promo", cta
 gz65 = S65.promo_page([(CN65, "on", "2026-10-20")], [], {}, {}, {}, set(), "2026-10-25")[2]; assert S65.SHOP_NOTES["coupang"] in gz65 and "제휴마케팅" not in gz65  # 쿠팡 파트너스 링크 = 쿠팡 문구(링크프라이스 X)
 KR65 = P65(id="kwr", mall="coupang", kw="가습기", url=None, cta=None, start="2026-10-20", pre=None)
 gr65 = S65.promo_page([(KR65, "on", "2026-10-20")], [(0, {"t": "2026-10-25 10:00", "text": "📦 쿠팡 🔥\n생 주소 가습기\n9,000원", "url": "https://www.coupang.com/vp/products/5?itemId=1", "own": 1}, (0, None, "", [], False))], {}, {}, {}, set(), "2026-10-25")[2]
-assert S65.SHOP_NOTES["coupang"] not in gr65 and "핫딜픽이 고른 1개" in gr65  # 생 주소 = 수수료 X = 문구 X
+assert gr65.count(S65.SHOP_NOTES["coupang"]) == 1 and "핫딜픽이 고른 1개" in gr65  # 쿠팡 문구 = 늘 있는 골드박스 칸(파트너스 링크) 1번 — 생 주소 상품은 문구 이유 X
 assert [p["id"] for p, _ in S65.promo_now(L65, "2026-10-25")] == ["cp-a", "kw", "p1", "ssg"] and S65.PROMO_LP_NOTE == H.AFF_NOTE and S65.PROMO_OY_NOTE == H.OY_NOTE
 assert 'closest(\'a[rel~=\"nofollow\"]:not([data-gc^=\"promo/\"])\')' in S65.GC_JS
 json.dump({"promos": pr65}, open("promos.json", "w"))
@@ -7211,7 +7213,7 @@ S65.build(po65b[:1] + [{**po65b[1], "url": "https://link.coupang.com/a/z1"}] + p
 assert [S65.keep_host(u) for u in ("https://m.brand.naver.com/a", "https://emart.ssg.com/", "https://www.ssg.com/", "https://evil.com/?u=coupang.com", "https://xcoupang.com/")] == [True, True, False, False, False]
 S65.SITE_AFF_ONLY = False
 os.remove("promos.json"); S65.build(po65, "site"); ix65, ev65, sm65 = (open(f"site/{f}").read() for f in ("index.html", "events/index.html", "sitemap.xml"))
-assert '<section class="pb"' not in ix65 and 'class="evb"' in ix65 and f"{S65.BASE}events/" not in sm65 and "noindex" in ev65  # promos 없음 = 띠 X·옛 배너 그대로·/events/ 검색 X
+assert '<section class="pb"' in ix65 and re.findall(r'data-gc="promo/([^"]+)"', ix65.split('<section class="pb"')[1].split("</section>")[0]) == ["all", "goldbox"] and 'class="evb"' in ix65 and f"{S65.BASE}events/" not in sm65 and "noindex" in ev65  # promos 없음 = 골드박스 1장 띠·옛 배너 그대로·/events/ 검색 X
 # 봇: 링크프라이스 딥링크(LP_PROMO 몰만 · 실패 = 하루 뒤) · 몰 로고 64px(1번, 하루 1번 다시 · 몰 이름 = 허용 목록)
 json.dump({"promos": pr65}, open("promos.json", "w")); c65, s65 = [], {}
 def http65(url, body=None, headers=None, method=None):
@@ -11429,4 +11431,25 @@ with contextlib.redirect_stdout(io.StringIO()) as o120:
 assert [e["pid"] for e in json.load(open("auto_events.json"))] == ["40", "41", "42", "43"] and "이름 막기 진열 자동 디펜드 성인용" in o120.getvalue() and "이름 막기 진열 자동 앱솔루트" in o120.getvalue(), o120.getvalue()
 assert all("name_block(" in inspect.getsource(f) for f in (H.cp_shelf, H.cp_repost, H.auto_repost, H.auto_pick5)) and 'name_block(name, "진열 자동", SHELF_BLOCK)' in inspect.getsource(H.auto_shelf)
 (time.time, H.http, H.tg, H.FEEDS, H.ppomppu_feed, H.ruliweb_feed, H.clien_feed, H.POSTS, H.EVENTS, S.EVENTS) = sv120[:10]; H.AUTO_ON.update(sv120[10]); H.E.clear(); H.E.update(sv120[11]); H.RUN.pop("nblk", None); H.RUN["cpu"] = {}; H.RUN.pop("cpn", None); os.chdir(cwd120)
+# 9-121) 기획전 카드 순서 = 우리 수익 먼저(10/30 진우 '골드박스·토스·네이버 등 우리가 수익이 먼저 나는 걸 앞에'): 골드박스 고정 카드 → 쿠팡 → 토스 → 네이버 → 올리브영 → 링크프라이스 몰(G마켓·옥션·롯데온·이마트몰)
+#   · 같은 몰 안 = 상태 순 그대로(진행 중·오늘 마감 → 곧 시작) · 수익 길 없음(제휴 링크·promo_links·진열 상품 X — 몰 홈만) = 몰 상관없이 맨 뒤 · 홈 띠·/events/ 같은 순서(A·B·C = 같은 HTML)
+P121 = lambda i, mall, **k: {"id": i, "mall": mall, "name": i.upper(), **k}
+L121 = [(P121("lo", "lotteon", url="https://www.lotteon.com/", end="2026-10-31"), "on", ""), (P121("ssg", "emart", url="https://emart.ssg.com/", start="2026-10-30", end="2026-11-08"), "on", "2026-10-30"),
+        (P121("nv", "naver", kw="넾다세일", url="https://shopping.naver.com/", start="2026-10-26", end="2026-11-08"), "on", "2026-10-26"), (P121("cpg", "coupang", tag="착한상점", end="2026-11-15"), "on", ""),
+        (P121("gm", "gmarket", url="https://www.gmarket.co.kr/", start="2026-11-02", end="2026-11-13"), "soon", "2026-11-02"), (P121("cpw", "coupang", tag="와우 멤버스데이", start="2026-11-02", end="2026-11-08"), "soon", "2026-11-02"),
+        (P121("tz", "toss", url="https://toss.im/x", start="2026-11-01", end="2026-11-05"), "soon", "2026-11-01")]
+U121 = lambda k: f"https://link.coupang.com/a/t121{k}"
+it121 = [(1, {"url": U121("a"), "text": "🔥 [쿠팡] 착한 사과 1kg (9,000원)\n\nx"}, (0, None, "", [], False)), (2, {"url": U121("b"), "text": "🔥 [쿠팡] 와우 김 20봉 (5,000원)\n\nx"}, (0, None, "", [], False)),
+         (3, {"url": "https://naver.me/x121", "text": "🔥 [네이버] 넾다세일 니트 (19,000원)\n\nx"}, (0, None, "", [], False))]
+tg121, LP121 = {"착한상점": {U121("a")}, "와우 멤버스데이": {U121("b")}}, lambda m: f"https://click.linkprice.com/click.php?m={m}&a=A100&l=9999&l_cd1=3&l_cd2=0&tu=x"
+ln121 = {"https://www.lotteon.com/": LP121("lotteon"), "https://emart.ssg.com/": LP121("emart")}  # G마켓 = promo_links 없음(몰 홈만 = 수익 길 X)
+SH121 = S.promo_shown(L121, it121, tg121, ln121)
+assert [p["id"] for p, _, _ in SH121] == ["cpg", "cpw", "nv", "lo", "ssg", "gm"], [p["id"] for p, _, _ in SH121]  # 쿠팡(진행 중 → 곧 시작) → 네이버 → 롯데온·쓱데이 → 수익 길 X G마켓 맨 뒤 · 토스(toss.im 수수료 길 X) = 숨김 그대로
+B121 = S.promo_band(SH121, it121, tg121, {}, ln121, set(), "2026-10-30")
+assert re.findall(r'data-gc="promo/([^"]+)"', B121) == ["all", "goldbox", "cpg", "cpw", "nv", "lo", "ssg", "gm"] and "전체 7 →" in B121 and re.findall(r'<a class="pbi[^"]*" href="([^"]+)"', B121)[0] == S.GOLDBOX, B121
+G121 = S.promo_page(SH121, it121, tg121, {}, ln121, set(), "2026-10-30")[2]
+assert re.findall(r'<article class="pv" id="([^"]+)"', G121) == ["goldbox", "cpg", "cpw", "nv", "lo", "ssg", "gm"] and "전체 7</button>" in G121 and "진행 중 5</button>" in G121 and "곧 시작 2</button>" in G121, G121  # 기획전 모음 = 같은 순서
+GL121 = [x for x in L121 if x[0]["id"] in ("gm", "lo")]
+assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {})] == ["lo", "gm"] and [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {u: LP121(u[12:15]) for u in ("https://www.lotteon.com/", "https://www.gmarket.co.kr/")})] == ["lo", "gm"]  # 둘 다 수익 길 X·둘 다 O = 상태 순 그대로
+assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {"https://www.gmarket.co.kr/": LP121("g")})] == ["gm", "lo"]  # 수익 길 있는 G마켓(곧 시작)이 몰 홈만 가는 롯데온(진행 중)보다 앞
 print("OK: 모든 셀프체크 통과")

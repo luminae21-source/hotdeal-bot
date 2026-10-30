@@ -159,7 +159,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .pbi{position:relative;flex:0 0 250px;height:112px;box-sizing:border-box;display:flex;flex-direction:column;padding:11px 13px;border-radius:16px;background:var(--m);color:var(--mf);text-decoration:none;overflow:hidden;scroll-snap-align:start}
 .pbi::after{content:"";position:absolute;right:-30px;top:-34px;width:104px;height:104px;border-radius:50%;border:16px solid currentColor;opacity:.12;pointer-events:none}
 .pbh{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;min-width:0}.pbh b:first-of-type{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbw{margin-top:7px;font-size:25px;font-weight:900;line-height:1.05;letter-spacing:-.6px;white-space:nowrap}.pbn{margin-top:4px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
+.pbw{margin-top:7px;font-size:25px;font-weight:900;line-height:1.05;letter-spacing:-.6px;white-space:nowrap}.pbn{margin-top:4px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbg{margin-top:2px;font-size:11.5px;font-weight:700;line-height:1.25;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
 .pbp{position:absolute;right:12px;bottom:11px;display:flex;flex-direction:row-reverse}.pbp img{width:38px;height:38px;margin-left:-10px;border-radius:50%;border:2px solid var(--m);background:#fff;object-fit:contain}
 .pbd{display:flex;justify-content:center;gap:5px;margin-top:8px}.pbd i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}.pbd i.on{width:14px;background:var(--ink)}
 .pcal{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}.pcal::-webkit-scrollbar{display:none}
@@ -1288,6 +1288,9 @@ MALL_C = {"coupang": ("#D9402A", "#fff", "#C2362A", "쿠"), "11st": ("#E8264A", 
 PROMO_DATE = r"\d{4}-\d{2}-\d{2}"
 
 
+GB_PROMO = {"id": "goldbox", "mall": "coupang", "mall_name": "쿠팡", "name": "⏰ 골드박스", "benefit": "매일 바뀌는 쿠팡 특가", "when": "매일"}  # 10/30 진우 '골드박스 어디 갔는지 안 보인다' → 기획전 맨 앞 고정 카드(코드 고정 — promos.json·끝남·D-n 규칙 밖 · 링크 = GOLDBOX · 시간 약속 문구 X)
+
+
 def promo_list(today):
     """promos.json -> [(항목, 상태, 첫날)] 상태 순(오늘 마감 'end' → 진행 중 'on'(사전 행사 중도) → 곧 시작 'soon' → 지난 'past'). 깨진 파일 = [](칸 숨김) · 모양이 틀린 항목 = 뺌
     (HTML·주소·파일 이름에 들어가는 값: id·mall = 영문 소문자·숫자, 주소 = https, 색 = #hex, 날짜 = YYYY-MM-DD)."""
@@ -1373,9 +1376,18 @@ def promo_go(p, xs, slugs, links, past=False):
     return (v, True) if v else ("", False)
 
 
+PROMO_MALL_RANK = {"coupang": 0, "toss": 1, "naver": 2, "oliveyoung": 3, "gmarket": 4, "auction": 4, "lotteon": 4, "emart": 4, "ssg": 4}  # 10/30 진우 '우리가 수익이 먼저 나는 걸 앞에' — 골드박스 고정 카드 다음 몰 순서(링크프라이스 몰 = 4 · 그 밖 = 뒤)
+
+
 def promo_shown(ps, it, tagged, links):
-    """사이트에 보일 행사 = 진열 상품(tag·kw)이 있거나 행사 주소가 제휴 링크·수수료 길이 있는 몰(promo_go) — 수수료 길이 없는 몰만 있는 행사 = 숨김."""
-    return [x for x in ps if promo_goods(x[0], it, tagged) or promo_go(x[0], [], {}, links)[0]]
+    """사이트에 보일 행사 = 진열 상품(tag·kw)이 있거나 행사 주소가 제휴 링크·수수료 길이 있는 몰(promo_go) — 수수료 길이 없는 몰만 있는 행사 = 숨김.
+    순서(홈 띠·/events/ 같이) = 수익 길 있음(진열 상품 또는 제휴 링크 — 몰 홈으로만 가는 카드 = 맨 뒤) → 몰 순서(PROMO_MALL_RANK) → 같은 몰 안 = 상태 순(promo_list 그대로)."""
+    out = []
+    for x in ps:
+        goods, go = promo_goods(x[0], it, tagged), promo_go(x[0], [], {}, links)[0]
+        if goods or go:
+            out.append((not (goods or aff(go)), PROMO_MALL_RANK.get(x[0]["mall"], 9), len(out), x))
+    return [x for *_, x in sorted(out, key=lambda y: y[:3])]
 
 
 def promo_a(href, ext, gc, inner, cls, extra=""):
@@ -1396,7 +1408,7 @@ def promo_card(p, st, xs, go, icons, today):
     pre, href, ext = p.get("pre") or {}, *go
     pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
     right = ("".join(f'<span class="pvp"><span><img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></span><small>{promo_won(x)}</small></span>' for x in pics) if pics
-             else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
+             else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or p.get("when") or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
     info = " · ".join(x for x in (promo_span(p.get("start"), p.get("end")), str(p.get("benefit") or "").strip()) if x)
     cta = promo_a(href, ext, f"promo/{p['id']}", f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
     return (f'<article class="pv" id="{p["id"]}" data-s="{st}" style="{sty}"><div class="pvt"><div class="pvh">{lg}<b class="pvm">{html.escape(mall)}</b>{promo_chip(p, st, today)}</div>'
@@ -1419,9 +1431,9 @@ def promo_band(ps, it, tagged, slugs, links, icons, today):
     """홈 맨 위 띠 '🎉 지금 하는 기획전'(시안 B 작게 — 10/25 진우): 오늘 마감 → 진행 중 → 곧 시작(PROMO_SOON일 안) 칸 250×112 · 진한 몰 색(쓱 = 글자 검정) · 링 장식 ·
     로고·몰·상태 칩 / 큰 날짜 / 행사명 / 상품 사진 동그라미 3개 · 옆으로 밀기 + 점 · 오른쪽 '전체 N →'(/events/) · 칸 누르면 = 그 행사 CTA(없으면 /events/#id) · GoatCounter promo/<id>."""
     show = promo_now(ps, today)
-    if not show:
-        return ""
-    cells = []
+    sty, lg, mall = promo_mall(GB_PROMO, icons)
+    cells = [promo_a(GOLDBOX, True, "promo/goldbox", f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pbw">{GB_PROMO["when"]}</b><b class="pbn">{GB_PROMO["name"]}</b><small class="pbg">{GB_PROMO["benefit"]}</small>',
+                     "pbi", f' style="{sty}" aria-label="{mall} 골드박스 — {GB_PROMO["benefit"]}"')]  # 맨 앞 고정 = 골드박스(행사가 없어도 띠 1장)
     for p, st in show:
         xs = promo_goods(p, it, tagged)
         sty, lg, mall = promo_mall(p, icons)
@@ -1431,7 +1443,7 @@ def promo_band(ps, it, tagged, slugs, links, icons, today):
         inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pbw">{html.escape(when)}</b><b class="pbn">{html.escape(p["name"].strip())}</b>'
                  + ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else ""))
         cells.append(promo_a(href or f"{BASE}events/#{p['id']}", ext, f"promo/{p['id']}", inner, "pbi pbx" if pics else "pbi", f' style="{sty}" aria-label="{html.escape(mall + " " + p["name"].strip())}"'))  # pbx = 사진 동그라미 자리만큼 이름 줄임
-    n = sum(st != "past" for _, st, _ in ps)
+    n = 1 + sum(st != "past" for _, st, _ in ps)  # 골드박스 포함
     return (f'<section class="pb" aria-labelledby="pbh"><div class="pbt"><h2 id="pbh">🎉 지금 하는 기획전</h2><a href="{BASE}events/" data-gc="promo/all">전체 {n} →</a></div><div class="pbs">{"".join(cells)}</div>'
             + (f'<div class="pbd" aria-hidden="true">{"".join("<i" + (" class=on" if k == 0 else "") + "></i>" for k in range(len(cells)))}</div>{PROMO_DOTS_JS}' if len(cells) > 1 else "") + "</section>")
 
@@ -1445,15 +1457,15 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     cal = ('<nav class="pcal" aria-label="쇼핑 달력">' + "".join(
         f'<a class="pcd{" k" if st == "end" else ""}" href="#{p["id"]}"><b>{promo_span(p.get("start") or (p.get("pre") or {}).get("start"), p.get("end"))}</b><span>{html.escape(p["name"].strip())}</span><i>{dd(p, st, first)}</i></a>'
         for p, st, first in sorted(live, key=lambda x: (x[2] or "0000", x[0]["id"]))) + "</nav>") if live else ""
-    cards, gos = [], []
+    cards, gos = [promo_card(GB_PROMO, "on", [], (GOLDBOX, True), icons, today)], [((GOLDBOX, True), [], GB_PROMO)]  # 맨 앞 고정 = 골드박스
     for p, st, _ in live + past:
         xs = promo_goods(p, it, tagged)
         go = promo_go(p, xs, slugs, links, st == "past")
         gos.append((go, xs, p))
         cards.append(promo_card(p, st, xs, go, icons, today))
     n_on, n_soon = sum(st in ("end", "on") for _, st, _ in live), sum(st == "soon" for _, st, _ in live)
-    chips = (f'<nav class="pf" aria-label="기획전 거르기"><button type="button" data-f="all" aria-pressed="true">전체 {len(live)}</button>'
-             f'<button type="button" data-f="on" aria-pressed="false">진행 중 {n_on}</button><button type="button" data-f="soon" aria-pressed="false">곧 시작 {n_soon}</button></nav>') if live else ""
+    chips = (f'<nav class="pf" aria-label="기획전 거르기"><button type="button" data-f="all" aria-pressed="true">전체 {len(live) + 1}</button>'
+             f'<button type="button" data-f="on" aria-pressed="false">진행 중 {n_on + 1}</button><button type="button" data-f="soon" aria-pressed="false">곧 시작 {n_soon}</button></nav>')  # +1 = 골드박스
     def note(h, ext, xs):  # 링크 프로그램마다 그 문구 그대로(hotdeal.aff_note와 같은 나눔) · 안쪽(e/·검색) = 그 칸 쿠팡 상품이 제휴 링크일 때만(생 주소 = 수수료 X)
         host = urllib.parse.urlsplit(h or "").netloc
         if not ext:
@@ -1463,8 +1475,8 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     notes = [n for n in dict.fromkeys(note(h, ext, xs) for (h, ext), xs, _ in gos) if n]
     mm = int(today[5:7])
     body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쇼핑몰 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
-            + cal + chips + (f'<div class="pvl">{"".join(cards[:len(live)])}</div>' if live else '<p class="t">지금 정리된 기획전이 없어요. 매일 저녁 새로 찾아 올려요.</p>')
-            + (f'<details class="pvx"><summary>지난 행사 {len(past)}</summary>{"".join(cards[len(live):])}</details>' if past else "")
+            + cal + chips + f'<div class="pvl">{"".join(cards[:len(live) + 1])}</div>'
+            + (f'<details class="pvx"><summary>지난 행사 {len(past)}</summary>{"".join(cards[len(live) + 1:])}</details>' if past else "")
             + (f'<p class="t pvnote">{" ".join(notes)}</p>' if notes else "") + PROMO_FILTER_JS)
     desc = f"{mm}월 쇼핑몰 기획전 기간·혜택 정리 — " + " · ".join(f"{(p.get('mall_name') or p['mall']).split(' · ')[0]} {p['name'].strip()}" for p, _, _ in live)
     return f"쇼핑 기획전 모음 ({mm}월) | {TITLE}", desc[:150], body
