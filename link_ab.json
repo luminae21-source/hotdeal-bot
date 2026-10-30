@@ -58,5 +58,20 @@
    "home": 0
   },
   "line": "link 10/29 a 2 view 0 buy(0%) 1 ch(50%) 1 home · b 1 view 0 buy(0%) 0 ch(0%) 0 home"
+ },
+ "2026-10-30": {
+  "a": {
+   "view": 0,
+   "buy": 0,
+   "ch": 0,
+   "home": 0
+  },
+  "b": {
+   "view": 0,
+   "buy": 0,
+   "ch": 0,
+   "home": 0
+  },
+  "line": "link 10/30 a 0 view 0 buy(-) 0 ch(-) 0 home · b 0 view 0 buy(-) 0 ch(-) 0 home"
  }
 }
