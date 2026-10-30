@@ -6895,7 +6895,7 @@ def cp63(method, path, body=None):
 H.coupang, H.cp_best = cp63, cb0; time.time = lambda: TK("2026-10-25 09:00"); o63 = io.StringIO()
 with contextlib.redirect_stdout(o63): H.cp_best(s63)
 assert cl63 == ["/products/bestcategories/1012?limit=100", "/products/bestcategories/1014?limit=100"] and s63["cpq"]["i"][U63("D")] == IM63(83), cl63
-assert o63.getvalue() == "cp best 1012 사진 +0 가격 0 · 1014 사진 +1 가격 0 (남은 차례 10칸)\n", o63.getvalue()
+assert o63.getvalue() == "cp best 1012 사진 +0 가격 0 줄 0 · 1014 사진 +1 가격 0 줄 0 (남은 차례 10칸)\n", o63.getvalue()  # 줄 = 받아 둔 베스트 줄 수(가격 없는 줄 X)
 o63 = io.StringIO()
 with contextlib.redirect_stdout(o63): H.cp_best(s63)
 assert cl63[2:] == ["/products/bestcategories/1013?limit=100", "/products/bestcategories/1010?limit=100"] and "cp best 1013 ValueError\n" in o63.getvalue() and s63["cpbest"]["d"] == dict.fromkeys(["1012", "1014", "1013", "1010"], "2026-10-25 1")  # 10/30: 사진 없는 상품이 없어도 부름(가격 관측) · 오류 = 그 칸 이번 차례 건너뜀
