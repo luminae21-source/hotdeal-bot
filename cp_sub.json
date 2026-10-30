@@ -460,7 +460,8 @@
  "https://www.coupang.com/vp/products/9291024760?itemId=27516645921": {
   "b": "https://link.coupang.com/a/ifHrpUHnu8",
   "site": "https://link.coupang.com/a/if3Jbd8kM0",
-  "telegram": "https://link.coupang.com/a/ihvQzsFxgO"
+  "telegram": "https://link.coupang.com/a/ihvQzsFxgO",
+  "threads": "https://link.coupang.com/a/ihyT8tmz12"
  },
  "https://www.coupang.com/vp/products/7268757142?itemId=18532604424": {
   "b": "https://link.coupang.com/a/ifyk95Mxj2",
@@ -3407,5 +3408,25 @@
  "https://www.coupang.com/vp/products/130164876?itemId=21326386046": {
   "b": "https://link.coupang.com/a/h9CkcTmi6K",
   "site": "https://link.coupang.com/a/igOgu8f9I4"
+ },
+ "https://www.coupang.com/vp/products/188227098?itemId=537550763&vendorItemId=4403776090": {
+  "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=188227098&itemId=537550763&vendorItemId=4403776090&traceid=V0-143-91fd29a018dd6edb&pt=0&slot=2",
+  "telegram": "https://link.coupang.com/a/ihyTuC27rM"
+ },
+ "https://www.coupang.com/vp/products/7268757142?itemId=18532604424&vendorItemId=85670957869": {
+  "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7268757142&itemId=18532604424&vendorItemId=85670957869&traceid=V0-143-eb7e95c62f7017af&pt=0&slot=14",
+  "telegram": "https://link.coupang.com/a/ihyTuGfpQb"
+ },
+ "https://www.coupang.com/vp/products/8274982913?itemId=23852024802&vendorItemId=90875402934": {
+  "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8274982913&itemId=23852024802&vendorItemId=90875402934&traceid=V0-143-9f99f0066ef82610&pt=0&slot=13",
+  "telegram": "https://link.coupang.com/a/ihyTuJwmZ2"
+ },
+ "https://www.coupang.com/vp/products/8157269016?itemId=20806562754&vendorItemId=87875610960": {
+  "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8157269016&itemId=20806562754&vendorItemId=87875610960&traceid=V0-143-001a4f06029965eb&pt=0&slot=4",
+  "telegram": "https://link.coupang.com/a/ihyTuMvBzo"
+ },
+ "https://www.coupang.com/vp/products/8349405516?itemId=24119951058&vendorItemId=91139151457": {
+  "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8349405516&itemId=24119951058&vendorItemId=91139151457&traceid=V0-143-e6666983e3dd0f0a&pt=0&slot=6",
+  "telegram": "https://link.coupang.com/a/ihyTuQogyO"
  }
 }
