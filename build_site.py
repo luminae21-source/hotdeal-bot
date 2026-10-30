@@ -159,7 +159,11 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .pbi{position:relative;flex:0 0 250px;height:112px;box-sizing:border-box;display:flex;flex-direction:column;padding:11px 13px;border-radius:16px;background:var(--m);color:var(--mf);text-decoration:none;overflow:hidden;scroll-snap-align:start}
 .pbi::after{content:"";position:absolute;right:-30px;top:-34px;width:104px;height:104px;border-radius:50%;border:16px solid currentColor;opacity:.12;pointer-events:none}
 .pbh{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;min-width:0}.pbh b:first-of-type{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbw{margin-top:7px;font-size:25px;font-weight:900;line-height:1.05;letter-spacing:-.6px;white-space:nowrap}.pbn{margin-top:4px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbg{margin-top:2px;font-size:11.5px;font-weight:700;line-height:1.25;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
+.pbw{margin-top:7px;font-size:25px;font-weight:900;line-height:1.05;letter-spacing:-.6px;white-space:nowrap}.pbn{margin-top:4px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbg{margin-top:2px;font-size:11.5px;font-weight:700;line-height:1.25;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb[data-st=nv] .pbr{position:relative;margin:0 -16px}.pb[data-st=nv] .pbs{gap:0;margin:0;padding:0;scroll-padding:0}.pb[data-st=nv] .pbi{flex:0 0 100%;height:190px;border-radius:0;padding:16px 18px 14px;scroll-snap-align:start;scroll-snap-stop:always}
+.pnm{margin-top:12px;font-size:34px;font-weight:900;line-height:1.12;letter-spacing:-.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pdt{margin-top:6px;font-size:15px;font-weight:700;opacity:.92;white-space:nowrap}
+.pbe{margin-top:5px;font-size:13px;font-weight:700;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb[data-st=nv] .pbp{right:18px;bottom:48px}.pb[data-st=nv] .pbx .pdt,.pb[data-st=nv] .pbx .pbe{max-width:calc(100% - 108px)}
+.pbq{position:absolute;right:12px;bottom:12px;z-index:2;border:0;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font:inherit;font-size:12px;font-weight:700;line-height:1;padding:6px 11px;cursor:pointer}.pbq i{font-style:normal;margin-right:2px}.pbx .pbn{max-width:132px}.pbi .pvs.end{background:#fff;color:#E5303F}
 .pbp{position:absolute;right:12px;bottom:11px;display:flex;flex-direction:row-reverse}.pbp img{width:38px;height:38px;margin-left:-10px;border-radius:50%;border:2px solid var(--m);background:#fff;object-fit:contain}
 .pbd{display:flex;justify-content:center;gap:5px;margin-top:8px}.pbd i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}.pbd i.on{width:14px;background:var(--ink)}
 .pcal{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}.pcal::-webkit-scrollbar{display:none}
@@ -1291,6 +1295,10 @@ PROMO_DATE = r"\d{4}-\d{2}-\d{2}"
 GB_PROMO = {"id": "goldbox", "mall": "coupang", "mall_name": "쿠팡", "name": "⏰ 골드박스", "benefit": "매일 바뀌는 쿠팡 특가", "when": "매일"}  # 10/30 진우 '골드박스 어디 갔는지 안 보인다' → 기획전 맨 앞 고정 카드(코드 고정 — promos.json·끝남·D-n 규칙 밖 · 링크 = GOLDBOX · 시간 약속 문구 X)
 
 
+PROMO_STYLE = "nv"  # 홈 '지금 하는 기획전' 모양(10/30 진우 '지금대로 버전과 네이버 시안 둘 다 남겨두고 우리가 선택 가능하게'): 'nv' = 네이버형(화면 폭 한 장씩 · 4초 자동 넘김 · 알약 '❚❚ 1 / N') | 'card' = 카드형(250px 칸 옆으로 밀기 + 점)
+NV_PROMO = (f"{BASE}c/naver/?ref=promo", "핫딜픽 네이버 특가 보기 →")  # 10/30 Cowork: 네이버 행사(진열 상품 없음) = 핫딜픽 네이버 특가 쪽(naver.me 쇼핑커넥트 링크) — 네이버 쇼핑 홈은 수익 길 X
+
+
 def promo_list(today):
     """promos.json -> [(항목, 상태, 첫날)] 상태 순(오늘 마감 'end' → 진행 중 'on'(사전 행사 중도) → 곧 시작 'soon' → 지난 'past'). 깨진 파일 = [](칸 숨김) · 모양이 틀린 항목 = 뺌
     (HTML·주소·파일 이름에 들어가는 값: id·mall = 영문 소문자·숫자, 주소 = https, 색 = #hex, 날짜 = YYYY-MM-DD)."""
@@ -1371,6 +1379,8 @@ def promo_go(p, xs, slugs, links, past=False):
     q = p.get("kw") if past else p.get("tag") or p.get("kw")  # 행사 쪽 없는 tag = tag 낱말 홈 검색(search_index가 행사 상품에 tag 낱말 — kw 상품까지) · 지난 행사 = kw만(tag 낱말은 검색에 X)
     if xs and q:
         return f"{BASE}?q={urllib.parse.quote(q)}", False
+    if p.get("mall") == "naver":
+        return NV_PROMO[0], False
     us = [u for u in (p.get("url"), (p.get("cta") or {}).get("href")) if u]
     v = next((links[u] for u in us if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) and aff(links[u])), "") or next((u for u in us if aff(u) or keep_host(u)), "")
     return (v, True) if v else ("", False)
@@ -1386,7 +1396,7 @@ def promo_shown(ps, it, tagged, links):
     for x in ps:
         goods, go = promo_goods(x[0], it, tagged), promo_go(x[0], [], {}, links)[0]
         if goods or go:
-            out.append((not (goods or aff(go)), PROMO_MALL_RANK.get(x[0]["mall"], 9), len(out), x))
+            out.append((not (goods or aff(go) or go.startswith(BASE)), PROMO_MALL_RANK.get(x[0]["mall"], 9), len(out), x))  # 핫딜픽 쪽(e/·검색·네이버 특가) = 수익 길 O
     return [x for *_, x in sorted(out, key=lambda y: y[:3])]
 
 
@@ -1410,13 +1420,18 @@ def promo_card(p, st, xs, go, icons, today):
     right = ("".join(f'<span class="pvp"><span><img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></span><small>{promo_won(x)}</small></span>' for x in pics) if pics
              else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or p.get("when") or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
     info = " · ".join(x for x in (promo_span(p.get("start"), p.get("end")), str(p.get("benefit") or "").strip()) if x)
-    cta = promo_a(href, ext, f"promo/{p['id']}", f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
+    cta = promo_a(href, ext, f"promo/{p['id']}", NV_PROMO[1] if href == NV_PROMO[0] else f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
     return (f'<article class="pv" id="{p["id"]}" data-s="{st}" style="{sty}"><div class="pvt"><div class="pvh">{lg}<b class="pvm">{html.escape(mall)}</b>{promo_chip(p, st, today)}</div>'
             f'<h2 class="pvn">{html.escape(p["name"].strip())}</h2>' + (f'<p class="pvi">{html.escape(info)}</p>' if info else "") + f'{cta}</div><div class="pvr">{right}</div></article>')
 
 
 PROMO_DOTS_JS = """<script>(function(){var s=document.querySelector('.pbs'),d=document.querySelectorAll('.pbd i');if(!s||d.length<2)return;s.addEventListener('scroll',function(){var w=(s.firstElementChild.offsetWidth||250)+8,k=s.scrollLeft+s.clientWidth>=s.scrollWidth-4?d.length-1:Math.round(s.scrollLeft/w);
 [].forEach.call(d,function(x,j){x.className=j===k?'on':''})},{passive:true})})()</script>"""  # 홈 기획전 띠 아래 점 = 지금 보이는 칸
+PROMO_AUTO_JS = """<script>(function(){var q=document.querySelector('.pbq'),s=q&&q.parentNode.querySelector('.pbs');if(!s)return;var n=s.children.length,off=matchMedia('(prefers-reduced-motion: reduce)').matches,hold=0,vis=true,t;
+function at(){return Math.round(s.scrollLeft/(s.clientWidth||1))}function show(){q.querySelector('b').textContent=Math.min(at(),n-1)+1;q.querySelector('i').textContent=off?'▶':'❚❚';q.setAttribute('aria-pressed',off?'true':'false')}
+s.addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(show,80)},{passive:true});['pointerdown','touchstart','wheel','keydown','click','focusin'].forEach(function(e){s.addEventListener(e,function(){hold=Date.now()+8000},{passive:true})});
+q.addEventListener('click',function(){off=!off;hold=0;show()});if('IntersectionObserver'in window)new IntersectionObserver(function(es){vis=es[0].isIntersecting}).observe(s);
+setInterval(function(){if(off||document.hidden||!vis||Date.now()<hold)return;var i=at()+1;s.scrollTo({left:(i>=n?0:i)*s.clientWidth,behavior:'smooth'})},4000);show()})()</script>"""  # 네이버형 띠 자동 넘김(10/30 진우): 4초마다 다음 · 끝 → 처음 · 손으로 넘기거나 누르면 8초 멈춤 · 알약 = 멈춤 ↔ 재생 · 움직임 줄이기 설정 = 자동 X · 탭 숨김·화면 밖 = 멈춤
 PROMO_FILTER_JS = """<script>(function(){var b=document.querySelectorAll('.pf button');[].forEach.call(b,function(x){x.addEventListener('click',function(){var f=x.getAttribute('data-f');
 [].forEach.call(b,function(y){y.setAttribute('aria-pressed',y===x?'true':'false')});[].forEach.call(document.querySelectorAll('.pvl .pv'),function(c){var s=c.getAttribute('data-s');c.hidden=!(f==='all'||f===s||f==='on'&&s==='end')})})})})()</script>"""  # /events/ 칩 = 화면 안에서만 거름(JS 꺼짐 = 전부 보임)
 
@@ -1430,20 +1445,28 @@ def promo_now(ps, today):
 def promo_band(ps, it, tagged, slugs, links, icons, today):
     """홈 맨 위 띠 '🎉 지금 하는 기획전'(시안 B 작게 — 10/25 진우): 오늘 마감 → 진행 중 → 곧 시작(PROMO_SOON일 안) 칸 250×112 · 진한 몰 색(쓱 = 글자 검정) · 링 장식 ·
     로고·몰·상태 칩 / 큰 날짜 / 행사명 / 상품 사진 동그라미 3개 · 옆으로 밀기 + 점 · 오른쪽 '전체 N →'(/events/) · 칸 누르면 = 그 행사 CTA(없으면 /events/#id) · GoatCounter promo/<id>."""
-    show = promo_now(ps, today)
+    show, nv = promo_now(ps, today), PROMO_STYLE == "nv"
     sty, lg, mall = promo_mall(GB_PROMO, icons)
-    cells = [promo_a(GOLDBOX, True, "promo/goldbox", f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pbw">{GB_PROMO["when"]}</b><b class="pbn">{GB_PROMO["name"]}</b><small class="pbg">{GB_PROMO["benefit"]}</small>',
-                     "pbi", f' style="{sty}" aria-label="{mall} 골드박스 — {GB_PROMO["benefit"]}"')]  # 맨 앞 고정 = 골드박스(행사가 없어도 띠 1장)
+    gb = (f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pnm">{GB_PROMO["name"]}</b><span class="pdt">{GB_PROMO["when"]}</span><span class="pbe">{GB_PROMO["benefit"]}</span>' if nv
+          else f'<span class="pbh">{lg}<b>{mall}</b></span><b class="pbw">{GB_PROMO["when"]}</b><b class="pbn">{GB_PROMO["name"]}</b><small class="pbg">{GB_PROMO["benefit"]}</small>')
+    cells = [promo_a(GOLDBOX, True, "promo/goldbox", gb, "pbi", f' style="{sty}" aria-label="{mall} 골드박스 — {GB_PROMO["benefit"]}"')]  # 맨 앞 고정 = 골드박스(행사가 없어도 띠 1장)
     for p, st in show:
         xs = promo_goods(p, it, tagged)
         sty, lg, mall = promo_mall(p, icons)
         href, ext = promo_go(p, xs, slugs, links)
         pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
         when = promo_span(p.get("start"), p.get("end")) or promo_span((p.get("pre") or {}).get("start"), (p.get("pre") or {}).get("end")) or "진행 중"
-        inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pbw">{html.escape(when)}</b><b class="pbn">{html.escape(p["name"].strip())}</b>'
-                 + ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else ""))
+        pic = ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else "")
+        ben = " · ".join(x for x in (str(p.get("benefit") or "").strip(), NV_PROMO[1] if href == NV_PROMO[0] else "") if x)
+        inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pnm">{html.escape(p["name"].strip())}</b><span class="pdt">{html.escape(when)}</span>'
+                 + (f'<span class="pbe">{html.escape(ben)}</span>' if ben else "") if nv else
+                 f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pbw">{html.escape(when)}</b><b class="pbn">{html.escape(p["name"].strip())}</b>') + pic
         cells.append(promo_a(href or f"{BASE}events/#{p['id']}", ext, f"promo/{p['id']}", inner, "pbi pbx" if pics else "pbi", f' style="{sty}" aria-label="{html.escape(mall + " " + p["name"].strip())}"'))  # pbx = 사진 동그라미 자리만큼 이름 줄임
     n = 1 + sum(st != "past" for _, st, _ in ps)  # 골드박스 포함
+    if nv:  # 네이버형: 화면 폭 한 장씩 · 점 X · 오른쪽 아래 알약(누르면 멈춤 ↔ 재생) · 4초 자동 넘김(PROMO_AUTO_JS)
+        return (f'<section class="pb" data-st="nv" aria-labelledby="pbh" aria-roledescription="carousel"><div class="pbt"><h2 id="pbh">🎉 지금 하는 기획전</h2><a href="{BASE}events/" data-gc="promo/all">전체 {n} →</a></div>'
+                f'<div class="pbr"><div class="pbs">{"".join(cells)}</div>'
+                + (f'<button class="pbq" type="button" aria-pressed="false" aria-label="자동 넘김 멈춤"><i aria-hidden="true">❚❚</i> <b>1</b> / {len(cells)}</button>{PROMO_AUTO_JS}' if len(cells) > 1 else "") + "</div></section>")
     return (f'<section class="pb" aria-labelledby="pbh"><div class="pbt"><h2 id="pbh">🎉 지금 하는 기획전</h2><a href="{BASE}events/" data-gc="promo/all">전체 {n} →</a></div><div class="pbs">{"".join(cells)}</div>'
             + (f'<div class="pbd" aria-hidden="true">{"".join("<i" + (" class=on" if k == 0 else "") + "></i>" for k in range(len(cells)))}</div>{PROMO_DOTS_JS}' if len(cells) > 1 else "") + "</section>")
 
