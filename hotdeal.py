@@ -484,7 +484,7 @@ def cp_best(seen):
 
 
 AUTO_ON = {"shelf": True, "repost": True, "pick5": True, "status": True, "event": True}  # 10/30 Cowork 크롬 루틴 이관(진우 '깃허브에서 작업 가능한 것은 이관하자') — 끔 스위치: False = 그 기능 X(Cowork 크롬 그대로) · 쿠팡 API 상한 그대로
-AUTO_SHELF_AT, AUTO_SHELF_N, AUTO_KEEP, CP_BEST_KEEP, AUTO_SHELF_V = "14:30", (4, 6), 45, 60, 2  # V = 바꾸면 그날 진열 자동 1번 더(10/30 첫날 0개 고친 뒤) · A 진열 자동: 하루 1번 이 시각 뒤 · 4~6개(4개 밑 = 안 올림) · auto_events 진열 45일 보관 · 베스트 응답 칸마다 위 60개만 보관
+AUTO_SHELF_AT, AUTO_SHELF_N, AUTO_KEEP, CP_BEST_KEEP, AUTO_SHELF_V = "14:30", (4, 6), 45, 60, 3  # V = 바꾸면 그날 못 올린 품목만 1번 더(10/30: 2 = 첫날 0개 고친 뒤 · 3 = 화장솜·면봉 낱말 검색) · A 진열 자동: 하루 1번 이 시각 뒤 · 4~6개(4개 밑 = 안 올림) · auto_events 진열 45일 보관 · 베스트 응답 칸마다 위 60개만 보관
 AUTO_CLAIM = r"효능|효과|개선|치료|예방|완화|다이어트|체지방|면역|미백|주름|탄력|재생|해독|디톡스"  # 이름에 효능 낱말 = 자동 진열 X(효능 표현은 사람이 판단)
 CP_BEST_NAME = {1001: "여성패션", 1010: "뷰티", 1011: "출산/유아동", 1012: "식품", 1013: "주방용품", 1014: "생활용품", 1015: "홈인테리어", 1016: "가전디지털", 1018: "자동차용품", 1021: "문구/오피스", 1024: "헬스/건강식품", 1029: "반려동물용품"}  # 쿠팡 파트너스 카테고리 번호 -> 이름('쿠팡 <카테고리> 베스트 N위')
 
@@ -521,13 +521,17 @@ def auto_add(es, kind):
 def auto_shelf(seen):
     """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목(group마다 1개 — 3품목이면 최대 18개) 낱말과 맞는 상품
     -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 효능 낱말 X · 이름 막기(SHELF_BLOCK) X · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
-    · 베스트에서 4개 밑 = 그 품목만 쿠팡 검색 1번(품목 kw — 검색 상한 그대로, 넘으면 다음 실행)으로 채움(같은 필터) · 그래도 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄 · 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
-    · 순위 = 응답 rank(없으면 응답 순서 — 10/30 첫날 베스트 응답에 rank가 없어 0개) · 근거 = '쿠팡 <카테고리> 베스트 N위' / 검색으로 채운 것 = '쿠팡 '<kw>' 검색 N위'(API엔 리뷰 수·할인 표시 X)
-    · 🔥 = price_hist 기록 최저보다 내려갔을 때만, 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = plan 그 품목 한 줄 · seen autoshelf = 그날 끝낸 품목(AUTO_SHELF_V 바꾸면 그날 1번 더)."""
+    · 베스트에서 4개 밑 = 그 품목만 kw를 '·'로 나눈 낱말 하나씩 쿠팡 검색(4개 채우면 멈춤 — 검색 상한 그대로, 넘으면 다음 실행에 이어서)으로 채움(같은 필터) · 그래도 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄 · 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
+    · 순위 = 응답 rank(없으면 응답 순서 — 10/30 첫날 베스트 응답에 rank가 없어 0개) · 근거 = '쿠팡 <카테고리> 베스트 N위' / 검색으로 채운 것 = '쿠팡 '<검색어>' 검색 N위'(API엔 리뷰 수·할인 표시 X)
+    · 🔥 = price_hist 기록 최저보다 내려갔을 때만, 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = plan 그 품목 한 줄 · seen autoshelf = 그날 끝낸 품목·검색 결과(AUTO_SHELF_V 바꾸면 그날 못 올린 품목만 1번 더)."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
     st = seen.get("autoshelf", {})
-    st = st if st.get("d") == today and st.get("v") == AUTO_SHELF_V else {"d": today, "v": AUTO_SHELF_V, "done": []}
+    if st.get("d") != today:
+        st = {"d": today, "v": AUTO_SHELF_V, "done": []}
+    elif st.get("v") != AUTO_SHELF_V:  # V 바꿈 = 그날 못 올린 품목만 1번 더(올린 품목 그대로)
+        up = {e.get("tag") for e in load(AUTO_EVENTS, []) or [] if isinstance(e, dict) and e.get("shelf") and str(e.get("at", "")).startswith(today)}
+        st = {"d": today, "v": AUTO_SHELF_V, "done": [k for k in st.get("done", []) if k in up]}
     if not AUTO_ON["shelf"] or hm < AUTO_SHELF_AT or st.get("end") or not seen.get("cpbest", {}).get("r"):
         return
     seen["autoshelf"] = st = {**st, "t": time.time()}
@@ -555,23 +559,34 @@ def auto_shelf(seen):
                     continue
                 if not str(rank).isdigit() or int(rank) < 1:
                     why["-rank 없음"] += 1  # 빼지 않고 응답 순서로
-                best[pid] = (src == "검색", int(rank) if str(rank).isdigit() and int(rank) > 0 else n, str(src), pid, item, name, price, img, rocket)
+                best[pid] = (src.startswith("검색"), int(rank) if str(rank).isdigit() and int(rank) > 0 else n, str(src), pid, item, name, price, img, rocket)
         for c, xs in seen["cpbest"]["r"].items():
             take(c, xs)
-        picks, srch = sorted(best.values())[:AUTO_SHELF_N[1]], ""
-        if len(picks) < AUTO_SHELF_N[0] and HAS_CP:  # 베스트에서 모자람 = 검색 1번(같은 필터)
-            try:
-                r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(pl['kw'].replace('·', ' '))}&limit=10")
-            except CpLimit:
-                print(f"auto shelf '{pl['kw']}': 베스트 {len(picks)}개 — 검색 상한, 다음 실행에")
+        sq = st.setdefault("s", {}).setdefault(pl["kw"], {})  # 검색 보충 {검색어: 줄} — 상한에 걸리면 다음 실행에 이어서
+        for q, rows in sq.items():
+            take("검색 " + q, rows)
+        picks, wait = sorted(best.values())[:AUTO_SHELF_N[1]], False
+        for q in [w.strip() for w in pl["kw"].split("·") if w.strip()] if HAS_CP else ():  # 베스트에서 모자람 = kw를 '·'로 나눈 낱말 하나씩 검색(같은 필터) · 4개 채우면 멈춤
+            if len(picks) >= AUTO_SHELF_N[0]:
+                break
+            if q in sq:
                 continue
+            try:
+                r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(q)}&limit=10")
+            except CpLimit:
+                print(f"auto shelf '{pl['kw']}': {len(picks)}개 — 검색 '{q}' 상한, 다음 실행에")
+                wait = True
+                break
             except Exception as e:
-                print(f"auto shelf '{pl['kw']}' 검색", type(e).__name__)
+                print(f"auto shelf '{pl['kw']}' 검색 '{q}'", type(e).__name__)
                 r = {}
-            n0 = len(best)
-            take("검색", [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], cp_won(z), z.get("productImage") or "", i, z.get("isRocket") is True]
-                          for i, z in enumerate((r if isinstance(r, dict) else {}).get("productData") or [], 1) if cp_won(z)])
-            picks, srch = sorted(best.values())[:AUTO_SHELF_N[1]], f" · 검색 +{len(best) - n0}"
+            sq[q] = [[str(z.get("productId")), cp_qs(z, "itemId"), str(z.get("productName") or "")[:80], cp_won(z), z.get("productImage") or "", i, z.get("isRocket") is True]
+                     for i, z in enumerate((r if isinstance(r, dict) else {}).get("productData") or [], 1) if cp_won(z)]
+            take("검색 " + q, sq[q])
+            picks = sorted(best.values())[:AUTO_SHELF_N[1]]
+        if wait:
+            continue
+        srch = f" · 검색어 {'·'.join(sq)}" if sq else ""
         st["done"].append(pl["kw"])
         diag = (f"후보 {sum(v for c, v in why.items() if not c.startswith('-'))}(" + (" · ".join(f"{c} {v}" for c, v in why.items() if not c.startswith("-")) or "0") + ") · 빠짐 "
                 + " · ".join(f"{w} {why['-' + w]}" for w in ("이미 진열", "cp_fail", "가격", "사진", "효능", "이름 막기")) + f" · rank 없음 {why['-rank 없음']}(응답 순서로){srch}")
@@ -586,7 +601,7 @@ def auto_shelf(seen):
             lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == ""), default=0)
             fire = bool(lo) and price < lo
             nf += fire
-            why_ = f"쿠팡 '{pl['kw']}' 검색 {rank}위" if c == "검색" else f"쿠팡 {CP_BEST_NAME.get(int(c), '카테고리')} 베스트 {rank}위"
+            why_ = f"쿠팡 '{c[3:]}' 검색 {rank}위" if c.startswith("검색") else f"쿠팡 {CP_BEST_NAME.get(int(c), '카테고리')} 베스트 {rank}위"
             es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": chk, "img": img,
                        "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ {esc(why_, False)}" + (" · 로켓배송" if rocket else "")
                                + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")

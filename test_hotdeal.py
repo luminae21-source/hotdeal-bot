@@ -11184,17 +11184,40 @@ with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
 a114 = json.load(open("auto_events.json"))
 assert sorted({e["tag"]: sum(x["tag"] == e["tag"] for x in a114) for e in a114}.items()) == [("라면", 6), ("세탁세제", 4)] and not cp114, o114.getvalue()  # 옛 표시(V 없음) = 오늘 1번 더 · rank 없음 = 순서
-assert "auto shelf '화장솜·면봉': 베스트 3개 — 검색 상한, 다음 실행에" in o114.getvalue() and s114["autoshelf"]["done"] == ["라면", "세탁세제"] and not s114["autoshelf"]["end"] and not tg114
+assert "auto shelf '화장솜·면봉': 3개 — 검색 '화장솜' 상한, 다음 실행에" in o114.getvalue() and s114["autoshelf"]["done"] == ["라면", "세탁세제"] and not s114["autoshelf"]["end"] and not tg114
 assert {e["at"][11:] for e in a114 if e["tag"] == "라면"} == {"14:30"} and {e["at"][11:] for e in a114 if e["tag"] == "세탁세제"} == {"14:32"}  # 14:30 칸 그대로
 H.RUN["cpn"] = [0, 0]; time.time = lambda: TK("2026-10-30 16:25")
 with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
 a114 = [e for e in json.load(open("auto_events.json")) if e["tag"] == "화장솜·면봉"]
-assert len(cp114) == 1 and "keyword=%ED%99%94%EC%9E%A5%EC%86%9C%20%EB%A9%B4%EB%B4%89&limit=10" in cp114[0] and len(a114) == 6 and s114["autoshelf"]["end"], (cp114, o114.getvalue())  # 검색 1번(품목 kw)
-assert [e["pid"] for e in a114] == ["200", "201", "202", "210", "211", "212"] and "✔ 쿠팡 '화장솜·면봉' 검색 1위 · 로켓배송" in a114[3]["text"] and a114[3]["url"].endswith("/210?itemId=J0") and a114[3]["at"][11:] == "14:31"  # 베스트 먼저 · 검색 근거
-assert "auto shelf '화장솜·면봉': 진열 6개(🔥 0) · 후보 6(1010 3 · 검색 3) ·" in o114.getvalue() and "rank 없음 3(응답 순서로) · 검색 +3" in o114.getvalue(), o114.getvalue()
+assert len(cp114) == 1 and cp114[0].endswith("keyword=%ED%99%94%EC%9E%A5%EC%86%9C&limit=10") and len(a114) == 6 and s114["autoshelf"]["end"], (cp114, o114.getvalue())  # '화장솜'으로 4개 채움 = '면봉' 검색 X
+assert [e["pid"] for e in a114] == ["200", "201", "202", "210", "211", "212"] and "✔ 쿠팡 '화장솜' 검색 1위 · 로켓배송" in a114[3]["text"] and a114[3]["url"].endswith("/210?itemId=J0") and a114[3]["at"][11:] == "14:31"  # 베스트 먼저 · 검색 근거
+assert "auto shelf '화장솜·면봉': 진열 6개(🔥 0) · 후보 6(1010 3 · 검색 화장솜 3) ·" in o114.getvalue() and "rank 없음 3(응답 순서로) · 검색어 화장솜\n" in o114.getvalue(), o114.getvalue()
 H.auto_shelf(s114); assert len(cp114) == 1  # 끝난 날 = 다시 X
 assert (H.CP_HOUR, H.CP_SEARCH_HOUR, H.CP_RUN, H.CP_SEARCH_RUN) == (25, 6, 6, 2)  # 상한 그대로
+# 10/30 Cowork(07:03 '화장솜·면봉' 3개 — kw 통째 검색): 검색 보충 = kw를 '·'로 나눈 낱말 하나씩(화장솜 → 면봉) · 4개 채우면 멈춤 · 상한 = 다음 실행에 이어서 · V 바꿈 = 그날 못 올린 품목만 1번 더(14:31 칸)
+def http114b(url, *a, **k):
+    kw = parse_qs(urlsplit(url).query)["keyword"][0]; cp114.append(kw); b = 400 + len(cp114) * 10
+    pd = {"화장솜": [("순면 화장솜 대용량 500매", 1)], "면봉": [(f"코튼 면봉 {i}00개", i) for i in range(1, 4)], "라면": [("진라면 5입", 1), ("짜파게티 5입", 2)]}.get(kw, [])
+    return json.dumps({"rCode": "0", "data": {"productData": [{"productId": b + j, "productName": n, "productPrice": 1000.0 + j, "productImage": IMG, "productUrl": f"https://link.coupang.com/re/AFFSDP?pageKey={b + j}"} for n, j in pd]}})
+json.dump([e for e in json.load(open("auto_events.json")) if e["tag"] != "화장솜·면봉"], open("auto_events.json", "w"))  # 오늘 = 라면·세탁세제만 올라감(실제 10/30)
+s114 = {"autoshelf": {"t": 1, "d": "2026-10-30", "v": 2, "done": ["라면", "화장솜·면봉", "세탁세제"], "end": True}, "cpbest": {"r": {"1010": [z114(200, "순면 화장솜 1매")]}}}
+cp114.clear(); H.http = http114b; H.RUN["cpu"] = {}; H.RUN["cpn"] = [0, H.CP_SEARCH_RUN - 1]; time.time = lambda: TK("2026-10-30 17:10")  # 이번 실행 검색 1번 남음
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+assert cp114 == ["화장솜"] and "auto shelf '화장솜·면봉': 2개 — 검색 '면봉' 상한, 다음 실행에" in o114.getvalue() and s114["autoshelf"]["done"] == ["라면", "세탁세제"], (cp114, o114.getvalue(), s114["autoshelf"])  # 라면·세탁세제 = 그대로(검색 X)
+H.RUN["cpn"] = [0, 0]
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+a114 = {e["pid"]: e for e in json.load(open("auto_events.json")) if e["tag"] == "화장솜·면봉"}
+assert cp114 == ["화장솜", "면봉"] and sorted(a114) == ["200", "411", "421", "422", "423"] and {e["at"][11:] for e in a114.values()} == {"14:31"} and s114["autoshelf"]["end"], (cp114, o114.getvalue())  # 화장솜 결과 다시 씀(검색 X) → 면봉
+assert "✔ 쿠팡 '화장솜' 검색 1위" in a114["411"]["text"] and "✔ 쿠팡 '면봉' 검색 1위" in a114["421"]["text"] and "✔ 쿠팡 뷰티 베스트 1위" in a114["200"]["text"]
+assert "auto shelf '화장솜·면봉': 진열 5개(🔥 0) · 후보 5(1010 1 · 검색 화장솜 1 · 검색 면봉 3) ·" in o114.getvalue() and "· 검색어 화장솜·면봉\n" in o114.getvalue(), o114.getvalue()
+json.dump({"shelf": [{"group": "food", "kw": "라면", "words": ["라면", "짜파게티"]}]}, open("docs/plan.json", "w"), ensure_ascii=False)
+s114 = {"cpbest": {"r": {"1012": [z114(500, "신라면 1입")]}}}; cp114.clear(); tg114.clear(); os.remove("auto_events.json"); H.RUN["cpn"] = [0, 0]; time.time = lambda: TK("2026-10-31 14:40")
+with contextlib.redirect_stdout(io.StringIO()) as o114:
+    H.auto_shelf(s114)
+assert cp114 == ["라면"] and "auto shelf '라면': 맞는 상품 3개(4개 밑) — 안 올림 · 후보 3(1012 1 · 검색 라면 2)" in o114.getvalue() and "베스트·검색에서 맞는 상품 3개" in tg114[0]["text"], (cp114, o114.getvalue())  # kw 낱말 1개 = 검색 1번
 H.http = lambda url, *a, **k: json.dumps({"rCode": "0", "data": [{"productName": "A"}, {"productName": "앱솔루트 분유"}, {"productName": "C", "rank": 7}, {"productName": "D"}]}); H.RUN["cpu"] = {}; H.RUN["cpn"] = [0, 0]
 with contextlib.redirect_stdout(io.StringIO()):
     assert [(x["productName"], x["rank"]) for x in H.coupang("GET", "/products/bestcategories/1011?limit=100")] == [("A", 1), ("C", 7), ("D", 4)]  # rank 없음 = 응답 순서(막기 전 — 'N위' 안 밀림)
