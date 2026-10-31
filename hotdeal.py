@@ -193,6 +193,7 @@ def http(url, body=None, headers=None, method=None):
         url, body = cp_sub_req(url, body, method)
     url, body = toss_req(url, body, method)  # ⑦ 토스 링크 든 글 마지막 검사(걸리면 토스 상품만 빼거나 보류 — TossHold)
     th_mall_mark(url, method, body)  # ⑨ Threads·텔레그램 채널 토스·쿠팡 글 시각(시차)
+    dk = dup_req(url, body, method)  # 10/31 같은 글 다시 X(실패 실행 뒤 재게시) — 막으면 DupHold
     if url.startswith(IG):  # 인스타 그래프 API 호출 수(10/22 'Application request limit reached' — 실행마다 로그 'ig api N calls')
         RUN["igc"] = RUN.get("igc", 0) + 1
     h = {"User-Agent": UA, **(headers or {})}
@@ -200,7 +201,9 @@ def http(url, body=None, headers=None, method=None):
         body, h["Content-Type"] = json.dumps(body).encode(), "application/json"
     try:
         with urllib.request.urlopen(urllib.request.Request(url, body, h, method=method), timeout=30) as r:
-            return r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
+            out = r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
+        dup_done(dk, url, out)
+        return out
     except urllib.error.HTTPError as e:
         e.body = e.read().decode("utf-8", "replace")[:300]  # 로그에서 원인 바로 보이게
         print("HTTP", e.code, url.split("/bot")[0].split("?")[0], re.sub(r"\?[^\s\"'<>]*", "?…", e.body))  # 주소·오류 글의 쿼리(토큰·키·프로젝트 번호) = 공개 로그 X(10/25 리뷰)
@@ -780,6 +783,83 @@ def cp_sub_req(url, body, method):
 
 class TossHold(Exception):
     """⑦ toss_guard가 글을 보류(토스 상품을 빼면 남는 상품이 없음) — 실패 알림 X(로그 'toss_guard'·하루 요약만)."""
+
+
+class DupHold(TossHold):
+    """10/31 묶음 중복 게시(#2719~2724 — 실패 실행이 seen을 못 남겨 같은 글 4번): 최근에 올린 글과 같은 글 = 안 올림(TossHold처럼 알림·다시 시도 X)."""
+
+
+def dup_key(text, n=120):
+    """같은 글 판단 재료: HTML·대가성 문구 줄·시리즈 머리('[… #N]')·빈칸 뺀 본문 앞 n자(None = 전부)."""
+    ls = [l for l in html.unescape(re.sub(r"<[^>]+>", "", text or "")).split("\n") if l.strip() and not l.strip().startswith(NOTE_STARTS) and not re.fullmatch(r"\s*\[[^\]]*#\d+\]\s*", l)]
+    return re.sub(r"\s+", " ", " ".join(ls)).strip()[:n]
+
+
+DUP_DAYS = 7  # 같은 본문 = 7일 안 다시 X(10/31 Cowork — 묶음·큐레이션·개별 글·깊이 쓰는 글 다)
+th_urls = lambda text: frozenset(u for u in re.findall(URL_ANY, text or "") if urllib.parse.urlsplit(u).netloc not in TH_NOT_PROD + ("t.me",) and not (u.startswith(SITE) and "/p/" not in u))  # 글의 상품 링크 묶음(우리 사이트 칸·채널 주소 = 뺌)
+dup_h = lambda x: hashlib.md5(str(x).encode()).hexdigest()[:12]
+
+
+def th_recent(tok):
+    """Threads 계정 최근 글 25개 본문(실행마다 1번 · 이번 실행에 올린 글은 dup_done이 더함) — 못 읽으면 빈 목록(seen thh·이번 실행 글만 봄)."""
+    if "threc" not in RUN:
+        try:
+            RUN["threc"] = [x.get("text") or "" for x in json.loads(http(f"{THREADS}/me/threads?fields=text&limit=25&access_token={tok}")).get("data") or []]
+        except Exception as e:
+            print("dup_guard th 목록 못 읽음", err_brief(e))
+            RUN["threc"] = []
+    return RUN["threc"]
+
+
+def dup_req(url, body, method):
+    """10/31 Cowork ②(c) — http()가 보내기 직전(main 실행 중 = RUN seen만): 텔레그램 채널 새 글(답장 X) = DUP_DAYS일 안 우리 글 본문 해시(seen tgh)와 같으면 ·
+    Threads 새 글(댓글 X) = 계정 최근 25개·이번 실행 글·DUP_DAYS일 기록(seen thh)과 본문 앞 120자(대가성·시리즈 머리 뺌) 또는 상품 링크 묶음이 같으면 DupHold.
+    키 이름이 아니라 보낸 본문으로(큐레이션·묶음·개별 글·events 글 다) · 통과 = (채널, 기록할 것) → 올린 뒤 dup_done."""
+    seen = RUN.get("seen")
+    if not isinstance(seen, dict):
+        return None
+    now = time.time()
+    if isinstance(body, dict) and url.startswith("https://api.telegram.org/bot") and CHANNEL and body.get("chat_id") == CHANNEL and url.rsplit("/", 1)[-1] in TG_SEND and "reply_parameters" not in body:
+        k = dup_key(next((body[k] for k in ("text", "caption") if isinstance(body.get(k), str)), ""), None)
+        if k and any(h == dup_h(k) and now - t < DUP_DAYS * 86400 for t, h in seen.get("tgh", {}).get("h", [])):
+            print("dup_guard tg 같은 글 막음 ·", clip(k, 40))
+            raise DupHold("tg")
+        return k and ("tg", [dup_h(k)])
+    if url.startswith(THREADS + "/") and url.partition("?")[0].endswith("/threads") and method == "POST":
+        q = dict(urllib.parse.parse_qsl(url.partition("?")[2], keep_blank_values=True))
+        if not q.get("text") or "reply_to_id" in q:  # 캐러셀 사진 칸·댓글 = X
+            return None
+        k, us = dup_key(q["text"]), th_urls(q["text"])
+        hs = {h for t, h in seen.get("thh", {}).get("h", []) if now - t < DUP_DAYS * 86400}
+        if k and dup_h(k) in hs or us and dup_h(sorted(us)) in hs or any(k and k == dup_key(t) or us and us == th_urls(t) for t in th_recent(q.get("access_token"))):
+            print("dup_guard th 같은 글 막음 ·", clip(k, 40))
+            raise DupHold("th")
+        return ("th", [dup_h(k)] * bool(k) + [dup_h(sorted(us))] * bool(us), q["text"])
+    return None
+
+
+def dup_done(dk, url, out):
+    """올린 뒤: 텔레그램 = 본문 해시 seen tgh · Threads = 만들기 응답 id에 걸어 두고 게시(threads_publish)되면 seen thh + 이번 실행 목록(게시 실패 = 기록 X → th_retry 그대로) ·
+    채널 새 글·Threads 게시 = seen 바로 저장(실행이 뒤에서 죽어도 같은 글 X — Cowork ②(a))."""
+    seen = RUN.get("seen")
+    if not isinstance(seen, dict):
+        return
+    if dk and dk[0] == "th":
+        try:
+            RUN.setdefault("thpend", {})[str(json.loads(out)["id"])] = dk
+        except (ValueError, KeyError, TypeError):
+            pass
+        return
+    if "/threads_publish" in url:
+        dk = RUN.get("thpend", {}).pop(dict(urllib.parse.parse_qsl(url.partition("?")[2])).get("creation_id", ""), None)
+        if dk:
+            RUN.setdefault("threc", []).append(dk[2])
+    if dk:
+        now, k = time.time(), "tgh" if dk[0] == "tg" else "thh"
+        seen[k] = {"t": now, "h": [x for x in seen.get(k, {}).get("h", []) if now - x[0] < DUP_DAYS * 86400] + [[now, h] for h in dk[1]]}
+    if dk or "/threads_publish" in url:
+        seen_save(seen)
+
 
 
 TOSS_GUARD, URL_ANY = True, r"https?://[^\s\"'<>)]+"  # ⑦ 10/31 진우 '토스는 문제 안 생기게 해줘'
@@ -11100,10 +11180,31 @@ def indexnow(seen, docs="docs"):
         print("indexnow " + " · ".join(out))
 
 
+def seen_save(seen):
+    """seen.json 저장(10/31 #2719~2724: 't' 없는 칸(series) KeyError로 6번 연속 저장 X → 같은 묶음·큐레이션 재게시): 3일 지난 칸만 뺌('t'·숫자 없는 칸 = 그대로) ·
+    json.dumps 먼저(JSON 안 되는 칸 = 그 칸만 빼고 로그) · tmp 파일 → rename(반쯤 쓴 seen X). 실행 끝·채널 새 글·Threads 게시 뒤·실행이 죽을 때(__main__) 부름."""
+    cutoff, ts = time.time() - 3 * 86400, lambda v: v.get("t") if isinstance(v, dict) else v
+    keep = {k: v for k, v in seen.items() if isinstance(ts(v), bool) or not isinstance(ts(v), (int, float)) or ts(v) > cutoff}
+    try:
+        out = json.dumps(keep)
+    except (TypeError, ValueError) as e:
+        bad = []
+        for k in list(keep):
+            try:
+                json.dumps(keep[k])
+            except (TypeError, ValueError):
+                bad.append(k)
+                keep.pop(k)
+        print("seen 저장: JSON 안 되는 칸 뺌", bad[:5], err_brief(e))
+        out = json.dumps(keep)
+    with open(SEEN + ".tmp", "w") as f:
+        f.write(out)
+    os.replace(SEEN + ".tmp", SEEN)
+
+
 def main():
     try:
         seen = json.load(open(SEEN))
-        for k in ("top_20261031_12", "ev_2026-10-31 12:40"): seen.setdefault(k, time.time())  # shortcut: 10/31 12~13시 KeyError 실행(#2719~2724)이 이미 올린 12시 묶음·12:40 큐레이션 = 캐시(#2718) 받은 다음 실행이 또 올리지 않게 — 11/1 뒤 지워도 됨
     except (OSError, ValueError) as e:
         seen = repr(e)
     if not isinstance(seen, dict):
@@ -11116,9 +11217,11 @@ def main():
                 print("alert", repr(e))
             raise SystemExit(1)
         seen = {}
-    RUN.update(ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, tstop=False, thids=[], season=season_ctx(seen), rvw={},
+    RUN.update(seen=seen, ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, tstop=False, thids=[], season=season_ctx(seen), rvw={},
                rvst=seen.setdefault(time.strftime("rvst_%Y%m%d", time.gmtime(time.time() + 9 * 3600)), {"t": 0}))  # Z: 오늘 계절 맥락(프롬프트마다 1줄·금지어·계절 상품) · 재검토 Claude 수 · 하루 기록(rv_report)
     RUN.pop("cpu", None)
+    RUN.pop("threc", None)
+    RUN.pop("thpend", None)
     RUN.pop("cpn", None)
     RUN.pop("cpnew", None)
     if TOSS_NO_CMP:
@@ -11227,10 +11330,14 @@ def main():
         print("watch", repr(e))
     if RUN["ch_last"]:
         seen["ch_last"] = {"t": RUN["ch_last"]}
-    cutoff = time.time() - 3 * 86400
-    json.dump({k: v for k, v in seen.items() if (v.get("t", time.time()) if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
+    seen_save(seen)  # hold_ = 딜째 보관
+    RUN.pop("seen", None)
     print(f"new={len(new)} seen={len(seen)}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:  # 10/31 Cowork ②(a): 실행이 중간에 죽어도 그때까지 올린 글 기록(seen) 저장(다음 실행이 같은 글 X)
+        if isinstance(RUN.get("seen"), dict):
+            seen_save(RUN["seen"])

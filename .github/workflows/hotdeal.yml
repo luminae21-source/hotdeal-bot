@@ -115,3 +115,15 @@ jobs:
           [ ! -f price_hist.json ] || git add price_hist.json   # 쿠팡 가격 추적(상품 키 -> [시각, 가격, 와우·쿠폰 표시, 출처] — 공개 가격만, 토스 X)
           [ ! -f auto_events.json ] || git add auto_events.json   # 봇이 만든 진열·예약(10/30 Cowork 크롬 이관 — events.json은 Cowork 것 그대로)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도
+      - id: seenok                 # 10/31 #2719~2724: 실패·시간 초과 실행도 seen 저장(같은 글 다시 X) — seen.json이 유효한 dict일 때만(캐시 못 받은 실행 = 파일 없음 = X)
+        if: ${{ always() && job.status != 'success' && hashFiles('seen.json') != '' }}
+        run: python3 -c "import json, sys; sys.exit(0 if isinstance(json.load(open('seen.json')), dict) else 1)"
+      - if: ${{ always() && steps.seenok.outcome == 'success' }}
+        uses: actions/cache/save@v5   # 맨 위 캐시와 같은 경로(다음 실행 restore-keys seen- 가 받음)
+        with:
+          path: |
+            seen.json
+            fonts
+            toss.json
+            music
+          key: seen-${{ github.run_id }}-f

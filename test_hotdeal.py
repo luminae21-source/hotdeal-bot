@@ -12079,3 +12079,73 @@ os.chdir(cwd130); S.EVENTS, H.CP_RUSH = sev130, scr130; H.AUTO_ON.clear(); H.AUT
  H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TOSS_TH_LATER, H.toss_pool) = sv129
 H.E.pop("THREADS_TOKEN", None) if tk129 is None else H.E.update(THREADS_TOKEN=tk129)
 H.RUN.clear(); H.RUN.update(run129); os.chdir(cwd129)
+# 9-131) 10/31 13:40 Cowork 긴급(묶음 중복 게시 — #2719~2724 seen 저장 KeyError 't' 6번 → 같은 12시 묶음 Threads 4번·12:40 큐레이션 텔레그램 4번):
+#        ① seen = 't' 없는 칸(series)·숫자 아닌 칸이 있어도 저장 · JSON 안 되는 칸만 빼고 저장 · tmp → rename ② (a) 채널 새 글·Threads 게시 뒤 seen 바로 저장 · 실행이 죽어도(__main__) 저장
+#        (b) 워크플로: 실패·시간 초과도 seen 캐시 저장(유효한 dict일 때만) (c) 같은 글 = 텔레그램 7일 본문 해시 · Threads 계정 최근 25개·7일 기록과 앞 120자(대가성·시리즈 머리 뺌) 또는 상품 링크 묶음
+sv131, cwd131 = (time.time, H.http, H.tg, urllib.request.urlopen, H.SEEN, H.CHANNEL, dict(H.RUN), H.TOSS_GUARD, H.time.sleep), os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.SEEN, H.CHANNEL, H.time.sleep = "seen131.json", "@ch131", (lambda s: None); H.RUN.clear()
+T131 = TK("2026-11-01 12:00"); time.time = lambda: T131
+H.seen_save({"series": {"toss": 2, "stock": 1}, "s": "글자", "l": [1, 2], "old": T131 - 4 * 86400, "new": T131, "od": {"t": T131 - 4 * 86400}, "nd": {"t": T131}, "bad": {1, 2}})
+assert sorted(json.load(open("seen131.json"))) == ["l", "nd", "new", "s", "series"] and not os.path.exists("seen131.json.tmp")  # ① 't' 없는 칸 = 그대로(KeyError X) · 3일 지난 칸만 뺌 · JSON 안 되는 칸만 빼고 저장
+src131, yml131 = inspect.getsource(H.main), open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+assert "seen_save(seen)" in src131 and "json.dump({k: v for k, v in seen.items()" not in src131 and "RUN.update(seen=seen," in src131 and "seen_save(RUN[\"seen\"])" in open(H.__file__, encoding="utf-8").read().split('if __name__ == "__main__":')[1]  # ② (a) 실행이 죽어도 저장
+assert "if: ${{ always() && job.status != 'success' && hashFiles('seen.json') != '' }}" in yml131 and "key: seen-${{ github.run_id }}-f" in yml131 and "isinstance(json.load(open('seen.json')), dict)" in yml131  # ② (b)
+assert yml131.split("restore-keys: seen-")[0].count("            seen.json\n            fonts\n            toss.json\n            music\n") == 1  # 맨 위 캐시 경로 그대로
+# ② (c) 텔레그램: 같은 본문 7일 안 X(큐레이션·묶음·개별 글 — 키 이름 말고 보낸 본문) · 답장·관리자 DM = X · 보낸 뒤 seen 바로 저장
+tgc131 = []
+class R131:
+    headers = type("h", (), {"get_content_charset": lambda self: "utf-8"})()
+    def __init__(s, b): s.b = b
+    def read(s): return s.b
+    def __enter__(s): return s
+    def __exit__(s, *a): return False
+def uo131(req, timeout=None):
+    tgc131.append(req.full_url)
+    if "/me?fields=id" in req.full_url: return R131(b'{"id": "777"}')
+    if "/me/threads?" in req.full_url: return R131(json.dumps({"data": [{"text": f"{H.DISCLOSURE}\n[💄 화장대·욕실 장바구니 #1]\n점심 장바구니\n\n1️⃣ 메디힐 세럼 9,900원\n👉 https://link.coupang.com/a/M1"}]}).encode())
+    if "/threads_publish?" in req.full_url: return R131(b'{"id": "p1"}')
+    if "/threads?" in req.full_url: return R131(b'{"id": "c%d"}' % len(tgc131))
+    return R131(b'{"ok": true, "result": {"message_id": 7}}')
+urllib.request.urlopen, H.http, H.tg = uo131, http_real, tg_real
+s131 = {"series": {"toss": 1}}; H.RUN.update(seen=s131, ok=set(), fail={}, ch_last=0)
+CUR131 = f"<i>{H.DISCLOSURE}</i>\n\n🧴 남자 스킨케어 3개\n\n1. 올인원 로션\n2. 선크림\n3. 클렌징폼"
+assert H.tg("sendMessage", chat_id="@ch131", text=CUR131) and len(s131["tgh"]["h"]) == 1 and "tgh" in json.load(open("seen131.json"))  # 올린 뒤 seen 바로 저장
+o131 = io.StringIO()
+with contextlib.redirect_stdout(o131):
+    r131 = H.tg("sendMessage", chat_id="@ch131", text=CUR131.replace("<i>", "").replace("</i>", ""), parse_mode="HTML")
+assert r131 is None and "dup_guard tg 같은 글 막음" in o131.getvalue() and len(tgc131) == 1, o131.getvalue()  # 13:05·13:20·13:34 다시 = 막음(태그·대가성 줄만 달라도 같은 글)
+assert H.tg("sendMessage", chat_id="@ch131", text=CUR131, reply_parameters={"message_id": 3}) and H.tg("sendMessage", chat_id=H.ADMIN, text=CUR131) and H.tg("sendMessage", chat_id="@ch131", text=CUR131 + "\n4. 립밤")  # 답장·관리자·다른 글 = 그대로
+time.time = lambda: T131 + 7 * 86400 + 60; tgc131.clear()
+assert H.tg("sendMessage", chat_id="@ch131", text=CUR131) and len(tgc131) == 1  # 7일 지나면 다시 OK
+# Threads: 계정 최근 글과 앞 120자 같음(시리즈 번호만 다름) = 막음 · 상품 링크 묶음 같음 = 막음 · 게시된 글 = 7일 기록(thh)·이번 실행 목록 · 게시 실패 = 기록 X(th_retry 그대로)
+time.time = lambda: T131; H.RUN.pop("threc", None); tgc131.clear(); o131 = io.StringIO()
+TH131 = f"{H.DISCLOSURE}\n[💄 화장대·욕실 장바구니 #2]\n점심 장바구니\n\n1️⃣ 메디힐 세럼 9,900원\n👉 https://link.coupang.com/a/M1"
+with contextlib.redirect_stdout(o131):
+    try:
+        H.th_post("tk", TH131); assert False, "올라가면 안 됨"
+    except H.DupHold:
+        pass
+assert "dup_guard th 같은 글 막음" in o131.getvalue() and not [u for u in tgc131 if "/threads?" in u and "/me/threads" not in u], tgc131
+try:
+    H.th_post("tk", f"{H.DISCLOSURE}\n다른 훅\n\n1️⃣ 메디힐 세럼 9,900원\n👉 https://link.coupang.com/a/M1"); assert False
+except H.DupHold:
+    pass  # 훅이 달라도 상품 링크 묶음이 같으면 막음
+NEW131 = f"{H.DISCLOSURE}\n점심 장바구니\n\n1️⃣ 라운드랩 선크림 9,900원\n👉 https://link.coupang.com/a/R9"
+H.th_post("tk", NEW131)
+assert len([u for u in tgc131 if "/threads_publish?" in u]) == 1 and len(s131["thh"]["h"]) == 2 and NEW131 in H.RUN["threc"] and [u for u in tgc131 if "/me/threads?" in u].__len__() == 1  # 목록은 실행마다 1번
+try:
+    H.th_post("tk", NEW131); assert False
+except H.DupHold:
+    pass  # 같은 실행에 같은 글 = 막음
+uo131b = lambda req, timeout=None: (_ for _ in ()).throw(urllib.error.HTTPError(req.full_url, 500, "x", {}, io.BytesIO(b"err"))) if "/threads_publish?" in req.full_url else uo131(req, timeout)
+urllib.request.urlopen = uo131b; FAIL131 = f"{H.DISCLOSURE}\n\n1️⃣ 다른 상품 5,000원\n👉 https://link.coupang.com/a/F1"
+with contextlib.redirect_stdout(io.StringIO()):
+    try:
+        H.th_post("tk", FAIL131)
+    except urllib.error.HTTPError:
+        pass
+assert len(s131["thh"]["h"]) == 2 and FAIL131 not in H.RUN["threc"]  # 게시 실패 = 기록 X(다음 실행 th_retry 그대로 올라감)
+H.RUN.pop("seen")
+assert H.dup_req(f"{H.THREADS}/777/threads?text=x&access_token=tk", None, "POST") is None  # main 밖(셀프체크·도구) = 가드 X
+(time.time, H.http, H.tg, urllib.request.urlopen, H.SEEN, H.CHANNEL, run131, H.TOSS_GUARD, H.time.sleep) = sv131
+H.RUN.clear(); H.RUN.update(run131); os.chdir(cwd131)
