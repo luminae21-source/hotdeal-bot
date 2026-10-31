@@ -12357,12 +12357,12 @@ os.chdir(cwd136)
 #        → ① 고친 줄에서 옛 줄의 가격 조건(와우가·와우 회원가·쿠폰가·회원가·카드가·첫 구매가…)이 빠지면 고침 버림(옛 줄 그대로 — 모든 where) ② 행사 코너 큐레이션(마지막 날 = 오늘) = 행사 이름·'오늘 밤 12시까지'·'오늘만' 그대로
 sv137, cwd137 = (H.ai_review, H.E.get("ANTHROPIC_API_KEY"), H.REVIEW, time.time, H.EVENTS, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp())
 H.E["ANTHROPIC_API_KEY"], H.REVIEW, H.RUN["rvw"], time.time = "k", True, {}, lambda: TK("2026-10-31 16:10")
-L137 = ["✨ 야광팔찌 100개 — 9,010원 와우가 (1개 90원)", "🍬 엘투 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", "🎃 호박 바구니 36개 — 14,490원 쿠폰가"]
+L137 = ["✨ 야광팔찌 100개 — 9,010원 와우가 (1개 90원)", "🍬 엘투 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", "🎃 호박 바구니 36개 — 14,490원 쿠폰가", "단점 하나: 와우회원가라 일반 회원은 가격이 다를 수 있음"]
 H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": L137[0], "new": "✨ 야광팔찌 100개 — 9,010원 (1개 90원)"}, {"line": L137[1], "new": "🍬 츄이 캔디 약 100봉 — 16,550원 (10g 414원)"},
-                                                   {"line": L137[2], "new": "🎃 호박바구니 36개 — 14,490원 쿠폰가"}]}
+                                                   {"line": L137[2], "new": "🎃 호박바구니 36개 — 14,490원 쿠폰가"}, {"line": L137[3], "new": ""}]}
 o137 = io.StringIO()
 with contextlib.redirect_stdout(o137): ch137 = H.review("ev", "\n".join(L137), L137)
-assert ch137 == {L137[1]: "🍬 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", L137[2]: "🎃 호박바구니 36개 — 14,490원 쿠폰가"} and "지킬 말 1" in o137.getvalue(), (ch137, o137.getvalue())  # (1) 와우가 빠진 고침 = 버림 · 조건 그대로인 고침 = 받음
+assert ch137 == {L137[1]: "🍬 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", L137[2]: "🎃 호박바구니 36개 — 14,490원 쿠폰가", L137[3]: ""} and "지킬 말 1" in o137.getvalue(), (ch137, o137.getvalue())  # (1) 와우가 빠진 고침 = 버림 · 조건 그대로인 고침 = 받음 · 줄 통째로 뺌 = 그대로(9-82)
 H.EVENTS = S.EVENTS = "e137.json"; json.dump([{"at": "2026-10-31 15:20", "url": "u1", "shelf": True, "tag": "할로윈 반짝", "until": "2026-10-31", "text": "x"}], open("e137.json", "w"), ensure_ascii=False)
 E137 = {"at": "2026-10-31 16:20", "curation": True, "topic": "할로윈"}
 assert H.cur_keep(E137) == ("할로윈", "반짝", "오늘 밤 12시까지", "오늘만") and H.cur_keep({"topic": "생필품"}) == ()

@@ -5557,7 +5557,7 @@ def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", 
     kp = lambda x: {re.sub(r"\s", "", w) for w in re.findall("|".join([PRICE_COND, *map(re.escape, keep)]), x)}
     for l in lines:
         n = fix.get(l, l)
-        if n != l and kp(l) - kp(n):  # 10/31 16:45 Cowork: 옛 줄의 가격 조건(와우가·쿠폰가…)·지킬 말(행사 이름·'오늘 밤 12시까지')이 빠진 고침 = 버림(옛 줄 그대로)
+        if n and n != l and kp(l) - kp(n):  # 10/31 16:45 Cowork: 옛 줄의 가격 조건(와우가·쿠폰가…)·지킬 말(행사 이름·'오늘 밤 12시까지')이 빠진 고침 = 버림(옛 줄 그대로) · 줄 통째로 뺌 = 그대로
             n, why["지킬 말"] = l, why["지킬 말"] + 1
         if n != l and n:
             r = "새 숫자" if nums(n) - nums(l + facts + text) else "폭" if th_w(n) > max(th_w(l) * 1.5 + 4, TH_W + 6) else "규칙" if valid and not valid(l, n) \
