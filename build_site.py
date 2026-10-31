@@ -2649,6 +2649,10 @@ def site_status(out, posts, it, urls, now_ts):
         if y and y.get(k) and days[today][k] * 100 < y[k] * (100 - STATUS_DROP):
             warn.append(f"{lab} {y[k]} → {days[today][k]}개(어제보다 {round((y[k] - days[today][k]) * 100 / y[k])}% 줄어듦)")
     warn += [f"{m} 진열 0개(어제 {n}개)" for m, n in ((y or {}).get("mall") or {}).items() if n >= 10 and not mall.get(m)]
+    ds = [days.get(time.strftime("%Y-%m-%d", time.gmtime(now_ts + 9 * 3600 - k * 86400))) for k in (3, 2, 1, 0)]  # 10/31 진우 '상품은 꾸준하게 웹사이트': 3일 전 → 오늘 진열 수가 3번 연속 줄면
+    if all(ds) and all(a["site"] > b["site"] for a, b in zip(ds, ds[1:])):
+        down = [f"{m} {n}→{ds[-1].get('mall', {}).get(m, 0)}" for m, n in (ds[0].get("mall") or {}).items() if ds[-1].get("mall", {}).get(m, 0) < n]
+        warn.append(f"진열 3일 연속 줄어듦 {' → '.join(format(d['site'], ',') for d in ds)}개 · 줄어든 몰 {' · '.join(down) or '없음'} · 변환 실패 {len(fp)}개")
     if len(miss) >= STATUS_MISS:
         warn.append(f"빠진 진우 쿠팡 상품 {len(miss)}개(예: {' · '.join(miss[:3])})")
     if len(fp) >= STATUS_FAIL:

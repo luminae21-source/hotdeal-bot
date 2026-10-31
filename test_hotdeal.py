@@ -11726,8 +11726,9 @@ time.time = lambda: TK("2026-11-06 13:05"); H.toss_deals(s126, "series"); assert
 H.RUN["tstop"] = True; time.time = lambda: TK("2026-11-06 10:05"); H.toss_deals(s126, "series"); assert not tg126; H.RUN.pop("tstop")  # 토스 점검 중 = 쉼
 s126["bundles"] = {"t": 1, "ts": []}; o126 = io.StringIO()
 with contextlib.redirect_stdout(o126): H.toss_deals(s126, "series")
-assert not tg126 and "toss_series skip 2개" in o126.getvalue() and "tossseries_20261106" in s126, o126.getvalue()  # 3일 안 올린 상품 빼고 2개 = 그날 회차 X(다시 X)
-[s126.pop(k) for k in [k for k in s126 if k.startswith("tb_")]]; time.time = lambda: TK("2026-11-07 10:05"); H.toss_deals(s126, "series")
+assert len(tg126) == 1 and "[💙 토스 하루특가" not in tg126[0] and "💙 <b>오늘 토스에서 살 만한 2개</b>" in tg126[0] and s126["series"]["toss"] == 1 and "tossseries_20261106" in s126, o126.getvalue()  # 10/31 진우 '상품은 꾸준하게': 3일 안 올린 상품 빼고 2개 = 시리즈 #N X → 텔레그램 보통 토스 글(번호 그대로)
+assert "toss_series 2개 = 시리즈 X" in o126.getvalue() and "toss tossseries Threads 2개 = 리스트 X → 토스 개별 글 줄" in o126.getvalue() and [(x.get("x"), x["text"].startswith(H.TOSS_NOTE)) for x in s126["thtx"]["q"]] == [(1, True)] * 2, o126.getvalue()  # Threads = 토스 개별 글 줄 2개(토스 틀)
+tg126.clear(); [s126.pop(k) for k in [k for k in s126 if k.startswith("tb_")]]; time.time = lambda: TK("2026-11-07 10:05"); H.toss_deals(s126, "series")
 assert len(tg126) == 1 and s126["series"]["toss"] == 2 and tg126[0].startswith(f"<i>{H.TOSS_NOTE}</i>\n[💙 토스 하루특가 #2]\n"), tg126  # 회차 +1
 # 예전 Threads 토스 리스트(12시 베스트) = 끔(텔레그램만) · 켜면 예전 그대로
 tg126.clear(); tb126.clear(); time.time = lambda: TK("2026-11-06 12:20"); s126["bundles"] = {"t": 1, "ts": []}
@@ -11742,7 +11743,7 @@ assert s126b["thsolo_20261106"]["n"] == 2 and s126b["thsolo_20261106"]["tz"] == 
 o126 = io.StringIO()
 with contextlib.redirect_stdout(o126): H.th_day_log("2026-11-06", s126b)
 assert o126.getvalue().endswith(" · 화장품 0/5 · 토스 1/5\n"), o126.getvalue()
-assert "th_mark(seen, i[\"bt\"], toss=is_toss(i.get(\"link\")))" in inspect.getsource(H.threads_deals) and "th_mark(seen, bt[i], toss=is_toss(posts[i].get(\"url\"), posts[i][\"text\"]), count=turn != \"tx\")" in inspect.getsource(H.threads_deals)
+assert "th_mark(seen, i[\"bt\"], toss=is_toss(i.get(\"link\")), count=not i.get(\"x\"))" in inspect.getsource(H.threads_deals) and "th_mark(seen, bt[i], toss=is_toss(posts[i].get(\"url\"), posts[i][\"text\"]), count=turn != \"tx\")" in inspect.getsource(H.threads_deals)
 sv126b = (H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB)
 p126 = []
 def http126(url, body=None, headers=None, method=None):
@@ -11779,7 +11780,8 @@ H.ai_json = ai126
 assert s126m["thtx"]["q"] == [{"u": "https://toss.shopping/_m/M1", "t": TK("2026-11-06 15:05")}], s126m.get("thtx")  # ⑥-정정 보강: 묶음에 들어갈 토스 = 빼고 개별 글 줄(버리지 않음)
 b126 = tb126[-1][1]
 assert "토스 키친타월" not in b126 and "toss.shopping" not in b126 and "게시 시점" not in b126 and H.TOSS_NOTE not in b126 and len(re.findall(r"^[1-7]️⃣ ", b126, re.M)) == 3 and b126.endswith("\n\n여러분 생필품 첫 순위는 뭐예요?"), b126
-assert "쿠팡보다" not in b126 and b126.startswith(H.DISCLOSURE + "\n[🧻 생필품 쟁여두기 #1]\n" + H.TH_LIST_HOOK[15] + "\n\n") and "몰끼리 가격 비교 X" in H.TH_LIST_PROMPT, b126  # 몰 이름 든 훅 = 뺌(기본 훅)
+assert "쿠팡보다" not in b126 and b126.startswith(H.DISCLOSURE + "\n[🧻 생필품 쟁여두기 #1]\n" + H.TH_LIST_HOOK[15] + "\n\n") and "몰끼리 가격 비교 X" in H.TH_LIST_PROMPT, b126
+assert len(re.findall(r"^[1-7]️⃣ [^\n]+\n[^\n]*욕실 선반 단골이에요", b126, re.M)) == 3 and [x.get("c") for x in [p for p in json.load(open(H.POSTS)) if p.get("bundle") == "th15"][-1]["items"]] == ["욕실 선반 단골이에요"] * 3, b126  # 10/31 상품마다 사는 사람 한 줄 · 사이트 묶음 카드도 같은 한 줄  # 몰 이름 든 훅 = 뺌(기본 훅)
 # metrics: 토스 글 따로(글 수·Threads 조회) + Threads 링크 클릭 중 토스 링크
 src126 = inspect.getsource(H.metrics_rows)
 assert 'tr = [r for r in rows if r.get("shop") == "toss"]' in src126 and 'm[day]["toss"] = {"tg": sum(r["ch"] == "tg" for r in tr), "th": sum(r["ch"] == "th" for r in tr), "th_views":' in src126 and "metric=clicks&since={int(t0)}&until={int(t0) + 86400}" in src126 and '"th_clicks": sum(x["value"] for x in lv if urllib.parse.urlsplit(x.get("link_url") or "").netloc in TOSS_HOSTS)' in src126
@@ -12003,6 +12005,75 @@ json.dump([own126(2911, "쿠팡C", "22:01")], open(H.POSTS, "w"), ensure_ascii=F
 s129b = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq126(8, "22:00")]}, "thsolo_20261106": {"t": 1, "n": 1, "b": 0, "last": 0, "m": "toss"}}
 g129, l129 = run126(s129b, "22:10")
 assert g129 == ["쿠팡C"] and "threads 번갈아 cp (앞 개별 글 toss" in l129 and len(s129b["thtoss"]["q"]) == 1, (g129, l129)
+# 9-130) 10/31 진우 '상품은 꾸준하게 웹사이트 올리고 · 구매하는 사람이라면 좋아할 만한 걸 써 주자'(Cowork): ① 토스 리스트·묶음 1~2개 = 토스 개별 글(0개 = 그 회차 X + 로그)
+#        ② 상품 줄 = 이름 · 1개 값 · 사는 사람 한 줄(이런 분께·언제·도착(근거 있을 때만)·확인할 점 — 빈 줄 X) ③ 사이트 진열 3일 연속 줄면 관리봇 1줄 · CP_RUSH 다음 날 남은 cp_fail 로그
+def toss130(path, body=None):
+    if path == "/categories": return {"categories": [{"categoryId": 7, "displayName": "생활용품"}]}
+    return {"items": [{"tacaItemId": 3001 + i, "displayName": f"토스개별{i}", "displayPrice": 6000 + i, "discountRate": 20} for i in range(2)] if "today-deals" in path else []}
+H.toss = toss130; tg129.clear(); tb129.clear(); s130 = {"bundles": {"t": 1, "ts": []}}; o130 = io.StringIO(); time.time = lambda: TK("2026-11-08 10:05")
+with contextlib.redirect_stdout(o130): H.toss_deals(s130, "series")
+assert len(tg129) == 1 and "[💙 토스 하루특가" not in tg129[0] and not tb129 and [(x["n"], x["x"], x["at"]) for x in s130["thtx"]["q"]] == [("토스개별0", 1, 0), ("토스개별1", 1, 0)], o130.getvalue()  # ① 10:00 2개 = 텔레그램 보통 글 · Threads = 개별 글 줄 2개
+assert "toss tossseries Threads 2개 = 리스트 X → 토스 개별 글 줄" in o130.getvalue() and all(x["text"].startswith(H.TOSS_NOTE) and "쿠팡" not in x["text"] for x in s130["thtx"]["q"])  # 토스 틀(대가성 첫 줄 · 다른 몰 X)
+json.dump([], open(H.POSTS, "w")); s130["thmall"] = {"t": 1, "cp": TK("2026-11-08 13:40")}  # 13:40 쿠팡 개별 글
+def run130(s, at):
+    p126.clear(); time.time = lambda: TK("2026-11-08 " + at); o = io.StringIO()
+    with contextlib.redirect_stdout(o): H.threads_deals(s)
+    return list(p126), o.getvalue()
+g130, l130 = run130(s130, "13:45")
+assert not g130 and "toss gap 미룸 · 토스 개별 11분 뒤" in l130, l130  # 쿠팡 글과 15분
+seq130 = [run130(s130, at)[0] for at in ("13:56", "14:20", "14:42")]
+assert [len(g) for g in seq130] == [1, 0, 1] and "토스개별0" in seq130[0][0] and "토스개별1" in seq130[2][0] and s130["thtx"]["q"] == [], seq130  # 개별 글 2개(개별 글 45분 간격 그대로)
+assert (s130["thsolo_20261108"]["n"], s130["thsolo_20261108"]["tx"], s130["thsolo_20261108"]["m"]) == (0, 2, "toss"), s130["thsolo_20261108"]  # 하루 개별 글 수(15개)와 따로
+s130z = {"bundles": {"t": 1, "ts": []}}; time.time = lambda: TK("2026-11-08 10:05"); H.toss = lambda path, body=None: {"categories": [{"categoryId": 7, "displayName": "생활용품"}]} if path == "/categories" else {"items": []}; o130 = io.StringIO()
+with contextlib.redirect_stdout(o130): H.toss_deals(s130z, "series")
+assert "thtx" not in s130z and "toss_series 0 items 0 picks 0 links" in o130.getvalue() and not tb129, o130.getvalue()  # 0개 = 그 회차 X + 로그
+s130l = {"bundles": {"t": 1, "ts": []}}; H.toss = toss130; time.time = lambda: TK("2026-11-08 20:05"); o130 = io.StringIO()
+with contextlib.redirect_stdout(o130): H.toss_deals(s130l, False)
+assert [(x["n"], x["at"]) for x in s130l["thtx"]["q"]] == [("토스개별0", TK("2026-11-08 21:20")), ("토스개별1", TK("2026-11-08 21:20"))] and "thlater" not in s130l, o130.getvalue()  # 21:20 하루특가 2개 = 21:20부터 개별 글
+# ② 토스 리스트(18:45) 상품 줄 = 이름 — 가격 / 🙋 누가·👍 언제(돌림) / 링크 · 없거나 성별 고정관념 = 확인할 점
+H.toss = toss129; tb130 = []; H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb130.append(text) or {"id": "T"}
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": 9, "comment": "", **({"who": "설거지 많은 집 · 자취방", "use": "주말 대청소 때 한 번에"} if i == 0 else {"who": "자취하는 남자"} if i == 1 else {"use": "캠핑 갈 때 챙기기"})} for i in range(min(6, len(lines)))]
+s130b = {"bundles": {"t": 1, "ts": []}}; time.time = lambda: TK("2026-11-08 18:50")
+with contextlib.redirect_stdout(io.StringIO()): H.toss_deals(s130b, True)
+b130 = tb130[-1]; ln130 = re.findall(r"^[1-7]️⃣ [^\n]+\n([^\n]+)\nhttps://toss\.shopping/", b130, re.M)
+assert len(ln130) == len(re.findall(r"^[1-7]️⃣ ", b130, re.M)) >= 3 and ln130[:3] == ["🙋 설거지 많은 집 · 자취방", "✔ " + H.BUY_CHECK, "👍 캠핑 갈 때 챙기기"] and len(b130) <= 480, b130  # 빈 줄 X
+# ② 쿠팡 묶음 한 줄: 도착 말 = 로켓 근거 있을 때만 · 성별 고정관념 X · 못 받은 줄 = 확인할 점(빈 줄 X)
+P130 = [{"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} (9,900원)\n\n{d}", "url": f"https://link.coupang.com/a/R{k}"} for k, (n, d) in enumerate([("생수 2L 12병", "✔ 로켓배송"), ("수세미 10개", "좋음"), ("면도기 세트", "좋음"), ("행주 5장", "좋음")], 1)]
+pr130, aj130 = [], H.ai_json
+H.ai_json = lambda prompt, props, img=None: pr130.append(prompt) or {"hook": "", "c": ["내일 도착해서 급할 때 좋아요", "내일 도착이라 편해요", "자취하는 남자에게 딱이에요"], "q": ""}
+cm130 = {}; H.th_list_copy({}, 12, [(p, "", "", 1) for p in P130], cm130); H.ai_json = aj130
+assert cm130 == {"https://link.coupang.com/a/R1": "내일 도착해서 급할 때 좋아요", **{f"https://link.coupang.com/a/R{k}": H.BUY_CHECK for k in (2, 3, 4)}}, cm130
+assert [l.endswith("(로켓배송)") for l in re.findall(r"^\d\. .+$", pr130[0], re.M)] == [True, False, False, False] and H.BUY_LINE in pr130[0], pr130[0]
+# ② 개별 글 끝 한 줄 = 사는 사람 한 줄(말투는 말끝만) · 로켓·새벽 근거 없는 도착 말 X · 성별 고정관념 X
+sv130v, q130, v130 = (H.ai_voice, H.random, H.TOSS_NO_CMP), [], []
+H.ai_voice, H.TOSS_NO_CMP = (lambda pr: v130.append(pr) or {"line": q130.pop(0) if q130 else ""}), True
+H.random = type("R", (), {"choice": staticmethod(lambda xs: 4 if 4 in xs else xs[0])})
+C130 = (f"{H.DISCLOSURE}\n\n🚀 쿠팡 로켓 🔥\n카밀 핸드 앤 네일 크림 클래식 100ml 3개\n8,630원\n쿠팡 검색 상위 핸드크림 중 단위가격 최저 — 1개 2,877원\n"
+        "⭐ 리뷰 51,181 · 한 달 2,000명 이상 구매 · 🚀 로켓배송(내일 새벽 7시 전 도착) · 30일 무료반품\n⚠️ 확인할 점: 100원 쿠폰 적용가(쿠폰 없으면 8,730원) · 결제 전 최종가 확인 (10/22 19시 가격)")
+N130 = C130.replace("🚀 쿠팡 로켓", H.CP_PLAIN[0]).replace(" · 🚀 로켓배송(내일 새벽 7시 전 도착)", "")
+q130[:] = ["내일 도착이라 든든해요", "새벽 도착이라 좋아요"]; o130v = H.th_voice({}, N130, "https://link.coupang.com/a/c")
+assert "로켓·새벽 도착 표시 없음" in v130[0] and H.BUY_LINE in v130[0] and "말끝·결만" in v130[0] and "도착이라" not in o130v and H.TH_TONE_POOL5[4][0] in o130v, o130v
+v130.clear(); q130[:] = ["내일 도착이라 든든해요"]; o130v = H.th_voice({}, C130, "https://link.coupang.com/a/c")
+assert "도착 표시: 새벽 도착" in v130[0] and "내일 도착이라 든든해요" in o130v, o130v  # 로켓·새벽 근거 있음 = OK
+q130[:] = ["자취하는 남자에게 딱이에요"] * 2; o130v = H.th_voice({}, C130, "https://link.coupang.com/a/c"); assert "남자" not in o130v, o130v
+H.ai_voice, H.random, H.TOSS_NO_CMP = sv130v
+# ③ 사이트 진열 3일 연속 줄어듦 = status warn(관리봇 1줄 — 수·줄어든 몰·변환 실패) · 한 번이라도 늘면 X · CP_RUSH 다음 날 남은 cp_fail 로그 1줄
+cwd130, sev130, sau130, scr130 = os.getcwd(), S.EVENTS, dict(H.AUTO_ON), H.CP_RUSH; os.chdir(tempfile.mkdtemp()); os.makedirs("docs"); S.EVENTS = "events.json"; json.dump([], open("events.json", "w"))
+json.dump([{"pid": "1"}, {"pid": "2"}], open("cp_fail.json", "w"))
+day130 = lambda b: json.dump({"days": {"2026-11-05": {"site": 1600, "mall": {"coupang": 1200, "naver": 400}}, "2026-11-06": {"site": b, "mall": {"coupang": 1195, "naver": 395}}, "2026-11-07": {"site": 1580, "mall": {"coupang": 1185, "naver": 395}}}}, open("docs/status.json", "w"))
+pc130, pn130 = {"t": "2026-11-08 09:00", "text": "🔥 [쿠팡] 상품 (1,000원)", "url": "https://link.coupang.com/a/x"}, {"t": "2026-11-08 09:00", "text": "🔥 [네이버] 상품 (1,000원)", "url": "https://smartstore.naver.com/x/products/1"}
+it130 = [(0, pc130, (0,))] * 1180 + [(1, pn130, (0,))] * 391
+day130(1590); w130 = S.site_status("docs", [pc130, pn130], it130, [("u", "")] * 10, TK("2026-11-08 09:50"))
+assert "진열 3일 연속 줄어듦 1,600 → 1,590 → 1,580 → 1,571개 · 줄어든 몰 coupang 1200→1180 · naver 400→391 · 변환 실패 2개" in w130, w130
+tg130 = []; H.tg = lambda m, **pp: tg130.append(pp) or {"message_id": 1}; H.AUTO_ON["status"] = True; time.time = lambda: TK("2026-11-08 10:05")
+with contextlib.redirect_stdout(io.StringIO()): H.status_dm({})
+assert len(tg130) == 1 and tg130[0]["chat_id"] == H.ADMIN and "• 진열 3일 연속 줄어듦 1,600 → 1,590 → 1,580 → 1,571개" in tg130[0]["text"], tg130  # 관리봇 DM
+day130(1610); assert not any("연속" in w for w in S.site_status("docs", [pc130, pn130], it130, [("u", "")] * 10, TK("2026-11-08 09:50")))  # 11/6에 늘었음 = X
+H.CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59"); json.dump({"at": "2026-11-05 09:50", "cp_fail": 154, "warn": []}, open("docs/status.json", "w")); o130 = io.StringIO()
+with contextlib.redirect_stdout(o130):
+    time.time = lambda: TK("2026-11-05 10:05"); H.status_dm({}); time.time = lambda: TK("2026-11-06 10:05"); H.status_dm({})
+assert o130.getvalue().count("cp_rush 끝(11/04) · 남은 cp_fail 154개") == 1, o130.getvalue()  # 몰아서 재시도 끝난 다음 날 1번
+os.chdir(cwd130); S.EVENTS, H.CP_RUSH = sev130, scr130; H.AUTO_ON.clear(); H.AUTO_ON.update(sau130)
 (time.time, H.http, run129, H.TOSS_GAP, H.POSTS, H.EVENTS, H.toss, H.toss_link, H.ai_pick, H.tg, H.th_bundle, H.HAS_TOSS, tk129, H.season_adj, H.rv_fields,
  H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TH_MALL_ALT, urllib.request.urlopen,
  H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TOSS_TH_LATER, H.toss_pool) = sv129
