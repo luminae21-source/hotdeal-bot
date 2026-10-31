@@ -5046,6 +5046,8 @@ assert all(not re.search(H.VOICE_YO, x) and not re.search(H.VOICE_BAN, x) for x 
 # 1건 테스트: 카드(변주) -> 15~20분 대기 -> 컨테이너·발행 -> 관리봇 1번, 인스타 외 채널 X
 H.ai_json = lambda prompt, props: {"lines": ["오늘 밤엔 이 정도면 살 만한 듯", "휴지 떨어진 집 손 ㅋㅋ"]}
 json.dump(ps33, open("posts33.json", "w"), ensure_ascii=False); open("igt33.txt", "w").write("2026-10-29\n")
+for d33 in ("29", "30", "31"):  # 앞 셀프체크가 실제 시계(10/29~31 21시 뒤)로 남긴 하루 카드 순서 파일 = 이 posts33과 번호가 달라 카드 X(10/31 22:4x 전체 셀프체크) — 지우고 시작
+    os.path.exists(f"docs/cards/2026-10-{d33}.json") and os.remove(f"docs/cards/2026-10-{d33}.json")
 os.path.exists("docs/cards/2026-10-29.json") and os.remove("docs/cards/2026-10-29.json")  # 앞 셀프체크가 실제 시계로(21시 뒤) 만든 '오늘' 카드 순서 = 이 가짜 날짜와 겹침(10/29 밤 실행) -> 지움
 H.POSTS, H.IG_TEST, H.IG_TEST_DIR, H.time.sleep = "posts33.json", "igt33.txt", "igt33", (lambda s: None)
 H.E.update(IG_TOKEN="pt", IG_USER_ID="178")
