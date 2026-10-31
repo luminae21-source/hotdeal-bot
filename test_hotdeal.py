@@ -2692,7 +2692,7 @@ g_calls.clear(); time.time = lambda: TK("2026-10-13 18:42"); H.threads_deals(s9g
 s9g.pop("sold_950"); json.dump([{"t": "2026-10-13 18:30", "text": "🔥 [쿠팡] 휴지 (9,000원)\n\n💡 쿠팡 같은 상품(10,000원)보다 1,000원 쌈", "url": "https://link.coupang.com/a/1", "s": 8, "mid": 2}], open("posts.json", "w"), ensure_ascii=False)
 s9g["thsolo_20261013"]["last"] = 0; g_calls.clear(); time.time = lambda: TK("2026-10-13 18:52"); H.threads_deals(s9g); f9g = gt(); assert len(f9g) == 1 and "휴지" in f9g[0] and [x["id"] for x in s9g["thtoss"]["q"]] == [1]
 g_calls.clear(); time.time = lambda: TK("2026-10-13 20:20"); H.threads_deals(s9g); assert gt() == []  # 3시간 지난 토스 픽은 안 올림(식은 글)
-H.TH_TOSS_FILL = (); s9g = {"tb_1": 1}; g_calls.clear(); time.time = lambda: TK("2026-10-13 17:10"); H.toss_deals(s9g, "cat"); assert "thtoss" not in s9g and len(gt()) == 1  # 끄면 줄 X(리스트는 그대로)
+H.TH_TOSS_FILL = (); s9g = {"tb_1": 1}; g_calls.clear(); time.time = lambda: TK("2026-10-13 17:10"); H.toss_deals(s9g, "cat"); assert "thtoss" not in s9g and not gt() and len(s9g["thtx"]["q"]) in (1, 2)  # 끄면 채움 줄 X(1개 = 리스트 대신 토스 개별 글 줄 — 10/31)
 H.TH_TOSS_FILL = ttf0; s9g = {}; g_calls.clear(); H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 8, "comment": "가"}]
 td9g, thd9g = [], H.th_deal
 H.th_deal, H.toss_photo = (lambda *a, image=None, tids=None, **k: td9g.append((image, tids)) or thd9g(*a, **k)), (lambda x: f"https://static.toss.im/i/{x['tacaItemId']}.jpg")
