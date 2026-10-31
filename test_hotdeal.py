@@ -2437,7 +2437,7 @@ S9c, W9c = "🔥 x\n💡 쿠팡 같은 상품(10,000원)보다 1,000원 쌈", "�
 time.time = lambda: TK("2026-10-12 10:00"); s9c = {}
 assert H.th_solo(s9c, "🔥 x", beauty=1, slot=True) and not H.th_solo(s9c, "🔥 x", beauty=1) and not H.th_solo(s9c, "🔥 x", slot=True)  # 화장품 자리: 진우 화장품은 ①② 아니어도 O, 봇 화장품·화장품 아닌 진우 링크는 ①②만
 assert not H.th_solo(s9c, W9c, beauty=2, slot=True)  # 🛒는 화장품 자리에도 X
-H.th_mark(s9c, 2); assert s9c["thsolo_20261012"] == {"t": TK("2026-10-12 10:00"), "n": 1, "b": 1, "last": TK("2026-10-12 10:00")}
+H.th_mark(s9c, 2); assert s9c["thsolo_20261012"] == {"t": TK("2026-10-12 10:00"), "n": 1, "b": 1, "last": TK("2026-10-12 10:00"), "m": "cp"}  # m = 바로 앞 개별 글 몰(10/31 번갈아)
 time.time = lambda: TK("2026-10-12 10:46")
 assert not H.th_solo(s9c, "🔥 x", beauty=1, slot=True) and H.th_solo(s9c, S9c, beauty=1)  # 1개 찼으면 진우 화장품도 ①②만
 H.th_mark(s9c, 1); H.th_mark(s9c); assert (s9c["thsolo_20261012"]["n"], s9c["thsolo_20261012"]["b"]) == (3, 2)
@@ -2445,7 +2445,7 @@ s9c["thsolo_20261012"]["last"] = 0; assert not H.th_solo(s9c, S9c, beauty=2, slo
 assert H.th_day({"thsolo_20261012": {"t": 1, "n": 1, "last": 5}}, time.time()) == {"t": 1, "n": 1, "b": 0, "last": 5} and H.th_day({}, time.time()) == {"n": 0, "b": 0, "last": 0}  # b 없는 기록(배포 전 = 0:02 재오픈 샤워기 헤드) = 화장품 0개
 s9c = {"thsolo_20261011": {"t": 1, "n": 3, "b": 0, "last": TK("2026-10-11 23:33")}}; time.time = lambda: TK("2026-10-12 00:02")  # 45분 간격은 밤 12시를 넘어서도(10/11 23:33 글 -> 10/12 0:02 재오픈이 29분 만에 나가던 것)
 assert H.th_day(s9c, time.time())["last"] == TK("2026-10-11 23:33") and not H.th_solo(s9c, S9c) and not H.th_solo(s9c, "🔥 x", beauty=2, slot=True)
-time.time = lambda: TK("2026-10-12 00:18"); assert H.th_solo(s9c, S9c); H.th_mark(s9c); assert s9c["thsolo_20261012"] == {"t": TK("2026-10-12 00:18"), "n": 1, "b": 0, "last": TK("2026-10-12 00:18")}
+time.time = lambda: TK("2026-10-12 00:18"); assert H.th_solo(s9c, S9c); H.th_mark(s9c); assert s9c["thsolo_20261012"] == {"t": TK("2026-10-12 00:18"), "n": 1, "b": 0, "last": TK("2026-10-12 00:18"), "m": "cp"}
 time.time = lambda: TK("2026-10-12 10:00")
 s9c = {"thsolo_20261012": {"t": 1, "n": 4, "b": 0, "last": 0}}  # 화장품 0개 + 다른 글 4개 -> 마지막 자리는 화장품 몫
 assert not H.th_solo(s9c, S9c) and H.th_solo(s9c, S9c, beauty=1) and H.th_solo(s9c, "🔥 x", beauty=2, slot=True)
@@ -2525,7 +2525,7 @@ H.th_mark(rq9, reopen="night"); assert (rq9["thsolo_20261012"]["n"], rq9["thsolo
 time.time = lambda: TK(f"{D9c} 00:40"); assert not H.th_solo(rq9, S9c, reopen="night") and not H.th_solo(rq9, S9c)  # 45분 간격은 같이(일반 딜도)
 time.time = lambda: TK(f"{D9c} 00:56"); H.th_mark(rq9, beauty=1); time.time = lambda: TK(f"{D9c} 01:42"); H.th_mark(rq9, reopen="night")
 time.time = lambda: TK(f"{D9c} 02:30"); assert not H.th_solo(rq9, S9c, reopen="night") and H.th_solo(rq9, S9c)  # 밤 2개 찼음, 일반 딜은 그대로
-assert rq9["thsolo_20261012"] == {"t": TK(f"{D9c} 01:42"), "n": 1, "b": 1, "rn": 2, "ra": 0, "last": TK(f"{D9c} 01:42")}
+assert rq9["thsolo_20261012"] == {"t": TK(f"{D9c} 01:42"), "n": 1, "b": 1, "rn": 2, "ra": 0, "last": TK(f"{D9c} 01:42"), "m": "toss"}  # 재오픈 = 토스 개별 글(번갈아 몰)
 time.time = lambda: TK(f"{D9c} 06:10"); assert H.th_solo(rq9, S9c, reopen="am"); H.th_mark(rq9, reopen="am"); time.time = lambda: TK(f"{D9c} 07:00"); H.th_mark(rq9, reopen="am")
 time.time = lambda: TK(f"{D9c} 07:50"); assert not H.th_solo(rq9, S9c, reopen="am") and H.th_solo(rq9, S9c)  # 아침 2개 찼음
 H.TH_REOPEN_MORN = 3; assert not H.th_solo(rq9, S9c, reopen="am"); H.TH_REOPEN_MORN = trn0[1]  # 하루 4개(밤 2 + 아침 2)도
