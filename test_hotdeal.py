@@ -11,9 +11,9 @@ IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70�
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 TOSSAT0 = (H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_LIST_HOURS, H.TH_TOSS_KINDS)  # 실제 토스 회차 시각(10/31 최종 — 9-129) · 아래에서 예전 값으로(예전 셀프체크)
-H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE = (10, 11, 12, 14, 16, 18, 20), 17, (), True
+H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TOSS_TH_LATER = (10, 11, 12, 14, 16, 18, 20), 17, (), True, {}
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
-H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_GUARD, H.TH_LIST_TOSS, H.NN_TOSS, H.TOSS_GAP, H.TH_ALT = (0, 0), True, 0, False, True, 2, 0, False  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이) · 예전 Threads 토스 리스트(⑥ 끔)·토스 개별 글 쿼터(⑥ 5개) = 9-126에서만 · toss_guard(⑦)·섞인 묶음 토스 X·품목 묶음 토스 X(⑥ 정정) = 9-127에서만 · 토스↔쿠팡 시차(⑨) = 9-128·9-129에서만 · 개별 글 쿠팡↔토스 번갈아(TH_ALT)·토스 회차 시각 13:30·17:10·18:45 = 9-129에서만
+H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_GUARD, H.TH_LIST_TOSS, H.NN_TOSS, H.TOSS_GAP, H.TH_MALL_ALT = (0, 0), True, 0, False, True, 2, 0, False  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이) · 예전 Threads 토스 리스트(⑥ 끔)·토스 개별 글 쿼터(⑥ 5개) = 9-126에서만 · toss_guard(⑦)·섞인 묶음 토스 X·품목 묶음 토스 X(⑥ 정정) = 9-127에서만 · 토스↔쿠팡 시차(⑨) = 9-128·9-129에서만 · 개별 글 쿠팡↔토스 번갈아(TH_MALL_ALT)·토스 회차 시각 13:30·17:10·18:45 = 9-129에서만
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -1550,7 +1550,7 @@ ps9 = H.PICK_SCAN; H.PICK_SCAN = 1; seen = {}; time.time = lambda: T("2026-10-12
 assert len(seen["pickscan"]["plan"]) == 1 and len(seen["pickscan"]["done"]) == 1  # 하위 카테고리는 하루 PICK_SCAN개까지(일 상한)
 assert not H.pick_scan(seen, ["새 상품 이름"]) and "새 상품 이름" not in seen["pickscan"]["names"]  # 상한이 차서 못 고른 이름 -> False(진우에게 아직 안 물음)
 time.time = lambda: T("2026-10-13 00:10"); assert H.pick_scan(seen, ["에이지랩 스네일 뮤신 브라이트닝 선크림"]) is not None and seen["pickscan"]["d"] == "20261013"; H.PICK_SCAN = ps9  # 밤 12시(KST)에 상한 새로
-assert 'lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
+assert 'lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout' in inspect.getsource(H.main) and H.TOSS_SPECIAL_HOURS == (8, 22) and "효능" in H.SPECIAL_PROMPT and "쿠팡 등 다른 쇼핑몰 가격 비교 언급 금지" in H.SPECIAL_PROMPT
 del H.E["THREADS_TOKEN"]; open("posts.json", "w").write(pj7); H.http, H.tg, H.ai_pick, H.time.sleep, H.EVENTS, H.HAS_TOSS = ph7, tg9, pa7, sl7, ev7, False
 if os.path.exists("toss.json"): os.remove("toss.json")
 time.time = tt
@@ -11917,16 +11917,17 @@ assert run126(s128d, "23:30")[0] == []  # 올린 건 다시 X
  H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB) = sv128
 H.E.pop("THREADS_TOKEN", None) if tk128 is None else H.E.update(THREADS_TOKEN=tk128)
 H.RUN.clear(); H.RUN.update(run128); os.chdir(cwd128)
-# 9-129) 10/31 진우 토스 시각 최종('20분 → 15분' · '쿠팡 토스 번갈아서 겹치지 않게' · '노출 횟수를 줄이지는 말아'): Threads 토스 묶음·리스트 = 10:00 💙 토스 하루특가 · 13:30 베스트 · 17:10 생필품 · 18:45 베스트(하루 4번)
+# 9-129) 10/31 진우 토스 시각 최종('20분 → 15분' · '쿠팡 토스 번갈아서 겹치지 않게' · '노출 횟수를 줄이지는 말아' · '토스 20:30·22:00에도'): Threads 토스 묶음·리스트 = 10:00 💙 토스 하루특가 · 13:30 베스트 · 17:10 생필품 · 18:45 베스트 · 21:20 하루특가 마감 전 · 22:20 토스 특가(하루 6번)
 #        · 텔레그램 토스 회차도 13:30·18:45·17:10(쿠팡 12·18시 TOP와 안 겹치게) + 쿠팡 채널 글 바로 뒤 15분 = 미룸 · Threads 개별 글 = 바로 앞 개별 글과 다른 몰 먼저(TH_ALT)
 sv129 = (time.time, H.http, dict(H.RUN), H.TOSS_GAP, H.POSTS, H.EVENTS, H.toss, H.toss_link, H.ai_pick, H.tg, H.th_bundle, H.HAS_TOSS, H.E.get("THREADS_TOKEN"), H.season_adj, H.rv_fields,
-         H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TH_ALT, urllib.request.urlopen,
-         H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB)
+         H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TH_MALL_ALT, urllib.request.urlopen,
+         H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TOSS_TH_LATER, H.toss_pool)
 d129, cwd129 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d129)
 src129 = open(H.__file__, encoding="utf-8").read()
 assert "TOSS_GAP = 15 * 60" in src129 and TOSSAT0[:4] == ((10, 11, 13.5, 14, 16, 18.75, 20), 17 + 10 / 60, (13.5, 18.75), False) and TOSSAT0[5] == ("best", "cat") and ", 5, False, 6, True  # 10/31 진우: 하루 생필품" in src129
 H.TOSS_GAP, H.POSTS, H.EVENTS = 15 * 60, "posts129.json", "ev129.json"; json.dump([], open(H.POSTS, "w")); json.dump([], open(H.EVENTS, "w"))
-H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS = TOSSAT0[0], TOSSAT0[1], TOSSAT0[2], TOSSAT0[3], TOSSAT0[5]
+H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TOSS_TH_LATER = TOSSAT0[0], TOSSAT0[1], TOSSAT0[2], TOSSAT0[3], TOSSAT0[5], {("day", 20): "21:20", ("special", 22): "22:20"}
+assert 'TOSS_TH_LATER = {("day", 20): "21:20", ("special", 22): "22:20"}' in src129 and f"{H.PREVIEW_HOUR:02d}:{H.PREVIEW_MIN:02d}" == "22:03"
 for k in ("thmall", "tgmall", "tstop", "treuse"): H.RUN.pop(k, None)
 # ① 쿠팡 12:00 묶음 → 토스 12:10 미룸 / 12:16 OK(12:30 쿠팡 모음은 따로 — 그게 있으면 그 뒤 15분)
 s129 = {"thmall": {"t": 1, "cp": TK("2026-11-06 12:00")}}
@@ -11951,7 +11952,26 @@ for m in range(9 * 60, 23 * 60, 5):
     time.time = lambda m=m: TK(f"2026-11-06 {m // 60:02d}:{m % 60:02d}")
     for kind in (False, "series", True, "cat"):
         with contextlib.redirect_stdout(io.StringIO()): H.toss_deals(s129d, kind)
-assert [k for _, k in tb129] == ["tossseries", "toss13.5", "toss17.1667", "toss18.75"] and [t for t, _ in tb129] == ["10:00", "13:30", "17:10", "18:45"], tb129  # 하루 4번
+    with contextlib.redirect_stdout(io.StringIO()): H.toss_th_later(s129d)
+assert [k for _, k in tb129] == ["tossseries", "toss13.5", "toss17.1667", "toss18.75", "toss2120"] and [t for t, _ in tb129] == ["10:00", "13:30", "17:10", "18:45", "21:20"], tb129  # 하루특가·베스트·생필품 + 21:20 하루특가 마감 전(20시 회차 상품)
+# 22:20 토스 특가(22시 회차 — 할인 40%↑·리뷰 50↑, 3~5개) = 줄 → 22:03 미리보기(쿠팡) 뒤 22:20 OK / 22:10이면 미룸 → 하루 6번
+H.toss_pool = lambda seen: [[950 + i, f"특가{i}", 9000, 0, 50, 0, 120] for i in range(4)]
+H.toss = lambda path, body=None: {"items": [{"tacaItemId": 950 + i, "displayName": f"토스특가{i}", "displayPrice": 9000 + i, "discountRate": 50, "reviewCount": 120, "reviewScore": 4.8} for i in range(4)]}
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": 9, "comment": ""} for i in range(len(lines))]
+time.time = lambda: TK("2026-11-06 22:05"); s129d["bundles"] = {"t": 1, "ts": []}; H.TOSS_NO_CMP = True  # 실제 = 게시 시점 줄
+with contextlib.redirect_stdout(io.StringIO()): H.toss_deals(s129d, "special")
+q129 = s129d["thlater"]["q"]; H.TOSS_NO_CMP = False
+assert [(x["at"], x["kind"]) for x in q129] == [("2026-11-06 22:20", "toss2220")] and q129[0]["text"].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 중 살 만한 3개\n\n1️⃣ ") and q129[0]["text"].endswith("\n\n⚠️ 11/6 22:05 게시 시점 가격") and len(q129[0]["text"]) <= 480 and "쿠팡" not in q129[0]["text"], q129
+s129d["thmall"] = {"t": 1, "cp": TK("2026-11-06 22:03")}  # 22:03 미리보기(쿠팡)
+s129x = {"thmall": s129d["thmall"], "thlater": {"t": 1, "q": [{**q129[0], "at": "2026-11-06 22:10"}]}}; o129 = io.StringIO(); time.time = lambda: TK("2026-11-06 22:10")
+with contextlib.redirect_stdout(o129): H.toss_th_later(s129x)
+assert "toss gap 미룸 · toss2220 9분 뒤" in o129.getvalue() and len(s129x["thlater"]["q"]) == 1 and tb129[-1][1] == "toss2120", o129.getvalue()  # 22:10 = 미뤄 둠(줄 그대로)
+time.time = lambda: TK("2026-11-06 22:20"); H.toss_th_later(s129d)
+assert [k for _, k in tb129] == ["tossseries", "toss13.5", "toss17.1667", "toss18.75", "toss2120", "toss2220"] and s129d["thlater"]["q"] == [], tb129  # 하루 6번
+s129y = {"thlater": {"t": 1, "q": [{**q129[0], "at": "2026-11-06 22:20"}]}}; time.time = lambda: TK("2026-11-06 23:31")
+o129 = io.StringIO()
+with contextlib.redirect_stdout(o129): H.toss_th_later(s129y)
+assert s129y["thlater"]["q"] == [] and "시간 지나 X" in o129.getvalue() and len(tb129) == 6  # 23:30 지나면 버림(로그)
 assert sorted(k[len("tossbest_20261106_"):] for k in s129d if k.startswith("tossbest_")) == sorted(["10", "11", "13.5", "14", "16", "18.75", "20"]) and "tosscat_20261106_17.1667" in s129d  # 텔레그램 토스 베스트 7번 그대로(12·18시 → 13:30·18:45) · 생필품 17:10
 # ④ 텔레그램: 토스 글이 쿠팡 채널 글 바로 뒤 15분 안 = 다음 실행에(개수 그대로) · 쿠팡 채널 글 시각 = http()가 채널 새 글 보낼 때
 class R129:
@@ -11973,7 +11993,7 @@ time.time = lambda: TK("2026-11-07 13:36"); H.toss_deals(s129t, True); assert "t
 s129g = {}; H.toss_guard_day(s129g); assert s129g["tgmall"]["cp"] == TK("2026-11-07 13:20")  # 실행 끝 = seen(다음 실행이 봄)
 H.RUN.pop("tgmall", None); H.RUN.pop("thmall", None)
 # ② 개별 글 번갈아: 쿠팡·쿠팡·토스 후보 = 쿠팡 → 토스 → 쿠팡(바로 앞 개별 글과 다른 몰 먼저 · 한쪽 없으면 같은 몰 연속)
-H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TH_ALT = http126, 99, 45 * 60, 1, th_strong0, True, (lambda s: None), False, True
+H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TH_MALL_ALT = http126, 99, 45 * 60, 1, th_strong0, True, (lambda s: None), False, True
 json.dump([own126(2901, "쿠팡A", "21:58"), own126(2902, "쿠팡B", "22:01")], open(H.POSTS, "w"), ensure_ascii=False)
 s129a = {"thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq126(9, "22:00")]}}
 seq129 = [run126(s129a, at) for at in ("22:10", "22:56", "23:42")]
@@ -11984,7 +12004,7 @@ s129b = {"thfill": {"t": 1, "k": "own"}, "thtoss": {"t": 1, "q": [tq126(8, "22:0
 g129, l129 = run126(s129b, "22:10")
 assert g129 == ["쿠팡C"] and "threads 번갈아 cp (앞 개별 글 toss" in l129 and len(s129b["thtoss"]["q"]) == 1, (g129, l129)
 (time.time, H.http, run129, H.TOSS_GAP, H.POSTS, H.EVENTS, H.toss, H.toss_link, H.ai_pick, H.tg, H.th_bundle, H.HAS_TOSS, tk129, H.season_adj, H.rv_fields,
- H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TH_ALT, urllib.request.urlopen,
- H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB) = sv129
+ H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TH_MALL_ALT, urllib.request.urlopen,
+ H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB, H.TOSS_TH_LATER, H.toss_pool) = sv129
 H.E.pop("THREADS_TOKEN", None) if tk129 is None else H.E.update(THREADS_TOKEN=tk129)
 H.RUN.clear(); H.RUN.update(run129); os.chdir(cwd129)
