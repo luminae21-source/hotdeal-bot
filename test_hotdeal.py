@@ -11696,7 +11696,7 @@ def toss126(path, body=None):
     api126.append(path)
     if path == "/categories": return {"categories": [{"categoryId": 7, "displayName": "생활용품"}, {"categoryId": 8, "displayName": "식품"}]}
     if path == "/products/today-deals?size=30": return {"items": [{"tacaItemId": 100 + i, "displayName": f"하루상품{i} 10개입", "displayPrice": 9900, "discountRate": 30, "isSoldOut": i == 2} for i in range(3)]}
-    if path == "/products/best-categories/7?size=30": return {"items": [{"tacaItemId": 200 + i, "displayName": f"생활상품{i}", "displayPrice": 5000 + i, "discountRate": 0} for i in range(5)]}
+    if path == "/products/best-categories/7?size=30": return {"items": [{"tacaItemId": 200 + i, "displayName": f"생활상품{i}", "displayPrice": 5000 + i, "discountRate": 0} for i in range(5)] + [{"tacaItemId": 101, "displayName": "하루상품1 10개입", "displayPrice": 9900}]}  # 101 = 하루특가에도 있음
     if path == "/products/best-selling?size=30": return {"items": [{"tacaItemId": 300 + i, "displayName": f"베스트{i}", "displayPrice": 7000} for i in range(3)]}
     raise AssertionError(path)
 tg126, tb126 = [], []
@@ -11712,7 +11712,7 @@ time.time = lambda: TK("2026-11-05 10:05"); H.toss_deals(s126, "series")
 assert len(tg126) == 1 and len(tb126) == 1 and s126["series"]["toss"] == 1 and "tossseries_20261105" in s126, (tg126, tb126)
 t126 = tg126[0]
 assert t126.startswith(f"<i>{H.TOSS_NOTE}</i>\n[💙 토스 하루특가 #1]\n\n💙 <b>오늘 토스에서 살 만한 5개</b>\n\n1️⃣ ") and t126.count("toss.shopping/_m/S") == 5 and "쿠팡" not in t126 and "게시 시점 가격" in t126, t126
-assert t126.index("하루상품0") < t126.index("하루상품1") < t126.index("생활상품") and "하루상품2" not in t126 and "⏰ 하루특가 · 밤 12시까지" in t126 and "🏆 11/5 생활용품 베스트 2위" in t126, t126  # 하루특가 먼저(품절 X) · 모자라면 베스트 점수 순 3개 채움(5개까지)
+assert t126.index("하루상품0") < t126.index("하루상품1") < t126.index("생활상품") and "하루상품2" not in t126 and t126.count("하루상품1") == 1 and "⏰ 하루특가 · 밤 12시까지\n💰 <b>9,900원</b> (30%↓)\n💰 1개당 990원꼴\n\n3️⃣" in t126 and "베스트 6위" not in t126 and "🏆 11/5 생활용품 베스트 2위" in t126, t126  # 하루특가 먼저(품절 X) · 모자라면 베스트 점수 순 3개 채움(5개까지)
 k126, x126, top126 = tb126[0]
 assert k126 == "tossseries" and top126 == "토스 하루특가" and x126.startswith(H.TOSS_NOTE + "\n[💙 토스 하루특가 #1]\n\n1️⃣ 하루상품0 10개입 9,900원 (30%↓)\n하루특가 · 밤 12시까지 · ") and len(x126) <= 480, x126
 assert re.search(r"\n\n⚠️ 11/5 10:05 게시 시점 가격$", x126) and len(re.findall(r"^[1-7]️⃣ ", x126, re.M)) >= 3 and "쿠팡" not in x126 and "네이버" not in x126, x126  # 다른 몰 X · 500자 안(넘으면 상품 수 줄임)

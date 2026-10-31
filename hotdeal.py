@@ -2915,7 +2915,7 @@ def toss_deals(seen, best=False):
     커머스형 전시·가격 비교 안 함) 그대로."""
     if RUN.get("tstop"):  # CCC 토스 점검 = 회차 쉼(main에서 lambda로도 불림)
         return
-    kst, cat, beauty, special, series = time.gmtime(time.time() + 9 * 3600), best in ("cat", "beauty"), best == "beauty", best == "special", best == "series"  # series = ⑥ 10시 토스 시리즈 묶음  # beauty = 뷰티 카테고리만 따로 1회차, special = 토스 특가(10/11)
+    kst, cat, beauty, special, series = time.gmtime(time.time() + 9 * 3600), best in ("cat", "beauty"), best == "beauty", best == "special", best == "series"  # beauty = 뷰티 카테고리만 따로 1회차, special = 토스 특가(10/11), series = ⑥ 10시 토스 시리즈 묶음
     day = [h for h in TOSS_DAY_HOURS if h <= kst.tm_hour < h + 3]  # 하루특가는 회차 3시간 안에만(놓친 회차를 밤에 몰아 올리지 않게)
     hrs = [h for h in (TOSS_BEAUTY_HOURS if beauty else (TOSS_CAT_HOUR,) if cat else [h for h in TOSS_SPECIAL_HOURS if kst.tm_hour < h + 3] if special else [TOSS_SERIES_HOUR] * (kst.tm_hour < TOSS_SERIES_HOUR + 3) if series else TOSS_BEST_HOURS if best else day) if h <= kst.tm_hour]
     key = time.strftime("tossseries_%Y%m%d" if series else "tossspecial_%Y%m%d_" if special else "tossbeauty_%Y%m%d_" if beauty else "tosscat_%Y%m%d_" if cat else "tossbest_%Y%m%d_" if best else "tossday_%Y%m%d", kst) + \
@@ -2944,8 +2944,9 @@ def toss_deals(seen, best=False):
                if (x.get("discountRate") or 0) >= SPECIAL_DR and (x.get("reviewCount") or 0) >= SPECIAL_RC]  # 지금 값으로 다시 거름(1일 된 목록의 끝난 하루특가 할인 X)
     elif series:  # ⑥ 하루특가(_d) + 생활용품 베스트(순위 = 오늘 날짜 기준) — 고른 뒤 하루특가 먼저, 5개 밑이면 베스트로 채움
         c = next((c for c in toss("/categories")["categories"] if c["displayName"] == TOSS_SERIES_CAT), None)
-        raw = [{**x, "_src": "하루특가 · 밤 12시까지", "_d": 1} for x in toss("/products/today-deals?size=30")["items"]] \
-            + [{**x, "_src": f"{kst.tm_mon}/{kst.tm_mday} {TOSS_SERIES_CAT} 베스트 {r + 1}위"} for r, x in enumerate(toss(f"/products/best-categories/{c['categoryId']}?size=30")["items"] if c else [])]
+        raw = [{**x, "_src": "하루특가 · 밤 12시까지", "_d": 1} for x in toss("/products/today-deals?size=30")["items"]]
+        raw += [{**x, "_src": f"{kst.tm_mon}/{kst.tm_mday} {TOSS_SERIES_CAT} 베스트 {r + 1}위"} for r, x in enumerate(toss(f"/products/best-categories/{c['categoryId']}?size=30")["items"] if c else [])
+                if x["tacaItemId"] not in {y["tacaItemId"] for y in raw}]  # 하루특가에도 있는 상품 = 하루특가로(아래 id로 합칠 때 하루특가 표시가 안 지워지게)
     else:
         raw = [{**x, "_src": f"많이 팔린 순위 {r + 1}위" if best else "하루특가 · 밤 12시까지"} for r, x in enumerate(toss(f"/products/{'best-selling' if best else 'today-deals'}?size=30")["items"])]
     evs, ti = load(EVENTS, []), seen.get("tossid", {}).get("m", {})
