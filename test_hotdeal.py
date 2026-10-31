@@ -779,7 +779,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), new_sets, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
