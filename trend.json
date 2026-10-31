@@ -1,7 +1,32 @@
 {
  "google": {
-  "at": "2026-11-01 02:04",
+  "at": "2026-11-01 03:00",
   "items": [
+   {
+    "t": "바이에른 대 도르트문트",
+    "n": "2000+",
+    "news": "'김민재 선발! 요나탄 타는 벤치' 콤파니의 선택은 韓 철기둥이었다...바이에른, 도르트문트와 분데스리가…"
+   },
+   {
+    "t": "미국 시간",
+    "n": "100+",
+    "news": "미국, 서머타임 내달 1일 해제…동부기준 韓과 시차 13→14시간"
+   },
+   {
+    "t": "헐 시티 대 입스위치",
+    "n": "100+",
+    "news": "Hull City 2-2 Ipswich Town: Julio Enciso stunner salvages…"
+   },
+   {
+    "t": "크리스타 파이크",
+    "n": "200+",
+    "news": "'독극물 사형' 생존 美죄수 \"육체와 마음에 통증\"…재집행 거부"
+   },
+   {
+    "t": "npl",
+    "n": "100+",
+    "news": "Waterlogged TU cricket ground (photos)"
+   },
    {
     "t": "조현아",
     "n": "500+",
@@ -20,37 +45,12 @@
    {
     "t": "스완지 시티 대 블랙번",
     "n": "200+",
-    "news": "Swansea City v Blackburn Rovers: Championship stats &…"
+    "news": "Swansea City 4-0 Blackburn Rovers: Eustaquio, Opoku, Lissah…"
    },
    {
     "t": "한화 blg",
     "n": "500+",
     "news": "[롤드컵] 추첨 운도 지독하게 없다…한화생명, 빌리빌리와 8강행 결정짓는 '단두대 매치'"
-   },
-   {
-    "t": "카를로스 알카라스",
-    "n": "500+",
-    "news": "그랜드슬램 4강인가, ATP 500인가…비엔나의 승부수, 알카라스 영입 효과"
-   },
-   {
-    "t": "ali",
-    "n": "100+",
-    "news": "Michael B. Jordan, Omari Hardwick and More Stars’ Shoes at…"
-   },
-   {
-    "t": "고소",
-    "n": "1000+",
-    "news": "김정철 \"중수청·공소청 출범, 지금 완전히 카오스\""
-   },
-   {
-    "t": "맨 시티 대 브라이턴",
-    "n": "5000+",
-    "news": "Manchester City vs Brighton & Hove Albion: Premier League…"
-   },
-   {
-    "t": "묀헨글라트바흐 대 파더보른",
-    "n": "100+",
-    "news": "Borussia M'gladbach vs Paderborn: German Bundesliga stats &…"
    }
   ]
  },
