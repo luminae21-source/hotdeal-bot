@@ -2390,7 +2390,7 @@ tg9b = H.tg; H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 1}
 json.dump([{"t": f"{D9b} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 리스트상품{k} {['아주 긴 물티슈', '꽤 긴 화장지', '조금 긴 세제', '제법 긴 샴푸', '무척 긴 치약'][k]} 대용량 기획 (9,900원/무료)\n\n좋음", "url": f"https://link.coupang.com/a/L{k}", "mid": 10 + k, "pop": 10 - k} for k in range(5)], open("posts.json", "w"), ensure_ascii=False)
 calls.clear(); time.time = lambda: TK(f"{D9b} 12:05"); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 지금 살 만한 딜 TOP") and "👉 https://link.coupang.com/a/L0\n" in tl9[0]["text"][0] and "/p/" not in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
+assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 생필품·세탁 5\n") and "👉 https://link.coupang.com/a/L0\n" in tl9[0]["text"][0] and "/p/" not in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
 lk9 = set(re.findall(r"https?://\S+|t\.me/\S+", tl9[0]["text"][0])) | set(tl9[0].get("link_attachment", []))
 assert len(lk9) <= 5 and "t.me" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://link.coupang.com/a/L0"]  # Threads 글 하나에 서로 다른 링크 5개까지(4279111 — 10/12 12·15·18시 리스트 실패): 딜 링크만, 미리보기 = 1번 딜
 assert "게시 시점" not in tl9[0]["text"][0]  # 토스 딜 없는 리스트 = 게시 시점 줄 X
@@ -2404,7 +2404,7 @@ with contextlib.redirect_stdout(out9): H.top_deals({})
 assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and SR9 + "4" in sent[-1][1]["text"] and "threads skip top12 0개\n" in out9.getvalue()  # 10/19 밤 진우 'Threads는 수수료 딜만': 검색 링크뿐이면 Threads 리스트 X, 텔레그램은 그대로
 json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and "TOP3 (12시)" in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
+assert len(tl9) == 1 and re.search(r"\n\n🏆 (?:[^\n]+ 3|지금 살 만한 딜 TOP3 \(\d+시\))\n", tl9[0]["text"][0]) and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
 assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🏆") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
 json.dump([{**p, "url": SR9 + str(k) if k else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
 with contextlib.redirect_stdout(out9): H.top_deals({})
@@ -3271,7 +3271,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -3856,7 +3856,7 @@ json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡]
              {"t": f"{D19} 09:10", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 커넥트 선크림 (9,900원)\n\n좋음", "url": "https://naver.me/S19", "mid": 1941}], open(H.POSTS, "w"), ensure_ascii=False)
 c19.clear(); time.time = lambda: TK(f"{D19} 12:05"); H.top_deals({})
 assert len(c19) == 1 and "\n\n💄 화장품\n· 커넥트 선크림 9,900원\n👉 https://naver.me/S19" in c19[0]["text"] and "검색 선크림" not in c19[0]["text"] and "search.shopping" not in c19[0]["text"]
-assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n🏆 지금 살 만한 딜 TOP3") and "게시 시점" not in c19[0]["text"]  # 💄 링크도 그 프로그램 대가성 문구 맨 앞(10/19 밤 점검: 리스트 딜 문구만 있던 것)
+assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n🏆 ") and re.search(r"\n\n🏆 (?:[^\n]+ 3|지금 살 만한 딜 TOP3 \(\d+시\))\n", c19[0]["text"]) and "게시 시점" not in c19[0]["text"]  # 💄 링크도 그 프로그램 대가성 문구 맨 앞(10/19 밤 점검: 리스트 딜 문구만 있던 것)
 ps19 = json.load(open(H.POSTS)); ps19[-1].update(url="https://toss.shopping/_m/S19", text=ps19[-1]["text"].replace(H.NAVER_NOTE, H.TOSS_NOTE).replace("[네이버]", "[토스]")); json.dump(ps19, open(H.POSTS, "w"), ensure_ascii=False)
 c19.clear(); H.top_deals({})
 assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n\n🏆") and c19[0]["text"].endswith("\n\n⚠️ 10/20 12:05 게시 시점 가격") and len(c19[0]["text"]) <= 480 and "👉 https://toss.shopping/_m/S19" in c19[0]["text"]  # 💄 토스 = 게시 시점 줄
@@ -10885,7 +10885,7 @@ json.dump([{"t": "2026-10-28 10:00", "text": "a", "url": B2}, {"t": "2026-10-29 
 H.RUN["cpsub"] = [0]; cc108.clear(); H.cp_sub_site({})
 assert cc108 == [("POST", "/deeplink", {"coupangUrls": [R1], "subId": "site"})]  # B2 = site 이미 있음 · 진우 링크 X
 H.cp_sub_site({}); assert len(cc108) == 1  # 다 됨 = 호출 X
-assert "trend, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
+assert "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
 S.SITE_SUB = S.site_subs(); assert S.SITE_SUB == {B1: "https://link.coupang.com/a/site11112", B2: "https://link.coupang.com/a/site222"}
 pg108 = S.page("t", f'<a class="buy" href="{B1}">사러 가기</a><a href="{JW}">진우</a><a href="{B2}">2</a>')
 assert 'href="https://link.coupang.com/a/site11112"' in pg108 and f'href="{JW}"' in pg108 and B1 not in pg108 and "site222" in pg108
