@@ -84,6 +84,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .ex{color:var(--acc);font-size:12px;font-weight:700}.u{color:var(--sub);font-size:12px;line-height:1.45}
 .im{position:relative;display:grid;place-items:center;overflow:hidden;background:var(--c,var(--chip));text-decoration:none}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}.ci{display:block;width:1em;height:1em;background:var(--ci,var(--sub));-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}.deal .im .ci{width:.7em;height:.7em}
 .im.bg{grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:2px;place-items:stretch;background:#fff}.im.bg img{position:static;min-height:0}.bn{position:absolute;left:6px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(17,17,17,.78);color:#fff;font-size:11px;font-weight:800;line-height:16px}
+.sq>b{display:block;margin:0 2px 6px;font-size:12.5px;font-weight:800;color:var(--sub)}.srl{list-style:none;margin:14px 0;padding:0}.srl li a{display:block;padding:14px 4px;border-top:1px solid var(--line);color:inherit;text-decoration:none}.srl b{display:block;font-size:16px}.srl span{font-size:13px;color:var(--sub)}.srn{margin:12px 0 0;font-size:13.5px;line-height:1.7}.srn a{margin-left:6px;font-weight:700}
 .bl{list-style:none;margin:14px 0 0;padding:0}.bi{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}.bi img,.bi .bx{flex:none;width:84px;height:84px;border-radius:12px;object-fit:contain;background:#fff}.bi .bx{background:var(--chip)}.bi div{min-width:0;flex:1}.bi b{display:block;font-size:15px;line-height:1.35}.bi .pr{display:block;margin-top:4px;font-size:17px;font-weight:800}.bi small{display:block;color:var(--sub);font-size:12.5px}.bi p{margin:4px 0 0;font-size:13.5px;color:var(--sub)}.bi>div>a{margin-top:8px;padding:9px 12px;font-size:14px}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 0}
 .tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 2px 10px;border-radius:18px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-size:13px;font-weight:600;letter-spacing:-.4px;white-space:nowrap}
@@ -1009,6 +1010,59 @@ def img_of(p):
 
 
 B_GOLD = "오늘의 쿠팡 골드박스 TOP"  # 아침 골드박스 묶음 글 머리(hotdeal.goldbox)
+SERIES = (("dawn", "새벽 장바구니", "🌙", "01:00", "새벽에 생각난 김에 쟁여 둘 생필품·간식 묶음"), ("one", "오늘의 1개 값", "☀️", "07:30", "1개 값으로 따져 본 오늘의 숫자 한 줄"),
+          ("vanity", "화장대·욕실 장바구니", "💄", "12:00", "화장대·욕실에서 자주 떨어지는 것들 묶음"), ("stock", "생필품 쟁여두기", "🧻", "15:00", "휴지·세제·물티슈 같은 생필품 1개 값 묶음"),
+          ("commute", "퇴근길 장바구니", "🚗", "18:00", "차·운동·면도·디지털 묶음"), ("analysis", "핫딜픽 분석", "🔍", "20:30", "표기에 속지 않게 — 핫딜픽이 따져 본 분석"),
+          ("weekly", "이번 주 가격", "📊", "일 20:30", "이번 주 가격 흐름 정리"))  # 10/31 진우 'Threads 글을 시리즈로 — 나중에 고객이나 우리가 찾기 좋게' (key, 이름, 이모지, 시각, 소개) -> docs/series.json
+SERIES_BY, SERIES_EPS = {k: (n, e) for k, n, e, *_ in SERIES}, "series_eps.json"  # 회차 기록: 묶음 = posts.json series·no / 큐레이션(분석·1개 값·이번 주) = series_eps.json(hotdeal.curation)
+
+
+def series_head(key, no):
+    """글 머리 '[🧻 생필품 쟁여두기 #12]'(대가성 문구 바로 다음 줄)."""
+    n, e = SERIES_BY[key]
+    return f"[{e} {n} #{no}]"
+
+
+def series_of(text):
+    """글 안 시리즈 머리 -> (key, 회차) 또는 None(metrics 시리즈별 비교)."""
+    m = re.search(r"^\[\S+ (.+?) #(\d+)\]$", text or "", re.M)
+    return next(((k, int(m[2])) for k, (n, _) in SERIES_BY.items() if m and n == m[1]), None)
+
+
+def series_pages(posts, out, today):
+    """/series/ 모음 + /series/<key>/ 회차 목록(최신 위 · 묶음 = 묶음 카드 · 큐레이션 = 사진·첫 줄·사이트 쪽 링크) + docs/series.json · 색인 O -> sitemap 주소들."""
+    eps = {k: [] for k in SERIES_BY}
+    for i, p in enumerate(posts):
+        if p.get("series") in eps and p.get("no"):
+            eps[p["series"]].append((p["no"], p["t"], card(i, p, (0, None, "", [], False))))
+    for e in json.load(open(SERIES_EPS)) if os.path.exists(SERIES_EPS) else []:
+        if e.get("key") in eps and e.get("no"):
+            im = img_of({"img": (e.get("img") or [""])[0], "url": GOLDBOX, "text": ""})
+            eps[e["key"]].append((e["no"], e.get("t", ""), f'<article class="g"><a class="se" href="{html.escape(e.get("link") or BASE)}">' + (f'<div class="im"><img src="{html.escape(im)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>' if im else "")
+                                  + f'<h3>{html.escape((e.get("title") or "")[:60])}</h3></a></article>'))
+    json.dump([{"key": k, "name": n, "emoji": e, "at": a, "desc": d, "n": len(eps[k])} for k, n, e, a, d in SERIES], open(f"{out}/series.json", "w"), ensure_ascii=False)
+    urls = []
+    for k, n, e, a, d in SERIES:
+        xs = sorted(eps[k], key=lambda x: (-x[0], x[1]))
+        body = (f'<h1 class="h">{e} {html.escape(n)}</h1><div class="t">{html.escape(d)} · 매일 {html.escape(a)} · 회차 {len(xs)}</div>'
+                + (f'<div class="cards">{"".join(f"<div class=sq><b>#{no} · {int(t[5:7])}/{int(t[8:10])}</b>{c}</div>" for no, t, c in xs)}</div>' if xs else '<p class="t">첫 회차를 준비하고 있어요</p>')
+                + f'<p class="t"><a href="{BASE}series/">← 시리즈 모두 보기</a></p>')
+        write(out, f"series/{k}/", page(f"{e} {n} — 핫딜픽 시리즈", body, f"핫딜픽 시리즈 {n}: {d}", f"{BASE}series/{k}/"))
+        urls.append((f"{BASE}series/{k}/", max([x[1][:10] for x in xs] or [today])))
+    body = '<h1 class="h">📚 핫딜픽 시리즈</h1><div class="t">회차마다 모아 봐요 — 지난 회차도 여기서</div><ul class="srl">' + "".join(
+        f'<li><a href="{BASE}series/{k}/"><b>{e} {html.escape(n)}</b><span>{html.escape(d)} · {html.escape(a)} · 회차 {len(eps[k])}</span></a></li>' for k, n, e, a, d in SERIES) + "</ul>"
+    write(out, "series/", page("핫딜픽 시리즈 — 새벽 장바구니·생필품 쟁여두기·핫딜픽 분석", body, "핫딜픽 시리즈 모음: 새벽 장바구니·화장대·욕실 장바구니·생필품 쟁여두기·퇴근길 장바구니·핫딜픽 분석·이번 주 가격", f"{BASE}series/"))
+    return urls + [(f"{BASE}series/", today)]
+
+
+def series_line(p, posts):
+    """딜 쪽 '이 시리즈 다른 회차' 줄: 같은 시리즈 묶음 글 최근 3개(이 글 빼고) + 시리즈 쪽 링크."""
+    if p.get("series") not in SERIES_BY:
+        return ""
+    n, e = SERIES_BY[p["series"]]
+    os_ = sorted(((q.get("no"), j) for j, q in enumerate(posts) if q is not p and q.get("series") == p["series"] and q.get("no")), reverse=True)[:3]
+    return (f'<nav class="srn" aria-label="이 시리즈 다른 회차"><b>{e} {html.escape(n)} #{p.get("no")}</b> · 이 시리즈 다른 회차 '
+            + " ".join(f'<a href="{BASE}p/{j}.html">#{no}</a>' for no, j in os_) + f' <a href="{BASE}series/{p["series"]}/">모두 보기 →</a></nav>')
 
 
 def bundle_of(p):
@@ -1633,7 +1687,7 @@ def search_index(it, tags={}):
         c = CAT_META.get(cat_of(p))
         name = parse(title_of(p["text"]))[1]
         out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_key(p), "c": c[3] if c else "",
-                    "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name), tags.get(p.get("url"))) if x).lower()})
+                    "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name), tags.get(p.get("url")), p.get("series") in SERIES_BY and f"{SERIES_BY[p["series"]][0]} #{p.get('no')} 시리즈") if x).lower()})
     return out
 
 
@@ -1997,7 +2051,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
                       + (f'<a class="btn" href="{html.escape(u)}" rel="nofollow sponsored noopener" target="_blank">구매하기</a>' if u else "") + "</div></li>"
                       for k, (n, pr, un, im, u, c) in enumerate(b_items(p), 1))
         return (f'<article class="card deal">{thumb(p)}<div class="s">{"쿠팡" if shop_of(p) == "coupang" else "핫딜"} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
-                f'<h1 class="dn"><a href="{BASE}p/{i}.html">{html.escape(bundle_head(p))}</a></h1>' + (f'<div class="u">{html.escape(sub)}</div>' if sub else "")
+                f'<h1 class="dn"><a href="{BASE}p/{i}.html">{html.escape(bundle_head(p))}</a></h1>' + (f'<div class="u">{html.escape(sub)}</div>' if sub else "") + extra
                 + f'<ol class="bl">{lis}</ol><p class="note">게시 시점 가격이에요 · 가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p></article>')
     store, name, price = parse(title)
     body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
@@ -2705,7 +2759,7 @@ def si(k, cls="si"):
     return f'<svg class="{cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="{d}"/></svg>'
 
 
-LINK_CSS = theme_css("""*{box-sizing:border-box}[hidden]{display:none!important}
+LINK_CSS = theme_css(""".srs{margin:18px 0 0}.srs h2{font-size:15px;margin:0 0 8px}.srs a{display:inline-block;margin:0 6px 8px 0;padding:7px 11px;border-radius:999px;background:var(--chip,#f2f3f5);color:inherit;font-size:13px;font-weight:700;text-decoration:none}*{box-sizing:border-box}[hidden]{display:none!important}
 :root{--bg:#fff;--ink:#1C1C1E;--sub:#55555B;--mut:#6B7180;--line:#E6E6EA;--chip:#F4F4F6;--tile:#F6F6F8;--pk:#E8436B;--pke:#D6365E;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#0F1013;--ink:#ECEEF2;--sub:#B4B9C4;--mut:#9AA0AC;--line:#262931;--chip:#24272E;--tile:#24272E;--pk:#FF5C72;--pke:#FF9AA6;color-scheme:dark}}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;letter-spacing:-.2px;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
@@ -2866,7 +2920,8 @@ def link_page(style, posts, it, out, alt=False, today=None):
             f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">{THEME_JS}'
             f'<style>{LINK_CSS}</style>{gc}</head><body><main>' + "".join(link_top(s, kakao) for s in ("a", "b") if s in style)
             + f'<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out)}{deals}'
-            f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">칸마다 가격 아래 = 확인·게시 시각(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour:02d}:{kst.tm_min:02d} 갱신</p>'
+            + '<nav class="srs" aria-label="시리즈"><h2>📚 시리즈 다시 보기</h2>' + "".join(f'<a href="{BASE}series/{k}/" data-gc="link/series-{k}">{e} {html.escape(n)}</a>' for k, n, e, *_ in SERIES) + "</nav>"
+            + f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">칸마다 가격 아래 = 확인·게시 시각(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour:02d}:{kst.tm_min:02d} 갱신</p>'
             f'</main>{LINK_JS}</body></html>')
 
 
@@ -2947,7 +3002,7 @@ def build(posts, out="docs"):
         back = f'<a class="btn2" href="{c_url(c[0] if c else "hot")}">{c[2] + " " + c[1] if c else "🔥 지금 특가"} 더 보기 →</a>'
         newer = cur.get(p.get("url")) if sh is None and p.get("own") and cur.get(p.get("url"), i) != i else None  # 같은 상품 새 글(진열 이어받음)
         sp = spec_of(parse(title_of(p["text"]))[1])
-        extra = "" if p["text"].startswith("📋") else (f'<div class="u">📦 구성 {html.escape(sp)}</div>' if sp else "") + rec_line(i, p, recs) + deal_state(p, sh, newer)  # TT-2 ⑤ 고유 내용
+        extra = "" if p["text"].startswith("📋") else series_line(p, posts) if bundle_of(p) else (f'<div class="u">📦 구성 {html.escape(sp)}</div>' if sp else "") + rec_line(i, p, recs) + deal_state(p, sh, newer)  # TT-2 ⑤ 고유 내용
         tp = TOPIC_OF.get(i)
         tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
         open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids)
@@ -3082,6 +3137,7 @@ def build(posts, out="docs"):
         if os.path.isdir(f"{out}/link/{d}"):
             shutil.rmtree(f"{out}/link/{d}")
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
+    urls += series_pages(posts, out, today)  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'

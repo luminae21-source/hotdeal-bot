@@ -111,6 +111,7 @@ jobs:
           [ ! -f relink.json ] || git add relink.json   # 사이트 생 주소 -> 수수료 링크(바뀐 수·끝까지 안 된 상품 pid·이름·응답 — 가격·수수료 X)
           [ ! -f trend.json ] || git add trend.json   # 품목 흐름(네이버 쇼핑인사이트 오르는 품목·구글 실검 — Cowork 진열 소재, 숫자 = 상대 비율만)
           [ ! -f cat_gender.json ] || git add cat_gender.json   # 품목 칸별 여성·남성 클릭 비율(쇼핑인사이트 월 1번 — Threads 12·18시 묶음 나눔)
+          [ ! -f series_eps.json ] || git add series_eps.json   # 시리즈 회차 기록(Cowork 큐레이션 — 분석·1개 값·이번 주: 시리즈·회차·첫 줄·사이트 쪽 링크·사진 주소)
           [ ! -f price_hist.json ] || git add price_hist.json   # 쿠팡 가격 추적(상품 키 -> [시각, 가격, 와우·쿠폰 표시, 출처] — 공개 가격만, 토스 X)
           [ ! -f auto_events.json ] || git add auto_events.json   # 봇이 만든 진열·예약(10/30 Cowork 크롬 이관 — events.json은 Cowork 것 그대로)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push)))  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도
