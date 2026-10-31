@@ -11,7 +11,7 @@ IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70�
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
-H.TH_SOLO_HOURS = ()  # 10/31 개별 글 07·12·18·20시대 몫 남김 = 9-122에서만(다른 셀프체크 = 시간대 상관없이)
+H.TH_SOLO_DAWN = (0, 0)  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이)
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -2383,14 +2383,14 @@ json.dump([{"t": f"{D9b} 18:00", "text": "🔥 [카카오] 5점만 (3,000원)\n\
 seen9b = {}; assert th9b("18:30") == []; H.TH_SOLO_MIN = 0  # 채움은 7점↑·진우 링크만(5점 X)
 assert "th_solo(seen, text, fill=True, reopen=mode)" in inspect.getsource(H.toss_reopen) and "th_solo(seen, plain_of(body), fill=True, beauty=" in inspect.getsource(H.toss_picks)  # 재오픈·토스 이름 예약도 하루 5개에 셈
 assert (tlh0, sv9b[5]) == ((12, 15, 18), ("day", "best", "cat", "beauty", "special")) and 'kind in TH_TOSS_KINDS and (hrs[-1] in TH_LIST_HOURS or kind == "cat")' in inspect.getsource(H.toss_deals)
-assert H.TH_TOSS_KINDS != ("best",) and "TH_LIST_HOURS, TH_TOSS_KINDS = 8, 0, 45 * 60, 1, 1, (12, 15, 18), (\"best\", \"cat\")" in inspect.getsource(H) and H.TH_SLOTS is None and "TH_SOLO_HOURS, TH_SOLO_PER = (7, 12, 18, 20), 2" in inspect.getsource(H)  # 기본값: 개별 글 하루 8개(10/31 — 99 = 한도 없음이던 것)·07·12·18·20시대 먼저·45분 간격(슬롯 X, 10/12 01:20), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
+assert H.TH_TOSS_KINDS != ("best",) and "TH_LIST_HOURS, TH_TOSS_KINDS = 15, 0, 45 * 60, 1, 1, (12, 15, 18), (\"best\", \"cat\")" in inspect.getsource(H) and H.TH_SLOTS is None and "TH_SOLO_DAWN = (7, 5)" in inspect.getsource(H)  # 기본값: 개별 글 하루 15개·새벽 5개까지(10/31 — 99 = 한도 없음이던 것)·45분 간격(슬롯 X, 10/12 01:20), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
 # 12·18시 '지금 살 만한 딜' 리스트는 Threads에도(대가성 문구 맨 앞·번호·이름·가격·텔레그램 버튼과 같은 링크(10/19~)·480자), 다른 시각엔 채널만
 H.TH_LIST_HOURS = (12, 18); sent[:] = []
 tg9b = H.tg; H.tg = lambda m, **p: sent.append((m, p)) or {"message_id": 1}
 json.dump([{"t": f"{D9b} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 리스트상품{k} {['아주 긴 물티슈', '꽤 긴 화장지', '조금 긴 세제', '제법 긴 샴푸', '무척 긴 치약'][k]} 대용량 기획 (9,900원/무료)\n\n좋음", "url": f"https://link.coupang.com/a/L{k}", "mid": 10 + k, "pop": 10 - k} for k in range(5)], open("posts.json", "w"), ensure_ascii=False)
 calls.clear(); time.time = lambda: TK(f"{D9b} 12:05"); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and tl9[0]["text"][0].startswith(H.DISCLOSURE + "\n\n🏆 생필품·세탁 5\n") and "👉 https://link.coupang.com/a/L0\n" in tl9[0]["text"][0] and "/p/" not in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
+assert len(tl9) == 1 and re.match(re.escape(H.DISCLOSURE) + r"\n[^\n]+\n\n1️⃣ ", tl9[0]["text"][0]) and "👉 https://link.coupang.com/a/L0\n" in tl9[0]["text"][0] and "/p/" not in tl9[0]["text"][0] and len(tl9[0]["text"][0]) <= 480 and "🏆 <b>지금 살 만한 딜 TOP5</b> (12시)" in sent[-1][1]["text"]
 lk9 = set(re.findall(r"https?://\S+|t\.me/\S+", tl9[0]["text"][0])) | set(tl9[0].get("link_attachment", []))
 assert len(lk9) <= 5 and "t.me" not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://link.coupang.com/a/L0"]  # Threads 글 하나에 서로 다른 링크 5개까지(4279111 — 10/12 12·15·18시 리스트 실패): 딜 링크만, 미리보기 = 1번 딜
 assert "게시 시점" not in tl9[0]["text"][0]  # 토스 딜 없는 리스트 = 게시 시점 줄 X
@@ -2404,12 +2404,12 @@ with contextlib.redirect_stdout(out9): H.top_deals({})
 assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and SR9 + "4" in sent[-1][1]["text"] and "threads skip top12 0개\n" in out9.getvalue()  # 10/19 밤 진우 'Threads는 수수료 딜만': 검색 링크뿐이면 Threads 리스트 X, 텔레그램은 그대로
 json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
-assert len(tl9) == 1 and re.search(r"\n\n🏆 (?:[^\n]+ 3|지금 살 만한 딜 TOP3 \(\d+시\))\n", tl9[0]["text"][0]) and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
-assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n🏆") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
+assert len(tl9) == 1 and "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ " in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
+assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
 json.dump([{**p, "url": SR9 + str(k) if k else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
 with contextlib.redirect_stdout(out9): H.top_deals({})
 assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and "threads skip top12 1개\n" in out9.getvalue()  # HH·KK: 수수료 딜 1개뿐·채울 것도 없음 = 'TOP1' 리스트 X(텔레그램 TOP5 그대로 · 그 딜 th 표시 X = 개별 칸 후보)
-assert not any(p.get("th") for p in json.load(open("posts.json")))
+assert not any(p.get("th") and not p.get("bundle") for p in json.load(open("posts.json")))  # 사이트 묶음 글(th 1 · bundle) = 그 딜 표시 아님
 H.TH_LIST_HOURS = (18,); calls.clear(); H.top_deals({}); assert not [u for m, u in calls if "/777/threads?" in u]  # 리스트 시각 아니면 채널만
 H.tg = tg9b; time.time = t0; del H.E["THREADS_TOKEN"]; H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_LIST_HOURS, H.TH_TOSS_KINDS = sv9b
 # 9-2c) 화장품 매일 1~2개(10/11 23:50 진우 '화장품은 꾸준하게 올리자, 소모량이 많을 거라 생각해' + '우선 관찰'): Threads 개별 글 3~5개 중 화장품 1~2개 —
@@ -2603,8 +2603,8 @@ json.dump([{"t": f"{D9e} 12:{10 + k}", "text": f"🔥 [G마켓] 반응{k} {['물
           + [{"t": f"{D9e} 13:20", "text": f"{H.TOSS_NOTE}\n\n🛒 [토스] 약한 선크림 (9,900원)\n\n🤔 솔직히 특가로는 약한 제품", "url": "https://toss.shopping/_m/w", "mid": 70, "own": 1},
              {"t": f"{D9e} 13:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 나간 리무버 (9,900원)\n\n토스 최대할인가", "url": "https://toss.shopping/_m/t", "mid": 71, "own": 1, "th": 1}], open("posts.json", "w"), ensure_ascii=False)
 time.time = lambda: TK(f"{D9e} 15:05"); H.top_deals({}); (t9b, l9b), = thp9
-assert t9b.index("반응0") < t9b.index("반응2") < t9b.index("\n\n💄 화장품\n· 클렌징폼0 9,900원\n👉 ") and "클렌징폼1" in t9b and "약한 선크림" not in t9b and "나간 리무버" not in t9b  # 기존 딜 그대로 + 화장품 칸
-assert len(set(re.findall(r"https?://\S+", t9b)) | {l9b}) <= 5 and t9b.count("👉") == 5 and "· 클렌징폼2 9,900원" in t9b and len(t9b) <= 480  # 링크 5개까지(3번째 화장품은 이름·가격만)
+assert t9b.index("반응0") < t9b.index("반응1") < t9b.index("반응2") and "약한 선크림" not in t9b and "나간 리무버" not in t9b.partition("💄")[2] and any("\n\n" + q in t9b for q in H.TH_LIST_Q) and len(t9b) <= 480, t9b  # 10/31 글 틀(훅·질문) — 480자 넘으면 💄 → 상품 순으로 줄임(💄 줄·링크 셈 = 9-19)
+assert len(set(re.findall(r"https?://\S+", t9b)) | {l9b}) <= 5 and t9b.count("👉") <= 5 and (("💄 화장품" in t9b) == ("클렌징폼" in t9b))  # 링크 5개까지
 H.TH_LIST_HOURS = tlh0
 H.th_post, H.tg = pt9e, tg9e2
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.http = sv9e; del H.E["THREADS_TOKEN"]; json.dump([], open("posts.json", "w")); time.time = t0
@@ -3854,12 +3854,14 @@ H.tg = lambda m, **p: tg19.append((m, p)) or {"message_id": 1919}
 json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {['휴지', '물티슈', '세제'][k]}{k} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/T{k}", "mid": 1930 + k, "pop": 9 - k} for k in range(3)]
           + [{"t": f"{D19} 09:00", "text": "🔥 [네이버] 검색 선크림 (9,900원)\n\n좋음", "url": "https://search.shopping.naver.com/search/all?query=sun", "mid": 1940},
              {"t": f"{D19} 09:10", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 커넥트 선크림 (9,900원)\n\n좋음", "url": "https://naver.me/S19", "mid": 1941}], open(H.POSTS, "w"), ensure_ascii=False)
+tln19, H.TH_LIST_NEED = H.TH_LIST_NEED, {}  # 💄 칸 셀프체크(12시 화장품 먼저 = 9-124)
 c19.clear(); time.time = lambda: TK(f"{D19} 12:05"); H.top_deals({})
 assert len(c19) == 1 and "\n\n💄 화장품\n· 커넥트 선크림 9,900원\n👉 https://naver.me/S19" in c19[0]["text"] and "검색 선크림" not in c19[0]["text"] and "search.shopping" not in c19[0]["text"]
-assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.NAVER_NOTE + "\n\n🏆 ") and re.search(r"\n\n🏆 (?:[^\n]+ 3|지금 살 만한 딜 TOP3 \(\d+시\))\n", c19[0]["text"]) and "게시 시점" not in c19[0]["text"]  # 💄 링크도 그 프로그램 대가성 문구 맨 앞(10/19 밤 점검: 리스트 딜 문구만 있던 것)
+assert re.match(re.escape(H.DISCLOSURE + "\n" + H.NAVER_NOTE) + r"\n[^\n]+\n\n1️⃣ ", c19[0]["text"]) and "게시 시점" not in c19[0]["text"]  # 💄 링크도 그 프로그램 대가성 문구 맨 앞(10/19 밤 점검: 리스트 딜 문구만 있던 것)
 ps19 = json.load(open(H.POSTS)); ps19[-1].update(url="https://toss.shopping/_m/S19", text=ps19[-1]["text"].replace(H.NAVER_NOTE, H.TOSS_NOTE).replace("[네이버]", "[토스]")); json.dump(ps19, open(H.POSTS, "w"), ensure_ascii=False)
 c19.clear(); H.top_deals({})
-assert c19[0]["text"].startswith(H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n\n🏆") and c19[0]["text"].endswith("\n\n⚠️ 10/20 12:05 게시 시점 가격") and len(c19[0]["text"]) <= 480 and "👉 https://toss.shopping/_m/S19" in c19[0]["text"]  # 💄 토스 = 게시 시점 줄
+c19t = c19[0]["text"]; assert len(c19t) <= 480 and ("👉 https://toss.shopping/_m/S19" in c19t) == c19t.endswith("\n\n⚠️ 10/20 12:05 게시 시점 가격") == (H.TOSS_NOTE in c19t) and c19t.startswith(H.DISCLOSURE), c19t  # 💄 토스가 들면 = 토스 문구·게시 시점 줄 같이(480자에 못 들면 셋 다 X)
+H.TH_LIST_NEED = tln19
 json.dump([{"t": f"{D19} 0{k + 5}:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {['휴지', '물티슈', '세제'][k]}{k} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/T{k}", "mid": 1930 + k, "pop": 9 - k} for k in range(3)]
           + [{"t": "2026-10-19 20:00", "text": "🔥 [네이버] 어젯밤 원글 (9,900원)\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=20", "mid": 1944, "th": 0},
              {"t": "2026-10-19 20:10", "text": f"{H.NAVER_NOTE}\n\n🔥 [네이버] 어젯밤 커넥트 (9,900원)\n\n💡 쿠팡 같은 상품(12,900원)보다 3,000원 쌈", "url": "https://naver.me/Y19", "mid": 1945}], open(H.POSTS, "w"), ensure_ascii=False)
@@ -9659,9 +9661,10 @@ assert "chat post: " in chat87("2026-11-10 13:12", {"cur_2026-11-10_1230": {"t":
 H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk87); os.chdir(cwd87)
 # 9-88) KK(10/26 Cowork — 진우 '싼 제품 달랑 하나 올라가니 황당, 최소 3~5개'): Threads 12·15·18시 리스트 = 항상 3~5개(💄 셈 X) · 채우기 ① 회차 TOP 수수료 딜 ② 최근 6시간 수수료 딜
 #       ③ 🔥 쿠팡 진열(딥링크·리뷰 300↑·계절) ④ 👍 꾸준템(JJ 기준 · 줄 앞 👍) · 같은 상품·같은 종류(same_kind — 품목 낱말) X · 24시간 안 리스트 2번 나온 상품 X · 3개 밑 = Threads만 X
-sv88 = (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS); d88, cwd88 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d88)
+sv88 = (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS, H.TH_LIST_MAX, H.TH_LIST_NEED); d88, cwd88 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d88)
+H.TH_LIST_MAX, H.TH_LIST_NEED = 3, {}  # 생필품·화장품 먼저(9-124) X · 채우는 차례·같은 종류·24시간·긴 링크 규칙 셀프체크(묶음 5~7개 = 9-122)
 tb88, tg88 = [], []
-hd88 = lambda t: int(re.search(r"\n\n🏆 \S[^\n]* (\d)\n\n", t)[1])  # 10/31 머리 줄 = 품목 이름 + 개수('식품·생필품 3')
+hd88 = lambda t: len(re.findall(r"^[1-7]️⃣ ", t, re.M))  # 10/31 묶음 글 = 대가성 → 상황 훅 → 상품 → 질문(머리 줄 X) — 상품 수
 H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb88.append((kind, text, link, len(seen.get("thlist", {}).get("h", [])))) or {"id": "T"}
 H.tg = lambda method, **p: tg88.append(p) or {"message_id": 1}; H.season_adj = lambda n, ctx=None: -2 if "선풍기" in n else 0
 H.POSTS, H.E["THREADS_TOKEN"], H.TH_LIST_HOURS = "posts88.json", "tk", (12, 15, 18)
@@ -9681,7 +9684,7 @@ P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,00
 json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals(s88)
 th88 = tb88[-1][1]
-assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "\n\n🏆 제철 먹거리·생필품 3\n\n" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
+assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and th88.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and hd88(th88) == 3, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"], th88  # ①→②→③ · 성경김 2개 X
 assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
 assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 == tb88[-1][3] and s88["thlist"]["t"] and len(s88["bundles"]["ts"]) == 1, o88.getvalue()  # (리뷰) 24시간 기록 = 올리기 전(실패 -> 다시 시도로 나가도 셈)
@@ -9723,7 +9726,7 @@ st88 = lambda t, name, pop: dict(ch88(t, name, f"https://link.coupang.com/a/{len
 json.dump(P88 + [st88("2026-11-12 08:30", "코멧 키친타월 6롤", 4), st88("2026-11-12 10:50", "깨끗한나라 화장지 30롤", 0)], open("posts88.json", "w"), ensure_ascii=False)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", tb88[-1][1]) == ["성경김 지도표 재래김 16봉", "👍 코멧 키친타월 6롤", "곰곰 국산 햅쌀 10kg"] and "화장지" not in tb88[-1][1], tb88[-1][1]  # (리뷰) 👍 채널 글 = ② 채움 X · ①에 들면 👍(특가 아님)
-(H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
+(H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk88, H.TH_LIST_HOURS, H.TH_LIST_MAX, H.TH_LIST_NEED) = sv88; H.E.pop("THREADS_TOKEN", None) if tk88 is None else H.E.update(THREADS_TOKEN=tk88); os.chdir(cwd88)
 # 9-89) KK②(10/26 Cowork — 진우 '잘 팔리는 제품은 꾸준하게 주문 들어온다고 올리자'): 👍 문구 = 근거(리뷰·한 달 구매 1,000↑ · 토스 '많이 팔린 순위 N위')가 글에 있으면
 #       '꾸준히 주문 들어오는', 없거나 1,000 밑이면 '꾸준히 팔리는'(👍 기준 그대로) · '핫딜픽에서 주문'·'하루 N개 주문' X(상품별 우리 주문 수는 없음)
 assert H.steady_word("5,270원 · 리뷰 103,307") == "꾸준히 주문 들어오는" and H.steady_word("리뷰 800") == H.steady_word("") == H.steady_word() == "꾸준히 팔리는"
@@ -9964,6 +9967,8 @@ g92 = sent92[-1]["text"]
 assert "goldbox_20261027" in s92 and ap92[0][1] == [g[0] for g in gl92] and "기록 평균보다 쌈" in ap92[0][0] and "용량은 상품 페이지 확인" in ap92[0][0] and "와우 회원가" in ap92[0][0]
 assert g92.startswith(f"<i>{H.DISCLOSURE}</i>\n\n⏰ <b>오늘의 쿠팡 골드박스 TOP4</b>\n<i>와우 회원가 · 다음 날 아침 7시까지</i>\n\n1. 🚀 <a href=\"https://link.coupang.com/re/1?itemId=11\">물하나 생수 1L x 12개</a> — <b>3,830원</b> · 1L당 319원\n   1L 12병 구성"), g92
 assert "오뚜기 발아흑미밥</a> — <b>15,000원</b>\n   발아흑미밥 구성 · 용량은 상품 페이지 확인" in g92 and "박상병 핫팩 150g 30개</a> — <b>15,900원</b> · 1개당 530원\n" in g92 and "\">완전두유 190ml 16팩</a> — <b>4,800원</b> · 1팩당 300원\n" in g92 and g92.endswith(H.toss_when()), g92  # 단위가 모름 = 페이지 확인
+gi92 = json.load(open("posts92.json"))[-1]
+assert gi92["bundle"] == "gold" and len(gi92["items"]) == 4 and gi92["items"][0] == {"n": "물하나 생수 1L x 12개", "p": "3,830원", "unit": "1L당 319원", "u": "https://link.coupang.com/re/1?itemId=11", "c": "1L 12병 구성"} and "unit" not in gi92["items"][1], gi92  # 10/31 사이트 묶음 카드 재료(사진 = API productImage 있을 때)
 assert "goldbox 7개 · 단가 4 · 기록 비교 1(평균보다 쌈 1) · 이름 보강 2 · 단가 모름 3 → 고른 것 4" in o92.getvalue() and "3,830" not in o92.getvalue(), o92.getvalue()  # 로그 = 개수만(가격 X)
 H.ai_pick = lambda prompt, lines: [{"i": 0, "score": 9, "comment": "a"}, {"i": 3, "score": 7, "comment": "b"}, {"i": 99, "score": 7, "comment": "c"}]; s92, o92, n92 = {}, io.StringIO(), len(sent92)
 with contextlib.redirect_stdout(o92): H.goldbox(s92)
@@ -11475,13 +11480,13 @@ assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {})] == ["lo", "gm"]
 assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {"https://www.gmarket.co.kr/": LP121("g")})] == ["gm", "lo"]  # 수익 길 있는 G마켓(곧 시작)이 몰 홈만 가는 롯데온(진행 중)보다 앞
 # 9-122) 10/31 Cowork — 진우 'Threads 덜 쪼개고 묶기 · 성별 타깃 · 분석형': ① 개별 딜 글 하루 8개(07·12·18·20시대 몫 남김 · 밤 0~6시 X) ② 12시 여성·15시 공통·18시 남성 품목 묶음
 #        (cat_gender.json — 쇼핑인사이트 성별 월 1번 · 머리 줄 = 품목 이름) ③ 힘 준 글 chain 답글 ④ 팔로워 성별·나이(100명↑ 주 1번)
-sv122 = (H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN)
-H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN = 8, (7, 12, 18, 20), lambda s: False, th_strong0, lambda n, ctx=None: 0, 1
+sv122 = (H.TH_SOLO_MAX, H.TH_SOLO_DAWN, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN)
+H.TH_SOLO_MAX, H.TH_SOLO_DAWN, H.th_hold, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN = 15, (7, 5), lambda s: False, th_strong0, lambda n, ctx=None: 0, 1
 def ok122(hm, n, b=0):
     time.time = lambda: TK(f"2026-11-12 {hm}")
     return H.th_solo({"thsolo_20261112": {"n": n, "last": 0, "b": 0}}, "🔥 [쿠팡] 오뚜기 진라면 멀티팩 (3,900원)\n\n30일 최저가", beauty=b)
-assert [ok122("03:00", 0), ok122("07:10", 0), ok122("07:50", 2), ok122("10:00", 1), ok122("12:05", 3), ok122("12:30", 4), ok122("18:10", 5), ok122("18:40", 6), ok122("20:05", 6), ok122("20:05", 7), ok122("22:00", 7, 1), ok122("22:00", 8, 1)] \
-    == [False, True, False, True, True, False, True, False, True, False, True, False]  # 뒤 시간대 몫 2개씩 남김 · 화장품 1자리(TH_BEAUTY_MIN) · 하루 8개
+assert [ok122("03:00", 0), ok122("06:50", 4), ok122("06:50", 5), ok122("07:10", 5), ok122("22:00", 13), ok122("22:00", 14), ok122("22:00", 14, 1), ok122("22:00", 15, 1)] \
+    == [True, True, False, True, True, False, True, False]  # 10/31 진우 '새벽에도 올려줘' — 새벽 5개까지 · 화장품 1자리(TH_BEAUTY_MIN) · 하루 15개
 d122, cwd122 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d122)
 tb122 = []
 H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb122.append((kind, text)) or {"id": "T"}
@@ -11497,13 +11502,13 @@ def top122(hm, gd=True):
     with contextlib.redirect_stdout(o): H.top_deals({})
     return tb122[-1][1], o.getvalue()
 w122, l122 = top122("12:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and "\n\n🏆 화장품 3\n\n" in w122 and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and w122.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and w122.endswith("?") and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
 m122, l122 = top122("18:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and "\n\n🏆 가전 3\n\n" in m122 and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and m122.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[18] + "\n\n") and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
 c122, l122 = top122("15:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and "\n\n🏆 세탁·생필품 3\n\n" in c122 and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and c122.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[15] + "\n\n") and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
 n122, l122 = top122("12:05", gd=False)
-assert "· 칸 가림 X 품목" in l122 and len(re.findall(r"[1-5]️⃣ ", n122)) == 3, (n122, l122)  # 성별 기록 없음 = 예전 리스트(칸 가림 X)
+assert "· 칸 가림 X 품목" in l122 and len(re.findall(r"^[1-7]️⃣ ", n122, re.M)) >= 5 and n122.count("👉 ") <= 5 and len(n122) <= 480 and n122.endswith("?"), (n122, l122)  # 10/31 묶음 5~7개 · 링크 5개까지 · 500자 안 · 끝 = 질문  # 성별 기록 없음 = 예전 리스트(칸 가림 X)
 assert H.th_group({"x": {"f": 60, "m": 40}}, "x") == "f" and H.th_group({"x": {"f": 40, "m": 60}}, "x") == "m" and H.th_group({"x": {"f": 59.9, "m": 40.1}}, "x") == "c" == H.th_group({}, "x") and H.CAT_SHORT["beauty"] == "화장품"
 # 성별 비율 받기: 이번 달 기록 없으면 하루 1번(06:00 뒤) · 분야마다 1호출(지난달 1달) · 이번 달 있으면 X · 키 없으면 X
 hc122 = []
@@ -11543,6 +11548,89 @@ H.fol_demo(s122, row122, "tk", ("U", {"Authorization": "Bearer x"}))
 assert row122["thd"] == {"gender": {"F": 70, "M": 40}, "age": {"F": 70, "M": 40}} and "igd" not in row122 and len(fc122) == 2 and all("follower_demographics" in u and "threads_insights" in u for u in fc122) and s122["fdemo"]["t"]
 H.fol_demo(s122, {"thf": 150, "igf": 200}, "tk", ("U", {})); time.time = lambda: TK("2026-11-19 05:10"); r122 = {"thf": 99, "igf": 200}; H.fol_demo(s122, r122, None, ("U", {}))
 assert len(fc122) == 4 and "thd" not in r122 and r122["igd"]["gender"] == {"F": 70, "M": 40} and "/U/insights?metric=follower_demographics&period=lifetime" in fc122[-1]  # 7일 안 = X · 99명 = X
-(H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, tk122, H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN) = sv122
+(H.TH_SOLO_MAX, H.TH_SOLO_DAWN, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, tk122, H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN) = sv122
 H.E.pop("THREADS_TOKEN", None) if tk122 is None else H.E.update(THREADS_TOKEN=tk122); os.chdir(cwd122)
+# 9-123) 10/31 진우 '묶음 글 카드 신경 써야겠어': 골드박스·Threads 묶음 = 사진 2×2 + 'N개 묶음' + '쿠팡 골드박스 TOP5 · 10/31' · 묶음 쪽 = 상품마다 사진·가격·1개 값·각자 구매 버튼
+#        · 지난 묶음(오늘 것 아닌 골드박스·같은 종류 옛 묶음·사진 없는 묶음) = 목록 X(딜 쪽만) · 같은 종류 = 최신 1개
+sv123, d123, cwd123 = (time.time, H.POSTS), tempfile.mkdtemp(), os.getcwd(); os.chdir(d123)
+IM123 = lambda k: f"https://thumbnail.coupangcdn.com/thumbnails/remote/t{k}.jpg"
+def gold123(t, n, imgs=None, kind="gold", head=None):
+    return {"t": t, "text": f"{H.DISCLOSURE}\n\n⏰ 오늘의 쿠팡 골드박스 TOP{n}\n와우 회원가 · 다음 날 아침 7시까지\n\n1. 🚀 상품0 — 1,000원" if kind == "gold" else f"{H.DISCLOSURE}\n\n🏆 {head}\n12시 묶음 · 게시 시점 가격\n\n1. 상품0 — 1,000원",
+            "url": S.GOLDBOX if kind == "gold" else "https://link.coupang.com/a/B0", **({"mid": 9} if kind == "gold" else {"th": 1, "head": head}), "bundle": kind,
+            "items": [{"n": f"상품{k}", "p": f"{(k + 1) * 1000:,}원", **({"unit": "1개당 100원"} if k == 0 else {}), **({"img": IM123(k)} if imgs is None or k < imgs else {}), "u": f"https://link.coupang.com/re/x?itemId={k}", "c": "한 줄"} for k in range(n)]}
+P123 = [{"t": "2026-10-28 07:01", "text": f"{H.DISCLOSURE}\n\n⏰ 오늘의 쿠팡 골드박스 TOP4\n와우 회원가 · 다음 날 아침 7시까지\n\n1. 🚀 옛 상품 — 1,000원", "url": S.GOLDBOX, "mid": 1},  # 옛 글(items 없음)
+        gold123("2026-10-30 07:20", 5), gold123("2026-10-31 07:11", 5), gold123("2026-10-31 12:05", 3, kind="th12", head="화장품 3"), gold123("2026-10-31 18:05", 3, imgs=1, kind="th18", head="가전 3"),
+        {"t": "2026-10-31 09:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n곰곰 즉석밥 24개\n18,900원", "url": "https://link.coupang.com/a/D1", "mid": 3}]
+assert [S.bundle_of(p) for p in P123] == ["gold", "gold", "gold", "th12", "th18", ""] and S.bundle_live(P123, TK("2026-10-31 19:00")) == {2, 3}  # 옛 골드박스 X · 사진 1장 묶음 X
+assert S.bundle_live(P123, TK("2026-11-01 06:59")) == {2, 3} and S.bundle_live(P123, TK("2026-11-01 07:00")) == {3} and S.bundle_live(P123, TK("2026-11-01 12:06")) == set()  # 골드박스 = 다음 날 7시 전 · Threads 묶음 = 24시간
+assert S.bundle_live(P123[:2], TK("2026-10-30 10:00")) == {1} and S.bundle_live(P123[:3], TK("2026-10-30 10:00")) == {2}  # 같은 종류 = 최신 1개
+T123 = S.thumb(P123[2])
+assert T123.startswith('<div class="im bg">') and T123.count("<img ") == 4 and "5개 묶음</b>" in T123 and IM123(4) not in T123 and 'class="ci"' not in T123, T123  # 2×2(4장) · 빈 가방(품목 아이콘) X
+C123 = S.card(2, P123[2], (0, None, "", [], False))
+assert "<h3><a href=\"" + S.BASE + "p/2.html\">쿠팡 골드박스 TOP5 · 10/31</a></h3>" in C123 and '<div class="pr">5개 · 최저 1,000원</div>' in C123 and "게시 시점 가격" in C123, C123
+assert "쿠팡 골드박스 TOP5 · 10/31" in S.row(2, P123[2], (0, None, "", [], False), "2026-10-31") and "화장품 3 · 10/31" in S.card(3, P123[3], (0, None, "", [], False))
+D123 = S.deal_card(2, P123[2])
+assert D123.count('class="bi"') == 5 and all(f'href="https://link.coupang.com/re/x?itemId={k}" rel="nofollow sponsored noopener" target="_blank">구매하기</a>' in D123 for k in range(5)) and "<small>1개당 100원</small>" in D123 \
+    and '<span class="pr">5,000원</span>' in D123 and '<div class="u">와우 회원가 · 다음 날 아침 7시까지</div>' in D123 and "게시 시점 가격" in D123 and D123.count('class="btn"') == 5, D123  # 버튼 1개 + 글 나열 X
+assert 'class="bi"' not in S.deal_card(0, P123[0])  # 옛 묶음(items 없음) = 예전 딜 쪽 그대로
+time.time = lambda: TK("2026-10-31 19:00")
+HP123 = S.home_pool(P123, ["2026-10-31", "2026-10-30", "2026-10-28"])
+assert 2 in HP123 and 3 in HP123 and not {0, 1, 4} & set(HP123) and 5 in HP123, HP123  # 지난 묶음 목록 0 · 같은 종류 = 최신 1개
+o123 = tempfile.mkdtemp()
+for d in ("p", "c"):
+    os.makedirs(f"{o123}/{d}", exist_ok=True)
+with contextlib.redirect_stdout(io.StringIO()): S.build(P123, o123)
+I123 = open(f"{o123}/index.html", encoding="utf-8").read()
+CP123 = open(f"{o123}/c/coupang/index.html", encoding="utf-8").read() if os.path.exists(f"{o123}/c/coupang/index.html") else open(f"{o123}/c/coupang.html", encoding="utf-8").read()
+for h123 in (I123, CP123):
+    ids123 = set(re.findall(r'href="' + re.escape(S.BASE) + r'p/(\d+)\.html"', h123))
+    assert "0" not in ids123 and "1" not in ids123 and "4" not in ids123 and "2" in ids123, ids123  # 지난·사진 없는 묶음 목록 0 · 오늘 골드박스 = 있음(겹침 X)
+assert os.path.exists(f"{o123}/p/1.html") and "5개 묶음" in open(f"{o123}/p/2.html", encoding="utf-8").read()  # 지난 묶음 = 딜 쪽(기록)은 그대로
+# Threads 묶음 -> 사이트 묶음 글(mid X · th 1 = 개별 글 후보 X · 성별 말 X)
+H.POSTS = "posts123.json"; json.dump([], open("posts123.json", "w"))
+pp123 = [{"t": "2026-10-31 11:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n라운드랩 선크림 50ml\n9,900원", "url": f"https://link.coupang.com/a/R{k}", "img": IM123(k), "unit": "10ml당 1,980원", "mid": 1} for k in range(3)]
+H.th_site("th12", H.DISCLOSURE, "🏆 화장품 3", [(p, "9,900원") for p in pp123])
+e123 = json.load(open("posts123.json"))[-1]
+assert e123["bundle"] == "th12" and e123["head"] == "화장품 3" and e123["th"] == 1 and "mid" not in e123 and e123["url"] == "https://link.coupang.com/a/R0" and len(e123["items"]) == 3 \
+    and e123["items"][1] == {"n": H.short_name("라운드랩 선크림 50ml"), "p": "9,900원", "unit": "10ml당 1,980원", "img": IM123(1), "u": "https://link.coupang.com/a/R1"} and e123["text"].startswith(H.DISCLOSURE + "\n\n🏆 화장품 3\n12시 묶음 · 게시 시점 가격\n\n1. ") \
+    and "여성" not in e123["text"] and S.bundle_of(e123) == "th12" and S.bundle_head(e123) == "화장품 3 · 10/31", e123
+assert ".im.bg{grid-template-columns:1fr 1fr" in S.CSS and ".bn{position:absolute" in S.CSS and ".bi img,.bi .bx{flex:none;width:84px" in S.CSS
+(time.time, H.POSTS) = sv123; os.chdir(cwd123)
+# 9-124) 10/31 진우 '제품 수 줄이지 말고 · 새벽에도 · 보고 싶게 · 생필품·화장품 꼭': 01시 새벽 묶음(7시 전에만) · 묶음 5~7개(링크 5개까지 · 480자 넘으면 줄임) · 글 틀(대가성 → 상황 훅 → 상품 '이름 가격' / '1개 값 · 한 줄' / 링크 → 질문)
+#        · 01·15시 생필품 먼저 · 12시 화장품 먼저 · 하루 1줄 로그(th day — 글·새벽·묶음·상품·quota 생필품 N/12 · 화장품 N/5)
+sv124 = (H.th_bundle, H.tg, H.POSTS, H.E.get("THREADS_TOKEN"), time.time, H.ai_json, H.season_adj)
+d124, cwd124 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d124)
+tb124 = []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb124.append((kind, text)) or {"id": "T"}
+H.tg, H.POSTS, H.E["THREADS_TOKEN"], H.season_adj = (lambda m, **p: {"message_id": 1}), "posts124.json", "tk", (lambda n, ctx=None: 0)
+N124 = ["메디힐 마스크팩 10매", "샤오미 보조배터리 10000mAh", "코멧 화장지 30롤", "탐사 물티슈 캡형 100매", "퍼실 세탁세제 2.5L", "로지텍 무선 마우스", "크린랩 위생장갑 100매", "곰곰 즉석밥 24개", "라운드랩 선크림 50ml"]
+def run124(hm, ai=None):
+    json.dump([{"t": f"2026-11-12 {int(hm[:2]) - 1 if hm[:2] != '01' else 0:02d}:{k:02d}", "text": f"{H.DISCLOSURE}\n\n[쿠팡] {n} (9,900원/무료)\n\n좋음", "url": f"https://link.coupang.com/a/N{k}", "mid": 1,
+                **({"unit": "1롤당 330원"} if k == 2 else {})} for k, n in enumerate(N124)], open("posts124.json", "w"), ensure_ascii=False)
+    H.ai_json = ai or (lambda prompt, props, img=None: (_ for _ in ()).throw(RuntimeError("x")))
+    time.time, o = lambda: TK(f"2026-11-12 {hm}"), io.StringIO()
+    n = len(tb124)
+    with contextlib.redirect_stdout(o): H.top_deals({})
+    return (tb124[-1][1] if len(tb124) > n else ""), o.getvalue()
+AI124 = lambda prompt, props, img=None: {"hook": "새벽 장바구니 몰래 정리해요", "c": ["욕실 선반 단골이에요", "최저가 강추템!!", "가방에 하나씩 넣어 둬요"] + ["거실 서랍에 두기 좋아요"] * 6, "q": "여러분 새벽 장바구니엔 뭐 담아요?"}
+a124, l124 = run124("01:05", AI124)
+it124 = re.findall(r"^[1-7]️⃣ (.+) [\d,]+원$", a124, re.M)
+assert tb124[-1][0] == "top1" and a124.startswith(H.DISCLOSURE + "\n새벽 장바구니 몰래 정리해요\n\n1️⃣ ") and a124.endswith("\n\n여러분 새벽 장바구니엔 뭐 담아요?") and len(a124) <= 480, a124  # 01시 새벽 묶음 · Claude 훅·질문
+assert len(it124) >= 4 and [H.th_kind(n) for n in it124[:3]] == ["life"] * 3 and a124.count("👉 ") <= 5 and "최저가" not in a124 and "강추" not in a124, (it124, a124)  # 생필품 먼저 · 링크 5개까지 · 규칙 어긋난 한 줄 = 뺌
+assert "\n1롤당 330원 · " in a124 or "\n1롤당 330원\n" in a124, a124  # 1개 값(글 unit) · 한 줄
+assert run124("07:30")[0] == "" and run124("06:59")[0] != ""  # 새벽 묶음 = 7시 전에만(놓치면 그날 X)
+b124, _ = run124("12:05")
+assert H.th_kind(re.findall(r"^1️⃣ (.+) [\d,]+원$", b124, re.M)[0]) == "beauty" and b124.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[12] + "\n\n") and any(b124.endswith("\n\n" + q) for q in H.TH_LIST_Q), b124  # 12시 = 화장품 먼저 · Claude 실패 = 기본 훅·질문
+assert H.th_kind("코멧 화장지 30롤") == "life" == H.th_kind("삼다수 생수 2L") and H.th_kind("라운드랩 선크림 50ml") == "beauty" and H.th_kind("로지텍 무선 마우스") == ""
+assert H.TH_DAWN_LIST == 1 and H.TH_LIST_MAX == 7 and H.TH_LIST_LINKS == 5 and len(H.NUM) == 7
+json.dump([{"t": "2026-11-12 03:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n코멧 화장지 30롤\n9,900원", "url": "u1", "mid": 1, "th": 1},
+           {"t": "2026-11-12 13:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n라운드랩 선크림 50ml\n9,900원", "url": "u2", "mid": 2, "th": 1},
+           {"t": "2026-11-12 13:20", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n로지텍 마우스\n9,900원", "url": "u3", "mid": 3},
+           {"t": "2026-11-12 15:05", "text": "x", "url": "u4", "bundle": "th15", "th": 1, "items": [{"n": "퍼실 세탁세제 2.5L"}, {"n": "탐사 물티슈"}, {"n": "메디힐 마스크팩"}]},
+           {"t": "2026-11-11 15:05", "text": "x", "url": "u5", "bundle": "th15", "th": 1, "items": [{"n": "어제 휴지"}]}], open("posts124.json", "w"), ensure_ascii=False)
+o124 = io.StringIO()
+with contextlib.redirect_stdout(o124): H.th_day_log("2026-11-12")
+assert o124.getvalue() == "th day 11-12: 글 3(개별 2 · 새벽 1 · 묶음 1) · 상품 5 · quota 생필품 3/12 · 화장품 2/5\n", o124.getvalue()
+assert "    metrics_save(m)\n    th_day_log(day)\n" in inspect.getsource(H.metrics_rows)  # 하루 1번(어제 성과 적을 때)
+(H.th_bundle, H.tg, H.POSTS, tk124, time.time, H.ai_json, H.season_adj) = sv124; H.E.pop("THREADS_TOKEN", None) if tk124 is None else H.E.update(THREADS_TOKEN=tk124); os.chdir(cwd124)
 print("OK: 모든 셀프체크 통과")

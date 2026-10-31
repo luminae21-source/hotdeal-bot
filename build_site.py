@@ -83,6 +83,8 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .mc{display:inline-block;padding:1px 6px;border-radius:6px;background:var(--chip);color:var(--sub);font-size:11.5px;font-weight:600;letter-spacing:-.2px}
 .ex{color:var(--acc);font-size:12px;font-weight:700}.u{color:var(--sub);font-size:12px;line-height:1.45}
 .im{position:relative;display:grid;place-items:center;overflow:hidden;background:var(--c,var(--chip));text-decoration:none}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}.ci{display:block;width:1em;height:1em;background:var(--ci,var(--sub));-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}.deal .im .ci{width:.7em;height:.7em}
+.im.bg{grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:2px;place-items:stretch;background:#fff}.im.bg img{position:static;min-height:0}.bn{position:absolute;left:6px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(17,17,17,.78);color:#fff;font-size:11px;font-weight:800;line-height:16px}
+.bl{list-style:none;margin:14px 0 0;padding:0}.bi{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}.bi img,.bi .bx{flex:none;width:84px;height:84px;border-radius:12px;object-fit:contain;background:#fff}.bi .bx{background:var(--chip)}.bi div{min-width:0;flex:1}.bi b{display:block;font-size:15px;line-height:1.35}.bi .pr{display:block;margin-top:4px;font-size:17px;font-weight:800}.bi small{display:block;color:var(--sub);font-size:12.5px}.bi p{margin:4px 0 0;font-size:13.5px;color:var(--sub)}.bi>div>a{margin-top:8px;padding:9px 12px;font-size:14px}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 0}
 .tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 2px 10px;border-radius:18px;background:var(--card);box-shadow:0 1px 0 var(--line);text-decoration:none;font-size:13px;font-weight:600;letter-spacing:-.4px;white-space:nowrap}
 .tile i{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--c);font-style:normal;font-size:22px}
@@ -760,9 +762,11 @@ def home_pool(posts, days, ok=None):
     today, ev = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), ev_info()
     recent = lambda p: p["t"][:10] in days[:3] and not p["text"].startswith("📋")
     last = {p.get("url"): i for i, p in enumerate(posts) if p.get("own")}
-    newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
-    out = {}
+    newer = {p.get("url"): i for i, p in enumerate(posts) if not p.get("own") and recent(p) and not bundle_of(p)}  # 같은 url 커뮤니티 글이 더 새로 칸에 있으면 그것만(같은 상품 두 번 X)
+    out, bl = {}, bundle_live(posts, time.time())
     for i, p in enumerate(posts):
+        if bundle_of(p) and i not in bl:  # 지난 묶음(오늘 것 아닌 골드박스·같은 종류 옛 묶음·사진 없는 묶음) = 목록 X(딜 쪽 = 기록만 — 10/31 진우)
+            continue
         if p["text"].startswith("📋") or (last.get(p.get("url")) != i or newer.get(p.get("url"), -1) > i if p.get("own") else not recent(p)) or not (ok or site_ok)(p):  # ok = 사이트 규칙 대신(SS 하루 로그 — 숨긴 수)
             continue  # 사이트 = 제휴 링크 딜(+ 당분간 뽐뿌·네이버 검색) — 쿠팡 생 주소 진열은 바뀌면 그때(site_ok)
         if (s := shelf(p, ev, today)) is not None:
@@ -1004,8 +1008,49 @@ def img_of(p):
     return u if u.startswith("https://") and (s == "coupang" and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))) else ""
 
 
+B_GOLD = "오늘의 쿠팡 골드박스 TOP"  # 아침 골드박스 묶음 글 머리(hotdeal.goldbox)
+
+
+def bundle_of(p):
+    """묶음 글 종류(10/31 진우 '제품 글을 올리되 묶어서 올리는 것도 좋다'): 'gold'(아침 골드박스 TOPn) · Threads 묶음 'th12'·'th15'·'th18'(hotdeal top_deals bundle 칸) · 아니면 ''."""
+    return p.get("bundle") or ("gold" if B_GOLD in title_of(p["text"]) else "")
+
+
+def b_items(p):
+    """묶음 상품 [(이름, 가격, 1개 값, 사진, 링크, 한 줄)] — 사진 = 쿠팡 사진 주소만(img_of와 같은 허용 목록) · 링크 = 수수료 링크(aff)만."""
+    return [(x.get("n") or "", x.get("p") or "", x.get("unit") or "", img_of({"img": x.get("img"), "url": GOLDBOX, "text": ""}), x.get("u") if aff(x.get("u")) else "", x.get("c") or "") for x in p.get("items") or []]
+
+
+def bundle_head(p):
+    """묶음 카드·쪽 머리: '쿠팡 골드박스 TOP5 · 10/31' / Threads 묶음 = 글 head(품목 이름 — '화장품·생필품 3') · 날짜."""
+    k, n = bundle_of(p), len(p.get("items") or []) or (re.search(r"TOP(\d+)", title_of(p["text"])) or [0, ""])[1]
+    return (f"쿠팡 골드박스 TOP{n}" if k == "gold" else p.get("head") or f"묶음 {n}") + f" · {int(p['t'][5:7])}/{int(p['t'][8:10])}"
+
+
+def b_price(p):
+    """묶음 카드 가격 칸 (보이는 값, 빨강 줄, 회색 줄) = ('N개 · 최저 X원', [], ['게시 시점 가격'])."""
+    ws = [int(re.sub(r"\D", "", x[1])) for x in b_items(p) if re.search(r"\d", x[1])]
+    return (f"{len(b_items(p))}개 · 최저 {min(ws):,}원" if ws else f"{len(b_items(p))}개", [], ["게시 시점 가격"])
+
+
+def bundle_live(posts, now_ts):
+    """목록(🔥·몰 칸·TOP 10·홈)에 둘 묶음 글 번호: 종류마다 가장 최신 1개만 · 골드박스 = 다음 날 07:00 전 · Threads 묶음 = 24시간 안 · 사진 2장↑(빈 사진 카드 X) — 나머지 = 딜 쪽(기록)만."""
+    last, kst, out = {}, now_ts + 9 * 3600, set()
+    for i, p in enumerate(posts):
+        if k := bundle_of(p):
+            last[k] = i
+    for k, i in last.items():
+        t0 = calendar.timegm(time.strptime(posts[i]["t"][:16], "%Y-%m-%d %H:%M"))
+        if kst < (calendar.timegm(time.strptime(posts[i]["t"][:10], "%Y-%m-%d")) + 86400 + 7 * 3600 if k == "gold" else t0 + 86400) and sum(bool(x[3]) for x in b_items(posts[i])) >= 2:
+            out.add(i)
+    return out
+
+
 def thumb(p, inner=""):
     """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(정사각 흰 배경 contain · 못 불러오면 사진만 지워져 선 아이콘이 보임)."""
+    if bundle_of(p) and any(x[3] for x in b_items(p)):  # 묶음 = 상품 사진 2×2 + 'N개 묶음'(빈 가방 아이콘 X)
+        return ('<div class="im bg">' + "".join(f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for u in [x[3] for x in b_items(p) if x[3]][:4])
+                + f'<b class="bn">{len(b_items(p))}개 묶음</b>{inner}</div>')
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
@@ -1042,8 +1087,7 @@ def card(i, p, sh, more=(), attrs="", plain=False):
     """상품 카드(10/24 진우 개편 A): 흰 r20 · 위 118px 썸네일(+ 배지·♡) · 몰 칩 · 이름 2줄 · 가격 800 17px · 빨강 줄 · 회색 줄. 카드 전체 = 딜 쪽(구매 버튼·왜 골랐나요).
     .g + .like data-i = 찜(LIKE_JS가 카드째 저장)·검색 그대로. sh = shelf 상태, more = 회색 줄 더(행사 쪽 단위가).
     plain = 📉 가격 내려간 쪽(10/24 Cowork C): 상태 배지 X(▼N%만) · 회색 = 'M/D H시 확인' + 대기면 '목표가 N원'."""
-    name = parse(title_of(p["text"]))[1]
-    shown, ex, grey = price_bits(p, sh)
+    name, (shown, ex, grey) = (bundle_head(p), b_price(p)) if bundle_of(p) else (parse(title_of(p["text"]))[1], price_bits(p, sh))
     end = [f'<div class="ex" data-end="{end_at(p)}">⏰ 오늘 밤 12시 마감</div>'] if any(c == "b2" for c, _ in badges(p)) else []
     ex = ([f"▼ {DROPS[i][0]}% 내림 ({DROPS[i][1]} 기록 대비)"] if i in DROPS else []) + ex  # 📉 같은 구성 내림(10/24 Cowork '카드에서도 바로')
     if plain:
@@ -1946,6 +1990,15 @@ def deal_card(i, p, extra="", tips=(), cur=None):
     """딜 쪽 본문(10/11 진우 '더 사고 싶게' · 10/24 개편): 썸네일 → 몰·시각 → 배지 → 이름 + 가격(h1 — TT-2 10/27) → 가격·얼마나 싼지·단위가 → extra(구성·기록 비교·확인 시각) → 큰 구매 버튼
     → 왜 골랐나요(코멘트·확인할 점) → 고르는 기준(tips — buy_tips)."""
     title, rest, cut = split_title(p["text"])
+    if bundle_of(p) and p.get("items"):  # 묶음 쪽(10/31 진우): 상품마다 사진·가격·1개 값·한 줄·각자 구매 버튼(버튼 1개 + 글 나열 X)
+        sub = rest.strip().split("\n")[0] if rest.strip() and not re.match(r"\d+\.", rest.strip()) else ""
+        lis = "".join('<li class="bi">' + (f'<img src="{html.escape(im)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if im else '<span class="bx"></span>')
+                      + f'<div><b>{k}. {html.escape(n)}</b><span class="pr">{html.escape(pr)}</span>' + (f'<small>{html.escape(un)}</small>' if un else "") + (f'<p>{html.escape(c)}</p>' if c else "")
+                      + (f'<a class="btn" href="{html.escape(u)}" rel="nofollow sponsored noopener" target="_blank">구매하기</a>' if u else "") + "</div></li>"
+                      for k, (n, pr, un, im, u, c) in enumerate(b_items(p), 1))
+        return (f'<article class="card deal">{thumb(p)}<div class="s">{"쿠팡" if shop_of(p) == "coupang" else "핫딜"} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
+                f'<h1 class="dn"><a href="{BASE}p/{i}.html">{html.escape(bundle_head(p))}</a></h1>' + (f'<div class="u">{html.escape(sub)}</div>' if sub else "")
+                + f'<ol class="bl">{lis}</ol><p class="note">게시 시점 가격이에요 · 가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p></article>')
     store, name, price = parse(title)
     body = to_html(rest, [{**e, "offset": e["offset"] - cut} for e in p.get("entities") or [] if e["offset"] >= cut])
     up = unit_pair(p)
@@ -2246,8 +2299,7 @@ def short_note(p, sh, today):
 
 def row(i, p, sh, today, gc="", extra=""):
     """목록형 한 줄(68px — 10/24 Cowork 포털형): 썸네일 52 · 1줄 = 몰 글자(몰 색) + 🔁/⏰/▼ + 이름 말줄임 · 2줄 = 가격 굵게 + 빨강 라벨 + 회색(단위가·확인 시각·M/D 가격). 누르면 딜 쪽."""
-    name = parse(title_of(p["text"]))[1]
-    shown, ex, _ = price_bits(p, sh)
+    name, (shown, ex, _) = (bundle_head(p), b_price(p)) if bundle_of(p) else (parse(title_of(p["text"]))[1], price_bits(p, sh))
     k = shop_of(p)
     flag = "" if extra else "🔁 " if sh[4] else "⏰ " if day_end(p, today) else {1: "👍 ", 2: "⏳ "}.get(sh[0], "") if p.get("own") else ""  # 🆕 탭 대기 상품 = 카드 badge()처럼 · 📉 줄(extra) = 상태 표시 X(▼N%만 — 10/24 Cowork C)
     d = DROPS.get(i)
@@ -2841,10 +2893,10 @@ def build(posts, out="docs"):
     evs = events_on(it, today)
     evi = {i for g in evs for i, _, _ in g["xs"]}  # 진행 중 기획전 상품 = 홈 오늘의 픽·🔥·👍·TOP 10·오늘 마감 칸 X(배너로만 — 품목 칸·검색·목록 쪽은 그대로)
     dl = deadline_list(it, evi, today)
-    cur = {posts[j].get("url"): j for j in sorted(home) if posts[j].get("url")}  # 주소 -> 지금 진열 글(같은 상품 최신)
+    cur = {posts[j].get("url"): j for j in sorted(home) if posts[j].get("url") and not bundle_of(posts[j])}  # 주소 -> 지금 진열 글(같은 상품 최신)
     st = lambda i, p: home.get(i) or (p.get("own") and p.get("url") in cur and home[cur[p["url"]]]) or (4, None, f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 게시' if p["t"][:10] not in days[:3] else "", [], False)  # 목록 밖 = 같은 상품 지금 상태, 없으면 배지 X(지난 딜을 🔥 특가라고 X) + 게시 날짜
     pool = [(j, q, set(keys(q).split())) for j, q in enumerate(posts) if q["t"][:10] in days[:2] and not q["text"].startswith("📋") and j not in gone
-            and aff(q.get("url")) and "특가로는 약한 제품" not in q["text"]]
+            and aff(q.get("url")) and "특가로는 약한 제품" not in q["text"] and not bundle_of(q)]
     had = set(REC_KEEP) | ({f[:-5] for f in os.listdir(f"{out}/c") if f.endswith(".html")} if os.path.isdir(f"{out}/c") else set())  # 있던 기록 쪽 주소(색인) — TT-2: SS로 수수료 링크 기록이 줄어 지워지던 것
     recs = {k: v for k, v in price_records(posts, skip=noaff, least=1).items() if len(v[2]) >= PRICE_MIN or k in had}
     bycat = {}  # TT-2 ②: 딜 쪽 '같은 칸 다른 딜' — 칸마다 진열 상품(🔥 먼저 · 일시 품절 X), '' = 🔥 지금 특가(칸 없는 딜)
