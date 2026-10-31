@@ -1531,7 +1531,8 @@ assert "휴지</b></a>\n⏰ 토스 하루특가 · 밤 12시까지\n💰" in p["
 assert "끝난 상품" not in str(sp_ai) and not [a for a, l in sp_ai if H.TOSS_EASE in a]  # 끝난 하루특가 X · 쿠팡 언급 있는 TOSS_EASE X(진우 '쿠팡 안 씀')
 w = next(v for k, v in seen.items() if k.startswith("sold_") and v["k"] == "top")
 assert [x[0] for x in w["it"]] == [502, 503] and [x[3] for x in w["it"]] == [0, 1] and "tossspecial_20261012_8" in seen  # 하루특가 목록에 있는 휴지만 품절 땐 '밤 12시 재오픈'
-assert len(sp_th) == 1 and sp_th[0]["text"][0].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 중 살 만한 2개") and "휴지 — 9,900원 (하루특가·밤 12시까지)" in sp_th[0]["text"][0] and "전기요 — 89,000원\n" in sp_th[0]["text"][0] and "샴푸" not in str(sp_ai)  # Threads도, 이름 예약 상품은 Claude 후보에도 없음
+tx15 = seen["thtx"]["q"]  # 10/31 진우 '상품은 꾸준하게'(Cowork): Threads 특가 2개 = 리스트 X → 토스 개별 글 줄(채널과 같은 순서) · 이름 예약 상품은 Claude에도 X
+assert not sp_th and ["전기요" in tx15[0]["text"], "휴지" in tx15[1]["text"]] == [True, True] and [x["x"] for x in tx15] == [1, 1] and "샴푸" not in str(sp_ai), tx15
 e502 = next(x for x in LISTS["/products/best-selling?size=100"] if x["tacaItemId"] == 502); e502["displayPrice"] = 10000  # 11/5~(TOSS_FEE_DAY) 개당 수익 = 기본 5%·하루특가(선착순특가) 3%: 전기요 (7 + Z 10월 겨울템 +1) × 10,000 × 5% > 휴지 9 × 9,900 × 3% (일괄 8%면 휴지 먼저 — 8 × 10,000 < 9 × 9,900)
 for fd, first in (("2026-11-05", "휴지"), ("2026-10-12", "전기요")):
     H.TOSS_FEE_DAY = fd; seen = {"tb_508": {"t": T("2026-10-12 07:00"), "n": "x"}, "pk_2026-10-12 12:30": {"t": T("2026-10-12 07:00"), "id": 506, "n": "x"}}; sp_run("2026-10-12 08:05", lambda s: H.toss_deals(s, "special"))
@@ -2666,9 +2667,9 @@ json.dump([], open("ev9g.json", "w")); json.dump([], open("posts.json", "w"))
 H.ai_pick = lambda prompt, lines: [{"i": 1, "score": 9, "comment": "1순위"}, {"i": 0, "score": 8, "comment": "2순위"}]
 s9g = {}; time.time = lambda: TK("2026-10-13 17:10"); H.toss_deals(s9g, "cat")
 gt = lambda: [parse_qs(urlsplit(u).query)["text"][0] for m, u in g_calls if "/777/threads?" in u]
-l9g = gt()
-assert len(l9g) == 1 and l9g[0].startswith(H.TOSS_NOTE) and "베스트 중 살 만한 2개" in l9g[0] and "⚠️ 10/13 17:10 게시 시점 가격" in l9g[0] and "쿠팡" not in l9g[0]  # 17시 생필품 리스트 Threads
-assert len(set(re.findall(r"https?://\S+", l9g[0]))) <= 5 and len(l9g[0]) <= 500 and "thretry_20261013_toss17" not in s9g
+l9g, tx9g = gt(), s9g.pop("thtx")["q"]  # 10/31 진우 '상품은 꾸준하게'(Cowork): 17시 생필품 2개 = Threads 리스트 X → 토스 개별 글 줄(토스 틀 · 게시 시점 줄 · 다른 몰 X) — 아래 채움 흐름은 예전 그대로 보려고 줄은 뺌
+assert not l9g and [x["link"] for x in tx9g] == ["https://toss.im/_m/21", "https://toss.im/_m/1"] and all(x["text"].startswith(H.TOSS_NOTE) and "쿠팡" not in x["text"] and "⚠️ 10/13 17:10 게시 시점 가격" in x["text"] and x["x"] == 1 for x in tx9g), tx9g
+assert "thretry_20261013_toss17" not in s9g
 assert [v.get("tail") for k, v in s9g.items() if k.startswith("sold_")] == ["\n\n⚠️ 10/13 17:10 게시 시점 가격"]  # 품절 고칠 때도 게시 시점 줄 그대로(10/22 — 예전엔 빠짐)
 q9g = s9g["thtoss"]["q"]; assert [(x["r"], x["k"], x["s"], x["link"]) for x in q9g] == [(0, "cat", 9, "https://toss.im/_m/21"), (1, "cat", 8, "https://toss.im/_m/1")]
 assert q9g[0]["text"].startswith(H.TOSS_NOTE + "\n\n💙 토스 특가 · 생필품 베스트 ") and "위 🔥\n카테21\n7,900원" in q9g[0]["text"] and "👉 1순위" in q9g[0]["text"] and "⚠️ 10/13 17:10 게시 시점 가격" in q9g[0]["text"] and q9g[0]["text"].endswith("🛒 https://toss.im/_m/21\n📲 실시간 알림 t.me/hotdeal_pick")
