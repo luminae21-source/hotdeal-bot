@@ -5787,7 +5787,7 @@ except Past42: pass  # 평소(받은 seen) = 그대로
 wf42 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "cold_start:" in wf42 and "type: boolean" in wf42 and "COLD_START: ${{ inputs.cold_start }}" in wf42 and "    seen = load(SEEN, {})" not in inspect.getsource(H.main)
 # 캐시 복구(1번, Run workflow restore_seen = 예전 캐시 key): 같은 경로 목록으로 받아(fail-on-cache-miss) 지금 seen과 합침 — 같은 칸은 지금 값, 예전에만 있는 칸은 되살림
-assert "restore_seen:" in wf42 and wf42.count("            seen.json\n            fonts\n            toss.json\n            music\n") == 2 and "fail-on-cache-miss: true" in wf42 and "key: ${{ inputs.restore_seen }}" in wf42
+assert "restore_seen:" in wf42 and wf42.count("            seen.json\n            fonts\n            toss.json\n            music\n") == 3 and "fail-on-cache-miss: true" in wf42 and "key: ${{ inputs.restore_seen }}" in wf42
 import subprocess; m42, d42 = re.search(r'python3 -c "(import json; o, n = .*?)"\n', wf42)[1], tempfile.mkdtemp(); os.makedirs(f"{d42}/.seen_now")
 json.dump({"tsolo_20261023_16": 1, "b": 1}, open(f"{d42}/seen.json", "w")); json.dump({"b": 2, "c": 2}, open(f"{d42}/.seen_now/seen.json", "w"))
 assert "seen 합침 2 + 2 -> 3" in subprocess.run([sys.executable, "-c", m42], cwd=d42, capture_output=True, text=True).stdout and json.load(open(f"{d42}/seen.json")) == {"tsolo_20261023_16": 1, "b": 2, "c": 2}
