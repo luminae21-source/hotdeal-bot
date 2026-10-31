@@ -3233,11 +3233,11 @@ assert [(r["ch"], r["id"]) for r in r10] == [("tg", 899), ("tg", 900), ("tg", 90
 r10 = [r10[i] for i in (3, 0, 1, 2, 4, 5, 6)]
 assert r10[0] == {"date": "2026-10-14", "ch": "tg", "id": 901, "shop": "coupang", "cat": "화장품", "price": "1~3만", "at": "23:50", "views": 3, "react": 0,
                   "kind": "deal", "name": "피지오겔 페이셜 로션 150ml", "url": "https://link.coupang.com/a/x"}  # posts.json 글 = 그 글·링크로 · 상품 칸(10/22 Cowork — kind·상품명·제휴 링크)
-assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "1~3만", "at": "10:00", "views": 1200, "react": 17, "kind": "deal", "name": "크리넥스 3겹 휴지 30롤", "url": "https://toss.im/_m/A"}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함)
+assert r10[1] == {"date": "2026-10-14", "ch": "tg", "id": 899, "shop": "toss", "cat": "생필품", "price": "", "at": "10:00", "views": 1200, "react": 17, "kind": "deal", "url": "https://toss.im/_m/A"}  # 채널 웹 글(토스 API) = 본문·버튼 링크로, 1.2K·반응 합(맞춤 이모지 포함) · ⑧ 토스 줄 = 상품 이름·가격대 X
 assert r10[2]["cat"] == "묶음" and r10[2]["price"] == "" and r10[2]["views"] == 40 and r10[2]["kind"] == "etc"  # (상품 링크 없는 묶음 = etc)
 assert (r10[3]["cat"], r10[3]["shop"], r10[3]["price"]) == ("생필품", "기타", "")  # 재오픈 답장 = 인용(원글 쿠팡 프라이팬 55,000원) 말고 답장 본문(괄호 없는 가격은 못 읽음 = 사이트 price_won 그대로)
 r10 = [r for r in r10 if r["id"] != 903]
-assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "1~3만", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0, "kind": "etc"}
+assert r10[3] == {"date": "2026-10-14", "ch": "th", "id": "t1", "shop": "toss", "cat": "식품", "price": "", "at": "12:00", "views": 340, "react": 6, "likes": 5, "replies": 0, "kind": "etc"}
 assert r10[4]["price"] == "5~10만" and r10[4]["react"] == 0 and r10[4]["views"] == 0 and r10[4]["shop"] == "coupang" and (r10[4]["kind"], r10[4]["name"], r10[4]["url"]) == ("deal", "샴푸", "https://link.coupang.com/a/abc")  # 0 = 빈 칸 아님 · [몰] 없는 Threads 글 = 글 속 구매 링크로 몰
 assert r10[5] == {"date": "2026-10-14", "ch": "ig", "id": "g1", "shop": "기타", "cat": "기타", "price": "", "at": "21:00", "views": None, "react": 5, "likes": 4, "replies": 1}
 assert d10["2026-10-14"]["miss"] == {"ig": "조회수 권한 없음(토큰 권한 instagram_business_manage_insights 확인): 403 (#10) Application does not have permission for this action"}
@@ -3271,7 +3271,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -4915,11 +4915,12 @@ M30 = {r["id"]: r for d in json.load(open(H.METRICS)).values() for r in d["rows"
 assert (M30["s1"]["url"], M30["s1"]["name"], M30["s1"]["shop"]) == ("https://link.coupang.com/a/PEP", "펩시 제로 라임 48캔", "coupang") and M30["s2"]["url"] == "https://hotdealpick.kr/p/1.html?ref=th" and M30["s3"]["name"] == "휴지", M30  # (구매 링크 없는 글 = 그대로)
 assert json.load(open(H.TOP))["items"][0]["url"] == "https://link.coupang.com/a/PEP" and os.path.exists(H.POSTS); json.dump([], open(H.POSTS, "w"))
 H.http = h30b
-# 토스 글 id 없음(10/22 전 링크) = 같은 이름끼리(토스 = tname, id 있는 글이 있으면 그 id로) · 쿠팡 링크 모르는 글 = 같은 이름 글의 링크
+# 토스 글 id 없음(10/22 전 링크) = 표 X(⑧ — 예전엔 같은 이름끼리 tname) · 쿠팡 링크 모르는 글 = 같은 이름 글의 링크
 R30b = {"2026-10-20": [th30("t1", "2026-10-20", 900, "https://toss.im/_m/OLD1", "토스 휴지 30롤", shop="toss"), th30("t2", "2026-10-20", 10, "https://toss.im/_m/OLD2", "토스 휴지 30롤", shop="toss"),
                        th30("t3", "2026-10-20", 800, "https://toss.im/_m/OLD3", "토스7 상품", shop="toss"), th30("t4", "2026-10-21", 5, "https://toss.im/_m/NEW", "토스7 상품", tid=7)] + [th30(f"z{k}", "2026-10-20", 1, f"https://link.coupang.com/a/Z{k}", f"z{k}") for k in range(6)]}
 json.dump({d: {"at": "", "miss": {}, "rows": rs} for d, rs in R30b.items()}, open(H.METRICS, "w"), ensure_ascii=False); os.remove(H.TOP); H.top_build(s30)
-assert [(x["key"], x["n"]) for x in json.load(open(H.TOP))["items"]] == [("tname:토스휴지30롤", 2), ("toss:7", 2)] and H.top_toss({}, TK("2026-10-22 16:30")) == ({7}, {"토스휴지30롤"})
+T30b = json.load(open(H.TOP))["items"]
+assert [(x["key"], x["n"], x["name"]) for x in T30b if x["mall"] == "toss"] == [("toss:7", 1, "")] and not any(x["key"].startswith("tname:") for x in T30b) and H.top_toss({}, TK("2026-10-22 16:30")) == ({7}, set()), T30b  # ⑧ 1일 원칙: 토스 = 상품 id로만(이름으로 묶지 않음 · id 없는 예전 토스 글 = 표 X · 이름 X)
 assert H.top_hit(({7}, {"토스휴지30롤"}), 99, "토스 휴지 30롤") and not H.top_hit(({7}, set()), 99, "x")
 # ③ 토스 개별 글: 표의 토스 상품(id 2) = +1점(6점 -> 7점 = 올림) · 하루 2번까지 · 표 없으면 6점 X
 json.dump({"d": "2026-10-23", "items": [{"key": "toss:2", "name": "베스트2"}, {"key": "https://link.coupang.com/a/U1"}]}, open(H.TOP, "w"), ensure_ascii=False)
@@ -10890,7 +10891,7 @@ json.dump([{"t": "2026-10-28 10:00", "text": "a", "url": B2}, {"t": "2026-10-29 
 H.RUN["cpsub"] = [0]; cc108.clear(); H.cp_sub_site({})
 assert cc108 == [("POST", "/deeplink", {"coupangUrls": [R1], "subId": "site"})]  # B2 = site 이미 있음 · 진우 링크 X
 H.cp_sub_site({}); assert len(cc108) == 1  # 다 됨 = 호출 X
-assert "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
+assert "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
 S.SITE_SUB = S.site_subs(); assert S.SITE_SUB == {B1: "https://link.coupang.com/a/site11112", B2: "https://link.coupang.com/a/site222"}
 pg108 = S.page("t", f'<a class="buy" href="{B1}">사러 가기</a><a href="{JW}">진우</a><a href="{B2}">2</a>')
 assert 'href="https://link.coupang.com/a/site11112"' in pg108 and f'href="{JW}"' in pg108 and B1 not in pg108 and "site222" in pg108
@@ -10944,7 +10945,7 @@ r109, p109 = S109.rev_pids("docs")
 assert r109["777"]["text"] == TX109 and p109[L109] == "777"
 rb109 = S109.rev_box({"url": L109}, r109, p109)
 assert '<h2 id="rvh">구매후기 요약 (10/30 기준)</h2>' in rb109 and "별점 5점이 82%예요<br>&#x27;두께&#x27; 설문은" in rb109 and S109.rev_box({"url": "https://link.coupang.com/a/x"}, r109, p109) == ""
-assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
+assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
 (time.time, H.tg, H.http, H.th_img, H.th_post, H.th_reply, H.EVENTS, e109, H.CHANNEL, H.ADMIN, H.th_topic) = sv109; H.E.clear(); H.E.update(e109); os.chdir(cwd109)
 # 9-110) 힘 준 글(10/30 진우 — '7은 편하게 3은 힘을 주자 · 첫 20분 댓글'): events 큐레이션 "power" = 시각에 Threads(사진 + 본문) · 관리봇 DM 1번(글 주소) · 20분 동안 다른 Threads 글 0
 #        (개별 th_solo X · 묶음 = 줄에 두고 th_retry가 20분 뒤 · 다른 큐레이션 Threads = 뒤로 — 텔레그램 채널은 그대로) · metrics kind power + 48시간 조회·답글(chat_48)
@@ -11072,7 +11073,7 @@ assert o112.getvalue() == "" and json.load(open("price_hist.json")) == ph112  # 
 json.dump({"at": "2026-10-30 05:00", "urls": [U112("E")]}, open("gc_top.json", "w"))
 nm112 = {U112(k): "x" for k in "ABE"}
 assert H.ph_prio({}, json.load(open("posts.json")), nm112) == {U112("B"), U112("E")}  # 👍 꾸준템(B) + 최근 7일 많이 본(E) · A = 식품 칸(추적 우선 X)
-assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track, th_pics):" in inspect.getsource(H.main)
+assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)
 d112 = tempfile.mkdtemp()
 json.dump({"77:I1": [["26102009", 10000, "", "post"], ["26102509", 12000, "", "cw"], ["26103009", 10200, "", "api"]], "77:I2": [["26102509", 19900, "", "cw"]],
            "80:I5": [["26102310", 9000, "", "cw"], ["26102909", 8000, "", "cw"]]}, open("price_hist.json", "w"))
@@ -11415,7 +11416,7 @@ json.dump([], open("posts.json", "w"))
 with contextlib.redirect_stdout(io.StringIO()):
     tp0(s119)
 assert not os.path.exists(f119) and s119["thpic"]["m"] == {}  # 14일 지난 그림 지움
-assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, th_pics):" in inspect.getsource(H.main)  # 캐러셀 그대로
+assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)  # 캐러셀 그대로
 (time.time, H.http, H.th_get, H.POSTS) = sv119; os.chdir(cwd119)
 # 9-120) 이름 막기(10/30 진우 규칙 — 분유 광고 X(조제분유·성장기용 조제유) · 기저귀는 아기용만): NAME_BLOCK 한 곳 — 쿠팡·토스 API 목록·커뮤니티 딜·쿠팡 진열 후보·재게시·5개가 같이 봄
 #   · 진열 자동(이관 A)만 SHELF_BLOCK(+성인) · 막으면 로그 1줄(실행마다 같은 이름 1번) · 이미 events에 있는 건 그대로
