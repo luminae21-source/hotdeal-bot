@@ -780,7 +780,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), new_sets, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -12256,7 +12256,7 @@ time.time = lambda: TK("2026-11-06 11:45"); o133 = io.StringIO()
 with contextlib.redirect_stdout(o133): H.new_sets(s133)
 assert len(s133["nset"]["h"]) == 1 and "새 구성 모자람 · " in o133.getvalue() and "toss 생필품 1" in o133.getvalue() and "naver 생필품 1" in o133.getvalue(), o133.getvalue()  # 몰마다 1개씩 = X
 assert "coupang 생필품 2" in o133.getvalue() and "coupang 주방 1" in o133.getvalue(), o133.getvalue()  # 미용티슈 + 코멧(생리대·치약 중 1개 — 같은 브랜드 1개) = 2개 = X(억지 X)
-assert "new_sets, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+assert "new_sets, mall_card_post, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv133
 os.chdir(cwd133)
 # 9-134) 10/31 14:10 Cowork(진우 '새 상품이 없는 경우는 기존 있던 상품 중 좋은 걸'): 새 상품 3개 밑 = 그 몰·그 칸 기존 진열 상품으로 채움(새 상품 맨 앞) · 새 구성 없이 빈 큐레이션 칸 3시간 안 = 기존 상품 구성
