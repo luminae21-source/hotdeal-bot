@@ -1,0 +1,29 @@
+name: Render deal cards
+on:
+  workflow_dispatch:
+    inputs:
+      data_file:
+        description: 'JSON path, e.g. data/coupang_1101.json'
+        required: true
+        default: 'data/coupang_1101.json'
+      output_file:
+        description: 'Output PNG path'
+        required: true
+        default: 'output/card.png'
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/render.mjs '${{ inputs.data_file }}' '${{ inputs.output_file }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hotdealpick-card
+          path: ${{ inputs.output_file }}
