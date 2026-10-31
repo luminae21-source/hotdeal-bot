@@ -11630,7 +11630,7 @@ json.dump([{"t": "2026-11-12 03:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 �
            {"t": "2026-11-11 15:05", "text": "x", "url": "u5", "bundle": "th15", "th": 1, "items": [{"n": "어제 휴지"}]}], open("posts124.json", "w"), ensure_ascii=False)
 o124 = io.StringIO()
 with contextlib.redirect_stdout(o124): H.th_day_log("2026-11-12")
-assert o124.getvalue() == "th day 11-12: 글 3(개별 2 · 새벽 1 · 묶음 1) · 상품 5 · quota 생필품 3/12 · 화장품 2/5 · 토스 0/5\n", o124.getvalue()
+assert o124.getvalue() == f"th day 11-12: 글 3(개별 2 · 새벽 1 · 묶음 1) · 상품 5 · quota 생필품 3/12 · 화장품 2/5 · 토스 0/{H.TH_TOSS_MIN}\n", o124.getvalue()
 assert "    metrics_save(m)\n    th_day_log(day, seen)\n" in inspect.getsource(H.metrics_rows)  # 하루 1번(어제 성과 적을 때)
 (H.th_bundle, H.tg, H.POSTS, tk124, time.time, H.ai_json, H.season_adj) = sv124; H.E.pop("THREADS_TOKEN", None) if tk124 is None else H.E.update(THREADS_TOKEN=tk124); os.chdir(cwd124)
 # 9-125) 10/31 진우 'Threads 글을 시리즈로 — 나중에 고객이나 우리가 찾기 좋게': 대가성 문구 다음 줄 '[🧻 생필품 쟁여두기 #N]'(시리즈별 회차 = seen) · Threads 주제 태그 = 시리즈 이름
