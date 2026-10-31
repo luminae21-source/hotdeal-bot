@@ -849,10 +849,9 @@ def toss_th(url, body=None, headers=None, method=None):
     return '{"id": "c1"}'
 H.http, H.E["THREADS_TOKEN"], sl, H.time.sleep = toss_th, "tk", H.time.sleep, lambda s: None
 seen.clear(); sent.clear(); H.toss_deals(seen)
-txt = parse_qs(urlsplit([u for u in th if "/threads?" in u][0]).query)["text"][0]
-assert "TOP2\n밤 12시까지 선착순 · 일부 고객에게만 보이고 수량 제한이 있을 수 있어요\n\n1️⃣ 토스상품3 — 4,000원\nhttps://toss.im/_m/3\n\n2️⃣ 토스상품1 — 2,000원\nhttps://toss.im/_m/1" in txt
-assert txt.startswith(H.TOSS_NOTE) and "TOP2" in txt and txt.index("https://toss.im/_m/3") < txt.index("https://toss.im/_m/1") and "4,000원" in txt and "<" not in txt and len(txt) <= 500
-assert any("threads_publish" in u for u in th) and [m for m, p in sent] == ["sendMessage"]
+tx5 = seen["thtx"]["q"]  # 10/31 진우 '상품은 꾸준하게'(Cowork): 2개 = Threads 리스트 X → 토스 개별 글 줄(채널과 같은 순서 · 대가성 문구 맨 앞 · HTML X · 500자 안)
+assert not th and [x["link"] for x in tx5] == ["https://toss.im/_m/3", "https://toss.im/_m/1"] and all(x["text"].startswith(H.TOSS_NOTE) and "<" not in x["text"] and len(x["text"]) <= 500 and x["x"] == 1 for x in tx5), tx5
+assert [m for m, p in sent] == ["sendMessage"]
 def th_fail(url, *a, **k):  # Threads가 막혀도(10/6 같은 계정 잠김) 채널 글은 이미 올라갔으니 다음 실행에 또 안 올림
     if url.startswith(H.THREADS):
         raise Exception("blocked")
