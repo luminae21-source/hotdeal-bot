@@ -1,16 +1,21 @@
 {
  "google": {
-  "at": "2026-10-31 10:01",
+  "at": "2026-10-31 11:12",
   "items": [
    {
+    "t": "수익률",
+    "n": "500+",
+    "news": "“1억 넣고 월 350만원 받는다”…수익률 1등, 그 ETF의 진실"
+   },
+   {
     "t": "주식",
-    "n": "2000+",
+    "n": "10000+",
     "news": "매도 사이드카 울렸는데…\"또 털렸대\" 30% 폭등한 주식 - 머니투데이"
    },
    {
     "t": "필라데피아 대 뉴욕",
-    "n": "500+",
-    "news": "Live updates: Sixers kick off NBA Cup play at home against…"
+    "n": "1000+",
+    "news": "Live updates: Sixers take a nine-point lead over the Knicks…"
    },
    {
     "t": "sk 사장단 인사",
@@ -19,7 +24,7 @@
    },
    {
     "t": "미세먼지",
-    "n": "100+",
+    "n": "200+",
     "news": "오늘 밤 서쪽 지방 미세먼지 주의…한낮에 포근"
    },
    {
@@ -29,23 +34,18 @@
    },
    {
     "t": "샌디스크",
-    "n": "100+",
-    "news": "샌디스크, 분기 영업이익 49배 급증"
+    "n": "200+",
+    "news": "키옥시아 NAND 가격 경고에 샌디스크 주가 11% 급락"
    },
    {
     "t": "lcs",
     "n": "100+",
-    "news": ""
+    "news": "Anyone's Legend vs. Team Liquid: Game 2 First Blood"
    },
    {
     "t": "직장폐쇄",
     "n": "200+",
     "news": "WS 우승 기쁨도 잠시… 밀워키, 직장폐쇄 위기"
-   },
-   {
-    "t": "le havre ac vs psg standings",
-    "n": "200+",
-    "news": "Achraf Hakimi scores 1st career hat trick as Luis Enrique…"
    },
    {
     "t": "테슬라",
