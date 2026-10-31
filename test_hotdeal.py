@@ -4948,7 +4948,7 @@ def h30c(url, body=None, headers=None, method=None):  # 10/18~ Threads 글: th_d
 H.http, H.E["METRICS_DAY"], H.E["THREADS_TOKEN"] = h30c, "2026-10-20", "tk"; H.E.pop("IG_TOKEN", None)
 H.metrics_rows({"thab": {"m": {"x2": {"ab": "B", "ts": 1, "u": "https://toss.im/_m/Q2", "n": "[토스] 휴지 30롤 (9,900원)"}}}, "tlink": {"t": 1, "r": {"https://toss.im/_m/Q2": [5, 1]}}})
 K30 = {r["id"]: r for r in json.load(open(H.METRICS))["2026-10-20"]["rows"]}; H.E.pop("METRICS_DAY")
-assert K30["x1"]["kind"] == "etc" and (K30["x2"]["kind"], K30["x2"]["name"], K30["x2"]["url"], K30["x2"]["tid"]) == ("deal", "휴지 30롤", "https://toss.im/_m/Q2", 5), K30  # B 글 = thab 링크 · 토스 링크 -> 상품 id
+assert K30["x1"]["kind"] == "etc" and (K30["x2"]["kind"], K30["x2"].get("name"), K30["x2"]["url"], K30["x2"]["tid"]) == ("deal", None, "https://toss.im/_m/Q2", 5), K30  # B 글 = thab 링크 · 토스 링크 -> 상품 id(⑧ 이름은 저장 X)
 (H.POSTS, H.TH_SOLO_FILL) = sv30c; (H.tg, H.ai_pick, H.EVENTS, H.TOSS_SOLO_HOURS, H.TOSS_GAP_MIN, H.TOSS_NO_CMP, H.HAS_TOSS) = sv30b
 (H.http, time.time, H.METRICS_HOUR, tk30) = sv30; H.E.pop("THREADS_TOKEN", None) if tk30 is None else H.E.update(THREADS_TOKEN=tk30)
 for f30 in (H.TOP, H.METRICS, "posts30.json"):
