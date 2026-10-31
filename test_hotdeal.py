@@ -14,6 +14,7 @@ TOSSAT0 = (H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.
 H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TOSS_TH_LATER = (10, 11, 12, 14, 16, 18, 20), 17, (), True, {}
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_GUARD, H.TH_LIST_TOSS, H.NN_TOSS, H.TOSS_GAP, H.TH_MALL_ALT = (0, 0), True, 0, False, True, 2, 0, False  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이) · 예전 Threads 토스 리스트(⑥ 끔)·토스 개별 글 쿼터(⑥ 5개) = 9-126에서만 · toss_guard(⑦)·섞인 묶음 토스 X·품목 묶음 토스 X(⑥ 정정) = 9-127에서만 · 토스↔쿠팡 시차(⑨) = 9-128·9-129에서만 · 개별 글 쿠팡↔토스 번갈아(TH_MALL_ALT)·토스 회차 시각 13:30·17:10·18:45 = 9-129에서만
+H.TH_DIVERSE = False  # 10/31 묶음 다양성(72시간 회전·브랜드 1개·쿠팡만·조합 돌리기·점검) = 9-132에서만(다른 칸 = 예전 리스트 그대로)
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -12149,3 +12150,74 @@ H.RUN.pop("seen")
 assert H.dup_req(f"{H.THREADS}/777/threads?text=x&access_token=tk", None, "POST") is None  # main 밖(셀프체크·도구) = 가드 X
 (time.time, H.http, H.tg, urllib.request.urlopen, H.SEEN, H.CHANNEL, run131, H.TOSS_GUARD, H.time.sleep) = sv131
 H.RUN.clear(); H.RUN.update(run131); os.chdir(cwd131)
+# 9-132) 10/31 Cowork ③ 묶음 다양성(진우 '같은 상품만 = 스팸 · 다양한 장바구니 · 쿠팡은 쿠팡끼리 · 반응 좋았던 상품은 꾸준하게 · 핫딜·꾸준템 회차는 그대로'):
+#        쿠팡 묶음 = 쿠팡만(다른 몰 = 개별 글 줄) · 72시간 회전 · 꾸준템(👍·잘 된 상품) = 묶음에 1개·하루 1번 · 같은 브랜드 1개 · 어제 같은 칸 소품목 조합 X · 올리기 전 점검 · 텔레그램 TOP·토스 Threads 리스트 회전·브랜드
+sv132, cwd132 = (time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, H.E.get("THREADS_TOKEN"), H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj), os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.POSTS, H.EVENTS, H.TH_DIVERSE, H.TH_LIST_TOSS, H.E["THREADS_TOKEN"], H.season_adj = "posts132.json", "ev132.json", True, False, "tk", (lambda n, ctx=None: 0)
+json.dump([], open("ev132.json", "w")); tb132, al132 = [], []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb132.append((kind, text)) or {"id": "T"}
+H.tg = lambda m, **p: {"message_id": 1}
+H.alert = lambda seen, key, text, *a, **k: al132.append(text)
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))  # 기본 훅·질문·한 줄(확인할 점)
+assert H.brand_of("메디힐 세럼 50ml") == H.brand_of("메디플라워 핸드크림") == "메디힐" and H.brand_of("[1+1] 라운드랩 선크림") == "라운드랩" and H.kind_key("라운드랩 독도 선크림 50ml") == "크림"
+P132 = lambda k, n, at, mall="쿠팡", u=None: {"t": f"2026-11-06 {at}", "text": f"{H.DISCLOSURE}\n\n🔥 [{mall}] {n} (9,900원)\n\n좋음", "url": u or f"https://link.coupang.com/a/D{k}", "mid": 100 + k, "own": 1}
+N132 = ["메디힐 세럼 50ml", "메디플라워 핸드크림 50ml", "메디힐 마스크팩 10매", "탐사 물티슈 100매", "퍼실 세탁세제 2.5L", "농심 신라면 5개", "삼다수 생수 2L 12병", "곰곰 계란 30구", "오뚜기 즉석밥 12개",
+        "스카트 고무장갑", "크리넥스 키친타월", "다우니 섬유유연제", "3M 수세미 10개", "코멧 화장지 30롤"]  # 0~2 = 메디 계열(화장품) · 13 = 잘 된 상품(아래 top.json)
+json.dump([P132(k, n, f"14:{k:02d}") for k, n in enumerate(N132)] + [P132(50, "네이버 두루마리 휴지 30롤", "14:30", "네이버", "https://naver.me/x50")], open("posts132.json", "w"), ensure_ascii=False)
+items132 = lambda t: re.findall(r"^[1-7]️⃣ (?:👍 )?(.+?) [\d,]+원$", t, re.M)
+s132 = {}; time.time = lambda: TK("2026-11-06 15:05"); o132 = io.StringIO()
+with contextlib.redirect_stdout(o132): H.top_deals(s132)
+b1 = items132(tb132[-1][1])
+assert len(b1) >= 3 and "두루마리" not in tb132[-1][1] and "묶음 점검 ok · top15" in o132.getvalue(), (b1, o132.getvalue())  # 쿠팡 묶음 = 쿠팡만
+assert [x["u"] for x in s132["thtx"]["q"]] == ["https://naver.me/x50"] and "threads top15 다른 몰 1개 = 묶음 X → 개별 글 줄" in o132.getvalue(), o132.getvalue()  # 네이버 = 개별 글 줄
+s132.pop("bundles", None); time.time = lambda: TK("2026-11-06 18:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s132)
+b2 = items132(tb132[-1][1])
+assert tb132[-1][0] == "top18" and len(b2) >= 3 and len(set(b1) & set(b2)) <= 1 and sum(H.brand_of(n) == "메디힐" for n in b2) <= 1, (b1, b2)  # (2) 같은 후보로 2번 = 겹침 1개 이하(72시간 회전)
+# (3) 같은 브랜드 후보 = 1개만(12시 화장대 칸 — 메디힐 세럼·메디플라워 핸드크림·메디힐 마스크팩 = 메디 계열)
+json.dump([{**P132(k, n, f"11:{k:02d}")} for k, n in enumerate(N132[:6])], open("posts132.json", "w"), ensure_ascii=False)
+s132m = {}; time.time = lambda: TK("2026-11-06 12:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s132m)
+m132 = items132(tb132[-1][1])
+assert tb132[-1][0] == "top12" and len(m132) >= 3 and sum(H.brand_of(n) == "메디힐" for n in m132) == 1, m132
+# (4) 꾸준템(잘 된 상품 top.json) 1개 + 다음 날 같은 후보 = 꾸준템은 남고 나머지는 겹침 1개 이하 · 같은 날 두 번째 묶음엔 X(하루 1번)
+json.dump({"items": [{"url": "https://link.coupang.com/a/D13"}]}, open("top.json", "w"))
+json.dump([P132(k, n, f"14:{k:02d}") for k, n in enumerate(N132)], open("posts132.json", "w"), ensure_ascii=False)
+s132b = {}; time.time = lambda: TK("2026-11-06 15:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s132b)
+c1 = items132(tb132[-1][1])
+json.dump([{**P132(k, n, f"14:{k:02d}"), "t": f"2026-11-07 14:{k:02d}"} for k, n in enumerate(N132)], open("posts132.json", "w"), ensure_ascii=False)
+s132b.pop("bundles", None); time.time = lambda: TK("2026-11-07 15:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s132b)
+c2 = items132(tb132[-1][1])
+assert tb132[-1][0] == "top15" and "코멧 화장지 30롤" in c1 and "코멧 화장지 30롤" in c2 and len(set(c1) & set(c2)) == 1, (c1, c2)  # 꾸준템 = 다음 날에도 · 나머지 = 회전
+s132b.pop("bundles", None); time.time = lambda: TK("2026-11-07 18:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s132b)
+assert not tb132[-1][0] == "top18" or "코멧 화장지 30롤" not in items132(tb132[-1][1])  # 같은 날 두 번째 묶음 = 꾸준템 X(하루 1번)
+# 올리기 전 점검: 72시간 지난 묶음(회전 밖)이라도 최근 묶음 3개와 겹침 2개↑ = 겹친 것 빼고 다시 → 3개 밑이면 그 회차 X + 관리자 1줄
+json.dump([P132(k, N132[k], f"14:{k:02d}") for k in (3, 4, 5)], open("posts132.json", "w"), ensure_ascii=False)
+s132c = {"thlist": {"t": 1, "h": [[TK("2026-11-02 15:05"), ["https://link.coupang.com/a/D3", "https://link.coupang.com/a/D4"], 15, []]]}}; time.time = lambda: TK("2026-11-06 15:05"); o132 = io.StringIO(); n132 = len(tb132)
+with contextlib.redirect_stdout(o132): H.top_deals(s132c)
+assert len(tb132) == n132 and "묶음 점검 막음 · top15 겹침 2개" in o132.getvalue() and al132 and al132[-1].startswith("⚠️ 중복 묶음 막음: 15시 묶음 · 겹친 상품 "), (o132.getvalue(), al132)
+# 텔레그램 TOP: 같은 브랜드 1개(앞에 온 것) · 72시간 안 TOP에 나간 상품 = X
+assert [p["n"] for p in H.brand_first([{"n": 1, "text": "🔥 [쿠팡] 메디힐 세럼 (1원)"}, {"n": 2, "text": "🔥 [쿠팡] 메디플라워 크림 (1원)"}, {"n": 3, "text": "🔥 [쿠팡] 코멧 휴지 (1원)"}])] == [1, 3]
+src132 = inspect.getsource(H.top_deals)
+assert 'rot = {u for h in seen.get("tgtop", {}).get("h", [])' in src132 and "tgt = brand_first([p for p in top if p[\"url\"] not in rot])[:5] if TH_DIVERSE else top[:5]" in src132
+# 토스 Threads 리스트(13:30 베스트): 같은 브랜드 1개 · 나간 상품 = thtl(72시간 회전) · 로그 '토스 묶음 점검'
+sv132t = (H.toss, H.toss_link, H.ai_pick, H.HAS_TOSS, H.TOSS_BEST_HOURS, H.TOSS_TH_BEST, H.TH_TOSS_KINDS, H.TOSS_TH_LIST, H.TOSS_GAP, H.TOSS_PAUSE, H.rv_fields)
+NT132 = ["메디힐 세럼 50ml", "메디플라워 핸드크림", "코멧 화장지 30롤", "탐사 물티슈 100매", "곰곰 계란 30구"]
+H.toss = lambda path, body=None: {"items": [{"tacaItemId": 700 + i, "displayName": n, "displayPrice": 5000 + i, "discountRate": 10} for i, n in enumerate(NT132)]}
+H.toss_link, H.ai_pick, H.HAS_TOSS, H.rv_fields = (lambda seen, i, n: f"https://toss.shopping/_m/V{i}"), (lambda prompt, lines: [{"i": i, "score": 9, "comment": ""} for i in range(len(lines))]), True, (lambda *a, **k: None)
+H.TOSS_BEST_HOURS, H.TOSS_TH_BEST, H.TH_TOSS_KINDS, H.TOSS_TH_LIST, H.TOSS_GAP, H.TOSS_PAUSE = (13.5,), (13.5,), ("best", "cat"), True, 0, ("2026-10-30 00:00", "2026-11-04 23:59")
+[H.RUN.pop(k, None) for k in ("tstop", "treuse", "thmall", "tgmall")]
+st132 = {"bundles": {"t": 1, "ts": []}}; time.time = lambda: TK("2026-11-06 13:35"); o132 = io.StringIO()
+with contextlib.redirect_stdout(o132): H.toss_deals(st132, True)
+bt132 = tb132[-1][1]
+assert tb132[-1][0] == "toss13.5" and sum(x in bt132 for x in ("메디힐", "메디플라워")) == 1 and "토스 묶음 점검 ok · 4개 (72시간 회전·브랜드 1개 뺌)" in o132.getvalue(), (bt132, o132.getvalue())
+assert len(st132["thtl"]["h"][-1][1]) == len(re.findall(r"^[1-7]️⃣ ", bt132, re.M)) >= 3  # 나간 상품 = 72시간 회전 기록
+(H.toss, H.toss_link, H.ai_pick, H.HAS_TOSS, H.TOSS_BEST_HOURS, H.TOSS_TH_BEST, H.TH_TOSS_KINDS, H.TOSS_TH_LIST, H.TOSS_GAP, H.TOSS_PAUSE, H.rv_fields) = sv132t
+# (5) 개별 🔥 핫딜·꾸준템 회차·토스 개별 글 = 다양성 규칙과 상관없음(묶음에 무엇을 담느냐만)
+assert all("TH_DIVERSE" not in inspect.getsource(f) for f in (H.threads_deals, H.steady_list, H.toss_solo, H.post_or_draft, H.th_solo, H.cp_mix)) and "TH_DIVERSE" in inspect.getsource(H.toss_deals)
+(time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, tk132, H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj) = sv132
+H.E.pop("THREADS_TOKEN", None) if tk132 is None else H.E.update(THREADS_TOKEN=tk132)
+os.chdir(cwd132)
