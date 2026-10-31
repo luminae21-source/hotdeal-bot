@@ -4099,6 +4099,8 @@ def new_sets(seen):
             continue
         pick = pickf(ps)
         if len(pick) < TH_LIST_MIN:  # 14:10 새 상품 모자람 = 그 몰·그 칸 기존 좋은 상품으로 채움
+            if any(x[1] == mall and x[2] == cat and not x[5] for x in sets):  # 그 칸에 안 올린 구성이 이미 있음 = 또 채우지 X(10/31 22:30 점검 — 커피 새 상품 1개마다 채운 구성 6개) · 새 상품 3개 모이면 그때
+                continue
             pick = build(pick, olds.get((mall, cat), []))
         nn = sum(p["url"] in npu for p in pick)
         if len(pick) < TH_LIST_MIN:

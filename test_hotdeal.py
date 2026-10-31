@@ -12377,3 +12377,17 @@ assert "names=kw, keep=kw" in inspect.getsource(H.curation)
 (H.ai_review, H.E["ANTHROPIC_API_KEY"], H.REVIEW, time.time, H.EVENTS, S.EVENTS) = sv137
 H.RUN.pop("rvw", None)
 os.chdir(cwd137)
+# 9-138) 10/31 22:30 점검: 커피 새 상품이 1개씩 들어올 때마다 기존 상품으로 채운 구성이 따로 생김(하루 6개) → 그 몰·칸에 안 올린 구성이 있으면 또 채우지 X(새 상품 3개 모이면 새 구성)
+sv138, cwd138 = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.POSTS, H.EVENTS, S.EVENTS = "p138.json", "e138.json", "e138.json"; H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))
+json.dump([{"at": f"2026-11-07 {s}", "curation": True, "text": "Cowork", "link": "x", "img": []} for s in H.NSET_SLOTS], open("e138.json", "w"))  # 칸 다 Cowork = 구성 줄 섬
+o138 = [S134(1, "깨끗한나라 화장지 30롤", rev=50000), S134(2, "탐사 물티슈 100매", rev=3000), S134(3, "페리오 칫솔 10개", rev=2000), S134(4, "잘풀리는집 미용티슈 3개", rev=1000)]
+json.dump(o138, open("p138.json", "w"), ensure_ascii=False); s138 = {}; time.time = lambda: TK("2026-11-07 09:00"); H.new_sets(s138)
+json.dump(o138 + [N134(1, "유한킴벌리 생리대 중형")], open("p138.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-07 09:30")
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s138)
+assert [(x[2], x[5], x[6]) for x in s138["nset"]["h"]] == [("life", "", "mix")], s138["nset"]  # 새 1 + 기존 = 채운 구성 1(칸 없음 = 줄 섬)
+json.dump(o138 + [N134(1, "유한킴벌리 생리대 중형"), N134(2, "2080 치약 120g")], open("p138.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-07 10:00")
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s138)
+assert len(s138["nset"]["h"]) == 1, s138["nset"]  # 같은 칸 새 1개 더 = 또 채우지 X
+(time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv138
+os.chdir(cwd138)
