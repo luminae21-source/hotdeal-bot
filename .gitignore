@@ -1,0 +1,4 @@
+tools/card/node_modules/
+tools/card/package-lock.json
+tools/card/fonts/
+tools/card/data/run_*.json

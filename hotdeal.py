@@ -3,7 +3,7 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, subprocess, tempfile, time, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -3977,7 +3977,11 @@ def top_deals(seen):
     labs = list(dict.fromkeys(CAT_SHORT[c] for c in (cat_of(p) for p in inl) if c in CAT_SHORT))[:4]  # 사이트 묶음 카드 머리 = 품목 이름('여자라면' 같은 말 X)
     th_site(f"th{hrs[-1]}", "\n".join(dict.fromkeys(aff_note(p["url"]) for p in inl)), f"{'·'.join(labs) or '오늘 묶음'} {n}", [(p, pr) for p, pr, *_ in pick], skey, sno, cm0)
     seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl], hrs[-1], sorted({kind_key(short_name(title_of(p["text"]))) for p in inl})]], "hq": [hook, q]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
-    th_bundle(seen, f"top{hrs[-1]}", render(pick, beauty, hook, q), th_url(inl[0], posts.index(inl[0])), topic=SERIES_BY[skey][0] if skey else None)  # 주제 태그 = 시리즈 이름
+    text, lk, tp = render(pick, beauty, hook, q), th_url(inl[0], posts.index(inl[0])), SERIES_BY[skey][0] if skey else None  # 주제 태그 = 시리즈 이름
+    if img := mall_card(f"top{hrs[-1]}", tp or "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img}]}
+    else:
+        th_bundle(seen, f"top{hrs[-1]}", text, lk, topic=tp)
     if skey:
         seen.setdefault("series", {})[skey] = sno  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
     if len(tgt) < 3:  # 텔레그램 리스트 없이 Threads만 = 묶음 글 10분 간격·1시간 글 수에 셈(수다·달력 글처럼 · 텔레그램도 나갔으면 위에서 1번만)
@@ -4202,6 +4206,91 @@ def th_list_copy(seen, h, pick, cm, theme=""):
     if got < len(pick) or ds:
         print(f"묶음 한 줄 {len(pick)}개 · Claude {got} · 겹침 {len(ds)} → 다시 {new} · 뺌 {len(ds) - new}")
     return hook, q
+
+
+MALL_CARD, MALL_CARD_DIR, MALL_CARD_WAIT, MALL_CARD_KEEP = True, "docs/cards/mall", 45 * 60, 7  # 11/1 진우 결정(Cowork tools/card — GPT 몰별 카드 렌더러 v2): 묶음 글 사진 = 같은 상품 카드(1080×1350) · 사이트에 뜨면 Threads(다음 실행) · 45분 안 뜨면 글만 · 7일 보관
+CARD_DIR, CARD_COND = "tools/card", (("와우", "와우가"), ("쿠폰", "쿠폰가"), ("회원가", "회원가"))  # 카드 가격 조건 = card.html 허용 3개만
+CARD_BAN = r"최저가|미백|다이어트|면역|직접\s*써|써\s*봤|사용해\s*봤|제가\s*사용|효능"  # card.html FORBIDDEN과 같게(걸린 상품 = 카드에서 뺌)
+
+
+def mall_card_json(title, items):
+    """tools/card 카드 JSON(11/1 Cowork): items = [(posts 글, 가격 글자)] -> {mall, title, checked, items:[{name, price, cond, unit, img, url, checked}]} 또는 None.
+    가격(숫자+원)·확인 시각(chk_ts — 진열 chkt·chk·글 시각) 있는 상품만 · 3~5개 · 몰 1개(섞임 X) · 토스 X(카드 = 사이트에 커밋 — 공개 저장소에 토스 가격 X) · 네이버 사진 X(규칙)."""
+    its, malls = [], set()
+    for p, pr in items:
+        n, name = won(pr or ""), short_name(title_of(p["text"]))
+        if not n or re.search(CARD_BAN, name):
+            continue
+        unit = p.get("unit") or (m[1].strip() if (m := re.search(r"💰\s*([^\n·]*?당\s*[\d,]+원)", p["text"])) else "")
+        its.append({"name": clip(name, 40), "price": f"{n:,}원", "cond": next((c for w, c in CARD_COND if w in (pr or "")), ""), "unit": "" if re.search(CARD_BAN, unit) else unit,
+                    "img": "" if shop_of(p) == "naver" else img_of(p) or "", "url": p["url"] if str(p.get("url") or "").startswith("https://") else "",
+                    "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(chk_ts(p) + 9 * 3600))})
+        malls.add(shop_of(p))
+    if not 3 <= len(its) <= 5 or len(malls) != 1 or malls & {"toss", ""} or re.search(CARD_BAN, title or "") or not (title or "").strip():
+        print("mall card X", f"{len(its)}개" + (f" · 몰 {'·'.join(sorted(malls)) or '모름'}" if len(malls) != 1 or malls & {"toss", ""} else ""))
+        return None
+    return {"mall": malls.pop(), "title": title.strip(), "checked": max(x["checked"] for x in its), "items": its}
+
+
+def mall_card(kind, title, items):
+    """묶음 글 몰별 카드(11/1): mall_card_json -> tools/card/render.mjs(러너에 깔린 Chrome — PW_CHROME · playwright npm은 이때만 설치, 브라우저 받기 X) -> docs/cards/mall/날짜_칸.png
+    -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node/Chrome 없음·렌더 실패 = None(글만 — 봇은 그대로)."""
+    d = MALL_CARD and mall_card_json(title, items)
+    if not d:
+        return None
+    stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
+    data, out = f"data/run_{stem}.json", os.path.abspath(f"{MALL_CARD_DIR}/{stem}.png")
+    try:
+        os.makedirs(f"{CARD_DIR}/data", exist_ok=True)
+        os.makedirs(MALL_CARD_DIR, exist_ok=True)
+        json.dump(d, open(f"{CARD_DIR}/{data}", "w"), ensure_ascii=False)
+        os.makedirs(f"{CARD_DIR}/fonts", exist_ok=True)
+        for f in glob.glob("fonts/Pretendard-*.otf") + glob.glob("fonts/NanumGothic-*.ttf"):  # jsDelivr Pretendard 안 될 때 = 봇 글꼴(card.html HDLocal)
+            shutil.copy(f, f"{CARD_DIR}/fonts/")
+        if not os.path.isdir(f"{CARD_DIR}/node_modules/playwright"):
+            subprocess.run(["npm", "i", "--no-audit", "--no-fund"], cwd=CARD_DIR, env={**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}, timeout=120, check=True, capture_output=True)
+        chrome = os.environ.get("PW_CHROME") or shutil.which("google-chrome") or shutil.which("chromium") or ""
+        subprocess.run(["node", "render.mjs", data, out], cwd=CARD_DIR, env={**os.environ, "PW_CHROME": chrome}, timeout=90, check=True, capture_output=True)
+    except Exception as e:  # node·npm·Chrome 없음·시간 초과·카드 검증 실패 = 글만
+        err = getattr(e, "stderr", b"") or b""
+        print("mall card 렌더 X", kind, err_brief(e), err.decode("utf-8", "replace").strip().splitlines()[-1:] if err else "")
+        return None
+    cut = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600 - MALL_CARD_KEEP * 86400))
+    for f in glob.glob(f"{MALL_CARD_DIR}/*.png"):  # 7일 지난 카드 = 지움(저장소 크기)
+        if os.path.basename(f)[:8] < cut:
+            os.remove(f)
+    print("mall card 만듦", d["mall"], f"{len(d['items'])}개", stem)
+    return f"{SITE}cards/mall/{stem}.png"
+
+
+def mall_card_post(seen):
+    """11/1 몰별 카드 묶음 글: 카드가 사이트에 뜨면(HEAD) Threads 사진 글 · MALL_CARD_WAIT(45분) 넘게 안 뜸 = 글만(지금처럼) · 사진 글 거절(4xx) = 글만 · 3시간 지난 줄 = 버림."""
+    q, now = seen.get("mcard", {}).get("q", []), time.time()
+    if not q:
+        return
+    go, keep = [], []
+    for x in q:
+        if now - x["t"] > 3 * 3600:
+            print("mall card 시간 지나 X", x["kind"])
+            continue
+        try:
+            http(x["img"], method="HEAD")
+            go.append((x, True))
+        except Exception:  # 아직 배포 전 = 기다림 · 45분 넘음 = 글만
+            if now - x["t"] < MALL_CARD_WAIT:
+                keep.append(x)
+            else:
+                go.append((x, False))
+    seen["mcard"] = {"t": now, "q": keep}  # 올리기 전에 줄에서 뺌(실패 = th_bundle의 다시 시도 1번)
+    for x, live in go:
+        try:
+            th_bundle(seen, x["kind"], x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))
+        except urllib.error.HTTPError as e:  # 서버가 카드 사진을 거절 = 글만 1번
+            if not live or e.code >= 500:
+                raise
+            print("mall card 사진 거절 -> 글만", x["kind"], err_brief(e))
+            th_bundle(seen, x["kind"], x["text"], x["link"], topic=x.get("topic"))
+        print("mall card", x["kind"], "사진 글" if live else "글만(카드가 사이트에 안 뜸)")
 
 
 TH_LIST_NEED, TH_QUOTA, TH_LIFE_CATS, TH_TOSS_MIN, TH_LIST_TOSS, TH_TX_HOURS, TH_MALL_ALT = {1: "life", 12: "beauty", 15: "life"}, (12, 5), ("life", "laundry", "kitchen"), 5, False, 6, True  # 10/31 진우: 하루 생필품 12개↑·화장품 5개↑(묶음 순서로 채움 · 모자라면 로그만)
@@ -11573,7 +11662,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
