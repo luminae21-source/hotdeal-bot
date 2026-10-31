@@ -163,7 +163,7 @@ OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 700  # FF(10/26): 표지 = 첫 장(1위 실사진 꽉 + 숫자 훅 띠) 가운데 0.7초 · 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(IG_H 끈 때만 — H 공개 릴스·카드 = 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#특가", "#살림템", "#쇼핑정보", "#할인정보", "#가성비템", "#쟁여템", "#장바구니", "#오늘의딜"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만, 채움은 칸마다 돌림)
-TOP_HOURS, TH_LIST_GROUP, TH_DAWN_LIST, TH_SERIES = (12, 15, 18), {1: "c", 12: "f", 15: "c", 18: "m"}, 1, {1: "dawn", 12: "vanity", 15: "stock", 18: "commute"}  # TH_SERIES = 묶음 시리즈(10/31 진우)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
+TOP_HOURS, TH_LIST_GROUP, TH_DAWN_LIST, TH_DAWN_END, TH_SERIES = (12, 15, 18), {1: "c", 12: "f", 15: "c", 18: "m"}, 1, 7, {1: "dawn", 12: "vanity", 15: "stock", 18: "commute"}  # TH_SERIES = 묶음 시리즈(10/31 진우)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17, 20)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
@@ -3471,7 +3471,7 @@ def top_deals(seen):
     """12·18시: 그 시간대(0~12시·12~18시)에 채널에 올린 커뮤니티 딜 중 반응(분당 조회수 + 추천×5, 게시 때 뽐뿌·클리앙 수치) 높은 TOP5를 한 글로.
     3개 미만이면 안 올림. 조회수 기준이라 '많이 보는' 딜(구매 수는 모름). 링크마다 그 제휴 프로그램 대가성 문구를 맨 앞에."""
     kst = time.gmtime(time.time() + 9 * 3600)
-    hrs = [h for h in sorted({*TOP_HOURS, TH_DAWN_LIST}) if h <= kst.tm_hour and (h != TH_DAWN_LIST or kst.tm_hour < TH_SOLO_DAWN[0])]  # 새벽 묶음 = 7시 전에만(놓치면 그날 X) · TH_DAWN_LIST(01시) = Threads 새벽 묶음만(텔레그램 TOP = 12·15·18시 그대로)
+    hrs = [h for h in sorted({*TOP_HOURS, TH_DAWN_LIST}) if h <= kst.tm_hour and (h != TH_DAWN_LIST or kst.tm_hour < TH_DAWN_END)]  # 새벽 묶음 = 7시 전에만(놓치면 그날 X) · TH_DAWN_LIST(01시) = Threads 새벽 묶음만(텔레그램 TOP = 12·15·18시 그대로)
     key = time.strftime("top_%Y%m%d_", kst) + (str(hrs[-1]) if hrs else "")
     if not hrs or key in seen or busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에
         return
