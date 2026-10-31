@@ -1041,7 +1041,7 @@ def series_pages(posts, out, today, toss=()):
         if e.get("key") in eps and e.get("no"):
             im = img_of({"img": (e.get("img") or [""])[0], "url": GOLDBOX, "text": ""})
             eps[e["key"]].append((e["no"], e.get("t", ""), f'<article class="g"><a class="se" href="{html.escape(e.get("link") or BASE)}">' + (f'<div class="im"><img src="{html.escape(im)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>' if im else "")
-                                  + f'<h3>{html.escape((e.get("title") or "")[:60])}</h3></a></article>'))
+                                  + f'<h3>{html.escape((e.get("title") or "Threads에서 보기")[:60])}</h3></a></article>'))  # 토스 회차 = 제목 없이 주소만(⑧)
     json.dump([{"key": k, "name": n, "emoji": e, "at": a, "desc": d, "n": len(eps[k])} for k, n, e, a, d in SERIES], open(f"{out}/series.json", "w"), ensure_ascii=False)
     urls = []
     for k, n, e, a, d in SERIES:
