@@ -2658,7 +2658,8 @@ def site_status(out, posts, it, urls, now_ts):
     if len(fp) >= STATUS_FAIL:
         warn.append(f"쿠팡 변환 실패 {len(fp)}개(cp_fail.json)")
     json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now_ts + 9 * 3600)), "posts": len(posts), "site": len(it), "mall": dict(mall), "cat": dict(cat),
-               "missing": len(miss), "missing_names": miss[:20], "cp_fail": len(fp), "sitemap": len(urls), "days": days, "warn": warn}, open(f"{out}/status.json", "w"), ensure_ascii=False, indent=0)
+               "missing": len(miss), "missing_names": miss[:20], "cp_fail": len(fp), "sitemap": len(urls), "days": days, "warn": warn,
+               "nset": [x for x in (nset.get("items") or []) if isinstance(x, dict)] if isinstance(nset := (json.load(open("nset.json")) if os.path.exists("nset.json") else {}), dict) and nset.get("d") == today else []}, open(f"{out}/status.json", "w"), ensure_ascii=False, indent=0)
     return warn
 
 

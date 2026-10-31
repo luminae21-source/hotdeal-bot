@@ -12221,3 +12221,34 @@ assert all("TH_DIVERSE" not in inspect.getsource(f) for f in (H.threads_deals, H
 (time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, tk132, H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj) = sv132
 H.E.pop("THREADS_TOKEN", None) if tk132 is None else H.E.update(THREADS_TOKEN=tk132)
 os.chdir(cwd132)
+# 9-133) 10/31 14:00 Cowork 새 기능(진우 '새로운 제품들이 나오면 계속 새로운 구성 · 깃허브에서'): 새 상품(posts.json에 처음 들어온 상품 48시간) → 같은 몰·같은 칸 3개↑(브랜드 1개·같은 종류 X·72시간 묶음 회전) = 새 구성
+#        → 빈 Cowork 큐레이션 칸 자동 큐레이션(auto_events) 또는 다음 쿠팡 묶음 먼저 · nset.json(status.json) · 셀프체크 (1) 같은 몰·칸 3개 = 구성 1 (2) 몰 섞인 3개 = X (3) 같은 브랜드 3개 = X (4) Cowork 큐레이션 칸 = 자동 X
+sv133, cwd133 = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS = "posts133.json", "ev133.json", "ev133.json"
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))
+P133 = lambda k, n, mall="쿠팡", u=None: {"t": "2026-11-06 10:00", "text": f"{H.DISCLOSURE if mall == '쿠팡' else H.TOSS_NOTE if mall == '토스' else H.NAVER_NOTE}\n\n🔥 [{mall}] {n} (9,900원)\n\n좋음", "url": u or f"https://link.coupang.com/a/N{k}", "mid": 300 + k, "own": 1}
+json.dump([P133(0, "곰곰 계란 30구")], open("posts133.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-11-06 12:40", "curation": True, "text": "Cowork 큐레이션", "link": f"{H.SITE}c/life/", "img": []}], open("ev133.json", "w"), ensure_ascii=False)
+s133 = {}; time.time = lambda: TK("2026-11-06 11:00")
+H.new_sets(s133); assert "nset" not in s133 and len(s133["npseen"]["h"]) == 1  # 첫 실행 = 지금 상품은 '본 것'(새 상품 X)
+json.dump([P133(0, "곰곰 계란 30구"), P133(1, "코멧 화장지 30롤"), P133(2, "탐사 물티슈 100매"), P133(3, "2080 치약 120g 6개")], open("posts133.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-06 11:15"); o133 = io.StringIO()
+with contextlib.redirect_stdout(o133): H.new_sets(s133)
+ae133 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
+assert [x[1:3] + [len(x[3]), x[4], x[5]] for x in s133["nset"]["h"]] == [["coupang", "life", 3, "생필품", "2026-11-06 18:40"]] and "새 구성 만듦 · coupang 생필품 3개" in o133.getvalue(), o133.getvalue()  # (1) 같은 몰·같은 칸 새 상품 3개 = 구성 1
+assert [e["at"] for e in ae133] == ["2026-11-06 18:40"] and ae133[0]["auto"] == "nset" and ae133[0]["link"] == f"{H.SITE}c/life/" and ae133[0]["topic"] == "생필품"  # (4) 12:40 = Cowork 큐레이션 → 다음 빈 칸 18:40
+assert ae133[0]["text"].startswith(H.DISCLOSURE + "\n\n🆕 새로 들어온 생필품 3개\n") and "1️⃣ 코멧 화장지 30롤 9,900원" not in ae133[0]["text"][:0] and "⚠️ 11/6 18:40 게시 시점 가격" in ae133[0]["text"] and len(re.findall(r"^[1-3]️⃣ ", ae133[0]["text"], re.M)) == 3, ae133[0]["text"]
+assert s133["thlist"]["h"][-1][2] == "nset" and len(s133["thlist"]["h"][-1][1]) == 3  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
+assert json.load(open("nset.json")) == {"d": "2026-11-06", "items": [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40"}]}
+S.site_status("docs", [], [], [], TK("2026-11-06 11:20")); assert json.load(open("docs/status.json"))["nset"] == [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40"}]  # 오늘 새 구성 = status.json
+time.time = lambda: TK("2026-11-06 11:30"); H.new_sets(s133); assert len(s133["nset"]["h"]) == 1 and len([e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]) == 1  # 같은 상품 = 구성 1번
+# (2) 몰 섞인 3개(쿠팡·토스·네이버 같은 칸) = 구성 X · (3) 같은 브랜드 3개(코멧) = 1개만 남아 X
+json.dump(json.load(open("posts133.json")) + [P133(4, "잘풀리는집 미용티슈 3개"), P133(5, "깨끗한나라 화장지", "토스", "https://toss.shopping/_m/N5"), P133(6, "화이트 생리대 중형", "네이버", "https://naver.me/N6"),
+           P133(7, "코멧 키친타월 6롤"), P133(8, "코멧 생리대 대형"), P133(9, "코멧 치약 3개")], open("posts133.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-06 11:45"); o133 = io.StringIO()
+with contextlib.redirect_stdout(o133): H.new_sets(s133)
+assert len(s133["nset"]["h"]) == 1 and "새 구성 모자람 · " in o133.getvalue() and "toss 생필품 1" in o133.getvalue() and "naver 생필품 1" in o133.getvalue(), o133.getvalue()  # 몰마다 1개씩 = X
+assert "coupang 생필품 2" in o133.getvalue() and "coupang 주방 1" in o133.getvalue(), o133.getvalue()  # 미용티슈 + 코멧(생리대·치약 중 1개 — 같은 브랜드 1개) = 2개 = X(억지 X)
+assert "new_sets, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+(time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv133
+os.chdir(cwd133)

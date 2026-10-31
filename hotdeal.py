@@ -3900,8 +3900,9 @@ def top_deals(seen):
     cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p) and inb(p)] \
         + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
         + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]
-    if TH_DIVERSE:  # 조합 돌리기: 같은 채움 칸 안에서 어제 같은 칸에 담은 소품목 = 뒤로
-        cands.sort(key=lambda c: (c[3], kind_key(short_name(title_of(c[0]["text"]))) in yk))
+    if TH_DIVERSE:  # 조합 돌리기: 같은 채움 칸 안에서 어제 같은 칸에 담은 소품목 = 뒤로 · 새 구성(쿠팡 — new_sets, 큐레이션 칸 못 받은 것) = 맨 앞(10/31 '새 제품 나오면 새 구성')
+        nsu = {u for x in seen.get("nset", {}).get("h", []) if x[1] == "coupang" and not x[5] for u in x[3]}
+        cands.sort(key=lambda c: (c[0]["url"] not in nsu, c[3], kind_key(short_name(title_of(c[0]["text"]))) in yk))
     if hrs[-1] in TH_LIST_NEED:  # 10/31 진우 '생필품 꼭 넣고, 화장품도': 01·15시 = 생필품 먼저 · 12시 = 화장품 먼저(지금 가격 확인된 것 — 진열 '(M/D H시 확인)' = 뒤로) · 모자라면 그대로(억지 X)
         cands.sort(key=lambda c: not (th_kind(short_name(title_of(c[0]["text"]))) == TH_LIST_NEED[hrs[-1]] and "확인)" not in c[1]))
     cands = [c for c in cands if inb(c[0])]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
@@ -4005,6 +4006,70 @@ def brand_first(ps):
 
 
 kind_key = lambda name: (kind_words(name) or [""])[-1][-2:]  # 소품목(조합 돌리기) = 마지막 종류 낱말 끝 두 글자(same_kind와 같은 셈)
+
+
+NSET_H, NSET_SLOTS, NSET_FILE, NSET_MAX = 48, ("08:20", "12:40", "18:40", "21:10"), "nset.json", 5  # 10/31 진우 '새로운 제품들이 나오면 계속 새로운 구성' — 새 상품 48시간 · Cowork 큐레이션 칸(비었을 때만 자동) · 오늘 기록(status.json) · 구성 5개까지
+
+
+def new_sets(seen):
+    """10/31 Cowork 새 기능(진우 '새 제품 나오면 계속 새로운 구성 · 깃허브에서'): 지난 실행 뒤 posts.json(채널 딜·사이트 진열 — 쿠팡·토스·네이버)에 처음 들어온 상품 = 새 상품(48시간) →
+    같은 몰 + 같은 칸(cat_of — CAT_SHORT 이름)에서 다양성 규칙(같은 브랜드 1개·같은 종류 X·72시간 안 묶음에 나간 상품 X·이미 구성에 든 상품 X)을 거친 새 상품 3개↑ = 새 구성 1개(5개까지) ·
+    3개 밑 = 억지 X(개별 핫딜·진열 그대로) · 로그 '새 구성 만듦/모자람'. 올리는 자리(새 시각 X): ① 그날 Cowork 큐레이션 칸(NSET_SLOTS)이 events.json에 비었으면 그 칸 자동 큐레이션(auto_events.json —
+    curation()이 텔레그램·Threads·인스타·사이트 주제 쪽 · 묶음 기록에 넣어 72시간 회전) ② 아니면 다음 쿠팡 묶음(top_deals)에서 먼저. 오늘 구성 = nset.json(status.json·Cowork 보고). 첫 실행 = 지금 상품을 '본 것'으로만."""
+    now, posts = time.time(), load(POSTS, [])
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    live = [p for p in posts if p.get("url") and (p.get("mid") or p.get("shelf")) and shop_of(p) and not tdead(p["url"]) and not p["text"].startswith("📋")]
+    byu, st = {p["url"]: p for p in live}, seen.get("npseen")
+    if not st:
+        seen["npseen"] = {"t": now, "h": sorted({dup_h(u) for u in byu})}
+        return
+    old = set(st["h"])
+    np = [x for x in seen.get("np", {}).get("h", []) if now - x[0] < NSET_H * 3600] + [[now, u] for u in byu if dup_h(u) not in old]
+    seen["npseen"], seen["np"] = {"t": now, "h": sorted(old | {dup_h(u) for u in byu})}, {"t": now, "h": np}
+    sets = [x for x in seen.get("nset", {}).get("h", []) if now - x[0] < NSET_H * 3600]  # [시각, 몰, 칸, 주소들, 이름, 칸 시각]
+    used = {u for x in sets for u in x[3]} | {u for h in seen.get("thlist", {}).get("h", []) if now - h[0] < TH_ROT_H * 3600 for u in h[1]}
+    groups = {}
+    for _, u in sorted(np, key=lambda x: -x[0]):
+        if u in byu and u not in used:
+            groups.setdefault((shop_of(byu[u]), cat_of(byu[u])), []).append(byu[u])
+    short, made = [], []
+    for (mall, cat), ps in groups.items():
+        if cat not in CAT_SHORT:  # 칸 모름 = 구성 X(사이트 쪽·이름 없음)
+            continue
+        pick = []
+        for p in ps:
+            nm = short_name(title_of(p["text"]))
+            if len(pick) < NSET_MAX and not any(brand_of(nm) == brand_of(short_name(title_of(q["text"]))) or same_kind(nm, short_name(title_of(q["text"]))) for q in pick):
+                pick.append(p)
+        if len(pick) < TH_LIST_MIN:
+            short.append(f"{mall} {CAT_SHORT.get(cat, cat)} {len(pick)}")
+            continue
+        made.append([now, mall, cat, [p["url"] for p in pick], CAT_SHORT.get(cat, "새로 들어온"), ""])
+        print(f"새 구성 만듦 · {mall} {made[-1][4]} {len(pick)}개")
+    if short and any(now - x[0] < 60 for x in np):  # 이번 실행에 새 상품이 들어왔을 때만(15분마다 같은 줄 X)
+        print("새 구성 모자람 · " + " · ".join(short[:6]))
+    sets += made
+    cow = {e.get("at") for e in (json.load(open(EVENTS)) if os.path.exists(EVENTS) else []) if isinstance(e, dict) and e.get("curation")}  # Cowork 큐레이션 = 먼저(자리 있으면 자동 X)
+    taken = cow | {e.get("at") for e in load(AUTO_EVENTS, []) or [] if isinstance(e, dict) and e.get("curation")}
+    for x in sets:
+        slot = next((f"{today} {s}" for s in NSET_SLOTS if f"{today} {s}" not in taken and kst_ts(f"{today} {s}") - now >= 20 * 60), None)
+        ps = [byu[u] for u in x[3] if u in byu]
+        if x[5] or not slot or len(ps) < TH_LIST_MIN:
+            continue
+        cm, pr = {}, lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
+        hook, q = th_list_copy(seen, int(slot[11:13]), [(p, pr(p), "", 2) for p in ps], cm, x[4])
+        text = aff_notes([p["url"] for p in ps]) + f"\n\n🆕 새로 들어온 {x[4]} {len(ps)}개\n{hook}\n\n" + "\n\n".join(
+            f"{NUM[k]} {clip(short_name(title_of(p['text'])), 30)} {pr(p)}" + "".join(f"\n{y}" for y in [" · ".join(z for z in (p.get("unit"), cm.get(p["url"])) if z)] if y) for k, p in enumerate(ps)) \
+            + f"\n\n{toss_when(slot)}" + (f"\n\n{q}" if q else "")
+        auto_add([{"at": slot, "curation": True, "topic": x[4], "link": f"{SITE}c/{x[2]}/", "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
+        x[5], taken = slot, taken | {slot}
+        seen["thlist"] = {**seen.get("thlist", {"h": []}), "t": now, "h": seen.get("thlist", {}).get("h", []) + [[now, x[3], "nset", []]]}  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
+        print(f"새 구성 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
+    seen["nset"] = {"t": now, "h": sets}
+    day = [{"name": x[4], "mall": x[1], "n": len(x[3]), "slot": x[5][11:]} for x in sets if time.strftime("%Y-%m-%d", time.gmtime(x[0] + 9 * 3600)) == today]
+    if day != (load(NSET_FILE, {}) or {}).get("items") or (load(NSET_FILE, {}) or {}).get("d") != today:
+        json.dump({"d": today, "items": day}, open(NSET_FILE, "w"), ensure_ascii=False, indent=0)  # 오늘 새 구성(이름·몰·상품 수 — 가격 X)
 
 
 def th_list_copy(seen, h, pick, cm, theme=""):
@@ -11373,7 +11438,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
