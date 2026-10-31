@@ -163,7 +163,7 @@ OY_DENY = r"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 700  # FF(10/26): 표지 = 첫 장(1위 실사진 꽉 + 숫자 훅 띠) 가운데 0.7초 · 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(IG_H 끈 때만 — H 공개 릴스·카드 = 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#특가", "#살림템", "#쇼핑정보", "#할인정보", "#가성비템", "#쟁여템", "#장바구니", "#오늘의딜"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만, 채움은 칸마다 돌림)
-TOP_HOURS = (12, 15, 18)  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
+TOP_HOURS, TH_LIST_GROUP = (12, 15, 18), {12: "f", 15: "c", 18: "m"}  # 10/12 01:25 진우 '좋은 딜은 묶어서 중간에 리스트도' -> 15시 추가(Threads 시청 피크 목·금 15~18시) · 커뮤니티 반응 좋은 딜 TOP5 묶음 글(10/9 진우 '사람들이 사는 제품을 보기 좋고 사고 싶게') — top_deals()
 NUM = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣".split()
 TOSS_DAY_HOURS = (9, 13, 17, 20)  # 하루특가(= 토스 앱 '매일 밤 12시 선착순특가') 회차, 회차마다 안 올린 것 최대 5개 (10/10 진우가 선착순 상품 링크를 직접 보내다가 '이 작업도 자동으로')
 TOSS_BEST_HOURS = (10, 11, 12, 14, 16, 18, 20)  # 10/11 진우 '회차 늘리기, 적절하게': 7일 표에서 묶음 글 없는 11시 추가(12시는 TOP5와 겹침). 줄이려면 여기서 빼기. 토스 '지금 많이 팔리는 상품'(1시간마다 갱신) 중 Claude가 살 만한 것만: 10~20시 2시간마다 (10/7 진우 제안 2번 -> 10/8 3번 -> 10/9 '쿠팡·토스 주력' 6번)
@@ -3501,25 +3501,31 @@ def top_deals(seen):
     if not tok or hrs[-1] not in TH_LIST_HOURS:
         return
     posts, now = load(POSTS, []), time.time()  # Threads 12·15·18시 리스트(10/11 진우 '나누지 말고 묶기'): 대가성 문구 맨 앞, 번호·이름·가격 + 링크, 500자
+    gd, grp = load(CAT_GENDER, {}), TH_LIST_GROUP.get(hrs[-1], "c")  # 10/31 진우 '여성/남성 주 소비층 품목 구분': 12시 여성 · 15시 공통 · 18시 남성 품목 묶음(cat_gender.json)
+    if grp != "c" and not any(th_group(gd, c) == grp for c in gd):  # 그쪽 칸 기록이 없음(첫 달 전·실패) = 칸 가림 X(예전 리스트 그대로)
+        grp = None
+    inb = lambda p: grp is None or th_group(gd, cat_of(p)) == grp
     hist = [h for h in seen.get("thlist", {}).get("h", []) if now - h[0] < 86400]
     many = {u for u, c in collections.Counter(u for h in hist for u in h[1]).items() if c >= TH_LIST_REPEAT}  # 최근 24시간 리스트에 이미 2번 = X
     six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and not tdead(p.get("url")) and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
     price = lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
-    cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p)] \
+    cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p) and inb(p)] \
         + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
-        + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
+        + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]
+    cands = [c for c in cands if inb(c[0])]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
     def render(ps, bs):  # 리스트 줄들 + 💄 (글, 줄) — 대가성 문구·토스 게시 시점 줄은 실제로 든 딜 기준(💄 포함, 10/19 밤 점검: 💄 토스 링크에 문구·시점 줄이 없던 것)
         used = [p for p, *_ in ps] + [p for p, _ in bs]
         head = "\n".join(dict.fromkeys(aff_note(p["url"]) for p in used))
         tail = f"\n\n{toss_when()}" if TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in used) else ""
         lines = [f"{NUM[k]} {mk}{clip(short_name(title_of(p['text'])), 30)} {pr}\n👉 {th_url(p, posts.index(p))}" for k, (p, pr, mk, _) in enumerate(ps)]  # 10/19 진우 '직접 링크로': 텔레그램 버튼과 같은 링크
-        return f"{head}\n\n🏆 지금 살 만한 딜 TOP{len(ps)} ({hrs[-1]}시)\n\n" + "\n".join(lines) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
+        labs = list(dict.fromkeys(CAT_SHORT[c] for c in (cat_of(p) for p, *_ in ps) if c in CAT_SHORT))[:4]  # 머리 줄 = 품목 이름(10/31 진우 — '여자라면' 같은 말 X)
+        return f"{head}\n\n" + (f"🏆 {'·'.join(labs)} {len(ps)}" if labs else f"🏆 지금 살 만한 딜 TOP{len(ps)} ({hrs[-1]}시)") + "\n\n" + "\n".join(lines) + ("\n\n💄 화장품\n" + "\n".join(l for _, l in bs) if bs else "") + tail
     pick, us = [], set(many)
     for p, pr, mk, src in cands:
         if src > 1 and len(pick) >= TH_LIST_MIN or len(pick) == 5:  # ②~④ = ①(회차 TOP 수수료 딜 — 5개까지)이 3개 밑일 때 3개까지만 채움
             break
         nm = short_name(title_of(p["text"]))
-        if not pr or p["url"] in us or any(same_kind(nm, short_name(title_of(q["text"]))) for q, *_ in pick) or src > 1 and (th_beauty(nm) or cat_of(p) == "beauty") \
+        if not pr or p["url"] in us or any(same_kind(nm, short_name(title_of(q["text"]))) for q, *_ in pick) or src > 1 and grp != "f" and (th_beauty(nm) or cat_of(p) == "beauty") \
                 or len(render(pick + [(p, pr, mk, src)], [])) + max(0, TH_LIST_MIN - len(pick) - 1) * 80 > 480:  # 같은 상품·같은 종류 X · 💄 = 채움 셈 X(💄 칸 따로) · 3개 칸까지 남은 줄마다 80자 남겨 둠 — 긴 링크(링크프라이스 ~260자) 하나가 3개를 못 채우게 막으면 그 딜 X, 다음 후보
             continue
         pick.append((p, pr, mk, src))
@@ -3529,7 +3535,7 @@ def top_deals(seen):
         print(f"threads skip top{hrs[-1]} {n}개")
         return
     links, beauty, inl = n, [], [p for p, *_ in pick]  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(셈에 안 넣음 · 링크는 합쳐 5개까지 — 넘으면 이름·가격만)
-    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in inl and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"]))][:5]:
+    for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in inl and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"])) and inb(p)][:5]:
         line = f"· {clip(short_name(title_of(p['text'])), 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
         if len(render(pick, beauty + [(p, line)])) > 480:
             break
@@ -3539,7 +3545,7 @@ def top_deals(seen):
     th_bundle(seen, f"top{hrs[-1]}", render(pick, beauty), th_url(inl[0], posts.index(inl[0])))  # Threads 글 하나에 서로 다른 링크 5개까지(4279111, 10/12 12·15·18시 실패) -> 딜 링크만(미리보기 = 1번 딜, t.me 줄 X)
     if len(top) < 3:  # 텔레그램 리스트 없이 Threads만 = 묶음 글 10분 간격·1시간 글 수에 셈(수다·달력 글처럼 · 텔레그램도 나갔으면 위에서 1번만)
         bundled(seen)
-    print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick).items())))
+    print(f"threads top{hrs[-1]} {n}개 | 채움 " + " ".join(f"{'①②③④'[s - 1]}{c}" for s, c in sorted(collections.Counter(src for *_, src in pick).items())) + f" · {dict(f='여성', m='남성', c='공통').get(grp, '칸 가림 X')} 품목")
 
 
 def busy(seen, cap=True):
@@ -7092,7 +7098,8 @@ def th_landed(tok, text, since):
         return False
 
 
-TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 99, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
+TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 8, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
+TH_SOLO_HOURS, TH_SOLO_PER = (7, 12, 18, 20), 2  # 10/31 진우 '덜 쪼개고 묶기'(하루 30→67글에 조회 제자리): 개별 딜 글 하루 TH_SOLO_MAX(8)개 — 07·12·18·20시대 먼저(뒤에 남은 시간대 몫 TH_SOLO_PER개씩은 비워 둠 = 밤 0~6시 X) · 나머지 딜 = 텔레그램·사이트 + 묶음 재료
 TH_TOSS_FILL = ("day", "best", "cat")  # 10/12 22:50 진우 '많이 팔리는 제품도 꾸준하게 — 토스에서 실적 볼 수 있으니까': 이 토스 회차(하루특가·베스트·생필품 카테고리) 픽 = Threads 채움 후보,
 # 채움 땐 토스 픽 먼저(회차 1순위 먼저 · 생필품 먼저 · 점수 · 최근), 진우 예약·다른 몰 ①②·화장품은 지금 순서 그대로. () = 끔
 TOSS_NO_CMP, TH_TOSS_DR = True, 30  # 10/12 21:05 토스 비즈니스 답변 '대가성 문구·게시 시점 가격 표시, 타 쇼핑몰과의 가격 비교 없이' -> 진우: 토스 글 전부에서 쿠팡 등 다른 몰 비교 뺌
@@ -7201,6 +7208,8 @@ def th_solo(seen, plain, fill=False, beauty=0, slot=False, reopen=None, gate=Fal
             return False
         return gate or ("특가로는 약한 제품" not in plain and th_strong(plain))
     if r["n"] >= TH_SOLO_MAX or "특가로는 약한 제품" in plain or (now - r["last"] < th_gap(r["last"]) if TH_SLOTS is None else th_slot(r, now) is None):
+        return False
+    if r["n"] >= TH_SOLO_MAX - TH_SOLO_PER * sum(x > time.gmtime(now + 9 * 3600).tm_hour for x in TH_SOLO_HOURS):  # 뒤에 남은 07·12·18·20시대 몫은 남겨 둠
         return False
     if not gate and season_adj(title_of(plain)) < 0:  # Z-3 철 지난 계절 상품(10월 선풍기 등) = Threads 개별 글 X(사이트 진열은 그대로)
         return False
@@ -8100,6 +8109,25 @@ def cur_power(seen, tok, pid):
     print("power 글 올라감 · 20분 다른 Threads 글 쉼")
 
 
+def cur_chain(seen, tok, pid, e):
+    """분석형 글 이어 쓰기(10/31 진우 '분석 좋아하는 사람도'): 힘 준 글(power)에 "chain": ["답글1", …]이면 본문 바로 뒤 내 답글로 차례로 이어 붙임(각 500자 안) ·
+    첫 답글에 "chain_img"(표 사진 주소 1장)면 사진 답글(실패 = 글만 1번 더) · 답글 하나라도 실패 = 거기서 그만(본문은 그대로) · 댓글 권한 없는 토큰 = 본문만."""
+    ch = [str(x).strip() for x in e.get("chain") or [] if str(x).strip()]
+    if not ch or not (TH_REPLY and th_reply_ok(seen)):
+        return
+    to, n = pid, 0
+    for k, t in enumerate(ch):
+        for im in (e.get("chain_img"), None) if k == 0 and e.get("chain_img") else (None,):
+            try:
+                to, n = th_reply(tok, to, th_fit(t, 480), image=im), n + 1
+                break
+            except Exception as x:
+                print("chain 답글 실패", k + 1, "사진" if im else "글", err_brief(x))
+        else:
+            break
+    print(f"chain 답글 {n}/{len(ch)}개")
+
+
 def curation(seen):
     """큐레이션 글(events curation): 시각이 되면 텔레그램 채널 = 본문 + '🛍 더 보기' 버튼(같은 쪽, ref=tgc) · Threads = 사진(우리 서버 JPEG) 1장 IMAGE·2장↑ CAROUSEL, 본문 끝 링크(ref=thc), topic_tag = topic
     / 사진 없음 = TEXT + 링크 카드(정보 글처럼) · 6시간 지나면 X. 사진은 시각 3시간 전부터 준비(이 실행 커밋 -> 사이트에 뜨면(HEAD) 게시 · 준비 뒤 1시간 넘게 안 뜨면 뜬 사진만, 없으면 글 + 링크 카드 ·
@@ -8179,6 +8207,7 @@ def curation(seen):
         th_nd(seen)  # 실제 올린 시각(수다 글 앞뒤 30분)
         if power and st["th"]:
             cur_power(seen, tok, st["th"])
+            cur_chain(seen, tok, st["th"], e)
         print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
 
 
@@ -9193,6 +9222,50 @@ def trend_kw(w):
     w = re.sub(r"(?:\s+(?:\d+\s*종|모음|묶음|시리즈|(?:19|20)\d\d))+$", "", w.strip()).strip()
     w = TREND_SWAP.get(w, w)
     return "" if re.search(r"기획전|할인전", w) else w[:30]
+CAT_SHORT = {c: n.split(" ", 1)[1].split("·")[0] for c, n, _ in SHELF_CATS}  # 사이트 칸 -> 묶음 머리 줄 이름('💄 화장품·뷰티' -> '화장품')
+CAT_GENDER, CAT_GENDER_PCT, NV_HUB_GENDER = "cat_gender.json", 60, NV_HUB.rsplit("/", 1)[0] + "/gender"  # 10/31 진우 '여성/남성 주 소비층 품목 구분': 쇼핑인사이트 분야별 성별 클릭 비율(월 1번)
+
+
+def cat_gender(seen):
+    """10/31 진우 '여성/남성 주 소비층 품목 구분': 이번 달 기록이 없으면 하루 1번(TREND_AT 뒤) 쇼핑인사이트 분야별 성별 클릭 비율(지난달 1달)을 받아
+    cat_gender.json {사이트 칸: {f, m(%), at}} — 칸↔분야 = NV_HUB_CAT(나머지 칸 = 생활/건강 50000008) · 분야마다 1호출(이번 달 셈 ntrm에 같이 · 월 한도 그대로) · 실패 = 다음 날 다시."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today, mon = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m", kst)
+    key, d = "cgd_" + today.replace("-", ""), load(CAT_GENDER, {})
+    if not (E.get("NAVER_HUB_ID") and E.get("NAVER_HUB_SECRET")) or time.strftime("%H:%M", kst) < TREND_AT or key in seen or any(str(v.get("at", ""))[:7] == mon for v in d.values()):
+        return
+    seen[key] = {"t": now}
+    end = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(mon + "-01", "%Y-%m-%d")) - 86400))  # 지난달 끝날
+    mc = seen["ntrm"] = seen["ntrm"] if seen.get("ntrm", {}).get("m") == mon else {"m": mon, "n": 0}
+    out = {}
+    for cid in dict.fromkeys(NV_HUB_CAT.get(c, "50000008") for c, _, _ in SHELF_CATS):
+        if mc["n"] >= NV_HUB_MONTH:
+            print("cat gender", f"이번 달 {NV_HUB_MONTH:,}회 다 씀 — 다음 달에")
+            return
+        mc["n"], mc["t"] = mc["n"] + 1, now
+        try:
+            r = json.loads(http(NV_HUB_GENDER, {"startDate": end[:8] + "01", "endDate": end, "timeUnit": "month", "category": cid},
+                                {"X-NCP-APIGW-API-KEY-ID": E["NAVER_HUB_ID"], "X-NCP-APIGW-API-KEY": E["NAVER_HUB_SECRET"]}, "POST"))
+        except Exception as e:
+            print("cat gender", cid, err_brief(e), "— 내일 다시")  # 키 값·주소 쿼리 X
+            return
+        g = collections.Counter()
+        for res in r.get("results") or []:
+            for x in res.get("data") or []:
+                g[x.get("group")] += float(x.get("ratio") or 0)
+        if g["f"] + g["m"]:
+            out[cid] = (round(100 * g["f"] / (g["f"] + g["m"]), 1), round(100 * g["m"] / (g["f"] + g["m"]), 1))
+    d = {c: {"f": out[cid][0], "m": out[cid][1], "at": today} for c, _, _ in SHELF_CATS if (cid := NV_HUB_CAT.get(c, "50000008")) in out}
+    if d:
+        json.dump(d, open(CAT_GENDER, "w"), ensure_ascii=False, indent=1)
+    print("cat gender", " · ".join(f"{c} 여{v['f']:g}" for c, v in d.items()) or "결과 없음")
+
+
+def th_group(gd, cat):
+    """품목 칸 -> 'f'(여성 클릭 CAT_GENDER_PCT%↑) · 'm'(남성 ↑) · 'c'(공통 · 기록 없는 칸)."""
+    g = gd.get(cat) or {}
+    return "f" if g.get("f", 0) >= CAT_GENDER_PCT else "m" if g.get("m", 0) >= CAT_GENDER_PCT else "c"
 GTREND = "https://trends.google.com/trending/rss?geo=KR"  # 구글 한국 실시간 인기 검색어 RSS(10분 갱신) — 1시간 1번 상위 20
 
 
@@ -9589,6 +9662,32 @@ def metrics(seen):
     cp_score(seen)
 
 
+FOL_DEMO_MIN, FOL_DEMO_DAYS = 100, 7  # 팔로워 100명↑(Meta가 성별·나이를 주는 기준)이면 주 1번 follower_demographics -> metrics 그날 thd·igd
+
+
+def demo_parse(r):
+    """follower_demographics 응답 -> {값: 수}(예: {"F": 12, "M": 30, "U": 3} · 나이 {"25-34": 20, …})."""
+    return {"".join(x.get("dimension_values") or ["?"]): x.get("value") for d in r.get("data") or [] for b in (d.get("total_value") or {}).get("breakdowns") or [] for x in b.get("results") or []}
+
+
+def fol_demo(seen, row, tok, ig):
+    """10/31 진우: 팔로워가 FOL_DEMO_MIN명 넘은 채널(row thf·igf)만 FOL_DEMO_DAYS일마다 성별·나이 -> row thd·igd {"gender": {...}, "age": {...}} — 묶음 비중을 우리 독자에 맞출 근거(지금은 기록만)."""
+    now = time.time()
+    if now - seen.get("fdemo", {}).get("t", 0) < FOL_DEMO_DAYS * 86400 - 3600:
+        return
+    got = False
+    for k, n, url, hd in (("thd", row.get("thf"), tok and (lambda b: f"{THREADS}/me/threads_insights?metric=follower_demographics&breakdown={b}&access_token={tok}"), None),
+                          ("igd", row.get("igf"), ig and (lambda b: f"{IG}/{ig[0]}/insights?metric=follower_demographics&period=lifetime&metric_type=total_value&breakdown={b}"), ig and ig[1])):
+        if not url or not isinstance(n, int) or n < FOL_DEMO_MIN:
+            continue
+        try:
+            row[k], got = {b: demo_parse(json.loads(http(url(b), None, hd))) for b in ("gender", "age")}, True
+        except Exception as e:
+            print(k, "팔로워 성별·나이 못 읽음", err_brief(e))
+    if got:
+        seen["fdemo"] = {"t": now}
+
+
 def metrics_rows(seen):
     """하루 1번 어제(KST) 글별 성과 -> metrics.json {날짜: {"at", "miss": {채널: 빈 칸 이유}, "rows": [{date, ch, id, shop, cat, price, at, views, react, (likes, replies)}]}}.
     텔레그램(tg) = 채널 웹(t.me/s) 조회·반응(posts.json 글이면 그 글·링크로 몰·품목), Threads(th) = 글 목록 + insights(views·likes·replies·reposts·quotes),
@@ -9704,6 +9803,11 @@ def metrics_rows(seen):
         m[day]["igf"] = itok and uid and json.loads(http(f"{IG}/{uid}?fields=followers_count", None, h)).get("followers_count")
     except Exception as e:
         print("ig 팔로워 못 읽음", err_brief(e))
+    try:  # Threads 팔로워(하루 1번 — 10/31 진우 '성별 타깃·분석형')
+        m[day]["thf"] = tok and json.loads(http(f"{THREADS}/me/threads_insights?metric=followers_count&access_token={tok}"))["data"][0]["total_value"]["value"]
+    except Exception as e:
+        print("th 팔로워 못 읽음", err_brief(e))
+    fol_demo(seen, m[day], tok, itok and uid and (uid, h))
     m[day]["igw"] = ig_week(m, day)  # 그날까지 7일 인스타 요약(Cowork가 읽고 단계 올릴지 판단 — 매일 그날 줄에)
     if day == TH_END_FROM:
         m[day]["chg"] = ["th_end", "th_tone5"]  # O: Threads 딜 글 끝맺음(친구 한 줄 + 단점 하나)·사진 글(K-1)·훅(U) 바꾼 날 · th_tone5 = 이날부터 th 줄 tone = TH_TONES 1~5(그 전 = TONES 1~4 — 같은 번호 다른 말투)
@@ -10669,7 +10773,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, review_post, cp_sub_site, price_track, th_pics):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics):
         if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

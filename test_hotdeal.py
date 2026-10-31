@@ -11,6 +11,7 @@ IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70�
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
+H.TH_SOLO_HOURS = ()  # 10/31 개별 글 07·12·18·20시대 몫 남김 = 9-122에서만(다른 셀프체크 = 시간대 상관없이)
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -9660,6 +9661,7 @@ H.E.pop("THREADS_TOKEN", None) if tk87 is None else H.E.update(THREADS_TOKEN=tk8
 #       ③ 🔥 쿠팡 진열(딥링크·리뷰 300↑·계절) ④ 👍 꾸준템(JJ 기준 · 줄 앞 👍) · 같은 상품·같은 종류(same_kind — 품목 낱말) X · 24시간 안 리스트 2번 나온 상품 X · 3개 밑 = Threads만 X
 sv88 = (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS); d88, cwd88 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d88)
 tb88, tg88 = [], []
+hd88 = lambda t: int(re.search(r"\n\n🏆 \S[^\n]* (\d)\n\n", t)[1])  # 10/31 머리 줄 = 품목 이름 + 개수('식품·생필품 3')
 H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb88.append((kind, text, link, len(seen.get("thlist", {}).get("h", [])))) or {"id": "T"}
 H.tg = lambda method, **p: tg88.append(p) or {"message_id": 1}; H.season_adj = lambda n, ctx=None: -2 if "선풍기" in n else 0
 H.POSTS, H.E["THREADS_TOKEN"], H.TH_LIST_HOURS = "posts88.json", "tk", (12, 15, 18)
@@ -9679,24 +9681,24 @@ P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,00
 json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals(s88)
 th88 = tb88[-1][1]
-assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "🏆 지금 살 만한 딜 TOP3 (12시)" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
+assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and "\n\n🏆 제철 먹거리·생필품 3\n\n" in th88, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"], th88  # ①→②→③ · 성경김 2개 X
 assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
 assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 == tb88[-1][3] and s88["thlist"]["t"] and len(s88["bundles"]["ts"]) == 1, o88.getvalue()  # (리뷰) 24시간 기록 = 올리기 전(실패 -> 다시 시도로 나가도 셈)
 # 24시간 안 리스트에 2번 나온 상품 X -> 다음 후보 · ①~④ 다 해도 3개 밑 = Threads만 X(로그)
 s88 = {"thlist": {"t": 1, "h": [[TK("2026-11-11 15:05"), ["https://link.coupang.com/a/S2"]], [TK("2026-11-11 18:05"), ["https://link.coupang.com/a/S2"]]]}}
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88)
-assert "탐사" not in tb88[-1][1] and "TOP3 (12시)" in tb88[-1][1] and "3️⃣ 👍 코멧 위생백 200매 5,900원" in tb88[-1][1] and len(s88["thlist"]["h"]) == 3  # ③ 없으면 ④(👍 = 특가 아님)
+assert "탐사" not in tb88[-1][1] and hd88(tb88[-1][1]) == 3 and "3️⃣ 👍 코멧 위생백 200매 5,900원" in tb88[-1][1] and len(s88["thlist"]["h"]) == 3  # ③ 없으면 ④(👍 = 특가 아님)
 json.dump([p for p in P88 if not p.get("shelf")], open("posts88.json", "w"), ensure_ascii=False); n88, o88 = len(tb88), io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals({})
 assert len(tb88) == n88 and "threads skip top12 2개" in o88.getvalue() and "TOP3" in tg88[-1]["text"]  # 텔레그램 리스트는 그대로
 json.dump(P88 + [sh88(f"진열{k}", f"https://link.coupang.com/a/X{k}", "9,000") for k in range(3)], open("posts88.json", "w"), ensure_ascii=False); o88 = io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals({})
-assert "TOP3 (12시)" in tb88[-1][1] and "threads top12 3개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 채움 = 3개까지(6시간 넘은 딜 X)
+assert hd88(tb88[-1][1]) == 3 and "threads top12 3개" in o88.getvalue() and "수세미" not in tb88[-1][1]  # 채움 = 3개까지(6시간 넘은 딜 X)
 json.dump([p for p in P88 if p["url"] != SR88 + "2"], open("posts88.json", "w"), ensure_ascii=False); n88, m88 = len(tb88), len(tg88)
 s88b = {}
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s88b)
-assert len(tg88) == m88 and len(tb88) == n88 + 1 and "TOP3 (12시)" in tb88[-1][1] and len(s88b["bundles"]["ts"]) == 1  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서 · (리뷰) Threads만 나가도 묶음 글 간격에 셈
+assert len(tg88) == m88 and len(tb88) == n88 + 1 and hd88(tb88[-1][1]) == 3 and len(s88b["bundles"]["ts"]) == 1  # 텔레그램 TOP 2개 = 텔레그램 리스트 X(그대로) · Threads는 채워서 · (리뷰) Threads만 나가도 묶음 글 간격에 셈
 assert H.same_kind("성경김 지도표 재래김", "성경김 파래김") and H.same_kind("양반 전장김", "광천 도시락김") and H.same_kind("홈플래닛 2단 석영관 히터", "모리츠 5방향 전기히터") and H.same_kind("홈플래닛 2단 석영관 히터, NDF2216, 화이트", "신일 4단 석영관 히터, SEH-NL20BK, 블랙") and H.same_kind("한일전기 컨벡터 히터 스탠드 2kw 3단조절", "신일 프리미엄 컨벡터 히터 스탠드 벽걸이 겸용") \
     and not H.same_kind("니코 미니 오일 라디에이터, WH-M05", "청우식품 미니 참깨스틱, 370g, 2개") and not H.same_kind("티키 입는 오버나이트 대형 8개입", "충성 포켓용 핫팩 대형 160g, 30개") and not H.same_kind("홈플래닛 히터, NDFKB2401, 화이트", "코멧 키친타월, 6롤, 화이트") \
     and H.same_kind("오뚜기 진라면 멀티팩", "농심 신라면 5개") and not H.same_kind("크린랩 니트릴장갑 100개입", "웰킵스 마스크 1개입") and not H.same_kind("코튼 화장솜 500매입", "숨37 패드 90매입") and not H.same_kind("신일 히터 화이트", "코멧 키친타월 화이트") \
@@ -9713,10 +9715,10 @@ assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", tb88[-1][1]) == ["성경김 지
 assert "수세미" not in tb88[-1][1] and tb88[-1][1].index("💄 화장품") < tb88[-1][1].index("선크림") and len(tb88[-1][1]) <= 480, tb88[-1][1]
 json.dump(P88 + [dict(ch88("2026-11-12 10:40", "숨37 시크릿 멀티 패드 70매", "https://link.coupang.com/a/B2", fire=False), cat="beauty")], open("posts88.json", "w"), ensure_ascii=False)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
-assert "TOP3 (12시)" in tb88[-1][1] and not re.search(r"[1-5]️⃣ 숨37", tb88[-1][1]) and H.th_beauty("숨37 시크릿 멀티 패드 70매") == 0, tb88[-1][1]  # (리뷰) 화장품 낱말에 없어도 사이트 품목 칸 💄(cat_of) = 채움 X
+assert hd88(tb88[-1][1]) == 3 and not re.search(r"[1-5]️⃣ 숨37", tb88[-1][1]) and H.th_beauty("숨37 시크릿 멀티 패드 70매") == 0, tb88[-1][1]  # (리뷰) 화장품 낱말에 없어도 사이트 품목 칸 💄(cat_of) = 채움 X
 json.dump(P88 + [ch88("2026-11-12 10:40", "라운드랩 독도 선크림 50ml", LP88 + "b", fire=False)], open("posts88.json", "w"), ensure_ascii=False)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
-assert "TOP3 (12시)" in tb88[-1][1] and "선크림" not in tb88[-1][1] and len(tb88[-1][1]) <= 480, tb88[-1][1]  # 💄 줄까지 넣으면 500자 넘음 = 💄 X(리스트는 그대로)
+assert hd88(tb88[-1][1]) == 3 and "선크림" not in tb88[-1][1] and len(tb88[-1][1]) <= 480, tb88[-1][1]  # 💄 줄까지 넣으면 500자 넘음 = 💄 X(리스트는 그대로)
 st88 = lambda t, name, pop: dict(ch88(t, name, f"https://link.coupang.com/a/{len(name)}", pop=pop, fire=False), text=ch88(t, name, "", fire=False)["text"].replace("[쿠팡]", "👍 [쿠팡]", 1))
 json.dump(P88 + [st88("2026-11-12 08:30", "코멧 키친타월 6롤", 4), st88("2026-11-12 10:50", "깨끗한나라 화장지 30롤", 0)], open("posts88.json", "w"), ensure_ascii=False)
 with contextlib.redirect_stdout(io.StringIO()): H.top_deals({})
@@ -11471,4 +11473,76 @@ assert f'href="{S.BASE}c/naver/?ref=promo" data-gc="promo/nvh">핫딜픽 네이�
 GL121 = [x for x in L121 if x[0]["id"] in ("gm", "lo")]
 assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {})] == ["lo", "gm"] and [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {u: LP121(u[12:15]) for u in ("https://www.lotteon.com/", "https://www.gmarket.co.kr/")})] == ["lo", "gm"]  # 둘 다 수익 길 X·둘 다 O = 상태 순 그대로
 assert [p["id"] for p, _, _ in S.promo_shown(GL121, [], {}, {"https://www.gmarket.co.kr/": LP121("g")})] == ["gm", "lo"]  # 수익 길 있는 G마켓(곧 시작)이 몰 홈만 가는 롯데온(진행 중)보다 앞
+# 9-122) 10/31 Cowork — 진우 'Threads 덜 쪼개고 묶기 · 성별 타깃 · 분석형': ① 개별 딜 글 하루 8개(07·12·18·20시대 몫 남김 · 밤 0~6시 X) ② 12시 여성·15시 공통·18시 남성 품목 묶음
+#        (cat_gender.json — 쇼핑인사이트 성별 월 1번 · 머리 줄 = 품목 이름) ③ 힘 준 글 chain 답글 ④ 팔로워 성별·나이(100명↑ 주 1번)
+sv122 = (H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, H.E.get("THREADS_TOKEN"), H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN)
+H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN = 8, (7, 12, 18, 20), lambda s: False, th_strong0, lambda n, ctx=None: 0, 1
+def ok122(hm, n, b=0):
+    time.time = lambda: TK(f"2026-11-12 {hm}")
+    return H.th_solo({"thsolo_20261112": {"n": n, "last": 0, "b": 0}}, "🔥 [쿠팡] 오뚜기 진라면 멀티팩 (3,900원)\n\n30일 최저가", beauty=b)
+assert [ok122("03:00", 0), ok122("07:10", 0), ok122("07:50", 2), ok122("10:00", 1), ok122("12:05", 3), ok122("12:30", 4), ok122("18:10", 5), ok122("18:40", 6), ok122("20:05", 6), ok122("20:05", 7), ok122("22:00", 7, 1), ok122("22:00", 8, 1)] \
+    == [False, True, False, True, True, False, True, False, True, False, True, False]  # 뒤 시간대 몫 2개씩 남김 · 화장품 1자리(TH_BEAUTY_MIN) · 하루 8개
+d122, cwd122 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d122)
+tb122 = []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb122.append((kind, text)) or {"id": "T"}
+H.tg, H.POSTS, H.E["THREADS_TOKEN"], H.TH_LIST_HOURS = (lambda method, **p: {"message_id": 1}), "posts122.json", "tk", (12, 15, 18)
+N122 = ["라운드랩 독도 선크림 50ml", "메디힐 마스크팩 10매", "아이소이 토너 200ml", "샤오미 보조배터리 10000mAh", "로지텍 무선 마우스", "삼성 USB-C 충전기 25W", "탐사 물티슈 캡형 100매", "코멧 화장지 30롤", "퍼실 세탁세제 2.5L"]
+def top122(hm, gd=True):
+    json.dump([{"t": f"2026-11-12 {int(hm[:2]) - 1:02d}:{k:02d}", "text": f"{H.DISCLOSURE}\n\n[쿠팡] {n} (9,900원/무료)\n\n좋음", "url": f"https://link.coupang.com/a/G{k}", "mid": 1} for k, n in enumerate(N122)], open("posts122.json", "w"), ensure_ascii=False)
+    if gd:
+        json.dump({"beauty": {"f": 81.5, "m": 18.5, "at": "2026-11-01"}, "digital": {"f": 31.0, "m": 69.0, "at": "2026-11-01"}, "life": {"f": 57.0, "m": 43.0, "at": "2026-11-01"}}, open("cat_gender.json", "w"))
+    elif os.path.exists("cat_gender.json"):
+        os.remove("cat_gender.json")
+    time.time, o = lambda: TK(f"2026-11-12 {hm}"), io.StringIO()
+    with contextlib.redirect_stdout(o): H.top_deals({})
+    return tb122[-1][1], o.getvalue()
+w122, l122 = top122("12:05")
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and "\n\n🏆 화장품 3\n\n" in w122 and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
+m122, l122 = top122("18:05")
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and "\n\n🏆 가전 3\n\n" in m122 and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
+c122, l122 = top122("15:05")
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and "\n\n🏆 세탁·생필품 3\n\n" in c122 and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
+n122, l122 = top122("12:05", gd=False)
+assert "· 칸 가림 X 품목" in l122 and len(re.findall(r"[1-5]️⃣ ", n122)) == 3, (n122, l122)  # 성별 기록 없음 = 예전 리스트(칸 가림 X)
+assert H.th_group({"x": {"f": 60, "m": 40}}, "x") == "f" and H.th_group({"x": {"f": 40, "m": 60}}, "x") == "m" and H.th_group({"x": {"f": 59.9, "m": 40.1}}, "x") == "c" == H.th_group({}, "x") and H.CAT_SHORT["beauty"] == "화장품"
+# 성별 비율 받기: 이번 달 기록 없으면 하루 1번(06:00 뒤) · 분야마다 1호출(지난달 1달) · 이번 달 있으면 X · 키 없으면 X
+hc122 = []
+def hub122(url, body=None, headers=None, method=None):
+    hc122.append((url, body, method))
+    return json.dumps({"results": [{"title": "x", "data": [{"period": "2026-10-01", "ratio": 100, "group": "f"}, {"period": "2026-10-01", "ratio": 50 if body["category"] != "50000003" else 300, "group": "m"}]}]})
+H.http, H.E["NAVER_HUB_ID"], H.E["NAVER_HUB_SECRET"] = hub122, "i", "s"
+time.time, s122, o122 = lambda: TK("2026-11-12 10:00"), {}, io.StringIO()
+with contextlib.redirect_stdout(o122): H.cat_gender(s122)
+g122 = json.load(open("cat_gender.json"))
+assert len(hc122) == len(set(H.NV_HUB_CAT.values()) | {"50000008"}) and all(u == H.NV_HUB_GENDER and m == "POST" and b["timeUnit"] == "month" and b["startDate"] == "2026-10-01" and b["endDate"] == "2026-10-31" for u, b, m in hc122), hc122
+assert g122["beauty"] == {"f": 66.7, "m": 33.3, "at": "2026-11-12"} and g122["digital"]["m"] == 75.0 and g122["car"] == g122["life"] and set(g122) == {c for c, _, _ in H.SHELF_CATS} and s122["ntrm"]["n"] == len(hc122), g122
+with contextlib.redirect_stdout(io.StringIO()): H.cat_gender({}); H.cat_gender({"cgd_20261112": 1} | {}); time.time = lambda: TK("2026-11-12 05:00"); os.remove("cat_gender.json"); H.cat_gender({})
+assert len(hc122) == 7 and not os.path.exists("cat_gender.json")  # 이번 달 있음 = X · 06:00 전 = X
+H.E.pop("NAVER_HUB_ID"); H.E.pop("NAVER_HUB_SECRET")
+# 힘 준 글 chain: 본문 -> 답글1(표 사진) -> 답글2 차례로 · 사진 실패 = 글만 · 답글 실패 = 거기서 그만
+rp122 = []
+def rep122(tok, to, text, link=None, image=None):
+    if image == "bad" or text.startswith("X"):
+        raise OSError("x")
+    rp122.append((to, text, image))
+    return f"R{len(rp122)}"
+H.th_reply, H.th_reply_ok, H.TH_REPLY = rep122, (lambda s: True), True
+with contextlib.redirect_stdout(io.StringIO()): H.cur_chain({}, "tk", "P", {"chain": ["표로 보면", "결론은 " + "가" * 600], "chain_img": "https://hotdealpick.kr/cards/t.jpg"})
+assert rp122 == [("P", "표로 보면", "https://hotdealpick.kr/cards/t.jpg"), ("R1", "결론은 " + "가" * 476 + "…", None)] or (rp122[0] == ("P", "표로 보면", "https://hotdealpick.kr/cards/t.jpg") and rp122[1][0] == "R1" and len(rp122[1][1]) <= 480), rp122
+rp122.clear(); o122 = io.StringIO()
+with contextlib.redirect_stdout(o122): H.cur_chain({}, "tk", "P", {"chain": ["a", "X 실패", "c"], "chain_img": "bad"})
+assert rp122 == [("P", "a", None)] and "chain 답글 1/3개" in o122.getvalue(), (rp122, o122.getvalue())
+rp122.clear(); H.th_reply_ok = lambda s: False; H.cur_chain({}, "tk", "P", {"chain": ["a"]}); H.cur_chain({}, "tk", "P", {}); assert rp122 == []  # 댓글 권한 없음·chain 없음 = 본문만
+# 팔로워 성별·나이: 100명↑ 채널만 · 주 1번
+DM122 = {"data": [{"name": "follower_demographics", "total_value": {"breakdowns": [{"dimension_keys": ["gender"], "results": [{"dimension_values": ["F"], "value": 70}, {"dimension_values": ["M"], "value": 40}]}]}}]}
+assert H.demo_parse(DM122) == {"F": 70, "M": 40} and H.demo_parse({}) == {}
+fc122 = []
+H.http = lambda url, body=None, headers=None, method=None: fc122.append(url) or json.dumps(DM122)
+time.time, s122, row122 = lambda: TK("2026-11-12 05:10"), {}, {"thf": 150, "igf": 60}
+H.fol_demo(s122, row122, "tk", ("U", {"Authorization": "Bearer x"}))
+assert row122["thd"] == {"gender": {"F": 70, "M": 40}, "age": {"F": 70, "M": 40}} and "igd" not in row122 and len(fc122) == 2 and all("follower_demographics" in u and "threads_insights" in u for u in fc122) and s122["fdemo"]["t"]
+H.fol_demo(s122, {"thf": 150, "igf": 200}, "tk", ("U", {})); time.time = lambda: TK("2026-11-19 05:10"); r122 = {"thf": 99, "igf": 200}; H.fol_demo(s122, r122, None, ("U", {}))
+assert len(fc122) == 4 and "thd" not in r122 and r122["igd"]["gender"] == {"F": 70, "M": 40} and "/U/insights?metric=follower_demographics&period=lifetime" in fc122[-1]  # 7일 안 = X · 99명 = X
+(H.TH_SOLO_MAX, H.TH_SOLO_HOURS, H.th_hold, time.time, H.th_bundle, H.tg, H.POSTS, tk122, H.TH_LIST_HOURS, H.http, H.th_reply, H.th_reply_ok, H.TH_REPLY, H.th_strong, H.season_adj, H.TH_BEAUTY_MIN) = sv122
+H.E.pop("THREADS_TOKEN", None) if tk122 is None else H.E.update(THREADS_TOKEN=tk122); os.chdir(cwd122)
 print("OK: 모든 셀프체크 통과")
