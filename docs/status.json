@@ -1,6 +1,6 @@
 {
-"at": "2026-10-31 15:41",
-"posts": 2797,
+"at": "2026-10-31 15:56",
+"posts": 2798,
 "site": 1591,
 "mall": {
 "coupang": 903,
@@ -14,10 +14,10 @@
 "food": 359,
 "beauty": 239,
 "life": 184,
+"kitchen": 109,
 "season": 82,
 "coffee": 79,
 "pet": 27,
-"kitchen": 109,
 "laundry": 68,
 "car": 31,
 "snack": 57,
@@ -94,7 +94,14 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "커피",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
 }
 ],
-"nset_n": "새 구성 6 · 기존 상품 구성 0"
+"nset_n": "새 구성 7 · 기존 상품 구성 0"
 }
