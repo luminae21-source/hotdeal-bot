@@ -11775,14 +11775,14 @@ tb126.clear()
 json.dump([{"t": f"2026-11-06 14:{k:02d}", "text": f"{H.TOSS_NOTE if 'toss' in u else H.DISCLOSURE}\n\n[{'토스' if 'toss' in u else '쿠팡'}] {n} (9,900원/무료)\n\n좋음", "url": u, "mid": 1, "own": 1}
            for k, (n, u) in enumerate([("코멧 화장지 30롤", "https://link.coupang.com/a/M0"), ("토스 키친타월 6롤", "https://toss.shopping/_m/M1"), ("탐사 물티슈 캡형 100매", "https://link.coupang.com/a/M2"), ("퍼실 세탁세제 2.5L", "https://link.coupang.com/a/M3")])],
           open(H.POSTS, "w"), ensure_ascii=False)
-ai126 = H.ai_json; H.ai_json = lambda prompt, props, img=None: {"hook": "쿠팡보다 싼 것만 모았어요", "c": ["욕실 선반 단골이에요"] * 4, "q": "여러분 생필품 첫 순위는 뭐예요?"}
+ai126 = H.ai_json; H.ai_json = lambda prompt, props, img=None: {"hook": "쿠팡보다 싼 것만 모았어요", "c": ["욕실 선반 단골이에요", "현관 수납장 단골이에요", "주방 서랍 단골이에요", "세탁실 선반 단골이에요"], "q": "여러분 생필품 첫 순위는 뭐예요?"}  # 10/31 15:35 같은 한 줄 2번↑ X = 상품마다 다른 줄
 time.time = lambda: TK("2026-11-06 15:05"); s126m = {}; H.top_deals(s126m)
 H.ai_json = ai126
 assert s126m["thtx"]["q"] == [{"u": "https://toss.shopping/_m/M1", "t": TK("2026-11-06 15:05")}], s126m.get("thtx")  # ⑥-정정 보강: 묶음에 들어갈 토스 = 빼고 개별 글 줄(버리지 않음)
 b126 = tb126[-1][1]
 assert "토스 키친타월" not in b126 and "toss.shopping" not in b126 and "게시 시점" not in b126 and H.TOSS_NOTE not in b126 and len(re.findall(r"^[1-7]️⃣ ", b126, re.M)) == 3 and b126.endswith("\n\n여러분 생필품 첫 순위는 뭐예요?"), b126
 assert "쿠팡보다" not in b126 and b126.startswith(H.DISCLOSURE + "\n[🧻 생필품 쟁여두기 #1]\n" + H.TH_LIST_HOOK[15] + "\n\n") and "몰끼리 가격 비교 X" in H.TH_LIST_PROMPT, b126
-assert len(re.findall(r"^[1-7]️⃣ [^\n]+\n[^\n]*욕실 선반 단골이에요", b126, re.M)) == 3 and [x.get("c") for x in [p for p in json.load(open(H.POSTS)) if p.get("bundle") == "th15"][-1]["items"]] == ["욕실 선반 단골이에요"] * 3, b126  # 10/31 상품마다 사는 사람 한 줄 · 사이트 묶음 카드도 같은 한 줄  # 몰 이름 든 훅 = 뺌(기본 훅)
+assert len(re.findall(r"^[1-7]️⃣ [^\n]+\n[^\n]*단골이에요", b126, re.M)) == 3 and [x.get("c") for x in [p for p in json.load(open(H.POSTS)) if p.get("bundle") == "th15"][-1]["items"]] == ["욕실 선반 단골이에요", "현관 수납장 단골이에요", "주방 서랍 단골이에요"], b126  # 10/31 상품마다 사는 사람 한 줄 · 사이트 묶음 카드도 같은 한 줄  # 몰 이름 든 훅 = 뺌(기본 훅)
 # metrics: 토스 글 따로(글 수·Threads 조회) + Threads 링크 클릭 중 토스 링크
 src126 = inspect.getsource(H.metrics_rows)
 assert 'tr = [r for r in rows if r.get("shop") == "toss"]' in src126 and 'm[day]["toss"] = {"tg": sum(r["ch"] == "tg" for r in tr), "th": sum(r["ch"] == "th" for r in tr), "th_views":' in src126 and "metric=clicks&since={int(t0)}&until={int(t0) + 86400}" in src126 and '"th_clicks": sum(x["value"] for x in lv if urllib.parse.urlsplit(x.get("link_url") or "").netloc in TOSS_HOSTS)' in src126
@@ -12037,13 +12037,16 @@ H.ai_pick = lambda prompt, lines: [{"i": i, "score": 9, "comment": "", **({"who"
 s130b = {"bundles": {"t": 1, "ts": []}}; time.time = lambda: TK("2026-11-08 18:50")
 with contextlib.redirect_stdout(io.StringIO()): H.toss_deals(s130b, True)
 b130 = tb130[-1]; ln130 = re.findall(r"^[1-7]️⃣ [^\n]+\n([^\n]+)\nhttps://toss\.shopping/", b130, re.M)
-assert len(ln130) == len(re.findall(r"^[1-7]️⃣ ", b130, re.M)) >= 3 and ln130[:3] == ["🙋 설거지 많은 집 · 자취방", "✔ " + H.BUY_CHECK, "👍 캠핑 갈 때 챙기기"] and len(b130) <= 480, b130  # 빈 줄 X
+ln130 = [x[1] for x in re.findall(r"^[1-7]️⃣ [^\n]+\n(([^\n]+)\n)?https://toss\.shopping/", b130, re.M)]
+assert len(ln130) == len(re.findall(r"^[1-7]️⃣ ", b130, re.M)) >= 3 and ln130[:3] == ["🙋 설거지 많은 집 · 자취방", "✔ " + H.BUY_CHECK, "👍 캠핑 갈 때 챙기기"] and len(b130) <= 480, b130
+assert all(x == "" for x in ln130[3:]), b130  # 10/31 15:35 같은 한 줄(👍 캠핑) 2번↑ X = 뒤 상품은 줄 뺌
 # ② 쿠팡 묶음 한 줄: 도착 말 = 로켓 근거 있을 때만 · 성별 고정관념 X · 못 받은 줄 = 확인할 점(빈 줄 X)
 P130 = [{"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} (9,900원)\n\n{d}", "url": f"https://link.coupang.com/a/R{k}"} for k, (n, d) in enumerate([("생수 2L 12병", "✔ 로켓배송"), ("수세미 10개", "좋음"), ("면도기 세트", "좋음"), ("행주 5장", "좋음")], 1)]
 pr130, aj130 = [], H.ai_json
 H.ai_json = lambda prompt, props, img=None: pr130.append(prompt) or {"hook": "", "c": ["내일 도착해서 급할 때 좋아요", "내일 도착이라 편해요", "자취하는 남자에게 딱이에요"], "q": ""}
 cm130 = {}; H.th_list_copy({}, 12, [(p, "", "", 1) for p in P130], cm130); H.ai_json = aj130
-assert cm130 == {"https://link.coupang.com/a/R1": "내일 도착해서 급할 때 좋아요", **{f"https://link.coupang.com/a/R{k}": H.BUY_CHECK for k in (2, 3, 4)}}, cm130
+assert cm130 == {"https://link.coupang.com/a/R1": "내일 도착해서 급할 때 좋아요", "https://link.coupang.com/a/R2": H.BUY_CHECK}, cm130  # 10/31 15:35 확인할 점 겹침(R3·R4) = 1번 더 물어도 도착 말뿐 → 줄 뺌
+assert len(pr130) == 2 and "이미 쓴 줄" in pr130[1] and H.BUY_CHECK in pr130[1], pr130[1:]
 assert [l.endswith("(로켓배송)") for l in re.findall(r"^\d\. .+$", pr130[0], re.M)] == [True, False, False, False] and H.BUY_LINE in pr130[0], pr130[0]
 # ② 개별 글 끝 한 줄 = 사는 사람 한 줄(말투는 말끝만) · 로켓·새벽 근거 없는 도착 말 X · 성별 고정관념 X
 sv130v, q130, v130 = (H.ai_voice, H.random, H.TOSS_NO_CMP), [], []
@@ -12292,3 +12295,42 @@ time.time = lambda: TK("2026-11-07 18:00"); H.new_sets(s134); assert len(s134["n
 st134 = inspect.getsource(H.top_deals); assert "for u in x[3] if u in npu}" in st134  # 쿠팡 묶음 '새 구성 먼저' = 새 상품만(기존 채움 X)
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv134
 os.chdir(cwd134)
+# 9-135) 10/31 15:35 Cowork(진우 '고객들이 좋아하게'): 15시 묶음 3개 한 줄이 다 '구성·용량 먼저 확인해요' — Claude 줄이 이름 숫자(450ml·80L·100매)·18자에 걸려 다 빠짐
+#        → 이름에 있는 숫자 OK · 22자까지 · 같은 한 줄 2번↑ = 그 상품만 Claude 1번 더 → 못 만들면 그 줄 뺌(같은 말 반복 X) · 골드박스·토스 리스트도 같은 한 줄 2번↑ X
+P135 = [{"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/Q{k}"} for k, n in enumerate(["샤워메이트 말랑이 버블 핸드워시 리필 450ml", "탐사 분리수거 쓰레기봉투 평판 투명 80L×100", "베베숲 오리진 물티슈 캡형 50g 100매×5"], 1)]
+U135, aj135, pr135, r135 = [p["url"] for p in P135], H.ai_json, [], []
+H.ai_json = lambda prompt, props, img=None: pr135.append(prompt) or r135.pop(0)
+r135[:] = [{"hook": "", "q": "", "c": ["리필이라 본품 펌프 있는지 봐요", "80L라 분리수거함 크기 먼저 재 보세요", "캡형이라 뚜껑 따로 안 사도 돼요"]}]
+cm135 = {}; o135 = io.StringIO()
+with contextlib.redirect_stdout(o135): H.th_list_copy({}, 15, [(p, "", "", 1) for p in P135], cm135)
+assert [cm135[u] for u in U135] == ["리필이라 본품 펌프 있는지 봐요", "80L라 분리수거함 크기 먼저 재 보세요", "캡형이라 뚜껑 따로 안 사도 돼요"] and len(pr135) == 1 and o135.getvalue() == "", (cm135, o135.getvalue())  # 이름 숫자(80L) OK · 22자 · 다 받으면 로그 X
+assert "숫자는 상품 이름에 있는 것만" in pr135[0] and "같은 말 두 번 X" in pr135[0]
+r135[:] = [{"hook": "", "q": "", "c": ["크기 먼저 재 보세요", "크기 먼저 재 보세요", "6개월은 넉넉해요"]}, {"c": ["80L라 분리수거함 크기 먼저 재 보세요"]}]  # 3번째 '6개월' = 이름에 없는 숫자 → 확인할 점
+cm135 = {}; o135 = io.StringIO()
+with contextlib.redirect_stdout(o135): H.th_list_copy({}, 15, [(p, "", "", 1) for p in P135], cm135)
+assert cm135 == {U135[0]: "크기 먼저 재 보세요", U135[1]: "80L라 분리수거함 크기 먼저 재 보세요", U135[2]: H.BUY_CHECK}, cm135  # (1) 겹친 상품(2번)만 다른 한 줄 · 확인할 점 1번은 그대로
+assert len(pr135) == 3 and "이미 쓴 줄" in pr135[2] and "크기 먼저 재 보세요" in pr135[2] and "탐사 분리수거 쓰레기봉투" in pr135[2] and "샤워메이트" not in pr135[2], pr135[2]  # 겹친 상품만 다시 물음
+assert "묶음 한 줄 3개 · Claude 2 · 겹침 1 → 다시 1 · 뺌 0" in o135.getvalue(), o135.getvalue()
+r135[:] = [{"hook": "", "q": "", "c": ["크기 먼저 재 보세요"] * 3}, {"c": ["크기 먼저 재 보세요", "최저가라 지금이에요"]}]  # (2) 다시 받은 줄도 같은 말·금지어 = 그 줄 뺌
+cm135 = {}; o135 = io.StringIO()
+with contextlib.redirect_stdout(o135): H.th_list_copy({}, 15, [(p, "", "", 1) for p in P135], cm135)
+assert cm135 == {U135[0]: "크기 먼저 재 보세요"} and "겹침 2 → 다시 0 · 뺌 2" in o135.getvalue(), (cm135, o135.getvalue())
+H.ai_json = lambda prompt, props, img=None: pr135.append(prompt) or (_ for _ in ()).throw(OSError("no key"))
+cm135 = {}; n135 = len(pr135)
+with contextlib.redirect_stdout(io.StringIO()): H.th_list_copy({}, 15, [(p, "", "", 1) for p in P135], cm135)
+assert cm135 == {U135[0]: H.BUY_CHECK} and len(pr135) == n135 + 1, cm135  # (3) Claude 안 됨 = 확인할 점 1번만(다시 묻지 않음 — 사용량) · 나머지 줄 X
+H.ai_json = aj135
+assert "if p[\"comment\"] in [q[\"comment\"] for q in picks[:k]]" in inspect.getsource(H.goldbox) and "l not in [x[2] for x in p[:k]]" in inspect.getsource(H.toss_deals)  # 골드박스·토스 리스트 = 앞 상품과 같은 한 줄 뺌
+# (4) Cowork 16:20 '할로윈 반짝 코너'(events tag + until 오늘) 상품 = 새 구성 X(줄 선 구성에서도 뺌) · 그날 쿠팡 묶음 X — Cowork 큐레이션과 같은 상품 겹침 X
+sv135e, cwd135 = (time.time, H.POSTS, H.EVENTS, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.POSTS, H.EVENTS, S.EVENTS = "p135.json", "e135.json", "e135.json"
+json.dump([{"at": "2026-11-07 15:20", "url": "https://www.coupang.com/vp/products/9", "shelf": True, "tag": "할로윈 반짝", "until": "2026-11-07", "text": "x"}], open("e135.json", "w"), ensure_ascii=False)
+json.dump([], open("p135.json", "w")); s135 = {}; time.time = lambda: TK("2026-11-07 09:00"); H.new_sets(s135)
+s135["nset"] = {"t": 0, "h": [[TK("2026-11-07 08:00"), "coupang", "snack", ["https://link.coupang.com/a/N3", "u8", "u9"], "과자", "", "new"]]}  # 할로윈 상품이 든 줄 선 구성
+json.dump([N134(1, "유한킴벌리 생리대 중형"), N134(2, "깨끗한나라 화장지 30롤"), {**N134(3, "할로윈 몬스터 롤리팝 100p"), "tag": "할로윈 반짝"}, {**N134(4, "탐사 물티슈 100매"), "tag": "할로윈 반짝"}], open("p135.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-07 09:30"); o135 = io.StringIO()
+with contextlib.redirect_stdout(o135): H.new_sets(s135)
+assert [x[3] for x in s135["nset"]["h"]] == [["u8", "u9"]] and "새 구성 모자람 · coupang 생필품 2" in o135.getvalue(), (s135["nset"], o135.getvalue())  # 물티슈(코너 상품) 빠져 생필품 2 = X · 줄 선 구성에서도 뺌
+assert H.ev_tags() == {"할로윈 반짝": "2026-11-07"} and "evd.get(p.get(\"tag\")) != time.strftime(\"%Y-%m-%d\", kst)" in inspect.getsource(H.top_deals)
+(time.time, H.POSTS, H.EVENTS, S.EVENTS) = sv135e
+os.chdir(cwd135)

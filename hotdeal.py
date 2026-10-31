@@ -2086,8 +2086,11 @@ def goldbox(seen):
             p["comment"] = BUY_CHECK
         if gl[p["i"]][3].startswith("단위가 모름") and "상품 페이지" not in p["comment"]:
             p["comment"] = p["comment"].rstrip(" .") + " · 용량은 상품 페이지 확인"
+    for k, p in enumerate(picks):  # 10/31 15:35 Cowork '같은 한 줄 2번↑ X' = 앞 상품과 같은 한 줄은 뺌
+        if p["comment"] in [q["comment"] for q in picks[:k]]:
+            p["comment"] = ""
     rows = [f"{n}. {'🚀 ' if x.get('isRocket') is True else ''}<a href=\"{esc(x['productUrl'])}\">{esc(gl[p['i']][1])}</a> — <b>{int(x['productPrice']):,}원</b>"
-            + (f" · {esc(gl[p['i']][2])}" if gl[p["i"]][2] else "") + f"\n   {esc(p['comment'])}" for n, p in enumerate(picks, 1) for x in [items[p["i"]]]]
+            + (f" · {esc(gl[p['i']][2])}" if gl[p["i"]][2] else "") + (f"\n   {esc(p['comment'])}" if p["comment"] else "") for n, p in enumerate(picks, 1) for x in [items[p["i"]]]]
     m = rows and tg("sendMessage", chat_id=CHANNEL, parse_mode="HTML", link_preview_options={"is_disabled": True},
                     text=f"<i>{DISCLOSURE}</i>\n\n⏰ <b>오늘의 쿠팡 골드박스 TOP{len(rows)}</b>\n<i>{GOLD_WOW}</i>\n\n" + "\n\n".join(rows) + f"\n\n{toss_when()}",  # 🚀 = API isRocket인 것만 · 게시 시점 가격(10/23) · 와우 회원가(OO)
                     reply_markup={"inline_keyboard": [[{"text": "⏰ 골드박스 전체 보기", "url": GOLDBOX}]]})
@@ -3296,7 +3299,7 @@ def toss_deals(seen, best=False):
         print(f"toss {what} Threads {len(ns)}개 = 리스트 X → 토스 개별 글 줄")
     if rows and tok and kind in TH_TOSS_FILL and not eve:  # 10/12 22:45·22:50 진우 '토스 인기 생필품·많이 팔리는 제품 꾸준하게': 이 회차 픽을 Threads 개별 글 채움 후보로(45분 칸이 비었을 때 토스 픽 먼저, 3시간 안)
         seen["thtoss"] = {"t": time.time(), "q": [x for x in seen.get("thtoss", {}).get("q", []) if time.time() - x["t"] < 3 * 3600] + [tsolo(n) for n in range(len(got))]}  # 사이트·posts.json X, 쉐어링크 그대로
-    body = lambda p, sub=True, ln=True: "\n\n".join(f"{LIST_NUM[k]} {a}" + (f"\n{b}" if sub and b else "") + (f"\n{l}" if ln and l else "") + f"\n{c}" for k, (a, b, l, c, _) in enumerate(p))
+    body = lambda p, sub=True, ln=True: "\n\n".join(f"{LIST_NUM[k]} {a}" + (f"\n{b}" if sub and b else "") + (f"\n{l}" if ln and l and l not in [x[2] for x in p[:k]] else "") + f"\n{c}" for k, (a, b, l, c, _) in enumerate(p))  # 같은 한 줄 2번↑ X(10/31 15:35)
     when = f"\n\n{toss_when()}" if TOSS_NO_CMP else ""
     ttxt = lambda p, **o: f"{TOSS_NOTE}\n\n{re.sub('<.*?>', '', head).format(len(p))}\n\n{body(p, **o)}{when}"  # Threads 토스 리스트 글: 상품마다 이름 — 가격 (1개 값) / 사는 사람 한 줄 / 링크
     stxt = lambda p, **o: f"{TOSS_NOTE}\n{series_head('toss', sno)}\n\n{body(p, **o)}{when}"  # ⑥ 시리즈 묶음: + 순위·1개 값 줄
@@ -3895,7 +3898,8 @@ def top_deals(seen):
     tops = {x.get("url") for x in load(TOP, {}).get("items", []) if x.get("url")} if TH_DIVERSE else set()
     good = lambda p, mk: TH_DIVERSE and (mk.startswith("👍") or p["url"] in tops)  # 10/31 진우 '반응 좋았던 상품은 꾸준하게': 👍 꾸준템·잘 된 상품 = 72시간 회전에서 빠짐(묶음에 1개·하루 1번)
     yk = next((set(h[3]) for h in reversed(hist) if len(h) > 3 and h[2] == hrs[-1] and h[0] < kst_ts(time.strftime("%Y-%m-%d", kst) + " 00:00")), set())  # 어제(전) 같은 칸 소품목 조합
-    six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and not tdead(p.get("url")) and season_adj(title_of(p["text"])) >= 0  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X
+    evd = ev_tags()
+    six, ok = time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - TH_FILL_HOURS * 3600)), lambda p: aff_note(p["url"] or "") and not tdead(p.get("url")) and season_adj(title_of(p["text"])) >= 0 and evd.get(p.get("tag")) != time.strftime("%Y-%m-%d", kst)  # 10/19 밤 진우 'Threads는 수수료 딜만' · Z 철 지난 계절 X · 10/31 행사 코너 마지막 날(Cowork 큐레이션 날) 상품 = 묶음 X
     price = lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
     cands = [(p, price(p), "👍 " if th_steady(p["text"]) else "", 1) for p in top if ok(p) and inb(p)] \
         + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
@@ -3988,7 +3992,7 @@ TH_LIST_Q = ("여러분 장바구니 1순위는 뭐예요?", "이 중에 하나�
 TH_LIST_PROMPT = """Threads 묶음 글에 들어갈 짧은 말을 써 주세요(10/31 진우 '게시글을 사람들이 보고 싶게'). 시간대: {when}. 상품(순서대로):
 {rows}
 - hook: 둘째 줄 상황 훅 1줄 — 이 시간대에 상황이 떠오르게{theme}(26자 안 · 숫자·가격·상품명 X · 예: '퇴근길 장바구니, 1개 값으로 줄 세웠어요' · '새벽에 생각난 김에 쟁여 둘 것')
-- c: 상품마다 {buy}(목록과 같은 개수·순서 · 18자 안 · 친근한 존댓말 ~요 · 숫자 X · 써 본 척·효능·'최저가'·'강추'·사라는 말 X)
+- c: 상품마다 {buy}(목록과 같은 개수·순서 · 18자 안 · 친근한 존댓말 ~요 · 숫자는 상품 이름에 있는 것만(80L·100매처럼) · 같은 말 두 번 X · 써 본 척·효능·'최저가'·'강추'·사라는 말 X)
 - q: 마지막 줄 진짜 질문 1개(24자 안 · 답하고 싶게 · 예: '여러분 장바구니 1순위는 뭐예요?')
 - 몰(쿠팡·토스·네이버 등) 이름·몰끼리 가격 비교 X(토스 약속: 다른 몰과 비교 없이)
 - 훅·질문: {fun}"""
@@ -4010,6 +4014,15 @@ kind_key = lambda name: (kind_words(name) or [""])[-1][-2:]  # 소품목(조합 
 
 
 NSET_H, NSET_SLOTS, NSET_FILE, NSET_MAX, NSET_FRESH = 48, ("08:20", "12:40", "18:40", "21:10"), "nset.json", 5, 48  # 10/31 진우 '새로운 제품들이 나오면 계속 새로운 구성' — 새 상품 48시간 · Cowork 큐레이션 칸(비었을 때만 자동) · 오늘 기록(status.json) · 구성 5개까지 · 가격 확인 48시간 안만(14:10)
+
+
+def ev_tags():
+    """기한 있는 행사 코너(events·auto_events의 tag + until 'YYYY-MM-DD') -> {tag: 마지막 날} — Cowork가 큐레이션하는 코너 상품(10/31 할로윈 반짝 16:20 · 진열 tag 같음)."""
+    out = {}
+    for e in ev_list():
+        if isinstance(e, dict) and e.get("tag") and re.match(r"\d{4}-\d\d-\d\d", str(e.get("until") or "")):
+            out[e["tag"]] = max(out.get(e["tag"], ""), e["until"][:10])
+    return out
 
 
 def chk_ts(p):
@@ -4044,10 +4057,13 @@ def new_sets(seen):
     np = [x for x in seen.get("np", {}).get("h", []) if now - x[0] < NSET_H * 3600] + [[now, u] for u in byu if dup_h(u) not in old]
     seen["npseen"], seen["np"] = {"t": now, "h": sorted(old | {dup_h(u) for u in byu})}, {"t": now, "h": np}
     sets = [x for x in seen.get("nset", {}).get("h", []) if now - x[0] < NSET_H * 3600]  # [시각, 몰, 칸, 주소들, 이름, 칸 시각, 종류 new·mix·old]
+    evt = ev_tags()  # 10/31 15:35 Cowork: 행사 코너 상품(할로윈 반짝 등) = Cowork 큐레이션 몫 → 자동 구성 X(같은 상품 겹침·코너 끝난 뒤 X)
     hist = seen.get("thlist", {}).get("h", [])
     used = {u for x in sets for u in x[3]} | {u for h in hist if now - h[0] < TH_ROT_H * 3600 for u in h[1]}
     name = lambda p: short_name(title_of(p["text"]))
-    ok = lambda p: aff(p["url"]) and p.get("st") not in ("gone", "out") and now - chk_ts(p) <= NSET_FRESH * 3600 and season_adj(name(p)) >= 0 and not name_block(name(p), "새 구성")  # 이름 막기(분유 등) = 다른 진열 묶음과 같이
+    for x in sets:  # 행사 코너 상품 = 줄 선 구성에서도 뺌(쿠팡 묶음 '새 구성 먼저'로 안 당김)
+        x[3] = x[3] if x[5] else [u for u in x[3] if byu.get(u, {}).get("tag") not in evt]
+    ok = lambda p: aff(p["url"]) and p.get("st") not in ("gone", "out") and p.get("tag") not in evt and now - chk_ts(p) <= NSET_FRESH * 3600 and season_adj(name(p)) >= 0 and not name_block(name(p), "새 구성")  # 이름 막기(분유 등) = 다른 진열 묶음과 같이
     npu, tday = {u for _, u in np}, {u for h in hist if h[0] >= kst_ts(today + " 00:00") for u in h[1]}
     tops = {x.get("url"): n for n, x in enumerate(load(TOP, {}).get("items", [])) if x.get("url")}
     gcs = {u: n for n, u in enumerate((load(GC_TOP, {}) or {}).get("urls", []))}
@@ -4133,12 +4149,23 @@ def new_sets(seen):
     if day != (load(NSET_FILE, {}) or {}).get("items") or (load(NSET_FILE, {}) or {}).get("d") != today:
         json.dump({"d": today, "items": day}, open(NSET_FILE, "w"), ensure_ascii=False, indent=0)  # 오늘 구성(이름·몰·상품 수·종류 — 가격 X)
 
+TH_C_MAX = 22  # 묶음 상품 한 줄 받는 길이(프롬프트는 18자 안 — 조금 넘친 줄까지 · 10/31 15시 묶음 3줄이 다 빠져 같은 '확인할 점'만 남음)
+TH_C_RETRY = """Threads 묶음 글에서 아래 상품의 '사는 사람이 좋아할 한 줄'이 다른 상품과 똑같이 나왔어요. 상품마다 그 상품에 맞는 다른 한 줄을 새로 써 주세요(10/31 진우 '고객들이 좋아하게').
+{rows}
+- c: 상품마다 {buy}(목록과 같은 개수·순서 · 18자 안 · 친근한 존댓말 ~요 · 숫자는 상품 이름에 있는 것만 · 써 본 척·효능·'최저가'·'강추'·사라는 말·몰 이름 X)
+- 이미 쓴 줄(이것과 같거나 거의 같은 말 X): {used}
+- 예: 쓰레기봉투 '80L라 분리수거함 크기 먼저 재 보세요' · 물티슈 '캡형이라 뚜껑 따로 안 사도 돼요'"""
+
+
 def th_list_copy(seen, h, pick, cm, theme=""):
     """묶음 글 말(10/31 진우 '보고 싶게'): Claude 1번 -> (훅, 질문) + cm[주소] = 한 줄 · 규칙(무례·사라는 말·써 본 척·숫자·길이) 어긋난 줄 = 뺌 / 실패 = TH_LIST_HOOK·TH_LIST_Q(날짜로 돌림)."""
     names, arr = [short_name(title_of(p["text"])) for p, *_ in pick], [arrive(p["text"], p["url"]) for p, *_ in pick]
     hook, q = TH_LIST_HOOK.get(h, ""), TH_LIST_Q[int(time.strftime("%j", time.gmtime(time.time() + 9 * 3600))) % len(TH_LIST_Q)]
     last = seen.get("thlist", {}).get("hq") or ["", ""]  # 바로 앞 묶음 훅·질문 = 연달아 X(10/31)
     bad = lambda x, n: not x or len(x) > n or rude(x) or re.search(rf"\d|{TH_PUSH}|{TH_C_FAKE}|{TH_C_BAN}|최저|효과|효능|쿠팡|토스|네이버|올리브영|보다\s*(?:싸|저렴)", x)
+    nd = lambda c, n: re.sub(r"\d[\d,.]*", lambda m: "" if re.search(rf"(?<![\d.,]){re.escape(m[0])}(?![\d.,])", n) else m[0], c)  # 상품 이름에 있는 숫자(80L·100매) = 사실이라 OK(10/31 15:35)
+    cbad = lambda c, n, a: bad(nd(c, n), TH_C_MAX) or len(c) > TH_C_MAX or arrive_bad(c, a) or sex_bad(c, n)
+    ai = False
     try:
         r = ai_json(TH_LIST_PROMPT.format(when={1: "새벽", 12: "점심", 15: "오후", 18: "퇴근 시간"}.get(h, "낮"), rows="\n".join(f"{k}. {n}" + (f" ({a})" if a else "") for k, (n, a) in enumerate(zip(names, arr), 1)),
                                           fun=TH_FUN.replace("\n", "\n- "), buy=BUY_LINE, theme=f" · 이 묶음 주제({theme})가 보이게" if theme else ""),
@@ -4147,12 +4174,31 @@ def th_list_copy(seen, h, pick, cm, theme=""):
         hook, q = (hook if bad(h2, 26) or h2 == last[0] else h2), (q if bad(q2, 24) or not q2.endswith("?") or q2 == last[1] else q2)
         for (p, *_), c, n, a in zip(pick, r.get("c") or [], names, arr):
             c = re.sub(r"\s+", " ", str(c)).strip()
-            if not bad(c, 18) and not arrive_bad(c, a) and not sex_bad(c, n):  # 도착 말 = 로켓·새벽 근거 있을 때만 · 성별 고정관념 X
+            if not cbad(c, n, a):  # 도착 말 = 로켓·새벽 근거 있을 때만 · 성별 고정관념 X
                 cm[p["url"]] = c
+        ai = True
     except Exception as e:
         print("th list copy 기본 말로", err_brief(e))
+    got = sum(p["url"] in cm for p, *_ in pick)
     for p, *_ in pick:  # 빈 줄 X(10/31 Cowork): 한 줄 못 받은 상품 = 확인할 점
         cm.setdefault(p["url"], BUY_CHECK)
+    dup = lambda: [k for k, (p, *_) in enumerate(pick) if cm.get(p["url"]) and cm[p["url"]] in [cm.get(x["url"]) for x, *_ in pick[:k]]]
+    ds, new = dup(), 0
+    if ds and ai:  # 10/31 15:35 Cowork '같은 한 줄 2번↑ X': 겹친 상품만 Claude 1번 더(그 상품에 맞는 다른 한 줄) → 못 만들면 그 줄 뺌
+        used = list(dict.fromkeys(cm[p["url"]] for p, *_ in pick))
+        try:
+            r = ai_json(TH_C_RETRY.format(rows="\n".join(f"{j}. {names[k]}" + (f" ({arr[k]})" if arr[k] else "") for j, k in enumerate(ds, 1)), buy=BUY_LINE, used=" / ".join(used)),
+                        {"c": {"type": "array", "items": {"type": "string"}}})
+            for k, c in zip(ds, r.get("c") or []):
+                c = re.sub(r"\s+", " ", str(c)).strip()
+                if not cbad(c, names[k], arr[k]) and c not in used:
+                    cm[pick[k][0]["url"]], used, new = c, used + [c], new + 1
+        except Exception as e:
+            print("th list copy 한 줄 다시 X", err_brief(e))
+    for k in dup():
+        cm.pop(pick[k][0]["url"])
+    if got < len(pick) or ds:
+        print(f"묶음 한 줄 {len(pick)}개 · Claude {got} · 겹침 {len(ds)} → 다시 {new} · 뺌 {len(ds) - new}")
     return hook, q
 
 
