@@ -9652,7 +9652,7 @@ q88 = [{"hook": "이것도 몰라?"}, {"hook": "다들 이거 몇 개씩 사 두
 assert H.th_hook({"thhook": {"l": [8]}}, "생수 2L", "", "^$", []) == ("다들 이거 몇 개씩 사 두세요?", 9) and "다시: 무례 X" in pr87[-1] and "무례 X: 사람·집단 놀림" in pr87[-2]
 q88 = [{"hook": "이것도 몰라요"}, {"hook": "아직도 정가 주고 사요"}, {"hook": "장 볼 때마다 생각나는 그거 있죠"}]
 assert H.th_hook({"thhook": {"l": [10]}}, "동서 보리차 티백 100개", "", "^$", []) == ("장 볼 때마다 생각나는 그거 있죠", 7) and not q88  # ⑥ 무례 2번 = 다음 유형 ⑦
-assert H.th_c_line("이것도 몰라?", [], False) == "" and 'f"{s}\\n{hook}"))' in inspect.getsource(H.th_voice) and "TH_FUN" in inspect.getsource(H.th_voice) and "rude(s)" in inspect.getsource(H.poll_ai) and "fun=TH_FUN" in inspect.getsource(H.poll_ai) \
+assert H.th_c_line("이것도 몰라?", [], False) == "" and 'f"{s}\\n{hook}"))' in inspect.getsource(H.th_voice) and "BUY_LINE" in inspect.getsource(H.th_voice) and "rude(s)" in inspect.getsource(H.poll_ai) and "fun=TH_FUN" in inspect.getsource(H.poll_ai) \
     and "not rude(rules[0][4])" in inspect.getsource(H.log_text) and "TH_FUN" in inspect.getsource(H.th_c_gen)
 with contextlib.redirect_stdout(io.StringIO()):
     assert sv87[3]("cur", "큐레이션\n이것도 몰라?", ["이것도 몰라?", "겨울엔 귤 박스 국룰"], ai=False) == {"이것도 몰라?": ""}  # 큐레이션 재검토 = 무례 줄만 뺌(코드 검사 rv_bad)
@@ -10702,7 +10702,7 @@ H.HAS_TOSS, H.http = True, lambda *a, **k: (_ for _ in ()).throw(AssertionError(
 H.toss_deals({}); H.toss_deals({}, "beauty")  # 회차 쉼(lambda로 불려도)
 src106 = inspect.getsource(H.main)
 assert 'if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):' in src106
-assert inspect.getsource(H.threads_deals).count("not tdead(") == 4 and "not tdead(" in inspect.getsource(H.top_deals) and inspect.getsource(H.top_deals).count("not tdead(") == 2
+assert inspect.getsource(H.threads_deals).count("not tdead(") == 5 and "not tdead(" in inspect.getsource(H.top_deals) and inspect.getsource(H.top_deals).count("not tdead(") == 2
 assert all("not tdead(" in inspect.getsource(fn) for fn in (H.pick_post, H.pair_post, H.nn_bundle, H.steady_list)) and 'HAS_TOSS and not RUN.get("tstop") and (last > tg_t' in inspect.getsource(H.cp_fill)
 assert 'if not RUN.get("tstop"):  # CCC: 점검 중엔 사이트 꾸준템 쪽' in inspect.getsource(H.steady_list) and "tstop" not in inspect.getsource(S)  # 사이트 = 그대로
 # 예약: 점검 중 토스 예약 = 안 올림(기록만) · 미리보기 = 예약 시각이 점검 안이면 토스 X(10/29 22시 미리보기에 10/30 0시 뒤 토스 X)
