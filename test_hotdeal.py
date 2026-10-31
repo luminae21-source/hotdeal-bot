@@ -10700,7 +10700,7 @@ H.HAS_TOSS, H.http = True, lambda *a, **k: (_ for _ in ()).throw(AssertionError(
 H.toss_deals({}); H.toss_deals({}, "beauty")  # 회차 쉼(lambda로 불려도)
 src106 = inspect.getsource(H.main)
 assert 'if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):' in src106
-assert inspect.getsource(H.threads_deals).count("not tdead(") == 3 and "not tdead(" in inspect.getsource(H.top_deals) and inspect.getsource(H.top_deals).count("not tdead(") == 2
+assert inspect.getsource(H.threads_deals).count("not tdead(") == 4 and "not tdead(" in inspect.getsource(H.top_deals) and inspect.getsource(H.top_deals).count("not tdead(") == 2
 assert all("not tdead(" in inspect.getsource(fn) for fn in (H.pick_post, H.pair_post, H.nn_bundle, H.steady_list)) and 'HAS_TOSS and not RUN.get("tstop") and (last > tg_t' in inspect.getsource(H.cp_fill)
 assert 'if not RUN.get("tstop"):  # CCC: 점검 중엔 사이트 꾸준템 쪽' in inspect.getsource(H.steady_list) and "tstop" not in inspect.getsource(S)  # 사이트 = 그대로
 # 예약: 점검 중 토스 예약 = 안 올림(기록만) · 미리보기 = 예약 시각이 점검 안이면 토스 X(10/29 22시 미리보기에 10/30 0시 뒤 토스 X)
