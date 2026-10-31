@@ -1011,6 +1011,7 @@ def img_of(p):
 
 B_GOLD = "오늘의 쿠팡 골드박스 TOP"  # 아침 골드박스 묶음 글 머리(hotdeal.goldbox)
 SERIES = (("dawn", "새벽 장바구니", "🌙", "01:00", "새벽에 생각난 김에 쟁여 둘 생필품·간식 묶음"), ("one", "오늘의 1개 값", "☀️", "07:30", "1개 값으로 따져 본 오늘의 숫자 한 줄"),
+          ("toss", "토스 하루특가", "💙", "10:00", "토스 하루특가·생활용품 베스트 5~7개 — 토스 가격·할인율·순위"),
           ("vanity", "화장대·욕실 장바구니", "💄", "12:00", "화장대·욕실에서 자주 떨어지는 것들 묶음"), ("stock", "생필품 쟁여두기", "🧻", "15:00", "휴지·세제·물티슈 같은 생필품 1개 값 묶음"),
           ("commute", "퇴근길 장바구니", "🚗", "18:00", "차·운동·면도·디지털 묶음"), ("analysis", "핫딜픽 분석", "🔍", "20:30", "표기에 속지 않게 — 핫딜픽이 따져 본 분석"),
           ("weekly", "이번 주 가격", "📊", "일 20:30", "이번 주 가격 흐름 정리"))  # 10/31 진우 'Threads 글을 시리즈로 — 나중에 고객이나 우리가 찾기 좋게' (key, 이름, 이모지, 시각, 소개) -> docs/series.json
@@ -1029,8 +1030,9 @@ def series_of(text):
     return next(((k, int(m[2])) for k, (n, _) in SERIES_BY.items() if m and n == m[1]), None)
 
 
-def series_pages(posts, out, today):
-    """/series/ 모음 + /series/<key>/ 회차 목록(최신 위 · 묶음 = 묶음 카드 · 큐레이션 = 사진·첫 줄·사이트 쪽 링크) + docs/series.json · 색인 O -> sitemap 주소들."""
+def series_pages(posts, out, today, toss=()):
+    """/series/ 모음 + /series/<key>/ 회차 목록(최신 위 · 묶음 = 묶음 카드 · 큐레이션 = 사진·첫 줄·사이트 쪽 링크) + docs/series.json · 색인 O -> sitemap 주소들.
+    toss = 토스 목록 [(i, p, 상태)] -> /series/toss/ 위에 진우 토스 링크 상품 카드(봇 API 상품 = 회차에 'Threads에서 보기'만 — 사이트에 가격·사진 X, TOSS_SITE False)."""
     eps = {k: [] for k in SERIES_BY}
     for i, p in enumerate(posts):
         if p.get("series") in eps and p.get("no"):
@@ -1045,6 +1047,7 @@ def series_pages(posts, out, today):
     for k, n, e, a, d in SERIES:
         xs = sorted(eps[k], key=lambda x: (-x[0], x[1]))
         body = (f'<h1 class="h">{e} {html.escape(n)}</h1><div class="t">{html.escape(d)} · 매일 {html.escape(a)} · 회차 {len(xs)}</div>'
+                + (f'<h2 class="ch">💙 진우가 고른 토스 상품</h2><div class="cards">{"".join(card(i, p, sh) for i, p, sh in own)}</div>' if k == "toss" and (own := [x for x in toss if x[1].get("own") and not x[1].get("tid")][:12]) else "")
                 + (f'<div class="cards">{"".join(f"<div class=sq><b>#{no} · {int(t[5:7])}/{int(t[8:10])}</b>{c}</div>" for no, t, c in xs)}</div>' if xs else '<p class="t">첫 회차를 준비하고 있어요</p>')
                 + f'<p class="t"><a href="{BASE}series/">← 시리즈 모두 보기</a></p>')
         write(out, f"series/{k}/", page(f"{e} {n} — 핫딜픽 시리즈", body, f"핫딜픽 시리즈 {n}: {d}", f"{BASE}series/{k}/"))
@@ -3137,7 +3140,7 @@ def build(posts, out="docs"):
         if os.path.isdir(f"{out}/link/{d}"):
             shutil.rmtree(f"{out}/link/{d}")
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
-    urls += series_pages(posts, out, today)  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
+    urls += series_pages(posts, out, today, ls["toss"][2] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'

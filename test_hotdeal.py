@@ -11,7 +11,7 @@ IG_GAP0, H.IG_GAP = H.IG_GAP, -float("inf")  # 게시 사이 2시간(F)은 9-70�
 tg_real = H.tg  # 진짜 tg(채널 실패 감시 셀프체크 9-7c용)
 http_real = H.http  # 진짜 http(오류 로그 쿼리 X 셀프체크 9-63용)
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
-H.TH_SOLO_DAWN = (0, 0)  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이)
+H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN = (0, 0), True, 0  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이) · 예전 Threads 토스 리스트(⑥ 끔)·토스 개별 글 쿼터(⑥ 5개) = 9-126에서만
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -1252,7 +1252,7 @@ seen = {"bundles": {"t": T("2026-10-12 13:20"), "ts": [T("2026-10-12 13:20")]}};
 c_calls.clear(); c_sent.clear(); out = io.StringIO(); tlh_, H.TH_LIST_HOURS = H.TH_LIST_HOURS, tlh0
 with contextlib.redirect_stdout(out): H.toss_deals(seen, True)
 assert not c_calls and not c_sent and "미룸" in out.getvalue()
-assert "busy(seen, cap=not (best is True and \"best\" in TH_TOSS_KINDS and hrs[-1] in TH_LIST_HOURS))" in inspect.getsource(H.toss_deals); H.TH_LIST_HOURS = tlh_  # 12·15·18시 Threads 베스트 리스트는 시간당 상한에 안 막힘(10/12 진우 '묶음 글은 반드시')
+assert "busy(seen, cap=not (series or best is True and \"best\" in TH_TOSS_KINDS and hrs[-1] in TH_LIST_HOURS))" in inspect.getsource(H.toss_deals); H.TH_LIST_HOURS = tlh_  # 12·15·18시 Threads 베스트 리스트는 시간당 상한에 안 막힘(10/12 진우 '묶음 글은 반드시')
 time.time = lambda: T("2026-10-12 14:21"); assert not H.busy(seen)  # 1시간 지난 글은 안 셈
 json.dump([{"t": "2026-10-12 11:%02d" % (10 + k), "text": f"🔥 [G마켓] 딜{k} (1원)", "url": f"https://g/{k}", "mid": 50 + k, "pop": 9 - k} for k in range(3)], open("posts.json", "w"))
 seen, c_sent[:] = {"bundles": {"t": T("2026-10-12 12:01"), "ts": [T("2026-10-12 12:01")]}}, []; time.time = lambda: T("2026-10-12 12:05"); H.top_deals(seen); assert not c_sent and "top_20261012_12" not in seen  # TOP5도 10분 안 묶음 글이면 다음 실행에
@@ -2474,7 +2474,7 @@ seen9b = {}; json.dump([{"t": f"{D9c} 00:40", "text": f"{H.TOSS_NOTE}\n\n🛒 [�
 assert th9c("00:50") == []  # 🛒(문구 없이 제목만)인 진우 화장품 = 화장품 자리에도 X(리스트로)
 seen9b = {}; json.dump([{"t": f"{D9c} 00:40", "text": "🔥 [쿠팡] 봇 클렌징폼 (5,900원)\n\n좋음", "url": "https://link.coupang.com/a/c", "s": 8}], open("posts.json", "w"), ensure_ascii=False)
 assert th9c("00:50") == []  # 봇 딜은 화장품이어도 ①②만
-assert "beauty=bt, slot=True" in inspect.getsource(H.toss_picks) and "th_mark(seen, bt)" in inspect.getsource(H.toss_picks)  # 토스 이름 예약 = 진우 화장품(자리 채움), 재오픈은 화장품 수에만 셈
+assert "beauty=bt, slot=True" in inspect.getsource(H.toss_picks) and "th_mark(seen, bt, toss=True)" in inspect.getsource(H.toss_picks)  # 토스 이름 예약 = 진우 화장품(자리 채움), 재오픈은 화장품 수에만 셈
 # 15·19시 토스 뷰티 회차: 오늘 화장품 자리가 비었고 진우 화장품 링크(오늘 남은 것·🛒 X)가 없으면 1개를 Threads 개별 글로(소모품 먼저), 채널 글은 그대로
 def toss9c(path, body=None):
     if path == "/categories": return {"categories": [{"displayName": "뷰티", "categoryId": 400}, {"displayName": "식품", "categoryId": 200}]}
@@ -11630,14 +11630,14 @@ json.dump([{"t": "2026-11-12 03:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 �
            {"t": "2026-11-11 15:05", "text": "x", "url": "u5", "bundle": "th15", "th": 1, "items": [{"n": "어제 휴지"}]}], open("posts124.json", "w"), ensure_ascii=False)
 o124 = io.StringIO()
 with contextlib.redirect_stdout(o124): H.th_day_log("2026-11-12")
-assert o124.getvalue() == "th day 11-12: 글 3(개별 2 · 새벽 1 · 묶음 1) · 상품 5 · quota 생필품 3/12 · 화장품 2/5\n", o124.getvalue()
-assert "    metrics_save(m)\n    th_day_log(day)\n" in inspect.getsource(H.metrics_rows)  # 하루 1번(어제 성과 적을 때)
+assert o124.getvalue() == "th day 11-12: 글 3(개별 2 · 새벽 1 · 묶음 1) · 상품 5 · quota 생필품 3/12 · 화장품 2/5 · 토스 0/5\n", o124.getvalue()
+assert "    metrics_save(m)\n    th_day_log(day, seen)\n" in inspect.getsource(H.metrics_rows)  # 하루 1번(어제 성과 적을 때)
 (H.th_bundle, H.tg, H.POSTS, tk124, time.time, H.ai_json, H.season_adj) = sv124; H.E.pop("THREADS_TOKEN", None) if tk124 is None else H.E.update(THREADS_TOKEN=tk124); os.chdir(cwd124)
 # 9-125) 10/31 진우 'Threads 글을 시리즈로 — 나중에 고객이나 우리가 찾기 좋게': 대가성 문구 다음 줄 '[🧻 생필품 쟁여두기 #N]'(시리즈별 회차 = seen) · Threads 주제 태그 = 시리즈 이름
 #        · 묶음(01 dawn·12 vanity·15 stock·18 commute) + events "series"(큐레이션 — 채널·Threads 같은 머리 · series_eps.json) · metrics series·no · 사이트 /series/ · /series/<key>/ · 딜 쪽 '이 시리즈 다른 회차' · search.json · /link 줄
 sv125 = (H.th_bundle, H.tg, H.POSTS, H.E.get("THREADS_TOKEN"), time.time, H.ai_json, H.season_adj, H.EVENTS, H.http, H.th_text, H.busy, H.bundled)
 d125, cwd125 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d125)
-assert [k for k, *_ in S.SERIES] == ["dawn", "one", "vanity", "stock", "commute", "analysis", "weekly"] and S.series_head("stock", 12) == "[🧻 생필품 쟁여두기 #12]" and S.series_of("x\n[🔍 핫딜픽 분석 #3]\ny") == ("analysis", 3) and S.series_of("[x #1]") is None
+assert [k for k, *_ in S.SERIES] == ["dawn", "one", "toss", "vanity", "stock", "commute", "analysis", "weekly"] and S.series_head("stock", 12) == "[🧻 생필품 쟁여두기 #12]" and S.series_of("x\n[🔍 핫딜픽 분석 #3]\ny") == ("analysis", 3) and S.series_of("[x #1]") is None
 assert H.TH_SERIES == {1: "dawn", 12: "vanity", 15: "stock", 18: "commute"} and H.series_of is S.series_of
 tb125 = []
 H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb125.append((kind, text, topic)) or {"id": "T"}
@@ -11683,3 +11683,108 @@ assert H.series_of(x125) == ("stock", 1) and '**({"series": sr[0], "no": sr[1]} 
 (H.th_bundle, H.tg, H.POSTS, tk125, time.time, H.ai_json, H.season_adj, H.EVENTS, H.http, H.th_text, H.busy, H.bundled) = sv125
 H.E.pop("THREADS_TOKEN", None) if tk125 is None else H.E.update(THREADS_TOKEN=tk125); os.chdir(cwd125)
 print("OK: 모든 셀프체크 통과")
+# 9-126) 10/31 진우 '토스도 신경쓰자'(⑥ · 11/5~): 10시 '[💙 토스 하루특가 #N]' 시리즈 묶음(하루특가 → 모자라면 생활용품 베스트 · 5~7개 · 텔레그램 같은 머리 줄 · 다른 몰 X · 게시 시점 줄)
+#        · 예전 Threads 토스 리스트 끔(텔레그램 그대로) · 개별 글 토스 5개↑(채움 칸 토스 먼저 · tz 셈 · 하루 로그 quota 토스 N/5) · 섞인 묶음 = 맨 아래 '💙 토스' 칸 + 게시 시점 줄
+#        · 묶음 말 몰 이름·비교 X · /series/toss/ = 진우 토스 링크 카드 + 회차 'Threads에서 보기'만 · metrics 토스 따로(글 수·조회·Threads 링크 클릭)
+sv126 = (H.toss, H.toss_link, H.ai_pick, H.tg, H.th_bundle, H.HAS_TOSS, H.E.get("THREADS_TOKEN"), time.time, H.season_adj, H.rv_fields, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.POSTS, H.EVENTS, dict(H.RUN), H.TOSS_NO_CMP)
+d126, cwd126 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d126)
+assert [k for k, *_ in S.SERIES][2] == "toss" and S.series_head("toss", 3) == "[💙 토스 하루특가 #3]" and S.series_of(f"{H.TOSS_NOTE}\n[💙 토스 하루특가 #3]\n\n1️⃣ x") == ("toss", 3)
+assert H.TOSS_SERIES_HOUR == 10 and H.TOSS_SERIES_N == (5, 7) and "TOSS_SERIES_HOUR, TOSS_SERIES_N, TOSS_SERIES_CAT, TOSS_TH_LIST = 10, (5, 7), \"생활용품\", False" in open(H.__file__, encoding="utf-8").read()
+assert 'toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True)' in inspect.getsource(H.main)  # 10시 베스트보다 먼저(묶음 10분 간격)
+api126 = []
+def toss126(path, body=None):
+    api126.append(path)
+    if path == "/categories": return {"categories": [{"categoryId": 7, "displayName": "생활용품"}, {"categoryId": 8, "displayName": "식품"}]}
+    if path == "/products/today-deals?size=30": return {"items": [{"tacaItemId": 100 + i, "displayName": f"하루상품{i} 10개입", "displayPrice": 9900, "discountRate": 30, "isSoldOut": i == 2} for i in range(3)]}
+    if path == "/products/best-categories/7?size=30": return {"items": [{"tacaItemId": 200 + i, "displayName": f"생활상품{i}", "displayPrice": 5000 + i, "discountRate": 0} for i in range(5)]}
+    if path == "/products/best-selling?size=30": return {"items": [{"tacaItemId": 300 + i, "displayName": f"베스트{i}", "displayPrice": 7000} for i in range(3)]}
+    raise AssertionError(path)
+tg126, tb126 = [], []
+H.toss, H.toss_link, H.HAS_TOSS, H.E["THREADS_TOKEN"], H.season_adj, H.rv_fields = toss126, (lambda seen, i, n: f"https://toss.shopping/_m/S{i}"), True, "tk", (lambda n, ctx=None: 0), (lambda *a, **k: None)
+H.tg = lambda m, **p: tg126.append(p.get("text")) or {"message_id": len(tg126)}
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb126.append((kind, text, topic)) or {"id": "T"}
+H.POSTS, H.EVENTS, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_NO_CMP = "posts126.json", "ev126.json", False, 5, True
+json.dump([], open("posts126.json", "w")); H.RUN.pop("tstop", None); H.RUN.pop("treuse", None)
+H.ai_pick = lambda prompt, lines: [{"i": i, "score": 9 - i % 3, "comment": ""} for i in range(len(lines))]  # 하루특가(0·1)보다 베스트 점수가 높아도 하루특가 먼저
+s126 = {}
+time.time = lambda: TK("2026-11-05 09:50"); H.toss_deals(s126, "series"); assert not api126 and not tg126  # 10시 전
+time.time = lambda: TK("2026-11-05 10:05"); H.toss_deals(s126, "series")
+assert len(tg126) == 1 and len(tb126) == 1 and s126["series"]["toss"] == 1 and "tossseries_20261105" in s126, (tg126, tb126)
+t126 = tg126[0]
+assert t126.startswith(f"<i>{H.TOSS_NOTE}</i>\n[💙 토스 하루특가 #1]\n\n💙 <b>오늘 토스에서 살 만한 5개</b>\n\n1️⃣ ") and t126.count("toss.shopping/_m/S") == 5 and "쿠팡" not in t126 and "게시 시점 가격" in t126, t126
+assert t126.index("하루상품0") < t126.index("하루상품1") < t126.index("생활상품") and "하루상품2" not in t126 and "⏰ 하루특가 · 밤 12시까지" in t126 and "🏆 11/5 생활용품 베스트 2위" in t126, t126  # 하루특가 먼저(품절 X) · 모자라면 베스트 점수 순 3개 채움(5개까지)
+k126, x126, top126 = tb126[0]
+assert k126 == "tossseries" and top126 == "토스 하루특가" and x126.startswith(H.TOSS_NOTE + "\n[💙 토스 하루특가 #1]\n\n1️⃣ 하루상품0 10개입 9,900원 (30%↓)\n하루특가 · 밤 12시까지 · ") and len(x126) <= 480, x126
+assert re.search(r"\n\n⚠️ 11/5 10:05 게시 시점 가격$", x126) and len(re.findall(r"^[1-7]️⃣ ", x126, re.M)) >= 3 and "쿠팡" not in x126 and "네이버" not in x126, x126  # 다른 몰 X · 500자 안(넘으면 상품 수 줄임)
+ep126 = json.load(open(S.SERIES_EPS))[-1]
+assert ep126["key"] == "toss" and ep126["no"] == 1 and ep126["link"] == S.THREADS and "img" not in ep126 and "원" not in ep126["title"] and "Threads에서 보기" in ep126["title"], ep126  # 사이트 회차 = 링크만(가격·사진 X)
+tg126.clear(); time.time = lambda: TK("2026-11-05 11:00"); H.toss_deals(s126, "series"); assert not tg126  # 하루 1번
+time.time = lambda: TK("2026-11-06 13:05"); H.toss_deals(s126, "series"); assert not tg126  # 13시 넘으면 그날 X(놓친 회차 몰아 X)
+H.RUN["tstop"] = True; time.time = lambda: TK("2026-11-06 10:05"); H.toss_deals(s126, "series"); assert not tg126; H.RUN.pop("tstop")  # 토스 점검 중 = 쉼
+s126["bundles"] = {"t": 1, "ts": []}; o126 = io.StringIO()
+with contextlib.redirect_stdout(o126): H.toss_deals(s126, "series")
+assert not tg126 and "toss_series skip 2개" in o126.getvalue() and "tossseries_20261106" in s126, o126.getvalue()  # 3일 안 올린 상품 빼고 2개 = 그날 회차 X(다시 X)
+[s126.pop(k) for k in [k for k in s126 if k.startswith("tb_")]]; time.time = lambda: TK("2026-11-07 10:05"); H.toss_deals(s126, "series")
+assert len(tg126) == 1 and s126["series"]["toss"] == 2 and tg126[0].startswith(f"<i>{H.TOSS_NOTE}</i>\n[💙 토스 하루특가 #2]\n"), tg126  # 회차 +1
+# 예전 Threads 토스 리스트(12시 베스트) = 끔(텔레그램만) · 켜면 예전 그대로
+tg126.clear(); tb126.clear(); time.time = lambda: TK("2026-11-06 12:20"); s126["bundles"] = {"t": 1, "ts": []}
+H.toss_deals(s126, True); assert len(tg126) == 1 and not tb126, tb126
+H.TOSS_TH_LIST = True; [s126.pop(k) for k in [k for k in s126 if k.startswith("tossbest_")]]; s126["bundles"] = {"t": 1, "ts": []}; [s126.pop(k) for k in [k for k in s126 if k.startswith("tb_")]]
+H.toss_deals(s126, True); assert len(tg126) == 2 and [k for k, *_ in tb126] == ["toss12"], tb126
+H.TOSS_TH_LIST = False
+# 개별 글 토스 셈(tz) · 하루 로그 · 채움 칸 = 토스 5개 전엔 토스 픽 먼저
+s126b = {}
+time.time = lambda: TK("2026-11-06 12:00"); H.th_mark(s126b, 0, toss=True); H.th_mark(s126b, 0)
+assert s126b["thsolo_20261106"]["n"] == 2 and s126b["thsolo_20261106"]["tz"] == 1
+o126 = io.StringIO()
+with contextlib.redirect_stdout(o126): H.th_day_log("2026-11-06", s126b)
+assert o126.getvalue().endswith(" · 화장품 0/5 · 토스 1/5\n"), o126.getvalue()
+assert "th_mark(seen, i[\"bt\"], toss=is_toss(i.get(\"link\")))" in inspect.getsource(H.threads_deals) and "th_mark(seen, bt[i], toss=is_toss(posts[i].get(\"url\"), posts[i][\"text\"]))" in inspect.getsource(H.threads_deals)
+sv126b = (H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB)
+p126 = []
+def http126(url, body=None, headers=None, method=None):
+    if "/me?fields=id" in url: return json.dumps({"id": "777"})
+    if "/777/threads?" in url: p126.append(parse_qs(urlsplit(url).query)["text"][0]); return json.dumps({"id": "c%d" % len(p126)})
+    if "/threads_publish?" in url: return json.dumps({"id": "p%d" % len(p126)})
+    raise AssertionError(url)
+H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB = http126, 99, 45 * 60, 1, th_strong0, True, (lambda s: None), False
+tq126 = lambda n, at: {"t": TK("2026-11-06 " + at), "text": f"{H.TOSS_NOTE}\n\n🔥 토스{n}\n💰 7,900원\n⚠️ 11/6 {at} 게시 시점 가격\n\n🛒 https://toss.shopping/_m/Q{n}", "link": f"https://toss.shopping/_m/Q{n}", "bt": 0, "id": 2600 + n, "r": n, "k": "best", "s": 8}
+own126 = lambda mid, name, at, url=None: {"t": "2026-11-06 " + at, "url": url or f"https://link.coupang.com/a/W{mid}", "mid": mid, "own": 1, "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {name} (16,940원)\n\n쿠팡 평균가보다 낮아요"}
+def run126(s, at):
+    p126.clear(); time.time = lambda: TK("2026-11-06 " + at); o = io.StringIO()
+    with contextlib.redirect_stdout(o): H.threads_deals(s)
+    return [re.search(r"🔥 (?:\[\S+\] )?(\S+)", x).group(1) for x in p126], o.getvalue()
+json.dump([own126(2601, "진우A", "22:01")], open(H.POSTS, "w"), ensure_ascii=False)  # 22시대 = 개별 글 슬롯(07·12·18·20시) 밖 채움 칸
+s126c = {"thfill": {"t": 1, "k": "toss"}, "thtoss": {"t": 1, "q": [tq126(1, "22:00"), tq126(2, "22:02")]}}
+g126, l126 = run126(s126c, "22:10")
+assert g126 == ["토스1"] and "quota 토스 0/5" in l126 and s126c["thsolo_20261106"]["tz"] == 1, (g126, l126)  # 직전이 토스여도 쿼터 전 = 토스 먼저
+s126c["thsolo_20261106"]["tz"] = 5; s126c["thsolo_20261106"]["last"] = 0
+assert run126(s126c, "23:00")[0] == ["진우A"]  # 5개 채우면 예전처럼 번갈아(직전 토스 -> 진우 딜)
+json.dump([own126(2611, "진우B", "22:01"), own126(2612, "진우토스", "22:05", url="https://toss.shopping/_m/OWN1")], open(H.POSTS, "w"), ensure_ascii=False)
+s126c = {"thfill": {"t": 1, "k": "own"}}
+g126, l126 = run126(s126c, "22:10")
+assert g126 == ["진우토스"] and "quota 토스 0/5" in l126, (g126, l126)  # 토스 픽 대기 없으면 진우 토스 링크 먼저(먼저 올라온 진우B보다)
+(H.http, H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.th_strong, H.TH_SOLO_FILL, H.time.sleep, H.TH_LINK_AB) = sv126b
+# 섞인 묶음(15시) = 토스 상품은 맨 아래 '💙 토스' 칸 + 게시 시점 줄, 질문은 맨 끝 · 묶음 말 = 몰 이름·몰끼리 비교 X
+tb126.clear()
+json.dump([{"t": f"2026-11-06 14:{k:02d}", "text": f"{H.TOSS_NOTE if 'toss' in u else H.DISCLOSURE}\n\n[{'토스' if 'toss' in u else '쿠팡'}] {n} (9,900원/무료)\n\n좋음", "url": u, "mid": 1, "own": 1}
+           for k, (n, u) in enumerate([("코멧 화장지 30롤", "https://link.coupang.com/a/M0"), ("토스 키친타월 6롤", "https://toss.shopping/_m/M1"), ("탐사 물티슈 캡형 100매", "https://link.coupang.com/a/M2"), ("퍼실 세탁세제 2.5L", "https://link.coupang.com/a/M3")])],
+          open(H.POSTS, "w"), ensure_ascii=False)
+ai126 = H.ai_json; H.ai_json = lambda prompt, props, img=None: {"hook": "쿠팡보다 싼 것만 모았어요", "c": ["욕실 선반 단골이에요"] * 4, "q": "여러분 생필품 첫 순위는 뭐예요?"}
+time.time = lambda: TK("2026-11-06 15:05"); H.top_deals({})
+H.ai_json = ai126
+b126 = tb126[-1][1]
+assert "\n\n💙 토스\n4️⃣ 토스 키친타월 6롤 9,900원\n" in b126 and b126.index("💙 토스") > b126.index("3️⃣ ") and re.search(r"\n⚠️ 11/6 15:05 게시 시점 가격\n\n여러분 생필품 첫 순위는 뭐예요\?$", b126), b126
+assert "쿠팡보다" not in b126 and b126.startswith(H.DISCLOSURE + "\n" + H.TOSS_NOTE + "\n[🧻 생필품 쟁여두기 #1]\n" + H.TH_LIST_HOOK[15] + "\n\n") and "몰끼리 가격 비교 X" in H.TH_LIST_PROMPT, b126  # 몰 이름 든 훅 = 뺌(기본 훅)
+# metrics: 토스 글 따로(글 수·Threads 조회) + Threads 링크 클릭 중 토스 링크
+src126 = inspect.getsource(H.metrics_rows)
+assert 'm[day]["toss"] = {"tg": sum(r["ch"] == "tg" for r in tr), "th": sum(r["ch"] == "th" for r in tr), "th_views":' in src126 and "metric=clicks&since={int(t0)}&until={int(t0) + 86400}" in src126 and '"th_clicks": sum(x["value"] for x in lv if urllib.parse.urlsplit(x.get("link_url") or "").netloc in TOSS_HOSTS)' in src126
+# 사이트 /series/toss/ = 진우 토스 링크 카드 + 회차 'Threads에서 보기'(봇 API 상품 가격·사진 X)
+o126s = tempfile.mkdtemp(); os.makedirs(f"{o126s}/series", exist_ok=True)
+P126 = [{"t": "2026-11-06 14:00", "text": f"{H.TOSS_NOTE}\n\n[토스] 진우 토스 수건 5장 (12,900원)\n\n좋음", "url": "https://toss.shopping/_m/JW1", "mid": 1, "own": 1}]
+S.series_pages(P126, o126s, "2026-11-06", [(0, P126[0], (1, None, "", [], False))])
+ST126 = open(f"{o126s}/series/toss/index.html", encoding="utf-8").read()
+assert "💙 진우가 고른 토스 상품" in ST126 and "진우 토스 수건" in ST126 and f'href="{S.THREADS}"' in ST126 and "Threads에서 보기" in ST126 and "#1 · 11/5" in ST126, ST126[:400]
+(H.toss, H.toss_link, H.ai_pick, H.tg, H.th_bundle, H.HAS_TOSS, tk126, time.time, H.season_adj, H.rv_fields, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.POSTS, H.EVENTS, run126s, H.TOSS_NO_CMP) = sv126
+H.E.pop("THREADS_TOKEN", None) if tk126 is None else H.E.update(THREADS_TOKEN=tk126)
+H.RUN.clear(); H.RUN.update(run126s); os.chdir(cwd126)
