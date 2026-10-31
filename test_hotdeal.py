@@ -12239,8 +12239,8 @@ assert [x[1:3] + [len(x[3]), x[4], x[5]] for x in s133["nset"]["h"]] == [["coupa
 assert [e["at"] for e in ae133] == ["2026-11-06 18:40"] and ae133[0]["auto"] == "nset" and ae133[0]["link"] == f"{H.SITE}c/life/" and ae133[0]["topic"] == "생필품"  # (4) 12:40 = Cowork 큐레이션 → 다음 빈 칸 18:40
 assert ae133[0]["text"].startswith(H.DISCLOSURE + "\n\n🆕 새로 들어온 생필품 3개\n") and "1️⃣ 코멧 화장지 30롤 9,900원" not in ae133[0]["text"][:0] and "⚠️ 11/6 18:40 게시 시점 가격" in ae133[0]["text"] and len(re.findall(r"^[1-3]️⃣ ", ae133[0]["text"], re.M)) == 3, ae133[0]["text"]
 assert s133["thlist"]["h"][-1][2] == "nset" and len(s133["thlist"]["h"][-1][1]) == 3  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
-assert json.load(open("nset.json")) == {"d": "2026-11-06", "items": [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40"}]}
-S.site_status("docs", [], [], [], TK("2026-11-06 11:20")); assert json.load(open("docs/status.json"))["nset"] == [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40"}]  # 오늘 새 구성 = status.json
+assert json.load(open("nset.json")) == {"d": "2026-11-06", "items": [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40", "k": "new"}]}
+S.site_status("docs", [], [], [], TK("2026-11-06 11:20")); assert json.load(open("docs/status.json"))["nset"] == [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40", "k": "new"}] and json.load(open("docs/status.json"))["nset_n"] == "새 구성 1 · 기존 상품 구성 0"  # 오늘 새 구성 = status.json
 time.time = lambda: TK("2026-11-06 11:30"); H.new_sets(s133); assert len(s133["nset"]["h"]) == 1 and len([e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]) == 1  # 같은 상품 = 구성 1번
 # (2) 몰 섞인 3개(쿠팡·토스·네이버 같은 칸) = 구성 X · (3) 같은 브랜드 3개(코멧) = 1개만 남아 X
 json.dump(json.load(open("posts133.json")) + [P133(4, "잘풀리는집 미용티슈 3개"), P133(5, "깨끗한나라 화장지", "토스", "https://toss.shopping/_m/N5"), P133(6, "화이트 생리대 중형", "네이버", "https://naver.me/N6"),
@@ -12252,3 +12252,43 @@ assert "coupang 생필품 2" in o133.getvalue() and "coupang 주방 1" in o133.g
 assert "new_sets, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv133
 os.chdir(cwd133)
+# 9-134) 10/31 14:10 Cowork(진우 '새 상품이 없는 경우는 기존 있던 상품 중 좋은 걸'): 새 상품 3개 밑 = 그 몰·그 칸 기존 진열 상품으로 채움(새 상품 맨 앞) · 새 구성 없이 빈 큐레이션 칸 3시간 안 = 기존 상품 구성
+#        고르는 순서 = top.json → gc_top → 리뷰 → 1개 값 · 빼는 것 = 확인 48시간 넘음·품절·수수료 링크 아님·72시간 묶음(꾸준템 1개 예외)·7일 안 같은 세트·같은 브랜드 · '다시 보는 장바구니 — 칸' · status.json '새 구성 N · 기존 상품 구성 M'
+#        셀프체크 (1) 새 1 + 기존 좋은 2 = 구성 1(새 맨 앞) (2) 확인 72시간 된 가격만 = X (3) 어제 같은 칸 세트 = 다른 세트(7일 안 같은 세트도 바꿈)
+sv134, cwd134 = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS = "posts134.json", "ev134.json", "ev134.json"
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))
+S134 = lambda k, n, chkt="2026-11-07 08:00", rev=900, **x: {"t": "2026-11-01 10:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🛒\n{n}\n12,900원\n✔ 리뷰 {rev:,}", "url": x.pop("u", f"https://link.coupang.com/a/E{k}"), "own": 1, "shelf": 1,
+                                                             "st": x.pop("st", "hot"), "now": "12,900원", "chk": f"{int(chkt[5:7])}/{int(chkt[8:10])} {int(chkt[11:13])}시", "chkt": chkt, **x}
+U134 = lambda k: f"https://link.coupang.com/a/E{k}"
+old134 = [S134(1, "깨끗한나라 화장지 30롤", rev=50000), S134(2, "탐사 물티슈 100매", "2026-11-06 20:00", 3000), S134(3, "2080 치약 120g 6개", "2026-11-04 08:00", 90000),  # E3 = 확인 75시간 전
+          S134(4, "잘풀리는집 미용티슈 3개", rev=80000, st="out"), S134(5, "페리오 칫솔 10개", rev=70000, u="https://www.coupang.com/vp/products/5"),  # 품절 · cp_fail 생 주소
+          S134(11, "햇반 210g 24개", "2026-11-04 08:00", 60000), S134(12, "오뚜기 진라면 20개", "2026-11-04 09:00", 50000),  # 식품 = 확인 72시간 넘은 것만
+          S134(21, "코멧 키친타월 6롤", stdy=1), S134(22, "3M 수세미 10개", rev=850), S134(23, "크린랩 위생장갑 200매", rev=820), S134(24, "해피콜 프라이팬 28cm", rev=800), S134(25, "락앤락 밀폐용기 5종", rev=700), S134(26, "락앤락 김치통 3L", rev=600)]
+json.dump(old134, open("posts134.json", "w"), ensure_ascii=False); json.dump([], open("ev134.json", "w"))
+json.dump({"items": [{"url": U134(1)}]}, open("top.json", "w")); json.dump({"urls": [U134(2)]}, open("gc_top.json", "w"))
+s134 = {"thlist": {"t": 0, "h": [[TK("2026-11-06 18:40"), [U134(21), U134(22), U134(23)], "nset", []], [TK("2026-11-02 18:40"), [U134(21), U134(24), U134(25)], "nset", []]]}}  # 어제 주방 세트 · 5일 전 세트
+time.time = lambda: TK("2026-11-07 09:00"); H.new_sets(s134); assert "nset" not in s134  # 첫 실행 = 본 것만
+N134 = lambda k, n: {"t": "2026-11-07 09:20", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/N{k}", "mid": 400 + k, "own": 1}
+json.dump(old134 + [N134(1, "유한킴벌리 생리대 중형"), N134(2, "곰곰 계란 30구")], open("posts134.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-07 09:30"); o134 = io.StringIO()
+with contextlib.redirect_stdout(o134): H.new_sets(s134)
+assert [x[1:3] + x[3:] for x in s134["nset"]["h"]] == [["coupang", "life", ["https://link.coupang.com/a/N1", U134(1), U134(2)], "생필품", "2026-11-07 12:40", "mix"]], s134["nset"]  # (1) 새 1 맨 앞 + 기존 좋은 2(top.json → gc_top) · 확인 75시간·품절·생 주소 = 뺌
+assert "새 구성 만듦 · coupang 생필품 3개(새 1 · 기존 2)" in o134.getvalue() and "새 구성 모자람 · coupang 식품 1" in o134.getvalue(), o134.getvalue()  # (2) 식품 = 새 1 + 확인 72시간 넘은 기존만 = X
+t134 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")][0]["text"]
+assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 장바구니 — 생필품\n") and "1️⃣ 🆕 유한킴벌리 생리대 중형 9,900원" in t134 and "2️⃣ 깨끗한나라 화장지 30롤 12,900원\n" in t134 and "3️⃣ 탐사 물티슈 100매 12,900원 (11/6 20시 확인)\n" in t134, t134
+assert t134.count("핫딜픽에서 많이 눌러 본") == 1 and not re.search("많이 팔린|인기", t134) and "⚠️ 11/7 12:40 게시 시점 가격" in t134, t134  # 근거(gc_top) 있는 상품만 · '많이 팔린'·'인기 1위' X
+time.time = lambda: TK("2026-11-07 15:30"); H.new_sets(s134); assert len(s134["nset"]["h"]) == 1  # 빈 칸(18:40) 3시간 넘게 남음 = 기존 상품 구성 아직 X(Cowork가 먼저 채울 틈)
+time.time = lambda: TK("2026-11-07 16:00"); o134 = io.StringIO()
+with contextlib.redirect_stdout(o134): H.new_sets(s134)
+x134 = s134["nset"]["h"][-1]
+assert x134[1:3] + x134[4:] == ["coupang", "kitchen", "주방", "2026-11-07 18:40", "old"] and x134[3] == [U134(21), U134(24), U134(26)], x134  # (3) 어제 세트(21·22·23) X — 꾸준템 21만 예외 1개 · 5일 전 세트(21·24·25) = 25 → 26 바꿈
+assert "기존 상품 구성 만듦 · coupang 주방 3개" in o134.getvalue() and "기존 상품 구성 자동 큐레이션 · 18:40 주방 3개" in o134.getvalue(), o134.getvalue()
+t134 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("at") == "2026-11-07 18:40"][0]["text"]
+assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 장바구니 — 주방\n") and "🆕" not in t134 and "1️⃣ 코멧 키친타월 6롤 12,900원\n" in t134, t134
+assert [x["k"] for x in json.load(open("nset.json"))["items"]] == ["mix", "old"]
+S.site_status("docs", [], [], [], TK("2026-11-07 16:05")); assert json.load(open("docs/status.json"))["nset_n"] == "새 구성 1 · 기존 상품 구성 1"
+time.time = lambda: TK("2026-11-07 18:00"); H.new_sets(s134); assert len(s134["nset"]["h"]) == 2  # 주방 = 48시간 안 구성한 칸 · 21:10 = 3시간 넘음
+st134 = inspect.getsource(H.top_deals); assert "for u in x[3] if u in npu}" in st134  # 쿠팡 묶음 '새 구성 먼저' = 새 상품만(기존 채움 X)
+(time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv134
+os.chdir(cwd134)

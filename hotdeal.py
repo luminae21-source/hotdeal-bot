@@ -3901,7 +3901,8 @@ def top_deals(seen):
         + [(p, price(p), "", 2) for p in sorted((p for p in reversed(posts) if p.get("mid") and not p.get("shelf") and not th_steady(p["text"]) and p["t"] >= six and ok(p)), key=lambda p: (not th_tier(p["text"]), -(p.get("pop") or 0)))] \
         + [(posts[i], pr, "", 3) for i, _, pr, _, _ in cp_shelf(posts, kst, False)] + [(posts[i], pr, "👍 ", 4) for i, _, pr, _, _ in cp_shelf(posts, kst, True)]
     if TH_DIVERSE:  # 조합 돌리기: 같은 채움 칸 안에서 어제 같은 칸에 담은 소품목 = 뒤로 · 새 구성(쿠팡 — new_sets, 큐레이션 칸 못 받은 것) = 맨 앞(10/31 '새 제품 나오면 새 구성')
-        nsu = {u for x in seen.get("nset", {}).get("h", []) if x[1] == "coupang" and not x[5] for u in x[3]}
+        npu = {u for _, u in seen.get("np", {}).get("h", [])}  # 새 상품만(14:10 기존 채움 상품 = 앞으로 X)
+        nsu = {u for x in seen.get("nset", {}).get("h", []) if x[1] == "coupang" and not x[5] for u in x[3] if u in npu}
         cands.sort(key=lambda c: (c[0]["url"] not in nsu, c[3], kind_key(short_name(title_of(c[0]["text"]))) in yk))
     if hrs[-1] in TH_LIST_NEED:  # 10/31 진우 '생필품 꼭 넣고, 화장품도': 01·15시 = 생필품 먼저 · 12시 = 화장품 먼저(지금 가격 확인된 것 — 진열 '(M/D H시 확인)' = 뒤로) · 모자라면 그대로(억지 X)
         cands.sort(key=lambda c: not (th_kind(short_name(title_of(c[0]["text"]))) == TH_LIST_NEED[hrs[-1]] and "확인)" not in c[1]))
@@ -4008,17 +4009,32 @@ def brand_first(ps):
 kind_key = lambda name: (kind_words(name) or [""])[-1][-2:]  # 소품목(조합 돌리기) = 마지막 종류 낱말 끝 두 글자(same_kind와 같은 셈)
 
 
-NSET_H, NSET_SLOTS, NSET_FILE, NSET_MAX = 48, ("08:20", "12:40", "18:40", "21:10"), "nset.json", 5  # 10/31 진우 '새로운 제품들이 나오면 계속 새로운 구성' — 새 상품 48시간 · Cowork 큐레이션 칸(비었을 때만 자동) · 오늘 기록(status.json) · 구성 5개까지
+NSET_H, NSET_SLOTS, NSET_FILE, NSET_MAX, NSET_FRESH = 48, ("08:20", "12:40", "18:40", "21:10"), "nset.json", 5, 48  # 10/31 진우 '새로운 제품들이 나오면 계속 새로운 구성' — 새 상품 48시간 · Cowork 큐레이션 칸(비었을 때만 자동) · 오늘 기록(status.json) · 구성 5개까지 · 가격 확인 48시간 안만(14:10)
+
+
+def chk_ts(p):
+    """가격 확인 시각(epoch): 진열 chkt('YYYY-MM-DD HH:MM') → chk('M/D H시' — 올해, 하루 넘게 앞이면 작년) → 글 시각."""
+    if re.match(AT_RX, p.get("chkt") or ""):
+        return kst_ts(p["chkt"])
+    m = re.match(r"(\d{1,2})/(\d{1,2})\s+(\d{1,2})", p.get("chk") or "")
+    if not m:
+        return kst_ts(p["t"])
+    y = time.gmtime(time.time() + 9 * 3600).tm_year
+    at = lambda y: kst_ts(f"{y}-{int(m[1]):02d}-{int(m[2]):02d} {int(m[3]):02d}:00")
+    return at(y) if at(y) <= time.time() + 86400 else at(y - 1)
 
 
 def new_sets(seen):
     """10/31 Cowork 새 기능(진우 '새 제품 나오면 계속 새로운 구성 · 깃허브에서'): 지난 실행 뒤 posts.json(채널 딜·사이트 진열 — 쿠팡·토스·네이버)에 처음 들어온 상품 = 새 상품(48시간) →
-    같은 몰 + 같은 칸(cat_of — CAT_SHORT 이름)에서 다양성 규칙(같은 브랜드 1개·같은 종류 X·72시간 안 묶음에 나간 상품 X·이미 구성에 든 상품 X)을 거친 새 상품 3개↑ = 새 구성 1개(5개까지) ·
-    3개 밑 = 억지 X(개별 핫딜·진열 그대로) · 로그 '새 구성 만듦/모자람'. 올리는 자리(새 시각 X): ① 그날 Cowork 큐레이션 칸(NSET_SLOTS)이 events.json에 비었으면 그 칸 자동 큐레이션(auto_events.json —
-    curation()이 텔레그램·Threads·인스타·사이트 주제 쪽 · 묶음 기록에 넣어 72시간 회전) ② 아니면 다음 쿠팡 묶음(top_deals)에서 먼저. 오늘 구성 = nset.json(status.json·Cowork 보고). 첫 실행 = 지금 상품을 '본 것'으로만."""
+    같은 몰 + 같은 칸(cat_of — CAT_SHORT 이름)에서 다양성 규칙(같은 브랜드 1개·같은 종류 X·72시간 안 묶음에 나간 상품 X·이미 구성에 든 상품 X)을 거친 새 상품 3개↑ = 새 구성 1개(5개까지).
+    14:10(진우 '새 상품이 없으면 기존 상품 중 좋은 걸'): 새 상품 3개 밑 = 그 몰·그 칸 기존 진열 상품으로 채움(새 상품 맨 앞) · 새 구성 없이 빈 큐레이션 칸이 3시간 안 = 기존 상품만으로 1개(48시간 안 구성한 칸 X).
+    기존 상품 고르는 순서 = 우리 반응(top.json → gc_top 사이트 클릭 순) → 리뷰 수 → 1개 값 싼 것 · 빼는 것 = 수수료 링크 아님(cp_fail 생 주소)·품절/뺌·가격 확인 48시간 넘음·철 지남(season_adj < 0)
+    ·72시간 안 묶음(👍 꾸준템·잘 된 상품 1개 예외 — 오늘 안 나간 것)·7일 안 같은 세트(기존 상품 하나씩 바꿈)·같은 브랜드. 3개 밑 = 억지 X · 로그 '새 구성 만듦/모자람'·'기존 상품 구성 만듦'.
+    올리는 자리(새 시각 X): ① 그날 Cowork 큐레이션 칸(NSET_SLOTS)이 events.json에 비었으면 그 칸 자동 큐레이션(auto_events.json — curation()이 텔레그램·Threads·인스타·사이트 주제 쪽 · 묶음 기록에 넣어 72시간 회전)
+    ② 아니면 다음 쿠팡 묶음(top_deals)에서 새 상품 먼저. 오늘 구성 = nset.json(k = new·mix·old → status.json). 첫 실행 = 지금 상품을 '본 것'으로만."""
     now, posts = time.time(), load(POSTS, [])
     kst = time.gmtime(now + 9 * 3600)
-    today = time.strftime("%Y-%m-%d", kst)
+    today, md = time.strftime("%Y-%m-%d", kst), f"{kst.tm_mon}/{kst.tm_mday} "
     live = [p for p in posts if p.get("url") and (p.get("mid") or p.get("shelf")) and shop_of(p) and not tdead(p["url"]) and not p["text"].startswith("📋")]
     byu, st = {p["url"]: p for p in live}, seen.get("npseen")
     if not st:
@@ -4027,50 +4043,95 @@ def new_sets(seen):
     old = set(st["h"])
     np = [x for x in seen.get("np", {}).get("h", []) if now - x[0] < NSET_H * 3600] + [[now, u] for u in byu if dup_h(u) not in old]
     seen["npseen"], seen["np"] = {"t": now, "h": sorted(old | {dup_h(u) for u in byu})}, {"t": now, "h": np}
-    sets = [x for x in seen.get("nset", {}).get("h", []) if now - x[0] < NSET_H * 3600]  # [시각, 몰, 칸, 주소들, 이름, 칸 시각]
-    used = {u for x in sets for u in x[3]} | {u for h in seen.get("thlist", {}).get("h", []) if now - h[0] < TH_ROT_H * 3600 for u in h[1]}
+    sets = [x for x in seen.get("nset", {}).get("h", []) if now - x[0] < NSET_H * 3600]  # [시각, 몰, 칸, 주소들, 이름, 칸 시각, 종류 new·mix·old]
+    hist = seen.get("thlist", {}).get("h", [])
+    used = {u for x in sets for u in x[3]} | {u for h in hist if now - h[0] < TH_ROT_H * 3600 for u in h[1]}
+    name = lambda p: short_name(title_of(p["text"]))
+    ok = lambda p: aff(p["url"]) and p.get("st") not in ("gone", "out") and now - chk_ts(p) <= NSET_FRESH * 3600 and season_adj(name(p)) >= 0 and not name_block(name(p), "새 구성")  # 이름 막기(분유 등) = 다른 진열 묶음과 같이
+    npu, tday = {u for _, u in np}, {u for h in hist if h[0] >= kst_ts(today + " 00:00") for u in h[1]}
+    tops = {x.get("url"): n for n, x in enumerate(load(TOP, {}).get("items", [])) if x.get("url")}
+    gcs = {u: n for n, u in enumerate((load(GC_TOP, {}) or {}).get("urls", []))}
+    good = lambda p: (icon_of(p["text"]) == "👍" or p.get("stdy") or p["url"] in tops) and p["url"] not in tday  # 꾸준템 예외 = 하루 1번
+    rv = lambda p: steady_n(m[1]) if (m := re.search(STEADY_REV, p["text"])) else 0
+    score = lambda p: (tops.get(p["url"], 999), gcs.get(p["url"].split("?")[0], 999), -rv(p), won(p.get("now") or parse(title_of(p["text"]))[2]) or 10 ** 9)
+    olds = {}  # (몰, 칸) -> 기존 상품(좋은 순)
+    for p in sorted((p for p in byu.values() if p["url"] not in npu and cat_of(p) in CAT_SHORT and ok(p) and (p["url"] not in used or good(p))), key=score):
+        olds.setdefault((shop_of(p), cat_of(p)), []).append(p)
+    recent = {frozenset(h[1]) for h in hist} | {frozenset(x[3]) for x in sets}  # 7일(thlist) 안 나간 세트
+
+    def pickf(cs):  # 같은 브랜드 1개·같은 종류 X·NSET_MAX · 72시간 안 나간 상품(꾸준템 예외) = 1개만
+        pick = []
+        for p in cs:
+            if len(pick) < NSET_MAX and not any(brand_of(name(p)) == brand_of(name(q)) or same_kind(name(p), name(q)) for q in pick) and (p["url"] not in used or not any(q["url"] in used for q in pick)):
+                pick.append(p)
+        return pick
+
+    def build(new, fill):  # 새 상품 맨 앞 + 기존 좋은 순 · 7일 안 같은 세트 = 마지막 기존 상품 빼고 다시
+        while True:
+            pick = pickf(new + fill)
+            if not pick or frozenset(p["url"] for p in pick) not in recent or pick[-1] not in fill:
+                return pick
+            fill = [p for p in fill if p is not pick[-1]]
+
     groups = {}
     for _, u in sorted(np, key=lambda x: -x[0]):
-        if u in byu and u not in used:
+        if u in byu and u not in used and ok(byu[u]):
             groups.setdefault((shop_of(byu[u]), cat_of(byu[u])), []).append(byu[u])
     short, made = [], []
     for (mall, cat), ps in groups.items():
         if cat not in CAT_SHORT:  # 칸 모름 = 구성 X(사이트 쪽·이름 없음)
             continue
-        pick = []
-        for p in ps:
-            nm = short_name(title_of(p["text"]))
-            if len(pick) < NSET_MAX and not any(brand_of(nm) == brand_of(short_name(title_of(q["text"]))) or same_kind(nm, short_name(title_of(q["text"]))) for q in pick):
-                pick.append(p)
+        pick = pickf(ps)
+        if len(pick) < TH_LIST_MIN:  # 14:10 새 상품 모자람 = 그 몰·그 칸 기존 좋은 상품으로 채움
+            pick = build(pick, olds.get((mall, cat), []))
+        nn = sum(p["url"] in npu for p in pick)
         if len(pick) < TH_LIST_MIN:
             short.append(f"{mall} {CAT_SHORT.get(cat, cat)} {len(pick)}")
             continue
-        made.append([now, mall, cat, [p["url"] for p in pick], CAT_SHORT.get(cat, "새로 들어온"), ""])
-        print(f"새 구성 만듦 · {mall} {made[-1][4]} {len(pick)}개")
+        made.append([now, mall, cat, [p["url"] for p in pick], CAT_SHORT.get(cat, "새로 들어온"), "", "new" if nn == len(pick) else "mix"])
+        print(f"새 구성 만듦 · {mall} {made[-1][4]} {len(pick)}개" + (f"(새 {nn} · 기존 {len(pick) - nn})" if nn < len(pick) else ""))
     if short and any(now - x[0] < 60 for x in np):  # 이번 실행에 새 상품이 들어왔을 때만(15분마다 같은 줄 X)
         print("새 구성 모자람 · " + " · ".join(short[:6]))
     sets += made
     cow = {e.get("at") for e in (json.load(open(EVENTS)) if os.path.exists(EVENTS) else []) if isinstance(e, dict) and e.get("curation")}  # Cowork 큐레이션 = 먼저(자리 있으면 자동 X)
     taken = cow | {e.get("at") for e in load(AUTO_EVENTS, []) or [] if isinstance(e, dict) and e.get("curation")}
-    for x in sets:
-        slot = next((f"{today} {s}" for s in NSET_SLOTS if f"{today} {s}" not in taken and kst_ts(f"{today} {s}") - now >= 20 * 60), None)
-        ps = [byu[u] for u in x[3] if u in byu]
-        if x[5] or not slot or len(ps) < TH_LIST_MIN:
-            continue
-        cm, pr = {}, lambda p: parse(title_of(p["text"]))[2].split("/")[0].strip()
+    nxt = lambda: next((f"{today} {s}" for s in NSET_SLOTS if f"{today} {s}" not in taken and kst_ts(f"{today} {s}") - now >= 20 * 60), None)
+    gct = set((load(GC_TOP, {}) or {}).get("urls", [])[:PH_TOP])
+
+    def place(x, slot):
+        ps = [byu[u] for u in x[3] if u in byu and ok(byu[u])]  # 올릴 때 다시 봄(품절·확인 48시간)
+        if len(ps) < TH_LIST_MIN:
+            return False
+        k, cm = (x[6] if len(x) > 6 else "new"), {}
+        pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(md) else "")
         hook, q = th_list_copy(seen, int(slot[11:13]), [(p, pr(p), "", 2) for p in ps], cm, x[4])
-        text = aff_notes([p["url"] for p in ps]) + f"\n\n🆕 새로 들어온 {x[4]} {len(ps)}개\n{hook}\n\n" + "\n\n".join(
-            f"{NUM[k]} {clip(short_name(title_of(p['text'])), 30)} {pr(p)}" + "".join(f"\n{y}" for y in [" · ".join(z for z in (p.get("unit"), cm.get(p["url"])) if z)] if y) for k, p in enumerate(ps)) \
+        head = f"🆕 새로 들어온 {x[4]} {len(ps)}개" if k == "new" else f"🧺 다시 보는 장바구니 — {x[4]}"  # 14:10 '많이 팔린'·'인기 1위' X
+        text = aff_notes([p["url"] for p in ps]) + f"\n\n{head}\n{hook}\n\n" + "\n\n".join(
+            f"{NUM[n]} {'🆕 ' if k != 'new' and p['url'] in npu else ''}{clip(name(p), 30)} {pr(p)}"
+            + "".join(f"\n{y}" for y in [" · ".join(z for z in (p.get("unit"), cm.get(p["url"]), "핫딜픽에서 많이 눌러 본" if p["url"].split("?")[0] in gct else "") if z)] if y) for n, p in enumerate(ps)) \
             + f"\n\n{toss_when(slot)}" + (f"\n\n{q}" if q else "")
         auto_add([{"at": slot, "curation": True, "topic": x[4], "link": f"{SITE}c/{x[2]}/", "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
-        x[5], taken = slot, taken | {slot}
+        x[5] = slot
         seen["thlist"] = {**seen.get("thlist", {"h": []}), "t": now, "h": seen.get("thlist", {}).get("h", []) + [[now, x[3], "nset", []]]}  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
-        print(f"새 구성 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
-    seen["nset"] = {"t": now, "h": sets}
-    day = [{"name": x[4], "mall": x[1], "n": len(x[3]), "slot": x[5][11:]} for x in sets if time.strftime("%Y-%m-%d", time.gmtime(x[0] + 9 * 3600)) == today]
-    if day != (load(NSET_FILE, {}) or {}).get("items") or (load(NSET_FILE, {}) or {}).get("d") != today:
-        json.dump({"d": today, "items": day}, open(NSET_FILE, "w"), ensure_ascii=False, indent=0)  # 오늘 새 구성(이름·몰·상품 수 — 가격 X)
+        print(f"{'새 구성' if k != 'old' else '기존 상품 구성'} 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
+        return True
 
+    for x in sets:
+        if not x[5] and (slot := nxt()) and place(x, slot):
+            taken |= {slot}
+    if (slot := nxt()) and kst_ts(slot) - now <= CUR_PREP:  # 14:10 새 구성 없이 빈 칸 = 기존 좋은 상품 구성 1개(칸 3시간 전부터 — Cowork가 먼저 채울 틈)
+        cats, inset = {x[2] for x in sets}, {u for x in sets for u in x[3]}
+        for (mall, cat), ps in sorted(olds.items(), key=lambda kv: score(kv[1][0])):
+            pick = [] if cat in cats else build([], [p for p in ps if p["url"] not in inset])
+            if len(pick) >= TH_LIST_MIN:
+                sets.append([now, mall, cat, [p["url"] for p in pick], CAT_SHORT[cat], "", "old"])
+                print(f"기존 상품 구성 만듦 · {mall} {CAT_SHORT[cat]} {len(pick)}개")
+                place(sets[-1], slot)
+                break
+    seen["nset"] = {"t": now, "h": sets}
+    day = [{"name": x[4], "mall": x[1], "n": len(x[3]), "slot": x[5][11:], "k": x[6] if len(x) > 6 else "new"} for x in sets if time.strftime("%Y-%m-%d", time.gmtime(x[0] + 9 * 3600)) == today]
+    if day != (load(NSET_FILE, {}) or {}).get("items") or (load(NSET_FILE, {}) or {}).get("d") != today:
+        json.dump({"d": today, "items": day}, open(NSET_FILE, "w"), ensure_ascii=False, indent=0)  # 오늘 구성(이름·몰·상품 수·종류 — 가격 X)
 
 def th_list_copy(seen, h, pick, cm, theme=""):
     """묶음 글 말(10/31 진우 '보고 싶게'): Claude 1번 -> (훅, 질문) + cm[주소] = 한 줄 · 규칙(무례·사라는 말·써 본 척·숫자·길이) 어긋난 줄 = 뺌 / 실패 = TH_LIST_HOOK·TH_LIST_Q(날짜로 돌림)."""
@@ -11043,7 +11104,7 @@ def status_dm(seen):
     if today == time.strftime("%Y-%m-%d", time.gmtime(kst_ts(CP_RUSH[1]) + 9 * 3600 + 86400)):  # CCC 몰아서 재시도(~CP_RUSH 끝) 다음 날 1번: 남은 변환 실패 수
         print(f"cp_rush 끝({CP_RUSH[1][5:10].replace('-', '/')}) · 남은 cp_fail {st.get('cp_fail')}개")
     w = [str(x) for x in st.get("warn") or []]
-    print("status", f"진열 {st.get('site')} · 사이트맵 {st.get('sitemap')} · 빠진 진우 {st.get('missing')} · 변환 실패 {st.get('cp_fail')} · 이상 {len(w)}건")
+    print("status", f"진열 {st.get('site')} · 사이트맵 {st.get('sitemap')} · 빠진 진우 {st.get('missing')} · 변환 실패 {st.get('cp_fail')} · 이상 {len(w)}건" + (f" · {st['nset_n']}" if st.get("nset_n") else ""))
     if w:
         tg("sendMessage", chat_id=ADMIN, text=f"🩺 사이트 점검 {kst.tm_mon}/{kst.tm_mday} ({st['at'][11:]} 빌드) — 이상 {len(w)}건\n" + "\n".join("• " + x for x in w))
 
