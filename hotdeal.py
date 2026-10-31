@@ -5530,7 +5530,10 @@ def rv_bad(l, text, hook, ctx, dup=False, names=()):
     return ""
 
 
-def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", valid=None):
+PRICE_COND = r"와우\s*(?:회원\s*)?가|쿠폰\s*(?:적용\s*)?가|회원\s*가|카드\s*(?:할인\s*)?가|첫\s*구매\s*가|멤버십\s*가|정기\s*배송\s*가"  # 가격 조건 — 빼면 누구나 그 가격처럼 보임(10/31 16:20 할로윈 큐레이션 '9,010원 와우가' → '9,010원')
+
+
+def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", valid=None, keep=()):
     """Z-4 재검토(게시 직전 — 예약 글도): 멘트 줄(lines = Claude·Cowork가 쓴 줄)을 코드 검사(rv_bad) + Claude 1번(체크리스트 ①~⑥ · 글 전체·원본 사실·오늘 계절 같이 — 실행마다 RV_MAX번)
     -> {줄: 고친 줄 또는 ''(뺌)} — 안 바뀐 줄은 없음. 고친 줄 = 코드 검사 다시(없던 숫자·너무 김 포함) + 부른 곳 규칙(valid(옛 줄, 새 줄) — 토스 비교·~요·금지어·폭 등), 걸리면 뺌 · 코드 검사에 걸렸는데 못 고침(Claude 실패·상한) = 뺌.
     ai=False·Claude 실패·키 없음·이 종류 RV_MAX번 넘음 = 코드 검사만(글은 나감) · 하루 기록 RUN['rvst'](seen rvst_ — 관리봇 rv_report). 로그엔 줄 글자 X(토스 가격 등 — 개수·이유 종류만)."""
@@ -5545,13 +5548,17 @@ def review(where, text, lines, facts="", dup=False, names=(), ai=True, hook="", 
         RUN["rvw"][where] = RUN["rvw"].get(where, 0) + 1
         try:
             a = ai_review(RV_PROMPT + f"\n\n{ctx['line']}\n\n원본 사실:\n{facts or '(글에 적힌 상품명·가격 그대로)'}\n\n글 전체:\n{text}\n\n멘트 줄:\n" + "\n".join(f"- {l}" for l in lines)
-                          + ("\n\n코드 검사에 걸린 줄(꼭 고치거나 빼기):\n" + "\n".join(f"- {l} — {r}" for l, r in bad.items()) if bad else ""))
+                          + ("\n\n코드 검사에 걸린 줄(꼭 고치거나 빼기):\n" + "\n".join(f"- {l} — {r}" for l, r in bad.items()) if bad else "")
+                          + ("\n\n그대로 둘 말(오늘 행사 코너 — 빼거나 바꾸지 말 것): " + " · ".join(keep) if keep else ""))
             fix = {norm(x["line"]).removeprefix("- "): norm(x["new"]) for x in a.get("fix") or [] if isinstance(x, dict) and isinstance(x.get("line"), str) and isinstance(x.get("new"), str)}
         except Exception as e:  # 실패 = 코드 검사만
             print("review 코드 검사만", where, clip(repr(e), 80))
     nums, ch, why = lambda x: set(re.findall(r"\d[\d,.]*", x)), {}, collections.Counter()  # why = 뺀 이유 종류(로그 — 줄 글자 X)
+    kp = lambda x: {re.sub(r"\s", "", w) for w in re.findall("|".join([PRICE_COND, *map(re.escape, keep)]), x)}
     for l in lines:
         n = fix.get(l, l)
+        if n != l and kp(l) - kp(n):  # 10/31 16:45 Cowork: 옛 줄의 가격 조건(와우가·쿠폰가…)·지킬 말(행사 이름·'오늘 밤 12시까지')이 빠진 고침 = 버림(옛 줄 그대로)
+            n, why["지킬 말"] = l, why["지킬 말"] + 1
         if n != l and n:
             r = "새 숫자" if nums(n) - nums(l + facts + text) else "폭" if th_w(n) > max(th_w(l) * 1.5 + 4, TH_W + 6) else "규칙" if valid and not valid(l, n) \
                 else "다시 검사" if rv_bad(n, text.replace(l, n), "" if l == hook else ch.get(hook, hook), ctx, dup, names) else ""
@@ -8862,6 +8869,13 @@ def cur_chain(seen, tok, pid, e):
     print(f"chain 답글 {n}/{len(ch)}개")
 
 
+def cur_keep(e):
+    """행사 코너 큐레이션(tag = 행사 이름이거나 topic이 행사 이름에 들어감 · 그 행사 마지막 날(until) = 오늘 — 10/31 할로윈 반짝)의 그대로 둘 말: 행사 이름 낱말·topic·'오늘 밤 12시까지'·'오늘만'."""
+    today, tp = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), str(e.get("topic") or "").strip()
+    ts = [t for t, d in ev_tags().items() if d == today and (t == e.get("tag") or tp and (tp in t or t in tp))]
+    return tuple(dict.fromkeys(w for t in ts for w in (*t.split(), tp) if len(w) >= 2)) + (("오늘 밤 12시까지", "오늘만") if ts else ())
+
+
 def curation(seen):
     """큐레이션 글(events curation): 시각이 되면 텔레그램 채널 = 본문 + '🛍 더 보기' 버튼(같은 쪽, ref=tgc) · Threads = 사진(우리 서버 JPEG) 1장 IMAGE·2장↑ CAROUSEL, 본문 끝 링크(ref=thc), topic_tag = topic
     / 사진 없음 = TEXT + 링크 카드(정보 글처럼) · 6시간 지나면 X. 사진은 시각 3시간 전부터 준비(이 실행 커밋 -> 사이트에 뜨면(HEAD) 게시 · 준비 뒤 1시간 넘게 안 뜨면 뜬 사진만, 없으면 글 + 링크 카드 ·
@@ -8891,7 +8905,8 @@ def curation(seen):
             continue
         if "body" not in st:  # Z-5 예약 글 재검토 1번(링크 줄 말고) -> 채널·Threads·인스타 같은 본문(다시 시도 땐 Claude X)
             ls = e["text"].strip().split("\n")
-            ch = review("cur", e["text"].strip(), [l for l in ls if l.strip() and not re.search(r"https?:|\.kr/", l)])  # 첫 줄 = 훅(제목 줄 X)
+            kw = cur_keep(e)  # 10/31 행사 코너(할로윈 반짝) = 행사 이름·'오늘 밤 12시까지' 그대로(계절 말로 안 봄)
+            ch = review("cur", e["text"].strip(), [l for l in ls if l.strip() and not re.search(r"https?:|\.kr/", l)], names=kw, keep=kw)  # 첫 줄 = 훅(제목 줄 X)
             st["body"] = "\n".join(ch.get(re.sub(r"\s+", " ", l).strip(), l) for l in ls if ch.get(re.sub(r"\s+", " ", l).strip(), True))
         e = {**e, "text": st["body"]}
         body = e["text"].strip()

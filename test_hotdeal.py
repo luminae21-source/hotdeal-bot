@@ -12353,3 +12353,27 @@ s136 = {"stk": {"t": 1, "coffee-mix": "2026-10-31", "rice": "2026-10-30", "chat"
 assert H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) is None and (H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) or H.stk_chat(s136, TK("2026-11-01 13:12")))[0] == "chat-1"  # 계절 둘 다 3일 안 = 캐릭터 그림
 assert "or stk_chat(seen, now)" in inspect.getsource(H.chat_post) and not re.search(r'\(\s*"chat', open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read())  # 원본 = chat* 안 그림
 os.chdir(cwd136)
+# 9-137) 10/31 16:45 Cowork: 16:20 할로윈 큐레이션 재검토(review 'cur')가 '9,010원 와우가' → '9,010원'(누구나 그 가격처럼 보임) · '할로윈'·'오늘 밤 12시까지' 뺌
+#        → ① 고친 줄에서 옛 줄의 가격 조건(와우가·와우 회원가·쿠폰가·회원가·카드가·첫 구매가…)이 빠지면 고침 버림(옛 줄 그대로 — 모든 where) ② 행사 코너 큐레이션(마지막 날 = 오늘) = 행사 이름·'오늘 밤 12시까지'·'오늘만' 그대로
+sv137, cwd137 = (H.ai_review, H.E.get("ANTHROPIC_API_KEY"), H.REVIEW, time.time, H.EVENTS, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.E["ANTHROPIC_API_KEY"], H.REVIEW, H.RUN["rvw"], time.time = "k", True, {}, lambda: TK("2026-10-31 16:10")
+L137 = ["✨ 야광팔찌 100개 — 9,010원 와우가 (1개 90원)", "🍬 엘투 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", "🎃 호박 바구니 36개 — 14,490원 쿠폰가"]
+H.ai_review = lambda prompt: {"ok": False, "fix": [{"line": L137[0], "new": "✨ 야광팔찌 100개 — 9,010원 (1개 90원)"}, {"line": L137[1], "new": "🍬 츄이 캔디 약 100봉 — 16,550원 (10g 414원)"},
+                                                   {"line": L137[2], "new": "🎃 호박바구니 36개 — 14,490원 쿠폰가"}]}
+o137 = io.StringIO()
+with contextlib.redirect_stdout(o137): ch137 = H.review("ev", "\n".join(L137), L137)
+assert ch137 == {L137[1]: "🍬 츄이 캔디 약 100봉 — 16,550원 (10g 414원)", L137[2]: "🎃 호박바구니 36개 — 14,490원 쿠폰가"} and "지킬 말 1" in o137.getvalue(), (ch137, o137.getvalue())  # (1) 와우가 빠진 고침 = 버림 · 조건 그대로인 고침 = 받음
+H.EVENTS = S.EVENTS = "e137.json"; json.dump([{"at": "2026-10-31 15:20", "url": "u1", "shelf": True, "tag": "할로윈 반짝", "until": "2026-10-31", "text": "x"}], open("e137.json", "w"), ensure_ascii=False)
+E137 = {"at": "2026-10-31 16:20", "curation": True, "topic": "할로윈"}
+assert H.cur_keep(E137) == ("할로윈", "반짝", "오늘 밤 12시까지", "오늘만") and H.cur_keep({"topic": "생필품"}) == ()
+L137 = ["🎃 오늘만 여는 할로윈 반짝 코너", "할로윈 사탕, 나눠 주는 쪽이에요 받는 쪽이에요? 🍬", "⚠️ 결제 전 최종가 확인 (10/31 15시 가격) · 코너는 오늘 밤 12시까지", "가랜드·야광팔찌는 캠핑에도 쓸 수 있어요"]
+pr137 = []
+H.ai_review = lambda prompt: pr137.append(prompt) or {"ok": False, "fix": [{"line": L137[0], "new": "🎃 오늘 하루 여는 반짝 코너"}, {"line": L137[1], "new": "사탕, 나눠 주는 쪽이에요 받는 쪽이에요? 🍬"},
+                                                                       {"line": L137[2], "new": "⚠️ 결제 전 최종가 확인 (10/31 15시 가격)"}, {"line": L137[3], "new": "가랜드·야광팔찌는 캠핑 때도 쓸 수 있어요"}]}
+with contextlib.redirect_stdout(io.StringIO()): ch137 = H.review("cur", "\n".join(L137), L137, names=H.cur_keep(E137), keep=H.cur_keep(E137))
+assert ch137 == {L137[3]: "가랜드·야광팔찌는 캠핑 때도 쓸 수 있어요"} and "그대로 둘 말(오늘 행사 코너 — 빼거나 바꾸지 말 것): 할로윈 · 반짝 · 오늘 밤 12시까지 · 오늘만" in pr137[0], ch137  # (2) 행사 이름·마감 말 뺀 고침 = 버림 · 다른 고침 = 받음
+time.time = lambda: TK("2026-11-01 09:00"); assert H.cur_keep(E137) == ()  # 코너 끝난 다음 날 = 보통 재검토
+assert "names=kw, keep=kw" in inspect.getsource(H.curation)
+(H.ai_review, H.E["ANTHROPIC_API_KEY"], H.REVIEW, time.time, H.EVENTS, S.EVENTS) = sv137
+H.RUN.pop("rvw", None)
+os.chdir(cwd137)
