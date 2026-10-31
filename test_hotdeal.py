@@ -11927,7 +11927,7 @@ src129 = open(H.__file__, encoding="utf-8").read()
 assert "TOSS_GAP = 15 * 60" in src129 and TOSSAT0[:4] == ((10, 11, 13.5, 14, 16, 18.75, 20), 17 + 10 / 60, (13.5, 18.75), False) and TOSSAT0[5] == ("best", "cat") and ", 5, False, 6, True  # 10/31 진우: 하루 생필품" in src129
 H.TOSS_GAP, H.POSTS, H.EVENTS = 15 * 60, "posts129.json", "ev129.json"; json.dump([], open(H.POSTS, "w")); json.dump([], open(H.EVENTS, "w"))
 H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TH_TOSS_KINDS, H.TOSS_TH_LATER = TOSSAT0[0], TOSSAT0[1], TOSSAT0[2], TOSSAT0[3], TOSSAT0[5], {("day", 20): "21:20", ("special", 22): "22:20"}
-assert 'TOSS_TH_LATER = {("day", 20): "21:20", ("special", 22): "22:20"}' in src129 and f"{H.PREVIEW_HOUR:02d}:{H.PREVIEW_MIN:02d}" == "22:03"
+assert 'TOSS_TH_LATER = {("day", 20): "21:20", ("special", 22): "22:20"}' in src129 and "PREVIEW_HOUR, PREVIEW_MIN, PV_NAME = 22, 3," in src129
 for k in ("thmall", "tgmall", "tstop", "treuse"): H.RUN.pop(k, None)
 # ① 쿠팡 12:00 묶음 → 토스 12:10 미룸 / 12:16 OK(12:30 쿠팡 모음은 따로 — 그게 있으면 그 뒤 15분)
 s129 = {"thmall": {"t": 1, "cp": TK("2026-11-06 12:00")}}
