@@ -9993,10 +9993,11 @@ from PIL import Image as I94
 RD94, K94 = os.path.dirname(os.path.abspath(H.__file__)), ("ramen", "water", "toilet-paper", "coffee-mix", "wet-wipes", "eggs", "rice", "milk", "chat")
 src94 = open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read()
 assert tuple(re.findall(r'^    \("([a-z-]+)", "(?:dog|cat)"', src94, re.M)) == K94[:-1] and set(K94) - {"chat"} <= {it[0] for it in __import__("build_site").PRICE_ITEMS}  # 키 = 스티커 원본 · 품목 slug(chat = 진우 그림 10/31 — 원본에서 안 그림)
-assert sorted(os.listdir(os.path.join(RD94, H.STK_DIR))) == sorted(k + ".png" for k in K94 + H.CHAT_STK[1:]) and H.STK_DAYS == 3 and H.STK_SEASON[10] == H.STK_SEASON[11] == ("coffee-mix", "rice")
-for k94 in K94 + H.CHAT_STK[1:]:
+ls94 = os.listdir(os.path.join(RD94, H.STK_DIR)); ck94 = [f[:-4] for f in ls94 if re.fullmatch(r"chat(-\d+)?\.png", f)]
+assert sorted(set(ls94) - {k + ".png" for k in ck94}) == sorted(k + ".png" for k in K94[:-1]) and "chat" in ck94 and len(ck94) >= 13 and H.STK_DAYS == 3 and H.STK_SEASON[10] == H.STK_SEASON[11] == ("coffee-mix", "rice")
+for k94 in K94[:-1] + tuple(ck94):
     with I94.open(os.path.join(RD94, H.STK_DIR, k94 + ".png")) as im94:
-        assert im94.format == "PNG" and (im94.size == (1080, 1080) or k94 in ("coffee-mix",) + H.CHAT_STK and 320 <= im94.width <= 1440 and os.path.getsize(im94.filename) <= 8_000_000), (k94, im94.size)  # 진우 그림(coffee-mix · chat·chat-1~5 10/31) = Threads 사진 폭 320~1440·8MB 안  # 9장 · 1080×1080(coffee-mix = 진우 새 그림 10/29 1092×1440 — Threads 사진 폭 320~1440·8MB 안)
+        assert im94.format == "PNG" and (im94.size == (1080, 1080) or k94 in ["coffee-mix"] + ck94 and 320 <= im94.width <= 1440 and os.path.getsize(im94.filename) <= 8_000_000), (k94, im94.size)  # 진우 그림(coffee-mix · chat·chat-N 10/31 — 1254 정사각·1080×1350) = Threads 사진 폭 320~1440·8MB 안  # 9장 · 1080×1080(coffee-mix = 진우 새 그림 10/29 1092×1440 — Threads 사진 폭 320~1440·8MB 안)
 sv94 = (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http, H.time.sleep)
 d94 = tempfile.mkdtemp(); cwd94 = os.getcwd(); os.chdir(d94); os.makedirs(H.STK_DIR); json.dump([], open("posts94.json", "w")); H.POSTS, H.METRICS = "posts94.json", "m94.json"
 for k94 in K94:
@@ -10053,7 +10054,7 @@ o94 = chat94("2026-10-30 13:12", {**h94("2026-10-29", "shop", "home"), "stk": {"
 o94 = chat94("2026-12-02 13:12", h94("2026-12-01", "shop", "home")); assert "chat post: season" in o94 and po94[-1][1] == U94("chat")[1]  # 계절 품목 없는 달 = chat
 o94 = chat94("2026-10-29 13:12", h94("2026-10-28", "shop", "home", "season")); assert "chat post: quiz" in o94 and po94[-1][1] == U94("ramen")[1]  # 퀴즈 = 그 품목
 H.price_records = lambda *a, **k: {"shampoo": ("샴푸", "100ml당", [(480.0, "100ml당 480원", 0, {})] * 3)}
-o94 = chat94("2026-10-29 13:12", h94("2026-10-28", "shop", "home", "season")); assert "chat post: quiz" in o94 and po94[-1][1] == U94("chat")[1]  # 스티커 없는 품목 = 수다 글 기본(CHAT_STK — 10/31)
+o94 = chat94("2026-10-29 13:12", h94("2026-10-28", "shop", "home", "season")); assert "chat post: quiz" in o94 and po94[-1][1] == U94("chat")[1]  # 스티커 없는 품목 = 수다 글 기본(chat_stk — 10/31)
 H.promo_list = lambda today: [({"name": "블랙프라이데이", "start": "2026-11-05", "end": "2026-11-09"}, "soon", "2026-11-05")]; H.price_records = lambda *a, **k: {}
 o94 = chat94("2026-11-01 13:12", h94("2026-10-31", "shop", "home", "season")); assert "chat post: cal" in o94 and po94[-1][1] == U94("chat")[1]  # 달력 = chat
 H.promo_list = lambda today: []
@@ -12334,18 +12335,21 @@ assert [x[3] for x in s135["nset"]["h"]] == [["u8", "u9"]] and "새 구성 모�
 assert H.ev_tags() == {"할로윈 반짝": "2026-11-07"} and "evd.get(p.get(\"tag\")) != time.strftime(\"%Y-%m-%d\", kst)" in inspect.getsource(H.top_deals)
 (time.time, H.POSTS, H.EVENTS, S.EVENTS) = sv135e
 os.chdir(cwd135)
-# 9-136) 10/31 15:45 Cowork(진우 '이 사진들 저장하고 활용하자'): 수다 글 기본 스티커 = CHAT_STK(chat·chat-1~5 진우 캐릭터 그림) 중 가장 오래 안 쓴 것 · 같은 그림 3일 안 X · 파일 없는 키 = 건너뜀
-#        · 계절·퀴즈 스티커가 3일 규칙에 걸리면 = CHAT_STK(전엔 글만) · tools/stickers/stickers.py = chat 안 그림(진우 그림 덮어쓰기 X)
+# 9-136) 10/31 15:45·16:45 Cowork(진우 '이 사진들 저장하고 활용하자'): 수다 글 기본 스티커 = STK_DIR의 chat.png + chat-*.png 전부(glob — 손으로 안 적음) 중 가장 오래 안 쓴 것 · 같은 그림 3일 안 X
+#        · 계절·퀴즈 스티커를 못 쓰면 = 캐릭터 그림(전엔 글만) · tools/stickers/stickers.py = chat* 안 그림(진우 그림 덮어쓰기 X)
 d136, cwd136 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d136); os.makedirs(H.STK_DIR)
-for k in H.CHAT_STK[:4] + ("coffee-mix", "rice"):  # chat-4·chat-5 파일 없음 = 건너뜀
+for k in ("chat", "chat-1", "chat-2", "chat-10", "coffee-mix", "rice"):
     open(f"{H.STK_DIR}/{k}.png", "wb").close()
+assert H.chat_stk() == ("chat", "chat-1", "chat-2", "chat-10")  # 파일 있는 것만 · 숫자 순(chat-10 = chat-2 뒤)
 s136, k136 = {}, []
 for at in ("2026-10-31 13:12", "2026-10-31 20:00", "2026-11-01 13:12", "2026-11-02 13:12", "2026-11-03 13:12"):
     x = H.stk_chat(s136, TK(at)); k136.append(x and x[0]); x and H.stk_used(s136, x[0], TK(at))
-assert k136 == ["chat", "chat-1", "chat-2", "chat-3", "chat"], k136  # 같은 날 2번 = 다른 그림 · 안 쓴 것 먼저 · 3일 지나면(10/31 → 11/3) 다시 · 파일 없는 chat-4·5 X
-s136 = {"stk": {"t": 1, "chat": "2026-10-30", "chat-1": "2026-10-28", "chat-2": "2026-10-29", "chat-3": "2026-10-31"}}
-assert H.stk_chat(s136, TK("2026-11-02 13:12")) == ("chat-1", H.SITE + "img/stk/chat-1.png")  # 가장 오래 안 쓴 것(10/28)
+assert k136 == ["chat", "chat-1", "chat-2", "chat-10", "chat"], k136  # 같은 날 2번 = 다른 그림 · 안 쓴 것 먼저 · 3일 지나면(10/31 → 11/3) 다시
+open(f"{H.STK_DIR}/chat-11.png", "wb").close()
+assert H.stk_chat(s136, TK("2026-11-03 20:00")) == ("chat-11", H.SITE + "img/stk/chat-11.png")  # 새 그림 파일 = 코드 안 고쳐도 바로(안 쓴 것 먼저)
+s136 = {"stk": {"t": 1, "chat": "2026-10-30", "chat-1": "2026-10-28", "chat-2": "2026-10-29", "chat-10": "2026-10-31", "chat-11": "2026-10-31"}}
+assert H.stk_chat(s136, TK("2026-11-02 13:12"))[0] == "chat-1"  # 가장 오래 안 쓴 것(10/28)
 s136 = {"stk": {"t": 1, "coffee-mix": "2026-10-31", "rice": "2026-10-30", "chat": "2026-10-31"}}
-assert H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) is None and (H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) or H.stk_chat(s136, TK("2026-11-01 13:12")))[0] == "chat-1"  # 계절 둘 다 3일 안 = CHAT_STK
-assert "or stk_chat(seen, now)" in inspect.getsource(H.chat_post) and '"chat"' not in open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read()  # 수다 글 = 계절·퀴즈 못 쓰면 CHAT_STK · 원본 = chat 안 그림
+assert H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) is None and (H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) or H.stk_chat(s136, TK("2026-11-01 13:12")))[0] == "chat-1"  # 계절 둘 다 3일 안 = 캐릭터 그림
+assert "or stk_chat(seen, now)" in inspect.getsource(H.chat_post) and not re.search(r'\(\s*"chat', open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read())  # 원본 = chat* 안 그림
 os.chdir(cwd136)
