@@ -12171,7 +12171,7 @@ P132 = lambda k, n, at, mall="쿠팡", u=None: {"t": f"2026-11-06 {at}", "text":
 N132 = ["메디힐 세럼 50ml", "메디플라워 핸드크림 50ml", "메디힐 마스크팩 10매", "탐사 물티슈 100매", "퍼실 세탁세제 2.5L", "농심 신라면 5개", "삼다수 생수 2L 12병", "곰곰 계란 30구", "오뚜기 즉석밥 12개",
         "스카트 고무장갑", "크리넥스 키친타월", "다우니 섬유유연제", "3M 수세미 10개", "코멧 화장지 30롤"]  # 0~2 = 메디 계열(화장품) · 13 = 잘 된 상품(아래 top.json)
 json.dump([P132(k, n, f"14:{k:02d}") for k, n in enumerate(N132)] + [P132(50, "네이버 두루마리 휴지 30롤", "14:30", "네이버", "https://naver.me/x50")], open("posts132.json", "w"), ensure_ascii=False)
-items132 = lambda t: re.findall(r"^[1-7]️⃣ (?:👍 )?(.+?) [\d,]+원$", t, re.M)
+items132 = lambda t: re.findall(r"^[1-7]️⃣ (?:👍 )?(.+?) [\d,]+원(?: \(\d+/\d+ \d+시 확인\))?$", t, re.M)  # 11/1 ⑤ 2시간 넘은 확인 = '(M/D H시 확인)'
 s132 = {}; time.time = lambda: TK("2026-11-06 15:05"); o132 = io.StringIO()
 with contextlib.redirect_stdout(o132): H.top_deals(s132)
 b1 = items132(tb132[-1][1])
@@ -12394,35 +12394,48 @@ with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s138)
 assert len(s138["nset"]["h"]) == 1, s138["nset"]  # 같은 칸 새 1개 더 = 또 채우지 X
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv138
 os.chdir(cwd138)
-# 9-139) 11/1 Cowork(진우 결정 — GPT 몰별 카드 렌더러 v2 tools/card): 묶음 글 같은 상품 → 카드 JSON(가격 숫자+원·조건·1개 값·사진·확인 시각) → render.mjs PNG(docs/cards/mall)
-#        → 사이트에 뜨면 Threads 사진 글(다음 실행) · 45분 안 뜨면 글만 · 사진 거절 = 글만 · 3개 미만·6개↑·몰 섞임·토스(공개 저장소에 토스 가격 X) = 카드 X · 렌더 실패 = 글만(봇 그대로)
-sv139, cwd139 = (time.time, H.subprocess.run, H.http, H.th_bundle, H.MALL_CARD), os.getcwd(); os.chdir(tempfile.mkdtemp())
+# 9-139) 11/1 Cowork(진우 결정 몰별 카드 — 07:4x v3로 교체: tools/card = luminae21-source/hotdealpick-cards 3b497e8 그대로): 묶음 글 같은 상품 → v3 JSON(가격 숫자+원 · 조건 = 진열 now·💰 줄 · 상품 checked = 실제 확인 시각 · 루트 = 게시 기준 지금 · 이름 원문 · 제목 36자)
+#        → `node scripts/render.mjs --data data/run_*.json` → rendered/ → docs/cards/mall → 사이트에 뜨면 Threads 사진 글(다음 실행) · 45분 안 뜨면 글만 · 사진 거절 = 글만 · 3개 미만·6개↑·몰 섞임·토스 = X · 렌더 실패 = 글만
+#        + ⑤ 묶음 가격 칸 = 확인가 + 조건 + 2시간 넘은 확인 '(M/D H시 확인)' · 사이트 묶음 카드 '게시 시점 가격' = 다 이 회차 확인일 때만
+sv139, cwd139 = (time.time, H.subprocess.run, H.http, H.th_bundle, H.MALL_CARD, H.POSTS), os.getcwd(); os.chdir(tempfile.mkdtemp())
 time.time = lambda: TK("2026-11-01 12:05")
-C139 = lambda k, n, mall="쿠팡", **x: {"t": "2026-11-01 11:00", "text": f"{H.DISCLOSURE}\n\n🔥 [{mall}] {n} (9,900원)\n💰 100g당 186원꼴\n\n좋음", "url": f"https://link.coupang.com/a/K{k}" if mall == "쿠팡" else f"https://naver.me/K{k}" if mall == "네이버" else f"https://toss.shopping/_m/K{k}", "mid": k, **x}
-I139 = [(C139(1, "몬스터 롤리팝 100p", chkt="2026-11-01 10:20", img="https://thumbnail.coupangcdn.com/a.jpg"), "14,900원"), (C139(2, "야광팔찌 100개"), "9,010원 와우가"), (C139(3, "호박 바구니 36개"), "14,490원 쿠폰가 (10/31 15시 확인)")]
-d139 = H.mall_card_json("생필품 쟁여두기", I139)
-assert d139["mall"] == "coupang" and d139["title"] == "생필품 쟁여두기" and d139["checked"] == "2026-11-01 11:00" and [(x["price"], x["cond"], x["unit"], x["checked"]) for x in d139["items"]] == [
-    ("14,900원", "", "100g당 186원", "2026-11-01 10:20"), ("9,010원", "와우가", "100g당 186원", "2026-11-01 11:00"), ("14,490원", "쿠폰가", "100g당 186원", "2026-11-01 11:00")], d139  # 가격 = 숫자+원 · 조건 칸 따로 · 상품별 확인 시각
-assert d139["items"][0]["img"] == "https://thumbnail.coupangcdn.com/a.jpg" and d139["items"][1]["url"] == "https://link.coupang.com/a/K2"
+C139 = lambda k, n, mall="쿠팡", money="💰 100g당 186원꼴", **x: {"t": "2026-11-01 11:00", "text": f"{H.DISCLOSURE}\n\n🔥 [{mall}] {n} (9,900원)\n{money}\n\n좋음", "url": f"https://link.coupang.com/a/K{k}" if mall == "쿠팡" else f"https://naver.me/K{k}" if mall == "네이버" else f"https://toss.shopping/_m/K{k}", "mid": k, **x}
+I139 = [(C139(1, "몬스터 롤리팝 100p", chkt="2026-11-01 10:20", now="14,900원", img="https://thumbnail.coupangcdn.com/a.jpg"), "14,900원"),
+        (C139(2, "탐사 분리수거 쓰레기봉투 60L×200", money="💰 1장당 61원꼴 · 와우 할인 중", t="2026-10-30 00:44"), "12,240원"),  # 01:07 새벽 묶음 — 조건 = 💰 줄(글 가격엔 없음)
+        (C139(3, "리베로 기저귀 6단계 252매", money="💰 1매당 231원꼴 · 쿠폰 할인 중"), "58,200원")]
+d139 = H.mall_card_json("새벽 장바구니 · 생필품 3", I139)
+assert d139["mall"] == "coupang" and d139["title"] == "새벽 장바구니 · 생필품 3" and d139["checked"] == "2026-11-01 12:05" and [(x["price"], x["cond"], x["unit"], x["checked"]) for x in d139["items"]] == [
+    ("14,900원", "", "100g당 186원", "2026-11-01 10:20"), ("12,240원", "와우가", "1장당 61원", "2026-10-30 00:44"), ("58,200원", "쿠폰가", "1매당 231원", "2026-11-01 11:00")], d139  # 루트 = 게시 기준(지금) · 상품 = 실제 확인 시각 · 조건 = now·💰 줄
+assert d139["items"][0]["img"] == "https://thumbnail.coupangcdn.com/a.jpg" and d139["items"][1]["url"] == "https://link.coupang.com/a/K2" and set(d139) == {"mall", "title", "checked", "items"} and set(d139["items"][0]) == {"name", "price", "cond", "unit", "img", "url", "checked"}  # v3 스키마 그대로
+assert len(H.mall_card_json("가" * 50, I139)["title"]) == 36 and H.mall_card_json("t", [(C139(9, "가" * 200), "9,900원")] + I139[:2])["items"][0]["name"] == "가" * 179 + "…"  # 제목 36 · 이름 180(v3 2줄 처리)
 o139 = io.StringIO()
 with contextlib.redirect_stdout(o139):
     assert H.mall_card_json("생필품", I139[:2]) is None and H.mall_card_json("생필품", I139 * 2) is None  # (1) 3개 미만·6개↑ = 카드 X
     assert H.mall_card_json("생필품", I139[:2] + [(C139(4, "화장지 30롤", "네이버"), "9,900원")]) is None  # (2) 몰 섞임 = X
-    assert H.mall_card_json("토스 하루특가", [(C139(k, f"토스 상품 {k}", "토스"), "9,900원") for k in (5, 6, 7)]) is None  # (3) 토스 = X(카드 = 사이트 커밋 — 공개 저장소에 토스 가격 X · 게시 시점 줄은 card.html이 토스면 넣음)
-    assert H.mall_card_json("생필품", I139[:2] + [(C139(8, "다이어트 쉐이크"), "9,900원")]) is None  # card.html 금지 표현 상품 = 빼고 셈
-assert "mall card X 2개" in o139.getvalue() and "몰 coupang·naver" in o139.getvalue() and "몰 toss" in o139.getvalue(), o139.getvalue()
-# 렌더: node render.mjs(data/run_*.json → docs/cards/mall/날짜_시각_칸.png) → 공개 주소 · 실패 = None(글만)
-r139 = []
+    assert H.mall_card_json("토스 하루특가", [(C139(k, f"토스 상품 {k}", "토스"), "9,900원") for k in (5, 6, 7)]) is None  # (3) 토스 = X(v3 검증 = toss.im만 · 우리 = toss.shopping)
+    for n139 in ("다이어트 쉐이크", "30% 증량 세제", "네이버 단독 화장지", "결로 예방 시트"):
+        assert H.mall_card_json("생필품", I139[:2] + [(C139(8, n139), "9,900원")]) is None, n139  # validation.mjs 금지 표현·다른 몰 이름 상품 = 빼고 셈(카드 전체 실패 X)
+assert "mall card X 2개" in o139.getvalue() and "몰 coupang·naver" in o139.getvalue() and "mall card X 0개" in o139.getvalue(), o139.getvalue()
+# ⑤ 묶음 가격 칸
+p139 = [H.bundle_pr(p, pr) for p, pr in I139]
+assert p139 == ["14,900원", "12,240원 와우가 (10/30 0시 확인)", "58,200원 쿠폰가"], p139  # 10:20·11:00 확인 = 2시간 안 · 10/30 = 오래된 확인 표시
+H.POSTS = "p139.json"; json.dump([], open("p139.json", "w"))
+H.th_site("th1", H.DISCLOSURE, "생필품 3", list(zip([p for p, _ in I139], p139)))
+H.th_site("th12", H.DISCLOSURE, "생필품 2", list(zip([p for p, _ in I139[::2]], p139[::2])))
+r139 = [p["text"] for p in json.load(open("p139.json"))]
+assert "1시 묶음 · 상품마다 확인 시각" in r139[0] and "— 12,240원 와우가 (10/30 0시 확인)" in r139[0] and "12시 묶음 · 게시 시점 가격" in r139[1], r139  # 다 이 회차 확인일 때만 '게시 시점 가격'
+# 렌더(v3): npm ci(@playwright/test 1.64.1 · 브라우저 받기 X) → npx playwright install --only-shell chromium → node scripts/render.mjs --data → rendered/run_*.png → docs/cards/mall
+c139 = []
 def run139(cmd, **kw):
-    r139.append((cmd, kw.get("cwd"), (kw.get("env") or {}).get("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD")))
-    if cmd[0] == "node":
-        open(cmd[3], "wb").write(b"png")
+    c139.append((cmd, kw.get("cwd"), (kw.get("env") or {}).get("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD")))
+    if cmd[:2] == ["node", "scripts/render.mjs"]:
+        os.makedirs("tools/card/rendered", exist_ok=True); open(f"tools/card/rendered/{cmd[3][5:-5]}.png", "wb").write(b"png")
 H.subprocess.run = run139; os.makedirs("tools/card"); H.MALL_CARD = True
-with contextlib.redirect_stdout(io.StringIO()): u139 = H.mall_card("top12", "생필품 쟁여두기", I139)
+with contextlib.redirect_stdout(io.StringIO()): u139 = H.mall_card("top12", "생필품 쟁여두기 · 생필품 3", I139)
 assert u139 == H.SITE + "cards/mall/20261101_1205_top12.png" and os.path.exists("docs/cards/mall/20261101_1205_top12.png") and json.load(open("tools/card/data/run_20261101_1205_top12.json"))["items"][1]["cond"] == "와우가"
-assert [c[0][0] for c in r139] == ["npm", "node"] and r139[0][2] == "1" and r139[1][0][1:3] == ["render.mjs", "data/run_20261101_1205_top12.json"] and r139[1][1] == "tools/card"  # npm(브라우저 받기 X) → node
-H.subprocess.run = lambda cmd, **kw: (_ for _ in ()).throw(H.subprocess.CalledProcessError(1, cmd, stderr=b"Error: chrome not found"))
-with contextlib.redirect_stdout(io.StringIO()) as o: assert H.mall_card("top15", "생필품", I139) is None  # 렌더 실패 = 글만
+assert [c[0] for c in c139] == [["npm", "ci", "--no-audit", "--no-fund"], ["npx", "playwright", "install", "--only-shell", "chromium"], ["node", "scripts/render.mjs", "--data", "data/run_20261101_1205_top12.json"]] and c139[0][2] == "1" and {c[1] for c in c139} == {"tools/card"}
+H.subprocess.run = lambda cmd, **kw: (_ for _ in ()).throw(H.subprocess.CalledProcessError(1, cmd, stderr=b"Card is invalid: MALL_URL"))
+with contextlib.redirect_stdout(io.StringIO()) as o: assert H.mall_card("top15", "생필품", I139) is None  # 렌더·검증 실패 = 글만
 H.MALL_CARD = False; assert H.mall_card("top18", "생필품", I139) is None; H.MALL_CARD = True  # 스위치
 # 게시: 사이트에 뜨면 사진 글 · 45분 안 = 기다림 · 45분 넘음 = 글만 · 사진 거절(4xx) = 글만
 tb139, live139 = [], {"ok": False}
@@ -12443,8 +12456,9 @@ assert tb139 == [("top12", None, "생필품 쟁여두기")]  # 45분 넘게 안 
 tb139.clear(); live139.update(ok=True, rej=True); s139 = q139("2026-11-01 12:05"); time.time = lambda: TK("2026-11-01 12:20")
 with contextlib.redirect_stdout(io.StringIO()): H.mall_card_post(s139)
 assert tb139 == [("top12", None, "생필품 쟁여두기")]  # 사진 거절 = 글만 1번
-st139 = inspect.getsource(H.top_deals); assert "if img := mall_card(f\"top{hrs[-1]}\"" in st139 and "mall_card_post, top_deals" in inspect.getsource(H.main)
-RD139 = os.path.dirname(os.path.abspath(H.__file__)); h139 = open(os.path.join(RD139, "tools/card/card.html"), encoding="utf-8").read()
-assert "Affiliate disclosure is intentionally hardcoded" in h139 and "font-family:Pretendard,HDLocal" in h139 and "이미지 없음';im.replaceWith" in h139 and "process.env.PW_CHROME" in open(os.path.join(RD139, "tools/card/render.mjs")).read()
-(time.time, H.subprocess.run, H.http, H.th_bundle, H.MALL_CARD) = sv139
+st139 = inspect.getsource(H.top_deals); assert "if img := mall_card(f\"top{hrs[-1]}\"" in st139 and "pick = [(p, bundle_pr(p, pr), mk, s)" in st139 and "mall_card_post, top_deals" in inspect.getsource(H.main)
+RD139 = os.path.dirname(os.path.abspath(H.__file__))
+assert json.load(open(os.path.join(RD139, "tools/card/package.json")))["devDependencies"] == {"@playwright/test": "1.64.1"} and "chromium.launch()" in open(os.path.join(RD139, "tools/card/scripts/render.mjs")).read() \
+    and "이 포스팅은 쿠팡 파트너스 활동의 일환으로" in open(os.path.join(RD139, "tools/card/assets/validation.mjs")).read() and os.path.getsize(os.path.join(RD139, "tools/card/assets/mascots-anime-v2.png")) > 1_000_000  # v3 파일 그대로
+(time.time, H.subprocess.run, H.http, H.th_bundle, H.MALL_CARD, H.POSTS) = sv139
 os.chdir(cwd139)

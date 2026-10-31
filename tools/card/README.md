@@ -1,17 +1,182 @@
-# tools/card — 몰별 카드 렌더러 (진우 GPT v2 + Cowork 수정, 2026-10-31)
+# 핫딜픽 · JSON으로 만드는 3종 상품 카드
 
-진우가 GPT로 만든 렌더 전용 템플릿 v2(card.html + JSON + Playwright). 봇이 확인한 가격·사진으로 몰별 4:5 카드(1080×1350)를 만드는 용도. 데이터 틀 = data/ (빈 값 — 가짜 상품·가격 X).
+Claude가 `data/` 안의 상품 JSON을 입력하면 쿠팡·토스·네이버 카드가 핫딜픽 브랜드의 몰별 디자인으로 그려집니다. GitHub Actions가 데이터를 검사하고 Playwright로 **1080 × 1350 PNG**를 만든 뒤 GitHub Pages에 카드와 PNG를 함께 배포합니다. 브라우저의 캔버스나 SVG `foreignObject` 저장 기능을 사용하지 않습니다.
 
-## Cowork 시험(10/31, 실제 쿠팡 상품 5개 — 할로윈 반짝 데이터)과 고친 것
-1. 쿠팡 사진이 전부 안 나옴 — img.crossOrigin='anonymous' 때문(쿠팡 CDN은 CORS 헤더 없음 → ERR_FAILED). 스크린샷엔 CORS 필요 없어서 그 줄 삭제 → 5장 다 나옴.
-2. 토스 카드 겹침 — 제휴 문구 2줄 + 긴 제목이면 5번째 상품이 '게시 시점 가격' 줄·하단과 겹침. 절대 위치 → 세로 flex, 제목 한 줄 말줄임, 상품 칸 높이 자동.
-3. 글꼴 — Arial/Noto Sans KR 지정이라 Actions(ubuntu)에선 한글이 대체 글꼴로 나옴 → Pretendard(jsDelivr woff2) + document.fonts.ready 기다림. CDN이 막히면 봇 fonts/ 나눔고딕을 로컬 @font-face로.
-4. 시각 표시 — 머리 'M/D HH:MM 확인 가격', 상품별 시각은 머리와 다를 때만. 가격 조건(와우가 등) 빨강 굵게.
-5. 폴더 단순화 — scripts/render.mjs → render.mjs (package.json 그대로 맞춤).
+**v3는 몰별 색감을 강화해 세 카드를 더 쉽게 구분할 수 있게 했습니다.** 핫딜픽의 빨간 ‘딜’ 로고와 2D 애니메이션풍 강아지·삼색 고양이는 공통으로 유지합니다. 손을 흔드는 강아지와 장바구니 속 삼색 고양이가 카드 상단에 크게 등장하며, 몰별 색상은 다음과 같습니다.
 
-## 규칙(그대로)
-제휴 문구 HTML 고정(JSON으로 못 바꿈) · 카드 1장 = 몰 1개 · 가격+확인 시각 있는 상품만 · 3~5개 아니면 실패 · 정가·할인율 없음 · 금지 표현 검사 · 토스 = 하단 '⚠️ M/D HH:MM 게시 시점 가격'.
+| 몰 | v3 색상과 적용 기준 |
+| --- | --- |
+| 쿠팡 | 레드 `#F33430` · 옐로 `#FFD84D`. 몰을 구분하기 위해 자체적으로 정한 조합이며 쿠팡의 공식 색 코드라고 주장하지 않습니다. |
+| 네이버 | 그린 `#03C75A`. 본문 강조에는 가독성을 위해 진한 초록 `#007A37`을 사용합니다. 그린 참고: [네이버 브랜드 가이드](https://www.navercorp.com/company/brandGuide). |
+| 토스 | 블루 `#0064FF`. 색상 참고: [토스 브랜드 리소스 센터](https://brand.toss.im/). |
 
-## 실행
-cd tools/card && npm i && npx playwright install --with-deps chromium && node render.mjs data/coupang_1101.json output/card.png
-(render.yml.example = GPT 수동 워크플로 원본, 경로는 루트 기준 — 봇 연결 땐 hotdeal.yml 안에서 직접 부르기)
+세 디자인 모두 핫딜픽 카드이며 공식 몰 로고 이미지는 사용하지 않습니다. 최상단 제휴고지, 몰 혼합 금지, 상품·가격·확인시각 검증 규칙도 동일하게 적용됩니다.
+
+일러스트는 `assets/mascots-anime-v2.png`에 포함되어 있고, 생성 방식과 최종 프롬프트는 `ARTWORK.md`에 기록했습니다. 카드 속 문구와 가격은 그림에 합성된 글자가 아니라 검증한 JSON을 바탕으로 그리는 실제 텍스트입니다.
+
+**기본 JSON 3개는 모두 빈 초안입니다.** 가짜 상품이나 가격을 채워 넣지 않았으므로 처음 실행하면 카드와 판매용 PNG가 만들어지지 않는 것이 정상입니다. 검증된 상품을 몰별로 3개 이상 입력하면 생성됩니다.
+
+## 1. 로컬에서 시작하기
+
+Node.js 22 이상을 설치한 뒤 프로젝트 폴더에서 실행합니다.
+
+```sh
+npm ci
+npx playwright install chromium
+npm run dev
+```
+
+브라우저에서 `http://127.0.0.1:4173/`를 엽니다. 파일을 직접 더블클릭하는 `file://` 실행은 지원하지 않습니다. JSON 읽기에 로컬 HTTP 서버가 필요합니다.
+
+- 쿠팡: `http://127.0.0.1:4173/card.html?data=coupang.json`
+- 토스: `http://127.0.0.1:4173/card.html?data=toss.json`
+- 네이버: `http://127.0.0.1:4173/card.html?data=naver.json`
+- `?data=data/coupang.json`처럼 `data/`를 포함해도 됩니다.
+
+처음에는 `data/coupang.json`, `data/toss.json`, `data/naver.json` 중 해당 몰 파일을 채우세요. 카드를 추가하려면 `data/coupang_20261101.json`처럼 같은 폴더에 새 JSON 파일을 만드세요. 파일명에는 영문·숫자·밑줄·하이픈만 사용합니다. 파일마다 카드 한 장이 생성됩니다.
+
+## 2. Claude에게 전달하기
+
+프로젝트와 함께 **`CLAUDE.md`**를 전달하고 다음처럼 요청하세요.
+
+> CLAUDE.md의 규칙대로 data/ 안의 해당 몰 JSON만 수정해 주세요. 제공된 실제 상품 정보와 확인된 가격·시각만 입력하고, 확인하지 못한 값은 추정하지 마세요. 코드를 바꾸거나 제휴고지를 수정하지 마세요. npm run validate로 확인하고, 실제 확인된 상품이 3개 미만이면 카드를 완성했다고 하지 마세요.
+
+이 프로젝트에는 Claude API 키나 상품 크롤러가 필요하지 않습니다. Claude가 저장소 파일을 수정할 수 있는 환경에서 JSON을 작성하고 커밋하면 이후 과정이 자동 실행됩니다. 일반 Claude 채팅에서 JSON만 받은 경우에는 그 JSON을 `data/`에 저장하고 GitHub에 반영하세요.
+
+## 3. JSON 형식
+
+기존 필드 이름을 그대로 사용합니다. 아래는 배포용 예시가 아닌 **빈 입력 양식**입니다.
+
+```json
+{
+  "mall": "coupang",
+  "title": "오늘의 장바구니",
+  "checked": "",
+  "items": [
+    { "name": "", "price": "", "cond": "", "unit": "", "img": "", "url": "", "checked": "" },
+    { "name": "", "price": "", "cond": "", "unit": "", "img": "", "url": "", "checked": "" },
+    { "name": "", "price": "", "cond": "", "unit": "", "img": "", "url": "", "checked": "" }
+  ]
+}
+```
+
+| 필드 | 입력 규칙 |
+| --- | --- |
+| `mall` | `coupang`, `toss`, `naver` 중 하나. 한 파일에 한 몰만 사용 |
+| `title` | 카드 제목, 최대 36자. 금지 표현이나 다른 몰 비교 문구 제외 |
+| 루트 `checked` | 카드의 게시 기준 시각. 한국 시간 `YYYY-MM-DD HH:mm` |
+| `items` | 원본 행도 3~5개. 6개 이상을 넣고 자동으로 잘라 쓰는 방식은 불가 |
+| `name` | 실제 상품명, 최대 180자. 화면에는 최대 2줄, 원문은 JSON에 유지 |
+| `price` | 실제로 확인한 원화 가격 문자열. 현재 적용 조건에 맞는 가격 입력 |
+| `cond` | 가격 조건, 최대 12자. `와우가`, `쿠폰가`, `회원가` 등 확인한 조건만 입력. 없으면 빈 문자열 |
+| `unit` | 확인된 수량·용량으로 계산한 단위가, 최대 32자. 가격 아래 굵게 표시. 계산 근거가 없으면 빈 문자열 |
+| `img` | 상품 이미지 HTTPS 주소 또는 `assets/images/` 아래 로컬 이미지 경로. 없으면 빈 문자열 |
+| `url` | 해당 몰의 실제 상품·제휴 HTTPS 링크. 판매자명 필드는 없음 |
+| 상품 `checked` | **그 상품의 가격을 실제 확인한 시각**. 한국 시간 `YYYY-MM-DD HH:mm` |
+
+루트와 상품의 `checked`는 자동으로 서로 채워지지 않으며, 상품 확인시각은 게시 기준시각보다 늦을 수 없습니다. 다른 시스템에서 사용하는 `verifiedAt`도 추가하지 말고 기존 상품 `checked`에 매핑하세요. 숫자 대신 문자열을 사용하며, 주석·마지막 쉼표가 있는 JSON은 허용되지 않습니다.
+
+### 제외되는 행과 중단되는 카드
+
+- `price` 또는 상품 `checked`가 비어 있으면 해당 상품 행을 카드에서 뺍니다. 빈 가격칸을 그리지 않습니다.
+- 제외 후 3개 미만이면 카드와 PNG를 만들지 않습니다. 제외 후 3~5개면 제외 사유를 알리고 나머지를 표시합니다.
+- 가격과 확인시각이 있는 행은 `name`과 `url`도 필요합니다. 날짜 오류, 다른 몰 링크, 잘못된 필드 등은 카드 생성 자체를 중단합니다.
+- 완전히 빈 기본 양식은 초안으로 분류해 자동 생성에서 건너뜁니다. 일부만 작성한 잘못된 데이터는 초안으로 숨기지 않고 검사 실패로 처리합니다.
+- `seller`, `originalPrice`, `discountRate`, 사용자 지정 제휴고지 등 스키마 밖 필드는 허용하지 않습니다.
+
+### 몰과 문구 검사
+
+쿠팡은 `coupang.com` 계열, 토스는 `toss.im` 계열, 네이버는 `smartstore.naver.com`, `brand.naver.com`, `shopping.naver.com` 계열과 `naver.me` 링크를 사용합니다. 호스트 이름을 엄격히 확인하며 다른 몰의 상품 링크와 문구를 막습니다. 단축 주소의 도메인만으로 최종 판매처를 증명할 수는 없으므로 **입력 전에 실제 도착 페이지와 몰을 확인**해야 합니다.
+
+정가·할인율, 최저가, 미백·다이어트·면역 등 효능 주장, 직접 사용한 것처럼 꾸민 표현은 허용하지 않습니다. 자동 검사는 정해진 패턴을 검사하므로 모든 변형 표현이나 사실 여부를 판정하지는 못합니다. 상품명 자체에 금지 표현이 포함돼 검사에서 막히면 검사를 우회하지 말고 원자료를 확인하세요. 실제 확인 없이 현재 가격이나 확인시각을 만들어 넣으면 안 됩니다.
+
+## 4. 고정 디자인과 제휴고지
+
+제휴고지는 카드 최상단에 22px로 표시되며 JSON으로 수정하거나 삭제할 수 없습니다. 저장소 코드를 직접 바꾸는 것은 별개의 관리 작업입니다.
+
+| 몰 | 고정 문구 |
+| --- | --- |
+| 쿠팡 | 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다. |
+| 토스 | 이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다. |
+| 네이버 | 이 포스팅은 네이버 쇼핑 커넥트 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다. |
+
+상품명 30px 이상·최대 2줄, 가격 40px 이상, 단위가 굵게, 가격 조건과 상품 확인시각을 함께 표시합니다. 토스는 하단에 `⚠️ M/D HH:MM 게시 시점 가격`을 표시합니다. 몰 표시는 작은 문자 배지이고 몰 로고 이미지나 판매처 칸은 없습니다. 하단은 `hotdealpick.kr · 결제 전 최종가 확인`으로 고정됩니다.
+
+## 5. PNG 생성과 검사
+
+```sh
+npm run validate
+npm test
+npm run test:browser
+npm run render
+npm run build
+```
+
+순서는 **검사 → 브라우저 테스트 → PNG 생성 → 배포 폴더 구성**입니다. 전체 검사·생성은 GitHub Actions에서도 실행됩니다. Linux에서 Chromium 실행에 필요한 운영체제 라이브러리가 없으면 `npx playwright install --with-deps chromium`을 사용하세요.
+
+- `rendered/<JSON 파일명>.png`: 실제 데이터가 완성된 카드의 1080 × 1350 PNG.
+- `rendered/report.json`: 렌더링 결과, 제외 경고, 이미지 실패, 원본·렌더러 해시.
+- `dist/`: GitHub Pages에 배포할 파일만 모은 폴더.
+- `test-results/`: 판매용이 아닌 브라우저 테스트 캡처와 실패 진단 자료.
+
+파일 하나만 검사·렌더링하려면 다음처럼 지정합니다.
+
+```sh
+npm run validate -- --data data/coupang.json
+npm run render -- --data data/coupang.json
+```
+
+개별 렌더링은 `rendered/`를 그 실행 결과로 다시 구성합니다. **전체 사이트를 빌드하기 전에는 인자 없는 `npm run render`로 모든 카드를 다시 생성**하세요. JSON이나 디자인이 변경된 뒤 오래된 PNG를 배포하지 않도록 `build`가 해시를 확인합니다. 오래됐거나 누락된 PNG가 있으면 빌드가 실패합니다.
+
+### 상품 이미지 처리
+
+이미지는 로드 완료 또는 실패·시간 초과가 확인된 뒤 캡처합니다. 빈 이미지·접근 거부·잘못된 주소·시간 초과는 중립적인 이미지 준비 표시로 대체하고 카드의 상품명·가격은 유지합니다. 대체 사실은 결과 보고서에 남습니다. 성공한 외부 이미지는 실제 브라우저 화면을 캡처하므로 캔버스 CORS 제한 때문에 사라지지 않습니다. 다만 원본 서버가 외부 사용을 막으면 해당 이미지를 가져올 수 없습니다.
+
+권한이 있는 상품 이미지 파일을 `assets/images/`에 저장하고 `img`에 같은 상대 경로를 넣으면 외부 서버 의존성을 줄일 수 있습니다. 내부망 주소·비보안 HTTP·스크립트 URL은 허용하지 않습니다. 이미지 변경은 JSON만 편집하는 일반 운영과 별도로 해당 파일을 추가해야 합니다.
+
+## 6. GitHub Pages 배포
+
+1. 새 GitHub 저장소에 이 프로젝트의 **내용물 전체**를 넣습니다. `.github/`, `package-lock.json`, 로컬 폰트 파일도 포함하세요. `node_modules/`, `test-results/`는 올리지 않습니다.
+2. 저장소 **Settings → Pages → Build and deployment → Source → GitHub Actions**를 선택합니다.
+3. 기본 브랜치에 반영하거나 Actions 화면에서 **Validate, render and publish Hotdealpick** 워크플로를 기본 브랜치 대상으로 수동 실행합니다.
+4. Actions가 성공하면 Pages 주소를 엽니다. `https://<계정>.github.io/<저장소>/` 형태의 하위 경로 배포도 지원합니다.
+5. Claude가 `data/` JSON을 수정해 기본 브랜치에 반영할 때마다 다시 검사하고 카드·PNG를 갱신합니다.
+
+기본 빈 양식만 있는 첫 배포도 가능합니다. 이때 홈에는 초안 안내만 표시되고 PNG는 없습니다. 잘못된 상품 데이터나 렌더링 오류가 있으면 새 배포를 막습니다. 저장소의 Pages 사용 가능 여부와 Actions 실행 권한은 GitHub 설정에 따라야 합니다.
+
+모든 브랜치의 push와 pull request에서는 검사를 실행하며, 배포는 저장소 기본 브랜치에서만 실행합니다. CI는 Node.js 24를 사용합니다. 실행 결과의 Artifacts에서 `hotdealpick-cards-<실행번호>`로 PNG·보고서를, `hotdealpick-tests-<실행번호>`로 테스트 진단 자료를 내려받을 수 있습니다. 기본 보존 기간은 30일이며 수동 실행 시 30·60·90일 중 선택할 수 있습니다.
+
+정적 Pages는 서버에서 상품을 실시간 조회하지 않습니다. JSON이 바뀌어 다시 배포될 때 반영되며, 확인 이후 가격 변동은 자동으로 알 수 없습니다. `hotdealpick.kr`은 카드의 브랜드 문구입니다. 실제 사용자 도메인 연결은 저장소 Pages 설정과 DNS 설정에서 별도로 해야 합니다.
+
+## 7. 실제 렌더링 테스트와 데이터 구분
+
+테스트는 Chromium에서 카드가 그려진 뒤 3·4·5개 배치, 3개 몰의 제휴고지, 글자 크기, 두 줄 제한, 몰 혼합 차단, 이미지 성공·실패·빈칸, JSON 오류와 경로 검사를 확인합니다. PNG 자체의 가로·세로도 검사합니다.
+
+`tests/fixtures.mjs`의 상품명·가격은 사용자 참고 이미지에 표시됐던 **과거 값**입니다. 현재 판매 정보로 확인한 값이 아닙니다. 몰별 대입과 테스트용 링크는 테스트 시뮬레이션이며, 테스트 브라우저가 네트워크 응답을 대체합니다. 디자인 비교 캡처에는 **‘디자인 테스트 · 과거 참고자료 · 판매용 아님’** 표시를 22px로 넣습니다. 이 데이터와 캡처는 `data/`·`rendered/`·`dist/`로 배포하지 않습니다.
+
+외부 상품의 실시간 가격·구매 조건·제휴 자격은 자동 테스트가 검증하지 않습니다. 발행 전 실제 링크에서 조건과 가격을 확인하고, 해당 시각을 JSON에 기록하세요.
+
+## 8. 폴더 구성
+
+```text
+data/                   몰별 빈 JSON 양식 및 운영 데이터
+assets/                 카드 디자인, 검증, 로컬 폰트와 캐릭터
+scripts/                로컬 서버, 검사, PNG 생성, 배포 준비
+tests/                  분리된 검증·실제 브라우저 테스트
+.github/workflows/      GitHub Actions 검사·PNG·Pages 자동화
+card.html               JSON 한 개를 그리는 렌더 전용 페이지
+index.html              카드 목록과 PNG 링크
+CLAUDE.md               Claude가 따라야 할 입력 규칙
+README.md               실행·배포 안내
+```
+
+Pretendard 폰트 라이선스는 `assets/fonts/OFL.txt`에 포함되어 있습니다.
+
+JSON 파일명은 영문·숫자·밑줄·하이픈과 `.json` 확장자만 사용합니다. 각 상품 확인 시각은 루트 게시 기준 시각보다 늦을 수 없습니다. 가격은 양수 원화 문자열이며 최대 `999,999,999원`까지 검사합니다. 표시 공간을 넘는 입력은 PNG 저장 전에 검출해 실패 처리합니다.
+
+## 구현 참고 문서
+
+- [GitHub Pages의 사용자 지정 Actions 워크플로](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+- [Playwright 스크린샷](https://playwright.dev/docs/screenshots)
+- [Playwright GitHub Actions 설정](https://playwright.dev/docs/ci-intro)
+- [GitHub Actions 아티팩트 저장](https://github.com/actions/upload-artifact)

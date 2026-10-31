@@ -3,7 +3,7 @@
 상품 주소가 있으면(루리웹·클리앙 글) 링크프라이스 승인 몰은 상품 페이지 제휴 링크 자동, 없으면(뽐뿌: GitHub IP 차단) 검색 제휴 링크.
 쿠팡·네이버 등 수동 몰은 관리자에게 사본(+쿠팡은 파트너스 검색 버튼, 네이버는 상품명 복사·쇼핑커넥트 버튼, 그 외 상품 열기 버튼) -> 제휴 링크를 답장(또는 그냥 전송)하면 채널 글 교체. 쿠팡 골드박스는 매일 7시 이후 1번 채널에 바로(키 없으면 골드박스 링크, 있으면 TOP5).
 GitHub Actions에서 15분마다 실행(tick.yml 타이머가 workflow_dispatch로 실행 + 예약 보조). 외부 패키지 없음(파이썬 표준 라이브러리만)."""
-import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, subprocess, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os, random, re, shutil, subprocess, tempfile, time, urllib.error, urllib.parse, urllib.request, unicodedata
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -3955,6 +3955,7 @@ def top_deals(seen):
     if n < TH_LIST_MIN:  # KK(10/26 Cowork — 진우 '싼 제품 달랑 하나 올라가니 황당, 최소 3~5개'): ①~④로도 3개 밑 = 그 회차 Threads 리스트만 X
         print(f"threads skip top{hrs[-1]} {n}개")
         return
+    pick = [(p, bundle_pr(p, pr), mk, s) for p, pr, mk, s in pick]  # 11/1 ⑤ 확인가·조건·오래된 확인 시각 표시(Threads 글·사이트 묶음 카드·몰별 카드 같은 값)
     links, beauty, inl = min(n, TH_LIST_LINKS), [], [p for p, *_ in pick]  # 10/12 19:50 진우 '리스트로 만들어도 좋아': 개별 글이 못 된 화장품 🔥는 '💄 화장품' 칸으로 더함(셈에 안 넣음 · 링크는 합쳐 5개까지 — 넘으면 이름·가격만)
     for p in [p for p in posts if p.get("mid") and prev <= p["t"] < until and not p.get("th") and p not in inl and aff_note(p["url"] or "") and not th_weak(p["text"]) and th_beauty(title_of(p["text"])) and inb(p) and (TH_LIST_TOSS or not is_toss(p["url"], p["text"]))][:5]:
         line = f"· {clip(short_name(title_of(p['text'])), 26)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" + (f"\n👉 {th_url(p, posts.index(p))}" if links < 5 else "")
@@ -3978,7 +3979,7 @@ def top_deals(seen):
     th_site(f"th{hrs[-1]}", "\n".join(dict.fromkeys(aff_note(p["url"]) for p in inl)), f"{'·'.join(labs) or '오늘 묶음'} {n}", [(p, pr) for p, pr, *_ in pick], skey, sno, cm0)
     seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl], hrs[-1], sorted({kind_key(short_name(title_of(p["text"]))) for p in inl})]], "hq": [hook, q]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
     text, lk, tp = render(pick, beauty, hook, q), th_url(inl[0], posts.index(inl[0])), SERIES_BY[skey][0] if skey else None  # 주제 태그 = 시리즈 이름
-    if img := mall_card(f"top{hrs[-1]}", tp or "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
+    if img := mall_card(f"top{hrs[-1]}", f"{tp} · {'·'.join(labs) or '오늘 묶음'} {n}" if tp else f"{'·'.join(labs) or '오늘 묶음'} {n}", [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
         seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img}]}
     else:
         th_bundle(seen, f"top{hrs[-1]}", text, lk, topic=tp)
@@ -4208,52 +4209,58 @@ def th_list_copy(seen, h, pick, cm, theme=""):
     return hook, q
 
 
-MALL_CARD, MALL_CARD_DIR, MALL_CARD_WAIT, MALL_CARD_KEEP = True, "docs/cards/mall", 45 * 60, 7  # 11/1 진우 결정(Cowork tools/card — GPT 몰별 카드 렌더러 v2): 묶음 글 사진 = 같은 상품 카드(1080×1350) · 사이트에 뜨면 Threads(다음 실행) · 45분 안 뜨면 글만 · 7일 보관
-CARD_DIR, CARD_COND = "tools/card", (("와우", "와우가"), ("쿠폰", "쿠폰가"), ("회원가", "회원가"))  # 카드 가격 조건 = card.html 허용 3개만
-CARD_BAN = r"최저가|미백|다이어트|면역|직접\s*써|써\s*봤|사용해\s*봤|제가\s*사용|효능"  # card.html FORBIDDEN과 같게(걸린 상품 = 카드에서 뺌)
+MALL_CARD, MALL_CARD_DIR, MALL_CARD_WAIT, MALL_CARD_KEEP = True, "docs/cards/mall", 45 * 60, 7  # 11/1 진우 결정 몰별 카드(v3 — 진우 GPT 승인 디자인 · tools/card = luminae21-source/hotdealpick-cards 3b497e8 그대로): 묶음 글 사진 = 같은 상품 카드(1080×1350) · 사이트에 뜨면 Threads(다음 실행) · 45분 안 뜨면 글만 · 7일 보관
+CARD_DIR, CARD_COND, CARD_HOSTS = "tools/card", (("와우", "와우가"), ("쿠폰", "쿠폰가"), ("회원가", "회원가")), {"coupang": ("coupang.com",), "naver": ("smartstore.naver.com", "brand.naver.com", "shopping.naver.com", "naver.me")}
+CARD_BAN = (r"최저가|역대최저|lowestprice|bestprice|미백|다이어트|면역|효능|치료|완치|예방|항암|항염|혈당|혈압|체지방|지방분해|살빠|체중감량|피부재생|주름개선|탈모방지|통증완화|보습효과"
+            r"|써봤|써보니|써본|써보았|써봐서|사용해봤|사용해보니|사용해본|사용해보았|먹어봤|먹어보니|먹어본|먹어보았|직접사용|직접구매|직접먹|직접써|실사용|내돈내산|체험후기|체험했|체험한|찐후기|써보고|먹어보고|사용후기|사용해보고"
+            r"|정가|정상가|소비자가|기존가|원래가|할인율|할인률|[0-9]+(?:\.[0-9]+)?%|퍼센트할인|반값")  # tools/card/assets/validation.mjs FORBIDDEN 그대로(띄어쓰기 뺀 소문자에 검사) — 걸린 상품 = 카드에서 뺌(카드 전체 실패 X)
+CARD_MALLW = {"coupang": r"토스|toss|네이버|naver", "naver": r"토스|toss|쿠팡|coupang"}  # 다른 몰 이름 = validation.mjs MIXED_MALL
 
 
 def mall_card_json(title, items):
-    """tools/card 카드 JSON(11/1 Cowork): items = [(posts 글, 가격 글자)] -> {mall, title, checked, items:[{name, price, cond, unit, img, url, checked}]} 또는 None.
-    가격(숫자+원)·확인 시각(chk_ts — 진열 chkt·chk·글 시각) 있는 상품만 · 3~5개 · 몰 1개(섞임 X) · 토스 X(카드 = 사이트에 커밋 — 공개 저장소에 토스 가격 X) · 네이버 사진 X(규칙)."""
-    its, malls = [], set()
+    """tools/card v3 카드 JSON(11/1 Cowork): items = [(posts 글, 가격 글자)] -> {mall, title(36자), checked(게시 기준 = 지금), items:[{name, price, cond, unit, img, url, checked}]} 또는 None.
+    가격·조건 = 진열 확인가(now)·💰 줄 → 글 가격 · 상품 checked = 실제 확인 시각(chk_ts — 진열 chkt·chk·글 시각, 지금 복사 X) · 3~5개 · 몰 1개 · 쿠팡·네이버만(토스 = v3 검증 toss.im만 — 우리 링크 toss.shopping)
+    · validation.mjs 금지 표현·다른 몰 이름·몰 아닌 링크 상품 = 뺌 · 네이버 사진 X(규칙)."""
+    # clip(s, n) = n자 + '…' → v3 LIMITS(제목 36·이름 180·단위 32) 안으로 1자 덜
+    its, malls, fold = [], set(), lambda x: unicodedata.normalize("NFKC", x or "").replace(" ", "").lower()
     for p, pr in items:
-        n, name = won(pr or ""), short_name(title_of(p["text"]))
-        if not n or re.search(CARD_BAN, name):
+        mall, money = shop_of(p), (m[1] if (m := re.search(r"💰\s*([^\n]*)", p["text"])) else "")
+        src, name = p.get("now") or pr or "", short_name(title_of(p["text"]))
+        n, cond = won(src), next((c for w, c in CARD_COND if w in src or w in money or w in (pr or "")), "")
+        unit = p.get("unit") or (u[1].strip() if (u := re.search(r"([^\n·]*?당\s*[\d,]+원)", money)) else "")
+        host = urllib.parse.urlsplit(p.get("url") or "").hostname or ""
+        if not n or mall not in CARD_HOSTS or not str(p.get("url") or "").startswith("https://") or not any(host == h or h != "naver.me" and host.endswith("." + h) for h in CARD_HOSTS[mall]) \
+                or re.search(rf"{CARD_BAN}|{CARD_MALLW[mall]}", fold(name + unit + cond)):
             continue
-        unit = p.get("unit") or (m[1].strip() if (m := re.search(r"💰\s*([^\n·]*?당\s*[\d,]+원)", p["text"])) else "")
-        its.append({"name": clip(name, 40), "price": f"{n:,}원", "cond": next((c for w, c in CARD_COND if w in (pr or "")), ""), "unit": "" if re.search(CARD_BAN, unit) else unit,
-                    "img": "" if shop_of(p) == "naver" else img_of(p) or "", "url": p["url"] if str(p.get("url") or "").startswith("https://") else "",
+        its.append({"name": clip(name, 179), "price": f"{n:,}원", "cond": cond, "unit": clip(unit, 31), "img": "" if mall == "naver" else img_of(p) or "", "url": p["url"],
                     "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(chk_ts(p) + 9 * 3600))})
-        malls.add(shop_of(p))
-    if not 3 <= len(its) <= 5 or len(malls) != 1 or malls & {"toss", ""} or re.search(CARD_BAN, title or "") or not (title or "").strip():
-        print("mall card X", f"{len(its)}개" + (f" · 몰 {'·'.join(sorted(malls)) or '모름'}" if len(malls) != 1 or malls & {"toss", ""} else ""))
+        malls.add(mall)
+    if not 3 <= len(its) <= 5 or len(malls) != 1 or not (title or "").strip() or re.search(CARD_BAN, fold(title)):
+        print("mall card X", f"{len(its)}개" + (f" · 몰 {'·'.join(sorted(malls))}" if len(malls) > 1 else ""))
         return None
-    return {"mall": malls.pop(), "title": title.strip(), "checked": max(x["checked"] for x in its), "items": its}
+    return {"mall": malls.pop(), "title": clip(title.strip(), 35), "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), "items": its}
 
 
 def mall_card(kind, title, items):
-    """묶음 글 몰별 카드(11/1): mall_card_json -> tools/card/render.mjs(러너에 깔린 Chrome — PW_CHROME · playwright npm은 이때만 설치, 브라우저 받기 X) -> docs/cards/mall/날짜_칸.png
-    -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node/Chrome 없음·렌더 실패 = None(글만 — 봇은 그대로)."""
+    """묶음 글 몰별 카드(11/1 v3): mall_card_json -> tools/card `node scripts/render.mjs --data data/run_<stem>.json`(v3 그대로 — chromium.launch()라 브라우저 = `npx playwright install --only-shell chromium`, 묶음 회차에만)
+    -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node·브라우저 없음·검증·렌더 실패 = None(글만 — 봇은 그대로)."""
     d = MALL_CARD and mall_card_json(title, items)
     if not d:
         return None
     stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
-    data, out = f"data/run_{stem}.json", os.path.abspath(f"{MALL_CARD_DIR}/{stem}.png")
+    data, env = f"data/run_{stem}.json", {**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     try:
         os.makedirs(f"{CARD_DIR}/data", exist_ok=True)
         os.makedirs(MALL_CARD_DIR, exist_ok=True)
         json.dump(d, open(f"{CARD_DIR}/{data}", "w"), ensure_ascii=False)
-        os.makedirs(f"{CARD_DIR}/fonts", exist_ok=True)
-        for f in glob.glob("fonts/Pretendard-*.otf") + glob.glob("fonts/NanumGothic-*.ttf"):  # jsDelivr Pretendard 안 될 때 = 봇 글꼴(card.html HDLocal)
-            shutil.copy(f, f"{CARD_DIR}/fonts/")
-        if not os.path.isdir(f"{CARD_DIR}/node_modules/playwright"):
-            subprocess.run(["npm", "i", "--no-audit", "--no-fund"], cwd=CARD_DIR, env={**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}, timeout=120, check=True, capture_output=True)
-        chrome = os.environ.get("PW_CHROME") or shutil.which("google-chrome") or shutil.which("chromium") or ""
-        subprocess.run(["node", "render.mjs", data, out], cwd=CARD_DIR, env={**os.environ, "PW_CHROME": chrome}, timeout=90, check=True, capture_output=True)
-    except Exception as e:  # node·npm·Chrome 없음·시간 초과·카드 검증 실패 = 글만
-        err = getattr(e, "stderr", b"") or b""
-        print("mall card 렌더 X", kind, err_brief(e), err.decode("utf-8", "replace").strip().splitlines()[-1:] if err else "")
+        if not os.path.isdir(f"{CARD_DIR}/node_modules/@playwright/test"):
+            subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=CARD_DIR, env=env, timeout=60, check=True, capture_output=True)
+        subprocess.run(["npx", "playwright", "install", "--only-shell", "chromium"], cwd=CARD_DIR, timeout=120, check=True, capture_output=True)  # 이미 있으면 바로 끝
+        subprocess.run(["node", "scripts/render.mjs", "--data", data], cwd=CARD_DIR, timeout=60, check=True, capture_output=True)
+        shutil.copy(f"{CARD_DIR}/rendered/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
+    except Exception as e:  # node·npm·브라우저 없음·시간 초과·카드 검증(validation.mjs) 실패 = 글만
+        err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
+        print("mall card 렌더 X", kind, err_brief(e), err[-1:] if err else "")
         return None
     cut = time.strftime("%Y%m%d", time.gmtime(time.time() + 9 * 3600 - MALL_CARD_KEEP * 86400))
     for f in glob.glob(f"{MALL_CARD_DIR}/*.png"):  # 7일 지난 카드 = 지움(저장소 크기)
@@ -4261,6 +4268,20 @@ def mall_card(kind, title, items):
             os.remove(f)
     print("mall card 만듦", d["mall"], f"{len(d['items'])}개", stem)
     return f"{SITE}cards/mall/{stem}.png"
+
+
+TH_FRESH_H = 2  # 묶음 가격 '이 회차 확인' = 2시간 안 확인(진열 chkt·chk·글 시각) — 넘으면 '(M/D H시 확인)'
+
+
+def bundle_pr(p, pr):
+    """묶음 가격 칸(11/1 Cowork ⑤ — 01:07 새벽 묶음 '게시 시점 가격'인데 10/30 0시 확인값): 확인가(진열 now → 글 가격) + 조건(와우가·쿠폰가 — now·💰 줄·글 가격) + 2시간 넘은 확인 = '(M/D H시 확인)'."""
+    src, money = p.get("now") or pr or "", (m[1] if (m := re.search(r"💰\s*([^\n]*)", p["text"])) else "")
+    n = won(src)
+    if not n:
+        return pr
+    t, cond = chk_ts(p), next((c for w, c in CARD_COND if w in src or w in money or w in (pr or "")), "")
+    k = time.gmtime(t + 9 * 3600)
+    return f"{n:,}원" + (f" {cond}" if cond else "") + (f" ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시 확인)" if time.time() - t > TH_FRESH_H * 3600 else "")
 
 
 def mall_card_post(seen):
@@ -4316,7 +4337,7 @@ def th_site(kind, note, head, ps, series=None, no=0, cm=None):
     """Threads 묶음(12·15·18시 — 10/31 진우)을 사이트에도 같은 묶음 카드로: posts.json에 mid 없는 묶음 글 1개(bundle·head·items — 이름·가격·1개 값·사진·링크).
     채널 글 아님(mid X · th 1 = Threads 개별 글·다른 고르기 후보 X) · 대가성 문구 = 든 상품 그 프로그램 문구(note)."""
     head = head.removeprefix("🏆 ")
-    record(f"{note}\n" + (f"{series_head(series, no)}\n" if series else "") + f"\n🏆 {head}\n{kind[2:]}시 묶음 · 게시 시점 가격\n\n"
+    record(f"{note}\n" + (f"{series_head(series, no)}\n" if series else "") + f"\n🏆 {head}\n{kind[2:]}시 묶음 · " + ("상품마다 확인 시각" if any("확인)" in pr for _, pr in ps) else "게시 시점 가격") + "\n\n"  # 11/1 ⑤ 다 이 회차 확인일 때만 '게시 시점 가격'
            + "\n".join(f"{k}. {short_name(title_of(p['text']))} — {pr}" for k, (p, pr) in enumerate(ps, 1)), [], ps[0][0]["url"],
            extra={"bundle": kind, "head": head, "th": 1, **({"series": series, "no": no} if series else {}), "items": [{k: v for k, v in (("n", short_name(title_of(p["text"]))), ("p", pr), ("unit", p.get("unit")), ("img", p.get("img")), ("u", p["url"]), ("c", (cm or {}).get(p["url"]))) if v} for p, pr in ps]})  # c = 사는 사람 한 줄(사이트 카드 상품 칸)
 
