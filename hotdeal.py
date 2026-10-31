@@ -11103,6 +11103,7 @@ def indexnow(seen, docs="docs"):
 def main():
     try:
         seen = json.load(open(SEEN))
+        for k in ("top_20261031_12", "ev_2026-10-31 12:40"): seen.setdefault(k, time.time())  # shortcut: 10/31 12~13시 KeyError 실행(#2719~2724)이 이미 올린 12시 묶음·12:40 큐레이션 = 캐시(#2718) 받은 다음 실행이 또 올리지 않게 — 11/1 뒤 지워도 됨
     except (OSError, ValueError) as e:
         seen = repr(e)
     if not isinstance(seen, dict):
