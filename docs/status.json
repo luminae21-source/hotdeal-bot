@@ -1,9 +1,9 @@
 {
-"at": "2026-10-31 14:44",
-"posts": 2779,
-"site": 1573,
+"at": "2026-10-31 14:58",
+"posts": 2785,
+"site": 1579,
 "mall": {
-"coupang": 885,
+"coupang": 891,
 "toss": 634,
 "naver": 54
 },
@@ -15,7 +15,7 @@
 "beauty": 239,
 "life": 183,
 "season": 82,
-"coffee": 73,
+"coffee": 79,
 "pet": 27,
 "kitchen": 103,
 "laundry": 68,
@@ -39,10 +39,10 @@
 }
 },
 "2026-10-31": {
-"site": 1573,
+"site": 1579,
 "sitemap": 987,
 "mall": {
-"coupang": 885,
+"coupang": 891,
 "toss": 634,
 "naver": 54
 }
@@ -51,5 +51,14 @@
 "warn": [
 "쿠팡 변환 실패 154개(cp_fail.json)"
 ],
-"nset": []
+"nset": [
+{
+"name": "커피",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+],
+"nset_n": "새 구성 1 · 기존 상품 구성 0"
 }
