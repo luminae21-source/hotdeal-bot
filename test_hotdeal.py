@@ -11622,7 +11622,7 @@ assert run124("07:30")[0] == "" and run124("06:59")[0] != ""  # 새벽 묶음 = 
 b124, _ = run124("12:05")
 assert H.th_kind(re.findall(r"^1️⃣ (.+) [\d,]+원$", b124, re.M)[0]) == "beauty" and b124.startswith(H.DISCLOSURE + "\n" + H.TH_LIST_HOOK[12] + "\n\n") and any(b124.endswith("\n\n" + q) for q in H.TH_LIST_Q), b124  # 12시 = 화장품 먼저 · Claude 실패 = 기본 훅·질문
 assert H.th_kind("코멧 화장지 30롤") == "life" == H.th_kind("삼다수 생수 2L") and H.th_kind("라운드랩 선크림 50ml") == "beauty" and H.th_kind("로지텍 무선 마우스") == ""
-assert H.TH_DAWN_LIST == 1 and H.TH_LIST_MAX == 7 and H.TH_LIST_LINKS == 5 and len(H.NUM) == 7
+assert H.TH_DAWN_LIST == 1 and H.TH_LIST_MAX == 7 and H.TH_LIST_LINKS == 5 and len(H.NUM) == 5  # 묶음 6·7번째 번호 = top_deals 안에서만(다른 목록 5개 그대로)
 json.dump([{"t": "2026-11-12 03:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n코멧 화장지 30롤\n9,900원", "url": "u1", "mid": 1, "th": 1},
            {"t": "2026-11-12 13:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n라운드랩 선크림 50ml\n9,900원", "url": "u2", "mid": 2, "th": 1},
            {"t": "2026-11-12 13:20", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n로지텍 마우스\n9,900원", "url": "u3", "mid": 3},
