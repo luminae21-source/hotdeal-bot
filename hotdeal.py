@@ -11227,7 +11227,7 @@ def main():
     if RUN["ch_last"]:
         seen["ch_last"] = {"t": RUN["ch_last"]}
     cutoff = time.time() - 3 * 86400
-    json.dump({k: v for k, v in seen.items() if (v["t"] if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
+    json.dump({k: v for k, v in seen.items() if (v.get("t", time.time()) if isinstance(v, dict) else v) > cutoff}, open(SEEN, "w"))  # hold_ = 딜째 보관
     print(f"new={len(new)} seen={len(seen)}")
 
 
