@@ -8522,7 +8522,8 @@ def use_bad(line, name):
 
 STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X
 STK_MONTHS = {"coffee-mix": (10, 11, 12, 1, 2), "rice": (9, 10, 11)}  # 말풍선이 철 타는 것('쌀쌀해지면'·'햅쌀 철이다멍') = 그 달만
-STK_SEASON = {10: ("coffee-mix", "rice"), 11: ("coffee-mix", "rice")}  # 수다 글 계절 주제 = 지금 계절 품목(없는 달 = chat)
+STK_SEASON = {10: ("coffee-mix", "rice"), 11: ("coffee-mix", "rice")}  # 수다 글 계절 주제 = 지금 계절 품목(없는 달 = CHAT_STK)
+CHAT_STK = ("chat", "chat-1", "chat-2", "chat-3", "chat-4", "chat-5")  # 10/31 진우 캐릭터 그림(Cowork 96d509136c '오늘 장바구니엔 뭐 담으셨어요?') — 수다 글 기본 · 가장 오래 안 쓴 것부터
 
 
 def stk_pick(seen, keys, now=None):
@@ -8530,6 +8531,11 @@ def stk_pick(seen, keys, now=None):
     now = now or time.time()
     mon, cut = time.gmtime(now + 9 * 3600).tm_mon, time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - STK_DAYS * 86400))
     return next(((k, f"{SITE}img/stk/{k}.png") for k in keys if k and os.path.exists(f"{STK_DIR}/{k}.png") and mon in STK_MONTHS.get(k, (mon,)) and seen.get("stk", {}).get(k, "") <= cut), None)
+
+
+def stk_chat(seen, now=None):
+    """수다 글 기본 스티커(10/31 진우 '이 사진들 저장하고 활용하자'): CHAT_STK 중 seen stk 마지막 날짜가 가장 오래된 것(안 쓴 것 먼저 · 같으면 순서대로) — 파일 없음·3일 안 = 건너뜀."""
+    return stk_pick(seen, sorted(CHAT_STK, key=lambda k: seen.get("stk", {}).get(k, "")), now)
 
 
 def stk_used(seen, key, now=None):
@@ -8606,7 +8612,7 @@ def chat_post(seen):
     lines = [l for l in lines if l]
     if why := chat_ok(lines, money, facts):
         return print("chat post: 재검토 뒤 규칙 걸림 -> 안 올림", name, why)
-    stk, text = stk_pick(seen, (item,) if name == "quiz" else STK_SEASON.get(kst.tm_mon, ("chat",)) if name == "season" else ("chat",), now), "\n".join(lines)  # QQ 주제 -> 스티커(장보기·살림·달력 = chat)
+    stk, text = stk_pick(seen, (item,) if name == "quiz" else STK_SEASON.get(kst.tm_mon, ()) if name == "season" else (), now) or stk_chat(seen, now), "\n".join(lines)  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 3일 안 = CHAT_STK(10/31)
     bundled(seen)
     try:
         r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")

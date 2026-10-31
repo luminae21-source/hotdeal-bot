@@ -1,6 +1,6 @@
-# tools/stickers/stickers.py — 핫딜픽 귀여운 스티커 9장(1080×1080) 원본 (Cowork 10/26, 진우 '귀여운 그림이나 사진 있음 좋겠다')
+# tools/stickers/stickers.py — 핫딜픽 귀여운 스티커 8장(1080×1080 — 품목) 원본 (Cowork 10/26, 진우 '귀여운 그림이나 사진 있음 좋겠다')
 # 사용: python3 tools/stickers/stickers.py out.html → playwright로 section#<키> 스크린샷 → docs/img/stk/<키>.png
-# 키 = PRICE_ITEMS 품목(ramen·water·toilet-paper·coffee-mix·wet-wipes·eggs·rice·milk) + chat(수다 글 기본)
+# 키 = PRICE_ITEMS 품목(ramen·water·toilet-paper·coffee-mix·wet-wipes·eggs·rice·milk) — 수다 글 기본 chat·chat-1~5.png = 진우 그림(10/31)이라 여기서 안 그림(덮어쓰기 X)
 
 def sparkle(x, y, s, c='#FFD84D'):
     return f'<path d="M{x} {y-s} Q{x} {y} {x+s} {y} Q{x} {y} {x} {y+s} Q{x} {y} {x-s} {y} Q{x} {y} {x} {y-s}Z" fill="{c}"/>'
@@ -128,11 +128,6 @@ def milk():  # 우유팩
             '<rect x="100" y="140" width="260" height="120" fill="#6FB4F0"/><text x="230" y="222" text-anchor="middle" font-family="PX" font-weight="800" font-size="62" fill="#fff">우유</text>'
             '<g fill="#fff"><circle cx="140" cy="300" r="10"/><circle cx="320" cy="300" r="10"/></g>')
 
-def cart():  # 장바구니(수다 글 기본)
-    return ('<path d="M20 40 h70 l50 220 h240 l40 -170 h-310" fill="none" stroke="#F0384A" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"/>'
-            '<path d="M120 100 h280 l-30 130 h-220Z" fill="#FFE3EA"/><circle cx="170" cy="310" r="30" fill="#33302F"/><circle cx="350" cy="310" r="30" fill="#33302F"/>'
-            '<circle cx="190" cy="80" r="40" fill="#FFC83A"/><rect x="250" y="40" width="70" height="80" rx="14" fill="#7FC1F5"/><path d="M330 90 q30 -60 70 -10Z" fill="#7CC37E"/>')
-
 def bubble(x, y, w, lines, tail="left"):
     h = 70 + 74 * len(lines)
     tx = x + (70 if tail == "left" else w - 110)
@@ -165,7 +160,6 @@ ITEMS = [
     ("eggs", "cat", eggs, ["계란은 개당", "얼마일까냥? 🥚"], "warm"),
     ("rice", "dog", rice, ["햅쌀 철이다멍!", "1kg당으로 보자 🍚"], "peach"),
     ("milk", "cat", milk, ["우유는 100ml당", "비교했다냥 🥛"], "lilac"),
-    ("chat", "dog", cart, ["오늘 장바구니엔", "뭐 담으셨어요? 🛒"], "warm"),
 ]
 body = ''.join(sticker(*x) for x in ITEMS)
 open(sys.argv[1], 'w').write(f'''<!doctype html><html><head><meta charset="utf-8"><style>
