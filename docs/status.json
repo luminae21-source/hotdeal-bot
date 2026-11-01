@@ -1,9 +1,9 @@
 {
-"at": "2026-11-01 17:53",
+"at": "2026-11-01 18:07",
 "posts": 2825,
-"site": 1603,
+"site": 1602,
 "mall": {
-"coupang": 920,
+"coupang": 919,
 "toss": 629,
 "naver": 54
 },
@@ -23,12 +23,12 @@
 "fashion": 78,
 "digital": 61,
 "sport": 19,
-"etc": 5
+"etc": 4
 },
 "missing": 0,
 "missing_names": [],
 "cp_fail": 154,
-"sitemap": 974,
+"sitemap": 972,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -49,10 +49,10 @@
 }
 },
 "2026-11-01": {
-"site": 1603,
-"sitemap": 974,
+"site": 1602,
+"sitemap": 972,
 "mall": {
-"coupang": 920,
+"coupang": 919,
 "toss": 629,
 "naver": 54
 }
