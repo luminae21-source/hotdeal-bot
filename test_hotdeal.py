@@ -12487,3 +12487,16 @@ cat140 = {d for d in os.listdir(f"{RD140}/c") if os.path.isfile(f"{RD140}/c/{d}/
 assert cat140 and not cat140 & ({n.removesuffix(".html") for n in os.listdir(RD140)} - old140), cat140 & ({n.removesuffix(".html") for n in os.listdir(RD140)} - old140)  # 실제 칸 이름 = 최상위 예약어와 안 겹침
 assert "short_pages(out, {" in inspect.getsource(S.build) and not re.search(r"\burls\b", inspect.getsource(S.short_pages))  # 사이트맵 X
 os.chdir(cwd140)
+
+# 9-141 (11/1 Cowork '개별 글 수 확 줄었어'): 10/30 진열 확인이 24시간 지나 cp_fill·auto_repost·auto_pick5 후보 0 -> cp_price가 🔥 진열(일반가·확인 20시간 지남·3일 채널 X·오늘 검색 X·옵션/수량)을 먼저 확인
+U141 = [f"https://link.coupang.com/a/F{i}" for i in range(9)]
+ev141 = {u: {"pid": str(100 + i), **({} if i in (6, 8) else {"item": "9"})} for i, u in enumerate(U141)}
+mk141 = lambda i, **k: {"t": "2026-10-30 10:00", "text": "x", "url": U141[i], "own": 1, "shelf": 1, "st": "hot", "now": "9,900원", "chkt": "2026-10-30 17:29", **k}
+P141 = [mk141(0), mk141(1, now="8,900원 와우가"), mk141(2, chkt="2026-11-01 09:00"), mk141(3, st="wait"), mk141(4), {"t": "2026-10-31 12:00", "text": "x", "url": U141[4], "mid": 5},
+        mk141(5), mk141(6), mk141(7, now=""), mk141(8)]
+names141 = {u: "상품" if i == 6 else "상품 500ml" for i, u in enumerate(U141)}
+fr141 = H.cp_fill_due(P141, names141, ev141, {U141[5]: [0, "2026-11-01 08:00", "9"]}, "2026-11-01", "2026-10-29 11:00", "2026-10-31 15:00")
+assert fr141 == {U141[0], U141[8]}, fr141  # 1 와우가(검색 일반가로 확인 X) · 2 확인 20시간 안 · 3 ⏳ · 4 3일 안 채널 · 5 오늘 검색함 · 6 옵션·수량 없음(own_end가 안 받음) · 7 가격 없음
+src141 = inspect.getsource(H.cp_price)
+assert "key=lambda t: (t[1] not in rw, t[1] not in fr, t[2] != \"tag\"" in src141 and "due(u) or u in fr or" in src141 and 'fq["n"] += u in fr' in src141 and "if fq[\"n\"] < CP_FILL_CHK else set()" in src141
+assert H.CP_FILL_STALE * 3600 < H.CPRE_FRESH and H.CP_FILL_CHK <= H.CP_SEARCH_HOUR * 24 // 3  # 확인 = 24시간 안 후보로 · 하루 검색 몫의 1/3까지

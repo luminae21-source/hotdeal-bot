@@ -41,6 +41,7 @@ CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날
 CP_NEW_RES = 8  # VV(10/27 Cowork — 새 진열 44개가 2시간째 0개: 앞 실행들의 가격 확인·사진·재시도가 시간당 상한을 다 써 cp_links 차례엔 CpLimit) — 한 번도 안 해 본 진열이 남아 있으면 다른 호출은 시간당 이만큼 남겨 둠(새 진열 변환 몫)
 CP_DL_BATCH = 20  # 딥링크 한 호출에 묶는 쿠팡 주소 수 — shortcut: 공식 최대 개수는 문서에 없음(20으로), 묶음 오류면 반씩 나눠 다시 · 공식 수 알면 바꿈
 CP_GROUP_MIN = 3  # T(10/26 진우): 사진 없는 쿠팡 글 = 품목 낱말(사이트 품목 칸 낱말) 같은 것 3개↑면 그 낱말로 검색 1번 먼저(7일에 1번) — 결과에 같은 pid 다 사진
+CP_FILL_CHK, CP_FILL_STALE = 48, 20  # 11/1 Cowork(개별 🔥 0): 🔥 진열 중 일반가·3일 채널 X·확인 20시간 지남 = 가격 확인 먼저(하루 48개까지(144의 1/3) — 검색 상한 그대로) -> cp_fill·auto_repost·auto_pick5 24시간 확인 후보
 CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 하루 1번) 시작 시각(KST) — 실행마다 1개라 75개면 ~17시
 CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59")  # CCC(10/29 진우 — 토스 점검 동안 쿠팡 쪽으로, KST): ① 변환 안 된 쿠팡 진열(cp_fail) = 이 시각 전 실패분 ①부터 1번 더(7일 규칙 X)·재시도 몫 = 실행 몫 전부 ② 가격 확인 = 사진 채움 쉬고 전부 가격(이 동안 아직 확인 안 된 것 먼저: 최근 게시 → 🔥 진열 → 오래된 확인) — 시간당 상한(CP_HOUR·CP_SEARCH_HOUR)은 그대로. shortcut: 끝나면 저절로 예전대로(코드는 11/5 뒤 정리)
 cp_rush = lambda: CP_RUSH[0] <= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)) <= CP_RUSH[1]
@@ -2438,6 +2439,15 @@ def cp_links(seen):
               + f" · 검색 대기 {len(rr['w'])} · 아직 {sum(u not in cl for u in rr['u'])}")
 
 
+def cp_fill_due(posts, names, ev, m, today, d3, stale):
+    """11/1 Cowork(개별 🔥 0 — 10/30 진열 확인이 24시간 지나 cp_fill·auto_repost·auto_pick5 후보 0): cp_price가 먼저 확인할 진우 쿠팡 🔥 상품 =
+    마지막 글 🔥 · 보이는 가격이 일반가(와우·쿠폰가는 검색 가격으로 확인 X — 그대로) · 확인이 stale 전 · 3일 안 채널 X · 오늘 검색 X · 옵션(item)이나 이름 수량으로 맞출 수 있음(own_end가 받는 것만)."""
+    lastp = {p["url"]: p for p in posts if p.get("own") and p.get("url") in names}
+    ch3 = {p.get("url") for p in posts if p.get("mid") and p.get("t", "") >= d3}
+    return {u for u, p in lastp.items() if ev[u].get("pid") and p.get("st") == "hot" and won(p.get("now") or "") and not re.search(r"쿠폰|와우", p.get("now") or "")
+            and p.get("chkt", "") < stale and u not in ch3 and not m.get(u, [0, ""])[1].startswith(today) and (ev[u].get("item") or re.search(CP_QTY, names[u], re.I))}
+
+
 def cp_price(seen):
     """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): 진우 글(url)마다 하루 1번(CP_CHK_HOUR~, 실행마다 1개, 가장 오래전에 확인한 것 먼저) 글 상품명으로 검색 API
     -> 결과(최대 10개) 중 events pid와 같은 상품(productId 또는 파트너스 링크 pageKey)이고 같은 옵션인 것만(events item = 옵션 itemId가 있으면 그것, 없으면 이름 수량·용량 cp_same)
@@ -2479,7 +2489,11 @@ def cp_price(seen):
         t = max((ph_last(r) for r in hh.get(ph_key(ev[u], u)) or [] if r[3] != "gold"), default="")  # 골드박스 = 하루 특가라 셈 X
         return max(last(u), f"20{t[:2]}-{t[2:4]}-{t[4:6]} {t[6:8]}:00" if t else "")
     due = lambda u: seen_at(u) < ago(ph_gap(hh.get(ph_key(ev[u], u)), u in prio))
-    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
+    fq = q.setdefault("fr", {"d": today, "n": 0})
+    if fq.get("d") != today:
+        fq.update(d=today, n=0)
+    fr = cp_fill_due(posts, names, ev, q["m"], today, ago(3), ago(CP_FILL_STALE / 24)) if fq["n"] < CP_FILL_CHK else set()
+    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u in fr or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
                                                                                                    or ev[u].get("item") and u in q["m"] and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or not rush and u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: (rush and t[0] >= CP_RUSH[0], t[1] not in hot, rush and t[1] not in fire, t[0]))  # 최근 올린 글(CP_HOT_H) 먼저, 그다음 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
@@ -2514,7 +2528,7 @@ def cp_price(seen):
         if ev[t[1]].get("tag") and t[1] not in rw:
             bytag[ev[t[1]]["tag"]].append(t[1])
     tags = [(t, None, "tag", t, None) for t, us in bytag.items() if len(us) >= PH_TAG_MIN and not (t in tg and tg[t][1] < 2)]  # 2개 밑으로 맞은 tag = 7일 동안 상품 이름 검색
-    todo = sorted(tags + [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]], key=lambda t: (t[1] not in rw, t[2] != "tag", t[1] not in pd, t[0] if t[1] in pd else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
+    todo = sorted(tags + [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]], key=lambda t: (t[1] not in rw, t[1] not in fr, t[2] != "tag", t[1] not in pd, t[0] if t[1] in pd else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
     got = miss = err = gn = 0
     xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
     qs = cp_qs
@@ -2545,6 +2559,7 @@ def cp_price(seen):
             ps["n"] += photo  # 실패한 검색도 1번(상한 셈 그대로)
             continue
         ds = [x for x in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(x, dict)]
+        fq["n"] += u in fr
         ps["n"] += photo
         for z in ds:  # 같은 검색 결과에 다른 진우 글 상품(같은 pid)도 있으면 그 사진도(10/24 진우 1주 ① — 사진 212개 중 14개뿐이던 것, 추가 호출 X) · T 품목 낱말 검색 = 이것만
             for u2 in bypid.get(str(z.get("productId")), ()):
