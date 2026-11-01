@@ -1,26 +1,31 @@
 {
  "google": {
-  "at": "2026-11-02 02:08",
+  "at": "2026-11-02 04:04",
   "items": [
    {
-    "t": "레알마드리드",
+    "t": "킬리안 음바페",
     "n": "200+",
-    "news": "라리가 라싱 데 산탄데르 대 레알 마드리드 생중계 링크"
+    "news": "[특파원 칼럼/김철중]음바페가 마주한 中 ‘소비자 민족주의’"
+   },
+   {
+    "t": "ลิเวอร์พูล พบ อาร์เซนอล",
+    "n": "200+",
+    "news": "LIVE ดูบอลสด ลิเวอร์พูล พบ อาร์เซนอล บอลวันนี้ (1 พ.ย. 69)…"
+   },
+   {
+    "t": "레알마드리드",
+    "n": "500+",
+    "news": "'무리뉴는 해냈다' 레알 마드리드에서 벌어진 놀라운 변화...레알 5연승에 엘 클라시코 승리까지 '완벽한…"
    },
    {
     "t": "liverpool vs arsenal",
-    "n": "500+",
-    "news": "Liverpool vs Arsenal LIVE: Premier League score, lineups…"
-   },
-   {
-    "t": "kbs",
-    "n": "100+",
-    "news": "Kim Hye-soo keeps vigil for third day at Choi Bul-am's…"
+    "n": "1000+",
+    "news": "Liverpool 0-1 Arsenal LIVE: Kai Havertz scores winner in…"
    },
    {
     "t": "리버풀 대 아스널",
-    "n": "5000+",
-    "news": "프리미어 리그 리버풀 대 아스날 생중계 링크"
+    "n": "10000+",
+    "news": "'맨시티 제치고 선두 탈환' 디펜딩 챔피언 위엄 증명했다! 아스날, 하베르츠 결승골→리버풀 1-0…"
    },
    {
     "t": "라치오",
@@ -30,27 +35,22 @@
    {
     "t": "расинг – реал мадрид",
     "n": "200+",
-    "news": "Реал определился с вратарём на матч против Расинга – что…"
+    "news": "Моуринью прокомментировал победу «Реала» над «Расингом» в…"
    },
    {
     "t": "스타링크",
-    "n": "100+",
-    "news": "우크라이나, 독자 통신위성 궤도 안착…스타링크 종속 탈피 첫걸음"
+    "n": "200+",
+    "news": "아시아 각국 국방 당국, 스타링크 통신 제한 전례에 상업 위성 계약 재검토 착수"
    },
    {
     "t": "racing santander vs madrid",
     "n": "200+",
-    "news": "Real Madrid's Galácticos show out in dominant first-half…"
+    "news": "Racing Santander 0-3 Real Madrid: England's Jude Bellingham…"
    },
    {
     "t": "성유리",
     "n": "1000+",
     "news": "\"핑클도 완전체로?\" 중년의 아이돌이 왜 자꾸 컴백할까"
-   },
-   {
-    "t": "racing santander vs real madrid",
-    "n": "1000+",
-    "news": "Racing - Real Madrid, en directo | Última hora de LALIGA EA…"
    }
   ]
  },
