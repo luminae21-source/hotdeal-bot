@@ -12515,7 +12515,7 @@ names141 = {u: "상품" if i == 6 else "상품 500ml" for i, u in enumerate(U141
 fr141 = H.cp_fill_due(P141, names141, ev141, {U141[5]: [0, "2026-11-01 08:00", "9"]}, "2026-11-01", "2026-10-29 11:00", "2026-10-31 15:00")
 assert fr141 == {U141[0], U141[8]}, fr141  # 1 와우가(검색 일반가로 확인 X) · 2 확인 20시간 안 · 3 ⏳ · 4 3일 안 채널 · 5 오늘 검색함 · 6 옵션·수량 없음(own_end가 안 받음) · 7 가격 없음
 src141 = inspect.getsource(H.cp_price)
-assert "key=lambda t: (t[1] not in rw, t[1] not in fr, t[2] != \"tag\"" in src141 and "due(u) or u in fr or" in src141 and 'fq["n"] += u in fr' in src141 and "if fq[\"n\"] < CP_FILL_CHK else set()" in src141
+assert "t[1] not in fr1, t[1] not in fr, t[2] != \"tag\"" in src141 and "due(u) or u in fr or" in src141 and 'fq["n"] += u in fr' in src141 and "if fq[\"n\"] < CP_FILL_CHK else set()" in src141
 assert H.CP_FILL_STALE * 3600 < H.CPRE_FRESH and H.CP_FILL_CHK <= H.CP_SEARCH_HOUR * 24 // 3  # 확인 = 24시간 안 후보로 · 하루 검색 몫의 1/3까지
 
 # 9-142 (11/1 Cowork 12:20 ②): 💄 화장대·욕실 바구니 = 그 칸 품목만(식용유 X · 모자라면 그 회차 시리즈 X) · 회차 = seen·posts.json·series_eps.json 중 큰 값 + 1(실패 실행에 seen이 안 남아 #1 두 번)
