@@ -2410,7 +2410,7 @@ assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][
 json.dump([{**p, "url": SR9 + str(k) if k % 2 else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); H.top_deals({})
 tl9 = [parse_qs(urlsplit(u).query) for m, u in calls if "/777/threads?" in u]
 assert len(tl9) == 1 and "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ " in tl9[0]["text"][0] and "TOP5" in sent[-1][1]["text"] and SR9 not in tl9[0]["text"][0] and tl9[0]["link_attachment"] == ["https://toss.shopping/_m/L0"]  # 섞이면 수수료 링크 딜만(토스·쿠팡 파트너스), 검색 링크 항목 X
-assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n" + H.series_head("vanity", 1) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
+assert tl9[0]["text"][0].startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n" + H.series_head("vanity", max(1, H.series_next({}, "vanity") - 1)) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣") and [l for l in re.findall(r"👉 (\S+)", tl9[0]["text"][0])] == ["https://toss.shopping/_m/L0", "https://link.coupang.com/a/L2", "https://link.coupang.com/a/L4"]
 json.dump([{**p, "url": SR9 + str(k) if k else p["url"]} for k, p in enumerate(ps9)], open("posts.json", "w"), ensure_ascii=False); calls.clear(); out9 = io.StringIO()
 with contextlib.redirect_stdout(out9): H.top_deals({})
 assert not [u for m, u in calls if "/777/threads?" in u] and "TOP5" in sent[-1][1]["text"] and "threads skip top12 1개\n" in out9.getvalue()  # HH·KK: 수수료 딜 1개뿐·채울 것도 없음 = 'TOP1' 리스트 X(텔레그램 TOP5 그대로 · 그 딜 th 표시 X = 개별 칸 후보)
@@ -9692,7 +9692,7 @@ P88 = [sh88("휴대용 선풍기 미니", "https://link.coupang.com/a/S0", "9,00
 json.dump(P88, open("posts88.json", "w"), ensure_ascii=False); time.time = lambda: TK("2026-11-12 12:05"); s88, o88 = {}, io.StringIO()
 with contextlib.redirect_stdout(o88): H.top_deals(s88)
 th88 = tb88[-1][1]
-assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and th88.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", 1) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and hd88(th88) == 3, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
+assert "TOP3</b> (12시)" in tg88[-1]["text"] and tb88[-1][0] == "top12" and th88.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", max(1, H.series_next({}, "vanity") - 1)) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and hd88(th88) == 3, (tg88[-1]["text"][:200], th88)  # 텔레그램 TOP3 그대로 · Threads = 수수료 딜 1개 -> 3개로 채움
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", th88) == ["성경김 지도표 재래김 16봉", "곰곰 국산 햅쌀 10kg", "탐사 물티슈 캡형 100매"], th88  # ①→②→③ · 성경김 2개 X
 assert "선풍기" not in th88 and "주방세제" not in th88 and "삼다수" not in th88 and th88.startswith(H.DISCLOSURE) and "5,900원" in th88 and len(th88) <= 480
 assert "threads top12 3개 | 채움 ①1 ②1 ③1" in o88.getvalue() and len(s88["thlist"]["h"]) == 1 == tb88[-1][3] and s88["thlist"]["t"] and len(s88["bundles"]["ts"]) == 1, o88.getvalue()  # (리뷰) 24시간 기록 = 올리기 전(실패 -> 다시 시도로 나가도 셈)
@@ -11511,11 +11511,11 @@ def top122(hm, gd=True):
     with contextlib.redirect_stdout(o): H.top_deals({})
     return tb122[-1][1], o.getvalue()
 w122, l122 = top122("12:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and w122.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", 1) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and w122.endswith("?") and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and w122.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", max(1, H.series_next({}, "vanity") - 1)) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and w122.endswith("?") and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
 m122, l122 = top122("18:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and m122.startswith(H.DISCLOSURE + "\n" + H.series_head("commute", 1) + "\n" + H.TH_LIST_HOOK[18] + "\n\n") and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and m122.startswith(H.DISCLOSURE + "\n" + H.series_head("commute", max(1, H.series_next({}, "commute") - 1)) + "\n" + H.TH_LIST_HOOK[18] + "\n\n") and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
 c122, l122 = top122("15:05")
-assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and c122.startswith(H.DISCLOSURE + "\n" + H.series_head("stock", 1) + "\n" + H.TH_LIST_HOOK[15] + "\n\n") and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
+assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and c122.startswith(H.DISCLOSURE + "\n" + H.series_head("stock", max(1, H.series_next({}, "stock") - 1)) + "\n" + H.TH_LIST_HOOK[15] + "\n\n") and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
 n122, l122 = top122("12:05", gd=False)
 assert "· 칸 가림 X 품목" in l122 and len(re.findall(r"^[1-7]️⃣ ", n122, re.M)) >= 5 and n122.count("👉 ") <= 5 and len(n122) <= 480 and n122.endswith("?"), (n122, l122)  # 10/31 묶음 5~7개 · 링크 5개까지 · 500자 안 · 끝 = 질문  # 성별 기록 없음 = 예전 리스트(칸 가림 X)
 assert H.th_group({"x": {"f": 60, "m": 40}}, "x") == "f" and H.th_group({"x": {"f": 40, "m": 60}}, "x") == "m" and H.th_group({"x": {"f": 59.9, "m": 40.1}}, "x") == "c" == H.th_group({}, "x") and H.CAT_SHORT["beauty"] == "화장품"
@@ -11629,7 +11629,7 @@ assert len(it124) >= 4 and [H.th_kind(n) for n in it124[:3]] == ["life"] * 3 and
 assert "\n1롤당 330원 · " in a124 or "\n1롤당 330원\n" in a124, a124  # 1개 값(글 unit) · 한 줄
 assert run124("07:30")[0] == "" and run124("06:59")[0] != ""  # 새벽 묶음 = 7시 전에만(놓치면 그날 X)
 b124, _ = run124("12:05")
-assert H.th_kind(re.findall(r"^1️⃣ (.+) [\d,]+원$", b124, re.M)[0]) == "beauty" and b124.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", 1) + "\n" + H.TH_LIST_HOOK[12] + "\n\n") and any(b124.endswith("\n\n" + q) for q in H.TH_LIST_Q), b124  # 12시 = 화장품 먼저 · Claude 실패 = 기본 훅·질문
+assert H.th_kind(re.findall(r"^1️⃣ (.+) [\d,]+원$", b124, re.M)[0]) == "beauty" and b124.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", max(1, H.series_next({}, "vanity") - 1)) + "\n" + H.TH_LIST_HOOK[12] + "\n\n") and any(b124.endswith("\n\n" + q) for q in H.TH_LIST_Q), b124  # 12시 = 화장품 먼저 · Claude 실패 = 기본 훅·질문
 assert H.th_kind("코멧 화장지 30롤") == "life" == H.th_kind("삼다수 생수 2L") and H.th_kind("라운드랩 선크림 50ml") == "beauty" and H.th_kind("로지텍 무선 마우스") == ""
 assert H.TH_DAWN_LIST == 1 and H.TH_LIST_MAX == 7 and H.TH_LIST_LINKS == 5 and len(H.NUM) == 5  # 묶음 6·7번째 번호 = top_deals 안에서만(다른 목록 5개 그대로)
 json.dump([{"t": "2026-11-12 03:10", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n코멧 화장지 30롤\n9,900원", "url": "u1", "mid": 1, "th": 1},
