@@ -12586,14 +12586,15 @@ assert u144[:4] == ["https://www.coupang.com/vp/products/111?itemId=222", "https
 with contextlib.redirect_stdout(io.StringIO()) as o144: gl144 = S.guides_load(True)
 assert [g["slug"] for g in gl144] == ["mask-pack-price", "few"] and len(gl144[0]["picks"]) == 4 and len(gl144[0]["sources"]) == 1 and "guide X 형식 no-summary" in o144.getvalue() and "guide 픽 뺌(형식·몰) mask-pack-price 1" in o144.getvalue()
 json.dump({"111:222": [["26103010", 12000, "", "api"], ["26110109", 9900, "", "api", "26110209"]], u144[1]: [["26110208", 5000, "", "api"]], "444:555": [["26102801", 3000, "", "api"]]}, open(S.PRICE_HIST, "w"))
-S.SITE_SUB = {u144[0]: "https://link.coupang.com/a/G1", u144[1]: "https://link.coupang.com/a/G2", u144[2]: "https://link.coupang.com/a/G3"}
+cl144 = {u144[0]: "https://link.coupang.com/a/B1", u144[1]: "https://link.coupang.com/a/G2", u144[2]: "https://link.coupang.com/a/G3"}  # cp_links.json = {상품 주소: 봇 링크}
+json.dump(cl144, open(S.CP_LINKS, "w")); S.SITE_SUB = {"https://link.coupang.com/a/B1": "https://link.coupang.com/a/G1", u144[0]: "https://link.coupang.com/a/X"}  # SITE_SUB = {봇 링크: site 링크} (상품 주소 키 = 안 씀)
 time.time = lambda: H.kst_ts("2026-11-02 12:00")
 os.makedirs("docs/c/beauty"); open("docs/c/beauty/index.html", "w").write("x"); os.makedirs("docs/guide/old-guide"); open("docs/guide/old-guide/index.html", "w").write("x")
 with contextlib.redirect_stdout(io.StringIO()) as o144: gu144 = S.guide_pages("docs", "2026-11-02")
 pg144 = open("docs/guide/mask-pack-price/index.html").read()
 assert gu144 == [(S.BASE + "guide/mask-pack-price/", "2026-11-02"), (S.BASE + "guide/few/", "2026-11-01"), (S.BASE + "guide/", "2026-11-02")], gu144  # lastmod = 고친 날(10/31)·지금 가격이 처음 보인 날 중 늦은 것(가짜 갱신 X)
 assert pg144.index('<p class="dis">') < pg144.index('<h1 class="h">마스크팩 1장 가격 비교</h1>') < pg144.index("<h2>결론</h2>") < pg144.index("<h2>고르는 기준</h2>") < pg144.index("<h2>오늘 가격표</h2>") < pg144.index("<h2>출처</h2>")
-assert "<b>9,900원</b><br><small>11/2 9시 확인</small>" in pg144 and "1매당 495원" in pg144 and "1매당 500원" in pg144 and 'href="https://link.coupang.com/a/G1" rel="nofollow sponsored">쿠팡에서 보기' in pg144 \
+assert "<b>9,900원</b><br><small>11/2 9시 확인</small>" in pg144 and "1매당 495원" in pg144 and "1매당 500원" in pg144 and 'href="https://link.coupang.com/a/G1" rel="nofollow sponsored">쿠팡에서 보기' in pg144 and 'href="https://link.coupang.com/a/G2" rel="nofollow sponsored">쿠팡에서 보기' in pg144 and "/a/X" not in pg144 and "/a/B1" not in pg144 \
     and "가격은 판매처에서 확인" in pg144 and 'href="https://naver.me/abc"' in pg144 and "오래된 확인" not in pg144 and "guide 줄 X mask-pack-price 오래된 확인 가격 확인 X" in o144.getvalue()  # 48시간 넘은 확인 = 그 줄 X
 assert "최근 7일 가격 변화: 메디힐 마스크팩 ▼18%" in pg144 and "마지막 확인 11/2 9시" in pg144 and f'href="{S.c_url("beauty")}"' in pg144 and (lambda b: "토스" not in b and "<img" not in b)(pg144[pg144.index('<h1 class="h">'):pg144.index("관련 칸 더 보기 →</a>")])  # 가이드 본문 = 토스 0 · 사진 0(사이트 틀 검색·로고 X)
 ld144 = json.loads(re.search(r'<script type="application/ld\+json">(.+?)</script>', pg144)[1])

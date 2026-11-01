@@ -2984,6 +2984,10 @@ def guide_pages(out, today):
     쿠팡 = 파트너스로 바뀐 것만, 48시간 넘은 확인·못 찾음 = 그 줄 X + 로그 · 가격 줄 2개 밑 = '가격 다시 확인 중') → 7일 변화 한 줄 → 출처 → 관련 칸·블로그.
     JSON-LD = Article + ItemList(별점·리뷰 X) · 사진 X · lastmod = 가이드 고친 날·가격 바뀐 날 중 늦은 것(안 바뀌면 그대로) -> 사이트맵 [(주소, lastmod)]."""
     gs, h, now, urls = guides_load(True), ph_load(), time.time(), []
+    try:  # {쿠팡 상품 주소: 봇 파트너스 링크} — SITE_SUB 키는 상품 주소가 아니라 봇 링크(11/2 Cowork: 가격 줄 0 버그)
+        cl = json.load(open(CP_LINKS)) if os.path.exists(CP_LINKS) else {}
+    except ValueError:
+        cl = {}
     when = lambda s: calendar.timegm(time.strptime("20" + s, "%Y%m%d%H")) - 9 * 3600
     for g in gs:
         rows, mod = [], g["updated"]
@@ -2992,7 +2996,7 @@ def guide_pages(out, today):
             if k["mall"] == "naver":
                 rows.append((k, u, None, None))
                 continue
-            st, href = ph_stat(h.get(ph_key({"pid": k["pid"], "item": k["item"]} if k["item"] else {"pid": k["pid"]}, u)), now), SITE_SUB.get(u)
+            st, href = ph_stat(h.get(ph_key({"pid": k["pid"], "item": k["item"]} if k["item"] else {"pid": k["pid"]}, u)), now), SITE_SUB.get(cl.get(u), cl.get(u))
             if not href or not aff(href) or not st or now - when(st["last"]) > GUIDE_STALE_H * 3600:
                 print("guide 줄 X", g["slug"], k["name"][:20], "파트너스 링크 전" if not href or not aff(href) else "가격 확인 X")
                 continue
