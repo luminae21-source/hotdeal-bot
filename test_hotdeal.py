@@ -12520,13 +12520,13 @@ assert H.CP_FILL_STALE * 3600 < H.CPRE_FRESH and H.CP_FILL_CHK <= H.CP_SEARCH_HO
 
 # 9-142 (11/1 Cowork 12:20 ②): 💄 화장대·욕실 바구니 = 그 칸 품목만(식용유 X · 모자라면 그 회차 시리즈 X) · 회차 = seen·posts.json·series_eps.json 중 큰 값 + 1(실패 실행에 seen이 안 남아 #1 두 번)
 cwd142 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+H.TH_SERIES_FIT = fit0  # 옛 셀프체크에서 끈 것 다시 켬
 json.dump([{"t": "2026-11-01 12:13", "text": "x", "series": "vanity", "no": 1}, {"t": "2026-11-01 15:12", "text": "x", "series": "stock", "no": 4}], open(H.POSTS, "w"))
 json.dump([{"key": "analysis", "no": 2, "t": "2026-10-31 20:30"}], open(H.SERIES_EPS, "w"))
 assert (H.series_next({}, "vanity"), H.series_next({"series": {"vanity": 5}}, "vanity"), H.series_next({"series": {"stock": 1}}, "stock"), H.series_next({}, "analysis"), H.series_next({}, "dawn")) == (2, 6, 5, 3, 1)
 f142 = H.TH_SERIES_FIT["vanity"]
 assert all(f142(n) for n in ("라운드랩 독도 토너 500ml", "도브 뷰티바 비누 90g×6", "2080 치약 120g×8", "좋은느낌 생리대 중형 36P", "해피바스 바디워시 900g")) \
     and not any(f142(n) for n in ("백설 콩기름 900ml×4", "오뚜기 진라면 120g×20", "크리넥스 3겹 30롤"))
-H.TH_SERIES_FIT = fit0
 ch142 = lambda cs: cs[:5]  # choose 대신(그대로 5개까지)
 mk142 = lambda n: ({"text": f"🔥 [쿠팡] {n} (9,900원)", "url": "https://link.coupang.com/a/" + n}, "9,900원", "", 3)
 C142 = [mk142(n) for n in ("백설 콩기름 900ml×4", "라운드랩 독도 토너 500ml", "2080 치약 120g×8", "오뚜기 진라면 120g×20", "해피바스 바디워시 900g")]
