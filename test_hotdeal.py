@@ -2305,7 +2305,7 @@ live_pages = {2, 3}
 def td_http(url, body=None, headers=None, method=None):
     calls.append((method or "GET", url))
     if "/p/" in url:
-        if int(url.rsplit("/", 1)[1].split(".")[0]) not in live_pages: raise OSError("404")
+        if int(re.search(r"/p/(\d+)", url)[1]) not in live_pages: raise OSError("404")
         return ""
     if "/me?" in url: return json.dumps({"id": "777"})
     if "/threads?" in url or "/threads_publish?" in url: return json.dumps({"id": "c1"})
