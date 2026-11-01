@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN  # 제휴 도메인은 사이트와 같이 씀
+from build_site import THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -2143,7 +2143,7 @@ def cp_api_prices(seen, items, src):
 def price_track(seen):
     """쿠팡 가격 추적(10/30 진우 '가격 변화를 꾸준하게 볼 수 있게'): 이번 실행까지 본 쿠팡 가격 -> price_hist.json(build_site.ph_add — 같은 값 다시 = 그대로 · 바뀐 것만 저장)
     봇 검색·골드박스·카테고리 베스트(cpq m — 출처 ms, 지금 events 옵션으로 맞춘 것만) api·gold·best · Cowork events now·chk cw · 진우 글 처음 올린 가격 post · 상품당 최근 180일. 쿠팡만(토스 X)."""
-    h, ev, q = ph_load(), ev_info(), seen.get("cpq", {})
+    h, ev, q = ph_load(), {**guide_ev(), **ev_info()}, seen.get("cpq", {})  # 11/2 /guide/ 쿠팡 픽도 price_hist에(가이드 가격표)
     n = ph_events(h, ev) + ph_posts(h, load(POSTS, []), ev)
     for u, v in q.get("m", {}).items():
         e = ev.get(u, {})
@@ -2319,6 +2319,7 @@ def cp_links(seen):
     lst = {i["url"]: str(i.get("name") or "") for e in raw if e.get("list") and isinstance(e.get("items"), list) and e.get("at", "") >= since
            for i in e["items"] if isinstance(i, dict) and re.match(CP_PROD, str(i.get("url") or ""))}  # 행사 목록 글(list_post) 상품 = 채널 예약
     evs += [{"url": u, "text": esc(n)} for u, n in lst.items()]
+    evs += [{"url": u, "text": esc(x["name"])} for u, x in guide_ev().items() if u not in {e.get("url") for e in evs}]  # 11/2 /guide/ 쿠팡 픽 = 파트너스 링크로
     evu = {e["url"] for e in evs}
     evs += [{"url": p["url"], "text": esc(p["text"]), "shelf": True} for p in load(POSTS, []) if p.get("own") and p.get("shelf") and re.match(CP_PROD, p.get("url") or "")
             and p["url"] not in cl and p["url"] not in evu]  # RR·SS(10/26 Cowork가 events에서 400 진열 79개 뺌 — 사이트 숨김·살아나면 다시 넣음): posts에 남은 생 주소 진열 = 변환 계속(되면 사이트에 다시 보임)
@@ -2441,6 +2442,11 @@ def cp_links(seen):
               + f" · 검색 대기 {len(rr['w'])} · 아직 {sum(u not in cl for u in rr['u'])}")
 
 
+def guide_ev():
+    """11/2 /guide/: guides.json 쿠팡 픽 -> {상품 주소: {pid, item(있으면), name}} — cp_links(파트너스)·cp_price(하루 1번 가격)·price_track(price_hist)이 진열처럼 봄."""
+    return {guide_url(k): {"pid": k["pid"], **({"item": k["item"]} if k["item"] else {}), "name": k["name"]} for g in guides_load() for k in g["picks"] if k["mall"] == "coupang"}
+
+
 def fill_slot_first(fr, posts, kst):
     """11/1 18시 묶음 '후보 1개'(남성 칸 🔥 78개 중 48시간 안 확인 2개): 3시간 안 묶음 칸(TH_LIST_GROUP f·m)이면 그 칸 상품을 cp_price가 먼저 확인."""
     grp = next((TH_LIST_GROUP.get(h) for h in TH_LIST_GROUP if 0 < (h - kst.tm_hour) % 24 <= 3), None)
@@ -2478,6 +2484,9 @@ def cp_price(seen):
             ev[u] = {"pid": m[1], **({"item": it[1]} if (it := re.search(r"[?&]itemId=(\d+)", u)) else {})}
     posts = load(POSTS, [])
     names = {p["url"]: parse(title_of(p["text"]))[1] for p in posts if p.get("own") and p.get("url") in ev and not p["text"].startswith("📋")}  # 같은 url 마지막 글 이름
+    gev = guide_ev()  # 11/2 /guide/ 쿠팡 픽 = 진열처럼 하루 1번 확인(가이드 가격표 — 검색 상한 그대로)
+    ev.update({u: x for u, x in gev.items() if u not in ev})
+    names.update({u: x["name"] for u, x in gev.items() if u not in names})
     hot = {p["url"] for p in posts if p.get("own") and p.get("t", "") >= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - CP_HOT_H * 3600))}
     fire = {p["url"] for p in posts if p.get("own") and p.get("st") == "hot"}  # 🔥 진열(CCC 몰아서 순서)
     q["m"], q["e"] = {u: v for u, v in q["m"].items() if u in names}, {u: d for u, d in q.get("e", {}).items() if d == today}  # e = 오늘 오류로 건너뛴 글
@@ -2504,8 +2513,8 @@ def cp_price(seen):
     if fq.get("d") != today:
         fq.update(d=today, n=0)
     fr = cp_fill_due(posts, names, ev, q["m"], today, ago(3), ago(CP_FILL_STALE / 24)) if fq["n"] < CP_FILL_CHK else set()
-    fr1 = fill_slot_first(fr, posts, kst)
-    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u in fr or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
+    fr1 = fill_slot_first(fr, posts, kst) | {u for u in gev if last(u) < ago(CP_FILL_STALE / 24) and u not in q["e"]}  # 가이드 픽 = 20시간 지나면 맨 앞
+    todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u in fr or u in fr1 or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
                                                                                                    or ev[u].get("item") and u in q["m"] and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or not rush and u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
                   key=lambda t: (rush and t[0] >= CP_RUSH[0], t[1] not in hot, rush and t[1] not in fire, t[0]))  # 최근 올린 글(CP_HOT_H) 먼저, 그다음 가장 오래전에 확인한 글 먼저(같으면 글 순서) — 글이 하루 실행 수보다 많아도 뒤쪽이 굶지 않게
@@ -6625,10 +6634,25 @@ def clip_topics(seen, posts, kst):
     out.append(("drop", "가격 내려간 상품", "", drop))
     days = [time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(kst) - d * 86400)) for d in range(3)]
     out.append(("beauty", "화장품 특가", "", [p for d in days for _, p in day_deals(posts, d) if cat_of(p) == "beauty"]))
+    pool = [p for d in days for _, p in day_deals(posts, d) if shop_of(p) == "coupang"] + [posts[i] for i, *_ in cp_shelf(posts, kst, False)]  # 11/2 진우 쇼츠: 가전·자취템·생필품 하루 1편씩
+    out.append(("appliance", "가전 특가", "", [p for p in pool if cat_of(p) in ("digital", "heat")]))
+    out.append(("solo", "자취템", "", [p for p in pool if re.search(CLIP_SOLO, parse(title_of(p["text"]))[1])]))
+    out.append(("life", "생필품 특가", "", [p for p in pool if cat_of(p) in TH_LIFE_CATS]))
     return out
 
 
-CLIP_HOOKS = {"steady": "다 떨어지기 전에 장바구니", "drop": "어제보다 내려간 것만", "eve": "어제 저녁 놓친 특가", "beauty": "화장대 채울 때 1개 값부터"}  # 주제별 기본 훅(kw·큐레이션 = '{검색어} 고를 때 1개 값부터')
+CLIP_SOLO = r"1인|자취|원룸|미니|소형|간편식|즉석|컵밥|햇반|도시락|수납|정리함|빨래|건조대|세탁망|전자레인지|에어프라이어|전기\s*포트|멀티탭"  # 자취템 = 1인 가구 생활용품(소형 가전·간편식·수납·세탁) — 성별 말 X
+CLIP_DAYS = 7  # 같은 상품 조합(3개) = 7일 안 다시 X(steady 포함 — 11/2 '반복 콘텐츠')
+
+
+def clip_kind(p):
+    """클립 제목·해시태그 품목 이름(11/2 Cowork — 상품명 첫 낱말 '합성'·'로즈라일락향' X): 가격 기록 품목(price_item '계란') → 진열 tag('주방세제' — 숫자·'할인전'·'시리즈' 같은 말 X) → 사이트 칸 이름(CAT_SHORT)."""
+    it, tg = price_item(p), str(p.get("tag") or "").split("·")[0].strip()
+    return (it[1] if it else "") or ("" if re.search(r"\d|할인|시리즈|정품|기획|특가|모음|행사|브랜드", tg) else tg) or CAT_SHORT.get(cat_of(p), "")
+
+
+CLIP_HOOKS = {"steady": "다 떨어지기 전에 장바구니", "drop": "어제보다 내려간 것만", "eve": "어제 저녁 놓친 특가", "beauty": "화장대 채울 때 1개 값부터",
+              "appliance": "작은 가전 바꿀 때 가격부터", "solo": "혼자 살 때 챙겨 둘 것", "life": "생필품은 1개 값부터"}  # 주제별 기본 훅(kw·큐레이션 = '{검색어} 고를 때 1개 값부터')
 
 
 def clip_hook(key, word, top, used=()):
@@ -6650,12 +6674,14 @@ def clip_text(n, key, label, word, top, kst):
     (쇼핑커넥트 아님 = NAVER_NOTE·'태그 상품은 판매처가 달라' 줄 X) · shop = 쇼핑 태그 걸 때 찾을 이름 · at = 네이버 + 30분(같은 시각 몰림 X)."""
     name = lambda p: parse(title_of(p["text"]))[1]
     tag = lambda p: " ".join([w for w in re.sub(r"\([^)]*\)|\[[^\]]*\]|,", " ", name(p)).split() if not re.search(r"\d", w)][:4])  # 수량·용량 낱말 빼고 앞 4낱말
-    word = word or "·".join(list(dict.fromkeys(tag(p).split()[-1] for p in top if tag(p)))[:2])  # 검색어 = 키워드 표·큐레이션 주제, 없으면 상품 품목 낱말(이름 끝 낱말) 2개
+    kinds = sorted(dict.fromkeys(k for k in map(clip_kind, top) if k), key=lambda k: k in CAT_SHORT.values())  # 칸 이름('생필품')은 뒤로
+    word = word or "·".join(kinds[:2])  # 검색어 = 키워드 표·큐레이션 주제, 없으면 품목 이름(clip_kind) 2개
+    hk = list(dict.fromkeys(x for x in (re.sub(r"[^가-힣A-Za-z0-9]", "", y) for y in [*word.split("·"), *kinds]) if x))[:3]  # 해시태그 = 품목 이름
     title = clip(f"{word} {label} TOP{len(top)}" if word not in label else f"{label} TOP{len(top)}", 30)
     rows = "\n".join(f"{i}. {clip(name(p), 40)} {parse(title_of(p['text']))[2].split('/')[0].strip()}" for i, p in enumerate(top, 1))
     desc = f"{CLIP_NOTE}\n\n{rows}\n\n{ig_tags(top, n)}"
     title, hh, at = re.sub(r"최저가?", "", title).strip(), CLIP_HOURS[(n - 1) % len(CLIP_HOURS)], clip_at(top)
-    ytd = f"{DISCLOSURE}\n영상 가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인\n\n{rows}\n\n전체 목록은 프로필 링크 hotdealpick.kr\n#핫딜픽 #생활꿀템 #{re.sub(r'[^가-힣A-Za-z0-9]', '', word.split('·')[0])}"
+    ytd = f"{DISCLOSURE}\n영상 가격은 쿠팡 {at[0]}/{at[1]} {at[2]}시 기준 · 결제 전 최종가 확인\n\n{rows}\n\n전체 목록은 프로필 링크 hotdealpick.kr\n#핫딜픽 " + " ".join(f"#{x}" for x in hk)
     return {"n": n, "topic": key, "title": title, "desc": re.sub(r"최저가", "특가", desc), "tags": [tag(p) for p in top], "at": hh + ":00", "file": f"{n:02d}.mp4",
             "yt": {"title": clip(f"{title} #쇼츠", 100), "desc": re.sub(r"최저가", "특가", ytd), "shop": [tag(p) for p in top], "at": hh + ":30"}}
 
@@ -6669,7 +6695,7 @@ def clip_post(seen):
     if hm < CLIP_FROM:
         return
     if st.get("d") != day or "v" not in st:  # v = 10/29 첫 배포 chk 'M/D H시' 오류로 멈춘 날 기록을 1번 새로
-        st = {**{k: v for k, v in st.items() if k in ("m", "n")}, "d": day, "done": [], "v": 1}
+        st = {**{k: v for k, v in st.items() if k in ("m", "n", "h")}, "d": day, "done": [], "v": 1}
     st = seen["clip"] = {**st, "t": now}
     if st.get("m") != day[:7]:
         st.update(m=day[:7], n=0)
@@ -6703,8 +6729,16 @@ def clip_post(seen):
         if k >= CLIP_RUN:
             break
         st["done"].append(key)  # 먼저 기록(실패해도 15분마다 다시 만들지 않게)
-        top = reel_top([p for p in ps if p.get("url") not in used], 3, f"clip {key}")
-        if len(top) < 3:
+        pool, cut = [p for p in ps if p.get("url") not in used], time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - CLIP_DAYS * 86400))
+        past = {frozenset(h[1]) for h in st.get("h", []) if h[0] > cut}
+        top, dup = reel_top(pool, 3, f"clip {key}"), 0
+        for _ in range(3):  # 7일 안 같은 조합 = 첫 상품 빼고 다시(3번까지)
+            if len(top) < 3 or frozenset(p["url"] for p in top) not in past:
+                break
+            pool, dup = [p for p in pool if p["url"] != top[0]["url"]], dup + 1
+            top = reel_top(pool, 3, f"clip {key} 다시")
+        if len(top) < 3 or frozenset(p["url"] for p in top) in past:
+            print(f"clip {key} 건너뜀 — " + ("7일 안 같은 조합 · " if dup else "") + f"후보 {len(top)}개")
             continue
         n, k, hook = len(made) + 1, k + 1, clip_hook(key, word, top, {c.get("hook") for c in made})
         try:
@@ -6714,11 +6748,12 @@ def clip_post(seen):
             continue
         made.append({**clip_text(n, key, label, word, top, kst), "u": [p["url"] for p in top], "voice": said, "lay": CLIP_LAY, "hook": hook})
         used |= {p["url"] for p in top}
+        st["h"] = [h for h in st.get("h", []) if h[0] > cut] + [[day, sorted(p["url"] for p in top)]]
         st["n"] = st.get("n", 0) + 1
         print(f"clip {n:02d} {key} · {made[-1]['title']} · 나레이션 {'O' if said else 'X'}")
     os.makedirs(CLIP_DIR, exist_ok=True)
     json.dump({d: v for d, v in js.items() if v}, open(jf, "w"), ensure_ascii=False, indent=1)
-    left = len(st["done"]) < 7
+    left = len(st["done"]) < len(topics)
     if hm >= CLIP_MSG and st.get("sent") != day and (not left or hm >= CLIP_LAST):
         st["sent"] = day
         tg("sendMessage", chat_id=ADMIN, link_preview_options={"is_disabled": True},

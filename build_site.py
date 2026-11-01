@@ -1666,7 +1666,7 @@ def list_pages(slug, head, desc, xs, mall, recs):
         nav = ('<nav class="pg" aria-label="쪽">' + (f'<a class="btn2" href="{c_url(slug, k - 1)}" rel="prev">← 이전 20개</a>' if k > 1 else "")
                + (f'<a class="btn2" href="{c_url(slug, k + 1)}" rel="next">다음 20개 보기 →</a>' if k < n else "") + "</nav>") if n > 1 else ""
         body = (f'<h1 class="h">{html.escape(head)}{f" · {k}쪽" if k > 1 else ""}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md} 업데이트</div>'
-                + (f'<p class="cin">{CAT_INTRO[slug]}</p>' + TOPIC_NAV.get(slug, "") if k == 1 and slug in CAT_INTRO else "")  # TT-2 ③⑥: 칸 소개 2~3줄 + 주제 쪽 링크(1쪽만)
+                + (f'<p class="cin">{CAT_INTRO[slug]}</p>' + TOPIC_NAV.get(slug, "") if k == 1 and slug in CAT_INTRO else "") + (GUIDE_NAV.get(slug, "") if k == 1 else "")  # TT-2 ③⑥: 칸 소개 2~3줄 + 주제 쪽 링크(1쪽만)
                 + ("".join(f'<section class="card" id="ig{j or ""}" aria-labelledby="igh{j or ""}"><h2 id="igh{j or ""}">📸 {html.escape(nm)}</h2><div class="t">인스타 게시물 번호와 같아요 · 누르면 바로 구매 페이지</div>{pick_rows(ps)}</section>'
                            for j, (nm, ps) in enumerate(IG_TOP.get(slug, []) if k == 1 else ())))
                 + (f'<p class="t">{SHOP_NOTES[mall]}</p>' if mall else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in part) else "") + (stat_chips(slug) if slug in dict(STAT_CHIPS) else chips_html(slug))
@@ -2935,6 +2935,108 @@ def link_page(style, posts, it, out, alt=False, today=None):
             f'</main>{LINK_JS}</body></html>')
 
 
+GUIDES, GUIDE_STALE_H = "guides.json", 48  # 11/2 진우 '구글이 주목하고 계속 끌어올릴 페이지' — Cowork가 웹 편집기로 씀 · 확인 48시간 넘은 가격 = 그 줄 X(규칙 12)
+GUIDE_NAV = {}  # build가 채움: c/ 칸 slug -> '고르는 법 보기' 링크 · '*' = 가이드 전부(홈·/c/)
+
+
+def guide_url(k):
+    """가이드 픽 -> 쿠팡 = 상품 주소(pid·itemId — cp_links·cp_price·price_track이 진열처럼 봄) / 네이버 = 적힌 쇼핑커넥트 링크."""
+    return f"https://www.coupang.com/vp/products/{k['pid']}" + (f"?itemId={k['item']}" if k.get("item") else "") if k.get("mall") == "coupang" else str(k.get("url") or "")
+
+
+def guides_load(log=False):
+    """guides.json -> 형식 맞는 가이드만(slug·title·summary·updated·criteria[name·text] 빠짐 = 그 가이드 건너뜀) · 픽 = 쿠팡(pid 숫자·item 숫자/빈칸)·네이버(naver.me 링크)만
+    (토스 X — 다른 몰과 한 표 금지) · 출처 = name + https 주소만."""
+    try:
+        raw = json.load(open(GUIDES))
+    except (OSError, ValueError):
+        return []
+    out = []
+    for g in raw if isinstance(raw, list) else []:
+        ok = isinstance(g, dict) and re.fullmatch(r"[a-z0-9][a-z0-9-]{2,59}", str(g.get("slug", ""))) and all(isinstance(g.get(k), str) and g[k].strip() for k in ("title", "summary", "updated")) \
+            and re.fullmatch(r"\d{4}-\d\d-\d\d", g["updated"]) and isinstance(g.get("criteria"), list) and g["criteria"] and isinstance(g.get("picks"), list) \
+            and all(isinstance(c, dict) and str(c.get("name", "")).strip() and str(c.get("text", "")).strip() for c in g["criteria"])
+        if not ok:
+            if log:
+                print("guide X 형식", str(g.get("slug") if isinstance(g, dict) else g)[:40])
+            continue
+        picks = [{**k, "pid": str(k.get("pid", "")), "item": str(k.get("item", ""))} for k in g["picks"] if isinstance(k, dict) and str(k.get("name", "")).strip()
+                 and (k.get("mall") == "coupang" and re.fullmatch(r"\d+", str(k.get("pid", ""))) and re.fullmatch(r"\d*", str(k.get("item", "")))
+                      or k.get("mall") == "naver" and urllib.parse.urlsplit(str(k.get("url", ""))).netloc in NAVER_HOSTS)]
+        if log and len(picks) < len(g["picks"]):
+            print("guide 픽 뺌(형식·몰)", g["slug"], len(g["picks"]) - len(picks))
+        out.append({**g, "picks": picks, "sources": [s for s in g.get("sources") or [] if isinstance(s, dict) and str(s.get("name", "")).strip() and str(s.get("url", "")).startswith("https://")]})
+    return out
+
+
+def unit_won(unit, price):
+    """가이드 단위당 가격: 픽 '단위'(그 상품 전체 양 — '30매'·'500ml'·'1.8L'·'200g') -> '1매당 33원'·'100ml당 1,980원' / 못 읽음 = ''(틀린 단가보다 없는 게 나음)."""
+    m = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*(ml|l|g|kg|매|개입|개|장|롤|팩|포|정|구|입)\s*", unit or "", re.I)
+    if not m or not price or not float(m[1]):
+        return ""
+    n, u = float(m[1]), m[2].lower()
+    n, u = (n * 1000, {"l": "ml", "kg": "g"}[u]) if u in ("l", "kg") else (n, u)
+    return f"100{u}당 {round(price * 100 / n):,}원" if u in ("ml", "g") else f"1{ {'개입': '개', '입': '개'}.get(m[2], m[2])}당 {round(price / n):,}원"
+
+
+def guide_pages(out, today):
+    """/guide/<slug>/ + /guide/ 목록(11/2 Cowork — 오래 남고 계속 새로워지는 고유 쪽): 결론 → 고르는 기준 표 → 오늘 가격표(price_hist 확인가·확인 시각·단위당·판매처 링크 그대로 —
+    쿠팡 = 파트너스로 바뀐 것만, 48시간 넘은 확인·못 찾음 = 그 줄 X + 로그 · 가격 줄 2개 밑 = '가격 다시 확인 중') → 7일 변화 한 줄 → 출처 → 관련 칸·블로그.
+    JSON-LD = Article + ItemList(별점·리뷰 X) · 사진 X · lastmod = 가이드 고친 날·가격 바뀐 날 중 늦은 것(안 바뀌면 그대로) -> 사이트맵 [(주소, lastmod)]."""
+    gs, h, now, urls = guides_load(True), ph_load(), time.time(), []
+    when = lambda s: calendar.timegm(time.strptime("20" + s, "%Y%m%d%H")) - 9 * 3600
+    for g in gs:
+        rows, mod = [], g["updated"]
+        for k in g["picks"]:
+            u = guide_url(k)
+            if k["mall"] == "naver":
+                rows.append((k, u, None, None))
+                continue
+            st, href = ph_stat(h.get(ph_key({"pid": k["pid"], "item": k["item"]} if k["item"] else {"pid": k["pid"]}, u)), now), SITE_SUB.get(u)
+            if not href or not aff(href) or not st or now - when(st["last"]) > GUIDE_STALE_H * 3600:
+                print("guide 줄 X", g["slug"], k["name"][:20], "파트너스 링크 전" if not href or not aff(href) else "가격 확인 X")
+                continue
+            s, i = st["s"], len(st["s"]) - 1
+            while i and s[i - 1][1] == st["now"]:  # 지금 가격이 처음 보인 날 = lastmod 후보(가짜 갱신 X)
+                i -= 1
+            mod = max(mod, f"20{s[i][0][:2]}-{s[i][0][2:4]}-{s[i][0][4:6]}")
+            rows.append((k, href, st, when(st["last"])))
+        priced = [r for r in rows if r[2]]
+        md = lambda ts: (lambda k: f"{k.tm_mon}/{k.tm_mday} {k.tm_hour}시")(time.gmtime(ts + 9 * 3600))
+        table = "".join(f'<tr><td>{html.escape(k["name"])}</td><td>{html.escape(str(k.get("unit") or ""))}</td>'
+                        + (f'<td><b>{st["now"]:,}원</b><br><small>{md(ts)} 확인</small></td><td>{unit_won(str(k.get("unit") or ""), st["now"])}</td>' if st else '<td colspan="2">가격은 판매처에서 확인</td>')
+                        + f'<td><a class="btn2" href="{html.escape(href)}" rel="nofollow sponsored">{"쿠팡" if k["mall"] == "coupang" else "네이버"}에서 보기</a></td></tr>' for k, href, st, ts in rows)
+        chg = [f"{html.escape(k['name'][:20])} {'▼' if st['d7'] < 0 else '▲'}{abs(st['d7'])}%" for k, _, st, _ in priced if st["d7"]]
+        last = max([ts for *_, ts in priced] or [0])
+        body = (f'<h1 class="h">{html.escape(g["title"])}</h1>' + (f'<p class="t">{html.escape(g.get("desc") or "")}</p>' if g.get("desc") else "")
+                + f'<section class="card"><h2>결론</h2><p>{html.escape(g["summary"])}</p></section>'
+                + '<section class="card"><h2>고르는 기준</h2><table class="gt"><thead><tr><th>기준</th><th>설명</th></tr></thead><tbody>'
+                + "".join(f'<tr><td>{html.escape(str(c["name"]))}</td><td>{html.escape(str(c["text"]))}</td></tr>' for c in g["criteria"]) + "</tbody></table></section>"
+                + '<section class="card"><h2>오늘 가격표</h2>' + (f'<table class="gt"><thead><tr><th>상품</th><th>양</th><th>가격</th><th>단위당</th><th>판매처</th></tr></thead><tbody>{table}</tbody></table>'
+                                                                   if len(priced) >= 2 else "<p>가격 다시 확인 중이에요.</p>")
+                + (f'<p class="t">마지막 확인 {md(last)} · 가격·재고는 바뀔 수 있어요</p>' if last else "")
+                + (f'<p class="t">최근 7일 가격 변화: {" · ".join(chg)}</p>' if chg else '<p class="t">최근 7일 가격 변화 없음(우리 확인 기준)</p>' if len(priced) >= 2 else "") + "</section>"
+                + ('<section class="card"><h2>출처</h2><ul>' + "".join(f'<li><a href="{html.escape(s["url"])}" rel="nofollow">{html.escape(str(s["name"]))}</a></li>' for s in g["sources"]) + "</ul></section>" if g["sources"] else "")
+                + "".join(x for x in (f'<a class="btn2" href="{c_url(g["related_c"])}">관련 칸 더 보기 →</a>' if os.path.isfile(f"{out}/c/{g.get('related_c')}/index.html") else "",
+                                      f'<a class="btn2" href="{html.escape(g["blog"])}">블로그 글 보기 →</a>' if str(g.get("blog") or "").startswith("https://") else "")))
+        url = f"{BASE}guide/{g['slug']}/"
+        ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "Article", "headline": g["title"], "dateModified": mod, "author": {"@type": "Organization", "name": TITLE}, "mainEntityOfPage": url},
+                                                                      {"@type": "ItemList", "itemListElement": [{"@type": "ListItem", "position": n, "name": k["name"]} for n, (k, *_) in enumerate(rows, 1)]}]}, ensure_ascii=False)
+        write(out, f"guide/{g['slug']}/", page(f"{g['title']} | {TITLE}", body, g.get("desc") or g["summary"], url, head=f'<script type="application/ld+json">{ld}</script>'))
+        urls.append((url, mod))
+    for d in os.listdir(f"{out}/guide") if os.path.isdir(f"{out}/guide") else ():  # 가이드에서 빠진 slug = 그 쪽 지움
+        if os.path.isdir(f"{out}/guide/{d}") and d not in {g["slug"] for g in gs}:
+            shutil.rmtree(f"{out}/guide/{d}")
+    if gs:
+        write(out, "guide/", page(f"고르는 법 가이드 | {TITLE}", '<h1 class="h">📖 고르는 법 가이드</h1>' + "".join(
+            f'<a class="card" href="{BASE}guide/{g["slug"]}/"><b>{html.escape(g["title"])}</b><br><small>{html.escape(g.get("desc") or "")} · {int(g["updated"][5:7])}/{int(g["updated"][8:])} 고침</small></a>' for g in gs),
+            "기준·가격을 비교해 고르는 법을 정리해요 — 가격은 매일 확인", f"{BASE}guide/"))
+        urls.append((f"{BASE}guide/", max(m for _, m in urls)))
+    elif os.path.isdir(f"{out}/guide"):
+        shutil.rmtree(f"{out}/guide")
+    return urls
+
+
 SHORT, SHORT_SKIP = True, {"today", "steady", "t"}  # 11/1 진우 '사이트에 짧은 주소'(결정 21 '링크 깔끔하게'): hotdealpick.kr/<칸> → /c/<칸>/ · False = 만든 짧은 쪽 지움 · today = 최상위 /today · steady = steady.html(/steady) · t = 주제 폴더
 
 
@@ -2969,6 +3071,10 @@ def short_pages(out, heads):
 def build(posts, out="docs"):
     global MICONS, SITE_SUB
     SITE_SUB = site_subs()
+    GUIDE_NAV.clear()  # 11/2 가이드 '고르는 법 보기' — 칸·딜 쪽·홈·/c/
+    for g in guides_load():
+        GUIDE_NAV[g.get("related_c") or ""] = GUIDE_NAV.get(g.get("related_c") or "", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])} — 고르는 법 보기</a>'
+        GUIDE_NAV["*"] = GUIDE_NAV.get("*", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])}</a>'
     os.makedirs(f"{out}/p", exist_ok=True)
     MICONS = {f[:-4] for f in os.listdir(f"{out}/icons/mall") if f.endswith(".png")} if os.path.isdir(f"{out}/icons/mall") else set()  # V 몰 로고(있는 것만)
     open(f"{out}/.nojekyll", "w").close()
@@ -3047,7 +3153,7 @@ def build(posts, out="docs"):
         tp = TOPIC_OF.get(i)
         tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
         open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids)
-                                                  + (rl or "") + tb + (more or "")
+                                                  + (rl or "") + tb + GUIDE_NAV.get(c[0] if c else "", "") + (more or "")
                                                   + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=ld or "", og=img_of(p),
                                                   noindex=sh is None or sh[0] == 3))  # TT-2 ①⑦: 끝난 딜(진열 밖)·일시 품절 = noindex(사람은 그대로 봄)
         if sh and sh[0] == 0:  # 사이트맵 딜 = 진행 중 🔥 특가만(⏳·👍 = 색인 O, 칸 쪽 링크로)
@@ -3072,7 +3178,7 @@ def build(posts, out="docs"):
     mc = collections.Counter(shop_of(p) for _, p, _ in it)
     write(out, "c/", page(f"카테고리 | {TITLE}", '<h1 class="h">🗂️ 카테고리</h1><div class="t">쇼핑몰·상태·품목으로 골라 보세요</div><h2 class="ch">🛍 쇼핑몰로 찾기</h2><nav class="mt3" aria-label="쇼핑몰">'
                           + "".join(f'<a class="mt {k}" href="{c_url(k)}" data-gc="mall/{k}"><b>{mall_label(k, n)}</b><small>{sub}</small><i>{mc[k]}개</i></a>' for k, n, sub in MALL_BTN) + "</nav>"
-                          + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (TOPIC_NAV.get("*") or "") + (rec_nav(recs) or "") + LSW + LSW_JS,
+                          + stat_chips("") + '<h2 class="ch">🗂 품목으로 찾기</h2>' + tiles(tuple(CAT_META), True) + (TOPIC_NAV.get("*") or "") + GUIDE_NAV.get("*", "") + (rec_nav(recs) or "") + LSW + LSW_JS,
                          "생필품·식품·뷰티·주방·세탁·간식·커피·차·겨울템 — 품목별 특가 모음", f"{BASE}c/", cur="cats"))
     urls.append((f"{BASE}c/", latest))
     top = lambda xs: [x for x in xs if x[0] not in evi]
@@ -3138,7 +3244,7 @@ def build(posts, out="docs"):
     hd = "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 주문 들어오는 것까지."
     ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "inLanguage": "ko", "description": hd},  # TT 10/27: 검색 '핫딜픽' 같은 이름 다른 곳보다 위로 — 다른 표기도 같은 사이트
                                                                   {"@type": "Organization", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
-    open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + HASH_JS,
+    open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + GUIDE_NAV.get("*", "") + HASH_JS,
                                               hd, BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>{HREF_KO_EN}', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
     json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
@@ -3178,6 +3284,7 @@ def build(posts, out="docs"):
         if os.path.isdir(f"{out}/link/{d}"):
             shutil.rmtree(f"{out}/link/{d}")
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
+    urls += guide_pages(out, today)  # 11/2 /guide/ 비교 가이드(색인 O · lastmod = 고친 날·가격 바뀐 날)
     urls += series_pages(posts, out, today, ls["toss"][2] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     short_pages(out, {**{k: v[0] for k, v in ls.items()}, "women": "여성용품 → 생필품"})  # 11/1 짧은 주소(/<칸> → /c/<칸>/ — 사이트맵 X)

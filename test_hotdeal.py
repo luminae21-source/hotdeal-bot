@@ -8477,7 +8477,7 @@ assert [p["url"][-2:] for p in mk75[3][0]] == ["s1", "s2", "s3"] and "clip cur2 
 assert "clip drop skip 사진 부족 2/3" in o75[-1] and "clip beauty skip 사진 부족 1/3" in o75[-1] and len(mk75) == 4 and not a75  # ⑥ 가격 내림 2개 · ⑦ 화장품 사진 1개 = 그 편 X · 07시 전 = 알림 X
 cj75 = json.load(open("docs/clips/clips.json"))["2026-10-29"]
 assert [(c["n"], c["topic"], c["file"], c["at"]) for c in cj75] == [(1, "kw", "01.mp4", "08:00"), (2, "cur1", "02.mp4", "11:00"), (3, "eve", "03.mp4", "13:00"), (4, "steady", "04.mp4", "17:00")]
-assert cj75[0]["title"] == "전기요 가성비 TOP3" and cj75[1]["title"] == "그릭요거트 모아보기 TOP3" and cj75[2]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3" and cj75[3]["title"] == "스틱·시트 꾸준템 TOP3" and all(len(c["title"]) <= 30 for c in cj75)  # 검색어 맨 앞 · 30자 안
+assert cj75[0]["title"] == "전기요 가성비 TOP3" and cj75[1]["title"] == "그릭요거트 모아보기 TOP3" and cj75[2]["title"] == "화장지·생필품 어제 저녁 쿠팡 특가 TOP3" and cj75[3]["title"] == "세탁세제·커피 꾸준템 TOP3" and all(len(c["title"]) <= 30 for c in cj75)  # 검색어 맨 앞 · 30자 안
 d75 = cj75[0]["desc"].split("\n")
 assert d75[:3] == [H.DISCLOSURE, H.NAVER_NOTE, "영상 가격은 쿠팡 기준, 태그 상품은 판매처가 달라 가격이 다를 수 있어요"] and d75[4] == "1. 곰표 전기요 슈퍼싱글 9,900원"
 assert len(d75[-1].split()) == 5 and all(x.startswith("#") for x in d75[-1].split()) and not any("최저" in c["desc"] + c["title"] for c in cj75)  # 해시태그 5개 · 최저가 X
@@ -8491,20 +8491,39 @@ assert H.clip_hook("drop", "", [{"text": "💡 모음 — 역대 최저가라 �
 assert H.clip_hook("kw", "전기요", []) == "전기요 고를 때 1개 값부터" and H.clip_hook("eve", "", [], {"어제 저녁 놓친 특가"}) == ""  # 다 썼으면 훅 없음
 # 유튜브 쇼츠(10/30 진우 '응' — 같은 영상, 진우가 올림): 제목 + #쇼츠 · 설명 첫 줄 = 쿠팡 문구 그대로 · 가격 시각 = 끝 장과 같음 · 네이버 쇼핑커넥트 줄 X · 해시태그 3개 · 쇼핑 태그 찾을 이름 · 네이버 + 30분
 y75 = cj75[0]["yt"]; yd75 = y75["desc"].split("\n")
-assert y75["title"] == "전기요 가성비 TOP3 #쇼츠" and y75["at"] == "08:30" and y75["shop"] == cj75[0]["tags"] and cj75[2]["yt"]["title"] == "칫솔·치약 어제 저녁 쿠팡 특가 TOP3 #쇼츠"
+assert y75["title"] == "전기요 가성비 TOP3 #쇼츠" and y75["at"] == "08:30" and y75["shop"] == cj75[0]["tags"] and cj75[2]["yt"]["title"] == "화장지·생필품 어제 저녁 쿠팡 특가 TOP3 #쇼츠"
 assert yd75[:4] == [H.DISCLOSURE, "영상 가격은 쿠팡 10/28 18시 기준 · 결제 전 최종가 확인", "", "1. 곰표 전기요 슈퍼싱글 9,900원"] and mk75[0][5] == "가격은 " + yd75[1].split("영상 가격은 ")[1]  # 끝 장과 같은 시각
-assert yd75[-2:] == ["전체 목록은 프로필 링크 hotdealpick.kr", "#핫딜픽 #생활꿀템 #전기요"] and cj75[2]["yt"]["desc"].endswith("#핫딜픽 #생활꿀템 #칫솔")
+assert yd75[-2:] == ["전체 목록은 프로필 링크 hotdealpick.kr", "#핫딜픽 #전기요 #겨울난방"] and cj75[2]["yt"]["desc"].endswith("#핫딜픽 #화장지 #생필품")  # 11/2: 해시태그·제목 = 품목 이름(clip_kind — 가격 기록 품목 → 진열 이름 → 칸 이름 뒤로)
 assert all(c["yt"]["desc"].startswith(H.DISCLOSURE + "\n") and H.NAVER_NOTE not in c["yt"]["desc"] and "판매처가 달라" not in c["yt"]["desc"] and len(c["yt"]["title"]) <= 100
            and not re.search("최저가", c["yt"]["title"] + c["yt"]["desc"]) for c in cj75)  # 셀프체크 3)
-clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 스틱·시트 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
+clip75("2026-10-29 07:07"); assert a75 == ["🎬 오늘 클립 4편 → https://hotdealpick.kr/clips/\n1. 전기요 가성비 TOP3 — https://hotdealpick.kr/clips/2026-10-29/01.mp4\n2. 그릭요거트 모아보기 TOP3 — https://hotdealpick.kr/clips/2026-10-29/02.mp4\n3. " + cj75[2]["title"] + " — https://hotdealpick.kr/clips/2026-10-29/03.mp4\n4. 세탁세제·커피 꾸준템 TOP3 — https://hotdealpick.kr/clips/2026-10-29/04.mp4"], a75
 clip75("2026-10-29 07:22"); assert len(a75) == 1 and len(mk75) == 4 and s75["clip"]["n"] == 4 and s75["clip"]["m"] == "2026-10"  # 하루 1번 · 다 한 주제 다시 X
 j75 = json.load(open("docs/clips/clips.json")); del j75["2026-10-29"][0]["lay"]; json.dump(j75, open("docs/clips/clips.json", "w"), ensure_ascii=False)  # 옛 틀로 만든 클립(lay 없음)
 clip75("2026-10-29 07:37"); clip75("2026-10-29 07:52")
 assert len(mk75) == 5 and mk75[4][1] == "docs/clips/2026-10-29/01.mp4" and [p["url"][-2:] for p in mk75[4][0]] == ["k1", "k2", "k3"] and mk75[4][4] == "전기요 가성비" and "clip 01 새 틀로 다시" in o75[-2]  # 같은 상품·같은 번호로 1번만 다시
 assert json.load(open("docs/clips/clips.json"))["2026-10-29"][0]["lay"] == H.CLIP_LAY and len(a75) == 1 and s75["clip"]["n"] == 4; del mk75[4:]
 H.make_reel = lambda *a, **k: (_ for _ in ()).throw(OSError("ffmpeg"))
-clip75("2026-10-30 06:07"); assert "clip steady OSError('ffmpeg')" in o75[-1] and len(s75["clip"]["done"]) == 7 and s75["clip"]["done"][:2] == ["kw", "cur1"] and s75["clip"]["n"] == 4  # 실패 = 그 편 X(다시 X) · 날 바뀜 = 처음부터
+clip75("2026-10-30 06:07"); assert "clip steady OSError('ffmpeg')" in o75[-1] and len(s75["clip"]["done"]) == 10 and s75["clip"]["done"][:2] == ["kw", "cur1"] and s75["clip"]["n"] == 4  # 실패 = 그 편 X(다시 X) · 날 바뀜 = 처음부터
 H.make_reel = mkr75
+# 11/2 진우 '쇼츠 주제·제목': 같은 상품 조합(3개) = 7일 안 다시 X(꾸준템 포함 — 첫 상품 빼고 3번까지 다시, 안 되면 건너뜀+로그) · 가전·자취템·생필품 주제 · 제목·해시태그 = 품목 이름
+u75 = lambda *ns: sorted(f"https://link.coupang.com/a/{n}" for n in ns)
+s75["clip"]["h"] = s75["clip"]["h"] + [["2026-10-30", u75("e3", "s1", "s2")], ["2026-10-20", u75("s2", "s3", "s4")]]  # 10/29 s1·s2·s3 + 10/30 e3·s1·s2 = 7일 안 · 10/20 = 지남
+assert ["2026-10-29", u75("s1", "s2", "s3")] in s75["clip"]["h"]; n75 = len(mk75); jb75, nn75 = open("docs/clips/clips.json").read(), s75["clip"]["n"]
+clip75("2026-10-31 06:07"); st75 = [x for x in mk75[n75:] if x[4] == "꾸준템"]
+assert len(st75) == 1 and [p["url"][-2:] for p in st75[0][0]] == ["s2", "s3", "s4"] and ["2026-10-31", u75("s2", "s3", "s4")] in s75["clip"]["h"]  # e3·s1·s2 X → s1·s2·s3 X → s2·s3·s4
+assert not any(h[0] <= "2026-10-24" for h in s75["clip"]["h"])  # 7일 지난 기록 = 지움
+s75["clip"].update(d="2026-10-31", done=[t for t in s75["clip"]["done"] if t != "steady"]); s75["clip"]["h"] += [["2026-10-31", u75("e3", "s1", "s3")]]
+json.dump({}, open("docs/clips/clips.json", "w")); clip75("2026-10-31 06:22")
+assert "clip steady 건너뜀 — 7일 안 같은 조합 · 후보 2개" in o75[-1] and len([x for x in mk75[n75:] if x[4] == "꾸준템"]) == 1, o75[-1]  # 남은 조합 다 7일 안 = 건너뜀
+del mk75[n75:]; s75["clip"]["n"] = nn75; open("docs/clips/clips.json", "w").write(jb75); shutil.rmtree("docs/clips/2026-10-31", ignore_errors=True)
+k75 = lambda **k: {"t": "2026-11-01 18:00", "text": "🔥 [쿠팡] 상품 (9,900원)", "url": "https://link.coupang.com/a/z", **k}
+assert H.clip_kind(k75(text="🔥 [쿠팡] 크리넥스 3겹 데코 화장지 30롤 (9,900원)", tag="크리넥스 시리즈")) == "화장지" and H.clip_kind(k75(tag="주방세제·수세미")) == "주방세제"  # 가격 기록 품목 → 진열 이름
+assert H.clip_kind(k75(tag="LG 뷰티 할인전")) == H.clip_kind(k75(tag="전기요 2026")) == H.clip_kind(k75()) == "" and H.clip_kind(k75(text="🔥 [쿠팡] 곰표 전기요 싱글 (9,900원)", tag="전기요 2026")) == H.CAT_SHORT[H.cat_of(k75(text="🔥 [쿠팡] 곰표 전기요 싱글 (9,900원)"))]  # 할인전·숫자 = 칸 이름(없으면 빈칸)
+ct75 = H.clip_text(1, "drop", "가격 내려간", "", [k75(text="🔥 [쿠팡] 로즈라일락향 합성 엔진오일 (9,900원)", tag="엔진오일"), k75(text="🔥 [쿠팡] 특란 계란 30구 (9,900원)", url="u2"), k75(url="u3")], time.gmtime(TK("2026-11-02 08:00")))
+assert ct75["title"].startswith("엔진오일·계란") and ct75["yt"]["title"].endswith("TOP3 #쇼츠") and "로즈라일락향" not in ct75["title"] + ct75["yt"]["desc"].split("\n")[-1], ct75
+assert ct75["yt"]["desc"].split("\n")[-1].startswith("#핫딜픽 #엔진오일 #계란") and ct75["yt"]["desc"].startswith(H.DISCLOSURE + "\n영상 가격은 쿠팡 ")  # 대가성 첫 줄·가격 시각·프로필 링크 그대로
+assert [t[0] for t in H.clip_topics({}, P75, time.gmtime(TK("2026-10-29 06:00")))][-3:] == ["appliance", "solo", "life"] and {"appliance", "solo", "life"} <= set(H.CLIP_HOOKS)
+assert not re.search("남자|여자|남성|여성|아빠|엄마", H.CLIP_SOLO + "".join(H.CLIP_HOOKS.values()))  # 자취템 = 1인 가구 생활용품 · 성별 말 X
 S75 = __import__("build_site"); cp75h = S75.clips_page("docs")
 assert '<meta name="robots" content="noindex,follow">' in cp75h and '<h1>네이버 클립 10/29 · 4편</h1>' in cp75h and '<video src="/clips/2026-10-29/01.mp4" controls playsinline preload="metadata">' in cp75h
 assert 'download="hotdealpick_2026-10-29_01.mp4">영상 저장</a>' in cp75h and 'data-copy="t2026-10-29-1">제목 복사' in cp75h and 'data-copy="d2026-10-29-1">설명 복사' in cp75h and "navigator.clipboard" in cp75h
@@ -12552,3 +12571,37 @@ k143 = lambda hm: time.gmtime(H.kst_ts("2026-11-02 " + hm) + 9 * 3600)
 assert [H.fill_slot_first(F143, P143, k143(x)) for x in ("16:00", "10:00", "13:00", "18:30", "23:00")] == [{"a"}, {"b"}, set(), set(), set()]
 H.th_group, H.cat_of = tg143, co143
 assert "key=lambda t: (t[1] not in rw, t[1] not in fr1, t[1] not in fr," in inspect.getsource(H.cp_price) and "fr1 = fill_slot_first(fr, posts, kst)" in inspect.getsource(H.cp_price)
+
+# 9-144 (11/2 진우 '구글이 계속 끌어올릴 페이지'): /guide/ 비교 가이드 — guides.json(형식 틀리면 그 가이드만 X · 토스 픽 X) → 결론·기준 표·오늘 가격표(price_hist 확인가·확인 시각·단위당·파트너스 링크 그대로 · 48시간 넘은 확인 = 그 줄 X)
+#   → 7일 변화 · 출처 · 관련 칸 · JSON-LD Article+ItemList · 사진 X · lastmod = 고친 날·가격 바뀐 날 · 가격 줄 2개 밑 = '가격 다시 확인 중' · 빠진 slug 쪽 지움 · 봇: 쿠팡 픽 = cp_links·cp_price·price_track
+cwd144, t144, sub144 = os.getcwd(), time.time, S.SITE_SUB; os.chdir(tempfile.mkdtemp())
+G144 = {"slug": "mask-pack-price", "title": "마스크팩 1장 가격 비교", "desc": "1장 값으로 비교", "summary": "1장 값은 A가 가장 낮아요.", "updated": "2026-10-31", "related_c": "beauty",
+        "criteria": [{"name": "1장 값", "text": "묶음 수로 나눈 값"}], "sources": [{"name": "식약처", "url": "https://www.mfds.go.kr"}, {"name": "x", "url": "http://bad"}],
+        "picks": [{"mall": "coupang", "pid": "111", "item": "222", "name": "메디힐 마스크팩", "unit": "20매"}, {"mall": "coupang", "pid": "333", "name": "아비브 마스크팩", "unit": "10매"},
+                  {"mall": "coupang", "pid": "444", "item": "555", "name": "오래된 확인", "unit": "5매"}, {"mall": "naver", "url": "https://naver.me/abc", "name": "네이버 팩", "unit": "30매"},
+                  {"mall": "toss", "url": "https://toss.im/x", "name": "토스 팩"}]}
+json.dump([G144, {**G144, "slug": "no-summary", "summary": ""}, {**G144, "slug": "few", "picks": G144["picks"][:1]}], open(S.GUIDES, "w"), ensure_ascii=False)
+u144 = [S.guide_url(k) for k in G144["picks"]]
+assert u144[:4] == ["https://www.coupang.com/vp/products/111?itemId=222", "https://www.coupang.com/vp/products/333", "https://www.coupang.com/vp/products/444?itemId=555", "https://naver.me/abc"]
+with contextlib.redirect_stdout(io.StringIO()) as o144: gl144 = S.guides_load(True)
+assert [g["slug"] for g in gl144] == ["mask-pack-price", "few"] and len(gl144[0]["picks"]) == 4 and len(gl144[0]["sources"]) == 1 and "guide X 형식 no-summary" in o144.getvalue() and "guide 픽 뺌(형식·몰) mask-pack-price 1" in o144.getvalue()
+json.dump({"111:222": [["26103010", 12000, "", "api"], ["26110109", 9900, "", "api", "26110209"]], u144[1]: [["26110208", 5000, "", "api"]], "444:555": [["26102801", 3000, "", "api"]]}, open(S.PRICE_HIST, "w"))
+S.SITE_SUB = {u144[0]: "https://link.coupang.com/a/G1", u144[1]: "https://link.coupang.com/a/G2", u144[2]: "https://link.coupang.com/a/G3"}
+time.time = lambda: H.kst_ts("2026-11-02 12:00")
+os.makedirs("docs/c/beauty"); open("docs/c/beauty/index.html", "w").write("x"); os.makedirs("docs/guide/old-guide"); open("docs/guide/old-guide/index.html", "w").write("x")
+with contextlib.redirect_stdout(io.StringIO()) as o144: gu144 = S.guide_pages("docs", "2026-11-02")
+pg144 = open("docs/guide/mask-pack-price/index.html").read()
+assert gu144 == [(S.BASE + "guide/mask-pack-price/", "2026-11-02"), (S.BASE + "guide/few/", "2026-11-01"), (S.BASE + "guide/", "2026-11-02")], gu144  # lastmod = 고친 날(10/31)·지금 가격이 처음 보인 날 중 늦은 것(가짜 갱신 X)
+assert pg144.index('<p class="dis">') < pg144.index('<h1 class="h">마스크팩 1장 가격 비교</h1>') < pg144.index("<h2>결론</h2>") < pg144.index("<h2>고르는 기준</h2>") < pg144.index("<h2>오늘 가격표</h2>") < pg144.index("<h2>출처</h2>")
+assert "<b>9,900원</b><br><small>11/2 9시 확인</small>" in pg144 and "1매당 495원" in pg144 and "1매당 500원" in pg144 and 'href="https://link.coupang.com/a/G1" rel="nofollow sponsored">쿠팡에서 보기' in pg144 \
+    and "가격은 판매처에서 확인" in pg144 and 'href="https://naver.me/abc"' in pg144 and "오래된 확인" not in pg144 and "guide 줄 X mask-pack-price 오래된 확인 가격 확인 X" in o144.getvalue()  # 48시간 넘은 확인 = 그 줄 X
+assert "최근 7일 가격 변화: 메디힐 마스크팩 ▼18%" in pg144 and "마지막 확인 11/2 9시" in pg144 and f'href="{S.c_url("beauty")}"' in pg144 and (lambda b: "토스" not in b and "<img" not in b)(pg144[pg144.index('<h1 class="h">'):pg144.index("관련 칸 더 보기 →</a>")])  # 가이드 본문 = 토스 0 · 사진 0(사이트 틀 검색·로고 X)
+ld144 = json.loads(re.search(r'<script type="application/ld\+json">(.+?)</script>', pg144)[1])
+assert [x["@type"] for x in ld144["@graph"]] == ["Article", "ItemList"] and ld144["@graph"][0]["dateModified"] == "2026-11-02" and "aggregateRating" not in pg144 and "reviewCount" not in pg144
+assert "가격 다시 확인 중" in open("docs/guide/few/index.html").read() and not os.path.exists("docs/guide/old-guide") and "마스크팩 1장 가격 비교" in open("docs/guide/index.html").read()  # 가격 줄 2개 밑 · 빠진 slug 지움
+assert [S.unit_won(u, p) for u, p in (("500ml", 9900), ("1.8L", 18000), ("200g", 5000), ("12개입", 6000), ("한 통", 9900), ("0매", 100))] == ["100ml당 1,980원", "100ml당 1,000원", "100g당 2,500원", "1개당 500원", "", ""]
+assert H.guide_ev() == {u144[0]: {"pid": "111", "item": "222", "name": "메디힐 마스크팩"}, u144[1]: {"pid": "333", "name": "아비브 마스크팩"}, u144[2]: {"pid": "444", "item": "555", "name": "오래된 확인"}}
+assert "guide_ev().items()" in inspect.getsource(H.cp_links) and "{**guide_ev(), **ev_info()}" in inspect.getsource(H.price_track) and "names.update({u: x[\"name\"] for u, x in gev.items()" in inspect.getsource(H.cp_price) \
+    and "urls += guide_pages(out, today)" in inspect.getsource(S.build) and 'GUIDE_NAV.get(c[0] if c else "", "")' in inspect.getsource(S.build)
+json.dump([], open(S.GUIDES, "w")); S.guide_pages("docs", "2026-11-02"); assert not os.path.exists("docs/guide")  # 가이드 없음 = /guide/ 지움
+time.time, S.SITE_SUB = t144, sub144; os.chdir(cwd144)
