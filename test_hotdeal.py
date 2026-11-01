@@ -2324,7 +2324,7 @@ assert [p.get("th") for p in json.load(open("posts.json"))] == [None, None, 1, 0
 assert "threads skip (수수료 링크 아님) [카카오] 고구마 3kg | direct\n" in out9.getvalue() and "threads skip (수수료 링크 아님) [옥션] 라면 | direct\n" in out9.getvalue() and "· 수수료 링크 아님 2" in out9.getvalue()
 live_pages, calls[:], out9 = {2, 3, 4, 5}, [], io.StringIO()
 with contextlib.redirect_stdout(out9): H.threads_deals({})  # 재실행: 올린 건 건너뛰고 남은 것만
-assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-15:-7] for m, u in calls if "/777/threads?" in u] == ["p/4.html"] and "threads skip" not in out9.getvalue()  # 건너뜀 로그는 딜마다 1번
+assert [parse_qs(urlsplit(u).query)["link_attachment"][0][-10:-7] for m, u in calls if "/777/threads?" in u] == ["p/4"] and "threads skip" not in out9.getvalue()  # 건너뜀 로그는 딜마다 1번
 calls[:] = []; H.threads_deals({}); assert not calls  # 더 올릴 게 없으면 API 호출 없음
 # 9-2b) Threads가 링크 미리보기를 못 만들면(Invalid Link Attachment·4279047, 10/7 15:51 버거킹 딜): 링크 첨부 없이 1번 더(본문 주소 그대로), 다른 오류는 그대로 예외
 import urllib.error
