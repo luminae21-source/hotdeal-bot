@@ -2935,6 +2935,37 @@ def link_page(style, posts, it, out, alt=False, today=None):
             f'</main>{LINK_JS}</body></html>')
 
 
+SHORT, SHORT_SKIP = True, {"today", "steady", "t"}  # 11/1 진우 '사이트에 짧은 주소'(결정 21 '링크 깔끔하게'): hotdealpick.kr/<칸> → /c/<칸>/ · False = 만든 짧은 쪽 지움 · today = 최상위 /today · steady = steady.html(/steady) · t = 주제 폴더
+
+
+def short_pages(out, heads):
+    """짧은 주소 쪽(11/1): docs/c/<칸>/ 있는 칸마다 docs/<칸>/index.html = 이동 쪽(noindex · canonical = 본 쪽 · 사이트맵 X · 쿼리 그대로 · ref 없으면 들어온 곳 호스트를 ?ref로 —
+    GoatCounter 유입이 '짧은 쪽'으로 안 바뀌게) + docs/short.json [{short, to, title}](Cowork 글·댓글용). 지난 short.json에 없던 최상위 이름(예약어 — alarm·p·today…)과 겹치면 안 만듦(로그)."""
+    old = {x.get("to", "").strip("/").split("/")[-1] for x in (json.load(open(f"{out}/short.json")) if os.path.exists(f"{out}/short.json") else []) if isinstance(x, dict)}
+    taken = {n.removesuffix(".html") for n in os.listdir(out)} - old
+    cats = sorted(d for d in os.listdir(f"{out}/c") if os.path.isfile(f"{out}/c/{d}/index.html") and d not in SHORT_SKIP) if SHORT else []
+    clash = [d for d in cats if d in taken]
+    if clash:
+        print("short 겹침 X", " ".join(clash))
+    rows = []
+    for d in [d for d in cats if d not in taken]:
+        to, title = f"/c/{d}/", heads.get(d, d)
+        js = ("(function(){var s=location.search,h='';try{h=document.referrer?new URL(document.referrer).hostname:''}catch(e){}"
+              f"if(!/[?&](ref|utm_source)=/.test(s))s+=(s?'&':'?')+'ref='+encodeURIComponent(h&&h!==location.hostname?h:'short');location.replace('{to}'+s+location.hash)}})()")
+        write(out, f"{d}/", f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">'
+                            f'<link rel="canonical" href="{BASE}c/{d}/"><title>{html.escape(title)} | 핫딜픽</title><script>{js}</script><noscript><meta http-equiv="refresh" content="0;url={to}"></noscript></head>'
+                            f'<body><a href="{to}">{html.escape(title)} 보기 →</a></body></html>')
+        rows.append({"short": f"{urllib.parse.urlsplit(BASE).netloc}/{d}", "to": to, "title": title})
+    for d in old - {r["to"].strip("/").split("/")[-1] for r in rows}:  # 없어진 칸·SHORT 끔 = 지난번 짧은 쪽 지움
+        if d and os.path.isdir(f"{out}/{d}"):
+            shutil.rmtree(f"{out}/{d}")
+    if rows:
+        json.dump(rows, open(f"{out}/short.json", "w"), ensure_ascii=False, indent=0)
+    elif os.path.exists(f"{out}/short.json"):
+        os.remove(f"{out}/short.json")
+    return rows
+
+
 def build(posts, out="docs"):
     global MICONS, SITE_SUB
     SITE_SUB = site_subs()
@@ -3149,6 +3180,7 @@ def build(posts, out="docs"):
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
     urls += series_pages(posts, out, today, ls["toss"][2] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
+    short_pages(out, {**{k: v[0] for k, v in ls.items()}, "women": "여성용품 → 생필품"})  # 11/1 짧은 주소(/<칸> → /c/<칸>/ — 사이트맵 X)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")

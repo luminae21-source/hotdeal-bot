@@ -12462,3 +12462,27 @@ assert json.load(open(os.path.join(RD139, "tools/card/package.json")))["devDepen
     and "이 포스팅은 쿠팡 파트너스 활동의 일환으로" in open(os.path.join(RD139, "tools/card/assets/validation.mjs")).read() and os.path.getsize(os.path.join(RD139, "tools/card/assets/mascots-anime-v2.png")) > 1_000_000  # v3 파일 그대로
 (time.time, H.subprocess.run, H.http, H.th_bundle, H.MALL_CARD, H.POSTS) = sv139
 os.chdir(cwd139)
+# 9-140) 11/1 Cowork(진우 '사이트에 짧은 주소 만들기'): build_site.short_pages — docs/c/<칸>/ 마다 docs/<칸>/index.html 이동 쪽(noindex · canonical = 본 쪽 · 사이트맵 X · 쿼리 그대로 · ref 없으면 들어온 곳 호스트)
+#        + docs/short.json · today·steady·t 빼고 · 최상위 예약어(지난 short.json에 없던 이름)와 겹치면 안 만듦 · SHORT 끔 = 지움 · 실제 docs 칸 이름 = 예약어와 안 겹침
+sv140, cwd140 = S.SHORT, os.getcwd(); os.chdir(tempfile.mkdtemp())
+for d in ("winter", "life", "today", "steady", "t", "alarm"):
+    os.makedirs(f"docs/c/{d}"); open(f"docs/c/{d}/index.html", "w").write("x")
+os.makedirs("docs/alarm"); os.makedirs("docs/p"); open("docs/steady.html", "w").write("x"); os.makedirs("docs/c/eggs-x"); open("docs/c/coffee-mix.html", "w").write("x")  # 파일·빈 폴더 = 칸 아님
+o140 = io.StringIO()
+with contextlib.redirect_stdout(o140): r140 = S.short_pages("docs", {"winter": "❄️ 겨울템", "life": "🧻 생필품"})
+assert r140 == [{"short": "hotdealpick.kr/life", "to": "/c/life/", "title": "🧻 생필품"}, {"short": "hotdealpick.kr/winter", "to": "/c/winter/", "title": "❄️ 겨울템"}] and "short 겹침 X alarm" in o140.getvalue(), (r140, o140.getvalue())
+h140 = open("docs/winter/index.html").read()
+assert '<meta name="robots" content="noindex">' in h140 and '<link rel="canonical" href="https://hotdealpick.kr/c/winter/">' in h140 and "location.replace('/c/winter/'+s+location.hash)" in h140 \
+    and "[?&](ref|utm_source)=" in h140 and "content=\"0;url=/c/winter/\"" in h140 and json.load(open("docs/short.json")) == r140  # 쿼리 그대로 · ref 없으면 들어온 곳 · JS 없으면 meta refresh
+with contextlib.redirect_stdout(io.StringIO()): assert S.short_pages("docs", {"winter": "❄️ 겨울템", "life": "🧻 생필품"}) == r140  # 다시 = 자기 쪽은 예약어 아님
+shutil.rmtree("docs/c/life")
+with contextlib.redirect_stdout(io.StringIO()): assert [x["to"] for x in S.short_pages("docs", {})] == ["/c/winter/"] and not os.path.exists("docs/life") and os.path.isdir("docs/alarm")  # 없어진 칸 = 짧은 쪽 지움 · 남의 폴더 X
+S.SHORT = False
+with contextlib.redirect_stdout(io.StringIO()): assert S.short_pages("docs", {}) == [] and not os.path.exists("docs/winter") and not os.path.exists("docs/short.json") and os.path.isdir("docs/c/winter")  # 끔 = 되돌림
+S.SHORT = sv140
+RD140 = os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs")
+old140 = {x["to"].strip("/").split("/")[-1] for x in json.load(open(f"{RD140}/short.json"))} if os.path.exists(f"{RD140}/short.json") else set()
+cat140 = {d for d in os.listdir(f"{RD140}/c") if os.path.isfile(f"{RD140}/c/{d}/index.html")} - S.SHORT_SKIP
+assert cat140 and not cat140 & ({n.removesuffix(".html") for n in os.listdir(RD140)} - old140), cat140 & ({n.removesuffix(".html") for n in os.listdir(RD140)} - old140)  # 실제 칸 이름 = 최상위 예약어와 안 겹침
+assert "short_pages(out, {" in inspect.getsource(S.build) and not re.search(r"\burls\b", inspect.getsource(S.short_pages))  # 사이트맵 X
+os.chdir(cwd140)
