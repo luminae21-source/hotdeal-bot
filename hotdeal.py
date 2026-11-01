@@ -2319,7 +2319,7 @@ def cp_links(seen):
     lst = {i["url"]: str(i.get("name") or "") for e in raw if e.get("list") and isinstance(e.get("items"), list) and e.get("at", "") >= since
            for i in e["items"] if isinstance(i, dict) and re.match(CP_PROD, str(i.get("url") or ""))}  # 행사 목록 글(list_post) 상품 = 채널 예약
     evs += [{"url": u, "text": esc(n)} for u, n in lst.items()]
-    evs += [{"url": u, "text": esc(x["name"])} for u, x in guide_ev().items() if u not in {e.get("url") for e in evs}]  # 11/2 /guide/ 쿠팡 픽 = 파트너스 링크로
+    evs += [{"url": u, "text": esc(x["name"])} for u, x in guide_ev().items() if u not in cl and u not in {e.get("url") for e in evs}]  # 11/2 /guide/ 쿠팡 픽 = 링크 없을 때만(있는 링크 다시 X — 다시 만들면 같은 상품 진열 url이 바뀌어 shelf_posts가 또 올림, 11/2 04~07시 240개)
     evu = {e["url"] for e in evs}
     evs += [{"url": p["url"], "text": esc(p["text"]), "shelf": True} for p in load(POSTS, []) if p.get("own") and p.get("shelf") and re.match(CP_PROD, p.get("url") or "")
             and p["url"] not in cl and p["url"] not in evu]  # RR·SS(10/26 Cowork가 events에서 400 진열 79개 뺌 — 사이트 숨김·살아나면 다시 넣음): posts에 남은 생 주소 진열 = 변환 계속(되면 사이트에 다시 보임)
@@ -2864,6 +2864,23 @@ def shelf_posts(seen):
     쿠팡 상품 주소 = 딥링크 전이어도 at이 지나면 생 주소 그대로(10/25 진우 '품목들은 무조건 다 올려' — 대가성 문구·[광고] X: aff_note = 제휴 링크만 · 20:3x Cowork 최종 규칙 ②) ->
     나중에 cp_links가 바꾸거나 같은 pid 파트너스 링크가 events에 오면 그 글을 그 자리(posts 번호·사이트 쪽 주소·찜 그대로)에서 파트너스 링크 + 대가성 문구로 바꿈(채널·Threads·인스타는 지금처럼 바뀐 링크만)."""
     now, posts, ev, cl = time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)), load(POSTS, []), ev_info(), load(CP_LINKS, {})
+    if "dup1102" not in seen:  # 11/2 04시~ 가이드 픽 링크를 실행마다 다시 만들어 같은 진열 15개가 15분마다 다시 올라감: 그 자리(posts 번호·찜·카드 번호 그대로)에서 own 빼고 nosite = 사이트·봇 후보 X · 그 p/ 쪽 지움 · 원래 글에 pid
+        nm, first = lambda p: parse(title_of(p["text"]))[1], {}
+        for i, p in enumerate(posts):
+            if p.get("own") and p.get("shelf") and p["t"] < "2026-11-02":
+                first.setdefault(nm(p), i)
+        dup = [i for i, p in enumerate(posts) if p.get("own") and p.get("shelf") and "2026-11-02 04:00" <= p["t"] < "2026-11-02 12:00" and nm(p) in first]
+        for i in dup:
+            if ev.get(posts[i]["url"], {}).get("pid"):
+                posts[first[nm(posts[i])]].setdefault("pid", ev[posts[i]["url"]]["pid"])
+            posts[i].pop("own")
+            posts[i]["nosite"] = 1
+            if os.path.exists(f"docs/p/{i}.html"):
+                os.remove(f"docs/p/{i}.html")
+        seen["dup1102"] = len(dup)
+        if dup:
+            json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+        print("shelf 11/2 중복 진열 정리", len(dup))
     itm, same, cpq, fix = lambda u: ev.get(u, {}).get("item") or (re.search(r"[?&]itemId=(\d+)", u) or [0, ""])[1], {}, seen.get("cpq", {}), 0
     for u, i in ev.items():  # 같은 상품(pid)의 파트너스 링크(진우 단축 링크·딥링크) — events에서 생 주소를 바꿔 넣거나 같은 상품 채널 예약이 와도 카드 하나(10/25 리뷰 · 옵션 itemId가 둘 다 있고 다르면 X)
         if i.get("pid") and urllib.parse.urlsplit(u).netloc in CP_SHORT:
@@ -2889,17 +2906,21 @@ def shelf_posts(seen):
     for p in posts:  # 10/25 Cowork: events img·cp_img.json -> 같은 url·같은 상품 번호(url0 = 사이트만 바꾼 글의 처음 주소 · cp_links 생 주소) 글 사진 — 이미 있는 글도(진열·진우 글·커뮤니티 쿠팡 딜) · 있는 사진(파트너스 API) 그대로 · img_of 허용 목록만(네이버 X)
         if not p.get("img") and (im := img_of({**p, "img": eimg(p)})):
             p["img"], ph = im, ph + 1
-    if fix or ph:
+    pn = 0
+    for p in posts:  # 진열 글에 pid 남김(지금 링크로 알 때) = 나중에 링크가 바뀌어도 같은 상품으로 봄(11/2)
+        if p.get("own") and p.get("shelf") and not p.get("pid") and ev.get(p.get("url") or "", {}).get("pid"):
+            p["pid"], pn = ev[p["url"]]["pid"], pn + 1
+    if fix or ph or pn:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
-        print("shelf", " · ".join(x for x in (fix and f"생 주소 진열 {fix}개 -> 파트너스 링크", ph and f"사진 {ph}개 채움") if x))
+        print("shelf", " · ".join(x for x in (fix and f"생 주소 진열 {fix}개 -> 파트너스 링크", ph and f"사진 {ph}개 채움", pn and f"pid {pn}개 기록") if x))
     have = {p.get("url") for p in posts if p.get("own")}
-    pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")}, 0
+    pids, n = {ev[u]["pid"] for u in have if ev.get(u, {}).get("pid")} | {p["pid"] for p in posts if p.get("own") and p.get("pid")}, 0  # 글에 남긴 pid = 링크가 바뀌어도 같은 상품(11/2)
     for e in ev_list(EVENTS):
         if not (isinstance(e, dict) and e.get("shelf") and isinstance(e.get("url"), str) and e.get("text") and str(e.get("at", "9")) <= now) or e["url"] in have or e.get("pid") and e["pid"] in pids:
             continue
         e = {**e, "deal": True}  # 진열 = 상품 글 틀(몰별 머리 줄·[광고] 첫 줄)
         t, ents = html_ents(ev_head(e) + ev_view(e)[0])
-        record(t, ents, e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag"), "img": img_of({"text": t, "url": e["url"], "img": eimg({"url": e["url"]})})})
+        record(t, ents, e["url"], extra={"own": 1, "shelf": 1, "tag": e.get("tag"), "img": img_of({"text": t, "url": e["url"], "img": eimg({"url": e["url"]})}), **({"pid": e["pid"]} if e.get("pid") else {})})
         have.add(e["url"])
         pids.add(e.get("pid") or e["url"])
         n += 1

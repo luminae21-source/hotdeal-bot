@@ -3010,7 +3010,7 @@ def guide_pages(out, today):
         table = "".join(f'<tr><td>{html.escape(k["name"])}</td><td>{html.escape(str(k.get("unit") or ""))}</td>'
                         + (f'<td><b>{st["now"]:,}원</b><br><small>{md(ts)} 확인</small></td><td>{unit_won(str(k.get("unit") or ""), st["now"])}</td>' if st else '<td colspan="2">가격은 판매처에서 확인</td>')
                         + f'<td><a class="btn2" href="{html.escape(href)}" rel="nofollow sponsored">{"쿠팡" if k["mall"] == "coupang" else "네이버"}에서 보기</a></td></tr>' for k, href, st, ts in rows)
-        chg = [f"{html.escape(k['name'][:20])} {'▼' if st['d7'] < 0 else '▲'}{abs(st['d7'])}%" for k, _, st, _ in priced if st["d7"]]
+        chg = [f"{html.escape(k['name'])} {'▼' if st['d7'] < 0 else '▲'}{abs(st['d7'])}%" for k, _, st, _ in priced if st["d7"]]
         last = max([ts for *_, ts in priced] or [0])
         body = (f'<h1 class="h">{html.escape(g["title"])}</h1>' + (f'<p class="t">{html.escape(g.get("desc") or "")}</p>' if g.get("desc") else "")
                 + f'<section class="card"><h2>결론</h2><p>{html.escape(g["summary"])}</p></section>'

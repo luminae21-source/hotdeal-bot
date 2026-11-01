@@ -12606,3 +12606,35 @@ assert "guide_ev().items()" in inspect.getsource(H.cp_links) and "{**guide_ev(),
     and "urls += guide_pages(out, today)" in inspect.getsource(S.build) and 'GUIDE_NAV.get(c[0] if c else "", "")' in inspect.getsource(S.build)
 json.dump([], open(S.GUIDES, "w")); S.guide_pages("docs", "2026-11-02"); assert not os.path.exists("docs/guide")  # 가이드 없음 = /guide/ 지움
 time.time, S.SITE_SUB = t144, sub144; os.chdir(cwd144)
+# 9-145 (11/2 Cowork 긴급 — 가이드 픽이 진열로 15분마다 다시 올라감): 가이드 쿠팡 픽 = 링크 찾기·가격 추적만(이미 있는 cp_links 다시 X — 값 그대로) · 진열·글 다시 X(같은 pid = 링크가 바뀌어도 중복)
+#   · 11/2 중복 진열 1번 정리(그 자리에서 own 빼고 nosite — posts 번호 그대로 · 그 p/ 쪽 지움 · 원래 글 그대로) · /guide/ 7일 변화 이름 = 모델명까지(자르지 않음)
+cwd145, sv145 = os.getcwd(), (H.HAS_CP, H.cp_deeplinks, time.time, H.tg); os.chdir(tempfile.mkdtemp()); os.makedirs("docs/p")
+U145, OLD145, c145 = "https://www.coupang.com/vp/products/4500298441?itemId=210", "https://link.coupang.com/a/OLD145", []
+def dl145(us):
+    c145.append(list(us)); return {u: f"https://link.coupang.com/a/N{len(c145)}" for u in us}  # 부를 때마다 새 링크(실제 딥링크 API처럼)
+H.HAS_CP, H.cp_deeplinks, H.tg, time.time = True, dl145, (lambda *a, **k: {"message_id": 1}), (lambda: H.kst_ts("2026-11-02 08:00")); H.RUN.pop("cpn", None); H.RUN.pop("cpu", None)
+json.dump([{"slug": "humid", "title": "가습기 고르는 법", "summary": "요약", "updated": "2026-11-01", "criteria": [{"name": "a", "text": "b"}],
+            "picks": [{"mall": "coupang", "pid": "4500298441", "item": "210", "name": "가습기 HL-S210"}]}], open("guides.json", "w"))
+json.dump({U145: OLD145}, open(H.CP_LINKS, "w"))
+json.dump([{"at": "2026-10-25 20:00", "shelf": True, "deal": True, "url": U145, "button": "🛒 구매하러 가기", "text": "🔥 <b>[쿠팡] 가습기 HL-S210 (39,000원)</b>"}], open(H.EVENTS, "w"))
+P145 = [{"t": "2026-10-25 20:00", "text": "🔥 [쿠팡] 가습기 HL-S210 (39,000원)", "url": OLD145, "own": 1, "shelf": 1},
+        {"t": "2026-11-02 06:11", "text": "🔥 [쿠팡] 가습기 HL-S210 (39,000원)", "url": "https://link.coupang.com/a/X1", "own": 1, "shelf": 1},  # 11/2 중복 진열
+        {"t": "2026-11-02 06:20", "text": "🔥 [쿠팡] 전기방석 (19,400원)", "url": "https://link.coupang.com/a/ch", "own": 1, "mid": 5, "th": 1}]  # 사이에 낀 채널 글 = 그대로
+json.dump(P145, open(H.POSTS, "w"), ensure_ascii=False); open("docs/p/1.html", "w").write("x"); open("docs/p/2.html", "w").write("x")
+assert U145 in H.guide_ev()
+s145 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_links(s145); H.cp_links(s145)
+assert json.load(open(H.CP_LINKS)) == {U145: OLD145} and not any(U145 in c for c in c145), c145  # 있는 링크 = 다시 안 만듦(값 그대로)
+with contextlib.redirect_stdout(io.StringIO()) as o145:
+    H.shelf_posts(s145); H.shelf_posts(s145)
+p145 = json.load(open(H.POSTS))
+assert len(p145) == 3 and "shelf 11/2 중복 진열 정리 1" in o145.getvalue() and s145["dup1102"] == 1  # 두 번 실행 = 새 진열 0
+assert "own" not in p145[1] and p145[1]["nosite"] == 1 and p145[1]["t"] == "2026-11-02 06:11" and not os.path.exists("docs/p/1.html") and os.path.exists("docs/p/2.html")  # 그 자리(번호 그대로)·쪽 지움
+assert p145[0]["url"] == OLD145 and p145[0]["own"] == 1 and p145[0]["pid"] == "4500298441" and p145[2] == P145[2]  # 원래 글·채널 글 그대로 · 원래 글 pid 기록
+json.dump({U145: "https://link.coupang.com/a/NEW145"}, open(H.CP_LINKS, "w"))  # 링크가 바뀌어도
+with contextlib.redirect_stdout(io.StringIO()):
+    H.shelf_posts(s145)
+assert len(json.load(open(H.POSTS))) == 3  # 같은 pid = 중복(새 진열 X)
+assert not S.site_ok(p145[1]) and "k['name'][:20]" not in inspect.getsource(S.guide_pages) and "html.escape(k['name'])" in inspect.getsource(S.guide_pages)  # nosite = 사이트 X · 7일 변화 이름 자르지 않음
+H.HAS_CP, H.cp_deeplinks, time.time, H.tg = sv145; H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); os.chdir(cwd145)
