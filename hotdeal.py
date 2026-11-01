@@ -1640,7 +1640,7 @@ def cmp_report(seen):
         if not (TOSS_NOTE in text or re.search(TOSS_TAG, text) or re.search(r"toss\.(?:shopping|im)/", text)) or "\n".join(clean) == text:
             return
         cmp = [l for l in text.split("\n") if l not in clean]  # 지워지거나 바뀐 줄 = 비교 문구
-        sp = re.search(rf"{re.escape(SITE)}p/(\d+)\.html", text)
+        sp = re.search(rf"{re.escape(SITE)}p/(\d+)", text)
         link = posts[int(sp[1])]["url"] if sp and int(sp[1]) < len(posts) else (re.findall(r"https://toss\.(?:shopping|im)/[^\s)]+", text) or [""])[0]
         title = next((l for l in text.split("\n") if re.match(r"(?:🔥|🛒) ", l) and "http" not in l), None) or \
             next((l for l in text.split("\n") if l.strip() and not l.startswith(NOTE_STARTS + ("[광고]",))), text.split("\n")[0])  # 묶음 = 머리 줄
@@ -4471,7 +4471,7 @@ def pair_post(seen):
     brand, lab = lambda p: parse(title_of(p["text"]))[1].split()[0], lambda p: (PAIR_UNIT.search(p["text"]) or [""])[0].split("당")[0]
     gs = {k: g[:1] + sorted(g[1:], key=lambda x: (lab(x[1]) != lab(g[0][1]), brand(x[1]) == brand(g[0][1]))) for k, g in gs.items()}  # 같은 단위 먼저(단가 비교) · 다른 브랜드 먼저
     seen[key] = {"t": now}
-    link = lambda i, p: (lambda u: u if len(u) <= 150 else f"{SITE}p/{i}.html?ref=th")(th_url(p, i))  # 긴 제휴 링크(링크프라이스 등) = 사이트 딜 쪽(500자 안)
+    link = lambda i, p: (lambda u: u if len(u) <= 150 else f"{SITE}p/{i}?ref=th")(th_url(p, i))  # 긴 제휴 링크(링크프라이스 등) = 사이트 딜 쪽(500자 안)
 
     def render(k, n):
         rows = gs[k][:n]
@@ -5423,7 +5423,7 @@ TH_LINK_MAX = 300  # 10/19 17시 진우 '경유 링크 말고 직접 링크로':
 def th_url(p, i, ref="th"):
     """Threads 글에 넣을 딜 링크: 텔레그램 버튼과 같은 링크(제휴·상품 페이지, 아직 검색 링크인 딜은 검색 링크 그대로). 주소가 없거나 TH_LINK_MAX보다 길면 사이트 딜 페이지."""
     u = p.get("url") or ""
-    return u if u and len(u) <= TH_LINK_MAX else f"{SITE}p/{i}.html?ref={ref}"
+    return u if u and len(u) <= TH_LINK_MAX else f"{SITE}p/{i}?ref={ref}"
 
 
 def link_kind(u):
@@ -6068,7 +6068,7 @@ def th_parts(vt):
 def th_why(link, tl):
     """첫 댓글 링크 앞 '지금 확인할 이유' 한 줄(10/25 Cowork — '사세요' X, 우리 데이터로): 오늘 밤 12시 마감 > 이번 주 같은 품목(PRICE_ITEMS) 단위가 순위(3위 안·3개↑) > 가격 확인 시각."""
     posts = load(POSTS, [])
-    m = re.search(r"/p/(\d+)\.html", link or "")
+    m = re.search(r"/p/(\d+)(?:\.html|(?=[?#]|$))", link or "")
     p = posts[int(m[1])] if m and int(m[1]) < len(posts) else next((q for q in reversed(posts) if q.get("url") == link), None)
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     if p and day_end(p, today):
@@ -6321,7 +6321,7 @@ def digest(seen, posts):
         return
     if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
         return
-    urls = [(post_url(p["mid"]) if not site_ok(p) and p.get("mid") else f"{SITE}p/{posts.index(p)}.html?ref=tg") if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 사이트에서 뺀 딜 = 쪽이 없음 -> 채널 글(10/25 리뷰)  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
+    urls = [(post_url(p["mid"]) if not site_ok(p) and p.get("mid") else f"{SITE}p/{posts.index(p)}?ref=tg") if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 사이트에서 뺀 딜 = 쪽이 없음 -> 채널 글(10/25 리뷰)  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
     night = night if len(night) < PREVIEW_MIN else []
     toss_in = toss_list(todays) or (TOSS_NO_CMP and any(is_toss(d["url"]) for d in night))  # 합친 밤 줄도 같은 글
@@ -8390,7 +8390,7 @@ def wx_deals(seen, words, n=3, deny=None):
 def wx_render(items, ref, html_text):
     """딜 줄(🔥/🛒 이름 가격 + 링크) -> (머리 대가성 문구, 줄들, 꼬리). 대가성 문구 = 링크 몰마다 맨 앞, 토스가 있으면 꼬리에 게시 시점 줄. 몰 이름·비교 없음.
     Threads = 텔레그램 버튼과 같은 링크(10/19 진우 '직접 링크로' — TH_LINK_MAX보다 긴 링크프라이스 주소만 사이트 딜 페이지), 토스 API 상품은 공유 링크 그대로."""
-    links = [c["u"] if c["u"] and (html_text or c.get("toss") or len(c["u"]) <= TH_LINK_MAX) else f"{SITE}p/{c['i']}.html?ref={ref}" for c in items]
+    links = [c["u"] if c["u"] and (html_text or c.get("toss") or len(c["u"]) <= TH_LINK_MAX) else f"{SITE}p/{c['i']}?ref={ref}" for c in items]
     notes = list(dict.fromkeys(n for n in (aff_note(c["u"] or "") for c in items) if n))
     rows = [f"{'🔥' if c['hot'] else '👍' if c.get('steady') else '🛒'} " + (f'<a href="{esc(u)}">{esc(clip(c["n"], 40))}</a>' + (f" {esc(c['p'])}" if c["p"] else "") if html_text else f"{clip(c['n'], 30)} {c['p']}".rstrip() + f"\n👉 {u}")
             for c, u in zip(items, links)]
@@ -10886,7 +10886,7 @@ def cp_score(seen):
                         path, n = re.sub(r"^buy/link-[ab]/", "buy/", str(h.get("path") or "")), int(h.get("count") or 0)  # /link A·B 상품 클릭(buy/link-a/몰 주소)도 같은 상품
                         if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
                             c["https://" + path[4:]] += n
-                        elif (m := re.fullmatch(r"/p/(\d+)\.html", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
+                        elif (m := re.fullmatch(r"/p/(\d+)(?:\.html)?", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
                             v[bare(posts[int(m[1])]["url"])] += n
                     if not r.get("more"):
                         break
@@ -10922,7 +10922,7 @@ def gc_top(seen):
                 if path.startswith("buy/") and "/" in path[4:]:  # 예전 'buy/<몰 주소>'(상품 구분 X)는 뺌
                     if nb["https://" + path[4:]] == 1:  # 상품 1개로 정해지는 주소만(검색·클릭 주소 = 어느 상품인지 모름)
                         sc["https://" + path[4:]] += 3 * n
-                elif (m := re.fullmatch(r"/p/(\d+)\.html", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
+                elif (m := re.fullmatch(r"/p/(\d+)(?:\.html)?", path)) and int(m[1]) < len(posts) and posts[int(m[1])].get("url"):
                     sc[key(posts[int(m[1])]["url"])] += n
             if not r.get("more"):
                 break
@@ -11383,7 +11383,7 @@ def top_build(seen):
         n_fill += 1
     posts, fixed = load(POSTS, []), 0
     for r in (r for d in days for r in m[d]["rows"] if r.get("kind") == "deal"):  # 사이트 딜 페이지 링크(10/19 직접 링크 전 Threads 글) -> 그 글의 구매 링크·상품명·몰(posts.json 번호 = 페이지 번호)
-        pn = re.match(re.escape(SITE) + r"p/(\d+)\.html", r.get("url") or "")
+        pn = re.match(re.escape(SITE) + r"p/(\d+)", r.get("url") or "")
         if pn and int(pn[1]) < len(posts) and posts[int(pn[1])].get("url"):
             pp = posts[int(pn[1])]
             r.update(url=pp["url"], name=parse(title_of(pp["text"]))[1], shop=shop_of(pp) or r["shop"])

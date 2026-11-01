@@ -2288,7 +2288,7 @@ big = [{"t": "2026-10-06 10:00", "text": f"🔥 [G마켓] 아주 긴 상품 이�
 sent.clear(); H.digest({}, big); db = [p["text"] for m, p in sent if m == "sendMessage" and p["chat_id"] == "@ch"][0]; H.draft = d0
 vis = H.html.unescape(re.sub(r"<[^>]+>", "", db)); kept = db.count('<a href="https://a/')
 assert len(vis) <= 4000 and 1 < kept < 80 and f"… 외 {80 - kept}개는 사이트에서" in db and db.endswith("https://t.me/hotdeal_pick")  # 딜이 아주 많은 날: 4096자 안으로, 뒤쪽은 '외 N개'
-assert f'href="{H.SITE}p/0.html?ref=tg">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
+assert f'href="{H.SITE}p/0?ref=tg">[올리브영] 세럼' in dg and "oy.run" not in dg and 'href="https://a"' in dg  # 모아보기 = 링크만 나열 -> 올영은 사이트로
 bt = H.blog_text(oyp, time.gmtime(1791291600 + 9 * 3600))
 assert bt.split("\n\n")[2] == H.OY_NOTE and "👉 https://oy.run/x" in bt  # 블로그: 올영 문구 본문 맨 위(코멘트 있는 글이라 링크 그대로)
 open("posts.json", "w").write(pj); H.tg, time.time = tg0, tt5
@@ -3193,7 +3193,7 @@ assert S.GC_CODE == "hotdealpick"  # 10/23 진우 가입(hotdealpick.goatcounter
 pg = S.page("t", "<p>b</p>")
 assert '<script data-goatcounter="https://hotdealpick.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>' in pg and "path:'buy/'+h" in pg and "event:true" in pg and pg.index("goatcounter") < pg.index("</head>")
 src10 = inspect.getsource(H)
-assert 'f"{SITE}p/{i}.html?ref={ref}"' in src10 and 'def th_url(p, i, ref="th")' in src10 and "지난 딜 전체 보기: {SITE}all.html?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
+assert 'f"{SITE}p/{i}?ref={ref}"' in src10 and 'def th_url(p, i, ref="th")' in src10 and "지난 딜 전체 보기: {SITE}all.html?ref=tg" in src10 and "전체 딜·구매 링크 👉 {SITE}?ref=th" in src10 and "더 많은 핫딜 👉 {SITE}?ref=blog" in src10
 # 9-11) 10/15 진우 '데이터 계획 1단계': 매일 5시 넘은 첫 실행에 어제 글별 성과 -> metrics.json(날짜·채널·글 id·몰·품목·가격대·시각·조회·반응), 수동 실행 METRICS_DAY면 그날 바로
 #       텔레그램 = 채널 웹(?before= 로 그날 처음까지, posts.json 글은 그 글·링크로), Threads = 글 목록 + insights, 인스타 = 목록(좋아요·댓글) + insights(views), 권한 없으면 빈 칸 + 이유(miss)
 assert mh0 == 5 and not os.path.exists(H.METRICS); H.METRICS_HOUR = mh0  # 앞 셀프체크(main 실행)에선 꺼 둠(99)
@@ -3354,7 +3354,7 @@ assert "<b>🍪 출출할 때 간식 3</b>" in out12[0][1]["text"] and th12b["te
 H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", L12, "", "snack", lo=3); assert [m for m, p in out12] == ["sendMessage"]; out12.clear()  # lo개로도 넘으면 Threads X(500자 넘는 글 안 보냄)
 L12b = [{"n": "롯데 빼빼로 오리지널 12갑", "p": "9,900원", "u": "https://click.linkprice.com/click.php?m=lotteon&a=A100&l=9999&u_id=" + "z" * 400, "i": 5, "hot": True}]
 H.wx_post({}, "k", "☁️ 오늘", L12b, "", "wx"); th12c = out12[-1][1]
-assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5.html?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 500자에 못 들어가는 긴 링크(TH_LINK_MAX 넘음)만 사이트 딜 페이지
+assert th12c["text"].startswith(H.AFF_NOTE) and th12c["link"] == "https://hotdealpick.kr/p/5?ref=th" and "linkprice" not in th12c["text"] and "linkprice" in out12[0][1]["text"]; out12.clear()  # 채널 = 제휴 링크, Threads = 500자에 못 들어가는 긴 링크(TH_LINK_MAX 넘음)만 사이트 딜 페이지
 s12c = {"wx_20261016": {"t": 1, "w": [W12(16, 24)]}}; H.weather_post(s12c)
 assert [p["text"] for m, p in out12 if m == "sendMessage"] == ["☁️ 오늘 서울 아침 16도·낮 24도\n오늘은 뭐 챙기셨어요?"] and out12[1][1]["text"] == "☁️ 오늘 서울 아침 16도·낮 24도\n오늘은 뭐 챙기셨어요?" and out12[1][1]["link"] is None  # 맞는 딜 0개 = 날씨 + 질문(링크 X)
 out12.clear(); s12d = {"wx_20261016": {"t": 1, "w": [W12(15, 20, rain=78)]}}; H.busy = lambda seen, cap=True: True; H.weather_post(s12d); assert not out12 and "wxpost_20261016" not in s12d  # 묶음 간격·시간당 상한 -> 다음 실행에
@@ -3797,7 +3797,7 @@ b18, r18 = c18[0], c18[1]
 assert "link_attachment" not in b18 and not re.search(r"http|/p/", b18["text"]) and b18["text"].startswith(H.th_note(H.DISCLOSURE)) and b18["text"].endswith(H.TH_AB_MARK)
 assert r18["reply_to_id"] == "p1" and r18["text"] == f"{H.th_note(H.DISCLOSURE)}👉 https://link.coupang.com/a/Z18\n📲 실시간 알림 t.me/hotdeal_pick" and "ref=thc" not in r18["text"]  # 대가성 문구는 본문·댓글 첫 줄
 LP18 = H.lp_link("gmarket", "https://www.gmarket.co.kr/n/search?keyword=" + "%EC%9A%B0%EC%9C%A0" * 40)  # TH_LINK_MAX 넘는 링크프라이스 = 500자에 못 들어감 -> 사이트 딜 페이지(사이트에 올라온 뒤)
-assert len(LP18) > H.TH_LINK_MAX and H.th_url({"url": LP18}, 7) == H.SITE + "p/7.html?ref=th" and H.th_url({"url": SR18}, 7) == SR18 and H.th_url({"url": None}, 7) == H.SITE + "p/7.html?ref=th"
+assert len(LP18) > H.TH_LINK_MAX and H.th_url({"url": LP18}, 7) == H.SITE + "p/7?ref=th" and H.th_url({"url": SR18}, 7) == SR18 and H.th_url({"url": None}, 7) == H.SITE + "p/7?ref=th"
 # ② [네이버] 딜 = 검색 링크 그대로(10/19 밤 정정: 네이버 쇼핑 검색 API 2026-07-31 종료라 상품 매칭 취소) + 관리자 사본 -> 진우 naver.me 답장으로 교체
 D18 = {"title": "[네이버] 서울우유 딸기우유 200ml 24팩 (13,900원/무료)", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=1297", "board": "뽐뿌"}
 H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("403")) if "ppomppu" in url else (_ for _ in ()).throw(AssertionError(url))
@@ -3910,7 +3910,7 @@ c19.clear(); tg19.clear(); o19 = io.StringIO()
 with contextlib.redirect_stdout(o19): H.wx_post({}, "k", "🍪 출출할 때 간식 {n}", [dict(x, u=None) for x in S19], "", "snack", lo=2)
 assert len(tg19) == 1 and c19 == [] and "threads skip (수수료 링크 아님) snack 묶음 | 항목 0개\n" in o19.getvalue()
 c19.clear(); tg19.clear(); H.wx_post({}, "k", "☁️ 오늘", S19[1:2], "☁️ 오늘\n질문", "wx")
-assert len(c19) == 1 and "초코파이" in c19[0]["text"] and c19[0]["link_attachment"] == H.SITE + "p/2.html?ref=th"  # 날씨 글은 그대로(10/19 밤 Cowork '날씨 그대로')
+assert len(c19) == 1 and "초코파이" in c19[0]["text"] and c19[0]["link_attachment"] == H.SITE + "p/2?ref=th"  # 날씨 글은 그대로(10/19 밤 Cowork '날씨 그대로')
 if ev19 is None: os.remove(H.EVENTS)
 else: open(H.EVENTS, "w").write(ev19)
 os.remove("posts19.json")
@@ -6273,7 +6273,7 @@ assert "1️⃣ 🚀 퍼실 파워젤 2.5L\n💰 13,850원 와우가 (10/24 9시
 # 긴 링크 = 사이트 딜 쪽 · 브랜드 하나뿐 = X · 토스끼리 = 토스 모음 쪽 · 커뮤니티 오늘 글 OK
 gm53 = lambda n, t="2026-10-24 10:00": {"t": t, "text": f"{H.AFF_NOTE}\n\n🔥 [G마켓] {n} 샴푸 1L (9,000원)", "url": LP53 + n}
 json.dump([gm53("려"), gm53("엘라스틴")], open(H.POSTS, "w"), ensure_ascii=False); H.pair_post({})
-assert "🤔 샴푸 둘 중 뭐 살래?" in p53[-1][0] and "linkprice" not in p53[-1][0] and f"{H.SITE}p/1.html?ref=th" in p53[-1][0] and len(p53[-1][0]) <= 480, p53[-1][0]
+assert "🤔 샴푸 둘 중 뭐 살래?" in p53[-1][0] and "linkprice" not in p53[-1][0] and f"{H.SITE}p/1?ref=th" in p53[-1][0] and len(p53[-1][0]) <= 480, p53[-1][0]
 n53 = len(p53); json.dump([cp53("라네즈 립 슬리핑 마스크 베리", "13,200원", "L1", now="13,200원", chkt="2026-10-24 09:00", chk="10/24 9시"), cp53("라네즈 립 슬리핑 마스크 애플", "13,200원", "L2", now="13,200원", chkt="2026-10-24 09:00", chk="10/24 9시")], open(H.POSTS, "w"), ensure_ascii=False)
 H.pair_post({}); assert len(p53) == n53  # 한 브랜드(맛만 다름) = X
 ts53 = lambda n, u: {"t": "2026-10-24 09:00", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] {n} 생수 2L 12개 (7,900원 · 5천원 쿠폰가)\n⚠️ 10/24 09:55 게시 시점 가격", "url": f"https://toss.shopping/_m/{u}", "own": 1, "chk": "10/24 10시"}
@@ -7033,6 +7033,7 @@ json.dump(P64, open("posts.json", "w"), ensure_ascii=False)
 assert H.th_why(L64, "⏰ 10/25 21시 가격") == "오늘 밤 12시에 끝나는 가격이라 지금 한 번 확인해 봐"
 assert H.th_why("https://link.coupang.com/a/hb1", "⏰ 10/25 21시 가격") == "이번 주 핫딜픽 즉석밥 중 단위가 1위라 지금 볼 만해"  # 같은 품목끼리만(토스 햇반 = 비교 X)
 assert H.th_why(H.SITE + "p/2.html?ref=th", "⏰ 10/25 21시 가격") == "이번 주 핫딜픽 즉석밥 중 단위가 2위라 지금 볼 만해"  # 사이트 딜 쪽 링크 = 글 번호로
+assert H.th_why(H.SITE + "p/2?ref=th", "⏰ 10/25 21시 가격") == H.th_why(H.SITE + "p/2.html?ref=th", "⏰ 10/25 21시 가격") and H.th_why("https://x.com/p/2abc", "⏰ 10/25 21시 가격") != H.th_why(H.SITE + "p/2", "⏰ 10/25 21시 가격")  # 11/1 짧은 주소: 글 링크 /p/N(.html 없이) — 옛 .html 링크도 같은 쪽
 assert H.th_why("https://link.coupang.com/a/rice", "⏰ 10/25 9시 쿠폰가 · 결제 전 확인") == "10/25 9시 기준 가격이라 바뀌기 전에 확인해 봐"  # 쌀 = 다른 품목(햇반과 순위 X) · 3개 안 됨
 assert H.th_why("https://x/none", "⏰ 10/25 21시 가격 · 결제 전 확인") == "10/25 21시 기준 가격이라 바뀌기 전에 확인해 봐" and H.th_why("https://x/none", "") == "가격은 바뀔 수 있어서 결제 전에 한 번 확인해 봐"
 # th_deal: 돌림 A→B→C(10/25 20시부터) · S = 19~22시 하루 1개(첫 B·C 차례) · 본문·첫 댓글 모양
