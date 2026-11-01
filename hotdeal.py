@@ -3957,9 +3957,8 @@ def top_deals(seen):
         seen["thtx"] = {"t": now, "q": txq + [{"u": p["url"], "t": now} for p in tx if p["url"] not in {x.get("u") for x in txq}]}
         print(f"threads top{hrs[-1]} {'토스' if all(is_toss(p['url'], p['text']) for p in tx) else '다른 몰'} {len(tx)}개 = 묶음 X → 개별 글 줄")
     cs = [c for c in cands if one(c[0])]
-    if (fit := TH_SERIES_FIT.get(skey)) and len(choose(fs := [c for c in cs if fit(short_name(title_of(c[0]["text"])))])) >= TH_LIST_MIN:
-        cs = fs  # 11/1 Cowork 규칙 7: 시리즈 바구니 = 그 바구니 칸 품목만(💄 화장대·욕실에 식용유 X)
-    elif fit:
+    cs, sk = series_fit(skey, cs, choose)
+    if sk != skey:
         print(f"threads top{hrs[-1]} {SERIES_BY[skey][0]} 칸 상품 {TH_LIST_MIN}개 밑 → 이번 회차 시리즈 X(품목 이름 묶음)")
         skey, sno, shead = None, 0, ""
     # ⑥ 정정: 1개 값 순 섞인 묶음 = 토스 X(토스 = 10시 토스 묶음·개별 글만)
@@ -4358,6 +4357,15 @@ def mall_card_post(seen):
 
 
 TH_LIST_NEED, TH_QUOTA, TH_LIFE_CATS, TH_TOSS_MIN, TH_LIST_TOSS, TH_TX_HOURS, TH_MALL_ALT = {1: "life", 12: "beauty", 15: "life"}, (12, 5), ("life", "laundry", "kitchen"), 5, False, 6, True  # 10/31 진우: 하루 생필품 12개↑·화장품 5개↑(묶음 순서로 채움 · 모자라면 로그만)
+
+
+def series_fit(skey, cs, choose):
+    """11/1 Cowork 규칙 7: 시리즈 바구니(TH_SERIES_FIT) = 그 칸 품목만(💄 화장대·욕실에 식용유 X) -> (채움 후보, 시리즈) · 그 칸으로 TH_LIST_MIN개 밑 = (그대로, None) = 그 회차 시리즈 X."""
+    fit = TH_SERIES_FIT.get(skey)
+    if not fit:
+        return cs, skey
+    fs = [c for c in cs if fit(short_name(title_of(c[0]["text"])))]
+    return (fs, skey) if len(choose(fs)) >= TH_LIST_MIN else (cs, None)
 
 
 def series_next(seen, key):

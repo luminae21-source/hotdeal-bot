@@ -15,6 +15,7 @@ H.TOSS_BEST_HOURS, H.TOSS_CAT_HOUR, H.TOSS_TH_BEST, H.TOSS_TH_EVE, H.TOSS_TH_LAT
 H.TH_SOLO_MAX, H.TH_SOLO_GAP, H.TH_SOLO_RUN, H.TH_LIST_HOURS, H.TH_TOSS_KINDS, th_strong0 = 99, 0, 3, tuple(range(24)), ("day", "best", "cat", "beauty", "special"), H.th_strong; tlh0 = (12, 15, 18); tbm0, (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX) = (H.TH_BEAUTY_MIN, H.TH_BEAUTY_MAX), (0, 99); trn0, (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY) = (H.TH_REOPEN_NIGHT, H.TH_REOPEN_MORN, H.TH_REOPEN_DAY), (99, 99, 99); tfill0, H.TH_SOLO_FILL = H.TH_SOLO_FILL, False; tnc0, H.TOSS_NO_CMP = H.TOSS_NO_CMP, False; ttf0, H.TH_TOSS_FILL = H.TH_TOSS_FILL, (); tsh0, H.TOSS_SOLO_HOURS = H.TOSS_SOLO_HOURS, (); tof0, (H.OTHER_MIN, H.OTHER_MAX) = (H.OTHER_MIN, H.OTHER_MAX), (0, 99); mh0, H.METRICS_HOUR = H.METRICS_HOUR, 99; wx0, (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS) = (H.WEATHER_HOUR, H.SNACK_HOUR, H.DAILY_LOG_HOUR, H.WEATHER_DM, H.WEATHER_BONUS), (None, None, None, None, 0); H.th_strong = lambda plain: "특가로는 약한 제품" not in plain  # 예전 Threads 셀프체크는 하루·간격 제한 없이 — 리스트 중심(10/11 진우 결정)은 맨 아래 9-9에서
 H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_GUARD, H.TH_LIST_TOSS, H.NN_TOSS, H.TOSS_GAP, H.TH_MALL_ALT = (0, 0), True, 0, False, True, 2, 0, False  # 10/31 새벽(0~7시) 개별 글 몫 = 9-122에서만(다른 셀프체크 = 시간대 상관없이) · 예전 Threads 토스 리스트(⑥ 끔)·토스 개별 글 쿼터(⑥ 5개) = 9-126에서만 · toss_guard(⑦)·섞인 묶음 토스 X·품목 묶음 토스 X(⑥ 정정) = 9-127에서만 · 토스↔쿠팡 시차(⑨) = 9-128·9-129에서만 · 개별 글 쿠팡↔토스 번갈아(TH_MALL_ALT)·토스 회차 시각 13:30·17:10·18:45 = 9-129에서만
 H.TH_DIVERSE = False  # 10/31 묶음 다양성(72시간 회전·브랜드 1개·쿠팡만·조합 돌리기·점검) = 9-132에서만(다른 칸 = 예전 리스트 그대로)
+fit0, H.TH_SERIES_FIT = H.TH_SERIES_FIT, {}  # 11/1 시리즈 바구니 칸만(💄) = 9-142에서만(옛 12시 리스트 셀프체크 = 예전 그대로)
 H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크에선 끔 — 9-139가 켜서 봄
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
@@ -12525,7 +12526,12 @@ assert (H.series_next({}, "vanity"), H.series_next({"series": {"vanity": 5}}, "v
 f142 = H.TH_SERIES_FIT["vanity"]
 assert all(f142(n) for n in ("라운드랩 독도 토너 500ml", "도브 뷰티바 비누 90g×6", "2080 치약 120g×8", "좋은느낌 생리대 중형 36P", "해피바스 바디워시 900g")) \
     and not any(f142(n) for n in ("백설 콩기름 900ml×4", "오뚜기 진라면 120g×20", "크리넥스 3겹 30롤"))
+H.TH_SERIES_FIT = fit0
+ch142 = lambda cs: cs[:5]  # choose 대신(그대로 5개까지)
+mk142 = lambda n: ({"text": f"🔥 [쿠팡] {n} (9,900원)", "url": "https://link.coupang.com/a/" + n}, "9,900원", "", 3)
+C142 = [mk142(n) for n in ("백설 콩기름 900ml×4", "라운드랩 독도 토너 500ml", "2080 치약 120g×8", "오뚜기 진라면 120g×20", "해피바스 바디워시 900g")]
+assert H.series_fit("vanity", C142, ch142) == ([C142[1], C142[2], C142[4]], "vanity") and H.series_fit("vanity", C142[:3], ch142) == (C142[:3], None) and H.series_fit("stock", C142, ch142) == (C142, "stock")  # 칸 3개↑ = 칸만 · 밑 = 시리즈 X · 다른 시리즈 = 그대로
 src142 = inspect.getsource(H.top_deals)
-assert "TH_SERIES_FIT.get(skey)" in src142 and 'skey, sno, shead = None, 0, ""' in src142 and src142.count("series_next(seen, skey)") == 1 and "seen.get(\"series\", {}).get(skey, 0) + 1" not in src142
+assert "series_fit(skey, cs, choose)" in src142 and 'skey, sno, shead = None, 0, ""' in src142 and src142.count("series_next(seen, skey)") == 1 and "seen.get(\"series\", {}).get(skey, 0) + 1" not in src142
 assert 'series_next(seen, "toss")' in inspect.getsource(H.toss_deals) and "series_next(seen, sk)" in inspect.getsource(H.curation)
 os.chdir(cwd142)
