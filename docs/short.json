@@ -1,0 +1,122 @@
+[
+{
+"short": "hotdealpick.kr/beauty",
+"to": "/c/beauty/",
+"title": "💄 뷰티 특가 모음"
+},
+{
+"short": "hotdealpick.kr/car",
+"to": "/c/car/",
+"title": "🚗 자동차 특가 모음"
+},
+{
+"short": "hotdealpick.kr/coffee",
+"to": "/c/coffee/",
+"title": "☕ 커피·차 특가 모음"
+},
+{
+"short": "hotdealpick.kr/coupang",
+"to": "/c/coupang/",
+"title": "🚀 쿠팡 특가 모음"
+},
+{
+"short": "hotdealpick.kr/digital",
+"to": "/c/digital/",
+"title": "🔌 가전·디지털 특가 모음"
+},
+{
+"short": "hotdealpick.kr/drop",
+"to": "/c/drop/",
+"title": "📉 가격 내려간 상품"
+},
+{
+"short": "hotdealpick.kr/fashion",
+"to": "/c/fashion/",
+"title": "🧦 패션·잡화 특가 모음"
+},
+{
+"short": "hotdealpick.kr/food",
+"to": "/c/food/",
+"title": "🍚 식품 특가 모음"
+},
+{
+"short": "hotdealpick.kr/home",
+"to": "/c/home/",
+"title": "🏠 생활·살림 특가 모음"
+},
+{
+"short": "hotdealpick.kr/hot",
+"to": "/c/hot/",
+"title": "🔥 지금 특가"
+},
+{
+"short": "hotdealpick.kr/kitchen",
+"to": "/c/kitchen/",
+"title": "🍳 주방 특가 모음"
+},
+{
+"short": "hotdealpick.kr/laundry",
+"to": "/c/laundry/",
+"title": "🧺 세탁 특가 모음"
+},
+{
+"short": "hotdealpick.kr/life",
+"to": "/c/life/",
+"title": "🧻 생필품 특가 모음"
+},
+{
+"short": "hotdealpick.kr/naver",
+"to": "/c/naver/",
+"title": "💚 네이버 특가 모음"
+},
+{
+"short": "hotdealpick.kr/pet",
+"to": "/c/pet/",
+"title": "🐶 반려동물 특가 모음"
+},
+{
+"short": "hotdealpick.kr/rehot",
+"to": "/c/rehot/",
+"title": "🔁 다시 특가"
+},
+{
+"short": "hotdealpick.kr/season",
+"to": "/c/season/",
+"title": "🍠 제철 먹거리 특가 모음"
+},
+{
+"short": "hotdealpick.kr/snack",
+"to": "/c/snack/",
+"title": "🍪 간식 특가 모음"
+},
+{
+"short": "hotdealpick.kr/sport",
+"to": "/c/sport/",
+"title": "🏋️ 운동 특가 모음"
+},
+{
+"short": "hotdealpick.kr/top",
+"to": "/c/top/",
+"title": "👍 반응 좋은 딜 TOP 10"
+},
+{
+"short": "hotdealpick.kr/toss",
+"to": "/c/toss/",
+"title": "💙 토스 특가 모음"
+},
+{
+"short": "hotdealpick.kr/wait",
+"to": "/c/wait/",
+"title": "⏳ 특가 기다리는 상품"
+},
+{
+"short": "hotdealpick.kr/winter",
+"to": "/c/winter/",
+"title": "❄️ 겨울템 특가 모음"
+},
+{
+"short": "hotdealpick.kr/women",
+"to": "/c/women/",
+"title": "여성용품 → 생필품"
+}
+]
