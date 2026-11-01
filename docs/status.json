@@ -1,22 +1,22 @@
 {
-"at": "2026-11-02 05:57",
-"posts": 2986,
-"site": 1750,
+"at": "2026-11-02 06:12",
+"posts": 3001,
+"site": 1765,
 "mall": {
-"coupang": 1067,
+"coupang": 1082,
 "toss": 629,
 "naver": 54
 },
 "cat": {
 "pet": 28,
-"heat": 179,
-"digital": 91,
+"heat": 185,
+"digital": 94,
 "car": 31,
 "food": 358,
-"life": 213,
+"life": 215,
 "kitchen": 109,
 "laundry": 68,
-"beauty": 278,
+"beauty": 282,
 "fashion": 78,
 "snack": 56,
 "coffee": 79,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 154,
-"sitemap": 1140,
+"sitemap": 1161,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -58,10 +58,10 @@
 }
 },
 "2026-11-02": {
-"site": 1750,
-"sitemap": 1140,
+"site": 1765,
+"sitemap": 1161,
 "mall": {
-"coupang": 1067,
+"coupang": 1082,
 "toss": 629,
 "naver": 54
 }
