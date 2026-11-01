@@ -12432,12 +12432,28 @@ def run139(cmd, **kw):
     if cmd[:2] == ["node", "scripts/render.mjs"]:
         os.makedirs("tools/card/rendered", exist_ok=True); open(f"tools/card/rendered/{cmd[3][5:-5]}.png", "wb").write(b"png")
 H.subprocess.run = run139; os.makedirs("tools/card"); H.MALL_CARD = True
-with contextlib.redirect_stdout(io.StringIO()): u139 = H.mall_card("top12", "생필품 쟁여두기 · 생필품 3", I139)
+with contextlib.redirect_stdout(io.StringIO()): u139 = H.mall_card("top12", "생필품 쟁여두기 · 생필품 3", "생필품 3", I139)
 assert u139 == H.SITE + "cards/mall/20261101_1205_top12.png" and os.path.exists("docs/cards/mall/20261101_1205_top12.png") and json.load(open("tools/card/data/run_20261101_1205_top12.json"))["items"][1]["cond"] == "와우가"
 assert [c[0] for c in c139] == [["npm", "ci", "--no-audit", "--no-fund"], ["npx", "playwright", "install", "--only-shell", "chromium"], ["node", "scripts/render.mjs", "--data", "data/run_20261101_1205_top12.json"]] and c139[0][2] == "1" and {c[1] for c in c139} == {"tools/card"}
 H.subprocess.run = lambda cmd, **kw: (_ for _ in ()).throw(H.subprocess.CalledProcessError(1, cmd, stderr=b"Card is invalid: MALL_URL"))
-with contextlib.redirect_stdout(io.StringIO()) as o: assert H.mall_card("top15", "생필품", I139) is None  # 렌더·검증 실패 = 글만
-H.MALL_CARD = False; assert H.mall_card("top18", "생필품", I139) is None; H.MALL_CARD = True  # 스위치
+with contextlib.redirect_stdout(io.StringIO()) as o: assert H.mall_card("top15", "생필품", "생필품 3", I139) is None and "제목 잘림" not in o.getvalue()  # 렌더·검증 실패 = 글만(잘림 아님 = 다시 X)
+c139.clear(); n139 = [0]
+def clip139(cmd, **kw):  # 11/1 Cowork: 머리 잘림(Clipped) = 짧은 제목으로 1번만 다시 → 그래도면 글만
+    c139.append(cmd)
+    if cmd[:2] == ["node", "scripts/render.mjs"]:
+        n139[0] += 1
+        if n139[0] == 1 or "화장품" not in json.load(open(f"tools/card/{cmd[3]}"))["title"] or n139[0] > 2 and clip139.always:
+            raise H.subprocess.CalledProcessError(1, cmd, stderr=b"Card is invalid: Clipped content: HEADER.card-header")
+        open(f"tools/card/rendered/{cmd[3][5:-5]}.png", "wb").write(b"png")
+clip139.always = False; H.subprocess.run = clip139
+with contextlib.redirect_stdout(io.StringIO()) as o: u139b = H.mall_card("top12", "화장대·욕실 장바구니", "화장품 3", I139)
+assert u139b and n139[0] == 2 and json.load(open("tools/card/data/run_20261101_1205_top12.json"))["title"] == "화장품 3" and "제목 잘림 → 짧은 제목 화장품 3" in o.getvalue(), o.getvalue()
+n139[0], clip139.always = 1, True  # 다시 해도 잘림 = 글만(1번만)
+with contextlib.redirect_stdout(io.StringIO()) as o: assert H.mall_card("top15", "화장대·욕실 장바구니", "생필품 3", I139) is None and n139[0] == 3 and "렌더 X" in o.getvalue()
+assert H.card_title("화장대·욕실 장바구니", ["화장품", "식품"], 3) == ("화장대·욕실 장바구니", "화장품 3") and H.card_title("새벽 장바구니", ["생필품"], 3) == ("새벽 장바구니 · 생필품 3", "생필품 3") \
+    and H.card_title(None, ["화장품", "생필품"], 4) == ("화장품·생필품 4", "화장품 4") and H.card_title(None, [], 3) == ("오늘 묶음 3", "오늘 묶음 3")  # 16자 넘음 = 시리즈 이름만
+assert "*card_title(tp, labs, n)" in inspect.getsource(H.top_deals)
+H.MALL_CARD = False; assert H.mall_card("top18", "생필품", "", I139) is None; H.MALL_CARD = True  # 스위치
 # 게시: 사이트에 뜨면 사진 글 · 45분 안 = 기다림 · 45분 넘음 = 글만 · 사진 거절(4xx) = 글만
 tb139, live139 = [], {"ok": False}
 H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: (_ for _ in ()).throw(E139()) if image and live139.get("rej") else tb139.append((kind, image, topic)) or {"id": "T"}
@@ -12500,3 +12516,16 @@ assert fr141 == {U141[0], U141[8]}, fr141  # 1 와우가(검색 일반가로 확
 src141 = inspect.getsource(H.cp_price)
 assert "key=lambda t: (t[1] not in rw, t[1] not in fr, t[2] != \"tag\"" in src141 and "due(u) or u in fr or" in src141 and 'fq["n"] += u in fr' in src141 and "if fq[\"n\"] < CP_FILL_CHK else set()" in src141
 assert H.CP_FILL_STALE * 3600 < H.CPRE_FRESH and H.CP_FILL_CHK <= H.CP_SEARCH_HOUR * 24 // 3  # 확인 = 24시간 안 후보로 · 하루 검색 몫의 1/3까지
+
+# 9-142 (11/1 Cowork 12:20 ②): 💄 화장대·욕실 바구니 = 그 칸 품목만(식용유 X · 모자라면 그 회차 시리즈 X) · 회차 = seen·posts.json·series_eps.json 중 큰 값 + 1(실패 실행에 seen이 안 남아 #1 두 번)
+cwd142 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+json.dump([{"t": "2026-11-01 12:13", "text": "x", "series": "vanity", "no": 1}, {"t": "2026-11-01 15:12", "text": "x", "series": "stock", "no": 4}], open(H.POSTS, "w"))
+json.dump([{"key": "analysis", "no": 2, "t": "2026-10-31 20:30"}], open(H.SERIES_EPS, "w"))
+assert (H.series_next({}, "vanity"), H.series_next({"series": {"vanity": 5}}, "vanity"), H.series_next({"series": {"stock": 1}}, "stock"), H.series_next({}, "analysis"), H.series_next({}, "dawn")) == (2, 6, 5, 3, 1)
+f142 = H.TH_SERIES_FIT["vanity"]
+assert all(f142(n) for n in ("라운드랩 독도 토너 500ml", "도브 뷰티바 비누 90g×6", "2080 치약 120g×8", "좋은느낌 생리대 중형 36P", "해피바스 바디워시 900g")) \
+    and not any(f142(n) for n in ("백설 콩기름 900ml×4", "오뚜기 진라면 120g×20", "크리넥스 3겹 30롤"))
+src142 = inspect.getsource(H.top_deals)
+assert "TH_SERIES_FIT.get(skey)" in src142 and 'skey, sno, shead = None, 0, ""' in src142 and src142.count("series_next(seen, skey)") == 1 and "seen.get(\"series\", {}).get(skey, 0) + 1" not in src142
+assert 'series_next(seen, "toss")' in inspect.getsource(H.toss_deals) and "series_next(seen, sk)" in inspect.getsource(H.curation)
+os.chdir(cwd142)
