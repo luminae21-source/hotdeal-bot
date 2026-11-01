@@ -12544,3 +12544,11 @@ assert ok143("탐사 베이킹소다 주방세제 780ml", chkt="2026-10-31 16:00
 assert "inb(c[0]) and th_bundle_ok(c[0], now)" in inspect.getsource(H.top_deals)
 fk143 = lambda s: bool(re.search(H.TH_C_FAKE, s))
 assert fk143("오후에 살림 정리하다 떠오른 채우기 목록") and fk143("우리 집 욕실 채우기") and fk143("써 보니 좋더라") and not any(fk143(h) for h in H.TH_LIST_HOOK.values()) and not any(fk143(q) for q in H.TH_LIST_Q)  # 기본 훅·질문은 그대로
+# 9-143+ (11/1 18시 '후보 1개' — 남성 칸 🔥 78개 중 48시간 안 확인 2개): 3시간 안 묶음 칸(f·m) 상품을 cp_price가 먼저 확인 · 공통(c) 칸 = 그대로
+tg143, co143 = H.th_group, H.cat_of
+H.th_group, H.cat_of = (lambda gd, c: {"car": "m", "beauty": "f"}.get(c, "c")), (lambda p: p["cat"])
+P143, F143 = [{"url": "a", "cat": "car"}, {"url": "b", "cat": "beauty"}, {"url": "c", "cat": "life"}], {"a", "b", "c"}
+k143 = lambda hm: time.gmtime(H.kst_ts("2026-11-02 " + hm) + 9 * 3600)
+assert [H.fill_slot_first(F143, P143, k143(x)) for x in ("16:00", "10:00", "13:00", "18:30", "23:00")] == [{"a"}, {"b"}, set(), set(), set()]
+H.th_group, H.cat_of = tg143, co143
+assert "key=lambda t: (t[1] not in rw, t[1] not in fr1, t[1] not in fr," in inspect.getsource(H.cp_price) and "fr1 = fill_slot_first(fr, posts, kst)" in inspect.getsource(H.cp_price)

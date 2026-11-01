@@ -2441,6 +2441,15 @@ def cp_links(seen):
               + f" · 검색 대기 {len(rr['w'])} · 아직 {sum(u not in cl for u in rr['u'])}")
 
 
+def fill_slot_first(fr, posts, kst):
+    """11/1 18시 묶음 '후보 1개'(남성 칸 🔥 78개 중 48시간 안 확인 2개): 3시간 안 묶음 칸(TH_LIST_GROUP f·m)이면 그 칸 상품을 cp_price가 먼저 확인."""
+    grp = next((TH_LIST_GROUP.get(h) for h in TH_LIST_GROUP if 0 < (h - kst.tm_hour) % 24 <= 3), None)
+    if grp in (None, "c"):
+        return set()
+    gd, last = load(CAT_GENDER, {}), {p.get("url"): p for p in posts}
+    return {u for u in fr if u in last and th_group(gd, cat_of(last[u])) == grp}
+
+
 def cp_fill_due(posts, names, ev, m, today, d3, stale):
     """11/1 Cowork(개별 🔥 0 — 10/30 진열 확인이 24시간 지나 cp_fill·auto_repost·auto_pick5 후보 0): cp_price가 먼저 확인할 진우 쿠팡 🔥 상품 =
     마지막 글 🔥 · 보이는 가격이 일반가(와우·쿠폰가는 검색 가격으로 확인 X — 그대로) · 확인이 stale 전 · 3일 안 채널 X · 오늘 검색 X · 옵션(item)이나 이름 수량으로 맞출 수 있음(own_end가 받는 것만)."""
@@ -2495,6 +2504,7 @@ def cp_price(seen):
     if fq.get("d") != today:
         fq.update(d=today, n=0)
     fr = cp_fill_due(posts, names, ev, q["m"], today, ago(3), ago(CP_FILL_STALE / 24)) if fq["n"] < CP_FILL_CHK else set()
+    fr1 = fill_slot_first(fr, posts, kst)
     todo = sorted(((last(u), u, ev[u]["pid"], n, ev[u].get("item")) for u, n in names.items() if ev[u].get("pid") and n and (due(u) or u in fr or u not in q.get("i", {}) and not q["m"].get(u, [0, ""])[1].startswith(today)
                                                                                                    or ev[u].get("item") and u in q["m"] and q["m"][u][2:3] != [ev[u]["item"]]
                                                                                                    or not rush and u not in q.get("i", {}) and u in q["pm"] and q["pm"][u][1] < len(cp_kws(n))) and u not in q["e"]),
@@ -2530,7 +2540,7 @@ def cp_price(seen):
         if ev[t[1]].get("tag") and t[1] not in rw:
             bytag[ev[t[1]]["tag"]].append(t[1])
     tags = [(t, None, "tag", t, None) for t, us in bytag.items() if len(us) >= PH_TAG_MIN and not (t in tg and tg[t][1] < 2)]  # 2개 밑으로 맞은 tag = 7일 동안 상품 이름 검색
-    todo = sorted(tags + [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]], key=lambda t: (t[1] not in rw, t[1] not in fr, t[2] != "tag", t[1] not in pd, t[0] if t[1] in pd else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
+    todo = sorted(tags + [t for k in range(max(len(pho), len(old))) for t in pho[k:k + 1] + old[k:k + 1]], key=lambda t: (t[1] not in rw, t[1] not in fr1, t[1] not in fr, t[2] != "tag", t[1] not in pd, t[0] if t[1] in pd else ""))  # RR 400 상품 = 두 줄 통틀어 먼저(한 줄에 몰려도 실행 검색 2번 다 — 리뷰) · 그다음 3일 넘은 추적 우선(오래된 것 먼저)
     got = miss = err = gn = 0
     xs = set()  # 같은 검색 결과로 이번 실행에 가격 확인한 글 = 이번 실행엔 따로 검색 X(못 찾음으로 덮지 않게)
     qs = cp_qs
