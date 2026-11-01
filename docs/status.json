@@ -1,5 +1,5 @@
 {
-"at": "2026-11-01 23:46",
+"at": "2026-11-02 00:01",
 "posts": 2831,
 "site": 1602,
 "mall": {
@@ -11,9 +11,7 @@
 "pet": 28,
 "heat": 119,
 "car": 31,
-"home": 77,
 "food": 360,
-"beauty": 238,
 "life": 193,
 "kitchen": 109,
 "laundry": 68,
@@ -21,6 +19,8 @@
 "snack": 56,
 "coffee": 79,
 "season": 82,
+"beauty": 238,
+"home": 77,
 "digital": 61,
 "sport": 19,
 "etc": 4
@@ -56,54 +56,20 @@
 "toss": 629,
 "naver": 54
 }
+},
+"2026-11-02": {
+"site": 1602,
+"sitemap": 969,
+"mall": {
+"coupang": 919,
+"toss": 629,
+"naver": 54
+}
 }
 },
 "warn": [
 "쿠팡 변환 실패 154개(cp_fail.json)"
 ],
-"nset": [
-{
-"name": "과자",
-"mall": "coupang",
-"n": 4,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "생활",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "식품",
-"mall": "coupang",
-"n": 5,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "생필품",
-"mall": "coupang",
-"n": 5,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "반려동물",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "생필품",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "new"
-}
-],
-"nset_n": "새 구성 6 · 기존 상품 구성 0"
+"nset": [],
+"nset_n": "새 구성 0 · 기존 상품 구성 0"
 }
