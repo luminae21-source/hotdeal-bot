@@ -35,6 +35,13 @@
 "n": 3,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
