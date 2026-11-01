@@ -12406,8 +12406,8 @@ I139 = [(C139(1, "몬스터 롤리팝 100p", chkt="2026-11-01 10:20", now="14,90
         (C139(2, "탐사 분리수거 쓰레기봉투 60L×200", money="💰 1장당 61원꼴 · 와우 할인 중", t="2026-10-30 00:44"), "12,240원"),  # 01:07 새벽 묶음 — 조건 = 💰 줄(글 가격엔 없음)
         (C139(3, "리베로 기저귀 6단계 252매", money="💰 1매당 231원꼴 · 쿠폰 할인 중"), "58,200원")]
 d139 = H.mall_card_json("새벽 장바구니 · 생필품 3", I139)
-assert d139["mall"] == "coupang" and d139["title"] == "새벽 장바구니 · 생필품 3" and d139["checked"] == "2026-11-01 12:05" and [(x["price"], x["cond"], x["unit"], x["checked"]) for x in d139["items"]] == [
-    ("14,900원", "", "100g당 186원", "2026-11-01 10:20"), ("12,240원", "와우가", "1장당 61원", "2026-10-30 00:44"), ("58,200원", "쿠폰가", "1매당 231원", "2026-11-01 11:00")], d139  # 루트 = 게시 기준(지금) · 상품 = 실제 확인 시각 · 조건 = now·💰 줄
+assert d139["mall"] == "coupang" and d139["title"] == "새벽 장바구니 · 생필품 3" and d139["checked"] == "2026-11-01 11:00" and [(x["price"], x["cond"], x["unit"], x["checked"]) for x in d139["items"]] == [
+    ("14,900원", "", "100g당 186원", "2026-11-01 10:20"), ("12,240원", "와우가", "1장당 61원", "2026-10-30 00:44"), ("58,200원", "쿠폰가", "1매당 231원", "2026-11-01 11:00")], d139  # 루트 = 상품 확인 중 가장 늦은 것(11/1 Cowork ① — 지금 X) · 상품 = 실제 확인 시각 · 조건 = now·💰 줄
 assert d139["items"][0]["img"] == "https://thumbnail.coupangcdn.com/a.jpg" and d139["items"][1]["url"] == "https://link.coupang.com/a/K2" and set(d139) == {"mall", "title", "checked", "items"} and set(d139["items"][0]) == {"name", "price", "cond", "unit", "img", "url", "checked"}  # v3 스키마 그대로
 assert len(H.mall_card_json("가" * 50, I139)["title"]) == 36 and H.mall_card_json("t", [(C139(9, "가" * 200), "9,900원")] + I139[:2])["items"][0]["name"] == "가" * 179 + "…"  # 제목 36 · 이름 180(v3 2줄 처리)
 o139 = io.StringIO()
@@ -12535,3 +12535,12 @@ src142 = inspect.getsource(H.top_deals)
 assert "series_fit(skey, cs, choose)" in src142 and 'skey, sno, shead = None, 0, ""' in src142 and src142.count("series_next(seen, skey)") == 1 and "seen.get(\"series\", {}).get(skey, 0) + 1" not in src142
 assert 'series_next(seen, "toss")' in inspect.getsource(H.toss_deals) and "series_next(seen, sk)" in inspect.getsource(H.curation)
 os.chdir(cwd142)
+
+# 9-143 (11/1 Cowork 15:25): ② 묶음 = 가격 확인 48시간 안만 · ③ 기저귀 = 아기 칸만(묶음 X) · ④ Threads 묶음 말 1인칭 경험(살림 정리하다 떠오른·우리 집) = 써 본 척
+now143 = H.kst_ts("2026-11-01 15:02")
+ok143 = lambda name, **k: H.th_bundle_ok({"t": "2026-11-01 14:00", "text": f"🔥 [쿠팡] {name} (9,900원)", **k}, now143)
+assert ok143("탐사 베이킹소다 주방세제 780ml", chkt="2026-10-31 16:00") and not ok143("탐사 베이킹소다 주방세제 780ml", chkt="2026-10-29 11:00") \
+    and not ok143("하기스 맥스드라이 기저귀 3단계 60매", chkt="2026-11-01 14:00") and not ok143("리베로 밴드형 기저귀 6단계") and ok143("크리넥스 3겹 30롤")  # 51시간 = X · 기저귀 = X · 글 시각 확인 = 그대로
+assert "inb(c[0]) and th_bundle_ok(c[0], now)" in inspect.getsource(H.top_deals)
+fk143 = lambda s: bool(re.search(H.TH_C_FAKE, s))
+assert fk143("오후에 살림 정리하다 떠오른 채우기 목록") and fk143("우리 집 욕실 채우기") and fk143("써 보니 좋더라") and not any(fk143(h) for h in H.TH_LIST_HOOK.values()) and not any(fk143(q) for q in H.TH_LIST_Q)  # 기본 훅·질문은 그대로
