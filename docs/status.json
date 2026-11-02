@@ -1,9 +1,9 @@
 {
-"at": "2026-11-02 17:59",
-"posts": 3120,
-"site": 1633,
+"at": "2026-11-02 18:14",
+"posts": 3121,
+"site": 1634,
 "mall": {
-"coupang": 950,
+"coupang": 951,
 "toss": 629,
 "naver": 54
 },
@@ -23,7 +23,7 @@
 "season": 83,
 "home": 77,
 "sport": 19,
-"etc": 4
+"etc": 5
 },
 "missing": 0,
 "missing_names": [],
@@ -58,10 +58,10 @@
 }
 },
 "2026-11-02": {
-"site": 1633,
+"site": 1634,
 "sitemap": 990,
 "mall": {
-"coupang": 950,
+"coupang": 951,
 "toss": 629,
 "naver": 54
 }
