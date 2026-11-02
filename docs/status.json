@@ -1,9 +1,9 @@
 {
-"at": "2026-11-02 13:31",
-"posts": 3101,
-"site": 1618,
+"at": "2026-11-02 13:44",
+"posts": 3102,
+"site": 1619,
 "mall": {
-"coupang": 935,
+"coupang": 936,
 "toss": 629,
 "naver": 54
 },
@@ -14,11 +14,11 @@
 "car": 31,
 "life": 195,
 "food": 364,
-"kitchen": 110,
+"fashion": 78,
+"kitchen": 111,
 "beauty": 245,
 "laundry": 69,
 "coffee": 79,
-"fashion": 78,
 "snack": 56,
 "season": 83,
 "home": 77,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 154,
-"sitemap": 987,
+"sitemap": 989,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -58,10 +58,10 @@
 }
 },
 "2026-11-02": {
-"site": 1618,
-"sitemap": 987,
+"site": 1619,
+"sitemap": 989,
 "mall": {
-"coupang": 935,
+"coupang": 936,
 "toss": 629,
 "naver": 54
 }
