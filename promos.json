@@ -1,6 +1,6 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-11-01 17:27",
+ "updated": "2026-11-02 17:38",
  "promos": [
   {
    "id": "ssg-ssgday-2610",
@@ -19,19 +19,19 @@
     "href": "https://emart.ssg.com/"
    },
    "src": "https://www.mt.co.kr/living/2026/10/19/2026101916054412524",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
    "kw": null
   },
   {
    "id": "gm-bigsmile-2611",
    "mall": "gmarket",
    "mall_name": "G마켓",
-   "sub": "",
+   "sub": "옥션 함께",
    "name": "빅스마일데이",
    "start": "2026-11-02",
    "end": "2026-11-13",
    "pre": null,
-   "benefit": "특가 3,000개 · 할인 쿠폰 G마켓 부담",
+   "benefit": "특가 3,000개 · 할인 쿠폰 G마켓 부담 · 옥션에서도 같이 진행",
    "tag": null,
    "url": "https://www.gmarket.co.kr/",
    "cta": {
@@ -39,27 +39,7 @@
     "href": "https://www.gmarket.co.kr/"
    },
    "src": "https://www.fnnews.com/news/202610231616564882",
-   "chk": "2026-11-01 17:27",
-   "kw": null
-  },
-  {
-   "id": "lo-brandfantasy-2610",
-   "mall": "lotteon",
-   "mall_name": "롯데온",
-   "sub": "",
-   "name": "브랜드판타지",
-   "start": null,
-   "end": "2026-10-31",
-   "pre": null,
-   "benefit": "여성 패션 브랜드 날짜별 릴레이 할인 · 가을·겨울 옷 최대 55%",
-   "tag": null,
-   "url": "https://www.lotteon.com/",
-   "cta": {
-    "text": "행사 보러 가기",
-    "href": "https://www.lotteon.com/"
-   },
-   "src": "https://www.segye.com/newsView/20261024502603",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
    "kw": null
   },
   {
@@ -79,7 +59,7 @@
     "href": "https://shopping.naver.com/"
    },
    "src": "https://www.navercorp.com/media/pressReleasesDetail?seq=10034785",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
    "kw": "넾다세일"
   },
   {
@@ -96,7 +76,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.newspim.com/news/view/20261029000802",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
    "kw": null
   },
   {
@@ -113,7 +93,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.youthdaily.co.kr/news/article.html?no=228991",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
    "kw": null
   },
   {
@@ -133,7 +113,27 @@
     "href": "https://www.lotteon.com/"
    },
    "src": "https://www.etnews.com/20261031000027",
-   "chk": "2026-11-01 17:27",
+   "chk": "2026-11-02 17:38",
+   "kw": null
+  },
+  {
+   "id": "oy-blackfriday-2611",
+   "mall": "oliveyoung",
+   "mall_name": "올리브영",
+   "sub": "",
+   "name": "블랙프라이데이",
+   "start": "2026-11-01",
+   "end": "2026-11-07",
+   "pre": null,
+   "benefit": "블랙프라이데이 세일 · 랜덤 쿠폰·결제 혜택 · 라스트픽 최대 70%(매장마다 다름)",
+   "tag": null,
+   "url": "https://www.oliveyoung.co.kr/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.oliveyoung.co.kr/"
+   },
+   "src": "https://www.greened.kr/news/articleView.html?idxno=353645",
+   "chk": "2026-11-02 17:38",
    "kw": null
   }
  ]
