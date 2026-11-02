@@ -5,7 +5,6 @@
 
 | 곡 | 작가 | 출처 |
 |---|---|---|
-| Monday Marimba | faespencer | https://pixabay.com/music/solo-instruments-monday-marimba-194523/ |
 | Vlog Sunny Travel Diary | alex-morgan | https://pixabay.com/music/lofi-vlog-sunny-travel-diary-578504/ |
 | Short Jam | EdR | https://pixabay.com/music/upbeat-short-jam-160347/ |
 | Short Upbeat Jingle | alanajordan | https://pixabay.com/music/upbeat-short-upbeat-jingle-253295/ |
@@ -14,6 +13,8 @@
 | Motivation Upbeat (Fun Day) | BombinSound | https://pixabay.com/music/beats-motivation-upbeat-fun-day-594803/ |
 | Summer Splash Lofi | Epicsongs | https://pixabay.com/music/folk-lofi-7-summer-splash-background-music-391679/ |
 | Travel I (Acoustic Lofi Folk) | JerzyGórecki | https://pixabay.com/music/acoustic-group-travel-i-background-film-music-acoustic-calm-music-guitar-lofi-folk-422787/ |
+| Sunny | Chill_Background_Music | https://pixabay.com/music/lofi-sunny-495047/ |
+| Cozy Cafe Moments (Soft Chillhop) | DesiFreeMusic | https://pixabay.com/music/pop-cozy-cafe-moments-soft-chillhop-1-449125/ |
 
 **라이선스: Pixabay Content License** (https://pixabay.com/service/license-summary/)
 - 상업 이용 가능 · 출처 표기 의무 없음(캡션에 🎵 곡명 (Pixabay)는 예의로 적음) · 영상에 넣어 쓰는 건 허용

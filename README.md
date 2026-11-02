@@ -121,15 +121,16 @@ GitHub Actions (15분마다 24시간 · 밤 0~8시 채널 글·사본은 알림 
 
   | # | 곡 | 아티스트 | Pixabay 장르 | 추가 |
   |---|---|---|---|---|
-  | 1 | Monday Marimba | faespencer | Solo Instruments | 10/6 |
-  | 2 | Vlog Sunny Travel Diary | alex-morgan | Lofi | 10/6 |
-  | 3 | Short Jam | EdR | Upbeat | 10/6 |
-  | 4 | Short Upbeat Jingle | alanajordan | Upbeat | 10/6 |
-  | 5 | Upbeat & Fun for Shorts | FernsCreativeCorner | Upbeat | 10/6 |
-  | 6 | Happy Lofi | AtlasAudio | Beats (Lofi) | 10/19 |
-  | 7 | Motivation Upbeat (Fun Day) | BombinSound | Beats (Upbeat) | 10/19 |
-  | 8 | Summer Splash Lofi (lofi-7) | Epicsongs | Folk · Beats (Lofi 기타) | 10/26 |
-  | 9 | Travel I (Acoustic Lofi Folk) | JerzyGórecki | Acoustic Group · Folk | 10/26 |
+  | 1 | Vlog Sunny Travel Diary | alex-morgan | Lofi | 10/6 |
+  | 2 | Short Jam | EdR | Upbeat | 10/6 |
+  | 3 | Short Upbeat Jingle | alanajordan | Upbeat | 10/6 |
+  | 4 | Upbeat & Fun for Shorts | FernsCreativeCorner | Upbeat | 10/6 |
+  | 5 | Happy Lofi | AtlasAudio | Beats (Lofi) | 10/19 |
+  | 6 | Motivation Upbeat (Fun Day) | BombinSound | Beats (Upbeat) | 10/19 |
+  | 7 | Summer Splash Lofi (lofi-7) | Epicsongs | Folk · Beats (Lofi 기타) | 10/26 |
+  | 8 | Travel I (Acoustic Lofi Folk) | JerzyGórecki | Acoustic Group · Folk | 10/26 |
+  | 9 | Sunny | Chill_Background_Music | Lofi · Beats · Cafe | 11/2 |
+  | 10 | Cozy Cafe Moments (Soft Chillhop) | DesiFreeMusic | Pop · Lofi · Beats | 11/2 |
 - **자동 게시 방식**: Instagram 로그인 방식(10/8~, 페이스북 페이지 없이 인스타 계정 토큰으로 바로) → **카드 사진**: 사이트에 올라간 JPEG 주소로 이미지 컨테이너 → 인스타 처리가 끝나면 다음 실행(15분 안)에 발행 → 봇이 '📸 인스타 자동 게시 완료'. 실패하면 '⚠️' 알림 + 사진은 봇 채팅에 그대로 와서 직접 올리면 됨. **릴스**: 영상 파일 직접 업로드(resumable)는 공식 문서상 **페이스북 로그인(페이지 토큰) 앱만** 가능 → Instagram 토큰이면 릴스는 자동 업로드를 시도하지 않고 지금처럼 봇 채팅 영상으로 직접(페이스북 페이지 토큰 EAA…를 넣으면 릴스도 자동). 하루 1~2개라 인스타 한도(24시간 100개)와 무관
 - **세팅(진우, 1번만)** — 10/8 바꿈: 페이스북 방식(그래프 API 탐색기)은 앱이 '비즈니스용 Facebook 로그인'이고 사용 사례에 권한이 하나도 추가돼 있지 않아서 토큰 버튼이 꺼져 있었음 → **Instagram 로그인 방식**으로. 인스타 @hotdealpick.kr은 프로페셔널(비즈니스) 계정이어야 함
   1. (완료, 10/8 Claude) 앱 `hotdealpick` → 이용 사례 'Instagram에서 메시지 및 콘텐츠 관리' → 권한 및 기능에서 `instagram_business_basic` `instagram_business_content_publish` **추가** + 앱 역할 → 역할 → @hotdealpick.kr **Instagram 테스터** 추가(10/8 진우 수락)
@@ -786,6 +787,7 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 | 2026-11-02 | **쇼츠 주제·제목**(Cowork 11/2 — 진우 '가전·화장품·자취템 등 생필품도') | `clip_topics` + 가전(appliance)·자취템(solo, `CLIP_SOLO` 1인 가구 생활용품 — 성별 말 X)·생필품(life) — 화장품(beauty) 그대로, 후보 3개 밑 = 건너뜀+로그 · `clip_kind` = 가격 기록 품목 → 진열 이름(숫자·할인전·시리즈 X) → 칸 이름(뒤로) · 제목 '엔진오일·계란 … TOP3 #쇼츠'·해시태그 #핫딜픽 + 품목 이름(네이버 클립 같은 방식) · 같은 상품 조합 7일 안 X(`CLIP_DAYS`, seen clip h — 꾸준템 포함, 첫 상품 빼고 3번까지 다시, 안 되면 '7일 안 같은 조합' 로그) · 대가성 첫 줄·영상 가격 시각·프로필 링크 그대로 | 셀프체크 9-75 |
 | 2026-11-02 | **가이드 픽 진열 중복 긴급 고침**(Cowork — 11/2 04:03~07:21 같은 진열 15개 × 16번 = 240개 다시 올라감) | 원인: `cp_links`가 가이드 쿠팡 픽 주소를 cp_links.json에 이미 있어도 실행마다 다시 변환 → 같은 상품 링크 값이 바뀜 → events 진열 url이 새 링크 → `shelf_posts` 중복 검사(url·지금 링크로 찾은 pid)를 통과 · 고침: ① 가이드 픽 = 링크 없을 때만 변환(있는 값 그대로) ② 진열 글에 pid 기록(지금 링크로 알 때 매 실행 채움) + 중복 검사 = 글의 pid도 → 링크가 바뀌어도 같은 상품 ③ 1번 정리(seen dup1102): 11/2 04~12시 own 진열 중 그 전 진열과 같은 이름 = 그 자리에서 own 빼고 nosite(posts 번호·찜·카드 번호 그대로 — 사이에 낀 채널 글 4개 번호 안 밀림) · 그 p/ 쪽 지움 · 원래 10/25 글 그대로(pid만 기록) ④ /guide/ 7일 변화 이름 = 자르지 않음(모델명까지) | 셀프체크 9-145(두 번 실행 = 진열 0·cp_links 값 그대로·링크 바뀌어도 중복 X · 변이 2개 잡음) |
 | 2026-11-02 | **정기 점검 09:00** | Actions 22:30 뒤 43회 전부 성공(17:35→19:03Z 빈칸 = GitHub 서버 오류 · Cowork 수동 실행) · 밤사이 개별 🔥 8(새벽 4↑)·01:11 새벽 묶음 v3 카드·07:08 골드박스 · 토스 채널 글 0(TOSS_PAUSE) · 중복 진열 240개 정리 확인(nosite 240·11/2 own 진열 0·pid 876) · guides.json 다시 넣은 뒤 cp_links 값 바뀜 0(새 픽 1개만 변환) · 사진 쿠팡 865/1067 · 가격 관측 137(호출 62·호출당 2.2·검색 43/144) · '가격 확인 안 됨' 252(10/31 175 → 하루 +30 흐름 — 추적 965개 > 확인 몫, 상한 그대로) · 메일 0 · 고침: seen_save가 숫자 값을 3일 지난 칸으로 지워 dup1102 정리가 매 실행 다시 돎 → True(f8dfd58b4a, 9-145 변이 확인) | |
+| 2026-11-02 | **주간 플레이리스트 10:30**: Pixabay 2곡 추가(9 → 11 → 최대 10 = 가장 오래된 Monday Marimba 뺌) — **Sunny — Chill_Background_Music**(밝은 로파이 기타, 2:08 · Bright·Laid Back·Happy) · **Cozy Cafe Moments (Soft Chillhop) — DesiFreeMusic**(밝은 칠합, 2:28 · Bright·Happy). 키즈·만화·크리스마스 X · 후보 6곡 중 4곡 뺌(Simple Happy Life = 'Happy Childrens Tunes' · Happy Upbeat = Kids Music·Cartoon 태그 · Vintage Thing = Content ID true · Short 2 = 키즈 태그). 새 곡은 보냄 표시 없음 → 다음 실행에 봇 채팅 🎵 플레이리스트 다시 감 · cache 경로 그대로 · 다음 = 11/9 10:30 예약 | 곡 페이지 JSON-LD(Firecrawl rawHtml — 컨테이너·web-fetch는 pixabay 접속 막힘 · Travel I로 contentUrl 맞춤 확인): additionalProperty = Mood·Movement·Theme뿐('Content ID Registered' 없음 = 미등록) · `contentUrl` cdn.pixabay.com · 기존 곡과 이름·주소 중복 없음 · MUSIC.md 표 맞춤(9-62) | ✅ 곡 목록 · ⏳ 다음 실행 봇 채팅 전송 확인 |
 | 2026-11-01 | **정기 점검 22:30**(09:00 뒤 하루 마감) | Actions hotdeal 사이트 커밋 59회(실행 15분 간격과 맞음 — 실패로 빠진 회차 안 보임) · 개별 🔥 9(13:23 뒤 8 — f880d4661b 뒤 살아남 · 0~7시 0 = 고치기 전) · 묶음 th1·th12(💄 #1 — 회차 고침 52139bb049)·th15(🧻 #2 · 첫 v3 카드 20261101_1502_top15.png) · 18시 = 'threads skip top18 1개'(48시간 규칙 뒤 남성 칸 확인 2개) → `fill_slot_first` f925627719 · 19:50 pick5 = 1개만(17시 24시간 안 후보 적음) · 꾸준템 19:50 · 사진 쿠팡 861/1067(81%) · 메일(링크프라이스·쿠팡·토스 1일) 0 · PWA 셀프체크 OK(짧은 주소 쪽 생김) · 주간 숫자 행 11/1 |
 | 2026-11-01 | **정기 점검 09:00**(10/31 22:30 뒤 밤사이) | Actions hotdeal 48회 전부 성공 · 채널 글 3개(같은 mid 0 · 토스 0 — 점검 모드) · 묶음 th1(01:07 — 'mall card 만듦 coupang 3개 20261101_0107_top1' = v2 카드 Actions 렌더 OK · '묶음 점검 ok · top1' · '묶음 한 줄 5개 · Claude 2 · 겹침 2 → 다시 1 · 뺌 1') · 골드박스 · 사진 쿠팡 818/1053 · status.json 진열 1,588 · 변환 실패 154(경고 그대로) · 새 구성 2 · 메일(링크프라이스·쿠팡·토스 하루) 0 · v3 카드(449df06da1) = 12시 묶음부터 |
 | 2026-10-26 | **Threads 수다 글 하루 1개(II)**(Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자') | `chat_post`: Threads만 하루 1번 13:10(`CHAT_AT` · `TH_CHAT = True`) — 딜·상품명·가격·링크 없는 반말 2~4줄 + 마지막 줄 질문 1개(물음표 1개) · 앞뒤 30분 안 다른 비딜 글(올린 정보·날씨·간식·일지·알림 받기 글 = seen `thnd` · 큐레이션 시각 · 날씨·달력·간식·일지·투표·알림 받기 정해진 시각)이면 그 30분 뒤 첫 빈 실행 · 13:10+3시간 넘으면 그날 X · 주제 5가지 돌림(장보기 공감·살림 공감·오늘 계절(season_ctx)·가격 퀴즈 = 최저가 기록 가장 쌀 때·평균 숫자만(최근 7일 쓴 품목 X)·쇼핑 달력 = promos.json 이름·기간만(몰 이름 뺌)) — 최근 덜 쓴 것 먼저, 재료 없는 퀴즈·달력 X · 금지(`chat_ok`): 써 본 척·몸·효능·과장(X_BAN)·링크·권유·댓글 보상·뉴스·연예·몰 이름·영문(브랜드)·기록 밖 금액·% · 계절 — 걸리면 그 글 X(로그) · 재검토(review) 1번 뒤 다시 검사 · 대가성 문구 X(링크 없음) · 주제 태그 '일상' · 답글 = 진우 직접(TH_WATCH 그대로, 자동 댓글 X) · metrics kind chat + 48시간 조회·답글(v48·r48 — 2주 뒤 딜 글과 비교) · 로그 'chat post: 주제 id \| 본문' | 셀프체크 9-87(올림·13:05 X·하루 1번·묶음 간격·주제 돌림·비딜 앞뒤 30분·3시간·15:30 간식·규칙 표·재검토·퀴즈·달력·48시간·실패 재시도 주제) · 변이 36/36 | ✅ |

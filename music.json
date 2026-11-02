@@ -1,12 +1,5 @@
 [
  {
-  "name": "Monday Marimba — faespencer",
-  "page": "https://pixabay.com/music/solo-instruments-monday-marimba-194523/",
-  "url": "https://cdn.pixabay.com/download/audio/2024/03/05/audio_3a39dd167f.mp3?filename=faespencer-monday-marimba-194523.mp3",
-  "fid": "CQACAgQAAxkDAAIDhmrew1UZwnBflsf_9HarnbcdSAm3AAKlCwAC0josUhVGA3ajWhUnPQQ",
-  "sent": 1
- },
- {
   "name": "Vlog Sunny Travel Diary — alex-morgan",
   "page": "https://pixabay.com/music/lofi-vlog-sunny-travel-diary-578504/",
   "url": "https://cdn.pixabay.com/download/audio/2026/08/01/audio_6d4b3be2c0.mp3?filename=alex-morgan-vlog-sunny-travel-diary-578504.mp3",
@@ -61,5 +54,15 @@
   "url": "https://cdn.pixabay.com/download/audio/2025/10/19/audio_f186a1bbae.mp3?filename=jerzygorecki-travel-i-background-film-music-acoustic-calm-music-guitar-lofi-folk-422787.mp3",
   "fid": "CQACAgQAAxkDAAIDjmrew12jmzz1sjHT18r_GhSW3oz7AALHDAACa5T9UnonkEuwemM8PQQ",
   "sent": 1
+ },
+ {
+  "name": "Sunny — Chill_Background_Music",
+  "page": "https://pixabay.com/music/lofi-sunny-495047/",
+  "url": "https://cdn.pixabay.com/download/audio/2026/03/04/audio_eeab967690.mp3?filename=chill_background_music-sunny-495047.mp3"
+ },
+ {
+  "name": "Cozy Cafe Moments (Soft Chillhop) — DesiFreeMusic",
+  "page": "https://pixabay.com/music/pop-cozy-cafe-moments-soft-chillhop-1-449125/",
+  "url": "https://cdn.pixabay.com/download/audio/2025/12/15/audio_6bd5da81d1.mp3?filename=desifreemusic-cozy-cafe-moments-soft-chillhop-1-449125.mp3"
  }
 ]
