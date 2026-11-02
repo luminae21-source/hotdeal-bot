@@ -1,9 +1,9 @@
 {
-"at": "2026-11-02 11:09",
-"posts": 3096,
-"site": 1616,
+"at": "2026-11-02 11:23",
+"posts": 3097,
+"site": 1617,
 "mall": {
-"coupang": 933,
+"coupang": 934,
 "toss": 629,
 "naver": 54
 },
@@ -15,8 +15,8 @@
 "life": 195,
 "food": 363,
 "kitchen": 110,
+"beauty": 245,
 "laundry": 69,
-"beauty": 244,
 "fashion": 78,
 "snack": 56,
 "coffee": 79,
@@ -58,10 +58,10 @@
 }
 },
 "2026-11-02": {
-"site": 1616,
+"site": 1617,
 "sitemap": 981,
 "mall": {
-"coupang": 933,
+"coupang": 934,
 "toss": 629,
 "naver": 54
 }
