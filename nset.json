@@ -49,6 +49,13 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "커피",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
