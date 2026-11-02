@@ -1,9 +1,9 @@
 {
-"at": "2026-11-02 10:26",
-"posts": 3079,
-"site": 1600,
+"at": "2026-11-02 10:41",
+"posts": 3095,
+"site": 1616,
 "mall": {
-"coupang": 917,
+"coupang": 933,
 "toss": 629,
 "naver": 54
 },
@@ -12,15 +12,15 @@
 "heat": 119,
 "digital": 61,
 "car": 31,
-"life": 193,
-"food": 358,
-"kitchen": 109,
-"laundry": 68,
-"beauty": 238,
+"life": 195,
+"food": 363,
+"kitchen": 110,
+"laundry": 69,
+"beauty": 244,
 "fashion": 78,
 "snack": 56,
 "coffee": 79,
-"season": 82,
+"season": 83,
 "home": 77,
 "sport": 19,
 "etc": 4
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 154,
-"sitemap": 979,
+"sitemap": 983,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -58,10 +58,10 @@
 }
 },
 "2026-11-02": {
-"site": 1600,
-"sitemap": 979,
+"site": 1616,
+"sitemap": 983,
 "mall": {
-"coupang": 917,
+"coupang": 933,
 "toss": 629,
 "naver": 54
 }
@@ -91,7 +91,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "화장품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 3 · 기존 상품 구성 0"
+"nset_n": "새 구성 4 · 기존 상품 구성 0"
 }
