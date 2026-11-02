@@ -12629,9 +12629,10 @@ assert json.load(open(H.CP_LINKS)) == {U145: OLD145} and not any(U145 in c for c
 with contextlib.redirect_stdout(io.StringIO()) as o145:
     H.shelf_posts(s145); H.shelf_posts(s145)
 p145 = json.load(open(H.POSTS))
-assert len(p145) == 3 and "shelf 11/2 중복 진열 정리 1" in o145.getvalue() and s145["dup1102"] == 1  # 두 번 실행 = 새 진열 0
+assert len(p145) == 3 and "shelf 11/2 중복 진열 정리 1" in o145.getvalue() and s145["dup1102"] is True and "중복 진열 정리" not in o145.getvalue().split("정리 1", 1)[1]  # 두 번 실행 = 새 진열 0 · 정리 1번만(seen_save가 남기는 값)
 assert "own" not in p145[1] and p145[1]["nosite"] == 1 and p145[1]["t"] == "2026-11-02 06:11" and not os.path.exists("docs/p/1.html") and os.path.exists("docs/p/2.html")  # 그 자리(번호 그대로)·쪽 지움
 assert p145[0]["url"] == OLD145 and p145[0]["own"] == 1 and p145[0]["pid"] == "4500298441" and p145[2] == P145[2]  # 원래 글·채널 글 그대로 · 원래 글 pid 기록
+H.seen_save(s145); assert json.load(open(H.SEEN)).get("dup1102") is True  # seen 저장에서 안 빠짐(숫자 값 = 시각으로 보고 지움)
 json.dump({U145: "https://link.coupang.com/a/NEW145"}, open(H.CP_LINKS, "w"))  # 링크가 바뀌어도
 with contextlib.redirect_stdout(io.StringIO()):
     H.shelf_posts(s145)

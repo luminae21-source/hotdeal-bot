@@ -2877,7 +2877,7 @@ def shelf_posts(seen):
             posts[i]["nosite"] = 1
             if os.path.exists(f"docs/p/{i}.html"):
                 os.remove(f"docs/p/{i}.html")
-        seen["dup1102"] = len(dup)
+        seen["dup1102"] = True  # 숫자 X — seen_save가 숫자 값을 시각으로 보고 3일 지난 칸처럼 지움(11/2 09시 점검: 매 실행 다시 돎)
         if dup:
             json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         print("shelf 11/2 중복 진열 정리", len(dup))
