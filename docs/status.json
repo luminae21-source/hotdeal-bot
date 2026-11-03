@@ -1,5 +1,5 @@
 {
-"at": "2026-11-03 14:09",
+"at": "2026-11-03 14:23",
 "posts": 3149,
 "site": 1641,
 "mall": {
@@ -27,8 +27,8 @@
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 154,
-"sitemap": 995,
+"cp_fail": 157,
+"sitemap": 997,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -68,7 +68,7 @@
 },
 "2026-11-03": {
 "site": 1641,
-"sitemap": 995,
+"sitemap": 997,
 "mall": {
 "coupang": 957,
 "toss": 630,
@@ -77,7 +77,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 154개(cp_fail.json)"
+"쿠팡 변환 실패 157개(cp_fail.json)"
 ],
 "nset": [
 {
