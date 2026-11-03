@@ -12572,6 +12572,13 @@ H.th_group, H.cat_of = (lambda gd, c: {"car": "m", "beauty": "f"}.get(c, "c")), 
 P143, F143 = [{"url": "a", "cat": "car"}, {"url": "b", "cat": "beauty"}, {"url": "c", "cat": "life"}], {"a", "b", "c"}
 k143 = lambda hm: time.gmtime(H.kst_ts("2026-11-02 " + hm) + 9 * 3600)
 assert [H.fill_slot_first(F143, P143, k143(x)) for x in ("16:00", "10:00", "13:00", "18:30", "23:00")] == [{"a"}, {"b"}, set(), set(), set()]
+tt143, time.time = time.time, (lambda: H.kst_ts("2026-11-02 16:00"))  # 11/3: fr 밖이라도 그 칸 🔥·👍 진열 = 확인 24시간 지난 것 먼저(같은 칸 다른 소품목)
+P143b = P143 + [{"url": "d", "cat": "car", "own": 1, "shelf": 1, "st": "hot", "t": "2026-10-30 10:00", "chkt": "2026-11-01 10:00"},
+                {"url": "e", "cat": "car", "own": 1, "shelf": 1, "st": "hot", "t": "2026-10-30 10:00", "chkt": "2026-11-02 09:00"},
+                {"url": "f", "cat": "car", "own": 1, "shelf": 1, "st": "wait", "stdy": 1, "t": "2026-10-28 10:00"},
+                {"url": "g", "cat": "car", "own": 1, "shelf": 1, "st": "wait", "t": "2026-10-28 10:00"}, {"url": "h", "cat": "life", "own": 1, "shelf": 1, "st": "hot", "t": "2026-10-28 10:00"}]
+assert H.fill_slot_first(F143, P143b, k143("16:00")) == {"a", "d", "f"} and H.fill_slot_first(set(), P143b, k143("13:00")) == set()  # 30시간 = 먼저 · 7시간 = X · ⏳(👍 아님) = X · 공통 칸 = X
+time.time = tt143
 H.th_group, H.cat_of = tg143, co143
 assert "key=lambda t: (t[1] not in rw, t[1] not in fr1, t[1] not in fr," in inspect.getsource(H.cp_price) and "fr1 = fill_slot_first(fr, posts, kst)" in inspect.getsource(H.cp_price)
 
