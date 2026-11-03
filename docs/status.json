@@ -1,9 +1,9 @@
 {
-"at": "2026-11-04 06:57",
+"at": "2026-11-04 07:12",
 "posts": 3217,
-"site": 1687,
+"site": 1686,
 "mall": {
-"coupang": 1003,
+"coupang": 1002,
 "toss": 630,
 "naver": 54
 },
@@ -20,7 +20,7 @@
 "snack": 61,
 "laundry": 70,
 "coffee": 85,
-"etc": 6,
+"etc": 5,
 "pet": 37,
 "season": 83,
 "car": 33
@@ -76,10 +76,10 @@
 }
 },
 "2026-11-04": {
-"site": 1687,
+"site": 1686,
 "sitemap": 1018,
 "mall": {
-"coupang": 1003,
+"coupang": 1002,
 "toss": 630,
 "naver": 54
 }
