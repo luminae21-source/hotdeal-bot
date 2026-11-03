@@ -11842,7 +11842,7 @@ assert why127(f"{N127}\n\n토스 수건 9,900원\n🛒 {TL127}") == ["b"]  # b �
 assert why127(f"{N127}\n\n토스 수건 9,900원 — 쿠팡보다 1,000원 싸요\n{W127}\n🛒 {TL127}") == ["c"] and why127(f"{N127}\n\n엑티몬 충전기 6,000원\n{W127}\n{TL127}") == []  # c 다른 몰 이름(낱말 안 '티몬' X)
 mix127 = f"{H.DISCLOSURE}\n{N127}\n\n생필품 1개 값 순\n\n1️⃣ 화장지 9,900원\n👉 {CL127}\n\n2️⃣ 키친타월 8,900원\n👉 {TL127}\n\n{W127}"
 assert why127(mix127) == ["d"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음"), kind="top15") == ["d"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음")) == []  # d 1개 값 순(글 말·묶음 종류)
-time.time = lambda: TK("2026-11-03 12:00"); assert why127(ok127) == ["e"]; time.time = lambda: TK("2026-11-06 12:00")  # e 토스 점검 기간(10/30~11/4)
+time.time = lambda: TK("2026-11-02 12:00"); assert why127(ok127) == ["e"]; time.time = lambda: TK("2026-11-06 12:00")  # e 토스 점검 기간(10/30~11/4)
 assert why127(f"👉 {TL127}", reply=True) == [] and why127(f"👉 {TL127} 쿠팡", reply=True) == ["c"]  # 링크 댓글 = a·b는 본 글이 봄(c·d·e는 그대로)
 cut127 = H.toss_cut(mix127, {"inline_keyboard": [[{"text": "1", "url": CL127}], [{"text": "2", "url": TL127}]]})
 assert cut127 and TL127 not in cut127[0] and N127 not in cut127[0] and "게시 시점" not in cut127[0] and CL127 in cut127[0] and cut127[0].startswith(H.DISCLOSURE) and cut127[1] == {"inline_keyboard": [[{"text": "1", "url": CL127}]]}, cut127
