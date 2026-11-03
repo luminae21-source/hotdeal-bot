@@ -1,5 +1,5 @@
 {
-"at": "2026-11-03 09:26",
+"at": "2026-11-03 09:40",
 "posts": 3142,
 "site": 1639,
 "mall": {
@@ -184,7 +184,91 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "패션",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "과자",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "자동차",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "운동",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "반려동물",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 15 · 기존 상품 구성 0"
+"nset_n": "새 구성 27 · 기존 상품 구성 0"
 }
