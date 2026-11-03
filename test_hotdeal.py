@@ -4770,7 +4770,7 @@ def h29(url, body=None, headers=None, method=None):
     raise AssertionError(url)
 H.http, H.HAS_TOSS, H.tg = h29, True, lambda m, **p: s29m.append(p.get("text", "")) or {"message_id": 900 + len(s29m)}
 H.E.update(TOSS_ACCESS_KEY="ak", TOSS_SECRET_KEY="sk", TOSS_PUBLISHER_ID="pub-1")
-H.TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59"); assert 'TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59")' in open(H.__file__, encoding="utf-8").read() and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_stage, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
+H.TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59"); assert 'TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-03 09:00")' in open(H.__file__, encoding="utf-8").read() and H.TOSS_STOCK_DAYS == ("2026-10-28", "2026-10-29") and "toss_mode(seen)" in inspect.getsource(H.main) and "ig_publish, ig_stage, ig_test, toss_stock, coupang_remind" in inspect.getsource(H.main)
 # ① 경계: 10/29 23:59 보통 · 10/30 00:00 재사용(시작 알림 1번) · 11/4 23:59 재사용(날 바뀌면 전날 요약 1번) · 11/5 00:00 링크 1개 만들어 봄 -> 되면 보통 + '끝' 1번
 s29 = {"tlink": {"t": 1, "m": {"7": ["https://toss.im/_m/K7", TK("2026-10-28 10:00")], "2": ["https://toss.im/_m/K2", TK("2026-10-29 10:00")]}}, "tb_7": {"t": TK("2026-10-29 12:00")}}
 H.toss_mode(s29, TK("2026-10-29 23:59")); assert H.RUN["treuse"] is False and not s29m and "tpause" not in s29 and not lk29
