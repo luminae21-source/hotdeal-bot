@@ -322,6 +322,27 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "패션",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "반려동물",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
