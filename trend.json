@@ -1,16 +1,21 @@
 {
  "google": {
-  "at": "2026-11-04 00:06",
+  "at": "2026-11-04 01:01",
   "items": [
+   {
+    "t": "최미나수",
+    "n": "100+",
+    "news": ""
+   },
    {
     "t": "midterm elections 2026",
     "n": "100+",
-    "news": "Ballot counting issues reported in key New York swing…"
+    "news": "U.S. House Midterm Election Live Results 2026"
    },
    {
     "t": "한국항공우주산업",
     "n": "200+",
-    "news": "KAI 노조 1천300명 상경투쟁…\"한화 인수 저지·독립경영 보장\""
+    "news": "KAI, 수출 호조에 3분기 매출 52% 증가…영업익도 32% 증가"
    },
    {
     "t": "small business",
@@ -19,13 +24,13 @@
    },
    {
     "t": "폰지 사기",
-    "n": "200+",
-    "news": "‘부동산 전문가’ 믿었는데…125억 가로챈 스타 강사"
+    "n": "500+",
+    "news": "방송 출연한 ‘부동산 투자 전문가’…알고 보니 125억 폰지사기"
    },
    {
     "t": "이재현",
     "n": "100+",
-    "news": "추가 실점위기, 역투하는 김정운"
+    "news": "[사진]실점 위기 등판한 사토시, 한점 차 승부 이어가보자"
    },
    {
     "t": "사토시",
@@ -34,8 +39,8 @@
    },
    {
     "t": "kbo",
-    "n": "1000+",
-    "news": "Samsung Lions 7-8 KT Wiz in Korean Series Game 1 — as it…"
+    "n": "2000+",
+    "news": "[Photo] Park Yeong-hyeon climbs mound amid bases-loaded…"
    },
    {
     "t": "내장산ic",
@@ -46,11 +51,6 @@
     "t": "양도소득세",
     "n": "1000+",
     "news": "국세청, 주식 양도세 더 낸 4천687명에게 21억원 돌려줘"
-   },
-   {
-    "t": "하희라",
-    "n": "200+",
-    "news": "최수종, ♥하희라에 지극정성 이유 있었다 \"4번 유산하고도 아이들 케어\" 애틋(옥문아)"
    }
   ]
  },
