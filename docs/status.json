@@ -1,9 +1,9 @@
 {
-"at": "2026-11-03 18:10",
+"at": "2026-11-03 18:24",
 "posts": 3192,
-"site": 1676,
+"site": 1675,
 "mall": {
-"coupang": 992,
+"coupang": 991,
 "toss": 630,
 "naver": 54
 },
@@ -23,7 +23,7 @@
 "snack": 61,
 "season": 83,
 "pet": 34,
-"etc": 5
+"etc": 4
 },
 "missing": 0,
 "missing_names": [],
@@ -67,10 +67,10 @@
 }
 },
 "2026-11-03": {
-"site": 1676,
+"site": 1675,
 "sitemap": 1008,
 "mall": {
-"coupang": 992,
+"coupang": 991,
 "toss": 630,
 "naver": 54
 }
