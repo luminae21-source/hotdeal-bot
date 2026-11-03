@@ -1562,7 +1562,7 @@ def toss_clean_posts():
 
 RUN = {"ok": set(), "fail": {}, "failch": set(), "th_last": 0, "th_why": "", "tg_err": "", "ch_last": 0, "treuse": False, "tstop": False}  # 이번 실행 기록(watch 알림용): 올라간 채널·텔레그램 채널 실패·Threads 마지막 글·Threads 대기 이유 · 채널 마지막 딜 글(빈틈 채움) · 토스 점검 재사용 모드(toss_mode)
 TG_SEND = ("sendMessage", "sendPhoto", "sendVideo", "copyMessage", "sendMediaGroup")  # 채널 '올리기' 호출(수정·답장 수정은 X)
-TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-04 23:59")  # 10/22 Cowork·진우: 토스 쉐어링크 점검(새 링크 X·공유 수익 0)에도 토스 글은 채널·Threads 둘 다 계속 -> 이 동안(KST, 끝 분 포함) 새로 안 만들고 만들어 둔 링크(tlink) 재사용(toss_mode)
+TOSS_PAUSE = ("2026-10-30 00:00", "2026-11-03 09:00")  # 11/3 진우: 쉐어링크 새로 만들기·열기 다 됨 → 지금 재개(원래 끝 11/4 23:59) · 10/22 Cowork·진우: 토스 쉐어링크 점검(새 링크 X·공유 수익 0)에도 토스 글은 채널·Threads 둘 다 계속 -> 이 동안(KST, 끝 분 포함) 새로 안 만들고 만들어 둔 링크(tlink) 재사용(toss_mode)
 TOSS_FEE_DAY = "2026-11-05"  # 토스 공지: 이날 0시 뒤 구매확정분부터 수수료 일괄 8% -> 기본 5%·선착순특가(= 하루특가) 3% (toss_deals 특가 회차 개당 수익)
 TOSS_STOCK_DAYS, TOSS_STOCK_GAP, TOSS_STOCK_RUN, TOSS_LINK_KEEP = ("2026-10-28", "2026-10-29"), 4 * 3600, 30, 14 * 86400  # 점검 전 미리 만들기 날(KST, 4시간마다 목록 1번 — toss_stock) · 한 실행 발급 수(실행 6분 한도 — 남으면 다음 실행에 이어서) · 만든 링크 보관 14일(10/22~ 만든 것도 11/4까지 남게)
 TOSS_WAIT = 2 * 3600  # 10/18 진우 '토스 링크는 뽐뿌 말고 바로 연결': 쉐어링크 못 찾은 토스 딜은 이만큼 실행마다 다시 찾고 -> 그래도 없으면 진우에게 링크 요청(toss_wait·toss_relink)
