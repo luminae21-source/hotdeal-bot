@@ -6816,6 +6816,10 @@ def playlist(seen):
     mus = load(MUSIC, [])
     if all(m.get("sent") for m in mus):
         return
+    keep = {hashlib.sha1(m["url"].encode()).hexdigest()[:12] + ".mp3" for m in mus if m.get("url")}
+    for f in os.listdir("music") if os.path.isdir("music") else []:
+        if f.endswith(".mp3") and f not in keep:
+            os.remove(os.path.join("music", f))  # 목록에서 빠진 곡 mp3 = 캐시에서도 지움(seen 캐시 크기 — 10/31 egress 한도 · 11/3 37→46MB)
     kst = time.gmtime(time.time() + 9 * 3600)
     today = song_of(kst)
     tg("sendMessage", chat_id=ADMIN, text=f"🎵 릴스 배경음악 플레이리스트 ({kst.tm_mon}/{kst.tm_mday} 갱신, {len(mus)}곡)\n\n"

@@ -405,7 +405,10 @@ assert (sent[1][1]["title"], sent[1][1]["performer"]) == ("A", "x") and "perform
 assert [(m.get("fid"), m.get("sent")) for m in json.load(open("music.json"))] == [("FA", 1), ("F1", 1), (None, 1)]
 sent.clear(); H.playlist({}); assert not sent  # 새 곡 없으면 안 보냄
 mj = json.load(open("music.json")) + [{"url": "https://cdn.pixabay.com/d.mp3", "name": "D"}]; json.dump(mj, open("music.json", "w"))
+os.makedirs("music", exist_ok=True); ka = H.hashlib.sha1(b"https://cdn.pixabay.com/a.mp3").hexdigest()[:12] + ".mp3"
+open(f"music/{ka}", "wb").write(b"a"); open("music/0ldsong12345.mp3", "wb").write(b"x"); open("music/note.txt", "w").write("x")
 H.playlist({}); assert sent[1][1]["audio"] == "FA" and "4곡" in sent[0][1]["text"]  # 새 곡 추가 -> 전체 다시(이미 받은 곡은 텔레그램 파일로)
+assert sorted(os.listdir("music")) == sorted([ka, "note.txt"]); shutil.rmtree("music")  # 목록에서 빠진 곡 mp3 = 캐시에서 지움(mp3만)
 os.remove("music.json"); sent.clear(); H.playlist({}); assert not sent
 time.time = tq4
 H.urllib.request.urlopen, H.tg = uo, fake_tg
