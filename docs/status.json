@@ -1,16 +1,16 @@
 {
-"at": "2026-11-03 11:32",
-"posts": 3144,
-"site": 1639,
+"at": "2026-11-03 11:46",
+"posts": 3146,
+"site": 1641,
 "mall": {
-"coupang": 955,
+"coupang": 957,
 "toss": 630,
 "naver": 54
 },
 "cat": {
 "heat": 123,
 "digital": 61,
-"car": 31,
+"car": 33,
 "sport": 19,
 "home": 77,
 "fashion": 78,
@@ -67,10 +67,10 @@
 }
 },
 "2026-11-03": {
-"site": 1639,
+"site": 1641,
 "sitemap": 994,
 "mall": {
-"coupang": 955,
+"coupang": 957,
 "toss": 630,
 "naver": 54
 }
