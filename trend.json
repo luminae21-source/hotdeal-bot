@@ -1,7 +1,17 @@
 {
  "google": {
-  "at": "2026-11-04 01:01",
+  "at": "2026-11-04 02:13",
   "items": [
+   {
+    "t": "코너 맥그리거",
+    "n": "200+",
+    "news": "1분 만에 드러눕고 450억 번 맥그리거, 격투기 은퇴 시사"
+   },
+   {
+    "t": "종합부동산세",
+    "n": "200+",
+    "news": "실거주 아니면 ‘세금 폭탄’…꼬이는 부동산 세제개편안 셈법"
+   },
    {
     "t": "최미나수",
     "n": "100+",
@@ -10,17 +20,17 @@
    {
     "t": "midterm elections 2026",
     "n": "100+",
-    "news": "U.S. House Midterm Election Live Results 2026"
+    "news": "Election Day 2026 live updates: DOJ election monitors to be…"
    },
    {
     "t": "한국항공우주산업",
-    "n": "200+",
+    "n": "500+",
     "news": "KAI, 수출 호조에 3분기 매출 52% 증가…영업익도 32% 증가"
    },
    {
     "t": "small business",
     "n": "200+",
-    "news": "‘In the trenches’: Wisconsin’s struggling small businesses…"
+    "news": "What Small Business Owners Who Can’t Pay Their EIDL Loans…"
    },
    {
     "t": "폰지 사기",
@@ -28,14 +38,9 @@
     "news": "방송 출연한 ‘부동산 투자 전문가’…알고 보니 125억 폰지사기"
    },
    {
-    "t": "이재현",
-    "n": "100+",
-    "news": "[사진]실점 위기 등판한 사토시, 한점 차 승부 이어가보자"
-   },
-   {
     "t": "사토시",
     "n": "200+",
-    "news": "Bitcoin's white paper turns 18, and small businesses are…"
+    "news": "\"셋 중 하나만 넘어갔더라면...\" 박진만의 장탄식, 흐름 바꾼 '파울홈런→적시타' 쏟아진 칭찬 세례…"
    },
    {
     "t": "kbo",
@@ -44,13 +49,8 @@
    },
    {
     "t": "내장산ic",
-    "n": "100+",
+    "n": "200+",
     "news": "전북 도공, 호남고속道 내장산 IC~정읍IC 차로 부분통제"
-   },
-   {
-    "t": "양도소득세",
-    "n": "1000+",
-    "news": "국세청, 주식 양도세 더 낸 4천687명에게 21억원 돌려줘"
    }
   ]
  },
