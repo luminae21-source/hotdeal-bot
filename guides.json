@@ -352,7 +352,8 @@
     "unit": "1000W"
    }
   ],
-  "related_c": "winter"
+  "related_c": "winter",
+  "blog": "https://blog.naver.com/hotdeal_pick/224462879797"
  },
  {
   "slug": "cat-litter-price-per-kg",
@@ -429,6 +430,7 @@
     "unit": "9kg"
    }
   ],
-  "related_c": "pet"
+  "related_c": "pet",
+  "blog": "https://blog.naver.com/hotdeal_pick/224464068532"
  }
 ]
