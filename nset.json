@@ -231,6 +231,27 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
