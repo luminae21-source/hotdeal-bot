@@ -1,5 +1,5 @@
 {
-"at": "2026-11-05 00:40",
+"at": "2026-11-05 00:54",
 "posts": 3262,
 "site": 1711,
 "mall": {
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 158,
-"sitemap": 1029,
+"sitemap": 1027,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -87,7 +87,7 @@
 },
 "2026-11-05": {
 "site": 1711,
-"sitemap": 1029,
+"sitemap": 1027,
 "mall": {
 "coupang": 1022,
 "toss": 634,
@@ -246,7 +246,42 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 21 · 기존 상품 구성 0"
+"nset_n": "새 구성 26 · 기존 상품 구성 0"
 }
