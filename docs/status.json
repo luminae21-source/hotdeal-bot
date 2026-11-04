@@ -1,11 +1,12 @@
 {
-"at": "2026-11-05 00:14",
-"posts": 3261,
-"site": 1710,
+"at": "2026-11-05 00:26",
+"posts": 3262,
+"site": 1711,
 "mall": {
 "coupang": 1022,
 "toss": 634,
-"naver": 54
+"naver": 54,
+"": 1
 },
 "cat": {
 "heat": 123,
@@ -13,7 +14,7 @@
 "digital": 61,
 "snack": 63,
 "food": 379,
-"season": 97,
+"season": 98,
 "life": 219,
 "kitchen": 115,
 "beauty": 246,
@@ -28,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 158,
-"sitemap": 1028,
+"sitemap": 1029,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -85,12 +86,13 @@
 }
 },
 "2026-11-05": {
-"site": 1710,
-"sitemap": 1028,
+"site": 1711,
+"sitemap": 1029,
 "mall": {
 "coupang": 1022,
 "toss": 634,
-"naver": 54
+"naver": 54,
+"": 1
 }
 }
 },
@@ -153,7 +155,56 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "패션",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 8 · 기존 상품 구성 0"
+"nset_n": "새 구성 15 · 기존 상품 구성 0"
 }
