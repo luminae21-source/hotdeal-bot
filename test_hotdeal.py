@@ -11559,6 +11559,10 @@ w122, l122 = top122("12:05")
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", w122) == N122[2::-1] and w122.startswith(H.DISCLOSURE + "\n" + H.series_head("vanity", max(1, H.series_next({}, "vanity") - 1)) + "\n" + H.TH_LIST_HOOK[12] + "\n\n1️⃣ ") and w122.endswith("?") and "· 여성 품목" in l122 and "여자" not in w122 and w122.startswith(H.DISCLOSURE), (w122, l122)  # 12시 = 여성 품목(화장품 81%) · 화장품도 채움
 m122, l122 = top122("18:05")
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", m122) == N122[5:2:-1] and m122.startswith(H.DISCLOSURE + "\n" + H.series_head("commute", max(1, H.series_next({}, "commute") - 1)) + "\n" + H.TH_LIST_HOOK[18] + "\n\n") and "· 남성 품목" in l122 and "남자" not in m122, (m122, l122)  # 18시 = 남성 품목(가전 69%)
+N122, nk122 = [n for n in N122 if "충전기" not in n], N122  # 11/4 진우 '제대로 안 되는 거 진행': 18시 남성 칸 2개 = 그 칸 먼저 + 공통 품목으로 채움(여성 칸 X)
+f122, l122 = top122("18:05")
+assert re.findall(r"[1-7]️⃣ (.+) [\d,]+원", f122)[:3] == ["로지텍 무선 마우스", "샤오미 보조배터리 10000mAh", "퍼실 세탁세제 2.5L"] and "남성 칸 2개 → 공통 품목으로 채움" in l122 and not any(n in f122 for n in N122[:3]), (f122, l122)
+N122 = nk122
 c122, l122 = top122("15:05")
 assert re.findall(r"[1-5]️⃣ (.+) [\d,]+원", c122) == N122[8:5:-1] and c122.startswith(H.DISCLOSURE + "\n" + H.series_head("stock", max(1, H.series_next({}, "stock") - 1)) + "\n" + H.TH_LIST_HOOK[15] + "\n\n") and "· 공통 품목" in l122, (c122, l122)  # 15시 = 공통(생필품 57% = 60% 밑 · 기록 없는 세탁 = 공통)
 n122, l122 = top122("12:05", gd=False)

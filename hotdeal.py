@@ -3974,7 +3974,7 @@ def top_deals(seen):
         cands.sort(key=lambda c: (c[0]["url"] not in nsu, c[3], kind_key(short_name(title_of(c[0]["text"]))) in yk))
     if hrs[-1] in TH_LIST_NEED:  # 10/31 진우 '생필품 꼭 넣고, 화장품도': 01·15시 = 생필품 먼저 · 12시 = 화장품 먼저(지금 가격 확인된 것 — 진열 '(M/D H시 확인)' = 뒤로) · 모자라면 그대로(억지 X)
         cands.sort(key=lambda c: not (th_kind(short_name(title_of(c[0]["text"]))) == TH_LIST_NEED[hrs[-1]] and "확인)" not in c[1]))
-    cands = [c for c in cands if inb(c[0]) and th_bundle_ok(c[0], now)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
+    allc, cands = cands, [c for c in cands if inb(c[0]) and th_bundle_ok(c[0], now)]  # KK 채우는 순서 ①~④(④ = 특가 아님 👍) · (리뷰) 👍 채널 글 = ② 채움 X(딜 아님), ①에 들면 👍 표시
     cm = {}  # 상품 주소 -> 한 줄 코멘트(th_list_copy) · 훅·질문 = 아래에서
     def render(ps, bs, hook=None, q=""):  # 10/31 진우 '게시글을 사람들이 보고 싶게': 대가성 문구 → 상황 훅 1줄 → 상품마다 '번호 이름 가격' / '1개 값 · 한 줄' / 직접 링크(5개까지 — 4279111) → 💄 → 진짜 질문 1개
         used = [p for p, *_ in ps] + [p for p, _ in bs]
@@ -4004,6 +4004,9 @@ def top_deals(seen):
         seen["thtx"] = {"t": now, "q": txq + [{"u": p["url"], "t": now} for p in tx if p["url"] not in {x.get("u") for x in txq}]}
         print(f"threads top{hrs[-1]} {'토스' if all(is_toss(p['url'], p['text']) for p in tx) else '다른 몰'} {len(tx)}개 = 묶음 X → 개별 글 줄")
     cs = [c for c in cands if one(c[0])]
+    if grp in ("f", "m") and (n0 := len(choose(cs))) < TH_LIST_MIN:  # 11/4 진우 '제대로 안 되는 거 진행': 그 칸(18시 남성) 모자람 = 그 칸 먼저 + 공통 품목으로 채움(다른 성별 칸 X)
+        cs += [c for c in allc if one(c[0]) and th_group(gd, cat_of(c[0])) == "c" and th_bundle_ok(c[0], now)]
+        print(f"threads top{hrs[-1]} {'남성' if grp == 'm' else '여성'} 칸 {n0}개 → 공통 품목으로 채움")
     cs, sk = series_fit(skey, cs, choose)
     if sk != skey:
         print(f"threads top{hrs[-1]} {SERIES_BY[skey][0]} 칸 상품 {TH_LIST_MIN}개 밑 → 이번 회차 시리즈 X(품목 이름 묶음)")
