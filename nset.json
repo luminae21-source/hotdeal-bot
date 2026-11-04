@@ -7,6 +7,13 @@
 "n": 4,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
