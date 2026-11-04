@@ -6985,6 +6985,29 @@ with contextlib.redirect_stdout(o63):
     try: http_real("https://texttospeech.googleapis.com/v1/text:synthesize?key=SECRET63", {"a": 1})
     except urllib.error.HTTPError: pass
 H.urllib.request.urlopen = uo63; assert "SECRET63" not in o63.getvalue() and "project=12345" not in o63.getvalue() and o63.getvalue().startswith("HTTP 403 https://texttospeech.googleapis.com/v1/text:synthesize "), o63.getvalue()  # http() 오류 로그 = 쿼리 X
+# 11/4 Claude 키 만료(401 invalid x-api-key — 조용히 기본값으로만 돎): http()가 Anthropic 첫 호출 결과 -> API_ST['claude'] -> api_check 관리봇 알림(바뀔 때만) · 키 값 X · 5xx = 키 탓 X
+class R63c:
+    headers = type("h", (), {"get_content_charset": lambda self: "utf-8"})()
+    def read(s): return b'{"content": []}'
+    def __enter__(s): return s
+    def __exit__(s, *a): return False
+def c63(code):
+    def f(req, timeout=None):
+        if code != 200:
+            raise urllib.error.HTTPError(req.full_url, code, "x", {}, io.BytesIO(b'{"error":{"message":"invalid x-api-key"}}'))
+        return R63c()
+    H.API_ST.clear(); H.urllib.request.urlopen = f; o = io.StringIO()
+    with contextlib.redirect_stdout(o):
+        try: http_real("https://api.anthropic.com/v1/messages", {"a": 1}, {"x-api-key": "sk-ant-SECRET63"})
+        except urllib.error.HTTPError: pass
+        H.api_check(s63a)
+    H.urllib.request.urlopen = uo63
+    return o.getvalue()
+n63 = len(sent63); oc63 = c63(401)
+assert H.API_ST["claude"] == "fail HTTPError 401" and s63a["apichk"]["claude"] == "fail" and len(sent63) == n63 + 1 and sent63[-1].startswith("⚠️ Claude API 키(GitHub 시크릿 ANTHROPIC_API_KEY) 호출 실패(HTTPError 401)"), sent63[-1:]
+assert "SECRET63" not in sent63[-1] + oc63 + json.dumps(s63a)  # 키 값 X
+c63(401); c63(500); assert len(sent63) == n63 + 1  # 같은 상태 · 5xx(키 탓 아님) = 알림 X
+c63(200); assert s63a["apichk"]["claude"] == "ok" and sent63[-1].startswith("✅ Claude API 키") and len(sent63) == n63 + 2  # 새 키 = 다시 켜짐 알림
 (time.time, H.coupang, H.http, H.HAS_CP, H.POSTS, H.EVENTS, S.EVENTS, _e63, H.tg, _c63) = sv63; H.E.clear(); H.E.update(_e63); H.API_ST.clear(); os.chdir(_c63); H.ph_gap = phg0
 # 9-64) (10/25 Cowork·진우) Threads 글 틀 C = 본문 '[광고] 상황 훅'(상품명·가격·숫자·링크 X) + 바로 첫 댓글(대가성 문구 전문 + 답·상품·가격·시각 + 지금 확인할 이유 + 👉 링크 — 여기에만)
 #      · 10/25 20시(19시 A/B 비교 뒤)부터 A→B→C 돌림(v48·rv48) · '상황 3장면' S = 하루 1개(19~22시 첫 B·C 차례 — 돌림 차례 그대로) · Claude 실패·규칙 X = A · 첫 30분 답글 = 관리자 알림(글 링크 + 답글, 로그엔 내용 X)

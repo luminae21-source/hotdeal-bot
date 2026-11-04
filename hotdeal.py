@@ -206,9 +206,13 @@ def http(url, body=None, headers=None, method=None):
         with urllib.request.urlopen(urllib.request.Request(url, body, h, method=method), timeout=30) as r:
             out = r.read().decode(r.headers.get_content_charset() or "utf-8", "replace")
         dup_done(dk, url, out)
+        if url.startswith(ANTHROPIC_URL):
+            API_ST.setdefault("claude", "ok")
         return out
     except urllib.error.HTTPError as e:
         e.body = e.read().decode("utf-8", "replace")[:300]  # 로그에서 원인 바로 보이게
+        if url.startswith(ANTHROPIC_URL) and e.code in (401, 403):  # 11/4 키 만료(11/3 UTC) -> 조용히 기본값으로만 돎 = 관리봇 알림(api_check)
+            API_ST.setdefault("claude", f"fail HTTPError {e.code}")
         print("HTTP", e.code, url.split("/bot")[0].split("?")[0], re.sub(r"\?[^\s\"'<>]*", "?…", e.body))  # 주소·오류 글의 쿼리(토큰·키·프로젝트 번호) = 공개 로그 X(10/25 리뷰)
         raise
 
@@ -11220,7 +11224,10 @@ def link_ab(seen):
 
 
 API_ST, API_AUTH = {}, (400, 401, 403)  # API_ST = 이번 실행 첫 호출 결과 {'tts'|'gc': 'ok' | 'fail <오류>'} — tts·gc_top이 채우고 api_check가 관리자 알림
-API_MSG = {"tts": ("Google TTS 키(릴스 나레이션)", "릴스 나레이션 켜짐", "릴스는 나레이션 없이 글자+음악으로 계속 — GCP 키의 API 제한(Cloud Text-to-Speech API)·결제 연결 확인"),
+ANTHROPIC_URL = "https://api.anthropic.com/"
+API_MSG = {"claude": ("Claude API 키(GitHub 시크릿 ANTHROPIC_API_KEY)", "점수·훅·말투 한 줄·카테고리 다시 켜짐",
+                      "점수·훅·말투 한 줄·카테고리 = 기본값으로 계속(새벽 묶음·골드박스가 빠질 수 있음) — Anthropic 콘솔에서 새 키 만들고 GitHub 시크릿 ANTHROPIC_API_KEY 바꾸기(만료 안내 메일 확인)"),
+           "tts": ("Google TTS 키(릴스 나레이션)", "릴스 나레이션 켜짐", "릴스는 나레이션 없이 글자+음악으로 계속 — GCP 키의 API 제한(Cloud Text-to-Speech API)·결제 연결 확인"),
            "gc": ("GoatCounter 토큰(통계 읽기)", "🏆 TOP 10 '많이 본'·화면 비교 데이터 씀", "사이트 TOP 10은 옛 순서 그대로 — 토큰 권한(Read statistics)·사이트(hotdealpick) 확인")}
 
 
