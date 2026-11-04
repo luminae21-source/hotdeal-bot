@@ -1,5 +1,5 @@
 {
-"at": "2026-11-05 05:37",
+"at": "2026-11-05 05:52",
 "posts": 3262,
 "site": 1711,
 "mall": {
@@ -18,8 +18,8 @@
 "life": 219,
 "kitchen": 115,
 "beauty": 246,
-"home": 78,
 "coffee": 85,
+"home": 78,
 "pet": 37,
 "fashion": 82,
 "laundry": 70,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 158,
-"sitemap": 1025,
+"sitemap": 1026,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -87,7 +87,7 @@
 },
 "2026-11-05": {
 "site": 1711,
-"sitemap": 1025,
+"sitemap": 1026,
 "mall": {
 "coupang": 1022,
 "toss": 634,
@@ -477,7 +477,14 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 54 · 기존 상품 구성 0"
+"nset_n": "새 구성 55 · 기존 상품 구성 0"
 }
