@@ -2385,7 +2385,9 @@
  },
  "https://www.coupang.com/vp/products/9320256369?itemId=27623848954": {
   "b": "https://link.coupang.com/a/h7oMv8fY4W",
-  "site": "https://link.coupang.com/a/igt2Y6IoNg"
+  "site": "https://link.coupang.com/a/igt2Y6IoNg",
+  "telegram": "https://link.coupang.com/a/iovFYt3AaG",
+  "threads": "https://link.coupang.com/a/iovF43EtPg"
  },
  "https://www.coupang.com/vp/products/9371524569?itemId=26571336169": {
   "b": "https://link.coupang.com/a/h7oMwk3LWK",
@@ -2595,7 +2597,8 @@
  },
  "https://www.coupang.com/vp/products/7783843085?itemId=21043067384": {
   "b": "https://link.coupang.com/a/h7iHXbkHV6",
-  "site": "https://link.coupang.com/a/igw5bgUNbw"
+  "site": "https://link.coupang.com/a/igw5bgUNbw",
+  "telegram": "https://link.coupang.com/a/iovFYJW7si"
  },
  "https://www.coupang.com/vp/products/8056327270?itemId=22700116361": {
   "b": "https://link.coupang.com/a/h7iHXDO8U8",
@@ -3487,7 +3490,9 @@
  },
  "https://www.coupang.com/vp/products/305672892?itemId=19013355784": {
   "b": "https://link.coupang.com/a/h5LBGRpQCy",
-  "site": "https://link.coupang.com/a/igNeFuhwqG"
+  "site": "https://link.coupang.com/a/igNeFuhwqG",
+  "telegram": "https://link.coupang.com/a/iovFYFosfc",
+  "threads": "https://link.coupang.com/a/iovF5e3Xs4"
  },
  "https://www.coupang.com/vp/products/170016359?itemId=486458347": {
   "b": "https://link.coupang.com/a/h5KAOr6tmm",
@@ -4236,5 +4241,14 @@
  "https://www.coupang.com/vp/products/9114596385?itemId=27406201525": {
   "b": "https://link.coupang.com/a/iouDISFMFE",
   "site": "https://link.coupang.com/a/iouFTyucTs"
+ },
+ "https://www.coupang.com/vp/products/9151574357?itemId=26947876758&vendorItemId=93690141973": {
+  "b": "https://link.coupang.com/a/iovFWI53w4",
+  "telegram": "https://link.coupang.com/a/iovFYzSDn2",
+  "threads": "https://link.coupang.com/a/iovF49MdiK"
+ },
+ "https://www.coupang.com/vp/products/8312207271?itemId=20090688205&vendorItemId=91104364716": {
+  "b": "https://link.coupang.com/a/iovFWN9jq0",
+  "telegram": "https://link.coupang.com/a/iovFYOOJYy"
  }
 }
