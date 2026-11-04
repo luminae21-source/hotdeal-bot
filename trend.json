@@ -1,30 +1,45 @@
 {
  "google": {
-  "at": "2026-11-05 03:02",
+  "at": "2026-11-05 04:13",
   "items": [
    {
-    "t": "페네르바흐체 대 리버풀",
-    "n": "1000+",
-    "news": "Champions League: Liverpool visit Fenerbahce before Arsenal…"
+    "t": "레알마드리드",
+    "n": "100+",
+    "news": "챔피언스 리그 AEK 아테네 대 레알 마드리드 경기 예측"
    },
    {
-    "t": "롤 패치노트",
+    "t": "리버풀",
     "n": "200+",
-    "news": "리그 오브 레전드 26.22 패치 노트"
+    "news": "페네르바체 vs 리버풀 예측: 원정 경기에서의 경기력이 시험대에 오를 것이다"
+   },
+   {
+    "t": "한화 이글스",
+    "n": "500+",
+    "news": "'1200만원 명품 쾌척!' 한화 복덩이 울린 대선배의 화답…\"18살 때부터 봤는데, 당연히 계속 응원했죠\""
+   },
+   {
+    "t": "aek vs real madrid",
+    "n": "500+",
+    "news": "LIVE BLOG: AEK Athens vs Real Madrid | UEFA Champions League"
+   },
+   {
+    "t": "페네르바흐체 대 리버풀",
+    "n": "2000+",
+    "news": "Champions League: Liverpool visit Fenerbahce before Arsenal…"
    },
    {
     "t": "이찬원",
     "n": "500+",
-    "news": "이찬원 ‘오내언사’ 1200만 뷰 돌파…팬 향한 사랑 담은 자작곡의 저력"
+    "news": "통행 금지령 내린 파리 현지 상황부터 캐나다 퀘벡 단풍 여행까지"
    },
    {
     "t": "microsoft",
     "n": "100+",
-    "news": "Forget the 12-Month Squeeze: Microsoft Is Primed for an…"
+    "news": "Microsoft Wins Even If The AI Bubble Pops (NASDAQ:MSFT)"
    },
    {
     "t": "사랑제일교회",
-    "n": "500+",
+    "n": "1000+",
     "news": "李, 사랑제일교회 재개발 제외에 \"무력으로 버티면 되는 게 어딨나\""
    },
    {
@@ -36,21 +51,6 @@
     "t": "우규민",
     "n": "10000+",
     "news": "명품 투수전, 실책이 승부 갈랐다…삼성, 연장 12회 혈투 끝 KT 3-2 제압 ‘원점’"
-   },
-   {
-    "t": "이요원",
-    "n": "500+",
-    "news": "이요원 美 명문대 졸업 큰딸 공개…173㎝ 엄마보다 큰 키 깜짝 - 머니투데이"
-   },
-   {
-    "t": "로보락",
-    "n": "100+",
-    "news": "로보락, 로봇청소기 구독 서비스 출시"
-   },
-   {
-    "t": "이유리",
-    "n": "500+",
-    "news": "이유리, 이사한 새집 최초 공개…“전문가 18명이 짐 정리, 15시간 걸렸다”"
    }
   ]
  },
