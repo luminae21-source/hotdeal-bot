@@ -12818,3 +12818,9 @@ os.remove(H.TODAY_FILE); s148b = {}; chat148("2026-11-07 13:12", s148b); assert 
 (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk148, H.POSTS, H.METRICS, H.http) = sv148
 H.E.pop("THREADS_TOKEN", None) if tk148 is None else H.E.update(THREADS_TOKEN=tk148); os.chdir(cwd148)
 assert not re.search(H.TH_C_BODY, "찬 바람 불면 국물 생각나죠") and re.search(H.TH_C_BODY, "불면증에 좋은") and re.search(H.TH_C_BODY, "불면 고민")  # 날씨 수다(바람 불면) = 효능 말 X로 안 걸림
+# 9-149 (11/5 21:0x Cowork '표지 제목 💙가 ≡로 깨짐'): cards.make 머리 이모지 = 컬러 이모지 그림(_em_text — RGB 카드도)
+import cards as C149
+from PIL import Image as I149
+p149 = os.path.join(tempfile.mkdtemp(), "t.jpg"); C149.make([{"title": "토스 상품 A", "unit": ""}], "11월 5일", p149, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
+im149 = I149.open(p149).convert("RGB"); assert any(b > 150 and r < 120 and g < 170 for r, g, b in (im149.getpixel((x, y)) for x in range(96, 176, 4) for y in range(140, 220, 4))), "💙 그림 없음"
+assert "_em_text(d, im, (X0, 136), head" in inspect.getsource(C149.make)

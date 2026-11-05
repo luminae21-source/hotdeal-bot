@@ -47,7 +47,7 @@ def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 
         d.rectangle((0, 0, W, 270), fill=top)
     d.text((X0, 84), f"{date_label}  ·  {label}", font=pf("SemiBold", 34), fill=sub)
     f = pf("Bold", 34); d.text((W - X0 - d.textlength("핫딜픽", font=f), 84), "핫딜픽", font=f, fill=ink if top else accent)
-    d.text((X0, 136), head, font=pf("ExtraBold", 76), fill=ink)
+    _em_text(d, im, (X0, 136), head, pf("ExtraBold", 76), ink)  # 11/5 Cowork: 머리 이모지(💙 토스 표지) = 컬러 이모지 그림(나눔고딕엔 없음 = ≡)
     d.rectangle((X0, 262, W - X0, 264), fill=top or LINE)
     ACC = accent
     y = 292
@@ -818,7 +818,7 @@ def _em_text(d, im, xy, s, f, fill):
         if re.fullmatch(EMO, part):
             try:
                 e = emoji(part, int(f.size * 1.05))
-                im.alpha_composite(e, (int(x), int(y + f.size * 0.12)))
+                (im.alpha_composite if im.mode == "RGBA" else lambda e_, xy: im.paste(e_, xy, e_))(e, (int(x), int(y + f.size * 0.12)))  # RGB 카드(make) = 투명 부분 가리고 붙임
                 x, em = x + e.width + int(f.size * 0.3), True
                 continue
             except Exception:
