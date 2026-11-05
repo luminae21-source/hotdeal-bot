@@ -12314,7 +12314,7 @@ with contextlib.redirect_stdout(o133): H.new_sets(s133)
 ae133 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
 assert [x[1:3] + [len(x[3]), x[4], x[5]] for x in s133["nset"]["h"]] == [["coupang", "life", 3, "생필품", "2026-11-06 18:40"]] and "새 구성 만듦 · coupang 생필품 3개" in o133.getvalue(), o133.getvalue()  # (1) 같은 몰·같은 칸 새 상품 3개 = 구성 1
 assert [e["at"] for e in ae133] == ["2026-11-06 18:40"] and ae133[0]["auto"] == "nset" and ae133[0]["link"] == f"{H.SITE}c/life/" and ae133[0]["topic"] == "생필품"  # (4) 12:40 = Cowork 큐레이션 → 다음 빈 칸 18:40
-assert ae133[0]["text"].startswith(H.DISCLOSURE + "\n\n🆕 새로 들어온 생필품 3개\n") and "1️⃣ 코멧 화장지 30롤 9,900원" not in ae133[0]["text"][:0] and "⚠️ 11/6 18:40 게시 시점 가격" in ae133[0]["text"] and len(re.findall(r"^[1-3]️⃣ ", ae133[0]["text"], re.M)) == 3, ae133[0]["text"]
+assert ae133[0]["text"].startswith(H.DISCLOSURE + "\n\n🆕 쿠팡에 새로 들어온 생필품 3개 · 9,900원\n\n1️⃣ 코멧 화장지 30롤 · 9,900원\n↳ ") and "⚠️ 11/6 18:40 게시 시점 가격" in ae133[0]["text"] and len(re.findall(r"^[1-3]️⃣ ", ae133[0]["text"], re.M)) == 3, ae133[0]["text"]
 assert s133["thlist"]["h"][-1][2] == "nset" and len(s133["thlist"]["h"][-1][1]) == 3  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
 assert json.load(open("nset.json")) == {"d": "2026-11-06", "items": [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40", "k": "new"}]}
 S.site_status("docs", [], [], [], TK("2026-11-06 11:20")); assert json.load(open("docs/status.json"))["nset"] == [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40", "k": "new"}] and json.load(open("docs/status.json"))["nset_n"] == "새 구성 1 · 기존 상품 구성 0"  # 오늘 새 구성 = status.json
@@ -12353,7 +12353,7 @@ with contextlib.redirect_stdout(o134): H.new_sets(s134)
 assert [x[1:3] + x[3:] for x in s134["nset"]["h"]] == [["coupang", "life", ["https://link.coupang.com/a/N1", U134(1), U134(2)], "생필품", "2026-11-07 12:40", "mix"]], s134["nset"]  # (1) 새 1 맨 앞 + 기존 좋은 2(top.json → gc_top) · 확인 75시간·품절·생 주소 = 뺌
 assert "새 구성 만듦 · coupang 생필품 3개(새 1 · 기존 2)" in o134.getvalue() and "새 구성 모자람 · coupang 식품 1" in o134.getvalue(), o134.getvalue()  # (2) 식품 = 새 1 + 확인 72시간 넘은 기존만 = X
 t134 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")][0]["text"]
-assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 장바구니 — 생필품\n") and "1️⃣ 🆕 유한킴벌리 생리대 중형 9,900원" in t134 and "2️⃣ 깨끗한나라 화장지 30롤 12,900원\n" in t134 and "3️⃣ 탐사 물티슈 100매 12,900원 (11/6 20시 확인)\n" in t134, t134
+assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 쿠팡 생필품 3개 · 9,900~12,900원\n\n") and "1️⃣ 🆕 유한킴벌리 생리대 중형 · 9,900원\n↳ " in t134 and "2️⃣ 깨끗한나라 화장지 30롤 · 12,900원\n" in t134 and "3️⃣ 탐사 물티슈 100매 · 12,900원 (11/6 20시 확인)\n↳ 핫딜픽에서 많이 눌러 본" in t134, t134  # 11/5 M: 첫 줄 = 무엇·몇 개·가격대 · '1️⃣ 이름 · 가격' + '↳ 한 줄'
 assert t134.count("핫딜픽에서 많이 눌러 본") == 1 and not re.search("많이 팔린|인기", t134) and "⚠️ 11/7 12:40 게시 시점 가격" in t134, t134  # 근거(gc_top) 있는 상품만 · '많이 팔린'·'인기 1위' X
 time.time = lambda: TK("2026-11-07 15:30"); H.new_sets(s134); assert len(s134["nset"]["h"]) == 1  # 빈 칸(18:40) 3시간 넘게 남음 = 기존 상품 구성 아직 X(Cowork가 먼저 채울 틈)
 time.time = lambda: TK("2026-11-07 16:00"); o134 = io.StringIO()
@@ -12362,7 +12362,7 @@ x134 = s134["nset"]["h"][-1]
 assert x134[1:3] + x134[4:] == ["coupang", "kitchen", "주방", "2026-11-07 18:40", "old"] and x134[3] == [U134(21), U134(24), U134(26)], x134  # (3) 어제 세트(21·22·23) X — 꾸준템 21만 예외 1개 · 5일 전 세트(21·24·25) = 25 → 26 바꿈
 assert "기존 상품 구성 만듦 · coupang 주방 3개" in o134.getvalue() and "기존 상품 구성 자동 큐레이션 · 18:40 주방 3개" in o134.getvalue(), o134.getvalue()
 t134 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("at") == "2026-11-07 18:40"][0]["text"]
-assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 장바구니 — 주방\n") and "🆕" not in t134 and "1️⃣ 코멧 키친타월 6롤 12,900원\n" in t134, t134
+assert t134.startswith(H.DISCLOSURE + "\n\n🧺 다시 보는 쿠팡 주방 ") and "🆕" not in t134 and "1️⃣ 코멧 키친타월 6롤 · 12,900원\n" in t134, t134
 assert [x["k"] for x in json.load(open("nset.json"))["items"]] == ["mix", "old"]
 S.site_status("docs", [], [], [], TK("2026-11-07 16:05")); assert json.load(open("docs/status.json"))["nset_n"] == "새 구성 1 · 기존 상품 구성 1"
 time.time = lambda: TK("2026-11-07 18:00"); H.new_sets(s134); assert len(s134["nset"]["h"]) == 2  # 주방 = 48시간 안 구성한 칸 · 21:10 = 3시간 넘음
@@ -12839,3 +12839,42 @@ H.ai_json = ai150
 assert hk150 != "점심 먹고 보니 욕실 선반이 비었어요" and cm150["https://toss.shopping/_m/k1"] == H.BUY_CHECK and cm150["https://toss.shopping/_m/k2"] == "120ml 4개라 넉넉해요" and q150 == "다들 세안은 몇 단계예요?", (hk150, cm150)  # 걸린 훅 = 기본 말 · 걸린 줄 = 확인할 점
 assert all("우리가 겪은 일처럼 쓰지 않기" in x and "당김·건조·트러블·민감" in x for x in (H.TH_LIST_PROMPT, H.TH_HOOK_PROMPT, H.TH_TONE_PROMPT)) and "당김·건조·트러블·민감" in H.SHELF_LINE_PROMPT
 assert "made_up(s, tf) and not skin_bad(s, name)" in inspect.getsource(H.th_voice) and "made_up(h, today_fit(name)) and not skin_bad(h, name)" in inspect.getsource(H.th_hook) and "made_up(l, facts) or skin_bad(l, x[5])" in inspect.getsource(H.shelf_custom)
+# 9-152 (11/5 23시 진우 M·N — 18:40 '🆕 새로 들어온 주방 5개'(토스) 이름·가격 줄 다 빠짐 · 18시 '[🚗 퇴근길 장바구니 #3]' 핸드솝 줄에 히터 얘기 · 카드 사진·글씨 작음)
+# M① 원인 = 큐레이션 재검토(Claude)가 '(11/4 18시 확인)' 상품 줄 5개를 다 지움 → 상품 줄은 재검토 X · 그래도 이름·가격 줄이 3개 밑이면 안 올림
+E152 = {"at": "2026-11-05 18:40", "curation": True, "topic": "주방", "link": f"{H.SITE}c/toss/", "img": [], "text": H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 5개 · 5,950~18,900원\n\n"
+        + "\n\n".join(f"{H.NUM[k]} {n} · {w}\n↳ {c}" for k, (n, w, c) in enumerate([("맥스앤맥스 이지밀 소분 밀폐용기 350ml", "5,950원", "냉동밥 소분용 350ml"), ("쉬젤 아티 내열유리 용기 10종 세트", "18,900원", "10종이라 반찬통 한 번에"),
+                                                                                  ("리벤스 살균 행주 티슈 60매 10팩", "8,650원", "60매 10팩, 한동안 든든"), ("주방 후드 필터 10m 2개", "6,780원", "10m라 넉넉히 잘라 써요"), ("마흐트 실리콘 조리도구 6종 세트", "8,500원", "6종 한 번에 바꾸기")]))
+        + "\n\n⚠️ 11/5 18:40 게시 시점 가격\n\n주방에서 제일 먼저 닳는 건 뭐예요?"}
+rv152, seen152 = H.review, []
+H.review = lambda kind, text, lines, **k: seen152.extend(lines) or {re.sub(r"\s+", " ", l).strip(): "" for l in lines}  # Claude가 받은 줄을 다 지운다고 해도
+b152 = H.cur_body(E152); H.review = rv152
+assert len(re.findall(r"^[1-5]️⃣ .+ · [\d,]+원$", b152, re.M)) == 5 and not [l for l in seen152 if H.CUR_ROW.match(l)], b152  # 이름·가격 5줄 그대로(재검토에 안 보냄)
+assert 'st.update(tg=None, th=None, ig=None)' in inspect.getsource(H.curation) and "상품 이름·가격 줄 빠짐 -> 안 올림" in inspect.getsource(H.curation)  # 이름·가격 없이 설명만 = 안 올림
+# M② 새 구성(토스) = 오늘 확인한 가격만 · 링크 = 토스만 모은 쪽(c/toss/ — 쿠팡 섞인 칸 X) · 첫 줄 = 무엇·몇 개·가격대 · '1️⃣ 이름 · 가격' + '↳ 한 줄' · 장면 훅 X
+sv152, cwd152 = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS = "posts152.json", "ev152.json", "ev152.json"; json.dump([], open("ev152.json", "w"))
+H.ai_json = lambda prompt, props, img=None: {"hook": "퇴근 후 주방 정리, 오늘은 한 번에 끝내요", "c": [{"n": 1, "key": "밀폐용기", "line": "350ml라 밥 한 공기씩"}, {"n": 2, "key": "필터", "line": "10m라 넉넉히 잘라 써요"}, {"n": 3, "key": "조리도구", "line": "6종이라 한 번에 바꿔요"}], "q": "주방에서 제일 먼저 닳는 건 뭐예요?"}
+T152 = lambda k, n, t="2026-11-06 10:00": {"t": t, "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] {n} (9,900원)\n\n좋음", "url": f"https://toss.shopping/_m/K{k}", "mid": 500 + k, "own": 1}
+json.dump([T152(0, "곰곰 계란 30구")], open("posts152.json", "w"), ensure_ascii=False)
+s152 = {}; time.time = lambda: TK("2026-11-06 11:00"); H.new_sets(s152)
+json.dump([T152(0, "곰곰 계란 30구"), T152(1, "맥스앤맥스 이지밀 냉동밥 소분 밀폐용기 350ml"), T152(2, "리벤스 주방 후드 필터 10m"), T152(3, "마흐트 실리콘 조리도구 6종 세트"), T152(4, "쉬젤 아티 내열유리 반찬 용기 10종", "2026-11-05 18:00")], open("posts152.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-06 11:15")
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152)
+ae152 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
+assert len(ae152) == 1 and ae152[0]["link"] == f"{H.SITE}c/toss/" and "c/kitchen" not in ae152[0]["text"] + ae152[0]["link"], ae152  # 토스만 모은 쪽
+t152 = ae152[0]["text"]
+assert t152.startswith(H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개 · 9,900원\n\n1️⃣ ") and "퇴근 후 주방 정리" not in t152 and "확인)" not in t152 and "쉬젤" not in t152, t152  # 첫 줄 = 무엇·몇 개·가격대 · 장면 훅 X · 어제 확인한 토스 X
+assert len(re.findall(r"^[1-3]️⃣ .+ · 9,900원$", t152, re.M)) == 3 and "↳ 350ml라 밥 한 공기씩" in t152 and "↳ 10m라 넉넉히 잘라 써요" in t152 and "↳ 6종이라 한 번에 바꿔요" in t152, t152  # '1️⃣ 이름 · 가격' + '↳ 한 줄' 
+(time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv152; os.chdir(cwd152)
+# N 한 줄 = 그 상품 번호·이름 낱말(key)과 맞아야 — 핸드솝 줄에 히터 얘기 X
+ai152, H.ai_json = H.ai_json, lambda prompt, props, img=None: {"hook": "", "c": [{"n": 1, "key": "히터", "line": "퇴근 후 거실을 데울 때 두기 좋아요"}, {"n": 2, "key": "히터", "line": "책상 밑에 두기 좋아요"}, {"n": 3, "key": "화장지", "line": "30롤이라 한동안 든든해요"}], "q": ""}
+P152 = [{"text": f"🔥 [쿠팡] {n} (9,900원)", "url": f"https://link.coupang.com/a/h{k}"} for k, n in enumerate(["아이깨끗해 핸드솝 리필 450ml 3개", "신일 미니 히터 저소음", "크리넥스 화장지 30롤"])]
+cm152 = {}
+with contextlib.redirect_stdout(io.StringIO()): H.th_list_copy({}, 18, [(p, "", "", 2) for p in P152], cm152, "생활")
+H.ai_json = ai152
+assert cm152[P152[0]["url"]] == H.BUY_CHECK and cm152[P152[1]["url"]] == "책상 밑에 두기 좋아요" and cm152[P152[2]["url"]] == "30롤이라 한동안 든든해요", cm152  # 핸드솝 = 히터 줄 X → 확인할 점
+assert '"key": 그 상품 이름에 그대로 있는 낱말' in H.TH_LIST_PROMPT
+# N 카드(v3 tools/card) = 디자인 그대로 · 크기만: 사진 칸 110 → 150(5개)·204(4개)·260(3개) · 이름 30 → 39px · 가격 42 → 55px · 머리 240 → 190 · 대가성 줄 22 → 26px (11/5 렌더 확인: 잘림 0)
+css152 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "tools/card/assets/card.css")).read()
+assert "grid-template-rows: 92px 190px minmax(0, 1fr) 76px" in css152 and "grid-template-columns: 150px minmax(0, 1fr) 298px" in css152 and ".product-price { font-size: 55px" in css152 and ".product-name {\n  font-size: 39px" in css152
+assert "width: 204px; height: 204px" in css152 and "width: 260px; height: 260px" in css152 and "  font-size: 26px;\n  font-weight: 700;" in css152

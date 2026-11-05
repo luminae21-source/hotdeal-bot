@@ -4220,7 +4220,7 @@ TH_LIST_PROMPT = """Threads 묶음 글에 들어갈 짧은 말을 써 주세요(
 {rows}
 - hook: 둘째 줄 상황 훅 1줄 — 이 시간대에 상황이 떠오르게{theme}(26자 안 · 숫자·가격·상품명 X · 예: '퇴근길 장바구니, 1개 값으로 줄 세웠어요' · '새벽에 생각난 김에 쟁여 둘 것')
 - 우리가 겪은 일처럼 쓰지 않기('저녁 먹고 보니 욕실 선반이 비었어요'·'~했더니'·'~샀어요' X — 없었던 장면 X). 화장품 c = 쓰임·구성(용량·개수·세트·쓰는 순서)만, 피부 상태·고민 말(당김·건조·트러블·민감 등) X.
-- c: 상품마다 {buy}(목록과 같은 개수·순서 · 18자 안 · 친근한 존댓말 ~요 · 숫자는 상품 이름에 있는 것만(80L·100매처럼) · 같은 말 두 번 X · 써 본 척·효능·'최저가'·'강추'·사라는 말 X)
+- c: 상품마다 {{"n": 상품 번호, "key": 그 상품 이름에 그대로 있는 낱말 1개(예: 핸드솝·히터), "line": 한 줄}} — line = 그 상품 이름·구성에서 나온 말만(다른 상품 얘기 X) · {buy}(목록과 같은 개수 · 18자 안 · 친근한 존댓말 ~요 · 숫자는 상품 이름에 있는 것만(80L·100매처럼) · 같은 말 두 번 X · 써 본 척·효능·'최저가'·'강추'·사라는 말 X)
 - q: 마지막 줄 진짜 질문 1개(24자 안 · 답하고 싶게 · 예: '여러분 장바구니 1순위는 뭐예요?')
 - 몰(쿠팡·토스·네이버 등) 이름·몰끼리 가격 비교 X(토스 약속: 다른 몰과 비교 없이)
 - 훅·질문: {fun}"""
@@ -4356,15 +4356,26 @@ def new_sets(seen):
         ps = [byu[u] for u in x[3] if u in byu and ok(byu[u])]  # 올릴 때 다시 봄(품절·확인 48시간)
         if len(ps) < TH_LIST_MIN:
             return False
-        k, cm = (x[6] if len(x) > 6 else "new"), {}
-        pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + (f" ({p['chk']} 확인)" if p.get("chk") and not p["chk"].startswith(md) else "")
-        hook, q = th_list_copy(seen, int(slot[11:13]), [(p, pr(p), "", 2) for p in ps], cm, x[4])
-        head = f"🆕 새로 들어온 {x[4]} {len(ps)}개" if k == "new" else f"🧺 다시 보는 장바구니 — {x[4]}"  # 14:10 '많이 팔린'·'인기 1위' X
-        text = aff_notes([p["url"] for p in ps]) + f"\n\n{head}\n{hook}\n\n" + "\n\n".join(
-            f"{NUM[n]} {'🆕 ' if k != 'new' and p['url'] in npu else ''}{clip(name(p), 30)} {pr(p)}"
-            + "".join(f"\n{y}" for y in [" · ".join(z for z in (p.get("unit"), cm.get(p["url"]), "핫딜픽에서 많이 눌러 본" if p["url"].split("?")[0] in gct else "") if z)] if y) for n, p in enumerate(ps)) \
-            + f"\n\n{toss_when(slot)}" + (f"\n\n{q}" if q else "")
-        auto_add([{"at": slot, "curation": True, "topic": x[4], "link": f"{SITE}c/{x[2]}/", "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
+        k, cm, toss = (x[6] if len(x) > 6 else "new"), {}, x[1] == "toss"
+        if toss:  # 11/5 진우 M: 토스 = 오늘 확인한 가격만(1일 원칙 — 지난날 '(확인)' 가격 줄은 재검토가 통째로 지워 이름·가격 없는 글이 됨)
+            ps = [p for p in ps if chk_ts(p) >= kst_ts(today + " 00:00")]
+            if len(ps) < TH_LIST_MIN:
+                return False
+        pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + ("" if toss or not p.get("chk") or p["chk"].startswith(md) else f" ({p['chk']} 확인)")
+        _, q = th_list_copy(seen, int(slot[11:13]), [(p, pr(p), "", 2) for p in ps], cm, x[4])  # M: 장면 훅 X(K) — 첫 줄 = 무엇·몇 개·가격대
+        link, mk = f"{SITE}c/toss/" if toss else f"{SITE}c/{x[2]}/", {"toss": "토스", "coupang": "쿠팡", "naver": "네이버"}.get(x[1], "")  # 토스 = 토스만 모은 쪽(쿠팡 섞인 칸 X)
+        while True:  # 길면 상품 수를 줄임(이름·가격은 남김 — Threads 500자)
+            ws = sorted(w for p in ps if (w := won(pr(p))))
+            rng = (f" · {ws[0]:,}원" if ws[0] == ws[-1] else f" · {ws[0]:,}~{ws[-1]:,}원") if ws else ""
+            head = (f"🆕 {mk}에 새로 들어온 {x[4]} {len(ps)}개" if k == "new" else f"🧺 다시 보는 {mk} {x[4]} {len(ps)}개") + rng  # 14:10 '많이 팔린'·'인기 1위' X
+            text = aff_notes([p["url"] for p in ps]) + f"\n\n{head}\n\n" + "\n\n".join(
+                f"{NUM[n]} {'🆕 ' if k != 'new' and p['url'] in npu else ''}{clip(name(p), 30)} · {pr(p)}"
+                + "".join(f"\n↳ {y}" for y in [" · ".join(z for z in (p.get("unit"), cm.get(p["url"]), "핫딜픽에서 많이 눌러 본" if p["url"].split("?")[0] in gct else "") if z)] if y) for n, p in enumerate(ps)) \
+                + f"\n\n{toss_when(slot)}" + (f"\n\n{q}" if q else "")
+            if th_len(text) <= 500 - th_len(link) - 2 or len(ps) <= TH_LIST_MIN:
+                break
+            ps = ps[:-1]
+        auto_add([{"at": slot, "curation": True, "topic": x[4], "link": link, "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
         x[5] = slot
         seen["thlist"] = {**seen.get("thlist", {"h": []}), "t": now, "h": seen.get("thlist", {}).get("h", []) + [[now, x[3], "nset", []]]}  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
         print(f"{'새 구성' if k != 'old' else '기존 상품 구성'} 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
@@ -4408,10 +4419,18 @@ def th_list_copy(seen, h, pick, cm, theme=""):
     try:
         r = ai_json(TH_LIST_PROMPT.format(when={1: "새벽", 12: "점심", 15: "오후", 18: "퇴근 시간"}.get(h, "낮"), rows="\n".join(f"{k}. {n}" + (f" ({a})" if a else "") for k, (n, a) in enumerate(zip(names, arr), 1)),
                                           fun=TH_FUN.replace("\n", "\n- "), buy=BUY_LINE, theme=f" · 이 묶음 주제({theme})가 보이게" if theme else ""),
-                    {"hook": {"type": "string"}, "c": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}})
+                    {"hook": {"type": "string"}, "c": {"type": "array", "items": {"type": "object", "properties": {"n": {"type": "integer"}, "key": {"type": "string"}, "line": {"type": "string"}}}}, "q": {"type": "string"}})
         h2, q2 = (re.sub(r"\s+", " ", str(r.get(k) or "")).strip() for k in ("hook", "q"))
         hook, q = (hook if bad(h2, 26) or h2 == last[0] or made_up(h2, tf) or any(skin_bad(h2, n) for n in names) else h2), (q if bad(q2, 24) or not q2.endswith("?") or q2 == last[1] else q2)
-        for (p, *_), c, n, a in zip(pick, r.get("c") or [], names, arr):
+        rc = r.get("c") or []
+        if rc and all(isinstance(c, dict) for c in rc):  # 11/5 N: 번호로 자리 맞춤 · key가 그 상품 이름에 없으면 = 다른 상품 얘기(핸드솝 줄에 '거실을 데울 때') → 그 줄 X
+            fold, by = lambda x: re.sub(r"\s+", "", str(x or "")), {}
+            for c in rc:
+                k = int(c["n"]) - 1 if str(c.get("n", "")).isdigit() else -1
+                if 0 <= k < len(pick) and k not in by and fold(c.get("key")) and fold(c.get("key")) in fold(names[k]):
+                    by[k] = str(c.get("line") or "")
+            rc = [by.get(k, "") for k in range(len(pick))]
+        for (p, *_), c, n, a in zip(pick, rc, names, arr):
             c = re.sub(r"\s+", " ", str(c)).strip()
             if not cbad(c, n, a):  # 도착 말 = 로켓·새벽 근거 있을 때만 · 성별 고정관념 X
                 cm[p["url"]] = c
@@ -9413,6 +9432,17 @@ def cur_keep(e):
     return tuple(dict.fromkeys(w for t in ts for w in (*t.split(), tp) if len(w) >= 2)) + (("오늘 밤 12시까지", "오늘만") if ts else ())
 
 
+CUR_ROW = re.compile(r"\d\ufe0f?\u20e3|🔟")  # 큐레이션 상품 줄(1️⃣ 이름 · 가격)
+
+
+def cur_body(e):
+    """큐레이션 본문 재검토(Z-5 — 링크 줄 말고) · 11/5 M: 상품 이름·가격 줄(1️⃣…) = 재검토 X(18:40 Claude가 '(11/4 확인)' 가격 줄 5개를 다 지워 설명만 남음)."""
+    ls = e["text"].strip().split("\n")
+    kw = cur_keep(e)  # 10/31 행사 코너(할로윈 반짝) = 행사 이름·'오늘 밤 12시까지' 그대로(계절 말로 안 봄)
+    ch = review("cur", e["text"].strip(), [l for l in ls if l.strip() and not re.search(r"https?:|\.kr/", l) and not CUR_ROW.match(l)], names=kw, keep=kw)  # 첫 줄 = 훅(제목 줄 X)
+    return "\n".join(ch.get(re.sub(r"\s+", " ", l).strip(), l) for l in ls if ch.get(re.sub(r"\s+", " ", l).strip(), True))
+
+
 def curation(seen):
     """큐레이션 글(events curation): 시각이 되면 텔레그램 채널 = 본문 + '🛍 더 보기' 버튼(같은 쪽, ref=tgc) · Threads = 사진(우리 서버 JPEG) 1장 IMAGE·2장↑ CAROUSEL, 본문 끝 링크(ref=thc), topic_tag = topic
     / 사진 없음 = TEXT + 링크 카드(정보 글처럼) · 6시간 지나면 X. 사진은 시각 3시간 전부터 준비(이 실행 커밋 -> 사이트에 뜨면(HEAD) 게시 · 준비 뒤 1시간 넘게 안 뜨면 뜬 사진만, 없으면 글 + 링크 카드 ·
@@ -9441,10 +9471,10 @@ def curation(seen):
         if now < t0:  # 사진만 미리(다음 실행 전에 사이트에 뜨게)
             continue
         if "body" not in st:  # Z-5 예약 글 재검토 1번(링크 줄 말고) -> 채널·Threads·인스타 같은 본문(다시 시도 땐 Claude X)
-            ls = e["text"].strip().split("\n")
-            kw = cur_keep(e)  # 10/31 행사 코너(할로윈 반짝) = 행사 이름·'오늘 밤 12시까지' 그대로(계절 말로 안 봄)
-            ch = review("cur", e["text"].strip(), [l for l in ls if l.strip() and not re.search(r"https?:|\.kr/", l)], names=kw, keep=kw)  # 첫 줄 = 훅(제목 줄 X)
-            st["body"] = "\n".join(ch.get(re.sub(r"\s+", " ", l).strip(), l) for l in ls if ch.get(re.sub(r"\s+", " ", l).strip(), True))
+            st["body"] = cur_body(e)
+            if sum(map(bool, map(CUR_ROW.match, e["text"].split("\n")))) >= TH_LIST_MIN > sum(map(bool, map(CUR_ROW.match, st["body"].split("\n")))):  # 11/5 M: 이름·가격 없이 설명만 = 안 올림
+                st.update(tg=None, th=None, ig=None)
+                print("curation: 상품 이름·가격 줄 빠짐 -> 안 올림", e["at"])
         e = {**e, "text": st["body"]}
         body = e["text"].strip()
         sk = e.get("series") if e.get("series") in SERIES_BY else ""  # 10/31 진우 '시리즈로'(events "series": key — 분석·1개 값·이번 주): 대가성 문구 다음 줄(없으면 첫 줄) '[🔍 핫딜픽 분석 #N]' · 채널·Threads 같은 머리
