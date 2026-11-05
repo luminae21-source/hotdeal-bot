@@ -12739,8 +12739,9 @@ assert hc146[0] == (f"{H.SITE}cards/igtoss/2026-11-06.jpg", None, "HEAD") and [b
 assert k146["kind"] == "toss" and k146["cap"] == cap146 and len(k146["kids"]) == 5 and st146["done"] and s146["tphoto"]["m"][-1]["ig"] == "2026-11-06 토스 넘기기"
 n146 = len(hc146); H.ig_toss(s146, "tok", "uid", N146 + 1800); assert len(hc146) == n146  # 하루 1번
 s146b = {"tossid": {"t": 1, "m": {u: v for u, v in m146.items() if u.endswith(("A", "F"))}}}
-with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146b, "tok", "uid", N146)
-assert s146b["igtoss_2026-11-06"]["skip"] == 2  # 3개 밑 = 그날 X
+o146 = io.StringIO()
+with contextlib.redirect_stdout(o146): H.ig_toss(s146b, "tok", "uid", N146)
+assert "igtoss_2026-11-06" not in s146b and "후보 2개 -> 건너뜀" in o146.getvalue()  # 3개 밑 = 이번 실행 X(seen 기록 X)
 H.TOSS_IG_IMG = False; s146c = {"tossid": {"t": 1, "m": m146}}; H.ig_toss(s146c, "tok", "uid", N146); assert not s146c.get("igtoss_2026-11-06"); H.TOSS_IG_IMG = True  # 스위치
 tg146 = []; H.tg = lambda m, **p: tg146.append(p) or {"message_id": 1}
 open("toss_noimg.txt", "w").write("140\n100  # 셀러 요청(A)\n")

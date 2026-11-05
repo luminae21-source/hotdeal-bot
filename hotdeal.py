@@ -7626,9 +7626,9 @@ def ig_toss(seen, tok, uid, now):
     try:
         if not st:
             its = ig_toss_items(seen, load(POSTS, []), now)
-            if len(its) < IG_TOSS_N[0]:
-                seen[key] = {"t": now, "done": 1, "skip": len(its)}
-                print("ig toss", today, f"후보 {len(its)}개 -> 건너뜀")
+            if len(its) < IG_TOSS_N[0]:  # 3개 밑 = 이번 실행 X(seen 기록 X — 저녁에 사진·확인이 늘면 그날 안에 다시)
+                if its:
+                    print("ig toss", today, f"후보 {len(its)}개 -> 건너뜀")
                 return
             import cards
             os.makedirs(IGTOSS_DIR, exist_ok=True)
