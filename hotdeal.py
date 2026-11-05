@@ -217,16 +217,16 @@ def http(url, body=None, headers=None, method=None):
         raise
 
 
-def tg_video(path, caption):
-    """관리자에게 영상 파일 업로드 (sendVideo, multipart). -> 보낸 메시지"""
+def tg_video(path, caption, method="sendVideo", field="video", ctype="video/mp4"):
+    """관리자에게 파일 업로드 (multipart — 영상 sendVideo · 그림 원본 = method sendDocument·field document·ctype image/png). -> 보낸 메시지"""
     b = "hotdeal" + os.urandom(8).hex()
-    fields = {"chat_id": ADMIN, "caption": caption, "supports_streaming": "true", "width": "1080", "height": "1920"}
+    fields = {"chat_id": ADMIN, "caption": caption, **({"supports_streaming": "true", "width": "1080", "height": "1920"} if field == "video" else {})}
     if time.gmtime(time.time() + 9 * 3600).tm_hour < 8:  # 밤(KST 0~8시) = 무음(tg와 같게 — 관리자 안 깨움)
         fields["disable_notification"] = "true"
     body = ("".join(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields.items())
-            + f'--{b}\r\nContent-Disposition: form-data; name="video"; filename="{os.path.basename(path)}"\r\nContent-Type: video/mp4\r\n\r\n').encode() \
+            + f'--{b}\r\nContent-Disposition: form-data; name="{field}"; filename="{os.path.basename(path)}"\r\nContent-Type: {ctype}\r\n\r\n').encode() \
         + open(path, "rb").read() + f"\r\n--{b}--\r\n".encode()
-    req = urllib.request.Request(f"https://api.telegram.org/bot{E['TG_TOKEN']}/sendVideo", body,
+    req = urllib.request.Request(f"https://api.telegram.org/bot{E['TG_TOKEN']}/{method}", body,
                                  {"Content-Type": f"multipart/form-data; boundary={b}"})
     with urllib.request.urlopen(req, timeout=120) as r:
         return json.loads(r.read())["result"]
@@ -4515,6 +4515,13 @@ def card_title(tp, labs, n):
     return (full if len(full) <= CARD_TITLE_MAX or not tp else tp), f"{labs[0] if labs else '오늘 묶음'} {n}"
 
 
+def pw_ready(env):
+    """tools/card 브라우저 준비(node_modules 없으면 npm ci · chromium 셸 — 이미 있으면 바로 끝)."""
+    if not os.path.isdir(f"{CARD_DIR}/node_modules/@playwright/test"):
+        subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=CARD_DIR, env=env, timeout=60, check=True, capture_output=True)
+    subprocess.run(["npx", "playwright", "install", "--only-shell", "chromium"], cwd=CARD_DIR, timeout=120, check=True, capture_output=True)
+
+
 def mall_card(kind, title, short, items):
     """묶음 글 몰별 카드(11/1 v3): mall_card_json -> tools/card `node scripts/render.mjs --data data/run_<stem>.json`(v3 그대로 — chromium.launch()라 브라우저 = `npx playwright install --only-shell chromium`, 묶음 회차에만)
     -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node·브라우저 없음·검증·렌더 실패 = None(글만 — 봇은 그대로)."""
@@ -4527,9 +4534,7 @@ def mall_card(kind, title, short, items):
         os.makedirs(f"{CARD_DIR}/data", exist_ok=True)
         os.makedirs(MALL_CARD_DIR, exist_ok=True)
         json.dump(d, open(f"{CARD_DIR}/{data}", "w"), ensure_ascii=False)
-        if not os.path.isdir(f"{CARD_DIR}/node_modules/@playwright/test"):
-            subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=CARD_DIR, env=env, timeout=60, check=True, capture_output=True)
-        subprocess.run(["npx", "playwright", "install", "--only-shell", "chromium"], cwd=CARD_DIR, timeout=120, check=True, capture_output=True)  # 이미 있으면 바로 끝
+        pw_ready(env)
         render = lambda: subprocess.run(["node", "scripts/render.mjs", "--data", data], cwd=CARD_DIR, timeout=60, check=True, capture_output=True)
         try:
             render()
@@ -5214,7 +5219,7 @@ def tg_toss(text, kb, photo):
 TOSS_SOLO_HOURS = range(0, 24)  # 10/13 22:30 진우 '토스 쇼핑에서 추출해서 자동으로 올려줘' -> '매시 1개': 이 시각마다 토스 API 상품 개별 글 1개(10/22 진우 '새벽에도' -> 0~8시도, 밤 발송은 무음). () = 끔
 TOSS_GAP_MIN, TOSS_GAP_NIGHT, TOSS_EV_PAD = 30, 60, 10 * 60  # 10/15 진우 '꾸준하게': 그 시각들에 채널 딜 글이 마지막 글 뒤 30분(0~8시는 60분, 10/22) 넘게 없으면 그 실행에 1개 더(빈틈 채움, 0 = 끔) · 진우 예약(events.json) 시각 앞뒤 10분이면 그 실행은 쉼(예약 먼저 — 예전 '예약 있는 시각 통째로 건너뜀' 대신)
 TOSS_SOLO_SRC, TOSS_SOLO_MIN, TOSS_SOLO_TRY = ("best", "beauty", "life", "day"), 7, 2  # 시각마다 돌아가며(많이 팔린 순위 -> 화장품 -> 생필품 -> 하루특가) · 점수 7↑ · 출처 2곳까지(Claude·API 아낌)
-TOSS_SITE = False  # 10/24 10:0x 보류(Cowork 확인: API 데이터로 사이트 전시 = 10/6 신청서 범위 밖) — 토스는 쉐어링크 웹에서 진우 계정으로 만든 링크를 events shelf로(진우 직접 링크와 같은 방식). True = 토스 API 개별 글 + toss_shelf 대량 진열도 사이트에(toss_site — 사이트 전용, 리뷰 수·평점 X)
+TOSS_SITE = False  # 11/5 Q 진우: CS 승인 나면 켬(= build_site.TOSS_API_SITE 같이 — 셀프체크) · 10/24 10:0x 보류(Cowork 확인: API 데이터로 사이트 전시 = 10/6 신청서 범위 밖) — 토스는 쉐어링크 웹에서 진우 계정으로 만든 링크를 events shelf로(진우 직접 링크와 같은 방식). True = 토스 API 개별 글 + toss_shelf 대량 진열도 사이트에(toss_site — 사이트 전용, 리뷰 수·평점 X)
 TOSS_SHELF_RUN = 10  # 토스 사이트 진열: 실행마다 새로 진열하는 상품 수(쉐어링크 발급 = API 호출, 하루 상한 X) — shortcut: 공식 호출 상한 문서 없음 -> 오류 응답이면 그 상품은 하루 쉬고 그 실행은 멈춤
 TOSS_STEADY_HOURS = (10, 15, 20)  # 10/23 진우 '특가는 끝났지만 꾸준하게 팔리는 상품들 올려줘 — 꾸준하게 제품 올라오는 게 좋지': 이 시각 매시 글은 진우 토스 꾸준템(own_end) 먼저(하루 3개까지, 같은 상품 3일 간격 tb_)
 SOLO_PROMPT = SPECIAL_PROMPT.replace("특가 후보 목록이야(할인율 높고 리뷰 있는 상품, ", "상품 목록이야(") + TOSS_EASE + "\ncomment는 단위가격·구성 같은 사실 한 줄만.\n"
@@ -5236,6 +5241,10 @@ def toss_site(seen, x, link, text):
     = 사이트 몰·품목 칸·상품 페이지·사이트맵, 채널·Threads·인스타·모아보기 X(shelf) · 리뷰 수·평점 X(가격·게시 시점만) · 진열 규칙 그대로(own_end: 판매 중 유지·⏳·🔁 —
     상품 그룹 id를 tossid에 미리 넣어 단축 링크를 안 풂)."""
     if any(p.get("tid") == x["tacaItemId"] or p.get("own") and p.get("url") == link for p in load(POSTS, [])):
+        return False
+    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg())  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
+    if why:
+        print("toss site 뺌", x["tacaItemId"], why)
         return False
     record(re.sub(r" · ⭐ [\d.]+ \([\d,]+\)", "", text), [], link, extra={"own": 1, "shelf": 1, "tid": x["tacaItemId"]})
     if x.get("tacaId"):
@@ -5279,6 +5288,113 @@ def toss_shelf(seen):
             n += 1
         have.add(x["tacaItemId"])
     print("toss shelf", f"{info.format('N')} · 사이트 진열 {n}개")
+
+
+TOSS_IDEA_AT, TOSS_IDEA_N = ("12:20", "13:20"), 10  # 11/5 R 진우: 매일 12:20 관리봇 DM — 진우가 아직 링크 안 만든 토스 상품 10개(진우가 웹에서 쉐어링크 → 관리봇 = 평소 흐름 → own → 사이트·채널)
+TOSS_IDEA_CHECK = "토스 링크 거리 10개 (12:20 DM)"  # 07:00 toss_list.json check 줄(R⑤)
+
+
+def toss_ideas(seen, now=None):
+    """R(11/5 진우): 매일 TOSS_IDEA_AT 창에 1번 관리봇 DM '토스 링크 만들 거리' TOSS_IDEA_N개 — 토스 API 목록(하루특가·많이 팔린 순위·뷰티 베스트·생필품 베스트(날마다 돌림)를 번갈아 섞음) 중
+    진우 링크 X(toss_list.json·진우 토스 글 — seen tossid 상품 id·이름) · 품절 X · 효능 낱말(TOSS_EFFECT)·분유·성인(SHELF_BLOCK)·toss_noimg.txt X · 같은 품목(same_kind) X · 7일 안 보낸 것 뒤로.
+    줄 = 이름 · 가격(확인 시각) · 품목 · 🔎 토스 앱 검색어 — 관리봇만(공개 파일·로그에 API 가격·이름 X). 목록 다 실패·전송 실패 = 창 안 다음 실행에."""
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    key = time.strftime("tidea_%Y%m%d", kst)
+    if not HAS_TOSS or key in seen or not TOSS_IDEA_AT[0] <= time.strftime("%H:%M", kst) < TOSS_IDEA_AT[1]:
+        return
+    ti, tl = seen.get("tossid", {}).get("m", {}), load(TOSS_LIST, {})
+    ns = lambda n: re.sub(r"\s+", "", str(n or "")).lower()
+    mine = {u for u in [x.get("url") for x in tl.get("items", [])] + [p.get("url") for p in load(POSTS, []) if p.get("own")] if toss_share(u)}
+    have = {str(i) for u in mine for i in ((ti.get(u) or [])[:1] + (ti.get(u) or [])[7:8]) if i}  # 진우 링크 상품 = 그룹 id·대표 옵션 id(own_end 기록)
+    names = {ns(x.get("n")) for x in tl.get("items", [])} - {""}
+    tree = toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
+    cats = [c for c in tree if re.search("뷰티|화장품", c["displayName"])][:1] + [c for c in tree if c["displayName"] in TOSS_CATS][kst.tm_yday % len(TOSS_CATS):][:1]
+    lists_ = []
+    for lab, path in [("하루특가", "/products/today-deals?size=30"), ("많이 팔린 순위", "/products/best-selling?size=30")] + [(f"{c['displayName']} 베스트", f"/products/best-categories/{c['categoryId']}?size=30") for c in cats]:
+        try:
+            lists_.append([(lab, x) for x in toss(path)["items"]])
+        except Exception as e:  # 한 목록 실패 = 나머지로
+            print("toss ideas", lab, repr(e))
+    if not any(lists_):
+        return
+    st = seen.setdefault("tidea", {"h": {}})
+    st["t"], st["h"] = now, {k: d for k, d in st.get("h", {}).items() if d > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400))}
+    mixed = sorted((y for k in range(max(map(len, lists_))) for l in lists_ for y in l[k:k + 1]), key=lambda y: str(y[1].get("tacaItemId")) in st["h"])  # 출처 번갈아 · 7일 안 보낸 것 뒤로(안정 정렬)
+    no, out, used = toss_noimg(), [], set()
+    kind = lambda n: (sorted(cp_words(n), key=n.rfind) or kind_words(n) or ["기타"])[-1]  # 품목 = 사이트 품목 칸 낱말(이름 뒤쪽) → 종류 낱말
+    for lab, x in mixed:
+        n, ids = x.get("displayName") or "", {str(x.get("tacaItemId")), str(x.get("tacaId"))}
+        if len(out) < TOSS_IDEA_N and not x.get("isSoldOut") and x.get("displayPrice") and not ids & (have | no | used) and ns(n) not in names and not re.search(TOSS_EFFECT, n) \
+                and not name_block(n, "toss ideas", SHELF_BLOCK) and not any(kind(n) == kind(o["displayName"]) or same_kind(n, o["displayName"]) for _, o in out):
+            used |= ids
+            out.append((lab, x))
+    chk = f"{kst.tm_mon}/{kst.tm_mday} {time.strftime('%H:%M', kst)}"
+    rows = [f"{k}. {clip(x['displayName'], 40)} · {x['displayPrice']:,}원 ({chk} 확인) · {kind(x['displayName'])} · 🔎 {clip(cp_kws(x['displayName'])[-1], 30)}" for k, (lab, x) in enumerate(out, 1)]
+    msg = (f"💙 토스 링크 만들 거리 {len(out)}개 ({chk} · 아직 링크 안 만든 것 · {'·'.join(dict.fromkeys(lab for lab, _ in out))})\n\n" + "\n".join(rows)
+           + "\n\n🔎 검색어로 찾아 웹에서 쉐어링크 만들어 평소처럼 여기로 보내면 → 채널·사이트" if out else f"💙 토스 링크 만들 거리 0개 ({chk}) — 목록이 다 진우 링크·거르는 낱말·품절이에요")
+    if tg("sendMessage", chat_id=ADMIN, text=msg) is None:
+        return  # 전송 실패 = 창 안 다음 실행에
+    seen[key] = now
+    st["h"].update({str(x["tacaItemId"]): time.strftime("%Y-%m-%d", kst) for _, x in out})
+    print("toss ideas", f"{len(out)}개 DM · 목록 {len(lists_)}곳 {sum(map(len, lists_))}개")
+
+
+TOSS_PREVIEW = True  # Q② 11/5: 토스 CS 문의용 — toss_site 결과 1장(PNG, 공개 X)을 관리봇 DM 1번(진우가 화면으로 첨부) · TOSS_SITE False 그대로
+PREVIEW_JS = ("const {chromium}=require('@playwright/test');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});"
+              "await p.route(/goatcounter/,r=>r.abort());await p.goto('file://'+process.argv[1],{waitUntil:'load'});await p.waitForTimeout(1500);"
+              "const r=await p.locator('#mg').boundingBox();await p.screenshot({path:process.argv[2],clip:{x:0,y:0,width:390,height:Math.ceil(r.y+r.height+24)}});await b.close()})()"
+              ".catch(e=>{console.error(String(e));process.exit(1)})")  # tools/card의 @playwright/test로(파일 안 늘림) · 측정 X
+
+
+def toss_preview_html(x, now=None):
+    """토스 API 상품 x -> (toss_site 글, /c/toss/ 쪽 HTML — build_site mall_page·card 그대로, 사진 = 토스 썸네일 원본 주소 + '사진: 토스쇼핑', noindex). 글 규칙(toss_why) 어긋나면 (글, None)."""
+    import build_site as B
+    t, link = time.strftime("%Y-%m-%d %H:%M", time.gmtime((now or time.time()) + 9 * 3600)), "https://toss.shopping/_m/preview"  # 미리보기 = 쉐어링크 안 만듦(카드에 주소 안 보임)
+    body = mall_body("toss", "하루특가 · 밤 12시까지", "🔥", x["displayName"], toss_price({**x, "reviewCount": 0}), [toss_when(t)])
+    text = html_ents(ad_head(TOSS_NOTE, plain_of(body)) + body)[0]
+    if toss_why(text, [link]):
+        return text, None
+    p, old = {"t": t, "text": text, "url": link, "own": 1, "shelf": 1, "tid": x["tacaItemId"]}, B.TIMG
+    B.TIMG = {link: toss_thumb(x)} if toss_thumb(x) else {}
+    try:
+        (u, _, title, sd, body_, _), = B.mall_page("toss", "💙 토스 특가 모음", "토스 특가만 모았어요", [(0, p, B.shelf(p, {}, t[:10]))], {})
+        return text, re.sub(r'<link rel="stylesheet" href="/s\.css[^"]*">', lambda m: f"<style>{B.CSS}</style>", B.page(title, body_, sd, u, cur="cats", noindex=True, dis=B.SHOP_NOTES["toss"]), 1).replace("<head>", f'<head><base href="{B.BASE}">', 1)  # 아이콘 = 공개 주소 · CSS = 아래 그대로 넣음
+    finally:
+        B.TIMG = old
+
+
+def toss_site_preview(seen, now=None):
+    """Q②(11/5 진우 — 토스 CS 문의 첨부): 하루특가 중 사진·판매 중·거르는 낱말·toss_noimg X인 상품 1개 -> toss_preview_html -> 임시 폴더(사이트·docs·posts.json X) -> 390px 스크린숏 PNG
+    -> 관리봇 sendDocument 1번(원본 PNG). 낮(9~21시)만 · 실패 = 1시간 뒤 다시(3번까지) · 공개 로그엔 상품 X."""
+    now = now or time.time()
+    kst, st = time.gmtime(now + 9 * 3600), seen.get("tsprev") or {}
+    if not (TOSS_PREVIEW and HAS_TOSS) or st.get("ok") or st.get("n", 0) >= 3 or now - st.get("t", 0) < 3600 or not 9 <= kst.tm_hour < 21:
+        return
+    seen["tsprev"] = st = {"t": now, "n": st.get("n", 0) + 1}
+    no, d = toss_noimg(), tempfile.mkdtemp()
+    try:
+        for x in toss("/products/today-deals?size=30")["items"]:
+            if not x.get("isSoldOut") and x.get("displayPrice") and toss_thumb(x) and not {str(x.get("tacaItemId")), str(x.get("tacaId"))} & no \
+                    and not re.search(TOSS_EFFECT, x.get("displayName") or "") and not name_block(x.get("displayName"), "toss preview", SHELF_BLOCK) and (doc := toss_preview_html(x, now)[1]):
+                break
+        else:
+            print("toss preview 상품 없음")
+            return
+        open(f"{d}/index.html", "w", encoding="utf-8").write(doc)
+        pw_ready({**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"})
+        subprocess.run(["node", "-e", PREVIEW_JS, f"{d}/index.html", f"{d}/toss_site_preview.png"], cwd=CARD_DIR, timeout=120, check=True, capture_output=True)
+        tg_video(f"{d}/toss_site_preview.png", "🧪 토스 사이트 진열 미리보기 1장(공개 X — 사이트엔 안 올림 · TOSS_SITE False 그대로) · 토스 CS 문의 첨부용\n"
+                 "· 토스 전용 쪽(/c/toss/)만 — 쿠팡과 같은 쪽·카드 X · 맨 위 대가성 문구 · 게시 시점 가격 줄 · 다른 몰 이름 X\n"
+                 "· 사진 = 토스 썸네일 원본 주소 그대로(자르기·합성·글자 X) + '사진: 토스쇼핑'\n· 가격 1일 안 다시 확인(넘으면 내림) · 판매자 요청 상품(toss_noimg.txt) 즉시 내림",
+                 "sendDocument", "document", "image/png")
+        st["ok"] = 1
+        print("toss preview 관리봇 1장")
+    except Exception as e:  # node·브라우저·토스·텔레그램 = 1시간 뒤 다시
+        err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
+        print("toss preview X", err_brief(e), err[-1:] if err else "")
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
 
 
 AT_RX = r"\d{4}-\d\d-\d\d ([01]\d|2[0-3]):[0-5]\d$"  # events at 모양(이 모양만 시각 계산 — 틀린 줄 하나가 단계를 멈추지 않게)
@@ -10941,7 +11057,7 @@ TOSS_LIST, TOSS_LIST_AT = "toss_list.json", ("07:00", "08:00")  # 10/23 진우 '
 
 def toss_roster(seen):
     """매일 TOSS_LIST_AT(KST) 1번: 진우 토스 상품 전부(같은 url 최신 진우 글, own_end 상태) -> toss_list.json(저장소가 공개라 토스 API 지금 가격·리뷰 수는 X — API 신청 범위):
-    {at, n: {hot·wait·out·gone 수}, rehot: 어제·오늘 🔁 다시 특가 된 이름, gone: 빠진 이름, new: {날짜: 그날 채널에 새로 나간 토스 상품 수(토스 API 글 tb_ + 진우 토스 글), 최근 7일},
+    {at, n: {hot·wait·out·gone 수}, check: 오늘 할 일 줄(R⑤ '토스 링크 거리 10개 (12:20 DM)'), rehot: 어제·오늘 🔁 다시 특가 된 이름, gone: 빠진 이름, new: {날짜: 그날 채널에 새로 나간 토스 상품 수(토스 API 글 tb_ + 진우 토스 글), 최근 7일},
      items: [{n, st, tgt 목표(올린) 가격, chk 확인 시각, stdy 👍, last 마지막 채널 게시일, url}]} — 🔥 → ⏳ → 일시 품절 → 뺌 순."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -10964,7 +11080,7 @@ def toss_roster(seen):
     old = load(TOSS_LIST, {})
     new = {d: n for d, n in {**old.get("new", {}), yd: sum(day(t) == yd for t in tb.values()) + sum(d == yd for ds in dates.values() for d in ds)}.items() if d > day(now - 8 * 86400)}
     out = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "n": dict(collections.Counter(x["st"] or "wait" for x in items)), "rehot": [parse(title_of(p["text"]))[1] for p in last.values() if (p.get("rehot") or "") >= yd],
-           "gone": [x["n"] for x in items if x["st"] == "gone"], "new": new, "items": items}
+           "gone": [x["n"] for x in items if x["st"] == "gone"], "new": new, "check": [TOSS_IDEA_CHECK] if HAS_TOSS else [], "items": items}  # check = 07:00 체크리스트 줄(R⑤ — Cowork 아침 보고)
     json.dump(out, open(TOSS_LIST, "w"), ensure_ascii=False, indent=1)
     print("toss roster", out["n"], "| 어제 새 토스 상품", new.get(yd), "| 다시 특가", len(out["rehot"]))
 
@@ -12157,8 +12273,8 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
-        if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
+        if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
             step(seen)

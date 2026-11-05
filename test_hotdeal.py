@@ -12920,3 +12920,134 @@ time.time = lambda: TK("2026-11-06 10:30")
 with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152r)
 assert len([e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]) == 1  # 하루 1번
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS, H.NSET_REPOST) = sv152r; os.chdir(cwd152r)
+# 9-153 (11/5 진우 Q·R): Q 토스 API 상품 사이트 진열 = 스위치 뒤 준비만(TOSS_SITE = build_site.TOSS_API_SITE = False — 토스 CS 승인 뒤 둘 다 켬) · 켜지면 /c/toss/ 카드만(홈·품목·검색·딜 쪽·사이트맵·알림 X)
+#   · 가격 1일 안(글 24시간 안 또는 1일 안 확인에 같은 가격) 넘으면 내림 · 사진 = 토스 원본 주소 + '사진: 토스쇼핑' · 맨 위 토스 대가성 문구·게시 시점 줄·다른 몰 이름 X · toss_noimg(판매자 요청) 즉시 내림
+#   · Q② 미리보기 1장(PNG — 공개 X) 관리봇 1번 / R 매일 12:20 '토스 링크 만들 거리' 10개 관리봇 DM + 07:00 toss_list.json check 줄
+assert H.TOSS_SITE is False and S.TOSS_API_SITE is False  # 스위치 = 둘 다 끔(켤 땐 같이)
+cwd153, d153 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d153)
+sv153 = (H.POSTS, H.toss, H.HAS_TOSS, H.tg, time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG, H.TOSS_LIST, H.subprocess.run, H.tg_video, H.pw_ready)
+H.POSTS, N153 = "posts.json", TK("2026-11-06 12:30")
+X153 = lambda i, g, n, p, so=False: {"tacaItemId": i, "tacaId": g, "displayName": n, "displayPrice": p, "discountRate": 20, "reviewCount": 0, "isSoldOut": so, "thumbnailUrl": f"https://static.toss.im/shop/{i}.jpg"}
+def tx153(x, when="2026-11-06 12:00", note=True, line=True, extra=""):
+    body = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", x["displayName"], H.toss_price(x), [H.toss_when(when)] if line else [])
+    return H.html_ents((H.ad_head(H.TOSS_NOTE, H.plain_of(body)) if note else "") + body + extra)[0]
+json.dump([], open("posts.json", "w"))
+# ① toss_site(글 만들 때): 맨 위 대가성 문구 · 게시 시점 줄 · 다른 몰 이름 X · 판매자 요청(toss_noimg) X
+with contextlib.redirect_stdout(io.StringIO()) as o153:
+    assert not H.toss_site({}, X153(1, 10, "물티슈", 5900), "https://toss.shopping/_m/A1", tx153(X153(1, 10, "물티슈", 5900), note=False))  # 문구 X
+    assert not H.toss_site({}, X153(1, 10, "물티슈", 5900), "https://toss.shopping/_m/A1", tx153(X153(1, 10, "물티슈", 5900), line=False))  # 게시 시점 X
+    assert not H.toss_site({}, X153(1, 10, "물티슈", 5900), "https://toss.shopping/_m/A1", tx153(X153(1, 10, "물티슈", 5900), extra="\n쿠팡보다 싸요"))  # 다른 몰 X
+    open("toss_noimg.txt", "w").write("10  # 판매자 요청\n")
+    assert not H.toss_site({}, X153(1, 10, "물티슈", 5900), "https://toss.shopping/_m/A1", tx153(X153(1, 10, "물티슈", 5900)))  # 판매자 요청(그룹 id)
+    os.remove("toss_noimg.txt")
+    s153 = {}
+    assert H.toss_site(s153, X153(1, 10, "물티슈", 5900), "https://toss.shopping/_m/A1", tx153(X153(1, 10, "물티슈", 5900)))
+assert json.load(open("posts.json"))[0]["tid"] == 1 and s153["tossid"]["m"]["https://toss.shopping/_m/A1"][0] == 10 and "toss site 뺌" in o153.getvalue() and "물티슈" not in o153.getvalue()  # 로그 = id·이유만
+# ② tapi_ok(사이트에 보여도 되나): 스위치 · 1일 · 같은 가격 · 품절 · 판매자 요청 · 문구·게시 시점 줄
+P153 = {"t": "2026-11-06 12:00", "text": tx153(X153(1, 10, "쿼카젤리 153팩", 5900)), "url": "https://toss.shopping/_m/A1", "own": 1, "shelf": 1, "tid": 1}
+S.TOSSM = {}
+assert not S.tapi_ok(P153, N153)  # 스위치 끔
+S.TOSS_API_SITE = True
+assert S.tapi_ok(P153, N153) and not S.site_ok(P153)  # 글 24시간 안 = O · 일반 목록(site_ok)은 늘 X
+assert not S.tapi_ok(P153, TK("2026-11-07 12:01"))  # 24시간 넘음 + 확인 없음 = 내림
+S.TOSSM = {P153["url"]: [10, 1, TK("2026-11-07 09:00"), "ok", [], 5900, False, 1, "https://static.toss.im/shop/1.jpg"]}
+assert S.tapi_ok(P153, TK("2026-11-07 20:00"))  # 1일 안 확인 · 같은 가격 = 그대로
+assert not S.tapi_ok(P153, TK("2026-11-08 09:01"))  # 확인도 1일 넘음 = 내림
+S.TOSSM[P153["url"]][5] = 6900; assert not S.tapi_ok(P153, TK("2026-11-07 20:00")); S.TOSSM[P153["url"]][5] = 5900  # 가격 바뀜 = 내림(게시 시점 가격 그대로 X)
+S.TOSSM[P153["url"]][3] = "out"; assert not S.tapi_ok(P153, N153); S.TOSSM[P153["url"]][3] = "ok"  # 품절 = 글 24시간 안이어도 X
+assert not S.tapi_ok({**P153, "st": "gone"}, N153) and not S.tapi_ok({**P153, "url": "https://toss.shopping/t/1"}, N153)  # 판매 종료 · 쉐어링크 아님
+for no153 in ("1", "10"):
+    open("toss_noimg.txt", "w").write(no153 + "\n"); assert not S.tapi_ok(P153, N153), no153  # 판매자 요청 = 즉시 내림(옵션 id·그룹 id)
+os.remove("toss_noimg.txt")
+assert not S.tapi_ok({**P153, "text": tx153(X153(1, 10, "쿼카젤리 153팩", 5900), note=False)}, N153) and not S.tapi_ok({**P153, "text": tx153(X153(1, 10, "쿼카젤리 153팩", 5900), line=False)}, N153)  # 문구·게시 시점 줄
+c153 = S.card(5, P153, (0, None, "", [], False))
+assert f'href="{P153["url"]}" rel="nofollow sponsored noopener"' in c153 and f'{S.BASE}p/5.html' not in c153 and "11/6 12:00 게시 시점 가격" in c153  # 카드 = 쉐어링크 바로(딜 쪽 X) · 게시 시점 줄
+# ③ 빌드: tid = /c/toss/ 카드만(홈·품목·검색·딜 쪽·사이트맵·알림·/series/toss X) · 맨 위 = 토스 문구만 · 사진 = 토스 원본 + 출처 · 1일 넘음·판매자 요청·스위치 끔 = 내림
+CPU153 = "https://link.coupang.com/a/CP153"
+pp153 = [{"t": "2026-11-06 11:00", "text": "🔥 [쿠팡] 쿠팡 세제 3L (9,900원)", "url": CPU153, "own": 1, "shelf": 1}, P153]
+json.dump({"tossid": {"m": {P153["url"]: [10, 1, N153 - 600, "ok", [], 5900, False, 1, "https://static.toss.im/shop/1.jpg"]}}}, open("seen.json", "w"))
+def b153(now):
+    time.time = lambda: now
+    shutil.rmtree("o153", ignore_errors=True)
+    with contextlib.redirect_stdout(io.StringIO()):
+        S.build([dict(p) for p in pp153], "o153")
+    hit = sorted(os.path.relpath(os.path.join(r, f), "o153") for r, _, fs in os.walk("o153") for f in fs if f.endswith((".html", ".json", ".xml", ".txt")) and "쿼카젤리" in open(os.path.join(r, f), encoding="utf-8", errors="ignore").read())
+    return hit, (open("o153/c/toss/index.html", encoding="utf-8").read() if os.path.exists("o153/c/toss/index.html") else "")
+hit153, tp153 = b153(N153)
+assert hit153 == ["c/toss/index.html"], hit153  # 토스 몰 쪽만
+assert tp153.index(f'<p class="dis">{S.SHOP_NOTES["toss"]}</p>') < tp153.index("쿼카젤리") and "쿠팡" not in tp153.split('<p class="dis">')[1].split("</main>")[0] and S.DISCLOSURE not in tp153, tp153[:300]  # 맨 위 토스 문구 · 다른 몰 이름 X
+assert 'src="https://static.toss.im/shop/1.jpg"' in tp153 and S.PHOTO_CREDIT in tp153 and "12:00 게시 시점 가격" in tp153 and not os.path.exists("o153/p/1.html")  # 원본 주소·출처 · 딜 쪽 X
+assert "쿠팡 세제" in open("o153/index.html", encoding="utf-8").read() and S.DISCLOSURE in open("o153/c/coupang/index.html", encoding="utf-8").read()  # 다른 쪽 그대로
+json.dump({"tossid": {"m": {P153["url"]: [10, 1, N153 - 600, "ok", [], 5900, False, 1, "https://static.toss.im/shop/1.jpg"]}}}, open("seen.json", "w"))
+assert b153(TK("2026-11-07 12:31"))[0] == []  # 확인 1일 넘음(글도 24시간 넘음) = 내림
+open("toss_noimg.txt", "w").write("1\n"); assert b153(N153)[0] == []; os.remove("toss_noimg.txt")  # 판매자 요청 = 바로 내림
+S.TOSS_API_SITE = False; assert b153(N153)[0] == []  # 스위치 끔 = X
+# ④ Q② 미리보기 1장: 글 = toss_site 틀 · 쪽 = /c/toss/ 카드 그대로(토스 문구만·사진 원본·출처·게시 시점·noindex·CSS 넣음) · 관리봇 sendDocument 1번 · 낮만 · 실패 3번까지 · 공개 파일 X
+t153, h153 = H.toss_preview_html(X153(7, 70, "섬유유연제 2L", 8900), N153)
+assert t153.startswith(H.TOSS_NOTE) and "11/6 12:30 게시 시점 가격" in t153 and H.toss_why(t153, ["https://toss.shopping/_m/preview"]) == []
+assert '<meta name="robots" content="noindex' in h153 and f'<p class="dis">{S.SHOP_NOTES["toss"]}</p>' in h153 and S.DISCLOSURE not in h153 and 'src="https://static.toss.im/shop/7.jpg"' in h153 and S.PHOTO_CREDIT in h153 and "<style>" in h153 and 'href="/s.css' not in h153 and f'<base href="{S.BASE}">' in h153
+assert H.toss_preview_html({**X153(7, 70, "섬유유연제 2L", 8900), "displayName": "쿠팡 섬유유연제"}, N153)[1] is None  # 글 규칙 어긋남 = 안 그림
+run153, up153, tc153 = [], [], []
+H.HAS_TOSS, H.pw_ready = True, lambda env: None
+H.toss = lambda path, body=None: tc153.append(path) or {"items": [X153(5, 50, "분유 1단계", 9000), X153(6, 60, "품절 세제", 1000, True), X153(7, 70, "섬유유연제 2L", 8900)]}
+H.subprocess.run = lambda a, **k: run153.append(a) or open(a[-1], "wb").write(b"\x89PNG")
+H.tg_video = lambda path, cap, *a: up153.append((os.path.basename(path), cap, a))
+s153p = {}
+time.time = lambda: TK("2026-11-06 08:30"); H.toss_site_preview(s153p); assert not tc153  # 낮(9~21시)만
+time.time = lambda: N153
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_site_preview(s153p)
+assert len(up153) == 1 and up153[0][0] == "toss_site_preview.png" and up153[0][2] == ("sendDocument", "document", "image/png") and "공개 X" in up153[0][1] and s153p["tsprev"]["ok"] == 1
+assert run153[0][:2] == ["node", "-e"] and "@playwright/test" in run153[0][2] and not os.path.exists(os.path.dirname(run153[0][-1])) and not os.path.exists("docs")  # 임시 폴더 지움 · 사이트 X
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_site_preview(s153p)
+assert len(up153) == 1  # 1번만
+H.subprocess.run = lambda a, **k: (_ for _ in ()).throw(RuntimeError("no node"))
+s153f = {}
+for k153 in range(5):
+    time.time = lambda: N153 + k153 * 3601
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.toss_site_preview(s153f)
+assert s153f["tsprev"]["n"] == 3 and "ok" not in s153f["tsprev"] and len(up153) == 1  # 실패 = 1시간 뒤 다시, 3번까지
+# ⑤ R 토스 링크 거리: 12:20 창 1번 · toss_list·진우 글 상품(id·이름) X · 품절·효능 낱말·분유·성인·판매자 요청 X · 같은 품목 X · 출처 섞기 · 줄 = 이름·가격(확인 시각)·품목·검색어 · 10개
+json.dump([{"t": "2026-11-05 10:00", "text": "💙 [토스] 진우 휴지 (9,900원)", "url": "https://toss.shopping/_m/J1", "own": 1}], open("posts.json", "w"))
+H.TOSS_LIST = "tl153.json"; json.dump({"items": [{"n": "이미 만든 샴푸 1L", "url": "https://toss.shopping/_m/J2"}]}, open("tl153.json", "w"))
+s153r = {"tossid": {"m": {"https://toss.shopping/_m/J1": [100, 1, 1, "ok", [], 9900, False, 101, ""], "https://toss.shopping/_m/J2": [200, 1, 1, "ok", [], 1, False, 201, ""]}}}
+open("toss_noimg.txt", "w").write("901\n")
+day153 = [X153(101, 100, "진우가 만든 휴지", 9900), X153(1, 1, "하루 물티슈 100매", 5900), X153(2, 2, "품절 키친타월", 3000, True), X153(3, 3, "미백 치약 3개", 4000), X153(4, 4, "아기 분유 800g", 30000), X153(5, 5, "하루 쌀 10kg", 29000)]
+best153 = [X153(6, 6, "베스트 물티슈 캡형", 7000), X153(7, 7, "베스트 세제 3L", 12900), X153(900, 901, "판매자 요청 수건", 9000), X153(8, 8, "성인 기저귀 대형", 15000), X153(9, 9, "베스트 김 20봉", 9900)]
+cat153 = {"/products/best-categories/41?size=30": [X153(10, 10, "이미 만든 샴푸 1L", 8000), X153(11, 11, "수분 크림 50ml", 15000), X153(12, 12, "보습 토너 200ml", 12000)],
+          "/products/best-categories/51?size=30": [X153(13, 13, "주방 행주 10매", 5000), X153(14, 14, "고무장갑 5켤레", 6000), X153(15, 15, "지퍼백 대형", 4000), X153(16, 16, "종량제 봉투", 3000), X153(17, 17, "건전지 AA 20개", 9000)],
+          "/products/best-categories/52?size=30": [X153(18, 18, "라면 5개입", 4500)]}
+def toss153(path, body=None):
+    tc153.append(path)
+    if path == "/categories":
+        return {"categories": [{"categoryId": 41, "displayName": "뷰티"}, {"categoryId": 51, "displayName": "생활용품"}, {"categoryId": 52, "displayName": "식품"}]}
+    return {"items": {"/products/today-deals?size=30": day153, "/products/best-selling?size=30": best153, **cat153}[path]}
+H.toss, tg153 = toss153, []
+H.tg = lambda m, **p: tg153.append((m, p)) or {"message_id": 1}
+del tc153[:]
+time.time = lambda: TK("2026-11-06 12:10"); H.toss_ideas(s153r); assert not tc153 and not tg153  # 12:20 전 X
+time.time = lambda: TK("2026-11-06 12:25")
+with contextlib.redirect_stdout(io.StringIO()) as o153r:
+    H.toss_ideas(s153r)
+m153 = tg153[0][1]["text"]; rows153 = [l for l in m153.split("\n") if re.match(r"\d+\. ", l)]
+assert len(tg153) == 1 and tg153[0][1]["chat_id"] == H.ADMIN and m153.startswith("💙 토스 링크 만들 거리 10개 (11/6 12:25") and len(rows153) == 10, m153
+assert all(re.fullmatch(r"\d+\. .+ · [\d,]+원 \(11/6 12:25 확인\) · \S+ · 🔎 .+", l) for l in rows153), rows153  # 이름 · 가격(확인 시각) · 품목 · 검색어
+for bad153 in ("진우가 만든 휴지", "품절 키친타월", "미백 치약", "분유", "판매자 요청 수건", "성인 기저귀", "이미 만든 샴푸", "하루 물티슈 100매"):
+    assert bad153 not in m153, bad153  # 진우 링크(id·이름) · 품절 · 효능 낱말 · 분유 · 판매자 요청 · 성인 · 같은 품목(물티슈 2개)
+assert [l.split(". ", 1)[1].split(" · ")[0] for l in rows153[:4]] == ["베스트 물티슈 캡형", "주방 행주 10매", "베스트 세제 3L", "수분 크림 50ml"], rows153  # 하루특가·베스트·뷰티·생필품 번갈아(진우 것·같은 품목 건너뜀)
+assert "· 물티슈 ·" in rows153[0] and "· 행주 ·" in rows153[1] and "5,900원" not in o153r.getvalue() and "물티슈" not in o153r.getvalue()  # 로그 = 수만(이름·가격 X)
+time.time = lambda: TK("2026-11-06 12:40"); H.toss_ideas(s153r); assert len(tg153) == 1  # 하루 1번
+time.time = lambda: TK("2026-11-07 12:25")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_ideas(s153r)
+assert tg153[-1][1]["text"].split("\n")[2].startswith("1. 라면 5개입") or "라면 5개입" in tg153[-1][1]["text"].split("\n\n")[1].split("\n")[0], tg153[-1][1]["text"]  # 7일 안 보낸 것 뒤로(새 것 먼저)
+H.tg = lambda m, **p: None; s153x = {"tossid": s153r["tossid"]}; time.time = lambda: TK("2026-11-06 12:25")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_ideas(s153x)
+assert "tidea_20261106" not in s153x  # 전송 실패 = 창 안 다음 실행에
+time.time = lambda: TK("2026-11-06 07:10"); H.toss_roster({}); assert json.load(open("tl153.json"))["check"] == ["토스 링크 거리 10개 (12:20 DM)"]  # 07:00 체크리스트 줄
+src153 = inspect.getsource(H.main) if hasattr(H, "main") else open(H.__file__, encoding="utf-8").read()
+assert "toss_shelf, toss_site_preview, toss_ideas," in open(H.__file__, encoding="utf-8").read() and 'step in (toss_shelf, toss_site_preview, toss_ideas, ' in open(H.__file__, encoding="utf-8").read()  # 실행 단계 · 토스 점검 땐 쉼
+(H.POSTS, H.toss, H.HAS_TOSS, H.tg, time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG, H.TOSS_LIST, H.subprocess.run, H.tg_video, H.pw_ready) = sv153; os.chdir(cwd153)

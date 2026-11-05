@@ -268,7 +268,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 <meta property="og:site_name" content="{TITLE}"><meta property="og:title" content="{html.escape(ogt) if ogt else t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{kind}"><meta property="og:locale" content="ko_KR"><meta property="og:image" content="{html.escape(og or OG_IMG)}">{f'<meta property="og:image:width" content="{wh[0]}"><meta property="og:image:height" content="{wh[1]}">' if wh else ''}<meta name="twitter:card" content="summary_large_image">
 {f'<meta property="og:url" content="{canonical}"><link rel="canonical" href="{canonical}">' if canonical else ''}<link rel="alternate" type="application/rss+xml" title="{TITLE}" href="{BASE}rss.xml">{PWA_HEAD}{THEME_JS}<link rel="stylesheet" href="/s.css{CV}">{FONT_HEAD}{INAPP_JS}{LAYOUT_JS}{gc_tag()}{head}</head><body><main>
 <header class="hd"><div class="hr"><a class="lg" href="{BASE}" aria-label="{TITLE} 홈"><img class="logo" src="/icons/logo-64.png{IV}" width="32" height="32" alt="" aria-hidden="true">{"<b>" + TITLE + "</b>" if "<h1" in body else "<h1>" + TITLE + "</h1>"}</a><a class="ib" href="{BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">{svg("alarm")}<i class="dot" id="adot" role="img" aria-label="찜한 딜 바뀜" hidden></i></a><a class="ib" href="{BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">{svg("saved")}</a></div><form class="sb" role="search" action="{BASE}">{svg("search")}<input id="q" name="q" type="search" placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기" aria-label="딜 검색" autocomplete="off" enterkeyhint="search"></form>{nav}</header>
-{top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
+{top}{lead}<p class="dis"{' style="font-size:10.5px;margin-top:6px"' if dis == HOME_DIS else ""}>{html.escape(note) + "<br>" if note else ""}{dis or DISCLOSURE}</p>{body}
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a> · <a href="{BASE}privacy/">개인정보처리방침</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>""", SITE_SUB)  # GGG 사이트 쿠팡 링크 = site 채널 링크
 
 
@@ -461,7 +461,7 @@ def keep_host(url):
 def site_ok(p):
     """사이트(목록·칸·검색·RSS·사이트맵)에 보일 딜 = 수수료 링크만(aff — 쿠팡 파트너스·토스 쉐어링크·네이버 쇼핑커넥트 naver.me·올리브영 oy.run·링크프라이스, 10/26 SS)
     / 그 밖(쿠팡 변환 전·400 생 주소·네이버 직접·뽐뿌 원글·11번가 등) = 사이트 X — 데이터 그대로(빌드에서만 숨김: 나중에 수수료 링크로 바뀌면 다시 보임) · 채널 옛 글 그대로."""
-    return not p.get("nosite") and (not SITE_AFF_ONLY or aff(p.get("url")))  # nosite = link_swap 'none'(진우가 쇼핑커넥트 '참여 안 함' 확인, 10/25 21:4x)
+    return not p.get("nosite") and not p.get("tid") and (not SITE_AFF_ONLY or aff(p.get("url")))  # tid = 토스 API 상품 글(hotdeal.toss_site) = /c/toss/ 카드만(tapi_ok — 홈·품목·검색·딜 쪽·사이트맵 X, Q 11/5) · nosite = link_swap 'none'(진우가 쇼핑커넥트 '참여 안 함' 확인, 10/25 21:4x)
 
 
 CARD_DIS = "제휴 링크로 수수료를 받을 수 있어요(토스·쿠팡·네이버)"  # WW ④ 카드 딜 칸 맨 위 한 줄(3사 문구 전체는 목록 아래 — SHOP_NOTES)
@@ -1112,17 +1112,41 @@ def bundle_live(posts, now_ts):
 
 TOSS_SITE_IMG, TOSS_NOIMG_FILE, SEEN_FILE, PHOTO_CREDIT = True, "toss_noimg.txt", "seen.json", "사진: 토스쇼핑"  # 11/5 Cowork A①(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 웹사이트도 OK · 크롭·합성·글자 X)
 TIMG = {}  # 빌드 때 seen 캐시에서(posts.json 등 공개 파일 X): 진우 토스 쉐어링크 상품 주소 -> 썸네일 원본 주소
+TOSS_API_SITE = False  # Q 11/5 = hotdeal.TOSS_SITE(셀프체크로 같게 — 켤 땐 둘 다): 토스 API 상품 글(tid)을 /c/toss/ 카드에 — 진우가 토스 CS 승인 받은 뒤(쉐어링크 API 문서: API 가격 커머스형 나열 X·캐시·노출 = 개별 승인)
+TOSSM = {}  # 빌드 때 seen tossid m(hotdeal.own_end 확인 기록 [그룹 id, _, 확인 시각, ok/out, _, 가격, _, 옵션 id, 사진] — 공개 파일 X)
+
+
+def noimg_ids():
+    """toss_noimg.txt 상품 id(tacaId·tacaItemId 줄마다 · '#' 뒤 메모) = 판매자 요청 내림 — 사진·토스 API 진열 X."""
+    try:
+        return {l.split("#")[0].strip() for l in open(TOSS_NOIMG_FILE, encoding="utf-8")} - {""}
+    except OSError:
+        return set()
+
+
+def tapi_ok(p, now=None):
+    """토스 API 상품 글(tid — hotdeal.toss_site)이 /c/toss/ 카드에 보여도 되는지(Q 11/5): TOSS_API_SITE · 쉐어링크 · 판매 중 · toss_noimg.txt(판매자 요청) 상품 X ·
+    맨 위 토스 대가성 문구 · 게시 시점 줄 · 가격 1일 안(글 24시간 안, 또는 1일 안 확인(own_end)에 판매 중·같은 가격 — 넘으면 내림)."""
+    if not (TOSS_API_SITE and p.get("tid") and toss_share(p.get("url"))) or p.get("st") in ("out", "gone"):
+        return False
+    now, v = now or time.time(), TOSSM.get(p["url"])
+    v = v if isinstance(v, list) else []
+    if {str(p["tid"]), *(str(v[k]) for k in (0, 7) if len(v) > k)} & noimg_ids() or len(v) > 3 and v[3] == "out":
+        return False
+    ls = [l.strip() for l in p["text"].split("\n") if l.strip()]
+    head = ls[:2] if ls and ls[0].startswith("[광고]") else ls[:1]
+    if SHOP_NOTES["toss"] not in head or "게시 시점" not in p["text"]:
+        return False
+    w = re.match(r"[\d,]+", parse(title_of(p["text"]))[2] or "")
+    return now - (calendar.timegm(time.strptime(p["t"][:16], "%Y-%m-%d %H:%M")) - 9 * 3600) < 86400 \
+        or bool(w) and len(v) > 5 and v[3] == "ok" and now - (v[2] or 0) < 86400 and v[5] == int(w[0].replace(",", ""))
 
 
 def toss_imgs(m, now=None):
     """진우 토스 상품 사진 {상품 주소: 썸네일 원본}: hotdeal own_end 상세 확인(seen tossid m[url] — [8] = thumbnailUrl)이 1일 안인 것만 · toss_noimg.txt 상품(tacaId·tacaItemId) X · TOSS_SITE_IMG 끄면 {}."""
     if not TOSS_SITE_IMG or not isinstance(m, dict):
         return {}
-    try:
-        no = {l.split("#")[0].strip() for l in open(TOSS_NOIMG_FILE, encoding="utf-8")} - {""}
-    except OSError:
-        no = set()
-    now = now or time.time()
+    no, now = noimg_ids(), now or time.time()
     return {u: v[8] for u, v in m.items() if isinstance(v, list) and len(v) > 8 and isinstance(v[8], str) and re.fullmatch(r"https://[^\s\"'<>]+", v[8])
             and now - (v[2] or 0) < 86400 and not {str(v[0]), str(v[7])} & no}
 
@@ -1156,7 +1180,7 @@ def price_bits(p, sh):
     sv = now is None and saving(p["text"])
     ex = (seg[1:] if now is None else [m[2]] if m else []) + ([f"{sv[0]}보다 {sv[1]}↓"] if sv else [])
     toss = shop_of(p) == "toss"
-    old = not note and (p.get("own") or toss or p.get("api")) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])} 가격' + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
+    old = not note and (p.get("own") or toss or p.get("api")) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])}' + (f' {p["t"][11:16]} 게시 시점 가격' if p.get("tid") else " 가격") + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
     grey = [x for x in (note or old, unit_of(p) if now is None else "") if x]  # 날짜·상태 줄 먼저(픽 줄·검색은 첫 줄만 — 토스 = 게시 시점 표기 필수)
     return shown, ex, grey
 
@@ -1184,7 +1208,7 @@ def card(i, p, sh, more=(), attrs="", plain=False):
         grey = [x for x in (p.get("chk") and f"{p['chk']} 확인", sh[0] in (1, 2) and tg and f"목표가 {tg[0]}") if x]
     return (f'<article class="g"{attrs}><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
             + thumb(p, "" if plain else badge(p, sh), True) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
-            + f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
+            + (f'<h3><a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank">{html.escape(name)}</a></h3>' if p.get("tid") else f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>') + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
             + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
 
 
@@ -1236,7 +1260,7 @@ def lists(posts, days, home=None):
         slug, name, emo, _ = CAT_META[k]
         out[slug] = (f"{emo} {name} 특가 모음", f"{name} 특가·핫딜을 매일 골라 정리해요 · 🔥 특가 중인 것 먼저", trust8([x for x in it if cat_of(x[1]) == k], today), "")
     for k, name, emo in MALLS:
-        xs = [x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))]
+        xs = [x for x in it if shop_of(x[1]) == k and (k != "toss" or toss_share(x[1].get("url")))] + (items(posts, days, home_pool(posts, days, ok=tapi_ok)) if k == "toss" and TOSS_API_SITE else [])  # Q: 토스 API 상품 = 토스 몰 쪽만
         out[k] = (f"{emo} {name} 특가 모음", f"{name} 특가만 모았어요", trust8(xs, today, key=(lambda x: (x[2][0], cat_of(x[1]) != "digital")) if k == "naver" else None), k)  # 네이버 = 가전·디지털 먼저(같은 단계 안 — 10/24 진우 v3 ⑥)
     return out
 
@@ -2747,7 +2771,7 @@ def mall_page(slug, head, desc, xs, recs):
     cs = collections.Counter(cat_of(p) or "etc" for _, p, _ in xs)
     ss = collections.Counter(t for x in xs for t in st(x).split())
     name = head.split(" ", 1)[1]
-    body = (f'<h1 class="h">{mall_label(slug, html.escape(head))}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md_of(today)} 업데이트</div><p class="t">{SHOP_NOTES[slug]}</p>'
+    body = (f'<h1 class="h">{mall_label(slug, html.escape(head))}</h1><div class="t">{html.escape(desc)} · {len(xs)}개 · {md_of(today)} 업데이트</div>' + (f'<p class="t">{SHOP_NOTES[slug]}</p>' if slug != "toss" else "")  # 토스 = 맨 위 dis 줄(page)
             + (f'<p class="t">{TOSS_LINE}</p>' if slug == "toss" else "")
             + '<div class="tabs" role="tablist" aria-label="상태"><button type="button" role="tab" aria-selected="true" data-s="">전체</button>'
             + "".join(f'<button type="button" role="tab" aria-selected="false" data-s="{t}">{n} {ss[t]}</button>' for t, n in (("h", "🔥 특가"), ("s", "👍 꾸준템"), ("w", "⏳ 대기")) if ss[t]) + "</div>"
@@ -2793,7 +2817,7 @@ def changes_json(posts, it, ds, dl, now_ts, prev=None):
         put(i, p, "drop", kst(p["chkt"]), p=pct, r=f"{b:,}원")
     for i, p, sh in dl:
         put(i, p, "deadline", kst(p["t"]))
-    last = {p.get("url"): j for j, p in enumerate(posts) if p.get("own") and not p["text"].startswith("📋")}
+    last = {p.get("url"): j for j, p in enumerate(posts) if p.get("own") and not p["text"].startswith("📋") and not p.get("tid")}  # tid = 토스 몰 쪽만(알림 탭 X)
     for i, p, sh in it:
         if sh[4]:
             put(i, p, "rehot", kst(p.get("rehot") or today))
@@ -3136,12 +3160,13 @@ def short_pages(out, heads):
 
 
 def build(posts, out="docs"):
-    global MICONS, SITE_SUB, TIMG
+    global MICONS, SITE_SUB, TIMG, TOSSM
     SITE_SUB = site_subs()
     try:
-        TIMG = toss_imgs(json.load(open(SEEN_FILE, encoding="utf-8")).get("tossid", {}).get("m", {}))
+        TOSSM = json.load(open(SEEN_FILE, encoding="utf-8")).get("tossid", {}).get("m", {})
+        TIMG = toss_imgs(TOSSM)
     except (OSError, ValueError, AttributeError):  # 로컬·첫 실행(seen 없음) = 토스 사진 X
-        TIMG = {}
+        TIMG, TOSSM = {}, {}
     GUIDE_NAV.clear()  # 11/2 가이드 '고르는 법 보기' — 칸·딜 쪽·홈·/c/
     for g in guides_load():
         GUIDE_NAV[g.get("related_c") or ""] = GUIDE_NAV.get(g.get("related_c") or "", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])} — 고르는 법 보기</a>'
@@ -3237,7 +3262,7 @@ def build(posts, out="docs"):
               today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), rehot=("🔁 다시 특가", "특가 가격으로 다시 돌아온 상품", [x for x in it if x[2][0] == 0 and x[2][4]], ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
     for slug, (head, desc, xs, mall) in ls.items():
         for u, k, ti, sd, body, ld in (mall_page(slug, head, desc, xs, recs) if mall else list_pages(slug, head, desc, xs, mall, recs)):
-            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", head=ld and ld_tag(ld) or ""))
+            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", head=ld and ld_tag(ld) or "", dis=SHOP_NOTES["toss"] if slug == "toss" else ""))  # 토스 쪽 맨 위 = 토스 대가성 문구만(다른 몰 이름 X — Q 11/5)
             urls.append((u, latest))
         n = 1 if mall else max(1, -(-len(xs) // PER))
         for d in os.listdir(f"{out}/c/{slug}"):  # 목록이 줄면 뒤쪽 옛 쪽(c/이름/N/) 지움 — 남으면 옛 카드·자기 canonical로 검색에 남음
@@ -3357,7 +3382,7 @@ def build(posts, out="docs"):
             shutil.rmtree(f"{out}/link/{d}")
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
     urls += guide_pages(out, today)  # 11/2 /guide/ 비교 가이드(색인 O · lastmod = 고친 날·가격 바뀐 날)
-    urls += series_pages(posts, out, today, ls["toss"][2] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
+    urls += series_pages(posts, out, today, [x for x in ls["toss"][2] if not x[1].get("tid")] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     short_pages(out, {**{k: v[0] for k, v in ls.items()}, "women": "여성용품 → 생필품"})  # 11/1 짧은 주소(/<칸> → /c/<칸>/ — 사이트맵 X)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
