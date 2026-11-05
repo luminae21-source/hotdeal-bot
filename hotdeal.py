@@ -594,7 +594,8 @@ SHELF_LINE_PROMPT = """핫딜픽 사이트 진열 상품마다 짧은 한 줄을
 - 그 상품의 이름·용량·구성에서 나온 말(다른 상품에 붙여도 말이 되는 일반적인 말 X). 말장난·의인화·일상 장면 OK.
 - 숫자는 상품 이름이나 '오늘 있었던 일'에 있는 것만. 가격·할인·최저가·순위 말 X.
 - 써 본 척(써 보니·먹어 보니·샀는데)·효능·건강·과장(역대급·무조건·인생템)·재촉(지금 바로·서두르세요)·비꼬기·성별 고정관념 X.
-- '오늘 있었던 일'은 그 상품과 맞을 때만 곁들이기(억지로 X · 사실 그대로 · 경험담 X).
+- '오늘 있었던 일'은 그 상품과 맞을 때만 곁들이기(억지로 X · 사실 그대로 · 경험담 X). 그 밖의 장면은 지어내지 않기('~보니 …비었어요' X).
+- 화장품 = 쓰임·구성(용량·개수·세트·쓰는 순서)만 — 피부 상태·고민 말(당김·건조·트러블·민감 등) X.
 - 줄끼리 첫 어절·끝맺음이 겹치지 않게.
 최근 쓴 줄(겹치지 않게): {recent}"""
 
@@ -627,7 +628,7 @@ def shelf_custom(pl, picks, used, now):
     for x, l in zip(picks, list(r) + [""] * len(picks)):
         l = re.sub(r"\s+", " ", str(l or "")).strip()
         nums = re.findall(r"\d[\d,.]*", l)
-        bad = not 4 <= len(l) <= 30 or l in seen_ or re.search(rf"{VOICE_BAN}|{TH_PUSH}|최저|할인|%|[\d,]+\s*원|역대급|무조건|인생템|지금\s*바로|서두르", l) or rude(l) or sex_bad(l, x[5]) \
+        bad = not 4 <= len(l) <= 30 or l in seen_ or re.search(rf"{VOICE_BAN}|{TH_PUSH}|최저|할인|%|[\d,]+\s*원|역대급|무조건|인생템|지금\s*바로|서두르", l) or rude(l) or sex_bad(l, x[5]) or made_up(l, facts) or skin_bad(l, x[5]) \
             or not all(n in x[5] or any(n in f for f in facts) for n in nums)
         out.append("" if bad else l)
         seen_.add(l)
@@ -4218,6 +4219,7 @@ TH_LIST_Q = ("여러분 장바구니 1순위는 뭐예요?", "이 중에 하나�
 TH_LIST_PROMPT = """Threads 묶음 글에 들어갈 짧은 말을 써 주세요(10/31 진우 '게시글을 사람들이 보고 싶게'). 시간대: {when}. 상품(순서대로):
 {rows}
 - hook: 둘째 줄 상황 훅 1줄 — 이 시간대에 상황이 떠오르게{theme}(26자 안 · 숫자·가격·상품명 X · 예: '퇴근길 장바구니, 1개 값으로 줄 세웠어요' · '새벽에 생각난 김에 쟁여 둘 것')
+- 우리가 겪은 일처럼 쓰지 않기('저녁 먹고 보니 욕실 선반이 비었어요'·'~했더니'·'~샀어요' X — 없었던 장면 X). 화장품 c = 쓰임·구성(용량·개수·세트·쓰는 순서)만, 피부 상태·고민 말(당김·건조·트러블·민감 등) X.
 - c: 상품마다 {buy}(목록과 같은 개수·순서 · 18자 안 · 친근한 존댓말 ~요 · 숫자는 상품 이름에 있는 것만(80L·100매처럼) · 같은 말 두 번 X · 써 본 척·효능·'최저가'·'강추'·사라는 말 X)
 - q: 마지막 줄 진짜 질문 1개(24자 안 · 답하고 싶게 · 예: '여러분 장바구니 1순위는 뭐예요?')
 - 몰(쿠팡·토스·네이버 등) 이름·몰끼리 가격 비교 X(토스 약속: 다른 몰과 비교 없이)
@@ -4400,14 +4402,15 @@ def th_list_copy(seen, h, pick, cm, theme=""):
     last = seen.get("thlist", {}).get("hq") or ["", ""]  # 바로 앞 묶음 훅·질문 = 연달아 X(10/31)
     bad = lambda x, n: not x or len(x) > n or rude(x) or re.search(rf"\d|{TH_PUSH}|{TH_C_FAKE}|{TH_C_BAN}|최저|효과|효능|쿠팡|토스|네이버|올리브영|보다\s*(?:싸|저렴)", x)
     nd = lambda c, n: re.sub(r"\d[\d,.]*", lambda m: "" if re.search(rf"(?<![\d.,]){re.escape(m[0])}(?![\d.,])", n) else m[0], c)  # 상품 이름에 있는 숫자(80L·100매) = 사실이라 OK(10/31 15:35)
-    cbad = lambda c, n, a: bad(nd(c, n), TH_C_MAX) or len(c) > TH_C_MAX or arrive_bad(c, a) or sex_bad(c, n)
+    tf = today_fit(" ".join([theme, *names]))  # 11/5 K: 장면 = 오늘 사실 그대로일 때만
+    cbad = lambda c, n, a: bad(nd(c, n), TH_C_MAX) or len(c) > TH_C_MAX or arrive_bad(c, a) or sex_bad(c, n) or made_up(c, tf) or skin_bad(c, n)
     ai = False
     try:
         r = ai_json(TH_LIST_PROMPT.format(when={1: "새벽", 12: "점심", 15: "오후", 18: "퇴근 시간"}.get(h, "낮"), rows="\n".join(f"{k}. {n}" + (f" ({a})" if a else "") for k, (n, a) in enumerate(zip(names, arr), 1)),
                                           fun=TH_FUN.replace("\n", "\n- "), buy=BUY_LINE, theme=f" · 이 묶음 주제({theme})가 보이게" if theme else ""),
                     {"hook": {"type": "string"}, "c": {"type": "array", "items": {"type": "string"}}, "q": {"type": "string"}})
         h2, q2 = (re.sub(r"\s+", " ", str(r.get(k) or "")).strip() for k in ("hook", "q"))
-        hook, q = (hook if bad(h2, 26) or h2 == last[0] else h2), (q if bad(q2, 24) or not q2.endswith("?") or q2 == last[1] else q2)
+        hook, q = (hook if bad(h2, 26) or h2 == last[0] or made_up(h2, tf) or any(skin_bad(h2, n) for n in names) else h2), (q if bad(q2, 24) or not q2.endswith("?") or q2 == last[1] else q2)
         for (p, *_), c, n, a in zip(pick, r.get("c") or [], names, arr):
             c = re.sub(r"\s+", " ", str(c)).strip()
             if not cbad(c, n, a):  # 도착 말 = 로켓·새벽 근거 있을 때만 · 성별 고정관념 X
@@ -5783,6 +5786,7 @@ TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주�
 - 사람이 말하듯, 이걸 고르는 게 왜 합리적인지 — 숫자를 쓴다면 아래 재료에 있는 숫자 1개만(단위가·리뷰 수·기록 등 · 재료에 없는 숫자·가격 X) (11/5 진우 '같은 멘트만 하지 말고 합리적인 선택임을 느끼게').
 - '최근 줄'과 첫 어절·끝맺음을 다르게.
 - 짧게(읽는 사람 기준) · 유머러스하게 — 말장난·의인화·일상 장면 OK, 비꼬기·비하·성별 고정관념 X.
+- 우리가 겪은 일처럼 쓰지 않기('~보니 …비었어요'·'~했더니' X — 없었던 장면 X, 그날 장면은 '오늘 있었던 일'에 있는 사실 그대로만). 화장품 = 쓰임·구성만, 피부 상태·고민 말(당김·건조·트러블·민감 등) X.
 - 한 문장, 폰 한 줄(20자 안팎). 이모지는 0~1개.
 - 써 본 척(제가·나도·써보니·먹어보니·샀는데·질렀음), 효능·건강·의학 말, 과장·조급(역대급·무조건·손해·마지막 기회), 재촉·클릭 유도(클릭·눌러·지금 바로 구매), 링크·댓글·광고 말 쓰지 않기.
 - '최근 줄'과 다른 문장으로.
@@ -5819,6 +5823,7 @@ TH_HOOK_PROMPT = """Threads 핫딜 글 첫 줄(훅) 1개를 써 주세요. 친�
 - 말투 예: '집에 휴지 떨어지면 세상 무너지는 거 저만 그래요? 🧻' · '라면 물 올려놓고 생각났다면… 지금이 쟁일 때예요 🍜' (아래 재미 예시 말도 존댓말로)
 - 가격·숫자 X. 써 본 척(써 보니·먹어 보니·샀는데)·나는/저는, 효능·건강, 과장('필수템'·'강추'·'최저가')·재촉('지금 안 사면 손해'·'지금 바로'), 링크·광고 말 X.
 - 쓰는 곳·몸 부위(얼굴·세안·피부·발 등)는 상품명에서 바로 알 수 있을 때만(모르면 보관·떨어짐·구성 장면).
+- 우리가 겪은 일처럼 쓰지 않기('~보니 …비었어요'·'~했더니' X — 없었던 장면 X). 화장품 = 쓰임·구성만, 피부 상태·고민 말(당김·건조·트러블·민감 등) X.
 - {fun}
 
 상품명: {name}"""
@@ -6207,7 +6212,7 @@ def th_voice(seen, text, link, src=None):
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
             and not th_say(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not use_bad(s, name) and norm(s) not in st.get("f", []) and not th_rep(re.sub("|".join(map(re.escape, names)) or "^$", "", s), st.get("b", []) + st.get("ht", [])) \
             and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", f"{s}\n{hook}")) \
-            and not arrive_bad(s, arr) and not sex_bad(s, name)  # Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
+            and not arrive_bad(s, arr) and not sex_bad(s, name) and not made_up(s, tf) and not skin_bad(s, name)  # 11/5 K 지어낸 장면·화장품 피부 고민 X · Z 계절·기온 금지어 · Y-4 훅과 같은 낱말 X · II+ 무례(ㅋㅋ = 훅과 합쳐 1번)
         arr = "" if toss else arrive(full, link)  # 도착 근거(쿠팡 로켓·새벽 표시만)
         prompt = TH_TONE_PROMPT + TH_FRIEND + "\n- 내용 = " + BUY_LINE + (f" — 이 상품 도착 표시: {arr}" if arr else " — 이 상품은 로켓·새벽 도착 표시 없음(배송·도착 말 X)") \
             + "\n- " + TH_TONES[tone][1] + " — 말끝·결만 이렇게(내용은 위 한 줄 1개)" + "\n- " + TONE_RULE.replace("이모지 0~2개", "이모지 0~1개").replace("가격·숫자는 재료 그대로 · ", "") + ("\n- 올리브영 딜: 권유·후기·추천·효과 말 X." if oy else "") \
@@ -6289,7 +6294,7 @@ def th_hook(seen, name, num, ban, names):
                     break
             plain = re.sub("|".join(map(re.escape, names)) or "^$", "", h)
             if h and not re.search(rf"\d|{TH_PRICE_WORD}|값|가격", h) and th_w(h) <= TH_HOOK_W and len(h) <= TH_HOOK_LEN and not th_say(h) and len(re.findall(VOICE_EMOJI, h)) <= 2 and not re.search(f"{ban}|{TH_HOOK_BAN}", plain) and (k == 9) == bool(re.search(TH_QM, h)) \
-                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and (season_fit(name) or not re.search(TH_HOOK_SEASON, plain)) and not rude(plain) and not use_bad(h, name) and not th_rep(plain, seen.get("thvoice", {}).get("b", []) + seen.get("thvoice", {}).get("ht", [])):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
+                    and not h.startswith(VOICE_LABEL) and not season_bad(plain) and (season_fit(name) or not re.search(TH_HOOK_SEASON, plain)) and not rude(plain) and not use_bad(h, name) and not made_up(h, today_fit(name)) and not skin_bad(h, name) and not th_rep(plain, seen.get("thvoice", {}).get("b", []) + seen.get("thvoice", {}).get("ht", [])):  # Z: 계절·기온 금지어(10/26 생수 '날 더워지면') = 다음 종류로
                 return h, k
         except Exception as e:
             print("th hook 다음 종류로", clip(repr(e), 80))
@@ -9028,6 +9033,29 @@ def use_bad(line, name):
     """ZZ ③ 쓰는 곳·몸 부위가 상품명(+ 종류로 뻔한 곳 USE_OK)에 없으면 지어낸 쓰임새(디펜턴 앰플 '세안') -> 그 낱말 · 없으면 None."""
     ok = (name or "") + " " + " ".join(w for rx, w in USE_OK if re.search(rx, name or ""))
     return next((w for w in re.findall(TH_USE, line or "") if w not in ok), None)
+
+
+_PAST = "".join(c for c in map(chr, range(0xAC00 + 20, 0xD7A4, 28)) if c not in "있겠셨")  # 받침 ㅆ 글자(했·었·봤·샀 — 지난 일) · 있(있어요)·겠(좋겠어요)·셨(보셨어요? = 읽는 사람) 빼고
+TH_MADE = rf"보니까?|봤더니|했더니|갔더니|왔더니|[{_PAST}](?:어요|더니|는데|더라|던|음)"  # 11/5 진우 '없었던 일을 만들지 말고 실제 일에 맞추어서' — '저녁 먹고 보니 욕실 선반이 비었어요' 같은 우리가 겪은 일
+TH_MADE_OK = r"(?:기록|가격표|가격|표기|구성|단가|숫자|리뷰|이름)\s*(?:을|를|만)?\s*(?:보니까?|봤더니)|(?:내려|올라|떨어|들어|돌아|다시\s*열려)\s*(?:왔|갔|졌|렸)|줄\s*세웠|(?:모아|골라|정리해)\s*봤"  # 우리 기록·표기를 본 말 · 값·재고 바뀜 · 우리가 고른 일 = 사실
+TH_SKIN = r"당김|당기|땅기|건조|푸석|각질|트러블|민감|예민|여드름|뾰루지|피지|모공|번들|유분|주름|탄력|칙칙|잡티|기미|홍조|붉어|붉은|진정|자극|가려|건성|지성|복합성|수분\s*부족|촉촉|보습|매끈|윤기|광채|톤\s*업|화사"  # 피부 상태·고민 = 효능처럼 읽힘(11/5 Cowork K)
+
+
+def made_up(s, facts=()):
+    """지어낸 장면·우리가 겪은 일(…보니·…했더니·…비었어요·…샀어요) -> 걸린 말 · '' = 통과. 오늘 사실(today.json)을 그대로 담은 줄 = OK(그날 장면은 그 사실일 때만)."""
+    if not s or any(f and f in s for f in facts):
+        return ""
+    m = re.search(TH_MADE, re.sub(TH_MADE_OK, "", s))
+    return m[0] if m else ""
+
+
+def skin_bad(s, name):
+    """화장품 줄(누구에게·한 줄·말투·훅) = 쓰임·구성(용량·개수·세트·쓰는 순서)만 — 피부 상태·고민 낱말(TH_SKIN) X -> 걸린 말 · 상품 이름에 든 낱말('보습 크림') = 사실이라 OK · 화장품 아니면 ''."""
+    n = name or ""
+    if not (re.search(BEAUTY, n) or re.search(TH_BEAUTY_MORE, n)) or re.search(TH_BEAUTY_NOT, n):
+        return ""
+    m = re.search(TH_SKIN, re.sub("|".join(map(re.escape, re.findall(r"[가-힣A-Za-z]{2,}", n))) or "^$", "", s or ""))
+    return m[0] if m else ""
 
 
 STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X

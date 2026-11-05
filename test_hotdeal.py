@@ -12824,3 +12824,18 @@ from PIL import Image as I149
 p149 = os.path.join(tempfile.mkdtemp(), "t.jpg"); C149.make([{"title": "토스 상품 A", "unit": ""}], "11월 5일", p149, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
 im149 = I149.open(p149).convert("RGB"); assert any(b > 150 and r < 120 and g < 170 for r, g, b in (im149.getpixel((x, y)) for x in range(96, 176, 4) for y in range(140, 220, 4))), "💙 그림 없음"
 assert "_em_text(d, im, (X0, 136), head" in inspect.getsource(C149.make)
+# 9-150 (11/5 22:1x Cowork K — 진우 '없었던 일을 만들지 말고 실제 일에 맞추어서'): 훅·말투·한 줄 = 우리가 겪은 일로 읽히는 서술 X(오늘 사실 그대로 = OK) · 화장품 줄 = 쓰임·구성만(피부 상태·고민 말 X)
+assert H.made_up("저녁 먹고 보니 욕실 선반이 비었어요") and H.made_up("어제 샀더니 좋았어요") and H.made_up("벌써 11월이 됐어요")  # 21:13 '🆕 새로 들어온 화장품' 훅 = 걸림
+assert not any(H.made_up(x) for x in ("다 떨어졌어요?", "기록 보니 다시 내려온 가격이에요", "새로 들어왔어요", "퇴근길 장바구니, 1개 값으로 줄 세웠어요", "냉장고에 쟁여 두기 좋겠어요", "리필도 있어요", "다들 챙기셨어요?"))  # 기록·재고·우리가 고른 일·읽는 사람에게 묻기 = OK
+assert not H.made_up("오늘 아침 기온 영하 2도였어요", ["오늘 아침 기온 영하 2도"]) and H.made_up("오늘 아침 눈이 왔어요", ["오늘 아침 기온 영하 2도"])  # 오늘 사실 그대로 = OK · 없는 장면 = X
+assert not [l for ls in H.TH_TONE_POOL5.values() for l in ls if H.made_up(l)]  # 기본 줄은 안 걸림
+n150 = "더마올로지 하이드로 베리어 휩 클렌징폼 230ml 4개"
+assert H.skin_bad("세안 후 당기는 느낌이 걱정되는 분이 보기 좋아요", n150) and H.skin_bad("세안 후 당김 걱정되는 분께 맞아요", n150) and not H.skin_bad("230ml 4개라 넉넉해요", n150)  # 화장품 '누구에게' = 피부 고민 X · 구성 OK
+assert not H.skin_bad("빨래 건조 빨리 돼요", "건조대 스탠드형") and not H.skin_bad("보습 크림이라 겨울용", "보습 크림 100ml")  # 화장품 아님 · 이름에 든 낱말 = OK
+ai150, H.ai_json = H.ai_json, lambda prompt, props, img=None: {"hook": "점심 먹고 보니 욕실 선반이 비었어요", "c": ["세안 후 당기는 느낌이 걱정되는 분이 보기 좋아요", "120ml 4개라 넉넉해요"], "q": "다들 세안은 몇 단계예요?"}
+P150 = [{"text": f"🔥 [토스] {n150} (10,900원)", "url": "https://toss.shopping/_m/k1"}, {"text": "🔥 [토스] 신통방통 크림 120ml 4개 (29,723원)", "url": "https://toss.shopping/_m/k2"}]
+cm150 = {}; hk150, q150 = H.th_list_copy({}, 21, [(p, "", "", 2) for p in P150], cm150, "화장품")
+H.ai_json = ai150
+assert hk150 != "점심 먹고 보니 욕실 선반이 비었어요" and cm150["https://toss.shopping/_m/k1"] == H.BUY_CHECK and cm150["https://toss.shopping/_m/k2"] == "120ml 4개라 넉넉해요" and q150 == "다들 세안은 몇 단계예요?", (hk150, cm150)  # 걸린 훅 = 기본 말 · 걸린 줄 = 확인할 점
+assert all("우리가 겪은 일처럼 쓰지 않기" in x and "당김·건조·트러블·민감" in x for x in (H.TH_LIST_PROMPT, H.TH_HOOK_PROMPT, H.TH_TONE_PROMPT)) and "당김·건조·트러블·민감" in H.SHELF_LINE_PROMPT
+assert "made_up(s, tf) and not skin_bad(s, name)" in inspect.getsource(H.th_voice) and "made_up(h, today_fit(name)) and not skin_bad(h, name)" in inspect.getsource(H.th_hook) and "made_up(l, facts) or skin_bad(l, x[5])" in inspect.getsource(H.shelf_custom)
