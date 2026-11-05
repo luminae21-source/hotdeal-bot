@@ -6007,8 +6007,9 @@ H.toss_shelf(s47); H.toss_shelf(s47); assert names47() == ["하루 물티슈", "
 H.RUN["treuse"] = True; n47 = len(calls47); H.toss_shelf(s47); assert len(calls47) == n47; H.RUN.pop("treuse")  # 토스 점검(재사용 모드) = X
 H.TOSS_SITE = False; H.toss_shelf(s47); assert len(calls47) == n47; H.TOSS_SITE = True
 po47 = json.load(open("posts.json")); assert not [i for i, _ in S40.day_deals(po47, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))] and not sent47  # 카드·인스타 X · 채널 X
-S40.build(po47, "site"); tz47 = open("site/c/toss/index.html").read()
-assert all(f"p/{i}.html" in tz47 for i in range(1, 5)) and "⭐" not in tz47  # 사이트 💙 토스 쪽에 진열(리뷰 X)
+S40.TOSS_API_SITE = True; S40.build(po47, "site"); tz47 = open("site/c/toss/index.html").read(); S40.TOSS_API_SITE = False  # 11/5 Q: 켰을 때 = 토스 몰 쪽 카드만(딜 쪽 p/ X — 쉐어링크로 바로)
+assert all(n in tz47 for n in names47()) and not any(f"p/{i}.html" in tz47 for i in range(1, 5)) and 'href="https://toss.im/_m/MADE20" rel="nofollow sponsored noopener"' in tz47 and "⭐" not in tz47  # 사이트 💙 토스 쪽에 진열(리뷰 X)
+S40.build(po47, "site"); assert not any(n in open("site/c/toss/index.html").read() for n in names47())  # 스위치 끔(지금) = 사이트 X
 H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS, H.TOSS_SITE = sv47[5:7]; os.chdir(cwd47)
 assert H.TOSS_SITE is False  # 보류 중(10/24 10시 Cowork — API 신청 범위)
 # 9-48) 쿠팡 진열 링크 변환 실패(10/24 10시 Cowork — 약 110개 중 9개 rCode 400): 진열 실패는 상품마다 DM 말고 하루 1번 묶어서(9시~, 상품 번호만) ·
@@ -12716,7 +12717,7 @@ assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 
 assert TU146 not in S.card(2, {**own146, "own": 0}, sh146) and TU146 not in S.card(3, {**own146, "url": "https://toss.shopping/_m/D"}, sh146) and S.PHOTO_CREDIT not in S.card(4, {**own146, "text": "🔥 [쿠팡] 수건 (9,900원)", "url": "https://link.coupang.com/a/X"}, sh146)  # API 상품·noimg·쿠팡 = 토스 사진 X
 dc146 = S.deal_card(1, own146); assert TU146 in dc146 and S.PHOTO_CREDIT in dc146 and dc146.index(S.PHOTO_CREDIT) < dc146.index('<div class="s">')  # 딜 쪽 = 사진 바로 아래 출처
 src146 = open(S.__file__, encoding="utf-8").read()
-assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .tbd .bdg{position:static" in src146 and 'toss_imgs(json.load(open(SEEN_FILE' in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
+assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .tbd .bdg{position:static" in src146 and 'TOSSM = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
 # own_end = 상세 확인 때 썸네일 원본을 seen tossid [8]에(사진 칸 없는 기록 먼저 확인)
 assert H.toss_thumb({"thumbnailUrl": TU146}) == TU146 and H.toss_thumb({"thumbnailUrl": "javascript:x"}) is None and H.toss_thumb({}) is None \
     and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)
