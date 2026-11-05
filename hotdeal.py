@@ -2454,9 +2454,10 @@ def guide_ev():
 def fill_slot_first(fr, posts, kst):
     """11/1 18시 묶음 '후보 1개'(남성 칸 🔥 78개 중 48시간 안 확인 2개): 3시간 안 묶음 칸(TH_LIST_GROUP f·m)이면 그 칸 상품을 cp_price가 먼저 확인.
     11/3 18시 '2개'(남성 칸 48시간 안 확인 32개 = 난방뿐 → 같은 종류·72시간 회전에 걸림): fr(cp_fill_due — 하루 상한·3일 채널 조건) 밖이라도
-    그 칸 🔥·👍 진열 상품 중 확인 24시간 지난 것도 먼저(디지털·운동 등 다른 소품목이 묶음에 들게 — API 상한 그대로)."""
+    그 칸 🔥·👍 진열 상품 중 확인 24시간 지난 것도 먼저(디지털·운동 등 다른 소품목이 묶음에 들게 — API 상한 그대로).
+    11/5 01시 'skip top1 2개' 2일째(공통 칸 48시간 안 확인 24개 중 72시간 회전·같은 종류·브랜드 뒤 2개) → 공통(c) 칸 01·15시 묶음도 같은 순서."""
     grp = next((TH_LIST_GROUP.get(h) for h in TH_LIST_GROUP if 0 < (h - kst.tm_hour) % 24 <= 3), None)
-    if grp in (None, "c"):
+    if grp is None:
         return set()
     gd, last, now = load(CAT_GENDER, {}), {p.get("url"): p for p in posts}, time.time()
     return {u for u, p in last.items() if th_group(gd, cat_of(p)) == grp and (u in fr or p.get("own") and p.get("shelf") and (p.get("st") == "hot" or p.get("stdy"))
