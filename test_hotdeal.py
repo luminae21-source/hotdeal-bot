@@ -12730,7 +12730,7 @@ mk146, it146 = cards.make, []
 cards.make = lambda items, d, out, **k: it146.append((items, out, k)) or open(out, "wb").write(b"jpg")
 hc146 = []
 H.http = lambda url, body=None, headers=None, method=None: hc146.append((url, body, method)) or json.dumps({"id": f"k{len(hc146)}"})
-H.ig_room, time.time, s146 = (lambda seen, now: 1), (lambda: N146), {"tossid": {"t": 1, "m": m146}}
+H.ig_room, time.time, s146 = (lambda seen, now, toss=False: 1), (lambda: N146), {"tossid": {"t": 1, "m": m146}}
 with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 - 3600)  # 19:40 = 시각 전
 assert "igtoss_2026-11-06" not in s146
 with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146)
@@ -12825,8 +12825,8 @@ p149 = os.path.join(tempfile.mkdtemp(), "t.jpg"); C149.make([{"title": "토스 �
 im149 = I149.open(p149).convert("RGB"); assert any(b > 150 and r < 120 and g < 170 for r, g, b in (im149.getpixel((x, y)) for x in range(96, 176, 4) for y in range(140, 220, 4))), "💙 그림 없음"
 assert "_em_text(d, im, (X0, 136), head" in inspect.getsource(C149.make)
 # 9-150 (11/5 22:1x Cowork K — 진우 '없었던 일을 만들지 말고 실제 일에 맞추어서'): 훅·말투·한 줄 = 우리가 겪은 일로 읽히는 서술 X(오늘 사실 그대로 = OK) · 화장품 줄 = 쓰임·구성만(피부 상태·고민 말 X)
-assert H.made_up("저녁 먹고 보니 욕실 선반이 비었어요") and H.made_up("어제 샀더니 좋았어요") and H.made_up("벌써 11월이 됐어요")  # 21:13 '🆕 새로 들어온 화장품' 훅 = 걸림
-assert not any(H.made_up(x) for x in ("다 떨어졌어요?", "기록 보니 다시 내려온 가격이에요", "새로 들어왔어요", "퇴근길 장바구니, 1개 값으로 줄 세웠어요", "냉장고에 쟁여 두기 좋겠어요", "리필도 있어요", "다들 챙기셨어요?"))  # 기록·재고·우리가 고른 일·읽는 사람에게 묻기 = OK
+assert H.made_up("저녁 먹고 보니 욕실 선반이 비었어요") and H.made_up("어제 샀더니 좋았어요")  # 21:13 '🆕 새로 들어온 화장품' 훅 = 걸림
+assert not any(H.made_up(x) for x in ("다 떨어졌어요?", "기록 보니 다시 내려온 가격이에요", "새로 들어왔어요", "퇴근길 장바구니, 1개 값으로 줄 세웠어요", "냉장고에 쟁여 두기 좋겠어요", "리필도 있어요", "다들 챙기셨어요?", "핫팩 쟁일 때 됐어요", "발 시린 계절이 왔어요", "다들 전기요 꺼냈어요?", "요즘 눈에 띄는 것만 골랐어요"))  # 기록·재고·우리가 고른 일·읽는 사람에게 묻기 = OK
 assert not H.made_up("오늘 아침 기온 영하 2도였어요", ["오늘 아침 기온 영하 2도"]) and H.made_up("오늘 아침 눈이 왔어요", ["오늘 아침 기온 영하 2도"])  # 오늘 사실 그대로 = OK · 없는 장면 = X
 assert not [l for ls in H.TH_TONE_POOL5.values() for l in ls if H.made_up(l)]  # 기본 줄은 안 걸림
 n150 = "더마올로지 하이드로 베리어 휩 클렌징폼 230ml 4개"
