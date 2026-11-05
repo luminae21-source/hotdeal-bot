@@ -1,16 +1,26 @@
 {
  "google": {
-  "at": "2026-11-06 03:08",
+  "at": "2026-11-06 04:05",
   "items": [
    {
+    "t": "예산",
+    "n": "100+",
+    "news": "추미애, 도의회서 전두환 소환 “존경하지 않는 분이지만…”"
+   },
+   {
+    "t": "알테오젠",
+    "n": "100+",
+    "news": "특징주, 알테오젠-바이오시밀러 테마 상승세에 7.48% ↑"
+   },
+   {
     "t": "수술",
-    "n": "200+",
+    "n": "500+",
     "news": "[단독] 기저질환 없던 60대, 무릎수술 다음날 사망"
    },
    {
     "t": "비트코인",
-    "n": "200+",
-    "news": "기요사키, 비트코인(BTC) 7만 5,000달러 부근 폭락에 추가 매수"
+    "n": "500+",
+    "news": "美 중간선거 끝나자… V 그린 비트코인 - 머니투데이"
    },
    {
     "t": "샌디스크 주가",
@@ -18,9 +28,14 @@
     "news": "SanDisk 주가가 급락하는 이유는?"
    },
    {
-    "t": "nasdaq",
+    "t": "tqqq",
     "n": "200+",
-    "news": "Dow tumbles 1,500 points, erasing its postelection rally;…"
+    "news": "ProShares UltraPro Short QQQ offers a tactical short-term…"
+   },
+   {
+    "t": "nasdaq",
+    "n": "500+",
+    "news": "Dow tumbles 1,600 points, erasing its postelection rally;…"
    },
    {
     "t": "세계 청년 대회",
@@ -30,27 +45,12 @@
    {
     "t": "마이크론 주가",
     "n": "200+",
-    "news": "마이크론, 대만 HBM 공장 건설 중단…삼성·SK하이닉스 수혜 촉각 By EBN"
+    "news": "마이크론, 메모리 가격 급등에도 주가 급락…AI 호황 속 커지는 반도체 시장의 역설"
    },
    {
     "t": "어선",
-    "n": "200+",
+    "n": "500+",
     "news": "울릉도 공해상 표류 북한 어선 발견…당국 조사中"
-   },
-   {
-    "t": "soxl stock",
-    "n": "100+",
-    "news": "Why is Direxion Daily Semiconductor Bear 3X Shares surging…"
-   },
-   {
-    "t": "vix",
-    "n": "200+",
-    "news": "Blue Chips Surge Past 2.8% as VIX Drops Below 18 While Oil…"
-   },
-   {
-    "t": "qld",
-    "n": "100+",
-    "news": "1003/9 Castlebar Street, Kangaroo Point, Qld 4169"
    }
   ]
  },
