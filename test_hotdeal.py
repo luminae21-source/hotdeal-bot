@@ -1832,6 +1832,8 @@ assert ".btn{display:flex;align-items:center;justify-content:center;min-height:5
 #      딜 쪽 = 썸네일 -> 이름(h1) -> 가격·절약 -> 큰 구매 버튼(가격) -> 왜 골랐나요 -> 같이 보면 좋은 딜 4개(최근 2일 제휴 딜, 같은 품목 먼저, 약한 딜·제휴 아님·같은 이름·자기 자신 빼고)
 assert S.saving("💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원, 10매당 51원)보다 7,210원 쌈") == ("쿠팡", "7,210원") and S.saving("싸요") is None
 assert S.unit_of({"text": "x\n💡 단위가격: 10매당 31원 — 쿠팡보다 쌈"}) == "10매당 31원" and S.unit_of({"text": "x", "unit": "롤당 1원"}) == "롤당 1원" and S.unit_of({"text": "x"}) == ""
+assert S.buy_label("[쿠팡] 만두 (16,580원)", {"t": "2026-11-02 10:40", "now": "18,480원"}, "18,480원") == "🛒 18,480원 구매하기" and S.buy_label("[쿠팡] 만두 (16,580원)", {"t": "2026-11-02 10:40"}) == "🛒 16,580원 구매하기 (11/2 가격)" \
+    and S.buy_label("[토스] 김 (9,900원)", {"t": "2026-11-02 10:40"}, "") == "🛒 구매하러 가기" and "buy_label(title, p, cur)" in inspect.getsource(S.deal_card)  # 11/5 Cowork C: 사이트 딜 쪽 버튼 = 지금 가격 · 없으면 글 가격 + 날짜 · 숨긴 가격 = X
 assert S.buy_label("[쿠팡] 휴지 (9,900원/무료)") == "🛒 9,900원 구매하기" and H.buy_label is S.buy_label and S.end_at({"t": "2026-10-10 21:35"}) == 1791644400  # 10/11 0시 KST
 mp = [{"t": td + " 09:00", "text": "🔥 [토스] 모나리자 미용티슈 300매 12입 (10,990원/무료)\n\n토스 9위\n💡 단위가격: 10매당 31원 — 쿠팡 같은 상품(18,200원)보다 7,210원 쌈\n⚠️ 확인할 점: 오늘 밤 12시까지", "url": "https://toss.shopping/_m/m"},
       {"t": td + " 09:10", "text": "🔥 [쿠팡] 코멧 화장지 30롤 (10,990원)", "url": "https://link.coupang.com/a/1", "s": 7},
@@ -6116,7 +6118,7 @@ assert open(f"{d50b}/today/2026-01-02/index.html").read().count('<li class="pk">
 sv51 = (H.http, H.th_post, time.time, H.POSTS, H.E.get("THREADS_TOKEN"), H.PICKS_FILE)
 d51 = tempfile.mkdtemp(); H.POSTS, H.PICKS_FILE = f"{d51}/posts.json", f"{d51}/picks.json"; H.E["THREADS_TOKEN"] = "t"
 json.dump([{"t": "2026-10-24 09:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,990원/무료)", "url": "https://link.coupang.com/a/E", "own": 1, "now": "7,490원", "chk": "10/24 9시"},
-           {"t": "2026-10-24 09:30", "text": "🔥 [토스] 모나리자 미용티슈 (10,990원)", "url": "https://toss.shopping/_m/M", "own": 1},
+           {"t": "2026-10-24 09:30", "text": "🔥 [토스] 모나리자 미용티슈 (10,990원)", "url": "https://toss.shopping/_m/M", "own": 1, "mid": 9},
            {"t": "2026-10-24 08:00", "text": "🔥 [G마켓] 커뮤니티 (1원)", "url": "https://g"},
            {"t": "2026-10-23 10:00", "text": "🔥 [토스] 어제 토스 상품 (5,000원)", "url": "https://toss.shopping/_m/Y", "own": 1}], open(H.POSTS, "w"), ensure_ascii=False)
 json.dump({"2026-10-24": [0, 1, 3]}, open(H.PICKS_FILE, "w"))
@@ -6127,12 +6129,15 @@ time.time = lambda: TK("2026-10-24 10:20"); s51 = {}; H.pick_post(s51); assert n
 time.time = lambda: TK("2026-10-24 10:40"); H.pick_post(s51)
 assert h51 == [("https://hotdealpick.kr/today/2026-10-24/", "HEAD")] and len(p51) == 1 and p51[0][1] == "https://hotdealpick.kr/today/2026-10-24/?ref=th", (h51, p51)
 t51 = p51[0][0]
-assert t51.startswith(H.aff_note("https://link.coupang.com/a/E")) and H.aff_note("https://toss.shopping/_m/M") in t51.split("🎯")[0]  # 대가성 문구 맨 앞(상품마다 그 프로그램)
-assert "🎯 오늘의 픽 2 (10/24)" in t51 and "1️⃣ 곰곰 특란 30구 7,490원 (10/24 9시 가격)" in t51 and f"2️⃣ 모나리자 미용티슈 10,990원 · {H.toss_when('2026-10-24 09:30')}" in t51 and "커뮤니티" not in t51 and "어제 토스" not in t51 and t51.count("http") == 1 + t51.split("🎯")[0].count("http")  # 링크 = 날짜 쪽 1개
+assert t51.startswith(H.aff_note("https://link.coupang.com/a/E")) and H.TOSS_NOTE not in t51  # 대가성 문구 맨 앞(상품마다 그 프로그램) · 11/5 B①: 토스 + 다른 몰 = 토스 빼고(개별 글 줄)
+assert "🎯 오늘의 픽 1 (10/24)" in t51 and "1️⃣ 곰곰 특란 30구 7,490원 (10/24 9시 가격)" in t51 and "모나리자" not in t51 and "커뮤니티" not in t51 and "어제 토스" not in t51 and t51.count("http") == 1 + t51.split("🎯")[0].count("http")  # 링크 = 날짜 쪽 1개
+assert [x["u"] for x in s51["thtx"]["q"]] == ["https://toss.shopping/_m/M"]  # 뺀 토스(채널 글 있음) = 토스 개별 글 줄
 H.pick_post(s51); assert len(p51) == 1  # 하루 1번
 s51b = {}; H.http = lambda url, *a, **k: (_ for _ in ()).throw(OSError("404")); H.pick_post(s51b); assert len(p51) == 1 and not any(k.startswith("thpick_") for k in s51b)  # 날짜 쪽 배포 전 = 다음 실행
 H.http = lambda url, *a, **k: ""; s51c = {"bundles": {"t": TK("2026-10-24 10:35"), "ts": [TK("2026-10-24 10:35")]}}; H.pick_post(s51c); assert len(p51) == 1  # 다른 묶음 글 10분 안 = 다음 실행
 json.dump({"2026-10-23": [0]}, open(H.PICKS_FILE, "w")); H.pick_post({}); assert len(p51) == 1  # 오늘 픽 없음(사이트가 아직 안 고름) = X
+json.dump({"2026-10-24": [1, 3]}, open(H.PICKS_FILE, "w")); H.pick_post({}); t51b = p51[-1][0]  # 토스만 = 그대로(토스 문구 + 게시 시점)
+assert len(p51) == 2 and t51b.startswith(H.TOSS_NOTE) and "🎯 오늘의 픽 1 (10/24)" in t51b and f"1️⃣ 모나리자 미용티슈 10,990원 · {H.toss_when('2026-10-24 09:30')}" in t51b and H.DISCLOSURE not in t51b, t51b
 H.http, H.th_post, time.time, H.POSTS = sv51[:4]; H.PICKS_FILE = sv51[5]; H.E.pop("THREADS_TOKEN") if sv51[4] is None else H.E.update(THREADS_TOKEN=sv51[4])
 assert "pick_post, " in open(H.__file__).read().split("for step in (", 1)[1].split("):\n", 1)[0] and "pick_post" in H.ALERT_STEPS  # 메인 실행 단계 · 실패 알림
 # (Z 10/26: 오늘 글이 아닌 토스 = 게시 시점 가격·1일 원칙이라 픽에서 뺌 — 어제 토스 상품 X)
@@ -11868,7 +11873,11 @@ assert why127(f"{H.DISCLOSURE}\n\n수건 9,900원\n{W127}\n🛒 {TL127}") == ["a
 assert why127(f"{N127}\n\n토스 수건 9,900원\n🛒 {TL127}") == ["b"]  # b 게시 시점 줄
 assert why127(f"{N127}\n\n토스 수건 9,900원 — 쿠팡보다 1,000원 싸요\n{W127}\n🛒 {TL127}") == ["c"] and why127(f"{N127}\n\n엑티몬 충전기 6,000원\n{W127}\n{TL127}") == []  # c 다른 몰 이름(낱말 안 '티몬' X)
 mix127 = f"{H.DISCLOSURE}\n{N127}\n\n생필품 1개 값 순\n\n1️⃣ 화장지 9,900원\n👉 {CL127}\n\n2️⃣ 키친타월 8,900원\n👉 {TL127}\n\n{W127}"
-assert why127(mix127) == ["d"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음"), kind="top15") == ["d"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음")) == []  # d 1개 값 순(글 말·묶음 종류)
+assert why127(mix127) == ["d", "f"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음"), kind="top15") == ["d", "f"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음")) == ["f"]  # d 1개 값 순(글 말·묶음 종류) · f 쿠팡과 한 글(11/5)
+pk127 = f"{H.DISCLOSURE}\n{N127}\n\n🎯 오늘의 픽 3 (11/6)\n\n1️⃣ 햅쌀 10kg 29,900원\n2️⃣ 토스 여주차 9,900원 · {W127}\n\n👉 {H.SITE}today/2026-11-06/?ref=th"
+assert all(re.search(H.TOSS_EFFECT, n) for n in ("센토 프라임 고불소 구취케어 치약", "맘스럽 아토워시", "피부 재생크림", "탄력 크림", "잇몸 치약")) and not any(re.search(H.TOSS_EFFECT, n) for n in ("모나리자 미용티슈", "고탄력 레깅스", "재생펄프 화장지")) \
+    and 'not re.search(TOSS_EFFECT, x["displayName"])' in inspect.getsource(H.toss_deals)  # 11/5 Cowork D: 토스 묶음·시리즈·리스트 이름 효능 낱말 X
+assert why127(pk127) == ["f"] and why127(pk127.replace(H.DISCLOSURE + "\n", "")) == [] and why127(pk127.replace(N127 + "\n", "")) == []  # 11/5 B①: 토스 주소 없이 사이트 링크만이어도 토스+쿠팡 문구 = 섞임 · 토스만·쿠팡만 = X
 time.time = lambda: TK("2026-11-02 12:00"); assert why127(ok127) == ["e"]; time.time = lambda: TK("2026-11-06 12:00")  # e 토스 점검 기간(10/30~11/4)
 assert why127(f"👉 {TL127}", reply=True) == [] and why127(f"👉 {TL127} 쿠팡", reply=True) == ["c"]  # 링크 댓글 = a·b는 본 글이 봄(c·d·e는 그대로)
 cut127 = H.toss_cut(mix127, {"inline_keyboard": [[{"text": "1", "url": CL127}], [{"text": "2", "url": TL127}]]})
@@ -12048,6 +12057,13 @@ s129t, o129 = {}, io.StringIO(); time.time = lambda: TK("2026-11-07 13:30")
 with contextlib.redirect_stdout(o129): H.toss_deals(s129t, True)
 assert "toss gap 미룸 · tossbest 6분 뒤" in o129.getvalue() and "tossbest_20261107_13.5" not in s129t, o129.getvalue()
 time.time = lambda: TK("2026-11-07 13:36"); H.toss_deals(s129t, True); assert "tossbest_20261107_13.5" in s129t  # 15분 지나면 그 회차 그대로
+po129, tk129 = H.POSTS, H.E.pop("THREADS_TOKEN", None); H.POSTS = tempfile.mkdtemp() + "/p.json"  # 11/5 Cowork B②(12:00:37 TOP3 토스 2 = 쿠팡 채널 글 14분 뒤): 토스 든 텔레그램 TOP도 시차 — 회차째 다음 실행
+json.dump([{"t": f"2026-11-07 11:0{k}", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 토스 상품{k} (9,900원)\n\n좋음", "url": f"https://toss.shopping/_m/T{k}", "mid": 100 + k, "pop": 5} for k in range(3)], open(H.POSTS, "w"), ensure_ascii=False)
+s129p, o129, n129 = {}, io.StringIO(), len(tg129); time.time = lambda: TK("2026-11-07 13:30")
+with contextlib.redirect_stdout(o129): H.top_deals(s129p)
+assert len(tg129) == n129 and "top_20261107_12" not in s129p and "텔레그램 TOP 토스 3개 = 쿠팡 채널 글 15분 안" in o129.getvalue(), o129.getvalue()
+time.time = lambda: TK("2026-11-07 13:36"); H.top_deals(s129p); assert len(tg129) == n129 + 1 and "TOP3" in tg129[-1] and "top_20261107_12" in s129p, tg129[n129:]
+H.POSTS = po129; H.E.update(THREADS_TOKEN=tk129) if tk129 else None
 s129g = {}; H.toss_guard_day(s129g); assert s129g["tgmall"]["cp"] == TK("2026-11-07 13:20")  # 실행 끝 = seen(다음 실행이 봄)
 H.RUN.pop("tgmall", None); H.RUN.pop("thmall", None)
 # ② 개별 글 번갈아: 쿠팡·쿠팡·토스 후보 = 쿠팡 → 토스 → 쿠팡(바로 앞 개별 글과 다른 몰 먼저 · 한쪽 없으면 같은 몰 연속)

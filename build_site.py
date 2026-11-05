@@ -422,10 +422,17 @@ def unit_of(p):
     return p.get("unit") or (m.group(1).strip() if m else "")
 
 
-def buy_label(title):
-    """구매 버튼에 가격(10/10 진우 'UI 편하게' → 가격·구매 먼저): '[쿠팡] 휴지 (9,900원/무료)' -> '🛒 9,900원 구매하기'. 가격 모르면 예전 문구."""
+def buy_label(title, p=None, cur=None):
+    """구매 버튼에 가격(10/10 진우 'UI 편하게' → 가격·구매 먼저): '[쿠팡] 휴지 (9,900원/무료)' -> '🛒 9,900원 구매하기'. 가격 모르면 예전 문구.
+    p = 사이트 딜 쪽(11/5 Cowork C — p/3085 버튼 16,580원 · 지금 18,480원): 지금 가격(진열 cur · 글 now) 있으면 그것 · 없으면 글 가격 + '(M/D 가격)' · 진열이 가격을 숨김(cur '') = 가격 X."""
+    if p is not None and cur == "":
+        return "🛒 구매하러 가기"
+    now = p is not None and (cur if cur and p.get("now") else (re.match(r"[\d,]+원", p.get("now") or "") or [None])[0])
+    if now:
+        return f"🛒 {now.replace(' ', '')} 구매하기"
     m = re.search(r"\d[\d,]*\s*원", parse(title)[2])
-    return f"🛒 {m.group(0).replace(' ', '')} 구매하기" if m else "🛒 구매하러 가기"
+    day = f" ({int(p['t'][5:7])}/{int(p['t'][8:10])} 가격)" if p is not None and re.match(r"\d{4}-\d\d-\d\d", p.get("t") or "") else ""
+    return f"🛒 {m.group(0).replace(' ', '')} 구매하기{day}" if m else "🛒 구매하러 가기"
 
 
 def toss_share(url):
@@ -2066,7 +2073,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
     elif p["text"].startswith("📋") and (p.get("url") or "").startswith("https://t.me/"):  # 행사 목록 글(url = 채널 글) = 구매 버튼 X
         btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="noopener" target="_blank">📢 텔레그램에서 전체 목록 보기</a>'
     else:
-        btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow {"sponsored " if aff(p["url"]) else ""}noopener" target="_blank">{buy_label(title)}</a>' if p.get("url") else ""
+        btn = f'<a class="btn" href="{html.escape(p["url"])}" rel="nofollow {"sponsored " if aff(p["url"]) else ""}noopener" target="_blank">{buy_label(title, p, cur)}</a>' if p.get("url") else ""
     main, _, ship = price.partition("/")
     posted, main = main.strip(), main if cur is None else cur  # TT-2: 진열 상태 가격(카드와 같음 — 확인가·토스 대기 숨김 '') = h1·큰 가격(올린 가격과 다른 '지금 가격'이 같은 쪽에 X)
     ship = {"무료": "무료배송", "무배": "무료배송"}.get(ship.strip(), ship.strip())

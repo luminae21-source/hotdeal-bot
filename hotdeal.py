@@ -882,8 +882,9 @@ def toss_why(text, links=(), kind="", reply=False):
     raw = html.unescape(text or "")
     us = re.findall(URL_ANY, raw) + [u for u in links if u]
     host = lambda u: urllib.parse.urlsplit(u).netloc
+    cpmix = TOSS_NOTE in raw and (DISCLOSURE in raw or any(host(u).endswith(("coupang.com", "coupa.ng")) for u in us))  # 11/5 Cowork B①: 토스 문구 + 쿠팡 문구·주소 = 한 글(토스 주소 없이 사이트 링크만이어도)
     if not any(host(u) in TOSS_HOSTS for u in us):
-        return []
+        return ["f 쿠팡과 한 글"] if cpmix else []
     lines = re.sub(r"<[^>]+>", "", raw).split("\n")
     disc = lambda l: l.strip().removeprefix("[광고]").strip().startswith(NOTE_STARTS[:2])  # 대가성 문구 줄(c 검사 X)
     k = next((i for i, l in enumerate(lines) if l.strip() and not l.strip().startswith(NOTE_STARTS)), len(lines))  # 머리 칸 = 맨 위 대가성 문구·[광고] 줄들
@@ -893,7 +894,7 @@ def toss_why(text, links=(), kind="", reply=False):
     m = re.search(TOSS_OTHER, flat)
     return [w for w, bad in (("a 첫 줄 토스 대가성 문구 X", not reply and not any(TOSS_NOTE in l for l in lines[:k])), ("b 게시 시점 줄 X", not reply and "게시 시점" not in raw),
                              (f"c 다른 몰 '{m and m[0]}'", bool(m)), ("d 토스 아닌 상품과 1개 값 순", bool(prod) and bool(re.search(TOSS_ORDER_KINDS, kind or "") or re.search(TOSS_ORDER, flat))),
-                             ("e 토스 점검 기간", TOSS_PAUSE[0] <= now <= TOSS_PAUSE[1])) if bad]
+                             ("e 토스 점검 기간", TOSS_PAUSE[0] <= now <= TOSS_PAUSE[1]), ("f 쿠팡과 한 글", cpmix)) if bad]
 
 
 def toss_cut(text, kb=None):
@@ -933,8 +934,8 @@ def toss_req(url, body, method):
     why = toss_why(text, links, RUN.get("thk", ""), reply)
     if not why:
         return url, body
-    cut = toss_cut(text, kb) if key else None
     toss = sorted({u for u in re.findall(URL_ANY, html.unescape(text)) + links if u and urllib.parse.urlsplit(u).netloc in TOSS_HOSTS})
+    cut = toss_cut(text, kb) if key and toss else None  # 토스 주소 없는 섞인 글(f — 사이트 링크만) = 토스 줄을 못 가려냄 → 보류
     RUN.setdefault("tguard", []).append([ch, "cut" if cut else "hold", [w[0] for w in why], hashlib.md5(" ".join(toss).encode()).hexdigest()[:10]])
     print(f"toss_guard {ch} {'토스 상품만 뺌' if cut else '보류'} · " + " · ".join(why))
     if not cut:
@@ -3284,7 +3285,7 @@ def toss_deals(seen, best=False):
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + time.strftime("%Y-%m-%d", kst)) and isinstance(v, dict)}  # 오늘 이름 예약(toss_picks)으로 찾은 상품도(이름이 달라도 id로)
     eve = not (best or special) and hrs[-1] == TOSS_DAY_EVE  # S 저녁 회차 = '1번 더': 오늘 올린 하루특가도 다시(판매 중 TOP5 — 진우 예약·이름 예약 상품은 그대로 뺌)
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and (eve or f"tb_{x['tacaItemId']}" not in seen) and toss_ok(seen, x["tacaItemId"])
-                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
+                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id and not re.search(TOSS_EFFECT, x["displayName"])}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
     tone, tsuf = tone_ask(seen, "ch") if items else (0, "")
     picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best and not series else DAY_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가").replace("5개", "7개" if series else "5개") + TOSS_EASE + TOSS_WU) + tsuf,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
@@ -3533,6 +3534,7 @@ WU_HEALTH = r"다이어트|혈당|면역|피로|건강|효능|효과|개선|미�
 WU_CMP = r"보다\s*(?:싸|저렴|비싸)|반값|코스트코|홈플러스|트레이더스"  # 다른 몰·비교(+ OTHER_STORES)
 WU_HYPE = r"역대급|무조건|손해|마지막\s*기회|클릭|눌러\s*(?:보|주)"  # 과장·조급·클릭 유도
 WU_BAN = "|".join((WU_FAKE, WU_HEALTH, WU_CMP, WU_HYPE))
+TOSS_EFFECT = r"구취|아토|미백|잇몸|시린|충치|치석|탈모|비듬|여드름|트러블|재생(?!\s*(?:펄프|지|용지|종이))|진정|장벽|리페어|기능성|주름|리프팅|(?<!고)탄력"  # 11/5 Cowork D(10시 💙 #1에 '고불소 구취케어 치약'·'아토워시'): 이름에 효능 낱말 = 토스 묶음·시리즈·리스트 X(Cowork 진열 규칙과 같게)
 TOSS_BAN = rf"{WU_CMP}|{OTHER_STORES}|{CMP_WORDS}|비교|비쌈|(?:온라인|인터넷|국내|업계|시중)\s*최저|시중|타\s*(?:몰|사이트|쇼핑몰)|다른\s*(?:데|곳|몰|쇼핑몰|사이트)|(?:가장|제일|젤)\s*(?:싸|싼|쌌|쌈|저렴|낮)"  # 토스 글 = 다른 몰·가격 비교 말 X(th_voice·Claude 한 줄)
 
 
@@ -3929,6 +3931,10 @@ def top_deals(seen):
     rot = {u for h in seen.get("tgtop", {}).get("h", []) if time.time() - h[0] < TH_ROT_H * 3600 for u in h[1]}
     tgt = brand_first([p for p in top if p["url"] not in rot])[:5] if TH_DIVERSE else top[:5]  # 10/31 텔레그램 TOP도 72시간 회전·같은 브랜드 1개(모자라면 3개 밑 = 그 회차 X 그대로)
     top = top[:5]
+    if len(tgt) >= 3 and any(is_toss(p["url"], p["text"]) for p in tgt) and (w := tg_gap(seen, time.time())):  # 11/5 Cowork B②(12:00:37 토스 2 TOP = 쿠팡 채널 글 14분 뒤): 토스 든 TOP도 시차 — 회차째 다음 실행에
+        seen.pop(key, None)
+        print(f"top{hrs[-1]} 텔레그램 TOP 토스 {sum(is_toss(p['url'], p['text']) for p in tgt)}개 = 쿠팡 채널 글 {TOSS_GAP // 60}분 안 → 다음 실행에({w}초)")
+        return
     if len(tgt) >= 3:  # 텔레그램 리스트 = 3개↑일 때만(그대로) · Threads 리스트는 아래에서 채워 따로(KK)
         toss_in = TOSS_NO_CMP and any(is_toss(p["url"], p["text"]) for p in tgt)  # 토스 딜이 든 리스트 = 다른 몰 이름 X(10/14 22:30 점검) + 게시 시점 줄(10/19 12:30 점검)
         tail = f"\n\n{toss_when()}" if toss_in else ""
@@ -4001,8 +4007,7 @@ def top_deals(seen):
     one = lambda p: (TH_LIST_TOSS or not is_toss(p["url"], p["text"])) and (not TH_DIVERSE or shop_of(p) == "coupang")  # 10/31 진우 '쿠팡은 쿠팡끼리': 쿠팡 묶음 = 쿠팡만
     tx = [p for p, *_ in choose(cands) if not one(p) and p.get("mid") and not p.get("th")]  # ⑥-정정 보강(10/31 진우 '섞이면 개별로 올려'): 묶음에 들어갈 토스·다른 몰 상품 = 빼고 개별 글 줄(thtx)
     if tx:
-        txq = [x for x in seen.get("thtx", {}).get("q", []) if now - x["t"] < TH_TX_HOURS * 3600]
-        seen["thtx"] = {"t": now, "q": txq + [{"u": p["url"], "t": now} for p in tx if p["url"] not in {x.get("u") for x in txq}]}
+        thtx_add(seen, tx, now)
         print(f"threads top{hrs[-1]} {'토스' if all(is_toss(p['url'], p['text']) for p in tx) else '다른 몰'} {len(tx)}개 = 묶음 X → 개별 글 줄")
     cs = [c for c in cands if one(c[0])]
     if grp in ("f", "m") and (n0 := len(choose(cs))) < TH_LIST_MIN:  # 11/4 진우 '제대로 안 되는 거 진행': 그 칸(18시 남성) 모자람 = 그 칸 먼저 + 공통 품목으로 채움(다른 성별 칸 X)
@@ -4489,6 +4494,12 @@ def pick_price(p, seen=None):
     return f"{p['now']}" + (f" ({p['chk']} 가격)" if p.get("chk") else "") if p.get("now") else pr and f"{pr} ({int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시 가격)"  # Y-3 시각 표기 = '(M/D H시 가격)' 하나로(토스 = 게시 시점 줄 그대로)
 
 
+def thtx_add(seen, ps, now):
+    """묶음·픽에서 뺀 토스·다른 몰 상품 = 개별 글 줄(thtx — TH_TX_HOURS 안 · 채널 글 있는 것만 나감)."""
+    txq = [x for x in seen.get("thtx", {}).get("q", []) if now - x["t"] < TH_TX_HOURS * 3600]
+    seen["thtx"] = {"t": now, "q": txq + [{"u": p["url"], "t": now} for p in ps if p["url"] not in {x.get("u") for x in txq}]}
+
+
 def pick_post(seen):
     """N2 하루 1번 PICK_TH_AT~PICK_TH_END(KST): Threads '🎯 오늘의 픽 3' — 대가성 문구 맨 앞(상품마다 그 프로그램) + 이름·가격 + 오늘의 픽 날짜 쪽 링크 1개
     (사이트 링크가 들어가는 Threads 글은 이것만 — 딜 글은 지금처럼 직접 링크, 10/19 진우). 재료 = 사이트가 고정한 docs/today/picks.json(오늘), 날짜 쪽이 배포된 뒤(HEAD)만.
@@ -4499,6 +4510,10 @@ def pick_post(seen):
         return
     posts, ids = load(POSTS, []), load(PICKS_FILE, {}).get(today) or []
     ps = [posts[i] for i in ids if isinstance(i, int) and i < len(posts) and not tdead(posts[i].get("url")) and (shop_of(posts[i]) != "toss" or pick_price(posts[i], seen) is not None) and season_adj(title_of(posts[i]["text"])) >= 0]  # 오늘 확인 안 된 토스·철 지난 계절 상품(기온까지 — 사이트 픽은 달만) = 뺌(Z)
+    if len({shop_of(p) == "toss" for p in ps}) > 1:  # 11/5 Cowork B①(10:35 픽 = 쿠팡 1 + 토스 2): 토스는 다른 몰과 한 글 X → 토스 픽 = 개별 글 줄, 픽 = 나머지만
+        thtx_add(seen, [p for p in ps if shop_of(p) == "toss" and p.get("mid") and not p.get("th")], time.time())
+        print("th pick 토스 " + str(sum(shop_of(p) == "toss" for p in ps)) + "개 = 다른 몰과 섞임 → 개별 글 줄")
+        ps = [p for p in ps if shop_of(p) != "toss"]
     if not ps:
         return
     url = f"{SITE}today/{today}/"
