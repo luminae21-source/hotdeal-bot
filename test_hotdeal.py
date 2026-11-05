@@ -12059,10 +12059,10 @@ assert "toss gap 미룸 · tossbest 6분 뒤" in o129.getvalue() and "tossbest_2
 time.time = lambda: TK("2026-11-07 13:36"); H.toss_deals(s129t, True); assert "tossbest_20261107_13.5" in s129t  # 15분 지나면 그 회차 그대로
 po129, tk129 = H.POSTS, H.E.pop("THREADS_TOKEN", None); H.POSTS = tempfile.mkdtemp() + "/p.json"  # 11/5 Cowork B②(12:00:37 TOP3 토스 2 = 쿠팡 채널 글 14분 뒤): 토스 든 텔레그램 TOP도 시차 — 회차째 다음 실행
 json.dump([{"t": f"2026-11-07 11:0{k}", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] 토스 상품{k} (9,900원)\n\n좋음", "url": f"https://toss.shopping/_m/T{k}", "mid": 100 + k, "pop": 5} for k in range(3)], open(H.POSTS, "w"), ensure_ascii=False)
-s129p, o129, n129 = {}, io.StringIO(), len(tg129); time.time = lambda: TK("2026-11-07 13:30")
+s129p, o129, tn129 = {}, io.StringIO(), len(tg129); time.time = lambda: TK("2026-11-07 13:30")
 with contextlib.redirect_stdout(o129): H.top_deals(s129p)
-assert len(tg129) == n129 and "top_20261107_12" not in s129p and "텔레그램 TOP 토스 3개 = 쿠팡 채널 글 15분 안" in o129.getvalue(), o129.getvalue()
-time.time = lambda: TK("2026-11-07 13:36"); H.top_deals(s129p); assert len(tg129) == n129 + 1 and "TOP3" in tg129[-1] and "top_20261107_12" in s129p, tg129[n129:]
+assert len(tg129) == tn129 and "top_20261107_12" not in s129p and "텔레그램 TOP 토스 3개 = 쿠팡 채널 글 15분 안" in o129.getvalue(), o129.getvalue()
+time.time = lambda: TK("2026-11-07 13:36"); H.top_deals(s129p); assert len(tg129) == tn129 + 1 and "TOP3" in tg129[-1] and "top_20261107_12" in s129p, tg129[tn129:]
 H.POSTS = po129; H.E.update(THREADS_TOKEN=tk129) if tk129 else None
 s129g = {}; H.toss_guard_day(s129g); assert s129g["tgmall"]["cp"] == TK("2026-11-07 13:20")  # 실행 끝 = seen(다음 실행이 봄)
 H.RUN.pop("tgmall", None); H.RUN.pop("thmall", None)
