@@ -1775,7 +1775,7 @@ life7, beauty7, kit7, lau7 = (open(f"docs7/c/{k}/index.html").read() for k in ("
 lc7 = life7.split('<div class="cards">')[1]; assert life7.count('class="g"') == 2 and lc7.index("KF94") < lc7.index("샴푸") and "마스크팩" not in life7 and "휴지" not in life7.split('<nav class="chips"')[1] and "위생백" in kit7 and "세제" in lau7  # 10/24 세분: 위생백 = 주방, 세제 = 세탁
 assert beauty7.count('class="g"') == 2 and beauty7.index("마스크팩") < beauty7.index("폼클렌징") and "아이스크림" not in beauty7 and '<h1 class="h">🧻 생필품 특가 모음</h1>' in life7 and '<h1 class="h">💄 뷰티 특가 모음</h1>' in beauty7
 assert [re.sub("<[^>]+>", "", a) for a in life7.split('<nav class="chips" aria-label="목록">')[1].split("</nav>")[0].split("</a>")[:-1]] == \
-    ["🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "☕ 커피·차", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🐶 반려동물", "🏋️ 운동", "🚀 쿠팡", "💙 토스", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
+    ["🚀 쿠팡 모음", "💙 토스 모음", "🔥 특가", "👍 꾸준템", "⏳ 대기", "🧻 생필품", "🍚 식품", "💄 뷰티", "🍳 주방", "🧺 세탁", "🍪 간식", "☕ 커피·차", "❄️ 겨울템", "🍠 제철 먹거리", "🏠 생활·살림", "🧦 패션·잡화", "🔌 가전·디지털", "🚗 자동차", "🐶 반려동물", "🏋️ 운동", "💚 네이버"]  # 몰 구분 = 칩(탭 X)
 cats7 = open("docs7/c/index.html").read()
 assert cats7.count('<a class="tile"') == 15 and f'href="{S.BASE}c/season/"' in cats7 and "🗂️ 카테고리" in cats7 and '<nav class="tiles t6" style="--n:8" aria-label="카테고리">' in cats7  # 아래 메뉴 '카테고리' = 13칸 전부(아이콘 6×2 + 10/26 자동차)
 assert cats7.index('<h1 class="h">🗂️ 카테고리</h1>') < cats7.index('<h2 class="ch">🛍 쇼핑몰로 찾기</h2>') < cats7.index(S.stat_chips("")) < cats7.index('<h2 class="ch">🗂 품목으로 찾기</h2>') < cats7.index('<nav class="tiles t6"')  # 쇼핑몰 → 상태 → 품목(10/24 Cowork)
