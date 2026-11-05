@@ -12707,7 +12707,8 @@ S.TOSS_SITE_IMG = False; assert S.toss_imgs(m146, N146) == {}; S.TOSS_SITE_IMG =
 S.TIMG = S.toss_imgs(m146, N146)
 own146 = {"t": "2026-11-06 10:00", "text": "🔥 [토스] 수건 5장 (9,900원)", "url": "https://toss.shopping/_m/A", "own": 1}
 c146, sh146 = S.card(1, own146, (0, None, "", [], False)), (0, None, "", [], False)
-im146 = c146.split('<div class="im"')[1].split("</div>")[0]
+im146 = c146.split('<div class="im tim"')[1].split("</div>")[0]
+assert im146.startswith(' style="background:#fff">') and im146.count("<") == 1 and not re.search(r"<i[\s>]", im146) and 'style="mix-blend-mode:normal;background:#fff"' in im146, im146  # 11/5 Cowork 17:1x: 토스 img = 섞기 X(normal)·뒤 요소(품목 아이콘 i) 없음·흰 배경
 assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 and c146.index(S.PHOTO_CREDIT) > c146.index(TU146) and c146.index('<div class="tbd"><b class="bdg f">🔥 특가</b></div>') > c146.index(S.PHOTO_CREDIT), c146  # 사진 위 배지·글자 X
 assert TU146 not in S.card(2, {**own146, "own": 0}, sh146) and TU146 not in S.card(3, {**own146, "url": "https://toss.shopping/_m/D"}, sh146) and S.PHOTO_CREDIT not in S.card(4, {**own146, "text": "🔥 [쿠팡] 수건 (9,900원)", "url": "https://link.coupang.com/a/X"}, sh146)  # API 상품·noimg·쿠팡 = 토스 사진 X
 dc146 = S.deal_card(1, own146); assert TU146 in dc146 and S.PHOTO_CREDIT in dc146 and dc146.index(S.PHOTO_CREDIT) < dc146.index('<div class="s">')  # 딜 쪽 = 사진 바로 아래 출처

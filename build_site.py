@@ -1140,7 +1140,7 @@ def thumb(p, inner="", tp=False):
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·위에 배지·글자 X(배지는 사진 밖 아래) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
-        return (f'<div class="im"{bg}>{ci(p)}<img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>'
+        return (f'<div class="im tim" style="background:#fff"><img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="mix-blend-mode:normal;background:#fff"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 배경·섞기(multiply) X — 배경색·아이콘과 섞이면 합성·편집 위험(인라인 = 쪽마다 다른 .im img 규칙보다 먼저)
                 f'<p class="pcr">{PHOTO_CREDIT}</p>' + (f'<div class="tbd">{inner}</div>' if inner else ""))
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
     return f'<div class="im"{bg}>{ci(p)}{pic}{inner}</div>'
