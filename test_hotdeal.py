@@ -12692,3 +12692,59 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(json.load(open(H.POSTS))) == 3  # 같은 pid = 중복(새 진열 X)
 assert not S.site_ok(p145[1]) and "k['name'][:20]" not in inspect.getsource(S.guide_pages) and "html.escape(k['name'])" in inspect.getsource(S.guide_pages)  # nosite = 사이트 X · 7일 변화 이름 자르지 않음
 H.HAS_CP, H.cp_deeplinks, time.time, H.tg = sv145; H.RUN.pop("cpn", None); H.RUN.pop("cpu", None); os.chdir(cwd145)
+# 9-146 (11/5 Cowork A — 토스 고객센터 답: 쉐어링크 웹 상품 썸네일 원본 = 사이트·인스타 OK · 크롭·합성·글자 X): 진우 토스(own)만 · seen tossid [8] 1일 안 · toss_noimg X
+#   · 사이트 = src 토스 주소 그대로(우리 서버 X)·원본 비율(contain)·배지 사진 밖·바로 아래 '사진: 토스쇼핑' · 봇 API 상품(own X) 사진 X · 인스타 = 토스만 넘기기(표지 = 우리 글자 카드) · 사진 내림 알림
+cwd146, d146 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d146)
+N146, TU146 = TK("2026-11-06 20:40"), "https://static.toss.im/shop/a.jpg"
+m146 = {f"https://toss.shopping/_m/{k}": [10 + j, 1, N146 - 3600, "ok", [], 9900, False, 100 + j, f"https://static.toss.im/shop/{k.lower()}.jpg"] for j, k in enumerate("AFGH")}
+m146.update({"https://toss.shopping/_m/B": [12, 1, N146 - 2 * 86400, "ok", [], 9900, False, 120, "https://static.toss.im/shop/b.jpg"],  # 1일 넘음
+             "https://toss.shopping/_m/C": [13, 1, N146 - 60, "ok", [], 9900, False, 130, "http://x/c.jpg"],  # https 아님
+             "https://toss.shopping/_m/D": [14, 1, N146 - 60, "ok", [], 9900, False, 140, "https://static.toss.im/shop/d.jpg"],  # toss_noimg
+             "https://toss.shopping/_m/E": [15, 1, N146 - 60, "ok", [], 9900, False, 150]})  # 사진 칸 전 기록
+open("toss_noimg.txt", "w").write("140  # 셀러 요청\n")
+assert S.toss_imgs(m146, N146) == {f"https://toss.shopping/_m/{k}": f"https://static.toss.im/shop/{k.lower()}.jpg" for k in "AFGH"}, S.toss_imgs(m146, N146)
+S.TOSS_SITE_IMG = False; assert S.toss_imgs(m146, N146) == {}; S.TOSS_SITE_IMG = True  # 스위치
+S.TIMG = S.toss_imgs(m146, N146)
+own146 = {"t": "2026-11-06 10:00", "text": "🔥 [토스] 수건 5장 (9,900원)", "url": "https://toss.shopping/_m/A", "own": 1}
+c146, sh146 = S.card(1, own146, (0, None, "", [], False)), (0, None, "", [], False)
+im146 = c146.split('<div class="im"')[1].split("</div>")[0]
+assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 and c146.index(S.PHOTO_CREDIT) > c146.index(TU146) and c146.index('<div class="tbd"><b class="bdg f">🔥 특가</b></div>') > c146.index(S.PHOTO_CREDIT), c146  # 사진 위 배지·글자 X
+assert TU146 not in S.card(2, {**own146, "own": 0}, sh146) and TU146 not in S.card(3, {**own146, "url": "https://toss.shopping/_m/D"}, sh146) and S.PHOTO_CREDIT not in S.card(4, {**own146, "text": "🔥 [쿠팡] 수건 (9,900원)", "url": "https://link.coupang.com/a/X"}, sh146)  # API 상품·noimg·쿠팡 = 토스 사진 X
+dc146 = S.deal_card(1, own146); assert TU146 in dc146 and S.PHOTO_CREDIT in dc146 and dc146.index(S.PHOTO_CREDIT) < dc146.index('<div class="s">')  # 딜 쪽 = 사진 바로 아래 출처
+src146 = open(S.__file__, encoding="utf-8").read()
+assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .tbd .bdg{position:static" in src146 and 'toss_imgs(json.load(open(SEEN_FILE' in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
+# own_end = 상세 확인 때 썸네일 원본을 seen tossid [8]에(사진 칸 없는 기록 먼저 확인)
+assert H.toss_thumb({"thumbnailUrl": TU146}) == TU146 and H.toss_thumb({"thumbnailUrl": "javascript:x"}) is None and H.toss_thumb({}) is None \
+    and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)
+# 인스타: 토스 진우 상품만 넘기기(표지 = 우리 글자 카드 · 상품 장 = 썸네일 원본 1장씩) · 캡션 첫 줄 토스 문구 + 이름·게시 시점 가격 + 사진: 토스쇼핑 · 쿠팡 X
+sv146 = (H.POSTS, H.http, H.tg, time.time, H.ig_room)
+H.POSTS = "posts146.json"
+json.dump([{"t": f"2026-11-06 1{j}:00", "text": f"🔥 [토스] 토스 상품{k} (9,900원)", "url": f"https://toss.shopping/_m/{k}", "own": 1, "st": "hot"} for j, k in enumerate("AFGHD")]
+          + [{"t": "2026-11-06 10:00", "text": "🔥 [쿠팡] 쿠팡 상품 (9,900원)", "url": "https://link.coupang.com/a/X", "own": 1}], open(H.POSTS, "w"), ensure_ascii=False)
+import cards
+mk146, it146 = cards.make, []
+cards.make = lambda items, d, out, **k: it146.append((items, out, k)) or open(out, "wb").write(b"jpg")
+hc146 = []
+H.http = lambda url, body=None, headers=None, method=None: hc146.append((url, body, method)) or json.dumps({"id": f"k{len(hc146)}"})
+H.ig_room, time.time, s146 = (lambda seen, now: 1), (lambda: N146), {"tossid": {"t": 1, "m": m146}}
+with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 - 3600)  # 19:40 = 시각 전
+assert "igtoss_2026-11-06" not in s146
+with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146)
+st146 = s146["igtoss_2026-11-06"]; cap146 = st146["cap"]
+assert st146["img"] == [f"https://static.toss.im/shop/{k.lower()}.jpg" for k in "HGFA"] and not hc146 and os.path.exists(st146["jpg"]) and [x["title"] for x in it146[0][0]] == [f"토스 상품{k}" for k in "HGFA"], st146  # 4개(D = noimg · 쿠팡 X) · 최근 글 먼저 · 표지 = 글자 카드
+assert cap146.startswith(H.TOSS_NOTE) and cap146.count("게시 시점") == 4 and cap146.rstrip().endswith(H.PHOTO_CREDIT) and "쿠팡" not in cap146 and H.DISCLOSURE not in cap146 and not H.toss_why(cap146), cap146
+with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 + 900)  # 다음 실행 = 표지 뜨면 조각
+k146 = s146["igk_toss_2026-11-06"]
+assert hc146[0] == (f"{H.SITE}cards/igtoss/2026-11-06.jpg", None, "HEAD") and [b["image_url"] for _, b, m in hc146[1:]] == [f"{H.SITE}cards/igtoss/2026-11-06.jpg"] + st146["img"] and all(b["is_carousel_item"] for _, b, _ in hc146[1:]), hc146
+assert k146["kind"] == "toss" and k146["cap"] == cap146 and len(k146["kids"]) == 5 and st146["done"] and s146["tphoto"]["m"][-1]["ig"] == "2026-11-06 토스 넘기기"
+n146 = len(hc146); H.ig_toss(s146, "tok", "uid", N146 + 1800); assert len(hc146) == n146  # 하루 1번
+s146b = {"tossid": {"t": 1, "m": {u: v for u, v in m146.items() if u.endswith(("A", "F"))}}}
+with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146b, "tok", "uid", N146)
+assert s146b["igtoss_2026-11-06"]["skip"] == 2  # 3개 밑 = 그날 X
+H.TOSS_IG_IMG = False; s146c = {"tossid": {"t": 1, "m": m146}}; H.ig_toss(s146c, "tok", "uid", N146); assert not s146c.get("igtoss_2026-11-06"); H.TOSS_IG_IMG = True  # 스위치
+tg146 = []; H.tg = lambda m, **p: tg146.append(p) or {"message_id": 1}
+open("toss_noimg.txt", "w").write("140\n100  # 셀러 요청(A)\n")
+with contextlib.redirect_stdout(io.StringIO()): H.toss_takedown(s146)
+assert "인스타 2026-11-06 토스 넘기기" in tg146[-1]["text"] and tg146[-1]["chat_id"] == H.ADMIN and "https://toss.shopping/_m/A" not in S.toss_imgs(m146, N146)  # 셀러 요청 = 인스타 게시물 관리봇 알림 · 사이트는 다음 빌드에 내림
+open(f"{H.IGTOSS_DIR}/2026-10-01.jpg", "wb").write(b"0"); H.prune_slides(N146); assert sorted(os.listdir(H.IGTOSS_DIR)) == ["2026-11-06.jpg"]  # 지난 표지 = 지움(SLIDE_KEEP)
+cards.make = mk146; H.POSTS, H.http, H.tg, time.time, H.ig_room = sv146; S.TIMG = {}; os.chdir(cwd146)

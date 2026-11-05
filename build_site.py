@@ -69,7 +69,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .ib::before{content:"";position:absolute;inset:-3px}.ib{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 .ib svg,.nav svg,.sb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ib b{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accf);color:#fff;font-size:10.5px;line-height:17px;text-align:center}.ib b:empty{display:none}
 .sb{position:relative;display:block;padding:0 0 6px}.sb svg{position:absolute;left:12px;top:11px;color:var(--acc)}.sb input{width:100%;height:42px;border:2px solid var(--acc);border-radius:12px;padding:0 10px 0 38px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
-.dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}
+.dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}.pcr{margin:3px 2px 0;font-size:10.5px;color:var(--sub)}.tbd{margin-top:4px}.g .tbd .bdg{position:static;display:inline-block}
 .t{color:var(--sub);font-size:12.5px}
 .tp{margin:16px 0 0;padding:20px 16px 6px;border-radius:24px;background:var(--pkbg)}
 .ev{flex:0 0 88%;min-width:0;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:18px;background:var(--pkbg);box-shadow:inset 0 0 0 1px var(--pkln);text-decoration:none;color:var(--ink)}
@@ -1110,13 +1110,38 @@ def bundle_live(posts, now_ts):
     return out
 
 
-def thumb(p, inner=""):
+TOSS_SITE_IMG, TOSS_NOIMG_FILE, SEEN_FILE, PHOTO_CREDIT = True, "toss_noimg.txt", "seen.json", "사진: 토스쇼핑"  # 11/5 Cowork A①(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 웹사이트도 OK · 크롭·합성·글자 X)
+TIMG = {}  # 빌드 때 seen 캐시에서(posts.json 등 공개 파일 X): 진우 토스 쉐어링크 상품 주소 -> 썸네일 원본 주소
+
+
+def toss_imgs(m, now=None):
+    """진우 토스 상품 사진 {상품 주소: 썸네일 원본}: hotdeal own_end 상세 확인(seen tossid m[url] — [8] = thumbnailUrl)이 1일 안인 것만 · toss_noimg.txt 상품(tacaId·tacaItemId) X · TOSS_SITE_IMG 끄면 {}."""
+    if not TOSS_SITE_IMG or not isinstance(m, dict):
+        return {}
+    try:
+        no = {l.split("#")[0].strip() for l in open(TOSS_NOIMG_FILE, encoding="utf-8")} - {""}
+    except OSError:
+        no = set()
+    now = now or time.time()
+    return {u: v[8] for u, v in m.items() if isinstance(v, list) and len(v) > 8 and isinstance(v[8], str) and re.fullmatch(r"https://[^\s\"'<>]+", v[8])
+            and now - (v[2] or 0) < 86400 and not {str(v[0]), str(v[7])} & no}
+
+
+def toss_img(p):
+    """진우 토스 상품(own · 쉐어링크 웹 링크)만 사진 — 봇 API 상품은 posts.json에 없음(TOSS_SITE False 그대로)."""
+    return TIMG.get(p.get("url"), "") if p.get("own") and shop_of(p) == "toss" else ""
+
+
+def thumb(p, inner="", tp=False):
     """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(정사각 흰 배경 contain · 못 불러오면 사진만 지워져 선 아이콘이 보임)."""
     if bundle_of(p) and any(x[3] for x in b_items(p)):  # 묶음 = 상품 사진 2×2 + 'N개 묶음'(빈 가방 아이콘 X)
         return ('<div class="im bg">' + "".join(f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for u in [x[3] for x in b_items(p) if x[3]][:4])
                 + f'<b class="bn">{len(b_items(p))}개 묶음</b>{inner}</div>')
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
+    if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·위에 배지·글자 X(배지는 사진 밖 아래) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
+        return (f'<div class="im"{bg}>{ci(p)}<img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>'
+                f'<p class="pcr">{PHOTO_CREDIT}</p>' + (f'<div class="tbd">{inner}</div>' if inner else ""))
     pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
     return f'<div class="im"{bg}>{ci(p)}{pic}{inner}</div>'
 
@@ -1158,7 +1183,7 @@ def card(i, p, sh, more=(), attrs="", plain=False):
         tg = re.match(r"[\d,]+원", p.get("tgt") or "")
         grey = [x for x in (p.get("chk") and f"{p['chk']} 확인", sh[0] in (1, 2) and tg and f"목표가 {tg[0]}") if x]
     return (f'<article class="g"{attrs}><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
-            + thumb(p, "" if plain else badge(p, sh)) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
+            + thumb(p, "" if plain else badge(p, sh), True) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
             + f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>' + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
             + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
 
@@ -2083,7 +2108,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
              + (f'<span class="ship">{html.escape(ship.strip())}</span>' if ship.strip() else "")
              + (f'<span class="sv">{sv[0]}보다 {sv[1]}↓</span>' if sv else "") + "</div>") if price else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
     bd = badge_html(p) + (f'<b class="b2">▼ {DROPS[i][0]}% 내림 · {DROPS[i][1]} 기록 대비</b>' if i in DROPS else "")
-    return (f'<article class="card deal">{thumb(p)}<div class="s">{html.escape(store or "핫딜")} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
+    return (f'<article class="card deal">{thumb(p, tp=True)}<div class="s">{html.escape(store or "핫딜")} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
             + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h1 class="dn"><a href="{url}">{html.escape(f"{name} {main.strip()}".strip() if price else title)}</a></h1>{hero}{extra}{btn}'
             + (f'<p class="note">가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p>' if btn else "") + f'<h3 class="why">왜 골랐나요</h3><p>{body}</p>'
             + (f'<h3 class="why">고르는 기준</h3><ul class="tips">{"".join(f"<li>{html.escape(t)}</li>" for t in tips)}</ul>' if tips else "") + "</article>")
@@ -3080,8 +3105,12 @@ def short_pages(out, heads):
 
 
 def build(posts, out="docs"):
-    global MICONS, SITE_SUB
+    global MICONS, SITE_SUB, TIMG
     SITE_SUB = site_subs()
+    try:
+        TIMG = toss_imgs(json.load(open(SEEN_FILE, encoding="utf-8")).get("tossid", {}).get("m", {}))
+    except (OSError, ValueError, AttributeError):  # 로컬·첫 실행(seen 없음) = 토스 사진 X
+        TIMG = {}
     GUIDE_NAV.clear()  # 11/2 가이드 '고르는 법 보기' — 칸·딜 쪽·홈·/c/
     for g in guides_load():
         GUIDE_NAV[g.get("related_c") or ""] = GUIDE_NAV.get(g.get("related_c") or "", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])} — 고르는 법 보기</a>'

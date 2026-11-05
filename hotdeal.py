@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
+from build_site import THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -4963,6 +4963,12 @@ def toss_noimg():
         return set()
 
 
+def toss_thumb(x):
+    """썸네일 원본 주소(https · 공백 X) 그대로 / 없으면 None — own_end가 seen tossid [8]에(사이트·인스타 사진은 빌드·게시 때 toss_noimg.txt·1일 안 확인으로 거름)."""
+    u = x.get("thumbnailUrl") if isinstance(x, dict) else None
+    return u if isinstance(u, str) and re.fullmatch(r"https://[^\s\"'<>]+", u) else None
+
+
 def toss_photo(x):
     """토스 상품 썸네일 주소(원본 그대로) / TOSS_PHOTO 꺼짐·https 아님·toss_noimg.txt에 있는 상품 = None. 상세 응답 필드 이름은 실행마다 1번 로그(값 X — 이미지 사용 금지 표시가 생기는지 확인용)."""
     if TOSS_PHOTO and isinstance(x, dict) and not RUN.get("tkeys"):
@@ -5003,6 +5009,8 @@ def toss_takedown(seen):
                 left.append("Threads " + json.loads(http(f"{THREADS}/{r['th']}?fields=permalink&access_token={tok}")).get("permalink", r["th"]))
             except Exception:
                 left.append(f"Threads 글 id {r['th']}")
+        elif "ig" in r:  # 11/5 A③ 인스타 토스 넘기기 = 진우가 앱에서(봇이 게시물 지우기 X)
+            left.append(f"인스타 {r['ig']}")
     print("toss 사진 내림", len(hit), "개 · 남은 것", len(left))
     if left:
         tg("sendMessage", chat_id=ADMIN, text="🖼 토스 사진 내림(toss_noimg.txt) — 봇이 못 지운 글이에요. 앱에서 지워 주세요\n" + "\n".join(left), link_preview_options={"is_disabled": True})
@@ -7548,9 +7556,10 @@ def prune_slides(now):
         for f in os.listdir(base) if os.path.isdir(base) else []:
             if STEM.fullmatch(f) and f[:10] < cut and os.path.isdir(f"{base}/{f}"):
                 shutil.rmtree(f"{base}/{f}")
-    for f in os.listdir(STORY_DIR) if os.path.isdir(STORY_DIR) else []:  # H-2 스토리
-        if f[:10] < cut:
-            os.remove(f"{STORY_DIR}/{f}")
+    for d in (STORY_DIR, IGTOSS_DIR):  # H-2 스토리 · 11/5 토스 넘기기 표지
+        for f in os.listdir(d) if os.path.isdir(d) else []:
+            if f[:10] < cut:
+                os.remove(f"{d}/{f}")
     for f in os.listdir("docs/reels") if os.path.isdir("docs/reels") else []:
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.mp4", f) and f[:10] < cut:
             os.remove(f"docs/reels/{f}")
@@ -7587,6 +7596,67 @@ def ig_reel(seen):
     print("ig reel 컨테이너", today)
 
 
+IG_TOSS_AT, IG_TOSS_N, IG_TOSS_DAYS, IGTOSS_DIR, TOSS_IG_IMG = "20:30", (3, 5), 7, "docs/cards/igtoss", True  # 11/5 Cowork A②: 하루 1번 · 3~5개 · 같은 상품 7일 안 다시 X
+
+
+def ig_toss_items(seen, posts, now):
+    """인스타 토스 넘기기 후보 = 진우 토스 쉐어링크 상품(own · 봇 API 상품 X)만: 사진(own_end 1일 안 확인 · toss_noimg.txt X — build_site.toss_imgs) · 판매 중(ok)
+    · 오늘 확인된 게시 시점 가격(pick_price) · 사이트에서 뺀 글(nosite) X · IG_TOSS_DAYS일 안 올린 상품 X -> [(글, 사진, ids)] 🔥 먼저 · 최근 글 먼저."""
+    ti = seen.get("tossid", {}).get("m", {})
+    used = {u for d, us in (seen.get("igtossu", {}).get("m") or {}).items() if now - float(d) < IG_TOSS_DAYS * 86400 for u in us}
+    imgs, last = S_toss_imgs(ti, now), {}
+    for p in posts:
+        if p.get("own") and shop_of(p) == "toss" and p.get("url") in imgs and not p.get("nosite"):
+            last[p["url"]] = p
+    out = [(p, imgs[u], [ti[u][0], ti[u][7]]) for u, p in last.items() if u not in used and ti[u][3] == "ok" and not tdead(u) and pick_price(p, seen)]
+    return sorted(out, key=lambda x: (x[0].get("st") != "hot", [-ord(c) for c in x[0]["t"]]))[:IG_TOSS_N[1]]
+
+
+def ig_toss(seen, tok, uid, now):
+    """11/5 Cowork A②(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 인스타도 OK · 넘기기에 원본 한 장씩 · 크롭·합성·글자 X): 하루 1번 IG_TOSS_AT 뒤 토스만 넘기기.
+    1) 표지 = 우리 글자 카드(cards.make — 토스 사진 X)를 docs/cards/igtoss/날짜.jpg(사이트 커밋) · 캡션 = 토스 대가성 문구 첫 줄 + 이름·게시 시점 가격 + '사진: 토스쇼핑'
+    2) 다음 실행 = 표지가 뜨면 조각(표지 + 썸네일 원본 주소 그대로) -> ig_carousel 묶음(kind toss) -> ig_publish · 쿠팡·네이버와 한 게시물 X · 3개 밑 = 그날 X
+    · tphoto 기록(ig) — toss_noimg.txt에 넣으면 toss_takedown이 관리봇에 이 게시물 알림 · 실패 = 그날 X(ig_fail)."""
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    key = "igtoss_" + today
+    if not TOSS_IG_IMG or time.strftime("%H:%M", kst) < IG_TOSS_AT or (seen.get(key) or {}).get("done"):
+        return
+    st = seen.get(key)
+    try:
+        if not st:
+            its = ig_toss_items(seen, load(POSTS, []), now)
+            if len(its) < IG_TOSS_N[0]:
+                seen[key] = {"t": now, "done": 1, "skip": len(its)}
+                print("ig toss", today, f"후보 {len(its)}개 -> 건너뜀")
+                return
+            import cards
+            os.makedirs(IGTOSS_DIR, exist_ok=True)
+            jpg = f"{IGTOSS_DIR}/{today}.jpg"
+            cards.make([{"title": clip(parse(title_of(p["text"]))[1], 40), "unit": ""} for p, _, _ in its], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
+            rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 40)}\n💰 {pick_price(p, seen)}" for k, (p, _, _) in enumerate(its)]
+            cap = f"{TOSS_NOTE}\n\n💙 토스에서 살 만한 것 {len(its)}개 ({kst.tm_mon}/{kst.tm_mday})\n\n" + "\n\n".join(rows) + f"\n\n🛒 프로필 링크 → 토스 상품 바로 가기\n\n{PHOTO_CREDIT}"
+            seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200]}
+            print("ig toss", today, f"표지 만듦 {len(its)}개")
+            return
+        if ig_room(seen, now) < 1:
+            return
+        cover = f"{SITE}{st['jpg'][5:]}"
+        try:
+            http(cover, method="HEAD")  # 표지 배포 전 = 다음 실행
+        except Exception:
+            return
+        st["done"], auth = 1, {"Authorization": "Bearer " + tok}
+        seen["igk_toss_" + today] = {"t": now, "kind": "toss", "cap": st["cap"], "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in [cover] + st["img"]]}
+        tu = seen.setdefault("igtossu", {"m": {}})
+        tu["t"], tu["m"] = now, {**{d: us for d, us in tu["m"].items() if now - float(d) < IG_TOSS_DAYS * 86400}, str(now): st["u"]}
+        tph_log(seen, st["ids"], ig=f"{today} 토스 넘기기")
+        print("ig toss", today, f"조각 {len(st['img']) + 1}장")
+    except Exception as e:
+        seen[key] = {**(st or {}), "t": now, "done": 1}
+        ig_fail(seen, now, f"토스 넘기기 {ig_err(e)}")
+
+
 def ig_cards(seen):
     """인스타 하루 4번부터(10/23 진우 '너무 자주 말고' — 단계적 늘리기 ig_stage): 오늘 칸(ig_hours, 11·15·19시 …) 시간대 카드 + 22시 하루 카드(21시 모아보기 때 만든 것).
     시간대 카드: 그 시각 첫 실행에 카드(JPEG)·번호 순서를 docs/cards/날짜_시에 만들고(워크플로가 커밋 -> 사이트 공개) 다음 실행에 사이트에 뜨면 인스타 컨테이너
@@ -7600,6 +7670,7 @@ def ig_cards(seen):
     if not (IG_AUTO and tok and uid) or seen.get("ig_hold", 0) > now:
         return
     ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
+    ig_toss(seen, tok, uid, now)  # 11/5 A② 토스 넘기기(하루 1번)
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
     built = {int(f[11:13]) for f in (os.listdir("docs/cards") if os.path.isdir("docs/cards") else []) if re.fullmatch(re.escape(today) + r"_\d\d\.json", f)}
@@ -10442,7 +10513,7 @@ def own_end(seen):
     stdy = 👍 꾸준템(토스 = 리뷰 toss_steady, 쿠팡·네이버 = 👍 글), rehot = ⏳ -> 🔥 된 날(사이트 🔁 배지 · 토스는 seen rehot 줄 -> toss_solo '🔁 다시 특가' 글),
     std·stp = st가 바뀐 날·앞 st(10/24) · cpp·cpt = 옵션을 맞춘(events item 또는 이름 수량·용량) 쿠팡 검색 API 가격·시각(10/24 — 사이트 📉·drop_check).
     토스 = 상세 API(실행마다 1번, 마지막 확인이 OWN_END_GAP 지난 id 30개까지 — 단축 링크 -> id는 seen tossid에 1번, 확인 뒤 다시 올린 글은 바로) · 쿠팡·네이버 = events 진우 항목 now·chk·target·end·why(Cowork).
-    seen tossid m[url] = [상품 그룹 id(tacaId = 주소 /t/번호), 푼 시각, 마지막 확인, 'ok'|'out', 조회 안 됨 날짜들, 지금가(내부 — 1일 캐시), 꾸준템, 대표 옵션 id(tacaItemId)]
+    seen tossid m[url] = [상품 그룹 id(tacaId = 주소 /t/번호), 푼 시각, 마지막 확인, 'ok'|'out', 조회 안 됨 날짜들, 지금가(내부 — 1일 캐시), 꾸준템, 대표 옵션 id(tacaItemId), 썸네일 원본(11/5 — 사이트·인스타 토스 사진)]
     — 상세는 tacaIds로(10/23: 그 전엔 tacaItemIds로 물어 대부분 '조회 안 됨' = 잘못된 일시 품절 → 8칸 아닌 기록은 다시 확인, 그 상태로는 🔁 X)."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -10463,7 +10534,7 @@ def own_end(seen):
             m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
             ti[u] = [int(m[1]) if m else 0, now, 0]
         by = {}
-        for _, u in sorted(((ti[u] + [0])[2], u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 8 or stale(u))):  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
+        for _, u in sorted(((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 9 or stale(u))):  # 11/5 A: 사진 칸([8]) 없는 기록 먼저(지난 진열 450여 개 빨리 채움)  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
             if len(by) < 30 or ti[u][0] in by:
                 by.setdefault(ti[u][0], []).append(u)
         if by:
@@ -10479,7 +10550,7 @@ def own_end(seen):
                     if not x and i not in nf:  # 응답에 없음 = 그대로, 다음에
                         continue
                     nfd = [] if x else [d for d in (v[4] if len(v) > 7 else []) if d != today] + [today]  # 조회 안 됨이 이어진 날들(조회되면 처음부터 · 예전 잘못 물은 기록은 버림)
-                    v[2:] = [now, "out" if not x or x.get("isSoldOut") else "ok", nfd, x and x["displayPrice"], bool(x and toss_steady(x)), x and x.get("tacaItemId") or (v[7] if len(v) > 7 else 0)]  # v[7] = 대표 옵션 id(tacaItemId — 꾸준템·🔁 글·품절 지켜보기·같은 상품 거르기)
+                    v[2:] = [now, "out" if not x or x.get("isSoldOut") else "ok", nfd, x and x["displayPrice"], bool(x and toss_steady(x)), x and x.get("tacaItemId") or (v[7] if len(v) > 7 else 0), x and toss_thumb(x)]  # v[7] = 대표 옵션 id(tacaItemId — 꾸준템·🔁 글·품절 지켜보기·같은 상품 거르기)
     ev, chk, cpq, cpi = ev_info(), f"{kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시", seen.get("cpq", {}).get("m", {}), seen.get("cpq", {}).get("i", {})
     rq = seen.setdefault("rehot", {"q": []})
     rq["t"], rq["q"], n, c = now, [q for q in rq["q"] if q.get("g")], 0, collections.Counter()  # g 없는 줄 = 예전(잘못 물은 id) 기록 — 버림
