@@ -561,9 +561,9 @@ def shelf_whys(picks, h, group, now):
         us = {j: u for j, x in enumerate(picks) if (u := nn_unit(x[5], x[6], base))}
         if len(us) >= 3:
             o = sorted(us, key=lambda j: us[j][0])
-            out[o[0]].append(f"같이 고른 {len(us)}개 중 {us[o[0]][1]}, 제일 덜 들어요")
+            out[o[0]].append(f"{len(us)}개 중 {us[o[0]][1]}, 제일 덜 들어요")
             if us[o[1]][0] > us[o[0]][0]:
-                out[o[1]].append(f"{us[o[1]][1]}, 같이 고른 것 중 두 번째로 덜 들어요")
+                out[o[1]].append(f"{us[o[1]][1]}, {len(us)}개 중 두 번째로 덜 들어요")
             break
     day = time.strftime("%y%m%d", time.gmtime(now + 9 * 3600))
     for j, x in enumerate(picks):
@@ -573,7 +573,7 @@ def shelf_whys(picks, h, group, now):
             t, p = max((ph_last(r), r[1]) for r in rows)
             d = (calendar.timegm(time.strptime(day, "%y%m%d")) - calendar.timegm(time.strptime(t[:6], "%y%m%d"))) // 86400
             if p > price and 1 <= d <= 30:
-                out[j].append(f"{d}일 전 확인 때보다 {p - price:,}원 내려왔어요")
+                out[j].append(f"{d}일 전보다 {p - price:,}원 내려왔어요")
         q = pack_q(name)
         if q and q[0] == "개" and group == "food" and 7 <= q[1] <= 120:
             out[j].append(f"하루 1개면 {q[1]}일 치예요")
@@ -584,9 +584,60 @@ def shelf_whys(picks, h, group, now):
     return out
 
 
-def shelf_tips(seen, pl, whys, now):
-    """💡 줄(상품마다 — 같은 품목 안 같은 줄 X): 첫 상품 = plan tips 돌림(날마다 시작점 다르게 · SHELF_COPY_DAYS일 안 쓴 카피 X) · 나머지 = 근거 줄(shelf_whys — 앞 상품과 다른 것)
-    → 없으면 아직 안 쓴 다른 카피 → 그것도 없으면 줄 X. seen shelfcopy = {카피: 쓴 시각}."""
+TODAY_FILE = "docs/today.json"  # 11/5 진우 '일상 대화도 실제 그날 있었던 일을 참고' — Cowork 매일 06:40 {date, updated, items:[{fact, kind, src, fit}]}
+SHELF_LINE_PROMPT = """핫딜픽 사이트 진열 상품마다 짧은 한 줄을 써 주세요(진우 11/5: 사람이 말하듯 · 짧게 · 유머러스하게 · 상품마다 다르게).
+품목: {kw}
+상품(번호. 이름):
+{names}
+{today}규칙:
+- 상품마다 1줄(lines 칸 = 상품 순서대로), 25자 안팎(30자 넘지 않게), 친근한 존댓말이나 짧은 말. 이모지 0~1개.
+- 그 상품의 이름·용량·구성에서 나온 말(다른 상품에 붙여도 말이 되는 일반적인 말 X). 말장난·의인화·일상 장면 OK.
+- 숫자는 상품 이름이나 '오늘 있었던 일'에 있는 것만. 가격·할인·최저가·순위 말 X.
+- 써 본 척(써 보니·먹어 보니·샀는데)·효능·건강·과장(역대급·무조건·인생템)·재촉(지금 바로·서두르세요)·비꼬기·성별 고정관념 X.
+- '오늘 있었던 일'은 그 상품과 맞을 때만 곁들이기(억지로 X · 사실 그대로 · 경험담 X).
+- 줄끼리 첫 어절·끝맺음이 겹치지 않게.
+최근 쓴 줄(겹치지 않게): {recent}"""
+
+
+def today_items(now=None):
+    """docs/today.json(Cowork — 그날 있었던 일 사실만) -> date가 오늘(KST)일 때만 items · 없음·지난 날짜·깨짐 = [] · 사실 40자 넘음·CHAT_BAN(뉴스·몰 이름 등) 걸림 = 그 줄 X."""
+    d, day = load(TODAY_FILE, {}), time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
+    if not isinstance(d, dict) or d.get("date") != day:
+        return []
+    return [x for x in d.get("items") or [] if isinstance(x, dict) and isinstance(x.get("fact"), str) and 0 < len(x["fact"].strip()) <= 40 and not re.search(CHAT_BAN, x["fact"])]
+
+
+def today_fit(text, now=None):
+    """오늘 있었던 일 중 fit 낱말이 text(품목·상품 이름)에 있는 것만 -> [사실] (11/5 I — fit 맞는 상품만 그 사실을 씀)."""
+    return [x["fact"].strip() for x in today_items(now) if any(isinstance(f, str) and f.strip() and f.strip() in text for f in x.get("fit") or [])]
+
+
+def shelf_custom(pl, picks, used, now):
+    """진열 상품마다 맞춤 한 줄(Claude 1번 — 품목마다): 상품 이름·용량·구성 + 그 품목 fit의 오늘 있었던 일(today_items) -> [줄|''] · 규칙(길이·금지어·숫자 = 이름·오늘 사실에 있는 것만·
+    7일 안 쓴 줄·서로 겹침) 걸린 줄·Claude 실패 = ''(그 상품은 plan tips로)."""
+    facts = today_fit(" ".join([pl.get("kw", ""), *(x[5] for x in picks)]), now)
+    try:
+        r = ai_json(SHELF_LINE_PROMPT.format(kw=pl.get("kw", ""), names="\n".join(f"{k + 1}. {x[5]}" for k, x in enumerate(picks)),
+                                             today=("오늘 있었던 일(사실): " + " · ".join(facts) + "\n") if facts else "", recent=" / ".join(list(used)[-12:]) or "(없음)"),
+                    {"lines": {"type": "array", "items": {"type": "string"}}})["lines"]
+    except Exception as e:
+        print("shelf line Claude 실패 -> plan tips", err_brief(e))
+        return [""] * len(picks)
+    out, seen_ = [], set(used)
+    for x, l in zip(picks, list(r) + [""] * len(picks)):
+        l = re.sub(r"\s+", " ", str(l or "")).strip()
+        nums = re.findall(r"\d[\d,.]*", l)
+        bad = not 4 <= len(l) <= 30 or l in seen_ or re.search(rf"{VOICE_BAN}|{TH_PUSH}|최저|할인|%|[\d,]+\s*원|역대급|무조건|인생템|지금\s*바로|서두르", l) or rude(l) or sex_bad(l, x[5]) \
+            or not all(n in x[5] or any(n in f for f in facts) for n in nums)
+        out.append("" if bad else l)
+        seen_.add(l)
+    return out
+
+
+def shelf_tips(seen, pl, whys, now, custom=None):
+    """진열 상품마다 (💡 줄, ✔ 아래 한 줄) — 같은 품목 안 같은 줄 X(11/5 F·I): 맞춤 한 줄 = custom(오늘 있었던 일·상품 이름 — shelf_custom) → 없으면 plan tips(날마다 시작점 ·
+    SHELF_COPY_DAYS일 안 쓴 카피 X · 상품마다 다른 줄) · 근거 줄(shelf_whys — 앞 상품과 다른 것)이 있으면 💡 = 근거, 맞춤 한 줄 = ✔ 아래 한 줄 / 없으면 💡 = 맞춤 한 줄 · 둘 다 없으면 줄 X.
+    seen shelfcopy = {쓴 맞춤 줄·카피: 시각}."""
     sc = seen.setdefault("shelfcopy", {"m": {}})
     sc["t"], sc["m"] = now, {c: t for c, t in (sc.get("m") or {}).items() if now - t < SHELF_COPY_DAYS * 86400}
     tips = list(dict.fromkeys(pl.get("tips") or ([pl["tip"]] if pl.get("tip") else [])))
@@ -594,12 +645,14 @@ def shelf_tips(seen, pl, whys, now):
     fresh, out, used = [t for t in tips[k0:] + tips[:k0] if t not in sc["m"]], [], set()
     for j, ws in enumerate(whys):
         why = next((w for w in ws if w not in used), "")
-        line = (fresh.pop(0) if fresh else why) if j == 0 else why or (fresh.pop(0) if fresh else "")
+        cu = (custom or [""] * len(whys))[j] if j < len(custom or []) else ""
+        line = cu if cu and cu not in used and cu not in sc["m"] else (fresh.pop(0) if fresh else "")
+        for x in (why, line):
+            if x:
+                used.add(x)
         if line:
-            used.add(line)
-            if line in tips:
-                sc["m"][line] = now
-        out.append(line)
+            sc["m"][line] = now
+        out.append((why, line) if why else (line, ""))
     return out
 
 
@@ -699,9 +752,9 @@ def auto_shelf(seen):
             tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트{'·검색' if srch else ''}에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
             continue
         at, nf, es = time.strftime("%Y-%m-%d %H:%M", time.gmtime(calendar.timegm(time.strptime(f"{today} {AUTO_SHELF_AT}", "%Y-%m-%d %H:%M")) + 60 * k)), 0, []
-        tips = shelf_tips(seen, pl, shelf_whys(picks, h, pl.get("group"), time.time()), time.time())  # 11/5: 💡 = 첫 상품 카피 돌림 · 나머지 근거 줄(같은 품목 안 같은 줄 X)
+        tips = shelf_tips(seen, pl, shelf_whys(picks, h, pl.get("group"), time.time()), time.time(), shelf_custom(pl, picks, seen.get("shelfcopy", {}).get("m", {}), time.time()))  # 11/5: 💡 = 근거 줄 · 맞춤 한 줄(오늘 있었던 일·상품 이름·tips) · 같은 품목 안 같은 줄 X
         d30 = time.strftime("%y%m%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))
-        for (_, rank, c, pid, item, name, price, img, rocket), tip in zip(picks, tips):
+        for (_, rank, c, pid, item, name, price, img, rocket), (tip, extra) in zip(picks, tips):
             pids.add(pid)
             u = f"https://www.coupang.com/vp/products/{pid}" + (f"?itemId={item}" if item else "")
             lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == "" and ph_last(r)[:6] >= d30), default=0)  # 30일 기록(최저가 낱말 X — '30일 기록 중 가장 낮은 가격')
@@ -710,7 +763,7 @@ def auto_shelf(seen):
             why_ = f"쿠팡 '{c[3:]}' 검색 {rank}위" if c.startswith("검색") else f"쿠팡 {CP_BEST_NAME.get(int(c), '카테고리')} 베스트 {rank}위"
             es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": chk, "img": img,
                        "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ {esc(why_, False)}" + (" · 로켓배송" if rocket else "")
-                               + ("\n✔ 핫딜픽 30일 기록 중 가장 낮은 가격" if fire else "") + (f"\n💡 {esc(tip)}" if tip else "")
+                               + ("\n✔ 핫딜픽 30일 기록 중 가장 낮은 가격" if fire else "") + (f"\n{esc(extra)}" if extra else "") + (f"\n💡 {esc(tip)}" if tip else "")
                                + "\n" + warn_line(seen, name, pl["kw"], kst)})
         print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · {diag}")
     st["end"] = all(pl["kw"] in st["done"] for pl in pls)
@@ -5729,6 +5782,7 @@ def ai_json(prompt, props, img=None):
 TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주세요(10/23 진우 '고정 레이아웃 + 말투 한 줄'). 상품명·가격은 위 줄에 따로 있어요.
 - 사람이 말하듯, 이걸 고르는 게 왜 합리적인지 — 숫자를 쓴다면 아래 재료에 있는 숫자 1개만(단위가·리뷰 수·기록 등 · 재료에 없는 숫자·가격 X) (11/5 진우 '같은 멘트만 하지 말고 합리적인 선택임을 느끼게').
 - '최근 줄'과 첫 어절·끝맺음을 다르게.
+- 짧게(읽는 사람 기준) · 유머러스하게 — 말장난·의인화·일상 장면 OK, 비꼬기·비하·성별 고정관념 X.
 - 한 문장, 폰 한 줄(20자 안팎). 이모지는 0~1개.
 - 써 본 척(제가·나도·써보니·먹어보니·샀는데·질렀음), 효능·건강·의학 말, 과장·조급(역대급·무조건·손해·마지막 기회), 재촉·클릭 유도(클릭·눌러·지금 바로 구매), 링크·댓글·광고 말 쓰지 않기.
 - '최근 줄'과 다른 문장으로.
@@ -6146,7 +6200,8 @@ def th_voice(seen, text, link, src=None):
         num = next((x for x in (f"{unit}꼴이에요" if unit else "", f"{dr[1]}% 내려간 가격이에요" if dr else "", f"리뷰 {rv:,}개 쌓인 상품이에요" if rv >= TH_HOOK_REV else "")
                     if x and len(x) <= TH_HOOK_LEN and not re.search(lban, x)), "")  # ⑩ 숫자형 = 우리 데이터만(단위가 > 할인율 > 리뷰 수)
         hook, hk = th_hook(seen, name, num, lban, names) if TH_HOOK and not oy else ("", 0)  # 올리브영 = 훅 X(큐레이터 정책)
-        mats = "\n".join([*ls, unit or "", won or ""])  # 11/5: 말투 줄 숫자 = 재료에 있는 것 1개까지(출처 없는 숫자 X)
+        tf = today_fit(name)  # 11/5 I: 오늘 있었던 일(docs/today.json — 사실만, fit 낱말이 상품 이름에 있을 때만)
+        mats = "\n".join([*ls, unit or "", won or "", *tf])  # 11/5: 말투 줄 숫자 = 재료(오늘 사실 포함)에 있는 것 1개까지(출처 없는 숫자 X)
         nums_ok = lambda s: len(re.findall(r"\d[\d,.]*", s)) <= 1 and all(n in mats for n in re.findall(r"\d[\d,.]*", s))
         ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and nums_ok(s) and not re.search(TH_PRICE_WORD, s) and th_w(s) <= TH_W + 2 and not th_shape(s, st.get("b", [])) \
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
@@ -6159,7 +6214,7 @@ def th_voice(seen, text, link, src=None):
             + ("\n- 물음표 쓰지 않기." if tone != TH_ASK else "") + ("\n- 토스 딜: 다른 쇼핑몰 이름·가격 비교(보다 싸·젤 싸·비교) 없이." if toss else "") \
             + (f"\n- 이 글 = 👍 '{steady_word(full)} 상품'(특가 아님): 특가·최저가·할인이라고 하지 않기 · '핫딜픽에서 주문'처럼 우리 링크 주문으로 읽히는 말 X · '하루 N개 주문' 같은 숫자 X(글에 있는 리뷰·구매 수만)." if steady else "") \
             + f"\n\n상품명: {name}\n가격: {won}\n재료:\n" + "\n".join(l for l in ls if "게시 시점" not in l) + ("\n\n최근 줄: " + " / ".join(st.get("b", [])[-5:]) if st.get("b") else "") \
-            + (f"\n\n첫 줄(훅): {hook}" if hook else "")  # Y-5 '첫 줄과 같은 낱말이면 다시' = 훅을 보여 줘야 스스로 확인
+            + (f"\n\n첫 줄(훅): {hook}" if hook else "") + (f"\n\n오늘 있었던 일(사실만 — 이 상품과 맞을 때만 곁들이기, 억지로 X): {' · '.join(tf)}" if tf else "")  # Y-5 '첫 줄과 같은 낱말이면 다시' = 훅을 보여 줘야 스스로 확인
         line, again = "", ""
         for _ in (0, 1):
             try:
@@ -6246,7 +6301,7 @@ TH_C, TH_C_FROM, TH_SCENE_H = True, "2026-10-25 20:00", (19, 22)  # 10/25 Cowork
 TH_C_BAN = r"추천|인생\s*템|강추|무조건|최저|역대|(?:가장|제일|젤)\s*(?:싸|저렴)|품절\s*임박|서두르|지금\s*바로|사세요|사야\s*해|구매하|링크|광고|수수료|https?:|\.kr|\.com"  # C·S 글(대가성 문구·링크는 코드가 붙임)
 TH_C_FAKE = r"정리하다|정리하면서|살림\s*(?:하다|하면서|정리)|(?<![가-힣])우리\s*집|떠오른|떠올랐|쟁여\s*(?:둔다|둠|둬|뒀|놨|놔|놓음|놓았|두는\s*중|두고\s*있)|쟁였|(?:쓰|써\s*보|마시|먹|입|신|뿌리|바르|발라\s*보|사용하|들고\s*다니)는\s*중(?!에)|쓰고\s*(?:부터|나서|나니)|쓰니까|써\s*보니|먹고\s*(?:부터|나서)|바꿨|바꿈|바꾸고\s*나|갈아타|갈아탔|갈아탐|정착|들인\s*뒤|들이고\s*나|(?:사다|사|주문해|시켜|챙겨|걸어)\s*(?:둠|둬|둔다|뒀|놨|놔|놓음)|(?:이거|이걸로)\s*(?:만\s*)?(?:씀|써|먹어|먹음|마셔|마심)(?![가-힣])|챙겨\s*먹|챙김|바름|샀더니|써\s*봄|먹어\s*봄|이거만\s*(?:씀|써|먹)|매일\s*(?:마심|먹음|씀|바름)|요즘\s*(?:이거|이걸로)|정기\s*배송|해결\s*(?:함|했|됨)|편해\s*(?:짐|졌)|좋아\s*(?:짐|졌)|달라\s*(?:짐|졌)"  # 내가 샀다·쓴다는 말(써 본 척 — 10/25 리뷰 2번: '쟁여 두기·두면' 같은 권유 꼴은 OK)
 TH_C_SKIP = r"영양제|유산균|프로바이오|락토|비타민|멀티\s*비타|종합\s*비타|오메가|콜라겐|홍삼|루테인|밀크\s*[씨시]슬|쏘팔|아르기닌|코엔자임|코큐텐|프로폴리스|크릴|보스웰리아|양배추즙|도라지|프로틴|다이어트|건강|효소|흑마늘|녹용|글루타치온|마그네슘|철분|칼슘|엽산|의약|파스|마스크팩|탈모|두피|\d+\s*(?:정|캡슐)(?![가-힣])"  # 몸·피부 고민 → 상품 = 효능 주장이 되는 품목은 C·S X(A/B만 — 전체 제목으로 봄, + WU_HEALTH)
-TH_C_BODY = r"아프|아파|뻐근|결림|저리|가려(?:워|움|운|웠)|간지러|빠진\s*머리|머리카락이\s*빠|더부룩|소화가|붓기|부었|피곤|칼칼|기침|콧물|여드름|트러블|잡티|기미|(?:얼굴|눈가|이마|목|피부)\s*주름|주름살|각질|두통|생리통|변비|불면|잠이\s*안"  # 몸·피부 증상 장면 X(상황 → 상품 = 효능 주장 — 생활 불편만)
+TH_C_BODY = r"아프|아파|뻐근|결림|저리|가려(?:워|움|운|웠)|간지러|빠진\s*머리|머리카락이\s*빠|더부룩|소화가|붓기|부었|피곤|칼칼|기침|콧물|여드름|트러블|잡티|기미|(?:얼굴|눈가|이마|목|피부)\s*주름|주름살|각질|두통|생리통|변비|불면(?:증|에|으로|\s*(?:개선|해소|고민))|잠이\s*안"  # 몸·피부 증상 장면 X(상황 → 상품 = 효능 주장 — 생활 불편만)
 TH_C_PROMPT = """너는 Threads에 생활 속 불편을 반말로 짧게 쓰는 사람이야. 아래 상품이 해결하는 '실제로 자주 겪는 불편한 상황'을 써.
 - 상품명·브랜드·'추천'이라는 말 X. 가격·숫자·용량·스펙·링크 X. 써 본 척(나도·내가·샀는데·써 보니)·효과·효능 약속·과장(인생템·강추·무조건·최저) X. 다른 쇼핑몰 이야기 X. 재촉('지금 바로'·'사세요') X.
 - 말하는 사람이 그 물건을 샀다·쓴다·먹는다·바꿨다·쟁여 뒀다는 말 X(요즘 이거 써·먹는 중·바꿨더니·들인 뒤로·쟁여 둠·챙김 X) — 불편한 장면만, 해결은 '방법·물건 소개'로.
@@ -8888,10 +8943,10 @@ def x_post(seen):
     print("x post: 알림 받기 글", r["id"], "· 댓글", xs["m"][r["id"]], f"· 끝난 특가 {n}개" + (f" · 가장 빨리 {h}시간 안" if h else ""))
 
 
-TH_CHAT, CHAT_AT, CHAT_GAP, CHAT_LATE, CHAT_DAYS = True, (13, 10), 30 * 60, 3 * 3600, 7  # II(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자'): Threads 수다 글 하루 1개(점심 13:10) · 앞뒤 30분 안 다른 비딜 글이면 그 30분 뒤 첫 빈 실행 · 3시간 넘으면 그날 X · 주제 = 최근 7일 덜 쓴 것
+TH_CHAT, CHAT_AT, CHAT_GAP, CHAT_LATE, CHAT_DAYS, CHAT_MORE = True, (13, 10), 30 * 60, 3 * 3600, 7, ((18, 40), (22, 40))  # 11/5 진우 '중간 중간 일상 수다도': 하루 3개(13:10 + 퇴근길 18:40 + 밤 22:40 — 20:30 힘 준 글·22:03 미리보기와 안 겹치게) · 같은 날 주제 X  # II(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자'): Threads 수다 글 하루 1개(점심 13:10) · 앞뒤 30분 안 다른 비딜 글이면 그 30분 뒤 첫 빈 실행 · 3시간 넘으면 그날 X · 주제 = 최근 7일 덜 쓴 것
 CHAT_TOPICS = (("shop", "장보기 습관 공감(예: 마트 가면 계획에 없던 거 꼭 하나 담게 돼요)"), ("home", "살림 공감(예: 치약 끝까지 짜는 파 vs 새로 뜯는 파)"),
                ("season", "오늘 계절·기온 이야기(아래 '오늘 계절' 줄에 있는 것만 — 없는 날씨·기온 X)"), ("quiz", "가격 감각 퀴즈 — 숫자는 아래 '우리 기록' 숫자 그대로만(품목은 일반 이름 — 상품·브랜드 X)"),
-               ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"))
+               ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"), ("today", "오늘 있었던 일 — 아래 '오늘 있었던 일' 사실 1개를 그대로 곁들인 공감(경험담·지어낸 일 X)"))  # 11/5 today = docs/today.json(있는 날 먼저)
 TH_NONDEAL = ("info", "wx", "snack", "log", "funnel", "chat")  # 비딜 Threads 묶음 글 kind(큐레이션 = events 시각·정해진 시각 글은 시각으로) — 수다 글 앞뒤 30분 칸
 CHAT_BAN = (r"https?:|www\.|\.kr\b|@|#|(?:사세요|주문하세요|담으세요|챙기세요|쟁이세요|구입하세요|구매하세요|장만하세요|지르세요|(?:사|담아|쟁여|챙겨|주문해|시켜|채워|들여)\s*(?:두세요|놓으세요))(?![^\n.!]{0,8}[?？])|사야\s*(?:해요|돼요|합니다|죠)(?![^\n.!]{0,8}[?？])|사\s*둬|구매\s*(?:하세요|해|하자|각|추천)|장바구니에\s*넣어|놓치지|서두르|지금\s*바로|링크|프로필|질러라|지르자|질러(?=\s*$|\s*[!~.\n])|(?:지금|당장|얼른|빨리)\s*(?:사|질러|담아)(?![가-힣])|사야\s*(?:해|돼|됨|지)(?![?？가-힣])|"  # 링크·권유(반말 재촉 — '질러 버림'·'빨리 사라짐' X)
             r"(?:댓글|답글)[^\n]{0,15}(?:달면|단\s*사람|남기면|남긴\s*사람|주시면|주면|달아\s*주면|쓰면)|추첨|경품|기프티콘|쏜다|쏠게|나눔|드려요|보내\s*드|"  # 댓글 보상 유도
@@ -9020,6 +9075,9 @@ def chat_facts(name, ps, today, used):
         rows = [f"· {re.sub(rf'{SAVE_STORES}|{OTHER_STORES}', '', p['name']).strip()} {int(p['start'][5:7])}/{int(p['start'][8:10])}~{int(p['end'][5:7])}/{int(p['end'][8:10])}"
                 for p, st, first in promo_list(today) if st != "past" and (first or today) <= lim and p.get("start") and p.get("end")][:3]
         return (f"행사(이름·기간만 — 몰 이름 X):\n" + "\n".join(rows) + "\n", set(), None) if rows else None
+    if name == "today":  # 11/5 docs/today.json(Cowork 06:40 — 사실만) · 없거나 지난 날짜 = 주제 X
+        xs = today_items(kst_ts(today + " 12:00"))
+        return ("오늘 있었던 일(사실 그대로 — 지어내기·경험담 X):\n" + "\n".join(f"- {x['fact'].strip()}" for x in xs[:3]) + "\n", set(), None) if xs else None
     return (f"오늘 계절: {(RUN.get('season') or season_ctx({}))['line']}\n" if name == "season" else ""), set(), None
 
 
@@ -9033,9 +9091,11 @@ def chat_post(seen):
         return
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", kst)
-    key, at = "chat_" + day.replace("-", ""), kst_ts(f"{day} {CHAT_AT[0]:02d}:{CHAT_AT[1]:02d}")
-    if key in seen or not at <= now < at + CHAT_LATE or busy(seen, cap=False) or th_hold(seen):
+    slot = next(((k, hm) for k, hm in enumerate((CHAT_AT, *CHAT_MORE)) if hm and ("chat_" + day.replace("-", "") + (f"_{hm[0]:02d}" if k else "")) not in seen
+                 and kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") <= now < kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") + CHAT_LATE), None)  # 11/5 하루 3칸(첫 칸 키 = 예전 그대로)
+    if not slot or busy(seen, cap=False) or th_hold(seen):
         return
+    key = "chat_" + day.replace("-", "") + (f"_{slot[1][0]:02d}" if slot[0] else "")
     fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT]  # None = 끔(그 시각 X)
     near = [t for t in seen.get("thnd", {}).get("ts", []) + [now if kst_ts(e["at"]) <= now <= kst_ts(e["at"]) + CUR_LATE and "th" not in seen.get(f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}", {}) else kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
     if near:
@@ -9046,7 +9106,8 @@ def chat_post(seen):
     st["h"] = [h for h in st.get("h", []) if h[0] > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 14 * 86400))]
     last = {h[1]: h[0] for h in st["h"]}  # 주제 -> 마지막으로 쓴 날
     ps, used = load(POSTS, []), {h[3] for h in st["h"] if len(h) > 3 and h[3] and h[0] > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - CHAT_DAYS * 86400))}
-    for name, desc in sorted(CHAT_TOPICS, key=lambda x: last.get(x[0], "")):  # 안 쓴 주제 -> 오래전에 쓴 주제 순(같으면 표 순서)
+    done = {h[1] for h in st["h"] if h[0] == day}  # 11/5 같은 날 주제 X(하루 3개)
+    for name, desc in sorted((x for x in CHAT_TOPICS if x[0] not in done), key=lambda x: (x[0] != "today", last.get(x[0], ""))):  # today.json 있는 날 = today 먼저 · 안 쓴 주제 -> 오래전에 쓴 주제 순(같으면 표 순서)
         fx = chat_facts(name, ps, day, used)
         if fx is not None:
             break

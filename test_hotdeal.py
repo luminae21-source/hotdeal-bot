@@ -4237,7 +4237,7 @@ assert t24 == f"""{H.TOSS_NOTE}
 for t in (k24, g24, t24):
     assert all(H.th_w(l) <= H.TH_W for l in t.split("\n")[1:] if not l.startswith(("👉", "🚀", "💙"))) and len(t) <= 480 and "👋" not in t and "📲" not in t, t  # 줄마다 폭 22 안(대가성 문구·머리·링크 줄 빼고)
     assert len(re.findall(H.TH_NUM, "\n\n".join(t.split("\n\n")[1:3]))) <= H.TH_NUMS and t.count("⏰") + t.count("게시 시점") == 1 and "\n\n\n" not in t, t  # 숫자 5개까지 · 시점은 한 줄에 한 번
-assert "말투 = 질문형 존댓말" in p24[0] and "말투 = 짧은 감탄 존댓말" in p24[1] and "말투 = 계산형 존댓말" in p24[2] and not any("해요체 X" in p for p in p24) and all("이모지 0~1개" in p and "숫자 없이" in p and H.TH_FRIEND.strip() in p for p in p24)
+assert "말투 = 질문형 존댓말" in p24[0] and "말투 = 짧은 감탄 존댓말" in p24[1] and "말투 = 계산형 존댓말" in p24[2] and not any("해요체 X" in p for p in p24) and all("이모지 0~1개" in p and "재료에 있는 숫자 1개만" in p and H.TH_FRIEND.strip() in p for p in p24)
 assert "상품명: 코멧 포켓형 손난로 핫팩 100g, 30개\n가격: 8,860원\n재료:\n" in p24[0] and "150개 40,310원이면 1개당 269원" in p24[0] and "토스 딜:" not in p24[0] and "토스 딜:" in p24[2], p24[0]  # 재료 = 줄이기 전 글
 assert "최근 줄: 이 가격 실화예요? 장바구니각이에요✨" in p24[1] and "물음표 쓰지 않기" in p24[1] and "물음표 쓰지 않기" not in p24[0] and "👋" not in p24[0] and "link.coupang" not in p24[0]  # 물음표는 질문형만
 v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화예요? 장바구니각이에요✨", "출퇴근용으로 쟁여 둘 만해요", "냉장고에 쟁여 두기 좋겠어요"], v24
@@ -11220,15 +11220,16 @@ s114 = {"cpbest": {"r": {"1012": R114 + [["20", "I20", "제주 생수 2L 12개",
 tg114 = []; H.tg = lambda m, **p: tg114.append(p) or {"message_id": 1}
 H.AUTO_ON["shelf"] = False; time.time = lambda: TK("2026-10-31 14:40"); H.auto_shelf(s114); assert not os.path.exists("auto_events.json") and "autoshelf" not in s114  # 끔 스위치
 H.AUTO_ON["shelf"] = True; time.time = lambda: TK("2026-10-31 14:20"); H.auto_shelf(s114); assert not os.path.exists("auto_events.json")  # 14:30 전 X
-time.time = lambda: TK("2026-10-31 14:40")
+time.time = lambda: TK("2026-10-31 14:40"); ai114, H.ai_json = H.ai_json, lambda prompt, props: (_ for _ in ()).throw(OSError("credit"))  # 맞춤 한 줄 Claude 실패 = plan tips 그대로
 with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
+H.ai_json = ai114; assert "shelf line Claude 실패 -> plan tips" in o114.getvalue()
 a114 = json.load(open("auto_events.json"))
 assert [e["pid"] for e in a114] == ["15", "16", "17", "19", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 효능 낱말 · 14 = 사진 X · 18 = 낱말 X · 19 = rank 없음 → 응답 순서(9번째 — 10/30 첫날 0개 원인) · 순위 순
 e114 = {e["pid"]: e for e in a114}
-assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n💡 물은 무거우니 문 앞까지\n⚠️ 확인할 점: 유통기한 · 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]  # 11/5: 💡 tip = 첫 상품만 · ⚠️ = 확인할 것 1개 + 짧게
+assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n물은 무거우니 문 앞까지\n💡 5개 중 100ml당 29원, 제일 덜 들어요\n⚠️ 확인할 점: 유통기한 · 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]  # 11/5 F: 💡 1개 = 근거 줄 · 카피 = ✔ 아래 한 줄 · ⚠️ = 확인할 것 1개 + 짧게
 assert e114["20"]["text"].startswith("🔥 <b>[쿠팡] 제주 생수 2L 12개 (8,500원)</b>") and "✔ 핫딜픽 30일 기록 중 가장 낮은 가격" in e114["20"]["text"] and "최저" not in e114["20"]["text"] and e114["16"]["url"] == "https://www.coupang.com/vp/products/16?itemId=I16"  # 🔥 = 30일 기록보다 내려감만('최저' 낱말 X)
-assert "💡 6일 전 확인 때보다 500원 내려왔어요" in e114["20"]["text"] and "💡 100ml당 30원, 같이 고른 것 중 두 번째로 덜 들어요" in e114["19"]["text"] and "💡" not in e114["16"]["text"] + e114["17"]["text"], [e114[k]["text"] for k in ("16", "17", "19", "20")]  # 나머지 = 근거 줄(가격 기록·같이 고른 것끼리 단위 값) · 근거 없으면 줄 X
+assert "💡 6일 전보다 500원 내려왔어요" in e114["20"]["text"] and "💡 100ml당 30원, 5개 중 두 번째로 덜 들어요" in e114["19"]["text"] and "💡" not in e114["16"]["text"] + e114["17"]["text"], [e114[k]["text"] for k in ("16", "17", "19", "20")]  # 나머지 = 근거 줄(가격 기록·같이 고른 것끼리 단위 값) · 근거 없으면 줄 X
 assert [e114[k]["text"].count("⚠️ 확인할 점: 유통기한 ·") for k in ("15", "16", "17", "19", "20")] == [1, 1, 1, 0, 0] and "⚠️ 확인할 점: 구성(개수) ·" in e114["19"]["text"]  # 같은 ⚠️ 문구 하루 3번까지
 assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 5개(🔥 1) · 후보 9(1012 9) · 빠짐 이미 진열 1 · cp_fail 1 · 가격 0 · 사진 1 · 효능 1 · 이름 막기 0 · rank 없음 1(응답 순서로)\n" in o114.getvalue(), o114.getvalue()
 assert "✔ 쿠팡 식품 베스트 9위 · 로켓배송" in e114["19"]["text"]  # 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
@@ -12759,13 +12760,14 @@ pl147 = {"kw": "라면", "group": "food", "tip": "t0", "tips": [f"카피{k}" for
 pk147 = [(0, k + 1, "1012", str(70 + k), "", n, pr, "https://x/i.jpg", True) for k, (n, pr) in enumerate([("신라면 120g 40개", 32000), ("진라면 120g 5개", 4500), ("너구리 120g 20개", 15000),
                                                                                                            ("짜파게티 140g 10개", 8900), ("컵누들 37.8g 6개", 5400), ("라면사리 110g 30개", 15900)])]
 w147 = H.shelf_whys(pk147, {"75:": [], "https://www.coupang.com/vp/products/75": [["26110109", 17900, "", "api"]]}, "food", N147)
-assert w147[5][0] == "같이 고른 6개 중 100g당 482원, 제일 덜 들어요" and w147[2][0] == "100g당 625원, 같이 고른 것 중 두 번째로 덜 들어요" and "5일 전 확인 때보다 2,000원 내려왔어요" in w147[5] and w147[1] == [] \
+assert w147[5][0] == "6개 중 100g당 482원, 제일 덜 들어요" and w147[2][0] == "100g당 625원, 6개 중 두 번째로 덜 들어요" and "5일 전보다 2,000원 내려왔어요" in w147[5] and w147[1] == [] \
     and "하루 1개면 40일 치예요" in w147[0] and "식구 많은 집이면 이 정도 양이 편해요" in w147[0], w147  # 같은 단위 값 1·2등 · 가격 기록 · 기간 환산 · 양으로 누구에게 · 근거 없으면 []
 assert H.shelf_whys([(0, 1, "", "90", "", "컵라면 3개", 3000, "", True)], {}, "food", N147) == [["1~2인 가구엔 부담 없는 양이에요"]]  # 적은 양 = 1~2인 가구(3개↑일 때만 단위 순위)
 s147 = {}; t147 = H.shelf_tips(s147, pl147, w147, N147)
-assert len(t147) == 6 and len(set(t147)) == 6 and all(t147) and t147[0].startswith("카피") and t147[5] == w147[5][0] and t147[2] == w147[2][0] and t147[1].startswith("카피"), t147  # 같은 품목 6개 = 💡 다 다름 · 첫 상품 = 카피 · 나머지 = 근거 줄 먼저, 없으면 다른 카피
-assert t147[0] in s147["shelfcopy"]["m"] and H.shelf_tips(s147, pl147, [[] for _ in range(6)], N147 + 3600)[0] != t147[0]  # 7일 안 쓴 카피 = 다시 X
-assert H.shelf_tips({}, {"tips": []}, [["a"], ["a"], []], N147) == ["a", "", ""]  # 카피 없음·근거 겹침 = 줄 X(지어낸 줄보다 빈 줄)
+assert t147 == [(w147[0][0], "카피3"), ("카피4", ""), (w147[2][0], "카피5"), (w147[3][0], "카피0"), ("카피1", ""), (w147[5][0], "카피2")], t147  # 11/5 F: 💡 1개 = 근거 줄(있으면) · 카피 = ✔ 아래 한 줄 / 근거 없으면 💡 = 카피 · 같은 품목 6개 = 카피 다 다름(날마다 시작점 돌림)
+assert H.shelf_tips(s147, pl147, [[] for _ in range(6)], N147 + 3600) == [("", "")] * 6 and H.shelf_tips(s147, pl147, [[]], N147 + 8 * 86400)[0][0].startswith("카피")  # 7일 안 쓴 카피 = 다시 X · 7일 지나면 다시
+assert H.shelf_tips({}, {"tips": []}, [["a"], ["a"], []], N147) == [("a", ""), ("", ""), ("", "")]  # 카피 없음·근거 겹침 = 줄 X(지어낸 줄보다 빈 줄)
+assert H.shelf_tips({}, pl147, [["근거"], [], []], N147, ["맞춤1", "맞춤1", ""]) == [("근거", "맞춤1"), ("카피3", ""), ("카피4", "")]  # 11/5 I: 맞춤 한 줄(shelf_custom) 먼저 · 겹치면·없으면 plan tips
 k147 = time.gmtime(N147 + 9 * 3600); s147w = {}
 wl147 = [H.warn_line(s147w, n, "화장지", k147) for n in ["코멧 화장지 30롤"] * 5 + ["리필 세제 2L"]]
 assert [l.split(" · ")[0] for l in wl147] == ["⚠️ 확인할 점: 겹 수·1롤 길이"] * 3 + ["⚠️ 확인할 점: 롤 수"] * 2 + ["⚠️ 확인할 점: 리필(통 없음)인지"] and all(l.endswith("결제 전 최종가 확인 (11/6 14시 가격)") for l in wl147), wl147  # 같은 문구 하루 3번까지 · 이름 먼저(리필)
@@ -12775,3 +12777,44 @@ for tn147, ls147 in H.TH_TONE_POOL5.items():  # 기본 줄 = 말투마다 6개�
     assert len(set(ls147)) >= 6 and not [x for x in ls147 if re.search(rf"\d|{H.VOICE_BAN}|{H.TH_PUSH}|{H.TH_PRICE_WORD}|최저", x) or (tn147 != H.TH_ASK and re.search(H.TH_QM, x))], (tn147, ls147)
 assert H.th_shape("이 구성 괜찮네요", ["이 정도면 무난하네요", "x"]) and H.th_shape("구성이 깔끔하네요", ["오 이건 괜찮네요"]) and not H.th_shape("생각보다 알찬 구성이에요", ["오 이건 괜찮네요"])  # 첫 어절 같음·끝맺음 같음 = 다시
 assert "재료에 있는 숫자 1개만" in H.TH_TONE_PROMPT and "첫 어절·끝맺음" in H.TH_TONE_PROMPT and "nums_ok(s)" in inspect.getsource(H.th_voice)
+# 9-148 (11/5 밤 진우 '제품에 적절한 멘트 · 일상 대화도 그날 있었던 일 참고 · 중간 중간 일상 수다도'): docs/today.json = 오늘 날짜일 때만(없음·지난 날 = 지금 그대로) · fit 맞는 상품만 그 사실 ·
+#   진열 맞춤 한 줄(Claude — 규칙 걸린 줄 = plan tips로) · Threads 말투 줄 재료에 오늘 사실 · 수다 글 하루 3개(13:10·18:40·22:40) · 같은 날 주제 X · today 주제 먼저 · 앞뒤 30분 비딜 글 = 다음 실행
+sv148 = (H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, H.E.get("THREADS_TOKEN"), H.POSTS, H.METRICS, H.http)
+d148 = tempfile.mkdtemp(); cwd148 = os.getcwd(); os.chdir(d148); os.makedirs("docs"); json.dump([], open("posts148.json", "w")); H.POSTS, H.METRICS = "posts148.json", "m148.json"
+N148 = TK("2026-11-06 12:00")
+assert H.today_items(N148) == [] and H.today_fit("핫팩", N148) == []  # 파일 없음 = 지금 그대로
+json.dump({"date": "2026-11-06", "updated": "06:40", "items": [{"fact": "오늘 아침 기온 영하 2도", "kind": "weather", "src": "기상청", "fit": ["핫팩", "내복"]},
+                                                               {"fact": "가" * 41, "kind": "life", "src": "x", "fit": ["핫팩"]}, {"fact": "뉴스에 나온 그 일", "kind": "life", "src": "x", "fit": []},
+                                                               {"fact": "오늘은 입동 전날", "kind": "cal", "src": "달력", "fit": []}]}, open(H.TODAY_FILE, "w"), ensure_ascii=False)
+assert [x["fact"] for x in H.today_items(N148)] == ["오늘 아침 기온 영하 2도", "오늘은 입동 전날"] and H.today_items(N148 + 86400) == [] and H.today_items(N148 - 86400) == []  # 오늘만 · 40자 넘음·뉴스 X
+assert H.today_fit("하루온 핫팩 150g 10개", N148) == ["오늘 아침 기온 영하 2도"] and H.today_fit("진라면 5개", N148) == []  # fit 낱말이 이름에 있을 때만
+pk148 = [(0, k + 1, "1012", str(80 + k), "", n, 9900, "", True) for k, n in enumerate(["하루온 핫팩 150g 10개", "붙이는 핫팩 50g 30개", "발난로 핫팩 20개"])]
+pr148 = []; H.ai_json = lambda prompt, props, img=None: pr148.append(prompt) or {"lines": ["주머니 속 작은 난로 10개", "최저가 30개 묶음", "영하 2도 아침, 발끝부터 따끈"]}
+assert H.shelf_custom({"kw": "핫팩"}, pk148, {}, N148) == ["주머니 속 작은 난로 10개", "", "영하 2도 아침, 발끝부터 따끈"] and "오늘 있었던 일(사실): 오늘 아침 기온 영하 2도" in pr148[-1] and "입동" not in pr148[-1]  # 최저가 X · 숫자 = 이름·오늘 사실(fit)만
+pk148b = [x[:5] + (n,) + x[6:] for x, n in zip(pk148, ["진라면 120g 10개", "너구리 30개", "짜파게티 10개"])]
+assert H.shelf_custom({"kw": "라면"}, pk148b, {}, N148)[2] == "" and "오늘 있었던 일(사실)" not in pr148[-1]  # fit 안 맞는 품목 = 오늘 사실 X(그 숫자도 X)
+assert H.shelf_custom({"kw": "핫팩"}, pk148, {"주머니 속 작은 난로 10개": N148}, N148)[0] == ""  # 7일 안 쓴 줄 = 다시 X
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("credit"))
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.shelf_custom({"kw": "핫팩"}, pk148, {}, N148) == ["", "", ""]  # Claude 실패 = plan tips로
+assert "today_fit(name)" in inspect.getsource(H.th_voice) and "오늘 있었던 일(사실만" in inspect.getsource(H.th_voice) and "*tf" in inspect.getsource(H.th_voice)  # 말투 줄 = fit 맞는 오늘 사실만 재료로
+po148, pr148, L148 = [], [], ["마트 가면 계획에 없던 거 꼭 하나씩 담게 되죠", "과자 코너 앞은 늘 고비예요", "다들 장보기 목록 끝까지 지키는 편이세요?"]
+H.E["THREADS_TOKEN"] = "tk"; H.th_post = lambda tok, text, link=None, image=None, tag="핫딜": po148.append(text) or {"id": f"C{len(po148)}"}
+H.ai_json = lambda prompt, props, img=None: pr148.append(prompt) or {"lines": L148}
+H.review = lambda *a, **k: {}; H.cur_events = lambda seen=None: []; H.promo_list = lambda today: []; H.price_records = lambda *a, **k: {}
+def chat148(at, s):
+    time.time = lambda: TK(at)
+    with contextlib.redirect_stdout(io.StringIO()) as o:
+        H.chat_post(s)
+    return o.getvalue()
+s148 = {}
+chat148("2026-11-06 13:12", s148); assert len(po148) == 1 and s148["chat"]["h"][-1][1] == "today" and "오늘 아침 기온 영하 2도" in pr148[-1] and "chat_20261106" in s148  # today.json 있는 날 = today 주제 먼저
+chat148("2026-11-06 14:00", s148); chat148("2026-11-06 18:30", s148); assert len(po148) == 1  # 칸 사이 X · 18:40 전 X
+s148["thnd"]["ts"].append(TK("2026-11-06 18:20")); assert "앞뒤 30분 안 비딜 글 18:20" in chat148("2026-11-06 18:42", s148) and len(po148) == 1  # 앞뒤 30분 = 다음 실행
+chat148("2026-11-06 18:52", s148); assert len(po148) == 2 and "chat_20261106_18" in s148
+chat148("2026-11-06 22:41", s148); chat148("2026-11-06 23:30", s148); assert len(po148) == 3 and "chat_20261106_22" in s148  # 하루 3개
+t148 = [h[1] for h in s148["chat"]["h"] if h[0] == "2026-11-06"]; assert len(t148) == 3 == len(set(t148)), t148  # 같은 날 주제 X
+os.remove(H.TODAY_FILE); s148b = {}; chat148("2026-11-07 13:12", s148b); assert s148b["chat"]["h"][-1][1] != "today" and len(po148) == 4  # today.json 없음 = 다른 주제(지금 그대로)
+(H.th_landed, H.th_post, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, time.time, tk148, H.POSTS, H.METRICS, H.http) = sv148
+H.E.pop("THREADS_TOKEN", None) if tk148 is None else H.E.update(THREADS_TOKEN=tk148); os.chdir(cwd148)
+assert not re.search(H.TH_C_BODY, "찬 바람 불면 국물 생각나죠") and re.search(H.TH_C_BODY, "불면증에 좋은") and re.search(H.TH_C_BODY, "불면 고민")  # 날씨 수다(바람 불면) = 효능 말 X로 안 걸림
