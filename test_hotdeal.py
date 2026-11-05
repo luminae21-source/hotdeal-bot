@@ -11920,7 +11920,7 @@ H.record(ok127, [], TL127)
 assert len(json.load(open(H.POSTS))) == 1 and "toss_guard site 보류 · b 게시 시점 줄 X" in o127.getvalue()
 # 하루 요약 1줄(같은 토스 상품 묶음 = 1번 · 날 바뀐 첫 실행에 어제 것)
 s127 = {}; H.toss_guard_day(s127)
-assert s127["tgd"]["n"] == {"cut": 1, "d": 1, "hold": 4, "b": 2, "a": 1, "c": 1}, s127["tgd"]  # tg 뺌 d · tg 보류 b · Threads a · 인스타 c · 사이트 b
+assert s127["tgd"]["n"] == {"cut": 1, "d": 1, "f": 1, "hold": 4, "b": 2, "a": 1, "c": 1}, s127["tgd"]  # tg 뺌 d(+ f 쿠팡과 한 글 — 11/5) · tg 보류 b · Threads a · 인스타 c · 사이트 b
 H.RUN["tguard"] = [["tg", "hold", ["b"], s127["tgd"]["k"][1][2:]]]; H.toss_guard_day(s127); assert s127["tgd"]["n"]["hold"] == 4  # 같은 글 다시 = 셈 X
 time.time = lambda: TK("2026-11-07 00:10"); o127 = io.StringIO()
 with contextlib.redirect_stdout(o127): H.toss_guard_day(s127)
