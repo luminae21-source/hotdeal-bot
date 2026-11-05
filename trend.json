@@ -1,29 +1,34 @@
 {
  "google": {
-  "at": "2026-11-06 02:11",
+  "at": "2026-11-06 03:08",
   "items": [
    {
-    "t": "미국",
-    "n": "5000+",
-    "news": "[주간 뉴스타파] 미국 중간선거 블루 쓰나미, 트럼프식 '정글의 법칙' 흔들리나"
-   },
-   {
-    "t": "샌디스크 주가",
-    "n": "100+",
-    "news": ""
+    "t": "수술",
+    "n": "200+",
+    "news": "[단독] 기저질환 없던 60대, 무릎수술 다음날 사망"
    },
    {
     "t": "비트코인",
     "n": "200+",
-    "news": "비트코인 ETF, 美 중간선거·해킹 악재에 2거래일간 10억 달러 유출 By The Guru"
+    "news": "기요사키, 비트코인(BTC) 7만 5,000달러 부근 폭락에 추가 매수"
+   },
+   {
+    "t": "샌디스크 주가",
+    "n": "100+",
+    "news": "SanDisk 주가가 급락하는 이유는?"
    },
    {
     "t": "nasdaq",
     "n": "200+",
-    "news": "Nasdaq plummets 4% into correction territory, Dow drops…"
+    "news": "Dow tumbles 1,500 points, erasing its postelection rally;…"
    },
    {
-    "t": "마이크론",
+    "t": "세계 청년 대회",
+    "n": "100+",
+    "news": "내년 '교황 방한' 행사, 광화문 아닌 상암...\"시민 불편 최소화\""
+   },
+   {
+    "t": "마이크론 주가",
     "n": "200+",
     "news": "마이크론, 대만 HBM 공장 건설 중단…삼성·SK하이닉스 수혜 촉각 By EBN"
    },
@@ -33,24 +38,19 @@
     "news": "울릉도 공해상 표류 북한 어선 발견…당국 조사中"
    },
    {
-    "t": "qld",
+    "t": "soxl stock",
     "n": "100+",
-    "news": "Education ministers agree to biggest school system shake-up…"
+    "news": "Why is Direxion Daily Semiconductor Bear 3X Shares surging…"
    },
    {
     "t": "vix",
     "n": "200+",
-    "news": "Wall Street's Fear Index is doing something strange. Here's…"
+    "news": "Blue Chips Surge Past 2.8% as VIX Drops Below 18 While Oil…"
    },
    {
-    "t": "코인니스",
+    "t": "qld",
     "n": "100+",
-    "news": "'Staking Funds Drained for Ether Crash'? The Ledger Tells a…"
-   },
-   {
-    "t": "토스증권",
-    "n": "1000+",
-    "news": "[카카오페이] 카카오페이, 영업이익 105% 급증…스테이블코인이 다음 성장동력 될까?(2026년_3Q)"
+    "news": "1003/9 Castlebar Street, Kangaroo Point, Qld 4169"
    }
   ]
  },
