@@ -6570,7 +6570,7 @@ assert ic59("무지 노트 5권") == svg59("") and ic59("무지 노트 5권", ca
 assert not S.img_of({"t": "x", "text": "🔥 [네이버] 김 (1원)", "url": "https://naver.me/a", "img": "https://shopping-phinf.pstatic.net/main_1/a.jpg"}) \
     and not S.img_of({"t": "x", "text": "🔥 [토스] 김 (1원)", "url": "https://toss.shopping/t/1", "img": "https://ads-partners.coupang.com/image1/a"}) and not S.img_of({"t": "x", "text": "🔥 [쿠팡] 김 (1원)", "url": "https://link.coupang.com/a/x", "img": "https://shopping-phinf.pstatic.net/a.jpg"})  # 사진 = 쿠팡 글·쿠팡 주소만(네이버 쇼핑 검색 API 종료 · 토스 X)
 assert "function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}" in S.SEARCH_JS and "if(g)return location.assign(g)" in S.SEARCH_JS and 'class="' not in S.SEARCH_JS  # 검색 '가격 내림'·'마감' = 상태 쪽(결과 위 버튼 · 엔터 = 바로) · 큰따옴표 class X
-assert "location.search.match(/[?&]s=([hsw])/)" in S.MALL_JS and "querySelectorAll('.mf [data-c]')" in S.MALL_JS and "n+=20" in S.MALL_JS and "data-t" in S.TAB_JS and "delete x.dataset.sh" in S.TAB_JS  # 몰 쪽 ?s=h(🔥 쪽 몰 칩) = 그 탭 · 20개씩 더 보기 · 🔥 탭(검색 숨김 표시 지움)
+assert "q.match(/[?&]s=([hsw])/)" in S.MALL_JS and "querySelectorAll('.mf [data-c]')" in S.MALL_JS and "n+=20" in S.MALL_JS and "data-t" in S.TAB_JS and "delete x.dataset.sh" in S.TAB_JS  # 몰 쪽 ?s=h(🔥 쪽 몰 칩) = 그 탭 · 20개씩 더 보기 · 🔥 탭(검색 숨김 표시 지움)
 # 🔥 실시간 핫딜: 가격 근거(fresh_day) = 진우 상품 chkt·chk('M/D H시')·rehot, 그 밖 = 올린 날 — 3일(10/22~) 안 🔥만 · 기획전(evi) X · 같은 브랜드 1개
 def h59(i, mall, name, t, st=0, rh=False, **x):
     return (i, {"t": t, "text": f"🔥 [{mall}] {name} (1,000원)", "url": {"쿠팡": f"https://link.coupang.com/a/h{i}", "토스": f"https://toss.shopping/_m/h{i}", "네이버": f"https://naver.me/h{i}"}[mall], **x}, (st, None, "", [], rh))
@@ -12900,3 +12900,23 @@ qn152 = S.quick_nav([], 0, "", False)
 assert qn152.split('<div class="qr">')[2].index("쿠팡 모음") < qn152.split('<div class="qr">')[2].index("토스 모음") < qn152.split('<div class="qr">')[2].index("생필품")  # 홈 품목 줄 맨 앞
 x152 = lambda i, img: (i, {"url": f"https://link.coupang.com/a/P{i}", "t": "2026-11-05 18:00", "text": "🔥 [쿠팡] 스탠리 텀블러 (19,850원)", **({"img": "https://thumbnail6.coupangcdn.com/a.jpg"} if img else {})}, (0, 0, 0, 0, 0))
 assert [x[0] for x in S.trust8([x152(1, False), x152(2, True), (3, {"url": "u", "t": "2026-11-05 18:00", "text": "x"}, (1, 0, 0, 0, 0)), x152(4, True)], "2026-11-05")] == [2, 4, 1, 3]  # 🔥 = 사진 있는 것 먼저(사진 없는 텀블러 맨 위 X)
+# P (11/5 23:3x 진우 '응 그렇게 하자'): 18:40 토스 주방 5개 다시 — NSET_REPOST 그날 낮 첫 빈 칸(칸 3시간 전부터) · 같은 상품 · 오늘 확인 가격 · 토스 모음 링크 · 쿠팡 글과 15분(토스 대가성 문구 = 토스 글)
+assert H.NSET_REPOST["2026-11-06"][0:2] == ("toss", "kitchen") and len(H.NSET_REPOST["2026-11-06"][2]) == 5 and H.NSET_REPOST["2026-11-06"][3] == ("12:40", "18:40")
+assert H.th_mall(H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개", [f"{H.SITE}c/s/x.html"]) == {"toss"} and "toss_gap(seen, now)" in inspect.getsource(H.curation)
+sv152r, cwd152r = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS, H.NSET_REPOST), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS, S.EVENTS = "posts152r.json", "ev152r.json", "ev152r.json"; json.dump([], open("ev152r.json", "w"))
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))
+json.dump([T152(1, "맥스앤맥스 이지밀 냉동밥 소분 밀폐용기 350ml"), T152(2, "리벤스 주방 후드 필터 10m"), T152(3, "마흐트 실리콘 조리도구 6종 세트"), T152(4, "쉬젤 아티 내열유리 반찬 용기 10종", "2026-11-05 18:00")], open("posts152r.json", "w"), ensure_ascii=False)
+H.NSET_REPOST = {"2026-11-06": ("toss", "kitchen", tuple(f"https://toss.shopping/_m/K{k}" for k in (4, 1, 2, 3)), ("12:40", "18:40"))}
+s152r = {}; time.time = lambda: TK("2026-11-06 09:00")
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152r); H.new_sets(s152r)
+assert "nsetrp" not in s152r and not os.path.exists(H.AUTO_EVENTS)  # 12:40 칸 3시간 전 = 아직
+time.time = lambda: TK("2026-11-06 10:00")
+with contextlib.redirect_stdout(io.StringIO()) as o152r: H.new_sets(s152r)
+ae152r = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
+assert s152r["nsetrp"]["2026-11-06"] == "2026-11-06 12:40" and len(ae152r) == 1 and ae152r[0]["urls"] == [f"https://toss.shopping/_m/K{k}" for k in (1, 2, 3)] and "다시 올림 구성" in o152r.getvalue(), (ae152r, o152r.getvalue())  # 어제 확인한 쉬젤 = 빠짐 · 순서 그대로
+assert ae152r[0]["link"] == f"{H.SITE}c/s/20261106-1240-toss-kitchen.html" and ae152r[0]["text"].startswith(H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개 · 9,900원\n\n1️⃣ ")
+time.time = lambda: TK("2026-11-06 10:30")
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152r)
+assert len([e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]) == 1  # 하루 1번
+(time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS, H.NSET_REPOST) = sv152r; os.chdir(cwd152r)

@@ -1137,7 +1137,7 @@ TOSS_GAP = 15 * 60  # ⑨ 10/31 진우 '쿠팡과 시차만 둬'(20 → 15분 '�
 def th_mall(text, links=()):
     """Threads 글 몰 -> {'toss', 'cp'} 중 든 것(토스 링크 · 쿠팡 링크/쿠팡 대가성 문구)."""
     hs = {urllib.parse.urlsplit(u).netloc for u in re.findall(URL_ANY, html.unescape(text or "")) + [u for u in links if u]}
-    return {k for k, hit in (("toss", bool(hs & set(TOSS_HOSTS))), ("cp", bool(hs & set(CP_SHORT)) or DISCLOSURE in (text or ""))) if hit}
+    return {k for k, hit in (("toss", bool(hs & set(TOSS_HOSTS)) or TOSS_NOTE in (text or "")), ("cp", bool(hs & set(CP_SHORT)) or DISCLOSURE in (text or ""))) if hit}  # 11/5 P: 토스 모음 링크(우리 사이트) 글 = 토스 대가성 문구로
 
 
 def th_mall_mark(url, method, body=None):
@@ -4241,6 +4241,8 @@ def brand_first(ps):
 kind_key = lambda name: (kind_words(name) or [""])[-1][-2:]  # 소품목(조합 돌리기) = 마지막 종류 낱말 끝 두 글자(same_kind와 같은 셈)
 
 
+NSET_REPOST = {"2026-11-06": ("toss", "kitchen", ("https://toss.shopping/_m/PUBtA9vD", "https://toss.shopping/_m/JLgF5PUk", "https://toss.shopping/_m/B6yMHKVy", "https://toss.shopping/_m/v6vJY2as",
+                                                  "https://toss.shopping/_m/FPKxGMas"), ("12:40", "18:40"))}  # 11/5 23:3x 진우 P: 18:40 토스 주방 5개(이름·가격 빠졌던 글) 다시 — 그날 낮 첫 빈 칸 · 같은 5개 · 오늘 확인 가격
 NSET_H, NSET_SLOTS, NSET_FILE, NSET_MAX, NSET_FRESH = 48, ("08:20", "12:40", "18:40", "21:10"), "nset.json", 5, 48  # 10/31 진우 '새로운 제품들이 나오면 계속 새로운 구성' — 새 상품 48시간 · Cowork 큐레이션 칸(비었을 때만 자동) · 오늘 기록(status.json) · 구성 5개까지 · 가격 확인 48시간 안만(14:10)
 
 
@@ -4383,6 +4385,14 @@ def new_sets(seen):
         print(f"{'새 구성' if k != 'old' else '기존 상품 구성'} 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
         return True
 
+    rp = NSET_REPOST.get(today)
+    if rp and today not in seen.get("nsetrp", {}):  # P: 정해 둔 상품 다시 올리기(칸 3시간 전부터 — 가격 = 오늘 확인)
+        slot = next((f"{today} {t}" for t in rp[3] if f"{today} {t}" not in taken and 20 * 60 <= kst_ts(f"{today} {t}") - now <= CUR_PREP), None)
+        x = [now, rp[0], rp[1], list(rp[2]), CAT_SHORT.get(rp[1], ""), "", "new"]
+        if slot and place(x, slot):
+            taken, seen["nsetrp"] = taken | {slot}, {"t": now, today: slot}
+            sets.append(x)
+            print("다시 올림 구성 ·", slot, x[4], len(x[3]))
     for x in sets:
         if not x[5] and (slot := nxt()) and place(x, slot):
             taken |= {slot}
@@ -9496,6 +9506,9 @@ def curation(seen):
             st["ep"] = 1
             json.dump(load(SERIES_EPS, []) + [{"key": sk, "no": st["no"], "t": e["at"], "title": next((l for l in body.split("\n") if l.strip() and not l.startswith(NOTE_STARTS) and not l.startswith("[")), ""),
                                                "link": e.get("link"), "img": list(e.get("img") or [])[:4]}], open(SERIES_EPS, "w"), ensure_ascii=False)
+        if "th" not in st and TOSS_NOTE in body.split("\n", 1)[0] and (w := toss_gap(seen, now)):  # 11/5 P: 토스 큐레이션 ↔ 쿠팡 글 15분(⑨) — 다음 실행에
+            print("curation 토스 글 쿠팡과 시차", int(w // 60), "분 -> 다음 실행", e["at"])
+            continue
         power = bool(e.get("power"))  # 힘 준 글(07:30·20:30 칸) = 묶음 간격 안 보고 시각에 · 다른 큐레이션 = 힘 준 글 20분 뒤
         th = tok and "th" not in st and (power or not busy(seen, cap=False) and not th_hold(seen))
         if not (th or ig):
