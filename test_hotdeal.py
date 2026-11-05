@@ -11226,8 +11226,10 @@ with contextlib.redirect_stdout(io.StringIO()) as o114:
 a114 = json.load(open("auto_events.json"))
 assert [e["pid"] for e in a114] == ["15", "16", "17", "19", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 효능 낱말 · 14 = 사진 X · 18 = 낱말 X · 19 = rank 없음 → 응답 순서(9번째 — 10/30 첫날 0개 원인) · 순위 순
 e114 = {e["pid"]: e for e in a114}
-assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n💡 물은 무거우니 문 앞까지\n⚠️ 확인할 점: 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]
-assert e114["20"]["text"].startswith("🔥 <b>[쿠팡] 제주 생수 2L 12개 (8,500원)</b>") and "✔ 핫딜픽 기록 최저 9,000원보다 낮음" in e114["20"]["text"] and e114["16"]["url"] == "https://www.coupang.com/vp/products/16?itemId=I16"  # 🔥 = 기록 최저보다 내려감만
+assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n💡 물은 무거우니 문 앞까지\n⚠️ 확인할 점: 유통기한 · 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]  # 11/5: 💡 tip = 첫 상품만 · ⚠️ = 확인할 것 1개 + 짧게
+assert e114["20"]["text"].startswith("🔥 <b>[쿠팡] 제주 생수 2L 12개 (8,500원)</b>") and "✔ 핫딜픽 30일 기록 중 가장 낮은 가격" in e114["20"]["text"] and "최저" not in e114["20"]["text"] and e114["16"]["url"] == "https://www.coupang.com/vp/products/16?itemId=I16"  # 🔥 = 30일 기록보다 내려감만('최저' 낱말 X)
+assert "💡 6일 전 확인 때보다 500원 내려왔어요" in e114["20"]["text"] and "💡 100ml당 30원, 같이 고른 것 중 두 번째로 덜 들어요" in e114["19"]["text"] and "💡" not in e114["16"]["text"] + e114["17"]["text"], [e114[k]["text"] for k in ("16", "17", "19", "20")]  # 나머지 = 근거 줄(가격 기록·같이 고른 것끼리 단위 값) · 근거 없으면 줄 X
+assert [e114[k]["text"].count("⚠️ 확인할 점: 유통기한 ·") for k in ("15", "16", "17", "19", "20")] == [1, 1, 1, 0, 0] and "⚠️ 확인할 점: 구성(개수) ·" in e114["19"]["text"]  # 같은 ⚠️ 문구 하루 3번까지
 assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 5개(🔥 1) · 후보 9(1012 9) · 빠짐 이미 진열 1 · cp_fail 1 · 가격 0 · 사진 1 · 효능 1 · 이름 막기 0 · rank 없음 1(응답 순서로)\n" in o114.getvalue(), o114.getvalue()
 assert "✔ 쿠팡 식품 베스트 9위 · 로켓배송" in e114["19"]["text"]  # 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
 assert "https://www.coupang.com/vp/products/15" in S.ev_info() and any(e.get("auto") for e in S.ev_list())  # 사이트·게시 쪽(ev_list)이 같이 읽음 — events.json은 그대로
@@ -12750,3 +12752,26 @@ with contextlib.redirect_stdout(io.StringIO()): H.toss_takedown(s146)
 assert "인스타 2026-11-06 토스 넘기기" in tg146[-1]["text"] and tg146[-1]["chat_id"] == H.ADMIN and "https://toss.shopping/_m/A" not in S.toss_imgs(m146, N146)  # 셀러 요청 = 인스타 게시물 관리봇 알림 · 사이트는 다음 빌드에 내림
 open(f"{H.IGTOSS_DIR}/2026-10-01.jpg", "wb").write(b"0"); H.prune_slides(N146); assert sorted(os.listdir(H.IGTOSS_DIR)) == ["2026-11-06.jpg"]  # 지난 표지 = 지움(SLIDE_KEEP)
 cards.make = mk146; H.POSTS, H.http, H.tg, time.time, H.ig_room = sv146; S.TIMG = {}; os.chdir(cwd146)
+# 9-147 (11/5 진우 '창의성 있게 같은 멘트만 하지 말고 사람이 말하듯, 합리적인 선택임을 느끼게'): 진열 💡 = 첫 상품 tips 돌림(7일 안 다시 X) · 나머지 = 근거 줄(데이터만) → 없으면 다른 카피 → 없으면 X
+#   · ⚠️ = 확인할 것 1개(같은 문구 하루 3번까지) + 짧게 결제 전 · Threads 말투 = 숫자는 재료에 있는 것 1개까지 · 최근 줄과 첫 어절·끝맺음 다르게 · 기본 줄 말투마다 6개 · copy rep 로그
+N147 = TK("2026-11-06 14:40")
+pl147 = {"kw": "라면", "group": "food", "tip": "t0", "tips": [f"카피{k}" for k in range(6)]}
+pk147 = [(0, k + 1, "1012", str(70 + k), "", n, pr, "https://x/i.jpg", True) for k, (n, pr) in enumerate([("신라면 120g 40개", 32000), ("진라면 120g 5개", 4500), ("너구리 120g 20개", 15000),
+                                                                                                           ("짜파게티 140g 10개", 8900), ("컵누들 37.8g 6개", 5400), ("라면사리 110g 30개", 15900)])]
+w147 = H.shelf_whys(pk147, {"75:": [], "https://www.coupang.com/vp/products/75": [["26110109", 17900, "", "api"]]}, "food", N147)
+assert w147[5][0] == "같이 고른 6개 중 100g당 482원, 제일 덜 들어요" and w147[2][0] == "100g당 625원, 같이 고른 것 중 두 번째로 덜 들어요" and "5일 전 확인 때보다 2,000원 내려왔어요" in w147[5] and w147[1] == [] \
+    and "하루 1개면 40일 치예요" in w147[0] and "식구 많은 집이면 이 정도 양이 편해요" in w147[0], w147  # 같은 단위 값 1·2등 · 가격 기록 · 기간 환산 · 양으로 누구에게 · 근거 없으면 []
+assert H.shelf_whys([(0, 1, "", "90", "", "컵라면 3개", 3000, "", True)], {}, "food", N147) == [["1~2인 가구엔 부담 없는 양이에요"]]  # 적은 양 = 1~2인 가구(3개↑일 때만 단위 순위)
+s147 = {}; t147 = H.shelf_tips(s147, pl147, w147, N147)
+assert len(t147) == 6 and len(set(t147)) == 6 and all(t147) and t147[0].startswith("카피") and t147[5] == w147[5][0] and t147[2] == w147[2][0] and t147[1].startswith("카피"), t147  # 같은 품목 6개 = 💡 다 다름 · 첫 상품 = 카피 · 나머지 = 근거 줄 먼저, 없으면 다른 카피
+assert t147[0] in s147["shelfcopy"]["m"] and H.shelf_tips(s147, pl147, [[] for _ in range(6)], N147 + 3600)[0] != t147[0]  # 7일 안 쓴 카피 = 다시 X
+assert H.shelf_tips({}, {"tips": []}, [["a"], ["a"], []], N147) == ["a", "", ""]  # 카피 없음·근거 겹침 = 줄 X(지어낸 줄보다 빈 줄)
+k147 = time.gmtime(N147 + 9 * 3600); s147w = {}
+wl147 = [H.warn_line(s147w, n, "화장지", k147) for n in ["코멧 화장지 30롤"] * 5 + ["리필 세제 2L"]]
+assert [l.split(" · ")[0] for l in wl147] == ["⚠️ 확인할 점: 겹 수·1롤 길이"] * 3 + ["⚠️ 확인할 점: 롤 수"] * 2 + ["⚠️ 확인할 점: 리필(통 없음)인지"] and all(l.endswith("결제 전 최종가 확인 (11/6 14시 가격)") for l in wl147), wl147  # 같은 문구 하루 3번까지 · 이름 먼저(리필)
+P147 = [{"text": f"x\n💡 같은 줄\n⚠️ 확인할 점: 결제 전 최종가 확인 ({k}시 가격)"} for k in range(4)] + [{"text": "x\n💡 다른 줄\n⚠️ 확인할 점: 유통기한 · 결제 전 최종가 확인 (1시 가격)"}]
+assert H.copy_rep(P147) == "copy rep 💡 60% ⚠️ 60%" and "print(copy_rep(load(POSTS, [])))" in inspect.getsource(H.status_dm)  # 같은 문구 비율(시각 괄호 빼고) · 하루 1번 status 로그
+for tn147, ls147 in H.TH_TONE_POOL5.items():  # 기본 줄 = 말투마다 6개↑ · 다 다름 · 숫자·재촉·써 본 척·과장 X
+    assert len(set(ls147)) >= 6 and not [x for x in ls147 if re.search(rf"\d|{H.VOICE_BAN}|{H.TH_PUSH}|{H.TH_PRICE_WORD}|최저", x) or (tn147 != H.TH_ASK and re.search(H.TH_QM, x))], (tn147, ls147)
+assert H.th_shape("이 구성 괜찮네요", ["이 정도면 무난하네요", "x"]) and H.th_shape("구성이 깔끔하네요", ["오 이건 괜찮네요"]) and not H.th_shape("생각보다 알찬 구성이에요", ["오 이건 괜찮네요"])  # 첫 어절 같음·끝맺음 같음 = 다시
+assert "재료에 있는 숫자 1개만" in H.TH_TONE_PROMPT and "첫 어절·끝맺음" in H.TH_TONE_PROMPT and "nums_ok(s)" in inspect.getsource(H.th_voice)

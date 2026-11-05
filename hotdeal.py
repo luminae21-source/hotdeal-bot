@@ -517,7 +517,8 @@ def plan_today(now=None):
         rot = [x for x in gx if not x.get("date")]
         x = next((x for x in gx if x.get("date") == today), None) or (rot[(calendar.timegm(time.strptime(today, "%Y-%m-%d")) // 86400 - 20756) % len(rot)] if rot else None)  # 20756 = 2026-10-30(돌림 첫날)
         if x:
-            out.append({"kw": str(x["kw"]), "words": [str(w) for w in x.get("words") or [x["kw"]] if str(w).strip()], "tip": str(x.get("tip") or "")})
+            out.append({"kw": str(x["kw"]), "words": [str(w) for w in x.get("words") or [x["kw"]] if str(w).strip()], "tip": str(x.get("tip") or ""), "group": g,
+                        "tips": [str(t) for t in x.get("tips") or [] if str(t).strip()] or ([str(x["tip"])] if x.get("tip") else [])})  # 11/5 tips 6개 = 💡 돌려 쓰기
     return out
 
 
@@ -534,12 +535,99 @@ def auto_add(es, kind):
     return len(add)
 
 
+SHELF_COPY_DAYS, WARN_DAY_MAX = 7, 3  # 11/5 진우 '같은 멘트만 하지 말고 사람이 말하듯, 합리적인 선택임을 느끼게': 진열 💡 카피 7일 안 다시 X · 같은 ⚠️ 확인 문구 하루 3번까지
+WARN_CHECK = ((r"리필", ("리필(통 없음)인지",)), (r"기저귀", ("사이즈(단계)", "매수")), (r"물티슈", ("매수·평량", "캡 있는지")),
+              (r"화장지|휴지|키친\s*타[월올]|티슈|두루마리", ("겹 수·1롤 길이", "롤 수", "평량")), (r"세제|유연제|샴푸|린스|컨디셔너|바디\s*워시|핸드\s*워시", ("용량", "향")),
+              (r"충전|케이블|필터|배터리|토너|잉크|교체용", ("호환 기종", "구성")),
+              (r"생수|탄산수|음료|우유|두유|커피|라면|과자|햇반|즉석|만두|김치|참치|햄|견과|간식|쌀|계란|달걀|과일|귤|사과|시리얼", ("유통기한", "구성(개수)")),
+              (r"", ("구성·용량", "옵션별 가격")))  # ⚠️ 줄 = 그 상품에서 진짜 확인할 것 1개(이름·품목 — 앞에서부터, 하루 WARN_DAY_MAX번 넘은 문구는 다음 것)
+
+
+def pack_q(name):
+    """이름의 총 개수·총 용량(nn_unit 셈 그대로 — 옵션·헷갈림 = None) -> ('개', n) | ('g', 총 g) | ('ml', 총 ml) | None."""
+    for base, k in (("개", "개"), ("100g", "g"), ("100ml", "ml")):
+        r = nn_unit(name, 10 ** 6, base)
+        if r:
+            return (k, round(10 ** 6 / r[0])) if k == "개" else (k, round(10 ** 8 / r[0]))
+    return None
+
+
+def shelf_whys(picks, h, group, now):
+    """진열 자동 상품마다 '왜 합리적인지' 근거 줄 후보(우리 데이터만 — 없으면 [] · 지어낸 줄보다 빈 줄) -> [[줄, …] 상품마다]:
+    ① 같이 고른 것끼리 같은 단위 값 1·2등(이름의 개수·용량 × 가격 — 3개↑ 셀 때만) ② 가격 기록: 직전 확인(오늘 전·30일 안)보다 내려옴
+    ③ 먹는 것 = '하루 1개면 N일 치'(개수에서 바로) ④ 양으로 누구에게(1~2인 가구·식구 많은 집 — 성별 X). picks = auto_shelf 줄(…, pid, item, name, price, …)."""
+    out = [[] for _ in picks]
+    for base in ("100g", "100ml", "롤", "개"):
+        us = {j: u for j, x in enumerate(picks) if (u := nn_unit(x[5], x[6], base))}
+        if len(us) >= 3:
+            o = sorted(us, key=lambda j: us[j][0])
+            out[o[0]].append(f"같이 고른 {len(us)}개 중 {us[o[0]][1]}, 제일 덜 들어요")
+            if us[o[1]][0] > us[o[0]][0]:
+                out[o[1]].append(f"{us[o[1]][1]}, 같이 고른 것 중 두 번째로 덜 들어요")
+            break
+    day = time.strftime("%y%m%d", time.gmtime(now + 9 * 3600))
+    for j, x in enumerate(picks):
+        pid, item, name, price = x[3], x[4], x[5], x[6]
+        rows = [r for r in h.get(f"{pid}:{item}" if item else f"https://www.coupang.com/vp/products/{pid}") or [] if r[2] == "" and ph_last(r)[:6] < day]
+        if rows:
+            t, p = max((ph_last(r), r[1]) for r in rows)
+            d = (calendar.timegm(time.strptime(day, "%y%m%d")) - calendar.timegm(time.strptime(t[:6], "%y%m%d"))) // 86400
+            if p > price and 1 <= d <= 30:
+                out[j].append(f"{d}일 전 확인 때보다 {p - price:,}원 내려왔어요")
+        q = pack_q(name)
+        if q and q[0] == "개" and group == "food" and 7 <= q[1] <= 120:
+            out[j].append(f"하루 1개면 {q[1]}일 치예요")
+        if q and q[1] >= {"개": 24, "g": 3000, "ml": 4000}[q[0]]:
+            out[j].append("식구 많은 집이면 이 정도 양이 편해요")
+        elif q and q[1] <= {"개": 4, "g": 500, "ml": 500}[q[0]]:
+            out[j].append("1~2인 가구엔 부담 없는 양이에요")
+    return out
+
+
+def shelf_tips(seen, pl, whys, now):
+    """💡 줄(상품마다 — 같은 품목 안 같은 줄 X): 첫 상품 = plan tips 돌림(날마다 시작점 다르게 · SHELF_COPY_DAYS일 안 쓴 카피 X) · 나머지 = 근거 줄(shelf_whys — 앞 상품과 다른 것)
+    → 없으면 아직 안 쓴 다른 카피 → 그것도 없으면 줄 X. seen shelfcopy = {카피: 쓴 시각}."""
+    sc = seen.setdefault("shelfcopy", {"m": {}})
+    sc["t"], sc["m"] = now, {c: t for c, t in (sc.get("m") or {}).items() if now - t < SHELF_COPY_DAYS * 86400}
+    tips = list(dict.fromkeys(pl.get("tips") or ([pl["tip"]] if pl.get("tip") else [])))
+    k0 = int((now + 9 * 3600) // 86400) % len(tips) if tips else 0
+    fresh, out, used = [t for t in tips[k0:] + tips[:k0] if t not in sc["m"]], [], set()
+    for j, ws in enumerate(whys):
+        why = next((w for w in ws if w not in used), "")
+        line = (fresh.pop(0) if fresh else why) if j == 0 else why or (fresh.pop(0) if fresh else "")
+        if line:
+            used.add(line)
+            if line in tips:
+                sc["m"][line] = now
+        out.append(line)
+    return out
+
+
+def warn_line(seen, name, kw, kst):
+    """⚠️ 줄 = 그 상품에서 진짜 확인할 것 1개(WARN_CHECK — 같은 문구 하루 WARN_DAY_MAX번까지) + 짧게 '결제 전 최종가 확인 (M/D H시 가격)'."""
+    day = time.strftime("%Y-%m-%d", kst)
+    wd = seen.get("warnday") if (seen.get("warnday") or {}).get("d") == day else {"d": day, "c": {}}
+    seen["warnday"], wd["t"] = wd, time.time()
+    c = next((c for c in dict.fromkeys(c for rx, cs in WARN_CHECK if re.search(rx, f"{name} {kw}") for c in cs) if wd["c"].get(c, 0) < WARN_DAY_MAX), "")
+    if c:
+        wd["c"][c] = wd["c"].get(c, 0) + 1
+    return f"⚠️ 확인할 점: {c + ' · ' if c else ''}결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"
+
+
+def copy_rep(posts, n=50):
+    """최근 n개 글의 💡·⚠️ 같은 문구 비율(시각 괄호 빼고) -> 'copy rep 💡 12% ⚠️ 20%' — 진우 '같은 멘트만 하지 말고' 지켜보기(하루 1번 status 로그)."""
+    def rep(k):
+        ls = [re.sub(r"\s*\([^)]*\d+시[^)]*\)\s*$", "", l).strip() for p in posts[-n:] for l in p.get("text", "").split("\n") if l.startswith(k)]
+        return round(100 * (len(ls) - len(set(ls))) / len(ls)) if ls else 0
+    return f"copy rep 💡 {rep('💡')}% ⚠️ {rep('⚠️')}%"
+
+
 def auto_shelf(seen):
     """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목(group마다 1개 — 3품목이면 최대 18개) 낱말과 맞는 상품
     -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 효능 낱말 X · 이름 막기(SHELF_BLOCK) X · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
     · 베스트에서 4개 밑 = 그 품목만 kw를 '·'로 나눈 낱말 하나씩 쿠팡 검색(4개 채우면 멈춤 — 검색 상한 그대로, 넘으면 다음 실행에 이어서)으로 채움(같은 필터) · 그래도 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄 · 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
     · 순위 = 응답 rank(없으면 응답 순서 — 10/30 첫날 베스트 응답에 rank가 없어 0개) · 근거 = '쿠팡 <카테고리> 베스트 N위' / 검색으로 채운 것 = '쿠팡 '<검색어>' 검색 N위'(API엔 리뷰 수·할인 표시 X)
-    · 🔥 = price_hist 기록 최저보다 내려갔을 때만, 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = plan 그 품목 한 줄 · seen autoshelf = 그날 끝낸 품목·검색 결과(AUTO_SHELF_V 바꾸면 그날 못 올린 품목만 1번 더)."""
+    · 🔥 = price_hist 30일 기록보다 내려갔을 때만('30일 기록 중 가장 낮은 가격'), 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = 첫 상품 plan tips 돌림 + 나머지 근거 줄(shelf_tips) · ⚠️ = 확인할 것 1개(warn_line) · seen autoshelf = 그날 끝낸 품목·검색 결과(AUTO_SHELF_V 바꾸면 그날 못 올린 품목만 1번 더)."""
     kst = time.gmtime(time.time() + 9 * 3600)
     today, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
     st = seen.get("autoshelf", {})
@@ -611,17 +699,19 @@ def auto_shelf(seen):
             tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트{'·검색' if srch else ''}에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
             continue
         at, nf, es = time.strftime("%Y-%m-%d %H:%M", time.gmtime(calendar.timegm(time.strptime(f"{today} {AUTO_SHELF_AT}", "%Y-%m-%d %H:%M")) + 60 * k)), 0, []
-        for _, rank, c, pid, item, name, price, img, rocket in picks:
+        tips = shelf_tips(seen, pl, shelf_whys(picks, h, pl.get("group"), time.time()), time.time())  # 11/5: 💡 = 첫 상품 카피 돌림 · 나머지 근거 줄(같은 품목 안 같은 줄 X)
+        d30 = time.strftime("%y%m%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))
+        for (_, rank, c, pid, item, name, price, img, rocket), tip in zip(picks, tips):
             pids.add(pid)
             u = f"https://www.coupang.com/vp/products/{pid}" + (f"?itemId={item}" if item else "")
-            lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == ""), default=0)
+            lo = min((r[1] for r in h.get(f"{pid}:{item}" if item else u) or [] if r[2] == "" and ph_last(r)[:6] >= d30), default=0)  # 30일 기록(최저가 낱말 X — '30일 기록 중 가장 낮은 가격')
             fire = bool(lo) and price < lo
             nf += fire
             why_ = f"쿠팡 '{c[3:]}' 검색 {rank}위" if c.startswith("검색") else f"쿠팡 {CP_BEST_NAME.get(int(c), '카테고리')} 베스트 {rank}위"
             es.append({"at": at, "button": "🛒 구매하러 가기", "url": u, "deal": True, "shelf": True, "tag": pl["kw"], "pid": pid, **({"item": item} if item else {}), "now": f"{price:,}원", "chk": chk, "img": img,
                        "text": f"{'🔥' if fire else '👍'} <b>[쿠팡] {esc(name)} ({price:,}원)</b>\n\n✔ {esc(why_, False)}" + (" · 로켓배송" if rocket else "")
-                               + (f"\n✔ 핫딜픽 기록 최저 {lo:,}원보다 낮음" if fire else "") + (f"\n💡 {esc(pl['tip'])}" if pl["tip"] else "")
-                               + f"\n⚠️ 확인할 점: 결제 전 최종가 확인 ({kst.tm_mon}/{kst.tm_mday} {kst.tm_hour}시 가격)"})
+                               + ("\n✔ 핫딜픽 30일 기록 중 가장 낮은 가격" if fire else "") + (f"\n💡 {esc(tip)}" if tip else "")
+                               + "\n" + warn_line(seen, name, pl["kw"], kst)})
         print(f"auto shelf '{pl['kw']}': 진열 {auto_add(es, 'shelf')}개(🔥 {nf}) · {diag}")
     st["end"] = all(pl["kw"] in st["done"] for pl in pls)
 
@@ -5636,7 +5726,9 @@ def ai_json(prompt, props, img=None):
     return json.loads(next(c["text"] for c in r["content"] if c["type"] == "text"))
 
 
-TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주세요(10/23 진우 '고정 레이아웃 + 말투 한 줄'). 상품명·가격·리뷰 수 같은 숫자는 위 줄에 따로 있으니 이 한 줄엔 숫자 없이, 아래 재료에 맞는 느낌만.
+TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주세요(10/23 진우 '고정 레이아웃 + 말투 한 줄'). 상품명·가격은 위 줄에 따로 있어요.
+- 사람이 말하듯, 이걸 고르는 게 왜 합리적인지 — 숫자를 쓴다면 아래 재료에 있는 숫자 1개만(단위가·리뷰 수·기록 등 · 재료에 없는 숫자·가격 X) (11/5 진우 '같은 멘트만 하지 말고 합리적인 선택임을 느끼게').
+- '최근 줄'과 첫 어절·끝맺음을 다르게.
 - 한 문장, 폰 한 줄(20자 안팎). 이모지는 0~1개.
 - 써 본 척(제가·나도·써보니·먹어보니·샀는데·질렀음), 효능·건강·의학 말, 과장·조급(역대급·무조건·손해·마지막 기회), 재촉·클릭 유도(클릭·눌러·지금 바로 구매), 링크·댓글·광고 말 쓰지 않기.
 - '최근 줄'과 다른 문장으로.
@@ -5645,13 +5737,16 @@ TH_TONE_PROMPT = """Threads 핫딜 글 끝에 붙일 말투 한 줄을 써 주�
 TH_TONE_POOL = {1: ("필요할 때 쟁여 두기 좋아요", "장바구니에 담아 두기 좋아요"), 2: ("장바구니에 담아 둘 만해요", "이 구성 꽤 괜찮아요"),
                 3: ("하나쯤 있으면 든든해요", "필요한 분께 잘 맞아요"), 4: ("쟁여 둘 만함", "구성 괜찮음")}  # Claude 실패·조건 안 맞음 = 말투별 기본 한 줄(숫자·경험담 X)
 TH_TONES = {  # M-5(10/26 진우 'Threads 쿠팡 글 재미나게 소통하는 느낌') + O(친구한테 말하듯 — '사세요' X): Threads 개별 딜 글 말투 5가지 돌림 · ZZ(10/27 Cowork — 반말 6건) 다 친근한 존댓말 · (이름, 지시)
-    1: ("계산형", "말투 = 계산형 존댓말(구성·단가가 왜 괜찮은지 계산하듯 짚기 — 숫자는 쓰지 말고). 결 예시: 낱개로 사는 것보다 이 묶음이 낫겠어요"),
+    1: ("계산형", "말투 = 계산형 존댓말(구성·단가가 왜 괜찮은지 계산하듯 짚기 — 숫자는 재료에 있는 것 1개까지). 결 예시: 낱개로 사는 것보다 이 묶음이 낫겠어요"),
     2: ("공감형", "말투 = 공감형 존댓말(이런 날 꼭 있죠 하는 생활 장면 — 내 경험·회상 X). 결 예시: 꼭 다 떨어졌을 때 찾게 되죠"),
     3: ("질문형", "말투 = 질문형 존댓말(가볍게 묻고 끝내기 — 물음표 1개). 결 예시: 다들 이런 거 몇 개씩 쟁여 두세요?"),
     4: ("짧은 감탄형", "말투 = 짧은 감탄 존댓말(10자 안팎). 결 예시: 이 구성 괜찮네요"),
     5: ("비교형", "말투 = 비교형 존댓말 — 재료의 🔁·'보다 내려' 줄(우리 기록)에 쓰인 사실만 · 다른 쇼핑몰 X · 숫자 X. 결 예시: 기록 보니 다시 내려온 가격이에요")}
-TH_ASK, TH_TONE_POOL5 = 3, {1: ("구성 보고 계산해 볼 만해요", "단가 따져 보면 괜찮은 편이에요"), 2: ("이런 건 떨어질 때 꼭 찾게 되죠", "있으면 은근 자주 쓰게 되죠"), 3: ("다들 이런 거 쟁여 두세요?", "이거 어디에 쓰실 것 같아요?"),
-                            4: ("이 구성 괜찮네요", "오 이건 괜찮네요"), 5: ("기록 보니 다시 내려온 가격이에요", "전에 본 가격이랑 같이 보면 좋아요")}  # 질문형만 물음표 · Claude 실패 = 기본 한 줄(숫자·경험담·상품 사실 단정 X — 비교형은 기록 재료 있을 때만 뽑힘)
+TH_ASK, TH_TONE_POOL5 = 3, {1: ("구성 보고 계산해 볼 만해요", "단가 따져 보면 괜찮은 편이에요", "낱개로 사는 것보다 셈이 편해요", "양 대비로 보면 납득되는 가격이에요", "묶음으로 보면 계산이 깔끔해요", "한 번에 채워 두면 덜 번거로워요"),
+                            2: ("이런 건 떨어질 때 꼭 찾게 되죠", "있으면 은근 자주 쓰게 되죠", "없으면 꼭 아쉬운 물건이죠", "매번 사러 가기 번거로운 거죠", "한 번 채워 두면 한동안 든든하죠", "찬장에 하나쯤 있으면 편하죠"),
+                            3: ("다들 이런 거 쟁여 두세요?", "이거 어디에 쓰실 것 같아요?", "이런 건 몇 개씩 두고 쓰세요?", "평소엔 어떤 구성으로 고르세요?", "이 정도 양이면 얼마나 갈까요?", "이건 집에 하나씩 있으시죠?"),
+                            4: ("이 구성 괜찮네요", "오 이건 괜찮네요", "생각보다 알찬 구성이네요", "구성이 깔끔하네요", "이건 눈여겨볼 만하네요", "이 정도면 무난하네요"),
+                            5: ("기록 보니 다시 내려온 가격이에요", "전에 본 가격이랑 같이 보면 좋아요", "기록이랑 나란히 보면 보이는 가격이에요", "확인해 둔 가격보다 나아진 편이에요", "기록 기준으로 보면 괜찮은 때예요", "지난 확인 가격이랑 견줘 볼 만해요")}  # 11/5 말투마다 6개(최근 쓴 줄·첫 어절·끝맺음 피해서 돌림)  # 질문형만 물음표 · Claude 실패 = 기본 한 줄(숫자·경험담·상품 사실 단정 X — 비교형은 기록 재료 있을 때만 뽑힘)
 TH_FRIEND = "\n- 이웃한테 말하듯 친근한 존댓말 한 줄(~요·~죠로 끝 — 반말 X). '쟁여 둘 만해요' 같은 의견은 OK, 써 본 척(써 보니·먹어 보니·샀는데)·내 경험·회상(나는·저는·~더라·~던데)·'사세요·구매하세요' 같은 권유는 X."
 TH_HOOK, TH_HOOKS = True, {6: "호기심형", 7: "공감형", 8: "반전형", 9: "질문형", 10: "숫자형"}  # HHH③(10/29 진우 '응 모두 다 진행하자' — U 1~5 바꿈): 개별 딜 글 첫 줄(대가성 문구 다음) 훅 5유형 돌림(직전 2개와 다르게) · metrics hook = 유형 이름(2주 뒤 유형별 조회·클릭 — subId 실적과 같이)
 TH_HOOK_BAN, TH_HOOK_LEN, TH_HOOK_REV, TH_HOOK_FROM = r"필수\s*템|강추|최저", 30, 100, "2026-10-30"  # 훅 금지 말 · 30자 안 · ⑩ 리뷰 수 줄 = 이만큼부터 · 바꾼 날(metrics chg)
@@ -5750,6 +5845,13 @@ def old_toss(l):
 
 
 TH_SEASON_W = r"쌀쌀|추워|추운|추위|찬\s*바람|으슬|뜨끈|따끈|따뜻"  # ZZ ⑥ 계절 말(최근 Threads 끝 줄·훅에 있으면 또 X — 10/27 '쌀쌀' 3번)
+
+
+def th_shape(s, recent):
+    """11/5 진우 '같은 멘트만 하지 말고': 최근 줄(5개)과 첫 어절이 같거나 바로 앞 줄과 끝맺음(마지막 두 글자)이 같으면 True."""
+    ht = lambda x: ((re.findall(r"[가-힣A-Za-z0-9]+", x) or [""])[0], re.sub(r"[^가-힣A-Za-z0-9]", "", x)[-2:])
+    h, t = ht(s or "")
+    return any(ht(r)[0] == h for r in recent[-5:]) or bool(recent) and ht(recent[-1])[1] == t
 
 
 def th_rep(l, rec):
@@ -6044,7 +6146,9 @@ def th_voice(seen, text, link, src=None):
         num = next((x for x in (f"{unit}꼴이에요" if unit else "", f"{dr[1]}% 내려간 가격이에요" if dr else "", f"리뷰 {rv:,}개 쌓인 상품이에요" if rv >= TH_HOOK_REV else "")
                     if x and len(x) <= TH_HOOK_LEN and not re.search(lban, x)), "")  # ⑩ 숫자형 = 우리 데이터만(단위가 > 할인율 > 리뷰 수)
         hook, hk = th_hook(seen, name, num, lban, names) if TH_HOOK and not oy else ("", 0)  # 올리브영 = 훅 X(큐레이터 정책)
-        ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and not re.search(rf"\d|{TH_PRICE_WORD}", s) and th_w(s) <= TH_W + 2 \
+        mats = "\n".join([*ls, unit or "", won or ""])  # 11/5: 말투 줄 숫자 = 재료에 있는 것 1개까지(출처 없는 숫자 X)
+        nums_ok = lambda s: len(re.findall(r"\d[\d,.]*", s)) <= 1 and all(n in mats for n in re.findall(r"\d[\d,.]*", s))
+        ok = lambda s: s and not s.startswith(VOICE_LABEL) and not TH_AB_URL.search(s) and nums_ok(s) and not re.search(TH_PRICE_WORD, s) and th_w(s) <= TH_W + 2 and not th_shape(s, st.get("b", [])) \
             and not re.search(lban, re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and (tone == TH_ASK or not re.search(TH_QM, s)) \
             and not th_say(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not use_bad(s, name) and norm(s) not in st.get("f", []) and not th_rep(re.sub("|".join(map(re.escape, names)) or "^$", "", s), st.get("b", []) + st.get("ht", [])) \
             and not season_bad(re.sub("|".join(map(re.escape, names)) or "^$", "", s)) and not dup_word(s, hook, names) and not rude(re.sub("|".join(map(re.escape, names)) or "^$", "", f"{s}\n{hook}")) \
@@ -6069,7 +6173,7 @@ def th_voice(seen, text, link, src=None):
                 break
             again = f"\n\n다시: '{x}'은 규칙에 안 맞음(숫자·가격 말 X · 폰 한 줄 · {TH_TONES[tone][0]} · 금지어·재촉·무례 X · 최근 줄·첫 줄과 다르게 · 지금 계절에 맞게)."
         pool = [] if oy else list(TH_TONE_POOL5[tone])  # 올리브영 = 기본 줄 X(큐레이터 정책: 가격·용량·구성·조건만)
-        line = line or ([x for x in pool if norm(x) not in st.get("f", [])] or pool or [""])[0]  # 올리브영이라 맞는 기본 줄이 없으면 말투 줄 없이
+        line = line or ([x for x in pool if norm(x) not in st.get("f", []) and not th_shape(x, st.get("b", []))] or [x for x in pool if norm(x) not in st.get("f", [])] or pool or [""])[0]  # 최근 쓴 줄·같은 첫 어절·끝맺음 피해서 · 올리브영이라 맞는 기본 줄이 없으면 말투 줄 없이
         soc = ([f"평점 {rate[1]}"] if rate and rv >= REV_MIN else []) + ([f"리뷰 {th_round(rv)}"] if rv >= REV_MIN else []) + ([f"한 달 {th_round(buy).rstrip('+')}명{'+' * th_round(buy).endswith('+')} 구매"] if buy else [])
         def render(soc, unit, tip, facts, line, con, hook=hook):
             money = f"💰 {won}" + (f" ({unit})" if unit and unit not in hook else f" ({dr[1]}%↓)" if dr else "")  # Y-4 훅 ⑤(단가)를 쓰면 💰 줄엔 같은 숫자 X
@@ -6097,7 +6201,7 @@ def th_voice(seen, text, link, src=None):
             raise ValueError(f"480자({len(out)})")
         if line and line in out.split("\n"):
             tone_keep(seen, "th", tone)
-            seen["thvoice"] = {"t": time.time(), "s": tone, "f": (st.get("f", []) + [norm(line)])[-10:], "b": (st.get("b", []) + [line])[-5:], "ht": st.get("ht", [])}
+            seen["thvoice"] = {"t": time.time(), "s": tone, "f": (st.get("f", []) + [norm(line)])[-20:], "b": (st.get("b", []) + [line])[-5:], "ht": st.get("ht", [])}
         else:  # 말투 줄이 빠짐(480자·올리브영) = 말투 기록 X
             seen.setdefault("thvoice", {"t": time.time()}).pop("s", None)
         if hook and hk in TH_HOOK_ASK and hook in out.split("\n"):  # ZZ ⑥ Claude 훅도 최근 말 기록(다음 글 끝 줄·훅이 같은 말 X — 데이터 훅 ⑩은 X)
@@ -11524,6 +11628,7 @@ def status_dm(seen):
         print(f"cp_rush 끝({CP_RUSH[1][5:10].replace('-', '/')}) · 남은 cp_fail {st.get('cp_fail')}개")
     w = [str(x) for x in st.get("warn") or []]
     print("status", f"진열 {st.get('site')} · 사이트맵 {st.get('sitemap')} · 빠진 진우 {st.get('missing')} · 변환 실패 {st.get('cp_fail')} · 이상 {len(w)}건" + (f" · {st['nset_n']}" if st.get("nset_n") else ""))
+    print(copy_rep(load(POSTS, [])))  # 11/5 진우 '같은 멘트만 하지 말고' — 하루 1번
     if w:
         tg("sendMessage", chat_id=ADMIN, text=f"🩺 사이트 점검 {kst.tm_mon}/{kst.tm_mday} ({st['at'][11:]} 빌드) — 이상 {len(w)}건\n" + "\n".join("• " + x for x in w))
 
