@@ -1,5 +1,5 @@
 {
-"at": "2026-11-05 09:11",
+"at": "2026-11-05 09:25",
 "posts": 3264,
 "site": 1711,
 "mall": {
@@ -14,6 +14,7 @@
 "digital": 61,
 "snack": 63,
 "food": 378,
+"laundry": 70,
 "season": 98,
 "life": 219,
 "kitchen": 115,
@@ -22,13 +23,12 @@
 "home": 78,
 "pet": 37,
 "fashion": 82,
-"laundry": 70,
 "car": 33,
 "etc": 3
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 158,
+"cp_fail": 159,
 "sitemap": 1024,
 "days": {
 "2026-10-30": {
@@ -97,7 +97,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 158개(cp_fail.json)"
+"쿠팡 변환 실패 159개(cp_fail.json)"
 ],
 "nset": [
 {
