@@ -4363,7 +4363,8 @@ def new_sets(seen):
                 return False
         pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + ("" if toss or not p.get("chk") or p["chk"].startswith(md) else f" ({p['chk']} 확인)")
         _, q = th_list_copy(seen, int(slot[11:13]), [(p, pr(p), "", 2) for p in ps], cm, x[4])  # M: 장면 훅 X(K) — 첫 줄 = 무엇·몇 개·가격대
-        link, mk = f"{SITE}c/toss/" if toss else f"{SITE}c/{x[2]}/", {"toss": "토스", "coupang": "쿠팡", "naver": "네이버"}.get(x[1], "")  # 토스 = 토스만 모은 쪽(쿠팡 섞인 칸 X)
+        sid, mk = f"{slot[:10].replace('-', '')}-{slot[11:13]}{slot[14:16]}-{x[1]}-{x[2]}", {"toss": "토스", "coupang": "쿠팡", "naver": "네이버"}.get(x[1], "")
+        link = f"{SITE}c/s/{sid}.html"  # 11/5 진우 M2: 그 글 상품만 글 순서대로 보이는 모음 쪽(build_site.set_pages — 칸 전체 c/kitchen X · 토스 글 = 토스만)
         while True:  # 길면 상품 수를 줄임(이름·가격은 남김 — Threads 500자)
             ws = sorted(w for p in ps if (w := won(pr(p))))
             rng = (f" · {ws[0]:,}원" if ws[0] == ws[-1] else f" · {ws[0]:,}~{ws[-1]:,}원") if ws else ""
@@ -4375,7 +4376,8 @@ def new_sets(seen):
             if th_len(text) <= 500 - th_len(link) - 2 or len(ps) <= TH_LIST_MIN:
                 break
             ps = ps[:-1]
-        auto_add([{"at": slot, "curation": True, "topic": x[4], "link": link, "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
+        stitle = f"{mk} 상품 모음 · {x[4]} ({int(slot[5:7])}/{int(slot[8:10])})"  # 11/5 진우 O: 링크 카드 제목 = 몰 이름 보이게('토스 상품 모음 · 주방 (11/5)')
+        auto_add([{"at": slot, "curation": True, "topic": x[4], "link": link, "set": sid, "cat": x[2], "urls": [p["url"] for p in ps], "set_title": stitle, "text": text, "img": [i for i in map(img_of, ps) if i]}], "nset")
         x[5] = slot
         seen["thlist"] = {**seen.get("thlist", {"h": []}), "t": now, "h": seen.get("thlist", {}).get("h", []) + [[now, x[3], "nset", []]]}  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
         print(f"{'새 구성' if k != 'old' else '기존 상품 구성'} 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")

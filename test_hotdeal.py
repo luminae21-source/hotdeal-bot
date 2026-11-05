@@ -12861,7 +12861,8 @@ json.dump([T152(0, "곰곰 계란 30구"), T152(1, "맥스앤맥스 이지밀 �
 time.time = lambda: TK("2026-11-06 11:15")
 with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152)
 ae152 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
-assert len(ae152) == 1 and ae152[0]["link"] == f"{H.SITE}c/toss/" and "c/kitchen" not in ae152[0]["text"] + ae152[0]["link"], ae152  # 토스만 모은 쪽
+assert len(ae152) == 1 and ae152[0]["link"] == f"{H.SITE}c/s/20261106-1240-toss-kitchen.html" and ae152[0]["set"] == "20261106-1240-toss-kitchen" and ae152[0]["cat"] == "kitchen" and "c/kitchen" not in ae152[0]["text"] + ae152[0]["link"], ae152  # M2·O: 글마다 모음 쪽(칸 전체 X)
+assert ae152[0]["set_title"] == "토스 상품 모음 · 주방 (11/6)" and ae152[0]["urls"] == ["https://toss.shopping/_m/K1", "https://toss.shopping/_m/K2", "https://toss.shopping/_m/K3"], ae152  # 링크 카드 제목 = 몰 이름 · 글 상품 순서
 t152 = ae152[0]["text"]
 assert t152.startswith(H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개 · 9,900원\n\n1️⃣ ") and "퇴근 후 주방 정리" not in t152 and "확인)" not in t152 and "쉬젤" not in t152, t152  # 첫 줄 = 무엇·몇 개·가격대 · 장면 훅 X · 어제 확인한 토스 X
 assert len(re.findall(r"^[1-3]️⃣ .+ · 9,900원$", t152, re.M)) == 3 and "↳ 350ml라 밥 한 공기씩" in t152 and "↳ 10m라 넉넉히 잘라 써요" in t152 and "↳ 6종이라 한 번에 바꿔요" in t152, t152  # '1️⃣ 이름 · 가격' + '↳ 한 줄' 
@@ -12878,3 +12879,24 @@ assert '"key": 그 상품 이름에 그대로 있는 낱말' in H.TH_LIST_PROMPT
 css152 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "tools/card/assets/card.css")).read()
 assert "grid-template-rows: 92px 190px minmax(0, 1fr) 76px" in css152 and "grid-template-columns: 150px minmax(0, 1fr) 298px" in css152 and ".product-price { font-size: 55px" in css152 and ".product-name {\n  font-size: 39px" in css152
 assert "width: 204px; height: 204px" in css152 and "width: 260px; height: 260px" in css152 and "  font-size: 26px;\n  font-weight: 700;" in css152
+# M2·O (11/5 23:2x 진우 '토스는 토스상품 모음으로 · 쿠팡은 쿠팡상품 모음으로'): 글 링크 = /c/s/<글>.html(링크 카드 제목 = '토스 상품 모음 · 주방 (11/5)') → 몰 모음 쪽(c/toss/·c/coupang/)
+#   품목 칩 골라진 채 · 글 상품 맨 위 같은 순서 · 토스 글 = 토스만(쿠팡 0) · 카테고리 줄·홈 품목 줄 맨 앞 '🚀 쿠팡 모음' '💙 토스 모음' · 🔥 칸 = 사진 있는 상품 먼저
+sv152s = (S.ev_list, S.card, S.page); d152 = tempfile.mkdtemp()
+S.card = lambda i, p, sh, **k: f"<article data-i='{i}'>{p['url']}</article>"
+S.page = lambda title, body, desc="", canonical="", **k: f"<title>{title}</title>{body}"
+it152 = [(10, {"url": "https://toss.shopping/_m/A", "text": "x"}, (0,)), (11, {"url": "https://link.coupang.com/a/B", "text": "x"}, (0,)), (12, {"url": "https://toss.shopping/_m/C", "text": "x"}, (0,))]
+S.ev_list = lambda path=None: [{"at": "2026-11-05 18:40", "curation": True, "set": "20261105-1840-toss-kitchen", "cat": "kitchen", "set_title": "토스 상품 모음 · 주방 (11/5)",
+                                 "urls": ["https://toss.shopping/_m/C", "https://link.coupang.com/a/B", "https://toss.shopping/_m/A"]}]
+os.makedirs(f"{d152}/c/s"); open(f"{d152}/c/s/old.html", "w").write("x")
+S.set_pages(d152, it152, "2026-11-05")
+h152 = open(f"{d152}/c/s/20261105-1840-toss-kitchen.html").read()
+assert h152.startswith("<title>토스 상품 모음 · 주방 (11/5)</title>") and re.findall(r"data-i='(\d+)'", h152) == ["12", "10"] and "coupang" not in h152, h152  # 글 순서 · 토스 글 = 쿠팡 0
+assert f'location.replace("{S.BASE}c/toss/?c=kitchen&top=12,10")' in h152 and not os.path.exists(f"{d152}/c/s/old.html"), h152  # 토스 모음 쪽 · 주방 칩 · 글 상품 맨 위 · 지난 쪽 지움
+(S.ev_list, S.card, S.page) = sv152s
+assert "[?&]top=([0-9,]+)" in S.MALL_JS and "[?&]c=([a-z0-9-]+)" in S.MALL_JS and "insertBefore" in S.MALL_JS  # 몰 쪽: ?c= 칩 · ?top= 맨 위
+ch152 = S.chips_html("")
+assert ch152.index("🚀 쿠팡 모음") < ch152.index("💙 토스 모음") < ch152.index("🔥 특가") and ch152.count("쿠팡 모음") == 1 and ch152.count("💙 토스") == 1  # 칩 2개 = 줄 맨 앞(뒤 몰 칩과 겹침 X)
+qn152 = S.quick_nav([], 0, "", False)
+assert qn152.split('<div class="qr">')[2].index("쿠팡 모음") < qn152.split('<div class="qr">')[2].index("토스 모음") < qn152.split('<div class="qr">')[2].index("생필품")  # 홈 품목 줄 맨 앞
+x152 = lambda i, img: (i, {"url": f"https://link.coupang.com/a/P{i}", "t": "2026-11-05 18:00", "text": "🔥 [쿠팡] 스탠리 텀블러 (19,850원)", **({"img": "https://thumbnail6.coupangcdn.com/a.jpg"} if img else {})}, (0, 0, 0, 0, 0))
+assert [x[0] for x in S.trust8([x152(1, False), x152(2, True), (3, {"url": "u", "t": "2026-11-05 18:00", "text": "x"}, (1, 0, 0, 0, 0)), x152(4, True)], "2026-11-05")] == [2, 4, 1, 3]  # 🔥 = 사진 있는 것 먼저(사진 없는 텀블러 맨 위 X)

@@ -1335,7 +1335,8 @@ def top4(sid, slug, head, xs, skip=()):
 
 def chips_html(cur):
     """목록 쪽 칩(링크): 상태(특가·꾸준템·대기) · 품목 12칸 · 몰 3곳 — 몰 구분은 탭 대신 칩으로(10/24 진우)."""
-    ks = [("hot", "🔥 특가"), ("steady", "👍 꾸준템"), ("wait", "⏳ 대기")] + [(m[0], f"{m[2]} {m[1]}") for m in CAT_META.values()] + [(k, f"{e} {n}") for k, n, e in MALLS]
+    ks = [("coupang", "🚀 쿠팡 모음"), ("toss", "💙 토스 모음")] + [("hot", "🔥 특가"), ("steady", "👍 꾸준템"), ("wait", "⏳ 대기")] + [(m[0], f"{m[2]} {m[1]}") for m in CAT_META.values()] \
+        + [(k, f"{e} {n}") for k, n, e in MALLS if k not in ("coupang", "toss")]  # 11/5 진우 O: 쿠팡·토스 모음 = 줄 맨 앞
     return ('<nav class="chips" aria-label="목록">' + "".join(f'<a href="{c_url(s)}"' + (' aria-current="page"' if s == cur else "") + f">{t}</a>" for s, t in ks) + "</nav>"
             + "<script>(function(a){if(a)a.parentNode.scrollLeft=a.offsetLeft-16})(document.querySelector('.chips [aria-current]'))</script>" * bool(cur))  # 옆으로 밀기 한 줄 — 지금 칸이 보이게
 
@@ -2003,6 +2004,32 @@ def topics(it):
     return sorted(out, key=lambda g: g["es"][-1]["at"], reverse=True)
 
 
+SET_DAYS = 7  # 모음 쪽(c/s/) = 큐레이션 시각부터 7일
+
+
+def set_pages(out, it, today):
+    """11/5 진우 M2 — 묶음·큐레이션 글 링크 = 그 글에 나온 상품만 바로 보이는 쪽: events curation "set"(주소)·"urls"(글 상품 순서)·"set_title"(글 첫 줄과 같은 제목)
+    -> /c/s/<set>.html = 그 상품만 글 순서대로(몰 1개 — 토스 글 = 토스만) · 진열에서 빠진 상품 = 안 보임 · SET_DAYS 지난 쪽 = 지움 · 사이트맵 X(noindex)."""
+    os.makedirs(f"{out}/c/s", exist_ok=True)
+    cut, byu, keep = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - SET_DAYS * 86400)), {x[1].get("url"): x for x in it}, set()
+    for e in ev_list():
+        if not (isinstance(e, dict) and e.get("curation") and isinstance(e.get("urls"), list) and re.fullmatch(r"[a-z0-9-]{1,60}", str(e.get("set") or "")) and str(e.get("at", "")) >= cut):
+            continue
+        xs, ti = [byu[u] for u in e["urls"] if u in byu], str(e.get("set_title") or e.get("topic") or "모음")
+        xs = [x for x in xs if shop_of(x[1]) == shop_of(xs[0][1])]  # 몰 섞임 X(첫 상품 몰만 — 토스 글 = 토스만)
+        mall = shop_of(xs[0][1]) if xs else ""
+        go = f'{BASE}c/{mall}/?c={e.get("cat") or ""}&top={",".join(str(x[0]) for x in xs)}' if mall in ("coupang", "toss", "naver") else ""  # 11/5 진우 O: 몰 모음 쪽(c/toss/·c/coupang/) — 그 글 품목 칩 골라진 채 · 글 상품 맨 위 같은 순서
+        body = (f'<h1 class="h">{html.escape(ti)}</h1><div class="t">{len(xs)}개 · 글에 나온 순서 · 가격은 결제 전 최종가 확인</div>'
+                + (f'<script>location.replace({json.dumps(go)})</script><a class="btn2" href="{html.escape(go)}">{html.escape(ti.split(" (")[0])} 전체 보기 →</a>' if go else "")
+                + (f'<div class="cards">{"".join(card(i, p, sh) for i, p, sh in xs)}</div>' if xs else '<p class="t">이 글 상품은 지금 진열에서 빠졌어요.</p>')
+                + f'<a class="btn2" href="{BASE}c/">🗂️ 카테고리 더 보기 →</a>')
+        open(f"{out}/c/s/{e['set']}.html", "w").write(page(ti, body, ti, f"{BASE}c/s/{e['set']}.html", cur="cats", noindex=True, ogt=ti))
+        keep.add(e["set"] + ".html")
+    for f in os.listdir(f"{out}/c/s"):
+        if f.endswith(".html") and f not in keep:
+            os.remove(f"{out}/c/s/{f}")
+
+
 def topic_page(g, tps, today, now_k):
     """주제 쪽 본문(TT-2 ⑥): 제목 '📌 {이름} 단위가 비교' · 본문 3줄 = 큐레이션 글 머리 2줄(지금까지 나간 것 중 마지막 — 아직이면 첫 예약) + 비교 기준 1줄
     · 단위가 표(# · 상품 = 딜 쪽 링크 · 가격 · 단위가 · 확인 시각) · 카드 · 칸 더 보기 · 다른 주제 -> (제목, 설명, 본문, JSON-LD)."""
@@ -2330,6 +2357,7 @@ def price_day(p, today):
 def trust8(xs, today, n=8, key=None):
     """목록 위 n개에서 보이는 가격이 HOT_DAYS일 지난 🔥 빼기(홈 TOP 규칙을 목록에도 — 10/24 Cowork B '🔁 10/13 가격'): 위 n자리 = 그 밖 상품 순서대로, 옛 가격 🔥는 그 뒤(순서 그대로)."""
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (HOT_DAYS - 1) * 86400))
+    xs = sorted(xs, key=lambda x: (x[2][0] != 0, x[2][0] == 0 and not img_of(x[1])))  # 11/5 진우: 🔥 칸 = 사진 있는 상품 먼저(사진 없는 스탠리 텀블러가 맨 위 X — 단계·순서는 그대로)
     ok = [x for x in xs if not (x[2][0] == 0 and price_day(x[1], today) < since)][:n]
     rest = [x for x in xs if x not in ok]
     return sorted(ok, key=key) + sorted(rest, key=key) if key else ok + rest  # key = 위 n자리·나머지 안에서만 다시 줄 세움(네이버 가전 먼저 — 옛 가격이 위로 X)
@@ -2409,7 +2437,8 @@ def quick_nav(evs, dl_n, dl_end, top_live, evh=""):
           a(c_url("drop"), "📉", "가격 내림", "q/drop"), a(c_url("rehot"), "🔁", "다시 특가", "q/rehot")] \
         + [f'<a class="q {k}" href="{c_url(k)}" data-gc="mall/{k}">{mall_logo(k)}{n.split()[1]}</a>' for k, n, _ in MALL_BTN] \
         + ([f'<a class="q evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event"><i class="lw" aria-hidden="true">🎉</i>기획전</a>'] if evs or evh else []) + [a(f"{BASE}c/", "▦", "품목 전체", "cat/all", " qc")]  # W: 쇼핑몰·기획전 = 흰 동그라미 · ▦ = C 혼합형만(2줄 품목 대신)
-    r2 = [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]
+    r2 = [a(c_url("coupang"), "🚀", "쿠팡 모음", "mall/coupang"), a(c_url("toss"), "💙", "토스 모음", "mall/toss")] \
+        + [a(c_url(CAT_META[k][0]), CAT_META[k][2], CAT_META[k][1].split("·")[0].split()[0], f"cat/{CAT_META[k][0]}", c=CAT_META[k][3]) for k in Q_CATS] + [a(f"{BASE}c/", "▦", "전체보기", "cat/all")]  # 11/5 진우 O: 품목 줄 맨 앞 = 쿠팡·토스 모음
     return f'<nav class="qk" aria-label="바로가기"><div class="qr">{"".join(r1)}</div><div class="qr">{"".join(r2)}</div></nav>'
 
 
@@ -2731,7 +2760,9 @@ def mall_page(slug, head, desc, xs, recs):
     return [(c_url(slug), 1, f"{name} ({md_of(today)}) | {TITLE}", f"{desc} — {name} {len(xs)}개, {md_of(today)} 기준 · {TITLE}", body, len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} ({md_of(today)})", "itemListElement": li})]
 
 
-MALL_JS = """<script>(function(){var g=document.getElementById('mg');if(!g)return;var C=[].slice.call(g.children),s=(location.search.match(/[?&]s=([hsw])/)||['',''])[1],c='',n=20,mm=document.getElementById('mm'),z=document.getElementById('m0');
+MALL_JS = """<script>(function(){var g=document.getElementById('mg');if(!g)return;var q=location.search,C=[].slice.call(g.children),s=(q.match(/[?&]s=([hsw])/)||['',''])[1],c=(q.match(/[?&]c=([a-z0-9-]+)/)||['',''])[1],n=20,mm=document.getElementById('mm'),z=document.getElementById('m0'),T=((q.match(/[?&]top=([0-9,]+)/)||['',''])[1]).split(',').filter(Boolean);
+if(T.length){var f=function(e){var b=e.querySelector('[data-i]');return b?T.indexOf(b.getAttribute('data-i')):-1};C.filter(function(e){return f(e)>=0}).sort(function(a,b){return f(b)-f(a)}).forEach(function(e){g.insertBefore(e,g.firstChild)});C=[].slice.call(g.children)}
+[].forEach.call(document.querySelectorAll('.mf [data-c]'),function(x){x.setAttribute('aria-pressed',x.dataset.c===c?'true':'false')});
 function run(){var k=0;C.forEach(function(e){var ok=(!s||(' '+e.dataset.s+' ').indexOf(' '+s+' ')>=0)&&(!c||e.dataset.c===c);e.hidden=!ok||k>=n;if(ok)k++});mm.hidden=k<=n;z.hidden=k>0}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-s],[data-c],#mm');if(!b||b.tagName!=='BUTTON')return;if(b.id==='mm'){n+=20;return run()}
 if(b.hasAttribute('data-s')){s=b.dataset.s;[].forEach.call(document.querySelectorAll('[data-s][role=tab]'),function(x){x.setAttribute('aria-selected',x===b?'true':'false')})}
@@ -3160,6 +3191,7 @@ def build(posts, out="docs"):
     for f in os.listdir(f"{out}/c/t") if os.path.isdir(f"{out}/c/t") else []:  # 상품이 빠진 옛 주제 쪽 = 안내 쪽(noindex — 옛 큐레이션 링크는 열림)
         if f.endswith(".html") and f[:-5] not in {g["slug"] for g in tps}:
             open(f"{out}/c/t/{f}", "w").write(page(f"주제 비교 | {TITLE}", f'<p class="t">이 주제 상품은 지금 진열에서 빠졌어요.</p><a class="btn2" href="{BASE}c/">🗂️ 카테고리에서 찾기 →</a>', "", f"{BASE}c/t/{f}", noindex=True))
+    set_pages(out, it, today)
     os.makedirs(f"{out}/c", exist_ok=True)
     for f in os.listdir(f"{out}/c"):  # 품목에서 빠진 옛 기록 페이지(c/*.html)만 지움 — 목록 쪽 폴더(c/life/ 등)는 그대로 · 기록 품목 쪽 = 안내 쪽(아래)
         if f.endswith(".html") and f[:-5] not in recs and f[:-5] not in {pi[0] for pi in PRICE_ITEMS}:
