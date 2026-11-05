@@ -12313,7 +12313,7 @@ time.time = lambda: TK("2026-11-06 11:15"); o133 = io.StringIO()
 with contextlib.redirect_stdout(o133): H.new_sets(s133)
 ae133 = [e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]
 assert [x[1:3] + [len(x[3]), x[4], x[5]] for x in s133["nset"]["h"]] == [["coupang", "life", 3, "생필품", "2026-11-06 18:40"]] and "새 구성 만듦 · coupang 생필품 3개" in o133.getvalue(), o133.getvalue()  # (1) 같은 몰·같은 칸 새 상품 3개 = 구성 1
-assert [e["at"] for e in ae133] == ["2026-11-06 18:40"] and ae133[0]["auto"] == "nset" and ae133[0]["link"] == f"{H.SITE}c/life/" and ae133[0]["topic"] == "생필품"  # (4) 12:40 = Cowork 큐레이션 → 다음 빈 칸 18:40
+assert [e["at"] for e in ae133] == ["2026-11-06 18:40"] and ae133[0]["auto"] == "nset" and ae133[0]["link"] == f"{H.SITE}c/s/20261106-1840-coupang-life.html" and ae133[0]["topic"] == "생필품"  # (4) 12:40 = Cowork 큐레이션 → 다음 빈 칸 18:40
 assert ae133[0]["text"].startswith(H.DISCLOSURE + "\n\n🆕 쿠팡에 새로 들어온 생필품 3개 · 9,900원\n\n1️⃣ 코멧 화장지 30롤 · 9,900원\n↳ ") and "⚠️ 11/6 18:40 게시 시점 가격" in ae133[0]["text"] and len(re.findall(r"^[1-3]️⃣ ", ae133[0]["text"], re.M)) == 3, ae133[0]["text"]
 assert s133["thlist"]["h"][-1][2] == "nset" and len(s133["thlist"]["h"][-1][1]) == 3  # 큐레이션에 나간 상품 = 묶음처럼 72시간 회전
 assert json.load(open("nset.json")) == {"d": "2026-11-06", "items": [{"name": "생필품", "mall": "coupang", "n": 3, "slot": "18:40", "k": "new"}]}
@@ -12446,7 +12446,7 @@ H.ai_review = lambda prompt: pr137.append(prompt) or {"ok": False, "fix": [{"lin
 with contextlib.redirect_stdout(io.StringIO()): ch137 = H.review("cur", "\n".join(L137), L137, names=H.cur_keep(E137), keep=H.cur_keep(E137))
 assert ch137 == {L137[3]: "가랜드·야광팔찌는 캠핑 때도 쓸 수 있어요"} and "그대로 둘 말(오늘 행사 코너 — 빼거나 바꾸지 말 것): 할로윈 · 반짝 · 오늘 밤 12시까지 · 오늘만" in pr137[0], ch137  # (2) 행사 이름·마감 말 뺀 고침 = 버림 · 다른 고침 = 받음
 time.time = lambda: TK("2026-11-01 09:00"); assert H.cur_keep(E137) == ()  # 코너 끝난 다음 날 = 보통 재검토
-assert "names=kw, keep=kw" in inspect.getsource(H.curation)
+assert "names=kw, keep=kw" in inspect.getsource(H.cur_body) and "cur_body(e)" in inspect.getsource(H.curation)
 (H.ai_review, H.E["ANTHROPIC_API_KEY"], H.REVIEW, time.time, H.EVENTS, S.EVENTS) = sv137
 H.RUN.pop("rvw", None)
 os.chdir(cwd137)
