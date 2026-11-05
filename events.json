@@ -20556,5 +20556,67 @@
   "chain": [
    "설거지 거리 많은 날은 세제가 금방 줄더라구요 ㅎㅎ 다들 무향 쓰세요, 향 있는 거 쓰세요?"
   ]
+ },
+ {
+  "at": "2026-11-05 18:20",
+  "button": "🛒 구매하러 가기",
+  "url": "https://link.coupang.com/a/ip8Xnpxrqe",
+  "deal": true,
+  "text": "🔥 <b>[쿠팡] 휘오 다이아몬드 EC 생수 300ml 40개 (10,980원)</b>\n\n💰 1병 275원꼴 · 100ml당 92원 · 26% 할인\n✔ 리뷰 23,671 · 한 달 1,000명 이상 구매(쿠팡 표시)\n✔ 300ml 중엔 40개가 1병 값 가장 낮아요 (20개 286원 · 80개 276원 · 120개 277원)\n💡 한 손에 쏙 300ml — 가방·차에 하나씩 🚰\n⚠️ 확인할 점: 같은 페이지 500ml 40개 옵션은 7,560원(100ml 38원) · 결제 전 최종가 확인 (11/5 11시 가격)",
+  "pid": "2213229154",
+  "now": "10,980원",
+  "chk": "2026-11-05 11:40",
+  "item": "18454923143",
+  "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/vendor_inventory/8745/6aa7baa90ecc1ba9c0ec6e7b1fd88fc8bb7434eed39e508c14b0d7c6b916.jpg"
+ },
+ {
+  "at": "2026-11-05 19:10",
+  "list": true,
+  "title": "생수 2L 12병, 100ml 값 모음",
+  "until": "2026-11-06",
+  "items": [
+   {
+    "url": "https://www.coupang.com/vp/products/7869554357?itemId=20151857085",
+    "name": "동원샘물 무라벨 2L 12개",
+    "price": "6,330원",
+    "unit": "100ml당 26원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/9359900389?itemId=27780683519",
+    "name": "아이시스 화이트캡 무라벨 2L 12개",
+    "price": "6,370원(와우가)",
+    "unit": "100ml당 27원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/8010806804?itemId=27311078171",
+    "name": "풀무원 퓨어 무라벨 2L 12개",
+    "price": "6,700원",
+    "unit": "100ml당 28원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/9245987907?itemId=17836675801",
+    "name": "아워홈 지리산수 무라벨 2L 12개",
+    "price": "7,400원",
+    "unit": "100ml당 31원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/8157269016?itemId=7505540780",
+    "name": "평창수 무라벨 2L 12개",
+    "price": "8,540원",
+    "unit": "100ml당 36원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/8174374237?itemId=23465158826",
+    "name": "백산수 무라벨 2L 12개",
+    "price": "11,960원",
+    "unit": "100ml당 50원"
+   },
+   {
+    "url": "https://www.coupang.com/vp/products/9725928342?itemId=29105043423",
+    "name": "제주삼다수 2L 12개",
+    "price": "12,980원",
+    "unit": "100ml당 54원"
+   }
+  ]
  }
 ]
