@@ -4243,7 +4243,7 @@ assert "최근 줄: 이 가격 실화예요? 장바구니각이에요✨" in p24
 v24 = seen24["thvoice"]; assert v24["s"] == 1 and len(v24["f"]) == 3 and v24["b"] == ["이 가격 실화예요? 장바구니각이에요✨", "출퇴근용으로 쟁여 둘 만해요", "냉장고에 쟁여 두기 좋겠어요"], v24
 # Claude 실패 = 말투별 기본 한 줄(레이아웃은 그대로)
 f24 = deal24(seen24, f"{H.DISCLOSURE}\n\n{K23}", KU24, [RuntimeError("api")], 4)
-assert f24 == k24.replace("이 가격 실화예요? 장바구니각이에요✨", H.TH_TONE_POOL5[4][0]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL5[4][0], f24
+assert f24 == k24.replace("이 가격 실화예요? 장바구니각이에요✨", H.TH_TONE_POOL5[4][1]) and seen24["thvoice"]["b"][-1] == H.TH_TONE_POOL5[4][1], f24  # 11/5: 기본 한 줄도 최근 줄과 첫 어절 다르게('이 구성…' = '이 가격…'과 첫 어절 같음 -> 다음 줄)
 m24 = seen24["thab"]["m"]; assert m24["p1"]["n"] == m24["p4"]["n"] == "[쿠팡] 코멧 포켓형 손난로 핫팩 100g, 30개 (8,860원)" and [m24[p]["tone"] for p in ("p1", "p2", "p3", "p4")] == [3, 4, 1, 4], m24  # 지금 틀 제목 · 말투
 json.dump({}, open(H.METRICS, "w")); H.E["METRICS_DAY"] = "2026-10-21"  # metrics.json: 분류·가격대는 지금 틀 제목으로 + tone = 말투
 H.http = lambda url, *a, **k: json.dumps({"data": [{"id": i, "text": t, "timestamp": "2026-10-21T10:43:00+0000"} for i, t in (("p1", k24), ("p2", g24), ("p4", f24))]}) if "/me/threads?" in url \
