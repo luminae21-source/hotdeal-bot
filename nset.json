@@ -1,4 +1,26 @@
 {
 "d": "2026-11-06",
-"items": []
+"items": [
+{
+"name": "주방",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "화장품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+]
 }
