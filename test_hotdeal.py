@@ -3141,7 +3141,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -10758,7 +10758,7 @@ assert H.toss_link(s106, 7) is None and not H.toss_ok(s106, 7) and not H.toss_ok
 H.HAS_TOSS, H.http = True, lambda *a, **k: (_ for _ in ()).throw(AssertionError("토스 API 부르면 안 됨"))
 H.toss_deals({}); H.toss_deals({}, "beauty")  # 회차 쉼(lambda로 불려도)
 src106 = inspect.getsource(H.main)
-assert 'if RUN.get("tstop") and step in (toss_shelf, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):' in src106
+assert 'if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):' in src106
 assert inspect.getsource(H.threads_deals).count("not tdead(") == 5 and "not tdead(" in inspect.getsource(H.top_deals) and inspect.getsource(H.top_deals).count("not tdead(") == 2
 assert all("not tdead(" in inspect.getsource(fn) for fn in (H.pick_post, H.pair_post, H.nn_bundle, H.steady_list)) and 'HAS_TOSS and not RUN.get("tstop") and (last > tg_t' in inspect.getsource(H.cp_fill)
 assert 'if not RUN.get("tstop"):  # CCC: 점검 중엔 사이트 꾸준템 쪽' in inspect.getsource(H.steady_list) and "tstop" not in inspect.getsource(S)  # 사이트 = 그대로
