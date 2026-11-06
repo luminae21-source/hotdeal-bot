@@ -1,9 +1,9 @@
 {
-"at": "2026-11-07 00:10",
-"posts": 3498,
-"site": 1777,
+"at": "2026-11-07 00:25",
+"posts": 3518,
+"site": 1786,
 "mall": {
-"coupang": 1089,
+"coupang": 1098,
 "toss": 632,
 "": 1,
 "naver": 55
@@ -17,10 +17,10 @@
 "car": 38,
 "life": 235,
 "coffee": 86,
-"season": 99,
+"season": 103,
 "home": 78,
 "fashion": 82,
-"beauty": 248,
+"beauty": 253,
 "kitchen": 120,
 "digital": 61,
 "sport": 19,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 161,
-"sitemap": 1058,
+"sitemap": 1059,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -106,10 +106,10 @@
 }
 },
 "2026-11-07": {
-"site": 1777,
-"sitemap": 1058,
+"site": 1786,
+"sitemap": 1059,
 "mall": {
-"coupang": 1089,
+"coupang": 1098,
 "toss": 632,
 "": 1,
 "naver": 55
@@ -119,6 +119,21 @@
 "warn": [
 "쿠팡 변환 실패 161개(cp_fail.json)"
 ],
-"nset": [],
-"nset_n": "새 구성 0 · 기존 상품 구성 0"
+"nset": [
+{
+"name": "자동차",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+],
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
