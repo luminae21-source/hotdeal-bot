@@ -9441,6 +9441,8 @@ def skin_bad(s, name):
 
 STK_DIR, STK_DAYS = "docs/img/stk", 3  # QQ(10/26 Cowork — 진우 '귀여운 그림이나 사진 있음 좋겠다 귀엽게'): 스티커 PNG(tools/stickers/stickers.py → 1080×1080, 키 = 품목 slug·chat) · 같은 스티커 3일 안 다시 X
 STK_MONTHS = {"coffee-mix": (10, 11, 12, 1, 2), "rice": (9, 10, 11)}  # 말풍선이 철 타는 것('쌀쌀해지면'·'햅쌀 철이다멍') = 그 달만
+STK_WORDS = ((r"치약", "toothpaste"), (r"휴지(?!통)|화장지", "toilet-paper"), (r"(?<![가-힣])라면|컵라면", "ramen"), (r"(?<![가-힣])생수", "water"), (r"물티슈", "wet-wipes"),
+             (r"계란|달걀", "eggs"), (r"(?<![가-힣])우유(?!부단)", "milk"), (r"(?<![가-힣])햅?쌀(?!쌀)", "rice"), (r"커피믹스", "coffee-mix"))  # 11/6 진우 '치약은 센스있게': 수다 글 품목 낱말 -> 그 품목 스티커 먼저 · '자취생이라면'·'쌀쌀'·'휴지통' X
 STK_SEASON = {10: ("coffee-mix", "rice"), 11: ("coffee-mix", "rice")}  # 수다 글 계절 주제 = 지금 계절 품목(없는 달 = 수다 글 기본 chat_stk)
 
 
@@ -9455,6 +9457,18 @@ def stk_pick(seen, keys, now=None):
     now = now or time.time()
     mon, cut = time.gmtime(now + 9 * 3600).tm_mon, time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - STK_DAYS * 86400))
     return next(((k, f"{SITE}img/stk/{k}.png") for k in keys if k and os.path.exists(f"{STK_DIR}/{k}.png") and mon in STK_MONTHS.get(k, (mon,)) and seen.get("stk", {}).get(k, "") <= cut), None)
+
+
+def stk_words(text):
+    """수다 글 글 속 품목 낱말(STK_WORDS) -> 스티커 키(글에 먼저 나온 순 · 겹침 X)."""
+    hits = sorted((m.start(), k) for w, k in STK_WORDS for m in [re.search(w, text)] if m)
+    return tuple(dict.fromkeys(k for _, k in hits))
+
+
+def chat_stk_for(seen, lines, name, item, now=None):
+    """수다 글 스티커(11/6 진우): ① 글 속 품목 낱말 스티커(stk_words) ② 퀴즈 = 그 품목 · 계절 = 철 품목 ③ 진우 캐릭터 그림(chat 기본 돌림) — 파일 없음·이달 아님·3일 안 = 다음."""
+    mon = time.gmtime((now or time.time()) + 9 * 3600).tm_mon
+    return stk_pick(seen, stk_words("\n".join(lines)), now) or stk_pick(seen, (item,) if name == "quiz" else STK_SEASON.get(mon, ()) if name == "season" else (), now) or stk_chat(seen, now)
 
 
 def stk_chat(seen, now=None):
@@ -9542,7 +9556,7 @@ def chat_post(seen):
     lines = [l for l in lines if l]
     if why := chat_ok(lines, money, facts):
         return print("chat post: 재검토 뒤 규칙 걸림 -> 안 올림", name, why)
-    stk, text = stk_pick(seen, (item,) if name == "quiz" else STK_SEASON.get(kst.tm_mon, ()) if name == "season" else (), now) or stk_chat(seen, now), "\n".join(lines)  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 못 씀 = 진우 캐릭터 그림(chat_stk — 10/31)
+    stk, text = chat_stk_for(seen, lines, name, item, now), "\n".join(lines)  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 못 씀 = 진우 캐릭터 그림(chat_stk — 10/31)
     bundled(seen)
     try:
         r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")

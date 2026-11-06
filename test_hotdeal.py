@@ -10051,7 +10051,7 @@ RD94, K94 = os.path.dirname(os.path.abspath(H.__file__)), ("ramen", "water", "to
 src94 = open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read()
 assert tuple(re.findall(r'^    \("([a-z-]+)", "(?:dog|cat)"', src94, re.M)) == K94[:-1] and set(K94) - {"chat"} <= {it[0] for it in __import__("build_site").PRICE_ITEMS}  # 키 = 스티커 원본 · 품목 slug(chat = 진우 그림 10/31 — 원본에서 안 그림)
 ls94 = os.listdir(os.path.join(RD94, H.STK_DIR)); ck94 = [f[:-4] for f in ls94 if re.fullmatch(r"chat(-\d+)?\.png", f)]
-assert sorted(set(ls94) - {k + ".png" for k in ck94}) == sorted(k + ".png" for k in K94[:-1]) and "chat" in ck94 and len(ck94) >= 13 and H.STK_DAYS == 3 and H.STK_SEASON[10] == H.STK_SEASON[11] == ("coffee-mix", "rice")
+assert {k + ".png" for k in K94[:-1]} <= set(ls94) - {k + ".png" for k in ck94} <= {k + ".png" for k in K94[:-1]} | {k + ".png" for _, k in H.STK_WORDS} and "chat" in ck94 and len(ck94) >= 13 and H.STK_DAYS == 3 and H.STK_SEASON[10] == H.STK_SEASON[11] == ("coffee-mix", "rice")
 for k94 in K94[:-1] + tuple(ck94):
     with I94.open(os.path.join(RD94, H.STK_DIR, k94 + ".png")) as im94:
         assert im94.format == "PNG" and (im94.size == (1080, 1080) or k94 in ["coffee-mix"] + ck94 and 320 <= im94.width <= 1440 and os.path.getsize(im94.filename) <= 8_000_000), (k94, im94.size)  # 진우 그림(coffee-mix · chat·chat-N 10/31 — 1254 정사각·1080×1350) = Threads 사진 폭 320~1440·8MB 안  # 9장 · 1080×1080(coffee-mix = 진우 새 그림 10/29 1092×1440 — Threads 사진 폭 320~1440·8MB 안)
@@ -12427,7 +12427,7 @@ s136 = {"stk": {"t": 1, "chat": "2026-10-30", "chat-1": "2026-10-28", "chat-2": 
 assert H.stk_chat(s136, TK("2026-11-02 13:12"))[0] == "chat-1"  # 가장 오래 안 쓴 것(10/28)
 s136 = {"stk": {"t": 1, "coffee-mix": "2026-10-31", "rice": "2026-10-30", "chat": "2026-10-31"}}
 assert H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) is None and (H.stk_pick(s136, H.STK_SEASON[11], TK("2026-11-01 13:12")) or H.stk_chat(s136, TK("2026-11-01 13:12")))[0] == "chat-1"  # 계절 둘 다 3일 안 = 캐릭터 그림
-assert "or stk_chat(seen, now)" in inspect.getsource(H.chat_post) and not re.search(r'\(\s*"chat', open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read())  # 원본 = chat* 안 그림
+assert "or stk_chat(seen, now)" in inspect.getsource(H.chat_stk_for) and "chat_stk_for(seen, lines, name, item, now)" in inspect.getsource(H.chat_post) and not re.search(r'\(\s*"chat', open(os.path.join(RD94, "tools/stickers/stickers.py"), encoding="utf-8").read())  # 원본 = chat* 안 그림
 os.chdir(cwd136)
 # 9-137) 10/31 16:45 Cowork: 16:20 할로윈 큐레이션 재검토(review 'cur')가 '9,010원 와우가' → '9,010원'(누구나 그 가격처럼 보임) · '할로윈'·'오늘 밤 12시까지' 뺌
 #        → ① 고친 줄에서 옛 줄의 가격 조건(와우가·와우 회원가·쿠폰가·회원가·카드가·첫 구매가…)이 빠지면 고침 버림(옛 줄 그대로 — 모든 where) ② 행사 코너 큐레이션(마지막 날 = 오늘) = 행사 이름·'오늘 밤 12시까지'·'오늘만' 그대로
@@ -13350,3 +13350,21 @@ S.TOSS_API_SITE = False  # 끄는 길: 다음 빌드 1번에 다 빠짐 · 로�
 hit158, log158 = b158()
 assert hit158 == {"새벽물개젤리": [], "어제수달비누": [], "요청너구리컵": []} and "toss api site" not in log158 and "쿠팡 세제" in open("o158/index.html", encoding="utf-8").read(), (hit158, log158)
 (time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG) = sv158; os.chdir(cwd158); shutil.rmtree(d158, ignore_errors=True)
+
+# 9-159 (11/6 21시대 진우 '치약은 좀 센스있게 — 고양이랑 강아지가 치약 쓰는 모습'): 수다 글 스티커 = 글 속 품목 낱말(STK_WORDS) 그 품목 먼저 → 없으면 예전(퀴즈 품목·계절·chat 기본 돌림)
+#   파일 없음 = 건너뜀(stk_pick) · 3일 안 같은 스티커 X · STK_MONTHS 그대로 · toothpaste.png = Cowork가 따로 올림(chat-* 아님 = 기본 돌림에 안 섞임)
+assert H.stk_words("치약 끝까지 쥐어짜는 파와 반 남기는 파") == ("toothpaste",) and H.stk_words("두루마리 휴지 vs 화장지") == ("toilet-paper",) and H.stk_words("아침엔 우유, 밤엔 컵라면") == ("milk", "ramen")
+assert all(H.stk_words(t) == () for t in ("자취생이라면 공감", "쌀쌀해지면 생각나요", "휴지통 비우는 날", "우유부단한 저", "오늘 장바구니엔 뭐 담으셨어요?"))  # 어미 '라면'·'쌀쌀'·'휴지통'·'우유부단' X
+assert {k for _, k in H.STK_WORDS} == {"toothpaste", "toilet-paper", "ramen", "water", "wet-wipes", "eggs", "milk", "rice", "coffee-mix"} and not any(k.startswith("chat") for _, k in H.STK_WORDS)
+sv159, d159 = H.STK_DIR, tempfile.mkdtemp(); H.STK_DIR = d159
+for k in ("chat", "chat-1", "ramen", "rice"):
+    open(f"{d159}/{k}.png", "wb").write(b"x")
+N159, L159 = TK("2026-11-06 13:12"), ["치약 끝까지 쥐어짜는 파와 반 남기는 파, 어느 쪽이세요?"]
+assert H.chat_stk_for({}, L159, "home", "", N159)[0] == "chat"  # toothpaste.png 없음 = 예전 그대로(chat 기본)
+open(f"{d159}/toothpaste.png", "wb").write(b"x")
+assert H.chat_stk_for({}, L159, "home", "", N159) == ("toothpaste", H.SITE + "img/stk/toothpaste.png") and "toothpaste" not in H.chat_stk()  # 파일 있으면 치약 · 기본 돌림에 안 섞임
+assert H.chat_stk_for({"stk": {"toothpaste": "2026-11-05"}}, L159, "home", "", N159)[0] == "chat"  # 3일 안 쓴 것 = 다음(chat)
+assert H.chat_stk_for({}, ["오늘 장바구니엔 뭐 담으셨어요?"], "home", "", N159)[0] == "chat"  # 낱말 없는 글 = chat 기본
+assert H.chat_stk_for({}, ["컵라면 vs 봉지라면"], "quiz", "rice", N159)[0] == "ramen" and H.chat_stk_for({}, ["오늘 퀴즈"], "quiz", "rice", N159)[0] == "rice"  # 글 속 낱말 먼저 · 없으면 퀴즈 품목
+assert H.chat_stk_for({}, ["햅쌀 철이에요"], "home", "", TK("2026-12-06 13:12"))[0] == "chat"  # STK_MONTHS(쌀 = 9~11월) 그대로
+H.STK_DIR = sv159; shutil.rmtree(d159, ignore_errors=True)
