@@ -14,6 +14,27 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "패션",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "겨울 난방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ]
 }

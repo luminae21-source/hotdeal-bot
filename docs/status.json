@@ -1,16 +1,16 @@
 {
-"at": "2026-11-07 00:25",
-"posts": 3518,
-"site": 1786,
+"at": "2026-11-07 00:39",
+"posts": 3542,
+"site": 1797,
 "mall": {
-"coupang": 1098,
+"coupang": 1109,
 "toss": 632,
 "": 1,
 "naver": 55
 },
 "cat": {
 "snack": 81,
-"heat": 124,
+"heat": 125,
 "food": 388,
 "laundry": 76,
 "pet": 37,
@@ -19,8 +19,8 @@
 "coffee": 86,
 "season": 103,
 "home": 78,
-"fashion": 82,
-"beauty": 253,
+"fashion": 91,
+"beauty": 254,
 "kitchen": 120,
 "digital": 61,
 "sport": 19,
@@ -28,8 +28,8 @@
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 161,
-"sitemap": 1059,
+"cp_fail": 164,
+"sitemap": 1060,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -106,10 +106,10 @@
 }
 },
 "2026-11-07": {
-"site": 1786,
-"sitemap": 1059,
+"site": 1797,
+"sitemap": 1060,
 "mall": {
-"coupang": 1098,
+"coupang": 1109,
 "toss": 632,
 "": 1,
 "naver": 55
@@ -117,7 +117,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 161개(cp_fail.json)"
+"쿠팡 변환 실패 164개(cp_fail.json)"
 ],
 "nset": [
 {
@@ -133,7 +133,28 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "패션",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "겨울 난방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 2 · 기존 상품 구성 0"
+"nset_n": "새 구성 5 · 기존 상품 구성 0"
 }
