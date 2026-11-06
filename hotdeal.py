@@ -7783,8 +7783,15 @@ def ig_publish(seen):
         if (card(v) or kind in IG_KIND) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
         n, free = seen.get(day, {}).get("n", 0), kind == "story" or IG_H and kind == "reel"  # H: 스토리·릴스(피드에 X) = 하루 피드 상한·2시간 간격 X(쉼·공식 한도는 같게)
-        if not failed and (seen.get("ig_hold", 0) > now or not free and (n >= ig_day_max(seen) or now - seen.get("iglast", {}).get("t", 0) < IG_GAP)):
-            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else " · 직전 게시 2시간 안" if now - seen.get("iglast", {}).get("t", 0) < IG_GAP else ""))
+        toss, last = kind == "toss", seen.get("iglast", {})
+        gap = IG_TOSS_GAP if toss or last.get("toss") else IG_GAP  # L' 토스 글 앞뒤 = 1시간 30분(쿠팡끼리 2시간)
+        if toss and not failed and not ig_toss_slot(now):  # L' 토스 = 15:30·18:30 칸 안에만 · 18:30 칸도 지나면 그날 X
+            if time.strftime("%H:%M", time.gmtime(now + 9 * 3600)) >= IG_TOSS_AT[-1]:
+                seen.pop(k)
+                print("ig toss 칸 다 지남 -> 그날 X", k)
+            continue
+        if not failed and (seen.get("ig_hold", 0) > now or not free and (not toss and n >= ig_day_max(seen) or now - last.get("t", 0) < gap)):
+            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else f" · 직전 게시 {gap // 60}분 안" if now - last.get("t", 0) < gap else ""))
             continue
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
         if st == "IN_PROGRESS" and not failed:
@@ -7805,7 +7812,7 @@ def ig_publish(seen):
                 if not pid:  # 오류 응답이어도 실제로 올라감(10/22 #1804 code 4·2207051 오탐)이면 성공 · 아니면 다음 실행에 상태만 다시 봄
                     seen[k] = {**(v if isinstance(v, dict) else {"t": v}), "fail": ig_err(e)}
                     if not free:  # 발행 시도도 2시간 간격에 셈(차단 오류 바로 뒤 다른 컨테이너 X — 10/25 리뷰)
-                        seen["iglast"] = {"t": now}
+                        seen["iglast"] = {"t": now, **({"toss": 1} if toss else {})}
                     print("ig publish 오류 — 다음 실행에 게시 여부만 확인(다시 발행 X)", k, clip(repr(e), 80))
                     continue
                 print("ig publish 오류 응답이지만 게시됨", k, clip(repr(e), 80))
@@ -7816,7 +7823,7 @@ def ig_publish(seen):
         print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         if not free:
-            seen[day], seen["iglast"] = {"t": now, "n": n + 1}, {"t": now}  # iglast = 게시 사이 2시간(IG_GAP)
+            seen[day], seen["iglast"] = {**seen.get(day, {}), "t": now, **({"toss": 1} if toss else {"n": n + 1})}, {"t": now, **({"toss": 1} if toss else {})}  # iglast = 게시 사이 2시간(IG_GAP — 토스 앞뒤 IG_TOSS_GAP) · L' 토스 = n(피드 상한) 밖
         if card(v):
             ig_live(card(v), now)
         if isinstance(v, dict) and v.get("stem") and pid:
@@ -7879,7 +7886,7 @@ def ig_room(seen, now):
         else sum(1 for hh, (h, m) in IG_FEED.items() if (seen.get(f"igf_{today}_{hh}") or {}).get("done") in (None, "day") and kst.tm_hour * 60 + kst.tm_min < h * 60 + m + IG_LATE * 60)  # H = 남은 피드 칸(S 기념일 몫 'day' = 쓸 때까지 남은 칸)
     if left and kst.tm_hour * 3600 + kst.tm_min * 60 > 86400 - IG_GAP - 3600:  # 21시 뒤 = 칸 밖 글 X(2시간 간격 때문에 남은 칸이 자정 뒤로 — 10/25 리뷰)
         return 0
-    return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k in seen if k.startswith(("igc_", "igk_"))) - left
+    return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k, v in seen.items() if k.startswith(("igc_", "igk_")) and not (isinstance(v, dict) and v.get("kind") == "toss")) - left  # L' 토스 = 피드 상한 밖
 
 
 def ig_stage_get(today):
@@ -8141,7 +8148,8 @@ def ig_reel(seen):
     print("ig reel 컨테이너", today)
 
 
-IG_TOSS_AT, IG_TOSS_N, IG_TOSS_DAYS, IGTOSS_DIR, TOSS_IG_IMG = "20:30", (3, 5), 7, "docs/cards/igtoss", True  # 11/5 Cowork A②: 하루 1번 · 3~5개 · 같은 상품 7일 안 다시 X
+IG_TOSS_AT, IG_TOSS_N, IG_TOSS_DAYS, IGTOSS_DIR, TOSS_IG_IMG = ("15:30", "18:30"), (3, 5), 7, "docs/cards/igtoss", True  # 11/5 Cowork A②: 하루 1번 · 3~5개 · 같은 상품 7일 안 다시 X
+IG_TOSS_WIN, IG_TOSS_GAP = 90 * 60, 90 * 60  # L' 11/7 02시 진우 '토스는 쿠팡글 줄이지 말고 사이에'(11/5 23시): 쿠팡 피드 4칸(11·14·17·20시) 사이 빈 칸 = 15:30 먼저, 다음 피드 칸(17시) 전까지 못 올리면 18:30(20시 전까지) · 토스 글 앞뒤 피드 글과 1시간 30분↑(쿠팡끼리 2시간 그대로) · 하루 피드 상한(IG_FEED_MAX) 밖 = 토스 날만 하루 5
 
 
 def ig_toss_items(seen, posts, now):
@@ -8157,23 +8165,29 @@ def ig_toss_items(seen, posts, now):
     return sorted(out, key=lambda x: (x[0].get("st") != "hot", [-ord(c) for c in x[0]["t"]]))[:IG_TOSS_N[1]]
 
 
+def ig_toss_slot(now, prep=0):
+    """L' 토스 넘기기 칸(IG_TOSS_AT 차례 — 칸 시각부터 IG_TOSS_WIN 안, prep = 그 전부터) -> 'HH:MM' / None(칸 밖 — 21시 뒤 X)."""
+    kst = time.gmtime(now + 9 * 3600)
+    m = kst.tm_hour * 60 + kst.tm_min
+    return next((a for a in IG_TOSS_AT if (s := int(a[:2]) * 60 + int(a[3:])) - prep // 60 <= m < s + IG_TOSS_WIN // 60), None)
+
+
 def ig_toss(seen, tok, uid, now):
-    """11/5 Cowork A②(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 인스타도 OK · 넘기기에 원본 한 장씩 · 크롭·합성·글자 X): 하루 1번 IG_TOSS_AT 뒤 토스만 넘기기.
+    """11/5 Cowork A②(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 인스타도 OK · 넘기기에 원본 한 장씩 · 크롭·합성·글자 X): 하루 1번 토스만 넘기기(L' 칸 = ig_toss_slot — 15:30 먼저·못 하면 18:30, 표지는 IGF_PREP 전부터 · 발행 시각·간격 = ig_publish).
     1) 표지 = 우리 글자 카드(cards.make — 토스 사진 X)를 docs/cards/igtoss/날짜.jpg(사이트 커밋) · 캡션 = 토스 대가성 문구 첫 줄 + 이름·게시 시점 가격 + '사진: 토스쇼핑'
     2) 다음 실행 = 표지가 뜨면 조각(표지 + 썸네일 원본 주소 그대로) -> ig_carousel 묶음(kind toss) -> ig_publish · 쿠팡·네이버와 한 게시물 X · 3개 밑 = 그날 X
     · tphoto 기록(ig) — toss_noimg.txt에 넣으면 toss_takedown이 관리봇에 이 게시물 알림 · 실패 = 그날 X(ig_fail)."""
     kst = time.gmtime(now + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
     key = "igtoss_" + today
-    if not TOSS_IG_IMG or time.strftime("%H:%M", kst) < IG_TOSS_AT or (seen.get(key) or {}).get("done"):
+    if not TOSS_IG_IMG or not (slot := ig_toss_slot(now, IGF_PREP)) or (seen.get(key) or {}).get("done"):
         return
     st = seen.get(key)
     try:
         if not st:
             its = ig_toss_items(seen, load(POSTS, []), now)
             if len(its) < IG_TOSS_N[0]:  # 3개 밑 = 이번 실행 X(seen 기록 X — 저녁에 사진·확인이 늘면 그날 안에 다시)
-                if its:
-                    print("ig toss", today, f"후보 {len(its)}개 -> 건너뜀")
+                print("ig toss", today, slot, f"후보 {len(its)}개 -> 건너뜀")
                 return
             import cards
             os.makedirs(IGTOSS_DIR, exist_ok=True)
@@ -8184,9 +8198,9 @@ def ig_toss(seen, tok, uid, now):
             seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200]}
             print("ig toss", today, f"표지 만듦 {len(its)}개")
             return
-        if ig_room(seen, now) < 1:
+        if not ig_toss_slot(now):  # 조각 = 칸 시각부터(피드처럼 — 발행은 ig_publish가 칸·간격 보고)
             return
-        cover = f"{SITE}{st['jpg'][5:]}"
+        cover = f"{SITE}{st['jpg'][5:]}"  # L': 피드 상한 밖(ig_room X)
         try:
             http(cover, method="HEAD")  # 표지 배포 전 = 다음 실행
         except Exception:

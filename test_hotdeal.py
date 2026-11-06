@@ -12701,7 +12701,7 @@ H.HAS_CP, H.cp_deeplinks, time.time, H.tg = sv145; H.RUN.pop("cpn", None); H.RUN
 # 9-146 (11/5 Cowork A — 토스 고객센터 답: 쉐어링크 웹 상품 썸네일 원본 = 사이트·인스타 OK · 크롭·합성·글자 X): 진우 토스(own)만 · seen tossid [8] 1일 안 · toss_noimg X
 #   · 사이트 = src 토스 주소 그대로(우리 서버 X)·원본 비율(contain)·배지 사진 밖·바로 아래 '사진: 토스쇼핑' · 봇 API 상품(own X) 사진 X · 인스타 = 토스만 넘기기(표지 = 우리 글자 카드) · 사진 내림 알림
 cwd146, d146 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d146)
-N146, TU146 = TK("2026-11-06 20:40"), "https://static.toss.im/shop/a.jpg"
+N146, TU146 = TK("2026-11-06 15:40"), "https://static.toss.im/shop/a.jpg"  # 11/7 L': 인스타 토스 칸 15:30(20:30 X)
 m146 = {f"https://toss.shopping/_m/{k}": [10 + j, 1, N146 - 3600, "ok", [], 9900, False, 100 + j, f"https://static.toss.im/shop/{k.lower()}.jpg"] for j, k in enumerate("AFGH")}
 m146.update({"https://toss.shopping/_m/B": [12, 1, N146 - 2 * 86400, "ok", [], 9900, False, 120, "https://static.toss.im/shop/b.jpg"],  # 1일 넘음
              "https://toss.shopping/_m/C": [13, 1, N146 - 60, "ok", [], 9900, False, 130, "http://x/c.jpg"],  # https 아님
@@ -12734,7 +12734,7 @@ cards.make = lambda items, d, out, **k: it146.append((items, out, k)) or open(ou
 hc146 = []
 H.http = lambda url, body=None, headers=None, method=None: hc146.append((url, body, method)) or json.dumps({"id": f"k{len(hc146)}"})
 H.ig_room, time.time, s146 = (lambda seen, now, toss=False: 1), (lambda: N146), {"tossid": {"t": 1, "m": m146}}
-with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 - 3600)  # 19:40 = 시각 전
+with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 - 3600)  # 14:40 = 칸(15:30 — 표지 15:10부터) 전
 assert "igtoss_2026-11-06" not in s146
 with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146)
 st146 = s146["igtoss_2026-11-06"]; cap146 = st146["cap"]
@@ -13496,3 +13496,43 @@ for f164 in (H.auto_shelf, H.toss_deals, H.toss_ideas, H.toss_site, H.toss_site_
 for c164 in ("진정·리페어 크림이라 좋아요", "리페어 크림이라 회복돼요", "피부 장벽까지 챙겨요", "시린이 걱정 덜어요"):
     assert re.search(H.WU_BAN, c164) and H.toss_lines({"comment": c164}) == [] and H.toss_one({"comment": c164}, 0, N164) == f"✔ {H.BUY_CHECK}", c164  # Claude 한 줄 = 걸림 유지
 assert H.toss_lines({"comment": "50ml 2개라 넉넉해요"}) == ["👉 50ml 2개라 넉넉해요"] and not any(re.search(H.WU_BAN, c) for c in ("진정한 가성비예요", "손이 시린 날 생각나요"))  # 쓰임·구성 말 = 그대로 · '진정한'·'손 시린' X
+
+# 9-165 (11/7 02시 진우 다시 · L' — 11/5 23시 '토스는 쿠팡글 줄이지 말고 사이에 올리자'): 인스타 쿠팡 피드 4칸(11·14·17·20시)·상한 4·2시간 간격 그대로 +
+#   토스 넘기기 = 사이 빈 칸 15:30 먼저(17시 전까지) · 못 하면 18:30(20시 전까지) · 앞뒤 피드 글과 1시간 30분↑ · 피드 상한 밖(토스 날만 하루 5) · 칸 다 지나면 그날 X
+src165 = open(H.__file__, encoding="utf-8").read()  # 앞 셀프체크가 칸 값을 바꿔 둘 수 있어 원본 줄로 확인
+assert '\nIG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}' in src165 and "\nIG_FEED_MAX, IGT_N, IGT_MIN, IG_REPEAT, IGF_PREP, IG_GUESS_AFTER = 4, " in src165 and "\nIG_GAP, IG_QUOTA_SHARE = 2 * 3600, " in src165  # 쿠팡 4칸·상한 4·2시간 그대로
+assert H.IG_TOSS_AT == ("15:30", "18:30") and H.IG_TOSS_GAP == 90 * 60 and H.IG_TOSS_N == (3, 5)
+assert [H.ig_toss_slot(TK(f"2026-11-07 {t}")) for t in ("15:29", "15:30", "16:59", "17:00", "18:30", "19:59", "20:00", "21:10")] == [None, "15:30", "15:30", None, "18:30", "18:30", None, None]
+assert H.ig_toss_slot(TK("2026-11-07 15:10"), H.IGF_PREP) == "15:30" and H.ig_toss_slot(TK("2026-11-07 15:09"), H.IGF_PREP) is None  # 표지 = 칸 20분 전부터
+sv165 = (H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, dict(H.E))
+H.E.update(IG_TOKEN="tk", IG_USER_ID="u1"); H.IG_AUTO, H.tg, H.ig_quota = True, (lambda m, **p: {"message_id": 1}), (lambda tok, uid: None)
+pub165 = []
+def http165(url, body=None, headers=None, method=None):
+    if "media_publish" in url:
+        pub165.append(body["creation_id"]); return json.dumps({"id": "P" + body["creation_id"]})
+    return json.dumps({"status_code": "FINISHED"})
+H.http = http165
+def run165(seen, t):
+    time.time = lambda: TK(f"2026-11-07 {t}")
+    with contextlib.redirect_stdout(io.StringIO()) as o:
+        H.ig_publish(seen)
+    return o.getvalue()
+D165 = "igpub_20261107"
+s165 = {D165: {"t": 1, "n": 2}, "iglast": {"t": TK("2026-11-07 14:50")}, "igc_T1": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}}
+assert "직전 게시 90분 안" in run165(s165, "16:10") and not pub165  # 14:50 피드 글 + 1시간 30분 전 = 미룸
+run165(s165, "16:21"); assert pub165 == ["T1"] and s165[D165]["n"] == 2 and s165[D165]["toss"] == 1 and s165["iglast"]["toss"] == 1  # 15:30 칸 · 피드 수(n) 그대로
+s165["igc_F17"] = {"t": TK("2026-11-07 17:30"), "kind": "one", "cap": "쿠팡"}
+assert "직전 게시 90분 안" in run165(s165, "17:50") and pub165 == ["T1"]  # 토스 글 뒤 쿠팡 피드 = 1시간 30분(2시간 X)
+run165(s165, "17:52"); assert pub165 == ["T1", "F17"] and s165[D165]["n"] == 3 and "toss" not in s165["iglast"]
+s165b = {D165: {"t": 1, "n": 4}, "iglast": {"t": TK("2026-11-07 14:50")}, "igc_T2": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}, "igc_F5": {"t": TK("2026-11-07 15:40"), "kind": "one", "cap": "쿠팡"}}
+pub165.clear(); o165 = run165(s165b, "16:30"); assert pub165 == ["T2"] and "igc_F5" in s165b and "오늘 4개" in o165, o165  # 피드 4개 다 찬 날도 토스 = 상한 밖(하루 5) · 쿠팡 5번째 = X
+s165c = {D165: {"t": 1, "n": 2}, "iglast": {"t": TK("2026-11-07 16:00")}, "igc_T3": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}}
+pub165.clear(); run165(s165c, "16:50"); run165(s165c, "17:10"); assert not pub165 and "igc_T3" in s165c  # 15:30 칸 못 함(간격) → 17시 뒤 = 기다림
+s165c["iglast"] = {"t": TK("2026-11-07 17:55")}; run165(s165c, "19:00"); assert not pub165
+run165(s165c, "19:26"); assert pub165 == ["T3"]  # 18:30 칸(17:55 피드 + 1시간 30분)
+s165d = {"igc_T4": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}}
+assert "그날 X" in run165(s165d, "20:05") and "igc_T4" not in s165d  # 칸 다 지남(21시 뒤 X 규칙 안)
+time.time = lambda: TK("2026-11-07 15:45")
+assert H.ig_room({"igk_toss_2026-11-07": {"t": 1, "kind": "toss", "kids": []}}, TK("2026-11-07 15:45")) == H.ig_room({}, TK("2026-11-07 15:45"))  # 토스 조각 = 피드 여유에 안 셈
+assert "ig_room(seen, now)" not in inspect.getsource(H.ig_toss) and "ig_toss_slot(now)" in inspect.getsource(H.ig_toss)  # 토스 = 피드 상한 밖 · 조각 = 칸 시각부터
+(H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, e165) = sv165; H.E.clear(); H.E.update(e165)
