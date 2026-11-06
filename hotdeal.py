@@ -3679,6 +3679,7 @@ WU_CMP = r"보다\s*(?:싸|저렴|비싸)|반값|코스트코|홈플러스|트�
 WU_HYPE = r"역대급|무조건|손해|마지막\s*기회|클릭|눌러\s*(?:보|주)"  # 과장·조급·클릭 유도
 WU_BAN = "|".join((WU_FAKE, WU_HEALTH, WU_CMP, WU_HYPE))
 TOSS_EFFECT = r"구취|아토|미백|잇몸|시린|충치|치석|탈모|비듬|여드름|트러블|재생(?!\s*(?:펄프|지|용지|종이))|진정|장벽|리페어|기능성|주름|리프팅|(?<!고)탄력"  # 11/5 Cowork D(10시 💙 #1에 '고불소 구취케어 치약'·'아토워시'): 이름에 효능 낱말 = 토스 묶음·시리즈·리스트 X(Cowork 진열 규칙과 같게)
+TOSS_SITE_BLOCK = f"{TOSS_EFFECT}|{AUTO_CLAIM}|{SHELF_BLOCK}"  # 11/6 Cowork: 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(토스 효능 낱말·효능 낱말·분유·성인) — “쿠잉 주름펴기”가 올라감 · = build_site.TAPI_NAME_BLOCK(셀프체크로 같게)
 TOSS_BAN = rf"{WU_CMP}|{OTHER_STORES}|{CMP_WORDS}|비교|비쌈|(?:온라인|인터넷|국내|업계|시중)\s*최저|시중|타\s*(?:몰|사이트|쇼핑몰)|다른\s*(?:데|곳|몰|쇼핑몰|사이트)|(?:가장|제일|젤)\s*(?:싸|싼|쌌|쌈|저렴|낮)"  # 토스 글 = 다른 몰·가격 비교 말 X(th_voice·Claude 한 줄)
 
 
@@ -5472,7 +5473,7 @@ def toss_site(seen, x, link, text):
     상품 그룹 id를 tossid에 미리 넣어 단축 링크를 안 풂)."""
     if any(p.get("tid") == x["tacaItemId"] or p.get("own") and p.get("url") == link for p in load(POSTS, [])):
         return False
-    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg())  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
+    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg()) + ["이름 낱말(효능·분유·성인)"] * bool(re.search(TOSS_SITE_BLOCK, x.get("displayName") or ""))  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
     if why:
         print("toss site 뺌", x["tacaItemId"], why)
         return False

@@ -13378,3 +13378,27 @@ for k in ("workflows: [hotdeal]", "types: [completed]", "cancel-in-progress: tru
     assert k in pg160, k
 hd160 = open(os.path.join(RD160, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "path: |\n            seen.json\n            fonts\n            toss.json\n            music\n" in hd160 and "path: animals\n" in hd160 and "pages" not in hd160.split("jobs:")[0]  # 캐시 경로 그대로 · hotdeal.yml 안 건드림
+
+# 9-161 (11/6 22:2x Cowork 버그 — 기존 규칙 그대로): 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(TOSS_EFFECT·AUTO_CLAIM·분유·성인) — '쿠잉 주름펴기 HSI-1500GW'가 올라갔던 것
+#   글 만들 때(toss_site) X + 이미 올라간 것 = 다음 빌드(tapi_ok)에서 빠짐 · 옷 스티머라도 이름 낱말 기준 그대로(예외 = 진우 결정 전 X)
+assert S.TAPI_NAME_BLOCK == H.TOSS_SITE_BLOCK == f"{H.TOSS_EFFECT}|{H.AUTO_CLAIM}|{H.SHELF_BLOCK}"  # 두 파일 같은 규칙
+assert all(re.search(S.TAPI_NAME_BLOCK, n) for n in ("쿠잉 주름펴기 HSI-1500GW , 1개", "미백 치약 3개", "매일 분유 800g", "성인용 기저귀")) and not re.search(S.TAPI_NAME_BLOCK, "물티슈 100매 10팩")
+sv161 = (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE); cwd161, d161 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d161)
+N161 = TK("2026-11-06 22:10")
+def T161(n, when="2026-11-06 22:02"):
+    x = {"tacaItemId": 7, "tacaId": 70, "displayName": n, "displayPrice": 39900, "discountRate": 10, "reviewCount": 0, "isSoldOut": False}
+    body = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", n, H.toss_price(x), [H.toss_when(when)])
+    return x, H.html_ents(H.ad_head(H.TOSS_NOTE, H.plain_of(body)) + body)[0]
+x161, t161 = T161("쿠잉 주름펴기 HSI-1500GW , 1개")
+H.POSTS = "posts161.json"; json.dump([], open(H.POSTS, "w")); open("toss_noimg.txt", "w").write("")
+with contextlib.redirect_stdout(io.StringIO()) as o161:
+    ok161 = H.toss_site({}, x161, "https://toss.shopping/_m/W1", t161)
+assert not ok161 and json.load(open(H.POSTS)) == [] and "이름 낱말(효능·분유·성인)" in o161.getvalue(), o161.getvalue()  # 글 만들 때 X
+xo161, to161 = T161("쿠잉 스팀다리미 HSI-1500GW , 1개")
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.toss_site({}, xo161, "https://toss.shopping/_m/W2", to161)  # 낱말 없는 같은 틀 = 올라감
+S.TOSS_API_SITE, S.TOSSM, time.time = True, {}, lambda: N161
+old161 = {"t": "2026-11-06 22:02", "text": t161, "url": "https://toss.shopping/_m/W1", "own": 1, "shelf": 1, "tid": 7}
+ok161b = {"t": "2026-11-06 22:02", "text": to161, "url": "https://toss.shopping/_m/W2", "own": 1, "shelf": 1, "tid": 8}
+assert not S.tapi_ok(old161, N161) and S.tapi_ok(ok161b, N161)  # 이미 올라간 것 = 다음 빌드에서 빠짐
+(time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE) = sv161; os.chdir(cwd161); shutil.rmtree(d161, ignore_errors=True)
