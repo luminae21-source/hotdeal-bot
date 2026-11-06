@@ -1727,7 +1727,7 @@ assert idx.count('<article class="g"') <= 8 and len(idx) < 60000  # 홈 = 줄(�
 d0 = allp.split('id="d0"')[1].split("</section>")[0]
 assert "10월 9일 딜" in d0 and d0.count('class="g"') == 8 and "나흘전딜" in allp and "모아보기" not in allp
 assert d0.index("생수 40병") < d0.index("추가딜4") < d0.index("추가딜0") < d0.index("라면")  # 3사(토스)는 오래됐어도 맨 앞, 나머지는 최신 순(10/15~ 링크프라이스 G마켓도 3사 뒤)
-assert '<span class="mc">토스</span><h3><a href="https://hotdealpick.kr/p/0.html">생수 40병</a></h3><div class="pr">5,900원</div><div class="u">10/9 가격</div><div class="u">병당 148원</div>' in d0 and 'href="https://toss.im/_m/w"' in open("docs5/p/0.html").read()  # 토스 = 'M/D 가격' 1줄(안내는 칸 머리 TOSS_LINE)
+assert '<div class="cr2"><span class="mc">토스</span>' in d0 and '찜">' + S.svg("saved") + '</button></div><h3><a href="https://hotdealpick.kr/p/0.html">생수 40병</a></h3><div class="pr">5,900원</div><div class="u">10/9 가격</div><div class="u">병당 148원</div>' in d0 and 'href="https://toss.im/_m/w"' in open("docs5/p/0.html").read()  # 토스 = 'M/D 가격' 1줄(안내는 칸 머리 TOSS_LINE)
 assert '<b class="bdg f">🔥 특가</b>' in d0 and d0.count('<div class="im" style="--c:#EAF6EE"><i class="ci ci-food" aria-hidden="true"></i>') >= 2  # 썸네일 = 품목 선 아이콘(10/24 진우 — 이모지 X, 생수·라면 = 식품 밥그릇, 바탕 = 품목 색) · 🔥 배지
 assert all(f'<a href="https://hotdealpick.kr/p/{i}.html">' in allp for i in (1, 2)) and 'href="https://www.ppomppu.co.kr' not in allp  # 원글·주소 없는 딜도 카드 = 딜 쪽(원글 버튼·같은 상품 찾기는 딜 쪽에)
 gp = [{"t": f"2026-10-09 {10 + k // 6:02d}:{k % 6}0", "text": f"🔥 [G마켓] 많은딜{k:02d} (1,000원)", "url": f"https://m{k}", "s": 5} for k in range(45)]
@@ -6063,7 +6063,7 @@ cp50 = lambda img, url="https://link.coupang.com/a/x", **k: {"t": "2026-10-24 10
 assert S50.img_of(cp50("https://ads-partners.coupang.com/image1/t")) == "https://ads-partners.coupang.com/image1/t" and S50.img_of(cp50("https://thumbnail6.coupangcdn.com/a.jpg")).startswith("https://thumbnail6.")
 assert all(S50.img_of(cp50(u)) == "" for u in ("http://ads-partners.coupang.com/i", "javascript:alert(1)", "https://evil.example/coupang.com.jpg", "https://coupang.com.evil.example/x", "", None)) and S50.img_of(cp50("https://ads-partners.coupang.com/i", url="https://toss.shopping/_m/x")) == ""  # https + 쿠팡 주소만, 토스 = 사진 X
 th50 = S50.thumb(cp50('https://ads-partners.coupang.com/i"><script>'))
-assert '<img src="https://ads-partners.coupang.com/i&quot;&gt;&lt;script&gt;"' in th50 and 'onerror="this.remove()"' in th50 and '<div class="im" style="--c:#EAF6EE"><i class="ci ci-food" aria-hidden="true"></i><img' in th50  # 이스케이프 · 못 불러오면 품목 선 아이콘(사진 아래 깔림)
+assert '<img src="https://ads-partners.coupang.com/i&quot;&gt;&lt;script&gt;"' in th50 and S50.IMG_LD in th50 and '<div class="im sk" style="--c:#EAF6EE"><i class="ci ci-food" aria-hidden="true"></i><img' in th50  # 이스케이프 · 못 불러오면 품목 선 아이콘(사진 아래 깔림)
 ld50 = json.loads(S50.seo(5, cp50("https://ads-partners.coupang.com/i", st="out"))[2].split(">", 1)[1].split("</script>")[0])
 assert ld50["image"] == "https://ads-partners.coupang.com/i" and "availability" not in ld50["offers"] and ld50["offers"]["seller"] == {"@type": "Organization", "name": "쿠팡"} and "review" not in json.dumps(ld50) and "Rating" not in json.dumps(ld50)
 d50 = tempfile.mkdtemp(); S50.build([cp50("https://ads-partners.coupang.com/i")], d50); p50 = open(f"{d50}/p/0.html").read()
@@ -6675,9 +6675,9 @@ assert '<span>🏆 많이 본 딜 TOP 10</span><small>최근 24시간 · 19시 �
 assert re.findall(r'data-gc="deadline/(\w+)"', sec59("dl")) == ["event", "11"] and "<small>2개</small>" in sec59("dl") and re.findall(r'data-gc="drop/(\d+)"', sec59("drop")) == ["2", "1", "4"]  # 오늘 마감 = 기획전 마지막 날 카드 + 토스 하루특가 · 가격 내림 = 큰 순
 assert re.findall(r'data-i="(\d+)"', sec59("steady")) == ["13"] and "<small>2개</small>" in sec59("steady") and re.findall(r'data-i="(\d+)"', sec59("pick")) and not set(re.findall(r'data-i="(\d+)"', sec59("pick"))) & {"15"}  # 👍 = 🔥 줄에 나온 것(12) 빼고 · 픽 = 가로 카드(기획전 X)
 cd59, cp59, tt59, ct59, cs59 = (rd59(f"c/{k}/index.html") for k in ("drop", "coupang", "toss", "today", "top"))
-assert re.findall(r'<article class="g"><button class="like" type="button" data-i="(\d+)"', cd59) == ["2", "1", "4"] and '<div class="ex">▼ 40% 내림 (10/20 기록 대비)</div>' in cd59 and f'<a href="{S.BASE}c/drop/" aria-current="page">📉 가격 내림</a>' in cd59 and f'<p class="t">{S.TOSS_LINE}</p>' not in cd59
+assert re.findall(r'<article class="g">(?:(?!</article>).)*?<button class="like" type="button" data-i="(\d+)"', cd59) == ["2", "1", "4"] and '<div class="ex">▼ 40% 내림 (10/20 기록 대비)</div>' in cd59 and f'<a href="{S.BASE}c/drop/" aria-current="page">📉 가격 내림</a>' in cd59 and f'<p class="t">{S.TOSS_LINE}</p>' not in cd59
 assert '<b class="b2">▼ 40% 내림 · 10/20 기록 대비</b>' in rd59("p/2.html") and '<b class="b2">▼' not in rd59("p/3.html") and f'<p class="dis">{S.DISCLOSURE}</p>' in rd59("p/2.html") and S.DOT_JS in rd59("p/2.html")  # 딜 쪽 배지 · 다른 쪽 = DISCLOSURE · 🔔 점
-assert re.findall(r'data-s="(\w)">[^<]+ (\d+)</button>', cp59) == [("h", "5"), ("s", "1"), ("w", "3")] and ' data-s="s w">' in cp59 and re.search(r'<article class="g" data-c="[a-z]+" data-s="h"><button class="like" type="button" data-i="2"', cp59) and S.MALL_JS in cp59 and f'href="{S.GOLDBOX}"' in cp59  # 몰 쪽 = 상태 탭(개수)·카드 data-c·data-s
+assert re.findall(r'data-s="(\w)">[^<]+ (\d+)</button>', cp59) == [("h", "5"), ("s", "1"), ("w", "3")] and ' data-s="s w">' in cp59 and re.search(r'<article class="g" data-c="[a-z]+" data-s="h">(?:(?!</article>).)*?<button class="like" type="button" data-i="2"', cp59) and S.MALL_JS in cp59 and f'href="{S.GOLDBOX}"' in cp59  # 몰 쪽 = 상태 탭(개수)·카드 data-c·data-s
 assert all(f'data-c="{S.CAT_META[k][0]}">' in cp59 for k in {S.cat_of(P59[i]) for i in (1, 2, 3, 6, 7, 8, 13, 15)} if k) and 'aria-label="목록"' not in cp59 and not os.path.exists(f"{w59}/c/coupang/2")  # 품목 칩 = 있는 품목만
 assert tt59.count(f'<p class="t">{S.TOSS_LINE}</p>') == 1 and '<div class="u">10/24 가격</div>' in tt59 and "지금 가격은 링크에서 확인</div>" not in tt59 and ct59.count('<article class="g"') == 1 and "매일두유" in ct59 and '<h1 class="h">🏆 많이 본 딜 TOP 10</h1>' in cs59 and cs59.count('<article class="g"') == 10
 assert '<nav class="chips" aria-label="몰"><a href="https://hotdealpick.kr/c/coupang/?s=h" data-gc="mall/coupang"><i class="lw" aria-hidden="true">🚀</i>쿠팡</a>' in rd59("c/hot/index.html") and S.stat_chips("hot") in rd59("c/hot/index.html") and S.chips_html("food") in rd59("c/food/index.html")  # 🔥 쪽 = 상태 칩 + 몰 칩(?s=h) · 품목 쪽 = 18칩 그대로
@@ -11632,7 +11632,7 @@ assert [S.bundle_of(p) for p in P123] == ["gold", "gold", "gold", "th12", "th18"
 assert S.bundle_live(P123, TK("2026-11-01 06:59")) == {2, 3} and S.bundle_live(P123, TK("2026-11-01 07:00")) == {3} and S.bundle_live(P123, TK("2026-11-01 12:06")) == set()  # 골드박스 = 다음 날 7시 전 · Threads 묶음 = 24시간
 assert S.bundle_live(P123[:2], TK("2026-10-30 10:00")) == {1} and S.bundle_live(P123[:3], TK("2026-10-30 10:00")) == {2}  # 같은 종류 = 최신 1개
 T123 = S.thumb(P123[2])
-assert T123.startswith('<div class="im bg">') and T123.count("<img ") == 4 and "5개 묶음</b>" in T123 and IM123(4) not in T123 and 'class="ci"' not in T123, T123  # 2×2(4장) · 빈 가방(품목 아이콘) X
+assert T123.startswith('<div class="im bg sk">') and T123.count("<img ") == 4 and "5개 묶음</b>" in T123 and IM123(4) not in T123 and 'class="ci"' not in T123, T123  # 2×2(4장) · 빈 가방(품목 아이콘) X
 C123 = S.card(2, P123[2], (0, None, "", [], False))
 assert "<h3><a href=\"" + S.BASE + "p/2.html\">쿠팡 골드박스 TOP5 · 10/31</a></h3>" in C123 and '<div class="pr">5개 · 최저 1,000원</div>' in C123 and "게시 시점 가격" in C123, C123
 assert "쿠팡 골드박스 TOP5 · 10/31" in S.row(2, P123[2], (0, None, "", [], False), "2026-10-31") and "화장품 3 · 10/31" in S.card(3, P123[3], (0, None, "", [], False))
@@ -11739,7 +11739,7 @@ for d in ("p", "c"):
     os.makedirs(f"{o125}/{d}", exist_ok=True)
 with contextlib.redirect_stdout(io.StringIO()): S.build(P125, o125)
 SI125, SS125 = open(f"{o125}/series/index.html", encoding="utf-8").read(), open(f"{o125}/series/stock/index.html", encoding="utf-8").read()
-assert all(f'{S.BASE}series/{k}/' in SI125 for k, *_ in S.SERIES) and "noindex" not in SI125 + SS125 and SS125.index("#2 · 11/13") < SS125.index("#1 · 11/12") and SS125.count('class="im bg"') == 2, SS125[:300]
+assert all(f'{S.BASE}series/{k}/' in SI125 for k, *_ in S.SERIES) and "noindex" not in SI125 + SS125 and SS125.index("#2 · 11/13") < SS125.index("#1 · 11/12") and SS125.count('class="im bg sk"') == 2, SS125[:300]
 assert "🔍 핫딜픽 분석" in open(f"{o125}/series/analysis/index.html", encoding="utf-8").read() and "&#x27;1+1&#x27;이라 샀다가 손해 보는 경우" in open(f"{o125}/series/analysis/index.html", encoding="utf-8").read()
 sj125 = json.load(open(f"{o125}/series.json")); assert {x["key"]: x["n"] for x in sj125}["stock"] == 2 and sj125[0] == {"key": "dawn", "name": "새벽 장바구니", "emoji": "🌙", "at": "01:00", "desc": S.SERIES[0][4], "n": 0}
 D125 = open(f"{o125}/p/{len(P125) - 1}.html", encoding="utf-8").read()
@@ -12713,13 +12713,13 @@ S.TOSS_SITE_IMG = False; assert S.toss_imgs(m146, N146) == {}; S.TOSS_SITE_IMG =
 S.TIMG = S.toss_imgs(m146, N146)
 own146 = {"t": "2026-11-06 10:00", "text": "🔥 [토스] 수건 5장 (9,900원)", "url": "https://toss.shopping/_m/A", "own": 1}
 c146, sh146 = S.card(1, own146, (0, None, "", [], False)), (0, None, "", [], False)
-im146 = c146.split('<div class="im tim"')[1].split("</div>")[0]
-assert im146.startswith(' style="background:#fff">') and im146.count("<") == 1 and not re.search(r"<i[\s>]", im146) and 'style="mix-blend-mode:normal;background:#fff"' in im146, im146  # 11/5 Cowork 17:1x: 토스 img = 섞기 X(normal)·뒤 요소(품목 아이콘 i) 없음·흰 배경
-assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 and c146.index(S.PHOTO_CREDIT) > c146.index(TU146) and c146.index('<div class="tbd"><b class="bdg f">🔥 특가</b></div>') > c146.index(S.PHOTO_CREDIT), c146  # 사진 위 배지·글자 X
+im146 = c146.split('<div class="im tim sk"')[1].split("</div>")[0]
+assert im146.startswith('>') and im146.count("<") == 1 and not re.search(r"<i[\s>]", im146) and 'style="mix-blend-mode:normal"' in im146 and "#fff" not in im146, im146  # 11/5 Cowork 17:1x: 토스 img = 섞기 X(normal)·뒤 요소(품목 아이콘 i) 없음 · U': 회색 타일(흰 바탕 = 뜬 뒤 CSS .tim.ld img)
+assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 and c146.index(S.PHOTO_CREDIT) > c146.index(TU146) and c146.index('<div class="cr2"><span class="mc">토스</span><b class="bdg f">🔥 특가</b><button class="like"') > c146.index(S.PHOTO_CREDIT), c146  # 사진 위 배지·글자 X(U': 사진 밖 한 줄)
 assert TU146 not in S.card(2, {**own146, "own": 0}, sh146) and TU146 not in S.card(3, {**own146, "url": "https://toss.shopping/_m/D"}, sh146) and S.PHOTO_CREDIT not in S.card(4, {**own146, "text": "🔥 [쿠팡] 수건 (9,900원)", "url": "https://link.coupang.com/a/X"}, sh146)  # API 상품·noimg·쿠팡 = 토스 사진 X
 dc146 = S.deal_card(1, own146); assert TU146 in dc146 and S.PHOTO_CREDIT in dc146 and dc146.index(S.PHOTO_CREDIT) < dc146.index('<div class="s">')  # 딜 쪽 = 사진 바로 아래 출처
 src146 = open(S.__file__, encoding="utf-8").read()
-assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .tbd .bdg{position:static" in src146 and 'TOSSM = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
+assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .cr2 .bdg{position:static" in src146 and ".g .im.tim img{mix-blend-mode:normal}" in src146 and 'TOSSM = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
 # own_end = 상세 확인 때 썸네일 원본을 seen tossid [8]에(사진 칸 없는 기록 먼저 확인)
 assert H.toss_thumb({"thumbnailUrl": TU146}) == TU146 and H.toss_thumb({"thumbnailUrl": "javascript:x"}) is None and H.toss_thumb({}) is None \
     and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)
@@ -13255,3 +13255,22 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(tg155) == 3  # 기념일 당일 X
 assert "price_track, dday_deals," in open(H.__file__, encoding="utf-8").read()
 (H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.http, H.th_text, _, _, S.EVENTS) = sv155; H.E.clear(); H.E.update(sv155[8]); H.RUN.clear(); H.RUN.update(sv155[9]); os.chdir(cwd155)
+
+# 9-156 (11/6 진우 U' '시안대로 해 보자'): 상품 카드 사진 칸 = 높이 그대로 118px · 회색 타일 #F3F4F6 r14 · padding 4px · 안쪽 1px 선 · 쿠팡 사진만 multiply·r6 ·
+#   배지·♡ = 사진 밖 한 줄([몰 칩][배지 칩] … ♡ 17px 회색, 누르는 곳 32px) · 뜨기 전 반짝임(reduce-motion = 멈춤) · 토스 = 섞기 X·글자 X · 사진 없음 = 같은 타일 + 자리표시
+cp156 = {"t": "2026-11-06 10:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,490원)", "url": "https://link.coupang.com/a/x", "img": "https://thumbnail6.coupangcdn.com/a.jpg", "own": 1}
+c156 = S.card(7, cp156, (0, None, "", [], False))
+im156 = c156.split('<div class="im')[1].split("</div>")[0]
+assert c156.startswith('<article class="g"><div class="im sk"') and S.IMG_LD in im156 and "bdg" not in im156 and "like" not in im156, c156  # 사진 칸 안 = 아이콘 + 사진만(배지·♡ X)
+assert re.search(r'</div><div class="cr2"><span class="mc">쿠팡[^<]*</span><b class="bdg f">🔥 특가</b><button class="like" type="button" data-i="7"[^>]*>' + re.escape(S.svg("saved")) + r'</button></div><h3>', c156), c156  # 사진 바로 아래 한 줄
+assert '<b class="bdg">👍 꾸준템</b><button class="like"' in S.card(7, cp156, (1, None, "", [], False)) and '<div class="cr2"><span class="mc">쿠팡' in S.card(7, cp156, (0, None, "", [], False), plain=True) and "bdg" not in S.card(7, cp156, (0, None, "", [], False), plain=True)  # 특가 아님 = 그 칩 · 📉 쪽 = 칩 없음(줄은 그대로)
+nv156 = S.card(8, {"t": "2026-11-06 10:00", "text": "🔥 [네이버] 곰곰 특란 30구 (7,490원)", "url": "https://smartstore.naver.com/x/products/1", "img": "https://thumbnail6.coupangcdn.com/a.jpg"}, (0, None, "", [], False))
+assert re.search(r'<div class="im"( style="--c:#[0-9A-F]+")?><i class="ci ci-[a-z]+" aria-hidden="true"></i></div><div class="cr2">', nv156) and "<img" not in nv156.split('<div class="cr2">')[0], nv156  # 네이버 = 사진 X · 자리표시 그대로(sk X)
+css156 = S.CSS
+for k in (".g .im{height:118px;border-radius:14px", ".g .im{background:#F3F4F6;padding:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}", "border-radius:6px;background:transparent;mix-blend-mode:multiply}",
+          ".g .im.tim img{mix-blend-mode:normal}", ".g .im.sk:not(.ld){background:linear-gradient(", "@media(prefers-reduced-motion:reduce){.g .im.sk{animation:none}}", ".g .im.sk .ci,.g .im:has(img) .ci{display:none}",
+          ".g .cr2{display:flex;align-items:center;gap:6px;min-height:32px", ".g .cr2 .mc{margin:0;align-self:center}", ".g .cr2 .bdg.f{background:rgba(229,57,53,.16);color:#ff7a70}", "padding:2px 7px;border-radius:6px;font-size:11px;font-weight:800",
+          "margin-left:auto;width:32px;height:32px;background:none;color:#9aa0a6}", ".g .cr2 .like svg{width:17px;height:17px}", ".g .cr2 .like[aria-pressed=true]{color:var(--acc)}"):
+    assert k in css156, k
+assert ".g .im .ci{--ci:#9aa0a6}" in css156 and ".hs .g .im{height:96px" in css156 and "#pick .hs .g .im{height:88px}" in css156 and "*{box-sizing:border-box}" in css156  # 칸·줄 수 그대로(padding = 안쪽)
+assert "<div class='cr2'><span class='mc'>\"+esc(x.s)+\"</span>\"+(x.b||\"\")+\"<button class='like'" in S.SEARCH_JS and "(x.b||\"\")+\"</div>" not in S.SEARCH_JS  # 검색 카드도 같은 틀

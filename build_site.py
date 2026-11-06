@@ -69,7 +69,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .ib::before{content:"";position:absolute;inset:-3px}.ib{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none}
 .ib svg,.nav svg,.sb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ib b{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accf);color:#fff;font-size:10.5px;line-height:17px;text-align:center}.ib b:empty{display:none}
 .sb{position:relative;display:block;padding:0 0 6px}.sb svg{position:absolute;left:12px;top:11px;color:var(--acc)}.sb input{width:100%;height:42px;border:2px solid var(--acc);border-radius:12px;padding:0 10px 0 38px;font:inherit;font-size:16px;letter-spacing:-.3px;background:var(--card);color:var(--ink)}.sb input::placeholder{color:var(--sub)}
-.dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}.pcr{margin:3px 2px 0;font-size:10.5px;color:var(--sub)}.tbd{margin-top:4px}.g .tbd .bdg{position:static;display:inline-block}
+.dis{font-size:11.5px;line-height:1.5;color:var(--sub);margin:10px 2px 0}.pcr{margin:3px 2px 0;font-size:10.5px;color:var(--sub)}
 .t{color:var(--sub);font-size:12.5px}
 .tp{margin:16px 0 0;padding:20px 16px 6px;border-radius:24px;background:var(--pkbg)}
 .ev{flex:0 0 88%;min-width:0;scroll-snap-align:start;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px;border-radius:18px;background:var(--pkbg);box-shadow:inset 0 0 0 1px var(--pkln);text-decoration:none;color:var(--ink)}
@@ -96,6 +96,7 @@ html{scroll-padding:calc(72px + env(safe-area-inset-top)) 0 calc(76px + env(safe
 .g .mc{margin:9px 2px 0;align-self:flex-start}.g h3{margin:5px 2px 4px;font-size:14px;line-height:1.4;font-weight:600;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.g h3 a{text-decoration:none}.g h3 a::after{content:"";position:absolute;inset:0;border-radius:20px}
 .g .pr{margin:0 2px;font-size:17px;font-weight:800;letter-spacing:-.6px;line-height:1.3}.g .u,.g .ex{margin:1px 2px 0}
 .like{position:absolute;z-index:2;top:12px;right:12px;display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:17px;background:rgba(255,255,255,.86);color:#6B7180;cursor:pointer}.like::before{content:"";position:absolute;inset:-5px}.like svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.like[aria-pressed=true]{color:var(--acc)}.like[aria-pressed=true] svg{fill:currentColor}
+.g .im{background:#F3F4F6;padding:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}.g .im img{top:4px;left:4px;width:calc(100% - 8px);height:calc(100% - 8px);border-radius:6px;background:transparent;mix-blend-mode:multiply}.g .im.bg{gap:2px}.g .im.bg img{width:100%;height:100%;object-fit:contain}.g .im.tim img{mix-blend-mode:normal}.g .im.tim.ld img{background:#fff}.g .im.sk .ci,.g .im:has(img) .ci{display:none}.g .im.sk:not(.ld){background:linear-gradient(100deg,#F3F4F6 30%,#E6E8EC 50%,#F3F4F6 70%) 0 0/200% 100%;animation:sk 1.4s ease-in-out infinite}@keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}@media(prefers-reduced-motion:reduce){.g .im.sk{animation:none}}.g .cr2{display:flex;align-items:center;gap:6px;min-height:32px;margin:6px 2px 0}.g .cr2 .mc{margin:0;align-self:center}.g .cr2 .bdg{position:static;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:800;line-height:16px;background:var(--chip);color:var(--sub)}.g .cr2 .bdg.f{background:rgba(229,57,53,.16);color:#ff7a70}.g .cr2 .like{position:relative;top:auto;right:auto;flex:none;margin-left:auto;width:32px;height:32px;background:none;color:#9aa0a6}.g .cr2 .like svg{width:17px;height:17px}.g .cr2 .like[aria-pressed=true]{color:var(--acc)}
 .g .s,.g .bd,.g .go,.g .rx,.g .sv{margin:2px 2px 0;font-size:12px;color:var(--sub)}.g .go{position:relative;z-index:1}.g:not(:has(.im)) h3{padding-right:36px}.g .go a{display:block;margin-top:8px;padding:9px 0;border-radius:10px;background:var(--chip);text-align:center;text-decoration:none;font-weight:700}
 .all{display:flex;align-items:center;justify-content:center;min-height:52px;margin:12px 0 0;border-radius:14px;background:var(--btn);color:var(--btnt);text-decoration:none;font-weight:700;font-size:15px;letter-spacing:-.3px}
 .btn{display:flex;align-items:center;justify-content:center;min-height:54px;margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--accf);color:#fff;text-decoration:none;font-weight:800;font-size:17px;letter-spacing:-.4px;text-align:center}
@@ -153,7 +154,7 @@ html.lay-c:not(.inapp) .hr .ib+.ib{display:grid;margin-left:0}html.lay-c .sb{rig
 .q i{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--c,var(--card));box-shadow:inset 0 0 0 1px var(--line);font-style:normal;font-size:22px;line-height:1}.q.coupang i{background:var(--cpb)}.q.toss i{background:var(--tsb)}.q.naver i{background:var(--nvb)}.q.evt i{background:var(--pkbg)}
 .qb{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}
 .myr{display:flex;gap:12px;margin:10px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}.myr::-webkit-scrollbar{display:none}.mi{position:relative;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-decoration:none}.mi .im{width:46px;height:46px;border-radius:50%;font-size:22px}.me .im{border:2px solid var(--acc);background:var(--card);color:var(--acc);font-size:13px;font-weight:800}.mi small{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;color:var(--sub)}.mi b{position:absolute;top:34px;left:50%;transform:translateX(-50%);padding:0 5px;border-radius:8px;background:var(--accf);color:#fff;font-size:9.5px;font-weight:800;line-height:15px;white-space:nowrap}.mi b.d{background:#15803D}
-@media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}
+@media(prefers-color-scheme:dark){.im,.tile i,.q i{background:color-mix(in srgb,var(--c,var(--chip)) 32%,var(--card))}.ci{--ci:#C9CED8}.g .im .ci{--ci:#9aa0a6}.like{background:rgba(26,28,33,.8);color:#9AA0AC}}
 .lw{display:inline-grid;place-items:center;flex:none;width:var(--s,20px);height:var(--s,20px);margin-right:5px;border-radius:50%;background:#fff!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);font-style:normal;vertical-align:-5px}.lw{font-size:calc(var(--s,20px)*.56);line-height:1}.lw img{width:64%;height:64%;object-fit:contain}.lw svg{width:44%;height:44%}.q i.lw{width:46px;height:46px;margin:0}.h .lw{--s:30px;margin-right:7px;vertical-align:middle}.mt b .lw{--s:24px;vertical-align:-6px}.mt b,.tabs button{display:inline-flex;align-items:center}.tabs button .lw,.mt b .lw{vertical-align:0}
 .mlg{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:#fff;color:var(--m);font-style:normal;font-size:9.5px;font-weight:900;letter-spacing:-.5px;overflow:hidden}.mlg img{width:12px;height:12px;object-fit:contain}
 .pvs{flex:none;padding:0 6px;border-radius:6px;font-size:10.5px;font-weight:800;line-height:17px;white-space:nowrap}.pvs.end{background:#E5303F;color:#fff}.pvs.on{background:#DDF5C9;color:#2F6B0F}.pvs.soon{background:#14161B;color:#fff}.pvs.past{background:var(--chip);color:var(--sub)}
@@ -274,7 +275,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function card(x){return "<article class='g'><button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button><div class='im' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onerror='this.remove()'>":"")+(x.b||"")+"</div><span class='mc'>"+esc(x.s)+"</span><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
+function card(x){return "<article class='g'><div class='im"+(x.g?" sk":"")+"' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onload='this.parentNode.classList.add(\\"ld\\")' onerror='this.parentNode.classList.remove(\\"sk\\");this.remove()'>":"")+"</div><div class='cr2'><span class='mc'>"+esc(x.s)+"</span>"+(x.b||"")+"<button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button></div><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
 function hide(on){[].forEach.call(M.children,function(e){if(/^(HEADER|FOOTER|SCRIPT)$/.test(e.tagName)||e.id==='sr'||e.className==='dis')return;if(on){if(!e.hidden){e.hidden=true;e.dataset.sh=1}}else if(e.dataset.sh){e.hidden=false;delete e.dataset.sh}})}
 function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}
 function run(){var v=q.value.trim().toLowerCase();if(!v){if(sr){sr.remove();sr=null}hide(false);return}
@@ -1156,18 +1157,22 @@ def toss_img(p):
     return TIMG.get(p.get("url"), "") if p.get("own") and shop_of(p) == "toss" else ""
 
 
-def thumb(p, inner="", tp=False):
-    """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(정사각 흰 배경 contain · 못 불러오면 사진만 지워져 선 아이콘이 보임)."""
+IMG_LD = ' onload="this.parentNode.classList.add(\'ld\')" onerror="this.parentNode.classList.remove(\'sk\');this.remove()"'  # 사진 뜨면 반짝임 멈춤(ld) · 못 불러오면 사진 지우고 sk 빼기(아이콘 다시 보임·반짝임 X)
+
+
+def thumb(p, tp=False):
+    """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(contain · 못 불러오면 사진만 지워져 선 아이콘이 보임).
+    U'(11/6 진우 '시안대로'): 상품 카드(.g) 사진 칸 = 회색 타일 #F3F4F6 · padding 4px · 쿠팡 사진만 multiply · 뜨기 전 반짝임(sk → 뜨면 ld) — 배지·찜은 사진 밖(card의 .cr2)."""
     if bundle_of(p) and any(x[3] for x in b_items(p)):  # 묶음 = 상품 사진 2×2 + 'N개 묶음'(빈 가방 아이콘 X)
-        return ('<div class="im bg">' + "".join(f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for u in [x[3] for x in b_items(p) if x[3]][:4])
-                + f'<b class="bn">{len(b_items(p))}개 묶음</b>{inner}</div>')
+        return ('<div class="im bg sk">' + "".join(f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' for u in [x[3] for x in b_items(p) if x[3]][:4])
+                + f'<b class="bn">{len(b_items(p))}개 묶음</b></div>')
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
-    if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·위에 배지·글자 X(배지는 사진 밖 아래) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
-        return (f'<div class="im tim" style="background:#fff"><img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="mix-blend-mode:normal;background:#fff"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 배경·섞기(multiply) X — 배경색·아이콘과 섞이면 합성·편집 위험(인라인 = 쪽마다 다른 .im img 규칙보다 먼저)
-                f'<p class="pcr">{PHOTO_CREDIT}</p>' + (f'<div class="tbd">{inner}</div>' if inner else ""))
-    pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
-    return f'<div class="im"{bg}>{ci(p)}{pic}{inner}</div>'
+    if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·섞기 X·위에 배지·글자 X(배지는 사진 밖 .cr2) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
+        return (f'<div class="im tim sk"><img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD} style="mix-blend-mode:normal"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 바탕(뜬 뒤 .tim.ld img)·섞기(multiply) X — 인라인 = 쪽마다 다른 .im img 규칙보다 먼저
+                f'<p class="pcr">{PHOTO_CREDIT}</p>')
+    pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' if u else ""
+    return f'<div class="im{" sk" if u else ""}"{bg}>{ci(p)}{pic}</div>'
 
 
 def price_bits(p, sh):
@@ -1206,8 +1211,8 @@ def card(i, p, sh, more=(), attrs="", plain=False):
     if plain:
         tg = re.match(r"[\d,]+원", p.get("tgt") or "")
         grey = [x for x in (p.get("chk") and f"{p['chk']} 확인", sh[0] in (1, 2) and tg and f"목표가 {tg[0]}") if x]
-    return (f'<article class="g"{attrs}><button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button>'
-            + thumb(p, "" if plain else badge(p, sh), True) + f'<span class="mc">{html.escape(chip_of(p))}</span>'
+    return (f'<article class="g"{attrs}>' + thumb(p, True)  # U': 사진 아래 한 줄 = [몰 칩][배지 칩] … 오른쪽 끝 ♡
+            + f'<div class="cr2"><span class="mc">{html.escape(chip_of(p))}</span>{"" if plain else badge(p, sh)}<button class="like" type="button" data-i="{i}" aria-pressed="false" aria-label="{html.escape(name)} 찜">{svg("saved")}</button></div>'
             + (f'<h3><a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank">{html.escape(name)}</a></h3>' if p.get("tid") else f'<h3><a href="{BASE}p/{i}.html">{html.escape(name)}</a></h3>') + (f'<div class="pr">{html.escape(shown)}</div>' if shown else "")
             + "".join(f'<div class="ex">{html.escape(x)}</div>' for x in ex[:2]) + "".join(end) + "".join(f'<div class="u">{html.escape(x)}</div>' for x in [*grey, *(m for m in more if m not in grey)]) + "</article>")
 
@@ -2159,7 +2164,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
              + (f'<span class="ship">{html.escape(ship.strip())}</span>' if ship.strip() else "")
              + (f'<span class="sv">{sv[0]}보다 {sv[1]}↓</span>' if sv else "") + "</div>") if price else "") + (f'<div class="u">{html.escape(u)}</div>' if u else "")
     bd = badge_html(p) + (f'<b class="b2">▼ {DROPS[i][0]}% 내림 · {DROPS[i][1]} 기록 대비</b>' if i in DROPS else "")
-    return (f'<article class="card deal">{thumb(p, tp=True)}<div class="s">{html.escape(store or "핫딜")} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
+    return (f'<article class="card deal">{thumb(p, True)}<div class="s">{html.escape(store or "핫딜")} · {int(p["t"][5:7])}월 {int(p["t"][8:10])}일 {p["t"][11:16]}</div>'
             + (f'<div class="bd">{bd}</div>' if bd else "") + f'<h1 class="dn"><a href="{url}">{html.escape(f"{name} {main.strip()}".strip() if price else title)}</a></h1>{hero}{extra}{btn}'
             + (f'<p class="note">가격·재고는 바뀔 수 있어요 · 결제 전 최종가 확인</p>' if btn else "") + f'<h3 class="why">왜 골랐나요</h3><p>{body}</p>'
             + (f'<h3 class="why">고르는 기준</h3><ul class="tips">{"".join(f"<li>{html.escape(t)}</li>" for t in tips)}</ul>' if tips else "") + "</article>")
