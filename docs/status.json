@@ -1,17 +1,17 @@
 {
-"at": "2026-11-06 15:12",
-"posts": 3342,
-"site": 1758,
+"at": "2026-11-06 15:26",
+"posts": 3347,
+"site": 1763,
 "mall": {
-"coupang": 1079,
+"coupang": 1084,
 "toss": 623,
 "naver": 55,
 "": 1
 },
 "cat": {
 "heat": 124,
-"snack": 78,
-"food": 386,
+"snack": 81,
+"food": 388,
 "laundry": 76,
 "season": 99,
 "beauty": 248,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 161,
-"sitemap": 1044,
+"sitemap": 1049,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -96,10 +96,10 @@
 }
 },
 "2026-11-06": {
-"site": 1758,
-"sitemap": 1044,
+"site": 1763,
+"sitemap": 1049,
 "mall": {
-"coupang": 1079,
+"coupang": 1084,
 "toss": 623,
 "naver": 55,
 "": 1
@@ -137,7 +137,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 4 · 기존 상품 구성 0"
+"nset_n": "새 구성 5 · 기존 상품 구성 0"
 }
