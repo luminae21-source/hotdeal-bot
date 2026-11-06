@@ -10469,7 +10469,7 @@ for d in ("c/beauty", "c/beauty/2"):
     os.makedirs(f"docs/{d}", exist_ok=True); open(f"docs/{d}/index.html", "w").write(d)
 open("docs/sitemap.xml", "w").write("<urlset>" + "".join(f"<url><loc>{S.BASE}{u}</loc></url>" for u in ["", "p/1.html", "p/0.html", "c/beauty/", "c/beauty/2/", "c/"]) + "</urlset>"); open("docs/c/index.html", "w").write("c")
 H.IDX_RUN, s98, req98[:] = 4, {"idx_key": {"t": 0}}, []; H.indexnow(s98); H.indexnow(s98)
-assert nv98() == [["", "c/beauty/", "c/", "p/1.html"], ["p/0.html", "c/beauty/2/"]], nv98()
+assert nv98() == [["", "c/beauty/", "c/", "c/beauty/2/"], ["p/1.html", "p/0.html"]], nv98()  # 11/7: 홈 -> 가이드·주제·칸·시리즈·행사(IDX_ORDER) -> 칸 뒤쪽 -> p/ 마지막
 (H.http, time.time, H.tg, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv98; os.chdir(cwd98)
 # 9-99) VV(10/27 Cowork — 새 진열 44개가 2시간째 수익 링크 0 · cp_fail 44개 f·x·e 빈 칸 = 한 번도 시도 X): 앞 실행들의 가격 확인·사진·재시도가 시간당 상한(25)을 다 써서 cp_links 차례엔 CpLimit ·
 #       진열은 재시도(나누다 만 묶음·1개짜리) 뒤 순서 -> ① 한 번도 안 해 본 진열 = 채널 예약 다음·재시도 앞 · 이 실행 몫(CP_RUN)까지 ② 재시도 = 남은 몫의 절반 · site_relink 쿠팡 = 새 진열 끝날 때까지 쉼
@@ -13536,3 +13536,21 @@ time.time = lambda: TK("2026-11-07 15:45")
 assert H.ig_room({"igk_toss_2026-11-07": {"t": 1, "kind": "toss", "kids": []}}, TK("2026-11-07 15:45")) == H.ig_room({}, TK("2026-11-07 15:45"))  # 토스 조각 = 피드 여유에 안 셈
 assert "ig_room(seen, now)" not in inspect.getsource(H.ig_toss) and "ig_toss_slot(now)" in inspect.getsource(H.ig_toss)  # 토스 = 피드 상한 밖 · 조각 = 칸 시각부터
 (H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, e165) = sv165; H.E.clear(); H.E.update(e165)
+
+# 9-166 (11/7 02시대 Cowork '네이버·구글 노출' — IndexNow가 안 도는 것처럼 보임): indexnow = main 단계 목록에 있음(실행마다 · 11/7 00:22 실행 'indexnow naver 50 ok · bing 50 ok')
+#   · 하루 200(곳마다)을 다 쓴 실행 = 말 없이 넘어가던 것 -> 'indexnow naver 0 (오늘 200/200 · 새 쪽 N)' 1줄 · 새 쪽 순서 = 홈 -> guide/ · c/t/ · c/<칸>/ · series/ · e/ -> 그 밖 -> 칸 뒤쪽 -> p/
+assert re.search(r"\n    for step in \(.*?\bindexnow, trend\b", inspect.getsource(H.main), re.S) and H.IDX_ORDER == ("guide/", "c/t/", "c/", "series/", "e/")  # 부르는 곳(실행마다)
+sv166 = (H.http, time.time, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW); cwd166, d166 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d166)
+P166 = ["events/", "e/sale.html", "series/toss/", "c/food/2/", "c/food/", "c/t/t1.html", "guide/g1/", ""]
+os.makedirs("docs", exist_ok=True); json.dump([], open("posts.json", "w")); open(f"docs/{S.INDEXNOW_KEY}.txt", "w").write(S.INDEXNOW_KEY)
+for r166 in P166:
+    f166 = f"docs/{r166}" + ("index.html" if r166.endswith("/") or not r166 else ""); os.makedirs(os.path.dirname(f166) or "docs", exist_ok=True); open(f166, "w").write(r166 or "home")
+open("docs/sitemap.xml", "w").write("".join(f"<url><loc>{H.SITE}{r}</loc></url>" for r in P166))
+rq166 = []; H.http = lambda url, body=None, headers=None, method=None: rq166.append(json.loads(body)["urlList"]) or ""
+H.IDX_DAY, H.IDX_RUN, H.IDX_NEW, time.time = 8, 8, 8, lambda: TK("2026-11-07 00:20")
+s166 = {"idx_key": {"t": 0}}
+with contextlib.redirect_stdout(io.StringIO()) as o166:
+    H.indexnow(s166, "docs"); H.indexnow(s166, "docs")
+assert [u[len(H.SITE):] for u in rq166[0]] == ["", "guide/g1/", "c/t/t1.html", "c/food/", "series/toss/", "e/sale.html", "events/", "c/food/2/"], rq166[0]
+assert len(rq166) == 2 and "indexnow naver 0 (오늘 8/8 · 새 쪽 0) · bing 0 (오늘 8/8 · 새 쪽 0)" in o166.getvalue(), o166.getvalue()  # 하루 몫 다 쓴 실행도 1줄
+(H.http, time.time, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv166; os.chdir(cwd166); shutil.rmtree(d166, ignore_errors=True)

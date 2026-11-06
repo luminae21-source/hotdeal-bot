@@ -12377,6 +12377,7 @@ def watch(seen):
 
 INDEXNOW = (("naver", "https://searchadvisor.naver.com/indexnow"), ("bing", "https://api.indexnow.org/indexnow"))  # UU: 네이버 서치어드바이저 · IndexNow 공용(빙 등)
 IDX_DAY, IDX_RUN, IDX_NEW, IDX_WAIT = 200, 50, 50, 900  # 곳마다 하루(KST) 합계 · 실행마다 · 새 쪽 몫(바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지) · 키 파일 처음 본 뒤 기다림(초)
+IDX_ORDER = ("guide/", "c/t/", "c/", "series/", "e/")  # 11/7 Cowork: 새 쪽 = 가이드·주제·칸 첫 쪽·시리즈·행사 먼저 -> 그 밖 -> 칸 뒤쪽 -> p/(딜 쪽) 마지막
 
 
 def indexnow(seen, docs="docs"):
@@ -12419,11 +12420,12 @@ def indexnow(seen, docs="docs"):
         n = st["n"][1] if st.get("n", [""])[0] == today else 0
         if st.get("stop") == today:
             continue
-        new = sorted((x for x in pages if x[1] not in h), key=lambda x: x[1].startswith("p/") or bool(re.search(r"/\d+/$", x[1])))  # 새 쪽 = 허브(홈·주제·기록·칸 첫 쪽·c/·events/) 먼저 -> 딜 쪽·칸 뒤쪽(리뷰: 사이트맵 순서면 칸 쪽이 4~5일째)
+        new = sorted((x for x in pages if x[1] not in h), key=lambda x: (x[1].startswith("p/"), bool(re.search(r"/\d+/$", x[1])), -1 if x[1] == "" else next((i for i, a in enumerate(IDX_ORDER) if x[1].startswith(a)), len(IDX_ORDER))))  # 홈 먼저  # 새 쪽 = 허브(홈·주제·기록·칸 첫 쪽·c/·events/) 먼저 -> 딜 쪽·칸 뒤쪽(리뷰: 사이트맵 순서면 칸 쪽이 4~5일째)
         chg = sorted((x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today), key=lambda x: h[x[1]][1])  # 오래전에 보낸 것부터(쪽 대부분이 매일 조금씩 바뀜 — 앞쪽만 돌지 않게)
         pick = new[:max(0, min(IDX_RUN, IDX_DAY - n))]
         pick += chg[:max(0, min(IDX_RUN - len(pick), IDX_DAY - IDX_NEW - n - len(pick)))]
         if not pick:
+            out.append(f"{name} 0 (오늘 {n}/{IDX_DAY} · 새 쪽 {len(new)})")  # 11/7: 하루 몫을 다 쓴 실행도 1줄(로그에 없으면 '안 돎'으로 보임)
             continue
         try:
             http(ep, json.dumps({"host": urllib.parse.urlsplit(SITE).netloc, "key": INDEXNOW_KEY, "keyLocation": f"{SITE}{INDEXNOW_KEY}.txt", "urlList": [u for u, _, _ in pick]}).encode(),
