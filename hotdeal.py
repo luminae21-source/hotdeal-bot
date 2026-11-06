@@ -6962,8 +6962,8 @@ def th_img(tok, me, text, image, tag="핫딜"):
         return None
 
 
-def th_carousel(tok, me, text, images, tag="핫딜"):
-    """Threads 캐러셀 글 1개(사진 2~10장 — 사진마다 IMAGE 항목(is_carousel_item) -> CAROUSEL, 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로)."""
+def th_carousel(tok, me, text, images, tag="핫딜", strict=False):
+    """Threads 캐러셀 글 1개(사진 2~10장 — 사진마다 IMAGE 항목(is_carousel_item) -> CAROUSEL, 링크는 본문) -> 결과 / 실패 = None(부르는 쪽이 글만으로) · strict = 실패 그대로 올림(th_post — 4xx/5xx 가름)."""
     try:
         kids = [json.loads(http(f"{THREADS}/{me}/threads?" + urllib.parse.urlencode({"media_type": "IMAGE", "image_url": u, "is_carousel_item": "true", "access_token": tok}), method="POST"))["id"] for u in images[:10]]
         time.sleep(30)  # 미디어 처리 대기(공식 권장)
@@ -6972,6 +6972,8 @@ def th_carousel(tok, me, text, images, tag="핫딜"):
         time.sleep(10)
         return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
     except Exception as e:
+        if strict:
+            raise
         print("th carousel 안 됨 -> 글만", err_brief(e))
         return None
 
@@ -8517,12 +8519,7 @@ def th_post(tok, text, link=None, image=None, tag="핫딜"):
     if isinstance(image, (list, tuple)):
         ims = [u for u in image if u][:10]
         if len(ims) >= 2:
-            kids = [json.loads(http(f"{THREADS}/{me}/threads?" + urllib.parse.urlencode({"media_type": "IMAGE", "image_url": u, "is_carousel_item": "true", "access_token": tok}), method="POST"))["id"] for u in ims]
-            time.sleep(30)  # 미디어 처리 대기(공식 권장)
-            q = urllib.parse.urlencode({"media_type": "CAROUSEL", "children": ",".join(kids), "text": text[:500], "topic_tag": tag, "access_token": tok})
-            cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
-            time.sleep(10)
-            return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
+            return th_carousel(tok, me, text[:500], ims, tag, strict=True)
         image = ims[0] if ims else None
     if link and not image:
         return th_text(tok, me, text, link, tag)
