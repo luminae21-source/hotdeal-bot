@@ -1593,7 +1593,7 @@ RD = os.path.dirname(os.path.abspath(S.__file__))  # 커밋된 파일(글꼴·�
 assert os.path.getsize(f"{RD}/docs/fonts/hdpsans-v1.woff2") > 200000 and "Reserved Font Name Pretendard" in open(f"{RD}/docs/fonts/OFL.txt").read() and "HDP Sans" in open(f"{RD}/docs/fonts/OFL.txt").read() and 'rel="preload" href="/fonts/hdpsans-v1.woff2" as="font" type="font/woff2" crossorigin' in S.FONT_HEAD  # 글꼴 = 커밋된 파일(OFL — 줄인 판은 이름 바꿈)
 assert os.path.exists("docs/p/0.html") and os.path.exists("docs/.nojekyll") and open("docs/CNAME").read() == "hotdealpick.kr" and os.path.exists("docs/all.html")
 assert '<a href="https://src" rel="nofollow noopener" target="_blank">뽐뿌</a>' in open("docs/p/0.html").read()  # 딜 쪽: 제목 줄 잘라낸 뒤에도 링크 위치 정확
-assert "p/0.html" in open("docs/sitemap.xml").read() and "all.html" not in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()  # TT-2: 지난 딜 전체 = 사이트맵 X(진행 중 딜·칸·기록·주제만)
+assert "p/0.html" not in open("docs/sitemap.xml").read() and 'content="noindex,follow"' in open("docs/p/0.html").read() and "all.html" not in open("docs/sitemap.xml").read() and "쿠팡 파트너스" in open("docs/p/0.html").read()  # 11/7 값어치(기록·주제·가이드·7일 클릭) 없는 딜 쪽 = 사이트맵 X·noindex,follow · TT-2: 지난 딜 전체 = 사이트맵 X(진행 중 딜·칸·기록·주제만)
 assert S.build([], "docs2") == 0 and "준비 중" in open("docs2/index.html").read()
 # 6-2) 📸 카드 딜 칸(인스타·Threads 캡션 '프로필 링크 → 맨 위 카드 딜에서 N번'): 가장 최근 카드 날짜의 딜을 카드와 같은 번호로, 누르면 바로 구매(구매 주소 없으면 딜 쪽), 모아보기 글 제외,
 #      큰 터치 버튼(.pick)·aria-label, 카드가 없으면 X · 10/24 개편: 홈 맨 위(숨김) — 인스타·Threads에서 왔거나 /#today면 보임(HASH_JS)
@@ -1868,7 +1868,7 @@ assert rs[2].findtext("description") == "싸요 & 좋아요 💡 단위가격 �
 sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"; locs = [u.findtext(ns + "loc") for u in sm]
 assert all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09" and locs[1] == "https://hotdealpick.kr/c/toilet-paper.html" and len(set(locs)) == len(locs)  # +1 = 화장지 최저가 기록(10/17)
 hot8 = {f"{S.BASE}p/{i}.html" for i, h in S.home_pool(sp, sorted({p["t"][:10] for p in sp if not p["text"].startswith("📋")}, reverse=True)).items() if h[0] == 0}
-assert f"https://hotdealpick.kr/today/{td}/" not in locs and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and {u for u in locs if "/p/" in u} == hot8 and 0 < len(hot8) < 34  # TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
+assert f"https://hotdealpick.kr/today/{td}/" not in locs and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and not {u for u in locs if "/p/" in u} and 0 < len(hot8) < 34  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
 td8 = open(f"docs8/today/{td}/index.html").read()
 assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og-v4.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
 d8 = open("docs8/p/0.html").read()
@@ -5923,7 +5923,7 @@ H.own_end(seen45); po45 = json.load(open("posts.json")); i45 = next(i for i, p i
 assert po45[i45]["now"] == "12,500원" and po45[i45]["st"] == "wait" and po45[i45]["chk"] == "10/24 9시", po45[i45]  # 진열 글 = events now·chk 그대로(글 시각보다 옛 확인이어도)
 S45.build(po45, "site"); ix45, sm45 = open("site/index.html").read(), open("site/sitemap.xml").read()
 lf45 = open("site/c/life/index.html").read()  # 10/24 개편: 품목 칸 = /c/life/ 쪽
-assert f"p/{i45}.html" in lf45 and "지금 가격 (10/24 9시 확인)" in lf45 and f"/p/{i45}.html" not in sm45 and 'content="noindex' not in open(f"site/p/{i45}.html").read()  # TT-2: ⏳ 대기 = 사이트맵 X(진행 중 🔥만) · 색인 O
+assert f"p/{i45}.html" in lf45 and "지금 가격 (10/24 9시 확인)" in lf45 and f"/p/{i45}.html" not in sm45 and 'content="noindex,follow' in open(f"site/p/{i45}.html").read()  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · noindex,follow
 pg45 = open(f"site/p/{i45}.html").read(); assert "제휴 마케팅 활동의 일환으로" in pg45 and f'href="{DL45}"' in pg45  # 상품 페이지 = 채널 글 페이지와 같은 대가성 문구·구매 버튼(딥링크)
 # 같은 url 채널 예약이 나중에 오면: 채널엔 평소대로 · 사이트 카드는 채널 글 하나(진열 글은 칸·날짜 목록·사이트맵에서 빠짐, 페이지는 그대로)
 time.time = lambda: T45 + 3600
@@ -6365,7 +6365,7 @@ assert len(x56) <= 480 and l56 == "https://coupa.ng/b9991" and x56.startswith(H.
     and x56.endswith(f"\n\n전체 5개 → https://t.me/ch/{mid56}\n\n⚠️ 행사 상품 여부·최종가는 결제 전 확인") and len(re.findall(r"https://", x56)) <= 5, x56  # Threads = 같은 순서·가격 · 링크 5개 한도
 assert S.home_pool(r56, ["2026-10-25", "2026-10-24"]).keys() == {0}  # 사이트 = 진열 카드 그대로(같은 url 목록 글이 이어받지 않음)·목록 글 카드 X
 o56 = tempfile.mkdtemp(); S.build(r56, o56); sm56 = open(f"{o56}/sitemap.xml").read()
-assert "p/0.html" in sm56 and "로켓프레시" not in open(f"{o56}/index.html").read() and "로켓프레시" not in open(f"{o56}/rss.xml").read()  # 📋 = 홈 카드·RSS X(딜 쪽 페이지는 예전 📋 모아보기처럼)
+assert "p/0.html" not in sm56 and "로켓프레시" not in open(f"{o56}/index.html").read() and "로켓프레시" not in open(f"{o56}/rss.xml").read()  # 📋 = 홈 카드·RSS X(딜 쪽 페이지는 예전 📋 모아보기처럼)
 sent56.clear(); thx56.clear(); H.events(s56); assert not sent56 and not thx56  # 1번만
 # 3개 밑 = 관리자 알림 1번(안 올림) · 키 없음 = 쿠팡 상품 주소는 못 바꿈(실패와 같음) · 토스 링크 = 토스 문구 + 게시 시점 줄
 EV56b = [{"at": "2026-10-26 21:00", "list": True, "title": "쿠팡 X", "items": [IT56[2], IT56[4], {"url": PP56(8001), "name": "아직 안 바꾼 것"}]},
@@ -6494,7 +6494,7 @@ H.E["GOATCOUNTER_TOKEN"] = "gtok"; o58 = io.StringIO()
 with __import__("contextlib").redirect_stdout(o58): H.gc_top(sg58)
 assert len(h58) == 2 and h58[0][0] == "https://hotdealpick.goatcounter.com/api/v0/stats/hits?start=2026-10-23T02%3A00%3A00Z&end=2026-10-24T02%3A00%3A00Z&limit=100" and h58[0][1]["Authorization"] == "Bearer gtok", h58[0]
 assert h58[1][0].endswith("&limit=100&exclude_paths=1%2C2%2C3"), h58[1][0]  # 다음 쪽 = 본 경로 빼고
-assert json.load(open("gc_top.json")) == {"at": "2026-10-24 11:30", "urls": [U58("Y"), U58("X"), U58("Z")]}, open("gc_top.json").read()  # 클릭 2 × 3 > 조회 5 > 1 · 쿼리 뺀 주소 · 숫자 X
+g58 = json.load(open("gc_top.json")); assert {k: v for k, v in g58.items() if k != "week"} == {"at": "2026-10-24 11:30", "urls": [U58("Y"), U58("X"), U58("Z")]} and set(g58["week"]) >= {U58("Y"), U58("X"), U58("Z")} and set(g58["week"].values()) == {"2026-10-24"}, open("gc_top.json").read()  # 11/7 week = 7일 본 주소(딜 쪽 색인)  # 클릭 2 × 3 > 조회 5 > 1 · 쿼리 뺀 주소 · 숫자 X
 assert not re.search(r"\d", o58.getvalue()) and "gtok" not in o58.getvalue(), o58.getvalue()
 time.time = lambda: TK("2026-10-24 12:29"); H.gc_top(sg58); assert len(h58) == 2  # 1시간 안 = X
 H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("down")); time.time = lambda: TK("2026-10-24 12:31"); o58 = io.StringIO()
@@ -7741,7 +7741,7 @@ H.CP_IMG, (H.CP_LINKS, S0.CP_LINKS) = sv69i, sv69c
 # E) 홈 카드 딜 줄 = 번호 옆 작은 사진(40px·lazy·크기 고정, 사진 없으면 번호만) · 이름 2줄까지 + 가격 = 오른쪽 칸(줄 높이 그대로)
 pr69 = S0.pick_rows([(1, {"t": "2026-10-26 09:00", "text": "🔥 [쿠팡] 크리넥스 3겹 데코앤소프트 화장지 30m 30롤 (19,900원/무료)", "url": "https://link.coupang.com/a/k1", "img": CPI69}),
                      (2, {"t": "2026-10-26 09:00", "text": "🔥 [네이버] 김 (9,900원)", "url": "https://naver.me/k2", "img": "https://shop-phinf.pstatic.net/a.jpg"})])
-assert f'<img src="{CPI69}" alt="" width="48" height="48" loading="lazy"' in pr69 and '<b>02</b><i class="pt" aria-hidden="true"><i class="lw" aria-hidden="true"><svg' in pr69 and pr69.count("<img") == 1  # 쿠팡 사진만(네이버 = 몰 로고 칩 — WW)
+assert re.search(rf'<img src="{re.escape(CPI69)}" alt="[^"]+" width="48" height="48" loading="lazy"', pr69) and '<b>02</b><i class="pt" aria-hidden="true"><i class="lw" aria-hidden="true"><svg' in pr69 and pr69.count("<img") == 1  # 쿠팡 사진만(네이버 = 몰 로고 칩 — WW)
 assert '<span class="nm">[쿠팡] 크리넥스 3겹 데코앤소프트 화장지 30m 30롤</span></span><em><i>19,900원</i><u>구매 →</u></em>' in pr69 and ".pick .pt{position:relative;display:grid;place-items:center;width:48px;height:48px;margin:-4px 0" in S0.CSS and "-webkit-line-clamp:2" in S0.CSS.split(".pick .nm{")[1].split("}")[0]  # WW: 48px · 위아래 -4px(줄 위아래 6px 안)
 # 큐레이션 인스타: 사진 2장↑ = 조각 -> 묶음(캡션 '프로필 링크 → 주제' + 출처) -> 발행(사이트 카드 기록 X) · 1장 = 사진 글 · 0장 = X · 실패 = 다시 X
 at69 = lambda d: setattr(time, "time", lambda: calendar.timegm(time.strptime(d, "%Y-%m-%d %H:%M")) - 9 * 3600)
@@ -10379,9 +10379,30 @@ assert "줄 세웠어요(단위가 다르거나 없는 상품은 뒤에) · 가�
 assert re.findall(r'p/(\d+)\.html">([^<]+)<', tb97) == [("3", "고향 호두아몬드 율무차 18g 110개입"), ("2", "곰곰 율무차 18g 50개입"), ("5", "담터 율무차 18g 50개입"), ("4", "오뚜기 율무차 분말 1kg")] \
     and "<small>10/26 23시 확인</small></td><td>9,900원</td><td>1봉 135원</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
 assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/coffee/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
-assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (1, 2, 3, 4, 7, 8, 9, 12, 13, 14)} and not any(x in u for u in sm97 for x in (f"{S.BASE}today/", "all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
+assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (2, 3, 4, 5, 12, 13, 14)} and not any(x in u for u in sm97 for x in (f"{S.BASE}today/", "all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
 ni97 = {i for i in range(len(po97)) if 'content="noindex' in open(f"docs/p/{i}.html").read()}
-assert ni97 == {0, 6, 11}, ni97  # 끝난 딜·일시 품절 = noindex(⏳ 대기 = 색인 O)
+assert ni97 == {0, 1, 6, 7, 8, 9, 10, 11}, ni97  # 끝난 딜·일시 품절 = noindex · 11/7 값어치(주제 쪽 등) 없는 딜 = noindex,follow(주제 상품 2~5·12~14 = 색인 — ⏳ 대기 5도)
+# 9-167 (11/7 진우 '구글 노출 늘리기' 3건 + Cowork 덧붙임 · 'RSS에 사진·요약'): 사이트맵·RSS·noindex 안 어긋남 · 상품 사진 alt = 상품명 · 주제 쪽 설명 첫 낱말 = 품목 · JSON-LD
+f97 = lambda u: f"docs/{u[len(S.BASE):]}" + ("index.html" if u.endswith("/") else "")
+rss97 = open("docs/rss.xml", encoding="utf-8").read(); rl97 = re.findall(r"<link>([^<]+)</link>", rss97)[1:]
+assert sm97 and all('content="noindex' not in open(f97(u)).read() for u in sm97)  # 사이트맵에 noindex 쪽 0
+assert rl97 and set(rl97) <= set(sm97) and not any("/p/" in u for u in rl97) and len(rss97.encode()) <= S.RSS_MAX and len(rl97) <= 30  # RSS = 색인 남기는 쪽만(p X) · 크기 상한
+for it97 in re.findall(r"<item>(.*?)</item>", rss97, re.S):
+    u97, d97 = re.search(r"<link>([^<]+)</link>", it97)[1], re.search(r"<description><!\[CDATA\[(.*?)\]\]></description>", it97, re.S)[1]
+    assert not re.search(r"최저가(?! 기록)|역대급|무조건|품절\s*임박|서두르|[7-9]\d\s*%|효능|효과", d97) and 1 <= d97.count("<br>") + 1 <= 5, d97  # 금지 낱말 X · 요약 1~5줄
+    for src97 in re.findall(r'<img src="([^"]+)"', d97):
+        assert f'src="{src97}"' in open(f97(u97)).read() and 'alt=""' not in d97, (u97, src97)  # RSS 사진 = 그 쪽 html에 있는 사진 그대로 · alt = 상품명
+assert any("<img " in x for x in re.findall(r"<description>(.*?)</description>", rss97, re.S))  # 사진 넣은 항목 1개↑(주제 쪽 쿠팡 사진)
+bad97 = [(f, g) for f in glob.glob("docs/**/*.html", recursive=True) for g in re.findall(r"<img\b[^>]*>", open(f).read()) if "/icons/" not in g and re.search(r"""\balt=(""|'')""", g)]
+assert not bad97, bad97[:3]  # 상품 사진 alt 빈 칸 0(로고·아이콘 = alt="" 그대로)
+assert re.search(r'<meta name="description" content="율무차 \d+개 1봉당 값 비교 — 1위 고향 호두아몬드 율무차', tp97), re.search(r'<meta name="description" content="[^"]*"', tp97)  # 주제 쪽 설명 첫 낱말 = 품목 + 1위
+ix97 = open("docs/index.html").read(); p397 = open("docs/p/3.html").read()
+assert '"@type": "WebSite"' in ix97 and '"@type": "SearchAction"' in ix97 and "?q={search_term_string}" in ix97 and '"@type": "Organization"' in ix97  # 홈 WebSite(+사이트 검색)·Organization
+assert all('"@type": "BreadcrumbList"' in x for x in (p397, tp97, open("docs/c/coffee/index.html").read())) and '"name": "핫딜픽", "item": "https://hotdealpick.kr/"' in p397  # c/·c/t·p 경로
+assert all('content="noindex,follow"' in open(f).read() for f in glob.glob("docs/c/*/[0-9]*/index.html")) and not any(re.search(r"/c/[^/]+/\d+/$", u) for u in sm97)  # 페이지 넘김 쪽 = noindex·사이트맵 X
+rp97 = [f for f in glob.glob("docs/c/*.html") if os.path.basename(f)[:-5] in {pi[0] for pi in S.PRICE_ITEMS} and "noindex" not in open(f).read()]  # 기록 0개 안내 쪽(noindex) 빼고
+assert all(re.search(r"<title>\S+ \S+당 가격 비교 — 최저가 기록 \d+개 \| 핫딜픽</title>", open(f).read()) for f in rp97) and rp97 \
+    and 'page(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개 | {TITLE}"' in open(S.__file__, encoding="utf-8").read()  # 품목 기록 쪽 제목 = '<품목> <단위>당 가격 비교'가 맨 앞(쪽 이름 '최저가 기록' 그대로)
 p97 = open("docs/p/3.html").read(); pt97 = re.sub(r"<[^>]+>", "", p97)
 assert '<h1 class="dn"><a href="https://hotdealpick.kr/p/3.html">고향 호두아몬드 율무차 18g 110개입 9,900원</a></h1>' in p97 and "📦 구성 18g · 110개입" in pt97 and "단위가 1봉 135원꼴" in pt97 \
     and "🕒 10/26 23:00 게시 · 지금 가격 9,900원 (10/26 23시 확인)" in pt97 and "고르는 기준" in pt97 and "1봉(1포·티백)·1병 용량과 개수" in pt97 and f'href="{S.BASE}c/t/yulmu-tea.html">📌 율무차 모아 보기 →</a>' in p97
@@ -10550,7 +10571,7 @@ ok100, ch100 = r100.split('<details class="pch">')
 rw100 = {int(x[:2]): x for x in ok100.split("<b>")[1:]}  # 번호 -> 그 줄
 assert sorted(rw100) == [2, 3, 4, 5, 6] and ok100.index("<b>02</b>") < ok100.index("<b>06</b>") and ch100.startswith("<summary>📲 나머지 1개는 텔레그램에서</summary>") and '<a class="pick ch" aria-disabled="true"><b>01</b>' in ch100 and "smartstore" not in r100, r100  # 수수료 링크 줄만 위 · 카드 번호 그대로
 assert f'<a class="u" href="{S.CHANNEL}" rel="noopener" target="_blank">텔레그램 채널에서 보기 →</a></details>' in ch100 and ok100.count("<u>구매 →</u>") == 5 and ok100.count('<i class="pt" aria-hidden="true">') == 5
-assert f'<img src="{IMG100}" alt="" width="48" height="48"' in rw100[2] and '<s class="pd">29%</s>' in rw100[2] and "<em><i>11,990원</i><u>구매 →</u></em>" in rw100[2] and '<i class="lw" aria-hidden="true">🚀</i>' in rw100[2]  # 사진 + 아래 쿠팡 칩(못 불러오면 보임) · 할인 배지
+assert re.search(rf'<img src="{re.escape(IMG100)}" alt="[^"]+" width="48" height="48"', rw100[2]) and '<s class="pd">29%</s>' in rw100[2] and "<em><i>11,990원</i><u>구매 →</u></em>" in rw100[2] and '<i class="lw" aria-hidden="true">🚀</i>' in rw100[2]  # 사진 + 아래 쿠팡 칩(못 불러오면 보임) · 할인 배지
 assert '<small class="pu">개당 1,683원</small>' in rw100[3] and "<img" not in rw100[3] and '<s class="pd">' not in rw100[3] and "<i>6,730원</i>" in rw100[3]  # 사진 없음 = 몰 로고 칩 · 단위가 칩
 assert IMG100 not in rw100[4] and '<img src="/icons/mall/toss.png" alt="토스">' in rw100[4] and "<img" not in rw100[5] and "pstatic" not in r100 and "<svg" in rw100[5] and 'class="ci ci-' in rw100[6] and '<i class="lw"' not in rw100[6]  # 토스·네이버 = 사진 X(규칙) · 3사 밖 = 품목 아이콘
 assert S.pick_rows([(0, P100[0])]) == '<details class="pch"><summary>📲 이 카드 1개는 텔레그램에서</summary><a class="pick ch" aria-disabled="true"><b>01</b><span class="pn"><span class="nm">[네이버] 네이버 직접 (1,000원)</span></span><em>채널에서</em></a>' + f'<a class="u" href="{S.CHANNEL}" rel="noopener" target="_blank">텔레그램 채널에서 보기 →</a></details>' and S.pick_rows(list(enumerate(P100[1:3]))).count("pch") == 0
@@ -13519,10 +13540,10 @@ def run165(seen, t):
     return o.getvalue()
 D165 = "igpub_20261107"
 s165 = {D165: {"t": 1, "n": 2}, "iglast": {"t": TK("2026-11-07 14:50")}, "igc_T1": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}}
-assert "직전 게시 90분 안" in run165(s165, "16:10") and not pub165  # 14:50 피드 글 + 1시간 30분 전 = 미룸
+assert "직전 게시 1시간 30분 안" in run165(s165, "16:10") and not pub165  # 14:50 피드 글 + 1시간 30분 전 = 미룸
 run165(s165, "16:21"); assert pub165 == ["T1"] and s165[D165]["n"] == 2 and s165[D165]["toss"] == 1 and s165["iglast"]["toss"] == 1  # 15:30 칸 · 피드 수(n) 그대로
 s165["igc_F17"] = {"t": TK("2026-11-07 17:30"), "kind": "one", "cap": "쿠팡"}
-assert "직전 게시 90분 안" in run165(s165, "17:50") and pub165 == ["T1"]  # 토스 글 뒤 쿠팡 피드 = 1시간 30분(2시간 X)
+assert "직전 게시 1시간 30분 안" in run165(s165, "17:50") and pub165 == ["T1"]  # 토스 글 뒤 쿠팡 피드 = 1시간 30분(2시간 X)
 run165(s165, "17:52"); assert pub165 == ["T1", "F17"] and s165[D165]["n"] == 3 and "toss" not in s165["iglast"]
 s165b = {D165: {"t": 1, "n": 4}, "iglast": {"t": TK("2026-11-07 14:50")}, "igc_T2": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}, "igc_F5": {"t": TK("2026-11-07 15:40"), "kind": "one", "cap": "쿠팡"}}
 pub165.clear(); o165 = run165(s165b, "16:30"); assert pub165 == ["T2"] and "igc_F5" in s165b and "오늘 4개" in o165, o165  # 피드 4개 다 찬 날도 토스 = 상한 밖(하루 5) · 쿠팡 5번째 = X
@@ -13539,18 +13560,18 @@ assert "ig_room(seen, now)" not in inspect.getsource(H.ig_toss) and "ig_toss_slo
 
 # 9-166 (11/7 02시대 Cowork '네이버·구글 노출' — IndexNow가 안 도는 것처럼 보임): indexnow = main 단계 목록에 있음(실행마다 · 11/7 00:22 실행 'indexnow naver 50 ok · bing 50 ok')
 #   · 하루 200(곳마다)을 다 쓴 실행 = 말 없이 넘어가던 것 -> 'indexnow naver 0 (오늘 200/200 · 새 쪽 N)' 1줄 · 새 쪽 순서 = 홈 -> guide/ · c/t/ · c/<칸>/ · series/ · e/ -> 그 밖 -> 칸 뒤쪽 -> p/
-assert re.search(r"\n    for step in \(.*?\bindexnow, trend\b", inspect.getsource(H.main), re.S) and H.IDX_ORDER == ("guide/", "c/t/", "c/", "series/", "e/")  # 부르는 곳(실행마다)
+assert re.search(r"\n    for step in \(.*?\bindexnow, trend\b", inspect.getsource(H.main), re.S) and H.IDX_ORDER[:4] == (r"c/t/", r"today/", r"c/[^/]+\.html$", r"c/[^/]+/$")  # 부르는 곳(실행마다) · 허브 먼저(네이버 하루 1~2쪽)
 sv166 = (H.http, time.time, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW); cwd166, d166 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d166)
-P166 = ["events/", "e/sale.html", "series/toss/", "c/food/2/", "c/food/", "c/t/t1.html", "guide/g1/", ""]
+P166 = ["events/", "e/sale.html", "series/toss/", "c/food/2/", "c/food/", "c/ramen.html", "today/2026-11-07/", "c/t/t1.html", "guide/g1/", ""]
 os.makedirs("docs", exist_ok=True); json.dump([], open("posts.json", "w")); open(f"docs/{S.INDEXNOW_KEY}.txt", "w").write(S.INDEXNOW_KEY)
 for r166 in P166:
     f166 = f"docs/{r166}" + ("index.html" if r166.endswith("/") or not r166 else ""); os.makedirs(os.path.dirname(f166) or "docs", exist_ok=True); open(f166, "w").write(r166 or "home")
 open("docs/sitemap.xml", "w").write("".join(f"<url><loc>{H.SITE}{r}</loc></url>" for r in P166))
 rq166 = []; H.http = lambda url, body=None, headers=None, method=None: rq166.append(json.loads(body)["urlList"]) or ""
-H.IDX_DAY, H.IDX_RUN, H.IDX_NEW, time.time = 8, 8, 8, lambda: TK("2026-11-07 00:20")
+H.IDX_DAY, H.IDX_RUN, H.IDX_NEW, time.time = 10, 10, 10, lambda: TK("2026-11-07 00:20")
 s166 = {"idx_key": {"t": 0}}
 with contextlib.redirect_stdout(io.StringIO()) as o166:
     H.indexnow(s166, "docs"); H.indexnow(s166, "docs")
-assert [u[len(H.SITE):] for u in rq166[0]] == ["", "guide/g1/", "c/t/t1.html", "c/food/", "series/toss/", "e/sale.html", "events/", "c/food/2/"], rq166[0]
-assert len(rq166) == 2 and "indexnow naver 0 (오늘 8/8 · 새 쪽 0) · bing 0 (오늘 8/8 · 새 쪽 0)" in o166.getvalue(), o166.getvalue()  # 하루 몫 다 쓴 실행도 1줄
+assert [u[len(H.SITE):] for u in rq166[0]] == ["", "c/t/t1.html", "today/2026-11-07/", "c/ramen.html", "c/food/", "guide/g1/", "series/toss/", "e/sale.html", "events/", "c/food/2/"], rq166[0]  # 홈 -> 주제 -> 오늘의 픽 -> 품목 기록 -> 칸 첫 쪽 -> 가이드·시리즈·행사 -> 그 밖 -> 칸 뒤쪽
+assert len(rq166) == 2 and "indexnow naver 0 (오늘 10/10 · 새 쪽 0) · bing 0 (오늘 10/10 · 새 쪽 0)" in o166.getvalue(), o166.getvalue()  # 하루 몫 다 쓴 실행도 1줄
 (H.http, time.time, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv166; os.chdir(cwd166); shutil.rmtree(d166, ignore_errors=True)

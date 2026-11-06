@@ -7791,7 +7791,7 @@ def ig_publish(seen):
                 print("ig toss 칸 다 지남 -> 그날 X", k)
             continue
         if not failed and (seen.get("ig_hold", 0) > now or not free and (not toss and n >= ig_day_max(seen) or now - last.get("t", 0) < gap)):
-            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else f" · 직전 게시 {gap // 60}분 안" if now - last.get("t", 0) < gap else ""))
+            print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else f" · 직전 게시 {'2시간' if gap == IG_GAP else '1시간 30분'} 안" if now - last.get("t", 0) < gap else ""))
             continue
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
         if st == "IN_PROGRESS" and not failed:
@@ -11821,7 +11821,9 @@ def gc_top(seen):
         if getattr(e, "code", 0) in API_AUTH:  # 토큰·권한 오류만 '실패' 알림(네트워크·5xx·429·응답 깨짐 = 로그만)
             API_ST.setdefault("gc", "fail " + err)
         return
-    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(60)]}, open(GC_TOP, "w"), ensure_ascii=False)
+    day, cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400))
+    week = {**{u: d for u, d in (load(GC_TOP, {}).get("week") or {}).items() if d > cut}, **{u: day for u in sc}}  # 11/7 진우 '구글 노출': 최근 7일 본·클릭한 상품 주소(build_site.p_worth_fn — 딜 쪽 색인·사이트맵)
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "urls": [u for u, _ in sc.most_common(60)], "week": week}, open(GC_TOP, "w"), ensure_ascii=False)
     print("gc ok · 많이 본 순서 갱신")
     API_ST.setdefault("gc", "ok")
 
@@ -12377,7 +12379,7 @@ def watch(seen):
 
 INDEXNOW = (("naver", "https://searchadvisor.naver.com/indexnow"), ("bing", "https://api.indexnow.org/indexnow"))  # UU: 네이버 서치어드바이저 · IndexNow 공용(빙 등)
 IDX_DAY, IDX_RUN, IDX_NEW, IDX_WAIT = 200, 50, 50, 900  # 곳마다 하루(KST) 합계 · 실행마다 · 새 쪽 몫(바뀐 쪽 = 하루 IDX_DAY - IDX_NEW까지) · 키 파일 처음 본 뒤 기다림(초)
-IDX_ORDER = ("guide/", "c/t/", "c/", "series/", "e/")  # 11/7 Cowork: 새 쪽 = 가이드·주제·칸 첫 쪽·시리즈·행사 먼저 -> 그 밖 -> 칸 뒤쪽 -> p/(딜 쪽) 마지막
+IDX_ORDER = (r"c/t/", r"today/", r"c/[^/]+\.html$", r"c/[^/]+/$", r"guide/", r"series/", r"e/")  # 11/7 Cowork(네이버 하루 1~2쪽만 수집): 새 쪽 = 홈 -> 주제(c/t) -> 오늘의 픽 -> 품목 기록 -> 칸 첫 쪽 -> 가이드·시리즈·행사 -> 그 밖 -> 칸 뒤쪽 -> p/(색인 남기는 쪽만 — 사이트맵) 마지막
 
 
 def indexnow(seen, docs="docs"):
@@ -12420,7 +12422,7 @@ def indexnow(seen, docs="docs"):
         n = st["n"][1] if st.get("n", [""])[0] == today else 0
         if st.get("stop") == today:
             continue
-        new = sorted((x for x in pages if x[1] not in h), key=lambda x: (x[1].startswith("p/"), bool(re.search(r"/\d+/$", x[1])), -1 if x[1] == "" else next((i for i, a in enumerate(IDX_ORDER) if x[1].startswith(a)), len(IDX_ORDER))))  # 홈 먼저  # 새 쪽 = 허브(홈·주제·기록·칸 첫 쪽·c/·events/) 먼저 -> 딜 쪽·칸 뒤쪽(리뷰: 사이트맵 순서면 칸 쪽이 4~5일째)
+        new = sorted((x for x in pages if x[1] not in h), key=lambda x: (x[1].startswith("p/"), bool(re.search(r"/\d+/$", x[1])), -1 if x[1] == "" else next((i for i, a in enumerate(IDX_ORDER) if re.match(a, x[1])), len(IDX_ORDER))))  # 홈 먼저  # 새 쪽 = 허브(홈·주제·기록·칸 첫 쪽·c/·events/) 먼저 -> 딜 쪽·칸 뒤쪽(리뷰: 사이트맵 순서면 칸 쪽이 4~5일째)
         chg = sorted((x for x in pages if x[1] in h and h[x[1]][0] != x[2] and h[x[1]][1] != today), key=lambda x: h[x[1]][1])  # 오래전에 보낸 것부터(쪽 대부분이 매일 조금씩 바뀜 — 앞쪽만 돌지 않게)
         pick = new[:max(0, min(IDX_RUN, IDX_DAY - n))]
         pick += chg[:max(0, min(IDX_RUN - len(pick), IDX_DAY - IDX_NEW - n - len(pick)))]

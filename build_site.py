@@ -275,7 +275,7 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 
 SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function card(x){return "<article class='g'><div class='im"+(x.g?" sk":"")+"' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='' loading='lazy' referrerpolicy='no-referrer' onload='this.parentNode.classList.add(\\"ld\\")' onerror='this.parentNode.classList.remove(\\"sk\\");this.remove()'>":"")+"</div><div class='cr2'><span class='mc'>"+esc(x.s)+"</span>"+(x.b||"")+"<button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button></div><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
+function card(x){return "<article class='g'><div class='im"+(x.g?" sk":"")+"' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='"+esc(x.n)+"' loading='lazy' referrerpolicy='no-referrer' onload='this.parentNode.classList.add(\\"ld\\")' onerror='this.parentNode.classList.remove(\\"sk\\");this.remove()'>":"")+"</div><div class='cr2'><span class='mc'>"+esc(x.s)+"</span>"+(x.b||"")+"<button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button></div><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
 function hide(on){[].forEach.call(M.children,function(e){if(/^(HEADER|FOOTER|SCRIPT)$/.test(e.tagName)||e.id==='sr'||e.className==='dis')return;if(on){if(!e.hidden){e.hidden=true;e.dataset.sh=1}}else if(e.dataset.sh){e.hidden=false;delete e.dataset.sh}})}
 function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}
 function run(){var v=q.value.trim().toLowerCase();if(!v){if(sr){sr.remove();sr=null}hide(false);return}
@@ -581,7 +581,7 @@ def pick_thumb(p):
     s, u = shop_of(p), img_of(p)
     m = next((m for l in p["text"].split("\n") for c in l.split(" · ") if (m := re.fullmatch(r"(?:💰 )?(?:토스 |쿠팡 )?([1-9]\d?)% 할인(?: 🔥)?", c.strip()))), None)
     return (f'<i class="pt" aria-hidden="true">{mall_logo(s) if s in MALL_KO else ci(p)}'
-            + (f'<img src="{html.escape(u)}" alt="" width="48" height="48" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else "")
+            + (f'<img src="{html.escape(u)}" alt="{alt_of(p)}" width="48" height="48" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else "")
             + (f'<s class="pd">{m[1]}%</s>' if m else "") + "</i>")
 
 
@@ -940,7 +940,8 @@ def record_page(k, rec, recs):
             + f'<div class="tw"><table><thead><tr><th>날짜</th><th>몰</th><th>상품</th><th>가격</th><th>{unit}</th></tr></thead><tbody>{tr}</tbody></table></div>'
             + f'<p class="t">💙 토스 특가는 이 표에 넣지 않아요 — <a href="{BASE}c/toss/">토스 특가 모음 보기</a></p>{rec_nav(recs, k) or ""}</section>')
     note = " ".join(dict.fromkeys(r[3]["text"].split("\n", 1)[0] for r in now if urllib.parse.urlsplit(r[3].get("url") or "").netloc in NAVER_HOSTS + OY_HOSTS and r[3]["text"].startswith(NOTE_STARTS)))  # 네이버·올영 링크 = 그 문구 맨 앞(딜 페이지와 같게)
-    return body, f"{name} {unit} 가격 기록 {len(rows)}개 · 최저 {low[1].split()[-1]} ({md(low[3])}) · 평균 {avg:,}원 · {TITLE}", note
+    nm3 = list(dict.fromkeys(parse(title_of(r[3]["text"]))[1][:24] for r in rows))[:3]  # 11/7 Cowork(네이버 검색어 '신라면 개당 가격'): 설명 첫 줄 = 기록에 있는 상품 이름 2~3개
+    return body, f"{name} {unit} 가격 비교: {' · '.join(nm3)} — 기록 {len(rows)}개 · 최저 {low[1].split()[-1]} ({md(low[3])}) · 평균 {avg:,}원 · {TITLE}", note
 
 
 SHOP_NOTES = {  # 몰 칸 맨 위 대가성 문구 — hotdeal.py DISCLOSURE·TOSS_NOTE·NAVER_NOTE와 같은 글자(변형 금지, 셀프체크로 맞춤)
@@ -1070,7 +1071,7 @@ def series_pages(posts, out, today, toss=()):
     for e in json.load(open(SERIES_EPS)) if os.path.exists(SERIES_EPS) else []:
         if e.get("key") in eps and e.get("no"):
             im = img_of({"img": (e.get("img") or [""])[0], "url": GOLDBOX, "text": ""})
-            eps[e["key"]].append((e["no"], e.get("t", ""), f'<article class="g"><a class="se" href="{html.escape(e.get("link") or BASE)}">' + (f'<div class="im"><img src="{html.escape(im)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>' if im else "")
+            eps[e["key"]].append((e["no"], e.get("t", ""), f'<article class="g"><a class="se" href="{html.escape(e.get("link") or BASE)}">' + (f'<div class="im"><img src="{html.escape(im)}" alt="{html.escape((e.get("title") or "시리즈 사진")[:60], quote=True)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></div>' if im else "")
                                   + f'<h3>{html.escape((e.get("title") or "Threads에서 보기")[:60])}</h3></a></article>'))  # 토스 회차 = 제목 없이 주소만(⑧)
     json.dump([{"key": k, "name": n, "emoji": e, "at": a, "desc": d, "n": len(eps[k])} for k, n, e, a, d in SERIES], open(f"{out}/series.json", "w"), ensure_ascii=False)
     urls = []
@@ -1183,18 +1184,23 @@ def toss_img(p):
 IMG_LD = ' onload="this.parentNode.classList.add(\'ld\')" onerror="this.parentNode.classList.remove(\'sk\');this.remove()"'  # 사진 뜨면 반짝임 멈춤(ld) · 못 불러오면 사진 지우고 sk 빼기(아이콘 다시 보임·반짝임 X)
 
 
+def alt_of(p):
+    """11/7 진우 '구글 노출' ②: 상품 사진 alt = 상품명(검색 로봇·화면 낭독 — 사진은 그대로) · 꾸밈 그림(로고·아이콘)은 alt="" 그대로."""
+    return html.escape(parse(title_of(p.get("text") or ""))[1] or bundle_of(p) and bundle_head(p) or "상품 사진", quote=True)
+
+
 def thumb(p, tp=False):
     """썸네일: 품목 파스텔 네모 + 품목 선 아이콘(CAT_ICON), 쿠팡 사진이 있으면 그 위에(contain · 못 불러오면 사진만 지워져 선 아이콘이 보임).
     U'(11/6 진우 '시안대로'): 상품 카드(.g) 사진 칸 = 회색 타일 #F3F4F6 · padding 4px · 쿠팡 사진만 multiply · 뜨기 전 반짝임(sk → 뜨면 ld) — 배지·찜은 사진 밖(card의 .cr2)."""
     if bundle_of(p) and any(x[3] for x in b_items(p)):  # 묶음 = 상품 사진 2×2 + 'N개 묶음'(빈 가방 아이콘 X)
-        return ('<div class="im bg sk">' + "".join(f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' for u in [x[3] for x in b_items(p) if x[3]][:4])
+        return ('<div class="im bg sk">' + "".join(f'<img src="{html.escape(x[3])}" alt="{html.escape(x[0], quote=True)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' for x in [x for x in b_items(p) if x[3]][:4])
                 + f'<b class="bn">{len(b_items(p))}개 묶음</b></div>')
     c, u = CAT_META.get(cat_of(p)), img_of(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·섞기 X·위에 배지·글자 X(배지는 사진 밖 .cr2) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
-        return (f'<div class="im tim sk"><img src="{html.escape(t)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD} style="mix-blend-mode:normal"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 바탕(뜬 뒤 .tim.ld img)·섞기(multiply) X — 인라인 = 쪽마다 다른 .im img 규칙보다 먼저
+        return (f'<div class="im tim sk"><img src="{html.escape(t)}" alt="{alt_of(p)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD} style="mix-blend-mode:normal"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 바탕(뜬 뒤 .tim.ld img)·섞기(multiply) X — 인라인 = 쪽마다 다른 .im img 규칙보다 먼저
                 f'<p class="pcr">{PHOTO_CREDIT}</p>')
-    pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' if u else ""
+    pic = f'<img src="{html.escape(u)}" alt="{alt_of(p)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' if u else ""
     return f'<div class="im{" sk" if u else ""}"{bg}>{ci(p)}{pic}</div>'
 
 
@@ -1604,7 +1610,7 @@ def promo_card(p, st, xs, go, icons, today):
     sty, lg, mall = promo_mall(p, icons)
     pre, href, ext = p.get("pre") or {}, *go
     pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
-    right = ("".join(f'<span class="pvp"><span><img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></span><small>{promo_won(x)}</small></span>' for x in pics) if pics
+    right = ("".join(f'<span class="pvp"><span><img src="{html.escape(img_of(x[1]))}" alt="{alt_of(x[1])}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"></span><small>{promo_won(x)}</small></span>' for x in pics) if pics
              else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or p.get("when") or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
     info = " · ".join(x for x in (promo_span(p.get("start"), p.get("end")), str(p.get("benefit") or "").strip()) if x)
     cta = promo_a(href, ext, f"promo/{p['id']}", NV_PROMO[1] if href == NV_PROMO[0] else f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
@@ -1648,7 +1654,7 @@ def promo_band(ps, it, tagged, slugs, links, icons, today):
         href, ext = promo_go(p, xs, slugs, links)
         pics = [x for x in xs if x[2][0] == 0 and img_of(x[1])][:3]
         when = promo_span(p.get("start"), p.get("end")) or promo_span((p.get("pre") or {}).get("start"), (p.get("pre") or {}).get("end")) or "진행 중"
-        pic = ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else "")
+        pic = ('<span class="pbp" aria-hidden="true">' + "".join(f'<img src="{html.escape(img_of(x[1]))}" alt="{alt_of(x[1])}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' for x in pics) + "</span>" if pics else "")
         ben = " · ".join(x for x in (str(p.get("benefit") or "").strip(), NV_PROMO[1] if href == NV_PROMO[0] else "") if x)
         inner = (f'<span class="pbh">{lg}<b>{html.escape(mall)}</b>{promo_chip(p, st, today)}</span><b class="pnm">{html.escape(p["name"].strip())}</b><span class="pdt">{html.escape(when)}</span>'
                  + (f'<span class="pbe">{html.escape(ben)}</span>' if ben else "") if nv else
@@ -1760,7 +1766,7 @@ def list_pages(slug, head, desc, xs, mall, recs):
                 + nav + (rec_nav(recs) or "" if slug == "life" and k == 1 else "") + (f'<a class="btn2" href="{GOLDBOX}" rel="nofollow sponsored noopener" target="_blank">⏰ 쿠팡 골드박스</a>' if mall == "coupang" and k == 1 else ""))
         li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for i, p, _ in part if img_of(p)), 1)]
         ld = len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} ({md})", "itemListElement": li}  # 네이버 캐러셀: 항목마다 진짜 상품 사진 필수(기본 그림 X) — 사진 있는 것만, 3개 미만이면 안 넣음
-        out.append((url, k, f"{name}{f' {k}쪽' if k > 1 else ''} ({md}) | {TITLE}", f"{desc} — {name} {len(xs)}개, {md} 기준{f' · {k}쪽' if k > 1 else ''} · {TITLE}", body, ld))
+        out.append((url, k, f"{name}{f' {k}쪽' if k > 1 else ''} ({md}) | {TITLE}", f"{name} {len(xs)}개({md} 기준){f' · {k}쪽' if k > 1 else ''} — {desc} · {TITLE}", body, ld))
     return out
 
 
@@ -2110,7 +2116,8 @@ def topic_page(g, tps, today, now_k):
             + (f'<a class="btn2" href="{c_url(c[0])}">{c[2]} {c[1]} 특가 모음 더 보기 →</a>' if c else f'<a class="btn2" href="{c_url("hot")}">🔥 지금 특가 더 보기 →</a>')
             + (f'<nav class="recs" aria-label="다른 주제"><h3>📌 다른 주제 모음</h3>' + "".join(f'<a href="{BASE}c/t/{o["slug"]}.html">{html.escape(o["name"])}</a>' for o in others[:12]) + "</nav>" if others else ""))
     li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{x[0]}.html", "name": parse(title_of(x[1]["text"]))[1], **({"image": img_of(x[1])} if img_of(x[1]) else {})} for m, (x, _) in enumerate(ups, 1)]
-    desc = " · ".join([intro[0]] * bool(intro) + [parse(title_of(x[1]["text"]))[1] for x in g["xs"][:3]])[:150]
+    top = ups and ups[0][1] and f" — 1위 {parse(title_of(ups[0][0][1]['text']))[1]} {re.sub(r'원꼴$', '원', ups[0][1][0])}" or ""
+    desc = (f"{g['name']} {n}개 {lab[0]}당 값 비교{top}" if lab else f"{g['name']} {n}개 모음 — " + " · ".join(parse(title_of(x[1]["text"]))[1] for x in g["xs"][:3]))[:150]  # 11/7 진우 '구글 노출' ③: 첫 낱말 = 품목(감성 문구 X)
     return f"{g['name']} {what} {n}개 ({md}) | {TITLE}", desc, body, {"@context": "https://schema.org", "@type": "ItemList", "name": f"{g['name']} {what} ({md})", "itemListElement": li}
 
 
@@ -2160,7 +2167,7 @@ def deal_card(i, p, extra="", tips=(), cur=None):
     title, rest, cut = split_title(p["text"])
     if bundle_of(p) and p.get("items"):  # 묶음 쪽(10/31 진우): 상품마다 사진·가격·1개 값·한 줄·각자 구매 버튼(버튼 1개 + 글 나열 X)
         sub = rest.strip().split("\n")[0] if rest.strip() and not re.match(r"\d+\.", rest.strip()) else ""
-        lis = "".join('<li class="bi">' + (f'<img src="{html.escape(im)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if im else '<span class="bx"></span>')
+        lis = "".join('<li class="bi">' + (f'<img src="{html.escape(im)}" alt="{html.escape(n, quote=True)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if im else '<span class="bx"></span>')
                       + f'<div><b>{k}. {html.escape(n)}</b><span class="pr">{html.escape(pr)}</span>' + (f'<small>{html.escape(un)}</small>' if un else "") + (f'<p>{html.escape(c)}</p>' if c else "")
                       + (f'<a class="btn" href="{html.escape(u)}" rel="nofollow sponsored noopener" target="_blank">구매하기</a>' if u else "") + "</div></li>"
                       for k, (n, pr, un, im, u, c) in enumerate(b_items(p), 1))
@@ -2250,6 +2257,7 @@ if(m[h]&&!document.getElementById(h)){if(m[h][0]==='#')location.replace(m[h]);el
 
 
 ld_tag = lambda ld: '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"  # 상품 이름에 '</script>'가 있어도 안 깨지게(seo()와 같게)
+crumb = lambda *xs: ld_tag({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": k, "name": n, "item": u} for k, (n, u) in enumerate(((TITLE, BASE),) + tuple(x for x in xs if x), 1)]})  # 11/7 진우 '구글 노출' ③: c/·c/t·p 경로(홈 > 칸 > 쪽)
 
 
 def clips_page(out):
@@ -2353,7 +2361,7 @@ def en_pages(out, today):
         rows = ""
         for x in xs:
             pu, pm, us, gl, img = num(x.get("price_usd")), num(x.get("per_ml")), x.get("us_url") or x.get("global_url"), x.get("global_url") or x.get("us_url"), str(x.get("img") or "")
-            rows += ("<li>" + (f'<img src="{e(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">' if img.startswith("https://") else "")
+            rows += ("<li>" + (f'<img src="{e(img)}" alt="{e(x.get("name") or "product")}" loading="lazy" referrerpolicy="no-referrer">' if img.startswith("https://") else "")
                      + f'<div><b>{e(str(x["name"]))}</b><span class="t">{e(str(x.get("size") or ""))}{f" · ${pu:,.2f}" if pu is not None else ""}</span><br>'
                      + (f'<span class="pm">${pm:.2f}/ml</span>' if pm is not None else "")
                      + (f'<br><span class="t">Check final price at checkout ({md(x.get("checked"))}, KST)</span>' if md(x.get("checked")) else "")
@@ -2989,7 +2997,7 @@ def link_tile(i, p, sh, ks):
     shown, ex, _ = price_bits(p, sh)
     em = ex[0] if shop_of(p) != "toss" and ex and len(ex[0]) <= 8 else ""
     c, u = CAT_META.get(cat_of(p)), img_of(p)
-    pic = f'<img src="{html.escape(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
+    pic = f'<img src="{html.escape(u)}" alt="{alt_of(p)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else ""
     return (f'<a href="{html.escape(go_url(i, p))}" rel="nofollow sponsored noopener" target="_blank" data-k="{" ".join(ks)}"' + ("" if "all" in ks else " hidden")
             + f'><div class="im"><i aria-hidden="true">{c[2] if c else "🛍️"}</i>{pic}</div><div class="nm">{html.escape(link_name(p))}</div>'
             + f'<div class="pr">{html.escape(shown)}' + (f'<em>{html.escape(em)}</em>' if em else "") + f'</div><div class="ck">{html.escape(link_when(p, sh))}</div></a>')
@@ -3187,6 +3195,63 @@ def short_pages(out, heads):
     return rows
 
 
+def p_worth_fn(now_ts):
+    """11/7 진우 '구글 노출 늘리기' ①(서치콘솔: 사이트맵 p 771 = 본문 대부분 공통 틀 · 발견됨-색인 안 됨 1,015): 딜 쪽 중 색인·사이트맵에 둘 값어치 -> (i, p) -> bool.
+    = 가격 기록 3번↑(price_hist 확인 수) · 주제 쪽(c/t)·가이드에 걸린 상품 · 최근 7일 사이트 클릭(gc_top.json week — hotdeal.gc_top이 7일 모음)."""
+    h, ev = ph_load(), ev_info()
+    try:
+        wk = set(json.load(open("gc_top.json")).get("week") or {})
+    except (OSError, ValueError, AttributeError):
+        wk = set()
+    gd = {str(k["pid"]) for g in guides_load() for k in g.get("picks") or [] if k.get("pid")}
+
+    def worth(i, p):
+        u = p.get("url") or ""
+        e = ev.get(u) or {}
+        st = e.get("pid") and ph_stat(h.get(ph_key(e, u)), now_ts)
+        return bool(TOPIC_OF.get(i) or str(e.get("pid")) in gd or u in wk or u.split("?")[0] in wk or st and st["n"] >= 3)
+    return worth
+
+
+def noindex_file(out, u):
+    """사이트맵 주소 -> 그 쪽이 noindex인지(파일 없음 = True — 사이트맵에 안 넣음)."""
+    try:
+        return b'name="robots" content="noindex' in open(f"{out}/{u[len(BASE):]}" + ("index.html" if u.endswith("/") else ""), "rb").read()
+    except OSError:
+        return True
+
+
+RSS_MAX = 100_000  # 11/7 진우 'RSS에 사진·요약'(네이버: 사진 포함 본문 권장 · 크면 제출 제한): rss.xml 크기 상한 — 넘으면 요약 줄부터 줄임
+
+
+def rss_pic(out, u, ps):
+    """RSS 대표 사진 1장 = 그 쪽 html에 실제로 있는 상품 사진 그대로(쿠팡 = 상품 사진 · 토스만 모은 쪽 = 토스 원본 + 출처 · 네이버·toss_noimg X) -> html('' = 사진 X)."""
+    toss = bool(ps) and all(shop_of(p) == "toss" for p in ps)  # 쿠팡과 토스 한 항목에 섞지 X
+    try:
+        page_html = open(f"{out}/{u[len(BASE):]}" + ("index.html" if u.endswith("/") else ""), encoding="utf-8").read()
+    except OSError:
+        return ""
+    for p in ps:
+        im = (toss_img(p) if toss else img_of(p)) if (shop_of(p) == "toss") == toss else ""
+        if im and f'src="{html.escape(im)}"' in page_html:
+            return f'<p><img src="{html.escape(im)}" alt="{alt_of(p)}"></p>' + (f"<p>{PHOTO_CREDIT}</p>" if toss else "")
+    return ""
+
+
+def rss_xml(out, rss):
+    """rss.xml: 항목 = (제목, 주소, 요약 줄들, 시각, guid, 상품 글들) -> description CDATA = 대표 사진 1장 + 요약 3~5줄(쪽에 있는 사실만) · RSS_MAX 넘으면 줄부터 줄임(그래도 넘으면 사진 뺌)."""
+    pics = {u: rss_pic(out, u, ps) for _, u, _, _, _, ps in rss}
+    for keep, pic in ((5, True), (3, True), (2, True), (1, True), (1, False)):
+        body = "".join(f'<item><title>{html.escape(t)}</title><link>{u}</link>' + (f'<guid isPermaLink="false">{g}</guid>' if g else f"<guid>{u}</guid>")
+                       + "<description><![CDATA[" + (pics[u] if pic else "") + "<p>" + "<br>".join(html.escape(l) for l in [l for l in ls if l][:keep]) + "</p>]]></description>"
+                       f'<pubDate>{time.strftime("%a, %d %b %Y %H:%M:00 +0900", time.strptime(w, "%Y-%m-%d %H:%M"))}</pubDate></item>' for t, u, ls, w, g, _ in rss)
+        x = (f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{TITLE}</title><link>{BASE}</link><description>쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요</description><language>ko</language>'
+             + body + "</channel></rss>")
+        if len(x.encode()) <= RSS_MAX:
+            return x
+    return x
+
+
 def build(posts, out="docs"):
     global MICONS, SITE_SUB, TIMG, TOSSM
     SITE_SUB = site_subs()
@@ -3237,9 +3302,11 @@ def build(posts, out="docs"):
     tnav = lambda gs: ('<nav class="recs" aria-label="주제별 비교"><h3>📌 주제별 모음·단위가 비교</h3>' + "".join(f'<a href="{BASE}c/t/{g["slug"]}.html">{html.escape(g["name"])}</a>' for g in gs) + "</nav>") if gs else ""
     TOPIC_NAV.update({m[0]: tnav([g for g in tps if g["cat"] == k]) for k, m in CAT_META.items()}, **{"*": tnav(tps)})
     os.makedirs(f"{out}/c/t", exist_ok=True) if tps else None
+    trss = []
     for g in tps:  # TT-2 ⑥ 주제 쪽 /c/t/주소.html = 사이트맵 앞쪽(홈 바로 뒤)
         ti, sd, body, ld = topic_page(g, tps, today, now_k)
-        open(f"{out}/c/t/{g['slug']}.html", "w").write(page(ti, body, sd, f"{BASE}c/t/{g['slug']}.html", cur="cats", head=ld_tag(ld)))
+        trss.append((ti.split(" | ")[0], f"{BASE}c/t/{g['slug']}.html", [sd, f"{md_of(today)} 업데이트"], f"{today} 00:00", f"t-{g['slug']}-{today}", [x[1] for x in g["xs"]]))  # 11/7 RSS = 색인 남기는 쪽만 · 요약 = 쪽 설명(품목·N개·1위)
+        open(f"{out}/c/t/{g['slug']}.html", "w").write(page(ti, body, sd, f"{BASE}c/t/{g['slug']}.html", cur="cats", head=ld_tag(ld) + crumb((tc := CAT_META.get(g["cat"])) and (tc[1], c_url(tc[0])), (g["name"], f"{BASE}c/t/{g['slug']}.html"))))
         urls.append((f"{BASE}c/t/{g['slug']}.html", today))
     for f in os.listdir(f"{out}/c/t") if os.path.isdir(f"{out}/c/t") else []:  # 상품이 빠진 옛 주제 쪽 = 안내 쪽(noindex — 옛 큐레이션 링크는 열림)
         if f.endswith(".html") and f[:-5] not in {g["slug"] for g in tps}:
@@ -3255,9 +3322,10 @@ def build(posts, out="docs"):
                                                           "", f"{BASE}c/{pi[0]}.html", noindex=True))
     for k, rec in recs.items():
         body, desc, note = record_page(k, rec, recs)
-        open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} 최저가 기록 — {rec[1]} 가격 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
+        open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     revs, rpids = rev_pids(out)  # HHH① 구매후기 요약 칸
+    worth, pn = p_worth_fn(now_ts), [0, 0]  # 11/7 사이트맵 다이어트: [사이트맵 p, noindex p]
     for i, p in reversed(list(enumerate(posts))):
         if i in noaff:  # 수수료 링크 없는 딜 = 새 쪽 X · 있던 쪽 = 구매 버튼 없는 안내 쪽(noindex — 옛 채널·Threads 링크는 열림 · SS 10/26: 수수료 링크로 바뀌면 다시 상품 쪽)
             if os.path.exists(f"{out}/p/{i}.html"):
@@ -3279,9 +3347,10 @@ def build(posts, out="docs"):
         tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
         open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids)
                                                   + (rl or "") + tb + GUIDE_NAV.get(c[0] if c else "", "") + (more or "")
-                                                  + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=ld or "", og=img_of(p),
-                                                  noindex=sh is None or sh[0] == 3))  # TT-2 ①⑦: 끝난 딜(진열 밖)·일시 품절 = noindex(사람은 그대로 봄)
-        if sh and sh[0] == 0:  # 사이트맵 딜 = 진행 중 🔥 특가만(⏳·👍 = 색인 O, 칸 쪽 링크로)
+                                                  + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=(ld or "") + crumb(c and (c[1], c_url(c[0])), (parse(title_of(p["text"]))[1] or ti, url)), og=img_of(p),
+                                                  noindex=(nx := sh is None or sh[0] == 3 or not worth(i, p))))  # TT-2 ①⑦: 끝난 딜(진열 밖)·일시 품절 = noindex(사람은 그대로 봄) · 11/7 값어치 없는 딜 쪽 = noindex,follow
+        pn[nx] += 1
+        if not nx:  # 11/7 진우 '구글 노출': 사이트맵 딜 = 값어치 있는 진행 중 쪽만(p_worth_fn)
             urls.append((url, p["t"][:10]))
     ls = lists(posts, days, home)
     ig_top(posts, out, now_ts)
@@ -3290,7 +3359,7 @@ def build(posts, out="docs"):
               today=("⏰ 오늘 마감", "오늘 밤 12시에 끝나는 특가(토스 하루특가·선착순 등)", dl, ""), rehot=("🔁 다시 특가", "특가 가격으로 다시 돌아온 상품", [x for x in it if x[2][0] == 0 and x[2][4]], ""), top=(tops[0], f"{tops[1]} 순위", tops[2], ""))  # 10/24 Cowork '변경 찾기' 상태 쪽(사이트맵)
     for slug, (head, desc, xs, mall) in ls.items():
         for u, k, ti, sd, body, ld in (mall_page(slug, head, desc, xs, recs) if mall else list_pages(slug, head, desc, xs, mall, recs)):
-            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", head=ld and ld_tag(ld) or "", dis=SHOP_NOTES["toss"] if slug == "toss" else ""))  # 토스 쪽 맨 위 = 토스 대가성 문구만(다른 몰 이름 X — Q 11/5)
+            write(out, u[len(BASE):], page(ti, body, sd, u, cur="fire" if slug in dict(STAT_CHIPS) else "cats", noindex=k > 1, head=(ld and ld_tag(ld) or "") + crumb((re.sub(r"^\W+", "", head).strip() or slug, c_url(slug))), dis=SHOP_NOTES["toss"] if slug == "toss" else ""))  # 토스 쪽 맨 위 = 토스 대가성 문구만(다른 몰 이름 X — Q 11/5)
             urls.append((u, latest))
         n = 1 if mall else max(1, -(-len(xs) // PER))
         for d in os.listdir(f"{out}/c/{slug}"):  # 목록이 줄면 뒤쪽 옛 쪽(c/이름/N/) 지움 — 남으면 옛 카드·자기 canonical로 검색에 남음
@@ -3367,7 +3436,8 @@ def build(posts, out="docs"):
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")
             + f'<a class="btn2" href="{BASE}all.html">지난 딜 전체 보기 →</a>' + TAB_JS + LSW + LSW_JS) if posts else "<p>첫 딜을 준비 중이에요.</p>"
     hd = "쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요. 오늘의 픽 3개, 지금 특가, 꾸준히 주문 들어오는 것까지."
-    ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "inLanguage": "ko", "description": hd},  # TT 10/27: 검색 '핫딜픽' 같은 이름 다른 곳보다 위로 — 다른 표기도 같은 사이트
+    ld = json.dumps({"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "inLanguage": "ko", "description": hd,
+                                                                   "potentialAction": {"@type": "SearchAction", "target": {"@type": "EntryPoint", "urlTemplate": f"{BASE}?q={{search_term_string}}"}, "query-input": "required name=search_term_string"}},  # 11/7: 사이트 검색(SEARCH_JS ?q=)  # TT 10/27: 검색 '핫딜픽' 같은 이름 다른 곳보다 위로 — 다른 표기도 같은 사이트
                                                                   {"@type": "Organization", "name": TITLE, "alternateName": ALT_NAMES, "url": BASE, "logo": f"{BASE}icons/icon-512.png", "sameAs": [INSTA, THREADS, BLOG, CHANNEL]}]}, ensure_ascii=False)
     open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + GUIDE_NAV.get("*", "") + HASH_JS,
                                               hd, BASE, top=INSTALL,
@@ -3414,21 +3484,24 @@ def build(posts, out="docs"):
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     short_pages(out, {**{k: v[0] for k, v in ls.items()}, "women": "여성용품 → 생필품"})  # 11/1 짧은 주소(/<칸> → /c/<칸>/ — 사이트맵 X)
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
+    urls = [x for x in dict((u, (u, d)) for u, d in urls).values() if not noindex_file(out, x[0])]  # 11/7: 사이트맵에 noindex 쪽 0 · 같은 주소 1번
+    print("sitemap", len(urls), "· p", sum(u.startswith(f"{BASE}p/") for u, _ in urls), "· noindex", pn[1])
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9) — '*' = 네이버 Yeti도 허용
     open(f"{out}/{INDEXNOW_KEY}.txt", "w").write(INDEXNOW_KEY)  # UU: IndexNow 키 파일(사이트 루트 — 보낼 때 keyLocation)
-    rss = [(f"오늘의 픽 {int(day[5:7])}월 {int(day[8:10])}일 — " + " · ".join(parse(title_of(p["text"]))[1] for _, p, _ in ps), f"{BASE}today/{day}/",
-            "핫딜픽이 고른 오늘의 특가 " + " / ".join(f"{n}. [{chip_of(p)}] {parse(title_of(p['text']))[1]} {'' if shop_of(p) == 'toss' else price_bits(p, sh)[0]}".strip() for n, (_, p, sh) in enumerate(ps, 1)),
-            f"{day} {PICK_HOUR:02d}:00", "")] if ps and day else []  # 10/24 N1: 오늘의 픽 날짜 쪽 = RSS 첫 글(매일 새 글, 설명 = 3개 전부)
     md = f"{int(today[5:7])}/{int(today[8:10])}"
-    rss += [(f"{CAT_META[k][1]} 특가 모음 ({md})", c_url(CAT_META[k][0]), f"{CAT_META[k][1]} 특가 {len(ls[CAT_META[k][0]][2])}개 — " + " · ".join(parse(title_of(p["text"]))[1] for _, p, _ in ls[CAT_META[k][0]][2][:3]),
-             f"{today} 00:00", f"c-{CAT_META[k][0]}-{today}") for k in TILES if ls[CAT_META[k][0]][2]]  # 10/24 N1 '품목 쪽 사이트맵·RSS에': 타일 8칸 1쪽 = 날마다 새 글(guid에 날짜)
-    rss += [(title_of(p["text"]), f"{BASE}p/{i}.html", summary(p["text"]), p["t"][:16], "") for i, p in [(i, p) for i, p in enumerate(posts) if not p["text"].startswith("📋") and i not in noaff][-(30 - len(rss)):][::-1]]  # 합쳐 30개  # 네이버 서치어드바이저 'RSS 제출'용 최근 딜 30개
-    open(f"{out}/rss.xml", "w").write(
-        f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{TITLE}</title><link>{BASE}</link><description>쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요</description><language>ko</language>'
-        + "".join(f'<item><title>{html.escape(t)}</title><link>{u}</link>' + (f'<guid isPermaLink="false">{g}</guid>' if g else f"<guid>{u}</guid>") + f'<description>{html.escape(d)}</description>'
-                  f'<pubDate>{time.strftime("%a, %d %b %Y %H:%M:00 +0900", time.strptime(w, "%Y-%m-%d %H:%M"))}</pubDate></item>' for t, u, d, w, g in rss) + "</channel></rss>")
+    nm = lambda p: parse(title_of(p["text"]))[1]
+    unit1 = lambda xs: next((f"{u[0].split('당')[0]}당 값 1위 {nm(p)} {re.sub(r'원꼴$', '원', u[0].split(' ')[-1])}" for p in xs if shop_of(p) != "toss" and (u := unit_pair(p))), "")
+    rss = [(f"오늘의 픽 {int(day[5:7])}월 {int(day[8:10])}일", f"{BASE}today/{day}/", [f"핫딜픽이 고른 오늘의 특가 {len(ps)}개"] + [f"{n}. {nm(p)}" for n, (_, p, _) in enumerate(ps, 1) if shop_of(p) != "toss"] + [f"{int(day[5:7])}/{int(day[8:10])} 확인"],
+            f"{day} {PICK_HOUR:02d}:00", "", [p for _, p, _ in ps])] if ps and day else []  # 10/24 N1: 오늘의 픽 날짜 쪽 = RSS 첫 글(매일 새 글)
+    rss += [(f"{CAT_META[k][1]} 특가 모음 ({md})", c_url(CAT_META[k][0]), [f"{CAT_META[k][1]} 특가 {len(ls[CAT_META[k][0]][2])}개 모음", " · ".join([nm(p) for _, p, _ in ls[CAT_META[k][0]][2][:PER] if shop_of(p) != "toss"][:3]), unit1([p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]), f"{md} 업데이트"],
+             f"{today} 00:00", f"c-{CAT_META[k][0]}-{today}", [p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]) for k in TILES if ls[CAT_META[k][0]][2]]  # 10/24 N1: 타일 8칸 1쪽 = 날마다 새 글(guid에 날짜)
+    rss += trss + [(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개", f"{BASE}c/{k}.html", [f"{rec[0]} {rec[1]} 가격 기록 {len(rec[2])}개", f"{rec[1]} 값 1위 {nm(rec[2][0][3])} {rec[2][0][1].split()[-1]}", f"{int((d := max(r[3]['t'][:10] for r in rec[2]))[5:7])}/{int(d[8:10])} 기록"],
+                    f"{d} 00:00", f"r-{k}-{today}", [r[3] for r in rec[2]]) for k, rec in recs.items()]
+    smap = {u for u, _ in urls}
+    rss = [x for x in rss if x[1] in smap][:30]  # 11/7 Cowork: RSS = 색인 남기는 쪽만(오늘의 픽·칸·주제·품목 기록 — p X) · 사이트맵·noindex와 안 어긋나게(사이트맵에 있는 쪽만)
+    open(f"{out}/rss.xml", "w").write(rss_xml(out, rss))
     if TOSS_API_SITE:  # 11/6 Q 켬: 사이트에 올라간 토스 API 상품 수 · 가격 확인 1일 넘어 내린 수(다른 조건은 다 맞는데 1일만 넘은 것) — 수만(가격·이름 X)
         tp = [p for p in posts if p.get("tid")]
         print("toss api site", f"사이트 {sum(1 for _, p, _ in ls.get('toss', ('', '', []))[2] if p.get('tid'))}개 · 1일 넘어 내림 {sum(not tapi_ok(p) and tapi_ok(p, calendar.timegm(time.strptime(p['t'][:16], '%Y-%m-%d %H:%M')) - 9 * 3600) for p in tp)}개")
