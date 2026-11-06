@@ -1128,7 +1128,7 @@ def toss_th_later(seen):
             x = e
     seen["thlater"] = {"t": now, "q": keep}
     if x:
-        th_bundle(seen, x["kind"], x["text"])
+        toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [])  # 11/6 토스 원본 사진(줄 설 때 받아 둔 주소)
         print("threads", x["kind"], "토스 리스트")
 
 
@@ -3529,7 +3529,7 @@ def toss_deals(seen, best=False):
         if len(its) < TH_LIST_MIN or not sok:
             to_solo([t[4] for t in its], "tossseries")
         else:
-            r = th_bundle(seen, "tossseries", text, topic=SERIES_BY["toss"][0])
+            r = toss_th_photo(seen, "tossseries", text, [toss_photo(got[t[4]]) for t in its], topic=SERIES_BY["toss"][0])  # 11/6 토스 원본 사진(글 순서 — fit이 its를 글에 든 것만 남김)
             tl_mark(its)
             seen.setdefault("series", {})["toss"] = sno
             try:
@@ -3547,7 +3547,7 @@ def toss_deals(seen, best=False):
             to_solo([t[4] for t in plain], f"{kind} {lat}", kst_ts(f"{day} {lat}"))
         else:
             seen["thlater"] = {"t": time.time(), "q": [x for x in seen.get("thlater", {}).get("q", []) if x["until"] >= day] + [
-                {"at": f"{day} {lat}", "until": f"{day} 23:30", "kind": f"toss{lat.replace(':', '')}", "text": text}]}
+                {"at": f"{day} {lat}", "until": f"{day} 23:30", "kind": f"toss{lat.replace(':', '')}", "text": text, "img": [toss_photo(got[t[4]]) for t in plain]}]}  # 11/6 사진(글 순서)
             tl_mark(plain)
             print(f"toss {kind} Threads {lat} 줄에 {len(plain)}개")
     elif rows and tok and lst and not plain:
@@ -3558,7 +3558,7 @@ def toss_deals(seen, best=False):
         if len(plain) < TH_LIST_MIN:
             to_solo([t[4] for t in plain], f"toss{hrs[-1]:g}")
         else:
-            th_bundle(seen, f"toss{hrs[-1]:g}", text)
+            toss_th_photo(seen, f"toss{hrs[-1]:g}", text, [toss_photo(got[t[4]]) for t in plain])  # 11/6 토스 원본 사진(글 순서)
             tl_mark(plain)
     elif rows and tok and beauty and th_day(seen, time.time())["b"] < TH_BEAUTY_MIN and not jw_beauty(seen, time.time()):  # 오늘 화장품 자리가 비었고 진우 화장품 링크가 더 없으면
         k = next((n for n, x in enumerate(got) if th_beauty(x["displayName"]) == 2), 0)  # 이 회차 1개를 Threads 개별 글로(소모품 먼저, 없으면 Claude 1순위) — 10/11 23:50 진우
@@ -8511,8 +8511,19 @@ def th_topic(seen, text=None, base=None, cat=None):
 
 
 def th_post(tok, text, link=None, image=None, tag="핫딜"):
-    """Threads 글 1개: image = 사진 글(30초 처리 대기), link = 링크 미리보기(th_text), 둘 다 없으면 글만."""
+    """Threads 글 1개: image = 사진 글(30초 처리 대기) · 사진 목록 2장↑ = 사진 넘기기(CAROUSEL — 목록 순서, 11/6 토스 묶음) · link = 링크 미리보기(th_text), 둘 다 없으면 글만.
+    실패 = 그대로 올림(HTTPError — 부르는 쪽이 4xx면 글만으로)."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
+    if isinstance(image, (list, tuple)):
+        ims = [u for u in image if u][:10]
+        if len(ims) >= 2:
+            kids = [json.loads(http(f"{THREADS}/{me}/threads?" + urllib.parse.urlencode({"media_type": "IMAGE", "image_url": u, "is_carousel_item": "true", "access_token": tok}), method="POST"))["id"] for u in ims]
+            time.sleep(30)  # 미디어 처리 대기(공식 권장)
+            q = urllib.parse.urlencode({"media_type": "CAROUSEL", "children": ",".join(kids), "text": text[:500], "topic_tag": tag, "access_token": tok})
+            cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+            time.sleep(10)
+            return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
+        image = ims[0] if ims else None
     if link and not image:
         return th_text(tok, me, text, link, tag)
     q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": tag, "access_token": tok})
@@ -8542,6 +8553,24 @@ def th_bundle(seen, kind, text, link=None, image=None, topic=None):
     if kind in TH_NONDEAL:
         th_nd(seen)
     return r
+
+
+def toss_th_photo(seen, kind, text, imgs, topic=None):
+    """11/6 진우 '얘는 그림 어디갔니??'(토스 Threads 묶음 글이 글자만): 상품 원본 사진(toss_photo — 받은 주소 그대로 · 자르기·합성·글자 X · toss_noimg = None → 그 상품 줄은 글만)을
+    글 순서대로 사진 넘기기(2장↑)·사진 1장 + 본문 끝 '사진: 토스쇼핑' / 0장 = 지금처럼 글만(로그 'toss list photo N/M') · Meta가 사진을 못 받음(4xx) = 글만 1번 다시(다시 올림 줄 X — 중복 X)
+    · 5xx = 예전처럼 다음 실행 th_retry(올라갔는지 확인 뒤)."""
+    ims = [u for u in imgs if u]
+    print(f"toss list photo {len(ims)}/{len(imgs)}", kind)
+    if not ims or len(text) + 2 + len(PHOTO_CREDIT) > 500:  # 출처 줄 못 넣으면 사진 X(출처 없는 토스 사진 X)
+        return th_bundle(seen, kind, text, topic=topic)
+    try:
+        return th_bundle(seen, kind, f"{text}\n\n{PHOTO_CREDIT}", image=ims if len(ims) > 1 else ims[0], topic=topic)
+    except urllib.error.HTTPError as e:
+        if e.code >= 500:
+            raise
+        seen.pop(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + kind, None)  # 사진 글로 다시 올림 X
+        print("toss list photo 거절 -> 글만", kind, err_brief(e))
+        return th_bundle(seen, kind, text, topic=topic)
 
 
 def th_nd(seen):

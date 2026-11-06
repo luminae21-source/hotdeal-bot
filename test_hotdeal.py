@@ -13425,3 +13425,53 @@ assert S.pick_name(NV162).startswith("갤럭시탭 S12 울트라") and "[네이�
 assert S.pick_name({**CP162, "img": "https://thumbnail6.coupangcdn.com/a.jpg"}) == "[쿠팡] 곰곰 특란 30구" and S.pick_name({"text": "🔥 [우리동네gs] 김치라면 (1,850원)", "url": "https://x"}).startswith("[우리동네gs]")  # 사진 있음·3사 밖 = [몰] 그대로
 import cards as C162
 assert "card_title(name)" in inspect.getsource(C162.make)  # 인스타 카드 줄 이름도 같은 규칙
+
+# 9-163 (11/6 23시대 진우 '얘는 그림 어디갔니??' — Threads '💙 토스 특가 중 살 만한 3개'·'토스 … 베스트 중 살 만한 3개'가 글자만): 토스 Threads 묶음 글(리스트·series·special·best·cat)
+#   = 상품 원본 사진(toss_photo — 받은 주소 그대로)을 글 순서대로 사진 넘기기(2장↑)·사진 1장 + 본문 끝 '사진: 토스쇼핑' · toss_noimg 상품 = 사진만 빠짐(그 줄은 글 그대로) · 0장 = 글만
+#   · 로그 'toss list photo N/M' · Meta가 사진 못 받음(4xx) = 글만 1번 다시(다시 올림 줄 X — 중복 X) · 5xx = 예전처럼 th_retry
+import urllib.error
+sv163 = (H.http, time.sleep, dict(H.E), H.th_hold, H.rv_text)
+calls163, fail163 = [], {}
+def http163(url, body=None, headers=None, method=None):
+    calls163.append(url)
+    if "/me?fields=id" in url:
+        return '{"id": "me1"}'
+    if fail163.get("code") and "image_url" in url:
+        raise urllib.error.HTTPError(url, fail163["code"], "x", {}, io.BytesIO(b'{"error": {"message": "media"}}'))
+    return '{"id": "c%d"}' % len(calls163)
+H.http, time.sleep, H.th_hold, H.rv_text = http163, (lambda s: None), (lambda seen: False), (lambda kind, text: text)
+H.E["THREADS_TOKEN"] = "tk"
+U163 = ["https://static.toss.im/a.jpg", None, "https://static.toss.im/c.jpg"]
+T163 = H.TOSS_NOTE + "\n\n💙 토스 특가 중 살 만한 3개\n\n1️⃣ 노르디쿡 무쇠팬 — 19,900원\n\n2️⃣ 대상 루테인 — 9,900원\n\n3️⃣ 프로프룻 사과 — 12,900원\n\n11/5 23시 게시 시점 가격"
+s163 = {}
+with contextlib.redirect_stdout(io.StringIO()) as o163:
+    r163 = H.toss_th_photo(s163, "toss22", T163, U163)
+q163 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for u in calls163]
+kids163 = [q["image_url"][0] for q in q163 if q.get("is_carousel_item")]
+car163 = [q for q in q163 if q.get("media_type") == ["CAROUSEL"]]
+assert kids163 == [U163[0], U163[2]] and len(car163) == 1 and car163[0]["text"][0].endswith("\n\n" + H.PHOTO_CREDIT) and "toss list photo 2/3 toss22" in o163.getvalue() and r163, (kids163, o163.getvalue())  # 글 순서 · noimg = 사진만 빠짐 · 출처 줄
+calls163.clear()
+with contextlib.redirect_stdout(io.StringIO()) as o163b:
+    H.toss_th_photo(s163, "toss22", T163, [None, "https://static.toss.im/b.jpg", None])
+q163 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for u in calls163]
+assert [q.get("media_type") for q in q163 if q.get("media_type")] == [["IMAGE"]] and q163[1]["image_url"] == ["https://static.toss.im/b.jpg"] and "toss list photo 1/3" in o163b.getvalue()  # 사진 1장 = 사진 글
+calls163.clear()
+with contextlib.redirect_stdout(io.StringIO()) as o163c:
+    H.toss_th_photo(s163, "toss22", T163, [None, None])
+q163 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for u in calls163]
+assert [q.get("media_type") for q in q163 if q.get("media_type")] == [["TEXT"]] and H.PHOTO_CREDIT not in q163[1]["text"][0] and "toss list photo 0/2" in o163c.getvalue()  # 0장 = 지금처럼 글만
+calls163.clear(); fail163["code"] = 400; s163 = {}
+with contextlib.redirect_stdout(io.StringIO()) as o163d:
+    r163d = H.toss_th_photo(s163, "toss22", T163, U163)
+q163 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for u in calls163]
+assert r163d and [q.get("media_type") for q in q163 if q.get("media_type") and not q.get("image_url")] == [["TEXT"]] and not [k for k in s163 if k.startswith("thretry_")] and "toss list photo 거절 -> 글만 toss22" in o163d.getvalue(), (q163, s163)  # 4xx = 글만 1번 · 다시 올림 X
+calls163.clear(); fail163["code"] = 500; s163 = {}
+try:
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.toss_th_photo(s163, "toss22", T163, U163)
+    raise AssertionError("5xx 그대로 올라가야")
+except urllib.error.HTTPError as e163:
+    assert e163.code == 500 and [k for k in s163 if k.startswith("thretry_")] and s163[[k for k in s163 if k.startswith("thretry_")][0]]["img"] == [U163[0], U163[2]]  # 5xx = 다음 실행 th_retry(사진 그대로)
+(H.http, time.sleep, _, H.th_hold, H.rv_text) = sv163; H.E.clear(); H.E.update(sv163[2])
+src163 = inspect.getsource(H.toss_deals)
+assert src163.count("toss_th_photo(") == 2 and '"img": [toss_photo(got[t[4]]) for t in plain]' in src163 and 'toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [])' in inspect.getsource(H.toss_th_later)  # series·리스트·줄 선 리스트(21:20·22:20) 다
