@@ -13186,3 +13186,70 @@ json.dump([{**ev154, "link": f"{H.SITE}e/{SLUG154}.html"}], open("auto_events.js
 assert [e["link"] for e in H.cur_events()] == [f"{H.SITE}e/{SLUG154}.html"]  # 행사 쪽 링크 = 큐레이션 모양 OK
 assert "new_sets, day_posts, mall_card_post," in open(H.__file__, encoding="utf-8").read()
 (H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.ai_json, _, H.http, H.th_text, H.busy, H.bundled, H.cur_ig) = sv154; H.IG_H, H.IG_AUTO = sv154b; H.E.clear(); H.E.update(sv154[7]); os.chdir(cwd154)
+# 9-155 (11/6 진우 S-2 '빼빼로데이 특가는 별도로 자동으로'): 기념일 기간 그 tag 진열 쿠팡 상품 · 같은 pid·itemId 가격 기록만 — 직전 확인가보다 10%↑ 내림 · 30일 기록 중 가장 낮은 가격 · 할인 표시 새로
+#   → 개별 특가 글(텔레그램 채널 + Threads · 묶음 수 X) · 머리 '🍫 빼빼로데이 특가 D-N' · 근거 = 확인한 기록만 · 같은 상품 하루 1번(같은 내림 다음 날 X) · 당일 X · 다른 글·토스 글 15분↑ · 로그 'day deal …'
+cwd155, d155 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d155)
+sv155 = (H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.http, H.th_text, dict(H.E), dict(H.RUN), S.EVENTS)
+H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, S.EVENTS = "posts.json", "events.json", "auto_events.json", "days.json", "events.json"
+H.E["THREADS_TOKEN"] = "tk"; H.RUN.pop("thmall", None); H.RUN.pop("tgmall", None); H.RUN["ch_last"] = 0
+json.dump([{"name": "빼빼로데이", "date": "2026-11-11", "from": "2026-10-30", "tag": "빼빼로 155", "emoji": "🍫"}], open("days.json", "w"), ensure_ascii=False)
+U155 = {k: f"https://link.coupang.com/a/DD{k}" for k in "ABCDE"}
+json.dump([{"t": "2026-11-05 19:05", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n빼빼로 혼합 10p 세트 444g {k}\n14,550원", "url": U155[k], "own": 1, "shelf": 1, "tag": "빼빼로 155", "st": "wait"} for k in "ABCDE"]
+          + [{"t": "2026-11-05 19:05", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n다른 tag\n14,550원", "url": "https://link.coupang.com/a/OT", "own": 1, "shelf": 1, "tag": "다른", "st": "wait"}], open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"url": U155["A"], "pid": "111", "item": "901", "shelf": True}, {"url": U155["B"], "pid": "222", "item": "902", "shelf": True}, {"url": U155["C"], "pid": "333", "shelf": True},  # C = 옵션 모름
+           {"url": U155["D"], "pid": "444", "item": "904", "shelf": True}, {"url": U155["E"], "pid": "555", "item": "905", "shelf": True}, {"url": "https://link.coupang.com/a/OT", "pid": "666", "item": "906", "shelf": True}], open("events.json", "w"))
+json.dump({"111:901": [["26110519", 14550, "", "post"], ["26110613", 9890, "", "api"]],  # A: 어제 진열가 → 오늘 봇 확인 32% 내림
+           "222:902": [["26110519", 10000, "", "post"], ["26110613", 9100, "", "api"]],  # B: 9% = X
+           "333": [["26110519", 14550, "", "post"], ["26110613", 5000, "", "api"]],  # C: 옵션(itemId) 모름 = X
+           "444:999": [["26110519", 14550, "", "post"], ["26110613", 5000, "", "api"]], "444:904": [["26110613", 14000, "", "api"]],  # D: 다른 구성(itemId)의 내림 = X
+           "555:905": [["26110112", 12000, "", "api", "26110212", 2], ["26110310", 11000, "", "cw"], ["26110613", 10900, "", "api"]],  # E: 내림 1% · 30일 기록 중 가장 낮음
+           "666:906": [["26110519", 14550, "", "post"], ["26110613", 5000, "", "api"]]}, open(S.PRICE_HIST, "w"))  # 다른 tag = X
+tg155, th155 = [], []
+H.tg = lambda m, **p: tg155.append(p) or {"message_id": 70 + len(tg155), "text": H.plain_of(p.get("text", "")), "entities": []}
+H.http = lambda url, body=None, headers=None, method=None: '{"id": "me1"}' if "/me?fields=id" in url else ""
+H.th_text = lambda tok, me, text, link, tag="핫딜": th155.append((text, link, tag)) or {"id": f"TH{len(th155)}"}
+assert H.day_deal_why(json.load(open(S.PRICE_HIST))["111:901"], TK("2026-11-06 13:10")) == ("9,890원", ["어제보다 4,660원 내려옴"], 4660)  # 기록 1개 = 30일 최저 X(그냥 내림)
+assert H.day_deal_why(json.load(open(S.PRICE_HIST))["222:902"], TK("2026-11-06 13:10")) is None and H.day_deal_why([["26110613", 9890, "", "api"]], TK("2026-11-06 13:10")) is None  # 9% · 기록 1개
+assert H.day_deal_why(json.load(open(S.PRICE_HIST))["111:901"], TK("2026-11-06 20:00")) is None  # 봇 확인 6시간 넘음
+assert H.day_deal_why(json.load(open(S.PRICE_HIST))["555:905"], TK("2026-11-06 13:10")) == ("10,900원", ["핫딜픽 30일 기록 중 가장 낮은 가격"], 0)
+assert H.day_deal_why([["26110612", 9000, "c", "cw"], ["26110519", 10000, "", "post"]], TK("2026-11-06 13:10")) == ("9,000원 쿠폰가", ["쿠폰가 표시가 새로 생겼어요"], 0)  # 할인 표시 새로
+assert H.day_deal_why([["26102012", 9500, "c", "cw"], ["26110612", 9000, "c", "cw"], ["26110519", 10000, "", "post"]], TK("2026-11-06 13:10")) is None  # 30일 안 이미 있던 표시
+s155 = {"thmall": {"cp": TK("2026-11-06 13:05")}}
+time.time = lambda: TK("2026-11-06 13:10")
+with contextlib.redirect_stdout(io.StringIO()) as o155:
+    H.day_deals(s155)
+assert not tg155 and "day deal 빼빼로데이 111 다른 글과 간격" in o155.getvalue()  # Threads 5분 전 글 = 다음 실행
+s155["thmall"] = {"toss": TK("2026-11-06 12:50")}
+with contextlib.redirect_stdout(io.StringIO()) as o155:
+    H.day_deals(s155)
+c155 = H.plain_of(tg155[0]["text"])
+assert len(tg155) == 1 and tg155[0]["chat_id"] == H.CHANNEL and c155.startswith(H.DISCLOSURE) and "🍫 빼빼로데이 특가 D-5 🔥" in c155 and "9,890원 (11/6 13시 확인)" in c155 and "💸 어제보다 4,660원 내려옴" in c155, c155
+assert "%" not in c155 and "최저가" not in c155 and "품절" not in c155 and tg155[0]["reply_markup"]["inline_keyboard"][0][0]["url"] == U155["A"]
+assert len(th155) == 1 and th155[0][0].startswith(H.DISCLOSURE + "\n\n") and "🍫 빼빼로데이 특가 D-5" in th155[0][0] and th155[0][1] == U155["A"] and th155[0][2] == "빼빼로데이"  # Threads 같은 글
+assert "day deal 빼빼로데이 111 -4,660원" in o155.getvalue()
+rec155 = json.load(open("posts.json"))[-1]
+assert rec155["url"] == U155["A"] and rec155["th"] == "TH1" and rec155["dayd"] == "빼빼로데이" and rec155["own"] == 1 and H.parse(H.title_of(rec155["text"]))[1] == "빼빼로 혼합 10p 세트 444g A"  # 사이트·Threads 개별 차례에 다시 X
+time.time = lambda: TK("2026-11-06 13:40"); H.RUN["ch_last"] = 0; s155["bundles"] = {}
+with contextlib.redirect_stdout(io.StringIO()) as o155b:
+    H.day_deals(s155)
+assert len(tg155) == 2 and "10,900원" in H.plain_of(tg155[1]["text"]) and "💸 핫딜픽 30일 기록 중 가장 낮은 가격" in H.plain_of(tg155[1]["text"]) and "day deal 빼빼로데이 555 -0원" in o155b.getvalue()  # 실행마다 1개 → 다음 실행에 E
+time.time = lambda: TK("2026-11-06 14:10"); H.RUN["ch_last"] = 0; s155["bundles"] = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.day_deals(s155)
+assert len(tg155) == 2  # 하루 1번(A·E 끝) · B 9% · C 옵션 모름 · D 다른 구성 · 다른 tag = X
+ph155 = json.load(open(S.PRICE_HIST)); ph155["111:901"][-1] += ["26110708", 2]; json.dump(ph155, open(S.PRICE_HIST, "w"))
+time.time = lambda: TK("2026-11-07 10:00"); H.RUN["ch_last"] = 0; s155["bundles"] = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.day_deals(s155)
+assert len(tg155) == 2  # 다음 날 같은 가격 = 다시 X(더 내려갔을 때만)
+ph155["111:901"].append(["26110709", 8500, "", "api"]); json.dump(ph155, open(S.PRICE_HIST, "w"))
+with contextlib.redirect_stdout(io.StringIO()):
+    H.day_deals(s155)
+assert len(tg155) == 3 and "8,500원" in H.plain_of(tg155[2]["text"]) and "🍫 빼빼로데이 특가 D-4" in H.plain_of(tg155[2]["text"])  # 더 내려감 = 다음 날 다시
+ph155["111:901"].append(["26111109", 7000, "", "api"]); json.dump(ph155, open(S.PRICE_HIST, "w"))
+time.time = lambda: TK("2026-11-11 10:00"); H.RUN["ch_last"] = 0; s155["bundles"] = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.day_deals(s155)
+assert len(tg155) == 3  # 기념일 당일 X
+assert "price_track, day_deals," in open(H.__file__, encoding="utf-8").read()
+(H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.http, H.th_text, _, _, S.EVENTS) = sv155; H.E.clear(); H.E.update(sv155[8]); H.RUN.clear(); H.RUN.update(sv155[9]); os.chdir(cwd155)
