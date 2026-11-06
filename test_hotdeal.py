@@ -8764,7 +8764,7 @@ json.dump([], open("ev77.json", "w")); json.dump([], open("posts.json", "w")); H
 for k77, v77 in (("TOSS_ACCESS_KEY", "ak"), ("TOSS_SECRET_KEY", "sk"), ("TOSS_PUBLISHER_ID", "pub-1")): H.E.setdefault(k77, v77)
 H.tg = lambda m, **p: s77t.append((m, p)) or {"message_id": 770 + len(s77t)}
 H.ai_pick = lambda prompt, lines: s77p.append(lines) or [{"i": 0, "score": 6, "comment": "가"}, {"i": 1, "score": 6, "comment": "나"}]
-H.th_bundle, H.busy, H.toss_photo = (lambda seen, kind, text, link=None, image=None: s77b.append((kind, text))), (lambda seen, cap=True: False), (lambda x: None)
+H.th_bundle, H.busy, H.toss_photo = (lambda seen, kind, text, link=None, image=None, topic=None: s77b.append((kind, text))), (lambda seen, cap=True: False), (lambda x: None)
 H.TH_TOSS_KINDS, H.TH_LIST_HOURS, H.TH_TOSS_FILL = ("best", "cat"), (12, 15, 18), ("day",)
 s77 = {}; time.time = lambda: TK("2026-10-26 12:05")
 with contextlib.redirect_stdout(io.StringIO()) as o77:
