@@ -1756,7 +1756,7 @@ assert l1.count('class="g"') == 20 and l2.count('class="g"') == 5 and not os.pat
 assert f'href="{S.BASE}c/life/2/" rel="next">다음 20개 보기 →' in l1 and f'href="{S.BASE}c/life/" rel="prev">← 이전 20개' in l2 and f'<link rel="canonical" href="{S.BASE}c/life/2/">' in l2 and "<title>생필품 특가 모음 2쪽 (" in l2  # 쪽마다 제 주소 canonical·다른 제목
 assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네이버 캐러셀: 항목마다 진짜 상품 사진)
 sm6 = open("docs6p/sitemap.xml").read()
-assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and "c/women/" not in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
+assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" not in sm6 and 'content="noindex,follow"' in open("docs6p/c/life/2/index.html").read() and "c/women/" not in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
 assert {d[:-5] for d in os.listdir("docs6p/c") if d.endswith(".html") and d != "index.html"} <= set(S.REC_KEEP)  # 기록 쪽 = 있던 품목(REC_KEEP)만(TT-2 — 0개 = 안내 쪽)
 assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "s", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
@@ -1859,16 +1859,15 @@ sp = [{"t": f"2026-10-0{1 + k % 9} 1{k % 10}:0{k % 6}", "text": f"{H.AFF_NOTE}\n
 sp.sort(key=lambda p: p["t"]); S.build(sp, "docs8")
 assert open("docs8/robots.txt").read() == "User-agent: *\nAllow: /\n\nSitemap: https://hotdealpick.kr/sitemap.xml\n"
 rs = ET.parse("docs8/rss.xml").getroot().find("channel").findall("item")
-assert len(rs) == 30 and all("모아보기" not in i.findtext("title") for i in rs) and all(i.findtext("pubDate").endswith(" +0900") for i in rs)
+assert 0 < len(rs) <= 30 and not any("/p/" in i.findtext("link") for i in rs) and all("모아보기" not in i.findtext("title") for i in rs) and all(i.findtext("pubDate").endswith(" +0900") for i in rs)
 rc8 = [i for i in rs if "/c/" in i.findtext("link")]  # 10/24 N1 '품목 쪽 RSS에': 타일 품목 1쪽 = 날짜 붙은 제목·guid(날마다 새 글) — 오늘의 픽 다음, 딜 앞
 assert [i.findtext("link") for i in rs[1:1 + len(rc8)]] == [i.findtext("link") for i in rc8] == ["https://hotdealpick.kr/c/life/"] and rc8[0].findtext("title") == f"생필품 특가 모음 ({int(td[5:7])}/{int(td[8:10])})" \
-    and rc8[0].find("guid").get("isPermaLink") == "false" and rc8[0].findtext("guid") == f"c-life-{td}" and rs[2].findtext("link").startswith("https://hotdealpick.kr/p/")
-assert rs[0].findtext("link") == f"https://hotdealpick.kr/today/{td}/" and rs[0].findtext("title").startswith(f"오늘의 픽 {int(td[5:7])}월 {int(td[8:10])}일 — 휴지") and rs[0].findtext("description").startswith("핫딜픽이 고른 오늘의 특가 1. [쿠팡] 휴지")
-assert rs[2].findtext("description") == "싸요 & 좋아요 💡 단위가격 롤당 663원" and rs[2].findtext("title").startswith("[쿠팡] 휴지")
+    and rc8[0].find("guid").get("isPermaLink") == "false" and rc8[0].findtext("guid") == f"c-life-{td}"  # 11/7: RSS = 색인 남기는 쪽만(p X)
+assert rs[0].findtext("link") == f"https://hotdealpick.kr/today/{td}/" and rs[0].findtext("title").startswith(f"오늘의 픽 {int(td[5:7])}월 {int(td[8:10])}일 — 휴지") and "<p>핫딜픽이 고른 오늘의 특가 1개<br>1. 휴지" in rs[0].findtext("description")  # 11/7 진우: 요약 줄(CDATA) · 딜 쪽(p) = RSS X
 sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"; locs = [u.findtext(ns + "loc") for u in sm]
 assert all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09" and locs[1] == "https://hotdealpick.kr/c/toilet-paper.html" and len(set(locs)) == len(locs)  # +1 = 화장지 최저가 기록(10/17)
 hot8 = {f"{S.BASE}p/{i}.html" for i, h in S.home_pool(sp, sorted({p["t"][:10] for p in sp if not p["text"].startswith("📋")}, reverse=True)).items() if h[0] == 0}
-assert f"https://hotdealpick.kr/today/{td}/" not in locs and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and not {u for u in locs if "/p/" in u} and 0 < len(hot8) < 34  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
+assert sum("/today/" in u for u in locs) <= 1 and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and not {u for u in locs if "/p/" in u} and 0 < len(hot8) < 34  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
 td8 = open(f"docs8/today/{td}/index.html").read()
 assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og-v4.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
 d8 = open("docs8/p/0.html").read()
@@ -3481,7 +3480,7 @@ d13 = tempfile.mkdtemp(); os.makedirs(f"{d13}/c"); open(f"{d13}/c/old.html", "w"
 l13 = {f: "noindex" in open(f"{d13}/c/{f}").read() for f in os.listdir(f"{d13}/c") if f.endswith(".html")}
 assert sorted(f for f, x in l13.items() if not x) == ["index.html", "ramen.html", "water.html"] and {f for f, x in l13.items() if x} == {f"{k}.html" for k in S13.REC_KEEP} - {"ramen.html", "water.html"} and os.path.isdir(f"{d13}/c/life")  # 기록 3개↑ 품목 + 있던 기록 쪽(REC_KEEP — TT-2: 생수 2개도 쪽 그대로 · 0개 = 안내 쪽 noindex) · 옛 페이지 지움(목록 쪽 폴더·카테고리 쪽은 그대로)
 c13, sm13, ix13 = (open(f"{d13}/{f}").read() for f in ("c/ramen.html", "sitemap.xml", "index.html"))
-assert "<title>라면 최저가 기록 — 개당 가격 | 핫딜픽</title>" in c13 and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
+assert re.search(r"<title>라면 개당 가격 비교 — 최저가 기록 \d+개 \| 핫딜픽</title>", c13) and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
 assert "진라면" not in c13 and "toss.shopping" not in c13 and "컵누들" not in c13 and "냄비" not in c13 and 'href="https://hotdealpick.kr/c/toss/">토스 특가 모음 보기' in c13  # 토스 행 X(링크 한 줄만)
 assert c13.count("<tr") == 4 and "<td>10/12</td><td>쿠팡</td>" in c13 and 'href="https://hotdealpick.kr/p/1.html">신라면 5개</a></td><td>2,400원</td><td>480원</td>' in c13 and "평균 · 기록 3개" in c13 and "<b>579원</b>" in c13
 assert re.findall(r"<loc>[^<]*/c/([^<]*\.html)</loc>", sm13) == ["ramen.html", "water.html"] and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
@@ -10379,7 +10378,7 @@ assert "줄 세웠어요(단위가 다르거나 없는 상품은 뒤에) · 가�
 assert re.findall(r'p/(\d+)\.html">([^<]+)<', tb97) == [("3", "고향 호두아몬드 율무차 18g 110개입"), ("2", "곰곰 율무차 18g 50개입"), ("5", "담터 율무차 18g 50개입"), ("4", "오뚜기 율무차 분말 1kg")] \
     and "<small>10/26 23시 확인</small></td><td>9,900원</td><td>1봉 135원</td>" in tb97 and "자연생각" not in tp97 and "toss.im" not in tp97  # 단위가 싼 순(가장 많은 단위 '봉' 먼저 · 100g = 뒤) · tag로 채움 · 일시 품절·토스 X
 assert sm97[:2] == [S.BASE, f"{S.BASE}c/t/yulmu-tea.html"] and f'<a href="{S.BASE}c/t/yulmu-tea.html">율무차</a>' in open("docs/c/coffee/index.html").read() and 'aria-label="주제별 비교"' in open("docs/c/index.html").read()  # 사이트맵 앞 · 칸·/c/ 링크
-assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (2, 3, 4, 5, 12, 13, 14)} and not any(x in u for u in sm97 for x in (f"{S.BASE}today/", "all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
+assert {u for u in sm97 if "/p/" in u} == {f"{S.BASE}p/{i}.html" for i in (2, 3, 4, 5, 12, 13, 14)} and sum(f"{S.BASE}today/" in u for u in sm97) <= 1 and not any(x in u for u in sm97 for x in ("all.html", "/link/", "steady.html"))  # 진행 중 🔥만(⏳ 대기 5·10 · 일시 품절 6 · 끝난 0·11 X) · 날짜·지난 딜·프로필 쪽 X
 ni97 = {i for i in range(len(po97)) if 'content="noindex' in open(f"docs/p/{i}.html").read()}
 assert ni97 == {0, 1, 6, 7, 8, 9, 10, 11}, ni97  # 끝난 딜·일시 품절 = noindex · 11/7 값어치(주제 쪽 등) 없는 딜 = noindex,follow(주제 상품 2~5·12~14 = 색인 — ⏳ 대기 5도)
 # 9-167 (11/7 진우 '구글 노출 늘리기' 3건 + Cowork 덧붙임 · 'RSS에 사진·요약'): 사이트맵·RSS·noindex 안 어긋남 · 상품 사진 alt = 상품명 · 주제 쪽 설명 첫 낱말 = 품목 · JSON-LD

@@ -3404,7 +3404,8 @@ def build(posts, out="docs"):
         write(out, f"today/{d}/", page(f"오늘의 픽 — {mdk} {malls} 특가 | {TITLE}", f'<h1 class="h">오늘의 픽 · {mdk}</h1>' + (pick_section(d, dps, True) or '<p class="t">이날 고른 상품은 지금 진열에서 빠졌어요.</p>') + nav
                                        + top4("fire", "hot", "🔥 지금 특가", top(ls["hot"][2]), {i for i, _, _ in dps}), f"{mdk} 핫딜픽 오늘의 픽 — {names}"[:150], f"{BASE}today/{d}/",
                                        head=ld_tag(ld), kind="article", cur="home"))  # og = 기본 그림 OG_IMG(인스타 카드는 다른 5개 딜이라 X)
-        # 날짜 쪽 = 사이트맵 X(TT-2 ① — 사이트맵 = 홈·주제·칸·기록·진행 중 딜)
+        if d == day and dps:  # 날짜 쪽 = 사이트맵 X(TT-2 ①) · 11/7 Cowork(네이버 하루 1~2쪽): 오늘 날짜 쪽 1개만 사이트맵(RSS·IndexNow 허브 — 지난날 = X)
+            urls.append((f"{BASE}today/{d}/", d))
     try:
         plinks = json.load(open(PROMO_LINKS))
     except (OSError, ValueError):
@@ -3493,7 +3494,7 @@ def build(posts, out="docs"):
     md = f"{int(today[5:7])}/{int(today[8:10])}"
     nm = lambda p: parse(title_of(p["text"]))[1]
     unit1 = lambda xs: next((f"{u[0].split('당')[0]}당 값 1위 {nm(p)} {re.sub(r'원꼴$', '원', u[0].split(' ')[-1])}" for p in xs if shop_of(p) != "toss" and (u := unit_pair(p))), "")
-    rss = [(f"오늘의 픽 {int(day[5:7])}월 {int(day[8:10])}일", f"{BASE}today/{day}/", [f"핫딜픽이 고른 오늘의 특가 {len(ps)}개"] + [f"{n}. {nm(p)}" for n, (_, p, _) in enumerate(ps, 1) if shop_of(p) != "toss"] + [f"{int(day[5:7])}/{int(day[8:10])} 확인"],
+    rss = [(f"오늘의 픽 {int(day[5:7])}월 {int(day[8:10])}일 — " + " · ".join(nm(p) for _, p, _ in ps if shop_of(p) != "toss"), f"{BASE}today/{day}/", [f"핫딜픽이 고른 오늘의 특가 {len(ps)}개"] + [f"{n}. {nm(p)}" for n, (_, p, _) in enumerate(ps, 1) if shop_of(p) != "toss"] + [f"{int(day[5:7])}/{int(day[8:10])} 확인"],
             f"{day} {PICK_HOUR:02d}:00", "", [p for _, p, _ in ps])] if ps and day else []  # 10/24 N1: 오늘의 픽 날짜 쪽 = RSS 첫 글(매일 새 글)
     rss += [(f"{CAT_META[k][1]} 특가 모음 ({md})", c_url(CAT_META[k][0]), [f"{CAT_META[k][1]} 특가 {len(ls[CAT_META[k][0]][2])}개 모음", " · ".join([nm(p) for _, p, _ in ls[CAT_META[k][0]][2][:PER] if shop_of(p) != "toss"][:3]), unit1([p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]), f"{md} 업데이트"],
              f"{today} 00:00", f"c-{CAT_META[k][0]}-{today}", [p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]) for k in TILES if ls[CAT_META[k][0]][2]]  # 10/24 N1: 타일 8칸 1쪽 = 날마다 새 글(guid에 날짜)
