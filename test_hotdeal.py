@@ -3281,7 +3281,7 @@ del H.E["THREADS_TOKEN"], H.E["IG_TOKEN"], H.E["IG_USER_ID"]; time.time = lambda
 d10 = json.load(open(H.METRICS)); assert list(d10) == ["2026-10-16", "2026-10-14"] and d10["2026-10-16"]["miss"] == {"tg": "채널 웹에서 그날 글 0개(페이지 모양 바뀜?)", "th": "THREADS_TOKEN 없음", "ig": "IG_TOKEN·IG_USER_ID 없음"}
 json.dump({f"2026-09-{d:02d}": {"at": "", "miss": {}, "rows": []} for d in range(1, 21)}, open(H.METRICS, "w")); H.metrics({})
 assert list(json.load(open(H.METRICS)))[:2] == ["2026-10-16", "2026-09-20"] and len(json.load(open(H.METRICS))) == H.METRICS_KEEP == 14
-assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)
+assert H.tg_num("1.2K") == 1200 and H.tg_num("15") == 15 and H.tg_num("2M") == 2000000 and "th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day):" in inspect.getsource(H.main)
 wf10 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read(); assert "git add metrics.json" in wf10 and "METRICS_DAY: ${{ inputs.metrics_day }}" in wf10 and "metrics_day:" in wf10
 os.remove(H.METRICS); json.dump([], open("posts.json", "w")); H.http, time.time, H.POSTS = sv10
 # 9-12) 10/15 23:40 진우 '날씨·계절 추천 · 간식 · 일상(정직하게)': Open-Meteo 하루 1번 캐시 → 7:30 날씨 글·15:30 간식 3(채널 + Threads), 20:30 운영 일지(Threads, 사실만·금지어 X),
@@ -10950,7 +10950,7 @@ json.dump([{"t": "2026-10-28 10:00", "text": "a", "url": B2}, {"t": "2026-10-29 
 H.RUN["cpsub"] = [0]; cc108.clear(); H.cp_sub_site({})
 assert cc108 == [("POST", "/deeplink", {"coupangUrls": [R1], "subId": "site"})]  # B2 = site 이미 있음 · 진우 링크 X
 H.cp_sub_site({}); assert len(cc108) == 1  # 다 됨 = 호출 X
-assert "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
+assert "trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day)" in inspect.getsource(H.main)  # 실행 끝(남은 몫)
 S.SITE_SUB = S.site_subs(); assert S.SITE_SUB == {B1: "https://link.coupang.com/a/site11112", B2: "https://link.coupang.com/a/site222"}
 pg108 = S.page("t", f'<a class="buy" href="{B1}">사러 가기</a><a href="{JW}">진우</a><a href="{B2}">2</a>')
 assert 'href="https://link.coupang.com/a/site11112"' in pg108 and f'href="{JW}"' in pg108 and B1 not in pg108 and "site222" in pg108
@@ -11004,7 +11004,7 @@ r109, p109 = S109.rev_pids("docs")
 assert r109["777"]["text"] == TX109 and p109[L109] == "777"
 rb109 = S109.rev_box({"url": L109}, r109, p109)
 assert '<h2 id="rvh">구매후기 요약 (10/30 기준)</h2>' in rb109 and "별점 5점이 82%예요<br>&#x27;두께&#x27; 설문은" in rb109 and S109.rev_box({"url": "https://link.coupang.com/a/x"}, r109, p109) == ""
-assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
+assert "rev_box(p, revs, rpids)" in inspect.getsource(S109.build) and "trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day)" in inspect.getsource(H.main) and '["th_hook5", "cp_subid"]' in inspect.getsource(H.metrics_rows) and H.TH_HOOK_FROM == "2026-10-30"  # 2주 비교 기준 날
 (time.time, H.tg, H.http, H.th_img, H.th_post, H.th_reply, H.EVENTS, e109, H.CHANNEL, H.ADMIN, H.th_topic) = sv109; H.E.clear(); H.E.update(e109); os.chdir(cwd109)
 # 9-110) 힘 준 글(10/30 진우 — '7은 편하게 3은 힘을 주자 · 첫 20분 댓글'): events 큐레이션 "power" = 시각에 Threads(사진 + 본문) · 관리봇 DM 1번(글 주소) · 20분 동안 다른 Threads 글 0
 #        (개별 th_solo X · 묶음 = 줄에 두고 th_retry가 20분 뒤 · 다른 큐레이션 Threads = 뒤로 — 텔레그램 채널은 그대로) · metrics kind power + 48시간 조회·답글(chat_48)
@@ -11132,7 +11132,7 @@ assert o112.getvalue() == "" and json.load(open("price_hist.json")) == ph112  # 
 json.dump({"at": "2026-10-30 05:00", "urls": [U112("E")]}, open("gc_top.json", "w"))
 nm112 = {U112(k): "x" for k in "ABE"}
 assert H.ph_prio({}, json.load(open("posts.json")), nm112) == {U112("B"), U112("E")}  # 👍 꾸준템(B) + 최근 7일 많이 본(E) · A = 식품 칸(추적 우선 X)
-assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)
+assert "t[1] not in pd" in inspect.getsource(H.cp_price) and "3일 안 확인" in inspect.getsource(H.cp_price) and 'cp_api_prices(seen, allg, "gold")' in inspect.getsource(H.goldbox) and "cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day):" in inspect.getsource(H.main)
 d112 = tempfile.mkdtemp()
 json.dump({"77:I1": [["26102009", 10000, "", "post"], ["26102509", 12000, "", "cw"], ["26103009", 10200, "", "api"]], "77:I2": [["26102509", 19900, "", "cw"]],
            "80:I5": [["26102310", 9000, "", "cw"], ["26102909", 8000, "", "cw"]]}, open("price_hist.json", "w"))
@@ -11478,7 +11478,7 @@ json.dump([], open("posts.json", "w"))
 with contextlib.redirect_stdout(io.StringIO()):
     tp0(s119)
 assert not os.path.exists(f119) and s119["thpic"]["m"] == {}  # 14일 지난 그림 지움
-assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, th_pics, toss_guard_day):" in inspect.getsource(H.main)  # 캐러셀 그대로
+assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, dday_deals, th_pics, toss_guard_day):" in inspect.getsource(H.main)  # 캐러셀 그대로
 (time.time, H.http, H.th_get, H.POSTS) = sv119; os.chdir(cwd119)
 # 9-120) 이름 막기(10/30 진우 규칙 — 분유 광고 X(조제분유·성장기용 조제유) · 기저귀는 아기용만): NAME_BLOCK 한 곳 — 쿠팡·토스 API 목록·커뮤니티 딜·쿠팡 진열 후보·재게시·5개가 같이 봄
 #   · 진열 자동(이관 A)만 SHELF_BLOCK(+성인) · 막으면 로그 1줄(실행마다 같은 이름 1번) · 이미 events에 있는 건 그대로
@@ -11865,7 +11865,7 @@ sv127 = (H.TOSS_GUARD, time.time, urllib.request.urlopen, H.TOSS_NO_CMP, H.POSTS
 d127, cwd127 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d127)
 src127 = open(H.__file__, encoding="utf-8").read()
 assert "TOSS_GUARD, URL_ANY = True," in src127 and ', 5, False, 6, True  # 10/31 진우: 하루 생필품' in src127 and "NN_TOSS, NN_HOLD = \"11:30\", \"09:00\", 3, (3, 5), 0," in src127  # 실제 값: 검사 켬 · 섞인 묶음 토스 X · 품목 묶음 토스 칸 0
-assert "    url, body = toss_req(url, body, method)" in src127 and "price_track, th_pics, toss_guard_day):" in src127  # 보내기 직전(http) · 하루 요약 = 단계 맨 끝
+assert "    url, body = toss_req(url, body, method)" in src127 and "price_track, dday_deals, th_pics, toss_guard_day):" in src127  # 보내기 직전(http) · 하루 요약 = 단계 맨 끝
 H.TOSS_GUARD, H.TOSS_NO_CMP, H.tg, H.http, H.TOSS_PAUSE = True, True, tg_real, http_real, PAUSE0  # 진짜 tg·http(보내기 직전 검사) · 실제 점검 기간
 time.time = lambda: TK("2026-11-06 12:00")
 N127, W127, TL127, CL127 = H.TOSS_NOTE, "⚠️ 11/6 12:00 게시 시점 가격", "https://toss.shopping/_m/G1", "https://link.coupang.com/a/G2"
