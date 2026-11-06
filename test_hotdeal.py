@@ -34,6 +34,7 @@ dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 �
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
+TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
 saff0, S0.SITE_AFF_ONLY = S0.SITE_AFF_ONLY, False  # 예전 사이트 셀프체크는 가짜 주소(https://buy 등) 그대로 — 사이트 링크 규칙 ①②③(10/25 20:3x Cowork 최종)은 맨 아래 9-65에서
 lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
 vc0, (H.TH_VOICE, H.TH_GAP_JITTER) = (H.TH_VOICE, H.TH_GAP_JITTER), (False, 0)  # 예전 Threads 셀프체크는 지금 틀·45분 그대로 — 사람 느낌 글·간격 흔들기(10/21 밤)는 맨 아래 9-24에서
@@ -6011,7 +6012,7 @@ S40.TOSS_API_SITE = True; S40.build(po47, "site"); tz47 = open("site/c/toss/inde
 assert all(n in tz47 for n in names47()) and not any(f"p/{i}.html" in tz47 for i in range(1, 5)) and 'href="https://toss.im/_m/MADE20" rel="nofollow sponsored noopener"' in tz47 and "⭐" not in tz47  # 사이트 💙 토스 쪽에 진열(리뷰 X)
 S40.build(po47, "site"); assert not any(n in open("site/c/toss/index.html").read() for n in names47())  # 스위치 끔(지금) = 사이트 X
 H.toss, H.HAS_TOSS, H.tg, time.time = sv47[:4]; H.RUN.clear(); H.RUN.update(sv47[4]); H.POSTS, H.TOSS_SITE = sv47[5:7]; os.chdir(cwd47)
-assert H.TOSS_SITE is False  # 보류 중(10/24 10시 Cowork — API 신청 범위)
+assert H.TOSS_SITE is False and TS0 == (True, True)  # 셀프체크 = 앞머리에서 끈 채 · 실제 = 켬(11/6 진우 — 10/24 보류 풀림)
 # 9-48) 쿠팡 진열 링크 변환 실패(10/24 10시 Cowork — 약 110개 중 9개 rCode 400): 진열 실패는 상품마다 DM 말고 하루 1번 묶어서(9시~, 상품 번호만) ·
 #       서로 다른 날 2번 실패한 진열 상품은 다음부터 변환 시도 X(events는 그대로) · 채널 예약 실패는 지금처럼 바로 알림
 import calendar
@@ -12943,7 +12944,7 @@ H.NSET_REPOST = sv152np
 # 9-153 (11/5 진우 Q·R): Q 토스 API 상품 사이트 진열 = 스위치 뒤 준비만(TOSS_SITE = build_site.TOSS_API_SITE = False — 토스 CS 승인 뒤 둘 다 켬) · 켜지면 /c/toss/ 카드만(홈·품목·검색·딜 쪽·사이트맵·알림 X)
 #   · 가격 1일 안(글 24시간 안 또는 1일 안 확인에 같은 가격) 넘으면 내림 · 사진 = 토스 원본 주소 + '사진: 토스쇼핑' · 맨 위 토스 대가성 문구·게시 시점 줄·다른 몰 이름 X · toss_noimg(판매자 요청) 즉시 내림
 #   · Q② 미리보기 1장(PNG — 공개 X) 관리봇 1번 / R 매일 12:20 '토스 링크 만들 거리' 10개 관리봇 DM + 07:00 toss_list.json check 줄
-assert H.TOSS_SITE is False and S.TOSS_API_SITE is False  # 스위치 = 둘 다 끔(켤 땐 같이)
+assert TS0 == (True, True) and H.TOSS_SITE is False and S.TOSS_API_SITE is False  # 실제 = 둘 다 켬(11/6 진우 · 켤/끌 땐 같이) · 셀프체크 = 앞머리에서 끈 채
 cwd153, d153 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d153)
 sv153 = (H.POSTS, H.toss, H.HAS_TOSS, H.tg, time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG, H.TOSS_LIST, H.subprocess.run, H.tg_video, H.pw_ready)
 H.POSTS, N153 = "posts.json", TK("2026-11-06 12:30")
@@ -13318,3 +13319,34 @@ assert len(tg157) == 1, tg157  # 쿠팡 큐레이션 = 그대로(토스 글만 �
 (H.EVENTS, S.EVENTS, S.AUTO_EVENTS, H.tg, H.http, _, time.time, _, H.TOSS_GAP) = sv157b; H.E.clear(); H.E.update(sv157b[5]); H.RUN.pop("tgmall", None); H.RUN.pop("thmall", None); H.RUN.update(sv157b[7])
 for f in ("ev157.json", "ae157.json"):
     os.remove(f)
+
+# 9-158 (11/6 20시대 진우 결정 Q 켜기 — TOSS_SITE = build_site.TOSS_API_SITE = True, Cowork가 문서 위험 설명 뒤 '그래도 켜기'): 켜도 Q 장치 그대로(9-153 — 1일 안 재확인·넘으면 내림 · 토스 원본 사진 + '사진: 토스쇼핑' ·
+#   맨 위 토스 문구·게시 시점 줄·다른 몰 이름 X · /c/toss/ 카드만 · toss_noimg 즉시 내림) · 빌드 로그 1줄 'toss api site 사이트 N개 · 1일 넘어 내림 M개' · 끄면(False) 다음 빌드 1번에 API 상품 다 빠짐
+assert TS0 == (True, True)  # 실제 스위치 = 둘 다 켬(켤/끌 땐 같이)
+assert "toss_noimg()" in inspect.getsource(H.toss_site) and "toss_why(" in inspect.getsource(H.toss_site) and "tapi_ok" in inspect.getsource(S.lists) and "if not (TOSS_SITE and HAS_TOSS)" in inspect.getsource(H.toss_shelf)
+sv158 = (time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG); cwd158, d158 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d158)
+N158 = TK("2026-11-06 21:00")
+X158 = lambda i, n: {"tacaItemId": i, "tacaId": 100 + i, "displayName": n, "displayPrice": 5900, "discountRate": 20, "reviewCount": 0, "isSoldOut": False}
+def T158(x, when):
+    body = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", x["displayName"], H.toss_price(x), [H.toss_when(when)])
+    return H.html_ents(H.ad_head(H.TOSS_NOTE, H.plain_of(body)) + body)[0]
+pp158 = [{"t": w, "text": T158(X158(i, n), w), "url": f"https://toss.shopping/_m/Q{i}", "own": 1, "shelf": 1, "tid": i}
+         for i, n, w in ((1, "새벽물개젤리 158팩", "2026-11-06 20:00"), (2, "어제수달비누 158개", "2026-11-05 15:00"), (3, "요청너구리컵 158개", "2026-11-06 20:00"))]
+pp158.append({"t": "2026-11-06 11:00", "text": "🔥 [쿠팡] 쿠팡 세제 3L (9,900원)", "url": "https://link.coupang.com/a/CP158", "own": 1, "shelf": 1})
+json.dump({"tossid": {"m": {}}}, open("seen.json", "w")); open("toss_noimg.txt", "w").write("3  # 판매자 요청\n")
+def b158():
+    shutil.rmtree("o158", ignore_errors=True)
+    with contextlib.redirect_stdout(io.StringIO()) as o:
+        S.build([dict(p) for p in pp158], "o158")
+    hit = {n: sorted(os.path.relpath(os.path.join(r, f), "o158") for r, _, fs in os.walk("o158") for f in fs if f.endswith((".html", ".json", ".xml", ".txt")) and n in open(os.path.join(r, f), encoding="utf-8", errors="ignore").read())
+           for n in ("새벽물개젤리", "어제수달비누", "요청너구리컵")}
+    return hit, o.getvalue()
+time.time = lambda: N158
+S.TOSS_API_SITE = True
+hit158, log158 = b158()
+assert hit158 == {"새벽물개젤리": ["c/toss/index.html"], "어제수달비누": [], "요청너구리컵": []}, hit158  # 1시간 전 글 = 토스 몰 쪽만 · 30시간 전(재확인 X) = 내림 · 판매자 요청 = 내림
+assert "toss api site 사이트 1개 · 1일 넘어 내림 1개" in log158, log158  # 판매자 요청은 '1일 넘어'로 안 셈
+S.TOSS_API_SITE = False  # 끄는 길: 다음 빌드 1번에 다 빠짐 · 로그 줄 X
+hit158, log158 = b158()
+assert hit158 == {"새벽물개젤리": [], "어제수달비누": [], "요청너구리컵": []} and "toss api site" not in log158 and "쿠팡 세제" in open("o158/index.html", encoding="utf-8").read(), (hit158, log158)
+(time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG) = sv158; os.chdir(cwd158); shutil.rmtree(d158, ignore_errors=True)

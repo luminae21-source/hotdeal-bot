@@ -1113,7 +1113,7 @@ def bundle_live(posts, now_ts):
 
 TOSS_SITE_IMG, TOSS_NOIMG_FILE, SEEN_FILE, PHOTO_CREDIT = True, "toss_noimg.txt", "seen.json", "사진: 토스쇼핑"  # 11/5 Cowork A①(토스 고객센터 답 — 쉐어링크 웹 상품 썸네일 원본 = 웹사이트도 OK · 크롭·합성·글자 X)
 TIMG = {}  # 빌드 때 seen 캐시에서(posts.json 등 공개 파일 X): 진우 토스 쉐어링크 상품 주소 -> 썸네일 원본 주소
-TOSS_API_SITE = False  # Q 11/5 = hotdeal.TOSS_SITE(셀프체크로 같게 — 켤 땐 둘 다): 토스 API 상품 글(tid)을 /c/toss/ 카드에 — 진우가 토스 CS 승인 받은 뒤(쉐어링크 API 문서: API 가격 커머스형 나열 X·캐시·노출 = 개별 승인)
+TOSS_API_SITE = True  # 11/6 진우 결정으로 켬(hotdeal.TOSS_SITE 주석 — 끄면 다음 빌드 1번에 API 상품 다 빠짐) · Q 11/5 = hotdeal.TOSS_SITE(셀프체크로 같게 — 켤/끌 땐 둘 다): 토스 API 상품 글(tid)을 /c/toss/ 카드에 — 진우가 토스 CS 승인 받은 뒤(쉐어링크 API 문서: API 가격 커머스형 나열 X·캐시·노출 = 개별 승인)
 TOSSM = {}  # 빌드 때 seen tossid m(hotdeal.own_end 확인 기록 [그룹 id, _, 확인 시각, ok/out, _, 가격, _, 옵션 id, 사진] — 공개 파일 X)
 
 
@@ -3406,6 +3406,9 @@ def build(posts, out="docs"):
         f'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>{TITLE}</title><link>{BASE}</link><description>쿠팡·토스·네이버 생필품·식품·화장품 특가를 매일 골라 정리해요</description><language>ko</language>'
         + "".join(f'<item><title>{html.escape(t)}</title><link>{u}</link>' + (f'<guid isPermaLink="false">{g}</guid>' if g else f"<guid>{u}</guid>") + f'<description>{html.escape(d)}</description>'
                   f'<pubDate>{time.strftime("%a, %d %b %Y %H:%M:00 +0900", time.strptime(w, "%Y-%m-%d %H:%M"))}</pubDate></item>' for t, u, d, w, g in rss) + "</channel></rss>")
+    if TOSS_API_SITE:  # 11/6 Q 켬: 사이트에 올라간 토스 API 상품 수 · 가격 확인 1일 넘어 내린 수(다른 조건은 다 맞는데 1일만 넘은 것) — 수만(가격·이름 X)
+        tp = [p for p in posts if p.get("tid")]
+        print("toss api site", f"사이트 {sum(1 for _, p, _ in ls.get('toss', ('', '', []))[2] if p.get('tid'))}개 · 1일 넘어 내림 {sum(not tapi_ok(p) and tapi_ok(p, calendar.timegm(time.strptime(p['t'][:16], '%Y-%m-%d %H:%M')) - 9 * 3600) for p in tp)}개")
     return len(posts)
 
 
