@@ -13370,13 +13370,14 @@ assert H.chat_stk_for({}, ["햅쌀 철이에요"], "home", "", TK("2026-12-06 13
 H.STK_DIR = sv159; shutil.rmtree(d159, ignore_errors=True)
 
 # 9-160 (11/6 22시대 진우 '이거 풀고 하자' — 브랜치 배포 deploy 10분 제한 3번 연속): .github/workflows/pages.yml = GitHub Actions 배포(docs artifact + deploy-pages 30분) · 겹치면 앞 것 취소
-#   · hotdeal 실행 끝(workflow_run)에 새 커밋 있을 때만 · Source가 'GitHub Actions'가 아니면(build_type ≠ workflow) 건너뜀 = 바꾸기 전엔 지금 브랜치 배포 그대로 · hotdeal.yml 캐시 경로 그대로
+#   · hotdeal 실행이 사이트 커밋을 올렸을 때만(hotdeal.yml 끝 단계가 gh workflow run — 11/6 13:32Z workflow_run 안 옴) · Source가 'GitHub Actions'가 아니면(build_type ≠ workflow) 건너뜀 = 바꾸기 전엔 지금 브랜치 배포 그대로 · hotdeal.yml 캐시 경로 그대로
 RD160 = os.path.dirname(os.path.abspath(H.__file__))
 pg160 = open(os.path.join(RD160, ".github/workflows/pages.yml"), encoding="utf-8").read()
-for k in ("workflows: [hotdeal]", "types: [completed]", "cancel-in-progress: true", "pages: write", "id-token: write", '--jq .build_type', '"$bt" != "workflow"', '"$head" = "$RUN_SHA"',
+for k in ("workflow_dispatch:", "cancel-in-progress: true", "pages: write", "id-token: write", '--jq .build_type', '"$bt" != "workflow"',
           "actions/upload-pages-artifact@v3", "path: docs", "actions/deploy-pages@v4", "timeout: 1800000", "name: github-pages", "if: needs.check.outputs.go == 'true'"):
     assert k in pg160, k
 hd160 = open(os.path.join(RD160, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert "workflow_run:" not in pg160 and "actions: write" in hd160 and 'echo "pushed=1" >> "$GITHUB_OUTPUT"' in hd160 and "if: ${{ steps.site.outputs.pushed == '1' }}" in hd160 and 'gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main' in hd160  # 11/6 13:32Z workflow_run 안 옴 -> hotdeal이 사이트 커밋 뒤 직접 부름
 assert "path: |\n            seen.json\n            fonts\n            toss.json\n            music\n" in hd160 and "path: animals\n" in hd160 and "pages" not in hd160.split("jobs:")[0]  # 캐시 경로 그대로 · hotdeal.yml 안 건드림
 
 # 9-161 (11/6 22:2x Cowork 버그 — 기존 규칙 그대로): 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(TOSS_EFFECT·AUTO_CLAIM·분유·성인) — '쿠잉 주름펴기 HSI-1500GW'가 올라갔던 것
