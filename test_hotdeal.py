@@ -13368,3 +13368,13 @@ assert H.chat_stk_for({}, ["오늘 장바구니엔 뭐 담으셨어요?"], "home
 assert H.chat_stk_for({}, ["컵라면 vs 봉지라면"], "quiz", "rice", N159)[0] == "ramen" and H.chat_stk_for({}, ["오늘 퀴즈"], "quiz", "rice", N159)[0] == "rice"  # 글 속 낱말 먼저 · 없으면 퀴즈 품목
 assert H.chat_stk_for({}, ["햅쌀 철이에요"], "home", "", TK("2026-12-06 13:12"))[0] == "chat"  # STK_MONTHS(쌀 = 9~11월) 그대로
 H.STK_DIR = sv159; shutil.rmtree(d159, ignore_errors=True)
+
+# 9-160 (11/6 22시대 진우 '이거 풀고 하자' — 브랜치 배포 deploy 10분 제한 3번 연속): .github/workflows/pages.yml = GitHub Actions 배포(docs artifact + deploy-pages 30분) · 겹치면 앞 것 취소
+#   · hotdeal 실행 끝(workflow_run)에 새 커밋 있을 때만 · Source가 'GitHub Actions'가 아니면(build_type ≠ workflow) 건너뜀 = 바꾸기 전엔 지금 브랜치 배포 그대로 · hotdeal.yml 캐시 경로 그대로
+RD160 = os.path.dirname(os.path.abspath(H.__file__))
+pg160 = open(os.path.join(RD160, ".github/workflows/pages.yml"), encoding="utf-8").read()
+for k in ("workflows: [hotdeal]", "types: [completed]", "cancel-in-progress: true", "pages: write", "id-token: write", '--jq .build_type', '"$bt" != "workflow"', '"$head" = "$RUN_SHA"',
+          "actions/upload-pages-artifact@v3", "path: docs", "actions/deploy-pages@v4", "timeout: 1800000", "name: github-pages", "if: needs.check.outputs.go == 'true'"):
+    assert k in pg160, k
+hd160 = open(os.path.join(RD160, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert "path: |\n            seen.json\n            fonts\n            toss.json\n            music\n" in hd160 and "path: animals\n" in hd160 and "pages" not in hd160.split("jobs:")[0]  # 캐시 경로 그대로 · hotdeal.yml 안 건드림

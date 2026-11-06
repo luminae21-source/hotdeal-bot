@@ -1,0 +1,66 @@
+name: pages
+# 11/6 22시대 진우 '이거 풀고 하자': 브랜치 배포(pages build and deployment)의 deploy 단계가 10분 제한(timeout 600000)에 3번 연속 걸림(12:21·12:34·12:49Z — docs 4,551개·330MB)
+# -> GitHub Actions 배포: docs 통째 artifact(upload-pages-artifact) + deploy-pages(제한 30분) · 겹치면 앞 것 취소 · hotdeal 실행이 사이트 커밋을 올린 뒤 1번
+# 켜기(1번, 진우 확인 뒤 Cowork가 화면에서): Settings → Pages → Build and deployment → Source = 'GitHub Actions'
+#   → 사용자 도메인(hotdealpick.kr)·Enforce HTTPS 그대로인지 같은 화면에서 확인 · 바꾸기 전엔 아래 check가 build_type 'legacy'(브랜치)를 보고 건너뜀 = 지금 브랜치 배포 그대로
+# 되돌리기: Source = 'Deploy from a branch'(main /docs) — 이 워크플로는 다시 건너뜀
+on:
+  workflow_run:                    # hotdeal이 GITHUB_TOKEN으로 올린 사이트 커밋은 push 트리거를 안 일으킴 -> hotdeal 실행 끝을 받음
+    workflows: [hotdeal]
+    types: [completed]
+    branches: [main]
+  push:                            # 사람(개발)이 올린 docs 커밋
+    branches: [main]
+    paths: ["docs/**"]
+  workflow_dispatch:               # Actions → pages → Run workflow (손으로 1번)
+concurrency:
+  group: pages
+  cancel-in-progress: true         # 새 사이트 커밋이 오면 앞 배포 취소 -> 마지막 것만
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      go: ${{ steps.c.outputs.go }}
+    steps:
+      - id: c
+        run: |
+          bt=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type 2>/dev/null || echo "?")
+          if [ "$bt" != "workflow" ]; then
+            echo "::notice::Pages Source = '$bt'(브랜치 배포) -> 건너뜀 · Settings → Pages → Source = 'GitHub Actions'로 바꾸면 이 배포가 맡음"
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+            head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+            if [ "$head" = "$RUN_SHA" ]; then
+              echo "::notice::hotdeal 실행이 새 커밋을 안 올림(main = $RUN_SHA) -> 건너뜀"
+              echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+  deploy:
+    needs: check
+    if: needs.check.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main                # 가장 새 사이트(대기 중에 쌓인 커밋까지)
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: dep
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000         # 30분(기본 10분에 걸려 실패하던 것)
