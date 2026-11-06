@@ -4410,6 +4410,142 @@ def new_sets(seen):
     if day != (load(NSET_FILE, {}) or {}).get("items") or (load(NSET_FILE, {}) or {}).get("d") != today:
         json.dump({"d": today, "items": day}, open(NSET_FILE, "w"), ensure_ascii=False, indent=0)  # 오늘 구성(이름·몰·상품 수·종류 — 가격 X)
 
+DAYS_FILE, DAY_LEAD, DAY_MIN, DAY_N, DAY_HOURS, DAY_GAP, DAY_REUSE_H, DAY_PLAN_H = "docs/days.json", 12, 4, (2, 4), (10, 22), 15 * 60, 72, 8  # 11/6 진우 S 'OO데이 상품은 Threads·인스타에 비정기로 · 당일 X · 최소 12일 전부터 · 노출 최소 4회'
+
+
+def day_list(today):
+    """docs/days.json(Cowork) [{name, date, from, tag, emoji}] 중 오늘 올릴 기간인 것 -> [(항목, D-N)]: 시작 = from과 date 12일 전 중 이른 날 ~ date 전날(당일·뒤 X) · 모양 틀린 항목 X."""
+    out = []
+    for d in load(DAYS_FILE, []) or []:
+        if not (isinstance(d, dict) and isinstance(d.get("name"), str) and d["name"].strip() and isinstance(d.get("tag"), str) and d["tag"].strip() and re.fullmatch(r"\d{4}-\d\d-\d\d", str(d.get("date") or ""))):
+            continue
+        day = datetime.strptime(d["date"], "%Y-%m-%d")
+        start = min([(day - timedelta(days=DAY_LEAD)).strftime("%Y-%m-%d")] + ([d["from"]] if re.fullmatch(r"\d{4}-\d\d-\d\d", str(d.get("from") or "")) else []))
+        if start <= today < d["date"]:
+            out.append((d, (day - datetime.strptime(today, "%Y-%m-%d")).days))
+    return out
+
+
+def day_plan(base, done, n):
+    """남은 날(D-n ~ D-1)마다 올릴 수 -> [오늘, 내일, …]: 기본(base(D-k)) + 모자란 몫(DAY_MIN - done - 기본 합)을 기본 0인 날 이른 순으로 먼저, 그다음 아무 날이나 이른 순으로 1개씩."""
+    plan = [base(k) for k in range(n, 0, -1)]
+    extra, order = max(0, DAY_MIN - done - sum(plan)), sorted(range(n), key=lambda i: (plan[i] > 0, i))
+    while extra > 0 and n:
+        for i in order:
+            if extra:
+                plan[i], extra = plan[i] + 1, extra - 1
+    return plan
+
+
+def day_posts(seen):
+    """S(11/6 진우 — Cowork days.json): 기념일 기간(day_list)이면 하루 1번(DAY_PLAN_H시 뒤 첫 실행) 그날 글을 정해 auto_events 큐레이션(curation()이 올림 — 텔레그램 X)으로:
+    Threads = 하루 1개(D-3~D-1 2개) · 인스타 = 이틀에 1개(D-홀수) · 기간 끝까지 DAY_MIN(4)회↑ 되게 모자란 몫을 남은 날에 더(day_plan — 이미 지난 시작일도 남은 날로).
+    상품 = 그 tag 진열(수수료 링크·판매 중·쿠팡 사진·가격 확인 48시간 안) 같은 몰끼리 2~4개 · 같은 채널 72시간 안 같은 상품 X · 진열 2개 밑 = 그날 X + 관리봇 '진열 부족 <name>' 1번.
+    Threads 시각 = 10~22시 무작위(정해진 묶음·큐레이션 시각과 15분↑ · 올릴 때 다른 글·토스 글과 15분↑ = curation day_wait) · 인스타 = 그날 남은 쿠팡 피드 칸 1개를 기념일 묶음으로(늘리지 않음).
+    글 = 대가성 문구 → '{emoji} D-N {name} · 상품에서 나온 한 줄'(th_list_copy 훅 — 지어낸 장면·재촉 X, 없으면 상품 수·가격대) → 1️⃣ 이름 · 가격 + ↳ 한 줄 · 링크 = 그 tag 행사 쪽(e/ — 없으면 이 글 상품 모음 c/s/)."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    st = seen.setdefault("dayp", {})
+    st["t"] = now
+    if kst.tm_hour < DAY_PLAN_H or st.get("d") == today:
+        return
+    days = day_list(today)
+    st["d"] = today
+    if not days:
+        return
+    posts, evs, cut = load(POSTS, []), ev_list(), now - DAY_REUSE_H * 3600
+    st["u"] = {ch: {u: t for u, t in st.get("u", {}).get(ch, {}).items() if t > cut} for ch in ("th", "ig")}
+    taken = {e.get("at") for e in evs if isinstance(e, dict) and e.get("curation")}
+    fixed = [kst_ts(f"{today} {a}") for a in [f"{h:02d}:00" for h in {*TOP_HOURS, TH_DAWN_LIST}] + [NN_AT, *CP_MIX_AT, STEADY_AT, PICK_TH_AT, *NSET_SLOTS, f"{PREVIEW_HOUR:02d}:{PREVIEW_MIN:02d}"]] + [kst_ts(a) for a in taken if str(a)[:10] == today]
+    ig_on = IG_H and IG_AUTO and E.get("IG_TOKEN") and E.get("IG_USER_ID")
+    for d, n in days:
+        name, rnd = d["name"].strip(), random.Random(f"{today}{d['name']}")
+        c = st.setdefault("c", {}).setdefault(name, {"th": 0, "ig": 0})
+        live = {}
+        for p in posts:  # 같은 주소 = 최신 글
+            if p.get("tag") == d["tag"] and p.get("url") and aff(p["url"]) and not p["text"].startswith("📋"):
+                live[p["url"]] = p
+        ps = [p for p in live.values() if p.get("st") not in ("gone", "out") and img_of(p) and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not name_block(short_name(title_of(p["text"])), "day post")]
+        if len(ps) < DAY_N[0]:
+            if name not in st.setdefault("short", {}):
+                st["short"][name] = today
+                tg("sendMessage", chat_id=ADMIN, text=f"🗓 진열 부족 {name} — '{d['tag']}' 진열 중 사진·가격 확인된 수수료 링크 상품 {len(ps)}개(2개↑ 필요) · {d['date']} D-{n} · 채워 주면 다음 날부터 Threads·인스타 기념일 글")
+            print("day post", name, f"D-{n} 진열 부족 {len(ps)}개 -> 오늘 X")
+            continue
+        st["short"].pop(name, None) if "short" in st else None
+        mall = collections.Counter(shop_of(p) for p in ps).most_common(1)[0][0]  # 같은 몰끼리만
+        ps = sorted((p for p in ps if shop_of(p) == mall), key=lambda p: (p.get("st") != "hot", -chk_ts(p)))
+        pl = {"th": day_plan(lambda k: 2 if k <= 3 else 1, c["th"], n), "ig": day_plan(lambda k: k % 2, c["ig"], n) if ig_on else [0]}
+        q, soon = {k: v[0] for k, v in pl.items()}, {k: max(1, sum(v[:3])) for k, v in pl.items()}  # soon = 앞으로 3일(같은 상품 72시간 X) 그 채널 글 수 — 상품을 나눠 써서 4회↑ 채우게
+        slots = []
+        for _ in range(q["th"]):  # Threads 시각: 10~22시 무작위 · 지금 40분 뒤 · 정해진 글·다른 기념일 글과 15분↑
+            lo, hi = max(kst_ts(f"{today} {DAY_HOURS[0]:02d}:00"), now + 40 * 60), kst_ts(f"{today} {DAY_HOURS[1] - 1:02d}:45")
+            ok = [t for t in range(int(lo // 60) * 60 + 60, int(hi) + 1, 60) if all(abs(t - f) >= DAY_GAP for f in fixed)]
+            if ok:
+                t = rnd.choice(ok)
+                fixed.append(t)
+                slots.append(("th", time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600)), None))
+        free = [hh for hh, (h, m) in IG_FEED.items() if not seen.get(f"igf_{today}_{hh}") and kst_ts(f"{today} {h:02d}:{m:02d}") - now >= IGF_PREP + 10 * 60 and h >= DAY_HOURS[0]]
+        for hh in rnd.sample(free, min(q["ig"], len(free))):  # 인스타 = 남은 쿠팡 피드 칸 하나를 기념일 묶음으로(칸 시각 + 15~20분)
+            h, m = IG_FEED[hh]
+            at = time.strftime("%Y-%m-%d %H:%M", time.gmtime(kst_ts(f"{today} {h:02d}:{m:02d}") + rnd.randint(15, 20) * 60 + 9 * 3600))
+            if at not in taken:
+                seen[f"igf_{today}_{hh}"] = {"t": now, "done": "day"}  # 이 칸 = 기념일 글 몫(ig_feed 건너뜀 · ig_room은 쓸 때까지 남은 칸으로 셈)
+                slots.append(("ig", at, f"{today}_{hh}"))
+        until = max((str(e.get("until") or "")[:10] for e in evs if isinstance(e, dict) and e.get("tag") == d["tag"]), default="")
+        slug = next((e["slug"] for e in evs if isinstance(e, dict) and e.get("tag") == d["tag"] and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(e.get("slug") or ""))), "") or "e" + hashlib.md5(d["tag"].strip().encode()).hexdigest()[:6]
+        made = []
+        for ch, at, igslot in sorted(slots, key=lambda x: x[1]):
+            fresh = [p for p in ps if p["url"] not in st["u"][ch]]
+            pick = fresh[:min(DAY_N[1], max(DAY_N[0], len(fresh) // max(1, soon[ch] - sum(e["ch"] == ch for e in made))))]  # 진열이 넉넉하면 4개까지 · 모자라면 2개씩(앞으로 3일 글 수만큼 나눔)
+            if len(pick) < DAY_N[0]:
+                print("day post", name, f"D-{n} {ch} {at[11:]} 72시간 안 안 쓴 상품 {len(fresh)}개 -> 이 칸 X")
+                if igslot:
+                    seen.pop(f"igf_{igslot}", None)  # 칸 돌려줌(쿠팡 피드 그대로)
+                continue
+            text, sid = day_text(seen, d, n, pick, at), f"{at[:10].replace('-', '')}-{at[11:13]}{at[14:16]}-day-{ch}"
+            link = f"{SITE}e/{slug}.html" if until >= today else f"{SITE}c/s/{sid}.html"  # 그 tag 행사 쪽(마감 날 있는 tag = build_site events_on) · 없으면 이 글 상품만
+            e = {"at": at, "curation": True, "ch": ch, "day": name, "dn": n, "topic": name, "link": link, "text": text, "img": [img_of(p) for p in pick], "urls": [p["url"] for p in pick]}
+            if "/c/s/" in link:
+                e.update(set=sid, cat=cat_of(pick[0]) or "", set_title=f"{name} 모음 ({int(at[5:7])}/{int(at[8:10])})")
+            if igslot:
+                e["igslot"] = igslot
+            made.append(e)
+            for p in pick:
+                st["u"][ch][p["url"]] = kst_ts(at)
+        auto_add(made, "day")
+        print("day plan", name, f"D-{n} · Threads {sum(e['ch'] == 'th' for e in made)}/{q['th']} · 인스타 {sum(e['ch'] == 'ig' for e in made)}/{q['ig']} · 진열 {len(ps)}개({mall}) · 지금까지 th {c['th']} ig {c['ig']}/{DAY_MIN}")
+
+
+def day_text(seen, d, n, ps, at):
+    """기념일 글 본문(대가성 문구 → '{emoji} D-N {name} · 한 줄' → 상품 줄): 한 줄 = th_list_copy 훅(상품 이름 보고 Claude — 숫자·재촉·지어낸 장면 X 검사), 없으면 상품 수·가격대(사실만)."""
+    md = f"{int(at[5:7])}/{int(at[8:10])} "
+    pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + ("" if not p.get("chk") or p["chk"].startswith(md) else f" ({p['chk']} 확인)")
+    cm = {}
+    hook, _ = th_list_copy(seen, 0, [(p, pr(p), "", 2) for p in ps], cm, d["name"])  # 0 = 묶음 시각 아님(기본 훅 '1개 값으로 줄 세웠어요' 등 X — Claude 실패면 상품 수·가격대)
+    ws = sorted(w for p in ps if (w := won(pr(p))))
+    fact = f"{len(ps)}개" + ((f" · {ws[0]:,}원" if ws[0] == ws[-1] else f" · {ws[0]:,}~{ws[-1]:,}원") if ws else "")
+    head = f"{str(d.get('emoji') or '🗓').strip()[:4]} D-{n} {d['name'].strip()} · {hook or fact}"
+    rows = [f"{NUM[k]} {clip(short_name(title_of(p['text'])), 30)} · {pr(p)}" + (f"\n↳ {cm[p['url']]}" if cm.get(p["url"]) else "") for k, p in enumerate(ps)]
+    while len(rows) > DAY_N[0] and th_len("\n\n".join([aff_notes([p["url"] for p in ps]), head, *rows])) > 500 - 60:  # Threads 500자(링크 자리 남김) — 길면 상품 줄을 뺌
+        rows, ps = rows[:-1], ps[:-1]
+    return "\n\n".join([aff_notes([p["url"] for p in ps]), head, *rows])
+
+
+def day_count(seen, e, ch):
+    """기념일 글 올린 수(seen dayp c) +1 -> 로그 'day post <name> D-N th|ig (n/4)'."""
+    c = seen.setdefault("dayp", {}).setdefault("c", {}).setdefault(e["day"], {"th": 0, "ig": 0})
+    c[ch] = c.get(ch, 0) + 1
+    print("day post", e["day"], f"D-{e.get('dn')}", ch, f"({c[ch]}/{DAY_MIN})")
+
+
+def day_wait(seen, now):
+    """기념일 Threads 글을 지금 올리면 다른 글과 붙는지 -> 남은 초: 마지막 Threads 글(쿠팡·토스 몰 글 thmall · 비딜 글 thnd)과 DAY_GAP · 앞으로 15분 안 정해진 쿠팡 글(toss_gap)."""
+    last = max([seen.get("thmall", {}).get(k, 0) for k in ("toss", "cp")] + [RUN.get("thmall", {}).get(k, 0) for k in ("toss", "cp")] + seen.get("thnd", {}).get("ts", []) + [0])
+    return max(0, int(last + DAY_GAP - now), toss_gap(seen, now))
+
+
 TH_C_MAX = 22  # 묶음 상품 한 줄 받는 길이(프롬프트는 18자 안 — 조금 넘친 줄까지 · 10/31 15시 묶음 3줄이 다 빠져 같은 '확인할 점'만 남음)
 TH_C_RETRY = """Threads 묶음 글에서 아래 상품의 '사는 사람이 좋아할 한 줄'이 다른 상품과 똑같이 나왔어요. 상품마다 그 상품에 맞는 다른 한 줄을 새로 써 주세요(10/31 진우 '고객들이 좋아하게').
 {rows}
@@ -7642,7 +7778,7 @@ def ig_room(seen, now):
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
     left = sum(1 for h in ig_hours(seen) if (stem := today if h == IG_DAY_HOUR else f"{today}_{h:02d}") not in led and "igs_" + stem not in seen and kst.tm_hour < h + IG_LATE) if not IG_H \
-        else sum(1 for hh, (h, m) in IG_FEED.items() if not (seen.get(f"igf_{today}_{hh}") or {}).get("done") and kst.tm_hour * 60 + kst.tm_min < h * 60 + m + IG_LATE * 60)  # H = 남은 피드 칸
+        else sum(1 for hh, (h, m) in IG_FEED.items() if (seen.get(f"igf_{today}_{hh}") or {}).get("done") in (None, "day") and kst.tm_hour * 60 + kst.tm_min < h * 60 + m + IG_LATE * 60)  # H = 남은 피드 칸(S 기념일 몫 'day' = 쓸 때까지 남은 칸)
     if left and kst.tm_hour * 3600 + kst.tm_min * 60 > 86400 - IG_GAP - 3600:  # 21시 뒤 = 칸 밖 글 X(2시간 간격 때문에 남은 칸이 자정 뒤로 — 10/25 리뷰)
         return 0
     return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k in seen if k.startswith(("igc_", "igk_"))) - left
@@ -9361,7 +9497,7 @@ def cur_events(seen=None):
         except ValueError:
             ok = False
         if not (ok and isinstance(text, str) and text.strip() and isinstance(link, str)
-                and link.startswith(SITE + "c/") and not re.search(r"\s", link) and isinstance(img, list) and all(isinstance(u, str) for u in img)):
+                and link.startswith((SITE + "c/", SITE + "e/")) and not re.search(r"\s", link) and isinstance(img, list) and all(isinstance(u, str) for u in img)):
             print("curation 모양 틀림 -> 건너뜀", str(at)[:16])
             k = "alert_curbad_" + hashlib.md5(json.dumps(e, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:8]
             if seen is not None and k not in seen:  # Cowork에 알림 항목마다 1번(조용히 빠지지 않게 · 3시간마다 X)
@@ -9436,7 +9572,8 @@ def cur_ig(seen, st, e, key, live, now):
     if not live:
         print("curation 인스타: 사진 없음 -> 안 올림", e["at"])
         return
-    if ig_room(seen, now) < 1:  # 하루 상한 = 딜 카드 칸 먼저(그날 남은 칸 몫을 남김)
+    mine = bool(e.get("igslot")) and (seen.get("igf_" + e["igslot"]) or {}).get("done") == "day"  # S 기념일 글 = 맡아 둔 쿠팡 피드 칸 몫(ig_room이 남은 칸으로 셈)
+    if ig_room(seen, now) + mine < 1:  # 하루 상한 = 딜 카드 칸 먼저(그날 남은 칸 몫을 남김)
         print("curation 인스타: 오늘 상한(딜 카드 칸 먼저) -> 안 올림", e["at"])
         return
     cp = any(urllib.parse.urlsplit(u).netloc.lower() == "coupang.com" or urllib.parse.urlsplit(u).netloc.lower().endswith((".coupang.com", ".coupangcdn.com")) for u in e.get("img") or [])  # 쿠팡 사진일 때만 출처 줄(우리 그림 og-v4 등 = X — 10/29 Cowork)
@@ -9449,6 +9586,10 @@ def cur_ig(seen, st, e, key, live, now):
             seen["igk_" + key] = {"t": now, "kind": "cur", "cap": cap, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in live]}
         st["ig"] = len(live)
         print("curation 인스타", e["at"], f"사진 {len(live)}장 컨테이너")
+        if mine:
+            seen["igf_" + e["igslot"]]["done"] = "day:used"
+        if e.get("day"):
+            day_count(seen, e, "ig")
     except Exception as x:
         st["ig"] = None
         ig_fail(seen, now, f"큐레이션 {e['at']} 컨테이너 {ig_err(x)}")
@@ -9585,7 +9726,10 @@ def curation(seen):
         key = f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}"  # 시각 = 열쇠(글을 고쳐도 다시 X — 같은 시각 큐레이션은 1개)
         st = seen.setdefault(key, {"t": now})
         st["t"], files = now, []
-        ig = IG_AUTO and E.get("IG_TOKEN") and E.get("IG_USER_ID") and "ig" not in st and seen.get("ig_hold", 0) <= now  # 인스타 = 큐레이션 사진 넘기기(cur_ig)
+        for k in ("tg", "th", "ig") if e.get("ch") else ():  # S 기념일 글 = 그 채널(th·ig) 하나만 — 나머지는 끝난 것으로(텔레그램 X · 사진 준비 되풀이 X)
+            if k != e["ch"]:
+                st.setdefault(k, None)
+        ig = IG_AUTO and E.get("IG_TOKEN") and E.get("IG_USER_ID") and "ig" not in st and seen.get("ig_hold", 0) <= now and e.get("ch") in (None, "ig")  # 인스타 = 큐레이션 사진 넘기기(cur_ig) · ch = 기념일 글(S — Threads·인스타 따로)
         if "th" not in st or ig:
             bad = st.setdefault("bad", {})
             for u in e["img"]:
@@ -9626,7 +9770,10 @@ def curation(seen):
             print("curation 토스 글 쿠팡과 시차", int(w // 60), "분 -> 다음 실행", e["at"])
             continue
         power = bool(e.get("power"))  # 힘 준 글(07:30·20:30 칸) = 묶음 간격 안 보고 시각에 · 다른 큐레이션 = 힘 준 글 20분 뒤
-        th = tok and "th" not in st and (power or not busy(seen, cap=False) and not th_hold(seen))
+        th = tok and "th" not in st and e.get("ch") in (None, "th") and (power or not busy(seen, cap=False) and not th_hold(seen))
+        if th and e.get("day") and (w := day_wait(seen, now)):  # S: 다른 글·토스 글과 15분↑ — 다음 실행에
+            print("day post", e["day"], "Threads 다른 글과", int(w // 60), "분 -> 다음 실행", e["at"])
+            th = False
         if not (th or ig):
             continue
         urls, live = [SITE + f[len("docs/"):] for f in files], []
@@ -9668,6 +9815,8 @@ def curation(seen):
             cur_power(seen, tok, st["th"])
             cur_chain(seen, tok, st["th"], e)
         print("curation:", e["at"], "Threads", st["th"], f"사진 {ph}장" if ph else "글 + 링크 카드", "· 채널", st.get("tg"))
+        if e.get("day") and st["th"]:
+            day_count(seen, e, "th")
 
 
 DPOST_AT, DPOST_PREP, DPOST_N, DPOST_MINPH, DPOST_DIR = (20, 40), 30 * 60, 5, 3, "docs/cards/drop"  # 10/25 23시 진우 D: 📉 하루 1번 20:40(진우 예약 20시대·22:03 미리보기와 따로 — 묶음 간격 busy) · 30분 전 카드 준비(커밋 -> 사이트) · 상품 5개 · 사진 3개↑일 때만
@@ -12273,7 +12422,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
+    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, th_pics, toss_guard_day):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

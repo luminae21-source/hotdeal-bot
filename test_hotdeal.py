@@ -784,7 +784,7 @@ sent.clear(); H.cp_events(seen, cdeals)
 assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
-assert "goldbox, lambda s: cp_events(s, deals), new_sets, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
+assert "goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
 H.http, H.ai_pick, time.time = ph5, pa5, tt5
 # 5-2) 최종 승인(API) 전: 아침 7시 이후 하루 1번 골드박스 파트너스 링크를 채널에 바로 (7시 전엔 안 보냄)
 H.HAS_CP, tt = False, time.time
@@ -12327,7 +12327,7 @@ time.time = lambda: TK("2026-11-06 11:45"); o133 = io.StringIO()
 with contextlib.redirect_stdout(o133): H.new_sets(s133)
 assert len(s133["nset"]["h"]) == 1 and "새 구성 모자람 · " in o133.getvalue() and "toss 생필품 1" in o133.getvalue() and "naver 생필품 1" in o133.getvalue(), o133.getvalue()  # 몰마다 1개씩 = X
 assert "coupang 생필품 2" in o133.getvalue() and "coupang 주방 1" in o133.getvalue(), o133.getvalue()  # 미용티슈 + 코멧(생리대·치약 중 1개 — 같은 브랜드 1개) = 2개 = X(억지 X)
-assert "new_sets, mall_card_post, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
+assert "new_sets, day_posts, mall_card_post, top_deals" in inspect.getsource(H.main) and "[ ! -f nset.json ] || git add nset.json" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml")).read()
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv133
 os.chdir(cwd133)
 # 9-134) 10/31 14:10 Cowork(진우 '새 상품이 없는 경우는 기존 있던 상품 중 좋은 걸'): 새 상품 3개 밑 = 그 몰·그 칸 기존 진열 상품으로 채움(새 상품 맨 앞) · 새 구성 없이 빈 큐레이션 칸 3시간 안 = 기존 상품 구성
@@ -13052,3 +13052,116 @@ time.time = lambda: TK("2026-11-06 07:10"); H.toss_roster({}); assert json.load(
 src153 = inspect.getsource(H.main) if hasattr(H, "main") else open(H.__file__, encoding="utf-8").read()
 assert "toss_shelf, toss_site_preview, toss_ideas," in open(H.__file__, encoding="utf-8").read() and 'step in (toss_shelf, toss_site_preview, toss_ideas, ' in open(H.__file__, encoding="utf-8").read()  # 실행 단계 · 토스 점검 땐 쉼
 (H.POSTS, H.toss, H.HAS_TOSS, H.tg, time.time, S.TOSS_API_SITE, S.TOSSM, S.TIMG, H.TOSS_LIST, H.subprocess.run, H.tg_video, H.pw_ready) = sv153; os.chdir(cwd153)
+# 9-154 (11/6 진우 S — 'OO데이 관련 제품은 Threads·인스타에도 비정기로 · 당일 X · 최소 12일 전부터 · 노출 최소 4회'): docs/days.json(Cowork) 기간(from·12일 전 중 이른 날 ~ 전날)이면
+#   하루 1번 그날 글 정함(Threads 하루 1개 · D-3~D-1 2개 / 인스타 이틀에 1개 = 남은 쿠팡 피드 칸 1개를 기념일 글로 · 기간 끝까지 4회↑ 되게 모자란 몫을 남은 날에) · 10~22시 무작위 · 정해진 글과 15분↑
+#   · 상품 = 그 tag 진열(수수료 링크·판매 중·사진·48시간 확인) 같은 몰 2~4개 · 같은 채널 72시간 안 같은 상품 X · 진열 2개 밑 = 그날 X + 관리봇 1번 · 텔레그램 X · 올릴 때 다른 글·토스 글과 15분↑
+cwd154, d154 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d154)
+sv154 = (H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.ai_json, dict(H.E), H.http, H.th_text, H.busy, H.bundled, H.cur_ig)
+sv154b = (H.IG_H, H.IG_AUTO); H.IG_H = H.IG_AUTO = True  # 고립 실행 기본값과 달라도 같게
+H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE = "posts.json", "events.json", "auto_events.json", "days.json"
+H.E.update(IG_TOKEN="t", IG_USER_ID="u")
+# ① 기간: 시작 = from·date 12일 전 중 이른 날 · 당일·뒤 X
+json.dump([{"name": "빼빼로데이", "date": "2026-11-11", "from": "2026-10-30", "tag": "빼빼로 154", "emoji": "🍫"},
+           {"name": "수능", "date": "2026-11-19", "from": "2026-11-15", "tag": "수능 154", "emoji": "✏️"},  # from이 12일 전보다 늦음 = 12일 전(11/7)부터
+           {"name": "지난날", "date": "2026-11-06", "from": "2026-10-25", "tag": "x"}, {"name": "먼 날", "date": "2026-12-25", "from": "2026-12-13", "tag": "y"}, {"name": "모양 틀림", "date": "11/20", "tag": "z"}], open("days.json", "w"), ensure_ascii=False)
+assert [(d["name"], n) for d, n in H.day_list("2026-11-06")] == [("빼빼로데이", 5)], H.day_list("2026-11-06")  # 수능 = 11/7부터 · 당일(지난날) X · 먼 날 X
+assert [(d["name"], n) for d, n in H.day_list("2026-11-07")] == [("빼빼로데이", 4), ("수능", 12)] and [d["name"] for d, _ in H.day_list("2026-11-10")] == ["빼빼로데이", "수능"] and [d["name"] for d, _ in H.day_list("2026-11-11")] == ["수능"]  # 11/11 당일 X
+assert "빼빼로데이" not in [d["name"] for d, _ in H.day_list("2026-10-29")] and "빼빼로데이" in [d["name"] for d, _ in H.day_list("2026-10-30")]  # from 전 X
+# ② 4회 채움 계산: 기본 + 모자란 몫(기본 0인 날 먼저) · 어떤 시작이든 기간 끝 합 ≥ 4
+th154, ig154 = (lambda k: 2 if k <= 3 else 1), (lambda k: k % 2)
+assert H.day_plan(th154, 0, 5) == [1, 1, 2, 2, 2] and H.day_plan(ig154, 0, 5) == [1, 1, 1, 0, 1] and H.day_plan(ig154, 0, 1) == [4] and H.day_plan(ig154, 0, 12) == [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+assert H.day_plan(ig154, 3, 2) == [0, 1] and H.day_plan(ig154, 2, 2) == [1, 1] and H.day_plan(th154, 4, 1) == [2]
+for n154 in range(1, 13):
+    for done154 in range(6):
+        for b154 in (th154, ig154):
+            assert done154 + sum(H.day_plan(b154, done154, n154)) >= 4, (n154, done154)
+# ③ 그날 글 정하기: 빼빼로(D-5) = Threads 1 · 인스타 1(남은 쿠팡 칸 맡음) · 상품 = 그 tag 진열 같은 몰 · 링크 = 행사 쪽(e/)
+IMG154 = "https://thumbnail.coupangcdn.com/thumbnails/remote/p{}.jpg"
+P154 = [{"t": "2026-11-05 19:05", "text": f"{H.DISCLOSURE}\n\n🍫 [쿠팡] 빼빼로 세트 {k}호 (1{k},900원)", "url": f"https://link.coupang.com/a/PP{k}", "own": 1, "shelf": 1, "tag": "빼빼로 154",
+         "img": IMG154.format(k), "chk": "11/6 1시", "chkt": "2026-11-06 01:00", "st": "hot" if k < 2 else "wait", "now": f"1{k},900원"} for k in range(5)]
+P154 += [{**P154[0], "url": "https://www.coupang.com/vp/products/1", "text": P154[0]["text"].replace("1호", "생주소")},  # 수수료 링크 아님
+         {**P154[1], "url": "https://link.coupang.com/a/GONE", "st": "gone"}, {**P154[2], "url": "https://link.coupang.com/a/NOIMG", "img": ""},  # 판매 끝 · 사진 없음
+         {**P154[3], "url": "https://link.coupang.com/a/OLD", "chkt": "2026-11-03 01:00", "chk": "11/3 1시"},  # 가격 확인 48시간 넘음
+         {**P154[4], "url": "https://toss.shopping/_m/T154", "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n빼빼로 토스\n9,900원"},  # 다른 몰(사진 X)
+         {**P154[0], "url": "https://link.coupang.com/a/SU1", "tag": "수능 154"}]  # 수능 진열 1개
+json.dump(P154, open("posts.json", "w"), ensure_ascii=False)
+json.dump([{"tag": "빼빼로 154", "until": "2026-11-11", "url": "https://link.coupang.com/a/PP0", "shelf": True}], open("events.json", "w"), ensure_ascii=False)
+tg154, ai154 = [], []
+H.tg = lambda m, **p: tg154.append(p) or {"message_id": 1}
+H.ai_json = lambda prompt, schema=None, **k: ai154.append(prompt) or {"hook": "작은 상자로 반 친구들 나눠 주기 좋아요", "c": [], "q": ""}
+s154 = {}
+time.time = lambda: TK("2026-11-06 07:50"); H.day_posts(s154); assert not os.path.exists("auto_events.json")  # 8시 전 X
+time.time = lambda: TK("2026-11-06 09:30")
+with contextlib.redirect_stdout(io.StringIO()) as o154:
+    H.day_posts(s154)
+ae154 = [e for e in json.load(open("auto_events.json")) if e.get("day")]
+th_e, ig_e = [e for e in ae154 if e["ch"] == "th"], [e for e in ae154 if e["ch"] == "ig"]
+assert len(th_e) == 1 and len(ig_e) == 1 and all(e["curation"] and e["day"] == "빼빼로데이" and e["dn"] == 5 and e["topic"] == "빼빼로데이" for e in ae154), ae154
+SLUG154 = "e" + hashlib.md5("빼빼로 154".encode()).hexdigest()[:6]
+assert all(e["link"] == f"{H.SITE}e/{SLUG154}.html" for e in ae154) and not any("set" in e for e in ae154)  # 그 tag 행사 쪽
+OK154 = {f"https://link.coupang.com/a/PP{k}" for k in range(5)}
+for e in ae154:
+    assert 2 <= len(e["urls"]) <= 4 and set(e["urls"]) <= OK154 and len({S.shop_of({"url": u, "text": ""}) for u in e["urls"]}) == 1 and e["img"] == [IMG154.format(u[-1]) for u in e["urls"]], e  # 같은 몰 · 수수료·판매 중·사진·48시간만 · 실제 사진
+    lines154 = e["text"].split("\n\n")
+    assert lines154[0] == H.DISCLOSURE and lines154[1] == "🍫 D-5 빼빼로데이 · 작은 상자로 반 친구들 나눠 주기 좋아요" and lines154[2].startswith("1️⃣ 빼빼로 세트 0호 · 10,900원"), e["text"]  # 대가성 문구 → D-N + 상품에서 나온 한 줄 → 상품 줄(🔥 먼저)
+    assert "품절" not in e["text"] and H.th_len(e["text"]) + H.th_len(e["link"]) + 2 <= 500
+assert "빼빼로데이" in ai154[0]  # 한 줄 = 상품 이름·기념일로 Claude(th_list_copy 검사)
+FIX154 = [TK(f"2026-11-06 {a}") for a in ["01:00", "12:00", "15:00", "18:00", H.NN_AT, *H.CP_MIX_AT, H.STEADY_AT, H.PICK_TH_AT, *H.NSET_SLOTS, f"{H.PREVIEW_HOUR:02d}:{H.PREVIEW_MIN:02d}"]]
+t154 = TK(th_e[0]["at"])
+assert TK("2026-11-06 10:10") <= t154 <= TK("2026-11-06 21:45") and all(abs(t154 - f) >= 15 * 60 for f in FIX154), th_e[0]["at"]  # 10~22시 · 지금 40분 뒤 · 정해진 글과 15분↑
+hh154 = ig_e[0]["igslot"][-2:]
+assert ig_e[0]["igslot"].startswith("2026-11-06_") and s154[f"igf_{ig_e[0]['igslot']}"]["done"] == "day" and 15 * 60 <= TK(ig_e[0]["at"]) - TK(f"2026-11-06 {H.IG_FEED[hh154][0]:02d}:00") <= 20 * 60  # 쿠팡 피드 칸 하나 = 기념일 글(칸 시각 + 15~20분)
+assert "day plan 빼빼로데이 D-5 · Threads 1/1 · 인스타 1/1 · 진열 5개(coupang)" in o154.getvalue()
+assert not [p for p in tg154 if "진열 부족" in p["text"]]  # 11/6 = 수능 기간 전(11/7부터) → 아직 X
+n154 = len(json.load(open("auto_events.json"))); H.day_posts(s154); assert len(json.load(open("auto_events.json"))) == n154  # 하루 1번
+# ④ 다음 날(11/7): 수능 진열 1개 = 그날 X + 관리봇 '진열 부족 수능' 1번 · 빼빼로 Threads = 72시간 안 안 쓴 상품만(모자라면 그 칸 X — 인스타 칸은 돌려줌)
+time.time = lambda: TK("2026-11-07 09:00")
+with contextlib.redirect_stdout(io.StringIO()) as o154b:
+    H.day_posts(s154)
+short154 = [p for p in tg154 if "진열 부족" in p["text"]]
+assert len(short154) == 1 and short154[0]["text"].startswith("🗓 진열 부족 수능") and short154[0]["chat_id"] == H.ADMIN and "day post 수능 D-12 진열 부족 1개 -> 오늘 X" in o154b.getvalue()
+ae154b = [e for e in json.load(open("auto_events.json")) if e.get("day") and e["at"] >= "2026-11-07"]
+used154 = set(th_e[0]["urls"])
+assert all(not (set(e["urls"]) & used154) for e in ae154b if e["ch"] == "th"), ae154b  # Threads 72시간 안 같은 상품 X
+assert all(not (set(e["urls"]) & set(ig_e[0]["urls"])) for e in ae154b if e["ch"] == "ig")
+if len(OK154 - used154) < 2:
+    assert "72시간 안 안 쓴 상품" in o154b.getvalue()
+time.time = lambda: TK("2026-11-08 09:00")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.day_posts(s154)
+assert len([p for p in tg154 if "진열 부족 수능" in p["text"]]) == 1 and [p for p in tg154 if "진열 부족 빼빼로데이" in p["text"]]  # 진열 부족 알림 = 이름마다 1번 · 빼빼로 = 가격 확인이 48시간 넘어 사진·가격 확인된 진열 0개(11/6 01시 확인 → 11/8 09시)
+# ⑤ 올릴 때: 텔레그램 X · Threads = 다른 글·토스 글과 15분↑(day_wait) · 인스타 = 맡아 둔 칸 몫(상한 꽉 차도) + 'day post … (n/4)'
+th154c = []
+H.th_text = lambda tok, me, text, link, tag="핫딜": th154c.append((text, link, tag)) or {"id": "TD1"}
+H.http = lambda url, body=None, headers=None, method=None: '{"id": "me1"}' if "/me?fields=id" in url else '{"id": "c1"}'
+H.busy, H.bundled, H.E["THREADS_TOKEN"] = (lambda seen, cap=True: False), (lambda seen: None), "tk"
+ev154 = {**th_e[0], "img": []}
+json.dump([ev154], open("auto_events.json", "w"), ensure_ascii=False)
+tg154.clear()
+s154c = {"thmall": {"toss": TK(ev154["at"]) - 5 * 60}}
+time.time = lambda: TK(ev154["at"]) + 60
+with contextlib.redirect_stdout(io.StringIO()) as o154c:
+    H.curation(s154c)
+assert not th154c and "day post 빼빼로데이 Threads 다른 글과" in o154c.getvalue()  # 토스 글 5분 전 = 다음 실행
+s154c["thmall"]["toss"] = TK(ev154["at"]) - 20 * 60
+with contextlib.redirect_stdout(io.StringIO()) as o154d:
+    H.curation(s154c)
+assert len(th154c) == 1 and th154c[0][0].startswith(H.DISCLOSURE + "\n\n🍫 D-5 빼빼로데이") and th154c[0][2] == "빼빼로데이" and not tg154, (th154c, tg154)  # Threads만 · 텔레그램 X
+assert "day post 빼빼로데이 D-5 th (1/4)" in o154d.getvalue() and s154c["dayp"]["c"]["빼빼로데이"]["th"] == 1
+ig154e = {**ig_e[0], "text": ig_e[0]["text"]}
+s154i = {f"igf_{ig_e[0]['igslot']}": {"t": 1, "done": "day"}, time.strftime("igpub_%Y%m%d", time.gmtime(TK(ig_e[0]["at"]) + 9 * 3600)): {"n": 1}}
+time.time = lambda: TK(ig_e[0]["at"])
+H.cur_ig = sv154[12]
+with contextlib.redirect_stdout(io.StringIO()) as o154e:
+    H.cur_ig(s154i, {}, ig154e, "cur_x", ["https://hotdealpick.kr/cards/cur/a.jpg"], time.time())
+assert "day post 빼빼로데이 D-5 ig (1/4)" in o154e.getvalue() and s154i[f"igf_{ig_e[0]['igslot']}"]["done"] == "day:used" and any(k.startswith("igc_") for k in s154i), o154e.getvalue()  # 11시 칸 올림 + 남은 칸(맡은 칸 포함) = 상한 꽉 참 → 맡은 칸 몫으로 올림
+s154j = {time.strftime("igpub_%Y%m%d", time.gmtime(TK(ig_e[0]["at"]) + 9 * 3600)): {"n": 1}}
+with contextlib.redirect_stdout(io.StringIO()) as o154f:
+    H.cur_ig(s154j, {}, {**ig154e, "igslot": ""}, "cur_y", ["https://hotdealpick.kr/cards/cur/a.jpg"], time.time())
+assert "오늘 상한" in o154f.getvalue() and not any(k.startswith("igc_") for k in s154j)  # 맡은 칸 없으면 상한 그대로(늘리지 않음)
+s154k = {f"igf_{ig_e[0]['igslot']}": {"t": 1, "done": "day"}}
+assert H.ig_room(s154k, TK("2026-11-06 10:00")) == H.ig_room({}, TK("2026-11-06 10:00"))  # 맡아 둔 칸 = 쓸 때까지 남은 칸(다른 큐레이션이 못 가져감)
+json.dump([{**ev154, "link": f"{H.SITE}e/{SLUG154}.html"}], open("auto_events.json", "w"), ensure_ascii=False)
+assert [e["link"] for e in H.cur_events()] == [f"{H.SITE}e/{SLUG154}.html"]  # 행사 쪽 링크 = 큐레이션 모양 OK
+assert "new_sets, day_posts, mall_card_post," in open(H.__file__, encoding="utf-8").read()
+(H.POSTS, H.EVENTS, H.AUTO_EVENTS, H.DAYS_FILE, time.time, H.tg, H.ai_json, _, H.http, H.th_text, H.busy, H.bundled, H.cur_ig) = sv154; H.IG_H, H.IG_AUTO = sv154b; H.E.clear(); H.E.update(sv154[7]); os.chdir(cwd154)
