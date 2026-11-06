@@ -12299,6 +12299,7 @@ assert all("TH_DIVERSE" not in inspect.getsource(f) for f in (H.threads_deals, H
 (time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, tk132, H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj) = sv132
 H.E.pop("THREADS_TOKEN", None) if tk132 is None else H.E.update(THREADS_TOKEN=tk132)
 os.chdir(cwd132)
+sv133np = H.NSET_REPOST; H.NSET_REPOST = {}  # 9-133~9-138 = 11/6 날짜 시험 — 실제 11/6 재게시 칸 맡기(P)와 따로
 # 9-133) 10/31 14:00 Cowork 새 기능(진우 '새로운 제품들이 나오면 계속 새로운 구성 · 깃허브에서'): 새 상품(posts.json에 처음 들어온 상품 48시간) → 같은 몰·같은 칸 3개↑(브랜드 1개·같은 종류 X·72시간 묶음 회전) = 새 구성
 #        → 빈 Cowork 큐레이션 칸 자동 큐레이션(auto_events) 또는 다음 쿠팡 묶음 먼저 · nset.json(status.json) · 셀프체크 (1) 같은 몰·칸 3개 = 구성 1 (2) 몰 섞인 3개 = X (3) 같은 브랜드 3개 = X (4) Cowork 큐레이션 칸 = 자동 X
 sv133, cwd133 = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
@@ -12465,6 +12466,7 @@ with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s138)
 assert len(s138["nset"]["h"]) == 1, s138["nset"]  # 같은 칸 새 1개 더 = 또 채우지 X
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS) = sv138
 os.chdir(cwd138)
+H.NSET_REPOST = sv133np  # 9-133~9-138 끝 = 실제 재게시 설정 되돌림
 # 9-139) 11/1 Cowork(진우 결정 몰별 카드 — 07:4x v3로 교체: tools/card = luminae21-source/hotdealpick-cards 3b497e8 그대로): 묶음 글 같은 상품 → v3 JSON(가격 숫자+원 · 조건 = 진열 now·💰 줄 · 상품 checked = 실제 확인 시각 · 루트 = 게시 기준 지금 · 이름 원문 · 제목 36자)
 #        → `node scripts/render.mjs --data data/run_*.json` → rendered/ → docs/cards/mall → 사이트에 뜨면 Threads 사진 글(다음 실행) · 45분 안 뜨면 글만 · 사진 거절 = 글만 · 3개 미만·6개↑·몰 섞임·토스 = X · 렌더 실패 = 글만
 #        + ⑤ 묶음 가격 칸 = 확인가 + 조건 + 2시간 넘은 확인 '(M/D H시 확인)' · 사이트 묶음 카드 '게시 시점 가격' = 다 이 회차 확인일 때만
