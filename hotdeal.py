@@ -4351,7 +4351,9 @@ def new_sets(seen):
     sets += made
     cow = {e.get("at") for e in (json.load(open(EVENTS)) if os.path.exists(EVENTS) else []) if isinstance(e, dict) and e.get("curation")}  # Cowork 큐레이션 = 먼저(자리 있으면 자동 X)
     taken = cow | {e.get("at") for e in load(AUTO_EVENTS, []) or [] if isinstance(e, dict) and e.get("curation")}
-    nxt = lambda: next((f"{today} {s}" for s in NSET_SLOTS if f"{today} {s}" not in taken and kst_ts(f"{today} {s}") - now >= 20 * 60), None)
+    rp = NSET_REPOST.get(today) if today not in seen.get("nsetrp", {}) else None
+    keep = {f"{today} {t}" for t in rp[3]} if rp else set()  # 11/6: 다시 올릴 글 칸 = 새벽 자동 구성이 먼저 차지 X(11/6 12:40·18:40을 쿠팡 구성이 다 가져가 재게시 못 함)
+    nxt = lambda: next((f"{today} {s}" for s in NSET_SLOTS if f"{today} {s}" not in taken | keep and kst_ts(f"{today} {s}") - now >= 20 * 60), None)
     gct = set((load(GC_TOP, {}) or {}).get("urls", [])[:PH_TOP])
 
     def place(x, slot):
@@ -4385,9 +4387,15 @@ def new_sets(seen):
         print(f"{'새 구성' if k != 'old' else '기존 상품 구성'} 자동 큐레이션 · {slot[11:]} {x[4]} {len(ps)}개")
         return True
 
-    rp = NSET_REPOST.get(today)
-    if rp and today not in seen.get("nsetrp", {}):  # P: 정해 둔 상품 다시 올리기(칸 3시간 전부터 — 가격 = 오늘 확인)
-        slot = next((f"{today} {t}" for t in rp[3] if f"{today} {t}" not in taken and 20 * 60 <= kst_ts(f"{today} {t}") - now <= CUR_PREP), None)
+    if rp:  # P: 정해 둔 상품 다시 올리기(칸 3시간 전부터 — 가격 = 오늘 확인)
+        auto = {e.get("at") for e in load(AUTO_EVENTS, []) or [] if isinstance(e, dict) and e.get("curation") and e.get("auto") == "nset"}
+        slot = next((f"{today} {t}" for t in rp[3] if (f"{today} {t}" not in taken or f"{today} {t}" in auto and f"{today} {t}" not in cow) and 20 * 60 <= kst_ts(f"{today} {t}") - now <= CUR_PREP), None)
+        if slot in auto:  # 그 칸에 든 자동 구성(아직 안 나감) = 재게시로 바꾸고 그 구성은 다음 빈 칸에
+            json.dump([e for e in load(AUTO_EVENTS, []) if not (isinstance(e, dict) and e.get("at") == slot and e.get("auto") == "nset")], open(AUTO_EVENTS, "w"), ensure_ascii=False, indent=0)
+            for y in sets:
+                y[5] = "" if y[5] == slot else y[5]
+            taken -= {slot}
+            print("다시 올림 구성 · 자동 구성 자리 바꿈", slot)
         x = [now, rp[0], rp[1], list(rp[2]), CAT_SHORT.get(rp[1], ""), "", "new"]
         if slot and place(x, slot):
             taken, seen["nsetrp"] = taken | {slot}, {"t": now, today: slot}
@@ -5457,14 +5465,18 @@ def toss_ideas(seen, now=None):
     st = seen.setdefault("tidea", {"h": {}})
     st["t"], st["h"] = now, {k: d for k, d in st.get("h", {}).items() if d > time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400))}
     mixed = sorted((y for k in range(max(map(len, lists_))) for l in lists_ for y in l[k:k + 1]), key=lambda y: str(y[1].get("tacaItemId")) in st["h"])  # 출처 번갈아 · 7일 안 보낸 것 뒤로(안정 정렬)
-    no, out, used = toss_noimg(), [], set()
+    no, out, used, why = toss_noimg(), [], set(), collections.Counter()
     kind = lambda n: (sorted(cp_words(n), key=n.rfind) or kind_words(n) or ["기타"])[-1]  # 품목 = 사이트 품목 칸 낱말(이름 뒤쪽) → 종류 낱말
     for lab, x in mixed:
-        n, ids = x.get("displayName") or "", {str(x.get("tacaItemId")), str(x.get("tacaId"))}
-        if len(out) < TOSS_IDEA_N and not x.get("isSoldOut") and x.get("displayPrice") and not ids & (have | no | used) and ns(n) not in names and not re.search(TOSS_EFFECT, n) \
-                and not name_block(n, "toss ideas", SHELF_BLOCK) and not any(kind(n) == kind(o["displayName"]) or same_kind(n, o["displayName"]) for _, o in out):
-            used |= ids
-            out.append((lab, x))
+        n, ids = x.get("displayName") or "", {str(v) for v in (x.get("tacaItemId"), x.get("tacaId")) if v}  # 목록 API엔 tacaId 칸 없음 — 'None'이 겹쳐 첫 상품 뒤 다 '같은 상품'이던 것(11/6 118개 중 1개)
+        w = "품절" if x.get("isSoldOut") or not x.get("displayPrice") else "진우 링크" if ids & have or ns(n) in names else "같은 상품" if ids & used else "판매자 요청" if ids & no \
+            else "효능 낱말" if re.search(TOSS_EFFECT, n) else "이름 막기" if name_block(n, "toss ideas", SHELF_BLOCK) \
+            else "같은 품목" if any(kind(n) != "기타" and kind(n) == kind(o["displayName"]) or same_kind(n, o["displayName"]) for _, o in out) else ""  # 11/6: 품목 모르는 것('기타')끼리 = 같은 품목 X(118개 중 1개만 남던 것)
+        if w or len(out) >= TOSS_IDEA_N:
+            why[w or "10개 다 참"] += 1
+            continue
+        used |= ids
+        out.append((lab, x))
     chk = f"{kst.tm_mon}/{kst.tm_mday} {time.strftime('%H:%M', kst)}"
     rows = [f"{k}. {clip(x['displayName'], 40)} · {x['displayPrice']:,}원 ({chk} 확인) · {kind(x['displayName'])} · 🔎 {clip(cp_kws(x['displayName'])[-1], 30)}" for k, (lab, x) in enumerate(out, 1)]
     msg = (f"💙 토스 링크 만들 거리 {len(out)}개 ({chk} · 아직 링크 안 만든 것 · {'·'.join(dict.fromkeys(lab for lab, _ in out))})\n\n" + "\n".join(rows)
@@ -5473,7 +5485,7 @@ def toss_ideas(seen, now=None):
         return  # 전송 실패 = 창 안 다음 실행에
     seen[key] = now
     st["h"].update({str(x["tacaItemId"]): time.strftime("%Y-%m-%d", kst) for _, x in out})
-    print("toss ideas", f"{len(out)}개 DM · 목록 {len(lists_)}곳 {sum(map(len, lists_))}개")
+    print("toss ideas", f"{len(out)}개 DM · 목록 {len(lists_)}곳 {sum(map(len, lists_))}개 · 뺀 이유 " + " · ".join(f"{k} {v}" for k, v in why.most_common()))
 
 
 TOSS_PREVIEW = True  # Q② 11/5: 토스 CS 문의용 — toss_site 결과 1장(PNG, 공개 X)을 관리봇 DM 1번(진우가 화면으로 첨부) · TOSS_SITE False 그대로

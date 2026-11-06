@@ -12842,6 +12842,7 @@ assert all("우리가 겪은 일처럼 쓰지 않기" in x and "당김·건조·
 assert "made_up(s, tf) and not skin_bad(s, name)" in inspect.getsource(H.th_voice) and "made_up(h, today_fit(name)) and not skin_bad(h, name)" in inspect.getsource(H.th_hook) and "made_up(l, facts) or skin_bad(l, x[5])" in inspect.getsource(H.shelf_custom)
 # 9-152 (11/5 23시 진우 M·N — 18:40 '🆕 새로 들어온 주방 5개'(토스) 이름·가격 줄 다 빠짐 · 18시 '[🚗 퇴근길 장바구니 #3]' 핸드솝 줄에 히터 얘기 · 카드 사진·글씨 작음)
 # M① 원인 = 큐레이션 재검토(Claude)가 '(11/4 18시 확인)' 상품 줄 5개를 다 지움 → 상품 줄은 재검토 X · 그래도 이름·가격 줄이 3개 밑이면 안 올림
+sv152np = H.NSET_REPOST; H.NSET_REPOST = {}  # 실제 11/6 재게시 칸 맡기와 따로(앞 시험은 날짜가 같음)
 E152 = {"at": "2026-11-05 18:40", "curation": True, "topic": "주방", "link": f"{H.SITE}c/toss/", "img": [], "text": H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 5개 · 5,950~18,900원\n\n"
         + "\n\n".join(f"{H.NUM[k]} {n} · {w}\n↳ {c}" for k, (n, w, c) in enumerate([("맥스앤맥스 이지밀 소분 밀폐용기 350ml", "5,950원", "냉동밥 소분용 350ml"), ("쉬젤 아티 내열유리 용기 10종 세트", "18,900원", "10종이라 반찬통 한 번에"),
                                                                                   ("리벤스 살균 행주 티슈 60매 10팩", "8,650원", "60매 10팩, 한동안 든든"), ("주방 후드 필터 10m 2개", "6,780원", "10m라 넉넉히 잘라 써요"), ("마흐트 실리콘 조리도구 6종 세트", "8,500원", "6종 한 번에 바꾸기")]))
@@ -12902,7 +12903,7 @@ assert qn152.split('<div class="qr">')[2].index("쿠팡 모음") < qn152.split('
 x152 = lambda i, img: (i, {"url": f"https://link.coupang.com/a/P{i}", "t": "2026-11-05 18:00", "text": "🔥 [쿠팡] 스탠리 텀블러 (19,850원)", **({"img": "https://thumbnail6.coupangcdn.com/a.jpg"} if img else {})}, (0, 0, 0, 0, 0))
 assert [x[0] for x in S.trust8([x152(1, False), x152(2, True), (3, {"url": "u", "t": "2026-11-05 18:00", "text": "x"}, (1, 0, 0, 0, 0)), x152(4, True)], "2026-11-05")] == [2, 4, 1, 3]  # 🔥 = 사진 있는 것 먼저(사진 없는 텀블러 맨 위 X)
 # P (11/5 23:3x 진우 '응 그렇게 하자'): 18:40 토스 주방 5개 다시 — NSET_REPOST 그날 낮 첫 빈 칸(칸 3시간 전부터) · 같은 상품 · 오늘 확인 가격 · 토스 모음 링크 · 쿠팡 글과 15분(토스 대가성 문구 = 토스 글)
-assert H.NSET_REPOST["2026-11-06"][0:2] == ("toss", "kitchen") and len(H.NSET_REPOST["2026-11-06"][2]) == 5 and H.NSET_REPOST["2026-11-06"][3] == ("12:40", "18:40")
+assert sv152np["2026-11-06"][0:2] == ("toss", "kitchen") and len(sv152np["2026-11-06"][2]) == 5 and sv152np["2026-11-06"][3] == ("12:40", "18:40")
 assert H.th_mall(H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개", [f"{H.SITE}c/s/x.html"]) == {"toss"} and "toss_gap(seen, now)" in inspect.getsource(H.curation)
 sv152r, cwd152r = (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS, H.NSET_REPOST), os.getcwd(); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
 H.POSTS, H.EVENTS, S.EVENTS = "posts152r.json", "ev152r.json", "ev152r.json"; json.dump([], open("ev152r.json", "w"))
@@ -12920,7 +12921,23 @@ assert ae152r[0]["link"] == f"{H.SITE}c/s/20261106-1240-toss-kitchen.html" and a
 time.time = lambda: TK("2026-11-06 10:30")
 with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152r)
 assert len([e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")]) == 1  # 하루 1번
+# 11/6 실제: 새벽 자동 구성이 12:40·18:40을 먼저 다 차지 → 재게시 자리 없음 · 고침 = 재게시 칸은 자동 구성이 못 가져감 + 이미 든 자동 구성(안 나감)은 재게시로 바꾸고 그 구성은 다음 빈 칸에
+os.remove(H.AUTO_EVENTS); s152x = {"npseen": dict(s152r["npseen"])}  # 첫 실행 = 본 것만 기록(건너뜀)
+json.dump([{"at": "2026-11-06 12:40", "curation": True, "auto": "nset", "text": "x", "link": f"{H.SITE}c/s/a.html", "img": []},
+           {"at": "2026-11-06 18:40", "curation": True, "auto": "nset", "text": "y", "link": f"{H.SITE}c/s/b.html", "img": []}], open(H.AUTO_EVENTS, "w"))
+time.time = lambda: TK("2026-11-06 15:45")  # 12:40 지남 · 18:40 칸 3시간 안
+with contextlib.redirect_stdout(io.StringIO()) as o152x: H.new_sets(s152x)
+ae152x = {e["at"]: e for e in json.load(open(H.AUTO_EVENTS)) if e.get("curation")}
+assert ae152x["2026-11-06 18:40"]["link"] == f"{H.SITE}c/s/20261106-1840-toss-kitchen.html" and ae152x["2026-11-06 12:40"]["text"] == "x" and "자동 구성 자리 바꿈" in o152x.getvalue(), (ae152x, o152x.getvalue())
+json.dump([{"at": "2026-11-06 18:40", "curation": True, "text": "cowork", "link": f"{H.SITE}c/life/", "img": []}], open("ev152r.json", "w"))  # Cowork 큐레이션 칸 = 안 바꿈
+os.remove(H.AUTO_EVENTS); s152y = {"npseen": dict(s152r["npseen"])}
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152y)
+assert "nsetrp" not in s152y and not any(e.get("set") == "20261106-1840-toss-kitchen" for e in (json.load(open(H.AUTO_EVENTS)) if os.path.exists(H.AUTO_EVENTS) else []))
+time.time = lambda: TK("2026-11-06 00:30"); json.dump([], open("ev152r.json", "w")); s152z = {"npseen": {"t": 1, "h": []}}  # 다 새 상품 = 자동 구성 만듦
+with contextlib.redirect_stdout(io.StringIO()): H.new_sets(s152z)
+assert not any(str(e.get("at")).endswith(("12:40", "18:40")) for e in (json.load(open(H.AUTO_EVENTS)) if os.path.exists(H.AUTO_EVENTS) else []) if e.get("auto") == "nset" and "toss" not in str(e.get("set")))  # 새벽 자동 구성 = 재게시 칸 X
 (time.time, H.POSTS, H.EVENTS, H.ai_json, S.EVENTS, H.NSET_REPOST) = sv152r; os.chdir(cwd152r)
+H.NSET_REPOST = sv152np
 # 9-153 (11/5 진우 Q·R): Q 토스 API 상품 사이트 진열 = 스위치 뒤 준비만(TOSS_SITE = build_site.TOSS_API_SITE = False — 토스 CS 승인 뒤 둘 다 켬) · 켜지면 /c/toss/ 카드만(홈·품목·검색·딜 쪽·사이트맵·알림 X)
 #   · 가격 1일 안(글 24시간 안 또는 1일 안 확인에 같은 가격) 넘으면 내림 · 사진 = 토스 원본 주소 + '사진: 토스쇼핑' · 맨 위 토스 대가성 문구·게시 시점 줄·다른 몰 이름 X · toss_noimg(판매자 요청) 즉시 내림
 #   · Q② 미리보기 1장(PNG — 공개 X) 관리봇 1번 / R 매일 12:20 '토스 링크 만들 거리' 10개 관리봇 DM + 07:00 toss_list.json check 줄
@@ -13014,12 +13031,13 @@ assert s153f["tsprev"]["n"] == 3 and "ok" not in s153f["tsprev"] and len(up153) 
 json.dump([{"t": "2026-11-05 10:00", "text": "💙 [토스] 진우 휴지 (9,900원)", "url": "https://toss.shopping/_m/J1", "own": 1}], open("posts.json", "w"))
 H.TOSS_LIST = "tl153.json"; json.dump({"items": [{"n": "이미 만든 샴푸 1L", "url": "https://toss.shopping/_m/J2"}]}, open("tl153.json", "w"))
 s153r = {"tossid": {"m": {"https://toss.shopping/_m/J1": [100, 1, 1, "ok", [], 9900, False, 101, ""], "https://toss.shopping/_m/J2": [200, 1, 1, "ok", [], 1, False, 201, ""]}}}
-open("toss_noimg.txt", "w").write("901\n")
+open("toss_noimg.txt", "w").write("900\n")
 day153 = [X153(101, 100, "진우가 만든 휴지", 9900), X153(1, 1, "하루 물티슈 100매", 5900), X153(2, 2, "품절 키친타월", 3000, True), X153(3, 3, "미백 치약 3개", 4000), X153(4, 4, "아기 분유 800g", 30000), X153(5, 5, "하루 쌀 10kg", 29000)]
-best153 = [X153(6, 6, "베스트 물티슈 캡형", 7000), X153(7, 7, "베스트 세제 3L", 12900), X153(900, 901, "판매자 요청 수건", 9000), X153(8, 8, "성인 기저귀 대형", 15000), X153(9, 9, "베스트 김 20봉", 9900)]
-cat153 = {"/products/best-categories/41?size=30": [X153(10, 10, "이미 만든 샴푸 1L", 8000), X153(11, 11, "수분 크림 50ml", 15000), X153(12, 12, "보습 토너 200ml", 12000)],
-          "/products/best-categories/51?size=30": [X153(13, 13, "주방 행주 10매", 5000), X153(14, 14, "고무장갑 5켤레", 6000), X153(15, 15, "지퍼백 대형", 4000), X153(16, 16, "종량제 봉투", 3000), X153(17, 17, "건전지 AA 20개", 9000)],
-          "/products/best-categories/52?size=30": [X153(18, 18, "라면 5개입", 4500)]}
+XN153 = lambda *a: {k: v for k, v in X153(*a).items() if k != "tacaId"}  # 목록 API = tacaId 칸 없음(11/6 — None이 겹쳐 1개만 남던 것)
+best153 = [XN153(6, 6, "베스트 물티슈 캡형", 7000), XN153(7, 7, "베스트 세제 3L", 12900), XN153(900, 901, "판매자 요청 수건", 9000), XN153(8, 8, "성인 기저귀 대형", 15000), XN153(9, 9, "베스트 김 20봉", 9900)]
+cat153 = {"/products/best-categories/41?size=30": [XN153(10, 10, "이미 만든 샴푸 1L", 8000), XN153(11, 11, "수분 크림 50ml", 15000), XN153(12, 12, "보습 토너 200ml", 12000)],
+          "/products/best-categories/51?size=30": [XN153(13, 13, "주방 행주 10매", 5000), XN153(14, 14, "고무장갑 5켤레", 6000), XN153(15, 15, "지퍼백 대형", 4000), XN153(16, 16, "종량제 봉투", 3000), XN153(17, 17, "건전지 AA 20개", 9000)],
+          "/products/best-categories/52?size=30": [XN153(18, 18, "라면 5개입", 4500)]}
 def toss153(path, body=None):
     tc153.append(path)
     if path == "/categories":
@@ -13038,6 +13056,7 @@ assert all(re.fullmatch(r"\d+\. .+ · [\d,]+원 \(11/6 12:25 확인\) · \S+ · 
 for bad153 in ("진우가 만든 휴지", "품절 키친타월", "미백 치약", "분유", "판매자 요청 수건", "성인 기저귀", "이미 만든 샴푸", "하루 물티슈 100매"):
     assert bad153 not in m153, bad153  # 진우 링크(id·이름) · 품절 · 효능 낱말 · 분유 · 판매자 요청 · 성인 · 같은 품목(물티슈 2개)
 assert [l.split(". ", 1)[1].split(" · ")[0] for l in rows153[:4]] == ["베스트 물티슈 캡형", "주방 행주 10매", "베스트 세제 3L", "수분 크림 50ml"], rows153  # 하루특가·베스트·뷰티·생필품 번갈아(진우 것·같은 품목 건너뜀)
+assert "뺀 이유 " in o153r.getvalue() and "진우 링크" in o153r.getvalue()  # 거른 이유 수(이름 X)
 assert "· 물티슈 ·" in rows153[0] and "· 행주 ·" in rows153[1] and "5,900원" not in o153r.getvalue() and "물티슈" not in o153r.getvalue()  # 로그 = 수만(이름·가격 X)
 time.time = lambda: TK("2026-11-06 12:40"); H.toss_ideas(s153r); assert len(tg153) == 1  # 하루 1번
 time.time = lambda: TK("2026-11-07 12:25")
