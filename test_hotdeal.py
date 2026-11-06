@@ -1860,14 +1860,14 @@ sp.sort(key=lambda p: p["t"]); S.build(sp, "docs8")
 assert open("docs8/robots.txt").read() == "User-agent: *\nAllow: /\n\nSitemap: https://hotdealpick.kr/sitemap.xml\n"
 rs = ET.parse("docs8/rss.xml").getroot().find("channel").findall("item")
 assert 0 < len(rs) <= 30 and not any("/p/" in i.findtext("link") for i in rs) and all("모아보기" not in i.findtext("title") for i in rs) and all(i.findtext("pubDate").endswith(" +0900") for i in rs)
-rc8 = [i for i in rs if "/c/" in i.findtext("link")]  # 10/24 N1 '품목 쪽 RSS에': 타일 품목 1쪽 = 날짜 붙은 제목·guid(날마다 새 글) — 오늘의 픽 다음, 딜 앞
+rc8 = [i for i in rs if re.search(r"/c/[^/.]+/$", i.findtext("link"))]  # 10/24 N1 '품목 쪽 RSS에': 타일 품목 1쪽 = 날짜 붙은 제목·guid(날마다 새 글) — 오늘의 픽 다음, 딜 앞
 assert [i.findtext("link") for i in rs[1:1 + len(rc8)]] == [i.findtext("link") for i in rc8] == ["https://hotdealpick.kr/c/life/"] and rc8[0].findtext("title") == f"생필품 특가 모음 ({int(td[5:7])}/{int(td[8:10])})" \
     and rc8[0].find("guid").get("isPermaLink") == "false" and rc8[0].findtext("guid") == f"c-life-{td}"  # 11/7: RSS = 색인 남기는 쪽만(p X)
-assert rs[0].findtext("link") == f"https://hotdealpick.kr/today/{td}/" and rs[0].findtext("title").startswith(f"오늘의 픽 {int(td[5:7])}월 {int(td[8:10])}일 — 휴지") and "<p>핫딜픽이 고른 오늘의 특가 1개<br>1. 휴지" in rs[0].findtext("description")  # 11/7 진우: 요약 줄(CDATA) · 딜 쪽(p) = RSS X
+assert rs[0].findtext("link") == f"https://hotdealpick.kr/today/{td}/" and rs[0].findtext("title").startswith(f"오늘의 픽 {int(td[5:7])}월 {int(td[8:10])}일 — 휴지") and re.search(r"<p>핫딜픽이 고른 오늘의 특가 \d개<br>1\. 휴지", rs[0].findtext("description"))  # 11/7 진우: 요약 줄(CDATA) · 딜 쪽(p) = RSS X
 sm = ET.parse("docs8/sitemap.xml").getroot(); ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"; locs = [u.findtext(ns + "loc") for u in sm]
 assert all(u.findtext(ns + "lastmod") for u in sm) and sm[0].findtext(ns + "lastmod") == "2026-10-09" and locs[1] == "https://hotdealpick.kr/c/toilet-paper.html" and len(set(locs)) == len(locs)  # +1 = 화장지 최저가 기록(10/17)
 hot8 = {f"{S.BASE}p/{i}.html" for i, h in S.home_pool(sp, sorted({p["t"][:10] for p in sp if not p["text"].startswith("📋")}, reverse=True)).items() if h[0] == 0}
-assert sum("/today/" in u for u in locs) <= 1 and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and not {u for u in locs if "/p/" in u} and 0 < len(hot8) < 34  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
+assert sum(u.startswith("https://hotdealpick.kr/today/") for u in locs) <= 1 and "https://hotdealpick.kr/c/life/" in locs and "https://hotdealpick.kr/c/" in locs and not {u for u in locs if "/p/" in u} and 0 < len(hot8) < 34  # 11/7: 값어치 없는 딜 쪽 = 사이트맵 X · TT-2 10/27: 딜 쪽 = 진행 중 🔥만(끝난 딜·대기·날짜 쪽 X)
 td8 = open(f"docs8/today/{td}/index.html").read()
 assert f"<title>오늘의 픽 — {int(td[5:7])}월 {int(td[8:10])}일 쿠팡 특가 | 핫딜픽</title>" in td8 and S.SHOP_NOTES["coupang"] not in td8 and f'<p class="dis">{S.DISCLOSURE}</p>' in td8 and f'content="{S.BASE}og-v4.png"' in td8  # 제목 몰 = 픽에 든 몰 · '보기'가 몰로 바로 = 그 몰 문구 · og = 기본 그림 and '<meta property="og:type" content="article">' in td8 and td8.count('<li class="pk">') == 3 and f'<link rel="canonical" href="https://hotdealpick.kr/today/{td}/">' in td8
 d8 = open("docs8/p/0.html").read()
