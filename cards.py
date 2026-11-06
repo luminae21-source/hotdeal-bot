@@ -2,7 +2,7 @@
 """오늘의 딜 카드 이미지(1080x1350 PNG) + 인스타 릴스 영상(1080x1920 MP4). Pillow 필요 (워크플로에서 설치)."""
 import os, re
 from PIL import Image, ImageDraw, ImageFont
-from build_site import parse, CARD_N  # 제목 -> (몰, 이름, 가격): 사이트 격자와 같이 씀 · 카드 딜 수(캡션·사이트 번호와 같게)
+from build_site import parse, CARD_N, card_title  # 제목 -> (몰, 이름, 가격): 사이트 격자와 같이 씀 · 카드 딜 수(캡션·사이트 번호와 같게)
 
 W, H = 1080, 1350
 FONTS = {  # 러너: fonts/ (워크플로가 Google Fonts 저장소에서 내려받음) / 로컬: Noto CJK
@@ -56,7 +56,7 @@ def make(items, date_label, out, head="오늘 살 만한 딜", label="오늘의 
         d.text((X0, y), f"{n:02d}", font=pf("ExtraBold", 34), fill=ACC)
         if store:
             d.text((X0 + 68, y + 4), store, font=pf("SemiBold", 28), fill=SUB)
-        d.text((X0, y + 44), wrap(d, name, pf("Bold", 40), W - 2 * X0, 1)[0] if name else "", font=pf("Bold", 40), fill=INK2)
+        d.text((X0, y + 44), wrap(d, card_title(name), pf("Bold", 40), W - 2 * X0, 1)[0] if name else "", font=pf("Bold", 40), fill=INK2)  # 11/6: 브랜드뿐인 첫 낱말 X(잘려도 뭔지 보이게)
         if price:
             main, _, ship = price.partition("/")
             fp = pf("ExtraBold", 44)

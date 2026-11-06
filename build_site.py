@@ -474,7 +474,8 @@ SLOT_NAMES = {"09": "오전 9시", "11": "오전 11시", "13": "낮 1시", "15":
 def day_deals(posts, day):
     """그날 딜의 카드 순서 [(posts 번호, 글)]: 점수 높은 순, 같은 점수면 제휴 링크 딜 먼저(10/8 진우 '쿠팡·토스 잘 팔리게'), 그다음 게시 순.
     카드·인스타 캡션·사이트 맨 위 카드 딜(앞 CARD_N개)·릴스(앞 3개) 번호가 모두 이 순서."""
-    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and not p.get("shelf") and parse(title_of(p["text"]))[2]]  # 사이트 진열(shelf) = 카드·인스타·릴스·Threads X · HH: 가격 못 읽은 딜 = 카드 X(다음 딜로)
+    ev = ev_info()
+    ds = [(i, p) for i, p in enumerate(posts) if p["t"].startswith(day) and not p["text"].startswith("📋") and not p.get("shelf") and parse(title_of(p["text"]))[2] and naver_dc_ok(p, ev)]  # 사이트 진열(shelf) = 카드·인스타·릴스·Threads X · HH: 가격 못 읽은 딜 = 카드 X(다음 딜로)
     return sorted(ds, key=lambda x: (-x[1].get("s", 0), not aff(x[1].get("url")), x[1]["t"]))
 
 
@@ -558,10 +559,20 @@ def card_picks(posts, out):
             f'<p class="dn">가격은 게시 시점 기준이라 바뀔 수 있어요. {" ".join(SHOP_NOTES.values())}</p></section>')  # WW ④: 맨 위 한 줄 + 3사 문구 전체는 목록 아래(지우지 X)
 
 
+CARD_BRAND = r"(?:[가-힣A-Za-z]+전자|삼성|LG|엘지|애플|Apple|APPLE)"  # 11/6 진우 '뭔지 안 써 있다': 카드 이름 첫 낱말이 회사 이름뿐이면 뺌(모델명이 상품을 말함 — 갤럭시·그램·아이패드)
+
+
+def card_title(nm):
+    """카드 이름(인스타 카드·사이트 카드 딜 줄): 브랜드뿐인 첫 낱말(삼성전자·LG전자 등) 빼고 모델명 먼저 — '삼성전자 갤럭시탭 S12 울트라 …' -> '갤럭시탭 S12 울트라 …'(뒤에 2낱말↑ 남을 때만)."""
+    m = re.match(rf"\s*{CARD_BRAND}\s+(\S.*)", nm or "")
+    return m[1] if m and len(m[1].split()) >= 2 else nm
+
+
 def pick_name(p):
-    """카드 딜 줄 이름 '[몰] 상품명'(가격은 오른쪽 칸 — 이름은 2줄까지만, 사진이 들어가도 줄 높이 그대로 · 10/25 진우 '칸 더 안 잡아먹게')."""
+    """카드 딜 줄 이름 '[몰] 상품명'(가격은 오른쪽 칸 — 이름은 2줄까지만, 사진이 들어가도 줄 높이 그대로 · 10/25 진우 '칸 더 안 잡아먹게')
+    · 11/6: 브랜드뿐인 첫 낱말 X(card_title) · 사진 없는 쿠팡·토스·네이버 줄 = '[몰]' 빼고 이름 2줄 다(몰은 왼쪽 로고가 알려 줌)."""
     st, nm, _ = parse(title_of(p["text"]))
-    return (f"[{st}] " if st else "") + nm if nm else title_of(p["text"])
+    return (f"[{st}] " if st and (img_of(p) or shop_of(p) not in MALL_KO) else "") + card_title(nm) if nm else title_of(p["text"])  # 3사 밖 몰 = 로고 X(품목 아이콘) -> [몰] 그대로
 
 
 def pick_thumb(p):
@@ -704,8 +715,18 @@ def ev_info(evs=None):
     evs, out = ev_list() if evs is None else evs, {}  # evs = 옛 커밋 events(가격 추적 백필)
     for e in evs if isinstance(evs, list) else []:
         if isinstance(e, dict) and isinstance(e.get("url"), str):
-            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img", "tag") if isinstance(e.get(k), str)})
+            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img", "tag") if isinstance(e.get(k), str)}
+                                                | ({"dc": e["dc"]} if isinstance(e.get("dc"), (int, float)) and not isinstance(e.get("dc"), bool) else {}))  # 11/6 네이버 할인 근거(Cowork 커넥트 툴 v8 — 판매가 대비 할인)
     return out
+
+
+def naver_dc_ok(p, ev):
+    """11/6 진우 '네이버의 경우 저런 걸 핫딜로 보는 게 맞아?'(갤럭시탭 S12 울트라 = 출고가 그대로): 진우·Cowork 네이버 딜(own)은 events "dc" > 0일 때만
+    카드 딜·🔥 — dc 0·없음 = 일반 🛒 글·사이트 네이버 모음엔 그대로 · 쿠팡·토스·커뮤니티 딜 = 지금 그대로(진우 '네이버만')."""
+    if shop_of(p) != "naver" or not p.get("own"):
+        return True
+    dc = p.get("dc", (ev.get(p.get("url")) or {}).get("dc"))
+    return isinstance(dc, (int, float)) and dc > 0
 
 
 def md_h(chk):
@@ -741,6 +762,7 @@ def shelf(p, ev, today):
     toss = shop_of(p) == "toss" and toss_share(p.get("url"))
     st = p.get("st") or ("hot" if ic == "🔥" and not (toss and re.search(DAY_ONLY, p["text"]) and p["t"][:10] < today) else "wait")
     e = ev.get(p.get("url"), {})
+    st = "wait" if st == "hot" and not naver_dc_ok(p, ev) else st  # 11/6 네이버 할인 근거(dc) 없음 = 🔥 X(대기로 — 네이버 모음엔 그대로)
     if st == "gone" or e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):  # events end는 봇이 st로 옮기기 전에도 바로
         return None
     tgt, now, chk = p.get("tgt", ""), p.get("now", ""), p.get("chk", "")

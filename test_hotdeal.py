@@ -1616,7 +1616,7 @@ assert '<span class="nm">[우리동네gs] 김치라면 대컵1+1</span></span><e
 deal = open("docs3/p/4.html").read()
 assert "📄 원글에서 구매 링크 보기" in deal and 'class="btn2"' in deal and "🛒 구매하러 가기" not in deal and "원글이 안 열리면" not in open("docs3/p/1.html").read()
 assert S.find_url("[쿠팡] 듀라셀 AA 20개입 1개/ 9,730원").endswith(urllib.parse.quote("듀라셀 AA 20개입 1개")) and not S.community("https://click.linkprice.com/x") and not S.community(None)
-assert top.index("<b>01</b>") < top.index(">[G마켓] 첫딜") < top.index("<b>02</b>") < top.index(">[토스쇼핑] 둘째 &lt;딜&gt;") and 'href="https://a1"' in top
+assert top.index("<b>01</b>") < top.index(">[G마켓] 첫딜") < top.index("<b>02</b>") < top.index(">둘째 &lt;딜&gt;") and 'href="https://a1"' in top
 assert 'href="https://hotdealpick.kr/p/3.html"' in top and 'aria-label="1번 [G마켓] 첫딜 (2,000원) 구매하러 가기"' in top and idx.index('<nav class="qk" aria-label="바로가기">') < idx.index('<p class="dis"') < idx.index('<section class="card" id="today" hidden') < idx.index('id="fire"') < idx.index('id="pick"')  # 포털형: 몰 버튼·품목 아이콘(lead) → 문구 → 카드 딜(숨김) → 🔥 → … → 오늘의 픽
 assert "fbclid" in S.HASH_JS and "Instagram|Barcelona" in S.HASH_JS and "h==='today'" in S.HASH_JS and "t.hidden=false" in S.HASH_JS and S.HASH_JS in idx  # 인스타·Threads에서 오면 카드 딜 칸이 맨 위에 보임
 S.build(pp, "docs4"); assert 'id="today"' not in open("docs4/index.html").read()  # 카드 폴더 없으면 안 보임
@@ -6635,7 +6635,7 @@ q59 = lambda name, price, t, mall="쿠팡", key="", **x: {"t": t, "text": f"🔥
 ck59 = dict(st="hot", chk="10/24 9시", chkt="2026-10-24 09:10")
 P59 = [{**q59("곰곰 특란 30구", "10,000원", "2026-10-18 10:00", key="A", own=1), "text": "🔥 [쿠팡] 곰곰 특란 30구 (10,000원)\n\n좋아요 (10/18 9시 가격)"},  # 0 A 첫 글(기록가)
        q59("곰곰 특란 30구", "9,500원", "2026-10-22 10:00", key="A", own=1, now="8,000원 와우가", **ck59), q59("코멧 화장지 30롤", "20,000원", "2026-10-20 10:00", key="B", own=1, now="12,000원", cpp=12100, cpt="2026-10-24 08:00", **ck59),  # 1 A ▼20% · 2 B ▼40%(API 확인)
-       q59("크리넥스 휴지 30롤", "20,000원", "2026-10-20 10:00", key="C", own=1, now="12,000원", **ck59), q59("광천 김 20봉", "10,000원", "2026-10-20 10:00", "네이버", "D", own=1, now="9,000원", **ck59),  # 3 C ▼40% 확인 X · 4 D 네이버 ▼10%
+       q59("크리넥스 휴지 30롤", "20,000원", "2026-10-20 10:00", key="C", own=1, now="12,000원", **ck59), q59("광천 김 20봉", "10,000원", "2026-10-20 10:00", "네이버", "D", own=1, now="9,000원", dc=10, **ck59),  # 3 C ▼40% 확인 X · 4 D 네이버 ▼10%
        q59("삼다수 2L 12병", "10,000원", "2026-10-20 10:00", "토스", "E", own=1, st="hot"), q59("스팸 200g 10개", "20,000원", "2026-10-10 10:00", key="H", own=1, now="20,000원", rehot="2026-10-24", **ck59),  # 5 토스 4일 전(🔥 칸 X) · 6 🔁
        q59("햇반 24개", "20,000원", "2026-10-10 10:00", key="I", own=1, now="25,000원", **{**ck59, "st": "wait"}, stp="hot", std="2026-10-23"), q59("카누 100T", "20,000원", "2026-10-10 10:00", key="J", own=1, st="wait", stp="hot", std="2026-10-18"),  # 7 특가 끝(어제) · 8 6일 전
        q59("오뚜기밥 24개", "10,000원", "2026-10-10 10:00", key="K", own=1, st="gone", std="2026-10-24"), q59("진라면 40개", "10,000원", "2026-10-10 10:00", key="L", own=1, st="gone", std="2026-10-10"),  # 9 판매 종료(오늘) · 10 옛 종료
@@ -13405,3 +13405,23 @@ assert not S.tapi_ok(old161, N161) and S.tapi_ok(ok161b, N161)  # 이미 올라�
 (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE) = sv161; os.chdir(cwd161); shutil.rmtree(d161, ignore_errors=True)
 assert not any(re.search(p, n) for p in (H.AUTO_CLAIM, H.WU_HEALTH, H.TOSS_EFFECT, H.OY_DENY, S.TAPI_NAME_BLOCK) for n in ("쿠잉 주름펴기 스티머", "쿠잉 주름펴기 HSI-1500GW , 1개", "핸디 스티머 의류 주름 제거기", "스팀 다리미 옷 주름"))  # 옷 주름 = 통과(효능 거르기 공통)
 assert all(re.search(p, n) for p in (H.AUTO_CLAIM, H.WU_HEALTH, H.TOSS_EFFECT, H.OY_DENY, S.TAPI_NAME_BLOCK) for n in ("주름 개선 크림", "아이크림 주름 케어 앰플", "첫 줄은 괜찮아요\n주름 개선돼요"))  # 화장품 주름 = 그대로 거름(여러 줄 글 둘째 줄도)
+
+# 9-162 (11/6 23시 진우 '네이버의 경우 저런 걸 핫딜로 보는 게 맞아?' · '뭔지 안 써 있다' — 갤럭시탭 S12 울트라 = 출고가 그대로, 카드 딜 #02): 진우 '네이버만'
+#   ① 진우·Cowork 네이버 딜(own)은 events "dc" > 0일 때만 오늘의 카드 딜(day_deals → 인스타·Threads·사이트 카드 칸)·🔥 — dc 0·없음 = 대기(네이버 모음엔 그대로) · 쿠팡·토스·커뮤니티 = 그대로
+#   ② 카드 이름 = 브랜드뿐인 첫 낱말(삼성전자·LG전자 등) 빼고 모델명 먼저 · 사진 없는 3사 줄 = '[몰]' 빼고 이름 2줄 다(몰 = 왼쪽 로고)
+sv162 = S.ev_list
+NV162 = {"t": "2026-11-06 01:20", "text": "🛒 [네이버] 삼성전자 갤럭시탭 S12 울트라 WiFi 256GB 그레이 SM-X940 (1,899,700원)\n\n💡 WiFi 전용", "url": "https://naver.me/GTab12", "own": 1}
+CP162 = {"t": "2026-11-06 02:00", "text": "🔥 [쿠팡] 곰곰 특란 30구 (7,490원)", "url": "https://link.coupang.com/a/egg162", "own": 1}
+CM162 = {"t": "2026-11-06 03:00", "text": "🔥 [네이버] 커뮤니티 김 (9,900원)", "url": "https://smartstore.naver.com/x/products/162"}
+for dc, want in ((None, False), (0, False), (12, True)):
+    S.ev_list = lambda path=None, dc=dc: [{"url": NV162["url"], "at": "2026-11-06 01:20", **({} if dc is None else {"dc": dc})}]
+    got = [i for i, _ in S.day_deals([NV162, CP162, CM162], "2026-11-06")]
+    assert (0 in got) is want and 1 in got and 2 in got, (dc, got)  # 네이버 own = dc > 0일 때만 · 쿠팡·커뮤니티 네이버 = 그대로
+    assert (S.shelf({**NV162, "st": "hot"}, S.ev_info(), "2026-11-06")[0] == 0) is want  # 🔥 = dc > 0일 때만(아니면 대기)
+assert S.naver_dc_ok({**NV162, "dc": 5}, {}) and not S.naver_dc_ok({**NV162, "dc": 0}, {}) and S.naver_dc_ok(CP162, {})
+S.ev_list = sv162
+assert S.card_title("삼성전자 갤럭시탭 S12 울트라 WiFi 256GB 그레이 SM-X940").startswith("갤럭시탭 S12") and S.card_title("LG전자 그램") == "LG전자 그램" and S.card_title("곰곰 특란 30구") == "곰곰 특란 30구"
+assert S.pick_name(NV162).startswith("갤럭시탭 S12 울트라") and "[네이버]" not in S.pick_name(NV162)  # 사진 없는 네이버 줄 = 로고가 몰 · 이름 2줄 다
+assert S.pick_name({**CP162, "img": "https://thumbnail6.coupangcdn.com/a.jpg"}) == "[쿠팡] 곰곰 특란 30구" and S.pick_name({"text": "🔥 [우리동네gs] 김치라면 (1,850원)", "url": "https://x"}).startswith("[우리동네gs]")  # 사진 있음·3사 밖 = [몰] 그대로
+import cards as C162
+assert "card_title(name)" in inspect.getsource(C162.make)  # 인스타 카드 줄 이름도 같은 규칙
