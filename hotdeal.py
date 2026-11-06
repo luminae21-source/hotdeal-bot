@@ -9855,6 +9855,9 @@ def curation(seen):
             ls = body.split("\n")
             k = 1 if ls and ls[0].startswith(NOTE_STARTS) else 0
             body = "\n".join(ls[:k] + [series_head(sk, st["no"])] + ls[k:])
+        if "tg" not in st and TOSS_NOTE in body.split("\n", 1)[0] and (w := tg_gap(seen, now)):  # 11/6 Cowork: 토스 큐레이션 채널 = 쿠팡 채널 글 바로 뒤 15분(⑨) — 다음 실행에(Threads도 같이)
+            print("curation 토스 글 채널 쿠팡과 시차", int(w // 60), "분 -> 다음 실행", e["at"])
+            continue
         if "tg" not in st:
             m = tg("sendMessage", chat_id=CHANNEL, text=esc(clip(body, 2000)), parse_mode="HTML", link_preview_options={"is_disabled": True},  # 4096자 한도(이모지 = 2자로 셈)
                    reply_markup={"inline_keyboard": [[{"text": "🛍 더 보기", "url": re.sub(r"([?&]ref=)thc\b", r"\g<1>tgc", e["link"])}]]})

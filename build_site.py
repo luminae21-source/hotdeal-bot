@@ -3274,7 +3274,7 @@ def build(posts, out="docs"):
             if d.isdigit() and int(d) > n:
                 shutil.rmtree(f"{out}/c/{slug}/{d}")
     for d in os.listdir(f"{out}/c"):  # 없어진 목록 이름 폴더도
-        if os.path.isdir(f"{out}/c/{d}") and d not in ls and d != "t":  # t = 주제 쪽(TT-2)
+        if os.path.isdir(f"{out}/c/{d}") and d not in ls and d not in ("t", "s"):  # t = 주제 쪽(TT-2) · s = 글 상품 모음 쪽(M2 set_pages — 11/6 빠져서 같은 빌드에서 지워짐 = 큐레이션 링크 404)
             shutil.rmtree(f"{out}/c/{d}")
     write(out, "c/women/", page(f"여성용품 → 생필품 | {TITLE}", f'<p class="t">여성용품은 생필품 칸으로 합쳤어요.</p><a class="btn2" href="{c_url("life")}">🧻 생필품 특가 보기 →</a>', "", f"{BASE}c/women/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("life")}">'))  # AAA: 옛 여성용품 칸 주소 = 생필품으로(noindex · 사이트맵 X)
     mc = collections.Counter(shop_of(p) for _, p, _ in it)

@@ -1757,7 +1757,7 @@ assert '"@type": "ItemList"' not in l1  # 사진 없는 목록 = ItemList X(네�
 sm6 = open("docs6p/sitemap.xml").read()
 assert all(f"<loc>{S.BASE}c/{u}/</loc>" in sm6 for u in ("hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "winter", "season", "home", "fashion", "digital", "coupang", "toss", "naver", "drop", "today", "rehot", "top")) and f"<loc>{S.BASE}c/life/2/</loc>" in sm6 and "c/women/" not in sm6 and f"<loc>{S.BASE}c/</loc>" in sm6 and "c/toss/2/" not in sm6  # + 상태 쪽 📉·⏰·🏆(10/24 Cowork) · 몰 쪽 = 한 쪽
 assert {d[:-5] for d in os.listdir("docs6p/c") if d.endswith(".html") and d != "index.html"} <= set(S.REC_KEEP)  # 기록 쪽 = 있던 품목(REC_KEEP)만(TT-2 — 0개 = 안내 쪽)
-assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
+assert sorted(d for d in os.listdir("docs6p/c") if not d.endswith(".html") or d == "index.html") == sorted(["hot", "steady", "wait", "life", "food", "beauty", "kitchen", "laundry", "snack", "coffee", "women", "winter", "season", "home", "fashion", "digital", "car", "pet", "sport", "coupang", "toss", "naver", "drop", "today", "rehot", "top", "s", "index.html"]) and os.listdir("docs6p/c/toss") == ["index.html"]  # 기록 쪽(c/*.html) 지우기는 .html만 — 목록 폴더 그대로(예전엔 폴더면 빌드가 멈췄음)
 S.build(tp, "docs6p")  # 두 번째 빌드(폴더가 있어도 그대로)
 # 6-6) 품목 12칸 쪽(10/24 세분): 제목 정규식(cat_of) — 위생백 = 주방, 세제 = 세탁, KF94·샴푸 = 생필품, 마스크팩·폼클렌징 = 뷰티(아이스크림 X) · 최근 3일 커뮤니티 딜 + 진우 상품
 hp = [{"t": "2026-10-06 10:00", "text": "🔥 [G마켓] 오래된 휴지 (9,900원)", "url": "https://g4", "s": 6, "pop": 99},  # posts.json = 게시 순
@@ -13274,3 +13274,47 @@ for k in (".g .im{height:118px;border-radius:14px", ".g .im{background:#F3F4F6;p
     assert k in css156, k
 assert ".g .im .ci{--ci:#9aa0a6}" in css156 and ".hs .g .im{height:96px" in css156 and "#pick .hs .g .im{height:88px}" in css156 and "*{box-sizing:border-box}" in css156  # 칸·줄 수 그대로(padding = 안쪽)
 assert "<div class='cr2'><span class='mc'>\"+esc(x.s)+\"</span>\"+(x.b||\"\")+\"<button class='like'" in S.SEARCH_JS and "(x.b||\"\")+\"</div>" not in S.SEARCH_JS  # 검색 카드도 같은 틀
+
+# 9-157 (11/6 18:5x Cowork 버그 2건 — M2·⑨ 그대로, 새 기능 X): ① build 뒤 c/s/<set>.html 남음(없어진 목록 이름 폴더 정리가 c/s까지 지워 큐레이션 링크 전부 404였음)
+#   ② 토스 큐레이션 채널 글 = 쿠팡 채널 글 바로 뒤 15분(tg_gap) 안이면 보내기 전에 다음 실행으로(18:43 #2491 토스 = 18:29 #2490 쿠팡 14분 뒤였음)
+sv157 = (S.ev_list, time.time)
+o157 = tempfile.mkdtemp()
+P157 = [{"t": "2026-11-06 11:00", "text": "🔥 [쿠팡] 쿠팡 세제 3L (9,900원)", "url": "https://link.coupang.com/a/CP157", "own": 1, "shelf": 1}]
+S.ev_list = lambda path=None: [{"at": "2026-11-06 12:40", "curation": True, "set": "20261106-1240-coupang-kitchen", "cat": "kitchen", "set_title": "쿠팡 상품 모음 · 주방 (11/6)",
+                                "urls": [P157[0]["url"]], "text": "x", "link": f"{S.BASE}c/s/20261106-1240-coupang-kitchen.html"}]
+time.time = lambda: TK("2026-11-06 19:00")
+for _ in range(2):  # 처음 빌드 · c/s 폴더가 이미 있는 다음 빌드 둘 다
+    with contextlib.redirect_stdout(io.StringIO()):
+        S.build([dict(p) for p in P157], o157)
+    assert os.path.isfile(f"{o157}/c/s/20261106-1240-coupang-kitchen.html"), sorted(os.listdir(f"{o157}/c"))
+assert 'd not in ("t", "s")' in inspect.getsource(S.build)
+(S.ev_list, time.time) = sv157
+shutil.rmtree(o157, ignore_errors=True)
+sv157b = (H.EVENTS, S.EVENTS, S.AUTO_EVENTS, H.tg, H.http, dict(H.E), time.time, {k: H.RUN.pop(k) for k in ("tgmall", "thmall") if k in H.RUN}, H.TOSS_GAP)
+H.EVENTS = S.EVENTS = "ev157.json"; S.AUTO_EVENTS = "ae157.json"; H.TOSS_GAP = 15 * 60  # 셀프체크 앞머리 = 0(끔) — 여기선 실제 값
+json.dump([], open("ev157.json", "w"))
+json.dump([{"at": "2026-11-06 18:40", "curation": True, "topic": "주방", "img": [], "link": f"{H.SITE}c/s/20261106-1840-toss-kitchen.html",
+            "text": H.TOSS_NOTE + "\n\n🆕 토스에 새로 들어온 주방 3개 · 6,780~18,900원\n\n1️⃣ 쉬젤 내열유리 용기 10종 · 18,900원\n\n2️⃣ 살균 행주 티슈 60매 · 8,650원\n\n3️⃣ 주방 후드 필터 2개 · 6,780원"}], open("ae157.json", "w"), ensure_ascii=False)
+tg157 = []
+H.tg = lambda method, **k: tg157.append((method, k)) or {"message_id": 2491}
+H.http = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("no net"))
+H.E["THREADS_TOKEN"] = H.E["IG_TOKEN"] = ""
+s157 = {"tgmall": {"cp": TK("2026-11-06 18:29")}}
+time.time = lambda: TK("2026-11-06 18:43")
+with contextlib.redirect_stdout(io.StringIO()) as o157a:
+    H.curation(s157)
+assert not tg157 and "curation 토스 글 채널 쿠팡과 시차 1 분 -> 다음 실행 2026-11-06 18:40" in o157a.getvalue() and "tg" not in s157["cur_2026-11-06_1840"], o157a.getvalue()  # 쿠팡 채널 글 14분 뒤 = 안 보냄
+time.time = lambda: TK("2026-11-06 18:45")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.curation(s157)
+assert len(tg157) == 1 and tg157[0][0] == "sendMessage" and s157["cur_2026-11-06_1840"]["tg"] == 2491, tg157  # 16분 뒤 = 보냄
+s157k = {"tgmall": {"cp": TK("2026-11-06 18:40")}}
+json.dump([{**json.load(open("ae157.json"))[0], "text": H.DISCLOSURE + "\n\n🆕 쿠팡에 새로 들어온 주방 3개 · 6,780~18,900원\n\n1️⃣ 쉬젤 내열유리 용기 10종 · 18,900원\n\n2️⃣ 살균 행주 티슈 60매 · 8,650원\n\n3️⃣ 주방 후드 필터 2개 · 6,780원",
+            "link": f"{H.SITE}c/s/20261106-1840-coupang-kitchen.html"}], open("ae157.json", "w"), ensure_ascii=False)
+tg157.clear(); time.time = lambda: TK("2026-11-06 18:41")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.curation(s157k)
+assert len(tg157) == 1, tg157  # 쿠팡 큐레이션 = 그대로(토스 글만 봄)
+(H.EVENTS, S.EVENTS, S.AUTO_EVENTS, H.tg, H.http, _, time.time, _, H.TOSS_GAP) = sv157b; H.E.clear(); H.E.update(sv157b[5]); H.RUN.pop("tgmall", None); H.RUN.pop("thmall", None); H.RUN.update(sv157b[7])
+for f in ("ev157.json", "ae157.json"):
+    os.remove(f)
