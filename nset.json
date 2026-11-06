@@ -70,6 +70,20 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "겨울 난방",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "mix"
 }
 ]
 }
