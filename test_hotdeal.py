@@ -11215,7 +11215,7 @@ json.dump({"shelf": [{"kw": "핸드워시 리필", "words": ["핸드워시", "�
                      {"kw": "키친타올", "date": "2026-11-01", "tip": "x"}]}, open("docs/plan.json", "w"), ensure_ascii=False)
 assert [x["kw"] for x in H.plan_today(TK("2026-10-31 14:40"))] == ["생수 2L"] and [x["kw"] for x in H.plan_today(TK("2026-10-30 14:40"))] == ["핸드워시 리필"] and H.plan_today(TK("2026-11-01 14:40"))[0]["words"] == ["키친타올"]  # 날짜 지정 먼저 · 없으면 10/30부터 하루씩 돌림
 IMG = "https://thumbnail.coupangcdn.com/x.jpg"
-R114 = [["11", "", "삼다수 생수 2L 12개", 9000, IMG, 1, True], ["12", "", "아이시스 생수 2L 12개", 8000, IMG, 2, True], ["13", "", "백산수 생수 2L 6개 다이어트", 7000, IMG, 3, False],
+R114 = [["11", "", "삼다수 생수 2L 12개", 9000, IMG, 1, True], ["12", "", "아이시스 생수 2L 12개", 8000, IMG, 2, True], ["13", "", "백산수 생수 2L 6개 분유", 7000, IMG, 3, False],
         ["14", "", "평창수 생수 2L 12개", 7500, "", 4, False], ["15", "", "곰곰 생수 2L 12개", 6900, IMG, 5, True], ["16", "I16", "탐사 생수 2L 6개", 4900, IMG, 6, False], ["17", "", "볼빅 생수 1.5L", 9900, IMG, 7, False],
         ["18", "", "휴지 30롤", 9900, IMG, 8, True], ["19", "", "동원샘물 생수 2L 12개", 7200, IMG, None, True]]
 s114 = {"cpbest": {"r": {"1012": R114 + [["20", "I20", "제주 생수 2L 12개", 8500, IMG, 9, True]]}}}
@@ -11227,13 +11227,13 @@ with contextlib.redirect_stdout(io.StringIO()) as o114:
     H.auto_shelf(s114)
 H.ai_json = ai114; assert "shelf line Claude 실패 -> plan tips" in o114.getvalue()
 a114 = json.load(open("auto_events.json"))
-assert [e["pid"] for e in a114] == ["15", "16", "17", "19", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 효능 낱말 · 14 = 사진 X · 18 = 낱말 X · 19 = rank 없음 → 응답 순서(9번째 — 10/30 첫날 0개 원인) · 순위 순
+assert [e["pid"] for e in a114] == ["15", "16", "17", "19", "20"], (a114, o114.getvalue())  # 11 = events · 12 = cp_fail · 13 = 이름 막기(분유 — 11/7 효능 낱말 이름 거르기 X·9-164) · 14 = 사진 X · 18 = 낱말 X · 19 = rank 없음 → 응답 순서(9번째 — 10/30 첫날 0개 원인) · 순위 순
 e114 = {e["pid"]: e for e in a114}
 assert e114["15"]["text"] == "👍 <b>[쿠팡] 곰곰 생수 2L 12개 (6,900원)</b>\n\n✔ 쿠팡 식품 베스트 5위 · 로켓배송\n물은 무거우니 문 앞까지\n💡 5개 중 100ml당 29원, 제일 덜 들어요\n⚠️ 확인할 점: 유통기한 · 결제 전 최종가 확인 (10/31 14시 가격)", e114["15"]["text"]  # 11/5 F: 💡 1개 = 근거 줄 · 카피 = ✔ 아래 한 줄 · ⚠️ = 확인할 것 1개 + 짧게
 assert e114["20"]["text"].startswith("🔥 <b>[쿠팡] 제주 생수 2L 12개 (8,500원)</b>") and "✔ 핫딜픽 30일 기록 중 가장 낮은 가격" in e114["20"]["text"] and "최저" not in e114["20"]["text"] and e114["16"]["url"] == "https://www.coupang.com/vp/products/16?itemId=I16"  # 🔥 = 30일 기록보다 내려감만('최저' 낱말 X)
 assert "💡 6일 전보다 500원 내려왔어요" in e114["20"]["text"] and "💡 100ml당 30원, 5개 중 두 번째로 덜 들어요" in e114["19"]["text"] and "💡" not in e114["16"]["text"] + e114["17"]["text"], [e114[k]["text"] for k in ("16", "17", "19", "20")]  # 나머지 = 근거 줄(가격 기록·같이 고른 것끼리 단위 값) · 근거 없으면 줄 X
 assert [e114[k]["text"].count("⚠️ 확인할 점: 유통기한 ·") for k in ("15", "16", "17", "19", "20")] == [1, 1, 1, 0, 0] and "⚠️ 확인할 점: 구성(개수) ·" in e114["19"]["text"]  # 같은 ⚠️ 문구 하루 3번까지
-assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 5개(🔥 1) · 후보 9(1012 9) · 빠짐 이미 진열 1 · cp_fail 1 · 가격 0 · 사진 1 · 효능 1 · 이름 막기 0 · rank 없음 1(응답 순서로)\n" in o114.getvalue(), o114.getvalue()
+assert all(e["shelf"] and e["deal"] and e["tag"] == "생수 2L" and e["auto"] == "shelf" and e["img"] == IMG and e["chk"] == "2026-10-31 14:40" for e in a114) and "auto shelf '생수 2L': 진열 5개(🔥 1) · 후보 9(1012 9) · 빠짐 이미 진열 1 · cp_fail 1 · 가격 0 · 사진 1 · 이름 막기 1 · rank 없음 1(응답 순서로)\n" in o114.getvalue(), o114.getvalue()
 assert "✔ 쿠팡 식품 베스트 9위 · 로켓배송" in e114["19"]["text"]  # 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
 assert "https://www.coupang.com/vp/products/15" in S.ev_info() and any(e.get("auto") for e in S.ev_list())  # 사이트·게시 쪽(ev_list)이 같이 읽음 — events.json은 그대로
 assert json.load(open("events.json")) == [{"at": "2026-10-20 10:00", "url": "https://www.coupang.com/vp/products/11", "pid": "11", "text": "x", "shelf": True}]
@@ -11880,8 +11880,7 @@ assert why127(f"{N127}\n\n토스 수건 9,900원 — 쿠팡보다 1,000원 싸�
 mix127 = f"{H.DISCLOSURE}\n{N127}\n\n생필품 1개 값 순\n\n1️⃣ 화장지 9,900원\n👉 {CL127}\n\n2️⃣ 키친타월 8,900원\n👉 {TL127}\n\n{W127}"
 assert why127(mix127) == ["d", "f"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음"), kind="top15") == ["d", "f"] and why127(mix127.replace("생필품 1개 값 순", "오늘 묶음")) == ["f"]  # d 1개 값 순(글 말·묶음 종류) · f 쿠팡과 한 글(11/5)
 pk127 = f"{H.DISCLOSURE}\n{N127}\n\n🎯 오늘의 픽 3 (11/6)\n\n1️⃣ 햅쌀 10kg 29,900원\n2️⃣ 토스 여주차 9,900원 · {W127}\n\n👉 {H.SITE}today/2026-11-06/?ref=th"
-assert all(re.search(H.TOSS_EFFECT, n) for n in ("센토 프라임 고불소 구취케어 치약", "맘스럽 아토워시", "피부 재생크림", "탄력 크림", "잇몸 치약")) and not any(re.search(H.TOSS_EFFECT, n) for n in ("모나리자 미용티슈", "고탄력 레깅스", "재생펄프 화장지")) \
-    and 'not re.search(TOSS_EFFECT, x["displayName"])' in inspect.getsource(H.toss_deals)  # 11/5 Cowork D: 토스 묶음·시리즈·리스트 이름 효능 낱말 X
+assert not hasattr(H, "TOSS_EFFECT") and "TOSS_EFFECT" not in inspect.getsource(H.toss_deals)  # 11/7 진우 '상품명 = 고유명사': 11/5 D(이름 효능 낱말 X) 끔 — 9-164
 assert why127(pk127) == ["f"] and why127(pk127.replace(H.DISCLOSURE + "\n", "")) == [] and why127(pk127.replace(N127 + "\n", "")) == []  # 11/5 B①: 토스 주소 없이 사이트 링크만이어도 토스+쿠팡 문구 = 섞임 · 토스만·쿠팡만 = X
 time.time = lambda: TK("2026-11-02 12:00"); assert why127(ok127) == ["e"]; time.time = lambda: TK("2026-11-06 12:00")  # e 토스 점검 기간(10/30~11/4)
 assert why127(f"👉 {TL127}", reply=True) == [] and why127(f"👉 {TL127} 쿠팡", reply=True) == ["c"]  # 링크 댓글 = a·b는 본 글이 봄(c·d·e는 그대로)
@@ -13056,8 +13055,9 @@ with contextlib.redirect_stdout(io.StringIO()) as o153r:
 m153 = tg153[0][1]["text"]; rows153 = [l for l in m153.split("\n") if re.match(r"\d+\. ", l)]
 assert len(tg153) == 1 and tg153[0][1]["chat_id"] == H.ADMIN and m153.startswith("💙 토스 링크 만들 거리 10개 (11/6 12:25") and len(rows153) == 10, m153
 assert all(re.fullmatch(r"\d+\. .+ · [\d,]+원 \(11/6 12:25 확인\) · \S+ · 🔎 .+", l) for l in rows153), rows153  # 이름 · 가격(확인 시각) · 품목 · 검색어
-for bad153 in ("진우가 만든 휴지", "품절 키친타월", "미백 치약", "분유", "판매자 요청 수건", "성인 기저귀", "이미 만든 샴푸", "하루 물티슈 100매"):
-    assert bad153 not in m153, bad153  # 진우 링크(id·이름) · 품절 · 효능 낱말 · 분유 · 판매자 요청 · 성인 · 같은 품목(물티슈 2개)
+for bad153 in ("진우가 만든 휴지", "품절 키친타월", "분유", "판매자 요청 수건", "성인 기저귀", "이미 만든 샴푸", "하루 물티슈 100매"):
+    assert bad153 not in m153, bad153  # 진우 링크(id·이름) · 품절 · 분유 · 판매자 요청 · 성인 · 같은 품목(물티슈 2개)
+assert "미백 치약 3개" in m153  # 11/7 진우 '상품명 = 고유명사': 이름 효능 낱말 거르기 X(9-164)
 assert [l.split(". ", 1)[1].split(" · ")[0] for l in rows153[:4]] == ["베스트 물티슈 캡형", "주방 행주 10매", "베스트 세제 3L", "수분 크림 50ml"], rows153  # 하루특가·베스트·뷰티·생필품 번갈아(진우 것·같은 품목 건너뜀)
 assert "뺀 이유 " in o153r.getvalue() and "진우 링크" in o153r.getvalue()  # 거른 이유 수(이름 X)
 assert "· 물티슈 ·" in rows153[0] and "· 행주 ·" in rows153[1] and "5,900원" not in o153r.getvalue() and "물티슈" not in o153r.getvalue()  # 로그 = 수만(이름·가격 X)
@@ -13382,29 +13382,28 @@ assert "path: |\n            seen.json\n            fonts\n            toss.json
 
 # 9-161 (11/6 22:2x Cowork 버그 — 기존 규칙 그대로): 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(TOSS_EFFECT·AUTO_CLAIM·분유·성인) — '쿠잉 주름펴기 HSI-1500GW'가 올라갔던 것
 #   글 만들 때(toss_site) X + 이미 올라간 것 = 다음 빌드(tapi_ok)에서 빠짐 · 11/6 22:3x 진우 '예외로 두자': 옷 주름(주름펴기·스티머·다리미·스팀·의류·옷) = '주름' 효능 낱말 예외(WRINKLE — 화장품 주름은 그대로 거름)
-assert S.TAPI_NAME_BLOCK == H.TOSS_SITE_BLOCK == f"{H.TOSS_EFFECT}|{H.AUTO_CLAIM}|{H.SHELF_BLOCK}"  # 두 파일 같은 규칙
-assert all(re.search(S.TAPI_NAME_BLOCK, n) for n in ("주름 개선 크림 50ml", "미백 치약 3개", "매일 분유 800g", "성인용 기저귀")) and not re.search(S.TAPI_NAME_BLOCK, "물티슈 100매 10팩")
+assert S.TAPI_NAME_BLOCK == H.SHELF_BLOCK  # 두 파일 같은 규칙(11/7 = 분유·성인만)
+assert all(re.search(S.TAPI_NAME_BLOCK, n) for n in ("매일 분유 800g", "성인용 기저귀")) and not any(re.search(S.TAPI_NAME_BLOCK, n) for n in ("주름 개선 크림 50ml", "미백 치약 3개")) and not re.search(S.TAPI_NAME_BLOCK, "물티슈 100매 10팩")
 sv161 = (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE); cwd161, d161 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d161)
 N161 = TK("2026-11-06 22:10")
 def T161(n, when="2026-11-06 22:02"):
     x = {"tacaItemId": 7, "tacaId": 70, "displayName": n, "displayPrice": 39900, "discountRate": 10, "reviewCount": 0, "isSoldOut": False}
     body = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", n, H.toss_price(x), [H.toss_when(when)])
     return x, H.html_ents(H.ad_head(H.TOSS_NOTE, H.plain_of(body)) + body)[0]
-x161, t161 = T161("주름 개선 크림 50ml")
+x161, t161 = T161("매일 분유 800g")
 H.POSTS = "posts161.json"; json.dump([], open(H.POSTS, "w")); open("toss_noimg.txt", "w").write("")
 with contextlib.redirect_stdout(io.StringIO()) as o161:
     ok161 = H.toss_site({}, x161, "https://toss.shopping/_m/W1", t161)
-assert not ok161 and json.load(open(H.POSTS)) == [] and "이름 낱말(효능·분유·성인)" in o161.getvalue(), o161.getvalue()  # 글 만들 때 X
+assert not ok161 and json.load(open(H.POSTS)) == [] and "이름 낱말(분유·성인)" in o161.getvalue(), o161.getvalue()  # 글 만들 때 X(11/7: 분유·성인만)
 xo161, to161 = T161("쿠잉 주름펴기 HSI-1500GW , 1개")
 with contextlib.redirect_stdout(io.StringIO()):
-    assert H.toss_site({}, xo161, "https://toss.shopping/_m/W2", to161)  # 옷 주름펴기 = 올라감(진우 예외)
+    assert H.toss_site({}, xo161, "https://toss.shopping/_m/W2", to161)  # 옷 주름펴기 = 올라감(11/7 이름 효능 낱말 거르기 X)
 S.TOSS_API_SITE, S.TOSSM, time.time = True, {}, lambda: N161
 old161 = {"t": "2026-11-06 22:02", "text": t161, "url": "https://toss.shopping/_m/W1", "own": 1, "shelf": 1, "tid": 7}
 ok161b = {"t": "2026-11-06 22:02", "text": to161, "url": "https://toss.shopping/_m/W2", "own": 1, "shelf": 1, "tid": 8}
 assert not S.tapi_ok(old161, N161) and S.tapi_ok(ok161b, N161)  # 이미 올라간 것 = 다음 빌드에서 빠짐
 (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE) = sv161; os.chdir(cwd161); shutil.rmtree(d161, ignore_errors=True)
-assert not any(re.search(p, n) for p in (H.AUTO_CLAIM, H.WU_HEALTH, H.TOSS_EFFECT, H.OY_DENY, S.TAPI_NAME_BLOCK) for n in ("쿠잉 주름펴기 스티머", "쿠잉 주름펴기 HSI-1500GW , 1개", "핸디 스티머 의류 주름 제거기", "스팀 다리미 옷 주름"))  # 옷 주름 = 통과(효능 거르기 공통)
-assert all(re.search(p, n) for p in (H.AUTO_CLAIM, H.WU_HEALTH, H.TOSS_EFFECT, H.OY_DENY, S.TAPI_NAME_BLOCK) for n in ("주름 개선 크림", "아이크림 주름 케어 앰플", "첫 줄은 괜찮아요\n주름 개선돼요"))  # 화장품 주름 = 그대로 거름(여러 줄 글 둘째 줄도)
+assert not hasattr(H, "WRINKLE") and all(re.search(p, "첫 줄은 괜찮아요\n주름 개선돼요") for p in (H.WU_HEALTH, H.OY_DENY))  # 11/7: 옷 주름 예외(a81affcf) 필요 X — 우리 문구는 '주름' 그대로 거름
 
 # 9-162 (11/6 23시 진우 '네이버의 경우 저런 걸 핫딜로 보는 게 맞아?' · '뭔지 안 써 있다' — 갤럭시탭 S12 울트라 = 출고가 그대로, 카드 딜 #02): 진우 '네이버만'
 #   ① 진우·Cowork 네이버 딜(own)은 events "dc" > 0일 때만 오늘의 카드 딜(day_deals → 인스타·Threads·사이트 카드 칸)·🔥 — dc 0·없음 = 대기(네이버 모음엔 그대로) · 쿠팡·토스·커뮤니티 = 그대로
@@ -13475,3 +13474,25 @@ except urllib.error.HTTPError as e163:
 (H.http, time.sleep, _, H.th_hold, H.rv_text) = sv163; H.E.clear(); H.E.update(sv163[2])
 src163 = inspect.getsource(H.toss_deals)
 assert src163.count("toss_th_photo(") == 2 and '"img": [toss_photo(got[t[4]]) for t in plain]' in src163 and 'toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [])' in inspect.getsource(H.toss_th_later)  # series·리스트·줄 선 리스트(21:20·22:20) 다
+
+# 9-164 (11/7 0시대 진우 '상품명에 있는건 그대로 진행해도 돼 고유명사 취급이야' — 엘렌실라 '에스카르고 오리지날 리페어 크림'(리뷰 2.5만)이 이름 '리페어'로 빠짐):
+#   ① 이름에 걸던 효능 낱말 거르기 끔(토스 API 사이트·자동 진열·토스 하루특가·묶음·링크 거리·미리보기) — 분유·조제유·성인(SHELF_BLOCK)·toss_noimg만 그대로
+#   ② 우리 문구(Claude 한 줄·🙋👍·💡·훅·말투) = 효능·피부 고민 말 그대로 X(이름에서 뽑아 강조 X) — 진정·리페어 등 = WU_HEALTH
+N164 = "엘렌실라 에스카르고 오리지날 리페어 크림"
+assert not any(hasattr(H, k) for k in ("AUTO_CLAIM", "TOSS_EFFECT", "TOSS_SITE_BLOCK", "WRINKLE")) and not re.search(S.TAPI_NAME_BLOCK, N164) and S.TAPI_NAME_BLOCK == H.SHELF_BLOCK
+assert all(re.search(H.SHELF_BLOCK, n) for n in ("매일 분유 800g", "성장기 조제유", "성인용 기저귀"))  # 그대로 둠
+sv164 = (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS); cwd164, d164 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d164)
+x164 = {"tacaItemId": 64, "tacaId": 640, "displayName": N164, "displayPrice": 19900, "discountRate": 10, "reviewCount": 25000, "reviewScore": 4.8, "isSoldOut": False}
+b164 = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", N164, H.toss_price(x164), [H.toss_when("2026-11-07 00:10")])
+t164 = H.html_ents(H.ad_head(H.TOSS_NOTE, H.plain_of(b164)) + b164)[0]
+H.POSTS = "posts164.json"; json.dump([], open(H.POSTS, "w")); open("toss_noimg.txt", "w").write("")
+with contextlib.redirect_stdout(io.StringIO()) as o164:
+    assert H.toss_site({}, x164, "https://toss.shopping/_m/E1", t164), o164.getvalue()  # 글 만들 때 통과
+S.TOSS_API_SITE, S.TOSSM, time.time = True, {}, lambda: TK("2026-11-07 00:20")
+assert S.tapi_ok({"t": "2026-11-07 00:10", "text": t164, "url": "https://toss.shopping/_m/E1", "own": 1, "shelf": 1, "tid": 64}, TK("2026-11-07 00:20"))  # 사이트 빌드 통과
+(time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS) = sv164; os.chdir(cwd164); shutil.rmtree(d164, ignore_errors=True)
+for f164 in (H.auto_shelf, H.toss_deals, H.toss_ideas, H.toss_site, H.toss_site_preview):
+    assert not re.search(r'EFFECT|CLAIM|"효능[ "]', inspect.getsource(f164)), f164.__name__  # 이름 효능 거르기 남은 곳 X
+for c164 in ("진정·리페어 크림이라 좋아요", "리페어 크림이라 회복돼요", "피부 장벽까지 챙겨요", "시린이 걱정 덜어요"):
+    assert re.search(H.WU_BAN, c164) and H.toss_lines({"comment": c164}) == [] and H.toss_one({"comment": c164}, 0, N164) == f"✔ {H.BUY_CHECK}", c164  # Claude 한 줄 = 걸림 유지
+assert H.toss_lines({"comment": "50ml 2개라 넉넉해요"}) == ["👉 50ml 2개라 넉넉해요"] and not any(re.search(H.WU_BAN, c) for c in ("진정한 가성비예요", "손이 시린 날 생각나요"))  # 쓰임·구성 말 = 그대로 · '진정한'·'손 시린' X

@@ -160,8 +160,7 @@ IG_DAY_HOUR, IG_OWN_HOUR = 22, 19  # 22시 = 하루 카드(21시 모아보기 �
 IG_START = "2026-10-23 15"  # shortcut: 첫날(10/23)은 15시 칸부터(진우 '11시 칸이 이미 지났으면 15시부터') — 10/24부터는 안 씀, 그 뒤 지워도 됨
 IG_LATE, IG_MIN = 2, 3  # 칸은 그 시각 2시간 안에만(늦게 몰아 안 올림) · 딜 3개 미만이면 건너뜀(억지로 안 채움) · 하루 발행 최대 = 그 단계 횟수 + 1(ig_day_max — 오류로 몰려 올라가지 않게, API 상한 50)
 IG_CAROUSEL, SLIDE_KEEP, KIDS_WAIT = True, 2, 3600  # 넘기기(10/11 진우 '인스타 업그레이드 2번'): 표지 + 딜마다 1장(False면 1단계 한 장 카드) · 딜 카드는 인스타가 가져간 뒤 2일 지나면 지움(저장소 크기) · 조각 처리 1시간 넘으면 버림
-WRINKLE = r"(?s:^(?!.*(?:주름\s*펴|스티머|다리미|스팀|의류|옷)).*?주름)"  # 11/6 진우 '예외로 두자': 효능 낱말 '주름' = 옷 주름 상품(주름펴기·스티머·다리미·스팀·의류·옷 든 글) 빼고만 — 화장품 주름은 그대로 거름(앞부터 봐서 글 어디에 있어도)
-OY_DENY = rf"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|{WRINKLE}|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
+OY_DENY = rf"후기|리뷰|추천|댓글|반응|좋|최고|100%|효과|효능|강추|쟁여|인생|대박|미백|주름|탄력|개선"  # 올리브영 딜 카드에서 빼는 말(큐레이터 정책: 가격·용량·구성·조건만)
 REEL_PUBLIC, REEL_HOUR, REEL_THUMB_MS = True, 22, 700  # FF(10/26): 표지 = 첫 장(1위 실사진 꽉 + 숫자 훅 띠) 가운데 0.7초 · 10/26 00:3x 진우 J-1 '배경음악도 넣어줘' = 공개 OK(라이선스 기록된 Pixabay 곡만 — Content ID 미등록)  # 릴스 자동(10/11 진우 '인스타 업그레이드 3번'): 영상을 docs/reels/에 공개 -> 인스타가 video_url로 가져감. 음원(Pixabay) 든 영상 공개는 진우 확인 뒤 True · 22시(21시 카드와 간격) · 표지 = 1.5초(첫 화면 다 뜬 뒤)
 IG_TRIES, IG_SITE_LAG = 3, 300  # 릴스 컨테이너 만들기 실패는 3번까지 다시(IG_H 끈 때만 — H 공개 릴스·카드 = 다시 시도 X) · 카드는 사이트 맨 위에 먼저(만든 실행) -> 5분 넘은 다음 실행에 발행
 IG_TAGS, IG_CAT_TAGS, IG_FILL_TAGS, IG_TAG_MAX = ("#핫딜", "#핫딜픽"), {"life": "#생필품", "beauty": "#화장품"}, ("#특가", "#살림템", "#쇼핑정보", "#할인정보", "#가성비템", "#쟁여템", "#장바구니", "#오늘의딜"), 5  # 해시태그 5개(근거 없는 #최저가 뺌, 카테고리 태그는 그날 딜에 있을 때만, 채움은 칸마다 돌림)
@@ -502,7 +501,6 @@ def cp_best(seen):
 
 AUTO_ON = {"shelf": True, "repost": True, "pick5": True, "status": True, "event": True}  # 10/30 Cowork 크롬 루틴 이관(진우 '깃허브에서 작업 가능한 것은 이관하자') — 끔 스위치: False = 그 기능 X(Cowork 크롬 그대로) · 쿠팡 API 상한 그대로
 AUTO_SHELF_AT, AUTO_SHELF_N, AUTO_KEEP, CP_BEST_KEEP, AUTO_SHELF_V = "14:30", (4, 6), 45, 60, 3  # V = 바꾸면 그날 못 올린 품목만 1번 더(10/30: 2 = 첫날 0개 고친 뒤 · 3 = 화장솜·면봉 낱말 검색) · A 진열 자동: 하루 1번 이 시각 뒤 · 4~6개(4개 밑 = 안 올림) · auto_events 진열 45일 보관 · 베스트 응답 칸마다 위 60개만 보관
-AUTO_CLAIM = rf"효능|효과|개선|치료|예방|완화|다이어트|체지방|면역|미백|{WRINKLE}|탄력|재생|해독|디톡스"  # 이름에 효능 낱말 = 자동 진열 X(효능 표현은 사람이 판단)
 CP_BEST_NAME = {1001: "여성패션", 1010: "뷰티", 1011: "출산/유아동", 1012: "식품", 1013: "주방용품", 1014: "생활용품", 1015: "홈인테리어", 1016: "가전디지털", 1018: "자동차용품", 1021: "문구/오피스", 1024: "헬스/건강식품", 1029: "반려동물용품"}  # 쿠팡 파트너스 카테고리 번호 -> 이름('쿠팡 <카테고리> 베스트 N위')
 
 
@@ -679,7 +677,7 @@ def copy_rep(posts, n=50):
 
 def auto_shelf(seen):
     """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목(group마다 1개 — 3품목이면 최대 18개) 낱말과 맞는 상품
-    -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 효능 낱말 X · 이름 막기(SHELF_BLOCK) X · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
+    -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 막기(SHELF_BLOCK — 분유·성인) X(11/7 효능 낱말 이름 거르기 X) · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
     · 베스트에서 4개 밑 = 그 품목만 kw를 '·'로 나눈 낱말 하나씩 쿠팡 검색(4개 채우면 멈춤 — 검색 상한 그대로, 넘으면 다음 실행에 이어서)으로 채움(같은 필터) · 그래도 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄 · 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
     · 순위 = 응답 rank(없으면 응답 순서 — 10/30 첫날 베스트 응답에 rank가 없어 0개) · 근거 = '쿠팡 <카테고리> 베스트 N위' / 검색으로 채운 것 = '쿠팡 '<검색어>' 검색 N위'(API엔 리뷰 수·할인 표시 X)
     · 🔥 = price_hist 30일 기록보다 내려갔을 때만('30일 기록 중 가장 낮은 가격'), 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = 첫 상품 plan tips 돌림 + 나머지 근거 줄(shelf_tips) · ⚠️ = 확인할 것 1개(warn_line) · seen autoshelf = 그날 끝낸 품목·검색 결과(AUTO_SHELF_V 바꾸면 그날 못 올린 품목만 1번 더)."""
@@ -712,7 +710,7 @@ def auto_shelf(seen):
                     continue
                 why[src] += 1
                 bad = ("이미 진열" if pid in pids else "cp_fail" if pid in fails else "가격" if not price else "사진" if not str(img).startswith("https://")
-                       else "효능" if re.search(AUTO_CLAIM, name) else "이름 막기" if name_block(name, "진열 자동", SHELF_BLOCK) else "")
+                       else "이름 막기" if name_block(name, "진열 자동", SHELF_BLOCK) else "")
                 if bad:
                     why["-" + bad] += 1
                     continue
@@ -748,7 +746,7 @@ def auto_shelf(seen):
         srch = f" · 검색어 {'·'.join(sq)}" if sq else ""
         st["done"].append(pl["kw"])
         diag = (f"후보 {sum(v for c, v in why.items() if not c.startswith('-'))}(" + (" · ".join(f"{c} {v}" for c, v in why.items() if not c.startswith("-")) or "0") + ") · 빠짐 "
-                + " · ".join(f"{w} {why['-' + w]}" for w in ("이미 진열", "cp_fail", "가격", "사진", "효능", "이름 막기")) + f" · rank 없음 {why['-rank 없음']}(응답 순서로){srch}")
+                + " · ".join(f"{w} {why['-' + w]}" for w in ("이미 진열", "cp_fail", "가격", "사진", "이름 막기")) + f" · rank 없음 {why['-rank 없음']}(응답 순서로){srch}")
         if len(picks) < AUTO_SHELF_N[0]:
             print(f"auto shelf '{pl['kw']}': 맞는 상품 {len(picks)}개({AUTO_SHELF_N[0]}개 밑) — 안 올림 · {diag}")
             tg("sendMessage", chat_id=ADMIN, text=f"🧺 진열 자동 '{pl['kw']}': 베스트{'·검색' if srch else ''}에서 맞는 상품 {len(picks)}개뿐이라 안 올렸어요 — plan.json 낱말 확인 또는 Cowork 진열")
@@ -3430,7 +3428,7 @@ def toss_deals(seen, best=False):
     picked = {v.get("id") for k, v in seen.items() if k.startswith("pk_" + time.strftime("%Y-%m-%d", kst)) and isinstance(v, dict)}  # 오늘 이름 예약(toss_picks)으로 찾은 상품도(이름이 달라도 id로)
     eve = not (best or special) and hrs[-1] == TOSS_DAY_EVE  # S 저녁 회차 = '1번 더': 오늘 올린 하루특가도 다시(판매 중 TOP5 — 진우 예약·이름 예약 상품은 그대로 뺌)
     items = list({x["tacaItemId"]: x for x in raw if not x.get("isSoldOut") and (eve or f"tb_{x['tacaItemId']}" not in seen) and toss_ok(seen, x["tacaItemId"])
-                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id and not re.search(TOSS_EFFECT, x["displayName"])}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
+                  and re.sub(r"\W", "", x["displayName"]) not in booked and x["tacaItemId"] not in picked | booked_id and ("g", x.get("tacaId")) not in booked_id}.values())  # 카테고리 겹친 상품은 1번만 · 토스 점검 땐 보관 링크 있는 것만
     tone, tsuf = tone_ask(seen, "ch") if items else (0, "")
     picks = items and ai_pick((SPECIAL_PROMPT if special else BEST_PROMPT if best and not series else DAY_PROMPT.replace("쿠팡 골드박스", "토스쇼핑 하루특가").replace("5개", "7개" if series else "5개") + TOSS_EASE + TOSS_WU) + tsuf,
                               [f"{x['displayName']} | {x['displayPrice']:,}원 ({x.get('discountRate', 0)}% 할인)"
@@ -3675,12 +3673,10 @@ def arrive_bad(s, a):
 
 
 WU_FAKE = r"(?<![가-힣])제가|(?:써|먹어|발라|마셔|사용해|입어|신어)\s*(?:보니|봤|봄|본)"  # 써 본 척
-WU_HEALTH = rf"다이어트|혈당|면역|피로|건강|효능|효과|개선|미백|{WRINKLE}|탄력|(?:피부|모발|두피)\s*재생|재생\s*(?:크림|효과|케어)|치료|탈모|여드름|트러블|아토피|숙면|관절|변비|혈압"  # 효능·건강·의학
+WU_HEALTH = r"다이어트|혈당|면역|피로|건강|효능|효과|개선|미백|주름|탄력|(?:피부|모발|두피)\s*재생|재생\s*(?:크림|효과|케어)|치료|탈모|여드름|트러블|아토피|숙면|관절|변비|혈압|구취|잇몸|충치|치석|시린이|비듬|진정(?!한|히|으로)|장벽|리페어|리프팅|회복|완화|체지방|해독|디톡스"  # 효능·건강·의학 · 11/7 진우 '상품명에 있는 건 고유명사': 이름 거르기 X — 효능 낱말은 우리 문구(Claude 한 줄·💡·훅·말투)에만
 WU_CMP = r"보다\s*(?:싸|저렴|비싸)|반값|코스트코|홈플러스|트레이더스"  # 다른 몰·비교(+ OTHER_STORES)
 WU_HYPE = r"역대급|무조건|손해|마지막\s*기회|클릭|눌러\s*(?:보|주)"  # 과장·조급·클릭 유도
 WU_BAN = "|".join((WU_FAKE, WU_HEALTH, WU_CMP, WU_HYPE))
-TOSS_EFFECT = rf"구취|아토|미백|잇몸|시린|충치|치석|탈모|비듬|여드름|트러블|재생(?!\s*(?:펄프|지|용지|종이))|진정|장벽|리페어|기능성|{WRINKLE}|리프팅|(?<!고)탄력"  # 11/5 Cowork D(10시 💙 #1에 '고불소 구취케어 치약'·'아토워시'): 이름에 효능 낱말 = 토스 묶음·시리즈·리스트 X(Cowork 진열 규칙과 같게)
-TOSS_SITE_BLOCK = f"{TOSS_EFFECT}|{AUTO_CLAIM}|{SHELF_BLOCK}"  # 11/6 Cowork: 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(토스 효능 낱말·효능 낱말·분유·성인) — “쿠잉 주름펴기”가 올라감 · = build_site.TAPI_NAME_BLOCK(셀프체크로 같게)
 TOSS_BAN = rf"{WU_CMP}|{OTHER_STORES}|{CMP_WORDS}|비교|비쌈|(?:온라인|인터넷|국내|업계|시중)\s*최저|시중|타\s*(?:몰|사이트|쇼핑몰)|다른\s*(?:데|곳|몰|쇼핑몰|사이트)|(?:가장|제일|젤)\s*(?:싸|싼|쌌|쌈|저렴|낮)"  # 토스 글 = 다른 몰·가격 비교 말 X(th_voice·Claude 한 줄)
 
 
@@ -5474,7 +5470,7 @@ def toss_site(seen, x, link, text):
     상품 그룹 id를 tossid에 미리 넣어 단축 링크를 안 풂)."""
     if any(p.get("tid") == x["tacaItemId"] or p.get("own") and p.get("url") == link for p in load(POSTS, [])):
         return False
-    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg()) + ["이름 낱말(효능·분유·성인)"] * bool(re.search(TOSS_SITE_BLOCK, x.get("displayName") or ""))  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
+    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg()) + ["이름 낱말(분유·성인)"] * bool(re.search(SHELF_BLOCK, x.get("displayName") or ""))  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
     if why:
         print("toss site 뺌", x["tacaItemId"], why)
         return False
@@ -5528,7 +5524,7 @@ TOSS_IDEA_CHECK = "토스 링크 거리 10개 (12:20 DM)"  # 07:00 toss_list.jso
 
 def toss_ideas(seen, now=None):
     """R(11/5 진우): 매일 TOSS_IDEA_AT 창에 1번 관리봇 DM '토스 링크 만들 거리' TOSS_IDEA_N개 — 토스 API 목록(하루특가·많이 팔린 순위·뷰티 베스트·생필품 베스트(날마다 돌림)를 번갈아 섞음) 중
-    진우 링크 X(toss_list.json·진우 토스 글 — seen tossid 상품 id·이름) · 품절 X · 효능 낱말(TOSS_EFFECT)·분유·성인(SHELF_BLOCK)·toss_noimg.txt X · 같은 품목(same_kind) X · 7일 안 보낸 것 뒤로.
+    진우 링크 X(toss_list.json·진우 토스 글 — seen tossid 상품 id·이름) · 품절 X · 분유·성인(SHELF_BLOCK — 11/7 효능 낱말 이름 거르기 X)·toss_noimg.txt X · 같은 품목(same_kind) X · 7일 안 보낸 것 뒤로.
     줄 = 이름 · 가격(확인 시각) · 품목 · 🔎 토스 앱 검색어 — 관리봇만(공개 파일·로그에 API 가격·이름 X). 목록 다 실패·전송 실패 = 창 안 다음 실행에."""
     now = now or time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -5558,7 +5554,7 @@ def toss_ideas(seen, now=None):
     for lab, x in mixed:
         n, ids = x.get("displayName") or "", {str(v) for v in (x.get("tacaItemId"), x.get("tacaId")) if v}  # 목록 API엔 tacaId 칸 없음 — 'None'이 겹쳐 첫 상품 뒤 다 '같은 상품'이던 것(11/6 118개 중 1개)
         w = "품절" if x.get("isSoldOut") or not x.get("displayPrice") else "진우 링크" if ids & have or ns(n) in names else "같은 상품" if ids & used else "판매자 요청" if ids & no \
-            else "효능 낱말" if re.search(TOSS_EFFECT, n) else "이름 막기" if name_block(n, "toss ideas", SHELF_BLOCK) \
+            else "이름 막기" if name_block(n, "toss ideas", SHELF_BLOCK) \
             else "같은 품목" if any(kind(n) != "기타" and kind(n) == kind(o["displayName"]) or same_kind(n, o["displayName"]) for _, o in out) else ""  # 11/6: 품목 모르는 것('기타')끼리 = 같은 품목 X(118개 중 1개만 남던 것)
         if w or len(out) >= TOSS_IDEA_N:
             why[w or "10개 다 참"] += 1
@@ -5612,7 +5608,7 @@ def toss_site_preview(seen, now=None):
     try:
         for x in toss("/products/today-deals?size=30")["items"]:
             if not x.get("isSoldOut") and x.get("displayPrice") and toss_thumb(x) and not {str(x.get("tacaItemId")), str(x.get("tacaId"))} & no \
-                    and not re.search(TOSS_EFFECT, x.get("displayName") or "") and not name_block(x.get("displayName"), "toss preview", SHELF_BLOCK) and (doc := toss_preview_html(x, now)[1]):
+                    and not name_block(x.get("displayName"), "toss preview", SHELF_BLOCK) and (doc := toss_preview_html(x, now)[1]):
                 break
         else:
             print("toss preview 상품 없음")
