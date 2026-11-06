@@ -4547,7 +4547,7 @@ DAY_DEAL_PCT, DAY_DEAL_FRESH, DAY_DEAL_MARKS = 10, 6, {"c": "쿠폰가", "w": "�
 def day_deal_why(rows, now):
     """같은 pid·itemId 가격 기록 줄(price_hist — ph_add 모양) -> 특가 근거 (보일 가격 줄, 근거 줄들, 내린 원) / None.
     지금가 = 봇 확인(api·best·gold) 일반가 중 마지막(DAY_DEAL_FRESH시간 안) · ① 바로 앞 일반가(출처 상관없이 — 진열가 포함)보다 DAY_DEAL_PCT%↑ 내림 = 'N일 전(어제·오늘 앞서)보다 M원 내려옴'
-    ② 30일 기록(일반가) 중 가장 낮은 가격(다른 기록 2개↑) ③ 할인 표시(쿠폰가·와우가)가 새로 생김(30일 안 처음 — 6시간 안 확인) — 확인한 기록만."""
+    ② 30일 기록(일반가) 중 가장 낮은 가격(다른 기록 2개↑) ③ 할인 표시(쿠폰가·와우가)가 새로 생김(표시 없는 일반가 확인 뒤 처음 · 30일 안 처음 · 6시간 안 확인) — 확인한 기록만."""
     fresh, d30 = ph_now(now - DAY_DEAL_FRESH * 3600), ph_now(now - 30 * 86400)
     rs = sorted((r for r in rows or [] if isinstance(r, list) and len(r) >= 4 and r[1]), key=lambda r: (r[0], ph_last(r)))
     day = lambda t: datetime.strptime(t[:6], "%y%m%d")
@@ -4565,7 +4565,8 @@ def day_deal_why(rows, now):
         if why:
             return f"{cur[1]:,}원", why, drop
     mk = max((r for r in rs if r[2] in DAY_DEAL_MARKS and ph_last(r) >= fresh), key=ph_last, default=None)
-    if mk and not any(r[2] in DAY_DEAL_MARKS and r is not mk and ph_last(r) >= d30 for r in rs) and mk[0] >= ph_now(now - 86400):
+    if mk and not any(r[2] in DAY_DEAL_MARKS and r is not mk and ph_last(r) >= d30 for r in rs) and mk[0] >= ph_now(now - 86400) \
+            and any(r[2] == "" and r[0] < mk[0] for r in rs):  # 11/6 Cowork: 표시 없는 일반가 확인이 먼저 있었을 때만 '새로'(기록이 표시 붙은 것뿐 = 전부터였을 수 있음 — 14:29 #2477)
         return f"{mk[1]:,}원 {DAY_DEAL_MARKS[mk[2]]}", [f"{DAY_DEAL_MARKS[mk[2]]} 표시가 새로 생겼어요"], 0
     return None
 

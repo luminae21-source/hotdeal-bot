@@ -13214,6 +13214,8 @@ assert H.day_deal_why(json.load(open(S.PRICE_HIST))["111:901"], TK("2026-11-06 2
 assert H.day_deal_why(json.load(open(S.PRICE_HIST))["555:905"], TK("2026-11-06 13:10")) == ("10,900원", ["핫딜픽 30일 기록 중 가장 낮은 가격"], 0)
 assert H.day_deal_why([["26110612", 9000, "c", "cw"], ["26110519", 10000, "", "post"]], TK("2026-11-06 13:10")) == ("9,000원 쿠폰가", ["쿠폰가 표시가 새로 생겼어요"], 0)  # 할인 표시 새로
 assert H.day_deal_why([["26102012", 9500, "c", "cw"], ["26110612", 9000, "c", "cw"], ["26110519", 10000, "", "post"]], TK("2026-11-06 13:10")) is None  # 30일 안 이미 있던 표시
+assert H.day_deal_why([["26110613", 7110, "w", "cw"]], TK("2026-11-06 14:20")) is None  # 11/6 14:29 #2477: 처음 기록부터 와우가 = '새로 생김' 확인 X
+assert H.day_deal_why([["26110613", 8000, "", "cw"], ["26110613", 7110, "w", "cw"]], TK("2026-11-06 14:20")) is None  # 같은 때 처음 본 일반가·와우가 = 먼저 없던 기록 X
 s155 = {"thmall": {"cp": TK("2026-11-06 13:05")}}
 time.time = lambda: TK("2026-11-06 13:10")
 with contextlib.redirect_stdout(io.StringIO()) as o155:
