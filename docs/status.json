@@ -1,24 +1,24 @@
 {
-"at": "2026-11-07 09:33",
-"posts": 3757,
-"site": 1794,
+"at": "2026-11-07 09:36",
+"posts": 3769,
+"site": 1805,
 "mall": {
-"coupang": 1109,
+"coupang": 1120,
 "toss": 629,
 "": 1,
 "naver": 55
 },
 "cat": {
-"snack": 80,
+"snack": 81,
 "heat": 125,
-"food": 387,
+"food": 392,
 "laundry": 76,
 "beauty": 253,
 "coffee": 86,
 "pet": 37,
 "car": 38,
 "life": 235,
-"season": 103,
+"season": 108,
 "home": 78,
 "fashion": 91,
 "kitchen": 120,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 165,
-"sitemap": 931,
+"sitemap": 937,
 "days": {
 "2026-10-30": {
 "site": 1581,
@@ -106,10 +106,10 @@
 }
 },
 "2026-11-07": {
-"site": 1794,
-"sitemap": 931,
+"site": 1805,
+"sitemap": 937,
 "mall": {
-"coupang": 1109,
+"coupang": 1120,
 "toss": 629,
 "": 1,
 "naver": 55
@@ -455,7 +455,21 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 48 · 기존 상품 구성 0"
+"nset_n": "새 구성 50 · 기존 상품 구성 0"
 }
