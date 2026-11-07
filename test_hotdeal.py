@@ -3141,7 +3141,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
