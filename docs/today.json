@@ -1,21 +1,19 @@
 {
- "date": "2026-11-07",
- "updated": "2026-11-07 06:42",
+ "date": "2026-11-08",
+ "updated": "2026-11-08 06:35 봇",
  "items": [
   {
-   "fact": "입동, 서울 아침 영하 1도·찬바람",
+   "fact": "서울 아침 3도",
    "kind": "weather",
-   "src": "https://www.gukjenews.com/news/articleView.html?idxno=3744859",
+   "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
     "출퇴근 겨울템 2026",
-    "겨울 머플러",
-    "따뜻한 차",
     "핫초코·코코아",
     "율무차"
    ]
   },
   {
-   "fact": "빼빼로데이(11/11)까지 4일",
+   "fact": "빼빼로데이(11/11)까지 3일",
    "kind": "cal",
    "src": "",
    "fit": [
@@ -23,16 +21,15 @@
    ]
   },
   {
-   "fact": "수능(11/19)까지 12일",
+   "fact": "수능(11/19)까지 11일",
    "kind": "cal",
-   "src": "https://ko.wikipedia.org/wiki/2027%ED%95%99%EB%85%84%EB%8F%84_%EB%8C%80%ED%95%99%EC%88%98%ED%95%99%EB%8A%A5%EB%A0%A5%EC%8B%9C%ED%97%98",
+   "src": "",
    "fit": [
-    "견과",
-    "출퇴근 겨울템 2026"
+    "수능 응원 2026"
    ]
   },
   {
-   "fact": "쿠팡 와우 멤버스데이 내일(8일)까지",
+   "fact": "와우 멤버스데이 11/8까지",
    "kind": "cal",
    "src": "",
    "fit": [
@@ -40,14 +37,10 @@
    ]
   },
   {
-   "fact": "배추·무 풍작, 김장 재료 할인 행사 중",
-   "kind": "life",
-   "src": "https://www.chosun.com/economy/economy_general/2026/11/03/YS6RJEVZ4ZDEPO7SA3KV477NSE/",
-   "fit": [
-    "절임배추 2026",
-    "위생장갑·위생백",
-    "수세미·고무장갑"
-   ]
+   "fact": "넾다세일 11/8까지",
+   "kind": "cal",
+   "src": "",
+   "fit": []
   }
  ]
 }
