@@ -10385,6 +10385,14 @@ assert ni97 == {0, 1, 6, 7, 8, 9, 10, 11}, ni97  # 끝난 딜·일시 품절 = n
 f97 = lambda u: f"docs/{u[len(S.BASE):]}" + ("index.html" if u.endswith("/") else "")
 rss97 = open("docs/rss.xml", encoding="utf-8").read(); rl97 = re.findall(r"<link>([^<]+)</link>", rss97)[1:]
 assert sm97 and all('content="noindex' not in open(f97(u)).read() for u in sm97)  # 사이트맵에 noindex 쪽 0
+o97, U97 = (S.ph_load, S.ev_info, S.ph_stat, S.guides_load), lambda n: f"https://link.coupang.com/a/pw{n}"
+S.ph_load, S.ph_stat = lambda: {U97(n): n for n in (1, 4, 5)}, lambda rows, t: rows and {"n": rows}
+S.ev_info, S.guides_load = lambda *a: {U97(n): {"pid": 900 + n} for n in (1, 4, 5)}, lambda *a, **k: [{"picks": [{"pid": 901}]}]
+w97, S.TOPIC_OF[-7] = S.p_worth_fn(0), ("t", "주제")
+assert S.P_WORTH_MIN == 5 and [w97(-1, {"url": U97(n)}) for n in (4, 5)] == [False, True]  # 11/7 09:4x 진우 '5번으로': 가격 기록 4번 = 사이트맵 X · 5번 = O
+assert w97(-1, {"url": U97(1)}) and w97(-7, {"url": "https://x.test/none"})  # 다른 이유 그대로: 가이드에 걸린 상품(기록 1번) · 주제 쪽 상품(기록 없음)
+S.P_WORTH_MIN = 4; assert w97(-1, {"url": U97(4)})  # 기준 = 상수 하나(바꾸면 바로 따라감)
+S.P_WORTH_MIN, (S.ph_load, S.ev_info, S.ph_stat, S.guides_load) = 5, o97; S.TOPIC_OF.pop(-7)
 assert rl97 and set(rl97) <= set(sm97) and not any("/p/" in u for u in rl97) and len(rss97.encode()) <= S.RSS_MAX and len(rl97) <= 30  # RSS = 색인 남기는 쪽만(p X) · 크기 상한
 for it97 in re.findall(r"<item>(.*?)</item>", rss97, re.S):
     u97, d97 = re.search(r"<link>([^<]+)</link>", it97)[1], re.search(r"<description><!\[CDATA\[(.*?)\]\]></description>", it97, re.S)[1]

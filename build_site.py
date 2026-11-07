@@ -3218,9 +3218,12 @@ def short_pages(out, heads):
     return rows
 
 
+P_WORTH_MIN = 5  # 11/7 09:4x 진우 '5번으로 하자, 그리고 나서 또 조절하자' — 사이트맵 딜 쪽 가격 기록 확인 수 기준(3 -> 5)
+
+
 def p_worth_fn(now_ts):
     """11/7 진우 '구글 노출 늘리기' ①(서치콘솔: 사이트맵 p 771 = 본문 대부분 공통 틀 · 발견됨-색인 안 됨 1,015): 딜 쪽 중 색인·사이트맵에 둘 값어치 -> (i, p) -> bool.
-    = 가격 기록 3번↑(price_hist 확인 수) · 주제 쪽(c/t)·가이드에 걸린 상품 · 최근 7일 사이트 클릭(gc_top.json week — hotdeal.gc_top이 7일 모음)."""
+    = 가격 기록 P_WORTH_MIN번↑(price_hist 확인 수) · 주제 쪽(c/t)·가이드에 걸린 상품 · 최근 7일 사이트 클릭(gc_top.json week — hotdeal.gc_top이 7일 모음)."""
     h, ev = ph_load(), ev_info()
     try:
         wk = set(json.load(open("gc_top.json")).get("week") or {})
@@ -3232,7 +3235,7 @@ def p_worth_fn(now_ts):
         u = p.get("url") or ""
         e = ev.get(u) or {}
         st = e.get("pid") and ph_stat(h.get(ph_key(e, u)), now_ts)
-        return bool(TOPIC_OF.get(i) or str(e.get("pid")) in gd or u in wk or u.split("?")[0] in wk or st and st["n"] >= 3)
+        return bool(TOPIC_OF.get(i) or str(e.get("pid")) in gd or u in wk or u.split("?")[0] in wk or st and st["n"] >= P_WORTH_MIN)
     return worth
 
 
