@@ -13896,3 +13896,19 @@ ms172 = inspect.getsource(H.main); assert re.search(r"toss_guard_day, shelf_cand
 (H.http, H.HAS_CP, e172, cu172, cn172, time.time, H.EVENTS) = sv172
 H.E.clear(); H.E.update(e172); H.RUN["cpu"], H.RUN["cpn"] = cu172 if cu172 is not None else {}, cn172 if cn172 is not None else [0, 0]
 os.chdir(cwd172); shutil.rmtree(d172, ignore_errors=True)
+
+# 9-173 (11/8 1시대 진우 '응 진행하자' — 실제 판매 = 식품·생활·육아·가전 · 뷰티 0): 홈 '💙 토스 특가' 품목 고르게 = 식품·생활·육아·가전 먼저 · 한 칸 최대 3개 · 뷰티 2개까지
+#   · 그 안 = 🔥 할인 큰 순 → 👍 그대로 · 토스만·사진 있는 것만·tid X 그대로
+sv173 = S.TIMG
+N173 = [("세럼", "아이소이 블레미쉬 세럼 30ml", 60), ("크림", "닥터지 레드 블레미쉬 크림", 55), ("앰플", "토리든 다이브인 앰플 50ml", 50), ("선크림", "라운드랩 선크림 50ml", 45),
+        ("라면", "농심 신라면 5개", 30), ("즉석밥", "햇반 210g 24개", 25), ("참치", "동원 참치 150g 10캔", 20), ("김치", "종가 포기김치 3kg", 15),
+        ("기저귀", "하기스 네이처메이드 기저귀 4단계", 10), ("물티슈", "베베숲 물티슈 100매 10팩", 8), ("밥솥", "쿠쿠 전기밥솥 6인용", 5), ("양말", "무지 양말 10켤레", 40)]
+P173 = [{"t": "2026-11-08 09:00", "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n{n}\n9,900원 ({d}%↓)", "url": f"https://toss.shopping/_m/Z{k}"} for k, (_, n, d) in enumerate(N173)]
+S.TIMG = {p["url"]: f"https://static.toss.im/t/z{k}.jpg" for k, p in enumerate(P173)}
+it173 = [(k, p, (0, None, "", [], False)) for k, p in enumerate(P173)]
+th173 = [S.parse(S.title_of(p["text"]))[1] for _, p, _ in S.toss_home(it173, set())]
+assert len(th173) == 9 and th173[:3] == ["농심 신라면 5개", "햇반 210g 24개", "동원 참치 150g 10캔"], th173  # 식품 먼저(할인 큰 순) · 한 칸 3개(김치 = 4번째 X) · 상한 걸린 것 빼고 9개(뷰티 2개 넘는 것 X — 억지로 안 채움)
+assert "종가 포기김치 3kg" not in th173 and th173[3:6] == ["하기스 네이처메이드 기저귀 4단계", "베베숲 물티슈 100매 10팩", "쿠쿠 전기밥솥 6인용"], th173  # 육아(생필품)·가전 다음
+assert th173[6] == "무지 양말 10켤레" and th173[7:] == ["아이소이 블레미쉬 세럼 30ml", "닥터지 레드 블레미쉬 크림"] and sum("세럼" in n or "크림" in n or "앰플" in n for n in th173) == 2, th173  # 그 밖 -> 뷰티 2개(할인 60·55%여도 뒤)
+assert S.TOSS_HOME_CAT == 3 and S.TOSS_HOME_BEAUTY == 2 and {"food", "life", "digital"} <= set(S.TOSS_HOME_FIRST)
+S.TIMG = sv173

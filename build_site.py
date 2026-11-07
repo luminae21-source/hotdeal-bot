@@ -2810,14 +2810,27 @@ def site_status(out, posts, it, urls, now_ts):
 
 
 TOSS_HOME_N = 10  # 11/7 진우 '토스 제품 홈페이지에 올리자': 홈 💙 토스 특가 가로 카드 수
+TOSS_HOME_FIRST = ("food", "snack", "coffee", "season", "life", "home", "kitchen", "laundry", "digital", "heat")  # 11/8 진우 '응 진행하자'(실제 판매 = 식품·생활·육아·가전 · 뷰티 0): 이 칸 먼저(육아 = 생필품 칸)
+TOSS_HOME_CAT, TOSS_HOME_BEAUTY = 3, 2  # 한 칸 최대 3개 · 뷰티 최대 2개
 
 
 def toss_home(it, evi, *shown):
     """11/7 홈 '💙 토스 특가'(🔥 아래 가로 카드): 토스만(쿠팡·네이버 X) · 사진 있는 것만(toss_img — 원본 + '사진: 토스쇼핑') · 🔥 특가 중 할인 큰 순 먼저 -> 👍 꾸준템 ·
-    같은 브랜드 1개 · 같은 상품 홈 최대 2번(cap2 — 앞 칸 shown) · 기획전 X · tid(토스 API 상품)는 site_ok가 이미 뺌(Q 11/5 — /c/toss/만) -> [(i, p, sh)] · 없으면 [] = 칸 X."""
+    같은 브랜드 1개 · 같은 상품 홈 최대 2번(cap2 — 앞 칸 shown) · 기획전 X · tid(토스 API 상품)는 site_ok가 이미 뺌(Q 11/5 — /c/toss/만) -> [(i, p, sh)] · 없으면 [] = 칸 X.
+    11/8: 품목 고르게 = 식품·생활·육아·가전 칸(TOSS_HOME_FIRST) 먼저 · 한 칸 TOSS_HOME_CAT개 · 뷰티(칸 beauty·화장품 낱말·크림) TOSS_HOME_BEAUTY개."""
     dr = lambda p: max([int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", p["text"])] or [0])
     xs = sorted((x for x in it if shop_of(x[1]) == "toss" and x[2][0] in (0, 1) and x[0] not in evi and not x[1].get("tid") and toss_img(x[1])), key=lambda x: x[1]["t"], reverse=True)
-    return uniq(cap2(sorted(xs, key=lambda x: (x[2][0], -dr(x[1]))), *shown), TOSS_HOME_N)
+    rx = {k: r for k, _, r in SHELF_CATS}["beauty"] + "|크림"
+    kind = lambda p: (lambda c: c if c in TOSS_HOME_FIRST else "beauty" if c == "beauty" or re.search(rx, parse(title_of(p["text"]))[1]) else c or "etc")(cat_of(p))
+    xs = sorted(cap2(sorted(xs, key=lambda x: (x[2][0], -dr(x[1]))), *shown), key=lambda x: (lambda k: 0 if k in TOSS_HOME_FIRST else 2 if k == "beauty" else 1)(kind(x[1])))  # 11/8: 식품·생활·육아·가전 먼저 -> 그 밖 -> 뷰티(그 안 = 🔥 할인 큰 순 -> 👍)
+    out, n, brands = [], collections.Counter(), set()
+    for x in xs:
+        k = kind(x[1])
+        if len(out) < TOSS_HOME_N and n[k] < (TOSS_HOME_BEAUTY if k == "beauty" else TOSS_HOME_CAT) and brand(x[1]) not in brands:  # 한 칸 3개 · 뷰티 2개 · 같은 브랜드 1개
+            out.append(x)
+            n[k] += 1
+            brands.add(brand(x[1]))
+    return out
 
 
 def hs_section(sid, head, small, xs, more="", cls="hs"):
