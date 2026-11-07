@@ -5471,7 +5471,7 @@ H.random = type("R", (), {"choice": staticmethod(lambda xs: 1 if 1 in xs else xs
 o36 = H.th_voice(s36v, f"{H.OY_NOTE}\n\n🔥 [올리브영] 토리든 세럼 50ml (19,900원)\n\n50ml 2개", "https://oy.run/x")
 assert o36.split("\n\n")[2].startswith("⏰") and "tone_th" not in s36v and "s" not in s36v["thvoice"], (o36, s36v)  # 올리브영 + 맞는 기본 줄 없음 = 말투 줄 없이(기록 X)
 H.ai_voice, H.random, H.TOSS_NO_CMP = sv36v
-assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and 'else {"card": stem}), **{x: v[x] for x in ("cmt", "stem", "guess", "ask") if v.get(x)}, **({"cap80": v["cap"][:80]} if v.get("stem") and v.get("cap") else {})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
+assert 'if k not in seen:' in inspect.getsource(H.ig_publish) and 'if k not in seen:' in inspect.getsource(H.ig_carousel) and 'else {"card": stem}), **{x: v[x] for x in ("cmt", "stem", "guess", "ask", "pr", "pc") if v.get(x)}, **({"cap80": v["cap"][:80]} if v.get("stem") and v.get("cap") else {})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행' in inspect.getsource(H.ig_carousel)
 # 9-37) 인스타 하루 4번(10/23 진우 정정): 칸 = 오늘 앞 칸 ~ 그 시각(11 = 0~11, 15 = 11~15, 19 = 15~19), 다른 칸 카드에 든 딜 X, 19시 = 진우 쿠팡 🔥·👍 먼저,
 #       3개 밑 = 건너뜀(억지로 안 채움) · 첫날 10/23은 15시부터 · 그날 표지 제목 안 겹침(밤·퇴근 말은 18시부터)
 D37 = "2026-11-20"
