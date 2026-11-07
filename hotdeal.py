@@ -8023,6 +8023,10 @@ def ig_publish(seen):
             seen.pop(k)
             print("ig toss 미룬 뒤 가격 다시 확인 ->", why, "-> 그날 X", k)
             continue
+        if isinstance(v, dict) and v.get("fresh") and st != "PUBLISHED" and not failed and now - v["fresh"] > IG_FUN_FRESH:  # 11/8 재미 질문 곁들임 가격이 미뤄져 24시간 넘음 = 그 글 X(다시 시도 X)
+            seen.pop(k)
+            print("ig 재미 질문 곁들임 가격 24시간 넘음 -> 그날 X", k)
+            continue
         pid = None
         if st != "PUBLISHED" and not failed and (q := ig_quota(tok, uid)) and q[0] >= q[1] * IG_QUOTA_SHARE:  # 공식 24시간 한도의 절반을 넘으면 미룸(실제 응답)
             print("ig publish 미룸", k, f"공식 한도 {q[0]}/{q[1]} — 절반 넘음")
@@ -10446,9 +10450,10 @@ IGT_TAGS = {"자취·살림": "#자취템 #살림템 #생활꿀템", "뷰티": "
             "간식": "#간식추천 #탕비실간식 #간식템", "패션": "#데일리룩 #가성비패션 #겨울옷", "생필품": "#생필품 #쟁여템 #장보기", "제철 먹거리": "#제철음식 #집밥 #장보기"}
 IGT_BAN = r"최저|역대|1위|최고|효과|효능|치료|완화|개선|보장|무조건|강추|미쳤|대박|광고|써보|써봤|써 보|써 봤|사봤|먹어보|발라보|제가 쓰|저도 쓰"  # 문구 금지(효능·단정·과장·써 본 척) — 걸리면 기본 문구
 IG_CMT_HEADS = ("🛒 구매 링크 모아뒀어요", "🛍 살 수 있는 곳 정리해 뒀어요", "👀 구매 링크는 여기 모아뒀어요", "🧺 상품 링크 한곳에 모아뒀어요", "📌 구매 링크 정리해 뒀어요")  # I: 첫 줄 돌림(같은 댓글 반복 X)
-IG_FUN_Q = (("붕어빵, 팥 vs 슈크림?", ("snack",)), ("겨울 아침, 이불 밖으로 나오는 데 몇 분 걸려요?", ("heat", "home")), ("귤은 한 번에 몇 개까지 먹어 봤어요?", ("season", "food")),
-            ("핫팩은 붙이는 거 vs 흔드는 거?", ("heat",)), ("라면에 계란, 넣는다 vs 안 넣는다?", ("food", "snack")), ("샤워는 아침 vs 저녁?", ("beauty", "life")), ("수면양말 신고 잔다 vs 벗고 잔다?", ("fashion", "heat")))  # M-4 재미 질문(관련 제품 1개 작게)
-IG_COPY = """인스타그램 '{kind}' 글 문구를 써 주세요. 핫딜픽이 친구한테 말하듯 1인칭·짧게·해요체. 상품(번호. 이름 · 가격 · 사실):
+IG_FUN_Q = (("붕어빵, 팥 vs 슈크림?", "붕어빵"), ("겨울 아침, 이불 밖으로 나오는 데 몇 분 걸려요?", "이불|전기요|전기매트|온수매트"), ("귤은 한 번에 몇 개까지 먹어 봤어요?", "귤|한라봉|천혜향"),
+            ("핫팩은 붙이는 거 vs 흔드는 거?", "핫팩"), ("라면에 계란, 넣는다 vs 안 넣는다?", "라면"), ("샤워는 아침 vs 저녁?", "바디워시|샤워"), ("수면양말 신고 잔다 vs 벗고 잔다?", "수면양말"))  # M-4 재미 질문 · 11/8 진우 '이거만 달랑 올리면 무슨 의미인지 알 수 없어': 곁들임 = 이름에 질문 낱말 있는 상품만(카테고리 X) — 없으면 질문 카드만
+IG_FUN_FRESH, IG_FUN_ME = 24 * 3600, r"저는|제가|저도|저희|나는|내가|(?<![가-힣])[제내](?=\s)"  # 11/8 곁들임 가격 = 게시 24시간 안 확인한 것만(발행 직전에도 다시 봄) · say = 1인칭 감상 X
+IG_COPY = """인스타그램 '{kind}' 글 문구를 써 주세요. 핫딜픽이 친구한테 말하듯 {voice}짧게·해요체. 상품(번호. 이름 · 가격 · 사실):
 {rows}
 
 {need}
@@ -10461,7 +10466,7 @@ IG_NEED = {"theme": "- title: 표지 제목 2줄('\\n'으로, 줄마다 14자 �
            "check": "- title: 표지 제목 2줄('\\n'으로, 예 '전기요 사기 전\\n확인할 3가지')\n- say: 1인칭 한 줄(35자 안팎 — 정보만, 구매 권유 X)\n- q: 질문 1줄(25자 안팎)",
            "guess": "- say: 1인칭 한 줄(35자 안팎 — 가격은 말하지 않기)",
            "top": "- title: 표지 제목 2줄('\\n'으로, 예 '요즘 사이트에서\\n많이 본 5가지')\n- say: 1인칭 한 줄(35자 안팎)\n- q: 질문 1줄(25자 안팎)",
-           "fun": "- say: 1인칭 한 줄(35자 안팎 — 재미 질문에 가볍게, 아래 상품을 살짝 곁들임)"}
+           "fun": "- say: 재미 질문을 받아 이어 가는 가벼운 한 줄(35자 안팎 — 댓글로 답하고 싶게, '저는'·지어낸 경험·상품 얘기 X, 예 '팥파 슈크림파, 댓글로 편 갈라 봐요')"}
 
 
 def card_names_put(stem, **kv):
@@ -10488,6 +10493,16 @@ def igt_item(seen, i, p, k=0):
             "when": f"{p['chk']} 확인" if p.get("chk") else f"{int(p['t'][5:7])}/{int(p['t'][8:10])} {int(p['t'][11:13])}시"}
 
 
+def ig_why(it):
+    """재미 질문 곁들임 이유 1줄(11/8 — 데이터만): 단위 값('1개당 312원꼴') -> 할인(70% 이하) -> 핫딜픽 30일 기록 -> 리뷰 수 중 처음 있는 것 · 단위 값·할인 = 글 가격이 지금 보이는 가격과 같을 때만 · 없으면 ''."""
+    t = it["p"]["text"]
+    same = won(parse(title_of(t))[2]) == won(it["price"])
+    dc = [int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", t) if int(x) <= 70] if same else []
+    rv = re.search(r"리뷰\s*([\d,.]+만?)", t)
+    return next((x for x in (same and (it["unit"] or "").split(" (")[0].strip(), dc and f"{max(dc)}% 할인", "핫딜픽 30일 기록 중 가장 낮은 가격" * ("30일 기록 중 가장 낮은 가격" in t),
+                             rv and f"리뷰 {rv[1]}") if x), "")
+
+
 def igt_pool(seen, posts, cats, day, one=False):
     """진열(🔥 특가·👍 꾸준템) 쿠팡 수수료 상품(cats 품목 칸 — None = 전부) · 사진 · 7일 안 인스타에 안 쓴 것(seen igu) -> [(i, p)] 진열 순서.
     one = 그날 올린 🔥 쿠팡 딜(없으면 오늘 확인한 🔥 진열). 토스 = X(인스타 토스 = 토스 범위 답 전 X — 쿠팡만)."""
@@ -10503,22 +10518,24 @@ def igt_pool(seen, posts, cats, day, one=False):
     return [(i, p) for i, p, sh in it if sh[0] in (0, 1) and ok(p)]
 
 
-def ig_copy(kind, label, its):
+def ig_copy(kind, label, its, q=""):
     """피드 문구(Claude 1번 — IG_NEED[kind] 칸 + tags) · 숫자는 상품 수·가격·가격대에서만 · 금지 말(IGT_BAN) X · 실패·안 맞음 = 칸마다 기본 문구."""
     n, ws = len(its), [w for it in its if (w := won(it["price"]))]
     base = {"title": {"theme": f"{label} 고민될 때,\n지금 살 만한 {n}가지", "ask": f"{label} 중에\n제일 먼저 챙기는 건?", "check": f"{label} 사기 전\n확인할 {n}가지", "top": f"요즘 사이트에서\n많이 본 {n}가지"}.get(kind, ""),
             "seo": f"{label} 추천 | 지금 살 만한 {n}가지", "say": "요즘 눈에 띄는 것만 골라 봤어요", "q": f"여러분은 {label} 뭐 쓰세요?",
             "open": f"{label} 하나 필요할 때 🤔", "close": f"그럴 땐 이거 하나면 돼요 🐻", "tags": IGT_TAGS.get(label, "#핫딜픽 #쟁여템 #쇼핑정보").split()[:3]}
-    rows = "\n".join(f"{k}. {it['name']} · {it['price']} · {it['fact']}" for k, it in enumerate(its, 1))
+    if kind == "fun":
+        base["say"] = "여러분은 어느 쪽인지 댓글로 알려 주세요 🙋"
+    rows = (f"(재미 질문: {q})\n" if q else "") + ("\n".join(f"{k}. {it['name']} · {it['price']} · {it['fact']}" for k, it in enumerate(its, 1)) or "(상품 없음 — 질문만)")
     props = {k: {"type": "string"} for k in re.findall(r"^- (\w+):", IG_NEED[kind], re.M)} | {"tags": {"type": "array", "items": {"type": "string"}}}
     try:
         r = ai_json(IG_COPY.format(kind={"theme": "테마 넘기기", "one": "개별 상품 소개", "vs": "이거 vs 저거", "ask": "질문 카드", "check": "사기 전 체크리스트", "guess": "가격 맞히기", "top": "많이 본 5가지", "fun": "재미 질문 카드"}[kind],
-                                    rows=rows, need=IG_NEED[kind]), props)
+                                    rows=rows, need=IG_NEED[kind], voice="" if kind == "fun" else "1인칭·"), props)
     except Exception as e:
         print("인스타 문구 기본으로", clip(repr(e), 80))
         return base
     nums = set(re.findall(r"\d+", rows)) | {str(n), "1", "2", "3", "4"} | {str(w // 10000) for w in ws} | {str(w // 1000) for w in ws}
-    good = lambda s, z: isinstance(s, str) and s.strip() and len(s) <= z and not re.search(IGT_BAN, s) and set(re.findall(r"\d+", s)) <= nums and (kind != "guess" or not re.search(r"\d[\d,]*\s*원", s))
+    good = lambda s, z: isinstance(s, str) and s.strip() and len(s) <= z and not re.search(IGT_BAN, s) and set(re.findall(r"\d+", s)) <= nums and (kind != "guess" or not re.search(r"\d[\d,]*\s*원", s)) and (kind != "fun" or not re.search(IG_FUN_ME, s))
     out = dict(base)
     for k, z in (("seo", 40), ("say", 45), ("q", 30), ("open", 28), ("close", 40)):
         if good(r.get(k), z):
@@ -10581,27 +10598,28 @@ def igf_make(seen, kind, stem, kst):
     take = lambda pool, n: [x for x in (igt_item(seen, i, p, k0 + j) for j, (i, p) in enumerate(pool[:n * 3])) if x][:n]
     for kd in dict.fromkeys((kind, "one", "theme")):
         lb = "요즘 많이 본" if kd == "top" else label  # 대신 형식(top -> theme)엔 요일 테마 이름 그대로
-        its, extra, files = [], {}, []
+        its, extra, files, q = [], {}, [], ""
         if kd == "top":
             urls = (load(GC_TOP, {}) or {}).get("urls") or []
             pool = {p["url"]: (i, p) for i, p in igt_pool(seen, posts, None, day)}
             its = take([pool[u] for u in urls if u in pool], IGT_N)
         elif kd == "fun":
-            q, qc = IG_FUN_Q[kst.tm_yday % len(IG_FUN_Q)]
-            its = take(igt_pool(seen, posts, qc, day), 1)
+            q, qw = IG_FUN_Q[kst.tm_yday % len(IG_FUN_Q)]
+            pool = [(i, p) for i, p in igt_pool(seen, posts, None, day) if re.search(qw, parse(title_of(p["text"]))[1]) and chk_ts(p) >= now + 3600 - IG_FUN_FRESH]  # 이름에 질문 낱말 · 가격 확인 = 게시(약 1시간 뒤) 24시간 안
+            its = [x for x in take(pool, 3) if ig_why(x)][:1]  # 이유 줄(데이터) 있는 것만 — 없으면 질문 카드만
         elif kd == "one":
             its = take(igt_pool(seen, posts, None, day, one=True), 1)
         else:
             its = take(igt_pool(seen, posts, cats, day), {"theme": IGT_N, "vs": 2, "ask": 4, "check": 3, "guess": 1}[kd])
-        need = {"theme": IGT_MIN, "top": IGT_MIN, "vs": 2, "ask": 4, "check": 2}.get(kd, 1)
+        need = {"theme": IGT_MIN, "top": IGT_MIN, "vs": 2, "ask": 4, "check": 2, "fun": 0}.get(kd, 1)
         if kd == "check":  # 확인할 점이 다른 상품만(같은 줄 X) -> 'N가지' = 보이는 줄 수
             its = [x for k, x in enumerate(its) if x["check"] and x["check"] not in [y["check"] for y in its[:k]]][:4]
         if len(its) < need:
             print("ig feed", stem, kd, f"상품 {len(its)}개 -> 다른 형식")
             continue
-        c = cat_of(its[0]["p"]) if kd in ("one", "guess", "fun", "top") else cats[0]
+        c = cat_of(its[0]["p"]) if kd in ("one", "guess", "fun", "top") and its else cats[0]
         cat, slug = (f"{lb} {len(its)}가지", "top") if kd == "top" else (CAT_META[c][1], CAT_META[c][0])  # top = 칸 이름·사이트 칸도 '요즘 많이 본'(10/26 11시 끝 장 '제철 먹거리' — 첫 상품 품목이던 것)
-        cp = ig_copy(kd, lb if kd != "one" else cat, its)
+        cp = ig_copy(kd, lb if kd != "one" else cat, its, q)
         notes = aff_notes(x["p"]["url"] for x in its)
         rows = "\n".join(f"{n}. {clip(x['name'], 28)} · {x['price']}" for n, x in enumerate(its, 1))
         nums = "1번" if len(its) == 1 else f"1~{len(its)}번"
@@ -10639,16 +10657,23 @@ def igf_make(seen, kind, stem, kst):
                      cards.theme_note("힌트 드려요 🔎", [("힌트", hint), ("정답은", ["3시간 뒤 댓글로!"])], f"{it['when']} 가격 기준 · 제휴 링크(수수료)", k0 + 1, f"{d}/02.jpg")]
             cap = f"이거 얼마일 것 같아요? 🤔\n{notes}\n\n{cp['say']}\n\n댓글로 맞혀 봐요, 3시간 뒤 정답!"
             extra = {"guess": {"price": it["price"], "won": won(it["price"]), "when": it["when"], "cat": cat}}
-        else:  # fun
-            it = its[0]
+        else:  # fun — 11/8: 곁들임 = 질문 낱말 상품 + 이유 줄(데이터) + 24시간 안 확인 가격 · 없으면 질문 카드만(링크·가격·대가성 문구 X)
             tl = ig_ask_tally(seen, tok)
             res = [f"{'어제는' if (seen.get('igask') or {}).get('day') != day else '아까 질문엔'} {tl[0]}번({clip(tl[1], 12)})이 제일 많았어요!"] if tl else []  # 실제 댓글 집계만
-            files = [cards.q_card([it["photo"]], (), "\n".join(cards.wrap(ImageDraw_dummy(), q, cards.pf("ExtraBold", 76), 950, 2)), res + [f"곁들임: {clip(it['name'], 22)} · {it['price']}"],
-                                  f"{it['when']} 가격 · 제휴 링크(수수료)", k0, f"{d}/01.jpg", head="핫딜픽 · 재미 질문", small=True)]
-            cap = f"{q} 😆\n{notes}\n\n" + (res[0] + "\n\n" if res else "") + f"{cp['say']}\n\n곁들임: {it['name']} · {it['price']}"
-        cap = (cap + f"\n\n상품 사진: 판매 페이지(쿠팡)\n\n{' '.join(cp['tags'][:3])}")[:2200]
+            qt = "\n".join(cards.wrap(ImageDraw_dummy(), q, cards.pf("ExtraBold", 76), 950, 2))
+            if its:
+                it = its[0]
+                why, when = ig_why(it), S_md_h(time.strftime("%Y-%m-%d %H:%M", time.gmtime(chk_ts(it["p"]) + 9 * 3600)))
+                files = [cards.q_card([it["photo"]], (), qt, res + [f"곁들임: {clip(it['name'], 22)} · {it['price']}", f"💡 {why}"], f"{when} 확인 가격 · 제휴 링크(수수료)", k0, f"{d}/01.jpg", head="핫딜픽 · 재미 질문", small=True)]
+                cap = f"{q} 😆\n{notes}\n\n" + (res[0] + "\n\n" if res else "") + f"{cp['say']}\n\n곁들임: {it['name']} · {it['price']}\n💡 {why}\n⚠️ {when} 확인 가격 · 결제 전 최종가 확인"
+                extra = {"fresh": chk_ts(it["p"])}  # 발행 직전 24시간 넘으면 그 글 X(ig_publish)
+            else:
+                files = [cards.q_card([], (), qt, res + ["댓글로 알려 주세요 🙋"], "핫딜픽 · 재미 질문", k0, f"{d}/01.jpg", head="핫딜픽 · 재미 질문", small=True)]
+                cap = f"{q} 😆\n\n" + (res[0] + "\n\n" if res else "") + cp["say"]
+                print("ig fun", stem, f"'{qw}' 상품 X(낱말·사진·24시간 안 가격·이유 줄) -> 질문 카드만")
+        cap = (cap + "\n\n상품 사진: 판매 페이지(쿠팡)" * bool(its) + f"\n\n{' '.join(cp['tags'][:3])}")[:2200]
         json.dump([x["i"] for x in its], open(f"docs/cards/{stem}.json", "w"))  # 카드 번호 순서(사이트 맨 위·c/칸 맨 위)
-        card_names_put(stem, title=cp["title"].replace("\n", " ") if kd in ("theme", "top", "check", "ask") else clip(its[0]["name"], 24) if kd != "vs" else "이거 vs 저거",
+        card_names_put(stem, title=cp["title"].replace("\n", " ") if kd in ("theme", "top", "check", "ask") else q if kd == "fun" and not its else clip(its[0]["name"], 24) if kd != "vs" else "이거 vs 저거",
                        slug=slug, cat=cat, theme=lb if kd in ("theme", "check", "ask", "vs") else kd, kind=kd)
         cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - IG_REPEAT * 86400))
         seen["igu"] = {"t": now, "m": {**{u: x for u, x in seen.get("igu", {}).get("m", {}).items() if x > cut}, **{x["p"]["url"]: day for x in its}}}
@@ -10695,7 +10720,7 @@ def ig_feed(seen):
             continue
         st["done"] = 1
         auth, meta = {"Authorization": "Bearer " + tok}, {"kind": "one" if st["kind"] == "one" else "theme", "cmt": st["cmt"], "stem": stem,
-                                                          **({"guess": st["guess"]} if st.get("guess") else {}), **({"ask": st["ask"]} if st.get("ask") else {})}
+                                                          **({"guess": st["guess"]} if st.get("guess") else {}), **({"ask": st["ask"]} if st.get("ask") else {}), **({"fresh": st["fresh"]} if st.get("fresh") else {})}
         try:
             if len(urls) == 1:
                 seen["igc_" + json.loads(http(f"{IG}/{uid}/media", {"image_url": urls[0], "caption": st["cap"]}, auth, "POST"))["id"]] = {"t": now, **meta, "cap80": st["cap"][:80]}

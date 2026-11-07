@@ -13930,3 +13930,69 @@ with contextlib.redirect_stdout(io.StringIO()):
 p174 = json.load(open("posts.json"))
 assert len(p174) == 1 and p174[0].get("own") and p174[0].get("shelf") and "S&G 성인 이중 슬림모" in p174[0]["text"], p174  # 사이트 진열 글로 감
 (time.time, H.POSTS, H.EVENTS) = sv174; os.chdir(cwd174)
+# 9-175 (11/8 8시대 진우 인스타 캡처 '이거만 달랑 올리면 무슨 의미인지 알 수 없어'): 재미 질문(IG_CYCLE fun) 카드 —
+#   ① 곁들임 = 이름에 질문 낱말 있는 상품만(카테고리 X) · 없으면 질문 카드만(링크·가격·대가성 문구 X) ② 이유 1줄 = 데이터(단위 값 -> 할인 -> 30일 기록 -> 리뷰) 카드·캡션 둘 다
+#   ③ 가격 = 게시 24시간 안 확인한 것만(발행 직전에도 다시 봄) · 캡션 'M/D H시 확인 가격' ④ say = 질문 잇는 한 줄(1인칭 X)
+d175, cwd175 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d175); os.makedirs("docs/cards")
+sv175 = (time.time, H.ig_photo, H.ai_json, H.POSTS, H.http, H.IG_AUTO, H.IG_SITE_LAG, H.E.get("IG_TOKEN"), H.E.get("IG_USER_ID"), H.RUN.pop("igq", None))
+H.IG_AUTO = True
+from PIL import Image as I175
+I175.new("RGB", (400, 400), (200, 100, 60)).save("ph.jpg")
+H.ig_photo = lambda p, d, seen=None: ("ph.jpg", "coupang")
+ai175 = []
+H.ai_json = lambda prompt, props: ai175.append(prompt) or {"say": "붙이는 파, 흔드는 파 댓글로 편 갈라 봐요", "tags": ["#핫팩", "#겨울템"]}
+def P175(name, chkt="2026-11-07 18:10", body="💰 개당 398원꼴\n✔ 무료배송 · 리뷰 1,203", k=1, price="19,900원"):
+    return {"t": "2026-11-07 09:00", "text": f"🔥 [쿠팡] {name} ({price})\n\n{body}\n⚠️ 확인할 점: 결제 전 최종가 확인", "url": f"https://link.coupang.com/a/f{k}", "own": 1, "st": "hot",
+            "img": f"https://thumbnail.coupangcdn.com/t/f{k}.jpg", "chk": H.S_md_h(chkt), "chkt": chkt, "now": price}
+HEAT175 = P175("델루체 PTC 써큘레이터형 헤드 온풍기", k=9, price="37,750원")
+K175 = time.gmtime(TK("2026-11-07 19:40") + 9 * 3600)
+Q175 = H.IG_FUN_Q[K175.tm_yday % len(H.IG_FUN_Q)][0]
+assert Q175 == "핫팩은 붙이는 거 vs 흔드는 거?" and all(isinstance(w, str) and w for _, w in H.IG_FUN_Q)  # 11/7 그 질문 · 질문마다 낱말
+time.time = lambda: TK("2026-11-07 19:40")
+def mk175(posts, seen=None):
+    json.dump(posts, open("p175.json", "w"), ensure_ascii=False); H.POSTS = "p175.json"
+    with contextlib.redirect_stdout(io.StringIO()) as o:
+        r = H.igf_make(seen if seen is not None else {}, "fun", "2026-11-07_20", K175)
+    return r, o.getvalue()
+f0, o0 = mk175([HEAT175])  # 핫팩 질문 + 온풍기만 = 질문만
+assert f0["kind"] == "fun" and len(f0["files"]) == 1 and "fresh" not in f0 and "질문 카드만" in o0, o0
+assert f0["cap"].startswith(Q175 + " 😆\n\n") and not any(w in f0["cap"] for w in ("온풍기", "곁들임", "원", "파트너스", "상품 사진", "확인 가격")), f0["cap"]  # 링크·가격·대가성 문구 X
+assert json.load(open("docs/cards/2026-11-07_20.json")) == [] and json.load(open("docs/cards/names.json"))["2026-11-07_20"]["title"] == Q175 and S.card_name("2026-11-07_20").endswith(Q175)
+assert "재미 질문: " + Q175 in ai175[-1] and "1인칭" not in ai175[-1] and "붙이는 파, 흔드는 파" in f0["cap"]  # say = 질문 받아 이어 감(질문을 문구 요청에 넘김)
+HOT175 = P175("박상병 붙이는 핫팩 50매", k=1)
+f1, o1 = mk175([HEAT175, HOT175])  # 핫팩 상품 있으면 붙고 이유 줄
+assert len(f1["files"]) == 1 and f1["fresh"] == TK("2026-11-07 18:10") and json.load(open("docs/cards/2026-11-07_20.json")) == [1], o1
+assert f1["cap"].startswith(Q175 + " 😆\n" + H.DISCLOSURE + "\n\n") and "곁들임: 박상병 붙이는 핫팩 50매 · 19,900원\n💡 개당 398원꼴\n⚠️ 11/7 18시 확인 가격 · 결제 전 최종가 확인" in f1["cap"] and "온풍기" not in f1["cap"], f1["cap"]
+I175.open(f1["files"][0]).verify()
+for bad, why in ((P175("박상병 붙이는 핫팩 50매", chkt="2026-11-06 07:23"), "24시간 넘은 확인 가격"), (P175("박상병 붙이는 핫팩 50매", body="✔ 무료배송"), "이유 줄 데이터 없음")):
+    fb, ob = mk175([HEAT175, bad])
+    assert "fresh" not in fb and "곁들임" not in fb["cap"] and json.load(open("docs/cards/2026-11-07_20.json")) == [], why
+# 이유 줄 = 단위 값 -> 할인(70% 이하) -> 30일 기록 -> 리뷰 · 단위 값·할인은 글 가격 = 지금 가격일 때만
+it175 = lambda body, now="19,900원": {"p": {"text": f"🔥 [쿠팡] 핫팩 10개 (19,900원)\n\n{body}"}, "price": now, "unit": (re.search(r"^💰\s*(.+)$", body, re.M) or [0, ""])[1]}
+assert H.ig_why(it175("💰 개당 398원꼴 (10개)\n30% 할인")) == "개당 398원꼴" and H.ig_why(it175("30% 할인\n✔ 리뷰 2.9만")) == "30% 할인" and H.ig_why(it175("75% 할인\n✔ 리뷰 2.9만")) == "리뷰 2.9만"
+assert H.ig_why(it175("✔ 핫딜픽 30일 기록 중 가장 낮은 가격\n✔ 리뷰 10")) == "핫딜픽 30일 기록 중 가장 낮은 가격" and H.ig_why(it175("💰 개당 398원꼴\n✔ 리뷰 12", now="21,000원")) == "리뷰 12" and H.ig_why(it175("✔ 무료배송")) == ""
+# say 1인칭 = 기본 문구
+for me in ("저는 붙이는 핫팩이 좋아요", "제가 써 보니 흔드는 게 낫더라고요", "내가 고르면 붙이는 거"):
+    H.ai_json = lambda prompt, props, me=me: {"say": me, "tags": ["#핫팩", "#겨울템"]}
+    assert H.ig_copy("fun", "겨울템", [], Q175)["say"] == "여러분은 어느 쪽인지 댓글로 알려 주세요 🙋", me
+H.ai_json = lambda prompt, props: {"say": "문제 없이 붙이는 파 손!", "tags": ["#핫팩", "#겨울템"]}
+assert H.ig_copy("fun", "겨울템", [], Q175)["say"] == "문제 없이 붙이는 파 손!"  # '문제 ' = 1인칭 X
+# 발행 직전: 곁들임 가격 확인이 24시간 넘게 미뤄짐 = 그 글 X(다시 시도 X) · 24시간 안 = 발행
+c175 = []
+def http175(url, body=None, headers=None, method=None):
+    c175.append((method, url))
+    if "status_code" in url: return json.dumps({"status_code": "FINISHED"})
+    if "content_publishing_limit" in url: return json.dumps({"data": [{"quota_usage": 1, "config": {"quota_total": 25}}]})
+    if url.endswith("/media_publish"): return json.dumps({"id": "P175"})
+    return json.dumps({"id": "X"})
+H.http = http175; H.E.update(IG_TOKEN="t175", IG_USER_ID="u175")
+s175 = {"igc_F1": {"t": TK("2026-11-07 20:20"), "kind": "theme", "cmt": "", "stem": "2026-11-07_20", "fresh": TK("2026-11-07 18:10")}}
+with contextlib.redirect_stdout(io.StringIO()) as o175:
+    time.time = lambda: TK("2026-11-08 18:30"); H.ig_publish(s175)
+assert "igc_F1" not in s175 and not [u for m, u in c175 if u.endswith("/media_publish")] and "24시간 넘음" in o175.getvalue(), o175.getvalue()
+s175 = {"igc_F2": {"t": TK("2026-11-07 20:20"), "kind": "theme", "cmt": "", "stem": "2026-11-07_20", "fresh": TK("2026-11-07 18:10")}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-11-07 20:45"); H.ig_publish(s175)
+assert [u for m, u in c175 if u.endswith("/media_publish")]
+assert "**({\"fresh\": st[\"fresh\"]} if st.get(\"fresh\") else {})" in inspect.getsource(H.ig_feed)  # 칸 카드 -> 컨테이너에 확인 시각 넘김
+(time.time, H.ig_photo, H.ai_json, H.POSTS, H.http, H.IG_AUTO, H.IG_SITE_LAG) = sv175[:7]; H.E.update(IG_TOKEN=sv175[7], IG_USER_ID=sv175[8]); H.RUN.pop("igq", None); os.chdir(cwd175)

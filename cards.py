@@ -1363,9 +1363,9 @@ def q_card(photos, labels, title, lines, foot, k, out, head="핫딜픽", small=F
     im = Image.new("RGBA", (W, H), TCREAM + (255,))
     d, P = ImageDraw.Draw(im), 64
     f = pf("ExtraBold", 40); d.text((P, 70), _fit(f, head, W - 2 * P - 300), font=f, fill=TORANGE)
-    _buddy(im, k, W - P - 84, 52, BUDDY_WORDS[k % len(BUDDY_WORDS)])
+    _buddy(im, k, W - P - 84, 52, BUDDY_WORDS[k % len(BUDDY_WORDS)] if photos else "댓글 환영")  # 상품 없는 카드 = 쇼핑 말풍선 X
     n, y0 = len(photos), 160
-    y1 = 520 if small else 760 if n <= 2 else 700  # 4장 = 이름 4줄 들어가게
+    y1 = 470 if not n else 520 if small else 760 if n <= 2 else 700  # 4장 = 이름 4줄 들어가게 · 사진 0장(11/8 재미 질문 상품 없음) = 글 위로
     if n == 1:
         boxes = [((W - (y1 - y0)) // 2, y0, (W + (y1 - y0)) // 2, y1)] if small else [(P, y0, W - P, y1)]
     elif n == 2:
