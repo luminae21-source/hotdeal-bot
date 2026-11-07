@@ -886,7 +886,7 @@ class CpLimit(RuntimeError):
     """쿠팡 API 호출 상한(이번 실행·최근 1시간) — 안 부르고 다음 실행에."""
 
 
-def coupang(method, path, body=None):
+def coupang(method, path, body=None, keep=False):
     """쿠팡 파트너스 Open API(HMAC). 상한(최근 1시간 seen cpuse · 이번 실행)이면 CpLimit(안 부름). 응답 rCode 400(그 주소·상품 실패, HTTP 200으로 옴) = ValueError,
     그 밖 rCode·JSON 아닌 응답 = RuntimeError(다음 실행에 다시)."""
     now, u, n = time.time(), RUN.setdefault("cpu", {}), RUN.setdefault("cpn", [0, 0])
@@ -913,13 +913,82 @@ def coupang(method, path, body=None):
         raise RuntimeError(f"coupang 응답 {e!r}")
     if str(r.get("rCode", "0")) != "0":
         raise (ValueError if str(r.get("rCode")) == "400" else RuntimeError)(f"coupang rCode {r.get('rCode')} {r.get('rMessage')}")
-    d, ok = r["data"], lambda x: not (isinstance(x, dict) and name_block(x.get("productName"), "쿠팡 API"))  # 검색·베스트·골드박스 상품 목록 = 이름 막기
+    d, ok = r["data"], lambda x: keep or not (isinstance(x, dict) and name_block(x.get("productName"), "쿠팡 API"))  # 검색·베스트·골드박스 상품 목록 = 이름 막기(keep = 시험 후보 파일 — 빼지 않고 ban 표시)
     if isinstance(d, dict) and isinstance(d.get("productData"), list):
         d["productData"] = list(filter(ok, d["productData"]))
     for i, x in enumerate(d if isinstance(d, list) else [], 1):  # 베스트·골드박스 순위 = rank, 없으면 응답 순서(막기 전 — 'N위'가 밀리지 않게)
         if isinstance(x, dict) and x.get("productName") and not str(x.get("rank") or "").isdigit():
             x["rank"] = i
     return list(filter(ok, d)) if isinstance(d, list) else d
+
+
+SHELF_QUEUE, SHELF_CAND = "docs/shelf_queue.json", "docs/shelf_cand.json"  # 11/7 진우 '쿠팡 진열 후보를 파트너스 API로 — 1단계 시험': Cowork 큐 [{kw, tag, unit}] -> 봇 = 남는 검색 몫으로 후보 파일만(진열·게시·events X)
+SQ_SIZE = r"(\d+(?:\.\d+)?)\s*(kg|g|ml|l|m)(?![a-zA-Z])"  # 용량·길이(kg -> g · L -> ml)
+SQ_CNT = r"(\d+)\s*(개입|입|개|롤|매|팩|봉|갑|박스|세트|병|캔|통|포|구)(?![가-힣])"  # 개수·묶음
+
+
+def sq_total(name, unit):
+    """이름 -> 총량 {'n', 'u'}(큐 unit 단위: g·ml·m = 용량 × 개수·묶음 · 롤·매·개 = 그 개수 × 묶음) · 못 읽음(옵션·택1·'/'·'~'·용량 2가지·용량 단위인데 용량 없음) = None.
+    '45g × 20개' = 900g · '30m 30롤' = 900m · '54g, 10개' = 540g · '총 N개' = 그 수(곱 X) · 개 단위에 개수 없음 = 1개."""
+    nm, um = str(name or ""), re.fullmatch(r"(\d+(?:\.\d+)?)\s*(kg|g|ml|l|m|롤|매|개)", str(unit or "").strip(), re.I)
+    if not um or re.search(r"택\s*1|택일|옵션|골라|\d\s*[/~]\s*\d|\+", nm):  # '+'(1+1·다른 상품 더하기) = 헷갈림 = 못 읽음
+        return None
+    base = {"kg": "g", "l": "ml"}.get(um[2].lower(), um[2].lower())
+    sizes = {(float(v) * (1000 if u.lower() in ("kg", "l") else 1), {"kg": "g", "l": "ml"}.get(u.lower(), u.lower())) for v, u in re.findall(SQ_SIZE, nm, re.I)}
+    tot = re.search(r"총\s*(\d+)\s*(개입|입|개|롤|매|구)(?![가-힣])", nm)
+    rest = re.sub(SQ_SIZE, " ", nm, flags=re.I)
+    cnts = [(int(n), w) for n, w in re.findall(SQ_CNT, re.sub(r"총\s*\d+\s*(?:개입|입|개|롤|매|구)", " ", rest))] + [(int(n), "x") for n in re.findall(r"[x×X*]\s*(\d+)(?![\d.]|\s*(?:개입|입|개|롤|매|팩|봉|갑|박스|세트|병|캔|통|포|구)(?![가-힣]))", rest)]  # '× 20개' = 위 개수로 1번만
+    if tot:  # '총 N개' = 그 수만(묶음 곱 X)
+        cnts = [(int(tot[1]), tot[2])]
+    if base in ("g", "ml", "m"):
+        same = {v for v, u in sizes if u == base}
+        if len(same) != 1:
+            return None
+        n = same.pop() * math.prod(c for c, w in cnts if w != "매")
+    else:
+        if base != "개" and not any(w == base for _, w in cnts):
+            return None
+        n = math.prod(c for c, w in cnts if w not in ("매", "롤") or w == base) if cnts else 1
+    return {"n": round(n, 2) if n % 1 else int(n), "u": base} if n > 0 else None
+
+
+def shelf_cand(seen, now=None):
+    """11/7 시험(진열·게시·events·사이트·채널 X): SHELF_QUEUE 키워드 중 오늘 결과 없는 첫 것 1개만 /products/search(limit 10) -> SHELF_CAND {kw: {at, tag, unit, items}} ·
+    실행 순서 맨 끝 = 기존 검색 먼저(coupang 상한 CP_SEARCH_HOUR·CP_SEARCH_RUN 그대로 — 남는 몫만, 걸리면 안 부름) · 실행당 1번 · 키워드당 하루 1번(400 = 그날 다시 X).
+    items = 응답 필드 그대로 + total(sq_total) · unit_price(큐 unit 기준 int(+0.5)) · parse_ok · ban(분유·성인 등 진열 거르기 — 빼지 않고 표시) · effect(효능 낱말 — 참고, 이름은 안 거름). 로그 = 키·서명·주소 X."""
+    if not HAS_CP:
+        return
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, q, out = time.strftime("%Y-%m-%d", kst), load(SHELF_QUEUE, []), load(SHELF_CAND, {})
+    out = out if isinstance(out, dict) else {}
+    todo = [x for x in q if isinstance(x, dict) and isinstance(x.get("kw"), str) and x["kw"].strip() and str((out.get(x["kw"]) or {}).get("at", ""))[:10] != day] if isinstance(q, list) else []
+    if not todo:
+        return
+    x = todo[0]
+    um = re.fullmatch(r"(\d+(?:\.\d+)?)", (re.match(r"\d+(?:\.\d+)?", str(x.get("unit") or "")) or [""])[0] or "")
+    try:
+        r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(x['kw'].strip())}&limit=10", keep=True)
+    except CpLimit:
+        return print("shelf cand: 검색 몫 없음 -> 다음 실행")
+    except ValueError as e:  # 그 키워드 오류(rCode 400) = 오늘 다시 X
+        out[x["kw"]] = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "tag": x.get("tag"), "unit": x.get("unit"), "error": "rCode 400", "items": []}
+        json.dump(out, open(SHELF_CAND, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        return print("shelf cand:", x["kw"], "오류 400 -> 오늘 X")
+    except Exception as e:
+        return print("shelf cand: 실패 -> 다음 실행", type(e).__name__)
+    items = []
+    for k, it in enumerate((r or {}).get("productData") or [] if isinstance(r, dict) else [], 1):
+        if not isinstance(it, dict):
+            continue
+        nm, pr = str(it.get("productName") or ""), it.get("productPrice")
+        tot = sq_total(nm, x.get("unit"))
+        up = int(pr / tot["n"] * float(um[1]) + 0.5) if tot and um and isinstance(pr, (int, float)) and pr > 0 else None
+        items.append({"rank": it.get("rank") or k, **it, "total": tot, "unit_price": up, "parse_ok": up is not None,
+                      "ban": [w for w, rx in (("분유·조제유", NAME_BLOCK), ("성인", r"성인")) if re.search(rx, nm)], "effect": sorted(set(re.findall(WU_HEALTH, nm)))})
+    out[x["kw"]] = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "tag": x.get("tag"), "unit": x.get("unit"), "items": items}
+    json.dump(out, open(SHELF_CAND, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print("shelf cand:", x["kw"], f"{len(items)}개 · 단위가 읽음 {sum(i['parse_ok'] for i in items)} · 남은 큐 {len(todo) - 1}")
 
 
 def cp_deeplinks(urls, sub=None):
@@ -12832,7 +12901,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

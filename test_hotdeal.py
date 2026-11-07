@@ -13833,3 +13833,51 @@ bs171 = inspect.getsource(S.build); assert bs171.index("index_todo(out, urls, to
 H.E.pop("OPENAI_API_KEY", None)
 if ok171: H.E["OPENAI_API_KEY"] = ok171
 os.chdir(cwd171); shutil.rmtree(d171, ignore_errors=True)
+
+# 9-172 (11/7 15시대 진우 '쿠팡 진열 후보 찾기를 파트너스 API로 — 1단계 시험'): docs/shelf_queue.json(Cowork) -> 남는 검색 몫으로 docs/shelf_cand.json 후보만(진열·게시·events X)
+#   · 기존 상한 그대로(CP_SEARCH_HOUR·CP_SEARCH_RUN — 걸리면 안 부름) · 실행당 1번 · 키워드당 하루 1번 · 단위 읽기(총량·단위가) · ban = 표시만(안 뺌) · 로그에 키·서명·주소 쿼리 X
+import io as io172
+assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/shelf_queue.json"), encoding="utf-8")) == [
+    {"kw": "빼빼로", "tag": "빼빼로데이 선물 2026", "unit": "10g"}, {"kw": "립밤", "tag": "립밤·립마스크 2026", "unit": "10g"}, {"kw": "세럼", "tag": "세럼 2026", "unit": "10ml"},
+    {"kw": "두루마리 화장지 30롤", "tag": "두루마리 화장지 2026", "unit": "10m"}, {"kw": "탄소매트", "tag": "탄소매트 2026", "unit": "1개"}, {"kw": "전기히터", "tag": "전기히터 2026", "unit": "1개"}]  # 처음 6개
+assert H.sq_total("45g × 20개", "10g") == {"n": 900, "u": "g"} and H.sq_total("30m 30롤", "10m") == {"n": 900, "u": "m"} and H.sq_total("크리넥스 화장지, 30m, 30롤, 1팩", "10m") == {"n": 900, "u": "m"}
+assert H.sq_total("롯데 빼빼로 오리지널, 54g, 10개", "10g") == {"n": 540, "u": "g"} and H.sq_total("세럼 1L", "10ml") == {"n": 1000, "u": "ml"} and H.sq_total("물티슈 100매 10팩", "100매") == {"n": 1000, "u": "매"}
+assert H.sq_total("탄소매트 싱글", "1개") == {"n": 1, "u": "개"} and H.sq_total("전기히터 2개입", "1개") == {"n": 2, "u": "개"} and H.sq_total("립밤 4.8g x 2개", "10g") == {"n": 9.6, "u": "g"}
+assert all(H.sq_total(n, "10g") is None for n in ("빼빼로 4종 택1", "립밤 촉촉", "빼빼로 32g + 아몬드 37g", "빼빼로 32g/54g", "빼빼로 32g, 54g"))  # 못 읽음(옵션·용량 없음·더하기·2가지) = None
+cwd172, d172 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d172); os.makedirs("docs")
+json.dump([{"kw": "빼빼로", "tag": "빼빼로데이 선물 2026", "unit": "10g"}, {"kw": "분유", "tag": "x", "unit": "10g"}], open("docs/shelf_queue.json", "w"), ensure_ascii=False)
+open("events172.json", "w").write("[]")
+sv172 = (H.http, H.HAS_CP, dict(H.E), H.RUN.get("cpu"), H.RUN.get("cpn"), time.time, H.EVENTS)
+c172 = []
+def http172(url, body=None, headers=None, method=None):
+    c172.append(url)
+    return json.dumps({"rCode": "0", "data": {"productData": [
+        {"productId": 1, "productName": "롯데웰푸드 빼빼로 오리지널, 54g, 10개", "productPrice": 5400, "productImage": "https://thumbnail.coupangcdn.com/a.jpg", "productUrl": "https://link.coupang.com/re/AFFSDP?x=1", "isRocket": True},
+        {"productId": 2, "productName": "빼빼로 4종 택1", "productPrice": 3000, "productUrl": "https://link.coupang.com/re/AFFSDP?x=2", "isRocket": False},
+        {"productId": 3, "productName": "성장기 조제유 분유 800g", "productPrice": 20000, "productUrl": "https://link.coupang.com/re/AFFSDP?x=3"}]}})
+H.http, H.HAS_CP, H.EVENTS = http172, True, "events172.json"
+H.E.update(COUPANG_ACCESS_KEY="ak172", COUPANG_SECRET_KEY="sk172")
+H.RUN["cpu"], H.RUN["cpn"] = {}, [0, 0]
+time.time = lambda: TK("2026-11-07 15:30")
+with contextlib.redirect_stdout(io172.StringIO()) as o172:
+    H.shelf_cand({})
+sc172 = json.load(open("docs/shelf_cand.json", encoding="utf-8"))
+assert list(sc172) == ["빼빼로"] and sc172["빼빼로"]["at"] == "2026-11-07 15:30" and sc172["빼빼로"]["tag"] == "빼빼로데이 선물 2026" and len(c172) == 1 and "/products/search?keyword=" in c172[0] and "limit=10" in c172[0]  # 실행당 1번(첫 키워드)
+i172 = sc172["빼빼로"]["items"]
+assert [x["productId"] for x in i172] == [1, 2, 3] and [x["rank"] for x in i172] == [1, 2, 3]  # 응답 그대로(분유도 안 뺌)
+assert i172[0]["total"] == {"n": 540, "u": "g"} and i172[0]["unit_price"] == 100 and i172[0]["parse_ok"] and i172[0]["productUrl"].startswith("https://link.coupang.com/") and i172[0]["isRocket"] is True and i172[0]["productImage"]  # 10g당 100원
+assert i172[1]["total"] is None and i172[1]["unit_price"] is None and not i172[1]["parse_ok"] and i172[2]["ban"] == ["분유·조제유"] and not i172[0]["ban"]  # 못 읽음 = parse_ok false · ban = 표시만
+assert "keyword=" not in o172.getvalue() and "ak172" not in o172.getvalue() and "sk172" not in o172.getvalue() and "signature" not in o172.getvalue()  # 로그 = 키·서명·주소 쿼리 X
+with contextlib.redirect_stdout(io172.StringIO()):
+    H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 2 and set(json.load(open("docs/shelf_cand.json"))) == {"빼빼로", "분유"}  # 다음 실행 = 다음 키워드
+    H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 2  # 오늘 결과 있음 = 안 부름(키워드당 하루 1번)
+    time.time = lambda: TK("2026-11-08 09:00"); H.RUN["cpu"], H.RUN["cpn"] = {"s": [time.time() - 60] * H.CP_SEARCH_HOUR, "a": []}, [0, 0]
+    H.shelf_cand({}); assert len(c172) == 2  # 시간당 검색 상한 = 안 부름
+    H.RUN["cpu"], H.RUN["cpn"] = {}, [0, H.CP_SEARCH_RUN]; H.shelf_cand({}); assert len(c172) == 2  # 실행당 검색 상한(기존 검색이 다 씀) = 안 부름
+    H.RUN["cpu"], H.RUN["cpn"] = {}, [0, 0]; H.shelf_cand({}); assert len(c172) == 3 and json.load(open("docs/shelf_cand.json"))["빼빼로"]["at"].startswith("2026-11-08")  # 다음 날 = 다시
+    H.HAS_CP = False; H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 3  # 키 없음 = X
+assert open("events172.json").read() == "[]" and not os.path.exists("posts.json")  # events·글 안 건드림
+ms172 = inspect.getsource(H.main); assert re.search(r"toss_guard_day, shelf_cand\):", ms172)  # 실행 맨 끝 = 기존 검색이 먼저
+(H.http, H.HAS_CP, e172, cu172, cn172, time.time, H.EVENTS) = sv172
+H.E.clear(); H.E.update(e172); H.RUN["cpu"], H.RUN["cpn"] = cu172 if cu172 is not None else {}, cn172 if cn172 is not None else [0, 0]
+os.chdir(cwd172); shutil.rmtree(d172, ignore_errors=True)
