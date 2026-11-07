@@ -1,16 +1,21 @@
 {
  "google": {
-  "at": "2026-11-08 02:07",
+  "at": "2026-11-08 03:03",
   "items": [
+   {
+    "t": "노팅엄 포레스트 대 맨 시티",
+    "n": "2000+",
+    "news": "Premier League LIVE: Live text, radio & score updates from…"
+   },
    {
     "t": "일본 지진",
     "n": "200+",
-    "news": "일본 시즈오카현 하마마쓰시 북쪽서 규모 5.7 지진"
+    "news": "일본 시즈오카현 하마마쓰시 북쪽 21km 지역 규모 5.7 지진"
    },
    {
     "t": "이천수",
     "n": "100+",
-    "news": "“분위기 어쩌다 이렇게 됐나”…이천수, 대표팀 갈등설에 조언"
+    "news": "이천수 “은퇴 번복 창피해 10억 제안 거절”…♥심하은 “말렸어야 했다”"
    },
    {
     "t": "복권",
@@ -18,14 +23,19 @@
     "news": "\"20억 대박\" 로또 1등 14명 당첨…서울에서만 7곳 최다"
    },
    {
+    "t": "하정우",
+    "n": "500+",
+    "news": "하정우, 12월 결혼 앞두고...확 달라진 비주얼 - 머니투데이"
+   },
+   {
     "t": "mainz vs bayern",
-    "n": "100+",
-    "news": "Ausgerechnet im Rekordspiel: Neuer verletzt ausgewechselt"
+    "n": "200+",
+    "news": "Nachbericht: 1. FSV Mainz 05 vs. FC Bayern I Analyse"
    },
    {
     "t": "김성우",
     "n": "200+",
-    "news": "[다시보기] 그것이 알고싶다 1511회"
+    "news": "'장모 살해·아내 납치' 김성우 구속 기소...스토킹 끝에 범행"
    },
    {
     "t": "nepal premier league",
@@ -40,17 +50,7 @@
    {
     "t": "arsenal vs hull",
     "n": "500+",
-    "news": "Premier League LIVE: Live text, radio & score updates from…"
-   },
-   {
-    "t": "아스널 대 헐 시티",
-    "n": "5000+",
-    "news": "아스널 0-0 헐 시티 (전반전): 선제골을 넣기 위한 공격에 박차를 가하고 있다."
-   },
-   {
-    "t": "풀럼 대 뉴캐슬",
-    "n": "1000+",
-    "news": "프리미어 리그 풀럼 대 뉴캐슬 경기 예측"
+    "news": "Arsenal 1-0 Hull City, Fulham 1-1 Newcastle United, FA Cup…"
    }
   ]
  },
