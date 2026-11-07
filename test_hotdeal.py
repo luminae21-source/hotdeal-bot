@@ -13769,3 +13769,67 @@ H.TOSS_BOOST_N = nb170
 (S.TIMG, H.toss, H.POSTS, H.HAS_TOSS, H.TOSS_SITE, H.toss_link, tr170, time.time) = sv170
 if tr170 is not None: H.RUN["treuse"] = tr170
 os.chdir(cwd170); shutil.rmtree(d170, ignore_errors=True)
+
+# 9-171 (11/7 13:5x 진우 '정해진 루틴은 봇으로 — Cowork 토큰 줄이기'): ① docs/today.json 06:30~09:00 첫 실행에 자동(weather = Open-Meteo 서울 아침 · cal = 고정 달력표 + days.json + promos 기간 · life = OPENAI 웹 검색 인용 있는 것만)
+#   — today_items(40자·CHAT_BAN) 그대로 통과 · 기념일 당일 X · 그날 파일 있으면(Cowork) 안 덮음 · fit = 지금 진열 tag만 ② docs/index_todo.json = 사이트맵 새 주소 -> today/ > c/t/ > e/ > guide/ > c/ > p/ 하루 10개 · 넣은 것 7일 다시 X
+import io as io171
+cwd171, d171 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d171); os.makedirs("docs")
+sv171 = (H.weather, H.EVENTS, H.E.get("OPENAI_API_KEY"), H.urllib.request.urlopen, time.time)
+json.dump([{"at": "2026-11-07 10:00", "tag": t, "url": "https://link.coupang.com/a/x"} for t in ("출퇴근 겨울템 2026", "핫초코·코코아", "빼빼로데이 선물 2026", "절임배추 2026")], open("ev171.json", "w"), ensure_ascii=False)
+json.dump([{"name": "수능", "date": "2026-11-19", "from": "2026-11-07", "tag": "수능 응원 2026"}], open("docs/days.json", "w"), ensure_ascii=False)
+H.EVENTS, H.weather = "ev171.json", (lambda seen: [{"date": time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)), "tmin": -3, "am": -1, "tmax": 8, "rain": 10}])
+H.E.pop("OPENAI_API_KEY", None)
+rd171 = lambda: json.load(open("docs/today.json", encoding="utf-8"))
+with contextlib.redirect_stdout(io171.StringIO()):
+    time.time = lambda: TK("2026-11-07 06:20"); s171 = {}; H.today_auto(s171); assert not os.path.exists("docs/today.json")  # 06:30 전 = X
+    time.time = lambda: TK("2026-11-07 06:37"); H.today_auto(s171)
+t171 = rd171(); f171 = {x["fact"]: x for x in t171["items"]}
+assert t171["date"] == "2026-11-07" and t171["updated"] == "2026-11-07 06:37 봇" and set(f171) == {"서울 아침 영하 1도", "빼빼로데이(11/11)까지 4일", "수능(11/19)까지 12일"}, t171  # 날씨·달력(14일 안만 — 크리스마스 X)
+w171 = f171["서울 아침 영하 1도"]
+assert w171["kind"] == "weather" and w171["src"].startswith("https://api.open-meteo.com/v1/forecast?latitude=") and w171["fit"] == ["출퇴근 겨울템 2026", "핫초코·코코아"]  # src = API 주소 · fit = 진열 tag 있는 것만(머플러·따뜻한 차 X)
+assert f171["빼빼로데이(11/11)까지 4일"]["fit"] == ["빼빼로데이 선물 2026"] and f171["수능(11/19)까지 12일"]["fit"] == ["수능 응원 2026"] and all(x["kind"] == "cal" for x in t171["items"][1:])
+assert [x["fact"] for x in H.today_items(TK("2026-11-07 12:00"))] == [x["fact"] for x in t171["items"]]  # 읽는 쪽(40자·CHAT_BAN) 그대로 통과
+with contextlib.redirect_stdout(io171.StringIO()):
+    json.dump({"date": "2026-11-07", "updated": "2026-11-07 06:42 Cowork", "items": [{"fact": "Cowork 줄", "kind": "life", "src": "", "fit": []}]}, open("docs/today.json", "w"), ensure_ascii=False)
+    H.today_auto({}); assert rd171()["updated"].endswith("Cowork")  # 그날 파일 있음 = 안 덮음
+    time.time = lambda: TK("2026-11-10 06:40"); H.today_auto({}); assert "빼빼로데이(11/11) 내일" in [x["fact"] for x in rd171()["items"]]  # 하루 전 = '내일'
+    time.time = lambda: TK("2026-11-11 06:40"); H.today_auto({}); assert not any("빼빼로" in x["fact"] for x in rd171()["items"])  # 기념일 당일 = X
+# 뉴스형: 키 있을 때만 · 인용(url_citation) 붙은 줄만 · 마크다운 링크 뺌 · 몰 이름(CHAT_BAN) X · fit = 낱말 표
+nt171 = "배추·무 풍작에 김장 재료값 내림 ([chosun.com](https://www.chosun.com/a?utm_source=openai))\n제주 감귤 출하 시작\n이마트 김장 할인전"
+nr171 = json.dumps({"output": [{"type": "web_search_call"}, {"type": "message", "content": [{"type": "output_text", "text": nt171, "annotations": [
+    {"type": "url_citation", "url": "https://www.chosun.com/a?utm_source=openai", "start_index": 20, "end_index": 60}, {"type": "url_citation", "url": "https://news.example.com/b", "start_index": len(nt171) - 5, "end_index": len(nt171)}]}]}]}).encode()
+rq171 = []
+H.urllib.request.urlopen = lambda req, timeout=None: rq171.append(json.loads(req.data)) or io171.BytesIO(nr171)
+H.E["OPENAI_API_KEY"] = "sk-t171"
+with contextlib.redirect_stdout(io171.StringIO()):
+    time.time = lambda: TK("2026-11-12 06:40"); H.today_auto({})
+n171 = [x for x in rd171()["items"] if x["kind"] == "life"]
+assert n171 == [{"fact": "배추·무 풍작에 김장 재료값 내림", "kind": "life", "src": "https://www.chosun.com/a", "fit": ["절임배추 2026"]}], n171  # 인용 없는 줄(감귤) X · 몰 이름 줄(이마트) X
+assert rq171[0]["tools"] == [{"type": "web_search", "search_context_size": "low"}] and rq171[0]["model"] == H.AI_NEWS_MODEL
+H.urllib.request.urlopen = lambda req, timeout=None: (_ for _ in ()).throw(TimeoutError("x"))
+with contextlib.redirect_stdout(io171.StringIO()):
+    time.time = lambda: TK("2026-11-13 06:40"); H.today_auto({})
+assert rd171()["date"] == "2026-11-13" and not [x for x in rd171()["items"] if x["kind"] == "life"] and any(x["kind"] == "weather" for x in rd171()["items"])  # 뉴스 실패 = 그 줄만 X(날씨·달력은 그대로)
+assert "today_auto, daily_cands" in inspect.getsource(H.main)  # 실행마다 맨 앞(창 안 첫 실행 1번)
+# ② 색인 요청 목록
+B171 = S.BASE
+old171 = [B171, B171 + "p/1.html", B171 + "c/life/"]
+open("docs/sitemap.xml", "w").write("".join(f"<url><loc>{u}</loc></url>" for u in old171))
+new171 = [B171 + x for x in ("p/2.html", "p/3.html", "p/4.html", "p/5.html", "c/t/a.html", "c/t/b.html", "today/2026-11-07/", "e/x.html", "guide/g/", "c/snack/", "c/ramen.html", "series/toss/")]
+cur171 = [(u, "2026-11-07") for u in old171 + new171]
+assert S.index_todo("docs", cur171, "2026-11-07") == (10, 2)
+it171 = json.load(open("docs/index_todo.json", encoding="utf-8"))
+assert it171["date"] == "2026-11-07" and [x["kind"] for x in it171["urls"]] == ["today", "topic", "topic", "event", "guide", "cat", "cat", "deal", "deal", "deal"], it171["urls"]  # 우선순위 · 하루 10
+assert all(x["added"] == "2026-11-07" and x["url"] in new171 for x in it171["urls"]) and {x["url"] for x in it171["q"]} == {B171 + "p/5.html", B171 + "series/toss/"}  # 넘친 것 = 줄(다음 날)
+open("docs/sitemap.xml", "w").write("".join(f"<url><loc>{u}</loc></url>" for u, _ in cur171))
+assert S.index_todo("docs", cur171 + [(B171 + "today/2026-11-08/", "")], "2026-11-07") == (10, 3)  # 같은 날 = 10개 그대로 · 새 것 = 줄
+assert S.index_todo("docs", [x for x in cur171 if x[0] != B171 + "series/toss/"] + [(B171 + "today/2026-11-08/", "")], "2026-11-08") == (2, 0)  # 다음 날 = 줄에서(today 먼저) · 사이트맵에서 빠진 것 X
+assert [x["url"] for x in json.load(open("docs/index_todo.json"))["urls"]] == [B171 + "today/2026-11-08/", B171 + "p/5.html"]
+open("docs/sitemap.xml", "w").write("".join(f"<url><loc>{u}</loc></url>" for u in old171))  # 빠졌다 다시 들어와도
+assert S.index_todo("docs", cur171, "2026-11-09") == (1, 0) and [x["url"] for x in json.load(open("docs/index_todo.json"))["urls"]] == [B171 + "series/toss/"]  # 7일 안 넣은 것 = 다시 X(안 넣었던 series만)
+os.remove("docs/sitemap.xml"); os.remove("docs/index_todo.json"); assert S.index_todo("docs", cur171, "2026-11-09") == (0, 0)  # 첫 빌드(앞 사이트맵 X) = 새 것으로 안 봄
+bs171 = inspect.getsource(S.build); assert bs171.index("index_todo(out, urls, today)") < bs171.index('open(f"{out}/sitemap.xml", "w")')  # 앞 사이트맵과 비교 = 쓰기 전
+(H.weather, H.EVENTS, ok171, H.urllib.request.urlopen, time.time) = sv171
+H.E.pop("OPENAI_API_KEY", None)
+if ok171: H.E["OPENAI_API_KEY"] = ok171
+os.chdir(cwd171); shutil.rmtree(d171, ignore_errors=True)

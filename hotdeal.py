@@ -607,6 +607,105 @@ def today_items(now=None):
     return [x for x in d.get("items") or [] if isinstance(x, dict) and isinstance(x.get("fact"), str) and 0 < len(x["fact"].strip()) <= 40 and not re.search(CHAT_BAN, x["fact"])]
 
 
+TODAY_AUTO_AT, TODAY_CAL_LEAD, TODAY_NEWS_N, AI_NEWS_MODEL = ("06:30", "09:00"), 14, 2, "gpt-6-astra"  # 11/7 진우 '정해진 루틴은 봇으로': today.json 06:30~09:00 첫 실행에 1번(그날 파일 있으면 = Cowork 것 그대로) · 달력 14일 전부터 · 뉴스형 2줄(OPENAI_API_KEY + 웹 검색 인용 주소 있는 것만)
+TODAY_CAL = (("빼빼로데이", "11-11"), ("크리스마스", "12-25"), ("연말", "12-31"), ("발렌타인데이", "02-14"), ("화이트데이", "03-14"), ("어린이날", "05-05"), ("어버이날", "05-08"))  # 해마다 같은 날
+TODAY_CAL_Y = (("설날", "2027-02-07"), ("추석", "2027-09-15"))  # 해마다 바뀌는 날(음력 — 해마다 확인해서 고침) · 수능 = SUNEUNG · 그 밖 = docs/days.json(Cowork)
+TODAY_FIT_WX = ((-99, 0, ("출퇴근 겨울템 2026", "겨울 머플러", "따뜻한 차", "핫초코·코코아", "율무차")), (1, 5, ("출퇴근 겨울템 2026", "따뜻한 차", "핫초코·코코아", "율무차")),
+                (6, 12, ("따뜻한 차", "율무차", "둥굴레차·현미녹차", "밀크티·라떼 스틱")), (13, 22, ("콜드브루", "아메리카노 스틱")), (23, 99, ("아이스크림 2026", "생수 2L", "콜드브루")))  # 아침 기온(도) -> 진열 tag(있는 것만)
+TODAY_FIT_KW = ((r"김장|배추|절임", ("절임배추 2026", "위생장갑·위생백", "수세미·고무장갑")), (r"귤", ("제주 감귤 2026",)), (r"쌀", ("햅쌀 2026",)), (r"고구마|군밤|호빵|붕어빵", ("군고구마", "군밤·맛밤", "호빵")),
+                (r"수능", ("수능 응원 2026", "견과")), (r"추위|한파|영하", ("출퇴근 겨울템 2026", "겨울 머플러")))  # 사실 낱말 -> 진열 tag(있는 것만)
+
+
+def today_tags():
+    """지금 진열·예약 tag 이름(events.json·auto_events.json·days.json) — fit은 이 중에서만."""
+    return {e["tag"].strip() for e in ev_list(EVENTS) + (load(AUTO_EVENTS, []) or []) + (load(DAYS_FILE, []) or []) if isinstance(e, dict) and isinstance(e.get("tag"), str) and e["tag"].strip()}
+
+
+def today_cal(day, tags):
+    """달력 줄: 고정 표(TODAY_CAL·TODAY_CAL_Y·수능) + days.json — 1~TODAY_CAL_LEAD일 전만('…(M/D)까지 N일' · 하루 전 '내일') · 당일·지난 날 X(기념일 당일 게시 X 그대로)
+    + promos.json 행사 기간(진행 중 = 'M/D까지' · 사흘 안 시작 = 'M/D부터' — 몰 이름 X, 2줄까지). fit = 이름이 든 tag."""
+    y, d0 = int(day[:4]), datetime.strptime(day, "%Y-%m-%d")
+    rows = [(n, f"{yy}-{md}") for n, md in TODAY_CAL for yy in (y, y + 1)] + list(TODAY_CAL_Y) + [("수능", SUNEUNG)] \
+        + [(x["name"].strip(), x["date"]) for x in load(DAYS_FILE, []) or [] if isinstance(x, dict) and isinstance(x.get("name"), str) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(x.get("date") or ""))]
+    out, names = [], set()
+    for n, dt in sorted(rows, key=lambda r: r[1]):
+        k = (datetime.strptime(dt, "%Y-%m-%d") - d0).days
+        if n in names or not 1 <= k <= TODAY_CAL_LEAD:
+            continue
+        names.add(n)
+        out.append({"fact": f"{n}({int(dt[5:7])}/{int(dt[8:10])})" + (" 내일" if k == 1 else f"까지 {k}일"), "kind": "cal", "src": "", "fit": sorted(t for t in tags if n in t)})
+    for pr, st, first in promo_list(day)[:6]:
+        nm = re.sub(rf"{SAVE_STORES}|{OTHER_STORES}", "", str(pr.get("name") or "")).strip(" ·-")
+        if not nm or st == "past" or not (pr.get("start") and pr.get("end")) or sum(x["src"] == "promo" for x in out) >= 2:
+            continue
+        on = pr["start"] <= day <= pr["end"]
+        if on or 0 < (datetime.strptime(pr["start"], "%Y-%m-%d") - d0).days <= 3:
+            out.append({"fact": f"{nm} {int(pr['end'][5:7])}/{int(pr['end'][8:10])}까지" if on else f"{nm} {int(pr['start'][5:7])}/{int(pr['start'][8:10])}부터", "kind": "cal", "src": "promo",
+                        "fit": sorted(t for t in tags if nm in t)})
+    for x in out:
+        x["src"] = "" if x["src"] == "promo" else x["src"]
+    return out
+
+
+def today_news(day):
+    """뉴스형 사실(OPENAI_API_KEY 있을 때만): Responses API 웹 검색 1번 -> 줄마다 인용(url_citation) 주소가 붙은 것만 TODAY_NEWS_N줄 · 키 없음·실패·인용 없음 = [] (지어내기 X)."""
+    if not E.get("OPENAI_API_KEY"):
+        return []
+    q = (f"오늘은 {day}(한국 시간)이에요. 한국 장보기·생활 물가와 관련해 최근 사흘 안 보도된 사실 {TODAY_NEWS_N}개를 찾아 주세요(예: 김장 재료 값·풍작·제철 과일). "
+         "줄마다 사실 1개, 30자 안 명사형 짧은 문장, 마트·쇼핑몰·브랜드 이름과 가격 숫자는 빼고, 줄마다 출처를 꼭 인용해 주세요. 확인 안 되는 건 쓰지 마세요.")
+    try:
+        req = urllib.request.Request("https://api.openai.com/v1/responses", json.dumps({"model": AI_NEWS_MODEL, "tools": [{"type": "web_search", "search_context_size": "low"}], "input": q}).encode(),
+                                     {"Authorization": "Bearer " + E["OPENAI_API_KEY"], "Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            o = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return print("today news 실패", e.code) or []
+    except Exception as e:
+        return print("today news 실패", type(e).__name__) or []
+    out = []
+    for it in o.get("output") or []:
+        for c in it.get("content") or [] if it.get("type") == "message" else []:
+            text, anns, pos = c.get("text") or "", [a for a in c.get("annotations") or [] if a.get("type") == "url_citation" and str(a.get("url", "")).startswith("https://")], 0
+            for line in text.split("\n"):
+                a, b, pos = pos, pos + len(line), pos + len(line) + 1
+                u = next((x["url"] for x in anns if a <= x.get("start_index", -1) < b + 1), None)
+                f = re.sub(r"\(?\[[^\]]*\]\([^)]*\)\)?|\(https?://[^)]*\)|^\s*(?:[-*•]|\d+[.)])\s*|\*+", "", line).strip(" .")
+                if u and 4 <= len(f) <= 40 and not re.search(CHAT_BAN, f) and len(out) < TODAY_NEWS_N:
+                    out.append({"fact": f, "kind": "life", "src": u.split("?utm_")[0]})
+    return out
+
+
+def today_auto(seen, now=None):
+    """11/7 진우 '정해진 루틴은 봇으로'(Cowork 06:40 손 커밋 대신): TODAY_AUTO_AT 창 첫 실행에 docs/today.json {date, updated('… 봇'), items:[{fact, kind, src, fit}]} 1번.
+    = weather(서울 아침 기온 — Open-Meteo, 키 없음 · src = 그 API 주소) + cal(today_cal) + life(today_news — 키·인용 있을 때만) · fit = 지금 진열 tag만(TODAY_FIT_WX·TODAY_FIT_KW·이름)
+    · 그날 날짜 파일이 이미 있으면(Cowork가 먼저 올림 — updated에 'Cowork' 등) 안 덮음 · 줄 = today_items 규칙(40자·CHAT_BAN) 통과한 것만 · 아무 줄도 없으면 파일 X."""
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, key = time.strftime("%Y-%m-%d", kst), time.strftime("todayauto_%Y%m%d", kst)
+    if key in seen or not TODAY_AUTO_AT[0] <= time.strftime("%H:%M", kst) < TODAY_AUTO_AT[1]:
+        return
+    seen[key] = now
+    old = load(TODAY_FILE, {})
+    if isinstance(old, dict) and old.get("date") == day:
+        return print("today auto: 오늘 파일 있음(", str(old.get("updated", ""))[:20], ") -> 그대로")
+    tags, items = today_tags(), []
+    w = next((x for x in weather(seen) or [] if x.get("date") == day), None)
+    if w:
+        t = w.get("am", w["tmin"])
+        fit = next((f for lo, hi, f in TODAY_FIT_WX if lo <= t <= hi), ())
+        items.append({"fact": f"서울 아침 {'영하 ' + str(-t) if t < 0 else t}도" + (f" · 비 올 확률 {w['rain']}%" if w.get("rain", 0) >= 60 else ""), "kind": "weather",
+                      "src": f"https://api.open-meteo.com/v1/forecast?latitude={WEATHER_LAT}&longitude={WEATHER_LON}&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
+                      "fit": [x for x in fit if x in tags]})
+    items += today_cal(day, tags)
+    for x in today_news(day):
+        items.append({**x, "fit": sorted({t for rx, ts in TODAY_FIT_KW if re.search(rx, x["fact"]) for t in ts if t in tags})})
+    items = [x for x in items if 0 < len(x["fact"]) <= 40 and not re.search(CHAT_BAN, x["fact"])]
+    if not items:
+        return print("today auto: 줄 없음 -> 파일 X")
+    json.dump({"date": day, "updated": time.strftime("%Y-%m-%d %H:%M", kst) + " 봇", "items": items}, open(TODAY_FILE, "w"), ensure_ascii=False, indent=1)
+    print("today auto:", len(items), "줄 ·", " / ".join(x["fact"] for x in items))
+
+
 def today_fit(text, now=None):
     """오늘 있었던 일 중 fit 낱말이 text(품목·상품 이름)에 있는 것만 -> [사실] (11/5 I — fit 맞는 상품만 그 사실을 씀)."""
     return [x["fact"].strip() for x in today_items(now) if any(isinstance(f, str) and f.strip() and f.strip() in text for f in x.get("fit") or [])]
@@ -12733,7 +12832,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

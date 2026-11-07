@@ -3232,6 +3232,41 @@ def short_pages(out, heads):
 P_WORTH_MIN = 5  # 11/7 09:4x 진우 '5번으로 하자, 그리고 나서 또 조절하자' — 사이트맵 딜 쪽 가격 기록 확인 수 기준(3 -> 5)
 
 
+INDEX_TODO, INDEX_TODO_N, INDEX_TODO_KEEP = "index_todo.json", 10, 7  # 11/7 Cowork: 구글 색인 요청 목록(docs/ — 구글은 요청 API가 없어 Cowork가 GSC에서 클릭) · 하루 10개 · 넣은 것 7일 다시 X
+INDEX_KINDS = (("today", "today/"), ("topic", "c/t/"), ("event", "e/"), ("guide", "guide/"), ("cat", "c/"), ("deal", "p/"))  # 우선순위 순 · 그 밖 = other(맨 뒤)
+
+
+def index_todo(out, urls, today):
+    """11/7 Cowork: 이번 빌드 사이트맵 주소 중 앞 sitemap.xml에 없던 것 -> 줄(q, 7일) -> 오늘 목록(urls) INDEX_TODO_N개까지(today/ > c/t/ > e/ > guide/ > c/ > p/ > 그 밖, 같은 칸은 먼저 들어온 순)
+    · 넣은 주소(done) 7일 다시 X · 사이트맵에서 빠진 주소 X · 앞 사이트맵이 없으면(첫 빌드) 새 것으로 안 봄 -> docs/index_todo.json {date, urls:[{url, kind, added}], q, done} -> (오늘 수, 줄 수)."""
+    kind = lambda u: next((k for k, pre in INDEX_KINDS if u[len(BASE):].startswith(pre)), "other")
+    rank = {k: n for n, (k, _) in enumerate(INDEX_KINDS)}
+    try:
+        prev = set(re.findall(r"<loc>([^<]+)</loc>", open(f"{out}/sitemap.xml", encoding="utf-8").read()))
+    except OSError:
+        prev = None
+    try:
+        d = json.load(open(f"{out}/{INDEX_TODO}", encoding="utf-8"))
+        d = d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        d = {}
+    cut, cur = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - INDEX_TODO_KEEP * 86400)), {u for u, _ in urls}
+    done = {u: t for u, t in (d.get("done") or {}).items() if isinstance(t, str) and t > cut}
+    lst = [x for x in d.get("urls") or [] if isinstance(x, dict) and x.get("url") in cur] if d.get("date") == today else []
+    q = {x["url"]: x for x in d.get("q") or [] if isinstance(x, dict) and x.get("url") in cur and x["url"] not in done and str(x.get("added", "")) > cut}
+    for u in sorted(cur - (prev if prev is not None else cur)):
+        if u not in done and u not in q:
+            q[u] = {"url": u, "kind": kind(u), "added": today}
+    for x in sorted(q.values(), key=lambda x: (rank.get(x["kind"], 99), x["added"], x["url"])):
+        if len(lst) >= INDEX_TODO_N:
+            break
+        lst.append(x)
+        done[x["url"]] = today
+    q = [x for u, x in q.items() if u not in done]
+    json.dump({"date": today, "urls": lst, "q": q, "done": done}, open(f"{out}/{INDEX_TODO}", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    return len(lst), len(q)
+
+
 def p_worth_fn(now_ts):
     """11/7 진우 '구글 노출 늘리기' ①(서치콘솔: 사이트맵 p 771 = 본문 대부분 공통 틀 · 발견됨-색인 안 됨 1,015): 딜 쪽 중 색인·사이트맵에 둘 값어치 -> (i, p) -> bool.
     = 가격 기록 P_WORTH_MIN번↑(price_hist 확인 수) · 주제 쪽(c/t)·가이드에 걸린 상품 · 최근 7일 사이트 클릭(gc_top.json week — hotdeal.gc_top이 7일 모음)."""
@@ -3526,6 +3561,7 @@ def build(posts, out="docs"):
     site_status(out, posts, it, urls, now_ts)  # D 10:00 사이트 점검(Cowork git 계산 대신) — docs/status.json
     urls = [x for x in dict((u, (u, d)) for u, d in urls).values() if not noindex_file(out, x[0])]  # 11/7: 사이트맵에 noindex 쪽 0 · 같은 주소 1번
     print("sitemap", len(urls), "· p", sum(u.startswith(f"{BASE}p/") for u, _ in urls), "· noindex", pn[1])
+    print("index todo 오늘 {}/{} · 줄 {}".format(*(lambda r: (r[0], INDEX_TODO_N, r[1]))(index_todo(out, urls, today))))  # 11/7 구글 색인 요청 목록(앞 사이트맵과 비교 — sitemap.xml 쓰기 전)
     open(f"{out}/sitemap.xml", "w").write('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                                            + "".join(f"<url><loc>{u}</loc>{d and f'<lastmod>{d}</lastmod>'}</url>" for u, d in urls) + "</urlset>")
     open(f"{out}/robots.txt", "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {BASE}sitemap.xml\n")  # 검색 로봇에게 사이트맵 위치(10/9) — '*' = 네이버 Yeti도 허용
