@@ -1,10 +1,20 @@
 {
  "google": {
-  "at": "2026-11-08 03:03",
+  "at": "2026-11-08 04:00",
   "items": [
    {
+    "t": "nottm forest vs man city",
+    "n": "200+",
+    "news": "Nottingham Forest vs Manchester City: Premier League…"
+   },
+   {
+    "t": "gta6",
+    "n": "100+",
+    "news": "An Update On A Possible ‘GTA 6’ PC Release Date Plans, Due…"
+   },
+   {
     "t": "노팅엄 포레스트 대 맨 시티",
-    "n": "2000+",
+    "n": "5000+",
     "news": "Premier League LIVE: Live text, radio & score updates from…"
    },
    {
@@ -20,17 +30,17 @@
    {
     "t": "복권",
     "n": "5000+",
-    "news": "\"20억 대박\" 로또 1등 14명 당첨…서울에서만 7곳 최다"
+    "news": "1249회 로또 1등 14명…1인당 20억3천만원"
    },
    {
     "t": "하정우",
-    "n": "500+",
+    "n": "1000+",
     "news": "하정우, 12월 결혼 앞두고...확 달라진 비주얼 - 머니투데이"
    },
    {
     "t": "mainz vs bayern",
     "n": "200+",
-    "news": "Nachbericht: 1. FSV Mainz 05 vs. FC Bayern I Analyse"
+    "news": "Im Rekordspiel: Bayern-Torwart Neuer wieder verletzt"
    },
    {
     "t": "김성우",
@@ -40,17 +50,7 @@
    {
     "t": "nepal premier league",
     "n": "100+",
-    "news": "Live Cricket Score, Schedule, Latest News, Stats & Videos"
-   },
-   {
-    "t": "버밍엄 대 스완지 시티",
-    "n": "500+",
-    "news": "Birmingham City v Swansea City: Championship stats &…"
-   },
-   {
-    "t": "arsenal vs hull",
-    "n": "500+",
-    "news": "Arsenal 1-0 Hull City, Fulham 1-1 Newcastle United, FA Cup…"
+    "news": "Match Predictions: Nepal Premier League 2026 - 18th Match -…"
    }
   ]
  },
