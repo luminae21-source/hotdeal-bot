@@ -13402,10 +13402,27 @@ H.STK_DIR = sv159; shutil.rmtree(d159, ignore_errors=True)
 RD160 = os.path.dirname(os.path.abspath(H.__file__))
 pg160 = open(os.path.join(RD160, ".github/workflows/pages.yml"), encoding="utf-8").read()
 for k in ("workflow_dispatch:", "cancel-in-progress: true", "pages: write", "id-token: write", '--jq .build_type', '"$bt" != "workflow"',
-          "actions/upload-pages-artifact@v3", "path: docs", "actions/deploy-pages@v4", "timeout: 1800000", "name: github-pages", "if: needs.check.outputs.go == 'true'"):
+          "actions/upload-pages-artifact@v3", "path: docs", "actions/deploy-pages@v4", "timeout: 600000", "name: github-pages", "if: needs.check.outputs.go == 'true'"):
     assert k in pg160, k
 hd160 = open(os.path.join(RD160, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert "workflow_run:" not in pg160 and "actions: write" in hd160 and 'echo "pushed=1" >> "$GITHUB_OUTPUT"' in hd160 and "if: ${{ steps.site.outputs.pushed == '1' }}" in hd160 and 'gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main' in hd160  # 11/6 13:32Z workflow_run 안 옴 -> hotdeal이 사이트 커밋 뒤 직접 부름
+assert "workflow_run:" not in pg160 and "actions: write" in hd160 and 'echo "pushed=1" >> "$GITHUB_OUTPUT"' in hd160 and 'gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main' in hd160  # 11/6 13:32Z workflow_run 안 옴 -> hotdeal이 사이트 커밋 뒤 직접 부름
+# 11/7 Cowork 버그(pages 10분 끊김 #42·#46·#50~#52): timeout 최대 10분(1800000 = 깎임) · 실패면 같은 실행에서 1번 더(dep2) · 다음 hotdeal 실행 = 커밋 없어도 마지막 pages 실패면 다시 부름 · 3일 지난 하루 카드 그림 = Pages에서만 뺌
+assert "1800000" not in pg160 and pg160.count("uses: actions/deploy-pages@v4") == 2 and "continue-on-error: true" in pg160 and "if: ${{ steps.dep.outcome == 'failure' }}" in pg160 and "steps.dep.outputs.page_url || steps.dep2.outputs.page_url" in pg160
+assert "if: ${{ !cancelled() }}" in hd160 and 'gh run list -R "$GITHUB_REPOSITORY" -w pages.yml -L 1' in hd160 and '[ "${{ steps.site.outputs.pushed }}" = "1" ] || [ "${last%%/*}" = "completed" -a "${last#*/}" != "success" ]' in hd160
+sh160 = re.search(r"- name: 아티팩트 줄이기[^\n]*\n\s+run: \|[^\n]*\n(.*?)\n      - uses: actions/upload-pages-artifact", pg160, re.S)[1]
+with tempfile.TemporaryDirectory() as td160:
+    import subprocess, datetime as dt160  # 날짜 = 스크립트와 같은 진짜 시계(KST date — 테스트가 time.time을 바꿔 둬도)
+    td0160 = dt160.date.fromisoformat(subprocess.run(["bash", "-c", "TZ=Asia/Seoul date +%F"], capture_output=True, text=True).stdout.strip())
+    dk160 = lambda n: (td0160 - dt160.timedelta(days=n)).isoformat()
+    fs160 = [f"docs/cards/{dk160(10)}.png", f"docs/cards/{dk160(10)}_11.jpg", f"docs/cards/{dk160(10)}.json", f"docs/cards/{dk160(9)}.png", f"docs/cards/{dk160(1)}.png", f"docs/cards/{dk160(0)}_15.jpg",
+             "docs/cards/th/aa.jpg", f"docs/clips/{dk160(2)}/01.mp4", "docs/cards/preview_A.png", "docs/index.html"]
+    for f in fs160:
+        os.makedirs(os.path.dirname(f"{td160}/{f}"), exist_ok=True); open(f"{td160}/{f}", "wb").write(b"x" * 100)
+    open(f"{td160}/README.md", "w").write(f"![a](https://hotdealpick.kr/cards/{dk160(9)}.png) ![b](docs/cards/preview_A.png)")
+    o160 = subprocess.run(["bash", "-e", "-c", sh160], cwd=td160, capture_output=True, text=True)
+    left160 = {f for f in fs160 if os.path.exists(f"{td160}/{f}")}
+    assert o160.returncode == 0 and left160 == set(fs160) - {f"docs/cards/{dk160(10)}.png", f"docs/cards/{dk160(10)}_11.jpg"}, (o160.stdout, o160.stderr, set(fs160) - left160)  # 지난 하루 그림만 · .json(빌드 순서)·README 그림·최근·th·clips·미리보기 그대로
+    assert "지난 카드 그림 2개 뺌" in o160.stdout, o160.stdout
 assert "path: |\n            seen.json\n            fonts\n            toss.json\n            music\n" in hd160 and "path: animals\n" in hd160 and "pages" not in hd160.split("jobs:")[0]  # 캐시 경로 그대로 · hotdeal.yml 안 건드림
 
 # 9-161 (11/6 22:2x Cowork 버그 — 기존 규칙 그대로): 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(TOSS_EFFECT·AUTO_CLAIM·분유·성인) — '쿠잉 주름펴기 HSI-1500GW'가 올라갔던 것

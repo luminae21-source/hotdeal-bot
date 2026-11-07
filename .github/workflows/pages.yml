@@ -1,6 +1,6 @@
 name: pages
 # 11/6 22시대 진우 '이거 풀고 하자': 브랜치 배포(pages build and deployment)의 deploy 단계가 10분 제한(timeout 600000)에 3번 연속 걸림(12:21·12:34·12:49Z — docs 4,551개·330MB)
-# -> GitHub Actions 배포: docs 통째 artifact(upload-pages-artifact) + deploy-pages(제한 30분) · 겹치면 앞 것 취소 · hotdeal 실행이 사이트 커밋을 올린 뒤 1번(hotdeal.yml 끝 단계가 gh workflow run으로 부름
+# -> GitHub Actions 배포: docs 통째 artifact(upload-pages-artifact) + deploy-pages(한 번 10분 — 아래 dep 주석) · 겹치면 앞 것 취소 · hotdeal 실행이 사이트 커밋을 올린 뒤 1번(hotdeal.yml 끝 단계가 gh workflow run으로 부름
 #    — 11/6 13:32Z workflow_run 트리거가 안 옴: GITHUB_TOKEN으로 이어진 실행의 끝은 다른 워크플로를 안 깨움 · workflow_dispatch만 예외)
 # 켜기(1번, 진우 확인 뒤 Cowork가 화면에서): Settings → Pages → Build and deployment → Source = 'GitHub Actions'
 #   → 사용자 도메인(hotdealpick.kr)·Enforce HTTPS 그대로인지 같은 화면에서 확인 · 바꾸기 전엔 아래 check가 build_type 'legacy'(브랜치)를 보고 건너뜀 = 지금 브랜치 배포 그대로
@@ -38,18 +38,35 @@ jobs:
     needs: check
     if: needs.check.outputs.go == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25             # 받기·묶기 1분 + 배포 10분 × 2번(dep·dep2)
     environment:
       name: github-pages
-      url: ${{ steps.dep.outputs.page_url }}
+      url: ${{ steps.dep.outputs.page_url || steps.dep2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
         with:
           ref: main                # 가장 새 사이트(대기 중에 쌓인 커밋까지)
+      - name: 아티팩트 줄이기(Pages에만 — 저장소 파일은 그대로)
+        run: |                     # 11/7 Cowork: 아티팩트 253MB · 하루 카드 그림(cards/날짜*.png·jpg)은 올릴 때만 인스타·Threads·텔레그램이 가져감(사이트 html은 안 씀 — 순서 .json은 빌드가 저장소에서 읽음)
+          cut=$(TZ=Asia/Seoul date -d '3 days ago' +%F)   # 3일 지난 하루 카드 그림 = Pages에서 뺌 · README가 hotdealpick.kr로 거는 그림은 남김 · th(14일 재사용)·mall(7일)·clips(진우 /clips/ 3일)는 그대로
+          keep=$(grep -ohE 'hotdealpick\.kr/cards/[^ )"`]+' README.md | sed 's#.*/cards/##' | sort -u)
+          n=0; b=0
+          for f in docs/cards/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.png docs/cards/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.jpg; do
+            [ -f "$f" ] || continue
+            k=${f#docs/cards/}
+            if [[ "${k:0:10}" < "$cut" ]] && ! grep -qxF "$k" <<< "$keep"; then b=$((b + $(stat -c %s "$f"))); rm "$f"; n=$((n + 1)); fi
+          done
+          echo "pages 아티팩트: 지난 카드 그림 ${n}개 뺌($((b / 1048576))MB) · docs $(du -sm docs | cut -f1)MB(clips $(du -sm docs/clips 2>/dev/null | cut -f1)MB)"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
       - id: dep
+        continue-on-error: true    # 11/7 #42·#46·#50~#52: 'syncing_files'에서 10분 멈춤 -> 같은 실행에서 1번 더(dep2) · 다음 hotdeal 실행도 앞 pages가 실패면 다시 부름(hotdeal.yml)
         uses: actions/deploy-pages@v4
         with:
-          timeout: 1800000         # 30분(기본 10분에 걸려 실패하던 것)
+          timeout: 600000          # 10분 = deploy-pages가 받는 최대(더 크게 줘도 10분으로 깎임 — 11/7 경고 'timeout set to the maximum of 600000')
+      - id: dep2
+        if: ${{ steps.dep.outcome == 'failure' }}
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000

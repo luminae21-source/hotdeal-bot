@@ -118,8 +118,13 @@ jobs:
           [ ! -f auto_events.json ] || git add auto_events.json   # 봇이 만든 진열·예약(10/30 Cowork 크롬 이관 — events.json은 Cowork 것 그대로)
           [ ! -f nset.json ] || git add nset.json   # 오늘 새 구성(이름·몰·상품 수 — 10/31 진우 '새 제품 나오면 새 구성' · status.json nset)
           git diff --cached --quiet || (git commit -m "site: $(date -u +%F_%H%M)" && (git push || (git pull --rebase -q && git push) || (sleep 60 && git pull --rebase -q && git push)) && echo "pushed=1" >> "$GITHUB_OUTPUT")  # 그사이 다른 커밋이 있으면 위에 얹어서 재시도 · 11/4 19:27 GitHub 500 두 번 = 1분 뒤 한 번 더
-      - if: ${{ steps.site.outputs.pushed == '1' }}   # 11/6 사이트 배포 = GitHub Actions(pages.yml): 이 실행이 사이트 커밋을 올렸을 때만 pages 1번(겹치면 pages 쪽에서 앞 것 취소)
-        run: gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main || echo "::warning::pages 부르기 실패 -> 다음 실행 커밋 때 다시"
+      - if: ${{ !cancelled() }}   # 11/6 사이트 배포 = GitHub Actions(pages.yml): 이 실행이 사이트 커밋을 올렸을 때 pages 1번(겹치면 pages 쪽에서 앞 것 취소)
+        run: |                    # 11/7 Cowork: + 마지막 pages가 실패로 끝났으면 커밋이 없어도(봇 단계가 실패한 실행도) 다시 부름 -> 라이브가 옛것으로 남는 공백 줄임
+          last=$(gh run list -R "$GITHUB_REPOSITORY" -w pages.yml -L 1 --json status,conclusion --jq '.[0] | .status + "/" + .conclusion' 2>/dev/null || echo "?")
+          if [ "${{ steps.site.outputs.pushed }}" = "1" ] || [ "${last%%/*}" = "completed" -a "${last#*/}" != "success" ]; then
+            echo "pages 부름 (사이트 커밋 ${{ steps.site.outputs.pushed || 0 }} · 마지막 pages $last)"
+            gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main || echo "::warning::pages 부르기 실패 -> 다음 실행 때 다시"
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
       - id: seenok                 # 10/31 #2719~2724: 실패·시간 초과 실행도 seen 저장(같은 글 다시 X) — seen.json이 유효한 dict일 때만(캐시 못 받은 실행 = 파일 없음 = X)
