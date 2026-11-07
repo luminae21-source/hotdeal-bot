@@ -434,6 +434,20 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
