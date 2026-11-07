@@ -9542,6 +9542,119 @@ def chat_facts(name, ps, today, used):
     return (f"오늘 계절: {(RUN.get('season') or season_ctx({}))['line']}\n" if name == "season" else ""), set(), None
 
 
+AI_IMG, AI_IMG_MODEL, AI_IMG_Q, AI_IMG_SIZE, AI_IMG_DIR = False, "gpt-image-2.5-flare", "medium", "1024x1024", "docs/cards/ai"  # 11/7 진우 '1번 3번 같이해': OpenAI 그림 1장 = 큐레이션·수다 글만(OPENAI_API_KEY 없으면 그림 X) · False = 시험(첫 AI_IMG_TEST장은 관리봇 DM만 — 진우 OK 뒤 True)
+AI_IMG_DAY, AI_IMG_TEST, AI_IMG_MONTH, AI_IMG_EST, AI_IMG_KB, AI_IMG_PREP, AI_IMG_LEAD = 3, 3, 5.0, 0.03, 200, 90 * 60, 20 * 60  # 하루 3장 · 실행당 1장(RUN) · 월 $5(다음 장 어림 $0.03 — 응답 usage로 실제 값) · 200KB 안 jpg · 글 90분~20분 전에 만듦(사이트에 뜨게)
+AI_IMG_NOTE = "🎨 그림: AI 생성"  # 11/7 'AI 그림 표시' — 그림이 붙은 글에만
+AI_IMG_RULE = ("Style: cute original characters with a simple illustrated background, soft warm pastel colors, friendly mood, square composition. "
+               "Absolutely no text, letters, numbers, signs or captions anywhere in the image. "
+               "No real brand logos, product packaging, trademarks, famous or copyrighted characters, meme templates, or real people.")
+
+
+def ai_img_theme(topic=""):
+    """AI 그림 주제 = 글 주제(큐레이션 topic) + today.json 사실 2개(없으면 계절 줄) — 상품·몰 이름 X(today_items가 CHAT_BAN 거른 것)."""
+    xs = [x["fact"].strip() for x in today_items()[:2]]
+    return " · ".join([t for t in (str(topic or "").strip()[:30],) if t] + (xs or [(RUN.get("season") or season_ctx({}))["line"]]))
+
+
+def ai_img_jpg(raw):
+    """받은 그림 -> jpg bytes(AI_IMG_KB 안 — 화질 85부터 낮추고, 그래도 크면 줄임) · 글자·합성 X."""
+    from io import BytesIO
+    from PIL import Image
+    im = Image.open(BytesIO(raw)).convert("RGB")
+    for _ in range(6):
+        for q in (85, 75, 65, 55):
+            b = BytesIO()
+            im.save(b, "JPEG", quality=q, optimize=True)
+            if b.tell() <= AI_IMG_KB * 1024:
+                return b.getvalue()
+        im = im.resize((round(im.width * 0.8), round(im.height * 0.8)), Image.LANCZOS)
+    raise ValueError("AI 그림 200KB 넘음")
+
+
+def ai_img_make(seen, key, theme, where, now=None):
+    """11/7 AI 그림 1장(큐레이션·수다 글만 부름): key(글 열쇠)마다 1번 · 실패 = 그 글은 그림 없이(다시 X) -> 공개할 파일(docs/cards/ai/key.jpg — AI_IMG 켬) · None.
+    키 없음 = 부르지도 않음 · 실행당 1장 · 하루 AI_IMG_DAY장 · 이달 쓴 돈 + 어림 > AI_IMG_MONTH = 멈춤 + 관리봇 1번 · AI_IMG False = 시험(AI_IMG_TEST장까지 관리봇 DM만 · 공개 글 X).
+    로그 = 키·돈 X(장 수만)."""
+    now = now or time.time()
+    st = seen.setdefault("aiimg", {})
+    day, mon = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), time.strftime("%Y-%m", time.gmtime(now + 9 * 3600))
+    st.update(t=now, d={k: v for k, v in st.get("d", {}).items() if k >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 3 * 86400))},
+              m={k: v for k, v in st.get("m", {}).items() if k >= time.strftime("%Y-%m", time.gmtime(now + 9 * 3600 - 40 * 86400))},
+              k={k: v for k, v in st.get("k", {}).items() if now - v[1] < 3 * 86400})
+    f = f"{AI_IMG_DIR}/{key}.jpg"
+    for x in os.listdir(AI_IMG_DIR) if os.path.isdir(AI_IMG_DIR) else []:  # 3일 지난 그림 = 지움(저장소 크기 — Threads는 올릴 때 가져감)
+        if x.endswith(".jpg") and x[:-4] not in st["k"]:
+            os.remove(f"{AI_IMG_DIR}/{x}")
+    if key in st["k"]:  # 만든 것(ok)만 다시 씀 · 실패·시험 = 그 글은 그림 X
+        return f if AI_IMG and st["k"][key][0] == "ok" and os.path.exists(f) else None
+    if not E.get("OPENAI_API_KEY") or RUN.get("aiimg") or not AI_IMG and st.get("test", 0) >= AI_IMG_TEST:
+        return None
+    if st["d"].get(day, 0) >= AI_IMG_DAY:
+        return print("ai img 오늘", AI_IMG_DAY, "장 다 씀 -> 그림 없이", key)
+    if st["m"].get(mon, 0) + AI_IMG_EST > AI_IMG_MONTH:
+        if st.get("warn") != mon:
+            st["warn"] = mon
+            alert(seen, "alert_aiimg", f"⚠️ AI 그림 이번 달 쓴 돈이 상한(${AI_IMG_MONTH:.0f})에 가까워서 이번 달은 멈춰요 — 큐레이션·수다 글은 그림 없이 올라가요(다음 달 1일 다시)")
+        return print("ai img 이번 달 상한 -> 그림 없이", key)
+    RUN["aiimg"], st["k"][key] = 1, ["fail", now]  # 먼저 표시(실패해도 이 글은 다시 X — 돈 두 번 X)
+    st["d"][day] = st["d"].get(day, 0) + 1
+    try:
+        req = urllib.request.Request("https://api.openai.com/v1/images/generations", json.dumps({
+            "model": AI_IMG_MODEL, "prompt": f"A cute illustration for a Korean shopping-tips post. Theme (Korean): {theme}. {AI_IMG_RULE}",
+            "size": AI_IMG_SIZE, "quality": AI_IMG_Q, "n": 1, "output_format": "jpeg", "output_compression": 80}).encode(),
+            {"Authorization": "Bearer " + E["OPENAI_API_KEY"], "Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=75) as r:
+            o = json.loads(r.read())
+        u = o.get("usage") or {}
+        st["m"][mon] = round(st["m"].get(mon, 0) + (u.get("output_tokens", 0) * 30 + u.get("input_tokens", 0) * 5) / 1e6 if u.get("output_tokens") else st["m"].get(mon, 0) + AI_IMG_EST, 4)
+        jpg = ai_img_jpg(base64.b64decode(o["data"][0]["b64_json"]))
+    except urllib.error.HTTPError as e:
+        return print("ai img 실패 -> 그림 없이", key, e.code, clip(re.sub(r"sk-[\w-]+", "sk-…", e.read().decode("utf-8", "replace")), 160))
+    except Exception as e:
+        return print("ai img 실패 -> 그림 없이", key, type(e).__name__)
+    if not AI_IMG:  # 시험 = 관리봇 DM만(사진 업로드 — 공개 주소 X · 저장소 X)
+        st["test"] = st.get("test", 0) + 1
+        st["k"][key] = ["test", now]
+        tmp = os.path.join(tempfile.gettempdir(), f"aiimg_{key}.jpg")
+        open(tmp, "wb").write(jpg)
+        try:
+            tg_video(tmp, f"🎨 AI 그림 시험 {st['test']}/{AI_IMG_TEST} — {where}\n주제: {clip(theme, 120)}\n공개 글엔 안 붙었어요. 괜찮으면 Cowork에 'AI 그림 켜기'(AI_IMG=True)", method="sendPhoto", field="photo", ctype="image/jpeg")
+        except Exception as e:
+            print("ai img 시험 DM 실패", type(e).__name__)
+        os.remove(tmp)
+        return print("ai img 시험", st["test"], "/", AI_IMG_TEST, "-> 관리봇 DM", key)
+    os.makedirs(AI_IMG_DIR, exist_ok=True)
+    open(f, "wb").write(jpg)
+    st["k"][key] = ["ok", now]
+    print("ai img 만듦", key, f"(오늘 {st['d'][day]}/{AI_IMG_DAY}장 · {len(jpg) // 1024}KB)")
+    return f
+
+
+def ai_img_live(seen, key):
+    """올릴 때: 이 글 AI 그림이 사이트에 떴으면 공개 주소, 아니면 None(기다리지 않음 — 그림 없이)."""
+    f = f"{AI_IMG_DIR}/{key}.jpg"
+    if not (AI_IMG and (seen.get("aiimg", {}).get("k", {}).get(key) or [""])[0] == "ok" and os.path.exists(f)):
+        return None
+    try:
+        http(SITE + f[len("docs/"):], method="HEAD")
+        return SITE + f[len("docs/"):]
+    except Exception:
+        return None
+
+
+def chat_ai_prep(seen, now):
+    """수다 글 칸 AI_IMG_PREP~AI_IMG_LEAD 전 = 그 칸 AI 그림 미리(이 실행 커밋 -> 사이트에 뜨면 올릴 때 스티커 대신) · 키 없음 = 아무것도 X."""
+    if not E.get("OPENAI_API_KEY"):
+        return
+    day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    for k, hm in enumerate((CHAT_AT, *CHAT_MORE)):
+        if not hm:
+            continue
+        key, t = "chat_" + day.replace("-", "") + (f"_{hm[0]:02d}" if k else ""), kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}")
+        if key not in seen and t - AI_IMG_PREP <= now <= t - AI_IMG_LEAD:
+            return ai_img_make(seen, key, ai_img_theme(), f"수다 글 {hm[0]:02d}:{hm[1]:02d}", now)
+
+
 def chat_post(seen):
     """II Threads 수다 글(10/26 Cowork): 딜·상품명·가격·링크 없는 짧은 존댓말 잡담 2~4줄(QQ·ZZ) + 마지막 줄 질문 1개 — Threads만 하루 1번 CHAT_AT(점심) · 앞뒤 CHAT_GAP 안 다른 비딜 글
     (올린 비딜 묶음 글 seen thnd · 큐레이션 시각 · 날씨·달력·간식·일지·투표·알림 받기 시각)이면 다음 실행에(= 그 30분 뒤 첫 빈 실행) · CHAT_LATE 넘으면 그날 X ·
@@ -9550,6 +9663,7 @@ def chat_post(seen):
     now, tok = time.time(), E.get("THREADS_TOKEN")
     if not (TH_CHAT and CHAT_AT and tok):
         return
+    chat_ai_prep(seen, now)  # 11/7 AI 그림 = 칸 90~20분 전에 미리(키 있을 때만)
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", kst)
     slot = next(((k, hm) for k, hm in enumerate((CHAT_AT, *CHAT_MORE)) if hm and ("chat_" + day.replace("-", "") + (f"_{hm[0]:02d}" if k else "")) not in seen
@@ -9594,7 +9708,8 @@ def chat_post(seen):
     lines = [l for l in lines if l]
     if why := chat_ok(lines, money, facts):
         return print("chat post: 재검토 뒤 규칙 걸림 -> 안 올림", name, why)
-    stk, text = chat_stk_for(seen, lines, name, item, now), "\n".join(lines)  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 못 씀 = 진우 캐릭터 그림(chat_stk — 10/31)
+    ai, text0 = ai_img_live(seen, key), "\n".join(lines)  # 11/7 AI 그림(미리 만들어 사이트에 뜬 것) = 스티커 대신 1장 + 'AI 생성' 줄 · 없으면 예전 스티커
+    stk, text = (("ai", ai) if ai else chat_stk_for(seen, lines, name, item, now)), text0 + (f"\n{AI_IMG_NOTE}" if ai else "")  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 못 씀 = 진우 캐릭터 그림(chat_stk — 10/31)
     bundled(seen)
     try:
         r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")
@@ -9603,8 +9718,8 @@ def chat_post(seen):
             raise
         seen.pop(time.strftime("thretry_%Y%m%d_chat", time.gmtime(time.time() + 9 * 3600)), None)  # 사진 글로 다시 올림 X
         print("chat post: 스티커 사진 글 거절 -> 글만", stk[0], err_brief(e))
-        stk, r = None, th_bundle(seen, "chat", text, topic="일상")
-    if stk:
+        stk, r = None, th_bundle(seen, "chat", text0, topic="일상")  # 그림 없으면 'AI 생성' 줄도 X
+    if stk and stk[0] != "ai":
         stk_used(seen, stk[0], now)
     st["h"][-1][2] = lines[0][:40]
     st.update(t=now, m={**dict(list(st.get("m", {}).items())[-9:]), r["id"]: {"ts": now}})
@@ -9890,6 +10005,10 @@ def curation(seen):
                     st.setdefault("pt", now)  # 사진 처음 준비된 시각(사이트에 뜨기 기다림 기준)
                 elif u not in bad or now - bad[u] >= 3600:
                     bad[u] = now
+        if ("th" not in st and E.get("OPENAI_API_KEY") and len(files) < 10 and not e.get("power") and TOSS_NOTE not in e["text"] and e.get("ch") in (None, "th")
+                and (now <= t0 - AI_IMG_LEAD or key in seen.get("aiimg", {}).get("k", {}))):  # 11/7 AI 그림 1장 = 상품 사진 뒤(맨 뒤) · 힘 준 글·토스 글·인스타 X · 글 20분 전까지만 새로 만듦
+            if a := ai_img_make(seen, key, ai_img_theme(e.get("topic")), f"큐레이션 {e['at']}", now):
+                files.append(a)
         if now < t0:  # 사진만 미리(다음 실행 전에 사이트에 뜨게)
             continue
         if "body" not in st:  # Z-5 예약 글 재검토 1번(링크 줄 말고) -> 채널·Threads·인스타 같은 본문(다시 시도 땐 Claude X)
@@ -9936,24 +10055,25 @@ def curation(seen):
                 live.append(u)
             except Exception:
                 pass
-        if len(live) < len(urls) and now < max(t0, st.get("pt", now)) + CUR_IMG_WAIT:
-            continue  # 아직 사이트에 다 안 뜸 = 다음 실행에(준비 뒤 1시간까지)
+        if len([u for u in live if "/cards/ai/" not in u]) < len([u for u in urls if "/cards/ai/" not in u]) and now < max(t0, st.get("pt", now)) + CUR_IMG_WAIT:
+            continue  # 아직 사이트에 다 안 뜸 = 다음 실행에(준비 뒤 1시간까지 — AI 그림은 안 기다림: 안 떴으면 그림 없이)
         if ig:
-            cur_ig(seen, st, e, key, live, now)
+            cur_ig(seen, st, e, key, [u for u in live if "/cards/ai/" not in u], now)  # 인스타 = AI 그림 X(상품 사진만)
         if not th:
             continue
         topic = SERIES_BY[sk][0] if sk else re.sub(r"[.&]", "", str(e.get("topic") or "")).strip()[:50] or th_topic(seen)  # Threads 주제 태그: 마침표·& X · 50자
-        lim = n = 500 - th_len(e["link"]) - 2
+        ai = any("/cards/ai/" in u for u in live)  # 11/7 AI 그림 붙음 = 본문 끝 'AI 생성' 줄
+        lim = n = 500 - th_len(e["link"]) - 2 - (th_len(AI_IMG_NOTE) + 1 if ai else 0)
         cut = th_fit(body, n)
         while th_len(cut) > lim and n > 40:  # Threads 글자 수 = 이모지 UTF-8 바이트(th_len) — th_fit은 글자 수라 넘치면 자를 길이만 줄임(한도는 그대로)
             n -= 10
             cut = th_fit(body, n)
-        post = f"{cut}\n\n{e['link']}"
+        post, post0 = (f"{cut}\n{AI_IMG_NOTE}" if ai else cut) + f"\n\n{e['link']}", f"{cut}\n\n{e['link']}"
         try:
             me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
             r = th_img(tok, me, post, live[0], topic) if len(live) == 1 else th_carousel(tok, me, post, live, topic) if live else None
             ph = len(live) if r else 0
-            r = r or th_text(tok, me, post, e["link"], topic)
+            r = r or th_text(tok, me, post0, e["link"], topic)  # 사진 X = 'AI 생성' 줄도 X
         except Exception as x:
             st["n"] = st.get("n", 0) + 1
             print("curation threads 실패", st["n"], err_brief(x))

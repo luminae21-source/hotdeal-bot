@@ -91,6 +91,7 @@ jobs:
           TOSS_PUBLISHER_ID: ${{ secrets.TOSS_PUBLISHER_ID }}
           NAVER_HUB_ID: ${{ secrets.NAVER_HUB_ID }}          # 네이버 API HUB 쇼핑인사이트(DDD trend.json — 진우가 넣으면 켜짐, 없으면 건너뜀)
           NAVER_HUB_SECRET: ${{ secrets.NAVER_HUB_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}      # 11/7 AI 그림(큐레이션·수다 글만 1장 — 없으면 그림 없이 · 로그에 키 X)
           MIN_SCORE: ${{ vars.MIN_SCORE }}
           MODEL: ${{ vars.MODEL }}
           METRICS_DAY: ${{ inputs.metrics_day }}

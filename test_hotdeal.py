@@ -13636,3 +13636,85 @@ assert S.pic_why({"t": "2026-11-05 00:26", "text": "🔥 [네이버] x (1,000원
     and S.pic_why({"t": "2026-11-05 00:26", "text": "🔥 [쿠팡] x (1,000원)", "url": "https://link.coupang.com/a/x"}) == "쿠팡 사진 없음"
 assert 'print(f"home 사진 X {sum(why.values())}줄"' in inspect.getsource(S.hot_section) and "tsite" in inspect.getsource(H.own_end)  # 홈 아이콘 줄 사유 로그 · 다시 확인 길
 (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.EVENTS, S.TIMG, S.TOSSM) = sv168; os.chdir(cwd168); shutil.rmtree(d168, ignore_errors=True)
+
+# 9-169 (11/7 11:3x 진우 '1번 3번 같이해' — 봇 GPT 그림 자동): OPENAI_API_KEY 없음 = 그림 X(부르지도 않음) · 큐레이션·수다 글에만 1장(상품 사진 뒤 · 힘 준 글·토스 글·딜 글·인스타 X)
+#   · 글자 없는 오리지널 그림 규칙(로고·포장·유명 캐릭터·실존 인물 X) · medium 1024 · 200KB 안 jpg · 하루 3장·실행당 1장·월 $5 넘을 것 같으면 멈춤 + 관리봇 1번 · 실패 = 그림 없이(다시 X) · AI_IMG False = 첫 3장 관리봇 DM만
+import io as io169, base64 as b64_169, urllib.error as ue169
+from PIL import Image as Im169
+d169, cwd169 = tempfile.mkdtemp(), os.getcwd(); os.chdir(d169)
+sv169 = (dict(H.E), H.AI_IMG, H.urllib.request.urlopen, H.tg_video, H.today_items, H.http, H.tg, time.time, H.alert, H.EVENTS, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, H.ai_img_make, H.IG_AUTO)
+b169 = io169.BytesIO(); Im169.frombytes("RGB", (1024, 1024), os.urandom(3 * 1024 * 1024)).save(b169, "PNG"); big169 = b169.getvalue()  # 잡음 그림 = 큰 파일(200KB 안으로 줄이는지)
+calls169, dm169, al169 = [], [], []
+def uo169(req, timeout=None):
+    if not req.full_url.startswith("https://api.openai.com/"):
+        raise OSError("net")
+    calls169.append((json.loads(req.data), dict(req.headers)))
+    return io169.BytesIO(json.dumps({"data": [{"b64_json": b64_169.b64encode(big169).decode()}], "usage": {"output_tokens": 800, "input_tokens": 120}}).encode())
+H.urllib.request.urlopen, H.today_items = uo169, (lambda now=None: [{"fact": "입동, 서울 아침 영하 1도"}, {"fact": "빼빼로데이(11/11)까지 4일"}])
+H.tg_video = lambda path, cap, **k: dm169.append((open(path, "rb").read(), cap, k))
+H.alert = lambda seen, key, text, *a, **k: al169.append(text)
+time.time = lambda: TK("2026-11-07 12:00")
+run169 = lambda: H.RUN.pop("aiimg", None)  # 새 실행
+with contextlib.redirect_stdout(io169.StringIO()):
+    H.E.pop("OPENAI_API_KEY", None); s169 = {}; run169()
+    assert H.ai_img_make(s169, "chat_20261107", "주제", "수다") is None and H.chat_ai_prep(s169, time.time()) is None and not calls169  # 키 없음 = 그림 X(부르지도 않음)
+    H.E["OPENAI_API_KEY"], H.AI_IMG = "sk-test169", False
+    for i in range(4):
+        run169(); assert H.ai_img_make(s169, f"chat_t{i}", "입동", "수다 글") is None  # 시험 = 공개 글 X
+    assert len(calls169) == 3 and len(dm169) == 3 and "시험 1/3" in dm169[0][1] and dm169[0][2] == {"method": "sendPhoto", "field": "photo", "ctype": "image/jpeg"} and not os.path.exists("docs/cards/ai")  # 첫 3장 = 관리봇 DM만(저장소 X) · 4번째 X
+    assert all(x[0][:2] == b"\xff\xd8" and len(x[0]) <= 200 * 1024 for x in dm169)  # jpg · 200KB 안
+    q169, hd169 = calls169[0]
+    assert (q169["model"], q169["quality"], q169["size"], q169["n"]) == ("gpt-image-2.5-flare", "medium", "1024x1024", 1) and "no text" in q169["prompt"] and "No real brand logos" in q169["prompt"] and "real people" in q169["prompt"] and "입동" in q169["prompt"]  # 모델·크기·글자 X·로고·실존 인물 X·주제
+    assert hd169["Authorization"] == "Bearer sk-test169" and "sk-test169" not in json.dumps(s169)  # 키 = 헤더에만(seen·로그 X)
+    H.AI_IMG, s169, calls169[:] = True, {}, []
+    run169(); f169 = H.ai_img_make(s169, "cur_a", "아이스크림 · 입동", "큐레이션")
+    assert f169 == "docs/cards/ai/cur_a.jpg" and os.path.getsize(f169) <= 200 * 1024 and Im169.open(f169).format == "JPEG"  # 켬 = 공개 파일
+    assert H.ai_img_make(s169, "cur_b", "x", "큐레이션") is None and len(calls169) == 1  # 실행당 1장
+    run169(); H.ai_img_make(s169, "cur_b", "x", "큐레이션"); run169(); H.ai_img_make(s169, "cur_c", "x", "큐레이션"); run169()
+    assert H.ai_img_make(s169, "cur_d", "x", "큐레이션") is None and len(calls169) == 3 and s169["aiimg"]["d"]["2026-11-07"] == 3  # 하루 3장
+    assert H.ai_img_make(s169, "cur_a", "x", "큐레이션") == f169 and len(calls169) == 3  # 만든 글 = 다시 씀(돈 X)
+    assert abs(s169["aiimg"]["m"]["2026-11"] - 3 * (800 * 30 + 120 * 5) / 1e6) < 1e-6  # 이달 쓴 돈 = 응답 usage로
+    s3_169 = {"aiimg": {"m": {"2026-11": 4.99}, "k": dict(s169["aiimg"]["k"])}}; run169()  # k 같이 = 그림 정리가 앞 그림 안 지움(실제 seen은 하나)
+    assert H.ai_img_make(s3_169, "cur_m", "x", "큐레이션") is None and len(al169) == 1 and "멈춰요" in al169[0]; run169()
+    assert H.ai_img_make(s3_169, "cur_n", "x", "큐레이션") is None and len(al169) == 1 and len(calls169) == 3  # 월 $5 넘을 것 같음 = 멈춤 + 관리봇 1번(그달)
+    H.urllib.request.urlopen = lambda req, timeout=None: (_ for _ in ()).throw(TimeoutError("slow"))
+    s4_169 = {"aiimg": {"k": dict(s169["aiimg"]["k"])}}; run169(); assert H.ai_img_make(s4_169, "cur_f", "x", "큐레이션") is None and s4_169["aiimg"]["k"]["cur_f"][0] == "fail"
+    H.urllib.request.urlopen = uo169; run169(); assert H.ai_img_make(s4_169, "cur_f", "x", "큐레이션") is None and len(calls169) == 3  # 실패 = 그 글은 그림 없이(다시 X)
+    H.http = lambda url, body=None, headers=None, method=None: ""
+    assert H.ai_img_live(s169, "cur_a") == H.SITE + "cards/ai/cur_a.jpg" and H.ai_img_live(s169, "cur_f") is None  # 사이트에 뜬 그림 = 주소
+    H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("404"))
+    assert H.ai_img_live(s169, "cur_a") is None  # 안 뜸 = 그림 없이(안 기다림)
+    s169["aiimg"]["k"] = {k: v for k, v in s169["aiimg"]["k"].items() if k != "cur_c"}; run169(); H.ai_img_make(s169, "cur_a", "x", "큐레이션")
+    assert not os.path.exists("docs/cards/ai/cur_c.jpg") and os.path.exists(f169)  # 기록 지난 그림 = 지움
+# 큐레이션: 상품 사진 뒤 1장 · 'AI 생성' 줄 · 토스 글·힘 준 글 = 안 부름 · 인스타 X
+H.RUN.pop("aiimg", None); os.makedirs("docs", exist_ok=True); Im169.new("RGB", (800, 800), (200, 100, 50)).save("docs/own169.png")
+ev169 = [{"at": "2026-11-08 14:30", "curation": True, "text": "🍦 겨울 아이스크림 고르기\n- 쿠키앤크림 1,000원", "link": H.SITE + "c/snack/?ref=thc", "topic": "아이스크림", "img": [H.SITE + "own169.png"]},
+         {"at": "2026-11-08 15:30", "curation": True, "text": H.TOSS_NOTE + "\n💙 토스 모음", "link": H.SITE + "c/life/?ref=thc", "topic": "토스", "img": []},
+         {"at": "2026-11-08 16:30", "curation": True, "power": True, "text": "🔍 분석 글", "link": H.SITE + "c/life/?ref=thc", "topic": "분석", "img": []}]
+json.dump(ev169, open("ev169.json", "w")); H.EVENTS = "ev169.json"
+mk169, t169, hd169x = [], [], {"ok": True}
+H.ai_img_make = lambda seen, key, theme, where, now=None: mk169.append((key, theme)) or sv169[15](seen, key, theme, where, now)
+H.tg = lambda m, **k: {"message_id": 7}
+H.http = lambda url, body=None, headers=None, method=None: (url.endswith("/me?fields=id&access_token=tk") and '{"id": "me1"}') or (method == "HEAD" and (hd169x["ok"] or (_ for _ in ()).throw(OSError("404"))) and "") or ""
+H.th_img = lambda tok, me, text, image, tag="핫딜": t169.append(("img", text, [image])) or {"id": "I9"}
+H.th_carousel = lambda tok, me, text, images, tag="핫딜": t169.append(("car", text, images)) or {"id": "C9"}
+H.th_text = lambda tok, me, text, link, tag="핫딜": t169.append(("text", text, [])) or {"id": "T9"}
+H.busy, H.bundled, H.E["THREADS_TOKEN"], H.IG_AUTO = (lambda seen, cap=True: False), (lambda seen: None), "tk", False
+s5_169 = {}
+with contextlib.redirect_stdout(io169.StringIO()):
+    time.time = lambda: TK("2026-11-08 12:00"); H.RUN.pop("aiimg", None); H.curation(s5_169)
+    time.time = lambda: TK("2026-11-08 13:40"); H.RUN.pop("aiimg", None); H.curation(s5_169)
+    assert [k for k, _ in mk169] == ["cur_2026-11-08_1430"] * 2 and "아이스크림" in mk169[0][1] and not t169  # 토스 글(15:30)·힘 준 글(16:30) = 안 부름 · 시각 전 = 그림만 미리
+    time.time = lambda: TK("2026-11-08 14:31"); H.curation(s5_169)
+    time.time = lambda: TK("2026-11-08 16:31"); H.curation(s5_169)
+assert len(t169) >= 1 and t169[0][0] == "car" and t169[0][2][-1] == H.SITE + "cards/ai/cur_2026-11-08_1430.jpg" and "/cards/cur/" in t169[0][2][0], t169  # 상품 사진 그대로 + 맨 뒤 AI 1장
+assert H.AI_IMG_NOTE in t169[0][1] and t169[0][1].index(H.AI_IMG_NOTE) < t169[0][1].index(H.SITE + "c/snack/"), t169[0][1]  # 'AI 생성' 표시 = 링크 줄 앞
+assert len(t169) == 3 and all(H.AI_IMG_NOTE not in x[1] for x in t169[1:]) and all(not any("/cards/ai/" in u for u in x[2]) for x in t169[1:])  # 토스·힘 준 글 = AI 그림·표시 X
+src169 = {n: inspect.getsource(f) for n, f in vars(H).items() if inspect.isfunction(f) and getattr(f, "__module__", "") == H.__name__}
+assert sorted(n for n, x in src169.items() if re.search(r"\bai_img_(make|live)\(", x) and n not in ("ai_img_make", "ai_img_live")) == ["chat_ai_prep", "chat_post", "curation"]  # 딜 글·토스 글·사이트 카드·인스타 = 안 부름
+assert 'cur_ig(seen, st, e, key, [u for u in live if "/cards/ai/" not in u], now)' in src169["curation"] and 'not e.get("power") and TOSS_NOTE not in e["text"]' in src169["curation"]
+assert 'ai, text0 = ai_img_live(seen, key)' in src169["chat_post"] and 'th_bundle(seen, "chat", text0, topic="일상")' in src169["chat_post"] and 'stk[0] != "ai"' in src169["chat_post"]  # 수다 글 = 스티커 대신 1장(못 올리면 글만·표시 X)
+assert "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}" in open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()  # 키 = GitHub Secrets(진우)
+(H.E, H.AI_IMG, H.urllib.request.urlopen, H.tg_video, H.today_items, H.http, H.tg, time.time, H.alert, H.EVENTS, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, H.ai_img_make, H.IG_AUTO) = sv169
+H.RUN.pop("aiimg", None); os.chdir(cwd169); shutil.rmtree(d169, ignore_errors=True)
+assert H.AI_IMG is False  # 기본 = 시험(진우 OK 뒤 True)
