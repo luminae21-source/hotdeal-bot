@@ -11180,17 +11180,21 @@ def own_end(seen):
         if p.get("own") and p.get("url") and not p["text"].startswith("📋"):
             urls.setdefault(p["url"], []).append(i)
     tossy = [u for u in urls if toss_share(u)]
+    cut7 = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400))
+    tsite = list(dict.fromkeys(p["url"] for p in posts if p.get("url") and p["t"][:10] >= cut7 and not p.get("own") and not p.get("tid") and toss_share(p["url"])
+                               and not p["text"].startswith("📋") and p["url"] not in urls))  # 11/7 진우 '홈페이지 사진은?': 사이트에 나오는 진우 쉐어링크 커뮤니티 토스 딜(own X) = 사진(썸네일 원본)만 확인 — 진열 상태 X
     tt = seen.setdefault("tossid", {"m": {}})
     tt["t"], ti = now, tt["m"]  # seen 정리(t 기준)에서 안 지워지게
     valid = {u for u in tossy if len(ti.get(u, [])) > 7}  # 상품 그룹 id(tacaIds)로 확인한 기록 — 그 전(10/23 새벽까지 tacaItemIds로 잘못 물은 것)은 다시 확인 · 그 상태에서 🔁 X
     if HAS_TOSS:
-        for u in [u for u in tossy if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]:
+        for u in [u for u in tossy + tsite if u not in ti or not ti[u][0] and now - ti[u][1] > 86400][:OWN_END_RES]:
             if time.time() - now > OWN_END_SEC:
                 break
             m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
             ti[u] = [int(m[1]) if m else 0, now, 0]
         by = {}
-        for _, u in sorted(((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 9 or stale(u))):  # 11/5 A: 사진 칸([8]) 없는 기록 먼저(지난 진열 450여 개 빨리 채움)  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
+        for _, u in sorted([((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 9 or stale(u))]
+                           + [((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tsite if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < now - OWN_END_GAP or len(ti[u]) < 9)]):  # 11/5 A: 사진 칸([8]) 없는 기록 먼저(지난 진열 450여 개 빨리 채움)  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
             if len(by) < 30 or ti[u][0] in by:
                 by.setdefault(ti[u][0], []).append(u)
         if by:

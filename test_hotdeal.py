@@ -13574,3 +13574,40 @@ with contextlib.redirect_stdout(io.StringIO()) as o166:
 assert [u[len(H.SITE):] for u in rq166[0]] == ["", "c/t/t1.html", "today/2026-11-07/", "c/ramen.html", "c/food/", "guide/g1/", "series/toss/", "e/sale.html", "events/", "c/food/2/"], rq166[0]  # 홈 -> 주제 -> 오늘의 픽 -> 품목 기록 -> 칸 첫 쪽 -> 가이드·시리즈·행사 -> 그 밖 -> 칸 뒤쪽
 assert len(rq166) == 2 and "indexnow naver 0 (오늘 10/10 · 새 쪽 0) · bing 0 (오늘 10/10 · 새 쪽 0)" in o166.getvalue(), o166.getvalue()  # 하루 몫 다 쓴 실행도 1줄
 (H.http, time.time, H.IDX_DAY, H.IDX_RUN, H.IDX_NEW) = sv166; os.chdir(cwd166); shutil.rmtree(d166, ignore_errors=True)
+
+# 9-168 (11/7 09:2x 진우 '핫딜픽 홈페이지 사진은? 교체나 추가 해 줘' — 홈 🔥 실시간 핫딜 33줄 중 7줄 아이콘): 원인 = 진우 쉐어링크 커뮤니티 토스 딜(own X)은 사진 길(toss_img = own만)이 없었음 · 지마켓 = 글에 사진 주소 X
+#   ① own_end가 사이트에 나오는 own X 토스 딜(7일 안)도 썸네일만 확인(같은 상세 API · 진열 상태 X) -> toss_img = 쉐어링크면 own 아니어도(1일 안·toss_noimg X 그대로) · 홈 줄 = 원본 + '사진: 토스쇼핑' 셋째 줄
+#   ② 그 밖 몰 = 그 글에 그 몰 사진 주소가 있을 때만(site_img — 사이트만) ③ 아이콘 줄 사유 로그 'home 사진 X N줄 · 토스 확인 X · toss_noimg · 사진 없는 몰 · 네이버(규칙)'
+sv168 = (H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.EVENTS, S.TIMG, S.TOSSM); cwd168, d168 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d168)
+json.dump([], open("ev168.json", "w")); open("toss_noimg.txt", "w").write("")
+P168 = [{"t": "2026-11-05 00:12", "text": "💙 토스 특가 🔥\n\n널담 네모 바게트 90g 10개\n💰 9,900원", "url": "https://toss.shopping/_m/C1"},
+        {"t": "2026-11-05 08:14", "text": "💙 토스 특가 🔥\n\n칸타타 콘트라베이스 400ml 20개\n💰 14,840원", "url": "https://toss.shopping/_m/C2"},
+        {"t": "2026-10-25 08:14", "text": "💙 토스 특가 🔥\n\n옛 딜\n💰 1,000원", "url": "https://toss.shopping/_m/C3"},
+        {"t": "2026-11-06 23:41", "text": "🔥 [토스] 진우 상품 (1,000원)", "url": "https://toss.shopping/_m/O1", "own": 1}]
+json.dump(P168, open("posts168.json", "w"), ensure_ascii=False); H.POSTS, H.HAS_TOSS, H.EVENTS = "posts168.json", True, "ev168.json"
+id168 = {"C1": 11, "C2": 12, "C3": 13, "O1": 21}
+H.plain = lambda u, hops=4: f"https://toss.shopping/t/{id168[u.rsplit('/', 1)[1]]}"
+H.toss = lambda path, body=None: {"items": [{"tacaId": i, "tacaItemId": i + 500, "displayPrice": 1000, "thumbnailUrl": f"https://static.toss.im/t/{i}.jpg"} for i in map(int, path.split("=")[1].split(","))], "notFoundIds": []}
+time.time = lambda: TK("2026-11-07 09:30"); s168 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.own_end(s168)
+m168 = s168["tossid"]["m"]
+assert m168["https://toss.shopping/_m/C1"][8] == "https://static.toss.im/t/11.jpg" and m168["https://toss.shopping/_m/C2"][8].endswith("/12.jpg") and m168["https://toss.shopping/_m/O1"][8].endswith("/21.jpg") \
+    and "https://toss.shopping/_m/C3" not in m168 and "st" not in json.load(open("posts168.json"))[0], m168  # 7일 안 own X 토스 딜 = 사진 확인만(진열 상태 X) · 7일 지남 X
+S.TOSSM, S.TIMG = m168, S.toss_imgs(m168, TK("2026-11-07 09:40"))
+sh168 = (0, None, "", [], False)
+assert S.toss_img(P168[0]) == "https://static.toss.im/t/11.jpg" and S.pic_why(P168[0]) == ""
+r168 = S.row(0, P168[0], sh168, "2026-11-07")
+assert '<img src="https://static.toss.im/t/11.jpg" alt="' in r168 and 'style="mix-blend-mode:normal"' in r168 and f'<span class="l3">{S.PHOTO_CREDIT}</span>' in r168 and '<p class="pcr">' not in r168, r168  # 원본 그대로 · 출처 = 셋째 줄
+assert S.pic_why({**P168[0], "url": "https://toss.shopping/_m/ZZ"}) == "토스 확인 X"  # 다시 확인 못 함 = 아이콘 그대로
+open("toss_noimg.txt", "w").write("11  # 판매자 요청\n"); S.TIMG = S.toss_imgs(m168, TK("2026-11-07 09:40"))
+assert S.pic_why(P168[0]) == "toss_noimg" and "<img " not in S.row(0, P168[0], sh168, "2026-11-07")  # 판매자 요청 = 사진 X
+S.TIMG = S.toss_imgs(m168, TK("2026-11-08 12:00")); open("toss_noimg.txt", "w").write("")
+assert S.pic_why(P168[1]) == "토스 확인 X"  # 1일 넘은 확인 = 사진 X(그대로)
+G168 = {"t": "2026-11-05 00:26", "text": "🔥 [지마켓] 26년 햅쌀 해나루 삼광미 특등급 10kg (28,960원/무배)", "url": "https://click.linkprice.com/click.php?m=gmarket&a=A1"}
+assert S.pic_why(G168) == "사진 없는 몰" and S.site_img({**G168, "img": "https://gdimg.gmarket.co.kr/x.jpg"}) == "https://gdimg.gmarket.co.kr/x.jpg" \
+    and not S.site_img({**G168, "img": "https://other.example.com/x.jpg"}) and not S.img_of({**G168, "img": "https://gdimg.gmarket.co.kr/x.jpg"})  # 글에 그 몰 사진 주소 있을 때만 · 사이트만(img_of = 인스타·카드 그대로)
+assert S.pic_why({"t": "2026-11-05 00:26", "text": "🔥 [네이버] x (1,000원)", "url": "https://smartstore.naver.com/a/products/1"}) == "네이버(규칙)" \
+    and S.pic_why({"t": "2026-11-05 00:26", "text": "🔥 [쿠팡] x (1,000원)", "url": "https://link.coupang.com/a/x"}) == "쿠팡 사진 없음"
+assert 'print(f"home 사진 X {sum(why.values())}줄"' in inspect.getsource(S.hot_section) and "tsite" in inspect.getsource(H.own_end)  # 홈 아이콘 줄 사유 로그 · 다시 확인 길
+(H.toss, H.plain, H.POSTS, H.HAS_TOSS, time.time, H.EVENTS, S.TIMG, S.TOSSM) = sv168; os.chdir(cwd168); shutil.rmtree(d168, ignore_errors=True)

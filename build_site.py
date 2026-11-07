@@ -134,7 +134,7 @@ html:not(.lay-b) .sb svg{top:10px;color:var(--sub)}html:not(.lay-b) .sb input{he
 .tabs{display:flex;gap:6px;margin:10px -16px 0;padding:0 16px 2px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
 .tabs button,.mf button{flex:none;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}.tabs button[aria-selected=true],.mf button[aria-pressed=true]{background:var(--btn);border-color:var(--btn);color:var(--btnt)}
 .rows{list-style:none;margin:8px 0 0;padding:0 12px;background:var(--card);border-radius:18px;box-shadow:0 1px 0 var(--line)}.r a{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:10px;min-height:68px;padding:8px 0;border-top:1px solid var(--line);text-decoration:none}.r:first-child a{border-top:0}
-.r .im{width:52px;height:52px;border-radius:12px;font-size:26px}.rt{display:flex;flex-direction:column;gap:1px;min-width:0}.l1{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:14px;font-weight:600;letter-spacing:-.3px}
+.r .im{width:52px;height:52px;border-radius:12px;font-size:26px}.rt{display:flex;flex-direction:column;gap:1px;min-width:0}.r .l3{font-size:10.5px;line-height:1.2;color:var(--sub)}.l1{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:14px;font-weight:600;letter-spacing:-.3px}
 .l2{display:flex;align-items:baseline;gap:0 6px;overflow:hidden;white-space:nowrap;font-size:12px;color:var(--sub)}.l2 b{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-.5px}.l2 i{flex:none;font-style:normal;font-weight:700;color:var(--pkt)}.l2 small{overflow:hidden;text-overflow:ellipsis;font-size:12px}.tl{margin:6px 2px 0;font-size:11.5px}
 .t10{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column;gap:0 12px;margin:8px 0 0;padding:6px 12px;background:var(--card);border-radius:18px;box-shadow:0 1px 0 var(--line)}
 .t10 a{display:flex;align-items:center;gap:6px;min-width:0;min-height:34px;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:-.3px}.t10 span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.t10 .n{flex:none;width:16px;text-align:center;font-weight:800;color:var(--sub)}.t10 .n.r{color:var(--acc)}.t10 .mk{margin:0;font-size:11.5px}
@@ -578,7 +578,7 @@ def pick_name(p):
 def pick_thumb(p):
     """WW 카드 딜 줄 왼쪽 48px 칸: 몰 로고(아래 — 사진 없거나 못 불러오면 보임 · 3사 밖 = 품목 아이콘) + 실제 사진(img_of — 쿠팡만, 토스·네이버 X 규칙)
     + 할인 % 빨간 배지 = 봇이 쓴 ' · ' 칸 'N% 할인'만(📦/🚀/💙/토스 줄 — 문장 속·⚠️ 줄·'정가 기준'·쿠폰/카드 조건 % X, 리뷰)."""
-    s, u = shop_of(p), img_of(p)
+    s, u = shop_of(p), site_img(p)
     m = next((m for l in p["text"].split("\n") for c in l.split(" · ") if (m := re.fullmatch(r"(?:💰 )?(?:토스 |쿠팡 )?([1-9]\d?)% 할인(?: 🔥)?", c.strip()))), None)
     return (f'<i class="pt" aria-hidden="true">{mall_logo(s) if s in MALL_KO else ci(p)}'
             + (f'<img src="{html.escape(u)}" alt="{alt_of(p)}" width="48" height="48" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else "")
@@ -1033,11 +1033,21 @@ def chip_of(p):
     return {"coupang": "쿠팡 · 로켓" if re.search(r"^🚀 쿠팡", p["text"], re.M) else "쿠팡", "toss": "토스", "naver": "네이버"}.get(s) or parse(title_of(p["text"]))[0] or "핫딜"
 
 
+MALL_IMG_HOSTS = {"지마켓": (".gmarket.co.kr",), "G마켓": (".gmarket.co.kr",), "옥션": (".auction.co.kr",), "11번가": (".011st.com", ".11st.co.kr"), "SSG": (".ssgcdn.com",), "이마트몰": (".ssgcdn.com",),
+                  "롯데온": (".lotteon.com",), "올리브영": (".oliveyoung.co.kr",)}  # 글 머리 [몰] 이름 -> 그 몰 사진 서버  # 11/7: 그 글에 그 몰 사진 주소가 있을 때만(지어낸·다른 상품 사진 X · 네이버 = 규칙상 X)
+
+
 def img_of(p):
     """상품 사진 주소(글 img): 쿠팡 = 파트너스 API productImage(hotdeal.cp_price) — https + 쿠팡 사진 주소만(HTML에 들어가는 값이라 허용 목록), 토스·네이버·그 밖 = ''(토스 = API 데이터 사이트 전시 X · 네이버 쇼핑 검색 API는 2026-07-31 종료)."""
     u, s = p.get("img") or "", shop_of(p)
     host = urllib.parse.urlsplit(u).netloc
     return u if u.startswith("https://") and (s == "coupang" and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))) else ""
+
+
+def site_img(p):
+    """사이트 카드·줄 사진: 쿠팡 = img_of · 그 밖 몰(MALL_IMG_HOSTS) = 그 글에 그 몰 사진 주소가 있을 때만(사이트만 — 인스타·카드 그림은 img_of 그대로)."""
+    u = p.get("img") or ""
+    return img_of(p) or (u if u.startswith("https://") and not re.search(r"[\s\"'<>]", u) and urllib.parse.urlsplit(u).netloc.endswith(MALL_IMG_HOSTS.get(parse(title_of(p.get("text") or ""))[0], ("\0",))) else "")
 
 
 B_GOLD = "오늘의 쿠팡 골드박스 TOP"  # 아침 골드박스 묶음 글 머리(hotdeal.goldbox)
@@ -1178,7 +1188,7 @@ def toss_imgs(m, now=None):
 
 def toss_img(p):
     """진우 토스 상품(own · 쉐어링크 웹 링크)만 사진 — 봇 API 상품은 posts.json에 없음(TOSS_SITE False 그대로)."""
-    return TIMG.get(p.get("url"), "") if p.get("own") and shop_of(p) == "toss" else ""
+    return TIMG.get(p.get("url"), "") if shop_of(p) == "toss" and (p.get("own") or toss_share(p.get("url"))) else ""  # 11/7: 진우 쉐어링크 커뮤니티 토스 딜도(own_end tsite가 확인한 썸네일 원본 — toss_noimg·1일 안 그대로)
 
 
 IMG_LD = ' onload="this.parentNode.classList.add(\'ld\')" onerror="this.parentNode.classList.remove(\'sk\');this.remove()"'  # 사진 뜨면 반짝임 멈춤(ld) · 못 불러오면 사진 지우고 sk 빼기(아이콘 다시 보임·반짝임 X)
@@ -1195,7 +1205,7 @@ def thumb(p, tp=False):
     if bundle_of(p) and any(x[3] for x in b_items(p)):  # 묶음 = 상품 사진 2×2 + 'N개 묶음'(빈 가방 아이콘 X)
         return ('<div class="im bg sk">' + "".join(f'<img src="{html.escape(x[3])}" alt="{html.escape(x[0], quote=True)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD}>' for x in [x for x in b_items(p) if x[3]][:4])
                 + f'<b class="bn">{len(b_items(p))}개 묶음</b></div>')
-    c, u = CAT_META.get(cat_of(p)), img_of(p)
+    c, u = CAT_META.get(cat_of(p)), site_img(p)
     bg = f' style="--c:{c[3]}"' if c else ""
     if tp and (t := toss_img(p)):  # 토스 사진 = 원본 비율(contain)·섞기 X·위에 배지·글자 X(배지는 사진 밖 .cr2) · 바로 아래 '사진: 토스쇼핑' · src = 토스 주소 그대로
         return (f'<div class="im tim sk"><img src="{html.escape(t)}" alt="{alt_of(p)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"{IMG_LD} style="mix-blend-mode:normal"></div>'  # 11/5 Cowork 17:1x: 토스 사진 = 뒤 아이콘 X·흰 바탕(뜬 뒤 .tim.ld img)·섞기(multiply) X — 인라인 = 쪽마다 다른 .im img 규칙보다 먼저
@@ -2480,9 +2490,10 @@ def row(i, p, sh, today, gc="", extra=""):
     k = shop_of(p)
     flag = "" if extra else "🔁 " if sh[4] else "⏰ " if day_end(p, today) else {1: "👍 ", 2: "⏳ "}.get(sh[0], "") if p.get("own") else ""  # 🆕 탭 대기 상품 = 카드 badge()처럼 · 📉 줄(extra) = 상태 표시 X(▼N%만 — 10/24 Cowork C)
     d = DROPS.get(i)
-    return (f'<li class="r"><a href="{BASE}p/{i}.html"' + (f' data-gc="{gc}"' if gc else "") + f'>{thumb(p)}<span class="rt"><span class="l1"><b class="mk {k}">{html.escape(chip_of(p).split(" ")[0])}</b>{flag}{html.escape(name)}</span>'
+    pic, cr, _ = thumb(p, True).partition(f'<p class="pcr">{PHOTO_CREDIT}</p>')  # 11/7: 토스 사진(원본 그대로) = 출처 줄을 글 쪽 셋째 줄로
+    return (f'<li class="r"><a href="{BASE}p/{i}.html"' + (f' data-gc="{gc}"' if gc else "") + f'>{pic}<span class="rt"><span class="l1"><b class="mk {k}">{html.escape(chip_of(p).split(" ")[0])}</b>{flag}{html.escape(name)}</span>'
             + f'<span class="l2">' + (extra or ((f"<b>{html.escape(shown)}</b>" if shown else "") + (f"<i>{html.escape(ex[0])}</i>" if ex else "") + (f'<i>▼{d[0]}%</i>' if d else "")
-                                                 + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span></span></a></li>")
+                                                 + f"<small>{html.escape(short_note(p, sh, today))}</small>")) + "</span>" + (f'<span class="l3">{PHOTO_CREDIT}</span>' if cr else "") + "</span></a></li>")
 
 
 Q_CATS = ("life", "food", "beauty", "digital", "kitchen", "laundry", "snack", "coffee", "heat", "season", "home", "fashion", "car", "pet", "sport")  # 둥근 바로가기 2줄째 순서(진우 v3 — 가전 4번째)
@@ -2508,6 +2519,16 @@ def mall_nav(evs, evh=""):
             + (f'<a class="m evt" href="{evh or BASE + "e/" + evs[0]["slug"] + ".html"}" data-gc="mall/event"><i class="lw" aria-hidden="true">🎉</i>기획전</a>' if evs or evh else "") + "</nav>")  # evh = /events/(기획전 모음 — 10/25)
 
 
+def pic_why(p):
+    """홈 줄 사진이 아이콘인 사유 ('' = 사진 있음): 토스 = toss_noimg(판매자 요청) | 토스 확인 X(1일 안 썸네일 확인 없음·실패) · 네이버 = 규칙 · 그 밖 = 사진 없는 몰·쿠팡 사진 없음."""
+    if "<img " in thumb(p, True):
+        return ""
+    s, v = shop_of(p), TOSSM.get(p.get("url"))
+    if s == "toss":
+        return "toss_noimg" if isinstance(v, list) and {str(v[0]), *(str(v[7]) for _ in [0] if len(v) > 7)} & noimg_ids() else "토스 확인 X"
+    return "네이버(규칙)" if s == "naver" else "쿠팡 사진 없음" if s == "coupang" else "사진 없는 몰"
+
+
 def hot_section(it, evi, today):
     """🔥 실시간 핫딜(10/24 Cowork 포털형 ⑤ + ② 신뢰): 🔥 상품 중 가격 근거(fresh_day)가 HOT_DAYS일 안 · 기획전 상품 X(배너로만) -> 탭 전체(몰 섞기)·몰별·🆕 새로 올라온(올린 순) 10줄씩, 같은 브랜드 1개.
     -> (HTML, 전체 탭 글 번호들)."""
@@ -2519,6 +2540,8 @@ def hot_section(it, evi, today):
     tabs = [t for t in tabs if t[2]]
     if not tabs:
         return "", []
+    why = collections.Counter(w for w in (pic_why(p) for i, p in {x[0]: x[1] for _, _, ys in tabs for x in ys}.items()) if w)
+    print(f"home 사진 X {sum(why.values())}줄" + "".join(f" · {k} {n}" for k, n in why.most_common()))  # 11/7 진우 '홈페이지 사진은?': 아이콘 줄 사유(토스 확인 X·toss_noimg·사진 없는 몰·네이버 규칙)
     toss = any(shop_of(p) == "toss" for _, _, ys in tabs for _, p, _ in ys)
     return (f'<section class="sec" id="fire" aria-labelledby="fireh"><h2 id="fireh"><span>🔥 실시간 핫딜<small>{len(xs)}개</small></span><a class="more" href="{c_url("hot")}">전체 →</a></h2>'
             + '<div class="tabs" role="tablist" aria-label="몰">' + "".join(f'<button type="button" role="tab" aria-selected="{"true" if not j else "false"}" aria-controls="fp-{k}" data-t="{k}">{mall_label(k, n) if k in MALL_KO else n}</button>' for j, (k, n, _) in enumerate(tabs)) + "</div>"
