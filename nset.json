@@ -483,6 +483,34 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "반려동물",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "자동차",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "반려동물",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "과자",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
