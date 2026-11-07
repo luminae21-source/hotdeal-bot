@@ -11512,7 +11512,7 @@ assert not os.path.exists(f119) and s119["thpic"]["m"] == {}  # 14일 지난 그
 assert "image = th_pic(image)" in inspect.getsource(H.th_img) and "th_pic" not in inspect.getsource(H.th_carousel) and "price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):" in inspect.getsource(H.main)  # 캐러셀 그대로
 (time.time, H.http, H.th_get, H.POSTS) = sv119; os.chdir(cwd119)
 # 9-120) 이름 막기(10/30 진우 규칙 — 분유 광고 X(조제분유·성장기용 조제유) · 기저귀는 아기용만): NAME_BLOCK 한 곳 — 쿠팡·토스 API 목록·커뮤니티 딜·쿠팡 진열 후보·재게시·5개가 같이 봄
-#   · 진열 자동(이관 A)만 SHELF_BLOCK(+성인) · 막으면 로그 1줄(실행마다 같은 이름 1번) · 이미 events에 있는 건 그대로
+#   · 진열 자동(이관 A)만 SHELF_BLOCK(+성인용품·성인 기저귀 — 11/8) · 막으면 로그 1줄(실행마다 같은 이름 1번) · 이미 events에 있는 건 그대로
 cwd120, sv120 = os.getcwd(), (time.time, H.http, H.tg, H.FEEDS, H.ppomppu_feed, H.ruliweb_feed, H.clien_feed, H.POSTS, H.EVENTS, S.EVENTS, dict(H.AUTO_ON), dict(H.E)); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
 H.RUN.pop("nblk", None)
 with contextlib.redirect_stdout(io.StringIO()) as o120:
@@ -13430,7 +13430,7 @@ assert "path: |\n            seen.json\n            fonts\n            toss.json
 
 # 9-161 (11/6 22:2x Cowork 버그 — 기존 규칙 그대로): 토스 API 상품 사이트(Q)도 채널 글과 같은 이름 거르기(TOSS_EFFECT·AUTO_CLAIM·분유·성인) — '쿠잉 주름펴기 HSI-1500GW'가 올라갔던 것
 #   글 만들 때(toss_site) X + 이미 올라간 것 = 다음 빌드(tapi_ok)에서 빠짐 · 11/6 22:3x 진우 '예외로 두자': 옷 주름(주름펴기·스티머·다리미·스팀·의류·옷) = '주름' 효능 낱말 예외(WRINKLE — 화장품 주름은 그대로 거름)
-assert S.TAPI_NAME_BLOCK == H.SHELF_BLOCK  # 두 파일 같은 규칙(11/7 = 분유·성인만)
+assert S.TAPI_NAME_BLOCK == H.SHELF_BLOCK  # 두 파일 같은 규칙(11/8 = 분유·성인용품·성인 기저귀만)
 assert all(re.search(S.TAPI_NAME_BLOCK, n) for n in ("매일 분유 800g", "성인용 기저귀")) and not any(re.search(S.TAPI_NAME_BLOCK, n) for n in ("주름 개선 크림 50ml", "미백 치약 3개")) and not re.search(S.TAPI_NAME_BLOCK, "물티슈 100매 10팩")
 sv161 = (time.time, S.TOSS_API_SITE, S.TOSSM, H.POSTS, H.TOSS_SITE); cwd161, d161 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d161)
 N161 = TK("2026-11-06 22:10")
@@ -13442,7 +13442,7 @@ x161, t161 = T161("매일 분유 800g")
 H.POSTS = "posts161.json"; json.dump([], open(H.POSTS, "w")); open("toss_noimg.txt", "w").write("")
 with contextlib.redirect_stdout(io.StringIO()) as o161:
     ok161 = H.toss_site({}, x161, "https://toss.shopping/_m/W1", t161)
-assert not ok161 and json.load(open(H.POSTS)) == [] and "이름 낱말(분유·성인)" in o161.getvalue(), o161.getvalue()  # 글 만들 때 X(11/7: 분유·성인만)
+assert not ok161 and json.load(open(H.POSTS)) == [] and "이름 낱말(분유·성인용품)" in o161.getvalue(), o161.getvalue()  # 글 만들 때 X(11/8: 분유·성인용품·성인 기저귀만)
 xo161, to161 = T161("쿠잉 주름펴기 HSI-1500GW , 1개")
 with contextlib.redirect_stdout(io.StringIO()):
     assert H.toss_site({}, xo161, "https://toss.shopping/_m/W2", to161)  # 옷 주름펴기 = 올라감(11/7 이름 효능 낱말 거르기 X)
@@ -13912,3 +13912,21 @@ assert "종가 포기김치 3kg" not in th173 and th173[3:6] == ["하기스 네�
 assert th173[6] == "무지 양말 10켤레" and th173[7:] == ["아이소이 블레미쉬 세럼 30ml", "닥터지 레드 블레미쉬 크림"] and sum("세럼" in n or "크림" in n or "앰플" in n for n in th173) == 2, th173  # 그 밖 -> 뷰티 2개(할인 60·55%여도 뒤)
 assert S.TOSS_HOME_CAT == 3 and S.TOSS_HOME_BEAUTY == 2 and {"food", "life", "digital"} <= set(S.TOSS_HOME_FIRST)
 S.TIMG = sv173
+# 9-174 (11/8 2시대 진우 '성인용 칫솔은 어른이 사용한다는 의미야, 검열하면 되려 잘못된 거야'): 이름 막기 '성인' 하나로 X -> 성인용품 · 성인+기저귀/패드만(기저귀는 아기용만) · 분유·조제유 그대로
+#   · 손으로 넣은 진열(events shelf)은 이름으로 안 숨김 = 11/8 03:00 'S&G 성인 이중 슬림모 칫솔 12개입'이 사이트 진열 글(own·shelf)로
+OK174, NO174 = ("성인용 칫솔", "S&G 성인 이중 슬림모 칫솔 12개입", "성인 치약 120g 3개", "하기스 팬티형 기저귀"), ("성인용품", "디펜드 성인용 기저귀", "성인 기저귀 20매", "성인용 요실금 패드", "앱솔루트 분유 800g", "성장기용 조제유")
+H.RUN.pop("nblk", None)
+with contextlib.redirect_stdout(io.StringIO()):
+    assert not any(H.name_block(n, "t", H.SHELF_BLOCK) or re.search(S.TAPI_NAME_BLOCK, n) for n in OK174) and all(H.name_block(n, "t", H.SHELF_BLOCK) and re.search(S.TAPI_NAME_BLOCK, n) for n in NO174)
+assert S.TAPI_NAME_BLOCK == H.SHELF_BLOCK and not re.search(H.NAME_BLOCK, "성인용품") and "ADULT_BLOCK)" in inspect.getsource(H.shelf_cand)  # 채널 글 NAME_BLOCK = 분유만 그대로 · 후보 ban 표시도 같은 규칙
+assert "BLOCK" not in inspect.getsource(H.shelf_posts) and "name_block" not in inspect.getsource(H.shelf_posts)  # 손 진열 = 이름 거르기 X
+cwd174, sv174 = os.getcwd(), (time.time, H.POSTS, H.EVENTS); os.chdir(tempfile.mkdtemp()); os.makedirs("docs")
+H.POSTS, H.EVENTS = "posts.json", "events.json"; json.dump([], open("posts.json", "w"))
+json.dump([{"at": "2026-11-08 03:00", "button": "🛒 구매하러 가기", "url": "https://www.coupang.com/vp/products/47242279?itemId=167317944", "deal": True, "shelf": True, "tag": "칫솔 2026",
+            "text": "🛒 <b>[쿠팡] S&G 성인 이중 슬림모 칫솔 12개입 (13,800원)</b>\n\n💰 1개당 1,150원꼴", "pid": "47242279", "now": "13,800원", "chk": "2026-11-08 02:00", "item": "167317944"}], open("events.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-08 03:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.shelf_posts({"dup1102": True})
+p174 = json.load(open("posts.json"))
+assert len(p174) == 1 and p174[0].get("own") and p174[0].get("shelf") and "S&G 성인 이중 슬림모" in p174[0]["text"], p174  # 사이트 진열 글로 감
+(time.time, H.POSTS, H.EVENTS) = sv174; os.chdir(cwd174)

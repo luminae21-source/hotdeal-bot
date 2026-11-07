@@ -776,7 +776,7 @@ def copy_rep(posts, n=50):
 
 def auto_shelf(seen):
     """A(10/30 Cowork 14:13 크롬 진열 이관): 하루 1번 AUTO_SHELF_AT 뒤 — 카테고리 베스트 응답(cp_best가 가격 추적에 받은 것 — 추가 호출 X)에서 plan.json 오늘 품목(group마다 1개 — 3품목이면 최대 18개) 낱말과 맞는 상품
-    -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 막기(SHELF_BLOCK — 분유·성인) X(11/7 효능 낱말 이름 거르기 X) · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
+    -> events·auto_events·cp_fail에 없는 pid · 가격·사진 있음 · 이름 막기(SHELF_BLOCK — 분유·성인용품·성인 기저귀) X(11/7 효능 낱말 이름 거르기 X) · 순위 순 AUTO_SHELF_N(품목마다 4~6개) -> auto_events.json 진열(Cowork 진열 틀 그대로)
     · 베스트에서 4개 밑 = 그 품목만 kw를 '·'로 나눈 낱말 하나씩 쿠팡 검색(4개 채우면 멈춤 — 검색 상한 그대로, 넘으면 다음 실행에 이어서)으로 채움(같은 필터) · 그래도 4개 밑 = 그 품목만 안 올림 + 관리봇 1줄 · 품목마다 로그 1줄(후보 칸별 · 빠진 이유별 수)
     · 순위 = 응답 rank(없으면 응답 순서 — 10/30 첫날 베스트 응답에 rank가 없어 0개) · 근거 = '쿠팡 <카테고리> 베스트 N위' / 검색으로 채운 것 = '쿠팡 '<검색어>' 검색 N위'(API엔 리뷰 수·할인 표시 X)
     · 🔥 = price_hist 30일 기록보다 내려갔을 때만('30일 기록 중 가장 낮은 가격'), 아니면 👍 · 🚀 로켓 = 응답 isRocket만 · 💡 = 첫 상품 plan tips 돌림 + 나머지 근거 줄(shelf_tips) · ⚠️ = 확인할 것 1개(warn_line) · seen autoshelf = 그날 끝낸 품목·검색 결과(AUTO_SHELF_V 바꾸면 그날 못 올린 품목만 1번 더)."""
@@ -869,7 +869,8 @@ def auto_shelf(seen):
 
 
 NAME_BLOCK = r"분유|조제유"  # 10/30 진우 규칙: 분유 광고 X(조제분유·성장기용 조제유 = 광고 금지) — 봇이 스스로 고르는 길(쿠팡·토스 API 목록·커뮤니티 딜·진열 자동·재게시·5개·사이트 쿠팡 진열 후보)이 다 이것을 봄 · 이미 events에 있는 건 그대로
-SHELF_BLOCK = NAME_BLOCK + r"|성인"  # 진열 자동(이관 A)만 더: 기저귀는 아기용만(진우 '성인용은 원하면')
+ADULT_BLOCK = r"성인용품|^(?=.*성인)(?=.*(?:기저귀|패드))"  # 11/8 진우 '성인용 칫솔은 어른이 쓴다는 뜻': '성인' 하나로 X — 성인용품·성인 기저귀/패드만(기저귀는 아기용만)
+SHELF_BLOCK = NAME_BLOCK + "|" + ADULT_BLOCK  # 진열 자동(이관 A)·토스 고르기만 더
 
 
 def name_block(name, where, pat=NAME_BLOCK):
@@ -955,7 +956,7 @@ def sq_total(name, unit):
 def shelf_cand(seen, now=None):
     """11/7 시험(진열·게시·events·사이트·채널 X): SHELF_QUEUE 키워드 중 오늘 결과 없는 첫 것 1개만 /products/search(limit 10) -> SHELF_CAND {kw: {at, tag, unit, items}} ·
     실행 순서 맨 끝 = 기존 검색 먼저(coupang 상한 CP_SEARCH_HOUR·CP_SEARCH_RUN 그대로 — 남는 몫만, 걸리면 안 부름) · 실행당 1번 · 키워드당 하루 1번(400 = 그날 다시 X).
-    items = 응답 필드 그대로 + total(sq_total) · unit_price(큐 unit 기준 int(+0.5)) · parse_ok · ban(분유·성인 등 진열 거르기 — 빼지 않고 표시) · effect(효능 낱말 — 참고, 이름은 안 거름). 로그 = 키·서명·주소 X."""
+    items = 응답 필드 그대로 + total(sq_total) · unit_price(큐 unit 기준 int(+0.5)) · parse_ok · ban(분유·성인용품 등 진열 거르기 — 빼지 않고 표시) · effect(효능 낱말 — 참고, 이름은 안 거름). 로그 = 키·서명·주소 X."""
     if not HAS_CP:
         return
     now = now or time.time()
@@ -985,7 +986,7 @@ def shelf_cand(seen, now=None):
         tot = sq_total(nm, x.get("unit"))
         up = int(pr / tot["n"] * float(um[1]) + 0.5) if tot and um and isinstance(pr, (int, float)) and pr > 0 else None
         items.append({"rank": it.get("rank") or k, **it, "total": tot, "unit_price": up, "parse_ok": up is not None,
-                      "ban": [w for w, rx in (("분유·조제유", NAME_BLOCK), ("성인", r"성인")) if re.search(rx, nm)], "effect": sorted(set(re.findall(WU_HEALTH, nm)))})
+                      "ban": [w for w, rx in (("분유·조제유", NAME_BLOCK), ("성인용품·성인 기저귀", ADULT_BLOCK)) if re.search(rx, nm)], "effect": sorted(set(re.findall(WU_HEALTH, nm)))})
     out[x["kw"]] = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "tag": x.get("tag"), "unit": x.get("unit"), "items": items}
     json.dump(out, open(SHELF_CAND, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("shelf cand:", x["kw"], f"{len(items)}개 · 단위가 읽음 {sum(i['parse_ok'] for i in items)} · 남은 큐 {len(todo) - 1}")
@@ -5638,7 +5639,7 @@ def toss_site(seen, x, link, text):
     상품 그룹 id를 tossid에 미리 넣어 단축 링크를 안 풂)."""
     if any(p.get("tid") == x["tacaItemId"] or p.get("own") and p.get("url") == link for p in load(POSTS, [])):
         return False
-    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg()) + ["이름 낱말(분유·성인)"] * bool(re.search(SHELF_BLOCK, x.get("displayName") or ""))  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
+    why = toss_why(text, [link]) + ["판매자 요청(toss_noimg)"] * bool({str(x.get("tacaItemId")), str(x.get("tacaId"))} & toss_noimg()) + ["이름 낱말(분유·성인용품)"] * bool(re.search(SHELF_BLOCK, x.get("displayName") or ""))  # Q 11/5: 맨 위 대가성 문구·게시 시점 줄·다른 몰 이름 X·셀러 요청 X(사이트 = build_site.tapi_ok가 1일 확인·내림)
     if why:
         print("toss site 뺌", x["tacaItemId"], why)
         return False
@@ -5722,7 +5723,7 @@ TOSS_IDEA_CHECK = "토스 링크 거리 10개 (12:20 DM)"  # 07:00 toss_list.jso
 
 def toss_ideas(seen, now=None):
     """R(11/5 진우): 매일 TOSS_IDEA_AT 창에 1번 관리봇 DM '토스 링크 만들 거리' TOSS_IDEA_N개 — 토스 API 목록(하루특가·많이 팔린 순위·뷰티 베스트·생필품 베스트(날마다 돌림)를 번갈아 섞음) 중
-    진우 링크 X(toss_list.json·진우 토스 글 — seen tossid 상품 id·이름) · 품절 X · 분유·성인(SHELF_BLOCK — 11/7 효능 낱말 이름 거르기 X)·toss_noimg.txt X · 같은 품목(same_kind) X · 7일 안 보낸 것 뒤로.
+    진우 링크 X(toss_list.json·진우 토스 글 — seen tossid 상품 id·이름) · 품절 X · 분유·성인용품(SHELF_BLOCK — 11/7 효능 낱말 이름 거르기 X)·toss_noimg.txt X · 같은 품목(same_kind) X · 7일 안 보낸 것 뒤로.
     줄 = 이름 · 가격(확인 시각) · 품목 · 🔎 토스 앱 검색어 — 관리봇만(공개 파일·로그에 API 가격·이름 X). 목록 다 실패·전송 실패 = 창 안 다음 실행에."""
     now = now or time.time()
     kst = time.gmtime(now + 9 * 3600)
