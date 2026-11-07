@@ -252,7 +252,9 @@
  },
  "https://www.coupang.com/vp/products/7230779632?itemId=18347032018": {
   "b": "https://link.coupang.com/a/ifyk92s4AK",
-  "site": "https://link.coupang.com/a/ifZOX6lCqi"
+  "site": "https://link.coupang.com/a/ifZOX6lCqi",
+  "telegram": "https://link.coupang.com/a/itBKdALbEG",
+  "threads": "https://link.coupang.com/a/itBKiwUSqa"
  },
  "https://www.coupang.com/vp/products/8581346895?itemId=24873284974": {
   "b": "https://link.coupang.com/a/ifGqPwJIbs",
@@ -260,7 +262,9 @@
  },
  "https://www.coupang.com/vp/products/8609429313?itemId=24969634153": {
   "b": "https://link.coupang.com/a/ifGqPzrs5c",
-  "site": "https://link.coupang.com/a/if0F9evD9o"
+  "site": "https://link.coupang.com/a/if0F9evD9o",
+  "telegram": "https://link.coupang.com/a/itBKdEzWLs",
+  "threads": "https://link.coupang.com/a/itBKiz9Xq0"
  },
  "https://www.coupang.com/vp/products/1271064981?itemId=2275730724": {
   "b": "https://link.coupang.com/a/ifvGXp9RXo",
@@ -5108,5 +5112,22 @@
  "https://www.coupang.com/vp/products/7623487361?itemId=29306343539": {
   "b": "https://link.coupang.com/a/ityGlqqsFw",
   "site": "https://link.coupang.com/a/ityO6MVo6u"
+ },
+ "https://www.coupang.com/vp/products/9594066237?itemId=28640305776&vendorItemId=95583051092": {
+  "b": "https://link.coupang.com/a/itBKbxSuvQ",
+  "telegram": "https://link.coupang.com/a/itBKdIqmaq"
+ },
+ "https://www.coupang.com/vp/products/9728375598?itemId=29112190003&vendorItemId=96036855449": {
+  "b": "https://link.coupang.com/a/itBKbCAa8O",
+  "telegram": "https://link.coupang.com/a/itBKdOoNa0",
+  "threads": "https://link.coupang.com/a/itBKiDio8W"
+ },
+ "https://www.coupang.com/vp/products/9591780838?itemId=28633052115&vendorItemId=95576052297": {
+  "b": "https://link.coupang.com/a/itBKbHffNY",
+  "telegram": "https://link.coupang.com/a/itBKdT4LMi"
+ },
+ "https://www.coupang.com/vp/products/7038269029?itemId=17397039608&vendorItemId=84566499890": {
+  "b": "https://link.coupang.com/a/itBKbLNHae",
+  "telegram": "https://link.coupang.com/a/itBKd0bAMm"
  }
 }
