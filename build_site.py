@@ -2809,6 +2809,17 @@ def site_status(out, posts, it, urls, now_ts):
     return warn
 
 
+TOSS_HOME_N = 10  # 11/7 진우 '토스 제품 홈페이지에 올리자': 홈 💙 토스 특가 가로 카드 수
+
+
+def toss_home(it, evi, *shown):
+    """11/7 홈 '💙 토스 특가'(🔥 아래 가로 카드): 토스만(쿠팡·네이버 X) · 사진 있는 것만(toss_img — 원본 + '사진: 토스쇼핑') · 🔥 특가 중 할인 큰 순 먼저 -> 👍 꾸준템 ·
+    같은 브랜드 1개 · 같은 상품 홈 최대 2번(cap2 — 앞 칸 shown) · 기획전 X · tid(토스 API 상품)는 site_ok가 이미 뺌(Q 11/5 — /c/toss/만) -> [(i, p, sh)] · 없으면 [] = 칸 X."""
+    dr = lambda p: max([int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", p["text"])] or [0])
+    xs = sorted((x for x in it if shop_of(x[1]) == "toss" and x[2][0] in (0, 1) and x[0] not in evi and not x[1].get("tid") and toss_img(x[1])), key=lambda x: x[1]["t"], reverse=True)
+    return uniq(cap2(sorted(xs, key=lambda x: (x[2][0], -dr(x[1]))), *shown), TOSS_HOME_N)
+
+
 def hs_section(sid, head, small, xs, more="", cls="hs"):
     """가로 카드 줄(오늘의 픽 118px·꾸준템): 카드(♡ 찜 그대로) 옆으로 밀기 + '전체 →'."""
     return "" if not xs else (f'<section class="sec" id="{sid}" aria-labelledby="{sid}h"><h2 id="{sid}h"><span>{head}' + (f"<small>{small}</small>" if small else "") + "</span>"
@@ -3454,10 +3465,12 @@ def build(posts, out="docs"):
     cp = card_picks(posts, out)
     hot, hot_ids = hot_section(it, evi, today)
     fx = [x for x in it if f'href="{BASE}p/{x[0]}.html"' in hot]  # 🔥 = 탭 전부 합쳐 1번
-    dsh = cap2(ds, dl[:12], fx)  # 같은 상품 홈 최대 2번: 오늘 마감 > 🔥 > 📉 > 픽 > 꾸준템(10/24 진우 v3 ② · TOP 10·찜/본·숨은 #today X)
-    psh = cap2(ps, dl[:12], fx, dsh[:DROP_N])  # 홈 픽만(날짜 쪽·RSS는 저장 목록 그대로)
-    stx = mix(cap2([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], dl[:12], fx, dsh[:DROP_N], psh), 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
-    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + MY + MY_JS + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(dsh, today, len(ds))
+    tsh = toss_home(it, evi, dl[:12], fx)  # 11/7 💙 토스 특가 = 🔥 다음(같은 상품 2번 셈에 들어감 — 🔥 섞는 비율은 그대로)
+    print(f"home 토스 칸 {len(tsh)}개 · 토스 칸별(/c/toss/) " + " · ".join(f"{CAT_META[k][1].split('·')[0]} {n}" for k, n in collections.Counter(cat_of(p) for _, p, _ in ls.get("toss", ("", "", []))[2]).most_common() if k in CAT_META))
+    dsh = cap2(ds, dl[:12], fx, tsh)  # 같은 상품 홈 최대 2번: 오늘 마감 > 🔥 > 💙 토스 > 📉 > 픽 > 꾸준템(10/24 진우 v3 ② · TOP 10·찜/본·숨은 #today X)
+    psh = cap2(ps, dl[:12], fx, tsh, dsh[:DROP_N])  # 홈 픽만(날짜 쪽·RSS는 저장 목록 그대로)
+    stx = mix(cap2([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], dl[:12], fx, tsh, dsh[:DROP_N], psh), 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
+    body = (cp.replace('<section class="card" id="today"', '<section class="card" id="today" hidden', 1) + hot + re.sub(r"</section>$", f'<a class="more2" href="{BASE}c/toss/">토스 전체 보기 →</a></section>', hs_section("tossh", "💙 토스 특가", f"{len(tsh)}개", tsh, f"{BASE}c/toss/")) + MY + MY_JS + top_section(*tops) + deadline_section(dl, evs, today) + drop_section(dsh, today, len(ds))
             + hs_section("pick", "⭐ 오늘의 픽", md_of(day) if day else "", psh, f"{BASE}today/{day}/" if day else "")
             + hs_section("steady", "👍 꾸준히 주문 들어오는 것", f"{len(top(ls['steady'][2]))}개", stx, c_url("steady")) + (rec_nav(recs) or "")
             + ('<a class="u" style="display:block;padding:10px 2px 0;text-decoration:none" href="#today">📸 인스타·Threads 카드 번호로 찾기 →</a>' if 'id="today"' in cp else "")

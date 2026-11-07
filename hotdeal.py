@@ -5480,6 +5480,19 @@ def toss_site(seen, x, link, text):
     return True
 
 
+TOSS_BOOST, TOSS_BOOST_N = ("laundry", "coffee", "pet", "snack", "season"), 10  # 11/7 진우 '빈칸 채우기': 사이트 토스 적은 칸(세탁·커피/차·반려동물·간식·계절) — 진열 실행 2번에 1번은 이 칸들 카테고리 베스트 · 하루 칸마다 최대 10개
+TOSS_BOOST_CAT = r"세탁|세제|섬유|커피|음료|(?<![가-힣])차(?![량가-힣])|반려|강아지|고양이|애견|애묘|펫|과자|간식|스낵|디저트|베이커리|빵|떡|아이스|과일|농산|채소|고구마|제철|간편식"  # 토스 카테고리(하위 포함) 이름 — 상품은 다시 사이트 품목(cat_of)으로 거름
+TOSS_SEASON_W = r"호빵|찐빵|호떡|어묵|오뎅|군밤|맛밤|고구마|곶감|아이스크림|붕어빵|귤"  # 11/7 진우: 이 낱말 든 상품 = 진열 순서 앞(없으면 그냥 지나감 — 알림 X)
+
+
+def toss_boost_srcs(tree):
+    """적은 칸 진열 목록: 토스 카테고리 트리(최상위·하위·그 아래) 중 이름이 TOSS_BOOST_CAT인 것 -> [(이름, id)] · 하나도 없으면 최상위 식품·생활·반려."""
+    flat = [(c, c["displayName"]) for c in tree] + [(k, f"{c['displayName']} > {k['displayName']}") for c in tree for k in c.get("children") or []] \
+        + [(g, f"{c['displayName']} > {k['displayName']} > {g['displayName']}") for c in tree for k in c.get("children") or [] for g in k.get("children") or []]
+    out = [(n, x["categoryId"]) for x, n in flat if re.search(TOSS_BOOST_CAT, x.get("displayName") or "")]
+    return out or [(c["displayName"], c["categoryId"]) for c in tree if re.search("식품|생활|반려", c["displayName"])]
+
+
 def toss_shelf(seen):
     """토스 대량 사이트 진열(10/24 진우 '하루특가·BEST(카테고리별) API 목록 -> 쉐어링크 -> 사이트 전용 진열, API가 허용하는 만큼'): 실행마다 목록 1곳(하루특가 -> 많이 팔린 순위 ->
     카테고리 베스트들, 돌아가며) 중 사이트에 없는·판매 중 상품을 TOSS_SHELF_RUN개까지 -> 쉐어링크(만든 것 있으면 재사용) -> toss_site. 글 = 토스 개별 글 틀(대가성 문구·💙 머리 줄·
@@ -5488,23 +5501,37 @@ def toss_shelf(seen):
         return
     now, st = time.time(), seen.setdefault("tshelf", {"i": 0, "x": {}})
     st["t"], st["x"] = now, {k: t for k, t in st.get("x", {}).items() if now - t < 86400}
+    day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    st["bd"] = {day: st.get("bd", {}).get(day, {})}  # 11/7 적은 칸 오늘 진열 수(칸 -> 개수)
     have = {p.get("tid") for p in load(POSTS, []) if p.get("tid")}
     try:
         tree = toss("/categories")["categories"]  # 트리 조회는 일 상한 차감 없음
-        srcs = [("하루특가 · 밤 12시까지", "/products/today-deals?size=30"), ("많이 팔린 순위 {}위", "/products/best-selling?size=30")] \
-            + [(f"{c['displayName']} 베스트 {{}}위", f"/products/best-categories/{c['categoryId']}?size=30") for c in tree]
-        info, path = srcs[st["i"] % len(srcs)]
-        st["i"] += 1
+        boost, bs = st.get("n", 0) % 2 == 1, toss_boost_srcs(tree)  # 11/7 진우 '빈칸 채우기': 2번에 1번 = 적은 칸 카테고리 베스트(100개 중 그 칸 상품만)
+        st["n"] = st.get("n", 0) + 1
+        if boost and bs and any(st["bd"][day].get(k, 0) < TOSS_BOOST_N for k in TOSS_BOOST):
+            name, cid = bs[st.get("b", 0) % len(bs)]
+            st["b"] = st.get("b", 0) + 1
+            info, path = f"{name.split(' > ')[-1]} 베스트 {{}}위", f"/products/best-categories/{cid}?size=100"
+        else:
+            boost = False
+            srcs = [("하루특가 · 밤 12시까지", "/products/today-deals?size=30"), ("많이 팔린 순위 {}위", "/products/best-selling?size=30")] \
+                + [(f"{c['displayName']} 베스트 {{}}위", f"/products/best-categories/{c['categoryId']}?size=30") for c in tree]
+            info, path = srcs[st["i"] % len(srcs)]
+            st["i"] += 1
         raw = toss(path)["items"]
     except Exception as e:  # 터널 끊김 등 = 다음 실행에
         print("toss shelf", repr(e))
         return
-    n, links = 0, seen.get("tlink", {}).get("m", {})
-    for r, x in enumerate(raw):
+    n, links, got = 0, seen.get("tlink", {}).get("m", {}), collections.Counter()
+    for r, x in sorted(enumerate(raw), key=lambda t: not re.search(TOSS_SEASON_W, t[1].get("displayName") or "")):  # 11/7 계절 낱말 = 앞(순위 글은 원래 순위 그대로)
         if n >= TOSS_SHELF_RUN:
             break
         if x.get("isSoldOut") or x["tacaItemId"] in have or str(x["tacaItemId"]) in st["x"]:
             continue
+        if boost:  # 적은 칸 = 사이트 품목이 그 칸이고 오늘 그 칸 TOSS_BOOST_N개 안일 때만(링크 만들기 전에 거름 — 호출 아낌)
+            k = cat_of({"text": f"🔥 [토스] {x.get('displayName') or ''}"})
+            if k not in TOSS_BOOST or st["bd"][day].get(k, 0) >= TOSS_BOOST_N:
+                continue
         try:
             link = (links.get(str(x["tacaItemId"])) or [None])[0] or toss_link(seen, x["tacaItemId"], x["displayName"])
         except Exception as e:  # 발급 제한 상품·호출 제한·접속 = 그 상품 하루 쉬고 이 실행은 멈춤
@@ -5514,8 +5541,11 @@ def toss_shelf(seen):
         body = mall_body("toss", info.format(r + 1), "🔥", x["displayName"], toss_price({**x, "reviewCount": 0}), [toss_when()])
         if toss_site(seen, x, link, html_ents(ad_head(TOSS_NOTE, plain_of(body)) + body)[0]):
             n += 1
+            if boost:
+                st["bd"][day][k] = st["bd"][day].get(k, 0) + 1
+                got[k] += 1
         have.add(x["tacaItemId"])
-    print("toss shelf", f"{info.format('N')} · 사이트 진열 {n}개")
+    print("toss shelf", f"{info.format('N')} · 사이트 진열 {n}개" + (" · 적은 칸 " + (" · ".join(f"{k} +{v}" for k, v in got.items()) or "0") + f" (오늘 {sum(st['bd'][day].values())})" if boost else ""))
 
 
 TOSS_IDEA_AT, TOSS_IDEA_N = ("12:20", "13:20"), 10  # 11/5 R 진우: 매일 12:20 관리봇 DM — 진우가 아직 링크 안 만든 토스 상품 10개(진우가 웹에서 쉐어링크 → 관리봇 = 평소 흐름 → own → 사이트·채널)

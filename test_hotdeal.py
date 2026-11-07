@@ -5996,6 +5996,7 @@ H.toss, H.tg = toss47, lambda m, **p: sent47.append((m, p)) or {"message_id": 1}
 json.dump([{"t": "2026-10-20 10:00", "text": "💙 토스 특가 🔥\n이미 있는 것\n1,000원", "url": "https://toss.im/_m/OLD", "own": 1, "tid": 11}], open("posts.json", "w"))
 s47 = {"tlink": {"m": {"20": ["https://toss.im/_m/MADE20", 1]}}}
 names47 = lambda: [S40.parse(S40.title_of(p["text"]))[1] for p in json.load(open("posts.json")) if p.get("shelf")]
+tb47, H.TOSS_BOOST = H.TOSS_BOOST, ()  # 11/7 적은 칸 진열 끔 = 예전 돌림 그대로 봄(적은 칸은 9-170)
 H.toss_shelf(s47); assert names47() == ["하루 물티슈"]  # 하루특가 목록: 품절·이미 사이트에 있는 것 X
 p47 = json.load(open("posts.json"))[-1]
 assert (p47["own"], p47["shelf"], p47["tid"], p47["url"], "mid" in p47) == (1, 1, 10, "https://toss.im/_m/L10", False) and p47["text"].startswith(H.TOSS_NOTE), p47
@@ -6006,6 +6007,7 @@ H.toss_shelf(s47); assert names47()[-1] == "생활 수세미" and "생활용품 
 H.toss_shelf(s47); H.toss_shelf(s47); assert names47() == ["하루 물티슈", "베스트 세제", "생활 수세미", "베스트 휴지"] and calls47.count("/links") == 4  # 다시 돌아옴: 있는 것 X · 오류 난 21은 하루 쉼(발급 10·21 실패·30·22)
 H.RUN["treuse"] = True; n47 = len(calls47); H.toss_shelf(s47); assert len(calls47) == n47; H.RUN.pop("treuse")  # 토스 점검(재사용 모드) = X
 H.TOSS_SITE = False; H.toss_shelf(s47); assert len(calls47) == n47; H.TOSS_SITE = True
+H.TOSS_BOOST = tb47
 po47 = json.load(open("posts.json")); assert not [i for i, _ in S40.day_deals(po47, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))] and not sent47  # 카드·인스타 X · 채널 X
 S40.TOSS_API_SITE = True; S40.build(po47, "site"); tz47 = open("site/c/toss/index.html").read(); S40.TOSS_API_SITE = False  # 11/5 Q: 켰을 때 = 토스 몰 쪽 카드만(딜 쪽 p/ X — 쉐어링크로 바로)
 assert all(n in tz47 for n in names47()) and not any(f"p/{i}.html" in tz47 for i in range(1, 5)) and 'href="https://toss.im/_m/MADE20" rel="nofollow sponsored noopener"' in tz47 and "⭐" not in tz47  # 사이트 💙 토스 쪽에 진열(리뷰 X)
@@ -13718,3 +13720,52 @@ assert "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}" in open(os.path.join(os.p
 (H.E, H.AI_IMG, H.urllib.request.urlopen, H.tg_video, H.today_items, H.http, H.tg, time.time, H.alert, H.EVENTS, H.th_img, H.th_carousel, H.th_text, H.busy, H.bundled, H.ai_img_make, H.IG_AUTO) = sv169
 H.RUN.pop("aiimg", None); os.chdir(cwd169); shutil.rmtree(d169, ignore_errors=True)
 assert H.AI_IMG is False  # 기본 = 시험(진우 OK 뒤 True)
+
+# 9-170 (11/7 11:4x 진우 '토스 제품 핫딜픽 홈페이지에 올리자' + '빈칸 채우기'): ① 홈 '💙 토스 특가' 가로 카드(🔥 아래) — 토스만·사진 있는 것만·🔥 할인 큰 순 먼저 -> 👍 · 같은 상품 홈 2번 · 비면 칸 X
+#   ② 토스 사이트 진열 = 2번에 1번 적은 칸(세탁·커피·반려동물·간식·계절) 카테고리 베스트 — 사이트 품목이 그 칸인 것만 · 하루 칸마다 10개 ③ 계절 낱말(호빵·어묵·군밤·고구마·귤 …) = 진열 순서 앞
+import collections
+T170 = lambda u: {"t": "2026-11-07 09:00", "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n브랜드{u} 상품 1개\n9,900원 ({ {'A': 20, 'B': 45, 'C': 10, 'D': 30}.get(u, 5)}%↓)", "url": f"https://toss.shopping/_m/{u}"}
+sv170 = (S.TIMG, H.toss, H.POSTS, H.HAS_TOSS, H.TOSS_SITE, H.toss_link, H.RUN.get("treuse"), time.time)
+S.TIMG = {f"https://toss.shopping/_m/{u}": f"https://static.toss.im/t/{u}.jpg" for u in "ABCE"}
+h0, h1 = (0, None, "", [], False), (1, None, "", [], False)
+it170 = [(0, T170("A"), h0), (1, T170("B"), h0), (2, T170("C"), h1), (3, T170("D"), h0), (4, {**T170("E"), "tid": 9}, h0),
+         (5, {"t": "2026-11-07 09:00", "text": "🔥 [쿠팡] 쿠팡 상품 (1,000원)", "url": "https://link.coupang.com/a/x"}, h0), (6, T170("F"), (2, "", "", [], False))]
+th170 = S.toss_home(it170, set())
+assert [i for i, _, _ in th170] == [1, 0, 2], th170  # 토스만(쿠팡 X) · 사진 없는 것(D) X · tid(E — /c/toss/만, Q 11/5) X · ⏳ 대기(F) X · 🔥 할인 큰 순(B 45 > A 20) -> 👍(C)
+assert all(S.shop_of(p) == "toss" and S.toss_img(p) for _, p, _ in th170)
+assert [i for i, _, _ in S.toss_home(it170, set(), [it170[1]], [it170[1]])] == [0, 2]  # 같은 상품 홈 최대 2번(앞 칸 2번 = 뺌)
+S.TIMG = {}; assert S.toss_home(it170, set()) == [] and S.hs_section("tossh", "💙 토스 특가", "0개", []) == ""  # 사진 없음 = 칸 숨김
+S.TIMG = {f"https://toss.shopping/_m/{u}": f"https://static.toss.im/t/{u}.jpg" for u in "ABCE"}
+h170 = S.hs_section("tossh", "💙 토스 특가", "3개", th170, f"{S.BASE}c/toss/")
+assert h170.count('<article') == 3 and "coupang" not in h170 and all(f"static.toss.im/t/{u}.jpg" in h170 for u in "ABC") and S.PHOTO_CREDIT in h170 and S.TOSS_LINE in h170 and f'href="{S.BASE}c/toss/"' in h170, h170[:300]  # 원본 사진 + '사진: 토스쇼핑' · 게시 시점 가격 줄 · 전체 보기
+bs170 = inspect.getsource(S.build)
+assert 'tsh = toss_home(it, evi, dl[:12], fx)' in bs170 and '+ hot + re.sub(r"</section>$"' in bs170 and 'hs_section("tossh", "💙 토스 특가"' in bs170 and "dsh = cap2(ds, dl[:12], fx, tsh)" in bs170 and "토스 전체 보기 →" in bs170  # 🔥 바로 아래 · 뒤 칸들 2번 셈에 들어감
+# ② 적은 칸 진열 + ③ 계절 낱말
+cwd170, d170 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d170); json.dump([], open("posts170.json", "w"))
+X170 = lambda i, n, sold=False: {"tacaItemId": i, "tacaId": i * 10, "displayName": n, "displayPrice": 5000, "discountRate": 10, "isSoldOut": sold}
+cl170 = []
+def toss170(path, body=None):
+    cl170.append(path)
+    if path == "/categories":
+        return {"categories": [{"categoryId": 1, "displayName": "식품", "children": [{"categoryId": 11, "displayName": "과자/간식"}, {"categoryId": 12, "displayName": "축산"}]},
+                               {"categoryId": 2, "displayName": "자동차용품"}]}
+    return {"items": {"/products/today-deals?size=30": [X170(1, "하루 물티슈 100매")],
+                      "/products/best-categories/11?size=100": [X170(21, "오리온 초코파이 12개"), X170(22, "삼립 호빵 단팥 8개"), X170(23, "농심 새우깡 90g 20봉"), X170(24, "해남 꿀고구마 3kg"),
+                                                                X170(25, "스마트폰 거치대"), X170(26, "해태 홈런볼 10봉")]}[path]}
+H.toss, H.POSTS, H.HAS_TOSS, H.TOSS_SITE, H.toss_link = toss170, "posts170.json", True, True, lambda seen, i, n: f"https://toss.im/_m/K{i}"
+H.RUN.pop("treuse", None); time.time = lambda: TK("2026-11-07 12:00")
+nb170, H.TOSS_BOOST_N = H.TOSS_BOOST_N, 1
+s170 = {}
+names170 = lambda: [S.parse(S.title_of(p["text"]))[1] for p in json.load(open("posts170.json"))]
+with contextlib.redirect_stdout(io.StringIO()) as o170:
+    H.toss_shelf(s170); H.toss_shelf(s170)
+assert H.toss_boost_srcs(toss170("/categories")["categories"]) == [("식품 > 과자/간식", 11)]  # 이름이 적은 칸 낱말인 카테고리(하위까지) · '자동차' = 차 X
+assert "/products/best-categories/11?size=100" in cl170 and names170()[0] == "하루 물티슈 100매", cl170  # 1번째 = 예전 돌림 · 2번째 = 적은 칸 카테고리 베스트(100개)
+assert names170()[1:] == ["삼립 호빵 단팥 8개", "오리온 초코파이 12개"], names170()  # 계절 낱말(호빵 — 계절 칸) 먼저 · 하루 칸마다 상한(시험 1 — 고구마 = 계절 칸 다 참 · 새우깡 = 간식 칸 다 참) · 칸 다른 것(거치대·홈런볼 = 품목 X) X
+ks170 = [S.cat_of(p) for p in json.load(open("posts170.json"))[1:]]
+assert set(ks170) <= set(H.TOSS_BOOST) and s170["tshelf"]["bd"]["2026-11-07"] == dict(collections.Counter(ks170)) and "적은 칸" in o170.getvalue(), (ks170, s170["tshelf"], o170.getvalue())
+assert all(p["text"].startswith(H.TOSS_NOTE) and "베스트" in p["text"] and "쿠팡" not in p["text"] and "⭐" not in p["text"] for p in json.load(open("posts170.json"))[1:])  # 토스 규칙 그대로(대가성·게시 시점·다른 몰 X)
+H.TOSS_BOOST_N = nb170
+(S.TIMG, H.toss, H.POSTS, H.HAS_TOSS, H.TOSS_SITE, H.toss_link, tr170, time.time) = sv170
+if tr170 is not None: H.RUN["treuse"] = tr170
+os.chdir(cwd170); shutil.rmtree(d170, ignore_errors=True)
