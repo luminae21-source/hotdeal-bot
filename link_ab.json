@@ -178,5 +178,20 @@
    "home": 0
   },
   "line": "link 11/6 a 0 view 0 buy(-) 0 ch(-) 0 home · b 0 view 0 buy(-) 0 ch(-) 0 home"
+ },
+ "2026-11-07": {
+  "a": {
+   "view": 0,
+   "buy": 0,
+   "ch": 0,
+   "home": 0
+  },
+  "b": {
+   "view": 0,
+   "buy": 0,
+   "ch": 0,
+   "home": 0
+  },
+  "line": "link 11/7 a 0 view 0 buy(-) 0 ch(-) 0 home · b 0 view 0 buy(-) 0 ch(-) 0 home"
  }
 }
