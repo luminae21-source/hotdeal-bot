@@ -1,16 +1,36 @@
 {
  "google": {
-  "at": "2026-11-07 22:07",
+  "at": "2026-11-07 23:04",
   "items": [
    {
-    "t": "agf",
-    "n": "200+",
-    "news": "The Fed in Uncharted Territory with New Communication Policy"
+    "t": "검사",
+    "n": "500+",
+    "news": "“이재명 탈옥법” 국힘, ‘조작기소 특검법’ 규탄 도심 집회"
+   },
+   {
+    "t": "닥터x 하얀 마피아의 시대",
+    "n": "1000+",
+    "news": "‘닥터X’ 김영민, 참 멋없는데… 누구보다 멋진 ‘진짜 의사’였다"
+   },
+   {
+    "t": "sbs",
+    "n": "500+",
+    "news": "Cha Cheong-hwa joins SBS drama 9 to 6 as corporate support…"
    },
    {
     "t": "persija jakarta vs persebaya",
     "n": "200+",
     "news": ""
+   },
+   {
+    "t": "agf",
+    "n": "500+",
+    "news": "The Fed in Uncharted Territory with New Communication Policy"
+   },
+   {
+    "t": "내일 날씨",
+    "n": "200000+",
+    "news": "[날씨] '입동 추위' 곳곳 영하권...서울 첫 얼음 관측"
    },
    {
     "t": "로또1249",
@@ -23,34 +43,14 @@
     "news": "Premier League LIVE: Build-up, team news, live text, radio…"
    },
    {
+    "t": "유방암",
+    "n": "2000+",
+    "news": "27세 女의대생이 두달만에 사망한 무서운 병[의료톡톡]"
+   },
+   {
     "t": "weather tomorrow",
     "n": "5000+",
     "news": "How to Watch the Iowa Hawkeyes at Northwestern Wildcats"
-   },
-   {
-    "t": "погода завтра",
-    "n": "500+",
-    "news": ""
-   },
-   {
-    "t": "thời tiết ngày mai",
-    "n": "1000+",
-    "news": "[Video] Dự báo thời tiết đêm nay và ngày mai 8/11/2026: Bắc…"
-   },
-   {
-    "t": "리즈 유나이티드 대 토트넘",
-    "n": "20000+",
-    "news": "\"맨유전 3시간 불꽃 난상토론\" 데제르비의 토트넘, '3연승' 대반전 이유가 밝혀졌다! 최하위→9위→오늘밤…"
-   },
-   {
-    "t": "항공기",
-    "n": "100+",
-    "news": "“비행기 오래되면 연료 더 쓰나?”…항공사들이 기단 바꾸는 이유"
-   },
-   {
-    "t": "달리기",
-    "n": "2000+",
-    "news": "“2살 아들 업고 6개월에 100대 명산… 산 달리기보다 쉬워요”[양종구의 100세 시대 건강법]"
    }
   ]
  },
