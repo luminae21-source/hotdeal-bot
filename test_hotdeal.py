@@ -12769,11 +12769,12 @@ assert "igtoss_2026-11-06" not in s146
 with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146)
 st146 = s146["igtoss_2026-11-06"]; cap146 = st146["cap"]
 assert st146["img"] == [f"https://static.toss.im/shop/{k.lower()}.jpg" for k in "HGFA"] and not hc146 and os.path.exists(st146["jpg"]) and [x["title"] for x in it146[0][0]] == [f"토스 상품{k}" for k in "HGFA"], st146  # 4개(D = noimg · 쿠팡 X) · 최근 글 먼저 · 표지 = 글자 카드
-assert cap146.startswith(H.TOSS_NOTE) and cap146.count("게시 시점") == 4 and cap146.rstrip().endswith(H.PHOTO_CREDIT) and "쿠팡" not in cap146 and H.DISCLOSURE not in cap146 and not H.toss_why(cap146), cap146
+assert cap146.startswith(H.TOSS_NOTE) and cap146.count(" 확인 가격") == 4 and "게시 시점" not in cap146 and cap146.rstrip().endswith(H.PHOTO_CREDIT) and "쿠팡" not in cap146 and H.DISCLOSURE not in cap146 and not H.toss_why(cap146), cap146
 with contextlib.redirect_stdout(io.StringIO()): H.ig_toss(s146, "tok", "uid", N146 + 900)  # 다음 실행 = 표지 뜨면 조각
 k146 = s146["igk_toss_2026-11-06"]
 assert hc146[0] == (f"{H.SITE}cards/igtoss/2026-11-06.jpg", None, "HEAD") and [b["image_url"] for _, b, m in hc146[1:]] == [f"{H.SITE}cards/igtoss/2026-11-06.jpg"] + st146["img"] and all(b["is_carousel_item"] for _, b, _ in hc146[1:]), hc146
 assert k146["kind"] == "toss" and k146["cap"] == cap146 and len(k146["kids"]) == 5 and st146["done"] and s146["tphoto"]["m"][-1]["ig"] == "2026-11-06 토스 넘기기"
+assert k146["pc"] == N146 and [x[0] for x in k146["pr"]] == [m146[f"https://toss.shopping/_m/{k}"][0] for k in "HGFA"] and all(isinstance(x[1], int) and x[1] > 0 for x in k146["pr"]), k146["pr"]  # 11/7 캡션 때 가격(그룹 id·원)·시각 = 발행이 미뤄지면 다시 확인
 n146 = len(hc146); H.ig_toss(s146, "tok", "uid", N146 + 1800); assert len(hc146) == n146  # 하루 1번
 s146b = {"tossid": {"t": 1, "m": {u: v for u, v in m146.items() if u.endswith(("A", "F"))}}}
 o146 = io.StringIO()
@@ -13551,7 +13552,7 @@ assert '\nIG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}
 assert H.IG_TOSS_AT == ("15:30", "18:30") and H.IG_TOSS_GAP == 90 * 60 and H.IG_TOSS_N == (3, 5)
 assert [H.ig_toss_slot(TK(f"2026-11-07 {t}")) for t in ("15:29", "15:30", "16:59", "17:00", "18:30", "19:59", "20:00", "21:10")] == [None, "15:30", "15:30", None, "18:30", "18:30", None, None]
 assert H.ig_toss_slot(TK("2026-11-07 15:10"), H.IGF_PREP) == "15:30" and H.ig_toss_slot(TK("2026-11-07 15:09"), H.IGF_PREP) is None  # 표지 = 칸 20분 전부터
-sv165 = (H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, dict(H.E))
+sv165 = (H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, dict(H.E), H.toss)
 H.E.update(IG_TOKEN="tk", IG_USER_ID="u1"); H.IG_AUTO, H.tg, H.ig_quota = True, (lambda m, **p: {"message_id": 1}), (lambda tok, uid: None)
 pub165 = []
 def http165(url, body=None, headers=None, method=None):
@@ -13579,10 +13580,24 @@ s165c["iglast"] = {"t": TK("2026-11-07 17:55")}; run165(s165c, "19:00"); assert 
 run165(s165c, "19:26"); assert pub165 == ["T3"]  # 18:30 칸(17:55 피드 + 1시간 30분)
 s165d = {"igc_T4": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스"}}
 assert "그날 X" in run165(s165d, "20:05") and "igc_T4" not in s165d  # 칸 다 지남(21시 뒤 X 규칙 안)
+# 11/7 16:4x Cowork: 캡션 = '확인 가격'(게시 시점 X) · 1시간↑ 미뤄짐 = 발행 직전 토스 상세 API로 가격 다시(같음 = 발행 · 바뀜·품절·조회 X·확인 못 함 = 그날 X) · 이름 = '토스 넘기기'
+tl165, tg165 = [], []
+H.toss, H.tg = (lambda path, body=None: tl165.append(path) or {"items": [{"tacaId": 11, "displayPrice": 9900}, {"tacaId": 12, "displayPrice": 5000, "isSoldOut": False}], "notFoundIds": []}), (lambda m, **p: tg165.append(p) or {"message_id": 1})
+s165e = {"igc_T5": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스", "pr": [[11, 9900], [12, 5000]], "pc": TK("2026-11-07 15:02")}}
+pub165.clear(); o165e = run165(s165e, "16:13")
+assert pub165 == ["T5"] and tl165 == ["/products/detail?tacaIds=11,12"] and "ig publish 토스 넘기기" in o165e and "릴스" not in o165e and "토스 넘기기" in tg165[-1]["text"] and "릴스" not in tg165[-1]["text"], (o165e, tg165)  # 1시간↑ = 다시 확인 · 같음 = 발행 · 로그·관리봇 = 토스 넘기기
+s165f = {"igc_T6": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스", "pr": [[11, 8900], [12, 5000]], "pc": TK("2026-11-07 15:02")}}
+pub165.clear(); o165f = run165(s165f, "16:13"); assert not pub165 and "igc_T6" not in s165f and "1/2개 바뀜" in o165f and "그날 X" in o165f, o165f  # 가격 바뀜 = 그날 X(다시 시도 X)
+tl165.clear(); s165g = {"igc_T7": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스", "pr": [[11, 8900]], "pc": TK("2026-11-07 15:50")}}
+pub165.clear(); run165(s165g, "16:13"); assert pub165 == ["T7"] and not tl165  # 1시간 안 = 다시 확인 X(API 안 부름)
+H.toss = lambda path, body=None: (_ for _ in ()).throw(OSError("tunnel"))
+s165h = {"igc_T8": {"t": TK("2026-11-07 15:40"), "kind": "toss", "cap": "토스", "pr": [[11, 9900]], "pc": TK("2026-11-07 15:02")}}
+pub165.clear(); assert "확인 못 함" in run165(s165h, "16:13") and not pub165 and "igc_T8" not in s165h  # 확인 못 함 = 그날 X
+assert H.IG_KIND["toss"] == "토스 넘기기" and ".replace(' 게시 시점 가격', ' 확인 가격')" in inspect.getsource(H.ig_toss)
 time.time = lambda: TK("2026-11-07 15:45")
 assert H.ig_room({"igk_toss_2026-11-07": {"t": 1, "kind": "toss", "kids": []}}, TK("2026-11-07 15:45")) == H.ig_room({}, TK("2026-11-07 15:45"))  # 토스 조각 = 피드 여유에 안 셈
 assert "ig_room(seen, now)" not in inspect.getsource(H.ig_toss) and "ig_toss_slot(now)" in inspect.getsource(H.ig_toss)  # 토스 = 피드 상한 밖 · 조각 = 칸 시각부터
-(H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, e165) = sv165; H.E.clear(); H.E.update(e165)
+(H.http, H.tg, time.time, H.ig_quota, H.IG_AUTO, e165, H.toss) = sv165; H.E.clear(); H.E.update(e165)
 
 # 9-166 (11/7 02시대 Cowork '네이버·구글 노출' — IndexNow가 안 도는 것처럼 보임): indexnow = main 단계 목록에 있음(실행마다 · 11/7 00:22 실행 'indexnow naver 50 ok · bing 50 ok')
 #   · 하루 200(곳마다)을 다 쓴 실행 = 말 없이 넘어가던 것 -> 'indexnow naver 0 (오늘 200/200 · 새 쪽 N)' 1줄 · 새 쪽 순서 = 홈 -> guide/ · c/t/ · c/<칸>/ · series/ · e/ -> 그 밖 -> 칸 뒤쪽 -> p/

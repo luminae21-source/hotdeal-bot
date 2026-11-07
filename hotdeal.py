@@ -7677,7 +7677,7 @@ def ig_human(seen, ps):
 
 
 IG_PHOTO_NOTE = "상품 사진: 판매 페이지(쿠팡)"  # 사진 장이 있는 넘기기 캡션 — 대가성 문구 바로 아래(10/25 Cowork ②)
-IG_KIND = {"cur": "큐레이션", "drop": "가격 내려간 상품", "theme": "테마 넘기기", "one": "개별 아이템", "story": "스토리"}  # 카드 칸 밖 인스타 글(igc_·igk_ kind) — 게시 기록·알림 이름
+IG_KIND = {"cur": "큐레이션", "drop": "가격 내려간 상품", "theme": "테마 넘기기", "one": "개별 아이템", "story": "스토리", "toss": "토스 넘기기"}  # 카드 칸 밖 인스타 글(igc_·igk_ kind) — 게시 기록·알림 이름
 
 
 def ig_caption(seen, stem, human=False, ps=None, photo=False):
@@ -7954,6 +7954,26 @@ def ig_live(stem, now):
     json.dump(led, open(IG_LIVE, "w"), ensure_ascii=False)
 
 
+IG_TOSS_RECHECK = 3600  # 11/7 Cowork: 토스 넘기기 발행이 캡션 가격 확인보다 1시간↑ 늦으면 발행 직전 다시 확인
+
+
+def ig_toss_recheck(v):
+    """토스 넘기기 캡션 가격(v['pr'] = [[그룹 id, 원]]) -> 토스 상세 API 1번으로 지금가 비교 -> '' = 그대로(발행) · 이유 = 바뀜·품절·조회 안 됨·확인 못 함(발행 X).
+    로그 = 개수·이유만(API 가격·이름 X — 공개 로그)."""
+    if "pr" not in v:  # 11/7 배포 전 컨테이너(캡션 가격 기록 없음) = 확인 X(그대로)
+        return ""
+    pr = [x for x in v.get("pr") or [] if x and x[0]]
+    if not pr or not all(x[1] for x in pr):
+        return "캡션 가격 기록 없음"
+    try:
+        r = toss("/products/detail?tacaIds=" + ",".join(str(x[0]) for x in pr))
+    except Exception as e:
+        return f"확인 못 함({type(e).__name__})"
+    got, nf = {x.get("tacaId"): x for x in r.get("items") or []}, {str(i) for i in r.get("notFoundIds") or []}
+    bad = [i for i, w in pr if str(i) in nf or i not in got or got[i].get("isSoldOut") or got[i].get("displayPrice") != w]
+    return f"{len(bad)}/{len(pr)}개 바뀜·품절·조회 X" if bad else ""
+
+
 def ig_publish(seen):
     """올려둔 인스타 컨테이너(카드·릴스)가 처리 끝났으면(FINISHED) 발행. 처리 중이면 다음 실행에.
     카드는 만든 실행에 사이트 맨 위에 먼저 뜨고(ig_live) IG_SITE_LAG 지난 뒤 발행(상태 조회도 그때부터 — 그래프 API 호출 줄이기). 이미 PUBLISHED = 게시 완료로.
@@ -7997,6 +8017,10 @@ def ig_publish(seen):
         if st != "PUBLISHED" and (failed or st != "FINISHED"):  # 처리 실패(ERROR·EXPIRED) · 발행 오류 뒤에도 안 올라감 = 진짜 실패, 그 회차만 건너뜀
             seen.pop(k)
             ig_fail(seen, now, (card(v) or IG_KIND.get(kind, "릴스")) + (f" 발행 {failed}" if failed else f" 처리 {st}"))
+            continue
+        if toss and st != "PUBLISHED" and not failed and now - v.get("pc", v["t"]) > IG_TOSS_RECHECK and (why := ig_toss_recheck(v)):  # 11/7 Cowork: 1시간↑ 미뤄짐 = 발행 직전 가격 다시(바뀜·품절·확인 X = 그날 X — 다시 시도 X)
+            seen.pop(k)
+            print("ig toss 미룬 뒤 가격 다시 확인 ->", why, "-> 그날 X", k)
             continue
         pid = None
         if st != "PUBLISHED" and not failed and (q := ig_quota(tok, uid)) and q[0] >= q[1] * IG_QUOTA_SHARE:  # 공식 24시간 한도의 절반을 넘으면 미룸(실제 응답)
@@ -8294,7 +8318,7 @@ def ig_carousel(seen, tok, uid, now):
         except Exception as e:
             ig_fail(seen, now, f"{stem} 넘기기 {ig_err(e)}")
             continue
-        seen["igc_" + c["id"]] = {"t": now, **({"kind": v["kind"]} if v.get("kind") else {"card": stem}), **{x: v[x] for x in ("cmt", "stem", "guess", "ask") if v.get(x)}, **({"cap80": v["cap"][:80]} if v.get("stem") and v.get("cap") else {})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행(묶은 실행 seen이 저장 안 되면 다음 실행이 같은 조각으로 또 묶어 두 번 올라가지 않게 — 10/23 리뷰)
+        seen["igc_" + c["id"]] = {"t": now, **({"kind": v["kind"]} if v.get("kind") else {"card": stem}), **{x: v[x] for x in ("cmt", "stem", "guess", "ask", "pr", "pc") if v.get(x)}, **({"cap80": v["cap"][:80]} if v.get("stem") and v.get("cap") else {})}  # 큐레이션 = 사이트 맨 위 카드 기록 X  # 발행은 다음 실행(묶은 실행 seen이 저장 안 되면 다음 실행이 같은 조각으로 또 묶어 두 번 올라가지 않게 — 10/23 리뷰)
         print("ig carousel", stem, len(v["kids"]), "장")
 
 
@@ -8391,9 +8415,10 @@ def ig_toss(seen, tok, uid, now):
             os.makedirs(IGTOSS_DIR, exist_ok=True)
             jpg = f"{IGTOSS_DIR}/{today}.jpg"
             cards.make([{"title": clip(parse(title_of(p["text"]))[1], 40), "unit": ""} for p, _, _ in its], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
-            rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 40)}\n💰 {pick_price(p, seen)}" for k, (p, _, _) in enumerate(its)]
+            rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 40)}\n💰 {pick_price(p, seen).replace(' 게시 시점 가격', ' 확인 가격')}" for k, (p, _, _) in enumerate(its)]  # 11/7 Cowork: 발행은 칸·간격으로 미뤄질 수 있음 = '게시 시점' X · 'M/D HH:MM 확인 가격
             cap = f"{TOSS_NOTE}\n\n💙 토스에서 살 만한 것 {len(its)}개 ({kst.tm_mon}/{kst.tm_mday})\n\n" + "\n\n".join(rows) + f"\n\n🛒 프로필 링크 → 토스 상품 바로 가기\n\n{PHOTO_CREDIT}"
-            seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200]}
+            seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200],
+                         "pr": [[x[2][0], (lambda v: v[5] if len(v) > 5 and v[5] else won(pick_price(x[0], seen) or ""))(seen.get("tossid", {}).get("m", {}).get(x[0]["url"]) or [])] for x in its], "pc": now}  # 캡션 때 가격(그룹 id·원 — own_end 상세 확인가 먼저) · 발행이 1시간↑ 미뤄지면 같은 API로 다시 비교(ig_publish)
             print("ig toss", today, f"표지 만듦 {len(its)}개")
             return
         if not ig_toss_slot(now):  # 조각 = 칸 시각부터(피드처럼 — 발행은 ig_publish가 칸·간격 보고)
@@ -8404,7 +8429,7 @@ def ig_toss(seen, tok, uid, now):
         except Exception:
             return
         st["done"], auth = 1, {"Authorization": "Bearer " + tok}
-        seen["igk_toss_" + today] = {"t": now, "kind": "toss", "cap": st["cap"], "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in [cover] + st["img"]]}
+        seen["igk_toss_" + today] = {"t": now, "kind": "toss", "cap": st["cap"], **{x: st[x] for x in ("pr", "pc") if x in st}, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in [cover] + st["img"]]}
         tu = seen.setdefault("igtossu", {"m": {}})
         tu["t"], tu["m"] = now, {**{d: us for d, us in tu["m"].items() if now - float(d) < IG_TOSS_DAYS * 86400}, str(now): st["u"]}
         tph_log(seen, st["ids"], ig=f"{today} 토스 넘기기")
