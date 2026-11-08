@@ -1,7 +1,27 @@
 {
  "google": {
-  "at": "2026-11-09 04:04",
+  "at": "2026-11-09 05:01",
   "items": [
+   {
+    "t": "압구정동",
+    "n": "200+",
+    "news": "좀만 참을 걸…김동현 100억에 산 압구정현대, 80억대로"
+   },
+   {
+    "t": "f1",
+    "n": "100+",
+    "news": "Norris wins Sao Paulo GP thriller as Mercedes claim title"
+   },
+   {
+    "t": "닥터x 10화",
+    "n": "100+",
+    "news": "[다시보기] 닥터X : 하얀 마피아의 시대 10회"
+   },
+   {
+    "t": "프리미어리그 순위",
+    "n": "500+",
+    "news": "\"122년 동안 없었던 일이 벌어졌다\" 맨시티의 충격적인 몰락...개막 7연승→3연패, 마레스카의 꿈이…"
+   },
    {
     "t": "sc 프라이부르크 대 우니온 베를린",
     "n": "100+",
@@ -9,8 +29,8 @@
    },
    {
     "t": "베식타시 대 겐칠레르빌리이",
-    "n": "500+",
-    "news": "Man Utd 4-4 Aston Villa (Nov 8, 2026) Team Stats"
+    "n": "1000+",
+    "news": "Beşiktaş vs Gençlerbirliği: Turkish Süper Lig stats &…"
    },
    {
     "t": "แมนยู พบ แอสตันวิลลา",
@@ -20,37 +40,17 @@
    {
     "t": "man utd đấu với aston villa",
     "n": "200+",
-    "news": "Man United 0-0 Aston Villa: Bruno Fernandes và Matheus…"
-   },
-   {
-    "t": "epl",
-    "n": "1000+",
-    "news": "Premier League LIVE: Build-up, team news, live text, radio…"
+    "news": "Kết quả bóng đá MU - Aston Villa: 8 bàn rượt đuổi điên rồ…"
    },
    {
     "t": "전력",
-    "n": "200+",
-    "news": "\"사막에 지어야 할지도\"…데이터센터 전략 다시 짜는 美 AI 기업들"
+    "n": "500+",
+    "news": "EVNNPT는 2027년까지 전력 송전을 보장하기 위한 해결책에 대해 산업통상부 장관에게 보고합니다."
    },
    {
     "t": "man utd vs aston villa",
-    "n": "1000+",
-    "news": "Premier League: Man Utd score twice in stoppage time to…"
-   },
-   {
-    "t": "맨유 대 애스턴 빌라",
-    "n": "10000+",
-    "news": "“최악 성적 기록한 맨유… 캐릭 감독의 전술 실패가 주원인”"
-   },
-   {
-    "t": "올리브영",
-    "n": "500+",
-    "news": "‘올리브영 쿠폰’으로 고객 잡기 나선 네카오 [정지은의 테크킥]"
-   },
-   {
-    "t": "คริสตัลพาเลซ พบ ลิเวอร์พูล",
-    "n": "200+",
-    "news": "การทำนายผลการแข่งขันรอบที่ 10 โดยคอมพิวเตอร์:…"
+    "n": "2000+",
+    "news": "Dorgu rescues point for Manchester United in eight-goal…"
    }
   ]
  },
