@@ -1,11 +1,26 @@
 {
  "google": {
-  "at": "2026-11-09 02:12",
+  "at": "2026-11-09 03:08",
   "items": [
    {
+    "t": "แมนยู พบ แอสตันวิลลา",
+    "n": "200+",
+    "news": "แมนเชสเตอร์ ยูไนเต็ด อยู่ในโซนตกชั้นก่อนเริ่มการแข่งขัน"
+   },
+   {
+    "t": "man utd đấu với aston villa",
+    "n": "200+",
+    "news": "Man United 0-0 Aston Villa: Bruno Fernandes và Matheus…"
+   },
+   {
+    "t": "전력",
+    "n": "200+",
+    "news": "\"사막에 지어야 할지도\"…데이터센터 전략 다시 짜는 美 AI 기업들"
+   },
+   {
     "t": "man utd vs aston villa",
-    "n": "500+",
-    "news": "Premier League: Villa lead at second-bottom Man Utd inside…"
+    "n": "1000+",
+    "news": "Premier League: Villa grab fourth at Man Utd to restore…"
    },
    {
     "t": "맨유 대 애스턴 빌라",
@@ -25,7 +40,7 @@
    {
     "t": "snow",
     "n": "100+",
-    "news": "Seoul Sees First Snow 12 Days Earlier Than Average Amid…"
+    "news": "Possible nor’easter headed to Massachusetts, Rhode Island…"
    },
    {
     "t": "palace vs liverpool",
@@ -35,22 +50,7 @@
    {
     "t": "원더독스",
     "n": "1000+",
-    "news": "'신인감독 김연경2', 역전할 수 있을까…황연주 체력 빨간불"
-   },
-   {
-    "t": "elche vs betis",
-    "n": "100+",
-    "news": "Elche vs Real Betis: Lineups, Prediction, Odds & Bet…"
-   },
-   {
-    "t": "인도네시아",
-    "n": "200+",
-    "news": "인도네시아에서 소방 헬리콥터가 추락해 1명이 실종됐다."
-   },
-   {
-    "t": "와이스",
-    "n": "100+",
-    "news": "[단독] '대전 예수' 와이스, 한화 복귀 무산될 듯…미국 잔류 결정, MLB 구단과 계약 임박"
+    "news": "김연경, 결국 작전판 내던졌다…인쿠시 플레이에 '극대노' - 머니투데이"
    }
   ]
  },
