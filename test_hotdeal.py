@@ -13850,7 +13850,7 @@ if ok171: H.E["OPENAI_API_KEY"] = ok171
 os.chdir(cwd171); shutil.rmtree(d171, ignore_errors=True)
 
 # 9-172 (11/7 15시대 진우 '쿠팡 진열 후보 찾기를 파트너스 API로 — 1단계 시험'): docs/shelf_queue.json(Cowork) -> 남는 검색 몫으로 docs/shelf_cand.json 후보만(진열·게시·events X)
-#   · 기존 상한 그대로(CP_SEARCH_HOUR·CP_SEARCH_RUN — 걸리면 안 부름) · 실행당 1번 · 키워드당 하루 1번 · 단위 읽기(총량·단위가) · ban = 표시만(안 뺌) · 로그에 키·서명·주소 쿼리 X
+#   · 11/8 Cowork: 전용 몫 시간당 1(CP_SHELF_HOUR — 기존 몫 6이 꽉 차도 됨 · 합계 7) · 실행당 1번 · 키워드당 하루 1번 · 단위 읽기(총량·단위가) · ban = 표시만(안 뺌) · 로그에 키·서명·주소 쿼리 X
 import io as io172
 assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/shelf_queue.json"), encoding="utf-8")) == [
     {"kw": "빼빼로", "tag": "빼빼로데이 선물 2026", "unit": "10g"}, {"kw": "립밤", "tag": "립밤·립마스크 2026", "unit": "10g"}, {"kw": "세럼", "tag": "세럼 2026", "unit": "10ml"},
@@ -13883,14 +13883,33 @@ assert [x["productId"] for x in i172] == [1, 2, 3] and [x["rank"] for x in i172]
 assert i172[0]["total"] == {"n": 540, "u": "g"} and i172[0]["unit_price"] == 100 and i172[0]["parse_ok"] and i172[0]["productUrl"].startswith("https://link.coupang.com/") and i172[0]["isRocket"] is True and i172[0]["productImage"]  # 10g당 100원
 assert i172[1]["total"] is None and i172[1]["unit_price"] is None and not i172[1]["parse_ok"] and i172[2]["ban"] == ["분유·조제유"] and not i172[0]["ban"]  # 못 읽음 = parse_ok false · ban = 표시만
 assert "keyword=" not in o172.getvalue() and "ak172" not in o172.getvalue() and "sk172" not in o172.getvalue() and "signature" not in o172.getvalue()  # 로그 = 키·서명·주소 쿼리 X
-with contextlib.redirect_stdout(io172.StringIO()):
-    H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 2 and set(json.load(open("docs/shelf_cand.json"))) == {"빼빼로", "분유"}  # 다음 실행 = 다음 키워드
+with contextlib.redirect_stdout(io172.StringIO()) as o172b:
+    H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 1 and "전용 몫(시간당 1) 씀" in o172b.getvalue()  # 11/8: 같은 시간 2번째 = 전용 몫 씀 -> 다음 실행
+    time.time = lambda: TK("2026-11-07 16:31"); H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 2 and set(json.load(open("docs/shelf_cand.json"))) == {"빼빼로", "분유"}  # 1시간 뒤 = 다음 키워드
     H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 2  # 오늘 결과 있음 = 안 부름(키워드당 하루 1번)
-    time.time = lambda: TK("2026-11-08 09:00"); H.RUN["cpu"], H.RUN["cpn"] = {"s": [time.time() - 60] * H.CP_SEARCH_HOUR, "a": []}, [0, 0]
-    H.shelf_cand({}); assert len(c172) == 2  # 시간당 검색 상한 = 안 부름
-    H.RUN["cpu"], H.RUN["cpn"] = {}, [0, H.CP_SEARCH_RUN]; H.shelf_cand({}); assert len(c172) == 2  # 실행당 검색 상한(기존 검색이 다 씀) = 안 부름
-    H.RUN["cpu"], H.RUN["cpn"] = {}, [0, 0]; H.shelf_cand({}); assert len(c172) == 3 and json.load(open("docs/shelf_cand.json"))["빼빼로"]["at"].startswith("2026-11-08")  # 다음 날 = 다시
-    H.HAS_CP = False; H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 3  # 키 없음 = X
+    time.time = lambda: TK("2026-11-08 09:00"); n172 = time.time()
+    H.RUN["cpu"], H.RUN["cpn"] = {"s": [n172 - 60] * H.CP_SEARCH_HOUR, "a": [n172 - 60] * H.CP_HOUR}, [H.CP_RUN, H.CP_SEARCH_RUN]  # 11/8 Cowork: 기존 몫(검색 6·전체 25·실행당) 꽉 참
+    H.shelf_cand({}); assert len(c172) == 3 and json.load(open("docs/shelf_cand.json"))["빼빼로"]["at"].startswith("2026-11-08")  # = 전용 1번은 됨(다음 날 = 다시)
+    u172 = H.RUN["cpu"]; assert len(u172["s"]) == H.CP_SEARCH_HOUR + H.CP_SHELF_HOUR == 7 and len(u172["q"]) == 1 and len(u172["a"]) == H.CP_HOUR + 1  # 합계 검색 7(공식 10 안)
+    for cand in (False, True):  # 꽉 찬 시간: 기존 검색도 전용 2번째도 X = 7 넘지 않음
+        try:
+            H.RUN["cpn"] = [0, 0]; H.coupang("GET", "/products/search?keyword=x&limit=1", cand=cand); raise AssertionError(cand)
+        except H.CpLimit:
+            pass
+    assert len(c172) == 3 and len(u172["s"]) == 7
+    H.RUN["cpu"], H.RUN["cpn"] = {"s": [n172 - 60] * 5 + [n172 - 30], "q": [n172 - 30], "a": [n172 - 60] * 6}, [0, 0]  # 기존 5 + 전용 1
+    H.coupang("GET", "/products/search?keyword=y&limit=1"); assert len(H.RUN["cpu"]["s"]) == 7  # 기존 몫은 전용 1번을 빼고 셈 = 기존 6번째 됨
+    try:
+        H.RUN["cpn"] = [0, 0]; H.coupang("GET", "/products/search?keyword=z&limit=1"); raise AssertionError("7 넘음")
+    except H.CpLimit:
+        pass
+    try:
+        H.coupang("GET", "/products/bestcategories/1001", cand=True); raise AssertionError("전용 = 검색만")
+    except H.CpLimit:
+        pass
+    assert len(c172) == 4
+    time.time = lambda: TK("2026-11-08 10:01"); H.RUN["cpn"] = [0, 0]; H.shelf_cand({}); assert len(c172) == 5 and set(json.load(open("docs/shelf_cand.json"))) == {"빼빼로", "분유"}  # 1시간 지나면 전용 다시
+    H.HAS_CP = False; time.time = lambda: TK("2026-11-09 12:00"); H.RUN["cpu"], H.RUN["cpn"] = {}, [0, 0]; H.shelf_cand({}); assert len(c172) == 5  # 키 없음 = X
 assert open("events172.json").read() == "[]" and not os.path.exists("posts.json")  # events·글 안 건드림
 ms172 = inspect.getsource(H.main); assert re.search(r"toss_guard_day, shelf_cand\):", ms172)  # 실행 맨 끝 = 기존 검색이 먼저
 (H.http, H.HAS_CP, e172, cu172, cn172, time.time, H.EVENTS) = sv172

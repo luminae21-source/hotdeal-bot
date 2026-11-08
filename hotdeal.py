@@ -35,6 +35,7 @@ MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
+CP_SHELF_HOUR = 1  # 11/8 Cowork: 진열 후보 시험(shelf_cand) 전용 검색 시간당 1번 — 기존 몫(CP_SEARCH_HOUR 6·CP_HOUR 25)과 따로 · 합계 검색 7(공식 10 안)
 CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
 CP_SUBS, CP_SUB_RUN = ("threads", "telegram", "site", "clip", "insta", "blog"), 2  # GGG 쿠팡 채널 ID(subId — 영문 소문자만): 앞 3개 먼저 · 채널 링크 만들기 = 실행마다 딥링크 2번까지(뒤 3개 = 최근 1시간 호출이 상한 절반 밑일 때만)
 CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날 2번 변환 실패하면 그 뒤엔 7일마다 1번(10/25 진우 '다 올려' — 사이트엔 쿠팡 주소 그대로 진열, 나중에 되면 파트너스 링크로) · 아직 안 바뀐 쿠팡 상품 주소 표(pid·이름·실패 날짜·마지막 시도·이유 — Cowork 점검용, 가격·수수료 X)
@@ -887,14 +888,18 @@ class CpLimit(RuntimeError):
     """쿠팡 API 호출 상한(이번 실행·최근 1시간) — 안 부르고 다음 실행에."""
 
 
-def coupang(method, path, body=None, keep=False):
+def coupang(method, path, body=None, keep=False, cand=False):
     """쿠팡 파트너스 Open API(HMAC). 상한(최근 1시간 seen cpuse · 이번 실행)이면 CpLimit(안 부름). 응답 rCode 400(그 주소·상품 실패, HTTP 200으로 옴) = ValueError,
-    그 밖 rCode·JSON 아닌 응답 = RuntimeError(다음 실행에 다시)."""
+    그 밖 rCode·JSON 아닌 응답 = RuntimeError(다음 실행에 다시).
+    cand = 진열 후보 시험 전용 몫(검색만 · 최근 1시간 CP_SHELF_HOUR번 · 기존 시간당·실행당 몫과 따로 — 기존 호출은 전용 몫 빼고 셈 = 검색 합계 ≤ CP_SEARCH_HOUR + CP_SHELF_HOUR)."""
     now, u, n = time.time(), RUN.setdefault("cpu", {}), RUN.setdefault("cpn", [0, 0])
-    u["a"], u["s"] = [x for x in u.get("a", []) if x > now - 3600], [x for x in u.get("s", []) if x > now - 3600]
+    u["a"], u["s"], u["q"] = ([x for x in u.get(k, []) if x > now - 3600] for k in ("a", "s", "q"))
     srch = path.startswith("/products/search")
     res = CP_NEW_RES if RUN.get("cpnew") else 0  # VV: 새 진열이 기다리면(이 실행 cp_links 뒤) 다른 호출은 시간당 몫 일부를 남김 -> 다음 실행 cp_links 차례
-    if len(u["a"]) >= CP_HOUR - res or n[0] >= CP_RUN or srch and (len(u["s"]) >= CP_SEARCH_HOUR or n[1] >= CP_SEARCH_RUN):
+    if cand:
+        if not srch or len(u["q"]) >= CP_SHELF_HOUR or len(u["s"]) >= CP_SEARCH_HOUR + CP_SHELF_HOUR or len(u["a"]) >= CP_HOUR + CP_SHELF_HOUR:
+            raise CpLimit("coupang 진열 후보 전용 몫 씀")
+    elif len(u["a"]) - len(u["q"]) >= CP_HOUR - res or n[0] >= CP_RUN or srch and (len(u["s"]) - len(u["q"]) >= CP_SEARCH_HOUR or n[1] >= CP_SEARCH_RUN):
         raise CpLimit("coupang 시간당 상한")
     u["t"] = now
     u["a"].append(now)
@@ -904,6 +909,8 @@ def coupang(method, path, body=None, keep=False):
     if srch:
         u["s"].append(now)
         n[1] += 1
+    if cand:
+        u["q"].append(now)
     dt = time.strftime("%y%m%dT%H%M%SZ", time.gmtime())
     p, _, q = (CP_BASE + path).partition("?")
     sig = hmac.new(E["COUPANG_SECRET_KEY"].encode(), (dt + method + p + q).encode(), hashlib.sha256).hexdigest()
@@ -955,7 +962,7 @@ def sq_total(name, unit):
 
 def shelf_cand(seen, now=None):
     """11/7 시험(진열·게시·events·사이트·채널 X): SHELF_QUEUE 키워드 중 오늘 결과 없는 첫 것 1개만 /products/search(limit 10) -> SHELF_CAND {kw: {at, tag, unit, items}} ·
-    실행 순서 맨 끝 = 기존 검색 먼저(coupang 상한 CP_SEARCH_HOUR·CP_SEARCH_RUN 그대로 — 남는 몫만, 걸리면 안 부름) · 실행당 1번 · 키워드당 하루 1번(400 = 그날 다시 X).
+    11/8 Cowork: 전용 몫 시간당 CP_SHELF_HOUR번(coupang cand — 기존 검색 몫 6과 따로, 기존 몫이 꽉 차도 됨 · 합계 7) · 실행당 1번 · 키워드당 하루 1번(400 = 그날 다시 X).
     items = 응답 필드 그대로 + total(sq_total) · unit_price(큐 unit 기준 int(+0.5)) · parse_ok · ban(분유·성인용품 등 진열 거르기 — 빼지 않고 표시) · effect(효능 낱말 — 참고, 이름은 안 거름). 로그 = 키·서명·주소 X."""
     if not HAS_CP:
         return
@@ -969,9 +976,9 @@ def shelf_cand(seen, now=None):
     x = todo[0]
     um = re.fullmatch(r"(\d+(?:\.\d+)?)", (re.match(r"\d+(?:\.\d+)?", str(x.get("unit") or "")) or [""])[0] or "")
     try:
-        r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(x['kw'].strip())}&limit=10", keep=True)
+        r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(x['kw'].strip())}&limit=10", keep=True, cand=True)
     except CpLimit:
-        return print("shelf cand: 검색 몫 없음 -> 다음 실행")
+        return print("shelf cand: 전용 몫(시간당 1) 씀 -> 다음 실행")
     except ValueError as e:  # 그 키워드 오류(rCode 400) = 오늘 다시 X
         out[x["kw"]] = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "tag": x.get("tag"), "unit": x.get("unit"), "error": "rCode 400", "items": []}
         json.dump(out, open(SHELF_CAND, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
