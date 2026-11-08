@@ -1,7 +1,17 @@
 {
  "google": {
-  "at": "2026-11-09 03:08",
+  "at": "2026-11-09 04:04",
   "items": [
+   {
+    "t": "sc 프라이부르크 대 우니온 베를린",
+    "n": "100+",
+    "news": "Freiburg vs Union Berlin: German Bundesliga stats &…"
+   },
+   {
+    "t": "베식타시 대 겐칠레르빌리이",
+    "n": "500+",
+    "news": "Man Utd 4-4 Aston Villa (Nov 8, 2026) Team Stats"
+   },
    {
     "t": "แมนยู พบ แอสตันวิลลา",
     "n": "200+",
@@ -13,6 +23,11 @@
     "news": "Man United 0-0 Aston Villa: Bruno Fernandes và Matheus…"
    },
    {
+    "t": "epl",
+    "n": "1000+",
+    "news": "Premier League LIVE: Build-up, team news, live text, radio…"
+   },
+   {
     "t": "전력",
     "n": "200+",
     "news": "\"사막에 지어야 할지도\"…데이터센터 전략 다시 짜는 美 AI 기업들"
@@ -20,7 +35,7 @@
    {
     "t": "man utd vs aston villa",
     "n": "1000+",
-    "news": "Premier League: Villa grab fourth at Man Utd to restore…"
+    "news": "Premier League: Man Utd score twice in stoppage time to…"
    },
    {
     "t": "맨유 대 애스턴 빌라",
@@ -36,21 +51,6 @@
     "t": "คริสตัลพาเลซ พบ ลิเวอร์พูล",
     "n": "200+",
     "news": "การทำนายผลการแข่งขันรอบที่ 10 โดยคอมพิวเตอร์:…"
-   },
-   {
-    "t": "snow",
-    "n": "100+",
-    "news": "Possible nor’easter headed to Massachusetts, Rhode Island…"
-   },
-   {
-    "t": "palace vs liverpool",
-    "n": "500+",
-    "news": "Crystal Palace 1-3 Liverpool: Pierre Sage under pressure as…"
-   },
-   {
-    "t": "원더독스",
-    "n": "1000+",
-    "news": "김연경, 결국 작전판 내던졌다…인쿠시 플레이에 '극대노' - 머니투데이"
    }
   ]
  },
