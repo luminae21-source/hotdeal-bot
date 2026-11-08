@@ -86,7 +86,7 @@ npm run dev
 
 ### 몰과 문구 검사
 
-쿠팡은 `coupang.com` 계열, 토스는 `toss.im` 계열, 네이버는 `smartstore.naver.com`, `brand.naver.com`, `shopping.naver.com` 계열과 `naver.me` 링크를 사용합니다. 호스트 이름을 엄격히 확인하며 다른 몰의 상품 링크와 문구를 막습니다. 단축 주소의 도메인만으로 최종 판매처를 증명할 수는 없으므로 **입력 전에 실제 도착 페이지와 몰을 확인**해야 합니다.
+쿠팡은 `coupang.com` 계열, 토스는 `toss.im`·`toss.shopping`(토스쇼핑 쉐어링크) 계열, 네이버는 `smartstore.naver.com`, `brand.naver.com`, `shopping.naver.com` 계열과 `naver.me` 링크를 사용합니다. 호스트 이름을 엄격히 확인하며 다른 몰의 상품 링크와 문구를 막습니다. 단축 주소의 도메인만으로 최종 판매처를 증명할 수는 없으므로 **입력 전에 실제 도착 페이지와 몰을 확인**해야 합니다.
 
 정가·할인율, 최저가, 미백·다이어트·면역 등 효능 주장, 직접 사용한 것처럼 꾸민 표현은 허용하지 않습니다. 자동 검사는 정해진 패턴을 검사하므로 모든 변형 표현이나 사실 여부를 판정하지는 못합니다. 상품명 자체에 금지 표현이 포함돼 검사에서 막히면 검사를 우회하지 말고 원자료를 확인하세요. 실제 확인 없이 현재 가격이나 확인시각을 만들어 넣으면 안 됩니다.
 
@@ -180,3 +180,7 @@ JSON 파일명은 영문·숫자·밑줄·하이픈과 `.json` 확장자만 사�
 - [Playwright 스크린샷](https://playwright.dev/docs/screenshots)
 - [Playwright GitHub Actions 설정](https://playwright.dev/docs/ci-intro)
 - [GitHub Actions 아티팩트 저장](https://github.com/actions/upload-artifact)
+
+## 핫딜봇 토스 카드(11/8)
+
+토스 묶음 글·인스타 토스 넘기기 표지는 `hotdealpick-cards` 27f6ff3의 토스 틀(`assets/tpl/toss-3·4·5.png`·`.json` — 파란 쇼핑백 고양이 '오늘의 장바구니')과 `assets/fill.html`로 그립니다. `scripts/render.mjs`는 그 몰·상품 수 틀이 있을 때만 fill을 쓰고, 쿠팡·네이버는 틀을 두지 않아 v3 카드 그대로입니다. 토스 카드 맨 아래 = '⚠️ M/D HH:MM 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑'.

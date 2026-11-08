@@ -13521,7 +13521,7 @@ except urllib.error.HTTPError as e163:
     assert e163.code == 500 and [k for k in s163 if k.startswith("thretry_")] and s163[[k for k in s163 if k.startswith("thretry_")][0]]["img"] == [U163[0], U163[2]]  # 5xx = 다음 실행 th_retry(사진 그대로)
 (H.http, time.sleep, _, H.th_hold, H.rv_text) = sv163; H.E.clear(); H.E.update(sv163[2])
 src163 = inspect.getsource(H.toss_deals)
-assert src163.count("toss_th_photo(") == 2 and '"img": [toss_photo(got[t[4]]) for t in plain]' in src163 and 'toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [])' in inspect.getsource(H.toss_th_later)  # series·리스트·줄 선 리스트(21:20·22:20) 다
+assert src163.count("toss_th_photo(") == 2 and '"img": [toss_photo(got[t[4]]) for t in plain]' in src163 and 'toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [], topic=x.get("topic"))' in inspect.getsource(H.toss_th_later)  # series·리스트·줄 선 리스트(21:20·22:20) 다 · 11/8 토스 카드 못 만듦·안 뜸 = 사진 넘기기 그대로
 
 # 9-164 (11/7 0시대 진우 '상품명에 있는건 그대로 진행해도 돼 고유명사 취급이야' — 엘렌실라 '에스카르고 오리지날 리페어 크림'(리뷰 2.5만)이 이름 '리페어'로 빠짐):
 #   ① 이름에 걸던 효능 낱말 거르기 끔(토스 API 사이트·자동 진열·토스 하루특가·묶음·링크 거리·미리보기) — 분유·조제유·성인(SHELF_BLOCK)·toss_noimg만 그대로
@@ -14015,3 +14015,117 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert [u for m, u in c175 if u.endswith("/media_publish")]
 assert "**({\"fresh\": st[\"fresh\"]} if st.get(\"fresh\") else {})" in inspect.getsource(H.ig_feed)  # 칸 카드 -> 컨테이너에 확인 시각 넘김
 (time.time, H.ig_photo, H.ai_json, H.POSTS, H.http, H.IG_AUTO, H.IG_SITE_LAG) = sv175[:7]; H.E.update(IG_TOKEN=sv175[7], IG_USER_ID=sv175[8]); H.RUN.pop("igq", None); os.chdir(cwd175)
+# 9-176 (11/8 23시대 진우 '토스도 바꾸자. 토스용으로 만든게 있어'): 토스 글 = tools/card 토스 카드(파란 쇼핑백 고양이 '오늘의 장바구니' — hotdealpick-cards 27f6ff3 assets/tpl/toss-3·4·5 + fill.html)
+#   ① Threads 토스 묶음(💙 하루특가 시리즈·리스트·21:20/22:20 줄) = 카드 만들면 줄(thlater) → 사이트에 뜨면 카드 1장 글 · 45분 안 뜸·렌더 실패·Meta 거절 = 지금처럼 사진 넘기기 · 쿠팡과 15분 그대로
+#   ② 인스타 토스 넘기기 표지 = 같은 카드(JPEG) · 뒤 장 = 토스 원본 사진 그대로 · 못 만듦 = 글자 표지
+#   · 대가성 문구(틀) · '⚠️ M/D HH:MM 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑' · 다른 몰·가격 비교·70%↑·toss_noimg 상품 = 카드에서 뺌 · '디자인 확인용·판매용 아님' 줄 X · 쿠팡 카드 = v3 그대로
+RD176 = os.path.dirname(os.path.abspath(H.__file__))
+from PIL import Image as I176
+for k176 in (3, 4, 5):
+    t176 = json.load(open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k176}.json")))
+    assert t176["mall"] == "toss" and t176["count"] == k176 == len(t176["rows"]) and t176["size"] == [1080, 1350] and I176.open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k176}.png")).size == (1080, 1350)
+assert not any(os.path.exists(os.path.join(RD176, f"tools/card/assets/tpl/{m}-{k}.json")) for m in ("coupang", "naver") for k in (3, 4, 5))  # 쿠팡·네이버 = 틀 X = v3 카드 그대로
+fj176, rm176 = open(os.path.join(RD176, "tools/card/assets/fill.js"), encoding="utf-8").read(), open(os.path.join(RD176, "tools/card/scripts/render.mjs"), encoding="utf-8").read()
+assert "`⚠️ ${short(data.checked)} 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑`" in fj176 and "'tpl', `${data.mall}-${data.items.length}.json`" in rm176 and "/assets/fill.html?data=" in rm176
+assert not re.search(r"판매용|디자인 확인|참고 시안|예시 상품|과거 참고", fj176 + open(os.path.join(RD176, "tools/card/assets/fill.css"), encoding="utf-8").read() + "".join(open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k}.json")).read() for k in (3, 4, 5)))
+assert "hosts: Object.freeze(['toss.im', 'toss.shopping'])" in open(os.path.join(RD176, "tools/card/assets/validation.mjs"), encoding="utf-8").read()  # 우리 쉐어링크 = toss.shopping/_m/..
+# 카드 JSON
+T176 = TK("2026-11-08 23:10")
+E176 = [("곰곰 국산 콩나물 300g", 1990, "https://toss.shopping/_m/A1", "https://static.toss.im/a.jpg", T176), ("햇반 210g 24개", 22900, "https://toss.shopping/_m/A2", "https://static.toss.im/b.jpg", T176 - 600),
+        ("코멧 키친타올 150매 12롤", 12900, "https://toss.shopping/_m/A3", "https://static.toss.im/c.jpg", T176)]
+d176 = H.toss_card_json(E176)
+assert d176["mall"] == "toss" and d176["checked"] == "2026-11-08 23:10" and [x["price"] for x in d176["items"]] == ["1,990원", "22,900원", "12,900원"] and d176["items"][1] == {
+    "name": "햇반 210g 24개", "price": "22,900원", "cond": "", "unit": "1개당 954원꼴", "img": "https://static.toss.im/b.jpg", "url": "https://toss.shopping/_m/A2", "checked": "2026-11-08 23:00"}  # 확인 시각 = 실제(상품마다)
+with contextlib.redirect_stdout(io.StringIO()):
+    for bad176 in (("noimg 상품", 9900, "https://toss.shopping/_m/B", None, T176), ("쿠팡보다 싼 휴지", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("다른몰 대비 반값 세제", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176),
+                   ("세제 75% 특가", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("최저가 세제", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("세제", 9900, "https://link.coupang.com/a/x", "https://x/a.jpg", T176)):
+        assert H.toss_card_json(E176[:2] + [bad176]) is None, bad176  # 그 상품만 빠짐 → 2개 = 카드 X(toss_noimg·다른 몰·가격 비교·할인율·최저가·토스 링크 아님)
+    assert H.toss_card_json(E176[:2]) is None and len(H.toss_card_json(E176 * 3)["items"]) == 5  # 3개 밑 X · 넘으면 앞 5개
+# Threads: 카드 줄 → 사이트에 뜨면 카드 1장 · 안 뜸(45분 안) = 기다림 · 45분 넘음 = 사진 넘기기 · 쿠팡과 15분 그대로 · 시리즈 회차 기록 = 올린 뒤
+sv176 = (H.card_png, H.th_bundle, H.toss_th_photo, H.toss_gap, H.th_hold, H.http, time.time, H.SERIES_EPS, dict(H.E))
+cwd176, d176t = os.getcwd(), tempfile.mkdtemp(); os.chdir(d176t)
+cp176, tb176, tp176, hd176 = [], [], [], {"live": False}
+H.card_png = lambda kind, d, short="": cp176.append((kind, d)) or (d and f"docs/cards/mall/20261108_2310_{kind}.png")
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb176.append((kind, text, image, topic)) or {"id": "TH176"}
+H.toss_th_photo = lambda seen, kind, text, imgs, topic=None: tp176.append((kind, text, imgs, topic)) or {"id": "PH176"}
+H.th_hold, H.SERIES_EPS = (lambda s: False), "eps176.json"
+gap176 = [0]; H.toss_gap = lambda seen, now, toss=True: gap176[0]
+def http176(url, body=None, headers=None, method=None):
+    if method == "HEAD":
+        if not hd176["live"]: raise OSError("404")
+        return ""
+    if "permalink" in url: return json.dumps({"permalink": "https://www.threads.com/@hotdealpick.kr/post/X176"})
+    raise AssertionError(url)
+H.http = http176; H.E["THREADS_TOKEN"] = "t176"
+s176, IM176 = {}, ["https://static.toss.im/a.jpg", "https://static.toss.im/b.jpg", "https://static.toss.im/c.jpg"]
+time.time = lambda: T176
+with contextlib.redirect_stdout(io.StringIO()):
+    assert H.toss_card_q(s176, "tossseries", "글176", IM176, E176, topic="토스 하루특가", ep={"no": 7, "t": "2026-11-08 23:10"})
+e176 = s176["thlater"]["q"][0]
+assert cp176[-1][0] == "tossseries" and e176["card"] == "docs/cards/mall/20261108_2310_tossseries.png" and e176["at"] == "2026-11-08 23:10" and e176["until"] == "2026-11-09 02:10" and e176["img"] == IM176
+for t, live, gap, want in (("23:25", False, 0, "wait"), ("23:30", True, 300, "gap"), ("23:41", True, 0, "card")):
+    time.time, hd176["live"], gap176[0] = (lambda t=t: TK(f"2026-11-08 {t}")), live, gap
+    with contextlib.redirect_stdout(io.StringIO()) as o176:
+        H.toss_th_later(s176)
+    if want == "wait":
+        assert not tb176 and not tp176 and len(s176["thlater"]["q"]) == 1 and "toss card 사이트 대기" in o176.getvalue(), o176.getvalue()  # 사이트 배포 전 = 기다림
+    elif want == "gap":
+        assert not tb176 and len(s176["thlater"]["q"]) == 1 and "toss gap 미룸" in o176.getvalue()  # 쿠팡과 15분 = 미룸
+    else:
+        assert tb176 == [("tossseries", "글176\n\n사진: 토스쇼핑", f"{H.SITE}cards/mall/20261108_2310_tossseries.png", "토스 하루특가")] and not tp176 and s176["thlater"]["q"] == []  # 카드 1장 + 출처 줄
+assert json.load(open("eps176.json")) == [{"key": "toss", "no": 7, "t": "2026-11-08 23:10", "link": "https://www.threads.com/@hotdealpick.kr/post/X176"}]  # 회차 기록 = 올린 글 주소
+s176b, hd176["live"] = {}, False
+time.time = lambda: T176
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_card_q(s176b, "toss22", "글B", IM176, E176)
+time.time = lambda: T176 + H.MALL_CARD_WAIT + 60
+with contextlib.redirect_stdout(io.StringIO()) as o176:
+    H.toss_th_later(s176b)
+assert tp176 == [("toss22", "글B", IM176, None)] and len(tb176) == 1 and "사이트에 안 뜸 -> 사진 넘기기" in o176.getvalue()  # 45분 넘게 안 뜸 = 지금처럼 사진 넘기기
+H.card_png = lambda kind, d, short="": None
+with contextlib.redirect_stdout(io.StringIO()):
+    assert not H.toss_card_q({}, "toss22", "글C", IM176, E176)  # 렌더 실패 = 부른 쪽이 사진 넘기기 바로
+H.TOSS_CARD = False; H.card_png = lambda kind, d, short="": "x.png"
+assert not H.toss_card_q({}, "toss22", "글D", IM176, E176) and H.toss_card("toss22", E176) is None; H.TOSS_CARD = True  # 스위치
+def tb176x(seen, kind, text, link=None, image=None, topic=None):
+    raise urllib.error.HTTPError("u", 400, "bad image", {}, None)
+H.th_bundle, tp176[:] = tb176x, []
+with contextlib.redirect_stdout(io.StringIO()):
+    H.toss_card_th({"thretry_20261108_toss22": 1}, {"kind": "toss22", "text": "글E", "img": IM176, "card": "docs/cards/mall/x.png"})
+assert tp176 == [("toss22", "글E", IM176, None)]  # Meta가 카드 거절 = 사진 넘기기 1번
+src176 = inspect.getsource(H.toss_deals)
+assert 'toss_card_q(seen, "tossseries", text, ims, tcard(its)' in src176 and 'toss_card_q(seen, f"toss{hrs[-1]:g}", text, ims, tcard(plain))' in src176 and "toss_card(f\"toss{lat.replace(':', '')}\", tcard(plain))" in src176
+assert "if (w := max(toss_gap(seen, time.time()) if series or lst else 0" in src176  # 묶음 만들 때도 쿠팡과 15분(그대로)
+# 인스타 표지 = 토스 카드(JPEG 1080×1350) · 상품 수가 뒤 사진 장과 다르면·렌더 실패 = 글자 표지
+(H.card_png, H.th_bundle, H.toss_th_photo, H.toss_gap, H.th_hold, H.http, time.time, H.SERIES_EPS) = sv176[:8]; H.E.clear(); H.E.update(sv176[8])
+def P176(n, k):
+    x = {"tacaItemId": k, "tacaId": k * 10, "displayName": n, "displayPrice": 9900 + k, "discountRate": 10, "reviewCount": 0, "isSoldOut": False}
+    body = H.mall_body("toss", "하루특가 · 밤 12시까지", "🔥", n, H.toss_price(x), [H.toss_when("2026-11-08 15:02")])
+    return {"t": "2026-11-08 15:02", "text": H.html_ents(H.ad_head(H.TOSS_NOTE, H.plain_of(body)) + body)[0], "url": f"https://toss.shopping/_m/I{k}", "own": 1}
+its176 = [(P176(n, k), f"https://static.toss.im/i{k}.jpg", [k, k * 10]) for k, n in enumerate(("곰곰 콩나물 300g", "햇반 210g 24개", "코멧 키친타올 12롤"), 1)]
+sv176i = (H.ig_toss_items, H.card_png, time.time); time.time = lambda: TK("2026-11-08 15:15")  # pick_price = 오늘 글의 게시 시점 줄
+en176 = H.ig_toss_entries({}, its176)
+assert [(n, p, u, i) for n, p, u, i, _ in en176] == [("곰곰 콩나물 300g", 9901, "https://toss.shopping/_m/I1", "https://static.toss.im/i1.jpg"), ("햇반 210g 24개", 9902, "https://toss.shopping/_m/I2", "https://static.toss.im/i2.jpg"),
+                                                     ("코멧 키친타올 12롤", 9903, "https://toss.shopping/_m/I3", "https://static.toss.im/i3.jpg")] and {t for *_, t in en176} == {TK("2026-11-08 15:02")}, en176  # 글의 게시 시점 가격·시각
+import cards as C176; mk176 = C176.make; mc176 = []
+H.ig_toss_items = lambda seen, posts, now: its176
+os.makedirs("docs/cards/mall", exist_ok=True); I176.new("RGB", (1080, 1350), (230, 240, 255)).save("docs/cards/mall/c176.png")
+H.card_png = lambda kind, d, short="": cp176.append((kind, d)) or "docs/cards/mall/c176.png"
+C176.make = lambda *a, **k: mc176.append(a) or a[2]
+time.time = lambda: TK("2026-11-08 15:15")
+with contextlib.redirect_stdout(io.StringIO()) as o176:
+    s176i = {}; H.ig_toss(s176i, "tok", "uid", TK("2026-11-08 15:15"))
+st176 = s176i["igtoss_2026-11-08"]
+assert "표지 = 토스 카드" in o176.getvalue() and not mc176 and I176.open(st176["jpg"]).size == (1080, 1350) and I176.open(st176["jpg"]).format == "JPEG" and cp176[-1][0] == "igtoss", o176.getvalue()
+assert [x["url"] for x in cp176[-1][1]["items"]] == ["https://toss.shopping/_m/I1", "https://toss.shopping/_m/I2", "https://toss.shopping/_m/I3"] and st176["img"] == [x[1] for x in its176]  # 카드 순서 = 뒤 사진 장 순서
+H.card_png = lambda kind, d, short="": None
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_toss({}, "tok", "uid", TK("2026-11-08 15:15"))
+assert len(mc176) == 1 and mc176[0][1] == "11월 8일"  # 렌더 실패 = 글자 표지(지금 방식)
+H.card_png = lambda kind, d, short="": "docs/cards/mall/c176.png"; mc176[:] = []
+H.ig_toss_items = lambda seen, posts, now: its176 + [(dict(P176("쿠팡 대비 싼 세제", 4)), "https://static.toss.im/i4.jpg", [4, 40])]
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_toss({}, "tok", "uid", TK("2026-11-08 15:15"))
+assert len(mc176) == 1  # 카드에서 상품이 빠지면(4 → 3) 뒤 사진 장과 번호가 어긋남 = 글자 표지
+(H.ig_toss_items, H.card_png, time.time) = sv176i; C176.make = mk176
+os.chdir(cwd176); shutil.rmtree(d176t, ignore_errors=True)

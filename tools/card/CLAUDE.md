@@ -34,7 +34,7 @@
 - 검사를 통과하기 위해 공백·문자 치환·우회 링크로 금지 표현이나 몰을 숨기는 행위.
 - 코드 변경으로 검사나 고정 제휴고지를 무력화하는 행위.
 
-허용 링크는 쿠팡 `coupang.com` 계열, 토스 `toss.im` 계열, 네이버 `smartstore.naver.com`·`brand.naver.com`·`shopping.naver.com` 계열 및 `naver.me`다. 단축 링크도 실제 도착 페이지가 올바른 몰인지 확인한다. 자동 호스트 검사는 상품과 판매처의 진위를 보증하지 않는다.
+허용 링크는 쿠팡 `coupang.com` 계열, 토스 `toss.im`·`toss.shopping`(토스쇼핑 쉐어링크 — 11/8 핫딜봇) 계열, 네이버 `smartstore.naver.com`·`brand.naver.com`·`shopping.naver.com` 계열 및 `naver.me`다. 단축 링크도 실제 도착 페이지가 올바른 몰인지 확인한다. 자동 호스트 검사는 상품과 판매처의 진위를 보증하지 않는다.
 
 ## 완료 절차
 

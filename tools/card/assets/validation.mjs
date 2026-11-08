@@ -8,7 +8,7 @@ export const MALLS = Object.freeze({
   toss: Object.freeze({
     label: '💙 토스',
     disclosure: '이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다.',
-    hosts: Object.freeze(['toss.im']),
+    hosts: Object.freeze(['toss.im', 'toss.shopping']),  // 11/8 핫딜봇: 토스쇼핑 쉐어링크 단축 주소(toss.shopping/_m/..) = 토스 발급 링크
   }),
   naver: Object.freeze({
     label: '네이버',

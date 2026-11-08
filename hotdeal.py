@@ -1295,6 +1295,9 @@ def toss_th_later(seen):
             print("toss Threads 리스트 시간 지나 X", e["kind"])
         elif x or hm < e["at"]:
             keep.append(e)
+        elif e.get("card") and not toss_card_live(e) and now - e.get("t", now) < MALL_CARD_WAIT:  # 11/8 토스 카드 = 사이트에 뜰 때까지(45분 넘으면 사진 넘기기)
+            print("toss card 사이트 대기", e["kind"])
+            keep.append(e)
         elif (w := toss_gap(seen, now)) or th_hold(seen):
             print(f"toss gap 미룸 · {e['kind']}" + (f" {w // 60 + 1}분 뒤" if w else " (힘 준 글 쉼)"))
             keep.append(e)
@@ -1302,8 +1305,68 @@ def toss_th_later(seen):
             x = e
     seen["thlater"] = {"t": now, "q": keep}
     if x:
-        toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [])  # 11/6 토스 원본 사진(줄 설 때 받아 둔 주소)
+        if x.get("card") and x.get("live"):
+            r = toss_card_th(seen, x)  # 11/8 토스 카드 1장
+        else:
+            if x.get("card"):
+                print("toss card 사이트에 안 뜸 -> 사진 넘기기", x["kind"])
+            r = toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [], topic=x.get("topic"))  # 11/6 토스 원본 사진(줄 설 때 받아 둔 주소)
+        if x.get("ep"):
+            toss_ep(E.get("THREADS_TOKEN"), r, x["ep"])
         print("threads", x["kind"], "토스 리스트")
+
+
+def toss_card_q(seen, kind, text, imgs, entries, topic=None, ep=None):
+    """11/8 진우 '토스도 바꾸자': 토스 Threads 묶음 = 토스 카드(toss_card) 만들면 줄(thlater — 지금부터 3시간 · toss_th_later가 사이트에 뜨면 카드 1장 글 · 쿠팡과 15분 그대로) -> True ·
+    못 만듦 = False(부른 쪽이 지금처럼 사진 넘기기)."""
+    card = toss_card(kind, entries)
+    if not card:
+        return False
+    now, hm = time.time(), lambda t: time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600))
+    seen["thlater"] = {"t": now, "q": seen.get("thlater", {}).get("q", []) + [{"at": hm(now), "until": hm(now + 3 * 3600), "kind": kind, "text": text, "img": imgs, "card": card, "t": now,
+                                                                                 **({"topic": topic} if topic else {}), **({"ep": ep} if ep else {})}]}
+    print("toss card 줄", kind)
+    return True
+
+
+def toss_card_url(card):
+    return f"{SITE}cards/mall/{os.path.basename(card)}"
+
+
+def toss_card_live(e):
+    """줄 선 토스 카드가 사이트에 떴나(HEAD — 뜨면 e live 기록)."""
+    if not e.get("live"):
+        try:
+            http(toss_card_url(e["card"]), method="HEAD")
+            e["live"] = True
+        except Exception:
+            pass
+    return bool(e.get("live"))
+
+
+def toss_card_th(seen, x):
+    """토스 카드 1장 Threads 묶음 글(본문 그대로 + 들어가면 '사진: 토스쇼핑' — 카드에도 있음) · Meta가 카드를 못 받음(4xx) = 지금처럼 사진 넘기기 1번(다시 올림 줄 X) · 5xx = th_retry."""
+    text = x["text"] + (f"\n\n{PHOTO_CREDIT}" if len(x["text"]) + 2 + len(PHOTO_CREDIT) <= 500 else "")
+    try:
+        r = th_bundle(seen, x["kind"], text, image=toss_card_url(x["card"]), topic=x.get("topic"))
+        print("toss card 글", x["kind"])
+        return r
+    except urllib.error.HTTPError as e:
+        if e.code >= 500:
+            raise
+        seen.pop(time.strftime("thretry_%Y%m%d_", time.gmtime(time.time() + 9 * 3600)) + x["kind"], None)
+        print("toss card 사진 거절 -> 사진 넘기기", x["kind"], err_brief(e))
+        return toss_th_photo(seen, x["kind"], x["text"], x.get("img") or [], topic=x.get("topic"))
+
+
+def toss_ep(tok, r, ep):
+    """⑥ 토스 시리즈 회차 기록(series_eps.json — 글 번호·시각·Threads 글 주소(못 읽음 = 프로필) · 사이트 = 'Threads에서 보기' 링크만)."""
+    try:
+        pl = r and r.get("id") and json.loads(http(f"{THREADS}/{r['id']}?fields=permalink&access_token={tok}")).get("permalink")
+    except Exception as e:
+        print("tossseries permalink", err_brief(e))
+        pl = None
+    json.dump(load(SERIES_EPS, []) + [{"key": "toss", "no": ep["no"], "t": ep["t"], "link": pl or TH_HOME}], open(SERIES_EPS, "w"), ensure_ascii=False)
 
 
 TOSS_GAP = 15 * 60  # ⑨ 10/31 진우 '쿠팡과 시차만 둬'(20 → 15분 '좁혀도 돼'): Threads 토스 글(10시 묶음·개별·재게시) ↔ 쿠팡 글(묶음·개별·큐레이션·힘 준 글) 앞뒤 20분↑ — 걸리면 다음 실행에(버리지 않음)
@@ -3673,6 +3736,7 @@ def toss_deals(seen, best=False):
                 out.append(t)
         print(f"토스 묶음 점검 ok · {len(out)}개" + (f" (72시간 회전·브랜드 {len(xs) - len(out)}개 뺌)" if len(out) < len(xs) else ""))
         return out
+    tcard = lambda xs: [(got[t[4]]["displayName"], got[t[4]]["displayPrice"], rows[t[4]][1], toss_photo(got[t[4]]), time.time()) for t in xs]  # 11/8 토스 카드 재료(글 순서 · 가격 = 이 실행 API 확인)
     def tl_mark(xs):  # Threads 토스 묶음에 나간 상품(72시간 회전)
         seen["thtl"] = {"t": time.time(), "h": [h for h in seen.get("thtl", {}).get("h", []) if time.time() - h[0] < TH_ROT_H * 3600] + [[time.time(), [t[3] for t in xs]]]}
     def to_solo(ns, what, at=0):  # 10/31 진우 '상품은 꾸준하게'(Cowork): 토스 리스트·묶음 1~2개 = 토스 개별 글 줄(thtx — 하루 개별 글 수와 따로 · 쿠팡과 15분 · at = 그 시각부터) · 0개 = 그 회차 X + 로그
@@ -3703,16 +3767,11 @@ def toss_deals(seen, best=False):
         if len(its) < TH_LIST_MIN or not sok:
             to_solo([t[4] for t in its], "tossseries")
         else:
-            r = toss_th_photo(seen, "tossseries", text, [toss_photo(got[t[4]]) for t in its], topic=SERIES_BY["toss"][0])  # 11/6 토스 원본 사진(글 순서 — fit이 its를 글에 든 것만 남김)
+            ep, ims = {"no": sno, "t": time.strftime("%Y-%m-%d %H:%M", kst)}, [toss_photo(got[t[4]]) for t in its]  # 11/6 토스 원본 사진(글 순서 — fit이 its를 글에 든 것만 남김)
+            if not toss_card_q(seen, "tossseries", text, ims, tcard(its), topic=SERIES_BY["toss"][0], ep=ep):  # 11/8 토스 카드(사이트에 뜨면 — 회차 기록도 그때) · 못 만듦 = 사진 넘기기 바로
+                toss_ep(tok, toss_th_photo(seen, "tossseries", text, ims, topic=SERIES_BY["toss"][0]), ep)
             tl_mark(its)
             seen.setdefault("series", {})["toss"] = sno
-            try:
-                pl = r and r.get("id") and json.loads(http(f"{THREADS}/{r['id']}?fields=permalink&access_token={tok}")).get("permalink")
-            except Exception as e:
-                print("tossseries permalink", err_brief(e))
-                pl = None
-            json.dump(load(SERIES_EPS, []) + [{"key": "toss", "no": sno, "t": time.strftime("%Y-%m-%d %H:%M", kst), "link": pl or TH_HOME}],
-                      open(SERIES_EPS, "w"), ensure_ascii=False)  # 토스 회차 기록 = 글 번호·시각·Threads 글 주소(사이트 = 'Threads에서 보기' 링크만 — TOSS_SITE False)
             print(f"threads tossseries #{sno} {len(its)}개")
     elif rows and tok and (lat := TOSS_TH_LIST and TOSS_TH_LATER.get((kind, hrs[-1]))):  # 21:20 하루특가 밤 12시 마감 전 · 22:20 토스 특가 = 줄에(쿠팡 글과 15분·힘 준 글 쉼 = toss_th_later가 미룸)
         plain = div(plain)
@@ -3721,7 +3780,8 @@ def toss_deals(seen, best=False):
             to_solo([t[4] for t in plain], f"{kind} {lat}", kst_ts(f"{day} {lat}"))
         else:
             seen["thlater"] = {"t": time.time(), "q": [x for x in seen.get("thlater", {}).get("q", []) if x["until"] >= day] + [
-                {"at": f"{day} {lat}", "until": f"{day} 23:30", "kind": f"toss{lat.replace(':', '')}", "text": text, "img": [toss_photo(got[t[4]]) for t in plain]}]}  # 11/6 사진(글 순서)
+                {"at": f"{day} {lat}", "until": f"{day} 23:30", "kind": f"toss{lat.replace(':', '')}", "text": text, "img": [toss_photo(got[t[4]]) for t in plain],
+                 **({"card": c, "t": time.time()} if (c := toss_card(f"toss{lat.replace(':', '')}", tcard(plain))) else {})}]}  # 11/6 사진(글 순서) · 11/8 토스 카드(그 시각에 사이트에 떠 있으면 카드 1장)
             tl_mark(plain)
             print(f"toss {kind} Threads {lat} 줄에 {len(plain)}개")
     elif rows and tok and lst and not plain:
@@ -3732,7 +3792,9 @@ def toss_deals(seen, best=False):
         if len(plain) < TH_LIST_MIN:
             to_solo([t[4] for t in plain], f"toss{hrs[-1]:g}")
         else:
-            toss_th_photo(seen, f"toss{hrs[-1]:g}", text, [toss_photo(got[t[4]]) for t in plain])  # 11/6 토스 원본 사진(글 순서)
+            ims = [toss_photo(got[t[4]]) for t in plain]  # 11/6 토스 원본 사진(글 순서)
+            if not toss_card_q(seen, f"toss{hrs[-1]:g}", text, ims, tcard(plain)):  # 11/8 토스 카드 줄 · 못 만듦 = 사진 넘기기 바로
+                toss_th_photo(seen, f"toss{hrs[-1]:g}", text, ims)
             tl_mark(plain)
     elif rows and tok and beauty and th_day(seen, time.time())["b"] < TH_BEAUTY_MIN and not jw_beauty(seen, time.time()):  # 오늘 화장품 자리가 비었고 진우 화장품 링크가 더 없으면
         k = next((n for n, x in enumerate(got) if th_beauty(x["displayName"]) == 2), 0)  # 이 회차 1개를 Threads 개별 글로(소모품 먼저, 없으면 Claude 1순위) — 10/11 23:50 진우
@@ -4908,6 +4970,31 @@ def mall_card_json(title, items):
     return {"mall": malls.pop(), "title": clip(title.strip(), 35), "checked": max(x["checked"] for x in its), "items": its}  # 11/1 Cowork ①: 머리 = 상품 확인 중 가장 늦은 것(지금 X — 오늘 확인처럼 읽힘)
 
 
+TOSS_CARD, TOSS_CARD_BAN = True, (r"쿠팡|coupang|네이버|naver|가격비교|타사|타몰|다른몰|대비|보다싸|보다저렴|더싸|더저렴|11번가|지마켓|g마켓|gmarket|옥션|auction|알리|aliexpress|테무|temu|아마존|amazon|ssg|쓱닷컴|최저")  # 11/8 진우 '토스도 바꾸자': 토스 묶음 = 토스 카드(validation.mjs MIXED_MALL·TOSS_COMPARE 그대로 — 걸린 상품 = 뺌)
+
+
+def toss_card_json(entries, title="토스 오늘의 장바구니"):
+    """토스 카드 JSON(11/8): entries = [(이름, 가격 원, 쉐어링크, 토스 원본 사진, 확인 epoch)] -> {mall: toss, title, checked, items} 또는 None.
+    사진 없음(toss_noimg·TOSS_PHOTO 꺼짐) · 토스 링크 아님 · 금지 표현·다른 몰 이름·가격 비교 상품 = 뺌 · 3~5개(넘으면 앞 5개) · 단위가 = toss_unit(우리 계산 — 못 읽으면 빈칸) · 확인 시각 = 실제 가격 받은 시각."""
+    fold, its = lambda x: unicodedata.normalize("NFKC", x or "").replace(" ", "").lower(), []
+    for name, price, link, img, t in entries:
+        host, unit = urllib.parse.urlsplit(str(link or "")).hostname or "", toss_unit(name, price) if isinstance(price, int) else ""
+        if not (img and isinstance(price, int) and price > 0 and str(link).startswith("https://") and any(host == h or host.endswith("." + h) for h in TOSS_HOSTS)) \
+                or re.search(rf"{CARD_BAN}|{TOSS_CARD_BAN}", fold(f"{name}{unit}")):
+            continue
+        its.append({"name": clip(name, 179), "price": f"{price:,}원", "cond": "", "unit": clip(unit, 31), "img": img, "url": link, "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600))})
+    if len(its) < 3:
+        print("toss card X", f"{len(its)}개")
+        return None
+    its = its[:5]
+    return {"mall": "toss", "title": title, "checked": max(x["checked"] for x in its), "items": its}
+
+
+def toss_card(kind, entries):
+    """토스 카드 PNG(11/8 — 사이트 docs/cards/mall) 경로 / None(TOSS_CARD 꺼짐·3개 밑·렌더 실패 = 지금 방식)."""
+    return TOSS_CARD and card_png(kind, toss_card_json(entries)) or None
+
+
 CARD_TITLE_MAX = 16  # 11/1 Cowork: v3 제목 = 큰 글씨 한 줄(머리 잘림 = 검증 X) — 통과한 샘플 14·15자
 
 
@@ -4927,9 +5014,14 @@ def pw_ready(env):
 
 
 def mall_card(kind, title, short, items):
-    """묶음 글 몰별 카드(11/1 v3): mall_card_json -> tools/card `node scripts/render.mjs --data data/run_<stem>.json`(v3 그대로 — chromium.launch()라 브라우저 = `npx playwright install --only-shell chromium`, 묶음 회차에만)
-    -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node·브라우저 없음·검증·렌더 실패 = None(글만 — 봇은 그대로)."""
-    d = MALL_CARD and mall_card_json(title, items)
+    """묶음 글 몰별 카드(11/1 v3): mall_card_json -> card_png -> 사이트 공개 주소(커밋·배포 뒤 뜸) · 조건 X·node·브라우저 없음·검증·렌더 실패 = None(글만 — 봇은 그대로)."""
+    f = card_png(kind, MALL_CARD and mall_card_json(title, items), short)
+    return f and f"{SITE}cards/mall/{os.path.basename(f)}"
+
+
+def card_png(kind, d, short=""):
+    """카드 JSON d -> tools/card `node scripts/render.mjs --data data/run_<stem>.json`(v3 그대로 — chromium.launch()라 브라우저 = `npx playwright install --only-shell chromium`, 묶음 회차에만 ·
+    11/8 토스 = 몰·칸 수 틀(assets/tpl/toss-3·4·5 — 파란 쇼핑백 고양이 '오늘의 장바구니')이 있으면 render.mjs가 fill.html로) -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png 경로 / None."""
     if not d:
         return None
     stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
@@ -4959,7 +5051,7 @@ def mall_card(kind, title, short, items):
         if os.path.basename(f)[:8] < cut:
             os.remove(f)
     print("mall card 만듦", d["mall"], f"{len(d['items'])}개", stem)
-    return f"{SITE}cards/mall/{stem}.png"
+    return f"{MALL_CARD_DIR}/{stem}.png"
 
 
 TH_FRESH_H = 2  # 묶음 가격 '이 회차 확인' = 2시간 안 확인(진열 chkt·chk·글 시각) — 넘으면 '(M/D H시 확인)'
@@ -8399,6 +8491,16 @@ def ig_toss_items(seen, posts, now):
     return sorted(out, key=lambda x: (x[0].get("st") != "hot", [-ord(c) for c in x[0]["t"]]))[:IG_TOSS_N[1]]
 
 
+def ig_toss_entries(seen, its):
+    """인스타 토스 넘기기 표지 카드 재료(11/8): [(이름, 가격 원, 쉐어링크, 사진, 확인 epoch)] — 가격·시각 = pick_price(글의 게시 시점 줄 · 오늘 아니면 own_end API 확인) · 못 읽음 = 그 상품 X."""
+    out, y = [], time.gmtime(time.time() + 9 * 3600).tm_year
+    for p, img, _ in its:
+        pp = pick_price(p, seen) or ""
+        if (m := re.search(r"(\d{1,2})/(\d{1,2}) (\d{1,2}):(\d{2})", pp)) and won(pp):
+            out.append((parse(title_of(p["text"]))[1], won(pp), p["url"], img, kst_ts(f"{y}-{int(m[1]):02d}-{int(m[2]):02d} {int(m[3]):02d}:{m[4]}")))
+    return out
+
+
 def ig_toss_slot(now, prep=0):
     """L' 토스 넘기기 칸(IG_TOSS_AT 차례 — 칸 시각부터 IG_TOSS_WIN 안, prep = 그 전부터) -> 'HH:MM' / None(칸 밖 — 21시 뒤 X)."""
     kst = time.gmtime(now + 9 * 3600)
@@ -8426,7 +8528,13 @@ def ig_toss(seen, tok, uid, now):
             import cards
             os.makedirs(IGTOSS_DIR, exist_ok=True)
             jpg = f"{IGTOSS_DIR}/{today}.jpg"
-            cards.make([{"title": clip(parse(title_of(p["text"]))[1], 40), "unit": ""} for p, _, _ in its], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
+            d = TOSS_CARD and toss_card_json(ig_toss_entries(seen, its))
+            if d and len(d["items"]) == len(its) and (png := card_png("igtoss", d)):  # 11/8 진우 '토스도 바꾸자': 표지 = 토스 카드(상품 수·순서 = 뒤 사진 장과 같을 때만)
+                from PIL import Image
+                Image.open(png).convert("RGB").save(jpg, "JPEG", quality=92)
+                print("ig toss 표지 = 토스 카드")
+            else:
+                cards.make([{"title": clip(parse(title_of(p["text"]))[1], 40), "unit": ""} for p, _, _ in its], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
             rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 40)}\n💰 {pick_price(p, seen).replace(' 게시 시점 가격', ' 확인 가격')}" for k, (p, _, _) in enumerate(its)]  # 11/7 Cowork: 발행은 칸·간격으로 미뤄질 수 있음 = '게시 시점' X · 'M/D HH:MM 확인 가격
             cap = f"{TOSS_NOTE}\n\n💙 토스에서 살 만한 것 {len(its)}개 ({kst.tm_mon}/{kst.tm_mday})\n\n" + "\n\n".join(rows) + f"\n\n🛒 프로필 링크 → 토스 상품 바로 가기\n\n{PHOTO_CREDIT}"
             seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200],
