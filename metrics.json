@@ -271,7 +271,7 @@
 {"date": "2026-11-06", "ch": "th", "id": "18129899989820800", "shop": "기타", "cat": "기타", "price": "", "at": "22:12", "views": null, "react": null, "likes": null, "replies": null, "kind": "etc"},
 {"date": "2026-11-06", "ch": "th", "id": "18131936392701716", "shop": "기타", "cat": "묶음", "price": "", "at": "22:17", "views": 8, "react": 0, "likes": 0, "replies": 0, "topic": "핫딜", "kind": "etc"},
 {"date": "2026-11-06", "ch": "th", "id": "18131990557791933", "shop": "toss", "cat": "묶음", "price": "", "at": "22:45", "views": 7, "react": 0, "likes": 0, "replies": 0, "topic": "핫딜", "kind": "list", "name": "토스 특가 중 살 만한 3개", "urls": ["https://toss.shopping/_m/zb8jiLpn", "https://toss.shopping/_m/9m3p5aA3", "https://toss.shopping/_m/rvnRoC0g"]},
-{"date": "2026-11-06", "ch": "th", "id": "18118359374275950", "shop": "기타", "cat": "기타", "price": "", "at": "22:45", "views": 4, "react": 0, "likes": 0, "replies": 0, "kind": "chat", "topic": "일상"},
+{"date": "2026-11-06", "ch": "th", "id": "18118359374275950", "shop": "기타", "cat": "기타", "price": "", "at": "22:45", "views": 4, "react": 0, "likes": 0, "replies": 0, "kind": "chat", "topic": "일상", "v48": 4, "r48": 0},
 {"date": "2026-11-06", "ch": "th", "id": "18134183614794746", "shop": "기타", "cat": "투표", "price": "", "at": "22:58", "views": 6, "react": 0, "likes": 0, "replies": 0, "topic": "핫딜", "kind": "etc"},
 {"date": "2026-11-06", "ch": "th", "id": "17898459225615212", "shop": "기타", "cat": "기타", "price": "", "at": "22:59", "views": null, "react": null, "likes": null, "replies": null, "kind": "etc"},
 {"date": "2026-11-06", "ch": "th", "id": "18129930763848789", "shop": "기타", "cat": "기타", "price": "", "at": "22:59", "views": null, "react": null, "likes": null, "replies": null, "kind": "etc"},
