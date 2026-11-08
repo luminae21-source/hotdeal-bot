@@ -22903,5 +22903,33 @@
   "chain": [
    "월요일 아침이네요 ㅎㅎ 칫솔은 가족 거 한꺼번에 사세요, 각자 사세요?"
   ]
+ },
+ {
+  "at": "2026-11-08 14:30",
+  "button": "🛒 구매하러 가기",
+  "url": "https://www.coupang.com/vp/products/7619171400?itemId=20196382341",
+  "deal": true,
+  "shelf": true,
+  "tag": "핫팩",
+  "text": "🛒 <b>[쿠팡] 해피데이 붙이는 발 핫팩 20g 2p, 40개 (16,320원)</b>\n\n💰 1개 204원꼴\n✔ 리뷰 2,045\n💡 20g 붙이는 타입 · 흔드는 포켓형이랑 쓰임이 달라요\n⚠️ 확인할 점: 표기 40개 = 2p 묶음(총 80개) · 결제 전 최종가 확인 (11/8 11시 가격)",
+  "pid": "7619171400",
+  "now": "16,320원",
+  "chk": "2026-11-08 11:01",
+  "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/151807865339037-9f49616c-efaf-4634-9b17-43f8ddd4bafe.jpg",
+  "item": "20196382341"
+ },
+ {
+  "at": "2026-11-08 14:30",
+  "button": "🛒 구매하러 가기",
+  "url": "https://www.coupang.com/vp/products/7554079907?itemId=19886495866",
+  "deal": true,
+  "shelf": true,
+  "tag": "핫팩",
+  "text": "🛒 <b>[쿠팡] 쓰리엠 포켓형 프리미엄 핫팩, 20개 (7,660원)</b>\n\n💰 1개 383원꼴\n✔ 리뷰 890\n💡 같은 상품 40개 묶음은 13,410원(쿠폰 적용가)이라 1개 335원\n⚠️ 확인할 점: 무게 표기는 상세에서 확인 · 결제 전 최종가 확인 (11/8 11시 가격)",
+  "pid": "7554079907",
+  "now": "7,660원",
+  "chk": "2026-11-08 11:01",
+  "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/492x492ex/image/retail/images/324382675183863-1f2e6e2d-e99b-49d8-bb36-6bbc5f99c74c.jpg",
+  "item": "19886495866"
  }
 ]
