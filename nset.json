@@ -252,6 +252,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "new"
 }
 ]
 }
