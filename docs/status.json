@@ -1,6 +1,6 @@
 {
-"at": "2026-11-09 07:22",
-"posts": 4319,
+"at": "2026-11-09 07:37",
+"posts": 4321,
 "site": 1907,
 "mall": {
 "coupang": 1222,
@@ -13,13 +13,13 @@
 "snack": 91,
 "pet": 41,
 "food": 405,
+"laundry": 76,
 "beauty": 261,
 "fashion": 91,
 "life": 259,
 "coffee": 85,
 "season": 127,
 "car": 42,
-"laundry": 76,
 "home": 82,
 "kitchen": 128,
 "digital": 63,
@@ -233,7 +233,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "과자",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 16 · 기존 상품 구성 0"
+"nset_n": "새 구성 17 · 기존 상품 구성 0"
 }
