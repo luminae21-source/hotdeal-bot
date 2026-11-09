@@ -196,6 +196,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "세탁",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
