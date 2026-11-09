@@ -12749,7 +12749,7 @@ assert f'src="{TU146}"' in im146 and "bdg" not in im146 and S.BASE not in im146 
 assert TU146 in S.card(2, {**own146, "own": 0}, sh146) and TU146 not in S.card(3, {**own146, "url": "https://toss.shopping/_m/D"}, sh146) and S.PHOTO_CREDIT not in S.card(4, {**own146, "text": "🔥 [쿠팡] 수건 (9,900원)", "url": "https://link.coupang.com/a/X"}, sh146)  # 11/7 진우 쉐어링크(확인된 주소)면 own X도 사진(9-168) · noimg·쿠팡 = 토스 사진 X
 dc146 = S.deal_card(1, own146); assert TU146 in dc146 and S.PHOTO_CREDIT in dc146 and dc146.index(S.PHOTO_CREDIT) < dc146.index('<div class="s">')  # 딜 쪽 = 사진 바로 아래 출처
 src146 = open(S.__file__, encoding="utf-8").read()
-assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .cr2 .bdg{position:static" in src146 and ".g .im.tim img{mix-blend-mode:normal}" in src146 and 'TOSSM = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
+assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .cr2 .bdg{position:static" in src146 and ".g .im.tim img{mix-blend-mode:normal}" in src146 and 'sd = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and 'TOSSM = sd.get("tossid"' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
 # own_end = 상세 확인 때 썸네일 원본을 seen tossid [8]에(사진 칸 없는 기록 먼저 확인)
 assert H.toss_thumb({"thumbnailUrl": TU146}) == TU146 and H.toss_thumb({"thumbnailUrl": "javascript:x"}) is None and H.toss_thumb({}) is None \
     and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)
