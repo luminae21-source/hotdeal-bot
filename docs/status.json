@@ -1,5 +1,5 @@
 {
-"at": "2026-11-09 23:53",
+"at": "2026-11-10 00:23",
 "posts": 4475,
 "site": 1940,
 "mall": {
@@ -10,7 +10,6 @@
 },
 "cat": {
 "heat": 132,
-"snack": 103,
 "pet": 41,
 "home": 85,
 "beauty": 261,
@@ -19,6 +18,7 @@
 "laundry": 77,
 "season": 129,
 "life": 262,
+"snack": 103,
 "coffee": 85,
 "car": 42,
 "kitchen": 128,
@@ -29,17 +29,8 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 168,
-"sitemap": 770,
+"sitemap": 771,
 "days": {
-"2026-11-01": {
-"site": 1602,
-"sitemap": 969,
-"mall": {
-"coupang": 919,
-"toss": 629,
-"naver": 54
-}
-},
 "2026-11-02": {
 "site": 1639,
 "sitemap": 997,
@@ -116,327 +107,21 @@
 "": 1,
 "naver": 55
 }
+},
+"2026-11-10": {
+"site": 1940,
+"sitemap": 771,
+"mall": {
+"coupang": 1254,
+"toss": 630,
+"": 1,
+"naver": 55
+}
 }
 },
 "warn": [
 "쿠팡 변환 실패 168개(cp_fail.json)"
 ],
-"nset": [
-{
-"name": "반려동물",
-"mall": "toss",
-"n": 5,
-"slot": "",
-"k": "new"
-},
-{
-"name": "반려동물",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "패션",
-"mall": "coupang",
-"n": 4,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "겨울 난방",
-"mall": "coupang",
-"n": 4,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "패션",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 5,
-"slot": "",
-"k": "new"
-},
-{
-"name": "제철 먹거리",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "세탁",
-"mall": "toss",
-"n": 5,
-"slot": "",
-"k": "new"
-},
-{
-"name": "세탁",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "겨울 난방",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "커피",
-"mall": "toss",
-"n": 5,
-"slot": "",
-"k": "new"
-},
-{
-"name": "커피",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "패션",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "생필품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "패션",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "화장품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "화장품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "제철 먹거리",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "생활",
-"mall": "toss",
-"n": 5,
-"slot": "",
-"k": "new"
-},
-{
-"name": "세탁",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "생활",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "세탁",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "반려동물",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "화장품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "가전",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "생활",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "패션",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "과자",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "세탁",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "생활",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "mix"
-},
-{
-"name": "생필품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "생필품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "식품",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "제철 먹거리",
-"mall": "toss",
-"n": 3,
-"slot": "",
-"k": "new"
-},
-{
-"name": "제철 먹거리",
-"mall": "toss",
-"n": 4,
-"slot": "",
-"k": "new"
-},
-{
-"name": "제철 먹거리",
-"mall": "coupang",
-"n": 3,
-"slot": "",
-"k": "mix"
-}
-],
-"nset_n": "새 구성 45 · 기존 상품 구성 0"
+"nset": [],
+"nset_n": "새 구성 0 · 기존 상품 구성 0"
 }

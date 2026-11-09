@@ -1,58 +1,11 @@
 {
-"date": "2026-11-09",
+"date": "2026-11-10",
 "urls": [
 {
-"url": "https://hotdealpick.kr/c/t/carbon-mat.html",
-"kind": "topic",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/c/t/t5db395.html",
-"kind": "topic",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tb87092.html",
-"kind": "topic",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tbbcfcf.html",
-"kind": "topic",
-"added": "2026-11-09"
-},
-{
-"url": "https://hotdealpick.kr/guide/electric-heater/",
+"url": "https://hotdealpick.kr/guide/air-purifier/",
 "kind": "guide",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/3132.html",
-"kind": "deal",
-"added": "2026-11-07"
-},
-{
-"url": "https://hotdealpick.kr/p/3227.html",
-"kind": "deal",
-"added": "2026-11-07"
-},
-{
-"url": "https://hotdealpick.kr/p/3255.html",
-"kind": "deal",
-"added": "2026-11-07"
-},
-{
-"url": "https://hotdealpick.kr/today/2026-11-09/",
-"kind": "today",
 "added": "2026-11-09"
 },
-{
-"url": "https://hotdealpick.kr/p/3999.html",
-"kind": "deal",
-"added": "2026-11-07"
-}
-],
-"q": [
 {
 "url": "https://hotdealpick.kr/p/4000.html",
 "kind": "deal",
@@ -97,31 +50,13 @@
 "url": "https://hotdealpick.kr/p/4012.html",
 "kind": "deal",
 "added": "2026-11-07"
-},
+}
+],
+"q": [
 {
 "url": "https://hotdealpick.kr/p/4016.html",
 "kind": "deal",
 "added": "2026-11-07"
-},
-{
-"url": "https://hotdealpick.kr/p/2652.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/2760.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/3125.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/3135.html",
-"kind": "deal",
-"added": "2026-11-08"
 },
 {
 "url": "https://hotdealpick.kr/p/1870.html",
@@ -429,11 +364,6 @@
 "added": "2026-11-09"
 },
 {
-"url": "https://hotdealpick.kr/guide/air-purifier/",
-"kind": "guide",
-"added": "2026-11-09"
-},
-{
 "url": "https://hotdealpick.kr/p/2052.html",
 "kind": "deal",
 "added": "2026-11-09"
@@ -512,6 +442,31 @@
 "url": "https://hotdealpick.kr/p/4474.html",
 "kind": "deal",
 "added": "2026-11-09"
+},
+{
+"url": "https://hotdealpick.kr/p/4192.html",
+"kind": "deal",
+"added": "2026-11-10"
+},
+{
+"url": "https://hotdealpick.kr/p/4193.html",
+"kind": "deal",
+"added": "2026-11-10"
+},
+{
+"url": "https://hotdealpick.kr/p/4196.html",
+"kind": "deal",
+"added": "2026-11-10"
+},
+{
+"url": "https://hotdealpick.kr/p/4202.html",
+"kind": "deal",
+"added": "2026-11-10"
+},
+{
+"url": "https://hotdealpick.kr/p/4203.html",
+"kind": "deal",
+"added": "2026-11-10"
 }
 ],
 "done": {
@@ -546,6 +501,16 @@
 "https://hotdealpick.kr/p/3227.html": "2026-11-09",
 "https://hotdealpick.kr/p/3255.html": "2026-11-09",
 "https://hotdealpick.kr/today/2026-11-09/": "2026-11-09",
-"https://hotdealpick.kr/p/3999.html": "2026-11-09"
+"https://hotdealpick.kr/p/3999.html": "2026-11-09",
+"https://hotdealpick.kr/guide/air-purifier/": "2026-11-10",
+"https://hotdealpick.kr/p/4000.html": "2026-11-10",
+"https://hotdealpick.kr/p/4001.html": "2026-11-10",
+"https://hotdealpick.kr/p/4002.html": "2026-11-10",
+"https://hotdealpick.kr/p/4004.html": "2026-11-10",
+"https://hotdealpick.kr/p/4006.html": "2026-11-10",
+"https://hotdealpick.kr/p/4008.html": "2026-11-10",
+"https://hotdealpick.kr/p/4009.html": "2026-11-10",
+"https://hotdealpick.kr/p/4011.html": "2026-11-10",
+"https://hotdealpick.kr/p/4012.html": "2026-11-10"
 }
 }
