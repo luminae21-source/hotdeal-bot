@@ -556,7 +556,8 @@ def card_picks(posts, out):
     first = f'<div class="t">{html.escape("인스타·Threads 카드 번호 그대로" + ("" if rest == "카드 딜" else " · " + rest))}</div><p class="d1">{CARD_DIS}</p>{pick_rows(blocks[0][1])}'
     more = "".join(f'<details><summary>{html.escape(name(x))}</summary>{pick_rows(ps)}</details>' for x, ps in blocks[1:])
     return (f'<section class="card" id="today" aria-labelledby="today-h"><h2 id="today-h">{head}</h2>{first}{more}'
-            f'<p class="dn">가격은 게시 시점 기준이라 바뀔 수 있어요. {" ".join(SHOP_NOTES.values())}</p></section>')  # WW ④: 맨 위 한 줄 + 3사 문구 전체는 목록 아래(지우지 X)
+            f'<p class="dn">가격은 게시 시점 기준이라 바뀔 수 있어요. {" ".join(SHOP_NOTES.values())}'
+            + (f" {PHOTO_CREDIT}" if any(shop_of(p) == "toss" and toss_img(p) for _, ps in blocks for _, p in ps if site_ok(p)) else "") + '</p></section>')  # 11/9 토스 사진 = 목록 아래 출처 한 줄  # WW ④: 맨 위 한 줄 + 3사 문구 전체는 목록 아래(지우지 X)
 
 
 CARD_BRAND = r"(?:[가-힣A-Za-z]+전자|삼성|LG|엘지|애플|Apple|APPLE)"  # 11/6 진우 '뭔지 안 써 있다': 카드 이름 첫 낱말이 회사 이름뿐이면 뺌(모델명이 상품을 말함 — 갤럭시·그램·아이패드)
@@ -578,8 +579,8 @@ def pick_name(p):
 def pick_thumb(p):
     """WW 카드 딜 줄 왼쪽 48px 칸: 몰 로고(아래 — 사진 없거나 못 불러오면 보임 · 3사 밖 = 품목 아이콘) + 실제 사진(img_of — 쿠팡만, 토스·네이버 X 규칙)
     + 할인 % 빨간 배지 = 봇이 쓴 ' · ' 칸 'N% 할인'만(📦/🚀/💙/토스 줄 — 문장 속·⚠️ 줄·'정가 기준'·쿠폰/카드 조건 % X, 리뷰)."""
-    s, u = shop_of(p), site_img(p)
-    m = next((m for l in p["text"].split("\n") for c in l.split(" · ") if (m := re.fullmatch(r"(?:💰 )?(?:토스 |쿠팡 )?([1-9]\d?)% 할인(?: 🔥)?", c.strip()))), None)
+    s, u = shop_of(p), site_img(p) or toss_img(p)  # 11/9 진우 '썸네일에 제품 사진': 토스 = own_end가 1일 안 확인한 토스 원본 사진(toss_noimg X) — 원본 비율(contain)·위에 배지 X · 카드 딜 목록 아래 '사진: 토스쇼핑'
+    m = None if s == "toss" and u else next((m for l in p["text"].split("\n") for c in l.split(" · ") if (m := re.fullmatch(r"(?:💰 )?(?:토스 |쿠팡 )?([1-9]\d?)% 할인(?: 🔥)?", c.strip()))), None)
     return (f'<i class="pt" aria-hidden="true">{mall_logo(s) if s in MALL_KO else ci(p)}'
             + (f'<img src="{html.escape(u)}" alt="{alt_of(p)}" width="48" height="48" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">' if u else "")
             + (f'<s class="pd">{m[1]}%</s>' if m else "") + "</i>")
@@ -1044,10 +1045,43 @@ def img_of(p):
     return u if u.startswith("https://") and (s == "coupang" and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))) else ""
 
 
+CPI, CP_IMG_FILE = {}, "cp_img.json"  # 11/9 진우 '썸네일에 제품 사진': 빌드 때 쿠팡 사진 채움 — 글 주소 -> 사진(seen cpq i = 파트너스 API productImage) · 'pid:번호' -> 사진(cp_img.json) · 'raw:링크' -> 쿠팡 상품 주소(cp_links·cp_sub) · 'ev:링크' -> events pid
+
+
+def cp_pid(p):
+    """쿠팡 글 상품 번호(pid): 글 pid → events pid → 그 링크의 쿠팡 상품 주소(cp_links·cp_sub 거꾸로 · 생 주소면 그대로) / ''."""
+    u = p.get("url") or ""
+    return str(p.get("pid") or CPI.get("ev:" + u) or (re.match(CP_PROD, CPI.get("raw:" + u) or u) or [0, ""])[1] or "")
+
+
+def cp_fill_img(p):
+    """img 없는 쿠팡 글 사진(11/9): 같은 글 주소 API 사진(seen cpq i) → 같은 pid cp_img.json · 쿠팡 사진 주소만(img_of 규칙) / ''."""
+    if shop_of(p) != "coupang" or p.get("img"):
+        return ""
+    u = CPI.get(p.get("url") or "") or ((pid := cp_pid(p)) and CPI.get("pid:" + pid)) or ""
+    return img_of({**p, "img": u}) if u else ""
+
+
+def cpi_load(sd):
+    """CPI 채움(build 처음 1번): sd = seen 캐시(없으면 {}) · cp_img.json·cp_links·cp_sub·events = 공개 파일."""
+    CPI.clear()
+    CPI.update({k: v for k, v in ((sd.get("cpq") or {}).get("i") or {}).items() if isinstance(k, str) and isinstance(v, str)})
+    for f, pick in ((CP_IMG_FILE, lambda k, v: {"pid:" + str(k): v} if isinstance(v, str) else {}),
+                    (CP_LINKS, lambda k, v: {"raw:" + v: k} if isinstance(v, str) else {}),
+                    (CP_SUB, lambda k, v: {"raw:" + x: k for x in v.values() if isinstance(x, str)} if isinstance(v, dict) else {})):
+        try:
+            m = json.load(open(f, encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for k, v in (m.items() if isinstance(m, dict) else ()):
+            CPI.update({a: b for a, b in pick(k, v).items() if a not in CPI})
+    CPI.update({"ev:" + u: str(e["pid"]) for u, e in ev_info().items() if isinstance(e, dict) and e.get("pid")})
+
+
 def site_img(p):
-    """사이트 카드·줄 사진: 쿠팡 = img_of · 그 밖 몰(MALL_IMG_HOSTS) = 그 글에 그 몰 사진 주소가 있을 때만(사이트만 — 인스타·카드 그림은 img_of 그대로)."""
+    """사이트 카드·줄 사진: 쿠팡 = img_of → 11/9 img 없으면 cp_fill_img(같은 pid 사진) · 그 밖 몰(MALL_IMG_HOSTS) = 그 글에 그 몰 사진 주소가 있을 때만(사이트만 — 인스타·카드 그림은 img_of 그대로)."""
     u = p.get("img") or ""
-    return img_of(p) or (u if u.startswith("https://") and not re.search(r"[\s\"'<>]", u) and urllib.parse.urlsplit(u).netloc.endswith(MALL_IMG_HOSTS.get(parse(title_of(p.get("text") or ""))[0], ("\0",))) else "")
+    return img_of(p) or cp_fill_img(p) or (u if u.startswith("https://") and not re.search(r"[\s\"'<>]", u) and urllib.parse.urlsplit(u).netloc.endswith(MALL_IMG_HOSTS.get(parse(title_of(p.get("text") or ""))[0], ("\0",))) else "")
 
 
 B_GOLD = "오늘의 쿠팡 골드박스 TOP"  # 아침 골드박스 묶음 글 머리(hotdeal.goldbox)
@@ -3341,10 +3375,12 @@ def build(posts, out="docs"):
     global MICONS, SITE_SUB, TIMG, TOSSM
     SITE_SUB = site_subs()
     try:
-        TOSSM = json.load(open(SEEN_FILE, encoding="utf-8")).get("tossid", {}).get("m", {})
+        sd = json.load(open(SEEN_FILE, encoding="utf-8"))
+        TOSSM = sd.get("tossid", {}).get("m", {})
         TIMG = toss_imgs(TOSSM)
     except (OSError, ValueError, AttributeError):  # 로컬·첫 실행(seen 없음) = 토스 사진 X
-        TIMG, TOSSM = {}, {}
+        sd, TIMG, TOSSM = {}, {}, {}
+    cpi_load(sd if isinstance(sd, dict) else {})  # 11/9 쿠팡 사진 채움(img 없는 글)
     GUIDE_NAV.clear()  # 11/2 가이드 '고르는 법 보기' — 칸·딜 쪽·홈·/c/
     for g in guides_load():
         GUIDE_NAV[g.get("related_c") or ""] = GUIDE_NAV.get(g.get("related_c") or "", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])} — 고르는 법 보기</a>'

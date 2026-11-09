@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, json, math, os,
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
+from build_site import MALL_IMG_HOSTS, THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -3245,6 +3245,42 @@ def link_swap(seen):
     if got:
         json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
         print("link swap", " · ".join(f"{k} {n}" for k, n in got.items()), "-> 글 주소 바꿈·사이트 X(none — 사이트만)")
+
+
+OG_RUN, OG_DAYS, OG_KEEP = 3, 7, 14  # 11/9 진우 '썸네일에 제품 사진'(Cowork ③): 링크프라이스 몰 글 대표 사진 — 실행마다 3개 · 7일 안 글 · 글마다 1번(14일 기록 — 다시 X)
+
+
+def og_imgs(seen):
+    """img 없는 링크프라이스 몰 글(지마켓·옥션·11번가·SSG·롯데온 — build_site.MALL_IMG_HOSTS 몰 머리) = 판매 페이지(링크 tu=) 정상 요청 1번 → og:image가 그 몰 사진 서버 주소면 글 img(사이트 줄·카드 사진 — 못 불러오면 사이트가 로고).
+    막힘·확인 화면·사진 없음·다른 서버 사진 = 아이콘 그대로(우회·다시 요청 X — seen ogi 1번 기록) · 원글(커뮤니티) X · 네이버 = 사진 X 규칙 그대로(MALL_IMG_HOSTS에 없음)."""
+    now, st = time.time(), seen.setdefault("ogi", {"m": {}})
+    st["t"], st["m"] = now, {u: t for u, t in (st.get("m") or {}).items() if now - t < OG_KEEP * 86400}
+    cut, posts, n, got = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - OG_DAYS * 86400)), load(POSTS, []), 0, 0
+    for p in reversed(posts):
+        if n >= OG_RUN or p.get("t", "")[:10] < cut:
+            break
+        u, hosts = p.get("url") or "", MALL_IMG_HOSTS.get(parse(title_of(p.get("text") or ""))[0])
+        sp = urllib.parse.urlsplit(u)
+        page = (urllib.parse.parse_qs(sp.query).get("tu") or [""])[0] if sp.netloc == "click.linkprice.com" else ""
+        if p.get("img") or not hosts or not page.startswith("https://") or u in st["m"]:
+            continue
+        st["m"][u], n = now, n + 1
+        try:
+            doc = http(page)
+        except Exception as e:  # 막힘(403·확인 화면 리다이렉트 실패 등) = 아이콘 그대로
+            print("og img X", parse(title_of(p["text"]))[0], err_brief(e))
+            continue
+        m = re.search(r"<meta[^>]+property=[\"']og:image[\"'][^>]*?content=[\"']([^\"']+)", doc) or re.search(r"<meta[^>]+content=[\"']([^\"']+)[\"'][^>]*?property=[\"']og:image[\"']", doc)
+        img = html.unescape(m[1]).strip() if m else ""
+        img = "https:" + img if img.startswith("//") else img
+        if img.startswith("https://") and not re.search(r"[\s\"'<>]", img) and urllib.parse.urlsplit(img).netloc.endswith(hosts):
+            p["img"], got = img, got + 1
+        else:
+            print("og img 없음(그 몰 사진 아님·확인 화면)", parse(title_of(p["text"]))[0])
+    if got:
+        json.dump(posts, open(POSTS, "w"), ensure_ascii=False)
+    if n:
+        print(f"og img {got}/{n}")
 
 
 def shelf_posts(seen):
@@ -13067,7 +13103,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

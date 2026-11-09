@@ -3141,7 +3141,7 @@ json.dump([{"t": f"{D7} 10:{k % 60:02d}", "text": f"🔥 [G마켓] 딜{k} (1,000
 sent7.clear(); dg7 = {}; H.digest(dg7, json.load(open("posts.json"))); d7 = [p["text"] for m, p in sent7 if m == "sendMessage" and p["chat_id"] == H.CHANNEL][0]
 hr7 = re.findall(r'href="([^"]*)"', d7); assert sum(map(len, hr7)) <= 5000 and len(hr7) == 60 and all(h.startswith(H.SITE + "p/") for h in hr7)  # 긴 주소(400자) 60개 -> 사이트 딜 페이지로(다 들어감, 10/11 21:39 ENTITIES_TOO_LONG)  # 딜 130개: 텔레그램 서식 100개 한도 안으로 줄임(10/11 21시 ENTITIES_TOO_LONG)
 sys.modules.pop("cards"); cm7 and sys.modules.__setitem__("cards", cm7)
-assert "for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
+assert "for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist," in inspect.getsource(H.main) and "preview" in H.ALERT_STEPS  # 토스 22시 회차보다 먼저 · 실패 알림(바로)
 time.time = tt7; del H.E["THREADS_TOKEN"]
 if ev7 is not None: open("events.json", "w").write(ev7)
 else: os.remove("events.json")
@@ -14129,3 +14129,57 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(mc176) == 1  # 카드에서 상품이 빠지면(4 → 3) 뒤 사진 장과 번호가 어긋남 = 글자 표지
 (H.ig_toss_items, H.card_png, time.time) = sv176i; C176.make = mk176
 os.chdir(cwd176); shutil.rmtree(d176t, ignore_errors=True)
+# 9-177 (11/9 오전 진우 '저기 썸네일에 제품 사진이 나오게 만들어 줘' — 홈 '🔥 오늘의 카드 딜' 줄 썸네일이 몰 로고·품목 아이콘): pick_thumb·site_img
+#   ① 쿠팡 img 없음 = 같은 글 API 사진(seen cpq i) → 같은 pid(글 pid·events pid·cp_links/cp_sub 거꾸로) cp_img.json · 쿠팡 사진 서버만 ② 토스 = own_end 1일 안 확인한 토스 원본 사진(TIMG — toss_noimg X) · 원본 비율·위에 배지 X · 목록 아래 '사진: 토스쇼핑'
+#   ③ 링크프라이스 몰 = 판매 페이지 og:image 정상 요청 1번(막힘·확인 화면·다른 서버 사진 = 아이콘 · 다시 X) ④ 네이버 = 사진 X 그대로 ⑤ 지금 글도(빌드 때·og = 7일 안 글 실행마다 3개) · 못 불러오면 onerror = 로고
+cwd177, d177 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d177)
+sv177 = (dict(S.CPI), dict(S.TIMG), S.EVENTS)
+json.dump({"111": "https://thumbnail.coupangcdn.com/t/111.jpg", "222": "https://evil.example.com/x.jpg"}, open("cp_img.json", "w"))
+json.dump({"https://www.coupang.com/vp/products/111?itemId=5": "https://link.coupang.com/a/AAA"}, open("cp_links.json", "w"))
+json.dump({"https://www.coupang.com/vp/products/333": {"b": "https://link.coupang.com/a/CCC", "site": "https://link.coupang.com/a/CCD"}}, open("cp_sub.json", "w"))
+json.dump([{"at": "2026-11-08 09:00", "url": "https://link.coupang.com/a/EEE", "pid": "111", "text": "x", "shelf": True}], open("ev177.json", "w")); S.EVENTS = "ev177.json"
+S.cpi_load({"cpq": {"i": {"https://link.coupang.com/a/BBB": "https://ads-partners.coupang.com/image1/bbb"}}})
+cp177 = lambda u, **x: {"t": "2026-11-08 13:54", "text": f"🚀 [쿠팡] 암바사 제로 1.5 12개 (14,570원)", "url": u, **x}
+assert S.site_img(cp177("https://link.coupang.com/a/AAA")) == "https://thumbnail.coupangcdn.com/t/111.jpg"  # cp_links 거꾸로 → pid 111 → cp_img.json
+assert S.site_img(cp177("https://link.coupang.com/a/BBB")) == "https://ads-partners.coupang.com/image1/bbb"  # 같은 글 API 사진(seen cpq i)
+assert S.site_img(cp177("https://link.coupang.com/a/EEE")) == "https://thumbnail.coupangcdn.com/t/111.jpg" and S.site_img(cp177("https://link.coupang.com/a/ZZZ", pid="111")) == "https://thumbnail.coupangcdn.com/t/111.jpg"  # events pid · 글 pid
+assert S.site_img(cp177("https://link.coupang.com/a/ZZZ", pid="222")) == "" and S.site_img(cp177("https://link.coupang.com/a/iviVjRMtFs")) == ""  # 쿠팡 사진 서버 아님 = X · pid 모름 = 로고 그대로
+assert S.cp_pid(cp177("https://link.coupang.com/a/CCD")) == "333" and S.site_img(cp177("https://link.coupang.com/a/AAA", img="https://thumbnail.coupangcdn.com/own.jpg")) == "https://thumbnail.coupangcdn.com/own.jpg"  # cp_sub 채널 링크 · 글 img가 먼저
+assert S.cp_fill_img({**cp177("https://link.coupang.com/a/AAA"), "text": "🛒 [네이버] 상품 (1,000원)", "url": "https://smartstore.naver.com/x"}) == ""
+nv177 = {"t": "2026-11-08 10:00", "text": "🛒 [네이버] 귤 5kg (9,900원)", "url": "https://smartstore.naver.com/a/products/1", "img": "https://shop-phinf.pstatic.net/a.jpg"}
+assert "<img" not in S.pick_thumb(nv177)  # 네이버 = 사진 X(규칙) — 로고
+S.TIMG = {"https://toss.shopping/_m/hlTT155c": "https://static.toss.im/hot.jpg"}
+tz177 = {"t": "2026-11-08 12:00", "text": "💙 토스 특가 · 하루특가 🔥 · 30% 할인\n[토스] 곰도리 붙이는 핫팩 파스형, 50매 (7590원/무료)", "url": "https://toss.shopping/_m/hlTT155c"}
+th177 = S.pick_thumb(tz177)
+assert 'src="https://static.toss.im/hot.jpg"' in th177 and 'onerror="this.remove()"' in th177 and 'class="pd"' not in th177, th177  # 토스 원본 사진 · 위에 % 배지 X · 못 불러오면 로고
+assert "<img" not in S.pick_thumb({**tz177, "url": "https://toss.shopping/_m/NOPE"}) and "object-fit:contain" in S.CSS  # TIMG 없음(1일 넘음·toss_noimg) = 로고 · 원본 비율
+assert "+ (f\" {PHOTO_CREDIT}\" if any(shop_of(p) == \"toss\" and toss_img(p)" in inspect.getsource(S.card_picks)  # 목록 아래 '사진: 토스쇼핑'(토스 사진 보일 때만)
+(cpi177, timg177, S.EVENTS) = sv177; S.CPI.clear(); S.CPI.update(cpi177); S.TIMG = timg177
+# ③ 링크프라이스 og:image
+GM177 = "https://click.linkprice.com/click.php?m=gmarket&a=A1&l=9999&tu=" + urllib.parse.quote("https://www.gmarket.co.kr/item?goodscode=111", safe="")
+og177 = lambda k, u=GM177, tag="지마켓", t="2026-11-08 09:00": {"t": t, "text": f"🔥 [{tag}] 제주 달콤 노지감귤 {k}kg (11,400원/무료)", "url": u + f"&k={k}"}
+P177 = [og177(1, t="2026-10-30 09:00"), og177(2), og177(3), og177(4), og177(5), og177(6, u="https://www.ppomppu.co.kr/zboard/view.php?no=1"), og177(7, tag="네이버", u="https://smartstore.naver.com/x?"), og177(8)]
+json.dump(P177, open("posts177.json", "w"), ensure_ascii=False)
+sv177h = (H.http, H.POSTS, time.time); H.POSTS = "posts177.json"; c177 = []
+def http177(url, body=None, headers=None, method=None):
+    c177.append(url)
+    if "goodscode=111" not in url: raise AssertionError(url)
+    k = len(c177)
+    if k == 1: return '<html><head><meta property="og:image" content="//gdimg.gmarket.co.kr/111/still/600"></head></html>'
+    if k == 2: raise urllib.error.HTTPError(url, 403, "Forbidden", {}, None)
+    return '<meta content="https://cdn.other.example/x.jpg" property="og:image">'
+H.http, time.time = http177, (lambda: TK("2026-11-09 09:00"))
+with contextlib.redirect_stdout(io.StringIO()) as o177:
+    s177 = {}; H.og_imgs(s177)
+p177 = json.load(open("posts177.json"))
+assert len(c177) == 3 and all(u == "https://www.gmarket.co.kr/item?goodscode=111" for u in c177), c177  # 실행마다 3개 · 판매 페이지(tu) 1번씩 · 원글·네이버 = 요청 X
+assert p177[7]["img"] == "https://gdimg.gmarket.co.kr/111/still/600" and "img" not in p177[5] and "img" not in p177[6] and "img" not in p177[4] and "img" not in p177[3], o177.getvalue()  # 막힘·다른 서버 사진 = 아이콘
+assert "og img 1/3" in o177.getvalue() and "og img X" in o177.getvalue()
+with contextlib.redirect_stdout(io.StringIO()):
+    H.og_imgs(s177)
+assert len(c177) == 5 and "img" not in json.load(open("posts177.json"))[0]  # 다음 실행 = 남은 글만(이미 해 본 글 다시 X) · 7일 넘은 글 X
+with contextlib.redirect_stdout(io.StringIO()):
+    H.og_imgs(s177)
+assert len(c177) == 5  # 더 할 글 없음 = 요청 X
+(H.http, H.POSTS, time.time) = sv177h
+os.chdir(cwd177); shutil.rmtree(d177, ignore_errors=True)
