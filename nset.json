@@ -161,6 +161,27 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
