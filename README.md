@@ -121,16 +121,16 @@ GitHub Actions (15분마다 24시간 · 밤 0~8시 채널 글·사본은 알림 
 
   | # | 곡 | 아티스트 | Pixabay 장르 | 추가 |
   |---|---|---|---|---|
-  | 1 | Vlog Sunny Travel Diary | alex-morgan | Lofi | 10/6 |
-  | 2 | Short Jam | EdR | Upbeat | 10/6 |
-  | 3 | Short Upbeat Jingle | alanajordan | Upbeat | 10/6 |
-  | 4 | Upbeat & Fun for Shorts | FernsCreativeCorner | Upbeat | 10/6 |
-  | 5 | Happy Lofi | AtlasAudio | Beats (Lofi) | 10/19 |
-  | 6 | Motivation Upbeat (Fun Day) | BombinSound | Beats (Upbeat) | 10/19 |
-  | 7 | Summer Splash Lofi (lofi-7) | Epicsongs | Folk · Beats (Lofi 기타) | 10/26 |
-  | 8 | Travel I (Acoustic Lofi Folk) | JerzyGórecki | Acoustic Group · Folk | 10/26 |
-  | 9 | Sunny | Chill_Background_Music | Lofi · Beats · Cafe | 11/2 |
-  | 10 | Cozy Cafe Moments (Soft Chillhop) | DesiFreeMusic | Pop · Lofi · Beats | 11/2 |
+  | 1 | Short Upbeat Jingle | alanajordan | Upbeat | 10/6 |
+  | 2 | Upbeat & Fun for Shorts | FernsCreativeCorner | Upbeat | 10/6 |
+  | 3 | Happy Lofi | AtlasAudio | Beats (Lofi) | 10/19 |
+  | 4 | Motivation Upbeat (Fun Day) | BombinSound | Beats (Upbeat) | 10/19 |
+  | 5 | Summer Splash Lofi (lofi-7) | Epicsongs | Folk · Beats (Lofi 기타) | 10/26 |
+  | 6 | Travel I (Acoustic Lofi Folk) | JerzyGórecki | Acoustic Group · Folk | 10/26 |
+  | 7 | Sunny | Chill_Background_Music | Lofi · Beats · Cafe | 11/2 |
+  | 8 | Cozy Cafe Moments (Soft Chillhop) | DesiFreeMusic | Pop · Lofi · Beats | 11/2 |
+  | 9 | Happy Upbeat | DELOSound | Lofi | 11/9 |
+  | 10 | Joyful Happy Upbeat Background Music | alex-morgan | Pop · Beats (Upbeat) | 11/9 |
 - **자동 게시 방식**: Instagram 로그인 방식(10/8~, 페이스북 페이지 없이 인스타 계정 토큰으로 바로) → **카드 사진**: 사이트에 올라간 JPEG 주소로 이미지 컨테이너 → 인스타 처리가 끝나면 다음 실행(15분 안)에 발행 → 봇이 '📸 인스타 자동 게시 완료'. 실패하면 '⚠️' 알림 + 사진은 봇 채팅에 그대로 와서 직접 올리면 됨. **릴스**: 영상 파일 직접 업로드(resumable)는 공식 문서상 **페이스북 로그인(페이지 토큰) 앱만** 가능 → Instagram 토큰이면 릴스는 자동 업로드를 시도하지 않고 지금처럼 봇 채팅 영상으로 직접(페이스북 페이지 토큰 EAA…를 넣으면 릴스도 자동). 하루 1~2개라 인스타 한도(24시간 100개)와 무관
 - **세팅(진우, 1번만)** — 10/8 바꿈: 페이스북 방식(그래프 API 탐색기)은 앱이 '비즈니스용 Facebook 로그인'이고 사용 사례에 권한이 하나도 추가돼 있지 않아서 토큰 버튼이 꺼져 있었음 → **Instagram 로그인 방식**으로. 인스타 @hotdealpick.kr은 프로페셔널(비즈니스) 계정이어야 함
   1. (완료, 10/8 Claude) 앱 `hotdealpick` → 이용 사례 'Instagram에서 메시지 및 콘텐츠 관리' → 권한 및 기능에서 `instagram_business_basic` `instagram_business_content_publish` **추가** + 앱 역할 → 역할 → @hotdealpick.kr **Instagram 테스터** 추가(10/8 진우 수락)
@@ -842,6 +842,7 @@ GitHub 예약 실행(schedule)은 몇 시간씩 건너뛰어서, `tick.yml`이 �
 | 2026-11-08 | **토스 글 = 토스 카드**(진우 23시대 '토스도 바꾸자. 토스용으로 만든게 있어') | tools/card에 hotdealpick-cards 27f6ff3 토스 틀(assets/tpl/toss-3·4·5 — 파란 쇼핑백 고양이 '오늘의 장바구니')·fill.html·render.mjs(그 몰·칸 수 틀이 있을 때만 fill — 쿠팡·네이버는 v3 그대로) · validation.mjs 토스 링크 = toss.im·toss.shopping · 맨 아래 '⚠️ M/D HH:MM 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑' ① Threads 토스 묶음(10시 시리즈·리스트·21:20/22:20 줄) = toss_card_q → thlater 줄 → 사이트에 뜨면 카드 1장 글(본문 + 사진: 토스쇼핑) · 쿠팡과 15분 그대로 · 45분 안 뜸·렌더 실패·Meta 거절 = 사진 넘기기(지금 방식) · 시리즈 회차 기록 = 올린 뒤 ② 인스타 토스 넘기기 표지 = 같은 카드(JPEG) · 뒤 장 = 토스 원본 사진 · 카드 상품 수가 뒤 장과 다르면·렌더 실패 = 글자 표지 · 카드에서 빼는 상품 = toss_noimg·다른 몰 이름·가격 비교·할인율·최저가·토스 링크 아님 | selfcheck 9-176 |
 | 2026-11-09 | **홈 카드 딜 썸네일 = 제품 사진**(진우 '저기 썸네일에 제품 사진이 나오게' — 11/8 줄: 지마켓 감귤·토스 청포도·토스 핫팩·쿠팡 암바사 = 아이콘) | ① 쿠팡 img 없음 = 빌드 때 같은 글 API 사진(seen cpq i) → 같은 pid(글 pid·events pid·cp_links/cp_sub 거꾸로) cp_img.json · 쿠팡 사진 서버만(지금 글도) — pid를 모르는 글(암바사 — 원래 상품 주소 기록 없음)은 아이콘 그대로 ② 토스 = own_end가 1일 안 확인한 토스 원본 사진(TIMG — toss_noimg X · posts.json에 안 씀) · 원본 비율 · 사진 위 % 배지 X · 카드 딜 목록 아래 '사진: 토스쇼핑' ③ 링크프라이스 몰(og_imgs) = 판매 페이지(링크 tu=) 정상 요청 1번 → og:image가 그 몰 사진 서버면 글 img · 막힘·확인 화면·다른 서버 = 아이콘 · 글마다 1번(14일 기록) · 실행마다 3개·7일 안 글 ④ 네이버 = 사진 X 그대로 · 못 불러오면 onerror = 로고 | selfcheck 9-177 |
 | 2026-11-09 | **정기 점검 09:00** | 22:30 뒤 hotdeal 48회 다 성공 · pages 46회(성공 45·진행 중 1) · 메일 없음(토스 경고 X) · today.json 06:39 봇(날씨·달력 — 오늘 소식 = OPENAI 키 아직) · 쿠팡 진열 후보 6/6(00:06~05:43 — 전용 몫) · sitemap 541·p 436 · toss api site 615(내림 163) · 토스 카드 = 아직 토스 묶음 회차 전(10시 시리즈부터) · guide 줄 X 11(포포몽 카사벤토 새로) | 점검 |
+| 2026-11-09 | **주간 플레이리스트 갱신** | Pixabay Content ID 미등록 2곡 더함 — Happy Upbeat(DELOSound · 1:30 · Lofi) · Joyful Happy Upbeat Background Music(alex-morgan · 0:40 · Pop) · 후보 중 Food Cooking·Vintage Thing·Bring It to Me·Upbeat(PaulYudin) = Content ID 등록이라 뺌 · 10곡 넘쳐 10/6 Vlog Sunny Travel Diary·Short Jam 뺌(봇 playlist가 뺀 곡 mp3 캐시 지움 — cache 경로 그대로) · 새 곡 = sent 없음 → 다음 실행 플레이리스트 전송 | 9-62 |
 | 2026-10-26 | **Threads 수다 글 하루 1개(II)**(Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자') | `chat_post`: Threads만 하루 1번 13:10(`CHAT_AT` · `TH_CHAT = True`) — 딜·상품명·가격·링크 없는 반말 2~4줄 + 마지막 줄 질문 1개(물음표 1개) · 앞뒤 30분 안 다른 비딜 글(올린 정보·날씨·간식·일지·알림 받기 글 = seen `thnd` · 큐레이션 시각 · 날씨·달력·간식·일지·투표·알림 받기 정해진 시각)이면 그 30분 뒤 첫 빈 실행 · 13:10+3시간 넘으면 그날 X · 주제 5가지 돌림(장보기 공감·살림 공감·오늘 계절(season_ctx)·가격 퀴즈 = 최저가 기록 가장 쌀 때·평균 숫자만(최근 7일 쓴 품목 X)·쇼핑 달력 = promos.json 이름·기간만(몰 이름 뺌)) — 최근 덜 쓴 것 먼저, 재료 없는 퀴즈·달력 X · 금지(`chat_ok`): 써 본 척·몸·효능·과장(X_BAN)·링크·권유·댓글 보상·뉴스·연예·몰 이름·영문(브랜드)·기록 밖 금액·% · 계절 — 걸리면 그 글 X(로그) · 재검토(review) 1번 뒤 다시 검사 · 대가성 문구 X(링크 없음) · 주제 태그 '일상' · 답글 = 진우 직접(TH_WATCH 그대로, 자동 댓글 X) · metrics kind chat + 48시간 조회·답글(v48·r48 — 2주 뒤 딜 글과 비교) · 로그 'chat post: 주제 id \| 본문' | 셀프체크 9-87(올림·13:05 X·하루 1번·묶음 간격·주제 돌림·비딜 앞뒤 30분·3시간·15:30 간식·규칙 표·재검토·퀴즈·달력·48시간·실패 재시도 주제) · 변이 36/36 | ✅ |
 | 2026-10-26 | **무례 X·재미 O(II+)**(Cowork — 진우 '무례하지 않게, 그렇지만 재미있게') | 프롬프트에 `TH_FUN` 두 묶음(재미 O: 누구나 겪는 장면·'국룰'·'나만 그래?'·ㅋㅋ 글당 1번·웃음 대상 = 상황·핫딜픽 자신 / 무례 X: 사람·집단 놀림·비하·비꼬기·훈계·욕설·비하 밈·브랜드·몰·다른 계정 깎아내리기·정치·종교·사건사고·연예인) — 수다 글·첫 줄 훅·말투 줄·투표·C·S 장면 · 코드 거르기 `TH_RUDE`(훈계·비꼬기 꼴 + 대표 비하어·욕설 + ㅋㅋ 2번↑) = 재검토 코드 검사(`rv_bad`)에도(큐레이션 재검토·말투·단점 줄) · 걸리면: 훅 = 같은 종류 1번 더 → 또 걸리면 다음 종류(고정 줄) · 말투 줄 = 1번 다시 → 기본 한 줄(TH_TONE_POOL5) · 투표 = 1번 다시 → 지금 틀 · 운영 일지 질문(날씨 표 고정 줄) = 기본 질문 · 수다 글 = 1번 다시 → 또 걸리면 그날 X(로그) · 수다 글 금지어 오탐 고침('사고 싶다'·'충동구매'·'배우다'·'기사님'·'정당한' 통과 · 핫딜픽 자기 농담 OK) | 셀프체크 9-87 II+(예시 2문장·비하어·ㅋㅋ 2번 걸림 · '국룰 아님?'·'나만 그래?'·ㅋㅋ 1번·오탐 13개 통과 · 수다 글 1번 다시·그날 X · 훅 같은 종류 다시 · 재검토 뺌) | ✅ |
 | 2026-10-26 | **골드박스 0개 날 = 꾸준템 글(JJ)**(Cowork — 진우 '대안: 살 만한 게 없어도 좋은 제품, 스테디셀러 등은 올려주자' · a8dba3a '기존 기준 유지' 대신) | '지금 사도 싸다' 1개↑ = 지금 골드박스 TOP 글 그대로 · 0개(2번째 판단도 0) = 건너뛰지 않고 `gold_steady`: 같은 시각·같은 채널 글 — 첫 줄 대가성 문구 → '👍 오늘 골드박스엔 지금 살 만한 특가가 없어서, 대신 꾸준히 팔리는 상품 N개' → 줄마다 이름·가격(진열 확인 가격, 오늘 확인 아니면 '(M/D H시 확인)')·단가(가격 그대로일 때만)·리뷰 수(·⭐ 있으면) → ⚠️ 게시 시점 가격 줄 · 버튼 '👍 꾸준템 더 보기'(/c/steady/) · 후보 = 사이트 👍 꾸준템 쿠팡 진열(파트너스 딥링크·품절·뺌 X·리뷰 1,000↑·⭐ 있으면 4.5↑·계절 맞음(season_adj)·이름에 🔥/특가/할인/최저 X) 중 최근 3일 채널 글·이 글에 나간 상품 X, 식품·생필품 먼저(그다음 최근 진열) 3~5개 — 3개 밑이면 그날 X · 텔레그램 실패 = 다음 실행에 · 로그 'goldbox N 개 중 고른 것 0 → steady N개' · ⚠️ 골드박스 API엔 평점·리뷰 수가 없음 = 골드박스 후보는 리뷰·평점으로 못 거름(진열 꾸준템만) · 진열 꾸준템 쿠팡 72개도 평점 없음(리뷰 수만) | 셀프체크 5-1(4개 고름·순서·확인 시각·단가·버튼·특가 말 1번(머리)·3일 안 다시 X·못 보냄 = 다음 실행) · 5) 골드박스 0개 로그 | ✅ |

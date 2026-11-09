@@ -1,19 +1,5 @@
 [
  {
-  "name": "Vlog Sunny Travel Diary — alex-morgan",
-  "page": "https://pixabay.com/music/lofi-vlog-sunny-travel-diary-578504/",
-  "url": "https://cdn.pixabay.com/download/audio/2026/08/01/audio_6d4b3be2c0.mp3?filename=alex-morgan-vlog-sunny-travel-diary-578504.mp3",
-  "fid": "CQACAgQAAxkDAAIEgWrn7UUd006YcIm7zhM_2evZShGfAAK2CwACcPIsUvqeEhWFwNi5PQQ",
-  "sent": 1
- },
- {
-  "name": "Short Jam — EdR",
-  "page": "https://pixabay.com/music/upbeat-short-jam-160347/",
-  "url": "https://cdn.pixabay.com/download/audio/2023/08/01/audio_13b428de6e.mp3?filename=edr-short-jam-160347.mp3",
-  "fid": "CQACAgQAAxkDAAIEgmrn7UbP4d7VZsfQ2QOhadkjNwajAALdCwAC2PosUsYPu5i49dKqPQQ",
-  "sent": 1
- },
- {
   "name": "Short Upbeat Jingle — alanajordan",
   "page": "https://pixabay.com/music/upbeat-short-upbeat-jingle-253295/",
   "url": "https://cdn.pixabay.com/download/audio/2024/10/21/audio_bc2a71b98d.mp3?filename=alanajordan-short-upbeat-jingle-253295.mp3",
@@ -68,5 +54,15 @@
   "url": "https://cdn.pixabay.com/download/audio/2025/12/15/audio_6bd5da81d1.mp3?filename=desifreemusic-cozy-cafe-moments-soft-chillhop-1-449125.mp3",
   "fid": "CQACAgQAAxkDAAIEimrn7U4DBRTM65XOCpXKmWo9QNyGAALVCwACE3tFU1KzNNFiGKb8PQQ",
   "sent": 1
+ },
+ {
+  "name": "Happy Upbeat — DELOSound",
+  "page": "https://pixabay.com/music/lofi-happy-upbeat-456257/",
+  "url": "https://cdn.pixabay.com/download/audio/2025/12/24/audio_256b7a69f1.mp3?filename=delosound-happy-upbeat-456257.mp3"
+ },
+ {
+  "name": "Joyful Happy Upbeat Background Music — alex-morgan",
+  "page": "https://pixabay.com/music/pop-joyful-happy-upbeat-background-music-587376/",
+  "url": "https://cdn.pixabay.com/download/audio/2026/08/17/audio_095df599a7.mp3?filename=alex-morgan-joyful-happy-upbeat-background-music-587376.mp3"
  }
 ]
