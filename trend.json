@@ -1,16 +1,26 @@
 {
  "google": {
-  "at": "2026-11-11 03:10",
+  "at": "2026-11-11 04:06",
   "items": [
+   {
+    "t": "espn",
+    "n": "100+",
+    "news": "Javonte Williams' late TD run helps Cowboys avoid another…"
+   },
+   {
+    "t": "이재진",
+    "n": "100+",
+    "news": "젝스키스 3인 공연, 이재진 불참에 결국 취소…예매 방식 갈등"
+   },
    {
     "t": "gta",
     "n": "200+",
-    "news": "Grand Theft Auto VI Pre-Load Begins on November 10"
+    "news": "Grand Theft Auto VI Comes to XBOX One and XBOX Series X|S…"
    },
    {
     "t": "로스앤젤레스 다저스",
     "n": "200+",
-    "news": "Why Jacob Wilson Could Make Sense As Athletics Trade…"
+    "news": "Hot Stove rumors: Padres, Skubal, Seiya, Morejon, Yanks"
    },
    {
     "t": "엘리자베스 홈즈",
@@ -19,7 +29,7 @@
    },
    {
     "t": "추위",
-    "n": "500+",
+    "n": "1000+",
     "news": "수요일 아침 영하권 추위·낮엔 포근…일교차 15도 안팎"
    },
    {
@@ -30,7 +40,7 @@
    {
     "t": "장동윤",
     "n": "200+",
-    "news": "“햇살 같은 아이라서” 이유진, 첫 만남에 생각한 ‘아내’ 차경은의 첫인상♥"
+    "news": "동상이몽2_너는 내 운명 : 이유진, 직접 웨딩 영상 만들어 업체들과 협업하고 결혼 비용 절감"
    },
    {
     "t": "코어위브",
@@ -41,16 +51,6 @@
     "t": "철도",
     "n": "500+",
     "news": "앞으로의 철도, 어떤 모습이면 좋을까요? - 전체 | 카드/한컷 | 멀티미디어"
-   },
-   {
-    "t": "고발",
-    "n": "200+",
-    "news": "김병기 수사 종결 또 지연 … 경찰, 한동훈 추가 고발·김승원 청탁 의혹 수사"
-   },
-   {
-    "t": "한수아",
-    "n": "500+",
-    "news": "한수아, 카리나와 절친 된 사연 \"먼저 번호 물어보더라…거의 매일 집에서 만나\" (우사편)"
    }
   ]
  },
