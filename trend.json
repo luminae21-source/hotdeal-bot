@@ -1,26 +1,36 @@
 {
  "google": {
-  "at": "2026-11-11 04:06",
+  "at": "2026-11-11 05:04",
   "items": [
+   {
+    "t": "전원주",
+    "n": "2000+",
+    "news": "'87세' 전원주...\"병원 가보시라\" 누리꾼 걱정 산 영상 - 머니투데이"
+   },
+   {
+    "t": "예금",
+    "n": "500+",
+    "news": "‘소액대출’ 금리도 상승…취약계층 울상"
+   },
+   {
+    "t": "넥슨",
+    "n": "200+",
+    "news": "넥슨 3분기 영업익 3천718억…메이플·FC 성과에 전망치 상회"
+   },
    {
     "t": "espn",
     "n": "100+",
-    "news": "Javonte Williams' late TD run helps Cowboys avoid another…"
+    "news": "LSU announces sellout for final home game against Texas"
    },
    {
     "t": "이재진",
-    "n": "100+",
-    "news": "젝스키스 3인 공연, 이재진 불참에 결국 취소…예매 방식 갈등"
-   },
-   {
-    "t": "gta",
     "n": "200+",
-    "news": "Grand Theft Auto VI Comes to XBOX One and XBOX Series X|S…"
+    "news": "[단독] 무산된 젝키 디너쇼, 결국 경찰서까지…주최측 “오늘부터 공식 환불”"
    },
    {
     "t": "로스앤젤레스 다저스",
-    "n": "200+",
-    "news": "Hot Stove rumors: Padres, Skubal, Seiya, Morejon, Yanks"
+    "n": "500+",
+    "news": "Tarik Skubal in the spotlight as MLB’s GM meetings begin in…"
    },
    {
     "t": "엘리자베스 홈즈",
@@ -34,23 +44,13 @@
    },
    {
     "t": "임준우",
-    "n": "1000+",
+    "n": "2000+",
     "news": "[단독] “아빠 저만 믿으세요”···임창정 아들, 4년 만에 ‘KPGA 프로’ 됐다"
    },
    {
     "t": "장동윤",
     "n": "200+",
     "news": "동상이몽2_너는 내 운명 : 이유진, 직접 웨딩 영상 만들어 업체들과 협업하고 결혼 비용 절감"
-   },
-   {
-    "t": "코어위브",
-    "n": "200+",
-    "news": "CoreWeave, 자율주행 기업 Wayve와 다년간 클라우드 계약 체결"
-   },
-   {
-    "t": "철도",
-    "n": "500+",
-    "news": "앞으로의 철도, 어떤 모습이면 좋을까요? - 전체 | 카드/한컷 | 멀티미디어"
    }
   ]
  },
