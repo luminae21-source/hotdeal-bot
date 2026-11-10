@@ -175,6 +175,27 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "자동차",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
