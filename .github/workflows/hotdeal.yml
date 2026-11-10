@@ -21,7 +21,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10           # 11/10 6 -> 10: 체인 3시간 끊긴 뒤 따라잡는 실행(00:10Z)이 봇 5분 21초 + 커밋 = 6분 넘어 git 단계 취소(push 뒤라 pages 부르기만 빠짐) · tick 14분 간격보다 짧게
     steps:
       - if: github.event_name == 'schedule'   # 11/10 tick 체인 끊김(11/9 18:10Z tick·hotdeal 둘 다 잡 0개 실패) 뒤 tick 매시 예약도 6시간 안 옴 -> 예약으로 돈 hotdeal이 tick 다시 켬(돌고 있으면 그대로)
         run: |
