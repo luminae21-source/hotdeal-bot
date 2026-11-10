@@ -1,9 +1,9 @@
 {
-"at": "2026-11-10 18:12",
+"at": "2026-11-10 18:23",
 "posts": 4628,
-"site": 1964,
+"site": 1963,
 "mall": {
-"coupang": 1276,
+"coupang": 1275,
 "toss": 631,
 "": 2,
 "naver": 55
@@ -24,12 +24,12 @@
 "car": 43,
 "digital": 72,
 "sport": 19,
-"etc": 4
+"etc": 3
 },
 "missing": 0,
 "missing_names": [],
 "cp_fail": 168,
-"sitemap": 799,
+"sitemap": 798,
 "days": {
 "2026-11-02": {
 "site": 1639,
@@ -109,10 +109,10 @@
 }
 },
 "2026-11-10": {
-"site": 1964,
-"sitemap": 799,
+"site": 1963,
+"sitemap": 798,
 "mall": {
-"coupang": 1276,
+"coupang": 1275,
 "toss": 631,
 "": 2,
 "naver": 55
