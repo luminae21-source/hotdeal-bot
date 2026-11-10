@@ -23,6 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
+      - if: github.event_name == 'schedule'   # 11/10 tick 체인 끊김(11/9 18:10Z tick·hotdeal 둘 다 잡 0개 실패) 뒤 tick 매시 예약도 6시간 안 옴 -> 예약으로 돈 hotdeal이 tick 다시 켬(돌고 있으면 그대로)
+        run: |
+          n=$(gh run list -R "$GITHUB_REPOSITORY" -w tick.yml -L 5 --json status --jq '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo 1)
+          [ "$n" != "0" ] || { echo "::warning::tick 체인 끊김 -> 다시 켬"; gh workflow run tick.yml -R "$GITHUB_REPOSITORY" || echo "::warning::tick 다시 켜기 실패"; }
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/checkout@v5
         with:
           ref: main                # 대기열에서 기다린 실행도 최신 main으로(기본 = 실행 예약 때 커밋 -> 앞 실행의 사이트 커밋과 충돌해 push 실패, 10/9 #376)

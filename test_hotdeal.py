@@ -14183,3 +14183,24 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert len(c177) == 5  # 더 할 글 없음 = 요청 X
 (H.http, H.POSTS, time.time) = sv177h
 os.chdir(cwd177); shutil.rmtree(d177, ignore_errors=True)
+
+# 9-178 (11/10 09:00 점검 — 11/9 18:10Z tick·hotdeal 둘 다 잡 0개 실패 = tick 체인 끊김 · tick 매시 예약도 6시간 안 옴 · 21:01Z hotdeal 예약 1번만):
+#   · hotdeal.yml 첫 단계 = 예약(schedule)으로 돈 실행만 tick 안 끝난 실행 수 보고 0이면 tick 다시 켬(gh 실패 = 1로 보고 그대로 · 켜기 실패 = 경고만)
+#   · 11/9 15:06Z 텔레그램 getUpdates 연결 끊김(Errno 104)이 publish_approved -> main 전체를 죽임 = 네트워크 오류만 잡고 실행 계속(코드 오류는 그대로 터짐)
+yml178 = open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+st178 = yml178.index("    steps:\n      - if: github.event_name == 'schedule'")
+assert st178 < yml178.index("      - uses: actions/checkout@v5") and yml178.count("gh workflow run tick.yml") == 1  # 체크아웃 전(뒤 단계가 실패해도 먼저) · 한 곳만
+sh178 = re.search(r"      - if: github.event_name == 'schedule'.*?\n        run: \|\n(.*?)\n        env:", yml178, re.S)[1]
+sh178 = "\n".join(l[10:] for l in sh178.split("\n"))
+d178 = tempfile.mkdtemp()
+for out178, rc178, want178 in (("1", 0, False), ("0", 0, True), ("", 1, False)):  # 돌고 있음 = 그대로 · 끊김 = 다시 켬 · gh 목록 실패 = 그대로(1)
+    open(f"{d178}/gh", "w").write(f"#!/bin/sh\nif [ \"$1\" = run ]; then echo {out178}; exit {rc178}; fi\necho \"$@\" >> {d178}/called\n")
+    os.chmod(f"{d178}/gh", 0o755)
+    if os.path.exists(f"{d178}/called"):
+        os.remove(f"{d178}/called")
+    r178 = subprocess.run(["bash", "-e", "-c", sh178], env={**os.environ, "PATH": f"{d178}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "o/r"}, capture_output=True, text=True)
+    assert r178.returncode == 0 and os.path.exists(f"{d178}/called") == want178, (out178, rc178, r178.stdout, r178.stderr)
+    assert not want178 or open(f"{d178}/called").read().startswith("workflow run tick.yml -R o/r") and "tick 체인 끊김" in r178.stdout
+shutil.rmtree(d178, ignore_errors=True)
+m178 = inspect.getsource(H.main)
+assert "    try:\n        publish_approved(seen)\n    except (urllib.error.URLError, ConnectionError, TimeoutError) as e:" in m178 and m178.count("publish_approved(seen)") == 1

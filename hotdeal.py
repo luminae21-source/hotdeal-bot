@@ -13023,7 +13023,10 @@ def main():
         toss_mode(seen)  # 토스 점검 재사용 모드(RUN['treuse'])·점검 알림 — 실패해도 실행은 계속
     except Exception as e:
         print("toss mode", repr(e))
-    publish_approved(seen)
+    try:
+        publish_approved(seen)
+    except (urllib.error.URLError, ConnectionError, TimeoutError) as e:  # 11/10: 11/9 15:06Z 텔레그램 getUpdates 연결 끊김(Errno 104)이 실행 전체를 죽임 -> 관리자 입력은 다음 실행에(확인 안 한 입력은 텔레그램이 24시간 보관)
+        print("publish_approved 네트워크 -> 다음 실행", err_brief(e))
     new, keys = [], set()
     deals = fetch_deals()
     mark_hot(deals)
