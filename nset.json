@@ -63,6 +63,20 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "운동",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
