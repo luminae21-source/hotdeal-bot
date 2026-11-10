@@ -1,9 +1,9 @@
 {
-"at": "2026-11-10 11:19",
-"posts": 4525,
-"site": 1947,
+"at": "2026-11-10 11:33",
+"posts": 4530,
+"site": 1948,
 "mall": {
-"coupang": 1260,
+"coupang": 1261,
 "toss": 630,
 "": 2,
 "naver": 55
@@ -13,7 +13,7 @@
 "home": 85,
 "beauty": 261,
 "fashion": 90,
-"food": 409,
+"food": 410,
 "laundry": 77,
 "season": 137,
 "life": 262,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 168,
-"sitemap": 780,
+"sitemap": 786,
 "days": {
 "2026-11-02": {
 "site": 1639,
@@ -109,10 +109,10 @@
 }
 },
 "2026-11-10": {
-"site": 1947,
-"sitemap": 780,
+"site": 1948,
+"sitemap": 786,
 "mall": {
-"coupang": 1260,
+"coupang": 1261,
 "toss": 630,
 "": 2,
 "naver": 55
@@ -178,7 +178,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 8 · 기존 상품 구성 0"
+"nset_n": "새 구성 9 · 기존 상품 구성 0"
 }
