@@ -1,6 +1,6 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-11-10 17:31",
+ "updated": "2026-11-11 17:27",
  "promos": [
   {
    "id": "gm-bigsmile-2611",
@@ -19,7 +19,7 @@
     "href": "https://www.gmarket.co.kr/"
    },
    "src": "https://www.fnnews.com/news/202610231616564882",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -36,7 +36,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.newspim.com/news/view/20261029000802",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -53,7 +53,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.ittimes.com/news/articleView.html?idxno=87880",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -70,7 +70,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.businesspost.co.kr/BP?command=article_view&num=450987",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -87,7 +87,7 @@
    "url": null,
    "cta": null,
    "src": "https://www.etnews.com/20261106000146",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -107,7 +107,7 @@
     "href": "https://www.lotteon.com/"
    },
    "src": "https://www.newspim.com/news/view/20261104000152",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -127,7 +127,7 @@
     "href": "https://www.lotteon.com/"
    },
    "src": "https://www.news1.kr/industry/distribution/6346934",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
    "kw": null
   },
   {
@@ -144,7 +144,24 @@
    "url": null,
    "cta": null,
    "src": "https://www.yna.co.kr/view/AKR20261110103500030",
-   "chk": "2026-11-10 17:31",
+   "chk": "2026-11-11 17:27",
+   "kw": null
+  },
+  {
+   "id": "cp-rlux-2611",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": "알럭스 2주년",
+   "name": "R.LUX Anniversary",
+   "start": null,
+   "end": "2026-11-15",
+   "pre": null,
+   "benefit": "럭셔리 뷰티 33개 브랜드 홀리데이 한정판 · 매일 오전 7시 'R.LUX SALE' 새 특가 · 브랜드별 사은품·전용 쿠폰",
+   "tag": null,
+   "url": null,
+   "cta": null,
+   "src": "https://www.betanews.net/article/view/beta202611100148",
+   "chk": "2026-11-11 17:27",
    "kw": null
   }
  ]
