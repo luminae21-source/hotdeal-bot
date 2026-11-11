@@ -9083,7 +9083,7 @@ def th_bundle(seen, kind, text, link=None, image=None, topic=None, alt=None):
         return None
     try:
         RUN["thk"] = kind  # ⑦ toss_guard d(1개 값 순 묶음 종류)
-        r = th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic), alt=alt)
+        r = th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic), **({"alt": alt} if alt else {}))  # alt = 22시 카드만
     except TossHold:  # ⑦ 보류 = 다시 시도 X
         raise
     except Exception:
