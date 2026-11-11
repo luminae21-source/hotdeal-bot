@@ -1,0 +1,129 @@
+{
+ "date": "2026-11-16",
+ "query": "에어프라이어",
+ "unit": "auto",
+ "chk": "2026-11-11 20:04",
+ "source": "coupang_partners_api",
+ "items": [
+  {
+   "rank": 6,
+   "pid": 7723142959,
+   "item": 87803427814,
+   "name": "홈플래닛 에어프라이어 3.9L",
+   "brand": "홈플래닛",
+   "price": 29990,
+   "img": "https://ads-partners.coupang.com/image1/lp_x0pWDwWbLolUhlhjTTDhFrLDwVCrUBPBuBNFCC0FCjL1n3Ja8jFjUip3A5b6FMl03X-Gxk974v3LuEutHUz6kDBr747hvPG8mNL3wB9rWu_EKQj2KxR52z28bg1mvBYOCXwxwzl1nuZ9gadiPHmzV3Yrt7bjgruC8aXkXgFGsf-GD2Kz8FgGMdrbW_P8Qh00Shk7PZMQBZuo7RAUhVHLIy-fDbI87lxDZMgK-HmO3U_zsizB61QkbBUHzUo-mNCTFA7aaQ1FaFxiRzkZKTtZ1_W0ShHNs9IiNhnRwdmfX0kf5RBS2q3KTfSqxjAgHoESUh1Iqdb9OTL8jAkmKcSJcVHskq0OO3KR0HsVSKHnn_IwK6hjcJfdS3kU_kPmtrO0e3YYz8Ricj-EfrqXWL1_eLobcKmZUWTvz9zUA1grN90X9f96hIHT8kc4Gvi8YZrtXiSlus16U9yjeZoZ3_qytaJ8QwaX1g-4Lo9PGF84mHHSpZ9NFB1R6J_FGQp1PEKhGraUgFj35FTtcwU-5x-s56w==",
+   "rocket": true,
+   "free_ship": false,
+   "qty": 1,
+   "size_each": 3900,
+   "size_unit": "ml",
+   "total": 3900,
+   "unit_value": 7690,
+   "unit_label": "1L당"
+  },
+  {
+   "rank": 10,
+   "pid": 9074364641,
+   "item": 93869187110,
+   "name": "히라 보이는 5L 에어프라이어",
+   "brand": "히라",
+   "price": 38900,
+   "img": "https://ads-partners.coupang.com/image1/Bab98fr6m93zCo4WBajKKy8O6-EpasgnB25qRdt2uikRPmHISc7zcVURm2Yd2ygZJGchPUOsgbs3XgO9akQXaqY2LGa_UtMd4YO38RjfKuyuleRrfozEamwYCn7H-QlqpFtF5Qq8aVo85nKV6BrA4-7VpOlgNkXMbzpzpsU_82pYsWG3H3VmybegdQVYpQXwdyDZVLXAVHumAGwyrJKdPON4dXERSQNehFtBBRP48UZEbeSXaiz-6QZhGoR9LlBNE7PBOrFPRnCYpf101SsY4_9SMcvLQkXqX003x6Y8j8CNFE2XopANom6U26sHsfXIRW3R82ZmGwUrNsoK87UiakrJiIwKrRCMs2pK_D83RZp-gaCIYP1zI7LOvqFnnL8GsOkklUuoLKjXtbZSZuW5EGcRI0t4ocf_m4OZaTvr6JgLjq8SzLMTNest3tgy4z_sDMcuu07r87-cjx2FXxBawzIt3FivcZYdagy0KZYu6AyZZrg33z0NL6WixuVM1CTUvnpwwqO2Hrlg9SDP4EKd-EpWeRNCy8EESol3dxFeVb_p96poaA==",
+   "rocket": true,
+   "free_ship": false,
+   "qty": 1,
+   "size_each": 5000,
+   "size_unit": "ml",
+   "total": 5000,
+   "unit_value": 7780,
+   "unit_label": "1L당"
+  },
+  {
+   "rank": 8,
+   "pid": 9648198897,
+   "item": 96031438474,
+   "name": "루미닉 대용량 보이는 에어프라이어 5L",
+   "brand": "루미닉",
+   "price": 39800,
+   "img": "https://ads-partners.coupang.com/image1/-R1CN5o6vGzuHxt--dKf9N3P2BbKE8XPGyqwJhLLd7HFEx7xuMEtMFJDX2FQQmOxVLrAfD7ZA1U1arw7U7WYz50aglkN4gYb7knjhwtXWtaepe4ERN_0fxcDcQGkbAzcSdh9tQsUN5kylQraMlwGteSdyERRM9AkvpvdnXHCM_6X1cwUIFkEfAy-SbSV6fZBWF93IXf73xPc-Xtziqh-yL0__V24s6a2epDgHsmJ9QeuJJzG3vAwexG-jkIDEbEWJxfWshVzhFx15XPySz2he50jGbnqxGUPQpDYbhws7aSpbGk3xwD_q_o8AJhzPjDxVFEExQ-mb57bJweSeSUBePHiMqNVW8Q9iSSbNmpG6fZJ0Bz9ndKh-noMQkI3GaLg9Ni4ZrugIygXCTPFPLBrEUaSwYa_rKX5vxYTuNx8uM5e1szZn9jGICTE3zrIu0YnpAVJ172mm455qqkkUazjllFuFL0yNbWyxJmnpH0jMX4d03txVixo7UAkoOI7Y5rrl2P8UZbQZtdodFRQn4KWJWyc",
+   "rocket": true,
+   "free_ship": false,
+   "qty": 1,
+   "size_each": 5000,
+   "size_unit": "ml",
+   "total": 5000,
+   "unit_value": 7960,
+   "unit_label": "1L당"
+  },
+  {
+   "rank": 5,
+   "pid": 6382734592,
+   "item": 81168891871,
+   "name": "최신형 리빙웰 30L 특대용량 올스텐 에어프라이어 AF300, AF300, 실버",
+   "brand": "최신형",
+   "price": 260000,
+   "img": "https://ads-partners.coupang.com/image1/17iCt962WkSeuihc12679rygbDuljOK8MlLcGsVb-ff0ZTLiTPHRg0e5UYlFT9e7yvaIEumLR7mKluUcYk_OL5efiFeb76PMvfTdqqKlOla2kWCLIe_76RcIIs8o4YKaEoKKbylc3N7JNkj5jkxN7SvogGzXmn-F4ZotePmOniWkUoFtIeikN1BtWv7FiAMToYFngDdVvl1SqCaC_DD1-fcpXRbJMlqscbFdDavT8nW0HsWVnfRfIpdyyzhQpDCTEQUJwPnC0UIbrjS5Xp1pvFYSn9R6Dw1Rp8f6WcFeWCJBU_E5bVjHYf-cCBcNOFrUiCm-TLCRjzld3mHiGPy4bPIPJVBUGbu0_Rq7lVblj7okGAwHtm8q-1PtqVYDSRJKTvtmPpju5JJgwt90ZuKQ3KlHLljfhw6KUnk80-6DTnuGfXQx21tWSEXpOjjgNMNH_KxpJiyo5VG9zxHOjKMFvIQuz6sLe48cg3PnNngdHwghZ3eNY3M_ictusKGGDRTtfcT4EH6gqlSHp6j-ddnXFu5Eh_lKkEw7",
+   "rocket": false,
+   "free_ship": true,
+   "qty": 1,
+   "size_each": 30000,
+   "size_unit": "ml",
+   "total": 30000,
+   "unit_value": 8667,
+   "unit_label": "1L당"
+  },
+  {
+   "rank": 1,
+   "pid": 1730725229,
+   "item": 70934600865,
+   "name": "리빙웰 스텐 에어프라이어 대용량 16리터 AF16, 화이트, AF16",
+   "brand": "리빙웰",
+   "price": 149000,
+   "img": "https://ads-partners.coupang.com/image1/qiKalNHkDpM4bW5nqiehb_VYisnv49sYjGlDy9ZACmk6HPfrS8ZHBK_qtujtBCLofCpkgwVldwV7_C6MUbFraBPe2PFDGyatjVmz9h5jUhMB6Dgw22aAo-bc4oYxNg5hhHbashkQNzIrIP0zBe_yS4H6KYd5SRDPcTHHXXPDW91X3rGQuSlJTTiKTqtkBostpreXFrt-55PjjWWx8pRCV339al4FdZ1Y_7R1wHjsAodlZ5Kx0ec8IyxB7HQXM7vdPkIOoDbW4iPy5dVSddSnBB4Jmis2srBq-j5ZcgUVPfyRkScTaoGJYwxD7-A2iLvX7Qf7B_t3GmAwpFFITyOCALrQHDa8797er6Bcu-VGJdFEoozMHCUR2ABnxo3D5hqHkza8qpfzpH2FWPBvBelppAyCm0i9Q8T7_JtXpexSy1-pMrQc-YL2-1Af0GI1Jquz0hCXc4EQsFw0UbtypcnDwW5SRUP8M_4IjbixRRjo6OppmOGil3cVnmlvxaOVadbIyVMbeVDDxjGqGu2sf3QIPOj0LSTEgcM=",
+   "rocket": false,
+   "free_ship": true,
+   "qty": null,
+   "size_each": null,
+   "size_unit": null,
+   "total": null,
+   "unit_value": null,
+   "unit_label": null
+  },
+  {
+   "rank": 3,
+   "pid": 9535512844,
+   "item": 95544876206,
+   "name": "닌자 크리스피 올인원 유리 에어프라이어 3.8L + 1.4L 세트, FN100KRWH, 화이트",
+   "brand": "닌자",
+   "price": 212430,
+   "img": "https://ads-partners.coupang.com/image1/zHOtwptniKNgd5l6zM-44ZC_wJRdlWgyX2pEzOe0JRUPxh7fzLvnh0cCT6daJfh3xeXNni8RLasXtX5kko87lNN3PCh6U7mixI4UC0lnqQzbnPA_fUOvQFtjeMNuhH5D3m4y5IKXNCzeIQecSDXDubTnWtI5tcJOS6-oU-RAGZSHJD8vYTLYPvEKGHgpnkW83gYtnZxdDejpzlpnpErtIDTLY74b_tnHUSD96phZ1AjWDUDfaFV3yLoLIlnoJ-h9y_xBrLNLa7_Qsa8eHtl-hCf_blb2ZmqL5CNggnnnRzQvC5YO0Q7mMKrE1ZaNiV4FbgpYdNXRHa91nVljP9V0SPWvsqyKWIjtF8VOTy_O5Mt0P5I_Dxg_M-yWw2go7L2cQpsxindAhOB8obcakF9BGaygVy4nTnePMNe56o-2btiG-1Zh_4aqmgFnKbMRx4JM-LDJs7rUgyC8z1VT34y4yilytaFl-YgejUfA8OC8zLCF_hw1pHOn2wjLF66xoW-q3E-t1c3tfQ==",
+   "rocket": true,
+   "free_ship": false,
+   "qty": null,
+   "size_each": null,
+   "size_unit": null,
+   "total": null,
+   "unit_value": null,
+   "unit_label": null
+  }
+ ],
+ "dropped": [
+  {
+   "name": "리빙웰 스텐 에어프라이어 대용량 16리터 AF16, 블랙, AF16",
+   "why": "같은 상품 다른 옵션"
+  },
+  {
+   "name": "닌자 크리스피 올인원 유리 에어프라이어 3.8L + 1.4L 세트, FN100KRSD1, 스톤",
+   "why": "같은 상품 다른 옵션"
+  },
+  {
+   "name": "홈플래닛 에어프라이어 5L",
+   "why": "같은 브랜드(홈플래닛) 순위 높은 것만"
+  },
+  {
+   "name": "홈플래닛 에어프라이어 2L",
+   "why": "같은 브랜드(홈플래닛) 순위 높은 것만"
+  }
+ ]
+}
