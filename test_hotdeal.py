@@ -14012,10 +14012,10 @@ assert "**({\"fresh\": st[\"fresh\"]} if st.get(\"fresh\") else {})" in inspect.
 #   · 대가성 문구(틀) · '⚠️ M/D HH:MM 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑' · 다른 몰·가격 비교·70%↑·toss_noimg 상품 = 카드에서 뺌 · '디자인 확인용·판매용 아님' 줄 X · 쿠팡 카드 = v3 그대로
 RD176 = os.path.dirname(os.path.abspath(H.__file__))
 from PIL import Image as I176
-for k176 in (3, 4, 5):
-    t176 = json.load(open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k176}.json")))
-    assert t176["mall"] == "toss" and t176["count"] == k176 == len(t176["rows"]) and t176["size"] == [1080, 1350] and I176.open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k176}.png")).size == (1080, 1350)
-assert not any(os.path.exists(os.path.join(RD176, f"tools/card/assets/tpl/{m}-{k}.json")) for m in ("coupang", "naver") for k in (3, 4, 5))  # 쿠팡·네이버 = 틀 X = v3 카드 그대로
+for m176 in ("toss", "coupang", "naver"):  # 11/12 진우 '쿠팡용도 바꿔서 올려' = hotdealpick-cards main(27f6ff3) assets/tpl 9종 그대로(몰 × 3·4·5칸)
+    for k176 in (3, 4, 5):
+        t176 = json.load(open(os.path.join(RD176, f"tools/card/assets/tpl/{m176}-{k176}.json")))
+        assert t176["mall"] == m176 and t176["count"] == k176 == len(t176["rows"]) and t176["size"] == [1080, 1350] and I176.open(os.path.join(RD176, f"tools/card/assets/tpl/{m176}-{k176}.png")).size == (1080, 1350)
 fj176, rm176 = open(os.path.join(RD176, "tools/card/assets/fill.js"), encoding="utf-8").read(), open(os.path.join(RD176, "tools/card/scripts/render.mjs"), encoding="utf-8").read()
 assert "`⚠️ ${short(data.checked)} 게시 시점 가격 · 결제 전 최종가 확인 · 사진: 토스쇼핑`" in fj176 and "'tpl', `${data.mall}-${data.items.length}.json`" in rm176 and "/assets/fill.html?data=" in rm176
 assert not re.search(r"판매용|디자인 확인|참고 시안|예시 상품|과거 참고", fj176 + open(os.path.join(RD176, "tools/card/assets/fill.css"), encoding="utf-8").read() + "".join(open(os.path.join(RD176, f"tools/card/assets/tpl/toss-{k}.json")).read() for k in (3, 4, 5)))
