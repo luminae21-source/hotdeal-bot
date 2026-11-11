@@ -1097,6 +1097,9 @@ def cp_deeplinks(urls, sub=None):
     파트너스 도메인 아닌 링크·응답에 없는 주소는 빠짐(대가성 문구가 빠지지 않게). 묶음 전체 오류(rCode 400) = ValueError."""
     r = coupang("POST", "/deeplink", {"coupangUrls": list(urls), **({"subId": sub} if sub else {})})
     ds, out = r if isinstance(r, list) else [], {}
+    if sub:  # ④ 11/12 진우: 채널 링크 응답 landingUrl에 subid 붙었는지만 셈(주소·값 X — 실행 끝 로그 1줄)
+        c = RUN.setdefault("cpsid", [0, 0])
+        c[0], c[1] = c[0] + sum("subid" in str((d if isinstance(d, dict) else {}).get("landingUrl") or "").lower() for d in ds), c[1] + len(ds)
     for k, d in enumerate(ds):
         d = d if isinstance(d, dict) else {}
         o = d.get("originalUrl") if d.get("originalUrl") in urls else urls[k] if len(ds) == len(urls) else None
@@ -13316,6 +13319,8 @@ def main():
         d = seen.setdefault(time.strftime("igapi_%Y%m%d", time.gmtime(time.time() + 9 * 3600)), {"n": 0})
         d.update(t=time.time(), n=d["n"] + RUN["igc"])
         print("ig api", RUN["igc"], "calls · 오늘", d["n"])
+    if RUN.get("cpsid"):
+        print("subid 붙음 {}/{}".format(*RUN["cpsid"]))  # ④ 채널 링크 만든 실행만
     try:
         watch(seen)
     except Exception as e:  # 감시가 실패해도 seen은 저장

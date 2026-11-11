@@ -14421,3 +14421,14 @@ assert len(n182) == 6 and not {0, 19} & set(n182) and 24 + len(n182) == 30, n182
 H.RUN.clear(); H.RUN.update(ru182); H.TH_DAY_CAP = None
 H.E.pop("THREADS_TOKEN", None) if tk182 is None else H.E.__setitem__("THREADS_TOKEN", tk182)
 
+# 9-183 (11/12 ④ 진우 '응'): 채널 링크(subId) 만들 때 쿠팡 응답 landingUrl에 subid 붙었는지만 셈 -> 실행 끝 로그 'subid 붙음 N/M'(주소·값 X)
+sv183 = (H.coupang, H.RUN.pop("cpsid", None))
+H.coupang = lambda m, path, body=None: [{"originalUrl": u, "shortenUrl": "https://link.coupang.com/a/x" + str(n), "landingUrl": "https://www.coupang.com/vp/products/1?lptag=AF1&subId=threads" if n == 0 else "https://www.coupang.com/vp/products/2?lptag=AF1"} for n, u in enumerate(body["coupangUrls"])]
+u183 = ["https://www.coupang.com/vp/products/1", "https://www.coupang.com/vp/products/2"]
+assert len(H.cp_deeplinks(u183, "threads")) == 2 and H.RUN["cpsid"] == [1, 2]
+H.cp_deeplinks(u183); assert H.RUN["cpsid"] == [1, 2]  # 채널 아닌 링크 = 안 셈
+H.coupang = lambda m, path, body=None: {"rCode": "0"}; H.cp_deeplinks(u183, "site"); assert H.RUN["cpsid"] == [1, 2]
+ms183 = inspect.getsource(H.main)
+assert '    if RUN.get("cpsid"):\n        print("subid 붙음 {}/{}".format(*RUN["cpsid"]))' in ms183 and "landingUrl" not in ms183
+H.coupang = sv183[0]; H.RUN.pop("cpsid", None)
+
