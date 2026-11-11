@@ -2484,7 +2484,7 @@ def publish_approved(seen=None):
                 v.update(pick=pick, pt=time.time())
             c = v.get("c", [])[int(v["pick"])] if str(v.get("pick")).isdigit() and int(v["pick"]) < len(v.get("c", [])) else None
             tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
-               reply_markup={"inline_keyboard": [[{"text": f"✅ {clip(c['n'], 30)} — 첫 댓글 링크" if c else "✅ 링크 없이 사진만" if v.get("pick") == "x" else "⚠️ 지난 버튼(기록 없음) — 새 버튼에서 골라줘", "callback_data": "-"}]]})
+               reply_markup={"inline_keyboard": [[{"text": f"✅ {clip(c['n'], 30)} — 본문 링크" if c else "✅ 링크 없이 사진만" if v.get("pick") == "x" else "⚠️ 지난 버튼(기록 없음) — 새 버튼에서 골라줘", "callback_data": "-"}]]})
             continue
         if m and str(q["from"]["id"]) == ADMIN and str(q.get("data", "")).startswith("igr:") and m["message_id"] not in handled:  # L: 인스타 답글 초안 [보내기]
             handled.add(m["message_id"])
@@ -3609,8 +3609,6 @@ def night_line(d, link=True):
 
 PV_HELLO = ("월요일 버티느라 고생 많았어요 🍵", "오늘 하루도 고생 많았어요 🍵", "한 주의 반, 잘 넘겼어요 🙌", "내일만 버티면 금요일이에요 💪",
             "드디어 금요일 밤이에요 🎉", "느긋한 토요일 밤 보내고 계세요? 🛋", "내일 출근 전, 장바구니 정리 어때요? 🧺")  # Threads 22시 미리보기 요일 인사(KST 월=0 — 10/25 23시 진우 '귀엽고 정겹게')
-PV_REPLY = (f"🛍 오늘 밤 딜, 여기서 한 번에 볼 수 있어요\n앱 설치 없이 바로 👉 {urllib.parse.urlsplit(SITE).netloc}\n\n"
-            "🔔 올라오자마자 알려드릴까요?\n텔레그램 👉 t.me/hotdeal_pick\n\n편안한 밤 보내세요 🌙")  # 미리보기 댓글(링크 카드 = 사이트 ?ref=th · 글자 주소는 ref 없이 · 대가성 문구·딜 줄 X)
 PV_PROMPT = """Threads 밤 미리보기 줄('22:10 이름 · 16,900원')에 쓸 짧은 상품 이름을 만들어 주세요(names[i] = i번 상품, 개수 그대로).
 - 휴대폰 한 줄에 들어가게 한글 13자 안팎(16자 넘지 않게).
 - 판매처·스토어 이름 앞머리(예: '명대잡는날')·겹치는 용량·수식어는 빼고 품목·브랜드·핵심 구분(5년/15년·20봉·1kg처럼 비슷한 상품끼리 구분되는 것 하나)만.
@@ -3643,7 +3641,7 @@ def preview(seen):
     """매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(10/11 진우 '리스트 필요, 꾸준함이 중요' — 팔로워가 이 시간엔 리스트가 뜬다고 알게): 진우 예약 딜 중
     지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads(10/25 23시 진우 '귀엽고 정겹게' ·
     '홈페이지 링크도 · 링크는 첫 댓글에'): 본문 = 대가성 문구(맨 위 1번) · 요일 인사 · 수수료 딜 전부 시각 순 '시각 짧은 이름 · 가격'(아이콘·🤔·💡 X, pv_names) · 500자 넘으면 뒷줄 대신 '🧺 그리고 N개 더…'
-    · 링크 카드 X / 댓글 1개 = 사이트·텔레그램(PV_REPLY, 링크 카드 = 사이트 ?ref=th). 댓글 못 다는 토큰·본문 다시 올리기 = 끝 2줄을 사이트·텔레그램으로 바꾼 글 1개 + 링크 카드.
+    · 11/11 끝 줄 = 본문 사이트 링크 1개(?ref=th) + 링크 카드 · 댓글 X.
     개별 글은 예약대로 그대로 나감. 묶음 글이라 BUNDLE_GAP(토스 22시 회차보다 먼저 — main 순서), 23시 넘으면 안 올림(이미 나가기 시작), 적은 날은 21시 모아보기에(digest)."""
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -3672,31 +3670,17 @@ def preview(seen):
         return
     note = "\n".join(dict.fromkeys(aff_note(d["url"]) for d in ds))  # 대가성 문구 = 본문 맨 위 1번(프로그램마다 · 댓글엔 X)
     rows = [f"{d['at'][11:]} {nm}" + (f" · {d['price']}" if d["price"] else "") for d, nm in zip(ds, pv_names([d["full"] for d in ds]))]  # 시각 순(night_deals) · 브랜드 1개 규칙 X · 짧은 이름(pv_names)
-    link, can = f"{SITE}?ref=th", TH_REPLY and th_reply_ok(seen)  # 댓글(reply_to_id)이 되는 토큰일 때만 '👇 댓글에'
+    link = f"{SITE}?ref=th"  # 11/11 진우 '쓰레드 링크는 본문에 — 터치도 귀찮은 게 사람들 마음': 댓글 X · 본문 끝 사이트 링크 1개 + 링크 카드
 
-    def body(reply):
-        end = "\n\n⏰ 시간 맞춰 하나씩 쏙쏙 올려드릴게요\n👇 한눈에 보기·알림은 댓글에 있어요" if reply else f"\n\n🛍 한눈에 보기 {urllib.parse.urlsplit(SITE).netloc}\n🔔 텔레그램 알림 t.me/hotdeal_pick"
+    def body():
+        end = f"\n\n🛍 오늘 밤 딜 한눈에 보기 👉 {link}"
         for k in range(len(rows), 0, -1):  # Threads 500자(th_len — 이모지 = UTF-8 바이트): 넘치면 뒷줄을 빼고 '🧺 그리고 N개 더…' 1줄(댓글로 밀지 X)
             text = f"{note}\n\n{PV_HELLO[kst.tm_wday]}\n🌙 오늘 밤 딜 {len(ds)}개, 먼저 살짝 보여드려요\n\n" + "\n".join(rows[:k]) \
                 + (f"\n🧺 그리고 {len(rows) - k}개 더 있어요, 시간 맞춰 올려드릴게요" if k < len(rows) else "") + end
             if th_len(text) <= 500:
                 break
         return text
-    try:
-        r = th_bundle(seen, "preview", body(can), None if can else link)  # 댓글이 있으면 본문엔 링크 카드 X
-    except Exception:
-        if can:  # 다음 실행 재시도(th_retry)는 글 1개 -> 끝 2줄 = 사이트·텔레그램 + 링크 카드('👇 댓글에' X)
-            seen[time.strftime("thretry_%Y%m%d_preview", kst)].update(text=rv_text("preview", body(False)), link=link)
-        raise
-    if not can:
-        return
-    try:
-        th_reply(tok, r["id"], PV_REPLY, link)
-    except Exception as e:  # 본문은 이미 나감('👇 댓글에' — Threads 글은 못 고침) -> 관리자에게 바로(댓글 붙여넣기용) · 다음 날부터 3일은 글 1개 + 링크 카드(th_reply_ok 다시 확인 전)
-        print("preview 댓글 실패", err_brief(e))
-        seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
-        tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 22시 미리보기 댓글 실패({err_brief(e)}) — 본문은 나갔고 '👇 댓글에 있어요'가 남아 있어. "
-           f"아래 글을 Threads 앱에서 그 글 댓글로 붙여넣어 줘(링크 {link})\n\n{PV_REPLY}")
+    th_bundle(seen, "preview", body(), link)
 
 
 def cp_events(seen, deals=()):
@@ -10354,7 +10338,7 @@ def rev_bad(e):
 
 def review_post(seen):
     """HHH① 구매후기 요약 글(rev_events): 시각 ~ 6시간 안 · 쿠팡 주소 = 파트너스 링크로 바뀐 뒤(cp_links) · 채널마다 1번(실패 = 다음 실행에 그 채널만 다시).
-    텔레그램 채널 = 쿠팡 대가성 문구 + 본문 그대로 + 버튼 · Threads = 대가성 문구 + 본문 그대로 + 사진 1장(img) · 구매 링크는 첫 댓글(10/26 결정 — 채널 ID는 http가 붙임) ·
+    텔레그램 채널 = 쿠팡 대가성 문구 + 본문 그대로 + 버튼 · Threads = 대가성 문구 + 본문 그대로 + 사진 1장(img) · 구매 링크 = 본문 끝(11/11 진우 — 10/26엔 첫 댓글 · 채널 ID는 http가 붙임) ·
     올린 뒤 docs/reviews.json{상품 번호: {at, text}} -> 사이트 같은 상품 p/ 쪽 '구매후기 요약 (M/D 기준)' 칸. 검사(rev_bad)·500자 걸림 = 안 올림 + 관리자 알림(1번)."""
     now, tok = time.time(), E.get("THREADS_TOKEN")
     for e in rev_events():
@@ -10363,7 +10347,8 @@ def review_post(seen):
         if st.get("x") or st.get("tg") and (st.get("th") or not tok) or not t0 <= now <= t0 + REV_LATE or re.match(CP_PROD, e["url"]):
             continue  # 쿠팡 상품 주소 그대로 = cp_links가 바꾼 뒤(6시간 안)
         body = f"{DISCLOSURE}\n\n{e['text'].strip()}"
-        why = rev_bad(e) or ("Threads 500자 넘음" if tok and th_len(f"{body}\n\n{TH_AB_MARK}") > 500 else "")
+        tb = f"{body}\n\n👉 구매 링크 {e['url']}"  # 11/11 진우 '쓰레드 링크는 본문에 — 터치도 귀찮은 게 사람들 마음': 링크 = 본문 끝 · 댓글 X
+        why = rev_bad(e) or ("Threads 500자 넘음" if tok and th_len(tb) > 500 else "")
         if why:
             seen[key] = {"t": now, "x": why}
             print("review 안 올림", e["at"], why)
@@ -10376,16 +10361,10 @@ def review_post(seen):
         if tok and not st.get("th") and not busy(seen, cap=False) and not th_hold(seen):  # 묶음 글 10분 안·힘 준 글 20분 = 다음 실행(딜 글 수·간격 그대로)
             try:
                 me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-                tb = f"{body}\n\n{TH_AB_MARK}"
                 r = (e.get("img") and th_img(tok, me, tb, e["img"], th_topic(seen, e["text"]))) or th_post(tok, tb, None, None, th_topic(seen, e["text"]))
-                st["th"], reply = r["id"], th_ab(body, e["url"])[1]
+                st["th"] = r["id"]
                 bundled(seen)
                 th_nd(seen)
-                try:
-                    th_reply(tok, r["id"], reply)
-                except Exception as x:  # 링크 댓글 = 다음 실행에 1번 더(th_deal과 같은 thabq)
-                    seen[f"thabq_{r['id']}"] = {"t": now, "id": r["id"], "text": reply}
-                    print("review th 댓글 다음 실행", err_brief(x))
             except Exception as x:
                 print("review th", e["at"], err_brief(x))
         if st.get("tg") or st.get("th"):
@@ -10565,21 +10544,20 @@ def curation(seen):
 
 
 DPOST_AT, DPOST_PREP, DPOST_N, DPOST_MINPH, DPOST_DIR = (20, 40), 30 * 60, 5, 3, "docs/cards/drop"  # 10/25 23시 진우 D: 📉 하루 1번 20:40(진우 예약 20시대·22:03 미리보기와 따로 — 묶음 간격 busy) · 30분 전 카드 준비(커밋 -> 사이트) · 상품 5개 · 사진 3개↑일 때만
-DPOST_REPLY = "📉 가격 내려간 상품 전체는 여기서 볼 수 있어요 👇\n\n🔔 올라오자마자 알려드릴까요?\n텔레그램 👉 t.me/hotdeal_pick"  # 사이트 주소 = 링크 카드만(?ref=thd)
 
 
 def drop_post(seen):
     """📉 가격 내려간 상품 하루 1번(10/25 23시 진우 D): 사이트 📉 칸과 같은 기준(build_site.drops — 같은 구성·첫 기록 대비·확인 24시간 안) 중 수수료 링크·3일 안 안 쓴 상품을
     내림 큰 순으로 사진(쿠팡 img_of — ig_photo) 있는 것만 DPOST_N개 · DPOST_MINPH개 미만이면 그날 X. DPOST_AT 30분 전 카드(우리 서버 JPEG — 상품마다 기록가 취소선 → 지금가·▼N%·동물 + 표지)를
     docs/cards/drop/에 만들고(이 실행 커밋 -> 사이트) DPOST_AT 뒤 사이트에 뜨면(HEAD) Threads = 캐러셀(상품 장) + 본문(대가성 문구 맨 위·귀여운 말투·'이름 · 기록가 → 지금가 (▼N%)'·기준 줄)
-    + 댓글(사이트 c/drop/ 링크 카드 ?ref=thd · 텔레그램) / 인스타 = 표지 + 상품 장 넘기기(캡션 '프로필 링크 → 가격 내려간 상품' — 하루 상한·2시간 간격·쉼은 ig_publish).
+    + 본문 끝 사이트 c/drop/ 링크 1개(?ref=thd — 11/11 댓글 X) / 인스타 = 표지 + 상품 장 넘기기(캡션 '프로필 링크 → 가격 내려간 상품' — 하루 상한·2시간 간격·쉼은 ig_publish).
     'N원 쌈'·'최저가' X · 쿠폰·와우 가격은 글자 그대로. 1시간 넘게 안 뜨면 그날 X. Threads 실패 = 다음 실행에 다시(3번째 = 알림·그만)."""
     import cards
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     day, sec, at = time.strftime("%Y-%m-%d", kst), kst.tm_hour * 3600 + kst.tm_min * 60, DPOST_AT[0] * 3600 + DPOST_AT[1] * 60
     key, link = "droppost_" + day.replace("-", ""), f"{c_url('drop')}?ref=thd"
-    ends = ("\n👇 전체는 댓글에 있어요", f"\n\n🛍 전체 보기 {link}\n🔔 텔레그램 알림 t.me/hotdeal_pick")  # 댓글 됨 / 댓글 못 다는 토큰 = 본문에 주소
+    end = f"\n\n🛍 가격 내려간 상품 전체 보기 👉 {link}"  # 11/11 진우 '쓰레드 링크는 본문에': 댓글 X · 본문 끝 링크 1개
     st = seen.get(key)
     if st is None:
         if not at - DPOST_PREP <= sec < at + WX_LATE:
@@ -10658,11 +10636,10 @@ def drop_post(seen):
         return
     if busy(seen, cap=False) or th_hold(seen):  # 묶음 간격·힘 준 글 20분 -> 다음 실행에
         return
-    can = TH_REPLY and th_reply_ok(seen)
-    text = st["th"] + ends[0 if can else 1]
+    text = st["th"] + end
     try:
         me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
-        r = th_carousel(tok, me, text, urls[1:], th_topic(seen)) or th_text(tok, me, text, None if can else link, th_topic(seen))
+        r = th_carousel(tok, me, text, urls[1:], th_topic(seen)) or th_text(tok, me, text, link, th_topic(seen))
     except Exception as x:
         st["n_th"] = st.get("n_th", 0) + 1
         print("drop post threads 실패", st["n_th"], err_brief(x))
@@ -10673,13 +10650,6 @@ def drop_post(seen):
     st["post"], st["done"] = r["id"], 1
     bundled(seen)
     print("drop post: Threads", r["id"], len(urls) - 1, "장")
-    if can:
-        try:
-            th_reply(tok, r["id"], DPOST_REPLY, link)
-        except Exception as e:  # 본문은 이미 나감('👇 댓글에') -> 관리자에게 바로(붙여넣기용)
-            print("drop post 댓글 실패", err_brief(e))
-            seen["threply"] = {"t": time.time(), "ok": 0, "err": (getattr(e, "body", "") or repr(e))[:300]}
-            tg("sendMessage", chat_id=ADMIN, text=f"⚠️ 📉 가격 내려간 상품 댓글 실패({err_brief(e)}) — 아래 글을 Threads 앱에서 그 글 댓글로 붙여넣어 줘(링크 {link})\n\n{DPOST_REPLY}")
 
 IG_H = True  # 10/26 H·L·M(진우 '노출이 너무 적고 보고 싶을 수준 X' · '광고처럼 보여, 소통하고 싶어' · '꾸준하게 제품도 시간마다'): 피드 = IG_FEED 4칸 형식 돌림 · 시간대·하루 카드·📉 = 스토리 · False = 예전(칸 카드 피드)
 IG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}  # M-1 피드 4칸(3시간 간격 + 15~20분 무작위 지연) — 카드 이름 날짜_시(사이트 맨 위·c/칸 맨 위 번호 = 인스타 번호)
@@ -11325,7 +11295,7 @@ def daily_in(seen, m, cap):
         open(f"{DAILY_DIR}/{name}", "wb").write(data)
         ask = (HAS_CP or HAS_TOSS) and not re.search(r"https?://", cap) and bool(daily_kw(cap))  # P: 링크 없는 '#일상 상품명' = 같은 상품 링크 후보 먼저(daily_cands)
         seen[k] = {"t": time.time(), "text": cap, "img": f"{SITE}daily/{name}", **({"ask": 1} if ask else {})}
-        reply("📝 받았어요 — " + ("같은 상품 링크 후보를 찾아서 버튼으로 보낼게요(고른 것 = 첫 댓글 링크 · '없음' = 사진만)" if ask else "사이트에 사진이 올라가면(15분쯤) Threads에 올릴게요"))
+        reply("📝 받았어요 — " + ("같은 상품 링크 후보를 찾아서 버튼으로 보낼게요(고른 것 = 본문 링크 · '없음' = 사진만)" if ask else "사이트에 사진이 올라가면(15분쯤) Threads에 올릴게요"))
     except Exception as e:
         print("daily in", repr(e))
         reply(f"⚠️ #일상 사진을 못 받았어요: {err_brief(e)} — 다시 보내줘")
@@ -11339,7 +11309,7 @@ def daily_kw(cap):
 
 def daily_cands(seen):
     """P(10/26 진우): 링크 없는 #일상 = 같은 상품 링크 후보 3개(토스 하루특가·많이 팔린 이름에 검색어 낱말이 다 든 것 먼저 — 다른 몰 비교 없는 캡션만 · 점검 땐 보관 링크 있는 것만
-    -> 쿠팡 검색 API) -> 관리봇 버튼(publish_approved 'dl:' — 이 버튼 메시지에서 누른 것만) · 진우가 고른 것만 첫 댓글 링크(daily_post) · '없음'·후보 0개 = 사진만.
+    -> 쿠팡 검색 API) -> 관리봇 버튼(publish_approved 'dl:' — 이 버튼 메시지에서 누른 것만) · 진우가 고른 것만 본문 링크(daily_post — 11/11 댓글 X) · '없음'·후보 0개 = 사진만.
     main 맨 앞 단계(쿠팡 검색 상한을 사진 가격 확인보다 먼저) · 실행마다 1건 · 토스 후보는 1번만 받아 둠(tc) · 쿠팡 상한·오류 = 다음 실행에 · 버튼 못 보냄 = 다음 실행에 다시."""
     for k in [k for k in seen if k.startswith("dly_") and seen[k].get("ask") and "c" not in seen[k] and not seen[k].get("done")]:
         v = seen[k]
@@ -11370,7 +11340,7 @@ def daily_cands(seen):
             continue
         kb = [[{"text": f"{'💙 토스' if c.get('toss') else '🚀 쿠팡'} · {clip(c['n'], 30)} · {c['p']:,}원", "callback_data": f"dl:{k[4:]}:{i}"}] for i, c in enumerate(v["cs"])]
         r = tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:]), "allow_sending_without_reply": True},
-               text=f"🔗 '{kw}' 같은 상품 링크 후보 — 사진 속 상품과 확실히 같을 때만 골라줘(고른 것 = 첫 댓글 링크)", reply_markup={"inline_keyboard": kb + [[{"text": "❌ 없음(사진만)", "callback_data": f"dl:{k[4:]}:x"}]]})
+               text=f"🔗 '{kw}' 같은 상품 링크 후보 — 사진 속 상품과 확실히 같을 때만 골라줘(고른 것 = 본문 링크)", reply_markup={"inline_keyboard": kb + [[{"text": "❌ 없음(사진만)", "callback_data": f"dl:{k[4:]}:x"}]]})
         if r:  # 보낸 버튼 메시지 = 이 후보 목록(다른 버튼 메시지에서 누른 건 안 받음)
             v.update(c=v.pop("cs"), kb=r["message_id"])
         return
@@ -11400,21 +11370,14 @@ def daily_post(seen):
         except Exception as e:  # 링크 못 만듦 = 사진만(사진 글은 그대로 올림)
             print("daily toss link", clip(repr(e), 80))
             link = None
-        why = "" if not c else "링크 못 만듦" if not link else "" if TH_REPLY and th_reply_ok(seen) else "댓글 못 닮"  # 링크 = 첫 댓글만(본문 X)
-        body, note = daily_text(f"{v['text']}\n{link}").replace(f"\n{link}", "") if link and not why else daily_text(v["text"]), link and aff_note(link)
-        if link and not why and th_len(body) > 480:  # 대가성 문구·게시 시점 줄 붙이면 500자에서 잘림 = 사진만
-            why = "대가성 문구까지 480자 넘음"
-        if why:
-            body = daily_text(v["text"])
+        why = "" if not c else "링크 못 만듦" if not link else ""
+        body = daily_text(f"{v['text']}\n\n👉 구매 링크 {link}") if link and not why else daily_text(v["text"])  # 11/11 진우 '쓰레드 링크는 본문에': 링크 = 본문 끝(대가성 문구 맨 위 = daily_text) · 댓글 X
+        if link and not why and th_len(body) > 500:  # 대가성 문구·게시 시점 줄·링크까지 500자 넘음 = 사진만
+            why, body = "대가성 문구·링크까지 500자 넘음", daily_text(v["text"])
         rep = link and not why
-        r = th_post(tok, body, image=v["img"], tag=th_topic(seen, base="일상"))
+        th_post(tok, body, image=v["img"], tag=th_topic(seen, base="일상"))
         bundled(seen)
-        try:
-            if rep:
-                th_reply(tok, r["id"], f"{note}\n\n👉 구매 링크 {link}", link)
-        except Exception as e:
-            tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text=f"⚠️ #일상 링크 댓글 실패({err_brief(e)}) — 앱에서 직접 달아줘\n{link}")
-        tail = " (링크 = 첫 댓글)" if rep else f" (링크 없이 사진만: {why}" + (f" · 필요하면 앱에서 직접 댓글 {link}" if link else "") + ")" if why else " (하루 동안 안 골라서 사진만)" if v.get("late") else ""
+        tail = " (링크 = 본문)" if rep else f" (링크 없이 사진만: {why}" + (f" · 필요하면 앱에서 직접 댓글 {link}" if link else "") + ")" if why else " (하루 동안 안 골라서 사진만)" if v.get("late") else ""
         tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": int(k[4:])}, text="✅ Threads에 올렸어요" + tail)
         return  # 1번에 1개(묶음 간격)
 

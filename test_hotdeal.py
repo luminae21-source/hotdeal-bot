@@ -3024,9 +3024,9 @@ assert "쌈" not in rows7[1] and "쌈" not in rows7[2] and rows7[3].startswith("
 assert t7.endswith("🔔 매일 밤 10시 미리보기 · 알림 켜두면 안 놓쳐요") and seen7[f"preview_{D7.replace('-', '')}"]["mid"] == 777 and seen7["bundles"]["ts"][-1] == TK(f"{D7} 22:07")
 q7 = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)
 tt = q7["text"][0]; rows7t = tt.split("\n\n")[2].split("\n"); wd7 = time.gmtime(TK(f"{D7} 22:07") + 9 * 3600).tm_wday
-assert tt.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + f"\n\n{H.PV_HELLO[wd7]}\n🌙 오늘 밤 딜 7개, 먼저 살짝 보여드려요\n\n22:20 ") and H.th_len(tt) <= 500 and "toss.shopping" not in tt and "http" not in tt, tt  # 10/25 23시 진우 '귀엽고 정겹게': 대가성 문구 맨 위 1번 · 요일 인사 · 상품 주소 X
+assert tt.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + f"\n\n{H.PV_HELLO[wd7]}\n🌙 오늘 밤 딜 7개, 먼저 살짝 보여드려요\n\n22:20 ") and H.th_len(tt) <= 500 and "toss.shopping" not in tt and tt.count("http") == 1, tt  # 10/25 23시 진우 '귀엽고 정겹게': 대가성 문구 맨 위 1번 · 요일 인사 · 상품 주소 X
 assert [l[:5] for l in rows7t] == ["22:20", "22:30", "22:40", "23:00", "23:10", "23:20", "07:50"] and all(re.fullmatch(r"\d\d:\d\d \S.* · [\d,]+원", l) for l in rows7t), rows7t  # 시각 순 전부(약한 딜도) · '시각 이름 · 가격'
-assert not re.search("[🔥🛒👍🤔💡]|쌈|…|특가로는", "\n".join(rows7t)) and tt.endswith("\n\n🛍 한눈에 보기 hotdealpick.kr\n🔔 텔레그램 알림 t.me/hotdeal_pick")  # 아이콘·🤔 메모·💡 비교·'…' X · 댓글 못 다는 토큰 = 끝 2줄 사이트·텔레그램
+assert not re.search("[🔥🛒👍🤔💡]|쌈|…|특가로는", "\n".join(rows7t)) and tt.endswith(f"\n\n🛍 오늘 밤 딜 한눈에 보기 👉 {H.SITE}?ref=th")  # 아이콘·🤔 메모·💡 비교·'…' X · 11/11 끝 = 본문 사이트 링크 1개
 assert q7["link_attachment"] == [f"{H.SITE}?ref=th"] and not [u for u in th7 if "reply_to_id" in u] and "댓글" not in tt  # 글 1개 + 링크 카드(사이트) · 댓글 X
 assert len(H.PV_HELLO) == 7 and len(set(H.PV_HELLO)) == 7 and H.PV_HELLO[0].startswith("월요일") and H.PV_HELLO[4].startswith("드디어 금요일") and H.PV_HELLO[6].startswith("내일 출근 전")  # 요일 인사 7개(월=0)
 at7("22:21"); assert not sent7 and not th7  # 하루 1번
@@ -3041,7 +3041,7 @@ with contextlib.redirect_stdout(o7): assert H.pv_names(F7[:1]) == ["명대잡는
 assert H.pv_name("휴지 30롤") == "휴지 30롤" and H.pv_name("가나다라마바사아자차카타파하가나다라") == "가나다라마바사아자차카타파" and H.pv_name("아주 긴 상품 이름 1번 대용량 기획 세트") == "아주 긴 상품 이름 1번"
 json.dump([{"at": f"{D7} 22:{10 + k}", "text": f"🔥 <b>[토스] 아주 긴 상품 이름 {k}번 대용량 기획 세트 묶음 (19,900원)</b>\n\n💡 쿠팡 같은 상품(29,900원)보다 10,000원 쌈", "url": f"https://toss.shopping/_m/L{k}", "deal": True, "button": "b"} for k in range(30)], open("events.json", "w"), ensure_ascii=False)
 at7("22:05", sv={"threply": {"t": 1, "ok": 0}}); tl = urllib.parse.parse_qs(urllib.parse.urlsplit([u for u in th7 if "/9/threads?" in u][0]).query)["text"][0]; nl7 = len(re.findall(r"\n22:\d\d ", tl))
-assert H.th_len(tl) <= 500 and nl7 < 30 and f"\n🧺 그리고 {30 - nl7}개 더 있어요, 시간 맞춰 올려드릴게요\n\n🛍 한눈에 보기" in tl and "딜 30개," in tl and len([u for u in th7 if "/9/threads?" in u]) == 1, tl  # 500자 넘음 = 뒷줄 대신 '🧺 그리고 N개 더…' 1줄(댓글로 밀지 X)
+assert H.th_len(tl) <= 500 and nl7 < 30 and f"\n🧺 그리고 {30 - nl7}개 더 있어요, 시간 맞춰 올려드릴게요\n\n🛍 오늘 밤 딜 한눈에 보기 👉 {H.SITE}?ref=th" in tl and "딜 30개," in tl and len([u for u in th7 if "/9/threads?" in u]) == 1, tl  # 500자 넘음 = 뒷줄 대신 '🧺 그리고 N개 더…' 1줄(댓글로 밀지 X)
 H.ai_json = ai7
 # 9-7b) (10/13 타래 -> 10/25 23시 진우 '홈페이지 링크도 · 링크는 첫 댓글에 · 귀엽고 정겹게') Threads 미리보기 = 본문(딜 전부·링크 카드 X) + 댓글 1개(사이트·텔레그램, 링크 카드 = 사이트) ·
 #       브랜드 1개 규칙 X(시각 순) · 토스 = 다른 몰 비교 X · 댓글 못 다는 토큰·다시 올리기 = 글 1개 + 링크 카드 · 본문 뒤 댓글 실패 = 관리자 알림
@@ -3060,20 +3060,11 @@ def http7b(url, body=None, headers=None, method=None):
     if "/threads_publish?" in url: return json.dumps({"id": "m" + url.split("creation_id=c")[1].split("&")[0]})
     raise AssertionError(url)
 H.http, H.TOSS_NO_CMP = http7b, True; at7("22:05", sv={"threply": {"t": 1, "ok": 1}})
-(_, b7, l7, _), (rto7, rt7, rl7, _) = rp7
+assert len(rp7) == 1 and rp7[0][0] is None, rp7  # 11/11 진우 '쓰레드 링크는 본문에' = 댓글 되는 토큰이어도 글 1개(댓글 X)
+(_, b7, l7, _), = rp7
 rb7 = b7.split("\n\n")[2].split("\n")
-assert l7 is None and H.th_len(b7) <= 500 and b7.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n") and "\n🌙 오늘 밤 딜 21개, 먼저 살짝 보여드려요\n\n22:10 메르헨트 상품 0번" in b7 and b7.count("메르헨트") == 2, b7  # 본문 = 링크 카드 X · 같은 브랜드도 시각 순 그대로
-assert b7.endswith("\n\n⏰ 시간 맞춰 하나씩 쏙쏙 올려드릴게요\n👇 한눈에 보기·알림은 댓글에 있어요") and [l[:5] for l in rb7[:-1]] == sorted(l[:5] for l in rb7[:-1]) and rb7[-1] == f"🧺 그리고 {21 - (len(rb7) - 1)}개 더 있어요, 시간 맞춰 올려드릴게요" and "쌈" not in b7 and "http" not in b7
-assert rto7 == "m1" and rt7 == H.PV_REPLY and rl7 == f"{H.SITE}?ref=th" and not re.search(r"\d\d:\d\d ", rt7) and not rt7.startswith(H.NOTE_STARTS) and "hotdealpick.kr\n" in rt7 and "ref=" not in rt7  # 댓글 1개 = 사이트(글자 주소 ref X · 카드에만)·텔레그램 · 딜 줄·대가성 문구 X
-rp7.clear(); pk7 = {}; at7("22:05", sv=pk7); assert pk7["threply"]["ok"] == 1 and [x[0] for x in rp7][:2] == ["p0", None] and rp7[2][0] == f"m{rp7[1][3]}" and len(rp7) == 3, rp7  # 권한 확인 = 내 최근 글에 컨테이너만(발행 X) -> 되면 본문 + 댓글
-def http7c(url, body=None, headers=None, method=None):
-    if "reply_to_id" in url:
-        e = urllib.error.HTTPError(url, 400, "Bad", None, None); e.body = '{"error": {"message": "Application does not have permission for this action", "code": 10}}'; raise e
-    return http7b(url, body, headers, method)
-H.http, pk7, rp7[:] = http7c, {}, []; at7("22:05", sv=pk7)
-assert pk7["threply"]["ok"] == 0 and len(rp7) == 1 and rp7[0][2] == f"{H.SITE}?ref=th" and rp7[0][1].endswith("\n🔔 텔레그램 알림 t.me/hotdeal_pick")  # 댓글 못 다는 토큰 = 글 1개 + 링크 카드
-H.http, rp7[:] = http7c, []; at7("22:05", sv={"threply": {"t": 1, "ok": 1}}); a7 = [p["text"] for m, p in sent7 if p.get("chat_id") == H.ADMIN]
-assert len(rp7) == 1 and rp7[0][1].endswith("👇 한눈에 보기·알림은 댓글에 있어요") and len(a7) == 1 and a7[0].startswith("⚠️ 22시 미리보기 댓글 실패") and a7[0].endswith(H.PV_REPLY)  # 본문 뒤 댓글 실패 = 관리자에게 바로(붙여넣기용)
+assert l7 == f"{H.SITE}?ref=th" and H.th_len(b7) <= 500 and b7.startswith(H.TOSS_NOTE + "\n" + H.DISCLOSURE + "\n\n") and "\n🌙 오늘 밤 딜 21개, 먼저 살짝 보여드려요\n\n22:10 메르헨트 상품 0번" in b7 and b7.count("메르헨트") == 2, b7  # 링크 카드 = 사이트 · 같은 브랜드도 시각 순 그대로
+assert b7.endswith(f"\n\n🛍 오늘 밤 딜 한눈에 보기 👉 {H.SITE}?ref=th") and [l[:5] for l in rb7[:-1]] == sorted(l[:5] for l in rb7[:-1]) and rb7[-1] == f"🧺 그리고 {21 - (len(rb7) - 1)}개 더 있어요, 시간 맞춰 올려드릴게요" and "쌈" not in b7 and b7.count("http") == 1 and "댓글" not in b7  # 본문 링크 1개 · 댓글 말 X
 def http7d(url, body=None, headers=None, method=None):
     if "threads_publish" in url: raise urllib.error.HTTPError(url, 500, "x", None, None)
     return http7b(url, body, headers, method)
@@ -3082,7 +3073,7 @@ try:
     at7("22:05", sv=pk7); raise AssertionError("본문 실패는 예외(main 알림)")
 except urllib.error.HTTPError:
     rt7x = pk7[f"thretry_{D7.replace('-', '')}_preview"]
-    assert rt7x["link"] == f"{H.SITE}?ref=th" and rt7x["text"].endswith("\n🛍 한눈에 보기 hotdealpick.kr\n🔔 텔레그램 알림 t.me/hotdeal_pick") and "댓글" not in rt7x["text"]  # 다시 올리기 = 글 1개 + 링크 카드('👇 댓글에' X)
+    assert rt7x["link"] == f"{H.SITE}?ref=th" and rt7x["text"].endswith(f"\n🛍 오늘 밤 딜 한눈에 보기 👉 {H.SITE}?ref=th") and "댓글" not in rt7x["text"]  # 다시 올리기 = 같은 글 1개 + 링크 카드
 H.http, H.TOSS_NO_CMP = http7, False
 # 9-7c) 10/13 01:50 진우 '업로드 안 되면 바로 알람': ① 미리보기 댓글 실패 알림 = 10/25 미리보기 댓글 안 씀으로 없어짐 ② 업로드 단계 실패 -> 바로(같은 단계·오류는 3시간에 1번),
 #       텔레그램 채널 글 실패도, 다시 올라가면 '✅ 다시 올라감' ③ 8~24시 Threads 2시간 글 없음 -> '⏸' 1번 · 예약 글 시각 + 20분 안 나감 -> 예약마다 1번
@@ -8011,8 +8002,8 @@ assert not [u for m, u, b in c71 if u.endswith("/u71/media")]  # 인스타 다�
 kids71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "/threads?" in u and "is_carousel_item" in u]
 car71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "media_type=CAROUSEL" in u]
 rep71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "reply_to_id" in u]
-assert len(kids71) == 5 and kids71[0]["image_url"] == ["https://hotdealpick.kr/cards/drop/2026-10-26_1.jpg"] and len(car71) == 1 and car71[0]["text"] == [th71 + "\n👇 전체는 댓글에 있어요"]  # Threads = 상품 장 5장(표지 X)
-assert H.th_len(car71[0]["text"][0]) <= 500 and rep71[0]["reply_to_id"] == ["T71"] and rep71[0]["text"] == [H.DPOST_REPLY] and rep71[0]["link_attachment"] == ["https://hotdealpick.kr/c/drop/?ref=thd"] and "hotdealpick.kr" not in H.DPOST_REPLY  # 댓글 = 링크 카드만 · 텔레그램 줄
+assert len(kids71) == 5 and kids71[0]["image_url"] == ["https://hotdealpick.kr/cards/drop/2026-10-26_1.jpg"] and len(car71) == 1 and car71[0]["text"] == [th71 + "\n\n🛍 가격 내려간 상품 전체 보기 👉 https://hotdealpick.kr/c/drop/?ref=thd"]  # Threads = 상품 장 5장(표지 X) · 11/11 본문 끝 링크 1개
+assert H.th_len(car71[0]["text"][0]) <= 500 and not rep71 and car71[0]["text"][0].count("http") == 1 and "댓글" not in car71[0]["text"][0] and car71[0]["text"][0].startswith(H.NOTE_STARTS)  # 11/11 진우 '쓰레드 링크는 본문에' = 댓글 X · 대가성 문구 첫 줄
 assert st["done"] == 1 and st["post"] == "T71" and s71["bundles"]["ts"]
 c71.clear()
 with contextlib.redirect_stdout(io.StringIO()):
@@ -8027,7 +8018,7 @@ s71b = {"dropu": {}}; H.th_reply_ok = lambda seen: False; c71.clear(); H.pv_name
 with contextlib.redirect_stdout(io.StringIO()):
     at71("2026-10-28 20:15"); H.drop_post(s71b); at71("2026-10-28 20:45"); H.E.pop("IG_TOKEN"); H.drop_post(s71b)
 car71 = [urllib.parse.parse_qs(urllib.parse.urlsplit(u).query) for m, u, b in c71 if "media_type=CAROUSEL" in u]
-assert car71[0]["text"][0].endswith("\n\n🛍 전체 보기 https://hotdealpick.kr/c/drop/?ref=thd\n🔔 텔레그램 알림 t.me/hotdeal_pick") and not [u for m, u, b in c71 if "reply_to_id" in u] and H.th_len(car71[0]["text"][0]) <= 500 and 2 <= car71[0]["text"][0].count("아주 긴 이름") < 5
+assert car71[0]["text"][0].endswith("\n\n🛍 가격 내려간 상품 전체 보기 👉 https://hotdealpick.kr/c/drop/?ref=thd") and not [u for m, u, b in c71 if "reply_to_id" in u] and H.th_len(car71[0]["text"][0]) <= 500 and 2 <= car71[0]["text"][0].count("아주 긴 이름") < 5
 assert "ig" not in s71b["droppost_20261028"]  # 인스타 토큰 없음 = 인스타 X
 # 인스타 게시 기록·알림 이름 = 가격 내려간 상품(ig_publish kind drop)
 assert H.IG_KIND["drop"] == "가격 내려간 상품" and 'kind in IG_KIND' in inspect.getsource(H.ig_publish) and "drop_post" in H.ALERT_STEPS
@@ -8657,19 +8648,19 @@ assert "pick" not in s76["dly_90"]  # 없는 후보 번호 = 안 받음
 H.tg = lambda m, **p: o76.append((m, p)) or (UP76 if m == "getUpdates" and "offset" not in p else {"message_id": 900}); o76.clear()
 H.publish_approved(s76)
 ed76 = [p for m, p in o76 if m == "editMessageReplyMarkup"]
-assert s76["dly_90"]["pick"] == "0" and len(ed76) == 1 and ed76[0]["reply_markup"]["inline_keyboard"][0][0]["text"] == "✅ 코멧 손난로 100g 30개 — 첫 댓글 링크"  # 첫 고름만 · 관리자 말고 X
+assert s76["dly_90"]["pick"] == "0" and len(ed76) == 1 and ed76[0]["reply_markup"]["inline_keyboard"][0][0]["text"] == "✅ 코멧 손난로 100g 30개 — 본문 링크"  # 첫 고름만 · 관리자 말고 X
 UP76[:] = [{"update_id": 4, "callback_query": {"from": {"id": 42}, "data": "dl:90:2", "message": {"message_id": 900, "chat": {"id": 42}}}},
            {"update_id": 5, "callback_query": {"from": {"id": 42}, "data": "dl:90:1", "message": {"message_id": 899, "chat": {"id": 42}}}}]; o76.clear(); H.publish_approved(s76)
 assert s76["dly_90"]["pick"] == "0" and "지난 버튼" in [p for m, p in o76 if m == "editMessageReplyMarkup"][1]["reply_markup"]["inline_keyboard"][0][0]["text"]  # 다음 실행에 또 눌러도 처음 고른 것 · 다른(지난) 버튼 메시지 = X
 H.tg = lambda m, **p: o76.append((m, p)) or {"message_id": 900}; o76.clear()
 H.daily_post(s76)
-assert th76 == [("post", H.th_note(H.TOSS_NOTE) + "#일상 코멧 손난로 🔥\n요즘 매일 들고 다님\n\n" + H.toss_when(), None, "https://hotdealpick.kr/daily/90.jpg"),
-                ("reply", "P76", f"{H.TOSS_NOTE}\n\n👉 구매 링크 https://toss.im/_m/T11", "https://toss.im/_m/T11")], th76  # 토스 = 고른 뒤 쉐어링크 · 게시 시점 줄 · 링크 = 첫 댓글
-assert o76[-1][1]["text"] == "✅ Threads에 올렸어요 (링크 = 첫 댓글)" and s76["dly_90"]["done"]
+assert th76 == [("post", H.th_note(H.TOSS_NOTE) + "#일상 코멧 손난로 🔥\n요즘 매일 들고 다님\n\n👉 구매 링크 https://toss.im/_m/T11\n\n" + H.toss_when(), None, "https://hotdealpick.kr/daily/90.jpg")], th76  # 토스 = 고른 뒤 쉐어링크 · 게시 시점 줄 · 11/11 진우 '쓰레드 링크는 본문에' = 본문 링크 1개 · 댓글 X
+assert th76[0][1].startswith(H.NOTE_STARTS) and th76[0][1].count("http") == 1 and H.th_len(th76[0][1]) <= 500 and "댓글" not in th76[0][1]  # 대가성 문구 첫 줄 · 링크 1개 · 500자 안
+assert o76[-1][1]["text"] == "✅ Threads에 올렸어요 (링크 = 본문)" and s76["dly_90"]["done"]
 th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: False
 s76b = {"dly_92": {"t": TK("2026-10-26 10:00"), "text": "#일상 핫팩", "img": "https://hotdealpick.kr/daily/92.jpg", "ask": 1, "c": CP76[:0] + [{"n": "코멧 핫팩", "p": 1, "u": "https://link.coupang.com/re/AFF1"}], "pick": "0"}}
 H.daily_post(s76b)
-assert th76 == [("post", "#일상 핫팩", None, "https://hotdealpick.kr/daily/92.jpg")] and o76[-1][1]["text"].endswith("(링크 없이 사진만: 댓글 못 닮 · 필요하면 앱에서 직접 댓글 https://link.coupang.com/re/AFF1)")  # 링크 = 첫 댓글만(본문 X)
+assert th76 == [("post", H.daily_text("#일상 핫팩\n\n👉 구매 링크 https://link.coupang.com/re/AFF1"), None, "https://hotdealpick.kr/daily/92.jpg")] and th76[0][1].startswith(H.NOTE_STARTS) and o76[-1][1]["text"].endswith("(링크 = 본문)")  # 댓글 못 다는 토큰이어도 = 본문 링크
 th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: True
 s76c = {"dly_93": {"t": TK("2026-10-26 10:00"), "text": "#일상 산책길", "img": "https://hotdealpick.kr/daily/93.jpg", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/A"}], "pick": "x"},
         "dly_94": {"t": TK("2026-10-26 10:00"), "text": "#일상 손난로", "img": "https://hotdealpick.kr/daily/94.jpg", "ask": 1, "c": [{"n": "토스 손난로", "p": 1, "toss": 14}], "pick": "0"}}
@@ -8679,7 +8670,7 @@ assert o76[0][1]["text"] == "✅ Threads에 올렸어요" and o76[-1][1]["text"]
 H.toss_link = lambda seen, iid, name="": f"https://toss.im/_m/T{iid}"; th76.clear(); o76.clear()
 H.th_reply = lambda tok, to, text, link=None: (_ for _ in ()).throw(OSError("reply 500"))
 s76d = {"dly_95": {"t": TK("2026-10-26 10:00"), "text": "#일상 핫팩", "img": "https://hotdealpick.kr/daily/95.jpg", "ask": 1, "c": [{"n": "코멧 핫팩", "p": 1, "u": "https://link.coupang.com/re/AFF1"}], "pick": "0"}}
-H.daily_post(s76d); assert "링크 댓글 실패" in o76[0][1]["text"] and o76[0][1]["text"].endswith("https://link.coupang.com/re/AFF1") and "(링크 = 첫 댓글)" in o76[1][1]["text"]  # 댓글 실패 = 진우가 직접(링크 알려 줌)
+H.daily_post(s76d); assert len(o76) == 1 and "(링크 = 본문)" in o76[0][1]["text"] and "https://link.coupang.com/re/AFF1" in th76[0][1]  # 댓글 X = th_reply 안 부름(부르면 위 OSError)
 o76.clear(); tc76.clear(); cs76.clear(); H.coupang = lambda m, p, b=None: cs76.append(p) or {"productData": []}
 s76e = {"dly_96": {"t": TK("2026-10-26 10:00"), "text": "#일상 쿠팡보다 싸게 산 손난로", "img": "x", "ask": 1}}
 H.daily_cands(s76e); assert s76e["dly_96"]["c"] == [] and s76e["dly_96"]["pick"] == "x" and "못 찾아서 사진만" in o76[0][1]["text"] and not tc76  # 다른 몰 비교 캡션 = 토스 X · 후보 0 = 사진만
@@ -8704,7 +8695,7 @@ H.toss, H.RUN["treuse"] = (lambda path, body=None: tc76.append(path) or {"items"
 H.daily_cands(s76k); H.RUN.pop("treuse"); assert [c.get("toss") or c["u"][-4:] for c in s76k["dly_105"]["c"]] == [21, "AFF1", "AFF2"]  # 토스 점검(재사용) = 보관 링크 있는 상품만
 th76.clear(); o76.clear(); H.th_reply_ok = lambda seen: True
 s76i = {"dly_103": {"t": TK("2026-10-26 10:00"), "text": "#일상 " + "가" * 400, "img": "x", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/" + "A" * 80}], "pick": "0"}}
-s76i["dly_103"]["text"] = "#일상 " + "가" * 440; H.daily_post(s76i); assert th76 == [("post", "#일상 " + "가" * 440, None, "x")] and "(링크 없이 사진만: 대가성 문구까지 480자 넘음" in o76[-1][1]["text"]  # 대가성 문구 붙이면 480자 넘음 = 사진만(잘린 글 X)
+s76i["dly_103"]["text"] = "#일상 " + "가" * 440; H.daily_post(s76i); assert th76 == [("post", "#일상 " + "가" * 440, None, "x")] and "(링크 없이 사진만: 대가성 문구·링크까지 500자 넘음" in o76[-1][1]["text"]  # 대가성 문구·링크 붙이면 500자 넘음 = 사진만(잘린 글 X)
 th76.clear(); o76.clear(); H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("404"))
 s76l = {"dly_106": {"t": TK("2026-10-26 07:00"), "text": "#일상 a", "img": "x", "ask": 1, "c": [], "pick": "x", "pt": TK("2026-10-26 09:50")},
         "dly_107": {"t": TK("2026-10-25 09:00"), "text": "#일상 b", "img": "y", "ask": 1, "c": [{"n": "a", "p": 1, "u": "https://link.coupang.com/re/A"}], "kb": 1}}
@@ -11021,9 +11012,9 @@ H.review_post(s109); assert not tg109 and not th109  # 쿠팡 주소 그대로 =
 json.dump({R109: L109}, open("cp_links.json", "w"))
 H.review_post(s109)
 assert tg109 == [("sendMessage", {"chat_id": "-100109", "link_preview_options": {"is_disabled": True}, "text": f"{H.DISCLOSURE}\n\n{TX109}", "reply_markup": {"inline_keyboard": [[{"text": "📦 쿠팡에서 보기", "url": L109}]]}})]
-assert th109[0] == ("img", f"{H.DISCLOSURE}\n\n{TX109}\n\n{H.TH_AB_MARK}", "https://thumbnail.coupangcdn.com/r777.jpg", "생활") and th109[1][:2] == ("reply", "T1") and th109[1][2].startswith(H.DISCLOSURE) and f"👉 {L109}" in th109[1][2]  # 본문 그대로 + 사진 1장 · 링크 = 첫 댓글(대가성 문구 첫 줄)
+assert th109 == [("img", f"{H.DISCLOSURE}\n\n{TX109}\n\n👉 구매 링크 {L109}", "https://thumbnail.coupangcdn.com/r777.jpg", "생활")] and th109[0][1].count("http") == 1 and "댓글" not in th109[0][1]  # 본문 그대로 + 사진 1장 · 11/11 링크 = 본문 끝(댓글 X · 대가성 문구 첫 줄)
 assert json.load(open("docs/reviews.json")) == {"777": {"at": "2026-10-30 20:00", "text": TX109}} and s109["revw_2026-10-30 20:00"]["tg"] == 55 and s109["revw_2026-10-30 20:00"]["th"] == "T1"
-H.review_post(s109); assert len(tg109) == 1 and len(th109) == 2  # 1번만
+H.review_post(s109); assert len(tg109) == 1 and len(th109) == 1  # 1번만
 time.time = lambda: TK("2026-10-31 02:02"); json.dump([{**ev109, "at": "2026-10-30 20:01"}], open("events.json", "w"), ensure_ascii=False); H.review_post(s109); assert len(tg109) == 1  # 6시간 지남 = X
 time.time = lambda: TK("2026-10-31 09:05")
 for bad, why in (("겨울이라 더워지면 덜 쓰게 돼요", "계절·기온"), ("이 물티슈가 역대급 최저가예요", "금지어"), ("가" * 480, "500자")):
