@@ -1,19 +1,19 @@
 {
- "date": "2026-11-11",
- "updated": "2026-11-11 06:42 봇",
+ "date": "2026-11-12",
+ "updated": "2026-11-12 06:42 봇",
  "items": [
   {
-   "fact": "서울 아침 4도",
+   "fact": "서울 아침 6도",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
-    "출퇴근 겨울템 2026",
-    "핫초코·코코아",
-    "율무차"
+    "율무차",
+    "둥굴레차·현미녹차",
+    "밀크티·라떼 스틱"
    ]
   },
   {
-   "fact": "수능(11/19)까지 8일",
+   "fact": "수능(11/19)까지 7일",
    "kind": "cal",
    "src": "",
    "fit": [
