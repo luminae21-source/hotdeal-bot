@@ -14365,7 +14365,7 @@ assert H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성�
 # 9-182 (11/12 ③ 진우 '글이 너무 많으면 의미가 없지'): Threads 하루 30개 안팎 — 조회 낮은 종류(기념일 특가·알림 받기·수다·토스 개별) 끔 · 쿠팡 개별 = 남는 몫을 시간 따라
 # · 0시·19시 쿠팡 개별 X · 자동 묶음 글은 Threads만 07:40·21:10(20분씩)으로 · 지킬 글(묶음·미리보기·예약 목록 등) = 상한과 상관없이 · 셈 = seen thcap · metrics chg th_cut30
 assert cap0 == 30 and H.TH_CUT == ("dday", "funnel", "chat", "toss") and set(H.TH_QUIET) == {0, 19} and H.TH_CUT_FROM == "2026-11-12"
-sv182 = (H.http, H.time.sleep, H.th_hold, time.time, dict(H.RUN), H.E.get("THREADS_TOKEN"))
+sv182 = (H.http, H.time.sleep, H.th_hold, time.time, dict(H.RUN), H.E.get("THREADS_TOKEN"), H.TOSS_GAP)
 H.TH_DAY_CAP = 30
 for k182 in H.TH_CUT:
     assert not H.th_cap({}, k182, TK("2026-11-12 12:00"))  # 끔
@@ -14402,7 +14402,7 @@ del th182[:]
 for at182 in ("21:05", "21:12", "21:20", "21:31", "21:40"):
     time.time = lambda: TK(f"2026-11-12 {at182}"); H.th_retry(s182); th182.append(at182)
 assert th182 == ["21:05", "🚀 cpmix 글", "21:12", "21:20", "🚀 steady 글", "21:31", "21:40"], th182  # 그 시각 뒤 실행마다 1개
-s182 = {"thmall": {"cp": TK("2026-11-12 07:35")}}; H.RUN.update(seen=s182); del th182[:]
+s182 = {"thmall": {"cp": TK("2026-11-12 07:35")}}; H.RUN.update(seen=s182); del th182[:]; H.TOSS_GAP = 15 * 60  # 앞머리 = 0(끔) — 여기선 실제 값
 time.time = lambda: TK("2026-11-12 00:20"); H.toss_th_photo(s182, "toss0", f"{H.TOSS_NOTE}\n🎁 토스 묶음", [])
 time.time = lambda: TK("2026-11-12 07:41"); H.th_retry(s182); assert not th182  # 토스↔쿠팡 15분
 time.time = lambda: TK("2026-11-12 07:51"); H.th_retry(s182); assert th182 == [f"{H.TOSS_NOTE}\n🎁 토스 묶음"], th182  # 0시 -> 07:40 뒤
@@ -14417,7 +14417,7 @@ for h182 in range(24):
     if H.th_cap(s182, "cp", t182):
         n182.append(h182); s182.setdefault("thcap", {}).setdefault("2026-11-12", {"n": 0, "k": {}})["k"]["cp"] = len(n182)
 assert len(n182) == 6 and not {0, 19} & set(n182) and 24 + len(n182) == 30, n182
-(H.http, H.time.sleep, H.th_hold, time.time, ru182, tk182) = sv182
+(H.http, H.time.sleep, H.th_hold, time.time, ru182, tk182, H.TOSS_GAP) = sv182
 H.RUN.clear(); H.RUN.update(ru182); H.TH_DAY_CAP = None
 H.E.pop("THREADS_TOKEN", None) if tk182 is None else H.E.__setitem__("THREADS_TOKEN", tk182)
 
