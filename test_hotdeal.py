@@ -14362,26 +14362,28 @@ assert H.cp_kws("필립스 미니 600 시리즈 AC0650/10")[-1] == "필립스 AC
 assert H.cp_kws("동계 성에제거 스프레이 420ml × 2통") == ["동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이"] and H.cp_kws("살림백서 구연산 주방세제 레몬 4L")[-1] == "살림백서 주방세제 레몬"  # 모델명 없음 = 그대로
 assert H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 2개") and H.cp_same("불스원 레인OK 성에제거 400ml 1통", "불스원 레인OK 성에제거, 400ml, 1개") and not H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 1개")
 
-# 9-182 (11/12 ③ 진우 '글이 너무 많으면 의미가 없지'): Threads 하루 30개 안팎 — 조회 낮은 종류(기념일 특가·알림 받기·수다·토스 개별) 끔 · 쿠팡 개별 = 남는 몫을 시간 따라
-# · 0시·19시 쿠팡 개별 X · 자동 묶음 글은 Threads만 07:40·21:10(20분씩)으로 · 지킬 글(묶음·미리보기·예약 목록 등) = 상한과 상관없이 · 셈 = seen thcap · metrics chg th_cut30
-assert cap0 == 30 and H.TH_CUT == ("dday", "funnel", "chat", "toss") and set(H.TH_QUIET) == {0, 19} and H.TH_CUT_FROM == "2026-11-12"
+# 9-182 (11/12 ③ 진우 '글이 너무 많으면 의미가 없지' · 07:24 '토스 5개 살려'·'쿠팡 개별딜도 그냥 유지'): Threads 하루 상한 40 — 조회 낮은 종류(기념일 특가·알림 받기·수다) 끔
+# · 토스 개별 = 하루 5개를 시간 따라 · 쿠팡 개별 = 예전 개수(상한 − 어제 지킬 글 − 토스 몫) · 0시·19시 개별 X · 자동 묶음 글은 Threads만 07:40·21:10(20분씩)으로 · 지킬 글(묶음·미리보기·예약 목록 등) = 상한과 상관없이 · 셈 = seen thcap · metrics chg th_cut30
+assert cap0 == 40 and H.TH_CUT == ("dday", "funnel", "chat") and H.TH_TOSS_DAY == 5 and set(H.TH_QUIET) == {0, 19} and H.TH_CUT_FROM == "2026-11-12"
 sv182 = (H.http, H.time.sleep, H.th_hold, time.time, dict(H.RUN), H.E.get("THREADS_TOKEN"), H.TOSS_GAP)
-H.TH_DAY_CAP = 30
+H.TH_DAY_CAP = 40
 for k182 in H.TH_CUT:
     assert not H.th_cap({}, k182, TK("2026-11-12 12:00"))  # 끔
-assert all(not H.th_cap({}, "cp", TK(f"2026-11-12 {h:02d}:30")) for h in (0, 19)) and H.th_cap({}, "cp", TK("2026-11-12 01:10"))
-c182 = lambda n, h, y=None: H.th_cap({"thcap": {**({"2026-11-11": y} if y else {}), "2026-11-12": {"n": 99, "k": {"cp": n}}}}, "cp", TK(f"2026-11-12 {h:02d}:05"))
-assert c182(0, 1) and not c182(1, 1) and c182(1, 4) and not c182(2, 7) and c182(5, 22) and not c182(6, 23)  # 어제 기록 없음 = 지킬 글 24 -> 6개를 시간 따라(1·4·8·12·16·20시)
-assert c182(7, 22, {"n": 20, "k": {"cp": 3, "toss": 1}}) and not c182(14, 23, {"n": 20, "k": {"cp": 3, "toss": 1}})  # 어제 지킬 글 16 -> 14개
+assert all(not H.th_cap({}, k, TK(f"2026-11-12 {h:02d}:30")) for h in (0, 19) for k in ("cp", "toss")) and H.th_cap({}, "cp", TK("2026-11-12 01:10")) and H.th_cap({}, "toss", TK("2026-11-12 01:10"))
+c182 = lambda n, h, y=None, k="cp": H.th_cap({"thcap": {**({"2026-11-11": y} if y else {}), "2026-11-12": {"n": 99, "k": {k: n}}}}, k, TK(f"2026-11-12 {h:02d}:05"))
+assert c182(10, 1) and not c182(11, 1) and not c182(11, 23)  # 어제 기록 없음 = 지킬 글 24 -> 쿠팡 40 − 24 − 5 = 11(시간 나눔 X — 예전 개수 그대로)
+assert c182(18, 22, {"n": 20, "k": {"cp": 3, "toss": 1}}) and not c182(19, 23, {"n": 20, "k": {"cp": 3, "toss": 1}})  # 어제 지킬 글 16 -> 19개
 assert not c182(0, 22, {"n": 40, "k": {"cp": 2}})  # 어제 지킬 글 38 = 쿠팡 개별 0
-H.TH_DAY_CAP = None; assert all(H.th_cap({}, k, TK("2026-11-12 19:10")) for k in H.TH_CUT + ("cp",)); H.TH_DAY_CAP = 30  # None = 예전대로
+t182 = lambda n, h: c182(n, h, {"n": 60, "k": {}}, "toss")  # 토스 = 어제 기록과 상관없이 하루 5개를 시간 따라(1·4·9·14·20시부터)
+assert t182(0, 1) and not t182(1, 1) and t182(1, 4) and not t182(2, 8) and t182(2, 9) and t182(3, 14) and not t182(4, 18) and t182(4, 20) and not t182(5, 23)
+H.TH_DAY_CAP = None; assert all(H.th_cap({}, k, TK("2026-11-12 19:10")) for k in H.TH_CUT + ("cp", "toss")); H.TH_DAY_CAP = 40  # None = 예전대로
 s182 = {"thcap": {"2026-11-08": {"n": 3, "k": {}}, "2026-11-11": {"n": 1, "k": {}}}}
 H.RUN.update(seen=s182, ok=set()); time.time = lambda: TK("2026-11-12 09:00")
 for k182 in ({"thc": "cp"}, {"thk": "chat"}, {"thk": "steady"}, {}):
     H.RUN.pop("thc", None); H.RUN.pop("thk", None); H.RUN.update(k182); H.th_ok({"id": "1"})
 H.RUN.pop("thc", None); H.RUN.pop("thk", None)
 assert s182["thcap"] == {"2026-11-11": {"n": 1, "k": {}}, "2026-11-12": {"n": 4, "k": {"cp": 1, "chat": 1}}}, s182  # 3일 보관 · 줄일 종류만 k
-H.TH_DAY_CAP = None; H.th_ok({"id": "2"}); H.TH_DAY_CAP = 30
+H.TH_DAY_CAP = None; H.th_ok({"id": "2"}); H.TH_DAY_CAP = 40
 assert s182["thcap"]["2026-11-12"]["n"] == 4  # 끄면 안 셈
 th182 = []
 def http182(url, body=None, headers=None, method=None):
@@ -14411,12 +14413,20 @@ for f182, k182 in ((H.toss_deals, "toss"), (H.toss_picks, "toss"), (H.toss_reope
 assert "cap = {m: th_cap(seen, m, now) for m in (\"toss\", \"cp\")}" in inspect.getsource(H.threads_deals) and "[c for c in todo if cap[mall(c)]]" in inspect.getsource(H.threads_deals)
 assert 'RUN["thc"] = None, "toss" if is_toss(link, src or text) else "cp"' in inspect.getsource(H.th_deal) and 'finally:\n        RUN.pop("thc", None)' in inspect.getsource(H.th_deal)
 assert 'if day == TH_CUT_FROM:\n        m[day]["chg"] = m[day].get("chg", []) + ["th_cut30"]' in inspect.getsource(H.metrics_rows)
-s182 = {}; n182 = []  # 하루: 지킬 글 24 + 쿠팡 개별 매시 시도 -> 30 안팎 · 0시·19시 0
-for h182 in range(24):
-    t182 = TK(f"2026-11-12 {h182:02d}:10")
-    if H.th_cap(s182, "cp", t182):
-        n182.append(h182); s182.setdefault("thcap", {}).setdefault("2026-11-12", {"n": 0, "k": {}})["k"]["cp"] = len(n182)
-assert len(n182) == 6 and not {0, 19} & set(n182) and 24 + len(n182) == 30, n182
+def day182(keep, cp):  # 하루: 지킬 글 keep(어제도 같음) + 쿠팡 개별 딜 cp시각(0시·19시 것은 다음 시간에 — 1시간에 1개) + 토스 매시 시도 -> {종류: 올린 시각들}
+    sv, out, q = {"thcap": {"2026-11-11": {"n": keep, "k": {}}}}, {"cp": [], "toss": []}, []
+    for h in range(24):
+        q += [h] * cp.count(h)
+        for k, ok in (("cp", bool(q)), ("toss", True)):
+            if ok and H.th_cap(sv, k, TK(f"2026-11-12 {h:02d}:10")):
+                out[k].append(h); q = q[1:] if k == "cp" else q
+                sv["thcap"].setdefault("2026-11-12", {"n": 0, "k": {}})["k"][k] = len(out[k])
+    return out
+o182 = day182(24, [0, 2, 5, 8, 11, 13, 16, 19, 21])  # 2주 평균: 지킬 글 24 · 쿠팡 9.3
+assert len(o182["cp"]) == 9 and len(o182["toss"]) == 5 and not {0, 19} & set(o182["cp"] + o182["toss"]) and 24 + 9 + 5 <= 40, o182  # 쿠팡 안 깎임 · 토스 5 · 0시·19시 0
+assert o182["cp"][0] == 1 and 20 in o182["cp"] and o182["toss"] == [1, 4, 9, 14, 20], o182  # 0시 딜 -> 1시 · 19시 딜 -> 20시
+o182 = day182(30, list(range(1, 19)))  # 지킬 글이 많은 날 = 쿠팡 개별만 남는 몫(40 − 30 − 5 = 5)
+assert len(o182["cp"]) == 5 and len(o182["toss"]) == 5 and 30 + 5 + 5 == 40, o182  # 합계 상한 40
 (H.http, H.time.sleep, H.th_hold, time.time, ru182, tk182, H.TOSS_GAP) = sv182
 H.RUN.clear(); H.RUN.update(ru182); H.TH_DAY_CAP = None
 H.E.pop("THREADS_TOKEN", None) if tk182 is None else H.E.__setitem__("THREADS_TOKEN", tk182)

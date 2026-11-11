@@ -9287,14 +9287,16 @@ def th_landed(tok, text, since):
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 15, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
-TH_DAY_CAP, TH_CUT, TH_QUIET, TH_KEEP0, TH_CUT_FROM = 30, ("dday", "funnel", "chat", "toss"), {0: "07:40", 19: "21:10"}, 24, "2026-11-12"  # ③ 11/11 23:56 진우 '글이 너무 많으면 의미가 없지'(Threads만 — 텔레그램·인스타 그대로 · None = 예전대로):
-# 봇 Threads 글 하루 30개 안팎 · TH_CUT = 2주(10/28~11/10) 글당 조회 낮은 순으로 끔(기념일 특가 3.2 · 알림 받기 6.5 · 수다 6.7 · 토스 개별 6.8) · 쿠팡 개별(7.9) = 남는 몫만(th_cap)
+TH_DAY_CAP, TH_CUT, TH_TOSS_DAY, TH_QUIET, TH_KEEP0, TH_CUT_FROM = 40, ("dday", "funnel", "chat"), 5, {0: "07:40", 19: "21:10"}, 24, "2026-11-12"  # ③ 11/11 23:56 진우 '글이 너무 많으면 의미가 없지'(Threads만 — 텔레그램·인스타 그대로 · None = 예전대로):
+# 11/12 07:24 진우 '토스 5개 살려'·'쿠팡 개별딜도 그냥 유지' -> 봇 Threads 글 하루 약 38~39(상한 40) · TH_CUT = 2주(10/28~11/10) 글당 조회 낮은 순으로 끔(기념일 특가 3.2 · 알림 받기 6.5 · 수다 6.7)
+# · 토스 개별 = 하루 TH_TOSS_DAY개(10/31 '토스 하루 5개' — 따로 둔 몫, 시간 따라) · 쿠팡 개별 = 예전 개수(상한 − 어제 지킬 글 − 토스 몫 = 약 11 — 안 깎임 · 간격 규칙 그대로)
 # · TH_QUIET = 0시·19시: 쿠팡 개별 = 안 올림(다음 시간에) · 자동 묶음 글 = Threads만 그 시각(뒤로 20분씩 — th_defer)으로 옮김(채널 글 그대로 · 22시 미리보기·예약 목록 X) · TH_KEEP0 = 어제 기록 없을 때 지킬 글(묶음·미리보기·달력·투표·예약·힘 준 글 등) 수(2주 평균)
 
 
 def th_cap(seen, kind, now=None):
-    """③ kind('cp' = 쿠팡 개별 · TH_CUT 종류)를 지금 Threads에 올려도 되는지: TH_CUT·TH_QUIET 시각 = X · 쿠팡 개별 = 하루 몫(TH_DAY_CAP − 어제 지킬 글 수)을
-    시간 따라 나눠서(h시까지 몫×(h+1)/24 — 한 시간대 몰림 X). 그 밖의 글(묶음·미리보기·달력·투표·예약·힘 준 글·가격 내려간 글 등) = 이 검사 X. 셈 = th_count(seen thcap)."""
+    """③ kind('cp' = 쿠팡 개별 · 'toss' = 토스 개별 · TH_CUT 종류)를 지금 Threads에 올려도 되는지: TH_CUT·TH_QUIET 시각 = X · 토스 개별 = 하루 TH_TOSS_DAY개를
+    시간 따라 나눠서(h시까지 몫×(h+1)/24 — 한 시간대 몰림 X) · 쿠팡 개별 = 하루 몫(TH_DAY_CAP − 어제 지킬 글 수 − 토스 몫)까지.
+    그 밖의 글(묶음·미리보기·달력·투표·예약·힘 준 글·가격 내려간 글 등) = 이 검사 X. 셈 = th_count(seen thcap)."""
     if not TH_DAY_CAP:
         return True
     now = now or time.time()
@@ -9302,9 +9304,11 @@ def th_cap(seen, kind, now=None):
     if kind in TH_CUT or h in TH_QUIET:
         return False
     st = seen.get("thcap", {})
+    n = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"k": {}})["k"].get(kind, 0)
+    if kind == "toss":
+        return n < -(-TH_TOSS_DAY * (h + 1) // 24)
     y = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400)))
-    b = max(0, TH_DAY_CAP - (y["n"] - sum(y["k"].values()) if y else TH_KEEP0))
-    return st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"k": {}})["k"].get(kind, 0) < -(-b * (h + 1) // 24)
+    return n < TH_DAY_CAP - (y["n"] - sum(y["k"].values()) if y else TH_KEEP0) - TH_TOSS_DAY
 
 
 def th_count(now):
