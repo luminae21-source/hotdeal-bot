@@ -7,6 +7,9 @@ on:
       metrics_day:                 # 성과 숫자(metrics.json)를 그날 것으로 바로 모음 — 평소엔 비워 둠(매일 5시 넘어 어제 것 자동)
         description: "성과 숫자 바로 모을 날짜 YYYY-MM-DD (보통 비움)"
         required: false
+      blog_date:                   # 11/11 블로그 표(docs/blog_data/<날짜>.json)를 그 날짜 것 바로 1번 — docs/blog_plan.json에 있는 날짜만 · 평소엔 비움(매일 18시 자동)
+        description: "블로그 표 바로 만들 날짜 YYYY-MM-DD (보통 비움)"
+        required: false
       cold_start:                  # seen.json 캐시가 다 지워졌을 때만 체크(처음부터 — 하루 1번 글이 다시 나갈 수 있음). 평소엔 끔 = 캐시 못 받은 실행은 건너뜀
         description: "봇 기억(seen.json) 없이 처음부터 실행 (캐시가 다 지워졌을 때만)"
         type: boolean
@@ -101,6 +104,7 @@ jobs:
           MIN_SCORE: ${{ vars.MIN_SCORE }}
           MODEL: ${{ vars.MODEL }}
           METRICS_DAY: ${{ inputs.metrics_day }}
+          BLOG_DATE: ${{ inputs.blog_date }}
           COLD_START: ${{ inputs.cold_start }}
       - id: site
         run: |                     # 게시된 딜·카드가 있으면 사이트 갱신 커밋

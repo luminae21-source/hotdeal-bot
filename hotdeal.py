@@ -35,7 +35,7 @@ MUSIC = "music.json"  # 릴스 배경음악 목록: Pixabay 음원 주소(Claude
 IG = "https://graph.%s.com/v25.0" % ("facebook" if E.get("IG_TOKEN", "").startswith("EAA") else "instagram")  # 인스타 자동 게시. IG_TOKEN = 앱 대시보드 '계정 추가'로 받은 Instagram 토큰(IGAA…, 60일, 카드 사진 자동) — 페이스북 페이지 토큰(EAA…)이면 페이스북 주소(릴스 영상 파일 업로드까지)
 CP_HOST, CP_BASE = "https://api-gateway.coupang.com", "/v2/providers/affiliate_open_api/apis/openapi/v1"
 CP_HOUR, CP_SEARCH_HOUR = 25, 6  # 쿠팡 API 최근 1시간 호출 상한(전체·검색, seen cpuse) — 공식 가이드: 검색 10·그 외 100/시간, 넘으면 24시간 차단·3번이면 파트너스 기능 차단 -> 여유 두고, 미검증 '계정 전체 30'도 안 넘게
-CP_SHELF_HOUR = 1  # 11/8 Cowork: 진열 후보 시험(shelf_cand) 전용 검색 시간당 1번 — 기존 몫(CP_SEARCH_HOUR 6·CP_HOUR 25)과 따로 · 합계 검색 7(공식 10 안)
+CP_SHELF_HOUR = 1  # 11/8 Cowork: 진열 후보 시험(shelf_cand — 새벽) · 11/11 블로그 표(blog_data — 18시 뒤) 전용 검색 시간당 1번 — 기존 몫(CP_SEARCH_HOUR 6·CP_HOUR 25)과 따로 · 합계 검색 7(공식 10 안)
 CP_RUN, CP_SEARCH_RUN = 6, 2  # (10/24 진우 1주 ① 썸네일: 1 -> 2 — 시간당 CP_SEARCH_HOUR 6 그대로)  실행마다 상한 — 실패한 실행은 seen 캐시가 저장 안 돼(Actions 캐시 = 성공 때만) 그 호출이 다음 실행에 안 보임 -> 1시간 4~6번 실행이 다 실패해도 검색 ≤ 6·전체 ≤ 36
 CP_SUBS, CP_SUB_RUN = ("threads", "telegram", "site", "clip", "insta", "blog"), 2  # GGG 쿠팡 채널 ID(subId — 영문 소문자만): 앞 3개 먼저 · 채널 링크 만들기 = 실행마다 딥링크 2번까지(뒤 3개 = 최근 1시간 호출이 상한 절반 밑일 때만)
 CP_RETRY_DAYS, CP_FAIL = 7, "cp_fail.json"  # 진열 상품이 서로 다른 날 2번 변환 실패하면 그 뒤엔 7일마다 1번(10/25 진우 '다 올려' — 사이트엔 쿠팡 주소 그대로 진열, 나중에 되면 파트너스 링크로) · 아직 안 바뀐 쿠팡 상품 주소 표(pid·이름·실패 날짜·마지막 시도·이유 — Cowork 점검용, 가격·수수료 X)
@@ -997,6 +997,98 @@ def shelf_cand(seen, now=None):
     out[x["kw"]] = {"at": time.strftime("%Y-%m-%d %H:%M", kst), "tag": x.get("tag"), "unit": x.get("unit"), "items": items}
     json.dump(out, open(SHELF_CAND, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("shelf cand:", x["kw"], f"{len(items)}개 · 단위가 읽음 {sum(i['parse_ok'] for i in items)} · 남은 큐 {len(todo) - 1}")
+
+
+BLOG_PLAN, BLOG_DIR, BLOG_AT, BLOG_AHEAD, BLOG_DAY_MAX, BLOG_N = "docs/blog_plan.json", "docs/blog_data", "18:00", 3, 2, 15  # 11/11 진우 '가장 중요하니까 바로': 블로그 원고용 쿠팡 상품 표(Cowork 브라우저 검색 대신)
+BLOG_ACC = r"호환|교체용|소모품|부품|리필만|종이\s*호일|거치대|(?:전용|여분|추가|교체)\s*(?:필터|배터리|브러[시쉬]|헤드|노즐|트레이|바스켓)"  # 본품 아님(dropped why)
+BLOG_AUTO = ("1L", "100g", "W")  # unit auto = 이름에서 먼저 맞는 것(용량 L·무게 g·전력 W) — 표 안에서 많은 쪽만 단위값
+
+
+def blog_size(name, unit):
+    """이름 + 기준(매·개·100ml·1L·10g·1kg·W) -> {total, size_each, size_unit, qty, base, label} / None(못 읽음 — sq_total 규칙 그대로 · W = 와트 1가지만)."""
+    nm, u = str(name or ""), str(unit or "").strip()
+    if u == "W":
+        w = {float(v) for v in re.findall(r"(\d+(?:\.\d+)?)\s*W(?![a-zA-Z])", nm)}
+        return {"total": w.pop(), "size_each": None, "size_unit": "W", "qty": 1, "base": 1, "label": "1W당"} if len(w) == 1 and not re.search(r"\d\s*[/~]\s*\d", nm) else None
+    um = re.fullmatch(r"(\d+(?:\.\d+)?)?\s*(kg|g|ml|l|매|개)", u, re.I)
+    if not um:
+        return None
+    k = float(um[1] or 1)
+    tot = sq_total(nm, f"{k:g}{um[2]}")
+    if not tot:
+        return None
+    if tot["u"] in ("g", "ml"):
+        each = next(float(v) * (1000 if w.lower() in ("kg", "l") else 1) for v, w in re.findall(SQ_SIZE, nm, re.I) if {"kg": "g", "l": "ml"}.get(w.lower(), w.lower()) == tot["u"])
+    else:
+        each = float((re.search(r"(\d+)\s*매", nm) or [0, 1])[1]) if tot["u"] == "매" else 1.0
+    base = k * (1000 if um[2].lower() in ("kg", "l") else 1)
+    return {"total": tot["n"], "size_each": int(each) if each % 1 == 0 else each, "size_unit": tot["u"], "qty": round(tot["n"] / each) if each else None, "base": base, "label": f"{u if um[1] else '1' + u}당"}
+
+
+def blog_rows(plan, r, chk):
+    """검색 응답 -> blog_data 파일 내용(items 단위값 낮은 순·최대 BLOG_N · dropped why). 거르기 = 이름 막기(분유·성인) · 가격 0 · 본품 아님 · 같은 상품(pid·이름) · 같은 브랜드(순위 높은 1개)."""
+    items, dropped, seen_k, brands = [], [], set(), set()
+    rows = sorted((x for x in (r or {}).get("productData") or [] if isinstance(x, dict)), key=lambda x: int(x.get("rank") or 999)) if isinstance(r, dict) else []
+    for x in rows:
+        nm, pr = str(x.get("productName") or "").strip(), x.get("productPrice")
+        brand = (re.sub(r"^\s*[\[(【][^\])】]*[\])】]\s*", "", nm).split() or [""])[0]
+        key = {str(x.get("productId") or ""), re.sub(r"[\W_]+", "", nm)} - {""}
+        why = ("이름 막기(분유·조제유·성인용품)" if re.search(SHELF_BLOCK, nm) else "가격 0" if not isinstance(pr, (int, float)) or pr <= 0 else
+               "본품 아님(" + re.search(BLOG_ACC, nm)[0] + ")" if re.search(BLOG_ACC, nm) else "같은 상품 다른 옵션" if key & seen_k else
+               f"같은 브랜드({brand}) 순위 높은 것만" if brand in brands else None)
+        if why:
+            dropped.append({"name": nm, "why": why})
+            continue
+        seen_k |= key
+        brands.add(brand)
+        vi = (urllib.parse.parse_qs(urllib.parse.urlsplit(str(x.get("productUrl") or "")).query).get("vendorItemId") or [""])[0]
+        items.append({"rank": int(x.get("rank") or len(items) + 1), "pid": x.get("productId"), "item": int(vi) if vi.isdigit() else None, "name": nm, "brand": brand, "price": pr,
+                      "img": x.get("productImage") if str(x.get("productImage") or "").startswith("https://") else None, "rocket": bool(x.get("isRocket")), "free_ship": bool(x.get("isFreeShipping")),
+                      **({"review": x["reviewCount"]} if isinstance(x.get("reviewCount"), int) else {})})  # 검색 API에 리뷰 수 없음(11/11) — 생기면 그대로
+    sz = {id(it): blog_size(it["name"], plan["unit"]) if plan["unit"] != "auto" else next((s for s in (blog_size(it["name"], b) for b in BLOG_AUTO) if s), None) for it in items}
+    top = collections.Counter(s["label"] for s in sz.values() if s).most_common(1)
+    label = top[0][0] if top else None
+    for it in items:
+        s = sz[id(it)] if sz[id(it)] and sz[id(it)]["label"] == label else None  # 단위 섞이면 많은 쪽만
+        it.update(qty=s and s["qty"], size_each=s and s["size_each"], size_unit=s and s["size_unit"], total=s and s["total"],
+                  unit_value=int(it["price"] / s["total"] * s["base"] + 0.5) if s else None, unit_label=label if s else None)
+    items.sort(key=lambda it: (it["unit_value"] is None, it["unit_value"] or 0, it["rank"]))
+    return {"date": plan["date"], "query": plan["query"], "unit": plan["unit"], "chk": chk, "source": "coupang_partners_api", "items": items[:BLOG_N], "dropped": dropped}
+
+
+def blog_data(seen, now=None):
+    """11/11 블로그용 쿠팡 상품 표(docs/blog_data/<date>.json — 사이트·채널·events·진열 X · Cowork가 읽고 원고): BLOG_PLAN [{date, query, unit}] 중 date가 오늘~BLOG_AHEAD일 뒤 · 파일 없음 ·
+    오늘 실패 안 한 것 · BLOG_AT(18시) 뒤 실행마다 1개(하루 BLOG_DAY_MAX) · /products/search limit 10(API 최대) 1번 = 진열 후보와 같은 전용 몫(CP_SHELF_HOUR — 진열 후보는 새벽, 이건 18시 뒤 = 시간 나눔) ·
+    몫 없음 = 다음 실행 · 오류·0개 = 내일 다시 + 관리봇 1줄. 로그 = 날짜·검색어·개수만(키·주소 X)."""
+    if not HAS_CP:
+        return
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
+    st, force = seen.get("blog_" + day) or {"n": 0, "fail": []}, E.get("BLOG_DATE")  # 수동 실행 blog_date = 그 날짜 1개만 바로(시각·며칠 앞·하루 몫 안 봄 · 파일 있으면 X)
+    if not force and (hm < BLOG_AT or st["n"] >= BLOG_DAY_MAX):
+        return
+    last = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 + BLOG_AHEAD * 86400))
+    plan = load(BLOG_PLAN, [])
+    todo = sorted((x for x in plan if isinstance(x, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(x.get("date") or "")) and (x["date"] == force if force else day <= x["date"] <= last and x["date"] not in st["fail"]) and str(x.get("query") or "").strip() and not os.path.exists(f"{BLOG_DIR}/{x['date']}.json")), key=lambda x: x["date"]) if isinstance(plan, list) else []
+    if not todo:
+        return
+    x = {**todo[0], "query": todo[0]["query"].strip(), "unit": str(todo[0].get("unit") or "auto").strip() or "auto"}
+    try:
+        r, why = coupang("GET", f"/products/search?keyword={urllib.parse.quote(x['query'])}&limit=10", keep=True, cand=True), None
+    except CpLimit:
+        return print("blog data: 전용 몫(시간당 1) 씀 -> 다음 실행")
+    except Exception as e:  # 400·게이트웨이·JSON = 오늘 다시 X
+        r, why = None, f"API {type(e).__name__}"
+    out = blog_rows(x, r, time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)))  # 받은 시각(KST) · 표 만들기 오류 = 단계 오류 알림(API 오류와 따로)
+    why = why or (None if out["items"] else f"남은 상품 0개(받은 {len(out['dropped'])}개 다 뺌)")
+    seen["blog_" + day] = st = {"t": now, "n": st["n"] + 1, "fail": st["fail"] + ([x["date"]] if why else [])}
+    if why:
+        print("blog data:", x["date"], x["query"], why, "-> 내일 다시")
+        return alert(seen, "blogfail_" + x["date"], f"📝 블로그 표 {x['date']} '{x['query']}' 못 만듦({why}) -> 내일 18시 다시")
+    os.makedirs(BLOG_DIR, exist_ok=True)
+    json.dump(out, open(f"{BLOG_DIR}/{x['date']}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print("blog data:", x["date"], x["query"], f"{len(out['items'])}개 · 뺌 {len(out['dropped'])} · 단위값 {sum(i['unit_value'] is not None for i in out['items'])}({out['items'][0]['unit_label'] or '없음'})")
 
 
 def cp_deeplinks(urls, sub=None):
@@ -13106,7 +13198,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

@@ -14204,3 +14204,77 @@ for out178, rc178, want178 in (("1", 0, False), ("0", 0, True), ("", 1, False)):
 shutil.rmtree(d178, ignore_errors=True)
 m178 = inspect.getsource(H.main)
 assert "    try:\n        publish_approved(seen)\n    except (urllib.error.URLError, ConnectionError, TimeoutError) as e:" in m178 and m178.count("publish_approved(seen)") == 1
+
+# 9-179 (11/11 19:41 진우 OK '가장 중요하니까 바로 시작하자'): 블로그용 쿠팡 상품 표 — docs/blog_plan.json [{date, query, unit}](Cowork) -> 매일 18시 뒤 docs/blog_data/<date>.json
+#   · date = 오늘~3일 뒤 · 파일 없음 · 하루 2개(실행당 1) · /products/search limit 10 1번(진열 후보와 같은 전용 몫 — 시간 나눔) · 실패·0개 = 내일 다시 + 관리봇 1줄 · 몫 없음 = 다음 실행
+#   · 거르기 = 이름 막기(분유·성인) · 가격 0 · 본품 아님 · 같은 상품(pid·이름) · 같은 브랜드(순위 높은 1개) · 단위값 = int(가격 / 총량 × 기준 + 0.5) · auto = 1L·100g·W 중 많은 쪽만
+#   · 사이트·채널·events·진열 X(파일만) · 수동 실행 blog_date = 그 날짜 바로
+assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/blog_plan.json"), encoding="utf-8")) == [
+    {"date": "2026-11-16", "query": "에어프라이어", "unit": "auto"}, {"date": "2026-11-17", "query": "물티슈", "unit": "매"},
+    {"date": "2026-11-19", "query": "무선청소기", "unit": "auto"}, {"date": "2026-11-20", "query": "핫팩", "unit": "개"}]
+assert H.blog_size("베베숲 물티슈 캡형 100매 10팩", "매") == {"total": 1000, "size_each": 100, "size_unit": "매", "qty": 10, "base": 1, "label": "1매당"}
+assert H.blog_size("핫팩 150g 10개입 x 3팩", "개")["total"] == 30 and H.blog_size("세제 2.5L 2개", "1L") == {"total": 5000, "size_each": 2500, "size_unit": "ml", "qty": 2, "base": 1000, "label": "1L당"}
+assert H.blog_size("쌀 10kg", "1kg")["base"] == 1000 and H.blog_size("청소기 450W", "W")["total"] == 450 and H.blog_size("청소기 450W/600W", "W") is None and H.blog_size("물티슈 4종 택1", "매") is None
+P179 = lambda i, n, p, **k: {"rank": i, "productId": k.get("pid", i), "productName": n, "productPrice": p, "productImage": f"https://thumbnail.coupangcdn.com/{i}.jpg",
+                              "productUrl": f"https://link.coupang.com/re/AFFSDP?lptag=AF1&pageKey={i}&itemId=9{i}&vendorItemId=8{i}&traceid=t", "isRocket": i % 2 == 1, "isFreeShipping": True}
+R179 = {"productData": [P179(1, "베베숲 물티슈 캡형 100매 10팩", 15000), P179(2, "베베숲 물티슈 엠보싱 80매 10팩", 9000), P179(3, "깨끗한나라 물티슈 70매 20팩", 12000),
+                        P179(4, "깨끗한나라 물티슈 70매 20팩", 12500, pid=3), P179(5, "성인용품 클렌징 물티슈 50매", 3000), P179(6, "몽드드 물티슈 리필만 100매", 2000),
+                        P179(7, "코디 물티슈 100매", 0), P179(8, "순수한면 물티슈 4종 택1", 5000)]}
+o179 = H.blog_rows({"date": "2026-11-17", "query": "물티슈", "unit": "매"}, R179, "2026-11-14 18:05")
+assert [(i["name"], i["unit_value"], i["unit_label"]) for i in o179["items"]] == [("깨끗한나라 물티슈 70매 20팩", 9, "1매당"), ("베베숲 물티슈 캡형 100매 10팩", 15, "1매당"), ("순수한면 물티슈 4종 택1", None, None)]  # 단위값 낮은 순 · 못 읽음 맨 뒤
+assert {d["why"] for d in o179["dropped"]} == {"같은 브랜드(베베숲) 순위 높은 것만", "같은 상품 다른 옵션", "이름 막기(분유·조제유·성인용품)", "본품 아님(리필만)", "가격 0"} and len(o179["dropped"]) == 5
+i179 = o179["items"][1]
+assert (i179["rank"], i179["pid"], i179["item"], i179["brand"], i179["img"], i179["rocket"], i179["free_ship"], i179["qty"], i179["size_each"], i179["total"]) == (1, 1, 81, "베베숲", "https://thumbnail.coupangcdn.com/1.jpg", True, True, 10, 100, 1000)
+assert all(i["unit_value"] == int(i["price"] / i["total"] * 1 + 0.5) for i in o179["items"] if i["unit_value"] is not None) and "review" not in i179  # 단위값 다시 계산 = 같음 · 리뷰 수 = API에 없음
+assert {k: o179[k] for k in ("date", "query", "unit", "chk", "source")} == {"date": "2026-11-17", "query": "물티슈", "unit": "매", "chk": "2026-11-14 18:05", "source": "coupang_partners_api"}
+assert not any("link.coupang" in json.dumps(i) or "token" in json.dumps(i) for i in o179["items"])  # 파트너스 주소·토큰 X(vendorItemId만)
+a179 = H.blog_rows({"date": "2026-11-16", "query": "에어프라이어", "unit": "auto"}, {"productData": [P179(1, "가나 에어프라이어 5.5L", 99000), P179(2, "다라 에어프라이어 4L", 60000),
+                    P179(3, "마바 에어프라이어 1500W", 70000), P179(4, "사아 에어프라이어 종이호일 100매", 5000), P179(5, "자차 에어프라이어 전용 트레이", 9000)]}, "2026-11-14 18:05")
+assert [(i["name"][:2], i["unit_value"], i["unit_label"]) for i in a179["items"]] == [("다라", 15000, "1L당"), ("가나", 18000, "1L당"), ("마바", None, None)]  # 섞이면 많은 쪽(L)만 · W = 단위값 X
+assert [d["why"] for d in a179["dropped"]] == ["본품 아님(종이호일)", "본품 아님(전용 트레이)"] and len(H.blog_rows({"date": "d", "query": "q", "unit": "개"}, {"productData": [P179(i, f"브랜드{i} 핫팩 {i}개", 1000) for i in range(1, 21)]}, "c")["items"]) == H.BLOG_N
+rd179 = os.path.dirname(os.path.abspath(H.__file__))
+cwd179, d179 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d179); os.makedirs("docs")
+shutil.copy(os.path.join(rd179, "docs/blog_plan.json"), "docs/blog_plan.json")
+sv179 = (H.coupang, H.alert, H.HAS_CP, H.tg, H.http, dict(H.E))
+c179, al179, s179, bad179 = [], [], {}, [True]
+def cp179(method, path, body=None, keep=False, cand=False):
+    c179.append((path, keep, cand))
+    if c179[-1][0].endswith(urllib.parse.quote("핫팩") + "&limit=10") and bad179[0]:
+        raise RuntimeError("coupang rCode 500")
+    return R179
+def no179(*a, **k):
+    raise AssertionError("블로그 표 = 게시 X")
+H.coupang, H.alert, H.HAS_CP, H.tg, H.http = cp179, lambda s, k, t, **kw: al179.append((k, t)), True, no179, no179
+H.E.pop("BLOG_DATE", None)
+H.blog_data(s179, TK("2026-11-13 17:59"))
+assert c179 == [] and not os.path.exists("docs/blog_data")  # 18시 전 X
+H.blog_data(s179, TK("2026-11-13 18:05"))
+assert c179 == [("/products/search?keyword=" + urllib.parse.quote("에어프라이어") + "&limit=10", True, True)] and os.path.exists("docs/blog_data/2026-11-16.json")  # 3일 뒤까지 = 11/16 · 전용 몫
+H.blog_data(s179, TK("2026-11-13 18:20"))
+assert len(c179) == 1  # 11/17 = 4일 뒤(아직)
+H.blog_data(s179, TK("2026-11-14 18:05")); H.blog_data(s179, TK("2026-11-14 18:20"))
+assert len(c179) == 2 and os.path.exists("docs/blog_data/2026-11-17.json") and json.load(open("docs/blog_data/2026-11-17.json"))["items"][0]["unit_value"] == 9  # 파일 있는 11/16 다시 X
+H.blog_data(s179, TK("2026-11-17 18:05")); H.blog_data(s179, TK("2026-11-17 18:20"))
+assert len(c179) == 4 and al179 and al179[-1][0] == "blogfail_2026-11-20" and "내일" in al179[-1][1] and not os.path.exists("docs/blog_data/2026-11-20.json")  # 11/19 만들고 11/20 실패 = 관리봇
+n179 = len(c179); H.blog_data(s179, TK("2026-11-17 19:05"))
+assert len(c179) == n179  # 하루 2개 · 실패 = 같은 날 다시 X
+H.blog_data(s179, TK("2026-11-18 18:05")); H.blog_data(s179, TK("2026-11-18 18:20"))
+assert len(c179) == n179 + 1 and s179["blog_2026-11-18"]["n"] == 1  # 다음 날 다시(또 실패) · 하루 몫 남아도 실패한 날짜 = 같은 날 다시 X
+bad179[0] = False
+H.blog_data(s179, TK("2026-11-19 18:05"))
+assert os.path.exists("docs/blog_data/2026-11-20.json") and len(c179) == n179 + 2  # 다음 날 다시 = 됨
+def lim179(*a, **k):
+    raise H.CpLimit("x")
+os.remove("docs/blog_data/2026-11-20.json"); H.coupang = lim179
+H.blog_data(s179, TK("2026-11-20 18:05"))
+assert s179.get("blog_2026-11-20") is None and not os.path.exists("docs/blog_data/2026-11-20.json")  # 몫 없음 = 센 것 X(다음 실행)
+H.coupang = cp179; H.E["BLOG_DATE"] = "2026-11-19"
+H.blog_data(s179, TK("2026-11-11 10:00"))
+assert os.path.exists("docs/blog_data/2026-11-19.json")  # 수동 실행 = 그 날짜 바로(시각·며칠 앞 안 봄)
+H.E.pop("BLOG_DATE"); json.dump([{"date": f"2026-12-0{i}", "query": f"q{i}", "unit": "개"} for i in (1, 2, 3)], open("docs/blog_plan.json", "w")); n179 = len(c179)
+for t179 in ("18:05", "18:20", "18:35"):
+    H.blog_data(s179, TK("2026-11-30 " + t179))
+assert len(c179) == n179 + 2 and not os.path.exists("docs/blog_data/2026-12-03.json")  # 하루 2개까지
+assert "ss_report, blog_data, th_retry" in inspect.getsource(H.main) and "BLOG_DATE: ${{ inputs.blog_date }}" in open(os.path.join(rd179, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+(H.coupang, H.alert, H.HAS_CP, H.tg, H.http, e179) = sv179; H.E.clear(); H.E.update(e179)
+os.chdir(cwd179); shutil.rmtree(d179, ignore_errors=True)
