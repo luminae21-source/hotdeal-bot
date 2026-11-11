@@ -47,7 +47,7 @@ CP_CHK_HOUR = 0  # ② 진우 쿠팡 상품 가격 확인(검색 API, pid마다 
 CP_RUSH = ("2026-10-29 12:00", "2026-11-04 23:59")  # CCC(10/29 진우 — 토스 점검 동안 쿠팡 쪽으로, KST): ① 변환 안 된 쿠팡 진열(cp_fail) = 이 시각 전 실패분 ①부터 1번 더(7일 규칙 X)·재시도 몫 = 실행 몫 전부 ② 가격 확인 = 사진 채움 쉬고 전부 가격(이 동안 아직 확인 안 된 것 먼저: 최근 게시 → 🔥 진열 → 오래된 확인) — 시간당 상한(CP_HOUR·CP_SEARCH_HOUR)은 그대로. shortcut: 끝나면 저절로 예전대로(코드는 11/5 뒤 정리)
 cp_rush = lambda: CP_RUSH[0] <= time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600)) <= CP_RUSH[1]
 CP_HOT_H = 48  # BBB(10/29 Cowork — 확인 10/25 전 435개): 최근 이 시간 안에 올린 진우 글(진열·큐레이션 상품 포함)은 오래된 확인보다 먼저(검색 상한은 그대로)
-CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*개)|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
+CP_QTY = r"\d+(?:\s*\+\s*\d+)+|(?<![a-z])[x×]\s*\d+(?![\d.]|\s*(?:개|통))|\d+(?:\.\d+)?\s*(?:ml|kg|g|l|m|개입|개|팩|롤|포|정|구|캔|병|입|매|세트|박스|봉|켤레|족|판|장|통|p)(?![a-z])"  # 수량·용량·묶음(2+1·x2) 글자(같은 productId = 1팩/2팩·용량 옵션 묶음 -> 옵션 맞추기)
 DISCLOSURE = "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
 AFF_NOTE = "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다."  # 링크프라이스 머천트 안내 대가성 문구 그대로(10/5 머천트 정보 화면)
 TOSS_NOTE = "이 콘텐츠는 토스쇼핑 쉐어링크 활동의 일환으로, 링크를 통한 구매가 발생하면 일정 수수료를 지급받습니다."  # 토스 권장 문구 (쉐어링크 가이드 '대가성 문구 표시하기', 10/5 확인)
@@ -3150,13 +3150,15 @@ def cp_kws(name):
     b = " ".join(re.sub(r"[(\[][^)\]]*[)\]]|" + CP_QTY + r"|[{}/+,·]|(?<![가-힣a-z])[x×](?![가-힣a-z])|(?<![가-힣0-9a-z])각(?![가-힣])", " ", name, flags=re.I).split())  # '각 5개' 남은 '각' X(XX)  # 괄호 안(옵션)·수량·용량 뺌
     w = [x for x in b.split() if not re.fullmatch(r"대용량|묶음|세트|기획|기획세트|증정|단품|본품|정품|무료배송|택1|리필|팩|개|대|특대|국내산", x)]
     c = " ".join([w[0]] + w[-2:]) if len(w) >= 4 else ""
-    return list(dict.fromkeys(k[:50] for k in (name, b, c) if len(k) >= 2)) or [name[:50]]
+    mc = max(re.findall(r"(?<![A-Za-z0-9])[A-Za-z][A-Za-z0-9-]*\d[A-Za-z0-9-]*(?:/\d+)?", name), key=len, default="")  # 11/12 Cowork 가이드 픽(공기청정기 등) = 브랜드 + 모델명(AC0650/10·AT8E430-MWK) 맨 뒤
+    m = f"{w[0]} {mc}" if len(mc) >= 4 and w and mc not in w[0] else ""
+    return list(dict.fromkeys(k[:50] for k in (name, b, c, m) if len(k) >= 2)) or [name[:50]]
 
 
 def cp_same(name, api):
     """검색 결과 이름이 진우 글과 같은 옵션인지: 글의 수량·용량 글자가 다 있고 글에 없는 묶음 수(개·팩·켤레·2+1·x2…)는 없음. 글에 수량이 없으면 결과에도 없어야(1개·1팩은 무시).
     캔·병·개입·입 = 개(쿠팡 이름은 '24개' — 글은 '24캔')."""
-    qty = lambda s: {re.sub(r"(캔|병|개입|입)$", "개", re.sub(r"\s", "", t).lower()) for t in re.findall(CP_QTY, s or "", re.I)} - {"1개", "1팩", "1세트", "1박스", "1봉", "1p"}
+    qty = lambda s: {re.sub(r"(캔|병|개입|입|통)$", "개", re.sub(r"\s", "", t).lower()) for t in re.findall(CP_QTY, s or "", re.I)} - {"1개", "1팩", "1세트", "1박스", "1봉", "1p"}  # 11/12 '420ml × 2통' = 쿠팡 '2개'
     need, got = qty(name), qty(api)
     extra = got - need
     return need <= got and not (extra if not need else {t for t in extra if re.search(r"(개|팩|세트|박스|봉|켤레|족|판|장|p|\d)$", t)})
@@ -3590,7 +3592,7 @@ def night_deals(seen, since, until):
         if TOSS_NO_CMP and is_toss(ev["url"]):  # 토스 딜 = 쿠팡 비교·차이 표시 X(10/12 토스 비즈니스 요청)
             sv, weak = None, weak and "특가로는 약함"
         out.append({"at": ev["at"], "icon": "👍" if th_steady(plain) and not weak else "🛒" if weak else "🔥", "name": clip(name, 26), "full": name, "price": price.split("/")[0].strip(),
-                    "sv": sv and sv.groups(), "url": ev["url"], "weak": weak})
+                    "sv": sv and sv.groups(), "url": ev["url"], "weak": weak, "ev": ev})  # ev = 예약 원본(22시 미리보기 카드 — now·chk·img)
     return out
 
 
@@ -3609,6 +3611,7 @@ def night_line(d, link=True):
 
 PV_HELLO = ("월요일 버티느라 고생 많았어요 🍵", "오늘 하루도 고생 많았어요 🍵", "한 주의 반, 잘 넘겼어요 🙌", "내일만 버티면 금요일이에요 💪",
             "드디어 금요일 밤이에요 🎉", "느긋한 토요일 밤 보내고 계세요? 🛋", "내일 출근 전, 장바구니 정리 어때요? 🧺")  # Threads 22시 미리보기 요일 인사(KST 월=0 — 10/25 23시 진우 '귀엽고 정겹게')
+PV_CARD, PV_CARD_DIR, PV_CARD_PREP, PV_CARD_AFTER = True, "hotdealpick-cards", 30, "22:10"  # 11/11 진우 '개발 진행하자': 22시 미리보기 Threads '오늘의 장바구니' 카드 1장 — 틀 = luminae21-source/hotdealpick-cards(워크플로가 21시대에 읽기 전용으로 받음 · GPT가 틀을 고침 = 복사 X) · 22시 30분 전에 만들어 커밋(사이트에 떠야 Threads가 받음) · 미리보기 전에 나갈 딜(22:10 전) X
 PV_PROMPT = """Threads 밤 미리보기 줄('22:10 이름 · 16,900원')에 쓸 짧은 상품 이름을 만들어 주세요(names[i] = i번 상품, 개수 그대로).
 - 휴대폰 한 줄에 들어가게 한글 13자 안팎(16자 넘지 않게).
 - 판매처·스토어 이름 앞머리(예: '명대잡는날')·겹치는 용량·수식어는 빼고 품목·브랜드·핵심 구분(5년/15년·20봉·1kg처럼 비슷한 상품끼리 구분되는 것 하나)만.
@@ -3637,6 +3640,52 @@ def pv_name(s, n=PV_NAME):
     return cut or s[:n]
 
 
+def pv_card(seen, now):
+    """22시 미리보기 카드(21:30~21:59 첫 실행 1번): 오늘 밤 미리보기 딜(night_deals — PV_CARD_AFTER 뒤 · 수수료 딜) 중 봇 확인 가격(now)·확인 시각(chk)·사진·몰 주소 있는 것 ->
+    가장 많은 몰 하나 3~5개(시각 순 앞 5개 · mall_card_json 규칙 = 쿠팡·네이버 — 토스는 카드 검증이 toss.im만·예약에 chk 없음 = X) -> 사진 미리 받아 assets/images/(렌더러 DNS 검사로 안 빠지게)
+    -> hotdealpick-cards scripts/render.mjs(검증 포함) -> docs/cards/mall/<날짜_시각>_pvcard.png · 대체텍스트 = 그 저장소 social-pack captionFiles alt.txt ·
+    루트 checked = 글 기준 22:00 · 상품 checked = 봇 확인 chk(같게 X). 못 만듦 = 관리봇 1줄(22시 글은 그대로 글만)."""
+    kst = time.gmtime(now + 9 * 3600)
+    day = time.strftime("%Y-%m-%d", kst)
+    if "pvcard_" + day in seen:
+        return
+    st = seen["pvcard_" + day] = {"t": now}
+    ok = [{**e, "chkt": e["chk"]} for e in (d["ev"] for d in night_deals(seen, f"{day} {PV_CARD_AFTER}", night_window(kst_ts(f"{day} {PREVIEW_HOUR:02d}:00"))[1]) if aff_note(d["url"]))
+          if e.get("now") and re.fullmatch(AT_RX, str(e.get("chk") or "")) and img_of(e) and shop_of(e) in CARD_HOSTS]
+    top, d, why = collections.Counter(map(shop_of, ok)).most_common(1), None, None
+    if not top or top[0][1] < 3:
+        why = f"확인 가격·사진 있는 같은 몰 딜 {top[0][1] if top else 0}개(3개↑)"
+    elif not os.path.isfile(f"{PV_CARD_DIR}/scripts/render.mjs"):
+        why = "카드 저장소 못 받음"
+    elif not (d := mall_card_json("오늘 밤 딜 미리보기", [(e, e["now"]) for e in ok if shop_of(e) == top[0][0]][:5])):
+        why = "카드 규칙(금지 표현·몰 주소)으로 3개 밑"
+    if d:
+        d["checked"] = f"{day} {PREVIEW_HOUR:02d}:00"  # 글 기준 시각(상품 checked = 봇 확인 시각 그대로)
+        try:
+            os.makedirs(f"{PV_CARD_DIR}/assets/images", exist_ok=True)
+            for i, it in enumerate(d["items"], 1):
+                b, ext = th_get(it["img"]), (re.search(r"\.(jpe?g|png|webp)$", urllib.parse.urlsplit(it["img"]).path, re.I) or [0, "jpg"])[1].lower()
+                if not b.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
+                    raise ValueError("사진 아님")
+                open(f"{PV_CARD_DIR}/assets/images/pv_{day}_{i}.{ext}", "wb").write(b)
+                it["img"] = f"assets/images/pv_{day}_{i}.{ext}"
+        except Exception as e:
+            why = f"사진 못 받음({type(e).__name__})"
+        if not why and not (f := card_png("pvcard", d, root=PV_CARD_DIR)):
+            why = "카드 검사·렌더 실패"
+    if why:
+        print("pv card X", why)
+        return alert(seen, "pvcard_x_" + day, f"🃏 22시 미리보기 카드 없이 글만 — {why}")
+    try:  # 대체텍스트 = 저장소 social-pack 문구 그대로(못 받으면 없이)
+        alt = subprocess.run(["node", "--input-type=module", "-e", "import {captionFiles} from './scripts/social-pack.mjs'; import fs from 'node:fs'; process.stdout.write(captionFiles(JSON.parse(fs.readFileSync(0, 'utf8')))['alt.txt'])"],
+                             cwd=PV_CARD_DIR, input=json.dumps(d, ensure_ascii=False), capture_output=True, text=True, timeout=30, check=True).stdout.strip()
+    except Exception as e:
+        alt = ""
+        print("pv card alt X", type(e).__name__)
+    st.update(card=f"{SITE}cards/mall/{os.path.basename(f)}", urls=[it["url"] for it in d["items"]], alt=alt, mall=d["mall"])
+    print("pv card", d["mall"], f"{len(d['items'])}개", os.path.basename(f))
+
+
 def preview(seen):
     """매일 밤 10시 '🌙 오늘 밤 특가 미리보기'(10/11 진우 '리스트 필요, 꾸준함이 중요' — 팔로워가 이 시간엔 리스트가 뜬다고 알게): 진우 예약 딜 중
     지금~다음 날 8시에 나갈 것(PREVIEW_MIN개 이상)을 시간표로 채널에 1번(시각·짧은 이름·링크·가격·같은 상품 쿠팡 차이, 대가성 문구 맨 앞) + Threads(10/25 23시 진우 '귀엽고 정겹게' ·
@@ -3646,6 +3695,8 @@ def preview(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     key = time.strftime("preview_%Y%m%d", kst)
+    if PV_CARD and kst.tm_hour == PREVIEW_HOUR - 1 and kst.tm_min >= 60 - PV_CARD_PREP:  # 11/11 카드는 30분 전에(커밋 -> 사이트 -> 22시 Threads)
+        return pv_card(seen, now)
     if kst.tm_hour != PREVIEW_HOUR or key in seen or busy(seen, cap=False) or th_hold(seen):  # 시간당 상한(HOUR_CAP)은 안 봄: 하루 1번이고 진우 예약(시간당 6개)이 몰린 밤엔 늘 걸려서 첫 글 뒤로 밀림
         return
     ds = night_deals(seen, *night_window(now))
@@ -3680,6 +3731,28 @@ def preview(seen):
             if th_len(text) <= 500:
                 break
         return text
+    pc, day, img = seen.get("pvcard_" + time.strftime("%Y-%m-%d", kst)) or {}, time.strftime("%Y-%m-%d", kst), None
+    if pc.get("card"):  # 11/11 카드 = 상품이 지금 미리보기에 다 있고 사이트에 떴을 때만(아니면 글만 — 늦추지 않음)
+        try:
+            why = "" if set(pc["urls"]) <= {d["url"] for d in ds} else "카드 상품이 지금 미리보기에 없음"
+            why or http(pc["card"], method="HEAD")
+        except Exception:
+            why = "카드가 사이트에 아직 안 뜸"
+        if why:
+            alert(seen, "pvcard_x_" + day, f"🃏 22시 미리보기 카드 안 붙임({why}) — 글만")
+        else:
+            img = pc["card"]
+    if img:
+        try:
+            r = th_bundle(seen, "preview", body(), link, image=img, alt=pc.get("alt"))
+            m = {k: v for k, v in seen.get("pvcard", {}).get("m", {}).items() if v >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))}
+            seen["pvcard"] = {"t": now, "m": {**m, **({r["id"]: day} if r and r.get("id") else {})}}  # metrics th 줄 chg th_card(11/25 글당 조회 비교)
+            return
+        except urllib.error.HTTPError as e:  # Threads가 카드를 못 받음(4xx) = 글만 바로 1번(다시 올림 줄 X) · 5xx = 예전처럼 다음 실행
+            if e.code >= 500:
+                raise
+            seen.pop(time.strftime("thretry_%Y%m%d_preview", kst), None)
+            alert(seen, "pvcard_x_" + day, f"🃏 22시 미리보기 카드를 Threads가 안 받음({err_brief(e)}) — 글만")
     th_bundle(seen, "preview", body(), link)
 
 
@@ -5119,11 +5192,11 @@ def card_title(tp, labs, n):
     return (full if len(full) <= CARD_TITLE_MAX or not tp else tp), f"{labs[0] if labs else '오늘 묶음'} {n}"
 
 
-def pw_ready(env):
-    """tools/card 브라우저 준비(node_modules 없으면 npm ci · chromium 셸 — 이미 있으면 바로 끝)."""
-    if not os.path.isdir(f"{CARD_DIR}/node_modules/@playwright/test"):
-        subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=CARD_DIR, env=env, timeout=60, check=True, capture_output=True)
-    subprocess.run(["npx", "playwright", "install", "--only-shell", "chromium"], cwd=CARD_DIR, timeout=120, check=True, capture_output=True)
+def pw_ready(env, root=CARD_DIR):
+    """카드 폴더(tools/card · 22시 미리보기 = hotdealpick-cards 읽기 전용) 브라우저 준비(node_modules 없으면 npm ci · chromium 셸 — 이미 있으면 바로 끝)."""
+    if not os.path.isdir(f"{root}/node_modules/@playwright/test"):
+        subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=root, env=env, timeout=60, check=True, capture_output=True)
+    subprocess.run(["npx", "playwright", "install", "--only-shell", "chromium"], cwd=root, timeout=120, check=True, capture_output=True)
 
 
 def mall_card(kind, title, short, items):
@@ -5132,7 +5205,7 @@ def mall_card(kind, title, short, items):
     return f and f"{SITE}cards/mall/{os.path.basename(f)}"
 
 
-def card_png(kind, d, short=""):
+def card_png(kind, d, short="", root=CARD_DIR):
     """카드 JSON d -> tools/card `node scripts/render.mjs --data data/run_<stem>.json`(v3 그대로 — chromium.launch()라 브라우저 = `npx playwright install --only-shell chromium`, 묶음 회차에만 ·
     11/8 토스 = 몰·칸 수 틀(assets/tpl/toss-3·4·5 — 파란 쇼핑백 고양이 '오늘의 장바구니')이 있으면 render.mjs가 fill.html로) -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png 경로 / None."""
     if not d:
@@ -5140,11 +5213,11 @@ def card_png(kind, d, short=""):
     stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
     data, env = f"data/run_{stem}.json", {**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     try:
-        os.makedirs(f"{CARD_DIR}/data", exist_ok=True)
+        os.makedirs(f"{root}/data", exist_ok=True)
         os.makedirs(MALL_CARD_DIR, exist_ok=True)
-        json.dump(d, open(f"{CARD_DIR}/{data}", "w"), ensure_ascii=False)
-        pw_ready(env)
-        render = lambda: subprocess.run(["node", "scripts/render.mjs", "--data", data], cwd=CARD_DIR, timeout=60, check=True, capture_output=True)
+        json.dump(d, open(f"{root}/{data}", "w"), ensure_ascii=False)
+        pw_ready(env, root)
+        render = lambda: subprocess.run(["node", "scripts/render.mjs", "--data", data], cwd=root, timeout=60, check=True, capture_output=True)
         try:
             render()
         except subprocess.CalledProcessError as e:  # 머리 잘림(Clipped) = 짧은 제목으로 1번만 다시 · 그 밖 = 글만
@@ -5152,9 +5225,9 @@ def card_png(kind, d, short=""):
                 raise
             print("mall card 제목 잘림 → 짧은 제목", short)
             d["title"] = clip(short, 35)
-            json.dump(d, open(f"{CARD_DIR}/{data}", "w"), ensure_ascii=False)
+            json.dump(d, open(f"{root}/{data}", "w"), ensure_ascii=False)
             render()
-        shutil.copy(f"{CARD_DIR}/rendered/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
+        shutil.copy(f"{root}/rendered/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
     except Exception as e:  # node·npm·브라우저 없음·시간 초과·카드 검증(validation.mjs) 실패 = 글만
         err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
         print("mall card 렌더 X", kind, err_brief(e), err[-1:] if err else "")
@@ -8978,7 +9051,7 @@ def th_topic(seen, text=None, base=None, cat=None):
     return t
 
 
-def th_post(tok, text, link=None, image=None, tag="핫딜"):
+def th_post(tok, text, link=None, image=None, tag="핫딜", alt=None):
     """Threads 글 1개: image = 사진 글(30초 처리 대기) · 사진 목록 2장↑ = 사진 넘기기(CAROUSEL — 목록 순서, 11/6 토스 묶음) · link = 링크 미리보기(th_text), 둘 다 없으면 글만.
     실패 = 그대로 올림(HTTPError — 부르는 쪽이 4xx면 글만으로)."""
     me = json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"]
@@ -8989,13 +9062,18 @@ def th_post(tok, text, link=None, image=None, tag="핫딜"):
         image = ims[0] if ims else None
     if link and not image:
         return th_text(tok, me, text, link, tag)
-    q = urllib.parse.urlencode({"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": tag, "access_token": tok})
-    cid = json.loads(http(f"{THREADS}/{me}/threads?{q}", method="POST"))["id"]
+    q = {"media_type": "IMAGE" if image else "TEXT", **({"image_url": image} if image else {}), "text": text[:500], "topic_tag": tag, "access_token": tok}
+    try:
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{urllib.parse.urlencode({**q, **({'alt_text': alt[:1000]} if alt and image else {})})}", method="POST"))["id"]
+    except urllib.error.HTTPError as e:  # 11/11 대체텍스트(alt_text)를 못 받는 API면 없이 1번 더
+        if not (alt and image and 400 <= e.code < 500):
+            raise
+        cid = json.loads(http(f"{THREADS}/{me}/threads?{urllib.parse.urlencode(q)}", method="POST"))["id"]
     time.sleep(30 if image else 10)  # 미디어 처리 대기 (공식 권장값)
     return th_ok(json.loads(http(f"{THREADS}/{me}/threads_publish?creation_id={cid}&access_token={tok}", method="POST")))
 
 
-def th_bundle(seen, kind, text, link=None, image=None, topic=None):
+def th_bundle(seen, kind, text, link=None, image=None, topic=None, alt=None):
     """묶음 글 Threads(12·18시 리스트·토스 베스트 리스트·21시 카드·22시 미리보기 — 10/12 진우 '묶음 글은 반드시'): 실패하면 다음 실행에 1번 더(th_retry — 코드 검사한 글), 예외는 그대로(main 알림).
     topic = 정해 둔 주제 태그(수다 글 '일상') · 비딜 글(TH_NONDEAL) 올린 시각 = seen thnd(수다 글 앞뒤 30분 칸)."""
     text = rv_text(kind, text)  # Z 계절·기온·오늘 아닌 토스 가격 줄 뺌
@@ -9005,7 +9083,7 @@ def th_bundle(seen, kind, text, link=None, image=None, topic=None):
         return None
     try:
         RUN["thk"] = kind  # ⑦ toss_guard d(1개 값 순 묶음 종류)
-        r = th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic))
+        r = th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic), alt=alt)
     except TossHold:  # ⑦ 보류 = 다시 시도 X
         raise
     except Exception:
@@ -12110,7 +12188,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}

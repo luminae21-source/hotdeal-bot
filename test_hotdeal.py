@@ -17,6 +17,7 @@ H.TH_SOLO_DAWN, H.TOSS_TH_LIST, H.TH_TOSS_MIN, H.TOSS_GUARD, H.TH_LIST_TOSS, H.N
 H.TH_DIVERSE = False  # 10/31 묶음 다양성(72시간 회전·브랜드 1개·쿠팡만·조합 돌리기·점검) = 9-132에서만(다른 칸 = 예전 리스트 그대로)
 fit0, H.TH_SERIES_FIT = H.TH_SERIES_FIT, {}  # 11/1 시리즈 바구니 칸만(💄) = 9-142에서만(옛 12시 리스트 셀프체크 = 예전 그대로)
 H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크에선 끔 — 9-139가 켜서 봄
+pvc0, H.PV_CARD = H.PV_CARD, False  # 11/11 22시 미리보기 카드(21:30~ 카드 저장소·node) = 9-180에서만
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -14272,3 +14273,90 @@ assert len(c179) == n179 + 2 and not os.path.exists("docs/blog_data/2026-12-03.j
 assert "ss_report, blog_data, th_retry" in inspect.getsource(H.main) and "BLOG_DATE: ${{ inputs.blog_date }}" in open(os.path.join(rd179, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 (H.coupang, H.alert, H.HAS_CP, H.tg, H.http, e179) = sv179; H.E.clear(); H.E.update(e179)
 os.chdir(cwd179); shutil.rmtree(d179, ignore_errors=True)
+
+# 9-180 (11/11 23:52 진우 OK '개발 진행하자'): 22시 미리보기 Threads 글 = '오늘의 장바구니' 카드 1장(hotdealpick-cards 틀 — 워크플로가 21시대에 읽기 전용으로 받음)
+#   · 21:30~ 카드 준비(pv_card): 미리보기 딜(22:10 뒤 · 수수료) 중 봇 확인 가격 now·chk·사진·몰 주소 = 많은 몰 하나 3~5개 · chk 없음 = X · 사진 미리 받아 assets/images/ · 루트 checked = 22:00(상품 = chk)
+#   · 22시: 카드가 사이트에 떴고 상품이 다 미리보기에 있으면 IMAGE 글(본문 링크 그대로 · alt_text) · 아니면·4xx = 글만 + 관리봇 1줄 · metrics th 줄 chg th_card
+rd180m = os.path.dirname(os.path.abspath(H.__file__))
+sv180 = (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, H.E.get("THREADS_TOKEN"))
+cwd180, d180 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d180); os.makedirs("hotdealpick-cards/scripts"); open("hotdealpick-cards/scripts/render.mjs", "w").write("")
+IMG180 = lambda i: f"https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/{i}.jpg"
+CP180 = lambda i, at, chk=True, **k: {"at": f"2026-11-12 {at}", "button": "b", "deal": True, "url": f"https://link.coupang.com/a/c{i}", "text": f"🔥 <b>[쿠팡] 브랜드{i} 수건 {i}장 (1{i},900원/무료)</b>",
+                                      "now": f"1{i},500원", "img": IMG180(i), **({"chk": f"2026-11-12 2{i % 2}:1{i}"} if chk else {}), **k}
+EV180 = [CP180(1, "22:05"), CP180(2, "22:20"), CP180(3, "22:30"), CP180(4, "22:40", chk=False), CP180(5, "23:00"), CP180(6, "23:10"), CP180(7, "23:20"), CP180(8, "23:30")]
+json.dump(EV180, open("events180.json", "w"), ensure_ascii=False)
+cp180, al180, s180 = [], [], {}
+H.EVENTS, H.PV_CARD, H.alert = "events180.json", True, lambda s, k, t, **kw: al180.append((k, t))
+H.card_png = lambda kind, d, short="", root=H.CARD_DIR: cp180.append((kind, json.loads(json.dumps(d)), root)) or "docs/cards/mall/20261112_2135_pvcard.png"
+H.th_get = lambda u: b"\xff\xd8\xff\xe0 jpeg " + u.encode()
+time.time = lambda: TK("2026-11-12 21:29"); H.preview(s180); assert not cp180 and "pvcard_2026-11-12" not in s180  # 30분 전 X
+time.time = lambda: TK("2026-11-12 21:35"); H.preview(s180)
+(k180, c180, r180), = cp180
+assert k180 == "pvcard" and r180 == "hotdealpick-cards" and c180["mall"] == "coupang" and len(c180["items"]) == 5 and not al180, (cp180, al180)
+assert [it["url"][-2:] for it in c180["items"]] == ["c2", "c3", "c5", "c6", "c7"]  # 22:10 전(c1)·chk 없음(c4) X · 시각 순 앞 5개(c8 X)
+assert [it["checked"] for it in c180["items"]] == [EV180[i]["chk"] for i in (1, 2, 4, 5, 6)] and c180["checked"] == "2026-11-12 22:00" and c180["checked"] not in [it["checked"] for it in c180["items"]]  # 상품 = 봇 chk · 루트 = 글 기준
+assert [it["price"] for it in c180["items"]] == ["12,500원", "13,500원", "15,500원", "16,500원", "17,500원"] and all(it["img"] == f"assets/images/pv_2026-11-12_{n}.jpg" for n, it in enumerate(c180["items"], 1))
+assert open("hotdealpick-cards/assets/images/pv_2026-11-12_1.jpg", "rb").read().startswith(b"\xff\xd8") and set(json.loads(json.dumps(c180)).keys()) == {"mall", "title", "checked", "items"}  # 사진 미리 받음 · 스키마 루트 그대로
+st180 = s180["pvcard_2026-11-12"]
+assert st180["card"] == f"{H.SITE}cards/mall/20261112_2135_pvcard.png" and st180["urls"] == [it["url"] for it in c180["items"]] and st180["alt"] == ""  # 대체텍스트 못 받음(가짜 저장소) = 없이
+time.time = lambda: TK("2026-11-12 21:50"); H.preview(s180); assert len(cp180) == 1  # 하루 1번
+rd180 = next((p for p in (os.environ.get("HOTDEALPICK_CARDS"), "/home/user/luminae21-source/hotdealpick-cards") if p and os.path.isfile(f"{p}/scripts/validate.mjs")), None)
+if rd180 and shutil.which("node"):  # 카드 저장소 검사기(validate.mjs) 그대로 — 저장소는 안 건드림(임시 폴더에 검사 파일만)
+    v180 = tempfile.mkdtemp(); shutil.copytree(f"{rd180}/scripts", f"{v180}/scripts"); os.makedirs(f"{v180}/assets/images"); os.makedirs(f"{v180}/data")
+    shutil.copy(f"{rd180}/assets/validation.mjs", f"{v180}/assets/validation.mjs"); shutil.copy(f"{rd180}/package.json", f"{v180}/package.json")
+    json.dump(c180, open(f"{v180}/data/pv.json", "w"), ensure_ascii=False)
+    pr180 = subprocess.run(["node", "scripts/validate.mjs", "--data", "data/pv.json"], cwd=v180, capture_output=True, text=True, timeout=60)
+    assert pr180.returncode == 0 and "READY" in pr180.stdout, (pr180.stdout, pr180.stderr)  # 저장소 검사 통과(준비된 카드)
+    shutil.rmtree(v180, ignore_errors=True)
+else:
+    print("9-180: hotdealpick-cards 검사기 없음 — validate 건너뜀")
+# 못 만드는 날 = 카드 X + 관리봇 1줄(글은 그대로)
+for evs180, why180, patch180 in (([CP180(2, "22:20"), CP180(3, "22:30"), CP180(4, "22:40", chk=False)], "3개↑", None), (EV180, "사진 못 받음", "img"), (EV180, "카드 검사·렌더 실패", "png")):
+    json.dump(evs180, open("events180.json", "w"), ensure_ascii=False); s180b, cp180[:], al180[:] = {}, [], []
+    H.th_get = (lambda u: b"<html>") if patch180 == "img" else (lambda u: b"\xff\xd8\xff\xe0 jpeg")
+    if patch180 == "png": H.card_png = lambda kind, d, short="", root=H.CARD_DIR: None
+    time.time = lambda: TK("2026-11-12 21:35"); H.preview(s180b)
+    assert "card" not in s180b["pvcard_2026-11-12"] and len(al180) == 1 and why180 in al180[0][1] and al180[0][1].startswith("🃏 22시 미리보기 카드 없이 글만"), (why180, al180)
+# 22시 미리보기 = 카드 IMAGE 글(본문 링크 그대로 · alt) / 안 뜸·4xx = 글만
+json.dump(EV180, open("events180.json", "w"), ensure_ascii=False)
+th180, head180, bad180 = [], [True], []
+def http180(url, body=None, headers=None, method=None):
+    if method == "HEAD":
+        if not head180[0]: raise OSError("404")
+        return ""
+    if "/me?" in url: return json.dumps({"id": "9"})
+    if "/threads?" in url:
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query); th180.append(q)
+        if bad180 and bad180[0] in ("img", "alt") and q.get("media_type") == ["IMAGE"] and (bad180[0] == "img" or "alt_text" in q):
+            e = urllib.error.HTTPError(url, 400, "Bad", None, None); e.body = '{"error": {"message": "bad image"}}'; raise e
+        return json.dumps({"id": f"c{len(th180)}"})
+    if "/threads_publish?" in url: return json.dumps({"id": "P180"})
+    raise AssertionError(url)
+H.http, H.tg, H.time.sleep, H.pv_names = http180, (lambda m, **p: {"message_id": 7}), (lambda s: None), (lambda fulls: [f[:12] for f in fulls])
+H.busy, H.th_hold, H.E["THREADS_TOKEN"] = (lambda seen, cap=True: False), (lambda seen: False), "tk"
+def pv180(sv, ok=True, bad=None):
+    th180.clear(); al180.clear(); head180[0] = ok; bad180[:] = [bad] if bad else []; time.time = lambda: TK("2026-11-12 22:05"); H.preview(sv)
+    return [q for q in th180 if q.get("media_type")]
+s180["pvcard_2026-11-12"]["alt"] = "핫딜픽 쿠팡 상품 카드"
+q180 = pv180(s180)
+assert len(q180) == 1 and q180[0]["media_type"] == ["IMAGE"] and q180[0]["image_url"] == [st180["card"]] and q180[0]["alt_text"] == ["핫딜픽 쿠팡 상품 카드"] and "link_attachment" not in q180[0]
+assert q180[0]["text"][0].endswith(f"👉 {H.SITE}?ref=th") and q180[0]["text"][0].count("http") == 1 and q180[0]["text"][0].startswith(H.NOTE_STARTS) and s180["pvcard"]["m"] == {"P180": "2026-11-12"} and not al180  # 본문 링크 그대로 · metrics 표시
+q180 = pv180({"pvcard_2026-11-12": dict(st180)}, ok=False)
+assert [q["media_type"] for q in q180] == [["TEXT"]] and q180[0]["link_attachment"] == [f"{H.SITE}?ref=th"] and "안 뜸" in al180[0][1]  # 사이트에 아직 안 뜸 = 글만 바로(안 늦춤)
+sv180b = {"pvcard_2026-11-12": dict(st180)}; q180 = pv180(sv180b, bad="img")
+assert [q["media_type"] for q in q180] == [["IMAGE"], ["IMAGE"], ["TEXT"]] and "alt_text" in q180[0] and "alt_text" not in q180[1] and "안 받음" in al180[0][1] and not [k for k in sv180b if k.startswith("thretry_")]  # 4xx = alt 없이 1번 → 그래도 X = 글만 1번 · 다시 올림 줄 X
+q180 = pv180({"pvcard_2026-11-12": {**st180, "alt": "ALT"}}, bad="alt")
+assert [(q["media_type"], "alt_text" in q) for q in q180] == [(["IMAGE"], True), (["IMAGE"], False)] and not al180  # alt_text 못 받으면 없이 1번 더
+json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv180({"pvcard_2026-11-12": dict(st180)})
+assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
+assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
+y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert '[ "$(TZ=Asia/Seoul date +%H)" = "21" ] || exit 0\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
+(H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
+H.E.pop("THREADS_TOKEN", None) if tk180 is None else H.E.__setitem__("THREADS_TOKEN", tk180)
+os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
+
+# 9-181 (11/12 Cowork — 가이드 '가격 확인 X' 17줄: 공기청정기 6·성에제거제 3): 쿠팡 검색어 맨 뒤 = 브랜드 + 모델명 · '× 2통'·'1통' = 수량(검색어에서 빼고 쿠팡 '2개'와 같은 옵션)
+assert H.cp_kws("필립스 미니 600 시리즈 AC0650/10")[-1] == "필립스 AC0650/10" and H.cp_kws("위닉스 타워 엣지 AT8E430-MWK")[-1] == "위닉스 AT8E430-MWK" and H.cp_kws("LG전자 퓨리케어 360 Hit AS186HWWA")[-1] == "LG전자 AS186HWWA"
+assert H.cp_kws("동계 성에제거 스프레이 420ml × 2통") == ["동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이"] and H.cp_kws("살림백서 구연산 주방세제 레몬 4L")[-1] == "살림백서 주방세제 레몬"  # 모델명 없음 = 그대로
+assert H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 2개") and H.cp_same("불스원 레인OK 성에제거 400ml 1통", "불스원 레인OK 성에제거, 400ml, 1개") and not H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 1개")
