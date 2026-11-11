@@ -9287,8 +9287,9 @@ def th_landed(tok, text, since):
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 15, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
-TH_DAY_CAP, TH_CUT, TH_TOSS_DAY, TH_QUIET, TH_KEEP0, TH_CUT_FROM = 40, ("dday", "funnel", "chat"), 5, {0: "07:40", 19: "21:10"}, 24, "2026-11-12"  # ③ 11/11 23:56 진우 '글이 너무 많으면 의미가 없지'(Threads만 — 텔레그램·인스타 그대로 · None = 예전대로):
-# 11/12 07:24 진우 '토스 5개 살려'·'쿠팡 개별딜도 그냥 유지' -> 봇 Threads 글 하루 약 38~39(상한 40) · TH_CUT = 2주(10/28~11/10) 글당 조회 낮은 순으로 끔(기념일 특가 3.2 · 알림 받기 6.5 · 수다 6.7)
+TH_DAY_CAP, TH_CUT, TH_TOSS_DAY, TH_QUIET, TH_KEEP0, TH_CUT_FROM = 45, (), 5, {0: "07:40", 19: "21:10"}, 26, "2026-11-12"  # ③ 11/11 23:56 진우 '글이 너무 많으면 의미가 없지'(Threads만 — 텔레그램·인스타 그대로 · None = 예전대로):
+# 11/12 07:24 진우 '토스 5개 살려'·'쿠팡 개별딜도 그냥 유지' · 07:40 '수다 기념일 알림 글을 좀 더 보고 싶게 수정하자'(끄지 말고 예전 개수) -> 봇 Threads 글 하루 약 41(상한 45)
+# · TH_CUT = 끌 종류('dday' 기념일 특가 · 'funnel' 알림 받기 · 'chat' 수다 — 지금은 다 켬, 0시·19시만 X · 2주(10/28~11/10) 글당 조회 3.2 · 6.5 · 6.7)
 # · 토스 개별 = 하루 TH_TOSS_DAY개(10/31 '토스 하루 5개' — 따로 둔 몫, 시간 따라) · 쿠팡 개별 = 예전 개수(상한 − 어제 지킬 글 − 토스 몫 = 약 11 — 안 깎임 · 간격 규칙 그대로)
 # · TH_QUIET = 0시·19시: 쿠팡 개별 = 안 올림(다음 시간에) · 자동 묶음 글 = Threads만 그 시각(뒤로 20분씩 — th_defer)으로 옮김(채널 글 그대로 · 22시 미리보기·예약 목록 X) · TH_KEEP0 = 어제 기록 없을 때 지킬 글(묶음·미리보기·달력·투표·예약·힘 준 글 등) 수(2주 평균)
 
@@ -9303,6 +9304,8 @@ def th_cap(seen, kind, now=None):
     h = time.gmtime(now + 9 * 3600).tm_hour
     if kind in TH_CUT or h in TH_QUIET:
         return False
+    if kind not in ("cp", "toss"):
+        return True
     st = seen.get("thcap", {})
     n = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"k": {}})["k"].get(kind, 0)
     if kind == "toss":
