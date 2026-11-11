@@ -18,6 +18,7 @@ H.TH_DIVERSE = False  # 10/31 묶음 다양성(72시간 회전·브랜드 1개·
 fit0, H.TH_SERIES_FIT = H.TH_SERIES_FIT, {}  # 11/1 시리즈 바구니 칸만(💄) = 9-142에서만(옛 12시 리스트 셀프체크 = 예전 그대로)
 H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크에선 끔 — 9-139가 켜서 봄
 pvc0, H.PV_CARD = H.PV_CARD, False  # 11/11 22시 미리보기 카드(21:30~ 카드 저장소·node) = 9-180에서만
+cap0, H.TH_DAY_CAP = H.TH_DAY_CAP, None  # 11/12 ③ Threads 하루 상한(0시·19시 옮김 포함) = 9-182에서만
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -14360,3 +14361,63 @@ os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
 assert H.cp_kws("필립스 미니 600 시리즈 AC0650/10")[-1] == "필립스 AC0650/10" and H.cp_kws("위닉스 타워 엣지 AT8E430-MWK")[-1] == "위닉스 AT8E430-MWK" and H.cp_kws("LG전자 퓨리케어 360 Hit AS186HWWA")[-1] == "LG전자 AS186HWWA"
 assert H.cp_kws("동계 성에제거 스프레이 420ml × 2통") == ["동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이"] and H.cp_kws("살림백서 구연산 주방세제 레몬 4L")[-1] == "살림백서 주방세제 레몬"  # 모델명 없음 = 그대로
 assert H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 2개") and H.cp_same("불스원 레인OK 성에제거 400ml 1통", "불스원 레인OK 성에제거, 400ml, 1개") and not H.cp_same("동계 성에제거 스프레이 420ml × 2통", "동계 성에제거 스프레이, 420ml, 1개")
+
+# 9-182 (11/12 ③ 진우 '글이 너무 많으면 의미가 없지'): Threads 하루 30개 안팎 — 조회 낮은 종류(기념일 특가·알림 받기·수다·토스 개별) 끔 · 쿠팡 개별 = 남는 몫을 시간 따라
+# · 0시·19시 쿠팡 개별 X · 자동 묶음 글은 Threads만 07:40·21:10(20분씩)으로 · 지킬 글(묶음·미리보기·예약 목록 등) = 상한과 상관없이 · 셈 = seen thcap · metrics chg th_cut30
+assert cap0 == 30 and H.TH_CUT == ("dday", "funnel", "chat", "toss") and set(H.TH_QUIET) == {0, 19} and H.TH_CUT_FROM == "2026-11-12"
+sv182 = (H.http, H.time.sleep, H.th_hold, time.time, dict(H.RUN), H.E.get("THREADS_TOKEN"))
+H.TH_DAY_CAP = 30
+for k182 in H.TH_CUT:
+    assert not H.th_cap({}, k182, TK("2026-11-12 12:00"))  # 끔
+assert all(not H.th_cap({}, "cp", TK(f"2026-11-12 {h:02d}:30")) for h in (0, 19)) and H.th_cap({}, "cp", TK("2026-11-12 01:10"))
+c182 = lambda n, h, y=None: H.th_cap({"thcap": {**({"2026-11-11": y} if y else {}), "2026-11-12": {"n": 99, "k": {"cp": n}}}}, "cp", TK(f"2026-11-12 {h:02d}:05"))
+assert c182(0, 1) and not c182(1, 1) and c182(1, 4) and not c182(2, 7) and c182(5, 22) and not c182(6, 23)  # 어제 기록 없음 = 지킬 글 24 -> 6개를 시간 따라(1·4·8·12·16·20시)
+assert c182(7, 22, {"n": 20, "k": {"cp": 3, "toss": 1}}) and not c182(14, 23, {"n": 20, "k": {"cp": 3, "toss": 1}})  # 어제 지킬 글 16 -> 14개
+assert not c182(0, 22, {"n": 40, "k": {"cp": 2}})  # 어제 지킬 글 38 = 쿠팡 개별 0
+H.TH_DAY_CAP = None; assert all(H.th_cap({}, k, TK("2026-11-12 19:10")) for k in H.TH_CUT + ("cp",)); H.TH_DAY_CAP = 30  # None = 예전대로
+s182 = {"thcap": {"2026-11-08": {"n": 3, "k": {}}, "2026-11-11": {"n": 1, "k": {}}}}
+H.RUN.update(seen=s182, ok=set()); time.time = lambda: TK("2026-11-12 09:00")
+for k182 in ({"thc": "cp"}, {"thk": "chat"}, {"thk": "steady"}, {}):
+    H.RUN.pop("thc", None); H.RUN.pop("thk", None); H.RUN.update(k182); H.th_ok({"id": "1"})
+H.RUN.pop("thc", None); H.RUN.pop("thk", None)
+assert s182["thcap"] == {"2026-11-11": {"n": 1, "k": {}}, "2026-11-12": {"n": 4, "k": {"cp": 1, "chat": 1}}}, s182  # 3일 보관 · 줄일 종류만 k
+H.TH_DAY_CAP = None; H.th_ok({"id": "2"}); H.TH_DAY_CAP = 30
+assert s182["thcap"]["2026-11-12"]["n"] == 4  # 끄면 안 셈
+th182 = []
+def http182(url, body=None, headers=None, method=None):
+    if "/me?" in url: return json.dumps({"id": "9"})
+    if "/threads?" in url and method != "POST": return json.dumps({"data": []})
+    if "/threads?" in url:
+        th182.append(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["text"][0]); return json.dumps({"id": f"c{len(th182)}"})
+    if "/threads_publish?" in url: return json.dumps({"id": f"P{len(th182)}"})
+    raise AssertionError(url)
+H.http, H.time.sleep, H.th_hold, H.E["THREADS_TOKEN"] = http182, (lambda s: None), (lambda seen: False), "tk"
+s182 = {"thcap": {"2026-11-12": {"n": 50, "k": {}}}}; H.RUN.update(seen=s182)
+for at182, k182 in (("19:31", "cpmix"), ("19:52", "steady"), ("19:55", "preview"), ("19:56", "list19"), ("20:01", "top20")):
+    time.time = lambda: TK(f"2026-11-12 {at182}"); H.th_bundle(s182, k182, f"🚀 {k182} 글")
+assert th182 == ["🚀 preview 글", "🚀 list19 글", "🚀 top20 글"], th182  # 22시 미리보기·예약 목록·19시 아닌 묶음 = 상한(n 50)과 상관없이 그대로
+mv182 = {k[17:]: time.strftime("%H:%M", time.gmtime(v["at"] + 9 * 3600)) for k, v in s182.items() if k.startswith("thretry_20261112_")}
+assert mv182 == {"cpmix": "21:10", "steady": "21:30"}, mv182  # 19시 자동 묶음 = Threads만 21:10부터 20분씩
+del th182[:]
+for at182 in ("21:05", "21:12", "21:20", "21:31", "21:40"):
+    time.time = lambda: TK(f"2026-11-12 {at182}"); H.th_retry(s182); th182.append(at182)
+assert th182 == ["21:05", "🚀 cpmix 글", "21:12", "21:20", "🚀 steady 글", "21:31", "21:40"], th182  # 그 시각 뒤 실행마다 1개
+s182 = {"thmall": {"cp": TK("2026-11-12 07:35")}}; H.RUN.update(seen=s182); del th182[:]
+time.time = lambda: TK("2026-11-12 00:20"); H.toss_th_photo(s182, "toss0", f"{H.TOSS_NOTE}\n🎁 토스 묶음", [])
+time.time = lambda: TK("2026-11-12 07:41"); H.th_retry(s182); assert not th182  # 토스↔쿠팡 15분
+time.time = lambda: TK("2026-11-12 07:51"); H.th_retry(s182); assert th182 == [f"{H.TOSS_NOTE}\n🎁 토스 묶음"], th182  # 0시 -> 07:40 뒤
+for f182, k182 in ((H.toss_deals, "toss"), (H.toss_picks, "toss"), (H.toss_reopen, "toss"), (H.dday_deals, "dday"), (H.chat_post, "chat"), (H.x_post, "funnel")):
+    assert f'th_cap(seen, "{k182}"' in inspect.getsource(f182), f182.__name__  # 개별 글 길마다 상한 검사
+assert "cap = {m: th_cap(seen, m, now) for m in (\"toss\", \"cp\")}" in inspect.getsource(H.threads_deals) and "[c for c in todo if cap[mall(c)]]" in inspect.getsource(H.threads_deals)
+assert 'RUN["thc"] = None, "toss" if is_toss(link, src or text) else "cp"' in inspect.getsource(H.th_deal) and 'finally:\n        RUN.pop("thc", None)' in inspect.getsource(H.th_deal)
+assert 'if day == TH_CUT_FROM:\n        m[day]["chg"] = m[day].get("chg", []) + ["th_cut30"]' in inspect.getsource(H.metrics_rows)
+s182 = {}; n182 = []  # 하루: 지킬 글 24 + 쿠팡 개별 매시 시도 -> 30 안팎 · 0시·19시 0
+for h182 in range(24):
+    t182 = TK(f"2026-11-12 {h182:02d}:10")
+    if H.th_cap(s182, "cp", t182):
+        n182.append(h182); s182.setdefault("thcap", {}).setdefault("2026-11-12", {"n": 0, "k": {}})["k"]["cp"] = len(n182)
+assert len(n182) == 6 and not {0, 19} & set(n182) and 24 + len(n182) == 30, n182
+(H.http, H.time.sleep, H.th_hold, time.time, ru182, tk182) = sv182
+H.RUN.clear(); H.RUN.update(ru182); H.TH_DAY_CAP = None
+H.E.pop("THREADS_TOKEN", None) if tk182 is None else H.E.__setitem__("THREADS_TOKEN", tk182)
+
