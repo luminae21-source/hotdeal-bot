@@ -1,58 +1,31 @@
 {
-"date": "2026-11-11",
+"date": "2026-11-12",
 "urls": [
 {
-"url": "https://hotdealpick.kr/c/t/apple.html",
-"kind": "topic",
-"added": "2026-11-10"
-},
-{
-"url": "https://hotdealpick.kr/c/t/t85e7a3.html",
-"kind": "topic",
-"added": "2026-11-10"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tb97e1a.html",
-"kind": "topic",
-"added": "2026-11-10"
-},
-{
-"url": "https://hotdealpick.kr/c/t/t3cdfd1.html",
+"url": "https://hotdealpick.kr/c/t/t861b59.html",
 "kind": "topic",
 "added": "2026-11-11"
 },
 {
-"url": "https://hotdealpick.kr/c/t/t5b2d60.html",
+"url": "https://hotdealpick.kr/c/t/tae3e0c.html",
 "kind": "topic",
 "added": "2026-11-11"
 },
 {
-"url": "https://hotdealpick.kr/c/t/t9e9cfd.html",
-"kind": "topic",
+"url": "https://hotdealpick.kr/guide/car-deicer-price-per-100ml/",
+"kind": "guide",
 "added": "2026-11-11"
 },
 {
-"url": "https://hotdealpick.kr/p/4016.html",
-"kind": "deal",
-"added": "2026-11-07"
-},
-{
-"url": "https://hotdealpick.kr/p/1756.html",
+"url": "https://hotdealpick.kr/p/1900.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
 {
-"url": "https://hotdealpick.kr/p/1870.html",
+"url": "https://hotdealpick.kr/p/1917.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
-{
-"url": "https://hotdealpick.kr/today/2026-11-11/",
-"kind": "today",
-"added": "2026-11-11"
-}
-],
-"q": [
 {
 "url": "https://hotdealpick.kr/p/2078.html",
 "kind": "deal",
@@ -64,12 +37,24 @@
 "added": "2026-11-08"
 },
 {
-"url": "https://hotdealpick.kr/p/3169.html",
+"url": "https://hotdealpick.kr/p/2378.html",
+"kind": "deal",
+"added": "2026-11-08"
+},
+{
+"url": "https://hotdealpick.kr/p/2389.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
 {
 "url": "https://hotdealpick.kr/p/3145.html",
+"kind": "deal",
+"added": "2026-11-08"
+}
+],
+"q": [
+{
+"url": "https://hotdealpick.kr/p/3169.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
@@ -179,32 +164,12 @@
 "added": "2026-11-08"
 },
 {
-"url": "https://hotdealpick.kr/p/1917.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
 "url": "https://hotdealpick.kr/p/4201.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
 {
 "url": "https://hotdealpick.kr/p/4251.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/2378.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/1900.html",
-"kind": "deal",
-"added": "2026-11-08"
-},
-{
-"url": "https://hotdealpick.kr/p/2389.html",
 "kind": "deal",
 "added": "2026-11-08"
 },
@@ -614,16 +579,6 @@
 "added": "2026-11-11"
 },
 {
-"url": "https://hotdealpick.kr/c/t/t861b59.html",
-"kind": "topic",
-"added": "2026-11-11"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tae3e0c.html",
-"kind": "topic",
-"added": "2026-11-11"
-},
-{
 "url": "https://hotdealpick.kr/p/3525.html",
 "kind": "deal",
 "added": "2026-11-11"
@@ -681,11 +636,6 @@
 {
 "url": "https://hotdealpick.kr/p/4612.html",
 "kind": "deal",
-"added": "2026-11-11"
-},
-{
-"url": "https://hotdealpick.kr/guide/car-deicer-price-per-100ml/",
-"kind": "guide",
 "added": "2026-11-11"
 },
 {
@@ -782,6 +732,16 @@
 "https://hotdealpick.kr/p/4016.html": "2026-11-11",
 "https://hotdealpick.kr/p/1756.html": "2026-11-11",
 "https://hotdealpick.kr/p/1870.html": "2026-11-11",
-"https://hotdealpick.kr/today/2026-11-11/": "2026-11-11"
+"https://hotdealpick.kr/today/2026-11-11/": "2026-11-11",
+"https://hotdealpick.kr/c/t/t861b59.html": "2026-11-12",
+"https://hotdealpick.kr/c/t/tae3e0c.html": "2026-11-12",
+"https://hotdealpick.kr/guide/car-deicer-price-per-100ml/": "2026-11-12",
+"https://hotdealpick.kr/p/1900.html": "2026-11-12",
+"https://hotdealpick.kr/p/1917.html": "2026-11-12",
+"https://hotdealpick.kr/p/2078.html": "2026-11-12",
+"https://hotdealpick.kr/p/2154.html": "2026-11-12",
+"https://hotdealpick.kr/p/2378.html": "2026-11-12",
+"https://hotdealpick.kr/p/2389.html": "2026-11-12",
+"https://hotdealpick.kr/p/3145.html": "2026-11-12"
 }
 }
