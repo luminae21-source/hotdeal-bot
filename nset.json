@@ -1,4 +1,19 @@
 {
 "d": "2026-11-12",
-"items": []
+"items": [
+{
+"name": "반려동물",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+]
 }

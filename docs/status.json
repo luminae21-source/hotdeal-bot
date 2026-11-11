@@ -1,26 +1,26 @@
 {
-"at": "2026-11-12 00:12",
-"posts": 4824,
-"site": 1985,
+"at": "2026-11-12 00:25",
+"posts": 4835,
+"site": 1980,
 "mall": {
-"coupang": 1297,
-"toss": 632,
-"": 1,
+"coupang": 1293,
+"toss": 630,
+"": 2,
 "naver": 55
 },
 "cat": {
-"season": 137,
+"season": 136,
 "pet": 41,
 "sport": 19,
 "home": 84,
-"digital": 72,
-"life": 272,
-"food": 419,
+"digital": 71,
+"life": 273,
+"food": 416,
 "heat": 131,
 "beauty": 262,
 "laundry": 77,
 "kitchen": 133,
-"snack": 109,
+"snack": 108,
 "coffee": 85,
 "car": 47,
 "fashion": 93,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 168,
-"sitemap": 821,
+"sitemap": 822,
 "days": {
 "2026-11-04": {
 "site": 1710,
@@ -111,12 +111,12 @@
 }
 },
 "2026-11-12": {
-"site": 1985,
-"sitemap": 821,
+"site": 1980,
+"sitemap": 822,
 "mall": {
-"coupang": 1297,
-"toss": 632,
-"": 1,
+"coupang": 1293,
+"toss": 630,
+"": 2,
 "naver": 55
 }
 }
@@ -124,6 +124,21 @@
 "warn": [
 "쿠팡 변환 실패 168개(cp_fail.json)"
 ],
-"nset": [],
-"nset_n": "새 구성 0 · 기존 상품 구성 0"
+"nset": [
+{
+"name": "반려동물",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+],
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
