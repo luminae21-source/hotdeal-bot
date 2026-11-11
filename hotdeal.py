@@ -10600,7 +10600,7 @@ def drop_post(seen):
         rows = [f"{it['short']} · {it['was']:,}원 → {it['price']} (▼{it['pct']}%)" for it in its]
         notes = aff_notes(p["url"] for p, *_ in picks)
         th = lambda k: f"{notes}\n\n📉 오늘 가격 내려간 거 모아왔어요 🐻\n\n" + "\n".join(rows[:k]) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격"
-        k = next((k for k in range(len(rows), 0, -1) if th_len(th(k) + ends[1]) <= 500), 1)  # Threads 500자(th_len) — 긴 끝 줄 몫까지
+        k = next((k for k in range(len(rows), 0, -1) if th_len(th(k) + end) <= 500), 1)  # Threads 500자(th_len) — 끝 링크 줄 몫까지
         st.update(files=files, cover=cover, urls=[p["url"] for p, *_ in picks], hook=f"▼{its[0]['pct']}% · {its[0]['price'].split(' ')[0]}", tags=ig_tags([p for p, *_ in picks], kst.tm_mday + 2), th=th(k),
                   igcap=f"{notes}\n\n📉 가격 내려간 상품 {len(its)}개\n\n" + "\n".join(rows) + f"\n\n같은 구성 · {recs} 기록 대비 · {chks} 확인 가격(쿠폰·와우 조건 그대로)\n\n🛒 프로필 링크 → 가격 내려간 상품\n\n상품 사진: 판매 페이지(쿠팡)")
         seen["dropu"] = {"t": now, "m": {**mem, **{u: day for u in st["urls"]}}}
