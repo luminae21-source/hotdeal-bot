@@ -1001,12 +1001,13 @@ def shelf_cand(seen, now=None):
 
 BLOG_PLAN, BLOG_DIR, BLOG_AT, BLOG_AHEAD, BLOG_DAY_MAX, BLOG_N = "docs/blog_plan.json", "docs/blog_data", "18:00", 3, 2, 15  # 11/11 진우 '가장 중요하니까 바로': 블로그 원고용 쿠팡 상품 표(Cowork 브라우저 검색 대신)
 BLOG_ACC = r"호환|교체용|소모품|부품|리필만|종이\s*호일|거치대|(?:전용|여분|추가|교체)\s*(?:필터|배터리|브러[시쉬]|헤드|노즐|트레이|바스켓)"  # 본품 아님(dropped why)
-BLOG_AUTO = ("1L", "100g", "W")  # unit auto = 이름에서 먼저 맞는 것(용량 L·무게 g·전력 W) — 표 안에서 많은 쪽만 단위값
+BLOG_AUTO = ("1L", "100g", "W")
+BLOG_NOT_BRAND = r"(?:최신형|신형|신제품|\d{2,4}년형|\d{2,4}년|대용량|초대용량|특대용량|정품|국내산?|공식|특가|NEW|new|1\+1)$"  # 11/11 실제 첫 실행: '최신형 리빙웰 …' = 브랜드 '최신형' -> 다음 낱말  # unit auto = 이름에서 먼저 맞는 것(용량 L·무게 g·전력 W) — 표 안에서 많은 쪽만 단위값
 
 
 def blog_size(name, unit):
     """이름 + 기준(매·개·100ml·1L·10g·1kg·W) -> {total, size_each, size_unit, qty, base, label} / None(못 읽음 — sq_total 규칙 그대로 · W = 와트 1가지만)."""
-    nm, u = str(name or ""), str(unit or "").strip()
+    nm, u = re.sub(r"(\d(?:\.\d+)?)\s*리터", r"\1L", str(name or "")), str(unit or "").strip()  # '16리터' = 16L
     if u == "W":
         w = {float(v) for v in re.findall(r"(\d+(?:\.\d+)?)\s*W(?![a-zA-Z])", nm)}
         return {"total": w.pop(), "size_each": None, "size_unit": "W", "qty": 1, "base": 1, "label": "1W당"} if len(w) == 1 and not re.search(r"\d\s*[/~]\s*\d", nm) else None
@@ -1031,7 +1032,7 @@ def blog_rows(plan, r, chk):
     rows = sorted((x for x in (r or {}).get("productData") or [] if isinstance(x, dict)), key=lambda x: int(x.get("rank") or 999)) if isinstance(r, dict) else []
     for x in rows:
         nm, pr = str(x.get("productName") or "").strip(), x.get("productPrice")
-        brand = (re.sub(r"^\s*[\[(【][^\])】]*[\])】]\s*", "", nm).split() or [""])[0]
+        brand = next((w for w in re.sub(r"^\s*[\[(【][^\])】]*[\])】]\s*", "", nm).split() if not re.match(BLOG_NOT_BRAND, w)), "")
         key = {str(x.get("productId") or ""), re.sub(r"[\W_]+", "", nm)} - {""}
         why = ("이름 막기(분유·조제유·성인용품)" if re.search(SHELF_BLOCK, nm) else "가격 0" if not isinstance(pr, (int, float)) or pr <= 0 else
                "본품 아님(" + re.search(BLOG_ACC, nm)[0] + ")" if re.search(BLOG_ACC, nm) else "같은 상품 다른 옵션" if key & seen_k else

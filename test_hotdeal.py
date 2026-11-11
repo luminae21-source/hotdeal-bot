@@ -14214,6 +14214,9 @@ assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)),
     {"date": "2026-11-19", "query": "무선청소기", "unit": "auto"}, {"date": "2026-11-20", "query": "핫팩", "unit": "개"}]
 assert H.blog_size("베베숲 물티슈 캡형 100매 10팩", "매") == {"total": 1000, "size_each": 100, "size_unit": "매", "qty": 10, "base": 1, "label": "1매당"}
 assert H.blog_size("핫팩 150g 10개입 x 3팩", "개")["total"] == 30 and H.blog_size("세제 2.5L 2개", "1L") == {"total": 5000, "size_each": 2500, "size_unit": "ml", "qty": 2, "base": 1000, "label": "1L당"}
+assert H.blog_size("리빙웰 에어프라이어 16리터 AF16", "1L")["total"] == 16000  # 11/11 실제 첫 실행 — '리터' = L
+assert sorted(x["brand"] for x in H.blog_rows({"date": "d", "query": "q", "unit": "1L"}, {"productData": [{"rank": 1, "productId": 1, "productName": "최신형 리빙웰 30L 에어프라이어", "productPrice": 260000},
+        {"rank": 2, "productId": 2, "productName": "[공식] 2026년형 닌자 에어프라이어 5L", "productPrice": 1}]}, "c")["items"]) == ["닌자", "리빙웰"]  # 꾸밈말 = 브랜드 X
 assert H.blog_size("쌀 10kg", "1kg")["base"] == 1000 and H.blog_size("청소기 450W", "W")["total"] == 450 and H.blog_size("청소기 450W/600W", "W") is None and H.blog_size("물티슈 4종 택1", "매") is None
 P179 = lambda i, n, p, **k: {"rank": i, "productId": k.get("pid", i), "productName": n, "productPrice": p, "productImage": f"https://thumbnail.coupangcdn.com/{i}.jpg",
                               "productUrl": f"https://link.coupang.com/re/AFFSDP?lptag=AF1&pageKey={i}&itemId=9{i}&vendorItemId=8{i}&traceid=t", "isRocket": i % 2 == 1, "isFreeShipping": True}
