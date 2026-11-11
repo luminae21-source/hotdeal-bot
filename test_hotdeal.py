@@ -5557,7 +5557,7 @@ s39 = {}; assert [tp39("휴지 30롤") for _ in range(5)] == ["생필품"] * 3 +
 s39 = {}; assert [H.th_topic(s39) for _ in range(5)] == ["핫딜"] * 3 + ["특가", "핫딜"] and len(s39["thtopic"]["l"]) == 5
 s39 = {"thtopic": {"t": 1, "l": ["가전"] * 12}}; tp39("휴지"); assert len(s39["thtopic"]["l"]) == 10  # 최근 10개만
 src39 = inspect.getsource
-assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic))' in src39(H.th_bundle) and 'th_topic(seen, base=seen[k].get("topic")))' in src39(H.th_retry) and "th_topic(seen))" in src39(H.poll_post)
+assert 'th_post(E.get("THREADS_TOKEN"), text, link, image, th_topic(seen, base=topic), **({"alt": alt} if alt else {}))' in src39(H.th_bundle) and 'th_topic(seen, base=seen[k].get("topic")))' in src39(H.th_retry) and "th_topic(seen))" in src39(H.poll_post)
 assert 'tag=th_topic(seen, base="일상")' in src39(H.daily_post) and "th_topic(seen, text, cat=cat)" in src39(H.th_deal) and "link, topic)" in src39(H.th_deal) and '"topic_tag": tag' in src39(H.th_text) and '"topic_tag": tag' in src39(H.th_poll)
 assert H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)", cat="digital") == "가전" and H.th_topic({}, "🔥 [쿠팡] Apple 2026 에어팟 5 (199,000원)") == "핫딜"  # 리뷰: 글 cat(Claude)도 = 사이트 품목 칸
 assert H.th_topic({}, f"{H.TOSS_NOTE}\n\n💙 토스 특가 🔥\n애터미 비비크림 40ml\n9,900원") == "화장품" and H.th_topic({}, "🔥 [쿠팡] 햇반 24개", cat="beauty") == "장보기"  # 칸 없음 -> 화장품 낱말 · 제목 칸이 먼저(사이트와 같게)
