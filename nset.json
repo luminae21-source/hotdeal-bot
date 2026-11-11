@@ -217,6 +217,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "과자",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
