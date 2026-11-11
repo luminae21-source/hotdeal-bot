@@ -91,6 +91,27 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
