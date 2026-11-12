@@ -1,9 +1,9 @@
 {
- "date": "2026-11-12",
- "updated": "2026-11-12 06:42 봇",
+ "date": "2026-11-13",
+ "updated": "2026-11-13 06:41 봇",
  "items": [
   {
-   "fact": "서울 아침 6도",
+   "fact": "서울 아침 8도",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
@@ -13,11 +13,19 @@
    ]
   },
   {
-   "fact": "수능(11/19)까지 7일",
+   "fact": "수능(11/19)까지 6일",
    "kind": "cal",
    "src": "",
    "fit": [
     "수능 응원 2026"
+   ]
+  },
+  {
+   "fact": "블랙프라이데이(11/27)까지 14일",
+   "kind": "cal",
+   "src": "",
+   "fit": [
+    "블랙프라이데이 2026"
    ]
   },
   {
