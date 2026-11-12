@@ -14698,7 +14698,7 @@ P190 = lambda *xs: {"productData": [{"productId": i, "productName": n, "productP
 r190 = P190((1, "햇반 백미밥 210g 24개", 26000, True), (2, "오뚜기밥 210g 36개", 31000, True), (3, "로켓아님 즉석밥 200g 30개", 15000, False), (4, "즉석밥 전용 수저 세트", 3000, True))
 pk190 = H.theme_pick("즉석밥", "100g", r190, "2026-11-12 14:05")
 assert pk190["name"] == "오뚜기밥 210g 36개" and pk190["label"] == "100g당" and pk190["uv"] == int(31000 / 7560 * 100 + 0.5) == 410 and pk190["url"].startswith("https://link.coupang.com/") and pk190["chk"] == "2026-11-12 14:05"  # 로켓만 · 본품만 · 단위값 다시 계산
-assert H.theme_pick("조미김", "10g", P190((5, "광천김 도시락김 5g 36봉", 15900, True)), "c")["label"] == "10g당" and H.theme_pick("즉석밥", "100g", P190((3, "즉석밥 200g 30개", 15000, False)), "c") is None
+assert H.theme_pick("조미김", "10g", P190((5, "광천김 도시락김 5g 36봉", 15900, True)), "c")["label"] == "10g당" and H.theme_pick("즉석밥", "100g", P190((3, "즉석밥 200g 30개", 15000, False)), "c")["uv"] == 250 and H.theme_pick("즉석밥", "100g", P190((4, "즉석밥 전용 수저 세트", 3000, True)), "c") is None  # 로켓 없으면 로켓 아닌 것 · 단위값 없음 = X
 cwd190, d190 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d190)
 sv190 = (H.coupang, H.HAS_CP, H.mall_card, H.th_bundle, H.http, H.busy, H.th_hold, H.E.get("THREADS_TOKEN"))
 srch190 = {"즉석밥": r190, "참치캔": P190((6, "동원참치 라이트 150g 10개", 21000, True)), "스팸": P190((7, "스팸 클래식 200g 6개", 25000, True)), "조미김": P190((8, "광천김 도시락김 5g 36봉", 15900, True)), "라면": P190((9, "신라면 120g 20개", 16000, True))}

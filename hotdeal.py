@@ -1034,9 +1034,13 @@ THEME_DAYS, THEME_SEARCH, THEME_POST_LATE = (1, 3, 5), ("10:00", "18:00"), "22:4
 def theme_pick(q, unit, r, chk):
     """테마 장바구니 한 칸: 검색 응답 -> blog_rows(이름 막기·본품만·같은 상품·같은 브랜드 1개 거르기 그대로) 중 로켓·단위값 있는 것(다시 계산해 같은 것만)·사진·상품 주소 -> 단위값 가장 낮은 1개 / None."""
     urls = {str(x.get("productId")): x.get("productUrl") for x in (r or {}).get("productData") or [] if isinstance(x, dict)} if isinstance(r, dict) else {}
-    ok = [it for it in blog_rows({"date": "", "query": q, "unit": unit}, r, chk)["items"] if it.get("rocket") and it.get("unit_value") is not None and blog_unit(it) == it["unit_value"]
-          and it.get("img") and str(urls.get(str(it["pid"])) or "").startswith("https://link.coupang.com/")]
-    it = min(ok, key=lambda it: (it["unit_value"], it["rank"]), default=None)
+    br = blog_rows({"date": "", "query": q, "unit": unit}, r, chk)
+    its = br["items"]
+    u_ok = [it for it in its if it.get("unit_value") is not None and blog_unit(it) == it["unit_value"]]
+    ok = [it for it in u_ok if it.get("img") and str(urls.get(str(it["pid"])) or "").startswith("https://link.coupang.com/")]
+    rk = [it for it in ok if it.get("rocket")]  # 11/12 로켓 먼저 · 없으면 로켓 아닌 것 중(11/12 첫날 A 4개 중 1칸만 — 거르기 수를 로그로)
+    print(f"theme pick {q}: 검색 {len((r or {}).get('productData') or []) if isinstance(r, dict) else 0} · 거름 뒤 {len(its)}(뺌 {len(br['dropped'])}) · 단위값 {len(u_ok)} · 사진·주소 {len(ok)} · 로켓 {len(rk)}")
+    it = min(rk or ok, key=lambda it: (it["unit_value"], it["rank"]), default=None)
     return it and {"q": q, "name": it["name"], "price": it["price"], "img": it["img"], "url": urls[str(it["pid"])], "uv": it["unit_value"], "label": it["unit_label"], "chk": chk}
 
 
