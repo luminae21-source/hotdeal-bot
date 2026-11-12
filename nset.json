@@ -1,4 +1,33 @@
 {
 "d": "2026-11-13",
-"items": []
+"items": [
+{
+"name": "세탁",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "자동차",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+]
 }
