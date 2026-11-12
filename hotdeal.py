@@ -3793,7 +3793,7 @@ def th_test_summary(seen, now):
     keep = y["n"] - sum(y["k"].values()) if y else TH_KEEP0
     print(f"card test ④ Threads 봇 글 {len(bot)}개(리포스트 {len(xs) - len(bot)}) · 시간별 " + " ".join(f"{h}시 {hrs[h]}" for h in sorted(hrs)) + f" · 0시 {hrs[0]} · 19시 {hrs[19]}"
           f" · 토스 개별 {len(toss1)}/{TH_TOSS_DAY} · 상품 링크 글 {len(prod)} 중 대가성 첫 줄 아님 {len(head)}")
-    print(f"card test ④ 상한 몫: 어제 지킬 글 {keep}{'' if y else '(기록 없음 = TH_KEEP0)'} · 쿠팡 개별 몫 {TH_DAY_CAP - keep - TH_TOSS_DAY} · 오늘 셈 {st.get(day)} · 지금 cp {th_cap(seen, 'cp', now)} · toss {th_cap(seen, 'toss', now)}")
+    print(f"card test ④ 상한 몫: 어제 지킬 글 {keep}{'' if y else '(기록 없음 = TH_KEEP0)'} · 쿠팡 개별 몫 {TH_DAY_CAP - keep - TH_TOSS_DAY if TH_DAY_CAP else '상한 끔'} · 오늘 셈 {st.get(day)} · 지금 cp {th_cap(seen, 'cp', now)} · toss {th_cap(seen, 'toss', now)}")
 
 
 def toss_lookup(seen, e):

@@ -14652,6 +14652,7 @@ TH188 = [{"id": "1", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡\n상품 https://lin
          {"id": "3", "text": "", "timestamp": "2026-11-12T01:20:00+0000", "media_type": "REPOST_FACADE"}, {"id": "4", "text": "수다 글이에요?", "timestamp": "2026-11-12T01:30:00+0000", "media_type": "TEXT_POST"}]
 H.card_png, H.pv_card, H.blog_img, H.tg = png188, pv188, (lambda seen, now=None: sent188.append("blog")), (lambda *a, **k: sent188.append("tg"))
 H.http = lambda url, body=None, headers=None, method=None: json.dumps({"data": TH188}) if "/me/threads?" in url and method is None else (_ for _ in ()).throw(AssertionError(url))
+cap188, H.TH_DAY_CAP = H.TH_DAY_CAP, 45  # 앞머리 = 끔(None)
 real188 = H.alert; s188 = {"pvcard_2026-11-12": {"t": 1}, "thcap": {"2026-11-11": {"n": 30, "k": {"cp": 4}}, "2026-11-12": {"n": 3, "k": {"cp": 1}}}}
 o188 = io.StringIO()
 with contextlib.redirect_stdout(o188):
@@ -14663,5 +14664,5 @@ assert "card test 알림(안 보냄): 카드 없이" in o188 and "card test ② 
 assert "card test ④ Threads 봇 글 3개(리포스트 1) · 시간별 9시 1 10시 2 · 0시 0 · 19시 0 · 토스 개별 1/5 · 상품 링크 글 2 중 대가성 첫 줄 아님 0" in o188, o188
 assert "card test ④ 상한 몫: 어제 지킬 글 26 · 쿠팡 개별 몫 14 · 오늘 셈 {'n': 3, 'k': {'cp': 1}}" in o188
 assert 'if E.get("CARD_TEST") == "true":' in inspect.getsource(H.main)
-(H.card_png, H.pv_card, H.blog_img, H.http, H.alert, H.POSTS, H.MALL_CARD_DIR, tk188, H.tg) = sv188; H.E.pop("THREADS_TOKEN", None) if tk188 is None else H.E.__setitem__("THREADS_TOKEN", tk188)
+H.TH_DAY_CAP = cap188; (H.card_png, H.pv_card, H.blog_img, H.http, H.alert, H.POSTS, H.MALL_CARD_DIR, tk188, H.tg) = sv188; H.E.pop("THREADS_TOKEN", None) if tk188 is None else H.E.__setitem__("THREADS_TOKEN", tk188)
 os.chdir(cwd188); shutil.rmtree(d188, ignore_errors=True)
