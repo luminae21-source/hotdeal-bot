@@ -1057,6 +1057,101 @@ def blog_rows(plan, r, chk):
     return {"date": plan["date"], "query": plan["query"], "unit": plan["unit"], "chk": chk, "source": "coupang_partners_api", "items": items[:BLOG_N], "dropped": dropped}
 
 
+BLOG_IMG, BLOG_IMG_DIR, BLOG_IMG_SRC, BLOG_IMG_JS = True, "docs/blog_img", "hotdealpick-cards/hotdealpick-deicer-redesign-20261111", "tools/blog_img/render.mjs"  # 11/12 진우: 블로그 사진 4장(GPT 잡지형 틀 — 그림·로고 = 카드 저장소 읽기 전용)
+BLOG_KIND = {"ml": ("용량", "으로"), "g": ("무게", "로"), "매": ("매수", "로"), "개": ("개수", "로"), "W": ("소비전력", "으로")}  # 공식·확인 문구의 '총 ○○'
+
+
+def blog_unit(it):
+    """blog_data 줄 단위값 다시 계산(blog_rows와 같은 식 — 판매가 ÷ 총량 × 기준, 반올림) -> 원 / None(기준·총량 없음)."""
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)?\s*(kg|g|ml|mL|l|L|매|개|W)당", str(it.get("unit_label") or ""))
+    if not m or not it.get("total") or not isinstance(it.get("price"), (int, float)):
+        return None
+    return int(it["price"] / it["total"] * float(m[1] or 1) * (1000 if m[2] in ("kg", "l", "L") else 1) + 0.5)
+
+
+def blog_img_spec(d, img=None):
+    """blog_data 1개 -> 블로그 사진 4장 그리기 재료(tools/blog_img/render.mjs — 숫자·편집 문구 여기서 다 정함): 같은 기준(가장 많은 unit_label) 줄만 · 3개↑ ·
+    단위값 = 다시 계산해 blog_data와 같아야(다르면 ValueError) · 제목 '{검색어}, {기준}당 얼마일까?' · 'N종' · 낮은 3개 · 막대 축 = 최고값을 보기 좋게 올림 · 4장 = 품목 공통 문구 ·
+    맨 위 대가성 문구 · 아래 '쿠팡 · 확인 시각 확인 가격' · 상품 사진 = blog_data img를 받은 그대로(img(url) -> data URI · 못 받음 = 빈 칸)."""
+    lab = collections.Counter(it.get("unit_label") for it in d.get("items", []) if it.get("unit_value") is not None).most_common(1)
+    its = [it for it in d.get("items", []) if lab and it.get("unit_label") == lab[0][0] and it.get("unit_value") is not None]
+    if len(its) < 3:
+        raise ValueError(f"같은 기준 상품 {len(its)}개(3개↑)")
+    for it in its:
+        if blog_unit(it) != it["unit_value"]:
+            raise ValueError(f"단위값 다름 {it.get('pid')} {it['unit_value']} != {blog_unit(it)}")
+    its.sort(key=lambda it: it["unit_value"])
+    label, q = lab[0][0], str(d["query"]).strip()
+    crit, (kind, ro) = label[:-1], BLOG_KIND.get(its[0].get("size_unit") or "", ("양", "으로"))
+    fmt = lambda v, u: f"{v / 1000:g}L" if u == "ml" and v >= 1000 else f"{v:g}mL" if u == "ml" else f"{v / 1000:g}kg" if u == "g" and v >= 1000 else f"{v:g}{u}"
+    size = lambda it: (f"{fmt(it['size_each'], it['size_unit'])} × {it['qty']}" if it.get("size_each") and (it.get("qty") or 1) > 1 else fmt(it["total"], it.get("size_unit") or "")) + (" · 로켓배송" if it.get("rocket") else "")
+    won_s = lambda n: f"{int(n):,}원"
+    lo, hi = its[0]["unit_value"], its[-1]["unit_value"]
+    e = 10 ** math.floor(math.log10(max(1, hi)))
+    mx = next(f * e for f in (1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10) if f * e >= hi * 1.04)
+    mx = int(mx) if mx == int(mx) else mx
+    def pic(u):  # 상품 사진 = 받은 그대로(JPEG·PNG·WEBP만) · 못 받음 = 빈 칸
+        try:
+            b = img(u) if img and u else b""
+        except Exception:
+            return ""
+        mt = "png" if b.startswith(b"\x89PNG") else "webp" if b.startswith(b"RIFF") else "jpeg" if b.startswith(b"\xff\xd8") else ""
+        return f"data:image/{mt};base64," + base64.b64encode(b).decode() if mt else ""
+    asset = lambda n: f"data:image/png;base64,{base64.b64encode(open(f'{BLOG_IMG_SRC}/assets/{n}', 'rb').read()).decode()}" if os.path.isfile(f"{BLOG_IMG_SRC}/assets/{n}") else ""
+    dl = DISCLOSURE.split(", ", 1)
+    ck = str(d.get("chk") or "")
+    lw = sum(92 if c == "원" else 28 if c == "," else 52 for c in won_s(lo)) + 55  # 표지 큰 숫자 폭(92px 굵게) + 줄표 자리
+    out = {"disclosure": [dl[0] + ",", dl[1]], "logo": asset("logo-cat.png"), "duo": asset("checklist-duo.png"), "query": q, "label": label, "n": len(its),
+           "kicker": f"PRICE GUIDE  /  {q} {len(its)}종", "title": [f"{q},", f"{crit}당 얼마일까?"], "loW": lw, "ratio": f"{hi / lo:.1f}" if lo else "-",
+           "coverNote": ["가격표 숫자만 보지 말고,", f"{crit}당 값으로 나눠 보세요."], "chartNote": f"가장 낮은 건 {clip(short_name(its[0]['name']), 16)} · {label} {won_s(lo)}",
+           "formula": f"{label} 가격 = 판매가 ÷ 총 {kind} × {crit} · 원 단위 반올림", "tableNote": f"비교 대상: 쿠팡 검색 {len(its)}종 · 강조 행은 {label} 가격이 낮은 3종",
+           "foot": f"쿠팡 · {ck.replace('-', '.')} 확인 가격", "strip": f"{q}도, 똑똑하게.",
+           "axis": {"max": mx, "ticks": [0, mx / 2, mx], "labels": ["0", f"{mx / 2:,.0f}" if mx / 2 == int(mx / 2) else f"{mx / 2:,.1f}", f"{mx:,}"]},
+           "tips": [["단위 가격", f"한 개 값보다 {label} 가격", f"총 {kind}{ro} 나누면 크기가 다른 상품도", "같은 기준으로 비교할 수 있어요."],
+                    ["결제 금액", "배송비·회원·쿠폰 조건까지", "같은 표시 가격이어도 결제 금액은 달라질 수 있어요.", "구매 직전 최종 결제 금액을 확인하세요."],
+                    ["구성·사용", "옵션과 구성부터", "색상·구성품·옵션이 같은지 상세 페이지에서 보고,", "사용 대상과 주의사항은 제품 표시를 확인하세요."]],
+           "items": [{"name": clip(short_name(it["name"]), 26), "short": clip(short_name(it["name"]), 14), "tname": clip(short_name(it["name"]), 18), "sub": size(it),
+                      "price": won_s(it["price"]), "unit": won_s(it["unit_value"]), "uv": it["unit_value"], "img": pic(it.get("img"))} for it in its]}
+    if " ".join(out["disclosure"]) != DISCLOSURE or not re.fullmatch(AT_RX, ck):
+        raise ValueError("대가성 문구·확인 시각")
+    return out
+
+
+def blog_img(seen, now=None):
+    """docs/blog_data/<날짜>.json(오늘 이후 · 사진 없는 것) -> docs/blog_img/<날짜>/1~4.png(1080×1350 — 게시 X, 파일만): 실행마다 1개 · 카드 저장소 틀(BLOG_IMG_SRC — 15~18·21시 받음)·
+    Noto Sans CJK KR(Actions fonts-noto-cjk) 있을 때만 · 못 만듦 = 그날 다시 X + 관리봇 1줄."""
+    now = now or time.time()
+    today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    if not BLOG_IMG or not os.path.isdir(BLOG_IMG_SRC):
+        return
+    todo = [f for f in sorted(glob.glob(f"{BLOG_DIR}/*.json")) if (day := os.path.basename(f)[:-5]) >= today and not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/4.png") and seen.get("blogimg_x_" + day) != today]
+    if not todo:
+        return
+    day = os.path.basename(todo[0])[:-5]
+    out, spec = f"{BLOG_IMG_DIR}/{day}", os.path.join(tempfile.gettempdir(), f"blog_img_{day}.json")
+    try:
+        sp = blog_img_spec(load(todo[0], {}), th_get)  # 숫자·문구 검사 먼저(글꼴 없는 실행에도 걸림 = 알림)
+        if "Noto Sans CJK KR" not in subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True, timeout=20).stdout:
+            return print("blog img: 글꼴(Noto Sans CJK KR) 없음 -> 다음 실행", day)
+        json.dump(sp, open(spec, "w"), ensure_ascii=False)
+        env = {**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
+        pw_ready(env)
+        subprocess.run(["node", BLOG_IMG_JS, spec, out], env=env, timeout=180, check=True, capture_output=True)
+        from PIL import Image
+        for n in range(1, 5):
+            if Image.open(f"{out}/{n}.png").size != (1080, 1350):
+                raise ValueError(f"{n}.png 크기")
+            os.remove(f"{out}/{n}.svg")  # 파일 = 1~4.png만
+        print("blog img", day, "4장")
+    except Exception as e:
+        seen["blogimg_x_" + day] = today
+        shutil.rmtree(out, ignore_errors=True)
+        err = (getattr(e, "stderr", b"") or b"")
+        err = (err.decode("utf-8", "replace") if isinstance(err, bytes) else str(err)).strip().splitlines()
+        print("blog img X", day, err_brief(e), err[-1:] if err else "")
+        alert(seen, "blogimg_x_" + day, f"🖼 블로그 사진 {day} 못 만듦 — {err_brief(e)}")
+
+
 def blog_data(seen, now=None):
     """11/11 블로그용 쿠팡 상품 표(docs/blog_data/<date>.json — 사이트·채널·events·진열 X · Cowork가 읽고 원고): BLOG_PLAN [{date, query, unit}] 중 date가 오늘~BLOG_AHEAD일 뒤 · 파일 없음 ·
     오늘 실패 안 한 것 · BLOG_AT(18시) 뒤 실행마다 1개(하루 BLOG_DAY_MAX) · /products/search limit 10(API 최대) 1번 = 진열 후보와 같은 전용 몫(CP_SHELF_HOUR — 진열 후보는 새벽, 이건 18시 뒤 = 시간 나눔) ·
@@ -13464,7 +13559,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, day_th, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, day_th, blog_img, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

@@ -14519,7 +14519,7 @@ mcm184.ok, head184[0], s184, n184 = True, False, {}, len(po184); run184(H.day_th
 assert "카드 아직 사이트에 안 뜸" in run184(H.day_th, "2026-11-09 15:30", s184) and len(po184) == n184  # 카드 사이트 반영 기다림(40분)
 run184(H.day_th, "2026-11-09 15:50", s184); assert po184[-1]["image"] is None and po184[-1]["link"] and len(po184) == n184 + 1  # 40분 지남 = 글만
 assert run184(H.day_th, "2026-11-07 15:05", {}) == "" and run184(H.day_th, "2026-11-12 15:05", {}) == ""  # D-4·행사 뒤 X
-assert "th_retry, day_th, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
+assert "th_retry, day_th, blog_img, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
 # ④ 릴스: TOP 넘기기 날도 릴스 · 영상 없으면 오늘 클립 1편(쇼츠 설명 = 쿠팡 대가성 첫 줄) · REEL_LATE까지 안 올라가면 관리봇 1줄
 assert 'st["kind"] in ("theme", "top") and not seen.get("reelt_" + today)' in inspect.getsource(H.ig_feed)  # TOP 넘기기 날(IG_CYCLE 3일 중 1일)도 릴스
 os.makedirs("clips184/2026-11-12"); open("clips184/2026-11-12/02.mp4", "wb").write(b"x")
@@ -14541,3 +14541,58 @@ H.IG_AUTO = ia184
 H.E.clear(); H.E.update(e184); H.RUN.clear(); H.RUN.update(r184)
 H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = (13, 10), ((18, 40), (22, 40)), 3 * 3600, False, False, False, False
 os.chdir(cwd184); shutil.rmtree(d184, ignore_errors=True)
+
+# 9-185 (11/12 09:04 진우 '토큰 많이 드는 개발 바로 시작' ②): 블로그 사진 4장 — docs/blog_data/<날짜>.json → docs/blog_img/<날짜>/1~4.png(1080×1350 · GPT 잡지형 틀 · 게시 X)
+#   단위값 = 다시 계산해 같아야 · 제목 '{검색어}, {기준}당 얼마일까?' · N종 · 낮은 3개 · 막대 축 = 최고값 올림 · 맨 위 대가성 문구 · 아래 '쿠팡 · 확인 시각 확인 가격' · 사진 = 받은 그대로(못 받음 = 빈 칸)
+cwd185, d185 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d185)
+sv185 = (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time)
+it185 = lambda n, price, total, uv, img="https://img.coupang.com/a.jpg", lab="1L당": {"rank": n, "pid": n, "name": f"테스트 전기포트 {n} 1.{n}L", "price": price, "img": img, "rocket": n == 1, "qty": 1,
+                                                                                   "size_each": total, "size_unit": "ml", "total": total, "unit_value": uv, "unit_label": lab}
+B185 = {"date": "2026-11-13", "query": "전기포트", "unit": "auto", "chk": "2026-11-12 09:11",
+        "items": [it185(2, 33850, 1500, 22567), it185(1, 9900, 1800, 5500), it185(3, 45900, 1000, 45900, img="https://img.coupang.com/bad.jpg"), {**it185(4, 212430, 0, None), "unit_label": None, "total": None}]}
+assert [H.blog_unit(x) for x in B185["items"]] == [22567, 5500, 45900, None] and H.blog_unit({"price": 6640, "total": 840, "unit_label": "100ml당"}) == 790 and H.blog_unit({"price": 9900, "total": 100, "unit_label": "1매당"}) == 99
+png185 = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+sp185 = H.blog_img_spec(B185, lambda u: png185 if "a.jpg" in u else b"<html>")
+assert sp185["title"] == ["전기포트,", "1L당 얼마일까?"] and sp185["n"] == 3 and sp185["kicker"] == "PRICE GUIDE  /  전기포트 3종" and sp185["label"] == "1L당" and sp185["ratio"] == "8.3"
+assert [x["uv"] for x in sp185["items"]] == [5500, 22567, 45900] and [x["unit"] for x in sp185["items"]] == ["5,500원", "22,567원", "45,900원"] and sp185["items"][0]["sub"] == "1.8L · 로켓배송"  # 낮은 순 · 값 없는 줄 X
+assert sp185["axis"] == {"max": 50000, "ticks": [0, 25000.0, 50000], "labels": ["0", "25,000", "50,000"]} and sp185["axis"]["max"] >= 45900 * 1.04  # 최고값을 보기 좋게 올림
+assert " ".join(sp185["disclosure"]) == H.DISCLOSURE and sp185["foot"] == "쿠팡 · 2026.11.12 09:11 확인 가격" and sp185["formula"] == "1L당 가격 = 판매가 ÷ 총 용량 × 1L · 원 단위 반올림"
+assert sp185["items"][0]["img"].startswith("data:image/png;base64,") and sp185["items"][2]["img"] == "" and sp185["tips"][1][0] == "결제 금액" and len(sp185["tips"]) == 3  # 사진 아님 = 빈 칸
+for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 5600}] + B185["items"][:1] + B185["items"][2:]}, "단위값 다름"), ({**B185, "items": B185["items"][:2]}, "같은 기준 상품 2개"), ({**B185, "chk": "11/12 9시"}, "확인 시각")):
+    try:
+        H.blog_img_spec(bad185); raise AssertionError(why185)
+    except ValueError as e:
+        assert why185 in str(e), (why185, e)
+os.makedirs("bd185"); json.dump(B185, open("bd185/2026-11-13.json", "w"), ensure_ascii=False); json.dump(B185, open("bd185/2026-11-11.json", "w"), ensure_ascii=False)
+os.makedirs("src185/assets"); al185 = []
+H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS = "bd185", "bi185", "src185", os.path.join(cwd185, "tools/blog_img/render.mjs")
+H.th_get, H.pw_ready, H.alert = (lambda u: png185), (lambda env, root=None: None), (lambda seen, key, text, *a, **k: al185.append((key, text)))
+cr185 = os.path.join(cwd185, "tools/card")
+s185 = {}
+fonts185 = "Noto Sans CJK KR" in subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True).stdout if shutil.which("fc-list") else False
+if fonts185 and shutil.which("node") and os.path.isdir(os.path.join(cr185, "node_modules/@playwright/test")):
+    o185 = io.StringIO()
+    with contextlib.redirect_stdout(o185):
+        H.blog_img(s185, TK("2026-11-12 18:20"))
+    if "Executable doesn't exist" in o185.getvalue() or "browserType.launch" in o185.getvalue():
+        print("9-185 실제 렌더 건너뜀(이 환경 브라우저 없음)")
+    else:
+        from PIL import Image
+        assert "blog img 2026-11-13 4장" in o185.getvalue() and not al185, (o185.getvalue(), al185)
+        assert sorted(os.listdir("bi185/2026-11-13")) == ["1.png", "2.png", "3.png", "4.png"] and all(Image.open(f"bi185/2026-11-13/{n}.png").size == (1080, 1350) for n in range(1, 5))
+        assert not os.path.isdir("bi185/2026-11-11")  # 지난 날짜 = X
+else:
+    print("9-185 실제 렌더 건너뜀(글꼴·node·playwright 없음)")
+os.makedirs("bi185/2026-11-13", exist_ok=True); [open(f"bi185/2026-11-13/{n}.png", "wb").write(b"x") for n in range(1, 5)]
+assert H.blog_img(s185, TK("2026-11-12 18:40")) is None and "blogimg_x_2026-11-13" not in s185  # 있으면 다시 X
+shutil.rmtree("bi185"); json.dump({**B185, "chk": "x"}, open("bd185/2026-11-13.json", "w"))
+o185 = io.StringIO()
+with contextlib.redirect_stdout(o185):
+    H.blog_img(s185, TK("2026-11-12 18:50"))
+assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_x_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄
+H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
+assert "th_retry, day_th, blog_img, cmp_report" in inspect.getsource(H.main)
+y185 = open(os.path.join(cwd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
+(H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
+os.chdir(cwd185); shutil.rmtree(d185, ignore_errors=True)
