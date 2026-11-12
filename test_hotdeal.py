@@ -19,6 +19,7 @@ fit0, H.TH_SERIES_FIT = H.TH_SERIES_FIT, {}  # 11/1 시리즈 바구니 칸만(�
 H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크에선 끔 — 9-139가 켜서 봄
 pvc0, H.PV_CARD = H.PV_CARD, False  # 11/11 22시 미리보기 카드(21:30~ 카드 저장소·node) = 9-180에서만
 cap0, H.TH_DAY_CAP = H.TH_DAY_CAP, None  # 11/12 ③ Threads 하루 상한(0시·19시 옮김 포함) = 9-182에서만
+cpd0, H.TH_CP_DAY = H.TH_CP_DAY, None  # 11/12 13:36 쿠팡 개별 하루 3·묶음 카드 본문 = 9-189에서만
 v12 = (H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP)  # 11/12 08:45 수다 21시 투표 · 알림 받기 새 틀 · 기념일 D-N 카드 · 릴스 클립 = 9-184에서만(앞 셀프체크 = 예전 틀)
 H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = (13, 10), ((18, 40), (22, 40)), 3 * 3600, False, False, False, False
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
@@ -14352,7 +14353,7 @@ q180 = pv180({"pvcard_2026-11-12": {**st180, "alt": "ALT"}}, bad="alt")
 assert [(q["media_type"], "alt_text" in q) for q in q180] == [(["IMAGE"], True), (["IMAGE"], False)] and not al180  # alt_text 못 받으면 없이 1번 더
 json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv180({"pvcard_2026-11-12": dict(st180)})
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
-assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
+assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
@@ -14666,3 +14667,25 @@ assert "card test ④ 상한 몫: 어제 지킬 글 26 · 쿠팡 개별 몫 14 �
 assert 'if E.get("CARD_TEST") == "true":' in inspect.getsource(H.main)
 H.TH_DAY_CAP = cap188; (H.card_png, H.pv_card, H.blog_img, H.http, H.alert, H.POSTS, H.MALL_CARD_DIR, tk188, H.tg) = sv188; H.E.pop("THREADS_TOKEN", None) if tk188 is None else H.E.__setitem__("THREADS_TOKEN", tk188)
 os.chdir(cwd188); shutil.rmtree(d188, ignore_errors=True)
+
+# 9-189 (11/12 13:36 진우 '묶음으로 합치자'): Threads 쿠팡 개별 딜 = 하루 3개(진우 예약·① 큰 차이만) · 나머지 = 12·15·18시(+01시) 쿠팡 묶음(몰 하나 3~5개 · GPT 카드) · 카드 글 = 상품 줄 + 본문 링크 1줄 · chg th_bundle
+assert cpd0 == 3 and H.TH_BCARD_LINK == "?ref=thb"
+H.TH_CP_DAY, cap189 = 3, H.TH_DAY_CAP; H.TH_DAY_CAP = 45
+c189 = lambda n, y=None: H.th_cap({"thcap": {**({"2026-11-11": y} if y else {}), "2026-11-12": {"n": 9, "k": {"cp": n}}}}, "cp", TK("2026-11-12 13:05"))
+assert c189(0) and c189(2) and not c189(3) and not c189(1, {"n": 50, "k": {}})  # 하루 3개 · 상한 45(지킬 글이 많으면 그 밑)
+assert H.th_cap({"thcap": {"2026-11-12": {"n": 9, "k": {"toss": 2}}}}, "toss", TK("2026-11-12 13:05"))  # 토스 5개 그대로(9시까지 3 · 13시 = 3)
+src189 = inspect.getsource(H.threads_deals)
+assert 'prio = lambda c: not TH_CP_DAY or isinstance(c, dict) or posts[c].get("own") or c in rei or th_tier(posts[c]["text"]) == 1' in src189 and '(mall(c) != "cp" or prio(c))' in src189
+assert "one = lambda p: (TH_LIST_TOSS or not is_toss(p[\"url\"], p[\"text\"])) and (not TH_DIVERSE or shop_of(p) == \"coupang\")" in inspect.getsource(H.top_deals) and H.TH_LIST_MIN == 3  # 묶음 = 쿠팡만 · 3개 밑 = 그 회차 X
+T189 = f"{H.DISCLOSURE}\n🛒 점심 장바구니\n\n1️⃣ 물티슈 100매 9,900원\n1매 99원\n👉 https://link.coupang.com/a/A1\n\n2️⃣ 세제 2.5L 12,900원\n👉 https://link.coupang.com/a/B2\n\n3️⃣ 휴지 30롤 19,900원"
+b189 = H.bcard_text(T189)
+assert b189.startswith(H.DISCLOSURE) and "link.coupang.com" not in b189 and b189.count("http") == 1 and b189.endswith(f"👉 {H.SITE}?ref=thb") and "1️⃣ 물티슈 100매 9,900원\n1매 99원\n\n2️⃣" in b189
+sv189 = (H.th_bundle, H.http, time.time); po189 = []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None, alt=None: po189.append((kind, text, image)) or {"id": f"B{len(po189)}"}
+H.http = lambda url, body=None, headers=None, method=None: "" if "live" in url else (_ for _ in ()).throw(OSError("404"))
+time.time = lambda: TK("2026-11-12 12:20")
+s189 = {"mcard": {"q": [{"t": TK("2026-11-12 12:08"), "kind": "top12", "text": T189, "link": "L", "img": "https://x/live.png"}, {"t": TK("2026-11-12 11:00"), "kind": "top9", "text": T189, "link": "L", "img": "https://x/dead.png"}]}}
+H.mall_card_post(s189)
+assert po189 == [("top12", b189, "https://x/live.png"), ("top9", T189, None)] and s189["thbcard"]["m"] == {"B1": "2026-11-12"}, po189  # 카드 글 = 링크 1줄 · 글만(카드 안 뜸) = 예전 그대로 · chg 표시 = 카드 글만
+(H.th_bundle, H.http, time.time) = sv189; H.TH_CP_DAY, H.TH_DAY_CAP = None, cap189
+

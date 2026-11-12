@@ -3793,7 +3793,7 @@ def th_test_summary(seen, now):
     keep = y["n"] - sum(y["k"].values()) if y else TH_KEEP0
     print(f"card test ④ Threads 봇 글 {len(bot)}개(리포스트 {len(xs) - len(bot)}) · 시간별 " + " ".join(f"{h}시 {hrs[h]}" for h in sorted(hrs)) + f" · 0시 {hrs[0]} · 19시 {hrs[19]}"
           f" · 토스 개별 {len(toss1)}/{TH_TOSS_DAY} · 상품 링크 글 {len(prod)} 중 대가성 첫 줄 아님 {len(head)}")
-    print(f"card test ④ 상한 몫: 어제 지킬 글 {keep}{'' if y else '(기록 없음 = TH_KEEP0)'} · 쿠팡 개별 몫 {TH_DAY_CAP - keep - TH_TOSS_DAY if TH_DAY_CAP else '상한 끔'} · 오늘 셈 {st.get(day)} · 지금 cp {th_cap(seen, 'cp', now)} · toss {th_cap(seen, 'toss', now)}")
+    print(f"card test ④ 상한 몫: 어제 지킬 글 {keep}{'' if y else '(기록 없음 = TH_KEEP0)'} · 쿠팡 개별 몫 {min(TH_CP_DAY or 999, TH_DAY_CAP - keep - TH_TOSS_DAY) if TH_DAY_CAP else '상한 끔'} · 오늘 셈 {st.get(day)} · 지금 cp {th_cap(seen, 'cp', now)} · toss {th_cap(seen, 'toss', now)}")
 
 
 def toss_lookup(seen, e):
@@ -5516,6 +5516,12 @@ def bundle_pr(p, pr):
     return f"{n:,}원" + (f" {cond}" if cond else "") + (f" ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시 확인)" if time.time() - t > TH_FRESH_H * 3600 else "")
 
 
+def bcard_text(text):
+    """11/12 묶음 카드 글 본문(진우 '묶음으로 합치자'): 대가성 문구 첫 줄·상품 줄 그대로 · 상품마다 👉 링크 줄 = 빼고 끝에 본문 링크 1줄(사이트 — 카드에 상품·가격이 다 있음)."""
+    body = re.sub(r"\n👉 https?://\S+", "", text).rstrip()
+    return f"{body}\n\n🛍 묶음 상품 한눈에 보기 👉 {SITE}{TH_BCARD_LINK}"
+
+
 def mall_card_post(seen):
     """11/1 몰별 카드 묶음 글: 카드가 사이트에 뜨면(HEAD) Threads 사진 글 · MALL_CARD_WAIT(45분) 넘게 안 뜸 = 글만(지금처럼) · 사진 글 거절(4xx) = 글만 · 3시간 지난 줄 = 버림."""
     q, now = seen.get("mcard", {}).get("q", []), time.time()
@@ -5537,7 +5543,10 @@ def mall_card_post(seen):
     seen["mcard"] = {"t": now, "q": keep}  # 올리기 전에 줄에서 뺌(실패 = th_bundle의 다시 시도 1번)
     for x, live in go:
         try:
-            th_bundle(seen, x["kind"], x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))
+            r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY else x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))
+            if live and r and r.get("id"):  # 11/12 묶음 카드 글 = metrics chg th_bundle(11/25 묶음·개별 글당 조회 비교)
+                m = {k: v for k, v in seen.get("thbcard", {}).get("m", {}).items() if v >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))}
+                seen["thbcard"] = {"t": now, "m": {**m, r["id"]: time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))}}
         except urllib.error.HTTPError as e:  # 서버가 카드 사진을 거절 = 글만 1번
             if not live or e.code >= 500:
                 raise
@@ -9568,6 +9577,7 @@ def th_landed(tok, text, since):
 
 
 TH_SOLO_MAX, TH_SOLO_MIN, TH_SOLO_GAP, TH_SOLO_SAVE, TH_SOLO_RUN, TH_LIST_HOURS, TH_TOSS_KINDS = 15, 0, 45 * 60, 1, 1, (12, 15, 18), ("best", "cat")  # 10/12 01:20 진우 '한도 없이 45분마다'(하루 5개 -> 99 = 사실상 없음), 리스트 12·15·18시, 토스 리스트 = 베스트 + 17시 생필품(10/12 22:45)
+TH_CP_DAY, TH_BCARD_LINK = 3, "?ref=thb"  # 11/12 13:36 진우 '묶음으로 합치자'(인사이트: 묶음 카드 글 평균 약 24 vs 개별 7): 쿠팡 개별 딜 Threads 하루 3개(진우 예약·① 큰 차이만) · 나머지 = 12·15·18시(+01시) 쿠팡 묶음 카드 · None = 예전대로
 TH_DAY_CAP, TH_CUT, TH_TOSS_DAY, TH_QUIET, TH_KEEP0, TH_CUT_FROM = 45, (), 5, {0: "07:40", 19: "21:10"}, 26, "2026-11-12"  # ③ 11/11 23:56 진우 '글이 너무 많으면 의미가 없지'(Threads만 — 텔레그램·인스타 그대로 · None = 예전대로):
 # 11/12 07:24 진우 '토스 5개 살려'·'쿠팡 개별딜도 그냥 유지' · 07:40 '수다 기념일 알림 글을 좀 더 보고 싶게 수정하자'(끄지 말고 예전 개수) -> 봇 Threads 글 하루 약 41(상한 45)
 # · TH_CUT = 끌 종류('dday' 기념일 특가 · 'funnel' 알림 받기 · 'chat' 수다 — 지금은 다 켬, 0시·19시만 X · 2주(10/28~11/10) 글당 조회 3.2 · 6.5 · 6.7)
@@ -9592,7 +9602,7 @@ def th_cap(seen, kind, now=None):
     if kind == "toss":
         return n < -(-TH_TOSS_DAY * (h + 1) // 24)
     y = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400)))
-    return n < TH_DAY_CAP - (y["n"] - sum(y["k"].values()) if y else TH_KEEP0) - TH_TOSS_DAY
+    return n < min(TH_CP_DAY or 999, TH_DAY_CAP - (y["n"] - sum(y["k"].values()) if y else TH_KEEP0) - TH_TOSS_DAY)  # 쿠팡 개별 = 하루 TH_CP_DAY(나머지 = 묶음 카드)
 
 
 def th_count(now):
@@ -9850,7 +9860,8 @@ def threads_deals(seen):
         if c not in pool[mall(c)]:
             pool[mall(c)].append(c)
     cap = {m: th_cap(seen, m, now) for m in ("toss", "cp")}  # ③ 하루 상한·0시·19시 = 막힌 몰 후보는 이번 실행 X(줄·글 그대로 — 다음 실행에)
-    pool, todo = {m: v if cap[m] else [] for m, v in pool.items()}, [c for c in todo if cap[mall(c)]]
+    prio = lambda c: not TH_CP_DAY or isinstance(c, dict) or posts[c].get("own") or c in rei or th_tier(posts[c]["text"]) == 1  # 11/12 쿠팡 개별 = 진우 예약(own·재업로드)·① 큰 차이만 — 나머지는 묶음 채움
+    pool, todo = {m: [c for c in v if m != "cp" or prio(c)] if cap[m] else [] for m, v in pool.items()}, [c for c in todo if cap[mall(c)] and (mall(c) != "cp" or prio(c))]
     other = {"toss": "cp", "cp": "toss"}
     want = other.get(rx.get("m")) or (mall(todo[0]) if todo else "toss") if TH_MALL_ALT else "toss"
     nxt = pool[want] or pool[other[want]] if TH_MALL_ALT else pool["toss"][:1]  # 10/31 진우 '쿠팡 토스 번갈아서 겹치지 않게'(TH_MALL_ALT): 바로 앞 개별 글과 다른 몰 먼저 · 그 몰 후보 없을 때만 같은 몰 연속 · 끝나가는 진우 🔥(late)는 그대로
@@ -12611,7 +12622,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
