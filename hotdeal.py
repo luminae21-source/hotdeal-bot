@@ -5614,6 +5614,102 @@ def bundle_pr(p, pr):
     return f"{n:,}원" + (f" {cond}" if cond else "") + (f" ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시 확인)" if time.time() - t > TH_FRESH_H * 3600 else "")
 
 
+FOCUS_SLOTS, FOCUS_PREP, FOCUS_WAIT, FOCUS_DIR = ((8, 30), (17, 20), (20, 5)), 30 * 60, 45 * 60, "docs/cards/focus"  # 11/12 13:46 진우 '개별로 소개하고 싶은 경우도 있으니 그건 집중하자':
+# 쿠팡 개별 하루 3개 = 집중 소개 · 잘 보이는 시각(8~9·17·20시대) · 묶음(12·15·18·21·01시)과 30분↑ · 카드 30분 전에 만들고 사이트에 뜨면 사진 글(45분 넘음 = 글만) · () = 끔(예전 개별 글 TH_CP_DAY)
+
+
+def focus_pick(seen, posts, now):
+    """집중 소개 후보 -> (글, posts 번호, 기록 대비(기록가, 지금가, ▼%, 'M/D') 또는 None): 진우 예약 글(own · 6시간 안 채널) > 기록 대비 내림 큰 것(build_site.drops — 📉와 같은 '같은 구성' 계산)
+    > 단위값 있는 최근(3일) 쿠팡 글 중 단위값 낮은 것 · 쿠팡 수수료 링크·사진·판매 중·확인 TH_CHK_MAX_H 안 · 7일 안 집중 소개·오늘 📉 글 상품 X / None."""
+    day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
+    used = set(seen.get("thfocus", {}).get("u", {})) | {u for u, d in seen.get("dropu", {}).get("m", {}).items() if d == day}
+    ok = lambda p: shop_of(p) == "coupang" and aff_note(p.get("url") or "") == DISCLOSURE and img_of(p) and p["url"] not in used and p.get("st") not in ("gone", "out") \
+        and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not p["text"].startswith("📋") and not name_block(short_name(title_of(p["text"])), "focus")
+    ago = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - h * 3600))
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i].get("mid") and posts[i]["t"] >= ago(6) and ok(posts[i])]
+    if own:
+        return posts[own[0]], own[0], None
+    days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+    for i, p, sh, base, nw, pct, rec, chk in drops(posts, shelf_items(posts, days), now):
+        if ok(p):
+            return p, i, (base, nw, pct, rec)
+    un = [i for i in range(len(posts)) if posts[i].get("unit") and posts[i]["t"] >= ago(72) and ok(posts[i]) and won(re.sub(r"^\S*당\s*", "", posts[i]["unit"]))]
+    i = min(un, key=lambda i: won(re.sub(r"^\S*당\s*", "", posts[i]["unit"])), default=None)
+    return (posts[i], i, None) if i is not None else None
+
+
+def focus_post(seen, now=None):
+    """집중 소개 Threads 글(FOCUS_SLOTS 칸마다 1개 — 쿠팡 개별 하루 3개): 칸 FOCUS_PREP 전 = 고르고(focus_pick) 📉 상품 카드(cards.ig_photo_card — ▼%·사진·기록가 → 지금가·'같은 구성 · M/D 기록 대비'·확인 시각,
+    기록 없으면 같은 카드에 ▼ 없이 '집중 소개') -> docs/cards/focus/ · 칸 시각 뒤 = 사이트에 뜨면 사진 글(FOCUS_WAIT 넘음 = 글만) · 본문 = 대가성 첫 줄 → ① 왜 지금(기록 대비 숫자) ② 누구에게(th_list_copy 한 줄 —
+    써 본 척·효능 X) ③ 단위값 ④ 본문 링크 1줄 · metrics chg th_focus."""
+    import cards
+    now, tok = now or time.time(), E.get("THREADS_TOKEN")
+    kst = time.gmtime(now + 9 * 3600)
+    day, m = time.strftime("%Y-%m-%d", kst), kst.tm_hour * 60 + kst.tm_min
+    if not (FOCUS_SLOTS and tok):
+        return
+    for k, (h, mi) in enumerate(FOCUS_SLOTS):
+        s, key = h * 60 + mi, f"focus_{day}_{k}"
+        if s - FOCUS_PREP // 60 <= m < s and key not in seen:  # 1단계: 고르고 카드
+            posts = load(POSTS, [])
+            got = focus_pick(seen, posts, now)
+            if not got:
+                seen[key] = {"t": now, "done": 1}
+                return print(f"focus {h:02d}:{mi:02d} 후보 없음 -> 이 칸 X")
+            p, i, dr = got
+            st = seen[key] = {"t": now, "url": p["url"], **({"drop": list(dr)} if dr else {})}
+            fu = seen.setdefault("thfocus", {"t": now, "u": {}, "m": {}})
+            fu["u"] = {**{u: d for u, d in fu.get("u", {}).items() if d >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 7 * 86400))}, p["url"]: day}  # 7일 안 같은 상품 X
+            try:
+                f = ig_photo(p, "ig_photos", seen)[0]
+                it = {"name": parse(title_of(p["text"]))[1], "short": pv_names([title_of(p["text"])])[0], "photo": f, "src": "coupang", "when": f"{p.get('chk') or md_of(p.get('chkt') or p['t'])} 확인",
+                      **({"price": f"{dr[1]:,}원", "was": dr[0], "pct": dr[2], "basis": f"같은 구성 · {dr[3]} 기록 대비"} if dr else
+                         {"price": p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip(), "pill": "집중 소개", "basis": p.get("unit") or "쿠팡 · 확인 가격"})}
+                if f:
+                    os.makedirs(FOCUS_DIR, exist_ok=True)
+                    st["card"] = f"{SITE}{cards.ig_photo_card(it, 1, f'{FOCUS_DIR}/{day}_{k}.jpg')[len('docs/'):]}"
+            except Exception as e:
+                print("focus 카드 X", type(e).__name__)
+            return print(f"focus {h:02d}:{mi:02d} 고름", clip(short_name(title_of(p["text"])), 24), f"▼{dr[2]}%" if dr else "(기록 없음)", "· 카드" if st.get("card") else "· 카드 X")
+        st = seen.get(key) or {}
+        if not (s <= m < s + 60 and st.get("url") and not st.get("done")):
+            continue
+        if busy(seen, cap=False) or th_hold(seen) or toss_gap(seen, now, False):
+            return print(f"focus {h:02d}:{mi:02d} 다른 글과 간격 -> 다음 실행")
+        posts = load(POSTS, [])
+        i = next((j for j in range(len(posts) - 1, -1, -1) if posts[j].get("url") == st["url"]), None)
+        if i is None:
+            st["done"] = 1
+            return
+        p, img = posts[i], st.get("card")
+        if img:
+            try:
+                http(img, method="HEAD")
+            except Exception:
+                if now - st["t"] < FOCUS_PREP + FOCUS_WAIT:
+                    return print(f"focus {h:02d}:{mi:02d} 카드 아직 사이트에 안 뜸 -> 다음 실행")
+                img = None
+        nm, link, dr = clip(short_name(title_of(p["text"])), 26), th_url(p, i), st.get("drop")
+        price = p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()
+        cm = {}
+        th_list_copy(seen, 0, [(p, price, "", 2)], cm, "")
+        lines = [f"📉 {nm} · {dr[3]} 기록 {dr[0]:,}원 → 지금 {dr[1]:,}원 (▼{dr[2]}%, 같은 구성)" if dr else f"🔥 {nm} · 지금 {price}",
+                 f"🙋 {cm[p['url']]}" if cm.get(p["url"]) else "", f"💰 {p['unit']}" if p.get("unit") else "", f"👉 {link}"]
+        text = f"{DISCLOSURE}\n\n" + "\n".join(l for l in lines if l and not re.search(r"최저|효능|효과", l))
+        st["done"] = 1  # 먼저 표시(실패 = th_bundle 다시 1번)
+        bundled(seen)
+        try:
+            r = th_bundle(seen, "focus", text, None if img else link, image=img)
+        except urllib.error.HTTPError as e:
+            if not img or e.code >= 500:
+                raise
+            img, r = None, th_bundle(seen, "focus", text, link)
+        if r and r.get("id"):
+            fu = seen.setdefault("thfocus", {"t": now, "u": {}, "m": {}})
+            fu["m"] = {**{x: d for x, d in fu.get("m", {}).items() if d >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))}, r["id"]: day}  # metrics chg th_focus
+        return print(f"focus {h:02d}:{mi:02d} Threads", (r or {}).get("id"), "· 카드" if img else "· 글만", "· 기록 대비" if dr else "")
+
+
 def bcard_text(text):
     """11/12 묶음 카드 글 본문(진우 '묶음으로 합치자'): 대가성 문구 첫 줄·상품 줄 그대로 · 상품마다 👉 링크 줄 = 빼고 끝에 본문 링크 1줄(사이트 — 카드에 상품·가격이 다 있음)."""
     body = re.sub(r"\n👉 https?://\S+", "", text).rstrip()
@@ -9695,6 +9791,8 @@ def th_cap(seen, kind, now=None):
         return False
     if kind not in ("cp", "toss"):
         return True
+    if kind == "cp" and FOCUS_SLOTS:  # 11/12 쿠팡 개별 = 집중 소개 글(focus_post)만 · 나머지 = 묶음
+        return False
     st = seen.get("thcap", {})
     n = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"k": {}})["k"].get(kind, 0)
     if kind == "toss":
@@ -12720,7 +12818,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
@@ -13782,7 +13880,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

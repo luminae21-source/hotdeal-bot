@@ -1200,7 +1200,7 @@ def ig_photo_card(it, n, out):
     it['was'] = 📉 가격 내려간 상품 장(10/25 진우 D): 알약 '▼N%' · 기록가 취소선 → 지금가 · '프로필 링크' 줄 대신 기준 it['basis'](같은 구성 · M/D 기록 대비). -> out"""
     im = Image.new("RGBA", (W, H), LMIST + (255,))
     d, P = ImageDraw.Draw(im), 56
-    fb = pf("ExtraBold", 48); s = f"▼{it['pct']}%" if it.get("was") else f"{n}번"; w = int(fb.getlength(s)) + 64
+    fb = pf("ExtraBold", 48); s = f"▼{it['pct']}%" if it.get("was") else it.get("pill") or f"{n}번"; w = int(fb.getlength(s)) + 64  # pill = 11/12 집중 소개(기록 없음)
     d.rounded_rectangle((P, 48, P + w, 136), radius=44, fill=PLUM)
     d.text((P + 32, 60), s, font=fb, fill="white")
     f = pf("ExtraBold", 40); d.text((P + w + 20, 70), "핫딜픽", font=f, fill=BERRY)

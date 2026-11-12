@@ -20,6 +20,7 @@ H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크�
 pvc0, H.PV_CARD = H.PV_CARD, False  # 11/11 22시 미리보기 카드(21:30~ 카드 저장소·node) = 9-180에서만
 cap0, H.TH_DAY_CAP = H.TH_DAY_CAP, None  # 11/12 ③ Threads 하루 상한(0시·19시 옮김 포함) = 9-182에서만
 cpd0, H.TH_CP_DAY = H.TH_CP_DAY, None  # 11/12 13:36 쿠팡 개별 하루 3·묶음 카드 본문 = 9-189에서만
+fs0, H.FOCUS_SLOTS = H.FOCUS_SLOTS, ()  # 11/12 13:46 집중 소개(쿠팡 개별 = 하루 3칸) = 9-191에서만
 v12 = (H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP)  # 11/12 08:45 수다 21시 투표 · 알림 받기 새 틀 · 기념일 D-N 카드 · 릴스 클립 = 9-184에서만(앞 셀프체크 = 예전 틀)
 H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = (13, 10), ((18, 40), (22, 40)), 3 * 3600, False, False, False, False
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
@@ -14354,7 +14355,7 @@ q180 = pv180({"pvcard_2026-11-12": {**st180, "alt": "ALT"}}, bad="alt")
 assert [(q["media_type"], "alt_text" in q) for q in q180] == [(["IMAGE"], True), (["IMAGE"], False)] and not al180  # alt_text 못 받으면 없이 1번 더
 json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv180({"pvcard_2026-11-12": dict(st180)})
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
-assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
+assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
@@ -14415,7 +14416,7 @@ time.time = lambda: TK("2026-11-12 07:41"); H.th_retry(s182); assert not th182  
 time.time = lambda: TK("2026-11-12 07:51"); H.th_retry(s182); assert th182 == [f"{H.TOSS_NOTE}\n🎁 토스 묶음"], th182  # 0시 -> 07:40 뒤
 for f182, k182 in ((H.toss_deals, "toss"), (H.toss_picks, "toss"), (H.toss_reopen, "toss"), (H.dday_deals, "dday"), (H.chat_post, "chat"), (H.x_post, "funnel")):
     assert f'th_cap(seen, "{k182}"' in inspect.getsource(f182), f182.__name__  # 개별 글 길마다 상한 검사
-assert "cap = {m: th_cap(seen, m, now) for m in (\"toss\", \"cp\")}" in inspect.getsource(H.threads_deals) and "[c for c in todo if cap[mall(c)]]" in inspect.getsource(H.threads_deals)
+assert "cap = {m: th_cap(seen, m, now) for m in (\"toss\", \"cp\")}" in inspect.getsource(H.threads_deals) and "[c for c in todo if cap[mall(c)] and (mall(c) != \"cp\" or prio(c))]" in inspect.getsource(H.threads_deals)
 assert 'RUN["thc"] = None, "toss" if is_toss(link, src or text) else "cp"' in inspect.getsource(H.th_deal) and 'finally:\n        RUN.pop("thc", None)' in inspect.getsource(H.th_deal)
 assert 'if day == TH_CUT_FROM:\n        m[day]["chg"] = m[day].get("chg", []) + ["th_cut30"]' in inspect.getsource(H.metrics_rows)
 def day182(keep, cp):  # 하루: 지킬 글 keep(어제도 같음) + 쿠팡 개별 딜 cp시각(0시·19시 것은 다음 시간에 — 1시간에 1개) + 토스 매시 시도 -> {종류: 올린 시각들}
@@ -14521,7 +14522,7 @@ mcm184.ok, head184[0], s184, n184 = True, False, {}, len(po184); run184(H.day_th
 assert "카드 아직 사이트에 안 뜸" in run184(H.day_th, "2026-11-09 15:30", s184) and len(po184) == n184  # 카드 사이트 반영 기다림(40분)
 run184(H.day_th, "2026-11-09 15:50", s184); assert po184[-1]["image"] is None and po184[-1]["link"] and len(po184) == n184 + 1  # 40분 지남 = 글만
 assert run184(H.day_th, "2026-11-07 15:05", {}) == "" and run184(H.day_th, "2026-11-12 15:05", {}) == ""  # D-4·행사 뒤 X
-assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
 # ④ 릴스: TOP 넘기기 날도 릴스 · 영상 없으면 오늘 클립 1편(쇼츠 설명 = 쿠팡 대가성 첫 줄) · REEL_LATE까지 안 올라가면 관리봇 1줄
 assert 'st["kind"] in ("theme", "top") and not seen.get("reelt_" + today)' in inspect.getsource(H.ig_feed)  # TOP 넘기기 날(IG_CYCLE 3일 중 1일)도 릴스
 os.makedirs("clips184/2026-11-12"); open("clips184/2026-11-12/02.mp4", "wb").write(b"x")
@@ -14594,7 +14595,7 @@ with contextlib.redirect_stdout(o185):
     H.blog_img(s185, TK("2026-11-12 18:50"))
 assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_x_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄
 H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
-assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report" in inspect.getsource(H.main)
 y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
 (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
@@ -14734,7 +14735,58 @@ s190c = {"theme": {"d": "2026-11-12", "k": "B", "rows": dict(list(th190["rows"].
 H.theme_post(s190c, TK("2026-11-12 21:35")); assert s190c["theme"]["done"] and len(mc190) == 1  # 3칸 밑 = X
 s190d = {"theme": {"d": "2026-11-12", "k": "A", "rows": dict(th190["rows"]), "n": 0, "card": None}, "preview_20261112": {"n": 5}}
 H.theme_post(s190d, TK("2026-11-12 22:06")); assert len(po190) == 1 and s190d["theme"]["done"]  # 22시 미리보기가 나간 밤 = 테마 X
-assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report" in inspect.getsource(H.main)
 (H.coupang, H.HAS_CP, H.mall_card, H.th_bundle, H.http, H.busy, H.th_hold, tk190) = sv190; H.E.pop("THREADS_TOKEN", None) if tk190 is None else H.E.__setitem__("THREADS_TOKEN", tk190)
 os.chdir(cwd190); shutil.rmtree(d190, ignore_errors=True)
+
+# 9-191 (11/12 13:46 진우 '개별로 소개하고 싶은 경우도 있으니 그건 집중하자'): 쿠팡 개별 = 하루 3칸 '집중 소개'(08:30·17:20·20:05 — 묶음 시각과 30분↑) · 고르기 = 진우 예약 > 기록 대비 내림(📉 계산) > 단위값
+#   · 사진 = 📉 상품 카드(▼%·기록가 → 지금가·같은 구성 기록 대비·확인 시각 / 기록 없으면 ▼ 없이) · 본문 = 대가성 첫 줄 · 왜 지금 · 누구에게 · 단위값 · 본문 링크 1줄 · chg th_focus · 그 밖 쿠팡 개별 = X(묶음)
+assert fs0 == ((8, 30), (17, 20), (20, 5)) and all(abs(h * 60 + m - b * 60) >= 30 for h, m in fs0 for b in (1, 12, 15, 18, 21))
+cwd191, d191 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d191)
+sv191 = (H.FOCUS_SLOTS, H.POSTS, H.ig_photo, H.th_bundle, H.http, H.busy, H.th_hold, H.th_list_copy, H.drops, H.E.get("THREADS_TOKEN"), H.TH_DAY_CAP, H.toss_gap)
+H.FOCUS_SLOTS, H.POSTS, H.E["THREADS_TOKEN"], H.TH_DAY_CAP = fs0, "p191.json", "tk", 45
+assert not H.th_cap({}, "cp", TK("2026-11-12 10:05"))  # 그 밖 쿠팡 개별 = X(묶음으로)
+F191 = lambda k, t, **x: {"t": t, "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n테스트 물티슈 {k} 100매 10팩\n12,900원", "url": f"https://link.coupang.com/a/F{k}", "mid": 100 + len(k),
+                           "img": f"https://thumbnail.coupangcdn.com/{k}.jpg", "now": "12,900원", "chkt": "2026-11-12 07:00", "st": "hot", **x}
+json.dump([F191("own", "2026-11-12 01:00", own=1), F191("u", "2026-11-11 10:00", unit="1매당 13원"), F191("u2", "2026-11-11 11:00", unit="1매당 9원"), F191("own2", "2026-11-12 07:50", own=1)], open("p191.json", "w"), ensure_ascii=False)
+ph191, po191, dr191 = [], [], [[]]
+from PIL import Image as Im191
+def ig191(p, d, seen=None):
+    os.makedirs(d, exist_ok=True); f = f"{d}/{p['url'].rsplit('/', 1)[-1]}.jpg"; Im191.new("RGB", (400, 400), "white").save(f); ph191.append(p["url"]); return f, "coupang"
+H.ig_photo, H.drops = ig191, (lambda posts, it, now: dr191[0])
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None, alt=None: po191.append((kind, text, link, image)) or {"id": f"FC{len(po191)}"}
+H.th_list_copy = lambda seen, h, pick, cm, theme="": cm.update({p["url"]: "물 많이 쓰는 집 욕실 청소 때 손이 가는 크기" for p, *_ in pick}) or ("", "")
+H.http, H.busy, H.th_hold, H.toss_gap = (lambda url, body=None, headers=None, method=None: ""), (lambda seen, cap=True: False), (lambda seen: False), (lambda seen, now, toss=True: 0)
+s191 = {}
+H.focus_post(s191, TK("2026-11-12 07:55")); assert "focus_2026-11-12_0" not in s191  # 08:00(칸 30분 전) 전 X
+o191 = io.StringIO()
+with contextlib.redirect_stdout(o191):
+    H.focus_post(s191, TK("2026-11-12 08:05"))
+st191 = s191["focus_2026-11-12_0"]
+assert st191["url"] == "https://link.coupang.com/a/Fown2" and "drop" not in st191 and st191["card"] == f"{H.SITE}cards/focus/2026-11-12_0.jpg" and os.path.exists("docs/cards/focus/2026-11-12_0.jpg")  # 진우 예약(6시간 안) 먼저
+assert Im191.open("docs/cards/focus/2026-11-12_0.jpg").size == (1080, 1350) and not po191 and "고름" in o191.getvalue()
+H.focus_post(s191, TK("2026-11-12 08:31")); k191, t191, l191, im191 = po191[0]
+assert k191 == "focus" and im191 == st191["card"] and l191 is None and t191.startswith(H.DISCLOSURE + "\n\n🔥 테스트 물티슈 own2") and t191.count("http") == 1 and "🙋 물 많이 쓰는 집" in t191
+assert s191["thfocus"]["m"] == {"FC1": "2026-11-12"} and s191["thfocus"]["u"] == {"https://link.coupang.com/a/Fown2": "2026-11-12"}
+H.focus_post(s191, TK("2026-11-12 08:50")); assert len(po191) == 1  # 칸마다 1번
+p191 = json.load(open("p191.json"))
+dr191[0] = [(1, p191[1], None, 15900, 12900, 19, "11/5", "11/12 7시")]  # 기록 대비 내림(📉 계산)
+H.focus_post(s191, TK("2026-11-12 17:00")); st191 = s191["focus_2026-11-12_1"]
+assert st191["url"] == "https://link.coupang.com/a/Fu" and st191["drop"] == [15900, 12900, 19, "11/5"]  # 진우 예약 6시간 지남 -> 기록 대비 내림
+head191 = [True]; H.http = lambda url, body=None, headers=None, method=None: "" if head191[0] else (_ for _ in ()).throw(OSError("404"))
+head191[0] = False; o191 = io.StringIO()
+with contextlib.redirect_stdout(o191):
+    H.focus_post(s191, TK("2026-11-12 17:25"))
+assert "카드 아직 사이트에 안 뜸" in o191.getvalue() and len(po191) == 1
+H.focus_post(s191, TK("2026-11-12 18:10")); assert len(po191) == 1  # 카드 기다림(만든 뒤 75분 = 칸 시각 + 45분)
+H.focus_post(s191, TK("2026-11-12 18:16")); t191 = po191[-1][1]
+assert po191[-1][3] is None and po191[-1][2] == "https://link.coupang.com/a/Fu" and "📉 테스트 물티슈 u 100매 10팩 · 11/5 기록 15,900원 → 지금 12,900원 (▼19%, 같은 구성)" in t191 and "💰 1매당 13원" in t191  # 75분 넘음 = 글만
+dr191[0] = []; H.http = lambda url, body=None, headers=None, method=None: ""
+H.focus_post(s191, TK("2026-11-12 19:40")); assert s191["focus_2026-11-12_2"]["url"] == "https://link.coupang.com/a/Fu2"  # 진우·기록 없음 -> 단위값 낮은 것(쓴 상품 X)
+H.focus_post({**s191, "thfocus": {"u": {u: "2026-11-12" for u in ("https://link.coupang.com/a/Fu2", "https://link.coupang.com/a/Fu", "https://link.coupang.com/a/Fown2", "https://link.coupang.com/a/Fown")}}}, TK("2026-11-13 08:05"))
+assert sum(1 for k in s191 if k.startswith("focus_2026-11-12")) == 3  # 하루 3칸
+assert 'fb = pf("ExtraBold", 48); s = f"▼{it[\'pct\']}%" if it.get("was") else it.get("pill") or f"{n}번"' in open(os.path.join(cwd191, "cards.py"), encoding="utf-8").read() if os.path.exists(os.path.join(cwd191, "cards.py")) else True
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report" in inspect.getsource(H.main)
+(H.FOCUS_SLOTS, H.POSTS, H.ig_photo, H.th_bundle, H.http, H.busy, H.th_hold, H.th_list_copy, H.drops, tk191, H.TH_DAY_CAP, H.toss_gap) = sv191; H.E.pop("THREADS_TOKEN", None) if tk191 is None else H.E.__setitem__("THREADS_TOKEN", tk191)
+os.chdir(cwd191); shutil.rmtree(d191, ignore_errors=True)
 
