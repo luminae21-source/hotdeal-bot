@@ -14519,7 +14519,7 @@ mcm184.ok, head184[0], s184, n184 = True, False, {}, len(po184); run184(H.day_th
 assert "카드 아직 사이트에 안 뜸" in run184(H.day_th, "2026-11-09 15:30", s184) and len(po184) == n184  # 카드 사이트 반영 기다림(40분)
 run184(H.day_th, "2026-11-09 15:50", s184); assert po184[-1]["image"] is None and po184[-1]["link"] and len(po184) == n184 + 1  # 40분 지남 = 글만
 assert run184(H.day_th, "2026-11-07 15:05", {}) == "" and run184(H.day_th, "2026-11-12 15:05", {}) == ""  # D-4·행사 뒤 X
-assert "dday_deals, day_th," in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
+assert "th_retry, day_th, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
 # ④ 릴스: TOP 넘기기 날도 릴스 · 영상 없으면 오늘 클립 1편(쇼츠 설명 = 쿠팡 대가성 첫 줄) · REEL_LATE까지 안 올라가면 관리봇 1줄
 assert 'st["kind"] in ("theme", "top") and not seen.get("reelt_" + today)' in inspect.getsource(H.ig_feed)  # TOP 넘기기 날(IG_CYCLE 3일 중 1일)도 릴스
 os.makedirs("clips184/2026-11-12"); open("clips184/2026-11-12/02.mp4", "wb").write(b"x")
