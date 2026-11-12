@@ -3655,38 +3655,45 @@ def pv_card(seen, now):
     st = seen["pvcard_" + day] = {"t": now}
     ok = [{**e, "chkt": e["chk"]} for e in (d["ev"] for d in night_deals(seen, f"{day} {PV_CARD_AFTER}", night_window(kst_ts(f"{day} {PREVIEW_HOUR:02d}:00"))[1]) if aff_note(d["url"]))
           if e.get("now") and re.fullmatch(AT_RX, str(e.get("chk") or "")) and img_of(e) and shop_of(e) in CARD_HOSTS]
-    top, d, why = collections.Counter(map(shop_of, ok)).most_common(1), None, None
-    if not top or top[0][1] < 3:
-        why = f"확인 가격·사진 있는 같은 몰 딜 {top[0][1] if top else 0}개(3개↑)"
-    elif not os.path.isfile(f"{PV_CARD_DIR}/scripts/render.mjs"):
-        why = "카드 저장소 못 받음"
-    elif not (d := mall_card_json("오늘 밤 딜 미리보기", [(e, e["now"]) for e in ok if shop_of(e) == top[0][0]][:5])):
-        why = "카드 규칙(금지 표현·몰 주소)으로 3개 밑"
-    if d:
-        d["checked"] = f"{day} {PREVIEW_HOUR:02d}:00"  # 글 기준 시각(상품 checked = 봇 확인 시각 그대로)
-        try:
-            os.makedirs(f"{PV_CARD_DIR}/assets/images", exist_ok=True)
-            for i, it in enumerate(d["items"], 1):
-                b, ext = th_get(it["img"]), (re.search(r"\.(jpe?g|png|webp)$", urllib.parse.urlsplit(it["img"]).path, re.I) or [0, "jpg"])[1].lower()
-                if not b.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
-                    raise ValueError("사진 아님")
-                open(f"{PV_CARD_DIR}/assets/images/pv_{day}_{i}.{ext}", "wb").write(b)
-                it["img"] = f"assets/images/pv_{day}_{i}.{ext}"
-        except Exception as e:
-            why = f"사진 못 받음({type(e).__name__})"
-        if not why and not (f := card_png("pvcard", d, root=PV_CARD_DIR)):
-            why = "카드 검사·렌더 실패"
+    top = collections.Counter(map(shop_of, ok)).most_common(1)
+    why = f"확인 가격·사진 있는 같은 몰 딜 {top[0][1] if top else 0}개(3개↑)" if not top or top[0][1] < 3 else \
+        mall_card_make(st, "오늘 밤 딜 미리보기", [(e, e["now"]) for e in ok if shop_of(e) == top[0][0]], f"{day} {PREVIEW_HOUR:02d}:00", f"pv_{day}", "pvcard")
     if why:
         print("pv card X", why)
         return alert(seen, "pvcard_x_" + day, f"🃏 22시 미리보기 카드 없이 글만 — {why}")
+    print("pv card", st["mall"], f"{len(st['urls'])}개", os.path.basename(st["card"]))
+
+
+def mall_card_make(st, title, pairs, checked, pre, kind):
+    """'오늘의 장바구니' 카드 1장(22시 미리보기·기념일 D-N 글): pairs [(글, 가격)] 앞 5개 -> mall_card_json(3개↑ · 한 몰) · 루트 checked = 글 기준 시각(상품 checked = 봇 확인 chkt — 같게 X)
+    -> 사진 미리 받아 hotdealpick-cards assets/images/{pre}_N(렌더러 DNS 검사로 안 빠지게) -> card_png(검증 포함 — docs/cards/mall/…_{kind}.png) · 대체텍스트 = 그 저장소 social-pack alt
+    -> st에 card·urls·alt·mall · 못 만듦 = 이유(st 그대로)."""
+    d = None
+    if not os.path.isfile(f"{PV_CARD_DIR}/scripts/render.mjs"):
+        return "카드 저장소 못 받음"
+    if not (d := mall_card_json(title, pairs[:5])):
+        return "카드 규칙(금지 표현·몰 주소)으로 3개 밑"
+    d["checked"] = checked  # 글 기준 시각(상품 checked = 봇 확인 시각 그대로)
+    try:
+        os.makedirs(f"{PV_CARD_DIR}/assets/images", exist_ok=True)
+        for i, it in enumerate(d["items"], 1):
+            b, ext = th_get(it["img"]), (re.search(r"\.(jpe?g|png|webp)$", urllib.parse.urlsplit(it["img"]).path, re.I) or [0, "jpg"])[1].lower()
+            if not b.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
+                raise ValueError("사진 아님")
+            open(f"{PV_CARD_DIR}/assets/images/{pre}_{i}.{ext}", "wb").write(b)
+            it["img"] = f"assets/images/{pre}_{i}.{ext}"
+    except Exception as e:
+        return f"사진 못 받음({type(e).__name__})"
+    if not (f := card_png(kind, d, root=PV_CARD_DIR)):
+        return "카드 검사·렌더 실패"
     try:  # 대체텍스트 = 저장소 social-pack 문구 그대로(못 받으면 없이)
         alt = subprocess.run(["node", "--input-type=module", "-e", "import {captionFiles} from './scripts/social-pack.mjs'; import fs from 'node:fs'; process.stdout.write(captionFiles(JSON.parse(fs.readFileSync(0, 'utf8')))['alt.txt'])"],
                              cwd=PV_CARD_DIR, input=json.dumps(d, ensure_ascii=False), capture_output=True, text=True, timeout=30, check=True).stdout.strip()
     except Exception as e:
         alt = ""
-        print("pv card alt X", type(e).__name__)
+        print(f"{kind} alt X", type(e).__name__)
     st.update(card=f"{SITE}cards/mall/{os.path.basename(f)}", urls=[it["url"] for it in d["items"]], alt=alt, mall=d["mall"])
-    print("pv card", d["mall"], f"{len(d['items'])}개", os.path.basename(f))
+    return ""
 
 
 def preview(seen):
@@ -5040,7 +5047,10 @@ def dday_deals(seen):
             st["d"][key], st["p"][key] = today, won(price) or 0
             bundled(seen)
             th = None
-            if (tok := E.get("THREADS_TOKEN")) and th_cap(seen, "dday"):  # ③ 하루 상한(끔 = 채널 글만)
+            if DAY_TH:  # 11/12 Threads = day_th(15~19시 · D-3~당일 · 카드 1장 묶음 글)에 이 상품을 맨 앞으로 — 여기선 채널 글만(개별 Threads 차례에도 X)
+                st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]
+                th = {"id": "day"}
+            elif (tok := E.get("THREADS_TOKEN")) and th_cap(seen, "dday"):  # ③ 하루 상한(끔 = 채널 글만)
                 try:
                     th = th_text(tok, json.loads(http(f"{THREADS}/me?fields=id&access_token={tok}"))["id"], f"{DISCLOSURE}\n\n{plain_of(body)}", u, d["name"].strip())
                     th_nd(seen)
@@ -5050,6 +5060,83 @@ def dday_deals(seen):
                                                                                      **{k: p.get(k) for k in ("cat", "tag", "st", "tgt", "now", "chk", "chkt", "stdy", "img")}})
             print("day deal", d["name"], e["pid"], f"-{drop:,}원", "· Threads", (th or {}).get("id"))
             return  # 실행마다 1개
+
+
+DAY_TH, DAY_TH_H, DAY_TH_DN, DAY_TH_WAIT = True, (15, 19), 3, 40 * 60  # 11/12 진우(Cowork 2 — 기념일 오후 3~6시 글 조회 29~72 · 밤 11시~새벽 1시 1~4): Threads 기념일 특가 글 = 15:00~18:59 · D-3~당일 · 카드 기다림 40분
+
+
+def day_th(seen):
+    """기념일 특가 D-N Threads 글(DAY_TH — 채널 글 dday_deals는 그대로): DAY_TH_H 안 · days.json 행사 D-DAY_TH_DN~당일 · 행사마다 하루 1번 ·
+    상품 = 그 tag 진열 쿠팡(수수료 링크·판매 중·사진·가격 확인 TH_CHK_MAX_H 안) — 오늘 특가(dday_deals) 상품 맨 앞 · 3~5개 = '오늘의 장바구니' 카드 1장(mall_card_make — 22시 미리보기와 같은 길)
+    1단계(첫 실행) = 카드 만듦(커밋 -> 사이트) · 2단계 = 카드가 사이트에 뜨면(HEAD) 사진 글, 못 만듦·DAY_TH_WAIT 지남·사진 거절(4xx) = 글만.
+    글 = 대가성 문구(첫 줄) → '{emoji} {이름} D-N · 숫자 훅'(봇 기록만: 오늘 특가 = 직전 확인보다 M원 · 없으면 N개 값 범위) → 상품 줄 → 본문 링크 1줄(행사 쪽 e/ · 없으면 첫 상품)."""
+    now, tok = time.time(), E.get("THREADS_TOKEN")
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    if not (DAY_TH and tok) or not DAY_TH_H[0] <= kst.tm_hour < DAY_TH_H[1] or not th_cap(seen, "dday", now):
+        return
+    for d in load(DAYS_FILE, []) or []:
+        if not (isinstance(d, dict) and isinstance(d.get("name"), str) and d["name"].strip() and isinstance(d.get("tag"), str) and d["tag"].strip() and re.fullmatch(r"\d{4}-\d\d-\d\d", str(d.get("date") or ""))):
+            continue
+        n, name = (datetime.strptime(d["date"], "%Y-%m-%d") - datetime.strptime(today, "%Y-%m-%d")).days, d["name"].strip()
+        key = f"dayth_{today}_{name}"
+        if not 0 <= n <= DAY_TH_DN or seen.get(key, {}).get("done"):
+            continue
+        dd = (seen.get("dayd", {}).get("th", {}).get(name) or [""])
+        dd = dd if dd[0] == today else None
+        if key not in seen:  # 1단계: 상품 고르고 카드
+            live = {}
+            for p in load(POSTS, []):
+                if p.get("own") and p.get("url") and aff_note(p["url"]) == DISCLOSURE and p.get("tag") == d["tag"] and not p["text"].startswith("📋"):
+                    live[p["url"]] = p
+            ps = sorted((p for p in live.values() if p.get("st") not in ("gone", "out") and img_of(p) and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not name_block(short_name(title_of(p["text"])), "day th")),
+                        key=lambda p: (not dd or p["url"] != dd[3], p.get("st") != "hot", -chk_ts(p)))[:5]
+            if not ps:
+                seen[key] = {"t": now, "done": 1}
+                print("day th", name, f"D-{n} 진열 0 -> 오늘 X")
+                continue
+            st = seen[key] = {"t": now, "urls": [p["url"] for p in ps]}
+            why = "상품 3개 밑" if len(ps) < 3 else mall_card_make(st, f"{name} {'D-day' if not n else f'D-{n}'}", [(p, p.get("now") or "") for p in ps], time.strftime("%Y-%m-%d %H:%M", kst), f"day_{today}", "daycard")
+            if why:
+                st["why"] = why
+            print("day th", name, f"D-{n} 상품 {len(ps)}개 · 카드", why or os.path.basename(st["card"]))
+            return  # 다음 실행에 올림(카드 = 이 실행 커밋 뒤 사이트에)
+        st = seen[key]
+        if busy(seen, cap=False) or th_hold(seen) or day_wait(seen, now) > 0:
+            print("day th", name, "다른 글과 간격 -> 다음 실행")
+            return
+        ps = [p for u in st["urls"] for p in [next((x for x in reversed(load(POSTS, [])) if x.get("url") == u), None)] if p]
+        img = st.get("card") if not st.get("why") else None
+        if img:
+            try:
+                http(img, method="HEAD")
+            except Exception:
+                if now - st["t"] < DAY_TH_WAIT:
+                    return print("day th", name, "카드 아직 사이트에 안 뜸 -> 다음 실행")
+                img, st["why"] = None, "카드가 사이트에 안 뜸"
+        ck = lambda p: time.gmtime(chk_ts(p) + 9 * 3600)
+        pr = lambda p: (p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) + ("" if ck(p)[:3] == kst[:3] else f" ({ck(p).tm_mon}/{ck(p).tm_mday} {ck(p).tm_hour}시 확인)")  # 오늘 확인 아니면 확인 시각
+        ws = sorted(w for p in ps if (w := won(pr(p))))
+        hook = f"{clip(dd[1], 16)} 직전 확인보다 {dd[2]:,}원 내려왔어요" if dd and dd[2] else f"{len(ps)}개 값 비교했어요" + ((f" · {ws[0]:,}원" if ws[0] == ws[-1] else f" · {ws[0]:,}~{ws[-1]:,}원") if ws else "")
+        evs = ev_list()
+        until = max((str(e.get("until") or "")[:10] for e in evs if isinstance(e, dict) and e.get("tag") == d["tag"]), default="")
+        slug = next((e["slug"] for e in evs if isinstance(e, dict) and e.get("tag") == d["tag"] and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(e.get("slug") or ""))), "") or "e" + hashlib.md5(d["tag"].strip().encode()).hexdigest()[:6]
+        link = f"{SITE}e/{slug}.html" if until >= today else (ps[0]["url"] if ps else SITE)  # day_posts와 같은 행사 쪽
+        rows = [f"{NUM[k]} {clip(short_name(title_of(p['text'])), 26)} · {pr(p)}" for k, p in enumerate(ps)]
+        mk = lambda rs: "\n\n".join([DISCLOSURE, f"{str(d.get('emoji') or '🗓').strip()[:4]} {name} {'D-day' if not n else f'D-{n}'} · {hook}", "\n".join(rs), f"👉 {link}"])
+        while len(rows) > 1 and th_len(mk(rows)) > 500:
+            rows = rows[:-1]
+        st["done"] = 1  # 먼저 표시(실패해도 오늘 다시 X — 예외 = main 알림)
+        bundled(seen)
+        try:
+            r = th_post(tok, mk(rows), None if img else link, img, name, **({"alt": st["alt"]} if img and st.get("alt") else {}))
+        except urllib.error.HTTPError as e:
+            if not img or e.code >= 500:
+                raise
+            print("day th 사진 거절 -> 글만", err_brief(e))
+            img, r = None, th_post(tok, mk(rows), link, None, name)
+        print("day th", name, f"D-{n}", (r or {}).get("id"), "· 카드" if img else f"· 글만({st.get('why') or '카드 X'})", f"· 상품 {len(rows)}개")
+        return
 
 
 def day_count(seen, e, ch):
@@ -8338,6 +8425,8 @@ def ig_publish(seen):
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
             pid = v.get("cap80") and ig_landed(tok, uid, k[4:], v["cap80"], since=v["t"])  # 피드 글 = 게시물 id 찾기(구매 댓글·정답 예약 — 'published'면 그건 X)
         RUN["ok"].add("ig")
+        if kind == "reel":  # 11/12 오늘 릴스 올라감(ig_reel 23:30 점검)
+            seen.setdefault(time.strftime("igr_%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1
         print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         if not free:
@@ -8635,6 +8724,21 @@ def prune_slides(now):
             os.remove(f"docs/reels/{f}")
 
 
+REEL_CLIP, REEL_LATE = True, "23:30"  # 11/12 진우 '릴스도 만들어야 해'(Cowork 4): 테마·TOP 넘기기 영상 없는 날 = 오늘 네이버 클립 1편을 릴스로 · REEL_LATE까지 안 올라가면 관리봇 1줄
+
+
+def reel_clip(seen, today):
+    """REEL_HOUR까지 오늘 릴스 영상(테마·TOP 넘기기 — ig_theme_reel)이 없으면 오늘 네이버 클립 세로 영상 1편(clip_post — 같은 파일 · 곡 = MUSIC.md 곡만 그대로)을 릴스로:
+    캡션 = 그 편 쇼츠 설명(yt desc — 쿠팡 대가성 문구 첫 줄 · 가격 시각 · 상품 줄 · 해시태그 · 네이버 문구 X) -> seen reel_<날짜>{src} · 없음 = None."""
+    for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
+        f = f"{CLIP_DIR}/{today}/{c.get('file')}" if isinstance(c, dict) else ""
+        if f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f):
+            print("ig reel 클립", today, c["file"])
+            r = seen["reel_" + today] = {"t": time.time(), "cap": c["yt"]["desc"][:2200], "feed": False, "src": f"{SITE}clips/{today}/{c['file']}"}
+            return r
+    return None
+
+
 def ig_reel(seen):
     """릴스 하루 1개 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_HOUR시~자정, 모아보기(digest)가 docs/reels/에 공개한 오늘 영상이 사이트에 뜨면(HEAD)
     REELS 컨테이너(video_url·캡션·피드에도·표지 1.5초) -> ig_publish가 처리 끝나면 발행(영상은 보통 1~10분). 만들기 실패는 IG_TRIES번까지 다음 실행에 다시."""
@@ -8643,9 +8747,13 @@ def ig_reel(seen):
     kst = time.gmtime(now + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
     r, tried = seen.get("reel_" + today), seen.get("igr_" + today)
+    if IG_AUTO and tok and uid and time.strftime("%H:%M", kst) >= REEL_LATE and not (tried or {}).get("ok"):  # 11/12 하루 1편 점검 = 관리봇 1줄(하루 1번)
+        alert(seen, "reelx_" + today, "🎬 오늘 인스타 릴스 안 올라감 — " + ("컨테이너 실패" if (tried or {}).get("fail") else "처리·발행 안 끝남" if tried else "영상이 사이트에 안 뜸" if r else "오늘 영상 없음(테마·TOP 넘기기·클립)"))
+    if not r and REEL_CLIP and IG_AUTO and tok and uid and kst.tm_hour >= REEL_HOUR:
+        r = reel_clip(seen, today)
     if not (IG_AUTO and tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
         return
-    url = f"{SITE}reels/{today}.mp4"
+    url = r.get("src") or f"{SITE}reels/{today}.mp4"
     try:
         http(url, method="HEAD")  # 아직 배포 전이면 다음 실행에
     except Exception:
@@ -8659,6 +8767,7 @@ def ig_reel(seen):
         if IG_H:  # 공개 릴스(J-1) = F 그대로: 실패 = 다시 X · ig_fail(행동 제한이면 그날 멈춤)
             seen["igr_" + today] = {"t": now, "fail": IG_TRIES}
             ig_fail(seen, now, f"릴스 컨테이너 {ig_err(e)}")
+            alert(seen, "reelx_" + today, f"🎬 오늘 인스타 릴스 못 올림 — 컨테이너 {ig_err(e)}")
             return
         seen["igr_" + today] = {"t": now, "fail": fail + 1}
         raise RuntimeError(f"인스타 릴스 컨테이너 실패({fail + 1}/{IG_TRIES}) — " + ("다음 실행에 다시" if fail + 1 < IG_TRIES else "봇 채팅에 온 영상을 직접 올려줘") + f": {e!r} {getattr(e, 'body', '') or ''}")
@@ -9902,6 +10011,7 @@ def cal_post(seen):
     print("cal post: 쇼핑 달력", text.count("\n· "), "줄 · 글", r.get("id"))
 
 
+X_V2 = True  # 11/12 '알림 받기' 글 새 틀(숫자 첫 줄·팁 2개·본문 링크 1개·댓글 X) — False = 예전(훅 + 팁 5개 · 숫자·링크 = 댓글)
 X_AT, X_DAYS, X_LINK = (21, 30), (6, 2), f"{SITE}link/?ref=thx"  # X(10/26 Cowork — 진우 공유 @powerful_deal 글 조회 3,927): Threads '알림 받기' 유입 글 일·수(tm_wday 6·2) 21:30(인사이트 활동 시간 일 21~24시) · ref=thx = /link 클릭 따로(GoatCounter)
 X_HOOKS = ("🧾 장보기 고정비 줄이는 법, 저장해 두세요", "📌 생필품 덜 쓰는 습관, 저장해 두고 꺼내 보세요", "🛒 장보기 전에 한 번 보면 좋은 것들, 저장해 두세요")  # 저장 유도 훅 1줄(글마다 돌림 — metrics가 첫 줄로 이 글을 알아봄)
 X_TIPS = ("단위가격(100g·1개당)으로 비교하기 — 큰 묶음이 늘 싼 건 아니에요", "토스 하루특가는 그날 밤 12시에 끝나요 — 봤으면 그날 안에",
@@ -9944,6 +10054,16 @@ def x_post(seen):
     seen[key] = now
     k, (n, h) = int((now + 9 * 3600) // 86400), x_stats(now)
     j = k // 7 * 2 + (k % 7 == 6)  # 몇 번째 글(일 = 짝수, 그 뒤 수 = 홀수 — 1970-01-01 목요일 기준 7일 묶음) -> 훅은 글마다 다르게
+    if X_V2:  # 11/12 진우(Cowork 3 — 숫자 있던 11/11 글 조회 24): 첫 줄 = 우리 기록 숫자(없으면 훅) · 팁 2개 · 끝 = 알림 받기 링크 본문 1줄 · 댓글 X
+        head = f"📊 최근 7일 핫딜픽이 올린 특가 중 끝난 것 {n}개" + (f" · 가장 빨리 끝난 건 올리고 {h}시간 안" if h else "") if n else X_HOOKS[j % len(X_HOOKS)]
+        text = head + "\n\n" + "\n".join("· " + X_TIPS[(j * 2 + i) % len(X_TIPS)] for i in range(2)) + f"\n\n특가는 예고 없이 끝나기도 해요 🔔\n👉 알림 받기 {X_LINK}"
+        if re.search(X_BAN, text):
+            return print("x post: 금지 낱말 -> 안 올림", re.search(X_BAN, text)[0])
+        bundled(seen)
+        r = th_bundle(seen, "funnel", text)
+        xs = seen.setdefault("xpost", {"m": {}})
+        xs["t"], xs["m"] = now, {**dict(list(xs["m"].items())[-9:]), r["id"]: None}
+        return print("x post: 알림 받기 글", r["id"], "· 본문 링크 · 댓글 X", f"· 끝난 특가 {n}개" + (f" · 가장 빨리 {h}시간 안" if h else ""))
     one = X_HOOKS[j % len(X_HOOKS)] + "\n\n" + "\n".join("· " + X_TIPS[(j * 5 + i) % len(X_TIPS)] for i in range(5))
     two = (f"📊 최근 7일 우리 기록: 특가 끝난 것 {n}개" + (f", 가장 빨리 끝난 건 올리고 {h}시간 안" if h else "") + "\n" if n else "") \
         + "특가는 예고 없이 끝나기도 해요. 특가 뜨면 바로 알림 받아 보세요 🔔\n👉 알림 채널" + ("·카톡 특가방(하루 한 번)" if re.match(r"https://open\.kakao\.com/", KAKAO_OPENCHAT_URL) else "") + f"·지금 특가 한곳에 {X_LINK.split('://')[1]}"  # 카톡방 = 하루 한 번 오늘의 픽(/link) — '바로 알림' 앞에 X
@@ -9970,7 +10090,7 @@ def x_post(seen):
     print("x post: 알림 받기 글", r["id"], "· 댓글", xs["m"][r["id"]], f"· 끝난 특가 {n}개" + (f" · 가장 빨리 {h}시간 안" if h else ""))
 
 
-TH_CHAT, CHAT_AT, CHAT_GAP, CHAT_LATE, CHAT_DAYS, CHAT_MORE = True, (13, 10), 30 * 60, 3 * 3600, 7, ((18, 40), (22, 40))  # 11/5 진우 '중간 중간 일상 수다도': 하루 3개(13:10 + 퇴근길 18:40 + 밤 22:40 — 20:30 힘 준 글·22:03 미리보기와 안 겹치게) · 같은 날 주제 X  # II(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자'): Threads 수다 글 하루 1개(점심 13:10) · 앞뒤 30분 안 다른 비딜 글이면 그 30분 뒤 첫 빈 실행 · 3시간 넘으면 그날 X · 주제 = 최근 7일 덜 쓴 것
+TH_CHAT, CHAT_AT, CHAT_GAP, CHAT_LATE, CHAT_DAYS, CHAT_MORE, CHAT_POLL = True, (21, 0), 30 * 60, 59 * 60, 7, (), True  # 11/12 08:45 진우(Cowork 1): 21시대 빈 칸 1개(21:00~21:59 — 앞뒤 30분 비딜 글 X 그대로) · 마지막 질문 = Threads 투표(보기 2~3개, 못 붙으면 예전처럼 글만) · 11/5 진우 '중간 중간 일상 수다도': 하루 3개(13:10 + 퇴근길 18:40 + 밤 22:40 — 20:30 힘 준 글·22:03 미리보기와 안 겹치게) · 같은 날 주제 X  # II(10/26 Cowork — 진우 '일상대화하듯 재미난 이야기들도 종종 하자'): Threads 수다 글 하루 1개(점심 13:10) · 앞뒤 30분 안 다른 비딜 글이면 그 30분 뒤 첫 빈 실행 · 3시간 넘으면 그날 X · 주제 = 최근 7일 덜 쓴 것
 CHAT_TOPICS = (("shop", "장보기 습관 공감(예: 마트 가면 계획에 없던 거 꼭 하나 담게 돼요)"), ("home", "살림 공감(예: 치약 끝까지 짜는 파 vs 새로 뜯는 파)"),
                ("season", "오늘 계절·기온 이야기(아래 '오늘 계절' 줄에 있는 것만 — 없는 날씨·기온 X)"), ("quiz", "가격 감각 퀴즈 — 숫자는 아래 '우리 기록' 숫자 그대로만(품목은 일반 이름 — 상품·브랜드 X)"),
                ("cal", "쇼핑 달력 — 아래 '행사' 이름·기간만(몰 이름 X)"), ("today", "오늘 있었던 일 — 아래 '오늘 있었던 일' 사실 1개를 그대로 곁들인 공감(경험담·지어낸 일 X)"))  # 11/5 today = docs/today.json(있는 날 먼저)
@@ -9988,6 +10108,7 @@ CHAT_PROMPT = """Threads에 올릴 짧은 '수다 글'을 친근한 존댓말로
 - 상품 이름·브랜드·몰·가게 이름 X. 가격 숫자 X(가격 퀴즈만 위 우리 기록 숫자 그대로). 링크·해시태그 X, 이모지 0~1개.
 - 써 본 척·지어낸 경험담('써봤', '우리 집' 등) X, 몸·피부 증상·효능 X, 사라·담아라 같은 구매 권유 X, '댓글 달면 …' 같은 보상 유도 X, 정치·연예·뉴스 X.
 - {fun}
+- poll = 마지막 줄 질문에 고를 보기 2~3개(보기마다 한글 8자 안 · 짧은 말 · 서로 다르게 · 정답·우열·구매 권유 X). 예: 치약, 끝까지 짜서 쓰는 편이에요? -> 끝까지 짠다 / 적당히 쓰고 새로 / 잘라서 끝까지
 최근 수다 글(겹치지 않게):
 {recent}"""
 
@@ -10266,7 +10387,8 @@ def chat_post(seen):
     now, tok = time.time(), E.get("THREADS_TOKEN")
     if not (TH_CHAT and CHAT_AT and tok) or not th_cap(seen, "chat", now):  # ③ 하루 상한(끔 = AI 그림 준비도 X)
         return
-    chat_ai_prep(seen, now)  # 11/7 AI 그림 = 칸 90~20분 전에 미리(키 있을 때만)
+    if not CHAT_POLL:  # 투표 글 = 사진 X(Threads 투표는 글만) -> AI 그림 준비 X
+        chat_ai_prep(seen, now)  # 11/7 AI 그림 = 칸 90~20분 전에 미리(키 있을 때만)
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", kst)
     slot = next(((k, hm) for k, hm in enumerate((CHAT_AT, *CHAT_MORE)) if hm and ("chat_" + day.replace("-", "") + (f"_{hm[0]:02d}" if k else "")) not in seen
@@ -10274,7 +10396,7 @@ def chat_post(seen):
     if not slot or busy(seen, cap=False) or th_hold(seen):
         return
     key = "chat_" + day.replace("-", "") + (f"_{slot[1][0]:02d}" if slot[0] else "")
-    fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT]  # None = 끔(그 시각 X)
+    fixed = [WEATHER_HOUR, CAL_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, POLL_HOUR, X_AT if kst.tm_wday in X_DAYS else None]  # None = 끔(그 시각 X) · 알림 받기 = 일·수만
     near = [t for t in seen.get("thnd", {}).get("ts", []) + [now if kst_ts(e["at"]) <= now <= kst_ts(e["at"]) + CUR_LATE and "th" not in seen.get(f"cur_{e['at'][:10]}_{e['at'][11:13]}{e['at'][14:16]}", {}) else kst_ts(e["at"]) for e in cur_events()] + [kst_ts(f"{day} {hm[0]:02d}:{hm[1]:02d}") for hm in fixed if hm] if abs(t - now) < CHAT_GAP]
     if near:
         print("chat post: 앞뒤 30분 안 비딜 글", time.strftime("%H:%M", time.gmtime(max(near) + 9 * 3600)), "-> 다음 실행")
@@ -10298,7 +10420,8 @@ def chat_post(seen):
     again = ""
     for _ in (0, 1):  # 규칙 걸림 = 걸린 이유 알려 주고 1번만 다시(II+ 무례 · QQ 존댓말·시키는 말 등)
         try:
-            lines = [l.strip() for l in ai_json(CHAT_PROMPT.format(topic=desc, facts=facts, recent=recent, fun=TH_FUN.replace("\n", "\n- ")) + again, {"lines": {"type": "array", "items": {"type": "string"}}})["lines"] if l.strip()]
+            o = ai_json(CHAT_PROMPT.format(topic=desc, facts=facts, recent=recent, fun=TH_FUN.replace("\n", "\n- ")) + again, {"lines": {"type": "array", "items": {"type": "string"}}, "poll": {"type": "array", "items": {"type": "string"}}})
+            lines, opts = [l.strip() for l in o["lines"] if l.strip()], [x.strip() for x in o.get("poll") or [] if isinstance(x, str) and x.strip()]
         except Exception as e:
             return print("chat post: Claude 실패 -> 오늘 X", err_brief(e))
         if not (why := chat_ok(lines, money, facts)):
@@ -10314,8 +10437,11 @@ def chat_post(seen):
     ai, text0 = ai_img_live(seen, key), "\n".join(lines)  # 11/7 AI 그림(미리 만들어 사이트에 뜬 것) = 스티커 대신 1장 + 'AI 생성' 줄 · 없으면 예전 스티커
     stk, text = (("ai", ai) if ai else chat_stk_for(seen, lines, name, item, now)), text0 + (f"\n{AI_IMG_NOTE}" if ai else "")  # QQ 주제 -> 스티커(퀴즈 = 그 품목 · 계절 = 철 품목) · 장보기·살림·달력·그 스티커 못 씀 = 진우 캐릭터 그림(chat_stk — 10/31)
     bundled(seen)
+    r = chat_poll(seen, tok, text0, opts, lines, money, facts) if CHAT_POLL else None  # 11/12 투표 글(못 붙으면 None -> 아래 예전 글)
+    if r:
+        stk = None
     try:
-        r = th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")
+        r = r or th_bundle(seen, "chat", text, image=stk and stk[1], topic="일상")
     except urllib.error.HTTPError as e:  # 서버가 사진 글을 거절(4xx — 사진 못 받음 등) = 안 올라감 -> 글만 지금 1번 · 시간 초과·5xx(올라갔을 수도)는 예전처럼 다음 실행 th_retry(th_landed 확인)
         if not stk or e.code >= 500:
             raise
@@ -10327,6 +10453,30 @@ def chat_post(seen):
     st["h"][-1][2] = lines[0][:40]
     st.update(t=now, m={**dict(list(st.get("m", {}).items())[-9:]), r["id"]: {"ts": now}})
     print("chat post:", name, r["id"], *(["· 스티커", stk[0]] if stk else []), "|", " / ".join(lines))
+
+
+def chat_poll_why(opts, lines, money=(), facts=""):
+    """수다 글 투표 보기 검사 -> 걸린 이유(빈 문자열 = 통과): 2~3개 · 보기마다 1~25바이트(th_poll — 한글 8자) · 서로 다름 · 질문 글과 같은 금지어 규칙(chat_ok — 권유·브랜드·무례·영문·금액)."""
+    if not 2 <= len(opts) <= 3 or len(set(opts)) != len(opts) or not all(1 <= len(o.encode()) <= 25 and "?" not in o for o in opts):
+        return "보기 수·길이"
+    return chat_ok(lines[:-1] + [" · ".join(opts) + " " + lines[-1]], money, facts)  # 보기도 질문 글과 같은 검사(마지막 줄에 붙여서)
+
+
+def chat_poll(seen, tok, text, opts, lines, money=(), facts=""):
+    """11/12 진우(Cowork 1 — 투표 글 조회 16 > 수다 5.7): 수다 글 마지막 질문 = Threads 투표(th_poll — 달력·가격 투표와 같은 길) -> {"id"} · 보기 규칙 밖·서버 거절(4xx) = None(예전처럼 글만)."""
+    if why := chat_poll_why(opts, lines, money, facts):
+        print("chat post: 투표 X ->", why, "| 글만")
+        return None
+    try:
+        pid = th_poll(tok, text, opts, th_topic(seen, base="일상"))
+    except (ValueError, urllib.error.HTTPError) as e:
+        if isinstance(e, urllib.error.HTTPError) and e.code >= 500:
+            raise
+        print("chat post: 투표 거절 -> 글만", err_brief(e))
+        return None
+    th_nd(seen)
+    print("chat post: 투표", " / ".join(opts))
+    return {"id": pid}
 
 
 def chat_48(seen):
@@ -11092,7 +11242,7 @@ def ig_feed(seen):
             return
         ig_live(stem, now)
         print("ig feed", stem, st["kind"], len(urls), "장")
-        if st["kind"] == "theme" and not seen.get("reelt_" + today):
+        if st["kind"] in ("theme", "top") and not seen.get("reelt_" + today):  # 11/12 TOP 넘기기 날(IG_CYCLE 3일 중 1일 — 테마 X)도 릴스
             seen["reelt_" + today] = {"t": now}
             ig_theme_reel(seen, stem, st, kst)
         return
@@ -13314,7 +13464,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, day_th, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

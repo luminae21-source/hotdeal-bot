@@ -67,7 +67,7 @@ jobs:
           [ ! -f .seen_now/toss.json ] || cp .seen_now/toss.json toss.json
           rm -rf .seen_now
       - run: |                     # 11/11 진우 '개발 진행하자': 22시 미리보기 카드 틀 = hotdealpick-cards 읽기 전용(GPT가 틀을 고침 — 복사 X) · 카드 만드는 21시대만(못 받으면 22시 글만)
-          [ "$(TZ=Asia/Seoul date +%H)" = "21" ] || exit 0
+          case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)
           git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo "::warning::카드 저장소 못 받음 -> 22시 미리보기 글만"
       - run: |                     # 카드 이미지용: Pillow + 나눔고딕(Google Fonts, OFL). 있으면 건너뜀
           python -c "import PIL" 2>/dev/null || pip install -q pillow

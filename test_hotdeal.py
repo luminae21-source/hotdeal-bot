@@ -19,6 +19,8 @@ fit0, H.TH_SERIES_FIT = H.TH_SERIES_FIT, {}  # 11/1 시리즈 바구니 칸만(�
 H.MALL_CARD = False  # 11/1 몰별 카드(npm·node·Chrome) = 옛 셀프체크에선 끔 — 9-139가 켜서 봄
 pvc0, H.PV_CARD = H.PV_CARD, False  # 11/11 22시 미리보기 카드(21:30~ 카드 저장소·node) = 9-180에서만
 cap0, H.TH_DAY_CAP = H.TH_DAY_CAP, None  # 11/12 ③ Threads 하루 상한(0시·19시 옮김 포함) = 9-182에서만
+v12 = (H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP)  # 11/12 08:45 수다 21시 투표 · 알림 받기 새 틀 · 기념일 D-N 카드 · 릴스 클립 = 9-184에서만(앞 셀프체크 = 예전 틀)
+H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = (13, 10), ((18, 40), (22, 40)), 3 * 3600, False, False, False, False
 pl0, H.POLL_HOUR = H.POLL_HOUR, None  # 가격 투표(12:30)는 맨 아래 9-13에서만
 cpre0, H.CPRE_HOURS, cps0, H.CPS_HOUR = H.CPRE_HOURS, (), H.CPS_HOUR, 99  # E 자동 재게시(12·18시)·반응 점수(5시~)는 맨 아래 9-52에서만(예전 main() 셀프체크에서 글·호출 X)
 rs0, H.reel_samples = H.reel_samples, (lambda s: None)  # 릴스 샘플(영상 만들기·관리자 업로드)은 맨 아래 9-62에서만
@@ -14352,7 +14354,7 @@ json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
 assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert '[ "$(TZ=Asia/Seoul date +%H)" = "21" ] || exit 0\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
+assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
 H.E.pop("THREADS_TOKEN", None) if tk180 is None else H.E.__setitem__("THREADS_TOKEN", tk180)
 os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
@@ -14443,3 +14445,99 @@ ms183 = inspect.getsource(H.main)
 assert '    if RUN.get("cpsid"):\n        print("subid 붙음 {}/{}".format(*RUN["cpsid"]))' in ms183 and "landingUrl" not in ms183
 H.coupang = sv183[0]; H.RUN.pop("cpsid", None)
 
+
+# 9-184 (11/12 08:45 진우 '나머지 작업 진행하자' — Cowork 1~4): ① 수다 = 21시대 1개 · 마지막 질문 = Threads 투표(보기 2~3개 · 못 붙으면 글만) ② 기념일 특가 D-N Threads = 15~19시 · D-3~당일
+#   · 대가성 첫 줄 → '행사 D-N · 숫자 훅' · 카드 1장(못 만들면 글만) · 본문 링크 1개 ③ 알림 받기 = 숫자 첫 줄 · 팁 2개 · 본문 링크 1개 · 댓글 X ④ 릴스 = TOP 넘기기 날도 · 영상 없으면 클립 1편 · 안 올라가면 관리봇 1줄
+cwd184, d184 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d184)
+sv184 = (H.th_post, H.th_poll, H.th_reply, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, H.chat_ai_prep, H.x_stats, H.th_reply_ok, H.mall_card_make, H.http, H.busy, H.th_hold, H.day_wait,
+         H.alert, time.time, H.POSTS, H.DAYS_FILE, H.EVENTS, H.CLIP_DIR, dict(H.E), dict(H.RUN), H.TOSS_GAP)
+assert v12 == ((21, 0), (), 59 * 60, True, True, True, True)
+H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = v12
+H.POSTS, H.DAYS_FILE, H.EVENTS, H.CLIP_DIR = "posts184.json", "days184.json", "ev184.json", "clips184"; json.dump([], open("posts184.json", "w")); json.dump([], open("ev184.json", "w"))
+H.E["THREADS_TOKEN"] = "tk"; H.RUN.update(ok=set()); H.RUN.pop("thmall", None); H.busy, H.th_hold, H.day_wait = (lambda seen, cap=True: False), (lambda seen: False), (lambda seen, now: 0)
+po184, pl184, al184, prep184 = [], [], [], []
+H.th_post = lambda tok, text, link=None, image=None, tag="핫딜", alt=None: po184.append({"text": text, "link": link, "image": image, "tag": tag, "alt": alt}) or {"id": f"T{len(po184)}"}
+H.th_poll = lambda tok, text, opts, tag="핫딜": pl184.append((text, list(opts), tag)) or f"P{len(pl184)}"
+H.th_reply = lambda *a, **k: (_ for _ in ()).throw(AssertionError("댓글 X"))
+H.alert = lambda seen, key, text, *a, **k: al184.append((key, text))
+H.review = lambda *a, **k: {}; H.cur_events = lambda seen=None: []; H.promo_list = lambda today: []; H.price_records = lambda *a, **k: {}; H.chat_ai_prep = lambda seen, now: prep184.append(now)
+L184 = ["치약 끝까지 짜는 분들 꽤 많죠", "다 쓴 줄 알았는데 또 나오면 괜히 뿌듯해요", "치약, 끝까지 짜서 쓰는 편이에요?"]
+A184 = [{"lines": L184, "poll": ["끝까지 짠다", "적당히 쓰고 새로", "잘라서 끝까지"]}]
+H.ai_json = lambda prompt, props, img=None: dict(A184[-1])
+def run184(f, at, s):
+    time.time = lambda: TK(at); o = io.StringIO()
+    with contextlib.redirect_stdout(o):
+        f(s)
+    return o.getvalue()
+# ① 수다 투표: 21:00~21:59만 · 투표 보기 = 그대로 · 사진·AI 그림 X · 하루 1개
+s184 = {}
+assert run184(H.chat_post, "2026-11-12 20:58", s184) == "" and run184(H.chat_post, "2026-11-12 22:01", {}) == "" and not pl184 and not po184
+o184 = run184(H.chat_post, "2026-11-12 21:02", s184)
+assert pl184 == [("\n".join(L184), ["끝까지 짠다", "적당히 쓰고 새로", "잘라서 끝까지"], "일상")] and not po184 and not prep184, (pl184, po184, o184)
+assert "chat post: 투표 끝까지 짠다 / 적당히 쓰고 새로 / 잘라서 끝까지" in o184 and "P1" in s184["chat"]["m"] and s184["thnd"]["ts"] and "chat_20261112" in s184
+run184(H.chat_post, "2026-11-12 21:40", s184); assert len(pl184) == 1  # 하루 1개(21시대 칸 1개)
+assert "앞뒤 30분 안 비딜 글 21:30" in run184(H.chat_post, "2026-11-11 21:02", {}) and len(pl184) == 1  # 수요일 = 알림 받기 21:30 앞뒤
+for p184, why184 in ((["아주아주아주긴보기라서안돼요", "짧게"], "보기 수·길이"), (["하나만"], "보기 수·길이"), (["같다", "같다"], "보기 수·길이"), (["다이소에서 산다", "마트"], "링크·권유"), (None, "보기 수·길이")):
+    A184.append({"lines": L184, **({"poll": p184} if p184 else {})}); o184 = run184(H.chat_post, "2026-11-13 21:05", {})
+    assert f"투표 X -> {why184}" in o184 and po184[-1]["text"] == "\n".join(L184) and po184[-1]["tag"] == "일상", (p184, o184)  # 규칙 밖 보기 = 예전처럼 글만
+def bad184(tok, text, opts, tag="핫딜"):
+    e = urllib.error.HTTPError("u", 400, "Bad", None, None); e.body = "Poll Option Has Invalid Length"; raise e
+H.th_poll, n184 = bad184, len(po184); A184.append(A184[0]); o184 = run184(H.chat_post, "2026-11-14 21:05", {})
+assert "투표 거절 -> 글만" in o184 and len(po184) == n184 + 1  # 서버 거절(4xx) = 글만
+H.th_poll = lambda tok, text, opts, tag="핫딜": pl184.append((text, list(opts), tag)) or f"P{len(pl184)}"
+assert "poll = 마지막 줄 질문에 고를 보기 2~3개" in H.CHAT_PROMPT and H.chat_poll_why(["1,500원 이하", "그 위"], L184) == "기록 밖 금액" and H.chat_poll_why(["1,500원 이하", "그 위"], L184, {"1500"}) == ""
+# ③ 알림 받기(일·수 21:30): 첫 줄 = 우리 기록 숫자 · 팁 2개 · 본문 링크 1개 · 댓글 X(th_reply 부르면 실패)
+H.x_stats, H.th_reply_ok, del184 = (lambda now: (14, 3)), (lambda seen: True), len(po184)
+run184(H.x_post, "2026-11-15 21:31", {}); t184 = po184[-1]["text"]
+assert len(po184) == del184 + 1 and t184.split("\n")[0] == "📊 최근 7일 핫딜픽이 올린 특가 중 끝난 것 14개 · 가장 빨리 끝난 건 올리고 3시간 안", t184
+assert sum(l.startswith("· ") for l in t184.split("\n")) == 2 and t184.count("http") == 1 and t184.endswith(f"👉 알림 받기 {H.X_LINK}") and po184[-1]["link"] is None and po184[-1]["image"] is None
+H.x_stats = lambda now: (0, None); run184(H.x_post, "2026-11-18 21:31", {}); assert po184[-1]["text"].split("\n")[0] in H.X_HOOKS and po184[-1]["text"].count("http") == 1  # 숫자 없음 = 훅
+# ② 기념일 특가 D-N: 15:00~18:59 · D-3~당일 · 1단계 카드(mall_card_make) → 2단계 사이트에 뜨면 사진 글 · 못 만듦·40분 = 글만 · 첫 줄 대가성 문구 · 본문 링크 1개
+json.dump([{"name": "빼빼로데이", "date": "2026-11-11", "tag": "빼빼로 184", "emoji": "🍫"}], open("days184.json", "w"), ensure_ascii=False)
+U184 = {k: f"https://link.coupang.com/a/DY{k}" for k in "ABCD"}
+json.dump([{"t": "2026-11-09 19:05", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n빼빼로 아몬드 {k} 10갑\n{9000 + n * 1000:,}원", "url": U184[k], "own": 1, "shelf": 1, "tag": "빼빼로 184", "st": "hot",
+            "img": f"https://thumbnail.coupangcdn.com/{k}.jpg", "now": f"{9000 + n * 1000:,}원", "chkt": "2026-11-10 09:00"} for n, k in enumerate("ABCD")], open("posts184.json", "w"), ensure_ascii=False)
+mk184 = []
+def mcm184(st, title, pairs, checked, pre, kind):
+    mk184.append((title, [p["url"] for p, _ in pairs], checked, pre, kind))
+    return st.update(card=f"{H.SITE}cards/mall/x_daycard.png", urls=[p["url"] for p, _ in pairs], alt="ALT", mall="coupang") or ("" if mcm184.ok else "카드 검사·렌더 실패")
+mcm184.ok, head184 = True, [True]
+H.mall_card_make = mcm184
+H.http = lambda url, body=None, headers=None, method=None: "" if method == "HEAD" and head184[0] else (_ for _ in ()).throw(OSError("404"))
+s184, n184 = {"dayd": {"th": {"빼빼로데이": ["2026-11-10", "빼빼로 아몬드 C 10갑", 1200, U184["C"]]}}}, len(po184)
+assert run184(H.day_th, "2026-11-10 14:58", s184) == "" and run184(H.day_th, "2026-11-10 19:02", s184) == "" and not mk184  # 15시 전·19시 뒤 X
+o184 = run184(H.day_th, "2026-11-10 15:05", s184)
+assert mk184 == [("빼빼로데이 D-1", [U184["C"], U184["A"], U184["B"], U184["D"]], "2026-11-10 15:05", "day_2026-11-10", "daycard")] and len(po184) == n184, (mk184, o184)  # 오늘 특가 상품 맨 앞 · 이 실행 = 카드만
+run184(H.day_th, "2026-11-10 15:20", s184); p184 = po184[-1]; L184b = p184["text"].split("\n\n")
+assert len(po184) == n184 + 1 and p184["image"] == f"{H.SITE}cards/mall/x_daycard.png" and p184["alt"] == "ALT" and p184["tag"] == "빼빼로데이" and p184["link"] is None
+assert L184b[0] == H.DISCLOSURE and L184b[1] == "🍫 빼빼로데이 D-1 · 빼빼로 아몬드 C 10갑 직전 확인보다 1,200원 내려왔어요" and p184["text"].count("http") == 1 and L184b[-1] == f"👉 {U184['C']}", L184b
+assert L184b[2].split("\n") == ["1️⃣ 빼빼로 아몬드 C 10갑 · 11,000원", "2️⃣ 빼빼로 아몬드 A 10갑 · 9,000원", "3️⃣ 빼빼로 아몬드 B 10갑 · 10,000원", "4️⃣ 빼빼로 아몬드 D 10갑 · 12,000원"], L184b[2]  # 오늘 확인 = 시각 X
+run184(H.day_th, "2026-11-10 16:20", s184); assert len(po184) == n184 + 1  # 행사마다 하루 1번
+mcm184.ok = False; s184 = {}; run184(H.day_th, "2026-11-11 15:05", s184); run184(H.day_th, "2026-11-11 15:20", s184)  # 당일(D-day) · 카드 못 만듦 = 글만(링크 미리보기)
+assert po184[-1]["image"] is None and po184[-1]["link"] == U184["A"] and po184[-1]["text"].split("\n\n")[1] == "🍫 빼빼로데이 D-day · 4개 값 비교했어요 · 9,000~12,000원", po184[-1]
+mcm184.ok, head184[0], s184, n184 = True, False, {}, len(po184); run184(H.day_th, "2026-11-09 15:05", s184)
+assert "카드 아직 사이트에 안 뜸" in run184(H.day_th, "2026-11-09 15:30", s184) and len(po184) == n184  # 카드 사이트 반영 기다림(40분)
+run184(H.day_th, "2026-11-09 15:50", s184); assert po184[-1]["image"] is None and po184[-1]["link"] and len(po184) == n184 + 1  # 40분 지남 = 글만
+assert run184(H.day_th, "2026-11-07 15:05", {}) == "" and run184(H.day_th, "2026-11-12 15:05", {}) == ""  # D-4·행사 뒤 X
+assert "dday_deals, day_th," in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
+# ④ 릴스: TOP 넘기기 날도 릴스 · 영상 없으면 오늘 클립 1편(쇼츠 설명 = 쿠팡 대가성 첫 줄) · REEL_LATE까지 안 올라가면 관리봇 1줄
+assert 'st["kind"] in ("theme", "top") and not seen.get("reelt_" + today)' in inspect.getsource(H.ig_feed)  # TOP 넘기기 날(IG_CYCLE 3일 중 1일)도 릴스
+os.makedirs("clips184/2026-11-12"); open("clips184/2026-11-12/02.mp4", "wb").write(b"x")
+json.dump({"2026-11-12": [{"n": 1, "file": "01.mp4", "yt": {"desc": f"{H.DISCLOSURE}\nA"}}, {"n": 2, "file": "02.mp4", "yt": {"desc": f"{H.DISCLOSURE}\n영상 가격은 쿠팡 11/12 8시 기준\n1. 물티슈"}}]}, open("clips184/clips.json", "w"), ensure_ascii=False)
+ic184 = []
+H.E.update(IG_TOKEN="it", IG_USER_ID="u1"); ia184 = H.IG_AUTO; H.IG_AUTO = True
+H.http = lambda url, body=None, headers=None, method=None: ic184.append((url, body, method)) or ("" if method == "HEAD" else json.dumps({"id": "RC1"}))
+s184 = {}; run184(H.ig_reel, "2026-11-12 21:50", s184); assert not ic184 and "reel_2026-11-12" not in s184  # 22시 전 = X
+o184 = run184(H.ig_reel, "2026-11-12 22:10", s184)
+assert s184["reel_2026-11-12"]["src"] == f"{H.SITE}clips/2026-11-12/02.mp4" and s184["reel_2026-11-12"]["feed"] is False and "ig reel 클립 2026-11-12 02.mp4" in o184  # 01 = 파일 없음 -> 02
+assert ic184[0] == (f"{H.SITE}clips/2026-11-12/02.mp4", None, "HEAD") and ic184[1][1]["video_url"] == f"{H.SITE}clips/2026-11-12/02.mp4" and ic184[1][1]["caption"].startswith(H.DISCLOSURE) and "igc_RC1" in s184
+assert not al184 and run184(H.ig_reel, "2026-11-12 23:31", s184) == "" and al184 == [("reelx_2026-11-12", "🎬 오늘 인스타 릴스 안 올라감 — 처리·발행 안 끝남")]  # 컨테이너만 = 23:30 관리봇 1줄
+s184["igr_2026-11-12"]["ok"] = 1; del al184[:]; run184(H.ig_reel, "2026-11-12 23:45", s184); assert not al184  # 올라감 = 알림 X
+run184(H.ig_reel, "2026-11-13 23:40", {}); assert al184 == [("reelx_2026-11-13", "🎬 오늘 인스타 릴스 안 올라감 — 오늘 영상 없음(테마·TOP 넘기기·클립)")]
+assert 'seen.setdefault(time.strftime("igr_%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1' in inspect.getsource(H.ig_publish)
+H.IG_AUTO = ia184
+(H.th_post, H.th_poll, H.th_reply, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, H.chat_ai_prep, H.x_stats, H.th_reply_ok, H.mall_card_make, H.http, H.busy, H.th_hold, H.day_wait,
+ H.alert, time.time, H.POSTS, H.DAYS_FILE, H.EVENTS, H.CLIP_DIR, e184, r184, H.TOSS_GAP) = sv184
+H.E.clear(); H.E.update(e184); H.RUN.clear(); H.RUN.update(r184)
+H.CHAT_AT, H.CHAT_MORE, H.CHAT_LATE, H.CHAT_POLL, H.X_V2, H.DAY_TH, H.REEL_CLIP = (13, 10), ((18, 40), (22, 40)), 3 * 3600, False, False, False, False
+os.chdir(cwd184); shutil.rmtree(d184, ignore_errors=True)
