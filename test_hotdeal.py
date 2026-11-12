@@ -14596,3 +14596,41 @@ y185 = open(os.path.join(cwd185, ".github/workflows/hotdeal.yml"), encoding="utf
 assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
 (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
 os.chdir(cwd185); shutil.rmtree(d185, ignore_errors=True)
+
+# 9-186 (11/12 진우 ③): metrics Threads 글자·주제·조회 없는 줄 = 글 media_type 확인 -> 리포스트(REPOST_FACADE)면 kind 'repost'·repost 1(글당 조회에서 뺌) · 새 날 = 글 목록 media_type으로 바로
+cwd186, d186 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d186)
+sv186 = (H.METRICS, H.http, H.E.get("THREADS_TOKEN")); H.METRICS, H.E["THREADS_TOKEN"] = "m186.json", "tk"; q186 = []
+R186 = lambda i, **k: {"date": "2026-11-10", "ch": "th", "id": i, "shop": "기타", "cat": "기타", "price": "", "at": "10:43", "views": None, "react": None, "likes": None, "replies": None, "kind": "etc", **k}
+json.dump({"2026-11-10": {"at": 1, "miss": {}, "rows": [R186("R1"), R186("N1"), R186("D1"), R186("T1", topic="핫딜", views=5, react=0), {**R186("G1"), "ch": "tg"}]}}, open("m186.json", "w"))
+def http186(url, body=None, headers=None, method=None):
+    q186.append(url.split("?")[0].rsplit("/", 1)[-1])
+    if "/D1?" in url:
+        e = urllib.error.HTTPError(url, 400, "Bad", None, None); e.body = '{"error": {"code": 100}}'; raise e
+    return json.dumps({"media_type": "REPOST_FACADE" if "/R1?" in url else "TEXT_POST"})
+H.http = http186; o186 = io.StringIO()
+with contextlib.redirect_stdout(o186):
+    H.th_repost({})
+r186 = {r["id"]: r for r in json.load(open("m186.json"))["2026-11-10"]["rows"]}
+assert q186 == ["R1", "N1", "D1"] and "th repost 확인 3개 · 리포스트 1" in o186.getvalue()  # 글자·조회 있는 줄·텔레그램 줄 = 안 물음
+assert r186["R1"]["kind"] == "repost" and r186["R1"]["repost"] == 1 and r186["N1"]["kind"] == "etc" and r186["N1"]["mt"] == "TEXT_POST" and r186["D1"]["mt"] == "?" and "mt" not in r186["T1"]
+q186.clear(); H.th_repost({}); assert not q186  # 다 확인함 = 다시 X
+src186 = inspect.getsource(H.metrics_rows)
+assert "fields=id,text,timestamp,topic_tag,media_type&since=" in src186 and 'row("th", x["id"], "", "", stamp(x["timestamp"]), None, None, kind="repost", repost=1)' in src186 and "week_report, th_repost, rv_report" in inspect.getsource(H.main)
+(H.METRICS, H.http, tk186) = sv186; H.E.pop("THREADS_TOKEN", None) if tk186 is None else H.E.__setitem__("THREADS_TOKEN", tk186)
+os.chdir(cwd186); shutil.rmtree(d186, ignore_errors=True)
+
+# 9-187 (11/12 진우 ④): 22시 미리보기 카드 토스 칸 준비 — 토스 예약 딜 이름 -> 사이트 토스 API 상품(posts tid · seen tossid)에서 가격·확인 시각·사진(toss_noimg = 사진 X) · 카드엔 아직 X(로그 개수만)
+cwd187, d187 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d187)
+sv187 = (H.POSTS, H.TOSS_NOIMG); H.POSTS, H.TOSS_NOIMG = "p187.json", "noimg187.txt"
+T187 = lambda n, tid, u: {"t": "2026-11-12 08:50", "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 많이 팔린 순위 18위 🔥\n{n}\n12,335원 (51%↓)\n⚠️ 11/12 08:50 게시 시점 가격", "url": u, "own": 1, "shelf": 1, "tid": tid}
+json.dump([T187("국내산 돈육 통족발, 1.3kg, 1개", "111", "https://toss.shopping/_m/A"), T187("유기농 바나나 1.2kg", "222", "https://toss.shopping/_m/B"), T187("품절 상품 이름 길게", "333", "https://toss.shopping/_m/C")], open("p187.json", "w"), ensure_ascii=False)
+open("noimg187.txt", "w").write("222  # 셀러 요청\n")
+s187 = {"tossid": {"m": {"https://toss.shopping/_m/A": [9, 1, TK("2026-11-12 08:40"), "ok", [], 12335, False, 111, "https://static.toss.im/a.jpg"],
+                         "https://toss.shopping/_m/B": [8, 1, TK("2026-11-12 08:41"), "ok", [], 5900, False, 222, "https://static.toss.im/b.jpg"],
+                         "https://toss.shopping/_m/C": [7, 1, TK("2026-11-12 08:42"), "out", [], 9000, False, 333, "https://static.toss.im/c.jpg"]}}}
+ev187 = lambda n: {"text": f"{H.TOSS_NOTE}\n\n💙 토스 🔥\n{n}\n12,900원", "link": "https://toss.shopping/_m/X"}
+assert H.toss_lookup(s187, ev187("국내산 돈육 통족발, 1.3kg, 1개")) == {"now": "12,335원", "chkt": "2026-11-12 08:40", "img": "https://static.toss.im/a.jpg"}
+assert H.toss_lookup(s187, ev187("유기농 바나나 1.2kg")) == {"now": "5,900원", "chkt": "2026-11-12 08:41", "img": ""}  # toss_noimg = 사진 X
+assert H.toss_lookup(s187, ev187("품절 상품 이름 길게")) is None and H.toss_lookup(s187, ev187("없는 상품 이름입니다")) is None and H.toss_lookup(s187, ev187("짧은")) is None  # 품절·없음·짧은 이름 = X
+assert 'print("pv card 토스", f"{len(ts)}개 중 찾음 {sum(bool(toss_lookup(seen, e)) for e in ts)}(카드엔 X — 링크 검사)")' in inspect.getsource(H.pv_card)
+(H.POSTS, H.TOSS_NOIMG) = sv187; os.chdir(cwd187); shutil.rmtree(d187, ignore_errors=True)

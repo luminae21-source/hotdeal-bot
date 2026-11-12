@@ -3738,6 +3738,23 @@ def pv_name(s, n=PV_NAME):
     return cut or s[:n]
 
 
+def toss_lookup(seen, e):
+    """토스 예약 딜(events) -> 사이트 토스 API 상품(posts tid · 같은 상품 이름)에서 {now 가격 글자, chkt 'YYYY-MM-DD HH:MM' 확인 시각(seen tossid — own_end), img 썸네일 원본(toss_noimg X)} / None.
+    11/12 ④ 22시 미리보기 카드 토스 칸 준비(값은 기록·로그에 안 남김 — 개수만)."""
+    fold = lambda x: re.sub(r"[^0-9a-z가-힣]", "", unicodedata.normalize("NFKC", x or "").lower())
+    nm = fold(parse(title_of(e.get("text") or ""))[1] or e.get("name") or "")
+    if len(nm) < 6:
+        return None
+    ti, bad = seen.get("tossid", {}).get("m", {}), toss_noimg()
+    for p in reversed(load(POSTS, [])):
+        if not p.get("tid") or fold(parse(title_of(p["text"]))[1]) != nm or not (r := ti.get(p.get("url"))) or len(r) < 9 or r[3] != "ok":
+            continue
+        img = r[8] if isinstance(r[8], str) and r[8].startswith("https://") and not ({str(p["tid"]), str(r[0]), str(r[7])} & bad) else ""
+        return {"now": f"{int(r[5]):,}원" if isinstance(r[5], (int, float)) and r[5] > 0 else "", "chkt": time.strftime("%Y-%m-%d %H:%M", time.gmtime(r[2] + 9 * 3600)) if isinstance(r[2], (int, float)) else "", "img": img} \
+            if isinstance(r[5], (int, float)) and r[5] > 0 else None
+    return None
+
+
 def pv_card(seen, now):
     """22시 미리보기 카드(21:30~21:59 첫 실행 1번): 오늘 밤 미리보기 딜(night_deals — PV_CARD_AFTER 뒤 · 수수료 딜) 중 봇 확인 가격(now)·확인 시각(chk)·사진·몰 주소 있는 것 ->
     가장 많은 몰 하나 3~5개(시각 순 앞 5개 · mall_card_json 규칙 = 쿠팡·네이버 — 토스는 카드 검증이 toss.im만·예약에 chk 없음 = X) -> 사진 미리 받아 assets/images/(렌더러 DNS 검사로 안 빠지게)
@@ -3748,8 +3765,10 @@ def pv_card(seen, now):
     if "pvcard_" + day in seen:
         return
     st = seen["pvcard_" + day] = {"t": now}
-    ok = [{**e, "chkt": e["chk"]} for e in (d["ev"] for d in night_deals(seen, f"{day} {PV_CARD_AFTER}", night_window(kst_ts(f"{day} {PREVIEW_HOUR:02d}:00"))[1]) if aff_note(d["url"]))
-          if e.get("now") and re.fullmatch(AT_RX, str(e.get("chk") or "")) and img_of(e) and shop_of(e) in CARD_HOSTS]
+    evs = [d["ev"] for d in night_deals(seen, f"{day} {PV_CARD_AFTER}", night_window(kst_ts(f"{day} {PREVIEW_HOUR:02d}:00"))[1]) if aff_note(d["url"])]
+    ok = [{**e, "chkt": e["chk"]} for e in evs if e.get("now") and re.fullmatch(AT_RX, str(e.get("chk") or "")) and img_of(e) and shop_of(e) in CARD_HOSTS]
+    if ts := [e for e in evs if shop_of(e) == "toss"]:  # 11/12 ④ 토스 = 이름으로 사이트 API 상품 가격·확인 시각·사진 찾기까지만(카드 X — 원본 검사기 toss.im만 · 쉐어링크 = toss.shopping)
+        print("pv card 토스", f"{len(ts)}개 중 찾음 {sum(bool(toss_lookup(seen, e)) for e in ts)}(카드엔 X — 링크 검사)")
     top = collections.Counter(map(shop_of, ok)).most_common(1)
     why = f"확인 가격·사진 있는 같은 몰 딜 {top[0][1] if top else 0}개(3개↑)" if not top or top[0][1] < 3 else \
         mall_card_make(st, "오늘 밤 딜 미리보기", [(e, e["now"]) for e in ok if shop_of(e) == top[0][0]], f"{day} {PREVIEW_HOUR:02d}:00", f"pv_{day}", "pvcard")
@@ -12087,6 +12106,34 @@ def tg_num(v):
     return int(float(v[:-1]) * {"K": 1000, "M": 10 ** 6}[v[-1]]) if v[-1:] in ("K", "M") else int(v)
 
 
+TH_RP_RUN = 40  # 11/12 진우 ③: metrics Threads 글자·조회 없는 줄(하루 약 25)이 리포스트인지 = 실행마다 이만큼 /{id}?fields=media_type
+
+
+def th_repost(seen):
+    """metrics.json 지난 Threads 줄 중 글자·주제·조회 없는 줄(views·react None · topic 칸 없음 · kind etc) -> 글 media_type 1번씩 물어
+    REPOST_FACADE = kind 'repost'·repost 1(글당 조회 계산에서 뺌) · 그 밖 = mt 칸만 · 못 읽음 = mt '?'(다시 X) · 로그 'th repost 확인 N개 · 리포스트 M'(id·글 X)."""
+    tok = E.get("THREADS_TOKEN")
+    m = load(METRICS, {}) if tok else {}
+    todo = [r for d in sorted(m, reverse=True) if isinstance(m[d], dict) for r in m[d].get("rows", [])
+            if r.get("ch") == "th" and r.get("views") is None and r.get("react") is None and "topic" not in r and r.get("kind") == "etc" and "mt" not in r and "repost" not in r][:TH_RP_RUN]
+    if not todo:
+        return
+    n = 0
+    for r in todo:
+        try:
+            r["mt"] = json.loads(http(f"{THREADS}/{r['id']}?fields=media_type&access_token={tok}")).get("media_type") or "?"
+        except Exception as e:
+            r["mt"] = "?"
+            if re.search(r'"code":\s*(10|190|200)\b', getattr(e, "body", "") or ""):  # 권한·토큰 = 그만(다음 실행에 다시 — 이 줄은 '?')
+                del r["mt"]
+                break
+        if r["mt"] == "REPOST_FACADE":
+            r.update(kind="repost", repost=1)
+            n += 1
+    metrics_save(m)
+    print(f"th repost 확인 {len(todo)}개 · 리포스트 {n}")
+
+
 def metrics_save(m):
     js = lambda x: json.dumps(x, ensure_ascii=False)
     open(METRICS, "w", encoding="utf-8").write("{" + ",\n".join(f'{js(d)}: {{"at": {js(v["at"])}, "miss": {js(v["miss"])}, ' + "".join(f'{js(k)}: {js(x)}, ' for k, x in v.items() if k not in ("at", "miss", "rows"))  # igf·igw(인스타 팔로워·7일 요약)
@@ -12475,7 +12522,7 @@ def metrics_rows(seen):
     if not tok:
         miss["th"] = "THREADS_TOKEN 없음"
     try:
-        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp,topic_tag&since={int(t0)}&until={int(min(t0 + 86400, now))}&limit=100&access_token={tok}"
+        url = tok and f"{THREADS}/me/threads?fields=id,text,timestamp,topic_tag,media_type&since={int(t0)}&until={int(min(t0 + 86400, now))}&limit=100&access_token={tok}"
         while url and len(ths) < 1000:
             r = json.loads(http(url))
             ths, url = ths + r.get("data", []), r.get("data") and r.get("paging", {}).get("next")
@@ -12485,6 +12532,9 @@ def metrics_rows(seen):
         if not t0 <= stamp(x["timestamp"]) < t0 + 86400:
             continue
         ins = {}
+        if x.get("media_type") == "REPOST_FACADE":  # 11/12 리포스트(남의·내 글 다시 올리기 — 글자·조회 없음) = kind repost(글당 조회 계산에서 뺌) · insights X
+            row("th", x["id"], "", "", stamp(x["timestamp"]), None, None, kind="repost", repost=1)
+            continue
         if "th" not in miss:  # 한 번 막히면(권한 없음 등) 나머지는 안 물음
             try:
                 ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{THREADS}/{x['id']}/insights?metric=views,likes,replies,reposts,quotes&access_token={tok}"))["data"]}
@@ -13559,7 +13609,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, ss_report, blog_data, th_retry, day_th, blog_img, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, th_repost, rv_report, ss_report, blog_data, th_retry, day_th, blog_img, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
