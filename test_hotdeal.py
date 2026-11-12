@@ -12513,9 +12513,12 @@ with contextlib.redirect_stdout(o139):
     assert H.mall_card_json("생필품", I139[:2]) is None and H.mall_card_json("생필품", I139 * 2) is None  # (1) 3개 미만·6개↑ = 카드 X
     assert H.mall_card_json("생필품", I139[:2] + [(C139(4, "화장지 30롤", "네이버"), "9,900원")]) is None  # (2) 몰 섞임 = X
     assert H.mall_card_json("토스 하루특가", [(C139(k, f"토스 상품 {k}", "토스"), "9,900원") for k in (5, 6, 7)]) is None  # (3) 토스 = X(v3 검증 = toss.im만 · 우리 = toss.shopping)
-    for n139 in ("다이어트 쉐이크", "30% 증량 세제", "네이버 단독 화장지", "결로 예방 시트"):
-        assert H.mall_card_json("생필품", I139[:2] + [(C139(8, n139), "9,900원")]) is None, n139  # validation.mjs 금지 표현·다른 몰 이름 상품 = 빼고 셈(카드 전체 실패 X)
-assert "mall card X 2개" in o139.getvalue() and "몰 coupang·naver" in o139.getvalue() and "mall card X 0개" in o139.getvalue(), o139.getvalue()
+    for n139 in ("다이어트 쉐이크", "네이버 단독 화장지", "결로 예방 시트"):
+        assert H.mall_card_json("생필품", I139[:2] + [(C139(8, n139), "9,900원")]) is None, n139  # validation.mjs 금지 표현·다른 몰 이름 상품 = 카드 X
+    assert H.mall_card_json("생필품", I139 + [(C139(8, "다이어트 쉐이크"), "9,900원")]) is None  # 11/12 진우 '품목 4개인데 카드 3개 → 개수에 맞춰서': 하나라도 빠지면 카드 X(글만)
+    assert [x["name"] for x in H.mall_card_json("생필품", I139[:2] + [(C139(8, "더마팩토리 나이아신아마이드 20% 세럼 80ml"), "9,900원"), (C139(9, "30% 증량 세제"), "9,900원")])["items"][2:]] == [
+        "더마팩토리 나이아신아마이드 세럼 80ml", "증량 세제"]  # 이름 속 'N%' = 카드 이름에서만 뺌(빠지지 않음)
+assert "mall card X 2개" in o139.getvalue() and "mall card X 3개 (글 4개)" in o139.getvalue() and "몰 coupang·naver" in o139.getvalue() and "mall card X 0개" in o139.getvalue(), o139.getvalue()
 # ⑤ 묶음 가격 칸
 p139 = [H.bundle_pr(p, pr) for p, pr in I139]
 assert p139 == ["14,900원", "12,240원 와우가 (10/30 0시 확인)", "58,200원 쿠폰가"], p139  # 10:20·11:00 확인 = 2시간 안 · 10/30 = 오래된 확인 표시
@@ -14035,9 +14038,10 @@ assert d176["mall"] == "toss" and d176["checked"] == "2026-11-08 23:10" and [x["
     "name": "햇반 210g 24개", "price": "22,900원", "cond": "", "unit": "1개당 954원꼴", "img": "https://static.toss.im/b.jpg", "url": "https://toss.shopping/_m/A2", "checked": "2026-11-08 23:00"}  # 확인 시각 = 실제(상품마다)
 with contextlib.redirect_stdout(io.StringIO()):
     for bad176 in (("noimg 상품", 9900, "https://toss.shopping/_m/B", None, T176), ("쿠팡보다 싼 휴지", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("다른몰 대비 반값 세제", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176),
-                   ("세제 75% 특가", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("최저가 세제", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("세제", 9900, "https://link.coupang.com/a/x", "https://x/a.jpg", T176)):
+                   ("최저가 세제", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176), ("세제", 9900, "https://link.coupang.com/a/x", "https://x/a.jpg", T176)):
         assert H.toss_card_json(E176[:2] + [bad176]) is None, bad176  # 그 상품만 빠짐 → 2개 = 카드 X(toss_noimg·다른 몰·가격 비교·할인율·최저가·토스 링크 아님)
-    assert H.toss_card_json(E176[:2]) is None and len(H.toss_card_json(E176 * 3)["items"]) == 5  # 3개 밑 X · 넘으면 앞 5개
+    assert H.toss_card_json(E176[:2]) is None and H.toss_card_json(E176 * 2) is None and H.toss_card_json(E176 + [bad176]) is None  # 3개 밑 X · 11/12 글 품목 수 = 카드 칸 수(5개 넘음·하나 빠짐 = 카드 X → 사진 넘기기)
+    assert H.toss_card_json(E176[:2] + [("세제 75% 특가", 9900, "https://toss.shopping/_m/B", "https://x/a.jpg", T176)])["items"][2]["name"] == "세제 특가"  # 이름 속 'N%' = 뺌
 # Threads: 카드 줄 → 사이트에 뜨면 카드 1장 · 안 뜸(45분 안) = 기다림 · 45분 넘음 = 사진 넘기기 · 쿠팡과 15분 그대로 · 시리즈 회차 기록 = 올린 뒤
 sv176 = (H.card_png, H.th_bundle, H.toss_th_photo, H.toss_gap, H.th_hold, H.http, time.time, H.SERIES_EPS, dict(H.E))
 cwd176, d176t = os.getcwd(), tempfile.mkdtemp(); os.chdir(d176t)
