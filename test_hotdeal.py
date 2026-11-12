@@ -14559,7 +14559,9 @@ B185 = {"date": "2026-11-13", "query": "전기포트", "unit": "auto", "chk": "2
         "items": [it185(2, 33850, 1500, 22567), it185(1, 9900, 1800, 5500), it185(3, 45900, 1000, 45900, img="https://img.coupang.com/bad.jpg"), {**it185(4, 212430, 0, None), "unit_label": None, "total": None}]}
 assert [H.blog_unit(x) for x in B185["items"]] == [22567, 5500, 45900, None] and H.blog_unit({"price": 6640, "total": 840, "unit_label": "100ml당"}) == 790 and H.blog_unit({"price": 9900, "total": 100, "unit_label": "1매당"}) == 99
 png185 = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+lg185, H.BLOG_LOGO = H.BLOG_LOGO, os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "brand/logo.png")  # 11/13 카드 저장소 logo-cat.png 없으면 봇 brand/logo.png
 sp185 = H.blog_img_spec(B185, lambda u: png185 if "a.jpg" in u else b"<html>")
+assert sp185["logo"].startswith("data:image/png;base64,") and len(sp185["logo"]) < 200000  # 빨간 '딜' 대신 고양이 로고(128px로 줄임)
 assert sp185["title"] == ["전기포트,", "1L당 얼마일까?"] and sp185["n"] == 3 and sp185["kicker"] == "PRICE GUIDE  /  전기포트 3종" and sp185["label"] == "1L당" and sp185["ratio"] == "8.3"
 assert [x["uv"] for x in sp185["items"]] == [5500, 22567, 45900] and [x["unit"] for x in sp185["items"]] == ["5,500원", "22,567원", "45,900원"] and sp185["items"][0]["sub"] == "1.8L · 로켓배송"  # 낮은 순 · 값 없는 줄 X
 assert sp185["axis"] == {"max": 50000, "ticks": [0, 25000.0, 50000], "labels": ["0", "25,000", "50,000"]} and sp185["axis"]["max"] >= 45900 * 1.04  # 최고값을 보기 좋게 올림
@@ -14570,6 +14572,15 @@ for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 56
         H.blog_img_spec(bad185); raise AssertionError(why185)
     except ValueError as e:
         assert why185 in str(e), (why185, e)
+json.dump(sp185, open("sp185.json", "w"), ensure_ascii=False)
+r185 = subprocess.run(["node", os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "tools/blog_img/render.mjs"), "sp185.json", "svg185", "--svg"], capture_output=True, text=True) if shutil.which("node") else None
+if r185 is not None:  # 막대 장: 상품마다 이름 → 구성(21px) → 막대 · 구성 글씨 y < 자기 막대 y(11/13 '5L · 로켓배송'이 다음 상품 것처럼 보임)
+    assert r185.returncode == 0, r185.stderr
+    svgt185 = open("svg185/2.svg", encoding="utf-8").read()
+    rows185 = re.findall(r'<g data-row="(\d+)">(.*?)</g>', svgt185)
+    assert len(rows185) == 3 and all(float(re.search(r'class="sub" x="[\d.]+" y="([\d.]+)"', g)[1]) < float(re.search(r'class="bar" x="[\d.]+" y="([\d.]+)"', g)[1]) for _, g in rows185), rows185
+    ys185 = [float(re.search(r'class="bar" x="[\d.]+" y="([\d.]+)"', g)[1]) for _, g in rows185]
+    assert all(b - a >= 104 for a, b in zip(ys185, ys185[1:]))  # 다음 상품 이름까지 빈 칸 > 구성↔막대
 os.makedirs("bd185"); json.dump(B185, open("bd185/2026-11-13.json", "w"), ensure_ascii=False); json.dump(B185, open("bd185/2026-11-11.json", "w"), ensure_ascii=False)
 os.makedirs("src185/assets"); al185 = []
 rd185 = os.path.dirname(os.path.abspath(H.__file__))
@@ -14602,7 +14613,7 @@ H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is N
 assert "th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report" in inspect.getsource(H.main)
 y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
-(H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
+(H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185; H.BLOG_LOGO = lg185
 os.chdir(cwd185); shutil.rmtree(d185, ignore_errors=True)
 
 # 9-186 (11/12 진우 ③): metrics Threads 글자·주제·조회 없는 줄 = 글 media_type 확인 -> 리포스트(REPOST_FACADE)면 kind 'repost'·repost 1(글당 조회에서 뺌) · 새 날 = 글 목록 media_type으로 바로

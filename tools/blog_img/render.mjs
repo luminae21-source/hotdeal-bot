@@ -5,9 +5,7 @@ import { createRequire } from 'node:module';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-const { chromium } = createRequire(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../card/package.json'))('@playwright/test');
-
-const [specPath, outDir] = process.argv.slice(2);
+const [specPath, outDir, mode] = process.argv.slice(2);  // mode '--svg' = SVG만(셀프체크 — 브라우저 X)
 const S = JSON.parse(await readFile(specPath, 'utf8'));
 const P = { paper: '#F8FAF7', mint: '#E8F4F1', teal: '#426765', navy: '#223845', red: '#F33430', yellow: '#F4CF59', muted: '#647B7A', line: '#D8E4DF', white: '#FFFFFF', soft: '#F0F7F3', track: '#EDF1ED', grey: '#A8BAB8' };
 const esc = s => String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
@@ -34,12 +32,12 @@ cover += photo(its[0].img, 620, 676, 366, 366) + t(64, 1151, S.coverNote[0], 32,
 
 let chart = base(2, `${S.label} 가격 비교`) + kicker(`PRICE CHECK  /  ${S.label} 기준`);
 chart += t(64, 300, '같은 기준으로 놓고,', 64, 700) + t(64, 379, '가격만 비교했어요.', 64, 700, P.teal) + t(64, 433, S.chartNote, 27, 400, P.muted);
-const x0 = 118, plotW = 898, rowH = Math.min(101, Math.floor(600 / its.length)), startY = 503;
+const x0 = 118, plotW = 898, rowH = Math.min(124, Math.floor(624 / its.length)), startY = 503, sub = rowH >= 104;  // 11/13 한 상품 = 이름 → 구성(이름 바로 밑) → 막대 · 다음 이름까지 빈 칸(rowH − 85)이 구성↔막대(14)보다 넓게 · 좁으면 구성 X
 its.forEach((p, i) => {
-  const y = startY + i * rowH, col = i === 0 ? P.red : i < 3 ? P.teal : P.grey;
-  chart += t(64, y, String(i + 1).padStart(2, '0'), 23, 400, P.muted) + t(x0, y, p.name, rowH < 90 ? 26 : 30, 500) + t(1016, y, p.unit, rowH < 90 ? 34 : 40, 700, i === 0 ? P.red : P.teal, 'end');
-  chart += r(x0, y + 17, plotW, 17, P.track, 5) + r(x0, y + 17, Math.max(4, p.uv / S.axis.max * plotW), 17, col, 5);
-  if (rowH >= 80) chart += t(x0, y + 62, p.sub, 21, 400, P.muted);
+  const y = startY + i * rowH, col = i === 0 ? P.red : i < 3 ? P.teal : P.grey, by = y + (sub ? 44 : 17);
+  chart += `<g data-row="${i}">` + t(64, y, String(i + 1).padStart(2, '0'), 23, 400, P.muted) + t(x0, y, p.name, sub ? 30 : 26, 500) + t(1016, y, p.unit, sub ? 40 : 34, 700, i === 0 ? P.red : P.teal, 'end');
+  if (sub) chart += `<text class="sub" x="${x0}" y="${y + 30}" font-size="21" font-weight="400" fill="${P.muted}">${esc(p.sub)}</text>`;
+  chart += r(x0, by, plotW, 17, P.track, 5) + `<rect class="bar" x="${x0}" y="${by}" width="${Math.max(4, p.uv / S.axis.max * plotW)}" height="17" rx="5" fill="${col}" stroke="none"/></g>`;
 });
 const ay = startY + its.length * rowH + 20;
 chart += line(x0, ay, 1016, ay);
@@ -68,11 +66,14 @@ S.tips.forEach((q, i) => { const y = 492 + i * 220; faq += t(64, y, String(i + 1
 faq += r(64, 1175, 952, 45, P.mint, 11) + t(540, 1207, S.strip, 25, 500, P.teal, 'middle') + footer();
 
 await mkdir(outDir, { recursive: true });
+const svgs = [cover, chart, table, faq];
+for (const [n, svg] of svgs.entries()) await writeFile(path.join(outDir, `${n + 1}.svg`), svg);
+if (mode === '--svg') process.exit(0);
+const { chromium } = createRequire(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../card/package.json'))('@playwright/test');
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 1 });
-  for (const [n, svg] of [cover, chart, table, faq].entries()) {
-    await writeFile(path.join(outDir, `${n + 1}.svg`), svg);
+  for (const [n, svg] of svgs.entries()) {
     await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:${P.paper}}</style></head><body>${svg}</body></html>`, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: path.join(outDir, `${n + 1}.png`), clip: { x: 0, y: 0, width: 1080, height: 1350 } });

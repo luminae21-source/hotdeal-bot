@@ -1153,6 +1153,7 @@ def blog_rows(plan, r, chk):
 
 
 BLOG_IMG, BLOG_IMG_DIR, BLOG_IMG_SRC, BLOG_IMG_JS = True, "docs/blog_img", "hotdealpick-cards/hotdealpick-deicer-redesign-20261111", "tools/blog_img/render.mjs"  # 11/12 진우: 블로그 사진 4장(GPT 잡지형 틀 — 그림·로고 = 카드 저장소 읽기 전용)
+BLOG_LOGO = "brand/logo.png"  # 11/13 블로그 사진 머리 로고(카드 저장소 logo-cat.png 없을 때)
 BLOG_KIND = {"ml": ("용량", "으로"), "g": ("무게", "로"), "매": ("매수", "로"), "개": ("개수", "로"), "W": ("소비전력", "으로")}  # 공식·확인 문구의 '총 ○○'
 
 
@@ -1193,10 +1194,21 @@ def blog_img_spec(d, img=None):
         mt = "png" if b.startswith(b"\x89PNG") else "webp" if b.startswith(b"RIFF") else "jpeg" if b.startswith(b"\xff\xd8") else ""
         return f"data:image/{mt};base64," + base64.b64encode(b).decode() if mt else ""
     asset = lambda n: f"data:image/png;base64,{base64.b64encode(open(f'{BLOG_IMG_SRC}/assets/{n}', 'rb').read()).decode()}" if os.path.isfile(f"{BLOG_IMG_SRC}/assets/{n}") else ""
+
+    def logo():  # 11/13 진우: 카드 저장소 logo-cat.png 먼저 · 없으면 봇 brand/logo.png(삼색 고양이 '딜' — 11/11 프로필 아이콘) · 128px로 줄여서(1.9MB 그대로 X)
+        from io import BytesIO
+        from PIL import Image
+        for f in (f"{BLOG_IMG_SRC}/assets/logo-cat.png", BLOG_LOGO):
+            if os.path.isfile(f):
+                im, b = Image.open(f), BytesIO()
+                im.thumbnail((128, 128))
+                im.save(b, "PNG")
+                return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
+        return ""
     dl = DISCLOSURE.split(", ", 1)
     ck = str(d.get("chk") or "")
     lw = sum(92 if c == "원" else 28 if c == "," else 52 for c in won_s(lo)) + 55  # 표지 큰 숫자 폭(92px 굵게) + 줄표 자리
-    out = {"disclosure": [dl[0] + ",", dl[1]], "logo": asset("logo-cat.png"), "duo": asset("checklist-duo.png"), "query": q, "label": label, "n": len(its),
+    out = {"disclosure": [dl[0] + ",", dl[1]], "logo": logo(), "duo": asset("checklist-duo.png"), "query": q, "label": label, "n": len(its),
            "kicker": f"PRICE GUIDE  /  {q} {len(its)}종", "title": [f"{q},", f"{crit}당 얼마일까?"], "loW": lw, "ratio": f"{hi / lo:.1f}" if lo else "-",
            "coverNote": ["가격표 숫자만 보지 말고,", f"{crit}당 값으로 나눠 보세요."], "chartNote": f"가장 낮은 건 {clip(short_name(its[0]['name']), 16)} · {label} {won_s(lo)}",
            "formula": f"{label} 가격 = 판매가 ÷ 총 {kind} × {crit} · 원 단위 반올림", "tableNote": f"비교 대상: 쿠팡 검색 {len(its)}종 · 강조 행은 {label} 가격이 낮은 3종",
