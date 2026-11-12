@@ -14573,14 +14573,10 @@ for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 56
     except ValueError as e:
         assert why185 in str(e), (why185, e)
 json.dump(sp185, open("sp185.json", "w"), ensure_ascii=False)
-r185 = subprocess.run(["node", os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "tools/blog_img/render.mjs"), "sp185.json", "svg185", "--svg"], capture_output=True, text=True) if shutil.which("node") else None
-if r185 is not None:  # 막대 장: 상품마다 이름 → 구성(21px) → 막대 · 구성 글씨 y < 자기 막대 y(11/13 '5L · 로켓배송'이 다음 상품 것처럼 보임)
-    assert r185.returncode == 0, r185.stderr
-    svgt185 = open("svg185/2.svg", encoding="utf-8").read()
-    rows185 = re.findall(r'<g data-row="(\d+)">(.*?)</g>', svgt185)
-    assert len(rows185) == 3 and all(float(re.search(r'class="sub" x="[\d.]+" y="([\d.]+)"', g)[1]) < float(re.search(r'class="bar" x="[\d.]+" y="([\d.]+)"', g)[1]) for _, g in rows185), rows185
-    ys185 = [float(re.search(r'class="bar" x="[\d.]+" y="([\d.]+)"', g)[1]) for _, g in rows185]
-    assert all(b - a >= 104 for a, b in zip(ys185, ys185[1:]))  # 다음 상품 이름까지 빈 칸 > 구성↔막대
+def bar185(svg):  # 막대 장 상품 줄: x=118 글자 = 이름·구성 차례 · x=118 회색 칸(#EDF1ED) = 막대 -> [(이름 y, 구성 y, 막대 y)]
+    ts = [float(y) for y in re.findall(r'<text x="118" y="([\d.]+)"', svg)]
+    bs = [float(y) for y in re.findall(r'<rect x="118" y="([\d.]+)"[^>]*fill="#EDF1ED"', svg)]
+    return [(ts[2 * k], ts[2 * k + 1], b) for k, b in enumerate(bs)] if len(ts) == 2 * len(bs) + 1 else None  # + 1 = 축 눈금 '0'(x=118)
 os.makedirs("bd185"); json.dump(B185, open("bd185/2026-11-13.json", "w"), ensure_ascii=False); json.dump(B185, open("bd185/2026-11-11.json", "w"), ensure_ascii=False)
 os.makedirs("src185/assets"); al185 = []
 rd185 = os.path.dirname(os.path.abspath(H.__file__))
@@ -14600,6 +14596,9 @@ if fonts185 and shutil.which("node") and os.path.isdir(os.path.join(cr185, "node
         assert "blog img 2026-11-13 4장" in o185.getvalue() and not al185, (o185.getvalue(), al185)
         assert sorted(os.listdir("bi185/2026-11-13")) == ["1.png", "2.png", "3.png", "4.png"] and all(Image.open(f"bi185/2026-11-13/{n}.png").size == (1080, 1350) for n in range(1, 5))
         assert not os.path.isdir("bi185/2026-11-11")  # 지난 날짜 = X
+        subprocess.run(["node", H.BLOG_IMG_JS, "sp185.json", "svg185"], check=True, capture_output=True, env={**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"})
+        rw185 = bar185(open("svg185/2.svg", encoding="utf-8").read())
+        assert rw185 and len(rw185) == 3 and all(n < s_ < b for n, s_, b in rw185) and all(b + 22 < n2 - 30 for (_, _, b), (n2, _, _) in zip(rw185, rw185[1:])), rw185  # 이름 → 구성 → 막대 · 구성 y < 자기 막대 y · 다음 이름은 막대 아래
 else:
     print("9-185 실제 렌더 건너뜀(글꼴·node·playwright 없음)")
 os.makedirs("bi185/2026-11-13", exist_ok=True); [open(f"bi185/2026-11-13/{n}.png", "wb").write(b"x") for n in range(1, 5)]
