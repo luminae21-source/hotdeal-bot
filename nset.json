@@ -133,6 +133,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "패션",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "운동",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
 }
 ]
 }
