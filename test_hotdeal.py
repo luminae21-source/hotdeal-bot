@@ -14204,7 +14204,7 @@ assert "    try:\n        publish_approved(seen)\n    except (urllib.error.URLEr
 #   · date = 오늘~3일 뒤 · 파일 없음 · 하루 2개(실행당 1) · /products/search limit 10 1번(진열 후보와 같은 전용 몫 — 시간 나눔) · 실패·0개 = 내일 다시 + 관리봇 1줄 · 몫 없음 = 다음 실행
 #   · 거르기 = 이름 막기(분유·성인) · 가격 0 · 본품 아님 · 같은 상품(pid·이름) · 같은 브랜드(순위 높은 1개) · 단위값 = int(가격 / 총량 × 기준 + 0.5) · auto = 1L·100g·W 중 많은 쪽만
 #   · 사이트·채널·events·진열 X(파일만) · 수동 실행 blog_date = 그 날짜 바로
-assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/blog_plan.json"), encoding="utf-8")) == [
+assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/blog_plan.json"), encoding="utf-8")) == [{"date": "2026-11-13", "query": "전기포트", "unit": "auto"},  # 11/12 진우 손 실행
     {"date": "2026-11-16", "query": "에어프라이어", "unit": "auto"}, {"date": "2026-11-17", "query": "물티슈", "unit": "매"},
     {"date": "2026-11-19", "query": "무선청소기", "unit": "auto"}, {"date": "2026-11-20", "query": "핫팩", "unit": "개"}]
 assert H.blog_size("베베숲 물티슈 캡형 100매 10팩", "매") == {"total": 1000, "size_each": 100, "size_unit": "매", "qty": 10, "base": 1, "label": "1매당"}
@@ -14232,7 +14232,7 @@ assert [(i["name"][:2], i["unit_value"], i["unit_label"]) for i in a179["items"]
 assert [d["why"] for d in a179["dropped"]] == ["본품 아님(종이호일)", "본품 아님(전용 트레이)"] and len(H.blog_rows({"date": "d", "query": "q", "unit": "개"}, {"productData": [P179(i, f"브랜드{i} 핫팩 {i}개", 1000) for i in range(1, 21)]}, "c")["items"]) == H.BLOG_N
 rd179 = os.path.dirname(os.path.abspath(H.__file__))
 cwd179, d179 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d179); os.makedirs("docs")
-shutil.copy(os.path.join(rd179, "docs/blog_plan.json"), "docs/blog_plan.json")
+json.dump([x for x in json.load(open(os.path.join(rd179, "docs/blog_plan.json"), encoding="utf-8")) if x["date"] != "2026-11-13"], open("docs/blog_plan.json", "w"), ensure_ascii=False)  # 11/13 = 손 실행으로 이미 만듦(아래 = 11/16~ 차례)
 sv179 = (H.coupang, H.alert, H.HAS_CP, H.tg, H.http, dict(H.E))
 c179, al179, s179, bad179 = [], [], {}, [True]
 def cp179(method, path, body=None, keep=False, cand=False):
@@ -14565,9 +14565,10 @@ for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 56
         assert why185 in str(e), (why185, e)
 os.makedirs("bd185"); json.dump(B185, open("bd185/2026-11-13.json", "w"), ensure_ascii=False); json.dump(B185, open("bd185/2026-11-11.json", "w"), ensure_ascii=False)
 os.makedirs("src185/assets"); al185 = []
-H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS = "bd185", "bi185", "src185", os.path.join(cwd185, "tools/blog_img/render.mjs")
+rd185 = os.path.dirname(os.path.abspath(H.__file__))
+H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS = "bd185", "bi185", "src185", os.path.join(rd185, "tools/blog_img/render.mjs")
 H.th_get, H.pw_ready, H.alert = (lambda u: png185), (lambda env, root=None: None), (lambda seen, key, text, *a, **k: al185.append((key, text)))
-cr185 = os.path.join(cwd185, "tools/card")
+cr185 = os.path.join(rd185, "tools/card")
 s185 = {}
 fonts185 = "Noto Sans CJK KR" in subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True).stdout if shutil.which("fc-list") else False
 if fonts185 and shutil.which("node") and os.path.isdir(os.path.join(cr185, "node_modules/@playwright/test")):
@@ -14592,7 +14593,7 @@ with contextlib.redirect_stdout(o185):
 assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_x_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄
 H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
 assert "th_retry, day_th, blog_img, cmp_report" in inspect.getsource(H.main)
-y185 = open(os.path.join(cwd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
+y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
 (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
 os.chdir(cwd185); shutil.rmtree(d185, ignore_errors=True)
@@ -14615,7 +14616,7 @@ assert q186 == ["R1", "N1", "D1"] and "th repost 확인 3개 · 리포스트 1" 
 assert r186["R1"]["kind"] == "repost" and r186["R1"]["repost"] == 1 and r186["N1"]["kind"] == "etc" and r186["N1"]["mt"] == "TEXT_POST" and r186["D1"]["mt"] == "?" and "mt" not in r186["T1"]
 q186.clear(); H.th_repost({}); assert not q186  # 다 확인함 = 다시 X
 src186 = inspect.getsource(H.metrics_rows)
-assert "fields=id,text,timestamp,topic_tag,media_type&since=" in src186 and 'row("th", x["id"], "", "", stamp(x["timestamp"]), None, None, kind="repost", repost=1)' in src186 and "week_report, th_repost, rv_report" in inspect.getsource(H.main)
+assert "fields=id,text,timestamp,topic_tag,media_type&since=" in src186 and 'row("th", x["id"], "", "", stamp(x["timestamp"]), None, None, kind="repost", repost=1)' in src186 and "rv_report, th_repost, ss_report" in inspect.getsource(H.main)
 (H.METRICS, H.http, tk186) = sv186; H.E.pop("THREADS_TOKEN", None) if tk186 is None else H.E.__setitem__("THREADS_TOKEN", tk186)
 os.chdir(cwd186); shutil.rmtree(d186, ignore_errors=True)
 
