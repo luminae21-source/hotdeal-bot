@@ -1,9 +1,9 @@
 {
-"at": "2026-11-13 04:48",
+"at": "2026-11-13 05:02",
 "posts": 5021,
-"site": 1994,
+"site": 1995,
 "mall": {
-"coupang": 1306,
+"coupang": 1307,
 "toss": 629,
 "": 3,
 "naver": 56
@@ -22,13 +22,13 @@
 "laundry": 77,
 "food": 418,
 "pet": 41,
-"snack": 108,
+"snack": 109,
 "fashion": 92,
 "etc": 4
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 168,
+"cp_fail": 167,
 "sitemap": 851,
 "days": {
 "2026-11-05": {
@@ -112,10 +112,10 @@
 }
 },
 "2026-11-13": {
-"site": 1994,
+"site": 1995,
 "sitemap": 851,
 "mall": {
-"coupang": 1306,
+"coupang": 1307,
 "toss": 629,
 "": 3,
 "naver": 56
@@ -123,7 +123,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 168개(cp_fail.json)"
+"쿠팡 변환 실패 167개(cp_fail.json)"
 ],
 "nset": [
 {
