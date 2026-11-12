@@ -10,6 +10,10 @@ on:
       blog_date:                   # 11/11 블로그 표(docs/blog_data/<날짜>.json)를 그 날짜 것 바로 1번 — docs/blog_plan.json에 있는 날짜만 · 평소엔 비움(매일 18시 자동)
         description: "블로그 표 바로 만들 날짜 YYYY-MM-DD (보통 비움)"
         required: false
+      card_test:                   # 11/12 진우 '지금 일찍 확인하자': 게시 X — 지금 데이터로 쿠팡 묶음 카드·22시 미리보기 카드·블로그 사진 + 오늘 Threads 요약 로그만(docs/cards/test/)
+        description: "카드·블로그 사진 미리 확인(게시 X)"
+        type: boolean
+        required: false
       cold_start:                  # seen.json 캐시가 다 지워졌을 때만 체크(처음부터 — 하루 1번 글이 다시 나갈 수 있음). 평소엔 끔 = 캐시 못 받은 실행은 건너뜀
         description: "봇 기억(seen.json) 없이 처음부터 실행 (캐시가 다 지워졌을 때만)"
         type: boolean
@@ -67,9 +71,11 @@ jobs:
           [ ! -f .seen_now/toss.json ] || cp .seen_now/toss.json toss.json
           rm -rf .seen_now
       - run: |                     # 11/11 진우 '개발 진행하자': 22시 미리보기 카드 틀 = hotdealpick-cards 읽기 전용(GPT가 틀을 고침 — 복사 X) · 카드 만드는 21시대만(못 받으면 22시 글만)
-          case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)
+          case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)
           git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo "::warning::카드 저장소 못 받음 -> 22시 미리보기 글만"
           for f in docs/blog_data/*.json; do d=$(basename "$f" .json); [ "$d" \< "$(TZ=Asia/Seoul date +%F)" ] || [ -f "docs/blog_img/$d/4.png" ] || { fc-list : family | grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk >/dev/null 2>&1 || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk >/dev/null 2>&1; } || echo "::warning::블로그 사진 글꼴 못 받음"; break; }; done   # 11/12 블로그 사진 4장(blog_img) 만들 날만 Noto Sans CJK KR
+        env:
+          CARD_TEST: ${{ inputs.card_test }}
       - run: |                     # 카드 이미지용: Pillow + 나눔고딕(Google Fonts, OFL). 있으면 건너뜀
           python -c "import PIL" 2>/dev/null || pip install -q pillow
           mkdir -p fonts && for w in ExtraBold Regular; do
@@ -109,6 +115,7 @@ jobs:
           MODEL: ${{ vars.MODEL }}
           METRICS_DAY: ${{ inputs.metrics_day }}
           BLOG_DATE: ${{ inputs.blog_date }}
+          CARD_TEST: ${{ inputs.card_test }}
           COLD_START: ${{ inputs.cold_start }}
       - id: site
         run: |                     # 게시된 딜·카드가 있으면 사이트 갱신 커밋

@@ -1148,7 +1148,7 @@ def blog_img(seen, now=None):
         shutil.rmtree(out, ignore_errors=True)
         err = (getattr(e, "stderr", b"") or b"")
         err = (err.decode("utf-8", "replace") if isinstance(err, bytes) else str(err)).strip().splitlines()
-        print("blog img X", day, err_brief(e), err[-1:] if err else "")
+        print("blog img X", day, err_brief(e), [l for l in err if "Executable doesn't exist" in l][-1:] or err[-1:])  # 브라우저 없음 줄 먼저
         alert(seen, "blogimg_x_" + day, f"🖼 블로그 사진 {day} 못 만듦 — {err_brief(e)}")
 
 
@@ -3736,6 +3736,64 @@ def pv_name(s, n=PV_NAME):
         return s
     cut = s[:n + 1].rsplit(" ", 1)[0].rstrip(" +,(·/-") if " " in s[:n + 1] else ""
     return cut or s[:n]
+
+
+CARD_TEST_DIR = "docs/cards/test"
+
+
+def card_test(seen, now=None):
+    """손 실행 card_test(11/12 진우 '지금 일찍 확인하자' — 게시·알림 X, 파일·로그만): ① 지금 쿠팡 묶음 후보(최근 진열·채널 쿠팡 · 확인 가격·사진)로 '오늘의 장바구니' 쿠팡 카드
+    ② 오늘 밤 22시 미리보기 카드(seen 사본 — 21:30 진짜 카드는 그대로) ③ 블로그 사진(blog_img) ④ 오늘 0시~지금 Threads 봇 글 시간별·토스 개별·대가성 첫 줄·하루 상한 몫 로그 -> docs/cards/test/<시각>_*.png."""
+    global alert
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, stamp = time.strftime("%Y-%m-%d", kst), time.strftime("%Y%m%d_%H%M", kst)
+    os.makedirs(CARD_TEST_DIR, exist_ok=True)
+    real_alert, alert = alert, lambda seen, key, text, *a, **k: print("card test 알림(안 보냄):", text)  # 관리봇 X
+    try:
+        ps = {}
+        for p in load(POSTS, []):
+            if shop_of(p) == "coupang" and aff_note(p.get("url") or "") == DISCLOSURE and img_of(p) and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and p.get("st") not in ("gone", "out"):
+                ps[p["url"]] = p
+        pick = sorted(ps.values(), key=lambda p: (p.get("st") != "hot", -chk_ts(p)))[:5]
+        f = card_png("cardtest", mall_card_json("오늘의 장바구니", [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in pick])) if len(pick) >= 3 else None
+        if f:
+            shutil.move(f, f"{CARD_TEST_DIR}/{stamp}_coupang.png")
+        print("card test ① 쿠팡 묶음 카드", f"{CARD_TEST_DIR}/{stamp}_coupang.png" if f else f"X(후보 {len(pick)}개)")
+        cp = dict(seen)
+        cp.pop("pvcard_" + day, None)
+        pv_card(cp, now)
+        if (c := cp.get("pvcard_" + day, {})).get("card"):
+            shutil.move(f"{MALL_CARD_DIR}/{os.path.basename(c['card'])}", f"{CARD_TEST_DIR}/{stamp}_pvcard.png")
+        print("card test ② 22시 미리보기 카드", f"{CARD_TEST_DIR}/{stamp}_pvcard.png · 상품 {len(c.get('urls', []))}개 · alt {len(c.get('alt', ''))}자" if c.get("card") else "X")
+        blog_img(seen, now)
+        th_test_summary(seen, now)
+    finally:
+        alert = real_alert
+
+
+def th_test_summary(seen, now):
+    """card_test ④: 오늘 0시~지금 Threads 봇 글(계정 글 목록 · 리포스트 X) -> 시간별 개수 · 0시·19시 · 토스 개별(토스 대가성 첫 줄 · 상품 줄 1개) · 상품 링크 글의 대가성 첫 줄 · 하루 상한 몫(th_cap)."""
+    tok, kst = E.get("THREADS_TOKEN"), time.gmtime(now + 9 * 3600)
+    day = time.strftime("%Y-%m-%d", kst)
+    if not tok:
+        return print("card test ④ THREADS_TOKEN 없음")
+    xs, url = [], f"{THREADS}/me/threads?fields=id,text,timestamp,media_type&since={kst_ts(day + ' 00:00')}&limit=100&access_token={tok}"
+    while url and len(xs) < 300:
+        r = json.loads(http(url))
+        xs, url = xs + r.get("data", []), r.get("data") and r.get("paging", {}).get("next")
+    bot = [x for x in xs if x.get("media_type") != "REPOST_FACADE" and (x.get("text") or "").strip()]
+    hrs = collections.Counter(time.gmtime(datetime.strptime(x["timestamp"], "%Y-%m-%dT%H:%M:%S%z").timestamp() + 9 * 3600).tm_hour for x in bot)
+    multi = lambda t: bool(re.search(r"1️⃣|^\s*1\. |^· ", t, re.M))
+    toss1 = [x for x in bot if x["text"].startswith(TOSS_NOTE) and not multi(x["text"])]
+    prod = [x for x in bot if th_urls(x["text"]) or re.search(r"toss\.shopping|link\.coupang\.com", x["text"])]
+    head = [x for x in prod if not x["text"].startswith((DISCLOSURE, TOSS_NOTE, NAVER_NOTE)) and not x["text"].startswith(NOTE_STARTS)]
+    st = seen.get("thcap", {})
+    y = st.get(time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400)))
+    keep = y["n"] - sum(y["k"].values()) if y else TH_KEEP0
+    print(f"card test ④ Threads 봇 글 {len(bot)}개(리포스트 {len(xs) - len(bot)}) · 시간별 " + " ".join(f"{h}시 {hrs[h]}" for h in sorted(hrs)) + f" · 0시 {hrs[0]} · 19시 {hrs[19]}"
+          f" · 토스 개별 {len(toss1)}/{TH_TOSS_DAY} · 상품 링크 글 {len(prod)} 중 대가성 첫 줄 아님 {len(head)}")
+    print(f"card test ④ 상한 몫: 어제 지킬 글 {keep}{'' if y else '(기록 없음 = TH_KEEP0)'} · 쿠팡 개별 몫 {TH_DAY_CAP - keep - TH_TOSS_DAY} · 오늘 셈 {st.get(day)} · 지금 cp {th_cap(seen, 'cp', now)} · toss {th_cap(seen, 'toss', now)}")
 
 
 def toss_lookup(seen, e):
@@ -13513,6 +13571,12 @@ def main():
         seen = {}
     RUN.update(seen=seen, ok=set(), fail={}, failch=set(), th_last=0, th_why="", tg_err="", ch_last=0, treuse=False, tstop=False, thids=[], season=season_ctx(seen), rvw={},
                rvst=seen.setdefault(time.strftime("rvst_%Y%m%d", time.gmtime(time.time() + 9 * 3600)), {"t": 0}))  # Z: 오늘 계절 맥락(프롬프트마다 1줄·금지어·계절 상품) · 재검토 Claude 수 · 하루 기록(rv_report)
+    if E.get("CARD_TEST") == "true":  # 11/12 진우 '지금 일찍 확인하자' = 게시 X · 파일·로그만
+        try:
+            card_test(seen)
+        finally:
+            seen_save(seen)
+        return
     RUN.pop("cpu", None)
     RUN.pop("threc", None)
     RUN.pop("thpend", None)

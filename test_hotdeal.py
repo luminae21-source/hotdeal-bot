@@ -14354,7 +14354,7 @@ json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
 assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
+assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
 H.E.pop("THREADS_TOKEN", None) if tk180 is None else H.E.__setitem__("THREADS_TOKEN", tk180)
 os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
@@ -14576,7 +14576,7 @@ if fonts185 and shutil.which("node") and os.path.isdir(os.path.join(cr185, "node
     with contextlib.redirect_stdout(o185):
         H.blog_img(s185, TK("2026-11-12 18:20"))
     if "Executable doesn't exist" in o185.getvalue() or "browserType.launch" in o185.getvalue():
-        print("9-185 실제 렌더 건너뜀(이 환경 브라우저 없음)")
+        print("9-185 실제 렌더 건너뜀(이 환경 브라우저 없음)"); s185.pop("blogimg_x_2026-11-13", None); al185.clear()
     else:
         from PIL import Image
         assert "blog img 2026-11-13 4장" in o185.getvalue() and not al185, (o185.getvalue(), al185)
@@ -14635,3 +14635,33 @@ assert H.toss_lookup(s187, ev187("유기농 바나나 1.2kg")) == {"now": "5,900
 assert H.toss_lookup(s187, ev187("품절 상품 이름 길게")) is None and H.toss_lookup(s187, ev187("없는 상품 이름입니다")) is None and H.toss_lookup(s187, ev187("짧은")) is None  # 품절·없음·짧은 이름 = X
 assert 'print("pv card 토스", f"{len(ts)}개 중 찾음 {sum(bool(toss_lookup(seen, e)) for e in ts)}(카드엔 X — 링크 검사)")' in inspect.getsource(H.pv_card)
 (H.POSTS, H.TOSS_NOIMG) = sv187; os.chdir(cwd187); shutil.rmtree(d187, ignore_errors=True)
+
+# 9-188 (11/12 10:59 진우 '지금 일찍 확인하자'): 손 실행 card_test = 게시·관리봇 X · 쿠팡 묶음 카드·22시 미리보기 카드(seen 사본)·블로그 사진 -> docs/cards/test/<시각>_*.png · 오늘 Threads 요약 로그
+cwd188, d188 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d188)
+sv188 = (H.card_png, H.pv_card, H.blog_img, H.http, H.alert, H.POSTS, H.MALL_CARD_DIR, H.E.get("THREADS_TOKEN"), H.tg)
+os.makedirs("mc188"); H.MALL_CARD_DIR, H.POSTS, H.E["THREADS_TOKEN"] = "mc188", "p188.json", "tk"
+json.dump([{"t": "2026-11-12 10:0{}".format(i), "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n물티슈 100매 {i}팩\n{9000 + i:,}원", "url": f"https://link.coupang.com/a/T{i}", "own": 1, "st": "hot",
+            "img": f"https://thumbnail.coupangcdn.com/{i}.jpg", "now": f"{9000 + i:,}원", "chkt": "2026-11-12 10:00"} for i in range(4)], open("p188.json", "w"), ensure_ascii=False)
+cj188, sent188 = [], []
+def png188(kind, d, short="", root=None):
+    cj188.append((kind, d and [it["url"] for it in d["items"]])); f = f"mc188/x_{kind}.png"; open(f, "wb").write(b"png"); return f
+def pv188(seen, now):
+    seen["pvcard_2026-11-12"] = {"t": now, "card": f"{H.SITE}cards/mall/x_pvcard.png", "urls": ["a", "b", "c"], "alt": "ALT"}; open("mc188/x_pvcard.png", "wb").write(b"png"); H.alert(seen, "k", "카드 없이")
+TH188 = [{"id": "1", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡\n상품 https://link.coupang.com/a/x", "timestamp": "2026-11-12T00:10:00+0000", "media_type": "TEXT_POST"},
+         {"id": "2", "text": f"{H.TOSS_NOTE}\n\n💙 토스\n상품 https://toss.shopping/_m/a", "timestamp": "2026-11-12T01:10:00+0000", "media_type": "IMAGE"},
+         {"id": "3", "text": "", "timestamp": "2026-11-12T01:20:00+0000", "media_type": "REPOST_FACADE"}, {"id": "4", "text": "수다 글이에요?", "timestamp": "2026-11-12T01:30:00+0000", "media_type": "TEXT_POST"}]
+H.card_png, H.pv_card, H.blog_img, H.tg = png188, pv188, (lambda seen, now=None: sent188.append("blog")), (lambda *a, **k: sent188.append("tg"))
+H.http = lambda url, body=None, headers=None, method=None: json.dumps({"data": TH188}) if "/me/threads?" in url and method is None else (_ for _ in ()).throw(AssertionError(url))
+real188 = H.alert; s188 = {"pvcard_2026-11-12": {"t": 1}, "thcap": {"2026-11-11": {"n": 30, "k": {"cp": 4}}, "2026-11-12": {"n": 3, "k": {"cp": 1}}}}
+o188 = io.StringIO()
+with contextlib.redirect_stdout(o188):
+    H.card_test(s188, TK("2026-11-12 11:05"))
+assert H.alert is real188 and "tg" not in sent188 and sent188 == ["blog"] and s188["pvcard_2026-11-12"] == {"t": 1}  # 관리봇 X · 진짜 22시 카드 기록 그대로(사본)
+assert sorted(os.listdir("docs/cards/test")) == ["20261112_1105_coupang.png", "20261112_1105_pvcard.png"] and cj188 == [("cardtest", [f"https://link.coupang.com/a/T{i}" for i in range(4)])], (os.listdir("docs/cards/test"), cj188)
+o188 = o188.getvalue()
+assert "card test 알림(안 보냄): 카드 없이" in o188 and "card test ② 22시 미리보기 카드 docs/cards/test/20261112_1105_pvcard.png · 상품 3개 · alt 3자" in o188
+assert "card test ④ Threads 봇 글 3개(리포스트 1) · 시간별 9시 1 10시 2 · 0시 0 · 19시 0 · 토스 개별 1/5 · 상품 링크 글 2 중 대가성 첫 줄 아님 0" in o188, o188
+assert "card test ④ 상한 몫: 어제 지킬 글 26 · 쿠팡 개별 몫 14 · 오늘 셈 {'n': 3, 'k': {'cp': 1}}" in o188
+assert 'if E.get("CARD_TEST") == "true":' in inspect.getsource(H.main)
+(H.card_png, H.pv_card, H.blog_img, H.http, H.alert, H.POSTS, H.MALL_CARD_DIR, tk188, H.tg) = sv188; H.E.pop("THREADS_TOKEN", None) if tk188 is None else H.E.__setitem__("THREADS_TOKEN", tk188)
+os.chdir(cwd188); shutil.rmtree(d188, ignore_errors=True)
