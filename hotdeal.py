@@ -1026,6 +1026,97 @@ def blog_size(name, unit):
     return {"total": tot["n"], "size_each": int(each) if each % 1 == 0 else each, "size_unit": tot["u"], "qty": round(tot["n"] / each) if each else None, "base": base, "label": f"{u if um[1] else '1' + u}당"}
 
 
+THEME = {"A": ("자취 식량 장바구니", "자취방 비상식량, 한 끼에 얼마?", (("즉석밥", "100g"), ("참치캔", "100g"), ("스팸", "100g"), ("조미김", "10g"), ("라면", "개"))),
+         "B": ("레토르트 장바구니", "전자레인지 3분, 한 끼에 얼마?", (("3분카레", "100g"), ("3분짜장", "100g"), ("즉석국", "100g"), ("즉석죽", "100g")))}  # 11/12 진우 '가공 식품도, 레토르트 식품도'
+THEME_DAYS, THEME_SEARCH, THEME_POST_LATE = (1, 3, 5), ("10:00", "18:00"), "22:40"  # 화·목·토 A·B 번갈아(주 3번) · 검색 = 진열 후보·블로그 전용 몫(시간당 1 — blog_data 18시 뒤와 안 겹치게) · 22:40까지 카드 안 뜨면 글만
+
+
+def theme_pick(q, unit, r, chk):
+    """테마 장바구니 한 칸: 검색 응답 -> blog_rows(이름 막기·본품만·같은 상품·같은 브랜드 1개 거르기 그대로) 중 로켓·단위값 있는 것(다시 계산해 같은 것만)·사진·상품 주소 -> 단위값 가장 낮은 1개 / None."""
+    urls = {str(x.get("productId")): x.get("productUrl") for x in (r or {}).get("productData") or [] if isinstance(x, dict)} if isinstance(r, dict) else {}
+    ok = [it for it in blog_rows({"date": "", "query": q, "unit": unit}, r, chk)["items"] if it.get("rocket") and it.get("unit_value") is not None and blog_unit(it) == it["unit_value"]
+          and it.get("img") and str(urls.get(str(it["pid"])) or "").startswith("https://link.coupang.com/")]
+    it = min(ok, key=lambda it: (it["unit_value"], it["rank"]), default=None)
+    return it and {"q": q, "name": it["name"], "price": it["price"], "img": it["img"], "url": urls[str(it["pid"])], "uv": it["unit_value"], "label": it["unit_label"], "chk": chk}
+
+
+def theme_prep(seen, now=None):
+    """테마 날(THEME_DAYS) THEME_SEARCH 안: 실행마다 품목 1개 쿠팡 검색(전용 몫 cand — 시간당 1 · 상한 넘음 = 다음 실행) -> seen theme rows · 오늘 테마 = A·B 번갈아(올린 날 기준)."""
+    now = now or time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
+    if not (HAS_CP and THEME) or kst.tm_wday not in THEME_DAYS or not THEME_SEARCH[0] <= hm < THEME_SEARCH[1]:
+        return
+    st = seen.setdefault("theme", {"n": 0})
+    if st.get("d") != day:
+        st.update(d=day, k="AB"[st.get("n", 0) % 2], rows={}, tried=[], t=now)
+    todo = [(q, u) for q, u in THEME[st["k"]][2] if q not in st["tried"]]
+    if not todo:
+        return
+    q, u = todo[0]
+    try:
+        r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(q)}&limit=10", keep=True, cand=True)
+    except CpLimit:
+        return print("theme: 전용 몫(시간당 1) 씀 -> 다음 실행")
+    except Exception as e:
+        r = None
+        print("theme 검색 X", q, err_brief(e))
+    st["tried"].append(q)
+    st["t"] = now
+    if it := theme_pick(q, u, r, time.strftime("%Y-%m-%d %H:%M", kst)):
+        st["rows"][q] = it
+    print(f"theme {st['k']} {q}", f"{it['label']} {it['uv']:,}원" if it else "X(로켓·단위값·사진 있는 본품 없음)", f"· {len(st['rows'])}/{len(THEME[st['k']][2])}")
+
+
+def theme_post(seen, now=None):
+    """테마 장바구니 Threads 글(11/12 진우): 21:30~ 칸 3개↑면 '오늘의 장바구니' 쿠팡 카드(mall_card — 몰 하나 · 칸 unit '100g당 N원') · 22시대 = 오늘 22시 미리보기가 안 나간 밤(예약 딜 PREVIEW_MIN 밑)만
+    대가성 첫 줄 → 테마 훅 → 상품 줄 → 본문 링크 1줄(단위값 1위 상품) · 카드가 THEME_POST_LATE까지 안 뜨면 글만 · 3칸 밑 = 안 냄 · 텔레그램 X."""
+    now, tok = now or time.time(), E.get("THREADS_TOKEN")
+    kst = time.gmtime(now + 9 * 3600)
+    day, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
+    st = seen.get("theme", {})
+    if not tok or st.get("d") != day or st.get("done") or hm < f"{PREVIEW_HOUR - 1:02d}:30" or kst.tm_hour > PREVIEW_HOUR:
+        return
+    rows = sorted(st.get("rows", {}).values(), key=lambda x: x["uv"])
+    if len(rows) < 3:
+        st["done"] = 1
+        return print(f"theme {st['k']} 칸 {len(rows)}개(3개↑) -> 오늘 X")
+    name, hook = THEME[st["k"]][:2]
+    ps = [{"text": f"{DISCLOSURE}\n\n📦 쿠팡\n{x['name']}\n{x['price']:,}원", "url": x["url"], "img": x["img"], "now": f"{x['price']:,}원", "chkt": x["chk"], "unit": f"{x['label']} {x['uv']:,}원"} for x in rows]
+    if "card" not in st:
+        st["card"] = mall_card("theme", name, name, [(p, p["now"]) for p in ps[:5]])  # None = 카드 못 만듦(글만)
+        st["t"] = now
+        return print(f"theme {st['k']} 카드", st["card"] and os.path.basename(st["card"]))
+    pv = seen.get(time.strftime("preview_%Y%m%d", kst))
+    if kst.tm_hour != PREVIEW_HOUR or not pv or (pv.get("n") or 0) >= PREVIEW_MIN or busy(seen, cap=False) or th_hold(seen):  # 미리보기가 나간 밤 = 테마 X(겹침 X)
+        if pv and (pv.get("n") or 0) >= PREVIEW_MIN:
+            st["done"] = 1
+            print("theme: 오늘 22시 미리보기 나감 -> 테마 X")
+        return
+    img = st["card"]
+    if img:
+        try:
+            http(img, method="HEAD")
+        except Exception:
+            if hm < THEME_POST_LATE:
+                return print("theme 카드 아직 사이트에 안 뜸 -> 다음 실행")
+            img = None
+    lines = [f"{NUM[k]} {clip(short_name(x['name']), 24)} {x['price']:,}원\n{x['label']} {x['uv']:,}원" for k, x in enumerate(rows[:5])]
+    text = f"{DISCLOSURE}\n\n{hook}\n🧺 {name} ({kst.tm_mon}/{kst.tm_mday} 확인 가격)\n\n" + "\n\n".join(lines) + f"\n\n👉 {clip(short_name(rows[0]['name']), 16)} 보기 {rows[0]['url']}"
+    st["done"] = 1  # 먼저 표시(실패 = th_bundle 다시 1번)
+    bundled(seen)
+    try:
+        r = th_bundle(seen, "theme", text, None if img else rows[0]["url"], image=img)
+    except urllib.error.HTTPError as e:
+        if not img or e.code >= 500:
+            raise
+        img, r = None, th_bundle(seen, "theme", text, rows[0]["url"])
+    st["n"] = st.get("n", 0) + 1  # 다음 테마 날 = 다른 쪽
+    if img and r and r.get("id"):
+        seen.setdefault("thbcard", {"t": now, "m": {}})["m"][r["id"]] = day  # metrics chg th_bundle
+    print(f"theme {st['k']} {name} Threads", (r or {}).get("id"), "· 카드" if img else "· 글만", f"· {len(lines)}칸")
+
+
 def blog_rows(plan, r, chk):
     """검색 응답 -> blog_data 파일 내용(items 단위값 낮은 순·최대 BLOG_N · dropped why). 거르기 = 이름 막기(분유·성인) · 가격 0 · 본품 아님 · 같은 상품(pid·이름) · 같은 브랜드(순위 높은 1개)."""
     items, dropped, seen_k, brands = [], [], set(), set()
@@ -3766,6 +3857,13 @@ def card_test(seen, now=None):
         if (c := cp.get("pvcard_" + day, {})).get("card"):
             shutil.move(f"{MALL_CARD_DIR}/{os.path.basename(c['card'])}", f"{CARD_TEST_DIR}/{stamp}_pvcard.png")
         print("card test ② 22시 미리보기 카드", f"{CARD_TEST_DIR}/{stamp}_pvcard.png · 상품 {len(c.get('urls', []))}개 · alt {len(c.get('alt', ''))}자" if c.get("card") else "X")
+        th0 = seen.get("theme", {})
+        rows = sorted(th0.get("rows", {}).values(), key=lambda x: x["uv"])
+        f = len(rows) >= 3 and mall_card("themetest", THEME[th0["k"]][0], THEME[th0["k"]][0], [({"text": f"{DISCLOSURE}\n\n📦 쿠팡\n{x['name']}\n{x['price']:,}원", "url": x["url"], "img": x["img"], "now": f"{x['price']:,}원",
+                                                                                                    "chkt": x["chk"], "unit": f"{x['label']} {x['uv']:,}원"}, f"{x['price']:,}원") for x in rows[:5]])
+        if f:
+            shutil.move(f"{MALL_CARD_DIR}/{os.path.basename(f)}", f"{CARD_TEST_DIR}/{stamp}_theme{th0['k']}.png")
+        print("card test ⑤ 테마 장바구니", f"{th0.get('k')} {CARD_TEST_DIR}/{stamp}_theme{th0['k']}.png" if f else f"X({th0.get('d')} {th0.get('k')} 칸 {len(rows)}개 · 검색 {th0.get('tried')})")
         blog_img(seen, now)
         th_test_summary(seen, now)
     finally:
@@ -13684,7 +13782,7 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:

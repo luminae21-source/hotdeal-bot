@@ -14207,7 +14207,8 @@ assert "    try:\n        publish_approved(seen)\n    except (urllib.error.URLEr
 #   · 사이트·채널·events·진열 X(파일만) · 수동 실행 blog_date = 그 날짜 바로
 assert json.load(open(os.path.join(os.path.dirname(os.path.abspath(H.__file__)), "docs/blog_plan.json"), encoding="utf-8")) == [{"date": "2026-11-13", "query": "전기포트", "unit": "auto"},  # 11/12 진우 손 실행
     {"date": "2026-11-16", "query": "에어프라이어", "unit": "auto"}, {"date": "2026-11-17", "query": "물티슈", "unit": "매"},
-    {"date": "2026-11-19", "query": "무선청소기", "unit": "auto"}, {"date": "2026-11-20", "query": "핫팩", "unit": "개"}]
+    {"date": "2026-11-19", "query": "무선청소기", "unit": "auto"}, {"date": "2026-11-20", "query": "핫팩", "unit": "개"},
+    {"date": "2026-11-23", "query": "즉석밥", "unit": "100g"}, {"date": "2026-11-25", "query": "참치캔", "unit": "100g"}, {"date": "2026-11-27", "query": "3분카레", "unit": "100g"}]  # 11/12 진우 가공·레토르트(하루씩 띄움)
 assert H.blog_size("베베숲 물티슈 캡형 100매 10팩", "매") == {"total": 1000, "size_each": 100, "size_unit": "매", "qty": 10, "base": 1, "label": "1매당"}
 assert H.blog_size("핫팩 150g 10개입 x 3팩", "개")["total"] == 30 and H.blog_size("세제 2.5L 2개", "1L") == {"total": 5000, "size_each": 2500, "size_unit": "ml", "qty": 2, "base": 1000, "label": "1L당"}
 assert H.blog_size("리빙웰 에어프라이어 16리터 AF16", "1L")["total"] == 16000  # 11/11 실제 첫 실행 — '리터' = L
@@ -14520,7 +14521,7 @@ mcm184.ok, head184[0], s184, n184 = True, False, {}, len(po184); run184(H.day_th
 assert "카드 아직 사이트에 안 뜸" in run184(H.day_th, "2026-11-09 15:30", s184) and len(po184) == n184  # 카드 사이트 반영 기다림(40분)
 run184(H.day_th, "2026-11-09 15:50", s184); assert po184[-1]["image"] is None and po184[-1]["link"] and len(po184) == n184 + 1  # 40분 지남 = 글만
 assert run184(H.day_th, "2026-11-07 15:05", {}) == "" and run184(H.day_th, "2026-11-12 15:05", {}) == ""  # D-4·행사 뒤 X
-assert "th_retry, day_th, blog_img, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main) and 'st.setdefault("th", {})[d["name"].strip()] = [today, short_name(name), drop, u]' in inspect.getsource(H.dday_deals)
 # ④ 릴스: TOP 넘기기 날도 릴스 · 영상 없으면 오늘 클립 1편(쇼츠 설명 = 쿠팡 대가성 첫 줄) · REEL_LATE까지 안 올라가면 관리봇 1줄
 assert 'st["kind"] in ("theme", "top") and not seen.get("reelt_" + today)' in inspect.getsource(H.ig_feed)  # TOP 넘기기 날(IG_CYCLE 3일 중 1일)도 릴스
 os.makedirs("clips184/2026-11-12"); open("clips184/2026-11-12/02.mp4", "wb").write(b"x")
@@ -14593,7 +14594,7 @@ with contextlib.redirect_stdout(o185):
     H.blog_img(s185, TK("2026-11-12 18:50"))
 assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_x_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄
 H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
-assert "th_retry, day_th, blog_img, cmp_report" in inspect.getsource(H.main)
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
 y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
 (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185
@@ -14688,4 +14689,52 @@ s189 = {"mcard": {"q": [{"t": TK("2026-11-12 12:08"), "kind": "top12", "text": T
 H.mall_card_post(s189)
 assert po189 == [("top12", b189, "https://x/live.png"), ("top9", T189, None)] and s189["thbcard"]["m"] == {"B1": "2026-11-12"}, po189  # 카드 글 = 링크 1줄 · 글만(카드 안 뜸) = 예전 그대로 · chg 표시 = 카드 글만
 (H.th_bundle, H.http, time.time) = sv189; H.TH_CP_DAY, H.TH_DAY_CAP = None, cap189
+
+# 9-190 (11/12 13:36 진우 '김 즉석밥 참치 스팸 등 가공 식품도, 3분 카레 등 레토르트 식품도'): 테마 장바구니 카드 A 자취 식량 · B 레토르트 — 품목마다 쿠팡 검색 1번(전용 몫) → 로켓·본품·단위값 가장 낮은 1개
+#   · 칸 unit '100g당 N원'(김 10g당) · 3칸 밑 = X · 몰 하나 · 화·목·토 번갈아 · 22시 미리보기가 안 나간 밤만 22시 Threads(대가성 첫 줄 · 훅 · 상품 줄 · 본문 링크 1줄) · 텔레그램 X
+P190 = lambda *xs: {"productData": [{"productId": i, "productName": n, "productPrice": pr, "productUrl": f"https://link.coupang.com/re/AFF?pageKey={i}&vendorItemId=9{i}", "productImage": f"https://ads-partners.coupang.com/i/{i}.jpg",
+                                     "isRocket": rk, "rank": k + 1} for k, (i, n, pr, rk) in enumerate(xs)]}
+r190 = P190((1, "햇반 백미밥 210g 24개", 26000, True), (2, "오뚜기밥 210g 36개", 31000, True), (3, "로켓아님 즉석밥 200g 30개", 15000, False), (4, "즉석밥 전용 수저 세트", 3000, True))
+pk190 = H.theme_pick("즉석밥", "100g", r190, "2026-11-12 14:05")
+assert pk190["name"] == "오뚜기밥 210g 36개" and pk190["label"] == "100g당" and pk190["uv"] == int(31000 / 7560 * 100 + 0.5) == 410 and pk190["url"].startswith("https://link.coupang.com/") and pk190["chk"] == "2026-11-12 14:05"  # 로켓만 · 본품만 · 단위값 다시 계산
+assert H.theme_pick("조미김", "10g", P190((5, "광천김 도시락김 5g 36봉", 15900, True)), "c")["label"] == "10g당" and H.theme_pick("즉석밥", "100g", P190((3, "즉석밥 200g 30개", 15000, False)), "c") is None
+cwd190, d190 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d190)
+sv190 = (H.coupang, H.HAS_CP, H.mall_card, H.th_bundle, H.http, H.busy, H.th_hold, H.E.get("THREADS_TOKEN"))
+srch190 = {"즉석밥": r190, "참치캔": P190((6, "동원참치 라이트 150g 10개", 21000, True)), "스팸": P190((7, "스팸 클래식 200g 6개", 25000, True)), "조미김": P190((8, "광천김 도시락김 5g 36봉", 15900, True)), "라면": P190((9, "신라면 120g 20개", 16000, True))}
+q190, lim190 = [], [False]
+def cp190(m, path, body=None, keep=False, cand=False):
+    assert keep and cand  # 진열 후보·블로그 표와 같은 전용 몫(시간당 1)
+    if lim190[0]: raise H.CpLimit("cand")
+    q = urllib.parse.unquote(path.split("keyword=")[1].split("&")[0]); q190.append(q); return srch190[q]
+H.coupang, H.HAS_CP, H.E["THREADS_TOKEN"] = cp190, True, "tk"
+s190 = {}
+for at190 in ("2026-11-12 09:55", "2026-11-11 14:00", "2026-11-12 18:01"):
+    H.theme_prep(s190, TK(at190))
+assert not q190 and "rows" not in s190.get("theme", {})  # 테마 날(화·목·토) 10~18시만
+for at190 in ("2026-11-12 10:05", "2026-11-12 11:05", "2026-11-12 12:05", "2026-11-12 13:05", "2026-11-12 14:05", "2026-11-12 15:05"):
+    H.theme_prep(s190, TK(at190))
+th190 = s190["theme"]
+assert q190 == ["즉석밥", "참치캔", "스팸", "조미김", "라면"] and th190["k"] == "A" and sorted(th190["rows"]) == ["라면", "스팸", "조미김", "즉석밥", "참치캔"]  # 실행마다 1개 · 다 하면 끝
+assert th190["rows"]["조미김"]["label"] == "10g당" and th190["rows"]["라면"]["label"] == "1개당" and all(H.blog_unit({"price": x["price"], "total": 1, "unit_label": "1개당"}) for x in th190["rows"].values())
+lim190[0] = True; s190b = {"theme": {"n": 1}}; H.theme_prep(s190b, TK("2026-11-14 10:05")); assert s190b["theme"]["k"] == "B" and s190b["theme"]["tried"] == []  # 토요일 = B · 몫 없음 = 다음 실행
+mc190, po190 = [], []
+H.mall_card = lambda kind, title, short, items: mc190.append((kind, title, [(p["url"], p["unit"]) for p, _ in items])) or "https://hotdealpick.kr/cards/mall/x_theme.png"
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None, alt=None: po190.append((kind, text, link, image)) or {"id": f"TH{len(po190)}"}
+H.http, H.busy, H.th_hold = (lambda url, body=None, headers=None, method=None: ""), (lambda seen, cap=True: False), (lambda seen: False)
+H.theme_post(s190, TK("2026-11-12 21:20")); assert not mc190  # 21:30 전 X
+H.theme_post(s190, TK("2026-11-12 21:35"))
+assert mc190 == [("theme", "자취 식량 장바구니", [(th190["rows"][q]["url"], f"{th190['rows'][q]['label']} {th190['rows'][q]['uv']:,}원") for q in sorted(th190["rows"], key=lambda q: th190["rows"][q]["uv"])][:5])] and not po190
+H.theme_post(s190, TK("2026-11-12 22:05")); assert not po190  # 미리보기 아직(기록 없음) = 기다림
+s190["preview_20261112"] = {"t": 1, "n": 0}; H.theme_post(s190, TK("2026-11-12 22:06"))
+k190, t190, l190, im190 = po190[0]
+assert k190 == "theme" and im190 == "https://hotdealpick.kr/cards/mall/x_theme.png" and l190 is None and t190.startswith(H.DISCLOSURE + "\n\n자취방 비상식량, 한 끼에 얼마?\n🧺 자취 식량 장바구니 (11/12 확인 가격)")
+assert t190.count("http") == 1 and "최저가" not in t190 and s190["theme"]["done"] and s190["theme"]["n"] == 1 and s190["thbcard"]["m"] == {"TH1": "2026-11-12"}  # 본문 링크 1줄 · 다음 = B
+H.theme_post(s190, TK("2026-11-12 22:20")); assert len(po190) == 1  # 하루 1번
+s190c = {"theme": {"d": "2026-11-12", "k": "B", "rows": dict(list(th190["rows"].items())[:2]), "n": 1}, "preview_20261112": {"n": 0}}
+H.theme_post(s190c, TK("2026-11-12 21:35")); assert s190c["theme"]["done"] and len(mc190) == 1  # 3칸 밑 = X
+s190d = {"theme": {"d": "2026-11-12", "k": "A", "rows": dict(th190["rows"]), "n": 0, "card": None}, "preview_20261112": {"n": 5}}
+H.theme_post(s190d, TK("2026-11-12 22:06")); assert len(po190) == 1 and s190d["theme"]["done"]  # 22시 미리보기가 나간 밤 = 테마 X
+assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
+(H.coupang, H.HAS_CP, H.mall_card, H.th_bundle, H.http, H.busy, H.th_hold, tk190) = sv190; H.E.pop("THREADS_TOKEN", None) if tk190 is None else H.E.__setitem__("THREADS_TOKEN", tk190)
+os.chdir(cwd190); shutil.rmtree(d190, ignore_errors=True)
 
