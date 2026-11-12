@@ -5494,17 +5494,18 @@ CARD_BAN = (r"최저가|역대최저|lowestprice|bestprice|미백|다이어트|�
             r"|써봤|써보니|써본|써보았|써봐서|사용해봤|사용해보니|사용해본|사용해보았|먹어봤|먹어보니|먹어본|먹어보았|직접사용|직접구매|직접먹|직접써|실사용|내돈내산|체험후기|체험했|체험한|찐후기|써보고|먹어보고|사용후기|사용해보고"
             r"|정가|정상가|소비자가|기존가|원래가|할인율|할인률|[0-9]+(?:\.[0-9]+)?%|퍼센트할인|반값")  # tools/card/assets/validation.mjs FORBIDDEN 그대로(띄어쓰기 뺀 소문자에 검사) — 걸린 상품 = 카드에서 뺌(카드 전체 실패 X)
 CARD_MALLW = {"coupang": r"토스|toss|네이버|naver", "naver": r"토스|toss|쿠팡|coupang"}  # 다른 몰 이름 = validation.mjs MIXED_MALL
+CARD_PCT = r"\s*[0-9]+(?:\.[0-9]+)?\s*[%％]"  # 11/12 진우 '품목 4개인데 카드 3개 → 개수에 맞춰서': 이름 속 'N%'(나이아신아마이드 20% 등) = 카드 이름에서만 뺌(글은 원래 이름) — validation.mjs 할인율 검사에 걸려 빠지던 것
 
 
 def mall_card_json(title, items):
     """tools/card v3 카드 JSON(11/1 Cowork): items = [(posts 글, 가격 글자)] -> {mall, title(36자), checked(게시 기준 = 지금), items:[{name, price, cond, unit, img, url, checked}]} 또는 None.
     가격·조건 = 진열 확인가(now)·💰 줄 → 글 가격 · 상품 checked = 실제 확인 시각(chk_ts — 진열 chkt·chk·글 시각, 지금 복사 X) · 3~5개 · 몰 1개 · 쿠팡·네이버만(토스 = v3 검증 toss.im만 — 우리 링크 toss.shopping)
-    · validation.mjs 금지 표현·다른 몰 이름·몰 아닌 링크 상품 = 뺌 · 네이버 사진 X(규칙)."""
+    · 이름 속 'N%' = 카드 이름에서 뺌 · validation.mjs 금지 표현·다른 몰 이름·몰 아닌 링크 상품이 하나라도 있으면 = 카드 X(11/12 진우 '개수에 맞춰서' — 글 품목 수 = 카드 칸 수) · 네이버 사진 X(규칙)."""
     # clip(s, n) = n자 + '…' → v3 LIMITS(제목 36·이름 180·단위 32) 안으로 1자 덜
     its, malls, fold = [], set(), lambda x: unicodedata.normalize("NFKC", x or "").replace(" ", "").lower()
     for p, pr in items:
         mall, money = shop_of(p), (m[1] if (m := re.search(r"💰\s*([^\n]*)", p["text"])) else "")
-        src, name = p.get("now") or pr or "", short_name(title_of(p["text"]))
+        src, name = p.get("now") or pr or "", re.sub(CARD_PCT, "", short_name(title_of(p["text"]))).strip()
         n, cond = won(src), next((c for w, c in CARD_COND if w in src or w in money or w in (pr or "")), "")
         unit = p.get("unit") or (u[1].strip() if (u := re.search(r"([^\n·]*?당\s*[\d,]+원)", money)) else "")
         host = urllib.parse.urlsplit(p.get("url") or "").hostname or ""
@@ -5514,8 +5515,8 @@ def mall_card_json(title, items):
         its.append({"name": clip(name, 179), "price": f"{n:,}원", "cond": cond, "unit": clip(unit, 31), "img": "" if mall == "naver" else img_of(p) or "", "url": p["url"],
                     "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(chk_ts(p) + 9 * 3600))})
         malls.add(mall)
-    if not 3 <= len(its) <= 5 or len(malls) != 1 or not (title or "").strip() or re.search(CARD_BAN, fold(title)):
-        print("mall card X", f"{len(its)}개" + (f" · 몰 {'·'.join(sorted(malls))}" if len(malls) > 1 else ""))
+    if len(its) != len(items) or not 3 <= len(its) <= 5 or len(malls) != 1 or not (title or "").strip() or re.search(CARD_BAN, fold(title)):  # 11/12 진우: 카드 칸 수 = 글 품목 수(하나라도 빠지면 카드 X = 글만)
+        print("mall card X", f"{len(its)}개" + (f" (글 {len(items)}개)" if len(its) != len(items) else "") + (f" · 몰 {'·'.join(sorted(malls))}" if len(malls) > 1 else ""))
         return None
     return {"mall": malls.pop(), "title": clip(title.strip(), 35), "checked": max(x["checked"] for x in its), "items": its}  # 11/1 Cowork ①: 머리 = 상품 확인 중 가장 늦은 것(지금 X — 오늘 확인처럼 읽힘)
 
@@ -5525,18 +5526,18 @@ TOSS_CARD, TOSS_CARD_BAN = True, (r"쿠팡|coupang|네이버|naver|가격비교|
 
 def toss_card_json(entries, title="토스 오늘의 장바구니"):
     """토스 카드 JSON(11/8): entries = [(이름, 가격 원, 쉐어링크, 토스 원본 사진, 확인 epoch)] -> {mall: toss, title, checked, items} 또는 None.
-    사진 없음(toss_noimg·TOSS_PHOTO 꺼짐) · 토스 링크 아님 · 금지 표현·다른 몰 이름·가격 비교 상품 = 뺌 · 3~5개(넘으면 앞 5개) · 단위가 = toss_unit(우리 계산 — 못 읽으면 빈칸) · 확인 시각 = 실제 가격 받은 시각."""
+    사진 없음(toss_noimg·TOSS_PHOTO 꺼짐) · 토스 링크 아님 · 금지 표현·다른 몰 이름·가격 비교 상품이 하나라도 있거나 5개 넘음 = 카드 X(11/12 글 품목 수 = 카드 칸 수 · 이름 속 'N%' = 뺌) · 단위가 = toss_unit(우리 계산 — 못 읽으면 빈칸) · 확인 시각 = 실제 가격 받은 시각."""
     fold, its = lambda x: unicodedata.normalize("NFKC", x or "").replace(" ", "").lower(), []
     for name, price, link, img, t in entries:
+        name = re.sub(CARD_PCT, "", name or "").strip()
         host, unit = urllib.parse.urlsplit(str(link or "")).hostname or "", toss_unit(name, price) if isinstance(price, int) else ""
         if not (img and isinstance(price, int) and price > 0 and str(link).startswith("https://") and any(host == h or host.endswith("." + h) for h in TOSS_HOSTS)) \
                 or re.search(rf"{CARD_BAN}|{TOSS_CARD_BAN}", fold(f"{name}{unit}")):
             continue
         its.append({"name": clip(name, 179), "price": f"{price:,}원", "cond": "", "unit": clip(unit, 31), "img": img, "url": link, "checked": time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600))})
-    if len(its) < 3:
-        print("toss card X", f"{len(its)}개")
+    if len(its) != len(entries) or not 3 <= len(its) <= 5:  # 11/12 진우: 카드 칸 수 = 글 품목 수(빠짐·5개 넘음 = 카드 X = 사진 넘기기)
+        print("toss card X", f"{len(its)}개" + (f" (글 {len(entries)}개)" if len(its) != len(entries) else ""))
         return None
-    its = its[:5]
     return {"mall": "toss", "title": title, "checked": max(x["checked"] for x in its), "items": its}
 
 
