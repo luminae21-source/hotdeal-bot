@@ -1,9 +1,9 @@
 {
-"at": "2026-11-13 11:25",
-"posts": 5078,
-"site": 1998,
+"at": "2026-11-13 11:40",
+"posts": 5084,
+"site": 2002,
 "mall": {
-"coupang": 1311,
+"coupang": 1315,
 "toss": 628,
 "": 3,
 "naver": 56
@@ -14,8 +14,8 @@
 "sport": 19,
 "home": 84,
 "digital": 75,
-"kitchen": 137,
-"life": 276,
+"kitchen": 139,
+"life": 278,
 "coffee": 85,
 "food": 418,
 "heat": 131,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 167,
-"sitemap": 861,
+"sitemap": 862,
 "days": {
 "2026-11-05": {
 "site": 1747,
@@ -112,10 +112,10 @@
 }
 },
 "2026-11-13": {
-"site": 1998,
-"sitemap": 861,
+"site": 2002,
+"sitemap": 862,
 "mall": {
-"coupang": 1311,
+"coupang": 1315,
 "toss": 628,
 "": 3,
 "naver": 56
@@ -293,7 +293,21 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "커피",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 24 · 기존 상품 구성 0"
+"nset_n": "새 구성 26 · 기존 상품 구성 0"
 }
