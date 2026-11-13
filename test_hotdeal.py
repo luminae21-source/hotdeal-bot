@@ -14833,7 +14833,7 @@ os.makedirs("sd192/src")
 open("sd192/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
 const a = process.argv.slice(2), f = {}; for (let i = 0; i < a.length; i += 2) f[a[i].slice(2)] = a[i + 1];
 const d = JSON.parse(fs.readFileSync(f.data, 'utf8'));
-if (d.items.some(p => p.name.includes('넘침'))) { console.error('Error: 상품명이 두 줄을 넘습니다.'); process.exit(1); }
+if (d.items.some(p => p.name.includes('넘침'))) { console.error('Error: 상품명이 두 줄을 넘습니다.\\n    at wrap (layout.mjs:1:1)\\n\\nNode.js v22'); process.exit(1); }
 fs.mkdirSync(f.out, {recursive: true}); fs.writeFileSync(path.join(f.out, 'argv.json'), JSON.stringify({f, d}));
 fs.writeFileSync(path.join(f.out, path.basename(f.data, '.json') + '.png'), 'png');
 """)
@@ -14853,7 +14853,7 @@ if shutil.which("node"):
     o192 = io.StringIO()
     with contextlib.redirect_stdout(o192):
         assert H.series_card("top15", "오늘의 장바구니", [({**P192[0], "text": P192[0]["text"].replace("테스트 상품 1", "넘침 상품")}, "9,901원")] + pr192[1:3]) is None  # 서식 검증 실패 = None
-    assert "series card 렌더 X top15" in o192.getvalue() and "상품명이 두 줄을 넘습니다" in o192.getvalue() and not os.path.exists("docs/cards/mall/20261114_1207_top15.png"), o192.getvalue()
+    assert "series card 렌더 X top15" in o192.getvalue() and "['Error: 상품명이 두 줄을 넘습니다.']" in o192.getvalue()  # 로그 = 검증 문구(node 버전 줄 X) and not os.path.exists("docs/cards/mall/20261114_1207_top15.png"), o192.getvalue()
     H.th_get = lambda u: b"<html>"; assert H.series_card("top18", "오늘의 장바구니", pr192[:3]) is None; H.th_get = lambda u: png192  # 사진 아님 = None
 else:
     print("9-192 새 서식 렌더 건너뜀(node 없음)")

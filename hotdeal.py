@@ -5676,7 +5676,7 @@ def series_card(kind, title, pairs, episode="", theme="", topic=""):
         shutil.copy(f"{SERIES_DIR}/output/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
     except Exception as e:
         err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
-        print("series card 렌더 X", kind, err_brief(e), err[-1:] if err else "")
+        print("series card 렌더 X", kind, err_brief(e), ([l for l in err if l.startswith("Error")] or err)[-1:] or "")  # node 마지막 줄 = 'Node.js v22…' → 서식 검증 문구(Error: …)
         return None
     print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt))
     return f"{SITE}cards/mall/{stem}.png"
