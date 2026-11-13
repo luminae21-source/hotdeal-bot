@@ -12684,7 +12684,7 @@ pg144 = open("docs/guide/mask-pack-price/index.html").read()
 assert gu144 == [(S.BASE + "guide/mask-pack-price/", "2026-11-02"), (S.BASE + "guide/few/", "2026-11-01"), (S.BASE + "guide/", "2026-11-02")], gu144  # lastmod = 고친 날(10/31)·지금 가격이 처음 보인 날 중 늦은 것(가짜 갱신 X)
 assert pg144.index('<p class="dis">') < pg144.index('<h1 class="h">마스크팩 1장 가격 비교</h1>') < pg144.index("<h2>결론</h2>") < pg144.index("<h2>고르는 기준</h2>") < pg144.index("<h2>오늘 가격표</h2>") < pg144.index("<h2>출처</h2>")
 assert "<b>9,900원</b><br><small>11/2 9시 확인</small>" in pg144 and "1매당 495원" in pg144 and "1매당 500원" in pg144 and 'href="https://link.coupang.com/a/G1" rel="nofollow sponsored">쿠팡에서 보기' in pg144 and 'href="https://link.coupang.com/a/G2" rel="nofollow sponsored">쿠팡에서 보기' in pg144 and "/a/X" not in pg144 and "/a/B1" not in pg144 \
-    and "가격은 판매처에서 확인" in pg144 and 'href="https://naver.me/abc"' in pg144 and "오래된 확인" not in pg144 and "guide 줄 X mask-pack-price 오래된 확인 가격 확인 X" in o144.getvalue()  # 48시간 넘은 확인 = 그 줄 X
+    and "가격은 판매처에서 확인" in pg144 and 'href="https://naver.me/abc"' in pg144 and "오래된 확인" not in pg144 and "guide 줄 X mask-pack-price 오래된 확인 가격 확인 오래됨" in o144.getvalue()  # 48시간 넘은 확인 = 그 줄 X
 assert "최근 7일 가격 변화: 메디힐 마스크팩 ▼18%" in pg144 and "마지막 확인 11/2 9시" in pg144 and f'href="{S.c_url("beauty")}"' in pg144 and (lambda b: "토스" not in b and "<img" not in b)(pg144[pg144.index('<h1 class="h">'):pg144.index("관련 칸 더 보기 →</a>")])  # 가이드 본문 = 토스 0 · 사진 0(사이트 틀 검색·로고 X)
 ld144 = json.loads(re.search(r'<script type="application/ld\+json">(.+?)</script>', pg144)[1])
 assert [x["@type"] for x in ld144["@graph"]] == ["Article", "ItemList"] and ld144["@graph"][0]["dateModified"] == "2026-11-02" and "aggregateRating" not in pg144 and "reviewCount" not in pg144
@@ -14920,3 +14920,46 @@ assert f193 and f193[0]["url"] == "https://link.coupang.com/a/f1"  # 7일 안 Th
 f193 = H.focus_pick({"thh": {"t": 1, "h": [[TK("2026-11-05 10:00"), H.dup_h(sorted({"https://link.coupang.com/a/f2"}))]]}}, P193, time.time())
 assert f193 and f193[0]["url"] == "https://link.coupang.com/a/f2"  # 7일 지남 = 다시 후보
 (H.http, ak193, time.time) = sv193; H.E.pop("ANTHROPIC_API_KEY", None) if ak193 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak193)
+
+# 9-194 (11/13 Cowork '가이드 가격 줄 빠짐 — 상품은 그대로, 가격 다시 보기'): 06~10시 가이드마다 하루 1번 guides.json q로 쿠팡 검색 1번 → 결과에 픽 pid = 같은 옵션 가격 기록(그날 가격표 줄 나옴)
+#   · pid 같고 item 다름 = 'guide item 다름 slug pid 옛→새' + 이름 수량·용량 같을 때만 가격 · 빌드 'guide 줄 X' 이유별(오래됨·기록 없음·링크 전) 합계
+cwd194, sv194 = os.getcwd(), (H.coupang, time.time, S.SITE_SUB, H.POSTS, H.HAS_CP); os.chdir(tempfile.mkdtemp())
+G194 = {"slug": "air-test", "title": "공기청정기 고르는 법", "desc": "d", "q": "공기청정기", "summary": "s", "updated": "2026-11-10", "criteria": [{"name": "면적", "text": "t"}],
+        "picks": [{"mall": "coupang", "pid": "111", "item": "222", "name": "가 공기청정기 A1", "unit": "1대"}, {"mall": "coupang", "pid": "333", "item": "444", "name": "나 공기청정기 필터 2개", "unit": "2개"},
+                  {"mall": "coupang", "pid": "555", "item": "666", "name": "다 공기청정기 필터 2개", "unit": "2개"}, {"mall": "coupang", "pid": "888", "item": "999", "name": "라 공기청정기", "unit": "1대"}]}
+json.dump([G194, {**G194, "slug": "no-q", "q": ""}], open(S.GUIDES, "w"), ensure_ascii=False)
+z194 = lambda pid, item, name, pr: {"productId": int(pid), "productName": name, "productPrice": pr, "productUrl": f"https://link.coupang.com/re/AFFSDP?lptag=x&pageKey={pid}&itemId={item}"}
+r194, c194 = [z194("111", "222", "가 공기청정기 A1", 159000), z194("333", "999", "나 공기청정기 필터, 2개", 31000), z194("555", "777", "다 공기청정기 필터, 3개", 45000), z194("123", "1", "다른 상품", 1000)], []
+H.coupang = lambda m, path, *a, **k: c194.append(urllib.parse.unquote(path)) or {"productData": r194}
+H.HAS_CP, H.POSTS = True, "posts194.json"; json.dump([], open("posts194.json", "w"))
+s194 = {}
+time.time = lambda: TK("2026-11-14 05:55"); H.guide_price(s194); assert not c194  # 06시 전 X
+time.time = lambda: TK("2026-11-14 07:10")
+with contextlib.redirect_stdout(io.StringIO()) as o194:
+    H.guide_price(s194)
+assert c194 == ["/products/search?keyword=공기청정기&limit=10"] and s194["gq"]["s"] == ["air-test"], c194  # 가이드마다 1번 · q 없는 가이드 = 검색 X
+m194 = s194["cpq"]["m"]
+assert m194 == {"https://www.coupang.com/vp/products/111?itemId=222": [159000, "2026-11-14 07:10", "222"], "https://www.coupang.com/vp/products/333?itemId=444": [31000, "2026-11-14 07:10", "444"]}, m194
+assert "guide item 다름 air-test 333 444→999 · 이름 구성 같음 → 가격 씀" in o194.getvalue() and "guide item 다름 air-test 555 666→777 · 구성 다름 → 가격 X" in o194.getvalue()  # 옵션 다름(2개 vs 3개) = pid 값 그대로 X
+assert "guide price air-test '공기청정기' 결과 4개 · 픽 4개 중 2개 가격" in o194.getvalue(), o194.getvalue()
+H.guide_price(s194); time.time = lambda: TK("2026-11-14 10:00"); s194["gq"]["s"] = []; H.guide_price(s194); assert len(c194) == 1  # 하루 1번 · 10시 뒤 X
+def lim194(*a, **k):
+    raise H.CpLimit("x")
+H.coupang, time.time = lim194, (lambda: TK("2026-11-15 06:20"))
+with contextlib.redirect_stdout(io.StringIO()) as o194:
+    H.guide_price(s194)
+assert s194["gq"] == {"d": "2026-11-15", "s": [], "t": TK("2026-11-15 06:20")} and "guide price 상한 — 다음 실행에" in o194.getvalue()  # 상한 = 그 가이드 다음 실행에 다시
+# 그날 가격표 줄: price_track → price_hist → /guide/ 쪽(item 다른 옵션 = 가이드 item 키 · 못 찾음 = '가격 기록 없음')
+time.time = lambda: TK("2026-11-14 07:10")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.price_track(s194)
+ph194 = json.load(open(S.PRICE_HIST))
+assert ph194["111:222"][-1][:2] == ["26111407", 159000] and ph194["333:444"][-1][:2] == ["26111407", 31000] and "555:666" not in ph194, ph194
+json.dump({S.guide_url(k): f"https://link.coupang.com/a/g{i}" for i, k in enumerate(G194["picks"])}, open(S.CP_LINKS, "w")); S.SITE_SUB = {}
+with contextlib.redirect_stdout(io.StringIO()) as o194:
+    S.guide_pages("docs", "2026-11-14")
+pg194 = open("docs/guide/air-test/index.html", encoding="utf-8").read()
+assert "<b>159,000원</b><br><small>11/14 7시 확인</small>" in pg194 and "<b>31,000원</b><br><small>11/14 7시 확인</small>" in pg194  # 검색 결과에 픽 pid = 그날 그 줄
+assert "guide 줄 X air-test 다 공기청정기 필터 2개 가격 기록 없음" in o194.getvalue() and "guide 줄 X 합계 4 · 가격 확인 오래됨 0 · 가격 기록 없음 4 · 파트너스 링크 전 0" in o194.getvalue(), o194.getvalue()  # no-q 가이드 2줄 포함
+assert 'guide_price(seen)' in inspect.getsource(H.cp_price)  # cp_price 앞(같은 검색 몫)
+(H.coupang, time.time, S.SITE_SUB, H.POSTS, H.HAS_CP) = sv194; os.chdir(cwd194)

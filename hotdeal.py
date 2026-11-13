@@ -3154,6 +3154,50 @@ def cp_fill_due(posts, names, ev, m, today, d3, stale):
             and p.get("chkt", "") < stale and u not in ch3 and not m.get(u, [0, ""])[1].startswith(today) and (ev[u].get("item") or re.search(CP_QTY, names[u], re.I))}
 
 
+GUIDE_Q_AT = ("06:00", "10:00")  # 11/13 Cowork '가이드 가격 줄 빠짐 — 상품은 그대로, 가격 다시 보기': 하루 1번 10시 오늘의 픽 전(검색 상한 그대로 — 12개면 06~08시대에 끝남)
+
+
+def guide_price(seen):
+    """가이드 픽 가격 다시 보기(11/13): GUIDE_Q_AT 안 가이드마다 하루 1번 guides.json q(가이드 주제 검색어 — 없으면 그 가이드 X)로 쿠팡 검색 1번(시간 6·실행 2 상한 그대로 — 넘으면 다음 실행)
+    -> 결과에 픽 pid가 있으면 같은 옵션(item 같음 · 픽 item 없음 = 이름 수량·용량 cp_same) 가격 = seen cpq m[상품 주소](price_track → price_hist → 가이드 가격표)
+    · pid 같고 item 다름 = 로그 'guide item 다름 slug pid 옛→새'(Cowork가 guides.json item을 고침) + 옵션 가격이 다를 수 있어 이름 수량·용량이 같을 때만(cp_same) 그 값(pid 값 그대로 X)."""
+    kst = time.gmtime(time.time() + 9 * 3600)
+    today, at = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d %H:%M", kst)
+    if not HAS_CP or not GUIDE_Q_AT[0] <= at[11:] < GUIDE_Q_AT[1]:
+        return
+    gq, q = seen.setdefault("gq", {"d": today, "s": []}), seen.setdefault("cpq", {"m": {}})
+    if gq.get("d") != today:
+        gq.update(d=today, s=[])
+    gq["t"] = time.time()
+    for g in guides_load():
+        ks, kw = [k for k in g["picks"] if k["mall"] == "coupang"], str(g.get("q") or "").strip()
+        if not ks or not kw or g["slug"] in gq["s"]:
+            continue
+        try:
+            r = coupang("GET", f"/products/search?keyword={urllib.parse.quote(kw)}&limit=10")
+        except CpLimit:
+            return print("guide price 상한 — 다음 실행에")
+        except Exception as e:  # 오류 = 오늘 그 가이드 X(줄 막지 않게)
+            r = None
+            print("guide price", g["slug"], err_brief(e))
+        gq["s"].append(g["slug"])
+        ds, n = [z for z in (r if isinstance(r, dict) else {}).get("productData") or [] if isinstance(z, dict) and cp_won(z)], 0
+        for k in ks:
+            same = [z for z in ds if str(z.get("productId")) == k["pid"]]
+            z = next((z for z in same if (cp_qs(z, "itemId") == k["item"] if k["item"] else cp_same(k["name"], z.get("productName")))), None)
+            if not z and k["item"] and same:  # 옵션 번호만 다름(11/13 전기포트 5개 다 — 쿠팡 API itemId ≠ 사이트 itemId)
+                ok = next((x for x in same if cp_same(k["name"], x.get("productName"))), None)
+                print("guide item 다름", g["slug"], k["pid"], f"{k['item']}→{cp_qs((ok or same[0]), 'itemId')}", "· 이름 구성 같음 → 가격 씀" if ok else "· 구성 다름 → 가격 X")
+                z = ok
+            if z:
+                u = guide_url(k)
+                q.setdefault("m", {})[u] = [cp_won(z), at, k["item"]]  # 옵션 = 가이드 item(price_track이 그 키로)
+                q.setdefault("ms", {}).pop(u, None)
+                n += 1
+        RUN.setdefault("cpo", collections.Counter())["n"] += n
+        print(f"guide price {g['slug']} '{kw}' 결과 {len(ds)}개 · 픽 {len(ks)}개 중 {n}개 가격")
+
+
 def cp_price(seen):
     """② 진우 쿠팡 상품 지금가(10/23 — Cowork 9:10 손 확인 대신): 진우 글(url)마다 하루 1번(CP_CHK_HOUR~, 실행마다 1개, 가장 오래전에 확인한 것 먼저) 글 상품명으로 검색 API
     -> 결과(최대 10개) 중 events pid와 같은 상품(productId 또는 파트너스 링크 pageKey)이고 같은 옵션인 것만(events item = 옵션 itemId가 있으면 그것, 없으면 이름 수량·용량 cp_same)
@@ -3165,6 +3209,10 @@ def cp_price(seen):
     kst = time.gmtime(time.time() + 9 * 3600)
     if not HAS_CP or kst.tm_hour < CP_CHK_HOUR:
         return
+    try:  # 11/13 가이드 주제 검색(06~10시 하루 1번) 먼저 — 같은 검색 몫(남으면 아래 글 확인)
+        guide_price(seen)
+    except Exception as e:
+        print("guide price 오류", err_brief(e))
     today, q, rush = time.strftime("%Y-%m-%d", kst), seen.setdefault("cpq", {"m": {}}), cp_rush()
     q["t"], ev = time.time(), ev_info()
     rr = seen.get("cpdl", {}).get("rr") or {}

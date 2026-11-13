@@ -3187,7 +3187,7 @@ def guide_pages(out, today):
     """/guide/<slug>/ + /guide/ 목록(11/2 Cowork — 오래 남고 계속 새로워지는 고유 쪽): 결론 → 고르는 기준 표 → 오늘 가격표(price_hist 확인가·확인 시각·단위당·판매처 링크 그대로 —
     쿠팡 = 파트너스로 바뀐 것만, 48시간 넘은 확인·못 찾음 = 그 줄 X + 로그 · 가격 줄 2개 밑 = '가격 다시 확인 중') → 7일 변화 한 줄 → 출처 → 관련 칸·블로그.
     JSON-LD = Article + ItemList(별점·리뷰 X) · 사진 X · lastmod = 가이드 고친 날·가격 바뀐 날 중 늦은 것(안 바뀌면 그대로) -> 사이트맵 [(주소, lastmod)]."""
-    gs, h, now, urls = guides_load(True), ph_load(), time.time(), []
+    gs, h, now, urls, gx = guides_load(True), ph_load(), time.time(), [], collections.Counter()
     try:  # {쿠팡 상품 주소: 봇 파트너스 링크} — SITE_SUB 키는 상품 주소가 아니라 봇 링크(11/2 Cowork: 가격 줄 0 버그)
         cl = json.load(open(CP_LINKS)) if os.path.exists(CP_LINKS) else {}
     except ValueError:
@@ -3202,7 +3202,9 @@ def guide_pages(out, today):
                 continue
             st, href = ph_stat(h.get(ph_key({"pid": k["pid"], "item": k["item"]} if k["item"] else {"pid": k["pid"]}, u)), now), SITE_SUB.get(cl.get(u), cl.get(u))
             if not href or not aff(href) or not st or now - when(st["last"]) > GUIDE_STALE_H * 3600:
-                print("guide 줄 X", g["slug"], k["name"][:20], "파트너스 링크 전" if not href or not aff(href) else "가격 확인 X")
+                why = "파트너스 링크 전" if not href or not aff(href) else "가격 기록 없음" if not st else "가격 확인 오래됨"  # 11/13 Cowork: 점검 22:30 이유별 수
+                print("guide 줄 X", g["slug"], k["name"][:20], why)
+                gx[why] += 1
                 continue
             s, i = st["s"], len(st["s"]) - 1
             while i and s[i - 1][1] == st["now"]:  # 지금 가격이 처음 보인 날 = lastmod 후보(가짜 갱신 X)
@@ -3232,6 +3234,8 @@ def guide_pages(out, today):
                                                                       {"@type": "ItemList", "itemListElement": [{"@type": "ListItem", "position": n, "name": k["name"]} for n, (k, *_) in enumerate(rows, 1)]}]}, ensure_ascii=False)
         write(out, f"guide/{g['slug']}/", page(f"{g['title']} | {TITLE}", body, g.get("desc") or g["summary"], url, head=f'<script type="application/ld+json">{ld}</script>'))
         urls.append((url, mod))
+    if gs:  # 11/13 Cowork: 점검 22:30 = 이유별 'guide 줄 X' 수(오래됨·기록 없음·링크 전)
+        print("guide 줄 X 합계", sum(gx.values()), "·", " · ".join(f"{k} {gx[k]}" for k in ("가격 확인 오래됨", "가격 기록 없음", "파트너스 링크 전")))
     for d in os.listdir(f"{out}/guide") if os.path.isdir(f"{out}/guide") else ():  # 가이드에서 빠진 slug = 그 쪽 지움
         if os.path.isdir(f"{out}/guide/{d}") and d not in {g["slug"] for g in gs}:
             shutil.rmtree(f"{out}/guide/{d}")
