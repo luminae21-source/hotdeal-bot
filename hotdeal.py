@@ -5708,14 +5708,16 @@ def focus_pick(seen, posts, now):
     ok = lambda p: shop_of(p) == "coupang" and aff_note(p.get("url") or "") == DISCLOSURE and img_of(p) and p["url"] not in used and p.get("st") not in ("gone", "out") \
         and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not p["text"].startswith("📋") and not name_block(short_name(title_of(p["text"])), "focus")
     ago = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - h * 3600))
-    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i].get("mid") and posts[i]["t"] >= ago(6) and ok(posts[i])]
+    hs = {h for t, h in seen.get("thh", {}).get("h", []) if now - t < DUP_DAYS * 86400}  # 11/13 20:05 칸 DupHold: 7일 안 Threads에 같은 링크 글(개별·꾸준템 등) = 후보 X(올릴 때 dup_guard에 막혀 칸을 잃음)
+    new = lambda i: not (us := th_urls(th_url(posts[i], i))) or dup_h(sorted(us)) not in hs
+    own = [i for i in range(len(posts) - 1, -1, -1) if posts[i].get("own") and posts[i].get("mid") and posts[i]["t"] >= ago(6) and ok(posts[i]) and new(i)]
     if own:
         return posts[own[0]], own[0], None
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
     for i, p, sh, base, nw, pct, rec, chk in drops(posts, shelf_items(posts, days), now):
-        if ok(p):
+        if ok(p) and new(i):
             return p, i, (base, nw, pct, rec)
-    un = [i for i in range(len(posts)) if posts[i].get("unit") and posts[i]["t"] >= ago(72) and ok(posts[i]) and won(re.sub(r"^\S*당\s*", "", posts[i]["unit"]))]
+    un = [i for i in range(len(posts)) if posts[i].get("unit") and posts[i]["t"] >= ago(72) and ok(posts[i]) and new(i) and won(re.sub(r"^\S*당\s*", "", posts[i]["unit"]))]
     i = min(un, key=lambda i: won(re.sub(r"^\S*당\s*", "", posts[i]["unit"])), default=None)
     return (posts[i], i, None) if i is not None else None
 
@@ -7182,6 +7184,13 @@ VOICE_STYLE = {  # (10/21 A 반말·B 음슴체 -> 10/23 TONES 4가지로, 인�
     "B": "말투 = 음슴체(핫딜 커뮤니티 글처럼 ~함·~음·~임 또는 명사로 끝냄). 말투 예시일 뿐 내용·숫자는 재료에서: 로켓 핫팩 100g 개당 가격 비교함 / 코멧 30개 8,860원 → 개당 295원으로 젤 쌈 / 150개짜리는 개당 269원 / 리뷰 1,400개 넘음"}
 
 
+def strict(s):
+    """구조화 출력 스키마 = object마다 additionalProperties false(11/13 API 400 'For object type, additionalProperties must be explicitly set to false' — 묶음 한 줄 c 칸)."""
+    if isinstance(s, list):
+        return [strict(x) for x in s]
+    return {**{k: strict(v) for k, v in s.items()}, **({"additionalProperties": False} if s.get("type") == "object" else {})} if isinstance(s, dict) else s
+
+
 def ai_json(prompt, props, img=None):
     """Claude 답을 JSON으로(구조화 출력 — props = 칸 이름: JSON 스키마, 전부 필수). 10/22 08:00 강제 tool_choice가 이 모델에서 400 -> 이 방식.
     effort low = 짧은 글이라 빨리(http 30초 안). 다 못 끝냄·거절 = 실패(부른 곳이 지금 틀로). img = JPEG 경로(사진 보고 답 — BB 동물 사진 확인, 계절 줄 X)."""
@@ -7189,7 +7198,7 @@ def ai_json(prompt, props, img=None):
         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(open(img, "rb").read()).decode()}}, {"type": "text", "text": prompt}]
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 4000, "output_config": {"effort": "low", "format": {"type": "json_schema", "schema": {
-            "type": "object", "required": list(props), "additionalProperties": False, "properties": props}}},
+            "type": "object", "required": list(props), "additionalProperties": False, "properties": strict(props)}}},
         "messages": [{"role": "user", "content": content}],
     }, {"x-api-key": E["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}))
     if r.get("stop_reason") != "end_turn":

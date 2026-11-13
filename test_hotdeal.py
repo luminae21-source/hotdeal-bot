@@ -14899,3 +14899,23 @@ assert not y192 or "      - uses: actions/setup-node@v5" in y192 and "          
 (H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time) = sv192
 H.E.pop("THREADS_TOKEN", None) if tk192 is None else H.E.__setitem__("THREADS_TOKEN", tk192)
 os.chdir(cwd192); shutil.rmtree(d192, ignore_errors=True)
+
+# 9-193 (11/13 22:30 점검): ① Claude 구조화 출력 = 안쪽 object에도 additionalProperties false(API 400 — 묶음 한 줄 c 칸이 늘 기본 말로) ② 집중 소개 후보 = 7일 안 Threads에 같은 링크 글(thh) X(20:05 칸 DupHold로 잃음)
+sv193 = (H.http, H.E.get("ANTHROPIC_API_KEY"), time.time)
+b193 = []
+H.http = lambda url, body=None, headers=None, **k: b193.append(body) or json.dumps({"stop_reason": "end_turn", "content": [{"type": "text", "text": '{"hook": "h", "c": []}'}]}).encode()
+H.E["ANTHROPIC_API_KEY"] = "k"
+assert H.ai_json("x", {"hook": {"type": "string"}, "c": {"type": "array", "items": {"type": "object", "properties": {"n": {"type": "integer"}, "type": {"type": "string"}}}}}) == {"hook": "h", "c": []}
+sc193 = b193[0]["output_config"]["format"]["schema"]
+assert sc193["additionalProperties"] is False and sc193["properties"]["c"]["items"]["additionalProperties"] is False and "additionalProperties" not in sc193["properties"]["hook"]  # 안쪽 object까지 · 글자 칸 X
+assert sc193["properties"]["c"]["items"]["properties"]["type"] == {"type": "string"}  # 'type'이라는 칸 이름 = 그대로
+time.time = lambda: TK("2026-11-13 19:40")
+P193 = [{"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 집중 후보 {k} 3kg (9,90{k}원)\n\n좋음", "url": f"https://link.coupang.com/a/f{k}", "img": f"https://img.coupang.com/f{k}.jpg", "now": f"9,90{k}원",
+         "chkt": "2026-11-13 19:00", "t": f"2026-11-13 1{7 + k}:00", "mid": k, "own": 1} for k in (1, 2)]
+f193 = H.focus_pick({}, P193, time.time())
+assert f193 and f193[0]["url"] == "https://link.coupang.com/a/f2"  # 최근 진우 예약 글부터
+f193 = H.focus_pick({"thh": {"t": 1, "h": [[TK("2026-11-12 10:00"), H.dup_h(sorted({"https://link.coupang.com/a/f2"}))]]}}, P193, time.time())
+assert f193 and f193[0]["url"] == "https://link.coupang.com/a/f1"  # 7일 안 Threads에 같은 링크 = 건너뜀
+f193 = H.focus_pick({"thh": {"t": 1, "h": [[TK("2026-11-05 10:00"), H.dup_h(sorted({"https://link.coupang.com/a/f2"}))]]}}, P193, time.time())
+assert f193 and f193[0]["url"] == "https://link.coupang.com/a/f2"  # 7일 지남 = 다시 후보
+(H.http, ak193, time.time) = sv193; H.E.pop("ANTHROPIC_API_KEY", None) if ak193 is None else H.E.__setitem__("ANTHROPIC_API_KEY", ak193)
