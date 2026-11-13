@@ -36,17 +36,18 @@ cover += photo(its[0].img, 620, 676, 366, 366) + t(64, 1148, S.coverNote[0], 40,
 
 let chart = base(2, `${S.label} 가격 비교`) + kicker(`PRICE CHECK  /  ${S.label} 기준`);
 chart += t(64, 300, '같은 기준으로 놓고,', 64, 700) + t(64, 379, '가격만 비교했어요.', 64, 700, P.teal) + t(64, 438, S.chartNote, 32, 500, P.ink2);
-const x0 = 118, plotW = 898, rowH = its.length <= 4 ? 150 : Math.floor(600 / its.length), sub = rowH >= 96, big = rowH >= 140, startY = 503;
+const x0 = 118, plotW = 898, rowH = its.length <= 4 ? 150 : Math.floor(680 / its.length), sub = rowH >= 105, big = rowH >= 140, axis = its.length <= 4, startY = 503;  // 5개↑ = 눈금 빼고 그 자리까지 줄 간격으로
 its.forEach((p, i) => {
   const y = startY + i * rowH, col = i === 0 ? P.red : i < 3 ? P.teal : P.grey;
   const by = y + (big ? 58 : sub ? 46 : 18);  // 한 상품 = 이름 → 구성(이름 바로 밑) → 막대
+  if (i > 0 && !big) chart += line(64, y - 26 - Math.round((rowH - (sub ? 90 : 60)) / 2), 1016, y - 26 - Math.round((rowH - (sub ? 90 : 60)) / 2));  // 상품 사이 구분선
   chart += t(64, y, String(i + 1).padStart(2, '0'), 26, 600, P.ink2) + t(x0, y, cut(p.name, big ? 18 : 20), big ? 37 : 32, 600) + t(1016, y, p.unit, big ? 48 : 40, 800, i === 0 ? P.red : P.teal, 'end');
   if (sub) chart += t(x0, y + (big ? 42 : 34), p.sub, big ? 30 : 26, 500, P.ink2);
   chart += r(x0, by, plotW, big ? 22 : 18, P.track, 7) + r(x0, by, Math.max(4, p.uv / S.axis.max * plotW), big ? 22 : 18, col, 7);
 });
 const ay = startY + its.length * rowH + 10;
-chart += line(x0, ay, 1016, ay);
-S.axis.ticks.forEach((tick, k) => { const x = x0 + tick / S.axis.max * plotW; chart += line(x, ay, x, ay + 8, P.muted) + t(x, ay + 40, S.axis.labels[k], 27, 500, P.ink2, k === 0 ? 'start' : k === S.axis.ticks.length - 1 ? 'end' : 'middle'); });
+if (axis) chart += line(x0, ay, 1016, ay);
+if (axis) S.axis.ticks.forEach((tick, k) => { const x = x0 + tick / S.axis.max * plotW; chart += line(x, ay, x, ay + 8, P.muted) + t(x, ay + 40, S.axis.labels[k], 27, 500, P.ink2, k === 0 ? 'start' : k === S.axis.ticks.length - 1 ? 'end' : 'middle'); });
 chart += t(64, 1214, S.formula, 28, 500, P.ink2) + footer();
 
 let table = base(3, `${S.query} 판매가 표`) + kicker('PRICE LIST  /  표시 판매가 함께 보기');
