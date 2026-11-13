@@ -12575,7 +12575,7 @@ assert tb139 == [("top12", None, "생필품 쟁여두기")]  # 45분 넘게 안 
 tb139.clear(); live139.update(ok=True, rej=True); s139 = q139("2026-11-01 12:05"); time.time = lambda: TK("2026-11-01 12:20")
 with contextlib.redirect_stdout(io.StringIO()): H.mall_card_post(s139)
 assert tb139 == [("top12", None, "생필품 쟁여두기")]  # 사진 거절 = 글만 1번
-st139 = inspect.getsource(H.top_deals); assert "if img := mall_card(f\"top{hrs[-1]}\"" in st139 and "pick = [(p, bundle_pr(p, pr), mk, s)" in st139 and "mall_card_post, top_deals" in inspect.getsource(H.main)
+st139 = inspect.getsource(H.top_deals); assert "if img := img or mall_card(f\"top{hrs[-1]}\"" in st139 and "pick = [(p, bundle_pr(p, pr), mk, s)" in st139 and "mall_card_post, top_deals" in inspect.getsource(H.main)
 RD139 = os.path.dirname(os.path.abspath(H.__file__))
 assert json.load(open(os.path.join(RD139, "tools/card/package.json")))["devDependencies"] == {"@playwright/test": "1.64.1"} and "chromium.launch()" in open(os.path.join(RD139, "tools/card/scripts/render.mjs")).read() \
     and "이 포스팅은 쿠팡 파트너스 활동의 일환으로" in open(os.path.join(RD139, "tools/card/assets/validation.mjs")).read() and os.path.getsize(os.path.join(RD139, "tools/card/assets/mascots-anime-v2.png")) > 1_000_000  # v3 파일 그대로
@@ -14817,7 +14817,8 @@ os.chdir(cwd191); shutil.rmtree(d191, ignore_errors=True)
 # 9-192 (11/13 진우 '① + ② 반반'): 새 카드 서식(hotdealpick-cards hotdealpick-series-20261113 — sharp만) · ① 19:50 꾸준템 목록 = '꾸준템 시리즈' 카드(글 상품과 같은 수·순서 · 회차 01부터 · 주제 4개 돌림)
 #   ② 쿠팡 묶음 12·15·18·01시 = 짝수 날 12·18시 · 홀수 날 15·01시만 새 '오늘의 장바구니'(나머지 = v3) · 검증·렌더 실패 = 지금처럼(묶음 v3 · 꾸준템 글만) · metrics card 'v3'·'series'
 cwd192, d192 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d192)
-sv192 = (H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time)
+sv192 = (H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time, H.TH_CP_DAY)
+H.TH_CP_DAY = 3  # 머리 = None(옛 개별 글) · 묶음 카드 글 = bcard_text(링크 1줄)
 tk192 = H.E.get("THREADS_TOKEN"); H.E["THREADS_TOKEN"] = "tk"
 k192 = lambda d, h=12: time.gmtime(TK(f"2026-11-{d} {h:02d}:07") + 9 * 3600)
 assert [H.series_ab(k192(14), h) for h in (12, 15, 18, 1)] == [True, False, True, False] and [H.series_ab(k192(13), h) for h in (12, 15, 18, 1)] == [False, True, False, True]  # 짝수 날 12·18 · 홀수 날 15·01
@@ -14896,7 +14897,7 @@ assert s192["thcardk"]["m"] == {"T1": ["series", "2026-11-18"], "T2": ["v3", "20
 assert '**({"card": seen["thcardk"]["m"][x["id"]][0]} if x["id"] in seen.get("thcardk", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y192 = open(os.path.join(cwd192, ".github/workflows/hotdeal.yml"), encoding="utf-8").read() if os.path.exists(os.path.join(cwd192, ".github/workflows/hotdeal.yml")) else ""
 assert not y192 or "      - uses: actions/setup-node@v5" in y192 and "          node-version: 22\n" in y192 and y192.index("actions/setup-node@v5") < y192.index("python hotdeal.py")  # 새 서식 engines node>=22
-(H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time) = sv192
+(H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time, H.TH_CP_DAY) = sv192
 H.E.pop("THREADS_TOKEN", None) if tk192 is None else H.E.__setitem__("THREADS_TOKEN", tk192)
 os.chdir(cwd192); shutil.rmtree(d192, ignore_errors=True)
 
