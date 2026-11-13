@@ -2,11 +2,6 @@
 "date": "2026-11-13",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-12/",
-"kind": "today",
-"added": "2026-11-12"
-},
-{
 "url": "https://hotdealpick.kr/c/t/t476d34.html",
 "kind": "topic",
 "added": "2026-11-12"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/p/3949.html",
 "kind": "deal",
 "added": "2026-11-08"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-13/",
+"kind": "today",
+"added": "2026-11-13"
 }
 ],
 "q": [
@@ -902,6 +902,7 @@
 "https://hotdealpick.kr/guide/electric-kettle/": "2026-11-13",
 "https://hotdealpick.kr/p/3169.html": "2026-11-13",
 "https://hotdealpick.kr/p/3241.html": "2026-11-13",
-"https://hotdealpick.kr/p/3949.html": "2026-11-13"
+"https://hotdealpick.kr/p/3949.html": "2026-11-13",
+"https://hotdealpick.kr/today/2026-11-13/": "2026-11-13"
 }
 }

@@ -1,56 +1,56 @@
 {
  "google": {
-  "at": "2026-11-13 09:03",
+  "at": "2026-11-13 10:00",
   "items": [
    {
-    "t": "정명훈",
+    "t": "m365",
+    "n": "200+",
+    "news": "Microsoft Starts Limiting Copilot Chat Usage For Users…"
+   },
+   {
+    "t": "양승조",
+    "n": "100+",
+    "news": "한국수자원공사 신임 사장에 양승조 전 충남지사"
+   },
+   {
+    "t": "김영훈",
+    "n": "200+",
+    "news": "김영훈 고용노동부 장관, 중대재해 취약 현장 불시 점검"
+   },
+   {
+    "t": "헤그세스",
+    "n": "100+",
+    "news": "헤그세스, 자기 꾸짖은 병사에 훈장 수여… \"잘했다, 상병\""
+   },
+   {
+    "t": "맨체스터 유나이티드 fc",
     "n": "1000+",
+    "news": "맨유 새 감독에 포체티노 유력"
+   },
+   {
+    "t": "두산에너빌리티",
+    "n": "2000+",
+    "news": "[장중수급포착] 두산에너빌리티, 외국인/기관 동시 순매수… 주가 +6.00%"
+   },
+   {
+    "t": "정명훈",
+    "n": "2000+",
     "news": "“정명훈 공연만 날린 게 아니다” 부산이 100억과 바꾼 것"
    },
    {
     "t": "england national football team vs croatia national football team standings",
-    "n": "100+",
-    "news": "Kane Scores Winner in Record-Breaking England…"
+    "n": "500+",
+    "news": "England 2-1 Croatia: Record-breaker Kane scores winner as…"
    },
    {
     "t": "czech republic national football team vs spain national football team standings",
     "n": "500+",
-    "news": "Czech Republic vs Spain: UEFA Nations League stats &…"
+    "news": "Czech Republic 0-2 Spain: Comfortable win extends unbeaten…"
    },
    {
-    "t": "이상순",
-    "n": "200+",
-    "news": "'이효리♥' 이상순 건강 어쩌나…\"서 있는 것도 힘들어\" - 머니투데이"
-   },
-   {
-    "t": "이승엽",
-    "n": "2000+",
-    "news": "삼성물산 패션, 삼성 한국시리즈 우승 기념행사…최대 21% 할인"
-   },
-   {
-    "t": "영화",
-    "n": "200+",
-    "news": "[카드뉴스] 휴대폰 속 판도라의 상자?... 영화 ‘완벽한 타인’"
-   },
-   {
-    "t": "스페인",
+    "t": "미세먼지",
     "n": "100+",
-    "news": "“월급 99%가 월세” 분노한 스페인 노동자 400만명 총파업"
-   },
-   {
-    "t": "s&p 500",
-    "n": "500+",
-    "news": "U.S. stocks fall as Nvidia’s Huang resigns and oil prices…"
-   },
-   {
-    "t": "skhy",
-    "n": "500+",
-    "news": "SK Hynix Options Spot-On: On November 11th, 111.36K…"
-   },
-   {
-    "t": "ionq",
-    "n": "200+",
-    "news": "IonQ Beat and Raised. Can the Quantum Stock Buck the Tech…"
+    "news": "올가을 첫 스모그 유입...수능 앞두고 기온 '뚝'"
    }
   ]
  },

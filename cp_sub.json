@@ -1415,7 +1415,8 @@
  },
  "https://www.coupang.com/vp/products/7672274450?itemId=20470197606": {
   "b": "https://link.coupang.com/a/h8GF9ZCdky",
-  "site": "https://link.coupang.com/a/igeROAmKsu"
+  "site": "https://link.coupang.com/a/igeROAmKsu",
+  "telegram": "https://link.coupang.com/a/iDkELBzpXE"
  },
  "https://www.coupang.com/vp/products/8625241493?itemId=25025323588": {
   "b": "https://link.coupang.com/a/h8IGX9AIxg",
@@ -5948,5 +5949,21 @@
  "https://www.coupang.com/vp/products/7869554357?itemId=24067286130&vendorItemId=86493937835": {
   "b": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7869554357&itemId=24067286130&vendorItemId=86493937835&traceid=V0-143-17c2a755e3c9640f&pt=0&slot=4",
   "telegram": "https://link.coupang.com/a/iC8tJMDytU"
+ },
+ "https://www.coupang.com/vp/products/9773192218?itemId=29254954619": {
+  "b": "https://link.coupang.com/a/iDkCRID3Iq",
+  "site": "https://link.coupang.com/a/iDkGhGs8Jg"
+ },
+ "https://www.coupang.com/vp/products/9039289343?itemId=26520266286": {
+  "b": "https://link.coupang.com/a/iDkCRDga84",
+  "site": "https://link.coupang.com/a/iDkGhMZpOS"
+ },
+ "https://www.coupang.com/vp/products/8941286910?itemId=26147595220": {
+  "b": "https://link.coupang.com/a/iDkCRxNs9A",
+  "site": "https://link.coupang.com/a/iDkGhTC1T2"
+ },
+ "https://www.coupang.com/vp/products/6756609752?itemId=20262875260": {
+  "b": "https://link.coupang.com/a/iDkCRr0y8i",
+  "site": "https://link.coupang.com/a/iDkGhXZWg0"
  }
 }
