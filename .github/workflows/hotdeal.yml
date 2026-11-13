@@ -36,6 +36,9 @@ jobs:
           [ "$n" != "0" ] || { echo "::warning::tick 체인 끊김 -> 다시 켬"; gh workflow run tick.yml -R "$GITHUB_REPOSITORY" || echo "::warning::tick 다시 켜기 실패"; }
         env:
           GH_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@v5   # 11/13 새 서식(hotdealpick-series — package.json engines node>=22) · tools/card도 >=22
+        with:
+          node-version: 22
       - uses: actions/checkout@v5
         with:
           ref: main                # 대기열에서 기다린 실행도 최신 main으로(기본 = 실행 예약 때 커밋 -> 앞 실행의 사이트 커밋과 충돌해 push 실패, 10/9 #376)
@@ -71,7 +74,7 @@ jobs:
           [ ! -f .seen_now/toss.json ] || cp .seen_now/toss.json toss.json
           rm -rf .seen_now
       - run: |                     # 11/11 진우 '개발 진행하자': 22시 미리보기 카드 틀 = hotdealpick-cards 읽기 전용(GPT가 틀을 고침 — 복사 X) · 카드 만드는 21시대만(못 받으면 22시 글만)
-          case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)
+          case "$(TZ=Asia/Seoul date +%H)" in 01|02|12|13|15|16|17|18|19|20|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th) · 11/13 새 서식(hotdealpick-series) = 쿠팡 묶음 01·12·15·18시(+1시간 밀림) · 꾸준템 19:50~21시
           git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo "::warning::카드 저장소 못 받음 -> 22시 미리보기 글만"
           for f in docs/blog_data/*.json; do d=$(basename "$f" .json); [ "$d" \< "$(TZ=Asia/Seoul date +%F)" ] || [ -f "docs/blog_img/$d/4.png" ] || { fc-list : family | grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk >/dev/null 2>&1 || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk >/dev/null 2>&1; } || echo "::warning::블로그 사진 글꼴 못 받음"; break; }; done   # 11/12 블로그 사진 4장(blog_img) 만들 날만 Noto Sans CJK KR
         env:

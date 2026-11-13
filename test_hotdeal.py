@@ -14361,7 +14361,7 @@ json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
 assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert 'case "$(TZ=Asia/Seoul date +%H)" in 15|16|17|18|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th)\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
+assert 'case "$(TZ=Asia/Seoul date +%H)" in 01|02|12|13|15|16|17|18|19|20|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th) · 11/13 새 서식(hotdealpick-series) = 쿠팡 묶음 01·12·15·18시(+1시간 밀림) · 꾸준템 19:50~21시\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
 H.E.pop("THREADS_TOKEN", None) if tk180 is None else H.E.__setitem__("THREADS_TOKEN", tk180)
 os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
@@ -14813,3 +14813,89 @@ assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspe
 (H.FOCUS_SLOTS, H.POSTS, H.ig_photo, H.th_bundle, H.http, H.busy, H.th_hold, H.th_list_copy, H.drops, tk191, H.TH_DAY_CAP, H.toss_gap) = sv191; H.E.pop("THREADS_TOKEN", None) if tk191 is None else H.E.__setitem__("THREADS_TOKEN", tk191)
 os.chdir(cwd191); shutil.rmtree(d191, ignore_errors=True)
 
+
+# 9-192 (11/13 진우 '① + ② 반반'): 새 카드 서식(hotdealpick-cards hotdealpick-series-20261113 — sharp만) · ① 19:50 꾸준템 목록 = '꾸준템 시리즈' 카드(글 상품과 같은 수·순서 · 회차 01부터 · 주제 4개 돌림)
+#   ② 쿠팡 묶음 12·15·18·01시 = 짝수 날 12·18시 · 홀수 날 15·01시만 새 '오늘의 장바구니'(나머지 = v3) · 검증·렌더 실패 = 지금처럼(묶음 v3 · 꾸준템 글만) · metrics card 'v3'·'series'
+cwd192, d192 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d192)
+sv192 = (H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time)
+tk192 = H.E.get("THREADS_TOKEN"); H.E["THREADS_TOKEN"] = "tk"
+k192 = lambda d, h=12: time.gmtime(TK(f"2026-11-{d} {h:02d}:07") + 9 * 3600)
+assert [H.series_ab(k192(14), h) for h in (12, 15, 18, 1)] == [True, False, True, False] and [H.series_ab(k192(13), h) for h in (12, 15, 18, 1)] == [False, True, False, True]  # 짝수 날 12·18 · 홀수 날 15·01
+H.SERIES_AB = False; assert not any(H.series_ab(k192(d), h) for d in (13, 14) for h in (12, 15, 18, 1)); H.SERIES_AB = True
+P192 = [{"text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 테스트 상품 {k} ({9900 + k:,}원)\n\n좋음", "url": f"https://link.coupang.com/a/t{k}", "img": f"https://img.coupang.com/{k}.jpg", "now": f"{9900 + k:,}원",
+         "chkt": f"2026-11-14 11:5{k}", "t": f"2026-11-14 11:5{k}", "mid": k} for k in range(1, 6)]
+pr192 = [(p, p["now"]) for p in P192]
+png192 = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+H.SERIES_DIR, H.series_ready, H.th_get = "sd192", (lambda env: None), (lambda u: png192)
+assert H.series_card("top12", "오늘의 장바구니", pr192[:3]) is None  # 새 서식 폴더 없음(그 시각 못 받음) = None(부른 쪽이 지금처럼)
+os.makedirs("sd192/src")
+open("sd192/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
+const a = process.argv.slice(2), f = {}; for (let i = 0; i < a.length; i += 2) f[a[i].slice(2)] = a[i + 1];
+const d = JSON.parse(fs.readFileSync(f.data, 'utf8'));
+if (d.items.some(p => p.name.includes('넘침'))) { console.error('Error: 상품명이 두 줄을 넘습니다.'); process.exit(1); }
+fs.mkdirSync(f.out, {recursive: true}); fs.writeFileSync(path.join(f.out, 'argv.json'), JSON.stringify({f, d}));
+fs.writeFileSync(path.join(f.out, path.basename(f.data, '.json') + '.png'), 'png');
+""")
+time.time = lambda: TK("2026-11-14 12:07")
+if shutil.which("node"):
+    o192 = io.StringIO()
+    with contextlib.redirect_stdout(o192):
+        u192 = H.series_card("top12", "오늘의 장바구니", pr192[:4])
+    a192 = json.load(open("sd192/output/argv.json"))
+    assert u192 == f"{H.SITE}cards/mall/20261114_1207_top12.png" and os.path.isfile("docs/cards/mall/20261114_1207_top12.png") and "series card 만듦 coupang 4개" in o192.getvalue(), o192.getvalue()
+    assert a192["f"] == {"data": "data/run_20261114_1207_top12.json", "out": "output"} and a192["d"]["title"] == "오늘의 장바구니" and a192["d"]["mall"] == "coupang"  # 장바구니 = 제목 고정 · 회차·주제 X
+    assert [x["name"] for x in a192["d"]["items"]] == [f"테스트 상품 {k}" for k in range(1, 5)] and [x["img"] for x in a192["d"]["items"]] == [f"assets/images/20261114_1207_top12_{k}.jpg" for k in range(1, 5)]  # 글 순서 · 사진 = 미리 받은 로컬 파일
+    assert all(os.path.isfile(f"sd192/assets/images/20261114_1207_top12_{k}.jpg") for k in range(1, 5)) and a192["d"]["items"][0]["price"] == "9,901원" and a192["d"]["items"][0]["checked"] == "2026-11-14 11:51"
+    assert H.series_card("steady", "꾸준템 시리즈", pr192[:3], "07", "season", "계절 준비").endswith("_steady.png")
+    a192 = json.load(open("sd192/output/argv.json"))
+    assert a192["f"] == {"data": "data/run_20261114_1207_steady.json", "out": "output", "theme": "season", "episode": "07", "topic": "계절 준비"} and a192["d"]["title"] == "꾸준템 시리즈" and len(a192["d"]["items"]) == 3
+    o192 = io.StringIO()
+    with contextlib.redirect_stdout(o192):
+        assert H.series_card("top15", "오늘의 장바구니", [({**P192[0], "text": P192[0]["text"].replace("테스트 상품 1", "넘침 상품")}, "9,901원")] + pr192[1:3]) is None  # 서식 검증 실패 = None
+    assert "series card 렌더 X top15" in o192.getvalue() and "상품명이 두 줄을 넘습니다" in o192.getvalue() and not os.path.exists("docs/cards/mall/20261114_1207_top15.png"), o192.getvalue()
+    H.th_get = lambda u: b"<html>"; assert H.series_card("top18", "오늘의 장바구니", pr192[:3]) is None; H.th_get = lambda u: png192  # 사진 아님 = None
+else:
+    print("9-192 새 서식 렌더 건너뜀(node 없음)")
+assert H.series_card("top12", "오늘의 장바구니", pr192[:2]) is None  # 3개 밑(mall_card_json) = None
+src192 = inspect.getsource(H.top_deals)
+assert 'img = series_ab(kst, hrs[-1]) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])' in src192 and 'ck = "series" if img else "v3"' in src192
+assert 'if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):' in src192 and '"img": img, "ck": ck}]}' in src192  # 새 서식 실패 = v3 → 그것도 실패 = 글만
+# ① 꾸준템: 글 상품(앞 n개)과 같은 수·순서 카드 · 회차 증가·주제 돌림 · 카드 못 만듦·토스 API 상품(i 없음) = 글만(회차 그대로)
+json.dump(P192, open("posts192.json", "w"), ensure_ascii=False); H.POSTS = "posts192.json"
+it192 = [{"n": f"테스트 상품 {k + 1}", "p": P192[k]["now"], "st": "", "u": P192[k]["url"], "tu": P192[k]["url"], "i": k} for k in range(5)]
+H.steady_cands, H.tg, H.busy, H.bundled = (lambda seen, now, n=None: [dict(x) for x in it192]), (lambda *a, **k: {"ok": True}), (lambda seen, cap=True: False), (lambda seen: None)
+sc192, tb192, ret192 = [], [], ["u"]
+H.series_card = lambda kind, title, pairs, *opt: sc192.append((kind, title, [p["url"] for p, _ in pairs], opt)) or (ret192[0] and f"{H.SITE}cards/mall/x_{kind}.png")
+H.th_bundle = lambda seen, kind, text, link, image=None, topic=None: tb192.append((kind, text, link, image)) or {"id": f"T{len(tb192)}"}
+s192 = {}
+for d, ok in ((14, "u"), (15, "u"), (16, None)):
+    ret192[0] = ok; time.time = lambda: TK(f"2026-11-{d} 19:52")
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.steady_list(s192)
+assert [(k, t, o) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", ("01", "pantry", "주방의 기본")), ("steady", "꾸준템 시리즈", ("02", "home", "포근한 집콕")), ("steady", "꾸준템 시리즈", ("03", "season", "계절 준비"))]
+assert all(u == [P192[k]["url"] for k in range(4)] for _, _, u, _ in sc192) and s192["steadyvol"] == 2  # 글 상품 4개(링크 5개 한도) 순서 그대로 · 실패한 회차 = 셈 X
+q192 = s192["mcard"]["q"]; assert [(x["kind"], x["ck"], x["img"]) for x in q192] == [("steady", "series", f"{H.SITE}cards/mall/x_steady.png")] * 2 and "1️⃣ 테스트 상품 1" in q192[0]["text"]
+assert len(tb192) == 1 and tb192[0][0] == "steady" and tb192[0][3] is None  # 16일 카드 못 만듦 = 지금처럼 글만
+s192["steadyvol"] = 4; ret192[0] = "u"; time.time = lambda: TK("2026-11-17 19:52")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.steady_list(s192)
+assert sc192[-1][3] == ("05", "pantry", "주방의 기본") and s192["steadyvol"] == 5  # 4개 돌고 다시 처음
+it192[1]["i"] = None; n192 = len(sc192); time.time = lambda: TK("2026-11-18 19:52")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.steady_list(s192)
+assert len(sc192) == n192 and tb192[-1][0] == "steady" and s192["steadyvol"] == 5  # 글 상품에 토스 API 상품(posts 없음) = 카드 X(토스 API 가격 공개 X)
+# mall_card_post: 꾸준템 = 글 그대로(상품 링크 유지)·묶음 셈 X · 묶음 = 링크 1줄 글 · 둘 다 카드 종류 기록(metrics card)
+H.http, tb192[:] = (lambda u, method="GET", **k: b""), []
+time.time = lambda: TK("2026-11-18 20:10")
+s192 = {"mcard": {"t": 1, "q": [{"t": TK("2026-11-18 19:52"), "kind": "steady", "text": "꾸준\n👉 https://link.coupang.com/a/t1", "link": "L1", "img": "I1", "ck": "series"},
+                                {"t": TK("2026-11-18 19:52"), "kind": "top18", "text": "묶음\n👉 https://link.coupang.com/a/t2", "link": "L2", "img": "I2", "ck": "v3"}]}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.mall_card_post(s192)
+assert tb192[0] == ("steady", "꾸준\n👉 https://link.coupang.com/a/t1", "L1", "I1") and tb192[1] == ("top18", H.bcard_text("묶음\n👉 https://link.coupang.com/a/t2"), "L2", "I2")
+assert s192["thcardk"]["m"] == {"T1": ["series", "2026-11-18"], "T2": ["v3", "2026-11-18"]} and s192["thbcard"]["m"] == {"T2": "2026-11-18"}  # 꾸준템 = th_bundle 셈 X
+assert '**({"card": seen["thcardk"]["m"][x["id"]][0]} if x["id"] in seen.get("thcardk", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
+y192 = open(os.path.join(cwd192, ".github/workflows/hotdeal.yml"), encoding="utf-8").read() if os.path.exists(os.path.join(cwd192, ".github/workflows/hotdeal.yml")) else ""
+assert not y192 or "      - uses: actions/setup-node@v5" in y192 and "          node-version: 22\n" in y192 and y192.index("actions/setup-node@v5") < y192.index("python hotdeal.py")  # 새 서식 engines node>=22
+(H.SERIES_DIR, H.SERIES_AB, H.series_ready, H.th_get, H.POSTS, H.steady_cands, H.tg, H.th_bundle, H.series_card, H.busy, H.http, H.bundled, time.time) = sv192
+H.E.pop("THREADS_TOKEN", None) if tk192 is None else H.E.__setitem__("THREADS_TOKEN", tk192)
+os.chdir(cwd192); shutil.rmtree(d192, ignore_errors=True)

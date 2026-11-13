@@ -3850,7 +3850,7 @@ CARD_TEST_DIR = "docs/cards/test"
 
 def card_test(seen, now=None):
     """손 실행 card_test(11/12 진우 '지금 일찍 확인하자' — 게시·알림 X, 파일·로그만): ① 지금 쿠팡 묶음 후보(최근 진열·채널 쿠팡 · 확인 가격·사진)로 '오늘의 장바구니' 쿠팡 카드
-    ② 오늘 밤 22시 미리보기 카드(seen 사본 — 21:30 진짜 카드는 그대로) ③ 블로그 사진(blog_img) ④ 오늘 0시~지금 Threads 봇 글 시간별·토스 개별·대가성 첫 줄·하루 상한 몫 로그 -> docs/cards/test/<시각>_*.png."""
+    ② 오늘 밤 22시 미리보기 카드(seen 사본 — 21:30 진짜 카드는 그대로) ③ 블로그 사진(blog_img) ④ 오늘 0시~지금 Threads 봇 글 시간별·토스 개별·대가성 첫 줄·하루 상한 몫 로그 ⑥ 새 서식(11/13 — 장바구니·꾸준템) -> docs/cards/test/<시각>_*.png."""
     global alert
     now = now or time.time()
     kst = time.gmtime(now + 9 * 3600)
@@ -3867,6 +3867,13 @@ def card_test(seen, now=None):
         if f:
             shutil.move(f, f"{CARD_TEST_DIR}/{stamp}_coupang.png")
         print("card test ① 쿠팡 묶음 카드", f"{CARD_TEST_DIR}/{stamp}_coupang.png" if f else f"X(후보 {len(pick)}개)")
+        vol = seen.get("steadyvol", 0) + 1  # ⑥ 새 서식(11/13): ①과 같은 상품 '오늘의 장바구니' · 지금 꾸준템 후보 앞 4개 '꾸준템 시리즈'(다음 회차 번호·주제 — 회차 기록 X)
+        st, ps0 = [x for x in steady_cands(seen, now, 99) if not tdead(x["u"])][:4], load(POSTS, [])
+        for nm, f in (("basket", len(pick) >= 3 and series_card("cardtest_b", "오늘의 장바구니", [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in pick])),
+                      ("steady", len(st) >= 3 and all(x["i"] is not None for x in st) and series_card("cardtest_s", "꾸준템 시리즈", [(ps0[x["i"]], x["p"]) for x in st], f"{vol:02d}", *SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)]))):
+            if f:
+                shutil.move(f"{MALL_CARD_DIR}/{os.path.basename(f)}", f"{CARD_TEST_DIR}/{stamp}_series_{nm}.png")
+            print("card test ⑥ 새 서식", nm, f"{CARD_TEST_DIR}/{stamp}_series_{nm}.png" if f else f"X(후보 {len(pick if nm == 'basket' else st)}개)")
         cp = dict(seen)
         cp.pop("pvcard_" + day, None)
         pv_card(cp, now)
@@ -3961,13 +3968,7 @@ def mall_card_make(st, title, pairs, checked, pre, kind):
         return "카드 규칙(금지 표현·몰 주소)으로 3개 밑"
     d["checked"] = checked  # 글 기준 시각(상품 checked = 봇 확인 시각 그대로)
     try:
-        os.makedirs(f"{PV_CARD_DIR}/assets/images", exist_ok=True)
-        for i, it in enumerate(d["items"], 1):
-            b, ext = th_get(it["img"]), (re.search(r"\.(jpe?g|png|webp)$", urllib.parse.urlsplit(it["img"]).path, re.I) or [0, "jpg"])[1].lower()
-            if not b.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
-                raise ValueError("사진 아님")
-            open(f"{PV_CARD_DIR}/assets/images/{pre}_{i}.{ext}", "wb").write(b)
-            it["img"] = f"assets/images/{pre}_{i}.{ext}"
+        card_imgs(d, PV_CARD_DIR, pre)
     except Exception as e:
         return f"사진 못 받음({type(e).__name__})"
     if not (f := card_png(kind, d, root=PV_CARD_DIR)):
@@ -3980,6 +3981,19 @@ def mall_card_make(st, title, pairs, checked, pre, kind):
         print(f"{kind} alt X", type(e).__name__)
     st.update(card=f"{SITE}cards/mall/{os.path.basename(f)}", urls=[it["url"] for it in d["items"]], alt=alt, mall=d["mall"])
     return ""
+
+
+def card_imgs(d, root, pre, blank=False):
+    """카드 사진 미리 받기(렌더러 DNS 검사로 안 빠지게 · 새 서식 = 로컬 파일만 읽음): items img 주소 -> {root}/assets/images/{pre}_N.확장자 · 사진 아님 = ValueError · blank = 빈 img 그대로(새 서식 '사진 미제공' — 네이버)."""
+    os.makedirs(f"{root}/assets/images", exist_ok=True)
+    for i, it in enumerate(d["items"], 1):
+        if blank and not it["img"]:
+            continue
+        b, ext = th_get(it["img"]), (re.search(r"\.(jpe?g|png|webp)$", urllib.parse.urlsplit(it["img"]).path, re.I) or [0, "jpg"])[1].lower()
+        if not b.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF")):
+            raise ValueError("사진 아님")
+        open(f"{root}/assets/images/{pre}_{i}.{ext}", "wb").write(b)
+        it["img"] = f"assets/images/{pre}_{i}.{ext}"
 
 
 def preview(seen):
@@ -4509,6 +4523,12 @@ def steady_list(seen):
     n = min(len(items), 4)
     while n > 1 and len(render(n)) > 480:
         n -= 1
+    vol = seen.get("steadyvol", 0) + 1  # 11/13 ① 꾸준템 시리즈 카드 = 글 상품과 같은 수·순서 · 회차 01부터(만든 것만 셈) · 주제 4개 돌림 · 못 만듦 = 지금처럼 글만
+    th, tp = SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)]
+    if n >= 3 and all(x["i"] is not None for x in items[:n]) and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp)):
+        seen["steadyvol"] = vol
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "steady", "text": render(n), "link": items[0]["tu"], "img": img, "ck": "series"}]}
+        return print(f"steady 꾸준템 카드 VOL.{vol:02d} {tp} -> 사이트에 뜨면 Threads(mall_card_post)")
     th_bundle(seen, "steady", render(n), items[0]["tu"])
 
 
@@ -4919,8 +4939,10 @@ def top_deals(seen):
     th_site(f"th{hrs[-1]}", "\n".join(dict.fromkeys(aff_note(p["url"]) for p in inl)), f"{'·'.join(labs) or '오늘 묶음'} {n}", [(p, pr) for p, pr, *_ in pick], skey, sno, cm0)
     seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl], hrs[-1], sorted({kind_key(short_name(title_of(p["text"]))) for p in inl})]], "hq": [hook, q]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
     text, lk, tp = render(pick, beauty, hook, q), th_url(inl[0], posts.index(inl[0])), SERIES_BY[skey][0] if skey else None  # 주제 태그 = 시리즈 이름
-    if img := mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
-        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img}]}
+    img = series_ab(kst, hrs[-1]) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])  # 11/13 ② A/B: 새 서식(제목 고정) · 실패 = 지금 v3 틀
+    ck = "series" if img else "v3"
+    if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img, "ck": ck}]}
     else:
         th_bundle(seen, f"top{hrs[-1]}", text, lk, topic=tp)
     if skey:
@@ -5617,6 +5639,49 @@ def card_png(kind, d, short="", root=CARD_DIR):
     return f"{MALL_CARD_DIR}/{stem}.png"
 
 
+SERIES_DIR, SERIES_AB = f"{PV_CARD_DIR}/hotdealpick-series-20261113", True  # 11/13 진우 '① + ② 반반': 새 서식(hotdealpick-cards 193c77b 글씨 키운 판 · sharp만, 브라우저 X) — ① 19:50 꾸준템 목록 카드 ② 쿠팡 묶음 하루 4번 중 2번(series_ab)
+SERIES_THEMES = (("pantry", "주방의 기본"), ("home", "포근한 집콕"), ("season", "계절 준비"), ("market", "장보기 메모"))  # ① 꾸준템 회차마다 돌림(--theme · --topic)
+
+
+def series_ab(kst, h):
+    """② 쿠팡 묶음 A/B(11/13): h시 회차가 새 '오늘의 장바구니' 서식인지 — 짝수 날 = 12·18시 · 홀수 날 = 15·01시(나머지 = 지금 v3 틀 · 시각 편향 X)."""
+    return SERIES_AB and (kst.tm_mday % 2 == 0) == (h in (12, 18))
+
+
+def series_ready(env):
+    """새 서식 렌더 준비(쓸 때만): node 22↑(package.json engines) · sharp(node_modules 없으면 npm ci) · Noto Sans CJK KR 글꼴(없으면 apt — Actions 러너)."""
+    if int(subprocess.run(["node", "-p", "process.versions.node.split('.')[0]"], capture_output=True, text=True, timeout=30, check=True).stdout.strip()) < 22:
+        raise RuntimeError("node 22 밑")
+    if not os.path.isdir(f"{SERIES_DIR}/node_modules/sharp"):
+        subprocess.run(["npm", "ci", "--no-audit", "--no-fund"], cwd=SERIES_DIR, env=env, timeout=180, check=True, capture_output=True)
+    if "Noto Sans CJK KR" not in subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True, timeout=30).stdout:
+        subprocess.run("sudo apt-get install -y -qq fonts-noto-cjk || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk; }", shell=True, timeout=300, check=True, capture_output=True)
+
+
+def series_card(kind, title, pairs, episode="", theme="", topic=""):
+    """새 서식 카드 1장(11/13): mall_card_json(지금 꼴 그대로 — 글 품목 수 = 칸 수 · 이름 속 N% 뺌 · 몰 1개) -> title '오늘의 장바구니'·'꾸준템 시리즈' -> 사진 미리 받아 assets/images/
+    -> `node src/render.mjs --data … --out output [--theme --episode --topic]`(서식 검증 — 이름 2줄·가격 칸·단위 20자) -> docs/cards/mall/<stem>.png 사이트 주소
+    / None(저장소·node 22·sharp·글꼴 없음 · 검증·렌더 실패 = 부른 쪽이 지금처럼: 묶음 = v3 카드 · 꾸준템 = 글만)."""
+    if not os.path.isfile(f"{SERIES_DIR}/src/render.mjs") or not (d := mall_card_json(title, pairs)):
+        return None
+    stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
+    try:
+        series_ready({**os.environ})
+        card_imgs(d, SERIES_DIR, stem, blank=True)
+        os.makedirs(f"{SERIES_DIR}/data", exist_ok=True)
+        os.makedirs(MALL_CARD_DIR, exist_ok=True)
+        json.dump(d, open(f"{SERIES_DIR}/data/run_{stem}.json", "w"), ensure_ascii=False)
+        opt = [a for k, v in (("--theme", theme), ("--episode", episode), ("--topic", topic)) if v for a in (k, v)]
+        subprocess.run(["node", "src/render.mjs", "--data", f"data/run_{stem}.json", "--out", "output", *opt], cwd=SERIES_DIR, timeout=60, check=True, capture_output=True)
+        shutil.copy(f"{SERIES_DIR}/output/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
+    except Exception as e:
+        err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
+        print("series card 렌더 X", kind, err_brief(e), err[-1:] if err else "")
+        return None
+    print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt))
+    return f"{SITE}cards/mall/{stem}.png"
+
+
 TH_FRESH_H = 2  # 묶음 가격 '이 회차 확인' = 2시간 안 확인(진열 chkt·chk·글 시각) — 넘으면 '(M/D H시 확인)'
 
 
@@ -5754,10 +5819,15 @@ def mall_card_post(seen):
     seen["mcard"] = {"t": now, "q": keep}  # 올리기 전에 줄에서 뺌(실패 = th_bundle의 다시 시도 1번)
     for x, live in go:
         try:
-            r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY else x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))
-            if live and r and r.get("id"):  # 11/12 묶음 카드 글 = metrics chg th_bundle(11/25 묶음·개별 글당 조회 비교)
-                m = {k: v for k, v in seen.get("thbcard", {}).get("m", {}).items() if v >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))}
-                seen["thbcard"] = {"t": now, "m": {**m, r["id"]: time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))}}
+            top = x["kind"].startswith("top")  # 꾸준템(steady) = 글 그대로(상품 링크 줄 유지) · 묶음 셈 X
+            r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY and top else x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))
+            if live and r and r.get("id"):  # 11/12 묶음 카드 글 = metrics chg th_bundle(11/25 묶음·개별 글당 조회 비교) · 11/13 카드 종류 card 'v3'·'series'(11/25 A/B 비교)
+                day, cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))
+                if top:
+                    m = {k: v for k, v in seen.get("thbcard", {}).get("m", {}).items() if v >= cut}
+                    seen["thbcard"] = {"t": now, "m": {**m, r["id"]: day}}
+                m = {k: v for k, v in seen.get("thcardk", {}).get("m", {}).items() if v[1] >= cut}
+                seen["thcardk"] = {"t": now, "m": {**m, r["id"]: [x.get("ck", "v3"), day]}}
         except urllib.error.HTTPError as e:  # 서버가 카드 사진을 거절 = 글만 1번
             if not live or e.code >= 500:
                 raise
@@ -12835,7 +12905,7 @@ def metrics_rows(seen):
             except Exception as e:
                 miss.setdefault("th_part", "일부 글 insights 못 읽음: " + blame(e))
         row("th", x["id"], x.get("text") or "", lk[0] if lk else ab.get("u", ""), stamp(x["timestamp"]), ins.get("views"), sum(ins.get(k, 0) for k in ("likes", "replies", "reposts", "quotes")) if ins else None,
-            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
+            title=ab.get("n"), links=None if fun or x["id"] in cx else [ab.get("u")] + re.findall(r"https?://[^\s<>\"]+", x.get("text") or ""), deal=bool(ab) or (False if day >= TH_AB_START else None), likes=ins.get("likes"), replies=ins.get("replies"), **({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {}), **({"card": seen["thcardk"]["m"][x["id"]][0]} if x["id"] in seen.get("thcardk", {}).get("m", {}) else {}), **({"ab": ab["ab"], "lk": link_kind(ab.get("u"))} if ab else {}), **({"rv": rv} if rid else {}), **({"kind": "funnel"} if fun else {"kind": "chat"} if x["id"] in cx else {"kind": "power"} if x["id"] in px else {}), **({"v": ab["v"]} if ab.get("v") else {}), **({"tone": ab["tone"]} if ab.get("tone") else {}), **({"ph": 1} if ab.get("ph") else {}), **({"hook": TH_HOOKS.get(ab["hook"], ab["hook"])} if ab.get("hook") else {}), **({"topic": x["topic_tag"]} if x.get("topic_tag") else {}))  # topic = Threads 주제 태그(10/23~, 주제별 조회 비교) · lk = 링크 종류(10/19~ 직접 링크 — 10/25 비교는 바뀐 뒤 글끼리)
 
     itok, uid, ms = E.get("IG_TOKEN"), E.get("IG_USER_ID"), []
     h = {"Authorization": f"Bearer {itok}"}
