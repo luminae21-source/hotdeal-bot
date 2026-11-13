@@ -1,21 +1,46 @@
 {
  "google": {
-  "at": "2026-11-13 10:00",
+  "at": "2026-11-13 11:11",
   "items": [
    {
-    "t": "m365",
+    "t": "gemini hydrogen",
     "n": "200+",
-    "news": "Microsoft Starts Limiting Copilot Chat Usage For Users…"
+    "news": "Introducing Gemini 4 Hydrogen for Agentic Workflows"
+   },
+   {
+    "t": "평가",
+    "n": "1000+",
+    "news": "ESG 성적 'A+' 자랑한 KB·신한금융…옥에 티는 'LTV 담합'"
+   },
+   {
+    "t": "아시아 프로야구 챔피언십",
+    "n": "2000+",
+    "news": "호주에도 지는 한국야구"
+   },
+   {
+    "t": "금융통화위원회",
+    "n": "100+",
+    "news": "11월엔 올린다지만 그다음은…금통위가 주목한 소비의 온도"
+   },
+   {
+    "t": "메르세데스-벤츠",
+    "n": "5000+",
+    "news": "벤츠도 독일 공장 폐쇄 검토…\"국내 투자 중단\""
    },
    {
     "t": "양승조",
-    "n": "100+",
-    "news": "한국수자원공사 신임 사장에 양승조 전 충남지사"
+    "n": "500+",
+    "news": "수자원공사 신임 사장에 양승조 임명, 충남지사 지내"
+   },
+   {
+    "t": "m365",
+    "n": "500+",
+    "news": "Microsoft Starts Limiting Copilot Chat Usage For Users…"
    },
    {
     "t": "김영훈",
     "n": "200+",
-    "news": "김영훈 고용노동부 장관, 중대재해 취약 현장 불시 점검"
+    "news": "노동장관, 반도체 기업 간담회…초광역특구 사회적 대화에 참고"
    },
    {
     "t": "헤그세스",
@@ -23,34 +48,9 @@
     "news": "헤그세스, 자기 꾸짖은 병사에 훈장 수여… \"잘했다, 상병\""
    },
    {
-    "t": "맨체스터 유나이티드 fc",
-    "n": "1000+",
-    "news": "맨유 새 감독에 포체티노 유력"
-   },
-   {
     "t": "두산에너빌리티",
-    "n": "2000+",
-    "news": "[장중수급포착] 두산에너빌리티, 외국인/기관 동시 순매수… 주가 +6.00%"
-   },
-   {
-    "t": "정명훈",
-    "n": "2000+",
-    "news": "“정명훈 공연만 날린 게 아니다” 부산이 100억과 바꾼 것"
-   },
-   {
-    "t": "england national football team vs croatia national football team standings",
-    "n": "500+",
-    "news": "England 2-1 Croatia: Record-breaker Kane scores winner as…"
-   },
-   {
-    "t": "czech republic national football team vs spain national football team standings",
-    "n": "500+",
-    "news": "Czech Republic 0-2 Spain: Comfortable win extends unbeaten…"
-   },
-   {
-    "t": "미세먼지",
-    "n": "100+",
-    "news": "올가을 첫 스모그 유입...수능 앞두고 기온 '뚝'"
+    "n": "5000+",
+    "news": "'DL이앤씨·두산 협력사' 엑스에너지 미국 SMR 건설 승인, \"실제 착공 여부는 미지수\""
    }
   ]
  },
