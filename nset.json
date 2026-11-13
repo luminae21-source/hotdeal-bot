@@ -35,6 +35,20 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "과자",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "new"
 }
 ]
 }
