@@ -1,9 +1,9 @@
 {
- "date": "2026-11-13",
- "updated": "2026-11-13 06:41 봇",
+ "date": "2026-11-14",
+ "updated": "2026-11-14 06:32 봇",
  "items": [
   {
-   "fact": "서울 아침 8도",
+   "fact": "서울 아침 9도 · 비 올 확률 100%",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
@@ -13,7 +13,7 @@
    ]
   },
   {
-   "fact": "수능(11/19)까지 6일",
+   "fact": "수능(11/19)까지 5일",
    "kind": "cal",
    "src": "",
    "fit": [
@@ -21,7 +21,7 @@
    ]
   },
   {
-   "fact": "블랙프라이데이(11/27)까지 14일",
+   "fact": "블랙프라이데이(11/27)까지 13일",
    "kind": "cal",
    "src": "",
    "fit": [
@@ -29,17 +29,19 @@
    ]
   },
   {
-   "fact": "빅스마일데이 11/13까지",
-   "kind": "cal",
-   "src": "",
-   "fit": []
-  },
-  {
    "fact": "모터스 페어 11/14까지",
    "kind": "cal",
    "src": "",
    "fit": [
     "쿠팡모터스 페어"
+   ]
+  },
+  {
+   "fact": "스위트샵 11/18까지",
+   "kind": "cal",
+   "src": "",
+   "fit": [
+    "스위트샵"
    ]
   }
  ]
