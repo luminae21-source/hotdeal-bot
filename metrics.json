@@ -253,7 +253,7 @@
 {"date": "2026-11-12", "ch": "th", "id": "18155495176535189", "shop": "기타", "cat": "기타", "price": "", "at": "07:38", "views": null, "react": null, "kind": "repost", "repost": 1},
 {"date": "2026-11-12", "ch": "th", "id": "18224070736347681", "shop": "기타", "cat": "기타", "price": "", "at": "07:38", "views": null, "react": null, "kind": "repost", "repost": 1},
 {"date": "2026-11-12", "ch": "th", "id": "18122941174980047", "shop": "기타", "cat": "기타", "price": "", "at": "07:40", "views": 11, "react": 1, "likes": 0, "replies": 1, "kind": "etc", "topic": "오늘의 1개 값", "series": "one", "no": 12, "v48": 13, "r48": 1},
-{"date": "2026-11-12", "ch": "th", "id": "17943442338383965", "shop": "기타", "cat": "기타", "price": "", "at": "08:23", "views": 11, "react": 1, "likes": 0, "replies": 1, "kind": "etc", "topic": "터치 장갑"},
+{"date": "2026-11-12", "ch": "th", "id": "17943442338383965", "shop": "기타", "cat": "기타", "price": "", "at": "08:23", "views": 11, "react": 1, "likes": 0, "replies": 1, "kind": "etc", "topic": "터치 장갑", "v48": 13, "r48": 1},
 {"date": "2026-11-12", "ch": "th", "id": "17895218871684371", "shop": "기타", "cat": "기타", "price": "", "at": "08:36", "views": null, "react": null, "kind": "repost", "repost": 1},
 {"date": "2026-11-12", "ch": "th", "id": "17977172460165541", "shop": "기타", "cat": "기타", "price": "", "at": "08:36", "views": null, "react": null, "kind": "repost", "repost": 1},
 {"date": "2026-11-12", "ch": "th", "id": "18131210197894686", "shop": "coupang", "cat": "기타", "price": "5~10만", "at": "09:48", "views": 11, "react": 0, "likes": 0, "replies": 0, "ab": "A", "lk": "direct", "ph": 1, "hook": "반전형", "topic": "겨울준비", "kind": "deal", "name": "한일전기 PTC 미니 온풍기, HEF-101MINI, 화이트", "url": "https://link.coupang.com/a/h8GGaC4spw"},
