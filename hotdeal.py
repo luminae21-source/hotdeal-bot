@@ -5631,7 +5631,7 @@ def bundle_pr(p, pr):
     return f"{n:,}원" + (f" {cond}" if cond else "") + (f" ({k.tm_mon}/{k.tm_mday} {k.tm_hour}시 확인)" if time.time() - t > TH_FRESH_H * 3600 else "")
 
 
-FOCUS_SLOTS, FOCUS_PREP, FOCUS_WAIT, FOCUS_DIR = ((8, 30), (17, 20), (20, 5)), 30 * 60, 45 * 60, "docs/cards/focus"  # 11/12 13:46 진우 '개별로 소개하고 싶은 경우도 있으니 그건 집중하자':
+FOCUS_SLOTS, FOCUS_PREP, FOCUS_WAIT, FOCUS_LATE, FOCUS_DIR = ((8, 30), (17, 20), (20, 5)), 30 * 60, 45 * 60, 120, "docs/cards/focus"  # FOCUS_LATE = 칸 뒤 올릴 수 있는 분(11/13 60 → 120)  # 11/12 13:46 진우 '개별로 소개하고 싶은 경우도 있으니 그건 집중하자':
 # 쿠팡 개별 하루 3개 = 집중 소개 · 잘 보이는 시각(8~9·17·20시대) · 묶음(12·15·18·21·01시)과 30분↑ · 카드 30분 전에 만들고 사이트에 뜨면 사진 글(45분 넘음 = 글만) · () = 끔(예전 개별 글 TH_CP_DAY)
 
 
@@ -5689,7 +5689,7 @@ def focus_post(seen, now=None):
                 print("focus 카드 X", type(e).__name__)
             return print(f"focus {h:02d}:{mi:02d} 고름", clip(short_name(title_of(p["text"])), 24), f"▼{dr[2]}%" if dr else "(기록 없음)", "· 카드" if st.get("card") else "· 카드 X")
         st = seen.get(key) or {}
-        if not (s <= m < s + 60 and st.get("url") and not st.get("done")):
+        if not (s <= m < s + FOCUS_LATE and st.get("url") and not st.get("done")):
             continue
         if busy(seen, cap=False) or th_hold(seen) or toss_gap(seen, now, False):
             return print(f"focus {h:02d}:{mi:02d} 다른 글과 간격 -> 다음 실행")
@@ -13897,7 +13897,12 @@ def main():
             tone_keep(seen, "ch", p.get("tone"))
     for h in q[k:]:  # 넘친 좋은 딜은 다음 실행에 다시 묻지 않고 올리게 보관(보관 중이던 것 = 그대로)
         seen["hold_" + h["d"]["id"]] = {"t": time.time(), **h}
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, focus_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    try:  # 11/13 집중 소개 = 토스·묶음 글보다 먼저(11/12 17:20·20:05 칸이 토스↔쿠팡 15분·묶음 10분에 계속 밀려 0개)
+        focus_post(seen)
+    except Exception as e:
+        print("focus_post", repr(e))
+        step_alert(seen, focus_post, e)
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
