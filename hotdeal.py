@@ -1256,7 +1256,7 @@ def blog_img(seen, now=None):
         err = (getattr(e, "stderr", b"") or b"")
         err = (err.decode("utf-8", "replace") if isinstance(err, bytes) else str(err)).strip().splitlines()
         print("blog img X", day, err_brief(e), [l for l in err if "Executable doesn't exist" in l][-1:] or err[-1:])  # 브라우저 없음 줄 먼저
-        alert(seen, "blogimg_x_" + day, f"🖼 블로그 사진 {day} 못 만듦 — {err_brief(e)}")
+        alert(seen, "blogimg_al_" + day, f"🖼 블로그 사진 {day} 못 만듦 — {err_brief(e)}")  # 알림 키 따로(11/14 같은 키 = alert가 {'t'} 칸으로 읽다 AttributeError · 덮으면 그날 다시 X 표시도 사라짐)
 
 
 def blog_data(seen, now=None):

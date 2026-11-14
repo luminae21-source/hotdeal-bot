@@ -14613,7 +14613,16 @@ shutil.rmtree("bi185"); json.dump({**B185, "chk": "x"}, open("bd185/2026-11-13.j
 o185 = io.StringIO()
 with contextlib.redirect_stdout(o185):
     H.blog_img(s185, TK("2026-11-12 18:50"))
-assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_x_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄
+assert s185.get("blogimg_x_2026-11-13") == "2026-11-12" and al185 and al185[-1][0] == "blogimg_al_2026-11-13" and not os.path.isdir("bi185/2026-11-13")  # 못 만듦 = 그날 다시 X + 관리봇 1줄(알림 키 따로)
+H.alert, s185b, tg185 = sv185[6], {}, H.tg  # 11/14 진짜 alert(관리봇만 가짜) = 같은 키로 AttributeError·그날 다시 X 표시 덮던 것
+H.tg = lambda *a, **k: {"ok": True}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.blog_img(s185b, TK("2026-11-12 18:52"))
+assert s185b.get("blogimg_x_2026-11-13") == "2026-11-12" and s185b.get("blogimg_al_2026-11-13", {}).get("t"), s185b
+with contextlib.redirect_stdout(io.StringIO()) as o185:
+    H.blog_img(s185b, TK("2026-11-12 19:10"))
+assert "blog img X" not in o185.getvalue()  # 그날 다시 X
+H.tg = tg185
 H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
 assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
 y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
