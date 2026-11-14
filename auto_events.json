@@ -2510,25 +2510,6 @@
 "auto": "nset"
 },
 {
-"at": "2026-11-11 16:37",
-"curation": true,
-"ch": "th",
-"day": "수능",
-"dn": 8,
-"topic": "수능",
-"link": "https://hotdealpick.kr/e/e56916b.html",
-"text": "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\n✏️ D-8 수능 · 2개 · 7,390~11,900원\n\n1️⃣ 옛다합격 5호 행운합격엿 + 페레로로쉐 세트 · 11,900원\n↳ 구성·용량 먼저 확인해요\n\n2️⃣ 마가렛트 오리지널 대용량 실속패키지 660g · 7,390원 (11/9 16시 확인)",
-"img": [
-"https://ads-partners.coupang.com/image1/8uRmse923YuaJoZd8iTP8LQlToCauuiEm-An_PiKo1pbtpDdT_1qJxXvXHD0VW3QL_aRFAZK7xbYkqUvNJ80yJ9c0Rrh7p0Iim_S-1_TkrL18BERsFUe7j7aqdMXpcVn0JOg8GUoKXLJsl08ugNCI0SYZc00oM74KraY7lpKXQzdIMM-2h97b45YpMNwyYrVzx7Lhj8U5j6CNcLF2QWYgFxsCKSjfMGMmc4o4IwFI6Ua9migojGHDjaJI4R86Smg7oMgHsT7sLNQNif6GE2riRbFLCml0DGsxAmE-lS9SXwOkpH7a_aV-4lVLHvuVn7Tg1HUW1PJkRX0ZQo0Hj54JwxBDk3HrO_k6FaT7AwNRkA8cqmHaS2uPoa3MhwpyBmb7Hl4w0_NfiJ1pOrCnXbbRGM0K-sdSBHEe-ljhMV4k-LprZ4HE2Vyv5bSfD7KnflCo4klPY39Kz61LpvO4JsSJScc9ZcAwB3_Nhf8okoWgCavNBIssjXeFqWfjpnoALz1j5xAw1ZxJS7zTaPQKqncpUgx7qv6IpSvYidLpIY7kTgS5oSRfSXSlnDbBC_swrFMBh-N0xPv_NcMJsu_mMTgHjc=",
-"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/75182980972121-7f1f77d9-6be0-4ee2-a0db-597e67177866.jpg"
-],
-"urls": [
-"https://link.coupang.com/a/ir5zUrTneS",
-"https://link.coupang.com/a/ixaeC3flXU"
-],
-"auto": "day"
-},
-{
 "at": "2026-11-11 14:30",
 "button": "🛒 구매하러 가기",
 "url": "https://www.coupang.com/vp/products/8622328438?itemId=25015015611",
@@ -3239,5 +3220,31 @@
 "img": "https://img5a.coupangcdn.com/image/retail/images/94120394691935-1bcaca6b-c93c-4369-bd50-901d1db6fb10.jpg",
 "text": "👍 <b>[쿠팡] 탐사 반려동물 남아용 기저귀 (11,580원)</b>\n\n✔ 쿠팡 반려동물용품 베스트 31위 · 로켓배송\n💡 단계부터 확인, 아기는 생각보다 빨리 커요 🍼\n⚠️ 확인할 점: 사이즈(단계) · 결제 전 최종가 확인 (11/14 14시 가격)",
 "auto": "shelf"
+},
+{
+"at": "2026-11-14 19:50",
+"url": "https://link.coupang.com/a/ifGqOBYW2m",
+"button": "🛒 구매하러 가기",
+"deal": true,
+"text": "🔥 <b>[쿠팡] 크리넥스 클래식 소프트 천연펄프 미용티슈 2겹 230매×6 (10,900원)</b>\n\n💰 10매당 79원꼴 · 할인 중\n✔ 리뷰 5.2만\n💡 각티슈 모음: 10매 값으로 줄 세웠어요 — 거실·차·방마다 하나씩 📦\n⚠️ 확인할 점: 결제 전 최종가 확인 (11/13 22시 가격)",
+"now": "10,900원",
+"chk": "2026-11-13 22:59",
+"pid": "8200388334",
+"item": "23504287368",
+"tag": "각티슈",
+"auto": "pick5"
+},
+{
+"at": "2026-11-14 20:00",
+"url": "https://link.coupang.com/a/ifyk8FA0Hs",
+"button": "🛒 구매하러 가기",
+"deal": true,
+"text": "🔥 <b>[쿠팡] 해표 콩기름 식용유 1.8L×2 (10,250원)</b>\n\n✔ 리뷰 42만\n💡 식용유 모음: 100ml 값으로 줄 세웠어요 — 콩기름·카놀라·포도씨 골라 담기 🍳\n⚠️ 확인할 점: 결제 전 최종가 확인 (11/14 12시 가격)",
+"now": "10,250원",
+"chk": "2026-11-14 12:13",
+"pid": "487322",
+"item": "231349355",
+"tag": "식용유",
+"auto": "pick5"
 }
 ]
