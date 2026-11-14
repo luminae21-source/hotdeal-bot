@@ -161,6 +161,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "커피",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
 }
 ]
 }
