@@ -1,16 +1,26 @@
 {
  "google": {
-  "at": "2026-11-15 01:12",
+  "at": "2026-11-15 02:09",
   "items": [
+   {
+    "t": "저축",
+    "n": "1000+",
+    "news": "같은 900만 원 넣어도 세금 29만원 차이? 청년 IRP 공제율 15% 핵심 정리"
+   },
+   {
+    "t": "비트코인",
+    "n": "200+",
+    "news": "\"비트코인 하락, 앤트로픽 IPO 전 투자자금 이동 때문\""
+   },
    {
     "t": "nepal premier league",
     "n": "200+",
-    "news": "Lumbini Lions become first team to reach NPL playoffs"
+    "news": "Lumbini Lions edge Biratnagar Kings by 4 wickets to seal…"
    },
    {
     "t": "bangladesh vs pakistan",
-    "n": "200+",
-    "news": "Bangladesh vs Pakistan LIVE Score: Hamza Choudary and…"
+    "n": "500+",
+    "news": "Bangladesh - Pakistan prediction & picks 14.11.2026"
    },
    {
     "t": "나의 이방인",
@@ -41,16 +51,6 @@
     "t": "딜라이브",
     "n": "200+",
     "news": "LG헬로 시청자 투니버스 못 보게 된다?… 시청자는 무슨 죄"
-   },
-   {
-    "t": "맥도날드 세종dt점",
-    "n": "500+",
-    "news": "새벽 2시부터 줄 섰다…‘인구 40만’ 세종시 첫 맥도날드, 오픈런에 경찰까지 출동"
-   },
-   {
-    "t": "갈비뼈",
-    "n": "500+",
-    "news": "멀쩡한 갈비뼈 6개 부러뜨린 30대 여성...이유는?"
    }
   ]
  },
