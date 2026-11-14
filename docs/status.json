@@ -1,9 +1,9 @@
 {
-"at": "2026-11-14 10:20",
-"posts": 5212,
-"site": 2003,
+"at": "2026-11-14 10:35",
+"posts": 5224,
+"site": 2008,
 "mall": {
-"coupang": 1318,
+"coupang": 1323,
 "toss": 626,
 "": 3,
 "naver": 56
@@ -14,7 +14,7 @@
 "food": 410,
 "kitchen": 139,
 "home": 84,
-"laundry": 77,
+"laundry": 82,
 "pet": 41,
 "life": 277,
 "beauty": 265,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 168,
-"sitemap": 872,
+"sitemap": 874,
 "days": {
 "2026-11-06": {
 "site": 1778,
@@ -112,10 +112,10 @@
 }
 },
 "2026-11-14": {
-"site": 2003,
-"sitemap": 872,
+"site": 2008,
+"sitemap": 874,
 "mall": {
-"coupang": 1318,
+"coupang": 1323,
 "toss": 626,
 "": 3,
 "naver": 56
@@ -265,7 +265,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 20 · 기존 상품 구성 0"
+"nset_n": "새 구성 21 · 기존 상품 구성 0"
 }
