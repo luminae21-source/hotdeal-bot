@@ -14989,7 +14989,8 @@ P195 = [p195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선
 with contextlib.redirect_stdout(io.StringIO()) as o195:
     ok195 = [H.th_bundle_ok(p, time.time()) for p in P195]
 assert ok195 == [False, False, False, True, True], ok195  # 묶음 = tag 끝남·이름 시즌 밖 X · 진행 중 행사(수능 11/19까지)·보통 상품 그대로
-assert "끝난 행사 뺌 행사 끝남 빼빼로데이 선물 2026 빼빼로 샘플러 6종 세트 258g" in o195.getvalue() and "끝난 행사 뺌 시즌 밖  롯데 빼빼로 혼합 10p 세트" in o195.getvalue(), o195.getvalue()
+assert "끝난 행사 뺌 행사 끝남 빼빼로데이 선물 2026 · 예 빼빼로 샘플러 6종 세트 258g" in o195.getvalue() and "끝난 행사 뺌 시즌 밖   롯데 빼빼로 혼합 10p 세트" in o195.getvalue(), o195.getvalue()
+assert o195.getvalue().count("빼빼로데이 선물 2026") == 1  # 같은 끝난 tag = 실행마다 1줄(가나 초콜릿 = 줄 X)
 ae195 = lambda k, name, **kw: {"at": "2026-11-12 19:50", "url": f"https://link.coupang.com/a/a{k}", "deal": True, "text": f"🛒 <b>[쿠팡] {name} (9,480원)</b>\n\n✔ 리뷰 7,072", **kw}
 with contextlib.redirect_stdout(io.StringIO()):
     n195 = H.auto_add([ae195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선물 2026"), ae195(2, "빼빼로 혼합 10p 세트 444g"), ae195(3, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026", shelf=True),

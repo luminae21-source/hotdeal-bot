@@ -10316,9 +10316,9 @@ def ev_off(name, tag=None, now=None):
     묶음(th_bundle_ok·TOP)·auto_events·새 구성·다시 소개·꾸준템·집중 소개·쿠팡 진열 후보(cp_shelf)·📉·릴스 키워드 · 사이트 진열 카드는 그대로(행사 띠만 내려감) · 로그 = 실행마다 같은 이름 1번."""
     today = time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
     why = "행사 끝남" if tag and ev_tags_c().get(tag, "9999") < today else next(("시즌 밖" for rx, a, b in EV_OFF if re.search(rx, str(name or "")) and not f"{today[:4]}-{a}" <= today <= f"{today[:4]}-{b}"), "")
-    if why and (name, why) not in (b := RUN.setdefault("evoff", set())):
-        b.add((name, why))
-        print("끝난 행사 뺌", why, str(tag or "")[:20], str(name or "")[:30])
+    if why and (k := tag if why == "행사 끝남" else name) not in (b := RUN.setdefault("evoff", set())):  # 로그 = 실행마다 끝난 tag 1줄(11/15 '햇상품 기획전' 35줄) · 시즌 밖 = 이름마다
+        b.add(k)
+        print("끝난 행사 뺌", why, str(tag or "")[:20], "· 예" if why == "행사 끝남" else "", str(name or "")[:30])
     return bool(why)
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
     (lambda w: w["rain"] >= 60, "비 소식", ("우산", "우비", "제습제", "실내 건조"), ("라면", "부침가루", "어묵"), "우산 챙기셨어요?"),
