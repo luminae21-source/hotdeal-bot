@@ -528,8 +528,21 @@ def auto_add(es, kind):
     old = old if isinstance(old, list) else []
     cut = {k: time.strftime("%Y-%m-%d %H:%M", time.gmtime(time.time() + 9 * 3600 - d * 86400)) for k, d in (("shelf", AUTO_KEEP), ("", 3))}
     old = [e for e in old if isinstance(e, dict) and str(e.get("at", "")) >= cut["shelf" if e.get("shelf") else ""]]
-    have = {(e.get("url"), e.get("at")) for e in old}
-    add = [dict(e, auto=kind) for e in es if (e.get("url"), e.get("at")) not in have]
+    have, evt, today = {(e.get("url"), e.get("at")) for e in old}, ev_tags_c(), time.strftime("%Y-%m-%d", kst)
+    ok = []
+    for e in es:  # 11/15 진우: 끝난 행사 tag = 안 붙임(진열 = tag만 뺌 · 예약 글 = 뺌) · tag 붙이면 그 until도 · 시즌 밖 기념일 이름 예약 글 = 뺌
+        nm, t = parse(title_of(re.sub(r"<[^>]+>", "", str(e.get("text") or ""))))[1] if e.get("text") else "", e.get("tag")
+        if t and evt.get(t, "9999") < today:
+            if not e.get("shelf"):
+                ev_off(nm, t)
+                continue
+            e = {k: v for k, v in e.items() if k != "tag"}
+        elif t in evt:
+            e = {**e, "until": evt[t]}
+        if not e.get("shelf") and nm and ev_off(nm):
+            continue
+        ok.append(e)
+    add = [dict(e, auto=kind) for e in ok if (e.get("url"), e.get("at")) not in have]
     if add or len(old) != len(load(AUTO_EVENTS, []) or []):
         json.dump(old + add, open(AUTO_EVENTS, "w"), ensure_ascii=False, indent=0)
     return len(add)
@@ -2878,7 +2891,7 @@ def cp_shelf(posts, kst, steady):
             continue
         rv, rate = re.search(STEADY_REV, p["text"]), re.search(r"⭐\s*(\d\.\d)", p["text"])
         _, name, price = parse(title_of(p["text"]))
-        if name_block(name, "쿠팡 진열") or not rv or steady_n(rv[1]) < (GOLD_ST_REV if steady else TH_FILL_REV) or steady and (rate and float(rate[1]) < GOLD_ST_RATE or re.search(r"🔥|특가|할인|최저", name)) \
+        if name_block(name, "쿠팡 진열") or ev_off(name, p.get("tag")) or not rv or steady_n(rv[1]) < (GOLD_ST_REV if steady else TH_FILL_REV) or steady and (rate and float(rate[1]) < GOLD_ST_RATE or re.search(r"🔥|특가|할인|최저", name)) \
                 or season_adj(name) < 0:
             continue
         unit, pr = re.search(r"💰\s*([^\n]*꼴)", p["text"]), price.split("/")[0].strip()
@@ -4523,7 +4536,7 @@ def steady_cands(seen, now, n=None):
     out += [item(i) for i in sorted((i for i in own if th_weak(posts[i]["text"]) and buys(i) >= STEADY_MIN_BUY), key=lambda i: -buys(i))]
     keep, us, ns = [], set(), set()
     for x in out:
-        if x["p"] and x["u"] not in us and norm(x["n"]) not in ns:
+        if x["p"] and x["u"] not in us and norm(x["n"]) not in ns and not ev_off(x["n"], posts[x["i"]].get("tag") if x["i"] is not None else None):
             keep.append(x)
             us.add(x["u"])
             ns.add(norm(x["n"]))
@@ -4855,7 +4868,7 @@ def top_deals(seen):
     if hrs[-1] in TOP_HOURS:
         since = day + f"{([0] + list(TOP_HOURS))[TOP_HOURS.index(hrs[-1])]:02d}:00"
         prev = time.strftime("%Y-%m-%d ", time.gmtime(time.time() + 9 * 3600 - 86400)) + f"{TOP_HOURS[-1]:02d}:00" if hrs[-1] == TOP_HOURS[0] else since  # 첫 리스트(12시)는 어젯밤(전날 마지막 리스트 뒤) 좋은 딜도
-    top = sorted((p for p in load(POSTS, []) if p.get("mid") and not tdead(p.get("url")) and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
+    top = sorted((p for p in load(POSTS, []) if p.get("mid") and not tdead(p.get("url")) and not ev_off(short_name(title_of(p["text"])), p.get("tag")) and ((since <= p["t"] < until and (p.get("pop") or th_tier(p["text"])))
                                                               or (prev <= p["t"] < since and th_tier(p["text"]) and not p.get("th") and aff_note(p["url"] or "")))),  # 10/12 진우 '누락 없이': 개별 글로 못 나간 ①②(45분 간격·화장품 한도·3시간)는 다음 리스트에
                  key=lambda p: (not th_tier(p["text"]), bool(p.get("th")) or not aff_note(p["url"] or ""), -(p.get("pop") or 0), -wb(title_of(p["text"]))))  # 수수료 링크 아닌 딜 = Threads에 나간 딜처럼 셈(10/19 밤 'Threads는 수수료 딜만' 전엔 대부분 개별 글로 나가 th 1 -> 채널 순서 그대로)  # 10/12 진우 '좋은 딜은 묶어서': 🔥 좋은 딜(① 쿠팡 같은 상품 차이·② 30일 최저가·순위) 먼저, 그다음 커뮤니티 반응 순
     rot = {u for h in seen.get("tgtop", {}).get("h", []) if time.time() - h[0] < TH_ROT_H * 3600 for u in h[1]}
@@ -5043,12 +5056,20 @@ def ev_tags():
     return out
 
 
+def ev_tags_c():
+    """ev_tags() 실행 안 캐시(events·auto_events 파일이 그대로면 다시 안 읽음 — 후보마다 부르는 ev_off용)."""
+    k = (os.getcwd(),) + tuple((os.path.getmtime(f), os.path.getsize(f)) if os.path.exists(f) else 0 for f in (EVENTS, AUTO_EVENTS))
+    if RUN.get("evtc", (None,))[0] != k:
+        RUN["evtc"] = (k, ev_tags())
+    return RUN["evtc"][1]
+
+
 TH_CHK_MAX_H, TH_BABY = 48, r"기저귀"  # 11/1 Cowork 규칙 12 '가격 확인 48시간 넘은 것 X' · 규칙 6 '기저귀 = 아기 칸만'(아기 칸 묶음 없음)
 
 
 def th_bundle_ok(p, now):
-    """묶음 채움 후보(top_deals): 가격 확인 TH_CHK_MAX_H시간 안 · 기저귀 X."""
-    return now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not re.search(TH_BABY, title_of(p["text"]))
+    """묶음 채움 후보(top_deals): 가격 확인 TH_CHK_MAX_H시간 안 · 기저귀 X · 끝난 행사 X(ev_off — 11/15)."""
+    return now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not re.search(TH_BABY, title_of(p["text"])) and not ev_off(short_name(title_of(p["text"])), p.get("tag"), now)
 
 
 def chk_ts(p):
@@ -5089,7 +5110,7 @@ def new_sets(seen):
     name = lambda p: short_name(title_of(p["text"]))
     for x in sets:  # 행사 코너 상품 = 줄 선 구성에서도 뺌(쿠팡 묶음 '새 구성 먼저'로 안 당김)
         x[3] = x[3] if x[5] else [u for u in x[3] if byu.get(u, {}).get("tag") not in evt]
-    ok = lambda p: aff(p["url"]) and p.get("st") not in ("gone", "out") and p.get("tag") not in evt and now - chk_ts(p) <= NSET_FRESH * 3600 and season_adj(name(p)) >= 0 and not name_block(name(p), "새 구성")  # 이름 막기(분유 등) = 다른 진열 묶음과 같이
+    ok = lambda p: aff(p["url"]) and p.get("st") not in ("gone", "out") and p.get("tag") not in evt and now - chk_ts(p) <= NSET_FRESH * 3600 and season_adj(name(p)) >= 0 and not name_block(name(p), "새 구성") and not ev_off(name(p), p.get("tag"))  # 이름 막기(분유 등) = 다른 진열 묶음과 같이
     npu, tday = {u for _, u in np}, {u for h in hist if h[0] >= kst_ts(today + " 00:00") for u in h[1]}
     tops = {x.get("url"): n for n, x in enumerate(load(TOP, {}).get("items", [])) if x.get("url")}
     gcs = {u: n for n, u in enumerate((load(GC_TOP, {}) or {}).get("urls", []))}
@@ -5754,7 +5775,7 @@ def focus_pick(seen, posts, now):
     day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
     used = set(seen.get("thfocus", {}).get("u", {})) | {u for u, d in seen.get("dropu", {}).get("m", {}).items() if d == day}
     ok = lambda p: shop_of(p) == "coupang" and aff_note(p.get("url") or "") == DISCLOSURE and img_of(p) and p["url"] not in used and p.get("st") not in ("gone", "out") \
-        and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not p["text"].startswith("📋") and not name_block(short_name(title_of(p["text"])), "focus")
+        and now - chk_ts(p) <= TH_CHK_MAX_H * 3600 and not p["text"].startswith("📋") and not name_block(short_name(title_of(p["text"])), "focus") and not ev_off(short_name(title_of(p["text"])), p.get("tag"))
     ago = lambda h: time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600 - h * 3600))
     hs = {h for t, h in seen.get("thh", {}).get("h", []) if now - t < DUP_DAYS * 86400}  # 11/13 20:05 칸 DupHold: 7일 안 Threads에 같은 링크 글(개별·꾸준템 등) = 후보 X(올릴 때 dup_guard에 막혀 칸을 잃음)
     new = lambda i: not (us := th_urls(th_url(posts[i], i))) or dup_h(sorted(us)) not in hs
@@ -8314,7 +8335,7 @@ def clip_topics(seen, posts, kst):
     ① 어제 블로그 키워드 표(events tag '… 2026') ②③ 오늘 큐레이션 2개(img = 그 상품 사진, 단가 싼 순) ④ 어제 17시 뒤 쿠팡 딜 ⑤ 👍 꾸준템(cp_shelf) ⑥ 가격 내림(changes.json drop, ▼% 큰 순) ⑦ 화장품(3일 안 쿠팡 뷰티)."""
     day, yday = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(kst) - 86400))
     num = lambda p: won(re.sub(r"^[^당]*당", "", unit_of(p))) or float("inf")  # '100g당 1,234원' -> 1234(단가 없음 = 맨 뒤)
-    tags = [p for p in posts if str(p.get("tag") or "").endswith(" 2026") and p["t"].startswith(yday)]
+    tags = [p for p in posts if str(p.get("tag") or "").endswith(" 2026") and p["t"].startswith(yday) and not ev_off(short_name(title_of(p["text"])), p["tag"])]
     kw = tags[0]["tag"][:-5].strip() if tags else ""
     out = [("kw", f"{kw} 가성비", kw, [p for p in tags if p["tag"] == tags[0]["tag"]])]
     curs = [e for e in cur_events(seen) if e["at"].startswith(day) and e["img"]][:2]
@@ -10283,7 +10304,22 @@ WEATHER_HOUR, SNACK_HOUR, DAILY_LOG_HOUR, WEATHER_DM = (7, 30), (15, 30), (20, 3
 WEATHER_LAT, WEATHER_LON, WEATHER_BONUS, WX_LATE = 37.57, 126.98, 5, 2 * 3600  # 서울(Open-Meteo, 키 없음) · 오늘 날씨 키워드에 맞는 딜 가점(TOP5·Threads 개별 = 동점일 때만 먼저 — 🔥·30일 최저가 순서는 그대로, 0 = 끔) · 그 시각 뒤 2시간 안에만
 POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격 투표'(Threads만, 하루 1번): 최저가 기록 품목 투표(10/22~ Claude 질문·보기 4개 — poll_ai · PP 10/26~ 존댓말 질문) + 다음 날 같은 회차에 결과·기록 최저 답글, 같은 품목은 7일 뒤에. 10/22 진우 '저녁 9시대'(12:30 조회 2~6 vs 저녁 운영 일지 124~177): 21:40 = 21시 모아보기·22시 미리보기·묶음 간격 사이. None = 끔
 POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25 UTF-8 바이트 = 한글 8자 — 공식 문서 create-posts/polls·10/24 HTTP 400)
+BLACK_FRIDAY = "2026-11-27"  # 해마다 확인해서 바꿈(11월 넷째 금요일)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
+EV_OFF = ((r"빼빼로", "11-01", dict(TODAY_CAL)["빼빼로데이"]), (r"수능", "11-05", SUNEUNG[5:]), (r"블랙\s*프라이데이|블프", "11-13", BLACK_FRIDAY[5:]),
+          (r"크리스마스|성탄", "11-15", dict(TODAY_CAL)["크리스마스"]), (r"발렌타인", "02-01", dict(TODAY_CAL)["발렌타인데이"]), (r"화이트\s*데이", "03-01", dict(TODAY_CAL)["화이트데이"]),
+          (r"어린이날", "04-21", dict(TODAY_CAL)["어린이날"]), (r"어버이날", "04-24", dict(TODAY_CAL)["어버이날"]))  # 11/15 진우: 기념일 낱말이 이름에 든 상품 = (시즌 시작 MM-DD, 그날) 밖이면 자동 게시 X(빼빼로 = 11/1~11/11)
+
+
+def ev_off(name, tag=None, now=None):
+    """끝난 행사 상품 = 자동 게시 후보 X(11/15 진우 '빼빼로데이 지났는데 계속 올리면 이상해'): ① tag 행사 끝남(ev_tags until < 오늘) ② 이름에 기념일 낱말(EV_OFF)인데 그 시즌(시작~그날) 밖.
+    묶음(th_bundle_ok·TOP)·auto_events·새 구성·다시 소개·꾸준템·집중 소개·쿠팡 진열 후보(cp_shelf)·📉·릴스 키워드 · 사이트 진열 카드는 그대로(행사 띠만 내려감) · 로그 = 실행마다 같은 이름 1번."""
+    today = time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
+    why = "행사 끝남" if tag and ev_tags_c().get(tag, "9999") < today else next(("시즌 밖" for rx, a, b in EV_OFF if re.search(rx, str(name or "")) and not f"{today[:4]}-{a}" <= today <= f"{today[:4]}-{b}"), "")
+    if why and (name, why) not in (b := RUN.setdefault("evoff", set())):
+        b.add((name, why))
+        print("끝난 행사 뺌", why, str(tag or "")[:20], str(name or "")[:30])
+    return bool(why)
 WEATHER_RULES = (  # (조건, 이름, 아이템 키워드, 간식 키워드, 운영 일지 질문) — 위에서부터 맞는 것 모두. 키워드 = 딜 제목에 들어 있으면(키워드에 띄어 쓴 자리는 붙여 써도 맞음)
     (lambda w: w["rain"] >= 60, "비 소식", ("우산", "우비", "제습제", "실내 건조"), ("라면", "부침가루", "어묵"), "우산 챙기셨어요?"),
     (lambda w: w["tmin"] <= 3, "많이 추움", ("핫팩", "발열 내의", "전기 매트", "가습기"), ("군고구마", "어묵", "유자차"), "핫팩 벌써 꺼냈어요?"),
@@ -11391,7 +11427,7 @@ def drop_post(seen):
         mem = {u: d for u, d in seen.get("dropu", {}).get("m", {}).items() if d > cut}  # 3일 안 쓴 상품(날짜로 — seen 3일 지움과 따로)
         picks = []
         for i, p, sh, base, nw, pct, rec, chk in drops(posts, shelf_items(posts, days), now):
-            if len(picks) < DPOST_N and aff_note(p["url"]) and aff_note(p["url"]) != OY_NOTE and p["url"] not in mem:  # Threads = 수수료 딜만(10/19 진우)
+            if len(picks) < DPOST_N and aff_note(p["url"]) and aff_note(p["url"]) != OY_NOTE and p["url"] not in mem and not ev_off(parse(title_of(p["text"]))[1], p.get("tag")):  # Threads = 수수료 딜만(10/19 진우)
                 f = ig_photo(p, "ig_photos", seen)[0]
                 if f:
                     picks.append((p, base, nw, pct, rec, f))
@@ -13467,7 +13503,7 @@ def cp_repost(seen):
     sig = lambda u: tuple(-sc.get(k, {}).get(bare(u), 0) for k in "ocv") + (top.get(u, len(top)),)
     miss = th_missed(posts, now)  # Threads 개별 글 칸에 밀려 3시간 창이 끝난 진우 🔥(10/25 Cowork '밀렸으면 재게시 루틴 대상으로') = 반응 신호 다음 차례
     cand = [u for u in chan if u not in block and ev.get(u, {}).get("pid") not in bpid and last[u].get("st") == "hot" and last[u].get("now") and last[u].get("chkt", "") >= fresh_at
-            and not name_block(parse(title_of(last[u]["text"]))[1], "재게시")
+            and not name_block(parse(title_of(last[u]["text"]))[1], "재게시") and not ev_off(parse(title_of(last[u]["text"]))[1], last[u].get("tag") or ev.get(u, {}).get("tag"))
             and (any(sig(u)[:3]) or u in top or u in miss)]
     seen[key] = now
     if not cand:
@@ -13529,7 +13565,8 @@ def auto_repost(seen):
         st = ph_stat(h.get(ph_key(ev.get(u, {}), u)), now)
         fp = won(parse(title_of(first[u]["text"]))[2])
         if p.get("st") == "hot" and u not in recent and u not in block and u not in done and st and fp and st["last"] >= ph_now(now - 86400) and p.get("now") \
-                and st["now"] * 100 <= fp * (100 + AUTO_RE_PCT) and p.get("chkt", "") >= d1 and not name_block(parse(title_of(p["text"]))[1], "재게시"):
+                and st["now"] * 100 <= fp * (100 + AUTO_RE_PCT) and p.get("chkt", "") >= d1 and not name_block(parse(title_of(p["text"]))[1], "재게시") \
+                and not ev_off(parse(title_of(p["text"]))[1], p.get("tag") or ev.get(u, {}).get("tag")):
             cand.append((st["now"] / fp, p["t"], u))
     seen[key] = {"t": now}
     if not cand:
@@ -13570,7 +13607,7 @@ def auto_pick5(seen):
     old = set(st5.get("k", [])) if st5.get("d") == yday else set()
     cand = sorted((won(p.get("now") or "") / max(won(parse(title_of(first[u]["text"]))[2]), 1), u) for u, p in last.items()
                   if p.get("st") == "hot" and p.get("chkt", "") >= d1 and won(p.get("now") or "") and u not in recent and u not in block and u in raw and kind(u, p) not in old
-                  and not name_block(parse(title_of(p["text"]))[1], "5개"))
+                  and not name_block(parse(title_of(p["text"]))[1], "5개") and not ev_off(parse(title_of(p["text"]))[1], raw.get(u, {}).get("tag") or p.get("tag")))
     picks, kinds = [], set()
     take = lambda u: picks.append(u) or kinds.add(kind(u, last[u]))
     hy = next((u for _, u in cand if re.search(AUTO_HYGIENE, parse(title_of(last[u]["text"]))[1]) and cat_of(last[u]) in sum((c for c, _ in AUTO_P5_MIX), ())), None)

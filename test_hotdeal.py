@@ -14972,3 +14972,39 @@ assert "<b>159,000원</b><br><small>11/14 7시 확인</small>" in pg194 and "<b>
 assert "guide 줄 X air-test 다 공기청정기 필터 2개 가격 기록 없음" in o194.getvalue() and "guide 줄 X 합계 4 · 가격 확인 오래됨 0 · 가격 기록 없음 4 · 파트너스 링크 전 0" in o194.getvalue(), o194.getvalue()  # no-q 가이드 2줄 포함
 assert 'guide_price(seen)' in inspect.getsource(H.cp_price)  # cp_price 앞(같은 검색 몫)
 (H.coupang, time.time, S.SITE_SUB, H.POSTS, H.HAS_CP) = sv194; os.chdir(cwd194)
+
+# 9-195 (11/15 진우 '빼빼로데이 지났는데 계속 올리면 이상해'): 끝난 행사 상품 = 자동 게시 후보 X — ① tag 행사 끝남(ev_tags until < 오늘) ② 이름에 기념일 낱말(EV_OFF)인데 시즌(시작~그날) 밖
+#   · 묶음(th_bundle_ok·TOP)·auto_events(끝난 tag = 안 붙임 · 붙이면 until)·다시 소개·5개·새 구성·집중·쿠팡 진열 후보·꾸준템·릴스 키워드·📉 · 사이트 진열 카드는 그대로
+cwd195, sv195 = os.getcwd(), (time.time, H.CPRE_HOURS, H.repost_send, H.busy, H.ev_near, H.POSTS, H.TOP); os.chdir(tempfile.mkdtemp())
+assert [H.ev_off("롯데 빼빼로 아몬드", now=TK(d)) for d in ("2026-10-31 12:00", "2026-11-01 00:10", "2026-11-11 23:50", "2026-11-12 00:10")] == [True, False, False, True]  # 빼빼로 = 11/1~11/11
+assert [H.ev_off("수능 응원 초콜릿", now=TK(d)) for d in ("2026-11-19 20:00", "2026-11-20 09:00")] == [False, True] and not H.ev_off("블랙프라이데이 특가 TV", now=TK("2026-11-27 12:00")) and H.ev_off("블랙프라이데이 특가 TV", now=TK("2026-11-28 12:00"))
+assert [H.ev_off("크리스마스 트리 150cm", now=TK(d)) for d in ("2026-11-14 12:00", "2026-11-15 12:00", "2026-12-25 22:00", "2026-12-26 09:00")] == [True, False, False, True] and not H.ev_off("코멧 물티슈", now=TK("2026-11-12 12:00"))
+json.dump([{"at": "2026-11-01 10:00", "shelf": True, "tag": "빼빼로데이 선물 2026", "until": "2026-11-11", "url": "https://link.coupang.com/a/v0", "text": "x"},
+           {"at": "2026-11-10 10:00", "shelf": True, "tag": "수능 응원 2026", "until": "2026-11-19", "url": "https://link.coupang.com/a/v9", "text": "x"}], open("events.json", "w"), ensure_ascii=False)
+time.time = lambda: TK("2026-11-12 12:00")
+p195 = lambda k, name, **kw: {"t": "2026-11-08 10:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {name} (9,90{k}원)\n\n좋음", "url": f"https://link.coupang.com/a/v{k}", "own": 1, "mid": k, "st": "hot",
+                              "now": f"9,90{k}원", "chk": "11/12 11시", "chkt": "2026-11-12 11:00", **kw}
+P195 = [p195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선물 2026"), p195(2, "롯데 빼빼로 혼합 10p 세트"), p195(3, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026"),
+        p195(4, "수능 응원 초콜릿 세트", tag="수능 응원 2026"), p195(5, "코멧 물티슈 100매 10팩")]
+with contextlib.redirect_stdout(io.StringIO()) as o195:
+    ok195 = [H.th_bundle_ok(p, time.time()) for p in P195]
+assert ok195 == [False, False, False, True, True], ok195  # 묶음 = tag 끝남·이름 시즌 밖 X · 진행 중 행사(수능 11/19까지)·보통 상품 그대로
+assert "끝난 행사 뺌 행사 끝남 빼빼로데이 선물 2026 빼빼로 샘플러 6종 세트 258g" in o195.getvalue() and "끝난 행사 뺌 시즌 밖  롯데 빼빼로 혼합 10p 세트" in o195.getvalue(), o195.getvalue()
+ae195 = lambda k, name, **kw: {"at": "2026-11-12 19:50", "url": f"https://link.coupang.com/a/a{k}", "deal": True, "text": f"🛒 <b>[쿠팡] {name} (9,480원)</b>\n\n✔ 리뷰 7,072", **kw}
+with contextlib.redirect_stdout(io.StringIO()):
+    n195 = H.auto_add([ae195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선물 2026"), ae195(2, "빼빼로 혼합 10p 세트 444g"), ae195(3, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026", shelf=True),
+                       ae195(4, "수능 응원 초콜릿 세트", tag="수능 응원 2026"), ae195(5, "코멧 물티슈 100매 10팩")], "pick5")
+a195 = {e["url"][-2:]: e for e in json.load(open(H.AUTO_EVENTS))}
+assert n195 == 3 and sorted(a195) == ["a3", "a4", "a5"] and "tag" not in a195["a3"] and a195["a3"]["shelf"] and a195["a4"]["until"] == "2026-11-19" and "until" not in a195["a5"], a195  # 예약 글 = 뺌 · 진열 = 끝난 tag만 뺌 · 진행 중 tag = until도
+# 다시 소개(cp_repost): 반응 1등이 빼빼로(tag 끝남)여도 = 다음 후보
+json.dump(P195, open("posts195.json", "w"), ensure_ascii=False); json.dump({"items": [{"url": p["url"]} for p in P195]}, open("top195.json", "w"))
+rs195 = []
+H.POSTS, H.TOP, H.CPRE_HOURS, H.busy, H.ev_near = "posts195.json", "top195.json", (12,), (lambda seen, cap=True: False), (lambda seen, now, evs=None: False)
+H.repost_send = lambda seen, key, u, *a, **k: rs195.append(u) or True
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_repost({})
+assert rs195 == ["https://link.coupang.com/a/v4"], rs195  # 1·2·3 = 끝난 행사 X → 수능(진행 중) 차례
+src195 = inspect.getsource(H)
+for f195 in ("auto_pick5", "auto_repost", "new_sets", "focus_pick", "cp_shelf", "steady_cands", "clip_topics", "drop_post", "top_deals"):
+    assert "ev_off(" in inspect.getsource(getattr(H, f195)), f195  # 자동 게시 후보 고르는 곳마다
+(time.time, H.CPRE_HOURS, H.repost_send, H.busy, H.ev_near, H.POSTS, H.TOP) = sv195; os.chdir(cwd195)
