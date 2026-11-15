@@ -1,4 +1,19 @@
 {
 "d": "2026-11-16",
-"items": []
+"items": [
+{
+"name": "반려동물",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "생활",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+]
 }

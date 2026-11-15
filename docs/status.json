@@ -1,5 +1,5 @@
 {
-"at": "2026-11-16 00:06",
+"at": "2026-11-16 00:20",
 "posts": 5453,
 "site": 2030,
 "mall": {
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 172,
-"sitemap": 894,
+"sitemap": 895,
 "days": {
 "2026-11-08": {
 "site": 1906,
@@ -113,7 +113,7 @@
 },
 "2026-11-16": {
 "site": 2030,
-"sitemap": 894,
+"sitemap": 895,
 "mall": {
 "coupang": 1348,
 "toss": 626,
@@ -125,6 +125,21 @@
 "warn": [
 "쿠팡 변환 실패 172개(cp_fail.json)"
 ],
-"nset": [],
-"nset_n": "새 구성 0 · 기존 상품 구성 0"
+"nset": [
+{
+"name": "반려동물",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "생활",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+],
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
