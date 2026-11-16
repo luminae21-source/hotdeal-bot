@@ -1,6 +1,6 @@
 {
-"at": "2026-11-16 10:43",
-"posts": 5487,
+"at": "2026-11-16 10:58",
+"posts": 5497,
 "site": 2029,
 "mall": {
 "coupang": 1348,
@@ -16,8 +16,8 @@
 "sport": 19,
 "home": 89,
 "fashion": 92,
-"kitchen": 139,
 "food": 407,
+"kitchen": 139,
 "beauty": 263,
 "life": 293,
 "season": 140,
@@ -186,7 +186,28 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "가전",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 9 · 기존 상품 구성 0"
+"nset_n": "새 구성 12 · 기존 상품 구성 0"
 }
