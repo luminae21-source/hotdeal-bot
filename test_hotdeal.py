@@ -38,6 +38,7 @@ cpe0, wr0, H.cp_eve, H.week_report = H.cp_eve, H.week_report, (lambda s: None), 
 anr0, H.ANIMAL_RUN = H.ANIMAL_RUN, 0  # BB 동물 사진 받기·Claude 확인(10/26)은 맨 아래 9-83에서만
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
+igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인스타 개편(하루 4개·겨울 요일 테마) = 9-196에서만
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
 TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
@@ -14541,7 +14542,7 @@ assert ic184[0] == (f"{H.SITE}clips/2026-11-12/02.mp4", None, "HEAD") and ic184[
 assert not al184 and run184(H.ig_reel, "2026-11-12 23:31", s184) == "" and al184 == [("reelx_2026-11-12", "🎬 오늘 인스타 릴스 안 올라감 — 처리·발행 안 끝남")]  # 컨테이너만 = 23:30 관리봇 1줄
 s184["igr_2026-11-12"]["ok"] = 1; del al184[:]; run184(H.ig_reel, "2026-11-12 23:45", s184); assert not al184  # 올라감 = 알림 X
 run184(H.ig_reel, "2026-11-13 23:40", {}); assert al184 == [("reelx_2026-11-13", "🎬 오늘 인스타 릴스 안 올라감 — 오늘 영상 없음(테마·TOP 넘기기·클립)")]
-assert 'seen.setdefault(time.strftime("igr_%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1' in inspect.getsource(H.ig_publish)
+assert 'seen.setdefault(time.strftime(("igr_" if kind == "reel" else "igrd_") + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1' in inspect.getsource(H.ig_publish)  # 11/16 낮 릴스 = igrd_
 H.IG_AUTO = ia184
 (H.th_post, H.th_poll, H.th_reply, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, H.chat_ai_prep, H.x_stats, H.th_reply_ok, H.mall_card_make, H.http, H.busy, H.th_hold, H.day_wait,
  H.alert, time.time, H.POSTS, H.DAYS_FILE, H.EVENTS, H.CLIP_DIR, e184, r184, H.TOSS_GAP) = sv184
@@ -15009,3 +15010,36 @@ src195 = inspect.getsource(H)
 for f195 in ("auto_pick5", "auto_repost", "new_sets", "focus_pick", "cp_shelf", "steady_cands", "clip_topics", "drop_post", "top_deals"):
     assert "ev_off(" in inspect.getsource(getattr(H, f195)), f195  # 자동 게시 후보 고르는 곳마다
 (time.time, H.CPRE_HOURS, H.repost_send, H.busy, H.ev_near, H.POSTS, H.TOP) = sv195; os.chdir(cwd195)
+
+# 9-196 (11/15~16 진우 인스타 통합 개편 ①②): 하루 4개 = 릴스 2(12~13시 클립 · 22시 테마) + 피드 2(토스 1칸 15:30 · 19시 쿠팡 테마 1칸) · 테마 못 만든 날 = 낮 릴스 X(22시 클립)
+#   · 11~2월 요일 테마 전부 계절 · IG_V2·IGT_WINTER 끄면 예전 일정 · 인스타 카드·표지·토스 표지·IG_TOSS_N 그대로
+cwd196, sv196 = os.getcwd(), (H.IG_V2, H.IGT_WINTER, H.http, time.time, H.CLIP_DIR, dict(H.E), H.IG_AUTO, H.ev_info, H.REEL_CLIP); os.chdir(tempfile.mkdtemp())
+H.IG_V2 = H.IGT_WINTER = True
+assert H.igf_slots() == {"19": (19, 0)} and H.igt_at() == ("15:30",) and H.ig_fmt(738000, "19") == "theme" and H.IG_TOSS_N == (3, 5) and H.IG_FEED == {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}
+k196 = lambda d: time.gmtime(TK(d) + 9 * 3600)
+assert [H.igt_days(k196(f"2026-11-{d} 12:00"))[k196(f"2026-11-{d} 12:00").tm_wday][0] for d in range(16, 23)] == ["겨울템", "겨울 보습", "방한 패션", "제철 먹거리", "겨울 가전·주방", "따뜻한 간식·차", "겨울 생필품"]  # 11/16 = 월
+assert H.igt_days(k196("2027-02-15 12:00")) == H.IGT_DAYS_WINTER and H.igt_days(k196("2027-03-01 12:00")) == H.IGT_DAYS and "laundry" not in str(H.IGT_DAYS_WINTER)  # 3~10월 = 예전
+H.IG_V2 = H.IGT_WINTER = False
+assert H.igf_slots() == H.IG_FEED and H.igt_at() == H.IG_TOSS_AT and H.igt_days(k196("2026-11-16 12:00")) == H.IGT_DAYS  # 끄면 예전
+H.IG_V2 = True
+# 낮 릴스: 오늘 테마 릴스(11:40 미리)가 있을 때만 · 테마 상품과 겹치는 클립 X · 하루 1번 · kind reeld
+os.makedirs("clips196/2026-11-16"); [open(f"clips196/2026-11-16/0{n}.mp4", "wb").write(b"v") for n in (1, 2)]
+json.dump({"2026-11-16": [{"file": "01.mp4", "u": ["https://www.coupang.com/vp/products/111?itemId=1"], "yt": {"desc": f"{H.DISCLOSURE}\n클립 1"}},
+                          {"file": "02.mp4", "u": ["https://www.coupang.com/vp/products/222?itemId=2"], "yt": {"desc": f"{H.DISCLOSURE}\n클립 2"}}]}, open("clips196/clips.json", "w"), ensure_ascii=False)
+H.CLIP_DIR, H.IG_AUTO, H.REEL_CLIP, h196 = "clips196", True, True, []
+H.E.update(IG_TOKEN="t", IG_USER_ID="u")
+H.http = lambda url, body=None, headers=None, method="GET", **k: h196.append((method, url, body)) or (json.dumps({"id": "C196"}).encode() if method == "POST" else b"")
+H.ev_info = lambda: {"https://link.coupang.com/a/th1": {"pid": "111"}}
+time.time = lambda: TK("2026-11-16 12:10")
+s196 = {}
+H.ig_reel_day(s196); assert not h196  # 테마 릴스 없음 = 낮 릴스 X(22시 ig_reel이 클립)
+s196 = {"reel_2026-11-16": {"t": 1, "cap": "테마", "feed": False}, "igu": {"t": 1, "m": {"https://link.coupang.com/a/th1": "2026-11-16"}}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_reel_day(s196)
+assert [m for m, *_ in h196] == ["HEAD", "POST"] and h196[0][1].endswith("clips/2026-11-16/02.mp4") and h196[1][2]["caption"] == f"{H.DISCLOSURE}\n클립 2" and h196[1][2]["media_type"] == "REELS"  # 01 = 테마 상품(111)과 겹침 = 건너뜀
+assert s196["igc_C196"]["kind"] == "reeld" and "igrd_2026-11-16" in s196 and "igr_2026-11-16" not in s196  # 22시 테마 릴스 표시와 따로
+h196.clear(); H.ig_reel_day(s196); assert not h196  # 하루 1번
+time.time = lambda: TK("2026-11-16 14:10"); s196.pop("igrd_2026-11-16"); H.ig_reel_day(s196); assert not h196  # 12~13시만
+assert 'kind in ("reel", "reeld")' in inspect.getsource(H.ig_publish) and "ig_reel_day(seen)" in inspect.getsource(H.ig_reel)
+fs196 = inspect.getsource(H.ig_feed); assert "min(at, REEL_DAY[0] * 3600) if IG_V2 else at" in fs196 and "ig_theme_reel(seen, stem, st, kst)" in fs196  # 19시 테마 = 11:40 미리 · 22시 테마 릴스 미리
+(H.IG_V2, H.IGT_WINTER, H.http, time.time, H.CLIP_DIR, e196, H.IG_AUTO, H.ev_info, H.REEL_CLIP) = sv196; H.E.clear(); H.E.update(e196); os.chdir(cwd196)

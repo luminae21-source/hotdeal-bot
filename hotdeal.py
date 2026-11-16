@@ -5303,9 +5303,9 @@ def day_posts(seen):
                 t = rnd.choice(ok)
                 fixed.append(t)
                 slots.append(("th", time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600)), None))
-        free = [hh for hh, (h, m) in IG_FEED.items() if not seen.get(f"igf_{today}_{hh}") and kst_ts(f"{today} {h:02d}:{m:02d}") - now >= IGF_PREP + 10 * 60 and h >= DAY_HOURS[0]]
+        free = [hh for hh, (h, m) in igf_slots().items() if not seen.get(f"igf_{today}_{hh}") and kst_ts(f"{today} {h:02d}:{m:02d}") - now >= IGF_PREP + 10 * 60 and h >= DAY_HOURS[0]]
         for hh in rnd.sample(free, min(q["ig"], len(free))):  # 인스타 = 남은 쿠팡 피드 칸 하나를 기념일 묶음으로(칸 시각 + 15~20분)
-            h, m = IG_FEED[hh]
+            h, m = igf_slots()[hh]
             at = time.strftime("%Y-%m-%d %H:%M", time.gmtime(kst_ts(f"{today} {h:02d}:{m:02d}") + rnd.randint(15, 20) * 60 + 9 * 3600))
             if at not in taken:
                 seen[f"igf_{today}_{hh}"] = {"t": now, "done": "day"}  # 이 칸 = 기념일 글 몫(ig_feed 건너뜀 · ig_room은 쓸 때까지 남은 칸으로 셈)
@@ -8919,11 +8919,11 @@ def ig_publish(seen):
         kind = isinstance(v, dict) and v.get("kind")
         if (card(v) or kind in IG_KIND) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
-        n, free = seen.get(day, {}).get("n", 0), kind == "story" or IG_H and kind == "reel"  # H: 스토리·릴스(피드에 X) = 하루 피드 상한·2시간 간격 X(쉼·공식 한도는 같게)
+        n, free = seen.get(day, {}).get("n", 0), kind == "story" or IG_H and kind in ("reel", "reeld")  # H: 스토리·릴스(피드에 X) = 하루 피드 상한·2시간 간격 X(쉼·공식 한도는 같게)
         toss, last = kind == "toss", seen.get("iglast", {})
         gap = IG_TOSS_GAP if toss or last.get("toss") else IG_GAP  # L' 토스 글 앞뒤 = 1시간 30분(쿠팡끼리 2시간)
         if toss and not failed and not ig_toss_slot(now):  # L' 토스 = 15:30·18:30 칸 안에만 · 18:30 칸도 지나면 그날 X
-            if time.strftime("%H:%M", time.gmtime(now + 9 * 3600)) >= IG_TOSS_AT[-1]:
+            if time.strftime("%H:%M", time.gmtime(now + 9 * 3600)) >= igt_at()[-1]:
                 seen.pop(k)
                 print("ig toss 칸 다 지남 -> 그날 X", k)
             continue
@@ -8965,8 +8965,8 @@ def ig_publish(seen):
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
             pid = v.get("cap80") and ig_landed(tok, uid, k[4:], v["cap80"], since=v["t"])  # 피드 글 = 게시물 id 찾기(구매 댓글·정답 예약 — 'published'면 그건 X)
         RUN["ok"].add("ig")
-        if kind == "reel":  # 11/12 오늘 릴스 올라감(ig_reel 23:30 점검)
-            seen.setdefault(time.strftime("igr_%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1
+        if kind in ("reel", "reeld"):  # 11/12 오늘 릴스 올라감(ig_reel 23:30 점검) · 11/16 낮 릴스 = igrd_
+            seen.setdefault(time.strftime(("igr_" if kind == "reel" else "igrd_") + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1
         print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         if not free:
@@ -9030,7 +9030,7 @@ def ig_room(seen, now):
     kst = time.gmtime(now + 9 * 3600)
     today, led = time.strftime("%Y-%m-%d", kst), load(IG_LIVE, {})
     left = sum(1 for h in ig_hours(seen) if (stem := today if h == IG_DAY_HOUR else f"{today}_{h:02d}") not in led and "igs_" + stem not in seen and kst.tm_hour < h + IG_LATE) if not IG_H \
-        else sum(1 for hh, (h, m) in IG_FEED.items() if (seen.get(f"igf_{today}_{hh}") or {}).get("done") in (None, "day") and kst.tm_hour * 60 + kst.tm_min < h * 60 + m + IG_LATE * 60)  # H = 남은 피드 칸(S 기념일 몫 'day' = 쓸 때까지 남은 칸)
+        else sum(1 for hh, (h, m) in igf_slots().items() if (seen.get(f"igf_{today}_{hh}") or {}).get("done") in (None, "day") and kst.tm_hour * 60 + kst.tm_min < h * 60 + m + IG_LATE * 60)  # H = 남은 피드 칸(S 기념일 몫 'day' = 쓸 때까지 남은 칸)
     if left and kst.tm_hour * 3600 + kst.tm_min * 60 > 86400 - IG_GAP - 3600:  # 21시 뒤 = 칸 밖 글 X(2시간 간격 때문에 남은 칸이 자정 뒤로 — 10/25 리뷰)
         return 0
     return ig_day_max(seen) - seen.get(time.strftime("igpub_%Y%m%d", kst), {}).get("n", 0) - sum(1 for k, v in seen.items() if k.startswith(("igc_", "igk_")) and not (isinstance(v, dict) and v.get("kind") == "toss")) - left  # L' 토스 = 피드 상한 밖
@@ -9279,6 +9279,40 @@ def reel_clip(seen, today):
     return None
 
 
+def ig_reel_day(seen):
+    """11/16 인스타 개편 릴스①(IG_V2): REEL_DAY(12~13시) 오늘 네이버 클립 1편 — 오늘 테마 릴스(reel_<날짜> — 11:40 19시 테마 넘기기로 미리 만든 것)가 있을 때만(못 만든 날 = 낮 쉼 → 22시 ig_reel이 클립)
+    · 테마 상품과 겹치는 클립 X(같은 상품 하루 1릴스 — pid) · 하루 1번 시도(실패 = ig_fail · 다시 X) · kind reeld(22시 릴스 표시 igr_와 따로)."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today, r = time.strftime("%Y-%m-%d", kst), seen.get("reel_" + time.strftime("%Y-%m-%d", kst)) or {}
+    if not (IG_V2 and REEL_CLIP and IG_AUTO and tok and uid) or not REEL_DAY[0] <= kst.tm_hour < REEL_DAY[1] or seen.get("igrd_" + today) or seen.get("ig_hold", 0) > now or not r or r.get("src"):
+        return
+    ev, used = ev_info(), {u for u, d in seen.get("igu", {}).get("m", {}).items() if d == today}
+    tp = {str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", u)) else "")) for u in used} - {""}
+    for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
+        f = f"{CLIP_DIR}/{today}/{c.get('file')}" if isinstance(c, dict) else ""
+        cp = {m[1] for u in (c.get("u") or [] if isinstance(c, dict) else []) if (m := re.search(r"/products/(\d+)", str(u)))}
+        if f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f) and not cp & tp:
+            break
+    else:
+        return print("ig reel day: 오늘 클립 없음(또는 테마 상품과 겹침) -> 낮 릴스 X")
+    url = f"{SITE}clips/{today}/{c['file']}"
+    try:
+        http(url, method="HEAD")
+    except Exception:
+        return  # 사이트 배포 전 = 다음 실행에
+    seen["igrd_" + today] = {"t": now}
+    try:
+        cid = json.loads(http(f"{IG}/{uid}/media", {"media_type": "REELS", "video_url": url, "caption": c["yt"]["desc"][:2200], "share_to_feed": False, "thumb_offset": REEL_THUMB_MS},
+                              {"Authorization": "Bearer " + tok}, "POST"))["id"]
+    except Exception as e:
+        seen["igrd_" + today] = {"t": now, "fail": 1}
+        return ig_fail(seen, now, f"낮 릴스 컨테이너 {ig_err(e)}")
+    seen["igc_" + cid] = {"t": now, "kind": "reeld"}
+    print("ig reel day 컨테이너", today, c["file"])
+
+
 def ig_reel(seen):
     """릴스 하루 1개 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_HOUR시~자정, 모아보기(digest)가 docs/reels/에 공개한 오늘 영상이 사이트에 뜨면(HEAD)
     REELS 컨테이너(video_url·캡션·피드에도·표지 1.5초) -> ig_publish가 처리 끝나면 발행(영상은 보통 1~10분). 만들기 실패는 IG_TRIES번까지 다음 실행에 다시."""
@@ -9286,6 +9320,10 @@ def ig_reel(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
+    try:  # 11/16 V2 낮 릴스(12~13시) — 같은 단계
+        ig_reel_day(seen)
+    except Exception as e:
+        print("ig reel day 오류", err_brief(e))
     r, tried = seen.get("reel_" + today), seen.get("igr_" + today)
     if IG_AUTO and tok and uid and time.strftime("%H:%M", kst) >= REEL_LATE and not (tried or {}).get("ok"):  # 11/12 하루 1편 점검 = 관리봇 1줄(하루 1번)
         alert(seen, "reelx_" + today, "🎬 오늘 인스타 릴스 안 올라감 — " + ("컨테이너 실패" if (tried or {}).get("fail") else "처리·발행 안 끝남" if tried else "영상이 사이트에 안 뜸" if r else "오늘 영상 없음(테마·TOP 넘기기·클립)"))
@@ -9316,6 +9354,7 @@ def ig_reel(seen):
 
 
 IG_TOSS_AT, IG_TOSS_N, IG_TOSS_DAYS, IGTOSS_DIR, TOSS_IG_IMG = ("15:30", "18:30"), (3, 5), 7, "docs/cards/igtoss", True  # 11/5 Cowork A②: 하루 1번 · 3~5개 · 같은 상품 7일 안 다시 X
+igt_at = lambda: IG_TOSS_AT_V2 if IG_V2 else IG_TOSS_AT  # V2 = 하루 1칸(15:30)
 IG_TOSS_WIN, IG_TOSS_GAP = 90 * 60, 90 * 60  # L' 11/7 02시 진우 '토스는 쿠팡글 줄이지 말고 사이에'(11/5 23시): 쿠팡 피드 4칸(11·14·17·20시) 사이 빈 칸 = 15:30 먼저, 다음 피드 칸(17시) 전까지 못 올리면 18:30(20시 전까지) · 토스 글 앞뒤 피드 글과 1시간 30분↑(쿠팡끼리 2시간 그대로) · 하루 피드 상한(IG_FEED_MAX) 밖 = 토스 날만 하루 5
 
 
@@ -9346,7 +9385,7 @@ def ig_toss_slot(now, prep=0):
     """L' 토스 넘기기 칸(IG_TOSS_AT 차례 — 칸 시각부터 IG_TOSS_WIN 안, prep = 그 전부터) -> 'HH:MM' / None(칸 밖 — 21시 뒤 X)."""
     kst = time.gmtime(now + 9 * 3600)
     m = kst.tm_hour * 60 + kst.tm_min
-    return next((a for a in IG_TOSS_AT if (s := int(a[:2]) * 60 + int(a[3:])) - prep // 60 <= m < s + IG_TOSS_WIN // 60), None)
+    return next((a for a in igt_at() if (s := int(a[:2]) * 60 + int(a[3:])) - prep // 60 <= m < s + IG_TOSS_WIN // 60), None)
 
 
 def ig_toss(seen, tok, uid, now):
@@ -11508,12 +11547,17 @@ def drop_post(seen):
     print("drop post: Threads", r["id"], len(urls) - 1, "장")
 
 IG_H = True  # 10/26 H·L·M(진우 '노출이 너무 적고 보고 싶을 수준 X' · '광고처럼 보여, 소통하고 싶어' · '꾸준하게 제품도 시간마다'): 피드 = IG_FEED 4칸 형식 돌림 · 시간대·하루 카드·📉 = 스토리 · False = 예전(칸 카드 피드)
-IG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}  # M-1 피드 4칸(3시간 간격 + 15~20분 무작위 지연) — 카드 이름 날짜_시(사이트 맨 위·c/칸 맨 위 번호 = 인스타 번호)
+IG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}
+IG_V2, IG_FEED_V2, IG_TOSS_AT_V2, REEL_DAY = True, {"19": (19, 0)}, ("15:30",), (12, 14)  # 11/15~16 진우 인스타 개편: 하루 4개 = 릴스 2(REEL_DAY 12~13시 클립 · 22시 테마) + 피드 2(토스 1 · 19시 쿠팡 테마 1) · False = 예전 일정
+igf_slots = lambda: IG_FEED_V2 if IG_V2 else IG_FEED  # 피드 칸(V2 = 19시 1칸 — 테마 넘기기 · 11:40에 미리 만들어 낮 릴스 판단·22시 테마 릴스)  # M-1 피드 4칸(3시간 간격 + 15~20분 무작위 지연) — 카드 이름 날짜_시(사이트 맨 위·c/칸 맨 위 번호 = 인스타 번호)
 IG_CYCLE = (("theme", "guess", "one", "vs"), ("top", "ask", "one", "fun"), ("theme", "check", "one", "guess"))  # L·M 형식 3일 돌림 — 같은 형식 연달아 X(날 넘어서도) · 링크 미는 글(IG_LINKY) 하루 2개 · 질문 카드 그날 저녁 = 재미 질문
 IG_LINKY = ("theme", "one", "top")  # 구매 링크 미는 형식(댓글 = 구매 링크 안내) — 나머지 = 소통(댓글로 답·정답·투표)
 IG_STORY, IG_STORY_MAX = {9: 0, 12: 30, 15: 30, 18: 30, 22: 0}, 5  # M-1 스토리(시: 분) — 그 시간대 딜 카드(9 = 0~9시 …) · 22시 = 📉 표지(없으면 하루 카드) · 피드 수 X
 IG_FEED_MAX, IGT_N, IGT_MIN, IG_REPEAT, IGF_PREP, IG_GUESS_AFTER = 4, 5, 3, 7, 20 * 60, 3 * 3600  # 하루 피드 4 · 테마 상품 5(3개↓ = 다른 형식) · 같은 상품 7일 X · 20분 전 카드(커밋 -> 사이트) · 가격 맞히기 정답 3시간 뒤
 IGT_DIR, CARD_NAMES = "docs/cards/igt", "docs/cards/names.json"  # 피드 카드 · 카드 이름(사이트 '📸 {이름}'·c/칸 맨 위 번호·pid -> 테마 = 주간 저장 순위)
+IGT_WINTER, IGT_DAYS_WINTER = True, (("겨울템", ("heat",)), ("겨울 보습", ("beauty",)), ("방한 패션", ("fashion",)), ("제철 먹거리", ("season",)), ("겨울 가전·주방", ("digital", "kitchen")),
+                                    ("따뜻한 간식·차", ("snack", "coffee")), ("겨울 생필품", ("life",)))  # 11/16 진우: 11~2월 요일 테마 전부 계절(월~일 · 세탁·주방 소모품 X) · 3~10월 = IGT_DAYS
+igt_days = lambda kst: IGT_DAYS_WINTER if IGT_WINTER and kst.tm_mon in (11, 12, 1, 2) else IGT_DAYS
 IGT_DAYS = (("자취·살림", ("home", "life")), ("뷰티", ("beauty",)), ("주방·세탁", ("kitchen", "laundry")), ("겨울템", ("heat",)), ("간식", ("snack", "coffee")), ("패션", ("fashion",)), ("생필품", ("life",)))  # 요일 테마(월~일, 시리즈처럼)
 IGT_SEASON = (("겨울템", ("heat",)), ("제철 먹거리", ("season",)))  # 많이 본 5개(GoatCounter)가 없을 때 테마(10~2월 = 겨울템)
 IGT_TAGS = {"자취·살림": "#자취템 #살림템 #생활꿀템", "뷰티": "#뷰티템 #스킨케어 #데일리뷰티", "주방·세탁": "#주방템 #살림꿀템 #세탁템", "겨울템": "#겨울템 #방한용품 #겨울필수템",
@@ -11633,7 +11677,7 @@ def ig_cmt(seen, cat, n, slug):
 
 def ig_fmt(day_ord, hh):
     """그 칸 형식(IG_CYCLE — 날짜 순서 % 3)."""
-    return IG_CYCLE[day_ord % len(IG_CYCLE)][list(IG_FEED).index(hh)]
+    return "theme" if IG_V2 else IG_CYCLE[day_ord % len(IG_CYCLE)][list(IG_FEED).index(hh)]  # V2 = 19시 1칸 = 테마 넘기기(22시 테마 릴스 재료)
 
 
 def ig_ask_tally(seen, tok):
@@ -11662,7 +11706,7 @@ def igf_make(seen, kind, stem, kst):
     import cards
     now, day, posts = time.time(), stem[:10], load(POSTS, [])
     tok = E.get("IG_TOKEN")
-    label, cats = IGT_DAYS[kst.tm_wday]
+    label, cats = igt_days(kst)[kst.tm_wday]
     d, k0 = f"{IGT_DIR}/{stem}", kst.tm_yday + int(stem[11:])
     shutil.rmtree(d, ignore_errors=True)
     take = lambda pool, n: [x for x in (igt_item(seen, i, p, k0 + j) for j, (i, p) in enumerate(pool[:n * 3])) if x][:n]
@@ -11768,13 +11812,16 @@ def ig_feed(seen):
         return
     kst = time.gmtime(now + 9 * 3600)
     today, sec = time.strftime("%Y-%m-%d", kst), kst.tm_hour * 3600 + kst.tm_min * 60
-    for hh, (h, m) in IG_FEED.items():
+    for hh, (h, m) in igf_slots().items():
         at, stem = h * 3600 + m * 60, f"{today}_{hh}"
         key, st = "igf_" + stem, seen.get("igf_" + stem)
-        if (st and st.get("done")) or not at - IGF_PREP <= sec < at + IG_LATE * 3600:
+        if (st and st.get("done")) or not (min(at, REEL_DAY[0] * 3600) if IG_V2 else at) - IGF_PREP <= sec < at + IG_LATE * 3600:  # V2 = 11:40부터 미리 만듦(낮 릴스 판단 · 게시는 칸 시각)
             continue
         if st is None:
             st = seen[key] = igf_make(seen, ig_fmt(datetime(kst.tm_year, kst.tm_mon, kst.tm_mday).toordinal(), hh), stem, kst)
+            if IG_V2 and st.get("kind") in ("theme", "top") and not seen.get("reelt_" + today):  # 22시 테마 릴스 = 미리(낮 릴스는 이것이 있을 때만)
+                seen["reelt_" + today] = {"t": now}
+                ig_theme_reel(seen, stem, st, kst)
             if st.get("files"):
                 return
             continue
