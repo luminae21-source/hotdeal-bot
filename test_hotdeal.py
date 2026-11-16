@@ -39,6 +39,7 @@ anr0, H.ANIMAL_RUN = H.ANIMAL_RUN, 0  # BB 동물 사진 받기·Claude 확인(1
 dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 아래 9-58에서만(예전 main() 셀프체크에서 관리자 DM X)
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인스타 개편(하루 4개·겨울 요일 테마) = 9-196에서만
+nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
 TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
@@ -15043,3 +15044,51 @@ time.time = lambda: TK("2026-11-16 14:10"); s196.pop("igrd_2026-11-16"); H.ig_re
 assert 'kind in ("reel", "reeld")' in inspect.getsource(H.ig_publish) and "ig_reel_day(seen)" in inspect.getsource(H.ig_reel)
 fs196 = inspect.getsource(H.ig_feed); assert "min(at, REEL_DAY[0] * 3600) if IG_V2 else at" in fs196 and "ig_theme_reel(seen, stem, st, kst)" in fs196  # 19시 테마 = 11:40 미리 · 22시 테마 릴스 미리
 (H.IG_V2, H.IGT_WINTER, H.http, time.time, H.CLIP_DIR, e196, H.IG_AUTO, H.ev_info, H.REEL_CLIP) = sv196; H.E.clear(); H.E.update(e196); os.chdir(cwd196)
+
+# 9-197 (11/15 진우 Threads 묶음 통합 v2): 고른 만큼 3~7(choose 그대로 · 억지로 X) · 4개↑ = 앞 3개만 1개 값·한 줄·링크 + 'N개 전체 👉 세트 쪽'(사이트 묶음 쪽) · 480자 = 한 줄 → 질문(상품 수 X)
+#   · 링크 5개 이하 · 꾸준템 = 그 칸 정상 후보 · 묶음당 3개 · 카드 칸 = 상품 수(6·7 = 새 서식만 · SERIES_DIR 20261115) · metrics n·stdy · 하루 칸 수 thb · TH_N_FIT 끄면 예전
+sv197, cwd197 = (time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, H.E.get("THREADS_TOKEN"), H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj, H.TH_N_FIT, H.SERIES_DIR, H.series_ready, H.th_get), os.getcwd()
+os.chdir(tempfile.mkdtemp())
+H.POSTS, H.EVENTS, H.TH_DIVERSE, H.TH_LIST_TOSS, H.E["THREADS_TOKEN"], H.season_adj, H.TH_N_FIT = "posts197.json", "ev197.json", True, False, "tk", (lambda n, ctx=None: 0), True
+json.dump([], open("ev197.json", "w")); tb197 = []
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None: tb197.append((kind, text)) or {"id": f"T{len(tb197)}"}
+H.tg, H.alert = (lambda m, **p: {"message_id": 1}), (lambda *a, **k: None)
+H.ai_json = lambda prompt, props, img=None: (_ for _ in ()).throw(OSError("no key"))
+P197 = lambda k, n, at: {"t": f"2026-11-06 {at}", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} (9,900원)\n\n좋음", "url": f"https://link.coupang.com/a/E{k}", "mid": 200 + k, "own": 1}
+N197 = ["탐사 물티슈 100매", "퍼실 세탁세제 2.5L", "농심 신라면 5개", "삼다수 생수 2L 12병", "곰곰 계란 30구", "오뚜기 즉석밥 12개", "스카트 고무장갑", "크리넥스 키친타월", "다우니 섬유유연제", "3M 수세미 10개", "코멧 화장지 30롤"]
+json.dump([P197(k, n, f"14:{k:02d}") for k, n in enumerate(N197)], open("posts197.json", "w"), ensure_ascii=False)
+json.dump({"items": [{"url": f"https://link.coupang.com/a/E{k}"} for k in range(6)]}, open("top.json", "w"))  # 잘 된 상품 6개(= 꾸준템 셈) — 묶음엔 3개까지
+s197 = {}; time.time = lambda: TK("2026-11-06 15:05")
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s197)
+k197, t197 = tb197[-1]
+it197 = re.findall(r"^[1-7]️⃣ (?:👍 )?(.+?) 9,900원$", t197, re.M)
+bi197 = next(i for i, x in enumerate(json.load(open("posts197.json"))) if x.get("bundle") == "th15")
+assert k197 == "top15" and 4 <= len(it197) <= 7 and len(t197) <= 480 and t197.count("https://") <= 5, (len(it197), len(t197), t197)  # 고른 만큼 · 480자 · 링크 5개
+assert f"{len(it197)}개 전체 👉 {H.SITE}p/{bi197}?ref=thb" in t197 and t197.count("👉") == 4  # 앞 3개 링크 + 세트 쪽(사이트 묶음 글 쪽)
+assert sum(n in N197[:6] for n in it197) <= 3, it197  # 꾸준템(잘 된 상품) 묶음당 3개
+assert s197["thbn"]["m"]["T1"] == [len(it197), 0, "2026-11-06", "top15"]  # metrics n·stdy(👍 표시 0)
+H.TH_N_FIT = False; s197b = {}; tb197.clear()
+json.dump([P197(k, n, f"14:{k:02d}") for k, n in enumerate(N197)], open("posts197.json", "w"), ensure_ascii=False)
+with contextlib.redirect_stdout(io.StringIO()): H.top_deals(s197b)
+assert tb197 and "개 전체 👉" not in tb197[-1][1] and tb197[-1][1].count("👉") == min(5, len(re.findall(r"^[1-7]️⃣ ", tb197[-1][1], re.M))); H.TH_N_FIT = True  # 끄면 예전 글(상품마다 링크 · 상품 수 기록은 그대로 = 비교 기준)
+assert "shelf_mix(posts, kst) if TH_N_FIT" in inspect.getsource(H.top_deals) and [x[2] for x in H.shelf_mix([], time.gmtime())] == []  # 꾸준템 = ③과 번갈아(정상 후보)
+# 카드: 장바구니 3~7칸(새 서식) · 꾸준템 3~5 · 6·7 = v3 X
+P197c = [({**P197(k, n, "14:00"), "img": f"https://img.coupang.com/{k}.jpg", "now": "9,900원", "chkt": f"2026-11-06 14:{k:02d}"}, "9,900원") for k, n in enumerate(N197)]
+assert H.mall_card_json("오늘의 장바구니", P197c[:7]) is None and len(H.mall_card_json("오늘의 장바구니", P197c[:7], 7)["items"]) == 7 and H.mall_card_json("x", P197c[:6], 7)["checked"] == "2026-11-06 14:05"  # 머리 = 가장 늦은 확인
+os.makedirs("sd197/src"); open("sd197/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
+const a = process.argv.slice(2), f = {}; for (let i = 0; i < a.length; i += 2) f[a[i].slice(2)] = a[i + 1];
+const d = JSON.parse(fs.readFileSync(f.data, 'utf8')); fs.mkdirSync(f.out, {recursive: true});
+fs.writeFileSync(path.join(f.out, path.basename(f.data, '.json') + '.png'), String(d.items.length));
+""")
+H.SERIES_DIR, H.series_ready, H.th_get = "sd197", (lambda env: None), (lambda u: base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
+if shutil.which("node"):
+    for n197 in range(3, 8):
+        with contextlib.redirect_stdout(io.StringIO()):
+            u197 = H.series_card(f"top{n197}", "오늘의 장바구니", P197c[:n197])
+        assert u197 and open(f"docs/cards/mall/{u197.rsplit('/', 1)[1]}").read() == str(n197), n197  # 카드 칸 = 상품 수
+    assert H.series_card("steady6", "꾸준템 시리즈", P197c[:6]) is None  # 꾸준템 = 3~5
+assert "(series_ab(kst, hrs[-1]) or n > 5) and series_card(" in inspect.getsource(H.top_deals) and H.SERIES_DIR.endswith("") and sv197[12].endswith("hotdealpick-series-20261115")
+assert "TH_LIST_MAX if TH_N_FIT else 3 if cat else 5" in inspect.getsource(H.toss_deals) and 'c/toss/?ref=tht' in inspect.getsource(H.toss_deals)  # 토스 묶음 = 같은 규칙(카드 3~5 = v3 · 6·7 = 사진 넘기기)
+assert '"n": seen["thbn"]["m"][x["id"]][0], "stdy": seen["thbn"]["m"][x["id"]][1]' in inspect.getsource(H.metrics_rows) and 'm[day]["thb"] = thb' in inspect.getsource(H.metrics_rows)
+(time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, tk197, H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj, H.TH_N_FIT, H.SERIES_DIR, H.series_ready, H.th_get) = sv197
+H.E.pop("THREADS_TOKEN", None) if tk197 is None else H.E.__setitem__("THREADS_TOKEN", tk197); os.chdir(cwd197)
