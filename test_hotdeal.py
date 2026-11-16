@@ -6509,7 +6509,7 @@ def http59(url, body=None, headers=None, method=None):
     return json.dumps({"hits": [{"path_id": 1, "path": "link-a", "count": 20}, {"path_id": 2, "path": "/link-b", "count": 10}, {"path_id": 3, "path": "buy/link-a/link.coupang.com/a/cY", "count": 3}, {"path_id": 4, "path": "link-a/kakao", "count": 2}], "more": True}
                       if len(h59) == 1 else {"hits": [{"path_id": 5, "path": "buy/link-b/toss.shopping/_m/x", "count": 1}, {"path_id": 6, "path": "link-b/blog", "count": 4}, {"path_id": 7, "path": "/link/", "count": 99}, {"path_id": 10, "path": "link-a/home", "count": 6},
                                                       {"path_id": 8, "path": "buy/link.coupang.com/a/cY", "count": 7}, {"path_id": 9, "path": "link/blog", "count": 5}], "more": False})
-H.http, sl59 = http59, {}
+H.http, sl59, gcd59 = http59, {}, (H.gc_day, H.ig_base); H.gc_day = H.ig_base = lambda s: None  # 11/16 gc_day·ig_base = 9-198·9-199
 for t59, why in (("2026-10-26 09:00", "기간 전(어제 10/25)"), ("2026-11-10 09:00", "기간 뒤(어제 11/9)"), ("2026-10-27 00:20", "0:30 전")):
     time.time = lambda t=t59: TK(t); H.link_ab(sl59); assert not h59 and not os.path.exists("link_ab.json"), why
 H.E["GOATCOUNTER_TOKEN"] = ""; time.time = lambda: TK("2026-10-27 09:00"); H.link_ab(sl59); assert not h59  # 토큰 없음
@@ -6523,6 +6523,7 @@ H.link_ab(sl59); assert len(h59) == 2  # 하루 1번
 H.http = lambda url, body=None, headers=None, method=None: (_ for _ in ()).throw(OSError("down")); time.time = lambda: TK("2026-10-28 09:00")
 with __import__("contextlib").redirect_stdout(io.StringIO()):
     for _ in range(4): H.link_ab(sl59)
+H.gc_day, H.ig_base = gcd59
 assert sl59["lab"]["d"] == {"2026-10-27": 3} and sl59["lab"]["t"] == TK("2026-10-28 09:00") and list(json.load(open("link_ab.json"))) == ["2026-10-26"]  # 오류 = 3번까지 다음 실행에 · 기록 그대로
 H.http = lambda url, body=None, headers=None, method=None: json.dumps({"hits": [{"path_id": 1, "path": "buy/link-b/link.coupang.com/a/cZ", "count": 1}], "more": False}); time.time = lambda: TK("2026-10-28 10:00")
 with __import__("contextlib").redirect_stdout(io.StringIO()): H.gc_top({})
@@ -9842,7 +9843,7 @@ assert ", cp_mix, " in inspect.getsource(H.main) and H.ALERT_STEPS["cp_mix"] == 
 (H.th_bundle, H.tg, H.season_adj, time.time, H.POSTS, tk90) = sv90; H.E.pop("THREADS_TOKEN", None) if tk90 is None else H.E.update(THREADS_TOKEN=tk90); os.chdir(cwd90)
 # ② 토스 베스트 = '💙 토스 상품 모음' 5개(카테고리·뷰티 베스트는 3개 그대로)
 src90 = inspect.getsource(H.toss_deals)
-assert '"💙 <b>토스 상품 모음 {}개</b>" if best is True' in src90 and '-p["score"]))[:3 if cat else TOSS_SERIES_N[1] if series else 5]' in src90 and "최대 5개 pick" in H.BEST_PROMPT
+assert '"💙 <b>토스 상품 모음 {}개</b>" if best is True' in src90 and '-p["score"]))[:TOSS_SERIES_N[1] if series else TH_LIST_MAX if TH_N_FIT else 3 if cat else 5]' in src90 and "최대 5개 pick" in H.BEST_PROMPT
 # ③ /link 앞 12칸: 품목 칸 2개까지 · 몰 돌림 · 어제·오늘 가격 먼저 · 모음 버튼
 lk90 = lambda k, nm, mall="쿠팡", at="2026-10-26 09:00", u=None: (k, {"t": at, "text": f"🔥 [{mall}] {nm} (9,900원)", "url": u or (f"https://toss.shopping/_m/L{k}" if mall == "토스" else f"https://link.coupang.com/a/L{k}"), "own": 1}, (0, None, "", [], False))
 LK90 = [lk90(k, f"코멧 전기히터 {k}") for k in range(8)] + [lk90(10, "농심 신라면"), lk90(11, "리큐 세탁세제"), lk90(12, "토스 온풍기", "토스"), lk90(13, "토스 생리대", "토스"),
@@ -14871,7 +14872,7 @@ else:
     print("9-192 새 서식 렌더 건너뜀(node 없음)")
 assert H.series_card("top12", "오늘의 장바구니", pr192[:2]) is None  # 3개 밑(mall_card_json) = None
 src192 = inspect.getsource(H.top_deals)
-assert 'img = series_ab(kst, hrs[-1]) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])' in src192 and 'ck = "series" if img else "v3"' in src192
+assert 'img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])' in src192 and 'ck = "series" if img else "v3"' in src192
 assert 'if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):' in src192 and '"img": img, "ck": ck}]}' in src192  # 새 서식 실패 = v3 → 그것도 실패 = 글만
 # ① 꾸준템: 글 상품(앞 n개)과 같은 수·순서 카드 · 회차 증가·주제 돌림 · 카드 못 만듦·토스 API 상품(i 없음) = 글만(회차 그대로)
 json.dump(P192, open("posts192.json", "w"), ensure_ascii=False); H.POSTS = "posts192.json"
@@ -15145,3 +15146,40 @@ with contextlib.redirect_stdout(io.StringIO()) as o198:
 g198 = json.load(open("gc_day.json"))["2026-11-16"]
 assert g198["cal_sub"] == 5 and g198["cal_add"] == 4 and "/p/1.html" not in g198 and "달력 구독 5" in o198.getvalue()
 (time.time, H.tg, H.th_bundle, H.busy, H.th_hold, H.EVENTS, H.http, e198, H.PROMO_ALERT) = sv198; H.E.clear(); H.E.update(e198); os.chdir(cwd198)
+
+# 9-199 (11/16 진우 인스타 통합 개편 ③⑤⑥⑦): 첫 화면 A/B(홀수 날 글자 '{주제} 1개 값, N원부터' · 짝수 날 실사진 — seen igcov → metrics 릴스 줄 cov) · 07:00 보고 igd(릴스 2·피드 2 ✅/❌ + 이유)
+#   · 품질 문(지금 기준 — 캡션 금지어 · 클립 상품 3개↑ = 그 회차만 쉼) · 개편 전(11/1~14) 릴스 기준값 ig_base.json(조회 중간값·저장·공유·평균 시청 시간) · 릴스 줄 kind·awt
+cwd199, sv199 = os.getcwd(), (H.IG_V2, H.http, time.time, dict(H.E), H.IG_AUTO, H.REEL_CLIP); os.chdir(tempfile.mkdtemp())
+H.IG_V2, H.IG_AUTO, H.REEL_CLIP = True, True, True; H.E.update(IG_TOKEN="t", IG_USER_ID="u")
+src199 = inspect.getsource(H.igf_make)
+assert 'cov = "text" if IG_COVER_AB and IG_V2 and kst.tm_mday % 2 else "photo"' in src199 and 'top=f"{lb} 1개 값,\\n{lo:,}원부터"' in src199 and '"cov": cov' in src199  # 홀수 날 글자 표지
+assert 'today: st["cov"]' in inspect.getsource(H.ig_theme_reel) and '"cov": c' in inspect.getsource(H.metrics_rows) and '"awt"' in inspect.getsource(H.metrics_rows) and '"kind": "reel"' in inspect.getsource(H.metrics_rows)
+assert 'm[day]["igd"] = {"릴스 낮"' in inspect.getsource(H.metrics_rows) and '"피드 19시"' in inspect.getsource(H.metrics_rows)  # 07:00 보고
+# 품질 문: 22시 릴스 캡션 금지어 = 그날 쉼 · 낮 릴스 = 상품 3개↑·금지어 X 클립만
+h199 = []
+H.http = lambda url, body=None, headers=None, method="GET", **k: h199.append((method, url)) or b"{}"
+time.time = lambda: TK("2026-11-17 22:10")
+s199 = {"reel_2026-11-17": {"t": 1, "cap": f"{H.DISCLOSURE}\n최저가 모음", "feed": False}}
+with contextlib.redirect_stdout(io.StringIO()) as o199:
+    H.ig_reel(s199)
+assert not h199 and s199["igr_2026-11-17"]["why"] == "금지어" and "품질 문 X" in o199.getvalue()
+os.makedirs("clips199/2026-11-17"); open("clips199/2026-11-17/01.mp4", "wb").write(b"v")
+json.dump({"2026-11-17": [{"file": "01.mp4", "u": ["https://www.coupang.com/vp/products/1", "https://www.coupang.com/vp/products/2"], "yt": {"desc": f"{H.DISCLOSURE}\n클립"}}]}, open("clips199/clips.json", "w"), ensure_ascii=False)
+cd199 = H.CLIP_DIR; H.CLIP_DIR = "clips199"; time.time = lambda: TK("2026-11-17 12:20")
+with contextlib.redirect_stdout(io.StringIO()) as o199:
+    H.ig_reel_day({"reel_2026-11-17": {"t": 1, "cap": "테마", "feed": False}})
+assert not h199 and "낮 릴스 X" in o199.getvalue(); H.CLIP_DIR = cd199  # 상품 2개 클립 = X
+# 개편 전 기준값(1번)
+def ig199(url, body=None, headers=None, method="GET", **k):
+    if "/media?" in url:
+        return json.dumps({"data": [{"id": f"m{i}", "timestamp": f"2026-11-{d:02d}T13:00:00+0000", "media_product_type": t} for i, (d, t) in enumerate(((15, "REELS"), (14, "REELS"), (10, "FEED"), (5, "REELS"), (1, "REELS"), (10, "REELS"), (10, "REELS")))]}).encode()
+    v = {"m1": 79, "m3": 50, "m4": 120, "m5": 90, "m6": 60}.get(url.split("/")[-2].split("?")[0], 0)
+    return json.dumps({"data": [{"name": "views", "values": [{"value": v}]}, {"name": "saved", "values": [{"value": 0}]}, {"name": "shares", "values": [{"value": 1}]}, {"name": "ig_reels_avg_watch_time", "values": [{"value": 4000}]}]}).encode()
+H.http = ig199
+with contextlib.redirect_stdout(io.StringIO()) as o199:
+    H.ig_base({})
+b199 = json.load(open("ig_base.json"))
+assert b199["n"] == 5 and b199["views_median"] == 79 and b199["shares"] == 5 and b199["awt_ms_avg"] == 4000 and "조회 중간값 79" in o199.getvalue(), b199  # 11/1~14 릴스만(11/15·피드 X)
+H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("다시 X")); H.ig_base({})  # 파일 있으면 X
+assert "[ ! -f ig_base.json ] || git add ig_base.json" in open(os.path.join(cwd199, ".github/workflows/hotdeal.yml"), encoding="utf-8").read() if os.path.exists(os.path.join(cwd199, ".github/workflows/hotdeal.yml")) else True
+(H.IG_V2, H.http, time.time, e199, H.IG_AUTO, H.REEL_CLIP) = sv199; H.E.clear(); H.E.update(e199); os.chdir(cwd199)

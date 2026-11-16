@@ -9330,7 +9330,7 @@ def ig_reel_day(seen):
     for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
         f = f"{CLIP_DIR}/{today}/{c.get('file')}" if isinstance(c, dict) else ""
         cp = {m[1] for u in (c.get("u") or [] if isinstance(c, dict) else []) if (m := re.search(r"/products/(\d+)", str(u)))}
-        if f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f) and not cp & tp:
+        if f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f) and not cp & tp and len(cp) >= 3 and not re.search(IG_REEL_BAN, c["yt"]["desc"]):  # 품질 문(3개↑·금지어 X)
             break
     else:
         return print("ig reel day: 오늘 클립 없음(또는 테마 상품과 겹침) -> 낮 릴스 X")
@@ -9369,6 +9369,9 @@ def ig_reel(seen):
     if not (IG_AUTO and tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
         return
     url = r.get("src") or f"{SITE}reels/{today}.mp4"
+    if re.search(IG_REEL_BAN, r.get("cap") or ""):  # 11/16 품질 문 = 그 회차만 쉼
+        seen["igr_" + today] = {"t": now, "fail": IG_TRIES, "why": "금지어"}
+        return print("ig reel 품질 문 X — 캡션 금지어 → 오늘 X")
     try:
         http(url, method="HEAD")  # 아직 배포 전이면 다음 실행에
     except Exception:
@@ -11585,7 +11588,8 @@ def drop_post(seen):
 
 IG_H = True  # 10/26 H·L·M(진우 '노출이 너무 적고 보고 싶을 수준 X' · '광고처럼 보여, 소통하고 싶어' · '꾸준하게 제품도 시간마다'): 피드 = IG_FEED 4칸 형식 돌림 · 시간대·하루 카드·📉 = 스토리 · False = 예전(칸 카드 피드)
 IG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}
-IG_V2, IG_FEED_V2, IG_TOSS_AT_V2, REEL_DAY = True, {"19": (19, 0)}, ("15:30",), (12, 14)  # 11/15~16 진우 인스타 개편: 하루 4개 = 릴스 2(REEL_DAY 12~13시 클립 · 22시 테마) + 피드 2(토스 1 · 19시 쿠팡 테마 1) · False = 예전 일정
+IG_V2, IG_FEED_V2, IG_TOSS_AT_V2, REEL_DAY = True, {"19": (19, 0)}, ("15:30",), (12, 14)
+IG_COVER_AB, IG_REEL_BAN = True, r"최저가|역대\s*최저|효능|효과|치료|무조건|지금\s*바로|서두르"  # 11/16 ③ 첫 화면 A/B(홀수 날 글자 · 짝수 날 실사진) · ⑥ 품질 문 = 릴스 캡션 금지어(지금 기준 — 더 엄격하게 X)  # 11/15~16 진우 인스타 개편: 하루 4개 = 릴스 2(REEL_DAY 12~13시 클립 · 22시 테마) + 피드 2(토스 1 · 19시 쿠팡 테마 1) · False = 예전 일정
 igf_slots = lambda: IG_FEED_V2 if IG_V2 else IG_FEED  # 피드 칸(V2 = 19시 1칸 — 테마 넘기기 · 11:40에 미리 만들어 낮 릴스 판단·22시 테마 릴스)  # M-1 피드 4칸(3시간 간격 + 15~20분 무작위 지연) — 카드 이름 날짜_시(사이트 맨 위·c/칸 맨 위 번호 = 인스타 번호)
 IG_CYCLE = (("theme", "guess", "one", "vs"), ("top", "ask", "one", "fun"), ("theme", "check", "one", "guess"))  # L·M 형식 3일 돌림 — 같은 형식 연달아 X(날 넘어서도) · 링크 미는 글(IG_LINKY) 하루 2개 · 질문 카드 그날 저녁 = 재미 질문
 IG_LINKY = ("theme", "one", "top")  # 구매 링크 미는 형식(댓글 = 구매 링크 안내) — 나머지 = 소통(댓글로 답·정답·투표)
@@ -11778,8 +11782,14 @@ def igf_make(seen, kind, stem, kst):
         if kd in ("theme", "top"):
             files = [cards.theme_cover([x["photo"] for x in its], cp["title"], " · ".join(clip(x["name"], 10) for x in its), f"{'월화수목금토일'[kst.tm_wday]}요일 {lb}", k0, f"{d}/00.jpg")]
             files += [cards.theme_slide(x, n, f"{d}/{n:02d}.jpg") for n, x in enumerate(its, 1)] + [cards.theme_end(cat, k0 + 3, f"{d}/09.jpg")]
-            cards.photo_cover(its[0]["photo"], f"1번 · {(its[0]['unit'] or '').lstrip('💰 ').split(' (')[0] or its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
-            extra = {"rc": f"{d}/rc.jpg"}  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
+            cov = "text" if IG_COVER_AB and IG_V2 and kst.tm_mday % 2 else "photo"  # 11/16 첫 화면 A/B(2주): 홀수 날 = 글자 표지 · 짝수 날 = 실사진 표지
+            lo = min([w for x in its if (w := won(re.sub(r"^[^당]*당", "", str(x.get("unit") or ""))))] or [won(x["price"]) or 0 for x in its])
+            if cov == "text" and lo:
+                cards.theme_end(lb, k0 + 5, f"{d}/rc.jpg", top=f"{lb} 1개 값,\n{lo:,}원부터", mark=False)
+            else:
+                cov = "photo"
+                cards.photo_cover(its[0]["photo"], f"1번 · {(its[0]['unit'] or '').lstrip('💰 ').split(' (')[0] or its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
+            extra = {"rc": f"{d}/rc.jpg", "cov": cov}  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
             cap = f"{cp['seo']}\n{notes}\n\n{cp['say']}\n\n{rows}\n\n저장해 두고 필요할 때 보세요 🔖\n{cp['q']}\n\n{link}"
         elif kd == "one":
             it = its[0]
@@ -11990,6 +12000,8 @@ def ig_theme_reel(seen, stem, st, kst):
         path = cards.slideshow(([st["rc"]] if st.get("rc") and os.path.exists(st["rc"]) else []) + st["files"], out, music)  # FF: 첫 장 = 1위 실사진 표지
         if REEL_PUBLIC:
             seen["reel_" + today] = {"t": time.time(), "cap": st["cap"][:1024], "feed": False}
+            if st.get("cov"):  # 11/16 표지 A/B 기록(metrics 릴스 줄 cov)
+                seen["igcov"] = {"t": time.time(), "m": {**{k: v for k, v in seen.get("igcov", {}).get("m", {}).items() if k >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))}, today: st["cov"]}}
         tg_video(path, f"🎬 오늘 릴스(테마 넘기기 {len(st['files'])}장 · 1.5초씩)" + (f" · 🎵 {song['name']}" if music and song else " · 음악 X") + (f" — {REEL_HOUR}시 자동 게시" if REEL_PUBLIC else ""))
         print("ig reel 테마", stem, song and song.get("name"))
     except Exception as e:
@@ -13089,7 +13101,7 @@ def metrics_rows(seen):
     if not (itok and uid):
         miss["ig"] = "IG_TOKEN·IG_USER_ID 없음"
     try:  # 하루 글 몇 개라 최근 50개면 어제까지 덮음
-        ms = itok and uid and json.loads(http(f"{IG}/{uid}/media?fields=id,caption,timestamp,like_count,comments_count&limit=50", None, h))["data"] or []
+        ms = itok and uid and json.loads(http(f"{IG}/{uid}/media?fields=id,caption,timestamp,like_count,comments_count,media_product_type&limit=50", None, h))["data"] or []
     except Exception as e:
         miss["ig"] = "미디어 목록 못 읽음: " + blame(e)
     for x in ms:
@@ -13098,10 +13110,11 @@ def metrics_rows(seen):
         v = None
         if "ig" not in miss:
             try:
-                ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,reach,saved,shares", None, h))["data"]}
+                rl = x.get("media_product_type") == "REELS"  # 11/16 릴스 = 평균 시청 시간(ms)도
+                ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,reach,saved,shares" + (",ig_reels_avg_watch_time" if rl else ""), None, h))["data"]}
                 if "views" not in ins:  # 빈 insights = 그 글만 빈 칸(일부 못 읽음)
                     raise ValueError("빈 insights")
-                v, x["reach"], x["saved"], x["shares"] = ins["views"], ins.get("reach"), ins.get("saved"), ins.get("shares")  # 도달·저장·공유(10/25 진우 '상황 잘 보고' · H-5 — 주간 요약 igw)
+                v, x["reach"], x["saved"], x["shares"], x["awt"] = ins["views"], ins.get("reach"), ins.get("saved"), ins.get("shares"), ins.get("ig_reels_avg_watch_time")  # 도달·저장·공유(10/25 진우 '상황 잘 보고' · H-5 — 주간 요약 igw)
             except Exception as e:
                 why = blame(e)
                 if denied(e):
@@ -13109,7 +13122,7 @@ def metrics_rows(seen):
                 else:
                     miss.setdefault("ig_part", "일부 글 조회수 못 읽음: " + why)
         lk, cm = x.get("like_count"), x.get("comments_count")
-        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, **{k: x[k] for k in ("reach", "saved", "shares") if x.get(k) is not None}, **({"theme": th} if (th := ig_theme_of(x["id"])) else {}))  # 도달·저장 = 읽힌 것만(권한 없으면 칸 X)
+        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, **{k: x[k] for k in ("reach", "saved", "shares", "awt") if x.get(k) is not None}, **({"kind": "reel", **({"cov": c} if (c := seen.get("igcov", {}).get("m", {}).get(day)) else {})} if x.get("media_product_type") == "REELS" else {}), **({"theme": th} if (th := ig_theme_of(x["id"])) else {}))  # 도달·저장 = 읽힌 것만(권한 없으면 칸 X)
 
     rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
     m = load(METRICS, {})
@@ -13140,6 +13153,11 @@ def metrics_rows(seen):
         m[day]["chg"] = m[day].get("chg", []) + ["th_cut30"]  # ③ Threads 하루 30개 안팎(11/25 글당 조회·하루 전체 조회·쿠팡 클릭으로 판단)
     if seen.get("thcap", {}).get(day):
         m[day]["thn"] = seen["thcap"][day]  # ③ 봇 Threads 글 수 {n: 전체, k: 줄일 종류별}
+    if IG_V2:  # 11/16 인스타 하루 4개 ✅/❌ + 못 나간 이유(07:00 보고)
+        ok = lambda v, why: "✅" if (v or {}).get("ok") or (v or {}).get("done") == 1 else f"❌ {(v or {}).get('why') or ('실패' if (v or {}).get('fail') else why)}"
+        f19 = seen.get(f"igf_{day}_19") or {}
+        m[day]["igd"] = {"릴스 낮": ok(seen.get("igrd_" + day), "테마 릴스 없음(낮 쉼)" if not seen.get("reelt_" + day) else "안 올라감"), "릴스 22시": ok(seen.get("igr_" + day), "안 올라감"),
+                         "피드 토스": ok(seen.get("igtoss_" + day), "토스 상품 3개 밑·칸 지남"), "피드 19시": "✅" if f19.get("done") == 1 else f"❌ {f19.get('done') or '안 만듦'}"}
     if thb := {v[3]: v[0] for v in seen.get("thbn", {}).get("m", {}).values() if v[2] == day}:  # 11/15 v2 묶음별 칸 수(07:00 보고 — {top12: 5, …})
         m[day]["thb"] = thb
     metrics_save(m)
@@ -13520,6 +13538,36 @@ def promo_alert(seen):
         return print(f"promo alert {g} {len(xs)}개 · " + " / ".join(f"{k} {p['id']}" for p, k in xs))
 
 
+IG_BASE, IG_BASE_FILE = ("2026-11-01", "2026-11-14"), "ig_base.json"  # 11/16 인스타 개편 ⑦ 비교 기준값(개편 전 릴스)
+
+
+def ig_base(seen):
+    """11/16 ⑦ 개편 전(IG_BASE) 릴스 기준값 1번: 릴스마다 조회·저장·공유·평균 시청 시간(ig_reels_avg_watch_time ms) -> ig_base.json(조회 중간값·저장 합·공유 합·평균 시청 시간 평균 — 11/29 2주 비교)
+    · 파일 있으면 X · 토큰 없음 = X · 오류 = 6시간 뒤 다시."""
+    tok, uid, now = E.get("IG_TOKEN"), E.get("IG_USER_ID"), time.time()
+    if os.path.exists(IG_BASE_FILE) or not (tok and uid) or now - seen.get("igbase", {}).get("t", 0) < 6 * 3600:
+        return
+    seen["igbase"] = {"t": now}
+    h, kday = {"Authorization": "Bearer " + tok}, lambda ts: time.strftime("%Y-%m-%d", time.gmtime(datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S%z").timestamp() + 9 * 3600))
+    try:
+        ms, url = [], f"{IG}/{uid}/media?fields=id,timestamp,media_product_type&limit=100"
+        while url and len(ms) < 500 and not (ms and kday(ms[-1]["timestamp"]) < IG_BASE[0]):
+            r = json.loads(http(url, None, h))
+            ms, url = ms + (r.get("data") or []), (r.get("paging") or {}).get("next")
+        rows = []
+        for x in (x for x in ms if x.get("media_product_type") == "REELS" and IG_BASE[0] <= kday(x["timestamp"]) <= IG_BASE[1]):
+            ins = {m["name"]: (m.get("total_value") or m["values"][0])["value"] for m in json.loads(http(f"{IG}/{x['id']}/insights?metric=views,saved,shares,ig_reels_avg_watch_time", None, h))["data"]}
+            rows.append({"id": x["id"], "day": kday(x["timestamp"]), "views": ins.get("views"), "saved": ins.get("saved"), "shares": ins.get("shares"), "awt": ins.get("ig_reels_avg_watch_time")})
+    except Exception as e:
+        return print("ig base", err_brief(e))
+    vs, aw = sorted(r["views"] for r in rows if isinstance(r["views"], int)), [r["awt"] for r in rows if isinstance(r["awt"], (int, float))]
+    med = (vs[len(vs) // 2] if len(vs) % 2 else (vs[len(vs) // 2 - 1] + vs[len(vs) // 2]) / 2) if vs else None
+    out = {"from": IG_BASE[0], "to": IG_BASE[1], "n": len(rows), "views_median": med, "saved": sum(r["saved"] or 0 for r in rows), "shares": sum(r["shares"] or 0 for r in rows),
+           "awt_ms_avg": round(sum(aw) / len(aw)) if aw else None, "at": time.strftime("%Y-%m-%d %H:%M", time.gmtime(now + 9 * 3600)), "rows": rows}
+    json.dump(out, open(IG_BASE_FILE, "w"), ensure_ascii=False, indent=1)
+    print(f"ig base 릴스 {len(rows)}개 · 조회 중간값 {med} · 저장 {out['saved']} · 공유 {out['shares']} · 평균 시청 {out['awt_ms_avg']}ms")
+
+
 GC_DAY_FILE, GC_DAY_RX = "gc_day.json", r"cal/|ig/"  # 11/16 07:00 보고: 어제 GoatCounter 이벤트(쇼핑 달력 구독·📅 추가 · 인스타 유입) {날짜: {이름: 수}}
 
 
@@ -13560,10 +13608,11 @@ def link_ab(seen):
     보기 'link-a'·'link-b'(가상 경로) · 상품 클릭 'buy/link-a/…' · 채널 클릭 'link-a/…'(카톡·블로그·Threads·인스타·텔레그램) · 사이트 홈 'link-a/home'(따로)
     -> link_ab.json {날짜: {a: {view, buy, ch, home}, b: …, line}} + 로그 줄(README 점검 표에 그대로). 상품 클릭률 = buy ÷ view · 채널 클릭률 = ch ÷ view.
     마지막 날(11/8) 줄은 11/9 0:30 뒤에 생김. 토큰 없으면 X · 오류 = 그날 3번까지 다음 실행에 다시."""
-    try:  # 11/16 07:00 보고 GoatCounter 이벤트(쇼핑 달력 등) — 같은 단계
-        gc_day(seen)
-    except Exception as e:
-        print("gc day 오류", err_brief(e))
+    for f in (gc_day, ig_base):  # 11/16 07:00 보고 GoatCounter 이벤트(쇼핑 달력 등) · 인스타 기준값 1번 — 같은 단계
+        try:
+            f(seen)
+        except Exception as e:
+            print(f.__name__, "오류", err_brief(e))
     tok, now = E.get("GOATCOUNTER_TOKEN"), time.time()
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
