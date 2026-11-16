@@ -4599,12 +4599,11 @@ def steady_list(seen):
     vol = seen.get("steadyvol", 0) + 1  # 11/13 ① 꾸준템 시리즈 카드 = 글 상품과 같은 수·순서 · 회차 01부터(만든 것만 셈) · 주제 4개 돌림 · 못 만듦 = 지금처럼 글만
     ok = n >= 3 and all(x["i"] is not None for x in items[:n])
     th = steady_theme([posts[x["i"]] for x in items[:n]]) if ok else SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)][0]  # 11/16 진우 ②: 테마 = 그날 품목
-    tp, last = SERIES_TOPIC.get(th, th), seen.get("steadyth", {})
-    alts = SERIES_POSE_ALT.get(th, ())
-    pose = alts[(alts.index(last["pose"]) + 1) % len(alts) if last.get("pose") in alts else 0] if last.get("th") == th and alts else None  # 같은 테마 이어짐 = 다른 포즈
-    if ok and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp, pose)):
-        seen["steadyvol"], seen["steadyth"] = vol, {"t": now, "th": th, "pose": pose}
-        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "steady", "text": render(n), "link": items[0]["tu"], "img": img, "ck": "series"}]}
+    tp, meta = SERIES_TOPIC.get(th, th), {}
+    pose = series_pick(seen, time.strftime("%Y-%m-%d", kst) + "_steady", th) if ok else None  # 11/17 위 = A/B 교대(성공 게시 기준) · 아래 = 같은 테마 foot
+    if ok and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp, pose, meta)):
+        seen["steadyvol"] = vol
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "steady", "text": render(n), "link": items[0]["tu"], "img": img, "ck": "series", **meta}]}
         return print(f"steady 꾸준템 카드 VOL.{vol:02d} {tp} -> 사이트에 뜨면 Threads(mall_card_post)")
     th_bundle(seen, "steady", render(n), items[0]["tu"])
 
@@ -5029,10 +5028,11 @@ def top_deals(seen):
     seen["thlist"] = {"t": now, "h": hist + [[now, [p["url"] for p in inl], hrs[-1], sorted({kind_key(short_name(title_of(p["text"]))) for p in inl})]], "hq": [hook, q]}  # 올리기 전에 적음 — 실패해 다시 시도(th_retry)로 나가도 24시간 셈에 듦
     text, lk, tp = render(pick, beauty, hook, q), th_url(inl[0], posts.index(inl[0])), SERIES_BY[skey][0] if skey else None  # 주제 태그 = 시리즈 이름
     stdy = sum(mk.startswith("👍") for _, _, mk, _ in pick)  # 11/15 v2 꾸준템 수(metrics stdy)
-    img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])  # 11/13 ② A/B: 새 서식(제목 고정) · 실패 = 지금 v3 틀 · 11/15 6·7칸 = 새 서식만(v3 = 3~5 — 실패 = 글만)
+    smeta = {}
+    img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick], pose=series_pick(seen, time.strftime("%Y-%m-%d", kst) + f"_top{hrs[-1]}", "market"), meta=smeta)  # 11/13 ② A/B: 새 서식(제목 고정) · 실패 = 지금 v3 틀 · 11/15 6·7칸 = 새 서식만(v3 = 3~5 — 실패 = 글만)
     ck = "series" if img else "v3"
     if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):  # 11/1 몰별 카드 = 사이트에 뜨면 사진 글(mall_card_post — 다음 실행)
-        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img, "ck": ck, "n": n, "stdy": stdy, "nfit": TH_N_FIT and n >= 4}]}
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": f"top{hrs[-1]}", "text": text, "link": lk, "topic": tp, "img": img, "ck": ck, "n": n, "stdy": stdy, "nfit": TH_N_FIT and n >= 4, **(smeta if ck == "series" else {})}]}
     else:
         thbn_mark(seen, (th_bundle(seen, f"top{hrs[-1]}", text, lk, topic=tp) or {}).get("id"), n, stdy, f"top{hrs[-1]}")
     if skey:
@@ -5746,7 +5746,8 @@ SERIES_COLOR = r"화이트|블랙|그레이|네이비|베이지|핑크|레드|�
 SERIES_THEME_CAT, SERIES_CLEAN = {"food": "pantry", "kitchen": "pantry", "snack": "pantry", "coffee": "pantry", "heat": "season", "season": "season", "laundry": "cleaning"}, \
     r"세제|세정제|청소|락스|표백|유연제|청소포|물걸레|탈취|곰팡이|얼룩|클리너|살균"  # 11/16 진우 ② 꾸준템 테마 = 품목: 식품·주방 pantry · 청소·세제 cleaning · 계절 season · 그 밖 생활·살림 home · 섞임 market
 SERIES_TOPIC = {"pantry": "주방의 기본", "home": "포근한 집콕", "cleaning": "산뜻한 청소", "season": "계절 준비", "market": "장보기 메모"}
-SERIES_POSE_ALT = {"pantry": ("cafe", "picnic"), "home": ("cafe", "gift"), "cleaning": ("home", "pantry"), "season": ("cafe", "gift"), "market": ("pantry", "picnic")}  # 같은 테마 이어짐 = 위 캐릭터만 준비된 다른 포즈(아래 footer와 다르게)
+SERIES_POSES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand/mascots")  # 11/17 진우 포즈 16장({theme}_b.png·{theme}_foot.png — 카드 저장소 ad0f2c8 zip · 이 세션은 카드 저장소 push 불가라 봇 저장소에) · 렌더러 assets/mascots에 있으면 그쪽 먼저
+# 위(큰 그림) = 그 테마 A({theme}.png) ↔ B({theme}_b.png) — 그 테마 마지막 '성공 게시' 포즈의 다음(이력 없음 = A) · 같은 게시물 = 처음 고른 포즈 · 아래 = 같은 테마 {theme}_foot.png 고정(다른 테마 빌려 쓰기 X)
 
 
 def series_fits(s, count):
@@ -5773,7 +5774,7 @@ def series_name(name, count):
     · 모델·사이즈·용량·수량·색상 = 그대로('a, b, c' 옵션 = ' · '로) · 넘치면 규격 아닌 가운데 꾸밈말부터 뺌(첫 낱말 = 브랜드 · 끝 낱말 = 품목) · 그래도 넘치면 그 상품만 글자 다듬음(로그) — 글씨 작게 X · v3로 X."""
     s = re.sub(r"[\[【][^\]】]*[\]】]", " ", re.sub(SERIES_NAME_AD, " ", name, flags=re.I))
     s = re.sub(r"\(([^()]*)\)", lambda m: f" {m[1]} " if re.search(rf"\d|\b[A-Z]{{1,4}}\b|{SERIES_COLOR}", m[1]) else " ", s)  # (규격) 남김 · (꾸밈) 뺌
-    parts = [x for x in (re.sub(r"\s+", " ", x).strip(" ·") for x in s.split(",")) if x] or [name.strip()]
+    parts = [x.replace("\0", ",") for x in (re.sub(r"\s+", " ", x).strip(" ·") for x in re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "\0", s).split(",")) if x] or [name.strip()]  # 1,015g = 천 단위 쉼표(옵션 X)
     seen, words, opts = set(), [], []
     for w in parts[0].split():
         if re.search(r"\d", w) or w.lower() not in seen:  # 같은 말 반복 X(숫자 규격은 구성마다 같을 수 있어 그대로)
@@ -5817,12 +5818,21 @@ def steady_theme(ps):
     return th if k * 3 >= len(ts) * 2 else "market"
 
 
+def series_mascot(f):
+    """포즈 그림 경로: 렌더러 assets/mascots 먼저 → 봇 저장소 SERIES_POSES · 없음 = FileNotFoundError(경로 — 다른 테마로 대신 X)."""
+    for d in (f"{SERIES_DIR}/assets/mascots", SERIES_POSES):
+        if os.path.isfile(f"{d}/{f}"):
+            return os.path.abspath(f"{d}/{f}")
+    raise FileNotFoundError(f"assets/mascots/{f}")
+
+
 def series_overlay(theme, pose):
-    """같은 테마가 이어질 때 위 캐릭터만 준비된 다른 포즈로(11/16 진우 ② — 새 그림 X · 카드 저장소 그대로): 임시 폴더 = src 복사 + 나머지 심볼릭 링크 + assets/mascots/{theme}.png -> {pose}.png
-    -> 그 폴더 / None(포즈 그림 없음·아래 footer와 같음)."""
-    m = re.search(rf"\b{theme}\s*:\s*{{[^}}]*footer\s*:\s*'(\w+)'", open(f"{SERIES_DIR}/src/config.mjs", encoding="utf-8").read()) if os.path.isfile(f"{SERIES_DIR}/src/config.mjs") else None
-    if not pose or pose == theme or (m and m[1] == pose) or not os.path.isfile(f"{SERIES_DIR}/assets/mascots/{pose}.png"):
-        return None
+    """11/17 포즈 16장: 렌더러가 읽는 assets/mascots를 임시 폴더로 겹침 — {theme}.png = 고른 위 포즈(A {theme}.png · B {theme}_b.png) · config footer 자리 = 같은 테마 {theme}_foot.png
+    (카드 저장소 그대로 · src 복사 + 나머지 심볼릭 링크) -> 그 폴더 / 그림 없음 = FileNotFoundError(경로)."""
+    m = re.search(rf"\b{theme}\s*:\s*{{[^}}]*footer\s*:\s*'(\w+)'", open(f"{SERIES_DIR}/src/config.mjs", encoding="utf-8").read()) if theme and os.path.isfile(f"{SERIES_DIR}/src/config.mjs") else None
+    if not m or m[1] == theme:
+        raise ValueError(f"테마 {theme or '-'} 아래 그림 자리(config footer) 못 찾음")
+    hero, foot = series_mascot(f"{theme}_b.png" if pose == "b" else f"{theme}.png"), series_mascot(f"{theme}_foot.png")
     o, root = tempfile.mkdtemp(prefix="series_"), os.path.abspath(SERIES_DIR)
     for n in os.listdir(root):
         if n == "src":
@@ -5833,10 +5843,30 @@ def series_overlay(theme, pose):
                 if a != "mascots":
                     os.symlink(f"{root}/assets/{a}", f"{o}/assets/{a}")
             for f in os.listdir(f"{root}/assets/mascots"):
-                os.symlink(f"{root}/assets/mascots/{pose}.png" if f == f"{theme}.png" else f"{root}/assets/mascots/{f}", f"{o}/assets/mascots/{f}")
+                if f not in (f"{theme}.png", f"{m[1]}.png"):
+                    os.symlink(f"{root}/assets/mascots/{f}", f"{o}/assets/mascots/{f}")
+            os.symlink(hero, f"{o}/assets/mascots/{theme}.png")
+            os.symlink(foot, f"{o}/assets/mascots/{m[1]}.png")
         else:
             os.symlink(f"{root}/{n}", f"{o}/{n}")
     return o
+
+
+def series_pick(seen, key, theme):
+    """위 포즈 고르기: 같은 게시물(key = 날짜_종류) = 처음 고른 포즈 그대로 · 새 게시물 = 그 테마 마지막 성공 게시(seen seriespose) 다음 — A→B→A · 이력 없음 = A · 미리보기·실패 = 안 앞당김."""
+    pk = seen.setdefault("serpick", {"t": 0, "m": {}})
+    if (v := pk["m"].get(key)) and v[0] == theme:
+        return v[1]
+    pose = "b" if seen.get("seriespose", {}).get("m", {}).get(theme) == "a" else "a"
+    cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 2 * 86400))
+    pk.update(t=time.time(), m={**{k: x for k, x in pk["m"].items() if k[:10] >= cut}, key: [theme, pose]})
+    return pose
+
+
+def series_pose_done(seen, theme, pose):
+    """사진 글 성공 게시(mall_card_post) 때만 그 테마 마지막 포즈 기록."""
+    if theme and pose:
+        seen["seriespose"] = {"t": time.time(), "m": {**seen.get("seriespose", {}).get("m", {}), theme: pose}}
 
 
 def series_ab(kst, h):
@@ -5854,7 +5884,7 @@ def series_ready(env):
         subprocess.run("sudo apt-get install -y -qq fonts-noto-cjk || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk; }", shell=True, timeout=300, check=True, capture_output=True)
 
 
-def series_card(kind, title, pairs, episode="", theme="", topic="", pose=None):
+def series_card(kind, title, pairs, episode="", theme="", topic="", pose=None, meta=None):
     """새 서식 카드 1장(11/13): mall_card_json(지금 꼴 그대로 — 글 품목 수 = 칸 수 · 이름 속 N% 뺌 · 몰 1개) -> title '오늘의 장바구니'·'꾸준템 시리즈' -> 사진 미리 받아 assets/images/
     -> `node src/render.mjs --data … --out output [--theme --episode --topic]`(서식 검증 — 이름 2줄·가격 칸·단위 20자) -> docs/cards/mall/<stem>.png 사이트 주소
     / None(저장소·node 22·sharp·글꼴 없음 · 검증·렌더 실패 = 부른 쪽이 지금처럼: 묶음 = v3 카드 · 꾸준템 = 글만)."""
@@ -5865,14 +5895,21 @@ def series_card(kind, title, pairs, episode="", theme="", topic="", pose=None):
         x["name"] = series_name(x["name"], len(d["items"]))
     try:
         series_ready({**os.environ})
-        cwd = series_overlay(theme, pose) or SERIES_DIR
         card_imgs(d, SERIES_DIR, stem, blank=True)
-        os.makedirs(f"{SERIES_DIR}/data", exist_ok=True)
+        for x in ("data", "output"):
+            os.makedirs(f"{SERIES_DIR}/{x}", exist_ok=True)
         os.makedirs(MALL_CARD_DIR, exist_ok=True)
         json.dump(d, open(f"{SERIES_DIR}/data/run_{stem}.json", "w"), ensure_ascii=False)
+        th = theme or ("market" if title == "오늘의 장바구니" else {"coupang": "pantry", "naver": "home", "toss": "season"}.get(d["mall"], ""))  # 렌더러 defaultTheme과 같게(--theme 안 넘김)
+        cwd = series_overlay(th, pose or "a")  # 11/17 위 A/B · 아래 같은 테마 foot(겹친 폴더에서 그림 — data·output·images = 원래 폴더 링크)
+        if meta is not None:
+            meta.update(th=th, pose=pose or "a")
         opt = [a for k, v in (("--theme", theme), ("--episode", episode), ("--topic", topic)) if v for a in (k, v)]
         subprocess.run(["node", "src/render.mjs", "--data", f"data/run_{stem}.json", "--out", "output", *opt], cwd=cwd, timeout=60, check=True, capture_output=True)
         shutil.copy(f"{SERIES_DIR}/output/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
+    except FileNotFoundError as e:
+        print("series card 그림 없음", kind, str(e))  # 11/17: 다른 테마로 대신 X — 경로만
+        return None
     except Exception as e:
         err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
         print("series card 렌더 X", kind, err_brief(e), ([l for l in err if l.startswith("Error")] or err)[-1:] or "")  # node 마지막 줄 = 'Node.js v22…' → 서식 검증 문구(Error: …)
@@ -5880,7 +5917,7 @@ def series_card(kind, title, pairs, episode="", theme="", topic="", pose=None):
     finally:
         if cwd != SERIES_DIR:
             shutil.rmtree(cwd, ignore_errors=True)
-    print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt) + (f" · 포즈 {pose}" if cwd != SERIES_DIR else ""))
+    print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt) + f" · {th} {(pose or 'a').upper()}·foot")
     return f"{SITE}cards/mall/{stem}.png"
 
 
@@ -6041,6 +6078,8 @@ def mall_card_post(seen):
             top = x["kind"].startswith("top")  # 꾸준템(steady) = 글 그대로(상품 링크 줄 유지) · 묶음 셈 X
             r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY and top and not x.get("nfit") else x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))  # v2 4개↑ = 세트 쪽 줄 있음(그대로)
             thbn_mark(seen, (r or {}).get("id"), x.get("n"), x.get("stdy"), x["kind"])
+            if live and r and r.get("id") and x.get("ck") == "series":  # 11/17 사진 글 성공 = 그 테마 포즈 기록(A/B 교대 기준)
+                series_pose_done(seen, x.get("th"), x.get("pose"))
             if live and r and r.get("id"):  # 11/12 묶음 카드 글 = metrics chg th_bundle(11/25 묶음·개별 글당 조회 비교) · 11/13 카드 종류 card 'v3'·'series'(11/25 A/B 비교)
                 day, cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))
                 if top:

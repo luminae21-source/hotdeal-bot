@@ -14844,7 +14844,10 @@ pr192 = [(p, p["now"]) for p in P192]
 png192 = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
 H.SERIES_DIR, H.series_ready, H.th_get = "sd192", (lambda env: None), (lambda u: png192)
 assert H.series_card("top12", "오늘의 장바구니", pr192[:3]) is None  # 새 서식 폴더 없음(그 시각 못 받음) = None(부른 쪽이 지금처럼)
-os.makedirs("sd192/src")
+os.makedirs("sd192/src"); os.makedirs("sd192/assets/mascots")  # 11/17 포즈: 테마 아래 그림 자리(config footer) · A 그림 = 렌더러 폴더 · B·foot = 봇 brand/mascots
+open("sd192/src/config.mjs", "w").write("export const themes = {\n  market: {label:'a', topic:'b', footer:'home'},\n  season: {label:'c', topic:'d', footer:'home'},\n  home: {label:'e', topic:'f', footer:'pantry'}\n};\n")
+for m192 in ("market", "season", "home", "pantry"):
+    open(f"sd192/assets/mascots/{m192}.png", "wb").write(m192.encode())
 open("sd192/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
 const a = process.argv.slice(2), f = {}; for (let i = 0; i < a.length; i += 2) f[a[i].slice(2)] = a[i + 1];
 const d = JSON.parse(fs.readFileSync(f.data, 'utf8'));
@@ -14874,7 +14877,7 @@ else:
     print("9-192 새 서식 렌더 건너뜀(node 없음)")
 assert H.series_card("top12", "오늘의 장바구니", pr192[:2]) is None  # 3개 밑(mall_card_json) = None
 src192 = inspect.getsource(H.top_deals)
-assert 'img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])' in src192 and 'ck = "series" if img else "v3"' in src192
+assert 'img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick], pose=' in src192 and 'ck = "series" if img else "v3"' in src192
 assert 'if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):' in src192 and '"img": img, "ck": ck, "n": n' in src192  # 새 서식 실패 = v3 → 그것도 실패 = 글만
 # ① 꾸준템: 글 상품(앞 n개)과 같은 수·순서 카드 · 회차 증가·주제 돌림 · 카드 못 만듦·토스 API 상품(i 없음) = 글만(회차 그대로)
 json.dump(P192, open("posts192.json", "w"), ensure_ascii=False); H.POSTS = "posts192.json"
@@ -14888,15 +14891,15 @@ for d, ok in ((14, "u"), (15, "u"), (16, None)):
     ret192[0] = ok; time.time = lambda: TK(f"2026-11-{d} 19:52")
     with contextlib.redirect_stdout(io.StringIO()):
         H.steady_list(s192)
-th192 = H.steady_theme([P192[k] for k in range(4)]); al192 = H.SERIES_POSE_ALT[th192]  # 11/16 진우 ②: 테마 = 그날 품목(돌림 X) · 같은 테마 이어짐 = 위 캐릭터 다른 포즈
-assert [(k, t, o) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", ("01", th192, H.SERIES_TOPIC[th192], None)), ("steady", "꾸준템 시리즈", ("02", th192, H.SERIES_TOPIC[th192], al192[0])), ("steady", "꾸준템 시리즈", ("03", th192, H.SERIES_TOPIC[th192], al192[1]))], sc192
+th192 = H.steady_theme([P192[k] for k in range(4)])  # 11/16 진우 ②: 테마 = 그날 품목(돌림 X) · 11/17 포즈 = 성공 게시 기준 A/B(여기선 게시 X = 늘 A)
+assert [(k, t, o[:4]) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", (f"{v:02d}", th192, H.SERIES_TOPIC[th192], "a")) for v in (1, 2, 3)], sc192
 assert all(u == [P192[k]["url"] for k in range(4)] for _, _, u, _ in sc192) and s192["steadyvol"] == 2  # 글 상품 4개(링크 5개 한도) 순서 그대로 · 실패한 회차 = 셈 X
 q192 = s192["mcard"]["q"]; assert [(x["kind"], x["ck"], x["img"]) for x in q192] == [("steady", "series", f"{H.SITE}cards/mall/x_steady.png")] * 2 and "1️⃣ 테스트 상품 1" in q192[0]["text"]
 assert len(tb192) == 1 and tb192[0][0] == "steady" and tb192[0][3] is None  # 16일 카드 못 만듦 = 지금처럼 글만
 s192["steadyvol"] = 4; ret192[0] = "u"; time.time = lambda: TK("2026-11-17 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
-assert sc192[-1][3] == ("05", th192, H.SERIES_TOPIC[th192], al192[1]) and s192["steadyvol"] == 5  # 회차 = 순서대로 · 같은 테마 = 포즈 돌림(실패한 회차 = 포즈 기록 X)
+assert sc192[-1][3][:4] == ("05", th192, H.SERIES_TOPIC[th192], "a") and s192["steadyvol"] == 5  # 회차 = 순서대로 · 만들기·실패만으로 포즈 안 앞당김
 it192[1]["i"] = None; n192 = len(sc192); time.time = lambda: TK("2026-11-18 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
@@ -15325,6 +15328,7 @@ cwd202 = os.getcwd(); os.chdir(tempfile.mkdtemp())
 assert H.series_fits("제로배로 배변패드 XL 90x60cm 100매 · 4팩", 5) and not H.series_fits("쿠쿠 인스퓨어 T8770 공기청정기 53.8㎡ AC-17TV20FNG 노블그레이+테라조", 3)  # layout.mjs wrap 그대로(폭·글씨 = 칸 수별)
 assert H.series_name("[무료배송] 제로배로 특가 배변패드 XL 90x60cm, 100매, 4팩", 5) == "제로배로 배변패드 XL 90x60cm 100매 · 4팩"  # 광고 말 X · 옵션 = ' · '
 assert H.series_name("발이 편한 카바 밴딩 중목 양말, 화이트, 10켤레", 5) == "발이 편한 카바 밴딩 중목 양말 화이트 · 10켤레"  # 색상 = 그대로(가격에 영향)
+assert H.series_name("더미식 한돈고기교자 1,015g + 김치교자 1.4kg", 4) == "더미식 한돈고기교자 1,015g + 김치교자 1.4kg" and H.series_name("생수 2L, 12개, 1,200원대", 5) == "생수 2L 12개 · 1,200원대"  # 천 단위 쉼표 = 옵션 X
 assert H.series_name("한수위 습기제거제 허그코튼 흡수량 대용량 290g, 40개, 290g", 5) == "한수위 습기제거제 허그코튼 흡수량 대용량 290g 40개"  # 같은 말 반복 X
 with contextlib.redirect_stdout(io.StringIO()) as o202:
     n202 = [H.series_name(x, c) for x, c in (("필립스 미니 공기청정기 600 시리즈 19.7㎡ AC0650/10 화이트", 5), ("쿠쿠 인스퓨어 T8770 공기청정기 53.8㎡ AC-17TV20FNG 노블그레이+테라조", 3),
@@ -15332,26 +15336,14 @@ with contextlib.redirect_stdout(io.StringIO()) as o202:
 assert all(H.series_fits(x, c) for x, c in zip(n202, (5, 3, 6))) and "공기청정기" in n202[0] and "AC0650/10" in n202[0] and "공기청정기" in n202[1] and "물티슈" in n202[2] and "프리미엄" not in n202[2], n202  # 품목·모델 남김 · 꾸밈말 먼저 뺌
 assert "series 이름 다듬음(넘침) 쿠쿠" in o202.getvalue() and o202.getvalue().count("다듬음") == 1  # 그래도 넘친 상품만 로그
 sc202 = inspect.getsource(H.series_card)
-assert 'x["name"] = series_name(x["name"], len(d["items"]))' in sc202 and "cwd = series_overlay(theme, pose) or SERIES_DIR" in sc202 and "shutil.rmtree(cwd" in sc202
+assert 'x["name"] = series_name(x["name"], len(d["items"]))' in sc202 and "shutil.rmtree(cwd" in sc202
 # ② 테마
 p202 = lambda name, cat: {"t": "2026-11-17 09:00", "text": f"🔥 [쿠팡] {name} (9,900원)", "url": "https://link.coupang.com/a/t", "cat": cat}
 assert H.steady_theme([p202("곰곰 햇반 210g 24개", "food"), p202("오뚜기 진라면 5개", "food"), p202("코멧 고무장갑 5세트", "kitchen")]) == "pantry"
 assert H.steady_theme([p202("테크 액체세제 2.4L", "laundry"), p202("유한락스 욕실청소용 1L", "life"), p202("홈스타 곰팡이싹 2개", "life")]) == "cleaning"  # 이름 = 청소·세제
 assert H.steady_theme([p202("핫팩 30개", "winter"), p202("전기요 싱글", "winter"), p202("귤 5kg", "season")]) == "season" and H.steady_theme([p202("코멧 화장지 30롤", "life")] * 3) == "home"
 assert H.steady_theme([p202("곰곰 햇반", "food"), p202("핫팩 30개", "winter"), p202("화장지 30롤", "life")]) == "market"  # 섞임 = market(3분의 2 밑)
-os.makedirs("ser202/src"); os.makedirs("ser202/assets/mascots"); os.makedirs("ser202/assets/images"); os.makedirs("ser202/node_modules")
-open("ser202/src/config.mjs", "w").write("export const themes = {\n  cleaning: {label:'산뜻한 청소', topic:'x', footer:'cafe'},\n  home: {label:'포근한 집콕', topic:'y', footer:'pantry'}\n};\n")
-for m202 in ("cleaning", "home", "cafe", "pantry"):
-    open(f"ser202/assets/mascots/{m202}.png", "wb").write(m202.encode())
-sd202, H.SERIES_DIR = H.SERIES_DIR, "ser202"
-o202 = H.series_overlay("cleaning", "home")
-assert open(f"{o202}/assets/mascots/cleaning.png", "rb").read() == b"home" and open(f"{o202}/assets/mascots/cafe.png", "rb").read() == b"cafe" and not os.path.islink(f"{o202}/src") and os.path.islink(f"{o202}/node_modules")  # 위 = 다른 포즈 · 아래 그대로 · src 복사
-assert open("ser202/assets/mascots/cleaning.png", "rb").read() == b"cleaning"  # 카드 저장소 그림 그대로
-assert H.series_overlay("cleaning", "cafe") is None and H.series_overlay("home", "pantry") is None and H.series_overlay("cleaning", None) is None and H.series_overlay("home", "gift") is None  # 아래 footer와 같음·없는 포즈 = X
-shutil.rmtree(o202); H.SERIES_DIR = sd202
-st202 = inspect.getsource(H.steady_list)
-assert "th = steady_theme([posts[x[\"i\"]] for x in items[:n]])" in st202 and 'if last.get("th") == th and alts else None' in st202 and 'seen["steadyth"] = vol, {"t": now, "th": th, "pose": pose}' in st202.replace('seen["steadyvol"], ', "")
-assert all(f not in H.SERIES_POSE_ALT[t] for t, f in (("pantry", "market"), ("home", "pantry"), ("cleaning", "cafe"), ("season", "home"), ("market", "home")))  # 기본 위·아래와 안 겹침
+assert "th = steady_theme([posts[x[\"i\"]] for x in items[:n]])" in inspect.getsource(H.steady_list)  # 포즈(11/17 16장 — 빌려쓰기 X) = 9-203
 # ③ 크리스마스
 x202 = lambda n, d: H.ev_off(n, now=TK(d))
 with contextlib.redirect_stdout(io.StringIO()):
@@ -15367,3 +15359,52 @@ assert H.blog_img_spec({"query": "물티슈", "chk": "2026-11-14 18:08", "items"
 bi202 = inspect.getsource(H.blog_img)
 assert 'if n not in sp["only"]:' in bi202 and 'not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/3.png")' in bi202
 os.chdir(cwd202)
+
+# 9-203 (11/17 진우 포즈 16장 — 카드 저장소 ad0f2c8 zip · 이 세션 push X라 봇 brand/mascots): 위(큰 그림) = 그 테마 A({theme}.png) ↔ B({theme}_b.png) — 그 테마 마지막 '성공 게시' 포즈의 다음(이력 없음 = A)
+#   · 같은 게시물 다시 = 처음 포즈 · 미리보기·실패 = 안 앞당김 · 아래 = 같은 테마 {theme}_foot.png 고정(다른 테마 빌려 쓰기 X) · 그림 없음 = 경로 로그(대신 X)
+cwd203 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+import hashlib as hl203
+md203 = {f: hl203.md5(open(os.path.join(H.SERIES_POSES, f), "rb").read()).hexdigest()[:10] for f in os.listdir(H.SERIES_POSES) if f.endswith(".png")}
+assert md203 == {"cafe_b.png": "d19144c071", "cafe_foot.png": "ceb3c0ff00", "cleaning_b.png": "9945b090d2", "cleaning_foot.png": "dc1909002b", "gift_b.png": "05186dc7a4", "gift_foot.png": "38d2d34861",
+                 "home_b.png": "d2c8be2af8", "home_foot.png": "01f4b6b0e0", "market_b.png": "5aa453176d", "market_foot.png": "b5aecb2902", "pantry_b.png": "81fb1a1d08", "pantry_foot.png": "c306c36add",
+                 "picnic_b.png": "16f767ec8d", "picnic_foot.png": "1c5efb7e09", "season_b.png": "7310fccf0d", "season_foot.png": "1e68d2549b"}, md203  # 16장 = Cowork 확인 원본 그대로
+os.makedirs("ser203/src"); os.makedirs("ser203/assets/mascots"); os.makedirs("ser203/assets/images"); os.makedirs("ser203/node_modules")
+open("ser203/src/config.mjs", "w").write("export const themes = {\n  cleaning: {label:'산뜻한 청소', topic:'x', footer:'cafe'},\n  home: {label:'포근한 집콕', topic:'y', footer:'pantry'},\n  gift: {label:'g', topic:'z', footer:'gift'},\n  market: {label:'m', topic:'w', footer:'home'}\n};\n")
+for m203 in ("cleaning", "home", "cafe", "pantry"):
+    open(f"ser203/assets/mascots/{m203}.png", "wb").write(m203.encode())
+sd203, H.SERIES_DIR = H.SERIES_DIR, "ser203"
+rd203 = lambda o, f: open(f"{o}/assets/mascots/{f}", "rb").read()
+oa203, ob203 = H.series_overlay("cleaning", "a"), H.series_overlay("cleaning", "b")
+assert rd203(oa203, "cleaning.png") == b"cleaning" and rd203(ob203, "cleaning.png") == open(f"{H.SERIES_POSES}/cleaning_b.png", "rb").read()  # 위 = A / B
+assert rd203(oa203, "cafe.png") == rd203(ob203, "cafe.png") == open(f"{H.SERIES_POSES}/cleaning_foot.png", "rb").read()  # 아래(config footer 자리) = 같은 테마 foot · 카페 그림 X
+assert rd203(oa203, "home.png") == b"home" and open("ser203/assets/mascots/cleaning.png", "rb").read() == b"cleaning" and not os.path.islink(f"{oa203}/src") and os.path.islink(f"{oa203}/node_modules")  # 저장소 그림 그대로
+shutil.rmtree(oa203); shutil.rmtree(ob203)
+for bad203, why203 in ((("gift", "a"), "footer"), (("season", "a"), "footer"), (("market", "a"), "market.png")):
+    try:
+        H.series_overlay(*bad203); raise AssertionError(bad203)
+    except (ValueError, FileNotFoundError) as e:
+        assert why203 in str(e), (bad203, e)  # 아래 자리 = 같은 테마·config에 없음 = X · A 그림 없음 = 경로
+sp203, H.SERIES_POSES = H.SERIES_POSES, "nope203"
+try:
+    H.series_overlay("home", "b"); raise AssertionError("없는 그림")
+except FileNotFoundError as e:
+    assert str(e) == "assets/mascots/home_b.png"  # 그림 없음 = 경로(다른 테마로 대신 X)
+H.SERIES_POSES = sp203; H.SERIES_DIR = sd203
+# 고르기: 같은 테마 3번 연속(성공 게시) = A/B/A · 같은 게시물 다시 = 그대로 · 실패·미리보기 = 안 앞당김
+s203 = {}
+seq203 = []
+for d203 in ("2026-11-17", "2026-11-18", "2026-11-19"):
+    time.time = lambda d=d203: TK(f"{d} 19:52")
+    p203 = H.series_pick(s203, f"{d203}_steady", "cleaning")
+    assert H.series_pick(s203, f"{d203}_steady", "cleaning") == p203  # 같은 게시물 다시 그림 = 처음 포즈
+    seq203.append(p203); H.series_pose_done(s203, "cleaning", p203)
+assert seq203 == ["a", "b", "a"]
+time.time = lambda: TK("2026-11-20 19:52")
+assert H.series_pick(s203, "2026-11-20_steady", "cleaning") == "b" and H.series_pick(s203, "2026-11-21_steady", "cleaning") == "b"  # 20일 게시 실패(done X) = 21일도 B
+assert H.series_pick(s203, "2026-11-20_top12", "market") == "a"  # 테마마다 따로 · 이력 없음 = A
+mp203 = inspect.getsource(H.mall_card_post)
+assert 'if live and r and r.get("id") and x.get("ck") == "series":' in mp203 and 'series_pose_done(seen, x.get("th"), x.get("pose"))' in mp203  # 사진 글 성공 때만
+assert 'pose=series_pick(seen, time.strftime("%Y-%m-%d", kst) + f"_top{hrs[-1]}", "market"), meta=smeta)' in inspect.getsource(H.top_deals) and "**(smeta if ck == \"series\" else {})" in inspect.getsource(H.top_deals)
+assert 'pose = series_pick(seen, time.strftime("%Y-%m-%d", kst) + "_steady", th) if ok else None' in inspect.getsource(H.steady_list)
+assert 'except FileNotFoundError as e:\n        print("series card 그림 없음", kind, str(e))' in inspect.getsource(H.series_card)
+os.chdir(cwd203)

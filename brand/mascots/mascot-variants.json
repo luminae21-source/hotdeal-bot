@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "canvas": {
+    "width": 1254,
+    "height": 1254,
+    "transparent": true,
+    "minimumMarginPercent": 8
+  },
+  "existingAAssetsIncluded": false,
+  "selection": {
+    "theme": "Choose by product category or post topic, not episode number.",
+    "hero": "Alternate A/B per theme in successful publication history; preserve selected variant when rerendering the same post.",
+    "footer": "Always use the same theme's *_foot.png.",
+    "missingAsset": "Report missing file; do not borrow a different theme."
+  },
+  "themes": {
+    "pantry": {
+      "label": "식품·주방",
+      "heroA": "assets/mascots/pantry.png",
+      "heroB": "assets/mascots/pantry_b.png",
+      "footer": "assets/mascots/pantry_foot.png",
+      "heroBDescription": "통조림·쌀 정리",
+      "footerDescription": "앞치마를 두르고 인사"
+    },
+    "home": {
+      "label": "생활·살림",
+      "heroA": "assets/mascots/home.png",
+      "heroB": "assets/mascots/home_b.png",
+      "footer": "assets/mascots/home_foot.png",
+      "heroBDescription": "택배 상자에서 휴지·생수 꺼내기",
+      "footerDescription": "담요 위에서 나란히 휴식"
+    },
+    "cleaning": {
+      "label": "청소·세제",
+      "heroA": "assets/mascots/cleaning.png",
+      "heroB": "assets/mascots/cleaning_b.png",
+      "footer": "assets/mascots/cleaning_foot.png",
+      "heroBDescription": "밀대·분무기·행주로 청소",
+      "footerDescription": "세제 통 옆에서 앞발을 들어 인사"
+    },
+    "season": {
+      "label": "계절",
+      "heroA": "assets/mascots/season.png",
+      "heroB": "assets/mascots/season_b.png",
+      "footer": "assets/mascots/season_foot.png",
+      "heroBDescription": "귀마개·목도리와 핫팩",
+      "footerDescription": "담요를 두르고 따뜻한 머그컵"
+    },
+    "market": {
+      "label": "여러 품목",
+      "heroA": "assets/mascots/market.png",
+      "heroB": "assets/mascots/market_b.png",
+      "footer": "assets/mascots/market_foot.png",
+      "heroBDescription": "장보기 카트 함께 밀기",
+      "footerDescription": "영수증 확인"
+    },
+    "cafe": {
+      "label": "카페",
+      "heroA": "assets/mascots/cafe.png",
+      "heroB": "assets/mascots/cafe_b.png",
+      "footer": "assets/mascots/cafe_foot.png",
+      "heroBDescription": "커피 원두 고르기",
+      "footerDescription": "머그컵 건배"
+    },
+    "picnic": {
+      "label": "피크닉",
+      "heroA": "assets/mascots/picnic.png",
+      "heroB": "assets/mascots/picnic_b.png",
+      "footer": "assets/mascots/picnic_foot.png",
+      "heroBDescription": "돗자리 펴기",
+      "footerDescription": "도시락을 들고 걷기"
+    },
+    "gift": {
+      "label": "선물",
+      "heroA": "assets/mascots/gift.png",
+      "heroB": "assets/mascots/gift_b.png",
+      "footer": "assets/mascots/gift_foot.png",
+      "heroBDescription": "리본 상자 포장",
+      "footerDescription": "선물 상자 건네기"
+    }
+  }
+}
