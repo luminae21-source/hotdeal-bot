@@ -2116,6 +2116,23 @@ TOPIC_SLUGS = {  # 큐레이션 topic -> (주소, 보일 이름) — 주소 = �
     "겨울준비": ("winter-ready", "겨울 준비"), "욕실온풍기": ("bath-heater", "욕실 온풍기"), "햅쌀": ("new-rice", "햅쌀")}
 TOPIC_MIN, TOPIC_MAX = 3, 8  # 주제 쪽 = 진열 상품 3개↑ · 표 최대 8개(Cowork '5~8개')
 TOPIC_NAV, TOPIC_OF = {}, {}  # build가 채움: 칸 주소(slug) -> 주제 칩 HTML · 글 번호 -> (주소, 이름)
+SEO_V2 = True  # 11/16 진우 '구글링 하면 잘 뜨게': 주제 쪽 제목·h1·설명 = 검색어형('… 가격 비교 — 단위당 순위 N개 (YYYY년 M월)') · 요약 + h2 3개 · 가이드↔주제 링크 · /guide/ 계절 먼저·h2·ItemList · /p/ 설명 = 확인 시각·주제 비교 · False = 지금처럼
+GT_LINK = {"g2t": {}, "t2g": {}}  # build가 채움(SEO_V2): 가이드 slug -> (주제 slug, 이름) · 주제 slug -> [(가이드 slug, 품목)]
+SEO_SEASON = r"전기요|온수매트|탄소매트|가습기|온풍기|히터|핫팩|성에|핸드크림|립밤|보습|패딩|내복|난방"  # 11~2월 /guide/ 먼저(겨울 품목)
+SEO_BAN = r"최저가|역대|효능|효과|치료|무조건|써\s*보|써\s*봤|지금\s*바로|서두르"  # 자동 문구 금지 말(셀프체크)
+
+
+def gt_match(tps, gs):
+    """가이드 품목(q — guides.json)과 주제 이름이 서로 들어 있으면 짝(띄어쓰기·· 무시 · 2자↑) -> {"g2t": {가이드: (주제 slug, 이름)}, "t2g": {주제: [(가이드, 품목)]}} — 가이드 1개 = 최근 주제 1개."""
+    nm = lambda x: re.sub(r"[\s·]+", "", str(x or ""))
+    out = {"g2t": {}, "t2g": {}}
+    for g in gs:
+        q = nm(g.get("q"))
+        t = next((t for t in tps if len(q) >= 2 and len(nm(t["name"])) >= 2 and (nm(t["name"]) in q or q in nm(t["name"]))), None)
+        if t:
+            out["g2t"][g["slug"]] = (t["slug"], t["name"])
+            out["t2g"].setdefault(t["slug"], []).append((g["slug"], str(g.get("q")).strip()))
+    return out
 topic_key = lambda t: re.sub(r"[\s#]+", "", t) if isinstance(t, str) else ""
 
 
@@ -2216,9 +2233,47 @@ def topic_page(g, tps, today, now_k):
             + (f'<a class="btn2" href="{c_url(c[0])}">{c[2]} {c[1]} 특가 모음 더 보기 →</a>' if c else f'<a class="btn2" href="{c_url("hot")}">🔥 지금 특가 더 보기 →</a>')
             + (f'<nav class="recs" aria-label="다른 주제"><h3>📌 다른 주제 모음</h3>' + "".join(f'<a href="{BASE}c/t/{o["slug"]}.html">{html.escape(o["name"])}</a>' for o in others[:12]) + "</nav>" if others else ""))
     li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{x[0]}.html", "name": parse(title_of(x[1]["text"]))[1], **({"image": img_of(x[1])} if img_of(x[1]) else {})} for m, (x, _) in enumerate(ups, 1)]
+    if SEO_V2:
+        return topic_v2(g, tps, today, ups, dom, lab, tr, c, others, li)
     top = ups and ups[0][1] and f" — 1위 {parse(title_of(ups[0][0][1]['text']))[1]} {re.sub(r'원꼴$', '원', ups[0][1][0])}" or ""
     desc = (f"{g['name']} {n}개 {lab[0]}당 값 비교{top}" if lab else f"{g['name']} {n}개 모음 — " + " · ".join(parse(title_of(x[1]["text"]))[1] for x in g["xs"][:3]))[:150]  # 11/7 진우 '구글 노출' ③: 첫 낱말 = 품목(감성 문구 X)
     return f"{g['name']} {what} {n}개 ({md}) | {TITLE}", desc, body, {"@context": "https://schema.org", "@type": "ItemList", "name": f"{g['name']} {what} ({md})", "itemListElement": li}
+
+
+def topic_v2(g, tps, today, ups, dom, lab, tr, c, others, li):
+    """SEO_V2 주제 쪽: 제목 '{이름} 가격 비교 — {단위}당·1개 값 순위 N개 (YYYY년 M월)'(60자 안 — 넘으면 줄임) · h1 '{이름} 가격 비교 — {단위}당 순위' · 설명 1위·값 · 요약(표 숫자 그대로 — 개수·같은 단위 범위·1위와 끝 순위 배·확인 시각)
+    · h2 '한눈에 보는 순위'(표·카드) · '고를 때 볼 것'(규칙 2~3줄) · '같이 보면 좋은 쪽'(가이드·칸·다른 주제) -> (제목, 설명, 본문, JSON-LD). 단위 없음 = '… 특가 모음'."""
+    n, nm, ym, tail = len(g["xs"]), g["name"], f"{today[:4]}년 {int(today[5:7])}월", f" | {TITLE}"
+    name = lambda x: parse(title_of(x[1]["text"]))[1]
+    vals = [(x, int(m[1].replace(",", ""))) for x, u in ups if lab and u and u[1] == dom[0][0] and (m := re.search(r"(\d[\d,]*)원", u[0]))]
+    ck = max((x[1].get("chkt") or "" for x in g["xs"]), default="")
+    when = f"{int(ck[5:7])}/{int(ck[8:10])} {int(ck[11:13])}시 확인" if re.match(r"\d{4}-\d\d-\d\d \d\d", ck) else f"{md_of(today)} 기준"
+    if lab:
+        unit = lab[0]
+        h1 = f"{nm} 가격 비교 — {unit}당 순위"
+        ti = next((t for t in (f"{nm} 가격 비교 — {unit}당·1개 값 순위 {n}개 ({ym})", f"{nm} 가격 비교 — {unit}당 순위 {n}개 ({ym})", f"{nm} 가격 비교 {n}개 ({ym})") if len(t + tail) <= 60),
+                  f"{nm[:max(1, 60 - len(tail) - len(f' 가격 비교 {n}개 ({ym})'))]} 가격 비교 {n}개 ({ym})")
+        desc = f"{nm} {n}개를 {unit}당 값으로 비교 — 1위 {name(vals[0][0])} {unit}당 {vals[0][1]:,}원 · 가격은 매일 확인" if vals else f"{nm} {n}개를 {unit}당 값으로 비교 · 가격은 매일 확인"
+        lo, hi = (min(v for _, v in vals), max(v for _, v in vals)) if vals else (0, 0)
+        summ = [f"비교 {n}개 · 같은 {unit} 단위 {len(vals)}개 기준 {unit}당 {lo:,}~{hi:,}원" if len(vals) >= 2 else f"비교 {n}개",
+                (f"1위와 {len(vals)}위 차이 {hi / lo:.1f}배 · " if len(vals) >= 2 and lo else "") + f"가격 {when}"]
+        rule = [f"같은 {unit} 단위끼리만 순위를 매겨요" + ("(단위가 다르거나 없는 상품은 표 뒤쪽에)" if len(vals) < n else "") + "."]
+    else:
+        h1, ti = f"{nm} 특가 모음", f"{nm} 특가 모음 {n}개 ({ym})"
+        desc = f"{nm} {n}개 모음 — " + " · ".join(name(x) for x in g["xs"][:3]) + " · 가격은 매일 확인"
+        summ, rule = [f"모은 상품 {n}개 · 가격 {when}"], ["단위 표기가 상품마다 달라서 순위 대신 모아 보여 드려요."]
+    rule += ["용량·구성(묶음·리필·1+1)이 상품마다 달라서 옵션과 수량을 꼭 확인하세요.", "가격은 확인 시각 기준이라 바뀔 수 있어요 · 결제 전 최종가를 확인하세요."]
+    gl = GT_LINK["t2g"].get(g["slug"], [])
+    rel = ("".join(f'<a class="btn2" href="{BASE}guide/{s}/">📖 {html.escape(q)} 고르는 법 →</a>' for s, q in gl)
+           + (f'<a class="btn2" href="{c_url(c[0])}">{c[2]} {c[1]} 특가 모음 더 보기 →</a>' if c else f'<a class="btn2" href="{c_url("hot")}">🔥 지금 특가 더 보기 →</a>')
+           + (f'<nav class="recs" aria-label="다른 주제"><h3>📌 다른 주제 가격 비교</h3>' + "".join(f'<a href="{BASE}c/t/{o["slug"]}.html">{html.escape(o["name"])}</a>' for o in others[:12]) + "</nav>" if others else ""))
+    body = (f'<h1 class="h">{html.escape(h1)}</h1><div class="t">{n}개 · {md_of(today)} 업데이트</div>'
+            + '<div class="cin">' + "".join(f"<p>{html.escape(x)}</p>" for x in summ) + "</div>"
+            + f'<section class="sec" aria-labelledby="tph1"><h2 id="tph1">한눈에 보는 순위</h2><div class="tw tt"><table><thead><tr><th>#</th><th>상품</th><th>가격</th><th>단위가</th></tr></thead><tbody>{tr}</tbody></table></div>'
+            + f'<div class="cards">{"".join(card(i, p, sh) for i, p, sh in g["xs"])}</div></section>'
+            + '<section class="sec" aria-labelledby="tph2"><h2 id="tph2">고를 때 볼 것</h2><ul class="tips">' + "".join(f"<li>{html.escape(x)}</li>" for x in rule) + "</ul></section>"
+            + f'<section class="sec" aria-labelledby="tph3"><h2 id="tph3">같이 보면 좋은 쪽</h2>{rel}</section>')
+    return ti + tail, desc[:150], body, {"@context": "https://schema.org", "@type": "ItemList", "name": f"{h1} ({ym})", "itemListElement": li}
 
 
 CAT_INTRO = {  # c/ 칸 쪽 첫 문단(TT-2 ③ 10/27 — 검색어 '쿠팡 OO 특가'가 자연스럽게, 사실만: 모은 것 · 보이는 순서(🔥 먼저 — items) · 고를 때 볼 것) · 1쪽만 · 토스 = 다른 몰과 비교하는 말 X
@@ -2324,8 +2379,11 @@ def seo(i, p, cur=None):
     ld = won and json.dumps({"@context": "https://schema.org", "@type": "Product", "name": name, **({"image": img_of(p)} if img_of(p) else {}), **({"description": sm} if sm else {}), **({"category": c[1]} if c else {}),
                              "offers": {"@type": "Offer", "price": won[:-1].replace(",", ""), "priceCurrency": "KRW", "url": f"{BASE}p/{i}.html",
                                         **({"seller": {"@type": "Organization", "name": store}} if store else {})}}, ensure_ascii=False).replace("</", "<\\/")  # TT-2: + 설명(코멘트 줄)·품목 칸 — Offer = 가격·통화·판매처만(진우 — 재고 X)
+    ck, up, tp = str(p.get("chkt") or ""), unit_pair(p), TOPIC_OF.get(i)
+    sd = " · ".join(x for x in (won, re.sub(r"원꼴$", "원", up[0]) if up else unit_of(p), store, f"가격 확인 {int(ck[5:7])}/{int(ck[8:10])}" if re.match(r"\d{4}-\d\d-\d\d", ck) else f"가격 확인 {int(p['t'][5:7])}/{int(p['t'][8:10])}",
+                                  tp and f"{tp[1]} 비교 있음") if x) if SEO_V2 else " · ".join(x for x in (won, unit_of(p), store, f"{int(p['t'][5:7])}/{int(p['t'][8:10])} 게시", TITLE) if x)  # 11/16 SEO_V2: 게시일 대신 확인 시각 + 주제 비교
     return (" ".join(x for x in (name, won, store and f"({store})") if x) + f" | {TITLE}",
-            " · ".join(x for x in (won, unit_of(p), store, f"{int(p['t'][5:7])}/{int(p['t'][8:10])} 게시", TITLE) if x),
+            sd,
             ld and f'<script type="application/ld+json">{ld}</script>')
 
 
@@ -3287,6 +3345,7 @@ def guide_pages(out, today):
                 + (f'<p class="t">마지막 확인 {md(last)} · 가격·재고는 바뀔 수 있어요</p>' if last else "")
                 + (f'<p class="t">최근 7일 가격 변화: {" · ".join(chg)}</p>' if chg else '<p class="t">최근 7일 가격 변화 없음(우리 확인 기준)</p>' if len(priced) >= 2 else "") + "</section>"
                 + ('<section class="card"><h2>출처</h2><ul>' + "".join(f'<li><a href="{html.escape(s["url"])}" rel="nofollow">{html.escape(str(s["name"]))}</a></li>' for s in g["sources"]) + "</ul></section>" if g["sources"] else "")
+                + (f'<a class="btn2" href="{BASE}c/t/{GT_LINK["g2t"][g["slug"]][0]}.html">📌 지금 {html.escape(GT_LINK["g2t"][g["slug"]][1])} 가격 비교 →</a>' if SEO_V2 and g["slug"] in GT_LINK["g2t"] else "")
                 + "".join(x for x in (f'<a class="btn2" href="{c_url(g["related_c"])}">관련 칸 더 보기 →</a>' if os.path.isfile(f"{out}/c/{g.get('related_c')}/index.html") else "",
                                       f'<a class="btn2" href="{html.escape(g["blog"])}">블로그 글 보기 →</a>' if str(g.get("blog") or "").startswith("https://") else "")))
         url = f"{BASE}guide/{g['slug']}/"
@@ -3299,7 +3358,22 @@ def guide_pages(out, today):
     for d in os.listdir(f"{out}/guide") if os.path.isdir(f"{out}/guide") else ():  # 가이드에서 빠진 slug = 그 쪽 지움
         if os.path.isdir(f"{out}/guide/{d}") and d not in {g["slug"] for g in gs}:
             shutil.rmtree(f"{out}/guide/{d}")
-    if gs:
+    if gs and SEO_V2:  # 11/16: 계절(11~2월 겨울 품목) 먼저 · 칸별 h2 · ItemList
+        win = int(today[5:7]) in (11, 12, 1, 2)
+        sea = [g for g in gs if win and re.search(SEO_SEASON, f"{g.get('q') or ''} {g['title']}")]
+        grp = collections.defaultdict(list)
+        for g in gs:
+            if g not in sea:
+                grp[next((m[1] for m in CAT_META.values() if m[0] == g.get("related_c")), "그 밖의 가이드")].append(g)
+        secs = ([("❄️ 지금 계절에 많이 찾는 것", sea)] if sea else []) + list(grp.items())
+        a = lambda g: f'<a class="card" href="{BASE}guide/{g["slug"]}/"><b>{html.escape(g["title"])}</b><br><small>{html.escape(g.get("desc") or "")} · {int(g["updated"][5:7])}/{int(g["updated"][8:])} 고침</small></a>'
+        order = [g for _, xs in secs for g in xs]
+        ld = json.dumps({"@context": "https://schema.org", "@type": "ItemList", "name": "고르는 법 가이드", "itemListElement": [{"@type": "ListItem", "position": n, "url": f"{BASE}guide/{g['slug']}/", "name": g["title"]} for n, g in enumerate(order, 1)]}, ensure_ascii=False)
+        write(out, "guide/", page(f"고르는 법 가이드 — 가격 비교·고르는 기준 {len(gs)}개 | {TITLE}", '<h1 class="h">📖 고르는 법 가이드</h1>' + "".join(
+            f'<section class="sec" aria-labelledby="gh{k}"><h2 id="gh{k}">{html.escape(t)}</h2>' + "".join(a(g) for g in xs) + "</section>" for k, (t, xs) in enumerate(secs)),
+            "전기요·가습기·핸드크림처럼 자주 사는 품목을 기준·단위당 가격으로 비교해 고르는 법 — 가격은 매일 확인", f"{BASE}guide/", head=f'<script type="application/ld+json">{ld}</script>'))
+        urls.append((f"{BASE}guide/", max(m for _, m in urls)))
+    elif gs:
         write(out, "guide/", page(f"고르는 법 가이드 | {TITLE}", '<h1 class="h">📖 고르는 법 가이드</h1>' + "".join(
             f'<a class="card" href="{BASE}guide/{g["slug"]}/"><b>{html.escape(g["title"])}</b><br><small>{html.escape(g.get("desc") or "")} · {int(g["updated"][5:7])}/{int(g["updated"][8:])} 고침</small></a>' for g in gs),
             "기준·가격을 비교해 고르는 법을 정리해요 — 가격은 매일 확인", f"{BASE}guide/"))
@@ -3480,9 +3554,10 @@ def build(posts, out="docs"):
         if x[2][0] != 3:
             bycat.setdefault(cat_of(x[1]), []).append(x)
     bycat[""] = [x for x in it if x[2][0] == 0]
-    tps, now_k = topics(it), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now_ts + 9 * 3600))
+    tps, now_k, seo_k = topics(it), time.strftime("%Y-%m-%d %H:%M", time.gmtime(now_ts + 9 * 3600)), 0
     TOPIC_OF.clear()
     TOPIC_OF.update({x[0]: (g["slug"], g["name"]) for g in reversed(tps) for x in g["xs"]})  # 여러 주제 = 최근 큐레이션 것
+    GT_LINK.update(gt_match(tps, guides_load()) if SEO_V2 else {"g2t": {}, "t2g": {}})
     TOPIC_NAV.clear()
     tnav = lambda gs: ('<nav class="recs" aria-label="주제별 비교"><h3>📌 주제별 모음·단위가 비교</h3>' + "".join(f'<a href="{BASE}c/t/{g["slug"]}.html">{html.escape(g["name"])}</a>' for g in gs) + "</nav>") if gs else ""
     TOPIC_NAV.update({m[0]: tnav([g for g in tps if g["cat"] == k]) for k, m in CAT_META.items()}, **{"*": tnav(tps)})
@@ -3529,7 +3604,8 @@ def build(posts, out="docs"):
         sp = spec_of(parse(title_of(p["text"]))[1])
         extra = "" if p["text"].startswith("📋") else series_line(p, posts) if bundle_of(p) else (f'<div class="u">📦 구성 {html.escape(sp)}</div>' if sp else "") + rec_line(i, p, recs) + deal_state(p, sh, newer)  # TT-2 ⑤ 고유 내용
         tp = TOPIC_OF.get(i)
-        tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">📌 {html.escape(tp[1])} 모아 보기 →</a>' if tp else ""
+        tb = f'<a class="btn2" href="{BASE}c/t/{tp[0]}.html">' + (f"📊 같은 품목 가격 비교 → {html.escape(tp[1])}" if SEO_V2 else f"📌 {html.escape(tp[1])} 모아 보기 →") + "</a>" if tp else ""
+        seo_k += bool(tp)
         open(f"{out}/p/{i}.html", "w").write(page(ti, deal_card(i, p, extra, () if p["text"].startswith("📋") else buy_tips(p, sh), curp) + rev_box(p, revs, rpids)
                                                   + (rl or "") + tb + GUIDE_NAV.get(c[0] if c else "", "") + (more or "")
                                                   + same_cat(i, p, bycat, {j for j, _ in rel or []}) + back + SEEN_JS, sd, url, note=note, head=(ld or "") + crumb(c and (c[1], c_url(c[0])), (parse(title_of(p["text"]))[1] or ti, url)), og=img_of(p),
@@ -3680,6 +3756,8 @@ def build(posts, out="docs"):
             shutil.rmtree(f"{out}/link/{d}")
     write(out, "price/", page(f"가격 내려간 상품 | {TITLE}", f'<p class="t">가격 추적 쪽은 닫았어요.</p><a class="btn2" href="{c_url("drop")}">📉 가격 내려간 상품 보기 →</a>', "", f"{BASE}price/", noindex=True, head=f'<meta http-equiv="refresh" content="0;url={c_url("drop")}">'))  # 10/30 진우 '가격은 빼고': 옛 /price/ = /c/drop/으로(noindex · 사이트맵 X)
     urls += guide_pages(out, today)  # 11/2 /guide/ 비교 가이드(색인 O · lastmod = 고친 날·가격 바뀐 날)
+    if SEO_V2:  # 11/16 점검용 1줄
+        print(f"seo v2 주제 {len(tps)} · 가이드 링크 {len(GT_LINK['g2t'])} · 상품 링크 {seo_k}")
     urls += series_pages(posts, out, today, [x for x in ls["toss"][2] if not x[1].get("tid")] if "toss" in ls else ())  # 10/31 진우 '시리즈로 — 찾기 좋게'(/series/ · 색인 O)
     urls += en_pages(out, today)  # 10/30 /privacy·/en(영어 — 인덱스 O · hreflang)
     short_pages(out, {**{k: v[0] for k, v in ls.items()}, "women": "여성용품 → 생필품"})  # 11/1 짧은 주소(/<칸> → /c/<칸>/ — 사이트맵 X)

@@ -44,6 +44,7 @@ pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에
 jit0, H.IG_JIT2 = H.IG_JIT2, False
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
+seo0, S0.SEO_V2 = S0.SEO_V2, False  # 11/16 구글 검색 개선(주제 쪽 검색어형 제목·h2·가이드 링크·상품 설명) = 9-201에서만
 TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
 saff0, S0.SITE_AFF_ONLY = S0.SITE_AFF_ONLY, False  # 예전 사이트 셀프체크는 가짜 주소(https://buy 등) 그대로 — 사이트 링크 규칙 ①②③(10/25 20:3x Cowork 최종)은 맨 아래 9-65에서
 lab0, H.TH_LINK_AB = H.TH_LINK_AB, False  # 예전 Threads 셀프체크는 링크 위치 A만 — A/B 시험(10/18 18:30)은 맨 아래 9-17에서
@@ -15272,3 +15273,46 @@ assert 'abs(ig_due(seen, "igtj_" + today, b0) - b0)' in inspect.getsource(H.ig_t
 assert 'and not (IG_V2 and IG_TOUCH)' in inspect.getsource(H.ig_guess) and inspect.getsource(H.ig_comments).count("/replies") == 0
 C200.slideshow = svs200
 (H.IG_V2, time.time, H.bgm, H.song_of, H.tg_video, H.tg, H.reel_me, H.http, H.REEL_PUBLIC) = sv200; os.chdir(cwd200)
+
+# 9-201 (11/16 진우 '구글링 하면 잘 뜨게' · 전부 진행): 주제 쪽 제목 '{이름} 가격 비교 — {단위}당·1개 값 순위 N개 (YYYY년 M월)'(60자 안) · h1 '{이름} 가격 비교 — {단위}당 순위' · 설명 1위·값
+#   · 요약(표 숫자 그대로) + h2 3개(한눈에 보는 순위·고를 때 볼 것·같이 보면 좋은 쪽) · 가이드↔주제 링크(대칭) · /guide/ 계절 먼저·칸별 h2·ItemList · /p/ 설명 = 확인 시각·주제 비교 · 상품 쪽 '같은 품목 가격 비교 →'
+cwd201, sv201 = os.getcwd(), (time.time, S.SEO_V2); os.chdir(tempfile.mkdtemp())
+S.SEO_V2, time.time = True, lambda: TK("2026-11-17 12:00")
+im201 = lambda k: f"https://thumbnail.coupangcdn.com/t201/{k}.jpg"
+def yu201(k, name, unit, cat="coffee"):
+    return {"t": "2026-11-17 09:00", "text": f"📦 쿠팡 🔥\n{name}\n9,900원\n💰 {unit} · 할인 중\n✔ 리뷰 1,234\n⚠️ 확인할 점: 결제 전 최종가 확인 (11/17 9시 가격)", "url": f"https://link.coupang.com/a/s{k}",
+            "own": 1, "shelf": 1, "img": im201(k), "st": "hot", "now": "9,900원", "chk": "11/17 9시", "chkt": "2026-11-17 09:00", "cat": cat}
+po201 = [yu201(1, "곰곰 율무차 18g 50개입", "1봉 200원꼴"), yu201(2, "고향 호두아몬드 율무차 18g 110개입", "1봉 135원꼴"), yu201(3, "오뚜기 율무차 분말 1kg", "100g당 600원꼴"), yu201(4, "담터 율무차 18g 50개입", "1봉 160원꼴")]
+po201[3]["chkt"] = "2026-11-17 11:40"
+json.dump([{"at": "2026-11-16 21:10", "curation": True, "topic": "율무차", "slug": "yulmu-tea", "text": "율무차 머리", "link": "https://hotdealpick.kr/c/coffee/?ref=thc", "img": [im201(k) for k in (1, 2, 3, 4)]}]
+          + [{"at": "2026-11-10 09:00", "shelf": True, "url": f"https://link.coupang.com/a/s{k}", "tag": "율무차", "text": "x"} for k in (1, 2, 3, 4)], open("events.json", "w"), ensure_ascii=False)
+G201 = {"title": "율무차 고르는 법 — 1봉 값 비교", "summary": "1봉 값으로 비교해요", "updated": "2026-11-16", "desc": "율무차를 1봉당 가격으로 비교해요", "related_c": "coffee",
+        "criteria": [{"name": "1봉 값", "text": "개수로 나눠 보기"}], "picks": [{"name": "고향 율무차", "mall": "coupang", "pid": "1", "item": "", "unit": "110개"}]}
+json.dump([{**G201, "slug": "yulmu-guide", "q": "율무차"}, {**G201, "slug": "blanket-guide", "q": "전기요", "title": "전기요 고르는 법", "related_c": "winter"},
+           {**G201, "slug": "rice-guide", "q": "햅쌀 10kg", "title": "햅쌀 고르는 법", "related_c": "food"}], open(S.GUIDES, "w"), ensure_ascii=False)
+with contextlib.redirect_stdout(io.StringIO()) as o201:
+    S.build(po201, "docs")
+tp201 = open("docs/c/t/yulmu-tea.html").read()
+ti201 = re.search(r"<title>([^<]*)</title>", tp201)[1]
+assert ti201 == "율무차 가격 비교 — 1봉당·1개 값 순위 4개 (2026년 11월) | 핫딜픽" and len(ti201) <= 60 and '<h1 class="h">율무차 가격 비교 — 1봉당 순위</h1>' in tp201, ti201  # 날짜 = 년·월(매일 바뀌는 제목 X)
+assert re.findall(r'<h2 id="tph\d">([^<]*)</h2>', tp201) == ["한눈에 보는 순위", "고를 때 볼 것", "같이 보면 좋은 쪽"]
+de201 = S.html.unescape(re.search(r'<meta name="description" content="([^"]*)"', tp201)[1])
+assert de201 == "율무차 4개를 1봉당 값으로 비교 — 1위 고향 호두아몬드 율무차 18g 110개입 1봉당 135원 · 가격은 매일 확인", de201
+cin201 = re.search(r'<div class="cin">(.*?)</div>', tp201)[1]
+tb201 = tp201.split("<tbody>")[1].split("</tbody>")[0]
+assert "비교 4개 · 같은 1봉 단위 3개 기준 1봉당 135~200원" in cin201 and "1위와 3위 차이 1.5배 · 가격 11/17 11시 확인" in cin201 and all(f"<td>1봉 {v}원</td>" in tb201 for v in (135, 160, 200)), cin201  # 요약 = 표 값 그대로 · 확인 시각 = 가장 최근
+assert "같은 1봉 단위끼리만 순위를 매겨요(단위가 다르거나 없는 상품은 표 뒤쪽에)." in tp201 and not re.search(S.SEO_BAN, re.sub(r"<[^>]+>", " ", tp201.split("<h1")[1].split('class="cards"')[0] + tp201.split('id="tph2"')[1]))  # 금지어 0
+gp201 = open("docs/guide/yulmu-guide/index.html").read()
+assert f'href="{S.BASE}guide/yulmu-guide/">📖 율무차 고르는 법 →</a>' in tp201 and f'href="{S.BASE}c/t/yulmu-tea.html">📌 지금 율무차 가격 비교 →</a>' in gp201  # 가이드 ↔ 주제 = 서로
+assert "c/t/" not in open("docs/guide/rice-guide/index.html").read() and S.GT_LINK == {"g2t": {"yulmu-guide": ("yulmu-tea", "율무차")}, "t2g": {"yulmu-tea": [("yulmu-guide", "율무차")]}}  # 같은 품목 주제 없음 = 링크 X
+gl201 = open("docs/guide/index.html").read()
+assert re.findall(r'<h2 id="gh\d+">([^<]*)</h2>', gl201) == ["❄️ 지금 계절에 많이 찾는 것", "커피·차", "식품"] and gl201.index("blanket-guide") < gl201.index("yulmu-guide") and gl201.count('"@type": "ListItem"') == 3, re.findall(r'<h2 id="gh\d+">([^<]*)</h2>', gl201)  # 11~2월 = 겨울 품목 먼저
+pp201 = open("docs/p/1.html").read()
+assert S.html.unescape(re.search(r'<meta name="description" content="([^"]*)"', pp201)[1]) == "9,900원 · 1봉 135원 · 쿠팡 · 가격 확인 11/17 · 율무차 비교 있음" and f'href="{S.BASE}c/t/yulmu-tea.html">📊 같은 품목 가격 비교 → 율무차</a>' in pp201
+assert "seo v2 주제 1 · 가이드 링크 1 · 상품 링크 4" in o201.getvalue(), o201.getvalue()[-300:]
+# 긴 이름 = 60자 안으로 줄임 · 단위 없음 = '특가 모음'
+x201 = [(k, {"t": "2026-11-17 09:00", "text": f"🔥 [쿠팡] 상품{k} (1,000원)", "url": f"https://link.coupang.com/a/z{k}"}, (0, None, "", [], False)) for k in (1, 2, 3)]
+ln201 = S.topic_v2({"xs": x201, "name": "아주 아주 긴 겨울 보습 핸드크림 선물 세트 모음", "slug": "z"}, [], "2026-11-17", [(x, ("100ml당 1,000원꼴", "ml", 10.0)) for x in x201], [("ml", 3)], re.match(r"100ml", "100ml"), "", None, [], [])
+nu201 = S.topic_v2({"xs": x201, "name": "가전", "slug": "y"}, [], "2026-11-17", [(x, None) for x in x201], [], None, "", None, [], [])
+assert len(ln201[0]) <= 60 and "(2026년 11월) | 핫딜픽" in ln201[0] and nu201[0] == "가전 특가 모음 3개 (2026년 11월) | 핫딜픽" and "모은 상품 3개" in nu201[2], (ln201[0], nu201[0])
+(time.time, S.SEO_V2) = sv201; os.chdir(cwd201)
