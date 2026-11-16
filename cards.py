@@ -1357,6 +1357,20 @@ def theme_end(cat, k, out, top="필요할 때 꺼내 보게\n저장해 두세요
     d.text((P, H - 110), "제휴 링크(수수료) · 가격은 바뀔 수 있어요", font=pf("SemiBold", 40), fill=(190, 182, 200))
     return _save(im, out)
 
+def reel_end(card, nums, fact, k, out):
+    """릴스 끝 장(11/16 — 1.5초, 1080x1350 진한 바탕): 동물 말풍선 = 사실만(개수·확인 시각) · '프로필 링크 → 📸 {카드 이름} → {번호}' 큰 글씨(/link 맨 위 칸 이름 그대로). -> out"""
+    im = Image.new("RGBA", (W, H), TDARK + (255,))
+    d, P = ImageDraw.Draw(im), 80
+    _buddy(im, k, W - P - 84, 110, fact)
+    ft, fc = pf("ExtraBold", 96), pf("ExtraBold", 72)
+    d.text((P, 400), "프로필 링크", font=ft, fill="white")
+    y = 400 + int(ft.size * 1.4)
+    for n, ln in enumerate(wrap(d, f"→ 📸 {card}", fc, W - 2 * P, 2)):
+        _em_text(d, im, (P + (0 if not n else 62), y), ln, fc, TORANGE); y += int(fc.size * 1.3)
+    d.text((P, y + 20), f"→ {nums}", font=ft, fill="white")
+    d.text((P, H - 110), "제휴 링크(수수료) · 가격은 바뀔 수 있어요", font=pf("SemiBold", 40), fill=(190, 182, 200))
+    return _save(im, out)
+
 def q_card(photos, labels, title, lines, foot, k, out, head="핫딜픽", small=False):
     """질문·이거 vs 저거·가격 맞히기·체크리스트·재미 질문 카드(1080x1350 크림, L·M): 위 머리 · 사진 1·2·4장(자르기 X, 알약 = labels — 'A'·'1') · 큰 제목(2줄, 숫자 주황) · 줄들 · 아래 줄 · 동물 말풍선.
     small = 사진 1장을 작게(체크리스트·재미 질문 — 글이 주인공). -> out"""
@@ -1427,8 +1441,9 @@ def ig_story(src, out, top, bottom, hook=None):
         d.text(((W - f.getlength(s)) / 2, y), s, font=f, fill="white")
     return _save(im, out)
 
-def slideshow(images, out, music=None, sec=1.5):
-    """H-4 릴스(1080x1920 MP4): 넘기기 장들을 sec초씩(0.3초 전환) — 뒤 = 그 장을 꽉 채워 흐리게, 가운데 = 장 0.92배 · 배경음악(짧으면 반복·앞뒤 페이드). -> out"""
+def slideshow(images, out, music=None, sec=1.5, secs=None, fx=None):
+    """H-4 릴스(1080x1920 MP4): 넘기기 장들을 sec초씩(0.3초 전환) — 뒤 = 그 장을 꽉 채워 흐리게, 가운데 = 장 0.92배 · 배경음악(짧으면 반복·앞뒤 페이드). -> out
+    11/16 secs = 장마다 초 · fx = 장마다 들어오는 전환('fade' 겹침 · 'slide' 옆으로 밀기 · 'zoom' 살짝 확대하며 겹침) — 없으면 지금 그대로."""
     import subprocess
     from PIL import ImageFilter
     SH, fps, xf = 1920, 30, 9
@@ -1444,7 +1459,18 @@ def slideshow(images, out, music=None, sec=1.5):
         im.paste(fg, ((W - fg.width) // 2, (SH - fg.height) // 2))
         return im
     fr = [frame(x) for x in images]
-    total = sec * len(fr)
+    secs, fx = list(secs or [sec] * len(fr)), list(fx or ["fade"] * len(fr))
+    total = sum(secs)
+    def mix(a, b, t, kind):
+        if kind == "slide":  # 새 장이 오른쪽에서 밀고 들어옴(앞 장은 왼쪽으로) — t = 0.1~0.9
+            x, im = round(W * t), Image.new("RGB", (W, SH))
+            im.paste(a.crop((x, 0, W, SH)), (0, 0)); im.paste(b.crop((0, 0, x, SH)), (W - x, 0))
+            return im
+        if kind == "zoom":
+            z = 1.06 - 0.06 * t; zb = b.resize((round(W * z), round(SH * z)), Image.BILINEAR)
+            zb = zb.crop(((zb.width - W) // 2, (zb.height - SH) // 2, (zb.width - W) // 2 + W, (zb.height - SH) // 2 + SH))
+            return Image.blend(a, zb, t)
+        return Image.blend(a, b, t)
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{SH}", "-r", str(fps), "-i", "-"]
     if music:
         cmd += ["-stream_loop", "-1", "-i", music, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-af", f"afade=t=in:d=0.5,afade=t=out:st={max(0, total - 1.5):.3f}:d=1.5"]
@@ -1452,10 +1478,9 @@ def slideshow(images, out, music=None, sec=1.5):
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     try:
-        n = round(sec * fps)
         for k, im in enumerate(fr):
-            for i in range(n):
-                f = Image.blend(fr[k - 1], im, (i + 1) / (xf + 1)) if k and i < xf else im
+            for i in range(round(secs[k] * fps)):
+                f = mix(fr[k - 1], im, (i + 1) / (xf + 1), fx[k]) if k and i < xf else im
                 proc.stdin.write(f.tobytes())
         proc.stdin.close()
         rc = proc.wait()

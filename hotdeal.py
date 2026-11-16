@@ -2630,6 +2630,9 @@ def publish_approved(seen=None):
         if text.lstrip().startswith("#일상") and str(m.get("from", {}).get("id")) == ADMIN:
             daily_in({} if seen is None else seen, m, text.strip())
             continue
+        if IG_ME and text.lstrip().startswith("#릴스") and str(m.get("from", {}).get("id")) == ADMIN:  # 11/16 ⑧ 다음 테마 릴스 첫 장
+            reel_me_in({} if seen is None else seen, m)
+            continue
         rmid = (m.get("reply_to_message") or {}).get("message_id")
         rd = rmid and next((k for k, v in (seen or {}).items() if k.startswith("igrd_") and isinstance(v, dict) and v.get("mid") == rmid), None)
         if rd and text.strip() and str(m.get("from", {}).get("id")) == ADMIN:  # L: 인스타 댓글 알림에 답장 = 고친 문구로 답글
@@ -8894,7 +8897,7 @@ def ig_landed(tok, uid, cid, cap="", since=0):
 def ig_due(seen, key, base):
     """인스타 게시 무작위 지연: base(이번 회차 시작) + IG_JITTER 사이 아무 때(회차마다 1번 정해 seen에) -> 이 시각 전엔 컨테이너 X."""
     if key not in seen:
-        seen[key] = {"t": base, "at": base + random.uniform(*IG_JITTER)}
+        seen[key] = {"t": base, "at": base + (random.choice((-1, 1)) * random.uniform(*IG_JIT2_S) if IG_V2 and IG_JIT2 else random.uniform(*IG_JITTER))}  # 11/16 ⑧ V2 = 칸 시각 ±10~25분
     return seen[key]["at"]
 
 
@@ -9325,6 +9328,8 @@ def ig_reel_day(seen):
     today, r = time.strftime("%Y-%m-%d", kst), seen.get("reel_" + time.strftime("%Y-%m-%d", kst)) or {}
     if not (IG_V2 and REEL_CLIP and IG_AUTO and tok and uid) or not REEL_DAY[0] <= kst.tm_hour < REEL_DAY[1] or seen.get("igrd_" + today) or seen.get("ig_hold", 0) > now or not r or r.get("src"):
         return
+    if IG_JIT2 and now < ig_due(seen, "igrdj_" + today, kst_ts(f"{today} {REEL_DAY[0]}:30")):  # 11/16 ⑧ 12:30 ±10~25분
+        return
     ev, used = ev_info(), {u for u, d in seen.get("igu", {}).get("m", {}).items() if d == today}
     tp = {str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", u)) else "")) for u in used} - {""}
     for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
@@ -9366,7 +9371,8 @@ def ig_reel(seen):
         alert(seen, "reelx_" + today, "🎬 오늘 인스타 릴스 안 올라감 — " + ("컨테이너 실패" if (tried or {}).get("fail") else "처리·발행 안 끝남" if tried else "영상이 사이트에 안 뜸" if r else "오늘 영상 없음(테마·TOP 넘기기·클립)"))
     if not r and REEL_CLIP and IG_AUTO and tok and uid and kst.tm_hour >= REEL_HOUR:
         r = reel_clip(seen, today)
-    if not (IG_AUTO and tok and uid and r) or kst.tm_hour < REEL_HOUR or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
+    early = now < ig_due(seen, "igrj_" + today, kst_ts(f"{today} {REEL_HOUR:02d}:00")) if IG_V2 and IG_JIT2 and r and not r.get("src") else kst.tm_hour < REEL_HOUR  # 11/16 ⑧ 테마 릴스 = 22시 ±10~25분
+    if not (IG_AUTO and tok and uid and r) or early or seen.get("ig_hold", 0) > now or (tried and tried.get("fail", IG_TRIES) >= IG_TRIES):
         return
     url = r.get("src") or f"{SITE}reels/{today}.mp4"
     if re.search(IG_REEL_BAN, r.get("cap") or ""):  # 11/16 품질 문 = 그 회차만 쉼
@@ -9463,6 +9469,8 @@ def ig_toss(seen, tok, uid, now):
             return
         if not ig_toss_slot(now):  # 조각 = 칸 시각부터(피드처럼 — 발행은 ig_publish가 칸·간격 보고)
             return
+        if IG_V2 and IG_JIT2 and now < (b0 := kst_ts(f"{today} {slot}")) + abs(ig_due(seen, "igtj_" + today, b0) - b0):
+            return  # 11/16 ⑧ 토스 = 칸 시각 + 10~25분(토스 칸 15:30 전엔 못 올림 — 앞당김 X)
         cover = f"{SITE}{st['jpg'][5:]}"  # L': 피드 상한 밖(ig_room X)
         try:
             http(cover, method="HEAD")  # 표지 배포 전 = 다음 실행
@@ -11590,6 +11598,13 @@ IG_H = True  # 10/26 H·L·M(진우 '노출이 너무 적고 보고 싶을 수�
 IG_FEED = {"11": (11, 0), "14": (14, 0), "17": (17, 0), "20": (20, 0)}
 IG_V2, IG_FEED_V2, IG_TOSS_AT_V2, REEL_DAY = True, {"19": (19, 0)}, ("15:30",), (12, 14)
 IG_COVER_AB, IG_REEL_BAN = True, r"최저가|역대\s*최저|효능|효과|치료|무조건|지금\s*바로|서두르"  # 11/16 ③ 첫 화면 A/B(홀수 날 글자 · 짝수 날 실사진) · ⑥ 품질 문 = 릴스 캡션 금지어(지금 기준 — 더 엄격하게 X)  # 11/15~16 진우 인스타 개편: 하루 4개 = 릴스 2(REEL_DAY 12~13시 클립 · 22시 테마) + 피드 2(토스 1 · 19시 쿠팡 테마 1) · False = 예전 일정
+IG_LINKIN, IG_TOUCH, IG_JIT2, IG_ME = True, True, True, True  # 11/16 개편 ④ 링크 유입(끝 장·캡션 2줄·/link 맨 위·GoatCounter) · ⑧ 사람 손길(장 길이·전환·끝 장 말풍선·태그·캡션 틀·진우 한마디) · ⑧ 게시 ±10~25분 · ⑧ '#릴스' 사진
+IG_JIT2_S, REEL_LEN, REEL_SEC, REEL_END_SEC, REEL_FX = (600, 1500), (9, 12, 15, 18, 20, 8), (1.2, 2.0), 1.5, ("fade", "slide", "zoom")  # 릴스 길이 8~20초 돌림(장 수 안에서 맞춤)
+REEL_PIN, REEL_TAGS, JW_DAYS = "docs/cards/reel.json", ("#핫딜픽", "#쇼핑정보", "#살림템", "#가성비템", "#장보기", "#쟁여템", "#생활꿀템", "#오늘의특가"), 14
+JW_LINES = ("{lb} {n}가지 중에 {lo}원부터 있어요, 어떤 게 먼저 눈에 들어오세요?", "이번엔 {n}개 골라 봤어요ㅎㅎ 몇 번이 제일 궁금하세요?", "{lo}원부터 {hi}원까지 담았어요, 이 가격대면 어떠세요?",
+            "{n}개 모두 {when} 가격이에요, 미리 쟁여 두는 편이세요?", "{lb} {n}가지 중 하나만 고른다면 몇 번이세요?", "제일 가벼운 건 {lo}원이에요, 집에 이미 있으신가요?",
+            "{lb} 고를 때 가격이랑 용량 중 뭘 먼저 보세요?", "{n}개 중에 벌써 쓰고 계신 게 있으세요?")  # ⑧ 진우 한마디: 짧은 존댓말·진짜 질문·그 영상 숫자만(써 본 척·효능·최저가·재촉 X) · 14일 안 같은 문장 X
+REEL_CAPS = ("🛒 프로필 링크 → 📸 {card} → {nums}", "📍 영상 속 번호 그대로 · 프로필 링크 → 📸 {card} → {nums}", "🔗 사는 곳: 프로필 링크 → 📸 {card} → {nums}", "👉 프로필 링크 → 📸 {card} → {nums}에 모아 뒀어요")  # 캡션 틀 4개 돌림(어제 틀 X)
 igf_slots = lambda: IG_FEED_V2 if IG_V2 else IG_FEED  # 피드 칸(V2 = 19시 1칸 — 테마 넘기기 · 11:40에 미리 만들어 낮 릴스 판단·22시 테마 릴스)  # M-1 피드 4칸(3시간 간격 + 15~20분 무작위 지연) — 카드 이름 날짜_시(사이트 맨 위·c/칸 맨 위 번호 = 인스타 번호)
 IG_CYCLE = (("theme", "guess", "one", "vs"), ("top", "ask", "one", "fun"), ("theme", "check", "one", "guess"))  # L·M 형식 3일 돌림 — 같은 형식 연달아 X(날 넘어서도) · 링크 미는 글(IG_LINKY) 하루 2개 · 질문 카드 그날 저녁 = 재미 질문
 IG_LINKY = ("theme", "one", "top")  # 구매 링크 미는 형식(댓글 = 구매 링크 안내) — 나머지 = 소통(댓글로 답·정답·투표)
@@ -11789,7 +11804,8 @@ def igf_make(seen, kind, stem, kst):
             else:
                 cov = "photo"
                 cards.photo_cover(its[0]["photo"], f"1번 · {(its[0]['unit'] or '').lstrip('💰 ').split(' (')[0] or its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
-            extra = {"rc": f"{d}/rc.jpg", "cov": cov}  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
+            extra = {"rc": f"{d}/rc.jpg", "cov": cov, "rl": {"n": len(its), "lo": lo, "hi": max([won(x["price"]) or 0 for x in its]), "when": its[0]["when"].replace(" 확인", ""), "lb": lb, "seo": cp["seo"], "say": cp["say"], "q": cp["q"],
+                                                             "rows": rows, "notes": notes, "tags": cp["tags"]}}  # 11/16 ④⑧ 릴스 캡션 재료  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
             cap = f"{cp['seo']}\n{notes}\n\n{cp['say']}\n\n{rows}\n\n저장해 두고 필요할 때 보세요 🔖\n{cp['q']}\n\n{link}"
         elif kd == "one":
             it = its[0]
@@ -11923,7 +11939,7 @@ def ig_guess(seen):
             continue
         guess = lambda t: [round(float(a) * {"만": 10000, "천": 1000}.get(u, 1) + (int(c) * 1000 if c else 0)) for a, u, c in re.findall(r"(\d+(?:\.\d+)?)\s*(만|천)?\s*(?:(\d+)\s*천)?", (t or "").replace(",", ""))]  # '1만2천'·'1.2만'·'12000'·'11,990원'
         best = min(((abs(g - v["won"]), c["id"]) for c in cs if not (c.get("text") or "").startswith("정답은") for g in guess(c.get("text")) if g >= 100), default=None)
-        if best and v.get("won"):
+        if best and v.get("won") and not (IG_V2 and IG_TOUCH):  # 11/16 ⑧ 봇 자동 답글 X(정답 댓글 = 우리 게시물 댓글이라 그대로)
             try:
                 http(f"{IG}/{best[1]}/replies", {"message": "거의 정답! 👏"}, {"Authorization": f"Bearer {tok}"}, "POST")
                 print("ig 정답 가까운 댓글에 답글", pid)
@@ -11989,6 +12005,60 @@ def ig_reply_send(seen, cid, text):
         return False, ig_err(e)
 
 
+def reel_cap(seen, rl, card, nums, rnd):
+    """11/16 ④⑧ 테마 릴스 캡션: 1줄 대가성 문구 · 2줄 '프로필 링크 → 📸 {카드} → 번호'(틀 4개 돌림 — 어제 틀 X) · 3줄 진우 한마디(jw_line) · 본문 틀 · 태그 3개(지난 릴스와 같은 묶음 X)."""
+    last = seen.get("igcap", {})
+    t = rnd.choice([k for k in range(len(REEL_CAPS)) if k != last.get("i")])
+    body = (f"{rl['seo']}\n\n{rl['say']}\n\n{rl['rows']}\n\n저장해 두고 필요할 때 보세요 🔖", f"{rl['rows']}\n\n{rl['say']}", f"{rl['say']}\n\n{rl['rows']}\n\n{rl['q']}", f"{rl['seo']}\n\n{rl['rows']}")[t]
+    pool = list(dict.fromkeys(list(rl.get("tags") or []) + IGT_TAGS.get(rl["lb"], "").split() + list(REEL_TAGS)))
+    tags = next((x for x in (rnd.sample(pool, 3) for _ in range(9)) if sorted(x) not in last.get("tags", [])), pool[:3]) if IG_TOUCH else (rl.get("tags") or [])[:3]
+    jw = jw_line(seen, rl, rnd) if IG_TOUCH else ""
+    seen["igcap"] = {"t": time.time(), "i": t, "tags": ([sorted(tags)] + last.get("tags", []))[:3]}
+    head = REEL_CAPS[t].format(card=card, nums=nums) if IG_LINKIN else rl["seo"]
+    return f"{rl['notes']}\n{head}" + (f"\n{jw}" if jw else "") + f"\n\n{body}\n\n상품 사진: 판매 페이지(쿠팡)\n\n{' '.join(tags)}"
+
+
+def jw_line(seen, rl, rnd):
+    """⑧ 진우 한마디 1줄(JW_LINES — 그 영상 숫자만) · JW_DAYS일 안 같은 문장 X(다 썼으면 줄 X)."""
+    cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - JW_DAYS * 86400))
+    used = {k: d for k, d in seen.get("igjw", {}).get("m", {}).items() if d > cut}
+    v = {**rl, "lo": f"{rl['lo']:,}", "hi": f"{rl['hi']:,}"}
+    for line in rnd.sample([x.format(**v) for x in JW_LINES], len(JW_LINES)):
+        if line not in used and not re.search(IG_REEL_BAN, line) and line.count("ㅎㅎ") <= 1:
+            seen["igjw"] = {"t": time.time(), "m": {**used, line: time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))}}
+            return line
+    return ""
+
+
+def reel_me_in(seen, m):
+    """⑧ 진우 '#릴스'(사진 + 캡션): 다음 테마 릴스 첫 장 — 텔레그램 file_id만 seen에(사이트·저장소 X) · 사진으로 보낸 것만(파일 원본 X) · 산 물건 사진만(진우 확인)."""
+    reply = lambda t: tg("sendMessage", chat_id=ADMIN, reply_parameters={"message_id": m["message_id"]}, text=t)
+    if not m.get("photo"):
+        return reply("📷 #릴스는 사진으로 보내줘(파일 원본 X — 위치 정보)")
+    seen["igme"] = {"t": time.time(), "fid": m["photo"][-1]["file_id"]}
+    reply("🎬 받았어요 — 다음 테마 릴스 첫 장으로 써요(위치 정보 지우고 · 산 물건 사진만 보내 주세요)")
+
+
+def reel_me(seen, today):
+    """seen igme 사진 1장 -> 임시 jpg(EXIF·GPS 지움 — 다시 저장) · 1번만(used) · 못 받음 = None(릴스는 그대로)."""
+    v = seen.get("igme") or {}
+    if not v.get("fid") or v.get("used"):
+        return None
+    v["used"] = today
+    try:
+        import io
+        from PIL import Image, ImageOps
+        f = tg("getFile", file_id=v["fid"])
+        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{E['TG_TOKEN']}/{f['file_path']}", timeout=60) as r:
+            im = ImageOps.exif_transpose(Image.open(io.BytesIO(r.read()))).convert("RGB")
+        out = os.path.join(tempfile.gettempdir(), f"reel_me_{today}.jpg")
+        im.save(out, quality=90)  # exif 안 넘김 = GPS X
+        return out
+    except Exception as e:
+        print("reel me X", err_brief(e))
+        return None
+
+
 def ig_theme_reel(seen, stem, st, kst):
     """H-4 릴스: 그날 첫 테마 넘기기 장들을 1.5초씩 넘김 영상(1080x1920 — 흐린 바탕 + 가운데 장, 0.3초 전환) + 배경음악(라이선스 기록된 Pixabay 곡, 날마다 돌림) ->
     REEL_PUBLIC이면 docs/reels/{날짜}.mp4 + 22시 ig_reel(피드엔 X — 하루 피드 수 그대로) · 관리봇에 영상·곡 이름(기록). 실패 = 로그만(넘기기는 그대로)."""
@@ -11997,12 +12067,32 @@ def ig_theme_reel(seen, stem, st, kst):
     try:
         music, song = bgm(kst), song_of(kst)
         out = f"docs/reels/{today}.mp4" if REEL_PUBLIC else os.path.join(tempfile.gettempdir(), f"reel_{today}.mp4")
-        path = cards.slideshow(([st["rc"]] if st.get("rc") and os.path.exists(st["rc"]) else []) + st["files"], out, music)  # FF: 첫 장 = 1위 실사진 표지
+        imgs, cap, secs, fx, rl = ([st["rc"]] if st.get("rc") and os.path.exists(st["rc"]) else []) + st["files"], st["cap"], None, None, st.get("rl")
+        if IG_V2 and rl and rl["n"] < 3:  # 11/16 ⑥ 품질 문 = 상품 3개↑
+            return print("ig reel 테마 품질 문 X — 상품", rl["n"], "개 → 오늘 테마 릴스 X")
+        if IG_V2 and rl and (IG_LINKIN or IG_TOUCH):
+            rnd, k0 = random.Random(stem), kst.tm_yday
+            from build_site import card_name
+            card, nums = card_name(stem), "1번" if rl["n"] == 1 else f"1~{rl['n']}번"
+            if IG_LINKIN:  # ④ 끝 장(지금 저장 장 대신 — 피드 넘기기 끝 장은 그대로) · /link 맨 위 = 이 카드
+                imgs = imgs[:-1] + [cards.reel_end(card, nums, f"{rl['n']}가지 · {rl['when']} 확인", k0, f"{IGT_DIR}/{stem}/re.jpg")]
+            if IG_ME and (me := reel_me(seen, today)):  # ⑧ 진우 '#릴스' 사진 = 첫 장
+                imgs = [me] + imgs
+            if IG_TOUCH:
+                n = len(imgs) - 1
+                T = min(max(REEL_LEN[k0 % len(REEL_LEN)] - REEL_END_SEC, n * REEL_SEC[0]), n * REEL_SEC[1])
+                secs = [round(min(max(T / n + rnd.uniform(-.3, .3), REEL_SEC[0]), REEL_SEC[1]), 2) for _ in range(n)] + [REEL_END_SEC]
+                kinds = rnd.sample(REEL_FX, rnd.choice((2, 3)))
+                fx = ["fade"] + rnd.sample([kinds[k % len(kinds)] for k in range(n)], n)
+            cap = reel_cap(seen, rl, card, nums, rnd)
+        path = cards.slideshow(imgs, out, music, **({"secs": secs, "fx": fx} if secs else {}))  # FF: 첫 장 = 1위 실사진 표지
         if REEL_PUBLIC:
-            seen["reel_" + today] = {"t": time.time(), "cap": st["cap"][:1024], "feed": False}
+            seen["reel_" + today] = {"t": time.time(), "cap": cap[:2200], "feed": False}
+            if IG_V2 and rl and IG_LINKIN:
+                json.dump({"day": today, "stem": stem}, open(REEL_PIN, "w"))
             if st.get("cov"):  # 11/16 표지 A/B 기록(metrics 릴스 줄 cov)
                 seen["igcov"] = {"t": time.time(), "m": {**{k: v for k, v in seen.get("igcov", {}).get("m", {}).items() if k >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))}, today: st["cov"]}}
-        tg_video(path, f"🎬 오늘 릴스(테마 넘기기 {len(st['files'])}장 · 1.5초씩)" + (f" · 🎵 {song['name']}" if music and song else " · 음악 X") + (f" — {REEL_HOUR}시 자동 게시" if REEL_PUBLIC else ""))
+        tg_video(path, f"🎬 오늘 릴스(테마 넘기기 {len(st['files'])}장 · " + (f"{len(imgs)}장 {sum(secs):.1f}초" if secs else "1.5초씩") + ")" + (f" · 🎵 {song['name']}" if music and song else " · 음악 X") + (f" — {REEL_HOUR}시 자동 게시" if REEL_PUBLIC else ""))
         print("ig reel 테마", stem, song and song.get("name"))
     except Exception as e:
         print("ig reel 테마 실패", repr(e))
@@ -13596,11 +13686,11 @@ def gc_day(seen):
         g = seen.setdefault("gcd", {"d": {}})
         g.update(t=now, d={**g.get("d", {}), day: tries + 1})
         return print("gc day", day, type(e).__name__)
-    c.update(cal_sub=c.get("cal/webcal", 0) + c.get("cal/google", 0), cal_add=sum(n for k, n in c.items() if k.startswith(("cal/add/", "cal/ics/"))))
+    c.update(cal_sub=c.get("cal/webcal", 0) + c.get("cal/google", 0), cal_add=sum(n for k, n in c.items() if k.startswith(("cal/add/", "cal/ics/"))), ig_link=c.get("ig/link", 0), ig_buy=c.get("ig/buy", 0))
     d = load(GC_DAY_FILE, {})
     d[day] = c
     json.dump(dict(sorted(d.items())[-60:]), open(GC_DAY_FILE, "w"), ensure_ascii=False, indent=1)
-    print(f"gc day {day} 달력 구독 {c['cal_sub']}(아이폰·삼성 {c.get('cal/webcal', 0)} · 구글 {c.get('cal/google', 0)}) · 📅 추가 {c['cal_add']}")
+    print(f"gc day {day} 달력 구독 {c['cal_sub']}(아이폰·삼성 {c.get('cal/webcal', 0)} · 구글 {c.get('cal/google', 0)}) · 📅 추가 {c['cal_add']} · 인스타 → /link {c['ig_link']} · 구매 클릭 {c['ig_buy']}")
 
 
 def link_ab(seen):

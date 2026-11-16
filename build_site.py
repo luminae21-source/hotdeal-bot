@@ -3067,6 +3067,8 @@ LINK_V = ("(function(){var f=(location.search.match(/[?&]v=([ab])(?:&|$)/)||[])[
 LINK_GC = ("document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-gc],a[rel~=\"sponsored\"]');if(!a||!window.goatcounter||!goatcounter.count||window.hpLF)return;"  # 채널 = link-a/채널(미리보기 쪽 = link/채널) · 상품 = buy/link-a/몰 주소+경로 · v= 고정 보기 = 집계 X
            "var v=window.hpLV,g=a.getAttribute('data-gc');if(g){if(v)g=g.replace(/^link\\//,'link-'+v+'/')}else{try{var h=new URL(a.href);g='buy/'+(v?'link-'+v+'/':'')+h.hostname+h.pathname}catch(x){return}}"
            "goatcounter.count({path:g,title:(a.textContent||'').trim().slice(0,80),event:true})})")
+LINK_IG = ("window.hpIG=/Instagram/.test(navigator.userAgent)||/[?&]ref=ig(?:&|$)/.test(location.search);window.addEventListener('load',function(){if(window.hpIG&&!window.hpLF&&window.goatcounter&&goatcounter.count)goatcounter.count({path:'ig/link',title:'인스타 → /link',event:true})});"
+           "document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[rel~=\"sponsored\"]');if(a&&!a.getAttribute('data-gc')&&window.hpIG&&!window.hpLF&&window.goatcounter&&goatcounter.count)goatcounter.count({path:'ig/buy',title:'인스타 → /link 구매',event:true})})")  # 11/16 인스타 ④: 인스타 앱 안(또는 ?ref=ig) /link 보기·구매 클릭 -> gc_day(07:00 보고)
 LINK_JS = """<script>(function(){var G=document.getElementById('lg'),N=document.getElementById('dn'),B=document.querySelectorAll('.chips button');
 [].forEach.call(B,function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-k'),n=0;[].forEach.call(B,function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
 [].forEach.call(G.children,function(t){var on=(' '+t.getAttribute('data-k')+' ').indexOf(' '+k+' ')>=0;t.hidden=!on;if(on)n++});N.textContent=n})});
@@ -3143,7 +3145,9 @@ def link_tile(i, p, sh, ks):
 def link_cards(posts, out):
     """오늘 카드 딜 번호 줄(가로): 홈 '📸 … 카드 딜'과 같은 카드·같은 번호(card_stems·card_order, CARD_N개) — 인스타·Threads 캡션 '프로필 링크 → … 카드 딜 N번'.
     24시간 안 앞 카드는 접힌 한 줄로(첫 화면에 지금 특가 — 10/25 리뷰) · 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영)는 딜 쪽으로(그 쪽에 그 문구)."""
-    blocks = [(x, ps) for x in reversed(card_stems(out)) if (ps := card_order(posts, x, out)[:CARD_N])]
+    pin, today = json.load(open(f"{out}/cards/reel.json")) if os.path.exists(f"{out}/cards/reel.json") else {}, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    st = [pin["stem"]] if pin.get("day") == today and pin.get("stem") else []  # 11/16 인스타 ④: 오늘 테마 릴스 카드 = 맨 위(캡션·끝 장 '📸 카드 이름' 그대로)
+    blocks = [(x, ps) for x in st + [x for x in reversed(card_stems(out)) if x not in st] if (ps := card_order(posts, x, out)[:CARD_N])]
     go = lambda i, p: f"{BASE}p/{i}.html" if aff(p.get("url")) and shop_of(p) not in SHOP_NOTES else go_url(i, p)
     row = lambda ps: '<div class="cr">' + "".join((f'<a aria-disabled="true"' if not site_ok(p) else f'<a href="{html.escape(go(i, p))}"' + (f' rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank"' if go(i, p).startswith("http") and not go(i, p).startswith(BASE) else ""))
                                                   + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, (i, p) in enumerate(ps, 1)) + "</div>"  # 사이트에서 뺀 딜 = 번호·이름만(10/25 리뷰) · sponsored = 제휴 링크만
@@ -3180,7 +3184,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
     url = f"{BASE}link/" + (f"{style}/" if alt else "")
     t, d = f"{TITLE} — 채널·지금 특가 한 번에", "카톡 특가방·블로그·Threads·인스타·텔레그램과 지금 특가 12개를 한 곳에. 쿠팡·토스·네이버 생활 특가를 매일 골라요."
     kst = time.gmtime(time.time() + 9 * 3600)
-    gc = (f'<script>{GC_APP}' + (LINK_V if style == "ab" else "") + f'</script><script data-goatcounter="https://{GC_CODE}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script><script>{LINK_GC}</script>') if GC_CODE \
+    gc = (f'<script>{GC_APP}' + (LINK_V if style == "ab" else "") + f'</script><script data-goatcounter="https://{GC_CODE}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script><script>{LINK_GC}{LINK_IG}</script>') if GC_CODE \
         else (f"<script>{LINK_V}</script>" if style == "ab" else "")
     return (f'<!doctype html><html lang="ko"' + (f' class="l{style}"' if style != "ab" else "") + '><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<title>{t}</title><meta name="description" content="{d}">' + ('<meta name="robots" content="noindex,follow">' if alt else "")

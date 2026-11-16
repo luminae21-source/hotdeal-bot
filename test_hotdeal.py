@@ -40,7 +40,8 @@ dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 �
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인스타 개편(하루 4개·겨울 요일 테마) = 9-196에서만
 nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
-pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만
+pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만 · jit0 = 게시 ±10~25분(정해진 시각 셀프체크 흔들림 X) = 9-200에서만
+jit0, H.IG_JIT2 = H.IG_JIT2, False
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
 TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
@@ -15183,3 +15184,82 @@ assert b199["n"] == 5 and b199["views_median"] == 79 and b199["shares"] == 5 and
 H.http = lambda *a, **k: (_ for _ in ()).throw(AssertionError("다시 X")); H.ig_base({})  # 파일 있으면 X
 assert "[ ! -f ig_base.json ] || git add ig_base.json" in open(os.path.join(cwd199, ".github/workflows/hotdeal.yml"), encoding="utf-8").read() if os.path.exists(os.path.join(cwd199, ".github/workflows/hotdeal.yml")) else True
 (H.IG_V2, H.http, time.time, e199, H.IG_AUTO, H.REEL_CLIP) = sv199; H.E.clear(); H.E.update(e199); os.chdir(cwd199)
+
+# 9-200 (11/16 진우 인스타 통합 개편 ④⑧): 테마 릴스 = 끝 장 1.5초 '프로필 링크 → 📸 카드 이름 → 번호'(동물 말풍선 = 개수·확인 시각만) · 캡션 1줄 대가성 문구 · 2줄 링크(틀 4개 돌림)
+#   · 3줄 진우 한마디(14일 안 같은 문장 X) · 태그 3개(지난 묶음 X) · 장 1.2~2.0초 · 전환 2~3가지 · 길이 8~20초 · '#릴스' 사진 = 첫 장(GPS 지움 · 1번) · /link 맨 위 = 오늘 릴스 카드
+#   · 인스타 → /link 보기·구매 클릭(GoatCounter ig/link·ig/buy → gc_day) · 게시 ±10~25분(토스 = +만) · 봇 자동 답글 X
+cwd200, sv200 = os.getcwd(), (H.IG_V2, time.time, H.bgm, H.song_of, H.tg_video, H.tg, H.reel_me, H.http, H.REEL_PUBLIC); os.chdir(tempfile.mkdtemp())
+import cards as C200
+H.REEL_PUBLIC = True
+sl200, svs200 = [], C200.slideshow
+C200.slideshow = lambda imgs, out, music=None, sec=1.5, secs=None, fx=None: sl200.append((list(imgs), secs, fx)) or out
+H.IG_V2, H.bgm, H.song_of, H.tg_video, H.reel_me = True, lambda kst: None, lambda kst: None, lambda *a, **k: None, lambda seen, today: None
+time.time = lambda: TK("2026-11-17 11:45")
+os.makedirs("docs/cards/igt/2026-11-17_19"); os.makedirs("docs/reels")
+for f in ("rc", "00", "01", "02", "03", "04", "09"):
+    open(f"docs/cards/igt/2026-11-17_19/{f}.jpg", "wb").write(b"j")
+rl200 = {"n": 4, "lo": 3990, "hi": 12900, "when": "11/17 11:40", "lb": "겨울 보습", "seo": "겨울 보습템 4가지", "say": "건조할 때 손이 가는 것만", "q": "어떤 거부터 보세요?", "rows": "1. 핸드크림 · 3,990원",
+         "notes": H.DISCLOSURE, "tags": ["#보습템", "#겨울뷰티", "#핸드크림"]}
+st200 = {"rc": "docs/cards/igt/2026-11-17_19/rc.jpg", "files": [f"docs/cards/igt/2026-11-17_19/{f}.jpg" for f in ("00", "01", "02", "03", "04", "09")], "cap": "옛 캡션", "rl": rl200, "cov": "text"}
+s200 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_theme_reel(s200, "2026-11-17_19", st200, time.gmtime(time.time() + 9 * 3600))
+im200, se200, fx200 = sl200[-1]
+assert im200[0].endswith("rc.jpg") and im200[-1].endswith("2026-11-17_19/re.jpg") and not any(x.endswith("09.jpg") for x in im200) and os.path.isfile(im200[-1])  # 끝 장 = 새 끝 장(피드 저장 장 X)
+assert all(1.2 <= x <= 2.0 for x in se200[:-1]) and se200[-1] == 1.5 and 8 <= sum(se200) <= 20 and len(se200) == len(im200) and len(set(se200[:-1])) > 1, se200  # 장마다 길이 다름
+assert fx200[0] == "fade" and 2 <= len(set(fx200[1:])) <= 3 and set(fx200) <= {"fade", "slide", "zoom"}, fx200
+cap200 = s200["reel_2026-11-17"]["cap"].split("\n")
+card200 = S.card_name("2026-11-17_19")
+assert cap200[0] == H.DISCLOSURE and f"프로필 링크 → 📸 {card200} → 1~4번" in cap200[1] and cap200[2].endswith("?") and cap200[2] in s200["igjw"]["m"], cap200[:3]  # 1줄 문구 · 2줄 링크 · 3줄 한마디
+assert len(cap200[-1].split()) == 3 and all(t.startswith("#") for t in cap200[-1].split()) and not re.search(H.IG_REEL_BAN, "\n".join(cap200))
+assert json.load(open(H.REEL_PIN)) == {"day": "2026-11-17", "stem": "2026-11-17_19"} and s200["igcov"]["m"]["2026-11-17"] == "text"
+i200, jw200 = s200["igcap"]["i"], cap200[2]
+time.time = lambda: TK("2026-11-18 11:45")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_theme_reel(s200, "2026-11-18_19", {**st200, "files": st200["files"]}, time.gmtime(time.time() + 9 * 3600))
+assert s200["igcap"]["i"] != i200 and s200["reel_2026-11-18"]["cap"].split("\n")[2] != jw200 and len(s200["igcap"]["tags"]) == 2  # 다음 날 = 다른 틀·다른 한마디
+assert "ㅎㅎㅎ" not in "".join(H.JW_LINES) and all(x.count("ㅎㅎ") <= 1 and x.rstrip().endswith("?") and not re.search(H.IGT_BAN, x) for x in H.JW_LINES)
+v200 = {**rl200, "lo": "3,990", "hi": "12,900"}
+s200b = {"igjw": {"t": 1, "m": {x.format(**v200): "2026-11-10" for x in H.JW_LINES}}}
+time.time = lambda: TK("2026-11-17 11:45"); assert H.jw_line(s200b, rl200, H.random.Random(1)) == ""  # 14일 안 다 씀 = 줄 X
+time.time = lambda: TK("2026-11-25 11:45"); assert H.jw_line(s200b, rl200, H.random.Random(1)) in [x.format(**v200) for x in H.JW_LINES]  # 14일 지나면 다시
+# 품질 문: 상품 3개 밑 = 테마 릴스 X
+n200 = len(sl200); s200c = {}
+with contextlib.redirect_stdout(io.StringIO()) as o200:
+    H.ig_theme_reel(s200c, "2026-11-19_19", {**st200, "rl": {**rl200, "n": 2}}, time.gmtime(time.time() + 9 * 3600))
+assert len(sl200) == n200 and "reel_2026-11-19" not in s200c and "품질 문 X" in o200.getvalue()
+# '#릴스' 사진: 받기(file_id만) · 첫 장 · GPS 지움 · 1번
+tg200 = []
+H.tg = lambda m, **k: tg200.append((m, k)) or ({"file_path": "photos/a.jpg"} if m == "getFile" else {"message_id": 9})
+H.reel_me_in(s200, {"message_id": 5, "document": {"file_id": "D"}}); assert "igme" not in s200 and "사진으로" in tg200[-1][1]["text"]
+H.reel_me_in(s200, {"message_id": 6, "photo": [{"file_id": "S"}, {"file_id": "BIG"}]}); assert s200["igme"]["fid"] == "BIG" and "첫 장" in tg200[-1][1]["text"]
+from PIL import Image as I200
+ex200 = I200.Exif(); ex200[0x8825] = {2: (37.0, 30.0, 0.0)}; ex200[0x0112] = 1
+b200 = io.BytesIO(); I200.new("RGB", (40, 30), "red").save(b200, "JPEG", exif=ex200); assert 0x8825 in I200.open(io.BytesIO(b200.getvalue())).getexif()
+uo200 = urllib.request.urlopen
+class R200(io.BytesIO):
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+urllib.request.urlopen = lambda url, timeout=None: R200(b200.getvalue())
+H.E.setdefault("TG_TOKEN", "x"); H.reel_me = sv200[6]
+p200 = H.reel_me(s200, "2026-11-20")
+urllib.request.urlopen = uo200
+assert p200 and 0x8825 not in I200.open(p200).getexif() and len(I200.open(p200).getexif()) == 0 and s200["igme"]["used"] == "2026-11-20" and H.reel_me(s200, "2026-11-21") is None  # GPS·EXIF X · 1번만
+assert 'text.lstrip().startswith("#릴스")' in inspect.getsource(H.publish_approved) and "reel_me(seen, today)" in inspect.getsource(H.ig_theme_reel)
+# /link 맨 위 = 오늘 릴스 카드
+os.makedirs("d200/cards"); json.dump({"day": "2026-11-17", "stem": "2026-11-17_19"}, open("d200/cards/reel.json", "w")); json.dump([2, 0, 1], open("d200/cards/2026-11-17_19.json", "w"))
+pp200 = [{"t": "2026-11-17 09:00", "text": f"🔥 [쿠팡] 딜{k} (1,000원)", "url": f"https://link.coupang.com/a/{k}"} for k in range(3)]
+time.time = lambda: TK("2026-11-17 22:05"); c200 = S.link_cards(pp200, "d200")
+assert f'<h2 id="cdh">📸 {S.html.escape(card200)}' in c200 and c200.index("<b>01</b><span>딜2</span>") < c200.index("<b>02</b><span>딜0</span>"), c200
+time.time = lambda: TK("2026-11-18 09:00"); assert S.link_cards(pp200, "d200") == ""  # 다음 날 = 고정 X
+assert "{LINK_GC}{LINK_IG}" in inspect.getsource(S.link_page) and "'ig/link'" in S.LINK_IG and "'ig/buy'" in S.LINK_IG and "/Instagram/.test(navigator.userAgent)" in S.LINK_IG and "!window.hpLF" in S.LINK_IG
+assert 'ig_link=c.get("ig/link", 0), ig_buy=c.get("ig/buy", 0)' in inspect.getsource(H.gc_day)
+# 게시 ±10~25분(V2) · 토스 = 칸 시각 + 만 · 22시·낮 릴스도
+H.IG_JIT2 = True; d200 = [H.ig_due({}, "k", 10000.0) - 10000.0 for _ in range(200)]; H.IG_JIT2 = False
+assert all(600 <= abs(x) <= 1500 for x in d200) and min(d200) < 0 < max(d200)
+assert 'early = now < ig_due(seen, "igrj_" + today, kst_ts(f"{today} {REEL_HOUR:02d}:00"))' in inspect.getsource(H.ig_reel) and 'ig_due(seen, "igrdj_" + today, kst_ts(f"{today} {REEL_DAY[0]}:30"))' in inspect.getsource(H.ig_reel_day)
+assert 'abs(ig_due(seen, "igtj_" + today, b0) - b0)' in inspect.getsource(H.ig_toss)
+# 봇 자동 답글 X(정답 가까운 댓글 답글 끔 — 진우가 고른 답글 보내기만)
+assert 'and not (IG_V2 and IG_TOUCH)' in inspect.getsource(H.ig_guess) and inspect.getsource(H.ig_comments).count("/replies") == 0
+C200.slideshow = svs200
+(H.IG_V2, time.time, H.bgm, H.song_of, H.tg_video, H.tg, H.reel_me, H.http, H.REEL_PUBLIC) = sv200; os.chdir(cwd200)
