@@ -533,10 +533,10 @@ def auto_add(es, kind):
     for e in es:  # 11/15 진우: 끝난 행사 tag = 안 붙임(진열 = tag만 뺌 · 예약 글 = 뺌) · tag 붙이면 그 until도 · 시즌 밖 기념일 이름 예약 글 = 뺌
         nm, t = parse(title_of(re.sub(r"<[^>]+>", "", str(e.get("text") or ""))))[1] if e.get("text") else "", e.get("tag")
         if t and evt.get(t, "9999") < today:
-            if not e.get("shelf"):
+            if not e.get("shelf") and EV_TAG_DROP:
                 ev_off(nm, t)
                 continue
-            e = {k: v for k, v in e.items() if k != "tag"}
+            e = {k: v for k, v in e.items() if k != "tag" and not (k == "until" and str(v)[:10] < today)}  # ⓒ 예약 글도 tag만 떼고 그대로(이름 규칙은 아래)
         elif t in evt:
             e = {**e, "until": evt[t]}
         if not e.get("shelf") and nm and ev_off(nm):
@@ -8375,7 +8375,7 @@ def clip_topics(seen, posts, kst):
     ① 어제 블로그 키워드 표(events tag '… 2026') ②③ 오늘 큐레이션 2개(img = 그 상품 사진, 단가 싼 순) ④ 어제 17시 뒤 쿠팡 딜 ⑤ 👍 꾸준템(cp_shelf) ⑥ 가격 내림(changes.json drop, ▼% 큰 순) ⑦ 화장품(3일 안 쿠팡 뷰티)."""
     day, yday = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(kst) - 86400))
     num = lambda p: won(re.sub(r"^[^당]*당", "", unit_of(p))) or float("inf")  # '100g당 1,234원' -> 1234(단가 없음 = 맨 뒤)
-    tags = [p for p in posts if str(p.get("tag") or "").endswith(" 2026") and p["t"].startswith(yday) and not ev_off(short_name(title_of(p["text"])), p["tag"])]
+    tags = [p for p in posts if str(p.get("tag") or "").endswith(" 2026") and p["t"].startswith(yday) and not ev_off(short_name(title_of(p["text"])), p["tag"], drop=True)]  # 주제 = tag 자체 → 끝난 tag X(ⓒ여도)
     kw = tags[0]["tag"][:-5].strip() if tags else ""
     out = [("kw", f"{kw} 가성비", kw, [p for p in tags if p["tag"] == tags[0]["tag"]])]
     curs = [e for e in cur_events(seen) if e["at"].startswith(day) and e["img"]][:2]
@@ -8404,7 +8404,8 @@ CLIP_DAYS = 7  # 같은 상품 조합(3개) = 7일 안 다시 X(steady 포함 �
 
 def clip_kind(p):
     """클립 제목·해시태그 품목 이름(11/2 Cowork — 상품명 첫 낱말 '합성'·'로즈라일락향' X): 가격 기록 품목(price_item '계란') → 진열 tag('주방세제' — 숫자·'할인전'·'시리즈' 같은 말 X) → 사이트 칸 이름(CAT_SHORT)."""
-    it, tg = price_item(p), str(p.get("tag") or "").split("·")[0].strip()
+    t0 = str(p.get("tag") or "")
+    it, tg = price_item(p), "" if t0 and ev_tags_c().get(t0, "9999") < time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) else t0.split("·")[0].strip()  # ⓒ 끝난 tag = 품목 이름으로 X
     return (it[1] if it else "") or ("" if re.search(r"\d|할인|시리즈|정품|기획|특가|모음|행사|브랜드", tg) else tg) or CAT_SHORT.get(cat_of(p), "")
 
 
@@ -10398,11 +10399,20 @@ EV_OFF = ((r"빼빼로", "11-01", dict(TODAY_CAL)["빼빼로데이"]), (r"수능
           (r"어린이날", "04-21", dict(TODAY_CAL)["어린이날"]), (r"어버이날", "04-24", dict(TODAY_CAL)["어버이날"]))  # 11/15 진우: 기념일 낱말이 이름에 든 상품 = (시즌 시작 MM-DD, 그날) 밖이면 자동 게시 X(빼빼로 = 11/1~11/11)
 
 
-def ev_off(name, tag=None, now=None):
-    """끝난 행사 상품 = 자동 게시 후보 X(11/15 진우 '빼빼로데이 지났는데 계속 올리면 이상해'): ① tag 행사 끝남(ev_tags until < 오늘) ② 이름에 기념일 낱말(EV_OFF)인데 그 시즌(시작~그날) 밖.
+EV_TAG_DROP = False  # 11/16 진우 ⓒ: 끝난 tag = 떼고 보통 후보(기념일 이름 규칙만 계속 뺌 — '빼빼로데이 선물'에 묶였던 가나 초콜릿 = 다시 나감) · True = 11/15 ⓐ(끝난 tag 상품 전부 뺌)
+
+
+def ev_off(name, tag=None, now=None, drop=None):
+    """(11/16 ⓒ: ① 끝난 tag는 떼기만 — 보통 후보 · EV_TAG_DROP · drop=True = tag가 주제인 릴스 키워드만 뺌) 끝난 행사 상품 = 자동 게시 후보 X(11/15 진우 '빼빼로데이 지났는데 계속 올리면 이상해'): ① tag 행사 끝남(ev_tags until < 오늘) ② 이름에 기념일 낱말(EV_OFF)인데 그 시즌(시작~그날) 밖.
     묶음(th_bundle_ok·TOP)·auto_events·새 구성·다시 소개·꾸준템·집중 소개·쿠팡 진열 후보(cp_shelf)·📉·릴스 키워드 · 사이트 진열 카드는 그대로(행사 띠만 내려감) · 로그 = 실행마다 같은 이름 1번."""
     today = time.strftime("%Y-%m-%d", time.gmtime((now or time.time()) + 9 * 3600))
-    why = "행사 끝남" if tag and ev_tags_c().get(tag, "9999") < today else next(("시즌 밖" for rx, a, b in EV_OFF if re.search(rx, str(name or "")) and not f"{today[:4]}-{a}" <= today <= f"{today[:4]}-{b}"), "")
+    end = bool(tag) and ev_tags_c().get(tag, "9999") < today
+    if end and not (EV_TAG_DROP if drop is None else drop):  # ⓒ drop = 그 tag 자체가 주제인 곳(릴스 키워드)만 True
+        if ("tag", tag) not in (b := RUN.setdefault("evoff", set())):
+            b.add(("tag", tag))
+            print("끝난 tag 뗌(보통 후보로)", str(tag)[:20])
+        end = False
+    why = "행사 끝남" if end else next(("시즌 밖" for rx, a, b in EV_OFF if re.search(rx, str(name or "")) and not f"{today[:4]}-{a}" <= today <= f"{today[:4]}-{b}"), "")
     if why and (k := tag if why == "행사 끝남" else name) not in (b := RUN.setdefault("evoff", set())):  # 로그 = 실행마다 끝난 tag 1줄(11/15 '햇상품 기획전' 35줄) · 시즌 밖 = 이름마다
         b.add(k)
         print("끝난 행사 뺌", why, str(tag or "")[:20], "· 예" if why == "행사 끝남" else "", str(name or "")[:30])

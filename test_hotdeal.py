@@ -14991,17 +14991,26 @@ p195 = lambda k, name, **kw: {"t": "2026-11-08 10:00", "text": f"{H.DISCLOSURE}\
                               "now": f"9,90{k}원", "chk": "11/12 11시", "chkt": "2026-11-12 11:00", **kw}
 P195 = [p195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선물 2026"), p195(2, "롯데 빼빼로 혼합 10p 세트"), p195(3, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026"),
         p195(4, "수능 응원 초콜릿 세트", tag="수능 응원 2026"), p195(5, "코멧 물티슈 100매 10팩")]
+H.EV_TAG_DROP = True  # 11/15 ⓐ(끝난 tag 상품 전부 뺌) — 스위치로 남김
 with contextlib.redirect_stdout(io.StringIO()) as o195:
     ok195 = [H.th_bundle_ok(p, time.time()) for p in P195]
 assert ok195 == [False, False, False, True, True], ok195  # 묶음 = tag 끝남·이름 시즌 밖 X · 진행 중 행사(수능 11/19까지)·보통 상품 그대로
 assert "끝난 행사 뺌 행사 끝남 빼빼로데이 선물 2026 · 예 빼빼로 샘플러 6종 세트 258g" in o195.getvalue() and "끝난 행사 뺌 시즌 밖   롯데 빼빼로 혼합 10p 세트" in o195.getvalue(), o195.getvalue()
 assert o195.getvalue().count("빼빼로데이 선물 2026") == 1  # 같은 끝난 tag = 실행마다 1줄(가나 초콜릿 = 줄 X)
+H.EV_TAG_DROP = False; H.RUN.pop("evoff", None)  # 11/16 진우 ⓒ(실제): 끝난 tag = 떼고 보통 후보 · 기념일 이름(빼빼로)만 계속 뺌
+with contextlib.redirect_stdout(io.StringIO()) as o195:
+    ok195 = [H.th_bundle_ok(p, time.time()) for p in P195]
+assert ok195 == [False, False, True, True, True], ok195  # 가나 초콜릿(빼빼로데이 선물 tag 끝남) = 다시 OK · 빼빼로 이름 = 그대로 X
+assert o195.getvalue().count("끝난 tag 뗌(보통 후보로) 빼빼로데이 선물 2026") == 1 and "행사 끝남" not in o195.getvalue(), o195.getvalue()
+assert H.ev_off("가나 초콜릿 선물세트", "빼빼로데이 선물 2026", drop=True) and not H.ev_off("가나 초콜릿 선물세트", "빼빼로데이 선물 2026")  # drop=True = 릴스 키워드(tag가 주제)
+assert 'p["tag"], drop=True)]' in inspect.getsource(H.clip_topics) and H.clip_kind({"text": "🔥 [쿠팡] 가나 초콜릿 선물세트 (9,900원)", "tag": "빼빼로데이 선물 2026"}) != "빼빼로데이 선물 2026"
 ae195 = lambda k, name, **kw: {"at": "2026-11-12 19:50", "url": f"https://link.coupang.com/a/a{k}", "deal": True, "text": f"🛒 <b>[쿠팡] {name} (9,480원)</b>\n\n✔ 리뷰 7,072", **kw}
 with contextlib.redirect_stdout(io.StringIO()):
     n195 = H.auto_add([ae195(1, "빼빼로 샘플러 6종 세트 258g", tag="빼빼로데이 선물 2026"), ae195(2, "빼빼로 혼합 10p 세트 444g"), ae195(3, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026", shelf=True),
-                       ae195(4, "수능 응원 초콜릿 세트", tag="수능 응원 2026"), ae195(5, "코멧 물티슈 100매 10팩")], "pick5")
+                       ae195(4, "수능 응원 초콜릿 세트", tag="수능 응원 2026"), ae195(5, "코멧 물티슈 100매 10팩"), ae195(6, "가나 초콜릿 선물세트", tag="빼빼로데이 선물 2026", until="2026-11-11")], "pick5")
 a195 = {e["url"][-2:]: e for e in json.load(open(H.AUTO_EVENTS))}
-assert n195 == 3 and sorted(a195) == ["a3", "a4", "a5"] and "tag" not in a195["a3"] and a195["a3"]["shelf"] and a195["a4"]["until"] == "2026-11-19" and "until" not in a195["a5"], a195  # 예약 글 = 뺌 · 진열 = 끝난 tag만 뺌 · 진행 중 tag = until도
+assert n195 == 4 and sorted(a195) == ["a3", "a4", "a5", "a6"] and "tag" not in a195["a3"] and a195["a3"]["shelf"] and a195["a4"]["until"] == "2026-11-19" and "until" not in a195["a5"], a195  # 빼빼로 이름 예약 글 = 뺌 · 진열 = 끝난 tag만 뺌 · 진행 중 tag = until도
+assert "tag" not in a195["a6"] and "until" not in a195["a6"]  # ⓒ 예약 글도 끝난 tag(·지난 until)만 떼고 그대로
 # 다시 소개(cp_repost): 반응 1등이 빼빼로(tag 끝남)여도 = 다음 후보
 json.dump(P195, open("posts195.json", "w"), ensure_ascii=False); json.dump({"items": [{"url": p["url"]} for p in P195]}, open("top195.json", "w"))
 rs195 = []
@@ -15009,7 +15018,7 @@ H.POSTS, H.TOP, H.CPRE_HOURS, H.busy, H.ev_near = "posts195.json", "top195.json"
 H.repost_send = lambda seen, key, u, *a, **k: rs195.append(u) or True
 with contextlib.redirect_stdout(io.StringIO()):
     H.cp_repost({})
-assert rs195 == ["https://link.coupang.com/a/v4"], rs195  # 1·2·3 = 끝난 행사 X → 수능(진행 중) 차례
+assert rs195 == ["https://link.coupang.com/a/v3"], rs195  # ⓒ: 1·2 = 빼빼로 이름(시즌 밖) X → 3 가나 초콜릿(tag만 끝남) = 보통 후보 차례
 src195 = inspect.getsource(H)
 for f195 in ("auto_pick5", "auto_repost", "new_sets", "focus_pick", "cp_shelf", "steady_cands", "clip_topics", "drop_post", "top_deals"):
     assert "ev_off(" in inspect.getsource(getattr(H, f195)), f195  # 자동 게시 후보 고르는 곳마다
