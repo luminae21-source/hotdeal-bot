@@ -15092,7 +15092,9 @@ assert "shelf_mix(posts, kst) if TH_N_FIT" in inspect.getsource(H.top_deals) and
 # 카드: 장바구니 3~7칸(새 서식) · 꾸준템 3~5 · 6·7 = v3 X
 P197c = [({**P197(k, n, "14:00"), "img": f"https://img.coupang.com/{k}.jpg", "now": "9,900원", "chkt": f"2026-11-06 14:{k:02d}"}, "9,900원") for k, n in enumerate(N197)]
 assert H.mall_card_json("오늘의 장바구니", P197c[:7]) is None and len(H.mall_card_json("오늘의 장바구니", P197c[:7], 7)["items"]) == 7 and H.mall_card_json("x", P197c[:6], 7)["checked"] == "2026-11-06 14:05"  # 머리 = 가장 늦은 확인
-os.makedirs("sd197/src"); open("sd197/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
+os.makedirs("sd197/src"); os.makedirs("sd197/assets/mascots")  # 11/17 포즈: config footer 자리 · A 그림(B·foot = 봇 brand/mascots)
+open("sd197/src/config.mjs", "w").write("export const themes = {\n  market: {label:'a', topic:'b', footer:'home'}\n};\n"); open("sd197/assets/mascots/market.png", "wb").write(b"A")
+open("sd197/src/render.mjs", "w").write("""import fs from 'node:fs'; import path from 'node:path';
 const a = process.argv.slice(2), f = {}; for (let i = 0; i < a.length; i += 2) f[a[i].slice(2)] = a[i + 1];
 const d = JSON.parse(fs.readFileSync(f.data, 'utf8')); fs.mkdirSync(f.out, {recursive: true});
 fs.writeFileSync(path.join(f.out, path.basename(f.data, '.json') + '.png'), String(d.items.length));
