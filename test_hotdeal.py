@@ -14873,7 +14873,7 @@ else:
 assert H.series_card("top12", "오늘의 장바구니", pr192[:2]) is None  # 3개 밑(mall_card_json) = None
 src192 = inspect.getsource(H.top_deals)
 assert 'img = (series_ab(kst, hrs[-1]) or n > 5) and series_card(f"top{hrs[-1]}", "오늘의 장바구니", [(p, pr) for p, pr, *_ in pick])' in src192 and 'ck = "series" if img else "v3"' in src192
-assert 'if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):' in src192 and '"img": img, "ck": ck}]}' in src192  # 새 서식 실패 = v3 → 그것도 실패 = 글만
+assert 'if img := img or mall_card(f"top{hrs[-1]}", *card_title(tp, labs, n), [(p, pr) for p, pr, *_ in pick]):' in src192 and '"img": img, "ck": ck, "n": n' in src192  # 새 서식 실패 = v3 → 그것도 실패 = 글만
 # ① 꾸준템: 글 상품(앞 n개)과 같은 수·순서 카드 · 회차 증가·주제 돌림 · 카드 못 만듦·토스 API 상품(i 없음) = 글만(회차 그대로)
 json.dump(P192, open("posts192.json", "w"), ensure_ascii=False); H.POSTS = "posts192.json"
 it192 = [{"n": f"테스트 상품 {k + 1}", "p": P192[k]["now"], "st": "", "u": P192[k]["url"], "tu": P192[k]["url"], "i": k} for k in range(5)]
@@ -15028,7 +15028,7 @@ H.IG_V2 = True
 # 낮 릴스: 오늘 테마 릴스(11:40 미리)가 있을 때만 · 테마 상품과 겹치는 클립 X · 하루 1번 · kind reeld
 os.makedirs("clips196/2026-11-16"); [open(f"clips196/2026-11-16/0{n}.mp4", "wb").write(b"v") for n in (1, 2)]
 json.dump({"2026-11-16": [{"file": "01.mp4", "u": ["https://www.coupang.com/vp/products/111?itemId=1"], "yt": {"desc": f"{H.DISCLOSURE}\n클립 1"}},
-                          {"file": "02.mp4", "u": ["https://www.coupang.com/vp/products/222?itemId=2"], "yt": {"desc": f"{H.DISCLOSURE}\n클립 2"}}]}, open("clips196/clips.json", "w"), ensure_ascii=False)
+                          {"file": "02.mp4", "u": [f"https://www.coupang.com/vp/products/{k}?itemId=2" for k in (222, 223, 224)], "yt": {"desc": f"{H.DISCLOSURE}\n클립 2"}}]}, open("clips196/clips.json", "w"), ensure_ascii=False)
 H.CLIP_DIR, H.IG_AUTO, H.REEL_CLIP, h196 = "clips196", True, True, []
 H.E.update(IG_TOKEN="t", IG_USER_ID="u")
 H.http = lambda url, body=None, headers=None, method="GET", **k: h196.append((method, url, body)) or (json.dumps({"id": "C196"}).encode() if method == "POST" else b"")
