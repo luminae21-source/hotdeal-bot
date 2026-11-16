@@ -14573,7 +14573,7 @@ assert [x["uv"] for x in sp185["items"]] == [5500, 22567, 45900] and [x["unit"] 
 assert sp185["axis"] == {"max": 50000, "ticks": [0, 25000.0, 50000], "labels": ["0", "25,000", "50,000"]} and sp185["axis"]["max"] >= 45900 * 1.04  # 최고값을 보기 좋게 올림
 assert " ".join(sp185["disclosure"]) == H.DISCLOSURE and sp185["foot"] == "쿠팡 · 2026.11.12 09:11 확인 가격" and sp185["formula"] == "1L당 가격 = 판매가 ÷ 총 용량 × 1L · 원 단위 반올림"
 assert sp185["items"][0]["img"].startswith("data:image/png;base64,") and sp185["items"][2]["img"] == "" and sp185["tips"][1][0] == "결제 금액" and len(sp185["tips"]) == 3  # 사진 아님 = 빈 칸
-for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 5600}] + B185["items"][:1] + B185["items"][2:]}, "단위값 다름"), ({**B185, "items": B185["items"][:2]}, "같은 기준 상품 2개"), ({**B185, "chk": "11/12 9시"}, "확인 시각")):
+for bad185, why185 in (({**B185, "items": [{**B185["items"][1], "unit_value": 5600}] + B185["items"][:1] + B185["items"][2:]}, "단위값 다름"), ({**B185, "items": B185["items"][:1]}, "같은 기준 상품 1개"), ({**B185, "chk": "11/12 9시"}, "확인 시각")):
     try:
         H.blog_img_spec(bad185); raise AssertionError(why185)
     except ValueError as e:
@@ -14888,14 +14888,15 @@ for d, ok in ((14, "u"), (15, "u"), (16, None)):
     ret192[0] = ok; time.time = lambda: TK(f"2026-11-{d} 19:52")
     with contextlib.redirect_stdout(io.StringIO()):
         H.steady_list(s192)
-assert [(k, t, o) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", ("01", "pantry", "주방의 기본")), ("steady", "꾸준템 시리즈", ("02", "home", "포근한 집콕")), ("steady", "꾸준템 시리즈", ("03", "season", "계절 준비"))]
+th192 = H.steady_theme([P192[k] for k in range(4)]); al192 = H.SERIES_POSE_ALT[th192]  # 11/16 진우 ②: 테마 = 그날 품목(돌림 X) · 같은 테마 이어짐 = 위 캐릭터 다른 포즈
+assert [(k, t, o) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", ("01", th192, H.SERIES_TOPIC[th192], None)), ("steady", "꾸준템 시리즈", ("02", th192, H.SERIES_TOPIC[th192], al192[0])), ("steady", "꾸준템 시리즈", ("03", th192, H.SERIES_TOPIC[th192], al192[1]))], sc192
 assert all(u == [P192[k]["url"] for k in range(4)] for _, _, u, _ in sc192) and s192["steadyvol"] == 2  # 글 상품 4개(링크 5개 한도) 순서 그대로 · 실패한 회차 = 셈 X
 q192 = s192["mcard"]["q"]; assert [(x["kind"], x["ck"], x["img"]) for x in q192] == [("steady", "series", f"{H.SITE}cards/mall/x_steady.png")] * 2 and "1️⃣ 테스트 상품 1" in q192[0]["text"]
 assert len(tb192) == 1 and tb192[0][0] == "steady" and tb192[0][3] is None  # 16일 카드 못 만듦 = 지금처럼 글만
 s192["steadyvol"] = 4; ret192[0] = "u"; time.time = lambda: TK("2026-11-17 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
-assert sc192[-1][3] == ("05", "pantry", "주방의 기본") and s192["steadyvol"] == 5  # 4개 돌고 다시 처음
+assert sc192[-1][3] == ("05", th192, H.SERIES_TOPIC[th192], al192[1]) and s192["steadyvol"] == 5  # 회차 = 순서대로 · 같은 테마 = 포즈 돌림(실패한 회차 = 포즈 기록 X)
 it192[1]["i"] = None; n192 = len(sc192); time.time = lambda: TK("2026-11-18 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
@@ -15316,3 +15317,53 @@ ln201 = S.topic_v2({"xs": x201, "name": "아주 아주 긴 겨울 보습 핸드�
 nu201 = S.topic_v2({"xs": x201, "name": "가전", "slug": "y"}, [], "2026-11-17", [(x, None) for x in x201], [], None, "", None, [], [])
 assert len(ln201[0]) <= 60 and "(2026년 11월) | 핫딜픽" in ln201[0] and nu201[0] == "가전 특가 모음 3개 (2026년 11월) | 핫딜픽" and "모은 상품 3개" in nu201[2], (ln201[0], nu201[0])
 (time.time, S.SEO_V2) = sv201; os.chdir(cwd201)
+
+# 9-202 (11/16 진우 답 — 정정본): ① 새 서식 카드 표시 이름만 '브랜드 + 품목 + 핵심 규격' 2줄(광고 말·같은 말 X · 모델·사이즈·용량·수량·색상 그대로 · 글씨 작게 X · v3 X — 넘치면 그 상품만 다듬음·로그)
+#   ② 꾸준템 테마 = 그날 품목(pantry·home·cleaning·season · 섞임 market) · 같은 테마 이어짐 = 위 캐릭터만 준비된 다른 포즈(아래와 다르게) ③ 크리스마스 = 용도 — 트리·장식·전구 11/15~ · 선물 용도 12/13~
+#   ④ 블로그 같은 기준 2개 = 막대 장 빼고 표 장(3.png)만 · 지어서 채우기 X
+cwd202 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+assert H.series_fits("제로배로 배변패드 XL 90x60cm 100매 · 4팩", 5) and not H.series_fits("쿠쿠 인스퓨어 T8770 공기청정기 53.8㎡ AC-17TV20FNG 노블그레이+테라조", 3)  # layout.mjs wrap 그대로(폭·글씨 = 칸 수별)
+assert H.series_name("[무료배송] 제로배로 특가 배변패드 XL 90x60cm, 100매, 4팩", 5) == "제로배로 배변패드 XL 90x60cm 100매 · 4팩"  # 광고 말 X · 옵션 = ' · '
+assert H.series_name("발이 편한 카바 밴딩 중목 양말, 화이트, 10켤레", 5) == "발이 편한 카바 밴딩 중목 양말 화이트 · 10켤레"  # 색상 = 그대로(가격에 영향)
+assert H.series_name("한수위 습기제거제 허그코튼 흡수량 대용량 290g, 40개, 290g", 5) == "한수위 습기제거제 허그코튼 흡수량 대용량 290g 40개"  # 같은 말 반복 X
+with contextlib.redirect_stdout(io.StringIO()) as o202:
+    n202 = [H.series_name(x, c) for x, c in (("필립스 미니 공기청정기 600 시리즈 19.7㎡ AC0650/10 화이트", 5), ("쿠쿠 인스퓨어 T8770 공기청정기 53.8㎡ AC-17TV20FNG 노블그레이+테라조", 3),
+                                             ("아주아주긴브랜드이름 프리미엄 고급 부드러운 촉촉한 대용량 저자극 순한 아기 물티슈 캡형 엠보싱 원단 두꺼운, 100매, 10팩, 화이트", 6))]
+assert all(H.series_fits(x, c) for x, c in zip(n202, (5, 3, 6))) and "공기청정기" in n202[0] and "AC0650/10" in n202[0] and "공기청정기" in n202[1] and "물티슈" in n202[2] and "프리미엄" not in n202[2], n202  # 품목·모델 남김 · 꾸밈말 먼저 뺌
+assert "series 이름 다듬음(넘침) 쿠쿠" in o202.getvalue() and o202.getvalue().count("다듬음") == 1  # 그래도 넘친 상품만 로그
+sc202 = inspect.getsource(H.series_card)
+assert 'x["name"] = series_name(x["name"], len(d["items"]))' in sc202 and "cwd = series_overlay(theme, pose) or SERIES_DIR" in sc202 and "shutil.rmtree(cwd" in sc202
+# ② 테마
+p202 = lambda name, cat: {"t": "2026-11-17 09:00", "text": f"🔥 [쿠팡] {name} (9,900원)", "url": "https://link.coupang.com/a/t", "cat": cat}
+assert H.steady_theme([p202("곰곰 햇반 210g 24개", "food"), p202("오뚜기 진라면 5개", "food"), p202("코멧 고무장갑 5세트", "kitchen")]) == "pantry"
+assert H.steady_theme([p202("테크 액체세제 2.4L", "laundry"), p202("유한락스 욕실청소용 1L", "life"), p202("홈스타 곰팡이싹 2개", "life")]) == "cleaning"  # 이름 = 청소·세제
+assert H.steady_theme([p202("핫팩 30개", "winter"), p202("전기요 싱글", "winter"), p202("귤 5kg", "season")]) == "season" and H.steady_theme([p202("코멧 화장지 30롤", "life")] * 3) == "home"
+assert H.steady_theme([p202("곰곰 햇반", "food"), p202("핫팩 30개", "winter"), p202("화장지 30롤", "life")]) == "market"  # 섞임 = market(3분의 2 밑)
+os.makedirs("ser202/src"); os.makedirs("ser202/assets/mascots"); os.makedirs("ser202/assets/images"); os.makedirs("ser202/node_modules")
+open("ser202/src/config.mjs", "w").write("export const themes = {\n  cleaning: {label:'산뜻한 청소', topic:'x', footer:'cafe'},\n  home: {label:'포근한 집콕', topic:'y', footer:'pantry'}\n};\n")
+for m202 in ("cleaning", "home", "cafe", "pantry"):
+    open(f"ser202/assets/mascots/{m202}.png", "wb").write(m202.encode())
+sd202, H.SERIES_DIR = H.SERIES_DIR, "ser202"
+o202 = H.series_overlay("cleaning", "home")
+assert open(f"{o202}/assets/mascots/cleaning.png", "rb").read() == b"home" and open(f"{o202}/assets/mascots/cafe.png", "rb").read() == b"cafe" and not os.path.islink(f"{o202}/src") and os.path.islink(f"{o202}/node_modules")  # 위 = 다른 포즈 · 아래 그대로 · src 복사
+assert open("ser202/assets/mascots/cleaning.png", "rb").read() == b"cleaning"  # 카드 저장소 그림 그대로
+assert H.series_overlay("cleaning", "cafe") is None and H.series_overlay("home", "pantry") is None and H.series_overlay("cleaning", None) is None and H.series_overlay("home", "gift") is None  # 아래 footer와 같음·없는 포즈 = X
+shutil.rmtree(o202); H.SERIES_DIR = sd202
+st202 = inspect.getsource(H.steady_list)
+assert "th = steady_theme([posts[x[\"i\"]] for x in items[:n]])" in st202 and 'if last.get("th") == th and alts else None' in st202 and 'seen["steadyth"] = vol, {"t": now, "th": th, "pose": pose}' in st202.replace('seen["steadyvol"], ', "")
+assert all(f not in H.SERIES_POSE_ALT[t] for t, f in (("pantry", "market"), ("home", "pantry"), ("cleaning", "cafe"), ("season", "home"), ("market", "home")))  # 기본 위·아래와 안 겹침
+# ③ 크리스마스
+x202 = lambda n, d: H.ev_off(n, now=TK(d))
+with contextlib.redirect_stdout(io.StringIO()):
+    assert [x202("크리스마스 트리 150cm", d) for d in ("2026-11-14 12:00", "2026-11-15 12:00", "2026-12-25 22:00", "2026-12-26 09:00")] == [True, False, False, True]
+    assert [x202(n, "2026-11-16 12:00") for n in ("크리스마스 리스 40cm", "크리스마스 LED 전구 10m", "Xmas 오너먼트 20p", "크리스마스 양말 3켤레")] == [False] * 4  # 준비용품 = 11/15~
+    assert [x202(n, d) for n in ("크리스마스 선물세트 초콜릿", "크리스마스 에디션 핸드크림") for d in ("2026-12-12 20:00", "2026-12-13 09:00")] == [True, False, True, False]  # 선물 용도 = 12/13~(days.json from)
+    assert not x202("산타 장식 인형", "2026-11-01 12:00")  # 이름에 크리스마스 없음 = 이 규칙 X
+# ④ 블로그 표만
+it202 = [{"name": f"물티슈 {k}", "price": p, "total": t, "unit_label": "1매당", "unit_value": round(p / t), "size_unit": "매", "img": ""} for k, p, t in ((1, 13000, 1000), (2, 32200, 1400))] + [{"name": "물티슈 3", "price": 9900, "unit_value": None}]
+sp202 = H.blog_img_spec({"query": "물티슈", "chk": "2026-11-14 18:08", "items": it202})
+assert sp202["only"] == [3] and sp202["n"] == 2 and "강조 행은 1매당 가격이 낮은 2종" in sp202["tableNote"] and [x["name"] for x in sp202["items"]] == ["물티슈 1", "물티슈 2"]  # 지어 채우기 X
+assert H.blog_img_spec({"query": "물티슈", "chk": "2026-11-14 18:08", "items": it202[:1] + it202 + [{**it202[0], "name": "물티슈 4"}]})["only"] == [1, 2, 3, 4]
+bi202 = inspect.getsource(H.blog_img)
+assert 'if n not in sp["only"]:' in bi202 and 'not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/3.png")' in bi202
+os.chdir(cwd202)

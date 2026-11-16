@@ -1184,8 +1184,8 @@ def blog_img_spec(d, img=None):
     맨 위 대가성 문구 · 아래 '쿠팡 · 확인 시각 확인 가격' · 상품 사진 = blog_data img를 받은 그대로(img(url) -> data URI · 못 받음 = 빈 칸)."""
     lab = collections.Counter(it.get("unit_label") for it in d.get("items", []) if it.get("unit_value") is not None).most_common(1)
     its = [it for it in d.get("items", []) if lab and it.get("unit_label") == lab[0][0] and it.get("unit_value") is not None]
-    if len(its) < 3:
-        raise ValueError(f"같은 기준 상품 {len(its)}개(3개↑)")
+    if len(its) < 2:
+        raise ValueError(f"같은 기준 상품 {len(its)}개(2개↑ — 2개 = 표 장만)")
     for it in its:
         if blog_unit(it) != it["unit_value"]:
             raise ValueError(f"단위값 다름 {it.get('pid')} {it['unit_value']} != {blog_unit(it)}")
@@ -1224,7 +1224,7 @@ def blog_img_spec(d, img=None):
     out = {"disclosure": [dl[0] + ",", dl[1]], "logo": logo(), "duo": asset("checklist-duo.png"), "query": q, "label": label, "n": len(its),
            "kicker": f"PRICE GUIDE  /  {q} {len(its)}종", "title": [f"{q},", f"{crit}당 얼마일까?"], "loW": lw, "ratio": f"{hi / lo:.1f}" if lo else "-",
            "coverNote": ["가격표 숫자만 보지 말고,", f"{crit}당 값으로 나눠 보세요."], "chartNote": f"가장 낮은 건 {clip(short_name(its[0]['name']), 16)} · {label} {won_s(lo)}",
-           "formula": f"{label} 가격 = 판매가 ÷ 총 {kind} × {crit} · 원 단위 반올림", "tableNote": f"비교 대상: 쿠팡 검색 {len(its)}종 · 강조 행은 {label} 가격이 낮은 3종",
+           "formula": f"{label} 가격 = 판매가 ÷ 총 {kind} × {crit} · 원 단위 반올림", "tableNote": f"비교 대상: 쿠팡 검색 {len(its)}종 · 강조 행은 {label} 가격이 낮은 {min(3, len(its))}종", "only": [3] if len(its) < 3 else [1, 2, 3, 4],
            "foot": f"쿠팡 · {ck.replace('-', '.')} 확인 가격", "strip": f"{q}도, 똑똑하게.",
            "axis": {"max": mx, "ticks": [0, mx / 2, mx], "labels": ["0", f"{mx / 2:,.0f}" if mx / 2 == int(mx / 2) else f"{mx / 2:,.1f}", f"{mx:,}"]},
            "tips": [["단위 가격", f"한 개 값보다 {label} 가격", f"총 {kind}{ro} 나누면 크기가 다른 상품도", "같은 기준으로 비교할 수 있어요."],
@@ -1244,7 +1244,7 @@ def blog_img(seen, now=None):
     today = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))
     if not BLOG_IMG or not os.path.isdir(BLOG_IMG_SRC):
         return
-    todo = [f for f in sorted(glob.glob(f"{BLOG_DIR}/*.json")) if (day := os.path.basename(f)[:-5]) >= today and not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/4.png") and seen.get("blogimg_x_" + day) != today]
+    todo = [f for f in sorted(glob.glob(f"{BLOG_DIR}/*.json")) if (day := os.path.basename(f)[:-5]) >= today and not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/4.png") and not os.path.isfile(f"{BLOG_IMG_DIR}/{day}/3.png") and seen.get("blogimg_x_" + day) != today]
     if not todo:
         return
     day = os.path.basename(todo[0])[:-5]
@@ -1262,7 +1262,9 @@ def blog_img(seen, now=None):
             if Image.open(f"{out}/{n}.png").size != (1080, 1350):
                 raise ValueError(f"{n}.png 크기")
             os.remove(f"{out}/{n}.svg")  # 파일 = 1~4.png만
-        print("blog img", day, "4장")
+            if n not in sp["only"]:  # 11/16 진우 ④: 같은 기준 2개 = 막대 장 빼고 표 장(3.png)만 · 상품 지어 채우기 X
+                os.remove(f"{out}/{n}.png")
+        print("blog img", day, f"{len(sp['only'])}장" + (" (표만 — 같은 기준 2개)" if len(sp["only"]) == 1 else ""))
     except Exception as e:
         seen["blogimg_x_" + day] = today
         shutil.rmtree(out, ignore_errors=True)
@@ -4595,9 +4597,13 @@ def steady_list(seen):
     while n > 1 and len(render(n)) > 480:
         n -= 1
     vol = seen.get("steadyvol", 0) + 1  # 11/13 ① 꾸준템 시리즈 카드 = 글 상품과 같은 수·순서 · 회차 01부터(만든 것만 셈) · 주제 4개 돌림 · 못 만듦 = 지금처럼 글만
-    th, tp = SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)]
-    if n >= 3 and all(x["i"] is not None for x in items[:n]) and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp)):
-        seen["steadyvol"] = vol
+    ok = n >= 3 and all(x["i"] is not None for x in items[:n])
+    th = steady_theme([posts[x["i"]] for x in items[:n]]) if ok else SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)][0]  # 11/16 진우 ②: 테마 = 그날 품목
+    tp, last = SERIES_TOPIC.get(th, th), seen.get("steadyth", {})
+    alts = SERIES_POSE_ALT.get(th, ())
+    pose = alts[(alts.index(last["pose"]) + 1) % len(alts) if last.get("pose") in alts else 0] if last.get("th") == th and alts else None  # 같은 테마 이어짐 = 다른 포즈
+    if ok and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp, pose)):
+        seen["steadyvol"], seen["steadyth"] = vol, {"t": now, "th": th, "pose": pose}
         seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "steady", "text": render(n), "link": items[0]["tu"], "img": img, "ck": "series"}]}
         return print(f"steady 꾸준템 카드 VOL.{vol:02d} {tp} -> 사이트에 뜨면 Threads(mall_card_post)")
     th_bundle(seen, "steady", render(n), items[0]["tu"])
@@ -5734,6 +5740,103 @@ def card_png(kind, d, short="", root=CARD_DIR):
 
 SERIES_DIR, SERIES_AB = f"{PV_CARD_DIR}/hotdealpick-series-20261115", True  # 11/15 → 20261115(6·7칸 · 테마 cafe·cleaning·picnic·gift 더함 — 명령·검증 같음)  # 11/13 진우 '① + ② 반반': 새 서식(hotdealpick-cards 193c77b 글씨 키운 판 · sharp만, 브라우저 X) — ① 19:50 꾸준템 목록 카드 ② 쿠팡 묶음 하루 4번 중 2번(series_ab)
 SERIES_THEMES = (("pantry", "주방의 기본"), ("home", "포근한 집콕"), ("season", "계절 준비"), ("market", "장보기 메모"))  # ① 꾸준템 회차마다 돌림(--theme · --topic)
+SERIES_NAME_AD = r"무료\s*배송|무배|로켓\s*(?:배송|와우)|당일\s*(?:발송|출고)|빠른\s*배송|초?특가|할인|세일|\bSALE\b|인기|베스트|\bBEST\b|추천|신상품?|신제품|최신형|\bNEW\b|1위|이벤트|사은품\S*|증정|한정\s*수량|단독|[★☆♥♡✔✨🔥👍]"  # 11/16 진우 ① 카드 이름 광고 말
+SERIES_FLUFF = r"프리미엄|고급|부드러운|촉촉한|두꺼운|도톰한|두툼한|순한|저자극|대용량|실속형?|가성비|국민|고농축|럭셔리|시그니처|오리지널|데일리|스페셜|베이직|클래식|퓨어|내추럴|신선한|맛있는|간편한|편한|깔끔한|산뜻한|든든한|엠보싱|원단|형"  # 넘칠 때 먼저 빼는 꾸밈말
+SERIES_COLOR = r"화이트|블랙|그레이|네이비|베이지|핑크|레드|블루|그린|옐로우|퍼플|브라운|아이보리|카키|민트|실버|골드|차콜|오렌지|라벤더|와인|투명|혼합|랜덤"  # 가격에 영향 = 남김(빼는 말 X)
+SERIES_THEME_CAT, SERIES_CLEAN = {"food": "pantry", "kitchen": "pantry", "snack": "pantry", "coffee": "pantry", "heat": "season", "season": "season", "laundry": "cleaning"}, \
+    r"세제|세정제|청소|락스|표백|유연제|청소포|물걸레|탈취|곰팡이|얼룩|클리너|살균"  # 11/16 진우 ② 꾸준템 테마 = 품목: 식품·주방 pantry · 청소·세제 cleaning · 계절 season · 그 밖 생활·살림 home · 섞임 market
+SERIES_TOPIC = {"pantry": "주방의 기본", "home": "포근한 집콕", "cleaning": "산뜻한 청소", "season": "계절 준비", "market": "장보기 메모"}
+SERIES_POSE_ALT = {"pantry": ("cafe", "picnic"), "home": ("cafe", "gift"), "cleaning": ("home", "pantry"), "season": ("cafe", "gift"), "market": ("pantry", "picnic")}  # 같은 테마 이어짐 = 위 캐릭터만 준비된 다른 포즈(아래 footer와 다르게)
+
+
+def series_fits(s, count):
+    """새 서식 상품명 2줄 안인지 — hotdealpick-series layout.mjs width·wrap 그대로(공백 0.28 · ASCII 0.6 · 그 밖 1 × 글씨 36(6칸↑ 32) · 폭 760 − 칸 수별 x)."""
+    size, mx = (32, 760 - 212) if count >= 6 else (36, 760 - {3: 279, 4: 256}.get(count, 228))
+    w = lambda x: sum(0.28 if c == " " else 0.6 if ord(c) < 128 else 1 for c in x) * size
+    lines = [""]
+    for word in s.split():
+        t = f"{lines[-1]} {word}" if lines[-1] else word
+        if w(t) <= mx:
+            lines[-1] = t
+        elif w(word) <= mx:
+            lines.append(word)
+        else:
+            for c in word:
+                if w(lines[-1] + c) > mx:
+                    lines.append("")
+                lines[-1] += c
+    return len([x for x in lines if x]) <= 2
+
+
+def series_name(name, count):
+    """새 서식 카드 표시 이름만(11/16 진우 ① — 본문·사이트·세트 쪽 이름은 그대로): 브랜드 + 품목 + 핵심 규격 2줄 · 광고 말([대괄호]·무료배송·특가 …)·같은 말 반복 X
+    · 모델·사이즈·용량·수량·색상 = 그대로('a, b, c' 옵션 = ' · '로) · 넘치면 규격 아닌 가운데 꾸밈말부터 뺌(첫 낱말 = 브랜드 · 끝 낱말 = 품목) · 그래도 넘치면 그 상품만 글자 다듬음(로그) — 글씨 작게 X · v3로 X."""
+    s = re.sub(r"[\[【][^\]】]*[\]】]", " ", re.sub(SERIES_NAME_AD, " ", name, flags=re.I))
+    s = re.sub(r"\(([^()]*)\)", lambda m: f" {m[1]} " if re.search(rf"\d|\b[A-Z]{{1,4}}\b|{SERIES_COLOR}", m[1]) else " ", s)  # (규격) 남김 · (꾸밈) 뺌
+    parts = [x for x in (re.sub(r"\s+", " ", x).strip(" ·") for x in s.split(",")) if x] or [name.strip()]
+    seen, words, opts = set(), [], []
+    for w in parts[0].split():
+        if re.search(r"\d", w) or w.lower() not in seen:  # 같은 말 반복 X(숫자 규격은 구성마다 같을 수 있어 그대로)
+            seen.add(w.lower()); words.append(w)
+    for o in parts[1:]:
+        if not all(t.lower() in seen for t in o.split()):
+            opts.append(o); seen.update(t.lower() for t in o.split())
+    spec = " · ".join(opts)
+    mk = lambda ws: " ".join(ws + [spec] * bool(spec))
+    plus = {k for k, w in enumerate(words) if "+" in w or k + 1 < len(words) and words[k + 1].startswith("+") or k and words[k - 1].endswith("+")
+            or k + 2 < len(words) and re.search(r"\d", words[k + 1]) and words[k + 2].startswith("+")}  # 'A 400g + B 400g' 구성 이름 = 그대로
+    from build_site import SHELF_CATS
+    item = "|".join(r for _, _, r in SHELF_CATS)  # 품목 낱말(사이트 칸 정규식 — 공기청정기·만두·물티슈 …) = 안 뺌
+    keep = lambda k: k in plus or re.search(rf"\d|{SERIES_COLOR}", words[k]) or re.fullmatch(r"[A-Z][A-Z0-9-]{0,9}|X{0,3}[SML]|FREE", words[k]) or re.search(item, words[k])
+    cand, drop = [mk(words)], set()
+    mids = [k for k in range(1, len(words) - 1) if not keep(k)]
+    for k in [k for k in mids if re.fullmatch(SERIES_FLUFF, words[k])] + [k for k in mids if not re.fullmatch(SERIES_FLUFF, words[k])]:  # 꾸밈말 먼저 · 그다음 브랜드 바로 뒤부터(품목은 보통 뒤쪽)
+        drop.add(k)
+        cand.append(mk([w for j, w in enumerate(words) if j not in drop]))
+    for c in cand:
+        if series_fits(c, count):
+            return c
+    ws, sp = [w for j, w in enumerate(words) if j not in drop], list(opts)  # 그래도 넘침 = 그 상품만 낱말 단위로 뒤에서 줄임(브랜드 남김) → 규격 뒤 → 글자
+    fit = lambda: series_fits(" ".join(ws) + "… " + " · ".join(sp), count)
+    while len(ws) > 1 and not fit():
+        ws.pop()
+    while sp and not fit():
+        sp.pop()
+    out = (" ".join(ws) + "… " + " · ".join(sp)).strip()
+    while not series_fits(out, count):
+        out = out[:-2].rstrip() + "…"
+    print("series 이름 다듬음(넘침)", clip(name, 30), "→", out)
+    return out
+
+
+def steady_theme(ps):
+    """② 꾸준템 카드 테마 = 그날 상품 품목: 청소·세제 이름 = cleaning · 칸 food·kitchen·snack·coffee = pantry · heat(겨울템)·season = season · laundry = cleaning · 그 밖 = home
+    · 3분의 2 이상 같은 테마 = 그 테마 · 아니면 여러 품목 섞임 = market."""
+    ts = ["cleaning" if re.search(SERIES_CLEAN, short_name(title_of(p["text"]))) else SERIES_THEME_CAT.get(cat_of(p), "home") for p in ps]
+    th, k = collections.Counter(ts).most_common(1)[0]
+    return th if k * 3 >= len(ts) * 2 else "market"
+
+
+def series_overlay(theme, pose):
+    """같은 테마가 이어질 때 위 캐릭터만 준비된 다른 포즈로(11/16 진우 ② — 새 그림 X · 카드 저장소 그대로): 임시 폴더 = src 복사 + 나머지 심볼릭 링크 + assets/mascots/{theme}.png -> {pose}.png
+    -> 그 폴더 / None(포즈 그림 없음·아래 footer와 같음)."""
+    m = re.search(rf"\b{theme}\s*:\s*{{[^}}]*footer\s*:\s*'(\w+)'", open(f"{SERIES_DIR}/src/config.mjs", encoding="utf-8").read()) if os.path.isfile(f"{SERIES_DIR}/src/config.mjs") else None
+    if not pose or pose == theme or (m and m[1] == pose) or not os.path.isfile(f"{SERIES_DIR}/assets/mascots/{pose}.png"):
+        return None
+    o, root = tempfile.mkdtemp(prefix="series_"), os.path.abspath(SERIES_DIR)
+    for n in os.listdir(root):
+        if n == "src":
+            shutil.copytree(f"{root}/src", f"{o}/src")  # node가 심볼릭 링크를 따라가 root를 원래 폴더로 잡지 않게 = 복사
+        elif n == "assets":
+            os.makedirs(f"{o}/assets/mascots")
+            for a in os.listdir(f"{root}/assets"):
+                if a != "mascots":
+                    os.symlink(f"{root}/assets/{a}", f"{o}/assets/{a}")
+            for f in os.listdir(f"{root}/assets/mascots"):
+                os.symlink(f"{root}/assets/mascots/{pose}.png" if f == f"{theme}.png" else f"{root}/assets/mascots/{f}", f"{o}/assets/mascots/{f}")
+        else:
+            os.symlink(f"{root}/{n}", f"{o}/{n}")
+    return o
 
 
 def series_ab(kst, h):
@@ -5751,27 +5854,33 @@ def series_ready(env):
         subprocess.run("sudo apt-get install -y -qq fonts-noto-cjk || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk; }", shell=True, timeout=300, check=True, capture_output=True)
 
 
-def series_card(kind, title, pairs, episode="", theme="", topic=""):
+def series_card(kind, title, pairs, episode="", theme="", topic="", pose=None):
     """새 서식 카드 1장(11/13): mall_card_json(지금 꼴 그대로 — 글 품목 수 = 칸 수 · 이름 속 N% 뺌 · 몰 1개) -> title '오늘의 장바구니'·'꾸준템 시리즈' -> 사진 미리 받아 assets/images/
     -> `node src/render.mjs --data … --out output [--theme --episode --topic]`(서식 검증 — 이름 2줄·가격 칸·단위 20자) -> docs/cards/mall/<stem>.png 사이트 주소
     / None(저장소·node 22·sharp·글꼴 없음 · 검증·렌더 실패 = 부른 쪽이 지금처럼: 묶음 = v3 카드 · 꾸준템 = 글만)."""
     if not os.path.isfile(f"{SERIES_DIR}/src/render.mjs") or not (d := mall_card_json(title, pairs, 7 if title == "오늘의 장바구니" else 5)):  # 11/15 장바구니 3~7칸 · 꾸준템 3~5
         return None
-    stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
+    stem, cwd = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind, SERIES_DIR
+    for x in d["items"]:  # 11/16 진우 ①: 카드 표시 이름만 2줄 안으로(글·사이트 이름 그대로)
+        x["name"] = series_name(x["name"], len(d["items"]))
     try:
         series_ready({**os.environ})
+        cwd = series_overlay(theme, pose) or SERIES_DIR
         card_imgs(d, SERIES_DIR, stem, blank=True)
         os.makedirs(f"{SERIES_DIR}/data", exist_ok=True)
         os.makedirs(MALL_CARD_DIR, exist_ok=True)
         json.dump(d, open(f"{SERIES_DIR}/data/run_{stem}.json", "w"), ensure_ascii=False)
         opt = [a for k, v in (("--theme", theme), ("--episode", episode), ("--topic", topic)) if v for a in (k, v)]
-        subprocess.run(["node", "src/render.mjs", "--data", f"data/run_{stem}.json", "--out", "output", *opt], cwd=SERIES_DIR, timeout=60, check=True, capture_output=True)
+        subprocess.run(["node", "src/render.mjs", "--data", f"data/run_{stem}.json", "--out", "output", *opt], cwd=cwd, timeout=60, check=True, capture_output=True)
         shutil.copy(f"{SERIES_DIR}/output/run_{stem}.png", f"{MALL_CARD_DIR}/{stem}.png")
     except Exception as e:
         err = (getattr(e, "stderr", b"") or b"").decode("utf-8", "replace").strip().splitlines()
         print("series card 렌더 X", kind, err_brief(e), ([l for l in err if l.startswith("Error")] or err)[-1:] or "")  # node 마지막 줄 = 'Node.js v22…' → 서식 검증 문구(Error: …)
         return None
-    print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt))
+    finally:
+        if cwd != SERIES_DIR:
+            shutil.rmtree(cwd, ignore_errors=True)
+    print("series card 만듦", d["mall"], f"{len(d['items'])}개", stem, " ".join(opt) + (f" · 포즈 {pose}" if cwd != SERIES_DIR else ""))
     return f"{SITE}cards/mall/{stem}.png"
 
 
@@ -10394,8 +10503,9 @@ POLL_HOUR, POLL_REUSE = (21, 40), 7  # 10/17 진우 '유입 늘리기 ① 가격
 POLL_KEYS = ("option_a", "option_b", "option_c", "option_d")  # Threads poll_attachment 보기(2~4개, 보기마다 1~25 UTF-8 바이트 = 한글 8자 — 공식 문서 create-posts/polls·10/24 HTTP 400)
 BLACK_FRIDAY = "2026-11-27"  # 해마다 확인해서 바꿈(11월 넷째 금요일)
 SUNEUNG = "2026-11-19"  # 2027학년도 수능(해마다 확인해서 바꿈) — 6일 전~당일 = 수능 주간 간식
+XMAS_PREP = r"트리|오너먼트|(?<!크)리스(?!마스)|전구|조명|LED|무드등|가랜드|갈란드|장식|데코|스노우볼|양말|스타킹|포장지|리본|스티커|파티|머리띠|모자|캔들|산타\s*(?:장식|인형)|루돌프|오르골|벽트리|커튼"  # 11/16 진우 ③: 크리스마스 = 용도로 — 트리·장식·전구 등 준비용품 11/15~ · 그 밖(선물 용도) 12/13~(days.json 크리스마스 from과 같게)
 EV_OFF = ((r"빼빼로", "11-01", dict(TODAY_CAL)["빼빼로데이"]), (r"수능", "11-05", SUNEUNG[5:]), (r"블랙\s*프라이데이|블프", "11-13", BLACK_FRIDAY[5:]),
-          (r"크리스마스|성탄", "11-15", dict(TODAY_CAL)["크리스마스"]), (r"발렌타인", "02-01", dict(TODAY_CAL)["발렌타인데이"]), (r"화이트\s*데이", "03-01", dict(TODAY_CAL)["화이트데이"]),
+          (rf"(?i)(?=.*(?:크리스마스|성탄|x-?mas))(?=.*(?:{XMAS_PREP}))", "11-15", dict(TODAY_CAL)["크리스마스"]), (rf"(?i)^(?!.*(?:{XMAS_PREP})).*(?:크리스마스|성탄|x-?mas)", "12-13", dict(TODAY_CAL)["크리스마스"]), (r"발렌타인", "02-01", dict(TODAY_CAL)["발렌타인데이"]), (r"화이트\s*데이", "03-01", dict(TODAY_CAL)["화이트데이"]),
           (r"어린이날", "04-21", dict(TODAY_CAL)["어린이날"]), (r"어버이날", "04-24", dict(TODAY_CAL)["어버이날"]))  # 11/15 진우: 기념일 낱말이 이름에 든 상품 = (시즌 시작 MM-DD, 그날) 밖이면 자동 게시 X(빼빼로 = 11/1~11/11)
 
 
