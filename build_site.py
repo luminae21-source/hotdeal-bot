@@ -1648,6 +1648,59 @@ def promo_won(x):
     return m[0] if m else ""
 
 
+CAL_ON, CAL_FILE, CAL_DIR = True, "calendar.ics", "cal"  # 11/16 진우 쇼핑 달력('📅 캘린더 넣기'): docs/calendar.ics(구독) + docs/cal/<행사 id>.ics(하나씩) + /events/ 구독 버튼 · 카드 '📅 추가' · False = 예전 쪽
+
+
+def ics_esc(s):
+    """iCalendar 글자 칸 이스케이프(RFC 5545 — 역슬래시·;·,·줄바꿈)."""
+    return str(s).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def ics_fold(line):
+    """75바이트 넘는 줄 = 접기(이어지는 줄은 공백 1칸 + 74바이트 · UTF-8 글자 중간 X)."""
+    b, out = line.encode(), []
+    while len(b) > (75 if not out else 74):
+        cut = 75 if not out else 74
+        while b[cut] & 0xC0 == 0x80:
+            cut -= 1
+        out.append(b[:cut].decode())
+        b = b[cut:]
+    return "\r\n ".join(out + [b.decode()])
+
+
+def promo_cal(p):
+    """행사 -> (요약 '몰 행사명', 첫날 'YYYYMMDD', 끝 다음 날(종일 일정 DTEND), 설명) · start 없음 = 마감일 하루 · end 없음 = 첫날 하루."""
+    s = p.get("start") or p.get("end")
+    e = p.get("end") or s
+    nxt = time.strftime("%Y%m%d", time.gmtime(calendar.timegm(time.strptime(e, "%Y-%m-%d")) + 86400))
+    summ = f"{(p.get('mall_name') or p['mall']).split(' · ')[0]} {p['name'].strip()}"
+    return summ, s.replace("-", ""), nxt, " · ".join(x for x in (str(p.get("benefit") or "").strip(), "기간·혜택은 기사 기준이라 바뀔 수 있어요", f"{BASE}events/#{p['id']}") if x)
+
+
+def calendar_ics(ps, stamp, name="핫딜픽 쇼핑 달력"):
+    """행사들 -> .ics(VCALENDAR) 글자: UID = 행사 id · 종일 기간 일정(시작~끝) · 시작 전날 저녁 6시 알림(VALARM -PT6H · start 없는 행사 = 마감 전날) · 골드박스 X(부르는 쪽 — promos.json만) · CRLF·75바이트 접기."""
+    ls = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//hotdealpick.kr//shopping calendar//KO", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", f"X-WR-CALNAME:{ics_esc(name)}", "X-WR-TIMEZONE:Asia/Seoul",
+          "REFRESH-INTERVAL;VALUE=DURATION:PT6H", "X-PUBLISHED-TTL:PT6H"]
+    for p in ps:
+        summ, a, b, desc = promo_cal(p)
+        ls += ["BEGIN:VEVENT", f"UID:{p['id']}@hotdealpick.kr", f"DTSTAMP:{stamp}", f"DTSTART;VALUE=DATE:{a}", f"DTEND;VALUE=DATE:{b}", f"SUMMARY:{ics_esc(summ)}", f"DESCRIPTION:{ics_esc(desc)}",
+               f"URL:{BASE}events/#{p['id']}", "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{ics_esc(summ + (' 내일 시작' if p.get('start') else ' 내일 마감'))}", "TRIGGER:-PT6H", "END:VALARM", "END:VEVENT"]
+    return "\r\n".join(ics_fold(l) for l in ls + ["END:VCALENDAR"]) + "\r\n"
+
+
+def gcal_add(p):
+    """구글 캘린더 '일정 만들기' 링크(그 행사 하나 — 종일 기간)."""
+    summ, a, b, desc = promo_cal(p)
+    return "https://calendar.google.com/calendar/render?" + urllib.parse.urlencode({"action": "TEMPLATE", "text": summ, "dates": f"{a}/{b}", "details": desc})
+
+
+CAL_WEBCAL = "webcal://" + BASE.split("://", 1)[1] + CAL_FILE
+CAL_BTNS = (f'<div class="calb" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0"><a class="btn2" href="{CAL_WEBCAL}" data-gc="cal/webcal">📅 아이폰·삼성 캘린더에 구독</a>'
+            f'<a class="btn2" href="https://calendar.google.com/calendar/r?cid={urllib.parse.quote(CAL_WEBCAL, safe="")}" target="_blank" rel="noopener" data-gc="cal/google">📅 구글 캘린더에 구독</a>'
+            '<p class="t calx" hidden>인스타·Threads 앱 안에서는 캘린더가 안 열려요 — 오른쪽 위 ⋯ 메뉴에서 \'기본 브라우저로 열기\' 뒤 눌러 주세요</p></div>'
+            "<script>if(/Instagram|Barcelona|FBAN|FBAV|KAKAOTALK|Line\\//i.test(navigator.userAgent)){var c=document.querySelector('.calx');if(c)c.hidden=false}</script>")  # Threads 앱 = Barcelona
+
+
 def promo_card(p, st, xs, go, icons, today):
     """/events/ 카드(시안 A 작게 — 10/25 진우): 연한 몰 색 바탕 r16 · [글 | 오른쪽] — 로고·몰 이름·상태 칩 / 행사명 한 줄 / 기간 · 혜택 한 줄 / CTA,
     오른쪽 = 행사 상품 중 사진 있는 🔥 3개(48px + 가격) · 없으면 흰 날짜 칸(본 기간 + '사전 …')."""
@@ -1658,6 +1711,9 @@ def promo_card(p, st, xs, go, icons, today):
              else f'<span class="pvd"><b>{promo_span(p.get("start"), p.get("end")) or p.get("when") or "진행 중"}</b>' + (f'<small>사전 {promo_span(pre.get("start"), pre.get("end"), True)}</small>' if pre.get("start") else "") + "</span>")
     info = " · ".join(x for x in (promo_span(p.get("start"), p.get("end")), str(p.get("benefit") or "").strip()) if x)
     cta = promo_a(href, ext, f"promo/{p['id']}", NV_PROMO[1] if href == NV_PROMO[0] else f"핫딜픽이 고른 {len(xs)}개 →" if not ext else "행사 보러 가기 →", "pvc") if href else ""
+    if CAL_ON and st != "past" and p is not GB_PROMO:  # 11/16 카드마다 '📅 추가'(구글 일정 만들기 · 하나짜리 .ics)
+        cta = (f'<p class="pvi pvcal">📅 추가 <a href="{html.escape(gcal_add(p))}" target="_blank" rel="noopener" data-gc="cal/add/{p["id"]}">구글</a> · '
+               f'<a href="{BASE}{CAL_DIR}/{p["id"]}.ics" data-gc="cal/ics/{p["id"]}">아이폰·삼성</a></p>') + cta
     return (f'<article class="pv" id="{p["id"]}" data-s="{st}" style="{sty}"><div class="pvt"><div class="pvh">{lg}<b class="pvm">{html.escape(mall)}</b>{promo_chip(p, st, today)}</div>'
             f'<h2 class="pvn">{html.escape(p["name"].strip())}</h2>' + (f'<p class="pvi">{html.escape(info)}</p>' if info else "") + f'{cta}</div><div class="pvr">{right}</div></article>')
 
@@ -1740,7 +1796,7 @@ def promo_page(ps, it, tagged, slugs, links, icons, today, updated=""):
     notes = [n for n in dict.fromkeys(note(h, ext, xs) for (h, ext), xs, _ in gos) if n]
     mm = int(today[5:7])
     body = (f'<h1 class="h">🎉 쇼핑 기획전 모음</h1><div class="t">쇼핑몰 진행 중·곧 시작하는 행사{" · " + html.escape(updated) + " 확인" if updated else ""} · 기간·혜택은 기사 기준이라 바뀔 수 있어요</div>'
-            + cal + chips + f'<div class="pvl">{"".join(cards[:len(live) + 1])}</div>'
+            + (CAL_BTNS if CAL_ON and live else "") + cal + chips + f'<div class="pvl">{"".join(cards[:len(live) + 1])}</div>'
             + (f'<details class="pvx"><summary>지난 행사 {len(past)}</summary>{"".join(cards[len(live) + 1:])}</details>' if past else "")
             + (f'<p class="t pvnote">{" ".join(notes)}</p>' if notes else "") + PROMO_FILTER_JS)
     desc = f"{mm}월 쇼핑몰 기획전 기간·혜택 정리 — " + " · ".join(f"{(p.get('mall_name') or p['mall']).split(' · ')[0]} {p['name'].strip()}" for p, _, _ in live)
@@ -3546,6 +3602,18 @@ def build(posts, out="docs"):
     ptags = {p.get("tag") for p, _ in promo_now(ps_, today)} if band else set()  # 옛 기획전 넘김 배너(events tag) = 기획전 띠에 없는 행사만(같은 행사 두 번 X)
     evh = f"{BASE}events/" if any(st != "past" for _, st, _ in ps_) else ""
     ti, sd, pbody = promo_page(ps_, it, tagged, slugs, plinks, icons, today)
+    if CAL_ON:  # 11/16 쇼핑 달력: 구독 .ics(지난 행사·골드박스 X) + 행사마다 .ics(없어진 행사 파일 = 지움) · DTSTAMP = promos.json 고친 시각(안 바뀌면 파일 그대로)
+        try:
+            up = str(json.load(open(PROMOS)).get("updated") or "2026-01-01 00:00")
+        except (OSError, ValueError, AttributeError):
+            up = "2026-01-01 00:00"
+        stamp, cps = time.strftime("%Y%m%dT%H%M00Z", time.gmtime(calendar.timegm(time.strptime(up[:16], "%Y-%m-%d %H:%M")) - 9 * 3600)), [p for p, st, _ in ps_ if st != "past"]
+        write(out, CAL_FILE, calendar_ics(cps, stamp))
+        for f in os.listdir(f"{out}/{CAL_DIR}") if os.path.isdir(f"{out}/{CAL_DIR}") else ():
+            if f.endswith(".ics") and f[:-4] not in {p["id"] for p in cps}:
+                os.remove(f"{out}/{CAL_DIR}/{f}")
+        for p in cps:
+            write(out, f"{CAL_DIR}/{p['id']}.ics", calendar_ics([p], stamp, promo_cal(p)[0]))
     write(out, "events/", page(ti, pbody, sd, f"{BASE}events/", cur="fire", noindex=not evh, ogt=f"기획전 모음 · {TITLE}"))  # og 그림 = 기본 그림 OG_IMG(Threads 정보 글 링크 카드)
     write(out, "clips/", clips_page(out))  # 진우용 네이버 클립(noindex·사이트맵 X·메뉴 X)
     if evh:

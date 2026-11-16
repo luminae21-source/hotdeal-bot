@@ -40,6 +40,7 @@ dra0, H.DROP_AT = H.DROP_AT, "24:00"  # 옵션 바뀜 의심 DM(9:30~)은 맨 �
 iga0, H.IG_AUTO = H.IG_AUTO, True  # 예전 인스타 셀프체크는 켠 채로 — 10/17 23시 멈춤(꺼짐)은 맨 아래 9-14에서
 igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인스타 개편(하루 4개·겨울 요일 테마) = 9-196에서만
 nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
+pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
 TS0 = (H.TOSS_SITE, S0.TOSS_API_SITE); H.TOSS_SITE = S0.TOSS_API_SITE = False  # 11/6 진우 Q 켬(실제 = True) — 켠 동작 = 9-47·9-153·9-158에서만(옛 셀프체크 = 끈 채 그대로)
@@ -15092,3 +15093,55 @@ assert "TH_LIST_MAX if TH_N_FIT else 3 if cat else 5" in inspect.getsource(H.tos
 assert '"n": seen["thbn"]["m"][x["id"]][0], "stdy": seen["thbn"]["m"][x["id"]][1]' in inspect.getsource(H.metrics_rows) and 'm[day]["thb"] = thb' in inspect.getsource(H.metrics_rows)
 (time.time, H.tg, H.th_bundle, H.POSTS, H.EVENTS, H.ai_json, tk197, H.TH_DIVERSE, H.TH_LIST_TOSS, H.alert, H.season_adj, H.TH_N_FIT, H.SERIES_DIR, H.series_ready, H.th_get) = sv197
 H.E.pop("THREADS_TOKEN", None) if tk197 is None else H.E.__setitem__("THREADS_TOKEN", tk197); os.chdir(cwd197)
+
+# 9-198 (11/16 진우 쇼핑 달력 '📅 캘린더 넣기 + 🧵 Threads·텔레그램 자동 알림'): docs/calendar.ics(promos.json — UID = 행사 id · 종일 기간 · start 없음 = 마감일 하루 · 골드박스 X · 시작 전날 저녁 알림)
+#   · /events/ 구독 버튼 2개(webcal · 구글) + 인앱 안내 · 카드 '📅 추가'(구글·.ics) · 알림 글(시작·마감 전날 저녁 · 같은 날 = 1글 · 토스 따로 15분 · 힘 준 글·공동구매 30분 · 70%↑ X) · gc_day(07:00 보고)
+cwd198, sv198 = os.getcwd(), (time.time, H.tg, H.th_bundle, H.busy, H.th_hold, H.EVENTS, H.http, dict(H.E), H.PROMO_ALERT); os.chdir(tempfile.mkdtemp()); H.PROMO_ALERT = True
+pr198 = lambda i, **k: {"id": i, "mall": "gmarket", "mall_name": "G마켓", "name": "빅스마일, 세일", "start": "2026-11-20", "end": "2026-11-22", "benefit": "쿠폰 10%", "url": "https://www.gmarket.co.kr/", **k}
+ics198 = S.calendar_ics([pr198("gm-a1"), pr198("cp-b2", mall="coupang", mall_name="쿠팡", name="블랙데일리 " * 6, start=None, end="2026-11-25")], "20261116T000000Z")
+raw198 = ics198.split("\r\n"); un198 = "\r\n".join(raw198).replace("\r\n ", "").split("\r\n")
+assert ics198.endswith("\r\n") and raw198[0] == "BEGIN:VCALENDAR" and un198[-2] == "END:VCALENDAR" and all(len(l.encode()) <= 75 for l in raw198) and any(l.startswith(" ") for l in raw198)  # CRLF · 75바이트 접기
+uid198 = [l for l in un198 if l.startswith("UID:")]
+assert uid198 == ["UID:gm-a1@hotdealpick.kr", "UID:cp-b2@hotdealpick.kr"] and len(set(uid198)) == 2 and un198.count("BEGIN:VEVENT") == 2 and un198.count("TRIGGER:-PT6H") == 2
+assert "DTSTART;VALUE=DATE:20261120" in un198 and "DTEND;VALUE=DATE:20261123" in un198 and "DTSTART;VALUE=DATE:20261125" in un198 and "DTEND;VALUE=DATE:20261126" in un198  # 종일 기간(끝 다음 날) · start 없음 = 마감일 하루
+assert "SUMMARY:G마켓 빅스마일\\, 세일" in un198 and any("쿠팡 블랙데일리" in l and "내일 마감" in l for l in un198)  # 쉼표 이스케이프 · 마감 알림
+assert 'href="webcal://hotdealpick.kr/calendar.ics" data-gc="cal/webcal"' in S.CAL_BTNS and "calendar.google.com/calendar/r?cid=webcal%3A%2F%2Fhotdealpick.kr%2Fcalendar.ics" in S.CAL_BTNS and 'data-gc="cal/google"' in S.CAL_BTNS
+assert "Barcelona" in S.CAL_BTNS and "기본 브라우저로 열기" in S.CAL_BTNS  # Threads·인스타 앱 안 = 안내
+cd198 = S.promo_card(pr198("gm-a1"), "on", [], ("https://www.gmarket.co.kr/", True), {}, "2026-11-16")
+assert "dates=20261120%2F20261123" in cd198 and f'{S.BASE}cal/gm-a1.ics' in cd198 and 'data-gc="cal/add/gm-a1"' in cd198 and 'data-gc="cal/ics/gm-a1"' in cd198
+assert "📅 추가" not in S.promo_card(pr198("gm-a1"), "past", [], ("https://www.gmarket.co.kr/", True), {}, "2026-11-16")  # 지난 행사 = X
+bs198 = inspect.getsource(S)
+assert "calendar_ics(cps, stamp)" in bs198 and 'cps = time.strftime' in bs198 and '[p for p, st, _ in ps_ if st != "past"]' in bs198  # 구독 = promos.json 진행·곧(골드박스 = ps_ 밖)
+# 알림 글
+json.dump({"updated": "2026-11-16 17:00", "promos": [pr198("gm-start", start="2026-11-17", end="2026-11-20", benefit="최대 80% 할인 쿠폰"), pr198("lo-end", mall="lotteon", mall_name="롯데온", name="패션 세라", start=None, end="2026-11-17", benefit="쿠폰 15%"),
+                                                     pr198("ts-start", mall="toss", mall_name="토스", name="토스 위크", start="2026-11-17", end="2026-11-19", url="https://toss.im/"), pr198("gm-later", start="2026-11-25", end="2026-11-28")]}, open("promos.json", "w"), ensure_ascii=False)
+tg198, th198 = [], []
+H.tg, H.th_bundle = (lambda m, **p: tg198.append(p) or {"message_id": 1}), (lambda seen, kind, text, link=None, **k: th198.append((kind, text, link)) or {"id": "P"})
+H.busy, H.th_hold, H.EVENTS = (lambda seen, cap=True: False), (lambda seen: False), "ev198.json"; json.dump([], open("ev198.json", "w")); H.E["THREADS_TOKEN"] = "tk"
+s198 = {}; time.time = lambda: TK("2026-11-16 20:30"); H.promo_alert(s198); assert not tg198  # 20:40 전 X
+time.time = lambda: TK("2026-11-16 20:45")
+with contextlib.redirect_stdout(io.StringIO()) as o198:
+    H.promo_alert(s198)
+assert len(tg198) == 1 and len(th198) == 1 and th198[0][0] == "promo", (tg198, o198.getvalue())
+t198 = tg198[0]["text"]
+assert "🟢 내일 시작 · G마켓 빅스마일, 세일" in t198 and "⏰ 내일 마감 · 롯데온 패션 세라" in t198 and "쿠폰 15%" in t198 and "80%" not in t198 and "토스" not in t198 and "gm-later" not in t198 and "빅스마일, 세일 (11/25" not in t198  # 같은 날 = 1글 · 70%↑ 혜택 줄 X · 토스 따로
+assert t198.endswith(f"{H.SITE}events/?ref=tgp") and th198[0][1].endswith("?ref=thp") and "댓글" not in t198
+H.promo_alert(s198); assert len(tg198) == 1  # 토스 = 쿠팡 쪽 글과 15분↑
+time.time = lambda: TK("2026-11-16 21:05")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.promo_alert(s198)
+assert len(tg198) == 2 and "🟢 내일 시작 · 토스 토스 위크" in tg198[1]["text"] and "G마켓" not in tg198[1]["text"]
+H.promo_alert(s198); assert len(tg198) == 2  # 하루 1번
+json.dump([{"at": "2026-11-17 21:00", "power": True, "text": "x"}], open("ev198.json", "w")); s198b = {}; time.time = lambda: TK("2026-11-17 20:45"); json.dump({"promos": [pr198("gm-x", start="2026-11-18", end="2026-11-19")]}, open("promos.json", "w"))
+with contextlib.redirect_stdout(io.StringIO()) as o198:
+    H.promo_alert(s198b)
+assert len(tg198) == 2 and "미룸" in o198.getvalue()  # 힘 준 글 30분 안 = 다음 실행
+# gc_day: 어제 GoatCounter 이벤트 -> gc_day.json(07:00 보고)
+H.E["GOATCOUNTER_TOKEN"] = "g"; time.time = lambda: TK("2026-11-17 01:00")
+H.http = lambda url, *a, **k: json.dumps({"hits": [{"path_id": 1, "path": "cal/webcal", "count": 3}, {"path_id": 2, "path": "cal/google", "count": 2}, {"path_id": 3, "path": "cal/add/gm-a1", "count": 4},
+                                                      {"path_id": 4, "path": "/p/1.html", "count": 9}], "more": False}).encode()
+with contextlib.redirect_stdout(io.StringIO()) as o198:
+    H.gc_day({})
+g198 = json.load(open("gc_day.json"))["2026-11-16"]
+assert g198["cal_sub"] == 5 and g198["cal_add"] == 4 and "/p/1.html" not in g198 and "달력 구독 5" in o198.getvalue()
+(time.time, H.tg, H.th_bundle, H.busy, H.th_hold, H.EVENTS, H.http, e198, H.PROMO_ALERT) = sv198; H.E.clear(); H.E.update(e198); os.chdir(cwd198)

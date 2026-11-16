@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, itertools, json
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import MALL_IMG_HOSTS, THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
+from build_site import MALL_IMG_HOSTS, THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_span, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -13484,11 +13484,86 @@ def mall_icons(seen):
         print("mall icon", m, "저장", f"({best[1]} {best[0].width}x{best[0].height})")
 
 
+PROMO_ALERT, PROMO_AL_AT, PROMO_AL_GAP, PROMO_AL_PCT = True, ("20:40", "22:00"), 30 * 60, 70  # 11/16 진우 쇼핑 달력 ⑤: 행사 시작·마감 전날 저녁 알림 글 · 힘 준 글·공동구매 30분 · 할인율 70%↑ 숫자 = 혜택 줄 X
+
+
+def promo_alert(seen):
+    """11/16 행사 알림 글(텔레그램 채널 + Threads 정보 글): PROMO_AL_AT 안 하루 1번 — 내일 시작하는 행사(사전 행사 포함 첫날)·내일 마감하는 행사(promos.json — 골드박스 X)를 1글로
+    (같은 날 여러 행사 = 1글 · 토스 행사 = 따로 1글, 쿠팡 쪽 글과 15분↑) · 문구 = promos.json 사실(몰·행사명·기간·혜택 — 할인율 PROMO_AL_PCT%↑ 숫자 있는 혜택 = 줄 X) · 링크 = 사이트 /events/(제휴 링크 X = 대가성 문구 X)
+    · 힘 준 글(events power)·공동구매 글 앞뒤 PROMO_AL_GAP · 힘 준 글 20분 쉼(th_hold) · 묶음 간격(busy) = 다음 실행 · 댓글 유도 X."""
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today, tmr, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 + 86400)), time.strftime("%H:%M", kst)
+    if not PROMO_ALERT or not PROMO_AL_AT[0] <= hm < PROMO_AL_AT[1]:
+        return
+    ps = [(p, "start") for p, st, first in promo_list(today) if (first or p.get("start")) == tmr] + [(p, "end") for p, st, _ in promo_list(today) if p.get("end") == tmr and (p.get("start") or "") != tmr]
+    evs = load(EVENTS, [])
+    near = any(abs(kst_ts(e["at"]) - now) < PROMO_AL_GAP for e in evs if isinstance(e, dict) and re.match(AT_RX, str(e.get("at", ""))) and (e.get("power") or "공동구매" in str(e.get("text") or "")))
+    for g in ("etc", "toss"):
+        key, xs = f"pal_{today}_{g}", [(p, k) for p, k in ps if (p["mall"] == "toss") == (g == "toss")]
+        if not xs or key in seen:
+            continue
+        if g == "toss" and now - (seen.get(f"pal_{today}_etc") or {}).get("t", 0) < 15 * 60 or near or busy(seen, cap=False) or th_hold(seen):
+            return print(f"promo alert {g} 미룸(토스 15분·힘 준 글·공동구매 30분·묶음 간격)")
+        rows = []
+        for p, k in xs:
+            mall, b = (p.get("mall_name") or p["mall"]).split(" · ")[0], str(p.get("benefit") or "").strip()
+            span = promo_span(p.get("start") or (p.get("pre") or {}).get("start"), p.get("end"))
+            ok_b = b and not any(int(n) >= PROMO_AL_PCT for n in re.findall(r"(\d+)\s*%", b))
+            rows.append(f"{'🟢 내일 시작' if k == 'start' else '⏰ 내일 마감'} · {mall} {p['name'].strip()}" + (f" ({span})" if span else "") + (f"\n{b}" if ok_b else ""))
+        text = "📅 내일 쇼핑 행사\n\n" + "\n\n".join(rows) + f"\n\n기간·혜택은 기사·공지 기준이라 바뀔 수 있어요\n기획전 모음 👉 {SITE}events/?ref=" + "{r}"
+        seen[key] = {"t": now}
+        tg("sendMessage", chat_id=CHANNEL, text=text.format(r="tgp"), link_preview_options={"is_disabled": True})
+        bundled(seen)
+        if E.get("THREADS_TOKEN"):
+            th_bundle(seen, "promo", text.format(r="thp")[:500], f"{SITE}events/?ref=thp")
+        return print(f"promo alert {g} {len(xs)}개 · " + " / ".join(f"{k} {p['id']}" for p, k in xs))
+
+
+GC_DAY_FILE, GC_DAY_RX = "gc_day.json", r"cal/|ig/"  # 11/16 07:00 보고: 어제 GoatCounter 이벤트(쇼핑 달력 구독·📅 추가 · 인스타 유입) {날짜: {이름: 수}}
+
+
+def gc_day(seen):
+    """하루 1번(0:30 KST 뒤) 어제 GoatCounter 이벤트 중 GC_DAY_RX(cal/webcal·cal/google·cal/add/<id>·cal/ics/<id> …) -> gc_day.json {날짜: {경로: 수, cal_sub, cal_add}} — 07:00 보고 · 토큰 없으면 X · 오류 = 그날 3번까지."""
+    tok, now = E.get("GOATCOUNTER_TOKEN"), time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
+    tries = seen.get("gcd", {}).get("d", {}).get(day, 0)
+    if not tok or kst.tm_hour == 0 and kst.tm_min < 30 or day in load(GC_DAY_FILE, {}) or tries >= 3:
+        return
+    t0 = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() - 9 * 3600
+    hr, c, ids = lambda t: time.strftime("%Y-%m-%dT%H:00:00Z", time.gmtime(t)), {}, []
+    try:
+        for _ in range(LINK_AB_PAGES):
+            q = urllib.parse.urlencode({"start": hr(t0), "end": hr(t0 + 86400 - 3600), "limit": 100, **({"exclude_paths": ",".join(ids)} if ids else {})})
+            r = json.loads(http(f"https://{GC_CODE}.goatcounter.com/api/v0/stats/hits?{q}", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}))
+            for h in r.get("hits") or []:
+                ids.append(str(h.get("path_id")))
+                if re.match(GC_DAY_RX, path := str(h.get("path") or "").lstrip("/")):
+                    c[path] = c.get(path, 0) + int(h.get("count") or 0)
+            if not r.get("more"):
+                break
+            time.sleep(0.3)
+    except Exception as e:
+        g = seen.setdefault("gcd", {"d": {}})
+        g.update(t=now, d={**g.get("d", {}), day: tries + 1})
+        return print("gc day", day, type(e).__name__)
+    c.update(cal_sub=c.get("cal/webcal", 0) + c.get("cal/google", 0), cal_add=sum(n for k, n in c.items() if k.startswith(("cal/add/", "cal/ics/"))))
+    d = load(GC_DAY_FILE, {})
+    d[day] = c
+    json.dump(dict(sorted(d.items())[-60:]), open(GC_DAY_FILE, "w"), ensure_ascii=False, indent=1)
+    print(f"gc day {day} 달력 구독 {c['cal_sub']}(아이폰·삼성 {c.get('cal/webcal', 0)} · 구글 {c.get('cal/google', 0)}) · 📅 추가 {c['cal_add']}")
+
+
 def link_ab(seen):
     """/link A·B 반반 비교(10/26~11/8 — 결과 판단은 Cowork·진우, 자동으로 한쪽으로 몰지 않음): 하루 1번(0:30 KST 뒤 첫 실행) 어제(KST) GoatCounter
     보기 'link-a'·'link-b'(가상 경로) · 상품 클릭 'buy/link-a/…' · 채널 클릭 'link-a/…'(카톡·블로그·Threads·인스타·텔레그램) · 사이트 홈 'link-a/home'(따로)
     -> link_ab.json {날짜: {a: {view, buy, ch, home}, b: …, line}} + 로그 줄(README 점검 표에 그대로). 상품 클릭률 = buy ÷ view · 채널 클릭률 = ch ÷ view.
     마지막 날(11/8) 줄은 11/9 0:30 뒤에 생김. 토큰 없으면 X · 오류 = 그날 3번까지 다음 실행에 다시."""
+    try:  # 11/16 07:00 보고 GoatCounter 이벤트(쇼핑 달력 등) — 같은 단계
+        gc_day(seen)
+    except Exception as e:
+        print("gc day 오류", err_brief(e))
     tok, now = E.get("GOATCOUNTER_TOKEN"), time.time()
     kst = time.gmtime(now + 9 * 3600)
     day = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 86400))
@@ -14152,7 +14227,7 @@ def main():
     except Exception as e:
         print("focus_post", repr(e))
         step_alert(seen, focus_post, e)
-    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
+    for step in (today_auto, daily_cands, site_relink, cp_links, link_swap, shelf_posts, og_imgs, toss_shelf, toss_site_preview, toss_ideas, events, preview, playlist, cp_eve, goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals, lambda s: toss_deals(s, "series"), lambda s: toss_deals(s, True), lambda s: toss_deals(s, "cat"), lambda s: toss_deals(s, "beauty"), lambda s: toss_deals(s, "special"), toss_th_later, toss_wait, toss_relink, toss_picks, cp_fill, toss_solo, cp_repost, auto_repost, toss_soldout, toss_takedown, toss_fix_channel, lambda s: digest(s, load(POSTS, [])), cat_fill, threads, threads_deals, daily_post, daily_log, wx_dm, toss_reopen, ig_cards, ig_feed, ig_guess, ig_comments, ig_reel, reel_samples, clip_post, ig_repost, ig_publish, ig_stage, ig_test, toss_stock, coupang_remind, oy_claim, report, week_report, rv_report, th_repost, ss_report, blog_data, th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report, promo_alert, th_reply_ok, th_verify, th_watch, metrics, ig_peek, gc_top, link_ab, promo_links, mall_icons, api_check, cp_best, auto_shelf, auto_pick5, status_dm, ev_check, cp_price, own_end, drop_check, toss_roster, th_end_report, indexnow, trend, cat_gender, review_post, cp_sub_site, price_track, dday_deals, th_pics, toss_guard_day, shelf_cand):
         if RUN.get("tstop") and step in (toss_shelf, toss_site_preview, toss_ideas, toss_wait, toss_relink, toss_picks, toss_solo, toss_soldout, toss_takedown, toss_fix_channel, toss_reopen, toss_stock, toss_roster):
             continue  # CCC 토스 점검 = 토스 단계 쉼(점검 중엔 링크·API로 할 게 없음 — toss_deals는 lambda라 그 안에서)
         try:
