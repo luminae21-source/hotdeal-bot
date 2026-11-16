@@ -1,10 +1,10 @@
 {
-"at": "2026-11-16 14:45",
-"posts": 5551,
-"site": 2045,
+"at": "2026-11-16 14:59",
+"posts": 5561,
+"site": 2050,
 "mall": {
-"coupang": 1364,
-"toss": 626,
+"coupang": 1368,
+"toss": 627,
 "naver": 55
 },
 "cat": {
@@ -16,10 +16,10 @@
 "sport": 19,
 "home": 91,
 "fashion": 92,
-"food": 409,
+"food": 410,
 "kitchen": 139,
-"beauty": 269,
-"life": 299,
+"beauty": 270,
+"life": 302,
 "season": 140,
 "coffee": 91,
 "laundry": 83,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 171,
-"sitemap": 907,
+"sitemap": 908,
 "days": {
 "2026-11-08": {
 "site": 1906,
@@ -111,11 +111,11 @@
 }
 },
 "2026-11-16": {
-"site": 2045,
-"sitemap": 907,
+"site": 2050,
+"sitemap": 908,
 "mall": {
-"coupang": 1364,
-"toss": 626,
+"coupang": 1368,
+"toss": 627,
 "naver": 55
 }
 }
@@ -263,7 +263,21 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "생필품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "운동",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ],
-"nset_n": "새 구성 20 · 기존 상품 구성 0"
+"nset_n": "새 구성 22 · 기존 상품 구성 0"
 }
