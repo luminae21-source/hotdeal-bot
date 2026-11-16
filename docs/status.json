@@ -1,5 +1,5 @@
 {
-"at": "2026-11-17 00:07",
+"at": "2026-11-17 00:19",
 "posts": 5607,
 "site": 2050,
 "mall": {
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 171,
-"sitemap": 915,
+"sitemap": 913,
 "days": {
 "2026-11-09": {
 "site": 1940,
@@ -111,7 +111,7 @@
 },
 "2026-11-17": {
 "site": 2050,
-"sitemap": 915,
+"sitemap": 913,
 "mall": {
 "coupang": 1367,
 "toss": 628,
@@ -122,6 +122,21 @@
 "warn": [
 "쿠팡 변환 실패 171개(cp_fail.json)"
 ],
-"nset": [],
-"nset_n": "새 구성 0 · 기존 상품 구성 0"
+"nset": [
+{
+"name": "생필품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+],
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
