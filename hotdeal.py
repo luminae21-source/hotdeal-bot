@@ -11978,7 +11978,7 @@ def igf_make(seen, kind, stem, kst):
             files = [cards.theme_cover([x["photo"] for x in its], cp["title"], " · ".join(clip(x["name"], 10) for x in its), f"{'월화수목금토일'[kst.tm_wday]}요일 {lb}", k0, f"{d}/00.jpg")]
             files += [cards.theme_slide(x, n, f"{d}/{n:02d}.jpg") for n, x in enumerate(its, 1)] + [cards.theme_end(cat, k0 + 3, f"{d}/09.jpg")]
             cov = "text" if IG_COVER_AB and IG_V2 and kst.tm_mday % 2 else "photo"  # 11/16 첫 화면 A/B(2주): 홀수 날 = 글자 표지 · 짝수 날 = 실사진 표지
-            lo = min([w for x in its if (w := won(re.sub(r"^[^당]*당", "", str(x.get("unit") or ""))))] or [won(x["price"]) or 0 for x in its])
+            lo = min(won(x["price"]) or 0 for x in its)  # 11/17: '1개 값' = 상품 1개 가격 중 가장 낮은 것(단위값은 기준이 섞임 — 10ml당·1매당 945원을 '1개 값'으로 쓰던 것 X)
             if cov == "text" and lo:
                 cards.theme_end(lb, k0 + 5, f"{d}/rc.jpg", top=f"{lb} 1개 값,\n{lo:,}원부터", mark=False)
             else:

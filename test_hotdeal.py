@@ -15171,6 +15171,7 @@ cwd199, sv199 = os.getcwd(), (H.IG_V2, H.http, time.time, dict(H.E), H.IG_AUTO, 
 H.IG_V2, H.IG_AUTO, H.REEL_CLIP = True, True, True; H.E.update(IG_TOKEN="t", IG_USER_ID="u")
 src199 = inspect.getsource(H.igf_make)
 assert 'cov = "text" if IG_COVER_AB and IG_V2 and kst.tm_mday % 2 else "photo"' in src199 and 'top=f"{lb} 1개 값,\\n{lo:,}원부터"' in src199 and '"cov": cov' in src199  # 홀수 날 글자 표지
+assert 'lo = min(won(x["price"]) or 0 for x in its)' in src199  # 11/17 '1개 값' = 가장 싼 상품 가격(섞인 단위값 X — '1매당 945원'이 '겨울 보습 1개 값, 945원부터'로 나감)
 assert 'today: st["cov"]' in inspect.getsource(H.ig_theme_reel) and '"cov": c' in inspect.getsource(H.metrics_rows) and '"awt"' in inspect.getsource(H.metrics_rows) and '"kind": "reel"' in inspect.getsource(H.metrics_rows)
 assert 'm[day]["igd"] = {"릴스 낮"' in inspect.getsource(H.metrics_rows) and '"피드 19시"' in inspect.getsource(H.metrics_rows)  # 07:00 보고
 # 품질 문: 22시 릴스 캡션 금지어 = 그날 쉼 · 낮 릴스 = 상품 3개↑·금지어 X 클립만
