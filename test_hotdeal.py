@@ -5338,7 +5338,7 @@ assert set(h35) == {0, 1, 2, 3, 6, 8, 9}, sorted(h35)  # E = gone만 빠짐 · F
 to35 = ids35(S35.lists(g35, d35b)["toss"][2]); assert to35 == [9, 6, 2, 0, 8, 3, 1], to35  # 위 8개 = 옛 가격(10/23 전) 🔥 X(9-60 B) — 3일 안 🔥(9) → ⏳·일시 품절 → 옛 가격 🔥
 ga35, gb35, gc35, gf35 = (S35.card(i, g35[i], h35[i]) for i in (0, 1, 2, 9))
 assert '<b class="bdg w">일시 품절 (10/25 확인)</b>' in ga35 and "10/10 가격 · 다시 들어오면 링크에서 확인" in ga35  # 그 자리 그대로 + 배지
-assert "10,000원" in gb35 and '<div class="u">10/11 가격</div>' in gb35 and "지금 가격은 링크에서 확인" not in gb35 and "👍" not in gb35  # 토스 🔥 = 올린 가격 + 날짜 1줄(API 가격 X · 안내는 칸 머리 TOSS_LINE)
+assert "10,000원" in gb35 and f'<div class="u">10/11 가격 · {g35[1]["chk"]} 다시 확인</div>' in gb35 and "지금 가격은 링크에서 확인" not in gb35 and "👍" not in gb35  # 토스 🔥 = 올린 가격 + 날짜 1줄(API 가격 X · 안내는 칸 머리 TOSS_LINE) · 11/18 확인 3일 안 = '다시 확인'(가격까지 다시 봄)
 assert '<div class="u">특가 때 8,000원 · 특가 기다리는 중</div>' in gc35 and "지금 가격은 링크에서 확인" not in gc35 and '<b class="bdg">👍 꾸준템</b>' in gc35 and 'class="pr"' not in gc35 and "9,000" not in gc35  # ⏳ = 옛 특가 가격 X
 assert "🔁 다시 특가" in gf35 and "7,000원" in gf35  # 다시 특가(3일) — 토스는 올린 가격
 fi35 = ids35(S35.lists(g35, d35b)["hot"][2]); assert fi35 == [9, 8, 3, 1], fi35  # 🔥 쪽 = 🔥 전부(🔁 먼저) · ⏳·일시 품절 X
