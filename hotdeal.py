@@ -9511,14 +9511,18 @@ def ig_reel_day(seen):
         return
     if IG_JIT2 and now < ig_due(seen, "igrdj_" + today, kst_ts(f"{today} {REEL_DAY[0]}:30")):  # 11/16 ⑧ 12:30 ±10~25분
         return
-    tp = reel_pids(seen, today)
+    tp, ev, why = reel_pids(seen, today), ev_info(), collections.Counter()
     for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
         f = f"{CLIP_DIR}/{today}/{c.get('file')}" if isinstance(c, dict) else ""
-        cp = {m[1] for u in (c.get("u") or [] if isinstance(c, dict) else []) if (m := re.search(r"/products/(\d+)", str(u)))}
-        if f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f) and not cp & tp and len(cp) >= 3 and not re.search(IG_REEL_BAN, c["yt"]["desc"]):  # 품질 문(3개↑·금지어 X)
+        cp = {x for u in (c.get("u") or [] if isinstance(c, dict) else []) if (x := link_pid(str(u), ev))}  # 클립 u = 파트너스 단축 링크(11/17 = 6편 다 0개로 셈 → 낮 릴스 X)
+        bad = ("파일·설명 없음" if not (f and isinstance(c.get("yt"), dict) and str(c["yt"].get("desc") or "").startswith(DISCLOSURE) and os.path.isfile(f))
+               else "테마 상품과 겹침" if cp & tp else "상품 3개 밑" if len(cp) < 3 else "금지어" if re.search(IG_REEL_BAN, c["yt"]["desc"]) else "")  # 품질 문(3개↑·금지어 X)
+        if not bad:
             break
-    else:
-        return print("ig reel day: 오늘 클립 없음(또는 테마 상품과 겹침) -> 낮 릴스 X")
+        why[bad] += 1
+    else:  # 11/18 쉰 이유 = 07:00 igd '릴스 낮' 줄('안 올라감' 대신) · 하루 1번 판단
+        seen["igrd_" + today] = {"t": now, "why": "오늘 클립 없음" if not why else f"클립 {sum(why.values())}편 다 X(" + " · ".join(f"{k} {n}" for k, n in why.most_common()) + ")"}
+        return print("ig reel day 쉼 —", seen["igrd_" + today]["why"])
     url = f"{SITE}clips/{today}/{c['file']}"
     try:
         http(url, method="HEAD")
@@ -9535,10 +9539,18 @@ def ig_reel_day(seen):
     print("ig reel day 컨테이너", today, c["file"])
 
 
+def link_pid(u, ev):
+    """쿠팡 링크 -> pid: events pid → 그 링크의 쿠팡 상품 주소(cp_links·cp_sub 거꾸로 — 단축 링크 · 11/18 낮 릴스가 클립 상품을 0개로 세던 것) → 주소의 /products/번호 / ''."""
+    import build_site
+    if not build_site.CPI:
+        build_site.cpi_load({})
+    return str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", build_site.CPI.get("raw:" + u) or u)) else ""))
+
+
 def reel_pids(seen, today):
     """오늘 인스타에 쓴 상품(seen igu — 08시 릴스·테마 넘기기) pid — 같은 상품 하루 1릴스(낮 클립·테마 고르기)."""
     ev = ev_info()
-    return {str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", u)) else "")) for u, d in seen.get("igu", {}).get("m", {}).items() if d == today} - {""}
+    return {link_pid(u, ev) for u, d in seen.get("igu", {}).get("m", {}).items() if d == today} - {""}
 
 
 def reel_am_post(today):

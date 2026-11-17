@@ -15190,7 +15190,7 @@ json.dump({"2026-11-17": [{"file": "01.mp4", "u": ["https://www.coupang.com/vp/p
 cd199 = H.CLIP_DIR; H.CLIP_DIR = "clips199"; time.time = lambda: TK("2026-11-17 12:20")
 with contextlib.redirect_stdout(io.StringIO()) as o199:
     H.ig_reel_day({"reel_2026-11-17": {"t": 1, "cap": "테마", "feed": False}})
-assert not h199 and "낮 릴스 X" in o199.getvalue(); H.CLIP_DIR = cd199  # 상품 2개 클립 = X
+assert not h199 and "ig reel day 쉼 — 클립 1편 다 X(상품 3개 밑 1)" in o199.getvalue(); H.CLIP_DIR = cd199  # 상품 2개 클립 = X(이유 = igd 줄)
 # 개편 전 기준값(1번)
 def ig199(url, body=None, headers=None, method="GET", **k):
     if "/media?" in url:
@@ -15587,7 +15587,7 @@ with contextlib.redirect_stdout(io.StringIO()):
 assert [os.path.basename(x) for x in sl207[-1][0]] == ["rc.jpg", "00.jpg", "01.jpg", "02.jpg", "03.jpg", "04.jpg", "re.jpg"] and all(1.2 <= x <= 2.0 for x in sl207[-1][1][:-1]) and s207["igrfmt"]["m"]["2026-11-18 22"] == "v1"  # 끔 = 지금 장
 # 같은 상품 하루 1릴스: 08시 상품(다른 링크 같은 pid 포함) = 테마 고르기 X · 낮 클립 판단 pid
 assert H.reel_pids(s207, "2026-11-18") == {"900", "901", "902"} and [p["url"] for _, p in H.igt_pool(s207, P207, None, "2026-11-18")] == [L207(3)]  # 일신 2개(같은 pid 900) X · 4번만
-assert "tp = reel_pids(seen, today)" in inspect.getsource(H.ig_reel_day) and "not cp & tp" in inspect.getsource(H.ig_reel_day)
+assert "tp, ev, why = reel_pids(seen, today), ev_info(), collections.Counter()" in inspect.getsource(H.ig_reel_day) and '"테마 상품과 겹침" if cp & tp' in inspect.getsource(H.ig_reel_day)
 # 쉼: 글 없음(08:55 지나면 이유) · 안 나감 · 3개 밑(이유 줄) · 사진 없음 · 09:30 지남 · 스위치 끔 = 아무것도 X
 for at207, s0207, why0 in (("2026-11-19 08:56", {}, "08시대 힘 준 글 없음"), ("2026-11-18 08:56", {}, "힘 준 글 안 나감"), ("2026-11-18 09:31", {}, "08시대 힘 준 글 없음·안 나감"),
                            ("2026-11-18 09:31", {"igram_2026-11-18": {"t": 1, "stem": "2026-11-18_08", "at": 1}}, "09:30까지 못 올림")):
@@ -15639,4 +15639,38 @@ assert S.shelf(cp208, {L208: {"pid": "9116101767", "item": "26812937323"}}, "202
 assert S.shelf({**cp208, "now": "70,000원", "chk": "11/16 9시", "chkt": "2026-11-16 09:00"}, {}, "2026-11-18")[1] == "70,000원"  # 글에 now 있음 = 그대로
 assert "PH.update(ph_load())" in inspect.getsource(S.build)
 time.time = sv208[0]; S.PH.clear(); S.PH.update(sv208[1]); S.CPI.clear(); S.CPI.update(sv208[2])
+
+# 9-209 (11/18 07:0x Cowork '11/17 릴스 낮 ❌ 안 올라감' — 원인 = 버그): 클립 u = 파트너스 단축 링크 → /products/ 정규식만 봐서 6편 다 '상품 0개' → 품질 문(3개↑) X
+#   → link_pid(events pid → 그 링크의 쿠팡 상품 주소 cp_links·cp_sub 거꾸로 → /products/)로 셈 · 규칙대로 쉰 날 = igrd_ why(07:00 igd '릴스 낮' 줄에 이유)
+cwd209, sv209 = os.getcwd(), (H.IG_V2, H.http, time.time, H.CLIP_DIR, dict(H.E), H.IG_AUTO, H.ev_info, H.REEL_CLIP, H.IG_JIT2, dict(S.CPI))
+os.chdir(tempfile.mkdtemp()); os.makedirs("clips209/2026-11-17")
+for f in ("01.mp4", "02.mp4"):
+    open(f"clips209/2026-11-17/{f}", "wb").write(b"v")
+SL209 = lambda k: f"https://link.coupang.com/a/clip{k}"
+json.dump({"2026-11-17": [{"file": "01.mp4", "u": [SL209(k) for k in (1, 2, 3)], "yt": {"desc": f"{H.DISCLOSURE}\n클립 1"}},
+                          {"file": "02.mp4", "u": [SL209(k) for k in (4, 5, 6)], "yt": {"desc": f"{H.DISCLOSURE}\n클립 2"}}]}, open("clips209/clips.json", "w"), ensure_ascii=False)
+S.CPI.clear(); S.CPI.update({"raw:" + SL209(k): f"https://www.coupang.com/vp/products/70{k}?itemId=1" for k in range(1, 7)})  # 빌드 때처럼 cp_links·cp_sub 거꾸로
+H.ev_info = lambda: {SL209(1): {"pid": "801"}}  # events pid가 먼저
+H.IG_V2, H.REEL_CLIP, H.IG_AUTO, H.IG_JIT2, H.CLIP_DIR = True, True, True, False, "clips209"; H.E.update(IG_TOKEN="t", IG_USER_ID="u")
+h209 = []; H.http = lambda url, body=None, headers=None, method="GET", **k: h209.append((method, url, body)) or (json.dumps({"id": "C209"}).encode() if method == "POST" else b"")
+time.time = lambda: TK("2026-11-17 12:40")
+assert [H.link_pid(SL209(k), H.ev_info()) for k in (1, 2)] == ["801", "702"] and H.link_pid("https://www.coupang.com/vp/products/55?itemId=1", {}) == "55" and H.link_pid("https://x.kr/a", {}) == ""
+s209 = {"reel_2026-11-17": {"t": 1, "cap": "테마", "feed": False}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_reel_day(s209)
+assert [m for m, *_ in h209] == ["HEAD", "POST"] and h209[0][1].endswith("clips/2026-11-17/01.mp4") and s209["igc_C209"]["kind"] == "reeld"  # 단축 링크 클립 = 상품 3개로 셈 → 낮 릴스
+h209.clear(); s209 = {"reel_2026-11-17": {"t": 1, "cap": "테마", "feed": False}, "igu": {"t": 1, "m": {SL209(1): "2026-11-17", "https://link.coupang.com/a/th209": "2026-11-17"}}}
+S.CPI["raw:https://link.coupang.com/a/th209"] = "https://www.coupang.com/vp/products/705?itemId=9"  # 테마 상품 = 클립 2의 5번(다른 링크·같은 pid)
+with contextlib.redirect_stdout(io.StringIO()) as o209:
+    H.ig_reel_day(s209)
+assert not h209 and s209["igrd_2026-11-17"]["why"] == "클립 2편 다 X(테마 상품과 겹침 2)" and "ig reel day 쉼" in o209.getvalue()  # 같은 상품 하루 1릴스(pid) · 이유 기록
+h209.clear(); H.ig_reel_day(s209); assert not h209  # 하루 1번 판단
+ok209 = lambda v, why: "✅" if (v or {}).get("ok") or (v or {}).get("done") == 1 else f"❌ {(v or {}).get('why') or ('실패' if (v or {}).get('fail') else why)}"  # metrics_rows igd ok()와 같은 식
+assert ok209(s209["igrd_2026-11-17"], "안 올라감") == "❌ 클립 2편 다 X(테마 상품과 겹침 2)" and "ok = lambda v, why:" in inspect.getsource(H.metrics_rows)
+time.time = lambda: TK("2026-11-18 12:40"); s209b = {"reel_2026-11-18": {"t": 1, "cap": "테마", "feed": False}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_reel_day(s209b)
+assert s209b["igrd_2026-11-18"]["why"] == "오늘 클립 없음" and not h209
+(H.IG_V2, H.http, time.time, H.CLIP_DIR, E209, H.IG_AUTO, H.ev_info, H.REEL_CLIP, H.IG_JIT2, CPI209) = sv209
+H.E.clear(); H.E.update(E209); S.CPI.clear(); S.CPI.update(CPI209); os.chdir(cwd209)
 
