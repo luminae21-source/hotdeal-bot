@@ -3953,6 +3953,11 @@ def card_test(seen, now=None):
         if f:
             shutil.move(f"{MALL_CARD_DIR}/{os.path.basename(f)}", f"{CARD_TEST_DIR}/{stamp}_theme{th0['k']}.png")
         print("card test ⑤ 테마 장바구니", f"{th0.get('k')} {CARD_TEST_DIR}/{stamp}_theme{th0['k']}.png" if f else f"X({th0.get('d')} {th0.get('k')} 칸 {len(rows)}개 · 검색 {th0.get('tried')})")
+        try:  # 11/18 Cowork — REEL_V2 켜기 전 미리보기 1세트
+            rv = reel_v2_test(seen, now, f"{CARD_TEST_DIR}/{stamp}_reel_v2")
+        except Exception as x:
+            rv = f"X {err_brief(x)}"
+        print("card test ⑦ 릴스 v2 미리보기", rv)
         blog_img(seen, now)
         th_test_summary(seen, now)
     finally:
@@ -9129,7 +9134,7 @@ def ig_publish(seen):
         kind = isinstance(v, dict) and v.get("kind")
         if (card(v) or kind in IG_KIND) and now - v["t"] < IG_SITE_LAG:  # 사이트 맨 위에 먼저(카드 만든 실행 배포) -> 다음 실행에 발행 — 상태도 그때(그래프 API 호출 줄이기) · 큐레이션도 만든·묶은 실행 다음(그 실행 seen이 저장 안 되면 두 번 X — 10/25 리뷰)
             continue
-        n, free = seen.get(day, {}).get("n", 0), kind == "story" or IG_H and kind in ("reel", "reeld")  # H: 스토리·릴스(피드에 X) = 하루 피드 상한·2시간 간격 X(쉼·공식 한도는 같게)
+        n, free = seen.get(day, {}).get("n", 0), kind == "story" or IG_H and kind in REEL_KINDS  # H: 스토리·릴스(피드에 X) = 하루 피드 상한·2시간 간격 X(쉼·공식 한도는 같게)
         toss, last = kind == "toss", seen.get("iglast", {})
         gap = IG_TOSS_GAP if toss or last.get("toss") else IG_GAP  # L' 토스 글 앞뒤 = 1시간 30분(쿠팡끼리 2시간)
         if toss and not failed and not ig_toss_slot(now):  # L' 토스 = 15:30·18:30 칸 안에만 · 18:30 칸도 지나면 그날 X
@@ -9139,6 +9144,9 @@ def ig_publish(seen):
             continue
         if not failed and (seen.get("ig_hold", 0) > now or not free and (not toss and n >= ig_day_max(seen) or now - last.get("t", 0) < gap)):
             print("ig publish 미룸", k, f"오늘 {n}개" + (" · 진짜 실패로 쉼" if seen.get("ig_hold", 0) > now else f" · 직전 게시 {'2시간' if gap == IG_GAP else '1시간 30분'} 안" if now - last.get("t", 0) < gap else ""))
+            continue
+        if kind in REEL_KINDS and REEL_AM and not failed and now - seen.get("igrlast", {}).get("t", 0) < IG_GAP:  # 11/18 릴스 3개 = 릴스끼리 2시간↑
+            print("ig publish 미룸", k, "직전 릴스 2시간 안")
             continue
         st = json.loads(http(f"{IG}/{k[4:]}?fields=status_code", headers={"Authorization": "Bearer " + tok}))["status_code"]
         if st == "IN_PROGRESS" and not failed:
@@ -9175,8 +9183,11 @@ def ig_publish(seen):
             print("ig publish 오류 응답 뒤 게시 확인됨", k)
             pid = v.get("cap80") and ig_landed(tok, uid, k[4:], v["cap80"], since=v["t"])  # 피드 글 = 게시물 id 찾기(구매 댓글·정답 예약 — 'published'면 그건 X)
         RUN["ok"].add("ig")
-        if kind in ("reel", "reeld"):  # 11/12 오늘 릴스 올라감(ig_reel 23:30 점검) · 11/16 낮 릴스 = igrd_
-            seen.setdefault(time.strftime(("igr_" if kind == "reel" else "igrd_") + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1
+        if kind in REEL_KINDS:  # 11/12 오늘 릴스 올라감(ig_reel 23:30 점검) · 11/16 낮 릴스 = igrd_ · 11/18 08시 = igram_
+            seen.setdefault(time.strftime({"reel": "igr_", "reeld": "igrd_", "reelam": "igram_"}[kind] + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1
+            seen["igrlast"] = {"t": now}
+            if isinstance(v, dict) and v.get("pin") and IG_LINKIN:  # 11/18 /link 맨 위 = 가장 최근에 올라간 릴스 카드(그날 앞 것은 그 아래 — card_stems)
+                json.dump({"day": time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), "stem": v["pin"]}, open(REEL_PIN, "w"))
         print("ig publish", card(v) or IG_KIND.get(kind, "릴스"), pid or "(게시됨 확인)")  # 게시 id(점검 표 — 오류 응답 뒤 확인·이미 PUBLISHED면 id 없음)
         seen.pop(k)
         if not free:
@@ -9192,7 +9203,7 @@ def ig_publish(seen):
         if isinstance(v, dict) and v.get("ask") and pid and pid != "published":
             seen["igask"] = {"t": now, "pid": pid, "names": v["ask"], "day": time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600))}  # M-4: 재미 질문 카드가 댓글 집계
         label = card(v) or ""
-        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if kind == "reel" else f" — {IG_KIND[kind]}" if kind in IG_KIND else "") + " (instagram.com/hotdealpick.kr)")
+        tg("sendMessage", chat_id=ADMIN, text="📸 인스타 자동 게시 완료" + (f" — {SLOT_NAMES[label[11:]]} 카드" if label[11:] in SLOT_NAMES else " — 오늘 카드" if label else " — 오늘 릴스" if kind == "reel" else " — 08시 릴스" if kind == "reelam" else f" — {IG_KIND[kind]}" if kind in IG_KIND else "") + " (instagram.com/hotdealpick.kr)")
 
 
 def ig_comment(seen, tok, mid, text):
@@ -9470,7 +9481,7 @@ def prune_slides(now):
             if f[:10] < cut:
                 os.remove(f"{d}/{f}")
     for f in os.listdir("docs/reels") if os.path.isdir("docs/reels") else []:
-        if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.mp4", f) and f[:10] < cut:
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}(_\d\d)?\.mp4", f) and f[:10] < cut:
             os.remove(f"docs/reels/{f}")
 
 
@@ -9500,8 +9511,7 @@ def ig_reel_day(seen):
         return
     if IG_JIT2 and now < ig_due(seen, "igrdj_" + today, kst_ts(f"{today} {REEL_DAY[0]}:30")):  # 11/16 ⑧ 12:30 ±10~25분
         return
-    ev, used = ev_info(), {u for u, d in seen.get("igu", {}).get("m", {}).items() if d == today}
-    tp = {str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", u)) else "")) for u in used} - {""}
+    tp = reel_pids(seen, today)
     for c in (load(f"{CLIP_DIR}/clips.json", {}) or {}).get(today) or []:
         f = f"{CLIP_DIR}/{today}/{c.get('file')}" if isinstance(c, dict) else ""
         cp = {m[1] for u in (c.get("u") or [] if isinstance(c, dict) else []) if (m := re.search(r"/products/(\d+)", str(u)))}
@@ -9525,6 +9535,206 @@ def ig_reel_day(seen):
     print("ig reel day 컨테이너", today, c["file"])
 
 
+def reel_pids(seen, today):
+    """오늘 인스타에 쓴 상품(seen igu — 08시 릴스·테마 넘기기) pid — 같은 상품 하루 1릴스(낮 클립·테마 고르기)."""
+    ev = ev_info()
+    return {str(ev.get(u, {}).get("pid") or (m[1] if (m := re.search(r"/products/(\d+)", u)) else "")) for u, d in seen.get("igu", {}).get("m", {}).items() if d == today} - {""}
+
+
+def reel_am_post(today):
+    """11/18 08시 릴스 재료 글: 그날 REEL_AM_POST(08시대) 힘 준 글(events power · urls) — 여럿이면 늦은 것 · 없음 = None."""
+    es = [e for e in ev_list(EVENTS) if isinstance(e, dict) and e.get("power") and isinstance(e.get("urls"), list) and re.match(AT_RX, str(e.get("at", "")))
+          and e["at"][:10] == today and REEL_AM_POST[0] <= e["at"][11:16] < REEL_AM_POST[1]]
+    return max(es, key=lambda e: e["at"]) if es else None
+
+
+def reel_am_items(seen, e, now, today):
+    """08시 릴스 상품(그 글 urls 순서 그대로 — 빠진 자리를 다른 상품으로 X): 진열 쿠팡 수수료 상품 · 판매 페이지 사진 · 가격 = 가격 기록(price_hist) 마지막 확인가 + 그 확인 시각
+    (REEL_AM_FRESH 안 — 와우·쿠폰 표시 그대로) · 오늘 다른 릴스 상품 X(pid) -> ([igt_item…], [뺀 이유…])."""
+    posts = load(POSTS, [])
+    days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
+    byu = {p.get("url"): (i, p) for i, p, _ in shelf_items(posts, days)}
+    info, h, used, out, why = ev_info(), ph_load(), reel_pids(seen, today), [], []
+    for k, u in enumerate(e["urls"], 1):
+        i, p = byu.get(u, (None, None))
+        iv = info.get(u) or {}
+        r = max(h.get(ph_key(iv, u)) or [["", 0, "", ""]], key=ph_last)
+        t = ph_last(r)
+        if p is None or shop_of(p) != "coupang" or not aff(u):
+            why.append(f"{k}번 진열 쿠팡 상품 아님")
+        elif str(iv.get("pid") or "") in used:
+            why.append(f"{k}번 오늘 다른 릴스 상품")
+        elif not (r[1] and re.fullmatch(r"\d{8}", t) and now - kst_ts(f"20{t[:2]}-{t[2:4]}-{t[4:6]} {t[6:8]}:00") <= REEL_AM_FRESH):
+            why.append(f"{k}번 가격 확인 48시간 넘음")
+        elif not (x := igt_item(seen, i, p, k)):
+            why.append(f"{k}번 사진 없음")
+        else:
+            out.append({**x, "price": f"{r[1]:,}원" + {"w": " 와우가", "c": " 쿠폰가"}.get(r[2], ""), "when": f"{int(t[2:4])}/{int(t[4:6])} {int(t[6:8])}시 확인"})
+    return out, why
+
+
+def reel_secs2(lead, m, rnd):
+    """v2 장 시간(초): 앞 장 lead개(표지·진우 사진) REEL_HEAD2 · 상품 장 m개 REEL_SEC2(0.9~1.4 — 진우 '장당 시간 짧게') · 끝 장 REEL_END2 —
+    합 = 8초(길이 규칙 8~20초의 아래 끝 — 짧게)를 넘는 만큼만: 상품 장만으론 모자라면 상품 장 -> 앞 장 -> 끝 장 순으로 각 한도까지 늘림 · 길이 변주 = 상품 장 무작위."""
+    goal = 8
+    ps = [round(rnd.uniform(*REEL_SEC2), 2) for _ in range(m)]
+    head = round(min(max((goal - sum(ps) - REEL_END2[0]) / max(lead, 1), REEL_HEAD2[0]), REEL_HEAD2[1]), 2)
+    secs = [head] * lead + ps + [round(min(max(goal - sum(ps) - head * lead, REEL_END2[0]), REEL_END2[1]), 2)]
+    for k in [*range(lead, lead + m), *range(lead), len(secs) - 1]:
+        top = REEL_SEC2[1] if lead <= k < lead + m else REEL_HEAD2[1] if k < lead else REEL_END2[1]
+        secs[k] = min(top, math.ceil((secs[k] + max(0, 8 - sum(secs))) * 100 - 1e-6) / 100)
+    return secs
+
+
+def reel_v2_imgs(xs, d):
+    """v2 상품 장(cards.reel_slide — 세로 꽉) 번호 큰 것부터(⑤→① — 번호 = /link 카드 번호 그대로 · '1위' 같은 순위 말 X) -> 경로들 · 한 장이라도 못 그림 = ValueError(부른 쪽이 v1 장)."""
+    import cards
+    os.makedirs(d, exist_ok=True)
+    return [cards.reel_slide(x, x["n"], f"{d}/v2_{x['n']:02d}.jpg") for x in sorted(xs, key=lambda x: -x["n"])]
+
+
+def reel_fmt_put(seen, day, slot, fmt):
+    """11/18 ③ 릴스 틀(v1/v2)·칸(08/낮/22) — metrics 릴스 줄(11/29 2주 비교) · 30일."""
+    cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))
+    seen["igrfmt"] = {"t": time.time(), "m": {**{k: v for k, v in seen.get("igrfmt", {}).get("m", {}).items() if k >= cut}, f"{day} {slot}": fmt}}
+
+
+reel_slot = lambda ts: "08" if (h := time.gmtime(ts + 9 * 3600).tm_hour) < 11 else "낮" if h < 18 else "22"  # 올라간 시각(KST) -> 릴스 칸
+
+
+def reel_am_video(its, lb, card, kst, d, out, v2=None, music=None):
+    """08시 릴스 장·영상(기록 X — 카드·seen은 부른 쪽): 표지 A/B(홀수 날 글자 '{lb} 1개 값, N원부터' · 짝수 날 1번 실사진 — 테마 릴스와 같은 틀) ·
+    상품 장(v2 = 세로 꽉 ⑤→① — 못 그리면 v1 · v1 = 테마 넘기기 장 ①→⑤) · 끝 장('프로필 링크 → 📸 {card} → 1~N번') -> out mp4 · (장 경로들, 초, 표지, v2 됐나)."""
+    import cards
+    v2 = REEL_V2 if v2 is None else v2
+    n, rnd, k0 = len(its), random.Random(card), kst.tm_yday + 8
+    shutil.rmtree(d, ignore_errors=True)
+    os.makedirs(d)
+    ws = [won(x["price"]) or 0 for x in its]
+    cov = "text" if IG_COVER_AB and kst.tm_mday % 2 and min(ws) else "photo"
+    if cov == "text":
+        cards.theme_end(lb, k0 + 5, f"{d}/rc.jpg", top=f"{lb} 1개 값,\n{min(ws):,}원부터", mark=False)
+    else:
+        cards.photo_cover(its[0]["photo"], f"1번 · {its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
+    pv = None
+    if v2:
+        try:
+            pv = reel_v2_imgs([{**x, "n": k} for k, x in enumerate(its, 1)], d)
+        except Exception as x:
+            print("ig reel 08시 v2 장 못 그림 -> v1 장", err_brief(x))
+    imgs = [f"{d}/rc.jpg"] + (pv or [cards.theme_slide(x, k, f"{d}/{k:02d}.jpg") for k, x in enumerate(its, 1)]) \
+        + [cards.reel_end(card, f"1~{n}번", f"{n}가지 · " + (its[0]["when"] if len({x["when"] for x in its}) == 1 else "장마다 확인 시각"), k0, f"{d}/re.jpg")]
+    m = len(imgs) - 1
+    if pv:
+        secs = reel_secs2(1, n, rnd)
+    else:
+        T = min(max(REEL_LEN[k0 % len(REEL_LEN)] - REEL_END_SEC, m * REEL_SEC[0]), m * REEL_SEC[1])
+        secs = [round(min(max(T / m + rnd.uniform(-.3, .3), REEL_SEC[0]), REEL_SEC[1]), 2) for _ in range(m)] + [REEL_END_SEC]
+    kinds = rnd.sample(REEL_FX, rnd.choice((2, 3)))
+    cards.slideshow(imgs, out, music, secs=secs, fx=["fade"] + rnd.sample([kinds[k % len(kinds)] for k in range(m)], m))
+    return imgs, secs, cov, bool(pv)
+
+
+def reel_am_make(seen, e, its, kst):
+    """08시 릴스 카드·영상: 카드 {날짜}_08(번호 = 글 순서 — docs/cards/{stem}.json·names.json → 컨테이너 때 ig.json → 사이트 맨 위·/link 번호 그대로) · 장·영상 = reel_am_video ·
+    캡션(reel_cap — 틀·진우 한마디·태그 · 줄마다 확인 시각) · 곡 = 그날 다음 차례 -> docs/reels/{날짜}_08.mp4 · 같은 상품 하루 1릴스(igu) · 틀·표지 기록 -> igram_ 상태(stem·cap·at)."""
+    from build_site import card_name
+    now, today = time.time(), time.strftime("%Y-%m-%d", kst)
+    stem, n, lb = f"{today}_08", len(its), re.sub(r"\s+", " ", str(e.get("topic") or "아침 특가")).strip()
+    json.dump([x["i"] for x in its], open(f"docs/cards/{stem}.json", "w"))
+    card_names_put(stem, title=lb, theme=lb, kind="reelam")
+    card, nums = card_name(stem), f"1~{n}번"
+    music, song = bgm(kst, 1), song_of(kst, 1)
+    out = f"docs/reels/{stem}.mp4"
+    imgs, secs, cov, v2 = reel_am_video(its, lb, card, kst, os.path.join(tempfile.gettempdir(), f"reelam_{stem}"), out, music=music)
+    cp = ig_copy("theme", lb, its)
+    ws = [won(x["price"]) or 0 for x in its]
+    rl = {"n": n, "lo": min(ws), "hi": max(ws), "when": its[0]["when"].replace(" 확인", ""), "same": len({x["when"] for x in its}) == 1, "lb": lb, "seo": cp["seo"], "say": cp["say"], "q": cp["q"], "tags": cp["tags"],
+          "rows": "\n".join(f"{k}. {clip(x['name'], 28)} · {x['price']} ({x['when']})" for k, x in enumerate(its, 1)), "notes": aff_notes(x["p"]["url"] for x in its)}
+    cap = reel_cap(seen, rl, card, nums, random.Random(stem))
+    cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - IG_REPEAT * 86400))
+    seen["igu"] = {"t": now, "m": {**{u: x for u, x in seen.get("igu", {}).get("m", {}).items() if x > cut}, **{x["p"]["url"]: today for x in its}}}  # 같은 상품 하루 1릴스(낮 클립·테마 고르기)
+    reel_fmt_put(seen, today, "08", "v2" if v2 else "v1")
+    seen["igcov"] = {"t": now, "m": {**{k: v for k, v in seen.get("igcov", {}).get("m", {}).items() if k >= time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))}, today: cov}}  # 표지 A/B(metrics cov)
+    at = kst_ts(f"{today} {REEL_AM_WIN[0]}") + random.uniform(30, (kst_ts(f"{today} {REEL_AM_WIN[1]}") - kst_ts(f"{today} {REEL_AM_WIN[0]}")) - 30)  # 08:30~08:55 무작위(정각 X)
+    tg_video(out, f"🎬 08시 릴스({lb} {n}개 · {len(imgs)}장 {sum(secs):.1f}초 · {'v2' if v2 else 'v1'})" + (f" · 🎵 {song['name']}" if music and song else " · 음악 X") + f" — {time.strftime('%H:%M', time.gmtime(at + 9 * 3600))}쯤 자동 게시")
+    print("ig reel 08시 만듦", stem, lb, n, "개 ·", "v2" if v2 else "v1", f"{sum(secs):.1f}초 · 표지", cov)
+    return {"t": now, "stem": stem, "cap": cap[:2200], "at": at, "n": n, "cov": cov}
+
+
+def reel_v2_test(seen, now, d):
+    """card_test ⑦(11/18 Cowork 'REEL_V2 켜기 전에 미리보기 1세트 — 실데이터 장 그림 + mp4'): 오늘 08시대 힘 준 글 상품(reel_am_items — 없거나 3개 밑 = 최근 힘 준 글 중 3개↑ 되는 것)
+    -> d/ 상품 장(⑤→①)·표지·끝 장 jpg + reel_v2.mp4(게시·카드·seen 기록 X — 사진 받기만). -> 로그 줄."""
+    kst = time.gmtime(now + 9 * 3600)
+    today = time.strftime("%Y-%m-%d", kst)
+    es = sorted((e for e in ev_list(EVENTS) if isinstance(e, dict) and e.get("power") and isinstance(e.get("urls"), list) and re.match(AT_RX, str(e.get("at", "")))), key=lambda e: e["at"], reverse=True)
+    e0 = reel_am_post(today)
+    es = sorted(es[:10], key=lambda e: e != e0)  # 오늘 08시대 글 먼저
+    for e in es:
+        its, why = reel_am_items(dict(seen), e, now, today)
+        if len(its) >= REEL_AM_N:
+            break
+    else:
+        return "X(최근 힘 준 글 10개 중 상품 3개↑ 없음)"
+    lb = re.sub(r"\s+", " ", str(e.get("topic") or "아침 특가")).strip()
+    imgs, secs, cov, v2 = reel_am_video(its, lb, f"{int(today[5:7])}월 {int(today[8:10])}일 {lb}", kst, d, f"{d}/reel_v2.mp4", v2=True, music=bgm(kst, 1))
+    return f"{d}/ · {e['at']} {lb} {len(its)}개 · {len(imgs)}장 {sum(secs):.1f}초 · 표지 {cov} · {'v2' if v2 else 'v2 못 그림 -> v1'} · 장 가격 " + " / ".join(x["price"] for x in its)
+
+
+def ig_reel_am(seen):
+    """11/18 진우 '릴스도 개발해야 해' ①(REEL_AM): 08시대 릴스 — 재료 = 그날 08시대 힘 준 글(reel_am_post) 상품 3개↑(그 글 순서 — reel_am_items) · 그 글이 나간 뒤(채널·Threads)
+    영상 만듦(reel_am_make — 이 실행 커밋 -> 사이트) -> 08:30~08:55 무작위 시각 뒤 사이트에 뜨면 컨테이너(kind reelam — 피드 X) -> ig_publish(릴스끼리 2시간·공식 한도 절반·쉼·행동 제한 = 그날 멈춤).
+    글 없음·안 나감·3개 밑·사진 없음·가격 48시간 넘음·금지어 = 그날 쉼(다른 걸로 대신 X — 이유 = igram_ why · 07:00 보고 igd '릴스 08시') · REEL_AM_LATE 지나도 못 올림 = 그날 X · 컨테이너 1번만."""
+    tok, uid = E.get("IG_TOKEN"), E.get("IG_USER_ID")
+    now = time.time()
+    kst = time.gmtime(now + 9 * 3600)
+    today, hm = time.strftime("%Y-%m-%d", kst), time.strftime("%H:%M", kst)
+    st = seen.get("igram_" + today) or {}
+    if not (IG_V2 and REEL_AM and REEL_PUBLIC and IG_AUTO and tok and uid) or hm < REEL_AM_POST[0] or st.get("end") or st.get("cid") or st.get("ok"):
+        return
+
+    def end(why):
+        seen["igram_" + today] = {**st, "t": now, "end": 1, "why": why}
+        print("ig reel 08시 X —", why)
+
+    if hm >= REEL_AM_LATE:
+        return end(f"{REEL_AM_LATE}까지 못 올림" if st.get("stem") else "08시대 힘 준 글 없음·안 나감")
+    if seen.get("ig_hold", 0) > now:
+        return
+    if not st.get("stem"):
+        e = reel_am_post(today)
+        cs = seen.get(e and f"cur_{today}_{e['at'][11:13]}{e['at'][14:16]}") or {}
+        if not e or not (cs.get("th") or cs.get("tg")):  # 그 글이 나간 뒤에만
+            return end("08시대 힘 준 글 없음" if not e else "힘 준 글 안 나감") if hm >= REEL_AM_WIN[1] else None
+        its, why = reel_am_items(seen, e, now, today)
+        if len(its) < REEL_AM_N:
+            return end(f"상품 {len(its)}개(3개 밑)" + (" — " + " · ".join(why) if why else ""))
+        try:
+            seen["igram_" + today] = reel_am_make(seen, e, its, kst)
+        except Exception as x:
+            return end(f"영상 못 만듦 {err_brief(x)}")
+        return  # 이 실행 커밋 -> 사이트(다음 실행에 컨테이너)
+    if now < st["at"]:
+        return
+    if re.search(IG_REEL_BAN, st.get("cap") or ""):  # 품질 문 = 그 회차만 쉼
+        return end("캡션 금지어")
+    url = f"{SITE}reels/{st['stem']}.mp4"
+    try:
+        http(url, method="HEAD")  # 아직 배포 전 = 다음 실행에
+    except Exception:
+        return
+    try:
+        cid = json.loads(http(f"{IG}/{uid}/media", {"media_type": "REELS", "video_url": url, "caption": st["cap"], "share_to_feed": False, "thumb_offset": REEL_THUMB_MS},
+                              {"Authorization": "Bearer " + tok}, "POST"))["id"]
+    except Exception as x:
+        end(f"컨테이너 {ig_err(x)}")
+        return ig_fail(seen, now, f"08시 릴스 컨테이너 {ig_err(x)}")
+    seen["igram_" + today] = {**st, "cid": cid}
+    seen["igc_" + cid] = {"t": now, "kind": "reelam", "pin": st["stem"]}
+    ig_live(st["stem"], now)  # 사이트 맨 위·/link 카드 = 컨테이너 만든 실행부터(만들기만 하고 안 올린 카드 X — card_stems)
+    print("ig reel 08시 컨테이너", st["stem"])
+
+
 def ig_reel(seen):
     """릴스 하루 1개 자동(10/11 진우 '인스타 업그레이드 3번'): REEL_HOUR시~자정, 모아보기(digest)가 docs/reels/에 공개한 오늘 영상이 사이트에 뜨면(HEAD)
     REELS 컨테이너(video_url·캡션·피드에도·표지 1.5초) -> ig_publish가 처리 끝나면 발행(영상은 보통 1~10분). 만들기 실패는 IG_TRIES번까지 다음 실행에 다시."""
@@ -9532,6 +9742,10 @@ def ig_reel(seen):
     now = time.time()
     kst = time.gmtime(now + 9 * 3600)
     today = time.strftime("%Y-%m-%d", kst)
+    try:  # 11/18 08시 릴스(REEL_AM)
+        ig_reel_am(seen)
+    except Exception as e:
+        print("ig reel 08시 오류", err_brief(e))
     try:  # 11/16 V2 낮 릴스(12~13시) — 같은 단계
         ig_reel_day(seen)
     except Exception as e:
@@ -9565,7 +9779,7 @@ def ig_reel(seen):
             return
         seen["igr_" + today] = {"t": now, "fail": fail + 1}
         raise RuntimeError(f"인스타 릴스 컨테이너 실패({fail + 1}/{IG_TRIES}) — " + ("다음 실행에 다시" if fail + 1 < IG_TRIES else "봇 채팅에 온 영상을 직접 올려줘") + f": {e!r} {getattr(e, 'body', '') or ''}")
-    seen["igc_" + c["id"]] = {"t": now, "kind": "reel"}
+    seen["igc_" + c["id"]] = {"t": now, "kind": "reel", **({"pin": r["pin"]} if r.get("pin") else {})}
     print("ig reel 컨테이너", today)
 
 
@@ -11781,6 +11995,9 @@ IG_COVER_AB, IG_REEL_BAN = True, r"최저가|역대\s*최저|효능|효과|치�
 IG_LINKIN, IG_TOUCH, IG_JIT2, IG_ME = True, True, True, True  # 11/16 개편 ④ 링크 유입(끝 장·캡션 2줄·/link 맨 위·GoatCounter) · ⑧ 사람 손길(장 길이·전환·끝 장 말풍선·태그·캡션 틀·진우 한마디) · ⑧ 게시 ±10~25분 · ⑧ '#릴스' 사진
 IG_JIT2_S, REEL_LEN, REEL_SEC, REEL_END_SEC, REEL_FX = (600, 1500), (9, 12, 15, 18, 20, 8), (1.2, 2.0), 1.5, ("fade", "slide", "zoom")  # 릴스 길이 8~20초 돌림(장 수 안에서 맞춤)
 REEL_PIN, REEL_TAGS, JW_DAYS = "docs/cards/reel.json", ("#핫딜픽", "#쇼핑정보", "#살림템", "#가성비템", "#장보기", "#쟁여템", "#생활꿀템", "#오늘의특가"), 14
+REEL_AM, REEL_AM_POST, REEL_AM_WIN, REEL_AM_LATE, REEL_AM_N, REEL_AM_FRESH = True, ("08:00", "08:30"), ("08:30", "08:55"), "09:30", 3, 48 * 3600  # 11/18 진우 '릴스도 개발해야 해' ①: 하루 릴스 3개(08시대 + 낮 클립 + 22시 테마 · 피드 2개 그대로) — 08시대 힘 준 글 상품 3개↑ · 그 글 나간 뒤 08:30~08:55 무작위 · 09:30 지나면 그날 X · 가격 확인 48시간 안 · 끄면 지금처럼 2개
+REEL_V2, REEL_SEC2, REEL_HEAD2, REEL_END2 = False, (0.9, 1.4), (1.2, 3.0), (1.5, 2.5)  # 11/18 ② 시청 시간: 상품 장 = 세로 꽉(cards.reel_slide) · 장당 0.9~1.4초 · 번호 큰 것부터(⑤→①) — 22시 테마·08시 릴스만(낮 클립 그대로) · 표지 그대로 · 미리보기 Cowork OK 뒤 켬(끄면 지금 장)
+REEL_KINDS = ("reel", "reeld", "reelam")  # 22시 · 낮 · 08시 릴스 컨테이너(ig_publish — 피드 상한 밖 · REEL_AM이면 릴스끼리 2시간)
 JW_LINES = ("{lb} {n}가지 중에 {lo}원부터 있어요, 어떤 게 먼저 눈에 들어오세요?", "이번엔 {n}개 골라 봤어요ㅎㅎ 몇 번이 제일 궁금하세요?", "{lo}원부터 {hi}원까지 담았어요, 이 가격대면 어떠세요?",
             "{n}개 모두 {when} 가격이에요, 미리 쟁여 두는 편이세요?", "{lb} {n}가지 중 하나만 고른다면 몇 번이세요?", "제일 가벼운 건 {lo}원이에요, 집에 이미 있으신가요?",
             "{lb} 고를 때 가격이랑 용량 중 뭘 먼저 보세요?", "{n}개 중에 벌써 쓰고 계신 게 있으세요?")  # ⑧ 진우 한마디: 짧은 존댓말·진짜 질문·그 영상 숫자만(써 본 척·효능·최저가·재촉 X) · 14일 안 같은 문장 X
@@ -11857,9 +12074,9 @@ def igt_pool(seen, posts, cats, day, one=False):
     """진열(🔥 특가·👍 꾸준템) 쿠팡 수수료 상품(cats 품목 칸 — None = 전부) · 사진 · 7일 안 인스타에 안 쓴 것(seen igu) -> [(i, p)] 진열 순서.
     one = 그날 올린 🔥 쿠팡 딜(없으면 오늘 확인한 🔥 진열). 토스 = X(인스타 토스 = 토스 범위 답 전 X — 쿠팡만)."""
     cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - IG_REPEAT * 86400))
-    used = {u for u, d in seen.get("igu", {}).get("m", {}).items() if d > cut}
+    used, tp, ev = {u for u, d in seen.get("igu", {}).get("m", {}).items() if d > cut}, reel_pids(seen, day), ev_info()
     ok = lambda p: shop_of(p) == "coupang" and aff(p.get("url")) and img_of(p) and p["url"] not in used and cat_of(p) in CAT_META and (cats is None or cat_of(p) in cats) \
-        and season_adj(title_of(p["text"])) >= 0  # Z 철 지난 계절 상품 X
+        and season_adj(title_of(p["text"])) >= 0 and str(ev.get(p["url"], {}).get("pid") or "-") not in tp  # Z 철 지난 계절 상품 X · 11/18 오늘 08시 릴스 상품(같은 상품 다른 링크) X
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
     it = shelf_items(posts, days)
     if one:
@@ -11984,8 +12201,9 @@ def igf_make(seen, kind, stem, kst):
             else:
                 cov = "photo"
                 cards.photo_cover(its[0]["photo"], f"1번 · {(its[0]['unit'] or '').lstrip('💰 ').split(' (')[0] or its[0]['price']}", ad="광고·제휴").save(f"{d}/rc.jpg", quality=88)
-            extra = {"rc": f"{d}/rc.jpg", "cov": cov, "rl": {"n": len(its), "lo": lo, "hi": max([won(x["price"]) or 0 for x in its]), "when": its[0]["when"].replace(" 확인", ""), "lb": lb, "seo": cp["seo"], "say": cp["say"], "q": cp["q"],
-                                                             "rows": rows, "notes": notes, "tags": cp["tags"]}}  # 11/16 ④⑧ 릴스 캡션 재료  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
+            extra = {"rc": f"{d}/rc.jpg", "cov": cov, "rl": {"n": len(its), "lo": lo, "hi": max([won(x["price"]) or 0 for x in its]), "when": its[0]["when"].replace(" 확인", ""), "same": len({x["when"] for x in its}) == 1, "lb": lb, "seo": cp["seo"], "say": cp["say"], "q": cp["q"],
+                                                             "rows": rows, "notes": notes, "tags": cp["tags"]},
+                     "v2": [{"n": n, **{k: x[k] for k in ("photo", "name", "price", "fact", "when")}} for n, x in enumerate(its, 1)]}  # 11/16 ④⑧ 릴스 캡션 재료 · 11/18 v2 장 재료(가격 = 넘기기 장과 같은 값)  # FF: 릴스 첫 장 = 1위 실사진 꽉 + 숫자 훅 띠(피드 넘기기엔 X)
             cap = f"{cp['seo']}\n{notes}\n\n{cp['say']}\n\n{rows}\n\n저장해 두고 필요할 때 보세요 🔖\n{cp['q']}\n\n{link}"
         elif kd == "one":
             it = its[0]
@@ -12203,7 +12421,8 @@ def jw_line(seen, rl, rnd):
     cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - JW_DAYS * 86400))
     used = {k: d for k, d in seen.get("igjw", {}).get("m", {}).items() if d > cut}
     v = {**rl, "lo": f"{rl['lo']:,}", "hi": f"{rl['hi']:,}"}
-    for line in rnd.sample([x.format(**v) for x in JW_LINES], len(JW_LINES)):
+    ls = [x.format(**v) for x in JW_LINES if rl.get("same", True) or "{when}" not in x]  # 11/18 상품마다 확인 시각이 다르면 '{n}개 모두 {when} 가격' X(지어낸 말)
+    for line in rnd.sample(ls, len(ls)):
         if line not in used and not re.search(IG_REEL_BAN, line) and line.count("ㅎㅎ") <= 1:
             seen["igjw"] = {"t": time.time(), "m": {**used, line: time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))}}
             return line
@@ -12254,11 +12473,24 @@ def ig_theme_reel(seen, stem, st, kst):
             rnd, k0 = random.Random(stem), kst.tm_yday
             from build_site import card_name
             card, nums = card_name(stem), "1번" if rl["n"] == 1 else f"1~{rl['n']}번"
+            v2 = None
+            if REEL_V2 and st.get("v2"):  # 11/18 ② 표지 그대로 + 상품 장 세로 꽉 ⑤→①(피드 표지 00 장 X)
+                try:
+                    v2 = reel_v2_imgs(st["v2"], os.path.join(tempfile.gettempdir(), f"reel2_{stem}"))
+                    imgs = imgs[:len(imgs) - len(st["files"])] + v2 + imgs[-1:]
+                except Exception as e:
+                    v2 = print("ig reel 테마 v2 장 못 그림 -> v1 장", err_brief(e))
+            reel_fmt_put(seen, today, "22", "v2" if v2 else "v1")
             if IG_LINKIN:  # ④ 끝 장(지금 저장 장 대신 — 피드 넘기기 끝 장은 그대로) · /link 맨 위 = 이 카드
                 imgs = imgs[:-1] + [cards.reel_end(card, nums, f"{rl['n']}가지 · {rl['when']} 확인", k0, f"{IGT_DIR}/{stem}/re.jpg")]
             if IG_ME and (me := reel_me(seen, today)):  # ⑧ 진우 '#릴스' 사진 = 첫 장
                 imgs = [me] + imgs
-            if IG_TOUCH:
+            if IG_TOUCH and v2:
+                n = len(imgs) - 1
+                secs = reel_secs2(n - len(v2), len(v2), rnd)
+                kinds = rnd.sample(REEL_FX, rnd.choice((2, 3)))
+                fx = ["fade"] + rnd.sample([kinds[k % len(kinds)] for k in range(n)], n)
+            elif IG_TOUCH:
                 n = len(imgs) - 1
                 T = min(max(REEL_LEN[k0 % len(REEL_LEN)] - REEL_END_SEC, n * REEL_SEC[0]), n * REEL_SEC[1])
                 secs = [round(min(max(T / n + rnd.uniform(-.3, .3), REEL_SEC[0]), REEL_SEC[1]), 2) for _ in range(n)] + [REEL_END_SEC]
@@ -12268,7 +12500,9 @@ def ig_theme_reel(seen, stem, st, kst):
         path = cards.slideshow(imgs, out, music, **({"secs": secs, "fx": fx} if secs else {}))  # FF: 첫 장 = 1위 실사진 표지
         if REEL_PUBLIC:
             seen["reel_" + today] = {"t": time.time(), "cap": cap[:2200], "feed": False}
-            if IG_V2 and rl and IG_LINKIN:
+            if IG_V2 and rl and IG_LINKIN and REEL_AM:  # 11/18 /link 맨 위 = 올라갈 때(ig_publish — 그 전엔 08시 릴스 카드)
+                seen["reel_" + today]["pin"] = stem
+            elif IG_V2 and rl and IG_LINKIN:
                 json.dump({"day": today, "stem": stem}, open(REEL_PIN, "w"))
             if st.get("cov"):  # 11/16 표지 A/B 기록(metrics 릴스 줄 cov)
                 seen["igcov"] = {"t": time.time(), "m": {**{k: v for k, v in seen.get("igcov", {}).get("m", {}).items() if k >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - 30 * 86400))}, today: st["cov"]}}
@@ -13393,7 +13627,8 @@ def metrics_rows(seen):
                 else:
                     miss.setdefault("ig_part", "일부 글 조회수 못 읽음: " + why)
         lk, cm = x.get("like_count"), x.get("comments_count")
-        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, **{k: x[k] for k in ("reach", "saved", "shares", "awt") if x.get(k) is not None}, **({"kind": "reel", **({"cov": c} if (c := seen.get("igcov", {}).get("m", {}).get(day)) else {})} if x.get("media_product_type") == "REELS" else {}), **({"theme": th} if (th := ig_theme_of(x["id"])) else {}))  # 도달·저장 = 읽힌 것만(권한 없으면 칸 X)
+        row("ig", x["id"], x.get("caption") or "", "", stamp(x["timestamp"]), v, None if lk is None else lk + (cm or 0), likes=lk, replies=cm, **{k: x[k] for k in ("reach", "saved", "shares", "awt") if x.get(k) is not None}, **({"kind": "reel", **({"cov": c} if (c := seen.get("igcov", {}).get("m", {}).get(day)) else {}), "slot": (sl := reel_slot(stamp(x["timestamp"]))),
+                                                                                                                                                         "fmt": seen.get("igrfmt", {}).get("m", {}).get(f"{day} {sl}") or "clip"} if x.get("media_product_type") == "REELS" else {}), **({"theme": th} if (th := ig_theme_of(x["id"])) else {}))  # 도달·저장 = 읽힌 것만(권한 없으면 칸 X)
 
     rows.sort(key=lambda r: (("tg", "th", "ig").index(r["ch"]), r["at"]))  # 채널별 시각 순(채널 웹은 쪽 순서로 읽힘)
     m = load(METRICS, {})
@@ -13428,7 +13663,8 @@ def metrics_rows(seen):
         ok = lambda v, why: "✅" if (v or {}).get("ok") or (v or {}).get("done") == 1 else f"❌ {(v or {}).get('why') or ('실패' if (v or {}).get('fail') else why)}"
         f19 = seen.get(f"igf_{day}_19") or {}
         m[day]["igd"] = {"릴스 낮": ok(seen.get("igrd_" + day), "테마 릴스 없음(낮 쉼)" if not seen.get("reelt_" + day) else "안 올라감"), "릴스 22시": ok(seen.get("igr_" + day), "안 올라감"),
-                         "피드 토스": ok(seen.get("igtoss_" + day), "토스 상품 3개 밑·칸 지남"), "피드 19시": "✅" if f19.get("done") == 1 else f"❌ {f19.get('done') or '안 만듦'}"}
+                         "피드 토스": ok(seen.get("igtoss_" + day), "토스 상품 3개 밑·칸 지남"), "피드 19시": "✅" if f19.get("done") == 1 else f"❌ {f19.get('done') or '안 만듦'}",
+                         **({"릴스 08시": ok(seen.get("igram_" + day), "안 만듦" if not seen.get("igram_" + day) else "안 올라감")} if REEL_AM else {})}
     if thb := {v[3]: v[0] for v in seen.get("thbn", {}).get("m", {}).values() if v[2] == day}:  # 11/15 v2 묶음별 칸 수(07:00 보고 — {top12: 5, …})
         m[day]["thb"] = thb
     metrics_save(m)

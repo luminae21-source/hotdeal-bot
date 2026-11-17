@@ -42,6 +42,7 @@ igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인
 nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
 pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만 · jit0 = 게시 ±10~25분(정해진 시각 셀프체크 흔들림 X) = 9-200에서만
 jit0, H.IG_JIT2 = H.IG_JIT2, False
+ram0, H.REEL_AM = H.REEL_AM, False  # 11/18 08시 릴스(하루 릴스 3개 · 핀 = 올라갈 때 · 릴스끼리 2시간) = 9-207에서만 — 예전 셀프체크 = 2개 그대로
 svol0, H.STEADY_VOL0 = H.STEADY_VOL0, 0  # 11/17 꾸준템 회차 기록 없음 = 1(실제) — 예전 셀프체크는 01부터 · 9-204에서 1
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
@@ -14549,7 +14550,7 @@ assert ic184[0] == (f"{H.SITE}clips/2026-11-12/02.mp4", None, "HEAD") and ic184[
 assert not al184 and run184(H.ig_reel, "2026-11-12 23:31", s184) == "" and al184 == [("reelx_2026-11-12", "🎬 오늘 인스타 릴스 안 올라감 — 처리·발행 안 끝남")]  # 컨테이너만 = 23:30 관리봇 1줄
 s184["igr_2026-11-12"]["ok"] = 1; del al184[:]; run184(H.ig_reel, "2026-11-12 23:45", s184); assert not al184  # 올라감 = 알림 X
 run184(H.ig_reel, "2026-11-13 23:40", {}); assert al184 == [("reelx_2026-11-13", "🎬 오늘 인스타 릴스 안 올라감 — 오늘 영상 없음(테마·TOP 넘기기·클립)")]
-assert 'seen.setdefault(time.strftime(("igr_" if kind == "reel" else "igrd_") + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1' in inspect.getsource(H.ig_publish)  # 11/16 낮 릴스 = igrd_
+assert 'seen.setdefault(time.strftime({"reel": "igr_", "reeld": "igrd_", "reelam": "igram_"}[kind] + "%Y-%m-%d", time.gmtime(now + 9 * 3600)), {"t": now})["ok"] = 1' in inspect.getsource(H.ig_publish)  # 11/16 낮 릴스 = igrd_ · 11/18 08시 = igram_
 H.IG_AUTO = ia184
 (H.th_post, H.th_poll, H.th_reply, H.ai_json, H.review, H.price_records, H.promo_list, H.cur_events, H.chat_ai_prep, H.x_stats, H.th_reply_ok, H.mall_card_make, H.http, H.busy, H.th_hold, H.day_wait,
  H.alert, time.time, H.POSTS, H.DAYS_FILE, H.EVENTS, H.CLIP_DIR, e184, r184, H.TOSS_GAP) = sv184
@@ -15060,7 +15061,7 @@ assert [m for m, *_ in h196] == ["HEAD", "POST"] and h196[0][1].endswith("clips/
 assert s196["igc_C196"]["kind"] == "reeld" and "igrd_2026-11-16" in s196 and "igr_2026-11-16" not in s196  # 22시 테마 릴스 표시와 따로
 h196.clear(); H.ig_reel_day(s196); assert not h196  # 하루 1번
 time.time = lambda: TK("2026-11-16 14:10"); s196.pop("igrd_2026-11-16"); H.ig_reel_day(s196); assert not h196  # 12~13시만
-assert 'kind in ("reel", "reeld")' in inspect.getsource(H.ig_publish) and "ig_reel_day(seen)" in inspect.getsource(H.ig_reel)
+assert 'IG_H and kind in REEL_KINDS' in inspect.getsource(H.ig_publish) and H.REEL_KINDS == ("reel", "reeld", "reelam") and "ig_reel_day(seen)" in inspect.getsource(H.ig_reel)
 fs196 = inspect.getsource(H.ig_feed); assert "min(at, REEL_DAY[0] * 3600) if IG_V2 else at" in fs196 and "ig_theme_reel(seen, stem, st, kst)" in fs196  # 19시 테마 = 11:40 미리 · 22시 테마 릴스 미리
 (H.IG_V2, H.IGT_WINTER, H.http, time.time, H.CLIP_DIR, e196, H.IG_AUTO, H.ev_info, H.REEL_CLIP) = sv196; H.E.clear(); H.E.update(e196); os.chdir(cwd196)
 
@@ -15478,3 +15479,137 @@ assert g206b["title"] == "" and g206b["rule"] is True and S.ev_name(g206b) == "�
     and f'<div class="t">핫딜픽이 고른 {n206}개 · ~10/25 마감 · <b class="dd">D-1</b></div><p class="evn">같은 종류 쿠팡 검색에서 단위가 하위 20%만 골랐어요 (10/24 19시)</p>' in b206b and "단위가 싼 것만" in d206b  # 다른 행사 = 그대로
 open("days.json", "w").write("{깨짐"); assert S.events_on(S.items(P57, ["2026-10-24"]), "2026-10-24")[0]["title"] == ""  # 깨진 days.json = 예전 그대로
 S.DAYS_JSON = dj206; os.chdir(cwd206)
+
+# 9-207 (11/18 Cowork — 진우 '릴스도 개발해야 해' · 선택 ①②): ① 08시 릴스(REEL_AM — 하루 릴스 3개 = 08시대 + 낮 클립 + 22시 테마 · 피드 2개 그대로) = 그날 08시대 힘 준 글(events power · urls) 상품 3개↑(글 순서)
+#   · 가격 = 가격 기록 마지막 확인가 + 확인 시각(48시간 안) · 그 글이 나간 뒤 08:30~08:55 무작위 · 글 없음·안 나감·3개 밑·사진 없음·가격 48시간 넘음 = 그날 쉼(대신 X) · 릴스끼리 2시간 · 같은 상품 하루 1릴스
+#   · /link 맨 위 = 가장 최근에 올라간 릴스 카드 · 07:00 igd '릴스 08시' · ② v2 상품 장(REEL_V2 — 세로 꽉 1080x1920 · 사진 칸 절반↑ · 가격 2배↑ · 글자 잘림 0 · 장 가격 = 재료 가격 · 장당 0.9~1.4초 · ⑤→①)
+#   · ③ metrics 릴스 줄 칸(08/낮/22)·틀(v1/v2) · 스위치 끔 = 지금 그대로(REEL_AM 끔 = 9-200 · REEL_V2 끔 = 지금 장)
+import cards as C207
+cwd207 = os.getcwd()
+sv207 = (H.IG_V2, H.REEL_PUBLIC, H.IG_AUTO, dict(H.E), H.http, time.time, H.ig_photo, H.ig_copy, H.bgm, H.song_of, H.tg_video, H.tg, H.ig_quota, H.REEL_AM, H.REEL_V2, C207.slideshow, H.IG_GAP, H.reel_me, H.IG_H)
+os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
+ph207 = sorted(glob.glob(os.path.join(os.path.dirname(H.__file__), "brand/mascots/*.png")))[0]
+# ② v2 장: 세로 꽉 · 글자 = 안전 자리 안(x 64~940 · 아래 1500) · … X · 장 가격 = 재료 가격(큰 숫자 + 와우·쿠폰 표시) · 이름 넘침 = 끝 낱말부터 덜어 냄
+X207, R207, B207 = C207.REEL_SAFE
+for k, (nm, pr, fact) in enumerate([("일신 미니 온풍기 책상용", "12,900원", "리뷰 1,234"), ("시프이컴 PTC 미니 온풍기, CIF-FH04W, 우드", "17,540원 와우가", "무료배송 · 리뷰 1,664"),
+                                    ("삼성전자 블루스카이 3100 공기청정기 33.1㎡ AP70F03102RT 그레이 화이트 에디션 특별 구성 대용량 필터 포함", "1,204,440원 쿠폰가", "무료배송 · 리뷰 1,735 · 로켓배송 · 오늘 출발 보장 · 무료 반품"),
+                                    ("🔥 햇반 210g 24개", "23,900원", "")]):
+    with contextlib.redirect_stdout(io.StringIO()) as o207:
+        f207 = C207.reel_slide({"photo": ph207, "name": nm, "price": pr, "fact": fact, "when": "11/17 18시 확인"}, 5 - k, f"v2_{k}.jpg")
+    bx207 = C207.REEL_BOXES
+    from PIL import Image as I207
+    assert I207.open(f207).size == (1080, 1920) and all(x0 >= X207 and x1 <= R207 and y1 <= B207 and "…" not in t for t, x0, y0, x1, y1 in bx207), (nm, bx207)
+    big207 = re.match(r"[\d,]+원", pr)[0]
+    assert bx207[[t for t, *_ in bx207].index(big207)][4] - bx207[[t for t, *_ in bx207].index(big207)][2] >= 100 and (pr[len(big207):].strip() in [t for t, *_ in bx207] or pr == big207)  # 가격 숫자 = 큰 글씨(테마 장 84px의 2배 → 글자 높이 100px↑)
+    nm207 = " ".join(t for t, *_ in bx207[:bx207.index(next(b for b in bx207 if b[0] == big207))])
+    assert nm.startswith(nm207) and (nm207 == nm or "이름 다듬음" in o207.getvalue()) and "11/17 18시 확인 가격" in " ".join(t for t, *_ in bx207) and "제휴 링크(수수료)" in " ".join(t for t, *_ in bx207), (nm, nm207)
+assert "(24, 56, RW - 24, 1060)" in inspect.getsource(C207.reel_slide) and 1060 - 56 >= 1920 / 2  # 위 실사진 칸 = 화면 절반↑
+for lead207, m207 in ((1, 3), (1, 5), (2, 5), (2, 3)):
+    for k in range(50):
+        x207 = H.reel_secs2(lead207, m207, H.random.Random(k))
+        assert 8 <= sum(x207) <= 20 and all(0.9 <= v <= 1.4 for v in x207[lead207:lead207 + m207]) and len(x207) == lead207 + m207 + 1, x207  # 장당 0.9~1.4초 · 전체 8~20초
+# ① 08시 릴스 재료: 진열 쿠팡 상품 · 가격 기록 마지막 확인가(48시간 안 — 와우 표시 그대로) · 글 순서
+L207 = lambda k: f"https://link.coupang.com/a/am{k}"
+N207 = [("일신 미니 온풍기 책상용", "12,900원"), ("시프이컴 PTC 미니 온풍기 CIF-FH04W", "17,540원"), ("카프 PTC 미니 온풍기 KF-FH01", "23,700원"), ("한일 발난로 HEF-200", "29,000원")]
+P207 = [{"t": "2026-11-17 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n{n}\n{pr}\n✔ 리뷰 1,{k}00", "url": L207(k), "own": 1, "shelf": 1, "st": "hot", "img": f"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/a{k}.jpg",
+         "now": pr, "chk": "11/17 18시", "chkt": "2026-11-17 18:00"} for k, (n, pr) in enumerate(N207)] \
+    + [{"t": "2026-11-17 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n일신 미니 온풍기 책상용 2개\n24,900원\n✔ 리뷰 1,000", "url": L207("x"), "own": 1, "shelf": 1, "st": "hot", "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/ax.jpg"}]
+EV207 = [{"at": "2026-11-17 18:00", "url": L207(k), "pid": f"90{k}", "text": "x", "deal": True, "shelf": True} for k in range(4)] + [{"at": "2026-11-17 18:00", "url": L207("x"), "pid": "900", "text": "x", "deal": True, "shelf": True}] \
+    + [{"at": "2026-11-18 08:20", "curation": True, "power": True, "topic": "책상 발밑 미니 히터", "set": "20261118-0820-heater", "urls": [L207(k) for k in (2, 0, 1, 3)], "text": f"{H.DISCLOSURE}\n\n미니 히터", "link": "https://hotdealpick.kr/c/s/x.html"}]
+json.dump(P207, open("posts.json", "w"), ensure_ascii=False); json.dump(EV207, open("events.json", "w"), ensure_ascii=False)
+json.dump({L207(0): [["26111018", 13900, "", "api"], ["26111520", 11990, "", "api", "26111718", 5]], L207(1): [["26111606", 17900, "w", "api", "26111706", 2]], L207(2): [["26111705", 23300, "", "cw"]],
+           L207(3): [["26111401", 29000, "", "api", "26111523", 3]]}, open(S.PRICE_HIST, "w"))  # 3번(L207(3)) = 11/15 23시가 마지막 확인 = 48시간 넘음
+H.ig_photo = lambda p, d, seen=None: (ph207, "coupang") if S.img_of(p) else (None, "")
+H.E.update(IG_TOKEN="t", IG_USER_ID="u"); H.IG_V2 = H.REEL_PUBLIC = H.IG_AUTO = H.REEL_AM = True; H.REEL_V2 = False
+H.ig_copy = lambda kind, label, its, q="": {"title": f"{label} 고민될 때,\n지금 살 만한 {len(its)}가지", "seo": f"{label} 추천 | 지금 살 만한 {len(its)}가지", "say": "요즘 눈에 띄는 것만 골라 봤어요", "q": f"여러분은 {label} 뭐 쓰세요?", "tags": ["#히터", "#겨울템"]}
+H.bgm, H.song_of, H.tg_video = (lambda kst, k=0: None), (lambda kst, k=0: None), (lambda *a, **k: None)
+sl207 = []; C207.slideshow = lambda imgs, out, music=None, sec=1.5, secs=None, fx=None: sl207.append((list(imgs), secs, fx, out)) or out
+e207 = H.reel_am_post("2026-11-18"); it207, why207 = H.reel_am_items({}, e207, TK("2026-11-18 08:25"), "2026-11-18")
+assert e207["topic"] == "책상 발밑 미니 히터" and H.reel_am_post("2026-11-19") is None
+assert [x["name"] for x in it207] == [N207[2][0], N207[0][0], N207[1][0]] and [x["price"] for x in it207] == ["23,300원", "11,990원", "17,900원 와우가"] \
+    and [x["when"] for x in it207] == ["11/17 5시 확인", "11/17 18시 확인", "11/17 6시 확인"] and why207 == ["4번 가격 확인 48시간 넘음"], (it207, why207)  # 글 순서 · 지금 확인가(글 가격 X) · 빠진 자리 대신 X
+# 흐름: 글 안 나감 = 기다림 · 나간 뒤 = 영상(이 실행) -> 08:30~08:55 무작위 뒤 사이트에 뜨면 컨테이너(kind reelam · 피드 X) · ig.json = 컨테이너 때
+h207 = []; H.http = lambda url, body=None, headers=None, method="GET", **k: h207.append((method, url, body)) or (json.dumps({"id": "C207"}).encode() if method == "POST" else b"")
+s207 = {}
+time.time = lambda: TK("2026-11-18 07:59"); H.ig_reel_am(s207); assert not s207 and not sl207
+time.time = lambda: TK("2026-11-18 08:21"); H.ig_reel_am(s207); assert not s207.get("igram_2026-11-18", {}).get("stem") and not sl207  # 힘 준 글 아직 안 나감 = 기다림
+s207["cur_2026-11-18_0820"] = {"th": "T1", "tg": 5}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-11-18 08:24"); H.ig_reel_am(s207)
+st207 = s207["igram_2026-11-18"]; im207, se207, fx207, out207 = sl207[-1]
+assert st207["stem"] == "2026-11-18_08" and out207 == "docs/reels/2026-11-18_08.mp4" and json.load(open("docs/cards/2026-11-18_08.json")) == [2, 0, 1] and not h207  # 카드 번호 = 글 순서(빠진 4번 X)
+assert TK("2026-11-18 08:30") < st207["at"] < TK("2026-11-18 08:55") and S.card_name("2026-11-18_08") == "11월 18일 책상 발밑 미니 히터"
+assert [os.path.basename(x) for x in im207] == ["rc.jpg", "01.jpg", "02.jpg", "03.jpg", "re.jpg"] and 8 <= sum(se207) <= 20 and fx207[0] == "fade"  # REEL_V2 끔 = 지금 장(테마 넘기기 장 ①→③)
+assert "모두" not in st207["cap"].split("\n")[2]  # 상품마다 확인 시각이 다름 = '{n}개 모두 {when} 가격' 한마디 X(지어낸 말)
+cap207 = st207["cap"].split("\n")
+assert cap207[0] == H.DISCLOSURE and "프로필 링크 → 📸 11월 18일 책상 발밑 미니 히터 → 1~3번" in cap207[1] and "1. 카프 PTC 미니 온풍기 KF-FH01 · 23,300원 (11/17 5시 확인)" in st207["cap"] and not re.search(H.IG_REEL_BAN, st207["cap"])
+assert {u: d for u, d in s207["igu"]["m"].items()} == {L207(2): "2026-11-18", L207(0): "2026-11-18", L207(1): "2026-11-18"} and s207["igrfmt"]["m"]["2026-11-18 08"] == "v1" and s207["igcov"]["m"]["2026-11-18"] == "photo"  # 짝수 날 = 실사진 표지
+assert "2026-11-18_08" not in (json.load(open(H.IG_LIVE)) if os.path.exists(H.IG_LIVE) else {})  # 만들기만 = 사이트 맨 위 카드 X(컨테이너 때)
+time.time = lambda: st207["at"] - 60; H.ig_reel_am(s207); assert not h207
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: st207["at"] + 60; H.ig_reel_am(s207)
+assert [m for m, *_ in h207] == ["HEAD", "POST"] and h207[0][1] == f"{S.BASE}reels/2026-11-18_08.mp4" and h207[1][2]["media_type"] == "REELS" and h207[1][2]["share_to_feed"] is False and h207[1][2]["caption"] == st207["cap"]
+assert s207["igc_C207"] == {"t": st207["at"] + 60, "kind": "reelam", "pin": "2026-11-18_08"} and s207["igram_2026-11-18"]["cid"] == "C207" and "2026-11-18_08" in json.load(open(H.IG_LIVE))
+h207.clear(); H.ig_reel_am(s207); assert not h207  # 컨테이너 1번만
+# 발행: 릴스끼리 2시간(REEL_AM) · 올라가면 igram_ ok · /link 맨 위 = 이 카드 · 피드 상한 밖
+H.ig_quota, H.IG_GAP, H.IG_H = (lambda tok, uid: (0, 100)), 2 * 3600, True
+tg207 = []; H.tg = lambda m, **k: tg207.append((m, k)) or {"message_id": 1}
+H.http = lambda url, body=None, headers=None, method="GET", **k: h207.append((method, url, body)) or (json.dumps({"status_code": "FINISHED"} if "status_code" in url else {"id": "P207"}).encode())
+s207["igrlast"] = {"t": time.time() - 3600}
+with contextlib.redirect_stdout(io.StringIO()) as o207:
+    H.ig_publish(s207)
+assert "igc_C207" in s207 and "직전 릴스 2시간 안" in o207.getvalue() and not h207  # 1시간 전 릴스 = 미룸(상태 조회도 X)
+s207["igrlast"] = {"t": time.time() - 2 * 3600 - 60}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_publish(s207)
+assert "igc_C207" not in s207 and s207["igram_2026-11-18"]["ok"] == 1 and s207["igrlast"]["t"] == time.time() and json.load(open(H.REEL_PIN)) == {"day": "2026-11-18", "stem": "2026-11-18_08"} \
+    and "igpub_20261118" not in s207 and "08시 릴스" in tg207[-1][1]["text"]
+# 22시 테마 릴스: REEL_AM = 핀은 올라갈 때(그 전 /link 맨 위 = 08시 카드) · v2 = 표지 그대로 + 세로 꽉 ⑤→①(피드 표지 00 X) · 장당 0.9~1.4초 · 같은 날 같은 표지 틀
+os.makedirs("docs/cards/igt/2026-11-18_19")
+for f in ("rc", "00", "01", "02", "03", "04", "09"):
+    open(f"docs/cards/igt/2026-11-18_19/{f}.jpg", "wb").write(b"j")
+rl207 = {"n": 4, "lo": 3990, "hi": 12900, "when": "11/18 11:40", "lb": "겨울 보습", "seo": "겨울 보습템 4가지", "say": "건조할 때 손이 가는 것만", "q": "어떤 거부터 보세요?", "rows": "1. 핸드크림 · 3,990원", "notes": H.DISCLOSURE, "tags": ["#보습템"]}
+v2207 = [{"n": n, "photo": ph207, "name": f"보습 크림 {n}호 대용량", "price": f"{n},990원", "fact": "리뷰 1,000", "when": "11/18 11시 확인"} for n in range(1, 5)]
+st207b = {"rc": "docs/cards/igt/2026-11-18_19/rc.jpg", "files": [f"docs/cards/igt/2026-11-18_19/{f}.jpg" for f in ("00", "01", "02", "03", "04", "09")], "cap": "x", "rl": rl207, "cov": "photo", "v2": v2207}
+H.reel_me = lambda seen, today: None; H.REEL_V2 = True
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-11-18 11:45"); H.ig_theme_reel(s207, "2026-11-18_19", st207b, time.gmtime(time.time() + 9 * 3600))
+im207b, se207b, fx207b, _ = sl207[-1]
+assert [os.path.basename(x) for x in im207b] == ["rc.jpg", "v2_04.jpg", "v2_03.jpg", "v2_02.jpg", "v2_01.jpg", "re.jpg"] and all(0.9 <= x <= 1.4 for x in se207b[1:-1]) and 8 <= sum(se207b) <= 20, (im207b, se207b)
+assert all(I207.open(x).size == (1080, 1920) for x in im207b[1:-1]) and s207["reel_2026-11-18"]["pin"] == "2026-11-18_19" and json.load(open(H.REEL_PIN))["stem"] == "2026-11-18_08" and s207["igrfmt"]["m"]["2026-11-18 22"] == "v2"
+assert '"v2": [{"n": n, **{k: x[k] for k in ("photo", "name", "price", "fact", "when")}} for n, x in enumerate(its, 1)]' in inspect.getsource(H.igf_make)  # v2 장 가격 = 넘기기 장과 같은 재료
+H.REEL_V2 = False
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_theme_reel(s207, "2026-11-18_19", st207b, time.gmtime(time.time() + 9 * 3600))
+assert [os.path.basename(x) for x in sl207[-1][0]] == ["rc.jpg", "00.jpg", "01.jpg", "02.jpg", "03.jpg", "04.jpg", "re.jpg"] and all(1.2 <= x <= 2.0 for x in sl207[-1][1][:-1]) and s207["igrfmt"]["m"]["2026-11-18 22"] == "v1"  # 끔 = 지금 장
+# 같은 상품 하루 1릴스: 08시 상품(다른 링크 같은 pid 포함) = 테마 고르기 X · 낮 클립 판단 pid
+assert H.reel_pids(s207, "2026-11-18") == {"900", "901", "902"} and [p["url"] for _, p in H.igt_pool(s207, P207, None, "2026-11-18")] == [L207(3)]  # 일신 2개(같은 pid 900) X · 4번만
+assert "tp = reel_pids(seen, today)" in inspect.getsource(H.ig_reel_day) and "not cp & tp" in inspect.getsource(H.ig_reel_day)
+# 쉼: 글 없음(08:55 지나면 이유) · 안 나감 · 3개 밑(이유 줄) · 사진 없음 · 09:30 지남 · 스위치 끔 = 아무것도 X
+for at207, s0207, why0 in (("2026-11-19 08:56", {}, "08시대 힘 준 글 없음"), ("2026-11-18 08:56", {}, "힘 준 글 안 나감"), ("2026-11-18 09:31", {}, "08시대 힘 준 글 없음·안 나감"),
+                           ("2026-11-18 09:31", {"igram_2026-11-18": {"t": 1, "stem": "2026-11-18_08", "at": 1}}, "09:30까지 못 올림")):
+    time.time = lambda: TK(at207); n207 = len(sl207)
+    with contextlib.redirect_stdout(io.StringIO()):
+        H.ig_reel_am(s0207)
+    assert s0207[f"igram_{at207[:10]}"]["why"] == why0 and s0207[f"igram_{at207[:10]}"]["end"] == 1 and len(sl207) == n207, (at207, s0207)
+json.dump({L207(k): [["26111401", 9000, "", "api"]] for k in (0, 1)} | {L207(2): [["26111705", 23300, "", "cw"]], L207(3): [["26111705", 29000, "", "api"]]}, open(S.PRICE_HIST, "w"))
+s207c = {"cur_2026-11-18_0820": {"th": "T1"}}
+with contextlib.redirect_stdout(io.StringIO()):
+    time.time = lambda: TK("2026-11-18 08:24"); n207 = len(sl207); H.ig_reel_am(s207c)
+assert s207c["igram_2026-11-18"]["why"] == "상품 2개(3개 밑) — 2번 가격 확인 48시간 넘음 · 3번 가격 확인 48시간 넘음" and len(sl207) == n207 and "igu" not in s207c  # 다른 상품으로 대신 X
+json.dump({L207(k): [["26111705", 9000, "", "api"]] for k in range(4)}, open(S.PRICE_HIST, "w")); H.ig_photo = lambda p, d, seen=None: (None, "")
+s207d = {"cur_2026-11-18_0820": {"th": "T1"}}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.ig_reel_am(s207d)
+assert s207d["igram_2026-11-18"]["why"].startswith("상품 0개(3개 밑) — 1번 사진 없음")
+H.REEL_AM = False; s207e = {"cur_2026-11-18_0820": {"th": "T1"}}; H.ig_reel_am(s207e); assert s207e == {"cur_2026-11-18_0820": {"th": "T1"}}  # 끔 = 지금처럼 하루 릴스 2개
+assert H.REEL_KINDS == ("reel", "reeld", "reelam") and 'kind in REEL_KINDS and REEL_AM and not failed' in inspect.getsource(H.ig_publish)  # 릴스끼리 2시간 = REEL_AM일 때만(끔 = 지금 그대로)
+assert time.strftime("%H:%M", time.gmtime(H.kst_ts(f"2026-11-18 {H.REEL_AM_LATE}") + 2 * 3600 + 9 * 3600)) <= f"{H.REEL_DAY[0]}:05"  # 08시 마지막(09:30) + 2시간 ≤ 낮 릴스 가장 이른 때(12:30 - 25분)
+# ③ metrics 릴스 줄 칸·틀 · 07:00 igd '릴스 08시' · 옛 영상 지우기(_08)
+assert [H.reel_slot(TK(f"2026-11-18 {t}")) for t in ("08:41", "12:20", "22:10", "23:59")] == ["08", "낮", "22", "22"]
+src207 = inspect.getsource(H.metrics_rows)
+assert '"slot": (sl := reel_slot(stamp(x["timestamp"])))' in src207 and '"fmt": seen.get("igrfmt", {}).get("m", {}).get(f"{day} {sl}") or "clip"' in src207 and '"릴스 08시": ok(seen.get("igram_" + day)' in src207 and "if REEL_AM else {}" in src207
+assert r're.fullmatch(r"\d{4}-\d{2}-\d{2}(_\d\d)?\.mp4", f)' in open(H.__file__, encoding="utf-8").read()  # 옛 영상 지우기 = 08시 영상도
+assert "reel_v2_test(seen, now, f\"{CARD_TEST_DIR}/{stamp}_reel_v2\")" in inspect.getsource(H.card_test)  # 켜기 전 미리보기 1세트(손 실행 card_test ⑦ — 게시 X)
+(H.IG_V2, H.REEL_PUBLIC, H.IG_AUTO, E207, H.http, time.time, H.ig_photo, H.ig_copy, H.bgm, H.song_of, H.tg_video, H.tg, H.ig_quota, H.REEL_AM, H.REEL_V2, C207.slideshow, H.IG_GAP, H.reel_me, H.IG_H) = sv207
+H.E.clear(); H.E.update(E207); H.RUN.pop("igq", None); os.chdir(cwd207)

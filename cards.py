@@ -1371,6 +1371,82 @@ def reel_end(card, nums, fact, k, out):
     d.text((P, H - 110), "제휴 링크(수수료) · 가격은 바뀔 수 있어요", font=pf("SemiBold", 40), fill=(190, 182, 200))
     return _save(im, out)
 
+REEL_SAFE = (64, 940, 1500)  # 11/18 릴스 v2 글자 자리: 왼쪽 64 · 오른쪽 940(인스타 오른쪽 버튼 줄 x 960~) · 아래 1500(캡션·계정 줄) — 사진은 그 밖도 OK
+REEL_BOXES = []  # 마지막 reel_slide 글자 [(글자, x0, y0, x1, y1)] — 셀프체크(잘림 0·안전 자리 안)
+
+
+def _reel_name(d, name, f, first, rest):
+    """이름 2줄(첫 줄 = 번호 동그라미 뒤 first 폭 · 둘째 줄 rest 폭) — 낱말 단위, 안 들어가면 None(… 말줄임 X)."""
+    lines, cur = [], ""
+    for w in name.split():
+        t = f"{cur} {w}".strip()
+        if d.textlength(t, font=f) <= (rest if lines else first):
+            cur = t
+        elif cur and len(lines) < 1 and d.textlength(w, font=f) <= rest:
+            lines, cur = [cur], w
+        else:
+            return None
+    return lines + [cur] if cur else lines
+
+
+def reel_slide(it, n, out):
+    """11/18 릴스 v2 상품 장(1080x1920 세로 꽉 — 흐린 바탕 가운데 작은 카드 X): 위 판매 페이지 사진(자르기 X · 사진 칸 높이 1000↑ = 화면 절반↑) · 번호 동그라미 + 이름 2줄 ·
+    가격 숫자 크게(테마 장 84px의 2배↑) · 작게 그대로: 사실 줄(리뷰·배송) · 'M/D H시 확인 가격 · 제휴 링크(수수료)'. 글자 = REEL_SAFE 안 · 잘림(…) X — 이름이 2줄에 안 들어가면
+    끝 낱말부터 덜어 냄(로그) · 사실 줄은 ' · ' 끝 칸부터 덜어 냄(그래도 넘치면 사실 줄 X) · 그래도 안 들어가면 ValueError(그 장 X — 부른 쪽이 v1 장으로). -> out"""
+    X, R, B = REEL_SAFE
+    price = (it.get("price") or "").strip()
+    m = re.match(r"[\d,]+원", price)
+    big, tail = (m[0], price[m.end():].strip()) if m else (price, "")
+    when = f"{it['when']} 가격" if it.get("when") else "게시 시점 가격"
+    d0 = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    for ns, ps, ss, nofact in ((56, 168, 38, 0), (52, 160, 36, 0), (48, 156, 36, 0), (44, 154, 34, 0), (44, 154, 34, 1)):  # 마지막 = 사실 줄 뺌(확인 시각·제휴·가격 조건은 늘)
+        fn, fs, dia = pf("Bold", ns), pf("SemiBold", ss), round(ns * 1.15)
+        fp = pf("ExtraBold", next((z for z in (ps, 140, 128, 112) if pf("ExtraBold", z).getlength(big) <= R - X), 112))  # 100만 원대(9자↑)만 2배 밑
+        words, trim = (it.get("name") or "").split(), 0
+        while words and not (lines := _reel_name(d0, " ".join(words), fn, R - X - dia - 16, R - X)):
+            words, trim = words[:-1], trim + 1
+        if not words or fp.getlength(big) > R - X:
+            continue
+        facts = [x.strip() for x in (it.get("fact") or "").split("·") if x.strip()] * (not nofact)
+        while facts and fs.getlength(" · ".join(facts)) > R - X:
+            facts = facts[:-1]
+        small = ([" · ".join(facts)] if facts else []) + [f"{when} · 제휴 링크(수수료)"]
+        if fs.getlength(small[-1]) > R - X:
+            small[-1:] = [when, "제휴 링크(수수료)"]
+        y = 1084 + 2 * round(ns * 1.22) + 8
+        pb = d0.textbbox((X, y), big, font=fp)
+        tail_in = bool(tail) and pb[2] + 20 + fs.getlength(tail) <= R
+        if tail and not tail_in:
+            small = [tail] + small
+        if pb[3] + 16 + len(small) * round(ss * 1.3) <= B:
+            break
+    else:
+        raise ValueError(f"reel v2 글자 넘침: {it.get('name')}")
+    if trim:
+        print("reel v2 이름 다듬음(2줄 넘침)", it.get("name"), "->", " ".join(words))
+    im = Image.new("RGBA", (RW, RH), (255, 255, 255, 255))
+    d = ImageDraw.Draw(im)
+    REEL_BOXES.clear()
+    put = lambda xy, s_, f, fill: (REEL_BOXES.append((s_, *d.textbbox(xy, s_, font=f))), _em_text(d, im, xy, s_, f, fill))
+    d.rounded_rectangle((24, 56, RW - 24, 1060), radius=36, fill=TTILE)
+    _contain(im, it["photo"], (24, 56, RW - 24, 1060), TTILE)
+    y = 1084
+    if n:
+        d.ellipse((X, y + 2, X + dia, y + 2 + dia), fill=TORANGE)
+        fb = pf("ExtraBold", round(ns * 0.8)); s_ = str(n)
+        d.text((X + dia / 2, y + 2 + dia / 2), s_, font=fb, fill="white", anchor="mm")
+    for k, ln in enumerate(lines):
+        put((X + (dia + 16 if k == 0 and n else 0), y), ln, fn, TINK); y += round(ns * 1.22)
+    y = 1084 + 2 * round(ns * 1.22) + 8
+    put((X, y), big, fp, TINK)
+    if tail_in:
+        put((pb[2] + 20, pb[3] - round(ss * 1.25)), tail, fs, TSUB)
+    y = pb[3] + 16
+    for s_ in small:
+        put((X, y), s_, fs, TSUB); y += round(ss * 1.3)
+    return _save(im, out)
+
+
 def q_card(photos, labels, title, lines, foot, k, out, head="핫딜픽", small=False):
     """질문·이거 vs 저거·가격 맞히기·체크리스트·재미 질문 카드(1080x1350 크림, L·M): 위 머리 · 사진 1·2·4장(자르기 X, 알약 = labels — 'A'·'1') · 큰 제목(2줄, 숫자 주황) · 줄들 · 아래 줄 · 동물 말풍선.
     small = 사진 1장을 작게(체크리스트·재미 질문 — 글이 주인공). -> out"""
