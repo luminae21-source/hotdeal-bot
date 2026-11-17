@@ -1,4 +1,26 @@
 {
 "d": "2026-11-18",
-"items": []
+"items": [
+{
+"name": "반려동물",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "생활",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+}
+]
 }
