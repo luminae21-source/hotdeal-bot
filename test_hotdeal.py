@@ -42,6 +42,7 @@ igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인
 nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
 pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만 · jit0 = 게시 ±10~25분(정해진 시각 셀프체크 흔들림 X) = 9-200에서만
 jit0, H.IG_JIT2 = H.IG_JIT2, False
+rv20, H.REEL_V2 = H.REEL_V2, False  # 11/18 릴스 v2 장(켬) = 9-207에서만 — 예전 셀프체크 = 지금 장
 ram0, H.REEL_AM = H.REEL_AM, False  # 11/18 08시 릴스(하루 릴스 3개 · 핀 = 올라갈 때 · 릴스끼리 2시간) = 9-207에서만 — 예전 셀프체크 = 2개 그대로
 svol0, H.STEADY_VOL0 = H.STEADY_VOL0, 0  # 11/17 꾸준템 회차 기록 없음 = 1(실제) — 예전 셀프체크는 01부터 · 9-204에서 1
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -15507,7 +15508,8 @@ assert "(24, 56, RW - 24, 1060)" in inspect.getsource(C207.reel_slide) and 1060 
 for lead207, m207 in ((1, 3), (1, 5), (2, 5), (2, 3)):
     for k in range(50):
         x207 = H.reel_secs2(lead207, m207, H.random.Random(k))
-        assert 8 <= sum(x207) <= 20 and all(0.9 <= v <= 1.4 for v in x207[lead207:lead207 + m207]) and len(x207) == lead207 + m207 + 1, x207  # 장당 0.9~1.4초 · 전체 8~20초
+        assert 8 <= sum(x207) <= 20 and all(0.9 <= v <= (1.8 if m207 <= 4 else 1.4) for v in x207[lead207:lead207 + m207]) and all(v <= 1.5 for v in x207[:lead207]) and x207[-1] <= 2.5 and len(x207) == lead207 + m207 + 1, x207
+assert H.reel_secs2(1, 3, H.random.Random(1))[0] <= 1.5 and H.reel_secs2(1, 5, H.random.Random(1))[0] == 1.2  # 11/18 Cowork: 표지 ≤ 1.5초(평균 시청 1.13초) · 모자란 시간 = 상품 장(3~4개만 1.8까지) -> 끝 장 · 5개↑ = 0.9~1.4
 # ① 08시 릴스 재료: 진열 쿠팡 상품 · 가격 기록 마지막 확인가(48시간 안 — 와우 표시 그대로) · 글 순서
 L207 = lambda k: f"https://link.coupang.com/a/am{k}"
 N207 = [("일신 미니 온풍기 책상용", "12,900원"), ("시프이컴 PTC 미니 온풍기 CIF-FH04W", "17,540원"), ("카프 PTC 미니 온풍기 KF-FH01", "23,700원"), ("한일 발난로 HEF-200", "29,000원")]
@@ -15576,7 +15578,7 @@ H.reel_me = lambda seen, today: None; H.REEL_V2 = True
 with contextlib.redirect_stdout(io.StringIO()):
     time.time = lambda: TK("2026-11-18 11:45"); H.ig_theme_reel(s207, "2026-11-18_19", st207b, time.gmtime(time.time() + 9 * 3600))
 im207b, se207b, fx207b, _ = sl207[-1]
-assert [os.path.basename(x) for x in im207b] == ["rc.jpg", "v2_04.jpg", "v2_03.jpg", "v2_02.jpg", "v2_01.jpg", "re.jpg"] and all(0.9 <= x <= 1.4 for x in se207b[1:-1]) and 8 <= sum(se207b) <= 20, (im207b, se207b)
+assert [os.path.basename(x) for x in im207b] == ["rc.jpg", "v2_04.jpg", "v2_03.jpg", "v2_02.jpg", "v2_01.jpg", "re.jpg"] and all(0.9 <= x <= 1.8 for x in se207b[1:-1]) and se207b[0] <= 1.5 and 8 <= sum(se207b) <= 20, (im207b, se207b)  # v2 표지 ≤ 1.5초
 assert all(I207.open(x).size == (1080, 1920) for x in im207b[1:-1]) and s207["reel_2026-11-18"]["pin"] == "2026-11-18_19" and json.load(open(H.REEL_PIN))["stem"] == "2026-11-18_08" and s207["igrfmt"]["m"]["2026-11-18 22"] == "v2"
 assert '"v2": [{"n": n, **{k: x[k] for k in ("photo", "name", "price", "fact", "when")}} for n, x in enumerate(its, 1)]' in inspect.getsource(H.igf_make)  # v2 장 가격 = 넘기기 장과 같은 재료
 H.REEL_V2 = False
@@ -15614,3 +15616,27 @@ assert r're.fullmatch(r"\d{4}-\d{2}-\d{2}(_\d\d)?\.mp4", f)' in open(H.__file__,
 assert "reel_v2_test(seen, now, f\"{CARD_TEST_DIR}/{stamp}_reel_v2\")" in inspect.getsource(H.card_test)  # 켜기 전 미리보기 1세트(손 실행 card_test ⑦ — 게시 X)
 (H.IG_V2, H.REEL_PUBLIC, H.IG_AUTO, E207, H.http, time.time, H.ig_photo, H.ig_copy, H.bgm, H.song_of, H.tg_video, H.tg, H.ig_quota, H.REEL_AM, H.REEL_V2, C207.slideshow, H.IG_GAP, H.reel_me, H.IG_H) = sv207
 H.E.clear(); H.E.update(E207); H.RUN.pop("igq", None); os.chdir(cwd207)
+
+# 9-208 (11/18 01:3x Cowork ②③): ② 토스 🔥 줄도 확인(토스 API 표시 가격 = 목표가 +5% 안 — 가격까지 다시 봄)이 3일 안이면 'M/D 가격 · M/D H시 다시 확인'(🔁 줄과 같게 · ⏳ 대기·3일 넘음 = X)
+#   ③ 진열 쿠팡 글에 now·chk 없음 = 가격 기록(price_hist) 마지막 확인가·시각 — 같은 pid·item만(events 그 링크 · 없으면 그 링크의 쿠팡 상품 주소 cp_sub 거꾸로) · 다르면 확인가가 앞(와우·쿠폰 표시 그대로)
+sv208 = (time.time, dict(S.PH), dict(S.CPI))
+time.time = lambda: TK("2026-11-18 01:30")
+tp208 = {"t": "2026-10-24 11:00", "text": "🔥 [토스] 센텔리안24 마데카 크림 (19,900원)", "url": "https://toss.im/_m/x", "own": 1, "chk": "11/17 17시"}
+assert S.shop_of(tp208) == "toss" and S.price_bits(tp208, (0, None, "", [], False))[2][0] == "10/24 가격 · 11/17 17시 다시 확인"
+assert S.price_bits({**tp208, "chk": "11/14 9시"}, (0, None, "", [], False))[2][0] == "10/24 가격" and S.price_bits(tp208, (2, None, "", [], False))[2][0] == "10/24 가격"  # 3일 넘음·대기 = X
+assert S.price_bits({**tp208, "chk": "11/10 9시"}, (0, None, "", [], True))[2][0] == "10/24 가격 · 11/10 9시 다시 확인"  # 🔁 = 예전 그대로
+L208, R208 = "https://link.coupang.com/a/jw208", "https://www.coupang.com/vp/products/9116101767?itemId=26812937313"
+cp208 = {"t": "2026-10-31 11:40", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\nMIGA 스마트 터치식 온수매트 Q 150×190cm\n69,900원", "url": L208, "own": 1, "st": "hot", "tgt": "69,900원"}
+S.PH.clear(); S.CPI.clear()
+assert S.shelf(cp208, {}, "2026-11-18")[1:3] == (None, "10/31 가격 · 가격 확인 안 됨")  # 기록 못 이음 = 예전 그대로
+S.CPI["raw:" + L208] = R208; S.PH.update({"9116101767:26812937313": [["26103111", 69900, "", "cw", "26111719", 17]], "9116101767:26812937323": [["26111720", 1000, "", "api"]]})
+sh208 = S.shelf(cp208, {}, "2026-11-18")
+assert sh208[:3] == (0, "69,900원", "지금 가격 (11/17 19시 확인)") and S.price_bits(cp208, sh208)[:2] == ("69,900원", [])  # 진우 단축 링크 -> cp_sub 거꾸로 -> 같은 pid·item 기록
+S.PH["9116101767:26812937313"].append(["26111806", 72900, "w", "api"])
+sh208 = S.shelf(cp208, {}, "2026-11-18"); assert sh208[1:3] == ("72,900원 와우가", "지금 가격 (11/18 6시 확인)") and S.price_bits(cp208, sh208)[:2] == ("72,900원", ["와우가"])  # 가격 다름 = 확인가가 앞(올린 69,900원 X)
+S.CPI["raw:" + L208] = "https://www.coupang.com/vp/products/9116101767"; assert S.shelf(cp208, {}, "2026-11-18")[1] is None  # itemId 모름 = 같은 item 아님 -> X
+assert S.shelf(cp208, {L208: {"pid": "9116101767", "item": "26812937323"}}, "2026-11-18")[1] == "1,000원"  # events pid·item = 그 item 기록만
+assert S.shelf({**cp208, "now": "70,000원", "chk": "11/16 9시", "chkt": "2026-11-16 09:00"}, {}, "2026-11-18")[1] == "70,000원"  # 글에 now 있음 = 그대로
+assert "PH.update(ph_load())" in inspect.getsource(S.build)
+time.time = sv208[0]; S.PH.clear(); S.PH.update(sv208[1]); S.CPI.clear(); S.CPI.update(sv208[2])
+

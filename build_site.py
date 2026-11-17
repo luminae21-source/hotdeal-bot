@@ -753,6 +753,15 @@ REHOT_DAYS = 3  # 🔁 다시 특가 배지 기간(⏳ -> 🔥 된 날부터)
 CHK_OLD, NOCHK = 3, "가격 확인 안 됨"  # XX(10/27 Cowork '못 찾으면 가격 확인 안 됨'): 진우 쿠팡 상품 마지막 확인(chkt — 없으면 올린 날)이 3일 넘고 + 봇이 못 찾음(events pid 없음 · 그 뒤 검색 실패 cpx) -> '지금 가격' X, 마지막 확인가 + 'M/D H시 가격 · 가격 확인 안 됨'(차례만 못 온 상품 = 그대로)
 
 
+def hist_last(p, ev):
+    """11/18 Cowork ③ 가격 기록(PH = price_hist) 마지막 확인 줄 — 같은 pid·item만: events 그 링크(ph_key) · 없으면 그 링크의 쿠팡 상품 주소(cp_links·cp_sub 거꾸로 — pid·itemId 둘 다)
+    -> [처음, 가격, 표시, 출처(, 마지막 확인, 수)] / None."""
+    u = p.get("url") or ""
+    k = ph_key(ev.get(u) or {}, u) or ((m := re.match(CP_PROD + r"\?itemId=(\d+)", CPI.get("raw:" + u) or "")) and f"{m[1]}:{m[2]}")
+    rows = k and PH.get(k)
+    return max(rows, key=ph_last) if rows else None
+
+
 def shelf(p, ev, today):
     """진열 상태(10/23 진우 '진열 = 기본 유지' · '지금 특가가 아닌 제품은 특가를 기다릴 제품으로 알려주고, 나중에 특가가 되면 다시 특가 제품으로'):
     -> (단계 0 🔥 특가 중 · 1 ⏳ 특가 대기 중 👍 꾸준템 · 2 ⏳ 특가 대기 · 3 일시 품절, 가격(None = 올린 때 · '' = 숨김 · 'N원' = 마지막 확인), 가격 아래 줄, 배지들, 🔁 다시 특가?)
@@ -769,6 +778,9 @@ def shelf(p, ev, today):
     st = "wait" if st == "hot" and not naver_dc_ok(p, ev) else st  # 11/6 네이버 할인 근거(dc) 없음 = 🔥 X(대기로 — 네이버 모음엔 그대로)
     if st == "gone" or e.get("end", "") >= p["t"][:10] and e.get("why", "gone") in ("gone", "issue"):  # events end는 봇이 st로 옮기기 전에도 바로
         return None
+    if not p.get("now") and shop_of(p) == "coupang" and (r := hist_last(p, ev)):  # 11/18 Cowork ③: 글에 now·chk 없음 = 가격 기록 마지막 확인가·시각(같은 pid·item — 다르면 확인가가 앞)
+        t = ph_last(r)
+        p = {**p, "now": f"{r[1]:,}원" + {"w": " 와우가", "c": " 쿠폰가"}.get(r[2], ""), "chk": f"{int(t[2:4])}/{int(t[4:6])} {int(t[6:8])}시", "chkt": f"20{t[:2]}-{t[2:4]}-{t[4:6]} {t[6:8]}:00"}
     tgt, now, chk = p.get("tgt", ""), p.get("now", ""), p.get("chk", "")
     since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (REHOT_DAYS - 1) * 86400))
     rehot = st == "hot" and p.get("rehot", "") >= since
@@ -1048,6 +1060,7 @@ def img_of(p):
     return u if u.startswith("https://") and (s == "coupang" and (host == "coupang.com" or host.endswith((".coupang.com", ".coupangcdn.com")))) else ""
 
 
+PH = {}  # 11/18 Cowork ③: 빌드 때 price_hist(ph_load) — 진열 글에 now·chk 없을 때 가격 줄(hist_last)
 CPI, CP_IMG_FILE = {}, "cp_img.json"  # 11/9 진우 '썸네일에 제품 사진': 빌드 때 쿠팡 사진 채움 — 글 주소 -> 사진(seen cpq i = 파트너스 API productImage) · 'pid:번호' -> 사진(cp_img.json) · 'raw:링크' -> 쿠팡 상품 주소(cp_links·cp_sub) · 'ev:링크' -> events pid
 
 
@@ -1261,7 +1274,8 @@ def price_bits(p, sh):
     sv = now is None and saving(p["text"])
     ex = (seg[1:] if now is None else [m[2]] if m else []) + ([f"{sv[0]}보다 {sv[1]}↓"] if sv else [])
     toss = shop_of(p) == "toss"
-    old = not note and (p.get("own") or toss or p.get("api")) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])}' + (f' {p["t"][11:16]} 게시 시점 가격' if p.get("tid") else " 가격") + ((f' · {p["chk"]} 다시 확인' if sh[4] and p.get("chk") else "") if toss else " · 지금 가격은 링크에서 확인")  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
+    old = not note and (p.get("own") or toss or p.get("api")) and f'{int(p["t"][5:7])}/{int(p["t"][8:10])}' + (f' {p["t"][11:16]} 게시 시점 가격' if p.get("tid") else " 가격") + ((f' · {p["chk"]} 다시 확인' if p.get("chk") and (sh[4] or sh[0] == 0 and fresh_day({"chk": p["chk"], "t": "0"}, td := time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)))
+                                                       >= time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - TOSS_HOME_DAYS * 86400))) else "") if toss else " · 지금 가격은 링크에서 확인")  # 11/18 Cowork ②: 🔥도 확인(토스 API 표시 가격 = 목표가 +5% 안 — 가격까지 다시 봄)이 3일 안이면  # 토스 = 1줄(10/24 Cowork — '지금 가격은 링크에서 확인'은 칸 머리 TOSS_LINE 한 번)
     grey = [x for x in (note or old, unit_of(p) if now is None else "") if x]  # 날짜·상태 줄 먼저(픽 줄·검색은 첫 줄만 — 토스 = 게시 시점 표기 필수)
     return shown, ex, grey
 
@@ -3539,6 +3553,8 @@ def build(posts, out="docs"):
     except (OSError, ValueError, AttributeError):  # 로컬·첫 실행(seen 없음) = 토스 사진 X
         sd, TIMG, TOSSM = {}, {}, {}
     cpi_load(sd if isinstance(sd, dict) else {})  # 11/9 쿠팡 사진 채움(img 없는 글)
+    PH.clear()
+    PH.update(ph_load())
     GUIDE_NAV.clear()  # 11/2 가이드 '고르는 법 보기' — 칸·딜 쪽·홈·/c/
     for g in guides_load():
         GUIDE_NAV[g.get("related_c") or ""] = GUIDE_NAV.get(g.get("related_c") or "", "") + f'<a class="btn2" href="{BASE}guide/{g["slug"]}/">📖 {html.escape(g["title"])} — 고르는 법 보기</a>'

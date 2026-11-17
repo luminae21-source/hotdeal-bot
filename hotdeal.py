@@ -9574,16 +9574,18 @@ def reel_am_items(seen, e, now, today):
 
 
 def reel_secs2(lead, m, rnd):
-    """v2 장 시간(초): 앞 장 lead개(표지·진우 사진) REEL_HEAD2 · 상품 장 m개 REEL_SEC2(0.9~1.4 — 진우 '장당 시간 짧게') · 끝 장 REEL_END2 —
-    합 = 8초(길이 규칙 8~20초의 아래 끝 — 짧게)를 넘는 만큼만: 상품 장만으론 모자라면 상품 장 -> 앞 장 -> 끝 장 순으로 각 한도까지 늘림 · 길이 변주 = 상품 장 무작위."""
-    goal = 8
-    ps = [round(rnd.uniform(*REEL_SEC2), 2) for _ in range(m)]
-    head = round(min(max((goal - sum(ps) - REEL_END2[0]) / max(lead, 1), REEL_HEAD2[0]), REEL_HEAD2[1]), 2)
-    secs = [head] * lead + ps + [round(min(max(goal - sum(ps) - head * lead, REEL_END2[0]), REEL_END2[1]), 2)]
-    for k in [*range(lead, lead + m), *range(lead), len(secs) - 1]:
-        top = REEL_SEC2[1] if lead <= k < lead + m else REEL_HEAD2[1] if k < lead else REEL_END2[1]
-        secs[k] = min(top, math.ceil((secs[k] + max(0, 8 - sum(secs))) * 100 - 1e-6) / 100)
-    return secs
+    """v2 장 시간(초): 앞 장 lead개(표지·진우 사진) REEL_HEAD2[0] · 상품 장 m개 REEL_SEC2(0.9~1.4 — 진우 '장당 시간 짧게') · 끝 장 REEL_END2[0] — 합이 8초(길이 규칙 아래 끝)에 모자라면
+    11/18 Cowork: 상품 장에 고르게(상품 3~4개일 때만 장당 REEL_FEW2 1.8초까지 · 5개↑ = 1.4) -> 끝 장(2.5) -> 표지(1.5 — 평균 시청 1.13초라 표지를 길게 X) 순으로 늘림."""
+    secs = [REEL_HEAD2[0]] * lead + [round(rnd.uniform(*REEL_SEC2), 2) for _ in range(m)] + [REEL_END2[0]]
+    for ks, top in ((range(lead, lead + m), REEL_FEW2 if m <= 4 else REEL_SEC2[1]), ((lead + m,), REEL_END2[1]), (range(lead), REEL_HEAD2[1])):
+        for _ in range(len(ks)):
+            room = [k for k in ks if secs[k] < top]
+            if not room or sum(secs) >= 8:
+                break
+            add = (8 - sum(secs)) / len(room)
+            for k in room:
+                secs[k] = min(top, secs[k] + add)
+    return [min(math.ceil(x * 100 - 1e-6) / 100, 20) for x in secs]
 
 
 def reel_v2_imgs(xs, d):
@@ -11996,7 +11998,7 @@ IG_LINKIN, IG_TOUCH, IG_JIT2, IG_ME = True, True, True, True  # 11/16 개편 ④
 IG_JIT2_S, REEL_LEN, REEL_SEC, REEL_END_SEC, REEL_FX = (600, 1500), (9, 12, 15, 18, 20, 8), (1.2, 2.0), 1.5, ("fade", "slide", "zoom")  # 릴스 길이 8~20초 돌림(장 수 안에서 맞춤)
 REEL_PIN, REEL_TAGS, JW_DAYS = "docs/cards/reel.json", ("#핫딜픽", "#쇼핑정보", "#살림템", "#가성비템", "#장보기", "#쟁여템", "#생활꿀템", "#오늘의특가"), 14
 REEL_AM, REEL_AM_POST, REEL_AM_WIN, REEL_AM_LATE, REEL_AM_N, REEL_AM_FRESH = True, ("08:00", "08:30"), ("08:30", "08:55"), "09:30", 3, 48 * 3600  # 11/18 진우 '릴스도 개발해야 해' ①: 하루 릴스 3개(08시대 + 낮 클립 + 22시 테마 · 피드 2개 그대로) — 08시대 힘 준 글 상품 3개↑ · 그 글 나간 뒤 08:30~08:55 무작위 · 09:30 지나면 그날 X · 가격 확인 48시간 안 · 끄면 지금처럼 2개
-REEL_V2, REEL_SEC2, REEL_HEAD2, REEL_END2 = False, (0.9, 1.4), (1.2, 3.0), (1.5, 2.5)  # 11/18 ② 시청 시간: 상품 장 = 세로 꽉(cards.reel_slide) · 장당 0.9~1.4초 · 번호 큰 것부터(⑤→①) — 22시 테마·08시 릴스만(낮 클립 그대로) · 표지 그대로 · 미리보기 Cowork OK 뒤 켬(끄면 지금 장)
+REEL_V2, REEL_SEC2, REEL_FEW2, REEL_HEAD2, REEL_END2 = True, (0.9, 1.4), 1.8, (1.2, 1.5), (1.5, 2.5)  # 11/18 ② 시청 시간: 상품 장 = 세로 꽉(cards.reel_slide) · 장당 0.9~1.4초 · 번호 큰 것부터(⑤→①) — 22시 테마·08시 릴스만(낮 클립 그대로) · 표지 그대로 · 미리보기 Cowork OK 뒤 켬(끄면 지금 장)
 REEL_KINDS = ("reel", "reeld", "reelam")  # 22시 · 낮 · 08시 릴스 컨테이너(ig_publish — 피드 상한 밖 · REEL_AM이면 릴스끼리 2시간)
 JW_LINES = ("{lb} {n}가지 중에 {lo}원부터 있어요, 어떤 게 먼저 눈에 들어오세요?", "이번엔 {n}개 골라 봤어요ㅎㅎ 몇 번이 제일 궁금하세요?", "{lo}원부터 {hi}원까지 담았어요, 이 가격대면 어떠세요?",
             "{n}개 모두 {when} 가격이에요, 미리 쟁여 두는 편이세요?", "{lb} {n}가지 중 하나만 고른다면 몇 번이세요?", "제일 가벼운 건 {lo}원이에요, 집에 이미 있으신가요?",
