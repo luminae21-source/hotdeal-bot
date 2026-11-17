@@ -13020,8 +13020,9 @@ def own_end(seen):
             m = re.fullmatch(r"https://toss\.shopping/t/(\d+)", plain(u) or "")
             ti[u] = [int(m[1]) if m else 0, now, 0]
         by = {}
-        for _, u in sorted([((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 9 or stale(u))]
-                           + [((len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tsite if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < now - OWN_END_GAP or len(ti[u]) < 9)]):  # 11/5 A: 사진 칸([8]) 없는 기록 먼저(지난 진열 450여 개 빨리 채움)  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
+        home = lambda u: posts[urls[u][-1]].get("st") == "hot" and len(ti[u]) > 8 and bool(ti[u][8])  # 11/18 Cowork: 홈 💙 토스 특가 후보(🔥·사진) 먼저 — 호출 수 그대로
+        for _, u in sorted([((not home(u), len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tossy if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < max(now - OWN_END_GAP, kst_ts(posts[urls[u][-1]]["t"])) or len(ti[u]) < 9 or stale(u))]
+                           + [((True, len(ti[u]) > 8, (ti[u] + [0])[2]), u) for u in tsite if ti.get(u, [0])[0] and ((ti[u] + [0])[2] < now - OWN_END_GAP or len(ti[u]) < 9)]):  # 11/5 A: 사진 칸([8]) 없는 기록 먼저(지난 진열 450여 개 빨리 채움)  # 이 규칙 전 기록·확인 뒤 다시 올린 글·밤 12시 지난 하루특가도 바로
             if len(by) < 30 or ti[u][0] in by:
                 by.setdefault(ti[u][0], []).append(u)
         if by:

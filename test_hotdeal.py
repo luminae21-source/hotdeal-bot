@@ -13761,7 +13761,7 @@ S.TIMG = {f"https://toss.shopping/_m/{u}": f"https://static.toss.im/t/{u}.jpg" f
 h170 = S.hs_section("tossh", "💙 토스 특가", "3개", th170, f"{S.BASE}c/toss/")
 assert h170.count('<article') == 3 and "coupang" not in h170 and all(f"static.toss.im/t/{u}.jpg" in h170 for u in "ABC") and S.PHOTO_CREDIT in h170 and S.TOSS_LINE in h170 and f'href="{S.BASE}c/toss/"' in h170, h170[:300]  # 원본 사진 + '사진: 토스쇼핑' · 게시 시점 가격 줄 · 전체 보기
 bs170 = inspect.getsource(S.build)
-assert 'tsh = toss_home(it, evi, dl[:12], fx)' in bs170 and '+ hot + re.sub(r"</section>$"' in bs170 and 'hs_section("tossh", "💙 토스 특가"' in bs170 and "dsh = cap2(ds, dl[:12], fx, tsh)" in bs170 and "토스 전체 보기 →" in bs170  # 🔥 바로 아래 · 뒤 칸들 2번 셈에 들어감
+assert 'tsh = toss_home(it, evi, dl[:12], fx, today=today, drop=tdrop)' in bs170 and '+ hot + re.sub(r"</section>$"' in bs170 and 'hs_section("tossh", "💙 토스 특가"' in bs170 and "dsh = cap2(ds, dl[:12], fx, tsh)" in bs170 and "토스 전체 보기 →" in bs170  # 🔥 바로 아래 · 뒤 칸들 2번 셈에 들어감
 # ② 적은 칸 진열 + ③ 계절 낱말
 cwd170, d170 = os.getcwd(), tempfile.mkdtemp(); os.chdir(d170); json.dump([], open("posts170.json", "w"))
 X170 = lambda i, n, sold=False: {"tacaItemId": i, "tacaId": i * 10, "displayName": n, "displayPrice": 5000, "discountRate": 10, "isSoldOut": sold}
@@ -15438,3 +15438,22 @@ d204 = H.mall_card_json("오늘의 장바구니", [(p, p["now"]) for p in ps204]
 assert [x["unit"] for x in d204["items"]] == ["100ml당 1,007원", "100ml당 1,017원", ""] and [x["price"] for x in d204["items"]] == ["6,040원", "6,100원", "5,000원"], [x["unit"] for x in d204["items"]]  # 카드 단위 = 카드 가격으로 셈
 assert all(not x["unit"] or H.won(x["unit"].split("당")[1]) == round(H.won(x["price"]) * 100 / 600) for x in d204["items"][:2])
 (H.SEEN, time.time) = sv204; os.chdir(cwd204)
+
+# 9-205 (11/18 Cowork — 진우 '개발할 것 빠르게'): 홈 '💙 토스 특가' = 마지막 확인(다시 확인·다시 특가 포함) 3일 안만 · 넘은 것 = 홈 칸 X(c/toss/엔 그대로) · 칸 0개 = 칸 숨김
+#   · 토스 다시 확인(own_end) = 홈 후보(🔥·사진) 먼저(호출 수 그대로) · 빌드 로그 '홈 토스 특가 N (오래돼 뺀 M)'
+sv205 = S.TIMG
+T205 = lambda u, t, **x: (u, {"t": t, "text": f"{H.TOSS_NOTE}\n\n💙 토스 특가 · 하루특가 🔥\n브랜드{u} 상품 1개\n9,900원 (20%↓)", "url": f"https://toss.shopping/_m/h{u}", "own": 1, **x}, (0, None, "", [], False))
+S.TIMG = {f"https://toss.shopping/_m/h{u}": f"https://static.toss.im/t/h{u}.jpg" for u in range(6)}
+it205 = [T205(0, "2026-10-13 09:00"), T205(1, "2026-10-24 09:00"), T205(2, "2026-10-20 09:00", chk="11/16 21시", chkt="2026-11-16 21:00"),  # 0·1 = 옛 가격(24~35일 전) · 2 = 다시 확인
+         T205(3, "2026-11-16 10:00"), T205(4, "2026-10-30 09:00", rehot="2026-11-17"), T205(5, "2026-11-14 09:00")]  # 3 = 이틀 전 글 · 4 = 다시 특가 · 5 = 4일 전(3일 넘음)
+d205 = []
+h205 = S.toss_home(it205, set(), today="2026-11-18", drop=d205)
+assert sorted(i for i, _, _ in h205) == [2, 3, 4] and sorted(i for i, _, _ in d205) == [0, 1, 5], (h205, d205)  # 3일 = 11/15부터 · 확인·다시 특가 날도 셈
+assert all(S.fresh_day(p, "2026-11-18") >= "2026-11-15" for _, p, _ in h205)  # 홈 칸에 확인 3일 넘은 상품 0
+assert S.toss_home(it205[:2], set(), today="2026-11-18") == [] and S.hs_section("tossh", "💙 토스 특가", "0개", []) == ""  # 다 오래됨 = 칸 숨김
+assert len(S.toss_home(it205[:2], set())) == 2  # 날짜 안 넘김(옛 셀프체크) = 거르기 X
+bs205 = inspect.getsource(S.build)
+assert 'print(f"홈 토스 특가 {len(tsh)} (오래돼 뺀 {len(tdrop)}) · 토스 칸별' in bs205 and "tsh = toss_home(it, evi, dl[:12], fx, today=today, drop=tdrop)" in bs205
+oe205 = inspect.getsource(H.own_end)
+assert 'home = lambda u: posts[urls[u][-1]].get("st") == "hot" and len(ti[u]) > 8 and bool(ti[u][8])' in oe205 and "((not home(u), len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in oe205 and "if len(by) < 30 or ti[u][0] in by:" in oe205  # 순서만(30개 그대로)
+S.TIMG = sv205

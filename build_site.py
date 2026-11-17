@@ -2962,12 +2962,21 @@ TOSS_HOME_FIRST = ("food", "snack", "coffee", "season", "life", "home", "kitchen
 TOSS_HOME_CAT, TOSS_HOME_BEAUTY = 3, 2  # 한 칸 최대 3개 · 뷰티 최대 2개
 
 
-def toss_home(it, evi, *shown):
+TOSS_HOME_DAYS = 3  # 11/18 Cowork: 홈 '💙 토스 특가' = 마지막 확인(다시 확인·다시 특가 포함 — fresh_day) 3일 안만 · 넘은 것 = 홈 칸 X(c/toss/엔 날짜 표기로 그대로)
+
+
+def toss_home(it, evi, *shown, today=None, drop=None):
     """11/7 홈 '💙 토스 특가'(🔥 아래 가로 카드): 토스만(쿠팡·네이버 X) · 사진 있는 것만(toss_img — 원본 + '사진: 토스쇼핑') · 🔥 특가 중 할인 큰 순 먼저 -> 👍 꾸준템 ·
     같은 브랜드 1개 · 같은 상품 홈 최대 2번(cap2 — 앞 칸 shown) · 기획전 X · tid(토스 API 상품)는 site_ok가 이미 뺌(Q 11/5 — /c/toss/만) -> [(i, p, sh)] · 없으면 [] = 칸 X.
     11/8: 품목 고르게 = 식품·생활·육아·가전 칸(TOSS_HOME_FIRST) 먼저 · 한 칸 TOSS_HOME_CAT개 · 뷰티(칸 beauty·화장품 낱말·크림) TOSS_HOME_BEAUTY개."""
     dr = lambda p: max([int(x) for x in re.findall(r"(\d{1,2})\s*%\s*(?:할인|↓)", p["text"])] or [0])
     xs = sorted((x for x in it if shop_of(x[1]) == "toss" and x[2][0] in (0, 1) and x[0] not in evi and not x[1].get("tid") and toss_img(x[1])), key=lambda x: x[1]["t"], reverse=True)
+    if today:  # 옛 가격에 🔥 배지가 홈 맨 앞에 X(10/13~10/24 가격 6개 — 11/18)
+        since = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - TOSS_HOME_DAYS * 86400))
+        old = [x for x in xs if fresh_day(x[1], today) < since]
+        xs = [x for x in xs if x not in old]
+        if drop is not None:
+            drop.extend(old)
     rx = {k: r for k, _, r in SHELF_CATS}["beauty"] + "|크림"
     kind = lambda p: (lambda c: c if c in TOSS_HOME_FIRST else "beauty" if c == "beauty" or re.search(rx, parse(title_of(p["text"]))[1]) else c or "etc")(cat_of(p))
     xs = sorted(cap2(sorted(xs, key=lambda x: (x[2][0], -dr(x[1]))), *shown), key=lambda x: (lambda k: 0 if k in TOSS_HOME_FIRST else 2 if k == "beauty" else 1)(kind(x[1])))  # 11/8: 식품·생활·육아·가전 먼저 -> 그 밖 -> 뷰티(그 안 = 🔥 할인 큰 순 -> 👍)
@@ -3701,8 +3710,9 @@ def build(posts, out="docs"):
     cp = card_picks(posts, out)
     hot, hot_ids = hot_section(it, evi, today)
     fx = [x for x in it if f'href="{BASE}p/{x[0]}.html"' in hot]  # 🔥 = 탭 전부 합쳐 1번
-    tsh = toss_home(it, evi, dl[:12], fx)  # 11/7 💙 토스 특가 = 🔥 다음(같은 상품 2번 셈에 들어감 — 🔥 섞는 비율은 그대로)
-    print(f"home 토스 칸 {len(tsh)}개 · 토스 칸별(/c/toss/) " + " · ".join(f"{CAT_META[k][1].split('·')[0]} {n}" for k, n in collections.Counter(cat_of(p) for _, p, _ in ls.get("toss", ("", "", []))[2]).most_common() if k in CAT_META))
+    tdrop = []
+    tsh = toss_home(it, evi, dl[:12], fx, today=today, drop=tdrop)  # 11/7 💙 토스 특가 = 🔥 다음(같은 상품 2번 셈에 들어감 — 🔥 섞는 비율은 그대로)
+    print(f"홈 토스 특가 {len(tsh)} (오래돼 뺀 {len(tdrop)}) · 토스 칸별(/c/toss/) " + " · ".join(f"{CAT_META[k][1].split('·')[0]} {n}" for k, n in collections.Counter(cat_of(p) for _, p, _ in ls.get("toss", ("", "", []))[2]).most_common() if k in CAT_META))
     dsh = cap2(ds, dl[:12], fx, tsh)  # 같은 상품 홈 최대 2번: 오늘 마감 > 🔥 > 💙 토스 > 📉 > 픽 > 꾸준템(10/24 진우 v3 ② · TOP 10·찜/본·숨은 #today X)
     psh = cap2(ps, dl[:12], fx, tsh, dsh[:DROP_N])  # 홈 픽만(날짜 쪽·RSS는 저장 목록 그대로)
     stx = mix(cap2([x for x in top(ls["steady"][2]) if x[0] not in hot_ids], dl[:12], fx, tsh, dsh[:DROP_N], psh), 10)  # 👍 = 몰 섞기(10/24 Cowork '쿠팡 꾸준템도') · 🔥 줄에 나온 건 X
