@@ -42,6 +42,7 @@ igv0, H.IG_V2, H.IGT_WINTER = (H.IG_V2, H.IGT_WINTER), False, False  # 11/16 인
 nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3개 링크·꾸준템 3) = 9-197에서만
 pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만 · jit0 = 게시 ±10~25분(정해진 시각 셀프체크 흔들림 X) = 9-200에서만
 jit0, H.IG_JIT2 = H.IG_JIT2, False
+svol0, H.STEADY_VOL0 = H.STEADY_VOL0, 0  # 11/17 꾸준템 회차 기록 없음 = 1(실제) — 예전 셀프체크는 01부터 · 9-204에서 1
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
 import build_site as S0
 seo0, S0.SEO_V2 = S0.SEO_V2, False  # 11/16 구글 검색 개선(주제 쪽 검색어형 제목·h2·가이드 링크·상품 설명) = 9-201에서만
@@ -14893,17 +14894,17 @@ for d, ok in ((14, "u"), (15, "u"), (16, None)):
         H.steady_list(s192)
 th192 = H.steady_theme([P192[k] for k in range(4)])  # 11/16 진우 ②: 테마 = 그날 품목(돌림 X) · 11/17 포즈 = 성공 게시 기준 A/B(여기선 게시 X = 늘 A)
 assert [(k, t, o[:4]) for k, t, _, o in sc192] == [("steady", "꾸준템 시리즈", (f"{v:02d}", th192, H.SERIES_TOPIC[th192], "a")) for v in (1, 2, 3)], sc192
-assert all(u == [P192[k]["url"] for k in range(4)] for _, _, u, _ in sc192) and s192["steadyvol"] == 2  # 글 상품 4개(링크 5개 한도) 순서 그대로 · 실패한 회차 = 셈 X
+assert all(u == [P192[k]["url"] for k in range(4)] for _, _, u, _ in sc192) and H.steady_vol(s192) == 2  # 글 상품 4개(링크 5개 한도) 순서 그대로 · 실패한 회차 = 셈 X
 q192 = s192["mcard"]["q"]; assert [(x["kind"], x["ck"], x["img"]) for x in q192] == [("steady", "series", f"{H.SITE}cards/mall/x_steady.png")] * 2 and "1️⃣ 테스트 상품 1" in q192[0]["text"]
 assert len(tb192) == 1 and tb192[0][0] == "steady" and tb192[0][3] is None  # 16일 카드 못 만듦 = 지금처럼 글만
 s192["steadyvol"] = 4; ret192[0] = "u"; time.time = lambda: TK("2026-11-17 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
-assert sc192[-1][3][:4] == ("05", th192, H.SERIES_TOPIC[th192], "a") and s192["steadyvol"] == 5  # 회차 = 순서대로 · 만들기·실패만으로 포즈 안 앞당김
+assert sc192[-1][3][:4] == ("05", th192, H.SERIES_TOPIC[th192], "a") and H.steady_vol(s192) == 5  # 회차 = 순서대로 · 만들기·실패만으로 포즈 안 앞당김
 it192[1]["i"] = None; n192 = len(sc192); time.time = lambda: TK("2026-11-18 19:52")
 with contextlib.redirect_stdout(io.StringIO()):
     H.steady_list(s192)
-assert len(sc192) == n192 and tb192[-1][0] == "steady" and s192["steadyvol"] == 5  # 글 상품에 토스 API 상품(posts 없음) = 카드 X(토스 API 가격 공개 X)
+assert len(sc192) == n192 and tb192[-1][0] == "steady" and H.steady_vol(s192) == 5  # 글 상품에 토스 API 상품(posts 없음) = 카드 X(토스 API 가격 공개 X)
 # mall_card_post: 꾸준템 = 글 그대로(상품 링크 유지)·묶음 셈 X · 묶음 = 링크 1줄 글 · 둘 다 카드 종류 기록(metrics card)
 H.http, tb192[:] = (lambda u, method="GET", **k: b""), []
 time.time = lambda: TK("2026-11-18 20:10")
@@ -15410,3 +15411,29 @@ assert 'pose=series_pick(seen, time.strftime("%Y-%m-%d", kst) + f"_top{hrs[-1]}"
 assert 'pose = series_pick(seen, time.strftime("%Y-%m-%d", kst) + "_steady", th) if ok else None' in inspect.getsource(H.steady_list)
 assert 'except FileNotFoundError as e:\n        print("series card 그림 없음", kind, str(e))' in inspect.getsource(H.series_card)
 os.chdir(cwd203)
+
+# 9-204 (11/17 20:05 Cowork 실물 확인 — 정한 규칙 위반 2개): ① 꾸준템 회차 = seen_save(3일 컷) 거쳐도 남음 · 차례대로(11/15·11/17 둘 다 VOL.01 → 다음 02)
+#   ② 카드 단위가 = 카드 가격(확인가)으로 다시 셈(nn_unit) · 못 셈 + 글 가격과 다름 = 비움 · v3·새 서식 같은 mall_card_json
+cwd204, sv204 = os.getcwd(), (H.SEEN, time.time); os.chdir(tempfile.mkdtemp())
+H.SEEN, time.time = "seen204.json", (lambda: TK("2026-11-17 20:00"))
+assert H.steady_vol({}) == H.STEADY_VOL0 and H.steady_vol({"steadyvol": 3}) == 3 and H.steady_vol({"steadyvol": {"n": 7, "day": "2026-11-17"}}) == 7  # 옛 정수 칸도 읽음
+s204 = {"steadyvol": {"n": 2, "day": "2026-11-17"}, "old204": 1}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.seen_save(s204)
+l204 = json.load(open("seen204.json"))
+assert l204["steadyvol"] == {"n": 2, "day": "2026-11-17"} and "old204" not in l204  # 't' 없는 칸 = 컷 X(정수 칸 1 = 지워짐 — 지난 VOL.01 반복 원인)
+o204 = H.STEADY_VOL0; H.STEADY_VOL0 = 1; assert H.steady_vol({}) + 1 == 2; H.STEADY_VOL0 = o204  # 실제: 기록 없음 = 다음 02
+assert 'seen["steadyvol"] = {"n": vol, "day": time.strftime("%Y-%m-%d", kst)}' in inspect.getsource(H.steady_list) and "vol = steady_vol(seen) + 1" in inspect.getsource(H.steady_list)
+# ② 카드 단위가
+assert H.card_unit("아이깨끗해 핸드워시 리필용 순 파우더향 600ml", 6040, "100ml당 1,017원", 6100) == "100ml당 1,007원"  # 10/30 6,100원 때 단위 → 지금 6,040원으로
+assert H.card_unit("이니스프리 비자 시카밤 70ml", 9290, "10ml당 1,327원", 9290) == "10ml당 1,327원" and H.card_unit("삼다수 2L 12개", 8540, "1L당 356원", 8800) == "1L당 356원"  # 10ml·1L = 100 기준에서 환산
+assert H.card_unit("크리넥스 데코앤소프트 화장지 30m 30롤", 21000, "1롤당 650원", 19500) == "1롤당 700원"
+assert H.card_unit("크리넥스 미용티슈 160매 3개", 4720, "1매당 9원", 4320) == "" and H.card_unit("크리넥스 미용티슈 160매 3개", 4320, "1매당 9원", 4320) == "1매당 9원"  # 못 셈 = 가격 같을 때만 글 단위
+pu204 = {"t": "2026-10-30 09:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] 아이깨끗해 핸드워시 리필용 순 파우더향 600ml (6,100원)\n\n💰 100ml당 1,017원꼴 · 할인 중", "url": "https://link.coupang.com/a/u204",
+         "img": "https://thumbnail.coupangcdn.com/x/u204.jpg", "now": "6,040원", "chkt": "2026-11-17 15:00"}
+ps204 = [pu204, {**pu204, "url": "https://link.coupang.com/a/u205", "text": pu204["text"].replace("600ml (6,100원)", "300ml 2개 (6,100원)"), "now": "6,100원"},
+         {**pu204, "url": "https://link.coupang.com/a/u206", "text": pu204["text"].replace("💰 100ml당 1,017원꼴", "💰 1매당 9원꼴"), "now": "5,000원"}]
+d204 = H.mall_card_json("오늘의 장바구니", [(p, p["now"]) for p in ps204])
+assert [x["unit"] for x in d204["items"]] == ["100ml당 1,007원", "100ml당 1,017원", ""] and [x["price"] for x in d204["items"]] == ["6,040원", "6,100원", "5,000원"], [x["unit"] for x in d204["items"]]  # 카드 단위 = 카드 가격으로 셈
+assert all(not x["unit"] or H.won(x["unit"].split("당")[1]) == round(H.won(x["price"]) * 100 / 600) for x in d204["items"][:2])
+(H.SEEN, time.time) = sv204; os.chdir(cwd204)

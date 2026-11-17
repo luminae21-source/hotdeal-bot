@@ -3933,7 +3933,7 @@ def card_test(seen, now=None):
         if f:
             shutil.move(f, f"{CARD_TEST_DIR}/{stamp}_coupang.png")
         print("card test ① 쿠팡 묶음 카드", f"{CARD_TEST_DIR}/{stamp}_coupang.png" if f else f"X(후보 {len(pick)}개)")
-        vol = seen.get("steadyvol", 0) + 1  # ⑥ 새 서식(11/13): ①과 같은 상품 '오늘의 장바구니' · 지금 꾸준템 후보 앞 4개 '꾸준템 시리즈'(다음 회차 번호·주제 — 회차 기록 X)
+        vol = steady_vol(seen) + 1  # ⑥ 새 서식(11/13): ①과 같은 상품 '오늘의 장바구니' · 지금 꾸준템 후보 앞 4개 '꾸준템 시리즈'(다음 회차 번호·주제 — 회차 기록 X)
         st, ps0 = [x for x in steady_cands(seen, now, 99) if not tdead(x["u"])][:4], load(POSTS, [])
         for nm, f in (("basket", len(pick) >= 3 and series_card("cardtest_b", "오늘의 장바구니", [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in pick])),
                       ("steady", len(st) >= 3 and all(x["i"] is not None for x in st) and series_card("cardtest_s", "꾸준템 시리즈", [(ps0[x["i"]], x["p"]) for x in st], f"{vol:02d}", *SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)]))):
@@ -4596,13 +4596,13 @@ def steady_list(seen):
     n = min(len(items), 4)
     while n > 1 and len(render(n)) > 480:
         n -= 1
-    vol = seen.get("steadyvol", 0) + 1  # 11/13 ① 꾸준템 시리즈 카드 = 글 상품과 같은 수·순서 · 회차 01부터(만든 것만 셈) · 주제 4개 돌림 · 못 만듦 = 지금처럼 글만
+    vol = steady_vol(seen) + 1  # 11/13 ① 꾸준템 시리즈 카드 = 글 상품과 같은 수·순서 · 회차 01부터(만든 것만 셈) · 주제 4개 돌림 · 못 만듦 = 지금처럼 글만
     ok = n >= 3 and all(x["i"] is not None for x in items[:n])
     th = steady_theme([posts[x["i"]] for x in items[:n]]) if ok else SERIES_THEMES[(vol - 1) % len(SERIES_THEMES)][0]  # 11/16 진우 ②: 테마 = 그날 품목
     tp, meta = SERIES_TOPIC.get(th, th), {}
     pose = series_pick(seen, time.strftime("%Y-%m-%d", kst) + "_steady", th) if ok else None  # 11/17 위 = A/B 교대(성공 게시 기준) · 아래 = 같은 테마 foot
     if ok and (img := series_card("steady", "꾸준템 시리즈", [(posts[x["i"]], x["p"]) for x in items[:n]], f"{vol:02d}", th, tp, pose, meta)):
-        seen["steadyvol"] = vol
+        seen["steadyvol"] = {"n": vol, "day": time.strftime("%Y-%m-%d", kst)}  # 11/17: 't' 없는 칸 = seen_save 3일 컷 X(정수 칸은 ts=회차 < 컷 → 매번 지워져 VOL.01 반복)
         seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "steady", "text": render(n), "link": items[0]["tu"], "img": img, "ck": "series", **meta}]}
         return print(f"steady 꾸준템 카드 VOL.{vol:02d} {tp} -> 사이트에 뜨면 Threads(mall_card_post)")
     th_bundle(seen, "steady", render(n), items[0]["tu"])
@@ -5630,6 +5630,18 @@ CARD_MALLW = {"coupang": r"토스|toss|네이버|naver", "naver": r"토스|toss|
 CARD_PCT = r"\s*[0-9]+(?:\.[0-9]+)?\s*[%％]"  # 11/12 진우 '품목 4개인데 카드 3개 → 개수에 맞춰서': 이름 속 'N%'(나이아신아마이드 20% 등) = 카드 이름에서만 뺌(글은 원래 이름) — validation.mjs 할인율 검사에 걸려 빠지던 것
 
 
+def card_unit(name, n, unit, posted):
+    """카드 단위가(11/17 Cowork — 글 💰 줄은 올린 날 가격 기준): 그 기준(100ml당·1개당 …) 그대로 카드 가격 n으로 다시 셈(nn_unit — 이름의 개수·용량 × 가격만)
+    · 못 셈 = 가격이 글 가격과 같을 때만 글 단위 그대로 · 다르면 ''(틀린 단가보다 없는 게 나음 — cp_mix 단가 X 규칙과 같게)."""
+    m = re.match(r"\s*(\d+(?:\.\d+)?)?\s*(ml|l|g|kg|개|롤|팩)당", unit or "", re.I)
+    if m and n:
+        q, u = float(m[1] or 1), m[2].lower()
+        r = (nn_unit(name, n, u) if q == 1 else None) if u in ("개", "롤", "팩") else nn_unit(name, n, "100ml" if u in ("ml", "l") else "100g")
+        if r:  # nn_unit 용량 기준 = 100ml·100g만 바로 맞음(10ml·1L 등은 100 기준에서 환산)
+            return f"{m[1] or ''}{m[2]}당 {round(r[0] if u in ('개', '롤', '팩') else r[0] * q * (1000 if u in ('l', 'kg') else 1) / 100):,}원"
+    return unit if n and n == posted else ""
+
+
 def mall_card_json(title, items, most=5):
     """tools/card v3 카드 JSON(11/1 Cowork): items = [(posts 글, 가격 글자)] -> {mall, title(36자), checked(게시 기준 = 지금), items:[{name, price, cond, unit, img, url, checked}]} 또는 None.
     가격·조건 = 진열 확인가(now)·💰 줄 → 글 가격 · 상품 checked = 실제 확인 시각(chk_ts — 진열 chkt·chk·글 시각, 지금 복사 X) · 3~5개 · 몰 1개 · 쿠팡·네이버만(토스 = v3 검증 toss.im만 — 우리 링크 toss.shopping)
@@ -5640,7 +5652,7 @@ def mall_card_json(title, items, most=5):
         mall, money = shop_of(p), (m[1] if (m := re.search(r"💰\s*([^\n]*)", p["text"])) else "")
         src, name = p.get("now") or pr or "", re.sub(CARD_PCT, "", short_name(title_of(p["text"]))).strip()
         n, cond = won(src), next((c for w, c in CARD_COND if w in src or w in money or w in (pr or "")), "")
-        unit = p.get("unit") or (u[1].strip() if (u := re.search(r"([^\n·]*?당\s*[\d,]+원)", money)) else "")
+        unit = card_unit(parse(title_of(p["text"]))[1], n, p.get("unit") or (u[1].strip() if (u := re.search(r"([^\n·]*?당\s*[\d,]+원)", money)) else ""), won(parse(title_of(p["text"]))[2]))
         host = urllib.parse.urlsplit(p.get("url") or "").hostname or ""
         if not n or mall not in CARD_HOSTS or not str(p.get("url") or "").startswith("https://") or not any(host == h or h != "naver.me" and host.endswith("." + h) for h in CARD_HOSTS[mall]) \
                 or re.search(rf"{CARD_BAN}|{CARD_MALLW[mall]}", fold(name + unit + cond)):
@@ -5808,6 +5820,15 @@ def series_name(name, count):
         out = out[:-2].rstrip() + "…"
     print("series 이름 다듬음(넘침)", clip(name, 30), "→", out)
     return out
+
+
+STEADY_VOL0 = 1  # 11/17 Cowork 실물: 11/15·11/17 둘 다 VOL.01로 나감 — 기록 없음 = 1회 나간 것으로(다음 02)
+
+
+def steady_vol(seen):
+    """꾸준템 마지막 회차 — {'n'}(11/17~) · 옛 정수 칸 · 없음 = STEADY_VOL0."""
+    v = seen.get("steadyvol")
+    return v["n"] if isinstance(v, dict) else v if isinstance(v, int) and not isinstance(v, bool) else STEADY_VOL0
 
 
 def steady_theme(ps):
