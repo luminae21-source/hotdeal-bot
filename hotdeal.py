@@ -9553,7 +9553,7 @@ def reel_am_items(seen, e, now, today):
     (REEL_AM_FRESH 안 — 와우·쿠폰 표시 그대로) · 오늘 다른 릴스 상품 X(pid) -> ([igt_item…], [뺀 이유…])."""
     posts = load(POSTS, [])
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
-    byu = {p.get("url"): (i, p) for i, p, _ in shelf_items(posts, days)}
+    byu = {p.get("url"): (i, p) for i, p, _ in shelf_items(posts, days) if not bundle_of(p)}  # 같은 링크를 쓰는 묶음 글('[🚗 퇴근길 장바구니 #14]') X = 상품 글
     info, h, used, out, why = ev_info(), ph_load(), reel_pids(seen, today), [], []
     for k, u in enumerate(e["urls"], 1):
         i, p = byu.get(u, (None, None))
@@ -12076,7 +12076,7 @@ def igt_pool(seen, posts, cats, day, one=False):
     cut = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600 - IG_REPEAT * 86400))
     used, tp, ev = {u for u, d in seen.get("igu", {}).get("m", {}).items() if d > cut}, reel_pids(seen, day), ev_info()
     ok = lambda p: shop_of(p) == "coupang" and aff(p.get("url")) and img_of(p) and p["url"] not in used and cat_of(p) in CAT_META and (cats is None or cat_of(p) in cats) \
-        and season_adj(title_of(p["text"])) >= 0 and str(ev.get(p["url"], {}).get("pid") or "-") not in tp  # Z 철 지난 계절 상품 X · 11/18 오늘 08시 릴스 상품(같은 상품 다른 링크) X
+        and season_adj(title_of(p["text"])) >= 0 and str(ev.get(p["url"], {}).get("pid") or "-") not in tp and not bundle_of(p)  # Z 철 지난 계절 상품 X · 11/18 오늘 08시 릴스 상품(같은 상품 다른 링크)·묶음 글 X
     days = sorted({p["t"][:10] for p in posts if not p["text"].startswith("📋")}, reverse=True)
     it = shelf_items(posts, days)
     if one:

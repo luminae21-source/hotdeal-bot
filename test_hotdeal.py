@@ -15513,7 +15513,8 @@ L207 = lambda k: f"https://link.coupang.com/a/am{k}"
 N207 = [("일신 미니 온풍기 책상용", "12,900원"), ("시프이컴 PTC 미니 온풍기 CIF-FH04W", "17,540원"), ("카프 PTC 미니 온풍기 KF-FH01", "23,700원"), ("한일 발난로 HEF-200", "29,000원")]
 P207 = [{"t": "2026-11-17 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n{n}\n{pr}\n✔ 리뷰 1,{k}00", "url": L207(k), "own": 1, "shelf": 1, "st": "hot", "img": f"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/a{k}.jpg",
          "now": pr, "chk": "11/17 18시", "chkt": "2026-11-17 18:00"} for k, (n, pr) in enumerate(N207)] \
-    + [{"t": "2026-11-17 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n일신 미니 온풍기 책상용 2개\n24,900원\n✔ 리뷰 1,000", "url": L207("x"), "own": 1, "shelf": 1, "st": "hot", "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/ax.jpg"}]
+    + [{"t": "2026-11-17 18:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n일신 미니 온풍기 책상용 2개\n24,900원\n✔ 리뷰 1,000", "url": L207("x"), "own": 1, "shelf": 1, "st": "hot", "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/ax.jpg"},
+       {"t": "2026-11-17 18:30", "text": f"{H.DISCLOSURE}\n[🚗 퇴근길 장바구니 #14]\n\n1. 카프 PTC 미니 온풍기 KF-FH01 — 23,700원", "url": L207(2), "bundle": "th18", "st": "hot", "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657/image/a2.jpg"}]  # 같은 링크 묶음 글(뒤) = 재료 X
 EV207 = [{"at": "2026-11-17 18:00", "url": L207(k), "pid": f"90{k}", "text": "x", "deal": True, "shelf": True} for k in range(4)] + [{"at": "2026-11-17 18:00", "url": L207("x"), "pid": "900", "text": "x", "deal": True, "shelf": True}] \
     + [{"at": "2026-11-18 08:20", "curation": True, "power": True, "topic": "책상 발밑 미니 히터", "set": "20261118-0820-heater", "urls": [L207(k) for k in (2, 0, 1, 3)], "text": f"{H.DISCLOSURE}\n\n미니 히터", "link": "https://hotdealpick.kr/c/s/x.html"}]
 json.dump(P207, open("posts.json", "w"), ensure_ascii=False); json.dump(EV207, open("events.json", "w"), ensure_ascii=False)
