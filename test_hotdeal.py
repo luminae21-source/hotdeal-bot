@@ -12759,7 +12759,7 @@ src146 = open(S.__file__, encoding="utf-8").read()
 assert ".im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain" in src146 and ".g .cr2 .bdg{position:static" in src146 and ".g .im.tim img{mix-blend-mode:normal}" in src146 and 'sd = json.load(open(SEEN_FILE' in inspect.getsource(S.build) and 'TOSSM = sd.get("tossid"' in inspect.getsource(S.build) and "TIMG = toss_imgs(TOSSM)" in inspect.getsource(S.build)  # 원본 비율 · 배지 사진 밖 · 빌드 때 seen에서
 # own_end = 상세 확인 때 썸네일 원본을 seen tossid [8]에(사진 칸 없는 기록 먼저 확인)
 assert H.toss_thumb({"thumbnailUrl": TU146}) == TU146 and H.toss_thumb({"thumbnailUrl": "javascript:x"}) is None and H.toss_thumb({}) is None \
-    and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)
+    and "x and toss_thumb(x)]" in inspect.getsource(H.own_end) and "((not home(u), len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in inspect.getsource(H.own_end)  # 11/18 홈 후보 먼저 → 그다음 사진 칸 없는 기록
 # 인스타: 토스 진우 상품만 넘기기(표지 = 우리 글자 카드 · 상품 장 = 썸네일 원본 1장씩) · 캡션 첫 줄 토스 문구 + 이름·게시 시점 가격 + 사진: 토스쇼핑 · 쿠팡 X
 sv146 = (H.POSTS, H.http, H.tg, time.time, H.ig_room)
 H.POSTS = "posts146.json"
