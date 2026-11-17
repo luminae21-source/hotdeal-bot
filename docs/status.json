@@ -1,9 +1,9 @@
 {
-"at": "2026-11-18 00:58",
+"at": "2026-11-18 01:08",
 "posts": 5760,
-"site": 2069,
+"site": 2068,
 "mall": {
-"coupang": 1384,
+"coupang": 1383,
 "toss": 630,
 "naver": 55
 },
@@ -23,12 +23,12 @@
 "life": 302,
 "season": 141,
 "coffee": 91,
-"etc": 5
+"etc": 4
 },
 "missing": 0,
 "missing_names": [],
 "cp_fail": 172,
-"sitemap": 927,
+"sitemap": 925,
 "days": {
 "2026-11-10": {
 "site": 1963,
@@ -109,10 +109,10 @@
 }
 },
 "2026-11-18": {
-"site": 2069,
-"sitemap": 927,
+"site": 2068,
+"sitemap": 925,
 "mall": {
-"coupang": 1384,
+"coupang": 1383,
 "toss": 630,
 "naver": 55
 }
