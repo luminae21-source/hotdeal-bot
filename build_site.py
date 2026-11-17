@@ -689,6 +689,9 @@ def site_subs():
     return {b: e["site"] for r, e in sub.items() if isinstance(e, dict) and e.get("site") for b in {e.get("b"), cl.get(r)} if isinstance(b, str)}
 
 
+DAYS_JSON = "docs/days.json"  # 기념일 줄(hotdeal DAYS_FILE) — 11/18 행사 쪽 이름(ev_title)·고르는 기준 줄 끔(ev_rule)도 여기
+
+
 def ev_list(path=None):
     """events.json(Cowork 예약) 그대로 + auto_events.json(봇이 만든 진열·예약 — 10/30 크롬 이관, events.json은 Cowork 것 그대로) — 쿠팡 상품 주소만 cp_links.json의 파트너스 링크로(pid 없으면 주소의 상품 번호 · 행사 목록 글 items도). 깨진 파일 = []."""
     path = path or EVENTS
@@ -920,7 +923,7 @@ def price_records(posts, shelf=True, skip=(), least=PRICE_MIN):
 def rec_nav(recs, skip=""):
     """최저가 기록 페이지 링크 줄(홈 생필품 칸·기록 페이지 아래) — 검색 로봇이 /c/ 페이지를 찾게."""
     ls = [f'<a href="{BASE}c/{k}.html">{n} {u}</a>' for k, (n, u, _) in recs.items() if k != skip]
-    return ls and f'<nav class="recs" aria-label="최저가 기록"><h3>📈 {"다른 " * bool(skip)}최저가 기록</h3>{"".join(ls)}</nav>'
+    return ls and f'<nav class="recs" aria-label="가격 기록"><h3>📈 {"다른 " * bool(skip)}가격 기록</h3>{"".join(ls)}</nav>'
 
 
 def record_page(k, rec, recs):
@@ -934,7 +937,7 @@ def record_page(k, rec, recs):
     tr = "".join(f'<tr{" class=min" if r is low else ""}><td>{md(r[3])}</td><td>{html.escape(parse(title_of(r[3]["text"]))[0] or "-")}</td>'
                  f'<td><a href="{BASE}p/{r[2]}.html">{html.escape(parse(title_of(r[3]["text"]))[1])}</a></td>'
                  f'<td>{f"{w:,}원" if (w := price_won(title_of(r[3]["text"]))) else ""}</td><td>{html.escape(r[1].split()[-1])}</td></tr>' for r in rows)
-    body = (f'<section class="day rec" aria-labelledby="rech"><h2 id="rech">📈 {name} 최저가 기록 — {unit} 가격</h2>'
+    body = (f'<section class="day rec" aria-labelledby="rech"><h2 id="rech">📈 {name} 가격 기록 — {unit} 가격</h2>'
             f'<div class="t">핫딜픽이 {md({"t": first})}부터 올린 {name} 딜 {len(rows)}개를 {unit} 가격으로 모았어요. 단위가 다른 기록은 섞지 않아요 · 날짜 = 게시 날짜</div>'
             + (f'<h3>🔥 지금 올라온 {name} 딜</h3><div class="t">최근 24시간 · 가격·재고는 바뀔 수 있어요</div><div class="cards">{"".join(card(r[2], r[3], st0(r[3])) for r in now)}</div>' if now else "")
             + f'<div class="stat"><div><b>{html.escape(low[1].split()[-1])}</b>기록 최저 · {md(low[3])} {html.escape(parse(title_of(low[3]["text"]))[0])}</div><div><b>{avg:,}원</b>평균 · 기록 {len(rows)}개</div></div>'
@@ -1487,8 +1490,13 @@ def events_on(it, today):
             g["until"], g["chk"] = max(g["until"], ev_day(e.get("until"), today)), max(g["chk"], str(e.get("chk") or "")[:16])
             g["slug"] = g["slug"] or (e["slug"] if re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(e.get("slug") or "")) else "")
             g["urls"][e["url"]] = str(e.get("kind") or g["urls"].get(e["url"]) or "")
-    out = []
+    try:
+        days = {d.get("tag"): d for d in json.load(open(DAYS_JSON, encoding="utf-8")) if isinstance(d, dict)}
+    except (OSError, ValueError, TypeError):
+        days = {}
+    out = []  # 11/18 진우: 행사 이름(ev_title — {n}·{mall})·고르는 기준 줄 끔(ev_rule False) = days.json 그 tag 줄
     for g in gs.values():
+        g.update(title=str(days.get(g["tag"], {}).get("ev_title") or ""), rule=days.get(g["tag"], {}).get("ev_rule", True) is not False)
         xs = [x for x in it if x[1].get("url") in g["urls"]]
         if xs and g["until"] >= today:
             ms = {shop_of(p) for _, p, _ in xs}
@@ -1502,7 +1510,9 @@ def ev_n(g):
 
 
 def ev_name(g):
-    """'쿠팡 햇상품 기획전'(상품이 한 몰이면 몰 이름 앞에 — tag에 이미 있으면 그대로)."""
+    """'쿠팡 햇상품 기획전'(상품이 한 몰이면 몰 이름 앞에 — tag에 이미 있으면 그대로) · days.json ev_title 있으면 그 이름('블프 시즌 · 핫딜픽이 고른 쿠팡 {n}개' — 11/18 공식 행사처럼 읽히지 않게)."""
+    if g.get("title"):
+        return g["title"].replace("{n}", str(ev_n(g))).replace("{mall}", g["mall"])
     return g["tag"] if not g["mall"] or g["tag"].startswith(g["mall"]) else f"{g['mall']} {g['tag']}"
 
 
@@ -1517,7 +1527,7 @@ def ev_banner(evs):
     md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
     return "" if not evs else ('<nav class="evb" aria-label="기획전"><div class="evs">' + "".join(
         f'<a class="ev" href="{BASE}e/{g["slug"]}.html" data-ev="{g["slug"]}"><span class="em" aria-hidden="true">🎉</span><span class="tx"><b>{html.escape(ev_name(g))}</b>'
-        f'<small>핫딜픽이 고른 {ev_n(g)}개 · ~{md(g["until"])}</small></span><span class="go">보기 →</span></a>' for g in evs) + "</div>"
+        f'<small>{"" if g.get("title") else f"핫딜픽이 고른 {ev_n(g)}개 · "}~{md(g["until"])}</small></span><span class="go">보기 →</span></a>' for g in evs) + "</div>"  # ev_title = 개수 이미 들어 있음(겹침 X)
         + (f'<b class="evn" aria-hidden="true"><span>1</span>/{len(evs)}</b></nav>{EV_JS}' if len(evs) > 1 else "</nav>"))
 
 
@@ -1830,15 +1840,16 @@ def ev_page(g, today):
     n, md, name, chk = ev_n(g), f"{int(g['until'][5:7])}/{int(g['until'][8:10])}", ev_name(g), g["chk"] and f" ({md_h(g['chk'])})"
     left = (calendar.timegm(time.strptime(g["until"], "%Y-%m-%d")) - calendar.timegm(time.strptime(today, "%Y-%m-%d"))) // 86400
     notes = " ".join(dict.fromkeys(SHOP_NOTES[shop_of(p)] for _, p, _ in g["xs"] if shop_of(p) in SHOP_NOTES and aff(p.get("url"))))  # 제휴 링크 상품만(쿠팡 생 주소 = 수수료 X — 10/25)
-    body = (f'<h1 class="h">🎉 {html.escape(name)}</h1><div class="t">핫딜픽이 고른 {n}개 · ~{md} 마감 · <b class="dd">{"오늘 마감" if left <= 0 else f"D-{int(left)}"}</b></div>'
-            + f'<p class="evn">같은 종류 {g["mall"] + " " if g["mall"] else ""}검색에서 단위가 하위 20%만 골랐어요{chk}</p>'
+    body = (f'<h1 class="h">🎉 {html.escape(name)}</h1><div class="t">{"" if g.get("title") else f"핫딜픽이 고른 {n}개 · "}~{md} 마감 · <b class="dd">{"오늘 마감" if left <= 0 else f"D-{int(left)}"}</b></div>'
+            + (f'<p class="evn">같은 종류 {g["mall"] + " " if g["mall"] else ""}검색에서 단위가 하위 20%만 골랐어요{chk}</p>' if g.get("rule", True) else "")  # 11/18: 그 기준으로 고르지 않은 행사 = 줄 X
             + (f'<p class="t">{notes}</p>' if notes else "")
             + ('<nav class="chips" aria-label="종류">' + "".join(f'<a href="#k{j}">{html.escape(k)} {len(grp[k])}</a>' for j, k in enumerate(order)) + "</nav>" if len(order) > 1 else "")
             + "".join(f'<section class="sec" id="k{j}" aria-labelledby="k{j}h"><h2 id="k{j}h">{html.escape(k)}<small>{len(grp[k])}개</small></h2><div class="cards">'
                       + "".join(card(i, p, sh, [unit_line(p)]) for i, p, sh in sorted(grp[k], key=key)) + "</div></section>" for j, k in enumerate(order))
             + f'<a class="all" href="{BASE}">🏠 홈으로</a>')
     li = [{"@type": "ListItem", "position": m, "url": f"{BASE}p/{i}.html", "name": parse(title_of(p["text"]))[1], "image": img_of(p)} for m, (i, p) in enumerate(((i, p) for k in order for i, p, _ in sorted(grp[k], key=key) if img_of(p)), 1)]
-    return (f"{name} — 핫딜픽이 고른 {n}개 (~{md}) | {TITLE}", f"{name} 상품 중 같은 종류 단위가 싼 것만 {n}개 골랐어요 · {' · '.join(order)} · ~{md} 마감", body,
+    return (f"{name} (~{md}) | {TITLE}" if g.get("title") else f"{name} — 핫딜픽이 고른 {n}개 (~{md}) | {TITLE}",
+            f"{name} 상품 중 같은 종류 단위가 싼 것만 {n}개 골랐어요 · {' · '.join(order)} · ~{md} 마감" if g.get("rule", True) else f"{name} · {' · '.join(order)} · ~{md} 마감", body,
             len(li) >= 3 and {"@context": "https://schema.org", "@type": "ItemList", "name": f"{name} (~{md})", "itemListElement": li})
 
 
@@ -2756,7 +2767,7 @@ def deadline_section(xs, evs, today):
     """⏰ 오늘 마감 칸(머리 옆 '밤 12시까지', 없으면 칸 X): 가로 카드 + 기획전 마지막 날 = 행사 카드 1장."""
     end = calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600
     evc = [f'<a class="hc evc" href="{BASE}e/{g["slug"]}.html" data-gc="deadline/event"><b class="cd" data-end="{end}" data-k="기획전">⏰ 오늘 밤 12시 마감 · 기획전</b><span class="em" aria-hidden="true">🎉</span>'
-           f'<b>{html.escape(ev_name(g))}</b><small>핫딜픽이 고른 {ev_n(g)}개 · 오늘 마감</small></a>' for g in evs if g["until"] == today]
+           f'<b>{html.escape(ev_name(g))}</b><small>{"" if g.get("title") else f"핫딜픽이 고른 {ev_n(g)}개 · "}오늘 마감</small></a>' for g in evs if g["until"] == today]
     return "" if not (xs or evc) else (f'<section class="sec" id="dl" aria-labelledby="dlh"><h2 id="dlh"><span>⏰ 오늘 마감<small>{len(xs) + len(evc)}개</small></span><small>밤 12시까지</small></h2>'
                                        + f'<div class="hs">{"".join(evc)}{"".join(dl_card(i, p, sh, today) for i, p, sh in xs[:12])}</div>'
                                        + (f'<a class="more2" href="{c_url("today")}">오늘 마감 전체 →</a>' if len(xs) > 12 else "") + (f'<p class="t">{TOSS_LINE}</p>' if any(shop_of(p) == "toss" for _, p, _ in xs[:12]) else "") + "</section>")
@@ -3587,11 +3598,11 @@ def build(posts, out="docs"):
             os.remove(f"{out}/c/{f}")
     for pi in PRICE_ITEMS:  # 있던 기록 쪽인데 지금 진열 기록 0개 = 안내 쪽(noindex — 옛 링크·검색 결과는 열림, 기록이 다시 생기면 다시 기록 쪽) · 이름 it = 진열 목록(덮어쓰기 X)
         if pi[0] in had and pi[0] not in recs:
-            open(f"{out}/c/{pi[0]}.html", "w").write(page(f"{pi[1]} 최저가 기록 | {TITLE}", f'<p class="t">지금은 핫딜픽에 진열 중인 {pi[1]} 특가가 없어요. 새로 올라오면 이 쪽에 다시 모여요.</p><a class="btn2" href="{c_url("hot")}">🔥 지금 특가 보기 →</a>',
+            open(f"{out}/c/{pi[0]}.html", "w").write(page(f"{pi[1]} 가격 기록 | {TITLE}", f'<p class="t">지금은 핫딜픽에 진열 중인 {pi[1]} 특가가 없어요. 새로 올라오면 이 쪽에 다시 모여요.</p><a class="btn2" href="{c_url("hot")}">🔥 지금 특가 보기 →</a>',
                                                           "", f"{BASE}c/{pi[0]}.html", noindex=True))
     for k, rec in recs.items():
         body, desc, note = record_page(k, rec, recs)
-        open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
+        open(f"{out}/c/{k}.html", "w").write(page(f"{rec[0]} {rec[1]} 가격 비교 — 가격 기록 {len(rec[2])}개 | {TITLE}", body, desc, f"{BASE}c/{k}.html", note=note, cur="cats"))
         urls.append((f"{BASE}c/{k}.html", max(r[3]["t"][:10] for r in rec[2])))
     revs, rpids = rev_pids(out)  # HHH① 구매후기 요약 칸
     worth, pn = p_worth_fn(now_ts), [0, 0]  # 11/7 사이트맵 다이어트: [사이트맵 p, noindex p]
@@ -3786,7 +3797,7 @@ def build(posts, out="docs"):
             f"{day} {PICK_HOUR:02d}:00", "", [p for _, p, _ in ps])] if ps and day else []  # 10/24 N1: 오늘의 픽 날짜 쪽 = RSS 첫 글(매일 새 글)
     rss += [(f"{CAT_META[k][1]} 특가 모음 ({md})", c_url(CAT_META[k][0]), [f"{CAT_META[k][1]} 특가 {len(ls[CAT_META[k][0]][2])}개 모음", " · ".join([nm(p) for _, p, _ in ls[CAT_META[k][0]][2][:PER] if shop_of(p) != "toss"][:3]), unit1([p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]), f"{md} 업데이트"],
              f"{today} 00:00", f"c-{CAT_META[k][0]}-{today}", [p for _, p, _ in ls[CAT_META[k][0]][2][:PER]]) for k in TILES if ls[CAT_META[k][0]][2]]  # 10/24 N1: 타일 8칸 1쪽 = 날마다 새 글(guid에 날짜)
-    rss += trss + [(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개", f"{BASE}c/{k}.html", [f"{rec[0]} {rec[1]} 가격 기록 {len(rec[2])}개", f"{rec[1]} 값 1위 {nm(rec[2][0][3])} {rec[2][0][1].split()[-1]}", f"{int((d := max(r[3]['t'][:10] for r in rec[2]))[5:7])}/{int(d[8:10])} 기록"],
+    rss += trss + [(f"{rec[0]} {rec[1]} 가격 비교 — 가격 기록 {len(rec[2])}개", f"{BASE}c/{k}.html", [f"{rec[0]} {rec[1]} 가격 기록 {len(rec[2])}개", f"{rec[1]} 값 1위 {nm(rec[2][0][3])} {rec[2][0][1].split()[-1]}", f"{int((d := max(r[3]['t'][:10] for r in rec[2]))[5:7])}/{int(d[8:10])} 기록"],
                     f"{d} 00:00", f"r-{k}-{today}", [r[3] for r in rec[2]]) for k, rec in recs.items()]
     smap = {u for u, _ in urls}
     rss = [x for x in rss if x[1] in smap][:30]  # 11/7 Cowork: RSS = 색인 남기는 쪽만(오늘의 픽·칸·주제·품목 기록 — p X) · 사이트맵·noindex와 안 어긋나게(사이트맵에 있는 쪽만)

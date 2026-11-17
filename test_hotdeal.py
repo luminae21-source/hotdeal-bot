@@ -3483,13 +3483,14 @@ d13 = tempfile.mkdtemp(); os.makedirs(f"{d13}/c"); open(f"{d13}/c/old.html", "w"
 l13 = {f: "noindex" in open(f"{d13}/c/{f}").read() for f in os.listdir(f"{d13}/c") if f.endswith(".html")}
 assert sorted(f for f, x in l13.items() if not x) == ["index.html", "ramen.html", "water.html"] and {f for f, x in l13.items() if x} == {f"{k}.html" for k in S13.REC_KEEP} - {"ramen.html", "water.html"} and os.path.isdir(f"{d13}/c/life")  # 기록 3개↑ 품목 + 있던 기록 쪽(REC_KEEP — TT-2: 생수 2개도 쪽 그대로 · 0개 = 안내 쪽 noindex) · 옛 페이지 지움(목록 쪽 폴더·카테고리 쪽은 그대로)
 c13, sm13, ix13 = (open(f"{d13}/{f}").read() for f in ("c/ramen.html", "sitemap.xml", "index.html"))
-assert re.search(r"<title>라면 개당 가격 비교 — 최저가 기록 \d+개 \| 핫딜픽</title>", c13) and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
+assert re.search(r"<title>라면 개당 가격 비교 — 가격 기록 \d+개 \| 핫딜픽</title>", c13) and '<link rel="canonical" href="https://hotdealpick.kr/c/ramen.html">' in c13 and S13.NAVER_VERIFY[1] in c13
 assert "진라면" not in c13 and "toss.shopping" not in c13 and "컵누들" not in c13 and "냄비" not in c13 and 'href="https://hotdealpick.kr/c/toss/">토스 특가 모음 보기' in c13  # 토스 행 X(링크 한 줄만)
 assert c13.count("<tr") == 4 and "<td>10/12</td><td>쿠팡</td>" in c13 and 'href="https://hotdealpick.kr/p/1.html">신라면 5개</a></td><td>2,400원</td><td>480원</td>' in c13 and "평균 · 기록 3개" in c13 and "<b>579원</b>" in c13
 assert re.findall(r"<loc>[^<]*/c/([^<]*\.html)</loc>", sm13) == ["ramen.html", "water.html"] and "<loc>https://hotdealpick.kr/c/ramen.html</loc><lastmod>2026-10-13</lastmod>" in sm13  # lastmod = 마지막 기록 날짜
 assert all('href="https://hotdealpick.kr/c/ramen.html">라면 개당</a>' in x for x in (ix13, open(f"{d13}/c/life/index.html").read(), open(f"{d13}/c/index.html").read()))  # 홈·생필품 쪽·카테고리 쪽 링크(검색 로봇이 찾게)
 assert 'href="https://hotdealpick.kr/c/ramen.html">📈 라면 개당 가격 기록 보기' in open(f"{d13}/p/0.html").read() and "c/ramen.html" in open(f"{d13}/p/3.html").read()  # 그 품목 딜 페이지 -> 기록(단위 다른 컵누들도)
 assert "c/ramen.html" not in open(f"{d13}/p/4.html").read() and "c/ramen.html" not in open(f"{d13}/p/6.html").read()  # 토스 딜·다른 품목 페이지엔 X
+assert not [f for r, _, fs in os.walk(d13) for f in fs if f.endswith((".html", ".xml")) and "최저가 기록" in open(os.path.join(r, f), encoding="utf-8").read()]  # 11/18 진우: 보이는 글자 '최저가 기록' 0(→ '가격 기록' — 주소·사이트맵 틀 그대로)
 assert H.poll_opts(480) == ["500원 이하", "600원까지", "700원까지", "가격 안 보고 집음"] and H.poll_opts(120)[:2] == ["120원 이하", "140원까지"] and H.poll_opts(2590)[0] == "2,500원 이하" and H.poll_opts(4.7)[0] == "10원 이하"
 assert H.poll_text(r13["ramen"]) == ("🗳️ 라면 개당, 얼마면 \"오 싸다\" 싶으세요?\n\n내일 이 시간, 답글로 핫딜픽 기록 중 제일 쌌던 가격 알려드릴게요 🙌", H.poll_opts(480))  # PP 끝 줄
 c13h = []
@@ -10414,8 +10415,8 @@ assert '"@type": "WebSite"' in ix97 and '"@type": "SearchAction"' in ix97 and "?
 assert all('"@type": "BreadcrumbList"' in x for x in (p397, tp97, open("docs/c/coffee/index.html").read())) and '"name": "핫딜픽", "item": "https://hotdealpick.kr/"' in p397  # c/·c/t·p 경로
 assert all('content="noindex,follow"' in open(f).read() for f in glob.glob("docs/c/*/[0-9]*/index.html")) and not any(re.search(r"/c/[^/]+/\d+/$", u) for u in sm97)  # 페이지 넘김 쪽 = noindex·사이트맵 X
 rp97 = [f for f in glob.glob("docs/c/*.html") if os.path.basename(f)[:-5] in {pi[0] for pi in S.PRICE_ITEMS} and "noindex" not in open(f).read()]  # 기록 0개 안내 쪽(noindex) 빼고
-assert all(re.search(r"<title>\S+ \S+당 가격 비교 — 최저가 기록 \d+개 \| 핫딜픽</title>", open(f).read()) for f in rp97) and rp97 \
-    and 'page(f"{rec[0]} {rec[1]} 가격 비교 — 최저가 기록 {len(rec[2])}개 | {TITLE}"' in open(S.__file__, encoding="utf-8").read()  # 품목 기록 쪽 제목 = '<품목> <단위>당 가격 비교'가 맨 앞(쪽 이름 '최저가 기록' 그대로)
+assert all(re.search(r"<title>\S+ \S+당 가격 비교 — 가격 기록 \d+개 \| 핫딜픽</title>", open(f).read()) for f in rp97) and rp97 \
+    and 'page(f"{rec[0]} {rec[1]} 가격 비교 — 가격 기록 {len(rec[2])}개 | {TITLE}"' in open(S.__file__, encoding="utf-8").read()  # 품목 기록 쪽 제목 = '<품목> <단위>당 가격 비교'가 맨 앞(쪽 이름 '최저가 기록' 그대로)
 p97 = open("docs/p/3.html").read(); pt97 = re.sub(r"<[^>]+>", "", p97)
 assert '<h1 class="dn"><a href="https://hotdealpick.kr/p/3.html">고향 호두아몬드 율무차 18g 110개입 9,900원</a></h1>' in p97 and "📦 구성 18g · 110개입" in pt97 and "단위가 1봉 135원꼴" in pt97 \
     and "🕒 10/26 23:00 게시 · 지금 가격 9,900원 (10/26 23시 확인)" in pt97 and "고르는 기준" in pt97 and "1봉(1포·티백)·1병 용량과 개수" in pt97 and f'href="{S.BASE}c/t/yulmu-tea.html">📌 율무차 모아 보기 →</a>' in p97
@@ -15457,3 +15458,23 @@ assert 'print(f"홈 토스 특가 {len(tsh)} (오래돼 뺀 {len(tdrop)}) · 토
 oe205 = inspect.getsource(H.own_end)
 assert 'home = lambda u: posts[urls[u][-1]].get("st") == "hot" and len(ti[u]) > 8 and bool(ti[u][8])' in oe205 and "((not home(u), len(ti[u]) > 8, (ti[u] + [0])[2]), u)" in oe205 and "if len(by) < 30 or ti[u][0] in by:" in oe205  # 순서만(30개 그대로)
 S.TIMG = sv205
+
+# 9-206 (11/18 Cowork — 진우 결정 2개 · 사이트 글자만): A) '📈 최저가 기록' → '📈 가격 기록'(칸 제목·'다른 가격 기록'·c/ h2·title·aria — 주소·사이트맵 그대로)
+#   B) days.json 그 tag 줄 ev_title = 행사 이름('블프 시즌 · 핫딜픽이 고른 쿠팡 {n}개' — 배너 작은 줄 = '~M/D'만, e/ h1·title 같게) · ev_rule False = '하위 20%' 기준 줄 X(그 행사만) — tag·주소·상품 그대로
+assert '<nav class="recs" aria-label="가격 기록"><h3>📈 다른 가격 기록</h3>' in c13 and '<h2 id="rech">📈 라면 가격 기록 — 개당 가격</h2>' in c13 and '<nav class="recs" aria-label="가격 기록"><h3>📈 가격 기록</h3>' in ix13 and "최저가 기록" not in c13 + ix13
+bf206 = [d for d in json.load(open(os.path.join(os.path.dirname(H.__file__), "docs/days.json"), encoding="utf-8")) if d.get("tag") == "블랙프라이데이 2026"]
+assert len(bf206) == 1 and bf206[0]["ev_title"] == "블프 시즌 · 핫딜픽이 고른 쿠팡 {n}개" and bf206[0]["ev_rule"] is False and bf206[0]["name"] == "블랙프라이데이"  # 실제 days.json 블프 줄
+cwd206, dj206 = os.getcwd(), S.DAYS_JSON; os.chdir(tempfile.mkdtemp()); json.dump(EV57, open("events.json", "w"), ensure_ascii=False); S.DAYS_JSON = "days.json"
+json.dump([{"name": "x", "date": "2026-10-25", "tag": "햇상품 기획전", "ev_title": "블프 시즌 · 핫딜픽이 고른 {mall} {n}개", "ev_rule": False}, {"name": "y", "date": "2026-10-26", "tag": "다른 행사"}], open("days.json", "w"), ensure_ascii=False)
+g206, = S.events_on(S.items(P57, ["2026-10-24"]), "2026-10-24"); n206 = S.ev_n(g206); nm206 = f"블프 시즌 · 핫딜픽이 고른 쿠팡 {n206}개"
+assert g206["tag"] == "햇상품 기획전" and g206["rule"] is False and S.ev_name(g206) == nm206 and n206 >= 10
+assert S.ev_banner([g206]) == f'<nav class="evb" aria-label="기획전"><div class="evs"><a class="ev" href="https://hotdealpick.kr/e/{g206["slug"]}.html" data-ev="{g206["slug"]}"><span class="em" aria-hidden="true">🎉</span><span class="tx"><b>{nm206}</b><small>~10/25</small></span><span class="go">보기 →</span></a></div></nav>'  # 작은 줄 = 마감만(개수 겹침 X)
+t206, d206, b206, _ = S.ev_page(g206, "2026-10-24")
+assert t206 == f"{nm206} (~10/25) | {S.TITLE}" and b206.startswith(f'<h1 class="h">🎉 {nm206}</h1><div class="t">~10/25 마감 · <b class="dd">D-1</b></div>') and 'class="evn"' not in b206 and "하위 20%" not in b206 and "단위가 싼 것만" not in d206 and d206.startswith(nm206)
+assert f"<b>{nm206}</b><small>오늘 마감</small>" in S.deadline_section([], [g206], "2026-10-25")  # 마지막 날 카드도 개수 겹침 X
+json.dump([{"name": "y", "date": "2026-10-26", "tag": "다른 행사", "ev_title": "딴 이름", "ev_rule": False}], open("days.json", "w"), ensure_ascii=False)
+g206b, = S.events_on(S.items(P57, ["2026-10-24"]), "2026-10-24"); t206b, d206b, b206b, _ = S.ev_page(g206b, "2026-10-24")
+assert g206b["title"] == "" and g206b["rule"] is True and S.ev_name(g206b) == "쿠팡 햇상품 기획전" and t206b == f"쿠팡 햇상품 기획전 — 핫딜픽이 고른 {n206}개 (~10/25) | {S.TITLE}" and f"<small>핫딜픽이 고른 {n206}개 · ~10/25</small>" in S.ev_banner([g206b]) \
+    and f'<div class="t">핫딜픽이 고른 {n206}개 · ~10/25 마감 · <b class="dd">D-1</b></div><p class="evn">같은 종류 쿠팡 검색에서 단위가 하위 20%만 골랐어요 (10/24 19시)</p>' in b206b and "단위가 싼 것만" in d206b  # 다른 행사 = 그대로
+open("days.json", "w").write("{깨짐"); assert S.events_on(S.items(P57, ["2026-10-24"]), "2026-10-24")[0]["title"] == ""  # 깨진 days.json = 예전 그대로
+S.DAYS_JSON = dj206; os.chdir(cwd206)
