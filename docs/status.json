@@ -1,17 +1,17 @@
 {
-"at": "2026-11-19 04:48",
-"posts": 5904,
-"site": 2091,
+"at": "2026-11-19 05:03",
+"posts": 5905,
+"site": 2092,
 "mall": {
 "coupang": 1407,
-"toss": 629,
+"toss": 630,
 "naver": 55
 },
 "cat": {
 "season": 144,
 "fashion": 93,
 "digital": 77,
-"laundry": 87,
+"laundry": 88,
 "life": 309,
 "food": 429,
 "beauty": 271,
@@ -108,11 +108,11 @@
 }
 },
 "2026-11-19": {
-"site": 2091,
+"site": 2092,
 "sitemap": 1040,
 "mall": {
 "coupang": 1407,
-"toss": 629,
+"toss": 630,
 "naver": 55
 }
 }
