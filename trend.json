@@ -1,7 +1,12 @@
 {
  "google": {
-  "at": "2026-11-18 23:09",
+  "at": "2026-11-19 00:05",
   "items": [
+   {
+    "t": "김소희",
+    "n": "200+",
+    "news": "[전문] 김소희 루머 가해자 징역형 “타인 삶 짓밟는 행위, 책임 뒤따라”"
+   },
    {
     "t": "김명민",
     "n": "500+",
@@ -9,18 +14,18 @@
    },
    {
     "t": "마린 르펜",
-    "n": "2000+",
+    "n": "5000+",
     "news": "나라 곳간 빨간불인데…\"60세부터 연금 수령\" 파격 승부수"
    },
    {
     "t": "누리호",
     "n": "200+",
-    "news": "누리호 5차 발사 성공 최종 확인…“목표궤도 진입 정상 수행”"
+    "news": "누리호가 가리키는 7대 시드의 길[기고/배경훈]"
    },
    {
     "t": "kamil mishara",
     "n": "500+",
-    "news": "Chitwan Rhinos set 205-run target for Kathmandu Gorkhas"
+    "news": "Sri Lankan Batter Kamil Mishara Sets New Record in Nepal…"
    },
    {
     "t": "앙투안 그리즈만",
@@ -33,9 +38,9 @@
     "news": "김포 선진버스, ‘교통사고 50% 줄이기’ 과제 조기 달성"
    },
    {
-    "t": "gta6 메타",
+    "t": "시계",
     "n": "200+",
-    "news": "펄어비스 ‘붉은사막’, 더게임어워드 1개 부문 후보 올라"
+    "news": "전 세계 시계 전문가들이 선정한, 2026 올해의 스포츠 워치"
    },
    {
     "t": "cuaca besok",
@@ -43,14 +48,9 @@
     "news": "Enam Daerah di Sulsel Berstatus Awas Bencana, BPBD Beri…"
    },
    {
-    "t": "kick",
-    "n": "100+",
-    "news": "Black Friday and Cyber Monday 2026: a first look at…"
-   },
-   {
-    "t": "twitch",
-    "n": "200+",
-    "news": "AI is still weighing on streamers at Twitch’s biggest event…"
+    "t": "gta6 메타크리틱",
+    "n": "500+",
+    "news": "[공지사항] The Game Awards 2026 베스트 커뮤니티 서포트 부문 후보 선정 안내 | 붉은사막"
    }
   ]
  },
