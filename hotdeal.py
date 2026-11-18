@@ -6059,6 +6059,15 @@ def focus_post(seen, now=None):
         return print(f"focus {h:02d}:{mi:02d} Threads", (r or {}).get("id"), "· 카드" if img else "· 글만", "· 기록 대비" if dr else "")
 
 
+def th_cardk(seen, rid, ck):
+    """Threads 카드 글 종류 -> seen thcardk {글 id: [card, 날짜]}(30일 · metrics 줄 card — 'v3'·'series'·'toss'·'text' A/B)."""
+    if not rid:
+        return
+    now = time.time()
+    day, cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600)), time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 30 * 86400))
+    seen["thcardk"] = {"t": now, "m": {**{k: v for k, v in seen.get("thcardk", {}).get("m", {}).items() if v[1] >= cut}, rid: [ck, day]}}
+
+
 def thbn_mark(seen, rid, n, stdy, kind):
     """11/15 v2 묶음 글 상품 수·꾸준템 수 -> seen thbn {글 id: [n, stdy, 날짜, kind]}(30일 · metrics 줄 n·stdy · 하루 칸 수 thb — 7일 뒤 3개 vs 4~7개 · 07:00 보고)."""
     if not (rid and n):
@@ -6102,7 +6111,8 @@ def mall_card_post(seen):
     for x, live in go:
         try:
             top = x["kind"].startswith("top")  # 꾸준템(steady) = 글 그대로(상품 링크 줄 유지) · 묶음 셈 X
-            r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY and top and not x.get("nfit") else x["text"], x["link"], image=x["img"] if live else None, topic=x.get("topic"))  # v2 4개↑ = 세트 쪽 줄 있음(그대로)
+            r = th_bundle(seen, x["kind"], bcard_text(x["text"]) if live and TH_CP_DAY and top and not x.get("nfit") else x["text"] if live or not x.get("text0") else x["text0"], x["link"],
+                          image=x["img"] if live else x.get("img0"), topic=x.get("topic"))  # v2 4개↑ = 세트 쪽 줄 있음(그대로) · 11/18 하루 모음 = 안 뜨면 글자 카드·그 본문(img0·text0)
             thbn_mark(seen, (r or {}).get("id"), x.get("n"), x.get("stdy"), x["kind"])
             if live and r and r.get("id") and x.get("ck") == "series":  # 11/17 사진 글 성공 = 그 테마 포즈 기록(A/B 교대 기준)
                 series_pose_done(seen, x.get("th"), x.get("pose"))
@@ -6111,8 +6121,9 @@ def mall_card_post(seen):
                 if top:
                     m = {k: v for k, v in seen.get("thbcard", {}).get("m", {}).items() if v >= cut}
                     seen["thbcard"] = {"t": now, "m": {**m, r["id"]: day}}
-                m = {k: v for k, v in seen.get("thcardk", {}).get("m", {}).items() if v[1] >= cut}
-                seen["thcardk"] = {"t": now, "m": {**m, r["id"]: [x.get("ck", "v3"), day]}}
+                th_cardk(seen, r["id"], x.get("ck", "v3"))
+            elif r and x.get("img0"):
+                th_cardk(seen, r.get("id"), "text")
         except urllib.error.HTTPError as e:  # 서버가 카드 사진을 거절 = 글만 1번
             if not live or e.code >= 500:
                 raise
@@ -10163,13 +10174,53 @@ def threads(seen):
     if not rows:
         print("threads skip (수수료 링크 아님) card 묶음 | 항목 0개")
         return
-    while True:  # 대가성 문구는 맨 앞 그대로, 길면 번호 줄을 줄임(Threads 500자)
-        text = (cap.split("\n\n")[0] + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows) + when
-                + f"\n\n전체 딜·구매 링크 👉 {SITE}?ref=th\n실시간 알림 👉 https://t.me/hotdeal_pick")
-        if len(text) <= 480 or len(rows) <= 1:
-            break
-        rows = rows[:-1]
-    th_bundle(seen, "card", text[:480], image=url)
+
+    def body(notes, rows, when):
+        while True:  # 대가성 문구는 맨 앞 그대로, 길면 번호 줄을 줄임(Threads 500자)
+            text = (notes + f"\n\n📋 {kst.tm_mon}/{kst.tm_mday} 오늘의 핫딜 모음\n\n" + "\n".join(rows) + when
+                    + f"\n\n전체 딜·구매 링크 👉 {SITE}?ref=th\n실시간 알림 👉 https://t.me/hotdeal_pick")
+            if len(text) <= 480 or len(rows) <= 1:
+                return text[:480]
+            rows = rows[:-1]
+    text, now = body(cap.split("\n\n")[0], rows, when), time.time()
+    mall, ps = day_char_pick(load(POSTS, []), today, now) if DAYCARD_CHAR else ("", [])
+    img, ck, meta = day_char_card(seen, today, mall, ps, now) if len(ps) >= 3 else (None, "", {})
+    if img:  # 11/18 진우: 캐릭터 카드(몰 1개) + 본문 = 카드 상품만(1부터) — 사이트에 뜨면 사진 글(mall_card_post · 안 뜨면 아래 글자 카드 그대로)
+        text2 = body(ig_notes(ps), [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, mall == 'toss')).strip(), 34)}" for n, p in enumerate(ps, 1)], f"\n\n{toss_when()}" if mall == "toss" else "")
+        seen["mcard"] = {"t": now, "q": seen.get("mcard", {}).get("q", []) + [{"t": now, "kind": "card", "text": text2, "link": None, "img": img, "ck": ck, "text0": text, "img0": url, **meta}]}
+        return print("threads 하루 모음 캐릭터 카드", mall, f"{len(ps)}개", ck)
+    print("threads 하루 모음 글자 카드" + (f" — 캐릭터 카드 X({mall or '몰 없음'} {len(ps)}개)" if DAYCARD_CHAR else ""))
+    th_cardk(seen, (th_bundle(seen, "card", text, image=url) or {}).get("id"), "text")
+
+
+DAYCARD_CHAR, DAYCARD_FRESH = True, 48 * 3600  # 11/18 진우 '왜 캐릭터로 안 바뀌었냐 · 쿠팡 토스 네이버 모두 다': Threads '📋 오늘의 핫딜 모음' 그림 = 캐릭터 틀(몰 1개) · False = 글자 카드 그대로
+
+
+def day_char_pick(posts, today, now):
+    """하루 모음 캐릭터 카드 상품: 그날 카드 후보(card_order) 중 수수료 링크 딜 · 쿠팡·네이버·토스 · 가격 있음 · 확인 DAYCARD_FRESH 안(토스 = 게시 시각 — 게시 시점 가격)
+    · 같은 상품·같은 브랜드 1번(앞 번호 남김) -> 몰별로 나눠 가장 많은 몰(같으면 쿠팡 → 네이버 → 토스) 앞 5개 -> (몰, [글…]) · 3개 밑이면 부른 쪽이 글자 카드."""
+    by, order = {}, ("coupang", "naver", "toss")
+    for _, p in card_order(posts, today):
+        m, name = shop_of(p), short_name(title_of(p["text"]))
+        if m not in order or not aff_note(p.get("url") or "") or not won(p.get("now") or parse(title_of(p["text"]))[2]) or now - (kst_ts(p["t"][:16]) if m == "toss" else chk_ts(p)) > DAYCARD_FRESH:
+            continue
+        xs, b = by.setdefault(m, []), brand_of(name)
+        if all(q["url"] != p.get("url") and (not b or brand_of(short_name(title_of(q["text"]))) != b) for q in xs):
+            xs.append(p)
+    m = max(by, key=lambda k: (len(by[k]), -order.index(k)), default="")
+    return m, by.get(m, [])[:5]
+
+
+def day_char_card(seen, today, mall, ps, now):
+    """하루 모음 캐릭터 카드(새 파일 — docs/cards/날짜.png·.json 그대로): 쿠팡·네이버 = 새 서식 '오늘의 장바구니'(series_card — 몰 캐릭터 · 네이버 사진 X · 와우가·쿠폰가 · 머리 = 상품 확인 최댓값)
+    · 토스 = 토스 캐릭터 틀(toss_card — 새 서식 검증이 토스 링크 toss.im만이라 · 쉐어링크 원본 썸네일 · 게시 시점 가격) -> (사이트 주소, metrics card 값, 포즈 기록) / (None, '', {})."""
+    meta = {}
+    if mall == "toss":
+        im = S_toss_imgs(seen.get("tossid", {}).get("m", {}), now)
+        f = toss_card("daytoss", [(parse(title_of(p["text"]))[1], won(parse(title_of(p["text"]))[2]), p["url"], im.get(p["url"]), kst_ts(p["t"][:16])) for p in ps])
+        return (f"{SITE}cards/mall/{os.path.basename(f)}" if f else None), "toss", meta
+    img = series_card("day", "오늘의 장바구니", [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in ps], pose=series_pick(seen, f"{today}_day", "market"), meta=meta)
+    return img, "series", meta
 
 
 TH_TOPICS = {"food": "장보기", "snack": "장보기", "season": "장보기", "life": "생필품", "laundry": "생필품", "coffee": "커피", "beauty": "화장품", "home": "살림템", "kitchen": "살림템", "digital": "가전", "fashion": "패션", "heat": "겨울준비", "car": "자동차", "pet": "반려동물", "sport": "운동"}  # 10/23 진우 'Threads 주제 태그(그 주제 보는 사람에게도)': 딜 글 = 품목 칸(cat_of) 주제

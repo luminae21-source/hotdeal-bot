@@ -43,6 +43,7 @@ nfit0, H.TH_N_FIT = H.TH_N_FIT, False  # 11/15 Threads 묶음 v2(3~7개·앞 3�
 pal0, H.PROMO_ALERT = H.PROMO_ALERT, False  # 11/16 행사 알림 글 = 9-198에서만 · jit0 = 게시 ±10~25분(정해진 시각 셀프체크 흔들림 X) = 9-200에서만
 jit0, H.IG_JIT2 = H.IG_JIT2, False
 rv20, H.REEL_V2 = H.REEL_V2, False  # 11/18 릴스 v2 장(켬) = 9-207에서만 — 예전 셀프체크 = 지금 장
+dcc0, H.DAYCARD_CHAR = H.DAYCARD_CHAR, False  # 11/18 하루 모음 캐릭터 카드 = 9-212에서만 — 예전 셀프체크 = 글자 카드 그대로
 ram0, H.REEL_AM = H.REEL_AM, False  # 11/18 08시 릴스(하루 릴스 3개 · 핀 = 올라갈 때 · 릴스끼리 2시간) = 9-207에서만 — 예전 셀프체크 = 2개 그대로
 svol0, H.STEADY_VOL0 = H.STEADY_VOL0, 0  # 11/17 꾸준템 회차 기록 없음 = 1(실제) — 예전 셀프체크는 01부터 · 9-204에서 1
 sc0, H.SEEN_COLD = H.SEEN_COLD, True  # 예전 셀프체크는 seen.json 없이도 실행 — 캐시 못 받으면 건너뛰기(10/23)는 맨 아래 9-42에서
@@ -15702,4 +15703,56 @@ with contextlib.redirect_stdout(io.StringIO()):
     f211 = H.card_png("toss17.1667", {"title": "x", "mall": "toss", "items": [1, 2, 3]}, root="card211")
 assert re.fullmatch(r"data/[A-Za-z0-9_-]+\.json", run211[-1][3]) and run211[-1][3].endswith("_toss17-1667.json") and f211 and f211.endswith("_toss17-1667.png"), (run211, f211)
 (H.subprocess.run, H.pw_ready, H.MALL_CARD_DIR) = sv211; os.chdir(cwd211)
+
+# 9-212 (11/18 22시 진우 '왜 캐릭터로 안 바뀌었냐 · 쿠팡 토스 네이버 모두 다'): Threads '📋 오늘의 핫딜 모음' 그림 = 캐릭터 틀 · 한 카드 한 몰(그날 카드 후보 중 수수료 딜 · 몰별 가장 많은 몰 — 같으면 쿠팡 먼저)
+#   3~5개 · 확인 48시간 안 · 같은 상품·같은 브랜드 1번 · 본문 = 카드 상품만 1부터 · 토스 = 게시 시점 줄 · 3개 밑·렌더 실패·사이트에 안 뜸 = 글자 카드·그 본문 그대로 · metrics card 값
+cwd212, sv212 = os.getcwd(), (H.DAYCARD_CHAR, H.http, H.tg, H.th_bundle, H.series_card, H.toss_card, time.time, dict(H.E), H.series_pick, H.S_toss_imgs)
+os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
+CL212 = lambda k: f"https://link.coupang.com/a/dc{k}"; TL212 = lambda k: f"https://toss.shopping/_m/dt{k}"
+P212 = [{"t": "2026-11-18 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": CL212(k), "own": 1, "chkt": ck, "now": pr} for k, (n, pr, ck) in enumerate(
+          [("곰곰 햅쌀 10kg", "33,890원", "2026-11-18 19:00"), ("곰곰 무농약 현미 4kg", "15,900원", "2026-11-18 19:00"), ("크리넥스 화장지 30롤", "19,900원 와우가", "2026-11-18 18:00"),
+           ("페브리즈 섬유탈취제 1L", "8,900원", "2026-11-15 09:00"), ("다우니 섬유유연제 4L", "17,900원", "2026-11-18 17:00")])] \
+     + [{"t": "2026-11-18 20:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] {n} ({pr})", "url": TL212(k), "own": 1} for k, (n, pr) in enumerate([("센텔리안24 마데카 크림", "19,900원"), ("오뚜기 진라면 20개", "13,900원"), ("하기스 기저귀 4단계", "39,900원")])]
+json.dump(P212, open("posts.json", "w"), ensure_ascii=False); json.dump([5, 0, 6, 1, 2, 7, 3, 4], open("docs/cards/2026-11-18.json", "w")); open("docs/cards/2026-11-18.png", "wb").write(b"p")
+time.time = lambda: TK("2026-11-18 21:10")
+m212, ps212 = H.day_char_pick(P212, "2026-11-18", time.time())
+assert m212 == "coupang" and [p["url"] for p in ps212] == [CL212(0), CL212(2), CL212(4)], (m212, [p["url"] for p in ps212])  # 곰곰 2번째 = 같은 브랜드 X · 페브리즈 = 확인 48시간 넘음 X · 쿠팡 3 = 토스 3 → 쿠팡 먼저
+P212b = [p for p in P212 if p["url"] != CL212(4)]
+assert H.day_char_pick(P212b, "2026-11-18", time.time())[0] == "toss" and sorted(p["url"] for p in H.day_char_pick(P212b, "2026-11-18", time.time())[1]) == [TL212(0), TL212(1), TL212(2)]  # 쿠팡 2 < 토스 3 = 토스(한 몰만)
+th212, sc212 = [], []
+H.E.update(THREADS_TOKEN="tk"); H.DAYCARD_CHAR, H.series_pick = True, (lambda seen, key, theme: "a")
+H.http, H.tg = (lambda url, *a, **k: b""), (lambda *a, **k: {"message_id": 1})
+H.th_bundle = lambda seen, kind, text, link=None, image=None, topic=None, alt=None: th212.append((kind, text, image)) or {"id": f"R{len(th212)}"}
+H.series_card = lambda kind, title, pairs, episode="", theme="", topic="", pose=None, meta=None: sc212.append((kind, title, [p["url"] for p, _ in pairs], pose)) or (meta.update(th="market", pose=pose) or "https://hotdealpick.kr/cards/mall/x_day.png")
+s212 = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.threads(s212)
+q212 = s212["mcard"]["q"][-1]
+assert sc212 == [("day", "오늘의 장바구니", [CL212(0), CL212(2), CL212(4)], "a")] and not th212 and q212["img"].endswith("_day.png") and q212["ck"] == "series" and q212["kind"] == "card"  # 한 몰 카드 · 사이트에 뜨면 사진 글(mall_card_post)
+t212 = q212["text"]
+assert t212.startswith(H.DISCLOSURE + "\n\n📋 11/18 오늘의 핫딜 모음\n\n1. ") and "\n2. " in t212 and "\n3. " in t212 and "\n4. " not in t212 and H.TOSS_NOTE not in t212 and "게시 시점" not in t212 \
+    and "센텔리안" not in t212 and "햅쌀" in t212 and "다우니" in t212, t212  # 본문 = 카드 상품만 1부터(토스 X)
+assert "센텔리안" in q212["text0"] and q212["img0"] == f"{S.BASE}cards/2026-11-18.png"  # 안 뜨면 = 예전 글자 카드·본문
+H.http = lambda url, *a, method="GET", **k: (_ for _ in ()).throw(urllib.error.URLError("x")) if url.endswith("_day.png") else b""
+time.time = lambda: TK("2026-11-18 22:00")
+with contextlib.redirect_stdout(io.StringIO()):
+    H.mall_card_post(s212)
+assert th212[-1] == ("card", q212["text0"], q212["img0"]) and s212["thcardk"]["m"]["R1"][0] == "text"  # 45분 넘게 안 뜸 = 글자 카드 그대로(metrics card = text)
+# 토스가 가장 많으면 = 토스 캐릭터 틀(게시 시점 가격 · 원본 썸네일)
+tc212 = []; H.S_toss_imgs = lambda m, now: {TL212(k): f"https://static.toss.im/t{k}.jpg" for k in range(3)}
+H.toss_card = lambda kind, entries: tc212.append((kind, entries)) or "docs/cards/mall/20261118_2110_daytoss.png"
+json.dump(P212b, open("posts.json", "w"), ensure_ascii=False); json.dump([4, 0, 5, 1, 2, 6, 3], open("docs/cards/2026-11-18.json", "w"))
+time.time = lambda: TK("2026-11-18 21:10"); s212b = {}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.threads(s212b)
+q212b = s212b["mcard"]["q"][-1]
+assert tc212[-1][0] == "daytoss" and [e[2] for e in tc212[-1][1]] == [TL212(0), TL212(1), TL212(2)] and [e[1] for e in tc212[-1][1]] == [19900, 13900, 39900] and q212b["ck"] == "toss" \
+    and q212b["img"] == f"{S.BASE}cards/mall/20261118_2110_daytoss.png" and q212b["text"].startswith(H.TOSS_NOTE) and "게시 시점 가격" in q212b["text"] and "햅쌀" not in q212b["text"], q212b["text"]
+# 3개 밑 = 글자 카드·본문 그대로(metrics card = text)
+json.dump(P212[:2] + P212[5:7], open("posts.json", "w"), ensure_ascii=False); json.dump([0, 2, 1, 3], open("docs/cards/2026-11-18.json", "w")); th212.clear(); s212c = {}
+with contextlib.redirect_stdout(io.StringIO()) as o212:
+    H.threads(s212c)
+assert th212 and th212[-1][2] == f"{S.BASE}cards/2026-11-18.png" and "mcard" not in s212c and s212c["thcardk"]["m"][f"R{len(th212)}"][0] == "text" and "캐릭터 카드 X(toss 2개)" in o212.getvalue(), o212.getvalue()  # 토스 2 · 쿠팡 1(곰곰 같은 브랜드)
+(H.DAYCARD_CHAR, H.http, H.tg, H.th_bundle, H.series_card, H.toss_card, time.time, E212, H.series_pick, H.S_toss_imgs) = sv212
+H.E.clear(); H.E.update(E212); os.chdir(cwd212)
 
