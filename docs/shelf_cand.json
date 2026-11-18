@@ -966,37 +966,17 @@
   ]
  },
  "전기히터": {
-  "at": "2026-11-18 06:09",
+  "at": "2026-11-19 06:01",
   "tag": "전기히터 2026",
   "unit": "1개",
   "items": [
    {
     "rank": 1,
-    "productId": 5885162592,
-    "productName": "홈플래닛 전기히터",
-    "productPrice": 33790,
-    "productImage": "https://ads-partners.coupang.com/image1/96wmTkVzFu4uo8_w91MPDO2FUUy8HEjZQXVjL_jGEjvmOnQXl_eCAe-e4zSq34DZ4fZqXhcFNGC5v4Mbh6ceAMe2kYla4u2P8nZBTL1leim5YYbrXZG4PMXZz22JhsO1rX7_ChlCQoyZ6xGeKqy0EOOc4vYTmNQEZBIoMwb_PSKAkMxE6eY4Z_kPaEdF_xxG8336n9FvIKK8hGMsDcquYJRFm4gV8tgQAHc8N30-4p_qsIXqg_Ki4OXU8bjxyZecQ5x6ZTZaglCg6NzqNmRsCwaNU39hIWNUUrvSuEwmzePxLK19GRAjSgHzjmlWnBLjJgqJlB2jQjxVvCkTB3LQ4XeC1d8Q1N0x_ux8A54wtqajAW83zQ38-8NeQc5WT_VK0ETXwvH7vaBisUu0vTAvmtepfCjipK5whmgrBi96oe_I0NKQbokaT37sT9kx7uhZr2rfKIbToDUp-c3YtcV3ZovfO5xdhl5VOoOX5KuXMVuaAB6X48-r_pWLL_Fb-KJEA1xK7xMR5WxzMNToG4-uLXydkg==",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=5885162592&itemId=10333011832&vendorItemId=77615227010&traceid=V0-153-6b70712596292759&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=0&slot=1",
-    "categoryName": "가전디지털",
-    "keyword": "전기히터",
-    "isRocket": true,
-    "isFreeShipping": false,
-    "total": {
-     "n": 1,
-     "u": "개"
-    },
-    "unit_price": 33790,
-    "parse_ok": true,
-    "ban": [],
-    "effect": []
-   },
-   {
-    "rank": 2,
     "productId": 7821738096,
     "productName": "한경희 초저소음 그래핀 PTC 온풍기 AI온도조절 절전형 3초발열 전기 히터, PTC-2280AY, 화이트",
     "productPrice": 129000,
-    "productImage": "https://ads-partners.coupang.com/image1/TZBr6YVXIrtX_zZ2TUZ6-cWQa_Y_2TGYlblLQqETo7xCv-WCb1toqJEDZeLcPD6sinovysH_FE_U2MQTAeUvpiBGb_Xrf2WWCNjsuo4t5VkdE2k2nDkYlF_22hVFfYFhfhk2ZUV9PMcK5ABr9FM5jYk8mA1wxkaOM4rQn0IuL7sg6Ak3YnkvaGJD_gvo64yrTqlVQQLWXSyQZXgmX8_c-mHVjgz_IjEdg9bc6_24X3sY47JYFrjbUyrF8DiA2nKD7AhmPOtOeHVIPwkJM_KsytHJIRJtVrcfRAoHnfCzK2b5Vt8cUFc7_LfZIc6GW2XlPy54-R4SqY6CK5Q3Jg5i0qbL24YFp0RLciyMM07hlLQNTNjYAbnjLX_0Rvozp572DYpLwaIn4LSWSeZ6FSIxm3vHAZpQSlPMHnRH3gTU6PVJMbgX84epwT9aFoXmjIfUHLb3vTf718zgxtHaQokDQqHJY0dFUel86bOWlh1V9TmYHkx3uR1VDbjgdiqaJMRLJO9Btap12CYMV6132v9peDycJ3TgYqXa",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7821738096&itemId=21247296854&vendorItemId=93504290234&traceid=V0-153-e58ad72ce6c0e5e3&clickBeacon=1d40a3d0-e2cb-11f1-bd70-ac9b852eab1d%7E3&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=1&slot=2",
+    "productImage": "https://ads-partners.coupang.com/image1/NA1tVLLtIfS8SAkxNLMAv9BpCvZOm5Kyf9jobv-4WzQN9V0ntC973pcycOTQj3Rj6B20C0g5xXe5wU_kytK8DhXEVkYqsvzagQWH5xUZkBbAjYTXV0qRGGvd4pRCzx46SFeezmmoGQzYezqWoZOUyBva9CGjmNeNecum0G5EoYAQR9QIas_DHz3J2r0A3Jw9aRjefoxkIB606Hb7xdqIfa7qw-rNF7qE8_K0YQdbZzQ1KfHLI0GYVx2vFQn5rpFgAn8TSzNHID8Nzd0BcYt_z22KbV3QzWQHVRsPd8FeCFLAP8p6Dg6WWYNg0QDXud6DgFvZexF62bbsRi2dKpDlxNjb63X8Vbsq1Z6Zyq-GiXvyO8Kdl_Md7H0AxM4BF1z11qDB6Ncud5IbWNGOxNAGmZcoNst-NTp91gLbUG6L1M9JjR2odsI7Pp0LbnMTPoCtZgc_q8xq0c6SR5VNFU_1H176pC32u07jzc5xetTh8H8yk6az-Ggyf9QohuVEqZ4br6rp1ZtF_ANfWzWL4Fh0m5N-uYmmdr0=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7821738096&itemId=21247296854&vendorItemId=93504290234&traceid=V0-153-e58ad72ce6c0e5e3&clickBeacon=3a547ff0-e393-11f1-8df3-617015af4135%7E3&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=1&slot=1",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
     "isRocket": true,
@@ -1011,52 +991,12 @@
     "effect": []
    },
    {
-    "rank": 3,
-    "productId": 9185978442,
-    "productName": "슈어홈 3초 강력난방 전기세 절약 컨벡션 히터, White, SUH-R25CVM",
-    "productPrice": 389000,
-    "productImage": "https://ads-partners.coupang.com/image1/F0-hAiL_sDzSQPA2F2XKjo-vVj-Mo_v818sBWBw0mBJwwPuSWfHVEQSWDIzU2gSSHX0PA3KxMhXbJYRKqt7GxBQ4qJbCF3pIzgg4xuK8nq7Cp_drp-OhzcEEjSMjKT2dTv4SBbNRUHbbo8Mb5zNPz86tuOq3LlhF0eEh7-Hl9nCbwIbgrq1PndzRM5dANN4sMYnGcHHYbbvzrRqq6NTdJq3Pj1pI5rMfBQQ6HqAB10gWqY8-OU8rtagUg5qONeWwnJspfuI8eiIQ3GYBAE7EYEa146us6pbFSWsbkZ6qQoMk-FiFy9i63vQmQZ0J4vnFVIHriMXKIrEv9_urIiZpoxxnQfocQK-CrFCacc09cRM0fNMz2FNsUJvuGdFuxgHhFDhPm-cWyXDeehbulyp3aehBuAbYfy8zwlHAzKUO-tRMUvu3jLZ9b-SerQruTBrWUFcnRM3_O9kO2Ypi08VU0BHhZ1XCgQaSnXNFmRnpVLYQYxZWiwg1LL-yL6Luc9CanyBQDIneHP4FuF4VT1ZOdu8DEQNMXYM=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=9185978442&itemId=27097840236&vendorItemId=94066045507&traceid=V0-153-a49ce81bf4b3f8d7&clickBeacon=1d40a3d0-e2cb-11f1-83f5-a90d727f2cbc%7E3&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=1&slot=3",
-    "categoryName": "가전디지털",
-    "keyword": "전기히터",
-    "isRocket": true,
-    "isFreeShipping": false,
-    "total": {
-     "n": 1,
-     "u": "개"
-    },
-    "unit_price": 389000,
-    "parse_ok": true,
-    "ban": [],
-    "effect": []
-   },
-   {
-    "rank": 4,
-    "productId": 2245605588,
-    "productName": "시프이컴 석영관 전기 히터 2단, CIF-FH03W, 혼합색상",
-    "productPrice": 12900,
-    "productImage": "https://ads-partners.coupang.com/image1/r6I7qh8TNwX9j4PVr9ekOCnSAMrgcdACwlvvMkfMFRVD9yG9CmlloI7D5-uYZCNogK8m2L0GhHzaWXDwNcepN3_Aof4Ca0TruN1OaD1IgF2aUlzV0scCm1Hsjb37wxVgy4sRUZbL5C7tiYv9fPoI58JMiRVjCsvzDE6RLbeUUZcKi-Jn59yYDB5d_AxT-BLdlvthfeWQ5gqr3nNEYWdWLdEZh2vayVkkX8TtJZ_ZkYXrMq1667QrE4uPF2iEBrZeZbMqr1xgCmk3XODQPQ084RX9NclDd4q2I0SLKyKvldn7WisE6WD1HZdItipHpFWmjUV887u9CsZoIZ_hGSM6mivPxcBN83ybzol_tkEtP1D4zawgsU6qsYthCRo04xtss9C1-3v6UDil_KYKxO9J3TYm1HtIly9ImbAwidO__cKPEhyozIKWhGWa-0H2jdiUq4JZvGDyxOTZJln1SaneN8fjVPJPAGgiQAtdIyhz-4FlZDlRvtYDOpVmZ91jC0VcRnYsEholx8qg",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=2245605588&itemId=3837344112&vendorItemId=71822165383&traceid=V0-153-b3d286b82b9b133f&clickBeacon=1d40a3d0-e2cb-11f1-9258-52207087d9ad%7E3&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=1&slot=4",
-    "categoryName": "가전디지털",
-    "keyword": "전기히터",
-    "isRocket": true,
-    "isFreeShipping": false,
-    "total": {
-     "n": 1,
-     "u": "개"
-    },
-    "unit_price": 12900,
-    "parse_ok": true,
-    "ban": [],
-    "effect": []
-   },
-   {
-    "rank": 5,
+    "rank": 2,
     "productId": 6398114847,
     "productName": "델루체 PTC 써큘레이터형 헤드 온풍기 팬히터, IN-H1000, 단일색상",
     "productPrice": 39400,
-    "productImage": "https://ads-partners.coupang.com/image1/7uMnW719-wqAXj-f7l15_PKn-X4iAkgO0-S8dbskoXQg_WORF9rQDTvRlZbxt2PuC0JI6eFz7HjHSEZMRRgeSWsNstAMiCzE7QaEsHuifh-9DKQWkxnIeAywHxX90aeQnBcNbFE7yCjvdNS_S7TSR-AHMvB1ceR8AXntpkplcfHc2xZOys8jh95lqgb0kGVodtn7hjjL0W2vO7l_v02jz3LeptlchfPz3Z8oUCzxN2CWEi0PyBZ8sUfcTreVIpLL1r0Ell4HwaJdDAvpOhUPw0F6fQUF_F-vJgoE3GGi4ZSZJ3vgzseP1JbV62vi2ht2KTawotPb9y8Mfnor2WoXHAFc90vKeTtQSXtbbj0QDIOTty1jBn77w5xFSOwjOxPz91gisKi5sK1WpaNR2ZsvM887H4BpmYcXL58DbQWyD0LyycsRjAu8sPtPNjPNEJS6Sn9IgUFHK9fd5LezFzVgpc4mbH-cYQLQynGtxcW1tv1xZCfH5YXt2qQ-_UTN3kdcH-tgZd4OR7Et",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6398114847&itemId=13670064866&vendorItemId=4243083330&traceid=V0-153-96792e5566f10922&clickBeacon=1d40a3d0-e2cb-11f1-af6c-2dfad032cfc4%7E3&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=1&slot=5",
+    "productImage": "https://ads-partners.coupang.com/image1/ppKDThIWvAJOYaP-prp1-qMStU6YhURN8EVWj6U3HOFcSmgwC_G6tlbT0IkBLjIxAa-7w2DqW_IwZihOOolAx2JyB3AkpO03DRMKGA3RUXb_tLoJlkzvOJULnK9RLGYK4TPNCTFkTaY0jRBMvWM-mfFVGqJ1GXQJ5b5BRJ_n3jNH12pgQpu4omAxtaK5NwAzuUzfvF-SmAgEvZb87-_4062_sPng0XWhEX_LD3Zbsn8LK-JAI2P9WwZpjCd77eJXl0WZgYx2ZGWRGWUdIGJhaElZVJLphugGZkp-VxXy0busrvjpNN8Cp_Bc8A5ofOLwHqVh3DZk8_Prm28UtEZi3C4NxIQq5QGuMgsyL0wuxPMjiktDGghgjwX_d0I4W0Q2yK9P9Wj1mTJO7ddRYw5srFGJoMtrvpVSZpjz2auUnMThsV5trzMUGt5QTEXuvngcRE62f0_Wla_JaQkybjjUsWWu1WG1COUR_ydz5WTlDsF_dBau-aNk0V4pmnLXlCvu4P_c6AHsWg==",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6398114847&itemId=13670064866&vendorItemId=4243083330&traceid=V0-153-96792e5566f10922&clickBeacon=3a547ff0-e393-11f1-a49e-ccb1637f9706%7E3&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=1&slot=2",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
     "isRocket": true,
@@ -1071,12 +1011,32 @@
     "effect": []
    },
    {
-    "rank": 6,
+    "rank": 3,
+    "productId": 9185725298,
+    "productName": "5방향 완벽난방 오방난로 이동식 실내용 전기히터, 화이트, SUH-500MN",
+    "productPrice": 64800,
+    "productImage": "https://ads-partners.coupang.com/image1/lHbfdFKit6y8QwL2lDsl4zvNWt--Rlk9ZWuiedxGQGTY0FpFby2eYwAg2Z-HkpduA3fDkTYzDt4QELevFVOr38bPWd3dRZIcxsQP5BSEjv2MCC_rKCvSBuQooPFe-kd6nW3dAOIgXyyJPumHOVLxcCNGPrnmm-z3FW271BTwF1H40qrowGGuVBwubBc1XoNerSv8XacyNW-fS7IX6yioH6NarRZMRlbMcbK0cq2cSduyvlAbtg405pJGN8_rPLmB_ucoUXPp_vlr5yrCgtEgX9LomZ6TJO-U1p1l67m8V_DscCT81WWL2VKx8pPd6Ng58jJRaGtGn4OL4z0eA3ZCh10kaW6ysbk7BlOmOY44fuVHrAMXx1auUPnErrXE7LEgL_9bFSqNER3W-Id3L81G3fa1-9WeYtqWm8wq2JPIRYOULOdg4FBuzkScpq7QLZOKmNa10LFpOr3TbvsZld0Rpm8WPqBJ2dBveb1nD0a1Gi73AObqLIRSwc5JpadkXvVRJqbVyyoTwZQGG5-hdmpSRXvMj6He6hgv",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=9185725298&itemId=27096675112&vendorItemId=94065377827&traceid=V0-153-72538b39a358dc75&clickBeacon=3a547ff0-e393-11f1-886a-61ad674d9edd%7E3&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=1&slot=3",
+    "categoryName": "가전디지털",
+    "keyword": "전기히터",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": {
+     "n": 1,
+     "u": "개"
+    },
+    "unit_price": 64800,
+    "parse_ok": true,
+    "ban": [],
+    "effect": []
+   },
+   {
+    "rank": 4,
     "productId": 6773488903,
     "productName": "포첸 2단 쿼츠 히터, LM-FH700, 화이트",
     "productPrice": 13400,
-    "productImage": "https://ads-partners.coupang.com/image1/f_nwfh0UuFRoc4WJf0ZYswlitr_MhH0HI0HAh9rzq9Z_ezDYdnpO6D31b2nG7gvNHwNkecoFnSIF-qphmZEhWE3F8FZPsy5nIDX4Gr_PtIyfwU9XGAnlHbFO7NcMxcXdkDhSx7DaqN7A1G8w9GxKKLeiP0BG20vkcXgkmBIcR7FZp6GIMI9HFtnlxkqFRgZsfs6zeeSmnCKDude-YwdFrO2wgh0xHalh320LtcpJyPGd7jR_MaoIootmqD6ETam2YTLTx1DauubPr_MvQtN_X0WAqCMnIjHa-p3wqQec8dr7R-2Ni0Z0NZkx2kUzJnWTHkZWA29EuxtzInn24IHi7Ew_lAwyxhNnFX1tFkvYSwo0LEypzkyinmzbjstWNiHUkFSK_gkXH9jIYBqMPPbzght55ZShTPLNnz9fVLIcHNNyGmelFJbwP41h9b60qdgidYNVNHnPCDSHcC9AgB7bK8e-fG0h8NqTmWgK4CripeoYK_aaRrrVGLp_INzA3v43C1tqk_tJzU4=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6773488903&itemId=15910179776&vendorItemId=83117757463&traceid=V0-153-109745b5a22c3085&clickBeacon=1d40a3d0-e2cb-11f1-986c-cf915e24fb9f%7E3&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=1&slot=6",
+    "productImage": "https://ads-partners.coupang.com/image1/TTC8DEJwPfv8oO1vTXw9tvmYXjPgJR_QydWMqcj7VyqtAUThqm787Fmq6TH_X1gMh3CQd6pbJ6RPHc5eBFXzzRR7tNPSB3hhxFVvhXT5KjHA8T0RUeOfRufoznoPOpv1l3QsNq2gv2EUKUKoFuTvoi69FpRGeEgebh-DOQM9nwvnE_l9mdgkDo4usp26eXQojwH-mhg00gIMDKvUCLpOJA6ep3yRz5iC2E_4PFzhcGyKIzMQQEGKBubHD7Cltg0tc3pKbYkPwWygTSUocENN2QsKwrIdLyeedljZxmgKFWzwT7X7CSRK4uayDw8YCCb18sG0Z8756AxYNWNpbCuFMjjYosDaUCQ2f80oDU7Me2FV210gNTHH_NylmcusBh88hcIGD2yI3TXXIMuCZ1nmz7bs01N5uCX9djygBlgPLYqJp3DjsbydVBDVF4R_6FuysLo6eAApiCF85W6h4LMw4Xla1SZCJXa7k9KxWFbicR0luRN-MpM14fDxQ9F5h5uMEyS-8_axBm4=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6773488903&itemId=15910179776&vendorItemId=83117757463&traceid=V0-153-109745b5a22c3085&clickBeacon=3a547ff0-e393-11f1-a1eb-402319236ad8%7E3&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=1&slot=4",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
     "isRocket": true,
@@ -1091,32 +1051,92 @@
     "effect": []
    },
    {
-    "rank": 7,
-    "productId": 8384169432,
-    "productName": "신일 카본 전기히터 전기난로 가정용 사무실 저소음 난방기",
-    "productPrice": 138000,
-    "productImage": "https://ads-partners.coupang.com/image1/rDhwaZHziGBs_PhmrJm6TtCVWWoIbW782fGHhWNAPq-pL9HWnStoddLDkzAScQOWybndok5YaJ67muolptVUtR64CgW5kt9KVtjNeLmMOHHodcQLLq2AnzshyCgT2OSeK2XdPVxf5Dz0MvLNh9TnXVr4onIXzQx2taHcs5l-nuZqUfV4jg3hGNL8chcBkL1rB0BOHJqc1LkhUoPeqDfpnGo8kw8tFkfWCLqd2zDNST2l9RqWLwlmmS4PFJvDDa9xsipY-8iuW6J23qxRfF2Ry9kuIQQgqrsPeTV0xoazzzSkbYVw5ADySnE9WokOSA28YJmsmQOuXQsOv96epnti8HK_4IF-ar51GsY_soSLDJglVLeXek0IAZNItvN_VtPAvZ_YbheIXEdmz4zQzHGwBWMP7ncHHsj-sBn4kv9EzvEbTmWH-VBSRSUREb5zdy-RIS9VZ63F6tXSrNlUnoBtRumN9TlH1Uh-_bLjwKd76nlIlC0z5MpC-Vw-eXqjT49DoWu1_4bp2AYKZ0wP1c3YZQjcO_lwwpsbEeEqVBiFcZgX_nk=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8384169432&itemId=24230993245&vendorItemId=91248190090&traceid=V0-153-3434857d3a404e6b&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=0&slot=7",
+    "rank": 5,
+    "productId": 8380337958,
+    "productName": "1등급 가정용 미니 오방난로 5방향 전기히터 전기난로 사무실 안전인증 절전형, BRH-5590Y, 모던화이트",
+    "productPrice": 109800,
+    "productImage": "https://ads-partners.coupang.com/image1/1kdt16JBPRyXMRjq1oEWVPapRjv97krmXpWf4P0kEh5g7ex7Dk_c87djfYrQJUudAnQWvW5ejxnqz8AWsxKYWwEoxM27-mg4t9_ptXNB1Dvr_MBmzeagS5hLnHVGgjgoBKmOsFdX05H5n0o1CzS9WknfyujsMVdzPPBoFHYUn2LRZMB0KsZenRcEQC8nKYvulSjMhWSiOpu2pa6_1_SQj1VE0-oUSSzxESAjk82kV7842EE2cm5PLL6LJ_jxM-pRZDOKmNL1x_TxvK8QaFXRK2p_cVOsKAzCJkbizWVAm1ZmNCH4oONsAhbq6UTYfp90bEPbPNtaAEjEmdFtFInqfhViK2ZqZilAGtkqEPoyI1Cv3Sd49m2Nv-RdfEj9WFEhtG5s83rh65WaUNTBu3s8JZF5bv7JpYDDZbjqOV-Mk9a7b1CAlK_gpt1hSrHyFt9m5h0uH7HzpIYEx04iHQyGt9_1rhxvFoVTEBDY1QLqfY8G5F4gqsHGkldplmHE_8gxK9KxhbG-9JUtEhdTwgg3Ves8Ju79c6BF",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8380337958&itemId=24216867919&vendorItemId=96005727992&traceid=V0-153-f426091a630a1b89&clickBeacon=3a547ff0-e393-11f1-9a16-094e6f1cd4fb%7E3&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=1&slot=5",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
-    "isRocket": false,
-    "isFreeShipping": true,
+    "isRocket": true,
+    "isFreeShipping": false,
     "total": {
      "n": 1,
      "u": "개"
     },
-    "unit_price": 138000,
+    "unit_price": 109800,
+    "parse_ok": true,
+    "ban": [],
+    "effect": []
+   },
+   {
+    "rank": 6,
+    "productId": 8384169432,
+    "productName": "신일 카본 전기히터 전기난로 가정용 사무실 저소음 난방기",
+    "productPrice": 137000,
+    "productImage": "https://ads-partners.coupang.com/image1/d7YggzDtoX63AtcsdwRdKRyQV2KddctMAA3KgFa7vqvIO-9qAuvvg39KN54UIPE8Ov8N8Fv3tJsXmT6kDcGbGRzH_ZM7SdWjiTeKhjRGYSZm1m6o_WFzaKMjPnZPwYBrQXXrqJ_lBla8EjU7tu6Cpd6QOHVET21MxXA1MJe8X0N6EUP5n8mxw7DwJSh_PU3rOoyhFl4kIcK3AagakbUY0ZWg3Meg40OMDNa3h6rP5ti3rpX_6ljf-DqTJ3Dlih4APzD7wPpTTEVtL9bI2lBla559FVGGMMXY8AjyC2LDiHZHudTwDGlVuuqsGWJQ5m9UWWw7dhz3jiR1mJ0Pwz07aF7hXbwgKXVfDrTnDOq0qCwCJNfml_3XxImZM5-WtGmEWHv0GNV3cE6uCfMvH_EuGDrKMocCcCveaGOT8poDVwG2JqhF2nvGs8PoThD5tNZ5FPdUO-mBvq4fJAM71ER8ClVFd7dEOyeiImm2M5w01NJyTozGk9dQw9cxh8iDl39NWsVnAJK4fiIs_kYXp9n7tBAv2X6veKp_Mxi4HWE247KU0hI=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8384169432&itemId=24230993245&vendorItemId=96069375645&traceid=V0-153-3434857d3a404e6b&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=0&slot=6",
+    "categoryName": "가전디지털",
+    "keyword": "전기히터",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": {
+     "n": 1,
+     "u": "개"
+    },
+    "unit_price": 137000,
+    "parse_ok": true,
+    "ban": [],
+    "effect": []
+   },
+   {
+    "rank": 7,
+    "productId": 5885162592,
+    "productName": "홈플래닛 전기히터",
+    "productPrice": 33790,
+    "productImage": "https://ads-partners.coupang.com/image1/ki1IA6HW2dy6Z3vXkgqGQPOvFNT_sWsS3LHwsrdXEfsBXkjL2EYwQcjahLkg1juzstKa0sgFJOwEYdE8CkUEBWXQDD3DhJTWnsrgrL4cMXXB9spCkt5HBdkUGJZySfTggmqa9ENVrbCyZqWXvbQWFfO39wLzFrKLE8pnBMGIuVrlE-wDeVs_4IPZWQ_ZRgU8FPSKp4t_I6SE54NKQXwaIxGC9y0Qb8F75pHjSv_iIkBLdcXlcYsQPKUdgFhWatqxomaF_aQir8WYvV5OZMD3-nxfJDxzgkleS7PgcrgKS2Vk74fqowc4LIW0Fbg04MI-AYYHaJ0MM0LzVDVilJWsYgup1Jn8bsqxtXBCDQgvUD0rJESWlBbkUXwX3jjOz8YdZxtXt3TnDLhLyfQ1-VnAXwFLS-wbYx7u2-3MTWNCHZJizIQILlsju25eLxUvOO6S4hgLonJushzzWwv8UslAaYMa3XtDBa-GQ-taMLcUQOsbJCAYvIK3x3XDDVKq12xtHJLjKH4Qi2TcoqOrcvVXjbBT",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=5885162592&itemId=10333011832&vendorItemId=77615227010&traceid=V0-153-6b70712596292759&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=0&slot=7",
+    "categoryName": "가전디지털",
+    "keyword": "전기히터",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": {
+     "n": 1,
+     "u": "개"
+    },
+    "unit_price": 33790,
     "parse_ok": true,
     "ban": [],
     "effect": []
    },
    {
     "rank": 8,
+    "productId": 7790267623,
+    "productName": "신일 전기 석영관 히터",
+    "productPrice": 23900,
+    "productImage": "https://ads-partners.coupang.com/image1/XeD6O632aMlFOyFiXT_x2Pjr84vX_3L2_AdQNvOXzq8pg3ICQCJDnEPY_RYnozWS-MoHRs5mN6jbOElAnQWUV8cEpUY_QbX5IjGOCRm4Ugsvk4Bts9EFkl0I2H4N0cKa7SM_K2jl356JqQuZ1ktxEkw5qq9cVv-K5opb4LBt0OtbfxiyUQIKuLTaS4wXHpo7rGVmGQXkdo6QjB0nU7VBi8pEFXgdr_XGM0tknyaiW2nLddGXylBhMvk92xSuwG7cj0iTL9fQ2Ch7wK2dtBIgl5O2sMq7meRKtVYMdu7NdhoHcPquI5DrLIkwo1_5I6sHvivY2rI5Mou4rD75codCvA948wBXaE7DIWBxzv3VV3bbEcKuBXYBiinkKJnLQBdpfKUrbTTUlwv9IyOyygW5sx3-wZT65pwgyb9Y4G8X3p7Ysn1pPTZfVtbHJTVsM2ClyFJwtL81m9-vW_An1hCWa_aOEnYAUNwM9eV1JXw8wXe6L3h_R4K8U3QjKkGJiX1NvIsKOXWYHUb6DTxfwp4QG-6r",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7790267623&itemId=21074699914&vendorItemId=3003564160&traceid=V0-153-49e4c292447922fa&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=0&slot=8",
+    "categoryName": "가전디지털",
+    "keyword": "전기히터",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": {
+     "n": 1,
+     "u": "개"
+    },
+    "unit_price": 23900,
+    "parse_ok": true,
+    "ban": [],
+    "effect": []
+   },
+   {
+    "rank": 9,
     "productId": 1384520598,
     "productName": "대웅 3단 석영관 전기히터 고급형",
     "productPrice": 37690,
-    "productImage": "https://ads-partners.coupang.com/image1/n9Uvr3njeqOFTcoCn1rAAN1XEjg1hVEnSQHBx5T_TmkMh91rBrLWnoWO0bpAO5izsh9yOMF4jfI3--HDv-Cyw0BVvMqiaiQVugncKRNe_NWKROGb4P3RCV4J_-WXFDkCWDpXL_YxBIEhsB_8gzlee62smctQsHtYLEIIyuUkMZV9_Zzm8OHCGL51X_c-5_im7rRgCnQtFYggKscDem7u6OquXjX6qKZWlTnXKmzAikSB_d7csgn7OVg9CC3SAdFiDUra6ZE_UgDIEfeyKLCujbRWV4Lm216R5dAHzT1FgLpsXI5D16OE8duAH0Jn8YvGiAqH-zvcvyOBiqQR30iBj7n9aojS4stpKUx3wHWpUO7a9KoYF2aCutoOeJwVJxoKEDV2-41ojor86-zpEcw34QfAm7TnJMH6_S1st17R1lK8oXyTjHeazQOoCE0UtKctLpATkY7MlEUFrOzO4T4oDW-5bc8ETHAi7ib9efsc2g6pI-TR-JFDGo49Qy0ZKN7LPc9dcaDWnLbPhmnlLvTusszJoInC6Tb3ha5L-baeBfvenLhs",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=1384520598&itemId=2419233328&vendorItemId=87793895774&traceid=V0-153-d28b11f819eb0861&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=0&slot=8",
+    "productImage": "https://ads-partners.coupang.com/image1/iGKBlht_3FaAP7QliERrWWXl8ANJk-cZG8mDVQWaF4NK3GKFmJPaCTnyf8siyRjQgidBlRX_szO8e-64A6yT9J2FmO6I4A1_m6iTyhLQwdur2sQDQqUxYRvEQbkjWTXDqF77zgSRJEuCKsNGWAljSZA_S9l5o7MtlCZHR0rkU07iowTqqfySTE0UyvHTgUQ2yxhZtvPploxY9Tv3R_VH9QLZTE5RhfNPnLDNgQBNxmPGefU24MXDK9xyobcLqfuAdzJVlyzWsZXnYldltKaCzTdeMZuzeJBzvWlZJZZqTjuRXa6yV0CzXc-EUOEH01BcWzIWc2lip_AqRHwNUBLMYfYfMt3HBN67cNQmp6sTIAAfmO3Wd_MoJ5EW8G6NQY--MXI2HVUhxF5fXid2BBoQ54w5ZgG-o4prseEuAIWNA4ThXmeH8-4xGkCxOicX1isTTHS8_6pWo46JLKcobf8VNRvd1eQR7hqkXuxgBWmSWGxteOA_nnvzFODW2xSZOJPCHxJ8kVFQ0st7b4qLKK24HNU25YFNsVSlKMJmCETyAsN-v8M=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=1384520598&itemId=2419233328&vendorItemId=87793895774&traceid=V0-153-d28b11f819eb0861&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=0&slot=9",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
     "isRocket": true,
@@ -1131,32 +1151,12 @@
     "effect": []
    },
    {
-    "rank": 9,
-    "productId": 6079713270,
-    "productName": "홈플래닛 리모컨 컨벡션 히터",
-    "productPrice": 49990,
-    "productImage": "https://ads-partners.coupang.com/image1/dAvFLnh70jeiRq7-dEbhLfvqvYVXE7j1MiAkWoSpYi7AMBj1qmFMa0-17rMZsR4lgBchyoUocOKHARVopAX1D1aWP13BT1mMqc_kpfe54YoS3N0iNGw5eV8aTFAj2p_jODDjERl7wsscmreCcyZPeJ5C3q3jSOX0hVTY132c-GQ2ONecHY4dAHahqgx_yJcK4acPsJRuMDX7inoiq3WFEKLTSxuHTCXyQQrVNYGxMoGEkzyHUvgzMQcsukLl97AGovL0-oJSS6ShvaafYebQpjTNoSlG35dPME0ZPasHS-zkL61JXscHOtoeu0mjaWHIcqHZoJ0dOGPCNOCUQFHrI1cZTC19PRiMjJQ2i6RD-ZCdAUN38hefUl8HaC-uIelDGlpYs3ze3AsvTF7lp_gCtlBtn-AVPROzYntFcD4uDZ951tT7JFkgEgIUGfgcSS_ExsyK4eDcA0Hg7BaFZaJf1raMSFwN274ErcG0wzQNtoLPuSokTAgtRdbXQsZTnxI6MgN1wFz0SgJdkYQgzwXuYrluow==",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6079713270&itemId=11263804258&vendorItemId=78540732876&traceid=V0-153-a6f66cdb486fc4cc&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=0&slot=9",
-    "categoryName": "가전디지털",
-    "keyword": "전기히터",
-    "isRocket": true,
-    "isFreeShipping": false,
-    "total": {
-     "n": 1,
-     "u": "개"
-    },
-    "unit_price": 49990,
-    "parse_ok": true,
-    "ban": [],
-    "effect": []
-   },
-   {
     "rank": 10,
-    "productId": 7727063548,
-    "productName": "대웅 멀티 발터치 오방향 전기히터",
-    "productPrice": 48450,
-    "productImage": "https://ads-partners.coupang.com/image1/2ZOd99FPESS36IyE2bpJQiqSKQno_hU_2be5i96Axn9fe90GQmQNo7i6o-YoHmGqBDTsR7pHkdWVj-mz4upExyY516MUv2ucxxaLmksrsLMwzioEkEyWvepizL92Kj42qbDPsRrXS-0bc7e9lFVWNVfN4HaJzB36fI28kZbjXVHyTL0qxF7-epTlvtnS5C9jTY96EG5mbazAPD9Wg4OcliTZ9qc_2f-hqLx95eY9LGt1i54MFkqKiNZJjjCe0EUPpnjIt6lqD89FgFk8NRqeCMNDGyhxYJ2yc9FNbBkD_oJaZLxFGtbyV8TUOvO-KoCGvnX5lD3CfZJMBsGp5_Ltrnl5Qygl0qcEBgBQoAWIF9eJjKvZ0m5Atv4jlv92p8drtHTHZwWP1lLXEpuF3rKdTfWz3gFRU7wl75rhrmYfkky1IKDtt_SMBtHFVw6yZiXBKDMobVmE0i8ebSLfD9F0tB_wraLsyPBbaspMUdhs_nMsb-IBKAz4NkbzOMaGQE2Ocm0hSq1xb8jRrExl1CUnFIMfHHNOkywfCtiDIRwlNCiDo4fe",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7727063548&itemId=20753623305&vendorItemId=88176112041&traceid=V0-153-374084aee2d81f42&requestid=20261118060902194179637889&token=31850C%7CMIXED&pt=0&slot=10",
+    "productId": 9778289352,
+    "productName": "[2026 NEW]프리미엄 VELUA 세라믹 원적외선 스탠드형 전기히터 / 타이머기능 / 자동좌우회전 / 화이트컬러",
+    "productPrice": 31900,
+    "productImage": "https://ads-partners.coupang.com/image1/LYPnkjS2W5L3HU_GLQuKvKs_Sy9yZV9x-ZduLKIVlENvzj83OwkDebWmrK6X4sbUJvUezYCExgaNTiPoCP33Tu5N7m4U2jsBBMXi0I4jTugIkhqTY3SN6V-wm_1-XUHhhpgDPTzMd97vseD6LPi2JOKa7WjOSt4HZB-DtD3HvRmy0KxqjwYPhC0Cr91afouHuPRXYlSl03WgLODZQuRiGlT2lVuraMrrLsChQg1rvlL3I4yuc4duthVkKr6aSfoATVOICwVPntU8zi01zOSGOwxgrbALgyiSHVAme0b3EX0qL8uLv3kK65Cn_NQoJdtnY38dkgVGCZCGp2TaRKrn4URQT2AE5U-Mr2IuG4lGmYgsCYcVl50tYcoLHaFmNFx6HsXsIuWo-PO8eu0dhZJmy7yI5hBdv-TAP6idnORtysAnmMMafpagfFILY5bJ_k3jBxyDLg2MsmQ0FO3RwxfPKnxrwim0GXabW6_gJ4bAqJLM79za1AsrbUp7XUvQvqVO6caMB7ja-r-EHHB2XVm3qpdS4s6rcaZEpd_GwfY_ok2xiF2A",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=9778289352&itemId=29273144962&vendorItemId=96190161408&traceid=V0-153-ce924ac6834eaaff&requestid=20261119060130323234827246&token=31850C%7CMIXED&pt=0&slot=10",
     "categoryName": "가전디지털",
     "keyword": "전기히터",
     "isRocket": true,
@@ -1165,7 +1165,7 @@
      "n": 1,
      "u": "개"
     },
-    "unit_price": 48450,
+    "unit_price": 31900,
     "parse_ok": true,
     "ban": [],
     "effect": []
