@@ -1,9 +1,9 @@
 {
-"at": "2026-11-19 06:57",
+"at": "2026-11-19 07:11",
 "posts": 5930,
-"site": 2092,
+"site": 2091,
 "mall": {
-"coupang": 1407,
+"coupang": 1406,
 "toss": 630,
 "naver": 55
 },
@@ -23,7 +23,7 @@
 "car": 47,
 "kitchen": 142,
 "sport": 19,
-"etc": 5
+"etc": 4
 },
 "missing": 0,
 "missing_names": [],
@@ -108,10 +108,10 @@
 }
 },
 "2026-11-19": {
-"site": 2092,
+"site": 2091,
 "sitemap": 1041,
 "mall": {
-"coupang": 1407,
+"coupang": 1406,
 "toss": 630,
 "naver": 55
 }
