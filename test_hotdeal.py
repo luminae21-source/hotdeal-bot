@@ -15674,3 +15674,20 @@ assert s209b["igrd_2026-11-18"]["why"] == "오늘 클립 없음" and not h209
 (H.IG_V2, H.http, time.time, H.CLIP_DIR, E209, H.IG_AUTO, H.ev_info, H.REEL_CLIP, H.IG_JIT2, CPI209) = sv209
 H.E.clear(); H.E.update(E209); S.CPI.clear(); S.CPI.update(CPI209); os.chdir(cwd209)
 
+
+# 9-210 (11/18 14시 Cowork 버그 — 주제 쪽 c/t/ 23개가 noindex 안내 쪽): topics()가 큐레이션 img = 진열 글 img 주소 똑같은 것만 짝 → 봇이 진열 글 사진을 파트너스 API 사진(ads-partners)으로 바꾸면 0개
+#   → 상품으로 짝: 글 urls 있으면 그 링크 · 없으면 사진(주소 앞·크기 표기 무시) → 같은 사진 진열 글 또는 events 진열 항목(처음 사진 그대로) → 그 링크·pid → 살아 있는 진열 글 · 토스·일시 품절 X·TOPIC_MIN 그대로
+cwd210 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+IM210 = lambda k, z="230x230ex": f"https://thumbnail.coupangcdn.com/thumbnails/remote/{z}/image/retail/images/2019/05/29/15/2/yulmu{k}.jpg"
+L210 = lambda k: f"https://link.coupang.com/a/yul{k}"
+P210 = [{"t": "2026-10-29 20:00", "text": f"{H.DISCLOSURE}\n\n📦 쿠팡 🔥\n담터 율무차 {k}0T\n{k},900원", "url": L210(k), "own": 1, "shelf": 1, "st": "hot",
+         "img": f"https://ads-partners.coupang.com/image1/api{k}=="} for k in range(1, 5)]  # 진열 글 사진 = 파트너스 API 사진(큐레이션 사진과 주소 다름)
+json.dump([{"at": "2026-10-29 19:00", "url": L210(k), "img": IM210(k, "492x492ex"), "pid": f"23101842{k}", "deal": True, "shelf": True, "text": "x"} for k in range(1, 5)]
+          + [{"at": "2026-10-29 21:10", "curation": True, "topic": "율무차", "slug": "yulmu-tea", "img": [IM210(k) for k in (1, 2, 3)], "text": "x"}], open("events.json", "w"), ensure_ascii=False)
+it210 = [(i, p, (0, None, "", [], False)) for i, p in enumerate(P210)]
+t210 = S.topics(it210)
+assert [(t["slug"], sorted(x[0] for x in t["xs"])) for t in t210] == [("yulmu-tea", [0, 1, 2])], t210  # 사진 3장 → events 항목(크기 표기 달라도) → 링크 → 진열 글 3개(예전 = 0개 → 안내 쪽)
+it210b = [(i, p, (3, None, "", [], False) if i == 1 else sh) for i, p, sh in it210]; assert S.topics(it210b) == []  # 일시 품절 1개 빠짐 = 2개 → TOPIC_MIN 3 밑 = 쪽 X(그대로)
+ev210 = json.load(open("events.json")); ev210[-1]["urls"] = [L210(k) for k in (4, 3, 2)]; json.dump(ev210, open("events.json", "w"), ensure_ascii=False)
+assert sorted(x[0] for x in S.topics(it210)[0]["xs"]) == [1, 2, 3]  # 글 상품 링크(urls)가 있으면 그것(사진보다 먼저)
+os.chdir(cwd210)

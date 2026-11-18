@@ -2168,24 +2168,35 @@ def topic_slug(e):
 
 
 def topics(it):
-    """큐레이션 주제 쪽(TT-2 10/27 ⑥ — /c/t/주소.html): events curation topic마다 상품 = 큐레이션 사진(img)과 같은 사진의 진열 상품(토스·일시 품절 X — 토스 = 다른 몰과 한 표 X)
+    """큐레이션 주제 쪽(TT-2 10/27 ⑥ — /c/t/주소.html): events curation topic마다 상품 = 그 글 상품(urls · 없으면 사진 img → 같은 사진의 진열 글 또는 events 진열 항목 링크·pid — 11/18 상품으로 짝)의 진열 상품(토스·일시 품절 X — 토스 = 다른 몰과 한 표 X)
     + 5개 밑이면 그 상품들의 events tag 상품으로 채움 · 단위가 싼 순(가장 많은 단위끼리, 없으면 뒤) 최대 TOPIC_MAX · TOPIC_MIN개 밑 = 쪽 X.
     -> [{"key","slug","name","es"(큐레이션 항목 시각 순),"xs","cat"}] 최근 큐레이션 먼저."""
     evs = ev_list()
     evs = evs if isinstance(evs, list) else []
     tag = {e["url"]: e["tag"].strip() for e in evs if isinstance(e, dict) and isinstance(e.get("url"), str) and isinstance(e.get("tag"), str) and e["tag"].strip() and e["tag"] != "정품"}
     live = [x for x in it if x[2][0] != 3 and shop_of(x[1]) != "toss"]
-    byimg = {}
+    ikey = lambda u: u.split("/image/", 1)[-1] if isinstance(u, str) else ""  # 11/18 사진 = 상품 열쇠(주소 앞·크기 표기 무시) — 봇이 진열 글 사진을 파트너스 API 사진으로 바꿔도 짝(주제 쪽이 비어 noindex 되던 것)
+    byurl, bypid, byimg, evimg = {}, {}, {}, {}
     for x in live:
-        byimg.setdefault(img_of(x[1]), x)
+        byurl.setdefault(x[1].get("url"), x)
+        if pid := cp_pid(x[1]):
+            bypid.setdefault(pid, x)
+        if im := img_of(x[1]):
+            byimg.setdefault(ikey(im), x)
+    for e in evs:  # events 진열 항목 = 처음 사진 그대로 → 그 링크·pid
+        if isinstance(e, dict) and isinstance(e.get("url"), str) and isinstance(e.get("img"), str) and e["img"]:
+            evimg.setdefault(ikey(e["img"]), []).append(e)
+    pick = lambda u, pid="": byurl.get(u) or bypid.get(str(pid or cp_pid({"url": u})))
     gs = {}
-    for e in sorted((e for e in evs if isinstance(e, dict) and e.get("curation") and topic_key(e.get("topic")) and isinstance(e.get("img"), list) and isinstance(e.get("at"), str)), key=lambda e: e["at"]):
+    for e in sorted((e for e in evs if isinstance(e, dict) and e.get("curation") and topic_key(e.get("topic")) and (isinstance(e.get("img"), list) or isinstance(e.get("urls"), list)) and isinstance(e.get("at"), str)), key=lambda e: e["at"]):
         g = gs.setdefault(topic_key(e["topic"]), {"key": topic_key(e["topic"]), "es": [], "xs": {}, "slug": ""})
         g["es"].append(e)
         g["slug"] = g["slug"] or (e["slug"] if re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", str(e.get("slug") or "")) else "")
-        for u in e["img"]:
-            if isinstance(u, str) and u and u in byimg:
-                g["xs"].setdefault(byimg[u][0], byimg[u])
+        xs = ([pick(u) for u in e["urls"] if isinstance(u, str)] if isinstance(e.get("urls"), list) and e["urls"]  # 글 상품 링크가 있으면 그것
+              else [byimg.get(ikey(u)) or next((x for v in evimg.get(ikey(u), []) if (x := pick(v["url"], v.get("pid")))), None) for u in e.get("img") or [] if isinstance(u, str) and u])
+        for x in xs:
+            if x:
+                g["xs"].setdefault(x[0], x)
     out, used = [], set()
     for g in gs.values():
         xs = list(g["xs"].values())
