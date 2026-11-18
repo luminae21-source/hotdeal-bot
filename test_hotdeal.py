@@ -15691,3 +15691,15 @@ it210b = [(i, p, (3, None, "", [], False) if i == 1 else sh) for i, p, sh in it2
 ev210 = json.load(open("events.json")); ev210[-1]["urls"] = [L210(k) for k in (4, 3, 2)]; json.dump(ev210, open("events.json", "w"), ensure_ascii=False)
 assert sorted(x[0] for x in S.topics(it210)[0]["xs"]) == [1, 2, 3]  # 글 상품 링크(urls)가 있으면 그것(사진보다 먼저)
 os.chdir(cwd210)
+
+# 9-211 (11/18 22:30 점검): 토스 시간 칸 카드 이름 'toss17.1667'(17:10) → 렌더러 '--data must name one JSON file … English letters, digits, - or _' → 카드 빠짐 · card_png가 파일 이름만 정리
+cwd211, sv211 = os.getcwd(), (H.subprocess.run, H.pw_ready, H.MALL_CARD_DIR); os.chdir(tempfile.mkdtemp()); os.makedirs("card211/rendered")
+run211 = []
+def fake211(cmd, cwd=None, **k):
+    run211.append(cmd); open(f"{cwd}/rendered/{os.path.basename(cmd[3])[:-5]}.png", "wb").write(b"p")
+H.subprocess.run, H.pw_ready, H.MALL_CARD_DIR = fake211, (lambda env, root: None), "mall211"
+with contextlib.redirect_stdout(io.StringIO()):
+    f211 = H.card_png("toss17.1667", {"title": "x", "mall": "toss", "items": [1, 2, 3]}, root="card211")
+assert re.fullmatch(r"data/[A-Za-z0-9_-]+\.json", run211[-1][3]) and run211[-1][3].endswith("_toss17-1667.json") and f211 and f211.endswith("_toss17-1667.png"), (run211, f211)
+(H.subprocess.run, H.pw_ready, H.MALL_CARD_DIR) = sv211; os.chdir(cwd211)
+

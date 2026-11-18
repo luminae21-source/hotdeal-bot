@@ -5725,7 +5725,7 @@ def card_png(kind, d, short="", root=CARD_DIR):
     11/8 토스 = 몰·칸 수 틀(assets/tpl/toss-3·4·5 — 파란 쇼핑백 고양이 '오늘의 장바구니')이 있으면 render.mjs가 fill.html로) -> rendered/run_<stem>.png -> docs/cards/mall/<stem>.png 경로 / None."""
     if not d:
         return None
-    stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + kind
+    stem = time.strftime("%Y%m%d_%H%M_", time.gmtime(time.time() + 9 * 3600)) + re.sub(r"[^A-Za-z0-9_-]", "-", kind)  # 11/18 'toss17.1667'(17:10 칸) = 렌더러 --data 이름 규칙(영문·숫자·-·_) X → 카드 빠짐
     data, env = f"data/run_{stem}.json", {**os.environ, "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     try:
         os.makedirs(f"{root}/data", exist_ok=True)
