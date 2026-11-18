@@ -1,7 +1,47 @@
 {
  "google": {
-  "at": "2026-11-18 21:02",
+  "at": "2026-11-18 22:12",
   "items": [
+   {
+    "t": "cuaca besok",
+    "n": "500+",
+    "news": "BMKG Ungkap 34 Wilayah Indonesia Berpotensi Diguyur Hujan…"
+   },
+   {
+    "t": "twitch",
+    "n": "200+",
+    "news": "AI is still weighing on streamers at Twitch’s biggest event…"
+   },
+   {
+    "t": "sxmb",
+    "n": "200+",
+    "news": "Phân tích thống kê XSMB Thứ 5 Ngày 19/11/2026 - Chốt Số…"
+   },
+   {
+    "t": "gta6 메타 크리틱",
+    "n": "1000+",
+    "news": "‘GTA 6’ 예약판매량 1500만장…콘솔게임 시장 살리나"
+   },
+   {
+    "t": "삼양식품",
+    "n": "200+",
+    "news": "“100일 만에 1000만개 판매”…삼양식품 '짜르르', 코스트코 전국 입점"
+   },
+   {
+    "t": "gta5",
+    "n": "200+",
+    "news": "GTA 5 Last Ride Community Event Leads to Emotional Goodbyes…"
+   },
+   {
+    "t": "국제신문",
+    "n": "200+",
+    "news": "소각장 멈추면 쓰레기 대신 처리…부산·김해시 손 잡았다"
+   },
+   {
+    "t": "gta6 출시",
+    "n": "100+",
+    "news": "펄어비스 ‘붉은사막’, 더게임어워드 1개 부문 후보 올라"
+   },
    {
     "t": "헝거게임",
     "n": "200+",
@@ -9,48 +49,8 @@
    },
    {
     "t": "유칼",
-    "n": "200+",
+    "n": "500+",
     "news": "[오피셜] '유칼' 손우현, 7년 만에 DN 복귀...'두두'-'커즈'와 함께 상체 구축"
-   },
-   {
-    "t": "포스코노동조합",
-    "n": "100+",
-    "news": "포스코 노사, 임단협 돌파구 찾나…포스코, 노조에 대화 요청"
-   },
-   {
-    "t": "미래에셋생명",
-    "n": "100+",
-    "news": "미래에셋생명 해킹 유출 1만 명 넘어‥스트리미 2천 명으로 늘어"
-   },
-   {
-    "t": "조희대",
-    "n": "10000+",
-    "news": "[고수다] \"추경호 '당사 모여라' 문자에도 '무죄'‥법원, 언제부터 너그러웠나?\""
-   },
-   {
-    "t": "이정재",
-    "n": "500+",
-    "news": "200억 벌어도 회사엔 4억만?…이정재 '10대 0' 계약 파장"
-   },
-   {
-    "t": "ces",
-    "n": "500+",
-    "news": "SDVerse named CES Innovation Awards 2027 Honore..."
-   },
-   {
-    "t": "sri lanka vs pakistan",
-    "n": "200+",
-    "news": "A morning that reminded Pakistan of what they once were"
-   },
-   {
-    "t": "게임대상",
-    "n": "100+",
-    "news": "펄어비스 '붉은사막', 대한민국 게임대상 8관왕‥역대 최다"
-   },
-   {
-    "t": "축산신문",
-    "n": "500+",
-    "news": ""
    }
   ]
  },
