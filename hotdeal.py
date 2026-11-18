@@ -10194,6 +10194,7 @@ def threads(seen):
 
 
 DAYCARD_CHAR, DAYCARD_FRESH = True, 48 * 3600  # 11/18 진우 '왜 캐릭터로 안 바뀌었냐 · 쿠팡 토스 네이버 모두 다': Threads '📋 오늘의 핫딜 모음' 그림 = 캐릭터 틀(몰 1개) · False = 글자 카드 그대로
+DAYCARD_TITLE, DAYCARD_TOSS = "오늘 살 만한 딜", False  # 11/18 23시 진우: 제목 = 글자 카드와 같게('오늘의 장바구니' = 낮 묶음 이름 그대로) — 새 서식 검증이 이 제목을 받기 전 = 렌더 X → 글자 카드 · 토스 틀 = 제목이 그림에 박힘('오늘의 장바구니') → 꺼 둠(글자 카드)
 
 
 def day_char_pick(posts, today, now):
@@ -10212,14 +10213,16 @@ def day_char_pick(posts, today, now):
 
 
 def day_char_card(seen, today, mall, ps, now):
-    """하루 모음 캐릭터 카드(새 파일 — docs/cards/날짜.png·.json 그대로): 쿠팡·네이버 = 새 서식 '오늘의 장바구니'(series_card — 몰 캐릭터 · 네이버 사진 X · 와우가·쿠폰가 · 머리 = 상품 확인 최댓값)
+    """하루 모음 캐릭터 카드(새 파일 — docs/cards/날짜.png·.json 그대로): 쿠팡·네이버 = 새 서식 장바구니 틀 + 제목 DAYCARD_TITLE(series_card — 몰 캐릭터 · 네이버 사진 X · 와우가·쿠폰가 · 머리 = 상품 확인 최댓값)
     · 토스 = 토스 캐릭터 틀(toss_card — 새 서식 검증이 토스 링크 toss.im만이라 · 쉐어링크 원본 썸네일 · 게시 시점 가격) -> (사이트 주소, metrics card 값, 포즈 기록) / (None, '', {})."""
     meta = {}
+    if mall == "toss" and not DAYCARD_TOSS:
+        return None, "", meta
     if mall == "toss":
         im = S_toss_imgs(seen.get("tossid", {}).get("m", {}), now)
         f = toss_card("daytoss", [(parse(title_of(p["text"]))[1], won(parse(title_of(p["text"]))[2]), p["url"], im.get(p["url"]), kst_ts(p["t"][:16])) for p in ps])
         return (f"{SITE}cards/mall/{os.path.basename(f)}" if f else None), "toss", meta
-    img = series_card("day", "오늘의 장바구니", [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in ps], pose=series_pick(seen, f"{today}_day", "market"), meta=meta)
+    img = series_card("day", DAYCARD_TITLE, [(p, p.get("now") or parse(title_of(p["text"]))[2].split("/")[0].strip()) for p in ps], theme="market", pose=series_pick(seen, f"{today}_day", "market"), meta=meta)  # 장바구니 틀(market)·제목만 다름
     return img, "series", meta
 
 
