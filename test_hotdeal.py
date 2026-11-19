@@ -2138,7 +2138,7 @@ st9.pop("mk500"); seen = {}; at9("12:36")
 assert len([1 for m, u, b in ig9 if m == "POST"]) == 1 and seen["igs_" + D9 + "_11"] == {"t": TK(f"{D9} 12:36")} and list(json.load(open(H.IG_LIVE))) == [f"{D9}_11"]  # 실패 없으면 그대로 1번
 # 사이트 맨 위 카드 = 가장 최근 카드부터 24시간 안(다음 날 오전 11시 카드가 올라가도 어제 저녁·밤 카드는 접어서, 딱 24시간 된 어제 오전 11시는 빠짐)
 H.ig_live("2026-10-13_11", TK(f"{D9} 23:00")); assert json.load(open(H.IG_LIVE)) == {f"{D9}_11": TK(f"{D9} 12:36"), "2026-10-13_11": TK(f"{D9} 23:00")}  # 기록 = 만든 시각
-json.dump({"2026-10-01": TK(f"{D9} 23:00") - 8 * 86400, f"{D9}_11": 1}, open(H.IG_LIVE, "w")); H.ig_live(f"{D9}_19", TK(f"{D9} 23:00")); assert list(json.load(open(H.IG_LIVE))) == [f"{D9}_19"]  # 7일 지난 기록 정리
+json.dump({"2026-10-01": TK(f"{D9} 23:00") - 15 * 86400, "2026-10-03": TK(f"{D9} 23:00") - 8 * 86400, f"{D9}_11": 1}, open(H.IG_LIVE, "w")); H.ig_live(f"{D9}_19", TK(f"{D9} 23:00")); assert list(json.load(open(H.IG_LIVE))) == ["2026-10-03", f"{D9}_19"]  # 14일 지난 기록 정리(11/19 /link 14일 — 8일 전은 그대로)
 json.dump({f"{D9}_11": 1, f"{D9}_19": 1, "2026-10-13_11": 1}, open(H.IG_LIVE, "w"))
 assert S9.card_stems("docs") == [f"{D9}_19", D9, "2026-10-13_11"]
 # 캡션 대가성 문구는 늘 맨 앞: 제휴 링크 없는 카드 = 일반 안내 1줄, 토스·쿠팡 딜 = 올린 뒤 제휴 링크로 바뀔 수 있어서(toss_relink·진우 파트너스 링크) 그 문구 미리
@@ -5613,12 +5613,12 @@ band40 = ((8, 570), (60, 570), (583, 8), (1158, 300))  # 원본 로고의 왼쪽
 assert all(lg40.getpixel(p)[3] == 255 and cat40.getpixel(p)[3] == 0 for p in band40) and cat40.getpixel((599, 593))[3] == 255 and cat40.getpixel((599, 830))[3] == 255  # 얼굴·'딜' 판(빨강이지만 바깥과 안 이어짐) = 남음
 import numpy as np40
 for f40, k40 in zip(ic40[:4], (1.0, 1.0, 0.76, 1.0)):
-    i40 = I40.open(f40); n40 = i40.width; m40 = round(n40 * k40); o40 = (n40 - m40) // 2
-    old40 = I40.new("RGBA", (n40, n40), C40.LOGO_RED + (255,)); old40.alpha_composite(C40.logo_sq(m40), (o40, o40))  # 옛 방식(로고 통째) — 고양이 자리·크기 비교 기준
-    ca40 = np40.zeros((n40, n40)); ca40[o40:o40 + m40, o40:o40 + m40] = np40.asarray(C40.logo_sq(m40, cat40))[..., 3]
+    i40 = I40.open(f40); n40 = i40.width; mk40 = round(n40 * k40); o40 = (n40 - mk40) // 2
+    old40 = I40.new("RGBA", (n40, n40), C40.LOGO_RED + (255,)); old40.alpha_composite(C40.logo_sq(mk40), (o40, o40))  # 옛 방식(로고 통째) — 고양이 자리·크기 비교 기준
+    ca40 = np40.zeros((n40, n40)); ca40[o40:o40 + mk40, o40:o40 + mk40] = np40.asarray(C40.logo_sq(mk40, cat40))[..., 3]
     d40c = np40.abs(np40.asarray(i40).astype(int) - np40.asarray(old40.convert("RGB")).astype(int)).sum(2)[ca40 == 255]
     assert d40c.size > n40 * n40 * 0.3 and d40c.mean() < 1, (f40, d40c.mean())  # 셀프체크: 고양이 픽셀 = 예전 아이콘과 같음(자리·크기 그대로 — 바탕만 바뀜)
-    xy40 = lambda p: (o40 + int((p[0] + 0.5) * m40 / 1167), o40 + int((p[1] + 13 + 0.5) * m40 / 1167))  # 원본 좌표 -> 아이콘(logo_sq = 위아래 13px 투명 덧붙인 1167 정사각)
+    xy40 = lambda p: (o40 + int((p[0] + 0.5) * mk40 / 1167), o40 + int((p[1] + 13 + 0.5) * mk40 / 1167))  # 원본 좌표 -> 아이콘(logo_sq = 위아래 13px 투명 덧붙인 1167 정사각)
     assert all(i40.getpixel(xy40(p)) == col40 for p in band40), (f40, [i40.getpixel(xy40(p)) for p in band40])  # 셀프체크: 로고 띠 자리 = 바탕 한 색(띠 없음)
     if k40 < 1:  # maskable만: 바깥 5% = 한 색(k 1.0은 귀·꼬리·몸 아래가 가장자리까지 닿음)
         e40 = round(n40 * 0.05); ring40 = {i40.getpixel((x, y)) for x in range(n40) for y in range(n40) if min(x, y, n40 - 1 - x, n40 - 1 - y) < e40}
@@ -7788,9 +7788,9 @@ with contextlib.redirect_stdout(io.StringIO()):
     at69("2026-10-26 20:05"); H.curation(s69); H.curation(s69)
 kid69 = s69["igk_cur_2026-10-26_2000"]
 assert [b["image_url"] for u, b, m in ig69] == [H.SITE + f"cards/cur/{H.hashlib.md5(u.encode()).hexdigest()[:12]}.jpg" for u in CU69["img"]] and all(b["is_carousel_item"] for u, b, m in ig69), ig69
-assert kid69["kind"] == "cur" and kid69["cap"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 겨울템\n\n상품 사진: 판매 페이지(쿠팡)" and s69["cur_2026-10-26_2000"]["ig"] == 2 and len(ig69) == 2  # 한 번만
+assert kid69["kind"] == "cur" and kid69["cap"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 10/26 겨울템\n\n상품 사진: 판매 페이지(쿠팡)" and s69["cur_2026-10-26_2000"]["ign"] == "10/26 겨울템" and s69["cur_2026-10-26_2000"]["ig"] == 2 and len(ig69) == 2  # 한 번만
 ig69.clear(); H.cur_ig({}, {}, {**CU69, "img": [H.SITE + "og-v4.png"]}, "cur_own69", [H.SITE + "cards/cur/own.jpg"], time.time())
-assert ig69[0][1]["caption"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 겨울템"  # 우리 그림(쿠팡 사진 X) = '상품 사진: 판매 페이지(쿠팡)' 줄 X(10/29 Cowork)
+assert ig69[0][1]["caption"] == "🧣 출근길 손 시릴 때\n전기방석 모아 봤어요\n\n🛒 프로필 링크 → 10/26 겨울템"  # 11/19 (라) 날짜 · 우리 그림(쿠팡 사진 X) = '상품 사진: 판매 페이지(쿠팡)' 줄 X(10/29 Cowork)
 ig69.clear(); at69("2026-10-26 20:20"); H.ig_carousel(s69, "it", "u69", time.time())
 car69 = next(b for u, b, m in ig69 if b and b.get("media_type") == "CAROUSEL"); cid69 = next(k for k in s69 if k.startswith("igc_"))
 assert car69["caption"] == kid69["cap"] and car69["children"] == ",".join(kid69["kids"]) and s69[cid69] == {"t": time.time(), "kind": "cur"} and "igk_cur_2026-10-26_2000" not in s69, s69[cid69]
