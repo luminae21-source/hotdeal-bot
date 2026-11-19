@@ -1199,11 +1199,6 @@
 "added": "2026-11-18"
 },
 {
-"url": "https://hotdealpick.kr/p/5865.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
 "url": "https://hotdealpick.kr/guide/hot-chocolate-price-per-cup/",
 "kind": "guide",
 "added": "2026-11-18"
@@ -1350,6 +1345,11 @@
 },
 {
 "url": "https://hotdealpick.kr/p/5448.html",
+"kind": "deal",
+"added": "2026-11-19"
+},
+{
+"url": "https://hotdealpick.kr/p/5978.html",
 "kind": "deal",
 "added": "2026-11-19"
 }
