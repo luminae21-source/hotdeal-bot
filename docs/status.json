@@ -1,26 +1,26 @@
 {
-"at": "2026-11-20 00:52",
-"posts": 6001,
-"site": 2118,
+"at": "2026-11-20 01:09",
+"posts": 6004,
+"site": 2112,
 "mall": {
-"coupang": 1432,
-"toss": 631,
+"coupang": 1430,
+"toss": 627,
 "naver": 55
 },
 "cat": {
 "season": 145,
 "digital": 78,
 "kitchen": 148,
-"food": 432,
+"food": 428,
 "beauty": 271,
 "life": 314,
 "heat": 135,
 "fashion": 102,
-"laundry": 88,
+"laundry": 87,
 "coffee": 91,
 "pet": 43,
 "home": 91,
-"snack": 110,
+"snack": 109,
 "car": 47,
 "sport": 19,
 "etc": 4
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 173,
-"sitemap": 1061,
+"sitemap": 1058,
 "days": {
 "2026-11-12": {
 "site": 1999,
@@ -107,11 +107,11 @@
 }
 },
 "2026-11-20": {
-"site": 2118,
-"sitemap": 1061,
+"site": 2112,
+"sitemap": 1058,
 "mall": {
-"coupang": 1432,
-"toss": 631,
+"coupang": 1430,
+"toss": 627,
 "naver": 55
 }
 }
@@ -126,7 +126,14 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "과자",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 1 · 기존 상품 구성 0"
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
