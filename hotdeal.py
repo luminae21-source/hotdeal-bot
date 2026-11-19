@@ -9090,13 +9090,40 @@ def ig_due(seen, key, base):
     return seen[key]["at"]
 
 
+IG_LINK, IG_LINK_DAYS = "docs/cards/iglink.json", 14  # 11/19 Cowork ③(진우 '좋아요는 누르는데 제품 링크로 바로'): 캡션 '프로필 링크 → 이름' 묶음 14일 -> 사이트 /link '📸 인스타에서 본 상품'(카드 = ig.json·names.json도 14일 · 큐레이션·토스 넘기기 = 이 파일 — ig_link_sync)
 IG_LIVE = "docs/cards/ig.json"  # 인스타에 올리는(컨테이너 만든)·올라간 카드 {카드 이름: 시각} — 사이트 맨 위 카드 딜이 인스타 게시물과 같은 번호(build_site.card_stems)
+
+
+def ig_link_name(day, name):
+    """11/19 Cowork ③(라) 캡션 '프로필 링크 → M/D 이름'(새 글부터 날짜 — 이미 올라간 글은 그대로) = 사이트 /link 목록 이름 글자 그대로."""
+    return f"{int(day[5:7])}/{int(day[8:10])} {name}"
+
+
+def ig_link_sync(seen, now):
+    """11/19 Cowork ③: 캡션이 '프로필 링크 → 이름'으로 가리킨 큐레이션·토스 넘기기 묶음 -> IG_LINK {열쇠: {d, at, kind, name(캡션 '→ ' 뒤 글자 그대로), urls(글 상품 순서 = 번호)}} IG_LINK_DAYS일.
+    컨테이너 만든 것만(큐레이션 = seen cur_ ig > 0 — 이름 ign, 옛 글 = 그때 꼬리 그대로 topic · 토스 = igtoss_ done 1 + igtossu에 같은 상품 = 만든 날 · 이름 = 캡션에서) ·
+    seen에서 지워진 지난 기록도 IG_LINK_DAYS일까지 그대로(합침) · 바뀔 때만 씀(실행마다 커밋 X)."""
+    cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - IG_LINK_DAYS * 86400))
+    old = load(IG_LINK, {})
+    m = {k: v for k, v in (old if isinstance(old, dict) else {}).items() if isinstance(v, dict) and str(v.get("d", "")) >= cut}
+    evs, tu = {str(e.get("at")): e for e in ev_list(EVENTS) if isinstance(e, dict) and e.get("curation")}, list((seen.get("igtossu", {}).get("m") or {}).values())
+    for k, st in list(seen.items()):
+        if not isinstance(st, dict):
+            continue
+        if (r := re.fullmatch(r"cur_(\d{4}-\d\d-\d\d)_(\d\d)(\d\d)", k)) and r[1] >= cut and st.get("ig") and isinstance((e := evs.get(f"{r[1]} {r[2]}:{r[3]}") or {}).get("urls"), list) and e["urls"]:
+            m[k] = {"d": r[1], "at": f"{r[1]} {r[2]}:{r[3]}", "kind": "cur", "name": st.get("ign") or str(e.get("topic") or "").strip() or "핫딜픽", "urls": [str(u) for u in e["urls"]]}
+        elif (r := re.fullmatch(r"igtoss_(\d{4}-\d\d-\d\d)", k)) and r[1] >= cut and st.get("done") == 1 and st.get("u") and st["u"] in tu and (c := re.search(r"프로필 링크 → ([^\n]+)", st.get("cap") or "")):
+            m[k] = {"d": r[1], "at": f"{r[1]} {IG_TOSS_AT[0]}", "kind": "toss", "name": c[1].strip(), "urls": [str(u) for u in st["u"]]}
+    if m != old:
+        os.makedirs(os.path.dirname(IG_LINK), exist_ok=True)
+        json.dump(m, open(IG_LINK, "w"), ensure_ascii=False)
+        print("ig link 기록", len(m), "묶음(큐레이션·토스 넘기기 14일)")
 
 
 def ig_live(stem, now):
     """IG_LIVE에 카드 기록(7일치). 컨테이너 만든 실행에 기록 -> 같은 실행의 사이트 만들기가 맨 위 카드를 바꿈 -> 다음 실행에 인스타 발행(사이트가 먼저).
     커밋된 기록이라 seen 캐시를 잃어도 같은 카드를 다시 안 올림(ig_cards)."""
-    led = {k: t for k, t in load(IG_LIVE, {}).items() if t > now - 7 * 86400}
+    led = {k: t for k, t in load(IG_LIVE, {}).items() if t > now - IG_LINK_DAYS * 86400}
     led[stem] = now
     os.makedirs(os.path.dirname(IG_LIVE), exist_ok=True)
     json.dump(led, open(IG_LIVE, "w"), ensure_ascii=False)
@@ -9874,7 +9901,7 @@ def ig_toss(seen, tok, uid, now):
             else:
                 cards.make([{"title": clip(parse(title_of(p["text"]))[1], 40), "unit": ""} for p, _, _ in its], f"{kst.tm_mon}월 {kst.tm_mday}일", jpg, head="💙 토스에서 살 만한 것", label="토스 모음", png=False)
             rows = [f"{NUM[k]} {clip(parse(title_of(p['text']))[1], 40)}\n💰 {pick_price(p, seen).replace(' 게시 시점 가격', ' 확인 가격')}" for k, (p, _, _) in enumerate(its)]  # 11/7 Cowork: 발행은 칸·간격으로 미뤄질 수 있음 = '게시 시점' X · 'M/D HH:MM 확인 가격
-            cap = f"{TOSS_NOTE}\n\n💙 토스에서 살 만한 것 {len(its)}개 ({kst.tm_mon}/{kst.tm_mday})\n\n" + "\n\n".join(rows) + f"\n\n🛒 프로필 링크 → 토스 상품 바로 가기\n\n{PHOTO_CREDIT}"
+            cap = f"{TOSS_NOTE}\n\n💙 토스에서 살 만한 것 {len(its)}개 ({kst.tm_mon}/{kst.tm_mday})\n\n" + "\n\n".join(rows) + f"\n\n🛒 프로필 링크 → {ig_link_name(today, '토스 상품 바로 가기')}\n\n{PHOTO_CREDIT}"
             seen[key] = {"t": now, "jpg": jpg, "img": [x[1] for x in its], "u": [p["url"] for p, _, _ in its], "ids": [i for x in its for i in x[2] if i], "cap": cap[:2200],
                          "pr": [[x[2][0], (lambda v: v[5] if len(v) > 5 and v[5] else won(pick_price(x[0], seen) or ""))(seen.get("tossid", {}).get("m", {}).get(x[0]["url"]) or [])] for x in its], "pc": now}  # 캡션 때 가격(그룹 id·원 — own_end 상세 확인가 먼저) · 발행이 1시간↑ 미뤄지면 같은 API로 다시 비교(ig_publish)
             print("ig toss", today, f"표지 만듦 {len(its)}개")
@@ -9909,6 +9936,7 @@ def ig_cards(seen):
     now = time.time()
     if tok and uid:
         prune_slides(now)  # 지난 넘기기 카드 정리는 인스타를 꺼도(모아보기가 21시 딜 카드를 계속 만듦)
+        ig_link_sync(seen, now)  # 11/19 /link '📸 인스타에서 본 상품' 기록(큐레이션·토스 넘기기 — 지난 실행에 만든 것까지)
     if not (IG_AUTO and tok and uid) or seen.get("ig_hold", 0) > now:
         return
     ig_carousel(seen, tok, uid, now)  # 지난 실행에 만든 조각
@@ -11706,14 +11734,15 @@ def cur_ig(seen, st, e, key, live, now):
         print("curation 인스타: 오늘 상한(딜 카드 칸 먼저) -> 안 올림", e["at"])
         return
     cp = any(urllib.parse.urlsplit(u).netloc.lower() == "coupang.com" or urllib.parse.urlsplit(u).netloc.lower().endswith((".coupang.com", ".coupangcdn.com")) for u in e.get("img") or [])  # 쿠팡 사진일 때만 출처 줄(우리 그림 og-v4 등 = X — 10/29 Cowork)
-    tail = f"\n\n🛒 프로필 링크 → {str(e.get('topic') or '').strip() or '핫딜픽'}" + (f"\n\n{IG_PHOTO_NOTE}" if cp else "")
+    name = ig_link_name(e["at"][:10], str(e.get('topic') or '').strip() or '핫딜픽')  # 11/19 Cowork ③(라): 새 글부터 날짜 — /link '📸 인스타에서 본 상품'에 이 글자 그대로
+    tail = f"\n\n🛒 프로필 링크 → {name}" + (f"\n\n{IG_PHOTO_NOTE}" if cp else "")
     cap, auth, uid = clip(e["text"].strip(), 2200 - len(tail) - 1) + tail, {"Authorization": "Bearer " + E["IG_TOKEN"]}, E["IG_USER_ID"]
     try:
         if len(live) == 1:
             seen["igc_" + json.loads(http(f"{IG}/{uid}/media", {"image_url": live[0], "caption": cap}, auth, "POST"))["id"]] = {"t": now, "kind": "cur"}
         else:
             seen["igk_" + key] = {"t": now, "kind": "cur", "cap": cap, "kids": [json.loads(http(f"{IG}/{uid}/media", {"image_url": u, "is_carousel_item": True}, auth, "POST"))["id"] for u in live]}
-        st["ig"] = len(live)
+        st["ig"], st["ign"] = len(live), name
         print("curation 인스타", e["at"], f"사진 {len(live)}장 컨테이너")
         if mine:
             seen["igf_" + e["igslot"]]["done"] = "day:used"
@@ -12108,9 +12137,9 @@ IG_NEED = {"theme": "- title: 표지 제목 2줄('\\n'으로, 줄마다 14자 �
 
 
 def card_names_put(stem, **kv):
-    """카드 이름 기록(docs/cards/names.json — 7일): {stem: {title, slug, cat, theme, kind, pid}} — 사이트 card_name·c/칸 맨 위·metrics 테마."""
+    """카드 이름 기록(docs/cards/names.json — 14일 · 11/19 /link 목록): {stem: {title, slug, cat, theme, kind, pid}} — 사이트 card_name·c/칸 맨 위·metrics 테마."""
     now = time.time()
-    m = {k: v for k, v in load(CARD_NAMES, {}).items() if isinstance(v, dict) and v.get("t", now) > now - 7 * 86400}
+    m = {k: v for k, v in load(CARD_NAMES, {}).items() if isinstance(v, dict) and v.get("t", now) > now - IG_LINK_DAYS * 86400}
     m[stem] = {**m.get(stem, {"t": now}), **kv}
     os.makedirs(os.path.dirname(CARD_NAMES), exist_ok=True)
     json.dump(m, open(CARD_NAMES, "w"), ensure_ascii=False)

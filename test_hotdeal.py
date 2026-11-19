@@ -1589,8 +1589,8 @@ n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
 assert n == 1 and '<h3><a href="https://hotdealpick.kr/p/0.html">휴지</a></h3>' in idx and '<span class="mc">쿠팡</span>' in idx and 'href="https://buy"' in open("docs/p/0.html").read()  # 카드 = 딜 쪽으로, 구매 링크는 딜 쪽 버튼
 pg0 = S.page("t", "")
-assert '<img class="logo" src="/icons/logo-64.png?v=4" width="32" height="32" alt="" aria-hidden="true"><b>핫딜픽</b>' in S.page("t", "<h1>x</h1>")  # 쪽에 h1이 있으면 로고 = b, 없으면(홈·기록 쪽) 로고 = h1
-assert all(x in pg0 for x in ('<header class="hd">', '<img class="logo" src="/icons/logo-64.png?v=4" width="32" height="32" alt="" aria-hidden="true"><h1>핫딜픽</h1>', f'href="{S.BASE}alarm/" aria-label="알림 받기"', f'href="{S.BASE}saved/" aria-label="찜한 딜 보기"',
+assert '<img class="logo" src="/icons/logo-64.png?v=5" width="32" height="32" alt="" aria-hidden="true"><b>핫딜픽</b>' in S.page("t", "<h1>x</h1>")  # 쪽에 h1이 있으면 로고 = b, 없으면(홈·기록 쪽) 로고 = h1
+assert all(x in pg0 for x in ('<header class="hd">', '<img class="logo" src="/icons/logo-64.png?v=5" width="32" height="32" alt="" aria-hidden="true"><h1>핫딜픽</h1>', f'href="{S.BASE}alarm/" aria-label="알림 받기"', f'href="{S.BASE}saved/" aria-label="찜한 딜 보기"',
                               'placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기"', f'<p class="dis">{S.DISCLOSURE}</p>', S.LIKE_JS, S.SEARCH_JS, S.END_JS, S.DOT_JS, f'<link rel="stylesheet" href="/s.css{S.CV}">', S.FONT_HEAD, 'id="lc"'))
 hr0 = pg0.split('<div class="hr">')[1].split("</div>")[0]  # 10/24 진우 v3 포털형 2차(N+스토어): 헤더 1줄 = 로고 + 핫딜픽 + 🔔 + ♡ / 그 아래 검색칸(빨강 2px — 위에 붙음)
 assert hr0.index('class="lg"') < hr0.index(f'<a class="ib" href="{S.BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">') < hr0.index(f'<a class="ib" href="{S.BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">') and hr0.count('class="ib"') == 2 and "<form" not in hr0
@@ -5592,7 +5592,7 @@ assert (m40["name"], m40["short_name"], m40["start_url"], m40["scope"], m40["dis
 assert [(i["sizes"], i["purpose"]) for i in m40["icons"]] == [("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")] and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"]
 for f40 in ("index.html", "all.html", "p/0.html", "c/life/index.html", "saved/index.html", f"today/{time.strftime('%Y-%m-%d', time.gmtime(time.time() + 9 * 3600))}/index.html"):
     h40 = open(f"{d40}/{f40}").read().split("</head>")[0]
-    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico?v=4"', 'name="theme-color" content="#F6F7F9"', 'content="#0F1013" media="(prefers-color-scheme: dark)"',
+    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico?v=5"', 'name="theme-color" content="#F6F7F9"', 'content="#0F1013" media="(prefers-color-scheme: dark)"',
                                   'apple-mobile-web-app-capable', 'apple-mobile-web-app-title" content="핫딜픽"', 'apple-mobile-web-app-status-bar-style', "serviceWorker.register('/sw.js')")), f40
 assert 'id="inst"' in ix40 and ix40.index('id="inst"') < ix40.index('class="dis"') and 'id="inst"' not in open(f"{d40}/all.html").read()  # 설치 버튼 = 홈(DOM 자리 그대로)만
 assert "localStorage.setItem('hv'" in S40.INSTALL and "if(v<2)return;" in S40.INSTALL and S40.INSTALL.index("if(v<2)return;") < S40.INSTALL.index("function show(") and ".inst{position:fixed;" in S40.CSS  # 10/24 Cowork: 두 번째 방문부터 · 아래쪽 띠(CSS로 자리만)
@@ -5603,26 +5603,32 @@ g40, S40.GC_CODE = S40.GC_CODE, "hdp"; assert S40.gc_tag().index(S40.GC_APP) < S
 assert S40.gc_tag() == "" if not g40 else True
 ic40 = C40.app_icons(f"{d40}/icons", d40); from PIL import Image as I40
 assert [I40.open(f).size for f in ic40[:6]] == [(192, 192), (512, 512), (512, 512), (180, 180), (32, 32), (16, 16)] and I40.open(f"{d40}/icons/apple-touch-icon.png").mode == "RGB"  # 애플 = 투명 X
-# 새 로고(10/29 진우 — brand/logo.png 삼색 고양이 '딜') · 11/19 진우 '테두리도 정리해 줘 깔끔하게': 바탕 = 로고 빨강 한 색 꽉(로고 둥근 네모·가장자리 띠 X) + 고양이만 가운데 · 고양이 폭 = any·애플 0.86 / maskable 0.72 · 파비콘 = 옛 '딜'만 둥근 네모
-assert all(I40.open(f).mode == "RGB" for f in ic40[:4]) and open(f"{d40}/icons/icon-512.png", "rb").read() != open(f"{d40}/icons/icon-512-maskable.png", "rb").read()
+# 새 로고(10/29 진우 — brand/logo.png 삼색 고양이 '딜') · 11/19 진우 '테두리도 정리해 줘 깔끔하게' + '고양이 그림은 사이즈 똑같이' + maskable '5% 작게': 바탕 = 로고 빨강 한 색 꽉(로고 둥근 네모·가장자리 띠 X) · 고양이 자리·크기 = logo_sq(k×n) 가운데 그대로(any·애플 k 1.0 · maskable 0.76) · 파비콘 = 옛 '딜'만 둥근 네모
+assert all(I40.open(f).mode == "RGB" for f in ic40[:4]) and open(f"{d40}/icons/icon-512.png", "rb").read() != open(f"{d40}/icons/icon-512-maskable.png", "rb").read() and C40.ICON_K == (1.0, 0.76)
 near40 = lambda a, b, t=4: all(abs(x - y) <= t for x, y in zip(a, b))
 bb40 = lambda ps: (min(x for x, _ in ps) / 512, min(y for _, y in ps) / 512, (max(x for x, _ in ps) + 1) / 512, (max(y for _, y in ps) + 1) / 512)  # 아래 바로가기 아이콘(sc-*)도 씀
-lg40 = I40.open(C40.LOGO_PNG); assert lg40.size == (1167, 1140) and lg40.getpixel((0, 0))[3] == 0  # 원본(그대로 둠) 모서리 투명
-cat40, col40 = C40.logo_cat(); assert cat40.size == lg40.size and all(abs(x - y) <= 6 for x, y in zip(col40, C40.LOGO_RED)) and cat40.getpixel((8, 570))[3] == 0 and cat40.getpixel((60, 570))[3] == 0  # 바탕 색 = 로고 빨강 중앙값 · 로고 왼쪽 띠(8px)·안쪽 빨강(60px) = 바탕(빠짐)
-assert cat40.getpixel((599, 593))[3] == 255 and cat40.getpixel((599, 830))[3] == 255  # 고양이 얼굴·'딜' 판(빨강이지만 바깥과 안 이어짐) = 남음
-for f40, k40 in zip(ic40[:4], (0.86, 0.86, 0.72, 0.86)):
-    i40 = I40.open(f40); n40 = i40.width; e40 = max(1, round(n40 * (0.05 if k40 > 0.8 else 0.12)))  # maskable은 12%까지(옛 아이콘 띠 = 10% 안쪽)
-    ring40 = {i40.getpixel((x, y)) for x in range(n40) for y in range(n40) if min(x, y, n40 - 1 - x, n40 - 1 - y) < e40}
-    assert ring40 == {col40}, (f40, list(ring40)[:5])  # 셀프체크: 바깥 5%(maskable 12%) 테두리 = 한 색(띠 없음)
-    nr40 = [(x, y) for x in range(n40) for y in range(n40) if i40.getpixel((x, y)) != col40]  # 고양이(바탕 색 아닌 곳)
-    bx40 = (min(x for x, _ in nr40), min(y for _, y in nr40), max(x for x, _ in nr40) + 1, max(y for _, y in nr40) + 1)
-    assert abs((bx40[2] - bx40[0]) / n40 - k40) <= 0.03 and abs((bx40[0] + bx40[2]) / 2 / n40 - 0.5) <= 0.02 and abs((bx40[1] + bx40[3]) / 2 / n40 - 0.5) <= 0.03, (f40, bx40)  # 셀프체크: 고양이 폭 = k · 가운데
-    assert max(min(i40.getpixel(p)) for p in nr40) > 230 and i40.getpixel((n40 // 2, n40 // 2)) != col40, f40  # 흰 '딜'·얼굴 · 한가운데 = 고양이
+lg40 = I40.open(C40.LOGO_PNG).convert("RGBA"); assert lg40.size == (1167, 1140) and lg40.getpixel((0, 0))[3] == 0  # 원본(그대로 둠) 모서리 투명
+cat40, col40 = C40.logo_cat(); assert cat40.size == lg40.size and all(abs(x - y) <= 6 for x, y in zip(col40, C40.LOGO_RED))  # 바탕 색 = 로고 빨강 중앙값
+band40 = ((8, 570), (60, 570), (583, 8), (1158, 300))  # 원본 로고의 왼쪽 띠·안쪽 빨강·위 밝은 줄·오른쪽 띠(불투명) -> 고양이 판에선 빠짐
+assert all(lg40.getpixel(p)[3] == 255 and cat40.getpixel(p)[3] == 0 for p in band40) and cat40.getpixel((599, 593))[3] == 255 and cat40.getpixel((599, 830))[3] == 255  # 얼굴·'딜' 판(빨강이지만 바깥과 안 이어짐) = 남음
+import numpy as np40
+for f40, k40 in zip(ic40[:4], (1.0, 1.0, 0.76, 1.0)):
+    i40 = I40.open(f40); n40 = i40.width; m40 = round(n40 * k40); o40 = (n40 - m40) // 2
+    old40 = I40.new("RGBA", (n40, n40), C40.LOGO_RED + (255,)); old40.alpha_composite(C40.logo_sq(m40), (o40, o40))  # 옛 방식(로고 통째) — 고양이 자리·크기 비교 기준
+    ca40 = np40.zeros((n40, n40)); ca40[o40:o40 + m40, o40:o40 + m40] = np40.asarray(C40.logo_sq(m40, cat40))[..., 3]
+    d40c = np40.abs(np40.asarray(i40).astype(int) - np40.asarray(old40.convert("RGB")).astype(int)).sum(2)[ca40 == 255]
+    assert d40c.size > n40 * n40 * 0.3 and d40c.mean() < 1, (f40, d40c.mean())  # 셀프체크: 고양이 픽셀 = 예전 아이콘과 같음(자리·크기 그대로 — 바탕만 바뀜)
+    xy40 = lambda p: (o40 + int((p[0] + 0.5) * m40 / 1167), o40 + int((p[1] + 13 + 0.5) * m40 / 1167))  # 원본 좌표 -> 아이콘(logo_sq = 위아래 13px 투명 덧붙인 1167 정사각)
+    assert all(i40.getpixel(xy40(p)) == col40 for p in band40), (f40, [i40.getpixel(xy40(p)) for p in band40])  # 셀프체크: 로고 띠 자리 = 바탕 한 색(띠 없음)
+    if k40 < 1:  # maskable만: 바깥 5% = 한 색(k 1.0은 귀·꼬리·몸 아래가 가장자리까지 닿음)
+        e40 = round(n40 * 0.05); ring40 = {i40.getpixel((x, y)) for x in range(n40) for y in range(n40) if min(x, y, n40 - 1 - x, n40 - 1 - y) < e40}
+        assert ring40 == {col40}, (f40, list(ring40)[:5])
+    assert i40.getpixel((n40 // 2, n40 // 2)) != col40 and max(min(i40.getpixel((x, y))) for x in range(0, n40, 2) for y in range(0, n40, 2)) > 230, f40  # 한가운데 = 고양이 · 흰 '딜'·얼굴
 lo40 = I40.open(f"{d40}/icons/logo-64.png"); assert lo40.size == (64, 64) and lo40.mode == "RGBA" and lo40.getpixel((0, 0))[3] == 0 and lo40.getpixel((32, 32))[3] == 255  # 헤더 로고(32px 2배) = 모서리 투명
 for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):
     i40 = I40.open(f40); n40 = i40.width
     assert i40.getpixel((0, 0))[3] == 0 and i40.getpixel((n40 // 2, n40 - 2))[3] == 255 and max(min(i40.getpixel((x, y))[:3]) for x in range(n40) for y in range(n40)) > 200, f40  # 둥근 네모(모서리 투명) + 흰 '딜'
-assert "/icons/icon-192.png?v=4" in sw40 and "/favicon.ico?v=4" in sw40 and all(i["src"].endswith("?v=4") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=4"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
+assert "/icons/icon-192.png?v=5" in sw40 and "/favicon.ico?v=5" in sw40 and all(i["src"].endswith("?v=5") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=5"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
 # 바로가기 아이콘 'V1 파스텔 이모지'(10/24 진우): 🔥·⏳·🧻 각자 파일(96·192 any — 크롬은 바로가기에 any만 씀, ?v=) · 위 -> 아래 파스텔 꽉 찬 정사각 · 이모지 가운데, 긴 변 = 0.5n
 assert [[(i["src"], i["sizes"], i["purpose"]) for i in x["icons"]] for x in m40["shortcuts"]] == [[(f"/icons/sc-{k}-96.png{S40.SV}", "96x96", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "any")] for k in ("fire", "wait", "life")]
 assert S40.SV.startswith("?v=") and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"] and [C40.SC_ICONS[k][0] for k in ("fire", "wait", "life")] == ["🔥", "⏳", "🧻"]
@@ -15765,3 +15771,62 @@ assert th212 and th212[-1][2] == f"{S.BASE}cards/2026-11-18.png" and "mcard" not
 (H.DAYCARD_CHAR, H.http, H.tg, H.th_bundle, H.series_card, H.toss_card, time.time, E212, H.series_pick, H.S_toss_imgs, H.DAYCARD_TOSS) = sv212
 H.E.clear(); H.E.update(E212); os.chdir(cwd212)
 
+# 9-213 (11/19 Cowork ③ — 진우 '좋아요는 누르는데 제품 링크로 바로 갈 수 있게 해 줘'): /link '📸 인스타에서 본 상품' = 캡션이 '프로필 링크 → 이름'으로 가리킨 묶음 14일
+#   (카드 딜·테마·08시 릴스 = card_name · 큐레이션·토스 넘기기 = iglink.json 이름 글자 그대로 — ig_link_sync) · 맨 위 묶음만 펼침 · 최신이 위 · 끝난 상품(일시 품절·진열에서 빠짐) 뺌(번호 그대로) · 0개 묶음 숨김
+#   · 한 묶음 한 몰 · 토스 사진 = 원본 + 출처 · 새 캡션 = '프로필 링크 → M/D 이름' · 셀프체크: 최근 14일 캡션 이름이 모두 /link에
+cwd213, sv213 = os.getcwd(), (time.time, H.ev_list, dict(S.TIMG), S.LINK_IG_OPEN)
+os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
+time.time = lambda: TK("2026-11-19 22:30")
+C213, T213 = (lambda k: f"https://link.coupang.com/a/lk{k}"), (lambda k: f"https://toss.shopping/_m/lk{k}")
+P213 = [{"t": "2026-11-18 08:00", "text": f"🔥 [쿠팡] 히터{k} (1{k},900원)", "url": C213(k), "own": 1, "img": f"https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/h{k}.jpg"} for k in range(6)] \
+     + [{"t": "2026-11-18 15:00", "text": f"🔥 [토스] 토스{k} (9,900원)", "url": T213(k), "own": 1} for k in range(3)]
+it213 = [(i, p, ((3 if i == 2 else 0), None, "", [], False)) for i, p in enumerate(P213) if i != 4]  # 2 = 일시 품절 · 4 = 진열에서 빠짐
+json.dump({"2026-11-18": TK("2026-11-18 22:00"), "2026-11-18_08": TK("2026-11-18 08:50"), "2026-11-18_19": TK("2026-11-18 19:05"), "2026-11-17_14": TK("2026-11-17 14:05"),
+           "2026-11-04": TK("2026-11-04 22:00"), "2026-11-19_19": TK("2026-11-19 19:05")}, open("docs/cards/ig.json", "w"))
+json.dump({"2026-11-18_08": {"t": TK("2026-11-18 08:50"), "title": "책상 발밑 미니 히터", "kind": "reelam"}, "2026-11-18_19": {"t": TK("2026-11-18 19:00"), "title": "겨울준비 5가지", "kind": "theme"},
+           "2026-11-17_14": {"t": TK("2026-11-17 14:00"), "title": "한 상품 글", "kind": "one"}, "2026-11-19_19": {"t": TK("2026-11-19 19:00"), "title": "햅쌀 5가지", "kind": "theme"}}, open("docs/cards/names.json", "w"), ensure_ascii=False)
+for st213, ix213 in (("2026-11-18", [0, 1, 2, 3, 4]), ("2026-11-18_08", [0, 1, 5]), ("2026-11-18_19", [2, 4]), ("2026-11-17_14", [0]), ("2026-11-04", [1]), ("2026-11-19_19", [3, 5])):
+    json.dump(ix213, open(f"docs/cards/{st213}.json", "w"))
+# 봇: 큐레이션(seen cur_ ig > 0 — 새 글 = ign 'M/D 이름', 옛 글 = 그때 꼬리 topic)·토스 넘기기(done 1 + igtossu = 만든 날) -> iglink.json · 14일 지난 기록 X · seen에서 지워진 기록 = 14일까지 그대로
+EV213 = [{"at": "2026-11-18 08:20", "curation": True, "topic": "책상 발밑 미니 히터", "urls": [C213(0), C213(1), T213(0)]}, {"at": "2026-11-19 08:20", "curation": True, "topic": "넥워머", "urls": [C213(5), "https://link.coupang.com/a/gone"]},
+         {"at": "2026-11-19 12:00", "curation": True, "topic": "Threads만", "urls": [C213(3)], "ch": "th"}, {"at": "2026-11-17 07:00", "curation": True, "topic": "품절 묶음", "urls": [C213(2), C213(4)]}]
+H.ev_list = lambda *a, **k: EV213
+json.dump({"cur_2026-11-01_0820": {"d": "2026-11-01", "kind": "cur", "name": "옛날", "urls": [C213(0)]}, "cur_2026-11-10_0900": {"d": "2026-11-10", "at": "2026-11-10 09:00", "kind": "cur", "name": "11/10 지난 기록", "urls": [C213(3)]}},
+          open("docs/cards/iglink.json", "w"), ensure_ascii=False)
+s213 = {"cur_2026-11-18_0820": {"t": TK("2026-11-18 08:20"), "ig": 3}, "cur_2026-11-19_0820": {"t": TK("2026-11-19 08:20"), "ig": 2, "ign": "11/19 넥워머"}, "cur_2026-11-19_1200": {"t": 1, "ig": 0},
+        "cur_2026-11-17_0700": {"t": 1, "ig": 1}, "igtoss_2026-11-18": {"t": 1, "done": 1, "u": [T213(0), T213(1), T213(2)], "cap": f"{H.TOSS_NOTE}\n\n💙 토스에서 살 만한 것 3개 (11/18)\n\n🛒 프로필 링크 → 토스 상품 바로 가기\n\n{H.PHOTO_CREDIT}"},
+        "igtoss_2026-11-19": {"t": 1, "done": 1, "u": [T213(1)], "cap": "🛒 프로필 링크 → 11/19 토스 상품 바로 가기"}, "igtossu": {"m": {str(TK("2026-11-18 15:35")): [T213(0), T213(1), T213(2)]}}}  # 11/19 토스 = 실패(igtossu X)
+H.ig_link_sync(s213, time.time()); g213 = json.load(open("docs/cards/iglink.json"))
+assert sorted(g213) == ["cur_2026-11-10_0900", "cur_2026-11-17_0700", "cur_2026-11-18_0820", "cur_2026-11-19_0820", "igtoss_2026-11-18"], sorted(g213)
+assert g213["cur_2026-11-18_0820"] == {"d": "2026-11-18", "at": "2026-11-18 08:20", "kind": "cur", "name": "책상 발밑 미니 히터", "urls": [C213(0), C213(1), T213(0)]} and g213["cur_2026-11-19_0820"]["name"] == "11/19 넥워머"
+assert g213["igtoss_2026-11-18"] == {"d": "2026-11-18", "at": "2026-11-18 15:30", "kind": "toss", "name": "토스 상품 바로 가기", "urls": [T213(0), T213(1), T213(2)]}
+o213 = io.StringIO()
+with contextlib.redirect_stdout(o213):
+    H.ig_link_sync(s213, time.time())
+assert "ig link 기록" not in o213.getvalue()  # 안 바뀌면 안 씀(실행마다 커밋 X)
+assert H.ig_link_name("2026-11-18", "책상 발밑 미니 히터") == "11/18 책상 발밑 미니 히터" and "name = ig_link_name(e[\"at\"][:10]" in inspect.getsource(H.cur_ig) and 'tail = f"\\n\\n🛒 프로필 링크 → {name}"' in inspect.getsource(H.cur_ig) \
+    and 'st["ig"], st["ign"] = len(live), name' in inspect.getsource(H.cur_ig) and "🛒 프로필 링크 → {ig_link_name(today, '토스 상품 바로 가기')}" in inspect.getsource(H.ig_toss)  # (라) 새 글부터 날짜
+assert "ig_link_sync(seen, now)" in inspect.getsource(H.ig_cards) and "IG_LINK_DAYS * 86400" in inspect.getsource(H.ig_live) and "IG_LINK_DAYS * 86400" in inspect.getsource(H.card_names_put) and H.IG_LINK_DAYS == S.LINK_IG_DAYS == 14 and H.IG_LINK == S.IG_LINK
+# 사이트 /link
+S.TIMG[T213(0)] = "https://static.toss.im/img/lk0.png"
+h213 = S.link_page("ab", P213, it213, "docs", today="2026-11-19"); c213 = h213[h213.index('<section class="cd ig"'):]; c213 = c213[:c213.index("</section>")]
+assert f'<h2 id="cdh">📸 {S.card_name("2026-11-19_19")}' in h213 and h213.index('id="cdh"') < h213.index('id="igh"') < h213.index('id="dh"')  # 맨 위 묶음(펼침) → 인스타에서 본 상품 → 지금 특가
+nm213 = re.findall(r"<summary>(?:<img[^>]*>)?<span>([^<]+)</span><small>(\d+)개</small></summary>", c213)
+assert nm213 == [("11/19 넥워머", "1"), ("11월 18일 카드 딜", "3"), ("11/18 토스 상품 바로 가기", "3"), ("11월 18일 책상 발밑 미니 히터", "3"), ("11/18 책상 발밑 미니 히터", "2"), ("11/10 지난 기록", "1")], nm213  # 최신이 위
+blk213 = lambda n: c213.split(f"<span>{n}</span>")[1].split("</details>")[0]
+assert re.findall(r"<b>(\d\d)</b>", blk213("11월 18일 카드 딜")) == ["01", "02", "04"] and "히터2" not in blk213("11월 18일 카드 딜") and "히터4" not in blk213("11월 18일 카드 딜")  # 품절·빠짐 = 뺌, 번호는 캡션 그대로
+assert re.findall(r"<b>(\d\d)</b><span>([^<]+)</span>", blk213("11/18 책상 발밑 미니 히터")) == [("01", "히터0"), ("02", "히터1")]  # 한 묶음 한 몰(토스 X)
+t213 = c213.split("<span>11/18 토스 상품 바로 가기</span>")[0].rsplit("<summary>", 1)[1] + blk213("11/18 토스 상품 바로 가기")
+assert 'class="tc"' in t213 and S.PHOTO_CREDIT in t213 and "link.coupang" not in t213 and re.findall(r"<b>(\d\d)</b>", t213) == ["01", "02", "03"]  # 토스 = 원본 썸네일(contain) + 사진 출처
+assert all(x not in c213 for x in ("한 상품 글", "옛날", "품절 묶음", "겨울준비 5가지", "Threads만", "11월 4일", "햅쌀 5가지")) and 'rel="nofollow sponsored noopener" target="_blank"><b>01</b><span>히터0' in c213
+for k213, v213 in json.load(open("docs/cards/ig.json")).items():  # 셀프체크 (마): 최근 14일 캡션 이름 = /link에(끝난 상품만 남아 숨긴 묶음 빼고)
+    xs213 = [i for i in json.load(open(f"docs/cards/{k213}.json")) if i in {x[0] for x in it213 if x[2][0] != 3}]
+    if k213[:10] >= "2026-11-06" and (json.load(open("docs/cards/names.json")).get(k213) or {}).get("kind") in S.LINK_IG_KINDS and k213 != "2026-11-19_19" and xs213:
+        assert f"<span>{S.card_name(k213)}</span>" in c213, k213
+for k213, v213 in g213.items():
+    if v213["d"] >= "2026-11-06" and any(u in {x[1]["url"] for x in it213 if x[2][0] != 3} for u in v213["urls"]):
+        assert f"<span>{v213['name'] if re.match(r'\d+/\d+ ', v213['name']) else str(int(v213['d'][5:7])) + '/' + str(int(v213['d'][8:10])) + ' ' + v213['name']}</span>" in c213, k213
+S.LINK_IG_OPEN = 2; m213 = S.link_page("ab", P213, it213, "docs", today="2026-11-19")
+assert '<details class="mo"><summary>이전 4개 더 보기</summary>' in m213 and m213.index("<span>11월 18일 카드 딜</span>") < m213.index("이전 4개 더 보기") < m213.index("<span>11/10 지난 기록</span>")  # 지금 특가가 너무 밀리지 않게
+assert S.link_cards(P213, "docs") == S.link_cards(P213, "docs").split('<section class="cd ig"')[0] and "앞 카드 딜" not in h213  # it 없으면 맨 위만(예전 '앞 카드 딜' 접기 = 목록으로)
+(time.time, H.ev_list, timg213, S.LINK_IG_OPEN) = sv213; S.TIMG.clear(); S.TIMG.update(timg213); os.chdir(cwd213)

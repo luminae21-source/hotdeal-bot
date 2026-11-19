@@ -292,7 +292,7 @@ ALIAS = lambda name: " ".join(w for r, w in ((r"화장지|두루마리|키친타
 
 PWA_BG, PWA_DARK = "#F6F7F9", "#0F1013"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
 OG_IMG = BASE + "og-v4.png"  # 사이트 기본 공유 그림(10/29 진우 'A로 해 보자' — 고양이+리트리버, 1200×630) · 새 이름 = 카톡이 옛 og.png를 캐시해서(그림 바꾸면 이름도 바꿈) · cards.og_image는 og.png만 만듦(이 파일 안 건드림)
-IV, SV = "?v=4", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜') · 4 = 11/19 앱 아이콘 띠 정리(빨강 한 색 + 고양이만)
+IV, SV = "?v=5", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜') · 4 = 11/19 앱 아이콘 띠 정리(빨강 한 색 + 고양이만) · 5 = 11/19 밤 고양이 크기 그대로(logo_sq) · maskable 0.76
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
             "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},
@@ -3142,7 +3142,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .sec{display:flex;justify-content:space-between;align-items:baseline;margin:20px 2px 8px}.sec h2{margin:0;font-size:19px;font-weight:800;line-height:1.35}.sec h2 span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
 .cd .sec{margin:16px 2px 6px}.cd h2{font-size:15px}.cd h2 small{font-weight:600;margin-left:4px}
 .cr{display:flex;gap:6px;overflow-x:auto;padding:4px 3px 6px;margin:0 -3px;scrollbar-width:none}.cr::-webkit-scrollbar{display:none}.cr a{flex:none;max-width:180px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 11px 7px 7px;border-radius:999px;background:var(--chip);white-space:nowrap}.cr span{min-width:0;overflow:hidden;text-overflow:ellipsis}.cr b{flex:none;font-size:11px;font-weight:800;background:var(--ink);color:var(--bg);border-radius:999px;padding:1px 6px}
-.cd details{margin-top:2px}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
+.cd details{margin-top:2px}.ig details{border-top:1px solid var(--line,rgba(127,127,127,.18))}.ig summary{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;padding:7px 2px}.ig summary span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ig summary small{flex:none;color:var(--mut);font-weight:500}.ig summary img{flex:none;width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--chip)}.ig summary img.tc{object-fit:contain}.ig .mo>summary{color:var(--sub);font-weight:600}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
 .chips{display:flex;gap:6px;margin:0 -3px 8px;padding:4px 3px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chips button{flex:none;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:0;border-radius:999px;background:var(--chip);color:var(--sub);cursor:pointer}.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}.g a{min-width:0}.im{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--tile)}
 .im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
@@ -3245,18 +3245,67 @@ def link_tile(i, p, sh, ks):
             + f'<div class="pr">{html.escape(shown)}' + (f'<em>{html.escape(em)}</em>' if em else "") + f'</div><div class="ck">{html.escape(link_when(p, sh))}</div></a>')
 
 
-def link_cards(posts, out):
+def link_go(i, p):
+    """번호 버튼 주소: 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영) = 딜 쪽(그 쪽에 그 문구) · 그 밖 = go_url."""
+    return f"{BASE}p/{i}.html" if aff(p.get("url")) and shop_of(p) not in SHOP_NOTES else go_url(i, p)
+
+
+def link_row(xs):
+    """번호 버튼 줄(가로) [(번호, i, p)] — 번호 = 캡션·카드 번호 그대로 · 사이트에서 뺀 딜 = 번호·이름만(링크 X — 10/25 리뷰) · sponsored = 제휴 링크만."""
+    return '<div class="cr">' + "".join((f'<a aria-disabled="true"' if not site_ok(p) else f'<a href="{html.escape(link_go(i, p))}"' + (f' rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank"' if link_go(i, p).startswith("http") and not link_go(i, p).startswith(BASE) else ""))
+                                        + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, i, p in xs) + "</div>"
+
+
+def link_cards(posts, out, it=None, today=None):
     """오늘 카드 딜 번호 줄(가로): 홈 '📸 … 카드 딜'과 같은 카드·같은 번호(card_stems·card_order, CARD_N개) — 인스타·Threads 캡션 '프로필 링크 → … 카드 딜 N번'.
-    24시간 안 앞 카드는 접힌 한 줄로(첫 화면에 지금 특가 — 10/25 리뷰) · 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영)는 딜 쪽으로(그 쪽에 그 문구)."""
-    pin, today = json.load(open(f"{out}/cards/reel.json")) if os.path.exists(f"{out}/cards/reel.json") else {}, time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
-    st = [pin["stem"]] if pin.get("day") == today and pin.get("stem") else []  # 11/16 인스타 ④: 오늘 테마 릴스 카드 = 맨 위(캡션·끝 장 '📸 카드 이름' 그대로)
+    맨 위 카드 1개만 펼침(첫 화면에 지금 특가 — 10/25 리뷰) · 그 아래 = 11/19 '📸 인스타에서 본 상품'(link_ig — it 있을 때 · 앞 카드도 여기로) · 쿠팡·토스·네이버 밖 제휴 링크(링크프라이스·올리브영)는 딜 쪽으로(그 쪽에 그 문구)."""
+    pin, today = json.load(open(f"{out}/cards/reel.json")) if os.path.exists(f"{out}/cards/reel.json") else {}, today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    st = [pin["stem"]] if pin.get("day") == time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600)) and pin.get("stem") else []  # 11/16 인스타 ④: 오늘 테마 릴스 카드 = 맨 위(캡션·끝 장 '📸 카드 이름' 그대로)
     blocks = [(x, ps) for x in st + [x for x in reversed(card_stems(out)) if x not in st] if (ps := card_order(posts, x, out)[:CARD_N])]
-    go = lambda i, p: f"{BASE}p/{i}.html" if aff(p.get("url")) and shop_of(p) not in SHOP_NOTES else go_url(i, p)
-    row = lambda ps: '<div class="cr">' + "".join((f'<a aria-disabled="true"' if not site_ok(p) else f'<a href="{html.escape(go(i, p))}"' + (f' rel="nofollow {"sponsored " if aff(p.get("url")) else ""}noopener" target="_blank"' if go(i, p).startswith("http") and not go(i, p).startswith(BASE) else ""))
-                                                  + f'><b>{n:02d}</b><span>{html.escape(link_name(p))}</span></a>' for n, (i, p) in enumerate(ps, 1)) + "</div>"  # 사이트에서 뺀 딜 = 번호·이름만(10/25 리뷰) · sponsored = 제휴 링크만
-    return blocks and (f'<section class="cd" aria-labelledby="cdh"><div class="sec"><h2 id="cdh">📸 {html.escape(card_name(blocks[0][0]))}<small>번호 그대로</small></h2></div>{row(blocks[0][1])}'
-                       + (f'<details><summary>앞 카드 딜 {len(blocks) - 1}개</summary>' + "".join(f'<small class="cn">{html.escape(card_name(x))}</small>{row(ps)}' for x, ps in blocks[1:]) + "</details>" if blocks[1:] else "")
-                       + "</section>") or ""
+    top = (f'<section class="cd" aria-labelledby="cdh"><div class="sec"><h2 id="cdh">📸 {html.escape(card_name(blocks[0][0]))}<small>번호 그대로</small></h2></div>'
+           + link_row([(n, i, p) for n, (i, p) in enumerate(blocks[0][1], 1)]) + "</section>") if blocks else ""
+    return top + (link_ig(posts, it, out, today, blocks[0][0] if blocks else None) if it is not None else "")
+
+
+IG_LINK, LINK_IG_DAYS, LINK_IG_KINDS, LINK_IG_OPEN = "docs/cards/iglink.json", 14, (None, "theme", "top", "check", "reelam"), 6  # 11/19 Cowork ③: 큐레이션·토스 넘기기 기록(hotdeal.ig_link_sync) · 14일 · 카드 중 캡션이 '프로필 링크 → 📸 카드 이름'인 것(카드 딜·테마·08시 릴스 — 한 상품·질문 글 = 칸 이름을 가리켜서 X)
+
+
+def link_ig(posts, it, out, today, skip=None):
+    """11/19 Cowork ③(진우 '좋아요는 누르는데 제품 링크로 바로 갈 수 있게' — 이틀 지난 글을 보고 들어와도 찾게): /link 맨 위 묶음 아래 '📸 인스타에서 본 상품' 접이식 목록.
+    = 캡션이 '프로필 링크 → 이름'으로 가리킨 묶음 LINK_IG_DAYS일: 카드(ig.json · LINK_IG_KINDS — 이름 = card_name, 캡션 '📸 …' 그대로) + 큐레이션·토스 넘기기(iglink.json name — 캡션 글자 그대로, 날짜 없던 옛 글 = 'M/D ' 붙임)
+    · 최신이 위 · 줄 = 날짜 + 이름 + 대표 사진 1장(첫 상품 — 토스 = 원본 썸네일 그대로 + 사진 출처) · 펼치면 번호 버튼(캡션 번호 그대로 — 뺀 번호는 건너뜀)
+    · 끝난 상품(진열에서 빠짐·일시 품절·사이트 X·링크 없음) 뺌 · 0개 묶음 = 숨김 · 한 묶음 = 한 몰(큐레이션 = 첫 상품 몰만 — set_pages처럼 · 토스 넘기기 = 토스만)."""
+    cut = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - (LINK_IG_DAYS - 1) * 86400))
+    live, byu = {i: sh for i, _, sh in it}, {}
+    for i, p, _ in it:
+        byu.setdefault(p.get("url"), (i, p))
+    ok = lambda i, p: i in live and live[i][0] != 3 and site_ok(p) and bool(p.get("url"))
+    md = lambda d: f"{int(d[5:7])}/{int(d[8:10])}"
+    try:
+        led = json.load(open(f"{out}/cards/ig.json"))
+        rec = json.load(open(f"{out}/cards/iglink.json")) if os.path.exists(f"{out}/cards/iglink.json") else {}
+    except (OSError, ValueError):
+        led, rec = {}, {}
+    nm, bs = card_names(), []
+    for x, t in led.items() if isinstance(led, dict) else ():
+        if STEM.fullmatch(x) and x[:10] >= cut and x != skip and (nm.get(x) or {}).get("kind") in LINK_IG_KINDS and isinstance(t, (int, float)):
+            bs.append((time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600)), card_name(x), [(n, i, p) for n, (i, p) in enumerate(card_order(posts, x, out)[:CARD_N], 1) if ok(i, p)]))
+    for v in rec.values() if isinstance(rec, dict) else ():
+        if isinstance(v, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(v.get("d", ""))) and v["d"] >= cut and str(v.get("name") or "").strip() and isinstance(v.get("urls"), list):
+            xs = [(n, *byu[u]) for n, u in enumerate(v["urls"], 1) if u in byu]
+            xs = [x for x in xs if shop_of(x[2]) == (shop_of(xs[0][2]) if v.get("kind") != "toss" else "toss") and ok(x[1], x[2])]
+            n0 = v["name"].strip()
+            bs.append((str(v.get("at") or v["d"]), n0 if re.match(r"\d{1,2}/\d{1,2} ", n0) else f"{md(v['d'])} {n0}", xs))
+    bs = sorted([b for b in bs if b[2]], key=lambda b: b[0], reverse=True)
+    if not bs:
+        return ""
+    pic = lambda p: (f'<img src="{html.escape(u)}" alt="" width="40" height="40" loading="lazy" decoding="async" referrerpolicy="no-referrer"' + (' class="tc"' if shop_of(p) == "toss" else "") + ' onerror="this.remove()">') if (u := site_img(p) or toss_img(p)) else ""
+    row = lambda name, xs: (f'<details><summary>{pic(xs[0][2])}<span>{html.escape(name)}</span><small>{len(xs)}개</small></summary>{link_row(xs)}'
+                            + (f'<small class="cn">{PHOTO_CREDIT}</small>' if pic(xs[0][2]) and shop_of(xs[0][2]) == "toss" else "") + "</details>")  # 토스 = 원본 썸네일 그대로(contain) + 사진 출처
+    return (f'<section class="cd ig" aria-labelledby="igh"><div class="sec"><h2 id="igh">📸 인스타에서 본 상품<small>최근 {LINK_IG_DAYS}일 · 최신이 위</small></h2></div>'
+            + "".join(row(n, xs) for _, n, xs in bs[:LINK_IG_OPEN])
+            + (f'<details class="mo"><summary>이전 {len(bs) - LINK_IG_OPEN}개 더 보기</summary>' + "".join(row(n, xs) for _, n, xs in bs[LINK_IG_OPEN:]) + "</details>" if bs[LINK_IG_OPEN:] else "")  # 지금 특가가 너무 밀리지 않게
+            + "</section>")
 
 
 def link_top(style, kakao):
@@ -3296,7 +3345,7 @@ def link_page(style, posts, it, out, alt=False, today=None):
             f'<link rel="icon" href="/favicon.ico{IV}" sizes="any"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png{IV}">'
             f'<meta name="theme-color" content="{"#FBFAF7" if style == "b" else "#ffffff"}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="{PWA_DARK}" media="(prefers-color-scheme: dark)">{THEME_JS}'
             f'<style>{LINK_CSS}</style>{gc}</head><body><main>' + "".join(link_top(s, kakao) for s in ("a", "b") if s in style)
-            + f'<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out)}{deals}'
+            + f'<p class="disc">{" ".join(SHOP_NOTES.values())}</p>{link_cards(posts, out, it, today)}{deals}'
             + '<nav class="srs" aria-label="시리즈"><h2>📚 시리즈 다시 보기</h2>' + "".join(f'<a href="{BASE}series/{k}/" data-gc="link/series-{k}">{e} {html.escape(n)}</a>' for k, n, e, *_ in SERIES) + "</nav>"
             + f'<a class="all" href="{BASE}?ref=link" data-gc="link/home">전체 특가 보기 →</a><p class="ft">칸마다 가격 아래 = 확인·게시 시각(토스 = 올린 날 가격) · 결제 전 최종가를 꼭 확인하세요 · 목록 {kst.tm_mon}/{kst.tm_mday} {kst.tm_hour:02d}:{kst.tm_min:02d} 갱신</p>'
             f'</main>{LINK_JS}</body></html>')

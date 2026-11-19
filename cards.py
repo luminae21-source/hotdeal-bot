@@ -1571,17 +1571,16 @@ LOGO_GRAD, LOGO_RED = ((255, 104, 96), (220, 34, 48)), (250, 3, 19)  # 파비콘
 LOGO_PNG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand", "logo.png")  # 새 로고 원본(10/29 진우 — 삼색 고양이 '딜', 1167×1140, 모서리 투명)
 
 
-def logo_sq(n):
-    """새 로고 -> n×n 정사각(세로 모자란 만큼 위아래 투명 · 비율 그대로 · 모서리 투명 그대로). 줄일 때 투명 가장자리 회색 번짐 X(RGBa)."""
-    lg = Image.open(LOGO_PNG).convert("RGBA")
+def logo_sq(n, lg=None):
+    """새 로고(lg = 같은 크기 다른 판 — 앱 아이콘은 logo_cat) -> n×n 정사각(세로 모자란 만큼 위아래 투명 · 비율 그대로 · 모서리 투명 그대로). 줄일 때 투명 가장자리 회색 번짐 X(RGBa)."""
+    lg = lg or Image.open(LOGO_PNG).convert("RGBA")
     s = max(lg.size)
     sq = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     sq.paste(lg, ((s - lg.width) // 2, (s - lg.height) // 2))
     return sq.convert("RGBa").resize((n, n), Image.LANCZOS).convert("RGBA")
 
 
-ICON_K = (0.86, 0.72)  # 11/19 앱 아이콘 고양이 폭 ÷ 아이콘 폭: any(192·512·apple 180) · maskable(가운데 안전 영역)
-LOGO_CAT = (37, 52, 1161, 1134)  # 원본 1167×1140에서 고양이 범위(x 37~1161 · y 52~1134) — 앱 아이콘 가운데 맞춤 기준
+ICON_K = (1.0, 0.76)  # 앱 아이콘 로고 한 변 ÷ 아이콘 한 변(logo_sq 자리 그대로 · 로고 가운데 = 아이콘 가운데): any(192·512·apple 180) 1.0 · maskable 0.76(11/19 진우 '5% 작게' — 0.8의 95%)
 
 
 def logo_cat():
@@ -1617,14 +1616,11 @@ def logo_cat():
 
 def app_logo(n, mini=False, k=1.0):
     """웹앱 아이콘 1장(n×n, 10/29 진우 새 로고): 로고 테두리 빨강(LOGO_RED) 꽉 찬 정사각 위에 새 로고(가운데, 한 변 k×n) — 투명 X(모서리도 빨강 · 모양은 런처·iOS가 깎음).
-    11/19: 바탕 = 로고 빨강 한 색 꽉(logo_cat — 로고 둥근 네모·가장자리 띠 X) + 고양이만 · k = 고양이 범위 폭 ÷ 아이콘 폭(any 0.86 · maskable 0.72). mini = 파비콘(16·32·48): 옛 '딜'만(16px에선 고양이가 뭉개짐), 그라데이션 둥근 네모(모서리 투명) — 4배로 그려 줄임."""
-    if not mini:  # 11/19 바탕 빨강 한 색(로고 둥근 네모 띠 X) + 고양이만 — k = 고양이 범위 폭 ÷ 아이콘 폭 · 범위 가운데 = 아이콘 가운데
+    11/19: 바탕 = 로고 빨강 한 색 꽉(logo_cat — 로고 둥근 네모·가장자리 띠 X) + 고양이만, 고양이 자리·크기는 그대로(k = 로고 한 변 ÷ 아이콘 한 변 · any 1.0 · maskable 0.76). mini = 파비콘(16·32·48): 옛 '딜'만(16px에선 고양이가 뭉개짐), 그라데이션 둥근 네모(모서리 투명) — 4배로 그려 줄임."""
+    if not mini:  # 11/19 바탕 = 로고 빨강 한 색(둥근 네모 띠 X) + 고양이(logo_cat) — 진우 '고양이 그림은 사이즈 똑같이': 자리·크기 = logo_sq(k×n) 그대로
         cat, col = logo_cat()
-        x0, y0, x1, y1 = LOGO_CAT
-        z = n * k / (x1 - x0)
-        c = cat.convert("RGBa").resize((round(cat.width * z), round(cat.height * z)), Image.LANCZOS).convert("RGBA")
-        im = Image.new("RGBA", (n, n), col + (255,))
-        im.alpha_composite(c, (round(n / 2 - (x0 + x1) / 2 * z), round(n / 2 - (y0 + y1) / 2 * z)))
+        im, m = Image.new("RGBA", (n, n), col + (255,)), round(n * k)
+        im.alpha_composite(logo_sq(m, cat), ((n - m) // 2, (n - m) // 2))
         return im
     N = n * 4
     g = Image.linear_gradient("L").resize((N, N), Image.BILINEAR)
