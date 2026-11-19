@@ -1,16 +1,16 @@
 {
-"at": "2026-11-19 09:18",
-"posts": 5934,
-"site": 2094,
+"at": "2026-11-19 09:32",
+"posts": 5935,
+"site": 2095,
 "mall": {
-"coupang": 1408,
+"coupang": 1409,
 "toss": 631,
 "naver": 55
 },
 "cat": {
 "season": 144,
 "fashion": 93,
-"digital": 77,
+"digital": 78,
 "laundry": 88,
 "life": 309,
 "food": 431,
@@ -108,10 +108,10 @@
 }
 },
 "2026-11-19": {
-"site": 2094,
+"site": 2095,
 "sitemap": 1042,
 "mall": {
-"coupang": 1408,
+"coupang": 1409,
 "toss": 631,
 "naver": 55
 }
@@ -190,7 +190,14 @@
 "n": 5,
 "slot": "",
 "k": "new"
+},
+{
+"name": "가전",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
 }
 ],
-"nset_n": "새 구성 10 · 기존 상품 구성 0"
+"nset_n": "새 구성 11 · 기존 상품 구성 0"
 }
