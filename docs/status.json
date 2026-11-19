@@ -1,5 +1,5 @@
 {
-"at": "2026-11-19 11:40",
+"at": "2026-11-19 11:54",
 "posts": 5940,
 "site": 2095,
 "mall": {
@@ -13,6 +13,7 @@
 "digital": 78,
 "laundry": 88,
 "life": 309,
+"kitchen": 142,
 "food": 431,
 "beauty": 271,
 "coffee": 91,
@@ -21,7 +22,6 @@
 "home": 91,
 "snack": 110,
 "car": 47,
-"kitchen": 142,
 "sport": 19,
 "etc": 5
 },
