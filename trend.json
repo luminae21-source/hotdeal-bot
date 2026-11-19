@@ -1,56 +1,56 @@
 {
  "google": {
-  "at": "2026-11-19 09:04",
+  "at": "2026-11-19 10:01",
   "items": [
+   {
+    "t": "현금",
+    "n": "2000+",
+    "news": "\"현금 결제 안 된다\" 말에 내리려던 할아버지…함께 움직인 승객들"
+   },
+   {
+    "t": "수원 fc 위민",
+    "n": "1000+",
+    "news": "꼴찌→PO 막차→리그 1위 꺾고 챔피언 등극, '캡틴' 장슬기도 놀랐다 \"감히 우승할 수 있을까…"
+   },
+   {
+    "t": "손혁",
+    "n": "200+",
+    "news": "\"못 쉬니까 더 아팠다\" 투수 부상자 명단 21회 공동 최다 LG, 손혁 신임 코치의 첫 주문은 '잘…"
+   },
+   {
+    "t": "집행유예",
+    "n": "200+",
+    "news": "남태현, '마약 집행유예 중 음주운전' 오늘(19일) 항소심 선고…징역 1년 뒤집힐까"
+   },
+   {
+    "t": "관광",
+    "n": "10000+",
+    "news": "문체부, '열린 관광지 조성 사업' 30곳 선정…경포해변 등 포함"
+   },
+   {
+    "t": "2027 수능",
+    "n": "500+",
+    "news": "[수능] 시험장 잘못 찾고 엘리베이터 갇히고…수험생 5명 경찰 도움"
+   },
    {
     "t": "제미나이 네온",
     "n": "200+",
-    "news": "구글, '제미나이 4 하이드로젠' 출시…상위 모델 '아르곤' 성능 추월"
+    "news": "구글, 세계 3위 성능 '제미나이 4 네온' 출시…작업 비용 32% 절감"
    },
    {
-    "t": "leet 시험",
-    "n": "2000+",
-    "news": "[속보] ‘리트 만점자’ 이진우씨, 공개 검증장 약속 시간에 안 나타나"
-   },
-   {
-    "t": "수능일",
-    "n": "1000+",
-    "news": "“10시까지 출근 아니었어요?”…대기업 직장인이 수능날 지각한 까닭"
-   },
-   {
-    "t": "s&p 500",
-    "n": "500+",
-    "news": "Dow drops more than 500 points; S&P 500 falls for fifth day…"
-   },
-   {
-    "t": "weather",
-    "n": "2000+",
-    "news": "‘Nothing I can do about it’: North Country woman made most…"
-   },
-   {
-    "t": "new zealand vs india",
+    "t": "nz vs ind",
     "n": "500+",
     "news": "In windy Wellington, India begin new era with history and…"
    },
    {
-    "t": "ionq",
-    "n": "200+",
-    "news": "Ionq stock hits 52-week low at 24.91 USD"
+    "t": "s&p 500",
+    "n": "500+",
+    "news": "Nasdaq-100 futures surge as traders gear up for Anthropic’s…"
    },
    {
-    "t": "겨울",
-    "n": "200+",
-    "news": "마포구, 겨울철 종합대책 가동…8천가구에 월동대책비"
-   },
-   {
-    "t": "nvda",
-    "n": "200+",
-    "news": "Same 0.5% risk, different position size: ADR% on NVDA for…"
-   },
-   {
-    "t": "kb금융그룹",
-    "n": "100+",
-    "news": "KB금융 '생산적 금융' 김성현·AX 이창권 부문장 사의…거버넌스 재편"
+    "t": "weather",
+    "n": "2000+",
+    "news": "Denver weather: Mild end to the week, much cooler weekend"
    }
   ]
  },

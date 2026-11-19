@@ -2,11 +2,6 @@
 "date": "2026-11-19",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-18/",
-"kind": "today",
-"added": "2026-11-18"
-},
-{
 "url": "https://hotdealpick.kr/c/t/americano.html",
 "kind": "topic",
 "added": "2026-11-18"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/c/t/t17f4cb.html",
 "kind": "topic",
 "added": "2026-11-18"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-19/",
+"kind": "today",
+"added": "2026-11-19"
 }
 ],
 "q": [
@@ -1368,6 +1368,7 @@
 "https://hotdealpick.kr/c/t/new-rice.html": "2026-11-19",
 "https://hotdealpick.kr/c/t/t040539.html": "2026-11-19",
 "https://hotdealpick.kr/c/t/t072f98.html": "2026-11-19",
-"https://hotdealpick.kr/c/t/t17f4cb.html": "2026-11-19"
+"https://hotdealpick.kr/c/t/t17f4cb.html": "2026-11-19",
+"https://hotdealpick.kr/today/2026-11-19/": "2026-11-19"
 }
 }
