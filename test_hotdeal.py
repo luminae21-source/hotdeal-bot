@@ -15720,7 +15720,6 @@ assert re.fullmatch(r"data/[A-Za-z0-9_-]+\.json", run211[-1][3]) and run211[-1][
 cwd212, sv212 = os.getcwd(), (H.DAYCARD_CHAR, H.http, H.tg, H.th_bundle, H.series_card, H.toss_card, time.time, dict(H.E), H.series_pick, H.S_toss_imgs, H.DAYCARD_TOSS)
 os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
 CL212 = lambda k: f"https://link.coupang.com/a/dc{k}"; TL212 = lambda k: f"https://toss.shopping/_m/dt{k}"
-H.S_toss_imgs = lambda m, now: {TL212(k): f"https://static.toss.im/t{k}.jpg" for k in range(3)}  # 11/19 사진 있는 상품만 — 토스 = 원본 썸네일
 P212 = [{"t": "2026-11-18 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": CL212(k), "own": 1, "chkt": ck, "now": pr, "img": f"https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/dc{k}.jpg"} for k, (n, pr, ck) in enumerate(
           [("곰곰 햅쌀 10kg", "33,890원", "2026-11-18 19:00"), ("곰곰 무농약 현미 4kg", "15,900원", "2026-11-18 19:00"), ("크리넥스 화장지 30롤", "19,900원 와우가", "2026-11-18 18:00"),
            ("페브리즈 섬유탈취제 1L", "8,900원", "2026-11-15 09:00"), ("다우니 섬유유연제 4L", "17,900원", "2026-11-18 17:00")])] \
@@ -15836,7 +15835,7 @@ S.LINK_IG_OPEN = 2; m213 = S.link_page("ab", P213, it213, "docs", today="2026-11
 assert '<details class="mo"><summary>이전 5개 더 보기</summary>' in m213 and m213.index("<span>11/19 넥워머</span>") < m213.index("이전 5개 더 보기") < m213.index("<span>11월 18일 카드 딜</span>") < m213.index("<span>11/10 지난 기록</span>")  # 지금 특가가 너무 밀리지 않게
 assert S.link_cards(P213, "docs") == S.link_cards(P213, "docs").split('<section class="cd ig"')[0] and "앞 카드 딜" not in h213  # it 없으면 맨 위만(예전 '앞 카드 딜' 접기 = 목록으로)
 (time.time, H.ev_list, timg213, S.LINK_IG_OPEN) = sv213; S.tapi_ok = tp213; S.TIMG.clear(); S.TIMG.update(timg213); os.chdir(cwd213)
-# 9-214 (11/19 23시 Cowork — 첫 하루 모음 캐릭터 카드 고칠 점): (1) 실제 상품 사진만 — 글 사진 → 같은 글 주소 API 사진·같은 pid cp_img.json → 진열 글 사진 · 없으면 그 상품 X(3개 밑 = 글자 카드) · 네이버 X(사진 X 규칙)
+# 9-214 (11/19 23시 Cowork — 첫 하루 모음 캐릭터 카드 고칠 점): (1) 쿠팡 = 실제 상품 사진만 — 글 사진 → 같은 글 주소 API 사진·같은 pid cp_img.json → 진열 글 사진 · 없으면 그 상품 X(3개 밑 = 글자 카드) · 네이버·토스 = 그대로(네이버 틀 = '사진 미제공' 칸 — 진우 결정 '세 몰 모두 캐릭터 틀')
 #   (2) 이름 2줄: 둘째 줄 첫 글자·첫 줄 끝 '·' X(렌더러 공백 줄바꿈 — 줄바꿈이 구분) · 상품명 속 옵션 목록('더블 2인용 싱글 1인용') + 고른 옵션 = 고른 것만 · (3) 머리 줄 = 카드 저장소 layout.mjs(Cowork 웹 편집기)
 cwd214, sv214 = os.getcwd(), (time.time,)
 os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
@@ -15847,16 +15846,17 @@ json.dump([{"at": "2026-11-19 09:00", "url": C214(2), "shelf": True, "img": "htt
 P214 = [{"t": "2026-11-19 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": C214(k), "own": 1, "chkt": "2026-11-19 19:00", "now": pr, **x} for k, (n, pr, x) in enumerate(
     [("곰곰 햅쌀 10kg", "33,890원", {"img": "https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/p0.jpg"}), ("스프라이트 제로 사이다, 250ml, 30개", "12,290원", {"pid": "777"}),
      ("크라운산도 딸기크림치즈 323g 3개", "7,360원", {}), ("코카콜라 제로 355ml 24개", "18,900원", {}), ("다우니 섬유유연제 4L", "17,900원", {"img": "https://example.com/x.jpg"})])] \
-    + [{"t": "2026-11-19 20:10", "text": f"{H.DISCLOSURE}\n\n🔥 [네이버] 네이버{k} (9,900원)", "url": f"https://naver.me/dp{k}", "own": 1, "now": "9,900원", "chkt": "2026-11-19 19:00"} for k in range(4)]
+    + [{"t": "2026-11-19 20:10", "text": f"{H.DISCLOSURE}\n\n🔥 [네이버] {n} (9,900원)", "url": f"https://naver.me/dp{k}", "own": 1, "now": "9,900원", "chkt": "2026-11-19 19:00"} for k, n in enumerate(("라운드랩 독도 토너", "닥터지 레드 블레미쉬 크림", "메디힐 티트리 마스크", "아누아 어성초 토너"))]
 json.dump(list(range(len(P214))), open("docs/cards/2026-11-19.json", "w"))
-ph214 = H.day_char_photo({}, time.time())
-assert [bool(ph214(p)) for p in P214] == [True, True, True, False, False, False, False, False, False], [ph214(p) for p in P214]  # 글 사진 · pid cp_img · 진열 글 사진 · 없음 · 쿠팡 사진 주소 아님 · 네이버 X
+ph214 = H.day_char_photo({})
+assert [bool(ph214(p)) for p in P214[:5]] == [True, True, True, False, False], [ph214(p) for p in P214[:5]]  # 글 사진 · pid cp_img · 진열 글 사진 · 없음 · 쿠팡 사진 주소 아님
 assert ph214(P214[1]).endswith("pid777.jpg") and ph214(P214[2]).endswith("ev2.jpg")
-m214, ps214 = H.day_char_pick(P214, "2026-11-19", time.time())
-assert m214 == "coupang" and [p["url"] for p in ps214] == [C214(0), C214(1), C214(2)] and [p["img"].rsplit("/", 1)[1] for p in ps214] == ["p0.jpg", "pid777.jpg", "ev2.jpg"], (m214, ps214)  # 사진 찾은 것만 · 찾은 사진 = 카드 사진(네이버 4개여도 사진 X = X)
+assert H.day_char_pick(P214, "2026-11-19", time.time())[0] == "naver" and len(H.day_char_pick(P214, "2026-11-19", time.time())[1]) == 4  # 네이버 4 > 쿠팡(사진 있는 것) 3 = 네이버 틀(사진 X 규칙 그대로)
+m214, ps214 = H.day_char_pick(P214[:7], "2026-11-19", time.time())
+assert m214 == "coupang" and [p["url"] for p in ps214] == [C214(0), C214(1), C214(2)] and [p["img"].rsplit("/", 1)[1] for p in ps214] == ["p0.jpg", "pid777.jpg", "ev2.jpg"], (m214, ps214)  # 쿠팡 = 사진 찾은 것만 · 찾은 사진 = 카드 사진 · 네이버 2 < 쿠팡 3
 d214 = H.mall_card_json("오늘 살 만한 딜", [(p, p["now"]) for p in ps214])
 assert [x["img"].rsplit("/", 1)[1] for x in d214["items"]] == ["p0.jpg", "pid777.jpg", "ev2.jpg"]  # '사진 미제공' 칸 X
-assert H.day_char_pick(P214[3:], "2026-11-19", time.time())[1] == []  # 사진 있는 상품 0 = 글자 카드(부른 쪽 3개 밑)
+assert H.day_char_pick(P214[3:5], "2026-11-19", time.time())[1] == []  # 쿠팡 사진 있는 상품 0 = 글자 카드(부른 쪽 3개 밑)
 n214 = "[27년형 신상품] 한일의료기 탄소열선 프리미엄 전기요 그레이 민들레 더블 2인용 싱글 1인용, 더블 2인용(135 x 180cm)"
 for c214 in (3, 5, 7):
     x214 = H.series_name(n214, c214)

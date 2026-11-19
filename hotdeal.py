@@ -10250,25 +10250,24 @@ DAYCARD_CHAR, DAYCARD_FRESH = True, 48 * 3600  # 11/18 진우 '왜 캐릭터로 
 DAYCARD_TITLE, DAYCARD_TOSS = "오늘 살 만한 딜", False  # 11/18 23시 진우: 제목 = 글자 카드와 같게('오늘의 장바구니' = 낮 묶음 이름 그대로) — 새 서식 검증이 이 제목을 받기 전 = 렌더 X → 글자 카드 · 토스 틀 = 제목이 그림에 박힘('오늘의 장바구니') → 꺼 둠(글자 카드)
 
 
-def day_char_photo(seen, now):
-    """11/19 Cowork ①(1) 하루 모음 캐릭터 카드 = 실제 상품 사진만 -> 글 -> 사진 주소('' = 없음): 쿠팡 = 글 사진(img_of) → 같은 글 주소 API 사진·같은 pid cp_img.json(build_site.cp_fill_img — 사이트와 같음)
-    → 진열 글(events) 사진 · 토스 = 원본 썸네일(toss_imgs) · 네이버 = X(사진 X 규칙)."""
+def day_char_photo(seen):
+    """11/19 Cowork ①(1) 하루 모음 캐릭터 카드 쿠팡 = 실제 상품 사진만 -> 쿠팡 글 -> 사진 주소('' = 없음): 글 사진(img_of) → 같은 글 주소 API 사진·같은 pid cp_img.json(build_site.cp_fill_img — 사이트와 같음) → 진열 글(events) 사진."""
     import build_site
     build_site.cpi_load(seen)
-    ev, tim = ev_info(), S_toss_imgs(seen.get("tossid", {}).get("m", {}), now)
-    return lambda p: tim.get(p.get("url"), "") if shop_of(p) == "toss" else (img_of(p) or build_site.cp_fill_img(p) or img_of({**p, "img": str((ev.get(p.get("url")) or {}).get("img") or "")})) if shop_of(p) == "coupang" else ""
+    ev = ev_info()
+    return lambda p: img_of(p) or build_site.cp_fill_img(p) or img_of({**p, "img": str((ev.get(p.get("url")) or {}).get("img") or "")})
 
 
 def day_char_pick(posts, today, now, seen=None):
     """하루 모음 캐릭터 카드 상품: 그날 카드 후보(card_order) 중 수수료 링크 딜 · 쿠팡·네이버·토스 · 가격 있음 · 확인 DAYCARD_FRESH 안(토스 = 게시 시각 — 게시 시점 가격)
-    · 11/19 사진 있는 상품만(day_char_photo — 찾은 사진을 글 img로 · 네이버 = 사진 X 규칙이라 X) · 같은 상품·같은 브랜드 1번(앞 번호 남김) -> 몰별로 나눠 가장 많은 몰(같으면 쿠팡 → 네이버 → 토스) 앞 5개
+    · 11/19 쿠팡 = 사진 있는 상품만(day_char_photo — 찾은 사진을 글 img로 · 네이버·토스 = 규칙 그대로: 네이버 틀은 사진 칸 '사진 미제공' · 토스 = toss_card가 원본 썸네일) · 같은 상품·같은 브랜드 1번(앞 번호 남김) -> 몰별로 나눠 가장 많은 몰(같으면 쿠팡 → 네이버 → 토스) 앞 5개
     -> (몰, [글…]) · 3개 밑이면 부른 쪽이 글자 카드."""
-    by, order, photo = {}, ("coupang", "naver", "toss"), day_char_photo(seen or {}, now)
+    by, order, photo = {}, ("coupang", "naver", "toss"), day_char_photo(seen or {})
     for _, p in card_order(posts, today):
         m, name = shop_of(p), short_name(title_of(p["text"]))
         if m not in order or not aff_note(p.get("url") or "") or not won(p.get("now") or parse(title_of(p["text"]))[2]) or now - (kst_ts(p["t"][:16]) if m == "toss" else chk_ts(p)) > DAYCARD_FRESH:
             continue
-        if not (ph := photo(p)):  # 사진 없음 = 카드 '사진 미제공' 칸 X
+        if m == "coupang" and not (ph := photo(p)):  # 쿠팡 사진 없음 = 카드 '사진 미제공' 칸 X
             continue
         xs, b = by.setdefault(m, []), brand_of(name)
         if all(q["url"] != p.get("url") and (not b or brand_of(short_name(title_of(q["text"]))) != b) for q in xs):
