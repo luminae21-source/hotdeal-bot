@@ -8329,6 +8329,9 @@ def th_text(tok, me, text, link, tag="핫딜"):
                 raise
 
 
+DIGEST_LATE = "22:00"  # 11/19: 21시대 내내 큐레이션·토스 회차 같은 묶음 글에 밀려 22시 넘도록 모아보기(-> 하루 카드·Threads 하루 모음)가 안 나감 -> 이 시각부터는 10분 간격 안 기다림
+
+
 def digest(seen, posts):
     """매일 21시(KST) 이후 1회: 오늘 게시한 딜 모아보기 -> 채널에 바로(10/10~, 실패하면 ✅ 초안). 바로 뒤 블로그용 글(길면 나눠서, 실패하면 다음 실행에 다시)·카드·릴스."""
     kst = time.gmtime(time.time() + 9 * 3600)
@@ -8345,8 +8348,8 @@ def digest(seen, posts):
         if "blog_" + key[7:] not in seen:
             blog()
         return
-    if busy(seen, cap=False):  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
-        return
+    if busy(seen, cap=False) and time.strftime("%H:%M", kst) < DIGEST_LATE:  # 10분 안에 다른 묶음 글 -> 다음 실행에(모아보기는 하루 1번이라 조금 늦어도 됨)
+        return print("digest 미룸(묶음 글 10분 간격) —", DIGEST_LATE, "부터는 안 기다림")
     urls = [(post_url(p["mid"]) if not site_ok(p) and p.get("mid") else f"{SITE}p/{posts.index(p)}?ref=tg") if aff_note(p["url"] or "") == OY_NOTE or len(p["url"] or "") > 150 else p["url"] for p in todays]  # 사이트에서 뺀 딜 = 쪽이 없음 -> 채널 글(10/25 리뷰)  # 올영: 링크만 나열 금지(FAQ) -> 사이트 · 아주 긴 주소(G마켓 검색 링크 ~400자)도 사이트 딜 페이지로(같은 구매 버튼, 텔레그램 링크 길이 한도)
     night = night_deals(seen, today + f" {PREVIEW_HOUR:02d}:00", night_window(time.time())[1])  # 밤 10시 미리보기가 안 나갈 만큼 적은 날(PREVIEW_MIN개 미만) = 여기에 합침
     night = night if len(night) < PREVIEW_MIN else []

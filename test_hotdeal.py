@@ -2213,6 +2213,10 @@ igp9, H.ig_photo = H.ig_photo, lambda p, d, seen=None: ("ph9.jpg", "coupang")  #
 seen, sent[:] = {}, []; time.time = lambda: TK(f"{D9} 21:05"); H.digest(seen, json.load(open("posts.json")))
 assert ds9[0] == (D9, 5) and sorted(os.listdir(f"docs/cards/{D9}")) == ["01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg"] and ds9[1][0] == "reel" and ds9[1][1][0] == "🧴"  # 딜 카드 때 채운 재료를 릴스도
 H.E.pop("IG_TOKEN"); shutil.rmtree(f"docs/cards/{D9}"); seen, ds9[:] = {}, []; H.digest(seen, json.load(open("posts.json"))); assert ds9[0][0] == "reel" and ds9[0][1][0] == "🧴" and not os.path.exists(f"docs/cards/{D9}")  # 인스타 없으면 딜 카드 X, 릴스 재료는 그대로 채움
+for hm9, ok9 in (("21:50", False), ("22:05", True)):  # 11/19: 21시대 내내 다른 묶음 글에 밀리던 모아보기 -> DIGEST_LATE(22시)부터는 10분 간격 안 기다림
+    time.time = lambda: TK(f"{D9} {hm9}"); seen, ds9[:] = {"bundles": {"t": time.time() - 120, "ts": [time.time() - 120]}}, []; H.digest(seen, json.load(open("posts.json")))
+    assert (f"digest_{D9.replace('-', '')}" in seen) == ok9 and bool(ds9) == ok9, hm9
+time.time = lambda: TK(f"{D9} 21:05")
 H.E["IG_TOKEN"] = "pt"; C9.reel, H.tg_video, H.deal_slides, H.ai_pick, H.ig_photo = rl9, tv9, sd9, ap9, igp9
 shutil.rmtree("docs/cards"); os.rename(cards9, "docs/cards")
 H.IG_HUMAN = ig9h
