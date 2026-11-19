@@ -292,7 +292,7 @@ ALIAS = lambda name: " ".join(w for r, w in ((r"화장지|두루마리|키친타
 
 PWA_BG, PWA_DARK = "#F6F7F9", "#0F1013"  # 사이트 바탕(CSS body·다크) = 앱 실행 화면·상단 줄 색
 OG_IMG = BASE + "og-v4.png"  # 사이트 기본 공유 그림(10/29 진우 'A로 해 보자' — 고양이+리트리버, 1200×630) · 새 이름 = 카톡이 옛 og.png를 캐시해서(그림 바꾸면 이름도 바꿈) · cards.og_image는 og.png만 만듦(이 파일 안 건드림)
-IV, SV = "?v=3", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜')
+IV, SV = "?v=4", "?v=1"  # 앱 아이콘(IV)·바로가기 아이콘(SV, sc-*) 그림 바꾸면 올림(cards.app_icons) -> 주소가 바뀌어 폰·크롬·서비스워커가 새 파일로 받음 · 2 = 10/23 'A 레드' · 3 = 10/29 새 로고(삼색 고양이 '딜') · 4 = 11/19 앱 아이콘 띠 정리(빨강 한 색 + 고양이만)
 MANIFEST = {"id": "/", "name": "핫딜픽 — 매일 살 만한 핫딜", "short_name": "핫딜픽", "description": "매일 살 만한 핫딜만 골라드려요", "lang": "ko", "dir": "ltr",  # 10/23 진우 '웹앱으로'(앱스토어 X)
             "start_url": "/?src=app", "scope": "/", "display": "standalone", "background_color": PWA_BG, "theme_color": PWA_BG, "categories": ["shopping"],
             "icons": [{"src": f"/icons/icon-192.png{IV}", "sizes": "192x192", "type": "image/png", "purpose": "any"}, {"src": f"/icons/icon-512.png{IV}", "sizes": "512x512", "type": "image/png", "purpose": "any"},

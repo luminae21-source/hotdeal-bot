@@ -1589,8 +1589,8 @@ n = S.build(posts, "docs")
 idx = open("docs/index.html").read()
 assert n == 1 and '<h3><a href="https://hotdealpick.kr/p/0.html">휴지</a></h3>' in idx and '<span class="mc">쿠팡</span>' in idx and 'href="https://buy"' in open("docs/p/0.html").read()  # 카드 = 딜 쪽으로, 구매 링크는 딜 쪽 버튼
 pg0 = S.page("t", "")
-assert '<img class="logo" src="/icons/logo-64.png?v=3" width="32" height="32" alt="" aria-hidden="true"><b>핫딜픽</b>' in S.page("t", "<h1>x</h1>")  # 쪽에 h1이 있으면 로고 = b, 없으면(홈·기록 쪽) 로고 = h1
-assert all(x in pg0 for x in ('<header class="hd">', '<img class="logo" src="/icons/logo-64.png?v=3" width="32" height="32" alt="" aria-hidden="true"><h1>핫딜픽</h1>', f'href="{S.BASE}alarm/" aria-label="알림 받기"', f'href="{S.BASE}saved/" aria-label="찜한 딜 보기"',
+assert '<img class="logo" src="/icons/logo-64.png?v=4" width="32" height="32" alt="" aria-hidden="true"><b>핫딜픽</b>' in S.page("t", "<h1>x</h1>")  # 쪽에 h1이 있으면 로고 = b, 없으면(홈·기록 쪽) 로고 = h1
+assert all(x in pg0 for x in ('<header class="hd">', '<img class="logo" src="/icons/logo-64.png?v=4" width="32" height="32" alt="" aria-hidden="true"><h1>핫딜픽</h1>', f'href="{S.BASE}alarm/" aria-label="알림 받기"', f'href="{S.BASE}saved/" aria-label="찜한 딜 보기"',
                               'placeholder="상품명 또는 브랜드 — 휴지, 라면, 가습기"', f'<p class="dis">{S.DISCLOSURE}</p>', S.LIKE_JS, S.SEARCH_JS, S.END_JS, S.DOT_JS, f'<link rel="stylesheet" href="/s.css{S.CV}">', S.FONT_HEAD, 'id="lc"'))
 hr0 = pg0.split('<div class="hr">')[1].split("</div>")[0]  # 10/24 진우 v3 포털형 2차(N+스토어): 헤더 1줄 = 로고 + 핫딜픽 + 🔔 + ♡ / 그 아래 검색칸(빨강 2px — 위에 붙음)
 assert hr0.index('class="lg"') < hr0.index(f'<a class="ib" href="{S.BASE}alarm/" aria-label="알림 받기" data-gc="hd/alarm">') < hr0.index(f'<a class="ib" href="{S.BASE}saved/" aria-label="찜 목록 열기" data-gc="hd/saved">') and hr0.count('class="ib"') == 2 and "<form" not in hr0
@@ -5588,7 +5588,7 @@ assert (m40["name"], m40["short_name"], m40["start_url"], m40["scope"], m40["dis
 assert [(i["sizes"], i["purpose"]) for i in m40["icons"]] == [("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")] and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"]
 for f40 in ("index.html", "all.html", "p/0.html", "c/life/index.html", "saved/index.html", f"today/{time.strftime('%Y-%m-%d', time.gmtime(time.time() + 9 * 3600))}/index.html"):
     h40 = open(f"{d40}/{f40}").read().split("</head>")[0]
-    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico?v=3"', 'name="theme-color" content="#F6F7F9"', 'content="#0F1013" media="(prefers-color-scheme: dark)"',
+    assert all(x in h40 for x in ('rel="manifest" href="/manifest.webmanifest"', 'rel="apple-touch-icon"', 'href="/favicon.ico?v=4"', 'name="theme-color" content="#F6F7F9"', 'content="#0F1013" media="(prefers-color-scheme: dark)"',
                                   'apple-mobile-web-app-capable', 'apple-mobile-web-app-title" content="핫딜픽"', 'apple-mobile-web-app-status-bar-style', "serviceWorker.register('/sw.js')")), f40
 assert 'id="inst"' in ix40 and ix40.index('id="inst"') < ix40.index('class="dis"') and 'id="inst"' not in open(f"{d40}/all.html").read()  # 설치 버튼 = 홈(DOM 자리 그대로)만
 assert "localStorage.setItem('hv'" in S40.INSTALL and "if(v<2)return;" in S40.INSTALL and S40.INSTALL.index("if(v<2)return;") < S40.INSTALL.index("function show(") and ".inst{position:fixed;" in S40.CSS  # 10/24 Cowork: 두 번째 방문부터 · 아래쪽 띠(CSS로 자리만)
@@ -5599,25 +5599,24 @@ g40, S40.GC_CODE = S40.GC_CODE, "hdp"; assert S40.gc_tag().index(S40.GC_APP) < S
 assert S40.gc_tag() == "" if not g40 else True
 ic40 = C40.app_icons(f"{d40}/icons", d40); from PIL import Image as I40
 assert [I40.open(f).size for f in ic40[:6]] == [(192, 192), (512, 512), (512, 512), (180, 180), (32, 32), (16, 16)] and I40.open(f"{d40}/icons/apple-touch-icon.png").mode == "RGB"  # 애플 = 투명 X
-# 새 로고(10/29 진우 — brand/logo.png 삼색 고양이 '딜'): any·애플 = 로고 테두리 빨강 꽉 찬 정사각 + 로고 꽉 차게(투명 X) · maskable = 같은 빨강 + 로고 80% 가운데 · 파비콘 = 옛 '딜'만 둥근 네모
+# 새 로고(10/29 진우 — brand/logo.png 삼색 고양이 '딜') · 11/19 진우 '테두리도 정리해 줘 깔끔하게': 바탕 = 로고 빨강 한 색 꽉(로고 둥근 네모·가장자리 띠 X) + 고양이만 가운데 · 고양이 폭 = any·애플 0.86 / maskable 0.72 · 파비콘 = 옛 '딜'만 둥근 네모
 assert all(I40.open(f).mode == "RGB" for f in ic40[:4]) and open(f"{d40}/icons/icon-512.png", "rb").read() != open(f"{d40}/icons/icon-512-maskable.png", "rb").read()
-near40 = lambda a, b, t=4: all(abs(x - y) <= t for x, y in zip(a, b))
-red40 = lambda c: near40(c, C40.LOGO_RED, 24)  # 로고 테두리 빨강(그림자 조금)
-bb40 = lambda ps: (min(x for x, _ in ps) / 512, min(y for _, y in ps) / 512, (max(x for x, _ in ps) + 1) / 512, (max(y for _, y in ps) + 1) / 512)
-lg40 = I40.open(C40.LOGO_PNG); assert lg40.size == (1167, 1140) and lg40.getpixel((0, 0))[3] == 0 and near40(lg40.getpixel((8, 570))[:3], C40.LOGO_RED, 12)  # 원본 모서리 투명 · 왼쪽 테두리 = LOGO_RED
-for f40 in ic40[:4]:
-    i40 = I40.open(f40); n40 = i40.width - 1
-    assert all(red40(i40.getpixel(p)) for p in ((0, 0), (n40, 0), (0, n40), (n40, n40))), f40  # 모서리 = 빨강(투명 X)
-    nr40 = [(x, y) for x in range(0, n40 + 1, 2) for y in range(0, n40 + 1, 2) if not red40(i40.getpixel((x, y)))]  # 로고 그림(빨강 아닌 곳: 고양이·느낌표)
-    bx40 = (min(x for x, _ in nr40) / n40, min(y for _, y in nr40) / n40, max(x for x, _ in nr40) / n40, max(y for _, y in nr40) / n40)
-    assert (all(v < 0.15 for v in bx40[:2]) and all(v > 0.85 for v in bx40[2:]) if "maskable" not in f40 else  # any·애플 = 로고 꽉 차게(수염·꼬리·몸통이 가장자리까지)
-            all(0.08 <= v <= 0.2 for v in bx40[:2]) and all(0.8 <= v <= 0.92 for v in bx40[2:]) and all((x / n40 - 0.5) ** 2 + (y / n40 - 0.5) ** 2 <= 0.5 ** 2 for x, y in nr40 if max(abs(x / n40 - 0.5), abs(y / n40 - 0.5)) > 0.4)), (f40, bx40)  # maskable = 로고 80% 가운데(바깥 10%는 빨강만)
-    assert max(min(i40.getpixel(p)) for p in nr40) > 230, f40  # 흰 '딜'·얼굴
+lg40 = I40.open(C40.LOGO_PNG); assert lg40.size == (1167, 1140) and lg40.getpixel((0, 0))[3] == 0  # 원본(그대로 둠) 모서리 투명
+cat40, col40 = C40.logo_cat(); assert cat40.size == lg40.size and all(abs(x - y) <= 6 for x, y in zip(col40, C40.LOGO_RED)) and cat40.getpixel((8, 570))[3] == 0 and cat40.getpixel((60, 570))[3] == 0  # 바탕 색 = 로고 빨강 중앙값 · 로고 왼쪽 띠(8px)·안쪽 빨강(60px) = 바탕(빠짐)
+assert cat40.getpixel((599, 593))[3] == 255 and cat40.getpixel((599, 830))[3] == 255  # 고양이 얼굴·'딜' 판(빨강이지만 바깥과 안 이어짐) = 남음
+for f40, k40 in zip(ic40[:4], (0.86, 0.86, 0.72, 0.86)):
+    i40 = I40.open(f40); n40 = i40.width; e40 = max(1, round(n40 * (0.05 if k40 > 0.8 else 0.12)))  # maskable은 12%까지(옛 아이콘 띠 = 10% 안쪽)
+    ring40 = {i40.getpixel((x, y)) for x in range(n40) for y in range(n40) if min(x, y, n40 - 1 - x, n40 - 1 - y) < e40}
+    assert ring40 == {col40}, (f40, list(ring40)[:5])  # 셀프체크: 바깥 5%(maskable 12%) 테두리 = 한 색(띠 없음)
+    nr40 = [(x, y) for x in range(n40) for y in range(n40) if i40.getpixel((x, y)) != col40]  # 고양이(바탕 색 아닌 곳)
+    bx40 = (min(x for x, _ in nr40), min(y for _, y in nr40), max(x for x, _ in nr40) + 1, max(y for _, y in nr40) + 1)
+    assert abs((bx40[2] - bx40[0]) / n40 - k40) <= 0.03 and abs((bx40[0] + bx40[2]) / 2 / n40 - 0.5) <= 0.02 and abs((bx40[1] + bx40[3]) / 2 / n40 - 0.5) <= 0.03, (f40, bx40)  # 셀프체크: 고양이 폭 = k · 가운데
+    assert max(min(i40.getpixel(p)) for p in nr40) > 230 and i40.getpixel((n40 // 2, n40 // 2)) != col40, f40  # 흰 '딜'·얼굴 · 한가운데 = 고양이
 lo40 = I40.open(f"{d40}/icons/logo-64.png"); assert lo40.size == (64, 64) and lo40.mode == "RGBA" and lo40.getpixel((0, 0))[3] == 0 and lo40.getpixel((32, 32))[3] == 255  # 헤더 로고(32px 2배) = 모서리 투명
 for f40 in (f"{d40}/icons/favicon-32.png", f"{d40}/icons/favicon-16.png"):
     i40 = I40.open(f40); n40 = i40.width
     assert i40.getpixel((0, 0))[3] == 0 and i40.getpixel((n40 // 2, n40 - 2))[3] == 255 and max(min(i40.getpixel((x, y))[:3]) for x in range(n40) for y in range(n40)) > 200, f40  # 둥근 네모(모서리 투명) + 흰 '딜'
-assert "/icons/icon-192.png?v=3" in sw40 and "/favicon.ico?v=3" in sw40 and all(i["src"].endswith("?v=3") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=3"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
+assert "/icons/icon-192.png?v=4" in sw40 and "/favicon.ico?v=4" in sw40 and all(i["src"].endswith("?v=4") for i in m40["icons"]) and 'href="/icons/apple-touch-icon.png?v=4"' in ix40  # 새 그림 = 새 주소(폰·SW가 새로 받음)
 # 바로가기 아이콘 'V1 파스텔 이모지'(10/24 진우): 🔥·⏳·🧻 각자 파일(96·192 any — 크롬은 바로가기에 any만 씀, ?v=) · 위 -> 아래 파스텔 꽉 찬 정사각 · 이모지 가운데, 긴 변 = 0.5n
 assert [[(i["src"], i["sizes"], i["purpose"]) for i in x["icons"]] for x in m40["shortcuts"]] == [[(f"/icons/sc-{k}-96.png{S40.SV}", "96x96", "any"), (f"/icons/sc-{k}.png{S40.SV}", "192x192", "any")] for k in ("fire", "wait", "life")]
 assert S40.SV.startswith("?v=") and [x["url"] for x in m40["shortcuts"]] == ["/#fire", "/#wait", "/#life"] and [C40.SC_ICONS[k][0] for k in ("fire", "wait", "life")] == ["🔥", "⏳", "🧻"]

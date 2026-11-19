@@ -1580,12 +1580,51 @@ def logo_sq(n):
     return sq.convert("RGBa").resize((n, n), Image.LANCZOS).convert("RGBA")
 
 
+ICON_K = (0.86, 0.72)  # 11/19 앱 아이콘 고양이 폭 ÷ 아이콘 폭: any(192·512·apple 180) · maskable(가운데 안전 영역)
+LOGO_CAT = (37, 52, 1161, 1134)  # 원본 1167×1140에서 고양이 범위(x 37~1161 · y 52~1134) — 앱 아이콘 가운데 맞춤 기준
+
+
+def logo_cat():
+    """11/19 진우 '테두리도 정리해 줘 깔끔하게'(삼성 홈 화면 = 안쪽 네모 띠): 로고에서 둥근 네모 바탕(빨강 판·가장자리 밝은 줄·그늘)을 떼어 낸 고양이만 -> (RGBA 1167×1140, 바탕 빨강 한 색).
+    바탕 = (색상 348~9° · 채도 0.72↑ · 밝기 0.42↑) 또는 투명, 그리고 불투명 가장자리 48px 띠 안 (346~14° · 0.12↑ · 0.4↑) 중 그림 바깥과 이어진 덩어리만('딜' 판·코 = 안 이어져서 남음)
+    · 1px 열림 · 경계 가우시안 1.2 · 바탕색 = 바탕 안쪽(경계에서 25px↑) 빨강 중앙값. 앱 아이콘만 씀(파비콘·logo-64·브랜드 로고 그대로)."""
+    import numpy as np
+    from PIL import ImageFilter
+    lg = Image.open(LOGO_PNG).convert("RGBA")
+    a = np.asarray(lg).astype(float) / 255
+    hsv = np.asarray(lg.convert("RGB").convert("HSV")).astype(float)
+    hue, sat, val, alpha = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255, hsv[..., 2] / 255, a[..., 3]
+    def shrink(m, k):  # k px 깎기(밖 = 없음)
+        for _ in range(k):
+            q = np.pad(m, 1)
+            m = q[1:-1, 1:-1] & q[:-2, 1:-1] & q[2:, 1:-1] & q[1:-1, :-2] & q[1:-1, 2:]
+        return m
+    opaque = alpha > 0
+    band = opaque & ~shrink(opaque, 48)  # 불투명 가장자리에서 48px 안쪽까지 = 띠
+    red = ((hue >= 348) | (hue <= 9)) & (sat >= 0.72) & (val >= 0.42)
+    edge = band & ((hue >= 346) | (hue <= 14)) & (sat >= 0.12) & (val >= 0.4)
+    cand = Image.fromarray(np.pad((red | ~opaque | edge).astype(np.uint8) * 255, 1, constant_values=255)).copy()  # copy: Pillow 12 fromarray 그림엔 floodfill이 안 먹음
+    ImageDraw.floodfill(cand, (0, 0), 128)  # 그림 바깥(테두리 한 줄 덧대기)과 이어진 후보만
+    bg = (np.asarray(cand)[1:-1, 1:-1] == 128)
+    bgi = Image.fromarray(bg.astype(np.uint8) * 255, "L").filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))  # 1px 열림
+    deep = shrink(np.asarray(bgi) > 0, 25)  # 경계에서 25px↑ 안쪽 바탕
+    rgb = np.asarray(lg.convert("RGB"))
+    col = tuple(int(np.median(rgb[..., c][deep & opaque])) for c in range(3))
+    soft = np.asarray(bgi.filter(ImageFilter.GaussianBlur(1.2))).astype(float) / 255
+    cat = np.dstack([rgb, np.clip((1 - soft) * alpha * 255, 0, 255).astype(np.uint8)])
+    return Image.fromarray(cat, "RGBA"), col
+
+
 def app_logo(n, mini=False, k=1.0):
     """웹앱 아이콘 1장(n×n, 10/29 진우 새 로고): 로고 테두리 빨강(LOGO_RED) 꽉 찬 정사각 위에 새 로고(가운데, 한 변 k×n) — 투명 X(모서리도 빨강 · 모양은 런처·iOS가 깎음).
-    k = 0.8 -> maskable(로고가 가운데 안전 영역 안). mini = 파비콘(16·32·48): 옛 '딜'만(16px에선 고양이가 뭉개짐), 그라데이션 둥근 네모(모서리 투명) — 4배로 그려 줄임."""
-    if not mini:
-        im, m = Image.new("RGBA", (n, n), LOGO_RED + (255,)), round(n * k)
-        im.alpha_composite(logo_sq(m), ((n - m) // 2, (n - m) // 2))
+    11/19: 바탕 = 로고 빨강 한 색 꽉(logo_cat — 로고 둥근 네모·가장자리 띠 X) + 고양이만 · k = 고양이 범위 폭 ÷ 아이콘 폭(any 0.86 · maskable 0.72). mini = 파비콘(16·32·48): 옛 '딜'만(16px에선 고양이가 뭉개짐), 그라데이션 둥근 네모(모서리 투명) — 4배로 그려 줄임."""
+    if not mini:  # 11/19 바탕 빨강 한 색(로고 둥근 네모 띠 X) + 고양이만 — k = 고양이 범위 폭 ÷ 아이콘 폭 · 범위 가운데 = 아이콘 가운데
+        cat, col = logo_cat()
+        x0, y0, x1, y1 = LOGO_CAT
+        z = n * k / (x1 - x0)
+        c = cat.convert("RGBa").resize((round(cat.width * z), round(cat.height * z)), Image.LANCZOS).convert("RGBA")
+        im = Image.new("RGBA", (n, n), col + (255,))
+        im.alpha_composite(c, (round(n / 2 - (x0 + x1) / 2 * z), round(n / 2 - (y0 + y1) / 2 * z)))
         return im
     N = n * 4
     g = Image.linear_gradient("L").resize((N, N), Image.BILINEAR)
@@ -1617,9 +1656,9 @@ def app_icons(d="docs/icons", root="docs"):
     """웹앱(PWA) 아이콘(10/23 진우 '웹앱으로' · 10/29 새 로고) -> d/: icon-192·512(any)·apple-touch-icon(180) = 빨강 꽉 찬 정사각 + 로고(투명 X — 런처·iOS가 모양을 깎음) · icon-512-maskable = 로고 80%,
     favicon-32·16('딜'만, 둥근 네모) + root/favicon.ico(16·32·48) + 바로가기 sc-fire·wait·life(192·96) + 헤더 로고 logo-64(32px 2배, 모서리 투명). 바꾸면 build_site.IV 올림(폰이 새 파일로 알게). -> 만든 파일 목록"""
     os.makedirs(d, exist_ok=True)
-    big = app_logo(512).convert("RGB")
-    out = {f"{d}/icon-192.png": app_logo(192).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": app_logo(512, k=0.8).convert("RGB"),
-           f"{d}/apple-touch-icon.png": app_logo(180).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True), f"{d}/logo-64.png": logo_sq(64)}
+    big = app_logo(512, k=ICON_K[0]).convert("RGB")
+    out = {f"{d}/icon-192.png": app_logo(192, k=ICON_K[0]).convert("RGB"), f"{d}/icon-512.png": big, f"{d}/icon-512-maskable.png": app_logo(512, k=ICON_K[1]).convert("RGB"),
+           f"{d}/apple-touch-icon.png": app_logo(180, k=ICON_K[0]).convert("RGB"), f"{d}/favicon-32.png": app_logo(32, mini=True), f"{d}/favicon-16.png": app_logo(16, mini=True), f"{d}/logo-64.png": logo_sq(64)}
     for k, (ch, a, b) in SC_ICONS.items():  # 바로가기 sc-{k}.png(192) · sc-{k}-96.png
         out[f"{d}/sc-{k}.png"], out[f"{d}/sc-{k}-96.png"] = sc_icon(ch, a, b, 192), sc_icon(ch, a, b, 96)
     for p, im in out.items():
