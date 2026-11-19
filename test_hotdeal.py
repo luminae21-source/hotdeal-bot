@@ -14648,7 +14648,7 @@ H.tg = tg185
 H.BLOG_IMG_SRC = "없음185"; assert H.blog_img({}, TK("2026-11-12 18:55")) is None  # 카드 저장소 없는 시각 = 조용히 X
 assert "th_retry, day_th, blog_img, theme_prep, theme_post, cmp_report" in inspect.getsource(H.main)
 y185 = open(os.path.join(rd185, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert 'grep -q "Noto Sans CJK KR" || sudo apt-get install -y -qq fonts-noto-cjk' in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
+assert 'grep -q "Noto Sans CJK KR" || timeout 60 sudo apt-get install -y -qq fonts-noto-cjk' in y185 and "timeout 45 sudo apt-get update -qq && timeout 60 sudo apt-get install" in y185 and '[ -f "docs/blog_img/$d/4.png" ]' in y185  # 만들 날만 글꼴
 (H.BLOG_DIR, H.BLOG_IMG_DIR, H.BLOG_IMG_SRC, H.BLOG_IMG_JS, H.th_get, H.pw_ready, H.alert, time.time) = sv185; H.BLOG_LOGO = lg185
 os.chdir(cwd185); shutil.rmtree(d185, ignore_errors=True)
 
