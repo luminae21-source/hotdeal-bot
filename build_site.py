@@ -3142,7 +3142,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .sec{display:flex;justify-content:space-between;align-items:baseline;margin:20px 2px 8px}.sec h2{margin:0;font-size:19px;font-weight:800;line-height:1.35}.sec h2 span{color:var(--pk)}.sec small{font-size:12px;color:var(--mut)}
 .cd .sec{margin:16px 2px 6px}.cd h2{font-size:15px}.cd h2 small{font-weight:600;margin-left:4px}
 .cr{display:flex;gap:6px;overflow-x:auto;padding:4px 3px 6px;margin:0 -3px;scrollbar-width:none}.cr::-webkit-scrollbar{display:none}.cr a{flex:none;max-width:180px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 11px 7px 7px;border-radius:999px;background:var(--chip);white-space:nowrap}.cr span{min-width:0;overflow:hidden;text-overflow:ellipsis}.cr b{flex:none;font-size:11px;font-weight:800;background:var(--ink);color:var(--bg);border-radius:999px;padding:1px 6px}
-.cd details{margin-top:2px}.ig details{border-top:1px solid var(--line,rgba(127,127,127,.18))}.ig summary{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;padding:7px 2px}.ig summary span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ig summary small{flex:none;color:var(--mut);font-weight:500}.ig summary img{flex:none;width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--chip)}.ig summary img.tc{object-fit:contain}.ig .mo>summary{color:var(--sub);font-weight:600}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
+.cd details{margin-top:2px}.ig details{border-top:1px solid var(--line,rgba(127,127,127,.18))}.ig summary{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;padding:7px 2px}.ig summary span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ig summary small{flex:none;color:var(--mut);font-weight:500}.ig summary img{flex:none;width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--chip)}.ig summary img.tc{object-fit:contain}.ig .mo>summary{color:var(--sub);font-weight:600}.ig a.u{display:block;font-size:13px;font-weight:700;padding:4px 2px 8px}.cd summary{font-size:12.5px;color:var(--sub);cursor:pointer;padding:4px 2px}.cd small.cn{display:block;font-size:12px;color:var(--mut);margin:6px 2px 0}
 .chips{display:flex;gap:6px;margin:0 -3px 8px;padding:4px 3px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chips button{flex:none;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:0;border-radius:999px;background:var(--chip);color:var(--sub);cursor:pointer}.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}.g a{min-width:0}.im{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--tile)}
 .im i{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-style:normal}.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;background:#fff}
@@ -3286,25 +3286,30 @@ def link_ig(posts, it, out, today, skip=None):
         rec = json.load(open(f"{out}/cards/iglink.json")) if os.path.exists(f"{out}/cards/iglink.json") else {}
     except (OSError, ValueError):
         led, rec = {}, {}
-    nm, bs = card_names(), []
+    nm, bs, last = card_names(), [], {}
+    for i, p in enumerate(posts):
+        last[p.get("url")] = i
     for x, t in led.items() if isinstance(led, dict) else ():
         if STEM.fullmatch(x) and x[:10] >= cut and x != skip and (nm.get(x) or {}).get("kind") in LINK_IG_KINDS and isinstance(t, (int, float)):
-            bs.append((time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600)), card_name(x), [(n, i, p) for n, (i, p) in enumerate(card_order(posts, x, out)[:CARD_N], 1) if ok(i, p)]))
+            bs.append((time.strftime("%Y-%m-%d %H:%M", time.gmtime(t + 9 * 3600)), card_name(x), [(n, i, p) for n, (i, p) in enumerate(card_order(posts, x, out)[:CARD_N], 1) if ok(i, p)], []))
     for v in rec.values() if isinstance(rec, dict) else ():
         if isinstance(v, dict) and re.fullmatch(r"\d{4}-\d\d-\d\d", str(v.get("d", ""))) and v["d"] >= cut and str(v.get("name") or "").strip() and isinstance(v.get("urls"), list):
             xs = [(n, *byu[u]) for n, u in enumerate(v["urls"], 1) if u in byu]
             xs = [x for x in xs if shop_of(x[2]) == (shop_of(xs[0][2]) if v.get("kind") != "toss" else "toss") and ok(x[1], x[2])]
-            n0 = v["name"].strip()
-            bs.append((str(v.get("at") or v["d"]), n0 if re.match(r"\d{1,2}/\d{1,2} ", n0) else f"{md(v['d'])} {n0}", xs))
-    bs = sorted([b for b in bs if b[2]], key=lambda b: b[0], reverse=True)
+            n0, ti = v["name"].strip(), []
+            if v.get("kind") == "toss":  # 토스 API 상품(tid) = /c/toss/ 카드만(Q 11/5 — 여기 버튼 X) -> 지금 그 쪽에 보이는 것(tapi_ok — 1일)을 '토스 모음에서 보기'(?top= 맨 위로)
+                ti = [i for u in v["urls"] if u not in {x[2].get("url") for x in xs} and (i := last.get(u)) is not None and tapi_ok(posts[i])]  # 같은 상품(주소) = 한 번만
+            bs.append((str(v.get("at") or v["d"]), n0 if re.match(r"\d{1,2}/\d{1,2} ", n0) else f"{md(v['d'])} {n0}", xs, ti))
+    bs = sorted([b for b in bs if b[2] or b[3]], key=lambda b: b[0], reverse=True)
     if not bs:
         return ""
     pic = lambda p: (f'<img src="{html.escape(u)}" alt="" width="40" height="40" loading="lazy" decoding="async" referrerpolicy="no-referrer"' + (' class="tc"' if shop_of(p) == "toss" else "") + ' onerror="this.remove()">') if (u := site_img(p) or toss_img(p)) else ""
-    row = lambda name, xs: (f'<details><summary>{pic(xs[0][2])}<span>{html.escape(name)}</span><small>{len(xs)}개</small></summary>{link_row(xs)}'
-                            + (f'<small class="cn">{PHOTO_CREDIT}</small>' if pic(xs[0][2]) and shop_of(xs[0][2]) == "toss" else "") + "</details>")  # 토스 = 원본 썸네일 그대로(contain) + 사진 출처
+    row = lambda name, xs, ti: (f'<details><summary>{pic(xs[0][2]) if xs else ""}<span>{html.escape(name)}</span><small>{len(xs) + len(ti)}개</small></summary>' + (link_row(xs) if xs else "")
+                                + (f'<a class="u" href="{BASE}c/toss/?top={",".join(map(str, ti))}&amp;ref=link" data-gc="link/ig-toss">💙 토스 모음에서 {len(xs) + len(ti)}개 보기 →</a>' if ti else "")
+                                + (f'<small class="cn">{PHOTO_CREDIT}</small>' if xs and pic(xs[0][2]) and shop_of(xs[0][2]) == "toss" else "") + "</details>")  # 토스 = 원본 썸네일 그대로(contain) + 사진 출처
     return (f'<section class="cd ig" aria-labelledby="igh"><div class="sec"><h2 id="igh">📸 인스타에서 본 상품<small>최근 {LINK_IG_DAYS}일 · 최신이 위</small></h2></div>'
-            + "".join(row(n, xs) for _, n, xs in bs[:LINK_IG_OPEN])
-            + (f'<details class="mo"><summary>이전 {len(bs) - LINK_IG_OPEN}개 더 보기</summary>' + "".join(row(n, xs) for _, n, xs in bs[LINK_IG_OPEN:]) + "</details>" if bs[LINK_IG_OPEN:] else "")  # 지금 특가가 너무 밀리지 않게
+            + "".join(row(n, xs, ti) for _, n, xs, ti in bs[:LINK_IG_OPEN])
+            + (f'<details class="mo"><summary>이전 {len(bs) - LINK_IG_OPEN}개 더 보기</summary>' + "".join(row(n, xs, ti) for _, n, xs, ti in bs[LINK_IG_OPEN:]) + "</details>" if bs[LINK_IG_OPEN:] else "")  # 지금 특가가 너무 밀리지 않게
             + "</section>")
 
 

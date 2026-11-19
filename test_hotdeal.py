@@ -15809,15 +15809,20 @@ assert H.ig_link_name("2026-11-18", "책상 발밑 미니 히터") == "11/18 책
 assert "ig_link_sync(seen, now)" in inspect.getsource(H.ig_cards) and "IG_LINK_DAYS * 86400" in inspect.getsource(H.ig_live) and "IG_LINK_DAYS * 86400" in inspect.getsource(H.card_names_put) and H.IG_LINK_DAYS == S.LINK_IG_DAYS == 14 and H.IG_LINK == S.IG_LINK
 # 사이트 /link
 S.TIMG[T213(0)] = "https://static.toss.im/img/lk0.png"
+P213 += [{"t": "2026-11-19 15:00", "text": f"🔥 [토스] API{k} (5,900원)", "url": T213(k), "own": 1, "shelf": 1, "tid": f"77{k}", **({"st": "out"} if k == 8 else {})} for k in (9, 8)]  # 토스 넘기기 = API 상품(tid — /c/toss/만)
+P213 += [{"t": "2026-11-19 15:01", "text": "🔥 [토스] 토스1 API 글 (9,900원)", "url": T213(1), "own": 1, "shelf": 1, "tid": "771"}]  # 사이트 버튼 있는 상품의 API 글 = 한 번만 셈
+tp213, S.tapi_ok = S.tapi_ok, (lambda p, now=None: bool(p.get("tid")) and p.get("st") not in ("out", "gone"))
+json.dump({**g213, "igtoss_2026-11-19": {"d": "2026-11-19", "at": "2026-11-19 15:30", "kind": "toss", "name": "11/19 토스 상품 바로 가기", "urls": [T213(9), T213(8), T213(1)]}}, open("docs/cards/iglink.json", "w"), ensure_ascii=False)
 h213 = S.link_page("ab", P213, it213, "docs", today="2026-11-19"); c213 = h213[h213.index('<section class="cd ig"'):]; c213 = c213[:c213.index("</section>")]
 assert f'<h2 id="cdh">📸 {S.card_name("2026-11-19_19")}' in h213 and h213.index('id="cdh"') < h213.index('id="igh"') < h213.index('id="dh"')  # 맨 위 묶음(펼침) → 인스타에서 본 상품 → 지금 특가
 nm213 = re.findall(r"<summary>(?:<img[^>]*>)?<span>([^<]+)</span><small>(\d+)개</small></summary>", c213)
-assert nm213 == [("11/19 넥워머", "1"), ("11월 18일 카드 딜", "3"), ("11/18 토스 상품 바로 가기", "3"), ("11월 18일 책상 발밑 미니 히터", "3"), ("11/18 책상 발밑 미니 히터", "2"), ("11/10 지난 기록", "1")], nm213  # 최신이 위
+assert nm213 == [("11/19 토스 상품 바로 가기", "2"), ("11/19 넥워머", "1"), ("11월 18일 카드 딜", "3"), ("11/18 토스 상품 바로 가기", "3"), ("11월 18일 책상 발밑 미니 히터", "3"), ("11/18 책상 발밑 미니 히터", "2"), ("11/10 지난 기록", "1")], nm213  # 최신이 위
 blk213 = lambda n: c213.split(f"<span>{n}</span>")[1].split("</details>")[0]
 assert re.findall(r"<b>(\d\d)</b>", blk213("11월 18일 카드 딜")) == ["01", "02", "04"] and "히터2" not in blk213("11월 18일 카드 딜") and "히터4" not in blk213("11월 18일 카드 딜")  # 품절·빠짐 = 뺌, 번호는 캡션 그대로
 assert re.findall(r"<b>(\d\d)</b><span>([^<]+)</span>", blk213("11/18 책상 발밑 미니 히터")) == [("01", "히터0"), ("02", "히터1")]  # 한 묶음 한 몰(토스 X)
 t213 = c213.split("<span>11/18 토스 상품 바로 가기</span>")[0].rsplit("<summary>", 1)[1] + blk213("11/18 토스 상품 바로 가기")
 assert 'class="tc"' in t213 and S.PHOTO_CREDIT in t213 and "link.coupang" not in t213 and re.findall(r"<b>(\d\d)</b>", t213) == ["01", "02", "03"]  # 토스 = 원본 썸네일(contain) + 사진 출처
+assert f'<a class="u" href="{S.BASE}c/toss/?top={len(P213) - 3}&amp;ref=link" data-gc="link/ig-toss">💙 토스 모음에서 2개 보기 →</a>' in blk213("11/19 토스 상품 바로 가기") and re.findall(r"<b>(\d\d)</b><span>([^<]+)</span>", blk213("11/19 토스 상품 바로 가기")) == [("03", "토스1")] and "API" not in c213  # API 상품 = 버튼 X · 토스 모음(?top= 맨 위)으로 · 품절 X
 assert all(x not in c213 for x in ("한 상품 글", "옛날", "품절 묶음", "겨울준비 5가지", "Threads만", "11월 4일", "햅쌀 5가지")) and 'rel="nofollow sponsored noopener" target="_blank"><b>01</b><span>히터0' in c213
 for k213, v213 in json.load(open("docs/cards/ig.json")).items():  # 셀프체크 (마): 최근 14일 캡션 이름 = /link에(끝난 상품만 남아 숨긴 묶음 빼고)
     xs213 = [i for i in json.load(open(f"docs/cards/{k213}.json")) if i in {x[0] for x in it213 if x[2][0] != 3}]
@@ -15827,6 +15832,6 @@ for k213, v213 in g213.items():
     if v213["d"] >= "2026-11-06" and any(u in {x[1]["url"] for x in it213 if x[2][0] != 3} for u in v213["urls"]):
         assert f"<span>{v213['name'] if re.match(r'\d+/\d+ ', v213['name']) else str(int(v213['d'][5:7])) + '/' + str(int(v213['d'][8:10])) + ' ' + v213['name']}</span>" in c213, k213
 S.LINK_IG_OPEN = 2; m213 = S.link_page("ab", P213, it213, "docs", today="2026-11-19")
-assert '<details class="mo"><summary>이전 4개 더 보기</summary>' in m213 and m213.index("<span>11월 18일 카드 딜</span>") < m213.index("이전 4개 더 보기") < m213.index("<span>11/10 지난 기록</span>")  # 지금 특가가 너무 밀리지 않게
+assert '<details class="mo"><summary>이전 5개 더 보기</summary>' in m213 and m213.index("<span>11/19 넥워머</span>") < m213.index("이전 5개 더 보기") < m213.index("<span>11월 18일 카드 딜</span>") < m213.index("<span>11/10 지난 기록</span>")  # 지금 특가가 너무 밀리지 않게
 assert S.link_cards(P213, "docs") == S.link_cards(P213, "docs").split('<section class="cd ig"')[0] and "앞 카드 딜" not in h213  # it 없으면 맨 위만(예전 '앞 카드 딜' 접기 = 목록으로)
-(time.time, H.ev_list, timg213, S.LINK_IG_OPEN) = sv213; S.TIMG.clear(); S.TIMG.update(timg213); os.chdir(cwd213)
+(time.time, H.ev_list, timg213, S.LINK_IG_OPEN) = sv213; S.tapi_ok = tp213; S.TIMG.clear(); S.TIMG.update(timg213); os.chdir(cwd213)
