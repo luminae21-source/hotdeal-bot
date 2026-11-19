@@ -5768,7 +5768,23 @@ SERIES_POSES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand/m
 
 
 def series_fits(s, count):
-    """새 서식 상품명 2줄 안인지 — hotdealpick-series layout.mjs width·wrap 그대로(공백 0.28 · ASCII 0.6 · 그 밖 1 × 글씨 36(6칸↑ 32) · 폭 760 − 칸 수별 x)."""
+    """새 서식 상품명 2줄 안인지(series_lines)."""
+    return len(series_lines(s, count)) <= 2
+
+
+def series_dot(s, count):
+    """11/19 Cowork ①(2): 렌더러가 공백마다 줄을 바꿔 둘째 줄이 '·'로 시작하거나('스프라이트 제로 사이다 250ml / · 30개') 첫 줄이 '·'로 끝나면 그 '·' 뺌 — 줄바꿈이 구분 역할(한 줄 안 '·'는 그대로)."""
+    for _ in range(3):
+        ls = series_lines(s, count)
+        bad = lambda k, l: k and l.startswith("·") or k < len(ls) - 1 and l.endswith("·")
+        if not any(bad(k, l) for k, l in enumerate(ls)):
+            break
+        s = " ".join((l[1:].lstrip() if k and l.startswith("·") else l).removesuffix("·").rstrip() if k < len(ls) - 1 else (l[1:].lstrip() if k and l.startswith("·") else l) for k, l in enumerate(ls))
+    return s
+
+
+def series_lines(s, count):
+    """새 서식 상품명 줄 나눔 — hotdealpick-series layout.mjs width·wrap 그대로(공백 0.28 · ASCII 0.6 · 그 밖 1 × 글씨 36(6칸↑ 32) · 폭 760 − 칸 수별 x)."""
     size, mx = (32, 760 - 212) if count >= 6 else (36, 760 - {3: 279, 4: 256}.get(count, 228))
     w = lambda x: sum(0.28 if c == " " else 0.6 if ord(c) < 128 else 1 for c in x) * size
     lines = [""]
@@ -5783,7 +5799,10 @@ def series_fits(s, count):
                 if w(lines[-1] + c) > mx:
                     lines.append("")
                 lines[-1] += c
-    return len([x for x in lines if x]) <= 2
+    return [x for x in lines if x]
+
+
+SERIES_VARIANT = (r"\d+(?:\.\d+)?인용", r"(?:슈퍼)?싱글|더블|퀸|킹")  # 옵션 종류(고른 옵션에 이 종류가 있으면 상품명 속 같은 종류 낱말 = 옵션 목록 → 뺌)
 
 
 def series_name(name, count):
@@ -5792,6 +5811,9 @@ def series_name(name, count):
     s = re.sub(r"[\[【][^\]】]*[\]】]", " ", re.sub(SERIES_NAME_AD, " ", name, flags=re.I))
     s = re.sub(r"\(([^()]*)\)", lambda m: f" {m[1]} " if re.search(rf"\d|\b[A-Z]{{1,4}}\b|{SERIES_COLOR}", m[1]) else " ", s)  # (규격) 남김 · (꾸밈) 뺌
     parts = [x.replace("\0", ",") for x in (re.sub(r"\s+", " ", x).strip(" ·") for x in re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "\0", s).split(",")) if x] or [name.strip()]  # 1,015g = 천 단위 쉼표(옵션 X)
+    for kind in SERIES_VARIANT:  # 11/19 Cowork ①(2): 상품명 속 옵션 목록('더블 2인용 싱글 1인용') + 고른 옵션(', 더블 2인용(135 x 180cm)') = 고른 것만
+        if parts[1:] and any(re.fullmatch(kind, t) for o in parts[1:] for t in o.split()):
+            parts[0] = " ".join(t for t in parts[0].split() if not re.fullmatch(kind, t)) or parts[0]
     seen, words, opts = set(), [], []
     for w in parts[0].split():
         if re.search(r"\d", w) or w.lower() not in seen:  # 같은 말 반복 X(숫자 규격은 구성마다 같을 수 있어 그대로)
@@ -5813,7 +5835,7 @@ def series_name(name, count):
         cand.append(mk([w for j, w in enumerate(words) if j not in drop]))
     for c in cand:
         if series_fits(c, count):
-            return c
+            return series_dot(c, count)
     ws, sp = [w for j, w in enumerate(words) if j not in drop], list(opts)  # 그래도 넘침 = 그 상품만 낱말 단위로 뒤에서 줄임(브랜드 남김) → 규격 뒤 → 글자
     fit = lambda: series_fits(" ".join(ws) + "… " + " · ".join(sp), count)
     while len(ws) > 1 and not fit():
@@ -5824,7 +5846,7 @@ def series_name(name, count):
     while not series_fits(out, count):
         out = out[:-2].rstrip() + "…"
     print("series 이름 다듬음(넘침)", clip(name, 30), "→", out)
-    return out
+    return series_dot(out, count)
 
 
 STEADY_VOL0 = 1  # 11/17 Cowork 실물: 11/15·11/17 둘 다 VOL.01로 나감 — 기록 없음 = 1회 나간 것으로(다음 02)
@@ -10214,7 +10236,7 @@ def threads(seen):
                 return text[:480]
             rows = rows[:-1]
     text, now = body(cap.split("\n\n")[0], rows, when), time.time()
-    mall, ps = day_char_pick(load(POSTS, []), today, now) if DAYCARD_CHAR else ("", [])
+    mall, ps = day_char_pick(load(POSTS, []), today, now, seen) if DAYCARD_CHAR else ("", [])
     img, ck, meta = day_char_card(seen, today, mall, ps, now) if len(ps) >= 3 else (None, "", {})
     if img:  # 11/18 진우: 캐릭터 카드(몰 1개) + 본문 = 카드 상품만(1부터) — 사이트에 뜨면 사진 글(mall_card_post · 안 뜨면 아래 글자 카드 그대로)
         text2 = body(ig_notes(ps), [f"{n}. {clip(re.sub(PRICE_TAIL, '', list_name(p, mall == 'toss')).strip(), 34)}" for n, p in enumerate(ps, 1)], f"\n\n{toss_when()}" if mall == "toss" else "")
@@ -10228,17 +10250,29 @@ DAYCARD_CHAR, DAYCARD_FRESH = True, 48 * 3600  # 11/18 진우 '왜 캐릭터로 
 DAYCARD_TITLE, DAYCARD_TOSS = "오늘 살 만한 딜", False  # 11/18 23시 진우: 제목 = 글자 카드와 같게('오늘의 장바구니' = 낮 묶음 이름 그대로) — 새 서식 검증이 이 제목을 받기 전 = 렌더 X → 글자 카드 · 토스 틀 = 제목이 그림에 박힘('오늘의 장바구니') → 꺼 둠(글자 카드)
 
 
-def day_char_pick(posts, today, now):
+def day_char_photo(seen, now):
+    """11/19 Cowork ①(1) 하루 모음 캐릭터 카드 = 실제 상품 사진만 -> 글 -> 사진 주소('' = 없음): 쿠팡 = 글 사진(img_of) → 같은 글 주소 API 사진·같은 pid cp_img.json(build_site.cp_fill_img — 사이트와 같음)
+    → 진열 글(events) 사진 · 토스 = 원본 썸네일(toss_imgs) · 네이버 = X(사진 X 규칙)."""
+    import build_site
+    build_site.cpi_load(seen)
+    ev, tim = ev_info(), S_toss_imgs(seen.get("tossid", {}).get("m", {}), now)
+    return lambda p: tim.get(p.get("url"), "") if shop_of(p) == "toss" else (img_of(p) or build_site.cp_fill_img(p) or img_of({**p, "img": str((ev.get(p.get("url")) or {}).get("img") or "")})) if shop_of(p) == "coupang" else ""
+
+
+def day_char_pick(posts, today, now, seen=None):
     """하루 모음 캐릭터 카드 상품: 그날 카드 후보(card_order) 중 수수료 링크 딜 · 쿠팡·네이버·토스 · 가격 있음 · 확인 DAYCARD_FRESH 안(토스 = 게시 시각 — 게시 시점 가격)
-    · 같은 상품·같은 브랜드 1번(앞 번호 남김) -> 몰별로 나눠 가장 많은 몰(같으면 쿠팡 → 네이버 → 토스) 앞 5개 -> (몰, [글…]) · 3개 밑이면 부른 쪽이 글자 카드."""
-    by, order = {}, ("coupang", "naver", "toss")
+    · 11/19 사진 있는 상품만(day_char_photo — 찾은 사진을 글 img로 · 네이버 = 사진 X 규칙이라 X) · 같은 상품·같은 브랜드 1번(앞 번호 남김) -> 몰별로 나눠 가장 많은 몰(같으면 쿠팡 → 네이버 → 토스) 앞 5개
+    -> (몰, [글…]) · 3개 밑이면 부른 쪽이 글자 카드."""
+    by, order, photo = {}, ("coupang", "naver", "toss"), day_char_photo(seen or {}, now)
     for _, p in card_order(posts, today):
         m, name = shop_of(p), short_name(title_of(p["text"]))
         if m not in order or not aff_note(p.get("url") or "") or not won(p.get("now") or parse(title_of(p["text"]))[2]) or now - (kst_ts(p["t"][:16]) if m == "toss" else chk_ts(p)) > DAYCARD_FRESH:
             continue
+        if not (ph := photo(p)):  # 사진 없음 = 카드 '사진 미제공' 칸 X
+            continue
         xs, b = by.setdefault(m, []), brand_of(name)
         if all(q["url"] != p.get("url") and (not b or brand_of(short_name(title_of(q["text"]))) != b) for q in xs):
-            xs.append(p)
+            xs.append({**p, "img": ph} if m == "coupang" else p)
     m = max(by, key=lambda k: (len(by[k]), -order.index(k)), default="")
     return m, by.get(m, [])[:5]
 

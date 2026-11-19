@@ -15720,14 +15720,15 @@ assert re.fullmatch(r"data/[A-Za-z0-9_-]+\.json", run211[-1][3]) and run211[-1][
 cwd212, sv212 = os.getcwd(), (H.DAYCARD_CHAR, H.http, H.tg, H.th_bundle, H.series_card, H.toss_card, time.time, dict(H.E), H.series_pick, H.S_toss_imgs, H.DAYCARD_TOSS)
 os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
 CL212 = lambda k: f"https://link.coupang.com/a/dc{k}"; TL212 = lambda k: f"https://toss.shopping/_m/dt{k}"
-P212 = [{"t": "2026-11-18 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": CL212(k), "own": 1, "chkt": ck, "now": pr} for k, (n, pr, ck) in enumerate(
+H.S_toss_imgs = lambda m, now: {TL212(k): f"https://static.toss.im/t{k}.jpg" for k in range(3)}  # 11/19 사진 있는 상품만 — 토스 = 원본 썸네일
+P212 = [{"t": "2026-11-18 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": CL212(k), "own": 1, "chkt": ck, "now": pr, "img": f"https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/dc{k}.jpg"} for k, (n, pr, ck) in enumerate(
           [("곰곰 햅쌀 10kg", "33,890원", "2026-11-18 19:00"), ("곰곰 무농약 현미 4kg", "15,900원", "2026-11-18 19:00"), ("크리넥스 화장지 30롤", "19,900원 와우가", "2026-11-18 18:00"),
            ("페브리즈 섬유탈취제 1L", "8,900원", "2026-11-15 09:00"), ("다우니 섬유유연제 4L", "17,900원", "2026-11-18 17:00")])] \
      + [{"t": "2026-11-18 20:30", "text": f"{H.TOSS_NOTE}\n\n🔥 [토스] {n} ({pr})", "url": TL212(k), "own": 1} for k, (n, pr) in enumerate([("센텔리안24 마데카 크림", "19,900원"), ("오뚜기 진라면 20개", "13,900원"), ("하기스 기저귀 4단계", "39,900원")])]
 json.dump(P212, open("posts.json", "w"), ensure_ascii=False); json.dump([5, 0, 6, 1, 2, 7, 3, 4], open("docs/cards/2026-11-18.json", "w")); open("docs/cards/2026-11-18.png", "wb").write(b"p")
 time.time = lambda: TK("2026-11-18 21:10")
 m212, ps212 = H.day_char_pick(P212, "2026-11-18", time.time())
-assert m212 == "coupang" and [p["url"] for p in ps212] == [CL212(0), CL212(2), CL212(4)], (m212, [p["url"] for p in ps212])  # 곰곰 2번째 = 같은 브랜드 X · 페브리즈 = 확인 48시간 넘음 X · 쿠팡 3 = 토스 3 → 쿠팡 먼저
+assert m212 == "coupang" and [p["url"] for p in ps212] == [CL212(0), CL212(2), CL212(4)] and all(H.img_of(p) for p in ps212), (m212, [p["url"] for p in ps212])  # 곰곰 2번째 = 같은 브랜드 X · 페브리즈 = 확인 48시간 넘음 X · 쿠팡 3 = 토스 3 → 쿠팡 먼저
 P212b = [p for p in P212 if p["url"] != CL212(4)]
 assert H.day_char_pick(P212b, "2026-11-18", time.time())[0] == "toss" and sorted(p["url"] for p in H.day_char_pick(P212b, "2026-11-18", time.time())[1]) == [TL212(0), TL212(1), TL212(2)]  # 쿠팡 2 < 토스 3 = 토스(한 몰만)
 th212, sc212 = [], []
@@ -15835,3 +15836,34 @@ S.LINK_IG_OPEN = 2; m213 = S.link_page("ab", P213, it213, "docs", today="2026-11
 assert '<details class="mo"><summary>이전 5개 더 보기</summary>' in m213 and m213.index("<span>11/19 넥워머</span>") < m213.index("이전 5개 더 보기") < m213.index("<span>11월 18일 카드 딜</span>") < m213.index("<span>11/10 지난 기록</span>")  # 지금 특가가 너무 밀리지 않게
 assert S.link_cards(P213, "docs") == S.link_cards(P213, "docs").split('<section class="cd ig"')[0] and "앞 카드 딜" not in h213  # it 없으면 맨 위만(예전 '앞 카드 딜' 접기 = 목록으로)
 (time.time, H.ev_list, timg213, S.LINK_IG_OPEN) = sv213; S.tapi_ok = tp213; S.TIMG.clear(); S.TIMG.update(timg213); os.chdir(cwd213)
+# 9-214 (11/19 23시 Cowork — 첫 하루 모음 캐릭터 카드 고칠 점): (1) 실제 상품 사진만 — 글 사진 → 같은 글 주소 API 사진·같은 pid cp_img.json → 진열 글 사진 · 없으면 그 상품 X(3개 밑 = 글자 카드) · 네이버 X(사진 X 규칙)
+#   (2) 이름 2줄: 둘째 줄 첫 글자·첫 줄 끝 '·' X(렌더러 공백 줄바꿈 — 줄바꿈이 구분) · 상품명 속 옵션 목록('더블 2인용 싱글 1인용') + 고른 옵션 = 고른 것만 · (3) 머리 줄 = 카드 저장소 layout.mjs(Cowork 웹 편집기)
+cwd214, sv214 = os.getcwd(), (time.time,)
+os.chdir(tempfile.mkdtemp()); os.makedirs("docs/cards")
+time.time = lambda: TK("2026-11-19 21:10")
+C214 = lambda k: f"https://link.coupang.com/a/dp{k}"
+json.dump({"777": "https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/pid777.jpg"}, open("cp_img.json", "w"))
+json.dump([{"at": "2026-11-19 09:00", "url": C214(2), "shelf": True, "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/ev2.jpg"}], open("events.json", "w"))
+P214 = [{"t": "2026-11-19 20:00", "text": f"{H.DISCLOSURE}\n\n🔥 [쿠팡] {n} ({pr})", "url": C214(k), "own": 1, "chkt": "2026-11-19 19:00", "now": pr, **x} for k, (n, pr, x) in enumerate(
+    [("곰곰 햅쌀 10kg", "33,890원", {"img": "https://thumbnail.coupangcdn.com/thumbnails/remote/230x230ex/image/p0.jpg"}), ("스프라이트 제로 사이다, 250ml, 30개", "12,290원", {"pid": "777"}),
+     ("크라운산도 딸기크림치즈 323g 3개", "7,360원", {}), ("코카콜라 제로 355ml 24개", "18,900원", {}), ("다우니 섬유유연제 4L", "17,900원", {"img": "https://example.com/x.jpg"})])] \
+    + [{"t": "2026-11-19 20:10", "text": f"{H.DISCLOSURE}\n\n🔥 [네이버] 네이버{k} (9,900원)", "url": f"https://naver.me/dp{k}", "own": 1, "now": "9,900원", "chkt": "2026-11-19 19:00"} for k in range(4)]
+json.dump(list(range(len(P214))), open("docs/cards/2026-11-19.json", "w"))
+ph214 = H.day_char_photo({}, time.time())
+assert [bool(ph214(p)) for p in P214] == [True, True, True, False, False, False, False, False, False], [ph214(p) for p in P214]  # 글 사진 · pid cp_img · 진열 글 사진 · 없음 · 쿠팡 사진 주소 아님 · 네이버 X
+assert ph214(P214[1]).endswith("pid777.jpg") and ph214(P214[2]).endswith("ev2.jpg")
+m214, ps214 = H.day_char_pick(P214, "2026-11-19", time.time())
+assert m214 == "coupang" and [p["url"] for p in ps214] == [C214(0), C214(1), C214(2)] and [p["img"].rsplit("/", 1)[1] for p in ps214] == ["p0.jpg", "pid777.jpg", "ev2.jpg"], (m214, ps214)  # 사진 찾은 것만 · 찾은 사진 = 카드 사진(네이버 4개여도 사진 X = X)
+d214 = H.mall_card_json("오늘 살 만한 딜", [(p, p["now"]) for p in ps214])
+assert [x["img"].rsplit("/", 1)[1] for x in d214["items"]] == ["p0.jpg", "pid777.jpg", "ev2.jpg"]  # '사진 미제공' 칸 X
+assert H.day_char_pick(P214[3:], "2026-11-19", time.time())[1] == []  # 사진 있는 상품 0 = 글자 카드(부른 쪽 3개 밑)
+n214 = "[27년형 신상품] 한일의료기 탄소열선 프리미엄 전기요 그레이 민들레 더블 2인용 싱글 1인용, 더블 2인용(135 x 180cm)"
+for c214 in (3, 5, 7):
+    x214 = H.series_name(n214, c214)
+    assert x214.startswith("한일의료기") and "싱글" not in x214 and "1인용" not in x214 and x214.count("2인용") == 1 and x214.count("더블") == 1 and x214.endswith("더블 2인용 135 x 180cm") and H.series_fits(x214, c214), (c214, x214)  # 고른 옵션 하나만
+    for nm214 in ("스프라이트 제로 사이다, 250ml, 30개", "다우니 섬유유연제, 4L, 2개, 블루", "하기스 네이처메이드 밴드형 기저귀, 중형, 공용, 4단계, 168매", n214):
+        ls214 = H.series_lines(H.series_name(nm214, c214), c214)
+        assert len(ls214) <= 2 and not any(k and l.startswith("·") or k < len(ls214) - 1 and l.endswith("·") for k, l in enumerate(ls214)), (c214, nm214, ls214)  # 둘째 줄 첫 글자·첫 줄 끝 '·' X
+assert H.series_lines(H.series_name("스프라이트 제로 사이다, 250ml, 30개", 5), 5) == ["스프라이트 제로 사이다 250ml", "30개"] and " · " in H.series_name("하기스 네이처메이드 밴드형 기저귀, 중형, 공용, 4단계, 168매", 7)  # 한 줄 안 '·' = 그대로
+assert "싱글" in H.series_name("한빛 침구 더블 싱글 세트", 5)  # 고른 옵션(쉼표 뒤)이 없으면 그대로
+(time.time,) = sv214; os.chdir(cwd214)
