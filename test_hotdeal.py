@@ -5605,6 +5605,8 @@ ic40 = C40.app_icons(f"{d40}/icons", d40); from PIL import Image as I40
 assert [I40.open(f).size for f in ic40[:6]] == [(192, 192), (512, 512), (512, 512), (180, 180), (32, 32), (16, 16)] and I40.open(f"{d40}/icons/apple-touch-icon.png").mode == "RGB"  # 애플 = 투명 X
 # 새 로고(10/29 진우 — brand/logo.png 삼색 고양이 '딜') · 11/19 진우 '테두리도 정리해 줘 깔끔하게': 바탕 = 로고 빨강 한 색 꽉(로고 둥근 네모·가장자리 띠 X) + 고양이만 가운데 · 고양이 폭 = any·애플 0.86 / maskable 0.72 · 파비콘 = 옛 '딜'만 둥근 네모
 assert all(I40.open(f).mode == "RGB" for f in ic40[:4]) and open(f"{d40}/icons/icon-512.png", "rb").read() != open(f"{d40}/icons/icon-512-maskable.png", "rb").read()
+near40 = lambda a, b, t=4: all(abs(x - y) <= t for x, y in zip(a, b))
+bb40 = lambda ps: (min(x for x, _ in ps) / 512, min(y for _, y in ps) / 512, (max(x for x, _ in ps) + 1) / 512, (max(y for _, y in ps) + 1) / 512)  # 아래 바로가기 아이콘(sc-*)도 씀
 lg40 = I40.open(C40.LOGO_PNG); assert lg40.size == (1167, 1140) and lg40.getpixel((0, 0))[3] == 0  # 원본(그대로 둠) 모서리 투명
 cat40, col40 = C40.logo_cat(); assert cat40.size == lg40.size and all(abs(x - y) <= 6 for x, y in zip(col40, C40.LOGO_RED)) and cat40.getpixel((8, 570))[3] == 0 and cat40.getpixel((60, 570))[3] == 0  # 바탕 색 = 로고 빨강 중앙값 · 로고 왼쪽 띠(8px)·안쪽 빨강(60px) = 바탕(빠짐)
 assert cat40.getpixel((599, 593))[3] == 255 and cat40.getpixel((599, 830))[3] == 255  # 고양이 얼굴·'딜' 판(빨강이지만 바깥과 안 이어짐) = 남음
@@ -14375,7 +14377,7 @@ json.dump(EV180[2:], open("events180.json", "w"), ensure_ascii=False); q180 = pv
 assert [q["media_type"] for q in q180] == [["TEXT"]] and "미리보기에 없음" in al180[0][1]  # 카드 상품(c2)이 그사이 빠짐 = 글만
 assert '**({"chg": "th_card"} if x["id"] in seen.get("pvcard", {}).get("m", {}) else {"chg": "th_bundle"} if x["id"] in seen.get("thbcard", {}).get("m", {}) else {"chg": "th_focus"} if x["id"] in seen.get("thfocus", {}).get("m", {}) else {})' in inspect.getsource(H.metrics_rows)
 y180 = open(os.path.join(rd180m, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
-assert 'case "$(TZ=Asia/Seoul date +%H)" in 01|02|12|13|15|16|17|18|19|20|21) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th) · 11/13 새 서식(hotdealpick-series) = 쿠팡 묶음 01·12·15·18시(+1시간 밀림) · 꾸준템 19:50~21시\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
+assert 'case "$(TZ=Asia/Seoul date +%H)" in 01|02|12|13|15|16|17|18|19|20|21|22|23) ;; *) [ "$CARD_TEST" = "true" ] || exit 0;; esac   # 22·23시 = 11/19 하루 모음 캐릭터 카드(21시 모아보기 카드 → 사이트에 뜬 다음 실행 Threads — 밀리면 22시대) · 21시 = 22시 미리보기 카드 · 15~18시 = 기념일 D-N 카드(day_th) · 11/13 새 서식(hotdealpick-series) = 쿠팡 묶음 01·12·15·18시(+1시간 밀림) · 꾸준템 19:50~21시\n          git clone -q --depth 1 https://github.com/luminae21-source/hotdealpick-cards hotdealpick-cards || echo' in y180 and y180.index("hotdealpick-cards hotdealpick-cards") < y180.index("python hotdeal.py")  # 읽기 전용 받기(토큰 X) · 봇 실행 전
 (H.card_png, H.th_get, H.alert, H.http, H.PV_CARD, H.EVENTS, time.time, H.tg, H.time.sleep, H.pv_names, H.busy, H.th_hold, tk180) = sv180
 H.E.pop("THREADS_TOKEN", None) if tk180 is None else H.E.__setitem__("THREADS_TOKEN", tk180)
 os.chdir(cwd180); shutil.rmtree(d180, ignore_errors=True)
