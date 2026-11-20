@@ -1,14 +1,14 @@
 {
-"at": "2026-11-20 11:31",
-"posts": 6067,
-"site": 2123,
+"at": "2026-11-20 11:45",
+"posts": 6069,
+"site": 2125,
 "mall": {
-"coupang": 1440,
+"coupang": 1442,
 "toss": 628,
 "naver": 55
 },
 "cat": {
-"season": 145,
+"season": 147,
 "digital": 78,
 "kitchen": 148,
 "home": 91,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 173,
-"sitemap": 1076,
+"sitemap": 1077,
 "days": {
 "2026-11-12": {
 "site": 1999,
@@ -107,10 +107,10 @@
 }
 },
 "2026-11-20": {
-"site": 2123,
-"sitemap": 1076,
+"site": 2125,
+"sitemap": 1077,
 "mall": {
-"coupang": 1440,
+"coupang": 1442,
 "toss": 628,
 "naver": 55
 }
