@@ -1,10 +1,10 @@
 {
-"at": "2026-11-20 17:11",
-"posts": 6118,
-"site": 2141,
+"at": "2026-11-20 17:26",
+"posts": 6119,
+"site": 2142,
 "mall": {
 "coupang": 1456,
-"toss": 630,
+"toss": 631,
 "naver": 55
 },
 "cat": {
@@ -16,7 +16,7 @@
 "beauty": 271,
 "life": 318,
 "heat": 135,
-"fashion": 104,
+"fashion": 105,
 "laundry": 87,
 "coffee": 91,
 "pet": 43,
@@ -107,11 +107,11 @@
 }
 },
 "2026-11-20": {
-"site": 2141,
+"site": 2142,
 "sitemap": 1078,
 "mall": {
 "coupang": 1456,
-"toss": 630,
+"toss": 631,
 "naver": 55
 }
 }
