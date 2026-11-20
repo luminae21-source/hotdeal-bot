@@ -1,7 +1,17 @@
 {
  "google": {
-  "at": "2026-11-21 04:02",
+  "at": "2026-11-21 05:16",
   "items": [
+   {
+    "t": "한파",
+    "n": "100+",
+    "news": "'수능 한파' 주말까지 더 심해진다...호남·제주 대설주의보"
+   },
+   {
+    "t": "al-ahli vs al-nassr",
+    "n": "100+",
+    "news": "Al-Nassr rue Ronaldo penalty miss as Toney fires Al-Ahli to…"
+   },
    {
     "t": "알아흘리 사우디 대 알나스르",
     "n": "500+",
@@ -11,6 +21,11 @@
     "t": "riemann hypothesis",
     "n": "100+",
     "news": "Anthropic mathematician claims to prove Riemann hypothesis…"
+   },
+   {
+    "t": "fear and greed",
+    "n": "100+",
+    "news": "Bitcoin Breaks Below $60K as Crypto Fear Index Hits Worst…"
    },
    {
     "t": "india a cricket team vs nepal national cricket team standings",
@@ -35,22 +50,7 @@
    {
     "t": "공포지수",
     "n": "200+",
-    "news": "엔비디아 호실적도 못 넘은 금리 인상 우려, 뉴욕증시 혼조"
-   },
-   {
-    "t": "연준",
-    "n": "200+",
-    "news": "TXT 연준, '나 혼자 산다' 출격⋯자취 7개월 차 일상 공개"
-   },
-   {
-    "t": "부동산",
-    "n": "5000+",
-    "news": "내년 아파트 공시가격 현실화율 69%로 5년째 동결…보유세 영향은?"
-   },
-   {
-    "t": "u17 việt nam",
-    "n": "200+",
-    "news": "Những tình huống tranh cãi của U17 Việt Nam được phân xử…"
+    "news": "엔비디아, AI 테마 투매에 '와르르'…알파벳에 밀려 시총 4위로"
    }
   ]
  },
