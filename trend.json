@@ -1,11 +1,31 @@
 {
  "google": {
-  "at": "2026-11-21 03:06",
+  "at": "2026-11-21 04:02",
   "items": [
+   {
+    "t": "알아흘리 사우디 대 알나스르",
+    "n": "500+",
+    "news": "Al Ahli vs Al Nassr: Saudi Pro League stats & head-to-head"
+   },
+   {
+    "t": "riemann hypothesis",
+    "n": "100+",
+    "news": "Anthropic mathematician claims to prove Riemann hypothesis…"
+   },
    {
     "t": "india a cricket team vs nepal national cricket team standings",
     "n": "5000+",
     "news": "Prince, Rana rout Nepal for 26 after Tilak, Kushagra tons"
+   },
+   {
+    "t": "의·치의학교육입문검사",
+    "n": "200+",
+    "news": "\"대치동 몸테크, 이제 끝나나\"…AI 커닝 사태가 흔든 '학군지 집값'의 미래"
+   },
+   {
+    "t": "리만가설 증명",
+    "n": "1000+",
+    "news": "앤트로픽 연구원 \"클로드 활용해 리만 가설 증명 발견한 것으로 판단\""
    },
    {
     "t": "세계사 2 번",
@@ -20,7 +40,7 @@
    {
     "t": "연준",
     "n": "200+",
-    "news": "美연준 고위인사 \"AI로 경제 과열…모든 선택지 가능\""
+    "news": "TXT 연준, '나 혼자 산다' 출격⋯자취 7개월 차 일상 공개"
    },
    {
     "t": "부동산",
@@ -31,26 +51,6 @@
     "t": "u17 việt nam",
     "n": "200+",
     "news": "Những tình huống tranh cãi của U17 Việt Nam được phân xử…"
-   },
-   {
-    "t": "오현민",
-    "n": "200+",
-    "news": "'데블스 플랜3' 오현민, 장동민 옆 눈물.. 탈락 심경 \"많이 부족했다\" [전문]"
-   },
-   {
-    "t": "엔비디아",
-    "n": "10000+",
-    "news": "FT “TSMC, 中 첨단 칩 출하 중단 통보”…美 '우회 수출 원천 봉쇄' 여파"
-   },
-   {
-    "t": "펍지",
-    "n": "1000+",
-    "news": "[G-STAR 26] Sega, CDPR, Capcom and more global game…"
-   },
-   {
-    "t": "류효영",
-    "n": "200+",
-    "news": "“오빠한테 관심 있어” 고백한 류효영, 이태성과 첫 키스 장소 방문 (신랑수업2)"
    }
   ]
  },
