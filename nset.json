@@ -189,6 +189,27 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "주방",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "자동차",
+"mall": "toss",
+"n": 5,
+"slot": "",
+"k": "mix"
 }
 ]
 }
