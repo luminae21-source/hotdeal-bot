@@ -1,21 +1,31 @@
 {
  "google": {
-  "at": "2026-11-22 04:09",
+  "at": "2026-11-22 05:05",
   "items": [
    {
-    "t": "newcastle vs arsenal",
+    "t": "위기",
     "n": "200+",
-    "news": "Newcastle United vs Arsenal: Premier League preview, team…"
+    "news": "\"호르무즈서 미확인 발사체에 유조선 잇단 피격\""
+   },
+   {
+    "t": "newcastle vs arsenal",
+    "n": "500+",
+    "news": "Match Summary"
    },
    {
     "t": "아스날",
-    "n": "200+",
+    "n": "500+",
     "news": "'게임에서 자기 자신을 주장으로 선택했을 뿐인데' 아스날 선발 명단 유출 논란...아르테타 감독 긴급 대응…"
    },
    {
     "t": "psg",
     "n": "100+",
-    "news": "Nice renversé, le PSG profite d'un penalty litigieux"
+    "news": "PSG : Luis Enrique salue le caractère de son groupe"
+   },
+   {
+    "t": "샬케 대 슈투트가르트",
+    "n": "200+",
+    "news": "‘韓 국가대표’ 황희찬의 독일 복귀가 이렇게 험난하다…샬케, 홈에서 아직도 0골→7경기 연속 무승, 감독도…"
    },
    {
     "t": "뉴캐슬 대 아스널",
@@ -25,12 +35,7 @@
    {
     "t": "nice vs psg",
     "n": "200+",
-    "news": "OGC Nice - PSG : les compositions probables"
-   },
-   {
-    "t": "토트넘 홋스퍼 fc 대 입스위치 타운 fc 라인업",
-    "n": "100+",
-    "news": "Match commentary and highlights: Tottenham 2-0 Ipswich"
+    "news": "Nice - PSG : les compositions officielles"
    },
    {
     "t": "เชลซี พบ ลีดส์",
@@ -46,11 +51,6 @@
     "t": "권순우",
     "n": "200+",
     "news": "'타이브레이크 역전쇼' 권순우, 시즌 4번째 4강 [ATP 메츠챌린저]"
-   },
-   {
-    "t": "엑셀방송",
-    "n": "200+",
-    "news": "'그것이 알고싶다', 女 줄세워 가학 벌칙…'사이버 룸살롱' 엑셀 방송의 충격 실태 - 머니투데이"
    }
   ]
  },
