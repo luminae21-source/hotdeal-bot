@@ -1,6 +1,6 @@
 {
-"at": "2026-11-22 06:57",
-"posts": 6279,
+"at": "2026-11-22 07:12",
+"posts": 6280,
 "site": 2150,
 "mall": {
 "coupang": 1465,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 175,
-"sitemap": 1086,
+"sitemap": 1087,
 "days": {
 "2026-11-14": {
 "site": 2017,
@@ -106,7 +106,7 @@
 },
 "2026-11-22": {
 "site": 2150,
-"sitemap": 1086,
+"sitemap": 1087,
 "mall": {
 "coupang": 1465,
 "toss": 630,
