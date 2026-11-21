@@ -1,25 +1,45 @@
 {
  "google": {
-  "at": "2026-11-22 01:05",
+  "at": "2026-11-22 02:02",
   "items": [
    {
-    "t": "채령",
+    "t": "토트넘 입스위치",
     "n": "200+",
+    "news": "Tottenham vs Ipswich LIVE! Premier League match updates…"
+   },
+   {
+    "t": "como vs cagliari",
+    "n": "100+",
+    "news": "Como-Cagliari: regresa Chalobah y Fabregas confirma cuatro…"
+   },
+   {
+    "t": "권순우",
+    "n": "200+",
+    "news": "'타이브레이크 역전쇼' 권순우, 시즌 4번째 4강 [ATP 메츠챌린저]"
+   },
+   {
+    "t": "엑셀방송",
+    "n": "200+",
+    "news": "성노예→학대 사이버 룸살롱 ‘엑셀’ 파헤친다 (그것이 알고싶다)"
+   },
+   {
+    "t": "채령",
+    "n": "500+",
     "news": ""
    },
    {
-    "t": "man city vs fulham f.c. standings",
-    "n": "2000+",
-    "news": "Manchester City 1-1 Fulham: Anderson rescues point for hosts"
+    "t": "첼시",
+    "n": "500+",
+    "news": "'슈퍼볼 7회 우승 NFL 역대 최고 전설, 이번엔 첼시로 향한다' 톰 브래디, 버밍엄 지분 팔고 PL…"
    },
    {
     "t": "chelsea vs leeds",
     "n": "200+",
-    "news": "Tottenham Hotspur vs Ipswich Town: Premier League preview…"
+    "news": "Teenager Williams-Barnett inspires Spurs to Ipswich win"
    },
    {
     "t": "장동혁",
-    "n": "100+",
+    "n": "200+",
     "news": "국힘, 대구서 장외 집회… \"조희대 탄핵 땐 정권 붕괴\""
    },
    {
@@ -29,28 +49,8 @@
    },
    {
     "t": "코번트리 대 크리스털 팰리스",
-    "n": "500+",
+    "n": "1000+",
     "news": "Coventry City vs Crystal Palace: Premier League preview…"
-   },
-   {
-    "t": "장동민",
-    "n": "100+",
-    "news": "‘독박투어’ 김재원 “역사 잘 알면 사람이 삐딱해져”"
-   },
-   {
-    "t": "쇼메이커",
-    "n": "200+",
-    "news": "[단독] ‘카나비’ 서진혁, ‘씨맥’ 품으로 가나… DK행 유력, 최종 협상 진행 중"
-   },
-   {
-    "t": "첼시 대 리즈 유나이티드",
-    "n": "2000+",
-    "news": "첼시 대 리즈: 상대 전적 통계 및 역사적 이정표"
-   },
-   {
-    "t": "우니온 베를린 대 라이프치히",
-    "n": "200+",
-    "news": "Confirmed lineups: 1.FC Union Berlin vs. RB Leipzig"
    }
   ]
  },
