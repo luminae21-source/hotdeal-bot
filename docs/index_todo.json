@@ -2,11 +2,6 @@
 "date": "2026-11-21",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-20/",
-"kind": "today",
-"added": "2026-11-20"
-},
-{
 "url": "https://hotdealpick.kr/c/t/t9a6fe2.html",
 "kind": "topic",
 "added": "2026-11-18"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/c/t/yuja-tea.html",
 "kind": "topic",
 "added": "2026-11-18"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-21/",
+"kind": "today",
+"added": "2026-11-21"
 }
 ],
 "q": [
@@ -1267,6 +1267,7 @@
 "https://hotdealpick.kr/c/t/td71505.html": "2026-11-21",
 "https://hotdealpick.kr/c/t/tfacb9c.html": "2026-11-21",
 "https://hotdealpick.kr/c/t/winter-ready.html": "2026-11-21",
-"https://hotdealpick.kr/c/t/yuja-tea.html": "2026-11-21"
+"https://hotdealpick.kr/c/t/yuja-tea.html": "2026-11-21",
+"https://hotdealpick.kr/today/2026-11-21/": "2026-11-21"
 }
 }
