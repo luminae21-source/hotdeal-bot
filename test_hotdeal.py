@@ -15867,3 +15867,14 @@ for c214 in (3, 5, 7):
 assert H.series_lines(H.series_name("스프라이트 제로 사이다, 250ml, 30개", 5), 5) == ["스프라이트 제로 사이다 250ml", "30개"] and " · " in H.series_name("하기스 네이처메이드 밴드형 기저귀, 중형, 공용, 4단계, 168매", 7)  # 한 줄 안 '·' = 그대로
 assert "싱글" in H.series_name("한빛 침구 더블 싱글 세트", 5)  # 고른 옵션(쉼표 뒤)이 없으면 그대로
 (time.time,) = sv214; os.chdir(cwd214)
+# 9-215 (11/21 Cowork 버그): 같은 파트너스 링크가 events.json(Cowork)·auto_events.json(봇 예약) 둘 다 = now·chk는 확인(chk) 늦은 쪽(events 새 확인이 auto_events 옛 확인에 덮이던 것 — 가격 기록 cw 줄·가이드 '가격 확인 오래됨') · 다른 칸은 뒤 항목 그대로
+cwd215 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+U215, V215 = "https://link.coupang.com/a/yt1", "https://link.coupang.com/a/yt2"
+json.dump([{"at": "2026-11-21 08:00", "url": U215, "now": "6,990원", "chk": "2026-11-21 15:43", "pid": "186449328", "item": "1033412099"},
+           {"at": "2026-11-21 08:00", "url": V215, "now": "7,500원", "chk": "2026-11-18 14:12", "tag": "율무차"}], open("events.json", "w"), ensure_ascii=False)
+json.dump([{"at": "2026-11-20 11:00", "url": U215, "now": "7,290원", "chk": "2026-11-20 11:03", "tag": "꾸준템"}, {"at": "2026-11-21 09:00", "url": V215, "now": "7,100원", "chk": "2026-11-21 09:05", "tag": "꾸준템"}], open("auto_events.json", "w"), ensure_ascii=False)
+e215 = S.ev_info()
+assert (e215[U215]["now"], e215[U215]["chk"], e215[U215]["tag"], e215[U215]["pid"]) == ("6,990원", "2026-11-21 15:43", "꾸준템", "186449328"), e215[U215]  # events 확인이 늦음 = events now·chk · tag = 뒤(auto) 그대로
+assert (e215[V215]["now"], e215[V215]["chk"]) == ("7,100원", "2026-11-21 09:05"), e215[V215]  # auto 확인이 늦음 = auto now·chk
+h215 = {}; S.ph_events(h215, e215); assert h215["186449328:1033412099"] == [["26112115", 6990, "", "cw"]], h215  # 가격 기록 cw = Cowork 새 확인(11/21 15시 6,990원)
+os.chdir(cwd215)

@@ -715,12 +715,14 @@ def ev_list(path=None):
 
 
 def ev_info(evs=None):
-    """events.json 진우 항목 -> {url: {now, chk, end, why, target, pid, item, img}}(같은 url 여러 항목이면 뒤 항목이 덮음, 글자 칸만 — img = 상품 사진 주소, 글에 넣는 건 hotdeal.own_end·쓰는 건 img_of 허용 목록만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
+    """events.json 진우 항목 -> {url: {now, chk, end, why, target, pid, item, img}}(같은 url 여러 항목이면 뒤 항목이 덮음 — now·chk만 확인 늦은 쪽, 글자 칸만 — img = 상품 사진 주소, 글에 넣는 건 hotdeal.own_end·쓰는 건 img_of 허용 목록만). 깨진 파일 = {}(사이트 빌드가 멈추면 그 실행의 기록·커밋이 안 남음)."""
     evs, out = ev_list() if evs is None else evs, {}  # evs = 옛 커밋 events(가격 추적 백필)
     for e in evs if isinstance(evs, list) else []:
         if isinstance(e, dict) and isinstance(e.get("url"), str):
-            out.setdefault(e["url"], {}).update({k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img", "tag") if isinstance(e.get(k), str)}
-                                                | ({"dc": e["dc"]} if isinstance(e.get("dc"), (int, float)) and not isinstance(e.get("dc"), bool) else {}))  # 11/6 네이버 할인 근거(Cowork 커넥트 툴 v8 — 판매가 대비 할인)
+            o, d = out.setdefault(e["url"], {}), {k: e[k] for k in ("now", "chk", "end", "why", "target", "pid", "item", "img", "tag") if isinstance(e.get(k), str)}
+            if o.get("chk", "") > d.get("chk", ""):  # 11/21 Cowork: 같은 링크가 events·auto_events 둘 다 = 확인(chk) 늦은 쪽 now·chk(뒤에 붙는 auto_events의 옛 확인이 Cowork 새 확인을 덮던 것) · 다른 칸은 뒤 항목 그대로
+                d.pop("now", None), d.pop("chk", None)
+            o.update(d | ({"dc": e["dc"]} if isinstance(e.get("dc"), (int, float)) and not isinstance(e.get("dc"), bool) else {}))  # 11/6 네이버 할인 근거(Cowork 커넥트 툴 v8 — 판매가 대비 할인)
     return out
 
 
