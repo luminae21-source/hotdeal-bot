@@ -1,5 +1,5 @@
 {
-"at": "2026-11-22 04:36",
+"at": "2026-11-22 04:50",
 "posts": 6279,
 "site": 2150,
 "mall": {
@@ -8,6 +8,7 @@
 "naver": 55
 },
 "cat": {
+"season": 150,
 "heat": 135,
 "life": 317,
 "coffee": 92,
@@ -18,7 +19,6 @@
 "beauty": 271,
 "fashion": 105,
 "laundry": 86,
-"season": 150,
 "digital": 77,
 "car": 47,
 "kitchen": 152,
