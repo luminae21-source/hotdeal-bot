@@ -1,16 +1,31 @@
 {
  "google": {
-  "at": "2026-11-22 02:02",
+  "at": "2026-11-22 03:11",
   "items": [
    {
-    "t": "토트넘 입스위치",
+    "t": "뉴캐슬 대 아스널",
+    "n": "2000+",
+    "news": "‘아스널 희소식’ 살리바 복귀 임박! ‘英 대표’ 콘사로 유지한 방패, 더 단단해진다"
+   },
+   {
+    "t": "nice vs psg",
     "n": "200+",
-    "news": "Tottenham vs Ipswich LIVE! Premier League match updates…"
+    "news": "OGC Nice - PSG : les compositions probables"
+   },
+   {
+    "t": "토트넘 홋스퍼 fc 대 입스위치 타운 fc 라인업",
+    "n": "100+",
+    "news": "Match commentary and highlights: Tottenham 2-0 Ipswich"
+   },
+   {
+    "t": "เชลซี พบ ลีดส์",
+    "n": "100+",
+    "news": "เอ็มมานูเอล เอเมก้า: ผมจะพร้อมเมื่อโอกาสมาถึง…"
    },
    {
     "t": "como vs cagliari",
     "n": "100+",
-    "news": "Como-Cagliari: regresa Chalobah y Fabregas confirma cuatro…"
+    "news": "Nico Paz jugó media hora en el triunfo del Como ante…"
    },
    {
     "t": "권순우",
@@ -28,29 +43,14 @@
     "news": ""
    },
    {
-    "t": "첼시",
-    "n": "500+",
-    "news": "'슈퍼볼 7회 우승 NFL 역대 최고 전설, 이번엔 첼시로 향한다' 톰 브래디, 버밍엄 지분 팔고 PL…"
-   },
-   {
     "t": "chelsea vs leeds",
-    "n": "200+",
-    "news": "Teenager Williams-Barnett inspires Spurs to Ipswich win"
+    "n": "500+",
+    "news": "Leeds overturn Chelsea lead with 4-1 win as Alonso suffers…"
    },
    {
     "t": "장동혁",
     "n": "200+",
-    "news": "국힘, 대구서 장외 집회… \"조희대 탄핵 땐 정권 붕괴\""
-   },
-   {
-    "t": "민효린",
-    "n": "100+",
-    "news": "빅뱅, 데뷔 20주년에 'MAMA' 수상 겹경사..\"기분 좋은 상\""
-   },
-   {
-    "t": "코번트리 대 크리스털 팰리스",
-    "n": "1000+",
-    "news": "Coventry City vs Crystal Palace: Premier League preview…"
+    "news": "이 대통령 \"5500억 환수가 배임이면…\" 대장동 업자 인터뷰 SNS에 공유"
    }
   ]
  },
