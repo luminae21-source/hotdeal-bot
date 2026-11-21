@@ -65,6 +65,8 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           timeout: 600000          # 10분 = deploy-pages가 받는 최대(더 크게 줘도 10분으로 깎임 — 11/7 경고 'timeout set to the maximum of 600000')
+      - if: ${{ steps.dep.outcome == 'failure' }}
+        run: sleep 60              # 11/19~21 하루 2~3번 dep·dep2 둘 다 1초 만에 'No artifacts named github-pages'(올린 직후 목록에 아직 없음) -> 1분 뒤 dep2
       - id: dep2
         if: ${{ steps.dep.outcome == 'failure' }}
         uses: actions/deploy-pages@v4

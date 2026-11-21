@@ -13432,7 +13432,7 @@ for k in ("workflow_dispatch:", "cancel-in-progress: true", "pages: write", "id-
 hd160 = open(os.path.join(RD160, ".github/workflows/hotdeal.yml"), encoding="utf-8").read()
 assert "workflow_run:" not in pg160 and "actions: write" in hd160 and 'echo "pushed=1" >> "$GITHUB_OUTPUT"' in hd160 and 'gh workflow run pages.yml -R "$GITHUB_REPOSITORY" --ref main' in hd160  # 11/6 13:32Z workflow_run 안 옴 -> hotdeal이 사이트 커밋 뒤 직접 부름
 # 11/7 Cowork 버그(pages 10분 끊김 #42·#46·#50~#52): timeout 최대 10분(1800000 = 깎임) · 실패면 같은 실행에서 1번 더(dep2) · 다음 hotdeal 실행 = 커밋 없어도 마지막 pages 실패면 다시 부름 · 3일 지난 하루 카드 그림 = Pages에서만 뺌
-assert "1800000" not in pg160 and pg160.count("uses: actions/deploy-pages@v4") == 2 and "continue-on-error: true" in pg160 and "if: ${{ steps.dep.outcome == 'failure' }}" in pg160 and "steps.dep.outputs.page_url || steps.dep2.outputs.page_url" in pg160
+assert "run: sleep 60" in pg160 and pg160.index("run: sleep 60") < pg160.index("- id: dep2") and "1800000" not in pg160 and pg160.count("uses: actions/deploy-pages@v4") == 2 and "continue-on-error: true" in pg160 and "if: ${{ steps.dep.outcome == 'failure' }}" in pg160 and "steps.dep.outputs.page_url || steps.dep2.outputs.page_url" in pg160
 assert "if: ${{ !cancelled() }}" in hd160 and 'gh run list -R "$GITHUB_REPOSITORY" -w pages.yml -L 1' in hd160 and '[ "${{ steps.site.outputs.pushed }}" = "1" ] || [ "${last%%/*}" = "completed" -a "${last#*/}" != "success" ]' in hd160
 sh160 = re.search(r"- name: 아티팩트 줄이기[^\n]*\n\s+run: \|[^\n]*\n(.*?)\n      - uses: actions/upload-pages-artifact", pg160, re.S)[1]
 with tempfile.TemporaryDirectory() as td160:
