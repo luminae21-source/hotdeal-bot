@@ -1,10 +1,10 @@
 {
-"at": "2026-11-22 00:07",
-"posts": 6257,
-"site": 2155,
+"at": "2026-11-22 00:22",
+"posts": 6267,
+"site": 2150,
 "mall": {
-"coupang": 1468,
-"toss": 632,
+"coupang": 1465,
+"toss": 630,
 "naver": 55
 },
 "cat": {
@@ -14,12 +14,12 @@
 "pet": 43,
 "snack": 110,
 "home": 97,
-"food": 446,
+"food": 444,
 "beauty": 271,
 "fashion": 105,
-"laundry": 87,
-"season": 151,
-"digital": 78,
+"laundry": 86,
+"season": 150,
+"digital": 77,
 "car": 47,
 "kitchen": 152,
 "sport": 19,
@@ -28,7 +28,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 175,
-"sitemap": 1090,
+"sitemap": 1088,
 "days": {
 "2026-11-14": {
 "site": 2017,
@@ -105,11 +105,11 @@
 }
 },
 "2026-11-22": {
-"site": 2155,
-"sitemap": 1090,
+"site": 2150,
+"sitemap": 1088,
 "mall": {
-"coupang": 1468,
-"toss": 632,
+"coupang": 1465,
+"toss": 630,
 "naver": 55
 }
 }
@@ -117,6 +117,21 @@
 "warn": [
 "쿠팡 변환 실패 175개(cp_fail.json)"
 ],
-"nset": [],
-"nset_n": "새 구성 0 · 기존 상품 구성 0"
+"nset": [
+{
+"name": "식품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+}
+],
+"nset_n": "새 구성 2 · 기존 상품 구성 0"
 }
