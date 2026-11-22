@@ -1,4 +1,19 @@
 {
 "d": "2026-11-23",
-"items": []
+"items": [
+{
+"name": "제철 먹거리",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+]
 }
