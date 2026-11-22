@@ -1,9 +1,9 @@
 {
-"at": "2026-11-23 03:29",
-"posts": 6394,
-"site": 2160,
+"at": "2026-11-23 03:44",
+"posts": 6395,
+"site": 2161,
 "mall": {
-"coupang": 1479,
+"coupang": 1480,
 "toss": 626,
 "naver": 55
 },
@@ -14,7 +14,7 @@
 "life": 319,
 "digital": 77,
 "pet": 43,
-"snack": 109,
+"snack": 110,
 "home": 101,
 "food": 441,
 "beauty": 270,
@@ -104,10 +104,10 @@
 }
 },
 "2026-11-23": {
-"site": 2160,
+"site": 2161,
 "sitemap": 1097,
 "mall": {
-"coupang": 1479,
+"coupang": 1480,
 "toss": 626,
 "naver": 55
 }
