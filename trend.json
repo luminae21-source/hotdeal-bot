@@ -1,15 +1,45 @@
 {
  "google": {
-  "at": "2026-11-23 01:09",
+  "at": "2026-11-23 02:05",
   "items": [
    {
-    "t": "la liga",
+    "t": "리버풀 맨유",
+    "n": "200+",
+    "news": "맨유 포체티노, 데뷔전 앞두고 기자회견 지각…“샤워할 시간도 없었어”"
+   },
+   {
+    "t": "청년문화예술패스",
+    "n": "100+",
+    "news": ""
+   },
+   {
+    "t": "라민 야말",
+    "n": "100+",
+    "news": "페이호 \"라민 야말의 활약은 특별하다\", 스페인이 2030 월드컵 결승전 개최해야"
+   },
+   {
+    "t": "liverpool vs man utd",
     "n": "500+",
-    "news": "Barcelona Shuffles Defense for Villarreal Clash to Protect…"
+    "news": "Liverpool vs Manchester United LIVE: Premier League…"
+   },
+   {
+    "t": "리버풀 대 맨유",
+    "n": "10000+",
+    "news": "“새 감독 선임한 맨유가 어떤 축구를 할지 모르겠다”… 노스웨스트 더비 앞두고 경계심 드러낸 리버풀 감독…"
+   },
+   {
+    "t": "fc barcelona vs villarreal cf standings",
+    "n": "500+",
+    "news": "Barcelona vs Villarreal Confirmed Lineups"
+   },
+   {
+    "t": "u17 월드컵",
+    "n": "100+",
+    "news": "베트남 U-17 대 뉴질랜드 U-17 경기를 주재한 카메룬 심판의 신원이 밝혀졌습니다."
    },
    {
     "t": "브라이튼",
-    "n": "100+",
+    "n": "200+",
     "news": "헐 시티 vs 브라이튼 경기 프리뷰 및 예측: 브라이튼은 여전히 ​​높이 비상한다"
    },
    {
@@ -20,37 +50,7 @@
    {
     "t": "아우크스부르크 대 마인츠 05",
     "n": "1000+",
-    "news": "Best of ESPN New York (Clips) - NY GameDay Hour 1: Why…"
-   },
-   {
-    "t": "맨유 리버풀",
-    "n": "500+",
-    "news": "“새 감독 선임한 맨유가 어떤 축구를 할지 모르겠다”… 노스웨스트 더비 앞두고 경계심 드러낸 리버풀 감독…"
-   },
-   {
-    "t": "조정석",
-    "n": "100+",
-    "news": ""
-   },
-   {
-    "t": "총파업",
-    "n": "200+",
-    "news": "철도노조 23일 쟁의행위 돌입…코레일 비상 체제"
-   },
-   {
-    "t": "지드래곤",
-    "n": "2000+",
-    "news": "\"첫사랑 결혼\" 태양, ♥민효린 子육아에 8년 활동중단..미안해서 오열 \"주책이다\" [Oh!쎈 이슈]"
-   },
-   {
-    "t": "persib bandung vs bali united",
-    "n": "100+",
-    "news": "Latest Super League Standings After Persib Beats Bali…"
-   },
-   {
-    "t": "pakistan a vs india a",
-    "n": "100+",
-    "news": "INDA vs PAKA, 8th Match, Group B, ACC Men's Asia Cup Rising…"
+    "news": "Augsburg vs Mainz 05: German Bundesliga stats & head-to-head"
    }
   ]
  },
