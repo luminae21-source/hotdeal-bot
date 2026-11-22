@@ -1,11 +1,26 @@
 {
  "google": {
-  "at": "2026-11-23 00:12",
+  "at": "2026-11-23 01:09",
   "items": [
+   {
+    "t": "la liga",
+    "n": "500+",
+    "news": "Barcelona Shuffles Defense for Villarreal Clash to Protect…"
+   },
+   {
+    "t": "브라이튼",
+    "n": "100+",
+    "news": "헐 시티 vs 브라이튼 경기 프리뷰 및 예측: 브라이튼은 여전히 ​​높이 비상한다"
+   },
+   {
+    "t": "백종헌",
+    "n": "200+",
+    "news": "검증 안 된 농산물 성분 광고 제동…과학적 근거 따진다"
+   },
    {
     "t": "아우크스부르크 대 마인츠 05",
     "n": "1000+",
-    "news": "Arsenal vs. West Ham (Nov 22, 2026) Team Stats"
+    "news": "Best of ESPN New York (Clips) - NY GameDay Hour 1: Why…"
    },
    {
     "t": "맨유 리버풀",
@@ -13,13 +28,18 @@
     "news": "“새 감독 선임한 맨유가 어떤 축구를 할지 모르겠다”… 노스웨스트 더비 앞두고 경계심 드러낸 리버풀 감독…"
    },
    {
+    "t": "조정석",
+    "n": "100+",
+    "news": ""
+   },
+   {
     "t": "총파업",
     "n": "200+",
-    "news": "[속보] 철도노조 \"안전운행 투쟁 26일로 연기…사고 복구가 먼저\""
+    "news": "철도노조 23일 쟁의행위 돌입…코레일 비상 체제"
    },
    {
     "t": "지드래곤",
-    "n": "1000+",
+    "n": "2000+",
     "news": "\"첫사랑 결혼\" 태양, ♥민효린 子육아에 8년 활동중단..미안해서 오열 \"주책이다\" [Oh!쎈 이슈]"
    },
    {
@@ -28,29 +48,9 @@
     "news": "Latest Super League Standings After Persib Beats Bali…"
    },
    {
-    "t": "barcelona đấu với villarreal",
-    "n": "200+",
-    "news": "Trực tiếp bóng đá Barcelona - Villarreal: Yamal đá chính…"
-   },
-   {
-    "t": "барселона – вильярреал",
-    "n": "200+",
-    "news": "«Барселона» — «Вильярреал»: где смотреть прямую трансляцию…"
-   },
-   {
     "t": "pakistan a vs india a",
     "n": "100+",
     "news": "INDA vs PAKA, 8th Match, Group B, ACC Men's Asia Cup Rising…"
-   },
-   {
-    "t": "김승수",
-    "n": "200+",
-    "news": "미운 우리 새끼 : [선공개] 김승수, 박혜연과 함께 기적 같은 혼성 듀엣 노래 부르기 성공"
-   },
-   {
-    "t": "barcelona vs villarreal",
-    "n": "2000+",
-    "news": "Barcelona - Villarreal en directo | Un gol en propia de Pau…"
    }
   ]
  },
