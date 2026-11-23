@@ -1,7 +1,22 @@
 {
  "google": {
-  "at": "2026-11-24 02:11",
+  "at": "2026-11-24 03:06",
   "items": [
+   {
+    "t": "노태문",
+    "n": "100+",
+    "news": "삼성전자 사장단 인사 – 삼성전자 뉴스룸"
+   },
+   {
+    "t": "sk그룹",
+    "n": "200+",
+    "news": "최태원 “재산분할금 9440억원 다 내겠다”…대법원에 ‘화해권고’ 신청"
+   },
+   {
+    "t": "u17 việt nam",
+    "n": "200+",
+    "news": "Báo New Zealand: 'Gặp Việt Nam là cơ hội tốt nhất để thắng…"
+   },
    {
     "t": "테슬라 주가",
     "n": "200+",
@@ -15,7 +30,7 @@
    {
     "t": "to me my x men",
     "n": "500+",
-    "news": "A New ‘Avengers: Doomsday’ Trailer Heralds a Crisis on All…"
+    "news": "Watch the Final ‘Avengers: Doomsday’ Trailer"
    },
    {
     "t": "tradingview",
@@ -36,21 +51,6 @@
     "t": "qld",
     "n": "100+",
     "news": "Qld critical mineral to supply fighter jets, subs…"
-   },
-   {
-    "t": "voo",
-    "n": "100+",
-    "news": "Teve seu voo da Latam alterado? Entenda as novas regras de…"
-   },
-   {
-    "t": "옆자리 프란체스카",
-    "n": "200+",
-    "news": "20년 만에 돌아온 뱀파이어들…'옆자리, 프란체스카' 오늘(23일) 첫 방송"
-   },
-   {
-    "t": "토스",
-    "n": "200+",
-    "news": "카카오페이·토스도 주민등록증 진위확인…위·변조 걸러낸다"
    }
   ]
  },
