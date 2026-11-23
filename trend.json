@@ -1,21 +1,16 @@
 {
  "google": {
-  "at": "2026-11-24 01:14",
+  "at": "2026-11-24 02:11",
   "items": [
    {
     "t": "테슬라 주가",
     "n": "200+",
-    "news": ""
+    "news": "테슬라 주가, 오늘 급등한 이유는?"
    },
    {
     "t": "샌디스크 주가",
     "n": "100+",
     "news": "샌디스크 주가, 오늘 왜 급등하나?"
-   },
-   {
-    "t": "nasdaq",
-    "n": "100+",
-    "news": "Wall Street Set to Bounce Back After Tech Sell-Off"
    },
    {
     "t": "to me my x men",
@@ -25,7 +20,12 @@
    {
     "t": "tradingview",
     "n": "100+",
-    "news": "NVIDIA reinstates Jen-Hsun Huang as CEO and board member"
+    "news": "WhiteBIT launches joint Black Friday promotion with…"
+   },
+   {
+    "t": "스페이스x 주가",
+    "n": "100+",
+    "news": "제프리스도 추가 상승 전망…10%대 급등"
    },
    {
     "t": "qqq",
@@ -40,7 +40,7 @@
    {
     "t": "voo",
     "n": "100+",
-    "news": "Da aviação nos EUA à Justiça brasileira, apagões digitais…"
+    "news": "Teve seu voo da Latam alterado? Entenda as novas regras de…"
    },
    {
     "t": "옆자리 프란체스카",
