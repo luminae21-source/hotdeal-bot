@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """posts.json(채널에 게시된 딜) -> docs/ 정적 사이트. GitHub Pages로 서빙. 외부 패키지 없음."""
-import calendar, collections, hashlib, html, itertools, json, os, re, shutil, time, urllib.parse
+import calendar, collections, difflib, hashlib, html, itertools, json, os, re, shutil, time, urllib.parse
 
 BASE = "https://hotdealpick.kr/"
 GC_CODE = "hotdealpick"  # GoatCounter 사이트 코드(10/11 진우 결정 '측정 붙이기' — 10/23 진우 가입, hotdealpick.goatcounter.com). 비어 있으면 측정 X · 진우 본인 방문 빼기 = hotdealpick.kr/#toggle-goatcounter
@@ -117,7 +117,7 @@ h1.h{margin:18px 2px 2px;font-size:22px;font-weight:800;letter-spacing:-.8px;lin
 .tw{overflow-x:auto;margin:14px 0 8px;background:var(--card);border-radius:14px;box-shadow:0 1px 0 var(--line)}.tw table{width:100%;border-collapse:collapse;font-size:13px}.tw th,.tw td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.tw th{color:var(--sub);font-weight:600;white-space:nowrap}.tw td:nth-child(-n+2),.tw td:nth-child(n+4){white-space:nowrap}.tw tr.min td{background:rgba(255,212,59,.18)}
 .inst{position:fixed;z-index:8;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:4px;max-width:528px;margin:0 auto;padding:2px 0 2px 12px;min-height:48px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:0 6px 20px rgba(20,22,27,.14);font-size:13px;line-height:1.35}@media(max-width:560px){.inst{left:10px;right:10px}}.inapp .inst{bottom:calc(10px + env(safe-area-inset-bottom))}main:has(>#inst:not([hidden])){padding-bottom:calc(150px + env(safe-area-inset-bottom))}.inst span{flex:1;min-width:0}.inst button{min-height:44px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}#instb{background:var(--accf);color:#fff;padding:0 12px;font-size:14px}#instx{min-width:44px;background:none;color:var(--sub);font-size:16px}
 footer{font-size:12px;color:var(--sub);text-align:center;padding:24px 44px 8px}footer a{color:var(--sub)}
-#sr .t{margin:12px 2px 0}
+#sr .t{margin:12px 2px 0}.sg{padding:2px 0 8px}.sg b{display:block;margin:0 2px 6px;font-size:12px;font-weight:700;color:var(--sub)}.sg div{display:flex;flex-wrap:wrap;gap:6px}.sg button{max-width:100%;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#sr .sg{margin-top:10px}
 @media(max-width:359px){main{padding-left:12px;padding-right:12px}.hd{margin:0 -12px;padding-left:12px;padding-right:12px}.tile{font-size:12px}.tp h2{font-size:21px}.pk{grid-template-columns:14px 56px minmax(0,1fr) auto;gap:8px}.pk .im{width:56px;height:56px}.pk .go{padding:0 10px}}
 .mb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:10px 0 0}.m{display:flex;align-items:center;justify-content:center;height:36px;border-radius:12px;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
 .coupang.m,.coupang.mt{background:var(--cpb);color:var(--cpt)}.toss.m,.toss.mt{background:var(--tsb);color:var(--tst)}.naver.m,.naver.mt{background:var(--nvb);color:var(--nvt)}.m.evt{background:var(--pkbg);color:var(--pkt)}
@@ -273,16 +273,19 @@ def page(title, body, desc="", canonical="", note="", top="", head="", cur="", o
 <footer>딜 정보는 게시 시점 기준이며 가격·재고는 변동될 수 있어요.<br><a href="{BLOG}">네이버 블로그</a> · <a href="{INSTA}">인스타그램</a> · <a href="{THREADS}">Threads</a> · <a href="{CHANNEL}">텔레그램</a> · <a href="{BASE}privacy/">개인정보처리방침</a>{THM}</footer></main>{TB}{LIKE_JS}{SEARCH_JS}{END_JS}{DOT_JS}</body></html>""", SITE_SUB)  # GGG 사이트 쿠팡 링크 = site 채널 링크
 
 
-SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
+SEARCH_JS = """<script>(function(){var q=document.getElementById('q');if(!q)return;var D=null,G=null,sg=null,sr=null,tm=0,M=document.querySelector('main'),H='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function card(x){return "<article class='g'><div class='im"+(x.g?" sk":"")+"' style='--c:"+esc(x.c)+"'><i class='ci ci-"+esc(x.m||'x')+"' aria-hidden='true'></i>"+(x.g?"<img src='"+esc(x.g)+"' alt='"+esc(x.n)+"' loading='lazy' referrerpolicy='no-referrer' onload='this.parentNode.classList.add(\\"ld\\")' onerror='this.parentNode.classList.remove(\\"sk\\");this.remove()'>":"")+"</div><div class='cr2'><span class='mc'>"+esc(x.s)+"</span>"+(x.b||"")+"<button class='like' type='button' data-i='"+x.i+"' aria-pressed='false' aria-label='"+esc(x.n)+" 찜'>"+H+"</button></div><h3><a href='/p/"+x.i+".html'>"+esc(x.n)+"</a></h3>"+(x.p?"<div class='pr'>"+esc(x.p)+"</div>":"")+(x.e?"<div class='ex'>"+esc(x.e)+"</div>":"")+(x.u?"<div class='u'>"+esc(x.u)+"</div>":"")+"</article>"}
 function hide(on){[].forEach.call(M.children,function(e){if(/^(HEADER|FOOTER|SCRIPT)$/.test(e.tagName)||e.id==='sr'||e.className==='dis')return;if(on){if(!e.hidden){e.hidden=true;e.dataset.sh=1}}else if(e.dataset.sh){e.hidden=false;delete e.dataset.sh}})}
 function go(v){return /가격\\s*내림|내려간|^내림$/.test(v)?'/c/drop/':/마감/.test(v)?'/c/today/':''}
-function run(){var v=q.value.trim().toLowerCase();if(!v){if(sr){sr.remove();sr=null}hide(false);return}
+function chips(){return G&&G.length?"<div class='sg' role='group' aria-label='추천 검색어'><b>추천 검색어</b><div>"+G.map(function(w){return "<button type='button' class='sgc' data-gc='suggest/"+esc(w)+"'>"+esc(w)+"</button>"}).join('')+"</div></div>":''}
+function sug(on){if(!on||q.value.trim()){if(sg)sg.hidden=true;return}if(!G){fetch('/suggest.json').then(function(r){return r.json()}).then(function(j){G=Array.isArray(j)?j.slice(0,8):[];sug(document.activeElement===q)}).catch(function(){G=[]});return}if(!G.length)return;if(!sg){sg=document.createElement('div');sg.id='sg';q.form.insertAdjacentElement('afterend',sg);sg.addEventListener('pointerdown',function(e){e.preventDefault()})}sg.innerHTML=chips();sg.hidden=false}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.sgc');if(!b)return;q.value=b.textContent;run();q.blur()});q.addEventListener('focus',function(){sug(true)});q.addEventListener('blur',function(){sug(false)});
+function run(){var v=q.value.trim().toLowerCase();sug(document.activeElement===q);if(!v){if(sr){sr.remove();sr=null}hide(false);return}
 if(!D){fetch('/search.json').then(function(r){return r.json()}).then(function(j){D=j;run()}).catch(function(){});return}
 var w=v.split(/\\s+/),r=D.filter(function(x){return w.every(function(k){return x.k.indexOf(k)>=0})});
 if(!sr){sr=document.createElement('section');sr.id='sr';sr.className='sec';M.querySelector('.dis').insertAdjacentElement('afterend',sr);scrollTo(0,0)}hide(true);
-var g=go(v);sr.innerHTML="<h2>검색 결과</h2>"+(g?"<a class='btn2' href='"+g+"'>"+(g==='/c/drop/'?'📉 가격 내려간 상품 보기 →':'⏰ 오늘 마감 보기 →')+"</a>":'')+"<p id='qn' class='t' role='status'>"+(r.length?r.length+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요')+"</p>"+(r.slice(0,60).some(function(x){return x.s==='토스'})?"<p class='t'>토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인</p>":'')+(r.length?"<div class='cards'>"+r.slice(0,60).map(card).join('')+"</div>":'');if(window.hdpLike)hdpLike()}
+var g=go(v);sr.innerHTML="<h2>검색 결과</h2>"+(g?"<a class='btn2' href='"+g+"'>"+(g==='/c/drop/'?'📉 가격 내려간 상품 보기 →':'⏰ 오늘 마감 보기 →')+"</a>":'')+"<p id='qn' class='t' role='status'>"+(r.length?r.length+'개 찾았어요':'찾는 딜이 없어요 · 다른 말로 찾아보세요')+"</p>"+(r.slice(0,60).some(function(x){return x.s==='토스'})?"<p class='t'>토스 가격 = 올린 날 가격 · 지금 가격은 링크에서 확인</p>":'')+(r.length?"<div class='cards'>"+r.slice(0,60).map(card).join('')+"</div>":chips());if(window.hdpLike)hdpLike()}
 q.addEventListener('input',function(){clearTimeout(tm);tm=setTimeout(run,120)});q.form.addEventListener('submit',function(e){e.preventDefault();q.blur();var g=go(q.value.trim().toLowerCase());if(g)return location.assign(g);run()});
 var nv=document.querySelector('.nav a[href$="#q"]');if(nv)nv.addEventListener('click',function(e){e.preventDefault();q.focus()});var u=new URLSearchParams(location.search).get('q');if(u){q.value=u;run()}})()</script>"""  # 10/24 개편: 홈이 TOP 4만 담아서 검색은 사이트 색인(search.json, 진열 상품 전부 — 처음 입력 때 1번 받음) — 🔥 먼저(목록 순서 그대로)·같은 상품 1번, 결과는 그 쪽 본문 자리에(지우면 그대로) · 아래 메뉴 '검색' = 새 쪽 X, 머리글 검색칸 초점(10/30)
 
@@ -1562,13 +1565,40 @@ PROMO_STYLE = "card"  # 홈 '지금 하는 기획전' 모양(10/30 진우 '지�
 NV_PROMO = (f"{BASE}c/naver/?ref=promo", "핫딜픽 네이버 특가 보기 →")  # 10/30 Cowork: 네이버 행사(진열 상품 없음) = 핫딜픽 네이버 특가 쪽(naver.me 쇼핑커넥트 링크) — 네이버 쇼핑 홈은 수익 길 X
 
 
+PROMOS_AUTO = "promos_auto.json"  # 11/23 진우 '기획전 자동으로' — 봇 hotdeal.cp_events가 고른 행사(쿠팡 + 제휴 몰) · promos.json 꼴
+
+
+def promo_key(name):
+    """같은 행사 견주기용 이름: 공백·기호·연도·몰 이름·흔한 말(기획전·행사·세일…) 뺌."""
+    n = re.sub(r"20\d\d년?|\d{2}년|쿠팡|[Gg]마켓|지마켓|옥션|롯데온|이마트몰|올리브영|기획전|행사|세일|이벤트|프로모션|특가|할인", "", str(name or ""))
+    return re.sub(r"[^0-9A-Za-z가-힣]", "", n).lower()
+
+
+def promo_same(a, b):
+    """같은 행사 = 몰 같고 이름이 비슷(한쪽이 다른 쪽에 들어 있음 · 비슷한 정도 0.6↑)."""
+    x, y = promo_key(a.get("name")), promo_key(b.get("name"))
+    return a.get("mall") == b.get("mall") and bool(x and y) and (x in y or y in x or difflib.SequenceMatcher(None, x, y).ratio() >= 0.6)
+
+
+def promo_raw(today=None):
+    """promos.json(Cowork) + promos_auto.json(봇 — 11/23) 항목 · 같은 행사 = promos.json 쪽만(Cowork 문구 안 덮음)·자동끼리도 1번 · 자동 = 끝난 지 PROMO_PAST일 넘으면 X · 깨진 파일 = 없음."""
+    def rd(f):
+        try:
+            d = json.load(open(f))
+        except (OSError, ValueError):
+            return []
+        return [p for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []) if isinstance(p, dict)]
+    today = today or time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
+    cut, out = time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - PROMO_PAST * 86400)), rd(PROMOS)
+    for p in rd(PROMOS_AUTO):
+        if isinstance(p.get("end"), str) and p["end"] >= cut and not any(promo_same(q, p) for q in out):
+            out.append(p)
+    return out
+
+
 def promo_list(today):
-    """promos.json -> [(항목, 상태, 첫날)] 상태 순(오늘 마감 'end' → 진행 중 'on'(사전 행사 중도) → 곧 시작 'soon' → 지난 'past'). 깨진 파일 = [](칸 숨김) · 모양이 틀린 항목 = 뺌
+    """promos.json + promos_auto.json(promo_raw) -> [(항목, 상태, 첫날)] 상태 순(오늘 마감 'end' → 진행 중 'on'(사전 행사 중도) → 곧 시작 'soon' → 지난 'past'). 깨진 파일 = [](칸 숨김) · 모양이 틀린 항목 = 뺌
     (HTML·주소·파일 이름에 들어가는 값: id·mall = 영문 소문자·숫자, 주소 = https, 색 = #hex, 날짜 = YYYY-MM-DD)."""
-    try:
-        d = json.load(open(PROMOS))
-    except (OSError, ValueError):
-        return []
     def day(v):  # 형식 + 진짜 날짜(11-31 = 뺌 — 빌드가 멈추면 그 실행 게시가 다음 실행에 또 나감)
         try:
             return v is None or isinstance(v, str) and re.fullmatch(PROMO_DATE, v) and time.strptime(v, "%Y-%m-%d")
@@ -1576,7 +1606,7 @@ def promo_list(today):
             return False
     https = lambda v: v is None or isinstance(v, str) and v.startswith("https://") and not re.search(r"\s", v)
     out = []
-    for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []):
+    for p in promo_raw(today):
         if not (isinstance(p, dict) and isinstance(p.get("id"), str) and isinstance(p.get("mall"), str) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", p["id"]) and re.fullmatch(r"[a-z0-9]{1,20}", p["mall"])  # 숫자 id·mall = 뺌(정렬·글자 자르기에서 빌드가 멈춤 — 10/25 리뷰)
                 and isinstance(p.get("name"), str) and p["name"].strip() and day(p.get("start")) and day(p.get("end")) and https(p.get("url"))
                 and (p.get("pre") is None or isinstance(p["pre"], dict) and day(p["pre"].get("start")) and day(p["pre"].get("end")))
@@ -1910,6 +1940,31 @@ def search_index(it, tags={}):
         out.append({"i": i, "n": name, "s": chip_of(p), "p": shown, "e": (ex or [""])[0], "u": (grey or [""])[0], "b": badge(p, sh), "m": icon_key(p), "c": c[3] if c else "",
                     "g": img_of(p), "k": " ".join(x for x in (name, chip_of(p), parse(title_of(p["text"]))[0], c and c[1], ALIAS(name), tags.get(p.get("url")), p.get("series") in SERIES_BY and f"{SERIES_BY[p["series"]][0]} #{p.get('no')} 시리즈") if x).lower()})
     return out
+
+
+SUGGEST_PIN, SUGGEST_N, SUGGEST_MIN = "suggest_pin.json", 8, 3  # 11/23 진우 '추천검색어 키워드도' — 고정 목록(Cowork·진우가 씀 · ["귤", …]) · 칩 8개까지 · 진열 tag는 지금 진열 3개↑
+
+
+def suggest_words(it, idx, today):
+    """docs/suggest.json 추천 검색어(11/23 진우): ⓐ suggest_pin.json(맨 앞 — 목록 또는 {"words": 목록}) ⓑ 진열 tag 중 지금 진열 SUGGEST_MIN개↑·확인(chk) 3일 안인 품목(많은 순)
+    ⓒ GoatCounter 7일 많이 본 상품(gc_top.json week)의 tag 품목 -> 낱말(연도·이모지·기호 뺌 · 12자까지) · 겹침 X(같은 말·한쪽이 다른 쪽에 들어감 = 같은 품목 1개)
+    · 검색 결과 0개 낱말 X(search.json k — 검색칸과 같은 규칙: 띄어 쓴 낱말이 모두 들어 있음) · SUGGEST_N개까지 · 깨진 파일 = 없음."""
+    word = lambda v: re.sub(r"\s*(?:20\d\d|\d\d년)\s*$", "", re.sub(r"\s+", " ", re.sub(r"[^0-9A-Za-z가-힣 ]", " ", str(v or "")))).strip()
+    def rd(f, k):
+        try:
+            d = json.load(open(f))
+        except (OSError, ValueError):
+            return []
+        d = d.get(k) if isinstance(d, dict) else d
+        return list(d) if isinstance(d, (list, dict)) else []
+    ev, cut = ev_info(), time.strftime("%Y-%m-%d", time.gmtime(calendar.timegm(time.strptime(today, "%Y-%m-%d")) - 3 * 86400))
+    n = collections.Counter(word(ev[p["url"]].get("tag")) for _, p, _ in it if (ev.get(p.get("url")) or {}).get("chk", "") >= cut)
+    out = []
+    for w in [word(x) for x in rd(SUGGEST_PIN, "words") if isinstance(x, str)] + [w for w, k in n.most_common() if k >= SUGGEST_MIN] + [word((ev.get(u) or {}).get("tag")) for u in rd("gc_top.json", "week")]:
+        ks = w.lower().split()
+        if w and len(w) <= 12 and not any(w in o or o in w for o in out) and any(all(k in x["k"] for k in ks) for x in idx):
+            out.append(w)
+    return out[:SUGGEST_N]
 
 
 def related(i, p, pool, n=4):
@@ -3822,7 +3877,9 @@ def build(posts, out="docs"):
     open(f"{out}/index.html", "w").write(page(f"{TITLE}(hotdealpick) - 오늘의 핫딜·특가 모음 (쿠팡·네이버·토스)", body + GUIDE_NAV.get("*", "") + HASH_JS,
                                               hd, BASE, top=INSTALL,
                                               head=f'<script type="application/ld+json">{ld}</script>{HREF_KO_EN}', cur="home", lead=band + f'<div class="la">{mall_nav(evs, evh)}{tiles(tuple(CAT_META), True)}</div><div class="lb">' + ev_banner([g for g in evs if g["tag"] not in ptags]) + quick_nav(evs, len(dl) + sum(g["until"] == today for g in evs), calendar.timegm(time.strptime(today, "%Y-%m-%d")) + 86400 - 9 * 3600, tops[0].startswith("🏆"), evh) + "</div>" if posts else "", dis=HOME_DIS))
-    json.dump(search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)}), open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
+    idx = search_index(it, {x[1].get("url"): p["tag"] for p, st, _ in ps_ if st != "past" and p.get("tag") for x in promo_goods(p, it, tagged)})
+    json.dump(idx, open(f"{out}/search.json", "w"), ensure_ascii=False, separators=(",", ":"))
+    json.dump(suggest_words(it, idx, today), open(f"{out}/suggest.json", "w"), ensure_ascii=False)  # 11/23 검색창 추천 검색어(SEARCH_JS가 처음 초점 때 받음)
     try:
         prev = json.load(open(f"{out}/changes.json"))
         prev = prev if isinstance(prev, dict) else None

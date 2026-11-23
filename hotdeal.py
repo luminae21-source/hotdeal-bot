@@ -7,7 +7,7 @@ import base64, calendar, collections, glob, hashlib, hmac, html, itertools, json
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from build_site import MALL_IMG_HOSTS, THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMO_LINKS, promo_list, promo_span, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
+from build_site import MALL_IMG_HOSTS, THREADS as TH_HOME, bundle_of, SERIES_BY, SERIES_EPS, series_head, series_of, topic_slug, INDEXNOW_KEY, day_end, BASE as SITE, BLOG, GOLDBOX, NOTE_STARTS, title_of, split_title, parse, react, TOSS_HOSTS, NAVER_HOSTS, AFF_HOSTS, OY_HOSTS, toss_share, day_deals, card_order, saving, buy_label, aff, MALL_HEAD, mall_title, CATS, CARD_N, SLOT_NAMES, card_name, SAVE_STORES, STEM, unit_of, strip_cmp, OTHER_STORES, CMP_WORDS, shop_of, price_won, FOOD, CHANNEL_WEB, price_records, PRICE_MIN, DAY_ONLY, cat_of, SHELF_CATS, ev_info, ev_list, CP_LINKS, CP_PROD, CP_SHORT, CP_SUB, CP_LINK_RE, cp_swap, icon_of, md_h as S_md_h, toss_imgs as S_toss_imgs, CAT_META, GC_CODE, per_unit as S_per_unit, items as shelf_items, PRICE_ITEMS, PRICE_NOT, price_item, LINK_AB, PROMOS, PROMOS_AUTO as PROMO_AUTO, PROMO_LINKS, promo_list, promo_span, promo_days, promo_pre, site_ok, home_pool, img_of, drops, c_url, md_of, won, end_at, KAKAO_OPENCHAT_URL, season_item, season_off, PRICE_HIST, PH_DUE, ph_load, ph_key, ph_t, ph_add, ph_events, ph_posts, ph_trim, ph_last, ph_n, ph_now, ph_stat, AUTO_EVENTS, PLAN, WOMEN, guides_load, guide_url  # 제휴 도메인은 사이트와 같이 씀
 
 E = {k: "".join(v.split()) for k, v in os.environ.items()}  # 시크릿 붙여넣을 때 섞인 공백·줄바꿈 전부 제거
 ADMIN, CHANNEL = E.get("TG_ADMIN_ID", ""), E.get("TG_CHANNEL", "")
@@ -148,9 +148,10 @@ MATCH_PROMPT = """커뮤니티 핫딜 글 제목: {}
 아래는 토스쇼핑 상품 목록이야. 이 핫딜과 같은 상품(브랜드·상품명·용량·수량·구성이 같음. 가격은 쿠폰·특가 때문에 달라도 됨)을 최대 1개 pick 도구로 골라.
 확신이 없거나 같은 상품이 없으면 아무것도 고르지 마. score = 확신도 1~10, comment = 판단 이유 짧게.
 """
-EVENT_PROMPT = """오늘은 {}. 아래는 쿠팡 관련 새 뉴스 기사·커뮤니티 핫딜 글이야(제목 | 날짜 | 본문). 쿠팡 고객이 지금 또는 곧 쿠팡 앱에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
-회사 소식·실적·협약·물류·사회공헌·채용·오프라인 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이는 빼. 글에 적힌 사실만 써(지어내지 마).
-q = 행사 이름(쿠팡 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
+EVENT_PROMPT = """오늘은 {}. 아래는 쇼핑몰(쿠팡·G마켓·옥션·롯데온·이마트몰·올리브영) 관련 새 뉴스 기사·커뮤니티 핫딜 글이야(제목 | 날짜 | 본문). 고객이 지금 또는 곧 그 몰 앱·사이트에서 참여할 수 있는 할인 행사(○○데이·기획전·세일)만 pick 도구로 골라.
+회사 소식·실적·협약·물류·사회공헌·채용·오프라인(매장) 행사·단일 상품 판매 시작·이미 끝난 행사·쿠팡이츠·쿠팡플레이·11번가·SSG.COM·지그재그·에이블리 행사는 빼. 글에 적힌 사실만 써(지어내지 마).
+mall = 행사 몰(coupang·gmarket·auction·lotteon·emart·oliveyoung 중 하나), q = 행사 이름(그 몰 앱 검색어, 예: 뷰티풀데이), hook = 기간·대상 한 줄(예: 10/18(일)까지 · 와우회원), pts = 핵심 혜택 2~3개(각 30자 안),
+start·end = 글에 적힌 행사 시작·끝 날짜(YYYY-MM-DD · 글에 없으면 비워 둠 — 짐작 X), benefit = 글에 적힌 대표 혜택 한 줄(30자 안 · 없으면 비워 둠),
 e = 어울리는 이모지 1개, comment = 고른 이유 짧게, score = 고객에게 쓸모 1~10(6 이상만 게시).
 """
 CP_REMIND_HOURS = (13, 19)  # 쿠팡 링크 아직 안 만든 오늘 딜 사본을 관리자에게 다시(10/8 진우 '쿠팡 링크 공유 쉽게') — coupang_remind()
@@ -357,7 +358,8 @@ def ai_pick(prompt, lines):
             "properties": {"i": {"type": "integer"}, "score": {"type": "integer"}, "comment": {"type": "string"},
                            "q": {"type": "string"}, "e": {"type": "string"}, "hook": {"type": "string"},
                            "pts": {"type": "array", "items": {"type": "string"}}, "unit": {"type": "string"}, "warn": {"type": "string"},
-                           "who": {"type": "string"}, "use": {"type": "string"}}}}}}}
+                           "who": {"type": "string"}, "use": {"type": "string"},
+                           "mall": {"type": "string"}, "start": {"type": "string"}, "end": {"type": "string"}, "benefit": {"type": "string"}}}}}}}
     r = json.loads(http("https://api.anthropic.com/v1/messages", {
         "model": MODEL, "max_tokens": 8000, "tools": [tool], "tool_choice": {"type": "auto"},  # 10/19 17:23 커뮤니티 글 많은 회차에 4000으로 picks가 잘림(다음 실행 복구) -> 8000(쓴 만큼만 과금)
         "messages": [{"role": "user", "content": prompt + season_note("\n") + "\n" + "\n".join(f"{i}. {l}" for i, l in enumerate(lines))}],
@@ -4148,15 +4150,18 @@ def cp_events(seen, deals=()):
            for it in ET.fromstring(http(CP_NEWS)).iter("item")]
     new += [(d["url"], d["title"], time.time() - d["age"] * 60, d["desc"]) for d in deals if re.search(r"데이|기획전|페스타|세일|위크|행사|쿠폰|이벤트", d["title"])]
     posted = "\n".join(p["text"] for p in [q for q in load(POSTS, []) if not q.get("shelf")][-80:])  # 딜로 이미 올라간 글은 빼기
-    new = [x for x in new if "쿠팡" in x[1] and x[2] > since and "cn_" + x[0] not in seen and x[1][:25] not in posted]
+    new = [x for x in new if re.search(PROMO_AUTO_RX, x[1]) and x[2] > since and "cn_" + x[0] not in seen and x[1][:25] not in posted]  # 11/23 쿠팡 + 제휴 몰(기획전 자동 — 채널 글은 쿠팡만)
     if not new:
         return
     today = time.strftime("%Y-%m-%d", time.gmtime(time.time() + 9 * 3600))
     picks = ai_pick(EVENT_PROMPT.format(today), [f"{t} | {time.strftime('%m/%d', time.gmtime(ts + 9 * 3600))} | {body[:1500]}" for _, t, ts, body in new])
     print("cp_events", [(p["score"], p.get("q")) for p in picks], "/", len(new))
     done = {x[0] for x in new} - {new[p["i"]][0] for p in picks if p["score"] >= 6 and p.get("q")}
-    rv_fields("cpev", [p for p in picks if new[p["i"]][0] not in done], [new[p["i"]][1] for p in picks if new[p["i"]][0] not in done], f"오늘 {today}")  # Z 재검토(훅·이유 칸)
-    for p in picks:
+    promo_auto_add([p for p in picks if new[p["i"]][0] not in done], new, time.time())  # 11/23 진우 '기획전 자동으로' — 사이트 기획전·쇼핑 달력·행사 알림 글(promos.json과 합침)
+    cpp = [p for p in picks if (p.get("mall") or "coupang") == "coupang"]
+    done |= {new[p["i"]][0] for p in picks if p not in cpp}  # 다른 몰 행사 = 기획전 자동만(채널 글 X — 버튼이 쿠팡 링크)
+    rv_fields("cpev", [p for p in cpp if new[p["i"]][0] not in done], [new[p["i"]][1] for p in cpp if new[p["i"]][0] not in done], f"오늘 {today}")  # Z 재검토(훅·이유 칸)
+    for p in cpp:
         link = new[p["i"]][0]
         if link in done:
             continue
@@ -4171,6 +4176,52 @@ def cp_events(seen, deals=()):
                 [{"text": "📢 채널에 올라간 글", "url": post_url(m["message_id"])}], [{"text": "📰 보도자료", "url": link}],
                 [{"text": "쿠팡 행사 · 행사 페이지 파트너스 링크 답장하면 버튼 교체(선택)", "callback_data": "-"}]]})
     seen.update({"cn_" + x: time.time() for x in done})
+
+
+PROMO_AUTO_MALLS = {"coupang": "쿠팡", "gmarket": "G마켓", "auction": "옥션", "lotteon": "롯데온", "emart": "이마트몰", "oliveyoung": "올리브영"}  # 11/23 기획전 자동 = 제휴 되는 몰만(11번가·SSG.COM·지그재그·에이블리 X)
+PROMO_AUTO_RX = r"쿠팡|[Gg]마켓|지마켓|옥션|롯데온|이마트몰|올리브영"
+
+
+def promo_auto_day(v, text, year):
+    """Claude가 준 날짜 -> 'YYYY-MM-DD' — 형식·진짜 날짜·올해/내년 · 그 달·날이 글에 적혀 있을 때만('11/25'·'11.25'·'11월 25일'·'25일'), 아니면 None(지어낸 날짜 X)."""
+    try:
+        t = time.strptime(str(v or ""), "%Y-%m-%d")
+    except ValueError:
+        return None
+    if t.tm_year not in (year, year + 1) or not re.search(rf"(?<!\d){t.tm_mon}\s*[/.월]\s*0?{t.tm_mday}(?!\d)|(?<!\d)0?{t.tm_mday}\s*일", text):
+        return None
+    return time.strftime("%Y-%m-%d", t)
+
+
+def promo_auto_add(picks, new, now):
+    """11/23 진우 '지금 기획전 자동으로 올라가게': cp_events가 고른 행사(점수 6↑ · 제휴 몰) -> PROMOS_AUTO(promos.json 꼴 — build_site.promo_raw가 합침, 같은 행사 = promos.json이 이김).
+    기간·혜택 = 글(제목·본문)에 있는 것만(promo_auto_day · 혜택 숫자가 글에 없거나 70%↑ = 혜택 X) · 끝(end) 없는 글 = X · src = 기사·글 주소 · 쿠팡 url·cta = None(홈 파트너스 링크) · 링크프라이스 몰 = 몰 홈(promo_links가 딥링크)
+    · 같은 몰·비슷한 이름 = 1번 · 끝난 지 3일 넘은 것 = 뺌 · 깨진 파일 = 없음 취급."""
+    import build_site
+    kst = time.gmtime(now + 9 * 3600)
+    today, old = time.strftime("%Y-%m-%d", kst), load(PROMO_AUTO, {})
+    cut = time.strftime("%Y-%m-%d", time.gmtime(now + 9 * 3600 - 3 * 86400))
+    raw = old.get("promos") if isinstance(old, dict) and isinstance(old.get("promos"), list) else []
+    ps = [p for p in raw if isinstance(p, dict) and str(p.get("end") or "") >= cut]
+    for p in picks:
+        link, title, _, body = new[p["i"]]
+        text, mall, name = f"{title} {body}", (p.get("mall") or "coupang").strip().lower(), clip(str(p.get("q") or "").strip(), 40)
+        start, end = promo_auto_day(p.get("start"), text, kst.tm_year), promo_auto_day(p.get("end"), text, kst.tm_year)
+        if p.get("score", 0) < 6 or mall not in PROMO_AUTO_MALLS or not name or not end or end < today or not str(link).startswith("https://"):
+            continue
+        b = str(p.get("benefit") or "").strip()
+        if not b or any(n not in text for n in re.findall(r"\d[\d,.]*", b)) or any(int(m) >= 70 for m in re.findall(r"(\d+)\s*%", b)):
+            b = None  # 글에 없는 숫자·70%↑ 할인율 = 혜택 줄 X
+        q = {"id": "au-" + hashlib.md5(f"{mall}|{name}".encode()).hexdigest()[:12], "mall": mall, "mall_name": PROMO_AUTO_MALLS[mall], "sub": None, "name": name,
+             "start": start if start and start <= end else None, "end": end, "pre": None, "benefit": b and clip(b, 40), "tag": None,
+             "url": None if mall == "coupang" else MALL_SITES[mall], "cta": None, "src": link, "chk": time.strftime("%Y-%m-%d %H:%M", kst), "kw": None}
+        if any(build_site.promo_same(x, q) for x in ps):  # 같은 행사 두 번 X
+            continue
+        ps.append(q)
+        print("promo auto", mall, name, q["start"] or "?", "~", end)
+    if ps != raw:  # 바뀔 때만 씀
+        json.dump({"note": "봇 자동(cp_events — 11/23) · 손으로 고치지 말 것: 같은 행사는 promos.json이 이김", "updated": time.strftime("%Y-%m-%d %H:%M", kst), "promos": ps},
+                  open(PROMO_AUTO, "w"), ensure_ascii=False, indent=1)
 
 
 def threads_hint(e):
@@ -14055,9 +14106,9 @@ MALL_BLOCK_DAYS, MALL_SQUARE = 7, (0.8, 1.25)  # W(10/26 Cowork): 몰 사이트�
 
 
 def promo_urls():
-    """promos.json(Cowork 기획전 — 깨진 파일 = 없음) 항목들."""
-    d = load(PROMOS, {})
-    return [p for p in (d.get("promos") if isinstance(d, dict) and isinstance(d.get("promos"), list) else []) if isinstance(p, dict)]
+    """promos.json(Cowork 기획전) + promos_auto.json(봇 — 11/23) 항목들(build_site.promo_raw — 깨진 파일 = 없음)."""
+    import build_site
+    return build_site.promo_raw()
 
 
 def promo_links(seen):

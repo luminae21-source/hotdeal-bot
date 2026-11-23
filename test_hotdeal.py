@@ -797,7 +797,7 @@ cdeals = [{"id": "ppomppu_9", "url": "https://www.ppomppu.co.kr/zboard/view.php?
           {"id": "ppomppu_12", "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=12", "title": "[쿠팡] 사흘 전 브랜드데이", "desc": "", "age": 4000}]  # 2일 지난 글 제외
 eprompts.clear(); H.ai_pick = lambda prompt, lines: eprompts.append(lines) or [{"i": 0, "score": 8, "q": "로켓프레시데이", "hook": "10/20~26", "comment": "c"}]
 sent.clear(); H.cp_events(seen, cdeals)
-assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰"]]  # 기사 없는 행사: 커뮤니티 글(쿠팡+행사 낱말, 딜로 안 올라간 것)만
+assert eprompts == [["[쿠팡] 로켓프레시 데이 최대 50% (10/20~26) | 10/09 | 와우 회원 쿠폰", "[G마켓] 빅스마일데이 시작 | 10/09 | "]]  # 기사 없는 행사: 커뮤니티 글(쿠팡·제휴 몰 + 행사 낱말, 딜로 안 올라간 것)만 · 11/23 G마켓도(기획전 자동 — 채널 글은 쿠팡만)
 assert sent[0][1]["reply_markup"]["inline_keyboard"][0][0] == {"text": "🚀 쿠팡 바로가기", "url": H.CP_FRESH} and "ppomppu_9" in seen and "ppomppu_10" not in seen  # 행사로 올린 글은 딜로 또 안 올림
 open("posts.json", "w").write(pjb)
 assert "goldbox, lambda s: cp_events(s, deals), new_sets, day_posts, mall_card_post, top_deals, pick_post, steady_list, cp_mix, nn_bundle, pair_post, weather_post, cal_post, x_post, chat_post, animals, curation, drop_post, snack_post, poll_post, toss_deals" in inspect.getsource(H.main)
@@ -15878,3 +15878,65 @@ assert (e215[U215]["now"], e215[U215]["chk"], e215[U215]["tag"], e215[U215]["pid
 assert (e215[V215]["now"], e215[V215]["chk"]) == ("7,100원", "2026-11-21 09:05"), e215[V215]  # auto 확인이 늦음 = auto now·chk
 h215 = {}; S.ph_events(h215, e215); assert h215["186449328:1033412099"] == [["26112115", 6990, "", "cw"]], h215  # 가격 기록 cw = Cowork 새 확인(11/21 15시 6,990원)
 os.chdir(cwd215)
+# 9-216 (11/23 진우 '지금 기획전 자동으로 올라가게'): cp_events가 고른 행사(쿠팡 + 제휴 몰 G마켓·옥션·롯데온·이마트몰·올리브영) -> promos_auto.json(promos.json 꼴) · 사이트·달력·알림 글 = promos.json과 합침(같은 행사 = promos.json)
+#   기간·혜택 = 글에 있는 것만(지어낸 날짜·글에 없는 숫자·70%↑ = X) · 끝 없는 글 X · 제휴 없는 몰 X · 같은 행사 두 번 X · 끝난 지 3일 넘으면 X · 깨진 파일 = 없음 · 채널 글 = 쿠팡만
+cwd216, sv216 = os.getcwd(), (H.http, H.ai_pick, H.tg, time.time)
+os.chdir(tempfile.mkdtemp()); json.dump([], open("posts.json", "w"))
+time.time = lambda: TK("2026-11-23 10:00")
+rss216 = lambda xs: '<?xml version="1.0"?><rss><channel>' + "".join(f"<item><title>{t}</title><link>https://www.news.example/{n}</link><pubDate>Mon, 23 Nov 2026 00:00:00 +0000</pubDate><description><![CDATA[{b}]]></description></item>" for n, t, b in xs) + "</channel></rss>"
+X216 = [(1, "쿠팡, 25일까지 '블랙프라이데이' 최대 80% 할인", "11월 20일부터 25일까지 쿠팡 블랙프라이데이 · 5,000원 쿠폰"),
+        (2, "G마켓 빅스마일데이 11/24~12/1 개최", "11월 24일부터 12월 1일까지 · 최대 20% 쿠폰"),
+        (3, "11번가 십일절, 쿠팡도 맞불 11/30까지", "30일까지"), (4, "롯데온 겨울 세일 시작", "곧 시작해요"), (5, "올리브영 올영세일 12/5까지", "12월 5일까지 · 1+1"), (7, "지그재그 블프 12/1까지", "1일까지")]  # 지그재그 = 몰 이름 X -> Claude에 안 감
+H.http = lambda url, *a, **k: rss216(X216)
+ix216 = lambda lines, w: next(k for k, l in enumerate(lines) if w in l)
+eplines216 = []
+H.ai_pick = lambda prompt, lines: eplines216.append(list(lines)) or [{**x, "i": ix216(lines, w)} for w, x in (
+    ("블랙프라이데이", {"score": 9, "q": "블랙프라이데이 세일", "mall": "coupang", "start": "2026-11-20", "end": "2026-11-25", "benefit": "5,000원 쿠폰 · 최대 80%", "comment": "c", "hook": "25일까지"}),
+    ("빅스마일데이", {"score": 8, "q": "빅스마일데이", "mall": "gmarket", "start": "2026-11-24", "end": "2026-12-01", "benefit": "최대 20% 쿠폰", "comment": "c"}),
+    ("십일절", {"score": 8, "q": "십일절", "mall": "11st", "end": "2026-11-30", "comment": "c"}),  # 제휴 없는 몰
+    ("롯데온", {"score": 8, "q": "겨울 세일", "mall": "lotteon", "comment": "c"}),  # 기간(끝) 없음
+    ("올리브영", {"score": 7, "q": "올영세일", "mall": "oliveyoung", "end": "2026-12-08", "benefit": "1+1", "comment": "c"}))]  # 지어낸 날짜(글엔 12/5)
+s216, sent216 = {}, []
+H.tg = lambda method, **p: sent216.append((method, p)) or {"message_id": 7}
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_events(s216)
+a216 = json.load(open("promos_auto.json"))["promos"]
+assert len(eplines216[0]) == 5 and not any("지그재그" in l for l in eplines216[0])  # 몰 이름 없는 글 = Claude에 안 감
+assert [(p["mall"], p["name"], p["start"], p["end"]) for p in a216] == [("coupang", "블랙프라이데이 세일", "2026-11-20", "2026-11-25"), ("gmarket", "빅스마일데이", "2026-11-24", "2026-12-01")], a216
+assert a216[0]["benefit"] is None and a216[1]["benefit"] == "최대 20% 쿠폰" and a216[0]["url"] is None and a216[0]["cta"] is None and a216[1]["url"] == H.MALL_SITES["gmarket"]  # 80% = 혜택 X · 쿠팡 = 홈 파트너스 링크(None)
+assert all(p["src"].startswith("https://www.news.example/") and re.fullmatch(r"au-[0-9a-f]{12}", p["id"]) and p["chk"] == "2026-11-23 10:00" and p["mall_name"] for p in a216)
+assert [m for m, p in sent216 if m == "sendMessage"] == ["sendMessage"] and "블랙프라이데이" in sent216[0][1]["text"]  # 채널 글 = 쿠팡만(G마켓 X)
+X216.append((6, "G마켓 빅스마일 데이 세일 다시", "12월 1일까지"))
+H.ai_pick = lambda prompt, lines: [{"i": len(lines) - 1, "score": 8, "q": "빅스마일 데이", "mall": "gmarket", "end": "2026-12-01", "comment": "c"}]
+with contextlib.redirect_stdout(io.StringIO()):
+    H.cp_events(s216)
+assert len(json.load(open("promos_auto.json"))["promos"]) == 2  # 같은 행사 두 번 X
+json.dump({"promos": [{"id": "cp-bf", "mall": "coupang", "mall_name": "쿠팡", "name": "블랙프라이데이", "start": "2026-11-20", "end": "2026-11-25", "benefit": "Cowork 문구", "url": None, "cta": None}]}, open("promos.json", "w"), ensure_ascii=False)
+l216 = [(p["id"], p.get("benefit")) for p, st, _ in S.promo_list("2026-11-23")]
+assert ("cp-bf", "Cowork 문구") in l216 and not any(i.startswith("au-") and "블랙" in n for i, n in [(p["id"], p["name"]) for p, *_ in S.promo_list("2026-11-23")]) and any(p["mall"] == "gmarket" for p, *_ in S.promo_list("2026-11-23")), l216  # promos.json이 이김 · G마켓 자동은 보임
+assert not any(p["mall"] == "gmarket" for p, *_ in S.promo_list("2026-12-05")) and any(p["mall"] == "gmarket" for p, *_ in S.promo_list("2026-12-04"))  # 끝난 지 3일 넘으면 X
+open("promos_auto.json", "w").write("{깨짐"); assert [p["id"] for p, *_ in S.promo_list("2026-11-23")] == ["cp-bf"] and [p["id"] for p in H.promo_urls()] == ["cp-bf"]  # 깨진 파일 = 없음
+open("promos.json", "w").write("깨짐"); assert S.promo_list("2026-11-23") == []
+assert H.promo_auto_day("2026-11-25", "25일까지", 2026) == "2026-11-25" and H.promo_auto_day("2026-11-25", "11월 26일", 2026) is None and H.promo_auto_day("2026-13-01", "1일", 2026) is None and H.promo_auto_day("2024-11-25", "11/25", 2026) is None
+(H.http, H.ai_pick, H.tg, time.time) = sv216; os.chdir(cwd216)
+# 9-217 (11/23 진우 '추천검색어 키워드도 만들어줘'): docs/suggest.json = ⓐ suggest_pin.json(맨 앞) ⓑ 진열 tag(지금 진열 3개↑ · 확인 3일 안) ⓒ GoatCounter 7일 많이 본 상품 tag
+#   · 겹침 X(같은 품목 1개) · 검색 결과 0개 낱말 X · 8개까지 · 글자만(이모지 X) · 검색창 초점(빈 칸)·결과 0개 = 칩 · 누르면 그 낱말로 검색 · GoatCounter suggest/<낱말>
+cwd217 = os.getcwd(); os.chdir(tempfile.mkdtemp())
+U217 = lambda k: f"https://link.coupang.com/a/sg{k}"
+EV217 = [{"at": "2026-11-23 08:00", "url": U217(k), "tag": t, "chk": c} for k, (t, c) in enumerate(
+    [("붕어빵 2026", "2026-11-22 10:00")] * 3 + [("주방세제 2026", "2026-11-23 09:00")] * 2 + [("핫팩 2026", "2026-11-23 09:00")] * 3 + [("수면양말 2026", "2026-11-18 09:00")] * 3
+    + [("율무차 2026", "2026-11-10 09:00"), ("제주 감귤 2026", "2026-11-10 09:00")])]
+json.dump(EV217, open("events.json", "w"), ensure_ascii=False)
+it217 = [(k, {"url": e["url"], "text": "x"}, (0,)) for k, e in enumerate(EV217)]
+idx217 = [{"k": k} for k in ("붕어빵 기계 쿠팡", "주방세제 1l", "핫팩 100g", "귤 3kg", "율무차 50개", "제주 감귤 5kg", "수면양말 5켤레")]
+json.dump(["귤 🍊", "핫팩", "없는말"], open("suggest_pin.json", "w"), ensure_ascii=False)
+json.dump({"week": {U217(11): "2026-11-22", U217(12): "2026-11-21"}}, open("gc_top.json", "w"))
+assert S.suggest_words(it217, idx217, "2026-11-23") == ["귤", "핫팩", "붕어빵", "율무차"], S.suggest_words(it217, idx217, "2026-11-23")
+# 귤 = 이모지 뺌 · 없는말 = 결과 0개 X · 붕어빵 = 진열 3개·3일 안 · 주방세제 = 2개 X · 핫팩 tag = 고정과 겹침 1번 · 수면양말 = 확인 5일 전 X · 율무차 = 7일 많이 본 tag · 제주 감귤 = '귤'과 같은 품목 X
+json.dump({"words": [f"품목{k}" for k in range(12)]}, open("suggest_pin.json", "w"), ensure_ascii=False)
+assert S.suggest_words(it217, [{"k": " ".join(f"품목{k}" for k in range(12))}], "2026-11-23") == [f"품목{k}" for k in range(8)]  # 8개까지 · {"words": …} 꼴도
+open("suggest_pin.json", "w").write("깨짐"); open("gc_top.json", "w").write("깨짐"); assert S.suggest_words(it217, idx217, "2026-11-23") == ["붕어빵", "핫팩"]  # 깨진 파일 = 없음
+assert all(x in S.SEARCH_JS for x in ("fetch('/suggest.json')", "data-gc='suggest/", "q.addEventListener('focus',function(){sug(true)})", ":chips());", "sg.addEventListener('pointerdown',function(e){e.preventDefault()})", "q.value=b.textContent;run();q.blur()"))  # 초점 = 칩 · 결과 0개 = 칩 · 누르면 검색 · 칩 눌러도 초점 안 잃음
+assert ".sg div{display:flex;flex-wrap:wrap;gap:6px}" in S.CSS and "white-space:nowrap" in S.CSS.split(".sg button{")[1].split("}")[0] and "max-width:100%" in S.CSS.split(".sg button{")[1].split("}")[0]  # 줄 바꿈(가로 넘침 X)
+assert 'json.dump(suggest_words(it, idx, today), open(f"{out}/suggest.json", "w")' in inspect.getsource(S.build)
+os.chdir(cwd217)
