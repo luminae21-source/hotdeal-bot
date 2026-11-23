@@ -734,11 +734,6 @@
 "added": "2026-11-19"
 },
 {
-"url": "https://hotdealpick.kr/p/5999.html",
-"kind": "deal",
-"added": "2026-11-19"
-},
-{
 "url": "https://hotdealpick.kr/p/1920.html",
 "kind": "deal",
 "added": "2026-11-19"
@@ -1230,6 +1225,11 @@
 },
 {
 "url": "https://hotdealpick.kr/p/6498.html",
+"kind": "deal",
+"added": "2026-11-23"
+},
+{
+"url": "https://hotdealpick.kr/p/6499.html",
 "kind": "deal",
 "added": "2026-11-23"
 }

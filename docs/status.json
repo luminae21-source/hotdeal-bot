@@ -1,6 +1,6 @@
 {
-"at": "2026-11-23 20:16",
-"posts": 6499,
+"at": "2026-11-23 20:33",
+"posts": 6500,
 "site": 2187,
 "mall": {
 "coupang": 1504,
@@ -11,6 +11,7 @@
 "cat": {
 "heat": 135,
 "season": 157,
+"food": 446,
 "life": 326,
 "kitchen": 164,
 "coffee": 96,
@@ -18,7 +19,6 @@
 "pet": 43,
 "snack": 110,
 "home": 101,
-"food": 446,
 "beauty": 270,
 "fashion": 105,
 "laundry": 86,
