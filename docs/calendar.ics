@@ -8,6 +8,74 @@ X-WR-TIMEZONE:Asia/Seoul
 REFRESH-INTERVAL;VALUE=DURATION:PT6H
 X-PUBLISHED-TTL:PT6H
 BEGIN:VEVENT
+UID:cp-appliance-bf-2611@hotdealpick.kr
+DTSTAMP:20261123T000500Z
+DTSTART;VALUE=DATE:20261116
+DTEND;VALUE=DATE:20261130
+SUMMARY:쿠팡 가전·디지털 블랙프라이데이
+DESCRIPTION:인기 가전·디지털 할인 · 블프페스타 라이브(11
+ /23~27) 시청 고객 추가 할인·경품 · 기간·혜택은 기사 
+ 기준이라 바뀔 수 있어요 · https://hotdealpick.kr/events/#cp-app
+ liance-bf-2611
+URL:https://hotdealpick.kr/events/#cp-appliance-bf-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 가전·디지털 블랙프라이데이 내일 시작
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:cp-goodshop-asan-2611@hotdealpick.kr
+DTSTAMP:20261123T000500Z
+DTSTART;VALUE=DATE:20261130
+DTEND;VALUE=DATE:20261201
+SUMMARY:쿠팡 아산시 우수상품 특별기획전
+DESCRIPTION:충남 아산시 우수 농산물 40여 개 로켓배송 · 기
+ 간·혜택은 기사 기준이라 바뀔 수 있어요 · https://hotdeal
+ pick.kr/events/#cp-goodshop-asan-2611
+URL:https://hotdealpick.kr/events/#cp-goodshop-asan-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 아산시 우수상품 특별기획전 내일 마감
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:cp-rlux-fashionbf-2611@hotdealpick.kr
+DTSTAMP:20261123T000500Z
+DTSTART;VALUE=DATE:20261120
+DTEND;VALUE=DATE:20261202
+SUMMARY:쿠팡 R.LUX 패션 블랙 프라이데이
+DESCRIPTION:약 2\,500개 브랜드 패션 33만여 개 · 전 상품 무
+ 료배송 · 와우회원 구매 뒤 30일 안 무료 반품 · 12/1 오
+ 후 6시까지 · 기간·혜택은 기사 기준이라 바뀔 수 있어
+ 요 · https://hotdealpick.kr/events/#cp-rlux-fashionbf-2611
+URL:https://hotdealpick.kr/events/#cp-rlux-fashionbf-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 R.LUX 패션 블랙 프라이데이 내일 시작
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:cp-rocketjikgu-bf-2611@hotdealpick.kr
+DTSTAMP:20261123T000500Z
+DTSTART;VALUE=DATE:20261123
+DTEND;VALUE=DATE:20261202
+SUMMARY:쿠팡 쿠블프(로켓직구 블랙프라이데이)
+DESCRIPTION:해외 직구 상품 약 3만 개 · 선착순 메가딜·하
+ 루특가·990원 딜 · 2개 이상 사면 10% 쿠폰 · 일본 상품 7\
+ ,000원 쿠폰 · 기간·혜택은 기사 기준이라 바뀔 수 있어
+ 요 · https://hotdealpick.kr/events/#cp-rocketjikgu-bf-2611
+URL:https://hotdealpick.kr/events/#cp-rocketjikgu-bf-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 쿠블프(로켓직구 블랙프라이데이) 내일 시
+ 작
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:lo-bigsave-2611@hotdealpick.kr
 DTSTAMP:20261123T000500Z
 DTSTART;VALUE=DATE:20261129

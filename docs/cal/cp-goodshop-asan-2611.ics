@@ -1,0 +1,26 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//hotdealpick.kr//shopping calendar//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:쿠팡 아산시 우수상품 특별기획전
+X-WR-TIMEZONE:Asia/Seoul
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+X-PUBLISHED-TTL:PT6H
+BEGIN:VEVENT
+UID:cp-goodshop-asan-2611@hotdealpick.kr
+DTSTAMP:20261123T000500Z
+DTSTART;VALUE=DATE:20261130
+DTEND;VALUE=DATE:20261201
+SUMMARY:쿠팡 아산시 우수상품 특별기획전
+DESCRIPTION:충남 아산시 우수 농산물 40여 개 로켓배송 · 기
+ 간·혜택은 기사 기준이라 바뀔 수 있어요 · https://hotdeal
+ pick.kr/events/#cp-goodshop-asan-2611
+URL:https://hotdealpick.kr/events/#cp-goodshop-asan-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 아산시 우수상품 특별기획전 내일 마감
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+END:VCALENDAR
