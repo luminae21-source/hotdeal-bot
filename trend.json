@@ -1,16 +1,21 @@
 {
  "google": {
-  "at": "2026-11-24 04:03",
+  "at": "2026-11-24 05:01",
   "items": [
    {
+    "t": "브뢴뷔 대 미트윌란",
+    "n": "100+",
+    "news": "Overreaction Monday - NFL Week 11: Niners, Lions, Jags…"
+   },
+   {
     "t": "탁구",
-    "n": "200+",
+    "n": "500+",
     "news": "강릉아레나서 제15회 GN 전국장애인 탁구대회 막 내려…전국 17개 시도 300여 명 참가"
    },
    {
     "t": "노태문",
     "n": "200+",
-    "news": "삼성전자 MX 수장 내려놓은 노태문, 사내 메일서 “부품값 급등에 어려웠던 해”"
+    "news": "삼성전자 사장단 인사 – 삼성전자 뉴스룸"
    },
    {
     "t": "sk그룹",
@@ -33,6 +38,11 @@
     "news": "샌디스크 주가, 오늘 왜 급등하나?"
    },
    {
+    "t": "nasdaq",
+    "n": "100+",
+    "news": "US Stocks, Gold and Bitcoin Rebound Together: Why Is Fear…"
+   },
+   {
     "t": "to me my x men",
     "n": "500+",
     "news": "Watch the Final ‘Avengers: Doomsday’ Trailer"
@@ -41,16 +51,6 @@
     "t": "tradingview",
     "n": "100+",
     "news": "WhiteBIT launches joint Black Friday promotion with…"
-   },
-   {
-    "t": "스페이스x 주가",
-    "n": "100+",
-    "news": "제프리스도 추가 상승 전망…10%대 급등"
-   },
-   {
-    "t": "qqq",
-    "n": "200+",
-    "news": "Why is Invesco QQQ Trust surging today?"
    }
   ]
  },
