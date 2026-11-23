@@ -1,6 +1,6 @@
 {
  "note": "봇 자동(cp_events — 11/23) · 손으로 고치지 말 것: 같은 행사는 promos.json이 이김",
- "updated": "2026-11-23 09:28",
+ "updated": "2026-11-23 12:14",
  "promos": [
   {
    "id": "au-efe0add46368",
@@ -17,6 +17,23 @@
    "cta": null,
    "src": "https://www.newsis.com/view/NISX20261122_0003878254",
    "chk": "2026-11-23 09:28",
+   "kw": null
+  },
+  {
+   "id": "au-1d5624307f63",
+   "mall": "coupang",
+   "mall_name": "쿠팡",
+   "sub": null,
+   "name": "쿠블프",
+   "start": "2026-11-23",
+   "end": "2026-12-01",
+   "pre": null,
+   "benefit": "2개 이상 구매 시 10% 할인 쿠폰",
+   "tag": null,
+   "url": null,
+   "cta": null,
+   "src": "https://www.newsis.com/view/NISX20261123_0003878817",
+   "chk": "2026-11-23 12:14",
    "kw": null
   }
  ]
