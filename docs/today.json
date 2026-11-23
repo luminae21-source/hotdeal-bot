@@ -1,24 +1,37 @@
 {
- "date": "2026-11-23",
- "updated": "2026-11-23 06:33 봇",
+ "date": "2026-11-24",
+ "updated": "2026-11-24 06:38 봇",
  "items": [
   {
-   "fact": "서울 아침 2도 · 비 올 확률 100%",
+   "fact": "서울 아침 영하 1도",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
     "출퇴근 겨울템 2026",
+    "겨울 머플러",
     "핫초코·코코아",
     "율무차"
    ]
   },
   {
-   "fact": "블랙프라이데이(11/27)까지 4일",
+   "fact": "블랙프라이데이(11/27)까지 3일",
    "kind": "cal",
    "src": "",
    "fit": [
     "블랙프라이데이 2026"
    ]
+  },
+  {
+   "fact": "가전·디지털 블랙프라이데이 11/29까지",
+   "kind": "cal",
+   "src": "",
+   "fit": []
+  },
+  {
+   "fact": "R.LUX 패션 블랙 프라이데이 12/1까지",
+   "kind": "cal",
+   "src": "",
+   "fit": []
   }
  ]
 }
