@@ -25,6 +25,7 @@ BLOG = "https://blog.naver.com/hotdeal_pick"
 INSTA = "https://www.instagram.com/hotdealpick.kr/"
 THREADS = "https://www.threads.com/@hotdealpick.kr"
 GOLDBOX = "https://link.coupang.com/a/hBMtMDCxFY"  # 쿠팡 파트너스 간편 링크: 골드박스 페이지(coupang.com/np/goldbox), 10/6 생성. 클릭 후 24시간 안 쿠팡 구매가 실적
+CP_HOME = "https://link.coupang.com/a/hHgmfLTIUm"  # = hotdeal.CP_HOME(10/9 진우 파트너스 간편 링크 '쿠팡 홈' — 행사 글 버튼) · 기획전 쿠팡 카드(promo_go)
 CHANNEL_WEB = "https://t.me/s/hotdeal_pick"  # 텔레그램 채널 웹 보기(앱 없이 열림)
 TITLE = "핫딜픽"  # 브랜드 이름 (텔레그램·블로그·스레드·인스타·페이스북 모두 핫딜픽, 10/5 통일)
 ALT_NAMES = ["핫딜 픽", "hotdealpick", "hotdealpick.kr"]  # TT 10/27: JSON-LD alternateName(띄어쓰기·영문·주소로 찾아도 같은 사이트)
@@ -1675,6 +1676,8 @@ def promo_go(p, xs, slugs, links, past=False):
     if p.get("mall") == "naver":
         return NV_PROMO[0], False
     us = [u for u in (p.get("url"), (p.get("cta") or {}).get("href")) if u]
+    if p.get("mall") == "coupang" and not us and not past:  # 11/23 쿠팡 행사는 주소 없이 옴(promos.json·자동 수집 모두) → 쿠팡 홈 파트너스 링크(텔레그램 행사 글 버튼과 같은 길) — 없으면 카드가 숨겨졌음
+        return CP_HOME, True
     v = next((links[u] for u in us if isinstance(links.get(u), str) and links[u].startswith(("https://", "http://")) and aff(links[u])), "") or next((u for u in us if aff(u) or keep_host(u)), "")
     return (v, True) if v else ("", False)
 
@@ -1687,7 +1690,7 @@ def promo_shown(ps, it, tagged, links):
     순서(홈 띠·/events/ 같이) = 수익 길 있음(진열 상품 또는 제휴 링크 — 몰 홈으로만 가는 카드 = 맨 뒤) → 몰 순서(PROMO_MALL_RANK) → 같은 몰 안 = 상태 순(promo_list 그대로)."""
     out = []
     for x in ps:
-        goods, go = promo_goods(x[0], it, tagged), promo_go(x[0], [], {}, links)[0]
+        goods, go = promo_goods(x[0], it, tagged), promo_go(x[0], [], {}, links, x[1] == "past")[0]
         if goods or go:
             out.append((not (goods or aff(go) or go.startswith(BASE)), PROMO_MALL_RANK.get(x[0]["mall"], 9), len(out), x))  # 핫딜픽 쪽(e/·검색·네이버 특가) = 수익 길 O
     return [x for *_, x in sorted(out, key=lambda y: y[:3])]
