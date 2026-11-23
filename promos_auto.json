@@ -1,0 +1,23 @@
+{
+ "note": "봇 자동(cp_events — 11/23) · 손으로 고치지 말 것: 같은 행사는 promos.json이 이김",
+ "updated": "2026-11-23 09:28",
+ "promos": [
+  {
+   "id": "au-efe0add46368",
+   "mall": "lotteon",
+   "mall_name": "롯데온",
+   "sub": null,
+   "name": "파자마위크",
+   "start": null,
+   "end": "2026-11-29",
+   "pre": null,
+   "benefit": "홈웨어 최대 63% 할인",
+   "tag": null,
+   "url": "https://www.lotteon.com",
+   "cta": null,
+   "src": "https://www.newsis.com/view/NISX20261122_0003878254",
+   "chk": "2026-11-23 09:28",
+   "kw": null
+  }
+ ]
+}
