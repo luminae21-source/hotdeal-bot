@@ -44,5 +44,13 @@
   "cal_add": 0,
   "ig_link": 0,
   "ig_buy": 0
+ },
+ "2026-11-23": {
+  "cal/google": 1,
+  "cal/webcal": 1,
+  "cal_sub": 2,
+  "cal_add": 0,
+  "ig_link": 0,
+  "ig_buy": 0
  }
 }
