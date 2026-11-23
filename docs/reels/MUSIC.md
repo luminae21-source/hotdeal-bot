@@ -7,8 +7,8 @@
 |---|---|---|
 | Vlog Sunny Travel Diary (11/9 플레이리스트에서 뺌 — 지난 릴스 기록) | alex-morgan | https://pixabay.com/music/lofi-vlog-sunny-travel-diary-578504/ |
 | Short Jam (11/9 플레이리스트에서 뺌 — 지난 릴스 기록) | EdR | https://pixabay.com/music/upbeat-short-jam-160347/ |
-| Short Upbeat Jingle | alanajordan | https://pixabay.com/music/upbeat-short-upbeat-jingle-253295/ |
-| Upbeat & Fun for Shorts | FernsCreativeCorner | https://pixabay.com/music/upbeat-upbeat-amp-fun-for-shorts-under-one-minute-122192/ |
+| Short Upbeat Jingle (11/23 플레이리스트에서 뺌 — 지난 릴스 기록) | alanajordan | https://pixabay.com/music/upbeat-short-upbeat-jingle-253295/ |
+| Upbeat & Fun for Shorts (11/23 플레이리스트에서 뺌 — 지난 릴스 기록) | FernsCreativeCorner | https://pixabay.com/music/upbeat-upbeat-amp-fun-for-shorts-under-one-minute-122192/ |
 | Happy Lofi | AtlasAudio | https://pixabay.com/music/beats-happy-lofi-593048/ |
 | Motivation Upbeat (Fun Day) | BombinSound | https://pixabay.com/music/beats-motivation-upbeat-fun-day-594803/ |
 | Summer Splash Lofi | Epicsongs | https://pixabay.com/music/folk-lofi-7-summer-splash-background-music-391679/ |
@@ -17,6 +17,8 @@
 | Cozy Cafe Moments (Soft Chillhop) | DesiFreeMusic | https://pixabay.com/music/pop-cozy-cafe-moments-soft-chillhop-1-449125/ |
 | Happy Upbeat | DELOSound | https://pixabay.com/music/lofi-happy-upbeat-456257/ |
 | Joyful Happy Upbeat Background Music | alex-morgan | https://pixabay.com/music/pop-joyful-happy-upbeat-background-music-587376/ |
+| Coffee's Cold (Upbeat) | vibemode | https://pixabay.com/music/rock-upbeat-coffeex27s-cold-545907/ |
+| Sunny Snow | Turning_Pages | https://pixabay.com/music/lofi-sunny-snow-448295/ |
 
 **라이선스: Pixabay Content License** (https://pixabay.com/service/license-summary/)
 - 상업 이용 가능 · 출처 표기 의무 없음(캡션에 🎵 곡명 (Pixabay)는 예의로 적음) · 영상에 넣어 쓰는 건 허용

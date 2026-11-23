@@ -1,19 +1,5 @@
 [
  {
-  "name": "Short Upbeat Jingle — alanajordan",
-  "page": "https://pixabay.com/music/upbeat-short-upbeat-jingle-253295/",
-  "url": "https://cdn.pixabay.com/download/audio/2024/10/21/audio_bc2a71b98d.mp3?filename=alanajordan-short-upbeat-jingle-253295.mp3",
-  "fid": "CQACAgQAAxkDAAIFZGrxJ_VnBM1TrZ7QTHNg4gprOB46AAKcCwACLPMtUnMc4HY5_KoJPQQ",
-  "sent": 1
- },
- {
-  "name": "Upbeat & Fun for Shorts — FernsCreativeCorner",
-  "page": "https://pixabay.com/music/upbeat-upbeat-amp-fun-for-shorts-under-one-minute-122192/",
-  "url": "https://cdn.pixabay.com/download/audio/2022/10/08/audio_3e8961633b.mp3?filename=fernscreativecorner-upbeat-amp-fun-for-shorts-under-one-minute-122192.mp3",
-  "fid": "CQACAgQAAxkDAAIFZWrxJ_YHpz8H206eOV5z0nkzHPfkAAKACwACbpgsUo_21s3PIhq8PQQ",
-  "sent": 1
- },
- {
   "name": "Happy Lofi — AtlasAudio",
   "page": "https://pixabay.com/music/beats-happy-lofi-593048/",
   "url": "https://cdn.pixabay.com/download/audio/2026/08/27/audio_287d530bef.mp3?filename=atlasaudio-happy-lofi-593048.mp3",
@@ -68,5 +54,15 @@
   "url": "https://cdn.pixabay.com/download/audio/2026/08/17/audio_095df599a7.mp3?filename=alex-morgan-joyful-happy-upbeat-background-music-587376.mp3",
   "fid": "CQACAgQAAxkDAAIFbWrxJ_3FvMhzwtExKkfZ94dvSBFIAALTCwACgpyUU7r43VbBz4W_PQQ",
   "sent": 1
+ },
+ {
+  "name": "Coffee's Cold (Upbeat) — vibemode",
+  "page": "https://pixabay.com/music/rock-upbeat-coffeex27s-cold-545907/",
+  "url": "https://cdn.pixabay.com/download/audio/2026/06/09/audio_25f765f1c7.mp3?filename=vibemode-upbeat-coffeex27s-cold-545907.mp3"
+ },
+ {
+  "name": "Sunny Snow — Turning_Pages",
+  "page": "https://pixabay.com/music/lofi-sunny-snow-448295/",
+  "url": "https://cdn.pixabay.com/download/audio/2025/12/15/audio_82afa3684a.mp3?filename=turning_pages-sunny-snow-448295.mp3"
  }
 ]
