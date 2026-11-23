@@ -2,11 +2,6 @@
 "date": "2026-11-23",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-22/",
-"kind": "today",
-"added": "2026-11-22"
-},
-{
 "url": "https://hotdealpick.kr/c/t/t741a5c.html",
 "kind": "topic",
 "added": "2026-11-21"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/p/5421.html",
 "kind": "deal",
 "added": "2026-11-17"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-23/",
+"kind": "today",
+"added": "2026-11-23"
 }
 ],
 "q": [
@@ -1212,6 +1212,7 @@
 "https://hotdealpick.kr/guide/hot-chocolate-price-per-cup/": "2026-11-23",
 "https://hotdealpick.kr/guide/yulmu-tea-price-per-cup/": "2026-11-23",
 "https://hotdealpick.kr/p/3924.html": "2026-11-23",
-"https://hotdealpick.kr/p/5421.html": "2026-11-23"
+"https://hotdealpick.kr/p/5421.html": "2026-11-23",
+"https://hotdealpick.kr/today/2026-11-23/": "2026-11-23"
 }
 }
