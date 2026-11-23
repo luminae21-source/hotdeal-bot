@@ -1,11 +1,16 @@
 {
  "google": {
-  "at": "2026-11-24 03:06",
+  "at": "2026-11-24 04:03",
   "items": [
    {
+    "t": "탁구",
+    "n": "200+",
+    "news": "강릉아레나서 제15회 GN 전국장애인 탁구대회 막 내려…전국 17개 시도 300여 명 참가"
+   },
+   {
     "t": "노태문",
-    "n": "100+",
-    "news": "삼성전자 사장단 인사 – 삼성전자 뉴스룸"
+    "n": "200+",
+    "news": "삼성전자 MX 수장 내려놓은 노태문, 사내 메일서 “부품값 급등에 어려웠던 해”"
    },
    {
     "t": "sk그룹",
@@ -45,12 +50,7 @@
    {
     "t": "qqq",
     "n": "200+",
-    "news": "NVIDIA's Market Cap Evaporates, Equaling Amazon's, Amid…"
-   },
-   {
-    "t": "qld",
-    "n": "100+",
-    "news": "Qld critical mineral to supply fighter jets, subs…"
+    "news": "Why is Invesco QQQ Trust surging today?"
    }
   ]
  },
