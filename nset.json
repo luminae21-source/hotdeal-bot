@@ -105,6 +105,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "세탁",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "화장품",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
