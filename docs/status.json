@@ -1,15 +1,15 @@
 {
-"at": "2026-11-24 11:23",
-"posts": 6564,
-"site": 2192,
+"at": "2026-11-24 11:37",
+"posts": 6576,
+"site": 2200,
 "mall": {
-"coupang": 1509,
+"coupang": 1517,
 "toss": 627,
 "": 1,
 "naver": 55
 },
 "cat": {
-"heat": 137,
+"heat": 141,
 "season": 157,
 "pet": 43,
 "food": 446,
@@ -21,15 +21,15 @@
 "home": 101,
 "beauty": 270,
 "fashion": 107,
-"laundry": 86,
-"car": 47,
+"laundry": 88,
+"car": 49,
 "sport": 19,
 "etc": 5
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 176,
-"sitemap": 1138,
+"cp_fail": 180,
+"sitemap": 1139,
 "days": {
 "2026-11-16": {
 "site": 2053,
@@ -105,10 +105,10 @@
 }
 },
 "2026-11-24": {
-"site": 2192,
-"sitemap": 1138,
+"site": 2200,
+"sitemap": 1139,
 "mall": {
-"coupang": 1509,
+"coupang": 1517,
 "toss": 627,
 "": 1,
 "naver": 55
@@ -116,7 +116,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 176개(cp_fail.json)"
+"쿠팡 변환 실패 180개(cp_fail.json)"
 ],
 "nset": [
 {
@@ -251,7 +251,14 @@
 "n": 4,
 "slot": "",
 "k": "new"
+},
+{
+"name": "자동차",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
 }
 ],
-"nset_n": "새 구성 19 · 기존 상품 구성 0"
+"nset_n": "새 구성 20 · 기존 상품 구성 0"
 }
