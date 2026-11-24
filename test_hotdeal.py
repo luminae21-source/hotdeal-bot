@@ -3637,6 +3637,14 @@ assert chm[0]["text"].startswith(f"<i>{H.TOSS_NOTE}</i>") and "⚠️ 10/18 14:0
 assert not [p for m, p in s15 if pp15 in json.dumps(p.get("reply_markup", {}))]  # 뽐뿌 링크 버튼으로 올라간 글 0
 sj15 = json.load(open("seen.json")); assert "tw_ppomppu_915" not in sj15 and "tw_ppomppu_916" in sj15 and not sj15["tw_ppomppu_916"].get("ask") and "tb_501" in sj15
 assert json.load(open("posts.json"))[-1]["url"] == "https://toss.shopping/_m/W501"
+w15 = json.loads(json.dumps({**sj15["tw_ppomppu_916"], "d": {**sj15["tw_ppomppu_916"]["d"], "id": "ppomppu_917", "title": "[토스] 비비고 왕교자 1.05kg 2봉 (13,900원/무료)"}}))
+for k15 in ("ids", "src", "done", "prev"): w15.pop(k15, None)
+sd15, tp15, got15 = {**json.loads(json.dumps(sj15)), "tw_dup": json.loads(json.dumps(w15))}, H.toss_post, []
+sd15.pop("tw_ppomppu_916"); H.toss_post = lambda w, link, seen: got15.append(link)
+H.toss_wait(sd15); assert not got15 and "tw_dup" not in sd15, got15  # 11/24 같은 상품(tb_501 = 14:00 채널) 24시간 안 = 안 올리고 버림(진우에게 링크도 안 물음)
+sd15["tw_dup"], sd15["tb_501"] = json.loads(json.dumps(w15)), {"t": TK("2026-10-17 13:00"), "n": "비비고"}
+H.toss_wait(sd15); assert got15 == ["https://toss.shopping/_m/W501"] and "tw_dup" not in sd15, got15  # 24시간 넘음 = 그대로 게시
+H.toss_post = tp15
 s15.clear(); time.time = lambda: TK("2026-10-18 15:59"); H.toss_wait(sj15); assert not s15  # 2시간 안 = 조용히 다시 찾기만
 time.time = lambda: TK("2026-10-18 16:01"); H.toss_wait(sj15)
 assert len(s15) == 1 and s15[0][1]["chat_id"] == "42" and "토스 링크 필요 — [토스] 없는 상품 김치 10kg" in s15[0][1]["text"] and pp15 + "916" in s15[0][1]["text"]

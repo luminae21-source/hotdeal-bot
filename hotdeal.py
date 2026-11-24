@@ -6517,6 +6517,7 @@ def toss_match(seen, r, title, src, items, maxp=None):
     if hit:
         r["done"] = True
     if hit and not link and not over:
+        r["prev"] = seen.get(f"tb_{hit[0]}", {}).get("t", 0)  # 11/24 — 이 상품이 채널에 마지막으로 나간 시각(toss_wait: 24시간 안이면 안 올림)
         seen[f"tb_{hit[0]}"] = {"t": time.time(), "n": hit[1]}  # 채널에 이미 나간 상품 -> 3일 동안 토스 베스트·하루특가에 다시 안 올림(10/10 삼겹살 01:31 딜 → 12:09 베스트)
         try:
             link = toss_link(seen, hit[0], hit[1])
@@ -6562,7 +6563,10 @@ def toss_wait(seen):
                     print("toss wait", d["title"][:40], msg)
             except Exception as e:  # 토스 API(터널)·Claude 오류여도 2시간 지난 딜은 진우에게 물음
                 print("toss wait", repr(e))
-        if link:
+        if link and w.get("prev", 0) > time.time() - 86400:  # 11/24 01:41 토스 특가 통삼겹살 → 02:38 같은 상품 커뮤니티 딜(2주 5번) = 24시간 안 채널에 나간 상품은 버림
+            seen.pop(k)
+            print("toss wait 같은 상품 24시간 안 채널에 나감 -> 안 올림", d["title"][:40])
+        elif link:
             seen.pop(k)
             toss_post(w, link, seen)
         elif time.time() - w["t"] >= TOSS_WAIT and RUN.get("treuse"):  # 토스 점검 = 진우도 새 링크를 못 만듦 -> 안 묻고 그만 찾음(하루 요약에 1줄)
