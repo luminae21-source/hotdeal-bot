@@ -363,17 +363,61 @@
   ]
  },
  "세럼": {
-  "at": "2026-11-24 02:24",
+  "at": "2026-11-25 02:30",
   "tag": "세럼 2026",
   "unit": "10ml",
   "items": [
    {
     "rank": 1,
+    "productId": 8150876047,
+    "productName": "메디힐 마데카소사이드 흔적 리페어 세럼, 2개, 40ml",
+    "productPrice": 20450,
+    "productImage": "https://ads-partners.coupang.com/image1/Utai4X5_q0pP9zOgUkBHkNWvZIIMibHwvvfw-1dMc3UDfpyJ81t6ujUdteqx9afSrrlR4H8HDuXd2rlB7bGgIzIv6vOEDCCdK8E8jLtaM7mB-CO3-JNHqw-gYMdK689WNtDZWFlkw7alJLkywns8rstJJ_tlSNGEjE3goziNWG_PoChJCVDzvIlwyRo6JAVhilbG7jSDYXw6_NOmuPik_6G5zw0fq_3nRWlNLROHYtGplyb_iT-OUMYzg4Z-ixHGPqzvaUsgYwpZhhY2YUPSWrrxbOqQNZnt8rZ4pmAgB_wpkuPSN2N6w-RKbnFwvmpVB-6bZhqlVOvDum3EA5XKT206hzEGt9UtqlhuAPaxqIgSWFQVr2tbjEA-akVLCDUhqsIgb3IQaxlCFsjBR1BGs_gKW7UIQCQMlkI9qIls2FbXUSacmJd0VRHBB02xjTLeOOYHszi9ZO3nNKApohLe64F7X7Grz09Q8M9mbpEah0Pzxfnhu4MlaQ61P_VRSbLm6MqJQqUag4jo6eEO45brSkqbPSLBIktBoERP6ZGWysjqBjddlvtwzLEcD0_VZc84y0GjWZTqjmVccdPW0pEXBcc=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8150876047&itemId=23599200319&vendorItemId=94966717988&traceid=V0-153-ae5d250f68d5bfdf&clickBeacon=c0e11ea0-e82c-11f1-ab1c-6802e399b957%7E3&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=1&slot=1",
+    "categoryName": "뷰티",
+    "keyword": "세럼",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": {
+     "n": 80,
+     "u": "ml"
+    },
+    "unit_price": 2556,
+    "parse_ok": true,
+    "ban": [],
+    "effect": [
+     "리페어"
+    ]
+   },
+   {
+    "rank": 2,
+    "productId": 8150876047,
+    "productName": "메디힐 마데카소사이드 흔적 리페어 세럼, 1개, 40ml",
+    "productPrice": 12900,
+    "productImage": "https://ads-partners.coupang.com/image1/JRFvQm8Hk2uqh1EyJcN_ubekFaT1JWrB5sv9rmlj69Zfhuf3TKfAumqEzw8a03PiKLVdtVXRRT08gYf_1nVM998xHi_2BrJkfIUIvKUhzQX_kHePEwJ3zZ2YLBbk1fizBvD442BUiE9Bwv14m1qjltvj_3iO0zQ4aDeADdzimEHajUgkQl0a89VtkESuc9unXOZbg8-ki04lc39mQ_NlRn4xon4pAk-tcqpdyI4fwpHXO1GQZNH_N7sQHJ92UDWS7SjqJNg1m7cQkUYasS2OaEzpP-szO12RtdZG-zCnQXfndljse7-ZFbXJqj8RiODbrIf9J8o65JL2DPYTSlFqWlW4A_BlJAomMai7JGco8gb7qPL4wlV6KF6Wb0Eg8qu8cf2D1sQ1AeUHPsGYFhBiWf17BmgY5IKA8h7VyBPr_ozpTg3ufxINFVYqFToy3IEjvlq3IQ__h_IJQJQpOZyebmgMOdDl_71dW_hn8Yuz3Le1rC0rwDugYjuNVOHkWUNJn_XIbWT8blz7ArFyOjj4F-sPOxEDFN925mX_NqraDkib80aouzRx__osKQHNJ6uP9fv8_D6gMU3Q1r3sw7PE3s4kX3k=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8150876047&itemId=23765096779&vendorItemId=94966717979&traceid=V0-153-ae5d250f68d5bfdf&clickBeacon=c0e145b0-e82c-11f1-a0c8-dd47e9359a32%7E3&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=1&slot=2",
+    "categoryName": "뷰티",
+    "keyword": "세럼",
+    "isRocket": false,
+    "isFreeShipping": false,
+    "total": {
+     "n": 40,
+     "u": "ml"
+    },
+    "unit_price": 3225,
+    "parse_ok": true,
+    "ban": [],
+    "effect": [
+     "리페어"
+    ]
+   },
+   {
+    "rank": 3,
     "productId": 8856923169,
     "productName": "디어글램 골드 콜라겐 15.0 주름 다리미 탄력 세럼, 2개, 50ml",
     "productPrice": 57990,
-    "productImage": "https://ads-partners.coupang.com/image1/DYy54zjH1_P719ItDYp7iNRVWleqCpXmZDooVdQuMmz9sYfUmWMq89JIUJI64LL3GTSEC1RCqXVCaiGYJHFOhBDQPeHXHqpxl8648BqB1ryfNctW2-Z-v6qNQqXsT0r6FfPOfGjzxg69QSVPMr9CKOk7ToWLg3kn8hfG7AffN0U1zknZMHQki4qm4Jsas7427smErhfr0JQYWCECMLzy2JoicvCWhRY7fCaK52lqjlK3oKfWOuKl1NjE8wh_RP7_A7ZTGIFm36hTaWOxV6gHE_DZ2csZP8yjbwmGUczsPwOL-8lyzL-CtoBmRZmffHAUcunGi7MhOW__XEH31miR12_AONrF5fpe_IbkJDH-7PGygHli8HVMdS5msyrBJ2NVMjSLyVxEINloaZVc61euGZ9WYHVBVXuTXSyQez8whPkQvdxpUK6Cmq1rRvj4-yYt4SuvYjHeOCELjLp308Vx2fx3AUo4037oosBSHpZZnyadmBSdt3t8H34yg-5jfvtsCgo-1sCrQlCUWMV8h-d-XzmMrpKvs59e81HhTfzCJGB1EHrkJPiabwEKOTbW29J2ZcKWpXKuXeqAOar10RRROnSDHg==",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8856923169&itemId=26277703499&vendorItemId=93255758872&traceid=V0-153-836cf233d1e15f6f&clickBeacon=ad93c570-e762-11f1-8f48-93190966e9e2%7E3&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=1&slot=1",
+    "productImage": "https://ads-partners.coupang.com/image1/8KEeD5yw4LyA1DHV8D5kVMoQ8rCXyBRRd3RnwECACedM9Xly_XsAykB2DLb10gA6hV4gaBPz8Rs3KY82aLPSn6KXWJaWaEBZREaobA_dVvvUrgHK_-5EaJbwjFc1S7Cz6TEerxVK3I9v4Mjxe3bD33YEaMgYIRQkoILtQFSMGcxcX5jdU0gt07e9NFPh8vas-I6ipKQnvKNX6mnA55zoIbDJGY12E0Gg6OZtCBVYRZkbPEMfw861K2QyO6b1My1dQCWb6FBTcejNjevDym1tAFOIuyw50Mb3D0QGMKKE0YjAShcEJpYI3aCWE-182S_gO9HBgc_7DHsVSY2miybqRp0IgBzi7mPsW-A8MW7jkGbVvWlA6Y1DtsYNkbxDY4UOfW2Kva_--RakhQhGQO9go4Yz2eHyeMIRMf4-EQR7ZYshMLFtnXAa2NNpN1JqAQKST-voSaFKbPni_jVd6St4hwyXbZVaIMV1BCLCTmcr3FC_h4XcnTh0ekDQA9ZfZ_pS5doojXuNU7SyXx_mML2OptfG1L0a6gC6Frf8-SH6ACy3QtTIlhf_VlNtm4SMmG9J0bwh9bNUhqViZRuJTw4y_z_02g==",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8856923169&itemId=26277703499&vendorItemId=93255758872&traceid=V0-153-836cf233d1e15f6f&clickBeacon=c0e145b0-e82c-11f1-a7d7-5158c2fec6d9%7E3&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=1&slot=3",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
@@ -391,12 +435,12 @@
     ]
    },
    {
-    "rank": 2,
-    "productId": 8150876047,
-    "productName": "메디힐 마데카소사이드 흔적 리페어 세럼, 2개, 40ml",
-    "productPrice": 20450,
-    "productImage": "https://ads-partners.coupang.com/image1/s1FLlhe6tKg88Pl9s8QlvckpwGFw_K7LrteC5I6DWIC6Hu6Q5qakVdRyB-vgHHlsQs_oUfauiBxrKmrQKicKMUP7IcsWX5jyPznq11TiwR_4ZNmsB1ZpW6xjKsk__djexBmuAkyFhlQ8cAlkVAt3KJeWGbGZADwcQo8p8fmepuEb8QkckGADPNlilgszj1KbsSucSf_9ybgFnkyBL1oN8UieZ_Ok_dMf5fkqthOpdHZ5luhyATllSsZ-2pw97TaDkLZL_OS-LsEaNhHBVIHkBq0xuEaQJpsCyovWtk3_OAgLK2dM7WnnwUvnVROV62w5791xqrIlOsxjeL1OztWh_0wMALj9MMzSKJKT1l0ohl6w3n2BKSlGh8iaREIKEAvJc9L6rasqWSHAxLI_MrkVMciQB2tBA8iSwl4AOSGqX7aJxcP8VUSeGn-4L7BMVpMmsR9RZf5seiNvplbqpgKyV1OLQ67ySxc3KdaQF_sRF5hoqP6Jf8yvivUBkwr7GLZ-1L7Xs8C4oWbPTkBodN_MDh58e7dLBxFD5GE7J_syxR-LMaFU53rOEZbUJdGjJVYRLeMlBJ3yWsRYqWPR6_NIzg==",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8150876047&itemId=23599200319&vendorItemId=94966717988&traceid=V0-153-ae5d250f68d5bfdf&clickBeacon=ad93c570-e762-11f1-9d28-e68159674567%7E3&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=1&slot=2",
+    "rank": 4,
+    "productId": 7166913299,
+    "productName": "더마팩토리 나이아신아마이드 20% 세럼, 80ml, 1개",
+    "productPrice": 10300,
+    "productImage": "https://ads-partners.coupang.com/image1/Km6r_bdx0q5O1ggPKl0uWSSoHDm3Nb9M5rfj-fLuxefZyvb3LXjF75VIU4yHOjuZm5lZB4yb9RmD4El_0SY7Cmiadhe2aRIkhzgZeKetQeZGPufCzd1pVZd_APFwpnUbCzZTzl-Q-_HFywQCykjOP-0O6xcKwLhPcIg95IiSBuMyYmsVuKWc0rtU6O-HEsWJLhMBRAy8iF7bMSEyn-OuZLBNbJgTIYOhdg5n41Bx2CdRIWFJ5ffhASWW_cuZ2MamPoxBhubKN4e42w8kHaNphW6UT-M5sxqUcmk4Ushh977DnXD70xvL6uHKSORcAtB-89pPeaRZVyq5icSdpzb8F141e0CDaYMGpSNBWpfDSP5eC0-8f5PAnPeTA88PiMCbC7FJxSY8PA80s-w2edj9oTwOgieFfCIXlHnhxv7f4WYcOYoj63HFSDrTNQe80fzda_2OX0pmbIk2GBDfWtY5ihzKVY1sXPoGVoeHdMYSWZqRYgkLnn3L7BLKk10ixgUFCdWSHGpuCiciSnwm-JLSOgaXNICzucYe6Nf7sz_zP6KIyAI_INvlVbAx6qPI5Ddl_XGFWzo=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7166913299&itemId=19504204117&vendorItemId=86613261356&traceid=V0-153-e4f03a3b0cb9469b&clickBeacon=c0e145b0-e82c-11f1-8c06-135ede5cab51%7E3&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=1&slot=4",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
@@ -405,71 +449,27 @@
      "n": 80,
      "u": "ml"
     },
-    "unit_price": 2556,
-    "parse_ok": true,
-    "ban": [],
-    "effect": [
-     "리페어"
-    ]
-   },
-   {
-    "rank": 3,
-    "productId": 8150876047,
-    "productName": "메디힐 마데카소사이드 흔적 리페어 세럼, 1개, 40ml",
-    "productPrice": 12900,
-    "productImage": "https://ads-partners.coupang.com/image1/t1ExfBTCh3Ejuujqtyxn4-hxXfq405nq0RqRNC0b3NMrO3QC4lYQ9vyQc9cw_pmnqQ70i4FDEJBpeXSGF90m-4JD9fPbjxurSV9al0AaBLfUS0og7qXAoSyz3pAL0m1gSIV5grazNDNzk18K8nhFQ9hbkX8u5Z3pQVNClbx62ou_g5lcXTjU8ZBOFtbtqGWYWmoeEugPmgy_mdYltAUg3u7OOgJKLhHpXvweQf11lRSbJ9NxeTCbK9FvAaYdALJjqBBe_deaZ1baz2OuYr5IU1UjC5IhfFZMzjPFWp9_5FIejMNBw_v4mGzdzGGAczyRszueLhGUQRTEL5oNWdS016bxGqb9GxUYCcpIzpaW6s-92hack98gjN1NSFcTAWv2XVN2lOWaWlzDS8xickk40aZB64AHduTEBEFtu4_6U_zQUXUnwJIjDx9lROtllP8vFg2Sj1jKEsriSYAbYLcxeFeSdtRcfp0khbLAF9DKXOttWqGL9oL2LXAavfRlMuA6BGNxhYbQz5co3yl_GNY1p4embYZleRl2KfeUKh9IfeJP9XujNQnXQPHOYkx8x-kwd1bRR-Rre3eW34Uzj7dSig9wrg==",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8150876047&itemId=23765096779&vendorItemId=94966717979&traceid=V0-153-ae5d250f68d5bfdf&clickBeacon=ad93c570-e762-11f1-953f-f3e452031577%7E3&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=1&slot=3",
-    "categoryName": "뷰티",
-    "keyword": "세럼",
-    "isRocket": false,
-    "isFreeShipping": false,
-    "total": {
-     "n": 40,
-     "u": "ml"
-    },
-    "unit_price": 3225,
-    "parse_ok": true,
-    "ban": [],
-    "effect": [
-     "리페어"
-    ]
-   },
-   {
-    "rank": 4,
-    "productId": 7166913299,
-    "productName": "더마팩토리 나이아신아마이드 20% 세럼, 80ml, 2개",
-    "productPrice": 19930,
-    "productImage": "https://ads-partners.coupang.com/image1/R0LkSInCbMDw0jefR87iz9-7HhKgiVH3ykbV6goB66IP0biAp76u-UwrAepIepQpjMrQ_q4ayUwS0JXDRnzZwXMilV1ROV87OcO3isZvnnskWCeYuu3ubwX3W9l8neOq0tmz8DmJA77l67L0vhSBYeREVanXSUVSzjxWN0zU7fnwdyQQI55Fifs8H2OYCIyMYxe6NiTYQTL3GaLtrKmJhsM7BtRtqfCFUpOpYHHLiQWibc7ANKx6GYEq9eQZ9p3T-MO_eu3jlVdmA6_2rz60RvwzpgdBQ8EVVvDfDKOaBfADkZDfkwCzJMyvcWMNqDKAovRtDc4uTJ9hYyhZIDZjEPxa79SKcMFTNRIzBl342vLPrOnoqc68DVkMCZ_QCjRjOjswmNj7TI6a9FK7LIX2jHyZ8ke0R4yR0kYt7hIvDxeP9CTWRIXKWGii7oAjQHpm99gvEij4PUgV3EXYg0cRUcQpD22UYFh4orJSXb3CyvWPAH_E7yaxCElPrPFfg-Z_haZjiXxEH4kjX1kgpHbgWw-64kTwpK08TCTqgd1FgpsLUi5H8xe6vs2eVMpZNk1YEENp",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7166913299&itemId=19665434406&vendorItemId=86771112965&traceid=V0-153-e4f03a3b0cb9469b&clickBeacon=ad93c570-e762-11f1-9e2c-809c5dfd60d2%7E3&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=1&slot=4",
-    "categoryName": "뷰티",
-    "keyword": "세럼",
-    "isRocket": true,
-    "isFreeShipping": false,
-    "total": {
-     "n": 160,
-     "u": "ml"
-    },
-    "unit_price": 1246,
+    "unit_price": 1288,
     "parse_ok": true,
     "ban": [],
     "effect": []
    },
    {
     "rank": 5,
-    "productId": 7166913299,
-    "productName": "더마팩토리 나이아신아마이드 20% 세럼, 80ml, 1개",
-    "productPrice": 10900,
-    "productImage": "https://ads-partners.coupang.com/image1/oCv1vt9kOj3wodoaoP4rYi9atmU4CLEKdjGvw7-l1tQixOQqG_Vl1DSFm0yDg4m_X6yz6lcTXCbh2qt4u2aXtPzpyyCo1lhh7_MyFvvM3sFxVcL_0IglpEcuKOxRSGAJS1gS8Njk5yI6P3JP0YKqR1v5vNJq2QeY0Vgrd84ROJLYLAfXU9OMRNf-mhmC-IL1USNYZECIjt5u9ealWQ6TkPJkJZDxviCKUvSZmjNEWdJfego8Li_H1l_Scy5pHLuE9W3airkyoNK2-_6w5pC9qxcKcz0JXcUG8tnLNMQHiRIPxPpxWcikC0ln1GjsDq0CUtic8CqvggG4Bj1nBaSpgDVEB8SYNlci2CI8RoP5lZ5AUxIxXMjQofHMSDh1E88RddpErAkFO2QKFKPueTYolac087XsDaH1B33KVQUv_oA_m_yF3mPhF47ZmrrrmfGgq_92LfU4nddyLFVP2oSjO0CxI6xtBkHncx2zhzBe22i-hvIJcOPo9rt4eIQsQYPYns3YTnUspm0eV2WaX-feQ_9jOKsHUczoLrrIxeEurQjQhGlucPtyaWmxBiCYjGYONklJLiA=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7166913299&itemId=19504204117&vendorItemId=86613261356&traceid=V0-153-e4f03a3b0cb9469b&clickBeacon=ad93c570-e762-11f1-905b-c149c93540c5%7E3&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=1&slot=5",
+    "productId": 1577486622,
+    "productName": "은율 리얼 비타민 세럼, 50ml, 3개",
+    "productPrice": 10500,
+    "productImage": "https://ads-partners.coupang.com/image1/fnffMpQ114Boa9kffuRNmGBC0hxNS5r3ohPTXxZ5YnMbzN9iOFqmpgmmuXN0wNkJH1fuRmFLStV87OoUeld_JLg11uv9oowmdsj58Wl6m-nqIkgH9XfZ7hIydc-2Gd5H1VpZWHXUyaU0wnZ37zZcEuoQIeWkJR6L3L4hm_Ekc3bR63glR3lA9v-GNgpdV_0DzCUXNAmRnKsZ-x5XC4BYM-94rdnot-BiEPVR3mvqsvW5xfH1a1f9WW5FvBExnLR6-h0cIOrPpInQsZ-fOARLSMqZnul5WXVkFdsDCyZkqXmoxxM4ON9m3x9SUSFFIotaOWkhJWN8eXQHhla3h2pDvfYRiK6n6dpsSdThBt7nJb2zzLP4ylX0aeGeBIrj_jN_Ygfb5KiqSrPPrYyF9tcMo21KduCOCM1OdOEjMsxwMPzRirGejcmoov2jqSey1K4aQlCS6pZ7ZivW3vEKQFKL5tFfuc4tfsZyGZoOY8kqO4en3H3aJeZ_J330e3M5cbNbCg6kN5Ol2K2d9PEngrFKHsmAnwIT31FIFNuzTONDddbYubLI0dTEHImP13Ije0RKlZX-DzzdlXv3GAbVFJZ9VMMvQcM=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=1577486622&itemId=2697504757&vendorItemId=78302359755&traceid=V0-153-6bb40f4e5a6eb6b3&clickBeacon=c0e16cc0-e82c-11f1-9016-0a9e0703e81b%7E3&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=1&slot=5",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
     "isFreeShipping": false,
     "total": {
-     "n": 80,
+     "n": 150,
      "u": "ml"
     },
-    "unit_price": 1363,
+    "unit_price": 700,
     "parse_ok": true,
     "ban": [],
     "effect": []
@@ -478,9 +478,9 @@
     "rank": 6,
     "productId": 6685577070,
     "productName": "토리든 다이브인 저분자 히알루론산 세럼",
-    "productPrice": 15090,
-    "productImage": "https://ads-partners.coupang.com/image1/iPkk7qYm7_Ih4KmKiEZnQrgWZdB3J67eV0KXlCXBFYiDpCgVWB3CuZORXhb3vxWo4c4O_Co_fdPVw3fcuF42HqRXxNQ-lTGkeK9G1RORvzpM2k3NfuXe5nvdgbyPlK4LbXlClT0ebJcLA1KMKQ4fah9WWI1ivRYZF9Y696S9ya6egEjy24y2753FXxGn5n21j8He6fsq2jMEkmFU2fj95-exk3JZ4yLiqnRVAJKCR_b4tddelMqRxK4IpkrMtshDc1HLTLgwAc6mAN-FBtISTzFvWxqb7vXwiYYVjgQE87HETJKYcXllXa9pST9S5Kdz-uKAp33y5DqEf5eGjrjcogrpVvPMe264tkL7IoLqyuf7SpBsNImAPwMjN6VoaD5f9wKrOiqrV5eAfxBRZr0oNDvbeUnaoyGDh7PpAIgAFHS2iikLtDWyRPvbjwmpVbYiVPNZB0WLlPgPwpku9seXsB40olHs1cG4sXltBVeze8lXuJpSap_nmgbAk9hGtmL6499_vqBj3eG8KdUa9DEhlnfkzHFTJ2oOeKfO_4BDCoouKm_cYkyscE_WBDpzE0fggD-s82KPD-iSuiLUX_Lw9AeiUtx6CuQ2SyZ-AGwy",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6685577070&itemId=22419652098&vendorItemId=94444300261&traceid=V0-153-9ed27ef3739d664f&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=0&slot=6",
+    "productPrice": 14490,
+    "productImage": "https://ads-partners.coupang.com/image1/ka23AWK-AqSM-ZP7kXy-jIUiMQ2fmoTDH_xM_EpFxREtFyEMi-p-f7yOcXqMzc0SmhQxkq3hWV_wJtUxLgeZ_qQ3bNr-mqm57QZmTnmVViAQCtBdsGdXfy-mwQPF79CDQd8kp5LGtqJmRRexAXJMr6iwIV20mOORbkzHpW9Ar-bd19Jj0ticQu06iP6cTW96DSFOAyRWLy_wF0Xk939E_X6eyqlz3828HZ3QDVDpWVGQ2Z-Io3ou4DWHIypHa9mdroa-Gj4ic5EXgBmdUiy3mu-DbgnONdzgOdqB_7mOMAMgQg6rZ-7nuyJf7J5v_kxs9ztXRYVLDytT_xO_G2LBD5qjCd5b6-bdYzoPvaMVRE2SNaPSgQ9PbVkVY3l3rRsMPPQ3imS7Fazqe3_YT4NVcgYCbcCRaxzz3bAnfKjHHyqi1fwVcL3omgr3VfSQ37ocQII4UC9ShrYqtG8-Z0n700slMCxZOdsm3WD5RIcU0P4iVRZMuTspaCQGE1oPpmc7TvKhPKsImGxpceVXjoYfKWCyI1xzYeogKz5OdFqhga2d7DfBLHyAOiT4OuVCk-qM0aoOkUMvakaSYFnYs1E8oOa0fz6XC5yJnG507Dbv",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6685577070&itemId=22419652098&vendorItemId=94444300261&traceid=V0-153-9ed27ef3739d664f&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=0&slot=6",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": false,
@@ -496,8 +496,8 @@
     "productId": 6146620481,
     "productName": "웰라쥬 리얼 히알루로닉 블루 앰플",
     "productPrice": 19800,
-    "productImage": "https://ads-partners.coupang.com/image1/DhuGZdeacndMEcj_DkNOSowm0pfplERNMgiJLB1xMWpSYnioCn5LHWSvlmWZzHq_4VbmifL4hqL7cTK7Zbhp9B4TMQU-VDaswf0fxUOWBRrWl7OnHOo3e1BnM6aIo3va-Ae-dV3BlFWVJ5XuG28CaVx2hXWhvM5Iy7Xi4eIH1rW1hOUQoWSk2LEZ4H4YQbjHJkWt61Rs9PvamTt9UEsrtHYpVEdfYmmPCwgRPWkhlq1PjO7LxJzjbCAO5MAFa1yvBUVAyqUFRswDU3UdiOu9D_SSWogpi2PMSD72h9VxhV3NFUlaDfpWATrw1hFOLrFdj0C4R_5BDP1qkCN_-_gfUo-GoGytAUA4w_ISObCJABECfNmQJNbIr4Ofdvwx4KBsDVWrJaTnEVA-JOUkRllOt3Oye1o8CTh2LXNE-yJjdDRAkIS7kZwqrnuB4WGtuXmWTeSnDvAYJ40FZx-jkPszyGOyklzKTT6gLxIxt3t5wEZeUu90PadJs-YRXKKDcBxGc2m81ewQW6Ac0rnevYgqXMCGhMEaBwj5TFntUHJul7ZuQpD0iXwZJ6WTVqpfGzGZjrPop6xLtzDKitDuf24=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6146620481&itemId=21287117540&vendorItemId=79107118397&traceid=V0-153-891a61920c470cf5&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=0&slot=7",
+    "productImage": "https://ads-partners.coupang.com/image1/NpzqUEmTBwVm7rtWNkJzFAOTW09JATEAUVVbAfpYzOm7NHisLiYA4xftYtecAO4Fuv8MExp-QQK09r4ffUQZzQCSbJK9PAHNpays6KZO_d6vN4CwsB3GNXWpWy15LF9NAJ6jfNRSZx5II_-ZUqj4G3WeuygW6cIKjqAG-AI8DPkQi_c-F9uWca8ndqS1jcIVbLA3voFuIy6jWxIc80IvEeudy2pW76BDarxN9dZhealgpxhYFYFplITdebZRnfelJBMOg-czkAjz4-0OHZJYy9peuwplEAKJg7X3Sfs1my0uGg61ROm68-tWQc1PwnU_s4W3eSXKr271aFoZTRF5OI2Bdp8Tj2Nh0j0lSrHxbqFqGof59cra7WgLH92T17LhkA-M8x_Qg_oQwKuquxgRP_40QYz3MqCHyHHZvRusegivSU9lAfA9DkoPIDVOoi6HtMlouvn6xua7AvCcRV0MqOgliVE-egUVBqrnOceFHw2I95Yl_6TdjC8iKoisiSuExSQ3rgbgm77YMM-XGNDDK-XLhnLQxRtqUBhOSN2lCAdsXrsnRfa7vXc9WXa75hvG1QlWEmrCzRIqfvmfteVx",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=6146620481&itemId=21287117540&vendorItemId=79107118397&traceid=V0-153-891a61920c470cf5&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=0&slot=7",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
@@ -512,9 +512,9 @@
     "rank": 8,
     "productId": 8215953680,
     "productName": "이니스프리 그린티 씨드 히알루론산 세럼",
-    "productPrice": 20820,
-    "productImage": "https://ads-partners.coupang.com/image1/yx9KAPPKTfDEbkYmy3tCHr8phUiT57sBOXs9dlk1JRW26vcy59XYU5tk0tGKHwcrLUjZxM2KA0ZS_QuhmwcDjKv-nwXoOum82_jj2IJgZ8xfhJt308SNjEkYnkDCLt44ApOiS-Ar09BKx1lwOY9Hjy9R0SUa1SCRF6JYxYUIeHnNgYhpTnyqS_lRaQF2zyWUvtFSeYpKAxD6LhVQ91LLO1Qm0JGsbPJEPyLXlmyJILlJ1kjt1tIoDvr7pLoOIEGGXx_PQGmEqz5ICPmTVQPaWiD5yWxvBPgg6KHRMifql_JOzcA0podgLl9jXoLXXMqHOxbQm5vtWZZGva8RcIb3JJyKtCgmkZDtSa75a4Qs8LMoUYTRFjrHIk6U-77xgZ0NoyRPSQZpsdh5aRbcJKQqCdsk8P35EToB9kB90elS8EehwVzEZVMXUf8PDBNkL4AWoojlMLm_QxDhrnx0krYDw6U3ocykqEZjVmoZ-h17uDTmcciIAPelCVpgNsaYaX97FIeeN0QpbvZS_HYqPPaSVtE9f3CFZhJp2oiB_7jWUdquSR5M92eGsUJhLuWOrlVYAOIhuvIbf4XbfGRFEJLO",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8215953680&itemId=22396598337&vendorItemId=91894073662&traceid=V0-153-517d81bedd118ab9&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=0&slot=8",
+    "productPrice": 22230,
+    "productImage": "https://ads-partners.coupang.com/image1/lB_JRhNTRs4wRFazlJkXo5eJMLyfkDXbQ2U0SJvQyt49dNRDvd_-_pUnMXKNDxJDuc3gDPEZ-iW1zEu87dS2_fW6eKsE5VvmZblcgr9WlB4QiNArFnQeHGCPVxZOt-1b26_BuAkNBQwvNHepRsaNc6HHAkYYHonBJ_A4ggVdg62I4xpnlMkPay34Qtv9IZtKoRJQ54Vl0T3HNjIOmAlRK5zOT4eEfADLmeDAFLugWlM4k3wMLByG-EczFLD_TxPNuWbsbIbXo63PEJDtqoBEAhycwdexwVJYmHv9fBH_mqMJ72SHIMkUglK4RoplpG7Jmdchx-236S0nNIK5mhblByV6pUjKw3TTrj4jrB0h4xAQtPzUSRu0KYeYRRbnVSYKiYDhAYl0evqrtNyFOuxJJsSCOqLdylNCyUuR0OgNnxaSRovE_V4M27YQ33fbrVZUFTs7eliLSbeqd0AQaoB9Rha8DR5IovBi_yWTENOLryRSgkmdHNpyfvvstu___vygn7DjZZeT7zfJII6c95B9xjaMHIA0604uA_6q6XGrsclYiKi5XiJ5iKqaFyl_RcVbsWGR7Fyz9ZXy6FmvHEk=",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8215953680&itemId=22396598337&vendorItemId=91894073662&traceid=V0-153-517d81bedd118ab9&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=0&slot=8",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
@@ -527,28 +527,11 @@
    },
    {
     "rank": 9,
-    "productId": 8304090879,
-    "productName": "아비브 어성초 테카 캡슐 세럼 카밍드롭",
-    "productPrice": 17870,
-    "productImage": "https://ads-partners.coupang.com/image1/Lgk2MVBNd7EACj9uLp6Qv2tRRqg19wmEWcH9HDe_BBft-1Ugz6G83LCCtJP4Kjv4_qGvF476OEOXqC4eunE88SoTHQtGywPH9608clC1xVUe_eC9kqvrMqgtJMv4bh6VZAp9GNmrCbPET9YjkhKSFpBpsUE2qSiB06m7f_F32Wmub1IMIMGQT29-EcGUELzgToJ71yEJgq7JI2B4v6hRnREY6egvYC1YZTK0e-zJG9AZETjZmMSybgZdDMrgyWEzpg71qTYYK1mukf4qVxitqYWG9KRrKXes9LbkrEWFTLpF5F41xtuJd2OJxq-xjZKBLkzHycVII-S1AXqyDUfC0MjOtft8ApygKrVJxqN8eJM6sGGbMmSmPZs-G8-S7LYYurcJnI1-oqIMCYp4WlNPPoMtsbxAMC9ILYybZNPpf7vMfnCcnVcKDZTRvZF4hNGnonaVHWF6hwEcqogBWcDa79lWmScvoRyWM75I2FGm6iSvA0FVrnkZtLZ0rVc9VJNU1YfPuAP8G5_ewbMJvExWdl-x0S90v7ejXDdYVSWOkTVbdBMkWqGSLo37dM5aX_W9ffJChPesRgEqcti8Cbd6g_Eky7GLxyc8C_ubqjf0",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=8304090879&itemId=26642232956&vendorItemId=95252319013&traceid=V0-153-55a1988e7eadc335&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=0&slot=9",
-    "categoryName": "뷰티",
-    "keyword": "세럼",
-    "isRocket": false,
-    "isFreeShipping": true,
-    "total": null,
-    "unit_price": null,
-    "parse_ok": false,
-    "ban": [],
-    "effect": []
-   },
-   {
-    "rank": 10,
     "productId": 7166913299,
     "productName": "더마팩토리 나이아신아마이드 20% 세럼",
-    "productPrice": 5550,
-    "productImage": "https://ads-partners.coupang.com/image1/FskszQSrmp2kCaDdFmxlHY70YtkNegZPc4QQwqezo6tQYtVC0Noe9iSmluMVpqLSaFiiy-DiYwpIfZNeKx0Vp1-GhTrOe3HETpyTdRaFpbPof7Htcu08BCyZ9TmGnGp-e2BbA-MTn-jkMqvgzMzgjnfSJ_kQxdT0d2DoXSVCT3KtHrz8zznwq9ZbmK8eR6kEVajJDKpXLyE5srwqLyrWcvIrpokuzdfD_oMGWNjzb1e4S2RW5uGy155lYy_BeK3s5XVSG7Aty_DTHEdQ-ErBtUIK2EfxEoc_Wf-Csk1bJ1PVQtA9-2u44MoPNVAC6zWEZvhxHwlitSGR4mff6HDVjMpuqPnjqTDmjEKrFP9jrYdU68rtoE3osZTqU1du1LA1147nDU3bmYSSgDGhxFw0tw2MCeRi2fRNO067bojrmekjCwavZu_wSbVHCFgAbU6HJp_wKEukIcp6WTM-7llG7OXEahAJz0w14MMV7XzHiwd4Lrv4kpsz7NgjXBSHCgyrAFIHTyw-UW9EGi8W2ayDEbS2Xux6IGuQhlr2p-K_JnT0c-OI6bCwgJK-Rptm14uEA-rL5NoAR0v5wrbH4cM=",
-    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7166913299&itemId=20648412944&vendorItemId=86558092017&traceid=V0-153-e4f03a3b0cb9469b&requestid=20261124022402922122736518&token=31850C%7CMIXED&pt=0&slot=10",
+    "productPrice": 5610,
+    "productImage": "https://ads-partners.coupang.com/image1/K2xoMjMVwcax2SdmK60i2FvoobjfhLAcq0q5SJoGbqLKemL5RZ5RO2VlCY4bLCqUEU7PsIweItpDRmCGicHAuvNqMH9uJ6GBFMl_uEd06cIi9jH-tLLENMZpMWLXxio5dfYALh7hgWE2Phy-AcgWkJp2WKrbxCNWjfK0s5uB8WvKlZl9-zB-sqelLtO21wNRdZQqX-K4Cg5C_uzV6U6B2FBRDGhHwD2Wti5YYFRCIgj5DvUI8rh0eosktfMf-AcoTgkmvPgPBUqCKjU8th6YnoiECwNWWnzGUBHToOZoVfRAJ1TJEChrn0K74GU6dQBsuZ-lZcPaua-7kQ4gQhAHfF6svvH2CqjEt5gNrIL2tDnYBfbtl24E7ce_dwKIrqWSWvgboPR0NOktG36gt5lURMO3jFo3sfJ6rN6NZR81Os79P10VzlTqsTesagw-OojEbMLldi4uwri24BEHOER5TFMHPuwhtsWbEKoUCi7E3VusBulJhhcnhg7HWMPvnFuwxhuZiw6ldim5K45wz0CZKYf_EGMDsKqFxwlHpEuEvcW0Fe9g4RMiNG_QU-ho47EzBsdFl9AysSWZ19_MNg==",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=7166913299&itemId=20648412944&vendorItemId=86558092017&traceid=V0-153-e4f03a3b0cb9469b&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=0&slot=9",
     "categoryName": "뷰티",
     "keyword": "세럼",
     "isRocket": true,
@@ -558,6 +541,25 @@
     "parse_ok": false,
     "ban": [],
     "effect": []
+   },
+   {
+    "rank": 10,
+    "productId": 9369239253,
+    "productName": "아누아 어성초 77 B3징크 트러블 세럼",
+    "productPrice": 15640,
+    "productImage": "https://ads-partners.coupang.com/image1/E1k4PVbt6eaJ23X7EwVAFcA3RINEjVojZo6UxjR5OggnqDI9zuVWZBp11QvVvJT6wWAKS529z8RMepo4NLVAWcIinN_iPnOqW5aGMqTOgQ5eD8T1Mt87hl9KlsvJ0d3v4bab5Z3GnEH49HHrStBV8Eubf9keTkdVwVdhJCxpTHL3s2zjq2Fsz_Quxi6ipAt7z9KUtZ5mFY0mdbBznkDMu0TXQcAAfPmgGzGv4YzlwvCmdIPMgNbl7YehVRr-aFXbut0KK7rAJosHgZdiaPGwEdh2KZB-7qL5Ph1Mg5q7Nkx3rSA2SMPfJWpJSvzQCrobIEE40Wu_u9DiNda5eI7W0I826FuK5hc3TYmOoAGPEF8ZqcVPEtdCnzUmli6crk7nqqhL-3d5lUtmXcDB2RRGdr23mN9kvoHOg8gLqJCiQ-1-sxamRB2sDoHXxDd1YfGvoMyxIXVz0faMRyqddOnFY4xmVIkZxP_-272PgtoTVC2n_B8RJIKkGFG2xcd9_2-sdYnjoU9lAiw78Cam1-X66cx4KiRklfkkGBfr7rr9mcrIqSBu0CXJJxMaPHtFc3PjAdXfrltCQUIw7jhD-3IH",
+    "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF9806756&pageKey=9369239253&itemId=27806343594&vendorItemId=95548863083&traceid=V0-153-539dc26699f3b99c&requestid=20261125023033698063790806&token=31850C%7CMIXED&pt=0&slot=10",
+    "categoryName": "뷰티",
+    "keyword": "세럼",
+    "isRocket": true,
+    "isFreeShipping": false,
+    "total": null,
+    "unit_price": null,
+    "parse_ok": false,
+    "ban": [],
+    "effect": [
+     "트러블"
+    ]
    }
   ]
  },
