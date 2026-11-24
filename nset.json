@@ -1,4 +1,19 @@
 {
 "d": "2026-11-25",
-"items": []
+"items": [
+{
+"name": "겨울 난방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "coupang",
+"n": 5,
+"slot": "",
+"k": "mix"
+}
+]
 }
