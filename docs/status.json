@@ -1,15 +1,15 @@
 {
-"at": "2026-11-24 10:13",
-"posts": 6543,
-"site": 2187,
+"at": "2026-11-24 10:28",
+"posts": 6557,
+"site": 2191,
 "mall": {
-"coupang": 1504,
+"coupang": 1508,
 "toss": 627,
 "": 1,
 "naver": 55
 },
 "cat": {
-"heat": 135,
+"heat": 137,
 "season": 156,
 "pet": 43,
 "food": 446,
@@ -20,7 +20,7 @@
 "snack": 110,
 "home": 101,
 "beauty": 270,
-"fashion": 105,
+"fashion": 107,
 "laundry": 86,
 "car": 47,
 "sport": 19,
@@ -29,7 +29,7 @@
 "missing": 0,
 "missing_names": [],
 "cp_fail": 176,
-"sitemap": 1133,
+"sitemap": 1138,
 "days": {
 "2026-11-16": {
 "site": 2053,
@@ -105,10 +105,10 @@
 }
 },
 "2026-11-24": {
-"site": 2187,
-"sitemap": 1133,
+"site": 2191,
+"sitemap": 1138,
 "mall": {
-"coupang": 1504,
+"coupang": 1508,
 "toss": 627,
 "": 1,
 "naver": 55
@@ -188,7 +188,35 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "겨울 난방",
+"mall": "coupang",
+"n": 4,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "패션",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "과자",
+"mall": "toss",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 10 · 기존 상품 구성 0"
+"nset_n": "새 구성 14 · 기존 상품 구성 0"
 }
