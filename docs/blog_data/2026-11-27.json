@@ -1,0 +1,77 @@
+{
+ "date": "2026-11-27",
+ "query": "3분카레",
+ "unit": "100g",
+ "chk": "2026-11-24 18:15",
+ "source": "coupang_partners_api",
+ "items": [
+  {
+   "rank": 1,
+   "pid": 6640662550,
+   "item": 85101028575,
+   "name": "오뚜기3분 카레 약간매운맛",
+   "brand": "오뚜기3분",
+   "price": 10960,
+   "img": "https://ads-partners.coupang.com/image1/6uXgvRWGPhdU_VPk6uHwxpLXapXxcwpjKQPuEl7Ix64-efTHTfMoBL1geblksblp7HUpVJiu4F5h7KXil2Li3Q2a4KpaZfp3U3EzE46cW-KrOKXKPaCmSufmR91Oz7AZOpFW7MTvEPkt_V_gMLkY0foI9HmirGNSD1OviIYvxIyfBz9ftFeFnkRZfw8NWcneuu7UQiI_xGmEjG8_jE8FLFAhceGWfAOMS7CQfXpegMxsg4fu5JNteBvAHmpkpqRtSPXv_8ExCQnIvwmLMApcxzuzdgAzRncM3QwsLTunJggKpivqzqPMXkNx7YjVjlz91jANiNyKOOsSQWIBhM4LIgU8IqskE9N3V7K6b9TiBQHnsEOTBdN2gCnGS_5hMawfPOaVGEEC7DPUiPWjOkgeEZlL1R_t4-tuKQRJxzjxq4W01sbgWOaTQGyO_JM1hwfCMcLbrzHvbSYDNUARXBdlLlIytUKlqAvXFIWX4RK9AE6h8pPvoFKGR7O-cuYzlAMK2TZlPfvfeeEy6Zm3jd-stQRz09EUa5YRaS53gcgQEa_uT_Brf4xxpSnf5EL7in85oO_lkh_DooqkKBaogiYE",
+   "rocket": true,
+   "free_ship": false,
+   "qty": null,
+   "size_each": null,
+   "size_unit": null,
+   "total": null,
+   "unit_value": null,
+   "unit_label": null
+  },
+  {
+   "rank": 2,
+   "pid": 8288848214,
+   "item": 81565676849,
+   "name": "오뚜기 3분소스 (쇠고기짜장+카레약간매운맛+김치참치덮밥+춘천닭갈비+낙지덮밥+제육덮밥+하이라이스+바베큐치킨+미트볼+백세카레 약간매운맛), 1.7kg, 1박스",
+   "brand": "오뚜기",
+   "price": 28800,
+   "img": "https://ads-partners.coupang.com/image1/Dq9qu8wL3WgEm1N2DoYSM-GHA5ml4IZ8fgR3capBv6Cm8tRT-CKGkSziKOIcs8DPzHYMdw-jqP6CR1skpriSI7BHA4zkVBP18Oo31X7ByMh939DGAQEQOWZcLb_HQ-dl0K4Se0tUedlsZfN5WEM3yae1ItPs_hBKjdH3caYzvyNwyc2T9Pv4r0F78Qr7VW0ijwjl8zocS8q_XWXyB94onvj2PnjJvhO2NUj5UELTeLxVwrUlBUmR6leT33bamYyh-0Wq3orqIDuU24H_WA7U5P_DU4KbhwbbYoSOsyXIcp8hCai-rnv_L1o-wraqvGHbJMyLemkDzYLoMM0wzlEftG77iuJjIvEFE9TTGv-jotEmFRcbKUBygmaSZnCxHqxE8ptR7sAbNW829CweVSRm17Eyj2hDPINutozyF3axTebrgk3M4a9gpezrbE1rrE1muOoP6EkukOMASgyDk3Mx8p18mCWQ4icCPyGbBcueKNSL52OBX8oRAH8ajM-cuWKlxirz4aKor38nYn5iVapw4UCNv1Q0LaswVBYw7inOCMPTvnpFRfecN6AOVwfjLPqjrJLOZ7mNa6jQpeYq14ZFv6DjhQ==",
+   "rocket": true,
+   "free_ship": false,
+   "qty": null,
+   "size_each": null,
+   "size_unit": null,
+   "total": null,
+   "unit_value": null,
+   "unit_label": null
+  }
+ ],
+ "dropped": [
+  {
+   "name": "오뚜기3분 소스 10종세트 (햄버그+미트볼+탕수완자+바베큐+데리야끼+스윗칠리+하이라이스+김치참치+쇠고기카레+쇠고기짜장), 200g, 1세트",
+   "why": "같은 브랜드(오뚜기3분) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기 3분소스 9종 기획세트 C1호(카레약간매운맛+짜장+쇠고기카레+쇠고기짜장+닭갈비+낙지+제육+김치참치+하이라이스), 1개, 200g",
+   "why": "같은 브랜드(오뚜기) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기 3분소스 기획세트 1호 약간매운맛카레2개+짜장2개+쇠고기카레2개+쇠고기짜장2개+하이라이스2개+쇠고기간짜장2개+미트볼2개+햄버그스테이크2개, 1세트, 2.98kg",
+   "why": "같은 브랜드(오뚜기) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기 3분소스 8종 (햄버그+미트볼+탕수완자+바베큐치킨+데리야끼+스위트칠리+하이라이스소스+김치참치소스), 1세트",
+   "why": "같은 브랜드(오뚜기) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기3분 카레 약간매운맛",
+   "why": "같은 상품 다른 옵션"
+  },
+  {
+   "name": "오뚜기3분 쇠고기카레",
+   "why": "같은 브랜드(오뚜기3분) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기3분 카레 매운맛",
+   "why": "같은 브랜드(오뚜기3분) 순위 높은 것만"
+  },
+  {
+   "name": "오뚜기3분 카레 매운맛",
+   "why": "같은 브랜드(오뚜기3분) 순위 높은 것만"
+  }
+ ]
+}
