@@ -1,6 +1,6 @@
 {
  "note": "봇 자동(cp_events — 11/23) · 손으로 고치지 말 것: 같은 행사는 promos.json이 이김",
- "updated": "2026-11-23 12:14",
+ "updated": "2026-11-25 07:14",
  "promos": [
   {
    "id": "au-efe0add46368",
@@ -34,6 +34,23 @@
    "cta": null,
    "src": "https://www.newsis.com/view/NISX20261123_0003878817",
    "chk": "2026-11-23 12:14",
+   "kw": null
+  },
+  {
+   "id": "au-b3dc3889ae14",
+   "mall": "lotteon",
+   "mall_name": "롯데온",
+   "sub": null,
+   "name": "땡겨요 제휴 할인 이벤트",
+   "start": null,
+   "end": "2026-12-31",
+   "pre": null,
+   "benefit": "롯데온 구매 할인 쿠폰 최대 1만3000원",
+   "tag": null,
+   "url": "https://www.lotteon.com",
+   "cta": null,
+   "src": "https://www.newsis.com/view/NISX20261124_0003881638",
+   "chk": "2026-11-25 07:14",
    "kw": null
   }
  ]
