@@ -119,6 +119,20 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "제철 먹거리",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "생활",
+"mall": "toss",
+"n": 4,
+"slot": "",
+"k": "new"
 }
 ]
 }
