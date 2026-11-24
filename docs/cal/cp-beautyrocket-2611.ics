@@ -1,0 +1,27 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//hotdealpick.kr//shopping calendar//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:쿠팡 '뷰티 로켓마트' 기획전
+X-WR-TIMEZONE:Asia/Seoul
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+X-PUBLISHED-TTL:PT6H
+BEGIN:VEVENT
+UID:cp-beautyrocket-2611@hotdealpick.kr
+DTSTAMP:20261124T083200Z
+DTSTART;VALUE=DATE:20261129
+DTEND;VALUE=DATE:20261130
+SUMMARY:쿠팡 '뷰티 로켓마트' 기획전
+DESCRIPTION:로켓프레시에서 닥터지·메디힐·바세린 등 45개
+  브랜드 530여 개 · 와우회원 상품별 즉시 할인 · 2만 원 
+ 이상 5천 원 할인 쿠폰 · 기간·혜택은 기사 기준이라 바
+ 뀔 수 있어요 · https://hotdealpick.kr/events/#cp-beautyrocket-2611
+URL:https://hotdealpick.kr/events/#cp-beautyrocket-2611
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:쿠팡 '뷰티 로켓마트' 기획전 내일 마감
+TRIGGER:-PT6H
+END:VALARM
+END:VEVENT
+END:VCALENDAR
