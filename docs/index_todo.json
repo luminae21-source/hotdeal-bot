@@ -1,542 +1,35 @@
 {
-"date": "2026-11-24",
+"date": "2026-11-25",
 "urls": [
 {
-"url": "https://hotdealpick.kr/c/t/t05da19.html",
-"kind": "topic",
-"added": "2026-11-23"
+"url": "https://hotdealpick.kr/today/2026-11-24/",
+"kind": "today",
+"added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/c/t/tangerine-10kg.html",
-"kind": "topic",
-"added": "2026-11-23"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tbecdb9.html",
-"kind": "topic",
-"added": "2026-11-23"
-},
-{
-"url": "https://hotdealpick.kr/c/t/te24e44.html",
-"kind": "topic",
-"added": "2026-11-23"
-},
-{
-"url": "https://hotdealpick.kr/c/t/t88b979.html",
+"url": "https://hotdealpick.kr/c/t/tangerine-hwanggeumhyang.html",
 "kind": "topic",
 "added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/p/1146.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/1161.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/1190.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/1848.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2003.html",
-"kind": "deal",
-"added": "2026-11-18"
-}
-],
-"q": [
-{
-"url": "https://hotdealpick.kr/p/2682.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3220.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4768.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3324.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5798.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3888.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5819.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5820.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5821.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5826.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5827.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5828.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3765.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3766.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3767.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5822.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5825.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2004.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2005.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2157.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2348.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2373.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2375.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2380.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2394.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2395.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2396.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2418.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2419.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2420.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2433.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2436.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2438.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2439.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2444.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2446.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2449.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2459.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2460.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2463.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2471.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2501.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2502.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2503.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2505.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2513.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2537.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2542.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2627.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2628.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2629.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2724.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2738.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2740.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2826.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3096.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3127.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3138.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3140.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3141.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3162.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3163.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3184.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3186.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3209.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3218.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3224.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3286.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3287.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3312.html",
-"kind": "deal",
-"added": "2026-11-18"
+"url": "https://hotdealpick.kr/c/t/td8ef34.html",
+"kind": "topic",
+"added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/p/3328.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4253.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4459.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4740.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4961.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4962.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/4963.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5078.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5079.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5080.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5081.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5422.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5523.html",
-"kind": "deal",
-"added": "2026-11-18"
+"url": "https://hotdealpick.kr/c/t/tf3f573.html",
+"kind": "topic",
+"added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/p/5524.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5823.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5824.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5854.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5855.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5856.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5857.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/2230.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5870.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5546.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5715.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/3344.html",
-"kind": "deal",
-"added": "2026-11-18"
-},
-{
-"url": "https://hotdealpick.kr/p/5875.html",
-"kind": "deal",
-"added": "2026-11-18"
+"url": "https://hotdealpick.kr/c/t/winter-slippers.html",
+"kind": "topic",
+"added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/p/5878.html",
+"url": "https://hotdealpick.kr/p/1920.html",
 "kind": "deal",
-"added": "2026-11-18"
+"added": "2026-11-19"
 },
 {
 "url": "https://hotdealpick.kr/p/2821.html",
@@ -557,7 +50,9 @@
 "url": "https://hotdealpick.kr/p/5957.html",
 "kind": "deal",
 "added": "2026-11-19"
-},
+}
+],
+"q": [
 {
 "url": "https://hotdealpick.kr/p/5958.html",
 "kind": "deal",
@@ -595,11 +90,6 @@
 },
 {
 "url": "https://hotdealpick.kr/p/5997.html",
-"kind": "deal",
-"added": "2026-11-19"
-},
-{
-"url": "https://hotdealpick.kr/p/1920.html",
 "kind": "deal",
 "added": "2026-11-19"
 },
@@ -735,11 +225,6 @@
 },
 {
 "url": "https://hotdealpick.kr/p/5452.html",
-"kind": "deal",
-"added": "2026-11-21"
-},
-{
-"url": "https://hotdealpick.kr/p/5962.html",
 "kind": "deal",
 "added": "2026-11-21"
 },
@@ -1054,21 +539,6 @@
 "added": "2026-11-23"
 },
 {
-"url": "https://hotdealpick.kr/p/2652.html",
-"kind": "deal",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/p/2760.html",
-"kind": "deal",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/p/3125.html",
-"kind": "deal",
-"added": "2026-11-24"
-},
-{
 "url": "https://hotdealpick.kr/p/6091.html",
 "kind": "deal",
 "added": "2026-11-24"
@@ -1104,16 +574,6 @@
 "added": "2026-11-24"
 },
 {
-"url": "https://hotdealpick.kr/today/2026-11-24/",
-"kind": "today",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/c/t/winter-slippers.html",
-"kind": "topic",
-"added": "2026-11-24"
-},
-{
 "url": "https://hotdealpick.kr/p/6543.html",
 "kind": "deal",
 "added": "2026-11-24"
@@ -1131,16 +591,6 @@
 {
 "url": "https://hotdealpick.kr/p/6546.html",
 "kind": "deal",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/c/t/td8ef34.html",
-"kind": "topic",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tf3f573.html",
-"kind": "topic",
 "added": "2026-11-24"
 },
 {
@@ -1176,11 +626,6 @@
 {
 "url": "https://hotdealpick.kr/p/6575.html",
 "kind": "deal",
-"added": "2026-11-24"
-},
-{
-"url": "https://hotdealpick.kr/c/t/tangerine-hwanggeumhyang.html",
-"kind": "topic",
 "added": "2026-11-24"
 },
 {
@@ -1282,19 +727,29 @@
 "url": "https://hotdealpick.kr/p/6635.html",
 "kind": "deal",
 "added": "2026-11-24"
+},
+{
+"url": "https://hotdealpick.kr/p/6092.html",
+"kind": "deal",
+"added": "2026-11-25"
+},
+{
+"url": "https://hotdealpick.kr/p/6093.html",
+"kind": "deal",
+"added": "2026-11-25"
+},
+{
+"url": "https://hotdealpick.kr/p/6094.html",
+"kind": "deal",
+"added": "2026-11-25"
+},
+{
+"url": "https://hotdealpick.kr/p/6467.html",
+"kind": "deal",
+"added": "2026-11-25"
 }
 ],
 "done": {
-"https://hotdealpick.kr/c/t/sweetpotato.html": "2026-11-18",
-"https://hotdealpick.kr/c/t/t237ad1.html": "2026-11-18",
-"https://hotdealpick.kr/c/t/t7304fd.html": "2026-11-18",
-"https://hotdealpick.kr/p/1897.html": "2026-11-18",
-"https://hotdealpick.kr/p/2602.html": "2026-11-18",
-"https://hotdealpick.kr/p/3332.html": "2026-11-18",
-"https://hotdealpick.kr/p/4191.html": "2026-11-18",
-"https://hotdealpick.kr/p/4195.html": "2026-11-18",
-"https://hotdealpick.kr/p/4601.html": "2026-11-18",
-"https://hotdealpick.kr/p/4605.html": "2026-11-18",
 "https://hotdealpick.kr/today/2026-11-18/": "2026-11-19",
 "https://hotdealpick.kr/c/t/americano.html": "2026-11-19",
 "https://hotdealpick.kr/c/t/car-supplies.html": "2026-11-19",
@@ -1357,6 +812,16 @@
 "https://hotdealpick.kr/p/1161.html": "2026-11-24",
 "https://hotdealpick.kr/p/1190.html": "2026-11-24",
 "https://hotdealpick.kr/p/1848.html": "2026-11-24",
-"https://hotdealpick.kr/p/2003.html": "2026-11-24"
+"https://hotdealpick.kr/p/2003.html": "2026-11-24",
+"https://hotdealpick.kr/today/2026-11-24/": "2026-11-25",
+"https://hotdealpick.kr/c/t/tangerine-hwanggeumhyang.html": "2026-11-25",
+"https://hotdealpick.kr/c/t/td8ef34.html": "2026-11-25",
+"https://hotdealpick.kr/c/t/tf3f573.html": "2026-11-25",
+"https://hotdealpick.kr/c/t/winter-slippers.html": "2026-11-25",
+"https://hotdealpick.kr/p/1920.html": "2026-11-25",
+"https://hotdealpick.kr/p/2821.html": "2026-11-25",
+"https://hotdealpick.kr/p/5545.html": "2026-11-25",
+"https://hotdealpick.kr/p/5859.html": "2026-11-25",
+"https://hotdealpick.kr/p/5957.html": "2026-11-25"
 }
 }
