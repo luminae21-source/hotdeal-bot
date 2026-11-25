@@ -1,16 +1,17 @@
 {
-"at": "2026-11-25 14:18",
-"posts": 6724,
-"site": 2235,
+"at": "2026-11-25 14:33",
+"posts": 6728,
+"site": 2238,
 "mall": {
-"coupang": 1548,
+"coupang": 1551,
 "toss": 631,
 "": 1,
 "naver": 55
 },
 "cat": {
-"heat": 144,
+"heat": 147,
 "food": 450,
+"beauty": 271,
 "pet": 43,
 "life": 337,
 "kitchen": 167,
@@ -18,7 +19,6 @@
 "digital": 81,
 "snack": 116,
 "home": 103,
-"beauty": 271,
 "fashion": 107,
 "laundry": 88,
 "season": 158,
@@ -106,10 +106,10 @@
 }
 },
 "2026-11-25": {
-"site": 2235,
+"site": 2238,
 "sitemap": 1187,
 "mall": {
-"coupang": 1548,
+"coupang": 1551,
 "toss": 631,
 "": 1,
 "naver": 55
@@ -273,7 +273,14 @@
 "n": 3,
 "slot": "",
 "k": "new"
+},
+{
+"name": "겨울 난방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ],
-"nset_n": "새 구성 22 · 기존 상품 구성 0"
+"nset_n": "새 구성 23 · 기존 상품 구성 0"
 }
