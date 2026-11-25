@@ -1,20 +1,19 @@
 {
- "date": "2026-11-25",
- "updated": "2026-11-25 06:31 봇",
+ "date": "2026-11-26",
+ "updated": "2026-11-26 06:39 봇",
  "items": [
   {
-   "fact": "서울 아침 영하 4도",
+   "fact": "서울 아침 6도",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
-    "출퇴근 겨울템 2026",
-    "겨울 머플러",
-    "핫초코·코코아",
-    "율무차"
+    "율무차",
+    "둥굴레차·현미녹차",
+    "밀크티·라떼 스틱"
    ]
   },
   {
-   "fact": "블랙프라이데이(11/27)까지 2일",
+   "fact": "블랙프라이데이(11/27) 내일",
    "kind": "cal",
    "src": "",
    "fit": [
@@ -23,6 +22,12 @@
   },
   {
    "fact": "가전·디지털 블랙프라이데이 11/29까지",
+   "kind": "cal",
+   "src": "",
+   "fit": []
+  },
+  {
+   "fact": "R.LUX 패션 블랙 프라이데이 12/1까지",
    "kind": "cal",
    "src": "",
    "fit": []
