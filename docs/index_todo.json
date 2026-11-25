@@ -2,11 +2,6 @@
 "date": "2026-11-25",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-24/",
-"kind": "today",
-"added": "2026-11-24"
-},
-{
 "url": "https://hotdealpick.kr/c/t/tangerine-hwanggeumhyang.html",
 "kind": "topic",
 "added": "2026-11-24"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/p/5957.html",
 "kind": "deal",
 "added": "2026-11-19"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-25/",
+"kind": "today",
+"added": "2026-11-25"
 }
 ],
 "q": [
@@ -757,6 +757,11 @@
 "url": "https://hotdealpick.kr/p/6665.html",
 "kind": "deal",
 "added": "2026-11-25"
+},
+{
+"url": "https://hotdealpick.kr/p/1934.html",
+"kind": "deal",
+"added": "2026-11-25"
 }
 ],
 "done": {
@@ -832,6 +837,7 @@
 "https://hotdealpick.kr/p/2821.html": "2026-11-25",
 "https://hotdealpick.kr/p/5545.html": "2026-11-25",
 "https://hotdealpick.kr/p/5859.html": "2026-11-25",
-"https://hotdealpick.kr/p/5957.html": "2026-11-25"
+"https://hotdealpick.kr/p/5957.html": "2026-11-25",
+"https://hotdealpick.kr/today/2026-11-25/": "2026-11-25"
 }
 }
