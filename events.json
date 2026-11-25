@@ -25725,8 +25725,8 @@
   "tag": "제주 감귤 2026",
   "text": "🛒 <b>[쿠팡] 귤탐 당도선별 11brix 감귤 로열과 5kg (19,960원)</b>\n\n💰 100g당 399원꼴\n✔ 리뷰 119,137\n💡 11brix 당도선별 표기 · 5kg 한 상자\n⚠️ 확인할 점: 5kg 한 상자 양이 맞는지 보기 · 검색 때 내일(토) 새벽 도착 표기 · 결제 전 최종가 확인 (11/20 11시 가격)",
   "pid": "6855806001",
-  "now": "24,660원",
-  "chk": "2026-11-22 20:31",
+  "now": "19,960원",
+  "chk": "2026-11-25 11:55",
   "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/2020/12/15/17/1/2f7d8037-0bd8-4b96-868a-866c019db203.jpg",
   "item": "16349390560"
  },
@@ -26410,8 +26410,8 @@
   "tag": "제주 감귤 2026",
   "text": "🛒 <b>[쿠팡] 곰곰 고당도 12.5brix 감귤 1.5kg (10,900원)</b>\n\n💰 100g당 727원꼴\n✔ 리뷰 26,800\n💡 1.5kg 한 상자 · 이름에 12.5brix 표기\n⚠️ 확인할 점: 1.5kg 소포장 · 검색 때 내일(월) 새벽 도착 표기 · 결제 전 최종가 확인 (11/22 20시 가격)",
   "pid": "7730266199",
-  "now": "10,900원",
-  "chk": "2026-11-22 20:31",
+  "now": "11,690원",
+  "chk": "2026-11-25 11:55",
   "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/2884059707515245-448b5d2b-4a14-4e33-8a06-2286392f8a64.jpg",
   "item": "29262573495"
  },
@@ -27446,6 +27446,33 @@
   ],
   "chain": [
    "목도리에 장갑에 귀마개까지, 겨울 출근 준비가 한 단계 늘었죠 ㅎㅎ 귀마개는 출근길에만 쓰세요, 산책 때도 쓰세요?"
+  ]
+ },
+ {
+  "at": "2026-11-25 12:10",
+  "button": "🛒 구매하러 가기",
+  "url": "https://www.coupang.com/vp/products/7179515814?itemId=18104646264",
+  "deal": true,
+  "shelf": true,
+  "tag": "제주 감귤 2026",
+  "text": "🛒 <b>[쿠팡] 과일맛집 허니삼구 15brix 당도선별 제주 감귤 5kg 내외(소과~M) (27,800원)</b>\n\n💰 100g당 556원꼴\n✔ 리뷰 1,947\n💡 이름에 15brix 표기 · 소과~M 크기\n⚠️ 확인할 점: 5kg '내외' 표기라 무게 보기 · 결제 전 최종가 확인 (11/25 11시 가격)",
+  "pid": "7179515814",
+  "now": "27,800원",
+  "chk": "2026-11-25 11:55",
+  "img": "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/vendor_inventory/image_audit/stage/manual/2a45f1cc230967dd9fa039970ec44eac4fd582916b66f8088a0361b7f73e_1765157549943.jpg",
+  "item": "18104646264"
+ },
+ {
+  "at": "2026-11-26 10:10",
+  "curation": true,
+  "topic": "brix 표기별 감귤",
+  "slug": "tangerine-brix",
+  "link": "https://hotdealpick.kr/c/season/?ref=thc",
+  "text": "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\nbrix 표기 다른 감귤 셋, 100g 값으로 줄 세워 봤어요 🍊\n이름에 적힌 brix 숫자 순서와 100g 값 순서가 달라요\n\n🍊 귤탐 당도선별 11brix 감귤 로열과 5kg: 19,960원\n100g 399원\n🍊 과일맛집 허니삼구 15brix 당도선별 감귤 5kg 내외: 27,800원\n100g 556원\n🍊 곰곰 고당도 12.5brix 감귤 1.5kg: 11,690원\n100g 779원\n\n100g 값 = 가격 ÷ 무게 · 같은 5kg끼리는 15brix 쪽이 100g 157원 더하고, 1.5kg 상자가 가장 높아요\n\n⚠️ brix는 판매자 표기 숫자예요 · 결제 전 최종가 확인 (11/25 11시 가격)\n\n귤 한 상자 사면, 며칠 만에 다 드세요?",
+  "img": [
+   "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/2020/12/15/17/1/2f7d8037-0bd8-4b96-868a-866c019db203.jpg",
+   "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/vendor_inventory/image_audit/stage/manual/2a45f1cc230967dd9fa039970ec44eac4fd582916b66f8088a0361b7f73e_1765157549943.jpg",
+   "https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/2884059707515245-448b5d2b-4a14-4e33-8a06-2286392f8a64.jpg"
   ]
  }
 ]
