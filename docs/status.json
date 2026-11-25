@@ -1,6 +1,6 @@
 {
-"at": "2026-11-25 15:44",
-"posts": 6742,
+"at": "2026-11-25 15:58",
+"posts": 6743,
 "site": 2242,
 "mall": {
 "coupang": 1555,
@@ -28,8 +28,8 @@
 },
 "missing": 0,
 "missing_names": [],
-"cp_fail": 183,
-"sitemap": 1187,
+"cp_fail": 185,
+"sitemap": 1189,
 "days": {
 "2026-11-17": {
 "site": 2070,
@@ -107,7 +107,7 @@
 },
 "2026-11-25": {
 "site": 2242,
-"sitemap": 1187,
+"sitemap": 1189,
 "mall": {
 "coupang": 1555,
 "toss": 631,
@@ -117,7 +117,7 @@
 }
 },
 "warn": [
-"쿠팡 변환 실패 183개(cp_fail.json)"
+"쿠팡 변환 실패 185개(cp_fail.json)"
 ],
 "nset": [
 {
