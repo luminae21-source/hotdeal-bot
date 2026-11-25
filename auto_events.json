@@ -3915,27 +3915,6 @@
 "auto": "shelf"
 },
 {
-"at": "2026-11-22 12:40",
-"curation": true,
-"topic": "식품",
-"link": "https://hotdealpick.kr/c/s/20261122-1240-coupang-food.html",
-"set": "20261122-1240-coupang-food",
-"cat": "food",
-"urls": [
-"https://link.coupang.com/a/iOXpJhVvye",
-"https://link.coupang.com/a/iOXpIDW1ue",
-"https://link.coupang.com/a/iNAkaW7cnQ"
-],
-"set_title": "쿠팡 상품 모음 · 식품 (11/22)",
-"text": "이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.\n\n🆕 쿠팡에 새로 들어온 식품 3개 · 11,900~39,900원\n\n1️⃣ 바른테이블 프리미엄 새우젓 2kg · 11,900원 (11/20 9시 확인)\n↳ 김장 간 맞출 때 쓸 분께\n\n2️⃣ 독배토돌이 광천토굴 추젓 (새우젓) 1kg · 21,840원 와우가 (11/20 9시 확인)\n↳ 찌개 감칠맛 더하고 싶을 때요\n\n3️⃣ 김영주스포츠 남성 웰론 경량 패딩 점퍼 MJ100 · 39,900원 (11/20 11시 확인)\n↳ 경량이라 겹쳐 입기 좋아요\n\n⚠️ 11/22 12:40 게시 시점 가격\n\n요즘 제일 빨리 떨어지는 건 뭐예요?",
-"img": [
-"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/643147374190953-687c3d55-a0a9-4dc0-8058-172b4ca66815.jpg",
-"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/retail/images/630395665648713-aa924c12-f3ce-46f7-94ce-1991aa27c317.jpg",
-"https://thumbnail.coupangcdn.com/thumbnails/remote/657x657q90trim/image/vendor_inventory/65b3/3f84aaaa25b74226f2a256e8ef998fd510e12a8c7999fc63d371cb2a5c71.jpg"
-],
-"auto": "nset"
-},
-{
 "at": "2026-11-22 18:40",
 "curation": true,
 "topic": "식품",
@@ -4567,5 +4546,65 @@
 "https://image7.coupangcdn.com/image/retail/images/84260456228561-aa7bbef2-e031-4324-9be4-6b2f2fd243a2.jpg"
 ],
 "auto": "nset"
+},
+{
+"at": "2026-11-25 14:31",
+"button": "🛒 구매하러 가기",
+"url": "https://www.coupang.com/vp/products/1392806360?itemId=29320669357",
+"deal": true,
+"shelf": true,
+"tag": "화장솜·면봉",
+"pid": "1392806360",
+"item": "29320669357",
+"now": "130,000원",
+"chk": "2026-11-25 15:02",
+"img": "https://ads-partners.coupang.com/image1/cLf2kxQOQrbGKdhdcIgP94vfgq2gfB_PR87k9ztqO_oRLLnS8dnc3seSA1rMy8Z-dnUwOoNQE78i2a7JPt5xymtVuQx-BWfShR2kgjGlTbMWkg6UF6t7OWwXFCZBo83_4MEd_qRruKqEMQ7jdNPt-kIDsR_G7FBrYj9ZxTKyeHwH8_oBfX27eMichqrPOsvkaQ1RjWcT-NYAPREsBn0mWXXY-jKzxSFPvSWUiucVLpsGCvGXLO-0Uwr2FDYYizIU67BUjWoCxR5BVYEUi3WTqHBUWJKTGOy9axNgp9i9fv66I0y2-BmBby8W1H7wecC7Q7uDJn4qZyNiicaEDiWdUpde7wZk65sMDOZSpwZoZHhQUbCbPc_t32AdhKfYA4T_qwFgyzC4yLUpXoHm6VIVmDH5xqkvwoAsPWcoj9-xyVJLZZuep4HFmHUVxNV5Uvb2yy8IWLTMS47RsONxrZkesOfjKk0lvttjgfZH5Q-cR7Ja4xB-DvnyDAwmb-BM8mLWVimhLYZPjEY5KA==",
+"text": "👍 <b>[쿠팡] 어반리브즈 엠보싱 화장솜, 100매입, 100개 (130,000원)</b>\n\n✔ 쿠팡 '화장솜' 검색 3위 · 로켓배송\n엠보싱 100매입 100개, 솜 부자 되는 숫자예요\n💡 개당 1,300원, 3개 중 두 번째로 덜 들어요\n⚠️ 확인할 점: 구성·용량 · 결제 전 최종가 확인 (11/25 15시 가격)",
+"auto": "shelf"
+},
+{
+"at": "2026-11-25 14:31",
+"button": "🛒 구매하러 가기",
+"url": "https://www.coupang.com/vp/products/9304211412?itemId=29320669034",
+"deal": true,
+"shelf": true,
+"tag": "화장솜·면봉",
+"pid": "9304211412",
+"item": "29320669034",
+"now": "87,500원",
+"chk": "2026-11-25 15:02",
+"img": "https://ads-partners.coupang.com/image1/IBGIzKAmaZzbkYTBIM6dbmO_FX1y2pSjnzSwaDREU8hDwgxCd9PLfbsCwnbT1LinKeUrM-sMGcqbkpSUAgpHA4qPdG5TEDCAUVrZfsHYqHNmaPFCA57PuIuqeAuqNbrHp8RRp6hL7Zy32B1b2zLyixS4DmQSEf9YiHOawReWPOwho6p5lCF5l4ATCZq5xg398jHaD9bd0uNeCaM1SQm_E7lZk_qtgWYdWJjjl92OmZkFNVtWU84eze8Dk71PI9qXTdbCleOFdS1D4On-6fZHTjfP_sUR6_Wxi08MKXAXTEF34EfNKyzdj7Sx6KP0GqAW3ZG7tQvJ7MxIZGhSymhZuGCqfIbbCyINim6hic63d3QrnHuCtuR2tdlpT7GpwL0tUqazNnGX5swC9HntSCI3a4oeWlr2Kp4Hoc_Qe_8J30xcTkIiuew-EdW8gqmoZubPHvX4cLTiZgHdk9qatl2I1oXed4BM1b4ksKHUMjU_SuUkXQrtA4ZOmouTJGNOsCPoeTsfmbRdIxUAyA==",
+"text": "👍 <b>[쿠팡] 어반리브즈 무표백 무형광 3겹 화장솜, 80매입, 70개 (87,500원)</b>\n\n✔ 쿠팡 '화장솜' 검색 4위 · 로켓배송\n무표백 무형광 3겹, 이름만 읽어도 담백해요\n💡 3개 중 개당 1,250원, 제일 덜 들어요\n⚠️ 확인할 점: 구성·용량 · 결제 전 최종가 확인 (11/25 15시 가격)",
+"auto": "shelf"
+},
+{
+"at": "2026-11-25 14:31",
+"button": "🛒 구매하러 가기",
+"url": "https://www.coupang.com/vp/products/9392184327?itemId=29017652181",
+"deal": true,
+"shelf": true,
+"tag": "화장솜·면봉",
+"pid": "9392184327",
+"item": "29017652181",
+"now": "25,370원",
+"chk": "2026-11-25 15:02",
+"img": "https://ads-partners.coupang.com/image1/Nuo3xrEE4Cd6dLXXNlEMwYwDNdHe0iluDq1b5yItjK5HJMlFdMYjjXFj0g5fZGx7XVXU4oNNYAdin6Zue996wg2g2ujf88DgJ7ZaLZuTIMKki1ymnZ7csHi62sI2K85S6UJKZhE6-UBhqU74FQGiUYwzwEShKCIfwybz5fDjU_AqvzfnyFyh_DSJtrW_S94VyKVZQ3WgyH867EEhz93f1PScnEdUSgVKuYYXfaUfQGh219w0eUJYV2fV4a2yJEZXtq4rKVk2DLUO9-GTomoqtcdqVJLO1UgmQW6MRZ4zZUEu8W_y41h2g6nquzT9pnWXAYMK0vKpuaVI1flDSmo8Tb3UgQwBDqPPqRfP-irYmtJct-mW8_8fS2FhRewzupkmBnL0-79lrEO08OLoo2TnVwbcX4qoSK6nHGoaahVAFHfoc6_mgVv4qCYLAjD69hmqJzSWcpjqeSoj67lZL81aZE1eHE0W0cIiIF-u7MziVIuo8j2otE2V7qxjHoRhI8pRKZ71kZfWnHk3haGgy-OyQARqla4BsH_1cW807CE6CIMUa4bpuD-bnak=",
+"text": "👍 <b>[쿠팡] AWC 절단 화장솜 대용량 피부관리실 화장솜 1200매, 3개, 1200매입 (25,370원)</b>\n\n✔ 쿠팡 '화장솜' 검색 5위\n1200매 3개면 솜이 서랍 한 칸 차지해요\n💡 1~2인 가구엔 부담 없는 양이에요\n⚠️ 확인할 점: 구성·용량 · 결제 전 최종가 확인 (11/25 15시 가격)",
+"auto": "shelf"
+},
+{
+"at": "2026-11-25 14:31",
+"button": "🛒 구매하러 가기",
+"url": "https://www.coupang.com/vp/products/9325337344?itemId=27642356577",
+"deal": true,
+"shelf": true,
+"tag": "화장솜·면봉",
+"pid": "9325337344",
+"item": "27642356577",
+"now": "5,900원",
+"chk": "2026-11-25 15:02",
+"img": "https://ads-partners.coupang.com/image1/8G6qnybCspkGd5nW8Kb7rhX-qqKxBZzEeeHzqPqjJ54uu_J6BiOJmDWVMkXRqn6Krzf2g15AHTKYxnLSCMccnAbfVZto469EowsRqyk-g_Bu1SLYqa6z3iA_MvM9hbH8jtAyYEw63IqQVgSPHEsOhR6ZspI7Q1KUwb5a3sCPdtdqxibrXn-bl8M50__9IeUe87YllQGrouiCu0I1FMEUz3s57BLyTUBpB3BuNW_HPcyGQ3vzUHGfaipv1Iazc-YD0nsm230fhPlo0iOW8odxZcjIUGw0ZIU0YbScvktK8bIQ4ojd2FXXTfj3g6fl_4kOBPAOQbmgh6aCCandY9k1eNt0uGx9llvXpxvfLpe8B_9M2hqgjzpXHwXH5fYY-gdH9fGVOb2Z6cmBrQ0CdzsPrtOnfgxxOX79MPZ2JiUNK9ushmfkjBaBcrX59Np2eOdBPXm0ZDvz3qpK9CGPGcKyRgEmTjZJlyp7U92pEbJBahTZ9une7aSv7FnGPLm5ezrxQuAtx7isxxxCSGxjQpNAFgn0ilYQIhLmOS4leRiXLTdFW40=",
+"text": "👍 <b>[쿠팡] 오아소 순면 100% 프리미엄 양면 화장솜 대용량 (5,900원)</b>\n\n✔ 쿠팡 '화장솜' 검색 10위\n💡 여행용 작은 통은 파우치 상비군\n⚠️ 확인할 점: 옵션별 가격 · 결제 전 최종가 확인 (11/25 15시 가격)",
+"auto": "shelf"
 }
 ]
