@@ -1,6 +1,6 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-11-24 17:32",
+ "updated": "2026-11-25 17:33",
  "promos": [
   {
    "id": "cp-goodshop-asan-2611",
@@ -159,6 +159,26 @@
    "cta": null,
    "src": "https://www.yna.co.kr/view/AKR20261124109100030",
    "chk": "2026-11-24 17:32",
+   "kw": null
+  },
+  {
+   "id": "lo-ttaenggyeoyo-2611",
+   "mall": "lotteon",
+   "mall_name": "롯데온",
+   "sub": "제휴 할인",
+   "name": "땡겨요 제휴 할인",
+   "start": null,
+   "end": "2026-12-31",
+   "pre": null,
+   "benefit": "땡겨요에서 롯데온으로 접속한 신규 회원 3만 원 이상 1만 원 쿠폰 + 온누리상생스토어 3만 원 이상 3천 원 쿠폰 · 기존 회원 3만 원 이상 2천 원 쿠폰",
+   "tag": null,
+   "url": "https://www.lotteon.com/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.lotteon.com/"
+   },
+   "src": "https://www.newspim.com/news/view/20261125000112",
+   "chk": "2026-11-25 17:33",
    "kw": null
   }
  ]
