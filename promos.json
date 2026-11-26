@@ -1,6 +1,6 @@
 {
  "note": "Cowork가 매일 17:30 갱신하는 쇼핑몰 기획전 목록(10/25 진우 '스스로 여러 기획전 찾아서 깔끔하고 이쁘게'). 기간·혜택 = 기사 근거(src). url = 제휴 링크가 있으면 그것, 없으면 몰 홈. tag = events shelf tag(사이트 상품 사진·개수). end 없음 = 종료일 미발표. kw = tag 없을 때 상품 이름 검색어. 10/25 19:5x 진우 '수수료 안 주는 곳은 빼자' → 제휴(수수료) 되는 몰만: 쿠팡(파트너스)·G마켓·옥션·롯데온·이마트몰(링크프라이스)·토스·네이버(쇼핑커넥트 상품)·올리브영(큐레이터). 11번가·SSG.COM 등 제휴 없는 몰은 넣지 않음.",
- "updated": "2026-11-25 17:33",
+ "updated": "2026-11-26 17:34",
  "promos": [
   {
    "id": "cp-goodshop-asan-2611",
@@ -16,43 +16,6 @@
    "url": null,
    "cta": null,
    "src": "https://www.ittimes.com/news/articleView.html?idxno=87880",
-   "chk": "2026-11-11 17:27",
-   "kw": null
-  },
-  {
-   "id": "lo-pasera-2611",
-   "mall": "lotteon",
-   "mall_name": "롯데온",
-   "sub": "겨울 패션",
-   "name": "패세라",
-   "start": null,
-   "end": "2026-11-22",
-   "pre": null,
-   "benefit": "겨울 아우터 등 패션 할인 행사(패션 세일 라인업)",
-   "tag": null,
-   "url": "https://www.lotteon.com/",
-   "cta": {
-    "text": "행사 보러 가기",
-    "href": "https://www.lotteon.com/"
-   },
-   "src": "https://www.news1.kr/industry/distribution/6346934",
-   "chk": "2026-11-11 17:27",
-   "kw": null
-  },
-  {
-   "id": "cp-blackdaily-2611",
-   "mall": "coupang",
-   "mall_name": "쿠팡",
-   "sub": "생필품",
-   "name": "블랙생필품 위크",
-   "start": null,
-   "end": "2026-11-22",
-   "pre": null,
-   "benefit": "200여 브랜드 생필품 2만여 개 · 매일 오전 10시 선착순 특가(일부 1,990원)",
-   "tag": null,
-   "url": null,
-   "cta": null,
-   "src": "https://www.yna.co.kr/view/AKR20261110103500030",
    "chk": "2026-11-11 17:27",
    "kw": null
   },
@@ -179,6 +142,26 @@
    },
    "src": "https://www.newspim.com/news/view/20261125000112",
    "chk": "2026-11-25 17:33",
+   "kw": null
+  },
+  {
+   "id": "gm-blackfriday-2611",
+   "mall": "gmarket",
+   "mall_name": "G마켓",
+   "sub": "블랙프라이데이",
+   "name": "G마켓 블랙프라이데이",
+   "start": "2026-11-26",
+   "end": "2026-11-30",
+   "pre": null,
+   "benefit": "한정 시간 특가 '플래시세일 타임딜' · '베스트 핫딜' · '라이브 딜' 등 할인 프로모션 · 27일 뷰티 특가 라이브 방송",
+   "tag": null,
+   "url": "https://www.gmarket.co.kr/",
+   "cta": {
+    "text": "행사 보러 가기",
+    "href": "https://www.gmarket.co.kr/"
+   },
+   "src": "https://isplus.com/article/view/isp202611250151",
+   "chk": "2026-11-26 17:34",
    "kw": null
   }
  ]
