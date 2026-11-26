@@ -35,6 +35,20 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "주방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
+},
+{
+"name": "식품",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
