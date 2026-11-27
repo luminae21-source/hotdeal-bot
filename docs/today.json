@@ -1,15 +1,15 @@
 {
- "date": "2026-11-27",
- "updated": "2026-11-27 06:30 봇",
+ "date": "2026-11-28",
+ "updated": "2026-11-28 06:35 봇",
  "items": [
   {
-   "fact": "서울 아침 7도 · 비 올 확률 61%",
+   "fact": "서울 아침 4도",
    "kind": "weather",
    "src": "https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&timezone=Asia%2FSeoul&daily=temperature_2m_min&hourly=temperature_2m",
    "fit": [
-    "율무차",
-    "둥굴레차·현미녹차",
-    "밀크티·라떼 스틱"
+    "출퇴근 겨울템 2026",
+    "핫초코·코코아",
+    "율무차"
    ]
   },
   {
