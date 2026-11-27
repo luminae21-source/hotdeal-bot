@@ -1,9 +1,8 @@
-{"d": "2026-11-27", "at": "2026-11-27 05:06", "days": 14, "rule": "Threads 개별 글 조회(v48, 없으면 views) 상위 20% + 답글(우리 링크 댓글 빼고) 상위 20%(1개↑), 상품(토스 = 상품 id·이름, 그 밖 = 링크)별 · 최고 조회 순", "posts": 65, "items": [
+{"d": "2026-11-28", "at": "2026-11-28 05:11", "days": 14, "rule": "Threads 개별 글 조회(v48, 없으면 views) 상위 20% + 답글(우리 링크 댓글 빼고) 상위 20%(1개↑), 상품(토스 = 상품 id·이름, 그 밖 = 링크)별 · 최고 조회 순", "posts": 60, "items": [
 {"key": "toss:2701652223", "name": "스타벅스 다크 로스트 홀리데이 스페셜팩, 50개입+홀리데이 머그, 1개", "url": "https://toss.shopping/_m/F8e9dYUw", "mall": "toss", "best": 139, "replies": 0, "n": 1, "last": "2026-11-24 05:00"},
 {"key": "toss:170485317", "name": "광천파도김 들기름으로 구워 더욱 고소한 광천김, 4g, 64개", "url": "https://toss.shopping/_m/pOdm773C", "mall": "toss", "best": 53, "replies": 0, "n": 1, "last": "2026-11-23 04:55"},
 {"key": "toss:155820037", "name": "5단 수압조절 온오프 샤워기헤드, 블랙, 2개", "url": "https://toss.shopping/_m/1KP1p4Cx", "mall": "toss", "best": 49, "replies": 0, "n": 1, "last": "2026-11-14 04:11"},
 {"key": "toss:110224187", "name": "베라 무해력 4ZERO 클래식, 3겹, 30롤, 25m, 2팩", "url": "https://toss.shopping/_m/jhy3SENk", "mall": "toss", "best": 48, "replies": 0, "n": 1, "last": "2026-11-23 01:09"},
-{"key": "toss:110224185", "name": "베라 무해력 4ZERO 클래식, 3겹, 30롤, 25m, 1팩", "url": "https://toss.shopping/_m/50oIwBYj", "mall": "toss", "best": 47, "replies": 0, "n": 2, "last": "2026-11-23 14:49"},
 {"key": "toss:2704606737", "name": "제주 효돈 감귤, 중대과, 10kg, 1개", "url": "https://toss.shopping/_m/VbjzgoW7", "mall": "toss", "best": 32, "replies": 0, "n": 1, "last": "2026-11-18 04:42"},
 {"key": "toss:1056720495", "name": "풀무원샘물 라벨랜덤, 2L, 36개", "url": "https://toss.shopping/_m/tuRqw1xa", "mall": "toss", "best": 31, "replies": 2, "n": 1, "last": "2026-11-25 09:08"},
 {"key": "toss:2654099765", "name": "한라산의 아침우유, 900ml, 1개", "url": "https://toss.shopping/_m/PXj8wPYa", "mall": "toss", "best": 29, "replies": 0, "n": 1, "last": "2026-11-22 23:04"},
