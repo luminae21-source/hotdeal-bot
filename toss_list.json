@@ -1,5 +1,5 @@
 {
- "at": "2026-11-27 07:14",
+ "at": "2026-11-28 07:05",
  "n": {
   "hot": 1715,
   "wait": 1247,
@@ -67,13 +67,13 @@
   "어가찬 국내산 햇 다시멸치, 국물용, 육수용, 1.5kg, 1개"
  ],
  "new": {
-  "2026-11-20": 172,
   "2026-11-21": 173,
   "2026-11-22": 162,
   "2026-11-23": 179,
   "2026-11-24": 158,
   "2026-11-25": 128,
-  "2026-11-26": 0
+  "2026-11-26": 0,
+  "2026-11-27": 0
  },
  "check": [
   "토스 링크 거리 10개 (12:20 DM)"
@@ -103,7 +103,7 @@
    "tgt": "4,890원 · 5천원 쿠폰가",
    "chk": "11/25 9시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-14",
    "url": "https://toss.shopping/_m/1Icnm9U6"
   },
   {
@@ -220,7 +220,7 @@
    "tgt": "2,800원",
    "chk": "11/25 13시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/9wO0qXN5"
   },
   {
@@ -301,7 +301,7 @@
    "tgt": "9,900원",
    "chk": "11/25 12시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/7jJ2tcLe"
   },
   {
@@ -553,7 +553,7 @@
    "tgt": "8,811원",
    "chk": "11/25 12시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/HejclJhB"
   },
   {
@@ -805,7 +805,7 @@
    "tgt": "14,400원",
    "chk": "11/25 6시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-06",
    "url": "https://toss.shopping/_m/pLdwCOBt"
   },
   {
@@ -850,7 +850,7 @@
    "tgt": "5,920원",
    "chk": "11/25 15시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-06",
    "url": "https://toss.shopping/_m/7tupYWQt"
   },
   {
@@ -904,7 +904,7 @@
    "tgt": "20,900원",
    "chk": "11/25 5시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-11-06",
    "url": "https://toss.shopping/_m/Nd1iFGSg"
   },
   {
@@ -985,7 +985,7 @@
    "tgt": "9,800원",
    "chk": "11/25 6시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/BWWHsmx8"
   },
   {
@@ -1120,7 +1120,7 @@
    "tgt": "7,118원",
    "chk": "11/25 7시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/t2qdhSVA"
   },
   {
@@ -1174,7 +1174,7 @@
    "tgt": "8,900원",
    "chk": "11/25 11시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/xx9bSQ7q"
   },
   {
@@ -1498,7 +1498,7 @@
    "tgt": "9,900원",
    "chk": "11/25 9시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-08",
    "url": "https://toss.shopping/_m/5mHByaIn"
   },
   {
@@ -1660,7 +1660,7 @@
    "tgt": "24,890원",
    "chk": "11/25 14시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-09",
    "url": "https://toss.shopping/_m/XE39sJBk"
   },
   {
@@ -1867,7 +1867,7 @@
    "tgt": "16,900원",
    "chk": "11/25 12시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-11",
    "url": "https://toss.shopping/_m/TjD4cZUp"
   },
   {
@@ -2416,7 +2416,7 @@
    "tgt": "7,900원",
    "chk": "11/25 14시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-20",
    "url": "https://toss.shopping/_m/TTB1SW0c"
   },
   {
@@ -2443,7 +2443,7 @@
    "tgt": "4,900원",
    "chk": "11/25 14시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-21",
    "url": "https://toss.shopping/_m/nXvORciq"
   },
   {
@@ -6205,7 +6205,7 @@
    "tgt": "9,300원",
    "chk": "11/25 9시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/hnRpsXxC"
   },
   {
@@ -12595,7 +12595,7 @@
    "tgt": "7,600원",
    "chk": "11/25 10시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-11-19",
    "url": "https://toss.shopping/_m/x2CqdZAr"
   },
   {
@@ -12901,7 +12901,7 @@
    "tgt": "24,651원",
    "chk": "11/25 15시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-11-20",
    "url": "https://toss.shopping/_m/l4iUf0oA"
   },
   {
@@ -15574,7 +15574,7 @@
    "tgt": "4,200원",
    "chk": "11/17 14시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-11",
    "url": "https://toss.shopping/_m/JydI2XYp"
   },
   {
@@ -15592,7 +15592,7 @@
    "tgt": "12,900원",
    "chk": "11/17 15시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-10-11",
    "url": "https://toss.shopping/_m/ZT9tWdVy"
   },
   {
@@ -15691,7 +15691,7 @@
    "tgt": "15,900원",
    "chk": "11/17 15시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-11",
    "url": "https://toss.shopping/_m/fs4ntBn9"
   },
   {
@@ -16159,7 +16159,7 @@
    "tgt": "4,990원",
    "chk": "11/23 9시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-14",
    "url": "https://toss.shopping/_m/9a8cOcEi"
   },
   {
@@ -16195,7 +16195,7 @@
    "tgt": "1,950원 · 5천원 쿠폰가",
    "chk": "11/17 15시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-14",
    "url": "https://toss.shopping/_m/7jBrHHMt"
   },
   {
@@ -16267,7 +16267,7 @@
    "tgt": "",
    "chk": "11/17 7시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/zDPvBXIj"
   },
   {
@@ -16285,7 +16285,7 @@
    "tgt": "7,800원",
    "chk": "11/23 1시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/JNufnyF9"
   },
   {
@@ -16429,7 +16429,7 @@
    "tgt": "",
    "chk": "11/17 21시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/1EpB2qh3"
   },
   {
@@ -16915,7 +16915,7 @@
    "tgt": "10,900원",
    "chk": "11/17 21시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/hOqEIjTp"
   },
   {
@@ -17203,7 +17203,7 @@
    "tgt": "5,500원",
    "chk": "11/20 9시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-06",
    "url": "https://toss.shopping/_m/DFLVHHIj"
   },
   {
@@ -17338,7 +17338,7 @@
    "tgt": "10,400원",
    "chk": "11/23 10시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/tvt4NcKj"
   },
   {
@@ -18022,7 +18022,7 @@
    "tgt": "9,900원",
    "chk": "11/25 14시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-09",
    "url": "https://toss.shopping/_m/RTLqE976"
   },
   {
@@ -18076,7 +18076,7 @@
    "tgt": "13,900원",
    "chk": "11/17 7시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-11-09",
    "url": "https://toss.shopping/_m/HnGjQpe7"
   },
   {
@@ -18571,7 +18571,7 @@
    "tgt": "8,990원",
    "chk": "11/17 22시",
    "stdy": true,
-   "last": "2026-11-25",
+   "last": "2026-11-12",
    "url": "https://toss.shopping/_m/VwM7nXRb"
   },
   {
@@ -20857,7 +20857,7 @@
    "tgt": "7,550원",
    "chk": "11/17 17시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/LXyQ8dVq"
   },
   {
@@ -22090,7 +22090,7 @@
    "tgt": "10,900원",
    "chk": "11/23 3시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-11-06",
    "url": "https://toss.shopping/_m/F5K19YD9"
   },
   {
@@ -22531,7 +22531,7 @@
    "tgt": "2,400원",
    "chk": "11/17 11시",
    "stdy": false,
-   "last": "2026-11-24",
+   "last": "2026-11-07",
    "url": "https://toss.shopping/_m/xh93hWTp"
   },
   {
@@ -26752,7 +26752,7 @@
    "tgt": "11,900원",
    "chk": "11/20 22시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-12",
    "url": "https://toss.shopping/_m/VhsDiUd7"
   },
   {
@@ -26788,7 +26788,7 @@
    "tgt": "9,900원",
    "chk": "11/23 2시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/RCmugL67"
   },
   {
@@ -26806,7 +26806,7 @@
    "tgt": "9,900원",
    "chk": "11/21 4시",
    "stdy": true,
-   "last": "2026-11-24",
+   "last": "2026-10-24",
    "url": "https://toss.shopping/_m/rZn0UVRa"
   },
   {
