@@ -2,11 +2,6 @@
 "date": "2026-11-27",
 "urls": [
 {
-"url": "https://hotdealpick.kr/today/2026-11-26/",
-"kind": "today",
-"added": "2026-11-26"
-},
-{
 "url": "https://hotdealpick.kr/c/t/t247938.html",
 "kind": "topic",
 "added": "2026-11-26"
@@ -50,6 +45,11 @@
 "url": "https://hotdealpick.kr/p/5452.html",
 "kind": "deal",
 "added": "2026-11-21"
+},
+{
+"url": "https://hotdealpick.kr/today/2026-11-27/",
+"kind": "today",
+"added": "2026-11-27"
 }
 ],
 "q": [
@@ -927,6 +927,7 @@
 "https://hotdealpick.kr/c/t/ta49c6a.html": "2026-11-27",
 "https://hotdealpick.kr/c/t/tangerine-2kg-vs-5kg.html": "2026-11-27",
 "https://hotdealpick.kr/c/t/te8e484.html": "2026-11-27",
-"https://hotdealpick.kr/p/5452.html": "2026-11-27"
+"https://hotdealpick.kr/p/5452.html": "2026-11-27",
+"https://hotdealpick.kr/today/2026-11-27/": "2026-11-27"
 }
 }
