@@ -7,6 +7,20 @@
 "n": 5,
 "slot": "",
 "k": "mix"
+},
+{
+"name": "세탁",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "mix"
+},
+{
+"name": "주방",
+"mall": "coupang",
+"n": 3,
+"slot": "",
+"k": "new"
 }
 ]
 }
